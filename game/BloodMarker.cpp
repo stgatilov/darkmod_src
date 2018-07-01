@@ -67,6 +67,13 @@ void CBloodMarker::Event_GenerateBloodSplat()
 	}
 }
 
+CBloodMarker::CBloodMarker() {
+	_angle = 0.0f;
+	_size = 0.0f;
+	_isFading = false;
+	_spilledBy = nullptr;
+}
+
 void CBloodMarker::Init(const idStr& splat, const idStr& splatFading, float size, idAI* bleeder) // grayman #3075 - add who bled
 {
 	_bloodSplat = splat;

@@ -24,6 +24,7 @@ class CBloodMarker : public idEntity
 {
 public:
 	CLASS_PROTOTYPE( CBloodMarker );
+	CBloodMarker();
 
 protected:
 	idStr					_bloodSplat;

@@ -74,14 +74,16 @@ CProjectileResult::CProjectileResult( void )
 	m_ProjData.LinVelocity.Zero();
 	m_ProjData.AngVelocity.Zero();
 	m_ProjData.AxialDir.Zero();
+	m_ProjData.IncidenceAngle = 0;
 	m_ProjData.mass = 0;
 
 	m_bActivated = false;
 
 	// initialize the trace data
+	m_Collision.fraction = 1.0f;
 	m_Collision.endpos.Zero();
 	m_Collision.endAxis.Zero();
-	m_Collision.c.point.Zero();
+	memset(&m_Collision.c, 0, sizeof(m_Collision.c));
 	m_Collision.c.normal.Set( 0, 0, 1 );
 }
 

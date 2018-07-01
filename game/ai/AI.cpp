@@ -480,6 +480,7 @@ idAI::idAI()
 	lastTimePlayerLost = -1;
 
 	fleeingEvent = false; // grayman #3317
+	emitFleeBarks = false;
 
 	memset( &worldMuzzleFlash, 0, sizeof ( worldMuzzleFlash ) );
 	worldMuzzleFlashHandle = -1;
@@ -553,6 +554,7 @@ idAI::idAI()
 	m_maxAlertIndex = 0;
 	m_recentHighestAlertLevel = 0;
 	m_AlertedByActor = NULL;
+	memset(alertTypeWeight, 0, sizeof(alertTypeWeight));
 
 	m_TactAlertEnt = NULL;
 	m_AlertGraceActor = NULL;
@@ -595,6 +597,8 @@ idAI::idAI()
 	m_bCanOperateDoors = false;
 
 	m_lipSyncActive		= false;
+	m_lipSyncAnim		= -1;
+	m_lipSyncEndTimer	= -1;
 
 	m_bPushOffPlayer	= false;
 

@@ -41,6 +41,7 @@ void CMultiStateMoverButton::Spawn()
 	{
 		gameLocal.Warning("Elevator button %s has neither 'fetch' nor 'ride' spawnargs set. AI will not be able to use this button!", name.c_str());
 	}
+	targetingOff = false;
 
 	PostEventMS(&EV_RegisterSelfWithElevator, 10);
 }

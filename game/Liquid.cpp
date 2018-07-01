@@ -124,6 +124,8 @@ void idLiquid::Spawn() {
 	spawnArgs.GetVector("minSplashVelocity","100 100 100",minSplash);
 	spawnArgs.GetVector("minWaveVelocity","60 60 60",minWave);
 
+	model = nullptr;
+
 	// setters
 	this->smokeName = "smoke_";
 	this->smokeName.Append(temp);

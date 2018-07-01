@@ -880,6 +880,7 @@ void idActor::Spawn( void )
 	m_MeleeHoldTimeMax					= spawnArgs.GetInt("melee_hold_time_max");
 	m_MeleeParryHoldMax					= spawnArgs.GetInt("melee_parry_hold_max");
 	m_MeleeParryHoldMin					= spawnArgs.GetInt("melee_parry_hold_min");
+	m_MeleeCurrentParryHold				= -1;
 	m_MeleeAttackRecoveryMin			= spawnArgs.GetInt("melee_attack_recovery_min");
 	m_MeleeAttackRecoveryMax			= spawnArgs.GetInt("melee_attack_recovery_max");
 	m_MeleeAttackLongRecoveryMin		= spawnArgs.GetInt("melee_attack_long_recovery_min");

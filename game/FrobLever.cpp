@@ -42,7 +42,9 @@ void CFrobLever::Restore( idRestoreGame *savefile )
 }
 
 void CFrobLever::Spawn()
-{}
+{
+	m_Latch = false;
+}
 
 void CFrobLever::PostSpawn()
 {

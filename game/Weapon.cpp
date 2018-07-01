@@ -141,6 +141,7 @@ idWeapon::idWeapon() {
 	brassDelay				= 0;
 
 	allowDrop				= true;
+	hideUntilTime			= -1;
 
 	Clear();
 
@@ -697,6 +698,7 @@ void idWeapon::Clear( void ) {
 	nozzleFx			= false;
 	nozzleFxFade		= 1500;
 	lastAttack			= 0;
+	lastBlock			= 0;
 	nozzleGlowHandle	= -1;
 	nozzleGlowShader	= NULL;
 	nozzleGlowRadius	= 10;
@@ -707,6 +709,8 @@ void idWeapon::Clear( void ) {
 	weaponAngleOffsetMax		= 0.0f;
 	weaponOffsetTime			= 0.0f;
 	weaponOffsetScale			= 0.0f;
+
+	arrow2Arrow					= false;
 
 	allowDrop			= true;
 
