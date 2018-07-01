@@ -32,7 +32,10 @@
 
 
 class idSIMD_AVX : public idSIMD_SSE3 {
+	bool UseFMA3;
 public:
+	idSIMD_AVX( bool useFMA3 ) : UseFMA3( useFMA3 ) {}
 	virtual const char * VPCALL GetName( void ) const;
+	virtual void VPCALL CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) ALLOW_AVX;
 	virtual void VPCALL CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) ALLOW_AVX;
 };

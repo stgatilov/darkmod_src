@@ -460,7 +460,7 @@ x/y/w/h are in the 0,0 to 640,480 range
 =============
 */
 void idGuiModel::DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *hShader ) {
-	idDrawVert verts[4];
+	static idDrawVert verts[4]; // duzenko: micro-optimization - too much zero-filling in idVec3::idVec3( void ). FIXME thread_local?
 	glIndex_t indexes[6];
 
 	if ( !glConfig.isInitialized ) {
