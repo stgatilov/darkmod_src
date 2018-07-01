@@ -1155,9 +1155,6 @@ private:
 	// An integer keeping track of the lightgem interleaving
 	int							m_LightgemInterleave;
 	
-	// nbohr1more #4369 Dynamic Lightgem Interleave
-	int							m_LightgemInterleaveMin;
-
 	// grayman #597 - ignore attack button if depressed, but weapon has been lowered
 	bool						ignoreWeaponAttack;
 

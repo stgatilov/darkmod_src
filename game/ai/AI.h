@@ -995,12 +995,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	float					m_AudThreshold;
 
 	/**
-	* Static visual distance cutoff that is calculated dynamically
-	* from the other visual acuity settings.
-	**/
-	float					m_VisDistMax;
-
-	/**
 	* The loudest direction for the last suspicious sound the AI heard
 	* is set to NULL if the AI has not yet heard a suspicious sound
 	* Note suspicious sounds that are omnidirectional do not set this.

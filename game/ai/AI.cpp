@@ -910,8 +910,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 
-	savefile->WriteFloat(m_VisDistMax);
-
 	/* grayman #3857
 	// grayman #3424
 	int num = m_randomHidingSpotIndexes.size();
@@ -1385,8 +1383,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	if ( gravity == gameLocal.GetGravity() ) {
 		SetAAS();
 	}
-
-	savefile->ReadFloat(m_VisDistMax);
 
 	/* grayman #3857
 	// grayman #3424
