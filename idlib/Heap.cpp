@@ -1559,7 +1559,7 @@ void *Mem_AllocDebugMemory( const int size, const char *fileName, const int line
 		*((int*)0x0) = 1;
 #endif
 		// NOTE: set a breakpoint here to find memory allocations before mem_heap is initialized
-		return malloc( size );
+		return align16 ? _mm_malloc( size, 16 ) : malloc(size);
 	}
 
 	if ( align16 ) {
@@ -1606,8 +1606,7 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const int lineNumber, c
 		*((int*)0x0) = 1;
 #endif
 		// NOTE: set a breakpoint here to find memory being freed before mem_heap is initialized
-		free( p );
-		return;
+		return align16 ? _mm_free(p) : free(p);
 	}
 
 	m = (debugMemory_t *) ( ( (byte *) p ) - sizeof( debugMemory_t ) );
