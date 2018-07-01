@@ -44,12 +44,11 @@ idAASLocal::EdgeSplitPoint
 */
 bool idAASLocal::EdgeSplitPoint( idVec3 &split, int edgeNum, const idPlane &plane ) const {
 	const aasEdge_t *edge;
-	idVec3 v1, v2;
 	float d1, d2;
 
 	edge = &file->GetEdge( edgeNum );
-	v1 = file->GetVertex( edge->vertexNum[0] );
-	v2 = file->GetVertex( edge->vertexNum[1] );
+	const idVec3 &v1 = file->GetVertex( edge->vertexNum[0] );
+	const idVec3 &v2 = file->GetVertex( edge->vertexNum[1] );
 	d1 = v1 * plane.Normal() - plane.Dist();
 	d2 = v2 * plane.Normal() - plane.Dist();
 
