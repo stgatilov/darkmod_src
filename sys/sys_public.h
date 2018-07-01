@@ -223,7 +223,7 @@ typedef enum {
 	CPUID_SSE41							= 0x00200,	// Streaming SIMD Extentions 4.1 (Penryn)
 	CPUID_AVX							= 0x00400,	// AVX extenstions (SandyBridge)
 	
-	CPUID_FMA3							= 0x01000,	// AVX extenstions (SandyBridge)
+	CPUID_FMA3							= 0x01000,	// AVX extenstions (Haswell)
 //	CPUID_CMOV							= 0x02000,	// Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
 	CPUID_FTZ							= 0x04000,	// Flush-To-Zero mode (denormal results are flushed to zero)
 	CPUID_DAZ							= 0x08000	// Denormals-Are-Zero mode (denormal source operands are set to zero)
