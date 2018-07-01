@@ -55,16 +55,17 @@ class LightGem
 private:
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
-	idEntityPtr<idEntity>	m_LightgemSurface;
 
-	unsigned char*			m_LightgemImgBuffer;
-	lightGemDrawCmds_t		m_LightgemDrawCmds[2];
+	/*lightGemDrawCmds_t		m_LightgemDrawCmds[2];
 	lightGemDrawCmds_t *	m_LightgemFrontDraw;
 	lightGemDrawCmds_t *	m_LightgemBackDraw;
-	renderView_t			m_Lightgem_rv;
+	renderView_t			m_Lightgem_rv;*/
 	float 					m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
 
 public:
+	unsigned char*			m_LightgemImgBuffer;
+	idEntityPtr<idEntity>	m_LightgemSurface;
+
 	//---------------------------------
 	// Construction/Destruction
 	//---------------------------------
@@ -94,8 +95,8 @@ public:
 	// Calculation
 	//---------------------------------
 	float Calculate		( idPlayer *	a_pPlayer );	
-	void Render();
-	void EndFrame();
+	//void Render();
+	//void EndFrame();
 
 private:
 	void AnalyzeRenderImage	( );

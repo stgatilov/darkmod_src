@@ -63,19 +63,21 @@ public:																											\
 //----------------------------------------------------
 LightGem::LightGem()
 {
-	for( int i = 0; i < 2; ++i ) {
+/*	for( int i = 0; i < 2; ++i ) {
 		m_LightgemDrawCmds[i].imageBuffer = (byte*)Mem_Alloc16(DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof(ILuint));
 		m_LightgemDrawCmds[i].cmdHead = m_LightgemDrawCmds[i].cmdTail = nullptr;
 	}
 	m_LightgemFrontDraw = &m_LightgemDrawCmds[0];
-	m_LightgemBackDraw = &m_LightgemDrawCmds[1];
+	m_LightgemBackDraw = &m_LightgemDrawCmds[1];*/
+	m_LightgemImgBuffer = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
 }
 
 LightGem::~LightGem()
 {
-	for( int i = 0; i < 2; ++i ) {
+	/*for( int i = 0; i < 2; ++i ) {
 		Mem_Free16( m_LightgemDrawCmds[i].imageBuffer );
-	}
+	}*/
+	Mem_Free16( m_LightgemImgBuffer );
 }
 
 
@@ -109,7 +111,7 @@ void LightGem::SpawnLightGemEntity( idMapFile *	a_mapFile )
 		mapEnt->epairs.Set("noclipmodel", "1");
 	}
 
-	m_Lightgem_rv.viewID = VID_LIGHTGEM;
+	/*m_Lightgem_rv.viewID = VID_LIGHTGEM;
 	
 	m_Lightgem_rv.width = SCREEN_WIDTH;
 	m_Lightgem_rv.height = SCREEN_HEIGHT;
@@ -120,7 +122,7 @@ void LightGem::SpawnLightGemEntity( idMapFile *	a_mapFile )
 		 0.0f, 0.0f, 1.0f,
 		 0.0f, 1.0f, 0.0f,
 		-1.0f, 0.0f, 0.0f
-	);
+	);*/
 
 	//m_Lightgem_rv.forceUpdate = false;
 	//m_Lightgem_rv.cramZNear = false;			// Needs testing
@@ -218,7 +220,7 @@ float LightGem::Calculate(idPlayer *player)
 		LGPos.z = Cam.z + cv_lg_ozoffs.GetFloat(); // Set the lightgem's Z-axis position to that of the player's eyes
 	}
 
-	m_Lightgem_rv.vieworg = LGPos;
+	/*m_Lightgem_rv.vieworg = LGPos;
 	lg->SetOrigin(LGPos); // Move the lightgem testmodel to the players feet based on the eye position
 
 	gameRenderWorld->UpdateEntityDef(lg->GetModelDefHandle(), lgent); // Make sure the lg is in the updated position
@@ -316,7 +318,7 @@ float LightGem::Calculate(idPlayer *player)
 			gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
 		}
 	}
-	PROFILE_BLOCK_END(LightGem_Calculate_UnSetup);
+	PROFILE_BLOCK_END(LightGem_Calculate_UnSetup);*/
 
 	m_LightgemShotSpot = (m_LightgemShotSpot + 1) % DARKMOD_LG_MAX_RENDERPASSES;
 
@@ -330,9 +332,9 @@ float LightGem::Calculate(idPlayer *player)
 	return fRetVal;
 }
 
-void R_IssueRenderCommands( frameData_t *frameData );
+//void R_IssueRenderCommands( frameData_t *frameData );
 
-void LightGem::Render() {
+/*void LightGem::Render() {
 	if (m_LightgemBackDraw->cmdHead == nullptr)
 		return;
 
@@ -351,15 +353,16 @@ void LightGem::Render() {
 	m_LightgemBackDraw->cmdHead = m_LightgemBackDraw->cmdTail = nullptr;
 
 	PROFILE_BLOCK_END(LightGem_Render);
-}
+}*/
 
-void LightGem::EndFrame() {
+/*void LightGem::EndFrame() {
 	std::swap( m_LightgemFrontDraw, m_LightgemBackDraw );
-}
+}*/
 
 void LightGem::AnalyzeRenderImage()
 {
-	const byte *buffer = m_LightgemFrontDraw->imageBuffer;
+	//const byte *buffer = m_LightgemFrontDraw->imageBuffer;
+	const byte *buffer = m_LightgemImgBuffer;
 	
 	// The lightgem will simply blink if the renderbuffer doesn't work.
 	if ( buffer == nullptr ) {
@@ -413,7 +416,7 @@ void LightGem::AnalyzeRenderImage()
 	m_fColVal[3] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
 }
 
-void LightGem::AddRenderToBufferCommand() {
+/*void LightGem::AddRenderToBufferCommand() {
 	int width, height;
 	renderSystem->GetCurrentRenderCropSize( width, height );
 	width = (width + 3) & ~3; //opengl wants width padded to 4x
@@ -427,4 +430,4 @@ void LightGem::AddRenderToBufferCommand() {
 	cmd.y = 0;
 	cmd.imageWidth = width;
 	cmd.imageHeight = height;
-}
+}*/

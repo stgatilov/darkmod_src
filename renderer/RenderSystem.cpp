@@ -639,7 +639,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		session->ActivateFrontend();
 		double endSignal = Sys_GetClockTicks();
 		// render lightgem
-		gameLocal.RenderLightgem();
+//		gameLocal.RenderLightgem();
 		double endLightgem = Sys_GetClockTicks();
 		// start the back end up again with the new command list
 		R_IssueRenderCommands( backendFrameData );
@@ -694,7 +694,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	vertexCache.EndFrame();
 
 	// swap lightgem render buffers
-	gameLocal.SwapLightgemBuffers();
+	//gameLocal.SwapLightgemBuffers();
 
 	if ( session->writeDemo ) {
 		session->writeDemo->WriteInt( DS_RENDER );

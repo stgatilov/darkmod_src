@@ -950,9 +950,10 @@ public:
 	/**
 	 * CalcLightgem will analyze the snaphost image in order to determine the lightvalue for the lightgem.
 	 */
+	LightGem				m_lightGem;
 	float					CalcLightgem(idPlayer*);
-	void					RenderLightgem();
-	void					SwapLightgemBuffers();
+	//void					RenderLightgem();
+	//void					SwapLightgemBuffers();
 
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
@@ -1110,8 +1111,6 @@ private:
 	idStrList				shakeSounds;
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
-
-	LightGem				m_lightGem;
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
 
