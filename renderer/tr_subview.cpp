@@ -590,7 +590,7 @@ bool R_Lightgem_Render() {
 	// Get position for lg
 	idEntity* lg = m_LightgemSurface.GetEntity();
 	// duzenko #4408 - this happens at map start if no game tics ran in background yet
-	if ( lg->GetModelDefHandle() == -1 )
+	if ( !lg || lg->GetModelDefHandle() == -1 )
 		return false;
 	renderEntity_t* lgent = lg->GetRenderEntity();
 	auto player = gameLocal.GetLocalPlayer();
