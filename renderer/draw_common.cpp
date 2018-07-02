@@ -1433,6 +1433,7 @@ void RB_Bloom() {
 	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 
 	FB_SelectPrimary();
+	qglViewport( 0, 0, w, h );
 	FB_TogglePrimary( false );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
