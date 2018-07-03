@@ -44,6 +44,7 @@ idlib_string = ' \
 	math/Simd_SSE2.cpp \
 	math/Simd_SSE3.cpp \
 	math/Simd_AVX.cpp \
+	math/Simd_AVX2.cpp \
 	math/Vector.cpp \
 	math/Line.cpp \
 	Base64.cpp \
