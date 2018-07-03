@@ -417,6 +417,23 @@ static bool HasAVX( void ) {
 
 /*
 ================
+HasAVX2
+================
+*/
+static bool HasAVX2( void ) {
+	unsigned regs[4];
+	// get CPU feature bits
+	CPUID( 7, regs );
+	//check if CPU supports AVX2 instructions
+	bool cpuAVX2Support = (regs[_REG_EBX] & (1 << 5)) != 0;
+	if ( cpuAVX2Support && HasAVX() ) {
+		return true;
+	}
+	return false;
+}
+
+/*
+================
 HasFMA3
 ================
 */
@@ -689,9 +706,14 @@ cpuid_t Sys_GetCPUId( void ) {
 		flags |= CPUID_AVX;
 	}
 
-	// check for AVX
+	// check for FMA3
 	if ( HasFMA3() ) {
 		flags |= CPUID_FMA3;
+	}
+
+	// check for AVX
+	if ( HasAVX2() ) {
+		flags |= CPUID_AVX2;
 	}
 
 	// check for Hyper-Threading Technology

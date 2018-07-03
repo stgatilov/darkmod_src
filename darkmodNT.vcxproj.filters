@@ -1393,6 +1393,9 @@
     <ClInclude Include="idlib\math\Simd_AVX.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\math\Simd_AVX2.h">
+      <Filter>idLib\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2753,6 +2756,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="idlib\math\Simd_AVX.cpp">
+      <Filter>idLib\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\math\Simd_AVX2.cpp">
       <Filter>idLib\Math</Filter>
     </ClCompile>
   </ItemGroup>

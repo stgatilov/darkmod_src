@@ -28,6 +28,7 @@
 #include "Simd_SSE2.h"
 #include "Simd_SSE3.h"
 #include "Simd_AVX.h"
+#include "Simd_AVX2.h"
 //#include "Simd_AltiVec.h"
 #if defined(_MSC_VER) && defined(_WIN64)
 #include <intrin.h>
@@ -168,8 +169,11 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 			bool upToSSSE3 = upToSSE3 && (cpuid & CPUID_SSSE3);
 			bool upToSSE41 = upToSSSE3 && (cpuid & CPUID_SSE41);
 			bool upToAVX = upToSSE41 && (cpuid & CPUID_AVX);
-			if (upToAVX) {
-				processor = new idSIMD_AVX( cpuid & CPUID_FMA3 );
+			bool upToAVX2 = upToAVX && (cpuid & CPUID_AVX2) && (cpuid & CPUID_FMA3);
+			if ( upToAVX2 ) {
+				processor = new idSIMD_AVX2;
+			} else if ( upToAVX ) {
+				processor = new idSIMD_AVX;
 			} else if (upToSSE3) {
 				processor = new idSIMD_SSE3;
 			} else if (upToSSE2) {
@@ -4129,8 +4133,14 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 				common->Printf( "CPU does not support MMX & SSE* & AVX\n" );
 				return;
 			}
-			p_simd = new idSIMD_AVX( false );
-		/*} else if ( idStr::Icmp( argString, "AltiVec" ) == 0 ) {
+			p_simd = new idSIMD_AVX();
+		} else if ( idStr::Icmp( argString, "AVX2" ) == 0 ) {
+			if ( !(cpuid & CPUID_MMX) || !(cpuid & CPUID_SSE) || !(cpuid & CPUID_SSE2) || !(cpuid & CPUID_SSE3) || !(cpuid & CPUID_SSSE3) || !(cpuid & CPUID_SSE41) || !(cpuid & CPUID_AVX) || !(cpuid & CPUID_AVX2) || !(cpuid & CPUID_FMA3) ) {
+				common->Printf( "CPU does not support MMX & SSE* & AVX2 & FMA3\n" );
+				return;
+			}
+			p_simd = new idSIMD_AVX2();
+			/*} else if ( idStr::Icmp( argString, "AltiVec" ) == 0 ) {
 			if ( !( cpuid & CPUID_ALTIVEC ) ) {
 				common->Printf( "CPU does not support AltiVec\n" );
 				return;

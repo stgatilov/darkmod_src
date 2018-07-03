@@ -56,38 +56,23 @@ void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, co
 	const __m256 fD = _mm256_set_ps( 0, 0, frustum[5][3], frustum[4][3], frustum[3][3], frustum[2][3], frustum[1][3], frustum[0][3] );
 	const __m256 eps = _mm256_set1_ps( epsilon );
 	const byte mask6 = (1 << 6) - 1;
-	if ( UseFMA3 ) {
-		for ( int j = 0; j < numVerts; j++ ) {
-			auto &vec = verts[j].xyz;
-			__m256 vX = _mm256_set1_ps( vec.x );
-			__m256 vY = _mm256_set1_ps( vec.y );
-			__m256 vZ = _mm256_set1_ps( vec.z );
-			__m256 d = _mm256_add_ps(
-				_mm256_add_ps(
-					_mm256_mul_ps( fA, vX ),
-					_mm256_mul_ps( fB, vY )
-				),
-				_mm256_add_ps(
-					_mm256_mul_ps( fC, vZ ),
-					fD
-				)
-			);
-			int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
-			pointCull[j] = (byte)mask_lo & mask6;
-		}
-	} else {
-		for ( int j = 0; j < numVerts; j++ ) {
-			auto &vec = verts[j].xyz;
-			__m256 vX = _mm256_set1_ps( vec.x );
-			__m256 vY = _mm256_set1_ps( vec.y );
-			__m256 vZ = _mm256_set1_ps( vec.z );
-			__m256 d = _mm256_fmadd_ps( fA, vX,
-				_mm256_fmadd_ps( fB, vY,
-					_mm256_fmadd_ps( fC, vZ, fD )
-				) );
-			int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
-			pointCull[j] = (byte)mask_lo & mask6;
-		}
+	for ( int j = 0; j < numVerts; j++ ) {
+		auto &vec = verts[j].xyz;
+		__m256 vX = _mm256_set1_ps( vec.x );
+		__m256 vY = _mm256_set1_ps( vec.y );
+		__m256 vZ = _mm256_set1_ps( vec.z );
+		__m256 d = _mm256_add_ps(
+			_mm256_add_ps(
+				_mm256_mul_ps( fA, vX ),
+				_mm256_mul_ps( fB, vY )
+			),
+			_mm256_add_ps(
+				_mm256_mul_ps( fC, vZ ),
+				fD
+			)
+		);
+		int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
+		pointCull[j] = (byte)mask_lo & mask6;
 	}
 	_mm256_zeroupper();
 }
@@ -108,40 +93,24 @@ void VPCALL idSIMD_AVX::CullByFrustum2( idDrawVert *verts, const int numVerts, c
 	const __m256 eps = _mm256_set1_ps( epsilon );
 	const __m256 epsM = _mm256_set1_ps( -epsilon );
 	const short mask6 = (1 << 6) - 1;
-	if ( UseFMA3 ) {
-		for ( int j = 0; j < numVerts; j++ ) {
-			auto &vec = verts[j].xyz;
-			__m256 vX = _mm256_set1_ps( vec.x );
-			__m256 vY = _mm256_set1_ps( vec.y );
-			__m256 vZ = _mm256_set1_ps( vec.z );
-			__m256 d = _mm256_fmadd_ps( fA, vX,
-				_mm256_fmadd_ps( fB, vY,
-				_mm256_fmadd_ps( fC, vZ, fD ) 
-			) );
-			int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
-			int mask_hi = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_GT_OQ ) );
-			pointCull[j] = (unsigned short)(mask_lo & mask6 | (mask_hi & mask6) << 6);
-		}
-	} else {
-		for ( int j = 0; j < numVerts; j++ ) {
-			auto &vec = verts[j].xyz;
-			__m256 vX = _mm256_set1_ps( vec.x );
-			__m256 vY = _mm256_set1_ps( vec.y );
-			__m256 vZ = _mm256_set1_ps( vec.z );
-			__m256 d = _mm256_add_ps(
-				_mm256_add_ps(
-					_mm256_mul_ps( fA, vX ),
-					_mm256_mul_ps( fB, vY )
-				),
-				_mm256_add_ps(
-					_mm256_mul_ps( fC, vZ ),
-					fD
-				)
-			);
-			int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
-			int mask_hi = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_GT_OQ ) );
-			pointCull[j] = (unsigned short)(mask_lo & mask6 | (mask_hi & mask6) << 6);
-		}
+	for ( int j = 0; j < numVerts; j++ ) {
+		auto &vec = verts[j].xyz;
+		__m256 vX = _mm256_set1_ps( vec.x );
+		__m256 vY = _mm256_set1_ps( vec.y );
+		__m256 vZ = _mm256_set1_ps( vec.z );
+		__m256 d = _mm256_add_ps(
+			_mm256_add_ps(
+				_mm256_mul_ps( fA, vX ),
+				_mm256_mul_ps( fB, vY )
+			),
+			_mm256_add_ps(
+				_mm256_mul_ps( fC, vZ ),
+				fD
+			)
+		);
+		int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
+		int mask_hi = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_GT_OQ ) );
+		pointCull[j] = (unsigned short)(mask_lo & mask6 | (mask_hi & mask6) << 6);
 	}
 	_mm256_zeroupper();
 }

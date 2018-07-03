@@ -168,6 +168,9 @@
     <ClCompile Include="idlib\math\Simd_AVX.cpp">
       <Filter>Math</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\math\Simd_AVX2.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -374,6 +377,9 @@
       <Filter>Containers</Filter>
     </ClInclude>
     <ClInclude Include="idlib\math\Simd_AVX.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\math\Simd_AVX2.h">
       <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
