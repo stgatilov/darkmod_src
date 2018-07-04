@@ -130,7 +130,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 
 	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
+	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s%s\n",
 			// Vendor
 			cpuid & CPUID_AMD ? "AMD" : 
 			cpuid & CPUID_INTEL ? "Intel" : 
@@ -152,6 +152,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 			cpuid & CPUID_SSSE3 ? " SSSE3" : "",
 			cpuid & CPUID_SSE41 ? " SSE4.1" : "",
 			cpuid & CPUID_AVX ? " AVX" : "",
+			cpuid & CPUID_AVX2 ? " AVX2" : "",
 			cpuid & CPUID_FMA3 ? " FMA3" : ""
 			//cpuid & CPUID_3DNOW ? " 3DNow!" : "",
 	);
@@ -4135,12 +4136,12 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 			}
 			p_simd = new idSIMD_AVX();
 		} else if ( idStr::Icmp( argString, "AVX2" ) == 0 ) {
-			if ( !(cpuid & CPUID_MMX) || !(cpuid & CPUID_SSE) || !(cpuid & CPUID_SSE2) || !(cpuid & CPUID_SSE3) || !(cpuid & CPUID_SSSE3) || !(cpuid & CPUID_SSE41) || !(cpuid & CPUID_AVX) || !(cpuid & CPUID_AVX2) || !(cpuid & CPUID_FMA3) ) {
-				common->Printf( "CPU does not support MMX & SSE* & AVX2 & FMA3\n" );
+			if ( !( cpuid & CPUID_MMX ) || !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) || !( cpuid & CPUID_SSSE3 ) || !( cpuid & CPUID_SSE41 ) || !( cpuid & CPUID_AVX ) || !( cpuid & CPUID_AVX2 ) || !( cpuid & CPUID_FMA3 ) ) {
+				common->Printf( "CPU does not support MMX & SSE* & AVX & AVX2 & FMA3\n" );
 				return;
 			}
 			p_simd = new idSIMD_AVX2();
-			/*} else if ( idStr::Icmp( argString, "AltiVec" ) == 0 ) {
+		/*} else if ( idStr::Icmp( argString, "AltiVec" ) == 0 ) {
 			if ( !( cpuid & CPUID_ALTIVEC ) ) {
 				common->Printf( "CPU does not support AltiVec\n" );
 				return;
@@ -4148,7 +4149,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 			p_simd = new idSIMD_AltiVec();*/
 		} else {
 			//common->Printf( "invalid argument, use: MMX, 3DNow, SSE, SSE2, SSE3, AltiVec\n" );
-			common->Printf( "invalid argument, use: MMX, SSE, SSE2, SSE3, AVX\n" );
+			common->Printf( "invalid argument, use: MMX, SSE, SSE2, SSE3, AVX, AVX2\n" );
 			return;
 		}
 	}
