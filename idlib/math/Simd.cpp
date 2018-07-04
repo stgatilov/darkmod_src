@@ -150,7 +150,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 			cpuid & CPUID_SSE2 ? " SSE2" : "",
 			cpuid & CPUID_SSE3 ? " SSE3" : "",
 			cpuid & CPUID_SSSE3 ? " SSSE3" : "",
-			cpuid & CPUID_SSE41 ? " SSE4.1" : "",
+			cpuid & CPUID_SSE41 ? " SSE41" : "",
 			cpuid & CPUID_AVX ? " AVX" : "",
 			cpuid & CPUID_AVX2 ? " AVX2" : "",
 			cpuid & CPUID_FMA3 ? " FMA3" : ""
