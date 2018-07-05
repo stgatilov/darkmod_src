@@ -952,8 +952,6 @@ public:
 	 */
 	LightGem				m_lightGem;
 	float					CalcLightgem(idPlayer*);
-	//void					RenderLightgem();
-	//void					SwapLightgemBuffers();
 
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);

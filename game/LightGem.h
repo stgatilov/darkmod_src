@@ -56,10 +56,6 @@ private:
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 
-	/*lightGemDrawCmds_t		m_LightgemDrawCmds[2];
-	lightGemDrawCmds_t *	m_LightgemFrontDraw;
-	lightGemDrawCmds_t *	m_LightgemBackDraw;
-	renderView_t			m_Lightgem_rv;*/
 	float 					m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
 
 public:
@@ -95,8 +91,6 @@ public:
 	// Calculation
 	//---------------------------------
 	float Calculate		( idPlayer *	a_pPlayer );	
-	//void Render();
-	//void EndFrame();
 
 private:
 	void AnalyzeRenderImage	( );

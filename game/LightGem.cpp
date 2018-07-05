@@ -19,9 +19,7 @@
 
 
 #include "LightGem.h"
-#include "Grabber.h"
 #include "../renderer/tr_local.h"
-#include "../renderer/FrameBuffer.h"
 
 // Temporary profiling related macros
 
@@ -63,20 +61,11 @@ public:																											\
 //----------------------------------------------------
 LightGem::LightGem()
 {
-/*	for( int i = 0; i < 2; ++i ) {
-		m_LightgemDrawCmds[i].imageBuffer = (byte*)Mem_Alloc16(DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof(ILuint));
-		m_LightgemDrawCmds[i].cmdHead = m_LightgemDrawCmds[i].cmdTail = nullptr;
-	}
-	m_LightgemFrontDraw = &m_LightgemDrawCmds[0];
-	m_LightgemBackDraw = &m_LightgemDrawCmds[1];*/
 	m_LightgemImgBuffer = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
 }
 
 LightGem::~LightGem()
 {
-	/*for( int i = 0; i < 2; ++i ) {
-		Mem_Free16( m_LightgemDrawCmds[i].imageBuffer );
-	}*/
 	Mem_Free16( m_LightgemImgBuffer );
 }
 
@@ -110,22 +99,6 @@ void LightGem::SpawnLightGemEntity( idMapFile *	a_mapFile )
 		mapEnt->epairs.Set("origin", "0 0 0");
 		mapEnt->epairs.Set("noclipmodel", "1");
 	}
-
-	/*m_Lightgem_rv.viewID = VID_LIGHTGEM;
-	
-	m_Lightgem_rv.width = SCREEN_WIDTH;
-	m_Lightgem_rv.height = SCREEN_HEIGHT;
-	m_Lightgem_rv.fov_x = m_Lightgem_rv.fov_y = DARKMOD_LG_RENDER_FOV;	// square, TODO: investigate lowering the value to increase performance on tall maps
-	m_Lightgem_rv.x = m_Lightgem_rv.y = 0;
-
-	m_Lightgem_rv.viewaxis = idMat3(	
-		 0.0f, 0.0f, 1.0f,
-		 0.0f, 1.0f, 0.0f,
-		-1.0f, 0.0f, 0.0f
-	);*/
-
-	//m_Lightgem_rv.forceUpdate = false;
-	//m_Lightgem_rv.cramZNear = false;			// Needs testing
 }
 
 void LightGem::InitializeLightGemEntity( void )
@@ -220,106 +193,6 @@ float LightGem::Calculate(idPlayer *player)
 		LGPos.z = Cam.z + cv_lg_ozoffs.GetFloat(); // Set the lightgem's Z-axis position to that of the player's eyes
 	}
 
-	/*m_Lightgem_rv.vieworg = LGPos;
-	lg->SetOrigin(LGPos); // Move the lightgem testmodel to the players feet based on the eye position
-
-	gameRenderWorld->UpdateEntityDef(lg->GetModelDefHandle(), lgent); // Make sure the lg is in the updated position
-
-	// Give the rv the current ambient light values - Not all of the other values, avoiding fancy effects.
-	m_Lightgem_rv.shaderParms[2] = gameLocal.globalShaderParms[2]; // Ambient R
-	m_Lightgem_rv.shaderParms[3] = gameLocal.globalShaderParms[3]; // Ambient G
-	m_Lightgem_rv.shaderParms[4] = gameLocal.globalShaderParms[4]; // Ambient B
-
-	// angua: render view needs current time, otherwise it will be unable to see time-dependent changes in light shaders such as flickering torches
-	m_Lightgem_rv.time = gameLocal.GetTime();
-
-	// Make sure the player model is hidden in the lightgem renders
-	renderEntity_t* prent = player->GetRenderEntity();
-	const int pdef = player->GetModelDefHandle();
-	const int playerid = prent->suppressSurfaceInViewID;
-	const int psid = prent->suppressShadowInViewID;
-	prent->suppressShadowInViewID = VID_LIGHTGEM;
-	prent->suppressSurfaceInViewID = VID_LIGHTGEM;
-
-	// And the player's head 
-	renderEntity_t* hrent = player->GetHeadEntity()->GetRenderEntity();
-	const int hdef = player->GetHeadEntity()->GetModelDefHandle();
-	const int headid = hrent->suppressSurfaceInViewID;
-	const int hsid = hrent->suppressShadowInViewID;
-	hrent->suppressShadowInViewID = VID_LIGHTGEM;
-	hrent->suppressSurfaceInViewID = VID_LIGHTGEM;
-
-	// Let the game know about the changes
-	gameRenderWorld->UpdateEntityDef(pdef, prent); 
-	gameRenderWorld->UpdateEntityDef(hdef, hrent);
-
-	// Currently grabbed entities should not cast a shadow on the lightgem to avoid exploits
-	int heldDef = 0;
-	int heldSurfID = 0;
-	int heldShadID = 0;
-	renderEntity_t *heldRE = NULL;
-	idEntity *heldEnt = gameLocal.m_Grabber->GetSelected();
-	if ( heldEnt ) {
-		heldDef = heldEnt->GetModelDefHandle();
-
-		// tels: #3286: Only update the entityDef if it is valid
-		if (heldDef >= 0)
-		{
-			heldRE = heldEnt->GetRenderEntity();
-			heldSurfID = heldRE->suppressSurfaceInViewID;
-			heldShadID = heldRE->suppressShadowInViewID;
-			heldRE->suppressShadowInViewID = VID_LIGHTGEM;
-			heldRE->suppressSurfaceInViewID = VID_LIGHTGEM;
-			gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
-		}
-	}
-
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderTurn %u", m_LightgemShotSpot);
-	PROFILE_BLOCK_END( LightGem_Calculate_Setup);
-
-	// Render up and down alternately 
-	m_Lightgem_rv.viewaxis.TransposeSelf();
-		
-	// We always use a square image, because we render now an overhead shot which
-	// covers all four side of the player at once, using a diamond or pyramid shape.
-	// The result is an image that is split in four triangles with an angle of 
-	// 45 degree, thus the square shape.
-	PROFILE_BLOCK_START( LightGem_Calculate_RenderScene );
-	emptyCommand_t *bkpCmdHead = frameData->cmdHead;
-	emptyCommand_t *bkpCmdTail = frameData->cmdTail;
-	R_ClearCommandChain( frameData );
-	renderSystem->CropRenderSize(DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH, true, true);
-	gameRenderWorld->SetRenderView(&m_Lightgem_rv); // most likely not needed
-	gameRenderWorld->RenderScene(m_Lightgem_rv);
-	AddRenderToBufferCommand();
-	renderSystem->UnCrop();
-	m_LightgemFrontDraw->cmdHead = frameData->cmdHead;
-	m_LightgemFrontDraw->cmdTail = frameData->cmdTail;
-	frameData->cmdHead = bkpCmdHead;
-	frameData->cmdTail = bkpCmdTail;
-	PROFILE_BLOCK_END( LightGem_Calculate_RenderScene );
-
-	PROFILE_BLOCK_START	( LightGem_Calculate_UnSetup );
-	// and switch back our normal render definition - player model and head are returned
-	prent->suppressSurfaceInViewID = playerid;
-	prent->suppressShadowInViewID = psid;
-	hrent->suppressSurfaceInViewID = headid;
-	hrent->suppressShadowInViewID = hsid;
-	gameRenderWorld->UpdateEntityDef(pdef, prent);
-	gameRenderWorld->UpdateEntityDef(hdef, hrent);
-
-	// switch back currently grabbed entity settings
-	if( heldEnt ) {
-		// tels: #3286: Only update the entityDef if it is valid
-		if (heldDef >= 0)
-		{
-			heldRE->suppressSurfaceInViewID = heldSurfID;
-			heldRE->suppressShadowInViewID = heldShadID;
-			gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
-		}
-	}
-	PROFILE_BLOCK_END(LightGem_Calculate_UnSetup);*/
-
 	m_LightgemShotSpot = (m_LightgemShotSpot + 1) % DARKMOD_LG_MAX_RENDERPASSES;
 
 	// we want to return the highest shot value
@@ -332,36 +205,8 @@ float LightGem::Calculate(idPlayer *player)
 	return fRetVal;
 }
 
-//void R_IssueRenderCommands( frameData_t *frameData );
-
-/*void LightGem::Render() {
-	if (m_LightgemBackDraw->cmdHead == nullptr)
-		return;
-
-	PROFILE_BLOCK_START(LightGem_Render);
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to lightgem render buffer\n");
-	
-	// switch in our own lightgem draw commands
-	emptyCommand_t *bkpCmdHead = backendFrameData->cmdHead;
-	emptyCommand_t *bkpCmdTail = backendFrameData->cmdTail;
-	backendFrameData->cmdHead = m_LightgemBackDraw->cmdHead;
-	backendFrameData->cmdTail = m_LightgemBackDraw->cmdTail;
-	R_IssueRenderCommands(backendFrameData);
-	backendFrameData->cmdHead = bkpCmdHead;
-	backendFrameData->cmdTail = bkpCmdTail;
-
-	m_LightgemBackDraw->cmdHead = m_LightgemBackDraw->cmdTail = nullptr;
-
-	PROFILE_BLOCK_END(LightGem_Render);
-}*/
-
-/*void LightGem::EndFrame() {
-	std::swap( m_LightgemFrontDraw, m_LightgemBackDraw );
-}*/
-
 void LightGem::AnalyzeRenderImage()
 {
-	//const byte *buffer = m_LightgemFrontDraw->imageBuffer;
 	const byte *buffer = m_LightgemImgBuffer;
 	
 	// The lightgem will simply blink if the renderbuffer doesn't work.
@@ -415,19 +260,3 @@ void LightGem::AnalyzeRenderImage()
 	m_fColVal[2] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
 	m_fColVal[3] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
 }
-
-/*void LightGem::AddRenderToBufferCommand() {
-	int width, height;
-	renderSystem->GetCurrentRenderCropSize( width, height );
-	width = (width + 3) & ~3; //opengl wants width padded to 4x
-
-	copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer(sizeof(cmd));
-	cmd.commandId = RC_COPY_RENDER;
-	cmd.buffer = m_LightgemFrontDraw->imageBuffer;
-	cmd.usePBO = true;
-	cmd.image = NULL;
-	cmd.x = 0;
-	cmd.y = 0;
-	cmd.imageWidth = width;
-	cmd.imageHeight = height;
-}*/
