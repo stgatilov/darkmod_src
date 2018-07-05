@@ -422,6 +422,10 @@ HasAVX2
 */
 static bool HasAVX2( void ) {
 	unsigned regs[4];
+	//check that cpuid instruction supports function 7
+	CPUID( 0, regs );
+	if (regs[0] < 7)
+		return false;
 	// get CPU feature bits
 	CPUID( 7, regs );
 	//check if CPU supports AVX2 instructions
