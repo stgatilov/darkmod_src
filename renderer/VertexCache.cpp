@@ -22,8 +22,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
-idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
-idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
 
 idVertexCache		vertexCache;
 
