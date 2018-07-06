@@ -59,7 +59,8 @@ private:
 	float 					m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
 
 public:
-	unsigned char*			m_LightgemImgBuffer;
+	unsigned char*			m_LightgemImgBufferFrontend;
+	unsigned char*			m_LightgemImgBufferBackend;
 	idEntityPtr<idEntity>	m_LightgemSurface;
 
 	//---------------------------------
@@ -94,7 +95,6 @@ public:
 
 private:
 	void AnalyzeRenderImage	( );
-	void AddRenderToBufferCommand();
 };
 
 #endif // __LIGHTGEM_H__

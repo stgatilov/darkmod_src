@@ -707,7 +707,8 @@ bool R_Lightgem_Render() {
 
 	copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer( sizeof( cmd ) );
 	cmd.commandId = RC_COPY_RENDER;
-	cmd.buffer = gameLocal.m_lightGem.m_LightgemImgBuffer;
+	// the frontend buffer has already been analyzed this frame and will become the backend buffer in the next frame
+	cmd.buffer = gameLocal.m_lightGem.m_LightgemImgBufferFrontend;
 	cmd.usePBO = true;
 	cmd.image = NULL;
 	cmd.x = 0;

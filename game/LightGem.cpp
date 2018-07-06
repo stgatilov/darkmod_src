@@ -61,12 +61,14 @@ public:																											\
 //----------------------------------------------------
 LightGem::LightGem()
 {
-	m_LightgemImgBuffer = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
+	m_LightgemImgBufferFrontend = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
+	m_LightgemImgBufferBackend = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
 }
 
 LightGem::~LightGem()
 {
-	Mem_Free16( m_LightgemImgBuffer );
+	Mem_Free16( m_LightgemImgBufferFrontend );
+	Mem_Free16( m_LightgemImgBufferBackend );
 }
 
 
@@ -207,7 +209,11 @@ float LightGem::Calculate(idPlayer *player)
 
 void LightGem::AnalyzeRenderImage()
 {
-	const byte *buffer = m_LightgemImgBuffer;
+	// frontend and backend can run in parallel, which is why we need two buffers and need to swap them
+	// on every frame
+	std::swap( m_LightgemImgBufferFrontend, m_LightgemImgBufferBackend );
+
+	const byte *buffer = m_LightgemImgBufferFrontend;
 	
 	// The lightgem will simply blink if the renderbuffer doesn't work.
 	if ( buffer == nullptr ) {
