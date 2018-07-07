@@ -593,7 +593,13 @@ bool R_Lightgem_Render() {
 	if ( !lg || lg->GetModelDefHandle() == -1 )
 		return false;
 	renderEntity_t* lgent = lg->GetRenderEntity();
+
 	auto player = gameLocal.GetLocalPlayer();
+	// don't render lightgem If player is hidden (i.e the whole player entity is actually hidden)
+	if ( player->GetModelDefHandle() == -1 ) {
+		return false;
+	}
+
 	const idVec3& Cam = player->GetEyePosition();
 	idVec3 LGPos = player->GetPhysics()->GetOrigin();// Set the lightgem position to that of the player
 
