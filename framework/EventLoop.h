@@ -52,6 +52,10 @@ public:
 					// Returns the journal level, 1 = record, 2 = play back.
 	int				JournalLevel( void ) const;
 
+					// Adds given event to the event queue
+					// Can be used for hooking mouse in menu for automation or tests
+	void			PushEvent( sysEvent_t *event );
+
 					// Journal file.
 	idFile *		com_journalFile;
 	idFile *		com_journalDataFile;
@@ -67,7 +71,6 @@ private:
 
 	sysEvent_t		GetRealEvent( void );
 	void			ProcessEvent( sysEvent_t ev );
-	void			PushEvent( sysEvent_t *event );
 };
 
 extern	idEventLoop	*eventLoop;

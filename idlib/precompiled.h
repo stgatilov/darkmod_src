@@ -160,6 +160,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 // game
 #include "../game/Game.h"
 
+// stgatilov: automation (for tests)
+#include "../game/gamesys/Automation.h"
+
 //-----------------------------------------------------
 
 #ifndef _D3SDK

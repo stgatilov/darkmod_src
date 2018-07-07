@@ -170,6 +170,8 @@ darkmod_string = ' \
 	Objectives/ObjectiveLocation.cpp \
 	Http/HttpConnection.cpp \
 	Http/HttpRequest.cpp \
+	Http/MessageTcp.cpp \
+	gamesys/Automation.cpp \
 	ZipLoader/ZipLoader.cpp \
 	pugixml/pugixml.cpp \
 	Shop/LootRuleSet.cpp \

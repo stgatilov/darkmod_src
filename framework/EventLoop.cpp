@@ -163,6 +163,11 @@ idEventLoop::RunEventLoop
 int idEventLoop::RunEventLoop( bool commandExecution ) {
 	sysEvent_t	ev;
 
+	//stgatilov: allow automation to communicate to external script
+	//and do whatever it wants to in general
+	if (com_automation.GetBool())
+		Auto_Think();
+
 	while ( 1 ) {
 
 		if ( commandExecution ) {

@@ -103,9 +103,6 @@
     <Filter Include="Game\GameSys">
       <UniqueIdentifier>{979bed74-b0ad-4b91-92a5-51f703280c0c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\Http">
-      <UniqueIdentifier>{ab1f887d-fe95-4de4-9fa9-94e250aa3e51}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Game\Inventory">
       <UniqueIdentifier>{9187785c-a030-476a-86e0-852991ff64e3}</UniqueIdentifier>
     </Filter>
@@ -132,6 +129,9 @@
     </Filter>
     <Filter Include="Game\ZipLoader">
       <UniqueIdentifier>{5e4f191a-36a5-42ac-859c-a005eeee7dd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Network">
+      <UniqueIdentifier>{ab1f887d-fe95-4de4-9fa9-94e250aa3e51}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -769,10 +769,10 @@
       <Filter>Game\GameSys</Filter>
     </ClInclude>
     <ClInclude Include="game\Http\HttpConnection.h">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClInclude>
     <ClInclude Include="game\Http\HttpRequest.h">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClInclude>
     <ClInclude Include="game\Inventory\Category.h">
       <Filter>Game\Inventory</Filter>
@@ -1221,7 +1221,17 @@
     </ClInclude>
     <ClInclude Include="renderer\BufferObject.h">
       <Filter>Renderer</Filter>
-    </ClInclude>  </ItemGroup>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Automation.h">
+      <Filter>Game\GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Http\MessageTcp.h">
+      <Filter>Game\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Automation_local.h">
+      <Filter>Game\GameSys</Filter>
+    </ClInclude>
+  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
       <Filter>CM</Filter>
@@ -2457,10 +2467,10 @@
       <Filter>Game\GameSys</Filter>
     </ClCompile>
     <ClCompile Include="game\Http\HttpConnection.cpp">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClCompile>
     <ClCompile Include="game\Http\HttpRequest.cpp">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClCompile>
     <ClCompile Include="game\Inventory\Category.cpp">
       <Filter>Game\Inventory</Filter>
@@ -2891,6 +2901,12 @@
     </ClCompile>
     <ClCompile Include="renderer\BufferObject.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\Automation.cpp">
+      <Filter>Game\GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Http\MessageTcp.cpp">
+      <Filter>Game\Network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
