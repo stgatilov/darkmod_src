@@ -33,11 +33,17 @@ public:
 	ID_INLINE int size() const { return m_Size; }
 	ID_INLINE char &operator[] (int i) { return m_Pointer[i]; }
 	ID_INLINE const char &operator[] (int i) const { return m_Pointer[i]; }
+	ID_INLINE char *data() { return m_Pointer; }
+	ID_INLINE const char *data() const { return m_Pointer; }
 
 	inline void resize(int newSize)
 	{
 		if (newSize > m_Capacity) reallocate(newSize);
 		m_Size = newSize;
+	}
+	inline void reserve(int newSize)
+	{
+		if (newSize > m_Capacity) reallocate(newSize);
 	}
 
 	//note: does not free memory!

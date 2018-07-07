@@ -114,4 +114,14 @@
     </Expand>
   </Type>
 
+  <Type Name="CRawVector">
+    <DisplayString>[{m_Size} / {m_Capacity}]</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>m_Size</Size>
+        <ValuePointer>m_Pointer</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
 </AutoVisualizer>
