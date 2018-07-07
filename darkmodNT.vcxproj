@@ -323,6 +323,7 @@
       <OptimizeReferences>
       </OptimizeReferences>
       <MapExports>true</MapExports>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -523,6 +524,8 @@
     <ClInclude Include="game\Game.h" />
     <ClInclude Include="game\GameEdit.h" />
     <ClInclude Include="game\GamePlayTimer.h" />
+    <ClInclude Include="game\gamesys\Automation.h" />
+    <ClInclude Include="game\gamesys\Automation_local.h" />
     <ClInclude Include="game\gamesys\Class.h" />
     <ClInclude Include="game\gamesys\DebugGraph.h" />
     <ClInclude Include="game\gamesys\Event.h" />
@@ -537,6 +540,7 @@
     <ClInclude Include="game\HidingSpotSearchCollection.h" />
     <ClInclude Include="game\Http\HttpConnection.h" />
     <ClInclude Include="game\Http\HttpRequest.h" />
+    <ClInclude Include="game\Http\MessageTcp.h" />
     <ClInclude Include="game\IK.h" />
     <ClInclude Include="game\ImageMapManager.h" />
     <ClInclude Include="game\IniFile.h" />
@@ -981,6 +985,7 @@
     <ClCompile Include="game\Func_Shooter.cpp" />
     <ClCompile Include="game\FX.cpp" />
     <ClCompile Include="game\GameEdit.cpp" />
+    <ClCompile Include="game\gamesys\Automation.cpp" />
     <ClCompile Include="game\gamesys\Class.cpp" />
     <ClCompile Include="game\gamesys\DebugGraph.cpp" />
     <ClCompile Include="game\gamesys\Event.cpp" />
@@ -1002,6 +1007,7 @@
     <ClCompile Include="game\HidingSpotSearchCollection.cpp" />
     <ClCompile Include="game\Http\HttpConnection.cpp" />
     <ClCompile Include="game\Http\HttpRequest.cpp" />
+    <ClCompile Include="game\Http\MessageTcp.cpp" />
     <ClCompile Include="game\IK.cpp" />
     <ClCompile Include="game\ImageMapManager.cpp" />
     <ClCompile Include="game\IniFile.cpp" />

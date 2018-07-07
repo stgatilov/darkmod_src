@@ -1396,6 +1396,15 @@
     <ClInclude Include="idlib\math\Simd_AVX2.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
+    <ClInclude Include="game\gamesys\Automation.h">
+      <Filter>Game\GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\Automation_local.h">
+      <Filter>Game\GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Http\MessageTcp.h">
+      <Filter>Game\Http</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2760,6 +2769,12 @@
     </ClCompile>
     <ClCompile Include="idlib\math\Simd_AVX2.cpp">
       <Filter>idLib\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gamesys\Automation.cpp">
+      <Filter>Game\GameSys</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Http\MessageTcp.cpp">
+      <Filter>Game\Http</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
