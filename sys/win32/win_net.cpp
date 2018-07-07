@@ -19,6 +19,7 @@
 
 #include <iptypes.h>
 #include <iphlpapi.h>
+#include <ws2tcpip.h>
 
 #include "win_local.h"
 
@@ -1123,6 +1124,90 @@ bool idTCP::Init( const char *host, short port ) {
 	return true;
 }
 
+bool idTCP::Listen(short port) {
+	if ( fd )
+		common->Warning( "idTCP::Listen: already initialized?" );
+
+	const char* hostname = 0; /* wildcard */
+	char portname[16];
+	sprintf(portname, "%d", int(port));
+
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_family = AF_INET;			//IPv4
+	hints.ai_socktype = SOCK_STREAM;	//TCP
+	hints.ai_protocol = IPPROTO_TCP;
+
+	struct addrinfo* res = 0;
+	int err = getaddrinfo(hostname, portname, &hints, &res);
+	if (err != 0) {
+	    common->Printf("ERROR: idTCP::Listen: getaddrinfo: %s", NET_ErrorString());
+		goto cleanup;
+	}
+
+	if ((fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == INVALID_SOCKET) {
+		fd = 0;
+		common->Printf( "ERROR: idTCP::Listen: socket: %s\n", NET_ErrorString());
+		goto cleanup;
+	}
+
+	unsigned long	_true = 1;
+	if (ioctlsocket(fd, FIONBIO, &_true) == SOCKET_ERROR) {
+		common->Printf( "ERROR: idTCP::Listen: ioctl FIONBIO: %s\n", NET_ErrorString() );
+		goto cleanup;
+	}
+
+	if (bind(fd, res->ai_addr, (int)res->ai_addrlen) == SOCKET_ERROR) {
+		common->Printf( "ERROR: idTCP::Listen: bind: %s\n", NET_ErrorString());
+		goto cleanup;
+	}
+
+	if (listen(fd, 5) == SOCKET_ERROR) {
+		common->Printf( "ERROR: idTCP::Listen: listen: %s\n", NET_ErrorString());
+		goto cleanup;
+	}
+
+	freeaddrinfo(res);
+	return true;
+
+cleanup:
+	if (fd && fd != INVALID_SOCKET)
+		closesocket(fd);
+	fd = 0;
+	if (res)
+		freeaddrinfo(res);
+	return false;
+}
+
+idTCP* idTCP::Accept() {
+	if ( !fd )
+		common->Warning( "idTCP::Accept: socket not created yet" );
+
+	int value = 0, size = sizeof(value);
+	if (getsockopt(fd, SOL_SOCKET, SO_ACCEPTCONN, (char*)&value, &size) == SOCKET_ERROR || value == 0) {
+		common->Printf( "ERROR: idTCP::Accept: socket not listening\n");
+		return nullptr;
+	}
+
+	sockaddr_in client_addr;
+	int addr_len = sizeof(client_addr);
+	SOCKET client_fd = accept(fd, (sockaddr*)&client_addr, &addr_len);
+	if (client_fd == INVALID_SOCKET) {
+		if (WSAGetLastError() == WSAEWOULDBLOCK)
+			return nullptr;	//no incoming clients yet
+		common->Printf( "ERROR: idTCP::Listen: accept: %s\n", NET_ErrorString());
+		return nullptr;
+	}
+
+	idTCP *res = new idTCP();
+	res->fd = client_fd;
+	res->address.type = NA_IP;
+	res->address.port = client_addr.sin_port;
+	memcpy(res->address.ip, &client_addr.sin_addr.S_un.S_addr, 4);
+	return res;
+}
+
 /*
 ==================
 idTCP::Close
@@ -1171,7 +1256,7 @@ int idTCP::Read( void *data, int size ) {
 idTCP::Write
 ==================
 */
-int idTCP::Write( void *data, int size ) {
+int idTCP::Write( const void *data, int size ) {
 	int nbytes;
 	
 	if ( !fd ) {
@@ -1179,7 +1264,8 @@ int idTCP::Write( void *data, int size ) {
 		return -1;
 	}
 
-	if ( ( nbytes = send( fd, (char *)data, size, 0 ) ) == SOCKET_ERROR ) {
+	//TODO: what about WSAEWOULDBLOCK here?
+	if ( ( nbytes = send( fd, (const char *)data, size, 0 ) ) == SOCKET_ERROR ) {
 		common->Printf( "ERROR: idTCP::Write: %s\n", NET_ErrorString() );
 		Close();
 		return -1;

@@ -724,7 +724,7 @@ static void got_SIGPIPE( int signum ) {
 	common->Printf( "idTCP: SIGPIPE\n" );
 }
 
-int	idTCP::Write(void *data, int size) {
+int	idTCP::Write(const void *data, int size) {
 	int nbytes;
 	
 	if ( !fd ) {
@@ -766,4 +766,13 @@ int	idTCP::Write(void *data, int size) {
 	}
 	
 	return nbytes;	
+}
+
+bool idTCP::Listen(short port) {
+	//TODO: implement (copy from win_net.cpp)
+	return false;
+}
+idTCP* idTCP::Accept() {
+	//TODO: implement (copy from win_net.cpp)
+	return nullptr;
 }

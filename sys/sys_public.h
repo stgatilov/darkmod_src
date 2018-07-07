@@ -466,16 +466,25 @@ public:
 	bool		Init( const char *host, short port );
 	void		Close();
 
+	// starts listening for incoming connections on specified port
+	bool		Listen( short port );
+	// if there is pending client, create direct connection with him
+	// note: caller must delete returned object!
+	idTCP*		Accept();
+
+	bool		IsAlive() const { return fd > 0; }
+	const netadr_t &GetAddress() const { return address; }
+
 	// returns -1 on failure (and closes socket)
 	// those are non blocking, can be used for polling
 	// there is no buffering, you are not guaranteed to Read or Write everything in a single call
 	// (specially on win32, see recv and send documentation)
 	int			Read( void *data, int size );
-	int			Write( void *data, int size );
+	int			Write( const void *data, int size );
 
 private:
 	netadr_t	address;		// remote address
-	int			fd;				// OS specific socket
+	size_t		fd;				// OS specific socket
 };
 
 				// parses the port number
