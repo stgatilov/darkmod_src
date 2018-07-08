@@ -376,6 +376,11 @@ static void R_RGBA8Image( idImage *image ) {
 		TF_DEFAULT, false, TR_REPEAT, TD_HIGH_QUALITY );
 }
 
+static void R_DepthTexture( idImage *image ) {
+	image->type = TT_2D;
+	//image->GenerateAttachment( 0, 0, TF_NEAREST, GL_DEPTH24_STENCIL8 );
+}
+
 #if 0
 static void R_RGB8Image( idImage *image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
@@ -1966,7 +1971,7 @@ void idImageManager::Init() {
 	accumImage = ImageFromFunction("_accum", R_RGBA8Image );
 	scratchCubeMapImage = ImageFromFunction("_scratchCubeMap", makeNormalizeVectorCubeMap );
 	currentRenderImage = ImageFromFunction("_currentRender", R_RGBA8Image );
-	currentDepthImage = ImageFromFunction("_currentDepth", R_RGBA8Image); // #3877. Allow shaders to access scene depth
+	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthTexture ); // #3877. Allow shaders to access scene depth
 	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_RGBA8Image );
 	shadowCubeMap = ImageFromFunction( "_shadowCubeMap", makeNormalizeVectorCubeMap );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );

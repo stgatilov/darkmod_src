@@ -630,13 +630,13 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 }
 
 void idImage::GenerateAttachment( int width, int height, textureFilter_t filter, GLint format ) {
-	if ( uploadWidth == width && uploadHeight == height 
+	// generate the texture number
+	if(texnum == TEXTURE_NOT_LOADED)
+		qglGenTextures( 1, &texnum );
+	if ( uploadWidth == width && uploadHeight == height
 		&& !( format == GL_DEPTH_COMPONENT && r_fboDepthBits.IsModified() ) 
 	) return;
-	this->filter = filter;
 	Bind();
-	uploadWidth = width;
-	uploadHeight = height;
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -658,6 +658,10 @@ void idImage::GenerateAttachment( int width, int height, textureFilter_t filter,
 	default:
 		common->Error( "Unsupported format in GenerateAttachment\n" );
 	}
+	uploadWidth = width;
+	uploadHeight = height;
+	internalFormat = format;
+	this->filter = filter;
 }
 
 /*
