@@ -825,7 +825,8 @@ bool R_GenerateSubViews( void ) {
 
 	subviews = false;
 
-	if ( !tr.viewDef->isSubview ) {
+	extern idCVar cv_lg_interleave;
+	if ( !tr.viewDef->isSubview && cv_lg_interleave.GetBool() ) {
 		R_Lightgem_Render();
 		subviews = true;
 	}
