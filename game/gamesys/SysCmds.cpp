@@ -2900,14 +2900,17 @@ void Cmd_ShowKeys_f( const idCmdArgs& args )
 
 		//if ( strcmp( common->GetI18N()->Translate( value ), "Keys" ) ) continue; // no key
 		if ( strcmp( value, "#str_02392" ) ) continue; // no key
-		
+		if ( !(ent->thinkFlags & TH_UPDATEVISUALS) )
+			continue;
+
+		value = ent->spawnArgs.GetString( "inv_name" );
+		auto invItem = gameLocal.GetLocalPlayer()->InventoryCursor()->Inventory()->GetItem( value );
+		if ( invItem )
+			continue;
+
+		gameRenderWorld->DebugBox( colorWhite, idBox( ent->GetPhysics()->GetAbsBounds() ), 5000 );
+		gameLocal.Printf( "  %s\n", value );
 		items++;
-
-		idVec4 colour( colorWhite );
-
-		gameRenderWorld->DebugBox( colour, idBox( ent->GetPhysics()->GetAbsBounds() ), 5000 );
-
-		gameLocal.Printf( "  %s\n", ent->name.c_str() );
 	}
 
 	gameLocal.Printf( "Highlighing %d keys for 5 seconds...\n", items );
