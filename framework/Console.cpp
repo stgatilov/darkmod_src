@@ -176,6 +176,7 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) {
 SCR_DrawFPS
 ==================
 */
+int showFPS_currentValue;	//for automation
 int SCR_DrawFPS( int y ) {
 	// don't use serverTime, because that will be drifting to
 	// correct for internet lag changes, timescales, timedemos, etc
@@ -205,6 +206,7 @@ int SCR_DrawFPS( int y ) {
 	if (total < 0)
 		fps = -1;
 	char *s = va("%ifps", fps);
+	showFPS_currentValue = fps;
 
     renderSystem->DrawBigStringExt(SCREEN_WIDTH - static_cast<int>(strlen(s)*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
 

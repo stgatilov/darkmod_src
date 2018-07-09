@@ -46,6 +46,72 @@ void Automation::ExecuteInGameConsole(const char *command, bool blocking) {
 	cmdSystem->BufferCommandText(blocking ? CMD_EXEC_NOW : CMD_EXEC_APPEND, command);
 }
 
+void Automation::ParseMessage(const char *message, int len) {
+	ParseIn parseIn = { message, len, idLexer{message, len, "<automation input>"}, -1 };
+	ParseMessage(parseIn);
+}
+
+void Automation::ParseMessage(ParseIn &parseIn) {
+	idToken token;
+
+	parseIn.lexer.ExpectTokenString("seqno");
+	parseIn.lexer.ExpectTokenType(TT_NUMBER, TT_INTEGER, &token);
+	parseIn.seqno = token.GetIntValue();
+
+	parseIn.lexer.ExpectTokenString("message");
+	parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
+	if (token == "action")
+		ParseAction(parseIn);
+	else if (token == "query")
+		ParseQuery(parseIn);
+	else
+		parseIn.lexer.Error("Unknown message type '%s'", token.c_str());
+}
+
+void Automation::ParseAction(ParseIn &parseIn) {
+	idToken token;
+
+	parseIn.lexer.ExpectTokenString("action");
+	parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
+
+	parseIn.lexer.ExpectTokenString("content");
+
+	int pos = parseIn.lexer.GetFileOffset();
+	const char *rest = strchr(parseIn.message + pos, '\n');
+
+	if (token == "conexec") {
+		while (const char *eol = strchr(rest, '\n')) {
+			idStr command(rest, 0, eol - rest);
+			if (!command.IsEmpty())
+				ExecuteInGameConsole(command.c_str());
+			rest = eol + 1;
+		}
+		//TODO: get console output printed since then
+		WriteResponse(parseIn.seqno, "");
+	}
+}
+
+extern int showFPS_currentValue;	//for "fps" query
+void Automation::ParseQuery(ParseIn &parseIn) {
+	idToken token;
+
+	parseIn.lexer.ExpectTokenString("query");
+	parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
+
+	if (token == "fps") {
+		char buff[256];
+		sprintf(buff, "%d\n", showFPS_currentValue);
+		WriteResponse(parseIn.seqno, buff);
+	}
+}
+
+void Automation::WriteResponse(int seqno, const char *response) {
+	char buff[256];
+	sprintf(buff, "response %d\n", seqno);
+	idStr text = idStr(buff) + response;
+	connection.WriteMessage(text.c_str(), text.Length());
+}
+
 void Automation::Think() {
 	//if started for first time, open tcp port and start listening
 	if (!listenTcp.IsAlive()) {
@@ -71,8 +137,10 @@ void Automation::Think() {
 
 	//test: see what we get from python
 	idList<char> message;
-	if (connection.ReadMessage(message)) {
-		common->Printf("Automation received: %s\n", message.Ptr());
+	while (connection.ReadMessage(message))
+		ParseMessage(message.Ptr(), message.Num());
+
+/*		common->Printf("Automation received: %s\n", message.Ptr());
 		int num = -1;
 		if (sscanf(message.Ptr(), "Hello %d", &num) == 1) {
 			bool isprime = num > 1;
@@ -83,7 +151,7 @@ void Automation::Think() {
 				connection.WriteMessage(buff, (int)strlen(buff));
 			}
 		}
-	}
+	}*/
 }
 
 void Auto_Think() {

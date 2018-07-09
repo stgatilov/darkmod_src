@@ -32,6 +32,20 @@ public:
 private:
 	idTCP listenTcp;
 	MessageTcp connection;
+
+	//info about current input message being parsed
+	struct ParseIn {
+		const char *message;
+		int len;
+		idLexer lexer;
+		int seqno;
+	};
+
+	void ParseMessage(const char *message, int len);
+	void ParseMessage(ParseIn &parseIn);
+	void ParseAction(ParseIn &parseIn);
+	void ParseQuery(ParseIn &parseIn);
+	void WriteResponse(int seqno, const char *response);
 };
 
 #endif
