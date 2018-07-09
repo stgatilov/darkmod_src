@@ -31,7 +31,6 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 #define CONSOLE_FIRSTREPEAT		200 // delay before initial key repeat
 #define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
 #define	COMMAND_HISTORY			64 // number of console commands kept in history buffer
-#define	FPS_FRAMES				4  // number of frames used to average the FPS display
 
 // the console will query the cvar and command systems for
 // command completion information
@@ -178,24 +177,34 @@ SCR_DrawFPS
 ==================
 */
 int SCR_DrawFPS( int y ) {
-	char	*s;
-	static unsigned int t , 
-		frameTime, index, total, fps,
-		previous, previousTimes[FPS_FRAMES];
-
 	// don't use serverTime, because that will be drifting to
 	// correct for internet lag changes, timescales, timedemos, etc
-	t = Sys_Milliseconds();
-	frameTime = t - previous;
+	static int previous;
+	int t = Sys_Milliseconds();
+	int frameTime = t - previous;
 	previous = t;
-	previousTimes[index % FPS_FRAMES] = frameTime;
+
+	static int previousTimes[128], index;
+	int avgCnt = com_showFPSavg.GetInteger();
+	previousTimes[index % avgCnt] = frameTime;
 	index++;
 
-	// average multiple frames together to smooth changes out a bit
-	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + previousTimes[3] + 1;
-	fps = (1000 * FPS_FRAMES) / total;
+	static int prevAvgCnt = 0;
+	if (prevAvgCnt != avgCnt) {
+		//com_showFPSavg was changed --- clear history
+		prevAvgCnt = avgCnt;
+		for (int i = 0; i < avgCnt; i++)
+			previousTimes[i] = -1000000;
+	}
 
-	s = va( "%ifps", fps );
+	// average multiple frames together to smooth changes out a bit
+	int total = 0;
+	for (int i = 0; i < avgCnt; i++)
+		total += previousTimes[i];
+	int fps = (1000 * avgCnt) / idMath::Imax(total, 1);
+	if (total < 0)
+		fps = -1;
+	char *s = va("%ifps", fps);
 
     renderSystem->DrawBigStringExt(SCREEN_WIDTH - static_cast<int>(strlen(s)*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
 
