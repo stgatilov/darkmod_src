@@ -510,7 +510,6 @@ bool idSecurityCamera::CanSeePlayer( void )
 	pvsHandle_t handle;
 
 	handle = gameLocal.pvs.SetupCurrentPVS( pvsArea );
-
 	for ( i = 0; i < gameLocal.numClients; i++ ) {
 		ent = static_cast<idPlayer*>(gameLocal.entities[ i ]);
 
@@ -529,30 +528,42 @@ bool idSecurityCamera::CanSeePlayer( void )
 			continue;
 		}
 
-		dir = ent->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-		dist = dir.Normalize();
-
-		if ( dist > scanDist ) {
-			continue;
-		}
-
-		if ( dir * GetAxis() < scanFovCos ) {
-			continue;
-		}
-
 		// take lighting into account
 		if (IsEntityHiddenByDarkness(ent, 0.1f))
 		{
 			continue;
 		}
 
-		idVec3 eye = ent->EyeOffset();
+		
 
-		gameLocal.clip.TracePoint( tr, GetPhysics()->GetOrigin(), ent->GetPhysics()->GetOrigin() + eye, MASK_OPAQUE, this );
-		if ( tr.fraction == 1.0 || ( gameLocal.GetTraceEntity( tr ) == ent ) ) {
-			gameLocal.pvs.FreeCurrentPVS( handle );
-			return true;
+		// check for eyes
+		idVec3 eye = ent->EyeOffset();
+		idVec3 start;
+		dir = (ent->GetPhysics()->GetOrigin() + eye) - GetPhysics()->GetOrigin();
+		dist = dir.Normalize();
+		start = 0.95*GetPhysics()->GetOrigin() + 0.05*(ent->GetPhysics()->GetOrigin() + eye);
+		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
+			gameLocal.clip.TracePoint(tr, start, ent->GetPhysics()->GetOrigin() + eye, MASK_OPAQUE, this);
+			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
+				gameLocal.pvs.FreeCurrentPVS(handle);
+				return true;
+			}
 		}
+
+		dir = ent->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
+		dist = dir.Normalize();
+		start = 0.95*GetPhysics()->GetOrigin() + 0.05*ent->GetPhysics()->GetOrigin();
+
+		// check for origin
+		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
+			gameLocal.clip.TracePoint(tr, GetPhysics()->GetOrigin(), ent->GetPhysics()->GetOrigin(), MASK_OPAQUE, this);
+			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
+				gameLocal.pvs.FreeCurrentPVS(handle);
+				return true;
+			}
+		}
+
+	
 	}
 
 	gameLocal.pvs.FreeCurrentPVS( handle );
