@@ -254,10 +254,23 @@ bool CModInfo::LoadMetaData()
 
 	int len = modFileContent.Length();
 
+	// FIX: Incorrect order in darkmod.txt or leaving out specific fields was causing crashes or incorrect data display
+	std::set<int> pos;
+	pos.insert(titlePos);
+	pos.insert(descPos);
+	pos.insert(authorPos);
+	pos.insert(versionPos);
+	pos.insert(missionTitlesPos);
+	pos.insert(len);
+	std::set<int>::iterator iter;
+
 	if (titlePos >= 0)
 	{
-		displayName = idStr(modFileContent, titlePos, (missionTitlesPos != -1) ? missionTitlesPos : (descPos != -1) ? descPos : len); // grayman #3733
+		//displayName = idStr(modFileContent, titlePos, (missionTitlesPos != -1) ? missionTitlesPos : (descPos != -1) ? descPos : len); // grayman #3733
 		//displayName = idStr(modFileContent, titlePos, (descPos != -1) ? descPos : len);
+		iter = pos.find(titlePos);
+		iter++;
+		displayName = idStr(modFileContent, titlePos, *iter);
 		Strip("Title:", displayName);
 	}
 
@@ -265,7 +278,10 @@ bool CModInfo::LoadMetaData()
 	_missionTitles.Append(displayName); // [0] is the display name
 
 	// grayman #3733 - read mission titles if they exist
-	idStr missionTitles = idStr(modFileContent, missionTitlesPos, (descPos != -1) ? descPos : len);
+	//idStr missionTitles = idStr(modFileContent, missionTitlesPos, (descPos != -1) ? descPos : len);
+	iter = pos.find(missionTitlesPos);
+	iter++;
+	idStr missionTitles = idStr(modFileContent, missionTitlesPos, *iter);
 	if (missionTitlesPos >= 0)
 	{
 		GetMissionTitles(missionTitles); // fills in _missionTitles
@@ -273,20 +289,28 @@ bool CModInfo::LoadMetaData()
 
 	if (descPos >= 0)
 	{
-		description = idStr(modFileContent, descPos, (authorPos != -1) ? authorPos : len);
+		//description = idStr(modFileContent, descPos, (authorPos != -1) ? authorPos : len);
+		iter = pos.find(descPos);
+		iter++;
+		description = idStr(modFileContent, descPos, *iter);
 		Strip("Description:", description);
 	}
 
 	if (authorPos >= 0)
 	{
-		author = idStr(modFileContent, authorPos, (versionPos != -1) ? versionPos : len);
+		//author = idStr(modFileContent, authorPos, (versionPos != -1) ? versionPos : len);
+		iter = pos.find(authorPos);
+		iter++;
+		author = idStr(modFileContent, authorPos, *iter);
 		Strip("Author:", author);
 	}
 
 	if (versionPos >= 0)
 	{
-		requiredVersionStr = idStr(modFileContent, versionPos, len);
-		
+		//requiredVersionStr = idStr(modFileContent, versionPos, len);
+		iter = pos.find(versionPos);
+		iter++;
+		requiredVersionStr = idStr(modFileContent, versionPos, *iter);
 		Strip("Required TDM Version:", requiredVersionStr);
 		requiredVersionStr.StripLeadingOnce('v');	// tels: "v1.07" => "1.07"		(#3170)
 
