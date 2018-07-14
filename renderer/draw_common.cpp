@@ -351,7 +351,9 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() )
 	{
-		if ( !r_useFbo.GetBool() ) // duzenko #4425 - depth texture is already bound to framebuffer
+		if ( r_useFbo.GetBool() ) // duzenko #4425 - FBO attachment
+			FB_CopyDepthBuffer();
+		else
 			globalImages->currentDepthImage->CopyDepthBuffer( backEnd.viewDef->viewport.x1,
 														  backEnd.viewDef->viewport.y1,
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
