@@ -641,12 +641,18 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 			else
 				return;
 			break;
+		case GL_RGBA:
+			if ( r_fboColorBits.IsModified() ) // IGPs might benefit from reduced color depth
+				r_fboColorBits.ClearModified();
+			else
+				return;
+			break;
 		default: // only width/height are usually changed
 			return;
 		}
 	}
 	switch ( format ) {
-	case GL_RGBA: case GL_BGRA:
+	case GL_RGBA:
 		filter = TF_LINEAR;
 		break;
 	default:
@@ -661,6 +667,10 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 	case GL_DEPTH_STENCIL:
 		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
 		common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
+		break;
+	case GL_RGBA:
+		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, 0 );
+		common->Printf( "Generated framebuffer COLOR attachment: %dx%d\n", width, height );
 		break;
 	// these two are for Intel separate stencil optimization
 	case GL_STENCIL_INDEX:

@@ -223,6 +223,9 @@ void CheckCreateShadow() {
 		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL_INDEX );
 	} else
 		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
+	// this texture is now only used as screen copy for post processing, never as FBO attachment in any mode, but we still need to set its size and other params here
+	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_RGBA );
+
 	if ( globalImages->shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
 		r_fboDepthBits.ClearModified();
 		globalImages->shadowCubeMap->Bind();
