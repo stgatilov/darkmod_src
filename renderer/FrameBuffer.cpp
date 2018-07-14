@@ -166,12 +166,13 @@ void CheckCreatePrimary() {
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
-	//globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_RGBA ); no longer an FBO attachment in any mode
 	if ( r_fboSeparateStencil.GetBool() ) { // intel optimization
-		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH_COMPONENT );
-		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL_INDEX );
+		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH );
+		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
 	} else // AMD/nVidia fast enough already, separate depth/stencil not supported
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
+	// this texture is now only used as screen copy for post processing, never as FBO attachment in any mode, but we still need to set its size and other params here
+	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_COLOR );
 
 	// (re-)attach textures to FBO
 	if ( !fboPrimary || r_multiSamples.IsModified() ) {
@@ -220,11 +221,9 @@ void CheckCreateShadow() {
 	// reset textures 
 	if ( r_fboSeparateStencil.GetBool() ) {
 		CheckCreatePrimary(); // currentDepthImage is initialized there
-		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL_INDEX );
+		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
 	} else
 		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
-	// this texture is now only used as screen copy for post processing, never as FBO attachment in any mode, but we still need to set its size and other params here
-	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_RGBA );
 
 	if ( globalImages->shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
 		r_fboDepthBits.ClearModified();

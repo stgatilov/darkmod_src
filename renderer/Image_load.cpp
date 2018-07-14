@@ -631,28 +631,21 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 // FBO attachments need specific setup, rarely changed
 void idImage::GenerateAttachment( int width, int height, GLint format ) {
-	if ( texnum == TEXTURE_NOT_LOADED ) // for color textures usually generated elsewhere, but not for depth
-		qglGenTextures( 1, &texnum );
-	if ( uploadWidth == width && uploadHeight == height && internalFormat == format ) { // called every frame, exit if no change needed
-		switch ( format ) {
-		case GL_DEPTH_COMPONENT:
-			if ( r_fboDepthBits.IsModified() ) // used only with separate stencil
-				r_fboDepthBits.ClearModified();
-			else
-				return;
-			break;
-		case GL_RGBA:
-			if ( r_fboColorBits.IsModified() ) // IGPs might benefit from reduced color depth
-				r_fboColorBits.ClearModified();
-			else
-				return;
-			break;
-		default: // only width/height are usually changed
-			return;
-		}
+	bool changed = (uploadWidth != width || uploadHeight != height || internalFormat != format);
+	if ( format == GL_DEPTH && r_fboDepthBits.IsModified() ) { // used only with separate stencil 
+		changed = true;
+		r_fboDepthBits.ClearModified();
 	}
+	if ( format == GL_COLOR && r_fboColorBits.IsModified() ) { // IGPs might benefit from reduced color depth
+		changed = true;
+		r_fboColorBits.ClearModified();
+	}
+	if ( !changed )
+		return;
+	if ( texnum == TEXTURE_NOT_LOADED ) // for color textures usually generated elsewhere, but for depth here
+		qglGenTextures( 1, &texnum );
 	switch ( format ) {
-	case GL_RGBA:
+	case GL_COLOR:
 		filter = TF_LINEAR;
 		break;
 	default:
@@ -668,19 +661,19 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
 		common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
 		break;
-	case GL_RGBA:
+	case GL_COLOR:
 		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, 0 );
 		common->Printf( "Generated framebuffer COLOR attachment: %dx%d\n", width, height );
 		break;
 	// these two are for Intel separate stencil optimization
-	case GL_STENCIL_INDEX:
-		qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, width, height, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
-		common->Printf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
-		break;
-	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH:
 		r_fboDepthBits.ClearModified();
 		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboDepthBits.GetInteger() == 16 ? GL_DEPTH_COMPONENT16 : GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 		common->Printf( "Generated framebuffer DEPTH attachment: %dx%d\n", width, height );
+		break;
+	case GL_STENCIL:
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, width, height, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
+		common->Printf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
 		break;
 	default:
 		common->Error( "Unsupported format in GenerateAttachment\n" );

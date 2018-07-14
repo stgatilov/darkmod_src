@@ -378,7 +378,6 @@ static void R_RGBA8Image( idImage *image ) {
 
 static void R_DepthTexture( idImage *image ) {
 	image->type = TT_2D;
-	//image->GenerateAttachment( 0, 0, TF_NEAREST, GL_DEPTH24_STENCIL8 );
 }
 
 #if 0
