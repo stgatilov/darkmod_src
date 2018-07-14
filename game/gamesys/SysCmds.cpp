@@ -30,6 +30,9 @@
 #include "../ai/Conversation/ConversationSystem.h"
 #include "../Missions/MissionManager.h"
 #include "../Missions/ModInfo.h"
+#include "../FrobDoorHandle.h"
+#include "../FrobLockHandle.h"
+#include "../FrobLever.h"
 
 #include "TypeInfo.h"
 
@@ -2881,6 +2884,60 @@ void Cmd_ShowLoot_f( const idCmdArgs& args )
 	gameLocal.Printf( "Gold: %d, Jewels: %d, Goods: %d\n", gold, jewels, goods );
 }
 
+void Cmd_ShowFrobs_f( const idCmdArgs& args )
+{
+	if ( gameLocal.GameState() != GAMESTATE_ACTIVE )
+	{
+		gameLocal.Printf( "No map running\n" );
+		return;
+	}
+
+	int items = 0, stat = 0, moveables = 0, doors = 0, btns = 0, animated = 0, pickables = 0;
+
+	for ( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
+		if ( ent == NULL )
+			continue;
+		if ( ent->IsHidden() )
+			continue;
+		if ( !ent->m_bFrobable )
+			continue;
+		const char* value = ent->spawnArgs.GetString( "inv_name" );
+		auto invItem = gameLocal.GetLocalPlayer()->InventoryCursor()->Inventory()->GetItem( value );
+		if ( invItem )
+			continue;
+		auto color = colorWhite;
+		if ( strlen(value) ) {
+			color = colorGreen;
+			pickables++;
+		} else if ( ent->IsType( idStaticEntity::Type ) ) {
+			color = colorLtGrey;
+			stat++;
+		} else if ( ent->IsType( CFrobDoor::Type ) || ent->IsType( CFrobLockHandle::Type ) || ent->IsType( CFrobDoorHandle::Type ) ) {
+			color = colorDkGrey;
+			doors++;
+		} else if ( ent->IsType( idMoveable::Type ) ) {
+			color = colorYellow;
+			moveables++;
+		} else if ( ent->IsType( idAnimatedEntity::Type ) ) {
+			color = colorBlue;
+			animated++;
+		} else if ( ent->IsType( CFrobButton::Type ) || ent->IsType( CFrobLever::Type ) ) {
+			color = colorRed;
+			btns++;
+		} else
+			ent->GetPhysics();
+		gameRenderWorld->DebugBox( color, idBox( ent->GetPhysics()->GetAbsBounds() ), 5000 );
+		items++;
+	}
+
+	gameLocal.Printf( "Highlighing %d frobables for 5 seconds...\n", items );
+	gameLocal.Printf( "  %d static\n", items );
+	gameLocal.Printf( "  %d moveables\n", moveables );
+	gameLocal.Printf( "  %d animated\n", animated );
+	gameLocal.Printf( "  %d buttons, levers\n", btns );
+	gameLocal.Printf( "  %d pickables\n", pickables );
+	gameLocal.Printf( "  %d doors, locks, handles\n", items );
+}
 
 void Cmd_ShowKeys_f( const idCmdArgs& args )
 {
@@ -3870,7 +3927,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_start_conversation",	Cmd_StartConversation_f,	CMD_FL_GAME,			"Starts the conversation with the given name." );
 	cmdSystem->AddCommand( "tdm_list_conversations",	Cmd_ListConversations_f,	CMD_FL_GAME,			"List all available conversations by name." );
 
-	cmdSystem->AddCommand( "tdm_show_keys",			Cmd_ShowKeys_f,	CMD_FL_GAME|CMD_FL_CHEAT,			"Highlight all keys in the map." );
+	cmdSystem->AddCommand( "tdm_show_frobs",		Cmd_ShowFrobs_f, CMD_FL_GAME | CMD_FL_CHEAT, "Highlight all frobables in the map." );
+	cmdSystem->AddCommand( "tdm_show_keys",			Cmd_ShowKeys_f,	CMD_FL_GAME | CMD_FL_CHEAT,	"Highlight all keys in the map." );
 	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f, CMD_FL_GAME | CMD_FL_CHEAT, "Highlight all loot items in the map." );
 
 	cmdSystem->AddCommand( "tdm_activatelogclass",		Cmd_ActivateLog_f,			CMD_FL_GAME,	"Activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
