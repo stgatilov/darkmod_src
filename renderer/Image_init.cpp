@@ -1972,7 +1972,7 @@ void idImageManager::Init() {
 	scratchCubeMapImage = ImageFromFunction("_scratchCubeMap", makeNormalizeVectorCubeMap );
 	currentRenderImage = ImageFromFunction("_currentRender", R_RGBA8Image );
 	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthTexture ); // #3877. Allow shaders to access scene depth
-	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_RGBA8Image );
+	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_DepthTexture );
 	shadowCubeMap = ImageFromFunction( "_shadowCubeMap", makeNormalizeVectorCubeMap );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
 	shadowStencilFbo = ImageFromFunction( "_shadowStencilFbo", R_RGBA8Image );

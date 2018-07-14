@@ -212,7 +212,6 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 }
 
 /*
-		idDrawVert	*ac = (idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache );
 ==================
 RB_GLSL_DrawLight_Stencil
 ==================

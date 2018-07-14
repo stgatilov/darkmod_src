@@ -922,40 +922,6 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char* buffer, bool use
 	cmd.imageHeight = rc.height;
 
 	R_IssueRenderCommands( frameData );
-
-	/*int backEndStartTime = Sys_Milliseconds();
-	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
-		qglReadBuffer( GL_BACK );
-
-	// #4395 Duzenko lightem pixel pack buffer optimization
-	if ( usePbo && glConfig.pixelBufferAvailable ) {
-		static int pboSize = -1;
-		if ( !pbo ) {
-			pboSize = rc->width * rc->height * 3;
-			qglGenBuffersARB( 1, &pbo );
-			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-			qglBufferDataARB( GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ );
-			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
-		}
-		if ( rc->width * rc->height * 3 != pboSize )
-			common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", rc->width, rc->height, pboSize );
-		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-		unsigned char* ptr = (unsigned char*)qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
-		if ( ptr ) {
-			memcpy( buffer, ptr, pboSize );
-			qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
-		} else {
-			// #4395 vid_restart ?
-			pbo = 0;
-		}
-		qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0 );
-		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
-		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
-	} else
-		qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer );
-	qglClear( GL_COLOR_BUFFER_BIT );
-	int backEndFinishTime = Sys_Milliseconds();
-	backEnd.pc.msec += backEndFinishTime - backEndStartTime;*/
 }
 
 /*
