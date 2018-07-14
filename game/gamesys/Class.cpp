@@ -287,7 +287,11 @@ void idClass::FindUninitializedMemory( void ) {
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
 	for ( int i = 0; i < size; i++ ) {
-		if ( ptr[i] == 0xcdcdcdcd ) {
+		//stgatilov: avoid false positives due to padding on 64-bit mode
+		//note: such false positives are possible on 32-bit mode too, but they don't happen =)
+		bool skipOnX64 = sizeof(void*) == 8 && (i & 1) == 0;
+
+		if ( ptr[i] == 0xcdcdcdcd && !skipOnX64 ) {
 #ifdef ID_USE_TYPEINFO
 			const char *varName = GetTypeVariableName( GetClassname(), i << 2 );
 #else
