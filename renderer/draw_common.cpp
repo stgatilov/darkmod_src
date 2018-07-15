@@ -277,6 +277,9 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			RB_DrawElementsWithCounters( tri );
 
 			RB_FinishStageTexturing( pStage, surf, ac );
+
+			qglUniform4fv( depthShader.color, 1, color );
+			qglUniform1f( depthShader.alphaTest, -1 ); // hint the glsl to skip texturing
 		}
 
 		qglDisableVertexAttribArray( 8 );
@@ -287,9 +290,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	// draw the entire surface solid
 	if ( drawSolid ) {
-		qglUniform4fv(depthShader.color, 1, color);
-		qglUniform1f(depthShader.alphaTest, -1); // hint the glsl to skip texturing
-
 		// draw it
 		RB_DrawElementsWithCounters( tri );
 	}
@@ -306,6 +306,69 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 }
 
 void RB_SetProgramEnvironment(); // Defined in the shader passes section next, now re-used for depth capture in #3877
+
+/*
+work in progress, hidden by the r_useMultiDraws cvar
+sorts solid static surfaces by ambientCache (model)
+effect: fewer static/dynamic VBO switches, VertexAttribPointer calls for scenes with multiple instance of the same static model
+TODO instanced draw
+*/
+NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs) {
+	struct SurfsByVertCache : drawSurf_t
+	{
+		// for sorting by vert cache
+		bool operator<( const SurfsByVertCache& d ) const { 
+			return backendGeo->ambientCache.offset < d.backendGeo->ambientCache.offset;
+		}
+	};
+	std::vector<SurfsByVertCache*> stat;
+	stat.reserve( numDrawSurfs );
+	
+	drawSurf_t **etc = new drawSurf_t*[numDrawSurfs];
+	int etcNum = 0;
+	for ( int i = 0; i < numDrawSurfs; i++ ) {
+		auto tri = drawSurfs[i]->backendGeo;
+		// filters static here
+		if ( tri->ambientCache.isStatic && drawSurfs[i]->material->Coverage() == MC_OPAQUE ) {
+			stat.push_back( (SurfsByVertCache*)drawSurfs[i] );
+			continue;
+		}
+		etc[etcNum++] = drawSurfs[i];
+	}
+	RB_RenderDrawSurfListWithFunction( etc, etcNum, RB_T_FillDepthBuffer );
+	delete etc;
+
+	if ( !stat.size() )
+		return;
+	backEnd.currentScissor = backEnd.viewDef->scissor;
+	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
+		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
+		backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
+		backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
+	std::sort( stat.begin(), stat.end() );
+	vertCacheHandle_t ac;
+	memset( &ac, -1, sizeof( ac ) );
+	int matrixLoads = 0, vapCalls = 0;
+	for ( size_t i = 0; i < stat.size(); i++ ) {
+		if ( stat[i]->space != backEnd.currentSpace ) { // multiple surfaces of the same model
+			qglLoadMatrixf( stat[i]->space->modelViewMatrix );
+			backEnd.currentSpace = stat[i]->space;
+			matrixLoads++;
+		}
+		auto tri = stat[i]->backendGeo;
+		if ( ac.offset != tri->ambientCache.offset ) {
+			ac = tri->ambientCache;
+			auto cachePointer = (idDrawVert *)vertexCache.VertexPosition( tri->ambientCache );
+			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &cachePointer->xyz );
+			vapCalls++;
+		}
+		RB_DrawElementsWithCounters( tri );
+	}
+	static idCVar r_showMultiDraw("r_showMultiDraw", "1", CVAR_RENDERER, "shows some statistic");
+	if ( r_showMultiDraw.GetBool() ) {
+		common->Printf( "Surfaces:%i/%i, matrix loads:%i, AttribPointer calls:%i\n", stat.size(), numDrawSurfs, matrixLoads, vapCalls );
+	}
+}
 
 /*
 =====================
@@ -325,6 +388,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
 	depthShader.Use();
+	qglUniform1f( depthShader.alphaTest, -1 ); // no alpha test by default
 	// enable the second texture for mirror plane clipping if needed
 	if ( backEnd.viewDef->numClipPlanes ) {
 	} else {
@@ -346,7 +410,10 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
+	if ( r_useMultiDraws.GetBool() )
+		RB_FillDepthBuffer_Multi( drawSurfs, numDrawSurfs );
+	else
+		RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() )
