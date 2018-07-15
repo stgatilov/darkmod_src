@@ -31,6 +31,7 @@ public:
 					explicit idBox( const idVec3 &point );
 					explicit idBox( const idBounds &bounds );
 					explicit idBox( const idBounds &bounds, const idVec3 &origin, const idMat3 &axis );
+					explicit idBox( const idBounds &bounds, const float modelMatrix[16] );
 
 	idBox			operator+( const idVec3 &t ) const;				// returns translated box
 	idBox &			operator+=( const idVec3 &t );					// translate the box

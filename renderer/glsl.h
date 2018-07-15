@@ -77,7 +77,7 @@ extern lightProgram_t stencilShadowShader;
 
 extern idCVar r_ambient_testadd;
 extern idCVar r_useGLSL;
-extern idCVar r_useMultiDraws;
+extern idCVar r_useMultiDraw;
 
 void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
 void RB_GLSL_DrawInteractions( void );

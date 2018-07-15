@@ -308,15 +308,14 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 void RB_SetProgramEnvironment(); // Defined in the shader passes section next, now re-used for depth capture in #3877
 
 /*
-work in progress, hidden by the r_useMultiDraws cvar
+work in progress, hidden by the r_useMultiDraw cvar
 sorts solid static surfaces by ambientCache (model)
 effect: fewer static/dynamic VBO switches, VertexAttribPointer calls for scenes with multiple instance of the same static model
 TODO instanced draw
 */
 NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs) {
-	struct SurfsByVertCache : drawSurf_t
-	{
-		// for sorting by vert cache
+	static idCVar r_showMultiDraw( "r_showMultiDraw", "0", CVAR_RENDERER, "1 = print to console, 2 - visualize" );
+	struct SurfsByVertCache : drawSurf_t { // for sorting by vert cache
 		bool operator<( const SurfsByVertCache& d ) const { 
 			return backendGeo->ambientCache.offset < d.backendGeo->ambientCache.offset;
 		}
@@ -324,19 +323,20 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 	std::vector<SurfsByVertCache*> stat;
 	stat.reserve( numDrawSurfs );
 	
-	drawSurf_t **etc = new drawSurf_t*[numDrawSurfs];
-	int etcNum = 0;
+	auto passedThrough = (drawSurf_t **) alloca( sizeof( drawSurf_t* )*numDrawSurfs );
+	int passedThroughNum = 0;
 	for ( int i = 0; i < numDrawSurfs; i++ ) {
 		auto tri = drawSurfs[i]->backendGeo;
-		// filters static here
+		// filters solid static here
 		if ( tri->ambientCache.isStatic && drawSurfs[i]->material->Coverage() == MC_OPAQUE ) {
 			stat.push_back( (SurfsByVertCache*)drawSurfs[i] );
 			continue;
 		}
-		etc[etcNum++] = drawSurfs[i];
+		passedThrough[passedThroughNum++] = drawSurfs[i];
+		if ( r_showMultiDraw.GetInteger() == 2 )
+			gameRenderWorld->DebugBox( colorDkGrey, idBox( tri->bounds, drawSurfs[i]->space->modelMatrix ), 5000 );
 	}
-	RB_RenderDrawSurfListWithFunction( etc, etcNum, RB_T_FillDepthBuffer );
-	delete etc;
+	RB_RenderDrawSurfListWithFunction( passedThrough, passedThroughNum, RB_T_FillDepthBuffer );
 
 	if ( !stat.size() )
 		return;
@@ -356,6 +356,9 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 			matrixLoads++;
 		}
 		auto tri = stat[i]->backendGeo;
+		if ( r_showMultiDraw.GetInteger() == 2 )
+			gameRenderWorld->DebugBox( ac.offset == tri->ambientCache.offset ? colorGreen : colorYellow,
+				idBox( tri->bounds, stat[i]->space->modelMatrix ), 5000 );
 		if ( ac.offset != tri->ambientCache.offset ) {
 			ac = tri->ambientCache;
 			auto cachePointer = (idDrawVert *)vertexCache.VertexPosition( tri->ambientCache );
@@ -364,10 +367,10 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 		}
 		RB_DrawElementsWithCounters( tri );
 	}
-	static idCVar r_showMultiDraw("r_showMultiDraw", "1", CVAR_RENDERER, "shows some statistic");
-	if ( r_showMultiDraw.GetBool() ) {
+	if ( r_showMultiDraw.GetBool() )
 		common->Printf( "Surfaces:%i/%i, matrix loads:%i, AttribPointer calls:%i\n", stat.size(), numDrawSurfs, matrixLoads, vapCalls );
-	}
+	if ( r_showMultiDraw.GetInteger() == 2 )
+		r_showMultiDraw.SetInteger( 0 );
 }
 
 /*
@@ -410,7 +413,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	if ( r_useMultiDraws.GetBool() )
+	if ( r_useMultiDraw.GetBool() )
 		RB_FillDepthBuffer_Multi( drawSurfs, numDrawSurfs );
 	else
 		RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );

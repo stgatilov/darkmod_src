@@ -14,6 +14,7 @@
 ******************************************************************************/
 
 #include "precompiled.h"
+#include "../renderer/tr_local.h"
 #pragma hdrstop
 
 
@@ -853,4 +854,16 @@ const char * idBox::ToString( const int precision ) const {
 	return idStr( min.ToString( precision ) ) + " -> " + idStr( max.ToString( precision ) ) + " (" + idStr( axis.ToString() ) + ")";
 }
 
-
+/*
+============
+idBox::idBox
+============
+*/
+idBox::idBox( const idBounds &bounds, const float modelMatrix[16] ) {
+	auto &c = (bounds[0] + bounds[1]) * 0.5f;
+	R_LocalPointToGlobal( modelMatrix, c, center );
+	extents = bounds[1] - c;
+	memcpy( axis[0].ToFloatPtr(), &modelMatrix[0], sizeof( axis[0] ) );
+	memcpy( axis[1].ToFloatPtr(), &modelMatrix[4], sizeof( axis[0] ) );
+	memcpy( axis[2].ToFloatPtr(), &modelMatrix[8], sizeof( axis[0] ) );
+}
