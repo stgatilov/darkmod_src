@@ -228,10 +228,19 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		// Note (SteveL) : FIXME: It *won't* always be NULL, we're in a loop and it gets set at the end. This change might be wiping out 
 		// all (marginal) benefits from sorting DrawSurfs by material, as it'll cause a blocking change in GL state on every draw. However, 
 		// reverting the change causes all static solid surfaces to become invisible. Don't know why.
-		if ( drawSurf->space ) {
-			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+		// Note (duzenko): is the "return" causing it?
+		const bool cacheMatrix = true;
+		if ( cacheMatrix ) {
+			if ( drawSurf->space != backEnd.currentSpace ) {
+				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+				backEnd.currentSpace = drawSurf->space;
+			}
 		} else {
-			return;
+			if ( drawSurf->space ) {
+				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			} else {
+				return; // duzenko: what is this supposed to mean???
+			}
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
@@ -258,7 +267,8 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 			RB_LeaveDepthHack();
 		}
 
-		backEnd.currentSpace = drawSurf->space;
+		if( !cacheMatrix )
+			backEnd.currentSpace = drawSurf->space;
 	}
 }
 
