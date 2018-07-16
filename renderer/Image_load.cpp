@@ -632,7 +632,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 // FBO attachments need specific setup, rarely changed
 void idImage::GenerateAttachment( int width, int height, GLint format ) {
 	bool changed = (uploadWidth != width || uploadHeight != height || internalFormat != format);
-	if ( format == GL_DEPTH && r_fboDepthBits.IsModified() ) { // used only with separate stencil 
+	if ( (format == GL_DEPTH || format == GL_DEPTH_STENCIL) && r_fboDepthBits.IsModified() ) {
 		changed = true;
 		r_fboDepthBits.ClearModified();
 	}
@@ -658,7 +658,8 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	switch ( format ) {
 	case GL_DEPTH_STENCIL:
-		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, width, height, 0, GL_DEPTH_STENCIL, 
+			r_fboDepthBits.GetInteger() == 32 ? GL_FLOAT_32_UNSIGNED_INT_24_8_REV : GL_UNSIGNED_INT_24_8, 0 );
 		common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
 		break;
 	case GL_COLOR:
