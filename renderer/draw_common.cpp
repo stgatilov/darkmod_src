@@ -315,12 +315,7 @@ TODO instanced draw
 */
 NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs) {
 	static idCVar r_showMultiDraw( "r_showMultiDraw", "0", CVAR_RENDERER, "1 = print to console, 2 - visualize" );
-	struct SurfsByVertCache : drawSurf_t { // for sorting by vert cache
-		bool operator<( const SurfsByVertCache& d ) const { 
-			return backendGeo->ambientCache.offset < d.backendGeo->ambientCache.offset;
-		}
-	};
-	std::vector<SurfsByVertCache*> stat;
+	std::vector<drawSurf_t*> stat;
 	stat.reserve( numDrawSurfs );
 	
 	auto passedThrough = (drawSurf_t **) alloca( sizeof( drawSurf_t* )*numDrawSurfs );
@@ -329,7 +324,7 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 		auto tri = drawSurfs[i]->backendGeo;
 		// filters solid static here
 		if ( tri->ambientCache.isStatic && drawSurfs[i]->material->Coverage() == MC_OPAQUE ) {
-			stat.push_back( (SurfsByVertCache*)drawSurfs[i] );
+			stat.push_back( drawSurfs[i] );
 			continue;
 		}
 		passedThrough[passedThroughNum++] = drawSurfs[i];
@@ -345,7 +340,9 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 		backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
 		backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
-	std::sort( stat.begin(), stat.end() );
+	std::sort( stat.begin(), stat.end(), []( const drawSurf_t *a, const drawSurf_t *b ) {
+		return a->backendGeo->ambientCache.offset > b->backendGeo->ambientCache.offset;
+	} );
 	vertCacheHandle_t ac;
 	memset( &ac, -1, sizeof( ac ) );
 	int matrixLoads = 0, vapCalls = 0;
