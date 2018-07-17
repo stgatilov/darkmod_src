@@ -2142,7 +2142,9 @@ void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
 
 	// vertex cache
 	if( tri.verts != NULL && tri.numVerts > 0) {
-		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, ALIGN( tri.numVerts * sizeof( tri.verts[0] ), VERTEX_CACHE_ALIGN ) );
+		// duzenko: need packed vertices for glDrawElementsBaseVertex
+		//tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, ALIGN( tri.numVerts * sizeof( tri.verts[0] ), VERTEX_CACHE_ALIGN ) );
+		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, tri.numVerts * sizeof( tri.verts[0] ) );
 		// shadow cache
 		/*if( tri.shadowVertexes == NULL ) {
 			// the shadowVerts for normal models include all the xyz values duplicated

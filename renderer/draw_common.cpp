@@ -309,8 +309,9 @@ void RB_SetProgramEnvironment(); // Defined in the shader passes section next, n
 
 /*
 work in progress, hidden by the r_useMultiDraw cvar
-sorts solid static surfaces by ambientCache (model)
-effect: fewer static/dynamic VBO switches, VertexAttribPointer calls for scenes with multiple instance of the same static model
+non-solid or non-static geometry not affected, passed through to RB_T_FillDepthBuffer
+solid static surfaces are expected to be in a single VBO => call VertexAttribPointer only once
+also sort by surface.space to minimize matrix switches
 TODO instanced draw
 */
 NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs) {
@@ -318,6 +319,7 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 	std::vector<drawSurf_t*> stat;
 	stat.reserve( numDrawSurfs );
 	
+	// step 1 - filter static solid geometry
 	auto passedThrough = (drawSurf_t **) alloca( sizeof( drawSurf_t* )*numDrawSurfs );
 	int passedThroughNum = 0;
 	for ( int i = 0; i < numDrawSurfs; i++ ) {
@@ -332,19 +334,21 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 			gameRenderWorld->DebugBox( colorDkGrey, idBox( tri->bounds, drawSurfs[i]->space->modelMatrix ), 5000 );
 	}
 	RB_RenderDrawSurfListWithFunction( passedThrough, passedThroughNum, RB_T_FillDepthBuffer );
-
 	if ( !stat.size() )
 		return;
+
+	// legacy render does per-surface scissor, we don't want that
 	backEnd.currentScissor = backEnd.viewDef->scissor;
 	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
 		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 		backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
 		backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
+
+	// step 2 - sort surfaces to minimize matrix loads
 	std::sort( stat.begin(), stat.end(), []( const drawSurf_t *a, const drawSurf_t *b ) {
-		return a->backendGeo->ambientCache.offset > b->backendGeo->ambientCache.offset;
+		return a->space < b->space;
 	} );
-	vertCacheHandle_t ac;
-	memset( &ac, -1, sizeof( ac ) );
+	// step 3 - call VertexAttribPointer once, then call DrawElementsBaseVertex per surface
 	int matrixLoads = 0, vapCalls = 0;
 	for ( size_t i = 0; i < stat.size(); i++ ) {
 		if ( stat[i]->space != backEnd.currentSpace ) { // multiple surfaces of the same model
@@ -353,16 +357,17 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 			matrixLoads++;
 		}
 		auto tri = stat[i]->backendGeo;
-		if ( r_showMultiDraw.GetInteger() == 2 )
+		/*if ( r_showMultiDraw.GetInteger() == 2 )
 			gameRenderWorld->DebugBox( ac.offset == tri->ambientCache.offset ? colorGreen : colorYellow,
-				idBox( tri->bounds, stat[i]->space->modelMatrix ), 5000 );
-		if ( ac.offset != tri->ambientCache.offset ) {
-			ac = tri->ambientCache;
-			auto cachePointer = (idDrawVert *)vertexCache.VertexPosition( tri->ambientCache );
-			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &cachePointer->xyz );
+				idBox( tri->bounds, stat[i]->space->modelMatrix ), 5000 );*/
+		auto cachePointer = (int)vertexCache.VertexPosition( tri->ambientCache );
+		int baseVertex = cachePointer / sizeof( idDrawVert ), offset = cachePointer % sizeof( idDrawVert );
+		if ( !i ) {
+			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), (GLvoid*)offset );
 			vapCalls++;
 		}
-		RB_DrawElementsWithCounters( tri );
+		extern void RB_DrawElementsWithCounters( const srfTriangles_t *tri, int baseVertex );
+		RB_DrawElementsWithCounters( tri, baseVertex );
 	}
 	if ( r_showMultiDraw.GetBool() )
 		common->Printf( "Surfaces:%i/%i, matrix loads:%i, AttribPointer calls:%i\n", stat.size(), numDrawSurfs, matrixLoads, vapCalls );
