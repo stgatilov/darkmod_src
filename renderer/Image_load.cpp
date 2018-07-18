@@ -85,6 +85,8 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 		return 4;			// not sure
 	case GL_COMPRESSED_RGBA_ARB:
 		return 8;			// not sure
+	case GL_DEPTH: case GL_DEPTH_STENCIL: case GL_STENCIL: case GL_COLOR: // FBO attachments
+		return 0;
 	default:
 		common->Warning( "\nR_BitsForInternalFormat: bad internalFormat:%i", internalFormat );
 	}
