@@ -1319,18 +1319,28 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 			if ( ref ) {
 				tr.BeginFrame( oldWidth, oldHeight );
 				tr.primaryWorld->RenderScene( *ref );
+				copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer( sizeof( cmd ) );
+				cmd.commandId = RC_COPY_RENDER;
+				cmd.buffer = temp;
+				cmd.usePBO = false;
+				cmd.image = NULL;
+				cmd.x = 0;
+				cmd.y = 0;
+				cmd.imageWidth = oldWidth;
+				cmd.imageHeight = oldHeight;
+				tr.EndFrame( NULL, NULL );
+				tr.BeginFrame( oldWidth, oldHeight );
 				tr.EndFrame( NULL, NULL );
 			} else {
 				session->UpdateScreen(false);
 			}
 
-			int w = ( xo + oldWidth > width )   ? (width - xo)  : oldWidth;
-			int h = ( yo + oldHeight > height ) ? (height - yo) : oldHeight;
-
+			int w = (xo + oldWidth > width) ? (width - xo) : oldWidth;
+			int h = (yo + oldHeight > height) ? (height - yo) : oldHeight;
 			qglReadBuffer( GL_FRONT );
-			qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp ); 
+//			qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 
-			int	row = ( w * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
+			int	row = (oldWidth * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
 
 			for ( int y = 0 ; y < h ; y++ ) {
 				memcpy( buffer + ( ( yo + y )* width + xo ) * 3,
@@ -1676,8 +1686,8 @@ void R_EnvShotGL_f( const idCmdArgs &args ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
 		ref.fov_x = ref.fov_y = 90;
-		ref.width = glConfig.vidWidth;
-		ref.height = glConfig.vidHeight;
+		ref.width = SCREEN_WIDTH;// glConfig.vidWidth;
+		ref.height = SCREEN_HEIGHT; //glConfig.vidHeight;
 		ref.viewaxis = axis[i];
 		sprintf( fullname, "env/%s%s", baseName, GLcubeExtensions[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
@@ -1762,8 +1772,8 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
 		ref.fov_x = ref.fov_y = 90;
-		ref.width = glConfig.vidWidth;
-		ref.height = glConfig.vidHeight;
+		ref.width = SCREEN_WIDTH;// glConfig.vidWidth;
+		ref.height = SCREEN_HEIGHT;// glConfig.vidHeight;
 		ref.viewaxis = axis[i];
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
