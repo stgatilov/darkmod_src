@@ -458,7 +458,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 shaderProgram_t::AttachShader
 =================
 */
-void shaderProgram_t::AttachShader( GLint ShaderType, char *fileName ) {
+void shaderProgram_t::AttachShader( GLint ShaderType, const char *fileName ) {
 	idStr fn( "glprogs/" );
 	fn.Append( fileName );
 	switch ( ShaderType ) {
@@ -492,7 +492,7 @@ void shaderProgram_t::AttachShader( GLint ShaderType, char *fileName ) {
 shaderProgram_t::Load
 =================
 */
-bool shaderProgram_t::Load( char *fileName ) {
+bool shaderProgram_t::Load( const char *fileName ) {
 	common->Printf( "%s ", fileName );
 	if ( program && qglIsProgram( program ) )
 		qglDeleteProgram( program );

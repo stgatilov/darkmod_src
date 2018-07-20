@@ -54,20 +54,16 @@
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
 
-#define ID_INLINE						__inline
-#ifdef _MSC_VER
-#define NOINLINE __declspec(noinline)
-#else
-#define NOINLINE __attribute__((noinline))
-#endif
-
 #define ID_STATIC_TEMPLATE				static
 
+#define ID_INLINE						__inline
+#define ID_NOINLINE						__declspec(noinline)
 //anon begin
 #define ID_INLINE_EXTERN				extern inline //anon
 #define ID_FORCE_INLINE					__inline //anon
 #define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon
 //anon end
+
 
 //stgatilov begin
 #ifdef _WIN64
@@ -174,6 +170,7 @@
 #define ASSERT							assert
 
 #define ID_INLINE						inline
+#define ID_NOINLINE						__attribute__((noinline))
 #define ID_STATIC_TEMPLATE
 
 #define assertmem( x, y )

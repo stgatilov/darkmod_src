@@ -314,7 +314,7 @@ solid static surfaces are expected to be in a single VBO => call VertexAttribPoi
 also sort by surface.space to minimize matrix switches
 TODO instanced draw
 */
-NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs) {
+ID_NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs) {
 	static idCVar r_showMultiDraw( "r_showMultiDraw", "0", CVAR_RENDERER, "1 = print to console, 2 - visualize" );
 	std::vector<drawSurf_t*> stat;
 	stat.reserve( numDrawSurfs );
@@ -360,14 +360,14 @@ NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs
 		/*if ( r_showMultiDraw.GetInteger() == 2 )
 			gameRenderWorld->DebugBox( ac.offset == tri->ambientCache.offset ? colorGreen : colorYellow,
 				idBox( tri->bounds, stat[i]->space->modelMatrix ), 5000 );*/
-		auto cachePointer = (int)vertexCache.VertexPosition( tri->ambientCache );
-		int baseVertex = cachePointer / sizeof( idDrawVert ), offset = cachePointer % sizeof( idDrawVert );
+		auto cachePointer = (size_t)vertexCache.VertexPosition( tri->ambientCache );
+		size_t baseVertex = cachePointer / sizeof( idDrawVert ), offset = cachePointer % sizeof( idDrawVert );
 		if ( !i ) {
 			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), (GLvoid*)offset );
 			vapCalls++;
 		}
 		extern void RB_DrawElementsWithCounters( const srfTriangles_t *tri, int baseVertex );
-		RB_DrawElementsWithCounters( tri, baseVertex );
+		RB_DrawElementsWithCounters( tri, (int)baseVertex );
 	}
 	if ( r_showMultiDraw.GetBool() )
 		common->Printf( "Surfaces:%i/%i, matrix loads:%i, AttribPointer calls:%i\n", stat.size(), numDrawSurfs, matrixLoads, vapCalls );
