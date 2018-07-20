@@ -132,10 +132,7 @@ public:
 	// This can only be called by the front end, the back end should only be looking at
 	// vertCacheHandle_t that are already validated.
 	bool			CacheIsCurrent( const vertCacheHandle_t handle ) const {
-		if( handle.isStatic ) {
-			return true;
-		}
-		return handle.frameNumber == ( currentFrame & VERTCACHE_FRAME_MASK );
+		return handle.isStatic || ( handle.IsValid() && handle.frameNumber == ( currentFrame & VERTCACHE_FRAME_MASK ) );
 	}
 
 
