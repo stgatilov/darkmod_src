@@ -758,6 +758,7 @@
     <ClInclude Include="renderer\tr_local.h" />
     <ClInclude Include="renderer\VertexCache.h" />
     <ClInclude Include="sound\efxlib.h" />
+    <ClInclude Include="sound\snd_efxpresets.h" />
     <ClInclude Include="sound\snd_local.h" />
     <ClInclude Include="sound\sound.h" />
     <ClInclude Include="sys\sys_local.h" />
@@ -1238,6 +1239,7 @@
     <ClCompile Include="sound\snd_cache.cpp" />
     <ClCompile Include="sound\snd_decoder.cpp" />
     <ClCompile Include="sound\snd_efxfile.cpp" />
+    <ClCompile Include="sound\snd_efxpresets.cpp" />
     <ClCompile Include="sound\snd_emitter.cpp" />
     <ClCompile Include="sound\snd_shader.cpp" />
     <ClCompile Include="sound\snd_system.cpp" />

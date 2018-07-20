@@ -1405,6 +1405,9 @@
     <ClInclude Include="game\Http\MessageTcp.h">
       <Filter>Game\Http</Filter>
     </ClInclude>
+    <ClInclude Include="sound\snd_efxpresets.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2775,6 +2778,9 @@
     </ClCompile>
     <ClCompile Include="game\Http\MessageTcp.cpp">
       <Filter>Game\Http</Filter>
+    </ClCompile>
+    <ClCompile Include="sound\snd_efxpresets.cpp">
+      <Filter>Sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

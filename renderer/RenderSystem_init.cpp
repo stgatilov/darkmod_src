@@ -1315,6 +1315,8 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 		for ( int yo = 0 ; yo < height ; yo += oldHeight ) {
 			tr.viewportOffset[0] = -xo;
 			tr.viewportOffset[1] = -yo;
+			int w = (xo + oldWidth > width) ? (width - xo) : oldWidth;
+			int h = (yo + oldHeight > height) ? (height - yo) : oldHeight;
 
 			if ( ref ) {
 				tr.BeginFrame( oldWidth, oldHeight );
@@ -1333,12 +1335,9 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 				tr.EndFrame( NULL, NULL );
 			} else {
 				session->UpdateScreen(false);
+				qglReadBuffer( GL_FRONT );
+				qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 			}
-
-			int w = (xo + oldWidth > width) ? (width - xo) : oldWidth;
-			int h = (yo + oldHeight > height) ? (height - yo) : oldHeight;
-			qglReadBuffer( GL_FRONT );
-//			qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 
 			int	row = (oldWidth * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
 
