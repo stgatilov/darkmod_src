@@ -19,6 +19,7 @@
 
 #include "snd_local.h"
 #include "../idlib/math/Math.h"
+#include "snd_efxpresets.h"
 
 #define mB_to_gain(millibels, property) \
 	_mB_to_gain(millibels,AL_EAXREVERB_MIN_ ## property, AL_EAXREVERB_MAX_ ## property)
@@ -103,11 +104,6 @@ bool idEFXFile::FindEffect(idStr &name, ALuint *effect) {
 	return false;
 }
 
-/*
-===============
-idEFXFile::ReadEffect
-===============
-*/
 #define efxi(param, value)													\
 	do {																	\
 		ALint _v = value;													\
@@ -145,7 +141,15 @@ idEFXFile::ReadEffect
 							"failed: 0x%x",	_v[0], _v[1], _v[2], err);		\
 		} while (false)
 
-bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
+/*
+===============
+idEFXFile::ReadEffectLegacy
+
+Reads EAX effect in Doom 3 original format.
+It is then converted to EFX parameters.
+===============
+*/
+bool idEFXFile::ReadEffectLegacy(idLexer &src, idSoundEffect *effect) {
 	idToken name, token;
 
 	if ( !src.ReadToken( &token ) )
@@ -172,7 +176,7 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 
 	ALenum err;
 	alGetError();
-	common->Printf("Loading EFX effect '%s' (#%u)\n", name.c_str(), effect->effect);
+	common->Printf("Loading EAX effect '%s' (#%u)\n", name.c_str(), effect->effect);
 
 	do {
 		if ( !src.ReadToken( &token ) ) {
@@ -248,13 +252,147 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 	return true;
 }
 
+bool idEFXFile::ReadEffectOpenAL(idLexer &src, idSoundEffect *effect) {
+	idToken token;
+
+	if (!src.ReadToken(&token))
+		return false;	// no more effects
+	src.UnreadToken(&token);
+
+	//location name
+	if (!src.ExpectTokenString("eaxreverb"))
+		return false;
+	src.ReadTokenOnLine(&token);
+	idStr name = token;
+	if (!src.ExpectTokenString("{"))
+		return false;
+
+	ALenum err;
+	alGetError();
+	common->Printf("Loading EFX effect for location '%s' (#%u)\n", name.c_str(), effect->effect);
+
+	while (1) {
+		if (!src.ReadToken(&token)) {
+			src.Error( "idEFXFile::ReadEffect: EOF without closing brace" );
+			return false;
+		}
+		if ( token == "}" ) {
+			effect->name = name;
+			break;
+		}
+
+		token.ToUpper();
+
+		if ( token == "PRESET" ) {
+			if (!src.ExpectAnyToken(&token))
+				return false;
+			token.ToUpper();
+
+			const EFXEAXREVERBPROPERTIES *props = NULL;
+			int k = 0;
+			for (k = 0; efxPresets[k].name[0]; k++)
+				if (efxPresets[k].name == token) {
+					props = &efxPresets[k].props;
+					break;
+				}
+			if (!props && (token.type == TT_NUMBER)) {
+				int idx = token.GetIntValue();
+				if (idx >= 0 && idx < k)
+					props = &efxPresets[idx].props;
+			}
+			if (!props) {
+				src.Error("idEFXFile::ReadEffect: Unknown preset name %s", token.c_str());
+				return false;
+			}
+
+			efxf(AL_EAXREVERB_DENSITY, props->flDensity);
+			efxf(AL_EAXREVERB_DIFFUSION, props->flDiffusion);
+			efxf(AL_EAXREVERB_GAIN, props->flGain);
+			efxf(AL_EAXREVERB_GAINHF, props->flGainHF);
+			efxf(AL_EAXREVERB_GAINLF, props->flGainLF);
+			efxf(AL_EAXREVERB_DECAY_TIME, props->flDecayTime);
+			efxf(AL_EAXREVERB_DECAY_HFRATIO, props->flDecayHFRatio);
+			efxf(AL_EAXREVERB_DECAY_LFRATIO, props->flDecayLFRatio);
+			efxf(AL_EAXREVERB_REFLECTIONS_GAIN, props->flReflectionsGain);
+			efxf(AL_EAXREVERB_REFLECTIONS_DELAY, props->flReflectionsDelay);
+			efxfv(AL_EAXREVERB_REFLECTIONS_PAN, props->flReflectionsPan[0], props->flReflectionsPan[1], props->flReflectionsPan[2]);
+			efxf(AL_EAXREVERB_LATE_REVERB_GAIN, props->flLateReverbGain);
+			efxf(AL_EAXREVERB_LATE_REVERB_DELAY, props->flLateReverbDelay);
+			efxfv(AL_EAXREVERB_LATE_REVERB_PAN, props->flLateReverbPan[0], props->flLateReverbPan[1], props->flLateReverbPan[2]);
+			efxf(AL_EAXREVERB_ECHO_TIME, props->flEchoTime);
+			efxf(AL_EAXREVERB_ECHO_DEPTH, props->flEchoDepth);
+			efxf(AL_EAXREVERB_MODULATION_TIME, props->flModulationTime);
+			efxf(AL_EAXREVERB_MODULATION_DEPTH, props->flModulationDepth);
+			efxf(AL_EAXREVERB_AIR_ABSORPTION_GAINHF, props->flAirAbsorptionGainHF);
+			efxf(AL_EAXREVERB_HFREFERENCE, props->flHFReference);
+			efxf(AL_EAXREVERB_LFREFERENCE, props->flLFReference);
+			efxf(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, props->flRoomRolloffFactor);
+			efxi(AL_EAXREVERB_DECAY_HFLIMIT, props->iDecayHFLimit);
+
+		} else if ( token == "DENSITY" ) {
+			efxf(AL_EAXREVERB_DENSITY, src.ParseFloat());
+		} else if ( token == "DIFFUSION" ) {
+			efxf(AL_EAXREVERB_DIFFUSION, src.ParseFloat());
+		} else if ( token == "GAIN" ) {
+			efxf(AL_EAXREVERB_GAIN, src.ParseFloat());
+		} else if ( token == "GAINHF" ) {
+			efxf(AL_EAXREVERB_GAINHF, src.ParseFloat());
+		} else if ( token == "GAINLF" ) {
+			efxf(AL_EAXREVERB_GAINLF, src.ParseFloat());
+		} else if ( token == "DECAY_TIME" ) {
+			efxf(AL_EAXREVERB_DECAY_TIME, src.ParseFloat());
+		} else if ( token == "DECAY_HFRATIO" ) {
+			efxf(AL_EAXREVERB_DECAY_HFRATIO, src.ParseFloat());
+		} else if ( token == "DECAY_LFRATIO" ) {
+			efxf(AL_EAXREVERB_DECAY_LFRATIO, src.ParseFloat());
+		} else if ( token == "REFLECTIONS_GAIN" ) {
+			efxf(AL_EAXREVERB_REFLECTIONS_GAIN, src.ParseFloat());
+		} else if ( token == "REFLECTIONS_DELAY" ) {
+			efxf(AL_EAXREVERB_REFLECTIONS_DELAY, src.ParseFloat());
+		} else if ( token == "REFLECTIONS_PAN" ) {
+			float x = src.ParseFloat(), y = src.ParseFloat(), z = src.ParseFloat();
+			efxfv(AL_EAXREVERB_REFLECTIONS_PAN, x, y, z);
+		} else if ( token == "LATE_REVERB_GAIN" ) {
+			efxf(AL_EAXREVERB_LATE_REVERB_GAIN, src.ParseFloat());
+		} else if ( token == "LATE_REVERB_DELAY" ) {
+			efxf(AL_EAXREVERB_LATE_REVERB_DELAY, src.ParseFloat());
+		} else if ( token == "LATE_REVERB_PAN" ) {
+			float x = src.ParseFloat(), y = src.ParseFloat(), z = src.ParseFloat();
+			efxfv(AL_EAXREVERB_LATE_REVERB_PAN, x, y, z);
+		} else if ( token == "ECHO_TIME" ) {
+			efxf(AL_EAXREVERB_ECHO_TIME, src.ParseFloat());
+		} else if ( token == "ECHO_DEPTH" ) {
+			efxf(AL_EAXREVERB_ECHO_DEPTH, src.ParseFloat());
+		} else if ( token == "MODULATION_TIME" ) {
+			efxf(AL_EAXREVERB_MODULATION_TIME, src.ParseFloat());
+		} else if ( token == "MODULATION_DEPTH" ) {
+			efxf(AL_EAXREVERB_MODULATION_DEPTH, src.ParseFloat());
+		} else if ( token == "AIR_ABSORPTION_GAINHF" ) {
+			efxf(AL_EAXREVERB_AIR_ABSORPTION_GAINHF, src.ParseFloat());
+		} else if ( token == "HFREFERENCE" ) {
+			efxf(AL_EAXREVERB_HFREFERENCE, src.ParseFloat());
+		} else if ( token == "LFREFERENCE" ) {
+			efxf(AL_EAXREVERB_LFREFERENCE, src.ParseFloat());
+		} else if ( token == "ROOM_ROLLOFF_FACTOR" ) {
+			efxf(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, src.ParseFloat());
+		} else if ( token == "DECAY_HFLIMIT" || token == "DECAYHF_LIMIT" ) {
+			efxi(AL_EAXREVERB_DECAY_HFLIMIT, src.ParseBool());
+		} else {
+			src.Error("idEFXFile::ReadEffect: Invalid parameter %s in reverb definition", token.c_str());
+			src.ParseRestOfLine(token);
+		}
+	}
+
+	return true;
+}
+
 /*
 ===============
 idEFXFile::LoadFile
 ===============
 */
 bool idEFXFile::LoadFile( const char *filename/*, bool OSPath*/ ) {
-	idLexer src( LEXFL_NOSTRINGCONCAT );
+	idLexer src( LEXFL_NOSTRINGCONCAT | LEXFL_NOFATALERRORS );
 	idToken token;
 
 	efxFilename = filename;
@@ -267,8 +405,9 @@ bool idEFXFile::LoadFile( const char *filename/*, bool OSPath*/ ) {
 		return NULL;
 	}
 
-	if ( src.ParseInt() != 1 ) {
-		src.Error( "idEFXFile::LoadFile: Unknown file version" );
+	version = src.ParseInt();
+	if ( version != 1 && version != 2 ) {
+		src.Error( "idEFXFile::LoadFile: Unknown file version %d", version );
 		return false;
 	}
 	
@@ -281,10 +420,18 @@ bool idEFXFile::LoadFile( const char *filename/*, bool OSPath*/ ) {
 			return false;
 		}
 
-		if (ReadEffect(src, effect))
-			effects.Append(effect);
+		bool ok = false;
+		if (version == 1)
+			ok = ReadEffectLegacy(src, effect);
 		else
+			ok = ReadEffectOpenAL(src, effect);
+
+		if (!ok) {
 			delete effect;
+			break;
+		}
+
+		effects.Append(effect);
 	};
 
 	return true;

@@ -1231,6 +1231,9 @@
     <ClInclude Include="game\gamesys\Automation_local.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
+    <ClInclude Include="sound\snd_efxpresets.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2907,6 +2910,9 @@
     </ClCompile>
     <ClCompile Include="game\Http\MessageTcp.cpp">
       <Filter>Game\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="sound\snd_efxpresets.cpp">
+      <Filter>Sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

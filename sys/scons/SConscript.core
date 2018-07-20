@@ -170,6 +170,7 @@ snd_string = ' \
 	snd_cache.cpp \
 	snd_decoder.cpp \
 	snd_efxfile.cpp \
+	snd_efxpresets.cpp \
 	snd_emitter.cpp \
 	snd_shader.cpp \
 	snd_system.cpp \

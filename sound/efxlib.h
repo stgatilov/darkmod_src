@@ -41,11 +41,13 @@ public:
 	bool IsAfterReload();
 
 private:
-	bool ReadEffect(idLexer &lexer, idSoundEffect *effect);
+	bool ReadEffectLegacy(idLexer &lexer, idSoundEffect *effect);
+	bool ReadEffectOpenAL(idLexer &lexer, idSoundEffect *effect);
 
 	//filename initially passed to LoadFile (or empty if LoadFile never called)
 	//(used in Reload method)
 	idStr efxFilename;
+	int version;
 	//this flag is raised after reload: idSoundWorldLocal::MixLoop checks for it
 	bool isAfterReload;
 
