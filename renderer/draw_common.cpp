@@ -1436,8 +1436,18 @@ Originally in front renderer (idPlayerView::dnPostProcessManager)
 void RB_Bloom() {
 	FB_CopyColorBuffer();
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
-	if ( !w || !h ) // this has actually happened
+	
+	if ( !w || !h // this has actually happened
+	     // nbohr1more add checks for render tools
+	     || r_showLightCount.GetBool() 
+		 || r_showShadows.GetBool() 
+		 || r_showVertexColor.GetBool()
+		 || r_showShadowCount.GetBool()
+		 || r_showTexturePolarity.GetBool()
+		 || r_showTangentSpace.GetBool()
+		 || r_showDepth.GetBool() )
 		return;
+		
 	float	parm[4];
 
 	FB_SelectPostProcess();
