@@ -222,7 +222,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	}
 
 	idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( tri->ambientCache );
-	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
 	bool drawSolid = false;
@@ -278,10 +277,10 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 			RB_FinishStageTexturing( pStage, surf, ac );
 
-			qglUniform4fv( depthShader.color, 1, color );
 			qglUniform1f( depthShader.alphaTest, -1 ); // hint the glsl to skip texturing
 		}
 
+		qglUniform4fv( depthShader.color, 1, colorBlack.ToFloatPtr() );
 		qglDisableVertexAttribArray( 8 );
 		if (!didDraw) {
 			drawSolid = true;
@@ -301,6 +300,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	// reset blending
 	if ( shader->GetSort() == SS_SUBVIEW ) {
+		qglUniform4fv( depthShader.color, 1, colorBlack.ToFloatPtr() );
 		GL_State( GLS_DEPTHFUNC_LESS );
 	}
 }

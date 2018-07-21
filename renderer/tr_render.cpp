@@ -264,7 +264,7 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		if ( cacheMatrix ) {
 			if ( drawSurf->space != backEnd.currentSpace ) {
 				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
-				backEnd.currentSpace = drawSurf->space;
+				//backEnd.currentSpace = drawSurf->space;
 			}
 		} else {
 			if ( drawSurf->space ) {
@@ -298,7 +298,8 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 			RB_LeaveDepthHack();
 		}
 
-		if( !cacheMatrix )
+		//if( !cacheMatrix )
+		if ( drawSurf->space != backEnd.currentSpace )
 			backEnd.currentSpace = drawSurf->space;
 	}
 }
