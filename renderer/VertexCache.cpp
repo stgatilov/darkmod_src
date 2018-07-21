@@ -241,8 +241,8 @@ the cached data isn't valid
 ===========
 */
 void idVertexCache::PurgeAll() {
-	//Shutdown();
-	//Init();
+	Shutdown();
+	Init();
 }
 
 /*

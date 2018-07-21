@@ -1154,5 +1154,7 @@ void R_RegenerateWorld_f( const idCmdArgs &args ) {
 
 	R_ReCreateWorldReferences();
 
+	renderModelManager->EndLevelLoad();
+
 	common->Printf( "Regenerated world, staticAllocCount = %i.\n", tr.staticAllocCount );
 }
