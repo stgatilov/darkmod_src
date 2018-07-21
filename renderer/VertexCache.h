@@ -31,9 +31,12 @@ const int VERTCACHE_OFFSET_MASK = 0xfffffff;	// 256 megs
 const int VERTCACHE_FRAME_SHIFT = 52;
 const int VERTCACHE_FRAME_MASK = 0xfff;		// 12 bits = 4k frames to wrap around
 
-const int VERTEX_CACHE_ALIGN = 32;
+// 240 is the least common multiple between 16-byte alignment and the size of idDrawVert and shadowCache_t.
+// The vertex cache positions need to be divisible by either size for glDrawElementsBaseVertex and similar
+// functions.
+const int VERTEX_CACHE_ALIGN = 240;
 const int INDEX_CACHE_ALIGN = 16;
-#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
+#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % a ) )
 
 enum cacheType_t {
 	CACHE_VERTEX,
