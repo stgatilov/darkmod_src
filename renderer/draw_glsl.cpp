@@ -305,7 +305,7 @@ void RB_GLSL_DrawLight_ShadowMap() {
 			
 			pointInteractionShader.Use();
 			qglUniform1f( pointInteractionShader.shadows, 2 );
-			qglUniform1f( pointInteractionShader.shadowMipMap, ShadowMipMap );
+			qglUniform1i( pointInteractionShader.shadowMipMap, ShadowMipMap );
 			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 			
 			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
