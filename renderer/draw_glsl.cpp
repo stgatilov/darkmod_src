@@ -567,6 +567,7 @@ void oldStageProgram_t::AfterLoad() {
 
 void depthProgram_t::AfterLoad() {
 	clipPlane = qglGetUniformLocation( program, "clipPlane" );
+	matViewRev = qglGetUniformLocation( program, "matViewRev" );
 	color = qglGetUniformLocation( program, "color" );
 	alphaTest = qglGetUniformLocation( program, "alphaTest" );
 }

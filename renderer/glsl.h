@@ -35,7 +35,7 @@ struct oldStageProgram_t : shaderProgram_t {
 };
 
 struct depthProgram_t : shaderProgram_t {
-	GLint			clipPlane;
+	GLint			clipPlane, matViewRev;
 	GLint			color;
 	GLint			alphaTest;
 	virtual	void AfterLoad();

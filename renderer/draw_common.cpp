@@ -155,13 +155,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	tri = surf->backendGeo;
 	shader = surf->material;
 
-	// update the clip plane if needed
-	if ( backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace ) {
-		idPlane	plane;
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane );
-		qglUniform4fv( depthShader.clipPlane, 1, plane.ToFloatPtr() );
-	}
-
 	if ( !shader->IsDrawn() ) {
 		return;
 	}
@@ -394,11 +387,14 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	depthShader.Use();
 	qglUniform1f( depthShader.alphaTest, -1 ); // no alpha test by default
-	// enable the second texture for mirror plane clipping if needed
-	if ( backEnd.viewDef->numClipPlanes ) {
+	if ( backEnd.viewDef->numClipPlanes ) { // pass mirror clip plane details to vertex shader if needed
+		idMat4 m;
+		memcpy( m.ToFloatPtr(), backEnd.viewDef->worldSpace.modelViewMatrix, sizeof( m ) );
+		m.InverseSelf();
+		qglUniformMatrix4fv( depthShader.matViewRev, 1, false, m.ToFloatPtr() );
+		qglUniform4fv( depthShader.clipPlane, 1, backEnd.viewDef->clipPlanes[0].ToFloatPtr() );
 	} else {
-		const float noClip[] = { 0, 0, 0, 1 };
-		qglUniform4fv( depthShader.clipPlane, 1, noClip );
+		qglUniform4fv( depthShader.clipPlane, 1, colorBlack.ToFloatPtr() ); // 0 0 0 1, all geometry passes
 	}
 
 	// the first texture will be used for alpha tested surfaces
@@ -407,7 +403,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
 
-	GL_State( GLS_DEPTHFUNC_LESS & GLS_COLORMASK & GLS_ALPHAMASK );
+	GL_State( GLS_DEPTHFUNC_LESS );
 
 	// Enable stencil test if we are going to be using it for shadows.
 	// If we didn't do this, it would be legal behavior to get z fighting
