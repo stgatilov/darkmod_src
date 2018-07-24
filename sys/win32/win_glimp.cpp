@@ -853,7 +853,7 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 		dm.dmPelsHeight = win32.desktopHeight;
 		dm.dmBitsPerPel = win32.desktopBitsPixel;
 		exstyle = 0;
-		stylebits = WINDOW_STYLE | WS_SYSMENU;
+		stylebits = WINDOW_STYLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 		AdjustWindowRect (&r, stylebits, FALSE);
 		SetWindowLong( win32.hWnd, GWL_STYLE, stylebits );
 		SetWindowLong( win32.hWnd, GWL_EXSTYLE, exstyle );
