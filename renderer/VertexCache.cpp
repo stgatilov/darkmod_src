@@ -22,8 +22,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
-idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
-idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
+idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Use GPU sync" );
 
 idVertexCache		vertexCache;
 
@@ -98,6 +99,8 @@ static void WaitForGeoBufferSet(geoBufferSet_t &gbs) {
 	GLenum result = qglClientWaitSync(gbs.bufferLock, 0, 1);
 	while (result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) {
 		result = qglClientWaitSync(gbs.bufferLock, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+		if ( result == GL_CONDITION_SATISFIED )
+			backEnd.pc.waitedFor = 'S';
 		if (result == GL_WAIT_FAILED) {
 			common->Warning("glClientWaitSync failed.\n");
 			break;
@@ -296,7 +299,7 @@ void idVertexCache::EndFrame() {
 
 	// ensure no GL draws are still active on the next buffer to write to
 	int nextListNum = (listNum + 1) % VERTCACHE_NUM_FRAMES;
-	if (glConfig.fenceSyncAvailable) {
+	if (glConfig.fenceSyncAvailable && r_useFenceSync.GetBool() ) {
 		LockGeoBufferSet(frameData[backendListNum]);
 		WaitForGeoBufferSet(frameData[nextListNum]);
 	} else {

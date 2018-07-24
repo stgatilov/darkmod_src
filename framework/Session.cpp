@@ -3116,7 +3116,7 @@ void idSessionLocal::WaitForFrontendCompletion() {
 	if( com_smp.GetBool() ) {
 		std::unique_lock<std::mutex> lock( signalMutex );
 		if( r_showSmp.GetBool() )
-			common->Printf( frontendActive ? "F" : "." );
+			backEnd.pc.waitedFor = frontendActive ? 'F' : '.';
 		while( frontendActive ) {
 			signalMainThread.wait( lock );
 		}
