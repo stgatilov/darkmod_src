@@ -503,8 +503,12 @@ typedef enum {
 						// of forced list submission before syncs
 } renderCommand_t;
 
-struct emptyCommand_t {
-	renderCommand_t		commandId, *next;
+struct baseCommand_t {
+	renderCommand_t commandId;
+};
+
+struct emptyCommand_t : baseCommand_t {
+	baseCommand_t *next;
 };
 
 struct setBufferCommand_t : emptyCommand_t {

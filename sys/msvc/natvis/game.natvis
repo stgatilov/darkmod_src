@@ -124,4 +124,23 @@
     </Expand>
   </Type>
 
+  <Type Name="emptyCommand_t" Inheritable="false">
+    <DisplayString></DisplayString>
+    <Expand>
+      <LinkedListItems>
+        <HeadPointer>this</HeadPointer>
+        <NextPointer>(emptyCommand_t*)next</NextPointer>
+        <ValueNode>(baseCommand_t*)this</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+  <Type Name="baseCommand_t" Inheritable="false">
+    <DisplayString>{commandId}</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="commandId==1">*(drawSurfsCommand_t*)this</ExpandedItem>
+      <ExpandedItem Condition="commandId==2">*(setBufferCommand_t*)this</ExpandedItem>
+      <ExpandedItem Condition="commandId==3">*(copyRenderCommand_t*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
 </AutoVisualizer>

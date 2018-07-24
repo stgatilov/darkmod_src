@@ -152,7 +152,7 @@ void *R_GetCommandBuffer( int bytes ) {
 
 	cmd = (emptyCommand_t *)R_FrameAlloc( bytes );
 	cmd->next = NULL;
-	frameData->cmdTail->next = &cmd->commandId;
+	frameData->cmdTail->next = cmd;
 	frameData->cmdTail = cmd;
 
 	return (void *)cmd;
