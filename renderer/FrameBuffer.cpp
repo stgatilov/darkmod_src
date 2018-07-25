@@ -161,11 +161,22 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 	GL_CheckErrors();
 }
 
+void DeleteFramebuffers() {
+	qglDeleteFramebuffers( 1, &fboPrimary );
+	qglDeleteFramebuffers( 1, &fboResolve );
+	fboPrimary = 0; 
+	fboResolve = 0;
+}
+
 void CheckCreatePrimary() {
 	GL_CheckErrors(); // debug
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
+	if ( r_fboSeparateStencil.IsModified() || curWidth != globalImages->currentRenderImage->uploadWidth ) {
+		r_fboSeparateStencil.ClearModified();
+		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
+	}
 	if ( r_fboSeparateStencil.GetBool() ) { // intel optimization
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH );
 		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
@@ -197,10 +208,7 @@ void CheckCreatePrimary() {
 		int statusPrimary = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 		if ( GL_FRAMEBUFFER_COMPLETE != statusResolve || GL_FRAMEBUFFER_COMPLETE != statusPrimary ) { // something went wrong, fall back to default
 			common->Printf( "glCheckFramebufferStatus - primary: %d - resolve: %d\n", statusPrimary, statusResolve );
-			qglDeleteFramebuffers( 1, &fboPrimary );
-			qglDeleteFramebuffers( 1, &fboResolve );
-			fboPrimary = 0; // try from scratch next time
-			fboResolve = 0;
+			DeleteFramebuffers(); // try from scratch next time
 			r_useFbo.SetBool( false );
 			r_softShadowsQuality.SetInteger( 0 );
 		}
