@@ -34,7 +34,7 @@ the shadow volumes face INSIDE
 static void RB_T_Shadow( const drawSurf_t *surf ) {
 	GL_CheckErrors();
 	const srfTriangles_t	*tri;
-	static int softCheck = r_softShadowsQuality.GetInteger();
+	int softCheck = r_softShadowsQuality.GetInteger();
 
 	// set the light position if we are using a vertex program to project the rear surfaces
 	if ( surf->space != backEnd.currentSpace ) {
