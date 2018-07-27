@@ -674,8 +674,19 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 		break;
 	// these two are for Intel separate stencil optimization
 	case GL_DEPTH:
+		switch ( r_fboDepthBits.GetInteger() )
+		{
+		case 16:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+			break;
+		case 32:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+			break;
+		default:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+			break;
+		}
 		r_fboDepthBits.ClearModified();
-		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboDepthBits.GetInteger() == 16 ? GL_DEPTH_COMPONENT16 : GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 		common->Printf( "Generated framebuffer DEPTH attachment: %dx%d\n", width, height );
 		break;
 	case GL_STENCIL:
