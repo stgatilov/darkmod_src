@@ -522,15 +522,27 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		_step8State.SetWindowText(CString(""));
 		break;
 
-    case PostUpdateCleanup:
+    case InstallVcRedist:
         // Update header title in this step
-        _subTitle.SetWindowText(CString("Performing cleanup steps"));
+        _subTitle.SetWindowText(CString("Finalizing installation"));
 
-        _step7Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files..."));
+        _statusText.SetWindowText(CString("Installing VC++ redistributable..."));
+        _progressMain.SetPos(0);
+
+        _step7Text.SetWindowText(CString("Installing Microsoft Visual C++ redistributable packages..."));
         _step7State.SetWindowText(CString("--"));
 
         _step8Text.SetWindowText(CString(""));
         _step8State.SetWindowText(CString(""));
+        break;
+
+    case PostUpdateCleanup:
+        // Update header title in this step
+        _statusText.SetWindowText(CString("Performing cleanup steps"));
+        _progressMain.SetPos(0);
+
+        _step8Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files..."));
+        _step8State.SetWindowText(CString("--"));
         break;
 	};
 }
@@ -741,9 +753,18 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 	}
 	break;
 
+	case InstallVcRedist:
+	{
+		_progressMain.SetPos(100);
+		_step7Text.SetWindowText(CString("Installing Microsoft Visual C++ redistributable packages... done."));
+		_statusText.SetWindowText(CString("Done installing VC++ redistributable."));
+	}
+	break;
+
     case PostUpdateCleanup:
     {
-        _step7Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files... done."));
+        _progressMain.SetPos(100);
+        _step8Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files... done."));
         _statusText.SetWindowText(CString("Done performing cleanup steps."));
     }
     break;

@@ -252,10 +252,35 @@ void UpdateController::PerformStep(UpdateStep step)
 		_updater.CleanupUpdateStep();
 		break;
 
+	case InstallVcRedist:
+		bool need32bit; need32bit = _updater.NeedsVCRedist(false);
+		bool need64bit; need64bit = _updater.NeedsVCRedist(true);
+		if (need32bit || need64bit) {
+			_view.OnMessage(
+				"Microsoft Visual C++ redistributable package will be installed now.\n"
+				"You will probably be prompted for admin permissions (with UAC dialog).\n"
+			);
+			if (need64bit)
+				_updater.InstallVCRedist(true);
+			if (need32bit)
+				_updater.InstallVCRedist(false);
+
+			bool stillNeed32bit =_updater.NeedsVCRedist(false);
+			bool stillNeed64bit =_updater.NeedsVCRedist(true);
+			if (stillNeed32bit || stillNeed64bit) {
+				std::string which = (stillNeed32bit && stillNeed64bit ? "vcredist_x86.exe and vcredist_x64.exe" : (stillNeed64bit ? "vcredist_x64.exe" : "vcredist_x86.exe"));
+				_view.OnWarning(
+					"Microsoft Visual C++ redistributable package failed to install.\n"
+					"You have to install it yourself in order to run the game.\n"
+					"Run " + which + " in game directory and make sure installation completes successfully."
+				);
+			}
+		}
+		break;
+
 	case PostUpdateCleanup:
         _updater.FixPK4Dates();
 		_updater.PostUpdateCleanup();
-		_updater.InstallVCRedist();
 		break;
 
 	case RestartUpdater:
@@ -354,7 +379,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 			else
 			{
 				// No update necessary
-				TryToProceedTo(PostUpdateCleanup);
+				TryToProceedTo(InstallVcRedist);
 			}
 		}
 		break;
@@ -391,7 +416,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 			//The hashes of pk4 files are now different from the ones on the server.
 			//That's why we exit right away to avoid redoing the same differential update and redownloading the unchanged data.
 			if (info.fromVersion == "2.05" && info.toVersion == "2.06") {
-				TryToProceedTo(PostUpdateCleanup);
+				TryToProceedTo(InstallVcRedist);
 				break;
 			}
 
@@ -401,6 +426,10 @@ void UpdateController::OnFinishStep(UpdateStep step)
 		break;
 
 	case DownloadFullUpdate:
+		TryToProceedTo(InstallVcRedist);
+		break;
+
+	case InstallVcRedist:
 		TryToProceedTo(PostUpdateCleanup);
 		break;
 

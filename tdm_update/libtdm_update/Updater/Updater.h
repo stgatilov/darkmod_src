@@ -300,7 +300,8 @@ public:
 	void RestartUpdater();
 
 	// Run vc_redist installers to install CRT dlls (needs admin rights to install)
-	void InstallVCRedist();
+	bool NeedsVCRedist(bool x64);
+	void InstallVCRedist(bool x64);
 
 	// Cleanup (both after regular exit and user terminations)
 	void PostUpdateCleanup();

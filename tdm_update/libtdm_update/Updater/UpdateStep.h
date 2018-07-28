@@ -39,6 +39,7 @@ enum UpdateStep
 	DownloadDifferentialUpdate,
 	PerformDifferentialUpdate,
 	DownloadFullUpdate,
+	InstallVcRedist,
 	PostUpdateCleanup,
 	Done,
 	RestartUpdater,
