@@ -26,6 +26,8 @@ GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
 int ShadowMipMap;
 
+const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
+
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if( !fboPrimary )
 		qglGenFramebuffers( 1, &fboPrimary );
@@ -161,11 +163,11 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 	GL_CheckErrors();
 }
 
-void DeleteFramebuffers() {
+void DeleteFramebuffers() { // force recreate on a cvar change
 	qglDeleteFramebuffers( 1, &fboPrimary );
 	qglDeleteFramebuffers( 1, &fboResolve );
-	fboPrimary = 0; 
-	fboResolve = 0;
+	qglDeleteFramebuffers( 1, &fboShadow );
+	fboPrimary = fboResolve = fboShadow = 0;
 }
 
 void CheckCreatePrimary() {
@@ -332,9 +334,16 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 		}
 		if( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {  // most vendors can't do separate stencil so we need to copy depth from the main/default FBO
-			globalImages->shadowDepthFbo->Bind();
+			qglDisable( GL_SCISSOR_TEST );
+			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadow );
+			qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+				0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+				GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, primaryOn ? fboPrimary : 0 );
+			qglEnable( GL_SCISSOR_TEST );
+/*			globalImages->shadowDepthFbo->Bind();
 			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, 0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight );
-			depthCopiedThisView = true;
+			*/depthCopiedThisView = true;
 		}
 		GL_CheckErrors();
 	}
@@ -440,6 +449,7 @@ void LeavePrimary() {
 				break;
 			case 3:
 				globalImages->shadowDepthFbo->Bind();
+				qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
 				break;
 			default:
 				globalImages->currentRenderImage->Bind();
