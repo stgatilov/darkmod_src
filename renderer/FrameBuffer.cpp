@@ -19,8 +19,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "FrameBuffer.h"
 #include "glsl.h"
 
-bool primaryOn;
+bool primaryOn, shadowOn;
 bool depthCopiedThisView;
+float shadowResolution;
 GLuint fboPrimary, fboResolve, fboShadow, fboPostProcess, fboCurrent, pbo;
 GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
@@ -329,6 +330,16 @@ void FB_BindShadowTexture() {
 	GL_CheckErrors();
 }
 
+void FB_ApplyScissor() {
+	if ( r_useScissor.GetBool() ) {
+		float shadowRes = shadowOn ? shadowResolution : 1;
+		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*shadowRes,
+			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*shadowRes,
+			(backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*shadowRes,
+			(backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*shadowRes );
+	}
+}
+
 void FB_ToggleShadow( bool on, bool clear ) {
 	//if ( r_shadows.GetInteger() < 2 ) // "Click when ready" screen calls this when not in FBO
 		//return;
@@ -351,31 +362,19 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		GL_CheckErrors();
 	}
 
+	shadowOn = on;
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
 	if(r_shadows.GetInteger() == 1)
 	if ( on ) {
-		float shadowRes = 1;
-		if ( r_softShadowsQuality.GetInteger() < 0 )
-			shadowRes = r_softShadowsQuality.GetInteger() / -100.;
-		qglViewport( 0, 0, glConfig.vidWidth * shadowRes, glConfig.vidHeight * shadowRes );
-		if ( r_useScissor.GetBool() ) {
-			r_useScissor.SetBool( false ); // FIXME hack
-			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*shadowRes,
-				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*shadowRes,
-				(backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*shadowRes,
-				(backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*shadowRes );
-		}
+		if ( r_softShadowsQuality.GetInteger() < 0 && shadowOn )
+			shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
+		else
+			shadowResolution = 1;
+		qglViewport( 0, 0, glConfig.vidWidth * shadowResolution, glConfig.vidHeight * shadowResolution );
+		FB_ApplyScissor();
 	} else {
-		r_useScissor.SetBool( true );
 		qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-		if ( r_useScissor.GetBool() ) {
-			if ( r_ignore.GetBool() )
-				qglEnable( GL_SCISSOR_TEST );
-			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-		}
+		FB_ApplyScissor();
 	}
 	GL_CheckErrors();
 

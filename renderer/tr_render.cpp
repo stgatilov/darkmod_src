@@ -20,6 +20,7 @@
 
 #include "tr_local.h"
 #include "glsl.h"
+#include "FrameBuffer.h"
 
 /*
 
@@ -329,10 +330,11 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 			const idScreenRect &r = drawSurf->scissorRect;
 			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) { // duzenko: FIXME find out why they are negative sometimes
 				backEnd.currentScissor = drawSurf->scissorRect;
-				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				/*qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );*/
+				FB_ApplyScissor();
 			} else
 				continue; // duzenko: why bother
 		}
