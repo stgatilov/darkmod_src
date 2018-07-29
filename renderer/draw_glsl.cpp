@@ -72,7 +72,7 @@ struct interactionProgram_t : lightProgram_t {
 
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint advanced, shadows, lightOrigin2;
-	GLint softShadowsQuality, softShadowsRadius, softShadowSamples, shadowMipMap;
+	GLint softShadowsQuality, softShadowsRadius, softShadowSamples, shadowMipMap, renderResolution;
 	GLint shadowMap, stencilTexture, depthTexture;
 	//TODO: is this global variable harming multithreading?
 	idList<idVec2> g_softShadowsSamples;
@@ -721,6 +721,7 @@ void pointInteractionProgram_t::AfterLoad() {
 	stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
 	depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
+	renderResolution = qglGetUniformLocation( program, "u_renderResolution" );
 	lightOrigin2 = qglGetUniformLocation( program, "u_lightOrigin2" );
 	shadowMipMap = qglGetUniformLocation( program, "u_shadowMipMap" );
 	// set texture locations
@@ -739,11 +740,14 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
-		if ( sampleK > 0 ) { // negative for debugging
+		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
 			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 ) {
 				GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
 				qglUniform2fv( softShadowSamples, sampleK, (float*)g_softShadowsSamples.Ptr() );
 			}
+		}
+		if ( sampleK < 0 ) { // WIP low res stencil shadows
+			qglUniform2f( renderResolution, glConfig.vidWidth, glConfig.vidHeight );
 		}
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );

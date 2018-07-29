@@ -218,12 +218,17 @@ void CheckCreatePrimary() {
 	}
 }
 
+//static idCVar r_fboShadowResolution( "r_fboShadowResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
+
 void CheckCreateShadow() {
 	// (re-)attach textures to FBO
 	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
 	if ( primaryOn ) {
-		curWidth *= r_fboResolution.GetFloat();
-		curHeight *= r_fboResolution.GetFloat();
+		float shadowRes = 1;
+		if ( r_softShadowsQuality.GetInteger() < 0 )
+			shadowRes = r_softShadowsQuality.GetInteger() / -100.;
+		curWidth *= r_fboResolution.GetFloat() * shadowRes;
+		curHeight *= r_fboResolution.GetFloat() * shadowRes;
 	}
 	textureType_t type = r_shadows.GetInteger() == 2 ? TT_CUBIC : TT_2D;
 	static textureType_t nowType;
@@ -336,18 +341,42 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		if( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {  // most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 			qglDisable( GL_SCISSOR_TEST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadow );
-			qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
-				0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+			qglBlitFramebuffer( 0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight,
+				0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight,
 				GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, primaryOn ? fboPrimary : 0 );
 			qglEnable( GL_SCISSOR_TEST );
-/*			globalImages->shadowDepthFbo->Bind();
-			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, 0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight );
-			*/depthCopiedThisView = true;
+			depthCopiedThisView = true;
 		}
 		GL_CheckErrors();
 	}
+
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
+	if(r_shadows.GetInteger() == 1)
+	if ( on ) {
+		float shadowRes = 1;
+		if ( r_softShadowsQuality.GetInteger() < 0 )
+			shadowRes = r_softShadowsQuality.GetInteger() / -100.;
+		qglViewport( 0, 0, glConfig.vidWidth * shadowRes, glConfig.vidHeight * shadowRes );
+		if ( r_useScissor.GetBool() ) {
+			r_useScissor.SetBool( false ); // FIXME hack
+			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*shadowRes,
+				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*shadowRes,
+				(backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*shadowRes,
+				(backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*shadowRes );
+		}
+	} else {
+		r_useScissor.SetBool( true );
+		qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		if ( r_useScissor.GetBool() ) {
+			if ( r_ignore.GetBool() )
+				qglEnable( GL_SCISSOR_TEST );
+			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+		}
+	}
 	GL_CheckErrors();
 
 	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
