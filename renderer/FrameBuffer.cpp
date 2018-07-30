@@ -332,11 +332,13 @@ void FB_BindShadowTexture() {
 
 void FB_ApplyScissor() {
 	if ( r_useScissor.GetBool() ) {
-		float shadowRes = shadowOn ? shadowResolution : 1;
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*shadowRes,
-			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*shadowRes,
-			(backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*shadowRes,
-			(backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*shadowRes );
+		float resFactor = 1;// r_fboResolution.GetFloat();
+		if( shadowOn )
+			resFactor *= shadowResolution;
+		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*resFactor,
+			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*resFactor,
+			(backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*resFactor,
+			(backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*resFactor );
 	}
 }
 
@@ -370,10 +372,13 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
 		else
 			shadowResolution = 1;
-		qglViewport( 0, 0, glConfig.vidWidth * shadowResolution, glConfig.vidHeight * shadowResolution );
+		qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
 		FB_ApplyScissor();
 	} else {
-		qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		if( primaryOn )
+			qglViewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
+		else
+			qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 		FB_ApplyScissor();
 	}
 	GL_CheckErrors();
