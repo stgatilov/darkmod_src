@@ -424,6 +424,13 @@ int idCinematicFFMpeg::OpenBestStreamOfType(AVMediaType type) {
 	}
 	TIMER_END_LOG(findDecoder, "Found decoder");
 
+	//note: "0" means "auto" (usually equal to number of CPU cores)
+	//this overrides the default value "1"
+	st->codec->thread_count = 0;
+	//note: this is the default value
+	//frame-threading is preferred, slice-threading is used only if codec does not support frame-threading
+	//st->codec->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
+
 	TIMER_START(openCodec);
 	AVDictionary *opts = NULL;
 	if (ExtLibs::avcodec_open2(st->codec, dec, &opts) < 0) {
