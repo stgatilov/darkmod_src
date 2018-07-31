@@ -27,8 +27,6 @@ GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
 int ShadowMipMap;
 
-const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
-
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if( !fboPrimary )
 		qglGenFramebuffers( 1, &fboPrimary );
@@ -322,7 +320,6 @@ void FB_BindShadowTexture() {
 		GL_SelectTexture( 7 );
 		if ( !r_fboSeparateStencil.GetBool() ) {
 			globalImages->shadowDepthFbo->Bind();
-			const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
 			qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 		} else
 			globalImages->currentStencilFbo->Bind();

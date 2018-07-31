@@ -208,6 +208,17 @@ extern PFNGLFENCESYNCPROC				qglFenceSync;
 extern PFNGLCLIENTWAITSYNCPROC			qglClientWaitSync;
 extern PFNGLDELETESYNCPROC				qglDeleteSync;
 
+// profiling
+extern PFNGLGENQUERIESPROC				qglGenQueries;
+extern PFNGLDELETEQUERIESPROC			qglDeleteQueries;
+extern PFNGLQUERYCOUNTERPROC			qglQueryCounter;
+extern PFNGLGETQUERYOBJECTUI64VPROC		qglGetQueryObjectui64v;
+extern PFNGLBEGINQUERYPROC				qglBeginQuery;
+extern PFNGLENDQUERYPROC				qglEndQuery;
+// debug groups
+extern PFNGLPUSHDEBUGGROUPPROC			qglPushDebugGroup;
+extern PFNGLPOPDEBUGGROUPPROC			qglPopDebugGroup;
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*

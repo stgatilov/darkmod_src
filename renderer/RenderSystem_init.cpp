@@ -394,6 +394,17 @@ PFNGLFENCESYNCPROC						qglFenceSync;
 PFNGLCLIENTWAITSYNCPROC					qglClientWaitSync;
 PFNGLDELETESYNCPROC						qglDeleteSync;
 
+// profiling
+PFNGLGENQUERIESPROC						qglGenQueries;
+PFNGLDELETEQUERIESPROC					qglDeleteQueries;
+PFNGLQUERYCOUNTERPROC					qglQueryCounter;
+PFNGLGETQUERYOBJECTUI64VPROC			qglGetQueryObjectui64v;
+PFNGLBEGINQUERYPROC						qglBeginQuery;
+PFNGLENDQUERYPROC						qglEndQuery;
+// debug groups
+PFNGLPUSHDEBUGGROUPPROC					qglPushDebugGroup;
+PFNGLPOPDEBUGGROUPPROC					qglPopDebugGroup;
+
 /*
 =================
 R_CheckExtension
@@ -624,6 +635,22 @@ static void R_CheckPortableExtensions( void ) {
 		if (glConfig.framebufferMultisampleAvailable) {
 			qglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorageMultisampleEXT");
 		}
+	}
+
+	if( glConfig.glVersion > 3.2 || R_CheckExtension( "GL_ARB_timer_query" ) ) {
+		glConfig.timerQueriesAvailable = true;
+		qglGenQueries = ( PFNGLGENQUERIESPROC )GLimp_ExtensionPointer( "glGenQueries" );
+		qglDeleteQueries = ( PFNGLDELETEQUERIESPROC )GLimp_ExtensionPointer( "glDeleteQueries" );
+		qglQueryCounter = ( PFNGLQUERYCOUNTERPROC )GLimp_ExtensionPointer( "glQueryCounterARB" );
+		qglGetQueryObjectui64v = ( PFNGLGETQUERYOBJECTUI64VPROC )GLimp_ExtensionPointer( "glGetQueryObjectui64vARB" );
+		qglBeginQuery = ( PFNGLBEGINQUERYPROC )GLimp_ExtensionPointer( "glBeginQuery" );
+		qglEndQuery = ( PFNGLENDQUERYPROC )GLimp_ExtensionPointer( "glEndQuery" );
+	}
+
+	if( glConfig.glVersion > 4.2 || R_CheckExtension( "GL_KHR_debug" ) ) {
+		glConfig.debugGroupsAvailable = true;
+		qglPushDebugGroup = ( PFNGLPUSHDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPushDebugGroup" );
+		qglPopDebugGroup = ( PFNGLPOPDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPopDebugGroup" );
 	}
 
 //	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */

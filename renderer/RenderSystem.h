@@ -67,6 +67,8 @@ typedef struct glconfig_s {
 	bool				framebufferPackedDepthStencilAvailable;
 	bool				multipleRenderTargetsAvailable;		//glDrawBuffers
 	bool				fenceSyncAvailable;
+	bool				timerQueriesAvailable;
+	bool				debugGroupsAvailable;
 
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 	int					displayFrequency;
