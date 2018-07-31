@@ -15,6 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #include "tr_local.h"
 #include "glsl.h"
+#include "Profiling.h"
 
 /*
 ==============================================================================
@@ -194,6 +195,8 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	if ( !drawSurfs ) {
 		return;
 	}
+
+	GL_PROFILE( "StencilShadowPass" );
 
 	RB_LogComment( "---------- RB_StencilShadowPass ----------\n" );
 

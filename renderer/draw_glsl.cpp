@@ -32,6 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
+#include "Profiling.h"
 
 struct shadowMapProgram_t : lightProgram_t {
 	virtual void Use();
@@ -148,6 +149,8 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf )
 		return;
 
+	GL_PROFILE( "GLSL_CreateDrawInteractions" );
+
 	// perform setup here that will be constant for all interactions
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
@@ -217,6 +220,8 @@ RB_GLSL_DrawLight_Stencil
 ==================
 */
 void RB_GLSL_DrawLight_Stencil() {
+	GL_PROFILE( "GLSL_DrawLight_Stencil" );
+
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
 	pointInteractionShader.Use();
 	qglUniform1f( pointInteractionShader.shadows, 1 );
@@ -270,6 +275,9 @@ RB_GLSL_CreateDrawInteractions
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
 	if ( !surf )
 		return;
+
+	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
+
 	FB_ToggleShadow( true, clear );
 	shadowMapShader.Use();
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
@@ -295,6 +303,8 @@ RB_GLSL_DrawLight_ShadowMap
 ==================
 */
 void RB_GLSL_DrawLight_ShadowMap() {
+	GL_PROFILE( "GLSL_DrawLight_ShadowMap" );
+
 	GL_CheckErrors();
 	if ( !backEnd.vLight->lightShader->IsAmbientLight() ) {
 		bool doShadows = !backEnd.vLight->lightDef->parms.noShadows
@@ -328,6 +338,8 @@ RB_GLSL_DrawInteractions
 ==================
 */
 void RB_GLSL_DrawInteractions() {
+	GL_PROFILE( "GLSL_DrawInteractions" );
+
 	GL_SelectTexture( 0 );
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {

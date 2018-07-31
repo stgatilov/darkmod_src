@@ -20,6 +20,7 @@
 
 #include "tr_local.h"
 #include "simplex.h"	// line font definition
+#include "Profiling.h"
 
 #define MAX_DEBUG_LINES			16384
 
@@ -2328,6 +2329,8 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !backEnd.viewDef->viewEntitys ) {
 		return;
 	}
+
+	GL_PROFILE( "RenderDebugTools" );
 
 	RB_LogComment( "---------- RB_RenderDebugTools ----------\n" );
 

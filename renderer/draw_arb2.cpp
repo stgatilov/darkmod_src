@@ -19,6 +19,7 @@
 
 
 #include "tr_local.h"
+#include "Profiling.h"
 
 /*
 =========================================================================================
@@ -119,6 +120,8 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf ) {
 		return;
 	}
+
+	GL_PROFILE( "ARB2_CreateDrawInteractions" );
 
 	// perform setup here that will be constant for all interactions
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
@@ -359,6 +362,8 @@ RB_ARB2_DrawInteractions
 ==================
 */
 void RB_ARB2_DrawInteractions( void ) {
+	GL_PROFILE( "ARB2_DrawInteractions" );
+
 	viewLight_t		*vLight;
 	const idMaterial	*lightShader;
 

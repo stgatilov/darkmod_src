@@ -18,6 +18,7 @@
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
+#include "Profiling.h"
 
 /*
 ================
@@ -381,6 +382,8 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !backEnd.viewDef->viewEntitys ) {
 		return;
 	}
+
+	GL_PROFILE( "STD_FillDepthBuffer" );
 
 	GL_CheckErrors();
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
@@ -985,6 +988,8 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetInteger() == 1 )
 		return numDrawSurfs;
 
+	GL_PROFILE( "STD_DrawShaderPasses" );
+
 	RB_LogComment( "---------- RB_STD_DrawShaderPasses ----------\n" );
 
 	// if we are about to draw the first surface that needs
@@ -1303,6 +1308,8 @@ void RB_STD_FogAllLights( void ) {
 		return;
 	}
 
+	GL_PROFILE( "STD_FogAllLights" );
+
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
@@ -1330,6 +1337,8 @@ RB_STD_DrawView
 =============
 */
 void	RB_STD_DrawView( void ) {
+	GL_PROFILE( "STD_DrawView" );
+
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs, processed;
 
