@@ -20,17 +20,29 @@
 #include "tr_local.h"
 
 extern idCVar r_useDebugGroups;
+extern idCVar r_glProfiling;
+
+void EnterProfilingSection( const char* section );
+void LeaveProfilingSection();
+
+void ProfilingBeginFrame();
+void ProfilingEndFrame();
+void DisplayProfilingInfo();
 
 class GlProfileScope {
 public:
 	GlProfileScope(const char* section) {
 		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
 			qglPushDebugGroup( GL_DEBUG_SOURCE_APPLICATION, 1, -1, section );
+		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
+			EnterProfilingSection( section );
 	}
 
 	~GlProfileScope() {
 		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
 			qglPopDebugGroup();
+		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
+			LeaveProfilingSection();
 	}
 };
 

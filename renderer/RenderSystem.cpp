@@ -20,6 +20,7 @@
 #include "tr_local.h"
 #include "FrameBuffer.h"
 #include "glsl.h"
+#include "Profiling.h"
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
@@ -642,12 +643,15 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		session->ActivateFrontend();
 		double endSignal = Sys_GetClockTicks();
 		// start the back end up again with the new command list
+		ProfilingBeginFrame();
 		R_IssueRenderCommands( backendFrameData );
+		ProfilingEndFrame();
 		double endRender = Sys_GetClockTicks();
 		session->WaitForFrontendCompletion();
 		double endWait = Sys_GetClockTicks();
 		common->SetErrorIndirection( false );
 
+		DisplayProfilingInfo();
 		if( r_logSmpTimings.GetBool() ) {
 			if( !smpTimingsLogFile ) {
 				idStr fileName;
