@@ -52,7 +52,7 @@ renderer_string = ' \
 	Model_md5.cpp \
 	Model_prt.cpp \
 	Model_sprite.cpp \
-    Profiling.cpp \
+	Profiling.cpp \
 	RenderEntity.cpp \
 	RenderSystem.cpp \
 	RenderSystem_init.cpp \
