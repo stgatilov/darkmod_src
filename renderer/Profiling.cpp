@@ -28,12 +28,13 @@ idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_INTEGER, "Colle
  */
 class GlProfiler {
 public:
-	GlProfiler() : profilingActive(false), lastTimingCopy(0), frameMarker(0) {}
+	GlProfiler() : profilingActive(false), lastTimingCopy(0), frameMarker(0), frameNumber(0) {}
 
 	void BeginFrame() {
+		++frameNumber;
 		sectionStack.clear();
 		frame[ frameMarker ] = section();
-		frame[ frameMarker ].name = "Frame";
+		frame[ frameMarker ].name = idStr("Frame ") + frameNumber;
 		AddProfilingQuery( &frame[ frameMarker ] );
 		sectionStack.push_back( &frame[ frameMarker ] );
 		profilingActive = true;
@@ -101,6 +102,7 @@ private:
 	// double-buffering, since GL query information is only available after the frame has rendered
 	section frame[ 2 ];
 	int frameMarker;
+	int frameNumber;
 
 	section *FindOrInsertSection(const idStr& name) {
 		for ( auto& s : sectionStack.back()->children ) {
@@ -169,29 +171,6 @@ void ProfilingEndFrame() {
 	}
 }
 
-void PrintSectionTimings( GlProfiler::section &s, idStr indent ) {
-	idStr level = indent + s.name;
-	common->Printf( "%-35s  %6d  %6.3f ms  %6.3f ms\n", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
-	for( auto& c : s.children ) {
-		PrintSectionTimings( c, indent + "  " );
-	}
-}
-
-void DisplayProfilingInfo() {
-	if( !r_glProfiling.GetBool() ) {
-		return;
-	}
-
-	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
-
-	// TODO: display info overlay like FPS counter
-	static int limiter = 0;
-	if( ++limiter % 10 != 0 )
-		return;  // only print timing info every n-th frame to avoid excessive spam
-	common->Printf( "%-35s  %6s  %9s  %9s\n", "# Section", "Count", "CPU", "GPU" );
-	PrintSectionTimings( *s, "" );
-}
-
 void ProfilingDrawSingleLine( int &y, const char *text, ... ) {
 	char string[MAX_STRING_CHARS];
 	va_list argptr;
@@ -207,7 +186,7 @@ void ProfilingDrawSingleLine( int &y, const char *text, ... ) {
 
 void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent ) {
 	idStr level = indent + s.name;
-	ProfilingDrawSingleLine( y, "%-35s  %6d  %6.3f ms  %6.3f ms\n", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
+	ProfilingDrawSingleLine( y, "%-35s  %6d  %6.3f ms  %6.3f ms", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
 	for( auto& c : s.children ) {
 		ProfilingDrawSectionTimings( y, c, indent + "  " );
 	}
@@ -216,6 +195,25 @@ void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent )
 void ProfilingDrawCurrentTimings() {
 	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
 	int y = 4;
-	ProfilingDrawSingleLine( y, "%-35s  %6s  %9s  %9s\n", "# Section", "Count", "CPU", "GPU" );
+	ProfilingDrawSingleLine( y, "%-35s  %6s  %9s  %9s", "# Section", "Count", "CPU", "GPU" );
 	ProfilingDrawSectionTimings( y, *s, "" );
+}
+
+void ProfilingPrintSectionTimings( GlProfiler::section &s, idStr indent ) {
+	idStr level = indent + s.name;
+	common->Printf( "%-35s  %6d  %6.3f ms  %6.3f ms\n", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
+	for( auto& c : s.children ) {
+		ProfilingPrintSectionTimings( c, indent + "  " );
+	}
+}
+
+void ProfilingPrintTimings_f( const idCmdArgs &args ) {
+	if( !r_glProfiling.GetBool() ) {
+		common->Printf( "Profiling is not enabled. Enable r_glProfiling." );
+		return;
+	}
+
+	common->Printf( "%-35s  %6s  %9s  %9s\n", "# Section", "Count", "CPU", "GPU" );
+	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
+	ProfilingPrintSectionTimings( *s, "" );
 }
