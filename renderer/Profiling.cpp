@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Profiling.h"
 
 idCVar r_useDebugGroups( "r_useDebugGroups", "0", CVAR_RENDERER | CVAR_BOOL, "Emit GL debug groups during rendering. Useful for frame debugging and analysis with e.g. nSight, which will group render calls accordingly." );
-idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_BOOL, "Collect profiling information about GPU and CPU time spent in the rendering backend." );
+idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_INTEGER, "Collect profiling information about GPU and CPU time spent in the rendering backend." );
 
 /**
  * Tracks CPU and GPU time spent in profiled sections.
@@ -28,7 +28,7 @@ idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_BOOL, "Collect 
  */
 class GlProfiler {
 public:
-	GlProfiler() : profilingActive(false), frameMarker(0) {}
+	GlProfiler() : profilingActive(false), lastTimingCopy(0), frameMarker(0) {}
 
 	void BeginFrame() {
 		sectionStack.clear();
@@ -44,6 +44,16 @@ public:
 		assert( sectionStack.empty() );
 		frameMarker = ( frameMarker + 1 ) % 2;
 		profilingActive = false;
+
+		// collect timing info from the *previous* frame and save it for retrieval
+		AccumulateTotalTimes( frame[ frameMarker ] );
+		// little hack: only copy the timings from the previous frame for retrieval every half second
+		// otherwise, displaying the values will fluctuate rapidly, making actually reading anything hard...
+		uint64_t curTime = Sys_GetClockTicks();
+		if( ( curTime - lastTimingCopy ) / Sys_ClockTicksPerSecond() >= 0.5 ) {
+			lastTimingCopy = curTime;
+			currentTimingInfos = frame[ frameMarker ];
+		}
 	}
 
 	void EnterSection(const idStr& name) {
@@ -78,14 +88,15 @@ public:
 		std::vector<query> queries;
 	} section;
 
-	section * CollectTimings() {
-		AccumulateTotalTimes( frame[ frameMarker ] );
-		return &frame[ frameMarker ];
+	section * GetCurrentTimingInfo() {
+		return &currentTimingInfos;
 	}
 	
 private:
 	bool profilingActive;
 	std::vector<section*> sectionStack;
+	section currentTimingInfos;
+	uint64_t lastTimingCopy;
 
 	// double-buffering, since GL query information is only available after the frame has rendered
 	section frame[ 2 ];
@@ -128,6 +139,7 @@ private:
 			s.totalGpuTimeMillis += ( gpuStopNanos - gpuStartNanos ) / 1000000.0;
 			qglDeleteQueries( 2, q.glQueries );
 		}
+		s.queries.clear();
 
 		for ( auto& c : s.children ) {
 			AccumulateTotalTimes( c );
@@ -137,11 +149,11 @@ private:
 
 GlProfiler glProfiler;
 
-void EnterProfilingSection( const char *section ) {
+void ProfilingEnterSection( const char *section ) {
 	glProfiler.EnterSection( section );
 }
 
-void LeaveProfilingSection() {
+void ProfilingLeaveSection() {
 	glProfiler.LeaveSection();
 }
 
@@ -170,7 +182,7 @@ void DisplayProfilingInfo() {
 		return;
 	}
 
-	GlProfiler::section *s = glProfiler.CollectTimings();
+	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
 
 	// TODO: display info overlay like FPS counter
 	static int limiter = 0;
@@ -178,4 +190,32 @@ void DisplayProfilingInfo() {
 		return;  // only print timing info every n-th frame to avoid excessive spam
 	common->Printf( "%-35s  %6s  %9s  %9s\n", "# Section", "Count", "CPU", "GPU" );
 	PrintSectionTimings( *s, "" );
+}
+
+void ProfilingDrawSingleLine( int &y, const char *text, ... ) {
+	char string[MAX_STRING_CHARS];
+	va_list argptr;
+
+	va_start( argptr, text );
+	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
+	va_end( argptr );
+
+	const idMaterial *textShader = declManager->FindMaterial( "textures/consolefont" );
+	renderSystem->DrawSmallStringExt( 0, y + 2, string, colorWhite, true, textShader );
+	y += SMALLCHAR_HEIGHT + 4;
+}
+
+void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent ) {
+	idStr level = indent + s.name;
+	ProfilingDrawSingleLine( y, "%-35s  %6d  %6.3f ms  %6.3f ms\n", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
+	for( auto& c : s.children ) {
+		ProfilingDrawSectionTimings( y, c, indent + "  " );
+	}
+}
+
+void ProfilingDrawCurrentTimings() {
+	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
+	int y = 4;
+	ProfilingDrawSingleLine( y, "%-35s  %6s  %9s  %9s\n", "# Section", "Count", "CPU", "GPU" );
+	ProfilingDrawSectionTimings( y, *s, "" );
 }

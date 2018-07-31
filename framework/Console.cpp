@@ -14,6 +14,7 @@
 ******************************************************************************/
 
 #include "precompiled.h"
+#include "../renderer/Profiling.h"
 #pragma hdrstop
 
 
@@ -1204,6 +1205,10 @@ void idConsoleLocal::Draw( bool forceFullScreen ) {
 		return;
 	}
 #endif
+	if ( r_glProfiling.GetInteger() == 1 ) {
+		ProfilingDrawCurrentTimings();
+	}
+	
 	int y = 0; // Padding from the top of the screen for FPS display etc.
 
 	if ( forceFullScreen ) {
@@ -1238,7 +1243,7 @@ void idConsoleLocal::Draw( bool forceFullScreen ) {
 	if ( com_showSoundDecoders.GetBool() ) {
 		y = SCR_DrawSoundDecoders( y );
 	}
-	
+
 #ifdef MULTIPLAYER
 	if (com_showAsyncStats.GetBool()) {
 		y = SCR_DrawAsyncStats( y );
