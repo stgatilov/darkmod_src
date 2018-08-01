@@ -1654,7 +1654,7 @@ bool Updater::NeedsVCRedist(bool x64) {
 	//install VC redistributable if not installed yet
 	//taken from https://stackoverflow.com/a/34209692/556899
 	static_assert(_MSC_VER == 1800, "Version mismatch in VC redist detection code");
-	static const CHAR *RegKey = (x64 == false
+	const CHAR *RegKey = (x64 == false
 		? "SOFTWARE\\Classes\\Installer\\Dependencies\\{f65db027-aff3-4070-886a-0d87064aabb1}"	//32-bit
 		: "SOFTWARE\\Classes\\Installer\\Dependencies\\{050d4fc8-5d48-4b8f-8972-47c82c46020f}"	//64-bit
 	);
