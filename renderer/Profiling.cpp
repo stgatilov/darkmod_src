@@ -43,12 +43,12 @@ public:
 	void EndFrame() {
 		LeaveSection();
 		assert( sectionStack.empty() );
-		frameMarker = ( frameMarker + 1 ) % 2;
+		frameMarker = ( frameMarker + 1 ) % NUM_FRAMES;
 		profilingActive = false;
 
-		// collect timing info from the *previous* frame and save it for retrieval
+		// collect timing info from the *oldest* frame and save it for retrieval
 		AccumulateTotalTimes( frame[ frameMarker ] );
-		// little hack: only copy the timings from the previous frame for retrieval every half second
+		// little hack: only copy the timings for retrieval every half second
 		// otherwise, displaying the values will fluctuate rapidly, making actually reading anything hard...
 		uint64_t curTime = Sys_GetClockTicks();
 		if( ( curTime - lastTimingCopy ) / Sys_ClockTicksPerSecond() >= 0.5 ) {
@@ -94,13 +94,15 @@ public:
 	}
 	
 private:
+	static const int NUM_FRAMES = 3;
+
 	bool profilingActive;
 	std::vector<section*> sectionStack;
 	section currentTimingInfos;
 	uint64_t lastTimingCopy;
 
 	// double-buffering, since GL query information is only available after the frame has rendered
-	section frame[ 2 ];
+	section frame[ NUM_FRAMES ];
 	int frameMarker;
 	int frameNumber;
 
