@@ -1651,49 +1651,75 @@ bool Updater::NeedsVCRedist(bool x64) {
 	if (x64 && !IsWindows64Bit())
 		return false;
 
+	//TODO: uncomment when tdm_update and TheDarkMod are built with same version of MSVC
+	//static_assert(_MSC_VER >= 1910 && _MSC_VER < 2000, "Version mismatch in VC redist detection code");
+
 	//install VC redistributable if not installed yet
 	//taken from https://stackoverflow.com/a/34209692/556899
-	static_assert(_MSC_VER == 1800, "Version mismatch in VC redist detection code");
 	const CHAR *RegKey = (x64 == false
-		? "SOFTWARE\\Classes\\Installer\\Dependencies\\{f65db027-aff3-4070-886a-0d87064aabb1}"	//32-bit
-		: "SOFTWARE\\Classes\\Installer\\Dependencies\\{050d4fc8-5d48-4b8f-8972-47c82c46020f}"	//64-bit
+		? "Installer\\Dependencies\\,,x86,14.0,bundle"		//32-bit
+		: "Installer\\Dependencies\\,,amd64,14.0,bundle"	//64-bit
 	);
-	static const CHAR *CorrectVersion = "12.0.30501.0";
+	//note: this is exactly the version bundled with VS 15.7.5
+	//and exactly the one we have in assets repo
+	static const CHAR *CorrectVersion = "14.14.26405.0";
 	static const CHAR *RegValue = "Version";
 
-	CHAR buffer[256] = {0};
-	DWORD length = sizeof(buffer);
+	//redist packages are versioned semantically: https://docs.microsoft.com/en-us/cpp/ide/determining-which-dlls-to-redistribute
+	auto IsVersionSuitable = [](const char *CurrentVersion, const char *NeededVersion) -> bool {
+		int current[3], needed[3];
+		if (sscanf(CurrentVersion, "%d.%d.%d", &current[0], &current[1], &current[2]) == 3)
+			if (sscanf(NeededVersion, "%d.%d.%d", &needed[0], &needed[1], &needed[2]) == 3) {
+				if (current[0] != needed[0])
+					return false;	//major version different --- not compatible
+				if (current[1] != needed[1])
+					return (current[1] > needed[1]);	//better/worse in minor version
+				if (current[2] != needed[2])
+					return (current[2] > needed[2]);	//better/worse in build number
+				return true;	//perfect match
+			}
+		//should never happen
+		return strcmp(CurrentVersion, NeededVersion) == 0;
+	};
+
+
+	CHAR installedVersion[256] = {0};
+	DWORD length = sizeof(installedVersion) - 1;
 	bool alreadyInstalled = false;
 
 	//query registry value (in WinXP-compatible way)
 	HKEY hkey = (HKEY)-1;
-	LSTATUS openErr = RegOpenKeyEx(HKEY_LOCAL_MACHINE, RegKey, 0, KEY_READ, &hkey);
+	LSTATUS openErr = RegOpenKeyEx(HKEY_CLASSES_ROOT, RegKey, 0, KEY_READ, &hkey);
 	if (ERROR_SUCCESS == openErr) {
 		DWORD type = (DWORD)-1;
-		LSTATUS queryErr = RegQueryValueEx(hkey, RegValue, NULL, &type, (BYTE*)buffer, &length);
-		if (ERROR_SUCCESS == queryErr && strncmp(buffer, CorrectVersion, strlen(CorrectVersion)) == 0)
+		LSTATUS queryErr = RegQueryValueEx(hkey, RegValue, NULL, &type, (BYTE*)installedVersion, &length);
+		if (ERROR_SUCCESS == queryErr && IsVersionSuitable(installedVersion, CorrectVersion))
 			alreadyInstalled = true;
 		RegCloseKey(hkey);
 	}
 
 	/*//query registry value (requires at least Vista or XP 64-bit)
 	LSTATUS err = RegGetValue(
-		HKEY_LOCAL_MACHINE,
+		HKEY_CLASSES_ROOT,
 		RegKey,
 		RegValue,
 		RRF_RT_REG_SZ | RRF_ZEROONFAILURE,
 		NULL,
-		buffer,
+		installedVersion,
 		&length
 	);
-	alreadyInstalled = (err == ERROR_SUCCESS && strcmp(buffer, CorrectVersion) == 0);*/
+	alreadyInstalled = (err == ERROR_SUCCESS && IsVersionSuitable(installedVersion, CorrectVersion));*/
+
+	std::string versionMessage = "(nothing found)";
+	if (strlen(installedVersion) > 0)
+		versionMessage = std::string("(") + installedVersion + (alreadyInstalled ? " >= " : " < " ) + CorrectVersion + ")";
 
 	if (alreadyInstalled) {
-		TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(x64 ? "64" : "32") + "-bit already installed.");
+		TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(x64 ? "64" : "32") + "-bit already installed " + versionMessage + ".");
 		return false;
 	}
 	else {
-		TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(x64 ? "64" : "32") + "-bit not detected.");
+		TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(x64 ? "64" : "32") + "-bit not detected " + versionMessage + ".");
 		return true;
 	}
 }
