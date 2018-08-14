@@ -1143,9 +1143,6 @@ void Sys_Init( void ) {
 		if ( win32.cpuid & CPUID_MMX ) {
 			string += "MMX & ";
 		}
-/*		if ( win32.cpuid & CPUID_3DNOW ) {
-			string += "3DNow! & ";
-		}*/
 		if ( win32.cpuid & CPUID_SSE ) {
 			string += "SSE & ";
 		}
@@ -1170,9 +1167,6 @@ void Sys_Init( void ) {
 		if ( win32.cpuid & CPUID_FMA3 ) {
 			string += "FMA3 & ";
 		}
-/*		if ( win32.cpuid & CPUID_HTT ) {
-			string += "HTT & ";
-		}*/
 		string.StripTrailing( " & " );
 		string.StripTrailing( " with " );
 		win32.sys_cpustring.SetString( string );
@@ -1191,8 +1185,6 @@ void Sys_Init( void ) {
 				id |= CPUID_AMD;
 			} else if ( token.Icmp( "mmx" ) == 0 ) {
 				id |= CPUID_MMX;
-/*			} else if ( token.Icmp( "3dnow" ) == 0 ) {
-				id |= CPUID_3DNOW;*/
 			} else if ( token.Icmp( "sse" ) == 0 ) {
 				id |= CPUID_SSE;
 			} else if ( token.Icmp( "sse2" ) == 0 ) {
@@ -1209,8 +1201,6 @@ void Sys_Init( void ) {
 				id |= CPUID_AVX2;
 			} else if ( token.Icmp( "fma3" ) == 0 ) {
 				id |= CPUID_FMA3;
-/*			} else if ( token.Icmp( "htt" ) == 0 ) {
-				id |= CPUID_HTT;*/
 			}
 		}
 		if ( id == CPUID_NONE ) {

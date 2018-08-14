@@ -1,21 +1,20 @@
 /*****************************************************************************
                     The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
+
+ This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
+
+ The Dark Mod Source Code is free software: you can redistribute it
+ and/or modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the License,
  or (at your option) any later version. For details, see LICENSE.TXT.
- 
+
  Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
-
 
 #include "tr_local.h"
 #include "FrameBuffer.h"
@@ -57,7 +56,7 @@ idCVar r_softShadowsRadius( "r_softShadowsRadius", "1.0", CVAR_RENDERER | CVAR_F
 /* ~ss
 idCVar r_softShadows( "r_softShadows", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Soft shadows. 0 = hard shadows, >0 = light radius" );
 idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shadows debug. 1 = Show penumbra lines, 2 = show penumbra sampling regions, "
-																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
+																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation.");
 idCVar r_softShadMaxSize( "ssmax", "20", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows max penumbra size in pixels. FIXME: Probably wants changing to be a % of screen size.");
 */
 
@@ -88,8 +87,6 @@ idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = b
 idCVar r_skipNewAmbient( "r_skipNewAmbient", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "bypasses all vertex/fragment program ambient drawing" );
 idCVar r_skipBlendLights( "r_skipBlendLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all blend lights" );
 idCVar r_skipFogLights( "r_skipFogLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all fog lights" );
- // idCVar r_skipParallelLights( "r_skipParallelLights", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "skip all parallel lights" );
- // idCVar r_skipProjectedLights( "r_skipProjectedLights", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "skip all projected lights" );
 idCVar r_skipDeforms( "r_skipDeforms", "0", CVAR_RENDERER | CVAR_BOOL, "leave all deform materials in their original state" );
 idCVar r_skipFrontEnd( "r_skipFrontEnd", "0", CVAR_RENDERER | CVAR_BOOL, "bypasses all front end work, but 2D gui rendering still draws" );
 idCVar r_skipUpdates( "r_skipUpdates", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't accept any entity or light updates, making everything static" );
@@ -104,18 +101,18 @@ idCVar r_useSoftParticles( "r_useSoftParticles", "1", CVAR_RENDERER | CVAR_BOOL 
 idCVar r_ignore( "r_ignore", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
 idCVar r_ignore2( "r_ignore2", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
 idCVar r_usePreciseTriangleInteractions( "r_usePreciseTriangleInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "1 = do winding clipping to determine if each ambiguous tri should be lit" );
-idCVar r_useCulling( "r_useCulling", "2", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = sphere, 2 = sphere + box", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
-idCVar r_useLightCulling( "r_useLightCulling", "3", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = box, 2 = exact clip of polyhedron faces, 3 = also areas", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
+idCVar r_useCulling( "r_useCulling", "2", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = sphere, 2 = sphere + box", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
+idCVar r_useLightCulling( "r_useLightCulling", "3", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = box, 2 = exact clip of polyhedron faces, 3 = also areas", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_useLightScissors( "r_useLightScissors", "1", CVAR_RENDERER | CVAR_BOOL, "1 = use custom scissor rectangle for each light" );
 //anon begin
-idCVar r_useLightPortalCulling("r_useLightPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
-idCVar r_useEntityPortalCulling("r_useEntityPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+idCVar r_useLightPortalCulling( "r_useLightPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
+idCVar r_useEntityPortalCulling( "r_useEntityPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 //anon end
-idCVar r_useClippedLightScissors("r_useClippedLightScissors", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+idCVar r_useClippedLightScissors( "r_useClippedLightScissors", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_useEntityCulling( "r_useEntityCulling", "1", CVAR_RENDERER | CVAR_BOOL, "0 = none, 1 = box" );
 idCVar r_useEntityScissors( "r_useEntityScissors", "0", CVAR_RENDERER | CVAR_BOOL, "1 = use custom scissor rectangle for each entity" );
 idCVar r_useInteractionCulling( "r_useInteractionCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions" );
-idCVar r_useInteractionScissors( "r_useInteractionScissors", "2", CVAR_RENDERER | CVAR_INTEGER, "1 = use a custom scissor rectangle for each shadow interaction, 2 = also crop using portal scissors", -2, 2, idCmdSystem::ArgCompletion_Integer<-2,2> );
+idCVar r_useInteractionScissors( "r_useInteractionScissors", "2", CVAR_RENDERER | CVAR_INTEGER, "1 = use a custom scissor rectangle for each shadow interaction, 2 = also crop using portal scissors", -2, 2, idCmdSystem::ArgCompletion_Integer < -2, 2 > );
 idCVar r_useShadowCulling( "r_useShadowCulling", "1", CVAR_RENDERER | CVAR_BOOL, "try to cull shadows from partially visible lights" );
 idCVar r_useFrustumFarDistance( "r_useFrustumFarDistance", "0", CVAR_RENDERER | CVAR_FLOAT, "if != 0 force the view frustum far distance to this distance" );
 idCVar r_logFile( "r_logFile", "0", CVAR_RENDERER | CVAR_INTEGER, "number of frames to emit GL logs" );
@@ -126,8 +123,8 @@ idCVar r_shadowPolygonOffset( "r_shadowPolygonOffset", "-1", CVAR_RENDERER | CVA
 idCVar r_shadowPolygonFactor( "r_shadowPolygonFactor", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "scale value for stencil shadow drawing" );
 idCVar r_frontBuffer( "r_frontBuffer", "0", CVAR_RENDERER | CVAR_BOOL, "draw to front buffer for debugging" );
 idCVar r_skipSubviews( "r_skipSubviews", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = don't render any gui elements on surfaces" );
-idCVar r_skipGuiShaders( "r_skipGuiShaders", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all gui elements on surfaces, 2 = skip drawing but still handle events, 3 = draw but skip events", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
-idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1> );
+idCVar r_skipGuiShaders( "r_skipGuiShaders", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all gui elements on surfaces, 2 = skip drawing but still handle events, 3 = draw but skip events", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
+idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0, 1> );
 idCVar r_subviewOnly( "r_subviewOnly", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged" );
 idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_INTEGER  | CVAR_ARCHIVE, "1 = stencil shadows, 2 = shadow maps (requires r_useGLSL 1)" );
 idCVar r_testARBProgram( "r_testARBProgram", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "experiment with vertex/fragment programs" );
@@ -136,9 +133,9 @@ idCVar r_testGammaBias( "r_testGammaBias", "0", CVAR_RENDERER | CVAR_FLOAT, "if 
 idCVar r_testStepGamma( "r_testStepGamma", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels" );
 idCVar r_lightScale( "r_lightScale", "2", CVAR_RENDERER | CVAR_FLOAT, "all light intensities are multiplied by this" );
 idCVar r_lightSourceRadius( "r_lightSourceRadius", "0", CVAR_RENDERER | CVAR_FLOAT, "for soft-shadow sampling" );
-idCVar r_flareSize( "r_flareSize", "1", CVAR_RENDERER | CVAR_FLOAT, "scale the flare deforms from the material def" ); 
+idCVar r_flareSize( "r_flareSize", "1", CVAR_RENDERER | CVAR_FLOAT, "scale the flare deforms from the material def" );
 
-idCVar r_useExternalShadows( "r_useExternalShadows", "1", CVAR_RENDERER | CVAR_INTEGER, "1 = skip drawing caps when outside the light volume, 2 = force to no caps for testing", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar r_useExternalShadows( "r_useExternalShadows", "1", CVAR_RENDERER | CVAR_INTEGER, "1 = skip drawing caps when outside the light volume, 2 = force to no caps for testing", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_useOptimizedShadows( "r_useOptimizedShadows", "1", CVAR_RENDERER | CVAR_BOOL, "use the dmap generated static shadow volumes" );
 idCVar r_useScissor( "r_useScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor clip as portals and lights are processed" );
 idCVar r_useDepthBoundsTest( "r_useDepthBoundsTest", "1", CVAR_RENDERER | CVAR_BOOL, "use depth bounds test to reduce shadow fill" );
@@ -164,22 +161,22 @@ idCVar r_showUpdates( "r_showUpdates", "0", CVAR_RENDERER | CVAR_BOOL, "report e
 idCVar r_showDemo( "r_showDemo", "0", CVAR_RENDERER | CVAR_BOOL, "report reads and writes to the demo file" );
 idCVar r_showDynamic( "r_showDynamic", "0", CVAR_RENDERER | CVAR_BOOL, "report stats on dynamic surface generation" );
 idCVar r_showDefs( "r_showDefs", "0", CVAR_RENDERER | CVAR_BOOL, "report the number of modeDefs and lightDefs in view" );
-idCVar r_showTrace( "r_showTrace", "0", CVAR_RENDERER | CVAR_INTEGER, "show the intersection of an eye trace with the world", idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar r_showTrace( "r_showTrace", "0", CVAR_RENDERER | CVAR_INTEGER, "show the intersection of an eye trace with the world", idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_showIntensity( "r_showIntensity", "0", CVAR_RENDERER | CVAR_BOOL, "draw the screen colors based on intensity, red = 0, green = 128, blue = 255" );
-idCVar r_showImages( "r_showImages", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show all images instead of rendering, 2 = show in proportional size", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar r_showImages( "r_showImages", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show all images instead of rendering, 2 = show in proportional size", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar com_smp( "com_smp", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "enable SMP" );
 idCVar r_showSmp( "r_showSmp", "0", CVAR_RENDERER | CVAR_BOOL, "show which end (front or back) is blocking" );
 idCVar r_logSmpTimings( "r_logSmpTimings", "0", CVAR_RENDERER | CVAR_BOOL, "log timings for frontend and backend rendering" );
-idCVar r_showLights( "r_showLights", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = just print volumes numbers, highlighting ones covering the view, 2 = also draw planes of each volume, 3 = also draw edges of each volume", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
-idCVar r_showShadows( "r_showShadows", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = visualize the stencil shadow volumes, 2 = draw filled in, 3 = lines with depth test", -1, 3, idCmdSystem::ArgCompletion_Integer<-1,3> );
-idCVar r_showShadowCount( "r_showShadowCount", "0", CVAR_RENDERER | CVAR_INTEGER, "colors screen based on shadow volume depth complexity, >= 2 = print overdraw count based on stencil index values, 3 = only show turboshadows, 4 = only show static shadows", 0, 4, idCmdSystem::ArgCompletion_Integer<0,4> );
+idCVar r_showLights( "r_showLights", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = just print volumes numbers, highlighting ones covering the view, 2 = also draw planes of each volume, 3 = also draw edges of each volume", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
+idCVar r_showShadows( "r_showShadows", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = visualize the stencil shadow volumes, 2 = draw filled in, 3 = lines with depth test", -1, 3, idCmdSystem::ArgCompletion_Integer < -1, 3 > );
+idCVar r_showShadowCount( "r_showShadowCount", "0", CVAR_RENDERER | CVAR_INTEGER, "colors screen based on shadow volume depth complexity, >= 2 = print overdraw count based on stencil index values, 3 = only show turboshadows, 4 = only show static shadows", 0, 4, idCmdSystem::ArgCompletion_Integer<0, 4> );
 idCVar r_showLightScissors( "r_showLightScissors", "0", CVAR_RENDERER | CVAR_BOOL, "show light scissor rectangles" );
 idCVar r_showEntityScissors( "r_showEntityScissors", "0", CVAR_RENDERER | CVAR_BOOL, "show entity scissor rectangles" );
-idCVar r_showInteractionFrustums( "r_showInteractionFrustums", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show a frustum for each interaction, 2 = also draw lines to light origin, 3 = also draw entity bbox", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
-idCVar r_showInteractionScissors( "r_showInteractionScissors", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show screen rectangle which contains the interaction frustum, 2 = also draw construction lines", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
-idCVar r_showLightCount( "r_showLightCount", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = colors surfaces based on light count, 2 = also count everything through walls, 3 = also print overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
+idCVar r_showInteractionFrustums( "r_showInteractionFrustums", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show a frustum for each interaction, 2 = also draw lines to light origin, 3 = also draw entity bbox", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
+idCVar r_showInteractionScissors( "r_showInteractionScissors", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show screen rectangle which contains the interaction frustum, 2 = also draw construction lines", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
+idCVar r_showLightCount( "r_showLightCount", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = colors surfaces based on light count, 2 = also count everything through walls, 3 = also print overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showViewEntitys( "r_showViewEntitys", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = displays the bounding boxes of all view models, 2 = print index numbers, 3 = index number and render model name" );
-idCVar r_showTris( "r_showTris", "0", CVAR_RENDERER | CVAR_INTEGER, "enables wireframe rendering of the world, 1 = only draw visible ones, 2 = draw all front facing, 3 = draw all", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
+idCVar r_showTris( "r_showTris", "0", CVAR_RENDERER | CVAR_INTEGER, "enables wireframe rendering of the world, 1 = only draw visible ones, 2 = draw all front facing, 3 = draw all", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showSurfaceInfo( "r_showSurfaceInfo", "0", CVAR_RENDERER | CVAR_BOOL, "show surface material name under crosshair" );
 idCVar r_showNormals( "r_showNormals", "0", CVAR_RENDERER | CVAR_FLOAT, "draws wireframe normals" );
 idCVar r_showMemory( "r_showMemory", "0", CVAR_RENDERER | CVAR_BOOL, "print frame memory utilization" );
@@ -190,16 +187,16 @@ idCVar r_showSurfaces( "r_showSurfaces", "0", CVAR_RENDERER | CVAR_BOOL, "report
 idCVar r_showPrimitives( "r_showPrimitives", "0", CVAR_RENDERER | CVAR_INTEGER, "report drawsurf/index/vertex counts" );
 idCVar r_showEdges( "r_showEdges", "0", CVAR_RENDERER | CVAR_BOOL, "draw the sil edges" );
 idCVar r_showTexturePolarity( "r_showTexturePolarity", "0", CVAR_RENDERER | CVAR_BOOL, "shade triangles by texture area polarity" );
-idCVar r_showTangentSpace( "r_showTangentSpace", "0", CVAR_RENDERER | CVAR_INTEGER, "shade triangles by tangent space, 1 = use 1st tangent vector, 2 = use 2nd tangent vector, 3 = use normal vector", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
+idCVar r_showTangentSpace( "r_showTangentSpace", "0", CVAR_RENDERER | CVAR_INTEGER, "shade triangles by tangent space, 1 = use 1st tangent vector, 2 = use 2nd tangent vector, 3 = use normal vector", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showDominantTri( "r_showDominantTri", "0", CVAR_RENDERER | CVAR_BOOL, "draw lines from vertexes to center of dominant triangles" );
 idCVar r_showAlloc( "r_showAlloc", "0", CVAR_RENDERER | CVAR_BOOL, "report alloc/free counts" );
 idCVar r_showTextureVectors( "r_showTextureVectors", "0", CVAR_RENDERER | CVAR_FLOAT, " if > 0 draw each triangles texture (tangent) vectors" );
-idCVar r_showOverDraw( "r_showOverDraw", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = geometry overdraw, 2 = light interaction overdraw, 3 = geometry and light interaction overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
+idCVar r_showOverDraw( "r_showOverDraw", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = geometry overdraw, 2 = light interaction overdraw, 3 = geometry and light interaction overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 
 idCVar r_lockSurfaces( "r_lockSurfaces", "0", CVAR_RENDERER | CVAR_BOOL, "allow moving the view point without changing the composition of the scene, including culling" );
 idCVar r_useEntityCallbacks( "r_useEntityCallbacks", "1", CVAR_RENDERER | CVAR_BOOL, "if 0, issue the callback immediately at update time, rather than defering" );
 
-idCVar r_showSkel( "r_showSkel", "0", CVAR_RENDERER | CVAR_INTEGER, "draw the skeleton when model animates, 1 = draw model with skeleton, 2 = draw skeleton only", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar r_showSkel( "r_showSkel", "0", CVAR_RENDERER | CVAR_INTEGER, "draw the skeleton when model animates, 1 = draw model with skeleton, 2 = draw skeleton only", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_jointNameScale( "r_jointNameScale", "0.02", CVAR_RENDERER | CVAR_FLOAT, "size of joint names when r_showskel is set to 1" );
 idCVar r_jointNameOffset( "r_jointNameOffset", "0.5", CVAR_RENDERER | CVAR_FLOAT, "offset of joint names when r_showskel is set to 1" );
 
@@ -213,7 +210,7 @@ idCVar r_materialOverride( "r_materialOverride", "", CVAR_RENDERER, "overrides a
 idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 
 // greebo: screenshot format CVAR, by default convert the generated TGA to JPG
-idCVar r_screenshot_format(		"r_screenshot_format", "jpg",   CVAR_RENDERER | CVAR_ARCHIVE, "Image format used to store ingame screenshots: png/tga/jpg/bmp." );
+idCVar r_screenshot_format(	"r_screenshot_format", "jpg",   CVAR_RENDERER | CVAR_ARCHIVE, "Image format used to store ingame screenshots: png/tga/jpg/bmp." );
 
 // rebb: toggle for dedicated ambient light shader use, mainly for performance testing
 idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL, "enable dedicated ambientLight shader" );
@@ -241,49 +238,19 @@ idCVar r_useMultiDraw( "r_useMultiDraw", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_A
 // FBO
 idCVar r_useFbo( "r_useFBO", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );
 idCVar r_nvidiaOverride( "r_nvidiaOverride", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
-idCVar r_fboDebug("r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0-3 individual fbo attachments");
+idCVar r_fboDebug( "r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0-3 individual fbo attachments" );
 idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32" );
 idCVar r_fboDepthBits( "r_fboDepthBits", "24", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "16, 24, 32" );
 idCVar r_shadowMapSize( "r_shadowMapSize", "256", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Shadow map texture resolution" );
 idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
-idCVar r_fboSeparateStencil("r_fboSeparateStencil", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use separate depth and stencil FBO attachments. Only supported on some Intel GPU's");
+idCVar r_fboSeparateStencil( "r_fboSeparateStencil", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use separate depth and stencil FBO attachments. Only supported on some Intel GPU's" );
 
 // relocate stgatilov ROQ options
+idCVar r_cinematic_legacyRoq( "r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
+                              "Play cinematics with original Doom3 code or with FFmpeg libraries. "
+                              "0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg" );
 
-idCVar r_cinematic_legacyRoq("r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
-	"Play cinematics with original Doom3 code or with FFmpeg libraries. "
-	"0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg");
-
-void (APIENTRY * qglActiveTexture)(GLenum texture);
-/*void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
-void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
-void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
-
-*void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
-void ( APIENTRY *qglCombinerParameterivNV )( GLenum pname, const GLint *params );
-void ( APIENTRY *qglCombinerParameterfNV )( GLenum pname, const GLfloat param );
-void ( APIENTRY *qglCombinerParameteriNV )( GLenum pname, const GLint param );
-void ( APIENTRY *qglCombinerInputNV )( GLenum stage, GLenum portion, GLenum variable, GLenum input,
-											  GLenum mapping, GLenum componentUsage );
-void ( APIENTRY *qglCombinerOutputNV )( GLenum stage, GLenum portion, GLenum abOutput, GLenum cdOutput, 
-											   GLenum sumOutput, GLenum scale, GLenum bias, GLboolean abDotProduct,
-											   GLboolean cdDotProduct, GLboolean muxSum );
-void ( APIENTRY *qglFinalCombinerInputNV )( GLenum variable, GLenum input, GLenum mapping, GLenum componentUsage );
-
-
-void (APIENTRY *qglVertexArrayRangeNV)( GLsizei length, void *pointer );
-// TTimo: wgl vs glX
-// http://oss.sgi.com/projects/ogl-sample/registry/NV/vertex_array_range.txt
-// since APIs are the same anyway, let's be wgl/glX agnostic
-void *(APIENTRY *qAllocateMemoryNV)( GLsizei size, float readFrequency, float writeFrequency, float priority);
-void (APIENTRY *qFreeMemoryNV)( void *pointer );
-#ifdef GLX_VERSION_1_1
-#define Q_ALLOCATE_MEMORY_NV "glXAllocateMemoryNV"
-#define Q_FREE_MEMORY_NV "glXFreeMemoryNV"
-#else
-#define Q_ALLOCATE_MEMORY_NV "wglAllocateMemoryNV"
-#define Q_FREE_MEMORY_NV "wglFreeMemoryNV"
-#endif*/
+void ( APIENTRY * qglActiveTexture )( GLenum texture );
 
 // separate stencil
 PFNGLSTENCILOPSEPARATEPROC				qglStencilOpSeparate;
@@ -415,7 +382,6 @@ bool R_CheckExtension( const char *name ) {
 		common->Printf( "^1X^0 - %s not found\n", name );
 		return false;
 	}
-
 	common->Printf( "^2v^0 - using %s\n", name );
 	return true;
 }
@@ -432,19 +398,22 @@ static void R_CheckPortableExtensions( void ) {
 	common->Printf( "Checking portable OpenGL extensions...\n" );
 
 	// GL_ARB_multitexture
-	if (!R_CheckExtension( "GL_ARB_multitexture" ))
+	if ( !R_CheckExtension( "GL_ARB_multitexture" ) ) {
 		common->Error( "GL_ARB_multitexture not supported!\n" );
-	qglActiveTexture = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTexture" );
+	}
+	qglActiveTexture = ( void( APIENTRY * )( GLenum ) )GLimp_ExtensionPointer( "glActiveTexture" );
 	qglGetIntegerv( GL_MAX_TEXTURE_COORDS_ARB, &glConfig.maxTextureCoords );
 	common->Printf( "Max texture coords: %d\n", glConfig.maxTextureCoords );
 	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );
 	common->Printf( "Max active textures: %d\n", glConfig.maxTextures );
-	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS )
+	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS ) {
 		common->Error( "   Too few!\n" );
+	}
 
 	// GL_ARB_texture_cube_map
-	if (!R_CheckExtension( "GL_ARB_texture_cube_map" ))
+	if ( !R_CheckExtension( "GL_ARB_texture_cube_map" ) ) {
 		common->Error( "GL_ARB_texture_cube_map not supported!\n" );
+	}
 
 	// GL_ARB_texture_non_power_of_two
 	glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension( "GL_ARB_texture_non_power_of_two" );
@@ -453,8 +422,8 @@ static void R_CheckPortableExtensions( void ) {
 	// DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
 	if ( R_CheckExtension( "GL_ARB_texture_compression" ) && R_CheckExtension( "GL_EXT_texture_compression_s3tc" ) ) {
 		glConfig.textureCompressionAvailable = true;
-		qglCompressedTexImage2DARB = (PFNGLCOMPRESSEDTEXIMAGE2DARBPROC)GLimp_ExtensionPointer( "glCompressedTexImage2DARB" );
-		qglGetCompressedTexImageARB = (PFNGLGETCOMPRESSEDTEXIMAGEARBPROC)GLimp_ExtensionPointer( "glGetCompressedTexImageARB" );
+		qglCompressedTexImage2DARB = ( PFNGLCOMPRESSEDTEXIMAGE2DARBPROC )GLimp_ExtensionPointer( "glCompressedTexImage2DARB" );
+		qglGetCompressedTexImageARB = ( PFNGLGETCOMPRESSEDTEXIMAGEARBPROC )GLimp_ExtensionPointer( "glGetCompressedTexImageARB" );
 	} else {
 		glConfig.textureCompressionAvailable = false;
 	}
@@ -490,8 +459,8 @@ static void R_CheckPortableExtensions( void ) {
 
 	// separate stencil (part of OpenGL 2.0 spec)
 	if ( glConfig.glVersion >= 2.0 ) {
-		qglStencilOpSeparate = (PFNGLSTENCILOPSEPARATEPROC)GLimp_ExtensionPointer( "glStencilOpSeparate" );
-		if( qglStencilOpSeparate ) {
+		qglStencilOpSeparate = ( PFNGLSTENCILOPSEPARATEPROC )GLimp_ExtensionPointer( "glStencilOpSeparate" );
+		if ( qglStencilOpSeparate ) {
 			common->Printf( "^2v^0 - using %s\n", "glStencilOpSeparate" );
 			glConfig.twoSidedStencilAvailable = true;
 		} else {
@@ -502,84 +471,85 @@ static void R_CheckPortableExtensions( void ) {
 
 	// ARB_vertex_buffer_object
 	//glConfig.vertexBufferObjectAvailable = R_CheckExtension( "GL_ARB_vertex_buffer_object" );
-	if ( !R_CheckExtension( "GL_ARB_vertex_buffer_object" ) )
+	if ( !R_CheckExtension( "GL_ARB_vertex_buffer_object" ) ) {
 		common->Error( "VBO NOT SUPPORTED" );
-	qglBindBufferARB = (PFNGLBINDBUFFERARBPROC)GLimp_ExtensionPointer( "glBindBufferARB");
-	qglDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)GLimp_ExtensionPointer( "glDeleteBuffersARB");
-	qglGenBuffersARB = (PFNGLGENBUFFERSARBPROC)GLimp_ExtensionPointer( "glGenBuffersARB");
-	qglIsBufferARB = (PFNGLISBUFFERARBPROC)GLimp_ExtensionPointer( "glIsBufferARB");
-	qglBufferDataARB = (PFNGLBUFFERDATAARBPROC)GLimp_ExtensionPointer( "glBufferDataARB");
-	qglBufferSubDataARB = (PFNGLBUFFERSUBDATAARBPROC)GLimp_ExtensionPointer( "glBufferSubDataARB");
-	qglGetBufferSubDataARB = (PFNGLGETBUFFERSUBDATAARBPROC)GLimp_ExtensionPointer( "glGetBufferSubDataARB");
-	qglMapBufferARB = (PFNGLMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glMapBufferARB");
-	qglUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glUnmapBufferARB");
-	qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
-	qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
+	}
+	qglBindBufferARB = ( PFNGLBINDBUFFERARBPROC )GLimp_ExtensionPointer( "glBindBufferARB" );
+	qglDeleteBuffersARB = ( PFNGLDELETEBUFFERSARBPROC )GLimp_ExtensionPointer( "glDeleteBuffersARB" );
+	qglGenBuffersARB = ( PFNGLGENBUFFERSARBPROC )GLimp_ExtensionPointer( "glGenBuffersARB" );
+	qglIsBufferARB = ( PFNGLISBUFFERARBPROC )GLimp_ExtensionPointer( "glIsBufferARB" );
+	qglBufferDataARB = ( PFNGLBUFFERDATAARBPROC )GLimp_ExtensionPointer( "glBufferDataARB" );
+	qglBufferSubDataARB = ( PFNGLBUFFERSUBDATAARBPROC )GLimp_ExtensionPointer( "glBufferSubDataARB" );
+	qglGetBufferSubDataARB = ( PFNGLGETBUFFERSUBDATAARBPROC )GLimp_ExtensionPointer( "glGetBufferSubDataARB" );
+	qglMapBufferARB = ( PFNGLMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glMapBufferARB" );
+	qglUnmapBufferARB = ( PFNGLUNMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glUnmapBufferARB" );
+	qglGetBufferParameterivARB = ( PFNGLGETBUFFERPARAMETERIVARBPROC )GLimp_ExtensionPointer( "glGetBufferParameterivARB" );
+	qglGetBufferPointervARB = ( PFNGLGETBUFFERPOINTERVARBPROC )GLimp_ExtensionPointer( "glGetBufferPointervARB" );
 	qglUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
 	qglBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
 
 	// ARB_map_buffer_range
-	glConfig.mapBufferRangeAvailable = R_CheckExtension("GL_ARB_map_buffer_range");
-	if (glConfig.mapBufferRangeAvailable) {
-		qglMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)GLimp_ExtensionPointer("glMapBufferRange");
-		qglFlushMappedBufferRange = (PFNGLFLUSHMAPPEDBUFFERRANGEPROC)GLimp_ExtensionPointer("glFlushMappedBufferRange");
+	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range" );
+	if ( glConfig.mapBufferRangeAvailable ) {
+		qglMapBufferRange = ( PFNGLMAPBUFFERRANGEPROC )GLimp_ExtensionPointer( "glMapBufferRange" );
+		qglFlushMappedBufferRange = ( PFNGLFLUSHMAPPEDBUFFERRANGEPROC )GLimp_ExtensionPointer( "glFlushMappedBufferRange" );
 	}
 
 	// ARB_vertex_program
-	qglVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
-	qglEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
-	qglDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glDisableVertexAttribArrayARB" );
-	qglProgramStringARB = (PFNGLPROGRAMSTRINGARBPROC)GLimp_ExtensionPointer( "glProgramStringARB" );
-	qglBindProgramARB = (PFNGLBINDPROGRAMARBPROC)GLimp_ExtensionPointer( "glBindProgramARB" );
-	qglGenProgramsARB = (PFNGLGENPROGRAMSARBPROC)GLimp_ExtensionPointer( "glGenProgramsARB" );
-	qglProgramEnvParameter4fvARB = (PFNGLPROGRAMENVPARAMETER4FVARBPROC)GLimp_ExtensionPointer( "glProgramEnvParameter4fvARB" );
-	qglProgramLocalParameter4fvARB = (PFNGLPROGRAMLOCALPARAMETER4FVARBPROC)GLimp_ExtensionPointer( "glProgramLocalParameter4fvARB" );
+	qglVertexAttribPointer = ( PFNGLVERTEXATTRIBPOINTERARBPROC )GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
+	qglEnableVertexAttribArray = ( PFNGLENABLEVERTEXATTRIBARRAYARBPROC )GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
+	qglDisableVertexAttribArray = ( PFNGLDISABLEVERTEXATTRIBARRAYARBPROC )GLimp_ExtensionPointer( "glDisableVertexAttribArrayARB" );
+	qglProgramStringARB = ( PFNGLPROGRAMSTRINGARBPROC )GLimp_ExtensionPointer( "glProgramStringARB" );
+	qglBindProgramARB = ( PFNGLBINDPROGRAMARBPROC )GLimp_ExtensionPointer( "glBindProgramARB" );
+	qglGenProgramsARB = ( PFNGLGENPROGRAMSARBPROC )GLimp_ExtensionPointer( "glGenProgramsARB" );
+	qglProgramEnvParameter4fvARB = ( PFNGLPROGRAMENVPARAMETER4FVARBPROC )GLimp_ExtensionPointer( "glProgramEnvParameter4fvARB" );
+	qglProgramLocalParameter4fvARB = ( PFNGLPROGRAMLOCALPARAMETER4FVARBPROC )GLimp_ExtensionPointer( "glProgramLocalParameter4fvARB" );
 
- 	// GL_EXT_depth_bounds_test
- 	glConfig.depthBoundsTestAvailable = R_CheckExtension( "GL_EXT_depth_bounds_test" );
- 	if ( glConfig.depthBoundsTestAvailable ) {
- 		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
- 	}
-	
+	// GL_EXT_depth_bounds_test
+	glConfig.depthBoundsTestAvailable = R_CheckExtension( "GL_EXT_depth_bounds_test" );
+	if ( glConfig.depthBoundsTestAvailable ) {
+		qglDepthBoundsEXT = ( PFNGLDEPTHBOUNDSEXTPROC )GLimp_ExtensionPointer( "glDepthBoundsEXT" );
+	}
+
 	// GLSL (core since GL 2.0)
-	qglAttachShader = (PFNGLATTACHSHADERPROC)GLimp_ExtensionPointer( "glAttachShader" );
-	qglCompileShader = (PFNGLCOMPILESHADERPROC)GLimp_ExtensionPointer( "glCompileShader" );
-	qglCreateProgram = (PFNGLCREATEPROGRAMPROC)GLimp_ExtensionPointer( "glCreateProgram" );
-	qglCreateShader = (PFNGLCREATESHADERPROC)GLimp_ExtensionPointer( "glCreateShader" );
-	qglLinkProgram = (PFNGLLINKPROGRAMPROC)GLimp_ExtensionPointer( "glLinkProgram" );
-	qglShaderSource = (PFNGLSHADERSOURCEPROC)GLimp_ExtensionPointer( "glShaderSource" );
-	qglUseProgram = (PFNGLUSEPROGRAMPROC)GLimp_ExtensionPointer( "glUseProgram" );
-	qglUniform1f = (PFNGLUNIFORM1FPROC)GLimp_ExtensionPointer( "glUniform1f" );
-	qglUniform2f = (PFNGLUNIFORM2FPROC)GLimp_ExtensionPointer( "glUniform2f" );
-	qglUniform3f = (PFNGLUNIFORM3FPROC)GLimp_ExtensionPointer( "glUniform3f" );
-	qglUniform4f = (PFNGLUNIFORM4FPROC)GLimp_ExtensionPointer( "glUniform4f" );
-	qglUniform1i = (PFNGLUNIFORM1IPROC)GLimp_ExtensionPointer( "glUniform1i" );
-	qglUniform2i = (PFNGLUNIFORM2IPROC)GLimp_ExtensionPointer( "glUniform2i" );
-	qglUniform3i = (PFNGLUNIFORM3IPROC)GLimp_ExtensionPointer( "glUniform3i" );
-	qglUniform4i = (PFNGLUNIFORM4IPROC)GLimp_ExtensionPointer( "glUniform4i" );
-	qglUniform1fv = (PFNGLUNIFORM1FVPROC)GLimp_ExtensionPointer( "glUniform1fv" );
-	qglUniform2fv = (PFNGLUNIFORM2FVPROC)GLimp_ExtensionPointer( "glUniform2fv" );
-	qglUniform3fv = (PFNGLUNIFORM3FVPROC)GLimp_ExtensionPointer( "glUniform3fv" );
-	qglUniform4fv = (PFNGLUNIFORM4FVPROC)GLimp_ExtensionPointer( "glUniform4fv" );
-	qglUniform1iv = (PFNGLUNIFORM1IVPROC)GLimp_ExtensionPointer( "glUniform1iv" );
-	qglUniform2iv = (PFNGLUNIFORM2IVPROC)GLimp_ExtensionPointer( "glUniform2iv" );
-	qglUniform3iv = (PFNGLUNIFORM3IVPROC)GLimp_ExtensionPointer( "glUniform3iv" );
-	qglUniform4iv = (PFNGLUNIFORM4IVPROC)GLimp_ExtensionPointer( "glUniform4iv" );
-	qglUniformMatrix2fv = (PFNGLUNIFORMMATRIX2FVPROC)GLimp_ExtensionPointer( "glUniformMatrix2fv" );
-	qglUniformMatrix3fv = (PFNGLUNIFORMMATRIX3FVPROC)GLimp_ExtensionPointer( "glUniformMatrix3fv" );
-	qglUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GLimp_ExtensionPointer( "glUniformMatrix4fv" );
-	qglValidateProgram = (PFNGLVALIDATEPROGRAMPROC)GLimp_ExtensionPointer( "glValidateProgram" );
-	qglGetShaderiv = (PFNGLGETSHADERIVPROC)GLimp_ExtensionPointer( "glGetShaderiv" );
-	qglGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glGetAttribLocation" );
-	qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
-	qglIsProgram = (PFNGLISPROGRAMPROC)GLimp_ExtensionPointer( "glIsProgram" );
-	qglIsShader = (PFNGLISSHADERPROC)GLimp_ExtensionPointer( "glIsShader" );
-	qglGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)GLimp_ExtensionPointer( "glGetShaderInfoLog" );
-	qglDeleteProgram = (PFNGLDELETEPROGRAMPROC)GLimp_ExtensionPointer( "glDeleteProgram" );
-	qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
-	qglGetProgramiv = (PFNGLGETPROGRAMIVPROC)GLimp_ExtensionPointer( "glGetProgramiv" );
-	qglGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)GLimp_ExtensionPointer( "glGetProgramInfoLog" );
-	qglBindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glBindAttribLocation" );
+	qglAttachShader = ( PFNGLATTACHSHADERPROC )GLimp_ExtensionPointer( "glAttachShader" );
+	qglCompileShader = ( PFNGLCOMPILESHADERPROC )GLimp_ExtensionPointer( "glCompileShader" );
+	qglCreateProgram = ( PFNGLCREATEPROGRAMPROC )GLimp_ExtensionPointer( "glCreateProgram" );
+	qglCreateShader = ( PFNGLCREATESHADERPROC )GLimp_ExtensionPointer( "glCreateShader" );
+	qglLinkProgram = ( PFNGLLINKPROGRAMPROC )GLimp_ExtensionPointer( "glLinkProgram" );
+	qglShaderSource = ( PFNGLSHADERSOURCEPROC )GLimp_ExtensionPointer( "glShaderSource" );
+	qglUseProgram = ( PFNGLUSEPROGRAMPROC )GLimp_ExtensionPointer( "glUseProgram" );
+	qglUniform1f = ( PFNGLUNIFORM1FPROC )GLimp_ExtensionPointer( "glUniform1f" );
+	qglUniform2f = ( PFNGLUNIFORM2FPROC )GLimp_ExtensionPointer( "glUniform2f" );
+	qglUniform3f = ( PFNGLUNIFORM3FPROC )GLimp_ExtensionPointer( "glUniform3f" );
+	qglUniform4f = ( PFNGLUNIFORM4FPROC )GLimp_ExtensionPointer( "glUniform4f" );
+	qglUniform1i = ( PFNGLUNIFORM1IPROC )GLimp_ExtensionPointer( "glUniform1i" );
+	qglUniform2i = ( PFNGLUNIFORM2IPROC )GLimp_ExtensionPointer( "glUniform2i" );
+	qglUniform3i = ( PFNGLUNIFORM3IPROC )GLimp_ExtensionPointer( "glUniform3i" );
+	qglUniform4i = ( PFNGLUNIFORM4IPROC )GLimp_ExtensionPointer( "glUniform4i" );
+	qglUniform1fv = ( PFNGLUNIFORM1FVPROC )GLimp_ExtensionPointer( "glUniform1fv" );
+	qglUniform2fv = ( PFNGLUNIFORM2FVPROC )GLimp_ExtensionPointer( "glUniform2fv" );
+	qglUniform3fv = ( PFNGLUNIFORM3FVPROC )GLimp_ExtensionPointer( "glUniform3fv" );
+	qglUniform4fv = ( PFNGLUNIFORM4FVPROC )GLimp_ExtensionPointer( "glUniform4fv" );
+	qglUniform1iv = ( PFNGLUNIFORM1IVPROC )GLimp_ExtensionPointer( "glUniform1iv" );
+	qglUniform2iv = ( PFNGLUNIFORM2IVPROC )GLimp_ExtensionPointer( "glUniform2iv" );
+	qglUniform3iv = ( PFNGLUNIFORM3IVPROC )GLimp_ExtensionPointer( "glUniform3iv" );
+	qglUniform4iv = ( PFNGLUNIFORM4IVPROC )GLimp_ExtensionPointer( "glUniform4iv" );
+	qglUniformMatrix2fv = ( PFNGLUNIFORMMATRIX2FVPROC )GLimp_ExtensionPointer( "glUniformMatrix2fv" );
+	qglUniformMatrix3fv = ( PFNGLUNIFORMMATRIX3FVPROC )GLimp_ExtensionPointer( "glUniformMatrix3fv" );
+	qglUniformMatrix4fv = ( PFNGLUNIFORMMATRIX4FVPROC )GLimp_ExtensionPointer( "glUniformMatrix4fv" );
+	qglValidateProgram = ( PFNGLVALIDATEPROGRAMPROC )GLimp_ExtensionPointer( "glValidateProgram" );
+	qglGetShaderiv = ( PFNGLGETSHADERIVPROC )GLimp_ExtensionPointer( "glGetShaderiv" );
+	qglGetAttribLocation = ( PFNGLGETATTRIBLOCATIONPROC )GLimp_ExtensionPointer( "glGetAttribLocation" );
+	qglGetUniformLocation = ( PFNGLGETUNIFORMLOCATIONPROC )GLimp_ExtensionPointer( "glGetUniformLocation" );
+	qglIsProgram = ( PFNGLISPROGRAMPROC )GLimp_ExtensionPointer( "glIsProgram" );
+	qglIsShader = ( PFNGLISSHADERPROC )GLimp_ExtensionPointer( "glIsShader" );
+	qglGetShaderInfoLog = ( PFNGLGETSHADERINFOLOGPROC )GLimp_ExtensionPointer( "glGetShaderInfoLog" );
+	qglDeleteProgram = ( PFNGLDELETEPROGRAMPROC )GLimp_ExtensionPointer( "glDeleteProgram" );
+	qglDeleteShader = ( PFNGLDELETESHADERPROC )GLimp_ExtensionPointer( "glDeleteShader" );
+	qglGetProgramiv = ( PFNGLGETPROGRAMIVPROC )GLimp_ExtensionPointer( "glGetProgramiv" );
+	qglGetProgramInfoLog = ( PFNGLGETPROGRAMINFOLOGPROC )GLimp_ExtensionPointer( "glGetProgramInfoLog" );
+	qglBindAttribLocation = ( PFNGLBINDATTRIBLOCATIONPROC )GLimp_ExtensionPointer( "glBindAttribLocation" );
 
 	bool hasArbFramebuffer = R_CheckExtension( "GL_ARB_framebuffer_object" );
 	if ( hasArbFramebuffer ) {
@@ -588,54 +558,55 @@ static void R_CheckPortableExtensions( void ) {
 		glConfig.framebufferMultisampleAvailable = true;
 		glConfig.framebufferPackedDepthStencilAvailable = true;
 		// Frame Buffer Objects
-		qglIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)GLimp_ExtensionPointer( "glIsRenderbuffer" );
-		qglBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)GLimp_ExtensionPointer( "glBindRenderbuffer" );
-		qglDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)GLimp_ExtensionPointer( "glDeleteRenderbuffers" );
-		qglGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)GLimp_ExtensionPointer( "glGenRenderbuffers" );
-		qglRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)GLimp_ExtensionPointer( "glRenderbufferStorage" );
-		qglGetRenderbufferParameteriv = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)GLimp_ExtensionPointer( "glGetRenderbufferParameteriv" );
-		qglIsFramebuffer = (PFNGLISFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glIsFramebuffer" );
-		qglBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBindFramebuffer" );
-		qglDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)GLimp_ExtensionPointer( "glDeleteFramebuffers" );
-		qglGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)GLimp_ExtensionPointer( "glGenFramebuffers" );
-		qglCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)GLimp_ExtensionPointer( "glCheckFramebufferStatus" );
-		qglFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)GLimp_ExtensionPointer( "glFramebufferTexture1D" );
-		qglFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)GLimp_ExtensionPointer( "glFramebufferTexture2D" );
-		qglFramebufferTexture = (PFNGLFRAMEBUFFERTEXTUREPROC)GLimp_ExtensionPointer( "glFramebufferTexture" );
-		qglFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)GLimp_ExtensionPointer( "glFramebufferRenderbuffer" );
-		qglGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)GLimp_ExtensionPointer( "glGetFramebufferAttachmentParameteriv" );
-		qglGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer( "glGenerateMipmap" );
-		qglBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBlitFramebuffer" );
-		qglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)GLimp_ExtensionPointer( "glRenderbufferStorageMultisample" );
-		qglFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
-		qglDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer( "glDrawBuffers" );
-		qglCopyImageSubData = (PFNGLCOPYIMAGESUBDATANVPROC)GLimp_ExtensionPointer( "glCopyImageSubData" );
+		qglIsRenderbuffer = ( PFNGLISRENDERBUFFERPROC )GLimp_ExtensionPointer( "glIsRenderbuffer" );
+		qglBindRenderbuffer = ( PFNGLBINDRENDERBUFFERPROC )GLimp_ExtensionPointer( "glBindRenderbuffer" );
+		qglDeleteRenderbuffers = ( PFNGLDELETERENDERBUFFERSPROC )GLimp_ExtensionPointer( "glDeleteRenderbuffers" );
+		qglGenRenderbuffers = ( PFNGLGENRENDERBUFFERSPROC )GLimp_ExtensionPointer( "glGenRenderbuffers" );
+		qglRenderbufferStorage = ( PFNGLRENDERBUFFERSTORAGEPROC )GLimp_ExtensionPointer( "glRenderbufferStorage" );
+		qglGetRenderbufferParameteriv = ( PFNGLGETRENDERBUFFERPARAMETERIVPROC )GLimp_ExtensionPointer( "glGetRenderbufferParameteriv" );
+		qglIsFramebuffer = ( PFNGLISFRAMEBUFFERPROC )GLimp_ExtensionPointer( "glIsFramebuffer" );
+		qglBindFramebuffer = ( PFNGLBINDFRAMEBUFFERPROC )GLimp_ExtensionPointer( "glBindFramebuffer" );
+		qglDeleteFramebuffers = ( PFNGLDELETEFRAMEBUFFERSPROC )GLimp_ExtensionPointer( "glDeleteFramebuffers" );
+		qglGenFramebuffers = ( PFNGLGENFRAMEBUFFERSPROC )GLimp_ExtensionPointer( "glGenFramebuffers" );
+		qglCheckFramebufferStatus = ( PFNGLCHECKFRAMEBUFFERSTATUSPROC )GLimp_ExtensionPointer( "glCheckFramebufferStatus" );
+		qglFramebufferTexture1D = ( PFNGLFRAMEBUFFERTEXTURE1DPROC )GLimp_ExtensionPointer( "glFramebufferTexture1D" );
+		qglFramebufferTexture2D = ( PFNGLFRAMEBUFFERTEXTURE2DPROC )GLimp_ExtensionPointer( "glFramebufferTexture2D" );
+		qglFramebufferTexture = ( PFNGLFRAMEBUFFERTEXTUREPROC )GLimp_ExtensionPointer( "glFramebufferTexture" );
+		qglFramebufferRenderbuffer = ( PFNGLFRAMEBUFFERRENDERBUFFERPROC )GLimp_ExtensionPointer( "glFramebufferRenderbuffer" );
+		qglGetFramebufferAttachmentParameteriv = ( PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC )GLimp_ExtensionPointer( "glGetFramebufferAttachmentParameteriv" );
+		qglGenerateMipmap = ( PFNGLGENERATEMIPMAPPROC )GLimp_ExtensionPointer( "glGenerateMipmap" );
+		qglBlitFramebuffer = ( PFNGLBLITFRAMEBUFFERPROC )GLimp_ExtensionPointer( "glBlitFramebuffer" );
+		qglRenderbufferStorageMultisample = ( PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC )GLimp_ExtensionPointer( "glRenderbufferStorageMultisample" );
+		qglFramebufferTextureLayer = ( PFNGLFRAMEBUFFERTEXTURELAYERPROC )GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
+		qglDrawBuffers = ( PFNGLDRAWBUFFERSPROC )GLimp_ExtensionPointer( "glDrawBuffers" );
+		qglCopyImageSubData = ( PFNGLCOPYIMAGESUBDATANVPROC )GLimp_ExtensionPointer( "glCopyImageSubData" );
 		// State management
 		//qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
 	} else {
 		glConfig.framebufferObjectAvailable = R_CheckExtension( "GL_EXT_framebuffer_object" );
 		glConfig.framebufferBlitAvailable = R_CheckExtension( "GL_EXT_framebuffer_blit" );
-		glConfig.framebufferMultisampleAvailable = R_CheckExtension("GL_EXT_framebuffer_multisample");
-		glConfig.framebufferPackedDepthStencilAvailable = R_CheckExtension("GL_EXT_packed_depth_stencil");
+		glConfig.framebufferMultisampleAvailable = R_CheckExtension( "GL_EXT_framebuffer_multisample" );
+		glConfig.framebufferPackedDepthStencilAvailable = R_CheckExtension( "GL_EXT_packed_depth_stencil" );
 		if ( glConfig.framebufferObjectAvailable ) {
-			qglGenFramebuffers = (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer( "glGenFramebuffersEXT" );
-			qglBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBindFramebufferEXT" );
-			qglDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)GLimp_ExtensionPointer( "glDeleteFramebuffersEXT" );
-			qglFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer( "glFramebufferTexture2DEXT" );
-			qglCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)GLimp_ExtensionPointer( "glCheckFramebufferStatusEXT" );
-			qglGenRenderbuffers = (PFNGLGENRENDERBUFFERSEXTPROC)GLimp_ExtensionPointer( "glGenRenderbuffersEXT" );
-			qglBindRenderbuffer = (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer( "glBindRenderbufferEXT" );
-			qglRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer( "glRenderbufferStorageEXT" );
-			qglFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer( "glFramebufferRenderbufferEXT" );
-			qglGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer( "glGenerateMipmapEXT" ); // why here?
+			qglGenFramebuffers = ( PFNGLGENFRAMEBUFFERSEXTPROC )GLimp_ExtensionPointer( "glGenFramebuffersEXT" );
+			qglBindFramebuffer = ( PFNGLBINDFRAMEBUFFERPROC )GLimp_ExtensionPointer( "glBindFramebufferEXT" );
+			qglDeleteFramebuffers = ( PFNGLDELETEFRAMEBUFFERSPROC )GLimp_ExtensionPointer( "glDeleteFramebuffersEXT" );
+			qglFramebufferTexture2D = ( PFNGLFRAMEBUFFERTEXTURE2DEXTPROC )GLimp_ExtensionPointer( "glFramebufferTexture2DEXT" );
+			qglCheckFramebufferStatus = ( PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC )GLimp_ExtensionPointer( "glCheckFramebufferStatusEXT" );
+			qglGenRenderbuffers = ( PFNGLGENRENDERBUFFERSEXTPROC )GLimp_ExtensionPointer( "glGenRenderbuffersEXT" );
+			qglBindRenderbuffer = ( PFNGLBINDRENDERBUFFEREXTPROC )GLimp_ExtensionPointer( "glBindRenderbufferEXT" );
+			qglRenderbufferStorage = ( PFNGLRENDERBUFFERSTORAGEEXTPROC )GLimp_ExtensionPointer( "glRenderbufferStorageEXT" );
+			qglFramebufferRenderbuffer = ( PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC )GLimp_ExtensionPointer( "glFramebufferRenderbufferEXT" );
+			qglGenerateMipmap = ( PFNGLGENERATEMIPMAPPROC )GLimp_ExtensionPointer( "glGenerateMipmapEXT" ); // why here?
 		}
 		if ( glConfig.framebufferBlitAvailable ) {
-			qglBlitFramebuffer = (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer( "glBlitFramebufferEXT" );
+			qglBlitFramebuffer = ( PFNGLBLITFRAMEBUFFEREXTPROC )GLimp_ExtensionPointer( "glBlitFramebufferEXT" );
 		}
-		if (glConfig.framebufferMultisampleAvailable) {
-			qglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorageMultisampleEXT");
+		if ( glConfig.framebufferMultisampleAvailable ) {
+			qglRenderbufferStorageMultisample = ( PFNGLRENDERBUFFERSTORAGEMULTISAMPLEEXTPROC )GLimp_ExtensionPointer( "glRenderbufferStorageMultisampleEXT" );
 		}
 	}
+	glConfig.pixelBufferAvailable = R_CheckExtension("GL_ARB_pixel_buffer_object");
 
 	if( glConfig.glVersion > 3.2 || R_CheckExtension( "GL_ARB_timer_query" ) ) {
 		glConfig.timerQueriesAvailable = true;
@@ -654,26 +625,19 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 //	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
-
 	glConfig.pixelBufferAvailable = R_CheckExtension("GL_ARB_pixel_buffer_object");
 
-	glConfig.multipleRenderTargetsAvailable = R_CheckExtension( "GL_ARB_draw_buffers" );
-	/*if ( glConfig.multipleRenderTargetsAvailable ) {
-		glDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer("glDrawBuffers");
-	}*/
-
 	glConfig.fenceSyncAvailable = R_CheckExtension( "GL_ARB_sync" );
-	if( glConfig.fenceSyncAvailable ) {
+	if ( glConfig.fenceSyncAvailable ) {
 		qglFenceSync = ( PFNGLFENCESYNCPROC )GLimp_ExtensionPointer( "glFenceSync" );
 		qglClientWaitSync = ( PFNGLCLIENTWAITSYNCPROC )GLimp_ExtensionPointer( "glClientWaitSync" );
 		qglDeleteSync = ( PFNGLDELETESYNCPROC )GLimp_ExtensionPointer( "glDeleteSync" );
-		//common->Printf( "GL fence sync available\n" );
+		common->Printf( "GL fence sync available\n" );
 	}
-
 	int n;
 	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
-	qglGetProgramivARB = (PFNGLGETPROGRAMIVARBPROC)GLimp_ExtensionPointer( "glGetProgramivARB" );
+	qglGetProgramivARB = ( PFNGLGETPROGRAMIVARBPROC )GLimp_ExtensionPointer( "glGetProgramivARB" );
 	if ( qglGetProgramivARB ) {
 		qglGetProgramivARB( GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &n );
 		common->Printf( "Max env parameters: %d\n", n );
@@ -691,20 +655,20 @@ will be used instead.
 ====================
 */
 typedef struct vidmode_s {
-    const char *description;
-    int         width, height;
+	const char *description;
+	int         width, height;
 } vidmode_t;
 
 vidmode_t r_vidModes[] = {
-    { "Mode  0: 320x240",		320,	240 },
-    { "Mode  1: 400x300",		400,	300 },
-    { "Mode  2: 512x384",		512,	384 },
-    { "Mode  3: 640x480",		640,	480 },
-    { "Mode  4: 800x600",		800,	600 },
-    { "Mode  5: 1024x768",		1024,	768 },
-    { "Mode  6: 1152x864",		1152,	864 },
-    { "Mode  7: 1280x1024",		1280,	1024 },
-    { "Mode  8: 1600x1200",		1600,	1200 },
+	{ "Mode  0: 320x240",		320,	240 },
+	{ "Mode  1: 400x300",		400,	300 },
+	{ "Mode  2: 512x384",		512,	384 },
+	{ "Mode  3: 640x480",		640,	480 },
+	{ "Mode  4: 800x600",		800,	600 },
+	{ "Mode  5: 1024x768",		1024,	768 },
+	{ "Mode  6: 1152x864",		1152,	864 },
+	{ "Mode  7: 1280x1024",		1280,	1024 },
+	{ "Mode  8: 1600x1200",		1600,	1200 },
 };
 static int	s_numVidModes = ( sizeof( r_vidModes ) / sizeof( r_vidModes[0] ) );
 
@@ -715,9 +679,10 @@ static bool R_GetModeInfo( int *width, int *height, int mode ) {
 #endif
 	vidmode_t	*vm;
 
-    if ( mode < -1 ) {
-        return false;
+	if ( mode < -1 ) {
+		return false;
 	}
+
 	if ( mode >= s_numVidModes ) {
 		return false;
 	}
@@ -727,17 +692,16 @@ static bool R_GetModeInfo( int *width, int *height, int mode ) {
 		*height = r_customHeight.GetInteger();
 		return true;
 	}
-
 	vm = &r_vidModes[mode];
 
 	if ( width ) {
 		*width  = vm->width;
 	}
+
 	if ( height ) {
 		*height = vm->height;
 	}
-
-    return true;
+	return true;
 }
 
 
@@ -762,7 +726,7 @@ void R_InitOpenGL( void ) {
 	glimpParms_t	parms;
 	int				i;
 
-    common->Printf("----- Initializing OpenGL -----\n");
+	common->Printf( "----- Initializing OpenGL -----\n" );
 
 	if ( glConfig.isInitialized ) {
 		common->FatalError( "R_InitOpenGL called while active" );
@@ -784,11 +748,11 @@ void R_InitOpenGL( void ) {
 		parms.fullScreen = r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
 		parms.stereo = false;
-		
-		if (!r_useFbo.GetBool()) {
-		    parms.multiSamples = r_multiSamples.GetInteger();
+
+		if ( !r_useFbo.GetBool() ) {
+			parms.multiSamples = r_multiSamples.GetInteger();
 		} else {
-		    parms.multiSamples = 0; 
+			parms.multiSamples = 0;
 		}
 
 		if ( GLimp_Init( parms ) ) {
@@ -813,19 +777,20 @@ void R_InitOpenGL( void ) {
 	soundSystem->InitHW();
 
 	// get our config strings
-	glConfig.vendor_string = (const char *)qglGetString(GL_VENDOR);
-	glConfig.renderer_string = (const char *)qglGetString(GL_RENDERER);
-	glConfig.version_string = (const char *)qglGetString(GL_VERSION);
-	glConfig.extensions_string = (const char *)qglGetString(GL_EXTENSIONS);
+	glConfig.vendor_string = ( const char * )qglGetString( GL_VENDOR );
+	glConfig.renderer_string = ( const char * )qglGetString( GL_RENDERER );
+	glConfig.version_string = ( const char * )qglGetString( GL_VERSION );
+	glConfig.extensions_string = ( const char * )qglGetString( GL_EXTENSIONS );
 
 	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 )
-		glConfig.vendor = glvIntel;
+	{ glConfig.vendor = glvIntel; }
 	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 )
-		glConfig.vendor = glvAMD;
-	if ( strncmp( glConfig.vendor_string, "NVIDIA", 6 ) == 0 
-	     || strncmp( glConfig.vendor_string, "Nvidia", 6 ) == 0 
-		 || strncmp( glConfig.vendor_string, "nvidia", 6 ) == 0 )
-	    glConfig.vendor = glvNVIDIA;
+	{ glConfig.vendor = glvAMD; }
+	if ( strncmp( glConfig.vendor_string, "NVIDIA", 6 ) == 0
+	        || strncmp( glConfig.vendor_string, "Nvidia", 6 ) == 0
+	        || strncmp( glConfig.vendor_string, "nvidia", 6 ) == 0 ) {
+		glConfig.vendor = glvNVIDIA;
+	}
 
 	// OpenGL driver constants
 	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
@@ -835,22 +800,18 @@ void R_InitOpenGL( void ) {
 	if ( glConfig.maxTextureSize <= 0 ) {
 		glConfig.maxTextureSize = 256;
 	}
-
 	glConfig.isInitialized = true;
 
-    common->Printf("OpenGL vendor: %s\n", glConfig.vendor_string);
-    common->Printf("OpenGL renderer: %s\n", glConfig.renderer_string);
-    common->Printf("OpenGL version: %s\n", glConfig.version_string);
+	common->Printf( "OpenGL vendor: %s\n", glConfig.vendor_string );
+	common->Printf( "OpenGL renderer: %s\n", glConfig.renderer_string );
+	common->Printf( "OpenGL version: %s\n", glConfig.version_string );
 
 	// recheck all the extensions (FIXME: this might be dangerous)
 	R_CheckPortableExtensions();
 
-	// parse our vertex and fragment programs, possibly disably support for
-	// one of the paths if there was an error
-	R_ARB2_Init();
-
 	cmdSystem->AddCommand( "reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs" );
 	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
+
 	R_ReloadARBPrograms_f( idCmdArgs() );
 	R_ReloadGLSLPrograms_f( idCmdArgs() );
 
@@ -862,10 +823,10 @@ void R_InitOpenGL( void ) {
 
 	// Reset our gamma
 	R_SetColorMappings();
-	
-	if ( (glConfig.vendor == glvNVIDIA) && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() ) {
-    common->Printf( "Nvidia Hardware Detected. Forcing FBO\n");
-	r_useFbo.SetBool(true);
+
+	if ( ( glConfig.vendor == glvNVIDIA ) && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() ) {
+		common->Printf( "Nvidia Hardware Detected. Forcing FBO\n" );
+		r_useFbo.SetBool( true );
 	}
 
 #ifdef _WIN32
@@ -878,7 +839,7 @@ void R_InitOpenGL( void ) {
 				Sys_GrabMouseCursor( false );
 			}
 			int ret = MessageBox( NULL, "Please install OpenGL drivers from your graphics hardware vendor to run " GAME_NAME ".\nYour OpenGL functionality is limited.",
-				"Insufficient OpenGL capabilities", MB_OKCANCEL | MB_ICONWARNING | MB_TASKMODAL );
+			                      "Insufficient OpenGL capabilities", MB_OKCANCEL | MB_ICONWARNING | MB_TASKMODAL );
 			if ( ret == IDCANCEL ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
 				cmdSystem->ExecuteCommandBuffer();
@@ -897,43 +858,44 @@ GL_CheckErrors
 ==================
 */
 void GL_CheckErrors( void ) {
-	if ( r_ignoreGLErrors.GetBool() )
+	if ( r_ignoreGLErrors.GetBool() ) {
 		return;
+	}
 	int		err;
-    char	s[64];
+	char	s[64];
 	int		i;
 	// check for up to 10 errors pending
 	for ( i = 0 ; i < 10 ; i++ ) {
 		err = qglGetError();
-		if ( err == GL_NO_ERROR )
-			return;
-		switch( err ) {
-			case GL_INVALID_ENUM:
-				strcpy( s, "GL_INVALID_ENUM" );
-				break;
-			case GL_INVALID_VALUE:
-				strcpy( s, "GL_INVALID_VALUE" );
-				break;
-			case GL_INVALID_OPERATION:
-				strcpy( s, "GL_INVALID_OPERATION" );
-				break;
-			case GL_STACK_OVERFLOW:
-				strcpy( s, "GL_STACK_OVERFLOW" );
-				break;
-			case GL_STACK_UNDERFLOW:
-				strcpy( s, "GL_STACK_UNDERFLOW" );
-				break;
-			case GL_OUT_OF_MEMORY:
-				strcpy( s, "GL_OUT_OF_MEMORY" );
-				break;
-			case GL_INVALID_FRAMEBUFFER_OPERATION:
-				strcpy( s, "GL_INVALID_FRAMEBUFFER_OPERATION" );
-				break;
-			default:
-				idStr::snPrintf( s, sizeof(s), "%i", err);
-				break;
+		if ( err == GL_NO_ERROR ) { 
+			return; 
 		}
-
+		switch ( err ) {
+		case GL_INVALID_ENUM:
+			strcpy( s, "GL_INVALID_ENUM" );
+			break;
+		case GL_INVALID_VALUE:
+			strcpy( s, "GL_INVALID_VALUE" );
+			break;
+		case GL_INVALID_OPERATION:
+			strcpy( s, "GL_INVALID_OPERATION" );
+			break;
+		case GL_STACK_OVERFLOW:
+			strcpy( s, "GL_STACK_OVERFLOW" );
+			break;
+		case GL_STACK_UNDERFLOW:
+			strcpy( s, "GL_STACK_UNDERFLOW" );
+			break;
+		case GL_OUT_OF_MEMORY:
+			strcpy( s, "GL_OUT_OF_MEMORY" );
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			strcpy( s, "GL_INVALID_FRAMEBUFFER_OPERATION" );
+			break;
+		default:
+			idStr::snPrintf( s, sizeof( s ), "%i", err );
+			break;
+		}
 		common->Printf( "GL_CheckErrors: %s\n", s );
 	}
 }
@@ -946,22 +908,18 @@ Reload the material displayed by r_showSurfaceInfo
 =====================
 */
 static void R_ReloadSurface_f( const idCmdArgs &args ) {
-
 	// Skip if the current render is the lightgem render (default RENDERTOOLS_SKIP_ID)
-	if ( tr.primaryView->IsLightGem() )
+	if ( tr.primaryView->IsLightGem() )	{
 		return;
-	
+	}
 	modelTrace_t mt;
 
 	// start far enough away that we don't hit the player model
-	{
-		const idVec3 start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
-		const idVec3 end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
-		if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false, true) ) {
-			return;
-		}
+	const idVec3 start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
+	const idVec3 end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
+	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false, true ) ) {
+		return;
 	}
-
 	common->Printf( "Reloading %s\n", mt.material->GetName() );
 
 	// reload the decl
@@ -971,8 +929,6 @@ static void R_ReloadSurface_f( const idCmdArgs &args ) {
 	mt.material->ReloadImages( false );
 }
 
-
-
 /*
 ==============
 R_ListModes_f
@@ -980,15 +936,12 @@ R_ListModes_f
 */
 static void R_ListModes_f( const idCmdArgs &args ) {
 	int i;
-
 	common->Printf( "\n" );
 	for ( i = 0; i < s_numVidModes; i++ ) {
 		common->Printf( "%s\n", r_vidModes[i].description );
 	}
 	common->Printf( "\n" );
 }
-
-
 
 /*
 =============
@@ -1012,8 +965,8 @@ void R_TestImage_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if ( idStr::IsNumeric( args.Argv(1) ) ) {
-		imageNum = atoi( args.Argv(1) );
+	if ( idStr::IsNumeric( args.Argv( 1 ) ) ) {
+		imageNum = atoi( args.Argv( 1 ) );
 		if ( imageNum >= 0 && imageNum < globalImages->images.Num() ) {
 			tr.testImage = globalImages->images[imageNum];
 		}
@@ -1024,63 +977,68 @@ void R_TestImage_f( const idCmdArgs &args ) {
 
 /*
 =============
-R_TestVideo_f
-
-Plays the cinematic file in a testImage
+TestVideoClean
 =============
 */
 static void TestVideoClean() {
-	if (tr.testVideo) {
+	if ( tr.testVideo ) {
 		tr.testVideo->Close();
 		tr.testVideo = NULL;
 	}
 	tr.testImage = NULL;
 }
+
+/*
+=============
+R_TestVideo_f
+
+Plays the cinematic file in a testImage
+=============
+*/
 void R_TestVideo_f( const idCmdArgs &args ) {
 	TestVideoClean();
 	if ( args.Argc() < 2 ) {
 		return;
 	}
 	//stgatilov #4847: support testing FFmpeg videos with audio stream
-	bool withAudio = args.Argc() >= 3 && strcmp(args.Argv(2), "withAudio") == 0;
+	bool withAudio = args.Argc() >= 3 && strcmp( args.Argv( 2 ), "withAudio" ) == 0;
 
 	tr.testImage = globalImages->ImageFromFile( "_scratch", TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-	tr.testVideo = idCinematic::Alloc(args.Argv(1));
-	tr.testVideo->InitFromFile( args.Argv( 1 ), false, withAudio);
+	tr.testVideo = idCinematic::Alloc( args.Argv( 1 ) );
+	tr.testVideo->InitFromFile( args.Argv( 1 ), false, withAudio );
 	tr.testVideoStartTime = tr.primaryRenderView.time * 0.001;
 
 	cinData_t cin;
 	cin = tr.testVideo->ImageForTime( 0 );
-	if (!cin.image) {
-		common->Warning("Failed to get first frame from video file");
+	if ( !cin.image ) {
+		common->Warning( "Failed to get first frame from video file" );
 		return TestVideoClean();
 	}
 	common->Printf( "%i x %i images\n", cin.imageWidth, cin.imageHeight );
 	int	len = tr.testVideo->AnimationLength();
 	common->Printf( "%5.1f seconds of video\n", len * 0.001 );
 
-	if (withAudio) {
+	if ( withAudio ) {
 		//stgatilov #4847: check that audio stream is peekable
 		float buff[4096] = { 0 };
 		int cnt = 1024;
-		bool ok = tr.testVideo->SoundForTimeInterval(0, &cnt, 44100, buff);
-		if (!ok) {
-			common->Warning("Failed to get first few sound samples from video file");
+		bool ok = tr.testVideo->SoundForTimeInterval( 0, &cnt, 44100, buff );
+		if ( !ok ) {
+			common->Warning( "Failed to get first few sound samples from video file" );
 			return TestVideoClean();
 		}
-		common->Printf("Sound stream opened\n");
+		common->Printf( "Sound stream opened\n" );
 
 		//create implicit sound shader with special name
 		char soundName[256];
-		idStr::snPrintf(soundName, sizeof(soundName), "__testvideo:%p__", tr.testVideo);
-		session->sw->PlayShaderDirectly(soundName);
-	}
-	else {
+		idStr::snPrintf( soundName, sizeof( soundName ), "__testvideo:%p__", tr.testVideo );
+		session->sw->PlayShaderDirectly( soundName );
+	} else {
 		// try to play the matching wav file
-		idStr	wavString = args.Argv((args.Argc() == 2) ? 1 : 2);
+		idStr	wavString = args.Argv( ( args.Argc() == 2 ) ? 1 : 2 );
 		wavString.StripFileExtension();
 		wavString = wavString + ".wav";
-		session->sw->PlayShaderDirectly(wavString.c_str());
+		session->sw->PlayShaderDirectly( wavString.c_str() );
 	}
 }
 
@@ -1088,13 +1046,15 @@ static int R_QsortSurfaceAreas( const void *a, const void *b ) {
 	const idMaterial	*ea, *eb;
 	int	ac, bc;
 
-	ea = *(idMaterial **)a;
+	ea = *( idMaterial ** )a;
+
 	if ( !ea->EverReferenced() ) {
 		ac = 0;
 	} else {
 		ac = ea->GetSurfaceArea();
 	}
-	eb = *(idMaterial **)b;
+	eb = *( idMaterial ** )b;
+
 	if ( !eb->EverReferenced() ) {
 		bc = 0;
 	} else {
@@ -1104,10 +1064,10 @@ static int R_QsortSurfaceAreas( const void *a, const void *b ) {
 	if ( ac < bc ) {
 		return -1;
 	}
+
 	if ( ac > bc ) {
 		return 1;
 	}
-
 	return idStr::Icmp( ea->GetName(), eb->GetName() );
 }
 
@@ -1120,16 +1080,15 @@ Prints a list of the materials sorted by surface area
 ===================
 */
 void R_ReportSurfaceAreas_f( const idCmdArgs &args ) {
-	int		i, count;
+	int	i, count;
 	idMaterial	**list;
 
 	count = declManager->GetNumDecls( DECL_MATERIAL );
-	list = (idMaterial **)_alloca( count * sizeof( *list ) );
+	list = ( idMaterial ** )_alloca( count * sizeof( *list ) );
 
 	for ( i = 0 ; i < count ; i++ ) {
-		list[i] = (idMaterial *)declManager->DeclByIndex( DECL_MATERIAL, i, false );
+		list[i] = ( idMaterial * )declManager->DeclByIndex( DECL_MATERIAL, i, false );
 	}
-
 	qsort( list, count, sizeof( list[0] ), R_QsortSurfaceAreas );
 
 	// skip over ones with 0 area
@@ -1139,7 +1098,7 @@ void R_ReportSurfaceAreas_f( const idCmdArgs &args ) {
 		}
 	}
 
-	for ( ; i < count ; i++ ) {
+	for ( /**/; i < count ; i++ ) {
 		// report size in "editor blocks"
 		int	blocks = list[i]->GetSurfaceArea() / 4096.0;
 		common->Printf( "%7i %s\n", blocks, list[i]->GetName() );
@@ -1151,68 +1110,62 @@ void R_ReportSurfaceAreas_f( const idCmdArgs &args ) {
 R_ReportImageDuplication_f
 
 Checks for images with the same hash value and does a better comparison
-
-
 ===================
 */
 void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 	int	count = 0;
 
-	common->Printf("Images with duplicated contents:\n");
-	if (!globalImages->image_blockChecksum.GetBool()) // duzenko #4400
-		common->Printf("Warning: image_blockChecksum set to 0, results invalid.\n");
+	common->Printf( "Images with duplicated contents:\n" );
+	if ( !globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
+	{ common->Printf( "Warning: image_blockChecksum set to 0, results invalid.\n" ); }
 
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		idImage	*image1 = globalImages->images[i];
 
 		if ( image1->isPartialImage     || // ignore background loading stubs
-			 image1->generatorFunction  || // ignore procedural images
-			 image1->type != TT_2D		|| // ignore cube maps
-			 image1->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-			 image1->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-			 image1->defaulted ) {
+		     image1->generatorFunction  || // ignore procedural images
+		     image1->type != TT_2D		|| // ignore cube maps
+		     image1->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+		     image1->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+		     image1->defaulted ) {
+			continue;
+		}
+		byte *data1;
+		int	h1 = 0;
+		int w1 = 0;
+
+		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
+
+		if ( !data1 ) { // duzenko #4400
 			continue;
 		}
 
-		byte	*data1;
-		int		h1 = 0; int w1 = 0;
-
-		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
-		if (!data1) // duzenko #4400
-			continue;
-
 		for ( int j = 0 ; j < i ; j++ ) {
 			idImage	*image2 = globalImages->images[j];
-
 			if ( image2->isPartialImage     || // ignore background loading stubs
-				 image2->generatorFunction  || // ignore procedural images
-				 image2->type != TT_2D		|| // ignore cube maps
-				 image2->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-				 image2->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
-				 image2->defaulted ) {
+			     image2->generatorFunction  || // ignore procedural images
+			     image2->type != TT_2D		|| // ignore cube maps
+			     image2->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+			     image2->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+			     image2->defaulted ) {
 				continue;
-			}
-
-			else if ( image1->imageHash    != image2->imageHash    ||
-					  image1->uploadWidth  != image2->uploadWidth  ||
-				      image1->uploadHeight != image2->uploadHeight ||
-					  !idStr::Icmp( image1->imgName, image2->imgName ) // ignore same image-with-different-parms
-					  ) { 
+			} else if ( image1->imageHash    != image2->imageHash    ||
+			            image1->uploadWidth  != image2->uploadWidth  ||
+			            image1->uploadHeight != image2->uploadHeight ||
+			            !idStr::Icmp( image1->imgName, image2->imgName ) ) { // ignore same image-with-different-parms
 				continue;
-			}
-
-			else {
-				byte	*data2;
-				int		h2 = 0; int w2 = 0;
+			} else {
+				byte *data2;
+				int	h2 = 0;
+				int w2 = 0;
 
 				R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
-				
-				if (!data2 || w1 != w2 || h1 != h2 || memcmp( data1, data2, w1*h1*4 ) ) // duzenko #4400
-				{
+
+				if ( !data2 || w1 != w2 || h1 != h2 || memcmp( data1, data2, w1 * h1 * 4 ) ) { // duzenko #4400
 					R_StaticFree( data2 );
 					continue;
 				}
-				R_StaticFree(data2); // duzenko #4400
+				R_StaticFree( data2 ); // duzenko #4400
 
 				common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
 				session->UpdateScreen( true );
@@ -1222,19 +1175,18 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 		}
 		R_StaticFree( data1 );
 	}
-
 	const idStr repcol = ( count < 20 ) ? S_COLOR_GREEN : S_COLOR_RED;
 
 	common->Printf( repcol + "Result : %i collisions out of %i images\n", count, globalImages->images.Num() );
 }
 
-/* 
-============================================================================== 
- 
+/*
+==============================================================================
+
 						THROUGHPUT BENCHMARKING
- 
-============================================================================== 
-*/ 
+
+==============================================================================
+*/
 
 /*
 ================
@@ -1249,7 +1201,7 @@ static float R_RenderingFPS( const renderView_t &renderView ) {
 	int		end;
 	int		count = 0;
 
-	while( 1 ) {
+	while ( 1 ) {
 		// render
 		renderSystem->BeginFrame( glConfig.vidWidth, glConfig.vidHeight );
 		tr.primaryWorld->RenderScene( renderView );
@@ -1261,7 +1213,6 @@ static float R_RenderingFPS( const renderView_t &renderView ) {
 			break;
 		}
 	}
-
 	float fps = count * 1000.0 / ( end - start );
 
 	return fps;
@@ -1307,13 +1258,13 @@ void R_Benchmark_f( const idCmdArgs &args ) {
 }
 
 
-/* 
-============================================================================== 
- 
-						SCREEN SHOTS 
- 
-============================================================================== 
-*/ 
+/*
+==============================================================================
+
+						SCREEN SHOTS
+
+==============================================================================
+*/
 
 /*
 ====================
@@ -1327,7 +1278,7 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref = NULL ) {
 	// include extra space for OpenGL padding to word boundaries
-	byte *temp = (byte *)R_StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
+	byte *temp = ( byte * )R_StaticAlloc( ( glConfig.vidWidth + 3 ) * glConfig.vidHeight * 3 );
 
 	const int oldWidth = glConfig.vidWidth;
 	const int oldHeight = glConfig.vidHeight;
@@ -1342,13 +1293,13 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 		for ( int yo = 0 ; yo < height ; yo += oldHeight ) {
 			tr.viewportOffset[0] = -xo;
 			tr.viewportOffset[1] = -yo;
-			int w = (xo + oldWidth > width) ? (width - xo) : oldWidth;
-			int h = (yo + oldHeight > height) ? (height - yo) : oldHeight;
+			int w = ( xo + oldWidth > width ) ? ( width - xo ) : oldWidth;
+			int h = ( yo + oldHeight > height ) ? ( height - yo ) : oldHeight;
 
 			if ( ref ) {
 				tr.BeginFrame( oldWidth, oldHeight );
 				tr.primaryWorld->RenderScene( *ref );
-				copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer( sizeof( cmd ) );
+				copyRenderCommand_t &cmd = *( copyRenderCommand_t * )R_GetCommandBuffer( sizeof( cmd ) );
 				cmd.commandId = RC_COPY_RENDER;
 				cmd.buffer = temp;
 				cmd.usePBO = false;
@@ -1361,20 +1312,17 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 				tr.BeginFrame( oldWidth, oldHeight );
 				tr.EndFrame( NULL, NULL );
 			} else {
-				session->UpdateScreen(false);
+				session->UpdateScreen( false );
 				qglReadBuffer( GL_FRONT );
 				qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 			}
-
-			int	row = (oldWidth * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
+			int	row = ( oldWidth * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
 
 			for ( int y = 0 ; y < h ; y++ ) {
-				memcpy( buffer + ( ( yo + y )* width + xo ) * 3,
-					temp + y * row, w * 3 );
+				memcpy( buffer + ( ( yo + y )* width + xo ) * 3, temp + y * row, w * 3 );
 			}
 		}
 	}
-
 	r_useScissor.SetBool( true );
 
 	tr.viewportOffset[0] = 0;
@@ -1388,31 +1336,32 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 	glConfig.vidHeight = oldHeight;
 }
 
-void Screenshot_ChangeFilename(idStr& filename, const char *extension)
-{
+/*
+====================
+Screenshot_ChangeFilename
+====================
+*/
+void Screenshot_ChangeFilename( idStr& filename, const char *extension ) {
 	idStr mapname( cvarSystem->GetCVarString( "fs_currentfm" ) );
-	char thetime[MAX_IMAGE_NAME/2];
+	char thetime[MAX_IMAGE_NAME / 2];
 
 	if ( !mapname || mapname[0] == '\0' ) {
 		mapname = "noFm";
 	}
 
-	{
-		time_t tt;
-		time(&tt);
-		struct tm * ltime = localtime(&tt);
-
-		strftime( thetime, sizeof(thetime) ,"_%Y-%m-%d_%H.%M.%S.", ltime );
-	}
-
+	// uhm any particular reason this was encapsulated in brackets ?
+	time_t tt;
+	time( &tt );
+	struct tm * ltime = localtime( &tt );
+	strftime( thetime, sizeof( thetime ), "_%Y-%m-%d_%H.%M.%S.", ltime );
 	const idStr fileOnly = mapname + thetime + extension;
-    
-    filename = "screenshots/";
+
+	filename = "screenshots/";
 	filename.AppendPath( fileOnly );
 }
 
 /*
-================== 
+==================
 TakeScreenshot
 
 Move to tr_imagefiles.c...
@@ -1420,24 +1369,24 @@ Move to tr_imagefiles.c...
 Will automatically tile render large screen shots if necessary
 Downsample is the number of steps to mipmap the image before saving it
 If ref == NULL, session->updateScreen will be used
-================== 
-*/  
+==================
+*/
 void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fileName, int blends, renderView_t *ref, bool envshot ) {
-	byte		*buffer;
-	int			i, j, c, temp;
+	byte *buffer;
+	int	i, j, c, temp;
 
 	takingScreenshot = true;
 
 	int	pix = width * height;
 
-	buffer = (byte *)R_StaticAlloc(pix*3 + 18);
-	memset (buffer, 0, 18);
+	buffer = ( byte * )R_StaticAlloc( pix * 3 + 18 );
+	memset( buffer, 0, 18 );
 
 	if ( blends <= 1 ) {
 		R_ReadTiledPixels( width, height, buffer + 18, ref );
 	} else {
-		unsigned short *shortBuffer = (unsigned short *)R_StaticAlloc(pix*2*3);
-		memset (shortBuffer, 0, pix*2*3);
+		unsigned short *shortBuffer = ( unsigned short * )R_StaticAlloc( pix * 2 * 3 );
+		memset( shortBuffer, 0, pix * 2 * 3 );
 
 		// enable anti-aliasing jitter
 		r_jitter.SetBool( true );
@@ -1445,16 +1394,15 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		for ( i = 0 ; i < blends ; i++ ) {
 			R_ReadTiledPixels( width, height, buffer + 18, ref );
 
-			for ( j = 0 ; j < pix*3 ; j++ ) {
-				shortBuffer[j] += buffer[18+j];
+			for ( j = 0 ; j < pix * 3 ; j++ ) {
+				shortBuffer[j] += buffer[18 + j];
 			}
 		}
 
 		// divide back to bytes
-		for ( i = 0 ; i < pix*3 ; i++ ) {
-			buffer[18+i] = shortBuffer[i] / blends;
+		for ( i = 0 ; i < pix * 3 ; i++ ) {
+			buffer[18 + i] = shortBuffer[i] / blends;
 		}
-
 		R_StaticFree( shortBuffer );
 		r_jitter.SetBool( false );
 	}
@@ -1469,17 +1417,17 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 
 	// swap rgb to bgr
 	c = 18 + width * height * 3;
-	for ( i=18 ; i<c ; i+=3 ) {
+	for ( i = 18 ; i < c ; i += 3 ) {
 		temp = buffer[i];
-		buffer[i] = buffer[i+2];
-		buffer[i+2] = temp;
+		buffer[i] = buffer[i + 2];
+		buffer[i + 2] = temp;
 	}
 
 	// greebo: Check if we should save a screen shot format other than TGA
-	if ( !envshot && (idStr::Icmp(r_screenshot_format.GetString(), "tga" ) != 0) ) {
+	if ( !envshot && ( idStr::Icmp( r_screenshot_format.GetString(), "tga" ) != 0 ) ) {
 		// load screenshot file buffer into image
 		Image image;
-		image.LoadImageFromMemory( (const unsigned char *)buffer, (unsigned int)c, "TDM_screenshot" );
+		image.LoadImageFromMemory( ( const unsigned char * )buffer, ( unsigned int )c, "TDM_screenshot" );
 
 		// find the preferred image format
 		idStr extension = r_screenshot_format.GetString( );
@@ -1498,58 +1446,55 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		Screenshot_ChangeFilename( changedPath, extension.c_str() );
 
 		// try to save image in other format
-		if ( !image.SaveImageToVfs(changedPath, format) ) {
+		if ( !image.SaveImageToVfs( changedPath, format ) ) {
 			common->Warning( "Could not save screenshot: %s", changedPath.c_str() );
 		} else {
 			common->Printf( "Wrote %s\n", changedPath.c_str() );
 		}
 	} else {
-        // change extension and index of screenshot file
+		// change extension and index of screenshot file
 		idStr changedPath( fileName );
-        
-        // if envshot is being used, don't name the image using the map + date convention
-        if ( !envshot ) {
-		    Screenshot_ChangeFilename( changedPath, "tga" );
-        }
+
+		// if envshot is being used, don't name the image using the map + date convention
+		if ( !envshot ) {
+			Screenshot_ChangeFilename( changedPath, "tga" );
+		}
 
 		// Format is TGA, just save the buffer
-        fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_savepath", "" );
+		fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_savepath", "" );
 
 		common->Printf( "Wrote %s\n", changedPath.c_str() );
 	}
-
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;
 }
 
 /*
-================== 
+==================
 R_BlendedScreenShot
 
 screenshot
 screenshot [filename]
 screenshot [width] [height]
 screenshot [width] [height] [samples]
-================== 
-*/ 
+==================
+*/
 #define	MAX_BLENDS	256	// to keep the accumulation in shorts
 void R_ScreenShot_f( const idCmdArgs &args ) {
 	idStr checkname;
-    qglFinish();
-	
+	qglFinish();
+
 	static bool stopTimeT = false;
 	int width = glConfig.vidWidth;
 	int height = glConfig.vidHeight;
 	int	blends = 0;
-	
-	if (g_stopTime.GetBool()) {
-	stopTimeT = true;
+
+	if ( g_stopTime.GetBool() ) {
+		stopTimeT = true;
+	} else {
+		g_stopTime.SetBool( true );
 	}
-	else {
-	g_stopTime.SetBool(true);
-	}
-	
 
 	switch ( args.Argc() ) {
 	case 1:
@@ -1586,15 +1531,14 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 
 	// put the console away
 	console->Close();
-    
+
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
-	
-    if (!stopTimeT) {
-	g_stopTime.SetBool(false);
+
+	if ( !stopTimeT ) {
+		g_stopTime.SetBool( false );
 	}
-	
 	stopTimeT = false;
-	
+
 }
 
 /*
@@ -1611,18 +1555,17 @@ void R_StencilShot( void ) {
 	const int	pix = width * height;
 	const int	flen = pix * 3 + 18;
 
-	buffer = (byte *)Mem_Alloc( flen );
-	memset(buffer, 0, 18);
+	buffer = ( byte * )Mem_Alloc( flen );
+	memset( buffer, 0, 18 );
 
-	byte *byteBuffer = (byte *)Mem_Alloc(pix);
+	byte *byteBuffer = ( byte * )Mem_Alloc( pix );
 
-	qglReadPixels( 0, 0, width, height, GL_STENCIL_INDEX , GL_UNSIGNED_BYTE, byteBuffer ); 
+	qglReadPixels( 0, 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, byteBuffer );
 
 	for ( int i = 0 ; i < pix ; i++ ) {
-		buffer[18+i*3] =
-		buffer[18+i*3+1] =
-			//		buffer[18+i*3+2] = ( byteBuffer[i] & 15 ) * 16;
-		buffer[18+i*3+2] = byteBuffer[i];
+		buffer[18 + i * 3] =
+		    buffer[18 + i * 3 + 1] =
+		        buffer[18 + i * 3 + 2] = byteBuffer[i];
 	}
 
 	// fill in the header (this is vertically flipped, which qglReadPixels emits)
@@ -1636,19 +1579,19 @@ void R_StencilShot( void ) {
 	fileSystem->WriteFile( "screenshots/stencilShot.tga", buffer, flen, "fs_savepath", "" );
 
 	Mem_Free( buffer );
-	Mem_Free( byteBuffer );	
+	Mem_Free( byteBuffer );
 }
 
 // nbohr1more #4041: add envshotGL for cubicLight
-/* 
-================== 
+/*
+==================
 R_EnvShotGL_f
 
 envshotGL <basename>
 
 (OpenGL orientation) Saves out env/<basename>_ft.tga, etc
-================== 
-*/  
+==================
+*/
 const static char *GLcubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 
 void R_EnvShotGL_f( const idCmdArgs &args ) {
@@ -1662,16 +1605,14 @@ void R_EnvShotGL_f( const idCmdArgs &args ) {
 	if ( !tr.primaryView ) {
 		common->Printf( "No primary view.\n" );
 		return;
-	}
-	else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
+	} else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
 		common->Printf( "USAGE: envshotGL <basename> [size] [blends]\n" );
 		return;
 	}
-
 	primary = *tr.primaryView;
 	baseName = args.Argv( 1 );
-
 	blends = 1;
+
 	if ( args.Argc() == 4 ) {
 		size = atoi( args.Argv( 2 ) );
 		blends = atoi( args.Argv( 3 ) );
@@ -1682,7 +1623,6 @@ void R_EnvShotGL_f( const idCmdArgs &args ) {
 		size = 256;
 		blends = 1;
 	}
-
 	memset( &axis, 0, sizeof( axis ) );
 	axis[0][0][0] = 1;
 	axis[0][1][2] = 1;
@@ -1718,40 +1658,37 @@ void R_EnvShotGL_f( const idCmdArgs &args ) {
 		sprintf( fullname, "env/%s%s", baseName, GLcubeExtensions[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
-
 	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
-} 
+}
 
 //============================================================================
 
-/* 
-================== 
+/*
+==================
 R_EnvShot_f
 
 envshot <basename>
 
 Saves out env/<basename>_ft.tga, etc
-================== 
-*/  
+==================
+*/
 const static char *cubeExtensions[6] = { "_forward.tga", "_left.tga", "_right.tga", "_back.tga", "_down.tga", "_up.tga" }; // names changed for TDM in #4041
 
 void R_EnvShot_f( const idCmdArgs &args ) {
-	idStr		fullname;
-	const char	*baseName;
-	idMat3		axis[6];
-	renderView_t	ref;
-	viewDef_t	primary;
-	int			blends, size;
+	idStr fullname;
+	const char *baseName;
+	idMat3 axis[6];
+	renderView_t ref;
+	viewDef_t primary;
+	int	blends, size;
 
 	if ( !tr.primaryView ) {
 		common->Printf( "No primary view.\n" );
 		return;
-	}
-	else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
+	} else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
 		common->Printf( "USAGE: envshot <basename> [size] [blends]\n" );
 		return;
 	}
-
 	primary = *tr.primaryView;
 	baseName = args.Argv( 1 );
 
@@ -1766,8 +1703,8 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		size = 256;
 		blends = 1;
 	}
-
 	memset( &axis, 0, sizeof( axis ) );
+
 	// SteveL #4041: these axes were wrong, causing some of the images to be flipped and rotated.
 	// forward = east (positive x-axis in DR)
 	axis[0][0][0] = 1;
@@ -1793,7 +1730,7 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	axis[5][0][2] = 1;
 	axis[5][1][1] = 1;
 	axis[5][2][0] = -1;
-	
+
 	for ( int i = 0 ; i < 6 ; i++ ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
@@ -1804,22 +1741,21 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
-
 	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
-} 
+}
 
 //============================================================================
 
 
-/* 
-================== 
+/*
+==================
 R_MakeAmbientMap_f
 
 R_MakeAmbientMap_f <basename> [size]
 
 Saves out env/<basename>_amb_ft.tga, etc
-================== 
-*/  
+==================
+*/
 void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	MakeAmbientMapParam param;
 	idStr		fullname;
@@ -1830,22 +1766,26 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		return;
 	}
 	baseName = args.Argv( 1 );
-	
+
 	byte* facepalm[6];
 	param.buffers = facepalm;
 
 	param.outSize = 32;
-	if ( args.Argc() > 2 ) 
+	if ( args.Argc() > 2 ) {
 		param.outSize = atoi( args.Argv( 2 ) );
+	}
 	param.samples = 1000;
-	if ( args.Argc() > 3 )
+	if ( args.Argc() > 3 ) {
 		param.samples = atoi( args.Argv( 3 ) );
+	}
 	param.crutchUp = 1;
-	if ( args.Argc() > 4 )
+	if ( args.Argc() > 4 ) {
 		param.crutchUp = atoi( args.Argv( 4 ) );
+	}
 	int	specular = 1;
-	if ( args.Argc() > 5 )
+	if ( args.Argc() > 5 ) {
 		specular = atoi( args.Argv( 5 ) );
+	}
 
 	// read all of the images
 	for ( int i = 0 ; i < 6 ; i++ ) {
@@ -1861,13 +1801,12 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 			return;
 		}
 	}
-
-	param.outBuffer = (byte*)R_StaticAlloc( 4 * param.outSize*param.outSize );
+	param.outBuffer = ( byte* )R_StaticAlloc( 4 * param.outSize * param.outSize );
 
 	for ( param.specular = false;; ) {
 		common->Printf( !param.specular ? "Ambient (1/2)\n" : "Specular (2/2)\n" );
 		session->UpdateScreen();
-		
+
 		for ( param.side = 0; param.side < 6; param.side++ ) {
 			sprintf( fullname, param.specular ? "env/%s_spec%s" : "env/%s_amb%s", baseName, cubeExtensions[param.side] );
 			common->Printf( "%d/6: %s\n", param.side + 1, fullname.c_str() );
@@ -1880,20 +1819,22 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 			session->UpdateScreen();
 			R_WriteTGA( fullname, param.outBuffer, param.outSize, param.outSize );
 		}
-		if ( !param.specular && specular ) // TODO move to the loop operator above
-			param.specular = true;
-		else
-			break;
-	}
 
+		if ( !param.specular && specular ) { // TODO move to the loop operator above
+			param.specular = true;
+		} else {
+			break;
+		}
+	}
 	R_StaticFree( param.outBuffer );
+
 	for ( int f = 0 ; f < 6 ; f++ ) {
 		if ( param.buffers[f] ) {
 			Mem_Free( param.buffers[f] );
 		}
 	}
 	session->UpdateScreen();
-} 
+}
 
 //============================================================================
 
@@ -1912,25 +1853,26 @@ void R_SetColorMappings( void ) {
 
 	for ( int i = 0; i < 256; i++ ) {
 		j = i * b;
-		if (j > 255) {
+
+		if ( j > 255 ) {
 			j = 255;
 		}
 
 		if ( g == 1 ) {
-			inf = (j<<8) | j;
+			inf = ( j << 8 ) | j;
 		} else {
-			inf = 0xffff * pow ( j/255.0f, 1.0f / g ) + 0.5f;
+			inf = 0xffff * pow( j / 255.0f, 1.0f / g ) + 0.5f;
 		}
-		if (inf < 0) {
+
+		if ( inf < 0 ) {
 			inf = 0;
 		}
-		if (inf > 0xffff) {
+
+		if ( inf > 0xffff ) {
 			inf = 0xffff;
 		}
-
 		tr.gammaTable[i] = inf;
 	}
-
 	GLimp_SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
 }
 
@@ -1941,8 +1883,7 @@ GfxInfo_f
 ================
 */
 static void GfxInfo_f( const idCmdArgs &args ) {
-	const char *fsstrings[] =
-	{
+	const char *fsstrings[] = {
 		"windowed",
 		"fullscreen"
 	};
@@ -1976,13 +1917,11 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	} else {
 		common->Printf( "glFinish not forced\n" );
 	}
-	
-	
 
-#ifdef _WIN32	
-// WGL_EXT_swap_interval
-typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
-extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
+#ifdef _WIN32
+	// WGL_EXT_swap_interval
+	typedef BOOL ( WINAPI * PFNWGLSWAPINTERVALEXTPROC )( int interval );
+	extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
 	if ( r_swapInterval.GetInteger() && wglSwapIntervalEXT ) {
 		common->Printf( "swapInterval forced (%i)\n", r_swapInterval.GetInteger() );
@@ -2011,9 +1950,9 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
-
 	bool full = true;
 	bool forceWindow = false;
+
 	for ( int i = 1 ; i < args.Argc() ; i++ ) {
 		if ( idStr::Icmp( args.Argv( i ), "partial" ) == 0 ) {
 			full = false;
@@ -2027,8 +1966,6 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 	// this could take a while, so give them the cursor back ASAP
 	Sys_GrabMouseCursor( false );
-
-    // softShadowMgr->UnInit();  //~SS
 
 	// dump ambient caches
 	renderModelManager->FreeModelVertexCaches();
@@ -2044,7 +1981,6 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	vertexCache.PurgeAll();
 
 	// sound and input are tied to the window we are about to destroy
-
 	if ( full ) {
 		// free all of our texture numbers
 		soundSystem->ShutdownHW();
@@ -2069,15 +2005,15 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		session->StartFrontendThread();
 	} else {
 		glimpParms_t	parms;
-		R_GetModeInfo(&glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger());
+		R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger() );
 		parms.width = glConfig.vidWidth;
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
-		if (!r_useFbo.GetBool()) {
-		    parms.multiSamples = r_multiSamples.GetInteger();
+		if ( !r_useFbo.GetBool() ) {
+			parms.multiSamples = r_multiSamples.GetInteger();
 		} else {
-		    parms.multiSamples = 0; 
+			parms.multiSamples = 0;
 		}
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
@@ -2091,16 +2027,13 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	R_RegenerateWorld_f( idCmdArgs() );
 
 	// check for problems
-	int err = qglGetError();
-	if ( err != GL_NO_ERROR ) {
-		common->Error( "glGetError() = 0x%x\n", err );
-	}
+	// use the builtin function instead revelator.
+	GL_CheckErrors();
 
 	// start sound playing again
 	soundSystem->SetMute( false );
 
-	if (game != NULL)
-	{
+	if ( game != NULL ) {
 		game->OnVidRestart();
 	}
 }
@@ -2154,7 +2087,6 @@ static void R_SizeDown_f( const idCmdArgs &args ) {
 	}
 }
 
-
 /*
 ===============
 TouchGui_f
@@ -2169,7 +2101,6 @@ void R_TouchGui_f( const idCmdArgs &args ) {
 		common->Printf( "USAGE: touchGui <guiName>\n" );
 		return;
 	}
-
 	common->Printf( "touchGui %s\n", gui );
 	session->UpdateScreen();
 	uiManager->Touch( gui );
@@ -2182,7 +2113,7 @@ R_InitCvars
 */
 void R_InitCvars( void ) {
 	// update latched cvars here
-	
+
 }
 
 /*
@@ -2191,7 +2122,7 @@ R_InitCommands
 =================
 */
 void R_InitCommands( void ) {
-	cmdSystem->AddCommand( "MakeMegaTexture", idMegaTexture::MakeMegaTexture_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "processes giant images" );
+	cmdSystem->AddCommand( "MakeMegaTexture", idMegaTexture::MakeMegaTexture_f, CMD_FL_RENDERER | CMD_FL_CHEAT, "processes giant images" );
 	cmdSystem->AddCommand( "sizeUp", R_SizeUp_f, CMD_FL_RENDERER, "makes the rendered view larger" );
 	cmdSystem->AddCommand( "sizeDown", R_SizeDown_f, CMD_FL_RENDERER, "makes the rendered view smaller" );
 	cmdSystem->AddCommand( "reloadGuis", R_ReloadGuis_f, CMD_FL_RENDERER, "reloads guis" );
@@ -2200,7 +2131,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "screenshot", R_ScreenShot_f, CMD_FL_RENDERER, "takes a screenshot" );
 	cmdSystem->AddCommand( "envshot", R_EnvShot_f, CMD_FL_RENDERER, "takes an environment shot" );
 	cmdSystem->AddCommand( "envshotGL", R_EnvShotGL_f, CMD_FL_RENDERER, "takes an environment shot in opengl orientation" ); // nbohr1more #4041: add envshotGL for cubicLight
-	cmdSystem->AddCommand( "makeAmbientMap", R_MakeAmbientMap_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "makes an ambient map" );
+	cmdSystem->AddCommand( "makeAmbientMap", R_MakeAmbientMap_f, CMD_FL_RENDERER | CMD_FL_CHEAT, "makes an ambient map" );
 	cmdSystem->AddCommand( "benchmark", R_Benchmark_f, CMD_FL_RENDERER, "benchmark" );
 	cmdSystem->AddCommand( "gfxInfo", GfxInfo_f, CMD_FL_RENDERER, "show graphics info" );
 	cmdSystem->AddCommand( "modulateLights", R_ModulateLights_f, CMD_FL_RENDERER | CMD_FL_CHEAT, "modifies shader parms on all lights" );
@@ -2265,13 +2196,13 @@ void idRenderSystemLocal::Clear( void ) {
 idRenderSystemLocal::Init
 ===============
 */
-void idRenderSystemLocal::Init( void ) {	
+void idRenderSystemLocal::Init( void ) {
 	r_swapIntervalTemp.SetModified();
 
 	// clear all our internal state
 	viewCount = 1;		// so cleared structures never match viewCount
-	// we used to memset tr, but now that it is a class, we can't, so
-	// there may be other state we need to reset
+						// we used to memset tr, but now that it is a class, we can't, so
+						// there may be other state we need to reset
 
 	ambientLightVector[0] = 0.5f;
 	ambientLightVector[1] = 0.5f - 0.385f;
@@ -2304,9 +2235,9 @@ void idRenderSystemLocal::Init( void ) {
 	renderModelManager->Init();
 
 	// set the identity space
-	identitySpace.modelMatrix[0*4+0] = 1.0f;
-	identitySpace.modelMatrix[1*4+1] = 1.0f;
-	identitySpace.modelMatrix[2*4+2] = 1.0f;
+	identitySpace.modelMatrix[0 * 4 + 0] = 1.0f;
+	identitySpace.modelMatrix[1 * 4 + 1] = 1.0f;
+	identitySpace.modelMatrix[2 * 4 + 2] = 1.0f;
 }
 
 /*
@@ -2314,14 +2245,13 @@ void idRenderSystemLocal::Init( void ) {
 idRenderSystemLocal::Shutdown
 ===============
 */
-void idRenderSystemLocal::Shutdown( void ) {	
+void idRenderSystemLocal::Shutdown( void ) {
 	common->Printf( "idRenderSystem::Shutdown()\n" );
 	R_DoneFreeType( );
 
 	if ( glConfig.isInitialized ) {
 		globalImages->PurgeAllImages();
 	}
-
 	renderModelManager->Shutdown();
 
 	idCinematic::ShutdownCinematic( );
@@ -2385,16 +2315,9 @@ idRenderSystemLocal::InitOpenGL
 void idRenderSystemLocal::InitOpenGL( void ) {
 	// if OpenGL isn't started, start it now
 	if ( !glConfig.isInitialized ) {
-		int	err;
-
 		R_InitOpenGL();
-
 		globalImages->ReloadAllImages();
-
-		err = qglGetError();
-		if ( err != GL_NO_ERROR ) {
-			common->Printf( "glGetError() = 0x%x\n", err );
-		}
+		GL_CheckErrors(); // use the existing internal function instead: revelator.
 	}
 }
 

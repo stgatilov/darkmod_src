@@ -219,7 +219,6 @@ void idGuiModel::EmitFullScreen( void ) {
 	if ( surfaces[0].numVerts == 0 ) {
 		return;
 	}
-
 	viewDef = (viewDef_t *)R_ClearedFrameAlloc( sizeof( *viewDef ) );
 
 	// for gui editor
@@ -228,14 +227,12 @@ void idGuiModel::EmitFullScreen( void ) {
 		viewDef->renderView.y = 0;
 		viewDef->renderView.width = SCREEN_WIDTH;
 		viewDef->renderView.height = SCREEN_HEIGHT;
-
 		tr.RenderViewToViewport( viewDef->renderView, viewDef->viewport );
 		// duzenko #4425 FIXME CRUTCH? always use window size for 2d if fbo is on
 		if (r_useFbo.GetBool()) {
 			viewDef->viewport.x2 = glConfig.vidWidth - 1;
 			viewDef->viewport.y2 = glConfig.vidHeight - 1;
 		}
-
 		viewDef->scissor.x1 = 0;
 		viewDef->scissor.y1 = 0;
 		viewDef->scissor.x2 = viewDef->viewport.x2 - viewDef->viewport.x1;
@@ -256,10 +253,8 @@ void idGuiModel::EmitFullScreen( void ) {
 		viewDef->scissor.x2 = tr.viewDef->scissor.x2;
 		viewDef->scissor.y2 = tr.viewDef->scissor.y2;
 	}
-
 	viewDef->floatTime = tr.frameShaderTime;
 
-	// qglOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
 	viewDef->projectionMatrix[0] = 2.0f / 640.0f;
 	viewDef->projectionMatrix[5] = -2.0f / 480.0f;
 	viewDef->projectionMatrix[10] = -2.0f / 1.0f;
@@ -284,7 +279,6 @@ void idGuiModel::EmitFullScreen( void ) {
 	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
 		EmitSurface( &surfaces[i], viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false );
 	}
-
 	tr.viewDef = oldViewDef;
 
 	// copy drawsurf geo state for backend use

@@ -40,10 +40,6 @@ Manager
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
-// tr_imageprogram.c
-
 #include "tr_local.h"
 
 /*
@@ -74,18 +70,18 @@ static void R_HeightmapToNormalMap( byte *data, int width, int height, float sca
 	// copy and convert to grey scale
 	j = width * height;
 	depth = (byte *)R_StaticAlloc( j );
+
 	for ( i = 0 ; i < j ; i++ ) {
 		depth[i] = ( data[i*4] + data[i*4+1] + data[i*4+2] ) / 3;
 	}
-
 	idVec3	dir, dir2;
+
 	for ( i = 0 ; i < height ; i++ ) {
 		for ( j = 0 ; j < width ; j++ ) {
 			int		d1, d2, d3, d4;
 			int		a1, a3, a4;
 
 			// FIXME: look at five points?
-
 			// look at three points to estimate the gradient
 			a1 = d1 = depth[ ( i * width + j ) ];
 			d2 = depth[ ( i * width + ( ( j + 1 ) & ( width - 1 ) ) ) ];
@@ -118,8 +114,6 @@ static void R_HeightmapToNormalMap( byte *data, int width, int height, float sca
 			data[ a1 + 3 ] = 255;
 		}
 	}
-
-
 	R_StaticFree( depth );
 }
 
@@ -196,7 +190,7 @@ static void R_AddNormalMaps( byte *data1, int width1, int height1, byte *data2, 
 		newMap = R_Dropsample( data2, width2, height2, width1, height1 );
 		data2 = newMap;
 	} else {
-		newMap = NULL;
+		newMap = nullptr;
 	}
 
 	// add the normal change from the second and renormalize
@@ -219,7 +213,6 @@ static void R_AddNormalMaps( byte *data1, int width1, int height1, byte *data2, 
 			if ( len < 1.0f ) {
 				n[2] = idMath::Sqrt(1.0 - (n[0]*n[0]) - (n[1]*n[1]));
 			}
-
 			n[0] += ( d2[0] - 128 ) / 127.0;
 			n[1] += ( d2[1] - 128 ) / 127.0;
 			n.Normalize();
@@ -268,10 +261,10 @@ static void R_SmoothNormalMap( byte *data, int width, int height ) {
 					if ( in[0] == 0 && in[1] == 0 && in[2] == 0 ) {
 						continue;
 					}
+
 					if ( in[0] == 128 && in[1] == 128 && in[2] == 128 ) {
 						continue;
 					}
-
 					normal[0] += factors[k+1][l+1] * ( in[0] - 128 );
 					normal[1] += factors[k+1][l+1] * ( in[1] - 128 );
 					normal[2] += factors[k+1][l+1] * ( in[2] - 128 );
@@ -284,7 +277,6 @@ static void R_SmoothNormalMap( byte *data, int width, int height ) {
 			out[2] = (byte)(128 + 127 * normal[2]);
 		}
 	}
-
 	R_StaticFree( orig );
 }
 
@@ -305,9 +297,8 @@ static void R_ImageAdd( byte *data1, int width1, int height1, byte *data2, int w
 		newMap = R_Dropsample( data2, width2, height2, width1, height1 );
 		data2 = newMap;
 	} else {
-		newMap = NULL;
+		newMap = nullptr;
 	}
-
 	c = width1 * height1 * 4;
 
 	for ( i = 0 ; i < c ; i++ ) {
@@ -377,7 +368,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( !R_ParseImageProgram_r( src, pic, width, height, timestamps, depth ) ) {
 			return false;
 		}
-
 		MatchAndAppendToken( src, "," );
 
 		src.ReadToken( &token );
@@ -391,7 +381,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 				*depth = TD_BUMP;
 			}
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -405,10 +394,9 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( !R_ParseImageProgram_r( src, pic, width, height, timestamps, depth ) ) {
 			return false;
 		}
-
 		MatchAndAppendToken( src, "," );
 
-		if ( !R_ParseImageProgram_r( src, pic ? &pic2 : NULL, &width2, &height2, timestamps, depth ) ) {
+		if ( !R_ParseImageProgram_r( src, pic ? &pic2 : nullptr, &width2, &height2, timestamps, depth ) ) {
 			if ( pic ) {
 				R_StaticFree( *pic );
 				*pic = NULL;
@@ -424,7 +412,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 				*depth = TD_BUMP;
 			}
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -442,7 +429,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 				*depth = TD_BUMP;
 			}
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -456,10 +442,9 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( !R_ParseImageProgram_r( src, pic, width, height, timestamps, depth ) ) {
 			return false;
 		}
-
 		MatchAndAppendToken( src, "," );
 
-		if ( !R_ParseImageProgram_r( src, pic ? &pic2 : NULL, &width2, &height2, timestamps, depth ) ) {
+		if ( !R_ParseImageProgram_r( src, pic ? &pic2 : nullptr, &width2, &height2, timestamps, depth ) ) {
 			if ( pic ) {
 				R_StaticFree( *pic );
 				*pic = NULL;
@@ -472,7 +457,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 			R_ImageAdd( *pic, *width, *height, pic2, width2, height2 );
 			R_StaticFree( pic2 );
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -496,7 +480,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( pic ) {
 			R_ImageScale( *pic, *width, *height, scale );
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -510,7 +493,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( pic ) {
 			R_InvertAlpha( *pic, *width, *height );
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -524,7 +506,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( pic ) {
 			R_InvertColor( *pic, *width, *height );
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -546,7 +527,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 				(*pic)[i+3] = (*pic)[i];
 			}
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -565,11 +545,10 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 			for ( i = 0; i < c; i += 4 ) {
 				(*pic)[i + 3] = ((*pic)[i + 0] + (*pic)[i + 1] + (*pic)[i + 2]) / 3;
 				(*pic)[i + 0] =
-					(*pic)[i + 1] =
-					(*pic)[i + 2] = 255;
+				(*pic)[i + 1] =
+				(*pic)[i + 2] = 255;
 			}
 		}
-
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
@@ -600,7 +579,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 			*timestamps = timestamp;
 		}
 	}
-
 	return true;
 }
 
@@ -620,7 +598,6 @@ void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, 
 	if ( timestamps ) {
 		*timestamps = 0;
 	}
-
 	R_ParseImageProgram_r( src, pic, width, height, timestamps, depth );
 
 	src.FreeSource();
@@ -633,7 +610,7 @@ R_ParsePastImageProgram
 */
 const char *R_ParsePastImageProgram( idLexer &src ) {
 	parseBuffer[0] = 0;
-	R_ParseImageProgram_r( src, NULL, NULL, NULL, NULL, NULL );
+	R_ParseImageProgram_r( src, nullptr, nullptr, nullptr, nullptr, nullptr );
 	return parseBuffer;
 }
 

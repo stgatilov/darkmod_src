@@ -460,9 +460,6 @@ public:
 						// an ambient light has non-directional bump mapping and no specular
 	bool				IsAmbientLight() const { return ambientLight; }
 	
-						// nbohr1more #3881: cubemap based lighting (further changes)
-	//bool				IsAmbientCubicLight() const { return ambientCubicLight; }
-	
 						// nbohr1more #3881: cubemap based lighting
 	bool				IsCubicLight() const { return cubicLight; }
 
@@ -470,7 +467,7 @@ public:
 						// but individual light entities can also override this value
 						// nbohr1more #3881: cubemap based lighting (further changes)
 	bool				LightCastsShadows() const { return TestMaterialFlag( MF_FORCESHADOWS ) ||
-								( !fogLight && !ambientLight /*&& !ambientCubicLight*/ && !blendLight && !TestMaterialFlag( MF_NOSHADOWS ) ); }
+								( !fogLight && !ambientLight && !blendLight && !TestMaterialFlag( MF_NOSHADOWS ) ); }
 
 						// fog lights, blend lights, ambient lights, etc will all have to have interaction
 						// triangles generated for sides facing away from the light as well as those
@@ -663,7 +660,6 @@ private:
 	bool				fogLight;
 	bool				blendLight;
 	bool				ambientLight;
-	//bool				ambientCubicLight;   // nbohr1more #3881: cubemap based lighting further changes
 	bool				cubicLight;          // nbohr1more #3881: cubemap based lighting
 	bool				unsmoothedTangents;
 	bool				hasSubview;			// mirror, remote render, etc

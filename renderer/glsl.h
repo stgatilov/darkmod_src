@@ -65,7 +65,7 @@ struct lightProgram_t : shaderProgram_t {
 	GLint modelMatrix;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent ) {}
-	virtual void UpdateUniforms(const drawInteraction_t *din) {}
+	virtual void UpdateUniforms( const drawInteraction_t *din ) {}
 };
 
 extern shaderProgram_t cubeMapShader;
@@ -78,9 +78,6 @@ extern lightProgram_t stencilShadowShader;
 extern idCVar r_ambient_testadd;
 extern idCVar r_useGLSL;
 extern idCVar r_useMultiDraw;
-
-void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
-void RB_GLSL_DrawInteractions( void );
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );

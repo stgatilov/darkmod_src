@@ -1,16 +1,16 @@
 /*****************************************************************************
                     The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
+
+ This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
+
+ The Dark Mod Source Code is free software: you can redistribute it
+ and/or modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the License,
  or (at your option) any later version. For details, see LICENSE.TXT.
- 
+
  Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+
 ******************************************************************************/
 
 #ifndef __R_IMAGE_H__
@@ -89,8 +89,7 @@ typedef struct {
 	unsigned int dwABitMask;
 } ddsFilePixelFormat_t;
 
-typedef struct
-{
+typedef struct {
 	unsigned int dwSize;
 	unsigned int dwFlags;
 	unsigned int dwHeight;
@@ -142,7 +141,7 @@ typedef enum {
 
 class idImage {
 public:
-				idImage();
+	idImage();
 
 	// Makes this image active on the current GL texture unit.
 	// automatically enables or disables cube mapping or texture3D
@@ -160,22 +159,22 @@ public:
 	// data goes from the bottom to the top line of the image, as OpenGL expects it
 	// These perform an implicit Bind() on the current texture unit
 	// FIXME: should we implement cinematics this way, instead of with explicit calls?
-	void		GenerateImage( const byte *pic, int width, int height, 
-					   textureFilter_t filter, bool allowDownSize, 
-					   textureRepeat_t repeat, textureDepth_t depth );
-	void		GenerateCubeImage( const byte *pic[6], int size, 
-						textureFilter_t filter, bool allowDownSize, 
-						textureDepth_t depth );
+	void		GenerateImage( const byte *pic, int width, int height,
+	                           textureFilter_t filter, bool allowDownSize,
+	                           textureRepeat_t repeat, textureDepth_t depth );
+	void		GenerateCubeImage( const byte *pic[6], int size,
+	                               textureFilter_t filter, bool allowDownSize,
+	                               textureDepth_t depth );
 	void		GenerateAttachment( int width, int height, GLint format );
-/*	void		GenerateRendertarget(); //~SS
-	// added for soft shadows jitter map, but should be generally useful for storing data 
-	// in a 3D texture. No mipmaps, high quality, nearest filtering, user specifies the format.
-	void		GenerateDataCubeImage( const GLvoid* data, int width, int height, int depth, textureRepeat_t repeat,
-									   GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
-*/
+	/*	void		GenerateRendertarget(); //~SS
+		// added for soft shadows jitter map, but should be generally useful for storing data
+		// in a 3D texture. No mipmaps, high quality, nearest filtering, user specifies the format.
+		void		GenerateDataCubeImage( const GLvoid* data, int width, int height, int depth, textureRepeat_t repeat,
+										   GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
+	*/
 
-						
-						
+
+
 	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
 	void		CopyDepthBuffer( int x, int y, int width, int height, bool useOversizedBuffer );
@@ -196,7 +195,7 @@ public:
 
 	void		AddReference()				{ refCount++; };
 
-//==========================================================
+	//==========================================================
 
 	void		GetDownsize( int &scaled_width, int &scaled_height ) const;
 	void		MakeDefault();	// fill with a grid pattern
@@ -229,7 +228,7 @@ public:
 
 	// parameters that define this image
 	idStr				imgName;				// game path, including extension (except for cube maps), may be an image program
-	void				(*generatorFunction)( idImage *image );	// NULL for files
+	void	( *generatorFunction )( idImage *image );	// NULL for files
 	bool				allowDownSize;			// this also doubles as a don't-partially-load flag
 	textureFilter_t		filter;
 	textureRepeat_t		repeat;
@@ -249,7 +248,7 @@ public:
 	// data for listImages
 	int					uploadWidth, uploadHeight;	// after power of two, downsample, and MAX_TEXTURE_SIZE
 	int					internalFormat;
-/*	GLuint				pixelDataFormat[2]; */ // ~ss
+
 	idImage 			*cacheUsagePrev, *cacheUsageNext;	// for dynamic cache purging of old images
 
 	idImage *			hashNext;				// for hash chains to speed lookup
@@ -258,7 +257,7 @@ public:
 };
 
 ID_INLINE idImage::idImage() {
-	texnum = TEXTURE_NOT_LOADED;
+	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
 	partialImage = NULL;
 	type = TT_DISABLED;
 	isPartialImage = false;
@@ -310,18 +309,15 @@ public:
 	// grid pattern.
 	// Will automatically resample non-power-of-two images and execute image programs if needed.
 	idImage *			ImageFromFile( const char *name,
-							 textureFilter_t filter, bool allowDownSize,
-							 textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D );
+	                                   textureFilter_t filter, bool allowDownSize,
+	                                   textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D );
 
 	// look for a loaded image, whatever the parameters
 	idImage *			GetImage( const char *name ) const;
 
 	// The callback will be issued immediately, and later if images are reloaded or vid_restart
 	// The callback function should call one of the idImage::Generate* functions to fill in the data
-	idImage *			ImageFromFunction( const char *name, void (*generatorFunction)( idImage *image ));
-
-		// For generating a rendertarget image. Can be called a second time with same name to resize or change format.
-//	idImage *			RendertargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
+	idImage *			ImageFromFunction( const char *name, void ( *generatorFunction )( idImage *image ) );
 
 	// called once a frame to allow any background loads that have been completed
 	// to turn into textures.
@@ -379,7 +375,7 @@ public:
 	static idCVar		image_useOffLineCompression; // will write a batch file with commands for the offline compression
 	static idCVar		image_preload;				// if 0, dynamically load all images
 	static idCVar		image_cacheMinK;			// maximum K of precompressed files to read at specification time,
-													// the remainder will be dynamically cached
+	// the remainder will be dynamically cached
 	static idCVar		image_cacheMegs;			// maximum bytes set aside for temporary loading of full-sized precompressed images
 	static idCVar		image_useCache;				// 1 = do background load image caching
 	static idCVar		image_showBackgroundLoads;	// 1 = print number of outstanding background loads
@@ -390,7 +386,7 @@ public:
 	static idCVar		image_downSizeBumpLimit;	// downsize bump limit
 	static idCVar		image_ignoreHighQuality;	// ignore high quality on materials
 	static idCVar		image_downSizeLimit;		// downsize diffuse limit
-	static idCVar		image_blockChecksum;		// duplicate check 
+	static idCVar		image_blockChecksum;		// duplicate check
 	static idCVar		image_mipmapMode;			// 0 - software, 1 = gl 1.4, 2 = gl 3.0
 
 	// built-in images
@@ -426,7 +422,7 @@ public:
 	idImage *			bloomImage;
 
 	//--------------------------------------------------------
-	
+
 	idImage *			AllocImage( const char *name );
 	void				SetNormalPalette();
 	void				ChangeTextureFilter();
@@ -458,6 +454,12 @@ public:
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system
 
+// newer use casting in this macro it fucks up with differing types !!!
+#define IMAGE_ROUND_POWER2(in, out) {		\
+	for (out = 1; out < in; out <<= 1)		\
+	;										\
+}
+
 /*
 ====================================================================
 
@@ -467,10 +469,10 @@ FIXME: make an "imageBlock" type to hold byte*,width,height?
 ====================================================================
 */
 
-byte *R_Dropsample( const byte *in, int inwidth, int inheight,  
-							int outwidth, int outheight );
-byte *R_ResampleTexture( const byte *in, int inwidth, int inheight,  
-							int outwidth, int outheight );
+byte *R_Dropsample( const byte *in, int inwidth, int inheight,
+                    int outwidth, int outheight );
+byte *R_ResampleTexture( const byte *in, int inwidth, int inheight,
+                         int outwidth, int outheight );
 byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder );
 
 // these operate in-place on the provided pixels

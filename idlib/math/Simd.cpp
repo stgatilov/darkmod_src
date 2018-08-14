@@ -1,17 +1,17 @@
 // vim:ts=4:sw=4:cindent
 /*****************************************************************************
                     The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
+
+ This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
+
+ The Dark Mod Source Code is free software: you can redistribute it
+ and/or modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the License,
  or (at your option) any later version. For details, see LICENSE.TXT.
- 
+
  Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -23,13 +23,11 @@
 
 #include "Simd_Generic.h"
 #include "Simd_MMX.h"
-//#include "Simd_3DNow.h"
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
 #include "Simd_SSE3.h"
 #include "Simd_AVX.h"
 #include "Simd_AVX2.h"
-//#include "Simd_AltiVec.h"
 #if defined(_MSC_VER) && defined(_WIN64)
 #include <intrin.h>
 #endif
@@ -66,96 +64,69 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	*/
 #ifdef __linux__
 	int cores = 0;
-	unsigned int a,b,c,d, result;
+	unsigned int a, b, c, d, result;
 
 	// greebo: Use the cpuid function as provided by gcc
-	__get_cpuid (0, &a, &b, &c, &d);
+	__get_cpuid( 0, &a, &b, &c, &d );
 
 	//idLib::common->Printf( "cpuid result is a=%x, c=%x, d=%x\n", a,c,d );
 
 	result = CPUID_GENERIC;
 	// "AuthenticAMD"
-	if (( 0x68747541l == a ) && ( 0x444d4163l == c ) && ( 0x69746e65l == d ) )
-	{
+	if ( ( 0x68747541l == a ) && ( 0x444d4163l == c ) && ( 0x69746e65l == d ) ) {
 		result = CPUID_AMD;
-	}
-	else
+	} else {
 		// "GenuineIntel"
-		if (( 0x756e6547l == a ) && ( 0x6c65746el == c ) && ( 0x49656e69l == d ) )
-		{
-		result = CPUID_INTEL;
+		if ( ( 0x756e6547l == a ) && ( 0x6c65746el == c ) && ( 0x49656e69l == d ) ) {
+			result = CPUID_INTEL;
 		}
-	
-	__get_cpuid (1, &a, &b, &c, &d);
+	}
+	__get_cpuid( 1, &a, &b, &c, &d );
 
-	// This can only be checked on AMD CPUs
-	/*if ( (result & CPUID_AMD) && (d & 0x10000000l) )		// >> 31 does not work here
-	{
-		result += CPUID_3DNOW;
-	}*/
 	// The calculation how many physical/logical CPUs the machine has is rather
 	// convuluted and differes between AMD and Intel, so we don't attempt it, we
 	// only check bits 16..23 of EBX to see if it is > 1:
-	cores = (a >> 16) & 0xFF;
-	// Only on Intel we can have Hyper-Threading
-	/*if ( (result & CPUID_INTEL) && ((d >> 28) & 0x1) && cores > 1 )
-	{
-		result += CPUID_HTT;
-	}*/
+	cores = ( a >> 16 ) & 0xFF;
 
 	// These tests are the same for AMD and Intel
-	if ((d >> 23) & 0x1)
-	{
+	if ( ( d >> 23 ) & 0x1 ) {
 		result += CPUID_MMX;
 	}
-	if ((d >> 25) & 0x1)
-	{
+	if ( ( d >> 25 ) & 0x1 ) {
 		result += CPUID_SSE;
 	}
-	if ((d >> 26) & 0x1)
-	{
+	if ( ( d >> 26 ) & 0x1 ) {
 		result += CPUID_SSE2;
 	}
-	/*if ((d >> 15) & 0x1)
-	{
-		result += CPUID_CMOV;
-	}*/
-	if (c & 0x1)
-	{
+	if ( c & 0x1 ) {
 		result += CPUID_SSE3;
 	}
 
 	//idLib::common->Printf( "cpuid result is %i (c = %i d = %i)\n", result, c, d);
-	cpuid = (cpuid_t)result;
+	cpuid = ( cpuid_t )result;
 #endif
 
 	// Print what we found to console
 	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s%s\n",
-			// Vendor
-			cpuid & CPUID_AMD ? "AMD" : 
-			cpuid & CPUID_INTEL ? "Intel" : 
-			cpuid & CPUID_GENERIC ? "Generic" : 
-			"Unsupported",
-			// Hyper-Threading?
-			//cpuid & CPUID_HTT ? " with Hyper-Threading enabled" : "",
-
-			// the calculation how many physical/logical CPUs the machine has is rather
-			// convuluted and differes between AMD and Intel, so we don't attempt it:
-//			cores,
-//		   	cores > 1 ? "cores" : "core",
-			// Flags
-			cpuid & CPUID_MMX ? " MMX" : "",
-			//cpuid & CPUID_CMOV ? " CMOV" : "",
-			cpuid & CPUID_SSE ? " SSE" : "",
-			cpuid & CPUID_SSE2 ? " SSE2" : "",
-			cpuid & CPUID_SSE3 ? " SSE3" : "",
-			cpuid & CPUID_SSSE3 ? " SSSE3" : "",
-			cpuid & CPUID_SSE41 ? " SSE41" : "",
-			cpuid & CPUID_AVX ? " AVX" : "",
-			cpuid & CPUID_AVX2 ? " AVX2" : "",
-			cpuid & CPUID_FMA3 ? " FMA3" : ""
-			//cpuid & CPUID_3DNOW ? " 3DNow!" : "",
-	);
+	                       // Vendor
+	                       cpuid & CPUID_AMD ? "AMD" :
+	                       cpuid & CPUID_INTEL ? "Intel" :
+	                       cpuid & CPUID_GENERIC ? "Generic" :
+	                       "Unsupported",
+	                       // the calculation how many physical/logical CPUs the machine has is rather
+	                       // convuluted and differes between AMD and Intel, so we don't attempt it:
+	                       //			cores,
+	                       //		   	cores > 1 ? "cores" : "core",
+	                       // Flags
+	                       cpuid & CPUID_MMX ? " MMX" : "",
+	                       cpuid & CPUID_SSE ? " SSE" : "",
+	                       cpuid & CPUID_SSE2 ? " SSE2" : "",
+	                       cpuid & CPUID_SSE3 ? " SSE3" : "",
+	                       cpuid & CPUID_SSSE3 ? " SSSE3" : "",
+	                       cpuid & CPUID_SSE41 ? " SSE41" : "",
+	                       cpuid & CPUID_AVX ? " AVX" : "",
+	                       cpuid & CPUID_AVX2 ? " AVX2" : "",
+	                       cpuid & CPUID_FMA3 ? " FMA3" : "" );
 	if ( forceGeneric ) {
 
 		newProcessor = generic;
@@ -163,34 +134,31 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	} else {
 
 		if ( !processor ) {
-			bool upToMMX = (cpuid & CPUID_MMX);
-			bool upToSSE = upToMMX && (cpuid & CPUID_SSE);
-			bool upToSSE2 = upToSSE && (cpuid & CPUID_SSE2);
-			bool upToSSE3 = upToSSE2 && (cpuid & CPUID_SSE3);
-			bool upToSSSE3 = upToSSE3 && (cpuid & CPUID_SSSE3);
-			bool upToSSE41 = upToSSSE3 && (cpuid & CPUID_SSE41);
-			bool upToAVX = upToSSE41 && (cpuid & CPUID_AVX);
-			bool upToAVX2 = upToAVX && (cpuid & CPUID_AVX2) && (cpuid & CPUID_FMA3);
+			bool upToMMX = ( cpuid & CPUID_MMX ) ? true : false;
+			bool upToSSE = upToMMX && ( cpuid & CPUID_SSE );
+			bool upToSSE2 = upToSSE && ( cpuid & CPUID_SSE2 );
+			bool upToSSE3 = upToSSE2 && ( cpuid & CPUID_SSE3 );
+			bool upToSSSE3 = upToSSE3 && ( cpuid & CPUID_SSSE3 );
+			bool upToSSE41 = upToSSSE3 && ( cpuid & CPUID_SSE41 );
+			bool upToAVX = upToSSE41 && ( cpuid & CPUID_AVX );
+			bool upToAVX2 = upToAVX && ( cpuid & CPUID_AVX2 ) && ( cpuid & CPUID_FMA3 );
 			if ( upToAVX2 ) {
 				processor = new idSIMD_AVX2;
 			} else if ( upToAVX ) {
 				processor = new idSIMD_AVX;
-			} else if (upToSSE3) {
+			} else if ( upToSSE3 ) {
 				processor = new idSIMD_SSE3;
-			} else if (upToSSE2) {
+			} else if ( upToSSE2 ) {
 				processor = new idSIMD_SSE2;
-			} else if (upToSSE) {
+			} else if ( upToSSE ) {
 				processor = new idSIMD_SSE;
-/*			} else if ( ( cpuid & CPUID_MMX ) && ( cpuid & CPUID_3DNOW ) ) {
-				processor = new idSIMD_3DNow;*/
-			} else if (upToMMX) {
+			} else if ( upToMMX ) {
 				processor = new idSIMD_MMX;
 			} else {
 				processor = generic;
 			}
 			processor->cpuid = cpuid;
 		}
-
 		newProcessor = processor;
 	}
 
@@ -306,27 +274,23 @@ typedef struct {
 } U64;
 
 
-asm void GetTB(U64 *in)
-{
+asm void GetTB( U64 *in ) {
 	nofralloc			// suppress prolog
 	machine 603			// allows the use of mftb & mftbu functions
-	
-loop:	
+
+loop:
 	mftbu	r5			// grab the upper time base register (TBU)
 	mftb	r4			// grab the lower time base register (TBL)
-	mftbu	r6			// grab the upper time base register (TBU) again 
-	
-	cmpw	r6,r5		// see if old TBU == new TBU
-	bne-	loop		// loop if carry occurred (predict branch not taken)
-	
-	stw  	r4,4(r3)	// store TBL in the low 32 bits of the return value
-	stw  	r5,0(r3)	// store TBU in the high 32 bits of the return value
+	mftbu	r6			// grab the upper time base register (TBU) again
+
+	cmpw	r6, r5		// see if old TBU == new TBU
+	bne -	loop		// loop if carry occurred (predict branch not taken)
+
+	stw  	r4, 4( r3 )	// store TBL in the low 32 bits of the return value
+	stw  	r5, 0( r3 )	// store TBU in the high 32 bits of the return value
 
 	blr
 }
-
-
-
 
 double TBToDoubleNano( U64 startTime, U64 stopTime, double ticksPerNanosecond );
 
@@ -337,8 +301,8 @@ void GetTB( U64 * );
 #endif
 
 double TBToDoubleNano( U64 startTime, U64 stopTime, double ticksPerNanosecond ) {
-	#define K_2POWER32 4294967296.0
-	#define TICKS_PER_NANOSECOND 0.025
+#define K_2POWER32 4294967296.0
+#define TICKS_PER_NANOSECOND 0.025
 	double nanoTime;
 	U64 diffTime;
 
@@ -347,14 +311,14 @@ double TBToDoubleNano( U64 startTime, U64 stopTime, double ticksPerNanosecond ) 
 	diffTime.lo = stopTime.lo - startTime.lo;
 
 	// convert TB ticks into time
-	nanoTime = (double)(diffTime.hi)*((double)K_2POWER32) + (double)(diffTime.lo);
-	nanoTime = nanoTime/ticksPerNanosecond;
-	return (nanoTime);
-}       
+	nanoTime = ( double )( diffTime.hi ) * ( ( double )K_2POWER32 ) + ( double )( diffTime.lo );
+	nanoTime = nanoTime / ticksPerNanosecond;
+	return ( nanoTime );
+}
 
 TIME_TYPE time_in_millisec( void ) {
-	#define K_2POWER32 4294967296.0
-	#define TICKS_PER_NANOSECOND 0.025
+#define K_2POWER32 4294967296.0
+#define TICKS_PER_NANOSECOND 0.025
 
 	U64 the_time;
 	double nanoTime, milliTime;
@@ -362,20 +326,20 @@ TIME_TYPE time_in_millisec( void ) {
 	GetTB( &the_time );
 
 	// convert TB ticks into time
-	nanoTime = (double)(the_time.hi)*((double)K_2POWER32) + (double)(the_time.lo);
-	nanoTime = nanoTime/ticksPerNanosecond;
+	nanoTime = ( double )( the_time.hi ) * ( ( double )K_2POWER32 ) + ( double )( the_time.lo );
+	nanoTime = nanoTime / ticksPerNanosecond;
 
 	// nanoseconds are 1 billionth of a second. I want milliseconds
 	milliTime = nanoTime * 1000000.0;
 
 	printf( "ticks per nanosec -- %lf\n", ticksPerNanosecond );
-	printf( "nanoTime is %lf -- milliTime is %lf -- as int is %i\n", nanoTime, milliTime, (int)milliTime );
+	printf( "nanoTime is %lf -- milliTime is %lf -- as int is %i\n", nanoTime, milliTime, ( int )milliTime );
 
-	return (int)milliTime;
+	return ( int )milliTime;
 }
 
 #define StartRecordTime( start )			\
-	start = time_in_millisec(); 
+	start = time_in_millisec();
 
 #define StopRecordTime( end )				\
 	end = time_in_millisec();
@@ -383,7 +347,7 @@ TIME_TYPE time_in_millisec( void ) {
 
 #else
 #define StartRecordTime( start )			\
-	start = mach_absolute_time(); 
+	start = mach_absolute_time();
 
 #define StopRecordTime( end )				\
 	end = mach_absolute_time();
@@ -432,13 +396,13 @@ void PrintClocks( const char *string, const int dataCount, int clocks, int other
 	int i;
 
 	idLib::common->Printf( string );
-	for ( i = idStr::LengthWithoutColors(string); i < 48; i++ ) {
-		idLib::common->Printf(" ");
+	for ( i = idStr::LengthWithoutColors( string ); i < 48; i++ ) {
+		idLib::common->Printf( " " );
 	}
 	clocks -= baseClocks;
 	if ( otherClocks && clocks ) {
 		otherClocks -= baseClocks;
-		int p = (int) ( (float) ( otherClocks - clocks ) * 100.0f / (float) otherClocks );
+		int p = ( int )( ( float )( otherClocks - clocks ) * 100.0f / ( float ) otherClocks );
 		idLib::common->Printf( "c = %4d, clcks = %5d, %d%%\n", dataCount, clocks, p );
 	} else {
 		idLib::common->Printf( "c = %4d, clcks = %5d\n", dataCount, clocks );
@@ -482,8 +446,7 @@ void TestAdd( void ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 		fsrc1[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -556,8 +519,7 @@ void TestSub( void ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 		fsrc1[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -630,8 +592,7 @@ void TestMul( void ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 		fsrc1[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -705,10 +666,9 @@ void TestDiv( void ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 		do {
 			fsrc1[i] = srnd.CRandomFloat() * 10.0f;
-		} while( idMath::Fabs( fsrc1[i] ) < 0.1f );
+		} while ( idMath::Fabs( fsrc1[i] ) < 0.1f );
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 
 	bestClocksGeneric = 0;
@@ -735,7 +695,6 @@ void TestDiv( void ) {
 	}
 	result = ( i >= COUNT ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->Div( float * float[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
-
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -781,8 +740,7 @@ void TestMulAdd( void ) {
 	for ( i = 0; i < COUNT; i++ ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	for ( j = 0; j < 50 && j < COUNT; j++ ) {
 
@@ -837,8 +795,7 @@ void TestMulSub( void ) {
 	for ( i = 0; i < COUNT; i++ ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	for ( j = 0; j < 50 && j < COUNT; j++ ) {
 
@@ -889,9 +846,9 @@ void TestDot( void ) {
 	ALIGN16( float fsrc1[COUNT] );
 	ALIGN16( idVec3 v3src0[COUNT] );
 	ALIGN16( idVec3 v3src1[COUNT] );
-	ALIGN16( idVec3 v3constant ) ( 1.0f, 2.0f, 3.0f );
+	ALIGN16( idVec3 v3constant )( 1.0f, 2.0f, 3.0f );
 	ALIGN16( idPlane v4src0[COUNT] );
-	ALIGN16( idPlane v4constant ) (1.0f, 2.0f, 3.0f, 4.0f);
+	ALIGN16( idPlane v4constant )( 1.0f, 2.0f, 3.0f, 4.0f );
 	ALIGN16( idDrawVert drawVerts[COUNT] );
 	const char *result;
 
@@ -910,9 +867,7 @@ void TestDot( void ) {
 		v4src0[i][3] = srnd.CRandomFloat() * 10.0f;
 		drawVerts[i].xyz = v3src0[i];
 	}
-
-	idLib::common->Printf("====================================\n" );
-
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -938,7 +893,6 @@ void TestDot( void ) {
 	}
 	result = ( i >= COUNT ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->Dot( idVec3 * idVec3[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
-
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -1095,8 +1049,7 @@ void TestDot( void ) {
 	result = ( i >= COUNT ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->Dot( idVec3[] * idVec3[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	float dot1 = 0.0f, dot2 = 0.0f;
 	for ( j = 0; j < 50 && j < COUNT; j++ ) {
@@ -1140,8 +1093,7 @@ void TestCompare( void ) {
 	for ( i = 0; i < COUNT; i++ ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -1388,8 +1340,7 @@ void TestMinMax( void ) {
 		drawVerts[i].xyz = v3src0[i];
 		indexes[i] = i;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -1409,7 +1360,6 @@ void TestMinMax( void ) {
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
-
 	result = ( min == min2 && max == max2 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MinMax( float[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 
@@ -1429,7 +1379,6 @@ void TestMinMax( void ) {
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
-
 	result = ( v2min == v2min2 && v2max == v2max2 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MinMax( idVec2[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 
@@ -1449,7 +1398,6 @@ void TestMinMax( void ) {
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
-
 	result = ( vmin == vmin2 && vmax == vmax2 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MinMax( idVec3[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 
@@ -1469,7 +1417,6 @@ void TestMinMax( void ) {
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
-
 	result = ( vmin == vmin2 && vmax == vmax2 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MinMax( idDrawVert[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 
@@ -1489,7 +1436,6 @@ void TestMinMax( void ) {
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
-
 	result = ( vmin == vmin2 && vmax == vmax2 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MinMax( idDrawVert[], indexes[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 }
@@ -1512,8 +1458,7 @@ void TestClamp( void ) {
 	for ( i = 0; i < COUNT; i++ ) {
 		fsrc0[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
@@ -1605,7 +1550,7 @@ void TestMemcpy( void ) {
 
 	idRandom random( RANDOM_SEED );
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	for ( i = 5; i < 8192; i += 31 ) {
 		for ( j = 0; j < i; j++ ) {
@@ -1639,7 +1584,7 @@ void TestMemset( void ) {
 		for ( j = -1; j <= 1; j++ ) {
 			p_simd->Memset( test, j, i );
 			for ( k = 0; k < i; k++ ) {
-				if ( test[k] != (byte)j ) {
+				if ( test[k] != ( byte )j ) {
 					idLib::common->Printf( "   simd->Memset() " S_COLOR_RED "X\n" );
 					return;
 				}
@@ -1661,9 +1606,9 @@ void TestMatXMultiplyVecX( void ) {
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	const char *result;
 	idMatX mat;
-	idVecX src(6);
-	idVecX dst(6);
-	idVecX tst(6);
+	idVecX src( 6 );
+	idVecX dst( 6 );
+	idVecX tst( 6 );
 
 	src[0] = 1.0f;
 	src[1] = 2.0f;
@@ -1672,7 +1617,7 @@ void TestMatXMultiplyVecX( void ) {
 	src[4] = 5.0f;
 	src[5] = 6.0f;
 
-	idLib::common->Printf("================= NxN * Nx1 ===================\n" );
+	idLib::common->Printf( "================= NxN * Nx1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( i, i, RANDOM_SEED, -10.0f, 10.0f );
@@ -1697,12 +1642,10 @@ void TestMatXMultiplyVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyVecX %dx%d*%dx1 %s", i, i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= Nx6 * 6x1 ===================\n" );
+	idLib::common->Printf( "================= Nx6 * 6x1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( i, 6, RANDOM_SEED, -10.0f, 10.0f );
@@ -1727,12 +1670,10 @@ void TestMatXMultiplyVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyVecX %dx6*6x1 %s", i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= 6xN * Nx1 ===================\n" );
+	idLib::common->Printf( "================= 6xN * Nx1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( 6, i, RANDOM_SEED, -10.0f, 10.0f );
@@ -1746,7 +1687,6 @@ void TestMatXMultiplyVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyVecX 6x%d*%dx1", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -1756,7 +1696,6 @@ void TestMatXMultiplyVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyVecX 6x%d*%dx1 %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -1772,9 +1711,9 @@ void TestMatXMultiplyAddVecX( void ) {
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	const char *result;
 	idMatX mat;
-	idVecX src(6);
-	idVecX dst(6);
-	idVecX tst(6);
+	idVecX src( 6 );
+	idVecX dst( 6 );
+	idVecX tst( 6 );
 
 	src[0] = 1.0f;
 	src[1] = 2.0f;
@@ -1783,7 +1722,7 @@ void TestMatXMultiplyAddVecX( void ) {
 	src[4] = 5.0f;
 	src[5] = 6.0f;
 
-	idLib::common->Printf("================= NxN * Nx1 ===================\n" );
+	idLib::common->Printf( "================= NxN * Nx1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( i, i, RANDOM_SEED, -10.0f, 10.0f );
@@ -1797,7 +1736,6 @@ void TestMatXMultiplyAddVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyAddVecX %dx%d*%dx1", i, i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -1808,12 +1746,10 @@ void TestMatXMultiplyAddVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyAddVecX %dx%d*%dx1 %s", i, i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= Nx6 * 6x1 ===================\n" );
+	idLib::common->Printf( "================= Nx6 * 6x1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( i, 6, RANDOM_SEED, -10.0f, 10.0f );
@@ -1827,7 +1763,6 @@ void TestMatXMultiplyAddVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyAddVecX %dx6*6x1", i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -1838,12 +1773,10 @@ void TestMatXMultiplyAddVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyAddVecX %dx6*6x1 %s", i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= 6xN * Nx1 ===================\n" );
+	idLib::common->Printf( "================= 6xN * Nx1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( 6, i, RANDOM_SEED, -10.0f, 10.0f );
@@ -1857,7 +1790,6 @@ void TestMatXMultiplyAddVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyAddVecX 6x%d*%dx1", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -1868,7 +1800,6 @@ void TestMatXMultiplyAddVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyAddVecX 6x%d*%dx1 %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -1884,9 +1815,9 @@ void TestMatXTransposeMultiplyVecX( void ) {
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	const char *result;
 	idMatX mat;
-	idVecX src(6);
-	idVecX dst(6);
-	idVecX tst(6);
+	idVecX src( 6 );
+	idVecX dst( 6 );
+	idVecX tst( 6 );
 
 	src[0] = 1.0f;
 	src[1] = 2.0f;
@@ -1895,7 +1826,7 @@ void TestMatXTransposeMultiplyVecX( void ) {
 	src[4] = 5.0f;
 	src[5] = 6.0f;
 
-	idLib::common->Printf("================= Nx6 * Nx1 ===================\n" );
+	idLib::common->Printf( "================= Nx6 * Nx1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( i, 6, RANDOM_SEED, -10.0f, 10.0f );
@@ -1909,7 +1840,6 @@ void TestMatXTransposeMultiplyVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_TransposeMulVecX %dx6*%dx1", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -1920,12 +1850,10 @@ void TestMatXTransposeMultiplyVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_TransposeMulVecX %dx6*%dx1 %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= 6xN * 6x1 ===================\n" );
+	idLib::common->Printf( "================= 6xN * 6x1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( 6, i, RANDOM_SEED, -10.0f, 10.0f );
@@ -1939,7 +1867,6 @@ void TestMatXTransposeMultiplyVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_TransposeMulVecX 6x%d*6x1", i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -1950,7 +1877,6 @@ void TestMatXTransposeMultiplyVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_TransposeMulVecX 6x%d*6x1 %s", i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -1966,9 +1892,9 @@ void TestMatXTransposeMultiplyAddVecX( void ) {
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	const char *result;
 	idMatX mat;
-	idVecX src(6);
-	idVecX dst(6);
-	idVecX tst(6);
+	idVecX src( 6 );
+	idVecX dst( 6 );
+	idVecX tst( 6 );
 
 	src[0] = 1.0f;
 	src[1] = 2.0f;
@@ -1977,7 +1903,7 @@ void TestMatXTransposeMultiplyAddVecX( void ) {
 	src[4] = 5.0f;
 	src[5] = 6.0f;
 
-	idLib::common->Printf("================= Nx6 * Nx1 ===================\n" );
+	idLib::common->Printf( "================= Nx6 * Nx1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( i, 6, RANDOM_SEED, -10.0f, 10.0f );
@@ -1991,7 +1917,6 @@ void TestMatXTransposeMultiplyAddVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_TransposeMulAddVecX %dx6*%dx1", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2002,12 +1927,11 @@ void TestMatXTransposeMultiplyAddVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_TransposeMulAddVecX %dx6*%dx1 %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
 
-	idLib::common->Printf("================= 6xN * 6x1 ===================\n" );
+	idLib::common->Printf( "================= 6xN * 6x1 ===================\n" );
 
 	for ( i = 1; i <= 6; i++ ) {
 		mat.Random( 6, i, RANDOM_SEED, -10.0f, 10.0f );
@@ -2021,7 +1945,6 @@ void TestMatXTransposeMultiplyAddVecX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_TransposeMulAddVecX 6x%d*6x1", i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2032,7 +1955,6 @@ void TestMatXTransposeMultiplyAddVecX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_TransposeMulAddVecX 6x%d*6x1 %s", i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -2052,7 +1974,7 @@ void TestMatXMultiplyMatX( void ) {
 	const char *result;
 	idMatX m1, m2, dst, tst;
 
-	idLib::common->Printf("================= NxN * Nx6 ===================\n" );
+	idLib::common->Printf( "================= NxN * Nx6 ===================\n" );
 
 	// NxN * Nx6
 	for ( i = 1; i <= 5; i++ ) {
@@ -2068,7 +1990,6 @@ void TestMatXMultiplyMatX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyMatX %dx%d*%dx6", i, i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2078,12 +1999,10 @@ void TestMatXMultiplyMatX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyMatX %dx%d*%dx6 %s", i, i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= 6xN * Nx6 ===================\n" );
+	idLib::common->Printf( "================= 6xN * Nx6 ===================\n" );
 
 	// 6xN * Nx6
 	for ( i = 1; i <= 5; i++ ) {
@@ -2099,7 +2018,6 @@ void TestMatXMultiplyMatX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyMatX 6x%d*%dx6", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2109,12 +2027,10 @@ void TestMatXMultiplyMatX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyMatX 6x%d*%dx6 %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= Nx6 * 6xN ===================\n" );
+	idLib::common->Printf( "================= Nx6 * 6xN ===================\n" );
 
 	// Nx6 * 6xN
 	for ( i = 1; i <= 5; i++ ) {
@@ -2130,7 +2046,6 @@ void TestMatXMultiplyMatX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyMatX %dx6*6x%d", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2140,12 +2055,10 @@ void TestMatXMultiplyMatX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyMatX %dx6*6x%d %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= 6x6 * 6xN ===================\n" );
+	idLib::common->Printf( "================= 6x6 * 6xN ===================\n" );
 
 	// 6x6 * 6xN
 	for ( i = 1; i <= 6; i++ ) {
@@ -2161,7 +2074,6 @@ void TestMatXMultiplyMatX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_MultiplyMatX 6x6*6x%d", i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2171,7 +2083,6 @@ void TestMatXMultiplyMatX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_MultiplyMatX 6x6*6x%d %s", i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -2188,7 +2099,7 @@ void TestMatXTransposeMultiplyMatX( void ) {
 	const char *result;
 	idMatX m1, m2, dst, tst;
 
-	idLib::common->Printf("================= Nx6 * NxN ===================\n" );
+	idLib::common->Printf( "================= Nx6 * NxN ===================\n" );
 
 	// Nx6 * NxN
 	for ( i = 1; i <= 5; i++ ) {
@@ -2204,7 +2115,6 @@ void TestMatXTransposeMultiplyMatX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_TransMultiplyMatX %dx6*%dx%d", i, i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2214,12 +2124,10 @@ void TestMatXTransposeMultiplyMatX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_TransMultiplyMatX %dx6*%dx%d %s", i, i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
-
-	idLib::common->Printf("================= 6xN * 6x6 ===================\n" );
+	idLib::common->Printf( "================= 6xN * 6x6 ===================\n" );
 
 	// 6xN * 6x6
 	for ( i = 1; i <= 6; i++ ) {
@@ -2235,7 +2143,6 @@ void TestMatXTransposeMultiplyMatX( void ) {
 			GetBest( start, end, bestClocksGeneric );
 		}
 		tst = dst;
-
 		PrintClocks( va( "generic->MatX_TransMultiplyMatX 6x%d*6x6", i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2245,7 +2152,6 @@ void TestMatXTransposeMultiplyMatX( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = dst.Compare( tst, MATX_MATX_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_TransMultiplyMatX 6x%d*6x6 %s", i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -2266,7 +2172,7 @@ void TestMatXLowerTriangularSolve( void ) {
 	idMatX L;
 	idVecX x, b, tst;
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	L.Random( MATX_LTS_SOLVE_SIZE, MATX_LTS_SOLVE_SIZE, 0, -1.0f, 1.0f );
 	x.SetSize( MATX_LTS_SOLVE_SIZE );
@@ -2295,7 +2201,6 @@ void TestMatXLowerTriangularSolve( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = x.Compare( tst, MATX_LTS_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_LowerTriangularSolve %dx%d %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -2313,7 +2218,7 @@ void TestMatXLowerTriangularSolveTranspose( void ) {
 	idMatX L;
 	idVecX x, b, tst;
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	L.Random( MATX_LTS_SOLVE_SIZE, MATX_LTS_SOLVE_SIZE, 0, -1.0f, 1.0f );
 	x.SetSize( MATX_LTS_SOLVE_SIZE );
@@ -2342,7 +2247,6 @@ void TestMatXLowerTriangularSolveTranspose( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = x.Compare( tst, MATX_LTS_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_LowerTriangularSolveT %dx%d %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -2363,7 +2267,7 @@ void TestMatXLDLTFactor( void ) {
 	idMatX src, original, mat1, mat2;
 	idVecX invDiag1, invDiag2;
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	original.SetSize( MATX_LDLT_FACTOR_SOLVE_SIZE, MATX_LDLT_FACTOR_SOLVE_SIZE );
 	src.Random( MATX_LDLT_FACTOR_SOLVE_SIZE, MATX_LDLT_FACTOR_SOLVE_SIZE, 0, -1.0f, 1.0f );
@@ -2380,7 +2284,6 @@ void TestMatXLDLTFactor( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksGeneric );
 		}
-
 		PrintClocks( va( "generic->MatX_LDLTFactor %dx%d", i, i ), 1, bestClocksGeneric );
 
 		bestClocksSIMD = 0;
@@ -2392,7 +2295,6 @@ void TestMatXLDLTFactor( void ) {
 			StopRecordTime( end );
 			GetBest( start, end, bestClocksSIMD );
 		}
-
 		result = mat1.Compare( mat2, MATX_LDLT_SIMD_EPSILON ) && invDiag1.Compare( invDiag2, MATX_LDLT_SIMD_EPSILON ) ? "ok" : S_COLOR_RED"X";
 		PrintClocks( va( "   simd->MatX_LDLTFactor %dx%d %s", i, i, result ), 1, bestClocksSIMD, bestClocksGeneric );
 	}
@@ -2569,11 +2471,11 @@ void TestConvertJointMatsToJointQuats( void ) {
 
 	for ( i = 0; i < COUNT; i++ ) {
 		if ( !joints1[i].q.Compare( joints2[i].q, 1e-4f ) ) {
-			idLib::common->Printf("ConvertJointMatsToJointQuats: broken q %i\n", i );
+			idLib::common->Printf( "ConvertJointMatsToJointQuats: broken q %i\n", i );
 			break;
 		}
 		if ( !joints1[i].t.Compare( joints2[i].t, 1e-4f ) ) {
-			idLib::common->Printf("ConvertJointMatsToJointQuats: broken t %i\n", i );
+			idLib::common->Printf( "ConvertJointMatsToJointQuats: broken t %i\n", i );
 			break;
 		}
 	}
@@ -2589,10 +2491,10 @@ TestTransformJoints
 void TestTransformJoints( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointMat joints[COUNT+1] );
-	ALIGN16( idJointMat joints1[COUNT+1] );
-	ALIGN16( idJointMat joints2[COUNT+1] );
-	ALIGN16( int parents[COUNT+1] );
+	ALIGN16( idJointMat joints[COUNT + 1] );
+	ALIGN16( idJointMat joints1[COUNT + 1] );
+	ALIGN16( idJointMat joints2[COUNT + 1] );
+	ALIGN16( int parents[COUNT + 1] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2635,7 +2537,7 @@ void TestTransformJoints( void ) {
 	}
 
 	for ( i = 0; i < COUNT; i++ ) {
-		if ( !joints1[i+1].Compare( joints2[i+1], 1e-4f ) ) {
+		if ( !joints1[i + 1].Compare( joints2[i + 1], 1e-4f ) ) {
 			break;
 		}
 	}
@@ -2651,10 +2553,10 @@ TestUntransformJoints
 void TestUntransformJoints( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( idJointMat joints[COUNT+1] );
-	ALIGN16( idJointMat joints1[COUNT+1] );
-	ALIGN16( idJointMat joints2[COUNT+1] );
-	ALIGN16( int parents[COUNT+1] );
+	ALIGN16( idJointMat joints[COUNT + 1] );
+	ALIGN16( idJointMat joints1[COUNT + 1] );
+	ALIGN16( idJointMat joints2[COUNT + 1] );
+	ALIGN16( int parents[COUNT + 1] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2697,7 +2599,7 @@ void TestUntransformJoints( void ) {
 	}
 
 	for ( i = 0; i < COUNT; i++ ) {
-		if ( !joints1[i+1].Compare( joints2[i+1], 1e-4f ) ) {
+		if ( !joints1[i + 1].Compare( joints2[i + 1], 1e-4f ) ) {
 			break;
 		}
 	}
@@ -2719,7 +2621,7 @@ void TestTransformVerts( void ) {
 	ALIGN16( idDrawVert drawVerts2[NUMVERTS] );
 	ALIGN16( idJointMat joints[NUMJOINTS] );
 	ALIGN16( idVec4 weights[COUNT] );
-	ALIGN16( int weightIndex[COUNT*2] );
+	ALIGN16( int weightIndex[COUNT * 2] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2742,8 +2644,8 @@ void TestTransformVerts( void ) {
 		weights[i][1] = srnd.CRandomFloat() * 2.0f;
 		weights[i][2] = srnd.CRandomFloat() * 2.0f;
 		weights[i][3] = srnd.CRandomFloat();
-		weightIndex[i*2+0] = ( i * NUMJOINTS / COUNT ) * sizeof( idJointMat );
-		weightIndex[i*2+1] = i & 1;
+		weightIndex[i * 2 + 0] = ( i * NUMJOINTS / COUNT ) * sizeof( idJointMat );
+		weightIndex[i * 2 + 1] = i & 1;
 	}
 
 	bestClocksGeneric = 0;
@@ -2789,10 +2691,10 @@ void TestTracePointCull( void ) {
 
 	idRandom srnd( RANDOM_SEED );
 
-	planes[0].SetNormal( idVec3(  1,  0, 0 ) );
+	planes[0].SetNormal( idVec3( 1,  0, 0 ) );
 	planes[1].SetNormal( idVec3( -1,  0, 0 ) );
-	planes[2].SetNormal( idVec3(  0,  1, 0 ) );
-	planes[3].SetNormal( idVec3(  0, -1, 0 ) );
+	planes[2].SetNormal( idVec3( 0,  1, 0 ) );
+	planes[3].SetNormal( idVec3( 0, -1, 0 ) );
 	planes[0][3] = -5.3f;
 	planes[1][3] = 5.3f;
 	planes[2][3] = -3.4f;
@@ -2846,12 +2748,12 @@ void TestDecalPointCull( void ) {
 
 	idRandom srnd( RANDOM_SEED );
 
-	planes[0].SetNormal( idVec3(  1,  0,  0 ) );
+	planes[0].SetNormal( idVec3( 1,  0,  0 ) );
 	planes[1].SetNormal( idVec3( -1,  0,  0 ) );
-	planes[2].SetNormal( idVec3(  0,  1,  0 ) );
-	planes[3].SetNormal( idVec3(  0, -1,  0 ) );
-	planes[4].SetNormal( idVec3(  0,  0,  1 ) );
-	planes[5].SetNormal( idVec3(  0,  0, -1 ) );
+	planes[2].SetNormal( idVec3( 0,  1,  0 ) );
+	planes[3].SetNormal( idVec3( 0, -1,  0 ) );
+	planes[4].SetNormal( idVec3( 0,  0,  1 ) );
+	planes[5].SetNormal( idVec3( 0,  0, -1 ) );
 	planes[0][3] = -5.3f;
 	planes[1][3] = 5.3f;
 	planes[2][3] = -4.4f;
@@ -2961,7 +2863,7 @@ void TestDeriveTriPlanes( void ) {
 	ALIGN16( idDrawVert drawVerts2[COUNT] );
 	ALIGN16( idPlane planes1[COUNT] );
 	ALIGN16( idPlane planes2[COUNT] );
-	ALIGN16( int indexes[COUNT*3] );
+	ALIGN16( int indexes[COUNT * 3] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -2977,15 +2879,15 @@ void TestDeriveTriPlanes( void ) {
 	}
 
 	for ( i = 0; i < COUNT; i++ ) {
-		indexes[i*3+0] = ( i + 0 ) % COUNT;
-		indexes[i*3+1] = ( i + 1 ) % COUNT;
-		indexes[i*3+2] = ( i + 2 ) % COUNT;
+		indexes[i * 3 + 0] = ( i + 0 ) % COUNT;
+		indexes[i * 3 + 1] = ( i + 1 ) % COUNT;
+		indexes[i * 3 + 2] = ( i + 2 ) % COUNT;
 	}
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
 		StartRecordTime( start );
-		p_generic->DeriveTriPlanes( planes1, drawVerts1, COUNT, indexes, COUNT*3 );
+		p_generic->DeriveTriPlanes( planes1, drawVerts1, COUNT, indexes, COUNT * 3 );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksGeneric );
 	}
@@ -2994,7 +2896,7 @@ void TestDeriveTriPlanes( void ) {
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
 		StartRecordTime( start );
-		p_simd->DeriveTriPlanes( planes2, drawVerts2, COUNT, indexes, COUNT*3 );
+		p_simd->DeriveTriPlanes( planes2, drawVerts2, COUNT, indexes, COUNT * 3 );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
@@ -3020,7 +2922,7 @@ void TestDeriveTangents( void ) {
 	ALIGN16( idDrawVert drawVerts2[COUNT] );
 	ALIGN16( idPlane planes1[COUNT] );
 	ALIGN16( idPlane planes2[COUNT] );
-	ALIGN16( int indexes[COUNT*3] );
+	ALIGN16( int indexes[COUNT * 3] );
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
@@ -3036,15 +2938,15 @@ void TestDeriveTangents( void ) {
 	}
 
 	for ( i = 0; i < COUNT; i++ ) {
-		indexes[i*3+0] = ( i + 0 ) % COUNT;
-		indexes[i*3+1] = ( i + 1 ) % COUNT;
-		indexes[i*3+2] = ( i + 2 ) % COUNT;
+		indexes[i * 3 + 0] = ( i + 0 ) % COUNT;
+		indexes[i * 3 + 1] = ( i + 1 ) % COUNT;
+		indexes[i * 3 + 2] = ( i + 2 ) % COUNT;
 	}
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
 		StartRecordTime( start );
-		p_generic->DeriveTangents( planes1, drawVerts1, COUNT, indexes, COUNT*3 );
+		p_generic->DeriveTangents( planes1, drawVerts1, COUNT, indexes, COUNT * 3 );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksGeneric );
 	}
@@ -3053,7 +2955,7 @@ void TestDeriveTangents( void ) {
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
 		StartRecordTime( start );
-		p_simd->DeriveTangents( planes2, drawVerts2, COUNT, indexes, COUNT*3 );
+		p_simd->DeriveTangents( planes2, drawVerts2, COUNT, indexes, COUNT * 3 );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
@@ -3066,7 +2968,7 @@ void TestDeriveTangents( void ) {
 		v2 = drawVerts2[i].normal;
 		v2.Normalize();
 		if ( !v1.Compare( v2, 1e-1f ) ) {
-			idLib::common->Printf("DeriveTangents: broken at normal %i\n -- expecting %s got %s", i, v1.ToString(), v2.ToString());
+			idLib::common->Printf( "DeriveTangents: broken at normal %i\n -- expecting %s got %s", i, v1.ToString(), v2.ToString() );
 			break;
 		}
 		v1 = drawVerts1[i].tangents[0];
@@ -3074,7 +2976,7 @@ void TestDeriveTangents( void ) {
 		v2 = drawVerts2[i].tangents[0];
 		v2.Normalize();
 		if ( !v1.Compare( v2, 1e-1f ) ) {
-			idLib::common->Printf("DeriveTangents: broken at tangent0 %i -- expecting %s got %s\n", i, v1.ToString(), v2.ToString() );
+			idLib::common->Printf( "DeriveTangents: broken at tangent0 %i -- expecting %s got %s\n", i, v1.ToString(), v2.ToString() );
 			break;
 		}
 		v1 = drawVerts1[i].tangents[1];
@@ -3082,7 +2984,7 @@ void TestDeriveTangents( void ) {
 		v2 = drawVerts2[i].tangents[1];
 		v2.Normalize();
 		if ( !v1.Compare( v2, 1e-1f ) ) {
-			idLib::common->Printf("DeriveTangents: broken at tangent1 %i -- expecting %s got %s\n", i, v1.ToString(), v2.ToString() );
+			idLib::common->Printf( "DeriveTangents: broken at tangent1 %i -- expecting %s got %s\n", i, v1.ToString(), v2.ToString() );
 			break;
 		}
 		if ( !planes1[i].Compare( planes2[i], 1e-1f, 1e-1f ) ) {
@@ -3220,8 +3122,8 @@ void TestNormalizeTangents( void ) {
 		if ( !drawVerts1[i].tangents[1].Compare( drawVerts2[i].tangents[1], 1e-2f ) ) {
 			break;
 		}
-		
-		// since we're doing a lot of unaligned work, added this check to 
+
+		// since we're doing a lot of unaligned work, added this check to
 		// make sure xyz wasn't getting overwritten
 		if ( !drawVerts1[i].xyz.Compare( drawVerts2[i].xyz, 1e-2f ) ) {
 			break;
@@ -3240,8 +3142,8 @@ void TestCreateShadowCache( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	ALIGN16( idDrawVert drawVerts[COUNT] );
-	ALIGN16( idVec4 vertexCache1[COUNT*2] );
-	ALIGN16( idVec4 vertexCache2[COUNT*2] );
+	ALIGN16( idVec4 vertexCache1[COUNT * 2] );
+	ALIGN16( idVec4 vertexCache2[COUNT * 2] );
 	ALIGN16( int originalVertRemap[COUNT] );
 	ALIGN16( int vertRemap1[COUNT] );
 	ALIGN16( int vertRemap2[COUNT] );
@@ -3267,7 +3169,7 @@ void TestCreateShadowCache( void ) {
 			vertRemap1[j] = originalVertRemap[j];
 		}
 		StartRecordTime( start );
-		numVerts1 =p_generic->CreateShadowCache( vertexCache1, vertRemap1, lightOrigin, drawVerts, COUNT );
+		numVerts1 = p_generic->CreateShadowCache( vertexCache1, vertRemap1, lightOrigin, drawVerts, COUNT );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksGeneric );
 	}
@@ -3286,10 +3188,10 @@ void TestCreateShadowCache( void ) {
 
 	for ( i = 0; i < COUNT; i++ ) {
 		if ( i < ( numVerts1 / 2 ) ) {
-			if ( !vertexCache1[i*2+0].Compare( vertexCache2[i*2+0], 1e-2f ) ) {
+			if ( !vertexCache1[i * 2 + 0].Compare( vertexCache2[i * 2 + 0], 1e-2f ) ) {
 				break;
 			}
-			if ( !vertexCache1[i*2+1].Compare( vertexCache2[i*2+1], 1e-2f ) ) {
+			if ( !vertexCache1[i * 2 + 1].Compare( vertexCache2[i * 2 + 1], 1e-2f ) ) {
 				break;
 			}
 		}
@@ -3297,7 +3199,6 @@ void TestCreateShadowCache( void ) {
 			break;
 		}
 	}
-
 	result = ( i >= COUNT && numVerts1 == numVerts2 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->CreateShadowCache() %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 
@@ -3319,10 +3220,10 @@ void TestCreateShadowCache( void ) {
 	}
 
 	for ( i = 0; i < COUNT; i++ ) {
-		if ( !vertexCache1[i*2+0].Compare( vertexCache2[i*2+0], 1e-2f ) ) {
+		if ( !vertexCache1[i * 2 + 0].Compare( vertexCache2[i * 2 + 0], 1e-2f ) ) {
 			break;
 		}
-		if ( !vertexCache1[i*2+1].Compare( vertexCache2[i*2+1], 1e-2f ) ) {
+		if ( !vertexCache1[i * 2 + 1].Compare( vertexCache2[i * 2 + 1], 1e-2f ) ) {
 			break;
 		}
 	}
@@ -3340,23 +3241,22 @@ TestSoundUpSampling
 void TestSoundUpSampling( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( short pcm[MIXBUFFER_SAMPLES*2] );
-	ALIGN16( float ogg0[MIXBUFFER_SAMPLES*2] );
-	ALIGN16( float ogg1[MIXBUFFER_SAMPLES*2] );
-	ALIGN16( float samples1[MIXBUFFER_SAMPLES*2] );
-	ALIGN16( float samples2[MIXBUFFER_SAMPLES*2] );
+	ALIGN16( short pcm[MIXBUFFER_SAMPLES * 2] );
+	ALIGN16( float ogg0[MIXBUFFER_SAMPLES * 2] );
+	ALIGN16( float ogg1[MIXBUFFER_SAMPLES * 2] );
+	ALIGN16( float samples1[MIXBUFFER_SAMPLES * 2] );
+	ALIGN16( float samples2[MIXBUFFER_SAMPLES * 2] );
 	float *ogg[2];
 	int kHz, numSpeakers;
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*2; i++ ) {
-		pcm[i] = srnd.RandomInt( (1<<16) ) - (1<<15);
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 2; i++ ) {
+		pcm[i] = srnd.RandomInt( ( 1 << 16 ) ) - ( 1 << 15 );
 		ogg0[i] = srnd.RandomFloat();
 		ogg1[i] = srnd.RandomFloat();
 	}
-
 	ogg[0] = ogg0;
 	ogg[1] = ogg1;
 
@@ -3366,27 +3266,27 @@ void TestSoundUpSampling( void ) {
 			bestClocksGeneric = 0;
 			for ( i = 0; i < NUMTESTS; i++ ) {
 				StartRecordTime( start );
-				p_generic->UpSamplePCMTo44kHz( samples1, pcm, MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, kHz, numSpeakers );
+				p_generic->UpSamplePCMTo44kHz( samples1, pcm, MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers );
 				StopRecordTime( end );
 				GetBest( start, end, bestClocksGeneric );
 			}
-			PrintClocks( va( "generic->UpSamplePCMTo44kHz( %d, %d )", kHz, numSpeakers ), MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, bestClocksGeneric );
+			PrintClocks( va( "generic->UpSamplePCMTo44kHz( %d, %d )", kHz, numSpeakers ), MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric );
 
 			bestClocksSIMD = 0;
 			for ( i = 0; i < NUMTESTS; i++ ) {
 				StartRecordTime( start );
-				p_simd->UpSamplePCMTo44kHz( samples2, pcm, MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, kHz, numSpeakers );
+				p_simd->UpSamplePCMTo44kHz( samples2, pcm, MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers );
 				StopRecordTime( end );
 				GetBest( start, end, bestClocksSIMD );
 			}
 
-			for ( i = 0; i < MIXBUFFER_SAMPLES*numSpeakers; i++ ) {
+			for ( i = 0; i < MIXBUFFER_SAMPLES * numSpeakers; i++ ) {
 				if ( idMath::Fabs( samples1[i] - samples2[i] ) > SOUND_UPSAMPLE_EPSILON ) {
 					break;
 				}
 			}
-			result = ( i >= MIXBUFFER_SAMPLES*numSpeakers ) ? "ok" : S_COLOR_RED"X";
-			PrintClocks( va( "   simd->UpSamplePCMTo44kHz( %d, %d ) %s", kHz, numSpeakers, result ), MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, bestClocksSIMD, bestClocksGeneric );
+			result = ( i >= MIXBUFFER_SAMPLES * numSpeakers ) ? "ok" : S_COLOR_RED"X";
+			PrintClocks( va( "   simd->UpSamplePCMTo44kHz( %d, %d ) %s", kHz, numSpeakers, result ), MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksSIMD, bestClocksGeneric );
 		}
 	}
 
@@ -3396,27 +3296,27 @@ void TestSoundUpSampling( void ) {
 			bestClocksGeneric = 0;
 			for ( i = 0; i < NUMTESTS; i++ ) {
 				StartRecordTime( start );
-				p_generic->UpSampleOGGTo44kHz( samples1, ogg, MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, kHz, numSpeakers );
+				p_generic->UpSampleOGGTo44kHz( samples1, ogg, MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers );
 				StopRecordTime( end );
 				GetBest( start, end, bestClocksGeneric );
 			}
-			PrintClocks( va( "generic->UpSampleOGGTo44kHz( %d, %d )", kHz, numSpeakers ), MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, bestClocksGeneric );
+			PrintClocks( va( "generic->UpSampleOGGTo44kHz( %d, %d )", kHz, numSpeakers ), MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksGeneric );
 
 			bestClocksSIMD = 0;
 			for ( i = 0; i < NUMTESTS; i++ ) {
 				StartRecordTime( start );
-				p_simd->UpSampleOGGTo44kHz( samples2, ogg, MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, kHz, numSpeakers );
+				p_simd->UpSampleOGGTo44kHz( samples2, ogg, MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, kHz, numSpeakers );
 				StopRecordTime( end );
 				GetBest( start, end, bestClocksSIMD );
 			}
 
-			for ( i = 0; i < MIXBUFFER_SAMPLES*numSpeakers; i++ ) {
+			for ( i = 0; i < MIXBUFFER_SAMPLES * numSpeakers; i++ ) {
 				if ( idMath::Fabs( samples1[i] - samples2[i] ) > SOUND_UPSAMPLE_EPSILON ) {
 					break;
 				}
 			}
 			result = ( i >= MIXBUFFER_SAMPLES ) ? "ok" : S_COLOR_RED"X";
-			PrintClocks( va( "   simd->UpSampleOGGTo44kHz( %d, %d ) %s", kHz, numSpeakers, result ), MIXBUFFER_SAMPLES*numSpeakers*kHz/44100, bestClocksSIMD, bestClocksGeneric );
+			PrintClocks( va( "   simd->UpSampleOGGTo44kHz( %d, %d ) %s", kHz, numSpeakers, result ), MIXBUFFER_SAMPLES * numSpeakers * kHz / 44100, bestClocksSIMD, bestClocksGeneric );
 		}
 	}
 }
@@ -3431,12 +3331,12 @@ TestSoundMixing
 void TestSoundMixing( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
-	ALIGN16( float origMixBuffer[MIXBUFFER_SAMPLES*6] );
-	ALIGN16( float mixBuffer1[MIXBUFFER_SAMPLES*6] );
-	ALIGN16( float mixBuffer2[MIXBUFFER_SAMPLES*6] );
-	ALIGN16( float samples[MIXBUFFER_SAMPLES*6] );
-	ALIGN16( short outSamples1[MIXBUFFER_SAMPLES*6] );
-	ALIGN16( short outSamples2[MIXBUFFER_SAMPLES*6] );
+	ALIGN16( float origMixBuffer[MIXBUFFER_SAMPLES * 6] );
+	ALIGN16( float mixBuffer1[MIXBUFFER_SAMPLES * 6] );
+	ALIGN16( float mixBuffer2[MIXBUFFER_SAMPLES * 6] );
+	ALIGN16( float samples[MIXBUFFER_SAMPLES * 6] );
+	ALIGN16( short outSamples1[MIXBUFFER_SAMPLES * 6] );
+	ALIGN16( short outSamples2[MIXBUFFER_SAMPLES * 6] );
 	float lastV[6];
 	float currentV[6];
 	const char *result;
@@ -3448,14 +3348,14 @@ void TestSoundMixing( void ) {
 		currentV[i] = srnd.CRandomFloat();
 	}
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
 		origMixBuffer[i] = srnd.CRandomFloat();
-		samples[i] = srnd.RandomInt( (1<<16) ) - (1<<15);
+		samples[i] = srnd.RandomInt( ( 1 << 16 ) ) - ( 1 << 15 );
 	}
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer1[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3465,10 +3365,9 @@ void TestSoundMixing( void ) {
 	}
 	PrintClocks( "generic->MixSoundTwoSpeakerMono()", MIXBUFFER_SAMPLES, bestClocksGeneric );
 
-
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer2[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3477,17 +3376,17 @@ void TestSoundMixing( void ) {
 		GetBest( start, end, bestClocksSIMD );
 	}
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
 		if ( idMath::Fabs( mixBuffer1[i] - mixBuffer2[i] ) > SOUND_MIX_EPSILON ) {
 			break;
 		}
 	}
-	result = ( i >= MIXBUFFER_SAMPLES*6 ) ? "ok" : S_COLOR_RED"X";
+	result = ( i >= MIXBUFFER_SAMPLES * 6 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MixSoundTwoSpeakerMono() %s", result ), MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer1[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3497,10 +3396,9 @@ void TestSoundMixing( void ) {
 	}
 	PrintClocks( "generic->MixSoundTwoSpeakerStereo()", MIXBUFFER_SAMPLES, bestClocksGeneric );
 
-
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer2[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3509,18 +3407,17 @@ void TestSoundMixing( void ) {
 		GetBest( start, end, bestClocksSIMD );
 	}
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
 		if ( idMath::Fabs( mixBuffer1[i] - mixBuffer2[i] ) > SOUND_MIX_EPSILON ) {
 			break;
 		}
 	}
-	result = ( i >= MIXBUFFER_SAMPLES*6 ) ? "ok" : S_COLOR_RED"X";
+	result = ( i >= MIXBUFFER_SAMPLES * 6 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MixSoundTwoSpeakerStereo() %s", result ), MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric );
-
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer1[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3530,10 +3427,9 @@ void TestSoundMixing( void ) {
 	}
 	PrintClocks( "generic->MixSoundSixSpeakerMono()", MIXBUFFER_SAMPLES, bestClocksGeneric );
 
-
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer2[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3542,17 +3438,17 @@ void TestSoundMixing( void ) {
 		GetBest( start, end, bestClocksSIMD );
 	}
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
 		if ( idMath::Fabs( mixBuffer1[i] - mixBuffer2[i] ) > SOUND_MIX_EPSILON ) {
 			break;
 		}
 	}
-	result = ( i >= MIXBUFFER_SAMPLES*6 ) ? "ok" : S_COLOR_RED"X";
+	result = ( i >= MIXBUFFER_SAMPLES * 6 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MixSoundSixSpeakerMono() %s", result ), MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer1[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3562,10 +3458,9 @@ void TestSoundMixing( void ) {
 	}
 	PrintClocks( "generic->MixSoundSixSpeakerStereo()", MIXBUFFER_SAMPLES, bestClocksGeneric );
 
-
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer2[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
@@ -3574,26 +3469,25 @@ void TestSoundMixing( void ) {
 		GetBest( start, end, bestClocksSIMD );
 	}
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
 		if ( idMath::Fabs( mixBuffer1[i] - mixBuffer2[i] ) > SOUND_MIX_EPSILON ) {
 			break;
 		}
 	}
-	result = ( i >= MIXBUFFER_SAMPLES*6 ) ? "ok" : S_COLOR_RED"X";
+	result = ( i >= MIXBUFFER_SAMPLES * 6 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MixSoundSixSpeakerStereo() %s", result ), MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric );
 
-
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
-		origMixBuffer[i] = srnd.RandomInt( (1<<17) ) - (1<<16);
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
+		origMixBuffer[i] = srnd.RandomInt( ( 1 << 17 ) ) - ( 1 << 16 );
 	}
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer1[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
-		p_generic->MixedSoundToSamples( outSamples1, mixBuffer1, MIXBUFFER_SAMPLES*6 );
+		p_generic->MixedSoundToSamples( outSamples1, mixBuffer1, MIXBUFFER_SAMPLES * 6 );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksGeneric );
 	}
@@ -3601,21 +3495,21 @@ void TestSoundMixing( void ) {
 
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-		for ( j = 0; j < MIXBUFFER_SAMPLES*6; j++ ) {
+		for ( j = 0; j < MIXBUFFER_SAMPLES * 6; j++ ) {
 			mixBuffer2[j] = origMixBuffer[j];
 		}
 		StartRecordTime( start );
-		p_simd->MixedSoundToSamples( outSamples2, mixBuffer2, MIXBUFFER_SAMPLES*6 );
+		p_simd->MixedSoundToSamples( outSamples2, mixBuffer2, MIXBUFFER_SAMPLES * 6 );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocksSIMD );
 	}
 
-	for ( i = 0; i < MIXBUFFER_SAMPLES*6; i++ ) {
+	for ( i = 0; i < MIXBUFFER_SAMPLES * 6; i++ ) {
 		if ( outSamples1[i] != outSamples2[i] ) {
 			break;
 		}
 	}
-	result = ( i >= MIXBUFFER_SAMPLES*6 ) ? "ok" : S_COLOR_RED"X";
+	result = ( i >= MIXBUFFER_SAMPLES * 6 ) ? "ok" : S_COLOR_RED"X";
 	PrintClocks( va( "   simd->MixedSoundToSamples() %s", result ), MIXBUFFER_SAMPLES, bestClocksSIMD, bestClocksGeneric );
 }
 
@@ -3628,7 +3522,7 @@ void TestMath( void ) {
 	int i;
 	TIME_TYPE start, end, bestClocks;
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	float tst = -1.0f;
 	float tst2 = 1.0f;
@@ -4034,23 +3928,21 @@ void TestNegate( void ) {
 	ALIGN16( float fsrc0[COUNT] );
 	ALIGN16( float fsrc1[COUNT] );
 	ALIGN16( float fsrc2[COUNT] );
-	
+
 	const char *result;
 
 	idRandom srnd( RANDOM_SEED );
 
 	for ( i = 0; i < COUNT; i++ ) {
 		fsrc0[i] = fsrc1[i] = fsrc2[i] = srnd.CRandomFloat() * 10.0f;
-		//fsrc1[i] = srnd.CRandomFloat() * 10.0f;
 	}
-
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	bestClocksGeneric = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-	
-		memcpy( &fsrc1[0], &fsrc0[0], COUNT * sizeof(float) );
-	
+
+		memcpy( &fsrc1[0], &fsrc0[0], COUNT * sizeof( float ) );
+
 		StartRecordTime( start );
 		p_generic->Negate16( fsrc1, COUNT );
 		StopRecordTime( end );
@@ -4060,9 +3952,9 @@ void TestNegate( void ) {
 
 	bestClocksSIMD = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) {
-	
-		memcpy( &fsrc2[0], &fsrc0[0], COUNT * sizeof(float) );
-	
+
+		memcpy( &fsrc2[0], &fsrc0[0], COUNT * sizeof( float ) );
+
 		StartRecordTime( start );
 		p_simd->Negate16( fsrc2, COUNT );
 		StopRecordTime( end );
@@ -4105,12 +3997,6 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 				return;
 			}
 			p_simd = new idSIMD_MMX;
-/*		} else if ( idStr::Icmp( argString, "3DNow" ) == 0 ) {
-			if ( !( cpuid & CPUID_MMX ) || !( cpuid & CPUID_3DNOW ) ) {
-				common->Printf( "CPU does not support MMX & 3DNow\n" );
-				return;
-			}
-			p_simd = new idSIMD_3DNow;*/
 		} else if ( idStr::Icmp( argString, "SSE" ) == 0 ) {
 			if ( !( cpuid & CPUID_MMX ) || !( cpuid & CPUID_SSE ) ) {
 				common->Printf( "CPU does not support MMX & SSE\n" );
@@ -4130,7 +4016,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 			}
 			p_simd = new idSIMD_SSE3();
 		} else if ( idStr::Icmp( argString, "AVX" ) == 0 ) {
-			if ( !( cpuid & CPUID_MMX ) || !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) || !( cpuid & CPUID_SSSE3 ) || !( cpuid & CPUID_SSE41 ) || !( cpuid & CPUID_AVX) ) {
+			if ( !( cpuid & CPUID_MMX ) || !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) || !( cpuid & CPUID_SSSE3 ) || !( cpuid & CPUID_SSE41 ) || !( cpuid & CPUID_AVX ) ) {
 				common->Printf( "CPU does not support MMX & SSE* & AVX\n" );
 				return;
 			}
@@ -4141,19 +4027,11 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 				return;
 			}
 			p_simd = new idSIMD_AVX2();
-		/*} else if ( idStr::Icmp( argString, "AltiVec" ) == 0 ) {
-			if ( !( cpuid & CPUID_ALTIVEC ) ) {
-				common->Printf( "CPU does not support AltiVec\n" );
-				return;
-			}
-			p_simd = new idSIMD_AltiVec();*/
 		} else {
-			//common->Printf( "invalid argument, use: MMX, 3DNow, SSE, SSE2, SSE3, AltiVec\n" );
 			common->Printf( "invalid argument, use: MMX, SSE, SSE2, SSE3, AVX, AVX2\n" );
 			return;
 		}
 	}
-
 	idLib::common->SetRefreshOnPrint( true );
 
 	idLib::common->Printf( "using %s for SIMD processing\n", p_simd->GetName() );
@@ -4185,7 +4063,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	TestMatXLowerTriangularSolveTranspose();
 	TestMatXLDLTFactor();
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	TestBlendJoints();
 	TestConvertJointQuatsToJointMats();
@@ -4202,7 +4080,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	TestNormalizeTangents();
 	TestCreateShadowCache();
 
-	idLib::common->Printf("====================================\n" );
+	idLib::common->Printf( "====================================\n" );
 
 	TestSoundUpSampling();
 	TestSoundMixing();

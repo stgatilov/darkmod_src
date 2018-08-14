@@ -134,7 +134,7 @@ private:
 
 	void AccumulateTotalTimes( section &s) {
 		s.totalCpuTimeMillis = s.totalGpuTimeMillis = 0;
-		s.count = s.queries.size();
+		s.count = (int)s.queries.size();
 		for ( auto& q : s.queries ) {
 			s.totalCpuTimeMillis += ( q.cpuStopTime - q.cpuStartTime ) * 1000 / Sys_ClockTicksPerSecond();
 			uint64_t gpuStartNanos, gpuStopNanos;

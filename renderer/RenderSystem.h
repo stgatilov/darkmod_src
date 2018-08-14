@@ -65,7 +65,6 @@ typedef struct glconfig_s {
 	bool				framebufferBlitAvailable;
 	bool				framebufferMultisampleAvailable;
 	bool				framebufferPackedDepthStencilAvailable;
-	bool				multipleRenderTargetsAvailable;		//glDrawBuffers
 	bool				fenceSyncAvailable;
 	bool				timerQueriesAvailable;
 	bool				debugGroupsAvailable;

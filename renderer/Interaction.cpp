@@ -1,22 +1,20 @@
 /*****************************************************************************
                     The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
+
+ This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
+
+ The Dark Mod Source Code is free software: you can redistribute it
+ and/or modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the License,
  or (at your option) any later version. For details, see LICENSE.TXT.
- 
+
  Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
-
-
 
 #include "tr_local.h"
 
@@ -29,6 +27,7 @@ idInteraction implementation
 */
 
 // FIXME: use private allocator for srfCullInfo_t
+idCVar r_useInteractionTriCulling("r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris");
 
 /*
 ================
@@ -44,53 +43,41 @@ edge silhouettes.
 void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, srfCullInfo_t &cullInfo ) {
 	idVec3 localLightOrigin;
 
-	if (cullInfo.facing != NULL) {
+	if ( cullInfo.facing != NULL ) {
 		return;
 	}
-	R_GlobalPointToLocal(ent->modelMatrix, light->globalLightOrigin, localLightOrigin);
+	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
 	const int numFaces = tri->numIndexes / 3;
 
-	if (r_useAnonreclaimer.GetBool()) {
-		cullInfo.facing = (byte*)R_StaticAlloc((numFaces + 1) * sizeof(cullInfo.facing[0]));
+	if ( r_useAnonreclaimer.GetBool() ) {
+		cullInfo.facing = ( byte* )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
 
 		// exact geometric cull against face
-		for (int i = 0, face = 0; i < tri->numIndexes; i += 3, face++)
-		{
+		for ( int i = 0, face = 0; i < tri->numIndexes; i += 3, face++ ) {
 			const idDrawVert& v0 = tri->verts[tri->indexes[i + 0]];
 			const idDrawVert& v1 = tri->verts[tri->indexes[i + 1]];
 			const idDrawVert& v2 = tri->verts[tri->indexes[i + 2]];
 
-			const idPlane plane(v0.xyz, v1.xyz, v2.xyz);
-			const float d = plane.Distance(localLightOrigin);
+			const idPlane plane( v0.xyz, v1.xyz, v2.xyz );
+			const float d = plane.Distance( localLightOrigin );
 
-			cullInfo.facing[face] = (d >= 0.0f);
+			cullInfo.facing[face] = ( d >= 0.0f );
 		}
-	}
-	else {
-		if (!tri->facePlanes || !tri->facePlanesCalculated) {
-			R_DeriveFacePlanes(const_cast<srfTriangles_t *>(tri));
+	} else {
+		if ( !tri->facePlanes || !tri->facePlanesCalculated ) {
+			R_DeriveFacePlanes( const_cast<srfTriangles_t *>( tri ) );
 		}
+		cullInfo.facing = ( byte * )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
 
-		cullInfo.facing = (byte *)R_StaticAlloc((numFaces + 1) * sizeof(cullInfo.facing[0]));
-
-		if (0) { // duzenko #4424: old code, questionable regarding cpu cache
-			// calculate back face culling
-			float *planeSide = (float *)_alloca16(numFaces * sizeof(float));
-
-			// exact geometric cull against face
-			SIMDProcessor->Dot(planeSide, localLightOrigin, tri->facePlanes, numFaces);
-			SIMDProcessor->CmpGE(cullInfo.facing, planeSide, 0.0f, numFaces);
-		} else { // duzenko #4424: similar to d3bfg don't use a temp array (no speed difference really)
-			for (int face = 0; face < numFaces; face++) {
-				const float d = tri->facePlanes[face].Distance(localLightOrigin);
-				cullInfo.facing[face] = (d >= 0.0f);
-			}
+		// duzenko #4424: similar to d3bfg don't use a temp array (no speed difference really)
+		// revelator: removed old codepath, keep source clean.
+		for ( int face = 0; face < numFaces; face++ ) {
+			const float d = tri->facePlanes[face].Distance( localLightOrigin );
+			cullInfo.facing[face] = ( d >= 0.0f );
 		}
-	}
+	}	
 	cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
 }
-
-idCVar r_useInteractionTriCulling( "r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris" );
 
 /*
 =====================
@@ -103,68 +90,57 @@ vertex is clearly inside, the entire triangle will be accepted.
 =====================
 */
 void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, srfCullInfo_t &cullInfo ) {
-	if (r_useAnonreclaimer.GetBool()) {
-		if (cullInfo.cullBits != NULL)
-		{
+	if ( r_useAnonreclaimer.GetBool() ) {
+		if ( cullInfo.cullBits != NULL ) {
 			return;
 		}
-
 		idPlane frustumPlanes[6];
-		idRenderMatrix::GetFrustumPlanes(frustumPlanes, light->baseLightProject, true, true);
-
+		idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
 		int frontBits = 0;
 
 		// cull the triangle surface bounding box
-		for (int i = 0; i < 6; i++)
-		{
-			R_GlobalPlaneToLocal(ent->modelMatrix, frustumPlanes[i], cullInfo.localClipPlanes[i]);
+		for ( int i = 0; i < 6; i++ ) {
+			R_GlobalPlaneToLocal( ent->modelMatrix, frustumPlanes[i], cullInfo.localClipPlanes[i] );
 
 			// get front bits for the whole surface
-			if (tri->bounds.PlaneDistance(cullInfo.localClipPlanes[i]) >= LIGHT_CLIP_EPSILON)
-			{
+			if ( tri->bounds.PlaneDistance( cullInfo.localClipPlanes[i] ) >= LIGHT_CLIP_EPSILON ) {
 				frontBits |= 1 << i;
 			}
 		}
 
 		// if the surface is completely inside the light frustum
-		if (frontBits == ((1 << 6) - 1))
-		{
+		if ( frontBits == ( ( 1 << 6 ) - 1 ) ) {
 			cullInfo.cullBits = LIGHT_CULL_ALL_FRONT;
 			return;
 		}
+		cullInfo.cullBits = ( byte* )R_StaticAlloc( tri->numVerts * sizeof( cullInfo.cullBits[0] ) );
+		memset( cullInfo.cullBits, 0, tri->numVerts * sizeof( cullInfo.cullBits[0] ) );
 
-		cullInfo.cullBits = (byte*)R_StaticAlloc(tri->numVerts * sizeof(cullInfo.cullBits[0]));
-		memset(cullInfo.cullBits, 0, tri->numVerts * sizeof(cullInfo.cullBits[0]));
-
-		for (int i = 0; i < 6; i++)
-		{
+		for ( int i = 0; i < 6; i++ ) {
 			// if completely infront of this clipping plane
-			if (frontBits & (1 << i))
-			{
+			if ( frontBits & ( 1 << i ) ) {
 				continue;
 			}
-			for (int j = 0; j < tri->numVerts; j++)
-			{
-				float d = cullInfo.localClipPlanes[i].Distance(tri->verts[j].xyz);
-				cullInfo.cullBits[j] |= (d < LIGHT_CLIP_EPSILON) << i;
+			for ( int j = 0; j < tri->numVerts; j++ ) {
+				float d = cullInfo.localClipPlanes[i].Distance( tri->verts[j].xyz );
+				cullInfo.cullBits[j] |= ( d < LIGHT_CLIP_EPSILON ) << i;
 			}
 		}
 	} else {
 		int i, frontBits;
 
-		if (cullInfo.cullBits != NULL) {
+		if ( cullInfo.cullBits != NULL ) {
 			return;
 		}
-
 		frontBits = 0;
 
 		// cull the triangle surface bounding box
-		for (i = 0; i < 6; i++) {
+		for ( i = 0; i < 6; i++ ) {
 
-			R_GlobalPlaneToLocal(ent->modelMatrix, -light->frustum[i], cullInfo.localClipPlanes[i]);
+			R_GlobalPlaneToLocal( ent->modelMatrix, -light->frustum[i], cullInfo.localClipPlanes[i] );
 
 			// get front bits for the whole surface
-			if (tri->bounds.PlaneDistance(cullInfo.localClipPlanes[i]) >= LIGHT_CLIP_EPSILON) {
+			if ( tri->bounds.PlaneDistance( cullInfo.localClipPlanes[i] ) >= LIGHT_CLIP_EPSILON ) {
 				frontBits |= 1 << i;
 			}
 		}
@@ -174,24 +150,10 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 			cullInfo.cullBits = LIGHT_CULL_ALL_FRONT;
 			return;
 		}
-
-		cullInfo.cullBits = (byte *)R_StaticAlloc(tri->numVerts * sizeof(cullInfo.cullBits[0]));
-#if 0 // duzenko #4424:  original code - questionable in terms of cpu cache
-			SIMDProcessor->Memset(cullInfo.cullBits, 0, tri->numVerts * sizeof(cullInfo.cullBits[0]));
-
-			float *planeSide = (float *)_alloca16(tri->numVerts * sizeof(float));
-
-			for (i = 0; i < 6; i++) {
-				// if completely in front of this clipping plane
-				if (frontBits & (1 << i)) {
-					continue;
-				}
-				SIMDProcessor->Dot(planeSide, cullInfo.localClipPlanes[i], tri->verts, tri->numVerts);
-				SIMDProcessor->CmpLT(cullInfo.cullBits, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts);
-			}
-#else // duzenko #4848
+		cullInfo.cullBits = ( byte * )R_StaticAlloc( tri->numVerts * sizeof( cullInfo.cullBits[0] ) );
+		// duzenko #4848
+		// revelator: removed old code path, keep source clean.
 		SIMDProcessor->CullByFrustum( tri->verts, tri->numVerts, cullInfo.localClipPlanes, cullInfo.cullBits, LIGHT_CLIP_EPSILON );
-#endif
 	}
 }
 
@@ -242,7 +204,7 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane plane 
 	bool	front;
 
 	in = &clipTris[inNum];
-	out = &clipTris[inNum^1];
+	out = &clipTris[inNum ^ 1];
 	counts[0] = counts[1] = counts[2] = 0;
 
 	// determine sides for each point
@@ -273,34 +235,34 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane plane 
 	// avoid wrapping checks by duplicating first value to end
 	sides[i] = sides[0];
 	dists[i] = dists[0];
+
 	in->verts[in->numVerts] = in->verts[0];
 
 	out->numVerts = 0;
+
 	for ( i = 0 ; i < in->numVerts ; i++ ) {
 		idVec3 &p1 = in->verts[i];
-		
+
 		if ( sides[i] == SIDE_FRONT ) {
 			out->verts[out->numVerts] = p1;
 			out->numVerts++;
 		}
 
-		if ( sides[i+1] == sides[i] ) {
+		if ( sides[i + 1] == sides[i] ) {
 			continue;
 		}
-			
+
 		// generate a split point
-		idVec3 &p2 = in->verts[i+1];
-		
-		dot = dists[i] / ( dists[i] - dists[i+1] );
+		idVec3 &p2 = in->verts[i + 1];
+
+		dot = dists[i] / ( dists[i] - dists[i + 1] );
+
 		for ( j = 0; j < 3; j++ ) {
 			mid[j] = p1[j] + dot * ( p2[j] - p1[j] );
 		}
-			
 		out->verts[out->numVerts] = mid;
-
 		out->numVerts++;
 	}
-
 	return inNum ^ 1;
 }
 
@@ -348,9 +310,9 @@ The resulting surface will be a subset of the original triangles,
 it will never clip triangles, but it may cull on a per-triangle basis.
 ====================
 */
-static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent, 
-									 const srfTriangles_t *tri, const idRenderLightLocal *light,
-									 const idMaterial *shader, srfCullInfo_t &cullInfo ) {
+static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
+        const srfTriangles_t *tri, const idRenderLightLocal *light,
+        const idMaterial *shader, srfCullInfo_t &cullInfo ) {
 	int			i;
 	int			numIndexes;
 	glIndex_t	*indexes;
@@ -369,15 +331,16 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	indexes = NULL;
 
 	// it is debatable if non-shadowing lights should light back faces. we aren't at the moment
-	includeBackFaces = r_lightAllBackFaces.GetBool() || r_shadows.GetInteger() == 2 // duzenko: need the back faces to work around shadowmap acne
-		|| light->lightShader->LightEffectsBackSides() || shader->ReceivesLightingOnBackSides()
-		|| ent->parms.noSelfShadow || ent->parms.noShadow;
+	includeBackFaces = r_lightAllBackFaces.GetBool() || r_shadows.GetInteger() == 2 ||  // duzenko: need the back faces to work around shadowmap acne
+										light->lightShader->LightEffectsBackSides() || 
+										shader->ReceivesLightingOnBackSides() || 
+										ent->parms.noSelfShadow || ent->parms.noShadow;
 
 	// allocate a new surface for the lit triangles
 	newTri = R_AllocStaticTriSurf();
 
 	// save a reference to the original surface
-	newTri->ambientSurface = const_cast<srfTriangles_t *>(tri);
+	newTri->ambientSurface = const_cast<srfTriangles_t *>( tri );
 
 	// the light surface references the verts of the ambient surface
 	newTri->numVerts = tri->numVerts;
@@ -415,9 +378,9 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 					c_backfaced++;
 					continue;
 				}
-				indexes[numIndexes+0] = tri->indexes[i+0];
-				indexes[numIndexes+1] = tri->indexes[i+1];
-				indexes[numIndexes+2] = tri->indexes[i+2];
+				indexes[numIndexes + 0] = tri->indexes[i + 0];
+				indexes[numIndexes + 1] = tri->indexes[i + 1];
+				indexes[numIndexes + 2] = tri->indexes[i + 2];
 				numIndexes += 3;
 			}
 
@@ -450,10 +413,9 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 					continue;
 				}
 			}
-
-			i1 = tri->indexes[i+0];
-			i2 = tri->indexes[i+1];
-			i3 = tri->indexes[i+2];
+			i1 = tri->indexes[i + 0];
+			i2 = tri->indexes[i + 1];
+			i3 = tri->indexes[i + 2];
 
 			// fast cull outside the frustum
 			// if all three points are off one plane side, it definately isn't visible
@@ -474,9 +436,9 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 			}
 
 			// add to the list
-			indexes[numIndexes+0] = i1;
-			indexes[numIndexes+1] = i2;
-			indexes[numIndexes+2] = i3;
+			indexes[numIndexes + 0] = i1;
+			indexes[numIndexes + 1] = i2;
+			indexes[numIndexes + 2] = i3;
 			numIndexes += 3;
 		}
 
@@ -491,9 +453,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 		R_ReallyFreeStaticTriSurf( newTri );
 		return NULL;
 	}
-
 	newTri->numIndexes = numIndexes;
-
 	newTri->bounds = bounds;
 
 	return newTri;
@@ -532,9 +492,7 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	if ( !edef || !ldef ) {
 		common->Error( "idInteraction::AllocAndLink: NULL parm" );
 	}
-
 	idRenderWorldLocal *renderWorld = edef->world;
-
 	idInteraction *interaction = renderWorld->interactionAllocator.Alloc();
 
 	// link and initialize
@@ -553,6 +511,7 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	interaction->lightNext = ldef->firstInteraction;
 	interaction->lightPrev = NULL;
 	ldef->firstInteraction = interaction;
+
 	if ( interaction->lightNext != NULL ) {
 		interaction->lightNext->lightPrev = interaction;
 	} else {
@@ -563,6 +522,7 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	interaction->entityNext = edef->firstInteraction;
 	interaction->entityPrev = NULL;
 	edef->firstInteraction = interaction;
+
 	if ( interaction->entityNext != NULL ) {
 		interaction->entityNext->entityPrev = interaction;
 	} else {
@@ -570,13 +530,14 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	}
 
 	// update the interaction table
-	int key = (ldef->index << 16) + edef->index;
-	auto &cell = renderWorld->interactionTable.Find(key);
-	if (!renderWorld->interactionTable.IsEmpty(cell))
-		common->Error( "idInteraction::AllocAndLink: non NULL table entry" );
+	int key = ( ldef->index << 16 ) + edef->index;
+	auto &cell = renderWorld->interactionTable.Find( key );
+	if ( !renderWorld->interactionTable.IsEmpty( cell ) ) { 
+		common->Error( "idInteraction::AllocAndLink: non NULL table entry" ); 
+	}
 	cell.key = key;
 	cell.value = interaction;
-	renderWorld->interactionTable.Added(cell);
+	renderWorld->interactionTable.Added( cell );
 
 	return interaction;
 }
@@ -610,7 +571,6 @@ void idInteraction::FreeSurfaces( void ) {
 			}
 			R_FreeInteractionCullInfo( sint->cullInfo );
 		}
-
 		R_StaticFree( this->surfaces );
 		this->surfaces = NULL;
 	}
@@ -630,6 +590,7 @@ void idInteraction::Unlink( void ) {
 	} else {
 		this->entityDef->firstInteraction = this->entityNext;
 	}
+
 	if ( this->entityNext ) {
 		this->entityNext->entityPrev = this->entityPrev;
 	} else {
@@ -643,6 +604,7 @@ void idInteraction::Unlink( void ) {
 	} else {
 		this->lightDef->firstInteraction = this->lightNext;
 	}
+
 	if ( this->lightNext ) {
 		this->lightNext->lightPrev = this->lightPrev;
 	} else {
@@ -662,11 +624,12 @@ void idInteraction::UnlinkAndFree( void ) {
 
 	// clear the table pointer
 	idRenderWorldLocal *renderWorld = this->lightDef->world;
-	int key = (this->lightDef->index << 16) + this->entityDef->index;
-	auto &cell = renderWorld->interactionTable.Find(key);
-	if (cell.key != key || cell.value != this)
-		common->Error( "idInteraction::UnlinkAndFree: interactionTable wasn't set" );
-	renderWorld->interactionTable.Erase(cell);
+	int key = ( this->lightDef->index << 16 ) + this->entityDef->index;
+	auto &cell = renderWorld->interactionTable.Find( key );
+	if ( cell.key != key || cell.value != this ) { 
+		common->Error( "idInteraction::UnlinkAndFree: interactionTable wasn't set" ); 
+	}
+	renderWorld->interactionTable.Erase( cell );
 
 	Unlink();
 
@@ -701,6 +664,7 @@ void idInteraction::MakeEmpty( void ) {
 	this->entityNext = NULL;
 	this->entityPrev = this->entityDef->lastInteraction;
 	this->entityDef->lastInteraction = this;
+
 	if ( this->entityPrev ) {
 		this->entityPrev->entityNext = this;
 	} else {
@@ -711,6 +675,7 @@ void idInteraction::MakeEmpty( void ) {
 	this->lightNext = NULL;
 	this->lightPrev = this->lightDef->lastInteraction;
 	this->lightDef->lastInteraction = this;
+
 	if ( this->lightPrev ) {
 		this->lightPrev->lightNext = this;
 	} else {
@@ -744,7 +709,6 @@ int idInteraction::MemoryUsed( void ) {
 		total += R_TriSurfMemory( inter->lightTris );
 		total += R_TriSurfMemory( inter->shadowTris );
 	}
-
 	return total;
 }
 
@@ -768,7 +732,6 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 	}
 
 	// the following is Mr.E's code
-
 	// frustum must be initialized and valid
 	if ( frustumState == idInteraction::FRUSTUM_UNINITIALIZED || frustumState == idInteraction::FRUSTUM_INVALID ) {
 		return lightDef->viewLight->scissorRect;
@@ -789,8 +752,8 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 			frustumAreas = tr.viewDef->renderWorld->FloodFrustumAreas( frustum, frustumAreas );
 			frustumState = idInteraction::FRUSTUM_VALIDAREAS;
 		}
-
 		portalRect.Clear();
+
 		for ( area = frustumAreas; area; area = area->next ) {
 			portalRect.Union( entityDef->world->GetAreaScreenRect( area->areaNum ) );
 		}
@@ -824,7 +787,6 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 	if ( r_showInteractionScissors.GetInteger() > 0 ) {
 		R_ShowColoredScreenRect( scissorRect, lightDef->index );
 	}
-
 	return scissorRect;
 }
 
@@ -857,7 +819,6 @@ bool idInteraction::CullInteractionByViewFrustum( const idFrustum &viewFrustum )
 		} else {
 			frustum.ConstrainToBox( idBox( lightDef->frustumTris->bounds ) );
 		}
-
 		frustumState = idInteraction::FRUSTUM_VALID;
 	}
 
@@ -872,14 +833,13 @@ bool idInteraction::CullInteractionByViewFrustum( const idFrustum &viewFrustum )
 			tr.viewDef->renderWorld->DebugBox( colorWhite, idBox( entityDef->referenceBounds, entityDef->parms.origin, entityDef->parms.axis ) );
 		}
 	}
-
 	return false;
 }
 
-ID_INLINE bool R_CullModelBoundsToLight(const idRenderLightLocal * light, const idBounds & localBounds, const idRenderMatrix & modelRenderMatrix) {
+ID_INLINE bool R_CullModelBoundsToLight( const idRenderLightLocal * light, const idBounds & localBounds, const idRenderMatrix & modelRenderMatrix ) {
 	idRenderMatrix modelLightProject;
-	idRenderMatrix::Multiply(light->baseLightProject, modelRenderMatrix, modelLightProject);
-	return idRenderMatrix::CullBoundsToMVP(modelLightProject, localBounds, true);
+	idRenderMatrix::Multiply( light->baseLightProject, modelRenderMatrix, modelLightProject );
+	return idRenderMatrix::CullBoundsToMVP( modelLightProject, localBounds, true );
 }
 
 /*
@@ -906,16 +866,15 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 
 	bounds = model->Bounds( &entityDef->parms );
 
-	if (r_useAnonreclaimer.GetBool()) {
+	if ( r_useAnonreclaimer.GetBool() ) {
 		// if it doesn't contact the light frustum, none of the surfaces will
-		if (R_CullModelBoundsToLight(lightDef, bounds, entityDef->modelRenderMatrix)) {
+		if ( R_CullModelBoundsToLight( lightDef, bounds, entityDef->modelRenderMatrix ) ) {
 			MakeEmpty();
 			return;
 		}
-	}
-	else {
+	} else {
 		// if it doesn't contact the light frustum, none of the surfaces will
-		if (R_CullLocalBox(bounds, entityDef->modelMatrix, 6, lightDef->frustum)) {
+		if ( R_CullLocalBox( bounds, entityDef->modelMatrix, 6, lightDef->frustum ) ) {
 			MakeEmpty();
 			return;
 		}
@@ -935,43 +894,41 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 	// create slots for each of the model's surfaces
 	//
 	numSurfaces = model->NumSurfaces();
-	surfaces = (surfaceInteraction_t *)R_ClearedStaticAlloc( sizeof( *surfaces ) * numSurfaces );
+	surfaces = ( surfaceInteraction_t * )R_ClearedStaticAlloc( sizeof( *surfaces ) * numSurfaces );
 
 	interactionGenerated = false;
 
 	// check each surface in the model
-	for (int c = 0; c < model->NumSurfaces(); c++) {
+	for ( int c = 0; c < model->NumSurfaces(); c++ ) {
 		const modelSurface_t	*surf;
 		srfTriangles_t	*tri;
 
-		surf = model->Surface(c);
+		surf = model->Surface( c );
 
 		tri = surf->geometry;
-		if (!tri) {
+		if ( !tri ) {
 			continue;
 		}
 
 		// determine the shader for this surface, possibly by skinning
 		shader = surf->shader;
-		shader = R_RemapShaderBySkin(shader, entityDef->parms.customSkin, entityDef->parms.customShader);
+		shader = R_RemapShaderBySkin( shader, entityDef->parms.customSkin, entityDef->parms.customShader );
 
-		if (!shader) {
+		if ( !shader ) {
 			continue;
 		}
 
-		if (r_useAnonreclaimer.GetBool()) {
+		if ( r_useAnonreclaimer.GetBool() ) {
 			// try to cull each surface
-			if (R_CullModelBoundsToLight(lightDef, tri->bounds, entityDef->modelRenderMatrix)) {
+			if ( R_CullModelBoundsToLight( lightDef, tri->bounds, entityDef->modelRenderMatrix ) ) {
+				continue;
+			}
+		} else {
+			// try to cull each surface
+			if ( R_CullLocalBox( tri->bounds, entityDef->modelMatrix, 6, lightDef->frustum ) ) {
 				continue;
 			}
 		}
-		else {
-			// try to cull each surface
-			if (R_CullLocalBox(tri->bounds, entityDef->modelMatrix, 6, lightDef->frustum)) {
-				continue;
-			}
-		}
-
 		surfaceInteraction_t *sint = &surfaces[c];
 
 		sint->shader = shader;
@@ -985,18 +942,11 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		if ( shader->Spectrum() != lightShader->Spectrum() ) {
 			continue;
 		}
-		
-		/* if (lightDef->parms.parallel && r_skipParallelLights.GetBool() ) {
-		    continue;
-		}
-		
-		if ( !lightDef->parms.pointLight && r_skipProjectedLights.GetBool() ) {
-		    continue;
-		} */
-		
+
 		// nbohr1more: #4379 lightgem culling
-		if (!HasShadows() && !shader->IsLightgemSurf() && tr.viewDef->IsLightGem() )
-		    continue;
+		if ( !HasShadows() && !shader->IsLightgemSurf() && tr.viewDef->IsLightGem() ) { 
+			continue; 
+		}
 
 		// generate a lighted surface and add it
 		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 ) {
@@ -1051,7 +1001,7 @@ we can draw it without caps in zpass mode
 ======================
 */
 static bool R_PotentiallyInsideInfiniteShadow( const srfTriangles_t *occluder,
-											  const idVec3 &localView, const idVec3 &localLight ) {
+        const idVec3 &localView, const idVec3 &localLight ) {
 	idBounds	exp;
 
 	// expand the bounds to account for the near clip plane, because the
@@ -1078,7 +1028,6 @@ static bool R_PotentiallyInsideInfiniteShadow( const srfTriangles_t *occluder,
 
 	// if the ray from localLight to localView intersects a face of the
 	// expanded bounds, we will be inside the projection
-
 	idVec3	ray = localView - localLight;
 
 	// intersect the ray from the view to the light with the near side of the bounds
@@ -1136,19 +1085,18 @@ void idInteraction::AddActiveInteraction( void ) {
 
 	vLight = lightDef->viewLight;
 	vEntity = entityDef->viewEntity;
-	
+
 
 	// nbohr1more: #4379 lightgem culling
-	if ( !HasShadows() && !entityDef->parms.isLightgem && tr.viewDef->IsLightGem())
-		return;
-	
-	// do not waste time culling the interaction frustum if there will be no shadows
-	else if ( !HasShadows() ) {
+	if ( !HasShadows() && !entityDef->parms.isLightgem && tr.viewDef->IsLightGem() ) { 
+		return; 
+	}
+	else if ( !HasShadows() ) { // do not waste time culling the interaction frustum if there will be no shadows
 
 		// use the entity scissor rectangle
 		shadowScissor = vEntity->scissorRect;
 
-	// culling does not seem to be worth it for static world models
+		// culling does not seem to be worth it for static world models
 	} else if ( entityDef->parms.hModel->IsStaticWorldModel() ) {
 
 		// use the light scissor rectangle
@@ -1176,6 +1124,7 @@ void idInteraction::AddActiveInteraction( void ) {
 	// model itself wasn't visible.  This just returns a cached value after it
 	// has been generated once in the view.
 	idRenderModel *model = R_EntityDefDynamicModel( entityDef );
+
 	if ( model == NULL || model->NumSurfaces() <= 0 ) {
 		return;
 	}
@@ -1190,7 +1139,6 @@ void idInteraction::AddActiveInteraction( void ) {
 	if ( IsDeferred() ) {
 		CreateInteraction( model );
 	}
-
 	R_GlobalPointToLocal( vEntity->modelMatrix, lightDef->globalLightOrigin, localLightOrigin );
 	R_GlobalPointToLocal( vEntity->modelMatrix, tr.viewDef->renderView.vieworg, localViewOrigin );
 
@@ -1206,9 +1154,8 @@ void idInteraction::AddActiveInteraction( void ) {
 		surfaceInteraction_t *sint = &surfaces[i];
 
 		// see if the base surface is visible, we may still need to add shadows even if empty
-		if ( r_shadows.GetInteger() == 2 // duzenko: send off-screen surfaces to backend in case they cast shadows
-			//|| r_lightNoCulling.GetBool() // duzenko: debug tool to send all tri's to GPU
-			|| !lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
+		if ( r_shadows.GetInteger() == 2 || // duzenko: send off-screen surfaces to backend in case they cast shadows
+			!lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
 
 			// make sure we have created this interaction, which may have been deferred
 			// on a previous use that only needed the shadow
@@ -1216,7 +1163,6 @@ void idInteraction::AddActiveInteraction( void ) {
 				sint->lightTris = R_CreateLightTris( vEntity->entityDef, sint->ambientTris, vLight->lightDef, sint->shader, sint->cullInfo );
 				R_FreeInteractionCullInfo( sint->cullInfo );
 			}
-
 			srfTriangles_t *lightTris = sint->lightTris;
 
 			if ( lightTris ) {
@@ -1224,8 +1170,8 @@ void idInteraction::AddActiveInteraction( void ) {
 				// try to cull before adding
 				// FIXME: this may not be worthwhile. We have already done culling on the ambient,
 				// but individual surfaces may still be cropped somewhat more
-				if ( r_shadows.GetInteger() == 2 // duzenko: send off-screen surfaces to backend in case they cast shadows
-					|| !R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
+				if ( r_shadows.GetInteger() == 2 || // duzenko: send off-screen surfaces to backend in case they cast shadows
+					!R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
 					// make sure the original surface has its ambient cache created
 					srfTriangles_t *tri = sint->ambientTris;
@@ -1239,44 +1185,42 @@ void idInteraction::AddActiveInteraction( void ) {
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
 
-					if ( !vertexCache.CacheIsCurrent(lightTris->indexCache) ) {
+					if ( !vertexCache.CacheIsCurrent( lightTris->indexCache ) ) {
 						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, ALIGN( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
 					}
-					
-					// add the surface to the light list
 
+					// add the surface to the light list
 					const idMaterial *shader = sint->shader;
 					R_GlobalShaderOverride( &shader );
 
 					// there will only be localSurfaces if the light casts shadows and there are surfaces with NOSELFSHADOW
 					if ( sint->shader->Coverage() == MC_TRANSLUCENT && sint->shader->ReceivesLighting() ) {
-						R_LinkLightSurf( &vLight->translucentInteractions, lightTris, 
-							vEntity, lightDef, shader, lightScissor, false );
-					} else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag(MF_NOSELFSHADOW) ) {
-						R_LinkLightSurf( &vLight->localInteractions, lightTris, 
-							vEntity, lightDef, shader, lightScissor, false );
+						R_LinkLightSurf( &vLight->translucentInteractions, lightTris,
+						                 vEntity, lightDef, shader, lightScissor, false );
+					} else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
+						R_LinkLightSurf( &vLight->localInteractions, lightTris,
+						                 vEntity, lightDef, shader, lightScissor, false );
 					} else {
-						R_LinkLightSurf( &vLight->globalInteractions, lightTris, 
-							vEntity, lightDef, shader, lightScissor, false );
+						R_LinkLightSurf( &vLight->globalInteractions, lightTris,
+						                 vEntity, lightDef, shader, lightScissor, false );
 					}
 				}
 			}
 		}
-
 		srfTriangles_t *shadowTris = sint->shadowTris;
 
 		// the shadows will always have to be added, unless we can tell they
 		// are from a surface in an unconnected area
 		if ( shadowTris ) {
-			
+
 			// check for view specific shadow suppression (player shadows, etc)
 			if ( !r_skipSuppress.GetBool() ) {
 				if ( entityDef->parms.suppressShadowInViewID &&
-					entityDef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
+				     entityDef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
 					continue;
 				}
 				if ( entityDef->parms.suppressShadowInLightID &&
-					entityDef->parms.suppressShadowInLightID == lightDef->parms.lightId ) {
+				     entityDef->parms.suppressShadowInLightID == lightDef->parms.lightId ) {
 					continue;
 				}
 			}
@@ -1291,7 +1235,6 @@ void idInteraction::AddActiveInteraction( void ) {
 			}
 
 			// copy the shadow vertexes to the vertex cache if they have been purged
-
 			// if we are using shared shadowVertexes and letting a vertex program fix them up,
 			// get the shadowCache from the parent ambient surface
 			if ( !shadowTris->shadowVertexes ) {
@@ -1323,10 +1266,10 @@ void idInteraction::AddActiveInteraction( void ) {
 
 			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
 				R_LinkLightSurf( &vLight->localShadows,
-					shadowTris, vEntity, lightDef, NULL, shadowScissor, inside );
+				                 shadowTris, vEntity, lightDef, NULL, shadowScissor, inside );
 			} else {
 				R_LinkLightSurf( &vLight->globalShadows,
-					shadowTris, vEntity, lightDef, NULL, shadowScissor, inside );
+				                 shadowTris, vEntity, lightDef, NULL, shadowScissor, inside );
 			}
 		}
 	}
@@ -1389,7 +1332,6 @@ void R_ShowInteractionMemory_f( const idCmdArgs &args ) {
 			}
 		}
 	}
-
 	common->Printf( "%i entities with %i total interactions totalling %ik\n", entities, interactions, total / 1024 );
 	common->Printf( "%i deferred interactions, %i empty interactions\n", deferredInteractions, emptyInteractions );
 	common->Printf( "%5i indexes %5i verts in %5i light tris\n", lightTriIndexes, lightTriVerts, lightTris );

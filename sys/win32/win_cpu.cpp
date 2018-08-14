@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include <float.h>
 #include "win_local.h"
 
@@ -674,12 +672,7 @@ cpuid_t Sys_GetCPUId( void ) {
 	if ( HasMMX() ) {
 		flags |= CPUID_MMX;
 	}
-
-/*	// check for 3DNow!
-	if ( Has3DNow() ) {
-		flags |= CPUID_3DNOW;
-	}*/
-
+	
 	// check for Streaming SIMD Extensions
 	if ( HasSSE() ) {
 		flags |= CPUID_SSE | CPUID_FTZ;
@@ -719,11 +712,6 @@ cpuid_t Sys_GetCPUId( void ) {
 	if ( HasAVX2() ) {
 		flags |= CPUID_AVX2;
 	}
-
-	// check for Hyper-Threading Technology
-/*	if ( HasHTT() ) {
-		flags |= CPUID_HTT;
-	}*/
 
 	// check for Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
 	/*if ( HasCMOV() ) {

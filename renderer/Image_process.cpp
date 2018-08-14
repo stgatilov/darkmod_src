@@ -15,8 +15,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
 /*
@@ -45,21 +43,22 @@ byte *R_ResampleTexture( const byte *in, int inwidth, int inheight,
 	if ( outwidth > MAX_DIMENSION ) {
 		outwidth = MAX_DIMENSION;
 	}
+
 	if ( outheight > MAX_DIMENSION ) {
 		outheight = MAX_DIMENSION;
 	}
-
 	out = (byte *)R_StaticAlloc( outwidth * outheight * 4 );
 	out_p = out;
 
 	fracstep = inwidth*0x10000/outwidth;
-
 	frac = fracstep>>2;
+
 	for ( i=0 ; i<outwidth ; i++ ) {
 		p1[i] = 4*(frac>>16);
 		frac += fracstep;
 	}
 	frac = 3*(fracstep>>2);
+
 	for ( i=0 ; i<outwidth ; i++ ) {
 		p2[i] = 4*(frac>>16);
 		frac += fracstep;
@@ -69,6 +68,7 @@ byte *R_ResampleTexture( const byte *in, int inwidth, int inheight,
 		inrow = in + 4 * inwidth * (int)( ( i + 0.25f ) * inheight / outheight );
 		inrow2 = in + 4 * inwidth * (int)( ( i + 0.75f ) * inheight / outheight );
 		frac = fracstep >> 1;
+
 		for (j=0 ; j<outwidth ; j++) {
 			pix1 = inrow + p1[j];
 			pix2 = inrow + p2[j];
@@ -80,7 +80,6 @@ byte *R_ResampleTexture( const byte *in, int inwidth, int inheight,
 			out_p[j*4+3] = (pix1[3] + pix2[3] + pix3[3] + pix4[3])>>2;
 		}
 	}
-
 	return out;
 }
 
@@ -94,7 +93,7 @@ Normal maps and such should not be bilerped.
 */
 byte *R_Dropsample( const byte *in, int inwidth, int inheight,  
 							int outwidth, int outheight ) {
-	int		i, j, k;
+	int			i, j, k;
 	const byte	*inrow;
 	const byte	*pix1;
 	byte		*out, *out_p;
@@ -113,7 +112,6 @@ byte *R_Dropsample( const byte *in, int inwidth, int inheight,
 			out_p[j*4+3] = pix1[3];
 		}
 	}
-
 	return out;
 }
 
@@ -129,6 +127,7 @@ void R_SetBorderTexels( byte *inBase, int width, int height, const byte border[4
 	byte	*out;
 
 	out = inBase;
+
 	for (i=0 ; i<height ; i++, out+=width*4) {
 		out[0] = border[0];
 		out[1] = border[1];
@@ -136,6 +135,7 @@ void R_SetBorderTexels( byte *inBase, int width, int height, const byte border[4
 		out[3] = border[3];
 	}
 	out = inBase+(width-1)*4;
+
 	for (i=0 ; i<height ; i++, out+=width*4) {
 		out[0] = border[0];
 		out[1] = border[1];
@@ -143,6 +143,7 @@ void R_SetBorderTexels( byte *inBase, int width, int height, const byte border[4
 		out[3] = border[3];
 	}
 	out = inBase;
+
 	for (i=0 ; i<width ; i++, out+=4) {
 		out[0] = border[0];
 		out[1] = border[1];
@@ -150,6 +151,7 @@ void R_SetBorderTexels( byte *inBase, int width, int height, const byte border[4
 		out[3] = border[3];
 	}
 	out = inBase+width*4*(height-1);
+
 	for (i=0 ; i<width ; i++, out+=4) {
 		out[0] = border[0];
 		out[1] = border[1];
@@ -182,25 +184,24 @@ byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder ) {
 	if ( width < 1 || height < 1 || ( width + height == 2 ) ) {
 		common->FatalError( "R_MipMap called with size %i,%i", width, height );
 	}
-
 	border[0] = in[0];
 	border[1] = in[1];
 	border[2] = in[2];
 	border[3] = in[3];
 
 	row = width * 4;
-
 	newWidth = width >> 1;
 	newHeight = height >> 1;
+
 	if ( !newWidth ) {
 		newWidth = 1;
 	}
+
 	if ( !newHeight ) {
 		newHeight = 1;
 	}
 	out = (byte *)R_StaticAlloc( newWidth * newHeight * 4 );
 	out_p = out;
-
 	in_p = in;
 
 	width >>= 1;
@@ -239,7 +240,6 @@ byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder ) {
 	if ( preserveBorder ) {
 		R_SetBorderTexels( out, width, height, border );
 	}
-
 	return out;
 }
 
@@ -312,7 +312,6 @@ void R_RotatePic( byte *data, int width ) {
 			*( temp + i * width + j ) = *( (int *)data + j * width + i );
 		}
 	}
-
 	memcpy( data, temp, width * width * 4 );
 
 	R_StaticFree( temp );

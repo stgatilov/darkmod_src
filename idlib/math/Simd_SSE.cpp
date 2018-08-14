@@ -3431,6 +3431,10 @@ void VPCALL idSIMD_SSE::Dot( float &dot, const float *src1, const float *src2, c
 		dst[i] |= ( src0[i] CMP c ) << BITNUM;											\
 	}
 
+/* revelator these functions should be rewritten,
+basically optimizations are turned off because these functions are treated as inline,
+and we cannot do that according to intel spec begin */
+
 /*
 ============
 idSIMD_SSE::CmpGT
@@ -3518,6 +3522,10 @@ idSIMD_SSE::CmpLE
 void VPCALL idSIMD_SSE::CmpLE( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
 	COMPAREBITCONSTANT( dst, bitNum, src0, constant, count, <=, cmpnleps, FLIP )
 }
+
+/* revelator these functions should be rewritten,
+basically optimizations are turned off because these functions are treated as inline,
+and we cannot do that according to intel spec end */
 
 /*
 ============
