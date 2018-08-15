@@ -152,6 +152,7 @@ private:
 };
 
 GlProfiler glProfiler;
+static const int NAME_COLUMN_WIDTH = -40;
 
 void ProfilingEnterSection( const char *section ) {
 	glProfiler.EnterSection( section );
@@ -188,7 +189,7 @@ void ProfilingDrawSingleLine( int &y, const char *text, ... ) {
 
 void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent ) {
 	idStr level = indent + s.name;
-	ProfilingDrawSingleLine( y, "%-35s  %6d  %6.3f ms  %6.3f ms", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
+	ProfilingDrawSingleLine( y, "%*s %6d  %6.3f ms  %6.3f ms", NAME_COLUMN_WIDTH, level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
 	for( auto& c : s.children ) {
 		ProfilingDrawSectionTimings( y, c, indent + "  " );
 	}
@@ -197,13 +198,13 @@ void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent )
 void ProfilingDrawCurrentTimings() {
 	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
 	int y = 4;
-	ProfilingDrawSingleLine( y, "%-35s  %6s  %9s  %9s", "# Section", "Count", "CPU", "GPU" );
+	ProfilingDrawSingleLine( y, "%*s %6s  %9s  %9s", NAME_COLUMN_WIDTH, "# Section", "Count", "CPU", "GPU" );
 	ProfilingDrawSectionTimings( y, *s, "" );
 }
 
 void ProfilingPrintSectionTimings( GlProfiler::section &s, idStr indent ) {
 	idStr level = indent + s.name;
-	common->Printf( "%-35s  %6d  %6.3f ms  %6.3f ms\n", level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
+	common->Printf( "%*s %6d  %6.3f ms  %6.3f ms\n", NAME_COLUMN_WIDTH, level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
 	for( auto& c : s.children ) {
 		ProfilingPrintSectionTimings( c, indent + "  " );
 	}
@@ -215,7 +216,7 @@ void ProfilingPrintTimings_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	common->Printf( "%-35s  %6s  %9s  %9s\n", "# Section", "Count", "CPU", "GPU" );
+	common->Printf( "%*s  %6s  %9s  %9s\n", NAME_COLUMN_WIDTH, "# Section", "Count", "CPU", "GPU" );
 	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
 	ProfilingPrintSectionTimings( *s, "" );
 }
