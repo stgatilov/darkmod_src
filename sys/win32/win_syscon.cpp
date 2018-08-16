@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include <errno.h>
 #include <float.h>
 #include <fcntl.h>
@@ -147,26 +145,6 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			s_wcd.hbrErrorBackground = CreateSolidBrush( RGB( 0x80, 0x80, 0x80 ) );
 			SetTimer( hWnd, 1, 1000, NULL );
 			break;
-/*
-		case WM_ERASEBKGND:
-			HGDIOBJ oldObject;
-			HDC hdcScaled;
-			hdcScaled = CreateCompatibleDC( ( HDC ) wParam );
-			assert( hdcScaled != 0 );
-			if ( hdcScaled ) {
-				oldObject = SelectObject( ( HDC ) hdcScaled, s_wcd.hbmLogo );
-				assert( oldObject != 0 );
-				if ( oldObject )
-				{
-					StretchBlt( ( HDC ) wParam, 0, 0, s_wcd.windowWidth, s_wcd.windowHeight, 
-						hdcScaled, 0, 0, 512, 384,
-						SRCCOPY );
-				}
-				DeleteDC( hdcScaled );
-				hdcScaled = 0;
-			}
-			return 1;
-*/
 		case WM_TIMER:
 			if ( wParam == 1 ) {
 				s_timePolarity = (bool)!s_timePolarity;
@@ -176,7 +154,6 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			}
 			break;
     }
-
     return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
@@ -261,7 +238,6 @@ LONG WINAPI InputLineWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 		break;
 	}
-
 	return CallWindowProc( s_wcd.SysInputLineWndProc, hWnd, uMsg, wParam, lParam );
 }
 
@@ -294,7 +270,6 @@ void Sys_CreateConsole( void ) {
 	if ( !RegisterClass (&wc) ) {
 		return;
 	}
-
 	hDC = GetDC( GetDesktopWindow() );
 	swidth = GetDeviceCaps( hDC, HORZRES );
 	sheight = GetDeviceCaps( hDC, VERTRES );
@@ -309,8 +284,6 @@ void Sys_CreateConsole( void ) {
 	s_wcd.windowWidth = rect.right - rect.left + 1;
 	s_wcd.windowHeight = rect.bottom - rect.top + 1;
 
-	//s_wcd.hbmLogo = LoadBitmap( win32.hInstance, MAKEINTRESOURCE( IDB_BITMAP_LOGO) );
-
 	// grayman #4539 - show whether this is a 32-bit or 64-bit binary
 	// I had a problem building the 'title' string.
 	// va() accepts the following:
@@ -319,7 +292,6 @@ void Sys_CreateConsole( void ) {
 	// idStr title = va( "%s %d.%02d/%u", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, sizeof(void*) * 8);
 	// It's as if there's a limitation on the number of chars va will accept, which makes no sense.
 	// So, for now, I'm going to change the title from "The Dark Mod 2.06" to "TDM 2.06" to give me room for the bit size.
-
 	idStr title = va( "%s/%u", ENGINE_VERSION, sizeof(void*) * 8);
 
 	s_wcd.hWnd = CreateWindowEx( 0,
@@ -401,7 +373,6 @@ void Sys_CreateConsole( void ) {
 		SetForegroundWindow( s_wcd.hWnd );
 		SetFocus( s_wcd.hwndInputLine );
 	}
-
 	s_wcd.consoleField.Clear();
 
 	for ( i = 0 ; i < COMMAND_HISTORY ; i++ ) {
@@ -456,8 +427,7 @@ char *Sys_ConsoleInput( void ) {
 	
 	if ( s_wcd.consoleText[0] == 0 ) {
 		return NULL;
-	}
-		
+	}		
 	strcpy( s_wcd.returnedText, s_wcd.consoleText );
 	s_wcd.consoleText[0] = 0;
 	

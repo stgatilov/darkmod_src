@@ -359,8 +359,7 @@ void idImage::GetDownsize( int &scaled_width, int &scaled_height ) const {
 	// deal with a half mip resampling
 	// This causes a 512*256 texture to sample down to
 	// 256*128 on a voodoo3, even though it could be 256*256
-	while ( scaled_width > glConfig.maxTextureSize
-	        || scaled_height > glConfig.maxTextureSize ) {
+	while ( scaled_width > glConfig.maxTextureSize || scaled_height > glConfig.maxTextureSize ) {
 		scaled_width >>= 1;
 		scaled_height >>= 1;
 	}
@@ -492,7 +491,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		scaled_width = width;
 		scaled_height = height;
 	}
-
 	uploadHeight = scaled_height;
 	uploadWidth = scaled_width;
 	type = TT_2D;
@@ -521,26 +519,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		char *ext = strrchr( filename, '.' );
 		if ( ext ) {
 			strcpy( ext, ".tga" );
-			// swap the red/alpha for the write
-			/*
-			if ( depth == TD_BUMP ) {
-				for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-					scaledBuffer[ i ] = scaledBuffer[ i + 3 ];
-					scaledBuffer[ i + 3 ] = 0;
-				}
-			}
-			*/
 			R_WriteTGA( filename, scaledBuffer, scaled_width, scaled_height, false );
-
-			// put it back
-			/*
-			if ( depth == TD_BUMP ) {
-				for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-					scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
-					scaledBuffer[ i ] = 0;
-				}
-			}
-			*/
 		}
 	}
 
@@ -555,8 +534,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			scaledBuffer[ i ] = 0;
 		}
 	}
+
 	// upload the main image level
-	Bind();
+	this->Bind();
 
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE );
@@ -566,15 +546,14 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if ( mipmapMode == 2 ) { // duzenko #4401
 		qglGenerateMipmap( GL_TEXTURE_2D );
 	}
-	if ( mipmapMode == 1 ) // duzenko #4401
+	if ( mipmapMode == 1 ) { // duzenko #4401
 		if ( strcmp( glConfig.vendor_string, "Intel" ) ) { // known to have crashed on Intel
 			qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE );
 		}
+	}
 
 	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
-	int		miplevel;
-
-	miplevel = 0;
+	int	miplevel = 0;
 	while ( scaled_width > 1 || scaled_height > 1 ) {
 		if ( mipmapMode > 0 ) { // duzenko #4401
 			break;
@@ -612,7 +591,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if ( scaledBuffer != 0 && pic != scaledBuffer ) { // duzenko #4401
 		R_StaticFree( scaledBuffer );
 	}
-
 	SetImageFilterAndRepeat();
 
 	// see if we messed anything up
@@ -623,6 +601,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 // FBO attachments need specific setup, rarely changed
 void idImage::GenerateAttachment( int width, int height, GLint format ) {
+	//PurgeImage(); // force a reload
 	bool changed = ( uploadWidth != width || uploadHeight != height || internalFormat != format );
 	if ( ( format == GL_DEPTH || format == GL_DEPTH_STENCIL ) && r_fboDepthBits.IsModified() ) {
 		changed = true;
@@ -663,7 +642,7 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 			qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr );
 			common->Printf( "Generated framebuffer COLOR attachment: %dx%d\n", width, height );
 			break;
-			// these two are for Intel separate stencil optimization
+		// these two are for Intel separate stencil optimization
 		case GL_DEPTH:
 			switch ( r_fboDepthBits.GetInteger() ) {
 				case 16:
@@ -1346,7 +1325,7 @@ Absolutely every image goes through this path
 On exit, the idImage will have a valid OpenGL texture number that can be bound
 ===============
 */
-void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) {
+void idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) {
 	int		width, height;
 	byte	*pic;
 
@@ -1627,7 +1606,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 		// you could also use 0x00000000 which is a 32 bit hexadecimal 0 or 0x00000000'00000000 for a 64 bit one.
 		// in practice though its usually enough to just use 0 the compiler will sort out the bit lenght.
 		// if you want a real null pointer in C++ use C++11 features where nullptr exists.
-		// using 0 is fine though but not strictly nessesary, in C though it would be a whole other ballpark of trouble,
+		// using 0 is fine in most cases, in C it would be a whole other ballpark of trouble,
 		// because you would basically send a pointer into something that does not use a pointer context ;).
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
 	}   //REVELATOR: dont need an else condition here.
@@ -1670,6 +1649,7 @@ void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bo
 		// This bit runs once only at map start, because it tests whether the image is too small to hold the screen.
 		// It resizes the texture to a power of two that can hold the screen,
 		// and then subsequent captures to the texture put the depth component into the RGB channels
+		// this part sets depthbits to the max value the gfx card supports, it could also be used for FBO.
 		switch ( glConfig.depthBits ) {
 		case 16:
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );

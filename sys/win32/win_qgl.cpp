@@ -25,8 +25,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include <float.h>
 #include "win_local.h"
 #include "../../renderer/tr_local.h"

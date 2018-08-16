@@ -55,7 +55,6 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 	qglEnd();
 }
 
-
 /*
 ================
 RB_DrawElementsWithCounters
@@ -70,9 +69,13 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += tri->numIndexes;
 		backEnd.pc.c_drawVertexes += tri->numVerts;
+	}
 
-		if ( tri->ambientSurface && ( tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts ) ) {
+	if ( tri->ambientSurface  ) {
+		if ( tri->indexes == tri->ambientSurface->indexes ) {
 			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+		}
+		if ( tri->verts == tri->ambientSurface->verts ) {
 			backEnd.pc.c_drawRefVertexes += tri->numVerts;
 		}
 	}
@@ -91,6 +94,14 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 	}
 }
 
+/*
+================
+RB_DrawElementsWithCountersBaseVertex
+
+Renamed this one to not overload the above function,
+only used in the experimental multidraw function: Revelator.
+================
+*/
 void RB_DrawElementsWithCountersBaseVertex( const srfTriangles_t *tri, int baseVertex ) {
 	if ( vertexCache.currentVertexBuffer == 0 ) {
 		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
@@ -101,9 +112,13 @@ void RB_DrawElementsWithCountersBaseVertex( const srfTriangles_t *tri, int baseV
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += tri->numIndexes;
 		backEnd.pc.c_drawVertexes += tri->numVerts;
+	}
 
-		if ( tri->ambientSurface && ( tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts ) ) {
+	if ( tri->ambientSurface  ) {
+		if ( tri->indexes == tri->ambientSurface->indexes ) {
 			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+		}
+		if ( tri->verts == tri->ambientSurface->verts ) {
 			backEnd.pc.c_drawRefVertexes += tri->numVerts;
 		}
 	}
@@ -137,6 +152,15 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 		backEnd.pc.c_shadowVertexes += tri->numVerts;
 	}
 
+	if ( tri->ambientSurface  ) {
+		if ( tri->indexes == tri->ambientSurface->indexes ) {
+			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+		}
+		if ( tri->verts == tri->ambientSurface->verts ) {
+			backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		}
+	}
+
 	if ( tri->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
 		                 numIndexes,
@@ -156,7 +180,7 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 ===============
 RB_RenderTriangleSurface
 
-Sets texcoord and vertex pointers
+Sets vertex pointers
 ===============
 */
 void RB_RenderTriangleSurface( const srfTriangles_t *tri ) {
@@ -165,9 +189,7 @@ void RB_RenderTriangleSurface( const srfTriangles_t *tri ) {
 		return;
 	}
 	const idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( tri->ambientCache );
-
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
-
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	RB_DrawElementsWithCounters( tri );
 }
 

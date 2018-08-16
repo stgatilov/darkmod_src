@@ -1,16 +1,16 @@
 /*****************************************************************************
                     The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
+
+ This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
+
+ The Dark Mod Source Code is free software: you can redistribute it
+ and/or modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the License,
  or (at your option) any later version. For details, see LICENSE.TXT.
- 
+
  Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -41,16 +41,16 @@ double Sys_GetClockTicks( void ) {
 	LARGE_INTEGER li;
 
 	QueryPerformanceCounter( &li );
-	return = (double ) li.LowPart + (double) 0xFFFFFFFF * li.HighPart;
+	return = ( double ) li.LowPart + ( double ) 0xFFFFFFFF * li.HighPart;
 
 #elif defined (_MSC_VER) && defined(_WIN64)
 
-	  // stgatilov: serialize pipeline with cpuid instruction
-    int values[4];
-    __cpuid(values, 0);
-    // greebo: Use the intrinsic provided by the VC++ compiler in x64
-    unsigned __int64 ticks = __rdtsc();
-    return static_cast<double>(ticks);
+	// stgatilov: serialize pipeline with cpuid instruction
+	int values[4];
+	__cpuid( values, 0 );
+	// greebo: Use the intrinsic provided by the VC++ compiler in x64
+	unsigned __int64 ticks = __rdtsc();
+	return static_cast<double>( ticks );
 
 #else
 
@@ -65,7 +65,7 @@ double Sys_GetClockTicks( void ) {
 		mov hi, edx
 		pop ebx
 	}
-	return (double ) lo + (double) 0xFFFFFFFF * hi;
+	return ( double ) lo + ( double ) 0xFFFFFFFF * hi;
 
 #endif
 }
@@ -95,17 +95,17 @@ double Sys_ClockTicksPerSecond( void ) {
 		if ( !RegOpenKeyEx( HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &hKey ) ) {
 			ProcSpeed = 0;
 			buflen = sizeof( ProcSpeed );
-			ret = RegQueryValueEx( hKey, "~MHz", NULL, NULL, (LPBYTE) &ProcSpeed, &buflen );
+			ret = RegQueryValueEx( hKey, "~MHz", NULL, NULL, ( LPBYTE ) &ProcSpeed, &buflen );
 			// If we don't succeed, try some other spellings.
 			if ( ret != ERROR_SUCCESS ) {
-				ret = RegQueryValueEx( hKey, "~Mhz", NULL, NULL, (LPBYTE) &ProcSpeed, &buflen );
+				ret = RegQueryValueEx( hKey, "~Mhz", NULL, NULL, ( LPBYTE ) &ProcSpeed, &buflen );
 			}
 			if ( ret != ERROR_SUCCESS ) {
-				ret = RegQueryValueEx( hKey, "~mhz", NULL, NULL, (LPBYTE) &ProcSpeed, &buflen );
+				ret = RegQueryValueEx( hKey, "~mhz", NULL, NULL, ( LPBYTE ) &ProcSpeed, &buflen );
 			}
 			RegCloseKey( hKey );
 			if ( ret == ERROR_SUCCESS ) {
-				ticks = (double) ((unsigned long)ProcSpeed) * 1000000;
+				ticks = ( double )( ( unsigned long )ProcSpeed ) * 1000000;
 			}
 		}
 	}
@@ -128,14 +128,12 @@ double Sys_ClockTicksPerSecond( void ) {
 HasCPUID
 ================
 */
-static bool HasCPUID( void )
-{
+static bool HasCPUID( void ) {
 #if defined(_MSC_VER) && defined(_WIN64)
-    // Yes, we just have it, we're not compiling on 486-compatible hardware
-    return true;
+	// Yes, we just have it, we're not compiling on 486-compatible hardware
+	return true;
 #else
-    __asm 
-	{
+	__asm {
 		pushfd						// save eflags
 		pop		eax
 		test	eax, 0x00200000		// check ID bit
@@ -148,7 +146,7 @@ static bool HasCPUID( void )
 		test	eax, 0x00200000		// check ID bit
 		jz		good
 		jmp		err					// cpuid not supported
-set21:
+		set21:
 		or		eax, 0x00200000		// set ID bit
 		push	eax					// store new value
 		popfd						// store new value in EFLAGS
@@ -176,18 +174,17 @@ good:
 CPUID
 ================
 */
-static void CPUID( int func, unsigned regs[4] )
-{
+static void CPUID( int func, unsigned regs[4] ) {
 #if defined (_MSC_VER) && defined(_WIN64)
-    // greebo: Use intrinsics on x64 in VC++
-    int values[4];
+	// greebo: Use intrinsics on x64 in VC++
+	int values[4];
 
-    __cpuid(values, func);
+	__cpuid( values, func );
 
-    regs[_REG_EAX] = values[0];
-    regs[_REG_EBX] = values[1];
-    regs[_REG_ECX] = values[2];
-    regs[_REG_EDX] = values[3];
+	regs[_REG_EAX] = values[0];
+	regs[_REG_EBX] = values[1];
+	regs[_REG_ECX] = values[2];
+	regs[_REG_EDX] = values[3];
 #else
 	unsigned regEAX, regEBX, regECX, regEDX;
 
@@ -239,47 +236,6 @@ static bool IsAMD( void ) {
 	}
 	return false;
 }
-
-/*
-================
-HasCMOV
-================
-*/
-/*static bool HasCMOV( void ) {
-	unsigned regs[4];
-
-	// get CPU feature bits
-	CPUID( 1, regs );
-
-	// bit 15 of EDX denotes CMOV existence
-	if ( regs[_REG_EDX] & ( 1 << 15 ) ) {
-		return true;
-	}
-	return false;
-}*/
-
-/*
-================
-Has3DNow
-================
-*/
-/*static bool Has3DNow( void ) {
-	unsigned regs[4];
-
-	// check AMD-specific functions
-	CPUID( 0x80000000, regs );
-	if ( regs[_REG_EAX] < 0x80000000 ) {
-		return false;
-	}
-
-	// bit 31 of EDX denotes 3DNow! support
-	CPUID( 0x80000001, regs );
-	if ( regs[_REG_EDX] & ( 1 << 31 ) ) {
-		return true;
-	}
-
-	return false;
-}*/
 
 /*
 ================
@@ -347,7 +303,7 @@ static bool HasSSE3( void ) {
 	CPUID( 1, regs );
 
 	// bit 0 of ECX denotes SSE3 existence
-	if ( regs[_REG_ECX] & (1 << 0) ) {
+	if ( regs[_REG_ECX] & ( 1 << 0 ) ) {
 		return true;
 	}
 	return false;
@@ -358,14 +314,14 @@ static bool HasSSE3( void ) {
 HasSSSE3
 ================
 */
-static bool HasSSSE3(void) {
+static bool HasSSSE3( void ) {
 	unsigned regs[4];
 
 	// get CPU feature bits
-	CPUID(1, regs);
+	CPUID( 1, regs );
 
 	// bit 9 of ECX denotes SSSE3 existence
-	if (regs[_REG_ECX] & (1 << 9)) {
+	if ( regs[_REG_ECX] & ( 1 << 9 ) ) {
 		return true;
 	}
 	return false;
@@ -383,7 +339,7 @@ static bool HasSSE41( void ) {
 	CPUID( 1, regs );
 
 	// bit 19 of ECX denotes SSE4.1 existence
-	if ( regs[_REG_ECX] & (1 << 19) ) {
+	if ( regs[_REG_ECX] & ( 1 << 19 ) ) {
 		return true;
 	}
 	return false;
@@ -401,14 +357,17 @@ static bool HasAVX( void ) {
 	//https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp#L53
 
 	//check if CPU supports AVX instructions
-	bool cpuAVXSupport = (regs[_REG_ECX] & (1 << 28)) != 0;
+	bool cpuAVXSupport = ( regs[_REG_ECX] & ( 1 << 28 ) ) != 0;
+
 	//check if xsave/xrstor instructions are enabled by OS for context switches
-	bool osUsesXsaveXrstor = (regs[_REG_ECX] & (1 << 27)) != 0;
-	if (cpuAVXSupport && osUsesXsaveXrstor) {
-		uint64_t xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+	bool osUsesXsaveXrstor = ( regs[_REG_ECX] & ( 1 << 27 ) ) != 0;
+
+	if ( cpuAVXSupport && osUsesXsaveXrstor ) {
+		uint64_t xcrFeatureMask = _xgetbv( _XCR_XFEATURE_ENABLED_MASK );
 		//check if OS is configured to save/restore YMM registers on context switches
-		if ((xcrFeatureMask & 0x6) == 0x6)
+		if ( ( xcrFeatureMask & 0x6 ) == 0x6 ) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -422,12 +381,12 @@ static bool HasAVX2( void ) {
 	unsigned regs[4];
 	//check that cpuid instruction supports function 7
 	CPUID( 0, regs );
-	if (regs[0] < 7)
-		return false;
+	if ( regs[0] < 7 )
+	{ return false; }
 	// get CPU feature bits
 	CPUID( 7, regs );
 	//check if CPU supports AVX2 instructions
-	bool cpuAVX2Support = (regs[_REG_EBX] & (1 << 5)) != 0;
+	bool cpuAVX2Support = ( regs[_REG_EBX] & ( 1 << 5 ) ) != 0;
 	if ( cpuAVX2Support && HasAVX() ) {
 		return true;
 	}
@@ -446,7 +405,7 @@ static bool HasFMA3( void ) {
 	CPUID( 1, regs );
 
 	// bit 12 of ECX denotes FMA3 support
-	if ( regs[_REG_ECX] & (1 << 12) ) {
+	if ( regs[_REG_ECX] & ( 1 << 12 ) ) {
 		return true;
 	}
 	return false;
@@ -458,15 +417,14 @@ LogicalProcPerPhysicalProc
 ================
 */
 #define NUM_LOGICAL_BITS   0x00FF0000     // EBX[23:16] Bit 16-23 in ebx contains the number of logical
-                                          // processors per physical processor when execute cpuid with 
-                                          // eax set to 1
-static unsigned char LogicalProcPerPhysicalProc( void )
-{
-    unsigned regs[4];
+// processors per physical processor when execute cpuid with
+// eax set to 1
+static unsigned char LogicalProcPerPhysicalProc( void ) {
+	unsigned regs[4];
 
-    CPUID(1, regs);
+	CPUID( 1, regs );
 
-	return (unsigned char) ((regs[_REG_EBX] & NUM_LOGICAL_BITS) >> 16);
+	return ( unsigned char )( ( regs[_REG_EBX] & NUM_LOGICAL_BITS ) >> 16 );
 }
 
 /*
@@ -475,152 +433,23 @@ GetAPIC_ID
 ================
 */
 #define INITIAL_APIC_ID_BITS  0xFF000000  // EBX[31:24] Bits 24-31 (8 bits) return the 8-bit unique 
-                                          // initial APIC ID for the processor this code is running on.
-                                          // Default value = 0xff if HT is not supported
-static unsigned char GetAPIC_ID( void )
-{
-    unsigned regs[4];
+// initial APIC ID for the processor this code is running on.
+// Default value = 0xff if HT is not supported
+static unsigned char GetAPIC_ID( void ) {
+	unsigned regs[4];
 
-    CPUID(1, regs);
+	CPUID( 1, regs );
 
-    return (unsigned char)((regs[_REG_EBX] & INITIAL_APIC_ID_BITS) >> 24);
+	return ( unsigned char )( ( regs[_REG_EBX] & INITIAL_APIC_ID_BITS ) >> 24 );
 }
 
 /*
 ================
-CPUCount
-
-	logicalNum is the number of logical CPU per physical CPU
-    physicalNum is the total number of physical processor
-	returns one of the HT_* flags
+HasDAZ
 ================
 */
-/*#define HT_NOT_CAPABLE				0
-#define HT_ENABLED					1
-#define HT_DISABLED					2
-#define HT_SUPPORTED_NOT_ENABLED	3
-#define HT_CANNOT_DETECT			4*/
-
-/*int CPUCount( int &logicalNum, int &physicalNum )
-{
-	int statusFlag;
-	SYSTEM_INFO info;
-
-	physicalNum = 1;
-	logicalNum = 1;
-	statusFlag = HT_NOT_CAPABLE;
-
-	info.dwNumberOfProcessors = 0;
-	GetSystemInfo (&info);
-
-	// Number of physical processors in a non-Intel system
-	// or in a 32-bit Intel system with Hyper-Threading technology disabled
-	physicalNum = info.dwNumberOfProcessors;  
-
-	unsigned char HT_Enabled = 0;
-
-	logicalNum = LogicalProcPerPhysicalProc();
-
-	if ( logicalNum >= 1 ) {	// > 1 doesn't mean HT is enabled in the BIOS
-		HANDLE hCurrentProcessHandle;
-		DWORD  dwAffinityMask;
-
-		// Calculate the appropriate  shifts and mask based on the 
-		// number of logical processors.
-
-		unsigned char i = 1, PHY_ID_MASK  = 0xFF, PHY_ID_SHIFT = 0;
-
-		while( i < logicalNum ) {
-			i *= 2;
- 			PHY_ID_MASK  <<= 1;
-			PHY_ID_SHIFT++;
-		}
-		
-		hCurrentProcessHandle = GetCurrentProcess();
-
-        DWORD_PTR  dwProcessAffinity;
-        DWORD_PTR  dwSystemAffinity;
-		GetProcessAffinityMask( hCurrentProcessHandle, &dwProcessAffinity, &dwSystemAffinity );
-
-		// Check if available process affinity mask is equal to the
-		// available system affinity mask
-		if ( dwProcessAffinity != dwSystemAffinity ) {
-			statusFlag = HT_CANNOT_DETECT;
-			physicalNum = -1;
-			return statusFlag;
-		}
-
-		dwAffinityMask = 1;
-		while ( dwAffinityMask != 0 && dwAffinityMask <= dwProcessAffinity ) {
-			// Check if this CPU is available
-			if ( dwAffinityMask & dwProcessAffinity ) {
-				if ( SetProcessAffinityMask( hCurrentProcessHandle, dwAffinityMask ) ) {
-					unsigned char APIC_ID, LOG_ID, PHY_ID;
-
-					Sleep( 0 ); // Give OS time to switch CPU
-
-					APIC_ID = GetAPIC_ID();
-					LOG_ID  = APIC_ID & ~PHY_ID_MASK;
-					PHY_ID  = APIC_ID >> PHY_ID_SHIFT;
-
-					if ( LOG_ID != 0 ) {
-						HT_Enabled = 1;
-					}
-				}
-			}
-			dwAffinityMask = dwAffinityMask << 1;
-		}
-	        
-		// Reset the processor affinity
-		SetProcessAffinityMask( hCurrentProcessHandle, dwProcessAffinity );
-	    
-		if ( logicalNum == 1 ) {  // Normal P4 : HT is disabled in hardware
-			statusFlag = HT_DISABLED;
-		} else {
-			if ( HT_Enabled ) {
-				// Total physical processors in a Hyper-Threading enabled system.
-				physicalNum /= logicalNum;
-				statusFlag = HT_ENABLED;
-			} else {
-				statusFlag = HT_SUPPORTED_NOT_ENABLED;
-			}
-		}
-	}
-	return statusFlag;
-}*/
-
-/*
-================
-HasHTT
-================
-*/
-/*static bool HasHTT( void ) {
-	unsigned regs[4];
-	int logicalNum, physicalNum, HTStatusFlag;
-
-	// get CPU feature bits
-	CPUID( 1, regs );
-
-	// bit 28 of EDX denotes HTT existence
-	if ( !( regs[_REG_EDX] & ( 1 << 28 ) ) ) {
-		return false;
-	}
-
-	HTStatusFlag = CPUCount( logicalNum, physicalNum );
-	if ( HTStatusFlag != HT_ENABLED ) {
-		return false;
-	}
-	return true;
-}*/
-
-/*
-================
-HasHTT
-================
-*/
-static bool HasDAZ( void )
-{
-	__declspec(align(16)) unsigned char FXSaveArea[512];
+static bool HasDAZ( void ) {
+	__declspec( align( 16 ) ) unsigned char FXSaveArea[512];
 	unsigned char *FXArea = FXSaveArea;
 	DWORD dwMask = 0;
 	unsigned regs[4];
@@ -636,7 +465,7 @@ static bool HasDAZ( void )
 	memset( FXArea, 0, sizeof( FXSaveArea ) );
 
 #if defined(_MSC_VER) && defined(_WIN64)
-    _fxsave(FXArea);
+	_fxsave( FXArea );
 #else
 	__asm {
 		mov		eax, FXArea
@@ -644,7 +473,7 @@ static bool HasDAZ( void )
 	}
 #endif
 
-	dwMask = *(DWORD *)&FXArea[28];						// Read the MXCSR Mask
+	dwMask = *( DWORD * )&FXArea[28];						// Read the MXCSR Mask
 	return ( ( dwMask & ( 1 << 6 ) ) == ( 1 << 6 ) );	// Return if the DAZ bit is set
 }
 
@@ -672,7 +501,7 @@ cpuid_t Sys_GetCPUId( void ) {
 	if ( HasMMX() ) {
 		flags |= CPUID_MMX;
 	}
-	
+
 	// check for Streaming SIMD Extensions
 	if ( HasSSE() ) {
 		flags |= CPUID_SSE | CPUID_FTZ;
@@ -684,17 +513,17 @@ cpuid_t Sys_GetCPUId( void ) {
 	}
 
 	// check for Streaming SIMD Extensions 3 aka Prescott's New Instructions
-	if (HasSSE3()) {
+	if ( HasSSE3() ) {
 		flags |= CPUID_SSE3;
 	}
 
 	// check for Supplemental Streaming SIMD Extensions 3
-	if (HasSSSE3()) {
+	if ( HasSSSE3() ) {
 		flags |= CPUID_SSSE3;
 	}
 
 	// check for Streaming SIMD Extensions 4.1
-	if (HasSSE41()) {
+	if ( HasSSE41() ) {
 		flags |= CPUID_SSE41;
 	}
 
@@ -713,17 +542,11 @@ cpuid_t Sys_GetCPUId( void ) {
 		flags |= CPUID_AVX2;
 	}
 
-	// check for Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
-	/*if ( HasCMOV() ) {
-		flags |= CPUID_CMOV;
-	}*/
-
 	// check for Denormals-Are-Zero mode
 	if ( HasDAZ() ) {
 		flags |= CPUID_DAZ;
 	}
-
-	return (cpuid_t)flags;
+	return ( cpuid_t )flags;
 }
 
 
@@ -736,7 +559,7 @@ cpuid_t Sys_GetCPUId( void ) {
 */
 
 typedef struct bitFlag_s {
-	char *		name;
+	char 		*name;
 	int			bit;
 } bitFlag_t;
 
@@ -785,29 +608,29 @@ Sys_FPU_PrintStateFlags
 int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse ) {
 	int i, length = 0;
 
-	length += sprintf( ptr+length,	"CTRL = %08x\n"
-									"STAT = %08x\n"
-									"TAGS = %08x\n"
-									"INOF = %08x\n"
-									"INSE = %08x\n"
-									"OPOF = %08x\n"
-									"OPSE = %08x\n"
-									"\n",
-									ctrl, stat, tags, inof, inse, opof, opse );
+	length += sprintf( ptr + length,	"CTRL = %08x\n"
+	                   "STAT = %08x\n"
+	                   "TAGS = %08x\n"
+	                   "INOF = %08x\n"
+	                   "INSE = %08x\n"
+	                   "OPOF = %08x\n"
+	                   "OPSE = %08x\n"
+	                   "\n",
+	                   ctrl, stat, tags, inof, inse, opof, opse );
 
-	length += sprintf( ptr+length, "Control Word:\n" );
+	length += sprintf( ptr + length, "Control Word:\n" );
 	for ( i = 0; controlWordFlags[i].name[0]; i++ ) {
-		length += sprintf( ptr+length, "  %-30s = %s\n", controlWordFlags[i].name, ( ctrl & ( 1 << controlWordFlags[i].bit ) ) ? "true" : "false" );
+		length += sprintf( ptr + length, "  %-30s = %s\n", controlWordFlags[i].name, ( ctrl & ( 1 << controlWordFlags[i].bit ) ) ? "true" : "false" );
 	}
-	length += sprintf( ptr+length, "  %-30s = %s\n", "Precision control", precisionControlField[(ctrl>>8)&3] );
-	length += sprintf( ptr+length, "  %-30s = %s\n", "Rounding control", roundingControlField[(ctrl>>10)&3] );
+	length += sprintf( ptr + length, "  %-30s = %s\n", "Precision control", precisionControlField[( ctrl >> 8 ) & 3] );
+	length += sprintf( ptr + length, "  %-30s = %s\n", "Rounding control", roundingControlField[( ctrl >> 10 ) & 3] );
 
-	length += sprintf( ptr+length, "Status Word:\n" );
+	length += sprintf( ptr + length, "Status Word:\n" );
 	for ( i = 0; statusWordFlags[i].name[0]; i++ ) {
-		ptr += sprintf( ptr+length, "  %-30s = %s\n", statusWordFlags[i].name, ( stat & ( 1 << statusWordFlags[i].bit ) ) ? "true" : "false" );
+		ptr += sprintf( ptr + length, "  %-30s = %s\n", statusWordFlags[i].name, ( stat & ( 1 << statusWordFlags[i].bit ) ) ? "true" : "false" );
 	}
-	length += sprintf( ptr+length, "  %-30s = %d%d%d%d\n", "Condition code", (stat>>8)&1, (stat>>9)&1, (stat>>10)&1, (stat>>14)&1 );
-	length += sprintf( ptr+length, "  %-30s = %d\n", "Top of stack pointer", (stat>>11)&7 );
+	length += sprintf( ptr + length, "  %-30s = %d%d%d%d\n", "Condition code", ( stat >> 8 ) & 1, ( stat >> 9 ) & 1, ( stat >> 10 ) & 1, ( stat >> 14 ) & 1 );
+	length += sprintf( ptr + length, "  %-30s = %d\n", "Top of stack pointer", ( stat >> 11 ) & 7 );
 
 	return length;
 }
@@ -823,32 +646,29 @@ int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, 
 #define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
 #define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
 
-static void EnableMXCSRFlag(int flag, bool enable, const char *name)
-{
-    int sse_mode;
+static void EnableMXCSRFlag( int flag, bool enable, const char *name ) {
+	int sse_mode;
 
-    STREFLOP_STMXCSR(sse_mode);
+	STREFLOP_STMXCSR( sse_mode );
 
-    if (enable && (sse_mode & flag) == flag) {
-        common->Printf("%s mode is already enabled\n", name);
-        return;
-    }
+	if ( enable && ( sse_mode & flag ) == flag ) {
+		common->Printf( "%s mode is already enabled\n", name );
+		return;
+	}
 
-    if (!enable && (sse_mode & flag) == 0) {
-        common->Printf("%s mode is already disabled\n", name);
-        return;
-    }
+	if ( !enable && ( sse_mode & flag ) == 0 ) {
+		common->Printf( "%s mode is already disabled\n", name );
+		return;
+	}
 
-    if (enable) {
-        common->Printf("enabling %s mode\n", name);
-        sse_mode |= flag;
-    }
-    else {
-        common->Printf("disabling %s mode\n", name);
-        sse_mode &= ~flag;
-    }
-
-    STREFLOP_LDMXCSR(sse_mode);
+	if ( enable ) {
+		common->Printf( "enabling %s mode\n", name );
+		sse_mode |= flag;
+	} else {
+		common->Printf( "disabling %s mode\n", name );
+		sse_mode &= ~flag;
+	}
+	STREFLOP_LDMXCSR( sse_mode );
 }
 #endif
 
@@ -857,15 +677,14 @@ static void EnableMXCSRFlag(int flag, bool enable, const char *name)
 Sys_FPU_SetDAZ
 ================
 */
-void Sys_FPU_SetDAZ(bool enable) 
-{
+void Sys_FPU_SetDAZ( bool enable ) {
 #if defined(_MSC_VER) && !defined(_WIN64)
-    if (!HasDAZ()) {
-        common->Printf("this CPU doesn't support Denormals-Are-Zero\n");
-        return;
-    }
+	if ( !HasDAZ() ) {
+		common->Printf( "this CPU doesn't support Denormals-Are-Zero\n" );
+		return;
+	}
 
-    EnableMXCSRFlag(MXCSR_DAZ, enable, "Denormals-Are-Zero");
+	EnableMXCSRFlag( MXCSR_DAZ, enable, "Denormals-Are-Zero" );
 #endif
 }
 
@@ -874,10 +693,9 @@ void Sys_FPU_SetDAZ(bool enable)
 Sys_FPU_SetFTZ
 ================
 */
-void Sys_FPU_SetFTZ(bool enable)
-{
+void Sys_FPU_SetFTZ( bool enable ) {
 #if defined(_MSC_VER) && !defined(_WIN64)
-    EnableMXCSRFlag(MXCSR_FTZ, enable, "Flush-To-Zero");
+	EnableMXCSRFlag( MXCSR_FTZ, enable, "Flush-To-Zero" );
 #endif
 }
 
@@ -888,6 +706,6 @@ Sys_FPU_SetPrecision
 */
 void Sys_FPU_SetPrecision() {
 #if defined(_MSC_VER) && defined(_M_IX86)
-    _controlfp(_PC_64, _MCW_PC);
+	_controlfp( _PC_64, _MCW_PC );
 #endif
 }

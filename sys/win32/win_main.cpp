@@ -1,22 +1,20 @@
 /*****************************************************************************
                     The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
+
+ This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
+
+ The Dark Mod Source Code is free software: you can redistribute it
+ and/or modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the License,
  or (at your option) any later version. For details, see LICENSE.TXT.
- 
+
  Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
-
-
 
 #include <errno.h>
 #include <float.h>
@@ -68,34 +66,34 @@ static	HANDLE		hTimer;
 Sys_Createthread
 ==================
 */
-typedef std::pair<xthread_t, void*> CreateThreadStartParams;
-DWORD WINAPI CreateThreadStartRoutine(LPVOID lpThreadParameter) {
-	auto arg = *((CreateThreadStartParams*)lpThreadParameter);
-	delete ((CreateThreadStartParams*)lpThreadParameter);
-	return arg.first(arg.second);
+typedef std::pair<xthread_t, void *> CreateThreadStartParams;
+DWORD WINAPI CreateThreadStartRoutine( LPVOID lpThreadParameter ) {
+	auto arg = *( ( CreateThreadStartParams * )lpThreadParameter );
+	delete ( ( CreateThreadStartParams * )lpThreadParameter );
+	return arg.first( arg.second );
 }
-void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count )
-{
+
+void Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count ) {
 	//stgatilov: it is illegal to reinterpret cdecl function as stdcall function (in 32-bit case)
 	//so we have to pass a helper function here, which would in turn call original callback
-	auto helperParam = new CreateThreadStartParams(function, parms);
+	auto helperParam = new CreateThreadStartParams( function, parms );
 	HANDLE temp = CreateThread(	NULL,	// LPSECURITY_ATTRIBUTES lpsa,
-									0,		// DWORD cbStack,
-									CreateThreadStartRoutine,	// LPTHREAD_START_ROUTINE lpStartAddr,
-									helperParam,	// LPVOID lpvThreadParm,
-									0,		//   DWORD fdwCreate,
-									&info.threadId);
-	info.threadHandle = (intptr_t) temp;
-	if (priority == THREAD_HIGHEST) {
-		SetThreadPriority( (HANDLE)info.threadHandle, THREAD_PRIORITY_HIGHEST );		//  we better sleep enough to do this
-	} else if (priority == THREAD_ABOVE_NORMAL ) {
-		SetThreadPriority( (HANDLE)info.threadHandle, THREAD_PRIORITY_ABOVE_NORMAL );
+	                            0,		// DWORD cbStack,
+	                            CreateThreadStartRoutine,	// LPTHREAD_START_ROUTINE lpStartAddr,
+	                            helperParam,	// LPVOID lpvThreadParm,
+	                            0,		//   DWORD fdwCreate,
+	                            &info.threadId );
+	info.threadHandle = ( intptr_t ) temp;
+	if ( priority == THREAD_HIGHEST ) {
+		SetThreadPriority( ( HANDLE )info.threadHandle, THREAD_PRIORITY_HIGHEST );		//  we better sleep enough to do this
+	} else if ( priority == THREAD_ABOVE_NORMAL ) {
+		SetThreadPriority( ( HANDLE )info.threadHandle, THREAD_PRIORITY_ABOVE_NORMAL );
 	}
-    info.name = name;
+	info.name = name;
 	if ( *thread_count < MAX_THREADS ) {
-		threads[(*thread_count)++] = &info;
+		threads[( *thread_count )++] = &info;
 	} else {
-		common->DPrintf("WARNING: MAX_THREADS reached\n");
+		common->DPrintf( "WARNING: MAX_THREADS reached\n" );
 	}
 }
 
@@ -104,9 +102,9 @@ void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priorit
 Sys_DestroyThread
 ==================
 */
-void Sys_DestroyThread( xthreadInfo& info ) {
-	WaitForSingleObject( (HANDLE)info.threadHandle, INFINITE);
-	CloseHandle( (HANDLE)info.threadHandle );
+void Sys_DestroyThread( xthreadInfo &info ) {
+	WaitForSingleObject( ( HANDLE )info.threadHandle, INFINITE );
+	CloseHandle( ( HANDLE )info.threadHandle );
 	info.threadHandle = 0;
 }
 
@@ -124,9 +122,9 @@ void Sys_Sentry() {
 Sys_GetThreadName
 ==================
 */
-const char* Sys_GetThreadName(int *index) {
-    DWORD id = GetCurrentThreadId();
-	for( int i = 0; i < g_thread_count; i++ ) {
+const char *Sys_GetThreadName( int *index ) {
+	DWORD id = GetCurrentThreadId();
+	for ( int i = 0; i < g_thread_count; i++ ) {
 		if ( id == g_threads[i]->threadId ) {
 			if ( index ) {
 				*index = i;
@@ -150,7 +148,7 @@ void Sys_EnterCriticalSection( int index ) {
 	assert( index >= 0 && index < MAX_CRITICAL_SECTIONS );
 	if ( TryEnterCriticalSection( &win32.criticalSections[index] ) == 0 ) {
 		EnterCriticalSection( &win32.criticalSections[index] );
-//		Sys_DebugPrintf( "busy lock '%s' in thread '%s'\n", lock->name, Sys_GetThreadName() );
+		//		Sys_DebugPrintf( "busy lock '%s' in thread '%s'\n", lock->name, Sys_GetThreadName() );
 	}
 }
 
@@ -188,8 +186,6 @@ void Sys_TriggerEvent( int index ) {
 	SetEvent( win32.backgroundDownloadSemaphore );
 }
 
-
-
 #pragma optimize( "", on )
 
 #ifdef DEBUG
@@ -206,15 +202,14 @@ idCVar sys_showMallocs( "sys_showMallocs", "0", CVAR_SYSTEM, "" );
 
 // _HOOK_ALLOC, _HOOK_REALLOC, _HOOK_FREE
 
-typedef struct CrtMemBlockHeader
-{
+typedef struct CrtMemBlockHeader {
 	struct _CrtMemBlockHeader *pBlockHeaderNext;	// Pointer to the block allocated just before this one:
 	struct _CrtMemBlockHeader *pBlockHeaderPrev;	// Pointer to the block allocated just after this one
-   char *szFileName;    // File name
-   int nLine;           // Line number
-   size_t nDataSize;    // Size of user block
-   int nBlockUse;       // Type of block
-   long lRequest;       // Allocation number
+	char *szFileName;    // File name
+	int nLine;           // Line number
+	size_t nDataSize;    // Size of user block
+	int nBlockUse;       // Type of block
+	long lRequest;       // Allocation number
 	byte		gap[4];								// Buffer just before (lower than) the user's memory:
 } CrtMemBlockHeader;
 
@@ -227,14 +222,12 @@ Sys_AllocHook
 	called for every malloc/new/free/delete
 ==================
 */
-int Sys_AllocHook( int nAllocType, void *pvData, size_t nSize, int nBlockUse, long lRequest, const unsigned char * szFileName, int nLine ) 
-{
+int Sys_AllocHook( int nAllocType, void *pvData, size_t nSize, int nBlockUse, long lRequest, const unsigned char *szFileName, int nLine ) {
 	CrtMemBlockHeader	*pHead;
 	byte				*temp;
 
-	if ( nBlockUse == _CRT_BLOCK )
-	{
-      return( TRUE );
+	if ( nBlockUse == _CRT_BLOCK ) {
+		return ( TRUE );
 	}
 
 	// get a pointer to memory block header
@@ -242,38 +235,38 @@ int Sys_AllocHook( int nAllocType, void *pvData, size_t nSize, int nBlockUse, lo
 	temp -= 32;
 	pHead = ( CrtMemBlockHeader * )temp;
 
-	switch( nAllocType ) {
-		case	_HOOK_ALLOC:
-			debug_total_alloc += nSize;
-			debug_current_alloc += nSize;
-			debug_frame_alloc += nSize;
-			debug_total_alloc_count++;
-			debug_current_alloc_count++;
-			debug_frame_alloc_count++;
-			break;
+	switch ( nAllocType ) {
+	case	_HOOK_ALLOC:
+		debug_total_alloc += nSize;
+		debug_current_alloc += nSize;
+		debug_frame_alloc += nSize;
+		debug_total_alloc_count++;
+		debug_current_alloc_count++;
+		debug_frame_alloc_count++;
+		break;
 
-		case	_HOOK_FREE:
-			assert( pHead->gap[0] == 0xfd && pHead->gap[1] == 0xfd && pHead->gap[2] == 0xfd && pHead->gap[3] == 0xfd );
+	case	_HOOK_FREE:
+		assert( pHead->gap[0] == 0xfd && pHead->gap[1] == 0xfd && pHead->gap[2] == 0xfd && pHead->gap[3] == 0xfd );
 
-			debug_current_alloc -= pHead->nDataSize;
-			debug_current_alloc_count--;
-			debug_total_alloc_count++;
-			debug_frame_alloc_count++;
-			break;
+		debug_current_alloc -= pHead->nDataSize;
+		debug_current_alloc_count--;
+		debug_total_alloc_count++;
+		debug_frame_alloc_count++;
+		break;
 
-		case	_HOOK_REALLOC:
-			assert( pHead->gap[0] == 0xfd && pHead->gap[1] == 0xfd && pHead->gap[2] == 0xfd && pHead->gap[3] == 0xfd );
+	case	_HOOK_REALLOC:
+		assert( pHead->gap[0] == 0xfd && pHead->gap[1] == 0xfd && pHead->gap[2] == 0xfd && pHead->gap[3] == 0xfd );
 
-			debug_current_alloc -= pHead->nDataSize;
-			debug_total_alloc += nSize;
-			debug_current_alloc += nSize;
-			debug_frame_alloc += nSize;
-			debug_total_alloc_count++;
-			debug_current_alloc_count--;
-			debug_frame_alloc_count++;
-			break;
+		debug_current_alloc -= pHead->nDataSize;
+		debug_total_alloc += nSize;
+		debug_current_alloc += nSize;
+		debug_frame_alloc += nSize;
+		debug_total_alloc_count++;
+		debug_current_alloc_count--;
+		debug_frame_alloc_count++;
+		break;
 	}
-	return( TRUE );
+	return ( TRUE );
 }
 
 /*
@@ -282,8 +275,8 @@ Sys_DebugMemory_f
 ==================
 */
 void Sys_DebugMemory_f( void ) {
-  	common->Printf( "Total allocation %8dk in %d blocks\n", debug_total_alloc / 1024, debug_total_alloc_count );
-  	common->Printf( "Current allocation %8dk in %d blocks\n", debug_current_alloc / 1024, debug_current_alloc_count );
+	common->Printf( "Total allocation %8dk in %d blocks\n", debug_total_alloc / 1024, debug_total_alloc_count );
+	common->Printf( "Current allocation %8dk in %d blocks\n", debug_current_alloc / 1024, debug_current_alloc_count );
 }
 
 /*
@@ -292,8 +285,8 @@ Sys_MemFrame
 ==================
 */
 void Sys_MemFrame( void ) {
-	if( sys_showMallocs.GetInteger() ) {
-		common->Printf("Frame: %8dk in %5d blocks\n", debug_frame_alloc / 1024, debug_frame_alloc_count );
+	if ( sys_showMallocs.GetInteger() ) {
+		common->Printf( "Frame: %8dk in %5d blocks\n", debug_frame_alloc / 1024, debug_frame_alloc_count );
 	}
 
 	debug_frame_alloc = 0;
@@ -323,11 +316,11 @@ Show the early console as an error dialog
 void Sys_Error( const char *error, ... ) {
 	va_list		argptr;
 	char		text[4096];
-    MSG        msg;
+	MSG        msg;
 
 	va_start( argptr, error );
 	vsprintf( text, error, argptr );
-	va_end( argptr);
+	va_end( argptr );
 
 	Conbuf_AppendText( text );
 	Conbuf_AppendText( "\n" );
@@ -347,12 +340,11 @@ void Sys_Error( const char *error, ... ) {
 			common->Quit();
 		}
 		TranslateMessage( &msg );
-      	DispatchMessage( &msg );
+		DispatchMessage( &msg );
 	}
-
 	Sys_DestroyConsole();
 
-	exit (1);
+	exit( 1 );
 }
 
 /*
@@ -383,14 +375,15 @@ void Sys_Printf( const char *fmt, ... ) {
 	char		msg[MAXPRINTMSG];
 
 	va_list argptr;
-	va_start(argptr, fmt);
-	idStr::vsnPrintf( msg, MAXPRINTMSG-1, fmt, argptr );
-	va_end(argptr);
-	msg[sizeof(msg)-1] = '\0';
+	va_start( argptr, fmt );
+	idStr::vsnPrintf( msg, MAXPRINTMSG - 1, fmt, argptr );
+	va_end( argptr );
+	msg[sizeof( msg ) - 1] = '\0';
 
 	if ( win32.win_outputDebugString.GetBool() ) {
 		OutputDebugString( msg );
 	}
+
 	if ( win32.win_outputEditString.GetBool() ) {
 		Conbuf_AppendText( msg );
 	}
@@ -407,8 +400,8 @@ void Sys_DebugPrintf( const char *fmt, ... ) {
 
 	va_list argptr;
 	va_start( argptr, fmt );
-	idStr::vsnPrintf( msg, MAXPRINTMSG-1, fmt, argptr );
-	msg[ sizeof(msg)-1 ] = '\0';
+	idStr::vsnPrintf( msg, MAXPRINTMSG - 1, fmt, argptr );
+	msg[ sizeof( msg ) - 1 ] = '\0';
 	va_end( argptr );
 
 	OutputDebugString( msg );
@@ -422,8 +415,8 @@ Sys_DebugVPrintf
 void Sys_DebugVPrintf( const char *fmt, va_list arg ) {
 	char msg[MAXPRINTMSG];
 
-	idStr::vsnPrintf( msg, MAXPRINTMSG-1, fmt, arg );
-	msg[ sizeof(msg)-1 ] = '\0';
+	idStr::vsnPrintf( msg, MAXPRINTMSG - 1, fmt, arg );
+	msg[ sizeof( msg ) - 1 ] = '\0';
 
 	OutputDebugString( msg );
 }
@@ -461,7 +454,7 @@ Sys_Mkdir
 ==============
 */
 void Sys_Mkdir( const char *path ) {
-	_mkdir (path);
+	_mkdir( path );
 }
 
 /*
@@ -472,7 +465,7 @@ Sys_FileTimeStamp
 ID_TIME_T Sys_FileTimeStamp( FILE *fp ) {
 	struct _stat st;
 	_fstat( _fileno( fp ), &st );
-	return (long) st.st_mtime;
+	return ( long ) st.st_mtime;
 }
 
 /*
@@ -482,34 +475,33 @@ Sys_DosToUnixTime
 */
 ID_TIME_T Sys_DosToUnixTime( unsigned long dostime ) {
 	ID_TIME_T unix_time = 0;
-    unsigned int sec, min, hour, day, mon, year;
-    struct tm dostm;
+	unsigned int sec, min, hour, day, mon, year;
+	struct tm dostm;
 
-    // break dos time down into its sec, min, hour components
-    sec = (dostime & 0x1F) * 2;
-    min = (dostime & 0x7E0) >> 5;
-    hour = (dostime & 0xF800)  >> 11; 
+	// break dos time down into its sec, min, hour components
+	sec = ( dostime & 0x1F ) * 2;
+	min = ( dostime & 0x7E0 ) >> 5;
+	hour = ( dostime & 0xF800 )  >> 11;
 
-    // temporarily remove time component
-    year = dostime >> 16;
-    
-    // break dos date down into its day, month, year components
-    day = year & 0x1F;
-    mon = (year & 0x1E0) >> 5;
-    year = (year >> 9) + 1980;
+	// temporarily remove time component
+	year = dostime >> 16;
 
-    if (sec <= 60 && min <= 59 && hour <= 23 && day >= 1 && day <= 31 && mon >= 1 && mon <= 12 && year <= 2107) {
-        dostm.tm_sec = sec;
-        dostm.tm_min = min;
-        dostm.tm_hour = hour;
-        dostm.tm_mday = day;
-        dostm.tm_mon = mon - 1;
-        dostm.tm_year = year - 1900;
-        
-        unix_time = mktime(&dostm);
-    }
+	// break dos date down into its day, month, year components
+	day = year & 0x1F;
+	mon = ( year & 0x1E0 ) >> 5;
+	year = ( year >> 9 ) + 1980;
 
-	return (long) unix_time;
+	if ( sec <= 60 && min <= 59 && hour <= 23 && day >= 1 && day <= 31 && mon >= 1 && mon <= 12 && year <= 2107 ) {
+		dostm.tm_sec = sec;
+		dostm.tm_min = min;
+		dostm.tm_hour = hour;
+		dostm.tm_mday = day;
+		dostm.tm_mon = mon - 1;
+		dostm.tm_year = year - 1900;
+
+		unix_time = mktime( &dostm );
+	}
+	return ( long ) unix_time;
 }
 
 /*
@@ -521,7 +513,7 @@ const char *Sys_Cwd( void ) {
 	static char cwd[MAX_OSPATH];
 
 	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[MAX_OSPATH-1] = 0;
+	cwd[MAX_OSPATH - 1] = 0;
 
 	return cwd;
 }
@@ -537,9 +529,8 @@ const char *Sys_DefaultBasePath( void ) {
 		// TheDarkMod.exe is now located under darkmod/ so we need to set basepath to the EXE path
 		idStr buff = Sys_EXEPath();
 		buff.StripFilename();
-		basePath = Mem_CopyString(buff.c_str());
+		basePath = Mem_CopyString( buff.c_str() );
 	}
-
 	return basePath;
 }
 
@@ -552,14 +543,13 @@ const char *Sys_DefaultSavePath( void ) {
 	static const char *savePath = NULL;
 	// default savepath changed to the mod dir.
 	if ( !savePath ) {
-		idStr buff = cvarSystem->GetCVarString("fs_basepath");
+		idStr buff = cvarSystem->GetCVarString( "fs_basepath" );
 		// only append the mod if it isn't "darkmod"
-		if ( idStr::Icmp( cvarSystem->GetCVarString("fs_mod"), BASE_TDM ) ) {
-			buff.AppendPath(cvarSystem->GetCVarString("fs_mod"));
+		if ( idStr::Icmp( cvarSystem->GetCVarString( "fs_mod" ), BASE_TDM ) ) {
+			buff.AppendPath( cvarSystem->GetCVarString( "fs_mod" ) );
 		}
-		savePath = Mem_CopyString(buff.c_str());
+		savePath = Mem_CopyString( buff.c_str() );
 	}
-
 	return savePath;
 }
 
@@ -568,17 +558,16 @@ const char *Sys_DefaultSavePath( void ) {
 Sys_ModSavePath
 ==============
 */
-const char* Sys_ModSavePath() {
-	// greebo: In Windows, we use the basepath + "darkmod/fms/" as savepath 
+const char *Sys_ModSavePath() {
+	// greebo: In Windows, we use the basepath + "darkmod/fms/" as savepath
 	// taaaki: changed this to savepath + "fms/"
 	static const char *modSavePath = NULL;
-	
-	if ( !modSavePath ) {
-		idStr buff = cvarSystem->GetCVarString("fs_savepath");
-		buff.AppendPath("fms");
-		modSavePath = Mem_CopyString(buff.c_str());
-	}
 
+	if ( !modSavePath ) {
+		idStr buff = cvarSystem->GetCVarString( "fs_savepath" );
+		buff.AppendPath( "fms" );
+		modSavePath = Mem_CopyString( buff.c_str() );
+	}
 	return modSavePath;
 }
 
@@ -601,10 +590,10 @@ Sys_ListFiles
 int Sys_ListFiles( const char *directory, const char *extension, idStrList &list ) {
 	idStr		search;
 	struct _finddata_t findinfo;
-    intptr_t	findhandle;
+	intptr_t	findhandle;
 	int			flag;
 
-	if ( !extension) {
+	if ( !extension ) {
 		extension = "";
 	}
 
@@ -615,13 +604,13 @@ int Sys_ListFiles( const char *directory, const char *extension, idStrList &list
 	} else {
 		flag = _A_SUBDIR;
 	}
-
 	sprintf( search, "%s\\*%s", directory, extension );
 
 	// search
 	list.Clear();
 
 	findhandle = _findfirst( search, &findinfo );
+
 	if ( findhandle == -1 ) {
 		return -1;
 	}
@@ -651,11 +640,11 @@ char *Sys_GetClipboardData( void ) {
 		HANDLE hClipboardData;
 
 		if ( ( hClipboardData = GetClipboardData( CF_TEXT ) ) != 0 ) {
-			if ( ( cliptext = (char *)GlobalLock( hClipboardData ) ) != 0 ) {
-				data = (char *)Mem_Alloc( GlobalSize( hClipboardData ) + 1 );
+			if ( ( cliptext = ( char * )GlobalLock( hClipboardData ) ) != 0 ) {
+				data = ( char * )Mem_Alloc( GlobalSize( hClipboardData ) + 1 );
 				strcpy( data, cliptext );
 				GlobalUnlock( hClipboardData );
-				
+
 				strtok( data, "\n\r\b" );
 			}
 		}
@@ -674,12 +663,12 @@ void Sys_SetClipboardData( const char *string ) {
 	char *PMem;
 
 	// allocate memory block
-	HMem = (char *)::GlobalAlloc( GMEM_MOVEABLE | GMEM_DDESHARE, strlen( string ) + 1 );
+	HMem = ( char * )::GlobalAlloc( GMEM_MOVEABLE | GMEM_DDESHARE, strlen( string ) + 1 );
 	if ( HMem == NULL ) {
 		return;
 	}
 	// lock allocated memory and obtain a pointer
-	PMem = (char *)::GlobalLock( HMem );
+	PMem = ( char * )::GlobalLock( HMem );
 	if ( PMem == NULL ) {
 		return;
 	}
@@ -709,38 +698,28 @@ DLL Loading
 ========================================================================
 */
 
-namespace 
-{
-	// Removes .\ and ..\ from the given path, converts forward slashes to backward slashes
-	idStr NormalisePath(const idStr& input)
-	{
-		std::vector<std::string> parts;
-		std::vector<std::string> resultParts;
+namespace {
+// Removes .\ and ..\ from the given path, converts forward slashes to backward slashes
+idStr NormalisePath( const idStr &input ) {
+	std::vector<std::string> parts;
+	std::vector<std::string> resultParts;
 
-		stdext::split(parts, std::string(input.c_str()), "\\/");
+	stdext::split( parts, std::string( input.c_str() ), "\\/" );
 
-		for (std::size_t i = 0; i < parts.size(); ++i)
-		{
-			if (parts[i] == "..")
-			{
-				if (!resultParts.empty())
-				{
-					resultParts.pop_back();
-				}
+	for ( std::size_t i = 0; i < parts.size(); ++i ) {
+		if ( parts[i] == ".." ) {
+			if ( !resultParts.empty() ) {
+				resultParts.pop_back();
 			}
-			else if (parts[i] == ".")
-			{
-				// Ignore
-			}
-			else
-			{
-				// Just cat other path entries
-				resultParts.push_back(parts[i]);
-			}
+		} else if ( parts[i] == "." ) {
+			// Ignore
+		} else {
+			// Just cat other path entries
+			resultParts.push_back( parts[i] );
 		}
-
-		return idStr(stdext::join(resultParts, "\\").c_str());
 	}
+	return idStr( stdext::join( resultParts, "\\" ).c_str() );
+}
 }
 
 /*
@@ -748,7 +727,7 @@ namespace
 Sys_DLL_Load
 =====================
 */
-uintptr_t Sys_DLL_Load(const char *dllName) {
+uintptr_t Sys_DLL_Load( const char *dllName ) {
 	HINSTANCE	libHandle;
 	libHandle = LoadLibrary( dllName );
 	if ( libHandle ) {
@@ -757,15 +736,15 @@ uintptr_t Sys_DLL_Load(const char *dllName) {
 		GetModuleFileName( libHandle, loadedPath, sizeof( loadedPath ) - 1 );
 
 		// greebo: Make sure to normalise the path before checking, there might be ".." in them
-		idStr dllPath = NormalisePath(dllName);
+		idStr dllPath = NormalisePath( dllName );
 
 		if ( idStr::IcmpPath( dllPath, loadedPath ) ) {
 			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllPath, loadedPath );
-			Sys_DLL_Unload( (uintptr_t)libHandle );
+			Sys_DLL_Unload( ( uintptr_t )libHandle );
 			return 0;
 		}
 	}
-    return (uintptr_t)libHandle;
+	return ( uintptr_t )libHandle;
 }
 
 /*
@@ -773,8 +752,8 @@ uintptr_t Sys_DLL_Load(const char *dllName) {
 Sys_DLL_GetProcAddress
 =====================
 */
-void *Sys_DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) {
-	return GetProcAddress( (HINSTANCE)dllHandle, procName ); 
+void *Sys_DLL_GetProcAddress( uintptr_t dllHandle, const char *procName ) {
+	return GetProcAddress( ( HINSTANCE )dllHandle, procName );
 }
 
 /*
@@ -782,21 +761,21 @@ void *Sys_DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) {
 Sys_DLL_Unload
 =====================
 */
-void Sys_DLL_Unload(uintptr_t dllHandle) {
+void Sys_DLL_Unload( uintptr_t dllHandle ) {
 	if ( !dllHandle ) {
 		return;
 	}
-	if ( FreeLibrary( (HINSTANCE)dllHandle ) == 0 ) {
+	if ( FreeLibrary( ( HINSTANCE )dllHandle ) == 0 ) {
 		int lastError = GetLastError();
 		LPVOID lpMsgBuf;
 		FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER,
+		    FORMAT_MESSAGE_ALLOCATE_BUFFER,
 		    NULL,
-			lastError,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-			(LPTSTR) &lpMsgBuf,
-			0,
-			NULL 
+		    lastError,
+		    MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), // Default language
+		    ( LPTSTR ) &lpMsgBuf,
+		    0,
+		    NULL
 		);
 		Sys_Error( "Sys_DLL_Unload: FreeLibrary failed - %s (%d)", lpMsgBuf, lastError );
 	}
@@ -831,14 +810,13 @@ void Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptr
 	ev = &eventQue[ eventHead & MASK_QUED_EVENTS ];
 
 	if ( eventHead - eventTail >= MAX_QUED_EVENTS ) {
-		common->Printf("Sys_QueEvent: overflow\n");
+		common->Printf( "Sys_QueEvent: overflow\n" );
 		// we are discarding an event, but don't leak memory
 		if ( ev->evPtr ) {
 			Mem_Free( ev->evPtr );
 		}
 		eventTail++;
 	}
-
 	eventHead++;
 
 	ev->evType = type;
@@ -856,30 +834,30 @@ This allows windows to be moved during renderbump
 =============
 */
 void Sys_PumpEvents( void ) {
-    MSG msg;
+	MSG msg;
 
 	// pump the message loop
-	while( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) ) {
+	while ( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) ) {
 		if ( !GetMessage( &msg, NULL, 0, 0 ) ) {
 			common->Quit();
 		}
 
 		// save the msg time, because wndprocs don't have access to the timestamp
-		if ( win32.sysMsgTime && win32.sysMsgTime > (int)msg.time ) {
-			// don't ever let the event times run backwards	
-//			common->Printf( "Sys_PumpEvents: win32.sysMsgTime (%i) > msg.time (%i)\n", win32.sysMsgTime, msg.time );
+		if ( win32.sysMsgTime && win32.sysMsgTime > ( int )msg.time ) {
+			// don't ever let the event times run backwards
+			//			common->Printf( "Sys_PumpEvents: win32.sysMsgTime (%i) > msg.time (%i)\n", win32.sysMsgTime, msg.time );
 		} else {
 			win32.sysMsgTime = msg.time;
 		}
 
 #ifdef ID_ALLOW_TOOLS
-		if ( GUIEditorHandleMessage ( &msg ) ) {	
+		if ( GUIEditorHandleMessage( &msg ) ) {
 			continue;
 		}
 #endif
- 
-		TranslateMessage (&msg);
-      	DispatchMessage (&msg);
+
+		TranslateMessage( &msg );
+		DispatchMessage( &msg );
 	}
 }
 
@@ -909,12 +887,11 @@ void Sys_GenerateEvents( void ) {
 		char	*b;
 		int		len;
 
-        len = static_cast<int>(strlen(s) + 1);
-		b = (char *)Mem_Alloc( len );
+		len = static_cast<int>( strlen( s ) + 1 );
+		b = ( char * )Mem_Alloc( len );
 		strcpy( b, s );
 		Sys_QueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
-
 	entered = false;
 }
 
@@ -938,10 +915,10 @@ sysEvent_t Sys_GetEvent( void ) {
 	// return if we have data
 	if ( eventHead > eventTail ) {
 		eventTail++;
-		return eventQue[ ( eventTail - 1 ) & MASK_QUED_EVENTS ];
+		return eventQue[( eventTail - 1 ) & MASK_QUED_EVENTS ];
 	}
 
-	// return the empty event 
+	// return the empty event
 	memset( &ev, 0, sizeof( ev ) );
 
 	return ev;
@@ -967,7 +944,7 @@ void Sys_In_Restart_f( const idCmdArgs &args ) {
 Sys_AsyncThread
 ==================
 */
-static THREAD_RETURN_TYPE Sys_AsyncThread(void *parm) {
+static THREAD_RETURN_TYPE Sys_AsyncThread( void *parm ) {
 	int		wakeNumber;
 	int		startTime;
 
@@ -975,7 +952,7 @@ static THREAD_RETURN_TYPE Sys_AsyncThread(void *parm) {
 	wakeNumber = 0;
 
 	while ( 1 ) {
-#ifdef WIN32	
+#ifdef WIN32
 		// this will trigger 60 times a second
 		int r = WaitForSingleObject( hTimer, 100 );
 		if ( r != WAIT_OBJECT_0 ) {
@@ -997,8 +974,7 @@ static THREAD_RETURN_TYPE Sys_AsyncThread(void *parm) {
 
 		common->Async();
 	}
-
-    return (THREAD_RETURN_TYPE)0;
+	return ( THREAD_RETURN_TYPE )0;
 }
 
 /*
@@ -1011,19 +987,19 @@ Start the thread that will call idCommon::Async()
 void Sys_StartAsyncThread( void ) {
 	// create an auto-reset event that happens 60 times a second
 	hTimer = CreateWaitableTimer( NULL, false, NULL );
+
 	if ( !hTimer ) {
 		common->Error( "idPacketServer::Spawn: CreateWaitableTimer failed" );
 	}
-
 	LARGE_INTEGER	t;
 	t.HighPart = t.LowPart = 0;
 	SetWaitableTimer( hTimer, &t, USERCMD_MSEC, NULL, NULL, TRUE );
 
-    Sys_CreateThread( Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads,  &g_thread_count );
+	Sys_CreateThread( Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads,  &g_thread_count );
 
-#ifdef SET_THREAD_AFFINITY 
+#ifdef SET_THREAD_AFFINITY
 	// give the async thread an affinity for the second cpu
-	SetThreadAffinityMask( (HANDLE)threadInfo.threadHandle, 2 );
+	SetThreadAffinityMask( ( HANDLE )threadInfo.threadHandle, 2 );
 #endif
 
 	if ( !threadInfo.threadHandle ) {
@@ -1036,6 +1012,8 @@ void Sys_StartAsyncThread( void ) {
 Sys_Init
 
 The cvar system must already be setup
+Lots of this code is redundant, clean up sometime: Revelator
+Added win 7 to code: Revelator
 ================
 */
 #define OSR2_BUILD_NUMBER 1111
@@ -1050,7 +1028,7 @@ void Sys_Init( void ) {
 	timeBeginPeriod( 1 );
 
 	// get WM_TIMER messages pumped every millisecond
-//	SetTimer( NULL, 0, 100, NULL );
+	//	SetTimer( NULL, 0, 100, NULL );
 
 	cmdSystem->AddCommand( "in_restart", Sys_In_Restart_f, CMD_FL_SYSTEM, "restarts the input system" );
 #ifdef DEBUG
@@ -1070,48 +1048,52 @@ void Sys_Init( void ) {
 	//
 	win32.osversion.dwOSVersionInfoSize = sizeof( win32.osversion );
 
-	if ( !GetVersionEx( (LPOSVERSIONINFO)&win32.osversion ) )
+	if ( !GetVersionEx( ( LPOSVERSIONINFO )&win32.osversion ) ) {
 		Sys_Error( "Couldn't get OS info" );
+	}
 
 	if ( win32.osversion.dwMajorVersion < 4 ) {
 		Sys_Error( GAME_NAME " requires Windows version 4 (NT) or greater" );
 	}
+
 	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32s ) {
 		Sys_Error( GAME_NAME " doesn't run on Win32s" );
 	}
 
-	if( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT ) {
-		if( win32.osversion.dwMajorVersion <= 4 ) {
+	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT ) {
+		if ( win32.osversion.dwMajorVersion <= 4 ) {
 			win32.sys_arch.SetString( "WinNT (NT)" );
-		} else if( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 0 ) {
+		} else if ( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 0 ) {
 			win32.sys_arch.SetString( "Win2K (NT)" );
-		} else if( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1 ) {
+		} else if ( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1 ) {
 			win32.sys_arch.SetString( "WinXP (NT)" );
 		} else if ( win32.osversion.dwMajorVersion == 6 ) {
 			win32.sys_arch.SetString( "Vista" );
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 1 ) {
+			win32.sys_arch.SetString( "Windows 7" );
 		} else {
 			win32.sys_arch.SetString( "Unknown NT variant" );
 		}
-	} else if( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) {
-		if( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 0 ) {
+	} else if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) {
+		if ( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 0 ) {
 			// Win95
-			if( win32.osversion.szCSDVersion[1] == 'C' ) {
+			if ( win32.osversion.szCSDVersion[1] == 'C' ) {
 				win32.sys_arch.SetString( "Win95 OSR2 (95)" );
 			} else {
 				win32.sys_arch.SetString( "Win95 (95)" );
 			}
-		} else if( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 10 ) {
+		} else if ( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 10 ) {
 			// Win98
-			if( win32.osversion.szCSDVersion[1] == 'A' ) {
+			if ( win32.osversion.szCSDVersion[1] == 'A' ) {
 				win32.sys_arch.SetString( "Win98SE (95)" );
 			} else {
 				win32.sys_arch.SetString( "Win98 (95)" );
 			}
-		} else if( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 90 ) {
+		} else if ( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 90 ) {
 			// WinMe
-		  	win32.sys_arch.SetString( "WinMe (95)" );
+			win32.sys_arch.SetString( "WinMe (95)" );
 		} else {
-		  	win32.sys_arch.SetString( "Unknown 95 variant" );
+			win32.sys_arch.SetString( "Unknown 95 variant" );
 		}
 	} else {
 		win32.sys_arch.SetString( "unknown Windows variant" );
@@ -1138,8 +1120,8 @@ void Sys_Init( void ) {
 		} else {
 			string += "generic CPU";
 		}
-
 		string += " with ";
+
 		if ( win32.cpuid & CPUID_MMX ) {
 			string += "MMX & ";
 		}
@@ -1147,15 +1129,15 @@ void Sys_Init( void ) {
 			string += "SSE & ";
 		}
 		if ( win32.cpuid & CPUID_SSE2 ) {
-            string += "SSE2 & ";
+			string += "SSE2 & ";
 		}
 		if ( win32.cpuid & CPUID_SSE3 ) {
 			string += "SSE3 & ";
-		}		
-		if (win32.cpuid & CPUID_SSSE3) {
+		}
+		if ( win32.cpuid & CPUID_SSSE3 ) {
 			string += "SSSE3 & ";
 		}
-		if (win32.cpuid & CPUID_SSE41) {
+		if ( win32.cpuid & CPUID_SSE41 ) {
 			string += "SSE41 & ";
 		}
 		if ( win32.cpuid & CPUID_AVX ) {
@@ -1176,7 +1158,7 @@ void Sys_Init( void ) {
 		idToken token;
 
 		int id = CPUID_NONE;
-		while( src.ReadToken( &token ) ) {
+		while ( src.ReadToken( &token ) ) {
 			if ( token.Icmp( "generic" ) == 0 ) {
 				id |= CPUID_GENERIC;
 			} else if ( token.Icmp( "intel" ) == 0 ) {
@@ -1207,7 +1189,7 @@ void Sys_Init( void ) {
 			common->Printf( "WARNING: unknown sys_cpustring '%s'\n", win32.sys_cpustring.GetString() );
 			id = CPUID_GENERIC;
 		}
-		win32.cpuid = (cpuid_t) id;
+		win32.cpuid = ( cpuid_t ) id;
 	}
 
 	common->Printf( "%s\n", win32.sys_cpustring.GetString() );
@@ -1228,7 +1210,7 @@ Sys_GetProcessorId
 ================
 */
 cpuid_t Sys_GetProcessorId( void ) {
-    return win32.cpuid;
+	return win32.cpuid;
 }
 
 /*
@@ -1253,11 +1235,11 @@ Win_Frame
 void Win_Frame( void ) {
 	// if "viewlog" has been modified, show or hide the log console
 	if ( win32.win_viewlog.IsModified() ) {
-		if ( !com_skipRenderer.GetBool() 
+		if ( !com_skipRenderer.GetBool()
 #ifdef MULTIPLAYER
-			&& idAsyncNetwork::serverDedicated.GetInteger() != 1
+		        && idAsyncNetwork::serverDedicated.GetInteger() != 1
 #endif
-			) {
+		   ) {
 			Sys_ShowConsole( win32.win_viewlog.GetInteger(), false );
 		}
 		win32.win_viewlog.ClearModified();
@@ -1303,17 +1285,17 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	Sys_StartAsyncThread();
 
 	// hide or show the early console as necessary
-	if ( win32.win_viewlog.GetInteger() || com_skipRenderer.GetBool() 
+	if ( win32.win_viewlog.GetInteger() || com_skipRenderer.GetBool()
 #ifdef MULTIPLAYER
-		|| idAsyncNetwork::serverDedicated.GetInteger()
+	        || idAsyncNetwork::serverDedicated.GetInteger()
 #endif
-		) {
+	   ) {
 		Sys_ShowConsole( 1, true );
 	} else {
 		Sys_ShowConsole( 0, false );
 	}
 
-#ifdef SET_THREAD_AFFINITY 
+#ifdef SET_THREAD_AFFINITY
 	// give the main thread an affinity for the first cpu
 	SetThreadAffinityMask( GetCurrentThread(), 1 );
 #endif
@@ -1328,8 +1310,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	::SetFocus( win32.hWnd );
 
-    // main game loop
-	while( 1 ) {
+	// main game loop
+	while ( 1 ) {
 
 		Win_Frame();
 
@@ -1345,12 +1327,10 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 			} else if ( com_editors & EDITOR_RADIANT ) {
 				// Level Editor
 				RadiantRun();
-			}
-			else if (com_editors & EDITOR_MATERIAL ) {
+			} else if ( com_editors & EDITOR_MATERIAL ) {
 				//BSM Nerve: Add support for the material editor
 				MaterialEditorRun();
-			}
-			else {
+			} else {
 				if ( com_editors & EDITOR_LIGHT ) {
 					// in-game Light Editor
 					LightEditorRun();
@@ -1395,19 +1375,18 @@ void idSysLocal::OpenURL( const char *url, bool doexit ) {
 	static bool doexit_spamguard = false;
 	HWND wnd;
 
-	if (doexit_spamguard) {
+	if ( doexit_spamguard ) {
 		common->DPrintf( "OpenURL: already in an exit sequence, ignoring %s\n", url );
 		return;
 	}
-
-	common->Printf("Open URL: %s\n", url);
+	common->Printf( "Open URL: %s\n", url );
 
 	if ( !ShellExecute( NULL, "open", url, NULL, NULL, SW_RESTORE ) ) {
 		common->Error( "Could not open url: '%s' ", url );
 		return;
 	}
-
 	wnd = GetForegroundWindow();
+
 	if ( wnd ) {
 		ShowWindow( wnd, SW_MAXIMIZE );
 	}
@@ -1428,14 +1407,14 @@ void idSysLocal::StartProcess( const char *exePath, bool doexit ) {
 	STARTUPINFO			si;
 	PROCESS_INFORMATION	pi;
 
-	ZeroMemory( &si, sizeof(si) );
-	si.cb = sizeof(si);
+	ZeroMemory( &si, sizeof( si ) );
+	si.cb = sizeof( si );
 
 	strncpy( szPathOrig, exePath, _MAX_PATH );
 
-	if( !CreateProcess( NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) ) {
-        common->Error( "Could not start process: '%s' ", szPathOrig );
-	    return;
+	if ( !CreateProcess( NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) ) {
+		common->Error( "Could not start process: '%s' ", szPathOrig );
+		return;
 	}
 
 	if ( doexit ) {

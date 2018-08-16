@@ -40,21 +40,19 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	// set the light position if we are using a vertex program to project the rear surfaces
 	if ( surf->space != backEnd.currentSpace ) {
 		idVec4 localLight;
-
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
-		if ( r_useGLSL.GetBool() )
+		if ( r_useGLSL.GetBool() ) {
 			qglUniform4fv( stencilShadowShader.lightOrigin, 1, localLight.ToFloatPtr() );
-		else
+		} else {
 			qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
+		}
 	}
-
 	tri = surf->backendGeo;
 
 	if ( !tri->shadowCache.IsValid() ) {
 		return;
 	}
-
 	qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.VertexPosition( tri->shadowCache ) );
 
 	// we always draw the sil planes, but we may not need to draw the front or rear caps
@@ -65,11 +63,11 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		numIndexes = tri->numIndexes;
 	} else if ( r_useExternalShadows.GetInteger() == 2 ) { // force to no caps for testing
 		numIndexes = tri->numShadowIndexesNoCaps;
-	} else if ( !(surf->dsFlags & DSF_VIEW_INSIDE_SHADOW) ) {
+	} else if ( !( surf->dsFlags & DSF_VIEW_INSIDE_SHADOW ) ) {
 		// if we aren't inside the shadow projection, no caps are ever needed needed
 		numIndexes = tri->numShadowIndexesNoCaps;
 		external = true;
-	} else if ( !backEnd.vLight->viewInsideLight && !(surf->backendGeo->shadowCapPlaneBits & SHADOW_CAP_INFINITE) ) {
+	} else if ( !backEnd.vLight->viewInsideLight && !( surf->backendGeo->shadowCapPlaneBits & SHADOW_CAP_INFINITE ) ) {
 		// if we are inside the shadow projection, but outside the light, and drawing
 		// a non-infinite shadow, we can skip some caps
 		if ( backEnd.vLight->viewSeesShadowPlaneBits & surf->backendGeo->shadowCapPlaneBits ) {
@@ -93,12 +91,11 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 	// debug visualization
 	if ( r_showShadows.GetInteger() ) {
-		
+
 		if ( r_softShadowsQuality.GetBool() ) {
-		r_softShadowsQuality.SetBool(0);
+			r_softShadowsQuality.SetBool( 0 );
 		}
-		    
-		
+
 		if ( r_showShadows.GetInteger() == 3 ) {
 			if ( external ) {
 				qglColor3f( 0.1 / backEnd.overBright, 1 / backEnd.overBright, 0.1 / backEnd.overBright );
@@ -124,7 +121,6 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 				}
 			}
 		}
-
 		qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 		qglDisable( GL_STENCIL_TEST );
 		GL_Cull( CT_TWO_SIDED );
@@ -171,11 +167,10 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 			RB_DrawShadowElementsWithCounters( tri, numIndexes );
 		}
 	}
-	
-	if (!r_showShadows.GetBool()) {
-	r_softShadowsQuality.SetInteger ( softCheck );
+
+	if ( !r_showShadows.GetBool() ) {
+		r_softShadowsQuality.SetInteger( softCheck );
 	}
-	
 	GL_CheckErrors();
 }
 
@@ -195,7 +190,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	if ( !drawSurfs ) {
 		return;
 	}
-
 	GL_PROFILE( "StencilShadowPass" );
 
 	RB_LogComment( "---------- RB_StencilShadowPass ----------\n" );
@@ -203,10 +197,9 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	globalImages->BindNull();
 
 	// for visualizing the shadows
-	switch ( r_showShadows.GetInteger() )
-	{
+	switch ( r_showShadows.GetInteger() ) {
 	case -1:
-		GL_State( /*GLS_DEPTHMASK |/**/ GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS );
+		GL_State( GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS );
 		break;
 	case 1:
 		// draw filled in
@@ -228,23 +221,25 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 		qglPolygonOffset( r_shadowPolygonFactor.GetFloat(), -r_shadowPolygonOffset.GetFloat() );
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 	}
-
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) 
+	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
 		qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
-
+	}
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_Shadow );
 
 	GL_Cull( CT_FRONT_SIDED );
 
-	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) 
+	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
+	}
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) 
+	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
 		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
-
+	}
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() )
+
+	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() ) {
 		qglStencilFunc( GL_GEQUAL, 128, 255 );
+	}
 }

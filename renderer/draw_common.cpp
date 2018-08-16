@@ -35,8 +35,8 @@ void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const dr
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
 
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), &ac->st );
+		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 
@@ -49,7 +49,7 @@ void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const dr
 		R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
 		// per-pixel reflection mapping without a normal map
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
+		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglEnableVertexAttribArray( 2 );
 
 		R_UseProgramARB( VPROG_ENVIRONMENT );
@@ -211,7 +211,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		color[3] = 1;
 	}
 	idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( tri->ambientCache );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 
 	bool drawSolid = false;
 
@@ -360,7 +360,7 @@ ID_NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSu
 		size_t baseVertex = cachePointer / sizeof( idDrawVert ), offset = cachePointer % sizeof( idDrawVert );
 
 		if ( !i ) {
-			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ( GLvoid * )offset );
+			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), reinterpret_cast< GLvoid * >( offset ) );
 			vapCalls++;
 		}
 		RB_DrawElementsWithCountersBaseVertex( tri, static_cast< int >( baseVertex ) );
@@ -438,6 +438,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
+	// breaks skyportals atm: Revelator
 	if ( r_useMultiDraw.GetBool() ) {
 		RB_FillDepthBuffer_Multi( drawSurfs, numDrawSurfs );
 	} else {
@@ -682,7 +683,7 @@ void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *
 	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 	qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 	qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-	qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
+	qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
@@ -931,7 +932,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
 	}
 	idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( tri->ambientCache );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 
 	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
 		pStage = shader->GetStage( stage );
@@ -1366,143 +1367,4 @@ void RB_STD_DrawView( void ) {
 		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed );
 	}
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
-}
-
-/*
-=============
-RB_DrawFullScreenQuad
-=============
-*/
-void RB_DrawFullScreenQuad( void ) {
-	qglBegin( GL_QUADS );
-	qglTexCoord2f( 0, 0 );
-	qglVertex2f( 0, 0 );
-	qglTexCoord2f( 0, 1 );
-	qglVertex2f( 0, 1 );
-	qglTexCoord2f( 1, 1 );
-	qglVertex2f( 1, 1 );
-	qglTexCoord2f( 1, 0 );
-	qglVertex2f( 1, 0 );
-	qglEnd();
-}
-
-/*
-=============
-RB_Bloom
-
-Originally in front renderer (idPlayerView::dnPostProcessManager)
-=============
-*/
-void RB_Bloom( void ) {
-	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
-
-	FB_CopyColorBuffer();
-
-	if ( !w || !h // this has actually happened
-		// nbohr1more add checks for render tools
-		|| r_showLightCount.GetBool()
-		|| r_showShadows.GetBool()
-		|| r_showVertexColor.GetBool()
-		|| r_showShadowCount.GetBool()
-		|| r_showTexturePolarity.GetBool()
-		|| r_showTangentSpace.GetBool()
-		|| r_showDepth.GetBool() ) {
-		return;
-	}
-	float	parm[4];
-
-	FB_SelectPostProcess();
-
-	// full screen blends
-	qglLoadIdentity();
-	qglMatrixMode( GL_PROJECTION );
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglOrtho( 0, 1, 0, 1, -1, 1 );
-
-	GL_State( GLS_DEPTHMASK );
-
-	qglDisable( GL_DEPTH_TEST );
-
-	qglEnable( GL_VERTEX_PROGRAM_ARB );
-	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
-	GL_SelectTexture( 0 );
-
-	qglViewport( 0, 0, 256, 1 );
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
-	parm[0] = r_postprocess_colorCurveBias.GetFloat();
-	parm[1] = r_postprocess_sceneGamma.GetFloat();
-	parm[2] = r_postprocess_sceneExposure.GetFloat();
-	parm[3] = 1;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
-
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
-	parm[0] = r_postprocess_brightPassThreshold.GetFloat();
-	parm[1] = r_postprocess_brightPassOffset.GetFloat();
-	parm[2] = r_postprocess_colorCorrection.GetFloat();
-	parm[3] = Max( Min( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
-
-	qglViewport( 0, 0, w / 2, h / 2 );
-	GL_SelectTexture( 0 );
-	globalImages->currentRenderImage->Bind();
-	GL_SelectTexture( 1 );
-	globalImages->bloomCookedMath->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
-	RB_DrawFullScreenQuad();
-	GL_SelectTexture( 0 );
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-
-	globalImages->bloomImage->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
-	parm[0] = 2 / w;
-	parm[1] = 1;
-	parm[2] = 1;
-	parm[3] = 1;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
-	parm[0] = 2 / h;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-
-	FB_SelectPrimary();
-	qglViewport( 0, 0, w, h );
-	FB_TogglePrimary( false );
-	GL_SelectTexture( 0 );
-	globalImages->currentRenderImage->Bind();
-	GL_SelectTexture( 1 );
-	globalImages->bloomImage->Bind();
-	GL_SelectTexture( 2 );
-	globalImages->bloomCookedMath->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
-	parm[0] = r_postprocess_bloomIntensity.GetFloat();
-	parm[1] = Max( Min( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	GL_SelectTexture( 2 );
-	globalImages->BindNull(); // or else GUI is screwed
-	GL_SelectTexture( 1 );
-	globalImages->BindNull(); // or else GUI is screwed
-	GL_SelectTexture( 0 );
-
-	qglDisable( GL_VERTEX_PROGRAM_ARB );
-	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-
-	qglPopMatrix();
-	qglEnable( GL_DEPTH_TEST );
-	qglMatrixMode( GL_MODELVIEW );
 }

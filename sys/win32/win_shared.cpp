@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "win_local.h"
 #include <lmerr.h>
 #include <lmcons.h>
@@ -55,6 +53,11 @@ int Sys_Milliseconds( void ) {
 	return sys_curtime;
 }
 
+/*
+================
+Sys_GetTimeMicroseconds
+================
+*/
 uint64_t Sys_GetTimeMicroseconds( void ) {
 	FILETIME ft = {0};
 	//note: returns number of 100-nanosec intervals since January 1, 1601 (UTC)
@@ -81,10 +84,15 @@ int Sys_GetDriveFreeSpace( const char *path ) {
 	DWORDLONG lpTotalNumberOfFreeBytes;
 	int ret = 26;
 	//FIXME: see why this is failing on some machines
+	//CANNOTFIX: uses reduntdant code needs total rewrite for modern windows archs, hack used to return positive numbers on win7 but breaks completely on any arch above that.
 	if ( ::GetDiskFreeSpaceEx( path, (PULARGE_INTEGER)&lpFreeBytesAvailable, (PULARGE_INTEGER)&lpTotalNumberOfBytes, (PULARGE_INTEGER)&lpTotalNumberOfFreeBytes ) ) {
 		ret = ( double )( lpFreeBytesAvailable ) / ( 1024.0 * 1024.0 );
 	}
-	return ret;
+	// force it to output positive numbers
+	if (ret < 0)	{
+		ret = -ret;
+	}
+	return abs(ret);
 }
 
 /*
@@ -123,7 +131,6 @@ char *Sys_GetCurrentUser( void ) {
 	static char s_userName[1024];
 	unsigned long size = sizeof( s_userName );
 
-
 	if ( !GetUserName( s_userName, &size ) ) {
 		strcpy( s_userName, "player" );
 	}
@@ -131,6 +138,5 @@ char *Sys_GetCurrentUser( void ) {
 	if ( !s_userName[0] ) {
 		strcpy( s_userName, "player" );
 	}
-
 	return s_userName;
 }	

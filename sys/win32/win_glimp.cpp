@@ -30,15 +30,10 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "win_local.h"
 #include "rc/doom_resource.h"
 #include "../../renderer/tr_local.h"
 #include "../../renderer/FrameBuffer.h"
-
-static void		GLW_InitExtensions( void );
-
 
 // WGL_ARB_extensions_string
 PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB;
@@ -62,7 +57,6 @@ PFNWGLQUERYPBUFFERARBPROC	wglQueryPbufferARB;
 PFNWGLBINDTEXIMAGEARBPROC		wglBindTexImageARB;
 PFNWGLRELEASETEXIMAGEARBPROC	wglReleaseTexImageARB;
 PFNWGLSETPBUFFERATTRIBARBPROC	wglSetPbufferAttribARB;
-
 
 //
 // function declaration
@@ -100,7 +94,6 @@ static void GLimp_RestoreGamma( void ) {
 	if ( win32.oldHardwareGamma[0][255] == 0 ) {
 		return;
 	}
-
 	hDC = GetDC( GetDesktopWindow() );
 	success = SetDeviceGammaRamp( hDC, win32.oldHardwareGamma );
 	common->Printf( "...restoring hardware gamma: %s\n", success ? "success" : "failed" );
@@ -218,7 +211,6 @@ void GLW_CheckWGLExtensions( HDC hDC ) {
 
 	// WGL_EXT_swap_control
 	wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALEXTPROC ) GLimp_ExtensionPointer( "wglSwapIntervalEXT" );
-	//r_swapInterval.SetModified();	// force a set next frame
 
 	// WGL_ARB_pixel_format
 	wglGetPixelFormatAttribivARB = ( PFNWGLGETPIXELFORMATATTRIBIVARBPROC )GLimp_ExtensionPointer( "wglGetPixelFormatAttribivARB" );
@@ -329,7 +321,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		common->Printf( "succeeded\n" );
 	}
 
-	// the multisample path uses the wgl					
+	// the multisample path uses the wgl
 	// duzenko #4425: AA needs to be setup elsewhere
 	if ( wglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
 		int		iAttributes[20];
@@ -427,7 +419,6 @@ static void GLW_CreateWindowClasses( void ) {
 	if ( win32.windowClassRegistered ) {
 		return;
 	}
-
 	memset( &wc, 0, sizeof( wc ) );
 
 	wc.style         = 0;
@@ -555,7 +546,6 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 		win32.hWnd = NULL;
 		return false;
 	}
-
 	SetForegroundWindow( win32.hWnd );
 	SetFocus( win32.hWnd );
 
@@ -563,8 +553,6 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	return true;
 }
-
-
 
 static void PrintCDSError( int value ) {
 	switch ( value ) {
@@ -591,7 +579,6 @@ static void PrintCDSError( int value ) {
 		break;
 	}
 }
-
 
 /*
 ===================
@@ -625,9 +612,9 @@ static bool GLW_SetFullScreen( glimpParms_t parms ) {
 			return false;
 		}
 
-		if ( ( int )devmode.dmPelsWidth  >= parms.width && 
-			 ( int )devmode.dmPelsHeight >= parms.height && 
-			 ( int )devmode.dmBitsPerPel == 32 ) {
+		if ( ( int )devmode.dmPelsWidth  >= parms.width &&
+		        ( int )devmode.dmPelsHeight >= parms.height &&
+		        ( int )devmode.dmBitsPerPel == 32 ) {
 
 			matched = true;
 
@@ -942,16 +929,14 @@ GLimp_SwapBuffers
 =====================
 */
 void GLimp_SwapBuffers( void ) {
-
 	// wglSwapinterval is a windows-private extension,
 	// so we must check for it here instead of portably
 	if ( r_swapIntervalTemp.IsModified() ) {
 		r_swapIntervalTemp.ClearModified();
-
-		if ( wglSwapIntervalEXT )
-		{ wglSwapIntervalEXT( r_swapIntervalTemp.GetInteger() ); }
+		if ( wglSwapIntervalEXT ) {
+			wglSwapIntervalEXT( r_swapIntervalTemp.GetInteger() );
+		}
 	}
-
 	qwglSwapBuffers( win32.hDC );
 
 #ifdef DEBUG_PRINTS
@@ -1060,7 +1045,6 @@ bool GLimp_SpawnRenderThread( void ( *function )( void ) ) {
 	return true;
 }
 
-
 //#define	DEBUG_PRINTS
 
 /*
@@ -1133,13 +1117,13 @@ void GLimp_WakeBackEnd( void *data ) {
 	if ( renderThreadActive ) {
 		common->FatalError( "GLimp_WakeBackEnd: already active" );
 	}
-
 	r = WaitForSingleObject( win32.renderActiveEvent, 0 );
+
 	if ( r == WAIT_OBJECT_0 ) {
 		common->FatalError( "GLimp_WakeBackEnd: already signaled" );
 	}
-
 	r = WaitForSingleObject( win32.renderCommandsEvent, 0 );
+
 	if ( r == WAIT_OBJECT_0 ) {
 		common->FatalError( "GLimp_WakeBackEnd: commands already signaled" );
 	}
@@ -1175,6 +1159,5 @@ GLExtension_t GLimp_ExtensionPointer( const char *name ) {
 	if ( !proc ) {
 		common->Printf( "Couldn't find proc address for: %s\n", name );
 	}
-
 	return proc;
 }

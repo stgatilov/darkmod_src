@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
 //#define TEST_TRACE
@@ -257,7 +255,6 @@ localTrace_t R_LocalTrace( const idVec3 &start, const idVec3 &end, const float r
 		hit.indexes[2] = tri->indexes[i+2];
 	}
 
-
 #ifdef TEST_TRACE
 	trace_timer.Stop();
 	common->Printf( "testVerts:%i c_testPlanes:%i c_testEdges:%i c_intersect:%i msec:%1.4f\n", 
@@ -289,7 +286,6 @@ void RB_DrawExpandedTriangles( const srfTriangles_t *tri, const float radius, co
 		if ( normal * p[0] < normal * vieworg ) {
 			continue;
 		}
-
 		dir[0] = normal.Cross( dir[0] );
 		dir[1] = normal.Cross( dir[1] );
 		dir[2] = normal.Cross( dir[2] );
@@ -327,7 +323,6 @@ void RB_DrawExpandedTriangles( const srfTriangles_t *tri, const float radius, co
 			point = p[k] + dir[k] * radius;
 			qglVertex3f( point[0], point[1], point[2] );
 		}
-
 		qglEnd();
 	}
 }
@@ -363,8 +358,7 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	end = start + 4000 * backEnd.viewDef->renderView.viewaxis[0];
 
 	// check and draw the surfaces
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-
+	qglDisableVertexAttribArray( 8 );
 	globalImages->whiteImage->Bind();
 
 	// find how many are ambient

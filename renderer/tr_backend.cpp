@@ -59,8 +59,9 @@ void RB_SetDefaultGLState( void ) {
 	qglCullFace( GL_FRONT_AND_BACK );
 	qglShadeModel( GL_SMOOTH );
 
-	if ( r_useScissor.GetBool() )
-	{ qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight ); }
+	if ( r_useScissor.GetBool() ) {
+		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	}
 
 	for ( int i = MAX_MULTITEXTURE_UNITS - 1 ; i >= 0 ; i-- ) {
 		GL_SelectTexture( i );
@@ -96,8 +97,8 @@ GL_SelectTexture
 ====================
 */
 void GL_SelectTexture( const int unit ) {
-	if ( backEnd.glState.currenttmu == unit ) { 
-		return; 
+	if ( backEnd.glState.currenttmu == unit ) {
+		return;
 	}
 
 	if ( unit < 0 || unit >= MAX_MULTITEXTURE_UNITS ) {
@@ -120,15 +121,15 @@ rendered is a mirored view.
 ====================
 */
 void GL_Cull( const int cullType ) {
-	if ( backEnd.glState.faceCulling == cullType ) { 
-		return; 
+	if ( backEnd.glState.faceCulling == cullType ) {
+		return;
 	}
 
 	if ( cullType == CT_TWO_SIDED ) {
 		qglDisable( GL_CULL_FACE );
 	} else {
-		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) { 
-			qglEnable( GL_CULL_FACE ); 
+		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) {
+			qglEnable( GL_CULL_FACE );
 		}
 
 		if ( cullType == CT_BACK_SIDED ) {
@@ -262,7 +263,6 @@ void GL_State( const int stateBits ) {
 			common->Error( "GL_State: invalid dst blend state bits\n" );
 			break;
 		}
-
 		qglBlendFunc( srcFactor, dstFactor );
 	}
 
@@ -293,31 +293,6 @@ void GL_State( const int stateBits ) {
 			qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		}
 	}
-
-	// alpha test
-	/*	if ( diff & GLS_ATEST_BITS ) {
-			switch ( stateBits & GLS_ATEST_BITS ) {
-			case 0:
-				qglDisable( GL_ALPHA_TEST );
-				break;
-			case GLS_ATEST_EQ_255:
-				qglEnable( GL_ALPHA_TEST );
-				qglAlphaFunc( GL_EQUAL, 1 );
-				break;
-			case GLS_ATEST_LT_128:
-				qglEnable( GL_ALPHA_TEST );
-				qglAlphaFunc( GL_LESS, 0.5 );
-				break;
-			case GLS_ATEST_GE_128:
-				qglEnable( GL_ALPHA_TEST );
-				qglAlphaFunc( GL_GEQUAL, 0.5 );
-				break;
-			default:
-				assert( 0 );
-				break;
-			}
-		}*/
-
 	backEnd.glState.glStateBits = stateBits;
 }
 
@@ -381,7 +356,6 @@ void RB_SetGL2D( void ) {
 /*
 =============
 RB_SetBuffer
-
 =============
 */
 static void	RB_SetBuffer( const void *data ) {
@@ -393,7 +367,7 @@ static void	RB_SetBuffer( const void *data ) {
 	backEnd.frameCount = cmd->frameCount;
 
 	if ( !r_useFbo.GetBool() ) { // duzenko #4425: not applicable, raises gl errors
-		qglDrawBuffer( cmd->buffer ); 
+		qglDrawBuffer( cmd->buffer );
 	}
 
 	// clear screen for debugging
@@ -411,9 +385,152 @@ static void	RB_SetBuffer( const void *data ) {
 			qglClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
 		}
 		if ( !r_useFbo.GetBool() || !game->PlayerReady() ) { // duzenko #4425: happens elsewhere for fbo, "Click when ready" skips FBO even with r_useFbo 1
-			qglClear( GL_COLOR_BUFFER_BIT ); 
+			qglClear( GL_COLOR_BUFFER_BIT );
 		}
 	}
+}
+
+/*
+=============
+RB_DrawFullScreenQuad
+
+Moved to backend: Revelator
+=============
+*/
+void RB_DrawFullScreenQuad( void ) {
+	qglBegin( GL_QUADS );
+	qglTexCoord2f( 0, 0 );
+	qglVertex2f( 0, 0 );
+	qglTexCoord2f( 0, 1 );
+	qglVertex2f( 0, 1 );
+	qglTexCoord2f( 1, 1 );
+	qglVertex2f( 1, 1 );
+	qglTexCoord2f( 1, 0 );
+	qglVertex2f( 1, 0 );
+	qglEnd();
+}
+
+/*
+=============
+RB_Bloom
+
+Originally in front renderer (idPlayerView::dnPostProcessManager)
+Moved to backend: Revelator
+=============
+*/
+void RB_Bloom( void ) {
+	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
+
+	FB_CopyColorBuffer();
+
+	if ( !w || !h // this has actually happened
+		// nbohr1more add checks for render tools
+		|| r_showLightCount.GetBool()
+		|| r_showShadows.GetBool()
+		|| r_showVertexColor.GetBool()
+		|| r_showShadowCount.GetBool()
+		|| r_showTris.GetBool() // revelator: need this one as well, screws up showtris as pointed out by judith.
+		|| r_showTexturePolarity.GetBool()
+		|| r_showTangentSpace.GetBool()
+		|| r_showDepth.GetBool() ) {
+		return;
+	}
+	float	parm[4];
+
+	FB_SelectPostProcess();
+
+	// full screen blends
+	qglLoadIdentity();
+	qglMatrixMode( GL_PROJECTION );
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglOrtho( 0, 1, 0, 1, -1, 1 );
+
+	GL_State( GLS_DEPTHMASK );
+
+	qglDisable( GL_DEPTH_TEST );
+
+	qglEnable( GL_VERTEX_PROGRAM_ARB );
+	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	GL_SelectTexture( 0 );
+
+	qglViewport( 0, 0, 256, 1 );
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
+	parm[0] = r_postprocess_colorCurveBias.GetFloat();
+	parm[1] = r_postprocess_sceneGamma.GetFloat();
+	parm[2] = r_postprocess_sceneExposure.GetFloat();
+	parm[3] = 1;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
+	parm[0] = r_postprocess_brightPassThreshold.GetFloat();
+	parm[1] = r_postprocess_brightPassOffset.GetFloat();
+	parm[2] = r_postprocess_colorCorrection.GetFloat();
+	parm[3] = Max( Min( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+
+	qglViewport( 0, 0, w / 2, h / 2 );
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->bloomCookedMath->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
+	RB_DrawFullScreenQuad();
+	GL_SelectTexture( 0 );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+
+	globalImages->bloomImage->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
+	parm[0] = 2 / w;
+	parm[1] = 1;
+	parm[2] = 1;
+	parm[3] = 1;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
+	parm[0] = 2 / h;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+
+	FB_SelectPrimary();
+	qglViewport( 0, 0, w, h );
+	FB_TogglePrimary( false );
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->bloomImage->Bind();
+	GL_SelectTexture( 2 );
+	globalImages->bloomCookedMath->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
+	parm[0] = r_postprocess_bloomIntensity.GetFloat();
+	parm[1] = Max( Min( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	GL_SelectTexture( 2 );
+	globalImages->BindNull(); // or else GUI is screwed
+	GL_SelectTexture( 1 );
+	globalImages->BindNull(); // or else GUI is screwed
+	GL_SelectTexture( 0 );
+
+	qglDisable( GL_VERTEX_PROGRAM_ARB );
+	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+
+	qglPopMatrix();
+	qglEnable( GL_DEPTH_TEST );
+	qglMatrixMode( GL_MODELVIEW );
 }
 
 /*
@@ -460,11 +577,9 @@ void RB_ShowImages( void ) {
 	qglFinish();
 }
 
-
 /*
 =============
 RB_SwapBuffers
-
 =============
 */
 const void	RB_SwapBuffers( const void *data ) {
@@ -492,7 +607,6 @@ RB_CopyRender
 Copy part of the current framebuffer to an image
 =============
 */
-
 void RB_CopyRender( const void *data ) {
 	if ( r_skipCopyTexture.GetBool() ) {
 		return;
@@ -549,13 +663,13 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 				}
 			}
 			RB_DrawView();
-			if ( isv3d ) { 
-				c_draw3d++; 
-			} else { 
-				c_draw2d++; 
+			if ( isv3d ) {
+				c_draw3d++;
+			} else {
+				c_draw2d++;
 			}
 			if ( r_frontBuffer.GetBool() ) {					// debug: put a breakpoint to see a per view render
-				qglFinish(); 
+				qglFinish();
 			}
 			break;
 		}

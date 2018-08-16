@@ -310,7 +310,6 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	if ( light->viewCount == tr.viewCount ) {
 		return light->viewLight;
 	}
-
 	light->viewCount = tr.viewCount;
 
 	// add to the view light chain
@@ -344,9 +343,10 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->lightProject[1] = light->lightProject[1];
 	vLight->lightProject[2] = light->lightProject[2];
 	vLight->lightProject[3] = light->lightProject[3];
+
 	if (r_useAnonreclaimer.GetBool()) {
 		//anon begin
-		//vLight->fogPlane = light->frustum[5];
+		// vLight->fogPlane = light->frustum[5];
 		// the fog plane is the light far clip plane
 		idPlane fogPlane(light->baseLightProject[2][0] - light->baseLightProject[3][0],
 			light->baseLightProject[2][1] - light->baseLightProject[3][1],
@@ -358,8 +358,10 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 		vLight->fogPlane[2] = fogPlane[2] * planeScale;
 		vLight->fogPlane[3] = fogPlane[3] * planeScale;
 		//anon end
-	} else
+	} else {
 		vLight->fogPlane = light->frustum[5];
+	}
+
 	// make a copy of the frustum for backend rendering
 	vLight->frustumTris = ( srfTriangles_t* )R_FrameAlloc( sizeof( srfTriangles_t ) );
 	memcpy( vLight->frustumTris, light->frustumTris, sizeof( srfTriangles_t ) );
@@ -371,7 +373,6 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	// link the view light
 	vLight->next = tr.viewDef->viewLights;
 	tr.viewDef->viewLights = vLight;
-
 	light->viewLight = vLight;
 
 	return vLight;
@@ -1348,7 +1349,6 @@ void R_AddModelSurfaces( void ) {
 				}
 				continue;
 			}
-
 			R_AddAmbientDrawsurfs( vEntity );
 			tr.pc.c_visibleViewEntities++;
 		} else {

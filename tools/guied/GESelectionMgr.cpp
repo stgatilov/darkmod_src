@@ -316,7 +316,6 @@ void rvGESelectionMgr::UpdateRectangle ( void )
 		mRect.x = min(selRect.x,mRect.x);
 		mRect.y = min(selRect.y,mRect.y);
 	}
-
 	mRect.w -= mRect.x;
 	mRect.h -= mRect.y;
 

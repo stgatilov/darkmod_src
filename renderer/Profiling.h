@@ -27,7 +27,6 @@ void ProfilingLeaveSection();
 
 void ProfilingBeginFrame();
 void ProfilingEndFrame();
-void DisplayProfilingInfo();
 
 void ProfilingDrawCurrentTimings();
 void ProfilingPrintTimings_f( const idCmdArgs &args );

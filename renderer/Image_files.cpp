@@ -86,9 +86,9 @@ void R_WriteTGA( const char *filename, const byte *data, int width, int height, 
 		buffer[17] = ( 1 << 5 );	// flip bit, for normal top to bottom raster order
 	}
 
-	// swap rgb to bgr
+	// swap rgba to bgra
 	for ( i = imgStart ; i < bufferSize ; i += 4 ) {
-		buffer[i] = data[i - imgStart + 2];		// blue
+		buffer[i] = data[i - imgStart + 2];			// blue
 		buffer[i + 1] = data[i - imgStart + 1];		// green
 		buffer[i + 2] = data[i - imgStart + 0];		// red
 		buffer[i + 3] = data[i - imgStart + 3];		// alpha
@@ -130,7 +130,7 @@ void R_WritePalTGA( const char *filename, const byte *data, const byte *palette,
 
 	// store palette, swapping rgb to bgr
 	for ( i = palStart ; i < imgStart ; i += 3 ) {
-		buffer[i] = palette[i - palStart + 2];		// blue
+		buffer[i] = palette[i - palStart + 2];			// blue
 		buffer[i + 1] = palette[i - palStart + 1];		// green
 		buffer[i + 2] = palette[i - palStart + 0];		// red
 	}
@@ -147,7 +147,6 @@ void R_WritePalTGA( const char *filename, const byte *data, const byte *palette,
 static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
-
 
 /*
 ========================================================================
@@ -182,15 +181,36 @@ TGA files are used for 24/32 bit images
 ========================================================================
 */
 
+/* more recent tga2 code, dont need no stinking hacks for flipped images, and also supports more formats */
+#define TGA_MAXCOLORS 16384
+
+/* Definitions for image types. */
+#define TGA_Null		0	/* no image data */
+#define TGA_Map			1	/* Uncompressed, color-mapped images. */
+#define TGA_RGB			2	/* Uncompressed, RGB images. */
+#define TGA_Mono		3	/* Uncompressed, black and white images. */
+#define TGA_RLEMap		9	/* Runlength encoded color-mapped images. */
+#define TGA_RLERGB		10	/* Runlength encoded RGB images. */
+#define TGA_RLEMono		11	/* Compressed, black and white images. */
+#define TGA_CompMap		32	/* Compressed color-mapped data, using Huffman, Delta, and runlength encoding. */
+#define TGA_CompMap4	33	/* Compressed color-mapped data, using Huffman, Delta, and runlength encoding.  4-pass quadtree-type process. */
+
+/* Definitions for interleave flag. */
+#define TGA_IL_None		0	/* non-interleaved. */
+#define TGA_IL_Two		1	/* two-way (even/odd) interleaving */
+#define TGA_IL_Four		2	/* four way interleaving */
+#define TGA_IL_Reserved	3	/* reserved */
+
+/* Definitions for origin flag */
+#define TGA_O_UPPER		0	/* Origin in lower left-hand corner. */
+#define TGA_O_LOWER		1	/* Origin in upper left-hand corner. */
+
 typedef struct _TargaHeader {
-	unsigned char 	id_length, colormap_type, image_type;
-	unsigned short	colormap_index, colormap_length;
-	unsigned char	colormap_size;
-	unsigned short	x_origin, y_origin, width, height;
+	unsigned char 	id_length, colormap_type, colormap_size, image_type;
 	unsigned char	pixel_size, attributes;
+	unsigned short	colormap_index, colormap_length;
+	unsigned short	x_origin, y_origin, width, height;
 } TargaHeader;
-
-
 
 /*
 =========================================================
@@ -199,6 +219,7 @@ BMP LOADING
 
 =========================================================
 */
+
 typedef struct {
 	char id[2];
 	unsigned int fileSize;
@@ -217,6 +238,7 @@ typedef struct {
 	unsigned int importantColors;
 	unsigned char palette[256][4];
 } BMPHeader_t;
+
 /*
 ==============
 LoadBMP
@@ -281,8 +303,8 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 
 	memcpy( bmpHeader.palette, buf_p, sizeof( bmpHeader.palette ) );
 
-	if ( bmpHeader.bitsPerPixel == 8 ) { 
-		buf_p += 1024; 
+	if ( bmpHeader.bitsPerPixel == 8 ) {
+		buf_p += 1024;
 	}
 
 	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' ) {
@@ -303,17 +325,17 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 	columns = bmpHeader.width;
 	rows = bmpHeader.height;
 
-	if ( rows < 0 ) { 
-		rows = -rows; 
+	if ( rows < 0 ) {
+		rows = -rows;
 	}
 	numPixels = columns * rows;
 
-	if ( width ) { 
-		*width = columns; 
+	if ( width ) {
+		*width = columns;
 	}
 
-	if ( height ) { 
-		*height = rows; 
+	if ( height ) {
+		*height = rows;
 	}
 	bmpRGBA = ( byte * )R_StaticAlloc( numPixels * 4 );
 	*pic = bmpRGBA;
@@ -328,44 +350,44 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 			unsigned short shortPixel;
 
 			switch ( bmpHeader.bitsPerPixel ) {
-				case 8:
-					palIndex = *buf_p++;
-					*pixbuf++ = bmpHeader.palette[palIndex][2];
-					*pixbuf++ = bmpHeader.palette[palIndex][1];
-					*pixbuf++ = bmpHeader.palette[palIndex][0];
-					*pixbuf++ = 0xff;
-					break;
-				case 16:
-					shortPixel = * ( unsigned short * ) pixbuf;
-					pixbuf += 2;
-					*pixbuf++ = ( shortPixel & ( 31 << 10 ) ) >> 7;
-					*pixbuf++ = ( shortPixel & ( 31 << 5 ) ) >> 2;
-					*pixbuf++ = ( shortPixel & ( 31 ) ) << 3;
-					*pixbuf++ = 0xff;
-					break;
+			case 8:
+				palIndex = *buf_p++;
+				*pixbuf++ = bmpHeader.palette[palIndex][2];
+				*pixbuf++ = bmpHeader.palette[palIndex][1];
+				*pixbuf++ = bmpHeader.palette[palIndex][0];
+				*pixbuf++ = 0xff;
+				break;
+			case 16:
+				shortPixel = * ( unsigned short * ) pixbuf;
+				pixbuf += 2;
+				*pixbuf++ = ( shortPixel & ( 31 << 10 ) ) >> 7;
+				*pixbuf++ = ( shortPixel & ( 31 << 5 ) ) >> 2;
+				*pixbuf++ = ( shortPixel & ( 31 ) ) << 3;
+				*pixbuf++ = 0xff;
+				break;
 
-				case 24:
-					blue = *buf_p++;
-					green = *buf_p++;
-					red = *buf_p++;
-					*pixbuf++ = red;
-					*pixbuf++ = green;
-					*pixbuf++ = blue;
-					*pixbuf++ = 255;
-					break;
-				case 32:
-					blue = *buf_p++;
-					green = *buf_p++;
-					red = *buf_p++;
-					alpha = *buf_p++;
-					*pixbuf++ = red;
-					*pixbuf++ = green;
-					*pixbuf++ = blue;
-					*pixbuf++ = alpha;
-					break;
-				default:
-					common->Error( "LoadBMP: illegal pixel_size '%d' in file '%s'\n", bmpHeader.bitsPerPixel, name );
-					break;
+			case 24:
+				blue = *buf_p++;
+				green = *buf_p++;
+				red = *buf_p++;
+				*pixbuf++ = red;
+				*pixbuf++ = green;
+				*pixbuf++ = blue;
+				*pixbuf++ = 255;
+				break;
+			case 32:
+				blue = *buf_p++;
+				green = *buf_p++;
+				red = *buf_p++;
+				alpha = *buf_p++;
+				*pixbuf++ = red;
+				*pixbuf++ = green;
+				*pixbuf++ = blue;
+				*pixbuf++ = alpha;
+				break;
+			default:
+				common->Error( "LoadBMP: illegal pixel_size '%d' in file '%s'\n", bmpHeader.bitsPerPixel, name );
+				break;
 			}
 		}
 	}
@@ -424,11 +446,11 @@ static void LoadPCX( const char *filename, byte **pic, byte **palette, int *widt
 	ymax = LittleShort( pcx->ymax );
 
 	if ( pcx->manufacturer != 0x0a
-	  || pcx->version != 5
-	  || pcx->encoding != 1
-	  || pcx->bits_per_pixel != 8
-	  || xmax >= 1024
-	  || ymax >= 1024 ) {
+	        || pcx->version != 5
+	        || pcx->encoding != 1
+	        || pcx->bits_per_pixel != 8
+	        || xmax >= 1024
+	        || ymax >= 1024 ) {
 		common->Printf( "Bad pcx file %s (%i x %i) (%i x %i)\n", filename, xmax + 1, ymax + 1, pcx->xmax, pcx->ymax );
 		return;
 	}
@@ -443,12 +465,12 @@ static void LoadPCX( const char *filename, byte **pic, byte **palette, int *widt
 		memcpy( *palette, ( byte * )pcx + len - 768, 768 );
 	}
 
-	if ( width ) { 
-		*width = xmax + 1; 
+	if ( width ) {
+		*width = xmax + 1;
 	}
 
-	if ( height ) { 
-		*height = ymax + 1; 
+	if ( height ) {
+		*height = ymax + 1;
 	}
 
 	// FIXME: use bytes_per_line here?
@@ -459,11 +481,11 @@ static void LoadPCX( const char *filename, byte **pic, byte **palette, int *widt
 			if ( ( dataByte & 0xC0 ) == 0xC0 ) {
 				runLength = dataByte & 0x3F;
 				dataByte = *raw++;
-			} else { 
+			} else {
 				runLength = 1;
 			}
 
-			while ( runLength-- > 0 ) { 
+			while ( runLength-- > 0 ) {
 				pix[x++] = dataByte;
 			}
 		}
@@ -529,13 +551,13 @@ LoadTGA
 =============
 */
 static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	int			columns, rows, numPixels, fileSize, numBytes;
-	byte		*pixbuf;
-	int			row, column;
+	int			w, h, x, y, len, realrow, truerow, baserow, i, temp1, temp2, pixel_size, map_idx;
+	int			RLE_count, RLE_flag, size, interleave, origin;
+	bool		mapped, rlencoded;
+	byte		*data, *dst, r, g, b, a, j, k, l, *ColorMap;
 	byte		*buf_p;
 	byte		*buffer;
-	TargaHeader	targa_header;
-	byte		*targa_rgba;
+	TargaHeader	header;
 
 	if ( !pic ) {
 		fileSystem->ReadFile( name, nullptr, timestamp );
@@ -546,207 +568,276 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 	//
 	// load the file
 	//
-	fileSize = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
-	if ( !buffer ) {
+	len = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
+
+	if ( !buffer || len <= 0 ) {
 		return;
 	}
 	buf_p = buffer;
+	header.id_length = *buf_p++;
+	header.colormap_type = *buf_p++;
+	header.image_type = *buf_p++;
+	header.colormap_index = LittleShort( *( short * )buf_p );
+	buf_p += 2;
+	header.colormap_length = LittleShort( *( short * )buf_p );
+	buf_p += 2;
+	header.colormap_size = *buf_p++;
+	header.x_origin = LittleShort( *( short * )buf_p );
+	buf_p += 2;
+	header.y_origin = LittleShort( *( short * )buf_p );
+	buf_p += 2;
+	header.width = LittleShort( *( short * )buf_p );
+	buf_p += 2;
+	header.height = LittleShort( *( short * )buf_p );
+	buf_p += 2;
+	header.pixel_size = *buf_p++;
+	header.attributes = *buf_p++;
 
-	targa_header.id_length = *buf_p++;
-	targa_header.colormap_type = *buf_p++;
-	targa_header.image_type = *buf_p++;
-
-	targa_header.colormap_index = LittleShort( *( short * )buf_p );
-	buf_p += 2;
-	targa_header.colormap_length = LittleShort( *( short * )buf_p );
-	buf_p += 2;
-	targa_header.colormap_size = *buf_p++;
-	targa_header.x_origin = LittleShort( *( short * )buf_p );
-	buf_p += 2;
-	targa_header.y_origin = LittleShort( *( short * )buf_p );
-	buf_p += 2;
-	targa_header.width = LittleShort( *( short * )buf_p );
-	buf_p += 2;
-	targa_header.height = LittleShort( *( short * )buf_p );
-	buf_p += 2;
-	targa_header.pixel_size = *buf_p++;
-	targa_header.attributes = *buf_p++;
-
-	if ( targa_header.image_type != 2 && targa_header.image_type != 10 && targa_header.image_type != 3 ) {
-		common->Error( "LoadTGA( %s ): Only type 2 (RGB), 3 (gray), and 10 (RGB) TGA images supported\n", name );
+	if ( header.id_length != 0 ) {
+		buf_p += header.id_length;
 	}
 
-	if ( targa_header.colormap_type != 0 ) {
-		common->Error( "LoadTGA( %s ): colormaps not supported\n", name );
+	/* validate TGA type */
+	switch ( header.image_type ) {
+	case TGA_Map:
+	case TGA_RGB:
+	case TGA_Mono:
+	case TGA_RLEMap:
+	case TGA_RLERGB:
+	case TGA_RLEMono:
+		break;
+	default:
+		common->Printf( "%s : Only type 1 (map), 2 (RGB), 3 (mono), 9 (RLEmap), 10 (RLERGB), 11 (RLEmono) TGA images supported\n", name );
+		return;
 	}
 
-	if ( ( targa_header.pixel_size != 32 && targa_header.pixel_size != 24 ) && targa_header.image_type != 3 ) {
-		common->Error( "LoadTGA( %s ): Only 32 or 24 bit images supported (no colormaps)\n", name );
+	/* validate color depth */
+	switch ( header.pixel_size ) {
+	case 8:
+	case 15:
+	case 16:
+	case 24:
+	case 32:
+		break;
+	default:
+		common->Printf( "%s : Only 8, 15, 16, 24 or 32 bit images (with colormaps) supported\n", name );
+		return;
 	}
+	r = g = b = a = l = 0;
 
-	if ( targa_header.image_type == 2 || targa_header.image_type == 3 ) {
-		numBytes = targa_header.width * targa_header.height * ( targa_header.pixel_size >> 3 );
-		if ( numBytes > fileSize - 18 - targa_header.id_length ) {
-			common->Error( "LoadTGA( %s ): incomplete file\n", name );
+	/* if required, read the color map information. */
+	ColorMap = nullptr;
+	mapped = ( header.image_type == TGA_Map || header.image_type == TGA_RLEMap ) && header.colormap_type == 1;
+
+	if ( mapped ) {
+		/* validate colormap size */
+		switch ( header.colormap_size ) {
+		case 8:
+		case 15:
+		case 16:
+		case 32:
+		case 24:
+			break;
+		default:
+			common->Printf( "%s : Only 8, 15, 16, 24 or 32 bit colormaps supported\n", name );
+			return;
+		}
+		temp1 = header.colormap_index;
+		temp2 = header.colormap_length;
+
+		if ( ( temp1 + temp2 + 1 ) >= TGA_MAXCOLORS ) {
+			return;
+		}
+		ColorMap = ( byte * )R_StaticAlloc( TGA_MAXCOLORS * 4 );
+		map_idx = 0;
+
+		for ( i = temp1; i < temp1 + temp2; ++i, map_idx += 4 ) {
+			/* read appropriate number of bytes, break into rgb & put in map. */
+			switch ( header.colormap_size ) {
+			case 8:	/* grey scale, read and triplicate. */
+				r = g = b = *buf_p++;
+				a = 255;
+				break;
+			case 15:	/* 5 bits each of red green and blue. */
+				/* watch byte order. */
+				j = *buf_p++;
+				k = *buf_p++;
+				l = ( ( unsigned int )k << 8 ) + j;
+				r = ( byte )( ( ( k & 0x7C ) >> 2 ) << 3 );
+				g = ( byte )( ( ( ( k & 0x03 ) << 3 ) + ( ( j & 0xE0 ) >> 5 ) ) << 3 );
+				b = ( byte )( ( j & 0x1F ) << 3 );
+				a = 255;
+				break;
+			case 16:	/* 5 bits each of red green and blue, 1 alpha bit. */
+				/* watch byte order. */
+				j = *buf_p++;
+				k = *buf_p++;
+				l = ( ( unsigned int )k << 8 ) + j;
+				r = ( byte )( ( ( k & 0x7C ) >> 2 ) << 3 );
+				g = ( byte )( ( ( ( k & 0x03 ) << 3 ) + ( ( j & 0xE0 ) >> 5 ) ) << 3 );
+				b = ( byte )( ( j & 0x1F ) << 3 );
+				a = ( k & 0x80 ) ? 255 : 0;
+				break;
+			case 24:	/* 8 bits each of blue, green and red. */
+				b = *buf_p++;
+				g = *buf_p++;
+				r = *buf_p++;
+				a = 255;
+				l = 0;
+				break;
+			case 32:	/* 8 bits each of blue, green, red and alpha. */
+				b = *buf_p++;
+				g = *buf_p++;
+				r = *buf_p++;
+				a = *buf_p++;
+				l = 0;
+				break;
+			}
+			ColorMap[map_idx + 0] = r;
+			ColorMap[map_idx + 1] = g;
+			ColorMap[map_idx + 2] = b;
+			ColorMap[map_idx + 3] = a;
 		}
 	}
-	columns = targa_header.width;
-	rows = targa_header.height;
-	numPixels = columns * rows;
+
+	/* check run-length encoding. */
+	rlencoded = ( header.image_type == TGA_RLEMap || header.image_type == TGA_RLERGB || header.image_type == TGA_RLEMono );
+	RLE_count = RLE_flag = 0;
+	w = header.width;
+	h = header.height;
+	size = w * h * 4;
 
 	if ( width ) {
-		*width = columns;
+		*width = w;
 	}
 
 	if ( height ) {
-		*height = rows;
+		*height = h;
 	}
-	targa_rgba = ( byte * )R_StaticAlloc( numPixels * 4 );
-	*pic = targa_rgba;
+	data = ( byte * )R_StaticAlloc( size );
+	*pic = data;
 
-	if ( targa_header.id_length != 0 ) {
-		buf_p += targa_header.id_length;  // skip TARGA image comment
-	}
+	/* read the Targa file body and convert to portable format. */
+	pixel_size = header.pixel_size;
+	origin = ( header.attributes & 0x20 ) >> 5;
+	interleave = ( header.attributes & 0xC0 ) >> 6;
+	truerow = 0;
+	baserow = 0;
 
-	if ( targa_header.image_type == 2 || targa_header.image_type == 3 ) {
-		// Uncompressed RGB or gray scale image
-		for ( row = rows - 1; row >= 0; row-- ) {
-			pixbuf = targa_rgba + row * columns * 4;
-			for ( column = 0; column < columns; column++ ) {
-				unsigned char red, green, blue, alphabyte;
-				switch ( targa_header.pixel_size ) {
-					case 8:
-						blue = *buf_p++;
-						green = blue;
-						red = blue;
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = 255;
-						break;
-
-					case 24:
-						blue = *buf_p++;
-						green = *buf_p++;
-						red = *buf_p++;
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = 255;
-						break;
-					case 32:
-						blue = *buf_p++;
-						green = *buf_p++;
-						red = *buf_p++;
-						alphabyte = *buf_p++;
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = alphabyte;
-						break;
-					default:
-						common->Error( "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size );
-						break;
-				}
-			}
+	for ( y = 0; y < h; y++ ) {
+		realrow = truerow;
+		if ( origin == TGA_O_UPPER )	{
+			realrow = h - realrow - 1;
 		}
-	} else if ( targa_header.image_type == 10 ) { // Runlength encoded RGB images
-		unsigned char red, green, blue, alphabyte, packetHeader, packetSize, j;
-
-		red = 0;
-		green = 0;
-		blue = 0;
-		alphabyte = 0xff;
-
-		for ( row = rows - 1; row >= 0; row-- ) {
-			pixbuf = targa_rgba + row * columns * 4;
-			for ( column = 0; column < columns; ) {
-				packetHeader = *buf_p++;
-				packetSize = 1 + ( packetHeader & 0x7f );
-				if ( packetHeader & 0x80 ) {        // run-length packet
-					switch ( targa_header.pixel_size ) {
-						case 24:
-							blue = *buf_p++;
-							green = *buf_p++;
-							red = *buf_p++;
-							alphabyte = 255;
-							break;
-						case 32:
-							blue = *buf_p++;
-							green = *buf_p++;
-							red = *buf_p++;
-							alphabyte = *buf_p++;
-							break;
-						default:
-							common->Error( "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size );
-							break;
+		dst = data + realrow * w * 4;
+		for ( x = 0; x < w; x++ ) {
+			/* check if run length encoded. */
+			if ( rlencoded )	{
+				if ( !RLE_count ) {
+					/* have to restart run. */
+					i = *buf_p++;
+					RLE_flag = ( i & 0x80 );
+					if ( !RLE_flag )	{
+						// stream of unencoded pixels
+						RLE_count = i + 1;
+					} else {
+						// single pixel replicated
+						RLE_count = i - 127;
 					}
-
-					for ( j = 0; j < packetSize; j++ ) {
-						*pixbuf++ = red;
-						*pixbuf++ = green;
-						*pixbuf++ = blue;
-						*pixbuf++ = alphabyte;
-						column++;
-						if ( column == columns ) { // run spans across rows
-							column = 0;
-							if ( row > 0 ) {
-								row--;
-							} else {
-								goto breakOut;
-							}
-							pixbuf = targa_rgba + row * columns * 4;
-						}
-					}
-				} else {                          // non run-length packet
-					for ( j = 0; j < packetSize; j++ ) {
-						switch ( targa_header.pixel_size ) {
-							case 24:
-								blue = *buf_p++;
-								green = *buf_p++;
-								red = *buf_p++;
-								*pixbuf++ = red;
-								*pixbuf++ = green;
-								*pixbuf++ = blue;
-								*pixbuf++ = 255;
-								break;
-							case 32:
-								blue = *buf_p++;
-								green = *buf_p++;
-								red = *buf_p++;
-								alphabyte = *buf_p++;
-								*pixbuf++ = red;
-								*pixbuf++ = green;
-								*pixbuf++ = blue;
-								*pixbuf++ = alphabyte;
-								break;
-							default:
-								common->Error( "LoadTGA( %s ): illegal pixel_size '%d'\n", name, targa_header.pixel_size );
-								break;
-						}
-						column++;
-						if ( column == columns ) { // pixel packet run spans across rows
-							column = 0;
-							if ( row > 0 ) {
-								row--;
-							} else {
-								goto breakOut;
-							}
-							pixbuf = targa_rgba + row * columns * 4;
-						}
+					/* decrement count & get pixel. */
+					--RLE_count;
+				} else {
+					/* have already read count & (at least) first pixel. */
+					--RLE_count;
+					if ( RLE_flag ) {
+						/* replicated pixels. */
+						goto PixEncode;
 					}
 				}
 			}
-breakOut:
-			;
+
+			/* read appropriate number of bytes, break into RGB. */
+			switch ( pixel_size ) {
+			case 8:	/* grey scale, read and triplicate. */
+				r = g = b = l = *buf_p++;
+				a = 255;
+				break;
+			case 15:	/* 5 bits each of red green and blue. */
+				/* watch byte order. */
+				j = *buf_p++;
+				k = *buf_p++;
+				l = ( ( unsigned int )k << 8 ) + j;
+				r = ( byte )( ( ( k & 0x7C ) >> 2 ) << 3 );
+				g = ( byte )( ( ( ( k & 0x03 ) << 3 ) + ( ( j & 0xE0 ) >> 5 ) ) << 3 );
+				b = ( byte )( ( j & 0x1F ) << 3 );
+				a = 255;
+				break;
+			case 16:	/* 5 bits each of red green and blue, 1 alpha bit. */
+				/* watch byte order. */
+				j = *buf_p++;
+				k = *buf_p++;
+				l = ( ( unsigned int )k << 8 ) + j;
+				r = ( byte )( ( ( k & 0x7C ) >> 2 ) << 3 );
+				g = ( byte )( ( ( ( k & 0x03 ) << 3 ) + ( ( j & 0xE0 ) >> 5 ) ) << 3 );
+				b = ( byte )( ( j & 0x1F ) << 3 );
+				a = ( k & 0x80 ) ? 255 : 0;
+				break;
+			case 24:	/* 8 bits each of blue, green and red. */
+				b = *buf_p++;
+				g = *buf_p++;
+				r = *buf_p++;
+				a = 255;
+				l = 0;
+				break;
+			case 32:	/* 8 bits each of blue, green, red and alpha. */
+				b = *buf_p++;
+				g = *buf_p++;
+				r = *buf_p++;
+				a = *buf_p++;
+				l = 0;
+				break;
+			default:
+				common->Printf( "%s : Illegal pixel_size '%d'\n", name, pixel_size );
+				R_StaticFree( data );
+				if ( mapped ) {
+					R_StaticFree( ColorMap );
+				}
+				return;
+			}
+PixEncode:
+			if ( mapped ) {
+				map_idx = l * 4;
+				*dst++ = ColorMap[map_idx + 0];
+				*dst++ = ColorMap[map_idx + 1];
+				*dst++ = ColorMap[map_idx + 2];
+				*dst++ = ColorMap[map_idx + 3];
+			} else {
+				*dst++ = r;
+				*dst++ = g;
+				*dst++ = b;
+				*dst++ = a;
+			}
+		}
+
+		if ( interleave == TGA_IL_Four )	{
+			truerow += 4;
+		} else if ( interleave == TGA_IL_Two )	{
+			truerow += 2;
+		} else {
+			truerow++;
+		}
+
+		if ( truerow >= h ) {
+			truerow = ++baserow;
 		}
 	}
 
-	if ( ( targa_header.attributes & ( 1 << 5 ) ) ) {			// image flp bit
-		R_VerticalFlip( *pic, *width, *height );
+	if ( mapped ) {
+		R_StaticFree( ColorMap );
 	}
 	fileSystem->FreeFile( buffer );
 }
+
 
 /*
 =========================================================
@@ -794,7 +885,6 @@ static void jpeg_mem_src( j_decompress_ptr cinfo, void *buffer, long nbytes ) {
 	src->next_input_byte = ( JOCTET * )buffer;
 }
 
-
 #endif
 
 /*
@@ -802,7 +892,7 @@ static void jpeg_mem_src( j_decompress_ptr cinfo, void *buffer, long nbytes ) {
 LoadJPG
 =============
 */
-static void LoadJPG( const char *filename, unsigned char **pic, int *width, int *height, ID_TIME_T *timestamp ) {
+static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
 	/* This struct contains the JPEG decompression parameters and pointers to
 	 * working space (which is allocated as needed by the JPEG library).
 	 */
@@ -842,7 +932,7 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 	{
 		idFile *f;
 
-		f = fileSystem->OpenFileRead( filename );
+		f = fileSystem->OpenFileRead( name );
 		if ( !f ) {
 			return;
 		}
@@ -863,7 +953,6 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 		f->Read( fbuffer, len );
 		fileSystem->CloseFile( f );
 	}
-
 
 	/* Step 1: allocate and initialize JPEG decompression object */
 
@@ -914,7 +1003,7 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 
 	if ( cinfo.output_components != 4 ) {
 		common->DWarning( "JPG %s is unsupported color depth (%d)",
-		                  filename, cinfo.output_components );
+		                  name, cinfo.output_components );
 	}
 	out = ( byte * )R_StaticAlloc( cinfo.output_width * cinfo.output_height * 4 );
 
@@ -1264,8 +1353,8 @@ R_MakeIrradiance
 =======================
 */
 void R_MakeIrradiance( byte *pics[6], int *size ) {
-	if ( *size == 0 ) { 
-		return; 
+	if ( *size == 0 ) {
+		return;
 	}
 	int time = Sys_Milliseconds();
 	int outSize = 32;
@@ -1361,26 +1450,26 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 		if ( pics && extensions == CF_CAMERA ) {
 			// convert from "camera" images to native cube map images
 			switch ( i ) {
-				case 0:	// forward
-					R_RotatePic( pics[i], width );
-					break;
-				case 1:	// back
-					R_RotatePic( pics[i], width );
-					R_HorizontalFlip( pics[i], width, height );
-					R_VerticalFlip( pics[i], width, height );
-					break;
-				case 2:	// left
-					R_VerticalFlip( pics[i], width, height );
-					break;
-				case 3:	// right
-					R_HorizontalFlip( pics[i], width, height );
-					break;
-				case 4:	// up
-					R_RotatePic( pics[i], width );
-					break;
-				case 5: // down
-					R_RotatePic( pics[i], width );
-					break;
+			case 0:	// forward
+				R_RotatePic( pics[i], width );
+				break;
+			case 1:	// back
+				R_RotatePic( pics[i], width );
+				R_HorizontalFlip( pics[i], width, height );
+				R_VerticalFlip( pics[i], width, height );
+				break;
+			case 2:	// left
+				R_VerticalFlip( pics[i], width, height );
+				break;
+			case 3:	// right
+				R_HorizontalFlip( pics[i], width, height );
+				break;
+			case 4:	// up
+				R_RotatePic( pics[i], width );
+				break;
+			case 5: // down
+				R_RotatePic( pics[i], width );
+				break;
 			}
 		}
 	}
@@ -1399,7 +1488,7 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 		return false;
 	}
 
-	if ( makeIrradiance ) { 
+	if ( makeIrradiance ) {
 		R_MakeIrradiance( pics, &size );
 	}
 
