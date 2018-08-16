@@ -665,7 +665,6 @@ static void RB_ShowShadowCount( void ) {
 RB_ShowTris
 
 Debugging tool
-Broken ATM: Revelator
 =====================
 */
 static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {

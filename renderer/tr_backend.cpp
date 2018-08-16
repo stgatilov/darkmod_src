@@ -392,6 +392,35 @@ static void	RB_SetBuffer( const void *data ) {
 
 /*
 =============
+RB_CheckTools
+
+Revelator: Check for any rendertool and mark it
+because it might potentially break with post processing.
+=============
+*/
+static bool RB_CheckTools( int width, int height ) {
+	// this has actually happened
+	if ( !width || !height ) {
+		return true;
+	}
+	// nbohr1more add checks for render tools
+	// revelator: added some more
+	if ( r_showLightCount.GetBool() ||
+	     r_showShadows.GetBool()	||
+	     r_showVertexColor.GetBool() ||
+	     r_showShadowCount.GetBool()	||
+	     r_showTris.GetBool() ||
+	     r_showPortals.GetBool() ||
+	     r_showTexturePolarity.GetBool()	||
+	     r_showTangentSpace.GetBool() ||
+	     r_showDepth.GetBool() ) {
+		 return true;
+	}
+	return false;
+}
+
+/*
+=============
 RB_DrawFullScreenQuad
 
 Moved to backend: Revelator
@@ -419,20 +448,15 @@ Moved to backend: Revelator
 =============
 */
 void RB_Bloom( void ) {
-	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
+	// revelator: old school programming here
+	// it is faster to do a multiplication by 0.5 than a divide by 2
+	int w = globalImages->currentRenderImage->uploadWidth;
+	int h = globalImages->currentRenderImage->uploadHeight;
 
 	FB_CopyColorBuffer();
 
-	if ( !w || !h // this has actually happened
-		// nbohr1more add checks for render tools
-		|| r_showLightCount.GetBool()
-		|| r_showShadows.GetBool()
-		|| r_showVertexColor.GetBool()
-		|| r_showShadowCount.GetBool()
-		|| r_showTris.GetBool() // revelator: need this one as well, screws up showtris as pointed out by judith.
-		|| r_showTexturePolarity.GetBool()
-		|| r_showTangentSpace.GetBool()
-		|| r_showDepth.GetBool() ) {
+	// revelator: added small function to take care of nono's
+	if ( RB_CheckTools( w, h ) ) {
 		return;
 	}
 	float	parm[4];
@@ -475,7 +499,7 @@ void RB_Bloom( void ) {
 	RB_DrawFullScreenQuad();
 	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
 
-	qglViewport( 0, 0, w / 2, h / 2 );
+	qglViewport( 0, 0, w * 0.5, h * 0.5 );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
 	GL_SelectTexture( 1 );
@@ -484,25 +508,25 @@ void RB_Bloom( void ) {
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w * 0.5, h * 0.5, false );
 
 	globalImages->bloomImage->Bind();
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
-	parm[0] = 2 / w;
+	parm[0] = 0.5f / w;
 	parm[1] = 1;
 	parm[2] = 1;
 	parm[3] = 1;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w * 0.5, h * 0.5, false );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
-	parm[0] = 2 / h;
+	parm[0] = 0.5f / h;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w * 0.5, h * 0.5, false );
 
 	FB_SelectPrimary();
 	qglViewport( 0, 0, w, h );
