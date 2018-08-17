@@ -40,17 +40,18 @@ static void R_PerformanceCounters( void ) {
 		float megaBytes = globalImages->SumOfUsedImages() / ( 1024 * 1024.0 );
 
 		if ( r_showPrimitives.GetInteger() > 1 ) {
-			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i image:%5.1f MB\n",
-			                tr.pc.c_numViews,
-			                backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
-			                backEnd.pc.c_drawIndexes / 3,
-			                ( backEnd.pc.c_drawIndexes - backEnd.pc.c_drawRefIndexes ) / 3,
-			                backEnd.pc.c_drawVertexes,
-			                ( backEnd.pc.c_drawVertexes - backEnd.pc.c_drawRefVertexes ),
-			                backEnd.pc.c_shadowIndexes / 3,
-			                backEnd.pc.c_shadowVertexes,
-			                megaBytes
-			              );
+			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i image:%5.1f MB ml:%i\n",
+				tr.pc.c_numViews,
+				backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
+				backEnd.pc.c_drawIndexes / 3,
+				(backEnd.pc.c_drawIndexes - backEnd.pc.c_drawRefIndexes) / 3,
+				backEnd.pc.c_drawVertexes,
+				(backEnd.pc.c_drawVertexes - backEnd.pc.c_drawRefVertexes),
+				backEnd.pc.c_shadowIndexes / 3,
+				backEnd.pc.c_shadowVertexes,
+				megaBytes,
+				backEnd.pc.c_matrixLoads
+			);
 		} else {
 			common->Printf( "views:%i draws:%i tris:%i (shdw:%i) (vbo:%i) image:%5.1f MB\n",
 			                tr.pc.c_numViews,

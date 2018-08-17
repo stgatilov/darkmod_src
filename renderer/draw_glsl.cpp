@@ -302,6 +302,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	shadowMapShader.Use();
 
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+	backEnd.currentSpace = NULL;
 
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() ) {
@@ -311,7 +312,11 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) {
 			continue;    // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
 		}
-		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
+		if ( backEnd.currentSpace != surf->space ) {
+			qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
+			backEnd.currentSpace = surf->space;
+			backEnd.pc.c_matrixLoads++;
+		}
 
 		// set the vertex pointers
 		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->backendGeo->ambientCache );
