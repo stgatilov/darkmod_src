@@ -53,16 +53,8 @@ struct interactionProgram_t : lightProgram_t {
 	GLint colorModulate;
 	GLint colorAdd;
 
-	GLint bumpMatrixS;
-	GLint bumpMatrixT;
-
-	GLint diffuseMatrixS;
-	GLint diffuseMatrixT;
-	GLint diffuseColor;
-
-	GLint specularMatrixS;
-	GLint specularMatrixT;
-	GLint specularColor;
+	GLint bumpMatrix, diffuseMatrix, specularMatrix;
+	GLint diffuseColor, specularColor;
 
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent ) {}
@@ -693,18 +685,14 @@ void interactionProgram_t::AfterLoad() {
 	lightProjectionQ = qglGetUniformLocation( program, "u_lightProjectionQ" );
 	lightFalloff = qglGetUniformLocation( program, "u_lightFalloff" );
 
-	bumpMatrixS = qglGetUniformLocation( program, "u_bumpMatrixS" );
-	bumpMatrixT = qglGetUniformLocation( program, "u_bumpMatrixT" );
-
-	diffuseMatrixS = qglGetUniformLocation( program, "u_diffuseMatrixS" );
-	diffuseMatrixT = qglGetUniformLocation( program, "u_diffuseMatrixT" );
+	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
+	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
 	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
 
 	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
 	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
 
-	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
-	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
+	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
 	specularColor = qglGetUniformLocation( program, "u_specularColor" );
 
 	cubic = qglGetUniformLocation( program, "u_cubic" );
@@ -742,10 +730,11 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
 	qglUniform4fv( lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
 	qglUniform4fv( lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
-	qglUniform4fv( bumpMatrixS, 1, din->bumpMatrix[0].ToFloatPtr() );
-	qglUniform4fv( bumpMatrixT, 1, din->bumpMatrix[1].ToFloatPtr() );
-	qglUniform4fv( diffuseMatrixS, 1, din->diffuseMatrix[0].ToFloatPtr() );
-	qglUniform4fv( diffuseMatrixT, 1, din->diffuseMatrix[1].ToFloatPtr() );
+	idMat2 texCoordMatrix( din->diffuseMatrix[0].ToVec2(), din->diffuseMatrix[1].ToVec2() );
+	qglUniformMatrix2fv( diffuseMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
+	texCoordMatrix[0] = din->bumpMatrix[0].ToVec2();
+	texCoordMatrix[1] = din->bumpMatrix[1].ToVec2();
+	qglUniformMatrix2fv( bumpMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
 	// set the constant color
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
@@ -777,8 +766,9 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS + 1 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
-	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
-	qglUniform4fv( specularMatrixT, 1, din->specularMatrix[1].ToFloatPtr() );
+	texCoordMatrix[0] = din->specularMatrix[0].ToVec2();
+	texCoordMatrix[1] = din->specularMatrix[1].ToVec2();
+	qglUniformMatrix2fv( specularMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 }
 
