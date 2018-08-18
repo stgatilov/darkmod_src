@@ -1196,13 +1196,13 @@ void idInteraction::AddActiveInteraction( void ) {
 					// there will only be localSurfaces if the light casts shadows and there are surfaces with NOSELFSHADOW
 					if ( sint->shader->Coverage() == MC_TRANSLUCENT && sint->shader->ReceivesLighting() ) {
 						R_LinkLightSurf( &vLight->translucentInteractions, lightTris,
-						                 vEntity, lightDef, shader, lightScissor, false );
+						                 vEntity, shader, lightScissor, false );
 					} else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
 						R_LinkLightSurf( &vLight->localInteractions, lightTris,
-						                 vEntity, lightDef, shader, lightScissor, false );
+						                 vEntity, shader, lightScissor, false );
 					} else {
 						R_LinkLightSurf( &vLight->globalInteractions, lightTris,
-						                 vEntity, lightDef, shader, lightScissor, false );
+						                 vEntity, shader, lightScissor, false );
 					}
 				}
 			}
@@ -1266,10 +1266,10 @@ void idInteraction::AddActiveInteraction( void ) {
 
 			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
 				R_LinkLightSurf( &vLight->localShadows,
-				                 shadowTris, vEntity, lightDef, NULL, shadowScissor, inside );
+				                 shadowTris, vEntity, NULL, shadowScissor, inside );
 			} else {
 				R_LinkLightSurf( &vLight->globalShadows,
-				                 shadowTris, vEntity, lightDef, NULL, shadowScissor, inside );
+				                 shadowTris, vEntity, NULL, shadowScissor, inside );
 			}
 		}
 	}

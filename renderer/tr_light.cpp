@@ -499,7 +499,7 @@ R_LinkLightSurf
 =================
 */
 void R_LinkLightSurf( /*const */drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
-				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
+		const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
 	if ( !space )
 		space = &tr.viewDef->worldSpace;
 
@@ -859,7 +859,7 @@ void R_AddLightSurfaces( void ) {
 				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
 			}
 
-			R_LinkLightSurf( &vLight->globalShadows, tri, NULL, light, NULL, vLight->scissorRect, true /* FIXME ? */ );
+			R_LinkLightSurf( &vLight->globalShadows, tri, NULL, NULL, vLight->scissorRect, true /* FIXME ? */ );
 		}
 	}
 }

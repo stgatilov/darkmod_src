@@ -1422,7 +1422,7 @@ void RB_ShowLights( void ) {
 	GL_Cull( CT_TWO_SIDED );
 	qglDisable( GL_DEPTH_TEST );
 
-	common->Printf( "volumes: " );	// FIXME: not in back end!
+	common->Printf( "volumes:" );	// FIXME: not in back end!
 
 	count = 0;
 
@@ -1448,11 +1448,18 @@ void RB_ShowLights( void ) {
 		}
 		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
 
+		common->Printf( " %i", index );
 		if ( vLight->viewInsideLight ) {
 			// view is in this volume
-			common->Printf( "[%i] ", index );
-		} else {
-			common->Printf( "%i ", index );
+			common->Printf( "i", index );
+		}
+		if ( vLight->lightShader->IsAmbientLight() ) {
+			// view is in this volume
+			common->Printf( "a", index );
+		}
+		if ( vLight->lightShader->LightCastsShadows() ) {
+			// view is in this volume
+			common->Printf( "s", index );
 		}
 	}
 	qglEnable( GL_DEPTH_TEST );
