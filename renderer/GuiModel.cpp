@@ -282,12 +282,12 @@ void idGuiModel::EmitFullScreen( void ) {
 	tr.viewDef = oldViewDef;
 
 	// copy drawsurf geo state for backend use
-	for ( int i = 0; i < viewDef->numDrawSurfs; ++i ) {
+	/*for ( int i = 0; i < viewDef->numDrawSurfs; ++i ) {
 		drawSurf_t* surf = viewDef->drawSurfs[i];
 		srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
 		memcpy( copiedGeo, surf->frontendGeo, sizeof( srfTriangles_t ) );
 		surf->backendGeo = copiedGeo;
-	}
+	}*/
 
 	// add the command to draw this view
 	R_AddDrawViewCmd( *viewDef );

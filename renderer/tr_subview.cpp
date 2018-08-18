@@ -105,7 +105,8 @@ bool R_PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) {
 	idVec3 localView;
 	idFixedWinding w;
 
-	tri = drawSurf->frontendGeo;
+	//tri = drawSurf->frontendGeo;
+	tri = &drawSurf->geo;
 
 	pointOr = 0;
 	pointAnd = (unsigned int)~0;
@@ -216,7 +217,8 @@ static viewDef_t *R_MirrorViewBySurface( drawSurf_t *drawSurf ) {
 	parms->isMirror = true;
 
 	// create plane axis for the portal we are seeing
-	R_PlaneForSurface( drawSurf->frontendGeo, originalPlane );
+	//R_PlaneForSurface( drawSurf->frontendGeo, originalPlane );
+	R_PlaneForSurface( &drawSurf->geo, originalPlane );
 	R_LocalPlaneToGlobal( drawSurf->space->modelMatrix, originalPlane, plane );
 
 	surface.origin = plane.Normal() * -plane[3];
@@ -237,7 +239,8 @@ static viewDef_t *R_MirrorViewBySurface( drawSurf_t *drawSurf ) {
 	R_MirrorVector( tr.viewDef->renderView.viewaxis[2], &surface, &camera, parms->renderView.viewaxis[2] );
 
 	// make the view origin 16 units away from the center of the surface
-	idVec3	viewOrigin = (drawSurf->frontendGeo->bounds[0] + drawSurf->frontendGeo->bounds[1]) * 0.5;
+	//idVec3	viewOrigin = (drawSurf->frontendGeo->bounds[0] + drawSurf->frontendGeo->bounds[1]) * 0.5;
+	idVec3	viewOrigin = (drawSurf->geo.bounds[0] + drawSurf->geo.bounds[1]) * 0.5;
 	viewOrigin += ( originalPlane.Normal() * 16 );
 
 	R_LocalPointToGlobal( drawSurf->space->modelMatrix, viewOrigin, parms->initialViewAreaOrigin );
@@ -749,7 +752,8 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 	// already seeing through
 	for ( parms = tr.viewDef ; parms ; parms = parms->superView ) {
 		if ( parms->subviewSurface
-			&& parms->subviewSurface->frontendGeo == drawSurf->frontendGeo
+			//&& parms->subviewSurface->frontendGeo == drawSurf->frontendGeo
+			&& parms->subviewSurface->geo.ambientCache.offset == drawSurf->geo.ambientCache.offset
 			&& parms->subviewSurface->space->entityDef == drawSurf->space->entityDef ) {
 			break;
 		}

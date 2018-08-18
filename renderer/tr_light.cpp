@@ -123,8 +123,10 @@ void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
 
-	const idDrawVert *verts = surf->frontendGeo->verts;
-	const int numVerts = surf->frontendGeo->numVerts;
+	//const idDrawVert *verts = surf->frontendGeo->verts;
+	const idDrawVert *verts = surf->geo.verts;
+	//const idDrawVert *verts = surf->frontendGeo->verts;
+	const int numVerts = surf->geo.numVerts;
 	const int size = numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
 
@@ -196,11 +198,13 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
 
-	const int numVerts = surf->frontendGeo->numVerts;
+	//const int numVerts = surf->frontendGeo->numVerts;
+	const int numVerts = surf->geo.numVerts;
 	const int size = numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
 
-	const idDrawVert *verts = surf->frontendGeo->verts;
+	//const idDrawVert *verts = surf->frontendGeo->verts;
+	const idDrawVert *verts = surf->geo.verts;
 	idVec3 v;
 	for (int i = 0; i < numVerts; i++ ) {
 		v[0] = verts[i].xyz[0] - localViewOrigin[0];
@@ -505,8 +509,9 @@ void R_LinkLightSurf( /*const */drawSurf_t **link, const srfTriangles_t *tri, co
 
 	drawSurf_t *drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 
-	drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = nullptr;
+	/*drawSurf->frontendGeo = tri;
+	drawSurf->backendGeo = nullptr;*/
+	drawSurf->CopyGeo( tri );
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
@@ -515,9 +520,9 @@ void R_LinkLightSurf( /*const */drawSurf_t **link, const srfTriangles_t *tri, co
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 	drawSurf->particle_radius = 0.0f; // #3878
 
-	srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
+	/*srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
 	memcpy( copiedGeo, drawSurf->frontendGeo, sizeof( srfTriangles_t ) );
-	drawSurf->backendGeo = copiedGeo;
+	drawSurf->backendGeo = copiedGeo;*/
 
 	if ( viewInsideShadow )
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
@@ -1003,8 +1008,9 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
-	drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = nullptr;
+	/*drawSurf->frontendGeo = tri;
+	drawSurf->backendGeo = nullptr;*/
+	drawSurf->CopyGeo( tri );
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;

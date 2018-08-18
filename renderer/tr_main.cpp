@@ -1158,12 +1158,12 @@ void R_RenderView( viewDef_t &parms ) {
 	}
 
 	// copy drawsurf geo state for backend use
-	for ( int i = 0; i < parms.numDrawSurfs; ++i ) {
+/*	for ( int i = 0; i < parms.numDrawSurfs; ++i ) {
 		drawSurf_t *surf = parms.drawSurfs[i];
 		srfTriangles_t *copiedGeo = ( srfTriangles_t * )R_FrameAlloc( sizeof( srfTriangles_t ) );
 		memcpy( copiedGeo, surf->frontendGeo, sizeof( srfTriangles_t ) );
 		surf->backendGeo = copiedGeo;
-	}
+	}*/
 
 	// write everything needed to the demo file
 	if ( session->writeDemo ) {
