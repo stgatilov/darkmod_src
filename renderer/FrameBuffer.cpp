@@ -19,8 +19,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "FrameBuffer.h"
 #include "glsl.h"
 
-bool primaryOn = false;
+bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
+float shadowResolution;
 GLuint fboPrimary, fboResolve, fboShadow, fboPostProcess, fboCurrent, pbo;
 GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
@@ -256,8 +257,14 @@ void CheckCreateShadow() {
 	// (re-)attach textures to FBO
 	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
 	if ( primaryOn ) {
-		curWidth *= r_fboResolution.GetFloat();
-		curHeight *= r_fboResolution.GetFloat();
+		// accidentally deleted begin
+		float shadowRes = 1;
+		if ( r_softShadowsQuality.GetInteger() < 0 ) {
+			shadowRes = r_softShadowsQuality.GetInteger() / -100.;
+		}
+		// accidentally deleted end
+		curWidth *= r_fboResolution.GetFloat() * shadowRes;
+		curHeight *= r_fboResolution.GetFloat() * shadowRes;
 	}
 	textureType_t type = r_shadows.GetInteger() == 2 ? TT_CUBIC : TT_2D;
 	static textureType_t nowType;
@@ -278,8 +285,7 @@ void CheckCreateShadow() {
 		globalImages->shadowCubeMap->uploadHeight = r_shadowMapSize.GetInteger();
 
 		for ( int sideId = 0; sideId < 6; sideId++ ) {
-			// revelator: need a real nullptr here as well, NULL = 0 in C++ so not a pointer.
-			// original Doom3 source used a hack to redefine NULL as a C NULL pointer, but it was removed here.
+			// revelator: changed to c++11 nullptr
 			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0,
 			               r_fboDepthBits.GetInteger() == 24 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16,
 			               r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
@@ -373,6 +379,20 @@ void FB_BindShadowTexture() {
 	GL_CheckErrors();
 }
 
+// accidentally deleted
+void FB_ApplyScissor() {
+	if ( r_useScissor.GetBool() ) {
+		float resFactor = 1; // r_fboResolution.GetFloat();
+		if( shadowOn ) {
+			resFactor *= shadowResolution;
+		}
+		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*resFactor,
+					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*resFactor,
+				   (backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*resFactor,
+				   (backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*resFactor );
+	}
+}
+
 void FB_ToggleShadow( bool on, bool clear ) {
 	CheckCreateShadow();
 	if ( on &&  r_shadows.GetInteger() == 1 ) {
@@ -381,19 +401,43 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 		}
 
-		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) { // most vendors can't do separate stencil so we need to copy depth from the main/default FBO
+		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
+		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {
 			qglDisable( GL_SCISSOR_TEST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadow );
-			qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
-				0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
-				GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+			// revert change, not sure what happened here tbh i newer touched this part Oo
+			qglBlitFramebuffer( 0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight,
+								0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight,
+								GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, primaryOn ? fboPrimary : 0 );
 			qglEnable( GL_SCISSOR_TEST );
 			depthCopiedThisView = true;
 		}
 		GL_CheckErrors();
 	}
+	shadowOn = on;
+
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
+
+	// accidentally deleted
+	if(r_shadows.GetInteger() == 1) {
+		if ( on ) {
+		if ( r_softShadowsQuality.GetInteger() < 0 && shadowOn ) {
+			shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
+		} else {
+			shadowResolution = 1;
+		}
+		qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
+		FB_ApplyScissor();
+		} else {
+			if( primaryOn ) {
+				qglViewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
+			} else {
+				qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+			}
+			FB_ApplyScissor();
+		}
+	}
 	GL_CheckErrors();
 
 	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
