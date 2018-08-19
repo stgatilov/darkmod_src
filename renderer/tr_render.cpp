@@ -65,21 +65,12 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
 		return;
 	}
-	//auto tri = surf->frontendGeo;
+
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += surf->numIndexes;
 		backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
 	}
-
-	/*if ( tri->ambientSurface  ) {
-		if ( tri->indexes == tri->ambientSurface->indexes ) {
-			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		}
-		if ( tri->verts == tri->ambientSurface->verts ) {
-			backEnd.pc.c_drawRefVertexes += tri->numVerts;
-		}
-	}*/
 
 	if ( surf->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
@@ -97,50 +88,6 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 
 /*
 ================
-RB_DrawElementsWithCountersBaseVertex
-
-Renamed this one to not overload the above function,
-only used in the experimental multidraw function: Revelator.
-================
-*/
-void RB_DrawElementsWithCountersBaseVertex( const srfTriangles_t *tri, int baseVertex ) {
-	if ( vertexCache.currentVertexBuffer == 0 ) {
-		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
-		return;
-	}
-
-	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-		backEnd.pc.c_drawElements++;
-		backEnd.pc.c_drawIndexes += tri->numIndexes;
-		backEnd.pc.c_drawVertexes += tri->numVerts;
-	}
-
-	if ( tri->ambientSurface  ) {
-		if ( tri->indexes == tri->ambientSurface->indexes ) {
-			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		}
-		if ( tri->verts == tri->ambientSurface->verts ) {
-			backEnd.pc.c_drawRefVertexes += tri->numVerts;
-		}
-	}
-	static PFNGLDRAWELEMENTSBASEVERTEXPROC qglDrawElementsBaseVertex = ( PFNGLDRAWELEMENTSBASEVERTEXPROC )GLimp_ExtensionPointer( "glDrawElementsBaseVertex" );
-
-	if ( tri->indexCache.IsValid() ) {
-		qglDrawElementsBaseVertex( GL_TRIANGLES,
-		                           tri->numIndexes,
-		                           GL_INDEX_TYPE,
-		                           vertexCache.IndexPosition( tri->indexCache ), baseVertex );
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += tri->numIndexes;
-		}
-	} else {
-		vertexCache.UnbindIndex();
-		qglDrawElementsBaseVertex( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes, baseVertex );
-	}
-}
-
-/*
-================
 RB_DrawShadowElementsWithCounters
 
 May not use all the indexes in the surface if caps are skipped
@@ -152,15 +99,6 @@ void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf ) {
 		backEnd.pc.c_shadowIndexes += surf->numIndexes;
 		backEnd.pc.c_shadowVertexes += surf->frontendGeo->numVerts;
 	}
-
-/*	if ( tri->ambientSurface  ) {
-		if ( tri->indexes == tri->ambientSurface->indexes ) {
-			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		}
-		if ( tri->verts == tri->ambientSurface->verts ) {
-			backEnd.pc.c_drawRefVertexes += tri->numVerts;
-		}
-	}*/
 
 	if ( surf->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
@@ -281,40 +219,29 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		}
 
-		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
-		}
-
+		/* revelator: taken from fhdoom */
+		/* #7627 revelator */
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+		} else 	if ( drawSurf->space->weaponDepthHack ) {
+			RB_EnterWeaponDepthHack();
+		} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack != 0.0f || backEnd.currentSpace->weaponDepthHack ) {
+			RB_LeaveDepthHack();
 		}
 
 		// change the scissor if needed
+		/* #7627 revelator */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
-
-			const GLint x = backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1;
-			const GLint y = backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1;
-			const GLsizei width = backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1;
-			const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1;
-
-			/* drop out of the depth hack early if the dimensions don't fit */
-			if ( width <= 0 || height <= 0 ) {
-				if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-					RB_LeaveDepthHack();
-				}
-				backEnd.currentSpace = drawSurf->space;
-				return;
-			}
-			qglScissor( x, y, width, height );
+			glScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+			           backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+			           backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+			           backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
 
 		// render it
 		triFunc_( drawSurf );
 
-		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack();
-		}
 		backEnd.currentSpace = drawSurf->space;
 	}
 }
@@ -327,6 +254,8 @@ Reverted and modified for early cutout if not scissoring: Revelator.
 ======================
 */
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
+	GL_CheckErrors();
+
 	const drawSurf_t *drawSurf;
 
 	backEnd.currentSpace = NULL;
@@ -337,42 +266,37 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		}
 
-		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
-		}
-
+		/* revelator: taken from fhdoom */
+		/* #7627 revelator */
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+		} else if ( drawSurf->space->weaponDepthHack ) {
+			RB_EnterWeaponDepthHack();
+		} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack != 0.0f || backEnd.currentSpace->weaponDepthHack ) {
+			RB_LeaveDepthHack();
 		}
 
 		// change the scissor if needed
+		// #7627 revelator reverted and cleaned up.
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
 
-			const GLint x = backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1;
-			const GLint y = backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1;
-			const GLsizei width = backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1;
-			const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1;
+			/* duzenko: FIXME find out why they are negative sometimes */
+			const idScreenRect &r = drawSurf->scissorRect;
 
-			/* drop out of the depth hack early if the dimensions don't fit */
-			if ( width <= 0 || height <= 0 ) {
-				if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-					RB_LeaveDepthHack();
-				}
-				backEnd.currentSpace = drawSurf->space;
+			/* revelator: if they are just skip scissoring */
+			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) {
 				return;
 			}
-			qglScissor( x, y, width, height );
+			FB_ApplyScissor();
 		}
 
 		// render it
 		triFunc_( drawSurf );
 
-		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack();
-		}
 		backEnd.currentSpace = drawSurf->space;
 	}
+	GL_CheckErrors();
 }
 
 /*
@@ -531,8 +455,8 @@ void RB_BeginDrawingView( void ) {
 R_SetDrawInteractions
 ==================
 */
-void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs, 
-	idImage **image, idVec4 matrix[2], float color[4] ) {
+void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs,
+                           idImage **image, idVec4 matrix[2], float color[4] ) {
 	*image = surfaceStage->texture.image;
 
 	if ( surfaceStage->texture.hasMatrix ) {
@@ -566,7 +490,6 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 		matrix[1][2] = 0;
 		matrix[1][3] = 0;
 	}
-
 
 	if ( color ) {
 		color[0] = surfaceRegs[surfaceStage->color.registers[0]];
@@ -696,9 +619,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 
 		qglLoadMatrixf( surf->space->modelViewMatrix );
 
+		//anon bengin
+		// turn off the light depth bounds test if this model is rendered with a depth hack
+		// revelator: test enable this without BFG portal culling.
 		if ( r_useAnonreclaimer.GetBool() ) {
-			//anon bengin
-			// turn off the light depth bounds test if this model is rendered with a depth hack
 			if ( backEnd.useLightDepthBounds ) {
 				if ( !surf->space->weaponDepthHack && surf->space->modelDepthHack == 0.0f ) {
 					if ( backEnd.lightDepthBoundsDisabled ) {
@@ -712,8 +636,8 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 					}
 				}
 			}
-			//anon end
 		}
+		//anon end
 	}
 
 	// change the scissor if needed
@@ -745,7 +669,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 
 	// rebb: world-up vector in local coordinates, required for certain effects, currently only for ambient lights. alternatively pass whole modelMatrix and calculate in shader
 	// nbohr1more #3881: cubemap lights further changes
-	if ( lightShader->IsAmbientLight() /*|| lightShader->IsAmbientCubicLight()*/ ) {
+	if ( lightShader->IsAmbientLight() ) {
 		// remove commented code as needed, just shows what was simplified here
 		inter.worldUpLocal.x = surf->space->modelMatrix[2];
 		inter.worldUpLocal.y = surf->space->modelMatrix[6];

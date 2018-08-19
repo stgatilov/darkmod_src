@@ -103,13 +103,13 @@ void FB_CopyColorBuffer() {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
 	} else {
 		GL_SelectTexture( 0 );
-		globalImages->currentRenderImage->CopyFramebuffer( 
-			backEnd.viewDef->viewport.x1,
-		    backEnd.viewDef->viewport.y1, 
-			backEnd.viewDef->viewport.x2 - 
-			backEnd.viewDef->viewport.x1 + 1,
-		    backEnd.viewDef->viewport.y2 - 
-			backEnd.viewDef->viewport.y1 + 1, true );
+		globalImages->currentRenderImage->CopyFramebuffer(
+		    backEnd.viewDef->viewport.x1,
+		    backEnd.viewDef->viewport.y1,
+		    backEnd.viewDef->viewport.x2 -
+		    backEnd.viewDef->viewport.x1 + 1,
+		    backEnd.viewDef->viewport.y2 -
+		    backEnd.viewDef->viewport.y1 + 1, true );
 	}
 }
 
@@ -164,7 +164,7 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 				pbo = 0;
 			}
 
-			// revelator: eh whoops we need a real nullptr here not 0
+			// revelator: added c++11 nullptr
 			qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, nullptr );
 			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
 		} else {
@@ -211,7 +211,7 @@ void CheckCreatePrimary() {
 		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
 	} else { // AMD/nVidia fast enough already, separate depth/stencil not supported
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
-	}	
+	}
 
 	// this texture is now only used as screen copy for post processing, never as FBO attachment in any mode, but we still need to set its size and other params here
 	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_COLOR );
@@ -383,19 +383,19 @@ void FB_BindShadowTexture() {
 void FB_ApplyScissor() {
 	if ( r_useScissor.GetBool() ) {
 		float resFactor = 1; // r_fboResolution.GetFloat();
-		if( shadowOn ) {
+		if ( shadowOn ) {
 			resFactor *= shadowResolution;
 		}
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1*resFactor,
-					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1*resFactor,
-				   (backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1)*resFactor,
-				   (backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1)*resFactor );
+		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1 * resFactor,
+		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor,
+		          ( backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 ) * resFactor,
+		          ( backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 ) * resFactor );
 	}
 }
 
 void FB_ToggleShadow( bool on, bool clear ) {
 	CheckCreateShadow();
-	if ( on &&  r_shadows.GetInteger() == 1 ) {
+	if ( on && r_shadows.GetInteger() == 1 ) {
 		if ( primaryOn && r_multiSamples.GetInteger() > 1 ) {
 			FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 			qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
@@ -406,9 +406,11 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			qglDisable( GL_SCISSOR_TEST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadow );
 			// revert change, not sure what happened here tbh i newer touched this part Oo
-			qglBlitFramebuffer( 0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight,
-								0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight,
-								GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+			qglBlitFramebuffer( 0, 0, globalImages->currentDepthImage->uploadWidth, 
+									  globalImages->currentDepthImage->uploadHeight,
+			                    0, 0, globalImages->shadowDepthFbo->uploadWidth, 
+									  globalImages->shadowDepthFbo->uploadHeight,
+			                    GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, primaryOn ? fboPrimary : 0 );
 			qglEnable( GL_SCISSOR_TEST );
 			depthCopiedThisView = true;
@@ -417,20 +419,21 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	}
 	shadowOn = on;
 
+	// decide which part gets drawn i guess ?
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
 
 	// accidentally deleted
-	if(r_shadows.GetInteger() == 1) {
+	if ( r_shadows.GetInteger() == 1 ) {
 		if ( on ) {
-		if ( r_softShadowsQuality.GetInteger() < 0 && shadowOn ) {
-			shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
+			if ( r_softShadowsQuality.GetInteger() < 0 && shadowOn ) {
+				shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
+			} else {
+				shadowResolution = 1;
+			}
+			qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
+			FB_ApplyScissor();
 		} else {
-			shadowResolution = 1;
-		}
-		qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
-		FB_ApplyScissor();
-		} else {
-			if( primaryOn ) {
+			if ( primaryOn ) {
 				qglViewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
 			} else {
 				qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
@@ -461,6 +464,8 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				qglScissor( 0, 0, mapSize, mapSize );
 			}
 
+			// is this one ever called ?
+			// edit: yes seems RB_GLSL_DrawLight_ShadowMap sets this.
 			if ( clear ) {
 				qglClear( GL_DEPTH_BUFFER_BIT );
 			}
@@ -534,7 +539,8 @@ void LeavePrimary() {
 		qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 	}
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, 
+							  globalImages->currentRenderImage->uploadHeight,
 	                    0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 
 	if ( r_fboDebug.GetInteger() != 0 ) {
@@ -554,7 +560,7 @@ void LeavePrimary() {
 		qglColor3f( 1, 1, 1 );
 
 		while ( 1 )	{
-			switch( r_fboDebug.GetInteger() ) {
+			switch ( r_fboDebug.GetInteger() ) {
 			case 2:
 				globalImages->currentDepthImage->Bind();
 				break;
