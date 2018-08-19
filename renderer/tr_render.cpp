@@ -281,13 +281,17 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
 
-			/* duzenko: FIXME find out why they are negative sometimes */
-			const idScreenRect &r = drawSurf->scissorRect;
+			/* revelator: reverted my revert of duzenkos code for negative bias, causes fog light and shadows to break with the way it handles things now */
+			const GLint x = backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1;
+			const GLint y = backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1;
+			const GLsizei width = backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1;
+			const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1;
 
-			/* revelator: if they are just skip scissoring */
-			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) {
+			if ( width <= 0 || height <= 0 ){
 				return;
 			}
+
+			/* This one was also missing */
 			FB_ApplyScissor();
 		}
 
