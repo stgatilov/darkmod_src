@@ -484,12 +484,12 @@ void RB_ShowLightCount( void ) {
 		for ( i = 0 ; i < 2 ; i++ ) {
 			for ( surf = i ? vLight->localInteractions: vLight->globalInteractions; surf; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
-				if (!surf->backendGeo->ambientCache.IsValid()) {
+				if (!surf->ambientCache.IsValid()) {
 					continue;
 				}
-				const idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache );
+				const idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
 				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
-				RB_DrawElementsWithCounters( surf->backendGeo );
+				RB_DrawElementsWithCounters( surf );
 			}
 		}
 	}
@@ -550,7 +550,7 @@ void RB_ShowSilhouette( void ) {
 				; surf ; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
 
-				const srfTriangles_t	*tri = surf->backendGeo;
+				const srfTriangles_t	*tri = surf->frontendGeo;
 
 				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.VertexPosition( tri->shadowCache ) );
 				qglBegin( GL_LINES );
@@ -619,7 +619,7 @@ static void RB_ShowShadowCount( void ) {
 			for ( surf = i ? vLight->localShadows : vLight->globalShadows 
 				; surf ; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
-				const srfTriangles_t	*tri = surf->backendGeo;
+				const srfTriangles_t	*tri = surf->frontendGeo;
 				if ( !tri->shadowCache.IsValid() ) {
 					continue;
 				}
@@ -636,9 +636,9 @@ static void RB_ShowShadowCount( void ) {
 						continue;
 					}
 				}
-				shadowCache_t *cache = (shadowCache_t *)vertexCache.VertexPosition( tri->shadowCache );
+				shadowCache_t *cache = (shadowCache_t *)vertexCache.VertexPosition( surf->shadowCache );
 				qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), &cache->xyz );
-				RB_DrawElementsWithCounters( tri );
+				RB_DrawElementsWithCounters( surf );
 			}
 		}
 	}
@@ -856,7 +856,7 @@ static void RB_ShowTexturePolarity( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 
 		if ( !tri->verts ) {
 			continue;
@@ -930,7 +930,7 @@ static void RB_ShowUnsmoothedTangents( drawSurf_t **drawSurfs, int numDrawSurfs 
 		}
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 
 		qglBegin( GL_TRIANGLES );
 
@@ -979,7 +979,7 @@ static void RB_ShowTangentSpace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -1033,7 +1033,7 @@ static void RB_ShowVertexColor( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -1095,7 +1095,7 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -1124,7 +1124,7 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		RB_SimpleWorldSetup();
 		for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 			drawSurf = drawSurfs[i];
-			tri = drawSurf->backendGeo;
+			tri = drawSurf->frontendGeo;
 			if ( !tri->verts ) {
 				continue;
 			}
@@ -1167,7 +1167,7 @@ static void RB_ShowTextureVectors( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 
 		if ( !tri->verts ) {
 			continue;
@@ -1266,7 +1266,7 @@ static void RB_ShowDominantTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 
 		if ( !tri->verts ) {
 			continue;
@@ -1323,7 +1323,7 @@ static void RB_ShowEdges( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		tri = drawSurf->backendGeo;
+		tri = drawSurf->frontendGeo;
 
 		idDrawVert *ac = (idDrawVert *)tri->verts;
 
@@ -1436,7 +1436,7 @@ void RB_ShowLights( void ) {
 			GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHMASK );
 			qglColor4f( 0, 0, 1, 0.25 );
 			qglEnable( GL_DEPTH_TEST );
-			RB_RenderTriangleSurface( tri );
+			RB_DrawElementsImmediate( tri );
 		}
 
 		// non-hidden lines
@@ -1444,7 +1444,7 @@ void RB_ShowLights( void ) {
 			GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK  );
 			qglDisable( GL_DEPTH_TEST );
 			qglColor3f( 1, 1, 1 );
-			RB_RenderTriangleSurface( tri );
+			RB_DrawElementsImmediate( tri );
 		}
 		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
 

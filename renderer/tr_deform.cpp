@@ -72,8 +72,7 @@ static void R_AutospriteDeform( drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 	srfTriangles_t	*newTri;
 
-	//tri = surf->frontendGeo;
-	tri = &surf->geo;
+	tri = surf->frontendGeo;
 
 	if ( tri->numVerts & 3 ) {
 		common->Warning( "R_AutospriteDeform: shader had odd vertex count" );
@@ -164,8 +163,7 @@ static int edgeVerts[6][2] = {
 	{ 5, 3 }
 };
 
-//tri = surf->frontendGeo;
-tri = &surf->geo;
+tri = surf->frontendGeo;
 
 	if ( tri->numVerts & 3 ) {
 		common->Error( "R_AutospriteDeform: shader had odd vertex count" );
@@ -506,8 +504,7 @@ static void R_FlareDeform( drawSurf_t *surf ) {
 	idVec3	localViewer;
 	int		j;
 
-	//tri = surf->frontendGeo;
-	tri = &surf->geo;
+	tri = surf->frontendGeo;
 
 	if ( tri->numVerts != 4 || tri->numIndexes != 6 ) {
 		//FIXME: temp hack for flares on tripleted models
@@ -700,8 +697,7 @@ static void R_ExpandDeform( drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 	srfTriangles_t	*newTri;
 
-	//tri = surf->frontendGeo;
-	tri = &surf->geo;
+	tri = surf->frontendGeo;
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
@@ -733,8 +729,7 @@ static void  R_MoveDeform( drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 	srfTriangles_t	*newTri;
 
-	//tri = surf->frontendGeo;
-	tri = &surf->geo;
+	tri = surf->frontendGeo;
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
@@ -768,8 +763,7 @@ static void  R_TurbulentDeform( drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 	srfTriangles_t	*newTri;
 
-	//tri = surf->frontendGeo;
-	tri = &surf->geo;
+	tri = surf->frontendGeo;
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
@@ -875,8 +869,7 @@ static void R_EyeballDeform( drawSurf_t *surf ) {
 	int			numIslands;
 	bool		triUsed[MAX_EYEBALL_ISLANDS*MAX_EYEBALL_TRIS];
 
-	//tri = surf->frontendGeo;
-	tri = &surf->geo;
+	tri = surf->frontendGeo;
 
 	// separate all the triangles into islands
 	int		numTri = tri->numIndexes / 3;
@@ -1038,8 +1031,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 	//
 	float	totalArea = 0;
 	float	*sourceTriAreas = NULL;
-	//const srfTriangles_t	*srcTri = surf->frontendGeo;
-	const srfTriangles_t	*srcTri = &surf->geo;
+	const srfTriangles_t	*srcTri = surf->frontendGeo;
 	int		numSourceTris = srcTri->numIndexes / 3;
 
 	if ( useArea ) {

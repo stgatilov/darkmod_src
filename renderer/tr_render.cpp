@@ -60,37 +60,38 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 RB_DrawElementsWithCounters
 ================
 */
-void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
+void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	if ( vertexCache.currentVertexBuffer == 0 ) {
 		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
 		return;
 	}
+	//auto tri = surf->frontendGeo;
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		backEnd.pc.c_drawElements++;
-		backEnd.pc.c_drawIndexes += tri->numIndexes;
-		backEnd.pc.c_drawVertexes += tri->numVerts;
+		backEnd.pc.c_drawIndexes += surf->numIndexes;
+		backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
 	}
 
-	if ( tri->ambientSurface  ) {
+	/*if ( tri->ambientSurface  ) {
 		if ( tri->indexes == tri->ambientSurface->indexes ) {
 			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
 		}
 		if ( tri->verts == tri->ambientSurface->verts ) {
 			backEnd.pc.c_drawRefVertexes += tri->numVerts;
 		}
-	}
+	}*/
 
-	if ( tri->indexCache.IsValid() ) {
+	if ( surf->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
-		                 tri->numIndexes,
+		                 surf->numIndexes,
 		                 GL_INDEX_TYPE,
-		                 vertexCache.IndexPosition( tri->indexCache ) );
+		                 vertexCache.IndexPosition( surf->indexCache ) );
 		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += tri->numIndexes;
+			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
+		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXMEs
 	}
 }
 
@@ -145,33 +146,33 @@ RB_DrawShadowElementsWithCounters
 May not use all the indexes in the surface if caps are skipped
 ================
 */
-void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes ) {
+void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf ) {
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		backEnd.pc.c_shadowElements++;
-		backEnd.pc.c_shadowIndexes += numIndexes;
-		backEnd.pc.c_shadowVertexes += tri->numVerts;
+		backEnd.pc.c_shadowIndexes += surf->numIndexes;
+		backEnd.pc.c_shadowVertexes += surf->frontendGeo->numVerts;
 	}
 
-	if ( tri->ambientSurface  ) {
+/*	if ( tri->ambientSurface  ) {
 		if ( tri->indexes == tri->ambientSurface->indexes ) {
 			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
 		}
 		if ( tri->verts == tri->ambientSurface->verts ) {
 			backEnd.pc.c_drawRefVertexes += tri->numVerts;
 		}
-	}
+	}*/
 
-	if ( tri->indexCache.IsValid() ) {
+	if ( surf->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
-		                 numIndexes,
+		                 surf->numIndexes,
 		                 GL_INDEX_TYPE,
-		                 vertexCache.IndexPosition( tri->indexCache ) );
+		                 vertexCache.IndexPosition( surf->indexCache ) );
 		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += numIndexes;
+			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, tri->indexes );
+		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXME
 	}
 }
 
@@ -183,14 +184,14 @@ RB_RenderTriangleSurface
 Sets vertex pointers
 ===============
 */
-void RB_RenderTriangleSurface( const srfTriangles_t *tri ) {
-	if ( !tri->ambientCache.IsValid() ) {
-		RB_DrawElementsImmediate( tri );
+void RB_RenderTriangleSurface( const drawSurf_t *surf ) {
+	if ( !surf->ambientCache.IsValid() ) {
+		RB_DrawElementsImmediate( surf->frontendGeo );
 		return;
 	}
-	const idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( tri->ambientCache );
+	const idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
 	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	RB_DrawElementsWithCounters( tri );
+	RB_DrawElementsWithCounters( surf );
 }
 
 /*
@@ -200,7 +201,7 @@ RB_T_RenderTriangleSurface
 ===============
 */
 void RB_T_RenderTriangleSurface( const drawSurf_t *surf ) {
-	RB_RenderTriangleSurface( surf->backendGeo );
+	RB_RenderTriangleSurface( surf );
 }
 
 /*
@@ -462,7 +463,7 @@ RB_FinishStageTexture
 void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf ) {
 	if ( texture->texgen & ( TG_SKYBOX_CUBE  | TG_WOBBLESKY_CUBE ) ) {
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ),
-		                    ( void * ) & ( ( ( idDrawVert * )vertexCache.VertexPosition( surf->backendGeo->ambientCache ) )->st ) );
+		                    ( void * ) & ( ( ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache ) )->st ) );
 	} else if ( texture->texgen == TG_REFLECT_CUBE ) {
 		qglDisableClientState( GL_NORMAL_ARRAY );
 
@@ -669,7 +670,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	backEnd.useLightDepthBounds = r_useDepthBoundsTest.GetBool();
 	//anon end
 
-	if ( !surf->backendGeo || !surf->backendGeo->ambientCache.IsValid() ) {
+	if ( !surf->ambientCache.IsValid() ) {
 		return;
 	}
 

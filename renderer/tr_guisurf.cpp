@@ -130,8 +130,7 @@ void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
 	tr.pc.c_guiSurfs++;
 
 	// create the new matrix to draw on this surface
-	//R_SurfaceToTextureAxis( drawSurf->frontendGeo, origin, axis );
-	R_SurfaceToTextureAxis( drawSurf->backendGeo, origin, axis );
+	R_SurfaceToTextureAxis( drawSurf->frontendGeo, origin, axis );
 
 	float	guiModelMatrix[16];
 	float	modelMatrix[16];

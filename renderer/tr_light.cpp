@@ -123,10 +123,8 @@ void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
 
-	//const idDrawVert *verts = surf->frontendGeo->verts;
-	const idDrawVert *verts = surf->geo.verts;
-	//const idDrawVert *verts = surf->frontendGeo->verts;
-	const int numVerts = surf->geo.numVerts;
+	const idDrawVert *verts = surf->frontendGeo->verts;
+	const int numVerts = surf->frontendGeo->numVerts;
 	const int size = numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
 
@@ -198,13 +196,11 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
 
-	//const int numVerts = surf->frontendGeo->numVerts;
-	const int numVerts = surf->geo.numVerts;
+	const int numVerts = surf->frontendGeo->numVerts;
 	const int size = numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
 
-	//const idDrawVert *verts = surf->frontendGeo->verts;
-	const idDrawVert *verts = surf->geo.verts;
+	const idDrawVert *verts = surf->frontendGeo->verts;
 	idVec3 v;
 	for (int i = 0; i < numVerts; i++ ) {
 		v[0] = verts[i].xyz[0] - localViewOrigin[0];
