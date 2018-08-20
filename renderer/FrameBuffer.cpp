@@ -44,11 +44,14 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
 		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
-		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_DEPTH24_STENCIL8, width, height );
+		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa,
+			r_fboDepthBits.GetInteger() == 32 ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8,
+			width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferDepthStencil );
+		common->Printf( "Generated render buffers for COLOR & DEPTH/STENCIL: %dx%dx%d\n", width, height, msaa );
 	} else {
 		// only need the color render buffer, depth will be bound directly to texture
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
@@ -204,6 +207,9 @@ void CheckCreatePrimary() {
 		r_fboSeparateStencil.ClearModified();
 		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
 	}
+
+	if( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 )
+		DeleteFramebuffers(); // Intel wants us to keep depth texture and multisampled storage formats the same
 
 	// intel optimization
 	if ( r_fboSeparateStencil.GetBool() ) {
