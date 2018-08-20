@@ -423,29 +423,30 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		}
 		GL_CheckErrors();
 	}
-	shadowOn = on;
 
 	// decide which part gets drawn i guess ?
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
 
 	// accidentally deleted
 	if ( r_shadows.GetInteger() == 1 ) {
-		if ( on ) {
-			if ( r_softShadowsQuality.GetInteger() < 0 && shadowOn ) {
+		shadowOn = on;
+		if ( r_softShadowsQuality.GetInteger() < 0 ) {
+			if ( on ) {
 				shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
+				qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
+				FB_ApplyScissor();
 			} else {
-				shadowResolution = 1;
+				if ( r_softShadowsQuality.GetInteger() < 0 ) {
+					if ( primaryOn ) {
+						qglViewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
+					} else {
+						qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+					}
+					FB_ApplyScissor();
+				}
 			}
-			qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
-			FB_ApplyScissor();
-		} else {
-			if ( primaryOn ) {
-				qglViewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
-			} else {
-				qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-			}
-			FB_ApplyScissor();
-		}
+		} else
+			shadowResolution = 1;
 	}
 	GL_CheckErrors();
 
