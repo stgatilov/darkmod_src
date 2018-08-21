@@ -405,6 +405,7 @@ static void R_CheckPortableExtensions( void ) {
 	common->Printf( "Max texture coords: %d\n", glConfig.maxTextureCoords );
 	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );
 	common->Printf( "Max active textures: %d\n", glConfig.maxTextures );
+
 	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS ) {
 		common->Error( "   Too few!\n" );
 	}
@@ -623,7 +624,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglPopDebugGroup = ( PFNGLPOPDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPopDebugGroup" );
 	}
 
-//	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
+	//	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
 	glConfig.pixelBufferAvailable = R_CheckExtension("GL_ARB_pixel_buffer_object");
 
 	glConfig.fenceSyncAvailable = R_CheckExtension( "GL_ARB_sync" );
@@ -781,14 +782,18 @@ void R_InitOpenGL( void ) {
 	glConfig.version_string = ( const char * )qglGetString( GL_VERSION );
 	glConfig.extensions_string = ( const char * )qglGetString( GL_EXTENSIONS );
 
-	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 )
-	{ glConfig.vendor = glvIntel; }
-	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 )
-	{ glConfig.vendor = glvAMD; }
-	if ( strncmp( glConfig.vendor_string, "NVIDIA", 6 ) == 0
-	        || strncmp( glConfig.vendor_string, "Nvidia", 6 ) == 0
-	        || strncmp( glConfig.vendor_string, "nvidia", 6 ) == 0 ) {
-		glConfig.vendor = glvNVIDIA;
+	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 ) { 
+		glConfig.vendor = glvIntel; 
+	}
+
+	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 ) { 
+		glConfig.vendor = glvAMD; 
+	}
+
+	if ( strncmp( glConfig.vendor_string, "NVIDIA", 6 ) == 0 || 
+		 strncmp( glConfig.vendor_string, "Nvidia", 6 ) == 0 || 
+		 strncmp( glConfig.vendor_string, "nvidia", 6 ) == 0 ) {
+		 glConfig.vendor = glvNVIDIA;
 	}
 
 	// OpenGL driver constants

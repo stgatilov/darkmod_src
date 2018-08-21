@@ -199,6 +199,11 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 	return ( void * )( size_t )( handle.offset );
 }
 
+/*
+==============
+idVertexCache::UnbindIndex
+==============
+*/
 void idVertexCache::UnbindIndex() {
 	if ( currentIndexBuffer != 0 ) {
 		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );

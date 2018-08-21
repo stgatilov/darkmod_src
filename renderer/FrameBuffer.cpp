@@ -93,8 +93,10 @@ This function blits to fboResolve, then we have a copy of MSFB in the currentRen
 void FB_ResolveMultisampling( GLbitfield mask, GLenum filter ) {
 	qglDisable( GL_SCISSOR_TEST );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboResolve );
-	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
-	                    0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, 
+							  globalImages->currentRenderImage->uploadHeight,
+	                    0, 0, globalImages->currentRenderImage->uploadWidth, 
+							  globalImages->currentRenderImage->uploadHeight,
 	                    mask, filter );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboPrimary );
 	qglEnable( GL_SCISSOR_TEST );
@@ -126,9 +128,10 @@ void FB_CopyDepthBuffer() {
 	}
 }
 
-void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
-	if ( cmd.imageWidth * cmd.imageHeight == 0 ) {
-		//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
+// system mem only
+void FB_CopyRender( const copyRenderCommand_t &cmd ) {
+	//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
+	if ( cmd.imageWidth * cmd.imageHeight == 0 ) {		
 		return;	//no pixels to be read
 	}
 	int backEndStartTime = Sys_Milliseconds();
@@ -239,10 +242,12 @@ void CheckCreatePrimary() {
 		// attach a texture to depth attachment point
 		GLuint depthTex = globalImages->currentDepthImage->texnum;
 
-		if ( r_fboSeparateStencil.GetBool() ) { // intel optimization
+		// intel optimization
+		if ( r_fboSeparateStencil.GetBool() ) {
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0 );
 		} else {
+			// shorthand for "both depth and stencil"
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 		}
 		int statusResolve = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -295,9 +300,18 @@ void CheckCreateShadow() {
 
 		for ( int sideId = 0; sideId < 6; sideId++ ) {
 			// revelator: changed to c++11 nullptr
-			// removed 32 bit depth test again, it causes problems
-			// revert to old behaviour, switches are to specific
-			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, ( r_fboDepthBits.GetInteger() == 16 )  ? GL_DEPTH_COMPONENT16 : GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+			// revert back again, the problem seems to be stencil depth.
+			switch ( r_fboDepthBits.GetInteger() ) {
+				case 16:
+					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+					break;
+				case 32:
+					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32F, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+					break;
+				default:
+					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+					break;
+			}
 		}
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
@@ -514,21 +528,6 @@ void EnterPrimary() {
 
 	if ( primaryOn ) {
 		return;
-	}
-
-	// revelator: autoset depth bits to the max of what the gfx card supports in case user did not request a specific mode.
-	if ( !r_fboDepthBits.IsModified() ) {
-		switch ( glConfig.depthBits ) {
-			case 16:
-				r_fboDepthBits.SetInteger( 16 );
-				break;
-			case 32:
-				r_fboDepthBits.SetInteger( 32 );
-				break;
-			default:
-				r_fboDepthBits.SetInteger( 24 );
-				break;
-		}
 	}
 	CheckCreatePrimary();
 
