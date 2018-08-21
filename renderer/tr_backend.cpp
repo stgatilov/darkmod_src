@@ -406,12 +406,12 @@ static bool RB_CheckTools( int width, int height ) {
 	// nbohr1more add checks for render tools
 	// revelator: added some more
 	if ( r_showLightCount.GetBool() ||
-	     r_showShadows.GetBool()	||
+	     r_showShadows.GetBool() ||
 	     r_showVertexColor.GetBool() ||
-	     r_showShadowCount.GetBool()	||
+	     r_showShadowCount.GetBool() ||
 	     r_showTris.GetBool() ||
 	     r_showPortals.GetBool() ||
-	     r_showTexturePolarity.GetBool()	||
+	     r_showTexturePolarity.GetBool() ||
 	     r_showTangentSpace.GetBool() ||
 	     r_showDepth.GetBool() ) {
 		 return true;
@@ -444,12 +444,10 @@ void RB_DrawFullScreenQuad( void ) {
 RB_Bloom
 
 Originally in front renderer (idPlayerView::dnPostProcessManager)
-Moved to backend: Revelator
+Moved to backend: Revelator 
 =============
 */
 void RB_Bloom( void ) {
-	// revelator: old school programming here
-	// it is faster to do a multiplication by 0.5 than a divide by 2
 	int w = globalImages->currentRenderImage->uploadWidth;
 	int h = globalImages->currentRenderImage->uploadHeight;
 
@@ -499,7 +497,7 @@ void RB_Bloom( void ) {
 	RB_DrawFullScreenQuad();
 	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
 
-	qglViewport( 0, 0, w * 0.5, h * 0.5 );
+	qglViewport( 0, 0, w / 2, h / 2 );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
 	GL_SelectTexture( 1 );
@@ -508,25 +506,25 @@ void RB_Bloom( void ) {
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w * 0.5, h * 0.5, false );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 
 	globalImages->bloomImage->Bind();
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
-	parm[0] = 0.5f / w;
+	parm[0] = 2 / w;
 	parm[1] = 1;
 	parm[2] = 1;
 	parm[3] = 1;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w * 0.5, h * 0.5, false );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
-	parm[0] = 0.5f / h;
+	parm[0] = 2 / h;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w * 0.5, h * 0.5, false );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 
 	FB_SelectPrimary();
 	qglViewport( 0, 0, w, h );
@@ -658,6 +656,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	}
 
 	// r_debugRenderToTexture
+	// revelator: added bloom to counters.
 	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_drawBloom = 0, c_copyRenders = 0;
 
 	backEndStartTime = Sys_Milliseconds();
@@ -732,6 +731,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	backEnd.pc.msecLast = backEndFinishTime - backEndStartTime;
 	backEnd.pc.msec += backEnd.pc.msecLast;
 
+	// revelator: added depthcopy to counters
 	if ( r_debugRenderToTexture.GetInteger() ) {
 		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, drwBloom: %i, CpyRenders: %i, CpyFrameBuf: %i, CpyDepthBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_drawBloom, c_copyRenders, backEnd.c_copyFrameBuffer, backEnd.c_copyDepthBuffer );
 		backEnd.c_copyFrameBuffer = 0;

@@ -52,8 +52,8 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 	if ( needsLighting && !tri->tangentsCalculated ) {
 		R_DeriveTangents( tri );
 	}
-
 	tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( tri->verts[0] ), VERTEX_CACHE_ALIGN ) );
+
 	return tri->ambientCache.IsValid();
 }
 
@@ -69,7 +69,6 @@ void R_CreatePrivateShadowCache( srfTriangles_t *tri ) {
 	if ( vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 		return;
 	}
-
 	tri->shadowCache = vertexCache.AllocVertex( tri->shadowVertexes, ALIGN( tri->numVerts * sizeof( *tri->shadowVertexes ), VERTEX_CACHE_ALIGN ) );
 }
 
@@ -133,7 +132,6 @@ void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 		texCoords[i][1] = verts[i].xyz[1] - localViewOrigin[1];
 		texCoords[i][2] = verts[i].xyz[2] - localViewOrigin[2];
 	}
-
 	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
 }
 
@@ -199,9 +197,9 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 	const int numVerts = surf->frontendGeo->numVerts;
 	const int size = numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
-
 	const idDrawVert *verts = surf->frontendGeo->verts;
 	idVec3 v;
+
 	for (int i = 0; i < numVerts; i++ ) {
 		v[0] = verts[i].xyz[0] - localViewOrigin[0];
 		v[1] = verts[i].xyz[1] - localViewOrigin[1];
@@ -209,7 +207,6 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 		R_LocalPointToGlobal( transform, v, texCoords[i] );
 	}
-
 	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
 }
 
@@ -231,7 +228,6 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def ) {
 	if ( def->viewCount == tr.viewCount ) {
 		return def->viewEntity;
 	}
-
 	def->viewCount = tr.viewCount;
 
 	// set the model and modelview matricies
@@ -254,7 +250,6 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def ) {
 		vModel->next = tr.viewDef->viewEntitys;
 		tr.viewDef->viewEntitys = vModel;
 	}
-
 	def->viewEntity = vModel;
 
 	return vModel;
@@ -274,7 +269,6 @@ static bool R_TestPointInViewLight( const idVec3 &org, const idRenderLightLocal 
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -292,7 +286,6 @@ static bool R_PointInFrustum( idVec3 &p, idPlane *planes, int numPlanes ) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
@@ -410,8 +403,7 @@ Both shadow and light surfaces have been generated.  Either or both surfaces may
 void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) {
 	areaReference_t		*eref, *lref; // entity, light
 	idRenderEntityLocal	*edef;
-	portalArea_t		*area;
-	
+	portalArea_t		*area;	
 
 	for ( lref = ldef->references ; lref ; lref = lref->ownerNext ) {
 		area = lref->area;
@@ -483,7 +475,6 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			}
 
 			// we will do a more precise per-surface check when we are checking the entity
-
 			// if this entity wasn't in view already, the scissor rect will be empty,
 			// so it will only be used for shadow casting
 			R_SetEntityDefViewEntity( edef );
@@ -500,28 +491,24 @@ R_LinkLightSurf
 */
 void R_LinkLightSurf( /*const */drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
 		const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
-	if ( !space )
+	if ( !space ) {
 		space = &tr.viewDef->worldSpace;
-
+	}
 	drawSurf_t *drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 
-	/*drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = nullptr;*/
 	drawSurf->CopyGeo( tri );
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
-	if ( space->entityDef && space->entityDef->parms.noShadow )
+	if ( space->entityDef && space->entityDef->parms.noShadow ) {
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
+	}
 	drawSurf->particle_radius = 0.0f; // #3878
 
-	/*srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
-	memcpy( copiedGeo, drawSurf->frontendGeo, sizeof( srfTriangles_t ) );
-	drawSurf->backendGeo = copiedGeo;*/
-
-	if ( viewInsideShadow )
+	if ( viewInsideShadow ) {
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
+	}
 
 	if ( !shader ) {
 		// shadows won't have a shader
@@ -570,7 +557,6 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) {
 		if ( !ow.GetNumPoints() || light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) >= 0 ) {
 			continue;
 		}
-
 		w = ow;
 
 		// now check the winding against each of the frustum planes
@@ -590,7 +576,6 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) {
 			if ( clip[3] <= 0.01f ) {
 				clip[3] = 0.01f;
 			}
-
 			R_TransformClipToDevice( clip, tr.viewDef, ndc );
 
 			float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 );
@@ -606,7 +591,6 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) {
 			} else if ( windowY < tr.viewDef->scissor.y1 ) {
 				windowY = tr.viewDef->scissor.y1;
 			}
-
 			r.AddPoint( windowX, windowY );
 		}
 	}
@@ -642,7 +626,6 @@ idScreenRect R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 	if ( r_useClippedLightScissors.GetInteger() == 2 ) {
 		return R_ClippedLightScissorRectangle( vLight );
 	}
-
 	r.Clear();
 
 	const srfTriangles_t *tri = vLight->lightDef->frustumTris;
@@ -663,7 +646,6 @@ idScreenRect R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 				return r;
 			}
 		}
-
 		R_TransformClipToDevice( clip, tr.viewDef, ndc );
 
 		float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 );
@@ -679,7 +661,6 @@ idScreenRect R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 		} else if ( windowY < tr.viewDef->scissor.y1 ) {
 			windowY = tr.viewDef->scissor.y1;
 		}
-
 		r.AddPoint( windowX, windowY );
 	}
 
@@ -710,9 +691,9 @@ and the viewEntitys due to game movement
 =================
 */
 void R_AddLightSurfaces( void ) {
-	viewLight_t		*vLight;
-	idRenderLightLocal *light;
-	viewLight_t		**ptr;
+	viewLight_t			*vLight;
+	idRenderLightLocal	*light;
+	viewLight_t			**ptr;
 
 	// go through each visible light, possibly removing some from the list
 	ptr = &tr.viewDef->viewLights;
@@ -755,7 +736,6 @@ void R_AddLightSurfaces( void ) {
 				if ( !lightRegs[ lightStage->conditionRegister ] ) {
 					continue;
 				}
-
 				const int *registers = lightStage->color.registers;
 
 				// snap tiny values to zero to avoid lights showing up with the wrong color
@@ -810,9 +790,9 @@ void R_AddLightSurfaces( void ) {
 		// if we are doing a soft-shadow novelty test, regenerate the light with
 		// a random offset every time
 		if ( r_lightSourceRadius.GetFloat() != 0.0f ) {
-				light->globalLightOrigin[0] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
-				light->globalLightOrigin[1] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
-				light->globalLightOrigin[2] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
+			 light->globalLightOrigin[0] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
+			 light->globalLightOrigin[1] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
+			 light->globalLightOrigin[2] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
 		}
 
 		// create interactions with all entities the light may touch, and add viewEntities
@@ -841,9 +821,6 @@ void R_AddLightSurfaces( void ) {
 			// if we have been purged, re-upload the shadowVertexes
 			if ( !vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 				R_CreatePrivateShadowCache( tri );
-				//if ( !tri->shadowCache ) {
-				//	continue;
-				//}
 			}
 
 			// Serp : Pretty sure this wont be possible
@@ -859,7 +836,6 @@ void R_AddLightSurfaces( void ) {
 			if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
 				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
 			}
-
 			R_LinkLightSurf( &vLight->globalShadows, tri, NULL, NULL, vLight->scissorRect, true /* FIXME ? */ );
 		}
 	}
@@ -879,9 +855,10 @@ bool R_IssueEntityDefCallback( idRenderEntityLocal *def ) {
 	if ( r_checkBounds.GetBool() ) {
 		oldBounds = def->referenceBounds;
 	}
-
 	def->archived = false;		// will need to be written to the demo file
+
 	tr.pc.c_entityDefCallbacks++;
+
 	if ( tr.viewDef ) {
 		update = def->parms.callback( &def->parms, &tr.viewDef->renderView );
 	} else {
@@ -902,7 +879,6 @@ bool R_IssueEntityDefCallback( idRenderEntityLocal *def ) {
 			common->Printf( "entity %i callback extended reference bounds\n", def->index );
 		}
 	}
-
 	return update;
 }
 
@@ -924,7 +900,6 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 	if ( def->parms.callback ) {
 		callbackUpdate = R_IssueEntityDefCallback( def );
 	}
-
 	idRenderModel *model = def->parms.hModel;
 
 	if ( !model ) {
@@ -970,7 +945,6 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 				}
 			}
 		}
-
 		def->dynamicModel = def->cachedDynamicModel;
 		def->dynamicModelFrameCount = tr.frameCount;
 	}
@@ -986,7 +960,6 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 
 	// FIXME: if any of the surfaces have deforms, create a frame-temporary model with references to the
 	// undeformed surfaces.  This would allow deforms to be light interacting.
-
 	return def->dynamicModel;
 }
 
@@ -1004,8 +977,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
-	/*drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = nullptr;*/
 	drawSurf->CopyGeo( tri );
 	drawSurf->space = space;
 	drawSurf->material = shader;
@@ -1135,7 +1106,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 //			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
 			R_RenderGuiSurf( gui, drawSurf );
 		}
-
 		tr.viewDef->floatTime = oldFloatTime;
 		tr.viewDef->renderView.time = oldTime;
 	}
@@ -1172,47 +1142,57 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		const modelSurface_t *surf = model->Surface( i );
 
 		// for debugging, only show a single surface at a time
-		if ( r_singleSurface.GetInteger() >= 0 && i != r_singleSurface.GetInteger() )
+		if ( r_singleSurface.GetInteger() >= 0 && i != r_singleSurface.GetInteger() ) {
 			continue;
-
+		}
 		tri = surf->geometry;
-		if ( !tri )
+
+		if ( !tri ) {
 			continue;
-		if ( !tri->numIndexes )
+		}
+
+		if ( !tri->numIndexes ) {
 			continue;
+		}
 		shader = surf->shader;
 		shader = R_RemapShaderBySkin( shader, def.parms.customSkin, def.parms.customShader );
 
 		R_GlobalShaderOverride( &shader );
 
-		if ( !shader )
+		if ( !shader ) {
 			continue;
-		if ( !shader->IsDrawn() && r_shadows.GetInteger()!=2 )
+		}
+
+		if ( !shader->IsDrawn() && r_shadows.GetInteger() != 2 ) {
 			continue;
+		}
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
 		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970
-		if ( tr.viewDef->IsLightGem() && ( shader->Deform() == DFRM_PARTICLE || shader->Deform() == DFRM_PARTICLE2 ) )
+		if ( tr.viewDef->IsLightGem() && ( shader->Deform() == DFRM_PARTICLE || shader->Deform() == DFRM_PARTICLE2 ) ) {
 			continue;
+		}
 
 		// debugging tool to make sure we are have the correct pre-calculated bounds
 		if ( r_checkBounds.GetBool() ) {
 			int j, k;
 			for ( j = 0 ; j < tri->numVerts ; j++ ) {
 				for ( k = 0 ; k < 3 ; k++ ) {
-					if ( tri->verts[j].xyz[k] > tri->bounds[1][k] + CHECK_BOUNDS_EPSILON
-						|| tri->verts[j].xyz[k] < tri->bounds[0][k] - CHECK_BOUNDS_EPSILON ) {
-						common->Printf( "bad tri->bounds on %s:%s\n", def.parms.hModel->Name(), shader->GetName() );
-						break;
+					if ( tri->verts[j].xyz[k] > tri->bounds[1][k] + CHECK_BOUNDS_EPSILON || 
+						 tri->verts[j].xyz[k] < tri->bounds[0][k] - CHECK_BOUNDS_EPSILON ) {
+						 common->Printf( "bad tri->bounds on %s:%s\n", def.parms.hModel->Name(), shader->GetName() );
+						 break;
 					}
-					if ( tri->verts[j].xyz[k] > def.referenceBounds[1][k] + CHECK_BOUNDS_EPSILON
-						|| tri->verts[j].xyz[k] < def.referenceBounds[0][k] - CHECK_BOUNDS_EPSILON ) {
-						common->Printf( "bad referenceBounds on %s:%s\n", def.parms.hModel->Name(), shader->GetName() );
-						break;
+					if ( tri->verts[j].xyz[k] > def.referenceBounds[1][k] + CHECK_BOUNDS_EPSILON || 
+						 tri->verts[j].xyz[k] < def.referenceBounds[0][k] - CHECK_BOUNDS_EPSILON ) {
+						 common->Printf( "bad referenceBounds on %s:%s\n", def.parms.hModel->Name(), shader->GetName() );
+						 break;
 					}
 				}
-				if ( k != 3 )
+
+				if ( k != 3 ) {
 					break;
+				}
 			}
 		}
 
@@ -1231,13 +1211,13 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 
 			// Soft Particles -- SteveL #3878
 			float particle_radius = -1.0f;		// Default = disallow softening, but allow modelDepthHack if specified in the decl.
-			if ( r_useSoftParticles.GetBool() 
-				&& !shader->ReceivesLighting()	// don't soften surfaces that are meant to be solid
-				&& !tr.viewDef->IsLightGem() ) // Skip during "invisible" rendering passes (e.g. lightgem)
-			{
+			if ( r_useSoftParticles.GetBool() && 
+				!shader->ReceivesLighting()	&&	// don't soften surfaces that are meant to be solid
+				!tr.viewDef->IsLightGem() )	{	// Skip during "invisible" rendering passes (e.g. lightgem)
 				const idRenderModelPrt* prt = dynamic_cast<const idRenderModelPrt*>( def.parms.hModel );
-				if ( prt )
+				if ( prt ) {
 					particle_radius = prt->SofteningRadius( surf->id );
+				}
 			}
 
 			// add the surface for drawing
@@ -1250,8 +1230,9 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 	}
 
 	// add the lightweight decal surfaces
-	for ( idRenderModelDecal *decal = def.decals; decal; decal = decal->Next() )
+	for ( idRenderModelDecal *decal = def.decals; decal; decal = decal->Next() ) {
 		decal->AddDecalDrawSurf( vEntity );
+	}
 }
 
 /*
@@ -1287,21 +1268,24 @@ void R_AddModelSurfaces( void ) {
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
-//	g_enablePortalSky = cvarSystem->GetCVarInteger("g_enablePortalSky"); // duzenko #4414: cache the game cvar
 
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
 	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
 
 		idRenderEntityLocal &def = *vEntity->entityDef;
-		if ( r_skipModels.GetInteger() == 1 && def.dynamicModel ) // debug filters
+		if ( r_skipModels.GetInteger() == 1 && def.dynamicModel ) { // debug filters
 			continue;
-		if ( r_skipModels.GetInteger() == 2 && !def.dynamicModel )
+		}
+
+		if ( r_skipModels.GetInteger() == 2 && !def.dynamicModel ) {
 			continue;
+		}
 
 		if ( r_useEntityScissors.GetBool() ) {
 			// calculate the screen area covered by the entity
 			idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
+
 			// intersect with the portal crossing scissor rectangle
 			vEntity->scissorRect.Intersect( scissorRect );
 
@@ -1309,7 +1293,6 @@ void R_AddModelSurfaces( void ) {
 				R_ShowColoredScreenRect( vEntity->scissorRect, def.index );
 			}
 		}
-
         float oldFloatTime = 0.0f;
         int oldTime = 0;
 
@@ -1338,8 +1321,9 @@ void R_AddModelSurfaces( void ) {
 		}
 
 		// Don't let particle entities re-instantiate their dynamic model during non-visible views (in TDM, the light gem render) -- SteveL #3970
-		if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>(def.parms.hModel ) != NULL )
+		if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>(def.parms.hModel ) != NULL ) {
 			continue;
+		}
 
 		// add the ambient surface if it has a visible rectangle
 		if ( !vEntity->scissorRect.IsEmpty() ) {
@@ -1425,12 +1409,12 @@ void R_RemoveUnecessaryViewLights( void ) {
 			if ( !vLight->lightShader->LightCastsShadows() ) {
 				continue;
 			}
-
 			surfRect.Clear();
 
 			for ( surf = vLight->globalInteractions ; surf ; surf = surf->nextOnLight ) {
 				surfRect.Union( surf->scissorRect );
 			}
+
 			for ( surf = vLight->localShadows ; surf ; surf = surf->nextOnLight ) {
 				const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
 			}
@@ -1445,31 +1429,27 @@ void R_RemoveUnecessaryViewLights( void ) {
 			for ( surf = vLight->translucentInteractions ; surf ; surf = surf->nextOnLight ) {
 				surfRect.Union( surf->scissorRect );
 			}
-
 			vLight->scissorRect.Intersect( surfRect );
 		}
 	}
+
 	if (r_useAnonreclaimer.GetBool()) {
 		// sort the viewLights list so the largest lights come first, which will reduce
 		// the chance of GPU pipeline bubbles
-		struct sortLight_t
-		{
+		struct sortLight_t {
 			viewLight_t* 	vLight;
 			int				screenArea;
-			static int sort(const void* a, const void* b)
-			{
+			static int sort(const void* a, const void* b) {
 				return ((sortLight_t*)a)->screenArea - ((sortLight_t*)b)->screenArea;
 			}
 		};
 		sortLight_t* sortLights = (sortLight_t*)_alloca(sizeof(sortLight_t)* numViewLights);
 		int	numSortLightsFilled = 0;
-		for (viewLight_t* vLight = tr.viewDef->viewLights; vLight != NULL; vLight = vLight->next)
-		{
+		for (viewLight_t* vLight = tr.viewDef->viewLights; vLight != NULL; vLight = vLight->next) {
 			sortLights[numSortLightsFilled].vLight = vLight;
 			sortLights[numSortLightsFilled].screenArea = vLight->scissorRect.GetArea();
 			numSortLightsFilled++;
 		}
-
 		qsort(sortLights, numSortLightsFilled, sizeof(sortLights[0]), sortLight_t::sort);
 
 		// rebuild the linked list in order

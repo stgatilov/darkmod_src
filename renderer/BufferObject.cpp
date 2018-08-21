@@ -137,8 +137,8 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	if( allocSize <= 0 ) {
 		idLib::Error( "BufferObject::AllocBufferObject: allocSize = %i", allocSize );
 	}
-
 	size = allocSize;
+
 	int numBytes = GetAllocedSize();
 
 	// clear out any previous error
@@ -170,7 +170,6 @@ void BufferObject::FreeBufferObject() {
 	if( IsMapped() ) {
 		UnmapBuffer();
 	}
-
 	qglDeleteBuffersARB( 1, &bufferObject );
 
 	size = 0;
@@ -189,20 +188,21 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 	void *buffer = NULL;
 
 	qglBindBufferARB( bufferType, bufferObject );
+
 	if (qglMapBufferRange) {
 		buffer = qglMapBufferRange(bufferType, mapOffset, GetAllocedSize() - mapOffset, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
-	}
-	else {
-		if (mapOffset != 0)
+	} else {
+		if (mapOffset != 0) {
 			common->FatalError("Cannot map range of buffer starting from %d without glMapBufferRange", mapOffset);
+		}
 		buffer = qglMapBufferARB(bufferType, GL_WRITE_ONLY);
 	}
 
 	if( buffer == NULL ) {
 		common->Error( "BufferObject::MapBuffer: failed" );
 	}
-
 	SetMapped();
+
 	return buffer;
 }
 
@@ -216,8 +216,10 @@ void BufferObject::FlushBuffer( int offset, int length ) {
 	assert( IsMapped() );
 
 	qglBindBufferARB( bufferType, bufferObject );
-	if (qglFlushMappedBufferRange)
+
+	if (qglFlushMappedBufferRange) {
 		qglFlushMappedBufferRange( bufferType, offset, length );
+	}
 }
 
 /*
@@ -230,9 +232,9 @@ void BufferObject::UnmapBuffer() {
 	assert( IsMapped() );
 
 	qglBindBufferARB( bufferType, bufferObject );
+
 	if( !qglUnmapBufferARB( bufferType ) ) {
 		common->Warning( "BufferObject::UnmapBuffer failed\n" );
 	}
-
 	SetUnmapped();
 }

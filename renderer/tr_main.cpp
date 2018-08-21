@@ -1073,21 +1073,16 @@ static void R_SortDrawSurfs( void ) {
 	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
 		R_QsortSurfaces );
 	static idCVar r_sortInteractions( "r_sortInteractions", "0", CVAR_ARCHIVE | CVAR_BOOL, "" );
-	if ( r_sortInteractions.GetBool() )
+	if ( r_sortInteractions.GetBool() ) {
 		for ( auto *light = tr.viewDef->viewLights; light; light = light->next ) {
 			ll_bubblesort( &light->globalInteractions );
 			ll_bubblesort( &light->localInteractions );
 		}
+	}
 }
 
 
-
 //========================================================================
-
-
-//==============================================================================
-
-
 
 /*
 ================
@@ -1105,7 +1100,6 @@ void R_RenderView( viewDef_t &parms ) {
 	if ( parms.renderView.width <= 0 || parms.renderView.height <= 0 ) {
 		return;
 	}
-
 	tr.viewCount++;
 
 	// save view in case we are a subview

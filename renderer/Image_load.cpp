@@ -601,7 +601,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 // FBO attachments need specific setup, rarely changed
 void idImage::GenerateAttachment( int width, int height, GLint format ) {
-	//PurgeImage(); // force a reload
 	bool changed = ( uploadWidth != width || uploadHeight != height || internalFormat != format );
 	if ( ( format == GL_DEPTH || format == GL_DEPTH_STENCIL ) && r_fboDepthBits.IsModified() ) {
 		changed = true;
@@ -1595,19 +1594,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	     ( !useOversizedBuffer && ( uploadWidth != imageWidth || uploadHeight != imageHeight ) ) ) {
 		uploadWidth = imageWidth;
 		uploadHeight = imageHeight;
-		// NULL means reserve texture memory, but texels are undefined
-		// REVELATOR: misconception here.
-		// in C++ NULL = integer 0 allways, ask bjarne stroustrup he developed C++ and was my teacher though not in programming :) 
-		// i was barely a teen when he started his work on C++, but i asked him for clarification today so.
-		// in C NULL is a pointer to 0,
-		// it has this form #define NULL (void *)0
-		// while '\0' is a null byte in octal form which is mostly used for terminating a string,
-		// in C++ NULL has this form #define NULL 0 so an octal integer 0, 
-		// you could also use 0x00000000 which is a 32 bit hexadecimal 0 or 0x00000000'00000000 for a 64 bit one.
-		// in practice though its usually enough to just use 0 the compiler will sort out the bit lenght.
-		// if you want a real null pointer in C++ use C++11 features where nullptr exists.
-		// using 0 is fine in most cases, in C it would be a whole other ballpark of trouble,
-		// because you would basically send a pointer into something that does not use a pointer context ;).
+		// bim bada bum, looks away...
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
 	}   //REVELATOR: dont need an else condition here.
 
@@ -1622,6 +1609,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	backEnd.c_copyFrameBuffer++;
 
+	// Debug
 	GL_CheckErrors();
 }
 
@@ -1651,15 +1639,15 @@ void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bo
 		// and then subsequent captures to the texture put the depth component into the RGB channels
 		// this part sets depthbits to the max value the gfx card supports, it could also be used for FBO.
 		switch ( glConfig.depthBits ) {
-		case 16:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
-			break;
-		case 32:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
-			break;
-		default:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
-			break;
+			case 16:
+				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+				break;
+			case 32:
+				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+				break;
+			default:
+				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+				break;
 		}
 	}   //REVELATOR: dont need an else condition here.
 
@@ -1674,7 +1662,7 @@ void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bo
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	backEnd.c_copyDepthBuffer++;
 
-	// debug this as well
+	// Debug this as well
 	GL_CheckErrors();
 }
 
@@ -1755,7 +1743,11 @@ void idImage::UploadScratch( const byte *data, int cols, int rows ) {
 	}
 }
 
-
+/*
+==================
+SetClassification
+==================
+*/
 void idImage::SetClassification( int tag ) {
 	classification = tag;
 }

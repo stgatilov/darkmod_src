@@ -77,7 +77,6 @@ extern lightProgram_t stencilShadowShader;
 
 extern idCVar r_ambient_testadd;
 extern idCVar r_useGLSL;
-extern idCVar r_useMultiDraw;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );

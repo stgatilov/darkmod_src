@@ -294,83 +294,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 }
 
 /*
-work in progress, hidden by the r_useMultiDraw cvar
-non-solid or non-static geometry not affected, passed through to RB_T_FillDepthBuffer
-solid static surfaces are expected to be in a single VBO => call VertexAttribPointer only once
-also sort by surface.space to minimize matrix switches
-TODO instanced draw
-*/
-/*ID_NOINLINE void RB_FillDepthBuffer_Multi( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	static idCVar r_showMultiDraw( "r_showMultiDraw", "0", CVAR_RENDERER, "1 = print to console, 2 - visualize" );
-	std::vector<drawSurf_t *> stat;
-	stat.reserve( numDrawSurfs );
-
-	// step 1 - filter static solid geometry
-	auto passedThrough = ( drawSurf_t ** ) alloca( sizeof( drawSurf_t * )*numDrawSurfs );
-	int passedThroughNum = 0;
-
-	for ( int i = 0; i < numDrawSurfs; i++ ) {
-		auto tri = drawSurfs[i]->backendGeo;
-
-		// filters solid static here
-		if ( tri->ambientCache.isStatic && drawSurfs[i]->material->Coverage() == MC_OPAQUE ) {
-			stat.push_back( drawSurfs[i] );
-			continue;
-		}
-		passedThrough[passedThroughNum++] = drawSurfs[i];
-
-		if ( r_showMultiDraw.GetInteger() == 2 ) {
-			gameRenderWorld->DebugBox( colorDkGrey, idBox( tri->bounds, drawSurfs[i]->space->modelMatrix ), 5000 );
-		}
-	}
-	RB_RenderDrawSurfListWithFunction( passedThrough, passedThroughNum, RB_T_FillDepthBuffer );
-
-	if ( !stat.size() ) {
-		return;
-	}
-
-	// legacy render does per-surface scissor, we don't want that
-	backEnd.currentScissor = backEnd.viewDef->scissor;
-	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
-	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
-	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
-	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
-
-	// step 2 - sort surfaces to minimize matrix loads
-	std::sort( stat.begin(), stat.end(), []( const drawSurf_t *a, const drawSurf_t *b ) {
-		return a->space < b->space;
-	} );
-
-	// step 3 - call VertexAttribPointer once, then call DrawElementsBaseVertex per surface
-	int matrixLoads = 0, vapCalls = 0;
-
-	for ( size_t i = 0; i < stat.size(); i++ ) {
-		if ( stat[i]->space != backEnd.currentSpace ) { // multiple surfaces of the same model
-			qglLoadMatrixf( stat[i]->space->modelViewMatrix );
-			backEnd.currentSpace = stat[i]->space;
-			matrixLoads++;
-		}
-		auto tri = stat[i]->backendGeo;
-		auto cachePointer = ( size_t )vertexCache.VertexPosition( tri->ambientCache );
-		size_t baseVertex = cachePointer / sizeof( idDrawVert ), offset = cachePointer % sizeof( idDrawVert );
-
-		if ( !i ) {
-			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), reinterpret_cast< GLvoid * >( offset ) );
-			vapCalls++;
-		}
-		RB_DrawElementsWithCountersBaseVertex( tri, static_cast< int >( baseVertex ) );
-	}
-
-	if ( r_showMultiDraw.GetBool() ) {
-		common->Printf( "Surfaces:%i/%i, matrix loads:%i, AttribPointer calls:%i\n", stat.size(), numDrawSurfs, matrixLoads, vapCalls );
-	}
-
-	if ( r_showMultiDraw.GetInteger() == 2 ) {
-		r_showMultiDraw.SetInteger( 0 );
-	}
-}*/
-
-/*
 =====================
 RB_CopyDepthBuffer
 
@@ -433,12 +356,8 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	// breaks skyportals atm: Revelator
-	/*if ( r_useMultiDraw.GetBool() ) {
-		RB_FillDepthBuffer_Multi( drawSurfs, numDrawSurfs );
-	} else */{
-		RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
-	}
+	// removed the multidraw function for now. #7627
+	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
@@ -1064,10 +983,10 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 
 	// this gets used for both blend lights and shadow draws
 	if ( surf->ambientCache.IsValid() ) {
-		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
+		idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	} else if ( surf->shadowCache.IsValid() ) {
-		shadowCache_t	*sc = ( shadowCache_t * )vertexCache.VertexPosition( surf->shadowCache );
+		shadowCache_t *sc = ( shadowCache_t * )vertexCache.VertexPosition( surf->shadowCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
 	}
 	RB_DrawElementsWithCounters( surf );

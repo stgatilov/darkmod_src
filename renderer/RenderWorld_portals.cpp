@@ -455,7 +455,9 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 		idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
 
 		memset( &ps, 0, sizeof( ps ) );
+
 		ps.numPortalPlanes = 6;
+
 		for ( int i = 0; i < 6; i++ ) {
 			ps.portalPlanes[i] = -frustumPlanes[i];
 		}
@@ -470,6 +472,7 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 		memset( &ps, 0, sizeof( ps ) );
 
 		ps.numPortalPlanes = 6;
+
 		for ( int i = 0; i < 6; i++ ) {
 			ps.portalPlanes[i] = light->frustum[i];
 		}

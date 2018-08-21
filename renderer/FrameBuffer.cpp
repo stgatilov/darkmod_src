@@ -22,22 +22,26 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
 float shadowResolution;
-GLuint fboPrimary, fboResolve, fboShadow, fboPostProcess, fboCurrent, pbo;
-GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
-GLuint postProcessWidth, postProcessHeight;
+// initialize to 0, keeps things neat.
+GLuint fboPrimary = 0, fboResolve = 0, fboShadow = 0, fboPostProcess = 0, fboCurrent = 0, pbo = 0;
+GLuint renderBufferColor = 0, renderBufferDepthStencil = 0, renderBufferPostProcess = 0;
+GLuint postProcessWidth = 0, postProcessHeight = 0;
 int ShadowMipMap;
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if ( !fboPrimary ) {
 		qglGenFramebuffers( 1, &fboPrimary );
 	}
+
 	if ( !renderBufferColor ) {
 		qglGenRenderbuffers( 1, &renderBufferColor );
 	}
+
 	if ( msaa > 1 ) {
 		if ( !fboResolve ) {
 			qglGenFramebuffers( 1, &fboResolve );
 		}
+
 		if ( !renderBufferDepthStencil ) {
 			qglGenRenderbuffers( 1, &renderBufferDepthStencil );
 		}
@@ -162,9 +166,6 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 			if ( ptr ) {
 				memcpy( cmd.buffer, ptr, pboSize );
 				qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
-			} else {
-				// #4395 vid_restart ?
-				pbo = 0;
 			}
 
 			// revelator: added c++11 nullptr
@@ -208,8 +209,9 @@ void CheckCreatePrimary() {
 		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
 	}
 
-	if( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 )
+	if( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 ) {
 		DeleteFramebuffers(); // Intel wants us to keep depth texture and multisampled storage formats the same
+	}
 
 	// intel optimization
 	if ( r_fboSeparateStencil.GetBool() ) {
@@ -268,6 +270,7 @@ void CheckCreateShadow() {
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			shadowRes = r_softShadowsQuality.GetInteger() / -100.;
 		}
+
 		// accidentally deleted end
 		curWidth *= r_fboResolution.GetFloat() * shadowRes;
 		curHeight *= r_fboResolution.GetFloat() * shadowRes;
@@ -292,9 +295,18 @@ void CheckCreateShadow() {
 
 		for ( int sideId = 0; sideId < 6; sideId++ ) {
 			// revelator: changed to c++11 nullptr
-			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0,
-			               r_fboDepthBits.GetInteger() == 24 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16,
-			               r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+			// test add 32 bit depth component
+			switch ( r_fboDepthBits.GetInteger() ) {
+				case 16:
+					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+					break;
+				case 32:
+					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32F, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+					break;
+				default:
+					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+					break;
+			}
 		}
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
@@ -308,6 +320,7 @@ void CheckCreateShadow() {
 		}
 		globalImages->BindNull();
 	}
+
 	if ( !fboShadow || nowType != type ) {
 		if ( !fboShadow ) {
 			qglGenFramebuffers( 1, &fboShadow );
@@ -388,7 +401,7 @@ void FB_BindShadowTexture() {
 // accidentally deleted
 void FB_ApplyScissor() {
 	if ( r_useScissor.GetBool() ) {
-		float resFactor = 1; // r_fboResolution.GetFloat();
+		float resFactor = 1.0f;
 		if ( shadowOn ) {
 			resFactor *= shadowResolution;
 		}
@@ -428,11 +441,12 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
 
 	// accidentally deleted
+	// softshadows
 	if ( r_shadows.GetInteger() == 1 ) {
 		shadowOn = on;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			if ( on ) {
-				shadowResolution = r_softShadowsQuality.GetInteger() / -100.;
+				shadowResolution = r_softShadowsQuality.GetInteger() / -100.0f;
 				qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
 				FB_ApplyScissor();
 			} else {
@@ -445,12 +459,14 @@ void FB_ToggleShadow( bool on, bool clear ) {
 					FB_ApplyScissor();
 				}
 			}
-		} else
-			shadowResolution = 1;
+		} else {
+			shadowResolution = 1.0f;
+		}
 	}
 	GL_CheckErrors();
 
-	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
+	// additional steps for shadowmaps
+	if ( r_shadows.GetInteger() == 2 ) {
 		qglDepthMask( on );
 		GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
 		if ( on ) {
@@ -471,8 +487,6 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				qglScissor( 0, 0, mapSize, mapSize );
 			}
 
-			// is this one ever called ?
-			// edit: yes seems RB_GLSL_DrawLight_ShadowMap sets this.
 			if ( clear ) {
 				qglClear( GL_DEPTH_BUFFER_BIT );
 			}
@@ -509,6 +523,21 @@ void EnterPrimary() {
 
 	if ( primaryOn ) {
 		return;
+	}
+
+	// revelator: autoset depth bits to the max of what the gfx card supports in case user did not request a specific mode.
+	if ( !r_fboDepthBits.IsModified() ) {
+		switch ( glConfig.depthBits ) {
+			case 16:
+				r_fboDepthBits.SetInteger( 16 );
+				break;
+			case 32:
+				r_fboDepthBits.SetInteger( 32 );
+				break;
+			default:
+				r_fboDepthBits.SetInteger( 24 );
+				break;
+		}
 	}
 	CheckCreatePrimary();
 

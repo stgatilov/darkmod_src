@@ -82,7 +82,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		}
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXMEs
+		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXME
 	}
 }
 
@@ -201,36 +201,32 @@ The triangle functions can check backEnd.currentSpace != surf->space
 to see if they need to perform any new matrix setup.  The modelview
 matrix will already have been loaded, and backEnd.currentSpace will
 be updated after the triangle function completes.
-
-Reverted and modified for early cutout if not scissoring: Revelator.
 ====================
 */
 void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
-	int					i;
+	GL_CheckErrors();
 	const drawSurf_t	*drawSurf;
 
 	backEnd.currentSpace = NULL;
 
-	for ( i = 0  ; i < numDrawSurfs ; i++ ) {
+	for ( int i = 0  ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		// change the matrix if needed
+		/* revelator: taken from fhdoom, change the matrix if needed
+		#7627 revelator */
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			if ( drawSurf->space->modelDepthHack != 0.0f ) {
+				RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+			} else 	if ( drawSurf->space->weaponDepthHack ) {
+				RB_EnterWeaponDepthHack();
+			} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack || backEnd.currentSpace->weaponDepthHack ) {
+				RB_LeaveDepthHack();
+			}
 		}
 
-		/* revelator: taken from fhdoom */
-		/* #7627 revelator */
-		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-		} else 	if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
-		} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack != 0.0f || backEnd.currentSpace->weaponDepthHack ) {
-			RB_LeaveDepthHack();
-		}
-
-		// change the scissor if needed
-		/* #7627 revelator */
+		/* change the scissor if needed
+		#7627 revelator */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
 			glScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
@@ -242,62 +238,55 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		// render it
 		triFunc_( drawSurf );
 
+		// mark currentSpace if we have drawn.
 		backEnd.currentSpace = drawSurf->space;
 	}
+	GL_CheckErrors();
 }
 
 /*
 ======================
 RB_RenderDrawSurfChainWithFunction
-
-Reverted and modified for early cutout if not scissoring: Revelator.
 ======================
 */
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
 	GL_CheckErrors();
-
 	const drawSurf_t *drawSurf;
 
 	backEnd.currentSpace = NULL;
 
 	for ( drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
-		// change the matrix if needed
+		/* revelator: taken from fhdoom, change the matrix if needed
+		#7627 revelator */
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			if ( drawSurf->space->modelDepthHack != 0.0f ) {
+				RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+			} else if ( drawSurf->space->weaponDepthHack ) {
+				RB_EnterWeaponDepthHack();
+			} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack || backEnd.currentSpace->weaponDepthHack ) {
+				RB_LeaveDepthHack();
+			}
 		}
 
-		/* revelator: taken from fhdoom */
-		/* #7627 revelator */
-		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-		} else if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
-		} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack != 0.0f || backEnd.currentSpace->weaponDepthHack ) {
-			RB_LeaveDepthHack();
-		}
-
-		// change the scissor if needed
-		// #7627 revelator reverted and cleaned up.
+		/* change the scissor if needed
+		#7627 revelator reverted and cleaned up. */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
-
-			/* revelator: reverted my revert of duzenkos code for negative bias, causes fog light and shadows to break with the way it handles things now */
-			const GLint x = backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1;
-			const GLint y = backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1;
-			const GLsizei width = backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1;
-			const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1;
-
-			if ( width <= 0 || height <= 0 ){
-				return;
+			/* scissor's with negative or invalid size KILLLL */
+			const idScreenRect &r = drawSurf->scissorRect;
+			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) {
+				/* Ahem, note to self, dont code when tired, i had placed the below after the continue facepalm */
+				FB_ApplyScissor();				
+			} else {
+				continue;
 			}
-
-			/* This one was also missing */
-			FB_ApplyScissor();
 		}
 
 		// render it
 		triFunc_( drawSurf );
 
+		// mark currentSpace if we have drawn.
 		backEnd.currentSpace = drawSurf->space;
 	}
 	GL_CheckErrors();
@@ -658,7 +647,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		RB_EnterWeaponDepthHack();
 	}
 
-	if ( surf->space->modelDepthHack ) {
+	if ( surf->space->modelDepthHack != 0.0f ) {
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
 	}
 	inter.surf = surf;

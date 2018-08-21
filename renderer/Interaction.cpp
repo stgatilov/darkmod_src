@@ -292,7 +292,6 @@ static bool	R_ClipTriangleToLight( const idVec3 &a, const idVec3 &b, const idVec
 			}
 		}
 	}
-
 	return true;
 }
 
@@ -904,8 +903,8 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		srfTriangles_t	*tri;
 
 		surf = model->Surface( c );
-
 		tri = surf->geometry;
+
 		if ( !tri ) {
 			continue;
 		}

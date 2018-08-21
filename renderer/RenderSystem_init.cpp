@@ -135,7 +135,7 @@ idCVar r_lightScale( "r_lightScale", "2", CVAR_RENDERER | CVAR_FLOAT, "all light
 idCVar r_lightSourceRadius( "r_lightSourceRadius", "0", CVAR_RENDERER | CVAR_FLOAT, "for soft-shadow sampling" );
 idCVar r_flareSize( "r_flareSize", "1", CVAR_RENDERER | CVAR_FLOAT, "scale the flare deforms from the material def" );
 
-idCVar r_useExternalShadows( "r_useExternalShadows", "1", CVAR_RENDERER | CVAR_INTEGER, "1 = skip drawing caps when outside the light volume, 2 = force to no caps for testing", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
+idCVar r_useExternalShadows( "r_useExternalShadows", "1", CVAR_RENDERER | CVAR_INTEGER, "1 = skip drawing caps when outside the light volume", 0, 1, idCmdSystem::ArgCompletion_Integer<0, 1> );
 idCVar r_useOptimizedShadows( "r_useOptimizedShadows", "1", CVAR_RENDERER | CVAR_BOOL, "use the dmap generated static shadow volumes" );
 idCVar r_useScissor( "r_useScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor clip as portals and lights are processed" );
 idCVar r_useDepthBoundsTest( "r_useDepthBoundsTest", "1", CVAR_RENDERER | CVAR_BOOL, "use depth bounds test to reduce shadow fill" );
@@ -233,7 +233,6 @@ idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR
 idCVar r_useAnonreclaimer( "r_useBfgPortalCulling", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer culling patch" );
 idCVar r_ambient_testadd( "r_ambient_testadd", "0", CVAR_RENDERER | CVAR_FLOAT, "Added ambient brightness for testing purposes. ", 0, 1 );
 idCVar r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB" );
-idCVar r_useMultiDraw( "r_useMultiDraw", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use glMultiDrawXXX functions for batch processing" );
 
 // FBO
 idCVar r_useFbo( "r_useFBO", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );

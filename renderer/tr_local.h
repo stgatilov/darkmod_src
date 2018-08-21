@@ -1325,7 +1325,7 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 		void ( *triFunc_ )( const drawSurf_t * ) );
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
-void RB_CreateSingleDrawInteractions( const drawSurf_t *surf/*, void (*DrawInteraction)(const drawInteraction_t *)*/ );
+void RB_CreateSingleDrawInteractions( const drawSurf_t *surf );
 
 void RB_DrawView();
 
@@ -1340,8 +1340,6 @@ DRAW_STANDARD
 */
 
 void RB_DrawElementsWithCounters( const drawSurf_t *surf );
-// revelator : this was named the same as the above function causing an unintentional overload (renamed and moved the extern here).
-void RB_DrawElementsWithCountersBaseVertex( const srfTriangles_t *tri, int baseVertex );
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
 void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf );

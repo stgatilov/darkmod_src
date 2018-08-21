@@ -57,24 +57,11 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	const int numIndexes = surf->numIndexes;
 	bool external = false;
 
-	if ( !r_useExternalShadows.GetInteger() ) {
-	} else if ( r_useExternalShadows.GetInteger() == 2 ) { // force to no caps for testing
-	} else if ( !( surf->dsFlags & DSF_VIEW_INSIDE_SHADOW ) ) {
-		// if we aren't inside the shadow projection, no caps are ever needed needed
+	// #7627 simplify a bit revelator.
+	// 1 = skip drawing caps when outside the light volume
+	if ( r_useExternalShadows.GetInteger() || !( surf->dsFlags & DSF_VIEW_INSIDE_SHADOW ) ) {
 		external = true;
-	}/* else if ( !backEnd.vLight->viewInsideLight && !( surf->backendGeo->shadowCapPlaneBits & SHADOW_CAP_INFINITE ) ) {
-		// if we are inside the shadow projection, but outside the light, and drawing
-		// a non-infinite shadow, we can skip some caps
-		if ( backEnd.vLight->viewSeesShadowPlaneBits & surf->backendGeo->shadowCapPlaneBits ) {
-			// we can see through a rear cap, so we need to draw it, but we can skip the
-			// caps on the actual surface
-		} else {
-			// we don't need to draw any caps
-		}
-		external = true;
-	} else {
-		// must draw everything
-	}*/
+	}
 
 	// set depth bounds
 	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
@@ -90,28 +77,11 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 		if ( r_showShadows.GetInteger() == 3 ) {
 			if ( external ) {
-				qglColor3f( 0.1 / backEnd.overBright, 1 / backEnd.overBright, 0.1 / backEnd.overBright );
+				qglColor3f( 0.1f / backEnd.overBright, 1.0f / backEnd.overBright, 0.1f / backEnd.overBright );
 			} else {
 				// these are the surfaces that require the reverse
-				qglColor3f( 1 / backEnd.overBright, 0.1 / backEnd.overBright, 0.1 / backEnd.overBright );
+				qglColor3f( 1.0f / backEnd.overBright, 0.1f / backEnd.overBright, 0.1f / backEnd.overBright );
 			}
-		} else {
-			// draw different color for turboshadows
-			/*if ( surf->backendGeo->shadowCapPlaneBits & SHADOW_CAP_INFINITE ) {
-				if ( numIndexes == tri->numIndexes ) {
-					qglColor3f( .5 / backEnd.overBright, 0.1 / backEnd.overBright, 0.1 / backEnd.overBright );
-				} else {
-					qglColor3f( .5 / backEnd.overBright, 0.4 / backEnd.overBright, 0.1 / backEnd.overBright );
-				}
-			} else {
-				if ( numIndexes == tri->numIndexes ) {
-					qglColor3f( 0.1 / backEnd.overBright, 1 / backEnd.overBright, 0.1 / backEnd.overBright );
-				} else if ( numIndexes == tri->numShadowIndexesNoFrontCaps ) {
-					qglColor3f( 0.1 / backEnd.overBright, 1 / backEnd.overBright, 0.6 / backEnd.overBright );
-				} else {
-					qglColor3f( 0.6 / backEnd.overBright, 1 / backEnd.overBright, 0.1 / backEnd.overBright );
-				}
-			}*/
 		}
 		qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 		qglDisable( GL_STENCIL_TEST );

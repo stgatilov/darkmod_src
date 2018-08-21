@@ -93,14 +93,16 @@ static void LockGeoBufferSet( geoBufferSet_t &gbs ) {
 }
 
 static void WaitForGeoBufferSet( geoBufferSet_t &gbs ) {
-	if ( gbs.bufferLock == 0 )
-	{ return; }
-
+	if ( gbs.bufferLock == 0 ) { 
+		return;
+	}
 	GLenum result = qglClientWaitSync( gbs.bufferLock, 0, 1 );
+
 	while ( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) {
 		result = qglClientWaitSync( gbs.bufferLock, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000 );
-		if ( result == GL_CONDITION_SATISFIED )
-		{ backEnd.pc.waitedFor = 'S'; }
+		if ( result == GL_CONDITION_SATISFIED )	{ 
+			backEnd.pc.waitedFor = 'S'; 
+		}
 		if ( result == GL_WAIT_FAILED ) {
 			common->Warning( "glClientWaitSync failed.\n" );
 			break;

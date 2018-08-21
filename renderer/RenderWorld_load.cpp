@@ -642,16 +642,18 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 		//anon begin
 		// the local and global reference bounds are the same for area models
 		def->referenceBounds = def->parms.hModel->Bounds();
-		if (r_useAnonreclaimer.GetBool())
+		if (r_useAnonreclaimer.GetBool()) {
 			def->globalReferenceBounds = def->parms.hModel->Bounds();
+		}
 		//anon end
 
 		def->parms.axis[0][0] = 1;
 		def->parms.axis[1][1] = 1;
 		def->parms.axis[2][2] = 1;
 
-		if (!r_useAnonreclaimer.GetBool())
+		if (!r_useAnonreclaimer.GetBool()) {
 			R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
+		}
 
 		// in case an explicit shader is used on the world, we don't
 		// want it to have a 0 alpha or color
@@ -660,9 +662,9 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 		def->parms.shaderParms[2] =
 		def->parms.shaderParms[3] = 1;
 
-		if (r_useAnonreclaimer.GetBool())
+		if (r_useAnonreclaimer.GetBool()) {
 			R_DeriveEntityData(def); //anon
-
+		}
 		AddEntityRefToArea(def, &portalAreas[i]);
 	}
 }
