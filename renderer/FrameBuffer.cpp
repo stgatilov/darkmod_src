@@ -48,9 +48,14 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
 		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
-		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa,
-			r_fboDepthBits.GetInteger() == 32 ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8,
-			width, height );
+		switch ( r_fboDepthBits.GetInteger() ) {
+			case 32:
+				qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_DEPTH32F_STENCIL8, width, height );
+				break;
+			default:
+				qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_DEPTH24_STENCIL8, width, height );
+				break;
+		}
 		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
@@ -204,12 +209,13 @@ void CheckCreatePrimary() {
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
-	if ( r_fboSeparateStencil.IsModified() || curWidth != globalImages->currentRenderImage->uploadWidth ) {
+	if ( r_fboSeparateStencil.IsModified() || ( curWidth != globalImages->currentRenderImage->uploadWidth ) ) {
 		r_fboSeparateStencil.ClearModified();
 		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
 	}
 
 	if( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 ) {
+		r_fboDepthBits.ClearModified();
 		DeleteFramebuffers(); // Intel wants us to keep depth texture and multisampled storage formats the same
 	}
 
@@ -287,7 +293,7 @@ void CheckCreateShadow() {
 		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}
 
-	if ( globalImages->shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
+	if ( ( globalImages->shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() ) || r_fboDepthBits.IsModified() ) {
 		r_fboDepthBits.ClearModified();
 		globalImages->shadowCubeMap->Bind();
 		globalImages->shadowCubeMap->uploadWidth = r_shadowMapSize.GetInteger();
@@ -295,13 +301,10 @@ void CheckCreateShadow() {
 
 		for ( int sideId = 0; sideId < 6; sideId++ ) {
 			// revelator: changed to c++11 nullptr
-			// test add 32 bit depth component
+			// removed 32 bit depth test again, it causes problems
 			switch ( r_fboDepthBits.GetInteger() ) {
 				case 16:
 					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-				case 32:
-					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32F, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
 					break;
 				default:
 					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );

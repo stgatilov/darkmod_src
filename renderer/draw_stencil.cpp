@@ -59,7 +59,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 	// #7627 simplify a bit revelator.
 	// 1 = skip drawing caps when outside the light volume
-	if ( r_useExternalShadows.GetInteger() || !( surf->dsFlags & DSF_VIEW_INSIDE_SHADOW ) ) {
+	if ( r_useExternalShadows.GetInteger() && !( surf->dsFlags & DSF_VIEW_INSIDE_SHADOW ) ) {
 		external = true;
 	}
 
