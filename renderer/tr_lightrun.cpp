@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
 /*
@@ -87,9 +85,6 @@ optimize groups
 
 build light models
 
-
-
-
 */
 
 //anon beign
@@ -133,12 +128,10 @@ void R_ModulateLights_f( const idCmdArgs &args ) {
 
 	if ( !tr.primaryWorld ) {
 		return;
-	}
-	else if ( args.Argc() != 4 ) {
+	} else if ( args.Argc() != 4 ) {
 		common->Printf( "usage: modulateLights <redFloat> <greenFloat> <blueFloat>\n" );
 		return;
 	}
-
 	int count = 0;
 	double modulate[3] = {atof(args.Argv(1)), atof(args.Argv(2)), atof(args.Argv(3))};
 	idRenderLightLocal *light;
@@ -205,8 +198,7 @@ void R_CreateEntityRefs( idRenderEntityLocal *def ) {
 
 		// push these points down the BSP tree into areas
 		def->world->PushFrustumIntoTree(def, NULL, def->inverseBaseModelProject, bounds_unitCube);
-	}
-	else {
+	} else {
 		for (int i = 0; i < 8; i++) {
 			v[0] = def->referenceBounds[i & 1][0];
 			v[1] = def->referenceBounds[(i >> 1) & 1][1];
@@ -262,7 +254,6 @@ void R_SetLightProject( idPlane lightProject[4], const idVec3 origin, const idVe
 		dist = -dist;
 		normal = -normal;
 	}
-
 	scale = ( 0.5f * dist ) / rLen;
 	right *= scale;
 	scale = -( 0.5f * dist ) / uLen;
@@ -289,10 +280,10 @@ void R_SetLightProject( idPlane lightProject[4], const idVec3 origin, const idVe
 	normal = stop - start;
 
 	dist = normal.Normalize();
+
 	if ( dist <= 0 ) {
 		dist = 1;
 	}
-
 	lightProject[3] = normal * ( 1.0f / dist );
 	startGlobal = start + origin;
 	lightProject[3][3] = -( startGlobal * lightProject[3].Normal() );
@@ -342,11 +333,6 @@ void R_FreeLightDefFrustum( idRenderLightLocal *ldef ) {
 	// free frustum windings
 	for ( int i = 0; i < 6; i++ ) {
 		ldef->frustumWindings[i].SetNumPoints(0);
-/*		if ( ldef->frustumWindings[i] ) {
-			delete ldef->frustumWindings[i];
-			ldef->frustumWindings[i] = NULL;
-		}
-		*/
 	}
 }
 
@@ -669,11 +655,9 @@ void R_DeriveLightData( idRenderLightLocal *light ) {
 				dir[2] = 1;
 			}
 			light->globalLightOrigin = light->parms.origin + dir * 100000;
-		}
-		else {
+		} else {
 			light->globalLightOrigin = light->parms.origin + light->parms.axis * light->parms.lightCenter;
 		}
-
 		R_FreeLightDefFrustum(light);
 
 		light->frustumTris = R_PolytopeSurface(6, light->frustum, light->frustumWindings);
@@ -711,13 +695,11 @@ void R_CreateLightRefs( idRenderLightLocal *light ) {
 		// may be in areas not directly visible to the light projection center.
 		if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows()) {
 			light->world->FlowLightThroughPortals(light);
-		}
-		else {
+		} else {
 			// push these points down the BSP tree into areas
 			light->world->PushFrustumIntoTree(NULL, light, light->inverseBaseLightProject, bounds_zeroOneCube);
 		}
-	}
-	else {
+	} else {
 		idVec3	points[MAX_LIGHT_VERTS];
 
 		const srfTriangles_t *tri = light->frustumTris;
@@ -755,8 +737,7 @@ void R_CreateLightRefs( idRenderLightLocal *light ) {
 		// may be in areas not directly visible to the light projection center.
 		if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows()) {
 			light->world->FlowLightThroughPortals(light);
-		}
-		else {
+		} else {
 			// push these points down the BSP tree into areas
 			light->world->PushVolumeIntoTree(NULL, light, tri->numVerts, points);
 		}
@@ -799,20 +780,15 @@ WindingCompletelyInsideLight
 */
 bool WindingCompletelyInsideLight( const idWinding *w, const idRenderLightLocal *ldef ) {
 	if (r_useAnonreclaimer.GetBool()) {
-		for (int i = 0; i < w->GetNumPoints(); i++)
-		{
-			if (idRenderMatrix::CullPointToMVP(ldef->baseLightProject, (*w)[i].ToVec3(), true))
-			{
+		for (int i = 0; i < w->GetNumPoints(); i++) {
+			if (idRenderMatrix::CullPointToMVP(ldef->baseLightProject, (*w)[i].ToVec3(), true)) {
 				return false;
 			}
 		}
-	}
-	else {
+	} else {
 		float d = 0.0f;
-
 		for (int i = 0; i < w->GetNumPoints(); i++) {
 			for (int j = 0; j < 6; j++) {
-
 				d = (*w)[i].ToVec3() * ldef->frustum[j].Normal() + ldef->frustum[j][3];
 				if (d > 0.0f) {
 					return false;

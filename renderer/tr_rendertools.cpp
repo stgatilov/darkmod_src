@@ -248,7 +248,6 @@ stencil buffer.  Stencil of 0 = black, 1 = red, 2 = green,
 ===================
 */
 static void R_ColorByStencilBuffer( void ) {
-	int		i;
 	static float colors[8][3] = {
 		{0,0,0},
 		{1,0,0},
@@ -268,7 +267,7 @@ static void R_ColorByStencilBuffer( void ) {
 	// now draw color for each stencil value
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 
-	for ( i = 0 ; i < 6 ; i++ ) {
+	for ( int i = 0 ; i < 6 ; i++ ) {
 		qglColor3fv( colors[i] );
 		qglStencilFunc( GL_EQUAL, i, 255 );
 		RB_PolygonClear();
@@ -284,12 +283,12 @@ RB_ShowOverdraw
 ==================
 */
 void RB_ShowOverdraw( void ) {
-	const idMaterial *	material;
+	const idMaterial	*material;
 	int					i;
-	drawSurf_t * *		drawSurfs;
-	const drawSurf_t *	surf;
+	drawSurf_t			**drawSurfs;
+	const drawSurf_t	*surf;
 	int					numDrawSurfs;
-	viewLight_t *		vLight;
+	viewLight_t			*vLight;
 
 	if ( r_showOverDraw.GetInteger() == 0 ) {
 		return;

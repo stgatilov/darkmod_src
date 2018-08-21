@@ -205,24 +205,23 @@ be updated after the triangle function completes.
 */
 void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
 	GL_CheckErrors();
-	const drawSurf_t	*drawSurf;
 
-	backEnd.currentSpace = NULL;
+	backEnd.currentSpace = nullptr;
 
+	/* Reverted all the unnessesary gunk here */
 	for ( int i = 0  ; i < numDrawSurfs ; i++ ) {
-		drawSurf = drawSurfs[i];
+		const drawSurf_t *drawSurf = drawSurfs[i];
 
-		/* revelator: taken from fhdoom, change the matrix if needed
-		#7627 revelator */
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
-			if ( drawSurf->space->modelDepthHack != 0.0f ) {
-				RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-			} else 	if ( drawSurf->space->weaponDepthHack ) {
-				RB_EnterWeaponDepthHack();
-			} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack || backEnd.currentSpace->weaponDepthHack ) {
-				RB_LeaveDepthHack();
-			}
+		}
+
+		if ( drawSurf->space->weaponDepthHack ) {
+			RB_EnterWeaponDepthHack ();
+		}
+
+		if ( drawSurf->space->modelDepthHack != 0.0f ) {
+			RB_EnterModelDepthHack ( drawSurf->space->modelDepthHack );
 		}
 
 		/* change the scissor if needed
@@ -238,6 +237,10 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		// render it
 		triFunc_( drawSurf );
 
+		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
+			RB_LeaveDepthHack ();
+		}
+
 		// mark currentSpace if we have drawn.
 		backEnd.currentSpace = drawSurf->space;
 	}
@@ -251,40 +254,44 @@ RB_RenderDrawSurfChainWithFunction
 */
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
 	GL_CheckErrors();
-	const drawSurf_t *drawSurf;
 
-	backEnd.currentSpace = NULL;
+	backEnd.currentSpace = nullptr;
 
-	for ( drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
-		/* revelator: taken from fhdoom, change the matrix if needed
-		#7627 revelator */
+	/* Reverted all the unnessesary gunk here */
+	for ( const drawSurf_t *drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
-			if ( drawSurf->space->modelDepthHack != 0.0f ) {
-				RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-			} else if ( drawSurf->space->weaponDepthHack ) {
-				RB_EnterWeaponDepthHack();
-			} else if ( !backEnd.currentSpace || backEnd.currentSpace->modelDepthHack || backEnd.currentSpace->weaponDepthHack ) {
-				RB_LeaveDepthHack();
-			}
+		}
+
+		if ( drawSurf->space->weaponDepthHack ) {
+			RB_EnterWeaponDepthHack ();
+		}
+
+		if ( drawSurf->space->modelDepthHack != 0.0f ) {
+			RB_EnterModelDepthHack ( drawSurf->space->modelDepthHack );
 		}
 
 		/* change the scissor if needed
 		#7627 revelator reverted and cleaned up. */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			backEnd.currentScissor = drawSurf->scissorRect;
-			/* scissor's with negative or invalid size KILLLL */
 			const idScreenRect &r = drawSurf->scissorRect;
+			// duzenko: FIXME find out why they are negative sometimes
 			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) {
-				/* Ahem, note to self, dont code when tired, i had placed the below after the continue facepalm */
-				FB_ApplyScissor();				
+				backEnd.currentScissor = drawSurf->scissorRect;
+				FB_ApplyScissor();
 			} else {
+				// duzenko: why bother
+				// hmm are we sure this is right ? we are basically skipping over the triFunc_( drawSurf ); 
 				continue;
 			}
 		}
 
 		// render it
 		triFunc_( drawSurf );
+
+		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
+			RB_LeaveDepthHack ();
+		}
 
 		// mark currentSpace if we have drawn.
 		backEnd.currentSpace = drawSurf->space;

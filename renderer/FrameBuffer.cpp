@@ -19,13 +19,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "FrameBuffer.h"
 #include "glsl.h"
 
+// all false at start
 bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
 float shadowResolution;
 // initialize to 0, keeps things neat.
 GLuint fboPrimary = 0, fboResolve = 0, fboShadow = 0, fboPostProcess = 0, fboCurrent = 0, pbo = 0;
 GLuint renderBufferColor = 0, renderBufferDepthStencil = 0, renderBufferPostProcess = 0;
-GLuint postProcessWidth = 0, postProcessHeight = 0;
+GLuint postProcessWidth, postProcessHeight;
 int ShadowMipMap;
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
@@ -256,7 +257,8 @@ void CheckCreatePrimary() {
 
 		int statusPrimary = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 
-		if ( GL_FRAMEBUFFER_COMPLETE != statusResolve || GL_FRAMEBUFFER_COMPLETE != statusPrimary ) { // something went wrong, fall back to default
+		// something went wrong, fall back to default
+		if ( GL_FRAMEBUFFER_COMPLETE != statusResolve || GL_FRAMEBUFFER_COMPLETE != statusPrimary ) {
 			common->Printf( "glCheckFramebufferStatus - primary: %d - resolve: %d\n", statusPrimary, statusResolve );
 			DeleteFramebuffers(); // try from scratch next time
 			r_useFbo.SetBool( false );
@@ -410,10 +412,16 @@ void FB_ApplyScissor() {
 		if ( shadowOn ) {
 			resFactor *= shadowResolution;
 		}
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1 * resFactor,
-		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor,
-		          ( backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 ) * resFactor,
-		          ( backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 ) * resFactor );
+		const GLint x = backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1 * resFactor;
+		const GLint y = backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor;
+		const GLsizei width = backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 * resFactor;
+		const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 * resFactor;
+
+		// moved check for invalid size here
+		if ( width <= 0 || height <= 0 ) {
+			return;
+		}
+		glScissor( x, y, width, height );
 	}
 }
 

@@ -84,31 +84,8 @@ void R_CreateVertexProgramShadowCache( srfTriangles_t *tri ) {
 	if ( !tri->verts ) {
 		return;
 	}
-
 	shadowCache_t *temp = (shadowCache_t *)_alloca16( tri->numVerts * 2 * sizeof( shadowCache_t ) );
-
-#if 1
-
 	SIMDProcessor->CreateVertexProgramShadowCache( &temp->xyz, tri->verts, tri->numVerts );
-
-#else
-
-	int numVerts = tri->numVerts;
-	const idDrawVert *verts = tri->verts;
-	for ( int i = 0; i < numVerts; i++ ) {
-		const float *v = verts[i].xyz.ToFloatPtr();
-		temp[i*2+0].xyz[0] = v[0];
-		temp[i*2+1].xyz[0] = v[0];
-		temp[i*2+0].xyz[1] = v[1];
-		temp[i*2+1].xyz[1] = v[1];
-		temp[i*2+0].xyz[2] = v[2];
-		temp[i*2+1].xyz[2] = v[2];
-		temp[i*2+0].xyz[3] = 1.0f;		// on the model surface
-		temp[i*2+1].xyz[3] = 0.0f;		// will be projected to infinity
-	}
-
-#endif
-
 	tri->shadowCache = vertexCache.AllocVertex( temp, ALIGN( tri->numVerts * 2 * sizeof( shadowCache_t ), VERTEX_CACHE_ALIGN ) );
 }
 
@@ -260,7 +237,7 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def ) {
 R_TestPointInViewLight
 ====================
 */
-#define INSIDE_LIGHT_FRUSTUM_SLOP			32
+static const float INSIDE_LIGHT_FRUSTUM_SLOP = 32.0f;
 // this needs to be greater than the dist from origin to corner of near clip plane
 static bool R_TestPointInViewLight( const idVec3 &org, const idRenderLightLocal *light ) {
 
@@ -489,7 +466,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 R_LinkLightSurf
 =================
 */
-void R_LinkLightSurf( /*const */drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
+void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
 		const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
 	if ( !space ) {
 		space = &tr.viewDef->worldSpace;

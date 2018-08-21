@@ -15,8 +15,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 #include "FrameBuffer.h"
 #include "glsl.h"
@@ -24,7 +22,6 @@
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
-
 
 /*
 =====================
@@ -111,8 +108,6 @@ static void R_PerformanceCounters( void ) {
 	memset( &backEnd.pc, 0, sizeof( backEnd.pc ) );
 }
 
-
-
 /*
 ====================
 R_IssueRenderCommands
@@ -139,7 +134,6 @@ void R_IssueRenderCommands( frameData_t *frameData ) {
 	if ( !r_skipBackEnd.GetBool() ) {
 		RB_ExecuteBackEndCommands( cmds );
 	}
-
 	R_ClearCommandChain( frameData );
 }
 
@@ -212,7 +206,6 @@ void	R_AddDrawViewCmd( viewDef_t &parms ) {
 		// save the command for r_lockSurfaces debugging
 		tr.lockSurfacesCmd = *cmd;
 	}
-
 	tr.pc.c_numViews++;
 
 	R_ViewStatistics( parms );
@@ -275,7 +268,8 @@ static void R_CheckCvars( void ) {
 		R_SetColorMappings();
 	}
 
-	if ( glConfig.vendor == glvNVIDIA && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() && !r_useFbo.GetBool() ) {
+	// Force FBO for nVidia
+	if ( ( glConfig.vendor == glvNVIDIA ) && r_softShadowsQuality.GetBool() && r_nVidiaOverride.GetBool() && !r_useFbo.GetBool() ) {
 		GL_CheckErrors();
 		qglFinish();
 		common->Printf( "Nvidia Hardware Detected. Forcing FBO\n" );
@@ -285,19 +279,19 @@ static void R_CheckCvars( void ) {
 
 	// revelator: autoset depth bits to the max of what the gfx card supports, regardless of previous user setting.
 	// unsupported bit depth will be forced back to the max the card supports.
-	if ( r_useFbo.GetBool() && ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) ) {
+	if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {
 		switch ( glConfig.depthBits ) {
 			case 16:
 				r_fboDepthBits.SetInteger( 16 );
-				common->Printf( "Unsupported: Depth Bits forced to: %s\n", "16" );
+				common->Printf( "Unsupported bit depth: Depth forced to: %s\n", "16" );
 				break;
 			case 32:
 				r_fboDepthBits.SetInteger( 32 );
-				common->Printf( "Unsupported: Depth Bits forced to: %s\n", "32" );
+				common->Printf( "Unsupported bit depth: Depth forced to: %s\n", "32" );
 				break;
 			default:
 				r_fboDepthBits.SetInteger( 24 );
-				common->Printf( "Unsupported: Depth Bits forced to: %s\n", "24" );
+				common->Printf( "Unsupported bit depth: Depth forced to: %s\n", "24" );
 				break;
 		}
 		r_fboDepthBits.SetModified();

@@ -229,7 +229,6 @@ extern PFNGLPOPDEBUGGROUPPROC			qglPopDebugGroup;
 #else
 
 // windows systems use a function pointer for each call so we can do our log file intercepts
-
 extern  void ( APIENTRY * qglAccum )(GLenum op, GLfloat value);
 extern  void ( APIENTRY * qglAlphaFunc )(GLenum func, GLclampf ref);
 extern  GLboolean ( APIENTRY * qglAreTexturesResident )(GLsizei n, const GLuint *textures, GLboolean *residences);

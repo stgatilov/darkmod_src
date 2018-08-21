@@ -15,25 +15,18 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
-
-
 
 // Compute conservative shadow bounds as the intersection
 // of the object's bounds' shadow volume and the light's bounds.
 // 
 // --cass
-
-
 template <class T, int N>
 struct MyArray
 {
 	MyArray() : s(0) {}
 
-	MyArray( const MyArray<T,N> & cpy ) : s(cpy.s)
-	{
+	MyArray( const MyArray<T,N> & cpy ) : s(cpy.s) {
 		for(int i=0; i < s; i++)
 			v[i] = cpy.v[i];
 	}
@@ -41,8 +34,6 @@ struct MyArray
 	void push_back(const T & i) {
 		v[s] = i;
 		s++;
-		//if(s > max_size)
-		//	max_size = int(s);
 	}
 
 	T & operator[](int i) {
@@ -60,16 +51,12 @@ struct MyArray
 	void empty() {
 		s = 0;
 	}
-
 	T v[N];
 	int s;
-//	static int max_size;
 };
 
 typedef MyArray<int, 4> MyArrayInt;
-//int MyArrayInt::max_size = 0;
 typedef MyArray<idVec4, 16> MyArrayVec4;
-//int MyArrayVec4::max_size = 0;
 
 struct poly
 {
@@ -79,7 +66,6 @@ struct poly
 };
 
 typedef MyArray<poly, 9> MyArrayPoly;
-//int MyArrayPoly::max_size = 0;
 
 struct edge
 {
@@ -88,10 +74,8 @@ struct edge
 };
 
 typedef MyArray<edge, 15> MyArrayEdge;
-//int MyArrayEdge::max_size = 0;
 
-MyArrayInt four_ints(int a, int b, int c, int d)
-{
+MyArrayInt four_ints(int a, int b, int c, int d) {
     MyArrayInt vi;
     vi.push_back(a);
     vi.push_back(b);
@@ -100,8 +84,7 @@ MyArrayInt four_ints(int a, int b, int c, int d)
     return vi;
 }
 
-idVec3 homogeneous_difference(idVec4 a, idVec4 b)
-{
+idVec3 homogeneous_difference(idVec4 a, idVec4 b) {
     idVec3 v;
 	v.x = b.x * a.w - a.x * b.w;
 	v.y = b.y * a.w - a.y * b.w;
@@ -110,19 +93,27 @@ idVec3 homogeneous_difference(idVec4 a, idVec4 b)
 }
 
 // handles positive w only
-idVec4 compute_homogeneous_plane(idVec4 a, idVec4 b, idVec4 c)
-{
+idVec4 compute_homogeneous_plane(idVec4 a, idVec4 b, idVec4 c) {
     idVec4 v, t;
 
-    if(a[3] == 0)
-    { t = a; a = b; b = c; c = t; }
-    if(a[3] == 0)
-    { t = a; a = b; b = c; c = t; }
+    if(a[3] == 0) { 
+		t = a; 
+		a = b; 
+		b = c; 
+		c = t; 
+	}
+
+    if(a[3] == 0) { 
+		t = a; 
+		a = b; 
+		b = c; 
+		c = t;
+	}
 
     // can't handle 3 infinite points
-    if( a[3] == 0 )
+    if( a[3] == 0 ) {
         return v;
-
+	}
     idVec3 vb = homogeneous_difference(a, b);
     idVec3 vc = homogeneous_difference(a, c);
     
@@ -138,14 +129,12 @@ idVec4 compute_homogeneous_plane(idVec4 a, idVec4 b, idVec4 c)
     return v;
 }
 
-struct polyhedron
-{
+struct polyhedron {
     MyArrayVec4 v;
     MyArrayPoly  p;
     MyArrayEdge  e;
 
-    void add_quad( int va, int vb, int vc, int vd )
-    {
+    void add_quad( int va, int vb, int vc, int vd ) {
         poly pg;
         pg.vi = four_ints(va, vb, vc, vd);
         pg.ni = four_ints(-1, -1, -1, -1);
@@ -153,18 +142,16 @@ struct polyhedron
         p.push_back(pg);
     }
 
-    void discard_neighbor_info()
-    {
-        for(unsigned int i = 0; i < p.size(); i++ )
-        {
+    void discard_neighbor_info() {
+        for(unsigned int i = 0; i < p.size(); i++ ) {
             MyArrayInt & ni = p[i].ni;
-            for(unsigned int j = 0; j < ni.size(); j++)
+            for(unsigned int j = 0; j < ni.size(); j++) {
                 ni[j] = -1;
+			}
         }
     }
 
-    void compute_neighbors()
-    {
+    void compute_neighbors() {
 		e.empty();
 
         discard_neighbor_info();
@@ -172,35 +159,31 @@ struct polyhedron
         bool found;
         int P = p.size();
         // for each polygon
-        for(int i = 0; i < P-1; i++ )
-        {
+        for(int i = 0; i < P-1; i++ ) {
             const MyArrayInt & vi = p[i].vi;
             MyArrayInt & ni = p[i].ni;
             int Si = vi.size();
 
             // for each edge of that polygon
-            for(int ii=0; ii < Si; ii++)
-            {
+            for(int ii=0; ii < Si; ii++) {
                 int ii0 = ii;
                 int ii1 = (ii+1) % Si;
 
                 // continue if we've already found this neighbor
-                if(ni[ii] != -1)
+                if(ni[ii] != -1) {
                     continue;
+				}
                 found = false;
+
                 // check all remaining polygons
-                for(int j = i+1; j < P; j++ )
-                {
+                for(int j = i+1; j < P; j++ ) {
                     const MyArrayInt & vj = p[j].vi;
                     MyArrayInt & nj = p[j].ni;
                     int Sj = vj.size();
-
-                    for( int jj = 0; jj < Sj; jj++ )
-                    {
+                    for( int jj = 0; jj < Sj; jj++ ) {
                         int jj0 = jj;
                         int jj1 = (jj+1) % Sj;
-                        if(vi[ii0] == vj[jj1] && vi[ii1] == vj[jj0])
-                        {
+                        if(vi[ii0] == vj[jj1] && vi[ii1] == vj[jj0]) {
                             edge ed;
                             ed.vi[0] = vi[ii0];
                             ed.vi[1] = vi[ii1];
@@ -211,40 +194,37 @@ struct polyhedron
                             nj[jj] = i;
                             found = true;
                             break;
-                        }
-                        else if ( vi[ii0] == vj[jj0] && vi[ii1] == vj[jj1] )
-                        {
+                        } else if ( vi[ii0] == vj[jj0] && vi[ii1] == vj[jj1] ) {
                             fprintf(stderr,"why am I here?\n");
                         }
                     }
-                    if( found ) 
+
+                    if( found ) {
                         break;
+					}
                 }
             }
         }
     }
 
-    void recompute_planes()
-    {
+    void recompute_planes() {
         // for each polygon
-        for(unsigned int i = 0; i < p.size(); i++ )
-        {
+        for(unsigned int i = 0; i < p.size(); i++ ) {
             p[i].plane = compute_homogeneous_plane(v[p[i].vi[0]], v[p[i].vi[1]], v[p[i].vi[2]]);
         }
     }
 
-    void transform(const idMat4 & m)
-    {
-        for(unsigned int i=0; i < v.size(); i++ )
+    void transform(const idMat4 & m) {
+        for(unsigned int i=0; i < v.size(); i++ ) {
             v[i] = m * v[i];
+		}
         recompute_planes();
     }
 
 };
 
 // make a unit cube
-polyhedron PolyhedronFromBounds( const idBounds & b )
-{
+polyhedron PolyhedronFromBounds( const idBounds & b ) {
 
 //       3----------2
 //       |\        /|
@@ -260,7 +240,6 @@ polyhedron PolyhedronFromBounds( const idBounds & b )
 	static polyhedron p;
 
 	if( p.e.size() == 0 ) {
-
 		p.v.push_back(idVec4( -1, -1,  1, 1));
 		p.v.push_back(idVec4(  1, -1,  1, 1));
 		p.v.push_back(idVec4(  1,  1,  1, 1));
@@ -281,7 +260,6 @@ polyhedron PolyhedronFromBounds( const idBounds & b )
 		p.recompute_planes();
 		p.v.empty(); // no need to copy this data since it'll be replaced
 	}
-
 	polyhedron p2(p);
 
 	const idVec3 & min = b[0];
@@ -301,57 +279,48 @@ polyhedron PolyhedronFromBounds( const idBounds & b )
     return p2;
 }
 
-
-polyhedron make_sv(const polyhedron & oc, idVec4 light)
-{
+polyhedron make_sv(const polyhedron & oc, idVec4 light) {
 	static polyhedron lut[64];
 	int index = 0;
 
 	for(unsigned int i = 0; i < 6; i++) {
-		if( ( oc.p[i].plane * light ) > 0 )
+		if( ( oc.p[i].plane * light ) > 0 ) {
 			index |= 1<<i;
+		}
 	}
 
-	if( lut[index].e.size() == 0 )
-	{
+	if( lut[index].e.size() == 0 ) {
 		polyhedron & ph = lut[index];
 		ph = oc;
 
 		int V = ph.v.size();
-		for( int j = 0; j < V; j++ ) 
-		{
+		for( int j = 0; j < V; j++ ) {
 			idVec3 proj = homogeneous_difference( light, ph.v[j] );
 			ph.v.push_back( idVec4(proj.x, proj.y, proj.z, 0) );
 		}
-
 		ph.p.empty(); 
 
-		for(unsigned int i=0; i < oc.p.size(); i++)
-		{
-			if( (oc.p[i].plane * light) > 0)
-			{
+		for(unsigned int i=0; i < oc.p.size(); i++) {
+			if( (oc.p[i].plane * light) > 0) {
 				ph.p.push_back(oc.p[i]);
 			}
 		}
 
-		if(ph.p.size() == 0)
+		if(ph.p.size() == 0) {
 			return ph = polyhedron();
-
+		}
 		ph.compute_neighbors();
 
 		MyArrayPoly vpg;
 		int I = ph.p.size();
 
-		for(int i=0; i < I; i++)
-		{
+		for(int i=0; i < I; i++) {
 			MyArrayInt & vi = ph.p[i].vi;
 			MyArrayInt & ni = ph.p[i].ni;
 			int S = vi.size();
 
-			for(int j = 0; j < S; j++)
-			{
-				if( ni[j] == -1 )
-				{
+			for(int j = 0; j < S; j++) {
+				if( ni[j] == -1 ) {
 					poly pg;
 					int a = vi[(j+1)%S];
 					int b = vi[j];
@@ -361,20 +330,19 @@ polyhedron make_sv(const polyhedron & oc, idVec4 light)
 				}
 			}
 		}
-		for(unsigned int i = 0; i < vpg.size(); i++)
-			ph.p.push_back(vpg[i]);
 
+		for(unsigned int i = 0; i < vpg.size(); i++) {
+			ph.p.push_back(vpg[i]);
+		}
 		ph.compute_neighbors();
 		ph.v.empty(); // no need to copy this data since it'll be replaced
 	}
-
 	polyhedron ph2 = lut[index];
 
 	// initalize vertices
 	ph2.v = oc.v;
 	int V = ph2.v.size();
-	for( int j = 0; j < V; j++ ) 
-	{
+	for( int j = 0; j < V; j++ ) {
 		idVec3 proj = homogeneous_difference( light, ph2.v[j] );
 		ph2.v.push_back( idVec4(proj.x, proj.y, proj.z, 0) );
 	}
@@ -386,16 +354,15 @@ polyhedron make_sv(const polyhedron & oc, idVec4 light)
 }
 
 typedef MyArray<idVec4, 36> MySegments;
-//int MySegments::max_size = 0;
 
-void polyhedron_edges(polyhedron & a, MySegments & e)
-{
+void polyhedron_edges(polyhedron & a, MySegments & e) {
 	e.empty();
-    if(a.e.size() == 0 && a.p.size() != 0)
-        a.compute_neighbors();
 
-    for(unsigned int i = 0; i < a.e.size(); i++)
-    {
+    if(a.e.size() == 0 && a.p.size() != 0) {
+        a.compute_neighbors();
+	}
+
+    for(unsigned int i = 0; i < a.e.size(); i++) {
         e.push_back(a.v[a.e[i].vi[0]]);
         e.push_back(a.v[a.e[i].vi[1]]);
     }
@@ -403,33 +370,32 @@ void polyhedron_edges(polyhedron & a, MySegments & e)
 }
 
 // clip the segments of e by the planes of polyhedron a.
-void clip_segments(const polyhedron & ph, MySegments & is, MySegments & os)
-{
+void clip_segments(const polyhedron & ph, MySegments & is, MySegments & os) {
     const MyArrayPoly & p = ph.p;
 
-    for(unsigned int i = 0; i < is.size(); i+=2 )
-    {
+    for(unsigned int i = 0; i < is.size(); i+=2 ) {
         idVec4 a = is[i  ];
         idVec4 b = is[i+1];
         idVec4 c;
 
         bool discard = false;
 
-        for(unsigned int j = 0; j < p.size(); j++ )
-        {
+        for(unsigned int j = 0; j < p.size(); j++ ) {
             float da = a * p[j].plane;
             float db = b * p[j].plane;
             float rdw = 1/(da - db);
 
             int code = 0;
-            if( da > 0 )
+
+            if( da > 0 ) {
                 code = 2;
-            if( db > 0 )
+			}
+
+            if( db > 0 ) {
                 code |= 1;
+			}
 
-
-            switch ( code ) 
-            {
+            switch ( code ) {
             case 3:
                 discard = true;
                 break;
@@ -452,12 +418,12 @@ void clip_segments(const polyhedron & ph, MySegments & is, MySegments & os)
                 break;
             }
 
-            if( discard )
+            if( discard ) {
                 break;
+			}
         }
 
-        if( ! discard )
-        {
+        if( ! discard ) {
             os.push_back(a);
             os.push_back(b);
         }
@@ -465,31 +431,25 @@ void clip_segments(const polyhedron & ph, MySegments & is, MySegments & os)
 
 }
 
-idMat4 make_idMat4(const float * m)
-{
+idMat4 make_idMat4(const float * m) {
 	return idMat4( m[ 0], m[ 4], m[ 8], m[12],
 				   m[ 1], m[ 5], m[ 9], m[13],
 				   m[ 2], m[ 6], m[10], m[14],
 				   m[ 3], m[ 7], m[11], m[15] );
 }
 
-idVec3 v4to3(const idVec4 & v)
-{
+idVec3 v4to3(const idVec4 & v) {
 	return idVec3(v.x/v.w, v.y/v.w, v.z/v.w);
 }
 
-void draw_polyhedron( const viewDef_t *viewDef, const polyhedron & p, idVec4 color )
-{
-	for(unsigned int i = 0; i < p.e.size(); i++)
-	{
+void draw_polyhedron( const viewDef_t *viewDef, const polyhedron & p, idVec4 color ) {
+	for(unsigned int i = 0; i < p.e.size(); i++) {
 		viewDef->renderWorld->DebugLine( color, v4to3(p.v[p.e[i].vi[0]]), v4to3(p.v[p.e[i].vi[1]]));
 	}
 }
 
-void draw_segments( const viewDef_t *viewDef, const MySegments & s, idVec4 color )
-{
-	for(unsigned int i = 0; i < s.size(); i+=2)
-	{
+void draw_segments( const viewDef_t *viewDef, const MySegments & s, idVec4 color ) {
+	for(unsigned int i = 0; i < s.size(); i+=2) {
 		viewDef->renderWorld->DebugLine( color, v4to3(s[i]), v4to3(s[i+1]));
 	}
 }
@@ -521,23 +481,17 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 										const viewDef_t * viewDef ) {
 
 	idMat4 omodel = make_idMat4( entityDef->modelMatrix );
-	//idMat4 lmodel = make_idMat4( lightDef->modelMatrix );
 
 	// compute light polyhedron
 	polyhedron lvol = PolyhedronFromBounds( lightDef->frustumTris->bounds );
-	// transform it into world space
-	//lvol.transform( lmodel );
 
-	// debug //
+	// debug
 	if ( r_useInteractionScissors.GetInteger() == -2 ) {
 		draw_polyhedron( viewDef, lvol, colorRed );
 	}
 
 	// compute object polyhedron
 	polyhedron vol = PolyhedronFromBounds( entityDef->referenceBounds );
-
-	//viewDef->renderWorld->DebugBounds( colorRed, lightDef->frustumTris->bounds );
-	//viewDef->renderWorld->DebugBox( colorBlue, idBox( model->Bounds(), entityDef->parms.origin, entityDef->parms.axis ) );
 
 	// transform it into world space
     vol.transform( omodel );
@@ -555,16 +509,17 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 
 	// generate shadow volume "polyhedron"
     polyhedron sv = make_sv(vol, lightpos);
-
     MySegments in_segs, out_segs;
 
 	// get shadow volume edges
     polyhedron_edges(sv, in_segs);
+
 	// clip them against light bounds planes
     clip_segments(lvol, in_segs, out_segs);
 
 	// get light bounds edges
 	polyhedron_edges(lvol, in_segs);
+
 	// clip them by the shadow volume
     clip_segments(sv, in_segs, out_segs);
 
@@ -572,19 +527,20 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 	if ( r_useInteractionScissors.GetInteger() == -2 ) {
 		draw_segments( viewDef, out_segs, colorGreen );
 	}
-
 	idBounds outbounds;
-	outbounds.Clear();
-	for( unsigned int i = 0; i < out_segs.size(); i++ ) {
 
+	outbounds.Clear();
+
+	for( unsigned int i = 0; i < out_segs.size(); i++ ) {
 		idVec4 v;
+
 		world_to_hclip( viewDef, out_segs[i], v );
 
 		if( v.w <= 0.0f ) {
 			return lightDef->viewLight->scissorRect;
 		}
-
 		idVec3 rv(v.x, v.y, v.z);
+
 		rv /= v.w;
 
 		outbounds.AddPoint( rv );
@@ -594,16 +550,18 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 	if ( outbounds[0].x < -1.0f ) {
 		outbounds[0].x = -1.0f;
 	}
+
 	if ( outbounds[1].x > 1.0f ) {
 		outbounds[1].x = 1.0f;
 	}
+
 	if ( outbounds[0].y < -1.0f ) {
 		outbounds[0].y = -1.0f;
 	}
+
 	if ( outbounds[1].y > 1.0f ) {
 		outbounds[1].y = 1.0f;
 	}
-
 	float w2 = ( viewDef->viewport.x2 - viewDef->viewport.x1 + 1 ) / 2.0f;
 	float x = viewDef->viewport.x1;
 	float h2 = ( viewDef->viewport.y2 - viewDef->viewport.y1 + 1 ) / 2.0f;
@@ -618,10 +576,9 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 
 	rect.Intersect( lightDef->viewLight->scissorRect );
 
-	// debug //
+	// debug
 	if ( r_useInteractionScissors.GetInteger() == -2 && !rect.IsEmpty() ) {
 		viewDef->renderWorld->DebugScreenRect( colorYellow, rect, viewDef );
 	}
-
 	return rect;
 }
