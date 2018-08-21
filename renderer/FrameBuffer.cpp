@@ -48,14 +48,8 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
 		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
-		switch ( r_fboDepthBits.GetInteger() ) {
-			case 32:
-				qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_DEPTH32F_STENCIL8, width, height );
-				break;
-			default:
-				qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_DEPTH24_STENCIL8, width, height );
-				break;
-		}
+		// revert to old behaviour, switches are to specific
+		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8, width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
@@ -302,14 +296,8 @@ void CheckCreateShadow() {
 		for ( int sideId = 0; sideId < 6; sideId++ ) {
 			// revelator: changed to c++11 nullptr
 			// removed 32 bit depth test again, it causes problems
-			switch ( r_fboDepthBits.GetInteger() ) {
-				case 16:
-					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-				default:
-					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-			}
+			// revert to old behaviour, switches are to specific
+			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, ( r_fboDepthBits.GetInteger() == 16 )  ? GL_DEPTH_COMPONENT16 : GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
 		}
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );

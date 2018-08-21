@@ -630,14 +630,9 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	switch ( format ) {
 		case GL_DEPTH_STENCIL:
-			switch ( r_fboDepthBits.GetInteger() ) {
-				case 32:
-					qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, nullptr );
-					break;
-				default:
-					qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr );
-					break;
-			}
+			// revert to old behaviour, switches are to specific
+			qglTexImage2D( GL_TEXTURE_2D, 0, ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, 
+											 ( r_fboDepthBits.GetInteger() == 32 ) ? GL_FLOAT_32_UNSIGNED_INT_24_8_REV : GL_UNSIGNED_INT_24_8, nullptr );
 			common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
 			break;
 		case GL_COLOR:
