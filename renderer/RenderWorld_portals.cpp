@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
 //anon begin

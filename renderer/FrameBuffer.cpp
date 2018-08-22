@@ -94,10 +94,10 @@ This function blits to fboResolve, then we have a copy of MSFB in the currentRen
 void FB_ResolveMultisampling( GLbitfield mask, GLenum filter ) {
 	qglDisable( GL_SCISSOR_TEST );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboResolve );
-	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, 
-							  globalImages->currentRenderImage->uploadHeight,
-	                    0, 0, globalImages->currentRenderImage->uploadWidth, 
-							  globalImages->currentRenderImage->uploadHeight,
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
+	                    globalImages->currentRenderImage->uploadHeight,
+	                    0, 0, globalImages->currentRenderImage->uploadWidth,
+	                    globalImages->currentRenderImage->uploadHeight,
 	                    mask, filter );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboPrimary );
 	qglEnable( GL_SCISSOR_TEST );
@@ -132,7 +132,7 @@ void FB_CopyDepthBuffer() {
 // system mem only
 void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 	//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
-	if ( cmd.imageWidth * cmd.imageHeight == 0 ) {		
+	if ( cmd.imageWidth * cmd.imageHeight == 0 ) {
 		return;	//no pixels to be read
 	}
 	int backEndStartTime = Sys_Milliseconds();
@@ -214,7 +214,7 @@ void CheckCreatePrimary() {
 		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
 	}
 
-	if( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 ) {
+	if ( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 ) {
 		r_fboDepthBits.ClearModified();
 		DeleteFramebuffers(); // Intel wants us to keep depth texture and multisampled storage formats the same
 	}
@@ -273,12 +273,13 @@ void CheckCreatePrimary() {
 
 void CheckCreateShadow() {
 	// (re-)attach textures to FBO
-	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
+	GLuint curWidth = glConfig.vidWidth;
+	GLuint curHeight = glConfig.vidHeight;
 	if ( primaryOn ) {
 		// accidentally deleted begin
 		float shadowRes = 1.0f;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
-			shadowRes = r_softShadowsQuality.GetInteger() / -100.0f;
+			shadowRes = r_softShadowsQuality.GetFloat() / -100.0f;
 		}
 
 		// accidentally deleted end
@@ -307,15 +308,15 @@ void CheckCreateShadow() {
 			// revelator: changed to c++11 nullptr
 			// revert back again, the problem seems to be stencil depth.
 			switch ( r_fboDepthBits.GetInteger() ) {
-				case 16:
-					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-				case 32:
-					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32F, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-				default:
-					qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
+			case 16:
+				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+				break;
+			case 32:
+				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32F, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+				break;
+			default:
+				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+				break;
 			}
 		}
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -410,22 +411,18 @@ void FB_BindShadowTexture() {
 
 // accidentally deleted
 void FB_ApplyScissor() {
-	if ( r_useScissor.GetBool() ) {
+	// run once update on change
+	bool runOnce = false;
+	if ( r_useScissor.GetBool() && !runOnce ) {
 		float resFactor = 1.0f;
 		if ( shadowOn ) {
 			resFactor *= shadowResolution;
 		}
-		const GLint x = backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1 * resFactor;
-		const GLint y = backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor;
-		const GLsizei width = backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 * resFactor;
-		const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 * resFactor;
-
-		// moved check for invalid size here
-		// don't scissor on invalid or negative values.
-		if ( width <= 0 || height <= 0 ) {
-			return;
-		}
-		GL_Scissor( x, y, width, height );
+		GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1 * resFactor,
+		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor,
+		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 * resFactor,
+		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 * resFactor );
+		runOnce = true;
 	}
 }
 
@@ -442,10 +439,10 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			qglDisable( GL_SCISSOR_TEST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadow );
 			// revert change, not sure what happened here tbh i newer touched this part Oo
-			qglBlitFramebuffer( 0, 0, globalImages->currentDepthImage->uploadWidth, 
-									  globalImages->currentDepthImage->uploadHeight,
-			                    0, 0, globalImages->shadowDepthFbo->uploadWidth, 
-									  globalImages->shadowDepthFbo->uploadHeight,
+			qglBlitFramebuffer( 0, 0, globalImages->currentDepthImage->uploadWidth,
+			                    globalImages->currentDepthImage->uploadHeight,
+			                    0, 0, globalImages->shadowDepthFbo->uploadWidth,
+			                    globalImages->shadowDepthFbo->uploadHeight,
 			                    GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, primaryOn ? fboPrimary : 0 );
 			qglEnable( GL_SCISSOR_TEST );
@@ -463,7 +460,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		shadowOn = on;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			if ( on ) {
-				shadowResolution = r_softShadowsQuality.GetInteger() / -100.0f;
+				shadowResolution = r_softShadowsQuality.GetFloat() / -100.0f;
 				GL_Viewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
 				FB_ApplyScissor();
 			} else {
@@ -490,9 +487,9 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			int mapSize = r_shadowMapSize.GetInteger();
 			ShadowMipMap = 0;
 			int lightScreenSize = idMath::Imax( backEnd.vLight->scissorRect.GetWidth(), backEnd.vLight->scissorRect.GetHeight() ),
-			    screenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );
+			         ScreenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );
 
-			while ( lightScreenSize < screenSize && ShadowMipMap < 5 ) {
+			while ( lightScreenSize < ScreenSize && ShadowMipMap < 5 ) {
 				ShadowMipMap++; // select a smaller map for small/distant lights
 				lightScreenSize <<= 1;
 				mapSize >>= 1;
@@ -577,8 +574,8 @@ void LeavePrimary() {
 		qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 	}
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, 
-							  globalImages->currentRenderImage->uploadHeight,
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
+	                    globalImages->currentRenderImage->uploadHeight,
 	                    0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 
 	if ( r_fboDebug.GetInteger() != 0 ) {

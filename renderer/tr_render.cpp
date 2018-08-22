@@ -228,7 +228,9 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		#7627 revelator */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
+			// revelator: test. parts of the functions loaded here also runs through the fbo transforms (the code for filling the depthbuffer for instance)
 			FB_ApplyScissor();
+			// revelator: if unwanted just remove the above and uncomment the below.
 			/*GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 			              backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 			              backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
