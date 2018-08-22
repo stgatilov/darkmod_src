@@ -222,7 +222,8 @@ void CheckCreatePrimary() {
 	// intel optimization
 	if ( r_fboSeparateStencil.GetBool() ) {
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH );
-		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
+		if ( !r_softShadowsQuality.GetBool() ) // currentStencilFbo will be initialized in CheckCreateShadow with possibly different resolution
+			globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
 	} else { // AMD/nVidia fast enough already, separate depth/stencil not supported
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}

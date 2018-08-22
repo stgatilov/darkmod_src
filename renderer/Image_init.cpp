@@ -1801,7 +1801,7 @@ void idImageManager::Init() {
 	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_DepthTexture );
 	shadowCubeMap = ImageFromFunction( "_shadowCubeMap", makeNormalizeVectorCubeMap );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
-	shadowStencilFbo = ImageFromFunction( "_shadowStencilFbo", R_RGBA8Image );
+	//shadowStencilFbo = ImageFromFunction( "_shadowStencilFbo", R_RGBA8Image ); unused for now
 
 	bloomCookedMath = ImageFromFunction( "_cookedMath", R_RGBA8Image );
 	bloomImage = ImageFromFunction( "_bloomImage", R_RGBA8Image );
