@@ -156,9 +156,8 @@ void idGLWidget::OnPaint()
 
 	if (!qwglMakeCurrent(dc.m_hDC, win32.hGLRC)) {
 	}
-
-	qglViewport(0, 0, rect.Width(), rect.Height());
-	qglScissor(0, 0, rect.Width(), rect.Height());
+	GL_Viewport(0, 0, rect.Width(), rect.Height());
+	GL_Scissor(0, 0, rect.Width(), rect.Height());
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadIdentity();
 	qglClearColor (0.4f, 0.4f, 0.4f, 0.7f);
@@ -172,8 +171,8 @@ void idGLWidget::OnPaint()
 	if (drawable) {
 		drawable->draw(1, 1, rect.Width()-1, rect.Height()-1);
 	} else {
-		qglViewport(0, 0, rect.Width(), rect.Height());
-		qglScissor(0, 0, rect.Width(), rect.Height());
+		GL_Viewport(0, 0, rect.Width(), rect.Height());
+		GL_Scissor(0, 0, rect.Width(), rect.Height());
 		qglMatrixMode(GL_PROJECTION);
 		qglLoadIdentity();
 		qglClearColor (0.4f, 0.4f, 0.4f, 0.7f);
@@ -251,23 +250,23 @@ void idGLDrawable::mouseMove(float x, float y) {
 
 void idGLDrawable::draw(int x, int y, int w, int h) {
 	GL_State( GLS_DEFAULT );
-	qglViewport(x, y, w, h);
-	qglScissor(x, y, w, h);
+	GL_Viewport(x, y, w, h);
+	GL_Scissor(x, y, w, h);
 	qglMatrixMode(GL_PROJECTION);
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 	qglClear(GL_COLOR_BUFFER_BIT);
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	qglLineWidth(0.5);
-	qglColor3f(1, 1, 1);
+	GL_FloatColor(1, 1, 1);
 	globalImages->BindNull();
 	qglBegin(GL_LINE_LOOP);
-	qglColor3f(1, 0, 0);
+	GL_FloatColor(1, 0, 0);
 	qglVertex2f(x + 3, y + 3);
-	qglColor3f(0, 1, 0);
+	GL_FloatColor(0, 1, 0);
 	qglVertex2f(x + 3, h - 3);
-	qglColor3f(0, 0, 1);
+	GL_FloatColor(0, 0, 1);
 	qglVertex2f(w - 3, h - 3);
-	qglColor3f(1, 1, 1);
+	GL_FloatColor(1, 1, 1);
 	qglVertex2f(w - 3, y + 3);
 	qglEnd();
 
@@ -343,8 +342,8 @@ void idGLDrawableMaterial::mouseMove(float x, float y) {
 void idGLDrawableMaterial::draw(int x, int y, int w, int h) {
 	const idMaterial *mat = material;
 	if (mat) {
-		qglViewport(x, y, w, h);
-		qglScissor(x, y, w, h);
+		GL_Viewport(x, y, w, h);
+		GL_Scissor(x, y, w, h);
 		qglMatrixMode(GL_PROJECTION);
 		qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 		qglClear(GL_COLOR_BUFFER_BIT);
@@ -615,11 +614,10 @@ void idGLDrawableModel::draw(int x, int y, int w, int h) {
 	if ( worldModel->IsDynamicModel() != DM_STATIC ) {
 		//return;
 	}
-
 	rect.Set( x, y, w, h );
 
-	qglViewport(x, y, w, h);
-	qglScissor(x, y, w, h);
+	GL_Viewport(x, y, w, h);
+	GL_Scissor(x, y, w, h);
 	qglMatrixMode(GL_PROJECTION);
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 	qglClear(GL_COLOR_BUFFER_BIT);
@@ -816,7 +814,7 @@ idGLDrawable::idGLDrawable() {
 void idGLDrawableConsole::draw(int x, int y, int w, int h) {
 	qglPushAttrib( GL_ALL_ATTRIB_BITS );
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
-	qglScissor( 0, 0, w, h );
+	GL_Scissor( 0, 0, w, h );
 	qglClear( GL_COLOR_BUFFER_BIT );
 	renderSystem->BeginFrame( w, h );
 

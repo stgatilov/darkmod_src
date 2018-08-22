@@ -1056,9 +1056,25 @@ void	GL_CheckErrors( void );
 void	GL_ClearStateDelta( void );
 void	GL_State( int stateVector );
 void	GL_Cull( int cullType );
+void	GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h );
+void	GL_Viewport( int x /* left */, int y /* bottom */, int w, int h );
 //anon begin
 void    GL_DepthBoundsTest( const float zmin, const float zmax );
 //anon end
+
+// overloaded color functions vector first
+void	GL_FloatColor( const idVec3 &color );
+void	GL_FloatColor( const idVec4 &color );
+
+// float type
+void	GL_FloatColor( const float *color );
+void	GL_FloatColor( float r, float g, float b );
+void	GL_FloatColor( float r, float g, float b, float a );
+
+// byte type
+void	GL_ByteColor( const byte *color );
+void	GL_ByteColor( byte r, byte g, byte b );
+void	GL_ByteColor( byte r, byte g, byte b, byte a );
 
 const int GLS_SRCBLEND_ONE						= 0x0;
 const int GLS_SRCBLEND_ZERO						= 0x00000001;

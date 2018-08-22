@@ -125,7 +125,7 @@ void CZClip::Paint(void)
 	float	x, y;
 	int	xCam = z.width/4;	// hmmm, a rather unpleasant and obscure global name, but it was already called that so...
 
-	qglColor3f (ZCLIP_COLOUR);//1.0, 0.0, 1.0);
+	GL_FloatColor (ZCLIP_COLOUR);//1.0, 0.0, 1.0);
 
 	// draw TOP marker...
 	//
@@ -143,7 +143,7 @@ void CZClip::Paint(void)
 	qglVertex3f (x+xCam,y,0);
 	qglEnd ();
 
-	qglColor3f (ZCLIP_COLOUR_DIM);//0.8, 0.0, 0.8);
+	GL_FloatColor (ZCLIP_COLOUR_DIM);//0.8, 0.0, 0.8);
 
 	if (m_bEnabled)
 		qglBegin(GL_TRIANGLES);
@@ -156,7 +156,7 @@ void CZClip::Paint(void)
 
 	// draw bottom marker...
 	//
-	qglColor3f (ZCLIP_COLOUR);//1.0, 0.0, 1.0);
+	GL_FloatColor (ZCLIP_COLOUR);//1.0, 0.0, 1.0);
 	x = 0;
 	y = m_iZClipBottom;
 
@@ -170,7 +170,7 @@ void CZClip::Paint(void)
 	qglVertex3f (x+xCam,y,0);
 	qglEnd ();
 
-	qglColor3f (ZCLIP_COLOUR_DIM);//0.8, 0.0, 0.8);
+	GL_FloatColor (ZCLIP_COLOUR_DIM);//0.8, 0.0, 0.8);
 
 	if (m_bEnabled)
 		qglBegin(GL_TRIANGLES);

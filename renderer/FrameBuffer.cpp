@@ -164,8 +164,9 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 			}
 			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
 
-			unsigned char *ptr = reinterpret_cast< unsigned char * >( qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY ) );
+			byte *ptr = reinterpret_cast< byte * >( qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY ) );
 
+			// #4395 moved to initializer
 			if ( ptr ) {
 				memcpy( cmd.buffer, ptr, pboSize );
 				qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
@@ -191,7 +192,8 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 	GL_CheckErrors();
 }
 
-void DeleteFramebuffers() { // force recreate on a cvar change
+// force recreate on a cvar change
+void DeleteFramebuffers() {
 	qglDeleteFramebuffers( 1, &fboPrimary );
 	qglDeleteFramebuffers( 1, &fboResolve );
 	qglDeleteFramebuffers( 1, &fboShadow );
@@ -273,9 +275,9 @@ void CheckCreateShadow() {
 	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
 	if ( primaryOn ) {
 		// accidentally deleted begin
-		float shadowRes = 1;
+		float shadowRes = 1.0f;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
-			shadowRes = r_softShadowsQuality.GetInteger() / -100.;
+			shadowRes = r_softShadowsQuality.GetInteger() / -100.0f;
 		}
 
 		// accidentally deleted end
@@ -418,10 +420,11 @@ void FB_ApplyScissor() {
 		const GLsizei height = backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 * resFactor;
 
 		// moved check for invalid size here
+		// don't scissor on invalid or negative values.
 		if ( width <= 0 || height <= 0 ) {
 			return;
 		}
-		glScissor( x, y, width, height );
+		GL_Scissor( x, y, width, height );
 	}
 }
 
@@ -460,14 +463,14 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			if ( on ) {
 				shadowResolution = r_softShadowsQuality.GetInteger() / -100.0f;
-				qglViewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
+				GL_Viewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
 				FB_ApplyScissor();
 			} else {
 				if ( r_softShadowsQuality.GetInteger() < 0 ) {
 					if ( primaryOn ) {
-						qglViewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
+						GL_Viewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
 					} else {
-						qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+						GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 					}
 					FB_ApplyScissor();
 				}
@@ -494,10 +497,10 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				mapSize >>= 1;
 			}
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap->texnum, ShadowMipMap );
-			qglViewport( 0, 0, mapSize, mapSize );
+			GL_Viewport( 0, 0, mapSize, mapSize );
 
 			if ( r_useScissor.GetBool() ) {
-				qglScissor( 0, 0, mapSize, mapSize );
+				GL_Scissor( 0, 0, mapSize, mapSize );
 			}
 
 			if ( clear ) {
@@ -507,10 +510,10 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		} else {
 			const idScreenRect &r = backEnd.viewDef->viewport;
 
-			qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
+			GL_Viewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
 
 			if ( r_useScissor.GetBool() ) {
-				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 				            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 				            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 				            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
@@ -541,12 +544,12 @@ void EnterPrimary() {
 
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 
-	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,	// FIXME: must not use tr in backend
+	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,	// FIXME: must not use tr in backend
 	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
 	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
 	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
 
-	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
+	GL_Scissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
 	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
 	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
@@ -565,8 +568,8 @@ void LeavePrimary() {
 	}
 	GL_CheckErrors();
 
-	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
 	if ( r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );

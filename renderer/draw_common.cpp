@@ -523,10 +523,10 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		cubeMapShader.Use();
 		break;
 	case TG_REFLECT_CUBE:
-		qglColor4fv( color );
+		GL_FloatColor( color );
 		break;
 	case TG_SCREEN:
-		qglColor4fv( color );
+		GL_FloatColor( color );
 	default:
 		qglEnableVertexAttribArray( 8 );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -688,7 +688,7 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 		color[1] = regs[pStage->color.registers[1]];
 		color[2] = regs[pStage->color.registers[2]];
 		color[3] = regs[pStage->color.registers[3]];
-		qglColor4fv( color );
+		GL_FloatColor( color );
 	} else {
 		// A properly set-up particle shader
 		qglEnableVertexAttribArray( 3 );
@@ -800,7 +800,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	// change the scissor if needed
 	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
 		backEnd.currentScissor = surf->scissorRect;
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );

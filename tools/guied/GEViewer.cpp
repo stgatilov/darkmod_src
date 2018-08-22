@@ -485,8 +485,8 @@ void rvGEViewer::Render	( HDC dc )
 	mWindowWidth = rClient.right - rClient.left;
 	mWindowHeight = rClient.bottom - rClient.top;
 
-	qglViewport(0, 0, mWindowWidth, mWindowHeight );
-	qglScissor(0, 0, mWindowWidth, mWindowHeight );
+	GL_Viewport(0, 0, mWindowWidth, mWindowHeight );
+	GL_Scissor(0, 0, mWindowWidth, mWindowHeight );
 	qglClearColor ( 0, 0, 0, 0 );
 
 	qglDisable(GL_DEPTH_TEST);

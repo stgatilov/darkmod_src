@@ -492,8 +492,8 @@ void idGLDrawableView::draw(int x, int y, int w, int h) {
 	const idMaterial		*mat = material;
 
 	if (mat) {
-		qglViewport(x, y, w, h);
-		qglScissor(x, y, w, h);
+		GL_Viewport(x, y, w, h);
+		GL_Scissor(x, y, w, h);
 		qglMatrixMode(GL_PROJECTION);
 		qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 		qglClear(GL_COLOR_BUFFER_BIT);

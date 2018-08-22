@@ -97,17 +97,13 @@ If a high order bit is clear, the point is outside the plane (definately negativ
 */
 
 #define TRIANGLE_CULLED(p1,p2,p3) ( pointCull[p1] & pointCull[p2] & pointCull[p3] & 0x3f )
-
-//#define TRIANGLE_CLIPPED(p1,p2,p3) ( ( pointCull[p1] | pointCull[p2] | pointCull[p3] ) & 0xfc0 )
 #define TRIANGLE_CLIPPED(p1,p2,p3) ( ( ( pointCull[p1] & pointCull[p2] & pointCull[p3] ) & 0xfc0 ) != 0xfc0 )
 
 // an edge that is on the plane is NOT culled
 #define EDGE_CULLED(p1,p2) ( ( pointCull[p1] ^ 0xfc0 ) & ( pointCull[p2] ^ 0xfc0 ) & 0xfc0 )
-
 #define EDGE_CLIPPED(p1,p2) ( ( pointCull[p1] & pointCull[p2] & 0xfc0 ) != 0xfc0 )
 
 // a point that is on the plane is NOT culled
-//#define	POINT_CULLED(p1) ( ( pointCull[p1] ^ 0xfc0 ) & 0xfc0 )
 #define	POINT_CULLED(p1) ( ( pointCull[p1] & 0xfc0 ) != 0xfc0 )
 
 idPlane	pointLightFrustums[6][6] = {
@@ -172,10 +168,13 @@ typedef struct {
 	int		end;
 } indexRef_t;
 
+#define	MAX_CLIP_SIL_EDGES		2048
+#define	MAX_SHADOW_INDEXES		0x18000
+#define	MAX_SHADOW_VERTS		0x18000
+
 // Consolidated all static variables into a struct
 // to pass as a state during shadow calculation
 typedef struct {
-#define	MAX_CLIP_SIL_EDGES		2048
 	int			numClipSilEdges;
 	int			clipSilEdges[MAX_CLIP_SIL_EDGES][2];
 	
@@ -187,10 +186,8 @@ typedef struct {
 	// and facing the apropriate direction
 	byte		*faceCastsShadow;
 	
-	int			*remap;
-	
-#define	MAX_SHADOW_INDEXES		0x18000
-#define	MAX_SHADOW_VERTS		0x18000
+	int			*remap;	
+
 	int			numShadowIndexes;
 	glIndex_t	shadowIndexes[MAX_SHADOW_INDEXES];
 	int			numShadowVerts;
@@ -233,15 +230,6 @@ static bool PointsOrdered( const idVec3 &a, const idVec3 &b ) {
 	j = b[0] + b[1]*127.0f + b[2]*1023.0f;
 
 	return (bool)(i < j);
-
-#if 0
-	// duzenko: floating point path is a bit complex, try a shortcut
-	// stgatilov: this check is unstable to input perturbations and produces same hash for permuted coordinates
-	// if this ever starts eating noticeable amount of CPU time, revisit this
-	int *v1 = (int*)a.ToFloatPtr();
-	int *v2 = (int*)b.ToFloatPtr();
-	return (v1[0] ^ v1[1] ^ v1[2]) < (v2[0] ^ v2[1] ^ v2[2]);
-#endif
 }
 
 /*

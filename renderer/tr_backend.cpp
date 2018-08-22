@@ -60,7 +60,7 @@ void RB_SetDefaultGLState( void ) {
 	qglShadeModel( GL_SMOOTH );
 
 	if ( r_useScissor.GetBool() ) {
-		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 
 	for ( int i = MAX_MULTITEXTURE_UNITS - 1 ; i >= 0 ; i-- ) {
@@ -147,6 +147,34 @@ void GL_Cull( const int cullType ) {
 		}
 	}
 	backEnd.glState.faceCulling = cullType;
+}
+
+/*
+====================
+GL_Scissor
+
+Utility function, 
+if you absolutly must
+check for anything out of the ordinary,
+then do it here.
+====================
+*/
+void GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h ) {
+	qglScissor( x, y, w, h );
+}
+
+/*
+====================
+GL_Viewport
+
+Utility function, 
+if you absolutly must
+check for anything out of the ordinary,
+then do it here.
+====================
+*/
+void GL_Viewport( int x /* left */, int y /* bottom */, int w, int h ) {
+	qglViewport( x, y, w, h );
 }
 
 /*
@@ -319,6 +347,144 @@ void GL_DepthBoundsTest( const float zmin, const float zmax ) {
 /*
 ============================================================================
 
+RENDER BACK END COLOR WRAPPERS
+
+============================================================================
+*/
+
+/*
+====================
+GL_Color
+
+Vector color 3 component (clamped)
+====================
+*/
+void GL_FloatColor( const idVec3 &color ) {
+	GLfloat parm[3];
+	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
+	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
+	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
+	qglColor3f( parm[0], parm[1], parm[2] );
+}
+
+/*
+====================
+GL_Color
+
+Vector color 4 component (clamped)
+====================
+*/
+void GL_FloatColor( const idVec4 &color ) {
+	GLfloat parm[4];
+	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
+	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
+	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
+	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
+	qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+}
+
+/*
+====================
+GL_Color
+
+Float to vector color 3 or 4 component (clamped)
+====================
+*/
+void GL_FloatColor( const float *color ) {
+	GLfloat parm[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
+	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
+	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
+	if ( color[3] ) {
+		parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
+	}
+	qglColor4fv( parm );
+}
+
+/*
+====================
+GL_Color
+
+Float color 3 component (clamped)
+====================
+*/
+void GL_FloatColor( float r, float g, float b ) {
+	GLfloat parm[3];
+	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, r );
+	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, g );
+	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, b );
+	qglColor3f( parm[0], parm[1], parm[2] );
+}
+
+/*
+====================
+GL_Color
+
+Float color 4 component (clamped)
+====================
+*/
+void GL_FloatColor( float r, float g, float b, float a ) {
+	GLfloat parm[4];
+	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, r );
+	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, g );
+	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, b );
+	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, a );
+	qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+}
+
+/*
+====================
+GL_Color
+
+Byte to vector color 3 or 4 component (clamped)
+====================
+*/
+void GL_ByteColor( const byte *color ) {
+	GLubyte parm[4] = { 255, 255, 255, 255 };
+	parm[0] = idMath::ClampByte( 0, 255, color[0] );
+	parm[1] = idMath::ClampByte( 0, 255, color[1] );
+	parm[2] = idMath::ClampByte( 0, 255, color[2] );
+	if ( color[3] ) {
+		parm[3] = idMath::ClampByte( 0, 255, color[3] );
+	}
+	qglColor3ub( parm[0], parm[1], parm[2] );
+}
+
+
+/*
+====================
+GL_Color
+
+Byte color 3 component (clamped)
+====================
+*/
+void GL_ByteColor( byte r, byte g, byte b ) {
+	GLubyte parm[3];
+	parm[0] = idMath::ClampByte( 0, 255, r );
+	parm[1] = idMath::ClampByte( 0, 255, g );
+	parm[2] = idMath::ClampByte( 0, 255, b );
+	qglColor3ub( parm[0], parm[1], parm[2] );
+}
+
+/*
+====================
+GL_Color
+
+Byte color 4 component (clamped)
+====================
+*/
+void GL_ByteColor( byte r, byte g, byte b, byte a ) {
+	GLubyte parm[4];
+	parm[0] = idMath::ClampByte( 0, 255, r );
+	parm[1] = idMath::ClampByte( 0, 255, g );
+	parm[2] = idMath::ClampByte( 0, 255, b );
+	parm[3] = idMath::ClampByte( 0, 255, a );
+	qglColor4ub( parm[0], parm[1], parm[2], parm[3] );
+}
+
+/*
+============================================================================
+
 RENDER BACK END THREAD FUNCTIONS
 
 ============================================================================
@@ -333,9 +499,9 @@ This is not used by the normal game paths, just by some tools
 */
 void RB_SetGL2D( void ) {
 	// set 2D virtual screen size
-	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	if ( r_useScissor.GetBool() ) {
-		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 	qglMatrixMode( GL_PROJECTION );
 	qglLoadIdentity();
@@ -476,7 +642,7 @@ void RB_Bloom( void ) {
 	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 	GL_SelectTexture( 0 );
 
-	qglViewport( 0, 0, 256, 1 );
+	GL_Viewport( 0, 0, 256, 1 );
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
 	parm[0] = r_postprocess_colorCurveBias.GetFloat();
@@ -497,7 +663,7 @@ void RB_Bloom( void ) {
 	RB_DrawFullScreenQuad();
 	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
 
-	qglViewport( 0, 0, w / 2, h / 2 );
+	GL_Viewport( 0, 0, w / 2, h / 2 );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
 	GL_SelectTexture( 1 );
@@ -527,7 +693,7 @@ void RB_Bloom( void ) {
 	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 
 	FB_SelectPrimary();
-	qglViewport( 0, 0, w, h );
+	GL_Viewport( 0, 0, w, h );
 	FB_TogglePrimary( false );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();

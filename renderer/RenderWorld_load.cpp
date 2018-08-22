@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
 
@@ -686,6 +684,5 @@ bool idRenderWorldLocal::CheckAreaForPortalSky( int areaNum ) {
 			return true;
 		}
 	}
-
 	return false;
 }

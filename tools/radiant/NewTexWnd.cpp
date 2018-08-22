@@ -254,8 +254,8 @@ void CNewTexWnd::OnPaint() {
 			g_qeglobals.d_savedinfo.colors[COLOR_TEXTUREBACK][2],
 			0
 		);
-		qglViewport(0, 0, rectClient.Width(), rectClient.Height());
-		qglScissor(0, 0, rectClient.Width(), rectClient.Height());
+		GL_Viewport(0, 0, rectClient.Width(), rectClient.Height());
+		GL_Scissor(0, 0, rectClient.Width(), rectClient.Height());
 		qglMatrixMode(GL_PROJECTION);
 		qglLoadIdentity();
 		qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -282,7 +282,7 @@ void CNewTexWnd::OnPaint() {
 			if ((draw.y - height - FONT_HEIGHT < origin.y) && (draw.y > origin.y - rectClient.Height())) {
 				// if in use, draw a background
 				qglLineWidth(1);
-				qglColor3f(1, 1, 1);
+				GL_FloatColor(1, 1, 1);
 				globalImages->BindNull();
 				qglBegin(GL_LINE_LOOP);
 				qglVertex2f(draw.x - 1, draw.y + 1 - FONT_HEIGHT);
@@ -296,7 +296,7 @@ void CNewTexWnd::OnPaint() {
 
 				mat->GetEditorImage()->Bind();
 				QE_CheckOpenGLForErrors();
-				qglColor3f(1, 1, 1);
+				GL_FloatColor(1, 1, 1);
 				qglBegin(GL_QUADS);
 				qglTexCoord2f(0, 0);
 				qglVertex2f(draw.x, draw.y - FONT_HEIGHT);
@@ -311,7 +311,7 @@ void CNewTexWnd::OnPaint() {
 				// draw the selection border
 				if ( !idStr::Icmp(g_qeglobals.d_texturewin.texdef.name, mat->GetName()) ) {
 					qglLineWidth(3);
-					qglColor3f(1, 0, 0);
+					GL_FloatColor(1, 0, 0);
 					globalImages->BindNull();
 
 					qglBegin(GL_LINE_LOOP);
@@ -326,7 +326,7 @@ void CNewTexWnd::OnPaint() {
 
 				// draw the texture name
 				globalImages->BindNull();
-				qglColor3f(1, 1, 1);
+				GL_FloatColor(1, 1, 1);
 				qglRasterPos2f(draw.x, draw.y - FONT_HEIGHT + 2);
 
 				// don't draw the directory name

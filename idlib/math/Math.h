@@ -202,6 +202,7 @@ public:
 	static signed short			ClampShort( int i );
 	static int					ClampInt( int min, int max, int value );
 	static float				ClampFloat( float min, float max, float value );
+	static byte					ClampByte( byte min, byte max, int value );
 
 	static float				AngleNormalize360( float angle );
 	static float				AngleNormalize180( float angle );
@@ -1001,6 +1002,16 @@ ID_INLINE float idMath::ClampFloat( float min, float max, float value ) {
 		return min;
 	}
 	if ( value > max ) {
+		return max;
+	}
+	return value;
+}
+
+ID_INLINE byte idMath::ClampByte( byte min, byte max, int value ) {
+	if( value < min ) {
+		return min;
+	}
+	if( value > max ) {
 		return max;
 	}
 	return value;

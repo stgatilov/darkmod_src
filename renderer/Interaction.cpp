@@ -835,6 +835,11 @@ bool idInteraction::CullInteractionByViewFrustum( const idFrustum &viewFrustum )
 	return false;
 }
 
+/*
+===================
+R_CullModelBoundsToLight
+===================
+*/
 ID_INLINE bool R_CullModelBoundsToLight( const idRenderLightLocal * light, const idBounds & localBounds, const idRenderMatrix & modelRenderMatrix ) {
 	idRenderMatrix modelLightProject;
 	idRenderMatrix::Multiply( light->baseLightProject, modelRenderMatrix, modelLightProject );

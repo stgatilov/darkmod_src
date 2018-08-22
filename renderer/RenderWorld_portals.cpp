@@ -1193,13 +1193,13 @@ void idRenderWorldLocal::ShowPortals() {
 			char *sColor = "";
 			// Changed to show 3 colours. -- SteveL #4162
 			if ( p->doublePortal->portalViewCount == viewCount ) { 
-				qglColor3f( 0, 1, 0 ); 	// green = we see through this portal
+				GL_FloatColor( 0, 1, 0 ); 	// green = we see through this portal
 				sColor = "^2";
 			} else if ( portalAreas[p->intoArea].areaViewCount == viewCount )	{ 
-				qglColor3f( 1, 1, 0 );	// yellow = we see into this visleaf but not through this portal
+				GL_FloatColor( 1, 1, 0 );	// yellow = we see into this visleaf but not through this portal
 				sColor = "^3";
 			} else {
-				qglColor3f( 1, 0, 0 ); 	// red = can't see
+				GL_FloatColor( 1, 0, 0 ); 	// red = can't see
 				sColor = "^1";
 			}
 			common->Printf( "%s-%i", sColor, p->intoArea );

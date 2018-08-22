@@ -16,9 +16,8 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "splines.h"
+#include "../../renderer/tr_local.h"
 
 idCameraDef splineList;
 idCameraDef *g_splineList = &splineList;
@@ -82,7 +81,8 @@ void glBox(idVec4 &color, idVec3 &point, float size) {
 	qglVertex3f(maxs[0],maxs[1],maxs[2]);
 	qglVertex3f(maxs[0],maxs[1],mins[2]);
 	qglEnd();
-	qglColor4fv(saveColor.ToFloatPtr());
+
+	GL_FloatColor(saveColor.ToFloatPtr());
 
 }
 

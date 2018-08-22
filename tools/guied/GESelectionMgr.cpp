@@ -165,7 +165,7 @@ void rvGESelectionMgr::Render ( void )
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
 	
 	idVec4&	color = gApp.GetOptions().GetSelectionColor ( );
- 	qglColor4f ( color[0],color[1],color[2], 1.0f );
+ 	GL_FloatColor ( color[0], color[1], color[2], 1.0f );
 	
 	qglBegin(GL_LINE_LOOP );	
 	qglVertex2f ( mRect.x, mRect.y );
@@ -174,7 +174,7 @@ void rvGESelectionMgr::Render ( void )
 	qglVertex2f ( mRect.x, mRect.y + mRect.h);
 	qglEnd ( );		
 
- 	qglColor4f ( color[0],color[1],color[2], 0.75f );
+ 	GL_FloatColor ( color[0],color[1],color[2], 0.75f );
 
 	int i;
 	for ( i = 0; i < mSelections.Num(); i ++ )
@@ -219,10 +219,9 @@ void rvGESelectionMgr::Render ( void )
 	{
 		return;
 	}
-
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
 	
- 	qglColor4f ( color[0],color[1],color[2], 1.0f );
+ 	GL_FloatColor ( color[0], color[1], color[2], 1.0f );
 	qglBegin(GL_QUADS);	
 	
 	// Top Left

@@ -810,7 +810,7 @@ void setGLMode(int mode) {
 			globalImages->BindNull();
 			qglDisable(GL_BLEND);
 			qglDisable(GL_DEPTH_TEST);
-			qglColor3f( 1.0f, 1.0f, 1.0f );
+			GL_FloatColor( 1.0f, 1.0f, 1.0f );
 			break;
 
 		case cd_solid:
@@ -951,9 +951,8 @@ void CCamWnd::Cam_Draw() {
 	if (renderMode) {
 		Cam_Render();
 	}
-
-	qglViewport(0, 0, m_Camera.width, m_Camera.height);
-	qglScissor(0, 0, m_Camera.width, m_Camera.height);
+	GL_Viewport(0, 0, m_Camera.width, m_Camera.height);
+	GL_Scissor(0, 0, m_Camera.width, m_Camera.height);
 	qglClearColor(g_qeglobals.d_savedinfo.colors[COLOR_CAMERABACK][0], g_qeglobals.d_savedinfo.colors[COLOR_CAMERABACK][1], g_qeglobals.d_savedinfo.colors[COLOR_CAMERABACK][2], 0);
 
 	if (!renderMode) {
@@ -1058,14 +1057,14 @@ void CCamWnd::Cam_Draw() {
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	if (renderMode) {
-		qglColor3f(1, 0, 0);
+		GL_FloatColor(1, 0, 0);
 		for (int i = 0; i < nCount; i++) {
 			face_t	*selFace = reinterpret_cast < face_t * > (g_ptrSelectedFaces.GetAt(i));
 			Face_Draw(selFace);
 		}
 	}
 
-	qglColor3f(1, 1, 1);
+	GL_FloatColor(1, 1, 1);
 	for (brush = pList->next; brush != pList; brush = brush->next) {
 		if (brush->pPatch || brush->modelHandle > 0) {
 			continue;
@@ -1078,7 +1077,7 @@ void CCamWnd::Cam_Draw() {
 	// edge / vertex flags
 	if (g_qeglobals.d_select_mode == sel_vertex) {
 		qglPointSize(4);
-		qglColor3f(0, 1, 0);
+		GL_FloatColor(0, 1, 0);
 		qglBegin(GL_POINTS);
 		for (i = 0; i < g_qeglobals.d_numpoints; i++) {
 			qglVertex3fv( g_qeglobals.d_points[i].ToFloatPtr() );
@@ -1091,7 +1090,7 @@ void CCamWnd::Cam_Draw() {
 		float	*v1, *v2;
 
 		qglPointSize(4);
-		qglColor3f(0, 0, 1);
+		GL_FloatColor(0, 0, 1);
 		qglBegin(GL_POINTS);
 		for (i = 0; i < g_qeglobals.d_numedges; i++) {
 			v1 = g_qeglobals.d_points[g_qeglobals.d_edges[i].p1].ToFloatPtr();
@@ -2060,7 +2059,7 @@ void CCamWnd::Cam_Render() {
 	// save the editor state
 	//qglPushAttrib( GL_ALL_ATTRIB_BITS );
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
-	qglScissor( 0, 0, m_Camera.width, m_Camera.height );
+	GL_Scissor( 0, 0, m_Camera.width, m_Camera.height );
 	qglClear( GL_COLOR_BUFFER_BIT );
 
 	//	qwglSwapBuffers(dc.m_hDC);

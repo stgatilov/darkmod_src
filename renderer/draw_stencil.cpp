@@ -77,10 +77,10 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 		if ( r_showShadows.GetInteger() == 3 ) {
 			if ( external ) {
-				qglColor3f( 0.1f / backEnd.overBright, 1.0f / backEnd.overBright, 0.1f / backEnd.overBright );
+				GL_FloatColor( 0.1f / backEnd.overBright, 1.0f / backEnd.overBright, 0.1f / backEnd.overBright );
 			} else {
 				// these are the surfaces that require the reverse
-				qglColor3f( 1.0f / backEnd.overBright, 0.1f / backEnd.overBright, 0.1f / backEnd.overBright );
+				GL_FloatColor( 1.0f / backEnd.overBright, 0.1f / backEnd.overBright, 0.1f / backEnd.overBright );
 			}
 		}
 		qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );

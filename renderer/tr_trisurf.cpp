@@ -16,8 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
 /*
@@ -2143,19 +2141,5 @@ void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
 	// vertex cache
 	if( tri.verts != NULL && tri.numVerts > 0) {
 		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, ALIGN( tri.numVerts * sizeof( tri.verts[0] ), VERTEX_CACHE_ALIGN ) );
-		// shadow cache
-		/*if( tri.shadowVertexes == NULL ) {
-			// the shadowVerts for normal models include all the xyz values duplicated
-			// for a W of 1 (near cap) and a W of 0 (end cap, projected to infinity)
-			const int shadowSize = ALIGN( tri.numVerts * 2 * sizeof( shadowCache_t ), VERTEX_CACHE_ALIGN );
-			if( tri.shadowVertexes == NULL ) {
-				tri.shadowVertexes = ( shadowCache_t * )Mem_Alloc16( shadowSize );
-				SIMDProcessor->CreateVertexProgramShadowCache( ( idVec4* )tri.shadowVertexes, tri.verts, tri.numVerts );
-			}
-		}*/
 	}
-
-	/*if( tri.shadowVertexes != NULL && tri.numVerts > 0 ) {
-		vertexCache.StaticAlloc( tri.shadowVertexes, ALIGN(tri.numVerts * 2 * sizeof( *tri.shadowVertexes ), VERTEX_CACHE_ALIGN), &tri.shadowCache );
-	}*/
 }

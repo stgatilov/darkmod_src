@@ -217,28 +217,29 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack ();
+			RB_EnterWeaponDepthHack();
 		}
 
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_EnterModelDepthHack ( drawSurf->space->modelDepthHack );
+			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 		}
 
 		/* change the scissor if needed
 		#7627 revelator */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
-			glScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-			           backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			           backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			           backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+			FB_ApplyScissor();
+			/*GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+			              backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+			              backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+			              backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );*/
 		}
 
 		// render it
 		triFunc_( drawSurf );
 
 		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack ();
+			RB_LeaveDepthHack();
 		}
 
 		// mark currentSpace if we have drawn.
@@ -250,6 +251,14 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 /*
 ======================
 RB_RenderDrawSurfChainWithFunction
+
+The triangle functions can check backEnd.currentSpace != surf->space
+to see if they need to perform any new matrix setup.  The modelview
+matrix will already have been loaded, and backEnd.currentSpace will
+be updated after the triangle function completes.
+
+Revelator: i left in console prints so that devs dont get any nasty ideas about how this works.
+Try and enable them if in doubt, but disable them again after use because the console spam will kill performance pretty badly.
 ======================
 */
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
@@ -260,40 +269,39 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 	/* Reverted all the unnessesary gunk here */
 	for ( const drawSurf_t *drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
 		if ( drawSurf->space != backEnd.currentSpace ) {
+			//common->Printf( "Yay i just loaded the matrix again, because (drawSurf->space does not equal backEnd.currentSpace) because it is NULL\n" );
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack ();
+			//common->Printf( "Yay i just ran a depth hack on viewmodels\n" );
+			RB_EnterWeaponDepthHack();
 		}
 
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_EnterModelDepthHack ( drawSurf->space->modelDepthHack );
+			//common->Printf( "Yay i just ran a depth hack on other models\n" );
+			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 		}
 
 		/* change the scissor if needed
 		#7627 revelator reverted and cleaned up. */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			const idScreenRect &r = drawSurf->scissorRect;
-			// duzenko: FIXME find out why they are negative sometimes
-			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) {
-				backEnd.currentScissor = drawSurf->scissorRect;
-				FB_ApplyScissor();
-			} else {
-				// duzenko: why bother
-				// hmm are we sure this is right ? we are basically skipping over the triFunc_( drawSurf ); 
-				continue;
-			}
+			//common->Printf( "Yay i just ran the scissor, because now the scissor equals the viewport\n" );
+			backEnd.currentScissor = drawSurf->scissorRect;
+			FB_ApplyScissor();
 		}
 
 		// render it
+		//common->Printf( "Yay i just ran a function, i hope someone does not do returns or continues above or im busted\n" );
 		triFunc_( drawSurf );
 
 		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack ();
+			//common->Printf( "Booh i just disabled the depth hacks\n" );
+			RB_LeaveDepthHack();
 		}
 
 		// mark currentSpace if we have drawn.
+		//common->Printf( "Yay i just determined that i dont need to run again, so ill set (backEnd.currentSpace to the value of drawSurf->space) so it is no longer NULL\n" );
 		backEnd.currentSpace = drawSurf->space;
 	}
 	GL_CheckErrors();
@@ -418,13 +426,13 @@ void RB_BeginDrawingView( void ) {
 	qglMatrixMode( GL_MODELVIEW );
 
 	// set the window clipping
-	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
+	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
 	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
 	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
 	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
 
 	// the scissor may be smaller than the viewport for subviews
-	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
+	GL_Scissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
 	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
 	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
@@ -643,7 +651,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	// change the scissor if needed
 	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
 		backEnd.currentScissor = surf->scissorRect;
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
@@ -719,58 +727,58 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 			const shaderStage_t	*surfaceStage = surfaceShader->GetStage( surfaceStageNum );
 
 			switch ( surfaceStage->lighting ) {
-				case SL_AMBIENT: {
-					// ignore ambient stages while drawing interactions
+			case SL_AMBIENT: {
+				// ignore ambient stages while drawing interactions
+				break;
+			}
+			case SL_BUMP: {
+				// ignore stage that fails the condition
+				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
 					break;
 				}
-				case SL_BUMP: {
-					// ignore stage that fails the condition
-					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
-						break;
-					}
-					// draw any previous interaction
+				// draw any previous interaction
+				RB_SubmittInteraction( &inter );
+				inter.diffuseImage = NULL;
+				inter.specularImage = NULL;
+				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
+				break;
+			}
+			case SL_DIFFUSE: {
+				// ignore stage that fails the condition
+				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
+					break;
+				} else if ( inter.diffuseImage ) {
 					RB_SubmittInteraction( &inter );
-					inter.diffuseImage = NULL;
-					inter.specularImage = NULL;
-					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
+				}
+				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
+				                      inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
+				inter.diffuseColor[0] *= lightColor[0];
+				inter.diffuseColor[1] *= lightColor[1];
+				inter.diffuseColor[2] *= lightColor[2];
+				inter.diffuseColor[3] *= lightColor[3];
+				inter.vertexColor = surfaceStage->vertexColor;
+				break;
+			}
+			case SL_SPECULAR: {
+				// ignore stage that fails the condition
+				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
 					break;
 				}
-				case SL_DIFFUSE: {
-					// ignore stage that fails the condition
-					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
-						break;
-					} else if ( inter.diffuseImage ) {
-						RB_SubmittInteraction( &inter );
-					}
-					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
-										  inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
-					inter.diffuseColor[0] *= lightColor[0];
-					inter.diffuseColor[1] *= lightColor[1];
-					inter.diffuseColor[2] *= lightColor[2];
-					inter.diffuseColor[3] *= lightColor[3];
-					inter.vertexColor = surfaceStage->vertexColor;
+				// nbohr1more: #4292 nospecular and nodiffuse fix
+				else if ( backEnd.vLight->lightDef->parms.noSpecular ) {
 					break;
+				} else if ( inter.specularImage ) {
+					RB_SubmittInteraction( &inter );
 				}
-				case SL_SPECULAR: {
-					// ignore stage that fails the condition
-					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
-						break;
-					}
-					// nbohr1more: #4292 nospecular and nodiffuse fix
-					else if ( backEnd.vLight->lightDef->parms.noSpecular ) {
-						break;
-					} else if ( inter.specularImage ) {
-						RB_SubmittInteraction( &inter );
-					}
-					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
-										  inter.specularMatrix, inter.specularColor.ToFloatPtr() );
-					inter.specularColor[0] *= lightColor[0];
-					inter.specularColor[1] *= lightColor[1];
-					inter.specularColor[2] *= lightColor[2];
-					inter.specularColor[3] *= lightColor[3];
-					inter.vertexColor = surfaceStage->vertexColor;
-					break;
-				}
+				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
+				                      inter.specularMatrix, inter.specularColor.ToFloatPtr() );
+				inter.specularColor[0] *= lightColor[0];
+				inter.specularColor[1] *= lightColor[1];
+				inter.specularColor[2] *= lightColor[2];
+				inter.specularColor[3] *= lightColor[3];
+				inter.vertexColor = surfaceStage->vertexColor;
+				break;
+			}
 			}
 		}
 

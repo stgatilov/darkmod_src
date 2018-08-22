@@ -294,7 +294,7 @@ void ZDrawCameraIcon(void) {
 	x = 0;
 	y = g_pParentWnd->GetCamera()->Camera().origin[2];
 
-	qglColor3f(0.0, 0.0, 1.0);
+	GL_FloatColor(0.0, 0.0, 1.0);
 	qglBegin(GL_LINE_STRIP);
 	qglVertex3f(x - xCam, y, 0);
 	qglVertex3f(x, y + CAM_GIZMO, 0);
@@ -339,8 +339,8 @@ void Z_Draw(void) {
 	}
 
 	// clear
-	qglViewport(0, 0, z.width, z.height);
-	qglScissor(0, 0, z.width, z.height);
+	GL_Viewport(0, 0, z.width, z.height);
+	GL_Scissor(0, 0, z.width, z.height);
 
 	qglClearColor
 	(
@@ -419,7 +419,7 @@ void Z_Draw(void) {
 		bottom = org_bottom[2] + bottom;
 
 		//q = declManager->FindMaterial(brush->brush_faces->texdef.name);
-		qglColor3f(brush->owner->eclass->color.x, brush->owner->eclass->color.y, brush->owner->eclass->color.z);
+		GL_FloatColor(brush->owner->eclass->color.x, brush->owner->eclass->color.y, brush->owner->eclass->color.z);
 		qglBegin(GL_QUADS);
 		qglVertex2f(-xCam, bottom);
 		qglVertex2f(xCam, bottom);
@@ -427,7 +427,7 @@ void Z_Draw(void) {
 		qglVertex2f(-xCam, top);
 		qglEnd();
 
-		qglColor3f(1, 1, 1);
+		GL_FloatColor(1, 1, 1);
 		qglBegin(GL_LINE_LOOP);
 		qglVertex2f(-xCam, bottom);
 		qglVertex2f(xCam, bottom);
@@ -453,7 +453,7 @@ void Z_Draw(void) {
 					bottom = org_bottom[2] + bottom;
 
 					//q = declManager->FindMaterial(brush->brush_faces->texdef.name);
-					qglColor3f(brush->owner->eclass->color.x, brush->owner->eclass->color.y, brush->owner->eclass->color.z);
+					GL_FloatColor(brush->owner->eclass->color.x, brush->owner->eclass->color.y, brush->owner->eclass->color.z);
 					qglBegin(GL_QUADS);
 					qglVertex2f(-xCam, bottom);
 					qglVertex2f(xCam, bottom);
