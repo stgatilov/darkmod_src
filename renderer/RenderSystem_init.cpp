@@ -1124,8 +1124,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		idImage	*image1 = globalImages->images[i];
 
-		if ( image1->isPartialImage     || // ignore background loading stubs
-		     image1->generatorFunction  || // ignore procedural images
+		if ( image1->generatorFunction  || // ignore procedural images
 		     image1->type != TT_2D		|| // ignore cube maps
 		     image1->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
 		     image1->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
@@ -1144,8 +1143,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 
 		for ( int j = 0 ; j < i ; j++ ) {
 			idImage	*image2 = globalImages->images[j];
-			if ( image2->isPartialImage     || // ignore background loading stubs
-			     image2->generatorFunction  || // ignore procedural images
+			if ( image2->generatorFunction  || // ignore procedural images
 			     image2->type != TT_2D		|| // ignore cube maps
 			     image2->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
 			     image2->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly

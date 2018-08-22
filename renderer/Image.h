@@ -200,7 +200,6 @@ public:
 	void		GetDownsize( int &scaled_width, int &scaled_height ) const;
 	void		MakeDefault();	// fill with a grid pattern
 	void		SetImageFilterAndRepeat() const;
-	bool		ShouldImageBePartialCached();
 	void		WritePrecompressedImage();
 	bool		CheckPrecompressedImage( bool fullLoad );
 	void		UploadPrecompressedImage( byte *data, int len );
@@ -218,13 +217,6 @@ public:
 	textureType_t		type;
 	int					frameUsed;				// for texture usage in frame statistics
 	int					bindCount;				// incremented each bind
-
-	// background loading information
-	idImage				*partialImage;			// shrunken, space-saving version
-	bool				isPartialImage;			// true if this is pointed to by another image
-	bool				backgroundLoadInProgress;	// true if another thread is reading the complete d3t file
-	backgroundDownload_t	bgl;
-	idImage *			bglNext;				// linked from tr.backgroundImageLoads
 
 	// parameters that define this image
 	idStr				imgName;				// game path, including extension (except for cube maps), may be an image program
@@ -249,8 +241,6 @@ public:
 	int					uploadWidth, uploadHeight;	// after power of two, downsample, and MAX_TEXTURE_SIZE
 	int					internalFormat;
 
-	idImage 			*cacheUsagePrev, *cacheUsageNext;	// for dynamic cache purging of old images
-
 	idImage *			hashNext;				// for hash chains to speed lookup
 
 	int					refCount;				// overall ref count
@@ -258,15 +248,9 @@ public:
 
 ID_INLINE idImage::idImage() {
 	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
-	partialImage = NULL;
 	type = TT_DISABLED;
-	isPartialImage = false;
 	frameUsed = 0;
 	classification = 0;
-	backgroundLoadInProgress = false;
-	bgl.opcode = DLTYPE_FILE;
-	bgl.f = NULL;
-	bglNext = NULL;
 	imgName[0] = '\0';
 	generatorFunction = NULL;
 	allowDownSize = false;
@@ -282,8 +266,6 @@ ID_INLINE idImage::idImage() {
 	bindCount = 0;
 	uploadWidth = uploadHeight = 0;
 	internalFormat = 0;
-	//	pixelDataFormat[0] = pixelDataFormat[1] = 0;	//~SS. Used for regenerating render target textures
-	cacheUsagePrev = cacheUsageNext = NULL;
 	hashNext = NULL;
 	refCount = 0;
 }
@@ -318,10 +300,6 @@ public:
 	// The callback will be issued immediately, and later if images are reloaded or vid_restart
 	// The callback function should call one of the idImage::Generate* functions to fill in the data
 	idImage *			ImageFromFunction( const char *name, void ( *generatorFunction )( idImage *image ) );
-
-	// called once a frame to allow any background loads that have been completed
-	// to turn into textures.
-	void				CompleteBackgroundImageLoads();
 
 	// returns the number of bytes of image data bound in the previous frame
 	int					SumOfUsedImages();
@@ -374,11 +352,6 @@ public:
 	static idCVar		image_useNormalCompression;	// use rxgb compression
 	static idCVar		image_useOffLineCompression; // will write a batch file with commands for the offline compression
 	static idCVar		image_preload;				// if 0, dynamically load all images
-	static idCVar		image_cacheMinK;			// maximum K of precompressed files to read at specification time,
-	// the remainder will be dynamically cached
-	static idCVar		image_cacheMegs;			// maximum bytes set aside for temporary loading of full-sized precompressed images
-	static idCVar		image_useCache;				// 1 = do background load image caching
-	static idCVar		image_showBackgroundLoads;	// 1 = print number of outstanding background loads
 	static idCVar		image_forceDownSize;		// allows the ability to force a downsize
 	static idCVar		image_downSizeSpecular;		// downsize specular
 	static idCVar		image_downSizeSpecularLimit;// downsize specular limit
@@ -443,13 +416,6 @@ public:
 	float				textureLODBias;
 
 	idImage *			imageHashTable[FILE_HASH_SIZE];
-
-	idImage *			backgroundImageLoads;		// chain of images that have background file loads active
-	idImage				cacheLRU;					// head/tail of doubly linked list
-	int					totalCachedImageSize;		// for determining when something should be purged
-
-	int	numActiveBackgroundImageLoads;
-	const static int MAX_BACKGROUND_IMAGE_LOADS = 8;
 };
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system

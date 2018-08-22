@@ -1049,62 +1049,6 @@ void idImage::WritePrecompressedImage() {
 
 /*
 ================
-ShouldImageBePartialCached
-
-Returns true if there is a precompressed image, and it is large enough
-to be worth caching
-================
-*/
-bool idImage::ShouldImageBePartialCached() {
-	if ( !glConfig.textureCompressionAvailable ) {
-		return false;
-	}
-
-	if ( !globalImages->image_useCache.GetBool() ) {
-		return false;
-	}
-
-	// the allowDownSize flag does double-duty as don't-partial-load
-	if ( !allowDownSize ) {
-		return false;
-	}
-
-	if ( globalImages->image_cacheMinK.GetInteger() <= 0 ) {
-		return false;
-	}
-	char	filename[MAX_IMAGE_NAME];
-
-	ImageProgramStringToCompressedFileName( imgName, filename );
-
-	// get the file timestamp
-	fileSystem->ReadFile( filename, NULL, &timestamp );
-
-	if ( timestamp == FILE_NOT_FOUND_TIMESTAMP ) {
-		return false;
-	}
-
-	// open it and get the file size
-	idFile *f;
-
-	f = fileSystem->OpenFileRead( filename );
-
-	if ( !f ) {
-		return false;
-	}
-	int	len = f->Length();
-
-	fileSystem->CloseFile( f );
-
-	if ( len <= globalImages->image_cacheMinK.GetInteger() * 1024 ) {
-		return false;
-	}
-
-	// we do want to do a partial load
-	return true;
-}
-
-/*
-================
 CheckPrecompressedImage
 
 If fullLoad is false, only the small mip levels of the image will be loaded
@@ -1153,9 +1097,6 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 		return false;
 	}
 
-	if ( !fullLoad && len > globalImages->image_cacheMinK.GetInteger() * 1024 ) {
-		len = globalImages->image_cacheMinK.GetInteger() * 1024;
-	}
 	byte *data = ( byte * )R_StaticAlloc( len );
 
 	f->Read( data, len );
@@ -1338,17 +1279,6 @@ void idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 		return;
 	}
 
-	// if we are a partial image, we are only going to load from a compressed file
-	if ( isPartialImage ) {
-		if ( CheckPrecompressedImage( false ) ) {
-			return;
-		}
-		// this is an error -- the partial image failed to load
-		common->Warning( "Failed to load partial image : %s", imgName.c_str() );
-		MakeDefault();
-		return;
-	}
-
 	//
 	// load the image from disk
 	//
@@ -1443,35 +1373,10 @@ void idImage::Bind() {
 	}
 #endif
 
-	// if this is an image that we are caching, move it to the front of the LRU chain
-	if ( isPartialImage ) {
-		if ( cacheUsageNext ) {
-			// unlink from old position
-			cacheUsageNext->cacheUsagePrev = cacheUsagePrev;
-			cacheUsagePrev->cacheUsageNext = cacheUsageNext;
-		}
-		// link in at the head of the list
-		cacheUsageNext = globalImages->cacheLRU.cacheUsageNext;
-		cacheUsagePrev = &globalImages->cacheLRU;
-
-		cacheUsageNext->cacheUsagePrev = this;
-		cacheUsagePrev->cacheUsageNext = this;
-	}
-
 	// load the image if necessary (FIXME: not SMP safe!)
 	if ( texnum == TEXTURE_NOT_LOADED ) {
-		if ( isPartialImage ) {
-			// if we have a partial image, go ahead and use that
-			this->partialImage->Bind();
-
-			// start a background load of the full thing if it isn't already in the queue
-			if ( !backgroundLoadInProgress ) {
-				StartBackgroundImageLoad();
-			}
-			return;
-		}
-
 		// load the image on demand here, which isn't our normal game operating mode
+		// duzenko: useful for fast map loading / quick debugging
 		ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
 	}
 
@@ -1531,36 +1436,10 @@ void idImage::BindFragment() {
 		RB_LogComment( "idImage::BindFragment %s )\n", imgName.c_str() );
 	}
 #endif
-	// if this is an image that we are caching, move it to the front of the LRU chain
-	if ( isPartialImage ) {
-		if ( cacheUsageNext ) {
-			// unlink from old position
-			cacheUsageNext->cacheUsagePrev = cacheUsagePrev;
-			cacheUsagePrev->cacheUsageNext = cacheUsageNext;
-		}
-
-		// link in at the head of the list
-		cacheUsageNext = globalImages->cacheLRU.cacheUsageNext;
-		cacheUsagePrev = &globalImages->cacheLRU;
-
-		cacheUsageNext->cacheUsagePrev = this;
-		cacheUsagePrev->cacheUsageNext = this;
-	}
-
 	// load the image if necessary (FIXME: not SMP safe!)
 	if ( texnum == TEXTURE_NOT_LOADED ) {
-		if ( isPartialImage ) {
-			// if we have a partial image, go ahead and use that
-			this->partialImage->BindFragment();
-
-			// start a background load of the full thing if it isn't already in the queue
-			if ( !backgroundLoadInProgress ) {
-				StartBackgroundImageLoad();
-			}
-			return;
-		}
-
 		// load the image on demand here, which isn't our normal game operating mode
+		// duzenko: useful for fast map loading / quick debugging
 		ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
 	}
 

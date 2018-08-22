@@ -55,10 +55,6 @@ idCVar idImageManager::image_writePrecompressedTextures( "image_writePrecompress
 idCVar idImageManager::image_writeNormalTGA( "image_writeNormalTGA", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the final normal maps for debugging" );
 idCVar idImageManager::image_writeTGA( "image_writeTGA", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the non normal maps for debugging" );
 idCVar idImageManager::image_useOffLineCompression( "image_useOfflineCompression", "0", CVAR_RENDERER | CVAR_BOOL, "write a batch file for offline compression of DDS files" );
-idCVar idImageManager::image_cacheMinK( "image_cacheMinK", "200", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "maximum KB of precompressed files to read at specification time" );
-idCVar idImageManager::image_cacheMegs( "image_cacheMegs", "20", CVAR_RENDERER | CVAR_ARCHIVE, "maximum MB set aside for temporary loading of full-sized precompressed images" );
-idCVar idImageManager::image_useCache( "image_useCache", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = do background load image caching" );
-idCVar idImageManager::image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER | CVAR_BOOL, "1 = print number of outstanding background loads" );
 idCVar idImageManager::image_downSizeSpecular( "image_downSizeSpecular", "0", CVAR_RENDERER | CVAR_ARCHIVE, "controls specular downsampling" );
 idCVar idImageManager::image_downSizeBump( "image_downSizeBump", "0", CVAR_RENDERER | CVAR_ARCHIVE, "controls normal map downsampling" );
 idCVar idImageManager::image_downSizeSpecularLimit( "image_downSizeSpecularLimit", "64", CVAR_RENDERER | CVAR_ARCHIVE, "controls specular downsampled limit" );
@@ -982,9 +978,6 @@ void R_ListImages_f( const idCmdArgs &args ) {
 	int		matchTag = 0;
 	bool	uncompressedOnly = false;
 	bool	unloaded = false;
-	bool	partial = false;
-	bool	cached = false;
-	bool	uncached = false;
 	bool	failed = false;
 	bool	touched = false;
 	bool	sorted = false;
@@ -999,14 +992,8 @@ void R_ListImages_f( const idCmdArgs &args ) {
 			uncompressedOnly = true;
 		} else if ( idStr::Icmp( args.Argv( 1 ), "sorted" ) == 0 ) {
 			sorted = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "partial" ) == 0 ) {
-			partial = true;
 		} else if ( idStr::Icmp( args.Argv( 1 ), "unloaded" ) == 0 ) {
 			unloaded = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "cached" ) == 0 ) {
-			cached = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "uncached" ) == 0 ) {
-			uncached = true;
 		} else if ( idStr::Icmp( args.Argv( 1 ), "tagged" ) == 0 ) {
 			matchTag = 1;
 		} else if ( idStr::Icmp( args.Argv( 1 ), "duplicated" ) == 0 ) {
@@ -1053,18 +1040,6 @@ void R_ListImages_f( const idCmdArgs &args ) {
 		}
 
 		if ( unloaded && image->texnum != idImage::TEXTURE_NOT_LOADED ) {
-			continue;
-		}
-
-		if ( partial && !image->isPartialImage ) {
-			continue;
-		}
-
-		if ( cached && ( !image->partialImage || image->texnum == idImage::TEXTURE_NOT_LOADED ) ) {
-			continue;
-		}
-
-		if ( uncached && ( !image->partialImage || image->texnum != idImage::TEXTURE_NOT_LOADED ) ) {
 			continue;
 		}
 
@@ -1334,10 +1309,6 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 			if ( image->allowDownSize == allowDownSize && image->depth == depth ) {
 				// note that it is used this level load
 				image->levelLoadReferenced = true;
-
-				if ( image->partialImage != NULL ) {
-					image->partialImage->levelLoadReferenced = true;
-				}
 				return image;
 			}
 
@@ -1354,18 +1325,12 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 			if ( image->allowDownSize == allowDownSize && image->depth == depth ) {
 				// the already created one is already the highest quality
 				image->levelLoadReferenced = true;
-				if ( image->partialImage != NULL ) {
-					image->partialImage->levelLoadReferenced = true;
-				}
 				return image;
 			}
 			image->allowDownSize = allowDownSize;
 			image->depth = depth;
 			image->levelLoadReferenced = true;
 
-			if ( image->partialImage != NULL ) {
-				image->partialImage->levelLoadReferenced = true;
-			}
 			if ( image_preload.GetBool() && !insideLevelLoad ) {
 				image->referencedOutsideLevelLoad = true;
 				image->ActuallyLoadImage( true, false );	// check for precompressed, load is from front end
@@ -1408,38 +1373,6 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	image->filter = filter;
 
 	image->levelLoadReferenced = true;
-
-	// also create a shrunken version if we are going to dynamically cache the full size image
-	if ( image->ShouldImageBePartialCached() ) {
-		// if we only loaded part of the file, create a new idImage for the shrunken version
-		image->partialImage = new idImage;
-
-		image->partialImage->allowDownSize = allowDownSize;
-		image->partialImage->repeat = repeat;
-		image->partialImage->depth = depth;
-		image->partialImage->type = TT_2D;
-		image->partialImage->cubeFiles = cubeMap;
-		image->partialImage->filter = filter;
-
-		image->partialImage->levelLoadReferenced = true;
-
-		// we don't bother hooking this into the hash table for lookup, but we do add it to the manager
-		// list for listImages
-		globalImages->images.Append( image->partialImage );
-		image->partialImage->imgName = image->imgName;
-		image->partialImage->isPartialImage = true;
-
-		// let the background file loader know that we can load
-		image->precompressedFile = true;
-
-		if ( image_preload.GetBool() && !insideLevelLoad ) {
-			image->partialImage->ActuallyLoadImage( true, false );	// check for precompressed, load is from front end
-			declManager->MediaPrint( "%ix%i %s\n", image->partialImage->uploadWidth, image->partialImage->uploadHeight, image->imgName.c_str() );
-		} else {
-			declManager->MediaPrint( "%s\n", image->imgName.c_str() );
-		}
-		return image;
-	}
 
 	// load it if we aren't in a level preload
 	if ( image_preload.GetBool() && !insideLevelLoad ) {
@@ -1592,113 +1525,6 @@ void R_CombineCubeImages_f( const idCmdArgs &args ) {
 	common->SetRefreshOnPrint( false );
 }
 
-
-/*
-==================
-idImage::StartBackgroundImageLoad
-==================
-*/
-void idImage::StartBackgroundImageLoad() {
-	if ( imageManager.numActiveBackgroundImageLoads >= idImageManager::MAX_BACKGROUND_IMAGE_LOADS ) {
-		return;
-	}
-	if ( globalImages->image_showBackgroundLoads.GetBool() ) {
-		common->Printf( "idImage::StartBackgroundImageLoad: %s\n", imgName.c_str() );
-	}
-	backgroundLoadInProgress = true;
-
-	if ( !precompressedFile ) {
-		common->Warning( "idImageManager::StartBackgroundImageLoad: %s wasn't a precompressed file", imgName.c_str() );
-		return;
-	}
-	bglNext = globalImages->backgroundImageLoads;
-	globalImages->backgroundImageLoads = this;
-
-	char filename[MAX_IMAGE_NAME];
-	ImageProgramStringToCompressedFileName( imgName, filename );
-
-	bgl.completed = false;
-	bgl.f = fileSystem->OpenFileRead( filename );
-
-	if ( !bgl.f ) {
-		common->Warning( "idImageManager::StartBackgroundImageLoad: Couldn't load %s", imgName.c_str() );
-		return;
-	}
-	bgl.file.position = 0;
-	bgl.file.length = bgl.f->Length();
-
-	if ( bgl.file.length < sizeof( ddsFileHeader_t ) ) {
-		common->Warning( "idImageManager::StartBackgroundImageLoad: %s had a bad file length", imgName.c_str() );
-		return;
-	}
-	bgl.file.buffer = R_StaticAlloc( bgl.file.length );
-	fileSystem->BackgroundDownload( &bgl );
-
-	imageManager.numActiveBackgroundImageLoads++;
-
-	// purge some images if necessary
-	int	totalSize = 0;
-
-	for ( idImage *check = globalImages->cacheLRU.cacheUsageNext ; check != &globalImages->cacheLRU ; check = check->cacheUsageNext ) {
-		totalSize += check->StorageSize();
-	}
-	const int needed = this->StorageSize();
-
-	while ( ( totalSize + needed ) > globalImages->image_cacheMegs.GetFloat() * 1024 * 1024 ) {
-		// purge the least recently used
-		idImage	*check = globalImages->cacheLRU.cacheUsagePrev;
-		if ( check->texnum != TEXTURE_NOT_LOADED ) {
-			totalSize -= check->StorageSize();
-			if ( globalImages->image_showBackgroundLoads.GetBool() ) {
-				common->Printf( "purging %s\n", check->imgName.c_str() );
-			}
-			check->PurgeImage();
-		}
-		// remove it from the cached list
-		check->cacheUsageNext->cacheUsagePrev = check->cacheUsagePrev;
-		check->cacheUsagePrev->cacheUsageNext = check->cacheUsageNext;
-		check->cacheUsageNext = nullptr;
-		check->cacheUsagePrev = nullptr;
-	}
-}
-
-/*
-==================
-R_CompleteBackgroundImageLoads
-
-Do we need to worry about vid_restarts here?
-==================
-*/
-void idImageManager::CompleteBackgroundImageLoads() {
-	idImage	*remainingList = nullptr;
-	idImage	*next;
-
-	for ( idImage *image = backgroundImageLoads ; image ; image = next ) {
-		next = image->bglNext;
-		if ( image->bgl.completed ) {
-			numActiveBackgroundImageLoads--;
-			fileSystem->CloseFile( image->bgl.f );
-			// upload the image
-			image->UploadPrecompressedImage( ( byte * )image->bgl.file.buffer, image->bgl.file.length );
-			R_StaticFree( image->bgl.file.buffer );
-			if ( image_showBackgroundLoads.GetBool() ) {
-				common->Printf( "R_CompleteBackgroundImageLoad: %s\n", image->imgName.c_str() );
-			}
-		} else {
-			image->bglNext = remainingList;
-			remainingList = image;
-		}
-	}
-	if ( image_showBackgroundLoads.GetBool() ) {
-		static int prev;
-		if ( numActiveBackgroundImageLoads != prev ) {
-			prev = numActiveBackgroundImageLoads;
-			common->Printf( "background Loads: %i\n", numActiveBackgroundImageLoads );
-		}
-	}
-	backgroundImageLoads = remainingList;
-}
-
 /*
 ===============
 CheckCvars
@@ -1763,10 +1589,6 @@ void idImageManager::Init() {
 	memset( imageHashTable, 0, sizeof( imageHashTable ) );
 
 	images.Resize( 1024, 1024 );
-
-	// clear the cached LRU
-	cacheLRU.cacheUsageNext = &cacheLRU;
-	cacheLRU.cacheUsagePrev = &cacheLRU;
 
 	// set default texture filter modes
 	ChangeTextureFilter();
@@ -1908,7 +1730,7 @@ void idImageManager::EndLevelLoad() {
 			continue;
 		}
 
-		if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && !image->partialImage ) {
+		if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
 			//common->Printf( "Loading image %d: %s\n",i,image->imgName.c_str() );
 			loadCount++;
 			image->ActuallyLoadImage( true, false );

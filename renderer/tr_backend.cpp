@@ -736,7 +736,7 @@ void RB_ShowImages( void ) {
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		image = globalImages->images[i];
 
-		if ( image->texnum == idImage::TEXTURE_NOT_LOADED && image->partialImage == NULL ) {
+		if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) {
 			continue;
 		}
 		w = glConfig.vidWidth / 20;
@@ -830,8 +830,6 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// needed for editor rendering
 	RB_SetDefaultGLState();
 
-	// upload any image loads that have completed
-	globalImages->CompleteBackgroundImageLoads();
 	bool isv3d = false, was2d = false; // needs to be declared outside of switch case
 
 	while ( cmds ) {
