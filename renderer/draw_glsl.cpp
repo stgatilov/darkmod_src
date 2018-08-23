@@ -363,26 +363,14 @@ void RB_GLSL_DrawLight_ShadowMap() {
 
 	GL_CheckErrors();
 
-	if ( !backEnd.vLight->lightShader->IsAmbientLight() ) {
-		bool doShadows = !backEnd.vLight->lightDef->parms.noShadows &&
-		                 backEnd.vLight->lightShader->LightCastsShadows();
-
-		if ( doShadows ) {
-			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
-
-			pointInteractionShader.Use();
-			qglUniform1f( pointInteractionShader.shadows, 2 );
-			qglUniform1i( pointInteractionShader.shadowMipMap, ShadowMipMap[0] );
-			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-
-			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
-
-			pointInteractionShader.Use();
-		} else {
-			pointInteractionShader.Use();
-			qglUniform1f( pointInteractionShader.shadows, 0 );
-			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-		}
+	bool doShadows = !backEnd.vLight->lightShader->IsAmbientLight() && !backEnd.vLight->lightDef->parms.noShadows &&
+		backEnd.vLight->lightShader->LightCastsShadows();
+	if ( doShadows ) {
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+	} else {
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	}
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
@@ -912,6 +900,14 @@ void pointInteractionProgram_t::AfterLoad() {
 
 void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
+
+	bool doShadows = !backEnd.vLight->lightDef->parms.noShadows &&
+		backEnd.vLight->lightShader->LightCastsShadows();
+	if ( doShadows ) {
+		qglUniform1f( shadows, 2 );
+		qglUniform1i( shadowMipMap, ShadowMipMap[0] );
+	} else
+		qglUniform1f( shadows, 0 );
 
 	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
