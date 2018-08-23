@@ -347,6 +347,7 @@ typedef struct viewLight_s {
 	// projection planes that the view is on the negative side of will be set,
 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
 	int						viewSeesShadowPlaneBits;
+	int						shadowMapIndex;
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 
@@ -636,7 +637,7 @@ typedef struct {
 	textureType_t	textureType;
 } tmu_t;
 
-const int MAX_MULTITEXTURE_UNITS =	8;
+const int MAX_MULTITEXTURE_UNITS =	8 + MAX_LIGHTS;
 typedef struct {
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
 	int			currenttmu;
