@@ -403,6 +403,8 @@ static void R_CheckPortableExtensions( void ) {
 	qglActiveTexture = ( void( APIENTRY * )( GLenum ) )GLimp_ExtensionPointer( "glActiveTexture" );
 	qglGetIntegerv( GL_MAX_TEXTURE_COORDS_ARB, &glConfig.maxTextureCoords );
 	common->Printf( "Max texture coords: %d\n", glConfig.maxTextureCoords );
+	qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &glConfig.maxTextureUnits );
+	common->Printf( "Max texture units: %d\n", glConfig.maxTextureUnits );
 	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );
 	common->Printf( "Max active textures: %d\n", glConfig.maxTextures );
 
