@@ -160,11 +160,6 @@ then do it here.
 ====================
 */
 void GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h ) {
-	// values will be forced to non negative
-	x = abs( x );
-	y = abs( y );
-	w = abs( w );
-	h = abs( h );
 	qglScissor( x, y, w, h );
 }
 
@@ -179,11 +174,6 @@ then do it here.
 ====================
 */
 void GL_Viewport( int x /* left */, int y /* bottom */, int w, int h ) {
-	// values will be forced to non negative
-	x = abs( x );
-	y = abs( y );
-	w = abs( w );
-	h = abs( h );
 	qglViewport( x, y, w, h );
 }
 
