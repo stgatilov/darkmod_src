@@ -1003,7 +1003,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		lightColors.push_back( lightColor.ToVec3() );
 
 		if ( vLight->lightShader->IsAmbientLight() )
-			shadowIndex.push_back( -1 );
+			shadowIndex.push_back( -2 );
 		else
 			shadowIndex.push_back( vLight->shadowMapIndex );
 	}
