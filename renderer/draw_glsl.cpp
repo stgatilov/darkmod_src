@@ -80,6 +80,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 struct multiLightInteractionProgram_t : lightProgram_t {
 	GLint lightCount, lightOrigin, lightColor, shadowMapIndex;
 	GLint bumpMatrix, diffuseMatrix, specularMatrix;
+	GLint gamma;
 	virtual	void AfterLoad();
 	virtual void Draw( const drawInteraction_t *din );
 };
@@ -958,6 +959,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
 	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
 	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
+	gamma = qglGetUniformLocation( program, "u_gamma" );
 	auto diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
 	qglUseProgram( program );
@@ -975,8 +977,6 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<idVec3> lightOrigins, lightColors;
 	std::vector<GLint> shadowIndex;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->lightShader->IsAmbientLight() )
-			continue;
 		if ( vLight->lightShader->IsFogLight() ) {
 			continue;
 		}
@@ -990,13 +990,28 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( din->surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		lightOrigins.push_back( localLightOrigin );
-		lightColors.push_back( din->diffuseColor.ToVec3() );
-		shadowIndex.push_back( vLight->shadowMapIndex );
+		
+		const float			*lightRegs = vLight->shaderRegisters;
+		const idMaterial	*lightShader = vLight->lightShader;
+		const shaderStage_t	*lightStage = lightShader->GetStage( 0 );
+		idVec4 lightColor (
+			backEnd.lightScale * lightRegs[lightStage->color.registers[0]] * din->diffuseColor[0],
+			backEnd.lightScale * lightRegs[lightStage->color.registers[1]] * din->diffuseColor[1],
+			backEnd.lightScale * lightRegs[lightStage->color.registers[2]] * din->diffuseColor[2],
+			lightRegs[lightStage->color.registers[3]]
+		);
+		lightColors.push_back( lightColor.ToVec3() );
+
+		if ( vLight->lightShader->IsAmbientLight() )
+			shadowIndex.push_back( -1 );
+		else
+			shadowIndex.push_back( vLight->shadowMapIndex );
 	}
 
 	Use();
 	lightProgram_t::UpdateUniforms( din );
 	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
+	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
 	idMat2 texCoordMatrix( din->diffuseMatrix[0].ToVec2(), din->diffuseMatrix[1].ToVec2() );
 	qglUniformMatrix2fv( diffuseMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
 	texCoordMatrix[0] = din->bumpMatrix[0].ToVec2();
