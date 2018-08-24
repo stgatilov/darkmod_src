@@ -328,24 +328,22 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 }
 
 void RB_GLSL_GenerateShadowMaps() {
+	if ( r_shadows.GetBool() == 0 )
+		return;
 	ShadowFboIndex = 0;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		backEnd.vLight->shadowMapIndex = -1;
 		if ( ShadowFboIndex >= MAX_LIGHTS )
 			continue;
-		if ( backEnd.vLight->lightShader->IsFogLight() ) {
-			continue;
-		}
-		if ( backEnd.vLight->lightShader->IsBlendLight() ) {
+		if ( !backEnd.vLight->lightShader->LightCastsShadows() ) {
 			continue;
 		}
 		// if there are no interactions, get out!
-		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions ) {
+		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions ) {
 			continue;
 		}
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions, false );
-		backEnd.vLight->shadowMapIndex = ShadowFboIndex++;
+		backEnd.vLight->shadowMapIndex = ++ShadowFboIndex;
 	}
 }
 
@@ -359,9 +357,7 @@ void RB_GLSL_DrawLight_ShadowMap() {
 
 	GL_CheckErrors();
 
-	bool doShadows = !backEnd.vLight->lightShader->IsAmbientLight() && !backEnd.vLight->lightDef->parms.noShadows &&
-		backEnd.vLight->lightShader->LightCastsShadows();
-	if ( doShadows ) {
+	if ( backEnd.vLight->lightShader->LightCastsShadows() ) {
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
@@ -987,6 +983,12 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
 			continue;
 		}
+		if ( 1/*r_ignore.GetBool()*/ ) {
+			idScreenRect r = din->surf->scissorRect;
+			r.Intersect( vLight->scissorRect );
+			if ( r.IsEmpty() )
+				continue;
+		}
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( din->surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		lightOrigins.push_back( localLightOrigin );
@@ -1005,7 +1007,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowIndex.push_back( -2 );
 		else
-			shadowIndex.push_back( vLight->shadowMapIndex );
+			shadowIndex.push_back( vLight->shadowMapIndex-1 );
 	}
 
 	Use();
