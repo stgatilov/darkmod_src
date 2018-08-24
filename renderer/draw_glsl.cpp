@@ -406,6 +406,11 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
 	qglEnableVertexAttribArray( 11 );
+	for ( int i = 0; i < MAX_LIGHTS; i++ ) {
+		GL_SelectTexture( MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i );
+		globalImages->shadowCubeMap[i]->Bind();
+	}
+
 	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
 		if ( drawSurfs[i]->material->SuppressInSubview() ) {
 			continue;
@@ -428,6 +433,12 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		extern void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
 		RB_CreateMultiDrawInteractions( drawSurfs[i] );
 	}
+
+	for ( int i = 0; i < MAX_LIGHTS; i++ ) {
+		GL_SelectTexture( MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i );
+		globalImages->BindNull();
+	}
+
 	GL_SelectTexture( 4 );
 	globalImages->BindNull();
 
@@ -1023,11 +1034,6 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	texCoordMatrix[1] = din->specularMatrix[1].ToVec2();
 	qglUniformMatrix2fv( specularMatrix, 1, false, texCoordMatrix.ToFloatPtr() );*/
 	
-	for ( int i = 0; i < MAX_LIGHTS; i++ ) {
-		GL_SelectTexture( MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i );
-		globalImages->shadowCubeMap[i]->Bind();
-	}
-
 	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = min( lightOrigins.size() - i, MAX_LIGHTS );
 		qglUniform1i( lightCount, thisCount );
@@ -1035,11 +1041,6 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
 		qglUniform1iv( shadowMapIndex, thisCount, &shadowIndex[i] );
 		RB_DrawElementsWithCounters( din->surf );
-	}
-
-	for ( int i = 0; i < MAX_LIGHTS; i++ ) {
-		GL_SelectTexture( MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i );
-		globalImages->BindNull();
 	}
 
 	qglUseProgram( 0 );

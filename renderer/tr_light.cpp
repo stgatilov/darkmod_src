@@ -481,6 +481,17 @@ void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEn
 	if ( space->entityDef && space->entityDef->parms.noShadow ) {
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 	}
+	
+	static idCVar r_skipDynamicShadows( "r_skipDynamicShadows", "0", CVAR_ARCHIVE | CVAR_BOOL | CVAR_RENDERER, "" );
+	if ( r_skipDynamicShadows.GetBool() )
+		for ( auto ent = space; ent; ent = ent->next ) {
+			//&& !space->entityDef->parms.hModel->IsStaticWorldModel() 
+			//	&& space->entityDef->lastModifiedFrameNum == tr.viewCount 
+			if ( ent->entityDef && ent->entityDef->parms.hModel && ent->entityDef->parms.hModel->IsDynamicModel() ) {
+				drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
+			}
+		}
+
 	drawSurf->particle_radius = 0.0f; // #3878
 
 	if ( viewInsideShadow ) {
