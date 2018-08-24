@@ -223,8 +223,6 @@ void RB_GLSL_DrawLight_Stencil() {
 	GL_PROFILE( "GLSL_DrawLight_Stencil" );
 
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
-	pointInteractionShader.Use();
-	qglUniform1f( pointInteractionShader.shadows, 1 );
 
 	// set depth bounds for the whole light
 	if ( backEnd.useLightDepthBounds ) {
@@ -904,7 +902,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	bool doShadows = !backEnd.vLight->lightDef->parms.noShadows &&
 		backEnd.vLight->lightShader->LightCastsShadows();
 	if ( doShadows ) {
-		qglUniform1f( shadows, 2 );
+		qglUniform1f( shadows, r_shadows.GetInteger() );
 		qglUniform1i( shadowMipMap, ShadowMipMap[0] );
 	} else
 		qglUniform1f( shadows, 0 );
