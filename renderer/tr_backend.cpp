@@ -153,13 +153,17 @@ void GL_Cull( const int cullType ) {
 ====================
 GL_Scissor
 
-Utility function, 
+Utility function,
 if you absolutly must
 check for anything out of the ordinary,
 then do it here.
 ====================
 */
 void GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h ) {
+	// x and y can be negative, but neither width nor height must be.
+	if ( w <= 0 || h <= 0 ) {
+		return;
+	}
 	qglScissor( x, y, w, h );
 }
 
@@ -167,13 +171,17 @@ void GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h ) {
 ====================
 GL_Viewport
 
-Utility function, 
+Utility function,
 if you absolutly must
 check for anything out of the ordinary,
 then do it here.
 ====================
 */
 void GL_Viewport( int x /* left */, int y /* bottom */, int w, int h ) {
+	// x and y can be negative, but neither width nor height must be.
+	if ( w <= 0 || h <= 0 ) {
+		return;
+	}
 	qglViewport( x, y, w, h );
 }
 
@@ -572,15 +580,15 @@ static bool RB_CheckTools( int width, int height ) {
 	// nbohr1more add checks for render tools
 	// revelator: added some more
 	if ( r_showLightCount.GetBool() ||
-	     r_showShadows.GetBool() ||
-	     r_showVertexColor.GetBool() ||
-	     r_showShadowCount.GetBool() ||
-	     r_showTris.GetBool() ||
-	     r_showPortals.GetBool() ||
-	     r_showTexturePolarity.GetBool() ||
-	     r_showTangentSpace.GetBool() ||
-	     r_showDepth.GetBool() ) {
-		 return true;
+	        r_showShadows.GetBool() ||
+	        r_showVertexColor.GetBool() ||
+	        r_showShadowCount.GetBool() ||
+	        r_showTris.GetBool() ||
+	        r_showPortals.GetBool() ||
+	        r_showTexturePolarity.GetBool() ||
+	        r_showTangentSpace.GetBool() ||
+	        r_showDepth.GetBool() ) {
+		return true;
 	}
 	return false;
 }
@@ -610,7 +618,7 @@ void RB_DrawFullScreenQuad( void ) {
 RB_Bloom
 
 Originally in front renderer (idPlayerView::dnPostProcessManager)
-Moved to backend: Revelator 
+Moved to backend: Revelator
 =============
 */
 void RB_Bloom( void ) {
