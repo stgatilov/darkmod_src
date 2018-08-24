@@ -42,10 +42,7 @@ struct interactionProgram_t : lightProgram_t {
 	GLint localViewOrigin;
 	GLint rgtc;
 
-	GLint lightProjectionS;
-	GLint lightProjectionT;
-	GLint lightProjectionQ;
-	GLint lightFalloff;
+	GLint lightProjectionFalloff;
 
 	GLint cubic;
 	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffCubemap, lightFalloffTexture;
@@ -780,10 +777,7 @@ void interactionProgram_t::AfterLoad() {
 	rgtc = qglGetUniformLocation( program, "u_RGTC" );
 
 	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
-	lightProjectionS = qglGetUniformLocation( program, "u_lightProjectionS" );
-	lightProjectionT = qglGetUniformLocation( program, "u_lightProjectionT" );
-	lightProjectionQ = qglGetUniformLocation( program, "u_lightProjectionQ" );
-	lightFalloff = qglGetUniformLocation( program, "u_lightFalloff" );
+	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
 
 	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
 	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
@@ -826,10 +820,7 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	                    one[4]		= { 1, 1, 1, 1 },
 	                    negOne[4]	= { -1, -1, -1, -1 };
 
-	qglUniform4fv( lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
-	qglUniform4fv( lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
-	qglUniform4fv( lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
-	qglUniform4fv( lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
+	qglUniformMatrix4fv( lightProjectionFalloff, 1, false, din->lightProjection[0].ToFloatPtr() );
 	idMat2 texCoordMatrix( din->diffuseMatrix[0].ToVec2(), din->diffuseMatrix[1].ToVec2() );
 	qglUniformMatrix2fv( diffuseMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
 	texCoordMatrix[0] = din->bumpMatrix[0].ToVec2();
@@ -1020,7 +1011,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		globalImages->shadowCubeMap[i]->Bind();
 	}
 
-	for ( int i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
+	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = min( lightOrigins.size() - i, MAX_LIGHTS );
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
