@@ -1262,11 +1262,11 @@ void R_AddModelSurfaces( void ) {
 	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
 
 		idRenderEntityLocal &def = *vEntity->entityDef;
-		if ( r_skipModels.GetInteger() == 1 && def.dynamicModel ) { // debug filters
+		if ( (r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0) && (def.dynamicModel || def.cachedDynamicModel) ) { // debug filters
 			continue;
 		}
 
-		if ( r_skipModels.GetInteger() == 2 && !def.dynamicModel ) {
+		if ( r_skipModels.GetInteger() == 2 && !(def.dynamicModel || def.cachedDynamicModel) ) {
 			continue;
 		}
 
