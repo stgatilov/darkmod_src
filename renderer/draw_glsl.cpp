@@ -79,7 +79,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 
 struct multiLightInteractionProgram_t : lightProgram_t {
 	GLint lightCount, lightOrigin, lightColor, shadowMapIndex;
-	GLint bumpMatrix, diffuseMatrix, specularMatrix;
+	GLint bumpMatrix, diffuseMatrix, specularMatrix, lightProjectionFalloff;
 	GLint gamma;
 	virtual	void AfterLoad();
 	virtual void Draw( const drawInteraction_t *din );
@@ -972,6 +972,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
 	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
 	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
+	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
 	auto diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
@@ -988,6 +989,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 
 void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<idVec3> lightOrigins, lightColors;
+	std::vector<idMat4> projectionFalloff;
 	std::vector<GLint> shadowIndex;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
@@ -1028,6 +1030,14 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		);
 		lightColors.push_back( lightColor.ToVec3() );
 
+		idPlane lightProject[4];
+		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
+		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );
+		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[2], lightProject[2] );
+		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
+		idMat4 *p = (idMat4*)&lightProject;
+		projectionFalloff.push_back( *p );
+
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowIndex.push_back( -2 );
 		else
@@ -1052,6 +1062,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
+		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
 		qglUniform1iv( shadowMapIndex, thisCount, &shadowIndex[i] );
 		RB_DrawElementsWithCounters( surf );
 		if ( r_showMultiLight.GetBool() ) {
