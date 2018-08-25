@@ -338,8 +338,10 @@ void RB_GLSL_GenerateShadowMaps() {
 		return;
 	ShadowFboIndex = 0;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( ShadowFboIndex >= MAX_LIGHTS )
+		if ( ShadowFboIndex >= MAX_LIGHTS ) {
+			common->Warning( "Shadow maps limit exceeded" );
 			continue;
+		}
 		if ( !backEnd.vLight->lightShader->LightCastsShadows() ) {
 			continue;
 		}
@@ -993,21 +995,11 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<GLint> shadowIndex;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->lightShader->IsFogLight() ) {
+		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() ) {
 			continue;
 		}
-		if ( vLight->lightShader->IsBlendLight() ) {
-			continue;
-		}
-		// if there are no interactions, get out!
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
 			continue;
-		}
-		if ( 1/*r_ignore.GetBool()*/ ) {
-			idScreenRect r = surf->scissorRect;
-			r.Intersect( vLight->scissorRect );
-			if ( r.IsEmpty() )
-				continue;
 		}
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );

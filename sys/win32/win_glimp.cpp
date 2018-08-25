@@ -772,8 +772,6 @@ Sets up the screen based on passed parms..
 ===================
 */
 bool GLimp_SetScreenParms( glimpParms_t parms ) {
-	int exstyle;
-	int stylebits;
 	int x, y, w, h;
 	DEVMODE dm;
 
@@ -789,10 +787,8 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 	glConfig.isFullscreen = parms.fullScreen;
 
 	if ( parms.fullScreen ) {
-		exstyle = 0;
-		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
-		SetWindowLong( win32.hWnd, GWL_STYLE, stylebits );
-		SetWindowLong( win32.hWnd, GWL_EXSTYLE, exstyle );
+		SetWindowLong( win32.hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE | WS_SYSMENU );
+		SetWindowLong( win32.hWnd, GWL_EXSTYLE, 0 );
 		dm.dmPelsWidth  = parms.width;
 		dm.dmPelsHeight = parms.height;
 		dm.dmBitsPerPel = 32;
@@ -829,11 +825,10 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 		dm.dmPelsWidth  = win32.desktopWidth;
 		dm.dmPelsHeight = win32.desktopHeight;
 		dm.dmBitsPerPel = win32.desktopBitsPixel;
-		exstyle = 0;
-		stylebits = WINDOW_STYLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+		auto stylebits = WINDOW_STYLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 		AdjustWindowRect( &r, stylebits, FALSE );
 		SetWindowLong( win32.hWnd, GWL_STYLE, stylebits );
-		SetWindowLong( win32.hWnd, GWL_EXSTYLE, exstyle );
+		SetWindowLong( win32.hWnd, GWL_EXSTYLE, 0 );
 		common->Printf( "%i %i %i %i\n", x, y, w, h );
 	}
 
