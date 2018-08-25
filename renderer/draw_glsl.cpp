@@ -989,6 +989,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<idVec3> lightOrigins, lightColors;
 	std::vector<GLint> shadowIndex;
+	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
 		if ( vLight->lightShader->IsFogLight() ) {
 			continue;
@@ -1001,13 +1002,19 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			continue;
 		}
 		if ( 1/*r_ignore.GetBool()*/ ) {
-			idScreenRect r = din->surf->scissorRect;
+			idScreenRect r = surf->scissorRect;
 			r.Intersect( vLight->scissorRect );
 			if ( r.IsEmpty() )
 				continue;
 		}
 		idVec3 localLightOrigin;
-		R_GlobalPointToLocal( din->surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
+		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
+		if ( 1/*r_ignore.GetBool()*/ ) {
+			idVec3 lr( vLight->lightDef->parms.lightRadius );
+			idBounds lb( localLightOrigin - lr, localLightOrigin + lr );
+			if ( !surf->frontendGeo->bounds.IntersectsBounds( lb ) )
+				continue;
+		}
 		lightOrigins.push_back( localLightOrigin );
 		
 		const float			*lightRegs = vLight->shaderRegisters;
@@ -1029,7 +1036,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 
 	Use();
 	lightProgram_t::UpdateUniforms( din );
-	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
+	qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
 	idMat2 texCoordMatrix( din->diffuseMatrix[0].ToVec2(), din->diffuseMatrix[1].ToVec2() );
 	qglUniformMatrix2fv( diffuseMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
@@ -1046,7 +1053,12 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
 		qglUniform1iv( shadowMapIndex, thisCount, &shadowIndex[i] );
-		RB_DrawElementsWithCounters( din->surf );
+		RB_DrawElementsWithCounters( surf );
+		if ( r_showMultiLight.GetBool() ) {
+			backEnd.pc.c_interactions++;
+			backEnd.pc.c_interactionLights += lightOrigins.size();
+			backEnd.pc.c_interactionMaxLights = max( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
+		}
 	}
 
 	qglUseProgram( 0 );

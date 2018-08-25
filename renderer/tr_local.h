@@ -669,6 +669,8 @@ typedef struct {
 	int		c_matrixLoads;
 	float	c_overDraw;
 
+	uint	c_interactions, c_interactionLights, c_interactionMaxLights;
+
 	int		msec;			// total msec for backend run
 	int		msecLast;		// last msec for backend run
 	char	waitedFor;		// . - backend, F = frontend, S - GPU Sync
@@ -981,6 +983,7 @@ extern idCVar r_showCull;				// report sphere and box culling stats
 extern idCVar r_showInteractions;		// report interaction generation activity
 extern idCVar r_showSurfaces;			// report surface/light/shadow counts
 extern idCVar r_showPrimitives;			// report vertex/index/draw counts
+extern idCVar r_showMultiLight;			// 
 extern idCVar r_showPortals;			// draw portal outlines in color based on passed / not passed
 extern idCVar r_showAlloc;				// report alloc/free counts
 extern idCVar r_showSkel;				// draw the skeleton when model animates
