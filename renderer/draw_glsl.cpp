@@ -300,6 +300,9 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	backEnd.currentSpace = NULL;
 
+	qglPolygonOffset( 1, 1 );
+	qglEnable( GL_POLYGON_OFFSET_FILL );
+
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() ) {
 			continue;    //most of dynamic models don't have this flag but use an _invisible_ shadow material
@@ -320,6 +323,9 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		RB_DrawElementsWithCounters( surf );
 	}
+	
+	qglDisable( GL_POLYGON_OFFSET_FILL );
+
 	qglUseProgram( 0 );
 
 	FB_ToggleShadow( false );

@@ -477,19 +477,19 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	// additional steps for shadowmaps
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglDepthMask( on );
-		GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
+		//GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
 		if ( on ) {
 			int mapSize = r_shadowMapSize.GetInteger();
-			ShadowMipMap[ShadowFboIndex] = 0;
+			/*ShadowMipMap[ShadowFboIndex] = 0;
 			int lightScreenSize = idMath::Imax( backEnd.vLight->scissorRect.GetWidth(), backEnd.vLight->scissorRect.GetHeight() ),
 			         ScreenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );
 
-			/*while ( lightScreenSize < screenSize && ShadowMipMap[ShadowFboIndex] < 5 ) {
+			while ( lightScreenSize < screenSize && ShadowMipMap[ShadowFboIndex] < 5 ) {
 				ShadowMipMap[ShadowFboIndex]++; // select a smaller map for small/distant lights
 				lightScreenSize <<= 1;
 				mapSize >>= 1;
-			}*/
-			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap[ShadowFboIndex]->texnum, ShadowMipMap[ShadowFboIndex] );
+			}
+			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap[ShadowFboIndex]->texnum, ShadowMipMap[ShadowFboIndex] );*/
 			qglViewport( 0, 0, mapSize, mapSize );
 
 			if ( r_useScissor.GetBool() ) {
