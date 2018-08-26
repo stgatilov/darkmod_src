@@ -411,6 +411,7 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 
 void RB_GLSL_DrawInteractions_MultiLight() {
 	RB_GLSL_GenerateShadowMaps();
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 	auto drawSurfs = backEnd.viewDef->drawSurfs;
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
