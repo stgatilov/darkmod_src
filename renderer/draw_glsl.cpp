@@ -35,14 +35,18 @@ If you have questions concerning this license or the applicable additional terms
 #include "Profiling.h"
 
 struct shadowMapProgram_t : lightProgram_t {
-	virtual void Use();
 };
 
-struct interactionProgram_t : lightProgram_t {
+struct basicInteractionProgram_t : lightProgram_t {
+	GLint lightProjectionFalloff, bumpMatrix, diffuseMatrix, specularMatrix;
+	virtual	void AfterLoad();
+	virtual void UpdateUniforms( bool translucent ) {}
+	virtual void UpdateUniforms( const drawInteraction_t *din );
+};
+
+struct interactionProgram_t : basicInteractionProgram_t {
 	GLint localViewOrigin;
 	GLint rgtc;
-
-	GLint lightProjectionFalloff;
 
 	GLint cubic;
 	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffCubemap, lightFalloffTexture;
@@ -50,7 +54,6 @@ struct interactionProgram_t : lightProgram_t {
 	GLint colorModulate;
 	GLint colorAdd;
 
-	GLint bumpMatrix, diffuseMatrix, specularMatrix;
 	GLint diffuseColor, specularColor;
 
 	virtual	void AfterLoad();
@@ -77,9 +80,8 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
-struct multiLightInteractionProgram_t : lightProgram_t {
+struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	GLint lightCount, lightOrigin, lightColor, shadowMapIndex;
-	GLint bumpMatrix, diffuseMatrix, specularMatrix, lightProjectionFalloff;
 	GLint gamma;
 	virtual	void AfterLoad();
 	virtual void Draw( const drawInteraction_t *din );
@@ -95,7 +97,7 @@ blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 multiLightInteractionProgram_t multiLightShader;
-lightProgram_t *currrentInteractionShader;
+interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
 /*
 ==================
@@ -767,9 +769,19 @@ void lightProgram_t::AfterLoad() {
 	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 }
 
-void shadowMapProgram_t::Use() {
-	lightProgram_t::Use();
-	currrentInteractionShader = this;
+void basicInteractionProgram_t::AfterLoad() {
+	lightProgram_t::AfterLoad();
+	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
+	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
+	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
+	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
+}
+
+void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
+	qglUniform4fv( diffuseMatrix, 2, din->diffuseMatrix[0].ToFloatPtr() );
+	qglUniform4fv( bumpMatrix, 2, din->bumpMatrix[0].ToFloatPtr() );
+	qglUniform4fv( specularMatrix, 2, din->specularMatrix[0].ToFloatPtr() );
 }
 
 void interactionProgram_t::ChooseInteractionProgram() {
@@ -788,22 +800,16 @@ void interactionProgram_t::Use() {
 }
 
 void interactionProgram_t::AfterLoad() {
-	lightProgram_t::AfterLoad();
+	basicInteractionProgram_t::AfterLoad();
 
 	rgtc = qglGetUniformLocation( program, "u_RGTC" );
 
 	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
-	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
 
-	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
-	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
 	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
-
+	specularColor = qglGetUniformLocation( program, "u_specularColor" );
 	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
 	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
-
-	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
-	specularColor = qglGetUniformLocation( program, "u_specularColor" );
 
 	cubic = qglGetUniformLocation( program, "u_cubic" );
 
@@ -832,16 +838,12 @@ void interactionProgram_t::AfterLoad() {
 }
 
 void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+	basicInteractionProgram_t::UpdateUniforms( din );
 	static const float	zero[4]		= { 0, 0, 0, 0 },
 	                    one[4]		= { 1, 1, 1, 1 },
 	                    negOne[4]	= { -1, -1, -1, -1 };
 
 	qglUniformMatrix4fv( lightProjectionFalloff, 1, false, din->lightProjection[0].ToFloatPtr() );
-	idMat2 texCoordMatrix( din->diffuseMatrix[0].ToVec2(), din->diffuseMatrix[1].ToVec2() );
-	qglUniformMatrix2fv( diffuseMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
-	texCoordMatrix[0] = din->bumpMatrix[0].ToVec2();
-	texCoordMatrix[1] = din->bumpMatrix[1].ToVec2();
-	qglUniformMatrix2fv( bumpMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
 	// set the constant color
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
@@ -873,9 +875,6 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS + 1 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
-	texCoordMatrix[0] = din->specularMatrix[0].ToVec2();
-	texCoordMatrix[1] = din->specularMatrix[1].ToVec2();
-	qglUniformMatrix2fv( specularMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 }
 
@@ -946,7 +945,6 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
-	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	qglUniform4fv( lightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform3fv( lightOrigin2, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	GL_CheckErrors();
@@ -961,20 +959,15 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
-	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	GL_CheckErrors();
 }
 
 void multiLightInteractionProgram_t::AfterLoad() {
-	lightProgram_t::AfterLoad();
+	basicInteractionProgram_t::AfterLoad();
 	lightCount = qglGetUniformLocation( program, "u_lightCount" );
 	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
 	lightColor = qglGetUniformLocation( program, "u_diffuseColor" );
 	shadowMapIndex = qglGetUniformLocation( program, "u_ShadowMapIndex" );
-	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
-	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
-	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
-	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
 	auto diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
@@ -1037,17 +1030,8 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	}
 
 	Use();
-	lightProgram_t::UpdateUniforms( din );
-	qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
+	basicInteractionProgram_t::UpdateUniforms( din );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
-	idMat2 texCoordMatrix( din->diffuseMatrix[0].ToVec2(), din->diffuseMatrix[1].ToVec2() );
-	qglUniformMatrix2fv( diffuseMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
-	texCoordMatrix[0] = din->bumpMatrix[0].ToVec2();
-	texCoordMatrix[1] = din->bumpMatrix[1].ToVec2();
-	qglUniformMatrix2fv( bumpMatrix, 1, false, texCoordMatrix.ToFloatPtr() );
-	/*texCoordMatrix[0] = din->specularMatrix[0].ToVec2();
-	texCoordMatrix[1] = din->specularMatrix[1].ToVec2();
-	qglUniformMatrix2fv( specularMatrix, 1, false, texCoordMatrix.ToFloatPtr() );*/
 	
 	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = min( lightOrigins.size() - i, MAX_LIGHTS );

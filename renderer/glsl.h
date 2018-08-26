@@ -64,8 +64,6 @@ struct lightProgram_t : shaderProgram_t {
 	GLint lightOrigin;
 	GLint modelMatrix;
 	virtual	void AfterLoad();
-	virtual void UpdateUniforms( bool translucent ) {}
-	virtual void UpdateUniforms( const drawInteraction_t *din ) {}
 };
 
 extern shaderProgram_t cubeMapShader;
