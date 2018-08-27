@@ -21,7 +21,7 @@ struct shaderProgram_t {
 	GLuint program;								// GPU program = vertex + fragment shader
 	bool Load( const char *fileName );
 	virtual void AfterLoad();
-	virtual void Use();							// 	qglUseProgram( 0 ) to reset, maybe consider RAII?
+	void Use();									// 	qglUseProgram( 0 ) to reset, maybe consider RAII?
 private:
 	void AttachShader( GLint ShaderType, const char *fileName );
 	GLuint CompileShader( GLint ShaderType, const char *fileName );
@@ -34,10 +34,15 @@ struct oldStageProgram_t : shaderProgram_t {
 	virtual	void AfterLoad();
 };
 
-struct depthProgram_t : shaderProgram_t {
-	GLint			clipPlane, matViewRev;
-	GLint			color;
-	GLint			alphaTest;
+struct basicDepthProgram_t : shaderProgram_t {
+	GLint alphaTest, color;
+	bool acceptsTranslucent;
+	virtual	void AfterLoad();
+	void FillDepthBuffer( const drawSurf_t *surf );
+};
+
+struct depthProgram_t : basicDepthProgram_t {
+	GLint clipPlane, matViewRev;
 	virtual	void AfterLoad();
 };
 

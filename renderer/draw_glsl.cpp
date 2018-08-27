@@ -34,7 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "FrameBuffer.h"
 #include "Profiling.h"
 
-struct shadowMapProgram_t : lightProgram_t {
+struct shadowMapProgram_t : basicDepthProgram_t {
+	GLint lightOrigin;
+	GLint modelMatrix;
+	virtual	void AfterLoad();
 };
 
 struct basicInteractionProgram_t : lightProgram_t {
@@ -59,7 +62,6 @@ struct interactionProgram_t : basicInteractionProgram_t {
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent ) {}
 	virtual void UpdateUniforms( const drawInteraction_t *din );
-	virtual void Use();
 	static void ChooseInteractionProgram();
 };
 
@@ -97,6 +99,7 @@ blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 multiLightInteractionProgram_t multiLightShader;
+
 interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
 /*
@@ -298,6 +301,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	FB_ToggleShadow( true, clear );
 
 	shadowMapShader.Use();
+	GL_SelectTexture( 0 );
 
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	backEnd.currentSpace = NULL;
@@ -320,10 +324,11 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			backEnd.pc.c_matrixLoads++;
 		}
 
-		// set the vertex pointers
+		/*/ set the vertex pointers
 		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-		RB_DrawElementsWithCounters( surf );
+		RB_DrawElementsWithCounters( surf );*/
+		shadowMapShader.FillDepthBuffer( surf );
 	}
 	
 	qglDisable( GL_POLYGON_OFFSET_FILL );
@@ -341,7 +346,7 @@ void RB_GLSL_GenerateShadowMaps() {
 	ShadowFboIndex = 0;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( ShadowFboIndex >= MAX_LIGHTS ) {
-			common->Warning( "Shadow maps limit exceeded" );
+			//common->Warning( "Shadow maps limit exceeded" );
 			continue;
 		}
 		if ( !backEnd.vLight->lightShader->LightCastsShadows() ) {
@@ -741,11 +746,15 @@ void oldStageProgram_t::AfterLoad() {
 	colorAdd = qglGetUniformLocation( program, "colorAdd" );
 }
 
-void depthProgram_t::AfterLoad() {
-	clipPlane = qglGetUniformLocation( program, "clipPlane" );
-	matViewRev = qglGetUniformLocation( program, "matViewRev" );
+void basicDepthProgram_t::AfterLoad() {
 	color = qglGetUniformLocation( program, "color" );
 	alphaTest = qglGetUniformLocation( program, "alphaTest" );
+}
+
+void depthProgram_t::AfterLoad() {
+	basicDepthProgram_t::AfterLoad();
+	clipPlane = qglGetUniformLocation( program, "clipPlane" );
+	matViewRev = qglGetUniformLocation( program, "matViewRev" );
 }
 
 void blendProgram_t::AfterLoad() {
@@ -787,17 +796,13 @@ void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 
 void interactionProgram_t::ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
-		ambientInteractionShader.Use();
+		currrentInteractionShader = &ambientInteractionShader;
 	} else {
-		pointInteractionShader.Use();
+		currrentInteractionShader = &pointInteractionShader;
 	}
+	currrentInteractionShader->Use();
+	qglUniform1f( currrentInteractionShader->rgtc, globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
 	GL_CheckErrors();
-}
-
-void interactionProgram_t::Use() {
-	lightProgram_t::Use();
-	currrentInteractionShader = this;
-	qglUniform1f( rgtc, globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
 }
 
 void interactionProgram_t::AfterLoad() {
@@ -1050,4 +1055,115 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	}
 
 	qglUseProgram( 0 );
+}
+
+void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
+	float color[4];
+	const idMaterial		*shader = surf->material;
+	int						stage;
+	const shaderStage_t		*pStage;
+	const float				*regs = surf->shaderRegisters;
+
+	// subviews will just down-modulate the color buffer by overbright
+	if ( shader->GetSort() == SS_SUBVIEW ) {
+		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
+		color[0] = color[1] = color[2] = (1.0 / backEnd.overBright);
+		color[3] = 1;
+	} else {
+		// others just draw black
+		color[0] = 0;
+		color[1] = 0;
+		color[2] = 0;
+		color[3] = 1;
+	}
+	idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+
+	bool drawSolid = false;
+
+	if ( shader->Coverage() == MC_OPAQUE ) {
+		drawSolid = true;
+	}
+	if ( shader->Coverage() == MC_TRANSLUCENT && acceptsTranslucent ) {
+		drawSolid = true;
+	}
+
+	// we may have multiple alpha tested stages
+	if ( shader->Coverage() == MC_PERFORATED ) {
+		// if the only alpha tested stages are condition register omitted,
+		// draw a normal opaque surface
+		bool	didDraw = false;
+
+		qglEnableVertexAttribArray( 8 );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+
+		// perforated surfaces may have multiple alpha tested stages
+		for ( stage = 0; stage < shader->GetNumStages(); stage++ ) {
+			pStage = shader->GetStage( stage );
+
+			if ( !pStage->hasAlphaTest ) {
+				continue;
+			}
+
+			// check the stage enable condition
+			if ( regs[pStage->conditionRegister] == 0 ) {
+				continue;
+			}
+
+			// if we at least tried to draw an alpha tested stage,
+			// we won't draw the opaque surface
+			didDraw = true;
+
+			// set the alpha modulate
+			color[3] = regs[pStage->color.registers[3]];
+
+			// skip the entire stage if alpha would be black
+			if ( color[3] <= 0 ) {
+				continue;
+			}
+			qglUniform4fv( this->color, 1, color );
+			qglUniform1f( alphaTest, regs[pStage->alphaTestRegister] );
+
+			// bind the texture
+			pStage->texture.image->Bind();
+
+			// set texture matrix and texGens
+			extern void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
+			RB_PrepareStageTexturing( pStage, surf, ac );
+
+			// draw it
+			RB_DrawElementsWithCounters( surf );
+
+			// take down texture matrix and texGens
+			extern void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
+			RB_FinishStageTexturing( pStage, surf, ac );
+
+			qglUniform1f( alphaTest, -1 ); // hint the glsl to skip texturing
+		}
+		qglUniform4fv( this->color, 1, colorBlack.ToFloatPtr() );
+		qglDisableVertexAttribArray( 8 );
+
+		if ( !didDraw ) {
+			drawSolid = true;
+		}
+	}
+
+	// draw the entire surface solid
+	if ( drawSolid ) {
+		// draw it
+		RB_DrawElementsWithCounters( surf );
+	}
+
+	// reset blending
+	if ( shader->GetSort() == SS_SUBVIEW ) {
+		qglUniform4fv( this->color, 1, colorBlack.ToFloatPtr() );
+		GL_State( GLS_DEPTHFUNC_LESS );
+	}
+}
+
+void shadowMapProgram_t::AfterLoad() {
+	basicDepthProgram_t::AfterLoad();
+	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
+	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
+	acceptsTranslucent = true;
 }

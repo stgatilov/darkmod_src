@@ -144,7 +144,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	const idMaterial		*shader;
 	const shaderStage_t		*pStage;
 	const float				*regs;
-	float					color[4];
+	//float					color[4];
 
 	shader = surf->material;
 
@@ -194,102 +194,11 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 	}
 
-	// subviews will just down-modulate the color buffer by overbright
-	if ( shader->GetSort() == SS_SUBVIEW ) {
-		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
-		color[0] =
-		color[1] =
-		color[2] = ( 1.0 / backEnd.overBright );
-		color[3] = 1;
-	} else {
-		// others just draw black
-		color[0] = 0;
-		color[1] = 0;
-		color[2] = 0;
-		color[3] = 1;
-	}
-	idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-
-	bool drawSolid = false;
-
-	if ( shader->Coverage() == MC_OPAQUE ) {
-		drawSolid = true;
-	}
-
-	// we may have multiple alpha tested stages
-	if ( shader->Coverage() == MC_PERFORATED ) {
-		// if the only alpha tested stages are condition register omitted,
-		// draw a normal opaque surface
-		bool	didDraw = false;
-
-		qglEnableVertexAttribArray( 8 );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-
-		// perforated surfaces may have multiple alpha tested stages
-		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
-			pStage = shader->GetStage( stage );
-
-			if ( !pStage->hasAlphaTest ) {
-				continue;
-			}
-
-			// check the stage enable condition
-			if ( regs[ pStage->conditionRegister ] == 0 ) {
-				continue;
-			}
-
-			// if we at least tried to draw an alpha tested stage,
-			// we won't draw the opaque surface
-			didDraw = true;
-
-			// set the alpha modulate
-			color[3] = regs[ pStage->color.registers[3] ];
-
-			// skip the entire stage if alpha would be black
-			if ( color[3] <= 0 ) {
-				continue;
-			}
-			qglUniform4fv( depthShader.color, 1, color );
-			qglUniform1f( depthShader.alphaTest, regs[pStage->alphaTestRegister] );
-
-			// bind the texture
-			pStage->texture.image->Bind();
-
-			// set texture matrix and texGens
-			RB_PrepareStageTexturing( pStage, surf, ac );
-
-			// draw it
-			RB_DrawElementsWithCounters( surf );
-
-			// take down texture matrix and texGens
-			RB_FinishStageTexturing( pStage, surf, ac );
-
-			qglUniform1f( depthShader.alphaTest, -1 ); // hint the glsl to skip texturing
-		}
-		qglUniform4fv( depthShader.color, 1, colorBlack.ToFloatPtr() );
-		qglDisableVertexAttribArray( 8 );
-
-		if ( !didDraw ) {
-			drawSolid = true;
-		}
-	}
-
-	// draw the entire surface solid
-	if ( drawSolid ) {
-		// draw it
-		RB_DrawElementsWithCounters( surf );
-	}
+	depthShader.FillDepthBuffer( surf );
 
 	// reset polygon offset
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
-	}
-
-	// reset blending
-	if ( shader->GetSort() == SS_SUBVIEW ) {
-		qglUniform4fv( depthShader.color, 1, colorBlack.ToFloatPtr() );
-		GL_State( GLS_DEPTHFUNC_LESS );
 	}
 }
 
