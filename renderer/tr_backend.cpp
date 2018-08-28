@@ -818,8 +818,7 @@ void RB_CopyRender( const void *data ) {
 ====================
 RB_ExecuteBackEndCommands
 
-This function will be called syncronously if running without
-smp extensions, or asyncronously by another thread.
+Always runs on the main thread
 ====================
 */
 void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {

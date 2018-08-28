@@ -1701,7 +1701,6 @@ void RB_ClearDebugLines( int time );
 void RB_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest );
 void RB_ClearDebugPolygons( int time );
 void RB_DrawBounds( const idBounds &bounds );
-// revelator: these next two where not changed to follow the functions they represent.
 void RB_ShowLights( void );
 void RB_ShowLightCount( void );
 void RB_PolygonClear( void );

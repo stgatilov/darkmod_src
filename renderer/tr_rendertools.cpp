@@ -1392,6 +1392,19 @@ static void RB_ShowEdges( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_DEPTH_TEST );
 }
 
+void RB_ShowLightScissors( void ) {
+	if ( r_showLightScissors.GetInteger() < 2 ) {
+		return;
+	}
+	common->Printf( "lights:" );	// FIXME: not in back end!
+	for ( auto vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
+		auto light = vLight->lightDef;
+		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
+		common->Printf( " %i>%ix%i", index, vLight->scissorRect.GetWidth(), vLight->scissorRect.GetHeight() );
+	}
+	common->Printf( "\n" );
+}
+
 /*
 ==============
 RB_ShowLights
@@ -2187,6 +2200,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_ShowNormals( drawSurfs, numDrawSurfs );
 	RB_ShowViewEntitys( backEnd.viewDef->viewEntitys );
 	RB_ShowLights();
+	RB_ShowLightScissors();
 	RB_ShowTextureVectors( drawSurfs, numDrawSurfs );
 	RB_ShowDominantTris( drawSurfs, numDrawSurfs );
 	if ( r_testGamma.GetInteger() > 0 ) {	// test here so stack check isn't so damn slow on debug builds
