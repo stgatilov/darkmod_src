@@ -348,7 +348,7 @@ void CheckCreateShadow() {
 
 		if ( r_shadows.GetInteger() == 2 ) {
 			GLuint depthTex = shadowCubeMap->texnum;
-			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
+			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, ShadowFboIndex / MAX_SHADOW_MAPS );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
 		} else {
 			if ( r_fboSeparateStencil.GetBool() ) {
@@ -356,7 +356,7 @@ void CheckCreateShadow() {
 				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0 );
 			} else {
 				GLuint depthTex = globalImages->shadowDepthFbo->texnum;
-				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, ShadowFboIndex / MAX_SHADOW_MAPS );
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 			}
 		}
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -487,7 +487,8 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		qglDepthMask( on );
 		//GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
 		if ( on ) {
-			int mapSize = r_shadowMapSize.GetInteger();
+			int mipmap = ShadowFboIndex / MAX_SHADOW_MAPS;
+			int mapSize = r_shadowMapSize.GetInteger() >> mipmap;
 			/*ShadowMipMap[ShadowFboIndex] = 0;
 			int lightScreenSize = idMath::Imax( backEnd.vLight->scissorRect.GetWidth(), backEnd.vLight->scissorRect.GetHeight() ),
 			         ScreenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );

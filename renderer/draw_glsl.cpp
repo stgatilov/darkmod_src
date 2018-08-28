@@ -1056,7 +1056,8 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			auto shMaps = std::count_if( shadowIndex.begin(), shadowIndex.end(), []( GLint x ) {
 				return x >= 0;
 			} );
-			backEnd.pc.c_interactionMaxShadowMaps = max( backEnd.pc.c_interactionMaxShadowMaps, (uint)shMaps );
+			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps)
+				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
 		}
 	}
 
