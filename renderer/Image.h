@@ -45,7 +45,7 @@ qglDisable( GL_TEXTURE_* )
 ====================================================================
 */
 
-const int MAX_LIGHTS = 16;
+const int MAX_SHADOW_MAPS = 3;
 
 typedef enum {
 	IS_UNLOADED,	// no gl texture number
@@ -388,7 +388,7 @@ public:
 
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
 	idImage *			shadowDepthFbo;
-	idImage *			shadowCubeMap[MAX_LIGHTS];
+	idImage *			shadowCubeMap[MAX_SHADOW_MAPS];
 	idImage *			currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
 	idImage *			shadowStencilFbo;
 	idImage *			bloomCookedMath;

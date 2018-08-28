@@ -22,10 +22,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // all false at start
 bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
-GLuint fboPrimary, fboResolve, fboShadows[MAX_LIGHTS], fboPostProcess, fboCurrent, pbo;
+GLuint fboPrimary, fboResolve, fboPostProcess, fboCurrent, pbo;
+std::vector<GLuint> fboShadows;
 GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
-int ShadowFboIndex, ShadowMipMap[MAX_LIGHTS];
+uint ShadowFboIndex;
 float shadowResolution;
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
@@ -195,10 +196,10 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 void DeleteFramebuffers() {
 	qglDeleteFramebuffers( 1, &fboPrimary );
 	qglDeleteFramebuffers( 1, &fboResolve );
-	qglDeleteFramebuffers( MAX_LIGHTS, fboShadows );
+	qglDeleteFramebuffers( fboShadows.size(), &fboShadows[0] );
 	fboPrimary = 0;
 	fboResolve = 0;
-	memset( fboShadows, 0, sizeof( fboShadows ));
+	fboShadows.clear();
 }
 
 void CheckCreatePrimary() {
@@ -286,7 +287,7 @@ void CheckCreateShadow() {
 		curHeight *= r_fboResolution.GetFloat() * shadowRes;
 	}
 	textureType_t type = r_shadows.GetInteger() == 2 ? TT_CUBIC : TT_2D;
-	static textureType_t nowType[MAX_LIGHTS];
+	static textureType_t nowType;
 
 	// reset textures
 	if ( r_fboSeparateStencil.GetBool() ) {
@@ -296,7 +297,7 @@ void CheckCreateShadow() {
 	} else {
 		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}
-	auto *shadowCubeMap = globalImages->shadowCubeMap[ShadowFboIndex];
+	auto *shadowCubeMap = globalImages->shadowCubeMap[ShadowFboIndex % MAX_SHADOW_MAPS];
 
 	if ( shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
 		r_fboDepthBits.ClearModified();
@@ -332,15 +333,17 @@ void CheckCreateShadow() {
 
 		// 3.2 required for geometry shader anyway but still don't want crashes
 		if ( qglGenerateMipmap ) {
-			//qglGenerateMipmap( GL_TEXTURE_CUBE_MAP );
+			qglGenerateMipmap( GL_TEXTURE_CUBE_MAP );
 		}
 		globalImages->BindNull();
 	}
-	GLuint &fboShadow = fboShadows[ShadowFboIndex];
-	if ( !fboShadow || nowType[ShadowFboIndex] != type ) {
-		if ( !fboShadow ) {
+	if ( ShadowFboIndex >= fboShadows.size() || nowType != type ) {
+		GLuint fboShadow;
+		if ( ShadowFboIndex >= fboShadows.size() ) {
 			qglGenFramebuffers( 1, &fboShadow );
-		}
+			fboShadows.push_back( fboShadow );
+		} else
+			fboShadow = fboShadows[ShadowFboIndex];
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );
 
 		if ( r_shadows.GetInteger() == 2 ) {
@@ -353,7 +356,7 @@ void CheckCreateShadow() {
 				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0 );
 			} else {
 				GLuint depthTex = globalImages->shadowDepthFbo->texnum;
-				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, ShadowFboIndex / MAX_SHADOW_MAPS );
 			}
 		}
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -365,7 +368,7 @@ void CheckCreateShadow() {
 			fboShadow = 0; // try from scratch next time
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-		nowType[ShadowFboIndex] = type;
+		nowType = type;
 	}
 	GL_CheckErrors();
 }
@@ -521,7 +524,8 @@ void FB_ToggleShadow( bool on, bool clear ) {
 }
 
 void FB_Clear() {
-	fboPrimary = fboResolve = fboShadows[0] = fboPostProcess = pbo = 0;
+	fboPrimary = fboResolve = fboPostProcess = pbo = 0;
+	fboShadows.clear();
 	renderBufferColor = renderBufferDepthStencil = renderBufferPostProcess = 0;
 }
 

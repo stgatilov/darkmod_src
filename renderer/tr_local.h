@@ -637,7 +637,7 @@ typedef struct {
 	textureType_t	textureType;
 } tmu_t;
 
-const int MAX_MULTITEXTURE_UNITS =	8 + MAX_LIGHTS;
+const int MAX_MULTITEXTURE_UNITS =	8;
 typedef struct {
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
 	int			currenttmu;
@@ -669,7 +669,7 @@ typedef struct {
 	int		c_matrixLoads;
 	float	c_overDraw;
 
-	uint	c_interactions, c_interactionLights, c_interactionMaxLights;
+	uint	c_interactions, c_interactionLights, c_interactionMaxLights, c_interactionMaxShadowMaps;
 
 	int		msec;			// total msec for backend run
 	int		msecLast;		// last msec for backend run

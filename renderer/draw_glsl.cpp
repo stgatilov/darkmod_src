@@ -83,6 +83,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 };
 
 struct multiLightInteractionProgram_t : basicInteractionProgram_t {
+	const uint MAX_LIGHTS = 16;
 	GLint lightCount, lightOrigin, lightColor, shadowMapIndex;
 	GLint gamma;
 	virtual	void AfterLoad();
@@ -345,10 +346,6 @@ void RB_GLSL_GenerateShadowMaps() {
 		return;
 	ShadowFboIndex = 0;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( ShadowFboIndex >= MAX_LIGHTS ) {
-			//common->Warning( "Shadow maps limit exceeded" );
-			continue;
-		}
 		if ( !backEnd.vLight->lightShader->LightCastsShadows() ) {
 			continue;
 		}
@@ -422,8 +419,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
 	qglEnableVertexAttribArray( 11 );
-	for ( int i = 0; i < MAX_LIGHTS; i++ ) {
-		GL_SelectTexture( MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i );
+	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
+		GL_SelectTexture( 5 + i );
 		globalImages->shadowCubeMap[i]->Bind();
 	}
 
@@ -450,8 +447,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		RB_CreateMultiDrawInteractions( drawSurfs[i] );
 	}
 
-	for ( int i = 0; i < MAX_LIGHTS; i++ ) {
-		GL_SelectTexture( MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i );
+	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
+		GL_SelectTexture( 5 + i );
 		globalImages->BindNull();
 	}
 
@@ -915,7 +912,8 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		backEnd.vLight->lightShader->LightCastsShadows();
 	if ( doShadows ) {
 		qglUniform1f( shadows, r_shadows.GetInteger() );
-		qglUniform1i( shadowMipMap, ShadowMipMap[0] );
+		//qglUniform1i( shadowMipMap, ShadowMipMap[0] );
+		qglUniform1i( shadowMipMap, 0 );
 	} else
 		qglUniform1f( shadows, 0 );
 
@@ -979,11 +977,12 @@ void multiLightInteractionProgram_t::AfterLoad() {
 	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
 	qglUseProgram( program );
 	qglUniform1i( diffuseTexture, 3 );
-	GLint scmTexNums[MAX_LIGHTS];
-	for ( int i = 0; i < MAX_LIGHTS; i++)
+	GLint scmTexNums[MAX_SHADOW_MAPS];
+	for ( int i = 0; i < MAX_SHADOW_MAPS; i++)
 		//scmTexNums[i] = globalImages->shadowCubeMap[i]->texnum;
-		scmTexNums[i] = MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i;
-	qglUniform1iv( shadowMap, MAX_LIGHTS, scmTexNums );
+		//scmTexNums[i] = MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i;
+		scmTexNums[i] = 5 + i;
+	qglUniform1iv( shadowMap, MAX_SHADOW_MAPS, scmTexNums );
 	//qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS - MAX_LIGHTS );
 	qglUseProgram( 0 );
 }
@@ -1041,16 +1040,23 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	
 	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = min( lightOrigins.size() - i, MAX_LIGHTS );
+
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
 		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
 		qglUniform1iv( shadowMapIndex, thisCount, &shadowIndex[i] );
+
 		RB_DrawElementsWithCounters( surf );
+
 		if ( r_showMultiLight.GetBool() ) {
 			backEnd.pc.c_interactions++;
 			backEnd.pc.c_interactionLights += lightOrigins.size();
 			backEnd.pc.c_interactionMaxLights = max( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
+			auto shMaps = std::count_if( shadowIndex.begin(), shadowIndex.end(), []( GLint x ) {
+				return x >= 0;
+			} );
+			backEnd.pc.c_interactionMaxShadowMaps = max( backEnd.pc.c_interactionMaxShadowMaps, (uint)shMaps );
 		}
 	}
 
