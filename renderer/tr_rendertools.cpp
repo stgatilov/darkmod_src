@@ -1444,7 +1444,7 @@ void RB_ShowLights( void ) {
 		tri = light->frustumTris;
 
 		// depth buffered planes
-		if ( r_showLights.GetInteger() >= 2 ) {
+		if ( r_showLights.GetInteger() >= 3 ) {
 			GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHMASK );
 			GL_FloatColor( 0, 0, 1, 0.25 );
 			qglEnable( GL_DEPTH_TEST );
@@ -1452,10 +1452,11 @@ void RB_ShowLights( void ) {
 		}
 
 		// non-hidden lines
-		if ( r_showLights.GetInteger() >= 3 ) {
+		if ( r_showLights.GetInteger() >= 2 ) {
 			GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK  );
 			qglDisable( GL_DEPTH_TEST );
-			GL_FloatColor( 1, 1, 1 );
+			int c = light->index % 7 + 1;
+			GL_FloatColor( c & 1, c & 2, c & 4 );
 			RB_DrawElementsImmediate( tri );
 		}
 		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
@@ -2218,6 +2219,15 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_ShowDebugText();
 	RB_ShowDebugPolygons();
 	RB_ShowTrace( drawSurfs, numDrawSurfs );
+
+	if ( r_showMultiLight.GetBool() ) {
+		common->Printf( "multi-light:%i/%i avg:%2.2f max:%i/%i\n",
+			backEnd.pc.c_interactions,
+			backEnd.pc.c_interactionLights,
+			1. * backEnd.pc.c_interactionLights / backEnd.pc.c_interactions,
+			backEnd.pc.c_interactionMaxShadowMaps, backEnd.pc.c_interactionMaxLights
+		);
+	}
 }
 
 /*

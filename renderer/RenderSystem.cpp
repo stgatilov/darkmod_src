@@ -61,15 +61,6 @@ static void R_PerformanceCounters( void ) {
 		}
 	}
 
-	if ( r_showMultiLight.GetBool() ) {
-		common->Printf( "multi-light:%i/%i avg:%2.2f max:%i/%i\n",
-			backEnd.pc.c_interactions,
-			backEnd.pc.c_interactionLights,
-			1. * backEnd.pc.c_interactionLights / backEnd.pc.c_interactions,
-			backEnd.pc.c_interactionMaxShadowMaps, backEnd.pc.c_interactionMaxLights
-		);
-	}
-
 	if ( r_showDynamic.GetBool() ) {
 		common->Printf( "callback:%i md5:%i dfrmVerts:%i dfrmTris:%i tangTris:%i guis:%i\n",
 		                tr.pc.c_entityDefCallbacks,
