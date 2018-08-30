@@ -42,6 +42,8 @@ struct shadowMapProgram_t : basicDepthProgram_t {
 
 struct basicInteractionProgram_t : lightProgram_t {
 	GLint lightProjectionFalloff, bumpMatrix, diffuseMatrix, specularMatrix;
+	GLint colorModulate, colorAdd;
+
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent ) {}
 	virtual void UpdateUniforms( const drawInteraction_t *din );
@@ -53,9 +55,6 @@ struct interactionProgram_t : basicInteractionProgram_t {
 
 	GLint cubic;
 	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffCubemap, lightFalloffTexture;
-
-	GLint colorModulate;
-	GLint colorAdd;
 
 	GLint diffuseColor, specularColor;
 
@@ -412,6 +411,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 	auto drawSurfs = backEnd.viewDef->drawSurfs;
+	qglEnableVertexAttribArray( 3 );
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
@@ -436,6 +436,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
@@ -465,6 +466,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	GL_SelectTexture( 0 );
 
 	qglUseProgram( 0 );
+	qglDisableVertexAttribArray( 3 );
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
@@ -780,6 +782,8 @@ void basicInteractionProgram_t::AfterLoad() {
 	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
 	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
 	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
+	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
+	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
 }
 
 void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
@@ -787,6 +791,24 @@ void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( diffuseMatrix, 2, din->diffuseMatrix[0].ToFloatPtr() );
 	qglUniform4fv( bumpMatrix, 2, din->bumpMatrix[0].ToFloatPtr() );
 	qglUniform4fv( specularMatrix, 2, din->specularMatrix[0].ToFloatPtr() );
+
+	static const float	zero[4]		= { 0, 0, 0, 0 },
+	                    one[4]		= { 1, 1, 1, 1 },
+	                    negOne[4]	= { -1, -1, -1, -1 };
+	switch ( din->vertexColor ) {
+	case SVC_IGNORE:
+		qglUniform4f( colorModulate, zero[0], zero[1], zero[2], zero[3] );
+		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
+		break;
+	case SVC_MODULATE:
+		qglUniform4f( colorModulate, one[0], one[1], one[2], one[3] );
+		qglUniform4f( colorAdd, zero[0], zero[1], zero[2], zero[3] );
+		break;
+	case SVC_INVERSE_MODULATE:
+		qglUniform4f( colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
+		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
+		break;
+	}
 }
 
 void interactionProgram_t::ChooseInteractionProgram() {
@@ -809,8 +831,6 @@ void interactionProgram_t::AfterLoad() {
 
 	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
 	specularColor = qglGetUniformLocation( program, "u_specularColor" );
-	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
-	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
 
 	cubic = qglGetUniformLocation( program, "u_cubic" );
 
@@ -840,28 +860,10 @@ void interactionProgram_t::AfterLoad() {
 
 void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	basicInteractionProgram_t::UpdateUniforms( din );
-	static const float	zero[4]		= { 0, 0, 0, 0 },
-	                    one[4]		= { 1, 1, 1, 1 },
-	                    negOne[4]	= { -1, -1, -1, -1 };
-
 	qglUniformMatrix4fv( lightProjectionFalloff, 1, false, din->lightProjection[0].ToFloatPtr() );
 	// set the constant color
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
-	switch ( din->vertexColor ) {
-	case SVC_IGNORE:
-		qglUniform4f( colorModulate, zero[0], zero[1], zero[2], zero[3] );
-		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
-		break;
-	case SVC_MODULATE:
-		qglUniform4f( colorModulate, one[0], one[1], one[2], one[3] );
-		qglUniform4f( colorAdd, zero[0], zero[1], zero[2], zero[3] );
-		break;
-	case SVC_INVERSE_MODULATE:
-		qglUniform4f( colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
-		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
-		break;
-	}
 	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
 		qglUniform1f( cubic, 1.0 );
 		qglUniform1i( lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
