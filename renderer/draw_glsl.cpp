@@ -312,7 +312,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() ) {
-			continue;    //most of dynamic models don't have this flag but use an _invisible_ shadow material
+			continue;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
 		}
 
 		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) {
@@ -325,10 +325,6 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			backEnd.pc.c_matrixLoads++;
 		}
 
-		/*/ set the vertex pointers
-		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-		RB_DrawElementsWithCounters( surf );*/
 		shadowMapShader.FillDepthBuffer( surf );
 	}
 	
@@ -344,7 +340,6 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 void RB_GLSL_GenerateShadowMaps() {
 	if ( r_shadows.GetBool() == 0 )
 		return;
-	ShadowFboIndex = 0;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( !backEnd.vLight->lightShader->LightCastsShadows() ) {
 			continue;
@@ -357,6 +352,7 @@ void RB_GLSL_GenerateShadowMaps() {
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions, false );
 		backEnd.vLight->shadowMapIndex = ++ShadowFboIndex;
 	}
+	ShadowFboIndex = 0;
 }
 
 /*
@@ -413,6 +409,7 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 
 void RB_GLSL_DrawInteractions_MultiLight() {
 	RB_GLSL_GenerateShadowMaps();
+
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 	auto drawSurfs = backEnd.viewDef->drawSurfs;
 	qglEnableVertexAttribArray( 8 );
@@ -424,19 +421,20 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		globalImages->shadowCubeMap[i]->Bind();
 	}
 
+	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
 	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
-		if ( drawSurfs[i]->material->SuppressInSubview() ) {
+		auto surf = drawSurfs[i];
+		if ( surf->material->SuppressInSubview() || surf->material->GetSort() < SS_OPAQUE )
 			continue;
-		}
-		if ( drawSurfs[i]->material->GetSort() < SS_OPAQUE ) {
-			continue;
+		if ( surf->material->GetSort() >= SS_AFTER_FOG )
+			break;
+		
+		if ( surf->space != backEnd.currentSpace ) {
+			backEnd.currentSpace = surf->space;
+			qglLoadMatrixf( surf->space->modelViewMatrix );
 		}
 
-		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS ) {
-			break;
-		}
-		
-		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( drawSurfs[i]->ambientCache );
+		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
@@ -444,7 +442,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
 		extern void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
-		RB_CreateMultiDrawInteractions( drawSurfs[i] );
+		RB_CreateMultiDrawInteractions( surf );
 	}
 
 	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
