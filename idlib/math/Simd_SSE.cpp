@@ -16953,6 +16953,8 @@ void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuf
 #endif
 }
 
+#endif /* SIMD_USE_ASM */
+
 /*
 ============
 idSIMD_SSE::CullByFrustum
@@ -17052,5 +17054,3 @@ void VPCALL idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, c
 		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
 	}
 }
-
-#endif /* SIMD_USE_ASM */
