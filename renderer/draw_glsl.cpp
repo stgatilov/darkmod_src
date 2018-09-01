@@ -1039,7 +1039,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
 	
 	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
-		int thisCount = min( lightOrigins.size() - i, MAX_LIGHTS );
+		int thisCount = idMath::Imin( lightOrigins.size() - i, MAX_LIGHTS );
 
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
@@ -1052,7 +1052,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		if ( r_showMultiLight.GetBool() ) {
 			backEnd.pc.c_interactions++;
 			backEnd.pc.c_interactionLights += lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = max( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
 			auto shMaps = std::count_if( shadowIndex.begin(), shadowIndex.end(), []( GLint x ) {
 				return x >= 0;
 			} );

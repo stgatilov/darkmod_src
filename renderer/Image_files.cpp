@@ -1153,8 +1153,8 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		h = *height;
 
 		// make sure it is a power of 2
-		IMAGE_ROUND_POWER2( w, scaled_width );
-		IMAGE_ROUND_POWER2( h, scaled_height );
+		scaled_width = idMath::CeilPowerOfTwo(w);
+		scaled_height = idMath::CeilPowerOfTwo(h);
 
 		if ( scaled_width != w || scaled_height != h ) {
 			if ( globalImages->image_roundDown.GetBool() && scaled_width > w ) {

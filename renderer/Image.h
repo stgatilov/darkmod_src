@@ -420,12 +420,6 @@ public:
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system
 
-// newer use casting in this macro it fucks up with differing types !!!
-#define IMAGE_ROUND_POWER2(in, out) {		\
-	for (out = 1; out < in; out <<= 1)		\
-	;										\
-}
-
 /*
 ====================================================================
 

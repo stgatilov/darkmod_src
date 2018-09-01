@@ -196,7 +196,7 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 void DeleteFramebuffers() {
 	qglDeleteFramebuffers( 1, &fboPrimary );
 	qglDeleteFramebuffers( 1, &fboResolve );
-	qglDeleteFramebuffers( fboShadows.size(), &fboShadows[0] );
+	qglDeleteFramebuffers( int(fboShadows.size()), &fboShadows[0] );
 	fboPrimary = 0;
 	fboResolve = 0;
 	fboShadows.clear();
