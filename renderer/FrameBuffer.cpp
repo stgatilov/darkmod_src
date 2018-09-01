@@ -104,6 +104,21 @@ void FB_ResolveMultisampling( GLbitfield mask, GLenum filter ) {
 }
 
 /*
+This function blits to fboShadow as a resolver to have a workable copy of the stencil texture
+*/
+void FB_ResolveShadowAA() {
+	qglDisable( GL_SCISSOR_TEST );
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadows[0] );
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
+	                    globalImages->currentRenderImage->uploadHeight,
+	                    0, 0, globalImages->currentRenderImage->uploadWidth,
+	                    globalImages->currentRenderImage->uploadHeight,
+	                    GL_STENCIL_BUFFER_BIT, GL_NEAREST );
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboPrimary );
+	qglEnable( GL_SCISSOR_TEST );
+}
+
+/*
 called when post-processing is about to start, needs pixels
 we need to copy render separately for water/smoke and then again for bloom
 */
@@ -276,13 +291,11 @@ void CheckCreateShadow() {
 	GLuint curWidth = glConfig.vidWidth;
 	GLuint curHeight = glConfig.vidHeight;
 	if ( primaryOn ) {
-		// accidentally deleted begin
 		float shadowRes = 1.0f;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			shadowRes = r_softShadowsQuality.GetFloat() / -100.0f;
 		}
 
-		// accidentally deleted end
 		curWidth *= r_fboResolution.GetFloat() * shadowRes;
 		curHeight *= r_fboResolution.GetFloat() * shadowRes;
 	}
@@ -306,7 +319,6 @@ void CheckCreateShadow() {
 		shadowCubeMap->uploadHeight = r_shadowMapSize.GetInteger();
 
 		for ( int sideId = 0; sideId < 6; sideId++ ) {
-			// revelator: changed to c++11 nullptr
 			// revert back again, the problem seems to be stencil depth.
 			switch ( r_fboDepthBits.GetInteger() ) {
 			case 16:
@@ -437,13 +449,13 @@ void FB_ApplyScissor() {
 void FB_ToggleShadow( bool on, bool clear ) {
 	CheckCreateShadow();
 	if ( on && r_shadows.GetInteger() == 1 ) {
-		if ( primaryOn && r_multiSamples.GetInteger() > 1 ) {
-			FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
-			qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
-		}
-
 		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {
+			if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
+				FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+				qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
+			}
+
 			qglDisable( GL_SCISSOR_TEST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadows[0] );
 			qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
@@ -456,9 +468,13 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		GL_CheckErrors();
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadows[ShadowFboIndex] : primaryOn ? fboPrimary : 0 );
+	if( on && r_shadows.GetInteger() == 1 && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+		// with MSAA on, we need to render against the multisampled primary buffer, otherwise stencil is drawn
+		// against a lower-quality depth map which may cause render errors with shadows
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+	}
 
-	// accidentally deleted
-	// softshadows
+	// stencil softshadows
 	if ( r_shadows.GetInteger() == 1 ) {
 		shadowOn = on;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
@@ -467,14 +483,12 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				GL_Viewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
 				FB_ApplyScissor();
 			} else {
-				if ( r_softShadowsQuality.GetInteger() < 0 ) {
-					if ( primaryOn ) {
-						GL_Viewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
-					} else {
-						GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-					}
-					FB_ApplyScissor();
+				if( primaryOn ) {
+					GL_Viewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
+				} else {
+					GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 				}
+				FB_ApplyScissor();
 			}
 		} else {
 			shadowResolution = 1.0f;

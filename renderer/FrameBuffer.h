@@ -48,4 +48,5 @@ void FB_BindShadowTexture();
 void FB_SelectPrimary();
 void FB_SelectPostProcess();
 void FB_ResolveMultisampling( GLbitfield mask = GL_COLOR_BUFFER_BIT, GLenum filter = GL_NEAREST );
+void FB_ResolveShadowAA();
 void FB_ApplyScissor();

@@ -254,6 +254,9 @@ void RB_GLSL_DrawLight_Stencil() {
 	stencilShadowShader.Use();
 
 	RB_StencilShadowPass( backEnd.vLight->globalShadows );
+	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+		FB_ResolveShadowAA();
+	}
 
 	const bool NoSelfShadows = true; // otherwise low-poly "round" models cast ugly shadows on themselves
 
@@ -270,6 +273,10 @@ void RB_GLSL_DrawLight_Stencil() {
 	stencilShadowShader.Use();
 
 	RB_StencilShadowPass( backEnd.vLight->localShadows );
+	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+		FB_ResolveShadowAA();
+	}
+
 
 	if ( useShadowFbo ) {
 		FB_ToggleShadow( false );
