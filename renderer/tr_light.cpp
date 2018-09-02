@@ -1365,52 +1365,6 @@ void R_AddModelSurfaces( void ) {
 	}
 }
 
-void ll_bubblesort( viewLight_t **pp ) {
-	// p always points to the head of the list
-	auto *p = *pp;
-	*pp = nullptr;
-
-	while ( p ) {
-		auto **lhs = &p;
-		auto **rhs = &p->next;
-		bool swapped = false;
-
-		// keep going until qq holds the address of a null pointer
-		while ( *rhs ) {
-			bool needsSwap = (*rhs)->scissorRect.GetArea() > (*lhs)->scissorRect.GetArea();
-			// if the left side is greater than the right side
-			if ( needsSwap ) {
-				// swap linked node ptrs, then swap *back* their next ptrs
-				std::swap( *lhs, *rhs );
-				std::swap( (*lhs)->next, (*rhs)->next );
-				lhs = &(*lhs)->next;
-				swapped = true;
-			}
-			else {   // no swap. advance both pointer-pointers
-				lhs = rhs;
-				rhs = &(*rhs)->next;
-			}
-		}
-
-		// link last node to the sorted segment
-		*rhs = *pp;
-
-		// if we swapped, detach the final node, terminate the list, and continue.
-		if ( swapped ) {
-			// take the last node off the list and push it into the result.
-			*pp = *lhs;
-			*lhs = nullptr;
-		}
-
-		// otherwise we're done. since no swaps happened the list is sorted.
-		// set the output parameter and terminate the loop.
-		else {
-			*pp = p;
-			break;
-		}
-	}
-}
-
 /*
 =====================
 R_RemoveUnecessaryViewLights
@@ -1467,5 +1421,7 @@ void R_RemoveUnecessaryViewLights( void ) {
 		}
 	}
 	// sort the viewLights list so the largest lights come first, which will reduce the chance of GPU pipeline bubbles
-	ll_bubblesort( &tr.viewDef->viewLights );
+	LinkedListBubbleSort( &tr.viewDef->viewLights, &viewLight_s::next, [](const viewLight_t &a, const viewLight_t &b) -> bool {
+		return a.scissorRect.GetArea() > b.scissorRect.GetArea();
+	});
 }

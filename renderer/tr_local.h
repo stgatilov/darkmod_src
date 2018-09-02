@@ -50,14 +50,14 @@ public:
 	void		Union( const idScreenRect &rect );
 	bool		Equals( const idScreenRect &rect ) const;
 	bool		IsEmpty() const;
-	int			GetArea() { //anon
+	int			GetArea() const { //anon
 		return GetWidth() * GetHeight();
 	}
 	// duzenko: got tired of all the inline subtractions
-	int GetWidth() {
+	int GetWidth() const {
 		return x2 - x1 + 1;
 	}
-	int GetHeight() {
+	int GetHeight() const {
 		return y2 - y1 + 1;
 	}
 };

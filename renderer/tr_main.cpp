@@ -1016,53 +1016,6 @@ static int R_QsortSurfaces( const void *a, const void *b ) {
 	return 0;
 }
 
-void ll_bubblesort( drawSurf_s **pp ) {
-	// p always points to the head of the list
-	auto *p = *pp;
-	*pp = nullptr;
-
-	while ( p ) {
-		auto **lhs = &p;
-		auto **rhs = &p->nextOnLight;
-		bool swapped = false;
-
-		// keep going until qq holds the address of a null pointer
-		while ( *rhs ) {
-			bool needsSwap = (*rhs)->space < (*lhs)->space;
-			if ( !needsSwap )
-				needsSwap = (*rhs)->material < (*lhs)->material;
-			// if the left side is greater than the right side
-			if ( needsSwap ) {
-				// swap linked node ptrs, then swap *back* their next ptrs
-				std::swap( *lhs, *rhs );
-				std::swap( (*lhs)->nextOnLight, (*rhs)->nextOnLight );
-				lhs = &(*lhs)->nextOnLight;
-				swapped = true;
-			} else {   // no swap. advance both pointer-pointers
-				lhs = rhs;
-				rhs = &(*rhs)->nextOnLight;
-			}
-		}
-
-		// link last node to the sorted segment
-		*rhs = *pp;
-
-		// if we swapped, detach the final node, terminate the list, and continue.
-		if ( swapped ) {
-			// take the last node off the list and push it into the result.
-			*pp = *lhs;
-			*lhs = nullptr;
-		}
-
-		// otherwise we're done. since no swaps happened the list is sorted.
-		// set the output parameter and terminate the loop.
-		else {
-			*pp = p;
-			break;
-		}
-	}
-}
-
 /*
 =================
 R_SortDrawSurfs
@@ -1074,9 +1027,16 @@ static void R_SortDrawSurfs( void ) {
 		R_QsortSurfaces );
 	static idCVar r_sortInteractions( "r_sortInteractions", "0", CVAR_ARCHIVE | CVAR_BOOL, "" );
 	if ( r_sortInteractions.GetBool() ) {
+		auto compare = [](const drawSurf_t &a, const drawSurf_t &b) -> bool {
+			if (a.space != b.space)
+				return a.space < b.space;
+			if (a.material != b.material)
+				return a.material < b.material;
+			return false;
+		};
 		for ( auto *light = tr.viewDef->viewLights; light; light = light->next ) {
-			ll_bubblesort( &light->globalInteractions );
-			ll_bubblesort( &light->localInteractions );
+			LinkedListBubbleSort(&light->globalInteractions, &drawSurf_s::nextOnLight, compare);
+			LinkedListBubbleSort(&light->localInteractions, &drawSurf_s::nextOnLight, compare);
 		}
 	}
 }
