@@ -1122,6 +1122,7 @@
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
+    <ClCompile Include="idlib\containers\LinkList.cpp" />
     <ClCompile Include="idlib\Dict.cpp" />
     <ClCompile Include="idlib\geometry\DrawVert.cpp" />
     <ClCompile Include="idlib\geometry\JointTransform.cpp" />

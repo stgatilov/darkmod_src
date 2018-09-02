@@ -2788,6 +2788,9 @@
     <ClCompile Include="renderer\Profiling.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\containers\LinkList.cpp">
+      <Filter>idLib\Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">
