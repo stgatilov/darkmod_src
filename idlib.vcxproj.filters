@@ -171,6 +171,9 @@
     <ClCompile Include="idlib\math\Simd_AVX2.cpp">
       <Filter>Math</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\containers\LinkList.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">

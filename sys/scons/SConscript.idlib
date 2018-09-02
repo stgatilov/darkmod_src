@@ -15,6 +15,7 @@ idlib_string = ' \
 	bv/Sphere.cpp \
 	bv/Box.cpp \
 	containers/HashIndex.cpp \
+	containers/LinkList.cpp \
 	geometry/DrawVert.cpp \
 	geometry/Winding2D.cpp \
 	geometry/RenderMatrix.cpp \

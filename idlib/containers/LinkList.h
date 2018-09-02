@@ -408,52 +408,19 @@ void idLinkList<type>::SetOwner( type *object ) {
 	owner = object;
 }
 
-template<class Node, class Compare>
-void LinkedListBubbleSort( Node **pp, Node* Node::*pmbNext, const Compare &cmp ) {
-	//algorithm taken from https://stackoverflow.com/a/19524059/556899
+//note: use LinkedListBubbleSort as typesafe wrapper of this code
+void LinkedListBubbleSortRaw(void **ppFirst, ptrdiff_t nextOffset, const void *context, bool (*isLess)(const void *, const void *, const void *));
 
-	// p always points to the head of the list
-	auto *p = *pp;
-	*pp = nullptr;
-
-	while ( p ) {
-		auto **lhs = &p;
-		auto **rhs = &(p->*pmbNext);
-		bool swapped = false;
-
-		// keep going until qq holds the address of a null pointer
-		while ( *rhs ) {
-			bool needsSwap = cmp(**rhs, **lhs);
-			// if the left side is greater than the right side
-			if ( needsSwap ) {
-				// swap linked node ptrs, then swap *back* their next ptrs
-				idSwap( *lhs, *rhs );
-				idSwap( (*lhs)->*pmbNext, (*rhs)->*pmbNext );
-				lhs = &((*lhs)->*pmbNext);
-				swapped = true;
-			} else {   // no swap. advance both pointer-pointers
-				lhs = rhs;
-				rhs = &((*rhs)->*pmbNext);
-			}
-		}
-
-		// link last node to the sorted segment
-		*rhs = *pp;
-
-		// if we swapped, detach the final node, terminate the list, and continue.
-		if ( swapped ) {
-			// take the last node off the list and push it into the result.
-			*pp = *lhs;
-			*lhs = nullptr;
-		}
-
-		// otherwise we're done. since no swaps happened the list is sorted.
-		// set the output parameter and terminate the loop.
-		else {
-			*pp = p;
-			break;
-		}
-	}
+template<class Node, class Comparator>
+void LinkedListBubbleSort( Node **ppStart, Node* Node::*pmbNext, const Comparator &isLess ) {
+	auto rawIsLess = [](const void *ctx, const void *a, const void *b) -> bool {
+		const Node &va = *(const Node *)a;
+		const Node &vb = *(const Node *)b;
+		const Comparator &isLess = *(const Comparator *)ctx;
+		return isLess(va, vb);
+	};
+	ptrdiff_t offset = (ptrdiff_t) &(((Node*)NULL)->*pmbNext);
+	LinkedListBubbleSortRaw((void**)ppStart, offset, &isLess, rawIsLess);
 }
 
 #endif /* !__LINKLIST_H__ */
