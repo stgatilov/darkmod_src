@@ -107,6 +107,8 @@ void FB_ResolveMultisampling( GLbitfield mask, GLenum filter ) {
 This function blits to fboShadow as a resolver to have a workable copy of the stencil texture
 */
 void FB_ResolveShadowAA() {
+	if (fboShadows.empty())
+		return;	//happens once when game starts
 	qglDisable( GL_SCISSOR_TEST );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadows[0] );
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
