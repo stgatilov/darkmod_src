@@ -1133,7 +1133,6 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	listenerPos = origin * DOOM_TO_METERS;			// meters
 	listenerAxis = axis;
 	listenerAreaName = areaName;
-	listenerAreaName.ToLower();
 
 	if ( rw ) {
 		listenerArea = rw->PointInArea( listenerQU );	// where are we?
