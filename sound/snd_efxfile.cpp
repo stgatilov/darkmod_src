@@ -95,7 +95,7 @@ bool idEFXFile::FindEffect(idStr &name, ALuint *effect) {
 	int i;
 
 	for (i = 0; i < effects.Num(); i++) {
-		if (effects[i]->name == name) {
+		if (effects[i]->name.Icmp(name) == 0) {
 			*effect = effects[i]->effect;
 			return true;
 		}
