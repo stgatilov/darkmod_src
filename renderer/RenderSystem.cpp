@@ -277,22 +277,12 @@ static void R_CheckCvars( void ) {
 		qglFinish();
 	}
 
-	// revelator: autoset depth bits to the max of what the gfx card supports, regardless of previous user setting.
+	// revelator: autoset depth bits to the max of what the gfx card supports, in case someone tries to supply an invalid bit depth.
 	// unsupported bit depth will be forced back to the max the card supports.
 	if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {
-		switch ( glConfig.depthBits ) {
-			case 16:
-				r_fboDepthBits.SetInteger( 16 );
-				common->Printf( "Unsupported bit depth: Depth forced to: %s\n", "16" );
-				break;
-			case 32:
-				r_fboDepthBits.SetInteger( 32 );
-				common->Printf( "Unsupported bit depth: Depth forced to: %s\n", "32" );
-				break;
-			default:
-				r_fboDepthBits.SetInteger( 24 );
-				common->Printf( "Unsupported bit depth: Depth forced to: %s\n", "24" );
-				break;
+		if ( r_fboDepthBits.GetInteger() > glConfig.depthBits ) {
+			common->Printf( "Unsupported bit depth %d attempted: Your card only supports: %d bit depth, defaults restored\n", r_fboDepthBits.GetInteger(), glConfig.depthBits );
+			r_fboDepthBits.SetInteger( glConfig.depthBits );
 		}
 		r_fboDepthBits.SetModified();
 	}
