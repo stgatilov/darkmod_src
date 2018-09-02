@@ -414,6 +414,8 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 }
 
 void RB_GLSL_DrawInteractions_MultiLight() {
+	if ( !backEnd.viewDef->viewLights )
+		return;
 	RB_GLSL_GenerateShadowMaps();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
@@ -431,7 +433,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
 	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
 		auto surf = drawSurfs[i];
-		if ( surf->material->SuppressInSubview() || surf->material->GetSort() < SS_OPAQUE )
+		auto material = surf->material;
+		if ( material->SuppressInSubview() || material->GetSort() < SS_OPAQUE || material->Spectrum() )
 			continue;
 		if ( surf->material->GetSort() >= SS_AFTER_FOG )
 			break;
@@ -870,7 +873,7 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniformMatrix4fv( lightProjectionFalloff, 1, false, din->lightProjection[0].ToFloatPtr() );
 	// set the constant color
 	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
-	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
+	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
 		qglUniform1f( cubic, 1.0 );
 		qglUniform1i( lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
@@ -885,7 +888,6 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS + 1 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
-	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 }
 
 void pointInteractionProgram_t::AfterLoad() {
