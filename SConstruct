@@ -243,6 +243,9 @@ BASECPPFLAGS.append( '-std=c++11' )
 BASECPPFLAGS.append( '-fno-strict-aliasing' )
 
 if ( g_os == 'Linux' ):
+	# use old ABI for std::string and std::list (which is not fully compliant with C++11 standard)
+	# this allows to run TDM binary on OSes which have old glibcxx (e.g. Ubuntu 14.04 from years 2014-2016)
+	BASECPPFLAGS.append( '-D_GLIBCXX_USE_CXX11_ABI=0' )
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
 	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
