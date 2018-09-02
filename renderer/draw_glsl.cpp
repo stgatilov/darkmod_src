@@ -172,6 +172,8 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 			continue;
 		}
+		if ( backEnd.currentSpace != surf->space ) // FIXME needs a better integration with RB_CreateSingleDrawInteractions
+			qglUniformMatrix4fv( currrentInteractionShader->modelMatrix, 1, false, surf->space->modelMatrix );
 
 		// set the vertex pointers
 		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
@@ -419,20 +421,24 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	RB_GLSL_GenerateShadowMaps();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
-	auto drawSurfs = backEnd.viewDef->drawSurfs;
+
 	qglEnableVertexAttribArray( 3 );
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
 	qglEnableVertexAttribArray( 11 );
+
 	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
 		GL_SelectTexture( 5 + i );
 		globalImages->shadowCubeMap[i]->Bind();
 	}
 
+	multiLightShader.Use();
+
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
+
 	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
-		auto surf = drawSurfs[i];
+		auto surf = backEnd.viewDef->drawSurfs[i];
 		auto material = surf->material;
 		if ( material->SuppressInSubview() || material->GetSort() < SS_OPAQUE )
 			continue;
@@ -442,6 +448,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		if ( surf->space != backEnd.currentSpace ) {
 			backEnd.currentSpace = surf->space;
 			qglLoadMatrixf( surf->space->modelViewMatrix );
+			qglUniformMatrix4fv( multiLightShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		}
 
 		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
@@ -456,6 +463,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		RB_CreateMultiDrawInteractions( surf );
 	}
 
+	qglUseProgram( 0 );
+	
 	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
 		GL_SelectTexture( 5 + i );
 		globalImages->BindNull();
@@ -463,19 +472,15 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 	GL_SelectTexture( 4 );
 	globalImages->BindNull();
-
 	GL_SelectTexture( 3 );
 	globalImages->BindNull();
-
 	GL_SelectTexture( 2 );
 	globalImages->BindNull();
-
 	GL_SelectTexture( 1 );
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
 
-	qglUseProgram( 0 );
 	qglDisableVertexAttribArray( 3 );
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
@@ -797,7 +802,8 @@ void basicInteractionProgram_t::AfterLoad() {
 }
 
 void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
+	if ( din->surf->space != backEnd.currentSpace )
+		qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	qglUniform4fv( diffuseMatrix, 2, din->diffuseMatrix[0].ToFloatPtr() );
 	qglUniform4fv( bumpMatrix, 2, din->bumpMatrix[0].ToFloatPtr() );
 	qglUniform4fv( specularMatrix, 2, din->specularMatrix[0].ToFloatPtr() );
@@ -1043,7 +1049,6 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			shadowIndex.push_back( vLight->shadowMapIndex-1 );
 	}
 
-	Use();
 	basicInteractionProgram_t::UpdateUniforms( din );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
 	
@@ -1069,8 +1074,6 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
 		}
 	}
-
-	qglUseProgram( 0 );
 }
 
 void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
