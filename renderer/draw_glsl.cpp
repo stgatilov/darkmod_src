@@ -434,7 +434,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
 		auto surf = drawSurfs[i];
 		auto material = surf->material;
-		if ( material->SuppressInSubview() || material->GetSort() < SS_OPAQUE || material->Spectrum() )
+		if ( material->SuppressInSubview() || material->GetSort() < SS_OPAQUE )
 			continue;
 		if ( surf->material->GetSort() >= SS_AFTER_FOG )
 			break;
@@ -1002,12 +1002,12 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<GLint> shadowIndex;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() ) {
+		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() )
 			continue;
-		}
-		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
+		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions )
 			continue;
-		}
+		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
+			continue;
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		if ( 1/*r_ignore.GetBool()*/ ) {
