@@ -433,9 +433,7 @@ void FB_BindShadowTexture() {
 
 // accidentally deleted
 void FB_ApplyScissor() {
-	// run once update on change
-	bool runOnce = false;
-	if ( r_useScissor.GetBool() && !runOnce ) {
+	if ( r_useScissor.GetBool() ) {
 		float resFactor = 1.0f;
 		if ( shadowOn ) {
 			resFactor *= shadowResolution;
@@ -444,7 +442,6 @@ void FB_ApplyScissor() {
 		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor,
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 * resFactor,
 		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 * resFactor );
-		runOnce = true;
 	}
 }
 
