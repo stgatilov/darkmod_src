@@ -87,7 +87,7 @@ private:
 	bool	_triedFitting;			// grayman #2345
 	bool	_canHandleDoor;			// grayman #2712
 	bool	_closeFromSameSide;		// grayman #2866
-	int		_blockedDoorCount;		// grayman #3523
+//	int		_blockedDoorCount;		// grayman #3523; grayman #4830
 	int		_useDelay;				// grayman #3755 - delay during hand anim before activating door or controller
 	bool	_rotates;				// grayman #3643 - true if this is a rotating door (false == sliding door)
 	int		_doorSide;				// grayman #3643 - which side of door are we on? (0 or 1)

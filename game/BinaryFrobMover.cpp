@@ -965,7 +965,7 @@ bool CBinaryFrobMover::IsAtClosedPosition()
 	const idVec3& localOrg = physicsObj.GetLocalOrigin();
 
 	const idAngles& localAngles = physicsObj.GetLocalAngles();
-	
+
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
 	return (localAngles - m_ClosedAngles).Normalize360().Compare(ang_zero, VECTOR_EPSILON) && 
 		   localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
@@ -1354,9 +1354,9 @@ void CBinaryFrobMover::OnOpenPositionReached()
 	// play the opened sound when the door opens completely
 	FrobMoverStartSound("snd_opened"); // grayman #3263
 
-	// trigger our targets when completely opened, if set to do so
 	if (spawnArgs.GetBool("trigger_when_opened", "0"))
 	{
+		// trigger our targets when completely opened, if set to do so
 		ActivateTargets(this);
 	}
 

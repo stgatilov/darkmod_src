@@ -110,7 +110,8 @@ Memory::Memory(idAI* owningAI) :
 	stayPut(false), // grayman #3528
 	combatState(-1), // grayman #3507
 	leaveAlertState(false), // grayman #3857
-	susDoorSameAsCurrentDoor(false) // grayman #3643
+	susDoorSameAsCurrentDoor(false), // grayman #3643
+	blockedDoorCount(0)		// grayman #3523; grayman #4830
 {
 	attacker = NULL; // grayman #3679 - who attacked me
 }
@@ -241,6 +242,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(closeFromAwayPos);
 	savefile->WriteInt(susDoorCloseFromThisSide); // grayman #3643
 	savefile->WriteBool(susDoorSameAsCurrentDoor);
+	savefile->WriteInt(blockedDoorCount); // grayman #4830
 	savefile->WriteFloat(savedAlertLevelDecreaseRate);
 	// end of #2866 changes
 
@@ -419,6 +421,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(closeFromAwayPos);
 	savefile->ReadInt(susDoorCloseFromThisSide); // grayman #3643
 	savefile->ReadBool(susDoorSameAsCurrentDoor);
+	savefile->ReadInt(blockedDoorCount); // grayman #4830
 	savefile->ReadFloat(savedAlertLevelDecreaseRate);
 	// end of #2866 changes
 

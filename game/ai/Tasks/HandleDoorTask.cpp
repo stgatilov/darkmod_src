@@ -37,6 +37,7 @@ namespace ai
 										// open is below this. Become interested if at or above.
 #define PUSH_PLAYER_ON_THIS_ATTEMPT 2	// grayman #3523 - When the door movement is interrupted,
 										// let the door push the player after this attempt.
+#define WALK_AWAY_AFTER_THIS_ATTEMPT 4  // grayman #4830 - walk away if blockedDoorCount gets larger than this
 #define TURN_TOWARD_DELAY 750	// how long to wait for a turn to complete
 
 #define CONTROLLER_HEIGHT_HIGH 66
@@ -108,7 +109,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	_leaveQueue = -1;		// grayman #2345
 	_leaveDoor = -1;		// grayman #2700
 	_canHandleDoor = true;	// grayman #2712
-	_blockedDoorCount = 0;	// grayman #3523
 	_useDelay = (int)(owner->spawnArgs.GetFloat("door_open_delay_on_use_anim", "500")/1.5f); // grayman #3755
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
@@ -335,30 +335,36 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 {
 	idAI* owner = _owner.GetEntity();
 
-	assert( ( door != NULL ) && ( owner != NULL ) ); // must be fulfilled
+	assert((door != NULL) && (owner != NULL)); // must be fulfilled
 
 	// Bark about it.
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1")));
 
-	_blockedDoorCount++; // grayman #3726 - keep track, even if owner is blocker
+	owner->GetMemory().blockedDoorCount++; // grayman #3726 - keep track, even if owner is blocker; grayman #4830
+	int bdcount = owner->GetMemory().blockedDoorCount; // grayman #4830
 
-	if (ownerIsBlocker)
+	if ( ownerIsBlocker )
 	{
-		return false;
+		return false; // walk away, but don't search
 	}
-	
+
+	if ( bdcount > WALK_AWAY_AFTER_THIS_ATTEMPT ) // grayman #4830
+	{
+		return false; // walk away, but don't search
+	}
+
 	// The first interruptions only elicit a bark from the AI.
 
-	if (_blockedDoorCount < PUSH_PLAYER_ON_THIS_ATTEMPT)
+	if ( bdcount < PUSH_PLAYER_ON_THIS_ATTEMPT) // grayman #4830
 	{
-		return false;
+		return false; // walk away, but don't search
 	}
 
 	// On the next attempt, let the door push the player in
 	// case the player's interrupting the door movement.
 
-	if (_blockedDoorCount == PUSH_PLAYER_ON_THIS_ATTEMPT)
+	if ( bdcount == PUSH_PLAYER_ON_THIS_ATTEMPT) // grayman #4830
 	{
 		// The door has a flag that tells it whether it can push
 		// the player or not. Normally, this is FALSE, but we want
@@ -374,7 +380,12 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 		{
 			door->PushDoorHard();
 		}
-		return false;
+		return false; // walk away, but don't search
+	}
+
+	if ( bdcount == WALK_AWAY_AFTER_THIS_ATTEMPT ) // grayman #4830
+	{
+		return false; // walk away, but don't search
 	}
 
 	// Now get upset and treat the door as suspicious.
@@ -382,7 +393,7 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 	// Search for a while. Remember the door so you can close it later. 
 
 	owner->SetUpSuspiciousDoor(door); // grayman #3643
-	return true;
+	return true; // walk away and search
 }
 
 // grayman #3643 - AI turns toward different positions
@@ -1748,7 +1759,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								// grayman #3523 - clean up any requests we made to
 								// push the player while the door was moving
 
-								_blockedDoorCount = 0;	// grayman #3523
+								//owner->GetMemory().blockedDoorCount = 0;	// grayman #3523; grayman #4830
 								if (frobDoor->IsPushingHard())
 								{
 									frobDoor->StopPushingDoorHard();
@@ -2101,8 +2112,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 
 					// grayman #3523 - This is where the door is stopped as the AI is closing it.
-					// The door is closing toward the AI or away from the AI, and the player blocks it
-					// or frobs it.
+					// The door is closing toward the AI or away from the AI, and either something blocks it
+					// or the player frobs it.
 
 					// Should owner become concerned that the door was interrupted?
 
@@ -2113,8 +2124,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 					// grayman #3726 - if you've tried opening and closing enough
 					// times, and you still can't close it, leave it open and walk away
-
-					if (_blockedDoorCount < (PUSH_PLAYER_ON_THIS_ATTEMPT + 1) )
+					if (owner->GetMemory().blockedDoorCount < (PUSH_PLAYER_ON_THIS_ATTEMPT + 1) ) // grayman #4830
 					{
 						// try opening the door and closing it again
 						Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
@@ -2129,7 +2139,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 
 				// grayman #4077 - is the door moving yet?
-				if ( ( gameLocal.time >= _waitEndTime ) && !frobDoor->IsMoving() )
+				else if ( ( gameLocal.time >= _waitEndTime ) && !frobDoor->IsMoving() ) // grayman #4830 - add an 'else'
 				{
 					_doorHandlingState = EStateWaitBeforeClose;
 				}
@@ -2272,7 +2282,10 @@ bool HandleDoorTask::OpenDoor()
 	bool doorWasLocked = false; // grayman #3643
 
 	idEntityPtr<idEntity> controllerPtr; // door controller
-	controllerPtr = frobDoor->GetDoorController(_doorSide);
+
+	int currentDoorSide = owner->GetDoorSide(frobDoor, owner->GetPhysics()->GetOrigin()); // grayman #4830
+	controllerPtr = frobDoor->GetDoorController(currentDoorSide); // grayman #4830
+	//controllerPtr = frobDoor->GetDoorController(_doorSide); // grayman #4830
 
 	if (controllerPtr.GetEntity() == NULL) // grayman #3643
 	{
@@ -2713,21 +2726,29 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 	memory.doorRelated.currentDoor = NULL;
 
-	if ( memory.closeSuspiciousDoor && frobDoor && ( memory.closeMe.GetEntity() == frobDoor ) ) // grayman #2866 - grayman #3104 - only forget suspicious door if it's the one I'm finishing now
+	if ( frobDoor && (memory.closeMe.GetEntity() == frobDoor) ) // grayman #4830
 	{
-		memory.closeMe = NULL;
-		memory.closeSuspiciousDoor = false;
-		_closeFromSameSide = false;
-		frobDoor->SetSearching(NULL);
-		idAngles doorRotation = frobDoor->spawnArgs.GetAngles("rotate","0 90 0");
-		float angleAdjustment = 90;
-		if ( doorRotation.yaw != 0)
+		if ( memory.closeSuspiciousDoor ) // grayman #2866 - grayman #3104 - only forget suspicious door if it's the one I'm finishing now
 		{
-			angleAdjustment = doorRotation.yaw;
+			memory.closeMe = NULL;
+			memory.closeSuspiciousDoor = false;
+			memory.blockedDoorCount = 0; // grayman #4830
+			_closeFromSameSide = false;
+			frobDoor->SetSearching(NULL);
+			idAngles doorRotation = frobDoor->spawnArgs.GetAngles("rotate", "0 90 0");
+			float angleAdjustment = 90;
+			if ( doorRotation.yaw != 0 )
+			{
+				angleAdjustment = doorRotation.yaw;
+			}
+			owner->TurnToward(owner->GetCurrentYaw() - angleAdjustment); // turn away from the door
+			owner->SetAlertLevel((owner->thresh_1 + owner->thresh_2) / 2.0f); // alert level is just below thresh_2 at this point, so this drops it down halfway to thresh_1
+			frobDoor->AllowResponse(ST_VISUAL, owner); // grayman #3104 - respond again to this visual stim, in case the door was never closed
 		}
-		owner->TurnToward(owner->GetCurrentYaw() - angleAdjustment); // turn away from the door
-		owner->SetAlertLevel( ( owner->thresh_1 + owner->thresh_2 ) / 2.0f); // alert level is just below thresh_2 at this point, so this drops it down halfway to thresh_1
-		frobDoor->AllowResponse(ST_VISUAL,owner); // grayman #3104 - respond again to this visual stim, in case the door was never closed
+	}
+	else
+	{
+		memory.blockedDoorCount = 0;	  // grayman #4830
 	}
 
 	//_leaveDoor = -1; // reset timeout for leaving the door
@@ -2920,7 +2941,7 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_triedFitting);		// grayman #2345
 	savefile->WriteBool(_canHandleDoor);	// grayman #2712
 	savefile->WriteBool(_closeFromSameSide); // grayman #2866
-	savefile->WriteInt(_blockedDoorCount);	// grayman #3523
+	//savefile->WriteInt(_blockedDoorCount);	// grayman #3523 // grayman #4830
 	savefile->WriteInt(_useDelay);			// grayman #3755
 	savefile->WriteBool(_rotates);			// grayman #3643
 	savefile->WriteInt(_doorSide);			// grayman #3643
@@ -2949,7 +2970,7 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_triedFitting);	// grayman #2345
 	savefile->ReadBool(_canHandleDoor);	// grayman #2712
 	savefile->ReadBool(_closeFromSameSide); // grayman #2866
-	savefile->ReadInt(_blockedDoorCount);	// grayman #3523
+	//savefile->ReadInt(_blockedDoorCount);	// grayman #3523 // grayman #4830
 	savefile->ReadInt(_useDelay);			// grayman #3755
 	savefile->ReadBool(_rotates);			// grayman #3643
 	savefile->ReadInt(_doorSide);			// grayman #3643

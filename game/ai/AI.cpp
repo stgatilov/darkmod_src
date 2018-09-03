@@ -13742,7 +13742,7 @@ int idAI::GetDoorSide(CFrobDoor* frobDoor, idVec3 pos) // grayman #4227
 	// determine which side of the door we're on
 	idVec3 sm0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER);
 	idVec3 sm1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_SIDEMARKER);
-	//idVec3 ownerOrig = GetPhysics()->GetOrigin();
+
 	if ( (sm0 - pos).LengthSqr() < (sm1 - pos).LengthSqr() )
 	{
 		doorSide = DOOR_SIDE_FRONT;
