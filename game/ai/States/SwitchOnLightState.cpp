@@ -275,7 +275,7 @@ void SwitchOnLightState::Init(idAI* owner)
 		_goalEnt = light;
 		goalOrigin = _goalEnt->GetPhysics()->GetOrigin();
 		goalDirection = owner->GetPhysics()->GetOrigin() - goalOrigin;
-	
+
 		idVec3 size(16, 16, 82);
 		idAAS* aas = owner->GetAAS();
 		if (aas)
@@ -331,7 +331,7 @@ void SwitchOnLightState::Init(idAI* owner)
 
 		idVec3 targetPoint = startPoint;
 		trace_t result;
-		if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, NULL))
+		if (gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, _goalEnt)) // grayman #4691
 		{
 			// Found the floor.
 
@@ -495,6 +495,14 @@ void SwitchOnLightState::Think(idAI* owner)
 
 	idLight* light = _light.GetEntity();
 	if (light == NULL)
+	{
+		owner->m_RelightingLight = false;
+		owner->GetMind()->EndState();
+		return;
+	}
+
+	// grayman #4691 - if _goalEnt has become NULL (don't know why), abort
+	if (_goalEnt == NULL)
 	{
 		owner->m_RelightingLight = false;
 		owner->GetMind()->EndState();
