@@ -1161,6 +1161,7 @@ void idParallelJobManagerLocal::Init() {
 	}
 	maxThreads = jobs_numThreads.GetInteger();
 
+	// ??? this function only exists as an extern
 	Sys_CPUCount( numPhysicalCpuCores, numLogicalCpuCores, numCpuPackages );
 }
 

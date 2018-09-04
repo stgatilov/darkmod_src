@@ -566,6 +566,45 @@ static void	RB_SetBuffer( const void *data ) {
 
 /*
 =============
+RB_DumpFramebuffer
+
+Bloom related debug tool
+=============
+*/
+void RB_DumpFramebuffer( const char *fileName ) {
+	renderCrop_t r;
+
+	qglGetIntegerv( GL_VIEWPORT, &r.x );
+
+	if (!r_useFbo.GetBool()) {
+		qglReadBuffer( GL_BACK );
+	}
+
+	// calculate pitch of buffer that will be returned by qglReadPixels()
+	int alignment;
+	qglGetIntegerv( GL_PACK_ALIGNMENT, &alignment );
+
+	int pitch = r.width * 4 + alignment - 1;
+	pitch = pitch - pitch % alignment;
+
+	byte *data = (byte *)R_StaticAlloc( pitch * r.height );
+
+	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
+	qglReadPixels( r.x, r.y, r.width, r.height, GL_RGBA, GL_UNSIGNED_BYTE, data );
+
+	byte *data2 = (byte *)R_StaticAlloc( r.width * r.height * 4 );
+
+	for ( int y = 0; y < r.height; y++ ) {
+		memcpy( data2 + y * r.width * 4, data + y * pitch, r.width * 4 );
+	}
+	R_WriteTGA( fileName, data2, r.width, r.height, true );
+
+	R_StaticFree( data );
+	R_StaticFree( data2 );
+}
+
+/*
+=============
 RB_CheckTools
 
 Revelator: Check for any rendertool and mark it
@@ -580,14 +619,14 @@ static bool RB_CheckTools( int width, int height ) {
 	// nbohr1more add checks for render tools
 	// revelator: added some more
 	if ( r_showLightCount.GetBool() ||
-	        r_showShadows.GetBool() ||
-	        r_showVertexColor.GetBool() ||
-	        r_showShadowCount.GetBool() ||
-	        r_showTris.GetBool() ||
-	        r_showPortals.GetBool() ||
-	        r_showTexturePolarity.GetBool() ||
-	        r_showTangentSpace.GetBool() ||
-	        r_showDepth.GetBool() ) {
+	     r_showShadows.GetBool() ||
+	     r_showVertexColor.GetBool() ||
+	     r_showShadowCount.GetBool() ||
+	     r_showTris.GetBool() ||
+	     r_showPortals.GetBool() ||
+	     r_showTexturePolarity.GetBool() ||
+	     r_showTangentSpace.GetBool() ||
+	     r_showDepth.GetBool() ) {
 		return true;
 	}
 	return false;
