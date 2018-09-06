@@ -1016,10 +1016,8 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			continue;
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-		if ( 1/*r_ignore.GetBool()*/ ) {
-			idVec3 lr( vLight->lightDef->parms.lightRadius );
-			idBounds lb( localLightOrigin - lr, localLightOrigin + lr );
-			if ( !surf->frontendGeo->bounds.IntersectsBounds( lb ) )
+		if ( 1/*!r_ignore.GetBool()*/ ) {
+			if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
 				continue;
 		}
 		lightOrigins.push_back( localLightOrigin );
