@@ -704,7 +704,7 @@ idPlayer::idPlayer() :
 	ignoreWeaponAttack		= false; // grayman #597
 	displayAASAreas			= false; // grayman #3032 - no need to save/restore
 	timeEvidenceIntruders	= 0;	 // grayman #3424
-
+	m_Listener				= NULL;	 // grayman #4620
 }
 
 /*
@@ -2280,6 +2280,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(ignoreWeaponAttack);   // grayman #597
 	savefile->WriteInt(timeEvidenceIntruders); // grayman #3424
 	savefile->WriteInt(savePermissions);
+	m_Listener.Save(savefile);				   // grayman #4620
 
 	if(hud)
 	{
@@ -2630,6 +2631,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(ignoreWeaponAttack);   // grayman #597
 	savefile->ReadInt(timeEvidenceIntruders); // grayman #3424
 	savefile->ReadInt(savePermissions);
+	m_Listener.Restore(savefile);			  // grayman #4620
+
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
 
@@ -8799,12 +8802,18 @@ void idPlayer::CalculateFirstPersonView( void )
 #endif
 	}
 
-	// Set the listener location (on the other side of a door if door leaning)
+	// Set the listener location (on the other side of a door if door leaning).
+	// grayman #4620 - or at the location of an idListener entity if one is defined.
+
 	if (physics->IsType(idPhysics_Player::Type) && 
 		static_cast<idPhysics_Player*>(physics)->IsDoorLeaning() && 
 		!gameLocal.inCinematic)
 	{
 		SetListenerLoc( m_DoorListenLoc );
+	}
+	else if (m_Listener.GetEntity()) // grayman #4620
+	{
+		SetListenerLoc( m_Listener.GetEntity()->GetPhysics()->GetOrigin() );
 	}
 	else
 	{

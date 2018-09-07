@@ -483,6 +483,11 @@ public:
 	**/
 	int						m_splashtime; // grayman #4600
 
+	/**
+	* Am I listening?
+	**/
+	bool					m_listening; // grayman #4620
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 

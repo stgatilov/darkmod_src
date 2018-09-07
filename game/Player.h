@@ -16,6 +16,8 @@
 #define __GAME_PLAYER_H__
 
 #include "ButtonStateTracker.h"
+#include "Listener.h"
+
 class CInventoryItem;
 typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
 
@@ -483,6 +485,12 @@ public:
 
 	// Obsttorte: 
 	int						savePermissions;
+
+	/**
+	* Pointer to an idListener entity if one is active
+	**/
+	idEntityPtr<idListener>		m_Listener; // grayman #4620
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 

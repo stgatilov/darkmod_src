@@ -1651,6 +1651,7 @@ void idEntity::Spawn( void )
 
 	m_pushedBy = NULL;		// grayman #4603
 	m_splashtime = 0;		// grayman #4600
+	m_listening = false;	// grayman #4620
 }
 
 /*
@@ -2223,6 +2224,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	m_pushedBy.Save( savefile ); // grayman #4603
 
 	savefile->WriteInt(m_splashtime); // grayman #4600
+	savefile->WriteBool(m_listening); // grayman #4620
 
 	// SteveL #3817: make decals persistent
     savefile->WriteInt(static_cast<int>(decals_list.size()));
@@ -2535,6 +2537,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	m_pushedBy.Restore( savefile ); // grayman #4603
 
 	savefile->ReadInt(m_splashtime); // grayman #4600
+	savefile->ReadBool(m_listening); // grayman #4620
 
 	// SteveL #3817: make decals persistent
 	int decalscount;
@@ -4248,6 +4251,18 @@ void idEntity::Present(void)
 	if ( cameraTarget && gameLocal.InPlayerPVS(this) )
 	{
 		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
+
+		// grayman #4620 - set (or unset) the entity whose origin will be the origin of the sound the player hears
+
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		if ( cameraTarget->m_listening )
+		{
+			player->m_Listener = static_cast<idListener*>(cameraTarget); // turn on listener
+		}
+		else
+		{
+			player->m_Listener = NULL; // turn off listener
+		}
 	}
 
 	// if set to invisible, skip

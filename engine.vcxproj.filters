@@ -1237,6 +1237,7 @@
     <ClInclude Include="renderer\Profiling.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="game\Listener.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2920,6 +2921,7 @@
     <ClCompile Include="renderer\Profiling.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="game\Listener.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">
