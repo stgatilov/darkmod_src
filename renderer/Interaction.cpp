@@ -953,7 +953,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		}
 
 		// generate a lighted surface and add it
-		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 ) {
+		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 && shader->SurfaceCastsShadow() ) {
 			if ( tri->ambientViewCount == tr.viewCount ) {
 				sint->lightTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
 			} else {
