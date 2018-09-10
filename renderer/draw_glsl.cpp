@@ -338,6 +338,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	
 	qglDisable( GL_POLYGON_OFFSET_FILL );
 
+	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
 	qglUseProgram( 0 );
 
 	FB_ToggleShadow( false );
