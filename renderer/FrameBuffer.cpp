@@ -304,6 +304,7 @@ void CheckCreateShadow() {
 	textureType_t type = r_shadows.GetInteger() == 2 ? TT_CUBIC : TT_2D;
 	static textureType_t nowType;
 
+	bool depthBitsModified = r_fboDepthBits.IsModified();
 	// reset textures
 	if ( r_fboSeparateStencil.GetBool() ) {
 		// currentDepthImage is initialized there
@@ -314,7 +315,7 @@ void CheckCreateShadow() {
 	}
 	auto *shadowCubeMap = globalImages->shadowCubeMap[ShadowFboIndex % MAX_SHADOW_MAPS];
 
-	if ( shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
+	if ( shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || depthBitsModified ) {
 		r_fboDepthBits.ClearModified();
 		shadowCubeMap->Bind();
 		shadowCubeMap->uploadWidth = r_shadowMapSize.GetInteger();
@@ -498,7 +499,6 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	// additional steps for shadowmaps
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglDepthMask( on );
-		//GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
 		if ( on ) {
 			int mipmap = ShadowFboIndex / MAX_SHADOW_MAPS;
 			int mapSize = r_shadowMapSize.GetInteger() >> mipmap;

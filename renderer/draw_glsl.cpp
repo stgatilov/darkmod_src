@@ -315,8 +315,10 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	backEnd.currentSpace = NULL;
 
-	qglPolygonOffset( 1, 1 );
-	qglEnable( GL_POLYGON_OFFSET_FILL );
+	GL_Cull( CT_BACK_SIDED ); 
+
+	/*qglPolygonOffset( r_ignore.GetFloat(), r_ignore2.GetFloat() );
+	qglEnable( GL_POLYGON_OFFSET_FILL );*/
 
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() ) {
@@ -336,7 +338,9 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		shadowMapShader.FillDepthBuffer( surf );
 	}
 	
-	qglDisable( GL_POLYGON_OFFSET_FILL );
+	//qglDisable( GL_POLYGON_OFFSET_FILL );
+
+	GL_Cull( CT_FRONT_SIDED );
 
 	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
 	qglUseProgram( 0 );

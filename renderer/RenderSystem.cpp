@@ -279,13 +279,13 @@ static void R_CheckCvars( void ) {
 
 	// revelator: autoset depth bits to the max of what the gfx card supports, in case someone tries to supply an invalid bit depth.
 	// unsupported bit depth will be forced back to the max the card supports.
-	if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {
+	/*if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {
 		if ( r_fboDepthBits.GetInteger() > glConfig.depthBits ) {
 			common->Printf( "Unsupported bit depth %d attempted: Your card only supports: %d bit depth, defaults restored\n", r_fboDepthBits.GetInteger(), glConfig.depthBits );
 			r_fboDepthBits.SetInteger( glConfig.depthBits );
 		}
 		r_fboDepthBits.SetModified();
-	}
+	}*/
 
 	// check for changes to logging state
 	GLimp_EnableLogging( r_logFile.GetInteger() != 0 );
