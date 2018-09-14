@@ -28,6 +28,8 @@
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
+idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
+
 /*
 ===========================================================================================
 
@@ -339,6 +341,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->lightShader = light->lightShader;
 	vLight->shaderRegisters = NULL;		// allocated and evaluated in R_AddLightSurfaces
 	vLight->noFogBoundary = light->parms.noFogBoundary; // #3664
+	vLight->tooBigForShadowMaps = light->parms.lightRadius.Length() > r_maxShadowMapLight.GetFloat();
 
 	// link the view light
 	vLight->next = tr.viewDef->viewLights;

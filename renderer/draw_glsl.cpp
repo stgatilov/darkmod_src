@@ -102,6 +102,7 @@ multiLightInteractionProgram_t multiLightShader;
 
 interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
+
 /*
 ==================
 RB_GLSL_DrawInteraction
@@ -527,7 +528,7 @@ void RB_GLSL_DrawInteractions() {
 			continue;
 		}
 
-		if ( r_shadows.GetInteger() == 2 ) {
+		if ( r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps ) {
 			RB_GLSL_DrawLight_ShadowMap();
 		} else {
 			RB_GLSL_DrawLight_Stencil();
@@ -932,11 +933,13 @@ void pointInteractionProgram_t::AfterLoad() {
 void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
 
-	bool doShadows = !backEnd.vLight->lightDef->parms.noShadows &&
-		backEnd.vLight->lightShader->LightCastsShadows();
+	bool doShadows = !backEnd.vLight->lightDef->parms.noShadows && backEnd.vLight->lightShader->LightCastsShadows();
 	if ( doShadows ) {
-		qglUniform1f( shadows, r_shadows.GetInteger() );
-		//qglUniform1i( shadowMipMap, ShadowMipMap[0] );
+		if(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps )
+			qglUniform1f( shadows, 1 );
+		else
+			qglUniform1f( shadows, r_shadows.GetInteger() );
+		//qglUniform1i( shadowMipMap, ShadowMipMap[0] ); // don't delete - disabled temporarily
 		qglUniform1i( shadowMipMap, 0 );
 	} else
 		qglUniform1f( shadows, 0 );

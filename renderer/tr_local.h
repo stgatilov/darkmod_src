@@ -350,6 +350,7 @@ typedef struct viewLight_s {
 	int						shadowMapIndex;
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
+	bool					tooBigForShadowMaps;
 
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend

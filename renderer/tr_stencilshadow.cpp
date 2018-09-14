@@ -1119,9 +1119,8 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	assert( light != NULL );
 
-	if ( r_shadows.GetInteger() != 1 ) {
+	if ( r_shadows.GetInteger() == 0 || r_shadows.GetInteger() == 2 && !light->viewLight->tooBigForShadowMaps )
 		return NULL;
-	}
 
 	if ( tri->numSilEdges == 0 || tri->numIndexes == 0 || tri->numVerts == 0 ) {
 		return NULL;
