@@ -985,7 +985,7 @@ void ambientInteractionProgram_t::AfterLoad() {
 
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
-	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
+	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 	GL_CheckErrors();
 }
