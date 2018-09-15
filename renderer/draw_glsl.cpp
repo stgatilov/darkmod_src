@@ -134,7 +134,8 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 4 );
 	din->specularImage->Bind();
 
-	if ( (r_softShadowsQuality.GetBool()) && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2 ) {
+	if( !(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps) ) // special case - no softening
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2 ) {
 		FB_BindShadowTexture();
 	}
 
@@ -228,7 +229,7 @@ RB_GLSL_DrawLight_Stencil
 void RB_GLSL_DrawLight_Stencil() {
 	GL_PROFILE( "GLSL_DrawLight_Stencil" );
 
-	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
+	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() && (r_shadows.GetInteger() != 2);
 
 	// set depth bounds for the whole light
 	if ( backEnd.useLightDepthBounds ) {
@@ -261,7 +262,7 @@ void RB_GLSL_DrawLight_Stencil() {
 		FB_ResolveShadowAA();
 	}
 
-	const bool NoSelfShadows = true; // otherwise low-poly "round" models cast ugly shadows on themselves
+	const bool NoSelfShadows = true; // don't delete - debug check for low-poly "round" models casting ugly shadows on themselves
 
 	if ( NoSelfShadows ) {
 		if ( useShadowFbo ) {
