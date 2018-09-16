@@ -360,7 +360,7 @@ void RB_GLSL_GenerateShadowMaps() {
 	if ( r_shadows.GetBool() == 0 )
 		return;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( !backEnd.vLight->lightShader->LightCastsShadows() ) {
+		if ( !backEnd.vLight->lightShader->LightCastsShadows() || backEnd.vLight->tooBigForShadowMaps ) {
 			continue;
 		}
 		// if there are no interactions, get out!
@@ -426,6 +426,37 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 	multiLightShader.Draw( din );
 }
 
+void RB_GLSL_DrawInteractions_SingleLight() {
+	// do fogging later
+	if ( backEnd.vLight->lightShader->IsFogLight() ) {
+		return;
+	}
+
+	if ( backEnd.vLight->lightShader->IsBlendLight() ) {
+		return;
+	}
+
+	// if there are no interactions, get out!
+	if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions ) {
+		return;
+	}
+
+	if ( r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps ) {
+		RB_GLSL_DrawLight_ShadowMap();
+	} else {
+		RB_GLSL_DrawLight_Stencil();
+	}
+
+	// translucent surfaces never get stencil shadowed
+	if ( r_skipTranslucent.GetBool() ) {
+		return;
+	}
+	qglStencilFunc( GL_ALWAYS, 128, 255 );
+	backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
+	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+}
+
 void RB_GLSL_DrawInteractions_MultiLight() {
 	if ( !backEnd.viewDef->viewLights )
 		return;
@@ -455,7 +486,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 			continue;
 		if ( surf->material->GetSort() >= SS_AFTER_FOG )
 			break;
-		
+
 		if ( surf->space != backEnd.currentSpace ) {
 			backEnd.currentSpace = surf->space;
 			qglLoadMatrixf( surf->space->modelViewMatrix );
@@ -475,7 +506,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	}
 
 	qglUseProgram( 0 );
-	
+
 	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
 		GL_SelectTexture( 5 + i );
 		globalImages->BindNull();
@@ -497,6 +528,11 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
 	qglDisableVertexAttribArray( 11 );
+
+	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+		if ( backEnd.vLight->tooBigForShadowMaps )
+			RB_GLSL_DrawInteractions_SingleLight();
+	}
 }
 
 /*
@@ -505,7 +541,7 @@ RB_GLSL_DrawInteractions
 ==================
 */
 void RB_GLSL_DrawInteractions() {
-	if ( r_testARBProgram.GetInteger() == 2 ) {
+	if ( r_testARBProgram.GetInteger() == 2 && r_shadows.GetInteger() == 2 ) {
 		RB_GLSL_DrawInteractions_MultiLight();
 		return;
 	}
@@ -515,34 +551,7 @@ void RB_GLSL_DrawInteractions() {
 
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		// do fogging later
-		if ( backEnd.vLight->lightShader->IsFogLight() ) {
-			continue;
-		}
-
-		if ( backEnd.vLight->lightShader->IsBlendLight() ) {
-			continue;
-		}
-
-		// if there are no interactions, get out!
-		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions ) {
-			continue;
-		}
-
-		if ( r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps ) {
-			RB_GLSL_DrawLight_ShadowMap();
-		} else {
-			RB_GLSL_DrawLight_Stencil();
-		}
-
-		// translucent surfaces never get stencil shadowed
-		if ( r_skipTranslucent.GetBool() ) {
-			continue;
-		}
-		qglStencilFunc( GL_ALWAYS, 128, 255 );
-		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
-		RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
-		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+		RB_GLSL_DrawInteractions_SingleLight();
 	}
 
 	// disable stencil shadow test
@@ -1021,7 +1030,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<GLint> shadowIndex;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() )
+		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->tooBigForShadowMaps )
 			continue;
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions )
 			continue;
