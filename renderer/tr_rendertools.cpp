@@ -2221,11 +2221,11 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_ShowTrace( drawSurfs, numDrawSurfs );
 
 	if ( r_showMultiLight.GetBool() ) {
-		common->Printf( "multi-light:%i/%i avg:%2.2f max:%i/%i\n",
+		common->Printf( "multi-light:%i/%i avg:%2.2f max:%i/%i/%i\n",
 			backEnd.pc.c_interactions,
 			backEnd.pc.c_interactionLights,
 			1. * backEnd.pc.c_interactionLights / backEnd.pc.c_interactions,
-			backEnd.pc.c_interactionMaxShadowMaps, backEnd.pc.c_interactionMaxLights
+			backEnd.pc.c_interactionMaxShadowMaps, backEnd.pc.c_interactionMaxLights, backEnd.pc.c_interactionSingleLights
 		);
 	}
 }

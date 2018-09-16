@@ -460,6 +460,22 @@ void RB_GLSL_DrawInteractions_SingleLight() {
 void RB_GLSL_DrawInteractions_MultiLight() {
 	if ( !backEnd.viewDef->viewLights )
 		return;
+
+	// special cases this shader does not support
+	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+		if ( backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
+			backEnd.vLight->singleLightOnly = true;
+		auto *shader = backEnd.vLight->lightShader;
+		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) // custom ambient projection
+			backEnd.vLight->singleLightOnly = true;
+		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
+			backEnd.vLight->singleLightOnly = true;
+		if ( backEnd.vLight->singleLightOnly ) {
+			RB_GLSL_DrawInteractions_SingleLight();
+			backEnd.pc.c_interactionSingleLights++;
+		}
+	}
+
 	RB_GLSL_GenerateShadowMaps();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
@@ -528,11 +544,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
 	qglDisableVertexAttribArray( 11 );
-
-	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->tooBigForShadowMaps )
-			RB_GLSL_DrawInteractions_SingleLight();
-	}
 }
 
 /*
@@ -1030,12 +1041,19 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<GLint> shadowIndex;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->tooBigForShadowMaps )
+		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->singleLightOnly )
 			continue;
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions )
 			continue;
 		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
 			continue;
+		if ( vLight->lightShader->IsAmbientLight() ) {
+			if ( r_skipAmbient.GetInteger() == 2 )
+				continue;
+		} else {
+			if ( r_skipInteractions.GetBool() )
+				continue;
+		}
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		if ( 1/*!r_ignore.GetBool()*/ ) {

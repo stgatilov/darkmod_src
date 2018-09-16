@@ -66,7 +66,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += surf->numIndexes;
 		backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;

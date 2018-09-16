@@ -350,7 +350,8 @@ typedef struct viewLight_s {
 	int						shadowMapIndex;
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
-	bool					tooBigForShadowMaps;
+	bool					tooBigForShadowMaps;		// shadow maps annoyingly pixelated
+	bool					singleLightOnly;			// multi-light shader can't handle it
 
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend
@@ -670,7 +671,7 @@ typedef struct {
 	int		c_matrixLoads;
 	float	c_overDraw;
 
-	uint	c_interactions, c_interactionLights, c_interactionMaxLights, c_interactionMaxShadowMaps;
+	uint	c_interactions, c_interactionSingleLights, c_interactionLights, c_interactionMaxLights, c_interactionMaxShadowMaps;
 
 	int		msec;			// total msec for backend run
 	int		msecLast;		// last msec for backend run
