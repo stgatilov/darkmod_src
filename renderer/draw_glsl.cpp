@@ -34,6 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "FrameBuffer.h"
 #include "Profiling.h"
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#endif
+
 struct shadowMapProgram_t : basicDepthProgram_t {
 	GLint lightOrigin;
 	GLint modelMatrix;
@@ -101,7 +105,6 @@ ambientInteractionProgram_t ambientInteractionShader;
 multiLightInteractionProgram_t multiLightShader;
 
 interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
-
 
 /*
 ==================
@@ -954,9 +957,12 @@ void pointInteractionProgram_t::AfterLoad() {
 void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
 
-	bool doShadows = !backEnd.vLight->lightDef->parms.noShadows && backEnd.vLight->lightShader->LightCastsShadows();
+	auto vLight = backEnd.vLight;
+	bool doShadows = !vLight->lightDef->parms.noShadows && vLight->lightShader->LightCastsShadows(); 
+	if ( doShadows && r_shadows.GetInteger() == 2 ) // FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
+		doShadows = vLight->globalInteractions != NULL;
 	if ( doShadows ) {
-		if(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps )
+		if(r_shadows.GetInteger() == 2 && vLight->tooBigForShadowMaps )
 			qglUniform1f( shadows, 1 );
 		else
 			qglUniform1f( shadows, r_shadows.GetInteger() );
