@@ -184,6 +184,8 @@ typedef struct {
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 
 	idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
+
+	bool				GLSL;
 } newShaderStage_t;
 
 typedef struct {

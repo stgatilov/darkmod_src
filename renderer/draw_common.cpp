@@ -498,7 +498,7 @@ RB_STD_T_RenderShaderPasses_New
 Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
-void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( r_skipNewAmbient.GetBool() ) {
 		return;
 	}
@@ -566,6 +566,12 @@ void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
 	qglDisableVertexAttribArray( 2 );
+}
+
+void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	qglUseProgram( pStage->newStage->fragmentProgram );
+	RB_DrawElementsWithCounters( surf );
+	qglUseProgram( 0 );
 }
 
 /*
@@ -773,7 +779,10 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		newShaderStage_t *newStage = pStage->newStage;
 
 		if ( newStage ) {
-			RB_STD_T_RenderShaderPasses_NewStage( ac, pStage, surf );
+			if(newStage->GLSL )
+				RB_STD_T_RenderShaderPasses_GLSL( ac, pStage, surf );
+			else
+				RB_STD_T_RenderShaderPasses_ARB( ac, pStage, surf );
 			continue;
 		}
 

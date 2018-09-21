@@ -1492,8 +1492,15 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 		else if ( !token.Icmp( "program" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
-				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
+				idStr fileExt;
+				token.ExtractFileExtension( fileExt );
+				if ( newStage.GLSL = fileExt.Icmp( "vfp" ) != 0 )
+					newStage.vertexProgram = newStage.fragmentProgram =
+						R_FindGLSLProgram( token );
+				else {
+					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
+					newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
+				}
 			}
 			continue;
 		}

@@ -106,6 +106,8 @@ multiLightInteractionProgram_t multiLightShader;
 
 interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
+std::map<idStr, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
+
 /*
 ==================
 RB_GLSL_DrawInteraction
@@ -590,6 +592,11 @@ bool R_ReloadGLSLPrograms() {
 	ok &= fogShader.Load( "fog" );
 	ok &= blendShader.Load( "blend" );
 	ok &= cubeMapShader.Load( "cubeMap" );
+	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
+		auto& fileName = it->first;
+		auto& shader = it->second;
+		shader->Load( fileName );
+	}
 	return ok;
 }
 
@@ -607,6 +614,17 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 		return;
 	}
 	common->Printf( "---------------------------------\n" );
+}
+
+int R_FindGLSLProgram( const char *program ) {
+	auto& i = dynamicShaders.find( program );
+	if( i == dynamicShaders.end() ) {
+		auto shader = new shaderProgram_t();
+		shader->Load( program );
+		dynamicShaders[program] = shader;
+		return shader->program;
+	} else
+		return i->second->program;
 }
 
 /*
