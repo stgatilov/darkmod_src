@@ -29,6 +29,24 @@ GLuint postProcessWidth, postProcessHeight;
 uint ShadowFboIndex;
 float shadowResolution;
 
+bool R_GetModeInfo( int *width, int *height, int mode );
+void FB_Resize( GLuint *width, GLuint *height ) {
+	// virtual resolution fix
+    if ( r_mode.IsModified() ) {
+        int w, h;
+        if ( R_GetModeInfo( &w, &h, r_mode.GetInteger() ) ) {
+            glConfig.vidWidth = w;
+            glConfig.vidHeight = h;
+        }
+        r_mode.ClearModified();
+    }
+    GLuint renderWidth = glConfig.vidWidth * r_fboResolution.GetInteger();
+    GLuint renderHeight = glConfig.vidHeight * r_fboResolution.GetInteger();
+
+	width = &renderWidth;
+	height =&renderHeight;
+}
+
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if ( !fboPrimary ) {
 		qglGenFramebuffers( 1, &fboPrimary );
@@ -83,6 +101,8 @@ void FB_CreatePostProcess( GLuint width, GLuint height ) {
 		qglDeleteFramebuffers( 1, &fboPostProcess );
 		fboPostProcess = 0; // try from scratch next time
 	}
+	FB_Resize( &width, &height );
+
 	postProcessWidth = width;
 	postProcessHeight = height;
 }
@@ -226,7 +246,10 @@ void CheckCreatePrimary() {
 	GL_CheckErrors();
 
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
-	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
+	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
+
+	// resize for virtual resolution
+	FB_Resize( &curWidth, &curHeight );
 
 	if ( r_fboSeparateStencil.IsModified() || ( curWidth != globalImages->currentRenderImage->uploadWidth ) ) {
 		r_fboSeparateStencil.ClearModified();
@@ -299,12 +322,11 @@ void CheckCreateShadow() {
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			shadowRes = r_softShadowsQuality.GetFloat() / -100.0f;
 		}
-
 		curWidth *= r_fboResolution.GetFloat() * shadowRes;
 		curHeight *= r_fboResolution.GetFloat() * shadowRes;
 	}
-
 	bool depthBitsModified = r_fboDepthBits.IsModified();
+
 	// reset textures
 	if ( r_fboSeparateStencil.GetBool() ) {
 		// currentDepthImage is initialized there
@@ -342,7 +364,7 @@ void CheckCreateShadow() {
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 
 		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
@@ -404,8 +426,12 @@ void FB_SelectPostProcess() {
 	if ( !primaryOn ) {
 		return;
 	}
-	GLuint curWidth = glConfig.vidWidth * r_fboResolution.GetFloat();
-	GLuint curHeight = glConfig.vidHeight * r_fboResolution.GetFloat();
+
+	// resize for virtual resolution
+	GLuint curWidth = glConfig.vidWidth;
+	GLuint curHeight = glConfig.vidHeight;
+
+	FB_Resize( &curWidth, &curHeight );
 
 	if ( !fboPostProcess || curWidth != postProcessWidth || curHeight != postProcessHeight ) {
 		FB_CreatePostProcess( curWidth, curHeight );
@@ -461,7 +487,6 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 				qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 			}
-
 			qglDisable( GL_SCISSOR_TEST );
 			qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadowStencil );
 			qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
@@ -474,6 +499,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		GL_CheckErrors();
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? (r_shadows.GetInteger() == 1 ? fboShadowStencil : fboShadowMaps[ShadowFboIndex]) : primaryOn ? fboPrimary : 0 );
+
 	if( on && r_shadows.GetInteger() == 1 && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
 		// with MSAA on, we need to render against the multisampled primary buffer, otherwise stencil is drawn
 		// against a lower-quality depth map which may cause render errors with shadows
@@ -518,7 +544,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				mapSize >>= 1;
 			}
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap[ShadowFboIndex]->texnum, ShadowMipMap[ShadowFboIndex] );*/
-			qglViewport( 0, 0, mapSize, mapSize );
+			GL_Viewport( 0, 0, mapSize, mapSize );
 
 			if ( r_useScissor.GetBool() ) {
 				GL_Scissor( 0, 0, mapSize, mapSize );
@@ -590,8 +616,14 @@ void LeavePrimary() {
 	}
 	GL_CheckErrors();
 
-	GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	// resize for virtual resolution
+	GLuint cropWidth = glConfig.vidWidth;
+	GLuint cropHeight = glConfig.vidHeight;
+
+	FB_Resize( &cropWidth, &cropHeight );
+
+    GL_Viewport( 0, 0, cropWidth, cropHeight );
+    GL_Scissor( 0, 0, cropWidth, cropHeight );
 
 	if ( r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );

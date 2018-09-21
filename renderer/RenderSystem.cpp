@@ -279,13 +279,13 @@ static void R_CheckCvars( void ) {
 
 	// revelator: autoset depth bits to the max of what the gfx card supports, in case someone tries to supply an invalid bit depth.
 	// unsupported bit depth will be forced back to the max the card supports.
-	/*if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {
+	if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {
 		if ( r_fboDepthBits.GetInteger() > glConfig.depthBits ) {
-			common->Printf( "Unsupported bit depth %d attempted: Your card only supports: %d bit depth, defaults restored\n", r_fboDepthBits.GetInteger(), glConfig.depthBits );
+			common->Printf( "Unsupported bit depth %d attempted: Your card supports: %d bit depth max, defaults restored\n", r_fboDepthBits.GetInteger(), glConfig.depthBits );
 			r_fboDepthBits.SetInteger( glConfig.depthBits );
 		}
 		r_fboDepthBits.SetModified();
-	}*/
+	}
 
 	// check for changes to logging state
 	GLimp_EnableLogging( r_logFile.GetInteger() != 0 );
@@ -526,7 +526,6 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
-
 	guiModel->Clear();
 
 	// for the larger-than-window tiled rendering screenshots
@@ -540,13 +539,9 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	renderCrops[0].x = 0;
 	renderCrops[0].y = 0;
 
-	if ( r_useFbo.GetBool() ) { // duzenko #4425: allow virtual resolution
-		renderCrops[0].width = windowWidth * r_fboResolution.GetFloat();
-		renderCrops[0].height = windowHeight * r_fboResolution.GetFloat();
-	} else {
-		renderCrops[0].width = windowWidth;
-		renderCrops[0].height = windowHeight;
-	}
+	renderCrops[0].width = windowWidth;
+	renderCrops[0].height = windowHeight;
+
 	currentRenderCrop = 0;
 
 	// screenFraction is just for quickly testing fill rate limitations
@@ -641,10 +636,11 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	} catch ( std::shared_ptr<ErrorReportedException> e ) {
 		session->WaitForFrontendCompletion();
 		common->SetErrorIndirection( false );
-		if ( e->IsFatalError() )
-		{ common->DoFatalError( e->ErrorMessage(), e->ErrorCode() ); }
-		else
-		{ common->DoError( e->ErrorMessage(), e->ErrorCode() ); }
+		if ( e->IsFatalError() ) { 
+			common->DoFatalError( e->ErrorMessage(), e->ErrorCode() );
+		} else { 
+			common->DoError( e->ErrorMessage(), e->ErrorCode() );
+		}
 	}
 
 	// check for dynamic changes that require some initialization

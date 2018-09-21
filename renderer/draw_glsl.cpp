@@ -1139,7 +1139,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 }
 
 void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
-	float color[4];
+	float					color[4];
 	const idMaterial		*shader = surf->material;
 	int						stage;
 	const shaderStage_t		*pStage;
@@ -1165,6 +1165,7 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 	if ( shader->Coverage() == MC_OPAQUE ) {
 		drawSolid = true;
 	}
+
 	if ( shader->Coverage() == MC_TRANSLUCENT && acceptsTranslucent ) {
 		drawSolid = true;
 	}
@@ -1208,15 +1209,13 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 			// bind the texture
 			pStage->texture.image->Bind();
 
-			// set texture matrix and texGens
-			extern void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
+			// set texture matrix and texGens			
 			RB_PrepareStageTexturing( pStage, surf, ac );
 
 			// draw it
 			RB_DrawElementsWithCounters( surf );
 
 			// take down texture matrix and texGens
-			extern void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
 			RB_FinishStageTexturing( pStage, surf, ac );
 
 			qglUniform1f( alphaTest, -1 ); // hint the glsl to skip texturing
@@ -1232,6 +1231,7 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 	// draw the entire surface solid
 	if ( drawSolid ) {
 		// draw it
+		qglUniform4fv( this->color, 1, color );
 		RB_DrawElementsWithCounters( surf );
 	}
 
