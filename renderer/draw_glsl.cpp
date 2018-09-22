@@ -468,19 +468,21 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 	// special cases this shader does not support
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
+		if ( backEnd.vLight->tooBigForShadowMaps ) { // use stencil shadows
 			backEnd.vLight->singleLightOnly = true;
+		}
 		auto *shader = backEnd.vLight->lightShader;
-		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) // custom ambient projection
+		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) { // custom ambient projection
 			backEnd.vLight->singleLightOnly = true;
-		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
+		}
+		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) { // custom point light projection
 			backEnd.vLight->singleLightOnly = true;
+		}
 		if ( backEnd.vLight->singleLightOnly ) {
 			RB_GLSL_DrawInteractions_SingleLight();
 			backEnd.pc.c_interactionSingleLights++;
 		}
 	}
-
 	RB_GLSL_GenerateShadowMaps();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
@@ -495,7 +497,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		GL_SelectTexture( 5 + i );
 		globalImages->shadowCubeMap[i]->Bind();
 	}
-
 	multiLightShader.Use();
 
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
@@ -513,7 +514,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 			qglLoadMatrixf( surf->space->modelViewMatrix );
 			qglUniformMatrix4fv( multiLightShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		}
-
 		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
@@ -522,10 +522,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
-		extern void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
 		RB_CreateMultiDrawInteractions( surf );
 	}
-
 	qglUseProgram( 0 );
 
 	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
@@ -623,8 +621,9 @@ int R_FindGLSLProgram( const char *program ) {
 		shader->Load( program );
 		dynamicShaders[program] = shader;
 		return shader->program;
-	} else
+	} else {
 		return i->second->program;
+	}
 }
 
 /*
@@ -686,7 +685,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 
 		/* print an error message and the info log */
 		common->Warning( "shaderCompileFromFile(%s) validation\n%s\n", fileName, log );
-		delete log;
+		delete[] log;
 
 		qglDeleteShader( shader );
 		return 0;
@@ -763,7 +762,7 @@ bool shaderProgram_t::Load( const char *fileName ) {
 		qglGetProgramInfoLog( program, length, &result, log );
 		/* print an error message and the info log */
 		common->Warning( "Program linking failed\n%s\n", log );
-		delete log;
+		delete[] log;
 
 		/* delete the program */
 		qglDeleteProgram( program );
@@ -980,14 +979,16 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	if ( doShadows && r_shadows.GetInteger() == 2 ) // FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 		doShadows = vLight->globalInteractions != NULL;
 	if ( doShadows ) {
-		if(r_shadows.GetInteger() == 2 && vLight->tooBigForShadowMaps )
+		if(r_shadows.GetInteger() == 2 && vLight->tooBigForShadowMaps ) {
 			qglUniform1f( shadows, 1 );
-		else
+		} else {
 			qglUniform1f( shadows, r_shadows.GetInteger() );
+		}
 		//qglUniform1i( shadowMipMap, ShadowMipMap[0] ); // don't delete - disabled temporarily
 		qglUniform1i( shadowMipMap, 0 );
-	} else
+	} else {
 		qglUniform1f( shadows, 0 );
+	}
 
 	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
@@ -1050,10 +1051,11 @@ void multiLightInteractionProgram_t::AfterLoad() {
 	qglUseProgram( program );
 	qglUniform1i( diffuseTexture, 3 );
 	GLint scmTexNums[MAX_SHADOW_MAPS];
-	for ( int i = 0; i < MAX_SHADOW_MAPS; i++)
+	for ( int i = 0; i < MAX_SHADOW_MAPS; i++) {
 		//scmTexNums[i] = globalImages->shadowCubeMap[i]->texnum;
 		//scmTexNums[i] = MAX_MULTITEXTURE_UNITS - MAX_LIGHTS + i;
 		scmTexNums[i] = 5 + i;
+	}
 	qglUniform1iv( shadowMap, MAX_SHADOW_MAPS, scmTexNums );
 	//qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS - MAX_LIGHTS );
 	qglUseProgram( 0 );
@@ -1115,7 +1117,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() - 1 );
 	
 	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( lightOrigins.size() - i, MAX_LIGHTS );
+		int thisCount = idMath::Imin( static_cast<int>( lightOrigins.size() - i ), MAX_LIGHTS );
 
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
@@ -1127,13 +1129,13 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 
 		if ( r_showMultiLight.GetBool() ) {
 			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
+			backEnd.pc.c_interactionLights += static_cast<uint>( lightOrigins.size() );
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( static_cast<int>( backEnd.pc.c_interactionMaxLights ), static_cast<int>( lightOrigins.size() ) );
 			auto shMaps = std::count_if( shadowIndex.begin(), shadowIndex.end(), []( GLint x ) {
 				return x >= 0;
 			} );
-			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps)
-				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
+			if ( backEnd.pc.c_interactionMaxShadowMaps < static_cast<uint>( shMaps ) )
+				backEnd.pc.c_interactionMaxShadowMaps = static_cast<uint>( shMaps );
 		}
 	}
 }
@@ -1231,6 +1233,8 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 	// draw the entire surface solid
 	if ( drawSolid ) {
 		// draw it
+		// according to the original source we also need a color uniform here.
+		// if wrong please remove it.
 		qglUniform4fv( this->color, 1, color );
 		RB_DrawElementsWithCounters( surf );
 	}

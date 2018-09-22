@@ -806,6 +806,11 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	//anon end
 }
 
+/*
+=============
+RB_CreateMultiDrawInteractions
+=============
+*/
 void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	const idMaterial	*surfaceShader = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
@@ -826,7 +831,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	}
 
 	if ( tr.logFile ) {
-		//RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
+		RB_LogComment( "---------- RB_CreateMultiDrawInteractions %s ----------\n", surfaceShader->GetName() );
 	}
 
 	//anon begin
@@ -836,7 +841,6 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {
 		backEnd.currentSpace = surf->space;
-
 		qglLoadMatrixf( surf->space->modelViewMatrix );
 	}
 
@@ -863,63 +867,63 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	inter.localLightOrigin[3] = 0;
 	inter.localViewOrigin[3] = 1;
 
-		inter.bumpImage = NULL;
-		inter.specularImage = NULL;
-		inter.diffuseImage = NULL;
-		inter.diffuseColor[0] = inter.diffuseColor[1] = inter.diffuseColor[2] = inter.diffuseColor[3] = 0;
-		inter.specularColor[0] = inter.specularColor[1] = inter.specularColor[2] = inter.specularColor[3] = 0;
+	inter.bumpImage = NULL;
+	inter.specularImage = NULL;
+	inter.diffuseImage = NULL;
+	inter.diffuseColor[0] = inter.diffuseColor[1] = inter.diffuseColor[2] = inter.diffuseColor[3] = 0;
+	inter.specularColor[0] = inter.specularColor[1] = inter.specularColor[2] = inter.specularColor[3] = 0;
 
-		// go through the individual stages
-		for ( int surfaceStageNum = 0; surfaceStageNum < surfaceShader->GetNumStages(); surfaceStageNum++ ) {
-			const shaderStage_t	*surfaceStage = surfaceShader->GetStage( surfaceStageNum );
+	// go through the individual stages
+	for ( int surfaceStageNum = 0; surfaceStageNum < surfaceShader->GetNumStages(); surfaceStageNum++ ) {
+		const shaderStage_t	*surfaceStage = surfaceShader->GetStage( surfaceStageNum );
 
-			switch ( surfaceStage->lighting ) {
-			case SL_AMBIENT: {
-				// ignore ambient stages while drawing interactions
-				break;
-			}
-			case SL_BUMP: {
-				// ignore stage that fails the condition
-				if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
-					break;
-				}
-				// draw any previous interaction
-				RB_SubmittInteraction( &inter );
-				inter.diffuseImage = NULL;
-				inter.specularImage = NULL;
-				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
-				break;
-			}
-			case SL_DIFFUSE: {
-				// ignore stage that fails the condition
-				if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
-					break;
-				} else if ( inter.diffuseImage ) {
-					RB_SubmittInteraction( &inter );
-				}
-				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
-					inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
-				inter.vertexColor = surfaceStage->vertexColor;
-				break;
-			}
-			case SL_SPECULAR: {
-				// ignore stage that fails the condition
-				if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
-					break;
-				}
-				else if ( inter.specularImage ) {
-					RB_SubmittInteraction( &inter );
-				}
-				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
-					inter.specularMatrix, inter.specularColor.ToFloatPtr() );
-				inter.vertexColor = surfaceStage->vertexColor;
-				break;
-			}
-			}
+		switch ( surfaceStage->lighting ) {
+		case SL_AMBIENT: {
+			// ignore ambient stages while drawing interactions
+			break;
 		}
+		case SL_BUMP: {
+			// ignore stage that fails the condition
+			if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
+				break;
+			}
+			// draw any previous interaction
+			RB_SubmittInteraction( &inter );
+			inter.diffuseImage = NULL;
+			inter.specularImage = NULL;
+			R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
+			break;
+		}
+		case SL_DIFFUSE: {
+			// ignore stage that fails the condition
+			if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
+				break;
+			} else if ( inter.diffuseImage ) {
+				RB_SubmittInteraction( &inter );
+			}
+			R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
+				inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
+			inter.vertexColor = surfaceStage->vertexColor;
+			break;
+		}
+		case SL_SPECULAR: {
+			// ignore stage that fails the condition
+			if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
+				break;
+			}
+			else if ( inter.specularImage ) {
+				RB_SubmittInteraction( &inter );
+			}
+			R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
+				inter.specularMatrix, inter.specularColor.ToFloatPtr() );
+			inter.vertexColor = surfaceStage->vertexColor;
+			break;
+		}
+		}
+	}
 
-		// draw the final interaction
-		RB_SubmittInteraction( &inter );
+	// draw the final interaction
+	RB_SubmittInteraction( &inter );
 
 	// unhack depth range if needed
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {

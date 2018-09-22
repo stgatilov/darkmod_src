@@ -1349,6 +1349,7 @@ void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStag
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
 void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
 void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
+void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
 void RB_CreateSingleDrawInteractions( const drawSurf_t *surf );
 
 void RB_DrawView();

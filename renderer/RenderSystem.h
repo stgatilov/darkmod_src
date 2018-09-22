@@ -267,4 +267,7 @@ void R_LightProjectionMatrix( const idVec3 &origin, const idPlane &rearPlane, id
 // used by the view shot taker
 void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName );
 
+// used for resolution changes
+bool R_GetModeInfo( int *width, int *height, int mode );
+
 #endif /* !__RENDERER_H__ */
