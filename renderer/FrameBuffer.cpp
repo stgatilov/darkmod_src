@@ -29,6 +29,10 @@ GLuint postProcessWidth, postProcessHeight;
 uint ShadowFboIndex;
 float shadowResolution;
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#endif
+
 bool R_GetModeInfo( int *width, int *height, int mode );
 void FB_Resize( GLuint *width, GLuint *height ) {
 	// virtual resolution fix
