@@ -228,13 +228,11 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		#7627 revelator */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
-			// revelator: test. parts of the functions loaded here also runs through the fbo transforms (the code for filling the depthbuffer for instance)
-			FB_ApplyScissor();
-			// revelator: if unwanted just remove the above and uncomment the below.
-			/*GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-			              backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			              backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			              backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );*/
+			// reverted back, turns out it does not like to be scaled by softshadow quality.
+			GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+			            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+			            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+			            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
 
 		// render it
@@ -271,39 +269,35 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 	/* Reverted all the unnessesary gunk here */
 	for ( const drawSurf_t *drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
 		if ( drawSurf->space != backEnd.currentSpace ) {
-			//common->Printf( "Yay i just loaded the matrix again, because (drawSurf->space does not equal backEnd.currentSpace) because it is NULL\n" );
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
-			//common->Printf( "Yay i just ran a depth hack on viewmodels\n" );
 			RB_EnterWeaponDepthHack();
 		}
 
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			//common->Printf( "Yay i just ran a depth hack on other models\n" );
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 		}
 
 		/* change the scissor if needed
 		#7627 revelator reverted and cleaned up. */
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			//common->Printf( "Yay i just ran the scissor, because now the scissor equals the viewport\n" );
 			backEnd.currentScissor = drawSurf->scissorRect;
-			FB_ApplyScissor();
+			FB_ApplyScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+						     backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+							 backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+							 backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
 
 		// render it
-		//common->Printf( "Yay i just ran a function, i hope someone does not do returns or continues above or im busted\n" );
 		triFunc_( drawSurf );
 
 		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			//common->Printf( "Booh i just disabled the depth hacks\n" );
 			RB_LeaveDepthHack();
 		}
 
 		// mark currentSpace if we have drawn.
-		//common->Printf( "Yay i just determined that i dont need to run again, so ill set (backEnd.currentSpace to the value of drawSurf->space) so it is no longer NULL\n" );
 		backEnd.currentSpace = drawSurf->space;
 	}
 	GL_CheckErrors();
