@@ -25,20 +25,22 @@ static bool depthCopiedThisView = false;
 static GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowStencil, pbo;
 static std::vector<GLuint> fboShadowMaps;
 static GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
-static GLuint croppedWidth = 0, croppedHeight = 0;
-static GLuint postProcessWidth = 0, postProcessHeight = 0;
+static GLuint postProcessWidth, postProcessHeight;
 uint ShadowFboIndex;
 static float shadowResolution;
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
-#endif
+void FB_Resize( GLuint *width, GLuint *height, GLfloat scale ) {
 
-// Check for resizing
-static void FB_Resize( GLuint *width, GLuint *height, bool scale ) {
+	// make sure we can contain these resolutions
+	if( *width > glConfig.maxRenderbufferSize )	{
+		common->Error( "FB_Resize: bad width %i", width );
+	}
 
-	// check if screen resolution was modified
-	// and update width and height
+	if( *height > glConfig.maxRenderbufferSize ) {
+		common->Error( "FB_Resize: bad height %i", height );
+	}
+
+	// update screen resolution if mode changes
     if ( r_mode.IsModified() ) {
         int w, h;
         if ( R_GetModeInfo( &w, &h, r_mode.GetInteger() ) ) {
@@ -48,17 +50,15 @@ static void FB_Resize( GLuint *width, GLuint *height, bool scale ) {
         r_mode.ClearModified();
     }
 
-	// do a copy of them
-    GLuint renderWidth = glConfig.vidWidth;
-    GLuint renderHeight = glConfig.vidHeight;
+	// copy of screen resolution
+    GLuint renderWidth = *width;
+    GLuint renderHeight = *height;
 
-	// scale them by fbo resolution if told to.
-	if ( scale ) {
-		renderWidth	*= r_fboResolution.GetInteger();
-		renderHeight *= r_fboResolution.GetInteger();
-	}
+	// will be 1 if not scaling
+	renderWidth *= scale;
+	renderHeight *= scale;
 
-	// put back the possibly scaled resolution
+	// uploading possibly scaled resolution
 	*width = renderWidth;
 	*height = renderHeight;
 }
@@ -83,14 +83,13 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
 		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
-
 		// revert to old behaviour, switches are to specific
 		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8, width, height );
 		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferDepthStencil );
-		common->DPrintf( "Generated render buffers for COLOR & DEPTH/STENCIL: %dx%dx%d\n", width, height, msaa ); // made this a debug print, spams like hell
+		common->Printf( "Generated render buffers for COLOR & DEPTH/STENCIL: %dx%dx%d\n", width, height, msaa );
 	} else {
 		// only need the color render buffer, depth will be bound directly to texture
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
@@ -104,7 +103,6 @@ void FB_CreatePostProcess( GLuint width, GLuint height ) {
 	if ( !fboPostProcess ) {
 		qglGenFramebuffers( 1, &fboPostProcess );
 	}
-
 	if ( !renderBufferPostProcess ) {
 		qglGenRenderbuffers( 1, &renderBufferPostProcess );
 	}
@@ -143,9 +141,8 @@ void FB_ResolveMultisampling( GLbitfield mask, GLenum filter ) {
 This function blits to fboShadow as a resolver to have a workable copy of the stencil texture
 */
 void FB_ResolveShadowAA() {
-	if (!fboShadowStencil) {
+	if (!fboShadowStencil)
 		return;	//happens once when game starts
-	}
 	qglDisable( GL_SCISSOR_TEST );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboShadowStencil );
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
@@ -218,7 +215,7 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 			}
 			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
 
-			byte *ptr = reinterpret_cast< byte * >( qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY ) );
+			byte *ptr = static_cast< byte * >( qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY ) );
 
 			// #4395 moved to initializer
 			if ( ptr ) {
@@ -256,17 +253,19 @@ void DeleteFramebuffers() {
 	fboResolve = 0;
 	fboShadowStencil = 0;
 	fboShadowMaps.clear();
-
-	// force recreation of these as well
-	croppedWidth = 0;
-	croppedHeight = 0;
 }
 
-void CheckCreatePrimary( GLuint width, GLuint height ) {
+void CheckCreatePrimary() {
 	// debug
 	GL_CheckErrors();
 
-	if ( r_fboSeparateStencil.IsModified() || ( width != globalImages->currentRenderImage->uploadWidth ) ) {
+	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
+	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
+
+	// resize for virtual resolution
+	FB_Resize( &curWidth, &curHeight, r_fboResolution.GetFloat() );
+
+	if ( r_fboSeparateStencil.IsModified() || ( curWidth != globalImages->currentRenderImage->uploadWidth ) ) {
 		r_fboSeparateStencil.ClearModified();
 		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
 	}
@@ -278,24 +277,23 @@ void CheckCreatePrimary( GLuint width, GLuint height ) {
 
 	// intel optimization
 	if ( r_fboSeparateStencil.GetBool() ) {
-		globalImages->currentDepthImage->GenerateAttachment( width, height, GL_DEPTH );
-		if ( !r_softShadowsQuality.GetBool() ) { 
-			// currentStencilFbo will be initialized in CheckCreateShadow with possibly different resolution
-			globalImages->currentStencilFbo->GenerateAttachment( width, height, GL_STENCIL );
+		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH );
+		// currentStencilFbo will be initialized in CheckCreateShadow with possibly different resolution
+		if ( !r_softShadowsQuality.GetBool() ) {
+			globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
 		}
-	} else { 
-		// AMD/nVidia fast enough already, separate depth/stencil not supported
-		globalImages->currentDepthImage->GenerateAttachment( width, height, GL_DEPTH_STENCIL );
+	} else { // AMD/nVidia fast enough already, separate depth/stencil not supported
+		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}
 
 	// this texture is now only used as screen copy for post processing, never as FBO attachment in any mode, but we still need to set its size and other params here
-	globalImages->currentRenderImage->GenerateAttachment( width, height, GL_COLOR );
+	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_COLOR );
 
 	// (re-)attach textures to FBO
 	if ( !fboPrimary || r_multiSamples.IsModified() ) {
 		r_multiSamples.ClearModified();
 		int msaa = r_multiSamples.GetInteger();
-		FB_CreatePrimaryResolve( width, height, msaa );
+		FB_CreatePrimaryResolve( curWidth, curHeight, msaa );
 		qglBindFramebuffer( GL_FRAMEBUFFER, ( msaa > 1 ) ? fboResolve : fboPrimary );
 
 		if ( msaa > 1 ) {
@@ -331,29 +329,28 @@ void CheckCreatePrimary( GLuint width, GLuint height ) {
 	}
 }
 
-void CheckCreateShadow( GLuint width, GLuint height ) {
+void CheckCreateShadow() {
 	// (re-)attach textures to FBO
-	bool depthBitsModified = r_fboDepthBits.IsModified();
-
-	// scale fbo resolution by softshadow quality if told to.
+	GLuint curWidth = glConfig.vidWidth;
+	GLuint curHeight = glConfig.vidHeight;
+	FB_Resize( &curWidth, &curHeight, 1.0f );
 	if ( primaryOn ) {
 		float shadowRes = 1.0f;
-
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
 			shadowRes = r_softShadowsQuality.GetFloat() / -100.0f;
 		}
-		width *= shadowRes;
-		height *= shadowRes;
+		curWidth *= r_fboResolution.GetFloat() * shadowRes;
+		curHeight *= r_fboResolution.GetFloat() * shadowRes;
 	}
+	bool depthBitsModified = r_fboDepthBits.IsModified();
 
 	// reset textures
 	if ( r_fboSeparateStencil.GetBool() ) {
 		// currentDepthImage is initialized there
-		// scale it by softshadows quality, or any value above 1 will shrink the viewport.
-		CheckCreatePrimary( width, height );
-		globalImages->currentStencilFbo->GenerateAttachment( width, height, GL_STENCIL );
+		CheckCreatePrimary();
+		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
 	} else {
-		globalImages->shadowDepthFbo->GenerateAttachment( width, height, GL_DEPTH_STENCIL );
+		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}
 	auto *shadowCubeMap = globalImages->shadowCubeMap[ShadowFboIndex % MAX_SHADOW_MAPS];
 
@@ -383,7 +380,9 @@ void CheckCreateShadow( GLuint width, GLuint height ) {
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 
-		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+		// aha this is for PCF ( fixed now ) jaggies are minimal even with low softshadow quality.
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );				// added depth texture mode
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );	//GL_COMPARE_REF_TO_TEXTURE
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 
 		// 3.2 required for geometry shader anyway but still don't want crashes
@@ -444,12 +443,14 @@ void FB_SelectPostProcess() {
 		return;
 	}
 
-	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
-	FB_Resize( &croppedWidth, &croppedHeight, true );
+	// resize for virtual resolution
+	GLuint curWidth = glConfig.vidWidth;
+	GLuint curHeight = glConfig.vidHeight;
 
-	// this is a HACK, need this here or postprocess effects will start to shine through solids
-	if ( !fboPostProcess || croppedWidth != postProcessWidth || croppedHeight != postProcessHeight ) {
-		FB_CreatePostProcess( croppedWidth, croppedHeight );
+	FB_Resize( &curWidth, &curHeight, r_fboResolution.GetFloat() );
+
+	if ( !fboPostProcess || curWidth != postProcessWidth || curHeight != postProcessHeight ) {
+		FB_CreatePostProcess( curWidth, curHeight );
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPostProcess );
 }
@@ -482,7 +483,7 @@ void FB_BindShadowTexture() {
 // now takes the same values as GL_Scissor avoids confusion.
 void FB_ApplyScissor( int x, int y, int w, int h ) {
 	if ( r_useScissor.GetBool() ) {
-		float resFactor = 1.0f;
+		float resFactor = 1.0F;
 		if ( shadowOn ) {
 			resFactor *= shadowResolution;
 		}
@@ -491,12 +492,7 @@ void FB_ApplyScissor( int x, int y, int w, int h ) {
 }
 
 void FB_ToggleShadow( bool on, bool clear ) {
-	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
-	FB_Resize( &croppedWidth, &croppedHeight, primaryOn );
-
-	// create the shadow map with given resolution
-	CheckCreateShadow( croppedWidth, croppedHeight );
-
+	CheckCreateShadow();
 	if ( on && r_shadows.GetInteger() == 1 ) {
 		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {
@@ -611,21 +607,15 @@ void EnterPrimary() {
 	if ( primaryOn ) {
 		return;
 	}
-
-	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
-	FB_Resize( &croppedWidth, &croppedHeight, true );
-
-	CheckCreatePrimary( croppedWidth, croppedHeight );
+	CheckCreatePrimary();
 
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 
-	// set the window clipping
 	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,	// FIXME: must not use tr in backend
 	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
 	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
 	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
 
-	// the scissor may be smaller than the viewport for subviews
 	GL_Scissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
 	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
@@ -644,13 +634,15 @@ void LeavePrimary() {
 		return;
 	}
 	GL_CheckErrors();
-	
-	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
-	// width and height are unscaled here.
-	FB_Resize( &croppedWidth, &croppedHeight, false );
 
-    GL_Viewport( 0, 0, croppedWidth, croppedHeight );
-    GL_Scissor( 0, 0, croppedWidth, croppedHeight );
+	// resize for virtual resolution
+	GLuint cropWidth = glConfig.vidWidth;
+	GLuint cropHeight = glConfig.vidHeight;
+
+	FB_Resize( &cropWidth, &cropHeight, 1.0F );
+
+    GL_Viewport( 0, 0, cropWidth, cropHeight );
+    GL_Scissor( 0, 0, cropWidth, cropHeight );
 
 	if ( r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
@@ -659,7 +651,7 @@ void LeavePrimary() {
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
 	                    globalImages->currentRenderImage->uploadHeight,
-	                    0, 0, croppedWidth, croppedHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+	                    0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 
 	if ( r_fboDebug.GetInteger() != 0 ) {
 		if ( r_multiSamples.GetInteger() > 1 ) {

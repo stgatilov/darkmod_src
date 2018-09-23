@@ -539,9 +539,16 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	renderCrops[0].x = 0;
 	renderCrops[0].y = 0;
 
-	renderCrops[0].width = windowWidth;
-	renderCrops[0].height = windowHeight;
-
+	// Huh fhDoom uses something similar here, only difference is that FBO is on allways.
+	// i can attest to that it would be a hard one to move out, since i would have to recreate rendercrops in the framebuffer,
+	// and all attempts of that failed miserably :S i would have to make things struct or class based to even begin.
+	if ( r_useFbo.GetBool() ) { // duzenko #4425: allow virtual resolution
+		renderCrops[0].width = windowWidth * r_fboResolution.GetFloat();
+		renderCrops[0].height = windowHeight * r_fboResolution.GetFloat();
+	} else {
+		renderCrops[0].width = windowWidth;
+		renderCrops[0].height = windowHeight;
+	}
 	currentRenderCrop = 0;
 
 	// screenFraction is just for quickly testing fill rate limitations
@@ -720,16 +727,18 @@ so if you specify a power of two size for a texture copy, it may be shrunk
 down, but still valid.
 ================
 */
-void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerOfTwo, bool forceDimensions ) {
-	if ( !glConfig.isInitialized )
-	{ return; }
+void idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerOfTwo, bool forceDimensions ) {
+	if ( !glConfig.isInitialized ) { 
+		return; 
+	}
 
 	// close any gui drawing before changing the size
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
-	if ( width < 1 || height < 1 )
-	{ common->Error( "CropRenderSize: bad sizes" ); }
+	if ( width < 1 || height < 1 ) { 
+		common->Error( "CropRenderSize: bad sizes" ); 
+	}
 
 	if ( session->writeDemo ) {
 		session->writeDemo->WriteInt( DS_RENDER );
@@ -738,8 +747,9 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 		session->writeDemo->WriteInt( height );
 		session->writeDemo->WriteInt( makePowerOfTwo );
 
-		if ( r_showDemo.GetBool() )
-		{ common->Printf( "write DC_CROP_RENDER\n" ); }
+		if ( r_showDemo.GetBool() )	{ 
+			common->Printf( "write DC_CROP_RENDER\n" ); 
+		}
 	}
 
 	// convert from virtual SCREEN_WIDTH/SCREEN_HEIGHT coordinates to physical OpenGL pixels
@@ -769,14 +779,17 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 	}
 
 	// we might want to clip these to the crop window instead
-	while ( width > glConfig.vidWidth )
-	{ width >>= 1; }
-	while ( height > glConfig.vidHeight )
-	{ height >>= 1; }
+	while ( width > glConfig.vidWidth )	{ 
+		width >>= 1; 
+	}
 
-	if ( currentRenderCrop == MAX_RENDER_CROPS )
-	{ common->Error( "idRenderSystemLocal::CropRenderSize: currentRenderCrop == MAX_RENDER_CROPS" ); }
+	while ( height > glConfig.vidHeight ) { 
+		height >>= 1; 
+	}
 
+	if ( currentRenderCrop == MAX_RENDER_CROPS ) { 
+		common->Error( "idRenderSystemLocal::CropRenderSize: currentRenderCrop == MAX_RENDER_CROPS" );
+	}
 	currentRenderCrop++;
 
 	renderCrop_t &rc = renderCrops[currentRenderCrop];
