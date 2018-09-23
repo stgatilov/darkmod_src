@@ -34,6 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "FrameBuffer.h"
 #include "Profiling.h"
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#endif
+
 struct shadowMapProgram_t : basicDepthProgram_t {
 	GLint lightOrigin;
 	GLint modelMatrix;
