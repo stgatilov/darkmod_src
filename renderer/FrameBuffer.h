@@ -41,6 +41,7 @@ extern uint ShadowFboIndex;
 void FB_Clear();
 void FB_CopyColorBuffer();
 void FB_CopyDepthBuffer();
+void FB_Resize( GLuint *width, GLuint *height, GLfloat scale );
 void FB_ApplyScissor( int x, int y, int w, int h );
 void FB_CopyRender( const copyRenderCommand_t &cmd );
 void FB_TogglePrimary( bool on );

@@ -22,45 +22,42 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // all false at start
 static bool primaryOn = false, shadowOn = false;
 static bool depthCopiedThisView = false;
-static GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowStencil, pbo;
+static GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowMap, fboShadowStencil, pbo;
 static std::vector<GLuint> fboShadowMaps;
 static GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 static GLuint postProcessWidth, postProcessHeight;
 uint ShadowFboIndex;
 static float shadowResolution;
 
+/* scale resolutions directly, i loove pointers muahaha */
 void FB_Resize( GLuint *width, GLuint *height, GLfloat scale ) {
-
-	// make sure we can contain these resolutions
-	if( *width > glConfig.maxRenderbufferSize )	{
-		common->Error( "FB_Resize: bad width %i", width );
-	}
-
-	if( *height > glConfig.maxRenderbufferSize ) {
-		common->Error( "FB_Resize: bad height %i", height );
-	}
-
 	// update screen resolution if mode changes
     if ( r_mode.IsModified() ) {
         int w, h;
         if ( R_GetModeInfo( &w, &h, r_mode.GetInteger() ) ) {
-            glConfig.vidWidth = w;
-            glConfig.vidHeight = h;
+            *width = w;
+            *height = h;
         }
         r_mode.ClearModified();
     }
 
-	// copy of screen resolution
-    GLuint renderWidth = *width;
-    GLuint renderHeight = *height;
+	// multiply by fbo resolution
+	// PS: if we are not using FBO's dont or the gui will scale to !!! 
+	if ( r_useFbo.GetBool() && !pbo ) {
+		*width *= scale;
+		*height *= scale;
+	}
 
-	// will be 1 if not scaling
-	renderWidth *= scale;
-	renderHeight *= scale;
+	// make sure the framebuffer can handle these resolutions: hint 16x is to much :)
+	if( *width > static_cast<GLuint>( glConfig.maxRenderbufferSize ) )	{
+		common->Warning( "FB_Resize: bad width %i", *width );
+		*width = glConfig.vidWidth; // reset to screen width
+	}
 
-	// uploading possibly scaled resolution
-	*width = renderWidth;
-	*height = renderHeight;
+	if( *height > static_cast<GLuint>( glConfig.maxRenderbufferSize ) ) {
+		common->Warning( "FB_Resize: bad height %i", *height );
+		*height = glConfig.vidHeight; // reset to screen height
+	}
 }
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
@@ -262,7 +259,7 @@ void CheckCreatePrimary() {
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
 
-	// resize for virtual resolution
+	// scaled by r_fboResolution for virtual resolution
 	FB_Resize( &curWidth, &curHeight, r_fboResolution.GetFloat() );
 
 	if ( r_fboSeparateStencil.IsModified() || ( curWidth != globalImages->currentRenderImage->uploadWidth ) ) {
@@ -333,11 +330,15 @@ void CheckCreateShadow() {
 	// (re-)attach textures to FBO
 	GLuint curWidth = glConfig.vidWidth;
 	GLuint curHeight = glConfig.vidHeight;
-	FB_Resize( &curWidth, &curHeight, 1.0f );
+
+	// not scaling here, the below will do that.
+	FB_Resize( &curWidth, &curHeight, 1.0F );
+
+	// scale shadows by r_fboResolution and r_softShadowsQuality
 	if ( primaryOn ) {
-		float shadowRes = 1.0f;
+		float shadowRes = 1.0F;
 		if ( r_softShadowsQuality.GetInteger() < 0 ) {
-			shadowRes = r_softShadowsQuality.GetFloat() / -100.0f;
+			shadowRes = r_softShadowsQuality.GetFloat() / -100.0F;
 		}
 		curWidth *= r_fboResolution.GetFloat() * shadowRes;
 		curHeight *= r_fboResolution.GetFloat() * shadowRes;
@@ -406,15 +407,14 @@ void CheckCreateShadow() {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		while ( ShadowFboIndex >= fboShadowMaps.size() ) {
-			GLuint fboShadow;
-			qglGenFramebuffers( 1, &fboShadow );
-			fboShadowMaps.push_back( fboShadow );
-			fboShadow = fboShadowMaps[ShadowFboIndex];
-			qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );
+			qglGenFramebuffers( 1, &fboShadowMap );
+			fboShadowMaps.push_back( fboShadowMap );
+			fboShadowMap = fboShadowMaps[ShadowFboIndex];
+			qglBindFramebuffer( GL_FRAMEBUFFER, fboShadowMap );
 			GLuint depthTex = shadowCubeMap->texnum;
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, ShadowFboIndex / MAX_SHADOW_MAPS );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
-			check( fboShadow );
+			check( fboShadowMap );
 		}
 	} else {
 		if ( !fboShadowStencil ) {
@@ -427,6 +427,7 @@ void CheckCreateShadow() {
 				GLuint depthTex = globalImages->shadowDepthFbo->texnum;
 				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 			}
+			check( fboShadowStencil ); // added this one to check
 		}
 	}
 	GL_CheckErrors();
@@ -443,7 +444,7 @@ void FB_SelectPostProcess() {
 		return;
 	}
 
-	// resize for virtual resolution
+	// scaled by r_fboResolution for virtual resolution
 	GLuint curWidth = glConfig.vidWidth;
 	GLuint curHeight = glConfig.vidHeight;
 
@@ -542,7 +543,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 								 backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 			}
 		} else {
-			shadowResolution = 1.0f;
+			shadowResolution = 1.0F;
 		}
 	}
 	GL_CheckErrors();
@@ -611,15 +612,20 @@ void EnterPrimary() {
 
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 
+	// set the window clipping
 	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,	// FIXME: must not use tr in backend
 	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
 	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
 	             backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
 
+	// the scissor may be smaller than the viewport for subviews
 	GL_Scissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
 	            tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
 	            backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
 	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
+
+	// also update currentScissor here
+	backEnd.currentScissor = backEnd.viewDef->scissor;
 
 	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
 
@@ -635,14 +641,14 @@ void LeavePrimary() {
 	}
 	GL_CheckErrors();
 
-	// resize for virtual resolution
-	GLuint cropWidth = glConfig.vidWidth;
-	GLuint cropHeight = glConfig.vidHeight;
+	// back to default resolution
+	GLuint defaultWidth = glConfig.vidWidth;
+	GLuint defaultHeight = glConfig.vidHeight;
 
-	FB_Resize( &cropWidth, &cropHeight, 1.0F );
+	FB_Resize( &defaultWidth, &defaultHeight, 1.0F );
 
-    GL_Viewport( 0, 0, cropWidth, cropHeight );
-    GL_Scissor( 0, 0, cropWidth, cropHeight );
+    GL_Viewport( 0, 0, defaultWidth, defaultHeight );
+    GL_Scissor( 0, 0, defaultWidth, defaultHeight );
 
 	if ( r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
@@ -651,7 +657,7 @@ void LeavePrimary() {
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth,
 	                    globalImages->currentRenderImage->uploadHeight,
-	                    0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+	                    0, 0, defaultWidth, defaultHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 
 	if ( r_fboDebug.GetInteger() != 0 ) {
 		if ( r_multiSamples.GetInteger() > 1 ) {
