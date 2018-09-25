@@ -541,7 +541,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 		idVec3 start;
 		dir = (ent->GetPhysics()->GetOrigin() + eye) - GetPhysics()->GetOrigin();
 		dist = dir.Normalize();
-		start = 0.95*GetPhysics()->GetOrigin() + 0.05*(ent->GetPhysics()->GetOrigin() + eye);
+		start = 0.95f*GetPhysics()->GetOrigin() + 0.05f*(ent->GetPhysics()->GetOrigin() + eye);
 		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
 			gameLocal.clip.TracePoint(tr, start, ent->GetPhysics()->GetOrigin() + eye, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
@@ -552,7 +552,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 
 		dir = ent->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
 		dist = dir.Normalize();
-		start = 0.95*GetPhysics()->GetOrigin() + 0.05*ent->GetPhysics()->GetOrigin();
+		start = 0.95f*GetPhysics()->GetOrigin() + 0.05f*ent->GetPhysics()->GetOrigin();
 
 		// check for origin
 		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
