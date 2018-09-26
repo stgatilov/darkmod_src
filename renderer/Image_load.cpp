@@ -633,11 +633,11 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 			// revert to old behaviour, switches are to specific
 			qglTexImage2D( GL_TEXTURE_2D, 0, ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, 
 											 ( r_fboDepthBits.GetInteger() == 32 ) ? GL_FLOAT_32_UNSIGNED_INT_24_8_REV : GL_UNSIGNED_INT_24_8, nullptr );
-			common->DPrintf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
+			common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
 			break;
 		case GL_COLOR:
 			qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr );
-			common->DPrintf( "Generated framebuffer COLOR attachment: %dx%d\n", width, height );
+			common->Printf( "Generated framebuffer COLOR attachment: %dx%d\n", width, height );
 			break;
 		// these two are for Intel separate stencil optimization
 		case GL_DEPTH:
@@ -653,11 +653,11 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 					break;
 			}
 			r_fboDepthBits.ClearModified();
-			common->DPrintf( "Generated framebuffer DEPTH attachment: %dx%d\n", width, height );
+			common->Printf( "Generated framebuffer DEPTH attachment: %dx%d\n", width, height );
 			break;
 		case GL_STENCIL:
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, width, height, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, nullptr );
-			common->DPrintf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
+			common->Printf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
 			break;
 		default:
 			common->Error( "Unsupported format in GenerateAttachment\n" );

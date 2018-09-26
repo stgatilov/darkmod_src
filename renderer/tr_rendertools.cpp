@@ -802,7 +802,7 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 
 		qglLoadMatrixf( vModels->modelViewMatrix );
 
-		if ( !vModels->entityDef || r_singleEntity.GetInteger() >= 0 && vModels->entityDef->index != r_singleEntity.GetInteger() ) {
+		if ( !vModels->entityDef ) {
 			continue;
 		}
 
