@@ -31,33 +31,41 @@ static float shadowResolution;
 
 /* scale resolutions directly, i loove pointers muahaha */
 void FB_Resize( GLuint *width, GLuint *height, GLfloat scale ) {
+	// minor correction, cannot use pointers directly before the end or the function would exit before doing anything.
+	GLuint scaledWidth = *width;
+	GLuint scaledHeight = *height;
+
 	// update screen resolution if mode changes
     if ( r_mode.IsModified() ) {
         int w, h;
         if ( R_GetModeInfo( &w, &h, r_mode.GetInteger() ) ) {
-            *width = w;
-            *height = h;
+            scaledWidth = w;
+            scaledHeight = h;
         }
         r_mode.ClearModified();
     }
 
 	// multiply by fbo resolution
-	// PS: if we are not using FBO's dont or the gui will scale to !!! 
-	if ( r_useFbo.GetBool() && !pbo ) {
-		*width *= scale;
-		*height *= scale;
+	// PS: if we are not using FBO's dont or the gui will scale to !!!
+	// QE: the pixel buffer is what is causing the blurring at lower scales, but if i guard against it scaling no longer has any effect.
+	if ( r_useFbo.GetBool() ) {
+		scaledWidth *= scale;
+		scaledHeight *= scale;
 	}
 
 	// make sure the framebuffer can handle these resolutions: hint 16x is to much :)
-	if( *width > static_cast<GLuint>( glConfig.maxRenderbufferSize ) )	{
-		common->Warning( "FB_Resize: bad width %i", *width );
-		*width = glConfig.vidWidth; // reset to screen width
+	// 0.1 blurred mess, 0.5 low res, 1 normal, 1.5 high def, 2 insane, 4 bye bye framerate, 16 would normally crash but i guarded against that.
+	if( scaledWidth > static_cast<GLuint>( glConfig.maxRenderbufferSize ) )	{
+		common->Warning( "FB_Resize: bad width %i", scaledWidth );
+		scaledWidth = glConfig.vidWidth; // reset to screen width
 	}
 
-	if( *height > static_cast<GLuint>( glConfig.maxRenderbufferSize ) ) {
-		common->Warning( "FB_Resize: bad height %i", *height );
-		*height = glConfig.vidHeight; // reset to screen height
+	if( scaledHeight > static_cast<GLuint>( glConfig.maxRenderbufferSize ) ) {
+		common->Warning( "FB_Resize: bad height %i", scaledHeight );
+		scaledHeight = glConfig.vidHeight; // reset to screen height
 	}
+	*width = scaledWidth;
+	*height = scaledHeight;
 }
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
@@ -245,10 +253,12 @@ void DeleteFramebuffers() {
 	qglDeleteFramebuffers( 1, &fboPrimary );
 	qglDeleteFramebuffers( 1, &fboResolve );
 	qglDeleteFramebuffers( 1, &fboShadowStencil );
+	qglDeleteFramebuffers( 1, &fboShadowMap );
 	qglDeleteFramebuffers( int(fboShadowMaps.size()), fboShadowMaps.data() );
 	fboPrimary = 0;
 	fboResolve = 0;
 	fboShadowStencil = 0;
+	fboShadowMap = 0;
 	fboShadowMaps.clear();
 }
 
