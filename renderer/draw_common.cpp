@@ -569,9 +569,45 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	qglUseProgram( pStage->newStage->fragmentProgram );
+	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+	qglEnableVertexAttribArray( 8 );
+	auto newStage = pStage->newStage;
+	for ( int i = 0; i < newStage->numFragmentProgramImages; i++ ) {
+		if ( newStage->fragmentProgramImages[i] ) {
+			GL_SelectTexture( i );
+			newStage->fragmentProgramImages[i]->Bind();
+		}
+	}
+	GL_State( pStage->drawStateBits );
+	qglUseProgram( pStage->newStage->fragmentProgram );	
+	
+	idMat4 modelView, proj;
+	memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
+	memcpy( proj.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( proj ) );
+	auto MVP = modelView * proj;
+	qglUniformMatrix4fv( 0, 1, false, MVP.ToFloatPtr() );
+	
+	float	parm[4][4];
+	const float	*regs = surf->shaderRegisters;
+	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
+		parm[i][0] = regs[newStage->vertexParms[i][0]];
+		parm[i][1] = regs[newStage->vertexParms[i][1]];
+		parm[i][2] = regs[newStage->vertexParms[i][2]];
+		parm[i][3] = regs[newStage->vertexParms[i][3]];
+	}
+	qglUniform4fv( 1, 4, parm[0] );
+
 	RB_DrawElementsWithCounters( surf );
 	qglUseProgram( 0 );
+
+	for ( int i = 1; i < newStage->numFragmentProgramImages; i++ ) {
+		if ( newStage->fragmentProgramImages[i] ) {
+			GL_SelectTexture( i );
+			globalImages->BindNull();
+		}
+	}
+	GL_SelectTexture( 0 );
+	qglDisableVertexAttribArray( 8 );
 }
 
 /*

@@ -29,6 +29,10 @@ GLuint postProcessWidth, postProcessHeight;
 uint ShadowFboIndex;
 float shadowResolution;
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#endif
+
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if ( !fboPrimary ) {
 		qglGenFramebuffers( 1, &fboPrimary );
