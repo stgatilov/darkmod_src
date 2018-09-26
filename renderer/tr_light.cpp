@@ -1232,10 +1232,16 @@ R_CalcEntityScissorRectangle
 ==================
 */
 idScreenRect R_CalcEntityScissorRectangle( viewEntity_t *vEntity ) {
-	idBounds bounds;
 	idRenderEntityLocal *def = vEntity->entityDef;
+	auto bounds = def->referenceBounds;
 
-	tr.viewDef->viewFrustum.ProjectionBounds( idBox( def->referenceBounds, def->parms.origin, def->parms.axis ), bounds );
+	// duzenko: the dynamic model does not always fit the reference bounds
+	idRenderModel *model = R_EntityDefDynamicModel( def );
+	if ( model ) 
+		bounds = model->Bounds( &def->parms );
+
+	tr.viewDef->viewFrustum.ProjectionBounds( idBox( bounds, def->parms.origin, def->parms.axis ), bounds );
+
 
 	return R_ScreenRectFromViewFrustumBounds( bounds );
 }
