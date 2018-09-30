@@ -456,6 +456,7 @@ void RB_BeginDrawingView( void ) {
 		qglDisable( GL_STENCIL_TEST );
 	}
 	backEnd.glState.faceCulling = -1;		// force face culling to set next time
+	ShadowAtlasIndex = 0;
 
 	GL_Cull( CT_FRONT_SIDED );
 }

@@ -22,11 +22,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // all false at start
 bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
-GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowStencil, pbo;
-std::vector<GLuint> fboShadowMaps;
+GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowStencil, pbo, fboShadowAtlas;
 GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
-uint ShadowFboIndex;
+uint ShadowAtlasIndex;
+renderCrop_t ShadowAtlasPages[42];
 float shadowResolution;
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
@@ -218,11 +218,11 @@ void DeleteFramebuffers() {
 	qglDeleteFramebuffers( 1, &fboPrimary );
 	qglDeleteFramebuffers( 1, &fboResolve );
 	qglDeleteFramebuffers( 1, &fboShadowStencil );
-	qglDeleteFramebuffers( int(fboShadowMaps.size()), fboShadowMaps.data() );
+	qglDeleteFramebuffers( 1, &fboShadowAtlas );
 	fboPrimary = 0;
 	fboResolve = 0;
 	fboShadowStencil = 0;
-	fboShadowMaps.clear();
+	fboShadowAtlas = 0;
 }
 
 void CheckCreatePrimary() {
@@ -317,46 +317,8 @@ void CheckCreateShadow() {
 	} else {
 		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}
-	auto *shadowCubeMap = globalImages->shadowCubeMap[ShadowFboIndex % MAX_SHADOW_MAPS];
-
-	if ( shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || depthBitsModified ) {
-		r_fboDepthBits.ClearModified();
-		shadowCubeMap->Bind();
-		shadowCubeMap->uploadWidth = r_shadowMapSize.GetInteger();
-		shadowCubeMap->uploadHeight = r_shadowMapSize.GetInteger();
-
-		for ( int sideId = 0; sideId < 6; sideId++ ) {
-			// revert back again, the problem seems to be stencil depth.
-			switch ( r_fboDepthBits.GetInteger() ) {
-			case 16:
-				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT16, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-				break;
-			case 32:
-				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32F, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-				break;
-			default:
-				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT24, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-				break;
-			}
-		}
-		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-
-		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
-
-		// 3.2 required for geometry shader anyway but still don't want crashes
-		if ( qglGenerateMipmap ) {
-			qglGenerateMipmap( GL_TEXTURE_CUBE_MAP );
-		}
-		globalImages->BindNull();
-	}
+	
+	globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize.GetInteger(), 6 * r_shadowMapSize.GetInteger(), GL_DEPTH );
 
 	auto check = []( GLuint &fbo ) {
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -371,16 +333,33 @@ void CheckCreateShadow() {
 	};
 
 	if ( r_shadows.GetInteger() == 2 ) {
-		while ( ShadowFboIndex >= fboShadowMaps.size() ) {
-			GLuint fboShadow;
-			qglGenFramebuffers( 1, &fboShadow );
-			fboShadowMaps.push_back( fboShadow );
-			fboShadow = fboShadowMaps[ShadowFboIndex];
-			qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );
-			GLuint depthTex = shadowCubeMap->texnum;
-			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, ShadowFboIndex / MAX_SHADOW_MAPS );
+		if( !fboShadowAtlas ) {
+			qglGenFramebuffers( 1, &fboShadowAtlas );
+			qglBindFramebuffer( GL_FRAMEBUFFER, fboShadowAtlas );
+			GLuint depthTex = globalImages->shadowAtlas->texnum;
+			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
-			check( fboShadow );
+			check( fboShadowAtlas );
+		}
+		if ( ShadowAtlasPages[0].width != r_shadowMapSize.GetInteger() ) {
+			for ( int i = 0; i < 2; i++ ) { // 2x full size pages
+				ShadowAtlasPages[i].x = 0;
+				ShadowAtlasPages[i].y = r_shadowMapSize.GetInteger() * i;
+				ShadowAtlasPages[i].width = r_shadowMapSize.GetInteger();
+			}
+			for ( int i = 0; i < 8; i++ ) { // 8x 1/4 pages
+				ShadowAtlasPages[2 + i].x = 0;
+				ShadowAtlasPages[2 + i].y = r_shadowMapSize.GetInteger() * 2 + (r_shadowMapSize.GetInteger() >> 1) * i;
+				ShadowAtlasPages[2 + i].width = r_shadowMapSize.GetInteger() >> 1;
+			}
+			for ( int i = 0; i < 16; i++ ) { // 32x 1/16-sized pages
+				ShadowAtlasPages[10 + i].x = r_shadowMapSize.GetInteger() * 3;
+				ShadowAtlasPages[10 + i].y = r_shadowMapSize.GetInteger() * 2 + (r_shadowMapSize.GetInteger() >> 2) * i;
+				ShadowAtlasPages[10 + i].width = r_shadowMapSize.GetInteger() >> 2;
+				ShadowAtlasPages[26 + i].x = r_shadowMapSize.GetInteger() * 4.5;
+				ShadowAtlasPages[26 + i].y = r_shadowMapSize.GetInteger() * 2 + (r_shadowMapSize.GetInteger() >> 2) * i;
+				ShadowAtlasPages[26 + i].width = r_shadowMapSize.GetInteger() >> 2;
+			}
 		}
 	} else {
 		if ( !fboShadowStencil ) {
@@ -426,7 +405,7 @@ void FB_BindShadowTexture() {
 	GL_CheckErrors();
 	if ( r_shadows.GetInteger() == 2 ) {
 		GL_SelectTexture( 6 );
-		globalImages->shadowCubeMap[0]->Bind();
+		globalImages->shadowAtlas->Bind();
 	} else {
 		GL_SelectTexture( 6 );
 		globalImages->currentDepthImage->Bind();
@@ -477,7 +456,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		}
 		GL_CheckErrors();
 	}
-	qglBindFramebuffer( GL_FRAMEBUFFER, on ? (r_shadows.GetInteger() == 1 ? fboShadowStencil : fboShadowMaps[ShadowFboIndex]) : primaryOn ? fboPrimary : 0 );
+	qglBindFramebuffer( GL_FRAMEBUFFER, on ? (r_shadows.GetInteger() == 1 ? fboShadowStencil : fboShadowAtlas) : primaryOn ? fboPrimary : 0 );
 	if( on && r_shadows.GetInteger() == 1 && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
 		// with MSAA on, we need to render against the multisampled primary buffer, otherwise stencil is drawn
 		// against a lower-quality depth map which may cause render errors with shadows
@@ -510,9 +489,9 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglDepthMask( on );
 		if ( on ) {
-			int mipmap = ShadowFboIndex / MAX_SHADOW_MAPS;
+			/*int mipmap = ShadowFboIndex / MAX_SHADOW_MAPS;
 			int mapSize = r_shadowMapSize.GetInteger() >> mipmap;
-			/*ShadowMipMap[ShadowFboIndex] = 0;
+			ShadowMipMap[ShadowFboIndex] = 0;
 			int lightScreenSize = idMath::Imax( backEnd.vLight->scissorRect.GetWidth(), backEnd.vLight->scissorRect.GetHeight() ),
 			         ScreenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );
 
@@ -521,12 +500,11 @@ void FB_ToggleShadow( bool on, bool clear ) {
 				lightScreenSize <<= 1;
 				mapSize >>= 1;
 			}
-			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap[ShadowFboIndex]->texnum, ShadowMipMap[ShadowFboIndex] );*/
-			qglViewport( 0, 0, mapSize, mapSize );
-
-			if ( r_useScissor.GetBool() ) {
-				GL_Scissor( 0, 0, mapSize, mapSize );
-			}
+			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap[ShadowFboIndex]->texnum, ShadowMipMap[ShadowFboIndex] );
+			*/
+			auto &page = ShadowAtlasPages[ShadowAtlasIndex-1];
+			qglViewport( page.x, page.y, page.width * 6, page.width );
+			GL_Scissor( page.x, page.y, page.width * 6, page.width );
 
 			if ( clear ) {
 				qglClear( GL_DEPTH_BUFFER_BIT );
@@ -548,8 +526,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 }
 
 void FB_Clear() {
-	fboPrimary = fboResolve = fboPostProcess = fboShadowStencil = pbo = 0;
-	fboShadowMaps.clear();
+	fboPrimary = fboResolve = fboPostProcess = fboShadowStencil = fboShadowAtlas = pbo = 0;
 	renderBufferColor = renderBufferDepthStencil = renderBufferPostProcess = 0;
 }
 
