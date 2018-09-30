@@ -535,10 +535,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 	qglUseProgram( 0 );
 
-	for ( int i = 0; i < MAX_SHADOW_MAPS; i++ ) {
-		GL_SelectTexture( 5 + i );
-		globalImages->BindNull();
-	}
+	GL_SelectTexture( 5 );
+	globalImages->BindNull();
 
 	GL_SelectTexture( 4 );
 	globalImages->BindNull();

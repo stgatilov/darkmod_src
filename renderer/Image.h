@@ -45,8 +45,6 @@ qglDisable( GL_TEXTURE_* )
 ====================================================================
 */
 
-const int MAX_SHADOW_MAPS = 3;
-
 typedef enum {
 	IS_UNLOADED,	// no gl texture number
 	IS_PARTIAL,		// has a texture number and the low mip levels loaded

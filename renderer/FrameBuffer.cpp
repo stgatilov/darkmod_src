@@ -601,6 +601,9 @@ void LeavePrimary() {
 
 		while ( 1 )	{
 			switch ( r_fboDebug.GetInteger() ) {
+			case 1:
+				globalImages->shadowAtlas->Bind();
+				break;
 			case 2:
 				globalImages->currentDepthImage->Bind();
 				break;
