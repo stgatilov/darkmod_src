@@ -310,15 +310,16 @@ void CheckCreateShadow() {
 
 	bool depthBitsModified = r_fboDepthBits.IsModified();
 	// reset textures
-	if ( r_fboSeparateStencil.GetBool() ) {
-		// currentDepthImage is initialized there
-		CheckCreatePrimary();
-		globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
-	} else {
-		globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
-	}
-	
-	globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize.GetInteger(), 6 * r_shadowMapSize.GetInteger(), GL_DEPTH );
+	if ( r_shadows.GetInteger() == 1 )
+		if ( r_fboSeparateStencil.GetBool() ) {
+			// currentDepthImage is initialized there
+			CheckCreatePrimary();
+			globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
+		} else {
+			globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
+		}
+	if ( r_shadows.GetInteger() == 2 )
+		globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize.GetInteger(), 6 * r_shadowMapSize.GetInteger(), GL_DEPTH );
 
 	auto check = []( GLuint &fbo ) {
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -506,21 +507,18 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			qglViewport( page.x, page.y, page.width * 6, page.width );
 			GL_Scissor( page.x, page.y, page.width * 6, page.width );
 
-			if ( clear ) {
+			if ( clear ) 
 				qglClear( GL_DEPTH_BUFFER_BIT );
-			}
 			GL_State( GLS_DEPTHFUNC_LESS ); // reset in RB_GLSL_CreateDrawInteractions
 		} else {
 			const idScreenRect &r = backEnd.viewDef->viewport;
 
 			GL_Viewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
 
-			if ( r_useScissor.GetBool() ) {
-				GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-				            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-				            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-				            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-			}
+			GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
 	}
 }
