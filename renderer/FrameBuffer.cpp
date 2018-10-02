@@ -27,7 +27,6 @@ GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
 uint ShadowAtlasIndex;
 renderCrop_t ShadowAtlasPages[42];
-float shadowResolution;
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
 #pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
@@ -426,9 +425,6 @@ void FB_BindShadowTexture() {
 void FB_ApplyScissor() {
 	if ( r_useScissor.GetBool() ) {
 		float resFactor = 1.0f;
-		if ( shadowOn ) {
-			resFactor *= shadowResolution;
-		}
 		GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1 * resFactor,
 		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1 * resFactor,
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1 * resFactor,
@@ -467,22 +463,6 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	// stencil softshadows
 	if ( r_shadows.GetInteger() == 1 ) {
 		shadowOn = on;
-		if ( r_softShadowsQuality.GetInteger() < 0 ) {
-			if ( on ) {
-				shadowResolution = r_softShadowsQuality.GetFloat() / -100.0f;
-				GL_Viewport( 0, 0, glConfig.vidWidth * shadowResolution * r_fboResolution.GetFloat(), glConfig.vidHeight * shadowResolution * r_fboResolution.GetFloat() );
-				FB_ApplyScissor();
-			} else {
-				if( primaryOn ) {
-					GL_Viewport( 0, 0, glConfig.vidWidth * r_fboResolution.GetFloat(), glConfig.vidHeight * r_fboResolution.GetFloat() );
-				} else {
-					GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-				}
-				FB_ApplyScissor();
-			}
-		} else {
-			shadowResolution = 1.0f;
-		}
 	}
 	GL_CheckErrors();
 
