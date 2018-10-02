@@ -1377,7 +1377,10 @@ void idImage::Bind() {
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		// load the image on demand here, which isn't our normal game operating mode
 		// duzenko: useful for fast map loading / quick debugging
-		ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
+		if ( backEnd.pc.textureLoads++ > 4 )
+			globalImages->whiteImage->Bind();
+		else
+			ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
 	}
 
 	// bump our statistic counters

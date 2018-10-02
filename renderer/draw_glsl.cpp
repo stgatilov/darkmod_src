@@ -325,10 +325,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	const bool backfaces = true;
 	if ( backfaces )
 		GL_Cull( CT_BACK_SIDED );
-	else {
-		qglPolygonOffset( 1, 1 );
-		qglEnable( GL_POLYGON_OFFSET_FILL );
-	}
+	qglPolygonOffset( -1, 0 );
+	qglEnable( GL_POLYGON_OFFSET_FILL );
 
 	auto &page = ShadowAtlasPages[backEnd.vLight->shadowMapIndex-1];
 	qglViewport( page.x, page.y, 6*page.width, page.width );
@@ -337,13 +335,15 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	for ( int i = 0; i < 4; i++ )
 		qglEnable( GL_CLIP_PLANE0 + i );
 	for ( ; surf; surf = surf->nextOnLight ) {
-		if ( !surf->material->SurfaceCastsShadow() ) {
+		if ( !surf->material->SurfaceCastsShadow() ) 
 			continue;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
-		}
 
-		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) {
+		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) 
 			continue;    // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
-		}
+
+		float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
+		if ( customOffset != 0 )
+			qglPolygonOffset( -1 + customOffset, 0 );
 
 		if ( backEnd.currentSpace != surf->space ) {
 			qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
@@ -352,14 +352,16 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		}
 
 		shadowMapShader.FillDepthBuffer( surf );
+
+		if ( customOffset != 0 )
+			qglPolygonOffset( -1, 0 );
 	}
 	for ( int i = 0; i < 4; i++ )
 		qglDisable( GL_CLIP_PLANE0 + i );
 
+	qglDisable( GL_POLYGON_OFFSET_FILL );
 	if(backfaces)
 		GL_Cull( CT_FRONT_SIDED );
-	else
-		qglDisable( GL_POLYGON_OFFSET_FILL );
 
 	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
 	qglUseProgram( 0 );

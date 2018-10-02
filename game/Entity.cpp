@@ -827,6 +827,8 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 
 	// check noselfshadows flag
 	renderEntity->noSelfShadow = args->GetBool( "noselfshadows" );
+	
+	renderEntity->shadowMapOffset = args->GetFloat( "shadowmapOffset" );
 
 	// init any guis, including entity-specific states
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {

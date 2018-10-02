@@ -672,6 +672,7 @@ typedef struct {
 	float	c_overDraw;
 
 	uint	c_interactions, c_interactionSingleLights, c_interactionLights, c_interactionMaxLights, c_interactionMaxShadowMaps;
+	uint	textureLoads;
 
 	int		msec;			// total msec for backend run
 	int		msecLast;		// last msec for backend run

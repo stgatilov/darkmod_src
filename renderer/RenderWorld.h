@@ -130,6 +130,7 @@ typedef struct renderEntity_s {
 	// options to override surface shader flags (replace with material parameters?)
 	bool					noSelfShadow;			// cast shadows onto other objects,but not self
 	bool					noShadow;				// no shadow at all
+	float					shadowMapOffset;		// workaround for shadow garbage on thin objects
 
 	bool					noDynamicInteractions;	// don't create any light / shadow interactions after
 													// the level load is completed.  This is a performance hack
