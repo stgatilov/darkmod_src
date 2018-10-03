@@ -880,6 +880,8 @@ extern idCVar r_flareSize;				// scale the flare deforms from the material def
 
 extern idCVar r_gamma;					// changes gamma tables
 extern idCVar r_brightness;				// changes gamma tables
+extern idCVar r_ambientMinLevel;		// tweaking overall ambient brightness
+extern idCVar r_ambientGamma;			// tweaking overall ambient brightness
 
 extern idCVar r_checkBounds;			// compare all surface bounds with precalculated ones
 

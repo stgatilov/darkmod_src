@@ -80,7 +80,7 @@ struct pointInteractionProgram_t : interactionProgram_t {
 };
 
 struct ambientInteractionProgram_t : interactionProgram_t {
-	GLint gamma;
+	GLint minLevel, gamma;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -88,7 +88,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	const uint MAX_LIGHTS = 16;
 	GLint lightCount, lightOrigin, lightColor, shadowRect;
-	GLint gamma;
+	GLint minLevel, gamma;
 	virtual	void AfterLoad();
 	virtual void Draw( const drawInteraction_t *din );
 };
@@ -1037,12 +1037,14 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 
 void ambientInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
+	minLevel = qglGetUniformLocation( program, "u_minLevel" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
 }
 
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
-	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 0 : r_gamma.GetFloat() );
+	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
+	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 	GL_CheckErrors();
 }
@@ -1053,6 +1055,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
 	lightColor = qglGetUniformLocation( program, "u_diffuseColor" );
 	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
+	minLevel = qglGetUniformLocation( program, "u_minLevel" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
 	auto diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
@@ -1122,7 +1125,8 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	}
 
 	basicInteractionProgram_t::UpdateUniforms( din );
-	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_gamma.GetFloat() );
+	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
+	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	
 	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = idMath::Imin( lightOrigins.size() - i, MAX_LIGHTS );
