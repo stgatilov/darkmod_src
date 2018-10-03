@@ -4673,7 +4673,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "resetgamma")
 	{
 		idCVar * cvar = cvarSystem->Find( "r_gamma" );
-		cvar ? cvar->SetFloat( 1.2f ) :	Warning("Cannot find CVAR r_gamma.");
+		cvar ? cvar->SetFloat( 1.0f ) :	Warning("Cannot find CVAR r_gamma.");
 	}
 	else if (cmd == "resethud") // Obsttorte
 	{
