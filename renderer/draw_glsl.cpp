@@ -624,14 +624,14 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 }
 
 int R_FindGLSLProgram( const char *program ) {
-	auto& i = dynamicShaders.find( program );
-	if( i == dynamicShaders.end() ) {
+	auto iter = dynamicShaders.find( program );
+	if( iter == dynamicShaders.end() ) {
 		auto shader = new shaderProgram_t();
 		shader->Load( program );
 		dynamicShaders[program] = shader;
 		return shader->program;
 	} else
-		return i->second->program;
+		return iter->second->program;
 }
 
 /*
