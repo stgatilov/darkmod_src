@@ -577,23 +577,22 @@ void LeavePrimary() {
 		qglDisable( GL_DEPTH_TEST );
 		qglColor3f( 1, 1, 1 );
 
-		while ( 1 )	{
-			switch ( r_fboDebug.GetInteger() ) {
-			case 1:
-				globalImages->shadowAtlas->Bind();
-				break;
-			case 2:
-				globalImages->currentDepthImage->Bind();
-				break;
-			case 3:
-				globalImages->shadowDepthFbo->Bind();
-				qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
-				break;
-			default:
-				globalImages->currentRenderImage->Bind();
-			}
-			RB_DrawFullScreenQuad();
+		switch ( r_fboDebug.GetInteger() ) {
+		case 1:
+			globalImages->shadowAtlas->Bind();
+			break;
+		case 2:
+			globalImages->currentDepthImage->Bind();
+			break;
+		case 3:
+			globalImages->shadowDepthFbo->Bind();
+			qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
+			break;
+		default:
+			globalImages->currentRenderImage->Bind();
 		}
+		RB_DrawFullScreenQuad();
+
 		qglEnable( GL_DEPTH_TEST );
 		qglPopMatrix();
 		qglMatrixMode( GL_MODELVIEW );
