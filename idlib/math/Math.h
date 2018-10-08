@@ -193,6 +193,7 @@ public:
 
 	//stgatilov: branchless min and max for floating point values
 	static float Fmin ( float a, float b );
+	static float Fmin( float a, float b, float c ) { return Fmin( a, Fmin( b, c ) ); }
 	static float Fmax ( float a, float b );
 
 	static int Imin ( int a, int b );

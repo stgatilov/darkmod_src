@@ -39,8 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 struct shadowMapProgram_t : basicDepthProgram_t {
-	GLint lightOrigin;
-	GLint modelMatrix;
+	GLint lightOrigin, lightRadius, modelMatrix;
 	virtual	void AfterLoad();
 };
 
@@ -320,6 +319,10 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	GL_SelectTexture( 0 );
 
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+	float lightRadius = backEnd.vLight->lightDef->parms.radius;
+	if ( lightRadius < 0 )
+		lightRadius = r_softShadowsRadius.GetFloat();
+	qglUniform1f( shadowMapShader.lightRadius, lightRadius );
 	backEnd.currentSpace = NULL;
 
 	const bool backfaces = true;
@@ -1002,7 +1005,10 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 
 	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
-		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
+		float lightRadius = backEnd.vLight->lightDef->parms.radius;
+		if ( lightRadius < 0 )
+			lightRadius = r_softShadowsRadius.GetFloat();
+		qglUniform1f( softShadowsRadius, lightRadius );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
 		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
@@ -1261,6 +1267,7 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 void shadowMapProgram_t::AfterLoad() {
 	basicDepthProgram_t::AfterLoad();
 	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
+	lightRadius = qglGetUniformLocation( program, "u_lightRadius" );
 	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 	acceptsTranslucent = true;
 }
