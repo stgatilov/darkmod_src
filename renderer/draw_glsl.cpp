@@ -1015,7 +1015,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 			}
 		}
 		if ( sampleK < 0 ) { // WIP low res stencil shadows
-			qglUniform2f( renderResolution, glConfig.vidWidth, glConfig.vidHeight );
+			//qglUniform2f( renderResolution, glConfig.vidWidth, glConfig.vidHeight );
 		}
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
