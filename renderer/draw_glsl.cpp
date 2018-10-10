@@ -325,10 +325,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	qglUniform1f( shadowMapShader.lightRadius, lightRadius );
 	backEnd.currentSpace = NULL;
 
-	const bool backfaces = true;
-	if ( backfaces )
-		GL_Cull( CT_BACK_SIDED );
-	qglPolygonOffset( -1, 0 );
+	GL_Cull( CT_TWO_SIDED );
+	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
 	auto &page = ShadowAtlasPages[backEnd.vLight->shadowMapIndex-1];
@@ -346,7 +344,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 
 		float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
 		if ( customOffset != 0 )
-			qglPolygonOffset( -1 + customOffset, 0 );
+			qglPolygonOffset( customOffset, 0 );
 
 		if ( backEnd.currentSpace != surf->space ) {
 			qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
@@ -357,14 +355,13 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		shadowMapShader.FillDepthBuffer( surf );
 
 		if ( customOffset != 0 )
-			qglPolygonOffset( -1, 0 );
+			qglPolygonOffset( 0, 0 );
 	}
 	for ( int i = 0; i < 4; i++ )
 		qglDisable( GL_CLIP_PLANE0 + i );
 
 	qglDisable( GL_POLYGON_OFFSET_FILL );
-	if(backfaces)
-		GL_Cull( CT_FRONT_SIDED );
+	GL_Cull( CT_FRONT_SIDED );
 
 	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
 	qglUseProgram( 0 );
