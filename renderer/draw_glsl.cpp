@@ -57,7 +57,7 @@ struct interactionProgram_t : basicInteractionProgram_t {
 	GLint rgtc;
 
 	GLint cubic;
-	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffCubemap, lightFalloffTexture;
+	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffTexture;
 
 	GLint diffuseColor, specularColor;
 
@@ -79,7 +79,7 @@ struct pointInteractionProgram_t : interactionProgram_t {
 };
 
 struct ambientInteractionProgram_t : interactionProgram_t {
-	GLint minLevel, gamma;
+	GLint minLevel, gamma, lightFalloffCubemap;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -913,7 +913,6 @@ void interactionProgram_t::AfterLoad() {
 	lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
 	lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
 	lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
-	lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
 	GLint diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	GLint specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
 
@@ -929,7 +928,6 @@ void interactionProgram_t::AfterLoad() {
 
 	// can't have sampler2D, usampler2D, samplerCube have the same TMU index
 	qglUniform1i( lightProjectionCubemap, 5 );
-	qglUniform1i( lightFalloffCubemap, 5 );
 	qglUseProgram( 0 );
 }
 
@@ -944,13 +942,11 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1i( lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( lightProjectionCubemap, 2 );
 		qglUniform1i( lightFalloffTexture, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( lightProjectionTexture, 2 );
 		qglUniform1i( lightProjectionCubemap, MAX_MULTITEXTURE_UNITS + 1 );
 		qglUniform1i( lightFalloffTexture, 1 );
-		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS + 1 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 }
@@ -1044,6 +1040,10 @@ void ambientInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	minLevel = qglGetUniformLocation( program, "u_minLevel" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
+	lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
+	qglUseProgram( program );
+	qglUniform1i( lightFalloffCubemap, 5 );
+	qglUseProgram( 0 );
 }
 
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
@@ -1051,6 +1051,11 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
+	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+		qglUniform1i( lightFalloffCubemap, 1 );
+	} else {
+		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS + 1 );
+	}
 	GL_CheckErrors();
 }
 
