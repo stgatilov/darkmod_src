@@ -302,6 +302,16 @@ void RB_GLSL_DrawLight_Stencil() {
 	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 }
 
+
+static float GetEffectiveLightRadius() {
+	float lightRadius = backEnd.vLight->lightDef->parms.radius;
+	if (r_softShadowsRadius.GetFloat() < 0.0)
+		lightRadius = -r_softShadowsRadius.GetFloat();	//override
+	else if (lightRadius < 0.0)
+		lightRadius = r_softShadowsRadius.GetFloat();	//default value
+	return lightRadius;
+}
+
 /*
 =============
 RB_GLSL_CreateDrawInteractions
@@ -319,10 +329,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	GL_SelectTexture( 0 );
 
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	float lightRadius = backEnd.vLight->lightDef->parms.radius;
-	if ( lightRadius < 0 )
-		lightRadius = r_softShadowsRadius.GetFloat();
-	qglUniform1f( shadowMapShader.lightRadius, lightRadius );
+	qglUniform1f( shadowMapShader.lightRadius, GetEffectiveLightRadius() );
 	backEnd.currentSpace = NULL;
 
 	GL_Cull( CT_TWO_SIDED );
@@ -998,10 +1005,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 
 	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
-		float lightRadius = backEnd.vLight->lightDef->parms.radius;
-		if ( lightRadius < 0 )
-			lightRadius = r_softShadowsRadius.GetFloat();
-		qglUniform1f( softShadowsRadius, lightRadius );
+		qglUniform1f( softShadowsRadius, GetEffectiveLightRadius() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
 		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
