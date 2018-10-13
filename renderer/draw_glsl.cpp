@@ -995,10 +995,12 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		else
 			qglUniform1f( shadows, r_shadows.GetInteger() );
 		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
-		idVec4 v( page.x, page.y, 0, page.width-1 );
+		idVec4 v( page.x, page.y, 0, page.width );
+		v /= 6 * r_shadowMapSize.GetFloat();
+		/*idVec4 v( page.x, page.y, 0, page.width-1 );
 		//v /= 6 * r_shadowMapSize.GetFloat() - 1;
 		v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger()); // https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
-		v.w /= 6 * r_shadowMapSize.GetFloat();
+		v.w /= 6 * r_shadowMapSize.GetFloat();*/
 		qglUniform4fv( shadowRect, 1, v.ToFloatPtr() );
 	} else
 		qglUniform1f( shadows, 0 );
