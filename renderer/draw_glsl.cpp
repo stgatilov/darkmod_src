@@ -1010,7 +1010,6 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 
 	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
-		qglUniform1f( softShadowsRadius, GetEffectiveLightRadius() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
 		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
@@ -1024,8 +1023,8 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		}
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
-		qglUniform1f( softShadowsRadius, 0.0f );
 	}
+	qglUniform1f( softShadowsRadius, GetEffectiveLightRadius() ); // for soft stencil and all shadow maps
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglUniform1i( shadowMap, 6 );
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
