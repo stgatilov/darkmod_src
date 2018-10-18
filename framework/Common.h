@@ -52,6 +52,7 @@ extern idCVar		com_asyncSound;
 extern idCVar		com_purgeAll;
 extern idCVar		com_developer;
 extern idCVar		com_allowConsole;
+extern idCVar		com_logFile;
 extern idCVar		com_speeds;
 extern idCVar		com_showFPS;
 extern idCVar		com_showFPSavg;
@@ -237,7 +238,15 @@ public:
 
 	                            // Agent Jones #3766 - Check if we have a game window. If we don't
 								// then the main thread is not running.
-    virtual bool                WindowAvailable(void) = 0;
+	virtual bool                WindowAvailable(void) = 0;
+
+								// stgatilov: returns current position in log file (with console messages)
+								// returns 0 if log file is not enabled
+	virtual int					GetConsoleMarker(void) = 0;
+								// stgatilov: returns contents of log file (with console messages)
+								// the substring from begin to end is returned
+	virtual idStr				GetConsoleContents(int begin, int end) = 0;
+
 };
 
 extern idCommon *		common;

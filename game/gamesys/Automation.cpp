@@ -80,14 +80,16 @@ void Automation::ParseAction(ParseIn &parseIn) {
 	const char *rest = strchr(parseIn.message + pos, '\n');
 
 	if (token == "conexec") {
+		int begMarker = common->GetConsoleMarker();
 		while (const char *eol = strchr(rest, '\n')) {
 			idStr command(rest, 0, eol - rest);
 			if (!command.IsEmpty())
 				ExecuteInGameConsole(command.c_str());
 			rest = eol + 1;
 		}
-		//TODO: get console output printed since then
-		WriteResponse(parseIn.seqno, "");
+		int endMarker = common->GetConsoleMarker();
+		idStr consoleUpdates = common->GetConsoleContents(begMarker, endMarker);
+		WriteResponse(parseIn.seqno, consoleUpdates.c_str());
 	}
 }
 
@@ -113,6 +115,11 @@ void Automation::WriteResponse(int seqno, const char *response) {
 }
 
 void Automation::Think() {
+	//make sure log file is enabled, so that automation can fetch console messages
+	if (com_logFile.GetInteger() == 0) {
+		common->Printf("Forcing com_logFile to 1 for automation to work properly");
+		com_logFile.SetInteger(1);
+	}
 	//if started for first time, open tcp port and start listening
 	if (!listenTcp.IsAlive()) {
 		int port = com_automation_port.GetInteger();

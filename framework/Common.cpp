@@ -178,6 +178,10 @@ public:
 	virtual int					ButtonState( int key );
 	virtual int					KeyState( int key );
 
+	//stgatilov: for automation
+	virtual int					GetConsoleMarker();
+	virtual idStr				GetConsoleContents(int begin, int end);
+
 	void						InitGame( void );
 	void						ShutdownGame( bool reloading );
 
@@ -485,6 +489,25 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 
 #endif
 }
+
+int idCommonLocal::GetConsoleMarker() {
+	if (!logFile) return 0;
+	return logFile->Tell();
+}
+idStr idCommonLocal::GetConsoleContents(int begin, int end) {
+	if (!logFile) return idStr();
+	int original = logFile->Tell();
+	assert(original >= end);
+	int len = end - begin;
+	idFile *f = fileSystem->OpenFileRead(logFile->GetName());
+	f->Seek(begin, FS_SEEK_SET);
+	idStr res;
+	res.Fill(' ', len);
+	f->Read((char*)res.c_str(), len);
+	fileSystem->FreeFile(f);
+	return res;
+}
+
 
 /*
 ==================
