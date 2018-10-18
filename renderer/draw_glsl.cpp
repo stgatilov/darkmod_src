@@ -659,7 +659,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 
 	if ( !fileBuffer ) {
 		if ( ShaderType != GL_GEOMETRY_SHADER ) {
-			common->Warning( "shaderCompileFromFile: \'%s\' not found", fileName );
+			common->Warning( "CompileShader(%s) file not found", fileName );
 		}
 		return 0;
 	}
@@ -690,18 +690,18 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 	/* make sure the compilation was successful */
 	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
 
+	char *log;
+	/* get the shader info log */
+	qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
+	log = new char[length];
+	log[0] = 0;
+	qglGetShaderInfoLog( shader, length, NULL, log );
+	//TODO: print compile log always (bad idea now due to tons of warnings)
+	if (result == GL_FALSE)
+		common->Warning( "CompileShader(%s): %s\n%s\n", fileName, (result ? "ok" : "FAILED"), log );
+	delete log;
+
 	if ( result == GL_FALSE ) {
-		char *log;
-
-		/* get the shader info log */
-		qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
-		log = new char[length];
-		qglGetShaderInfoLog( shader, length, &result, log );
-
-		/* print an error message and the info log */
-		common->Warning( "shaderCompileFromFile(%s) validation\n%s\n", fileName, log );
-		delete log;
-
 		qglDeleteShader( shader );
 		return 0;
 	}
