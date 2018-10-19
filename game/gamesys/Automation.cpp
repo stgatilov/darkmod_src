@@ -22,7 +22,8 @@
 #define AUTOMATION_VARMODE CVAR_ARCHIVE
 #else
 //make sure all players have automation disabled on TDM releases
-#define AUTOMATION_VARMODE CVAR_INIT
+//note: they can enable it manually in console, but setting won't be saved
+#define AUTOMATION_VARMODE 0
 #endif
 
 idCVar com_automation("com_automation", "0", CVAR_BOOL | AUTOMATION_VARMODE, "Enable TDM automation (for tests)");
