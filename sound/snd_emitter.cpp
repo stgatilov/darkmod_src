@@ -501,8 +501,10 @@ Called once each sound frame by the main thread from idSoundWorldLocal::PlaceOri
 ===================
 */
 
-void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRenderWorld *rw ) {
+// grayman #4882 - listenerPos is in meters
 
+void idSoundEmitterLocal::Spatialize( bool primary, idVec3 listenerPos, int listenerArea, idRenderWorld *rw ) // grayman #4882
+{
 	//
 	// work out the maximum distance of all the playing channels
 	// grayman #3042 - also work out the minimum distance
@@ -531,35 +533,38 @@ void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRe
 	//
 	// work out where the sound comes from
 	//
-	idVec3 realOrigin = origin * DOOM_TO_METERS;
-	idVec3 len = listenerPos - realOrigin;
-	realDistance = len.LengthFast();
+	idVec3 realOrigin = origin * DOOM_TO_METERS; // meters
+	idVec3 len = listenerPos - realOrigin; // meters
+	realDistance = len.LengthFast(); // meters
 
 	if ( realDistance >= maxDistance )
 	{
 		// no way to possibly hear it
-		distance = realDistance;
+		if ( primary )
+		{
+			distance = realDistance; // meters
+		}
 		return;
 	}
 
 	//
 	// work out virtual origin and distance, which may be from a portal instead of the actual origin
 	//
-	distance = maxDistance * METERS_TO_DOOM;
+	distance = maxDistance; // grayman #4882 - meters
 	if ( listenerArea == -1 )
-	{		// listener is outside the world
+	{	// listener is outside the world
 		return;
 	}
 
 	if ( rw )
 	{
 		// we have a valid renderWorld
-		int soundInArea = rw->PointInArea( origin );
+		int soundInArea = rw->PointInArea(realOrigin * METERS_TO_DOOM);
 		if ( soundInArea == -1 )
 		{
 			if ( lastValidPortalArea == -1 )		// sound is outside the world
 			{
-				distance = realDistance;
+				distance = realDistance; // meters
 				spatializedOrigin = origin;			// sound is in our area
 				volumeLoss = 0; // grayman #3042 - no volume loss when in the same area
 				return;
@@ -569,7 +574,46 @@ void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRe
 		lastValidPortalArea = soundInArea;
 		if ( soundInArea == listenerArea )
 		{
-			distance = realDistance;
+			// grayman #4882 - If the listener is a Listener entity, and it's targetted at another
+			// entity, treat that other entity as an emitter, and start a new waveform there with
+			// the results we have now. This is the equivalent of having a "no-occlusion tunnel"
+			// between the listener and the emitter.
+
+			idPlayer* player = gameLocal.GetLocalPlayer();
+			if ( !primary && player )
+			{
+				idListener* listener = player->m_Listener.GetEntity();
+				if ( listener )
+				{
+					float pLength = ((listenerPos * METERS_TO_DOOM) - listener->GetPhysics()->GetOrigin()).LengthFast();
+					if ( pLength < VECTOR_EPSILON )
+					{
+						int numTargets = listener->targets.Num();
+						if ( numTargets > 0 )
+						{
+							idEntity* target = listener->targets[0].GetEntity();
+							if ( target )
+							{
+								idVec3 targetOrigin = target->GetPhysics()->GetOrigin();
+								int targetArea = rw->PointInArea(targetOrigin);
+
+								SoundChainResults results;
+								if ( soundWorld->ResolveOrigin(true, 0, NULL, targetArea, realDistance, 0, targetOrigin, targetOrigin, this, &results) ) // grayman #3042
+								{
+									// get results
+									spatializedOrigin = results.spatializedOrigin;
+									distance = results.distance; // doom units
+									distance *= DOOM_TO_METERS; // meters
+									volumeLoss = results.loss;
+								}
+								return;
+							}
+						}
+					}
+				}
+			}
+
+			distance = realDistance; // meters
 			spatializedOrigin = origin; // sound is in our area
 			volumeLoss = 0; // grayman #3042 - no volume loss when in the same area
 			return;
@@ -578,22 +622,56 @@ void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRe
 		volumeLoss = 0; // grayman #3042 - accumulates volume loss via ResolveOrigin() processing
 
 		SoundChainResults results;
-		if ( soundWorld->ResolveOrigin( 0, NULL, soundInArea, 0.0f, 0.0f, origin, origin, this, &results ) ) // grayman #3042
+		if ( soundWorld->ResolveOrigin(primary, 0, NULL, soundInArea, 0.0f, 0.0f, origin, origin, this, &results ) ) // grayman #3042
 		{
+			// grayman #4882 - If the listener is a Listener entity, and it's targetted at another
+			// entity, treat that other entity as an emitter, and start a new waveform there with
+			// the results we have now. This is the equivalent of having a "no-occlusion tunnel"
+			// between the listener and the emitter.
+
+			idPlayer* player = gameLocal.GetLocalPlayer();
+			if (!primary && player)
+			{
+				idListener* listener = player->m_Listener.GetEntity();
+				if ( listener )
+				{
+					float pLength = ((listenerPos * METERS_TO_DOOM) - listener->GetPhysics()->GetOrigin()).LengthFast();
+					if ( pLength < VECTOR_EPSILON )
+					{
+						int numTargets = listener->targets.Num();
+						if ( numTargets > 0 )
+						{
+							idEntity* target = listener->targets[0].GetEntity();
+							if ( target )
+							{
+								idVec3 targetOrigin = target->GetPhysics()->GetOrigin();
+								int targetArea = rw->PointInArea(targetOrigin);
+
+								soundWorld->ResolveOrigin(true, 0, NULL, targetArea, results.distance*DOOM_TO_METERS, results.loss, targetOrigin, targetOrigin, this, &results); // grayman #3042
+							}
+						}
+					}
+				}
+			}
+
 			// get results
 			spatializedOrigin = results.spatializedOrigin;
-			distance = results.distance;
+			distance = results.distance; // doom units
+			distance *= DOOM_TO_METERS; // meters
 			volumeLoss = results.loss;
 		}
 
-		distance /= METERS_TO_DOOM;
+		//distance /= METERS_TO_DOOM; // meters
 	}
 	else
 	{
 		// no portals available
-		distance = realDistance;
-		spatializedOrigin = origin; // sound is in our area
-		volumeLoss = 0;
+		if ( primary )
+		{
+			distance = realDistance;  // meters
+			spatializedOrigin = origin; // sound is in our area
+			volumeLoss = 0;
+		}
 	}
 }
 
@@ -662,6 +740,37 @@ void idSoundEmitterLocal::Free( bool immediate ) {
 	} else {
 		Clear();
 	}
+}
+
+/*
+==================
+idSoundEmitterLocal::GetEffectiveVolume
+==================
+*/
+float idSoundEmitterLocal::GetEffectiveVolume(idVec3 spatializedOrigin, float distance, float volumeLoss)
+{
+	//grayman #4882 - Understand this better. How does the incoming volumeLoss figure into the distance already traveled?
+
+	float vol = soundSystemLocal.dB2Scale(parms.volume - volumeLoss);
+	float mind = minDistance;
+	float maxd = maxDistance;
+
+	// reduce effective volume based on distance
+	if ( distance >= maxd )
+	{
+		vol = 0.0f;
+	}
+	else if ( distance > mind )
+	{
+		float frac = idMath::ClampFloat(0.0f, 1.0f, 1.0f - ((distance - mind) / (maxd - mind)));
+		if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() )
+		{
+			frac *= frac;
+		}
+		vol *= frac;
+	}
+
+	return vol;
 }
 
 /*
@@ -867,7 +976,75 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 
 	// spatialize it immediately, so it will start the next mix block
 	// even if that happens before the next PlaceOrigin()
-	Spatialize( soundWorld->listenerPos, soundWorld->listenerArea, soundWorld->rw );
+
+	//Spatialize(soundWorld->listenerPos, soundWorld->listenerArea, soundWorld->rw);
+
+	/* grayman #4882
+	Can we use a list of Listeners to propagate a single waveform and recognize listeners
+	as we propagate? Then we'd only have to Spatialize once.
+	Look at CsndProp::Propagate() Line 515.
+	*/
+
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if ( player )
+	{
+		idVec3 p; // meters
+		int area;
+		idVec3 pSpatializedOrigin;
+		float pDistance;
+		float pVolumeLoss;
+
+		bool spatializePrimary = true; // hear what's around the player (default)
+		idListener* listener = player->m_Listener.GetEntity();
+		if ( listener )
+		{
+			if ( listener->mode == 2 )
+			{
+				spatializePrimary = false; // don't hear what's around the player
+			}
+		}
+
+		if ( spatializePrimary )
+		{
+			// grayman #4882 - Spatialize from primary location (player's ear)
+			p = player->GetPrimaryListenerLoc(); // meters
+			area = soundWorld->rw->PointInArea(p * METERS_TO_DOOM);
+			Spatialize(true, p, area, soundWorld->rw); // to player's ear
+
+			// save primary data
+			pSpatializedOrigin = spatializedOrigin;
+			pDistance = distance;
+			pVolumeLoss = volumeLoss;
+		}
+
+		// grayman #4882 - Spatialize from secondary location (beyond door OR remote Listener)
+		p = player->GetSecondaryListenerLoc(); // meters
+		if ( p != vec3_zero )
+		{
+			area = soundWorld->rw->PointInArea(p * METERS_TO_DOOM);
+			Spatialize(false, p, area, soundWorld->rw); // to active Listener
+
+			// If we did a primary spatialize, determine whether the primary path or the secondary path provides the louder sound. Use the winner.
+
+			if ( spatializePrimary )
+			{
+				float primaryEffectiveVolume = GetEffectiveVolume(pSpatializedOrigin, pDistance, pVolumeLoss);
+				float secondaryEffectiveVolume = GetEffectiveVolume(spatializedOrigin, distance, volumeLoss);
+
+				if ( primaryEffectiveVolume > secondaryEffectiveVolume ) // use data from higher effective volume
+				{
+					// put back the primary data
+					spatializedOrigin = pSpatializedOrigin;
+					distance = pDistance;
+					volumeLoss = pVolumeLoss;
+				}
+			}
+		}
+	}
+	else
+	{
+		Spatialize(true, vec3_zero, 0, soundWorld->rw);
+	}
 
 	// return length of sound in milliseconds
 	int length = chan->leadinSample->LengthIn44kHzSamples();

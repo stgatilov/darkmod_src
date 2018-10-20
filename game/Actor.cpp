@@ -5383,6 +5383,27 @@ int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, b
 	return index;
 }
 
+int idActor::GetDoorSide(CFrobDoor* frobDoor, idVec3 pos) // grayman #4882
+{
+	int doorSide = 0;
+	// determine which side of the door we're on
+	idVec3 sm0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT, DOOR_POS_SIDEMARKER);
+	idVec3 sm1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK, DOOR_POS_SIDEMARKER);
+
+	if ( (sm0 - pos).LengthSqr() < (sm1 - pos).LengthSqr() )
+	{
+		doorSide = DOOR_SIDE_FRONT;
+	}
+	else
+	{
+		doorSide = DOOR_SIDE_BACK;
+	}
+
+	return doorSide;
+}
+
+
+
 /****************************************************************************************
 	=====================
 	idActor::CrashLand

@@ -326,6 +326,8 @@ void idGameLocal::Clear( void )
 
 	m_spyglassOverlay = 0; // grayman #3807 - no need to save/restore
 
+	m_peekOverlay = 0; // grayman #4882 - no need to save/restore
+
 	m_InterMissionTriggers.Clear();
 	
 	serverInfo.Clear();
@@ -619,7 +621,11 @@ void idGameLocal::Init( void ) {
 	}
 
 	// grayman #3807 - set spyglass overlay per aspect ratio
-	m_spyglassOverlay = DetermineAspectRatio();
+	int ar = DetermineAspectRatio();
+	m_spyglassOverlay = ar;
+
+	// grayman #4882 - set peeking overlay per aspect ratio
+	m_peekOverlay = ar;
 }
 
 const idStr& idGameLocal::GetMapFileName() const
@@ -8112,7 +8118,11 @@ void idGameLocal::OnReloadImages()
 void idGameLocal::OnVidRestart()
 {
 	// grayman #3807 - set spyglass overlay per aspect ratio
-	m_spyglassOverlay = DetermineAspectRatio();
+	int ar = DetermineAspectRatio();
+	m_spyglassOverlay = ar;
+
+	// grayman #4882 - set peeking overlay per aspect ratio
+	m_peekOverlay = ar;
 
 	idPlayer* player = GetLocalPlayer();
 
@@ -8194,6 +8204,14 @@ int idGameLocal::GetSpyglassOverlay()
 {
 	return m_spyglassOverlay;
 }
+
+// grayman #4882
+
+int idGameLocal::GetPeekOverlay()
+{
+	return m_peekOverlay;
+}
+
 
 // grayman #3857
 SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman #3857

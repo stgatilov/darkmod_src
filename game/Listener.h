@@ -25,8 +25,15 @@ public:
 
 	virtual ~idListener(void);
 
+	int		mode;	// 1 (default) = hear what's at the Listener plus what's around the player
+					// 2 = hear only what's at the Listener
+
+	int		loss;	// Volume loss through the Listener. Only affects sounds the player hears.
+
 	void	Spawn();
 	void	PostSpawn();
+	void	Save(idSaveGame *savefile) const;
+	void	Restore(idRestoreGame *savefile);
 
 private:
 	void	Event_Activate(idEntity *activator);

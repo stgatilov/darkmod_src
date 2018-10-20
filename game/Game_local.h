@@ -732,6 +732,8 @@ public:
 
 	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
+	int						m_peekOverlay; // grayman #4882 - no need to save/restore
+	
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -763,6 +765,7 @@ public:
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
 	virtual int				GetSpyglassOverlay(); // grayman #3807
+	virtual int				GetPeekOverlay(); // grayman #4882
 	virtual int				DetermineAspectRatio(); // grayman #3807
 
 	/**

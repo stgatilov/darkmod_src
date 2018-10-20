@@ -1370,7 +1370,7 @@ void Entity_UpdateSoundEmitter( entity_t *ent ) {
 			gameEdit->ParseSpawnArgsToRefSound( &ent->epairs, &sound );
 			if ( !sound.waitfortrigger ) {	// waitfortrigger will not start playing immediately
 				if ( !ent->soundEmitter ) {
-					ent->soundEmitter = g_qeglobals.sw->AllocSoundEmitter();
+					ent->soundEmitter = g_qeglobals.sw->AllocSoundEmitter(ent->origin); // grayman #4882
 				}
 				playing = true;
 				ent->soundEmitter->UpdateEmitter( ent->origin, 0, &sound.parms );

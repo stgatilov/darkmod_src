@@ -169,6 +169,9 @@ public:
 	// grayman #3643 - retrieve a particular door controller
 	idEntityPtr<idEntity>	GetDoorController(int side);
 
+	// grayman #4882 - retrieve a peek entity
+	idEntityPtr<idPeek>		GetDoorPeekEntity();
+	
 	// grayman #3643 - retrieve a particular door handle position
 	idEntityPtr<idEntity>	GetDoorHandlePosition(int side);
 
@@ -328,6 +331,11 @@ protected:
 	* grayman #3643 - holds door controllers
 	**/
 	idList< idEntityPtr<idEntity> > m_controllers;
+
+	/**
+	* grayman #4882 - holds a peek entity
+	**/
+	idEntityPtr<idPeek> m_peek;
 
 	/**
 	* grayman #3643 - holds door handle positions

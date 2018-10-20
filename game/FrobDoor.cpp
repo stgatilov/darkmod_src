@@ -87,6 +87,7 @@ CFrobDoor::CFrobDoor()
 	m_lossBasePlayer = 0;		// Player sound loss provided by other entities, i.e. location separator
 	m_isTransparent = false;
 	m_controllers.Clear();		// grayman #3643 - list of my controllers
+	m_peek = NULL;			// grayman #4882 - my peek entity
 	m_doorHandlingPositions.Clear(); // grayman #3643 - list of my door handling positions
 	m_AIPushingDoor = false;	// grayman #3748
 	m_speedFactor = -1.0f;
@@ -150,6 +151,9 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	{
 		m_controllers[i].Save(savefile);
 	}
+
+	// grayman #4882 - peek entity
+	m_peek.Save(savefile);
 
 	// grayman #3643 - list of door handling positions
 	savefile->WriteInt(m_doorHandlingPositions.Num());
@@ -218,6 +222,9 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	{
 		m_controllers[i].Restore(savefile);
 	}
+
+	// grayman #4882 - peek entity
+	m_peek.Restore(savefile);
 
 	// grayman #3643 - list of door handling positions
 	m_doorHandlingPositions.Clear();
@@ -339,6 +346,21 @@ void CFrobDoor::PostSpawn()
 	if (spawnArgs.GetBool("auto_setup_door_handles", "1"))
 	{
 		AutoSetupDoorHandles();
+	}
+
+	// grayman #4882 - set up peek entity if present
+	idList<idEntity *> children;
+	GetTeamChildren(&children);
+	m_peek = NULL;
+
+	for ( int i = 0; i < children.Num(); i++ )
+	{
+		if ( children[i]->IsType(idPeek::Type) )
+		{
+			idPeek *peekEntity = static_cast<idPeek*>(children[i]);
+			m_peek = peekEntity;
+			break;
+		}
 	}
 
 	// greebo: Should we auto-setup the double door behaviour?
@@ -2098,6 +2120,12 @@ idEntityPtr<idEntity> CFrobDoor::GetDoorController(int side)
 	}
 
 	return ePtr;
+}
+
+// grayman #4882 - retrieve a door peek entity
+idEntityPtr<idPeek> CFrobDoor::GetDoorPeekEntity()
+{
+	return m_peek;
 }
 
 // grayman #3643 - retrieve a particular door handle position

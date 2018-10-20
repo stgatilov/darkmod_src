@@ -33,7 +33,12 @@ void idListener::Spawn(void)
 	// keep track during cinematics
 	cinematic = true;
 
-	// Schedule a post-spawn event to setup other spawnargs
+	mode = spawnArgs.GetInt("mode", "1");	// 1 = hear what's at the Listener plus what's around the player
+											// 2 = hear what's at the Listner only
+
+	loss = 0;	// Volume loss through the Listener. Only affects sounds the player hears.
+				// Schedule a post-spawn event to setup other spawnargs
+
 	PostEventMS(&EV_PostSpawn, 1);
 }
 
@@ -48,7 +53,6 @@ idListener::Event_Activate
 */
 void idListener::Event_Activate(idEntity *_activator)
 {
-	//gameLocal.Printf("Activating %s\n", GetName()); // grayman debug
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
 	// If the current listener is this listener, turn off this listener.
@@ -61,20 +65,38 @@ void idListener::Event_Activate(idEntity *_activator)
 	{
 		if ( currentListener == this )
 		{
-			//gameLocal.Printf("turn off current listener %s\n", GetName()); // grayman debug
 			player->m_Listener = NULL; // turn off listener
+			player->SetSecondaryListenerLoc(vec3_zero);
 		}
 		else
 		{
-			//gameLocal.Printf("1 turn on new listener %s\n", GetName()); // grayman debug
 			player->m_Listener = this; // turn on listener
 		}
 	}
 	else // no current listener
 	{
 		player->m_Listener = this; // turn on listener
-		//gameLocal.Printf("2 turn on new listener\n", GetName()); // grayman debug
 	}
+}
+
+/*
+===============
+idListener::Save
+================
+*/
+void idListener::Save(idSaveGame *savefile) const {
+	savefile->WriteInt(mode);
+	savefile->WriteInt(mode);
+}
+
+/*
+===============
+idListener::Restore
+================
+*/
+void idListener::Restore(idRestoreGame *savefile) {
+	savefile->ReadInt(mode);
+	savefile->ReadInt(loss);
 }
 
 idListener::~idListener(void)

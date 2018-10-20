@@ -901,6 +901,24 @@ protected:
 	void	Event_ScaleVine(float factor);
 };
 
+/*
+===============================================================================
+
+idPeek
+
+===============================================================================
+*/
+
+class idPeek : public idStaticEntity
+{
+public:
+	CLASS_PROTOTYPE(idPeek);
+	
+	idPeek(); // Constructor
+	virtual ~idPeek(); // Destructor
+
+	void	Spawn();
+};
 
 #endif /* !__GAME_MISC_H__ */
 

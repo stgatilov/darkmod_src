@@ -114,15 +114,21 @@ idCameraView::Event_Activate
 ================
 */
 void idCameraView::Event_Activate( idEntity *activator ) {
-	if (spawnArgs.GetBool("trigger")) {
-		if (gameLocal.GetCamera() != this) {
-			if ( g_debugCinematic.GetBool() ) {
+	if (spawnArgs.GetBool("trigger"))
+	{
+		if (gameLocal.GetCamera() != this)
+		{
+			if ( g_debugCinematic.GetBool() )
+			{
 				gameLocal.Printf( "%d: '%s' start\n", gameLocal.framenum, GetName() );
 			}
 
 			gameLocal.SetCamera(this);
-		} else {
-			if ( g_debugCinematic.GetBool() ) {
+		}
+		else
+		{
+			if ( g_debugCinematic.GetBool() )
+			{
 				gameLocal.Printf( "%d: '%s' stop\n", gameLocal.framenum, GetName() );
 			}
 			gameLocal.SetCamera(NULL);
@@ -146,7 +152,7 @@ void idCameraView::Stop( void ) {
 
 /*
 =====================
-idCameraView::Spawn
+idCameraView::SetAttachment
 =====================
 */
 void idCameraView::SetAttachment( idEntity **e, const char *p  ) {

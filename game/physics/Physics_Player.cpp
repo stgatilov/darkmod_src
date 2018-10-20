@@ -132,6 +132,11 @@ const float LADDER_TOPVELOCITY = 80.0f;
 const float LADDER_WALKDETACH_ANGLE = 45.0f;
 const float LADDER_WALKDETACH_DOT = idMath::Cos( DEG2RAD( LADDER_WALKDETACH_ANGLE ) );
 
+/**
+* Player's eye needs to be closer than this in order to peek through an opening.
+**/
+const float PEEK_MAX_DIST = 22.0f; // grayman #4882
+
 // movementFlags
 const int PMF_DUCKED			= 1;		// set when ducking
 const int PMF_JUMPED			= 2;		// set when the player jumped this frame
@@ -2948,8 +2953,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_viewLeanAngles = ang_zero;
 	m_viewLeanTranslation = vec3_zero;
 
-	m_LeanDoorListenPos = vec3_zero;
-	m_LeanDoorEnt = NULL;
+	m_LeanListenPos = vec3_zero;
+	m_LeanEnt = NULL;
 
 	m_DeltaViewYaw = 0.0;
 	m_DeltaViewPitch = 0.0;
@@ -3076,8 +3081,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteAngles (m_lastPlayerViewAngles);
 	savefile->WriteAngles (m_viewLeanAngles);
 	savefile->WriteVec3 (m_viewLeanTranslation);
-	savefile->WriteVec3 (m_LeanDoorListenPos);
-	m_LeanDoorEnt.Save( savefile );
+	savefile->WriteVec3 (m_LeanListenPos);
+	m_LeanEnt.Save( savefile );
 
 	savefile->WriteStaticObject(*m_PushForce);
 }
@@ -3175,8 +3180,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadAngles (m_lastPlayerViewAngles);
 	savefile->ReadAngles (m_viewLeanAngles);
 	savefile->ReadVec3 (m_viewLeanTranslation);
-	savefile->ReadVec3 (m_LeanDoorListenPos);
-	m_LeanDoorEnt.Restore( savefile );
+	savefile->ReadVec3 (m_LeanListenPos);
+	m_LeanEnt.Restore( savefile );
 
 	savefile->ReadStaticObject( *m_PushForce );
 
@@ -4665,8 +4670,8 @@ void idPhysics_Player::ToggleLean(float leanYawAngleDegrees)
 		m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
 		m_leanYawAngleDegrees = leanYawAngleDegrees;
 
-		// Hack: Use different values for forward/backward lean than side/side
-		if( leanYawAngleDegrees == 90.0f || leanYawAngleDegrees == -90.0f )
+		// Hack: Use different values for forward lean than side/side
+		if ( leanYawAngleDegrees == 90.0f )
 		{
 			m_leanTime = cv_pm_lean_forward_time.GetFloat();
 			m_leanMoveEndTilt = cv_pm_lean_forward_angle.GetFloat();
@@ -4739,6 +4744,21 @@ idVec3 idPhysics_Player::GetViewLeanTranslation()
 
 //----------------------------------------------------------------------
 
+void idPhysics_Player::ProcessPeek(idEntity* peekEntity, idEntity* door, idVec3 normal) // grayman #4882
+{
+	const function_t* func = gameLocal.program.FindFunction("peekThread");
+	if ( func != NULL )
+	{
+		idThread *pThread = new idThread(func);
+		int n = pThread->GetThreadNum();
+		pThread->CallFunctionArgs(func, true, "eev", peekEntity, door,normal);
+		pThread->DelayedStart(0);
+		pThread->Execute();
+	}
+}
+
+//----------------------------------------------------------------------
+
 void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaLeanStretch)
 {
 	// What would the new lean angle be?
@@ -4796,29 +4816,121 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 	//DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Collision trace between old view point ( %d, %d, %d ) and newPoint: ( %d, %d, %d )\r", origPoint.x, origPoint.y, origPoint.z, newPoint.x, newPoint.y, newPoint.z );
 
 	// Do not lean farther if the player would hit the wall
-	if( bWouldClip )
+	if ( bWouldClip )
 	{
 		idEntity* traceEnt = gameLocal.GetTraceEntity( trTest );
 
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Lean test point within solid, lean motion stopped.\r" );
-		
-		if( traceEnt != NULL)
+
+		if ( traceEnt != NULL )
 		{
 			// Door leaning test
-			if (traceEnt->IsType(CFrobDoor::Type) && 
-				!static_cast<CFrobDoor*>(traceEnt)->IsOpen() && 
-				m_LeanDoorEnt.GetEntity() == NULL )
+			if (traceEnt->IsType(CFrobDoor::Type))
 			{
-				// If it is a door, can it be listened through?
-				if( FindLeanDoorListenPos( trTest.c.point, static_cast<CFrobDoor*>(traceEnt) ) )
+				if ( m_LeanEnt.GetEntity() == NULL ) // not set up yet?
 				{
-					m_LeanDoorEnt = static_cast<CFrobDoor*>(traceEnt);
+					CFrobDoor* door = static_cast<CFrobDoor*>(traceEnt);
+					if ( (m_leanYawAngleDegrees == 0.0f) || (m_leanYawAngleDegrees == 180.0f) ) // no listening when leaning forward (90 degrees)
+					{
+						if ( !door->IsOpen() )
+						{
+							// can the door be listened through?
+							if ( FindLeanListenPos(trTest.c.point) ) // grayman #4882
+							{
+								m_LeanEnt = door;
+							}
+						}
+					}
+
+					// grayman #4882 - If the door has a peek entity attached to it, and leaning forward, pass control to the peek code.
+
+					// get the peek entity for the door we're leaning on, if it exists
+					idEntityPtr<idPeek> peekEntity = door->GetDoorPeekEntity();
+
+					if ( peekEntity.GetEntity() && (m_leanYawAngleDegrees == 90.0f) )
+					{
+						// Process the peek if the player's eyes are close enough to "see through".
+
+						idVec3 peekOrigin = peekEntity.GetEntity()->GetPhysics()->GetOrigin(); // grayman #4882
+						idVec3 playerEyeLocation = player->GetEyePosition(); // grayman #4882
+						float distFromEye2PeakEntity = (playerEyeLocation - peekOrigin).LengthFast();
+
+						if ( distFromEye2PeakEntity < PEEK_MAX_DIST )
+						{
+							ProcessPeek(peekEntity.GetEntity(), door, trTest.c.normal);
+
+							// Can listen while in a forward lean
+
+							if ( !door->IsOpen() )
+							{
+								// can the door be listened through?
+								if ( FindLeanListenPos(trTest.c.point) ) // grayman #4882
+								{
+									m_LeanEnt = door;
+								}
+							}
+						}
+					}
 				}
 			}
 			// Detect AI collision
 			else if (traceEnt->IsType(idAI::Type) )
 			{
 				static_cast<idAI*>(traceEnt)->HadTactile(player);
+			}
+			else
+			{
+				// Is a peek entity nearby? (Non-door situation, like a crack in a wall.)
+
+				idPeek* peekEntity = NULL;
+				if ( traceEnt->IsType(idPeek::Type) ) // did we hit the peek entity directly?
+				{
+					peekEntity = static_cast<idPeek*>(traceEnt);
+				}
+				else
+				{
+					idEntity* entityList[MAX_GENTITIES];
+					int num;
+					num = gameLocal.EntitiesWithinRadius(player->GetEyePosition(), PEEK_MAX_DIST, entityList, MAX_GENTITIES);
+					for ( int i = 0 ; i < num ; i++ )
+					{
+						idEntity *candidate = entityList[i];
+
+						if ( candidate == NULL ) // just in case
+						{
+							continue;
+						}
+
+						if ( candidate->IsType(idPeek::Type) )
+						{
+							// grayman #4882 - If leaning forward, pass control to the peek code.
+
+							// get the peek entity
+							peekEntity = static_cast<idPeek*>(candidate);
+						}
+					}
+				}
+
+				if ( peekEntity && (m_leanYawAngleDegrees == 90.0f) )
+				{
+					// Process the peek if the player's eyes are close enough to "see through".
+
+					idVec3 peekOrigin = peekEntity->GetPhysics()->GetOrigin(); // grayman #4882
+					idVec3 playerEyeLocation = player->GetEyePosition(); // grayman #4882
+					float distFromEye2PeekEntity = (playerEyeLocation - peekOrigin).LengthFast();
+
+					if ( distFromEye2PeekEntity < PEEK_MAX_DIST )
+					{
+						ProcessPeek(peekEntity, NULL, trTest.c.normal);
+
+						// Can listen while in a forward lean
+
+						if ( FindLeanListenPos(trTest.c.point) ) // grayman #4882
+						{
+							m_LeanEnt = peekEntity;
+						}
+					}
+				}
 			}
 		}
 
@@ -4895,7 +5007,7 @@ void idPhysics_Player::LeanMove()
 
 	// If player is leaned at all, do an additional clip test and unlean them
 	// In case they lean and walk into something, or a moveable moves into them, etc.
-	if( m_CurrentLeanTiltDegrees != 0.0	&& TestLeanClip() )
+	if ( m_CurrentLeanTiltDegrees != 0.0	&& TestLeanClip() )
 	{
 		DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Leaned player clipped solid, unleaning to valid position \r");
 
@@ -4903,9 +5015,9 @@ void idPhysics_Player::LeanMove()
 	}
 
 	// Lean door test
-	if( IsLeaning() )
+	if ( IsLeaning() )
 	{
-		UpdateLeanDoor();
+		UpdateLean();
 	}
 
 	// TODO: Update lean radius if player is crouching/uncrouching
@@ -5151,7 +5263,7 @@ void idPhysics_Player::UnleanToValidPosition( void )
 	UpdateLeanPhysics();
 }
 
-bool idPhysics_Player::FindLeanDoorListenPos(const idVec3& incidencePoint, CFrobDoor* door)
+bool idPhysics_Player::FindLeanListenPos(const idVec3& incidencePoint) // grayman #4882
 {
 	bool bFoundEmptySpace( false );
 	int contents = -1;
@@ -5170,7 +5282,6 @@ bool idPhysics_Player::FindLeanDoorListenPos(const idVec3& incidencePoint, CFrob
 
 	int MaxCount = cv_pm_lean_door_increments.GetInteger();
 
-
 	for( int count = 1; count < MaxCount; count++ )
 	{
 		vTest += vDirTest * ( (float) count / (float) MaxCount ) * cv_pm_lean_door_max.GetFloat();
@@ -5183,7 +5294,7 @@ bool idPhysics_Player::FindLeanDoorListenPos(const idVec3& incidencePoint, CFrob
 			DM_LOG(LC_MOVEMENT,LT_DEBUG)LOGSTRING("Lean Into Door: Found empty space on other side of door.  Incidence point: %s Empty space point: %s \r", incidencePoint.ToString(), vTest.ToString() );
 			
 			bFoundEmptySpace = true;
-			m_LeanDoorListenPos = vTest;
+			m_LeanListenPos = vTest;
 			break;
 		}
 	}
@@ -5194,63 +5305,94 @@ bool idPhysics_Player::FindLeanDoorListenPos(const idVec3& incidencePoint, CFrob
 	return bFoundEmptySpace;
 }
 
-void idPhysics_Player::UpdateLeanDoor( void )
+void idPhysics_Player::UpdateLean( void ) // grayman #4882 - expanded to handle wall cracks
 {
 	idPlayer* player = static_cast<idPlayer*>(self);
 
-	CFrobDoor* door = m_LeanDoorEnt.GetEntity();
+	// If there's a peek entity, is it bound to a door?
 
-	if( door && player )
+	idEntity* e = m_LeanEnt.GetEntity();
+
+	// Are we leaning against a door?
+	if ( e && e->IsType(CFrobDoor::Type) )
 	{
-		if (!m_LeanDoorEnt.IsValid() || door->IsOpen() || !IsLeaning())
+		CFrobDoor* door = static_cast<CFrobDoor*>(e);
+
+		if ( player )
 		{
-			m_LeanDoorEnt = NULL;
-			return;
-		}
+			if ( !m_LeanEnt.IsValid() || door->IsOpen() || !IsLeaning() )
+			{
+				m_LeanEnt = NULL;
+				return;
+			}
 
-		idBounds TestBounds = m_LeanViewBounds;
-		TestBounds.ExpandSelf( cv_pm_lean_door_bounds_exp.GetFloat() );
-		TestBounds.TranslateSelf( player->GetEyePosition() );
+			idBounds TestBounds = m_LeanViewBounds;
+			TestBounds.ExpandSelf(cv_pm_lean_door_bounds_exp.GetFloat());
+			TestBounds.TranslateSelf(player->GetEyePosition());
 
-/** More precise test (Not currently used)
-	
-		int numEnts = 0;
-		idEntity *ents[MAX_GENTITIES];
-		idEntity *ent = NULL;
-		bool bMatchedDoor(false);
+			/** More precise test (Not currently used)
 
-		numEnts = gameLocal.clip.EntitiesTouchingBounds( TestBounds, CONTENTS_SOLID, ents, MAX_GENTITIES);
-		for( int i=0; i < numEnts; i++ )
-		{
+			int numEnts = 0;
+			idEntity *ents[MAX_GENTITIES];
+			idEntity *ent = NULL;
+			bool bMatchedDoor(false);
+
+			numEnts = gameLocal.clip.EntitiesTouchingBounds( TestBounds, CONTENTS_SOLID, ents, MAX_GENTITIES);
+			for( int i=0; i < numEnts; i++ )
+			{
 			if( ents[i] == (idEntity *) door )
 			{
-				bMatchedDoor = true;
-				break;
+			bMatchedDoor = true;
+			break;
 			}
-		}
+			}
 
-		if( !bMatchedDoor )
-		{
-			m_LeanDoorEnt = NULL;
+			if( !bMatchedDoor )
+			{
+			m_LeanEnt = NULL;
 			goto Quit;
-		}
-**/
+			}
+			**/
 
-		if( !TestBounds.IntersectsBounds( door->GetPhysics()->GetAbsBounds() ) )
-		{
-			m_LeanDoorEnt = NULL;
-			return;
+			if ( !TestBounds.IntersectsBounds(door->GetPhysics()->GetAbsBounds()) )
+			{
+				m_LeanEnt = NULL;
+				return;
+			}
+
+			// We are leaning into a door
+			// overwrite the current player listener loc with that calculated for the door
+			player->SetListenLoc(m_LeanListenPos);
 		}
-		
-		// We are leaning into a door
-		// overwrite the current player listener loc with that calculated for the door
-		player->SetDoorListenLoc( m_LeanDoorListenPos );
+	}
+	else if ( e && e->IsType(idPeek::Type) )// are we leaning near a peek entity that isn't a keyhole?
+	{
+		if ( player )
+		{
+			if ( !m_LeanEnt.IsValid() || !IsLeaning() )
+			{
+				m_LeanEnt = NULL;
+				return;
+			}
+
+			idBounds TestBounds = m_LeanViewBounds;
+			TestBounds.ExpandSelf(cv_pm_lean_door_bounds_exp.GetFloat());
+			TestBounds.TranslateSelf(player->GetEyePosition());
+
+			if ( !TestBounds.IntersectsBounds(e->GetPhysics()->GetAbsBounds()) )
+			{
+				m_LeanEnt = NULL;
+				return;
+			}
+
+			player->SetListenLoc(m_LeanListenPos);
+		}
 	}
 }
 
-bool idPhysics_Player::IsDoorLeaning( void )
+bool idPhysics_Player::IsPeakLeaning( void )
 {
-	return (m_LeanDoorEnt.GetEntity() != NULL) && m_LeanDoorEnt.IsValid();
+	return (m_LeanEnt.GetEntity() != NULL) && m_LeanEnt.IsValid();
 }
 
 idStr idPhysics_Player::GetClimbSurfaceType() const

@@ -13736,25 +13736,6 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	}
 }
 
-int idAI::GetDoorSide(CFrobDoor* frobDoor, idVec3 pos) // grayman #4227
-{
-	int doorSide = 0;
-	// determine which side of the door we're on
-	idVec3 sm0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER);
-	idVec3 sm1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_SIDEMARKER);
-
-	if ( (sm0 - pos).LengthSqr() < (sm1 - pos).LengthSqr() )
-	{
-		doorSide = DOOR_SIDE_FRONT;
-	}
-	else
-	{
-		doorSide = DOOR_SIDE_BACK;
-	}
-
-	return doorSide;
-}
-
 // grayman #4238 - is point p obstructed by a standing humanoid AI other than yourself?
 
 bool idAI::PointObstructed(idVec3 p)

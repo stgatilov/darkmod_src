@@ -89,6 +89,7 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	aviDemoName = "";
 
 	localSound = NULL;
+	secondarySound = NULL; // grayman #4882
 
 	slowmoActive		= false;
 	slowmoSpeed			= 0;
@@ -148,6 +149,7 @@ void idSoundWorldLocal::Shutdown() {
 		}
 	}
 	localSound = NULL;
+	secondarySound = NULL; // grayman #4882
 }
 
 /*
@@ -167,6 +169,7 @@ void idSoundWorldLocal::ClearAllSoundEmitters() {
 		sound->Clear();
 	}
 	localSound = NULL;
+	secondarySound = NULL; // grayman #4882
 
 	Sys_LeaveCriticalSection();
 }
@@ -176,7 +179,8 @@ void idSoundWorldLocal::ClearAllSoundEmitters() {
 idSoundWorldLocal::AllocLocalSoundEmitter
 ===================
 */
-idSoundEmitterLocal *idSoundWorldLocal::AllocLocalSoundEmitter() {
+idSoundEmitterLocal *idSoundWorldLocal::AllocLocalSoundEmitter(idVec3 loc) // grayman #4882
+{
 	int i, index;
 	idSoundEmitterLocal *def = NULL;
 
@@ -215,6 +219,7 @@ idSoundEmitterLocal *idSoundWorldLocal::AllocLocalSoundEmitter() {
 	def->index = index;
 	def->removeStatus = REMOVE_STATUS_ALIVE;
 	def->soundWorld = this;
+	def->origin = loc; // grayman #4882
 
 	return def;
 }
@@ -226,8 +231,9 @@ idSoundWorldLocal::AllocSoundEmitter
   this is called from the main thread
 ===================
 */
-idSoundEmitter *idSoundWorldLocal::AllocSoundEmitter() {
-	idSoundEmitterLocal *emitter = AllocLocalSoundEmitter();
+idSoundEmitter *idSoundWorldLocal::AllocSoundEmitter(idVec3 loc) // grayman #4882
+{
+	idSoundEmitterLocal *emitter = AllocLocalSoundEmitter(loc); // grayman #4882
 
 	if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
 		common->Printf( "AllocSoundEmitter = %i\n",  emitter->index );
@@ -761,9 +767,9 @@ set at maxDistance
 */
 static const int MAX_PORTAL_TRACE_DEPTH = 10;
 
-bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, const idVec3& prevSoundOrigin, idSoundEmitterLocal *def , SoundChainResults *results) // grayman #3042 // grayman #4219
+bool idSoundWorldLocal::ResolveOrigin( bool primary, const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, const idVec3& prevSoundOrigin, idSoundEmitterLocal *def , SoundChainResults *results) // grayman #3042 // grayman #4219
 {
-	if ( dist >= def->distance )
+	if ( dist >= def->distance ) // compare meters to meters
 	{
 		// we can't possibly hear the sound through this chain of portals
 		return false;
@@ -773,8 +779,10 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 	// from here is greater than the sound's max distance, then there's no need to continue, because
 	// the listener won't hear the sound using this chain of portals along this path.
 
-	float distToListener = (soundOrigin - listenerQU).LengthFast(); // min distance remaining to reach listener
-	if ( ( dist + distToListener ) >= def->distance )
+	idVec3 listenerPosition = (primary ? listenerQU : (gameLocal.GetLocalPlayer()->GetSecondaryListenerLoc()*METERS_TO_DOOM)); // doom units
+	float distToListener;
+	distToListener = (soundOrigin - listenerPosition).LengthFast(); // min distance remaining to reach listener (doom units)
+	if ( ( dist + (distToListener * DOOM_TO_METERS) ) >= def->distance )
 	{
 		return false;
 	}
@@ -785,16 +793,25 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		return false;
 	}
 
-	// If we've reached the sound area the listener is in, our journey is over. Place the
+	// If this is a primary path, and if we've reached the sound area the listener is in, our journey is over. Place the
+	// results in the "results" object and return to the level above us.
+
+	// If this is a secondary path, and the Listener targets another entity, we need to continue,
+	// treating the path from the Listener to its target as a tunnel, where no volume loss occurs
+	// and no distance increase occurs.
+
+	// If this is a secondary path, and the Listener doesn't target another entity, then our journey is over. Place the
 	// results in the "results" object and return to the level above us.
 
 	// grayman #4219 - calculate the sound loss due to the direction change at this portal
 
 	float angularLoss = 0.0f;
 
-	if ( soundArea == listenerArea )
+	int listenArea = rw->PointInArea(listenerPosition);
+
+	if ( soundArea == listenArea ) // grayman #4882
 	{
-		angularLoss = GetDiffractionLoss(prevSoundOrigin, soundOrigin, listenerQU);
+		angularLoss = GetDiffractionLoss(prevSoundOrigin, soundOrigin, listenerPosition); // grayman #4882
 
 		// If this additional loss makes the sound too soft to hear at this portal,
 		// don't return spatialized data.
@@ -804,10 +821,10 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 			return false;
 		}
 		
-		results->distance = dist + distToListener; // found the listener, so no need to travel distances beyond this
+		results->distance = (dist * METERS_TO_DOOM) + distToListener; // found the listener, so no need to travel distances beyond this
 		results->spatializedOrigin = soundOrigin;
 		results->loss = loss + angularLoss; // grayman #3042 - total accumulated volume loss across portals
-		results->spatialDistance = distToListener;
+		results->spatialDistance = distToListener; // doom units
 		return true;
 	}
 
@@ -868,7 +885,7 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		re.w.GetPlane( pl );
 
 		float  scale;
-		idVec3 dir = listenerQU - soundOrigin;
+		idVec3 dir = listenerPosition - soundOrigin; // grayman #4882
 		if ( !pl.RayIntersection( soundOrigin, dir, scale ) )
 		{
 			source = re.w.GetCenter();
@@ -951,8 +968,8 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		}
 #endif
 
-		idVec3 tlen = source - soundOrigin;
-		float tlenLength = tlen.LengthFast();
+		idVec3 tlen = source - soundOrigin; // doom units
+		float tlenLength = tlen.LengthFast(); // doom units
 		SoundChainResults *res = new SoundChainResults();
 
 		// grayman #4219 - determine sound loss due to direction change at the previous portal
@@ -964,9 +981,9 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 			angularLoss = GetDiffractionLoss(prevSoundOrigin, soundOrigin, source);
 		}
 
-		idVec3 trailingSoundOrigin = soundOrigin;
+		idVec3 trailingSoundOrigin = soundOrigin; // doom units
 
-		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer + angularLoss/* + waterLoss*/, source, trailingSoundOrigin, def, res ) ) // grayman #3042
+		if ( ResolveOrigin( primary, stackDepth+1, &newStack, otherArea, dist+(tlenLength*DOOM_TO_METERS), loss + re.lossPlayer + angularLoss/* + waterLoss*/, source, trailingSoundOrigin, def, res ) ) // grayman #3042
 		{
 			chainResults.Append(res);
 		} 
@@ -1069,7 +1086,7 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		results->spatializedOrigin = aveSpatialOrigin;
 		results->distance = aveDist;
 		results->loss = aveLoss;
-		results->spatialDistance = (aveSpatialOrigin - listenerQU).LengthFast();
+		results->spatialDistance = (aveSpatialOrigin - listenerPosition).LengthFast(); // grayman #4882
 
 		return true;
 	}
@@ -1112,7 +1129,7 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	// we usually expect gameTime to be increasing by 16 or 32 msec, but when
 	// a cinematic is fast-forward skipped through, it can jump by a significant
 	// amount, while the hardware 44kHz position will not have changed accordingly,
-	// which would make sounds (like long character speaches) continue from the
+	// which would make sounds (like long character speeches) continue from the
 	// old time.  Fix this by killing all non-looping sounds
 	if ( gameTime > gameMsec + 500 ) {
 		OffsetSoundTime( - ( gameTime - gameMsec ) * 0.001f * 44100.0f );
@@ -1146,6 +1163,7 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 
 	ForegroundUpdate( current44kHzTime );
 }
+
 
 /*
 ==================
@@ -1187,8 +1205,76 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 			continue;
 		}
 
+		/* grayman #4882
+		Can we use a list of Listeners to propagate a single waveform and recognize listeners
+		as we propagate? Then we'd only have to Spatialize once.
+		Look at CsndProp::Propagate() Line 515.
+		*/
+
+		//Spatialize(soundWorld->listenerPos, soundWorld->listenerArea, soundWorld->rw);
+
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		if ( player )
+		{
+			idVec3 p; // meters
+			int area;
+			idVec3 pSpatializedOrigin;
+			float pDistance;
+			float pVolumeLoss;
+
+			bool spatializePrimary = true; // hear what's around the player (default)
+			idListener* listener = player->m_Listener.GetEntity();
+			if ( listener )
+			{
+				if ( listener->mode == 2 )
+				{
+					spatializePrimary = false; // don't hear what's around the player
+				}
+			}
+
+			if ( spatializePrimary )
+			{
+				// grayman #4882 - Spatialize from primary location (player's ear)
+				idVec3 p = player->GetPrimaryListenerLoc(); // meters
+				int area = rw->PointInArea(p * METERS_TO_DOOM);
+				def->Spatialize(true, p, area, rw); // to player's ear
+
+				// save primary data
+				pSpatializedOrigin = def->spatializedOrigin;
+				pDistance = def->distance;
+				pVolumeLoss = def->volumeLoss;
+			}
+
+			// grayman #4882 - Spatialize from secondary location (beyond door OR remote Listener)
+			p = player->GetSecondaryListenerLoc(); // meters
+			if ( p != vec3_zero )
+			{
+				area = rw->PointInArea(p * METERS_TO_DOOM);
+				def->Spatialize(false, p, area, rw); // to active Listener
+
+				// If we did a primary spatialize, determine whether the primary path or the secondary path provides the louder sound. Use the winner.
+
+				if ( spatializePrimary )
+				{
+					float primaryEffectiveVolume = def->GetEffectiveVolume(pSpatializedOrigin, pDistance, pVolumeLoss);
+					float secondaryEffectiveVolume = def->GetEffectiveVolume(def->spatializedOrigin, def->distance, def->volumeLoss);
+
+					if ( primaryEffectiveVolume > secondaryEffectiveVolume ) // use data from higher effective volume
+					{
+						// put back the primary data
+						def->spatializedOrigin = pSpatializedOrigin;
+						def->distance = pDistance;
+						def->volumeLoss = pVolumeLoss;
+					}
+				}
+			}
+		}
+		else
+		{
+			def->Spatialize(true, vec3_zero, 0, rw);
+		}
 		// update virtual origin / distance, etc
-		def->Spatialize( listenerPos, listenerArea, rw );
+//		def->Spatialize( listenerPos, listenerArea, rw ); // grayman #4882
 
 		// per-sound debug options
 		if ( idSoundSystemLocal::s_drawSounds.GetInteger() && rw ) {
@@ -1681,13 +1767,44 @@ void idSoundWorldLocal::PlayShaderDirectly( const char *shaderName, int channel 
 	}
 
 	if ( !localSound ) {
-		localSound = AllocLocalSoundEmitter();
+		// grayman #4882
+		// If you have multiple listeners, then one emitter should be created
+		// for each listener, and AllocLocalSoundEmitter() changes to
+		// AllocLocalSoundEmitter(idVec3 listenerLocation). 
+		// listenerLocation needs to be in meters, not DOOM units. The first
+		// location will be the location of the player's ear, and the second
+		// location will either be the other side of a door (when the player is
+		// leaning against that door) OR the location of a remote listening
+		// entity if one is active.
+
+		idPlayer* player = gameLocal.GetLocalPlayer(); // grayman #4882
+		if ( player )
+		{
+			localSound = AllocLocalSoundEmitter(player->firstPersonViewOrigin); // grayman #4882
+			if ( player->m_Listener.GetEntity() )
+			{
+				secondarySound = AllocLocalSoundEmitter(player->m_Listener.GetEntity()->GetPhysics()->GetOrigin()); // grayman #4882
+			}
+			else // grayman #4882
+			{
+				secondarySound = NULL;
+			}
+		}
+		else // grayman #4882
+		{
+			localSound = AllocLocalSoundEmitter(vec3_zero);
+			secondarySound = NULL;
+		}
 	}
 
 	static idRandom	rnd;
 	float	diversity = rnd.RandomFloat();
 
 	localSound->StartSound( shader, ( channel == -1 ) ? SCHANNEL_ONE : channel , diversity, SSF_GLOBAL );
+	if ( secondarySound ) // grayman #4882
+	{
+		secondarySound->StartSound(shader, (channel == -1) ? SCHANNEL_ANY : channel, diversity, SSF_GLOBAL); // grayman #4882
+	}
 
 	// in case we are at the console without a game doing updates, force an update
 	ForegroundUpdate( soundSystemLocal.GetCurrent44kHzTime() );
@@ -2112,6 +2229,10 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 		} 
 		else
 		{
+			// grayman #4882 - listenerPos in the following needs to have separate calls for
+			// the player's ear and an active Listener?
+			// What about listenerAxis?
+
 			CalcEars( numSpeakers, spatializedOriginInMeters, listenerPos, listenerAxis, ears, spatialize );
 
 			for ( int i = 0 ; i < 6 ; i++ )

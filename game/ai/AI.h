@@ -2019,12 +2019,8 @@ public:
 	// grayman #3643 - setup a suspicious door
 	void					SetUpSuspiciousDoor(CFrobDoor* door);
 
-	// grayman #3643 - get which side of a door a point is on
-	int						GetDoorSide(CFrobDoor* frobDoor, idVec3 pos); // grayman #4227
-
 	// grayman #4238 - is an AI standing at a point?
 	bool					PointObstructed(idVec3 p);
-
 
 	// for debugging circling problems
 	//void					PrintGoalData(idVec3 goal, int tag);

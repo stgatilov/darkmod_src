@@ -102,13 +102,13 @@ public:
 //	CMultiStateMover* GetNearbyElevator(idVec3 pos, float maxDist, float maxVertDist);
 	
 	// grayman - for debugging cluster data
-//	void PrintClusterInfo();
+	//void PrintClusterInfo();
 
 private:
 	void SetupClusterInfoStructures();
 	void AssignElevatorsToClusters();
 
-//	void PrintRoutes(); // grayman - debug routes
+	//void PrintRoutes(); // grayman - debug routes
 
 	void SetupClusterRouting();
 	void SetupReachableElevatorStations();

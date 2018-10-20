@@ -92,7 +92,9 @@ private:
 	void						Event_AngToRight( idAngles &ang );
 	void						Event_AngToUp( idAngles &ang );
 	void						Event_GetSine( const float angle );
+	void						Event_GetASine(const float sin); // grayman #4882
 	void						Event_GetCosine( const float angle );
+	void						Event_GetACosine(const float cos); // grayman #4882
 	void						Event_GetLog( const float x );
 	void						Event_GetPow( const float x, const float y );
 	// largest integer (-1.5 => -1, 1.5 => 2, 1.3 => 2)

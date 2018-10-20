@@ -378,15 +378,15 @@ private:
 	float					m_DeltaViewPitch;
 
 	/**
-	* Door that the player is leaning into
-	* Set to NULL if the player is not leaning into a door
+	* Peek entity that the player is leaning into
+	* Set to NULL if the player is not leaning into a peek entity
 	**/
-	idEntityPtr<CFrobDoor>	m_LeanDoorEnt;
+	idEntityPtr<idEntity>  m_LeanEnt;
 
 	/**
-	* Position to place the player listener beyond the door when door leaning
+	* Position to place the player listener when leaning
 	**/
-	idVec3					m_LeanDoorListenPos;
+	idVec3					m_LeanListenPos;
 
 	// greebo: The push force as applied to blocking objects
 	CForcePushPtr			m_PushForce;
@@ -794,6 +794,11 @@ protected:
 	**/
 	idVec3 LeanParmsToPoint( float AngTilt, float Stretch );
 
+	/**
+	* Start and maintain a peeking state until exited
+	**/
+	void ProcessPeek(idEntity *peekEntity, idEntity* door, idVec3 normal); // grayman #4882
+	
 	/*!
 	* This method updates the lean by as much of the delta amount given
 	* that does not result in a clip model trace collision.
@@ -827,13 +832,13 @@ protected:
 	* If a point is found, it sets m_DoorListenPos and returns true
 	* If door is too thick to listen through, returns false
 	**/
-	bool FindLeanDoorListenPos(const idVec3& incidencePoint, CFrobDoor* door);
+	bool FindLeanListenPos(const idVec3& incidencePoint); // grayman #4882
 
 	/**
-	* Tests whether the player is still leaning against the door.
-	* If not, clears m_LeanDoorEnt
+	* Tests whether the player is still leaning against a peek entity.
+	* If not, clears m_LeanEnt
 	**/
-	void UpdateLeanDoor();
+	void UpdateLean();
 
 public:
 
@@ -860,9 +865,9 @@ public:
 	bool IsLeaning();
 
 	/**
-	* Returns true if the player is leaning against a door
+	* Returns true if the player is leaning near a peeking entity (keyhole or crack)
 	**/
-	bool		IsDoorLeaning();
+	bool IsPeakLeaning();
 
 	/*!
 	* This is called from idPlayer to adjust the camera before

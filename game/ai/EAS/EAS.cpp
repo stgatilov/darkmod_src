@@ -889,7 +889,7 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 		// grayman - for debugging, print the nodes for this route
 		RouteType type = (*route)->routeType;
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     type = %s for route 1\r", type == ROUTE_TO_AREA ? "AREA" : "CLUSTER");
-		RouteNodeList& routeNodes = (*route)->routeNodes;
+		routeNodes = (*route)->routeNodes;
 
 		for ( RouteNodeList::const_iterator node = routeNodes.begin() ; node != routeNodes.end() ; node++ )
 		{

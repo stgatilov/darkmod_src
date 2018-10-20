@@ -411,6 +411,8 @@ public:
 	// returns the length of the started sound in msec
 	virtual int			StartSound( const idSoundShader *shader, const s_channelType channel, float diversity = 0, int shaderFlags = 0, bool allowSlow = true /* D3XP */ );
 
+	float				GetEffectiveVolume(idVec3 spatializedOrigin, float distance, float volumeLoss); // grayman #4882
+	
 	// can pass SCHANNEL_ANY
 	virtual void		ModifySound( const s_channelType channel, const soundShaderParms_t *parms );
 	virtual void		StopSound( const s_channelType channel );
@@ -430,7 +432,7 @@ public:
 
 	void				OverrideParms( const soundShaderParms_t *base, const soundShaderParms_t *over, soundShaderParms_t *out );
 	void				CheckForCompletion( int current44kHzTime );
-	void				Spatialize( idVec3 listenerPos, int listenerArea, idRenderWorld *rw );
+	void				Spatialize( bool primary, idVec3 listenerPos, int listenerArea, idRenderWorld *rw ); // grayman #4882
 
 	idSoundWorldLocal *	soundWorld;				// the world that holds this emitter
 
@@ -514,7 +516,7 @@ public:
 	virtual void			StopAllSounds( void );
 
 	// get a new emitter that can play sounds in this world
-	virtual idSoundEmitter *AllocSoundEmitter( void );
+	virtual idSoundEmitter *AllocSoundEmitter(idVec3 loc); // grayman #4882
 
 	// for load games
 	virtual idSoundEmitter *EmitterForIndex( int index );
@@ -573,14 +575,14 @@ public:
 	void					ForegroundUpdate( int currentTime );
 	void					OffsetSoundTime( int offset44kHz );
 
-	idSoundEmitterLocal *	AllocLocalSoundEmitter();
+	idSoundEmitterLocal *	AllocLocalSoundEmitter(idVec3 loc); // grayman #4882
 	void					CalcEars( int numSpeakers, idVec3 realOrigin, idVec3 listenerPos, idMat3 listenerAxis, float ears[6], float spatialize );
 	void					AddChannelContribution( idSoundEmitterLocal *sound, idSoundChannel *chan,
 												int current44kHz, int numSpeakers, float *finalMixBuffer );
 	void					MixLoop( int current44kHz, int numSpeakers, float *finalMixBuffer );
 	void					AVIUpdate( void );
 	float					GetDiffractionLoss(const idVec3 p1, const idVec3 p2, const idVec3 p3); // grayman #4219
-	bool					ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, const idVec3& prevSoundOrigin, idSoundEmitterLocal *def , SoundChainResults *results); // grayman #3042 // grayman #4219
+	bool					ResolveOrigin( bool primary, const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, const idVec3& prevSoundOrigin, idSoundEmitterLocal *def , SoundChainResults *results); // grayman #3042 // grayman #4219 // grayman #4882
 	float					FindAmplitude( idSoundEmitterLocal *sound, const int localTime, const idVec3 *listenerPosition, const s_channelType channel, bool shakesOnly );
 
 	//============================================
@@ -613,6 +615,7 @@ public:
 	idStr					aviDemoName;
 
 	idSoundEmitterLocal *	localSound;		// just for playShaderDirectly()
+	idSoundEmitterLocal *	secondarySound;		// just for playShaderDirectly() // grayman #4882
 
 	bool					slowmoActive;
 	float					slowmoSpeed;

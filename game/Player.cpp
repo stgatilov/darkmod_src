@@ -307,6 +307,10 @@ const idEventDef EV_Player_SetFrobOnlyUsedByInv("setFrobOnlyUsedByInv", EventArg
 		"Engages or disengages a mode where we only frobhilight entities that can be used by our current inventory item.\n" \
 		"This also disables general frobactions and only allows \"used by\" frob actions.");
 
+// grayman #4882
+const idEventDef EV_Player_SetPeekView("setPeekView", EventArgs('d', "OnOff", "", 'v', "origin", ""), EV_RETURNS_VOID,
+	"Toggle whether we should use a view from a peek entity as the player's view");
+
 // tels #3282:
 const idEventDef EV_Player_GetShouldered("getShouldered", EventArgs(), 'e', 
 		"Returns the currently shouldered body, otherwise $null_entity. See also getDragged(), getGrabbed() and getFrobbed().");
@@ -320,6 +324,10 @@ const idEventDef EV_Player_GetGrabbed("getGrabbed", EventArgs(), 'e',
 // grayman #3807
 const idEventDef EV_Player_SetSpyglassOverlayBackground("setSpyglassOverlayBackground", EventArgs(), EV_RETURNS_VOID, 
 		"Sets the background overlay for the spyglass, depending on aspect ratio.");
+
+// grayman #4882
+const idEventDef EV_Player_SetPeekOverlayBackground("setPeekOverlayBackground", EventArgs(), EV_RETURNS_VOID,
+	"Sets the background overlay for peeking, depending on aspect ratio.");
 
 //Obsttorte
 const idEventDef EV_SAVEGAME("saveGame",EventArgs('s', "filename",""),EV_RETURNS_VOID,"");
@@ -350,6 +358,7 @@ const idEventDef EV_Player_TestEvent3("testEvent3",	EventArgs(
 	D_EVENT_ENTITY_NULL, "ent_player", ""
 ), D_EVENT_VECTOR, "");
 
+const idEventDef EV_IsLeaning("isLeaning", EventArgs(), 'd', "Get whether the player is leaning"); // grayman #4882
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -443,16 +452,21 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_ProcessInterMissionTriggers,	idPlayer::Event_ProcessInterMissionTriggers )
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 	EVENT( EV_Player_SetSpyglassOverlayBackground, idPlayer::Event_SetSpyglassOverlayBackground ) // grayman #3807
+	EVENT( EV_Player_SetPeekOverlayBackground, idPlayer::Event_SetPeekOverlayBackground) // grayman #4882
 
 	// Obsttorte: script function to save the game
 	EVENT( EV_SAVEGAME,						idPlayer::Event_saveGame )
 	EVENT( EV_setSavePermissions,			idPlayer::Event_setSavePermissions )
+	
+	EVENT( EV_Player_SetPeekView,			idPlayer::Event_SetPeekView) // grayman #4882
 
 	//stgatilov: test functions
 	//called once during player creation, assert that scripting system works
 	EVENT( EV_Player_TestEvent1,		idPlayer::Event_TestEvent1 )
 	EVENT( EV_Player_TestEvent2,		idPlayer::Event_TestEvent2 )
 	EVENT( EV_Player_TestEvent3,		idPlayer::Event_TestEvent3 )
+
+	EVENT(EV_IsLeaning,						idPlayer::Event_IsLeaning) // grayman #4882
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -597,8 +611,9 @@ idPlayer::idPlayer() :
 
 	privateCameraView		= NULL;
 
-	m_ListenerLoc			= vec3_zero;
-	m_DoorListenLoc			= vec3_zero;
+	m_PrimaryListenerLoc	= vec3_zero; // grayman #4882
+	m_ListenLoc			= vec3_zero;
+	m_SecondaryListenerLoc	= vec3_zero; // grayman #4882
 
 	// m_immobilization.Clear();
 	m_immobilizationCache	= 0;
@@ -1011,6 +1026,10 @@ void idPlayer::Init( void ) {
 	
 	
 	savePermissions = 0;
+
+	usePeekView = 0;       // grayman #4882
+	normalViewOrigin.Zero();  // grayman #4882
+	peekEntityViewOrigin.Zero(); // grayman #4882
 }
 
 /*
@@ -2178,8 +2197,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteSkin( influenceSkin );
 
 	savefile->WriteObject( privateCameraView );
-	savefile->WriteVec3( m_ListenerLoc );
-	savefile->WriteVec3( m_DoorListenLoc );
+	savefile->WriteVec3( m_PrimaryListenerLoc ); // grayman #4882
+	savefile->WriteVec3( m_ListenLoc );
+	savefile->WriteVec3( m_SecondaryListenerLoc ); // grayman #4882
 
 	savefile->WriteDict( &m_immobilization );
 	savefile->WriteInt( m_immobilizationCache );
@@ -2281,6 +2301,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(timeEvidenceIntruders); // grayman #3424
 	savefile->WriteInt(savePermissions);
 	m_Listener.Save(savefile);				   // grayman #4620
+	savefile->WriteInt(usePeekView);		   // grayman #4882
+	savefile->WriteVec3(normalViewOrigin);	   // grayman #4882
+	savefile->WriteVec3(peekEntityViewOrigin);	   // grayman #4882
 
 	if(hud)
 	{
@@ -2506,8 +2529,9 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadSkin( influenceSkin );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( privateCameraView ) );
-	savefile->ReadVec3( m_ListenerLoc );
-	savefile->ReadVec3( m_DoorListenLoc );
+	savefile->ReadVec3( m_PrimaryListenerLoc ); // grayman #4882
+	savefile->ReadVec3( m_ListenLoc );
+	savefile->ReadVec3( m_SecondaryListenerLoc ); // grayman #4882
 
 	savefile->ReadDict( &m_immobilization );
 	savefile->ReadInt( m_immobilizationCache );
@@ -2632,7 +2656,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(timeEvidenceIntruders); // grayman #3424
 	savefile->ReadInt(savePermissions);
 	m_Listener.Restore(savefile);			  // grayman #4620
-
+	savefile->ReadInt(usePeekView);			  // grayman #4882
+	savefile->ReadVec3(normalViewOrigin);	  // grayman #4882
+	savefile->ReadVec3(peekEntityViewOrigin); // grayman #4882
+	
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
 
@@ -2643,8 +2670,13 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		gameLocal.Warning( "Unable to relink HUD to overlay system." );
 
 	// grayman #3807 - set spyglass overlay per aspect ratio
-	gameLocal.m_spyglassOverlay = gameLocal.DetermineAspectRatio();
+	int ar = gameLocal.DetermineAspectRatio();
+	gameLocal.m_spyglassOverlay = ar;
 	Event_SetSpyglassOverlayBackground();
+
+	// grayman #4882 - set peek overlay per aspect ratio
+	gameLocal.m_peekOverlay = ar;
+	Event_SetPeekOverlayBackground();
 }
 
 /*
@@ -6310,17 +6342,23 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 		case IMPULSE_44:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
+			{
 				physicsObj.ToggleLean(90.0);
+			}
 		break;
 
 		case IMPULSE_45:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
+			{
 				physicsObj.ToggleLean(180.0);
+			}
 		break;
 
 		case IMPULSE_46:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
+			{
 				physicsObj.ToggleLean(0.0);
+			}
 		break;
 
 		case IMPULSE_51:		// Inventory Use item
@@ -8741,6 +8779,12 @@ idPlayer::GetViewPos
 void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 	idAngles angles;
 
+	if ( usePeekView ) // grayman #4882
+	{
+		origin = peekEntityViewOrigin;
+		return;
+	}
+
 	// if dead, fix the angle and don't add any kick
 	if ( health <= 0 ) {
 		angles.yaw = viewAngles.yaw;
@@ -8765,11 +8809,11 @@ void idPlayer::GetViewPos( idVec3 &origin, idMat3 &axis ) const {
 idPlayer::CalculateFirstPersonView
 ===============
 */
-void idPlayer::CalculateFirstPersonView( void )
+void idPlayer::CalculateFirstPersonView(void)
 {
 	idPhysics* physics = GetPhysics();
 
-	if ( ( pm_modelView.GetInteger() == 1 ) || ( ( pm_modelView.GetInteger() == 2 ) && ( health <= 0 ) ) ) 
+	if ( (pm_modelView.GetInteger() == 1) || ((pm_modelView.GetInteger() == 2) && (health <= 0)) )
 	{
 		//	Displays the view from the point of view of the "camera" joint in the player model
 
@@ -8778,24 +8822,25 @@ void idPlayer::CalculateFirstPersonView( void )
 		idAngles ang = viewBobAngles + playerView.AngleOffset();
 
 		/*!
-		* Lean mod: 
+		* Lean mod:
 		* @author: sophisticatedZombie
 		*/
-		if (physics->IsType(idPhysics_Player::Type))
+		if ( physics->IsType(idPhysics_Player::Type) )
 		{
 			ang += static_cast<idPhysics_Player*>(physics)->GetViewLeanAngles();
 		}
-		
-		ang.yaw += viewAxis[ 0 ].ToYaw();
-		
-		jointHandle_t joint = animator.GetJointHandle( "camera" );
-		animator.GetJointTransform( joint, gameLocal.time, origin, axis );
-		firstPersonViewOrigin = ( origin + modelOffset ) * ( viewAxis * physicsObj.GetGravityAxis() ) + physicsObj.GetOrigin() + viewBob + physicsObj.GetViewLeanTranslation();
+
+		ang.yaw += viewAxis[0].ToYaw();
+
+		jointHandle_t joint = animator.GetJointHandle("camera");
+		animator.GetJointTransform(joint, gameLocal.time, origin, axis);
+		firstPersonViewOrigin = (origin + modelOffset) * (viewAxis * physicsObj.GetGravityAxis()) + physicsObj.GetOrigin() + viewBob + physicsObj.GetViewLeanTranslation();
 		firstPersonViewAxis = axis * ang.ToMat3() * physicsObj.GetGravityAxis();
-	} else 
+	}
+	else
 	{
 		// offset for local bobbing and kicks
-		GetViewPos( firstPersonViewOrigin, firstPersonViewAxis );
+		GetViewPos(firstPersonViewOrigin, firstPersonViewAxis);
 #if 0
 		// shakefrom sound stuff only happens in first person
 		firstPersonViewAxis = firstPersonViewAxis * playerView.ShakeAxis();
@@ -8805,20 +8850,44 @@ void idPlayer::CalculateFirstPersonView( void )
 	// Set the listener location (on the other side of a door if door leaning).
 	// grayman #4620 - or at the location of an idListener entity if one is defined.
 
-	if (physics->IsType(idPhysics_Player::Type) && 
-		static_cast<idPhysics_Player*>(physics)->IsDoorLeaning() && 
-		!gameLocal.inCinematic)
+	// grayman #4882 - create primaryListenerLoc and secondaryListenerLoc.
+	// The former gets firstPersonViewOrigin and the latter gets either the door listening
+	// spot or an active Listener entity.
+
+#if 1
+	if ( physics->IsType(idPhysics_Player::Type) &&
+		static_cast<idPhysics_Player*>(physics)->IsPeakLeaning() &&
+		!gameLocal.inCinematic )
 	{
-		SetListenerLoc( m_DoorListenLoc );
+		SetSecondaryListenerLoc(m_ListenLoc);
 	}
-	else if (m_Listener.GetEntity()) // grayman #4620
+	else if ( m_Listener.GetEntity() ) // grayman #4620
 	{
-		SetListenerLoc( m_Listener.GetEntity()->GetPhysics()->GetOrigin() );
+		SetSecondaryListenerLoc(m_Listener.GetEntity()->GetPhysics()->GetOrigin());
 	}
 	else
 	{
-		SetListenerLoc( firstPersonViewOrigin );
+		SetSecondaryListenerLoc(vec3_zero);
 	}
+
+	SetPrimaryListenerLoc( firstPersonViewOrigin );
+#else
+	// previous method (after #4620 fix)
+	if ( physics->IsType(idPhysics_Player::Type) &&
+		static_cast<idPhysics_Player*>(physics)->IsDoorLeaning() &&
+		!gameLocal.inCinematic )
+	{
+		SetListenerLoc(m_SecondaryListenerLoc);
+	}
+	else if ( m_Listener.GetEntity() ) // grayman #4620
+	{
+		SetListenerLoc(m_Listener.GetEntity()->GetPhysics()->GetOrigin());
+	}
+	else
+	{
+		SetListenerLoc(firstPersonViewOrigin);
+	}
+#endif
 }
 
 /*
@@ -11543,6 +11612,37 @@ float idPlayer::RangedThreatTo(idEntity* target) {
 	return weaponEnt->IsRanged();
 }
 
+#if 1 // grayman #4882
+void idPlayer::SetPrimaryListenerLoc(idVec3 loc)
+{
+	m_PrimaryListenerLoc = loc * DOOM_TO_METERS; // grayman #4882
+}
+
+idVec3 idPlayer::GetPrimaryListenerLoc(void)
+{
+	return m_PrimaryListenerLoc; // grayman #4882
+}
+
+void idPlayer::SetListenLoc(idVec3 loc)
+{
+	m_ListenLoc = loc; // doom units
+}
+
+idVec3 idPlayer::GetListenLoc(void)
+{
+	return m_ListenLoc;
+}
+
+void idPlayer::SetSecondaryListenerLoc(idVec3 loc)
+{
+	m_SecondaryListenerLoc = loc * DOOM_TO_METERS; // grayman #4882
+}
+
+idVec3 idPlayer::GetSecondaryListenerLoc(void)
+{
+	return m_SecondaryListenerLoc; // grayman #4882
+}
+#else
 void idPlayer::SetListenerLoc( idVec3 loc )
 {
 	m_ListenerLoc = loc;
@@ -11552,16 +11652,7 @@ idVec3 idPlayer::GetListenerLoc( void )
 {
 	return m_ListenerLoc;
 }
-
-void idPlayer::SetDoorListenLoc( idVec3 loc )
-{
-	m_DoorListenLoc = loc;
-}
-
-idVec3 idPlayer::GetDoorListenLoc( void )
-{
-	return m_DoorListenLoc;
-}
+#endif
 
 CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 {
@@ -12137,6 +12228,29 @@ void idPlayer::Event_SetSpyglassOverlayBackground()
 	}
 }
 
+// grayman #4882 - called immediately after creating the peek overlay gui
+void idPlayer::Event_SetPeekOverlayBackground()
+{
+	switch ( gameLocal.GetPeekOverlay() )
+	{
+	default:
+	case 0:
+		m_overlays.broadcastNamedEvent("initBackground_4x3");
+		break;
+	case 1:
+	case 4:
+		m_overlays.broadcastNamedEvent("initBackground_16x9");
+		break;
+	case 2:
+		m_overlays.broadcastNamedEvent("initBackground_16x10");
+		break;
+	case 3:
+		m_overlays.broadcastNamedEvent("initBackground_5x4");
+		break;
+	}
+}
+
+
 void idPlayer::Event_ChangeWeaponProjectile(const char* weaponName, const char* projectileDefName)
 {
 	// Just wrap to the actual method
@@ -12254,10 +12368,44 @@ void idPlayer::Event_setSavePermissions(int sp)
 {
 	savePermissions=sp;
 }
+
+void idPlayer::Event_SetPeekView(int state,idVec3 origin)
+{
+	// state can be one of these:
+	// 1 = turn on peeking view
+	// 2 = maintain peeking view
+	// 3 = turn off peeking view
+
+	if ( state == 1) // switch to peeking view
+	{
+		usePeekView = 1;
+		normalViewOrigin = GetRenderView()->vieworg; // eye origin prior to peeking switch
+		GetRenderView()->vieworg = origin;
+		peekEntityViewOrigin = origin;
+	}
+	else if ( state == 2 ) // maintain peeking view
+	{
+		GetRenderView()->vieworg = origin;
+		peekEntityViewOrigin = origin;
+	}
+	else if (state == 3) // exit peeking view
+	{
+		usePeekView = 0;
+		GetRenderView()->vieworg = normalViewOrigin; // restore to eye origin prior to peeking switch
+		normalViewOrigin.Zero();
+		peekEntityViewOrigin.Zero();
+	}
+}
+
 bool idPlayer::CanGreet() // grayman #3338
 {
 	// Player can always respond to a greeting, but he never says anything
 	return true;
+}
+
+void idPlayer::Event_IsLeaning() // grayman #4882
+{
+	idThread::ReturnInt(physicsObj.IsLeaning());
 }
 
 //stgatilov: script-cpp interop testing code

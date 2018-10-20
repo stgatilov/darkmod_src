@@ -83,7 +83,9 @@ const idEventDef EV_Thread_AngToForward( "angToForward", EventArgs('v', "angles"
 const idEventDef EV_Thread_AngToRight( "angToRight", EventArgs('v', "angles", ""), 'v', "Returns a right vector for the given Euler angles.");
 const idEventDef EV_Thread_AngToUp( "angToUp", EventArgs('v', "angles", ""), 'v', "Returns an up vector for the given Euler angles.");
 const idEventDef EV_Thread_Sine( "sin", EventArgs('f', "degrees", ""), 'f', "Returns the sine of the given angle in degrees.");
+const idEventDef EV_Thread_ASine("asin", EventArgs('f', "sine", ""), 'f', "Returns the angle in degrees with the given sine."); // grayman #4882
 const idEventDef EV_Thread_Cosine( "cos", EventArgs('f', "degrees", ""), 'f', "Returns the cosine of the given angle in degrees.");
+const idEventDef EV_Thread_ACosine("acos", EventArgs('f', "cosine", ""), 'f', "Returns the angle in degrees with the given cosine."); // grayman #4882
 const idEventDef EV_Thread_Log( "log", EventArgs('f', "x", ""), 'f', "Returns the log of the given argument.");
 const idEventDef EV_Thread_Pow( "pow", EventArgs('f', "x", "", 'f', "y", ""), 'f', "Returns the power of x to y.");
 const idEventDef EV_Thread_Ceil( "ceil", EventArgs('f', "x", ""), 'f', "Returns the smallest integer that is greater than or equal to the given value.");
@@ -313,7 +315,9 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_AngToRight,			idThread::Event_AngToRight )
 	EVENT( EV_Thread_AngToUp,				idThread::Event_AngToUp )
 	EVENT( EV_Thread_Sine,					idThread::Event_GetSine )
+	EVENT( EV_Thread_ASine,					idThread::Event_GetASine ) // grayman #4882
 	EVENT( EV_Thread_Cosine,				idThread::Event_GetCosine )
+	EVENT( EV_Thread_ACosine,				idThread::Event_GetACosine ) // grayman #4882
 	EVENT( EV_Thread_Log,				idThread::Event_GetLog )
 	EVENT( EV_Thread_Pow,				idThread::Event_GetPow )
 	EVENT( EV_Thread_Floor,				idThread::Event_GetFloor )
@@ -1513,11 +1517,33 @@ void idThread::Event_GetSine( const float angle ) {
 
 /*
 ================
+idThread::Event_GetASine
+================
+*/
+void idThread::Event_GetASine(const float s) // grayman #4882
+{
+	float angle = idMath::ASin(s);
+	ReturnFloat(RAD2DEG(angle));
+}
+
+/*
+================
 idThread::Event_GetCosine
 ================
 */
 void idThread::Event_GetCosine( const float angle ) {
 	ReturnFloat( idMath::Cos( DEG2RAD( angle ) ) );
+}
+
+/*
+================
+idThread::Event_GetACosine
+================
+*/
+void idThread::Event_GetACosine(const float s) // grayman #4882
+{
+	float angle = idMath::ACos(s);
+	ReturnFloat(RAD2DEG(angle));
 }
 
 /*

@@ -437,7 +437,10 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 
 	// place the sound origin for the player
 	// TODO: Support overriding the location area so that reverb settings can be applied for listening thru doors?
-	gameSoundWorld->PlaceListener( player->GetListenerLoc(), view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" );
+	idVec3 p = player->GetPrimaryListenerLoc(); // grayman #4882
+	p *= METERS_TO_DOOM; // grayman #4882
+	gameSoundWorld->PlaceListener( p, view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString( "location" ) : "Undefined" ); // grayman #4882
+//	gameSoundWorld->PlaceListener(player->GetListenerLoc(), view->viewaxis, player->entityNumber + 1, gameLocal.time, hud ? hud->State().GetString("location") : "Undefined");
 
 	// hack the shake in at the very last moment, so it can't cause any consistency problems
 	renderView_t	hackedView = *view;
@@ -625,6 +628,153 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 	}
 }
 
+// grayman #4882 - PeekView temporarily sets the player view on the far side of an opening
+
+/*
+==================
+idPlayerView::PeekView
+==================
+*/
+void idPlayerView::PeekView(const renderView_t *view)
+{
+	// normal rendering
+	if ( !view ) {
+		return;
+	}
+
+	renderView_t hackedView = *view;
+	hackedView.viewaxis = hackedView.viewaxis * ShakeAxis();
+
+	// grayman #3108 - contributed by neuro & 7318
+	idVec3 diff, currentEyePos, PSOrigin, Zero;
+
+	Zero.Zero();
+
+	if ( (gameLocal.CheckGlobalPortalSky()) || (gameLocal.GetCurrentPortalSkyType() == PORTALSKY_LOCAL) ) {
+		// in a case of a moving portalSky
+
+		currentEyePos = hackedView.vieworg;
+
+		if ( gameLocal.playerOldEyePos == Zero ) {
+			// Initialize playerOldEyePos. This will only happen in one tick.
+			gameLocal.playerOldEyePos = currentEyePos;
+		}
+
+		diff = (currentEyePos - gameLocal.playerOldEyePos) / gameLocal.portalSkyScale;
+		gameLocal.portalSkyGlobalOrigin += diff; // This is for the global portalSky.
+												 // It should keep going even when not active.
+	}
+
+	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+
+		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
+			PSOrigin = gameLocal.portalSkyOrigin;
+		}
+
+		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_GLOBAL ) {
+			PSOrigin = gameLocal.portalSkyGlobalOrigin;
+		}
+
+		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_LOCAL ) {
+			gameLocal.portalSkyOrigin += diff;
+			PSOrigin = gameLocal.portalSkyOrigin;
+		}
+
+		gameLocal.playerOldEyePos = currentEyePos;
+		// end neuro & 7318
+
+		renderView_t portalView = hackedView;
+
+		portalView.vieworg = PSOrigin;	// grayman #3108 - contributed by neuro & 7318
+		// portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
+		portalView.viewaxis = portalView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
+
+		// setup global fixup projection vars
+		if ( 1 ) {
+			int vidWidth, vidHeight;
+			idVec2 shiftScale;
+
+			renderSystem->GetGLSettings(vidWidth, vidHeight);
+
+			float pot;
+			int	 w = vidWidth;
+			pot = w;// MakePowerOfTwo( w );
+			shiftScale.x = (float)w / pot;
+
+			int	 h = vidHeight;
+			pot = h;// MakePowerOfTwo( h );
+			shiftScale.y = (float)h / pot;
+
+			hackedView.shaderParms[6] = shiftScale.x; // grayman #3108 - neuro used [4], we use [6]
+			hackedView.shaderParms[7] = shiftScale.y; // grayman #3108 - neuro used [5], we use [7]
+		}
+
+		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
+	}
+	else // grayman #3108 - contributed by 7318 
+	{
+		// So if g_enablePortalSky is disabled, GlobalPortalSkies doesn't break.
+		// When g_enablePortalSky gets re-enabled, GlobalPortalSkies keeps working. 
+		gameLocal.playerOldEyePos = currentEyePos;
+	}
+
+	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
+	if ( g_enablePortalSky.GetInteger() != -1 ) // duzenko #4414: debug tool to present the skybox stage result
+		gameRenderWorld->RenderScene(hackedView);
+	// process the frame
+
+	if ( player->spectating ) {
+		return;
+	}
+
+	// draw screen blobs
+	if ( !pm_thirdPerson.GetBool() && !g_skipViewEffects.GetBool() ) {
+		for ( int i = 0; i < MAX_SCREEN_BLOBS; i++ ) {
+			screenBlob_t	*blob = &screenBlobs[i];
+			if ( blob->finishTime <= gameLocal.time ) {
+				continue;
+			}
+
+			blob->y += blob->driftAmount;
+
+			float	fade = (float)(blob->finishTime - gameLocal.time) / (blob->finishTime - blob->startFadeTime);
+			if ( fade > 1.0f ) {
+				fade = 1.0f;
+			}
+			if ( fade ) {
+				renderSystem->SetColor4(1, 1, 1, fade);
+				renderSystem->DrawStretchPic(blob->x, blob->y, blob->w, blob->h, blob->s1, blob->t1, blob->s2, blob->t2, blob->material);
+			}
+		}
+	}
+
+	// Rotoscope (Cartoon-like) rendering - (Rotoscope Shader v1.0 by Hellborg) - added by Dram
+	if ( g_rotoscope.GetBool() ) {
+		const idMaterial *mtr = declManager->FindMaterial("textures/postprocess/rotoedge", false);
+		if ( !mtr ) {
+			common->Printf("Rotoscope material not found.\n");
+		}
+		else {
+			renderSystem->CaptureRenderToImage(*globalImages->currentRenderImage);
+			renderSystem->SetColor4(1.0f, 1.0f, 1.0f, 1.0f);
+			renderSystem->DrawStretchPic(0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr);
+		}
+	}
+
+	// test a single material drawn over everything
+	if ( g_testPostProcess.GetString()[0] ) {
+		const idMaterial *mtr = declManager->FindMaterial(g_testPostProcess.GetString(), false);
+		if ( !mtr ) {
+			common->Printf("Material not found.\n");
+			g_testPostProcess.SetString("");
+		}
+		else {
+			renderSystem->SetColor4(1.0f, 1.0f, 1.0f, 1.0f);
+			renderSystem->DrawStretchPic(0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr);
+		}
+	}
+}
+
 /*
 ===================
 idPlayerView::DoubleVision
@@ -800,7 +950,14 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 
 	if(g_skipViewEffects.GetBool())
 	{
-		SingleView( hud, view );
+		if ( player->usePeekView )
+		{
+			PeekView(view);
+		}
+		else
+		{
+			SingleView(hud, view);
+		}
 	} else {
 
 		/*if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
@@ -823,7 +980,14 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 			// 			}
 			// 			else
 			{
-				SingleView( hud, view, false );
+				if ( player->usePeekView )
+				{
+					PeekView(view);
+				}
+				else
+				{
+					SingleView(hud, view);
+				}
 			}
 		}
 		//}

@@ -191,7 +191,7 @@ public:
 	virtual void			StopAllSounds( void ) = 0;
 
 	// get a new emitter that can play sounds in this world
-	virtual idSoundEmitter *AllocSoundEmitter( void ) = 0;
+	virtual idSoundEmitter *AllocSoundEmitter(idVec3 loc) = 0; // grayman #4882
 
 	// for load games, index 0 will return NULL
 	virtual idSoundEmitter *EmitterForIndex( int index ) = 0;

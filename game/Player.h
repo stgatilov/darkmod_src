@@ -66,6 +66,9 @@ extern const idEventDef EV_Player_GetGrabbed;
 extern const idEventDef EV_SAVEGAME;
 extern const idEventDef EV_setSavePermissions;
 
+// grayman #4882
+extern const idEventDef EV_Player_SetPeekView;
+
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
 const int	LAND_RETURN_TIME = 300;
@@ -491,6 +494,10 @@ public:
 	**/
 	idEntityPtr<idListener>		m_Listener; // grayman #4620
 
+	int						usePeekView;    // grayman #4882
+	idVec3					normalViewOrigin;  // grayman #4882
+	idVec3					peekEntityViewOrigin; // grayman #4882
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -579,15 +586,21 @@ public:
 	/**
 	* Get or set the listener location for the player, in world coordinates
 	**/
-	idVec3					GetListenerLoc( void );
-	void					SetListenerLoc( idVec3 loc );
+#if 1 // grayman #4882
+	void					SetPrimaryListenerLoc(idVec3 loc);
+	idVec3					GetPrimaryListenerLoc( void );
+	void					SetSecondaryListenerLoc(idVec3 loc);
+	idVec3					GetSecondaryListenerLoc(void);
+#else
+	void					SetListenerLoc(idVec3 loc);
+	idVec3					GetListenerLoc(void);
+#endif
 
 	/**
 	* Set/Get the door listening location
 	**/
-	void					SetDoorListenLoc( idVec3 loc );
-	idVec3					GetDoorListenLoc( void );
-
+	void					SetListenLoc( idVec3 loc );
+	idVec3					GetListenLoc( void );
 
 	void					CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity );
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
@@ -1091,13 +1104,18 @@ private:
 	/**
 	* Location of the player's ears for sound rendering
 	**/
-	idVec3					m_ListenerLoc;
+	idVec3					m_PrimaryListenerLoc; // grayman #4882
 
 	/**
 	* Location of the player's ear point when the player is leaning against
 	* a door (i.e., a point on the other side of the door)
 	**/
-	idVec3					m_DoorListenLoc;
+	idVec3					m_ListenLoc;
+
+	/**
+	* Location of an activated Listener entity. (grayman #4882)
+	**/
+	idVec3					m_SecondaryListenerLoc;
 
 	/**
 	* m_immobilization keeps track of sources of immobilization.
@@ -1411,6 +1429,8 @@ private:
 
 	void					Event_SetSpyglassOverlayBackground(); // grayman #3807
 
+	void					Event_SetPeekOverlayBackground(); // grayman #4882
+
 	// Changes the projectile def name of the given weapon inventory item
 	void					Event_ChangeWeaponProjectile(const char* weaponName, const char* projectileDefName);
 	void					Event_ResetWeaponProjectile(const char* weaponName);
@@ -1443,6 +1463,10 @@ private:
 
 
 	void					Event_setSavePermissions(int sp);
+
+	void					Event_SetPeekView(int state, idVec3 peekViewOrigin); // grayman #4882
+
+	void					Event_IsLeaning(); // grayman #4882
 
 	//stgatilov: testing script-cpp interop
 	void Event_TestEvent1(float float_pi, int int_beef, float float_exp, const char *string_tdm, float float_exp10, int int_food);

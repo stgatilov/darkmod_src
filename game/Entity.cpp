@@ -4558,7 +4558,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 
 	// if we don't have a soundEmitter allocated yet, get one now
 	if ( !refSound.referenceSound ) {
-		refSound.referenceSound = gameSoundWorld->AllocSoundEmitter();
+		refSound.referenceSound = gameSoundWorld->AllocSoundEmitter(GetPhysics()->GetOrigin()); // grayman #4882
 	}
 			
 	UpdateSound(); // grayman #4337

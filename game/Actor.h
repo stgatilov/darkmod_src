@@ -528,6 +528,9 @@ public:
 	void MeleeAttackParried( idEntity *owner, idEntity *weapon = NULL );
 	void MeleeParrySuccess( idEntity *other );
 
+	// grayman #4882 - get which side of a door a point is on
+	int  GetDoorSide(CFrobDoor* frobDoor, idVec3 pos);
+
 	/****************************************************************************************
 	=====================
 	idActor::CrashLand

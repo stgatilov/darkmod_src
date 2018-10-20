@@ -73,6 +73,7 @@ public:
 
 private:
 	void				SingleView( idUserInterface *hud, const renderView_t *view, bool drawHUD = true);
+	void				PeekView(const renderView_t *view); // grayman #4882
 	void				DoubleVision( idUserInterface *hud, const renderView_t *view, int offset );
 	void				BerserkVision( idUserInterface *hud, const renderView_t *view );
 	void				InfluenceVision( idUserInterface *hud, const renderView_t *view );

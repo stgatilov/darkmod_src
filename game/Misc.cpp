@@ -3933,3 +3933,38 @@ void tdmVine::Event_ScaleVine(float factor)
 	GetPhysics()->SetAxis( axis );
 	UpdateVisuals();
 }
+
+/*
+===============================================================================
+
+idPeek - a peek entity you can look through
+
+===============================================================================
+*/
+CLASS_DECLARATION(idStaticEntity, idPeek)
+END_CLASS
+
+idPeek::idPeek(void) {
+}
+
+/*
+===============
+idPeek::~idPeek
+===============
+*/
+
+idPeek::~idPeek(void) {
+}
+
+/*
+===============
+idPeek::Spawn
+===============
+*/
+
+void idPeek::Spawn(void)
+{
+}
+
+
+
