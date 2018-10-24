@@ -81,6 +81,9 @@ public:
 	virtual int			ButtonState( int key ) { return 0; }
 	virtual int			KeyState( int key ) { return 0; }
 	virtual bool            WindowAvailable(void) { return true; } // Agent Jones #3766
+	virtual int					GetConsoleMarker(void) { return 0; }
+	virtual idStr				GetConsoleContents(int begin, int end) { return ""; }
+
 };
 
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM, "developer mode" );
