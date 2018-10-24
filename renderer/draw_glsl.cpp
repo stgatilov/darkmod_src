@@ -693,7 +693,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 	char *log;
 	/* get the shader info log */
 	qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
-	log = new char[length];
+	log = new char[length + 1];
 	log[0] = 0;
 	qglGetShaderInfoLog( shader, length, NULL, log );
 	//TODO: print compile log always (bad idea now due to tons of warnings)
