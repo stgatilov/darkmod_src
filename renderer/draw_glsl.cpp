@@ -87,7 +87,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	const uint MAX_LIGHTS = 16;
 	GLint lightCount, lightOrigin, lightColor, shadowRect;
-	GLint minLevel, gamma;
+	GLint minLevel, gamma, softShadowsRadius;
 	virtual	void AfterLoad();
 	virtual void Draw( const drawInteraction_t *din );
 };
@@ -1075,6 +1075,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
 	minLevel = qglGetUniformLocation( program, "u_minLevel" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
+	softShadowsRadius = qglGetUniformLocation( program, "u_softShadowsRadius" );
 	auto diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
 	qglUseProgram( program );
@@ -1087,8 +1088,10 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<idVec3> lightOrigins, lightColors;
 	std::vector<idMat4> projectionFalloff;
 	std::vector<idVec4> shadowRect;
+	std::vector<float> softShadowRads;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
+		backEnd.vLight = vLight;
 		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->singleLightOnly )
 			continue;
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions )
@@ -1135,11 +1138,12 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			if( vLight->shadowMapIndex <= 0 )
 				shadowRect.push_back( idVec4( 0, 0, -1, 0 ) );
 			auto &page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
-			idVec4 v( page.x, page.y, 0, page.width );
-			v /= 6 * r_shadowMapSize.GetFloat();
-			v.z = vLight->shadowMapIndex - 1;
+			idVec4 v( page.x, page.y, 0, page.width - 1 );
+			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
+			v.w /= 6 * r_shadowMapSize.GetFloat();
 			shadowRect.push_back( v );
 		}
+		softShadowRads.push_back( GetEffectiveLightRadius() );
 	}
 
 	basicInteractionProgram_t::UpdateUniforms( din );
@@ -1154,6 +1158,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
 		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
 		qglUniform4fv( this->shadowRect, thisCount, shadowRect[i].ToFloatPtr() );
+		qglUniform1fv( softShadowsRadius, thisCount, &softShadowRads[i] );
 
 		RB_DrawElementsWithCounters( surf );
 

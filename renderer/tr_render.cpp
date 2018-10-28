@@ -515,7 +515,7 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 RB_SubmittInteraction
 =================
 */
-static void RB_SubmittInteraction( drawInteraction_t *din ) {
+static void RB_SubmittInteraction( drawInteraction_t *din, bool multi = false ) {
 	if ( !din->bumpImage ) {
 		return;
 	}
@@ -534,7 +534,7 @@ static void RB_SubmittInteraction( drawInteraction_t *din ) {
 	}
 
 	if ( r_useGLSL.GetBool() ) {
-		if ( r_testARBProgram.GetInteger() == 2 && !backEnd.vLight ) {
+		if ( multi ) {
 			extern void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din );
 			RB_GLSL_DrawInteraction_MultiLight( din );
 		} else
@@ -885,7 +885,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 					break;
 				}
 				// draw any previous interaction
-				RB_SubmittInteraction( &inter );
+				RB_SubmittInteraction( &inter, true );
 				inter.diffuseImage = NULL;
 				inter.specularImage = NULL;
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
@@ -896,7 +896,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 				if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
 					break;
 				} else if ( inter.diffuseImage ) {
-					RB_SubmittInteraction( &inter );
+					RB_SubmittInteraction( &inter, true );
 				}
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
 					inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
@@ -909,7 +909,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 					break;
 				}
 				else if ( inter.specularImage ) {
-					RB_SubmittInteraction( &inter );
+					RB_SubmittInteraction( &inter, true );
 				}
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
 					inter.specularMatrix, inter.specularColor.ToFloatPtr() );
@@ -920,7 +920,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 		}
 
 		// draw the final interaction
-		RB_SubmittInteraction( &inter );
+		RB_SubmittInteraction( &inter, true );
 
 	// unhack depth range if needed
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
