@@ -31,7 +31,6 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 #define	NUM_CON_TIMES			4 // used for printing when the console is up (con_noPrint 0)
 #define CONSOLE_FIRSTREPEAT		200 // delay before initial key repeat
 #define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
-#define	COMMAND_HISTORY			64 // number of console commands kept in history buffer
 
 // the console will query the cvar and command systems for
 // command completion information
@@ -102,11 +101,9 @@ private:
 
 	idVec4				color;
 
-	idEditField			historyEditLines[COMMAND_HISTORY];
+	idStrList			historyStrings;
 
-	int					nextHistoryLine;// the last line in the history buffer, not masked
-	int					historyLine;	// the line being displayed from history buffer
-										// will be <= nextHistoryLine
+	int					historyLine;	// the line being displayed from history list
 
 	idEditField			consoleField;
 
@@ -382,11 +379,6 @@ void idConsoleLocal::Init( void ) {
 	consoleField.Clear();
 	consoleField.SetWidthInChars( LINE_WIDTH );
 
-	for ( int i = 0 ; i < COMMAND_HISTORY ; i++ ) {
-		historyEditLines[i].Clear();
-		historyEditLines[i].SetWidthInChars( LINE_WIDTH );
-	}
-
 	cmdSystem->AddCommand( "clear", Con_Clear_f, CMD_FL_SYSTEM, "clears the console" );
 	cmdSystem->AddCommand( "conDump", Con_Dump_f, CMD_FL_SYSTEM, "dumps the console text to a file" );
 	cmdSystem->AddCommand( "printGlProfiling", ProfilingPrintTimings_f, CMD_FL_SYSTEM, "Print current GL profile timings to the console" );
@@ -542,14 +534,12 @@ void idConsoleLocal::Dump( const char *fileName, const bool unwrap ) {
 void idConsoleLocal::SaveHistory()
 {
     idFile *f = fileSystem->OpenFileWrite("consolehistory.dat");
-    for (int i = 0; i < COMMAND_HISTORY; ++i) {
-        // make sure the history is in the right order
-        int line = (nextHistoryLine + i) % COMMAND_HISTORY;
-        const char *s = historyEditLines[line].GetBuffer();
-        if (s && s[0]) {
-            f->WriteString(s);
-        }
-    }
+	auto startIndex = idMath::Imax( 0, historyStrings.Num() - 100 );
+	for ( int i = startIndex; i < historyStrings.Num(); i++ ) {
+		const char *s = historyStrings[i].c_str();
+		if ( s && s[0] )
+			f->WriteString( s );
+	}
     fileSystem->CloseFile(f);
 }
 
@@ -559,17 +549,15 @@ void idConsoleLocal::LoadHistory()
     if (f == NULL) // file doesn't exist
         return;
 
-    historyLine = 0;
     idStr tmp;
-    for (int i = 0; i < COMMAND_HISTORY; ++i) {
-        if (f->Tell() >= f->Length()) {
-            break; // EOF is reached
-        }
-        f->ReadString(tmp);
-        historyEditLines[i].SetBuffer(tmp.c_str());
-        ++historyLine;
-    }
-    nextHistoryLine = historyLine;
+	while ( 1 ) {
+		if ( f->Tell() >= f->Length() ) {
+			break; // EOF is reached
+		}
+		f->ReadString( tmp );
+		historyStrings.AddUnique( tmp );
+	}
+	historyLine = historyStrings.Num();
     fileSystem->CloseFile(f);
 }
 
@@ -653,17 +641,10 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, consoleField.GetBuffer() ); // valid command
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "\n" );
 
-        // copy line to history buffer, if it isn't the same as the last command
-        if (idStr::Cmp(consoleField.GetBuffer(),
-            historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].GetBuffer()) != 0)
-        {
-            historyEditLines[nextHistoryLine % COMMAND_HISTORY] = consoleField;
-            nextHistoryLine++;
-        }
-
-        historyLine = nextHistoryLine;
-        // clear the next line from old garbage, else the oldest history entry turns up when pressing DOWN
-        historyEditLines[nextHistoryLine % COMMAND_HISTORY].Clear();
+		// add line to history list or swap if exists
+		int newIndex = historyStrings.AddUnique( consoleField.GetBuffer() );
+		historyLine = historyStrings.Num();
+		idSwap( historyStrings[historyLine - 1], historyStrings[newIndex] );
 
 		consoleField.Clear();
 		consoleField.SetWidthInChars( LINE_WIDTH );
@@ -681,19 +662,18 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 
 	// command history (ctrl-p ctrl-n for unix style, scroll up/down command history)
 	if ( key == K_UPARROW || ( key == 'p' && idKeyInput::IsDown( K_CTRL ) ) ) {
-		if ( nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0 ) {
+		if ( historyLine > 0 ) {
 			historyLine--;
+			consoleField.SetBuffer( historyStrings[historyLine] );
 		}
-		consoleField = historyEditLines[ historyLine % COMMAND_HISTORY ];
 		return;
 	}
 
 	if ( key == K_DOWNARROW || ( key == 'n' && idKeyInput::IsDown( K_CTRL ) ) ) {
-		if ( historyLine == nextHistoryLine ) {
+		if ( historyLine >= historyStrings.Num() )
 			return;
-		}
 		historyLine++;
-		consoleField = historyEditLines[ historyLine % COMMAND_HISTORY ];
+		consoleField.SetBuffer( historyStrings[historyLine] );
 		return;
 	}
 
