@@ -318,12 +318,9 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
-	if ( !surf ) {
-		return;
-	}
 	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
 
-	FB_ToggleShadow( true, clear );
+	FB_ToggleShadow( true );
 
 	shadowMapShader.Use();
 	GL_SelectTexture( 0 );
@@ -340,6 +337,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	qglViewport( page.x, page.y, 6*page.width, page.width );
 	if ( r_useScissor.GetBool() )
 		GL_Scissor( page.x, page.y, 6*page.width, page.width );
+	if ( clear )
+		qglClear( GL_DEPTH_BUFFER_BIT );
 	for ( int i = 0; i < 4; i++ )
 		qglEnable( GL_CLIP_PLANE0 + i );
 	for ( ; surf; surf = surf->nextOnLight ) {
@@ -382,18 +381,11 @@ void RB_GLSL_GenerateShadowMaps() {
 	if ( r_shadows.GetBool() == 0 )
 		return;
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
-		if ( !backEnd.vLight->lightShader->LightCastsShadows() || backEnd.vLight->tooBigForShadowMaps ) {
+		if ( !backEnd.vLight->shadowMapIndex || backEnd.vLight->singleLightOnly )
 			continue;
-		}
-		// if there are no interactions, get out!
-		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions ) {
-			continue;
-		}
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions, false );
 	}
-	ShadowAtlasIndex = 0;
 }
 
 /*
@@ -407,7 +399,6 @@ void RB_GLSL_DrawLight_ShadowMap() {
 	GL_CheckErrors();
 
 	if ( backEnd.vLight->lightShader->LightCastsShadows() ) {
-		backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
@@ -484,21 +475,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	if ( !backEnd.viewDef->viewLights )
 		return;
 
-	// special cases this shader does not support
-	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
-			backEnd.vLight->singleLightOnly = true;
-		auto *shader = backEnd.vLight->lightShader;
-		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) // custom ambient projection
-			backEnd.vLight->singleLightOnly = true;
-		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
-			backEnd.vLight->singleLightOnly = true;
-		if ( backEnd.vLight->singleLightOnly ) {
-			RB_GLSL_DrawInteractions_SingleLight();
-			backEnd.pc.c_interactionSingleLights++;
-		}
-	}
-
 	RB_GLSL_GenerateShadowMaps();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
@@ -571,6 +547,24 @@ RB_GLSL_DrawInteractions
 ==================
 */
 void RB_GLSL_DrawInteractions() {
+	// assign shadow pages and prepare lights for single/multi processing // singleLightOnly - special cases the multi-light shader does not support
+	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+		if ( backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
+			backEnd.vLight->singleLightOnly = true;
+		auto shader = backEnd.vLight->lightShader;
+		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) // custom ambient projection
+			backEnd.vLight->singleLightOnly = true;
+		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
+			backEnd.vLight->singleLightOnly = true;
+		if ( shader->LightCastsShadows() && !backEnd.vLight->tooBigForShadowMaps )
+			backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
+		if ( backEnd.vLight->singleLightOnly ) {
+			RB_GLSL_DrawInteractions_SingleLight();
+			backEnd.pc.c_interactionSingleLights++;
+		}
+	}
+	ShadowAtlasIndex = 0; // reset for next run
+
 	if ( r_testARBProgram.GetInteger() == 2 && r_shadows.GetInteger() == 2 ) {
 		RB_GLSL_DrawInteractions_MultiLight();
 		return;
@@ -580,9 +574,8 @@ void RB_GLSL_DrawInteractions() {
 	GL_SelectTexture( 0 );
 
 	// for each light, perform adding and shadowing
-	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) 
 		RB_GLSL_DrawInteractions_SingleLight();
-	}
 
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );

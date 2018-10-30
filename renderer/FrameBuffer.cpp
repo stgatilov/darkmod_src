@@ -432,7 +432,7 @@ void FB_ApplyScissor() {
 	}
 }
 
-void FB_ToggleShadow( bool on, bool clear ) {
+void FB_ToggleShadow( bool on ) {
 	CheckCreateShadow();
 	if ( on && r_shadows.GetInteger() == 1 ) {
 		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
@@ -483,13 +483,8 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			}
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap[ShadowFboIndex]->texnum, ShadowMipMap[ShadowFboIndex] );
 			*/
-			auto &page = ShadowAtlasPages[ShadowAtlasIndex-1];
-			qglViewport( page.x, page.y, page.width * 6, page.width );
-			GL_Scissor( page.x, page.y, page.width * 6, page.width );
-
-			if ( clear ) 
-				qglClear( GL_DEPTH_BUFFER_BIT );
 			GL_State( GLS_DEPTHFUNC_LESS ); // reset in RB_GLSL_CreateDrawInteractions
+			// the caller is now responsible for proper setup of viewport/scissor
 		} else {
 			const idScreenRect &r = backEnd.viewDef->viewport;
 

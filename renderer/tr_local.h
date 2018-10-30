@@ -347,7 +347,7 @@ typedef struct viewLight_s {
 	// projection planes that the view is on the negative side of will be set,
 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
 	int						viewSeesShadowPlaneBits;
-	int						shadowMapIndex;
+	int						shadowMapIndex;				// zero - shadow maps not used, positive - shadow page index +1
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 	bool					tooBigForShadowMaps;		// shadow maps annoyingly pixelated

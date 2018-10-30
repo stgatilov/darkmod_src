@@ -44,7 +44,7 @@ void FB_CopyColorBuffer();
 void FB_CopyDepthBuffer();
 void FB_CopyRender( const copyRenderCommand_t &cmd );
 void FB_TogglePrimary( bool on );
-void FB_ToggleShadow( bool on, bool clear = false );
+void FB_ToggleShadow( bool on );
 void FB_BindShadowTexture();
 void FB_SelectPrimary();
 void FB_SelectPostProcess();
