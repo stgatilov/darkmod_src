@@ -642,9 +642,12 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "\n" );
 
 		// add line to history list or swap if exists
-		int newIndex = historyStrings.AddUnique( consoleField.GetBuffer() );
+		idStr s = consoleField.GetBuffer();
+		int index = historyStrings.FindIndex( s );
+		if( index >= 0 )
+			historyStrings.RemoveIndex( index );
+		historyStrings.Append( s );
 		historyLine = historyStrings.Num();
-		idSwap( historyStrings[historyLine - 1], historyStrings[newIndex] );
 
 		consoleField.Clear();
 		consoleField.SetWidthInChars( LINE_WIDTH );
@@ -670,7 +673,7 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 	}
 
 	if ( key == K_DOWNARROW || ( key == 'n' && idKeyInput::IsDown( K_CTRL ) ) ) {
-		if ( historyLine >= historyStrings.Num() )
+		if ( historyLine > historyStrings.Num()-2 )
 			return;
 		historyLine++;
 		consoleField.SetBuffer( historyStrings[historyLine] );

@@ -1159,6 +1159,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
 		qglUniform4fv( this->shadowRect, thisCount, shadowRect[i].ToFloatPtr() );
 		qglUniform1fv( softShadowsRadius, thisCount, &softShadowRads[i] );
+		GL_CheckErrors();
 
 		RB_DrawElementsWithCounters( surf );
 
@@ -1173,6 +1174,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
 		}
 	}
+	GL_CheckErrors();
 }
 
 void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
