@@ -549,9 +549,9 @@ RB_GLSL_DrawInteractions
 void RB_GLSL_DrawInteractions() {
 	// assign shadow pages and prepare lights for single/multi processing // singleLightOnly - special cases the multi-light shader does not support
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
-			backEnd.vLight->singleLightOnly = true;
 		auto shader = backEnd.vLight->lightShader;
+		if ( shader->LightCastsShadows() && backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
+			backEnd.vLight->singleLightOnly = true;
 		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) // custom ambient projection
 			backEnd.vLight->singleLightOnly = true;
 		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
@@ -1080,7 +1080,7 @@ void multiLightInteractionProgram_t::AfterLoad() {
 void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	std::vector<idVec3> lightOrigins, lightColors;
 	std::vector<idMat4> projectionFalloff;
-	std::vector<idVec4> shadowRect;
+	std::vector<idVec4> shadowRects;
 	std::vector<float> softShadowRads;
 	auto surf = din->surf;
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
@@ -1126,15 +1126,16 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		projectionFalloff.push_back( *p );
 
 		if ( vLight->lightShader->IsAmbientLight() )
-			shadowRect.push_back( idVec4(0, 0, -2, 0) );
+			shadowRects.push_back( idVec4(0, 0, -2, 0) );
 		else {
 			if( vLight->shadowMapIndex <= 0 )
-				shadowRect.push_back( idVec4( 0, 0, -1, 0 ) );
+				shadowRects.push_back( idVec4( 0, 0, -1, 0 ) );
 			auto &page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
 			idVec4 v( page.x, page.y, 0, page.width - 1 );
 			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
 			v.w /= 6 * r_shadowMapSize.GetFloat();
-			shadowRect.push_back( v );
+			v.z = vLight->shadowMapIndex-1;
+			shadowRects.push_back( v );
 		}
 		softShadowRads.push_back( GetEffectiveLightRadius() );
 	}
@@ -1150,7 +1151,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
 		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
-		qglUniform4fv( this->shadowRect, thisCount, shadowRect[i].ToFloatPtr() );
+		qglUniform4fv( shadowRect, thisCount, shadowRects[i].ToFloatPtr() );
 		qglUniform1fv( softShadowsRadius, thisCount, &softShadowRads[i] );
 		GL_CheckErrors();
 
@@ -1160,7 +1161,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			backEnd.pc.c_interactions++;
 			backEnd.pc.c_interactionLights += lightOrigins.size();
 			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
-			auto shMaps = std::count_if( shadowRect.begin(), shadowRect.end(), []( idVec4 v ) {
+			auto shMaps = std::count_if( shadowRects.begin(), shadowRects.end(), []( idVec4 v ) {
 				return v.z >= 0;
 			} );
 			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps)
