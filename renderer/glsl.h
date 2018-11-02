@@ -46,6 +46,12 @@ struct depthProgram_t : basicDepthProgram_t {
 	virtual	void AfterLoad();
 };
 
+struct shadowMapProgram_t : basicDepthProgram_t {
+	GLint lightOrigin, lightRadius, modelMatrix;
+	virtual	void AfterLoad();
+	void RenderAllLights();
+};
+
 struct blendProgram_t : shaderProgram_t {
 	GLint			tex0PlaneS;
 	GLint			tex0PlaneT;
@@ -77,6 +83,7 @@ extern depthProgram_t depthShader;
 extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
+extern shadowMapProgram_t shadowMapMultiShader;
 
 extern idCVar r_ambient_testadd;
 extern idCVar r_useGLSL;

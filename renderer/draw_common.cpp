@@ -279,6 +279,9 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	qglUseProgram( 0 );
 	GL_CheckErrors();
+
+	/*if ( r_shadows.GetInteger() == 2 )
+		shadowMapMultiShader.RenderAllLights();*/
 }
 
 /*

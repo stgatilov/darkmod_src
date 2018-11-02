@@ -38,11 +38,6 @@ If you have questions concerning this license or the applicable additional terms
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
 
-struct shadowMapProgram_t : basicDepthProgram_t {
-	GLint lightOrigin, lightRadius, modelMatrix;
-	virtual	void AfterLoad();
-};
-
 struct basicInteractionProgram_t : lightProgram_t {
 	GLint lightProjectionFalloff, bumpMatrix, diffuseMatrix, specularMatrix;
 	GLint colorModulate, colorAdd;
@@ -96,7 +91,7 @@ shaderProgram_t cubeMapShader;
 oldStageProgram_t oldStageShader;
 depthProgram_t depthShader;
 lightProgram_t stencilShadowShader;
-shadowMapProgram_t shadowMapShader;
+shadowMapProgram_t shadowMapShader, shadowMapMultiShader;
 fogProgram_t fogShader;
 blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
@@ -585,13 +580,16 @@ void RB_GLSL_DrawInteractions() {
 /*
 ==================
 R_ReloadGLSLPrograms
+
+If the 'required' shaders fail to compile the r_useGLSL will toggle to 0 so as to fall back to ARB2 shaders
+filenames hardcoded here since they're not used elsewhere
+FIXME split the stencil and shadowmap interactions in separate shaders as the latter might not compile on DX10 and older hardware
 ==================
 */
-bool R_ReloadGLSLPrograms() {
+bool R_ReloadGLSLPrograms() { 
 	bool ok = true;
-	ok &= pointInteractionShader.Load( "interactionA" );				// filenames hardcoded here since they're not used elsewhere
+	ok &= pointInteractionShader.Load( "interactionA" ); 
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
-	ok &= multiLightShader.Load( "interactionN" );
 	ok &= stencilShadowShader.Load( "stencilShadow" );
 	ok &= shadowMapShader.Load( "shadowMapA" );
 	ok &= oldStageShader.Load( "oldStage" );
@@ -599,6 +597,9 @@ bool R_ReloadGLSLPrograms() {
 	ok &= fogShader.Load( "fog" );
 	ok &= blendShader.Load( "blend" );
 	ok &= cubeMapShader.Load( "cubeMap" );
+	// these are optional and don't "need" to build
+	multiLightShader.Load( "interactionN" );
+	shadowMapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
 		auto& shader = it->second;
@@ -1281,4 +1282,64 @@ void shadowMapProgram_t::AfterLoad() {
 	lightRadius = qglGetUniformLocation( program, "u_lightRadius" );
 	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 	acceptsTranslucent = true;
+}
+
+void shadowMapProgram_t::RenderAllLights() {
+	GL_PROFILE( "shadowMapProgram_t::RenderAllLights" );
+
+	FB_ToggleShadow( true );
+
+	Use();
+	GL_SelectTexture( 0 );
+
+	qglUniform4fv( lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+	qglUniform1f( lightRadius, GetEffectiveLightRadius() );
+	backEnd.currentSpace = NULL;
+
+	GL_Cull( CT_TWO_SIDED );
+	qglPolygonOffset( 0, 0 );
+	qglEnable( GL_POLYGON_OFFSET_FILL );
+
+	auto &page = ShadowAtlasPages[backEnd.vLight->shadowMapIndex - 1];
+	qglViewport( 0, 0, globalImages->shadowAtlas->uploadWidth, globalImages->shadowAtlas->uploadHeight );
+	if ( r_useScissor.GetBool() )
+		GL_Scissor( 0, 0, globalImages->shadowAtlas->uploadWidth, globalImages->shadowAtlas->uploadHeight );
+	qglClear( GL_DEPTH_BUFFER_BIT );
+	for ( int i = 0; i < 4; i++ )
+		qglEnable( GL_CLIP_PLANE0 + i );
+	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
+		auto surf = backEnd.viewDef->drawSurfs[i];
+		if ( !surf->material->SurfaceCastsShadow() )
+			continue;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
+
+		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
+			continue;    // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
+
+		float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
+		if ( customOffset != 0 )
+			qglPolygonOffset( customOffset, 0 );
+
+		if ( backEnd.currentSpace != surf->space ) {
+			qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
+			backEnd.currentSpace = surf->space;
+			backEnd.pc.c_matrixLoads++;
+		}
+
+		FillDepthBuffer( surf );
+
+		if ( customOffset != 0 )
+			qglPolygonOffset( 0, 0 );
+	}
+	for ( int i = 0; i < 4; i++ )
+		qglDisable( GL_CLIP_PLANE0 + i );
+
+	qglDisable( GL_POLYGON_OFFSET_FILL );
+	GL_Cull( CT_FRONT_SIDED );
+
+	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
+	qglUseProgram( 0 );
+
+	FB_ToggleShadow( false );
+
+	GL_CheckErrors();
 }
