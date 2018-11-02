@@ -228,10 +228,6 @@ to force the alpha test to fail when behind that clip plane
 =====================
 */
 void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	// if we are just doing 2D rendering, no need to fill the depth buffer
-	if ( !backEnd.viewDef->viewEntitys ) {
-		return;
-	}
 	GL_CheckErrors();
 	
 	GL_PROFILE( "STD_FillDepthBuffer" );
@@ -279,9 +275,6 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	qglUseProgram( 0 );
 	GL_CheckErrors();
-
-	/*if ( r_shadows.GetInteger() == 2 )
-		shadowMapMultiShader.RenderAllLights();*/
 }
 
 /*
@@ -1207,14 +1200,17 @@ void RB_STD_DrawView( void ) {
 	backEnd.lightScale = r_lightScale.GetFloat();
 	backEnd.overBright = 1.0f;
 
-	// fill the depth buffer and clear color buffer to black except on subviews
-	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
+	// if we are just doing 2D rendering, no need to fill the depth buffer
+	if ( backEnd.viewDef->viewEntitys ) {
+		// fill the depth buffer and clear color buffer to black except on subviews
+		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
-	if ( r_useGLSL.GetBool() ) {
-		RB_GLSL_DrawInteractions();
-	} else {
-		RB_ARB2_DrawInteractions();
-	}	
+		if ( r_useGLSL.GetBool() ) {
+			RB_GLSL_DrawInteractions();
+		} else {
+			RB_ARB2_DrawInteractions();
+		}
+	}
 		
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );

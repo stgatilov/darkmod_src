@@ -79,10 +79,25 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
+struct shadowMapProgram_t : basicDepthProgram_t {
+	GLint lightOrigin, lightRadius, modelMatrix;
+	GLint lightCount, shadowRect, shadowTexelStep; // multi-light stuff
+	virtual	void AfterLoad();
+	void RenderAllLights();
+};
+
+struct MultiLightShaderData { // used by both interaction and shadow map shaders
+	std::vector<viewLight_t *> vLights;
+	std::vector<idVec3> lightOrigins;
+	std::vector<idVec4> shadowRects;
+	std::vector<float> softShadowRads;
+	MultiLightShaderData( const drawSurf_t *surf, bool shadowPass );
+};
+
 struct multiLightInteractionProgram_t : basicInteractionProgram_t {
-	const uint MAX_LIGHTS = 16;
-	GLint lightCount, lightOrigin, lightColor, shadowRect;
-	GLint minLevel, gamma, softShadowsRadius;
+	static const uint MAX_LIGHTS = 16;
+	GLint lightCount, lightOrigin, lightColor, shadowRect, softShadowsRadius;
+	GLint minLevel, gamma;
 	virtual	void AfterLoad();
 	virtual void Draw( const drawInteraction_t *din );
 };
@@ -313,6 +328,7 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
+	if ( r_ignore2.GetBool() ) return;
 	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
 
 	FB_ToggleShadow( true );
@@ -559,6 +575,9 @@ void RB_GLSL_DrawInteractions() {
 		}
 	}
 	ShadowAtlasIndex = 0; // reset for next run
+
+	if ( r_ignore2.GetBool() && r_shadows.GetInteger() == 2 )
+		shadowMapMultiShader.RenderAllLights();
 
 	if ( r_testARBProgram.GetInteger() == 2 && r_shadows.GetInteger() == 2 ) {
 		RB_GLSL_DrawInteractions_MultiLight();
@@ -1061,6 +1080,50 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 	GL_CheckErrors();
 }
 
+MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowPass ) {
+	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
+		backEnd.vLight = vLight;
+		if ( shadowPass ) {
+			if ( !backEnd.vLight->shadowMapIndex )
+				continue;
+		} else {
+			if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->singleLightOnly )
+				continue;
+		}
+		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
+			continue;
+		if ( vLight->lightShader->IsAmbientLight() ) {
+			if ( r_skipAmbient.GetInteger() == 2 )
+				continue;
+		} else {
+			if ( r_skipInteractions.GetBool() )
+				continue;
+		}
+		idVec3 localLightOrigin;
+		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
+		if ( 1/*!r_ignore.GetBool()*/ ) {
+			if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
+				continue;
+		}
+		vLights.push_back( vLight );
+		lightOrigins.push_back( localLightOrigin );
+
+		if ( vLight->lightShader->IsAmbientLight() )
+			shadowRects.push_back( idVec4( 0, 0, -2, 0 ) );
+		else {
+			if ( vLight->shadowMapIndex <= 0 )
+				shadowRects.push_back( idVec4( 0, 0, -1, 0 ) );
+			auto &page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
+			idVec4 v( page.x, page.y, 0, page.width - 1 );
+			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
+			v.w /= 6 * r_shadowMapSize.GetFloat();
+			v.z = vLight->shadowMapIndex - 1;
+			shadowRects.push_back( v );
+		}
+		softShadowRads.push_back( GetEffectiveLightRadius() );
+	}
+}
+
 void multiLightInteractionProgram_t::AfterLoad() {
 	basicInteractionProgram_t::AfterLoad();
 	lightCount = qglGetUniformLocation( program, "u_lightCount" );
@@ -1079,34 +1142,11 @@ void multiLightInteractionProgram_t::AfterLoad() {
 }
 
 void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
-	std::vector<idVec3> lightOrigins, lightColors;
-	std::vector<idMat4> projectionFalloff;
-	std::vector<idVec4> shadowRects;
-	std::vector<float> softShadowRads;
 	auto surf = din->surf;
-	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		backEnd.vLight = vLight;
-		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->singleLightOnly )
-			continue;
-		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions )
-			continue;
-		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
-			continue;
-		if ( vLight->lightShader->IsAmbientLight() ) {
-			if ( r_skipAmbient.GetInteger() == 2 )
-				continue;
-		} else {
-			if ( r_skipInteractions.GetBool() )
-				continue;
-		}
-		idVec3 localLightOrigin;
-		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-		if ( 1/*!r_ignore.GetBool()*/ ) {
-			if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
-				continue;
-		}
-		lightOrigins.push_back( localLightOrigin );
-		
+	MultiLightShaderData data( surf, false );
+	std::vector<idVec3> lightColors;
+	std::vector<idMat4> projectionFalloff;
+	for each (auto vLight in data.vLights) {
 		const float			*lightRegs = vLight->shaderRegisters;
 		const idMaterial	*lightShader = vLight->lightShader;
 		const shaderStage_t	*lightStage = lightShader->GetStage( 0 );
@@ -1117,7 +1157,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			lightRegs[lightStage->color.registers[3]]
 		);
 		lightColors.push_back( lightColor.ToVec3() );
-
+	
 		idPlane lightProject[4];
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );
@@ -1125,44 +1165,30 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
 		idMat4 *p = (idMat4*)&lightProject;
 		projectionFalloff.push_back( *p );
-
-		if ( vLight->lightShader->IsAmbientLight() )
-			shadowRects.push_back( idVec4(0, 0, -2, 0) );
-		else {
-			if( vLight->shadowMapIndex <= 0 )
-				shadowRects.push_back( idVec4( 0, 0, -1, 0 ) );
-			auto &page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
-			idVec4 v( page.x, page.y, 0, page.width - 1 );
-			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
-			v.w /= 6 * r_shadowMapSize.GetFloat();
-			v.z = vLight->shadowMapIndex-1;
-			shadowRects.push_back( v );
-		}
-		softShadowRads.push_back( GetEffectiveLightRadius() );
 	}
 
 	basicInteractionProgram_t::UpdateUniforms( din );
 	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	
-	for ( size_t i = 0; i < lightOrigins.size(); i += MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( lightOrigins.size() - i, MAX_LIGHTS );
+	for ( size_t i = 0; i < data.lightOrigins.size(); i += MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( data.lightOrigins.size() - i, MAX_LIGHTS );
 
 		qglUniform1i( lightCount, thisCount );
-		qglUniform3fv( lightOrigin, thisCount, lightOrigins[i].ToFloatPtr() );
+		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
 		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
 		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
-		qglUniform4fv( shadowRect, thisCount, shadowRects[i].ToFloatPtr() );
-		qglUniform1fv( softShadowsRadius, thisCount, &softShadowRads[i] );
+		qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
+		qglUniform1fv( softShadowsRadius, thisCount, &data.softShadowRads[i] );
 		GL_CheckErrors();
 
 		RB_DrawElementsWithCounters( surf );
 
-		if ( r_showMultiLight.GetBool() ) {
+		if ( r_showMultiLight.GetInteger() == 1 ) {
 			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, lightOrigins.size() );
-			auto shMaps = std::count_if( shadowRects.begin(), shadowRects.end(), []( idVec4 v ) {
+			backEnd.pc.c_interactionLights += data.lightOrigins.size();
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, data.lightOrigins.size() );
+			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
 				return v.z >= 0;
 			} );
 			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps)
@@ -1281,6 +1307,9 @@ void shadowMapProgram_t::AfterLoad() {
 	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
 	lightRadius = qglGetUniformLocation( program, "u_lightRadius" );
 	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
+	lightCount = qglGetUniformLocation( program, "u_lightCount" );
+	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
+	shadowTexelStep = qglGetUniformLocation( program, "u_shadowTexelStep" );
 	acceptsTranslucent = true;
 }
 
@@ -1292,8 +1321,6 @@ void shadowMapProgram_t::RenderAllLights() {
 	Use();
 	GL_SelectTexture( 0 );
 
-	qglUniform4fv( lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	qglUniform1f( lightRadius, GetEffectiveLightRadius() );
 	backEnd.currentSpace = NULL;
 
 	GL_Cull( CT_TWO_SIDED );
@@ -1301,9 +1328,12 @@ void shadowMapProgram_t::RenderAllLights() {
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
 	auto &page = ShadowAtlasPages[backEnd.vLight->shadowMapIndex - 1];
-	qglViewport( 0, 0, globalImages->shadowAtlas->uploadWidth, globalImages->shadowAtlas->uploadHeight );
+	float texSize = globalImages->shadowAtlas->uploadHeight;
+	qglUniform1f( shadowTexelStep, 1/texSize );
+
+	qglViewport( 0, 0, texSize, texSize );
 	if ( r_useScissor.GetBool() )
-		GL_Scissor( 0, 0, globalImages->shadowAtlas->uploadWidth, globalImages->shadowAtlas->uploadHeight );
+		GL_Scissor( 0, 0, texSize, texSize );
 	qglClear( GL_DEPTH_BUFFER_BIT );
 	for ( int i = 0; i < 4; i++ )
 		qglEnable( GL_CLIP_PLANE0 + i );
@@ -1325,7 +1355,30 @@ void shadowMapProgram_t::RenderAllLights() {
 			backEnd.pc.c_matrixLoads++;
 		}
 
-		FillDepthBuffer( surf );
+		MultiLightShaderData data( surf, true );
+
+		for ( size_t i = 0; i < data.lightOrigins.size(); i += multiLightInteractionProgram_t::MAX_LIGHTS ) {
+			int thisCount = idMath::Imin( data.lightOrigins.size() - i, multiLightInteractionProgram_t::MAX_LIGHTS );
+
+			qglUniform1i( lightCount, thisCount );
+			qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
+			qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
+			qglUniform1fv( lightRadius, thisCount, &data.softShadowRads[i] );
+			GL_CheckErrors();
+
+			FillDepthBuffer( surf );
+
+			if ( r_showMultiLight.GetInteger() == 2 ) {
+				backEnd.pc.c_interactions++;
+				backEnd.pc.c_interactionLights += data.lightOrigins.size();
+				backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, data.lightOrigins.size() );
+				auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
+					return v.z >= 0;
+				} );
+				if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps )
+					backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
+			}
+		}
 
 		if ( customOffset != 0 )
 			qglPolygonOffset( 0, 0 );
