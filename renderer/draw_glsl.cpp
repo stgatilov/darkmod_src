@@ -1101,12 +1101,15 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		}
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-		if ( 1/*!r_ignore.GetBool()*/ ) {
+		if ( !r_ignore.GetBool() ) {
 			if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
 				continue;
 		}
 		vLights.push_back( vLight );
-		lightOrigins.push_back( localLightOrigin );
+		if ( shadowPass )
+			lightOrigins.push_back( vLight->globalLightOrigin );
+		else
+			lightOrigins.push_back( localLightOrigin );
 
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowRects.push_back( idVec4( 0, 0, -2, 0 ) );
@@ -1335,7 +1338,7 @@ void shadowMapProgram_t::RenderAllLights() {
 	if ( r_useScissor.GetBool() )
 		GL_Scissor( 0, 0, texSize, texSize );
 	qglClear( GL_DEPTH_BUFFER_BIT );
-	for ( int i = 0; i < 4; i++ )
+	for ( int i = 0; i < 4; i++ ) // clip the geometry shader output to each of the atlas pages
 		qglEnable( GL_CLIP_PLANE0 + i );
 	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
 		auto surf = backEnd.viewDef->drawSurfs[i];
@@ -1349,11 +1352,11 @@ void shadowMapProgram_t::RenderAllLights() {
 		if ( customOffset != 0 )
 			qglPolygonOffset( customOffset, 0 );
 
-		if ( backEnd.currentSpace != surf->space ) {
+		//if ( backEnd.currentSpace != surf->space ) {
 			qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
 			backEnd.currentSpace = surf->space;
 			backEnd.pc.c_matrixLoads++;
-		}
+		//}
 
 		MultiLightShaderData data( surf, true );
 
