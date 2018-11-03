@@ -1101,7 +1101,7 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		}
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-		if ( !r_ignore.GetBool() ) {
+		if ( 1/* !r_ignore.GetBool()*/ ) {
 			if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
 				continue;
 		}
@@ -1326,7 +1326,7 @@ void shadowMapProgram_t::RenderAllLights() {
 
 	backEnd.currentSpace = NULL;
 
-	GL_Cull( CT_TWO_SIDED );
+//	GL_Cull( CT_TWO_SIDED );
 	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
@@ -1352,11 +1352,11 @@ void shadowMapProgram_t::RenderAllLights() {
 		if ( customOffset != 0 )
 			qglPolygonOffset( customOffset, 0 );
 
-		//if ( backEnd.currentSpace != surf->space ) {
+		if ( backEnd.currentSpace != surf->space ) {
 			qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
 			backEnd.currentSpace = surf->space;
 			backEnd.pc.c_matrixLoads++;
-		//}
+		}
 
 		MultiLightShaderData data( surf, true );
 
