@@ -561,18 +561,8 @@ void RB_GLSL_DrawInteractions() {
 	// assign shadow pages and prepare lights for single/multi processing // singleLightOnly - special cases the multi-light shader does not support
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		auto shader = backEnd.vLight->lightShader;
-		if ( shader->LightCastsShadows() && backEnd.vLight->tooBigForShadowMaps ) // use stencil shadows
-			backEnd.vLight->singleLightOnly = true;
-		if ( shader->IsAmbientLight() && !strstr( shader->GetName(), "ambientlightnfo" ) ) // custom ambient projection
-			backEnd.vLight->singleLightOnly = true;
-		if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
-			backEnd.vLight->singleLightOnly = true;
 		if ( shader->LightCastsShadows() && !backEnd.vLight->tooBigForShadowMaps )
 			backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
-		if ( backEnd.vLight->singleLightOnly ) {
-			RB_GLSL_DrawInteractions_SingleLight();
-			backEnd.pc.c_interactionSingleLights++;
-		}
 	}
 	ShadowAtlasIndex = 0; // reset for next run
 
@@ -581,6 +571,12 @@ void RB_GLSL_DrawInteractions() {
 
 	if ( r_testARBProgram.GetInteger() == 2 && r_shadows.GetInteger() == 2 ) {
 		RB_GLSL_DrawInteractions_MultiLight();
+		for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+			if ( backEnd.vLight->singleLightOnly ) {
+				RB_GLSL_DrawInteractions_SingleLight();
+				backEnd.pc.c_interactionSingleLights++;
+			}
+		}
 		return;
 	}
 	GL_PROFILE( "GLSL_DrawInteractions" );
@@ -1081,13 +1077,19 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 }
 
 MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowPass ) {
+#ifdef MULTI_LIGHT_IN_FRONT
+	idList<int> lightIndex;
+	if ( surf->onLights && r_ignore.GetBool() )
+		for ( int* pIndex = surf->onLights; *pIndex >= 0; pIndex++ )
+			lightIndex.Append( *pIndex );
+#endif
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
 		backEnd.vLight = vLight;
 		if ( shadowPass ) {
 			if ( !backEnd.vLight->shadowMapIndex )
 				continue;
 		} else {
-			if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() || vLight->singleLightOnly )
+			if ( vLight->singleLightOnly )
 				continue;
 		}
 		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
@@ -1102,8 +1104,14 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		if ( 1/* !r_ignore.GetBool()*/ ) {
-			if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
-				continue;
+#ifdef MULTI_LIGHT_IN_FRONT
+			if ( r_ignore.GetBool() ) {
+				if ( !lightIndex.Find( vLight->lightDef->index ) )
+					continue;
+			} else
+#endif
+				if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
+					continue;
 		}
 		vLights.push_back( vLight );
 		if ( shadowPass )
@@ -1147,8 +1155,8 @@ void multiLightInteractionProgram_t::AfterLoad() {
 void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	auto surf = din->surf;
 	MultiLightShaderData data( surf, false );
-	std::vector<idVec3> lightColors;
-	std::vector<idMat4> projectionFalloff;
+	idList<idVec3> lightColors;
+	idList<idMat4> projectionFalloff;
 	for each (auto vLight in data.vLights) {
 		const float			*lightRegs = vLight->shaderRegisters;
 		const idMaterial	*lightShader = vLight->lightShader;
@@ -1159,7 +1167,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 			backEnd.lightScale * lightRegs[lightStage->color.registers[2]] * din->diffuseColor[2],
 			lightRegs[lightStage->color.registers[3]]
 		);
-		lightColors.push_back( lightColor.ToVec3() );
+		lightColors.Append( lightColor.ToVec3() );
 	
 		idPlane lightProject[4];
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
@@ -1167,7 +1175,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[2], lightProject[2] );
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
 		idMat4 *p = (idMat4*)&lightProject;
-		projectionFalloff.push_back( *p );
+		projectionFalloff.Append( *p );
 	}
 
 	basicInteractionProgram_t::UpdateUniforms( din );

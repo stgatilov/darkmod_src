@@ -111,6 +111,8 @@ static const int DSF_SOFT_PARTICLE = 2; // #3878
 static const int DSF_SHADOW_MAP_IGNORE = 4; // #4641
 static const int DSF_SHADOW_MAP_ONLY = 8; // #4641
 
+#define MULTI_LIGHT_IN_FRONT 1 // keep track of the multi light front renderer changes
+
 typedef struct drawSurf_s {
 	const srfTriangles_t	*frontendGeo;			// do not use in the backend; may be modified by the frontend
 	int						numIndexes;				// these four are frame-safe copies for backend use
@@ -119,11 +121,16 @@ typedef struct drawSurf_s {
 	vertCacheHandle_t		shadowCache;			// shadowCache_t
 
 	const struct viewEntity_s *space;
-	const idMaterial		*material;	// may be NULL for shadow volumes
-	float					sort;		// material->sort, modified by gui / entity sort offsets
+	const idMaterial		*material;			// may be NULL for shadow volumes
+	float					sort;				// material->sort, modified by gui / entity sort offsets
 	const float				*shaderRegisters;	// evaluated and adjusted for referenceShaders
 	/*const*/ struct drawSurf_s	*nextOnLight;	// viewLight chains
-	idScreenRect			scissorRect;	// for scissor clipping, local inside renderView viewport
+
+#ifdef MULTI_LIGHT_IN_FRONT
+	int						*onLights;			// light/entity bounds intersections, array of light-def index, terminated by -1
+#endif // MULTI_LIGHT_IN_FRONT
+
+	idScreenRect			scissorRect;		// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
 	vertCacheHandle_t		dynamicTexCoords;	// float * in vertex cache memory
 	// specular directions for non vertex program cards, skybox texcoords, etc

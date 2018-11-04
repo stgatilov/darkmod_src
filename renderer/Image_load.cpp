@@ -1384,7 +1384,7 @@ void idImage::Bind() {
 	}
 
 	// bump our statistic counters
-	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+	if ( r_showPrimitives.GetBool() && backEnd.viewDef && !backEnd.viewDef->IsLightGem() ) { // backEnd.viewDef is null when changing map
 		frameUsed = backEnd.frameCount;
 		bindCount++;
 	}

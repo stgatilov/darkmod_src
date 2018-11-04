@@ -341,7 +341,20 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->lightShader = light->lightShader;
 	vLight->shaderRegisters = NULL;		// allocated and evaluated in R_AddLightSurfaces
 	vLight->noFogBoundary = light->parms.noFogBoundary; // #3664
+
 	vLight->tooBigForShadowMaps = light->parms.lightRadius.Length() > r_maxShadowMapLight.GetFloat();
+	// multi-light shader stuff
+	auto shader = vLight->lightShader;
+	if ( shader->LightCastsShadows() && vLight->tooBigForShadowMaps ) // use stencil shadows
+		vLight->singleLightOnly = true;
+	if ( shader->IsAmbientLight() ) { // custom ambient projection
+		vLight->singleLightOnly = !strstr( shader->GetName(), "ambientlightnfo" )
+			&& !strstr( shader->GetName(), "ambient_biground" );
+	}
+	if ( !shader->IsAmbientLight() && !strstr( shader->GetName(), "biground" ) ) // custom point light projection
+		vLight->singleLightOnly = true;
+	if(vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight())
+		vLight->singleLightOnly = true;
 
 	// link the view light
 	vLight->next = tr.viewDef->viewLights;
