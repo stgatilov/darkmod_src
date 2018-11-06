@@ -327,6 +327,7 @@ public:
 	int				KeyState( int key );
 
 	usercmd_t		GetDirectUsercmd( void );
+	int&			hack_Flags();
 
 private:
 	void			MakeCurrent( void );
@@ -1123,4 +1124,8 @@ usercmd_t idUsercmdGenLocal::GetDirectUsercmd( void ) {
 	cmd.duplicateCount = 0;
 
 	return cmd;
+}
+
+int& idUsercmdGenLocal::hack_Flags() {
+	return flags;
 }

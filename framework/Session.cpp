@@ -2907,6 +2907,11 @@ void idSessionLocal::RunGameTic() {
 		lastGameTic++;
 	}
 
+	// stgatilov: allow automation to intercept gameplay controls
+	if (com_automation.GetBool()) {
+		bool automationRules = Auto_GetUsercmd(cmd);
+	}
+
 	// grayman #3763 - allow "Mission Start" gui if the mission uses it
 	if ( ( loadDoneTime > 0 ) && ( Sys_Milliseconds() > loadDoneTime ) )
 	{

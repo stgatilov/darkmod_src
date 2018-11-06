@@ -121,8 +121,15 @@ public:
 	bool			Remove( const type & obj );							// remove the element
 	void			Sort( cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
 	void			SortSubSection( int startIndex, int endIndex, cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
+	void			Reverse();											// stgatilov: reverse order of elements
 	void			Swap( idList<type> &other );						// swap the contents of the lists
 	void			DeleteContents( bool clear );						// delete the contents of the list
+
+	//stgatilov: for "range-based for" from C++11
+	type *			begin();
+	const type *	begin() const;
+	type *			end();
+	const type *	end() const;
 
 private:
 	int				num;
@@ -993,6 +1000,13 @@ ID_INLINE void idList<type>::SortSubSection( int startIndex, int endIndex, cmp_t
 	qsort( ( void * )( &list[startIndex] ), ( size_t )( endIndex - startIndex + 1 ), sizeof( type ), vCompare );
 }
 
+template< class type >
+ID_INLINE void idList<type>::Reverse() {
+	int k = (num >> 1);
+	for (int i = 0; i < k; i++)
+		idSwap(list[i], list[num-1-i]);
+}
+
 /*
 ================
 idList<type>::Swap
@@ -1007,6 +1021,25 @@ ID_INLINE void idList<type>::Swap( idList<type> &other ) {
 	idSwap( granularity, other.granularity );
 	idSwap( list, other.list );
 }
+
+
+template< class type >
+ID_INLINE type * idList<type>::begin() {
+	return list;
+}
+template< class type >
+ID_INLINE const type * idList<type>::begin() const {
+	return list;
+}
+template< class type >
+ID_INLINE type * idList<type>::end() {
+	return list + num;
+}
+template< class type >
+ID_INLINE const type * idList<type>::end() const {
+	return list + num;
+}
+
 
 typedef idList<idStr> idStringList;
 

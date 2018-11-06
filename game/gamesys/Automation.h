@@ -26,4 +26,7 @@ extern Automation *automation;
 //perform all the regular processing (communicate with script, send commands, etc.)
 void Auto_Think();
 
+//check if automation locks user's gameplay input, and return that input if it does
+bool Auto_GetUsercmd(usercmd_t &cmd);
+
 #endif

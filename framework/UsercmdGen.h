@@ -326,6 +326,10 @@ public:
 
 	// Directly sample a usercmd.
 	virtual usercmd_t	GetDirectUsercmd( void ) = 0;
+
+	// stgatilov: needed for automation only!!!
+	// Allows to toggle impulse flag properly.
+	virtual int&		hack_Flags() = 0;
 };
 
 extern idUsercmdGen	*usercmdGen;

@@ -33,14 +33,217 @@ Automation automationLocal;
 Automation *automation = &automationLocal;
 
 
+void GameplayControlPlan::Clear() {
+	Kill();
+	for (int i = 0; i < 8; i++)
+		buttons[i].Clear();
+	for (int i = 0; i < 3; i++)
+		moves[i].Clear();
+	for (int i = 0; i < 3; i++)
+		angles[i].Clear();
+}
 
-void Automation::PushInputEvents() {
+void GameplayControlPlan::Finalize() {
+	//get current view angles
+	idAngles initialAngles;
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if (player)
+		initialAngles = player->viewAngles;
+
+	//choose mode for viewangles
+	if (angleMode == amNone)
+		angleMode = amAbsolute;	//default
+	if (angleMode == amRelative) {
+		//all angles are set relative to initial values
+		for (int i = 0; i < 3; i++)
+			for (auto &span : angles[i]) {
+				span.startValue += initialAngles[i];
+				span.endValue += initialAngles[i];
+			}
+		angleMode = amAbsolute;
+	}
+	if (angleMode == amSmooth) {
+		//all angles are set absolute, but first start value if modified to initial value
+		for (int i = 0; i < 3; i++) {
+			int k = angles[i].Num() - 1;
+			if (k >= 0)
+				angles[i][k].startValue = initialAngles[i];
+		}
+		angleMode = amAbsolute;
+	}
+
+	//if some signal has no spans, add one span with default value
+	for (int i = 0; i < 8; i++)
+		if (buttons[i].Num() == 0) {
+			float value = 0;
+			if ((1<<i) == BUTTON_MLOOK)
+				value = 1;		//assume in_freeLook = 1
+			buttons[i].Append(CubicSpan{0, 0, value, value, 0, 0});
+		}
+	for (int i = 0; i < 3; i++)
+		if (moves[i].Num() == 0)
+			moves[i].Append(CubicSpan{0, 0, 0, 0, 0, 0});
+	for (int i = 0; i < 3; i++)
+		if (angles[i].Num() == 0)
+			angles[i].Append(CubicSpan{0, 0, initialAngles[i], initialAngles[i], 0, 0});
+}
+
+static bool RemoveExpired(idList<CubicSpan> &plan, float nowTime) {
+	assert(plan.Num() > 0);
+	while (nowTime > plan[plan.Num() - 1].endParam) {
+		if (plan.Num() == 1)
+			return true;
+		else
+			plan.Resize(plan.Num() - 1);
+	}
+	return false;
+}
+bool GameplayControlPlan::RemoveExpired(float nowTime) {
+	if (!IsAlive())
+		return true;	//never set or expired long ago
+	//remove all spans which have ended before current time
+	int cntExpired = 0;
+	for (int i = 0; i < 8; i++)
+		cntExpired += ::RemoveExpired(buttons[i], nowTime);
+	for (int i = 0; i < 3; i++)
+		cntExpired += ::RemoveExpired(moves[i], nowTime);
+	for (int i = 0; i < 3; i++)
+		cntExpired += ::RemoveExpired(angles[i], nowTime);
+	//the whole plan is expired if all plans are expired and all impulses are finished
+	if (cntExpired == 14 && impulse.Num() == 0)
+		return true;
+	return false;
+}
+
+static float GetSignal(const idList<CubicSpan> &plan, float nowTime) {
+	//find where we are in the current span
+	const auto &c = plan[plan.Num() - 1];
+	float len = (c.endParam - c.startParam);
+	float ratio = (nowTime - c.startParam) / idMath::Fmax(len, 1e-10f);
+	ratio = idMath::ClampFloat(0.0f, 1.0f, ratio);
+
+	//evaluate cubic function via some Bezier-like formulas
+	float t = ratio, r = 1.0f - ratio;
+	float p0 = c.startValue, p1 = c.startValue + c.startDeriv * (len / 3.0f);
+	float p3 = c.endValue, p2 = c.endValue - c.endDeriv * (len / 3.0f);
+	float value = 0.0f;
+	value += p0 * (r * r * r);
+	value += p1 * (r * r * t) * 3.0f;
+	value += p2 * (r * t * t) * 3.0f;
+	value += p3 * (t * t * t);
+
+	return value;
+}
+static int GetImpulse(idList<ImpulseMoment> &plan, float nowTime) {
+	if (plan.Num() == 0)
+		return -1;	//no more impulses
+	const auto &last = plan[plan.Num() - 1];
+	if (nowTime < last.param)
+		return -1;	//next impulse not yet ready
+	int res = last.impulse;
+	plan.Resize(plan.Num() - 1);
+	return res;
+}
+bool GameplayControlPlan::GetUsercmd(float nowTime, usercmd_t &cmd) {
+	//remove past pieces of the plan, check if the whole plan has ended
+	if (RemoveExpired(nowTime))
+		Kill();			//finished
+	if (!IsAlive())
+		return false;	//no active plan now
+
+	//calculate values for all buttons
+	cmd.buttons = 0;
+	for (int b = 0; b < 8; b++) {
+		float level = GetSignal(buttons[b], nowTime);
+		cmd.buttons ^= (level >= 0.5f ? 1 : 0) << b;
+	}
+
+	//calculate values for various moves
+	//note: see KEY_MOVESPEED in UsercmdGen.cpp
+	//this is how much "move" you do when you press a key
+	const int KEY_MOVESPEED = 127;
+	cmd.forwardmove = byte(KEY_MOVESPEED * GetSignal(moves[0], nowTime));
+	cmd.rightmove   = byte(KEY_MOVESPEED * GetSignal(moves[1], nowTime));
+	cmd.upmove      = byte(KEY_MOVESPEED * GetSignal(moves[2], nowTime));
+
+	//calculate values for view angles
+	idAngles deltaViewAngles;
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if (player) {
+		deltaViewAngles = player->GetDeltaViewAngles();
+	}
+	assert(angleMode == amAbsolute);
+	for (int a = 0; a < 3; a++) {
+		//see formula for TestAngles in idPlayer::UpdateViewAngles
+		float effectiveAngle = GetSignal(angles[a], nowTime);
+		float relativeAngle = idMath::AngleNormalize180(effectiveAngle - deltaViewAngles[a]);
+		cmd.angles[a] = ANGLE2SHORT(relativeAngle);
+	}
+
+	//check if we have impulse ready
+	int imp = GetImpulse(impulse, nowTime);
+	if (imp >= 0) {
+		cmd.impulse = imp;
+		cmd.flags ^= UCF_IMPULSE_SEQUENCE;
+	}
+
+	return true;
+}
+
+int GameplayControlPlan::GetTimeNow() const {
+	if (timeMode == tmAstronomical)
+		return Sys_GetTimeMicroseconds() / 1000;
+	if (timeMode == tmGamePhysics)
+		return gameLocal.time;
+	assert(0);
+	return -1e+10f;
+}
+
+
+
+
+void Automation::PushInputEvents(int key, int value) {
 	sysEvent_t ev;
 	memset(&ev, 0, sizeof(ev));
-	ev.evType = SE_MOUSE;
-	ev.evValue = 1;
-	ev.evValue = 2;
+	ev.evType = SE_KEY;
+	ev.evValue = key;
+	ev.evValue2 = value;
 	eventLoop->PushEvent(&ev);
+}
+
+bool Automation::GetUsercmd(usercmd_t &cmd) {
+	if (!gameControlPlan.IsAlive())
+		return false;
+
+	//fetch current time in the specified time measurement system
+	float nowTime = (gameControlPlan.GetTimeNow() - gameControlPlan_time) * 1e-3;
+
+	//ask our plan for the data
+	cmd.flags = usercmdGen->hack_Flags();
+	bool ok = gameControlPlan.GetUsercmd(nowTime, cmd);
+	usercmdGen->hack_Flags() = cmd.flags;
+
+	if (!ok) {
+		//make sure view angles do not jump back immediately afterwards
+		idPlayer *player = gameLocal.GetLocalPlayer();
+		if (player) {
+			idAngles angles;
+			for (int a = 0; a < 3; a++)
+				angles[a] = gameControlPlan.angles[a][0].endValue;
+			usercmdGen->ClearAngles();
+			player->SetDeltaViewAngles(player->viewAngles = angles);
+			player->cmdAngles = idAngles();
+		}
+
+		WriteGameControlResponse("finished");
+		return false;	//no valid plan now: return control to human
+	}
+
+	cmd.duplicateCount = 0;
+	cmd.mx = cmd.my = 0;
+	cmd.sequence = 0;
+	cmd.gameFrame = cmd.gameTime = 0;
+	return true;
 }
 
 void Automation::ExecuteInGameConsole(const char *command, bool blocking) {
@@ -76,9 +279,11 @@ void Automation::ParseAction(ParseIn &parseIn) {
 	parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
 
 	parseIn.lexer.ExpectTokenString("content");
+	parseIn.lexer.CheckTokenString(":");
 
 	int pos = parseIn.lexer.GetFileOffset();
 	const char *rest = strchr(parseIn.message + pos, '\n');
+
 
 	if (token == "conexec") {
 		int begMarker = common->GetConsoleMarker();
@@ -91,7 +296,114 @@ void Automation::ParseAction(ParseIn &parseIn) {
 		int endMarker = common->GetConsoleMarker();
 		idStr consoleUpdates = common->GetConsoleContents(begMarker, endMarker);
 		WriteResponse(parseIn.seqno, consoleUpdates.c_str());
+		return;
 	}
+
+	if (token == "sysctrl") {
+		int key, value;
+		if (sscanf(rest, "%d%d", &key, &value) == 2)
+			PushInputEvents(key, value);
+		WriteResponse(parseIn.seqno, "");
+		return;
+	}
+
+	if (token == "gamectrl") {
+		if (gameControlPlan_seqno >= 0)
+			WriteGameControlResponse("interrupted");
+		gameControlPlan_seqno = parseIn.seqno;
+		gameControlPlan_time = -1;
+		GameplayControlPlan &plan = gameControlPlan;
+		plan.Clear();
+
+		while (!parseIn.lexer.EndOfFile()) {
+			parseIn.lexer.ExpectTokenType(TT_NAME, 0, &token);
+
+			if (token == "timemode") {
+				parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
+				if (token.Left(5) == "astro")
+					plan.timeMode = GameplayControlPlan::tmAstronomical;
+				else if (token.Left(4) == "game")
+					plan.timeMode = GameplayControlPlan::tmGamePhysics;
+				else
+					parseIn.lexer.Error("Expected time mode, found '%s'", token.c_str());
+				continue;
+			}
+
+			if (token == "anglemode") {
+				parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
+				if (token.Left(3) == "abs")
+					plan.angleMode = GameplayControlPlan::amAbsolute;
+				else if (token.Left(3) == "rel")
+					plan.angleMode = GameplayControlPlan::amRelative;
+				else if (token == "smooth")
+					plan.angleMode = GameplayControlPlan::amSmooth;
+				else
+					parseIn.lexer.Error("Expected angle mode, found '%s'", token.c_str());
+				continue;
+			}
+
+			if (token == "impulse") {
+				while (parseIn.lexer.PeekTokenType(TT_PUNCTUATION, 0, &token) && token == "(") {
+					parseIn.lexer.ExpectTokenString("(");
+					ImpulseMoment imp;
+					imp.impulse = parseIn.lexer.ParseInt();
+					imp.param = parseIn.lexer.ParseFloat();
+					plan.impulse.Append(imp);
+					parseIn.lexer.ExpectTokenString(")");
+				}
+				plan.impulse.Reverse();
+				continue;
+			}
+
+			idList<CubicSpan> *series = 0;
+			int len = -1;
+			idStr suffix;
+			if (token.Left(6) == "button") {
+				series = plan.buttons;  len = 8;
+				suffix = token.Right(token.Length() - 6);
+			}
+			if (token.Left(4) == "move") {
+				series = plan.moves;  len = 3;
+				suffix = token.Right(token.Length() - 4);
+			}
+			if (token.Left(5) == "angle") {
+				series = plan.angles;  len = 3;
+				suffix = token.Right(token.Length() - 5);
+			}
+
+			if (series == 0)
+				parseIn.lexer.Error("Expected signal or impulses, found '%s'", token.c_str());
+			int index = -1;
+			sscanf(suffix.c_str(), "%d", &index);
+			if (index < 0 || index >= len)
+				parseIn.lexer.Error("Signal index is too large: %d", index);
+			idList<CubicSpan> &signal = series[index];
+
+			while (parseIn.lexer.PeekTokenType(TT_PUNCTUATION, 0, &token) && token == "(") {
+				parseIn.lexer.ExpectTokenString("(");
+				CubicSpan span;
+				span.startValue = parseIn.lexer.ParseFloat();
+				span.endValue = parseIn.lexer.ParseFloat();
+				span.startDeriv = parseIn.lexer.ParseFloat();
+				span.endDeriv = parseIn.lexer.ParseFloat();
+				span.startParam = parseIn.lexer.ParseFloat();
+				span.endParam = parseIn.lexer.ParseFloat();
+				signal.Append(span);
+				parseIn.lexer.ExpectTokenString(")");
+			}
+			signal.Reverse();
+		}
+
+		plan.Finalize();
+		gameControlPlan_time = plan.GetTimeNow();
+
+		return;
+	}
+}
+
+void Automation::WriteGameControlResponse(const char *message) {
+	WriteResponse(gameControlPlan_seqno, message);
+	gameControlPlan_seqno = -1;
 }
 
 extern int showFPS_currentValue;	//for "fps" query
@@ -143,25 +455,16 @@ void Automation::Think() {
 	//push data from output buffer, pull into input buffer
 	connection.Think();
 
-	//test: see what we get from python
+	//handle any messages send from client
 	idList<char> message;
 	while (connection.ReadMessage(message))
 		ParseMessage(message.Ptr(), message.Num());
-
-/*		common->Printf("Automation received: %s\n", message.Ptr());
-		int num = -1;
-		if (sscanf(message.Ptr(), "Hello %d", &num) == 1) {
-			bool isprime = num > 1;
-			for (int q = 2; q < num; q++) if (num % q == 0) isprime = false;
-			if (isprime) {
-				char buff[256];
-				sprintf(buff, "%d is prime", num);
-				connection.WriteMessage(buff, (int)strlen(buff));
-			}
-		}
-	}*/
 }
 
 void Auto_Think() {
-    automation->Think();
+	automation->Think();
+}
+
+bool Auto_GetUsercmd(usercmd_t &cmd) {
+	return automation->GetUsercmd(cmd);
 }

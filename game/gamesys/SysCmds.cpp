@@ -1129,11 +1129,13 @@ void Cmd_GetViewpos_f( const idCmdArgs &args ) {
 
 	const renderView_t *view = player->GetRenderView();
 	if ( view ) {
-		gameLocal.Printf( "(%s) %.1f\n", view->vieworg.ToString(), view->viewaxis[0].ToYaw() );
+		origin = view->vieworg;
+		axis = view->viewaxis;
 	} else {
 		player->GetViewPos( origin, axis );
-		gameLocal.Printf( "(%s) %.1f\n", origin.ToString(), axis[0].ToYaw() );
 	}
+	idAngles angles = axis.ToAngles();
+	gameLocal.Printf( "%s   %.1f %.1f %.1f\n", origin.ToString(), angles.pitch, angles.yaw, angles.roll);
 }
 
 /*
@@ -1151,16 +1153,25 @@ void Cmd_SetViewpos_f( const idCmdArgs &args ) {
 	if ( !player || !gameLocal.CheatsOk() ) {
 		return;
 	}
-
-	if ( ( args.Argc() != 4 ) && ( args.Argc() != 5 ) ) {
+	if ( args.Argc() < 4 || args.Argc() > 7 ) {
 		gameLocal.Printf( "usage: setviewpos <x> <y> <z> <yaw>\n" );
 		return;
 	}
 
 	angles.Zero();
 	if ( args.Argc() == 5 ) {
+		//special case: yaw only
 		angles.yaw = atof( args.Argv( 4 ) );
+	} else {
+		//general case: pitch yaw roll
+		if ( args.Argc() >= 5 )
+			angles.pitch = atof( args.Argv( 4 ) );
+		if ( args.Argc() >= 6 )
+			angles.yaw = atof( args.Argv( 5 ) );
+		if ( args.Argc() >= 7 )
+			angles.roll = atof( args.Argv( 6 ) );
 	}
+
 
 	for ( i = 0 ; i < 3 ; i++ ) {
 		origin[i] = atof( args.Argv( i + 1 ) );
@@ -3846,9 +3857,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "inaudible",				Cmd_Inaudible_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"makes the player inaudible; he can't be heard" ); // grayman #3857
 	cmdSystem->AddCommand( "noclip",				Cmd_Noclip_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"disables collision detection for the player" );
 	cmdSystem->AddCommand( "kill",					Cmd_Kill_f,					CMD_FL_GAME,				"kills the player" );
-	cmdSystem->AddCommand( "where",					Cmd_GetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints the current view position" );
-	cmdSystem->AddCommand( "getviewpos",			Cmd_GetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints the current view position" );
-	cmdSystem->AddCommand( "setviewpos",			Cmd_SetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"sets the current view position" );
+	cmdSystem->AddCommand( "where",					Cmd_GetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints the current view position:  x y z   pitch yaw roll" );
+	cmdSystem->AddCommand( "getviewpos",			Cmd_GetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints the current view position:  x y z   pitch yaw roll" );
+	cmdSystem->AddCommand( "setviewpos",			Cmd_SetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"sets the current view position:  [x y z] or [x y z yaw] or [x y z pitch yaw]" );
 	cmdSystem->AddCommand( "teleport",				Cmd_Teleport_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleports the player to an entity location", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "trigger",				Cmd_Trigger_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"triggers an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "spawn",					Cmd_Spawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"spawns a game entity", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> );
