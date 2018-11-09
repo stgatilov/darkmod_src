@@ -641,6 +641,8 @@ static void R_CheckPortableExtensions( void ) {
 	int n;
 	qglGetIntegerv( GL_MAX_GEOMETRY_OUTPUT_VERTICES, &n );
 	common->Printf( "Max geometry output vertices: %d\n", n );
+	qglGetIntegerv( GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS, &n );
+	common->Printf( "Max geometry output components: %d\n", n );
 	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
 	qglGetProgramivARB = ( PFNGLGETPROGRAMIVARBPROC )GLimp_ExtensionPointer( "glGetProgramivARB" );
