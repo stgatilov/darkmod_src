@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma once
 
 extern idCVar r_useFbo;
-extern idCVar r_fboDebug;
+extern idCVar r_showFBO;
 extern idCVar r_fboColorBits;
 extern idCVar r_fboDepthBits;
 extern idCVar r_fboSeparateStencil;

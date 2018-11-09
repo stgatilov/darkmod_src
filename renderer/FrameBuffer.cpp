@@ -556,7 +556,7 @@ void LeavePrimary() {
 	                    globalImages->currentRenderImage->uploadHeight,
 	                    0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 
-	if ( r_fboDebug.GetInteger() != 0 ) {
+	if ( r_showFBO.GetInteger() ) {
 		if ( r_multiSamples.GetInteger() > 1 ) {
 			FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 		}
@@ -572,7 +572,7 @@ void LeavePrimary() {
 		qglDisable( GL_DEPTH_TEST );
 		qglColor3f( 1, 1, 1 );
 
-		switch ( r_fboDebug.GetInteger() ) {
+		switch ( r_showFBO.GetInteger() ) {
 		case 1:
 			globalImages->shadowAtlas->Bind();
 			break;

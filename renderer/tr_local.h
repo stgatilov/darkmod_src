@@ -634,7 +634,7 @@ typedef struct {
 	int		c_deformedIndexes;		// idMD5Mesh::GenerateSurface
 	int		c_tangentIndexes;		// R_DeriveTangents()
 	int		c_entityUpdates, c_lightUpdates, c_entityReferences, c_lightReferences;
-	int		c_guiSurfs;
+	int		c_guiSurfs, c_noshadowSurfs;
 	int		frontEndMsec;			// sum of time in all RE_RenderScene's in a frame
 	int		frontEndMsecLast;		// time in last RE_RenderScene
 } performanceCounters_t;

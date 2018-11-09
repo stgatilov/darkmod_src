@@ -183,7 +183,7 @@ static void R_ViewStatistics( viewDef_t &parms ) {
 	if ( !r_showSurfaces.GetBool() ) {
 		return;
 	}
-	common->Printf( "view:%i surfs:%i\n", tr.pc.c_numViews, parms.numDrawSurfs );
+	common->Printf( "view:%i surfs:%i (%i)\n", tr.pc.c_numViews, parms.numDrawSurfs, tr.pc.c_noshadowSurfs );
 }
 
 /*

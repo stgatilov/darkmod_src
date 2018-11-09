@@ -986,16 +986,16 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->sort = shader->GetSort() + tr.sortOffset;
-	
-	if ( soft_particle_radius != -1.0f )	// #3878
-	{
+	if ( soft_particle_radius != -1.0f ) {	// #3878
 		drawSurf->dsFlags = DSF_SOFT_PARTICLE;
 		drawSurf->particle_radius = soft_particle_radius;
-	} 
-	else
-	{
+	} else {
 		drawSurf->dsFlags = 0;
 		drawSurf->particle_radius = 0.0f;
+	}
+	if ( space->entityDef && space->entityDef->parms.noShadow ) {
+		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
+		tr.pc.c_noshadowSurfs++;
 	}
 
 	// bumping this offset each time causes surfaces with equal sort orders to still

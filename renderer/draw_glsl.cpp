@@ -1360,7 +1360,7 @@ void shadowMapProgram_t::RenderAllLights() {
 			continue;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
 
 		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
-			continue;    // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
+			continue;    // this flag is set by entities with parms.noShadow (candles, torches, models with separate shadow geometry, etc)
 
 		float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
 		if ( customOffset != 0 )
