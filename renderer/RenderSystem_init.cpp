@@ -639,6 +639,8 @@ static void R_CheckPortableExtensions( void ) {
 		common->Printf( "GL fence sync available\n" );
 	}
 	int n;
+	qglGetIntegerv( GL_MAX_GEOMETRY_OUTPUT_VERTICES, &n );
+	common->Printf( "Max geometry output vertices: %d\n", n );
 	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
 	qglGetProgramivARB = ( PFNGLGETPROGRAMIVARBPROC )GLimp_ExtensionPointer( "glGetProgramivARB" );
