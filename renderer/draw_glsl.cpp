@@ -117,6 +117,8 @@ interactionProgram_t *currrentInteractionShader; // dynamic, either pointInterac
 
 std::map<idStr, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
 
+idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "1", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
+
 /*
 ==================
 RB_GLSL_DrawInteraction
@@ -328,7 +330,8 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
-	if ( r_ignore2.GetBool() ) return;
+	if ( r_shadowMapSinglePass.GetBool() ) 
+		return;
 	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
 
 	FB_ToggleShadow( true );
@@ -558,7 +561,7 @@ RB_GLSL_DrawInteractions
 ==================
 */
 void RB_GLSL_DrawInteractions() {
-	// assign shadow pages and prepare lights for single/multi processing // singleLightOnly - special cases the multi-light shader does not support
+	// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		auto shader = backEnd.vLight->lightShader;
 		if ( shader->LightCastsShadows() && !backEnd.vLight->tooBigForShadowMaps )
@@ -566,7 +569,7 @@ void RB_GLSL_DrawInteractions() {
 	}
 	ShadowAtlasIndex = 0; // reset for next run
 
-	if ( r_ignore2.GetBool() && r_shadows.GetInteger() == 2 )
+	if ( r_shadowMapSinglePass.GetBool() && r_shadows.GetInteger() == 2 )
 		shadowMapMultiShader.RenderAllLights();
 
 	if ( r_testARBProgram.GetInteger() == 2 && r_shadows.GetInteger() == 2 ) {
@@ -1079,7 +1082,7 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowPass ) {
 #ifdef MULTI_LIGHT_IN_FRONT
 	idList<int> lightIndex;
-	if ( surf->onLights && r_ignore.GetBool() )
+	if ( surf->onLights && r_multiLightInFrontend.GetBool() )
 		for ( int* pIndex = surf->onLights; *pIndex >= 0; pIndex++ )
 			lightIndex.Append( *pIndex );
 #endif
@@ -1105,13 +1108,16 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		if ( 1/* !r_ignore.GetBool()*/ ) {
 #ifdef MULTI_LIGHT_IN_FRONT
-			if ( r_ignore.GetBool() ) {
+			if ( r_multiLightInFrontend.GetBool() ) {
 				if ( !lightIndex.Find( vLight->lightDef->index ) )
 					continue;
-			} else
+			} else 
 #endif
-				if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
+			{
+				auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?
+				if ( !entDef || R_CullLocalBox( surf->frontendGeo->bounds, entDef->modelMatrix, 6, vLight->lightDef->frustum ) )
 					continue;
+			}
 		}
 		vLights.push_back( vLight );
 		if ( shadowPass )

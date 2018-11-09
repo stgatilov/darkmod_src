@@ -1028,12 +1028,13 @@ static void R_SortDrawSurfs( void ) {
 #ifdef MULTI_LIGHT_IN_FRONT // calculate the light/entity bounds intersections here to reduce the CPU load in the backend
 	idList<int> lDefInd;	// FIXME this has been calculated already somewhere - make use of that
 	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
-		drawSurf_t *surf = tr.viewDef->drawSurfs[i];
-		if ( r_ignore.GetBool() ) // perf test - skip if not used in backend, but still zero the onLights (SMP crash when toggling)
+		auto surf = tr.viewDef->drawSurfs[i];
+		auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?
+		if ( r_multiLightInFrontend.GetBool() && entDef )	// even if not used, still zero the onLights (else SMP crash when toggling)
 			for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next ) {
 				idVec3 localLightOrigin;
 				R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-				if ( R_CullLocalBox( surf->frontendGeo->bounds, surf->space->entityDef->modelMatrix, 6, vLight->lightDef->frustum ) )
+				if ( R_CullLocalBox( surf->frontendGeo->bounds, entDef->modelMatrix, 6, vLight->lightDef->frustum ) )
 					continue;
 				lDefInd.Append( vLight->lightDef->index );
 			}
