@@ -986,11 +986,15 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->sort = shader->GetSort() + tr.sortOffset;
+	drawSurf->dsFlags = 0;
+#ifdef MULTI_LIGHT_IN_FRONT
+	if( scissor.IsEmpty() )
+		drawSurf->dsFlags |= DSF_SHADOW_MAP_ONLY;
+#endif
 	if ( soft_particle_radius != -1.0f ) {	// #3878
-		drawSurf->dsFlags = DSF_SOFT_PARTICLE;
+		drawSurf->dsFlags |= DSF_SOFT_PARTICLE;
 		drawSurf->particle_radius = soft_particle_radius;
 	} else {
-		drawSurf->dsFlags = 0;
 		drawSurf->particle_radius = 0.0f;
 	}
 	if ( space->entityDef && space->entityDef->parms.noShadow ) {
@@ -1200,7 +1204,12 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			}
 		}
 
-		if ( !R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
+		if ( 
+#ifdef MULTI_LIGHT_IN_FRONT
+			r_shadowMapSinglePass.GetBool() ||
+#endif
+			!R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) 
+		) {
 
 			def.visibleCount = tr.viewCount;
 
@@ -1336,7 +1345,11 @@ void R_AddModelSurfaces( void ) {
 		}
 
 		// add the ambient surface if it has a visible rectangle
-		if ( !vEntity->scissorRect.IsEmpty() ) {
+		if ( !vEntity->scissorRect.IsEmpty() 
+#ifdef MULTI_LIGHT_IN_FRONT
+			|| r_shadowMapSinglePass.GetBool() 
+#endif
+		) {
 			model = R_EntityDefDynamicModel( &def );
 			if ( model == NULL || model->NumSurfaces() <= 0 ) {
 				if ( def.parms.timeGroup ) {

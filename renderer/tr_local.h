@@ -453,6 +453,9 @@ typedef struct viewDef_s {
 	drawSurf_t 			**drawSurfs;			// we don't use an idList for this, because
 	int					numDrawSurfs;			// it is allocated in frame temporary memory
 	int					maxDrawSurfs;			// may be resized
+#ifdef MULTI_LIGHT_IN_FRONT
+	int					numOffscreenSurfs;			// light occluders
+#endif
 
 	struct viewLight_s	*viewLights;			// chain of all viewLights effecting view
 	struct viewEntity_s	*viewEntitys;			// chain of all viewEntities effecting view, including off screen ones casting shadows
@@ -1039,7 +1042,7 @@ extern idCVar r_softShadowsRadius;
 
 extern idCVar r_useAnonreclaimer;
 #ifdef MULTI_LIGHT_IN_FRONT
-extern idCVar r_multiLightInFrontend;
+extern idCVar r_shadowMapSinglePass;
 #endif
 
 // stgatilov ROQ

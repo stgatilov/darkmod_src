@@ -1030,7 +1030,7 @@ static void R_SortDrawSurfs( void ) {
 	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
 		auto surf = tr.viewDef->drawSurfs[i];
 		auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?
-		if ( r_multiLightInFrontend.GetBool() && entDef )	// even if not used, still zero the onLights (else SMP crash when toggling)
+		if ( entDef )	// even if not used, still zero the onLights (else SMP crash when toggling)
 			for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next ) {
 				idVec3 localLightOrigin;
 				R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
@@ -1048,6 +1048,19 @@ static void R_SortDrawSurfs( void ) {
 		} else
 			surf->onLights = NULL;
 	}
+	// filter the offscreen shadow-only surfaces into a separate array
+	idList<drawSurf_t*> visible( tr.viewDef->numDrawSurfs ), offscreen( tr.viewDef->numDrawSurfs );
+	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
+		auto surf = tr.viewDef->drawSurfs[i];
+		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY )
+			offscreen.Append( surf );
+		else
+			visible.Append( surf );
+	}
+	tr.viewDef->numDrawSurfs = visible.Num();
+	tr.viewDef->numOffscreenSurfs = offscreen.Num();
+	memcpy( tr.viewDef->drawSurfs, visible.Ptr(), visible.MemoryUsed() );
+	memcpy( &tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs], offscreen.Ptr(), offscreen.MemoryUsed() );
 #endif // MULTI_LIGHT_IN_FRONT
 }
 

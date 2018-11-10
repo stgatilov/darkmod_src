@@ -84,6 +84,7 @@ struct shadowMapProgram_t : basicDepthProgram_t {
 	GLint lightCount, shadowRect, shadowTexelStep; // multi-light stuff
 	virtual	void AfterLoad();
 	void RenderAllLights();
+	void RenderAllLights(drawSurf_t *surf);
 };
 
 struct MultiLightShaderData { // used by both interaction and shadow map shaders
@@ -1082,7 +1083,7 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowPass ) {
 #ifdef MULTI_LIGHT_IN_FRONT
 	idList<int> lightIndex;
-	if ( surf->onLights && r_multiLightInFrontend.GetBool() )
+	if ( surf->onLights )
 		for ( int* pIndex = surf->onLights; *pIndex >= 0; pIndex++ )
 			lightIndex.Append( *pIndex );
 #endif
@@ -1108,16 +1109,13 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		if ( 1/* !r_ignore.GetBool()*/ ) {
 #ifdef MULTI_LIGHT_IN_FRONT
-			if ( r_multiLightInFrontend.GetBool() ) {
 				if ( !lightIndex.Find( vLight->lightDef->index ) )
 					continue;
-			} else 
-#endif
-			{
+#else
 				auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?
 				if ( !entDef || R_CullLocalBox( surf->frontendGeo->bounds, entDef->modelMatrix, 6, vLight->lightDef->frustum ) )
 					continue;
-			}
+#endif
 		}
 		vLights.push_back( vLight );
 		if ( shadowPass )
@@ -1330,6 +1328,54 @@ void shadowMapProgram_t::AfterLoad() {
 	acceptsTranslucent = true;
 }
 
+void shadowMapProgram_t::RenderAllLights(drawSurf_t *surf) {
+	/*if ( !surf->material->SurfaceCastsShadow() )
+		return; */   // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
+
+	if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
+		return;    // this flag is set by entities with parms.noShadow (candles, torches, models with separate shadow geometry, etc)
+
+	float customOffset = 0;
+	if( auto entityDef = surf->space->entityDef )
+		customOffset = entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
+	if ( customOffset != 0 )
+		qglPolygonOffset( customOffset, 0 );
+
+	if ( backEnd.currentSpace != surf->space ) {
+		qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
+		backEnd.currentSpace = surf->space;
+		backEnd.pc.c_matrixLoads++;
+	}
+
+	MultiLightShaderData data( surf, true );
+
+	for ( size_t i = 0; i < data.lightOrigins.size(); i += multiLightInteractionProgram_t::MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( data.lightOrigins.size() - i, multiLightInteractionProgram_t::MAX_LIGHTS );
+
+		qglUniform1i( lightCount, thisCount );
+		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
+		qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
+		qglUniform1fv( lightRadius, thisCount, &data.softShadowRads[i] );
+		GL_CheckErrors();
+
+		FillDepthBuffer( surf );
+
+		if ( r_showMultiLight.GetInteger() == 2 ) {
+			backEnd.pc.c_interactions++;
+			backEnd.pc.c_interactionLights += data.lightOrigins.size();
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, data.lightOrigins.size() );
+			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
+				return v.z >= 0;
+			} );
+			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps )
+				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
+		}
+	}
+
+	if ( customOffset != 0 )
+		qglPolygonOffset( 0, 0 );
+}
+
 void shadowMapProgram_t::RenderAllLights() {
 	GL_PROFILE( "shadowMapProgram_t::RenderAllLights" );
 
@@ -1354,52 +1400,9 @@ void shadowMapProgram_t::RenderAllLights() {
 	qglClear( GL_DEPTH_BUFFER_BIT );
 	for ( int i = 0; i < 4; i++ ) // clip the geometry shader output to each of the atlas pages
 		qglEnable( GL_CLIP_PLANE0 + i );
-	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
-		auto surf = backEnd.viewDef->drawSurfs[i];
-		if ( !surf->material->SurfaceCastsShadow() )
-			continue;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
-
-		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
-			continue;    // this flag is set by entities with parms.noShadow (candles, torches, models with separate shadow geometry, etc)
-
-		float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
-		if ( customOffset != 0 )
-			qglPolygonOffset( customOffset, 0 );
-
-		if ( backEnd.currentSpace != surf->space ) {
-			qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
-			backEnd.currentSpace = surf->space;
-			backEnd.pc.c_matrixLoads++;
-		}
-
-		MultiLightShaderData data( surf, true );
-
-		for ( size_t i = 0; i < data.lightOrigins.size(); i += multiLightInteractionProgram_t::MAX_LIGHTS ) {
-			int thisCount = idMath::Imin( data.lightOrigins.size() - i, multiLightInteractionProgram_t::MAX_LIGHTS );
-
-			qglUniform1i( lightCount, thisCount );
-			qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
-			qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
-			qglUniform1fv( lightRadius, thisCount, &data.softShadowRads[i] );
-			GL_CheckErrors();
-
-			FillDepthBuffer( surf );
-
-			if ( r_showMultiLight.GetInteger() == 2 ) {
-				backEnd.pc.c_interactions++;
-				backEnd.pc.c_interactionLights += data.lightOrigins.size();
-				backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, data.lightOrigins.size() );
-				auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
-					return v.z >= 0;
-				} );
-				if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps )
-					backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
-			}
-		}
-
-		if ( customOffset != 0 )
-			qglPolygonOffset( 0, 0 );
-	}
+	auto viewDef = backEnd.viewDef;
+	for ( int i = 0; i < viewDef->numDrawSurfs + viewDef->numOffscreenSurfs; i++ )
+		RenderAllLights( viewDef->drawSurfs[i] );
 	for ( int i = 0; i < 4; i++ )
 		qglDisable( GL_CLIP_PLANE0 + i );
 

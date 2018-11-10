@@ -782,6 +782,8 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 			}
 		}
 		common->Printf( "\n" );
+		if ( r_showViewEntitys.GetInteger() > 2 )
+			r_showViewEntitys.SetInteger( 0 );
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
