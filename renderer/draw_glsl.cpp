@@ -1329,8 +1329,8 @@ void shadowMapProgram_t::AfterLoad() {
 }
 
 void shadowMapProgram_t::RenderAllLights(drawSurf_t *surf) {
-	/*if ( !surf->material->SurfaceCastsShadow() )
-		return; */   // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
+	if ( !surf->material->SurfaceCastsShadow() )
+		return;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
 
 	if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
 		return;    // this flag is set by entities with parms.noShadow (candles, torches, models with separate shadow geometry, etc)
