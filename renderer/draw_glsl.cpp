@@ -466,9 +466,9 @@ void RB_GLSL_DrawInteractions_SingleLight() {
 	}
 
 	// if there are no interactions, get out!
-	if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions ) {
+	if ( r_singleLight.GetInteger() < 0 ) // duzenko 2018: I need a way to override this for debugging 
+	if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions )
 		return;
-	}
 
 	if ( r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps ) {
 		RB_GLSL_DrawLight_ShadowMap();
@@ -562,30 +562,32 @@ RB_GLSL_DrawInteractions
 ==================
 */
 void RB_GLSL_DrawInteractions() {
-	// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
-	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		auto shader = backEnd.vLight->lightShader;
-		if ( shader->LightCastsShadows() && !backEnd.vLight->tooBigForShadowMaps )
-			backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
-	}
-	ShadowAtlasIndex = 0; // reset for next run
-
-	if ( r_shadowMapSinglePass.GetBool() && r_shadows.GetInteger() == 2 )
-		shadowMapMultiShader.RenderAllLights();
-
-	if ( r_testARBProgram.GetInteger() == 2 && r_shadows.GetInteger() == 2 ) {
-		RB_GLSL_DrawInteractions_MultiLight();
-		for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-			if ( backEnd.vLight->singleLightOnly ) {
-				RB_GLSL_DrawInteractions_SingleLight();
-				backEnd.pc.c_interactionSingleLights++;
-			}
-		}
-		return;
-	}
 	GL_PROFILE( "GLSL_DrawInteractions" );
-
 	GL_SelectTexture( 0 );
+
+	if ( r_shadows.GetInteger() == 2 ) {
+		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
+		for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+			auto shader = backEnd.vLight->lightShader;
+			if ( shader->LightCastsShadows() && !backEnd.vLight->tooBigForShadowMaps )
+				backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
+		}
+		ShadowAtlasIndex = 0; // reset for next run
+
+		if ( r_shadowMapSinglePass.GetBool() )
+			shadowMapMultiShader.RenderAllLights();
+
+		if ( r_testARBProgram.GetInteger() == 2 ) {
+			RB_GLSL_DrawInteractions_MultiLight();
+			for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+				if ( backEnd.vLight->singleLightOnly ) {
+					RB_GLSL_DrawInteractions_SingleLight();
+					backEnd.pc.c_interactionSingleLights++;
+				}
+			}
+			return;
+		}
+	}
 
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) 

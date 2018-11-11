@@ -940,7 +940,7 @@ void RB_DrawView( void ) {
 
 	// if there aren't any drawsurfs, do nothing
 	if ( !backEnd.viewDef->numDrawSurfs ) {
-		return;
+		//return;
 	}
 
 	// skip render bypasses everything that has models, assuming

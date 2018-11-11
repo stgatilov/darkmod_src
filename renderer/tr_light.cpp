@@ -431,6 +431,10 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			if ( edef->parms.noDynamicInteractions && edef->world->generateAllInteractionsCalled ) {
 				continue;
 			}
+
+			if ( r_singleEntity.GetInteger() >= 0 && r_singleEntity.GetInteger() != edef->index ) {
+				continue;
+			}
 			
 			// if any of the edef's interaction match this light, we don't
 			// need to consider it. 
@@ -1123,6 +1127,30 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	// adds for this view
 }
 
+#ifdef MULTI_LIGHT_IN_FRONT
+/*
+===============
+R_HasVisibleShadows
+
+Do we need to add offscreen geometry? Is it casting shadows into the view frustum?
+===============
+*/
+static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
+	if ( !r_shadowMapSinglePass.GetBool() )
+		return false;
+	auto &def = *vEntity->entityDef;
+	for ( auto inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {
+		if ( inter->lightDef->viewCount != tr.viewCount ) {
+			continue;
+		}
+		idScreenRect shadowRect;
+		return inter->HasActive(shadowRect);
+		//inter->CullInteractionByViewFrustum( tr.viewDef->viewFrustum )
+	}
+	return false;
+}
+#endif
+
 /*
 ===============
 R_AddAmbientDrawsurfs
@@ -1205,10 +1233,10 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		}
 
 		if ( 
-#ifdef MULTI_LIGHT_IN_FRONT
-			r_shadowMapSinglePass.GetBool() ||
-#endif
 			!R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) 
+#ifdef MULTI_LIGHT_IN_FRONT
+			|| R_HasVisibleShadows( vEntity )
+#endif
 		) {
 
 			def.visibleCount = tr.viewCount;
@@ -1347,7 +1375,7 @@ void R_AddModelSurfaces( void ) {
 		// add the ambient surface if it has a visible rectangle
 		if ( !vEntity->scissorRect.IsEmpty() 
 #ifdef MULTI_LIGHT_IN_FRONT
-			|| r_shadowMapSinglePass.GetBool() 
+			|| R_HasVisibleShadows( vEntity )
 #endif
 		) {
 			model = R_EntityDefDynamicModel( &def );
@@ -1415,6 +1443,7 @@ void R_RemoveUnecessaryViewLights( void ) {
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
+		if ( r_singleLight.GetInteger() < 0 ) // duzenko 2018: I need a way to override this for debugging 
 		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) {
 			vLight->localShadows = NULL;
 			vLight->globalShadows = NULL;

@@ -132,6 +132,7 @@ public:
 	// makes sure all necessary light surfaces and shadow surfaces are created, and
 	// calls R_LinkLightSurf() for each one
 	void					AddActiveInteraction( void );
+	bool					HasActive( idScreenRect &shadowScissor );
 
 private:
 	enum {

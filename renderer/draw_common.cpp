@@ -846,7 +846,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	int	 i;
 
 	// only obey skipAmbient if we are rendering a view
-	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetInteger() == 1 ) {
+	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetInteger() == 1 || !numDrawSurfs ) {
 		return numDrawSurfs;
 	}
 	GL_PROFILE( "STD_DrawShaderPasses" );
