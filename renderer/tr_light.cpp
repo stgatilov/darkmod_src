@@ -1144,8 +1144,8 @@ static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
 			continue;
 		}
 		idScreenRect shadowRect;
-		return inter->HasActive(shadowRect);
-		//inter->CullInteractionByViewFrustum( tr.viewDef->viewFrustum )
+		if ( inter->HasActive( shadowRect ) )
+			return true;
 	}
 	return false;
 }
