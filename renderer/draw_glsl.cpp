@@ -175,6 +175,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	// perform setup here that will be constant for all interactions
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
+	backEnd.currentSpace = NULL; // ambient/interaction shaders conflict
 
 	// bind the vertex and fragment program
 	interactionProgram_t::ChooseInteractionProgram();
