@@ -78,9 +78,11 @@ public:
 	// Returns the number of milliseconds since the last frame.
 	virtual void	Frame() = 0;
 
+#ifdef MULTIPLAYER
 	// Returns true if a multiplayer game is running.
 	// CVars and commands are checked differently in multiplayer mode.
 	virtual bool	IsMultiplayer() = 0;
+#endif
 
 	// Processes the given event.
 	virtual	bool	ProcessEvent( const sysEvent_t *event ) = 0;

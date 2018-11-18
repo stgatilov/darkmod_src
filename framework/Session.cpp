@@ -395,18 +395,16 @@ void idSessionLocal::Shutdown() {
 	Clear();
 }
 
+#ifdef MULTIPLAYER
 /*
 ===============
 idSessionLocal::IsMultiplayer
 ===============
 */
 bool	idSessionLocal::IsMultiplayer() {
-#ifdef MULTIPLAYER
 	return idAsyncNetwork::IsActive();
-#else
-	return false;
-#endif
 }
+#endif
 
 /*
 ================
@@ -1438,12 +1436,13 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	// close console and remove any prints from the notify lines
 	console->Close();
 
+#ifdef MULTIPLAYER
 	if ( IsMultiplayer() ) {
 		// make sure the mp GUI isn't up, or when players get back in the
 		// map, mpGame's menu and the gui will be out of sync.
 		SetGUI( NULL, NULL );
 	}
-
+#endif
 	// mute sound
 	soundSystem->SetMute( true );
 
@@ -1879,11 +1878,12 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		return false;
 	}
 
+#ifdef MULTIPLAYER
 	if ( IsMultiplayer() ) {
 		common->Printf( "Can't save during net play.\n" );
 		return false;
 	}
-
+#endif
 	if ( game->GetPersistentPlayerInfo( 0 ).GetInt( "health" ) <= 0 ) {
 		// "Must be alive" and "Unable to save"
 		MessageBox( MSG_OK, common->Translate ( "#str_02012" ), common->Translate ( "#str_02013" ), true );
@@ -2086,11 +2086,12 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 	int i;
 	idStr in, loadFile, saveMap, gamename;
 
+#ifdef MULTIPLAYER
 	if ( IsMultiplayer() ) {
 		common->Printf( "Can't load during net play.\n" );
 		return false;
 	}
-
+#endif
 	//Hide the dialog box if it is up.
 	StopBox();
 

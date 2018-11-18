@@ -286,7 +286,11 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 
 	// flag for in-game menu
 	if ( mapSpawned ) {
-		guiMainMenu->SetStateString( "inGame", IsMultiplayer() ? "2" : "1" );
+		guiMainMenu->SetStateString( "inGame", 
+#ifdef MULTIPLAYER
+			IsMultiplayer() ? "2" : 
+#endif
+			"1" );
 	} else {
 		guiMainMenu->SetStateString( "inGame", "0" );
 	}

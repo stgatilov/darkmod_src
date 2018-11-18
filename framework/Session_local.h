@@ -93,8 +93,9 @@ public:
 
 	virtual void		Frame();
 
+#ifdef MULTIPLAYER
 	virtual bool		IsMultiplayer();
-
+#endif
 	virtual bool		ProcessEvent( const sysEvent_t *event );
 
 	virtual void		StartMenu( bool playIntro = false );

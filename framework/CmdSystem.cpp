@@ -471,10 +471,12 @@ void idCmdSystemLocal::ExecuteTokenizedString( const idCmdArgs &args ) {
 			cmd->next = commands;
 			commands = cmd;
 
+#ifdef MULTIPLAYER
 			if ( ( cmd->flags & (CMD_FL_CHEAT|CMD_FL_TOOL) ) && session && session->IsMultiplayer() && !cvarSystem->GetCVarBool( "net_allowCheats" ) ) {
 				common->Printf( "Command '%s' not valid in multiplayer mode.\n", cmd->name );
 				return;
 			}
+#endif
 			// perform the action
 			if ( !cmd->function ) {
 				break;
