@@ -1164,7 +1164,7 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	MultiLightShaderData data( surf, false );
 	idList<idVec3> lightColors;
 	idList<idMat4> projectionFalloff;
-	for each (auto vLight in data.vLights) {
+	for ( auto vLight : data.vLights ) {
 		const float			*lightRegs = vLight->shaderRegisters;
 		const idMaterial	*lightShader = vLight->lightShader;
 		const shaderStage_t	*lightStage = lightShader->GetStage( 0 );
