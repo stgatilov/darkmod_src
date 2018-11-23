@@ -1393,7 +1393,6 @@ void shadowMapProgram_t::RenderAllLights() {
 	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
-	auto &page = ShadowAtlasPages[backEnd.vLight->shadowMapIndex - 1];
 	float texSize = globalImages->shadowAtlas->uploadHeight;
 	qglUniform1f( shadowTexelStep, 1/texSize );
 
