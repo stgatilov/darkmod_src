@@ -1022,6 +1022,8 @@ R_SortDrawSurfs
 =================
 */
 static void R_SortDrawSurfs( void ) {
+	if ( !tr.viewDef->numDrawSurfs ) // otherwise an assert fails in debug builds
+		return;
 	// sort the drawsurfs by sort type, then orientation, then shader
 	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
 		R_QsortSurfaces );
