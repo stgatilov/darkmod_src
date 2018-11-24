@@ -613,9 +613,8 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	}
 
 	if ( vLight->lightShader->IsAmbientLight() ) {
-		if ( r_skipAmbient.GetInteger() == 2 ) {
+		if ( r_skipAmbient.GetInteger() & 2 )
 			return;
-		}
 	} else if ( r_skipInteractions.GetBool() ) {
 		return;
 	}

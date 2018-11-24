@@ -81,7 +81,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 
 struct shadowMapProgram_t : basicDepthProgram_t {
 	GLint lightOrigin, lightRadius, modelMatrix;
-	GLint lightCount, shadowRect, shadowTexelStep; // multi-light stuff
+	GLint lightCount, shadowRect, shadowTexelStep, lightFrustum; // multi-light stuff
 	virtual	void AfterLoad();
 	void RenderAllLights();
 	void RenderAllLights(drawSurf_t *surf);
@@ -92,6 +92,7 @@ struct MultiLightShaderData { // used by both interaction and shadow map shaders
 	std::vector<idVec3> lightOrigins;
 	std::vector<idVec4> shadowRects;
 	std::vector<float> softShadowRads;
+	std::vector<idVec4> lightFrustum;
 	MultiLightShaderData( const drawSurf_t *surf, bool shadowPass );
 };
 
@@ -1102,7 +1103,7 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
 			continue;
 		if ( vLight->lightShader->IsAmbientLight() ) {
-			if ( r_skipAmbient.GetInteger() == 2 )
+			if ( r_skipAmbient.GetInteger() & 2 )
 				continue;
 		} else {
 			if ( r_skipInteractions.GetBool() )
@@ -1125,6 +1126,8 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 			lightOrigins.push_back( vLight->globalLightOrigin );
 		else
 			lightOrigins.push_back( localLightOrigin );
+		for ( int i = 0; i < 6; i++ )
+			lightFrustum.push_back( vLight->lightDef->frustum[i].ToVec4() );
 
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowRects.push_back( idVec4( 0, 0, -2, 0 ) );
@@ -1328,6 +1331,7 @@ void shadowMapProgram_t::AfterLoad() {
 	lightCount = qglGetUniformLocation( program, "u_lightCount" );
 	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
 	shadowTexelStep = qglGetUniformLocation( program, "u_shadowTexelStep" );
+	lightFrustum = qglGetUniformLocation( program, "u_lightFrustum" );
 	acceptsTranslucent = true;
 }
 
@@ -1359,6 +1363,7 @@ void shadowMapProgram_t::RenderAllLights(drawSurf_t *surf) {
 		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
 		qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
 		qglUniform1fv( lightRadius, thisCount, &data.softShadowRads[i] );
+		qglUniform4fv( lightFrustum, thisCount*6, data.lightFrustum[i*6].ToFloatPtr() );
 		GL_CheckErrors();
 
 		FillDepthBuffer( surf );
