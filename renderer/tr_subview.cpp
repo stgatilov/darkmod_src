@@ -19,6 +19,9 @@
 #include "tr_local.h"
 #include "../game/Grabber.h"
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#endif
 
 typedef struct {
 	idVec3		origin;
@@ -333,7 +336,7 @@ R_MirrorRender
 void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scissor ) {
 	viewDef_t		*parms;
 
-	if ( tr.viewDef->isSubview ) // #4615 HOM effect - only draw mirror from player's view
+	if ( tr.viewDef->superView && tr.viewDef->superView->isSubview ) // #4615 HOM effect - only draw mirrors from player's view and top-level asubviews
 		return;
 
 	// remote views can be reused in a single frame
@@ -388,6 +391,8 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	*parms = *tr.primaryView;
 	parms->renderView.viewID = VID_SUBVIEW;
 	parms->numClipPlanes = 0;
+	parms->superView = tr.viewDef;
+	parms->subviewSurface = surf;
 
 	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
 
