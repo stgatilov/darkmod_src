@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>openal-soft-master\common;openal-soft-master\OpenAL32\Include;openal-soft-master\build;openal-soft-master\Alc;$(SolutionDir)/include/libpng;$(SolutionDir)/include/ffmpeg;$(SolutionDir)/lib/curl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>openal-soft\common;openal-soft\OpenAL32\Include;openal-soft\build;openal-soft\Alc;$(SolutionDir)/include/libpng;$(SolutionDir)/include/ffmpeg;$(SolutionDir)/lib/curl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_IL_BUILD_LIBRARY;BUILDING_LIBCURL;MAKEDLL;AL_BUILD_LIBRARY;AL_ALEXT_PROTOTYPES;_LARGEFILE_SOURCE;_LARGE_FILES;restrict=;inline=__inline;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;strcasecmp=_stricmp;strncasecmp=_strnicmp;OpenAL_EXPORTS;HAVE_STRUCT_TIMESPEC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

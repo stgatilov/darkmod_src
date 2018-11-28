@@ -523,68 +523,68 @@
     <ClCompile Include="devil.cpp" />
     <ClCompile Include="ffmpeg.cpp" />
     <ClCompile Include="jpeg.cpp" />
-    <ClCompile Include="openal-soft-master\Alc\ALc.c" />
-    <ClCompile Include="openal-soft-master\Alc\alcConfig.c" />
-    <ClCompile Include="openal-soft-master\Alc\alcRing.c" />
-    <ClCompile Include="openal-soft-master\Alc\ALu.c" />
-    <ClCompile Include="openal-soft-master\Alc\ambdec.c" />
-    <ClCompile Include="openal-soft-master\Alc\backends\base.c" />
-    <ClCompile Include="openal-soft-master\Alc\backends\loopback.c" />
-    <ClCompile Include="openal-soft-master\Alc\backends\mmdevapi.c" />
-    <ClCompile Include="openal-soft-master\Alc\backends\null.c">
+    <ClCompile Include="openal-soft\Alc\ALc.c" />
+    <ClCompile Include="openal-soft\Alc\alcConfig.c" />
+    <ClCompile Include="openal-soft\Alc\alcRing.c" />
+    <ClCompile Include="openal-soft\Alc\ALu.c" />
+    <ClCompile Include="openal-soft\Alc\ambdec.c" />
+    <ClCompile Include="openal-soft\Alc\backends\base.c" />
+    <ClCompile Include="openal-soft\Alc\backends\loopback.c" />
+    <ClCompile Include="openal-soft\Alc\backends\mmdevapi.c" />
+    <ClCompile Include="openal-soft\Alc\backends\null.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)/null_backends.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)/null_backends.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)/null_backends.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)/null_backends.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="openal-soft-master\Alc\backends\wave.c" />
-    <ClCompile Include="openal-soft-master\Alc\backends\winmm.c" />
-    <ClCompile Include="openal-soft-master\Alc\bformatdec.c" />
-    <ClCompile Include="openal-soft-master\Alc\bs2b.c" />
-    <ClCompile Include="openal-soft-master\Alc\converter.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\chorus.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\compressor.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\dedicated.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\distortion.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\echo.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\equalizer.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\flanger.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\modulator.c" />
-    <ClCompile Include="openal-soft-master\Alc\effects\null.c">
+    <ClCompile Include="openal-soft\Alc\backends\wave.c" />
+    <ClCompile Include="openal-soft\Alc\backends\winmm.c" />
+    <ClCompile Include="openal-soft\Alc\bformatdec.c" />
+    <ClCompile Include="openal-soft\Alc\bs2b.c" />
+    <ClCompile Include="openal-soft\Alc\converter.c" />
+    <ClCompile Include="openal-soft\Alc\effects\chorus.c" />
+    <ClCompile Include="openal-soft\Alc\effects\compressor.c" />
+    <ClCompile Include="openal-soft\Alc\effects\dedicated.c" />
+    <ClCompile Include="openal-soft\Alc\effects\distortion.c" />
+    <ClCompile Include="openal-soft\Alc\effects\echo.c" />
+    <ClCompile Include="openal-soft\Alc\effects\equalizer.c" />
+    <ClCompile Include="openal-soft\Alc\effects\flanger.c" />
+    <ClCompile Include="openal-soft\Alc\effects\modulator.c" />
+    <ClCompile Include="openal-soft\Alc\effects\null.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)/null_effects.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)/null_effects.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)/null_effects.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)/null_effects.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="openal-soft-master\Alc\effects\reverb.c" />
-    <ClCompile Include="openal-soft-master\Alc\helpers.c" />
-    <ClCompile Include="openal-soft-master\Alc\hrtf.c" />
-    <ClCompile Include="openal-soft-master\Alc\mastering.c" />
-    <ClCompile Include="openal-soft-master\Alc\mixer.c" />
-    <ClCompile Include="openal-soft-master\Alc\mixer_c.c" />
-    <ClCompile Include="openal-soft-master\Alc\mixer_sse.c" />
-    <ClCompile Include="openal-soft-master\Alc\mixer_sse2.c" />
-    <ClCompile Include="openal-soft-master\Alc\mixer_sse3.c" />
-    <ClCompile Include="openal-soft-master\Alc\mixer_sse41.c" />
-    <ClCompile Include="openal-soft-master\Alc\nfcfilter.c" />
-    <ClCompile Include="openal-soft-master\Alc\panning.c" />
-    <ClCompile Include="openal-soft-master\Alc\uhjfilter.c" />
-    <ClCompile Include="openal-soft-master\common\almalloc.c" />
-    <ClCompile Include="openal-soft-master\common\atomic.c" />
-    <ClCompile Include="openal-soft-master\common\rwlock.c" />
-    <ClCompile Include="openal-soft-master\common\threads.c" />
-    <ClCompile Include="openal-soft-master\common\uintmap.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alAuxEffectSlot.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alBuffer.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alEffect.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alError.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alExtension.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alFilter.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alListener.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alSource.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alState.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\alThunk.c" />
-    <ClCompile Include="openal-soft-master\OpenAL32\sample_cvt.c" />
+    <ClCompile Include="openal-soft\Alc\effects\reverb.c" />
+    <ClCompile Include="openal-soft\Alc\helpers.c" />
+    <ClCompile Include="openal-soft\Alc\hrtf.c" />
+    <ClCompile Include="openal-soft\Alc\mastering.c" />
+    <ClCompile Include="openal-soft\Alc\mixer.c" />
+    <ClCompile Include="openal-soft\Alc\mixer_c.c" />
+    <ClCompile Include="openal-soft\Alc\mixer_sse.c" />
+    <ClCompile Include="openal-soft\Alc\mixer_sse2.c" />
+    <ClCompile Include="openal-soft\Alc\mixer_sse3.c" />
+    <ClCompile Include="openal-soft\Alc\mixer_sse41.c" />
+    <ClCompile Include="openal-soft\Alc\nfcfilter.c" />
+    <ClCompile Include="openal-soft\Alc\panning.c" />
+    <ClCompile Include="openal-soft\Alc\uhjfilter.c" />
+    <ClCompile Include="openal-soft\common\almalloc.c" />
+    <ClCompile Include="openal-soft\common\atomic.c" />
+    <ClCompile Include="openal-soft\common\rwlock.c" />
+    <ClCompile Include="openal-soft\common\threads.c" />
+    <ClCompile Include="openal-soft\common\uintmap.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alAuxEffectSlot.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alBuffer.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alEffect.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alError.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alExtension.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alFilter.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alListener.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alSource.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alState.c" />
+    <ClCompile Include="openal-soft\OpenAL32\alThunk.c" />
+    <ClCompile Include="openal-soft\OpenAL32\sample_cvt.c" />
     <ClCompile Include="vorbis.cpp" />
     <ClCompile Include="zlib.cpp" />
   </ItemGroup>
