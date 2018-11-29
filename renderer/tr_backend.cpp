@@ -876,7 +876,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// needed for editor rendering
 	RB_SetDefaultGLState();
 
-	bool isv3d = false, was2d = false; // needs to be declared outside of switch case
+	bool isv3d = false, fboOff = false; // needs to be declared outside of switch case
 
 	while ( cmds ) {
 		switch ( cmds->commandId ) {
@@ -886,12 +886,12 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			backEnd.viewDef = ( ( const drawSurfsCommand_t * )cmds )->viewDef;
 			isv3d = ( backEnd.viewDef->viewEntitys != nullptr );	// view is 2d or 3d
 			if ( !backEnd.viewDef->IsLightGem() ) {					// duzenko #4425: create/switch to framebuffer object
-				if ( !was2d ) {										// don't switch to FBO if some 2d has happened (e.g. compass)
+				if ( !fboOff ) {									// don't switch to FBO if bloom or some 2d has happened
 					if ( isv3d ) {
 						FB_TogglePrimary( true );
 					} else {
 						FB_TogglePrimary( false );					// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
-						was2d = true;
+						fboOff = true;
 					}
 				}
 			}
@@ -913,6 +913,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_BLOOM:
 			RB_Bloom();
 			c_drawBloom++;
+			fboOff = true;
 			break;
 		case RC_COPY_RENDER:
 			RB_CopyRender( cmds );

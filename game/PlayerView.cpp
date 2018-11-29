@@ -555,10 +555,10 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 				renderSystem->DrawStretchPic( blob->x, blob->y, blob->w, blob->h,blob->s1, blob->t1, blob->s2, blob->t2, blob->material );
 			}
 		}
-		if (drawHUD)
+		/*if (drawHUD)
 		{
 			player->DrawHUD( hud );
-		}
+		}*/
 
 		// tunnel vision
 

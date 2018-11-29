@@ -660,8 +660,8 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 	}
 
 	// close any gui drawing
-	tr.guiModel->EmitFullScreen();
-	tr.guiModel->Clear();
+	/*tr.guiModel->EmitFullScreen();
+	tr.guiModel->Clear();*/
 
 	int startTime = Sys_Milliseconds();
 
@@ -746,7 +746,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 	tr.pc.frontEndMsec += endTime - startTime;
 
 	// prepare for any 2D drawing after this
-	tr.guiModel->Clear();
+	//tr.guiModel->Clear();
 #endif
 }
 
