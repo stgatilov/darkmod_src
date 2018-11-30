@@ -79,7 +79,10 @@ void idRenderWindow::PreRender() {
 		spawnArgs.Set("classname", "light");
 		spawnArgs.Set("name", "light_1");
 		spawnArgs.Set("origin", lightOrigin.ToVec3().ToString());
-		spawnArgs.Set("_color", lightColor.ToVec3().ToString());
+		spawnArgs.Set( "_color", lightColor.ToVec3().ToString() );
+		for ( auto var : definedVars )
+			if ( !strcmp( var->GetName(), "noshadows" ) )
+				spawnArgs.Set( "noshadows", "1" );
 		gameEdit->ParseSpawnArgsToRenderLight( &spawnArgs, &rLight );
 		lightDef = world->AddLightDef( &rLight );
 		if ( !modelName[0] ) {
