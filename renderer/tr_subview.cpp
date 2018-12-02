@@ -828,8 +828,8 @@ bool R_GenerateSubViews( void ) {
 
 	subviews = false;
 
-	extern idCVar cv_lg_interleave;
-	if ( !tr.viewDef->isSubview && cv_lg_interleave.GetBool() ) {
+	extern idCVar cv_lg_interleave;								// FIXME a better way to check for RenderWindow views? (compass, etc)
+	if ( !tr.viewDef->isSubview && cv_lg_interleave.GetBool() && !tr.viewDef->renderWorld->mapName.IsEmpty() ) {
 		R_Lightgem_Render();
 		subviews = true;
 	}
