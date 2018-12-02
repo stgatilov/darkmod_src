@@ -76,7 +76,7 @@ void RB_SetDefaultGLState( void ) {
 RB_LogComment
 ====================
 */
-void RB_LogComment( const char *comment, ... ) {
+/*void RB_LogComment( const char *comment, ... ) {
 	if ( !tr.logFile ) {
 		return;
 	}
@@ -86,7 +86,7 @@ void RB_LogComment( const char *comment, ... ) {
 	va_start( marker, comment );
 	vfprintf( tr.logFile, comment, marker );
 	va_end( marker );
-}
+}*/
 
 
 //=============================================================================
