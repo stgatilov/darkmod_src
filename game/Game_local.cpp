@@ -4671,6 +4671,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Add the command to buffer, but no need to issue it immediately. 
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_lod_bias_changed\n" );
 	}
+	else if (cmd == "shadowimplchanged")	// We have to call "reloadModels" to make sure shadows implementations toggle correctly
+	{										// stgatilov: added for 2.07
+		// Add the command to buffer, but no need to issue it immediately. 
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "reloadModels\n" );
+	}
 	else if (cmd == "resetbrightness")
 	{
 		idCVar * cvar = cvarSystem->Find( "r_brightness" );
