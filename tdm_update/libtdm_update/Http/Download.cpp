@@ -102,7 +102,7 @@ void Download::Start()
 
 void Download::Stop()
 {
-	if (_thread != NULL && _request != NULL)
+	if (_thread != NULL)
 	{
 		// Set the URL index beyond the list size to prevent 
 		// the worker thread from proceeding to the next URL
@@ -110,7 +110,8 @@ void Download::Stop()
 		_curUrl = _urls.size();
 
 		// Cancel the request
-		_request->Cancel();
+		if (_request)
+			_request->Cancel();
 
 		// Wait for the thread to finish
 		_thread->join();

@@ -1206,7 +1206,8 @@ void Updater::NotifyDownloadProgress()
 	if (curDownloadId != -1 && _downloadProgressCallback)
 	{
 		DownloadPtr curDownload = _downloadManager->GetCurrentDownload();
-
+		if (!curDownload)
+			return;		//may happen due to race condition =(
 		CurDownloadInfo info;
 
 		info.file = curDownload->GetFilename();
