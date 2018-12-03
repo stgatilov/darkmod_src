@@ -137,8 +137,10 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 		}
 	}
 
-	if ( !args->GetFloat( "size", "-1", renderLight->radius ) )
-		renderLight->radius = 1e-2 * idMath::Fmin( renderLight->lightRadius[0], renderLight->lightRadius[1], renderLight->lightRadius[2] );
+	bool sizeFound = args->GetFloat( "emitter_size", "-1", renderLight->radius );
+	//stgatilov: computing emitter size from light radius in all cases is a dangerous default, we should not impose it on players!
+	/*if ( !sizeFound )
+		renderLight->radius = 1e-2 * idMath::Fmin( renderLight->lightRadius[0], renderLight->lightRadius[1], renderLight->lightRadius[2] );*/
 
 	// get the rotation matrix in either full form, or single angle form
 	idAngles angles;
