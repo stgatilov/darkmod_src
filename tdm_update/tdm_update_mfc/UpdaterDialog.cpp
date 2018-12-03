@@ -56,7 +56,7 @@ UpdaterDialog::UpdaterDialog(const fs::path& executableName,
 
 	// Pause before downloading anything
 	_controller->PauseAt(DownloadNewUpdater);
-	_controller->PauseAt(DownloadDifferentialUpdate);
+	//_controller->PauseAt(DownloadDifferentialUpdate);
 	_controller->PauseAt(DownloadFullUpdate);
 
 	_controller->PauseAt(RestartUpdater);
@@ -419,7 +419,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		_step2State.SetWindowText(CString("--"));
 		break;
 
-	case DownloadVersionInfo:
+	/*case DownloadVersionInfo:
 		_statusText.SetWindowText(CString("Download version information..."));
 		_progressMain.SetPos(0);
 
@@ -445,7 +445,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		_step6State.SetWindowText(CString(""));
 		_step7State.SetWindowText(CString(""));
 		_step8State.SetWindowText(CString(""));
-		break;
+		break;*/
 
 	case CompareLocalFilesToNewest:
 		_statusText.SetWindowText(CString("Comparing local files to server definitions..."));
@@ -476,7 +476,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		_step5State.SetWindowText(CString("--"));
 		break;
 
-	case DownloadDifferentialUpdate:
+	/*case DownloadDifferentialUpdate:
 		// Update header title in this step
 		_subTitle.SetWindowText(CString("Downloading differential update from servers"));
 
@@ -504,7 +504,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 
 		_step7State.SetWindowText(CString(""));
 		_step8State.SetWindowText(CString(""));
-		break;
+		break;*/
 
 	case DownloadFullUpdate:
 		// Update header title in this step
@@ -616,7 +616,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 	}
 	break;
 
-	case DownloadVersionInfo:
+	/*case DownloadVersionInfo:
 	{
 		CString prevText;
 		_step2Text.GetWindowText(prevText);
@@ -656,7 +656,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		_step3Text.SetWindowText(prevText + versionFound.c_str());
 		_statusText.SetWindowText(CString("Done matching local version."));
 	}
-	break;
+	break;*/
 
 	case CompareLocalFilesToNewest:
 	{
@@ -726,7 +726,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 	}
 	break;
 
-	case DownloadDifferentialUpdate:
+	/*case DownloadDifferentialUpdate:
 	{
 		CString prevText;
 		_step5Text.GetWindowText(prevText);
@@ -744,7 +744,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		_step6Text.SetWindowText(prevText + " done.");
 		_statusText.SetWindowText(CString("Done applying differential update."));
 	}
-	break;
+	break;*/
 
 	case DownloadFullUpdate:
 	{
@@ -807,7 +807,7 @@ void UpdaterDialog::OnFailure(UpdateStep step, const std::string& errorMessage)
 	}
 	break;
 
-	case DownloadVersionInfo:
+	/*case DownloadVersionInfo:
 	{
 		CString prevText;
 		_step2Text.GetWindowText(prevText);
@@ -817,7 +817,7 @@ void UpdaterDialog::OnFailure(UpdateStep step, const std::string& errorMessage)
 		_controller->Abort();
 		OnFail();
 	}
-	break;
+	break;*/
 
 	case DownloadNewUpdater:
 	{
@@ -831,7 +831,7 @@ void UpdaterDialog::OnFailure(UpdateStep step, const std::string& errorMessage)
 	}
 	break;
 
-	case DownloadDifferentialUpdate:
+	/*case DownloadDifferentialUpdate:
 	{
 		CString prevText;
 		_step5Text.GetWindowText(prevText);
@@ -854,7 +854,7 @@ void UpdaterDialog::OnFailure(UpdateStep step, const std::string& errorMessage)
 		_controller->Abort();
 		OnFail();
 	}
-	break;
+	break;*/
 
 	case DownloadFullUpdate:
 	{
@@ -956,7 +956,7 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 
 void UpdaterDialog::OnStartDifferentialUpdate(const DifferentialUpdateInfo& info)
 {
-	_controller->DontPauseAt(DownloadDifferentialUpdate);
+	//_controller->DontPauseAt(DownloadDifferentialUpdate);
 
 	std::string sizeStr = Util::GetHumanReadableBytes(info.filesize);
 	std::string text = (boost::format("Downloading update package for version %s to %s (size: %s)...") % 

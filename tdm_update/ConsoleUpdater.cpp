@@ -147,7 +147,7 @@ void ConsoleUpdater::OnStartStep(UpdateStep step)
 		TraceLog::WriteLine(LOG_STANDARD, " Downloading CRC file...");
 		break;
 
-	case DownloadVersionInfo:
+/*	case DownloadVersionInfo:
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
 		TraceLog::WriteLine(LOG_STANDARD, " Downloading version info file...");
 		break;
@@ -155,7 +155,7 @@ void ConsoleUpdater::OnStartStep(UpdateStep step)
 	case DetermineLocalVersion:
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
 		TraceLog::WriteLine(LOG_STANDARD, " Trying to match local files to version definitions...");
-		break;
+		break;*/
 
 	case CompareLocalFilesToNewest:
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
@@ -167,7 +167,7 @@ void ConsoleUpdater::OnStartStep(UpdateStep step)
 		TraceLog::WriteLine(LOG_STANDARD, " Downloading TDM Update application...");
 		break;
 
-	case DownloadDifferentialUpdate:
+/*	case DownloadDifferentialUpdate:
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
 		TraceLog::WriteLine(LOG_STANDARD, " Downloading differential update package...");
 		break;
@@ -175,7 +175,7 @@ void ConsoleUpdater::OnStartStep(UpdateStep step)
 	case PerformDifferentialUpdate:
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
 		TraceLog::WriteLine(LOG_STANDARD, " Applying differential update package...");
-		break;
+		break;*/
 
 	case DownloadFullUpdate:
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
@@ -239,7 +239,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
     }
     break;
 
-    case DownloadVersionInfo:
+/*    case DownloadVersionInfo:
     {
         TraceLog::Write(LOG_STANDARD, " Done downloading versions.");
 
@@ -269,7 +269,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
             TraceLog::WriteLine(LOG_STANDARD, versionFound);
         }
     }
-    break;
+    break;*/
 
     case CompareLocalFilesToNewest:
     {
@@ -315,7 +315,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
     }
     break;
 
-    case DownloadDifferentialUpdate:
+/*    case DownloadDifferentialUpdate:
     {
         TraceLog::WriteLine(LOG_STANDARD, " Done downloading the differential update.");
     }
@@ -325,7 +325,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
     {
         TraceLog::WriteLine(LOG_STANDARD, " Done applying the differential update.");
     }
-    break;
+    break;*/
 
     case DownloadFullUpdate:
     {

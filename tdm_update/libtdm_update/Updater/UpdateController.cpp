@@ -211,13 +211,13 @@ void UpdateController::PerformStep(UpdateStep step)
 		_updater.CheckLocalFiles();
 		break;
 
-	case DownloadVersionInfo:
+/*	case DownloadVersionInfo:
 		_updater.GetVersionInfoFromServer();
 		break;
 
 	case DetermineLocalVersion:
 		_updater.DetermineLocalVersion();
-		break;
+		break;*/
 
 	case DownloadNewUpdater:
 		// Prepare, Download, Apply
@@ -226,7 +226,7 @@ void UpdateController::PerformStep(UpdateStep step)
 		_updater.CleanupUpdateStep();
 		break;
 	
-	case DownloadDifferentialUpdate:
+/*	case DownloadDifferentialUpdate:
 		{
             DifferentialUpdateInfo info = _updater.GetDifferentialUpdateInfo();
 			_view.OnStartDifferentialUpdate(info);
@@ -244,7 +244,7 @@ void UpdateController::PerformStep(UpdateStep step)
 
 			_updater.PerformDifferentialUpdateStep();
 		}
-		break;
+		break;*/
 
 	case DownloadFullUpdate:
         _updater.PrepareUpdateStep();
@@ -339,7 +339,9 @@ void UpdateController::OnFinishStep(UpdateStep step)
 		break;
 
 	case DownloadCrcs:
-		TryToProceedTo(DownloadVersionInfo);
+		TryToProceedTo(CompareLocalFilesToNewest);
+		break;
+/*		TryToProceedTo(DownloadVersionInfo);
 		break;
 
 	case DownloadVersionInfo:
@@ -350,7 +352,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 	case DetermineLocalVersion:
 		TryToProceedTo(CompareLocalFilesToNewest);
 		break;
-
+*/
 	case CompareLocalFilesToNewest:
 		{
 			if (_updater.NewUpdaterAvailable())
@@ -360,7 +362,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 			}
 			else if (_updater.LocalFilesNeedUpdate())
 			{
-				// Update necessary, updater is ok
+				/*// Update necessary, updater is ok
 				if (_updater.DifferentialUpdateAvailable())
 				{
 					TryToProceedTo(DownloadDifferentialUpdate);
@@ -372,9 +374,9 @@ void UpdateController::OnFinishStep(UpdateStep step)
 					{
 						_view.OnMessage("A differential update has been applied to your installation,\nthough some files still need to be updated.");
 					}
-
+					*/
 					TryToProceedTo(DownloadFullUpdate);
-				}
+				//}
 			}
 			else
 			{
@@ -397,7 +399,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 		}
 		break;
 
-	case DownloadDifferentialUpdate:
+/*	case DownloadDifferentialUpdate:
 		{
 			TryToProceedTo(PerformDifferentialUpdate);
 		}
@@ -423,7 +425,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 			// Go back to determine our local version
 			TryToProceedTo(DetermineLocalVersion);
 		}
-		break;
+		break;*/
 
 	case DownloadFullUpdate:
 		TryToProceedTo(InstallVcRedist);
