@@ -18,6 +18,7 @@
 #include "../Constants.h"
 #include "../Util.h"
 #include "../ExceptionSafeThread.h"
+#include "../tdmsync/tdmsync.h"
 
 namespace tdm
 {
@@ -775,6 +776,25 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 
 		pk4->DeflateFile(sourceFile, targetFile.string(), method);
 	}
+	//close pk4 file (ensure all contents are flushed to disk)
+	pk4.reset();
+
+	//create .tdmsync files with metainfo
+	auto dataFn = pk4Path.string();
+	auto metaFn = dataFn + ".tdmsync";
+	{
+		using namespace TdmSync;
+		StdioFile dataFile;
+		dataFile.open(dataFn.c_str(), StdioFile::Read);
+		FileInfo info;
+		info.computeFromFile(dataFile, 4096);
+
+		StdioFile metaFile;
+		metaFile.open(metaFn.c_str(), StdioFile::Write);
+		info.serialize(metaFile);
+		metaFile.flush();
+	}
+
 }
 
 void Packager::CreatePackage()
