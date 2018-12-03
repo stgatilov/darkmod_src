@@ -1320,8 +1320,10 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 		// Close the zip file before removal
 		zipFile.reset();
 
+		/*
 		// Remove the Zip
 		File::Remove(zipFilePath);
+		*/
 	}
 	catch (std::runtime_error& ex)
 	{
