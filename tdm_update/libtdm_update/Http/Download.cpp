@@ -21,6 +21,7 @@
 #include "../CRC.h"
 #include "../Util.h"
 #include "../Constants.h"
+#include "../tdmsync/tdmsync_curl.h"
 
 #include <functional>
 
@@ -105,6 +106,7 @@ void Download::Stop()
 	{
 		// Set the URL index beyond the list size to prevent 
 		// the worker thread from proceeding to the next URL
+		//TODO: better way of stopping download thread!
 		_curUrl = _urls.size();
 
 		// Cancel the request
@@ -169,6 +171,77 @@ void Download::SetRequiredFilesize(std::size_t requiredSize)
 
 void Download::Perform()
 {
+	//first pass: only download if tdmsync metainfo is available
+	for (_curUrl = 0; _curUrl < _urls.size(); _curUrl++) {
+		const std::string& url = _urls[_curUrl];
+		using namespace TdmSync;
+
+		try {
+			std::string dataUri = url;
+			std::string metaUri = url + ".tdmsync";
+			std::string localFn = _destFilename.string();
+			std::string metaFn = _tempFilename.string() + ".tdmsync";
+			std::string downFn = _tempFilename.string() + ".bindiff";
+			std::string resultFn = _tempFilename.string();
+
+			//download metainfo file (if present)
+			StdioFile metaFile;
+			metaFile.open(metaFn.c_str(), StdioFile::Write);
+			CurlDownloader curlWrapper;
+			curlWrapper.downloadMeta(metaFile, metaUri.c_str());
+			metaFile.flush();
+
+			//read downloaded metainfo file
+			metaFile.open(metaFn.c_str(), StdioFile::Read);
+			FileInfo info;
+			info.deserialize(metaFile);
+
+			//if file being downloaded is not present, create it empty
+			if (!fs::exists(_destFilename))
+				StdioFile().open(localFn.c_str(), StdioFile::Write);
+
+			//devise the update plan from local file and metainfo
+			StdioFile localFile;
+			localFile.open(localFn.c_str(), StdioFile::Read);
+			UpdatePlan plan = info.createUpdatePlan(localFile);
+			//plan.print();
+
+			//download the missing parts --- smart "differential update"
+			StdioFile downloadFile;
+			downloadFile.open(downFn.c_str(), StdioFile::Write);
+			CurlDownloader curlWrapper2;
+			curlWrapper2.downloadMissingParts(downloadFile, plan, dataUri.c_str());
+			downloadFile.flush();
+			auto mode = curlWrapper2.getModeUsed();
+			if (mode == CurlDownloader::dmManyByteranges)
+				TraceLog::WriteLine(LOG_STANDARD, "Fallback to many byterange requests");
+
+			//perform update and rewrite the old version of destination file
+			downloadFile.open(downFn.c_str(), StdioFile::Read);
+			StdioFile resultFile;
+			resultFile.open(resultFn.c_str(), StdioFile::Write);
+			plan.apply(localFile, downloadFile, resultFile);
+			resultFile.flush();
+		}
+		catch(const std::exception &e) {
+			TraceLog::WriteLine(LOG_VERBOSE, std::string("tdmsync error: ") + e.what());
+			continue;
+		}
+
+		bool valid = CheckIntegrity();
+		if (valid) {
+			TraceLog::WriteLine(LOG_VERBOSE, "Downloaded file passed the integrity checks.");
+			File::Remove(_destFilename);
+			if (File::Move(_tempFilename, _destFilename))
+				_status = SUCCESS;
+			else
+				_status = FAILED;
+			return;
+		}
+	}
+
+	//second pass: just download the file if possible
+	_curUrl = 0;
 	while (_curUrl < _urls.size())
 	{
 		// Remove any previous temporary file
