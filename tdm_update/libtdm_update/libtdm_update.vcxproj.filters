@@ -13,6 +13,9 @@
     <Filter Include="Packager">
       <UniqueIdentifier>{9ffd21da-5f63-47c3-9f90-89781d64e5d8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tdmsync">
+      <UniqueIdentifier>{54b518c1-54b5-4dfc-8520-a248fb2ad3b3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Http\Download.cpp">
@@ -49,6 +52,30 @@
     <ClCompile Include="TraceLog.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="ThreadControl.cpp" />
+    <ClCompile Include="tdmsync\binsearch.c">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\buzhash.c">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\fileio.cpp">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\polyhash.c">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\sha1.c">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\tdmsync.cpp">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\tdmsync_curl.cpp">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
+    <ClCompile Include="tdmsync\tsassert.cpp">
+      <Filter>tdmsync</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http\Download.h">
@@ -117,5 +144,32 @@
     <ClInclude Include="UpdatePackageInfo.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="ThreadControl.h" />
+    <ClInclude Include="tdmsync\binsearch.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\buzhash.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\fileio.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\phf.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\polyhash.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\sha1.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\tdmsync.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\tdmsync_curl.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
+    <ClInclude Include="tdmsync\tsassert.h">
+      <Filter>tdmsync</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
