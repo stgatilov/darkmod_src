@@ -119,7 +119,7 @@ interactionProgram_t *currrentInteractionShader; // dynamic, either pointInterac
 
 std::map<idStr, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
 
-idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "1", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
+idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
 
 /*
 ==================
