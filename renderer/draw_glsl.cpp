@@ -108,10 +108,10 @@ shaderProgram_t cubeMapShader;
 oldStageProgram_t oldStageShader;
 depthProgram_t depthShader;
 lightProgram_t stencilShadowShader;
-shadowMapProgram_t shadowMapShader, shadowMapMultiShader;
+shadowMapProgram_t shadowmapShader, shadowmapMultiShader;
 fogProgram_t fogShader;
 blendProgram_t blendShader;
-pointInteractionProgram_t pointInteractionShader;
+pointInteractionProgram_t stencilInteractionShader, shadowmapInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 multiLightInteractionProgram_t multiLightShader;
 
@@ -339,11 +339,11 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 
 	FB_ToggleShadow( true );
 
-	shadowMapShader.Use();
+	shadowmapShader.Use();
 	GL_SelectTexture( 0 );
 
-	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	qglUniform1f( shadowMapShader.lightRadius, GetEffectiveLightRadius() );
+	qglUniform4fv( shadowmapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+	qglUniform1f( shadowmapShader.lightRadius, GetEffectiveLightRadius() );
 	backEnd.currentSpace = NULL;
 
 	GL_Cull( CT_TWO_SIDED );
@@ -370,12 +370,12 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			qglPolygonOffset( customOffset, 0 );
 
 		if ( backEnd.currentSpace != surf->space ) {
-			qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
+			qglUniformMatrix4fv( shadowmapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 			backEnd.currentSpace = surf->space;
 			backEnd.pc.c_matrixLoads++;
 		}
 
-		shadowMapShader.FillDepthBuffer( surf );
+		shadowmapShader.FillDepthBuffer( surf );
 
 		if ( customOffset != 0 )
 			qglPolygonOffset( 0, 0 );
@@ -577,7 +577,7 @@ void RB_GLSL_DrawInteractions() {
 		ShadowAtlasIndex = 0; // reset for next run
 
 		if ( r_shadowMapSinglePass.GetBool() )
-			shadowMapMultiShader.RenderAllLights();
+			shadowmapMultiShader.RenderAllLights();
 
 		if ( r_testARBProgram.GetInteger() == 2 ) {
 			RB_GLSL_DrawInteractions_MultiLight();
@@ -611,18 +611,19 @@ FIXME split the stencil and shadowmap interactions in separate shaders as the la
 */
 bool R_ReloadGLSLPrograms() { 
 	bool ok = true;
-	ok &= pointInteractionShader.Load( "interactionA" ); 
+	ok &= stencilInteractionShader.Load( "interaction" ); 
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
 	ok &= stencilShadowShader.Load( "stencilShadow" );
-	ok &= shadowMapShader.Load( "shadowMapA" );
 	ok &= oldStageShader.Load( "oldStage" );
 	ok &= depthShader.Load( "depthAlpha" );
 	ok &= fogShader.Load( "fog" );
 	ok &= blendShader.Load( "blend" );
 	ok &= cubeMapShader.Load( "cubeMap" );
-	// these are optional and don't "need" to build
+	// these are optional and don't "need" to compile
+	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
-	shadowMapMultiShader.Load( "shadowMapN" );
+	shadowmapShader.Load( "shadowMapA" );
+	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
 		auto& shader = it->second;
@@ -914,7 +915,10 @@ void interactionProgram_t::ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
 		currrentInteractionShader = &ambientInteractionShader;
 	} else {
-		currrentInteractionShader = &pointInteractionShader;
+		if ( backEnd.vLight->shadowMapIndex )
+			currrentInteractionShader = &shadowmapInteractionShader;
+		else
+			currrentInteractionShader = &stencilInteractionShader;
 	}
 	currrentInteractionShader->Use();
 	qglUniform1f( currrentInteractionShader->rgtc, globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
