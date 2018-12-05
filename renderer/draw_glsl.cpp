@@ -35,7 +35,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Profiling.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
 
 struct basicInteractionProgram_t : lightProgram_t {
@@ -74,7 +74,7 @@ struct pointInteractionProgram_t : interactionProgram_t {
 };
 
 struct ambientInteractionProgram_t : interactionProgram_t {
-	GLint minLevel, gamma, lightFalloffCubemap;
+	GLint minLevel, gamma, lightFalloffCubemap, rimColor;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -1070,6 +1070,7 @@ void ambientInteractionProgram_t::AfterLoad() {
 	minLevel = qglGetUniformLocation( program, "u_minLevel" );
 	gamma = qglGetUniformLocation( program, "u_gamma" );
 	lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
+	rimColor = qglGetUniformLocation( program, "u_rimColor" );
 	qglUseProgram( program );
 	qglUniform1i( lightFalloffCubemap, 5 );
 	qglUseProgram( 0 );
@@ -1080,6 +1081,9 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
+	idVec4 color;
+	din->surf->material->GetAmbientRimColor( color );
+	qglUniform4fv( rimColor, 1, color.ToFloatPtr() );
 	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
 		qglUniform1i( lightFalloffCubemap, 1 );
 	} else {
