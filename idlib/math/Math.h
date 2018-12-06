@@ -306,8 +306,10 @@ ID_INLINE float idMath::InvSqrt16( float x ) {
 
 ID_INLINE float idMath::InvSqrt( float x ) {
 #ifdef __SSE__
-	//stgatilov: one NR iteration is almost enough for float32 precision
-	return InvSqrt16(x);                  //23-bit precision
+	//stgatilov: one NR iteration is not enough (see #4877)
+	//two NR iterations are almost as slow as direct computation, but take more space
+	//so we simply use IEEE-precise version
+	return 1.0f / SSE_SQRT(SSE_MAKEPOSITIVE(x));
 #else
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
