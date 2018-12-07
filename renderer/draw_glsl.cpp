@@ -1039,9 +1039,6 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 				qglUniform2fv( softShadowSamples, sampleK, ( float * )g_softShadowsSamples.Ptr() );
 			}
 		}
-		if ( sampleK < 0 ) { // WIP low res stencil shadows
-			//qglUniform2f( renderResolution, glConfig.vidWidth, glConfig.vidHeight );
-		}
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
 	}
@@ -1054,6 +1051,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS + 2 );
 		qglUniform1i( depthTexture, 6 );
 		qglUniform1i( stencilTexture, 7 );
+		qglUniform2f( renderResolution, glConfig.vidWidth, glConfig.vidHeight );
 	}
 	GL_CheckErrors();
 }
