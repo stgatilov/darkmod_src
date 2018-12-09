@@ -316,7 +316,7 @@ PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
 PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
-PFNGLCOPYIMAGESUBDATANVPROC				qglCopyImageSubData;
+//PFNGLCOPYIMAGESUBDATANVPROC				qglCopyImageSubData;
 
 // GLSL
 PFNGLATTACHSHADERPROC						qglAttachShader;
@@ -379,12 +379,20 @@ PFNGLPOPDEBUGGROUPPROC					qglPopDebugGroup;
 R_CheckExtension
 =================
 */
-bool R_CheckExtension( const char *name ) {
-	if ( !strstr( glConfig.extensions_string, name ) ) {
+bool R_CheckExtension( const char *name, double coreSince ) {
+	//check if the extension is available
+	bool hasExtension = (strstr(glConfig.extensions_string, name) != NULL);
+	//check if OpenGL version is high enough to include the feature into its core
+	bool alreadyCore = (glConfig.glVersion >= coreSince - 1e-3);
+
+	if ( !hasExtension && !alreadyCore ) {
 		common->Printf( "^1X^0 - %s not found\n", name );
 		return false;
 	}
-	common->Printf( "^2v^0 - using %s\n", name );
+	common->Printf(
+		"^2v^0 - using %s (%s)\n", name,
+		hasExtension && alreadyCore ? "core+ext" : (hasExtension ? "ext" : "core")
+	);
 	return true;
 }
 
@@ -400,7 +408,7 @@ static void R_CheckPortableExtensions( void ) {
 	common->Printf( "Checking portable OpenGL extensions...\n" );
 
 	// GL_ARB_multitexture
-	if ( !R_CheckExtension( "GL_ARB_multitexture" ) ) {
+	if ( !R_CheckExtension( "GL_ARB_multitexture", 1.3 ) ) {
 		common->Error( "GL_ARB_multitexture not supported!\n" );
 	}
 	qglActiveTexture = ( void( APIENTRY * )( GLenum ) )GLimp_ExtensionPointer( "glActiveTexture" );
@@ -410,29 +418,28 @@ static void R_CheckPortableExtensions( void ) {
 	common->Printf( "Max texture units: %d\n", glConfig.maxTextureUnits );
 	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );
 	common->Printf( "Max active textures: %d\n", glConfig.maxTextures );
-
 	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS ) {
 		common->Error( "   Too few!\n" );
 	}
 
 	// GL_ARB_texture_cube_map
-	if ( !R_CheckExtension( "GL_ARB_texture_cube_map" ) ) {
+	if ( !R_CheckExtension( "GL_ARB_texture_cube_map", 1.3 ) ) {
 		common->Error( "GL_ARB_texture_cube_map not supported!\n" );
 	}
 
 	// GL_ARB_texture_non_power_of_two
-	glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension( "GL_ARB_texture_non_power_of_two" );
+	glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension( "GL_ARB_texture_non_power_of_two", 2.0 );
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
 	// DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
-	if ( R_CheckExtension( "GL_ARB_texture_compression" ) && R_CheckExtension( "GL_EXT_texture_compression_s3tc" ) ) {
+	if ( R_CheckExtension( "GL_ARB_texture_compression", 1.3 ) && R_CheckExtension( "GL_EXT_texture_compression_s3tc" ) ) {
 		glConfig.textureCompressionAvailable = true;
 		qglCompressedTexImage2DARB = ( PFNGLCOMPRESSEDTEXIMAGE2DARBPROC )GLimp_ExtensionPointer( "glCompressedTexImage2DARB" );
 		qglGetCompressedTexImageARB = ( PFNGLGETCOMPRESSEDTEXIMAGEARBPROC )GLimp_ExtensionPointer( "glGetCompressedTexImageARB" );
 	} else {
 		glConfig.textureCompressionAvailable = false;
 	}
-	glConfig.textureCompressionRgtcAvailable = R_CheckExtension( "GL_ARB_texture_compression_rgtc" );
+	glConfig.textureCompressionRgtcAvailable = R_CheckExtension( "GL_ARB_texture_compression_rgtc", 3.0 );
 
 	// GL_EXT_texture_filter_anisotropic
 	glConfig.anisotropicAvailable = R_CheckExtension( "GL_EXT_texture_filter_anisotropic" );
@@ -462,21 +469,15 @@ static void R_CheckPortableExtensions( void ) {
 		tr.stencilDecr = GL_DECR;
 	}
 
-	// separate stencil (part of OpenGL 2.0 spec)
-	if ( glConfig.glVersion >= 2.0 ) {
+	// separate stencil (part of OpenGL 2.0 spec --- no extension)
+	glConfig.twoSidedStencilAvailable = R_CheckExtension( "glStencilOpSeparate", 2.0 );
+	if ( glConfig.twoSidedStencilAvailable ) {
 		qglStencilOpSeparate = ( PFNGLSTENCILOPSEPARATEPROC )GLimp_ExtensionPointer( "glStencilOpSeparate" );
-		if ( qglStencilOpSeparate ) {
-			common->Printf( "^2v^0 - using %s\n", "glStencilOpSeparate" );
-			glConfig.twoSidedStencilAvailable = true;
-		} else {
-			common->Printf( "^1X^0 - %s not found\n", "glStencilOpSeparate" );
-			glConfig.twoSidedStencilAvailable = false;
-		}
 	}
 
 	// ARB_vertex_buffer_object
 	//glConfig.vertexBufferObjectAvailable = R_CheckExtension( "GL_ARB_vertex_buffer_object" );
-	if ( !R_CheckExtension( "GL_ARB_vertex_buffer_object" ) ) {
+	if ( !R_CheckExtension( "GL_ARB_vertex_buffer_object", 1.5 ) ) {
 		common->Error( "VBO not supported!\n" );
 	}
 	qglBindBufferARB = ( PFNGLBINDBUFFERARBPROC )GLimp_ExtensionPointer( "glBindBufferARB" );
@@ -494,13 +495,13 @@ static void R_CheckPortableExtensions( void ) {
 	qglBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
 
 	// ARB_map_buffer_range
-	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range" );
+	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range", 3.0 );
 	if ( glConfig.mapBufferRangeAvailable ) {
 		qglMapBufferRange = ( PFNGLMAPBUFFERRANGEPROC )GLimp_ExtensionPointer( "glMapBufferRange" );
 		qglFlushMappedBufferRange = ( PFNGLFLUSHMAPPEDBUFFERRANGEPROC )GLimp_ExtensionPointer( "glFlushMappedBufferRange" );
 	}
 
-	// ARB_vertex_program
+	// ARB_vertex_program (never got into core?...)
 	if ( !(R_CheckExtension("GL_ARB_vertex_program") && R_CheckExtension("GL_ARB_fragment_program")) ) {
 		common->Error( "Low-level ARB shader programs not supported!\n" );
 	}
@@ -519,14 +520,19 @@ static void R_CheckPortableExtensions( void ) {
 		qglDepthBoundsEXT = ( PFNGLDEPTHBOUNDSEXTPROC )GLimp_ExtensionPointer( "glDepthBoundsEXT" );
 	}
 
-	// GL_ARB_draw_buffers (core since GL 2.0)
-	glConfig.multipleRenderTargetAvailable = (glConfig.glVersion >= 2.0 || R_CheckExtension("GL_ARB_draw_buffers"));
+	// GL_ARB_draw_buffers
+	glConfig.multipleRenderTargetAvailable = R_CheckExtension( "GL_ARB_draw_buffers", 2.0 );
 	if (glConfig.multipleRenderTargetAvailable) {
 		qglDrawBuffers = ( PFNGLDRAWBUFFERSPROC )GLimp_ExtensionPointer( "glDrawBuffers" );
 	}
 
-	// GLSL (core since GL 2.0)
-	if ( !(glConfig.glVersion >= 2.0 || (R_CheckExtension("GL_ARB_shader_objects") && R_CheckExtension("GL_ARB_vertex_shader") && R_CheckExtension("GL_ARB_fragment_shader"))) ) {
+	// GLSL
+	bool hasGLSL = (
+		R_CheckExtension("GL_ARB_shader_objects", 2.0) && 
+		R_CheckExtension("GL_ARB_vertex_shader", 2.0) && 
+		R_CheckExtension("GL_ARB_fragment_shader", 2.0)
+	);
+	if (!hasGLSL) {
 		common->Error( "High-level ARB shaders (aka GLSL) not supported!\n" );
 	}
 	qglAttachShader = ( PFNGLATTACHSHADERPROC )GLimp_ExtensionPointer( "glAttachShader" );
@@ -568,7 +574,7 @@ static void R_CheckPortableExtensions( void ) {
 	qglGetProgramInfoLog = ( PFNGLGETPROGRAMINFOLOGPROC )GLimp_ExtensionPointer( "glGetProgramInfoLog" );
 	qglBindAttribLocation = ( PFNGLBINDATTRIBLOCATIONPROC )GLimp_ExtensionPointer( "glBindAttribLocation" );
 
-	bool hasArbFramebuffer = R_CheckExtension( "GL_ARB_framebuffer_object" );
+	bool hasArbFramebuffer = R_CheckExtension( "GL_ARB_framebuffer_object", 3.0 );
 	if ( hasArbFramebuffer ) {
 		glConfig.framebufferObjectAvailable = true;
 		glConfig.framebufferBlitAvailable = true;
@@ -626,23 +632,23 @@ static void R_CheckPortableExtensions( void ) {
 		}
 	}
 
-	//geometry shaders (core since GL 3.2)
-	glConfig.geometryShaderAvailable = (glConfig.glVersion >= 3.2 || R_CheckExtension("GL_ARB_geometry_shader4"));
+	// geometry shaders
+	glConfig.geometryShaderAvailable = R_CheckExtension( "GL_ARB_geometry_shader4", 3.2 );
 	if (glConfig.geometryShaderAvailable) {
 		qglFramebufferTexture = ( PFNGLFRAMEBUFFERTEXTUREPROC )GLimp_ExtensionPointer( "glFramebufferTexture" );
 		qglFramebufferTextureLayer = ( PFNGLFRAMEBUFFERTEXTURELAYERPROC )GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
 	}
 
-	//glCopyImageSubData (core since GL 4.3)
-	if (glConfig.glVersion >= 4.3 || R_CheckExtension("GL_ARB_copy_image")) {
+	/*// glCopyImageSubData (core since GL 4.3)
+	if (R_CheckExtension( "GL_ARB_copy_image", 4.3 )) {
 		qglCopyImageSubData = ( PFNGLCOPYIMAGESUBDATANVPROC )GLimp_ExtensionPointer( "glCopyImageSubData" );
-	}
+	}*/
 
-	//PBO (core since GL 2.1)
-	glConfig.pixelBufferAvailable = (glConfig.glVersion >= 2.1 || R_CheckExtension("GL_ARB_pixel_buffer_object"));
+	// PBO
+	glConfig.pixelBufferAvailable = R_CheckExtension( "GL_ARB_pixel_buffer_object", 2.1 );
 
-	if( glConfig.glVersion > 3.2 || R_CheckExtension( "GL_ARB_timer_query" ) ) {
-		glConfig.timerQueriesAvailable = true;
+	glConfig.timerQueriesAvailable = R_CheckExtension( "GL_ARB_timer_query", 3.3 );
+	if( glConfig.timerQueriesAvailable ) {
 		qglGenQueries = ( PFNGLGENQUERIESPROC )GLimp_ExtensionPointer( "glGenQueries" );
 		qglDeleteQueries = ( PFNGLDELETEQUERIESPROC )GLimp_ExtensionPointer( "glDeleteQueries" );
 		qglQueryCounter = ( PFNGLQUERYCOUNTERPROC )GLimp_ExtensionPointer( "glQueryCounter" );
@@ -651,13 +657,13 @@ static void R_CheckPortableExtensions( void ) {
 		qglEndQuery = ( PFNGLENDQUERYPROC )GLimp_ExtensionPointer( "glEndQuery" );
 	}
 
-	if( glConfig.glVersion > 4.2 || R_CheckExtension( "GL_KHR_debug" ) ) {
-		glConfig.debugGroupsAvailable = true;
+	glConfig.debugGroupsAvailable = R_CheckExtension( "GL_KHR_debug" );
+	if( glConfig.debugGroupsAvailable ) {
 		qglPushDebugGroup = ( PFNGLPUSHDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPushDebugGroup" );
 		qglPopDebugGroup = ( PFNGLPOPDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPopDebugGroup" );
 	}
 
-	glConfig.fenceSyncAvailable = R_CheckExtension( "GL_ARB_sync" );
+	glConfig.fenceSyncAvailable = R_CheckExtension( "GL_ARB_sync", 3.2 );
 	if ( glConfig.fenceSyncAvailable ) {
 		qglFenceSync = ( PFNGLFENCESYNCPROC )GLimp_ExtensionPointer( "glFenceSync" );
 		qglClientWaitSync = ( PFNGLCLIENTWAITSYNCPROC )GLimp_ExtensionPointer( "glClientWaitSync" );

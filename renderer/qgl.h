@@ -158,7 +158,7 @@ extern PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 extern PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
 extern PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
-extern PFNGLCOPYIMAGESUBDATANVPROC			qglCopyImageSubData;
+//extern PFNGLCOPYIMAGESUBDATANVPROC			qglCopyImageSubData;
 
 // GLSL
 extern PFNGLATTACHSHADERPROC				qglAttachShader;
