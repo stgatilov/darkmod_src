@@ -479,6 +479,8 @@ idAI::idAI()
 	lastTimePlayerSeen = -1;
 	lastTimePlayerLost = -1;
 
+	vectorToIdealOrigin.Zero(); // grayman #3989
+
 	fleeingEvent = false; // grayman #3317
 	emitFleeBarks = false;
 
@@ -1069,6 +1071,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	
 	savefile->WriteVec3( lastSearchedSpot ); // grayman #4220
 
+	savefile->WriteVec3(vectorToIdealOrigin); // grayman #3989
+
 	mind->Save(savefile);
 
 	senseSubsystem->Save(savefile);
@@ -1565,7 +1569,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		tactileIgnoreEntities.insert(tactEnt);
 	}
 	
-	savefile->ReadVec3( lastSearchedSpot); // grayman #4220
+	savefile->ReadVec3(lastSearchedSpot); // grayman #4220
+
+	savefile->ReadVec3(vectorToIdealOrigin); // grayman #3989
 
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
@@ -2345,7 +2351,6 @@ void idAI::Think( void )
 		return; // Thinking is disabled.
 	}
 
-	// Interleaved thinking
 	if (!ThinkingIsAllowed())
 	{
 		return;
@@ -2358,6 +2363,18 @@ void idAI::Think( void )
 	if ( ( gameLocal.time <= m_getupEndTime ) &&
 		 ( idStr(WaitState()) == "wake_up") &&
 		 ((AI_SleepLocation == SLEEP_LOC_FLOOR) || (AI_SleepLocation == SLEEP_LOC_BED)))// grayman #3820
+	{
+		idVec3 origin = physicsObj.GetOrigin();
+		if ( origin.z < m_sleepFloorZ )
+		{
+			origin.z = m_sleepFloorZ;
+			physicsObj.SetOrigin(origin);
+		}
+	}
+
+	// grayman #3989 - don't let origin slip below the floor when lying down
+	if ((idStr(WaitState()) == "fall_asleep") &&
+		((AI_SleepLocation == SLEEP_LOC_FLOOR) || (AI_SleepLocation == SLEEP_LOC_BED)) )// grayman #3820
 	{
 		idVec3 origin = physicsObj.GetOrigin();
 		if ( origin.z < m_sleepFloorZ )
@@ -6047,6 +6064,7 @@ void idAI::SittingMove()
 	idVec3 oldorigin = physicsObj.GetOrigin();
 	idMat3 oldaxis = viewAxis;
 
+	// Interleaved thinking
 	AI_BLOCKED = false;
 
 	RunPhysics();
@@ -13324,6 +13342,16 @@ void idAI::SitDown()
 	}
 	SetMoveType(MOVETYPE_SIT_DOWN);
 	SetWaitState("sit_down");
+
+	// grayman #3989 - If startSitLocation is set,
+	// then save the vector from my origin to startSitLocation.
+	// This is useful when sitting down and lying down, to make sure I sit
+	// or lay down in the most accurate place.
+	ai::Memory& memory = GetMemory();
+	if ( memory.startSitLocation.x < idMath::INFINITY )
+	{
+		vectorToIdealOrigin = memory.startSitLocation - GetPhysics()->GetOrigin();
+	}
 }
 
 void idAI::GetUp()
@@ -13381,6 +13409,16 @@ void idAI::FallAsleep()
 	SetMoveType(MOVETYPE_FALL_ASLEEP);
 	SetWaitState("fall_asleep");
 
+	// grayman #3989 - If startSitLocation is set,
+	// then save the vector from my origin to startSitLocation.
+	// This is useful when sitting down and lying down, to make sure I sit
+	// or lay down in the most accurate place.
+	ai::Memory& memory = GetMemory();
+	if ( memory.startSitLocation.x < idMath::INFINITY )
+	{
+		vectorToIdealOrigin = memory.startSitLocation - GetPhysics()->GetOrigin();
+	}
+
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
 	// floor yet when mappers start them floating above the floor.
@@ -13394,15 +13432,12 @@ void idAI::FallAsleep()
 
 	// Tels: Sleepers are blind
 	m_oldVisualAcuity = GetBaseAcuity("vis"); // grayman #3552
-	//m_oldVisualAcuity = GetAcuity("vis");
 	SetAcuity("vis", 0);
 
 	// Reduce hearing and tactile acuity by 50%
 	// TODO: use spawnargs
 	SetAcuity("aud", GetBaseAcuity("aud") * 0.5); // grayman #3552
 	SetAcuity("tact", GetBaseAcuity("tact") * 0.5); // grayman #3552
-	//SetAcuity("aud", GetAcuity("aud") * 0.5);
-	//SetAcuity("tact", GetAcuity("tact") * 0.5);
 }
 
 float idAI::StealthDamageMult()

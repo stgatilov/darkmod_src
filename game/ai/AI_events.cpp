@@ -385,6 +385,8 @@ const idEventDef AI_GetAttacker( "getAttacker", EventArgs(), 'e', "Returns the a
 const idEventDef AI_IsPlayerResponsibleForDeath( "isPlayerResponsibleForDeath", EventArgs(), 'd', 
 	"Returns true if the player was responsible for the AI's caller's death."); // grayman #3679
 
+const idEventDef AI_GetVectorToIdealOrigin("getVectorToIdealOrigin", EventArgs(), 'v', "Returns the vector from where the AI is to where he ideally should be"); // grayman #3679
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -577,6 +579,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_IsPlayerResponsibleForDeath,		idAI::Event_IsPlayerResponsibleForDeath) // grayman #3679
 	EVENT ( AI_NoisemakerDone,					idAI::Event_NoisemakerDone) // grayman #3681
 	EVENT ( AI_OnHitByDoor,						idAI::Event_HitByDoor) // grayman #3681
+	EVENT ( AI_GetVectorToIdealOrigin,			idAI::Event_GetVectorToIdealOrigin) // grayman #3989
 
 END_CLASS
 
@@ -3448,6 +3451,13 @@ void idAI::Event_HitByDoor(idEntity* door)
 
 		mind->GetState()->OnVisualStimDoor(door, this);
 	}
+}
+
+// grayman #3989
+
+void idAI::Event_GetVectorToIdealOrigin()
+{
+	idThread::ReturnVector(vectorToIdealOrigin);
 }
 
 

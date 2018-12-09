@@ -866,6 +866,8 @@ public: // greebo: Made these public
 	
 	idVec3					lastSearchedSpot; // grayman #4220 - most recently searched spot
 
+	idVec3					vectorToIdealOrigin; // grayman #3989
+
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
 	idScriptBool			AI_TALK;
@@ -2323,6 +2325,8 @@ public:
 	void Event_HitByDoor(idEntity* door); // grayman #3756
 
 	void Event_PlayCustomAnim( const char* animName ); // SteveL #3597
+
+	void Event_GetVectorToIdealOrigin(); // grayman #3989
 
 #ifdef TIMING_BUILD
 private:

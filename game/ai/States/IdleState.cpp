@@ -207,7 +207,7 @@ void IdleState::Think(idAI* owner)
 	}
 	else if (_startSitting && owner->GetMoveType() != MOVETYPE_SIT && waitState != "sit_down")
 	{
-		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION) 
+		if (owner->ReachedPos(memory.idlePosition, MOVE_TO_POSITION)
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
 			owner->SitDown();
@@ -240,6 +240,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 	{
 		// No idle position saved yet, take the current one
 		memory.idlePosition = owner->GetPhysics()->GetOrigin();
+		memory.startSitLocation = memory.idlePosition; // grayman #3989
 		memory.idleYaw = owner->GetCurrentYaw();
 	}
 
@@ -271,7 +272,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 			// angua: don't do this when we are sitting or sleeping
 			// We already HAVE an idle position set, this means that we are
 			// supposed to be there, let's move
-			float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1");
+			float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1"); // grayman #3989
 			owner->movementSubsystem->PushTask(
 				TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw, startPosTolerance))
 			);

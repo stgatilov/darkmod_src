@@ -5426,7 +5426,6 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 
 	idVec3 curVelocity = physics.GetLinearVelocity();
 
-	// grayman #3699 - ragdolls and actors fall differently, so they require
 	// different math to determine whether they've landed, and how much
 	// damage they should accrue. So we'll differentiate between them in certain
 	// code sections. isRagDoll will be true if the AI is a ragdoll using ragdoll physics.

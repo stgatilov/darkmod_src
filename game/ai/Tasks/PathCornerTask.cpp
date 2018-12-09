@@ -119,6 +119,11 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 				// Move is done, fall back to PatrolTask
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
 
+				// grayman #3989 - Save the vector from my origin to the path origin.
+				// This is useful when sitting down and lying down, to make sure I sit
+				// or lay down in the correct place.
+				owner->GetMemory().startSitLocation = path->GetPhysics()->GetOrigin();
+
 				// grayman #3755 - reset time this door can be used again
 
 				Memory& memory = owner->GetMemory();

@@ -214,6 +214,7 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 	}
 
 	// try to move at the stepped up position
+
 	stepPos = tr.endpos;
 	stepVel = velocity;
 	result2 = SlideMove( stepPos, stepVel, delta );
@@ -254,9 +255,22 @@ monsterMoveResult_t idPhysics_Monster::StepMove( idVec3 &start, idVec3 &velocity
 		velocity = noStepVel;
 		return MM_SLIDING;
 	}
-	
 
-	start = stepPos;
+	// grayman #3989 - if this attempted step is being made during a "wake_up"/"fall_asleep" animation,
+	// we can't let the vertical part go down/up. Otherwise, we'll see the animation jump up
+	// for a few frames or the AI will end up floating above the bed.
+
+	// use the current velocity so there's still horizontal movement
+	idStr anim = idStr(static_cast<idAI*>(self)->WaitState());
+	if ( (stepPos.z > noStepPos.z) && self->IsType(idAI::Type) && ((anim == "wake_up") || (anim == "fall_asleep")))
+	{
+		start = noStepPos;
+	}
+	else
+	{
+		start = stepPos;
+	}
+
 	velocity = stepVel;
 
 	return MM_STEPPED;

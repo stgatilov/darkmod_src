@@ -517,6 +517,16 @@ void SwitchOnLightState::Think(idAI* owner)
 		return;
 	}
 		
+	// if this is a flame and it's not vertical, ignore it
+
+	if ( !light->IsVertical(10) ) // w/in 10 degrees of vertical?
+	{
+		light->SetRelightAfter();	// AI should wait a while before
+									// paying attention to it again, in case it rights itself
+		Wrapup(owner,false);
+		return;
+	}
+
 	// check if something happened to abort the relight (i.e. higher alert, dropped torch)
 	// grayman #3510 - if the relight anim is running, wait for it to finish
 	if ( owner->GetMemory().stopRelight && ( idStr(owner->WaitState()) != "relight" ) )
