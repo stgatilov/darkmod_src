@@ -491,8 +491,8 @@ static void R_CheckPortableExtensions( void ) {
 	qglUnmapBufferARB = ( PFNGLUNMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glUnmapBufferARB" );
 	qglGetBufferParameterivARB = ( PFNGLGETBUFFERPARAMETERIVARBPROC )GLimp_ExtensionPointer( "glGetBufferParameterivARB" );
 	qglGetBufferPointervARB = ( PFNGLGETBUFFERPOINTERVARBPROC )GLimp_ExtensionPointer( "glGetBufferPointervARB" );
-	qglUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
-	qglBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
+	qglUnmapBuffer = ( PFNGLUNMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glUnmapBufferARB" );
+	qglBufferSubData = ( PFNGLBUFFERSUBDATAARBPROC )GLimp_ExtensionPointer( "glBufferSubDataARB" );
 
 	// ARB_map_buffer_range
 	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range", 3.0 );
@@ -523,7 +523,7 @@ static void R_CheckPortableExtensions( void ) {
 	// GL_ARB_draw_buffers
 	glConfig.multipleRenderTargetAvailable = R_CheckExtension( "GL_ARB_draw_buffers", 2.0 );
 	if (glConfig.multipleRenderTargetAvailable) {
-		qglDrawBuffers = ( PFNGLDRAWBUFFERSPROC )GLimp_ExtensionPointer( "glDrawBuffers" );
+		qglDrawBuffers = ( PFNGLDRAWBUFFERSARBPROC )GLimp_ExtensionPointer( "glDrawBuffersARB" );
 	}
 
 	// GLSL
@@ -535,6 +535,7 @@ static void R_CheckPortableExtensions( void ) {
 	if (!hasGLSL) {
 		common->Error( "High-level ARB shaders (aka GLSL) not supported!\n" );
 	}
+	//all functions should have "ARB" suffix?...
 	qglAttachShader = ( PFNGLATTACHSHADERPROC )GLimp_ExtensionPointer( "glAttachShader" );
 	qglCompileShader = ( PFNGLCOMPILESHADERPROC )GLimp_ExtensionPointer( "glCompileShader" );
 	qglCreateProgram = ( PFNGLCREATEPROGRAMPROC )GLimp_ExtensionPointer( "glCreateProgram" );
@@ -635,8 +636,8 @@ static void R_CheckPortableExtensions( void ) {
 	// geometry shaders
 	glConfig.geometryShaderAvailable = R_CheckExtension( "GL_ARB_geometry_shader4", 3.2 );
 	if (glConfig.geometryShaderAvailable) {
-		qglFramebufferTexture = ( PFNGLFRAMEBUFFERTEXTUREPROC )GLimp_ExtensionPointer( "glFramebufferTexture" );
-		qglFramebufferTextureLayer = ( PFNGLFRAMEBUFFERTEXTURELAYERPROC )GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
+		qglFramebufferTexture = ( PFNGLFRAMEBUFFERTEXTUREARBPROC )GLimp_ExtensionPointer( "glFramebufferTextureARB" );
+		qglFramebufferTextureLayer = ( PFNGLFRAMEBUFFERTEXTURELAYERARBPROC )GLimp_ExtensionPointer( "glFramebufferTextureLayerARB" );
 	}
 
 	/*// glCopyImageSubData (core since GL 4.3)
@@ -649,10 +650,11 @@ static void R_CheckPortableExtensions( void ) {
 
 	glConfig.timerQueriesAvailable = R_CheckExtension( "GL_ARB_timer_query", 3.3 );
 	if( glConfig.timerQueriesAvailable ) {
-		qglGenQueries = ( PFNGLGENQUERIESPROC )GLimp_ExtensionPointer( "glGenQueries" );
-		qglDeleteQueries = ( PFNGLDELETEQUERIESPROC )GLimp_ExtensionPointer( "glDeleteQueries" );
 		qglQueryCounter = ( PFNGLQUERYCOUNTERPROC )GLimp_ExtensionPointer( "glQueryCounter" );
 		qglGetQueryObjectui64v = ( PFNGLGETQUERYOBJECTUI64VPROC )GLimp_ExtensionPointer( "glGetQueryObjectui64v" );
+		//note: the rest actually comes from ARB_occlusion_query (core since 1.5)
+		qglGenQueries = ( PFNGLGENQUERIESPROC )GLimp_ExtensionPointer( "glGenQueries" );
+		qglDeleteQueries = ( PFNGLDELETEQUERIESPROC )GLimp_ExtensionPointer( "glDeleteQueries" );
 		qglBeginQuery = ( PFNGLBEGINQUERYPROC )GLimp_ExtensionPointer( "glBeginQuery" );
 		qglEndQuery = ( PFNGLENDQUERYPROC )GLimp_ExtensionPointer( "glEndQuery" );
 	}
