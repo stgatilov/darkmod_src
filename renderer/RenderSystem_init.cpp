@@ -404,15 +404,14 @@ R_CheckPortableExtensions
 */
 static void R_CheckPortableExtensions( void ) {
 	glConfig.glVersion = atof( glConfig.version_string );
-
+	if ( !R_CheckExtension( "GL version 2.0", 2.0 ) ) {
+		common->Error( "OpenGL version must be at least 2.0 for TDM to run!\n" );
+	}
 	common->Printf( "Checking portable OpenGL extensions...\n" );
 
-	// GL_ARB_multitexture
-	if ( !R_CheckExtension( "GL_ARB_multitexture", 1.3 ) ) {
-		common->Error( "GL_ARB_multitexture not supported!\n" );
-	}
-	qglActiveTexture = ( void( APIENTRY * )( GLenum ) )GLimp_ExtensionPointer( "glActiveTexture" );
-	qglGetIntegerv( GL_MAX_TEXTURE_COORDS_ARB, &glConfig.maxTextureCoords );
+	//R_CheckExtension( "GL_ARB_multitexture", 1.3 );
+	qglActiveTexture = ( PFNGLACTIVETEXTUREPROC )GLimp_ExtensionPointer( "glActiveTexture" );
+	qglGetIntegerv( GL_MAX_TEXTURE_COORDS, &glConfig.maxTextureCoords );
 	common->Printf( "Max texture coords: %d\n", glConfig.maxTextureCoords );
 	qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &glConfig.maxTextureUnits );
 	common->Printf( "Max texture units: %d\n", glConfig.maxTextureUnits );
@@ -423,23 +422,22 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// GL_ARB_texture_cube_map
-	if ( !R_CheckExtension( "GL_ARB_texture_cube_map", 1.3 ) ) {
-		common->Error( "GL_ARB_texture_cube_map not supported!\n" );
-	}
+	//R_CheckExtension( "GL_ARB_texture_cube_map", 1.3 );
 
 	// GL_ARB_texture_non_power_of_two
-	glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension( "GL_ARB_texture_non_power_of_two", 2.0 );
+	//R_CheckExtension( "GL_ARB_texture_non_power_of_two", 2.0 );
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
 	// DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
-	if ( R_CheckExtension( "GL_ARB_texture_compression", 1.3 ) && R_CheckExtension( "GL_EXT_texture_compression_s3tc" ) ) {
-		glConfig.textureCompressionAvailable = true;
-		qglCompressedTexImage2DARB = ( PFNGLCOMPRESSEDTEXIMAGE2DARBPROC )GLimp_ExtensionPointer( "glCompressedTexImage2DARB" );
-		qglGetCompressedTexImageARB = ( PFNGLGETCOMPRESSEDTEXIMAGEARBPROC )GLimp_ExtensionPointer( "glGetCompressedTexImageARB" );
-	} else {
-		glConfig.textureCompressionAvailable = false;
-	}
+	//R_CheckExtension( "GL_ARB_texture_compression", 1.3 );
+	qglCompressedTexImage2DARB = ( PFNGLCOMPRESSEDTEXIMAGE2DPROC )GLimp_ExtensionPointer( "glCompressedTexImage2D" );
+	qglGetCompressedTexImageARB = ( PFNGLGETCOMPRESSEDTEXIMAGEPROC )GLimp_ExtensionPointer( "glGetCompressedTexImage" );
+	glConfig.textureCompressionAvailable = R_CheckExtension( "GL_EXT_texture_compression_s3tc" );
 	glConfig.textureCompressionRgtcAvailable = R_CheckExtension( "GL_ARB_texture_compression_rgtc", 3.0 );
+	if (!glConfig.textureCompressionAvailable) {
+		//TDM 2.07: it gives black screen instead of menu
+		common->Error( "Missing texture compression support!\n" );
+	}
 
 	// GL_EXT_texture_filter_anisotropic
 	glConfig.anisotropicAvailable = R_CheckExtension( "GL_EXT_texture_filter_anisotropic" );
@@ -451,11 +449,7 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// GL_EXT_texture_lod_bias
-	if ( R_CheckExtension( "GL_EXT_texture_lod_bias" ) ) {
-		glConfig.textureLODBiasAvailable = true;
-	} else {
-		glConfig.textureLODBiasAvailable = false;
-	}
+	glConfig.textureLODBiasAvailable = R_CheckExtension( "GL_EXT_texture_lod_bias" );
 
 	// EXT_stencil_wrap
 	// This isn't very important, but some pathological case might cause a clamp error and give a shadow bug.
@@ -470,29 +464,24 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// separate stencil (part of OpenGL 2.0 spec --- no extension)
-	glConfig.twoSidedStencilAvailable = R_CheckExtension( "glStencilOpSeparate", 2.0 );
-	if ( glConfig.twoSidedStencilAvailable ) {
-		qglStencilOpSeparate = ( PFNGLSTENCILOPSEPARATEPROC )GLimp_ExtensionPointer( "glStencilOpSeparate" );
-	}
+	glConfig.twoSidedStencilAvailable = true; //R_CheckExtension( "glStencilOpSeparate", 2.0 );
+	qglStencilOpSeparate = ( PFNGLSTENCILOPSEPARATEPROC )GLimp_ExtensionPointer( "glStencilOpSeparate" );
 
 	// ARB_vertex_buffer_object
-	//glConfig.vertexBufferObjectAvailable = R_CheckExtension( "GL_ARB_vertex_buffer_object" );
-	if ( !R_CheckExtension( "GL_ARB_vertex_buffer_object", 1.5 ) ) {
-		common->Error( "VBO not supported!\n" );
-	}
-	qglBindBufferARB = ( PFNGLBINDBUFFERARBPROC )GLimp_ExtensionPointer( "glBindBufferARB" );
-	qglDeleteBuffersARB = ( PFNGLDELETEBUFFERSARBPROC )GLimp_ExtensionPointer( "glDeleteBuffersARB" );
-	qglGenBuffersARB = ( PFNGLGENBUFFERSARBPROC )GLimp_ExtensionPointer( "glGenBuffersARB" );
-	qglIsBufferARB = ( PFNGLISBUFFERARBPROC )GLimp_ExtensionPointer( "glIsBufferARB" );
-	qglBufferDataARB = ( PFNGLBUFFERDATAARBPROC )GLimp_ExtensionPointer( "glBufferDataARB" );
-	qglBufferSubDataARB = ( PFNGLBUFFERSUBDATAARBPROC )GLimp_ExtensionPointer( "glBufferSubDataARB" );
-	qglGetBufferSubDataARB = ( PFNGLGETBUFFERSUBDATAARBPROC )GLimp_ExtensionPointer( "glGetBufferSubDataARB" );
-	qglMapBufferARB = ( PFNGLMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glMapBufferARB" );
-	qglUnmapBufferARB = ( PFNGLUNMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glUnmapBufferARB" );
-	qglGetBufferParameterivARB = ( PFNGLGETBUFFERPARAMETERIVARBPROC )GLimp_ExtensionPointer( "glGetBufferParameterivARB" );
-	qglGetBufferPointervARB = ( PFNGLGETBUFFERPOINTERVARBPROC )GLimp_ExtensionPointer( "glGetBufferPointervARB" );
-	qglUnmapBuffer = ( PFNGLUNMAPBUFFERARBPROC )GLimp_ExtensionPointer( "glUnmapBufferARB" );
-	qglBufferSubData = ( PFNGLBUFFERSUBDATAARBPROC )GLimp_ExtensionPointer( "glBufferSubDataARB" );
+	//R_CheckExtension( "GL_ARB_vertex_buffer_object", 1.5 );
+	qglBindBufferARB = ( PFNGLBINDBUFFERPROC )GLimp_ExtensionPointer( "glBindBuffer" );
+	qglDeleteBuffersARB = ( PFNGLDELETEBUFFERSPROC )GLimp_ExtensionPointer( "glDeleteBuffers" );
+	qglGenBuffersARB = ( PFNGLGENBUFFERSPROC )GLimp_ExtensionPointer( "glGenBuffers" );
+	qglIsBufferARB = ( PFNGLISBUFFERPROC )GLimp_ExtensionPointer( "glIsBuffer" );
+	qglBufferDataARB = ( PFNGLBUFFERDATAPROC )GLimp_ExtensionPointer( "glBufferData" );
+	qglBufferSubDataARB = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
+	qglGetBufferSubDataARB = ( PFNGLGETBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glGetBufferSubData" );
+	qglMapBufferARB = ( PFNGLMAPBUFFERPROC )GLimp_ExtensionPointer( "glMapBuffer" );
+	qglUnmapBufferARB = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
+	qglGetBufferParameterivARB = ( PFNGLGETBUFFERPARAMETERIVPROC )GLimp_ExtensionPointer( "glGetBufferParameteriv" );
+	qglGetBufferPointervARB = ( PFNGLGETBUFFERPOINTERVPROC )GLimp_ExtensionPointer( "glGetBufferPointerv" );
+	qglUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
+	qglBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
 
 	// ARB_map_buffer_range
 	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range", 3.0 );
@@ -521,21 +510,11 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// GL_ARB_draw_buffers
-	glConfig.multipleRenderTargetAvailable = R_CheckExtension( "GL_ARB_draw_buffers", 2.0 );
-	if (glConfig.multipleRenderTargetAvailable) {
-		qglDrawBuffers = ( PFNGLDRAWBUFFERSARBPROC )GLimp_ExtensionPointer( "glDrawBuffersARB" );
-	}
+	//R_CheckExtension( "GL_ARB_draw_buffers", 2.0 );
+	qglDrawBuffers = ( PFNGLDRAWBUFFERSPROC )GLimp_ExtensionPointer( "glDrawBuffers" );
 
 	// GLSL
-	bool hasGLSL = (
-		R_CheckExtension("GL_ARB_shader_objects", 2.0) && 
-		R_CheckExtension("GL_ARB_vertex_shader", 2.0) && 
-		R_CheckExtension("GL_ARB_fragment_shader", 2.0)
-	);
-	if (!hasGLSL) {
-		common->Error( "High-level ARB shaders (aka GLSL) not supported!\n" );
-	}
-	//all functions should have "ARB" suffix?...
+	//R_CheckExtension("GL_ARB_shader_objects", 2.0);
 	qglAttachShader = ( PFNGLATTACHSHADERPROC )GLimp_ExtensionPointer( "glAttachShader" );
 	qglCompileShader = ( PFNGLCOMPILESHADERPROC )GLimp_ExtensionPointer( "glCompileShader" );
 	qglCreateProgram = ( PFNGLCREATEPROGRAMPROC )GLimp_ExtensionPointer( "glCreateProgram" );
@@ -634,29 +613,26 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// geometry shaders
-	glConfig.geometryShaderAvailable = R_CheckExtension( "GL_ARB_geometry_shader4", 3.2 );
+	glConfig.geometryShaderAvailable = R_CheckExtension( "GL_ARB_geometry_shader4"/*, 3.2*/ );
 	if (glConfig.geometryShaderAvailable) {
 		qglFramebufferTexture = ( PFNGLFRAMEBUFFERTEXTUREARBPROC )GLimp_ExtensionPointer( "glFramebufferTextureARB" );
 		qglFramebufferTextureLayer = ( PFNGLFRAMEBUFFERTEXTURELAYERARBPROC )GLimp_ExtensionPointer( "glFramebufferTextureLayerARB" );
 	}
 
-	/*// glCopyImageSubData (core since GL 4.3)
-	if (R_CheckExtension( "GL_ARB_copy_image", 4.3 )) {
-		qglCopyImageSubData = ( PFNGLCOPYIMAGESUBDATANVPROC )GLimp_ExtensionPointer( "glCopyImageSubData" );
-	}*/
-
 	// PBO
-	glConfig.pixelBufferAvailable = R_CheckExtension( "GL_ARB_pixel_buffer_object", 2.1 );
+	glConfig.pixelBufferAvailable = R_CheckExtension( "GL_ARB_pixel_buffer_object"/*, 2.1*/ );
+
+	// Occlusion queries
+	//R_CheckExtension("GL_ARB_occlusion_query", 1.5);
+	qglGenQueries = ( PFNGLGENQUERIESPROC )GLimp_ExtensionPointer( "glGenQueries" );
+	qglDeleteQueries = ( PFNGLDELETEQUERIESPROC )GLimp_ExtensionPointer( "glDeleteQueries" );
+	qglBeginQuery = ( PFNGLBEGINQUERYPROC )GLimp_ExtensionPointer( "glBeginQuery" );
+	qglEndQuery = ( PFNGLENDQUERYPROC )GLimp_ExtensionPointer( "glEndQuery" );
 
 	glConfig.timerQueriesAvailable = R_CheckExtension( "GL_ARB_timer_query", 3.3 );
 	if( glConfig.timerQueriesAvailable ) {
 		qglQueryCounter = ( PFNGLQUERYCOUNTERPROC )GLimp_ExtensionPointer( "glQueryCounter" );
 		qglGetQueryObjectui64v = ( PFNGLGETQUERYOBJECTUI64VPROC )GLimp_ExtensionPointer( "glGetQueryObjectui64v" );
-		//note: the rest actually comes from ARB_occlusion_query (core since 1.5)
-		qglGenQueries = ( PFNGLGENQUERIESPROC )GLimp_ExtensionPointer( "glGenQueries" );
-		qglDeleteQueries = ( PFNGLDELETEQUERIESPROC )GLimp_ExtensionPointer( "glDeleteQueries" );
-		qglBeginQuery = ( PFNGLBEGINQUERYPROC )GLimp_ExtensionPointer( "glBeginQuery" );
-		qglEndQuery = ( PFNGLENDQUERYPROC )GLimp_ExtensionPointer( "glEndQuery" );
 	}
 
 	glConfig.debugGroupsAvailable = R_CheckExtension( "GL_KHR_debug" );

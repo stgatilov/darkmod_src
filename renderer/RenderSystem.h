@@ -58,7 +58,6 @@ typedef struct glconfig_s {
 	bool				anisotropicAvailable;
 	bool				textureLODBiasAvailable;
 	bool				twoSidedStencilAvailable;
-	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				pixelBufferAvailable;
 	bool				mapBufferRangeAvailable;
@@ -66,7 +65,6 @@ typedef struct glconfig_s {
 	bool				framebufferBlitAvailable;
 	bool				framebufferMultisampleAvailable;
 	bool				framebufferPackedDepthStencilAvailable;
-	bool				multipleRenderTargetAvailable;
 	bool				geometryShaderAvailable;
 	bool				fenceSyncAvailable;
 	bool				timerQueriesAvailable;
