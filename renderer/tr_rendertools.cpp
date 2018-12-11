@@ -747,6 +747,11 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		0.35f, colorRed, tr.primaryView->renderView.viewaxis );
 	tr.primaryWorld->DrawText( mt.material->GetName(), mt.point, 
 		0.35f, colorBlue, tr.primaryView->renderView.viewaxis );
+	if ( r_showSurfaceInfo.GetInteger() == 2 ) {
+		idStr index( mt.entity->entityNum );
+		tr.primaryWorld->DrawText( index.c_str(), mt.point + tr.primaryView->renderView.viewaxis[2] * 32,
+			0.35f, colorBlue, tr.primaryView->renderView.viewaxis );
+	}
 
 	qglEnable( GL_DEPTH_TEST );
 	qglDisable( GL_POLYGON_OFFSET_LINE );

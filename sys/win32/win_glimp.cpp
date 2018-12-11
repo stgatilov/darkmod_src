@@ -478,8 +478,17 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 		x = 0;
 		y = 0;
-		w = parms.width;
-		h = parms.height;
+		if ( r_useFbo.GetBool() && parms.height != win32.desktopHeight ) {
+			extern idCVar r_customWidth, r_customHeight, cv_r_fovRatio;
+			glConfig.vidWidth = w = win32.desktopWidth;
+			glConfig.vidHeight = h = win32.desktopHeight;
+			r_customWidth.SetInteger( w );
+			r_customHeight.SetInteger( h );
+			cv_r_fovRatio.SetFloat( 1.0f * w / h );
+		} else {
+			w = parms.width;
+			h = parms.height;
+		}
 	} else {
 		RECT	r;
 
