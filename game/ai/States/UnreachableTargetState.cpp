@@ -236,11 +236,10 @@ void UnreachableTargetState::Think(idAI* owner)
 	// Check the distance to the enemy, the other subsystem tasks need it.
 	// This handles both melee and ranged weapons.
 	memory.canHitEnemy = owner->CanHitEntity(enemy);
-
 	if (!owner->AI_ENEMY_VISIBLE)
 	{
 		// The enemy is not visible, let's keep track of him for a small amount of time
-		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
+		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_UNREACHABLE_TIME ) // grayman #4343
 		{
 			// Cheat a bit and take the last reachable position as "visible & reachable"
 			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;

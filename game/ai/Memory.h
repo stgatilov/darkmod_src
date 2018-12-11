@@ -220,8 +220,11 @@ const char* const AlertStateNames[EAlertStateNum] =
 #define HIDING_OBJECT_HEIGHT 0.35f
 #define MAX_SPOTS_PER_SEARCH_CALL 100
 
-// The maximum time the AI is able to follow the enemy although it's invisible (ms)
+// The maximum time the AI is able to follow the enemy during combat, although it's invisible (ms)
 #define MAX_BLIND_CHASE_TIME 3000
+
+// The maximum time the AI is able to follow the enemy when it's unreachable, although it's invisible (ms)
+#define MAX_BLIND_UNREACHABLE_TIME 5000 // grayman #4343 (was 3000)
 
 // grayman #2603 - how long to wait until barking again about a light that's out (ms)
 #define REBARK_DELAY 15000
