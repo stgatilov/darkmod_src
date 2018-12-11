@@ -77,8 +77,9 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 	}
 
 	// angua: Throw after the delay has expired, but only if
-	// the player is visible  and object throwing is enabled for this AI
+	// the player is visible and object throwing is enabled for this AI
 	if ( ( _nextThrowObjectTime <= gameLocal.time ) && 
+		 owner->AI_ENEMY_VISIBLE && // grayman #4343
 		 owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
 	{
 		idStr waitState(owner->WaitState());

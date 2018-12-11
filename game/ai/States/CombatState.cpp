@@ -1112,7 +1112,7 @@ void CombatState::Think(idAI* owner)
 		// Check whether the enemy can hit us in the near future
 		memory.canBeHitByEnemy = owner->CanBeHitByEntity(enemy, _combatType);
 
-		if ( !owner->AI_ENEMY_VISIBLE && 
+		if ( !owner->AI_ENEMY_VISIBLE &&
 			 ( ( ( _combatType == COMBAT_MELEE )  && !memory.canHitEnemy ) || ( _combatType == COMBAT_RANGED) ) )
 		{
 			// The enemy is not visible, let's keep track of him for a small amount of time
