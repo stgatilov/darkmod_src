@@ -390,30 +390,6 @@ void RB_BindVariableStageImage( const textureStage_t *texture, const float *shad
 }
 
 /*
-======================
-RB_FinishStageTexture
-======================
-*/
-void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf ) {
-	if ( texture->texgen & ( TG_SKYBOX_CUBE  | TG_WOBBLESKY_CUBE ) ) {
-		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ),
-		                    ( void * ) & ( ( ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache ) )->st ) );
-	} else if ( texture->texgen == TG_REFLECT_CUBE ) {
-		qglDisableClientState( GL_NORMAL_ARRAY );
-
-		qglMatrixMode( GL_TEXTURE );
-		qglLoadIdentity();
-		qglMatrixMode( GL_MODELVIEW );
-	}
-
-	if ( texture->hasMatrix ) {
-		qglMatrixMode( GL_TEXTURE );
-		qglLoadIdentity();
-		qglMatrixMode( GL_MODELVIEW );
-	}
-}
-
-/*
 =================
 RB_BeginDrawingView
 
