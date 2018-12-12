@@ -235,7 +235,7 @@ idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR
 // 2016-2018 additions by duzenko
 idCVar r_useAnonreclaimer( "r_useBfgPortalCulling", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer culling patch" );
 idCVar r_ambient_testadd( "r_ambient_testadd", "0", CVAR_RENDERER | CVAR_FLOAT, "Added ambient brightness for testing purposes. ", 0, 1 );
-idCVar r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB" );
+idCVar r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB2" );
 
 // FBO
 idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );
@@ -279,7 +279,6 @@ PFNGLFLUSHMAPPEDBUFFERRANGEPROC			qglFlushMappedBufferRange;
 PFNGLBUFFERSUBDATAPROC					qglBufferSubData;
 
 // ARB_vertex_program / ARB_fragment_program
-PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointer;
 PFNGLENABLEVERTEXATTRIBARRAYARBPROC		qglEnableVertexAttribArray;
 PFNGLDISABLEVERTEXATTRIBARRAYARBPROC	qglDisableVertexAttribArray;
 PFNGLPROGRAMSTRINGARBPROC				qglProgramStringARB;

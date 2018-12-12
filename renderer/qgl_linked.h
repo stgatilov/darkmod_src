@@ -306,7 +306,7 @@
 #define qglVertex4iv glVertex4iv
 #define qglVertex4s glVertex4s
 #define qglVertex4sv glVertex4sv
-#define qglVertexPointer glVertexPointer
+#define qglVertexAttribPointer glVertexAttribPointer
 #define qglViewport glViewport
 
 #ifdef GLX_VERSION_1_1 // catch all for any GLX-aware situation

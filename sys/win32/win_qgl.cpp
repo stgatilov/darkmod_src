@@ -352,7 +352,7 @@ void ( APIENTRY * qglVertex4i )(GLint x, GLint y, GLint z, GLint w);
 void ( APIENTRY * qglVertex4iv )(const GLint *v);
 void ( APIENTRY * qglVertex4s )(GLshort x, GLshort y, GLshort z, GLshort w);
 void ( APIENTRY * qglVertex4sv )(const GLshort *v);
-void ( APIENTRY * qglVertexPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+void ( APIENTRY * qglVertexAttribPointer ) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
 void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
 
 
@@ -1529,7 +1529,6 @@ void QGL_Shutdown( void )
 	qglVertex4iv                 = NULL;
 	qglVertex4s                  = NULL;
 	qglVertex4sv                 = NULL;
-	qglVertexPointer             = NULL;
 	qglViewport                  = NULL;
 
 	qwglCopyContext              = NULL;
@@ -1879,7 +1878,6 @@ bool QGL_Init( const char *dllname )
 	qglVertex4iv                 = 	dllVertex4iv                 = glVertex4iv;
 	qglVertex4s                  = 	dllVertex4s                  = glVertex4s;
 	qglVertex4sv                 = 	dllVertex4sv                 = glVertex4sv;
-	qglVertexPointer             = 	dllVertexPointer             = glVertexPointer;
 	qglViewport                  = 	dllViewport                  = glViewport;
 
 	qwglCopyContext              = wglCopyContext;
@@ -2267,7 +2265,6 @@ void GLimp_EnableLogging( bool enable ) {
 		qglVertex4iv                 = 	logVertex4iv                 ;
 		qglVertex4s                  = 	logVertex4s                  ;
 		qglVertex4sv                 = 	logVertex4sv                 ;
-		qglVertexPointer             = 	logVertexPointer             ;
 		qglViewport                  = 	logViewport                  ;
 	}
 	else
@@ -2565,7 +2562,6 @@ void GLimp_EnableLogging( bool enable ) {
 		qglVertex4iv                 = 	dllVertex4iv                 ;
 		qglVertex4s                  = 	dllVertex4s                  ;
 		qglVertex4sv                 = 	dllVertex4sv                 ;
-		qglVertexPointer             = 	dllVertexPointer             ;
 		qglViewport                  = 	dllViewport                  ;
 	}
 }

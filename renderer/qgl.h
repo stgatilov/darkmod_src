@@ -523,7 +523,7 @@ extern  void ( APIENTRY * qglVertex4i )(GLint x, GLint y, GLint z, GLint w);
 extern  void ( APIENTRY * qglVertex4iv )(const GLint *v);
 extern  void ( APIENTRY * qglVertex4s )(GLshort x, GLshort y, GLshort z, GLshort w);
 extern  void ( APIENTRY * qglVertex4sv )(const GLshort *v);
-extern  void ( APIENTRY * qglVertexPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+extern	void ( APIENTRY * qglVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
 extern  void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
 
 #if defined( _WIN32 )
