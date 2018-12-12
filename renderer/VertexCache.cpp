@@ -167,7 +167,7 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		vbo = frameData[backendListNum].vertexBuffer.GetAPIObject();
 	}
 	if ( vbo != currentVertexBuffer ) {
-		qglBindBufferARB( GL_ARRAY_BUFFER_ARB, vbo );
+		qglBindBuffer( GL_ARRAY_BUFFER_ARB, vbo );
 		currentVertexBuffer = vbo;
 	}
 	return ( void * )( size_t )( handle.offset );
@@ -193,7 +193,7 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		vbo = frameData[backendListNum].indexBuffer.GetAPIObject();
 	}
 	if ( vbo != currentIndexBuffer ) {
-		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, vbo );
+		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, vbo );
 		currentIndexBuffer = vbo;
 	}
 	return ( void * )( size_t )( handle.offset );
@@ -206,7 +206,7 @@ idVertexCache::UnbindIndex
 */
 void idVertexCache::UnbindIndex() {
 	if ( currentIndexBuffer != 0 ) {
-		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 		currentIndexBuffer = 0;
 	}
 }
@@ -326,8 +326,8 @@ void idVertexCache::EndFrame() {
 	staticData.indexMapOffset = staticData.indexMemUsed;
 	staticData.vertexMapOffset = staticData.vertexMemUsed;
 
-	qglBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
-	qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+	qglBindBuffer( GL_ARRAY_BUFFER_ARB, 0 );
+	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 	currentVertexBuffer = 0;
 	currentIndexBuffer = 0;
 }

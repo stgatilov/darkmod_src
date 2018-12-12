@@ -285,7 +285,6 @@
 #define qglVertex2f glVertex2f
 #define qglVertex3f glVertex3f
 #define qglVertex3fv glVertex3fv
-#define qglVertexAttribPointer glVertexAttribPointer
 #define qglViewport glViewport
 
 #ifdef GLX_VERSION_1_1 // catch all for any GLX-aware situation

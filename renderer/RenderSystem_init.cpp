@@ -262,21 +262,19 @@ PFNGLCOMPRESSEDTEXIMAGE2DARBPROC		qglCompressedTexImage2DARB;
 PFNGLGETCOMPRESSEDTEXIMAGEARBPROC		qglGetCompressedTexImageARB;
 
 // ARB_vertex_buffer_object
-PFNGLBINDBUFFERARBPROC					qglBindBufferARB;
-PFNGLDELETEBUFFERSARBPROC				qglDeleteBuffersARB;
-PFNGLGENBUFFERSARBPROC					qglGenBuffersARB;
-PFNGLISBUFFERARBPROC					qglIsBufferARB;
-PFNGLBUFFERDATAARBPROC					qglBufferDataARB;
-PFNGLBUFFERSUBDATAARBPROC				qglBufferSubDataARB;
-PFNGLGETBUFFERSUBDATAARBPROC			qglGetBufferSubDataARB;
-PFNGLMAPBUFFERARBPROC					qglMapBufferARB;
-PFNGLUNMAPBUFFERARBPROC					qglUnmapBufferARB;
-PFNGLGETBUFFERPARAMETERIVARBPROC		qglGetBufferParameterivARB;
-PFNGLGETBUFFERPOINTERVARBPROC			qglGetBufferPointervARB;
-PFNGLMAPBUFFERRANGEPROC					qglMapBufferRange;
-PFNGLUNMAPBUFFERPROC					qglUnmapBuffer;
-PFNGLFLUSHMAPPEDBUFFERRANGEPROC			qglFlushMappedBufferRange;
+PFNGLBINDBUFFERPROC						qglBindBuffer;
+PFNGLDELETEBUFFERSPROC					qglDeleteBuffers;
+PFNGLGENBUFFERSPROC						qglGenBuffers;
+PFNGLISBUFFERPROC						qglIsBuffer;
+PFNGLBUFFERDATAPROC						qglBufferData;
 PFNGLBUFFERSUBDATAPROC					qglBufferSubData;
+PFNGLGETBUFFERSUBDATAPROC				qglGetBufferSubData;
+PFNGLMAPBUFFERPROC						qglMapBuffer;
+PFNGLUNMAPBUFFERPROC					qglUnmapBuffer;
+PFNGLGETBUFFERPARAMETERIVPROC			qglGetBufferParameteriv;
+PFNGLGETBUFFERPOINTERVPROC				qglGetBufferPointerv;
+PFNGLMAPBUFFERRANGEPROC					qglMapBufferRange;
+PFNGLFLUSHMAPPEDBUFFERRANGEPROC			qglFlushMappedBufferRange;
 
 // ARB_vertex_program / ARB_fragment_program
 PFNGLENABLEVERTEXATTRIBARRAYARBPROC		qglEnableVertexAttribArray;
@@ -468,19 +466,17 @@ static void R_CheckPortableExtensions( void ) {
 
 	// ARB_vertex_buffer_object
 	//R_CheckExtension( "GL_ARB_vertex_buffer_object", 1.5 );
-	qglBindBufferARB = ( PFNGLBINDBUFFERPROC )GLimp_ExtensionPointer( "glBindBuffer" );
-	qglDeleteBuffersARB = ( PFNGLDELETEBUFFERSPROC )GLimp_ExtensionPointer( "glDeleteBuffers" );
-	qglGenBuffersARB = ( PFNGLGENBUFFERSPROC )GLimp_ExtensionPointer( "glGenBuffers" );
-	qglIsBufferARB = ( PFNGLISBUFFERPROC )GLimp_ExtensionPointer( "glIsBuffer" );
-	qglBufferDataARB = ( PFNGLBUFFERDATAPROC )GLimp_ExtensionPointer( "glBufferData" );
-	qglBufferSubDataARB = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
-	qglGetBufferSubDataARB = ( PFNGLGETBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glGetBufferSubData" );
-	qglMapBufferARB = ( PFNGLMAPBUFFERPROC )GLimp_ExtensionPointer( "glMapBuffer" );
-	qglUnmapBufferARB = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
-	qglGetBufferParameterivARB = ( PFNGLGETBUFFERPARAMETERIVPROC )GLimp_ExtensionPointer( "glGetBufferParameteriv" );
-	qglGetBufferPointervARB = ( PFNGLGETBUFFERPOINTERVPROC )GLimp_ExtensionPointer( "glGetBufferPointerv" );
-	qglUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
+	qglBindBuffer = ( PFNGLBINDBUFFERPROC )GLimp_ExtensionPointer( "glBindBuffer" );
+	qglDeleteBuffers = ( PFNGLDELETEBUFFERSPROC )GLimp_ExtensionPointer( "glDeleteBuffers" );
+	qglGenBuffers = ( PFNGLGENBUFFERSPROC )GLimp_ExtensionPointer( "glGenBuffers" );
+	qglIsBuffer = ( PFNGLISBUFFERPROC )GLimp_ExtensionPointer( "glIsBuffer" );
+	qglBufferData = ( PFNGLBUFFERDATAPROC )GLimp_ExtensionPointer( "glBufferData" );
 	qglBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
+	qglGetBufferSubData = ( PFNGLGETBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glGetBufferSubData" );
+	qglMapBuffer = ( PFNGLMAPBUFFERPROC )GLimp_ExtensionPointer( "glMapBuffer" );
+	qglUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
+	qglGetBufferParameteriv = ( PFNGLGETBUFFERPARAMETERIVPROC )GLimp_ExtensionPointer( "glGetBufferParameteriv" );
+	qglGetBufferPointerv = ( PFNGLGETBUFFERPOINTERVPROC )GLimp_ExtensionPointer( "glGetBufferPointerv" );
 
 	// ARB_map_buffer_range
 	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range", 3.0 );
@@ -493,9 +489,9 @@ static void R_CheckPortableExtensions( void ) {
 	if ( !(R_CheckExtension("GL_ARB_vertex_program") && R_CheckExtension("GL_ARB_fragment_program")) ) {
 		common->Error( "Low-level ARB shader programs not supported!\n" );
 	}
-	qglVertexAttribPointer = ( PFNGLVERTEXATTRIBPOINTERARBPROC )GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
-	qglEnableVertexAttribArray = ( PFNGLENABLEVERTEXATTRIBARRAYARBPROC )GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
-	qglDisableVertexAttribArray = ( PFNGLDISABLEVERTEXATTRIBARRAYARBPROC )GLimp_ExtensionPointer( "glDisableVertexAttribArrayARB" );
+	qglVertexAttribPointer = ( PFNGLVERTEXATTRIBPOINTERPROC )GLimp_ExtensionPointer( "glVertexAttribPointer" );
+	qglEnableVertexAttribArray = ( PFNGLENABLEVERTEXATTRIBARRAYPROC )GLimp_ExtensionPointer( "glEnableVertexAttribArray" );
+	qglDisableVertexAttribArray = ( PFNGLDISABLEVERTEXATTRIBARRAYPROC )GLimp_ExtensionPointer( "glDisableVertexAttribArray" );
 	qglProgramStringARB = ( PFNGLPROGRAMSTRINGARBPROC )GLimp_ExtensionPointer( "glProgramStringARB" );
 	qglBindProgramARB = ( PFNGLBINDPROGRAMARBPROC )GLimp_ExtensionPointer( "glBindProgramARB" );
 	qglGenProgramsARB = ( PFNGLGENPROGRAMSARBPROC )GLimp_ExtensionPointer( "glGenProgramsARB" );

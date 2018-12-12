@@ -36,8 +36,8 @@ UnbindBufferObjects
 ========================
 */
 void UnbindBufferObjects() {
-	qglBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
-	qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+	qglBindBuffer( GL_ARRAY_BUFFER_ARB, 0 );
+	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 }
 
 /*
@@ -144,12 +144,12 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	// clear out any previous error
 	qglGetError();
 
-	qglGenBuffersARB( 1, &bufferObject );
+	qglGenBuffers( 1, &bufferObject );
 	if( bufferObject == 0 ) {
 		common->FatalError( "BufferObject::AllocBufferObject: failed" );
 	}
-	qglBindBufferARB( bufferType, bufferObject );
-	qglBufferDataARB( bufferType, numBytes, initialData, bufferUsage );
+	qglBindBuffer( bufferType, bufferObject );
+	qglBufferData( bufferType, numBytes, initialData, bufferUsage );
 
 	GLenum err = qglGetError();
 	if( err == GL_OUT_OF_MEMORY ) {
@@ -170,7 +170,7 @@ void BufferObject::FreeBufferObject() {
 	if( IsMapped() ) {
 		UnmapBuffer();
 	}
-	qglDeleteBuffersARB( 1, &bufferObject );
+	qglDeleteBuffers( 1, &bufferObject );
 
 	size = 0;
 	bufferObject = 0;
@@ -187,7 +187,7 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 
 	void *buffer = NULL;
 
-	qglBindBufferARB( bufferType, bufferObject );
+	qglBindBuffer( bufferType, bufferObject );
 
 	if (qglMapBufferRange) {
 		buffer = qglMapBufferRange(bufferType, mapOffset, GetAllocedSize() - mapOffset, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
@@ -195,7 +195,7 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 		if (mapOffset != 0) {
 			common->FatalError("Cannot map range of buffer starting from %d without glMapBufferRange", mapOffset);
 		}
-		buffer = qglMapBufferARB(bufferType, GL_WRITE_ONLY);
+		buffer = qglMapBuffer(bufferType, GL_WRITE_ONLY);
 	}
 
 	if( buffer == NULL ) {
@@ -215,7 +215,7 @@ void BufferObject::FlushBuffer( int offset, int length ) {
 	assert( bufferObject != 0 );
 	assert( IsMapped() );
 
-	qglBindBufferARB( bufferType, bufferObject );
+	qglBindBuffer( bufferType, bufferObject );
 
 	if (qglFlushMappedBufferRange) {
 		qglFlushMappedBufferRange( bufferType, offset, length );
@@ -231,9 +231,9 @@ void BufferObject::UnmapBuffer() {
 	assert( bufferObject != 0 );
 	assert( IsMapped() );
 
-	qglBindBufferARB( bufferType, bufferObject );
+	qglBindBuffer( bufferType, bufferObject );
 
-	if( !qglUnmapBufferARB( bufferType ) ) {
+	if( !qglUnmapBuffer( bufferType ) ) {
 		common->Warning( "BufferObject::UnmapBuffer failed\n" );
 	}
 	SetUnmapped();

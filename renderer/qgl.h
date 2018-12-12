@@ -69,52 +69,22 @@ GLExtension_t GLimp_ExtensionPointer( const char *name );
 extern	void ( APIENTRY * qglActiveTexture )( GLenum texture );
 
 // ARB_vertex_buffer_object
-extern PFNGLBINDBUFFERARBPROC qglBindBufferARB;
-extern PFNGLDELETEBUFFERSARBPROC qglDeleteBuffersARB;
-extern PFNGLGENBUFFERSARBPROC qglGenBuffersARB;
-extern PFNGLISBUFFERARBPROC qglIsBufferARB;
-extern PFNGLBUFFERDATAARBPROC qglBufferDataARB;
-extern PFNGLBUFFERSUBDATAARBPROC qglBufferSubDataARB;
-extern PFNGLGETBUFFERSUBDATAARBPROC qglGetBufferSubDataARB;
-extern PFNGLMAPBUFFERARBPROC qglMapBufferARB;
-extern PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB;
-extern PFNGLGETBUFFERPARAMETERIVARBPROC qglGetBufferParameterivARB;
-extern PFNGLGETBUFFERPOINTERVARBPROC qglGetBufferPointervARB;
+extern PFNGLBINDBUFFERARBPROC qglBindBuffer;
+extern PFNGLDELETEBUFFERSARBPROC qglDeleteBuffers;
+extern PFNGLGENBUFFERSARBPROC qglGenBuffers;
+extern PFNGLISBUFFERARBPROC qglIsBuffer;
+extern PFNGLBUFFERDATAARBPROC qglBufferData;
+extern PFNGLBUFFERSUBDATAARBPROC qglBufferSubData;
+extern PFNGLGETBUFFERSUBDATAARBPROC qglGetBufferSubData;
+extern PFNGLMAPBUFFERARBPROC qglMapBuffer;
+extern PFNGLUNMAPBUFFERARBPROC qglUnmapBuffer;
+extern PFNGLGETBUFFERPARAMETERIVARBPROC qglGetBufferParameteriv;
+extern PFNGLGETBUFFERPOINTERVARBPROC qglGetBufferPointerv;
 extern PFNGLMAPBUFFERRANGEPROC qglMapBufferRange;
 extern PFNGLFLUSHMAPPEDBUFFERRANGEPROC qglFlushMappedBufferRange;
-extern PFNGLUNMAPBUFFERPROC qglUnmapBuffer;
-extern PFNGLBUFFERSUBDATAPROC qglBufferSubData;
-
-// NV_register_combiners
-extern	void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
-extern	void ( APIENTRY *qglCombinerParameterivNV )( GLenum pname, const GLint *params );
-extern	void ( APIENTRY *qglCombinerParameterfNV )( GLenum pname, const GLfloat param );
-extern	void ( APIENTRY *qglCombinerParameteriNV )( GLenum pname, const GLint param );
-extern	void ( APIENTRY *qglCombinerInputNV )( GLenum stage, GLenum portion, GLenum variable, GLenum input,
-											  GLenum mapping, GLenum componentUsage );
-extern	void ( APIENTRY *qglCombinerOutputNV )( GLenum stage, GLenum portion, GLenum abOutput, GLenum cdOutput, 
-											   GLenum sumOutput, GLenum scale, GLenum bias, GLboolean abDotProduct,
-											   GLboolean cdDotProduct, GLboolean muxSum );
-extern	void ( APIENTRY *qglFinalCombinerInputNV )( GLenum variable, GLenum input, GLenum mapping, GLenum componentUsage );
 
 // 3D textures
 extern void ( APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
-
-// ATI_fragment_shader
-/*extern	PFNGLGENFRAGMENTSHADERSATIPROC	qglGenFragmentShadersATI;
-extern	PFNGLBINDFRAGMENTSHADERATIPROC	qglBindFragmentShaderATI;
-extern	PFNGLDELETEFRAGMENTSHADERATIPROC qglDeleteFragmentShaderATI;
-extern	PFNGLBEGINFRAGMENTSHADERATIPROC qglBeginFragmentShaderATI;
-extern	PFNGLENDFRAGMENTSHADERATIPROC	qglEndFragmentShaderATI;
-extern	PFNGLPASSTEXCOORDATIPROC		qglPassTexCoordATI;
-extern	PFNGLSAMPLEMAPATIPROC			qglSampleMapATI;
-extern	PFNGLCOLORFRAGMENTOP1ATIPROC	qglColorFragmentOp1ATI;
-extern	PFNGLCOLORFRAGMENTOP2ATIPROC	qglColorFragmentOp2ATI;
-extern	PFNGLCOLORFRAGMENTOP3ATIPROC	qglColorFragmentOp3ATI;
-extern	PFNGLALPHAFRAGMENTOP1ATIPROC	qglAlphaFragmentOp1ATI;
-extern	PFNGLALPHAFRAGMENTOP2ATIPROC	qglAlphaFragmentOp2ATI;
-extern	PFNGLALPHAFRAGMENTOP3ATIPROC	qglAlphaFragmentOp3ATI;
-extern	PFNGLSETFRAGMENTSHADERCONSTANTATIPROC	qglSetFragmentShaderConstantATI;*/
 
 // separate stencil
 extern PFNGLSTENCILOPSEPARATEPROC			qglStencilOpSeparate;

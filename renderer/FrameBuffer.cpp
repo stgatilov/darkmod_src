@@ -173,28 +173,28 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 
 			if ( !pbo ) {
 				pboSize = cmd.imageWidth * cmd.imageHeight * 3;
-				qglGenBuffersARB( 1, &pbo );
-				qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-				qglBufferDataARB( GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ );
-				qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
+				qglGenBuffers( 1, &pbo );
+				qglBindBuffer( GL_PIXEL_PACK_BUFFER, pbo );
+				qglBufferData( GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ );
+				qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
 			}
 
 			if ( cmd.imageWidth * cmd.imageHeight * 3 != pboSize ) {
 				common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", cmd.imageWidth, cmd.imageHeight, pboSize );
 			}
-			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
+			qglBindBuffer( GL_PIXEL_PACK_BUFFER, pbo );
 
-			byte *ptr = reinterpret_cast< byte * >( qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY ) );
+			byte *ptr = reinterpret_cast< byte * >( qglMapBuffer( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY ) );
 
 			// #4395 moved to initializer
 			if ( ptr ) {
 				memcpy( cmd.buffer, ptr, pboSize );
-				qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
+				qglUnmapBuffer( GL_PIXEL_PACK_BUFFER );
 			}
 
 			// revelator: added c++11 nullptr
 			qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, nullptr );
-			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
+			qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
 		} else {
 			qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, cmd.buffer );
 		}
