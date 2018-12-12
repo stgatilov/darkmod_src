@@ -1492,59 +1492,9 @@ static void APIENTRY logTranslatef(GLfloat x, GLfloat y, GLfloat z) {
 	dllTranslatef(x, y, z);
 }
 
-static void APIENTRY logVertex2d(GLdouble x, GLdouble y) {
-	fprintf( tr.logFile, "glVertex2d %g %g\n", x, y );
-	dllVertex2d(x, y);
-}
-
-static void APIENTRY logVertex2dv(const GLdouble *v) {
-// unknown type: "const GLdouble *" name: "v"
-	fprintf( tr.logFile, "glVertex2dv 'const GLdouble * v'\n" );
-	dllVertex2dv(v);
-}
-
 static void APIENTRY logVertex2f(GLfloat x, GLfloat y) {
 	fprintf( tr.logFile, "glVertex2f %g %g\n", x, y );
 	dllVertex2f(x, y);
-}
-
-static void APIENTRY logVertex2fv(const GLfloat *v) {
-// unknown type: "const GLfloat *" name: "v"
-	fprintf( tr.logFile, "glVertex2fv 'const GLfloat * v'\n" );
-	dllVertex2fv(v);
-}
-
-static void APIENTRY logVertex2i(GLint x, GLint y) {
-	fprintf( tr.logFile, "glVertex2i %d %d\n", x, y );
-	dllVertex2i(x, y);
-}
-
-static void APIENTRY logVertex2iv(const GLint *v) {
-// unknown type: "const GLint *" name: "v"
-	fprintf( tr.logFile, "glVertex2iv 'const GLint * v'\n" );
-	dllVertex2iv(v);
-}
-
-static void APIENTRY logVertex2s(GLshort x, GLshort y) {
-	fprintf( tr.logFile, "glVertex2s %d %d\n", x, y );
-	dllVertex2s(x, y);
-}
-
-static void APIENTRY logVertex2sv(const GLshort *v) {
-// unknown type: "const GLshort *" name: "v"
-	fprintf( tr.logFile, "glVertex2sv 'const GLshort * v'\n" );
-	dllVertex2sv(v);
-}
-
-static void APIENTRY logVertex3d(GLdouble x, GLdouble y, GLdouble z) {
-	fprintf( tr.logFile, "glVertex3d %g %g %g\n", x, y, z );
-	dllVertex3d(x, y, z);
-}
-
-static void APIENTRY logVertex3dv(const GLdouble *v) {
-// unknown type: "const GLdouble *" name: "v"
-	fprintf( tr.logFile, "glVertex3dv 'const GLdouble * v'\n" );
-	dllVertex3dv(v);
 }
 
 static void APIENTRY logVertex3f(GLfloat x, GLfloat y, GLfloat z) {
@@ -1556,78 +1506,6 @@ static void APIENTRY logVertex3fv(const GLfloat *v) {
 // unknown type: "const GLfloat *" name: "v"
 	fprintf( tr.logFile, "glVertex3fv 'const GLfloat * v'\n" );
 	dllVertex3fv(v);
-}
-
-static void APIENTRY logVertex3i(GLint x, GLint y, GLint z) {
-	fprintf( tr.logFile, "glVertex3i %d %d %d\n", x, y, z );
-	dllVertex3i(x, y, z);
-}
-
-static void APIENTRY logVertex3iv(const GLint *v) {
-// unknown type: "const GLint *" name: "v"
-	fprintf( tr.logFile, "glVertex3iv 'const GLint * v'\n" );
-	dllVertex3iv(v);
-}
-
-static void APIENTRY logVertex3s(GLshort x, GLshort y, GLshort z) {
-	fprintf( tr.logFile, "glVertex3s %d %d %d\n", x, y, z );
-	dllVertex3s(x, y, z);
-}
-
-static void APIENTRY logVertex3sv(const GLshort *v) {
-// unknown type: "const GLshort *" name: "v"
-	fprintf( tr.logFile, "glVertex3sv 'const GLshort * v'\n" );
-	dllVertex3sv(v);
-}
-
-static void APIENTRY logVertex4d(GLdouble x, GLdouble y, GLdouble z, GLdouble w) {
-	fprintf( tr.logFile, "glVertex4d %g %g %g %g\n", x, y, z, w );
-	dllVertex4d(x, y, z, w);
-}
-
-static void APIENTRY logVertex4dv(const GLdouble *v) {
-// unknown type: "const GLdouble *" name: "v"
-	fprintf( tr.logFile, "glVertex4dv 'const GLdouble * v'\n" );
-	dllVertex4dv(v);
-}
-
-static void APIENTRY logVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
-	fprintf( tr.logFile, "glVertex4f %g %g %g %g\n", x, y, z, w );
-	dllVertex4f(x, y, z, w);
-}
-
-static void APIENTRY logVertex4fv(const GLfloat *v) {
-// unknown type: "const GLfloat *" name: "v"
-	fprintf( tr.logFile, "glVertex4fv 'const GLfloat * v'\n" );
-	dllVertex4fv(v);
-}
-
-static void APIENTRY logVertex4i(GLint x, GLint y, GLint z, GLint w) {
-	fprintf( tr.logFile, "glVertex4i %d %d %d %d\n", x, y, z, w );
-	dllVertex4i(x, y, z, w);
-}
-
-static void APIENTRY logVertex4iv(const GLint *v) {
-// unknown type: "const GLint *" name: "v"
-	fprintf( tr.logFile, "glVertex4iv 'const GLint * v'\n" );
-	dllVertex4iv(v);
-}
-
-static void APIENTRY logVertex4s(GLshort x, GLshort y, GLshort z, GLshort w) {
-	fprintf( tr.logFile, "glVertex4s %d %d %d %d\n", x, y, z, w );
-	dllVertex4s(x, y, z, w);
-}
-
-static void APIENTRY logVertex4sv(const GLshort *v) {
-// unknown type: "const GLshort *" name: "v"
-	fprintf( tr.logFile, "glVertex4sv 'const GLshort * v'\n" );
-	dllVertex4sv(v);
-}
-
-static void APIENTRY logVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer) {
-// unknown type: "const GLvoid *" name: "pointer"
-	fprintf( tr.logFile, "glVertexPointer %d %s %d 'const GLvoid * pointer'\n", size, EnumString(type), stride );
-	dllVertexPointer(size, type, stride, pointer);
 }
 
 static void APIENTRY logViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
