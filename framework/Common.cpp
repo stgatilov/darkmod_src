@@ -2833,8 +2833,8 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		com_fullyInitialized = true;
 	}
 
-	catch( idException & ) {
-		Sys_Error( "Error during initialization" );
+	catch( idException &e ) {
+		Sys_Error( "Error during initialization. %s", e.error );
 	}
 }
 
