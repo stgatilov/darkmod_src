@@ -92,6 +92,11 @@ public:
 
 	virtual void	SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) = 0;
 
+	// stgatilov: for clicking GUI buttons in automation
+	// windowName --- the name of GUI window (see idWindows::name)
+	// scriptNum --- index of script (see idWindow::ON_ACTION = 2 and similar)
+	virtual bool	RunGuiScript(const char *windowName, int scriptNum = 2) = 0;
+
 	// Updates gui and dispatched events to it
 	virtual void	GuiFrameEvents() = 0;
 

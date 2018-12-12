@@ -652,3 +652,14 @@ void idUserInterfaceLocal::SetCursor( float x, float y ) {
 	cursorY = y;
 }
 
+
+bool idUserInterfaceLocal::RunGuiScript(const char *windowName, int scriptNum) {
+	idWindow *rootWin = GetDesktop();
+	if (!rootWin)
+		return false;
+	drawWin_t *dw = rootWin->FindChildByName(windowName);
+	if (!dw || !dw->win)
+		return false;
+	bool ok = dw->win->RunScript(scriptNum);
+	return ok;
+}

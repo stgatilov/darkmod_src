@@ -102,6 +102,7 @@ public:
 	virtual void		ExitMenu();
 	virtual void		GuiFrameEvents();
 	virtual void		SetGUI( idUserInterface *gui, HandleGuiCommand_t handle );
+	virtual bool		RunGuiScript(const char *windowName, int scriptNum);
 
 	virtual const char *MessageBox( msgBoxType_t type, const char *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false  );
 	virtual void		StopBox( void );

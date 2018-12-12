@@ -56,6 +56,7 @@ public:
 
 	virtual float				CursorX() { return cursorX; }
 	virtual float				CursorY() { return cursorY; }
+	virtual bool				RunGuiScript(const char *windowName, int scriptNum);
 
 	size_t						Size();
 

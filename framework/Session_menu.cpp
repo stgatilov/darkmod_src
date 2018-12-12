@@ -97,6 +97,13 @@ void idSessionLocal::SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) {
 	guiActive->Activate( true, com_frameTime );
 }
 
+bool idSessionLocal::RunGuiScript(const char *windowName, int scriptNum) {
+	idUserInterface *ui = guiActive;
+	if (!ui)
+		return false;
+	return ui->RunGuiScript(windowName, scriptNum);
+}
+
 /*
 ===============
 idSessionLocal::ExitMenu

@@ -15,6 +15,7 @@
 
 #include "precompiled.h"
 #include "Automation_local.h"
+#include "../Missions/MissionManager.h"
 
 
 #ifdef _DEBUG
@@ -299,6 +300,44 @@ void Automation::ParseAction(ParseIn &parseIn) {
 		return;
 	}
 
+	if (token == "guiscript") {
+		bool ok = false;
+		char name[256];
+		int scriptNum;
+		if (sscanf(rest, "%s%d", name, &scriptNum) == 2)
+			ok = session->RunGuiScript(name, scriptNum);
+		WriteResponse(parseIn.seqno, (ok ? "done" : "error"));
+	}
+
+	if (token == "installfm") {
+		int modsNum = gameLocal.m_MissionManager->GetNumMods();
+
+		char name[256];
+		int argsNum = sscanf(rest, "%s", name);
+		if (argsNum <= 0) {
+			idStr modList;
+			for (int i = 0; i < modsNum; i++) {
+				modList += gameLocal.m_MissionManager->GetModInfo(i)->modName;
+				modList += "\n";
+			}
+			WriteResponse(parseIn.seqno, modList.c_str());
+		}
+		else {
+			int idx = -1;
+			for (int i = 0; i < modsNum; i++)
+				if (gameLocal.m_MissionManager->GetModInfo(i)->modName == idStr(name))
+					idx = i;
+			bool ok = false;
+			if (idx >= 0) {
+				auto res = gameLocal.m_MissionManager->InstallMod(idx);
+				ok = (res == CMissionManager::INSTALLED_OK);
+				if (ok)
+					cmdSystem->SetupReloadEngine(idCmdArgs());
+			}
+			WriteResponse(parseIn.seqno, (ok ? "done" : "error"));
+		}
+	}
+
 	if (token == "sysctrl") {
 		int key, value;
 		if (sscanf(rest, "%d%d", &key, &value) == 2)
@@ -413,10 +452,43 @@ void Automation::ParseQuery(ParseIn &parseIn) {
 	parseIn.lexer.ExpectTokenString("query");
 	parseIn.lexer.ExpectTokenType(TT_STRING, 0, &token);
 
+	parseIn.lexer.ExpectTokenString("content");
+	parseIn.lexer.CheckTokenString(":");
+
+	int pos = parseIn.lexer.GetFileOffset();
+	const char *rest = strchr(parseIn.message + pos, '\n');
+
 	if (token == "fps") {
 		char buff[256];
 		sprintf(buff, "%d\n", showFPS_currentValue);
 		WriteResponse(parseIn.seqno, buff);
+	}
+
+	if (token == "console") {
+		int arg0, arg1;
+		int argsNum = sscanf(rest, "%d%d", &arg0, &arg1);
+		int consoleEnd = common->GetConsoleMarker();
+
+		if (argsNum <= 0) {
+			//return size of console in chars
+			char buff[256];
+			sprintf(buff, "%d\n", consoleEnd);
+			WriteResponse(parseIn.seqno, buff);
+		}
+		else if (argsNum == 2) {
+			auto decodePos = [consoleEnd](int x) -> int {	//python-style indexing
+				x = (x < 0 ? consoleEnd : 0) + x;
+				return idMath::ClampInt(0, consoleEnd, x);
+			};
+			//fetch console chars
+			int beg = decodePos(arg0);
+			int end = decodePos(arg1);
+			if (end < beg) end = beg;
+			idStr consoleUpdates = common->GetConsoleContents(beg, end);
+			WriteResponse(parseIn.seqno, consoleUpdates.c_str());
+		}
+		else 
+			WriteResponse(parseIn.seqno, "");
 	}
 }
 
