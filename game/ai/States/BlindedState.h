@@ -32,6 +32,7 @@ private:
 	float _oldVisAcuity; // to restore visual acuity
 	float _oldAudAcuity; // Smoke #2829 - to restore audio acuity
 	bool  _staring;		 // grayman #3431 (true = staring at ground)
+	bool  _initialized;  // grayman debug
 
 public:
 	// Get the name of this state
