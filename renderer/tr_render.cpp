@@ -59,7 +59,7 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 	}
 	qglEnd();*/
 	vertexCache.UnbindIndex();
-	static const vertCacheHandle_t nil;
+	static vertCacheHandle_t nil;
 	vertexCache.VertexPosition( nil );
 	auto ac = tri->verts;
 	qglEnableVertexAttribArray( 8 );
