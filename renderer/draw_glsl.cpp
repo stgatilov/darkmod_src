@@ -700,7 +700,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 
 	/* create shader object, set the source, and compile */
 	shader = qglCreateShader( ShaderType );
-	length = ( GLint )strlen( source );
+	length = ( GLint )strlen( source ) + 1;
 	qglShaderSource( shader, 1, ( const char ** )&source, &length );
 	qglCompileShader( shader );
 	fileSystem->FreeFile( fileBuffer );
