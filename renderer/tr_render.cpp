@@ -20,6 +20,10 @@
 #include "glsl.h"
 #include "FrameBuffer.h"
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+#endif
+
 /*
   back end scene + lights rendering functions
 */
@@ -34,9 +38,9 @@ This should never happen if the vertex cache is operating properly.
 =================
 */
 void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
-	backEnd.pc.c_drawElements++;
+	/*backEnd.pc.c_drawElements++;
 	backEnd.pc.c_drawIndexes += tri->numIndexes;
-	backEnd.pc.c_drawVertexes += tri->numVerts;
+	backEnd.pc.c_drawVertexes += tri->numVerts;*/
 
 	if ( tri->ambientSurface ) {
 		if ( tri->indexes == tri->ambientSurface->indexes ) {
@@ -46,13 +50,20 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 			backEnd.pc.c_drawRefVertexes += tri->numVerts;
 		}
 	}
-	qglBegin( GL_TRIANGLES );
+
+	/*qglBegin( GL_TRIANGLES );
 
 	for ( int i = 0 ; i < tri->numIndexes ; i++ ) {
 		qglTexCoord2fv( tri->verts[ tri->indexes[i] ].st.ToFloatPtr() );
 		qglVertex3fv( tri->verts[ tri->indexes[i] ].xyz.ToFloatPtr() );
 	}
-	qglEnd();
+	qglEnd();*/
+	auto ac = tri->verts;
+	qglEnableVertexAttribArray( 8 );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+	qglDrawElements( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
+	qglDisableVertexAttribArray( 8 );
 }
 
 /*

@@ -35,7 +35,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Profiling.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
 
 struct basicInteractionProgram_t : lightProgram_t {
@@ -1198,8 +1198,8 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	
-	for ( size_t i = 0; i < data.lightOrigins.size(); i += MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( data.lightOrigins.size() - i, MAX_LIGHTS );
+	for ( int i = 0; i < (int) data.lightOrigins.size(); i += MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( (uint) data.lightOrigins.size() - i, MAX_LIGHTS );
 
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
@@ -1213,8 +1213,8 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 
 		if ( r_showMultiLight.GetInteger() == 1 ) {
 			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += data.lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, data.lightOrigins.size() );
+			backEnd.pc.c_interactionLights += (uint) data.lightOrigins.size();
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint) data.lightOrigins.size() );
 			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
 				return v.z >= 0;
 			} );
@@ -1362,8 +1362,8 @@ void shadowMapProgram_t::RenderAllLights(drawSurf_t *surf) {
 
 	MultiLightShaderData data( surf, true );
 
-	for ( size_t i = 0; i < data.lightOrigins.size(); i += multiLightInteractionProgram_t::MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( data.lightOrigins.size() - i, multiLightInteractionProgram_t::MAX_LIGHTS );
+	for ( int i = 0; i < (int) data.lightOrigins.size(); i += multiLightInteractionProgram_t::MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( (int) data.lightOrigins.size() - i, multiLightInteractionProgram_t::MAX_LIGHTS );
 
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
@@ -1376,8 +1376,8 @@ void shadowMapProgram_t::RenderAllLights(drawSurf_t *surf) {
 
 		if ( r_showMultiLight.GetInteger() == 2 ) {
 			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += data.lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, data.lightOrigins.size() );
+			backEnd.pc.c_interactionLights += (uint) data.lightOrigins.size();
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint) data.lightOrigins.size() );
 			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
 				return v.z >= 0;
 			} );
