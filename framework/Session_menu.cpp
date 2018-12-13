@@ -101,7 +101,11 @@ bool idSessionLocal::RunGuiScript(const char *windowName, int scriptNum) {
 	idUserInterface *ui = guiActive;
 	if (!ui)
 		return false;
-	return ui->RunGuiScript(windowName, scriptNum);
+	const char *command = ui->RunGuiScript(windowName, scriptNum);
+	if (!command)
+		return false;
+	DispatchCommand(ui, command);
+	return true;
 }
 
 /*

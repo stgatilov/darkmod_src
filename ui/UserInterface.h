@@ -100,7 +100,7 @@ public:
 	virtual float				CursorY() = 0;
 
 	//stgatilov: allows clicking GUI buttons in automation
-	virtual bool				RunGuiScript(const char *windowName, int scriptNum) = 0;
+	virtual const char*			RunGuiScript(const char *windowName, int scriptNum) = 0;
 };
 
 
