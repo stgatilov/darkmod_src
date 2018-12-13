@@ -331,7 +331,6 @@ void ( APIENTRY * qglTranslatef )(GLfloat x, GLfloat y, GLfloat z);
 void ( APIENTRY * qglVertex2f )(GLfloat x, GLfloat y);
 void ( APIENTRY * qglVertex3f )(GLfloat x, GLfloat y, GLfloat z);
 void ( APIENTRY * qglVertex3fv )(const GLfloat *v);
-void ( APIENTRY * qglVertexAttribPointer ) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
 void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
 
 

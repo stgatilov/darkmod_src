@@ -105,12 +105,12 @@ GLimp_BindLogging
 */
 void GLimp_BindLogging() {
 define(`assign_funcptr', `qgl`$1' = log`$1';')
-forloop(`i', gl_start, gl_end, `assign_funcptr(indir(`f'i`_name'))
-')
+dnl forloop(`i', gl_start, gl_end, `assign_funcptr(indir(`f'i`_name'))
+dnl ')
 
 define(`assign_funcptr', `qglX`$1' = log`$1';')
-forloop(`i', glX_start, glX_end, `assign_funcptr(indir(`f'i`_name'))
-')
+dnl forloop(`i', glX_start, glX_end, `assign_funcptr(indir(`f'i`_name'))
+dnl ')
 }
 
 /*

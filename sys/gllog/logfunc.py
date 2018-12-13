@@ -11,6 +11,7 @@ def do_logfunc(f_in, f_out):
 
 	for l in (gl, glX):
 		for t in l:
+			break
 			# process ret type to strip trailing spaces
 			t[0] = string.strip(t[0])
 			f_out.write('static %s APIENTRY log%s(%s) {\n' % ( t[0], t[2], t[3] ))
@@ -57,18 +58,18 @@ def do_logfunc(f_in, f_out):
 			for par in params:
 				f_out.write(', ' + par)
 			f_out.write(' );\n')
-			if (t[0] != 'void'):
-				f_out.write('\treturn dll%s(' % t[2])
-			else:
-				f_out.write('\tdll%s(' % t[2])
-			started = 0
-			for i in names:
-				if (started):
-					f_out.write(', ')
-				else:
-					started = 1
-				f_out.write(i)
-			f_out.write(');\n')
+#			if (t[0] != 'void'):
+#				f_out.write('\treturn dll%s(' % t[2])
+#			else:
+#				f_out.write('\tdll%s(' % t[2])
+#			started = 0
+#			for i in names:
+#				if (started):
+#					f_out.write(', ')
+#				else:
+#					started = 1
+#				f_out.write(i)
+#			f_out.write(');\n')
 			f_out.write('}\n\n')
 			
 if __name__ == '__main__':
