@@ -885,8 +885,8 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool use
 	}
 	rc.width = ( rc.width + 3 ) & ~3; //opengl wants width padded to 4x
 
-	guiModel->EmitFullScreen();
-	guiModel->Clear();
+	//guiModel->EmitFullScreen();
+	//guiModel->Clear();
 
 	copyRenderCommand_t &cmd = *( copyRenderCommand_t * )R_GetCommandBuffer( sizeof( cmd ) );
 	cmd.commandId = RC_COPY_RENDER;
