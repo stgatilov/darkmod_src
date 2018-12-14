@@ -3313,7 +3313,6 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	m_overlays.drawOverlays();
 
 	// weapon targeting crosshair
-
 #if 0 // greebo: disabled cursor calls entirely
 	if ( !GuiActive() ) {
 		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
@@ -3321,6 +3320,15 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		}
 	}
 #endif
+	// STiFU: Cursor reenabled as a FrobHelper
+	if (cursor)
+	{
+		// TODO: test if frob helper is supposed to be shown
+		// TODO: calculate fade in etc.
+		static const float alpha = 0.2f;
+		cursor->Redraw(gameLocal.realClientTime, alpha);
+	}
+
 
 	// J.C.Denton Start
 	float fFadeDelay = Max(0.0001f, cv_lg_fade_delay.GetFloat() );		// Avoid divide by zero errors. 

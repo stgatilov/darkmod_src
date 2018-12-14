@@ -236,7 +236,9 @@ public:
 	virtual bool Parse(idParser *src, bool rebuild = true);
 	virtual const char *HandleEvent(const sysEvent_t *event, bool *updateVisuals);
 	void	CalcRects(float x, float y);
-	virtual void Redraw(float x, float y);
+
+	// STiFU: Added alpha to handle adjusting the crosshair alpha. Init disabled == -1.0
+	virtual void Redraw(float x, float y, const float alpha = -1.0);
 
 	virtual void ArchiveToDictionary(idDict *dict, bool useNames = true);
 	virtual void InitFromDictionary(idDict *dict, bool byName = true);
@@ -252,7 +254,8 @@ public:
 	virtual void Draw(int time, float x, float y);
 	virtual void MouseExit();
 	virtual void MouseEnter();
-	virtual void DrawBackground(const idRectangle &drawRect);
+	// STiFU: Alpha handling for FrobHelper
+	virtual void DrawBackground(const idRectangle &drawRect, const float alpha = -1.0);
 	virtual const char *RouteMouseCoords(float xd, float yd);
 	virtual void SetBuddy(idWindow *buddy) {};
 	virtual void HandleBuddyUpdate(idWindow *buddy) {};
