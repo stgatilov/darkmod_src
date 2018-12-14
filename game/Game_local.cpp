@@ -3793,9 +3793,6 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 {
 	if (cvarSystem->GetCVarInteger("r_aspectRatio") > 0)
 	{
-		// Wide-screen resolution selected in the GUI, set the mode to "custom"
-		cvarSystem->SetCVarInteger("r_mode", -1);
-
 		// Set the custom height and width
 		int mode = cv_tdm_widescreenmode.GetInteger();
 
@@ -3887,11 +3884,6 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 		Printf("Widesreenmode %i, setting r_customWidth=%i, r_customHeight=%i\n", mode, width, height);
 		cvarSystem->SetCVarInteger("r_customWidth", width);
 		cvarSystem->SetCVarInteger("r_customHeight", height);
-	}
-	else
-	{
-		// Not widescreen, set r_mode to something reasonable (1024x768)
-		cvarSystem->SetCVarInteger("r_mode", 5);
 	}
 }
 
@@ -4219,8 +4211,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "loadcustomvideoresolution")
 	{
-		if (cvarSystem->GetCVarInteger("r_mode") == -1)
-		{
 			// Just set the state variable based on width
 			int width = cvarSystem->GetCVarInteger("r_customWidth");
 			int height = cvarSystem->GetCVarInteger("r_customHeight");
@@ -4255,7 +4245,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			default: cv_tdm_widescreenmode.SetInteger(0); break;
 			}
 			Printf("Widescreenmode was set to: %i (%ix%i)\n", cv_tdm_widescreenmode.GetInteger(), width, height );
-		}
 		UpdateGUIScaling(gui);
 	}
 	// greebo: the "log" command is used to write stuff to the console
