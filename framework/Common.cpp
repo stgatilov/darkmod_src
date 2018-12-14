@@ -3015,17 +3015,6 @@ void idCommonLocal::InitGame( void )
 	// init the session
 	session->Init();
 
-	// have to do this twice.. first one sets the correct r_mode for the renderer init
-	// this time around the backend is all setup correct.. a bit fugly but do not want
-	// to mess with all the gl init at this point.. an old vid card will never qualify for 
-	/*if ( sysDetect ) {
-		SetMachineSpec();
-		Com_ExecMachineSpec_f( args );
-		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
-		cmdSystem->ExecuteCommandBuffer();
-	}*/
-
 	// tels: #3199: now that the game DLL is loaded, we can execute another config, this
 	// enables it to run f.i. dmap (dmap before DLL load produces no AAS):
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autocommands.cfg\n" );

@@ -421,6 +421,14 @@ void Sys_ShowConsole( int visLevel, bool quitOnClose ) {
 }
 
 /*
+** Sys_GetCurrentMonitorResolution
+*/
+void Sys_GetCurrentMonitorResolution( int &width, int &height ) {
+	width = win32.desktopWidth;
+	height = win32.desktopHeight;
+}
+
+/*
 ** Sys_ConsoleInput
 */
 char *Sys_ConsoleInput( void ) {

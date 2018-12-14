@@ -31,11 +31,10 @@ glconfig_t	glConfig;
 idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
 idCVar r_multiSamples( "r_multiSamples", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "number of antialiasing samples" );
-idCVar r_mode( "r_mode", "5", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_INTEGER, "video mode number" ); // grayman #4022
 idCVar r_displayRefresh( "r_displayRefresh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 200.0f );
 idCVar r_fullscreen( "r_fullscreen", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "0 = windowed, 1 = full screen" );
-idCVar r_customWidth( "r_customWidth", "720", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom screen width. set r_mode to -1 to activate" );
-idCVar r_customHeight( "r_customHeight", "486", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "custom screen height. set r_mode to -1 to activate" );
+idCVar r_customWidth( "r_customWidth", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "video resolution, horizontal" );
+idCVar r_customHeight( "r_customHeight", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "video resolution, vertical" );
 idCVar r_singleTriangle( "r_singleTriangle", "0", CVAR_RENDERER | CVAR_BOOL, "only draw a single triangle per primitive" );
 idCVar r_checkBounds( "r_checkBounds", "0", CVAR_RENDERER | CVAR_BOOL, "compare all surface bounds with precalculated ones" );
 
@@ -660,67 +659,6 @@ static void R_CheckPortableExtensions( void ) {
 }
 
 /*
-====================
-R_GetModeInfo
-
-r_mode is normally a small non-negative integer that
-looks resolutions up in a table, but if it is set to -1,
-the values from r_customWidth, amd r_customHeight
-will be used instead.
-====================
-*/
-typedef struct vidmode_s {
-	const char *description;
-	int         width, height;
-} vidmode_t;
-
-vidmode_t r_vidModes[] = {
-	{ "Mode  0: 320x240",		320,	240 },
-	{ "Mode  1: 400x300",		400,	300 },
-	{ "Mode  2: 512x384",		512,	384 },
-	{ "Mode  3: 640x480",		640,	480 },
-	{ "Mode  4: 800x600",		800,	600 },
-	{ "Mode  5: 1024x768",		1024,	768 },
-	{ "Mode  6: 1152x864",		1152,	864 },
-	{ "Mode  7: 1280x1024",		1280,	1024 },
-	{ "Mode  8: 1600x1200",		1600,	1200 },
-};
-static int	s_numVidModes = ( sizeof( r_vidModes ) / sizeof( r_vidModes[0] ) );
-
-#if MACOS_X
-bool R_GetModeInfo( int *width, int *height, int mode ) {
-#else
-static bool R_GetModeInfo( int *width, int *height, int mode ) {
-#endif
-	vidmode_t	*vm;
-
-	if ( mode < -1 ) {
-		return false;
-	}
-
-	if ( mode >= s_numVidModes ) {
-		return false;
-	}
-
-	if ( mode == -1 ) {
-		*width = r_customWidth.GetInteger();
-		*height = r_customHeight.GetInteger();
-		return true;
-	}
-	vm = &r_vidModes[mode];
-
-	if ( width ) {
-		*width  = vm->width;
-	}
-
-	if ( height ) {
-		*height = vm->height;
-	}
-	return true;
-}
-
-
-/*
 ==================
 R_InitOpenGL
 
@@ -756,7 +694,14 @@ void R_InitOpenGL( void ) {
 	//
 	for ( i = 0 ; i < 2 ; i++ ) {
 		// set the parameters we are trying
-		R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger() );
+		if ( r_customWidth.GetInteger() <= 0 || r_customHeight.GetInteger() <= 0 ) {
+			Sys_GetCurrentMonitorResolution( glConfig.vidWidth, glConfig.vidHeight );
+			r_customWidth.SetInteger( glConfig.vidWidth );
+			r_customHeight.SetInteger( glConfig.vidHeight );
+		} else {
+			glConfig.vidWidth = r_customWidth.GetInteger();
+			glConfig.vidHeight = r_customHeight.GetInteger();
+		}
 
 		parms.width = glConfig.vidWidth;
 		parms.height = glConfig.vidHeight;
@@ -779,9 +724,7 @@ void R_InitOpenGL( void ) {
 			common->FatalError( "Unable to initialize OpenGL" );
 		}
 
-		// if we failed, set everything back to "safe mode"
-		// and try again
-		r_mode.SetInteger( 3 );
+		// if we failed, set everything back to "safe mode" and try again
 		r_fullscreen.SetInteger( 1 );
 		r_displayRefresh.SetInteger( 0 );
 		r_multiSamples.SetInteger( 0 );
@@ -946,20 +889,6 @@ static void R_ReloadSurface_f( const idCmdArgs &args ) {
 
 	// reload any images used by the decl
 	mt.material->ReloadImages( false );
-}
-
-/*
-==============
-R_ListModes_f
-==============
-*/
-static void R_ListModes_f( const idCmdArgs &args ) {
-	int i;
-	common->Printf( "\n" );
-	for ( i = 0; i < s_numVidModes; i++ ) {
-		common->Printf( "%s\n", r_vidModes[i].description );
-	}
-	common->Printf( "\n" );
 }
 
 /*
@@ -1916,7 +1845,7 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	common->Printf( "GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: %d\n", glConfig.maxTextures );
 	common->Printf( "GL_MAX_TEXTURE_COORDS_ARB: %d\n", glConfig.maxTextureCoords );
 	common->Printf( "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
-	common->Printf( "MODE: %d, %d x %d %s hz:", r_mode.GetInteger(), glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen.GetBool()] );
+	common->Printf( "MODE: %d x %d %s hz:", glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen.GetBool()] );
 
 	if ( glConfig.displayFrequency ) {
 		common->Printf( "%d\n", glConfig.displayFrequency );
@@ -2022,9 +1951,8 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		session->StartFrontendThread();
 	} else {
 		glimpParms_t	parms;
-		R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger() );
-		parms.width = glConfig.vidWidth;
-		parms.height = glConfig.vidHeight;
+		parms.width = glConfig.vidWidth = r_customWidth.GetInteger();
+		parms.height = glConfig.vidHeight = r_customHeight.GetInteger();
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
 		if ( !r_useFbo.GetBool() ) {
@@ -2162,7 +2090,6 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "vid_restart", R_VidRestart_f, CMD_FL_RENDERER, "restarts renderSystem" );
 	cmdSystem->AddCommand( "listRenderEntityDefs", R_ListRenderEntityDefs_f, CMD_FL_RENDERER, "lists the entity defs" );
 	cmdSystem->AddCommand( "listRenderLightDefs", R_ListRenderLightDefs_f, CMD_FL_RENDERER, "lists the light defs" );
-	cmdSystem->AddCommand( "listModes", R_ListModes_f, CMD_FL_RENDERER, "lists all video modes" );
 	cmdSystem->AddCommand( "reloadSurface", R_ReloadSurface_f, CMD_FL_RENDERER, "reloads the decl and images for selected surface" );
 }
 
