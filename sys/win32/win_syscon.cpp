@@ -424,8 +424,21 @@ void Sys_ShowConsole( int visLevel, bool quitOnClose ) {
 ** Sys_GetCurrentMonitorResolution
 */
 void Sys_GetCurrentMonitorResolution( int &width, int &height ) {
-	width = win32.desktopWidth;
-	height = win32.desktopHeight;
+	if ( win32.desktopWidth > 0 ) {
+		width = win32.desktopWidth;
+		height = win32.desktopHeight;
+	} else {
+		RECT desktop;
+		// Get a handle to the desktop window
+		const HWND hDesktop = GetDesktopWindow();
+		// Get the size of screen to the variable desktop
+		GetWindowRect( hDesktop, &desktop );
+		// The top left corner will have coordinates (0,0)
+		// and the bottom right corner will have coordinates
+		// (horizontal, vertical)
+		width = desktop.right;
+		height = desktop.bottom;
+	}
 }
 
 /*
