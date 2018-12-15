@@ -1034,3 +1034,7 @@ void Sys_Error(const char *error, ...) {
 
 	Posix_Exit( EXIT_FAILURE );
 }
+
+bool Sys_GetCurrentMonitorResolution( int &width, int &height ) {
+	return false;   //TODO: implement?
+}

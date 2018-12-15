@@ -423,7 +423,7 @@ void Sys_ShowConsole( int visLevel, bool quitOnClose ) {
 /*
 ** Sys_GetCurrentMonitorResolution
 */
-void Sys_GetCurrentMonitorResolution( int &width, int &height ) {
+bool Sys_GetCurrentMonitorResolution( int &width, int &height ) {
 	if ( win32.desktopWidth > 0 ) {
 		width = win32.desktopWidth;
 		height = win32.desktopHeight;
@@ -436,9 +436,10 @@ void Sys_GetCurrentMonitorResolution( int &width, int &height ) {
 		// The top left corner will have coordinates (0,0)
 		// and the bottom right corner will have coordinates
 		// (horizontal, vertical)
-		width = desktop.right;
-		height = desktop.bottom;
+		width = desktop.right - desktop.left;
+		height = desktop.bottom - desktop.top;
 	}
+	return true;
 }
 
 /*

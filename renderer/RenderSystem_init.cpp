@@ -695,7 +695,11 @@ void R_InitOpenGL( void ) {
 	for ( i = 0 ; i < 2 ; i++ ) {
 		// set the parameters we are trying
 		if ( r_customWidth.GetInteger() <= 0 || r_customHeight.GetInteger() <= 0 ) {
-			Sys_GetCurrentMonitorResolution( glConfig.vidWidth, glConfig.vidHeight );
+			bool ok = Sys_GetCurrentMonitorResolution( glConfig.vidWidth, glConfig.vidHeight );
+			if (!ok) {
+				glConfig.vidWidth = 800;
+				glConfig.vidHeight = 600;
+			}
 			r_customWidth.SetInteger( glConfig.vidWidth );
 			r_customHeight.SetInteger( glConfig.vidHeight );
 		} else {

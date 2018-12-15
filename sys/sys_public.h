@@ -382,7 +382,7 @@ void			Sys_AdjustMouseMovement(float &dx, float &dy);
 void			Sys_ShowWindow( bool show );
 bool			Sys_IsWindowVisible( void );
 void			Sys_ShowConsole( int visLevel, bool quitOnClose );
-void			Sys_GetCurrentMonitorResolution( int &width, int &height );
+bool			Sys_GetCurrentMonitorResolution( int &width, int &height );
 
 
 void			Sys_Mkdir( const char *path );
