@@ -3789,102 +3789,85 @@ int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthS
 	return totalLength;
 }
 
+/* for aspect ratios, see mainmenu_settings_video.gui:
+choiceDef Screensize4to3	0
+choiceDef Screensize16to9	1
+choiceDef Screensize16to10	2
+choiceDef Screensize5to4	3
+choiceDef ScreensizeTV16to9	4
+*/
+struct VideoMode {
+	int aspect;				//r_aspectRatio number
+	int width, height;		//r_customWidth, r_customHeight
+};
+//note: indexed by cv_tdm_widescreenmode
+VideoMode VideoModes[] = {
+	{2,  1024,  600 },  //0
+	{2,  1280,  800 },  //1
+	{2,  1440,  900 },  //2
+	{2,  1680,  1050 }, //3
+	{2,  1920,  1200 }, //4
+	{1,  1366,  768 },	//5
+	{1,  1280,  720 },	//6
+	{1,  1920,	1080 },	//7
+	{1,  2560,	1440 },	//8
+	{2,  2560,	1600 },	//9
+	{3,  1280,	1024 },	//10
+	{3,  1800,	1440 },	//11
+	{3,  2560,	2048 },	//12
+	{4,  1360,	768  },	//13
+	{1,  1600,	900  },	//14
+	{2,  3280,	2048 },	//15
+	{2,  3360,	2100 },	//16
+	{1,  3840,	2160 },	//17
+	{2,  3840,	2400 },	//18
+	{-1,  320,	200  },	//19
+	{-1,  400,	300  },	//20
+	{-1,  512,	384  },	//21
+	{0,  640,	480  },	//22
+	{0,  800,	600  },	//23
+	{0,  1024,	768  },	//24
+	{0,  1152,	864  },	//25
+	{0,  1280,	1024 },	//26
+	{0,  1600,	1200 },	//27
+};
+static int VideoModesNum = ( sizeof(VideoModes) / sizeof(VideoModes[0]) );
+
 void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 {
-	if (cvarSystem->GetCVarInteger("r_aspectRatio") > 0)
-	{
-		// Set the custom height and width
-		int mode = cv_tdm_widescreenmode.GetInteger();
-
-		int width = 1024;
-		int height = 600;
-
-		switch (mode)
-		{
-		case 0:
-			width = 1024;
-			height = 600;
-			break;
-		case 1:
-			width = 1280;
-			height = 800;
-			break;
-		case 2:
-			width = 1440;
-			height = 900;
-			break;
-		case 3:
-			width = 1680;
-			height = 1050;
-			break;
-		case 4:
-			width = 1920;
-			height = 1200;
-			break;
-		case 5:
-			width = 1366;
-			height = 768;
-			break;
-		case 6:
-			width = 1280;
-			height = 720;
-			break;
-		case 7:
-			width = 1920;
-			height = 1080;
-			break;
-		case 8:
-			width = 2560;
-			height = 1440;
-			break;
-		case 9:
-			width = 2560;
-			height = 1600;
-			break;
-		case 10:
-			width = 1280;
-			height = 1024;
-			break;
-		case 11:
-			width = 1800;
-			height = 1440;
-			break;
-		case 12:
-			width = 2560;
-			height = 2048;
-			break;
-		case 13:
-			width = 1360;
-			height = 768;
-			break;
-		case 14:
-			width = 1600;
-			height = 900;
-			break;
-		case 15:
-			width = 3280;
-			height = 2048;
-			break;
-		case 16:
-			width = 3360;
-			height = 2100;
-			break;
-		case 17:
-			width = 3840;
-			height = 2160;
-			break;
-		case 18:
-			width = 3840;
-			height = 2400;
-			break;
-		default:
-			break;
-		};
-
-		Printf("Widesreenmode %i, setting r_customWidth=%i, r_customHeight=%i\n", mode, width, height);
-		cvarSystem->SetCVarInteger("r_customWidth", width);
-		cvarSystem->SetCVarInteger("r_customHeight", height);
+	// Set the custom height and width
+	int mode = cv_tdm_widescreenmode.GetInteger();
+	if (mode < 0 || mode >= VideoModesNum) {
+		Printf("widesreenmode %i: out of range\n", mode);
+		return;
 	}
+	auto vm = VideoModes[mode];
+	int width = vm.width;
+	int height = vm.height;
+	int aspect = vm.aspect;
+
+	Printf("widesreenmode %i: setting r_customWidth|r_customHeight = %ix%i, r_aspectRatio = %i\n", mode, width, height, aspect);
+	cvarSystem->SetCVarInteger("r_customWidth", width);
+	cvarSystem->SetCVarInteger("r_customHeight", height);
+	cvarSystem->SetCVarInteger("r_aspectRatio", aspect);
+}
+
+void idGameLocal::UpdateWidescreenModeFromScreenResolution(idUserInterface* gui)
+{
+	int width = cvarSystem->GetCVarInteger("r_customWidth");
+	int height = cvarSystem->GetCVarInteger("r_customHeight");
+
+	int mode = -1;
+	for (int m = 0; m < VideoModesNum; m++) {
+		auto vm = VideoModes[m];
+		if (width == vm.width && height == vm.height)
+			mode = m;
+	}
+	int aspect = (mode < 0 ? 0 : VideoModes[mode].aspect);
+
+	Printf("r_customWidth|r_customHeight = %ix%i: setting widescreenmode = %i, r_aspectRatio = %i\n", width, height, mode, aspect );
+	cv_tdm_widescreenmode.SetInteger(mode);
+	r_aspectRatio.SetInteger(aspect);
 }
 
 void idGameLocal::HandleGuiMessages(idUserInterface* ui)
@@ -4200,51 +4183,31 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "setvideoreswidescreen")
 	{
-		// Called when widescreen size selection changes
+		// Called when "screen size" is changed (i.e. cv_tdm_widescreenmode)
+		// Update resolution and aspect cvars accordingly
 		UpdateScreenResolutionFromGUI(gui);
 		UpdateGUIScaling(gui);
 	}
 	else if (cmd == "aspectratiochanged")
 	{
+		// Called when "aspect ratio" is changed
+		// Enable any mode with such ratio
+		int aspect = r_aspectRatio.GetInteger();
+		for (int m = 0; m < VideoModesNum; m++) {
+			auto vm = VideoModes[m];
+			if (aspect == vm.aspect) {
+				cv_tdm_widescreenmode.SetInteger(m);
+				break;
+			}
+		}
 		UpdateScreenResolutionFromGUI(gui);
 		UpdateGUIScaling(gui);
 	}
 	else if (cmd == "loadcustomvideoresolution")
 	{
-			// Just set the state variable based on width
-			int width = cvarSystem->GetCVarInteger("r_customWidth");
-			int height = cvarSystem->GetCVarInteger("r_customHeight");
-
-			switch (width)
-			{
-			case 1024: cv_tdm_widescreenmode.SetInteger(0); break;
-						// 1280 x 800 => 1
-						// 1280 x 720 => 6
-						// 1280 x 1024 => 10
-			case 1280: cv_tdm_widescreenmode.SetInteger(height == 800 ? 1 : (height == 720 ? 6 : 10) ); break;
-			case 1360: cv_tdm_widescreenmode.SetInteger(13); break;
-			case 1366: cv_tdm_widescreenmode.SetInteger(5); break;
-			case 1440: cv_tdm_widescreenmode.SetInteger(2); break;
-						// 1600 x 900
-			case 1600: cv_tdm_widescreenmode.SetInteger(14); break;
-			case 1680: cv_tdm_widescreenmode.SetInteger(3); break;
-						// 1800 x 1440
-			case 1800: cv_tdm_widescreenmode.SetInteger(11); break;
-			case 1920: cv_tdm_widescreenmode.SetInteger(height == 1200 ? 4 : 7); break;
-						// 2560 x 1440 => 8
-						// 2560 x 1600 => 9
-						// 2560 x 2048 => 12
-			case 2560: cv_tdm_widescreenmode.SetInteger(height == 1440 ? 8 : height == 1600 ? 9 : 12); break;
-						// 3280 x 2048
-			case 3280: cv_tdm_widescreenmode.SetInteger(15); break;
-						// 3360 x 2100
-			case 3360: cv_tdm_widescreenmode.SetInteger(16); break;
-						// 3840 x 2160 => 17
-						// 3840 x 2400 => 18
-			case 3840: cv_tdm_widescreenmode.SetInteger( height == 2160 ? 17 : 18); break;
-			default: cv_tdm_widescreenmode.SetInteger(0); break;
-			}
-			Printf("Widescreenmode was set to: %i (%ix%i)\n", cv_tdm_widescreenmode.GetInteger(), width, height );
+		// Called during engine initialization
+		// Take r_customWidth x r_customHeight, and find mode and aspect ratio
+		UpdateWidescreenModeFromScreenResolution(gui);
 		UpdateGUIScaling(gui);
 	}
 	// greebo: the "log" command is used to write stuff to the console

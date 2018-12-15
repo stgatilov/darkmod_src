@@ -1196,6 +1196,8 @@ private:
 
 	// Sets the video CVARs according to the settings in the given GUI
 	void					UpdateScreenResolutionFromGUI(idUserInterface* gui);
+	// Sets the CVARs for GUI settings according to the resolution CVARs
+	void					UpdateWidescreenModeFromScreenResolution(idUserInterface* gui);
 
 	// Splits the given string and stores the found video materials in the target list.
 	// Calculates the length of the ROQ videos as defined in the string (each material
