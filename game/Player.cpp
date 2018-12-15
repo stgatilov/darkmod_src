@@ -3323,9 +3323,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	// STiFU: Cursor reenabled as a FrobHelper
 	if (cursor)
 	{
-		// TODO: test if frob helper is supposed to be shown
-		// TODO: calculate fade in etc.
-		static const float alpha = 0.2f;
+		const float alpha = m_FrobHelper.GetAlpha();
 		cursor->Redraw(gameLocal.realClientTime, alpha);
 	}
 
@@ -11103,40 +11101,43 @@ void idPlayer::PerformFrobCheck()
 	// greebo: Don't run this when dead
 	if (AI_DEAD) 
 	{
+		m_FrobHelper.HideInstantly();
 		return;
 	}
 
 	// greebo: Don't run the frobcheck when we're dragging items around
 	if (m_bGrabberActive)
 	{
+		m_FrobHelper.Hide();
 		return;
 	}
 
 	// ishtvan: Don't run if frob hilighting is disabled
 	// TODO: Should we just add this functionality to EIM_FROB and get rid of EIM_FROBHILIGHT?
+	// TODO: FrobHelper should actually also show when frob highlight is disabled
 	if ( GetImmobilization() & EIM_FROB_HILIGHT )
 	{
 		m_FrobEntity = NULL;
 		return;
-	}
+	}	
 
 	idVec3 eyePos = GetEyePosition();
 	float maxFrobDistance = g_Global.m_MaxFrobDistance;
 
 	// greebo: Let the currently selected inventory item affect the frob distance (lockpicks, for instance)
 	CInventoryItemPtr curItem = InventoryCursor()->GetCurrentItem();
-	
+
 	idVec3 start = eyePos;
 	idVec3 end = start + viewAngles.ToForward() * maxFrobDistance;
 
 	// Do frob trace first, along view axis, record distance traveled
 	// Frob collision mask:
-	int cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_BODY
-		|CONTENTS_CORPSE|CONTENTS_RENDERMODEL|CONTENTS_FROBABLE;
+	int cm = CONTENTS_SOLID | CONTENTS_OPAQUE | CONTENTS_BODY
+		| CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_FROBABLE;
 
 	trace_t trace;
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
-
+	
 	float traceDist = g_Global.m_MaxFrobDistance * trace.fraction;
 
 	if ( trace.fraction < 1.0f )
@@ -11205,6 +11206,8 @@ void idPlayer::PerformFrobCheck()
 			m_FrobTrace = trace;
 			// Store the frob entity
 			m_FrobEntity = ent;
+
+			m_FrobHelper.Show();
 
 			// we have found our frobbed entity, so exit
 			return;
@@ -11305,6 +11308,8 @@ void idPlayer::PerformFrobCheck()
 
 	if ( ( bestEnt != NULL ) && ( bestEnt != gameLocal.m_Grabber->GetSelected() ) )
 	{
+		m_FrobHelper.Show();
+
 		// Mark the entity as frobbed this frame
 		bestEnt->SetFrobbed(true);
 		// Store the frob entity
@@ -11317,6 +11322,7 @@ void idPlayer::PerformFrobCheck()
 
 	// No frob entity
 	m_FrobEntity = NULL;
+	m_FrobHelper.Hide();
 }
 
 int idPlayer::GetImmobilization( const char *source )

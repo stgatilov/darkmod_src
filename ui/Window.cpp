@@ -1130,6 +1130,7 @@ void idWindow::DrawBackground(const idRectangle &drawRect, const float alpha /*=
 		if (alpha < 0) {
 			dc->DrawMaterial(drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, matColor, scalex, scaley);
 		} else if (alpha > 0) {
+			// STiFUReplace matColor alpha with passed alpha for dynamic alpha of FrobHelper
 			const idVec4 NewMatColor { matColor.x(), matColor.y(), matColor.z(), alpha};
 			dc->DrawMaterial(drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, NewMatColor, scalex, scaley);
 		}
