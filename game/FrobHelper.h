@@ -1,10 +1,17 @@
 #pragma once
 
+// STiFU: Including SysCvar here will increase compile time, but it is necessary 
+// for inlining below accessors
+#include "gamesys/SysCvar.h"
+
 typedef struct trace_s trace_t;
 
+/** @brief	  	Handles visibility calculation of the FrobHelper cursor
+  * @author		STiFU */
 class CFrobHelper
 {
 public:
+	
 	CFrobHelper();
 	~CFrobHelper();
 
@@ -20,13 +27,6 @@ public:
 	  * @author		STiFU */
 	void Show();
 
-	// TODO: change method to just do the increased distance check
-	/** @brief	  	Check whether the Frob Helper should be displayed or not
-	  * @param 		eyePos	The position of the eye of the player
-	  * @param		frobTraceEnd	The end position of the frob trace
-	  * @author		STiFU */
-	//void UpdateState(const idVec3& eyePos, const idVec3& frobTraceEnd);
-
 	/** @brief	  	Retrieve the current visibility of the frob helper
 	  * @return   	The visibility of the frob helper in the range [0,1]
 	  * @author		STiFU */
@@ -38,8 +38,7 @@ public:
 	  * @author		STiFU */
 	inline const bool IsActive()
 	{
-		// TODO: poll cvar
-		static const bool bActive = true;
+		const bool bActive = cv_frobhelper_active.GetBool();
 		if (bActive != m_bActive)
 		{
 			m_bActive = bActive;
@@ -48,13 +47,19 @@ public:
 		return m_bActive;
 	}
 
-private:
-	// TODO: add separate fade out delay
+private: // cvar accessors
 
-	inline const float GetFadeDelay()
+	inline const float& GetFadeDelay()
 	{
-		// TODO: poll cvar
-		static const int iDelay = 500;
+		int iDelay = cv_frobhelper_fadein_delay.GetInteger();
+		// STiFU: It would be preferred to do value checks when SETTING the cvars
+		// rather than on every lookup
+		if (iDelay < 0)
+		{
+			iDelay = 0;
+			cv_frobhelper_fadein_delay.SetInteger(0);
+		}
+
 		if (m_iFadeDelay != iDelay)
 		{
 			m_iFadeDelay = iDelay;
@@ -63,22 +68,55 @@ private:
 		return m_iFadeDelay;
 	}
 
-	inline const int GetFadeDuration()
+	inline const int& GetFadeInDuration()
 	{
-		// TODO: poll cvar
-		static const int iFadeInOutDuration = 1000;
-		if (m_iFadeInOutDuration != iFadeInOutDuration)
+		int iFadeInDuration = cv_frobhelper_fadein_duration.GetInteger();
+		if (iFadeInDuration < 0)
 		{
-			m_iFadeInOutDuration = iFadeInOutDuration;
+			iFadeInDuration = 0;
+			cv_frobhelper_fadein_duration.SetInteger(0);
+		}
+
+		if (m_iFadeInDuration != iFadeInDuration)
+		{
+			m_iFadeInDuration = iFadeInDuration;
 			Reset();
 		}
-		return m_iFadeInOutDuration;
+		return m_iFadeInDuration;
 	}
 
-	inline const float GetMaxAlpha()
+	inline const int& GetFadeOutDuration()
 	{
-		// TODO: poll cvar
-		static const float fMaxAlpha = 1.0f;
+		int iFadeOutDuration = cv_frobhelper_fadeout_duration.GetInteger();
+		if (iFadeOutDuration < 0)
+		{
+			iFadeOutDuration = 0;
+			cv_frobhelper_fadeout_duration.SetInteger(0);
+		}
+
+		if (m_iFadeOutDuration != iFadeOutDuration)
+		{
+			m_iFadeOutDuration = iFadeOutDuration;
+			Reset();
+		}
+		return m_iFadeOutDuration;
+	}
+
+	inline const float& GetMaxAlpha()
+	{
+		float fMaxAlpha = cv_frobhelper_alpha.GetFloat();
+		if (fMaxAlpha <= 0.0f)
+		{
+			fMaxAlpha = 0.0f;
+			cv_frobhelper_alpha.SetFloat(0.0f);
+			cv_frobhelper_active.SetBool(false);
+		}
+		if (fMaxAlpha > 1.0f)
+		{
+			fMaxAlpha = 1.0f;
+			cv_frobhelper_alpha.SetFloat(1.0f);
+		}
+
 		if (fMaxAlpha != m_fMaxAlpha)
 		{
 			m_fMaxAlpha = fMaxAlpha;
@@ -95,16 +133,17 @@ private:
 		m_fLastStateChangeAlpha = 0.0f;
 		m_iLastStateChangeTime = 0;
 	}
-
-
+	
 private:
 	// Configuration
 	bool	m_bActive;
 	int		m_iFadeDelay;
-	int		m_iFadeInOutDuration;
+	int		m_iFadeInDuration;
+	int		m_iFadeOutDuration;
 	float	m_fMaxAlpha;
 
 	// State members
+	// -> No locks required. All calls by same thread.
 	bool	m_bShouldBeDisplayed;
 	bool	m_bReachedTargetAlpha;
 	float	m_fCurrentAlpha;

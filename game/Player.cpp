@@ -3321,7 +3321,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	}
 #endif
 	// STiFU: Cursor reenabled as a FrobHelper
-	if (cursor)
+	if (cursor && m_FrobHelper.IsActive())
 	{
 		const float alpha = m_FrobHelper.GetAlpha();
 		cursor->Redraw(gameLocal.realClientTime, alpha);

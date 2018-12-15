@@ -2,9 +2,6 @@
 #include "FrobHelper.h"
 #include "Game_local.h"
 
-// TODO: is this needed?
-#pragma hdrstop
-
 extern idGameLocal			gameLocal;
 
 CFrobHelper::CFrobHelper()
@@ -15,7 +12,8 @@ CFrobHelper::CFrobHelper()
 , m_iLastStateChangeTime(0)
 , m_bReachedTargetAlpha(true)
 , m_iFadeDelay(-1)
-, m_iFadeInOutDuration(-1)
+, m_iFadeInDuration(-1)
+, m_iFadeOutDuration(-1)
 , m_fMaxAlpha(-1.0)
 {
 }
@@ -70,66 +68,15 @@ void CFrobHelper::Show()
 }
 
 
-// void CFrobHelper::UpdateState(const idVec3& eyePos, const idVec3& frobTraceEnd)
-// {
-// 	if (!IsActive())
-// 		return;
-// 
-// 	// Check whether multiple entities are in close proximity to the frob end point
-// 	// If so, the frob helper should be displayed
-// 	idBounds frobBounds(frobTraceEnd);
-// 	static const float fFrobHelperDisplayRange = 10; // TODO: make cvar
-// 	frobBounds.ExpandSelf(fFrobHelperDisplayRange);
-// 
-// 	// TODO optimize: share with player.cpp to save some memory
-// 	static idEntity* frobRangeEnts[MAX_GENTITIES];
-// 	const int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds(
-// 		frobBounds, -1, frobRangeEnts, MAX_GENTITIES);
-// 
-// 	// TODO: test for direct hit needed
-// 
-// 	// Count frobable entites in range
-// 	int iFrobableEntities = 0;
-// 	for (int i = 0; i < numFrobEnt; i++)
-// 	{
-// 		// Skip irrelevant entites
-// 		idEntity *ent = frobRangeEnts[i];
-// 		if (!ent || !ent->m_bFrobable || ent->IsHidden() || !ent->m_FrobDistance)
-// 			continue;
-// 		
-// 		// Check if entity is within frob distance
-// 		static const float fExtraSpace = 8;
-// 		const float frobDist = ent->m_FrobDistance + fExtraSpace;
-// 		const idVec3 delta = ent->GetPhysics()->GetOrigin() - eyePos;
-// 		const float entDistance = delta.LengthFast();
-// 		if (entDistance > frobDist)
-// 			continue;
-// 		
-// 		iFrobableEntities++;
-// 	}
-// 
-// 	// Change state
-// 	const bool bShouldBeDisplayed = iFrobableEntities > 0;
-// 	if (bShouldBeDisplayed != m_bShouldBeDisplayed)
-// 	{
-// 		// TODO: Add mutex
-// 		m_bShouldBeDisplayed = bShouldBeDisplayed;
-// 		m_iLastStateChangeTime = gameLocal.time;
-// 		m_fLastStateChangeAlpha = m_fCurrentAlpha;
-// 		m_bReachedTargetAlpha = false;		
-// 	}
-// }
-
 const float CFrobHelper::GetAlpha()
 {
 	if (!IsActive())
 		return 0.0f;
 
-	// TODO: activate mutex here
-
-	const int	iFadeDelay		= GetFadeDelay();
-	const int	iFadeDuration	= GetFadeDuration();
-	const float	fMaxAlpha		= GetMaxAlpha();
+	const int&		iFadeDelay			= GetFadeDelay();
+	const int&		iFadeInDuration		= GetFadeInDuration();
+	const int&		iFadeOutDuration	= GetFadeOutDuration();
+	const float&	fMaxAlpha			= GetMaxAlpha();
 
 	if (m_bReachedTargetAlpha)
 		// Early return for higher performance
@@ -152,7 +99,7 @@ const float CFrobHelper::GetAlpha()
 		const float fFadeDurationFactor =
 			fabs(fMaxAlpha - m_fLastStateChangeAlpha) / fMaxAlpha;
 		const int iFadeEnd = iFadeStart 
-			+ static_cast<int>(fFadeDurationFactor * static_cast<float>(iFadeDuration));
+			+ static_cast<int>(fFadeDurationFactor * static_cast<float>(iFadeInDuration));
 
 		if (iTime < iFadeEnd)
 		{
@@ -173,14 +120,14 @@ const float CFrobHelper::GetAlpha()
 		const float fFadeDurationFactor =
 			m_fLastStateChangeAlpha / fMaxAlpha;
 		const int iFadeEnd = m_iLastStateChangeTime 
-			+ static_cast<int>(fFadeDurationFactor*static_cast<float>(iFadeDuration));
+			+ static_cast<int>(fFadeDurationFactor*static_cast<float>(iFadeOutDuration));
 
 		// Calculate FrobHelper alpha based on fade out time
 		if (iTime < iFadeEnd)
 		{
 			m_fCurrentAlpha = m_fLastStateChangeAlpha *
 				(1.0f - static_cast<float>(iTime - m_iLastStateChangeTime)
-					    / static_cast<float>(iFadeDuration) );
+					    / static_cast<float>(iFadeOutDuration) );
 		}
 		else if (!m_bReachedTargetAlpha)
 		{
