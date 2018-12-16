@@ -27,6 +27,13 @@ public:
 	  * @author		STiFU */
 	void Show();
 
+	
+	/** @brief	  	Check whether the passed entity is so big that it should be ignored
+	  * @param 		pEntity	The entity that is supposed to be checked.
+	  * @return   	True, if the passed entity should be ignored.
+	  * @author		STiFU */
+	const bool IsEntityIgnored(idEntity* pEntity);
+
 	/** @brief	  	Retrieve the current visibility of the frob helper
 	  * @return   	The visibility of the frob helper in the range [0,1]
 	  * @author		STiFU */
@@ -47,9 +54,18 @@ public:
 		return m_bActive;
 	}
 
-private: // cvar accessors
+private:
 
-	inline const float& GetFadeDelay()
+	inline const bool IsEntityBig(idEntity* pEntity)
+	{
+		const idVec3& entBounds = pEntity->GetPhysics()->GetBounds().GetSize();
+		const float fMaxDim = Max3<float>(entBounds.x, entBounds.y, entBounds.z);
+		return fMaxDim > cv_frobhelper_ignore_size.GetFloat();
+	}
+
+private: // inline cvar accessors
+
+	inline const int& GetFadeDelay()
 	{
 		int iDelay = cv_frobhelper_fadein_delay.GetInteger();
 		// STiFU: It would be preferred to do value checks when SETTING the cvars

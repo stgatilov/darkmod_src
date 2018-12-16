@@ -11098,26 +11098,31 @@ void idPlayer::Event_GetFov()
 
 void idPlayer::PerformFrobCheck()
 {
+	const bool bFrobHelperActive = m_FrobHelper.IsActive();
+
 	// greebo: Don't run this when dead
-	if (AI_DEAD) 
+	if (AI_DEAD)
 	{
-		m_FrobHelper.HideInstantly();
+		if (bFrobHelperActive)
+			m_FrobHelper.HideInstantly();
 		return;
 	}
 
 	// greebo: Don't run the frobcheck when we're dragging items around
 	if (m_bGrabberActive)
 	{
-		m_FrobHelper.Hide();
+		if (bFrobHelperActive)
+			m_FrobHelper.Hide();
 		return;
 	}
 
 	// ishtvan: Don't run if frob hilighting is disabled
 	// TODO: Should we just add this functionality to EIM_FROB and get rid of EIM_FROBHILIGHT?
-	// TODO: FrobHelper should actually also show when frob highlight is disabled
 	if ( GetImmobilization() & EIM_FROB_HILIGHT )
 	{
 		m_FrobEntity = NULL;
+		if (bFrobHelperActive)
+			m_FrobHelper.HideInstantly();
 		return;
 	}	
 
@@ -11139,6 +11144,8 @@ void idPlayer::PerformFrobCheck()
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
 	
 	float traceDist = g_Global.m_MaxFrobDistance * trace.fraction;
+
+	bool bEntityAlreadyFrobbed = false;
 
 	if ( trace.fraction < 1.0f )
 	{
@@ -11207,10 +11214,20 @@ void idPlayer::PerformFrobCheck()
 			// Store the frob entity
 			m_FrobEntity = ent;
 
-			m_FrobHelper.Show();
-
-			// we have found our frobbed entity, so exit
-			return;
+			if (!bFrobHelperActive)
+				// we have found our frobbed entity, so exit
+				return;
+			
+			if (!m_FrobHelper.IsEntityIgnored(ent))
+			{
+				// Entity is not ignored, so show FrobHelper and return
+				m_FrobHelper.Show();
+				return;
+			} 
+			// else: FrobHelper is not shown for this type of entity, but there
+			//		 could be entites in close proximity that are not ignored. 
+			//		 Check them, although the FrobCheck already succeeded.
+			bEntityAlreadyFrobbed = true;
 		}
 	}
 
@@ -11233,6 +11250,8 @@ void idPlayer::PerformFrobCheck()
 	idVec3 vecForward = viewAngles.ToForward();
 	float bestDot = 0;
 	idEntity* bestEnt = NULL;
+
+	bool bEntityRelevantToFrobHelperFound = false;
 
 	for ( int i = 0 ; i < numFrobEnt ; i++ )
 	{
@@ -11295,6 +11314,9 @@ void idPlayer::PerformFrobCheck()
 			}
 		}
 
+		if (!m_FrobHelper.IsEntityIgnored(ent))
+			bEntityRelevantToFrobHelperFound = true;
+
 		delta.NormalizeFast();
 		float currentDot = delta * vecForward;
 		currentDot *= ent->m_FrobBias;
@@ -11306,10 +11328,19 @@ void idPlayer::PerformFrobCheck()
 		}
 	}
 
+	if (bEntityRelevantToFrobHelperFound)
+		m_FrobHelper.Show();
+	else
+		m_FrobHelper.Hide();
+
+	if (bEntityAlreadyFrobbed)
+		// Already frobbed an entity. We only worked until here so that we can
+		// check if FrobHelper is supposed to be shown.
+		return;
+
+	// Activate frobbed state on found entity. We might have alrady
 	if ( ( bestEnt != NULL ) && ( bestEnt != gameLocal.m_Grabber->GetSelected() ) )
 	{
-		m_FrobHelper.Show();
-
 		// Mark the entity as frobbed this frame
 		bestEnt->SetFrobbed(true);
 		// Store the frob entity
@@ -11322,7 +11353,6 @@ void idPlayer::PerformFrobCheck()
 
 	// No frob entity
 	m_FrobEntity = NULL;
-	m_FrobHelper.Hide();
 }
 
 int idPlayer::GetImmobilization( const char *source )

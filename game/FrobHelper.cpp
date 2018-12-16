@@ -1,6 +1,10 @@
 #include "precompiled.h"
 #include "FrobHelper.h"
 #include "Game_local.h"
+#include "FrobLock.h"
+#include "FrobLockHandle.h"
+#include "FrobDoorHandle.h"
+#include <limits>
 
 extern idGameLocal			gameLocal;
 
@@ -65,6 +69,32 @@ void CFrobHelper::Show()
 		m_fLastStateChangeAlpha = m_fCurrentAlpha;
 		m_bReachedTargetAlpha	= false;
 	}
+}
+
+
+const bool CFrobHelper::IsEntityIgnored(idEntity* pEntity)
+{
+	if (!pEntity)
+		return true;
+
+	if (cv_frobhelper_ignore_size.GetFloat() < std::numeric_limits<float>::epsilon())
+		// Ignore size is disabled
+		return false;
+
+	bool bIsTeamMember = pEntity->GetTeamMaster() != NULL;
+	if (bIsTeamMember)
+	{
+		// Check all members of the team. Start with master
+		for (idEntity* pEntityIt = pEntity->GetTeamMaster(); pEntityIt != NULL; pEntityIt = pEntityIt->GetNextTeamEntity())
+		{
+			if (IsEntityBig(pEntityIt))
+				return true;
+		}
+		return false;
+	}
+
+	// Entity is not a team member. Just check its size
+	return IsEntityBig(pEntity);
 }
 
 
