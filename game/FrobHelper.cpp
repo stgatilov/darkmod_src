@@ -6,6 +6,8 @@
 #include "FrobDoorHandle.h"
 #include <limits>
 
+#pragma hdrstop
+
 extern idGameLocal			gameLocal;
 
 CFrobHelper::CFrobHelper()
@@ -87,14 +89,14 @@ const bool CFrobHelper::IsEntityIgnored(idEntity* pEntity)
 		// Check all members of the team. Start with master
 		for (idEntity* pEntityIt = pEntity->GetTeamMaster(); pEntityIt != NULL; pEntityIt = pEntityIt->GetNextTeamEntity())
 		{
-			if (IsEntityBig(pEntityIt))
+			if (IsEntityTooBig(pEntityIt))
 				return true;
 		}
 		return false;
 	}
 
 	// Entity is not a team member. Just check its size
-	return IsEntityBig(pEntity);
+	return IsEntityTooBig(pEntity);
 }
 
 

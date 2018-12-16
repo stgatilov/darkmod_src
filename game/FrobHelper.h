@@ -56,7 +56,7 @@ public:
 
 private:
 
-	inline const bool IsEntityBig(idEntity* pEntity)
+	inline const bool IsEntityTooBig(idEntity* pEntity)
 	{
 		const idVec3& entBounds = pEntity->GetPhysics()->GetBounds().GetSize();
 		const float fMaxDim = Max3<float>(entBounds.x, entBounds.y, entBounds.z);
