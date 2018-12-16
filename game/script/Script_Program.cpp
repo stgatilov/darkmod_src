@@ -551,7 +551,7 @@ void idTypeDef::AddFunction( const function_t *func ) {
 idVarDef::idVarDef()
 ================
 */
-idVarDef::idVarDef( idTypeDef *typeptr ) {
+idVarDef::idVarDef( idTypeDef *typeptr, const char *fileName ) {
 	typeDef		= typeptr;
 	num			= 0;
 	scope		= NULL;
@@ -560,6 +560,7 @@ idVarDef::idVarDef( idTypeDef *typeptr ) {
 	memset( &value, 0, sizeof( value ) );
 	name		= NULL;
 	next		= NULL;
+	this->fileName = fileName;
 }
 
 /*
@@ -1253,7 +1254,7 @@ idProgram::AllocVarDef
 idVarDef *idProgram::AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope) {
     idVarDef	*def;
 
-    def = new idVarDef(type);
+    def = new idVarDef(type, filename);
     def->scope = scope;
     def->numUsers = 1;
     def->num = varDefs.Append(def);
@@ -1436,7 +1437,7 @@ idVarDef *idProgram::GetDef( const idTypeDef *type, const char *name, const idVa
 
 	// see if the name is already in use for another type
 	if ( bestDef && type && ( bestDef->TypeDef() != type ) ) {
-		throw idCompileError( va( "Type mismatch on redeclaration of %s", name ) );
+		throw idCompileError( va( "Type mismatch on redeclaration of %s '%s'", name, bestDef->FileName() ) );
 	}
 
 	return bestDef;
