@@ -3313,7 +3313,6 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	m_overlays.drawOverlays();
 
 	// weapon targeting crosshair
-
 #if 0 // greebo: disabled cursor calls entirely
 	if ( !GuiActive() ) {
 		if ( cursor && weapon.GetEntity()->ShowCrosshair() ) {
@@ -3321,6 +3320,13 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		}
 	}
 #endif
+	// STiFU: Cursor reenabled as a FrobHelper
+	if (cursor && m_FrobHelper.IsActive())
+	{
+		const float alpha = m_FrobHelper.GetAlpha();
+		cursor->Redraw(gameLocal.realClientTime, alpha);
+	}
+
 
 	// J.C.Denton Start
 	float fFadeDelay = Max(0.0001f, cv_lg_fade_delay.GetFloat() );		// Avoid divide by zero errors. 
@@ -11092,15 +11098,21 @@ void idPlayer::Event_GetFov()
 
 void idPlayer::PerformFrobCheck()
 {
+	const bool bFrobHelperActive = m_FrobHelper.IsActive();
+
 	// greebo: Don't run this when dead
-	if (AI_DEAD) 
+	if (AI_DEAD)
 	{
+		if (bFrobHelperActive)
+			m_FrobHelper.HideInstantly();
 		return;
 	}
 
 	// greebo: Don't run the frobcheck when we're dragging items around
 	if (m_bGrabberActive)
 	{
+		if (bFrobHelperActive)
+			m_FrobHelper.Hide();
 		return;
 	}
 
@@ -11109,27 +11121,31 @@ void idPlayer::PerformFrobCheck()
 	if ( GetImmobilization() & EIM_FROB_HILIGHT )
 	{
 		m_FrobEntity = NULL;
+		if (bFrobHelperActive)
+			m_FrobHelper.HideInstantly();
 		return;
-	}
+	}	
 
 	idVec3 eyePos = GetEyePosition();
 	float maxFrobDistance = g_Global.m_MaxFrobDistance;
 
 	// greebo: Let the currently selected inventory item affect the frob distance (lockpicks, for instance)
 	CInventoryItemPtr curItem = InventoryCursor()->GetCurrentItem();
-	
+
 	idVec3 start = eyePos;
 	idVec3 end = start + viewAngles.ToForward() * maxFrobDistance;
 
 	// Do frob trace first, along view axis, record distance traveled
 	// Frob collision mask:
-	int cm = CONTENTS_SOLID|CONTENTS_OPAQUE|CONTENTS_BODY
-		|CONTENTS_CORPSE|CONTENTS_RENDERMODEL|CONTENTS_FROBABLE;
+	int cm = CONTENTS_SOLID | CONTENTS_OPAQUE | CONTENTS_BODY
+		| CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_FROBABLE;
 
 	trace_t trace;
 	gameLocal.clip.TracePoint(trace, start, end, cm, this);
-
+	
 	float traceDist = g_Global.m_MaxFrobDistance * trace.fraction;
+
+	bool bEntityAlreadyFrobbed = false;
 
 	if ( trace.fraction < 1.0f )
 	{
@@ -11198,8 +11214,20 @@ void idPlayer::PerformFrobCheck()
 			// Store the frob entity
 			m_FrobEntity = ent;
 
-			// we have found our frobbed entity, so exit
-			return;
+			if (!bFrobHelperActive)
+				// we have found our frobbed entity, so exit
+				return;
+			
+			if (!m_FrobHelper.IsEntityIgnored(ent))
+			{
+				// Entity is not ignored, so show FrobHelper and return
+				m_FrobHelper.Show();
+				return;
+			} 
+			// else: FrobHelper is not shown for this type of entity, but there
+			//		 could be entites in close proximity that are not ignored. 
+			//		 Check them, although the FrobCheck already succeeded.
+			bEntityAlreadyFrobbed = true;
 		}
 	}
 
@@ -11222,6 +11250,8 @@ void idPlayer::PerformFrobCheck()
 	idVec3 vecForward = viewAngles.ToForward();
 	float bestDot = 0;
 	idEntity* bestEnt = NULL;
+
+	bool bEntityRelevantToFrobHelperFound = false;
 
 	for ( int i = 0 ; i < numFrobEnt ; i++ )
 	{
@@ -11284,6 +11314,9 @@ void idPlayer::PerformFrobCheck()
 			}
 		}
 
+		if (!m_FrobHelper.IsEntityIgnored(ent))
+			bEntityRelevantToFrobHelperFound = true;
+
 		delta.NormalizeFast();
 		float currentDot = delta * vecForward;
 		currentDot *= ent->m_FrobBias;
@@ -11295,6 +11328,17 @@ void idPlayer::PerformFrobCheck()
 		}
 	}
 
+	if (bEntityRelevantToFrobHelperFound)
+		m_FrobHelper.Show();
+	else
+		m_FrobHelper.Hide();
+
+	if (bEntityAlreadyFrobbed)
+		// Already frobbed an entity. We only worked until here so that we can
+		// check if FrobHelper is supposed to be shown.
+		return;
+
+	// Activate frobbed state on found entity. We might have alrady
 	if ( ( bestEnt != NULL ) && ( bestEnt != gameLocal.m_Grabber->GetSelected() ) )
 	{
 		// Mark the entity as frobbed this frame

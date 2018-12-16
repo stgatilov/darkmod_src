@@ -27,7 +27,9 @@ public:
 	virtual bool				InitFromFile( const char *qpath, bool rebuild = true, bool cache = true );
 	virtual const char *		HandleEvent( const sysEvent_t *event, int time, bool *updateVisuals );
 	virtual void				HandleNamedEvent( const char* namedEvent );
-	virtual void				Redraw( int time );
+	
+	// STiFU: Added alpha handling for FrobHelper. Default disabled == -1.0
+	virtual void				Redraw( int time, float alpha = -1.0);
 	virtual void				DrawCursor();
 	virtual const idDict &		State() const;
 	virtual void				DeleteStateVar( const char *varName );

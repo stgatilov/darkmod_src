@@ -56,7 +56,8 @@ public:
 	virtual void				HandleNamedEvent( const char *eventName ) = 0;
 
 								// repaints the ui
-	virtual void				Redraw( int time ) = 0;
+								// STiFU: Added alpha handling for FrobHelper. Default disabled == -1.0
+	virtual void				Redraw( int time, float alpha = -1.0) = 0;
 
 								// repaints the cursor
 	virtual void				DrawCursor() = 0;
