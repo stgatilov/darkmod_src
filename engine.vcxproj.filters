@@ -1238,6 +1238,9 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="game\Listener.h" />
+    <ClInclude Include="game\FrobHelper.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2922,6 +2925,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="game\Listener.cpp" />
+    <ClCompile Include="game\FrobHelper.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">

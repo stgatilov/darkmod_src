@@ -17,6 +17,7 @@
 
 #include "ButtonStateTracker.h"
 #include "Listener.h"
+#include "FrobHelper.h"
 
 class CInventoryItem;
 typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
@@ -388,6 +389,9 @@ public:
 	// angua: this is true when the player is holding the crocuh button
 	// or toggle crouch is active
 	bool					m_CrouchIntent;
+
+	// STiFU: FrobHelper alpha calculation
+	CFrobHelper				m_FrobHelper;
 
 
 	/**
