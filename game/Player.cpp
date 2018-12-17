@@ -3324,7 +3324,8 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	if (cursor && m_FrobHelper.IsActive())
 	{
 		const float alpha = m_FrobHelper.GetAlpha();
-		cursor->Redraw(gameLocal.realClientTime, alpha);
+		cursor->SetStateFloat("FrobHelper_Opacity", alpha);
+		cursor->Redraw(gameLocal.realClientTime);
 	}
 
 

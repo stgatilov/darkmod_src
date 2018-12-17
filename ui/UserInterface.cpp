@@ -379,14 +379,14 @@ void idUserInterfaceLocal::HandleNamedEvent ( const char* eventName ) {
 	desktop->RunNamedEvent( eventName );
 }
 
-void idUserInterfaceLocal::Redraw( int _time, float alpha /*= -1.0*/) {
+void idUserInterfaceLocal::Redraw( int _time ) {
 	if ( r_skipGuiShaders.GetInteger() > 5 ) {
 		return;
 	}
 	if ( !loading && desktop ) {
 		time = _time;
 		uiManagerLocal.dc.PushClipRect( uiManagerLocal.screenRect );
-		desktop->Redraw( 0, 0, alpha );
+		desktop->Redraw( 0, 0 );
 		uiManagerLocal.dc.PopClipRect();
 	}
 }

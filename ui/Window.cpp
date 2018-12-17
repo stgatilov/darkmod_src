@@ -1113,12 +1113,12 @@ float idWindow::EvalRegs(int test, bool force) {
 idWindow::DrawBackground
 ================
 */
-void idWindow::DrawBackground(const idRectangle &drawRect, const float alpha /*= -1.0*/) {
+void idWindow::DrawBackground(const idRectangle &drawRect) {
 	if ( backColor.w() ) {
 		dc->DrawFilledRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, backColor);
 	}
 
-	if ( background && (matColor.w()) ) {
+	if ( background && matColor.w() ) {
 		float scalex, scaley;
 		if ( flags & WIN_NATURALMAT ) {
 			scalex = drawRect.w / background->GetImageWidth();
@@ -1127,13 +1127,7 @@ void idWindow::DrawBackground(const idRectangle &drawRect, const float alpha /*=
 			scalex = matScalex;
 			scaley = matScaley;
 		}
-		if (alpha < 0) {
-			dc->DrawMaterial(drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, matColor, scalex, scaley);
-		} else if (alpha > 0) {
-			// STiFUReplace matColor alpha with passed alpha for dynamic alpha of FrobHelper
-			const idVec4 NewMatColor { matColor.x(), matColor.y(), matColor.z(), alpha};
-			dc->DrawMaterial(drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, NewMatColor, scalex, scaley);
-		}
+		dc->DrawMaterial(drawRect.x, drawRect.y, drawRect.w, drawRect.h, background, matColor, scalex, scaley);
 	}
 }
 
@@ -1206,7 +1200,7 @@ void idWindow::CalcRects(float x, float y) {
 idWindow::Redraw
 ================
 */
-void idWindow::Redraw(float x, float y, const float alpha /*= -1.0*/) {
+void idWindow::Redraw(float x, float y) {
 	idStr str;
 
 	if (r_skipGuiShaders.GetInteger() == 1 || dc == NULL ) {
@@ -1259,7 +1253,7 @@ void idWindow::Redraw(float x, float y, const float alpha /*= -1.0*/) {
 	dc->GetTransformInfo( oldOrg, oldTrans );
 
 	SetupTransforms(x, y);
-	DrawBackground(drawRect, alpha);
+	DrawBackground(drawRect);
 	DrawBorderAndCaption(drawRect);
 
 	if ( !( flags & WIN_NOCLIP) ) {
@@ -1277,7 +1271,7 @@ void idWindow::Redraw(float x, float y, const float alpha /*= -1.0*/) {
 	int c = drawWindows.Num();
 	for ( int i = 0; i < c; i++ ) {
 		if ( drawWindows[i].win ) {
-			drawWindows[i].win->Redraw( clientRect.x + xOffset, clientRect.y + yOffset, alpha);
+			drawWindows[i].win->Redraw( clientRect.x + xOffset, clientRect.y + yOffset );
 		} else {
 			drawWindows[i].simp->Redraw( clientRect.x + xOffset, clientRect.y + yOffset );
 		}
