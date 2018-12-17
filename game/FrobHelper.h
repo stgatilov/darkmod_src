@@ -84,12 +84,6 @@ private:
 	}
 	
 private:
-	// Configuration
-	int		m_iFadeDelay;
-	int		m_iFadeInDuration;
-	int		m_iFadeOutDuration;
-	float	m_fMaxAlpha;
-
 	// State members
 	// -> No locks required. All calls by same thread.
 	bool	m_bShouldBeDisplayed;
