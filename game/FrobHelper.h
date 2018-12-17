@@ -45,13 +45,7 @@ public:
 	  * @author		STiFU */
 	inline const bool IsActive()
 	{
-		const bool bActive = cv_frobhelper_active.GetBool();
-		if (bActive != m_bActive)
-		{
-			m_bActive = bActive;
-			Reset();
-		}
-		return m_bActive;
+		return cv_frobhelper_active.GetBool();
 	}
 
 private:
@@ -62,83 +56,22 @@ private:
 		const float fMaxDim = Max3<float>(entBounds.x, entBounds.y, entBounds.z);
 		return fMaxDim > cv_frobhelper_ignore_size.GetFloat();
 	}
-
-private: // inline cvar accessors
-
-	inline const int& GetFadeDelay()
+	
+	inline void CheckCvars()
 	{
-		int iDelay = cv_frobhelper_fadein_delay.GetInteger();
-		// STiFU: It would be preferred to do value checks when SETTING the cvars
-		// rather than on every lookup
-		if (iDelay < 0)
+		if (   cv_frobhelper_active.IsModified()
+			|| cv_frobhelper_fadein_delay.IsModified()
+			|| cv_frobhelper_fadein_duration.IsModified()
+			|| cv_frobhelper_fadeout_duration.IsModified()
+			|| cv_frobhelper_alpha.IsModified())
 		{
-			iDelay = 0;
-			cv_frobhelper_fadein_delay.SetInteger(0);
-		}
-
-		if (m_iFadeDelay != iDelay)
-		{
-			m_iFadeDelay = iDelay;
+			cv_frobhelper_active.ClearModified();
+			cv_frobhelper_fadein_delay.ClearModified();
+			cv_frobhelper_fadein_duration.ClearModified();
+			cv_frobhelper_fadeout_duration.ClearModified();
+			cv_frobhelper_alpha.ClearModified();
 			Reset();
 		}
-		return m_iFadeDelay;
-	}
-
-	inline const int& GetFadeInDuration()
-	{
-		int iFadeInDuration = cv_frobhelper_fadein_duration.GetInteger();
-		if (iFadeInDuration < 0)
-		{
-			iFadeInDuration = 0;
-			cv_frobhelper_fadein_duration.SetInteger(0);
-		}
-
-		if (m_iFadeInDuration != iFadeInDuration)
-		{
-			m_iFadeInDuration = iFadeInDuration;
-			Reset();
-		}
-		return m_iFadeInDuration;
-	}
-
-	inline const int& GetFadeOutDuration()
-	{
-		int iFadeOutDuration = cv_frobhelper_fadeout_duration.GetInteger();
-		if (iFadeOutDuration < 0)
-		{
-			iFadeOutDuration = 0;
-			cv_frobhelper_fadeout_duration.SetInteger(0);
-		}
-
-		if (m_iFadeOutDuration != iFadeOutDuration)
-		{
-			m_iFadeOutDuration = iFadeOutDuration;
-			Reset();
-		}
-		return m_iFadeOutDuration;
-	}
-
-	inline const float& GetMaxAlpha()
-	{
-		float fMaxAlpha = cv_frobhelper_alpha.GetFloat();
-		if (fMaxAlpha <= 0.0f)
-		{
-			fMaxAlpha = 0.0f;
-			cv_frobhelper_alpha.SetFloat(0.0f);
-			cv_frobhelper_active.SetBool(false);
-		}
-		if (fMaxAlpha > 1.0f)
-		{
-			fMaxAlpha = 1.0f;
-			cv_frobhelper_alpha.SetFloat(1.0f);
-		}
-
-		if (fMaxAlpha != m_fMaxAlpha)
-		{
-			m_fMaxAlpha = fMaxAlpha;
-			Reset();
-		}
-		return m_fMaxAlpha;
 	}
 
 	inline void Reset()
@@ -152,7 +85,6 @@ private: // inline cvar accessors
 	
 private:
 	// Configuration
-	bool	m_bActive;
 	int		m_iFadeDelay;
 	int		m_iFadeInDuration;
 	int		m_iFadeOutDuration;
