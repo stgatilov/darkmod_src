@@ -125,6 +125,7 @@ darkmod_string = ' \
 	FrobButton.cpp \
 	FrobDoorHandle.cpp \
 	FrobHandle.cpp \
+	FrobHelper.cpp \
 	FrobLever.cpp \
 	FrobLock.cpp \
 	FrobLockHandle.cpp \
