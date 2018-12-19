@@ -473,11 +473,23 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	// compute width and height
 	if ( parms.fullScreen ) {
+	
+	    if ( r_fullscreen.GetInteger() == 1 )
+		{
+		exstyle = WS_EX_TOPMOST;
+		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
+
+		x = 0;
+		y = 0;
+		}
+		if ( r_fullscreen.GetInteger() == 2 )
+		{
 		exstyle = 0; // WS_EX_TOPMOST;
 		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 
 		x = 0;
 		y = 0;
+		}
 		if ( r_useFbo.GetBool() && parms.height != win32.desktopHeight ) {
 			extern idCVar r_customWidth, r_customHeight, cv_r_fovRatio;
 			glConfig.vidWidth = w = win32.desktopWidth;
