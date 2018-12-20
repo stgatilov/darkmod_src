@@ -1167,6 +1167,12 @@ public:
 	virtual float			RangedThreatTo(idEntity* target);
 
 	/**
+	 * Returns true, if the entity can be picked up, i.e., if it is loot, ammo,
+	 * a weapon, or a general inventory item, and if it does not go to the grabber.
+	 */
+	const bool CanBePickedUp();
+
+	/**
 	 * AddToInventory will add an entity to the inventory. The item is only
 	 * added if the appropriate spawnargs are set, otherwise it will be rejected
 	 * and NULL is returned.

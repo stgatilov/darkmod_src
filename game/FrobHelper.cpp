@@ -78,10 +78,10 @@ const bool CFrobHelper::IsEntityIgnored(idEntity* pEntity)
 		// Ignore size is disabled
 		return false;
 
-	bool bIsTeamMember = pEntity->GetTeamMaster() != NULL;
-	if (bIsTeamMember)
+	// If the entity cannot be picked up, check the whole entity team because
+	// the entity might be part of a big object that is supposed to be ignored
+	if (!pEntity->CanBePickedUp() && pEntity->GetTeamMaster() != NULL)
 	{
-		// Check all members of the team. Start with master
 		for (idEntity* pEntityIt = pEntity->GetTeamMaster(); pEntityIt != NULL; pEntityIt = pEntityIt->GetNextTeamEntity())
 		{
 			if (IsEntityTooBig(pEntityIt))
@@ -90,7 +90,7 @@ const bool CFrobHelper::IsEntityIgnored(idEntity* pEntity)
 		return false;
 	}
 
-	// Entity is not a team member. Just check its size
+	// Entity is not a team member or can be picked up. Just check its size
 	return IsEntityTooBig(pEntity);
 }
 
