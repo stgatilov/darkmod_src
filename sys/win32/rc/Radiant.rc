@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "Radiant_resource.h"
+#include "framework/Licensee.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -2087,9 +2088,13 @@ END
 // Version
 //
 
+#define TDM_VERSION_COMPLETE TDM_VERSION_MAJOR,0,TDM_VERSION_MINOR,0
+#define TDM_VERSION_FILEVERSION_STR VALUE "FileVersion" "TDM_VERSION_COMPLETE"
+#define TDM_VERSION_PRODUCTVERSION_STR VALUE "ProductVersion" "TDM_VERSION_COMPLETE"
+
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION TDM_VERSION_COMPLETE
+ PRODUCTVERSION TDM_VERSION_COMPLETE
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -2106,12 +2111,14 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Broken Glass Studios"
             VALUE "FileDescription", "The Dark Mod"
-            VALUE "FileVersion", "1, 0, 9, 0"
+            TDM_VERSION_FILEVERSION_STR
+            //VALUE "FileVersion", TDM_VERSION_COMPLETE_STR
             VALUE "InternalName", "The Dark Mod"
             VALUE "LegalCopyright", "Copyright (C) 2004 id Software, Copyright (C) 2004-2012 Broken Glass Studios"
             VALUE "OriginalFilename", "TheDarkMod.exe"
             VALUE "ProductName", "The Dark Mod"
-            VALUE "ProductVersion", "1, 0, 0, 1"
+            TDM_VERSION_PRODUCTVERSION_STR
+            //VALUE "ProductVersion", TDM_VERSION_COMPLETE_STR
         END
     END
     BLOCK "VarFileInfo"
