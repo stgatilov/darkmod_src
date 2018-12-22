@@ -1411,6 +1411,9 @@
     <ClInclude Include="renderer\Profiling.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="game\FrobHelper.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2790,6 +2793,9 @@
     </ClCompile>
     <ClCompile Include="idlib\containers\LinkList.cpp">
       <Filter>idLib\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="game\FrobHelper.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
