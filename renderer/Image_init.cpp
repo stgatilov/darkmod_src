@@ -358,34 +358,22 @@ static void R_AlphaNotchImage( idImage *image ) {
 }
 
 static void R_FlatNormalImage( idImage *image ) {
-	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
-	const int red = 3;
-	const int alpha = 0;
-
+	int	data[DEFAULT_SIZE][DEFAULT_SIZE];
 	// flat normal map for default bunp mapping
-	for ( int i = 0 ; i < 4 ; i++ ) {
-		data[0][i][red] = 128;
-		data[0][i][1] = 128;
-		data[0][i][2] = 255;
-		data[0][i][alpha] = 255;
-	}
-	image->GenerateImage( ( byte * )data, 2, 2,
-	                      TF_DEFAULT, true, TR_REPEAT, TD_HIGH_QUALITY );
+	for ( int i = 0 ; i < 4 ; i++ )
+		data[0][i] = 0xffff8080;
+	image->GenerateImage( ( byte * )data, 2, 2, TF_DEFAULT, true, TR_REPEAT, TD_BUMP );
 }
 
 static void R_AmbientNormalImage( idImage *image ) {
-	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
-	const int red = 3;
-	const int alpha = 0;
+	byte data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// flat normal map for default bunp mapping
 	for ( int i = 0 ; i < 4 ; i++ ) {
-		data[0][i][red] = ( byte )( 255 * tr.ambientLightVector[0] );
+		data[0][i][0] = ( byte )( 255 * tr.ambientLightVector[0] );
 		data[0][i][1] = ( byte )( 255 * tr.ambientLightVector[1] );
 		data[0][i][2] = ( byte )( 255 * tr.ambientLightVector[2] );
-		data[0][i][alpha] = 255;
+		data[0][i][3] = 255;
 	}
 	const byte	*pics[6];
 
@@ -394,7 +382,7 @@ static void R_AmbientNormalImage( idImage *image ) {
 	}
 
 	// this must be a cube map for fragment programs to simply substitute for the normalization cube map
-	image->GenerateCubeImage( pics, 2, TF_DEFAULT, true, TD_HIGH_QUALITY );
+	image->GenerateCubeImage( pics, 2, TF_DEFAULT, true, TD_BUMP );
 }
 
 /*
