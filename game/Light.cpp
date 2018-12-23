@@ -460,6 +460,12 @@ idLight::Spawn
 void idLight::Spawn( void )
 {
 	const char *demonic_shader;
+	const char *nospec_set;
+	const char *radius_set;
+	const char *emitter_size_set;
+	const char *noShadows_set;
+	const char *pointLight_set;
+	const char *parallel_set;
 
 	// do the parsing the same way dmap and the editor do
 	gameEdit->ParseSpawnArgsToRenderLight( &spawnArgs, &renderLight );
@@ -490,6 +496,41 @@ void idLight::Spawn( void )
 
 	// also put the light texture on the model, so light flares
 	// can get the current intensity of the light
+	
+	// cache args so that they doesn't get lost on map close
+	
+	if ( spawnArgs.GetString( "noSpecular", NULL, &nospec_set ) )
+	{
+		declManager->FindType( DECL_ENTITYDEF, nospec_set );
+	}
+	
+	if ( spawnArgs.GetString( "radius", NULL, &radius_set ) )
+	{
+		declManager->FindType( DECL_ENTITYDEF, radius_set );
+	}
+	
+	if ( spawnArgs.GetString( "emitter_size", NULL, &emitter_size_set ) )
+	{
+		declManager->FindType( DECL_ENTITYDEF, emitter_size_set );
+	}
+	
+	if ( spawnArgs.GetString( "noShadows", NULL, &noShadows_set ) )
+	{
+		declManager->FindType( DECL_ENTITYDEF, noShadows_set );
+	}
+	
+	if ( spawnArgs.GetString( "pointLight", NULL, &pointLight_set ) )
+	{
+		declManager->FindType( DECL_ENTITYDEF, pointLight_set );
+	}
+	
+	if ( spawnArgs.GetString( "parallel", NULL, &parallel_set ) )
+	{
+		declManager->FindType( DECL_ENTITYDEF, parallel_set );
+	}
+	
+	
+	
 	renderEntity.referenceShader = renderLight.shader;
 
 	lightDefHandle = -1;		// no static version yet
