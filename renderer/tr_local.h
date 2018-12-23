@@ -354,6 +354,11 @@ typedef struct viewLight_s {
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 	bool					tooBigForShadowMaps;		// shadow maps annoyingly pixelated
 	bool					singleLightOnly;			// multi-light shader can't handle it
+	bool					pointLight;
+	bool					noShadows;
+	bool					noSpecular;
+
+	float					radius;
 
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend

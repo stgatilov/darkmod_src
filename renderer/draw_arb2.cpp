@@ -130,7 +130,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
 			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
 		} else { // nbohr1more #3881: dedicated cubemap lighting (further changes)
-			if ( backEnd.vLight->lightDef->parms.pointLight ) {
+			if ( backEnd.vLight->pointLight ) {
 				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_POINT );
 				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_POINT );
 			} else {
@@ -245,7 +245,7 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
 			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
 		} else { // nbohr1more #3881: dedicated cubemap lighting (further changes)
-			if ( backEnd.vLight->lightDef->parms.pointLight ) {
+			if ( backEnd.vLight->pointLight ) {
 				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT_POINT );
 				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT_POINT );
 			} else {
