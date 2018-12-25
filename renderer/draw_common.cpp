@@ -26,7 +26,7 @@ RB_PrepareStageTexturing_ReflectCube
 Extracted from RB_PrepareStageTexturing
 ================
 */
-void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
+ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
 	// see if there is also a bump map specified
 	const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 	if ( bumpStage ) {
@@ -46,7 +46,11 @@ void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const dr
 		qglEnableVertexAttribArray( 10 );
 
 		// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
-		R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
+		//R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
+		cubeMapShader.Use();
+		qglUniform1f( cubeMapShader.reflective, 1 );
+		qglUniformMatrix4fv( cubeMapShader.modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
+		qglUniform3fv( cubeMapShader.viewOrigin, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
 	} else {
 		// per-pixel reflection mapping without a normal map
 		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
@@ -114,7 +118,10 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 
 		// per-pixel reflection mapping without bump mapping
 		qglDisableVertexAttribArray( 2 );
-		R_UseProgramARB();
+		//R_UseProgramARB();
+		qglUniform1f( cubeMapShader.reflective, 0 );
+		qglUseProgram( 0 );
+
 		break;
 	}
 

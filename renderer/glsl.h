@@ -71,7 +71,12 @@ struct lightProgram_t : shaderProgram_t {
 	virtual	void AfterLoad();
 };
 
-extern shaderProgram_t cubeMapShader;
+struct cubeMapProgram_t : shaderProgram_t {
+	GLint reflective, rgtc, viewOrigin, modelMatrix;
+	virtual	void AfterLoad();
+};
+
+extern cubeMapProgram_t cubeMapShader;
 extern oldStageProgram_t oldStageShader;
 extern depthProgram_t depthShader;
 extern fogProgram_t fogShader;

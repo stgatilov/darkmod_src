@@ -104,7 +104,7 @@ struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	virtual void Draw( const drawInteraction_t *din );
 };
 
-shaderProgram_t cubeMapShader;
+cubeMapProgram_t cubeMapShader;
 oldStageProgram_t oldStageShader;
 depthProgram_t depthShader;
 lightProgram_t stencilShadowShader;
@@ -1428,4 +1428,20 @@ void shadowMapProgram_t::RenderAllLights() {
 	FB_ToggleShadow( false );
 
 	GL_CheckErrors();
+}
+
+void cubeMapProgram_t::AfterLoad() {
+	rgtc = qglGetUniformLocation( program, "u_RGTC" );
+	viewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
+	reflective = qglGetUniformLocation( program, "u_reflective" );
+	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
+
+	GLint normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
+
+	// set texture locations
+	qglUseProgram( program );
+
+	// static bindings
+	qglUniform1i( normalTexture, 1 );
+	qglUseProgram( 0 );
 }
