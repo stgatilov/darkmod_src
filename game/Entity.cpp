@@ -11910,6 +11910,29 @@ float idEntity::RangedThreatTo(idEntity* target)
 	return 0;
 }
 
+
+const bool idEntity::CanBePickedUp()
+{
+	const bool bIsLoot =
+		CInventoryItem::GetLootTypeFromSpawnargs(spawnArgs) != LOOT_NONE
+		&& spawnArgs.GetInt("inv_loot_value", "-1") > 0;
+	if (bIsLoot)
+		return true;
+
+	const bool bIsGeneralInventoryItem =
+		strlen(spawnArgs.GetString("inv_name", "")) > 0;
+	if (bIsGeneralInventoryItem)
+		return true;
+
+	const bool bIsAmmo = spawnArgs.GetInt("inv_ammo_amount", "0") > 0;
+	if (bIsAmmo)
+		return true;
+
+	const bool bIsWeapon =
+		strlen(spawnArgs.GetString("inv_weapon_name")) > 0;
+	return bIsWeapon;
+}
+
 void idEntity::GetTeamChildren( idList<idEntity *> *list )
 {
 	// ishtvan: TODO: I think this is WRONG and can go up and across the team hierarchy when called on bind children

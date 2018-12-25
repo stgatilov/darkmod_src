@@ -591,6 +591,7 @@ idPlayer::idPlayer() :
 	airless					= false;
 	airTics					= 0;
 	lastAirDamage			= 0;
+	lastAirCheck			= 0;
 	underWaterEffectsActive	= false;
 	underWaterGUIHandle		= -1;
 
@@ -5640,6 +5641,7 @@ void idPlayer::UpdateAir( void )
 				areaNum = gameRenderWorld->PointInArea( this->GetPhysics()->GetOrigin() );
 			}
 			newAirless = gameRenderWorld->AreasAreConnected( gameLocal.vacuumAreaNum, areaNum, PS_BLOCK_AIR );
+			DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: Bordering on neighbor area. VacuumArea: %d, NeighborArea: %d, Airless: %d", gameLocal.vacuumAreaNum, areaNum, newAirless);
 		}
 	}
 
@@ -5647,10 +5649,22 @@ void idPlayer::UpdateAir( void )
 
 	idPhysics* phys = GetPhysics();
 
-	if ( phys != NULL && phys->IsType( idPhysics_Actor::Type ) &&
-		static_cast<idPhysics_Actor*>(phys)->GetWaterLevel() >= WATERLEVEL_HEAD )
+	if (phys != NULL)
 	{
-		newAirless = true;	// MOD_WATERPHYSICS
+		if (phys->IsType(idPhysics_Actor::Type) &&
+			static_cast<idPhysics_Actor*>(phys)->GetWaterLevel() >= WATERLEVEL_HEAD)
+		{
+			newAirless = true;	// MOD_WATERPHYSICS
+			DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: Underwater!");
+		}
+		else
+		{
+			DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: Not underwater!");
+		}
+	}
+	else
+	{
+		DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: No physics!");
 	}
 
 #endif // MOD_WATERPHYSICS
@@ -5697,8 +5711,11 @@ void idPlayer::UpdateAir( void )
 	if ( gameLocal.time >= lastAirCheck ) {
 		if ( airless ) {
 			airTics--;
+			DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: Air ticks while airless: %d", airTics);
 			if ( airTics < 0 ) {
 				airTics = 0;
+				DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: No more air ticks. Applying damage.");
+
 				// check for damage
 				const idDict *damageDef = gameLocal.FindEntityDefDict( "damage_noair", false );
 				int dmgTiming = 1000 * (damageDef ? static_cast<int>(damageDef->GetFloat( "delay", "3.0" )) : 3);
@@ -5713,6 +5730,7 @@ void idPlayer::UpdateAir( void )
 				airTics = pm_airTics.GetInteger();
 		}
 		lastAirCheck = gameLocal.time + USERCMD_MSEC; // mimic the legacy 60 tics per second
+		DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: Last air check new: %d, game time: %d", lastAirCheck, gameLocal.time);
 	}
 }
 
