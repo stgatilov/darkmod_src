@@ -3865,7 +3865,7 @@ void idGameLocal::UpdateWidescreenModeFromScreenResolution(idUserInterface* gui)
 	}
 	int aspect = (mode < 0 ? 0 : VideoModes[mode].aspect);
 
-	Printf("r_customWidth|r_customHeight = %ix%i: setting widescreenmode = %i, r_aspectRatio = %i\n", width, height, mode, aspect );
+	Printf("r_customWidth|Height = %ix%i => widescreenmode = %i, r_aspectRatio = %i\n", width, height, mode, aspect );
 	cv_tdm_widescreenmode.SetInteger(mode);
 	r_aspectRatio.SetInteger(aspect);
 }

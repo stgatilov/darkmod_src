@@ -523,6 +523,7 @@
     <ClInclude Include="game\FrobDoor.h" />
     <ClInclude Include="game\FrobDoorHandle.h" />
     <ClInclude Include="game\FrobHandle.h" />
+    <ClInclude Include="game\FrobHelper.h" />
     <ClInclude Include="game\FrobLever.h" />
     <ClInclude Include="game\FrobLock.h" />
     <ClInclude Include="game\FrobLockHandle.h" />
@@ -988,6 +989,7 @@
     <ClCompile Include="game\FrobDoor.cpp" />
     <ClCompile Include="game\FrobDoorHandle.cpp" />
     <ClCompile Include="game\FrobHandle.cpp" />
+    <ClCompile Include="game\FrobHelper.cpp" />
     <ClCompile Include="game\FrobLever.cpp" />
     <ClCompile Include="game\FrobLock.cpp" />
     <ClCompile Include="game\FrobLockHandle.cpp" />

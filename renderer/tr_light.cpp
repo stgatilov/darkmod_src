@@ -287,6 +287,10 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	// add to the view light chain
 	vLight = (viewLight_t *)R_ClearedFrameAlloc( sizeof( *vLight ) );
 	vLight->lightDef = light;
+	vLight->pointLight = light->parms.pointLight;
+	vLight->radius = light->parms.radius;
+	vLight->noShadows = light->parms.noShadows;
+	vLight->noSpecular = light->parms.noSpecular;
 
 	// the scissorRect will be expanded as the light bounds is accepted into visible portal chains
 	vLight->scissorRect.Clear();
@@ -342,7 +346,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->shaderRegisters = NULL;		// allocated and evaluated in R_AddLightSurfaces
 	vLight->noFogBoundary = light->parms.noFogBoundary; // #3664
 
-	vLight->tooBigForShadowMaps = light->parms.lightRadius.Length() > r_maxShadowMapLight.GetFloat();
+	vLight->tooBigForShadowMaps = ( (light->parms.lightRadius.Length() > r_maxShadowMapLight.GetFloat()) || ( light->parms.parallel ) );
 	// multi-light shader stuff
 	auto shader = vLight->lightShader;
 	if ( shader->LightCastsShadows() && vLight->tooBigForShadowMaps ) // use stencil shadows

@@ -319,7 +319,7 @@ void RB_GLSL_DrawLight_Stencil() {
 
 
 static float GetEffectiveLightRadius() {
-	float lightRadius = backEnd.vLight->lightDef->parms.radius;
+	float lightRadius = backEnd.vLight->radius;
 	if (r_softShadowsRadius.GetFloat() < 0.0)
 		lightRadius = -r_softShadowsRadius.GetFloat();	//override
 	else if (lightRadius < 0.0)
@@ -1007,7 +1007,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
 
 	auto vLight = backEnd.vLight;
-	bool doShadows = !vLight->lightDef->parms.noShadows && vLight->lightShader->LightCastsShadows(); 
+	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
 	if ( doShadows && r_shadows.GetInteger() == 2 ) // FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 		doShadows = vLight->globalInteractions != NULL;
 	if ( doShadows ) {
