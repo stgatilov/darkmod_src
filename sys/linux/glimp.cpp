@@ -21,11 +21,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <X11/Xatom.h>
+
 extern "C" {
 #	include "libXNVCtrl/NVCtrlLib.h"
 }
 
 idCVar sys_videoRam( "sys_videoRam", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "Texture memory on the video card (in megabytes) - 0: autodetect", 0, 512 );
+idCVar v_nowmfullscreen( "v_nowmfullscreen", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "Do not use the window manager for fullscreen. If this is set and full screen is used, it will not notify the window manager and will monopolize both mouse and keyboard inputs. Only used at screen initialization.");
 
 Display *dpy = NULL;
 static int scrnum = 0;
@@ -42,6 +45,9 @@ static int vidmode_MajorVersion = 0, vidmode_MinorVersion = 0;	// major and mino
 static XF86VidModeModeInfo **vidmodes;
 static int num_vidmodes;
 static bool vidmode_active = false;
+
+// Set to true if fullscreen mode was set without asking the window manager to treat this window as full screen.
+bool vidmode_nowmfullscreen = false;
 
 // backup gamma ramp
 static int save_rampsize = 0;
@@ -472,13 +478,23 @@ int GLX_Init(glimpParms_t a) {
 	attr.colormap = XCreateColormap(dpy, root, visinfo->visual, AllocNone);
 	attr.event_mask = X_MASK;
 	if (vidmode_active) {
-		mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore |
-			CWEventMask | CWOverrideRedirect;
-		attr.override_redirect = True;
+		if(v_nowmfullscreen.GetBool()) {
+			/*We're not going to cooperate with any window managers, so the window will grab full control.*/
+			mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore |
+				CWEventMask | CWOverrideRedirect | CWBorderPixel;
+			vidmode_nowmfullscreen = true;
+			attr.override_redirect = True;
+		} else {
+			/*Create a normal window and later inform the window manager that this is fullscreen.*/
+			mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore |
+				CWEventMask | CWBorderPixel;
+			vidmode_nowmfullscreen = false;
+		}
 		attr.backing_store = NotUseful;
 		attr.save_under = False;
 	} else {
 		mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+		vidmode_nowmfullscreen = false;
 	}
 
 	win = XCreateWindow(dpy, root, 0, 0,
@@ -486,6 +502,16 @@ int GLX_Init(glimpParms_t a) {
 						0, visinfo->depth, InputOutput,
 						visinfo->visual, mask, &attr);
 
+	if(vidmode_active && !vidmode_nowmfullscreen) {
+		/*Tell the window manager that this is a full screen window.*/
+		const Atom atoms[2] = { XInternAtom(dpy, "_NET_WM_STATE_FULLSCREEN", False), None };
+		XChangeProperty(
+			dpy, 
+			win, 
+			XInternAtom(dpy, "_NET_WM_STATE", False),
+			XA_ATOM, 32, PropModeReplace, (const unsigned char *)atoms, 1
+			);
+	}
 	XStoreName(dpy, win, GAME_NAME);
 
 	// don't let the window be resized

@@ -15,6 +15,7 @@
 #include "../../idlib/precompiled.h"
 #include "../posix/posix_public.h"
 #include "local.h"
+#include "framework/KeyInput.h"
 
 #include <pthread.h>
 
@@ -22,12 +23,19 @@ idCVar in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "" );
 idCVar in_dgamouse( "in_dgamouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "" );
 idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "" );
 idCVar in_nowarp( "in_nowarp", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "" );
+idCVar in_grabkeyboard( "in_grabkeyboard", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "When set, the keyboard is grabbed, so input goes exclusively to this game. When cleared the window manager is allowed to handle input from the keyboard." );
+idCVar in_grabmouse( "in_grabmouse", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "When set, the mouse is grabbed, so input goes exclusively to this game." );
 
 // have a working xkb extension
 static bool have_xkb = false;
 
 // toggled by grab calls - decides if we ignore MotionNotify events
 static bool mouse_active = false;
+
+// flags if the keyboard has already been grabbed.
+static bool keyboard_grabbed = false;
+// flags if the mouse has already been grabbed.
+static bool mouse_grabbed = false;
 
 // non-DGA pointer-warping mouse input
 static int mwx, mwy;
@@ -135,15 +143,19 @@ static void Sys_XInstallGrabs( void ) {
 	XSync( dpy, False );
 
 	XDefineCursor( dpy, win, Sys_XCreateNullCursor( dpy, win ) );
-	
-	XGrabPointer( dpy, win,
-				 False,
-				 MOUSE_MASK,
-				 GrabModeAsync, GrabModeAsync,
-				 win,
-				 None,
-				 CurrentTime );
 
+	
+	if((vidmode_nowmfullscreen || in_grabmouse.GetBool()) && !mouse_grabbed) {
+		mouse_grabbed = true;
+		XGrabPointer( dpy, win,
+			      False,
+			      MOUSE_MASK,
+			      GrabModeAsync, GrabModeAsync,
+			      win,
+			      None,
+			      CurrentTime );
+	}
+		
 	XGetPointerControl( dpy, &mouse_accel_numerator, &mouse_accel_denominator,
 					   &mouse_threshold );
 	
@@ -168,11 +180,15 @@ static void Sys_XInstallGrabs( void ) {
 		mwy = glConfig.vidHeight / 2;
 		mx = my = 0;
 	}
-	
-	XGrabKeyboard( dpy, win,
-				  False,
-				  GrabModeAsync, GrabModeAsync,
-				  CurrentTime );
+
+	/*Grab the keyboard if we're configured to grab it, or if we're doing full screen without the window manager.*/
+	if((vidmode_nowmfullscreen || in_grabkeyboard.GetBool()) && !keyboard_grabbed) {
+		keyboard_grabbed = true;
+		XGrabKeyboard( dpy, win,
+			       False,
+			       GrabModeAsync, GrabModeAsync,
+			       CurrentTime );
+	}
 	
 	XSync( dpy, False );
 
@@ -192,8 +208,14 @@ void Sys_XUninstallGrabs(void) {
 	XChangePointerControl( dpy, true, true, mouse_accel_numerator, 
 						  mouse_accel_denominator, mouse_threshold );
 	
-	XUngrabPointer( dpy, CurrentTime );
-	XUngrabKeyboard( dpy, CurrentTime );
+	if(mouse_grabbed) {
+		XUngrabPointer( dpy, CurrentTime );
+		mouse_grabbed = false;
+	}
+	if(keyboard_grabbed) {
+		XUngrabKeyboard( dpy, CurrentTime );
+		keyboard_grabbed = false;
+	}
 	
 	XWarpPointer( dpy, None, win,
 				 0, 0, 0, 0,
@@ -232,6 +254,33 @@ void Sys_GrabMouseCursor( bool grabIt ) {
 			common->DPrintf("forcing in_nograb 0 while running fullscreen\n");
 			in_nograb.SetBool( false );
 		}
+	}
+	/*Check if the keyboard should be grabbed or ungrabbed.*/
+	if(!vidmode_nowmfullscreen && keyboard_grabbed && (!grabIt || !in_grabkeyboard.GetBool())) {
+		XUngrabKeyboard( dpy, CurrentTime );
+		keyboard_grabbed = false;
+	} else if((vidmode_nowmfullscreen || (grabIt && in_grabkeyboard.GetBool())) && !keyboard_grabbed) {
+		/*Grab the keyboard if we're configured to grab it and set to grab, or if we're doing full screen without the window manager.*/
+		keyboard_grabbed = true;
+		XGrabKeyboard( dpy, win,
+			       False,
+			       GrabModeAsync, GrabModeAsync,
+			       CurrentTime );
+	}
+
+	/*Check if the mouse should be grabbed or ungrabbed.*/
+	if(!vidmode_nowmfullscreen && mouse_grabbed && (!grabIt || !in_grabmouse.GetBool())) {
+		XUngrabPointer( dpy, CurrentTime );
+		mouse_grabbed = false;
+	} else if((vidmode_nowmfullscreen || (grabIt && in_grabmouse.GetBool())) && !mouse_grabbed) {
+		mouse_grabbed = true;
+		XGrabPointer( dpy, win,
+			      False,
+			      MOUSE_MASK,
+			      GrabModeAsync, GrabModeAsync,
+			      win,
+			      None,
+			      CurrentTime );
 	}
 	
 	if ( in_nograb.GetBool() ) {

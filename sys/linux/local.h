@@ -30,6 +30,8 @@ extern glconfig_t glConfig;
 extern Display *dpy;
 extern Window win;
 
+extern bool vidmode_nowmfullscreen;
+
 // input.cpp
 extern bool dga_found;
 void Sys_XEvents();
