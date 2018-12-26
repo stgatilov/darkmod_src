@@ -678,7 +678,8 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		}
 
 		// remove decals that are completely faded away
-		R_FreeEntityDefFadedDecals( entity, tr.viewDef->renderView.time );
+		if( entity->decals )
+			R_FreeEntityDefFadedDecals( entity, tr.viewDef->renderView.time );
 
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
