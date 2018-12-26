@@ -946,17 +946,17 @@ int idParser::Directive_include( void ) {
 	}
 	if ( token.type == TT_STRING ) {
 		script = new idLexer;
-		// try relative to the current file
-		path = scriptstack->GetFileName();
-		path.StripFilename();
-		path += "/";
-		path += token;
+		// try absolute path
+		path = token;
 		if ( !script->LoadFile( path, OSPath ) ) {
-			// try absolute path
-			path = token;
+			// try from the include path
+			path = includepath + token;
 			if ( !script->LoadFile( path, OSPath ) ) {
-				// try from the include path
-				path = includepath + token;
+				// try relative to the current file
+				path = scriptstack->GetFileName();
+				path.StripFilename();
+				path += "/";
+				path += token;
 				if ( !script->LoadFile( path, OSPath ) ) {
 					delete script;
 					script = NULL;
