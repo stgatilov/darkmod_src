@@ -5725,7 +5725,7 @@ void idPlayer::UpdateAir( void )
 				}
 			}
 		} else {
-			airTics += 2;	// regain twice as fast as lose
+			airTics += pm_airTicsRegainingSpeed.GetInteger();
 			if ( airTics > pm_airTics.GetInteger() )
 				airTics = pm_airTics.GetInteger();
 		}
