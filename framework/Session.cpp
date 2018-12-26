@@ -43,6 +43,7 @@ idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | 
 
 // stgatilov: allow choosing format for savegame previews
 idCVar	com_savegame_preview_format( "com_savegame_preview_format", "jpg", CVAR_GAME | CVAR_ARCHIVE, "Image format used to store previews for game saves: tga/jpg." );
+idCVar	com_maxFPS( "com_maxFPS", "125", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "define the maximum FPS cap", 20, 1000 );
 
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
@@ -2756,7 +2757,7 @@ void idSessionLocal::Frame() {
 		while (true) {
 			latchedTicNumber = com_ticNumber;
 			if (latchedTicNumber >= minTic)
-				if (com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 6000)
+				if (com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 1000000 / com_maxFPS.GetInteger() )
 					break;
 			Sys_Sleep( 1 );
 		}
