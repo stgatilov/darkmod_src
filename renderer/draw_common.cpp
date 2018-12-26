@@ -27,6 +27,8 @@ Extracted from RB_PrepareStageTexturing
 ================
 */
 ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
+	qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+	qglEnableVertexAttribArray( 2 );
 	// see if there is also a bump map specified
 	const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 	if ( bumpStage ) {
@@ -35,12 +37,10 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
 
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 
-		qglEnableVertexAttribArray( 2 );
 		qglEnableVertexAttribArray( 8 );
 		qglEnableVertexAttribArray( 9 );
 		qglEnableVertexAttribArray( 10 );
@@ -52,10 +52,6 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		qglUniformMatrix4fv( cubeMapShader.modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
 		qglUniform3fv( cubeMapShader.viewOrigin, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
 	} else {
-		// per-pixel reflection mapping without a normal map
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglEnableVertexAttribArray( 2 );
-
 		R_UseProgramARB( VPROG_ENVIRONMENT );
 	}
 }
@@ -114,13 +110,13 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableVertexAttribArray( 8 );
 			qglDisableVertexAttribArray( 9 );
 			qglDisableVertexAttribArray( 10 );
+			qglUniform1f( cubeMapShader.reflective, 0 );
+			qglUseProgram( 0 );
 		}
 
 		// per-pixel reflection mapping without bump mapping
 		qglDisableVertexAttribArray( 2 );
-		//R_UseProgramARB();
-		qglUniform1f( cubeMapShader.reflective, 0 );
-		qglUseProgram( 0 );
+		R_UseProgramARB();
 
 		break;
 	}
