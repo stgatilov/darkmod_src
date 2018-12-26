@@ -2170,6 +2170,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( airless );
 	savefile->WriteInt( airTics );
 	savefile->WriteInt( lastAirDamage );
+	savefile->WriteInt( lastAirCheck );
 
 	savefile->WriteBool(underWaterEffectsActive);
 	savefile->WriteInt(underWaterGUIHandle);
@@ -2494,6 +2495,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( airless );
 	savefile->ReadInt( airTics );
 	savefile->ReadInt( lastAirDamage );
+	savefile->ReadInt( lastAirCheck );
 
 	savefile->ReadBool(underWaterEffectsActive);
 	savefile->ReadInt(underWaterGUIHandle);
@@ -5725,7 +5727,7 @@ void idPlayer::UpdateAir( void )
 				}
 			}
 		} else {
-			airTics += 2;	// regain twice as fast as lose
+			airTics += pm_airTicsRegainingSpeed.GetInteger();
 			if ( airTics > pm_airTics.GetInteger() )
 				airTics = pm_airTics.GetInteger();
 		}

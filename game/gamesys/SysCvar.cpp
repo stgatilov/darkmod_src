@@ -679,7 +679,8 @@ idCVar pm_thirdPersonClip(			"pm_thirdPersonClip",		"1",			CVAR_GAME | CVAR_NETW
 idCVar pm_thirdPerson(				"pm_thirdPerson",			"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_BOOL, "enables third person view" );
 idCVar pm_thirdPersonDeath(			"pm_thirdPersonDeath",		"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_BOOL, "enables third person view when player dies" );
 idCVar pm_modelView(				"pm_modelView",				"0",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_INTEGER, "draws camera from POV of player model (1 = always, 2 = when dead)", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
-idCVar pm_airTics(					"pm_air",					"1800",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_ARCHIVE | CVAR_INTEGER, "how long in milliseconds the player can go without air before he starts taking damage" );
+idCVar pm_airTics(					"pm_air",					"1800",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_INTEGER, "how long the player can go without air before he starts taking damage (One tic corresponds to 16 ms)", 1, 1000000);
+idCVar pm_airTicsRegainingSpeed(	"pm_air_regainingSpeed",	"4",			CVAR_GAME | CVAR_NETWORKSYNC | CVAR_INTEGER, "how fast the player regains air after diving (value corresponds to number of tics regained every 16 ms)", 1, 8);
 
 idCVar g_showPlayerShadow(			"g_showPlayerShadow",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "enables shadow of player model" );
 idCVar g_showHud(					"g_showHud",				"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "toggles whether hud elements are shown in game" );
