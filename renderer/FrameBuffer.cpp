@@ -36,24 +36,32 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if ( !fboPrimary ) {
 		qglGenFramebuffers( 1, &fboPrimary );
 	}
-
 	if ( !renderBufferColor ) {
 		qglGenRenderbuffers( 1, &renderBufferColor );
 	}
 
-	if ( msaa > 1 ) {
+	if ( !r_fboSharedDepth.GetBool() || msaa > 1 ) {
 		if ( !fboResolve ) {
 			qglGenFramebuffers( 1, &fboResolve );
 		}
-
 		if ( !renderBufferDepthStencil ) {
 			qglGenRenderbuffers( 1, &renderBufferDepthStencil );
 		}
+
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
-		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
+		if (msaa > 1)
+			qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
+		else
+			qglRenderbufferStorage( GL_RENDERBUFFER, GL_RGBA, width, height );
+
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
 		// revert to old behaviour, switches are to specific
-		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8, width, height );
+		int depthFormat = ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8;
+		if (msaa > 1)
+			qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, depthFormat, width, height );
+		else
+			qglRenderbufferStorage( GL_RENDERBUFFER, depthFormat, width, height );
+
 		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
@@ -128,7 +136,8 @@ called when post-processing is about to start, needs pixels
 we need to copy render separately for water/smoke and then again for bloom
 */
 void FB_CopyColorBuffer() {
-	if ( primaryOn && r_multiSamples.GetInteger() > 1 ) {
+	bool msaa = (r_multiSamples.GetInteger() > 1);
+	if ( primaryOn && msaa ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
 	} else {
 		GL_SelectTexture( 0 );
@@ -143,9 +152,21 @@ void FB_CopyColorBuffer() {
 }
 
 void FB_CopyDepthBuffer() {
-	// AA off: already have depth texture attached to FBO. AA on: need to blit from multisampled storage
-	if ( primaryOn && r_multiSamples.GetInteger() > 1 ) {
+	bool msaa = (r_multiSamples.GetInteger() > 1);
+	if (r_fboSharedDepth.GetBool() && !msaa)
+		return;	//do not copy depth buffer, use the FBO-attached texture in postprocessing shaders
+
+	if ( primaryOn && msaa ) {
 		FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT );
+	} else {
+		GL_SelectTexture( 0 );
+		globalImages->currentDepthImage->CopyDepthBuffer(
+			backEnd.viewDef->viewport.x1,
+			backEnd.viewDef->viewport.y1,
+			backEnd.viewDef->viewport.x2 -
+			backEnd.viewDef->viewport.x1 + 1,
+			backEnd.viewDef->viewport.y2 -
+			backEnd.viewDef->viewport.y1 + 1, true);
 	}
 }
 
@@ -231,45 +252,50 @@ void CheckCreatePrimary() {
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
-	if ( r_fboSeparateStencil.IsModified() || ( curWidth != globalImages->currentRenderImage->uploadWidth ) ) {
+	if (
+		r_multiSamples.IsModified() || 
+		r_fboSeparateStencil.IsModified() ||
+		r_fboSharedDepth.IsModified() ||
+		r_fboResolution.IsModified()
+	) {
+		// something FBO-related has changed, let's recreate everything from scratch
+		r_multiSamples.ClearModified();
 		r_fboSeparateStencil.ClearModified();
-		DeleteFramebuffers(); // otherwise framebuffer is not resized (even though its attachments are, FIXME? ViewPort not updated?)
+		r_fboSharedDepth.ClearModified();
+		r_fboResolution.ClearModified();
+		DeleteFramebuffers();
 	}
-
-	if ( r_fboDepthBits.IsModified() && r_multiSamples.GetInteger() > 1 ) {
-		r_fboDepthBits.ClearModified();
-		DeleteFramebuffers(); // Intel wants us to keep depth texture and multisampled storage formats the same
-	}
-
-	// intel optimization
+		
+	// create global depth texture (usually holds screen copy, used by postprocessing)
 	if ( r_fboSeparateStencil.GetBool() ) {
+		// intel optimization
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH );
 		if ( !r_softShadowsQuality.GetBool() ) // currentStencilFbo will be initialized in CheckCreateShadow with possibly different resolution
 			globalImages->currentStencilFbo->GenerateAttachment( curWidth, curHeight, GL_STENCIL );
-	} else { // AMD/nVidia fast enough already, separate depth/stencil not supported
+	} else {
+		// AMD/nVidia fast enough already, separate depth/stencil not supported
 		globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 	}
-
-	// this texture is now only used as screen copy for post processing, never as FBO attachment in any mode, but we still need to set its size and other params here
+	// create global color texture (used by post processing)
 	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_COLOR );
 
-	// (re-)attach textures to FBO
-	if ( !fboPrimary || r_multiSamples.IsModified() ) {
-		r_multiSamples.ClearModified();
+	// recreate FBOs and attach textures to them
+	if ( !fboPrimary ) {
 		int msaa = r_multiSamples.GetInteger();
 		FB_CreatePrimaryResolve( curWidth, curHeight, msaa );
-		qglBindFramebuffer( GL_FRAMEBUFFER, ( msaa > 1 ) ? fboResolve : fboPrimary );
+		bool useResolveFbo = ( !r_fboSharedDepth.GetBool() || msaa > 1 );
 
-		if ( msaa > 1 ) {
+		qglBindFramebuffer( GL_FRAMEBUFFER, useResolveFbo ? fboResolve : fboPrimary );
+
+		if ( useResolveFbo ) {
 			// attach a texture to FBO color attachment point
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
 		}
 
 		// attach a texture to depth attachment point
 		GLuint depthTex = globalImages->currentDepthImage->texnum;
-
-		// intel optimization
 		if ( r_fboSeparateStencil.GetBool() ) {
+			// intel optimization
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0 );
 		} else {
@@ -278,8 +304,8 @@ void CheckCreatePrimary() {
 		}
 		int statusResolve = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 
-		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		int statusPrimary = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 
 		// something went wrong, fall back to default
