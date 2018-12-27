@@ -989,15 +989,15 @@ void Sys_QueMouseEvents( int dwElements ) {
 			Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_KEY, K_MOUSE1 + ( polled_didod[i].dwOfs - DIMOFS_BUTTON0 ), value, 0, NULL );
 		} else {
 			switch (polled_didod[i].dwOfs) {
-			case DIMOFS_X:
+			case offsetof(DIMOUSESTATE,lX):
 				value = polled_didod[i].dwData;
 				Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_MOUSE, value, 0, 0, NULL );
 				break;
-			case DIMOFS_Y:
+			case offsetof(DIMOUSESTATE, lY):
 				value = polled_didod[i].dwData;
 				Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_MOUSE, 0, value, 0, NULL );
 				break;
-			case DIMOFS_Z:
+			case offsetof(DIMOUSESTATE, lZ):
 				value = ( (int) polled_didod[i].dwData ) / WHEEL_DELTA;
 				int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
 				value = abs( value );
@@ -1054,15 +1054,15 @@ int Sys_ReturnMouseInputEvent( const int n, int &action, int &value ) {
 	}
 
 	switch( diaction ) {
-		case DIMOFS_X:
+		case offsetof(DIMOUSESTATE, lX):
 			value = polled_didod[n].dwData;
 			action = M_DELTAX;
 			return 1;
-		case DIMOFS_Y:
+		case offsetof(DIMOUSESTATE, lY):
 			value = polled_didod[n].dwData;
 			action = M_DELTAY;
 			return 1;
-		case DIMOFS_Z:
+		case offsetof(DIMOUSESTATE, lZ):
 			// mouse wheel actions are impulses, without a specific up / down
 			value = ( (int) polled_didod[n].dwData ) / WHEEL_DELTA;
 			action = M_DELTAZ;

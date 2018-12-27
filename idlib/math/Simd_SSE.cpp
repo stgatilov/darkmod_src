@@ -15,6 +15,7 @@
 
 #include "precompiled.h"
 #pragma hdrstop
+#pragma warning(disable: 4740)
 
 #include "Simd_Generic.h"
 #include "Simd_MMX.h"
