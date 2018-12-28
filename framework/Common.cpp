@@ -2443,6 +2443,14 @@ void idCommonLocal::Frame( void ) {
 		}
 
 		eventLoop->RunEventLoop();
+		
+		// nbohr1more: workaround for timescale with uncapped FPS
+		static int ticSaver = sessLocal.com_fixedTic.GetBool();
+
+        if ( com_timescale.GetFloat() != 1.0f )
+           sessLocal.com_fixedTic.SetBool(0);
+        else 
+           sessLocal.com_fixedTic.SetBool(ticSaver);
 
 		// duzenko #4409 - need frame time msec to pass to game tic
 		static int	lastTime;
