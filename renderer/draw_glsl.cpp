@@ -49,7 +49,7 @@ struct basicInteractionProgram_t : lightProgram_t {
 
 struct interactionProgram_t : basicInteractionProgram_t {
 	GLint localViewOrigin;
-	GLint rgtc;
+	GLint rgtc, hasTextureDNS;
 
 	GLint cubic;
 	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffTexture;
@@ -133,8 +133,13 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
-	GL_SelectTexture( 0 );
-	din->bumpImage->Bind();
+	if ( r_skipBump.GetBool() )
+		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 0, 1 );
+	else {
+		GL_SelectTexture( 0 );
+		din->bumpImage->Bind();
+		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 1, 1 );
+	}
 
 	// texture 1 will be the light falloff texture
 	GL_SelectTexture( 1 );
@@ -929,6 +934,7 @@ void interactionProgram_t::AfterLoad() {
 	basicInteractionProgram_t::AfterLoad();
 
 	rgtc = qglGetUniformLocation( program, "u_RGTC" );
+	hasTextureDNS = qglGetUniformLocation( program, "u_hasTextureDNS" );
 
 	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
 
