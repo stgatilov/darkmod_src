@@ -4532,9 +4532,21 @@ void idPhysics_Player::PerformMantle()
 		return;
 	}
 
-	if (static_cast<idPlayer*>(self)->GetImmobilization() & EIM_MANTLE)
+	idPlayer* p_player = static_cast<idPlayer*>(self);
+	if (p_player == NULL)
+	{
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("p_player is NULL\r");
+		return;
+	}
+
+	if (p_player->GetImmobilization() & EIM_MANTLE)
 	{
 		return; // greebo: Mantling disabled by immobilization system
+	}
+
+	if (waterLevel >= WATERLEVEL_HEAD)
+	{
+		return; // STiFU: #1037: Do not mantle underwater
 	}
 
 	// Clear mantled entity members to indicate nothing is
@@ -4563,14 +4575,6 @@ void idPhysics_Player::PerformMantle()
 	);
 
 	// Get start position of gaze trace, which is player's eye position
-	idPlayer* p_player = static_cast<idPlayer*>(self);
-
-	if (p_player == NULL)
-	{
-		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("p_player is NULL\r");
-		return;
-	}
-
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Getting eye position\r");
 	idVec3 eyePos = p_player->GetEyePosition();
 
