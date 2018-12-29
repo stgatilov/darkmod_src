@@ -17,6 +17,7 @@
 #pragma hdrstop
 
 #include "Session_local.h"
+#include "Common.h"
 #include "../renderer/tr_local.h"
 #include "../renderer/FrameBuffer.h"
 #include "../game/Missions/MissionManager.h"
@@ -2744,7 +2745,7 @@ void idSessionLocal::Frame() {
 			minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
 		}
 		// fixedTic lets us run a forced number of usercmd each frame without timing
-		if (com_fixedTic.GetInteger()) {
+		if (com_fixedTic.GetInteger() && com_tstic.GetBool() ) {
 			minTic = latchedTicNumber;
 		}
 

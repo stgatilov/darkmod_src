@@ -61,6 +61,7 @@ extern idCVar		com_showAsyncStats;
 extern idCVar		com_showSoundDecoders;
 extern idCVar		com_makingBuild;
 extern idCVar		com_updateLoadSize;
+extern idCVar		com_tstic;
 // extern idCVar       com_maxFPS;
 //extern idCVar		com_videoRam;
 
