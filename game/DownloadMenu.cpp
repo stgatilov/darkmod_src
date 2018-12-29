@@ -228,11 +228,21 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		UpdateGUI(gui);
 	}
+	// #4492(Obsttorte)
+	else if (cmd == "onselectallmissionsfordownload")
+	{
+		for (int i = 0; i < gameLocal.m_MissionManager->GetDownloadableMods().Num(); i++)
+		{
+			_selectedMods.AddUnique(i);
+		}
+		gui->SetStateBool("av_mission_details_visible", false);
+		UpdateGUI(gui);
+	}
 	else if (cmd == "ondeselectmissionfordownload")
 	{
 		int index = gui->GetStateInt("downloadSelectedList_sel_0", "-1");
 
-    if (index < 0) return;
+		if (index < 0) return;
 
 		if (gui->GetStateBool("mission_download_in_progress") == 1){//Cancel a download in progress
 			if (gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].missionDownloadId)->GetStatus() == CDownload::/*DownloadStatus::*/SUCCESS) // grayman - make linux compiler happy
