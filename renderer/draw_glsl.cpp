@@ -133,12 +133,13 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
-	if ( r_skipBump.GetBool() )
+	if ( r_skipBump.GetBool() && currrentInteractionShader->hasTextureDNS >= 0 )
 		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 0, 1 );
 	else {
 		GL_SelectTexture( 0 );
 		din->bumpImage->Bind();
-		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 1, 1 );
+		if ( currrentInteractionShader->hasTextureDNS >= 0 )
+			qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 1, 1 );
 	}
 
 	// texture 1 will be the light falloff texture
