@@ -3674,6 +3674,9 @@ float idPhysics_Player::GetMantleTimeForPhase(EMantlePhase mantlePhase)
 	case push_DarkModMantlePhase:
 		return cv_pm_mantle_push_msecs.GetFloat();
 
+	case pushNonCrouched_DarkModMantlePhase:
+		return cv_pm_mantle_pushNonCrouched_msecs.GetFloat();
+
 	default:
 		return 0.0f;
 	}
@@ -3732,17 +3735,19 @@ void idPhysics_Player::MantleMove()
 			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
 	}
-	else if (m_mantlePhase == push_DarkModMantlePhase)
+	else if (m_mantlePhase == push_DarkModMantlePhase || m_mantlePhase == pushNonCrouched_DarkModMantlePhase)
 	{
 		// Rocking back and forth to get legs up over edge
-		float rockDistance = 10.0f;
+		// STiFU: Reduce rockdistance for pushNonCrouched
+		const float rockDistance = (m_mantlePhase == push_DarkModMantlePhase) ? 10.0f : 5.0f;
 
 		// Player pushes themselves upward to get their legs onto the surface
 		totalMove = m_mantlePushEndPos - m_mantlePullEndPos;
 		newPosition = m_mantlePullEndPos + (totalMove * idMath::Sin(timeRatio * (idMath::PI/2)) );
 
 		// We go into duck during this phase and stay there until end
-		current.movementFlags |= PMF_DUCKED;
+		if (m_mantlePhase == push_DarkModMantlePhase)
+			current.movementFlags |= PMF_DUCKED;
 
 		float timeRadians = idMath::PI * timeRatio;
 		newPosition += (idMath::Sin (timeRadians) * rockDistance) * viewRight;
@@ -3831,6 +3836,7 @@ void idPhysics_Player::UpdateMantleTimers()
 				player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
+			case pushNonCrouched_DarkModMantlePhase:
 			case push_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: mantle completed\r");
 
@@ -3975,6 +3981,12 @@ void idPhysics_Player::StartMantle
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push upward\r");
 		player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 	}
+	else if (initialMantlePhase == pushNonCrouched_DarkModMantlePhase)
+	{
+		// STiFU: Skip playing sound for this very easy mantle
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push non-crouched upward\r");
+	}
+
 
 	m_mantlePhase = initialMantlePhase;
 	m_mantleTime = GetMantleTimeForPhase(m_mantlePhase);
@@ -3989,11 +4001,6 @@ void idPhysics_Player::StartMantle
 			const idMat3& mantledEntityAxis = p_physics->GetAxis();
 
 			// ishtvan 1/3/2010: Incorporate entity rotation as well as translation
-			/*
-			startPos -= mantledEntityOrigin;
-			eyePos -= mantledEntityOrigin;
-			endPos -= mantledEntityOrigin;
-			*/
 			startPos = (startPos - mantledEntityOrigin) * mantledEntityAxis.Transpose();
 			eyePos = (eyePos - mantledEntityOrigin) * mantledEntityAxis.Transpose();
 			endPos = (endPos - mantledEntityOrigin) * mantledEntityAxis.Transpose();
@@ -4559,8 +4566,7 @@ void idPhysics_Player::PerformMantle()
 	forward.Normalize();
 
 	// We use gravity alot here...
-	idVec3 gravityNormal = GetGravityNormal();
-	idVec3 upVector = -gravityNormal;
+	const idVec3& gravityNormal = GetGravityNormal();
 
 	// Get maximum reach distances for mantling
 	float maxVerticalReachDistance; 
@@ -4632,7 +4638,9 @@ void idPhysics_Player::PerformMantle()
 
 			// Start with log phase dependent on position relative
 			// to the mantle end point
-			if (mantleEndPoint * gravityNormal < eyePos * gravityNormal)
+			const float eyeHeight = -(eyePos * gravityNormal);
+			const float mantleEndHeight = -(mantleEndPoint * gravityNormal);
+			if (eyeHeight < mantleEndHeight)
 			{
 				// Start with pull if on the ground, hang if not
 				if (groundPlane)
@@ -4644,10 +4652,15 @@ void idPhysics_Player::PerformMantle()
 					StartMantle(hang_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}
 			}
+			else if (!cv_pm_mantle_fastLowObstaces.GetBool() || eyeHeight - 0.5*GetBounds()[1].z < mantleEndHeight || m_bOnRope || m_bOnClimb)
+			{
+				// Obstacle bigger than half the body size or fast low obstacle mantling disabled or player was attached to climb surface
+				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+			}
 			else
 			{
-				// We are above it, start with push
-				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+				// Low obstacle: Do a fast mantle
+				StartMantle(pushNonCrouched_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
 		}
 	}

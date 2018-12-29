@@ -79,6 +79,7 @@ enum EMantlePhase
 	shiftHands_DarkModMantlePhase,
 	push_DarkModMantlePhase,
 	fixClipping_DarkModMantlePhase,	
+	pushNonCrouched_DarkModMantlePhase,
 	NumMantlePhases,
 };
 
