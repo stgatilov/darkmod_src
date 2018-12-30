@@ -722,16 +722,15 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 				// ignore ambient stages while drawing interactions
 				break;
 			}
-			case SL_BUMP: {
-				// ignore stage that fails the condition
-				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
+			case SL_BUMP: {				
+				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) // ignore stage that fails the condition
 					break;
+				if ( !r_skipBump.GetBool() ) {
+					RB_SubmittInteraction( &inter ); // draw any previous interaction
+					inter.diffuseImage = NULL;
+					inter.specularImage = NULL;
+					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
 				}
-				// draw any previous interaction
-				//RB_SubmittInteraction( &inter );
-				inter.diffuseImage = NULL;
-				inter.specularImage = NULL;
-				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
 				break;
 			}
 			case SL_DIFFUSE: {

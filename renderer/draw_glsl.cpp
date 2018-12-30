@@ -133,11 +133,10 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
-	if ( (r_skipBump.GetBool() || !din->bumpImage) && currrentInteractionShader->hasTextureDNS >= 0 )
+	if ( !din->bumpImage && currrentInteractionShader->hasTextureDNS >= 0 )
 		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 0, 1 );
 	else {
-		// FIXME shadow surfaces should be already filtered out
-		if( !din->bumpImage )
+		if( !din->bumpImage ) // FIXME Uh-oh! This should not happen
 			return;
 		GL_SelectTexture( 0 );
 		din->bumpImage->Bind();
@@ -898,7 +897,8 @@ void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	if ( din->surf->space != backEnd.currentSpace )
 		qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	qglUniform4fv( diffuseMatrix, 2, din->diffuseMatrix[0].ToFloatPtr() );
-	qglUniform4fv( bumpMatrix, 2, din->bumpMatrix[0].ToFloatPtr() );
+	if ( din->bumpImage )
+		qglUniform4fv( bumpMatrix, 2, din->bumpMatrix[0].ToFloatPtr() );
 	qglUniform4fv( specularMatrix, 2, din->specularMatrix[0].ToFloatPtr() );
 
 	static const float	zero[4]		= { 0, 0, 0, 0 },
