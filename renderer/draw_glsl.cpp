@@ -133,9 +133,12 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
-	if ( r_skipBump.GetBool() && currrentInteractionShader->hasTextureDNS >= 0 )
+	if ( (r_skipBump.GetBool() || !din->bumpImage) && currrentInteractionShader->hasTextureDNS >= 0 )
 		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 0, 1 );
 	else {
+		// FIXME shadow surfaces should be already filtered out
+		if( !din->bumpImage )
+			return;
 		GL_SelectTexture( 0 );
 		din->bumpImage->Bind();
 		if ( currrentInteractionShader->hasTextureDNS >= 0 )
