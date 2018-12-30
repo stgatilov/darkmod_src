@@ -20,6 +20,7 @@
 #include "Common.h"
 #include "../renderer/tr_local.h"
 #include "../renderer/FrameBuffer.h"
+#include "../game/gamesys/SysCvar.h"
 #include "../game/Missions/MissionManager.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
@@ -2678,7 +2679,15 @@ void idSessionLocal::Frame() {
 	}
 	
 	//nbohr1more: disable SMP for debug render tools
-	if (r_showSurfaceInfo.GetBool() || 
+	if (r_showSurfaceInfo.GetBool() ||
+    g_showEntityInfo.GetBool() ||
+    g_showPVS.GetBool() ||
+    g_showTargets.GetBool() ||
+    g_showTriggers.GetBool() ||
+    g_showCollisionWorld.GetBool() ||
+    g_showCollisionModels.GetBool() ||
+    g_showCollisionTraces.GetBool() ||
+    g_showCollisionAlongView.GetBool() ||	
 	r_showSilhouette.GetBool() || 
 	r_showViewEntitys.GetBool() || 
 	r_showEdges.GetBool() || 
