@@ -384,6 +384,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		}
 
 		shadowmapShader.FillDepthBuffer( surf );
+		backEnd.pc.c_shadowIndexes += surf->numIndexes;
+		backEnd.pc.c_drawIndexes -= surf->numIndexes;
 
 		if ( customOffset != 0 )
 			qglPolygonOffset( 0, 0 );
