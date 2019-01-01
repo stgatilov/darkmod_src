@@ -96,7 +96,6 @@ idCVar com_showSoundDecoders( "com_showSoundDecoders", "0", CVAR_BOOL|CVAR_SYSTE
 
 idCVar com_timestampPrints( "com_timestampPrints", "0", CVAR_SYSTEM, "print time with each console print, 1 = sec, 2 = msec", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar com_timescale( "timescale", "1", CVAR_SYSTEM | CVAR_FLOAT, "scales the time", 0.1f, 10.0f );
-idCVar com_tstic( "com_tstic", "1", CVAR_SYSTEM | CVAR_BOOL, "force capped FPS for timescale" );
 idCVar com_logFile( "logFile", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "1 = buffer log, 2 = flush after each print", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar com_logFileName( "logFileName", "qconsole.log", CVAR_SYSTEM | CVAR_NOCHEAT, "name of log file, if empty, qconsole.log will be used" );
 idCVar com_makingBuild( "com_makingBuild", "0", CVAR_BOOL | CVAR_SYSTEM, "1 when making a build" );
@@ -2444,18 +2443,6 @@ void idCommonLocal::Frame( void ) {
 		}
 
 		eventLoop->RunEventLoop();
-		
-		// nbohr1more: workaround for timescale with uncapped FPS
-		
-
-        if ( ( sessLocal.com_fixedTic.GetBool() == 1 ) && (com_timescale.GetFloat() != 1) )
-		{
-		 com_tstic.SetBool(0);
-		}
-		else
-		{
-		 com_tstic.SetBool(1);
-		}
 			
 			
 		// duzenko #4409 - need frame time msec to pass to game tic
@@ -2464,7 +2451,7 @@ void idCommonLocal::Frame( void ) {
 		com_frameMsec = nowTime - lastTime;
 		lastTime = nowTime;
 
-		if (sessLocal.com_fixedTic.GetBool())
+		if (sessLocal.com_fixedTic.GetBool() )
 			com_frameTime += com_frameMsec;
 		else
 			//com_frameTime = com_ticNumber * USERCMD_MSEC;
