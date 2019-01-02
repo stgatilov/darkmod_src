@@ -74,11 +74,16 @@ size_t CurlDownloader::headerWriteCallback(char *ptr, size_t size, size_t nmemb)
 
     if (startsWith(added, "HTTP"))
         isHttp = true;          //this class is tied to HTTP multi-byte-range behavior
-    if (startsWith(added, "Accept-Ranges: bytes"))
+
+    if (startsWith(added, "Accept-Ranges: bytes") ||        //returned on any request
+        startsWith(added, "Content-Range: bytes")           //some servers don't return accept-ranges for range requests
+    ) {
         acceptRanges = true;    //differential update is impossible without byte ranges
+    }
 
     //check if this is a multipart response for multi-byte-range request
     if (auto ptr = startsWith(added, "Content-Type: multipart/byteranges; boundary=")) {
+        acceptRanges = true;                                //some servers don't return accept-ranges for range requests
         int pos = ptr - added.c_str();
         //save boundary string for parsing the response
         std::string token = added.substr(pos, added.size() - 2 - pos);
