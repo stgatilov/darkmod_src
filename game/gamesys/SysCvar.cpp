@@ -200,6 +200,7 @@ idCVar cv_pm_mantle_shift_hands_msecs(	"pm_mantle_shift_hands_msecs",		"500",			
 idCVar cv_pm_mantle_push_msecs(	"pm_mantle_push_msecs",		"800",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to push themselves up onto the mantle surface.", 0, 10000);
 idCVar cv_pm_mantle_pushNonCrouched_msecs("pm_mantle_pushNonCrouched_msecs","550", CVAR_GAME | CVAR_INTEGER, "Milliseconds of time it takes for the player to push themselves up onto the mantle surface without crouching.",0,100000);
 idCVar cv_pm_mantle_fastLowObstaces("pm_mantle_fastLowObstacles", "1", CVAR_GAME | CVAR_BOOL, "If true, a faster mantle will be performed for low obstacles.", 0, 1);
+idCVar cv_pm_mantle_maxLowObstacleHeight("pm_mantle_maxLowObstacleHeight", "36.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The maximum height of obstacles over which a fast mantle can be performed", 0.0f, 60.0f);
 
 /**
 * Dark Mod Jumping 

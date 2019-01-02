@@ -4716,16 +4716,16 @@ void idPhysics_Player::PerformMantle()
 					StartMantle(hang_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}
 			}
-			else if (!cv_pm_mantle_fastLowObstaces.GetBool() 
-				|| eyeHeight - 0.5*GetBounds()[1].z < mantleEndHeight 
-				|| IsMantleable == EMantleable_YesCrouched)
+			else if (!cv_pm_mantle_fastLowObstaces.GetBool() // fast low obstacle mantling disabled 
+				|| current.movementFlags & PMF_DUCKED		 // Player is crouched: Do slow mantle
+				|| IsMantleable == EMantleable_YesCrouched	 // Standing up mantle impossible
+				|| -(GetOrigin() * gravityNormal) + cv_pm_mantle_maxLowObstacleHeight.GetFloat() < mantleEndHeight) // Obstacle is not considered "low"
 			{
-				// Obstacle bigger than half the body size or fast low obstacle mantling disabled or not enough room for non crouched mantle
 				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
 			else
 			{
-				// Low obstacle: Do a fast mantle
+				// Do a fast mantle over low obstacle
 				StartMantle(pushNonCrouched_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
 		}
