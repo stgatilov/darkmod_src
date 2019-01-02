@@ -581,6 +581,13 @@ protected:
 		trace_t& out_trace
 	);
 
+	enum EMantleable
+	{
+		EMantleable_No = 0,
+		EMantleable_YesCrouched = 1,
+		EMantleable_YesUpstraight = 2,
+	};
+
 	/*!
 	* 
 	* This function checks the collision target of the mantle 
@@ -593,11 +600,12 @@ protected:
 	* @param[out] out_mantleEndPoint If the return code is true, this out paramter specifies the position of the player's origin at the end of the mantle move.
 	*
 	* @return the result of the test
-	* @retval true if the mantle target has a mantleable surface
-	* @retval false if the mantel target does not have a mantleable surface
+	* @retval EMantleable_No if the mantel target does not have a mantleable surface
+	* @retval EMantleable_YesCrouched if the mantle target has a mantleable surface that can be reached in crouched state
+	* @retval EMantleable_YesUpstraight if the mantle target has a mantleable surface
 	*
 	*/
-	bool DetermineIfMantleTargetHasMantleableSurface
+	EMantleable DetermineIfMantleTargetHasMantleableSurface
 	(
 		float maxVerticalReachDistance,
 		float maxHorizontalReachDistance,
@@ -611,6 +619,7 @@ protected:
 	*
 	* @param[in] maxVerticalReachDistance The maximum distance that the player can reach vertically from their current origin
 	* @param[in] maxHorizontalReachDistance The maximum distance that the player can reach horizontally from their current origin
+	* @param[in] testCrouched Perform this test with a crouched clipmodel (true) or standing up straight (false)
 	* @param[in] eyePos The position of the player's eyes in the world
 	* @param[in] mantleStartPoint The player's origin at the start of the mantle movement
 	* @param[in] mantleEndPoint The player's origin at the end of the mantle movement
@@ -623,6 +632,7 @@ protected:
 	(
 		float maxVerticalReachDistance,
 		float maxHorizontalReachDistance,
+		bool  testCrouched,
 		const idVec3& eyePos,
 		const idVec3& mantleStartPoint,
 		const idVec3& mantleEndPoint
@@ -648,11 +658,12 @@ protected:
 	* @param[out] out_mantleEndPoint If the return value is true, this passes back out what the player's origin will be at the end of the mantle
 	*
 	* @returns the result of the test
-	* @retval true if the mantle target can be mantled
-	* @retval false if the mantle target cannot be mantled
+	* @retval EMantleable_No if the mantel target does not have a mantleable surface
+	* @retval EMantleable_YesCrouched if the mantle target has a mantleable surface that can be reached in crouched state
+	* @retval EMantleable_YesUpstraight if the mantle target has a mantleable surface
 	*
 	*/	
-	bool ComputeMantlePathForTarget
+	EMantleable ComputeMantlePathForTarget
 	(	
 		float maxVerticalReachDistance,
 		float maxHorizontalReachDistance,

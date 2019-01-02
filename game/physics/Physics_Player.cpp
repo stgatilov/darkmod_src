@@ -4151,7 +4151,7 @@ void idPhysics_Player::MantleTargetTrace
 
 //----------------------------------------------------------------------
 
-bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
+idPhysics_Player::EMantleable idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 (	
 	float maxVerticalReachDistance,
 	float maxHorizontalReachDistance,
@@ -4167,7 +4167,7 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 		if (ent == NULL || !ent->IsMantleable())
 		{
 			// The mantle target is an unmantleable entity
-			return false;
+			return EMantleable_No;
 		}
 	}
 
@@ -4346,6 +4346,14 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 			}
 		}
 	}
+
+	// Return Val
+	EMantleable Mantleable = EMantleable_No;
+	if (b_mantlePossible)
+	{
+		out_mantleEndPoint = testPosition;
+		Mantleable = EMantleable_YesCrouched;
+	}
 	
 	// Must restore standing model if player is not crouched
 	if (!(current.movementFlags & PMF_DUCKED))
@@ -4355,14 +4363,24 @@ bool idPhysics_Player::DetermineIfMantleTargetHasMantleableSurface
 		bounds[1][2] = pm_normalheight.GetFloat();
 
 		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
-	}
 
-	// Return result
-	if (b_mantlePossible)
-	{
-		out_mantleEndPoint = testPosition;
+		// STiFU #4930: Test if the end position can also be reached standing up.
+		// Do this only if player is non-crouched
+		if (b_mantlePossible)
+		{
+			trace_t ceilTrace;
+			gameLocal.clip.Translation(ceilTrace, testPosition,
+				testPosition - (gravityNormal * MANTLE_TEST_INCREMENT),
+				clipModel, clipModel->GetAxis(), clipMask, self);
+			if (ceilTrace.fraction > 0.0f)
+			{
+				Mantleable = EMantleable_YesUpstraight;
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Surface can be mantled upstraight\r");
+			}
+		}
 	}
-	return b_mantlePossible;
+	
+	return Mantleable;
 }
 
 //----------------------------------------------------------------------
@@ -4371,6 +4389,7 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 (
 	float maxVerticalReachDistance,
 	float maxHorizontalReachDistance,
+	bool  testCrouched,
 	const idVec3& in_eyePos,
 	const idVec3& in_mantleStartPoint,
 	const idVec3& in_mantleEndPoint
@@ -4392,14 +4411,25 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 	MoveUpEnd.y += -gravityNormal.y * in_mantleEndPoint.y;
 	MoveUpEnd.z += -gravityNormal.z * in_mantleEndPoint.z;
 
-	// Use crouch clip model
-	if (!(current.movementFlags & PMF_DUCKED))
+	// Change clip model if needed
+	bool clipModelChanged = false;
+	if (testCrouched && !(current.movementFlags & PMF_DUCKED))
 	{
 		// Load crouching model
 		idBounds bounds = clipModel->GetBounds();
 		bounds[1][2] = pm_crouchheight.GetFloat();
 
 		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
+		clipModelChanged = true;
+	}
+	else if (!testCrouched && (current.movementFlags & PMF_DUCKED))
+	{
+		// Load standing model
+		idBounds bounds = clipModel->GetBounds();
+		bounds[1][2] = pm_normalheight.GetFloat();
+
+		clipModel->LoadModel(pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds));
+		clipModelChanged = true;
 	}
 
 	gameLocal.clip.Translation
@@ -4413,14 +4443,25 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 		self 
 	);
 
-	// Done with crouch model if not currently crouched
-	if (!(current.movementFlags & PMF_DUCKED))
+	// Change back clip model
+	if (clipModelChanged)
 	{
-		// Load back standing model
-		idBounds bounds = clipModel->GetBounds();
-		bounds[1][2] = pm_normalheight.GetFloat();
+		if (testCrouched)
+		{
+			// Load back standing model
+			idBounds bounds = clipModel->GetBounds();
+			bounds[1][2] = pm_normalheight.GetFloat();
 
-		clipModel->LoadModel( pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds) );
+			clipModel->LoadModel(pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds));
+		}
+		else
+		{
+			// Load back crouching model
+			idBounds bounds = clipModel->GetBounds();
+			bounds[1][2] = pm_crouchheight.GetFloat();
+
+			clipModel->LoadModel(pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds));
+		}
 	}
 
 	// Log
@@ -4449,7 +4490,7 @@ bool idPhysics_Player::DetermineIfPathToMantleSurfaceIsPossible
 
 //----------------------------------------------------------------------
 
-bool idPhysics_Player::ComputeMantlePathForTarget
+idPhysics_Player::EMantleable idPhysics_Player::ComputeMantlePathForTarget
 (	
 	float maxVerticalReachDistance,
 	float maxHorizontalReachDistance,
@@ -4465,7 +4506,7 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 	const idVec3& mantleStartPoint = GetOrigin();
 
 	// Check if trace target has a mantleable surface
-	bool b_canBeMantled = DetermineIfMantleTargetHasMantleableSurface
+	EMantleable IsSurfaceMantleable = DetermineIfMantleTargetHasMantleableSurface
 	(
 		maxVerticalReachDistance,
 		maxHorizontalReachDistance,
@@ -4473,19 +4514,41 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 		out_mantleEndPoint
 	);
 
-	if (b_canBeMantled)
+	if (IsSurfaceMantleable > EMantleable_No)
 	{
 		// Check if path to mantle end point is not blocked
-		b_canBeMantled &= DetermineIfPathToMantleSurfaceIsPossible
-		(
-			maxVerticalReachDistance,
-			maxHorizontalReachDistance,
-			eyePos,
-			mantleStartPoint,
-			out_mantleEndPoint
-		);
+		if (IsSurfaceMantleable == EMantleable_YesUpstraight)
+		{
+			// STiFU #4930: Try standing up first, if that fails, try crouched
+			static const bool bCrouchedTest = false;
+			const bool bPathClearStandingUp = DetermineIfPathToMantleSurfaceIsPossible(
+				maxVerticalReachDistance,
+				maxHorizontalReachDistance,
+				bCrouchedTest,
+				eyePos,
+				mantleStartPoint,
+				out_mantleEndPoint
+			);
+			if (!bPathClearStandingUp)
+				IsSurfaceMantleable = EMantleable_YesCrouched;
+		}
+		if (IsSurfaceMantleable != EMantleable_YesUpstraight)
+		{
+			static const bool bCrouchedTest = true;
+			const bool bPathClearCrouched = DetermineIfPathToMantleSurfaceIsPossible(
+				maxVerticalReachDistance,
+				maxHorizontalReachDistance,
+				bCrouchedTest,
+				eyePos,
+				mantleStartPoint,
+				out_mantleEndPoint
+			);
+			if (!bPathClearCrouched)
+				IsSurfaceMantleable = EMantleable_No;
+		}
+		
 
-		if (b_canBeMantled)
+		if (IsSurfaceMantleable > EMantleable_No)
 		{
 			// Is end point too far away?
 			idVec3 endDistanceVector = out_mantleEndPoint - eyePos;
@@ -4503,7 +4566,7 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 			if (upDist < 0.0)
 			{
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantleable surface was below player's feet. No belly slide allowed.\r");
-				b_canBeMantled = false;
+				IsSurfaceMantleable = EMantleable_No;
 			}
 			else if	(upDist > maxVerticalReachDistance || nonUpDist > maxHorizontalReachDistance)
 			{
@@ -4517,7 +4580,7 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 					maxHorizontalReachDistance
 				);
 
-				b_canBeMantled = false;
+				IsSurfaceMantleable = EMantleable_No;
 			}
 
 			// Distances are reasonable
@@ -4525,7 +4588,7 @@ bool idPhysics_Player::ComputeMantlePathForTarget
 	}
 
 	// Return result
-	return b_canBeMantled;
+	return IsSurfaceMantleable;
 }
 
 //----------------------------------------------------------------------
@@ -4616,14 +4679,15 @@ void idPhysics_Player::PerformMantle()
 		// Find mantle end point and make sure mantle is
 		// possible
 		idVec3 mantleEndPoint;
-		if (ComputeMantlePathForTarget
+		EMantleable IsMantleable = ComputeMantlePathForTarget
 		(
 			maxVerticalReachDistance,
 			maxHorizontalReachDistance,
 			eyePos,
 			trace,
 			mantleEndPoint
-		))
+		);
+		if (IsMantleable > EMantleable_No)
 		{
 			// Mantle target passed mantleability tests
 
@@ -4652,9 +4716,11 @@ void idPhysics_Player::PerformMantle()
 					StartMantle(hang_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}
 			}
-			else if (!cv_pm_mantle_fastLowObstaces.GetBool() || eyeHeight - 0.5*GetBounds()[1].z < mantleEndHeight || m_bOnRope || m_bOnClimb)
+			else if (!cv_pm_mantle_fastLowObstaces.GetBool() 
+				|| eyeHeight - 0.5*GetBounds()[1].z < mantleEndHeight 
+				|| IsMantleable == EMantleable_YesCrouched)
 			{
-				// Obstacle bigger than half the body size or fast low obstacle mantling disabled or player was attached to climb surface
+				// Obstacle bigger than half the body size or fast low obstacle mantling disabled or not enough room for non crouched mantle
 				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
 			else
