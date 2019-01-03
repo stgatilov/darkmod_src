@@ -866,8 +866,6 @@ public: // greebo: Made these public
 	
 	idVec3					lastSearchedSpot; // grayman #4220 - most recently searched spot
 
-	idVec3					vectorToIdealOrigin; // grayman #3989
-
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
 	idScriptBool			AI_TALK;
@@ -1990,7 +1988,7 @@ public:
 	// grayman #3857 - bark stuff
 	idStr					m_barkName; // The name of the bark
 	int						m_barkEndTime; // When the bark will end
-	
+
 	bool					DrawWeapon(ECombatType type); // grayman #3331 // grayman #3775
 	void					SheathWeapon();
 
