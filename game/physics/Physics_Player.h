@@ -76,10 +76,11 @@ enum EMantlePhase
 	notMantling_DarkModMantlePhase	= 0,
 	hang_DarkModMantlePhase,	
 	pull_DarkModMantlePhase,
+	pullFast_DarkModMantlePhase, // STiFU #4945: Quicker pull-push medium obstacles
 	shiftHands_DarkModMantlePhase,
 	push_DarkModMantlePhase,
-	fixClipping_DarkModMantlePhase,	
-	pushNonCrouched_DarkModMantlePhase,
+	pushNonCrouched_DarkModMantlePhase, // STiFU #4930: Quicker low obstacles
+	fixClipping_DarkModMantlePhase,		
 	NumMantlePhases,
 };
 

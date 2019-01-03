@@ -3668,6 +3668,9 @@ float idPhysics_Player::GetMantleTimeForPhase(EMantlePhase mantlePhase)
 	case pull_DarkModMantlePhase:
 		return cv_pm_mantle_pull_msecs.GetFloat();
 
+	case pullFast_DarkModMantlePhase:
+		return cv_pm_mantle_pullFast_msecs.GetFloat();
+
 	case shiftHands_DarkModMantlePhase:
 		return cv_pm_mantle_shift_hands_msecs.GetFloat();
 
@@ -3714,7 +3717,7 @@ void idPhysics_Player::MantleMove()
 			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
 	}
-	else if (m_mantlePhase == pull_DarkModMantlePhase)
+	else if (m_mantlePhase == pull_DarkModMantlePhase || m_mantlePhase == pullFast_DarkModMantlePhase)
 	{
 		// Player pulls themself up to shoulder even with the surface
 		totalMove = m_mantlePullEndPos - m_mantlePullStartPos;
@@ -3738,7 +3741,7 @@ void idPhysics_Player::MantleMove()
 	else if (m_mantlePhase == push_DarkModMantlePhase || m_mantlePhase == pushNonCrouched_DarkModMantlePhase)
 	{
 		// Rocking back and forth to get legs up over edge
-		// STiFU: Reduce rockdistance for pushNonCrouched
+		// STiFU #4930: Reduce rockdistance for pushNonCrouched
 		const float rockDistance = (m_mantlePhase == push_DarkModMantlePhase) ? 10.0f : 5.0f;
 
 		// Player pushes themselves upward to get their legs onto the surface
@@ -3824,6 +3827,16 @@ void idPhysics_Player::UpdateMantleTimers()
 			case pull_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Shifting hand position...\r");
 				m_mantlePhase = shiftHands_DarkModMantlePhase;
+				break;
+
+			case pullFast_DarkModMantlePhase: // STiFU #4945: Skip shift hands
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: Quickly pushing self up...\r");
+				m_mantlePhase = pushNonCrouched_DarkModMantlePhase;
+
+				// Go into crouch
+				current.movementFlags |= PMF_DUCKED;
+
+				player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
 			case shiftHands_DarkModMantlePhase:
@@ -3968,6 +3981,10 @@ void idPhysics_Player::StartMantle
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with pull upward\r");
 		player->StartSound("snd_player_mantle_pull", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 	}
+	else if (initialMantlePhase == pullFast_DarkModMantlePhase)
+	{
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with quick silent pull upward\r"); 
+	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
 	{
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with shift hands\r");
@@ -3983,7 +4000,7 @@ void idPhysics_Player::StartMantle
 	}
 	else if (initialMantlePhase == pushNonCrouched_DarkModMantlePhase)
 	{
-		// STiFU: Skip playing sound for this very easy mantle
+		// STiFU #4930: Skip playing sound for this very easy mantle
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push non-crouched upward\r");
 	}
 
@@ -4010,13 +4027,20 @@ void idPhysics_Player::StartMantle
 	// Set end position
 	m_mantlePushEndPos = endPos;
 
-	if (initialMantlePhase == pull_DarkModMantlePhase || initialMantlePhase == hang_DarkModMantlePhase)
+	if (	initialMantlePhase == pull_DarkModMantlePhase 
+		||	initialMantlePhase == hang_DarkModMantlePhase )
 	{
 		// Pull from start position up to about 2/3 of eye height
 		m_mantlePullStartPos = startPos;
 		m_mantlePullEndPos = eyePos;
 
 		m_mantlePullEndPos += GetGravityNormal() * pm_normalheight.GetFloat() / 3.0f;
+	}
+	else if (initialMantlePhase == pullFast_DarkModMantlePhase)
+	{
+		// Pull from start position up to eye height
+		m_mantlePullStartPos = startPos;
+		m_mantlePullEndPos = eyePos;
 	}
 	else
 	{
@@ -4700,11 +4724,41 @@ void idPhysics_Player::PerformMantle()
 				mantleEndPoint.z
 			);
 
-			// Start with log phase dependent on position relative
+			// Start with mantle phase dependent on position relative
 			// to the mantle end point
-			const float eyeHeight = -(eyePos * gravityNormal);
-			const float mantleEndHeight = -(mantleEndPoint * gravityNormal);
-			if (eyeHeight < mantleEndHeight)
+			const float mantleEndHeight = -(mantleEndPoint * gravityNormal);			
+			if (cv_pm_mantle_fastLowObstaces.GetBool()) // STiFU #4930
+			{
+				const float feetHeight = -(GetOrigin() * gravityNormal);
+				if (   IsMantleable == EMantleable_YesUpstraight
+					&& mantleEndHeight < feetHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat())
+				{
+					// Do a fast mantle over low obstacle
+					StartMantle(pushNonCrouched_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+					return;
+				}
+			}
+			if (cv_pm_mantle_fastMediumObstaclesCrouched.GetBool()) // STiFU #4945
+			{
+				// Use floorHeight instead of feetHeight to allow this mantle also when jump-mantling medium sized obstacles
+				float floorHeight = std::numeric_limits<float>::lowest();
+				idVec3 floorPos;
+				if (self->GetFloorPos(pm_normalviewheight.GetFloat(), floorPos))
+					floorHeight = -floorPos * gravityNormal;
+
+				const bool bIsCrouched = current.movementFlags & PMF_DUCKED;
+
+				if (   bIsCrouched
+					&& mantleEndHeight >= floorHeight + pm_crouchviewheight.GetFloat()
+					&& mantleEndHeight < floorHeight + pm_normalviewheight.GetFloat())
+				{
+					// Do a fast pull-push mantle over medium sized obstacle
+					StartMantle(pullFast_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+					return;
+				}
+			}
+			if (-eyePos * gravityNormal < mantleEndHeight 
+				&& !m_bOnClimb) // STiFU: Do the faster push when climbing
 			{
 				// Start with pull if on the ground, hang if not
 				if (groundPlane)
@@ -4716,17 +4770,9 @@ void idPhysics_Player::PerformMantle()
 					StartMantle(hang_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 				}
 			}
-			else if (!cv_pm_mantle_fastLowObstaces.GetBool() // fast low obstacle mantling disabled 
-				|| current.movementFlags & PMF_DUCKED		 // Player is crouched: Do slow mantle
-				|| IsMantleable == EMantleable_YesCrouched	 // Standing up mantle impossible
-				|| -(GetOrigin() * gravityNormal) + cv_pm_mantle_maxLowObstacleHeight.GetFloat() < mantleEndHeight) // Obstacle is not considered "low"
-			{
-				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
-			}
 			else
 			{
-				// Do a fast mantle over low obstacle
-				StartMantle(pushNonCrouched_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
+				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
 		}
 	}

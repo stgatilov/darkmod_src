@@ -165,6 +165,8 @@ extern idCVar cv_pm_mantle_push_msecs;
 extern idCVar cv_pm_mantle_pushNonCrouched_msecs;
 extern idCVar cv_pm_mantle_fastLowObstaces;
 extern idCVar cv_pm_mantle_maxLowObstacleHeight;
+extern idCVar cv_pm_mantle_fastMediumObstaclesCrouched;
+extern idCVar cv_pm_mantle_pullFast_msecs;
 
 extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
