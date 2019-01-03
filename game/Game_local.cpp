@@ -48,6 +48,7 @@
 #include "StimResponse/StimType.h" // grayman #2721
 #include "StdString.h"
 #include "Session_local.h"
+#include "../framework/Common.h"
 
 #include <chrono>
 #include <iostream>
@@ -3304,7 +3305,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			framenum++;
 			// duzenko #4409 - game time modified using game timer
 			previousTime = time;
-			if ( idSessionLocal::com_fixedTic.GetBool() )
+			if ( idSessionLocal::com_fixedTic.GetBool() && com_timescale.GetFloat() == 1 )
 				time += m_GamePlayTimer.LastTickCapped();
 			else 
 				time += (int)(USERCMD_MSEC * g_timeModifier.GetFloat());
@@ -8251,7 +8252,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 // duzenko #4409 - last frame time in msec, used for head bob cycling, physics
 
 int idGameLocal::getMsec() {
-	if ( idSessionLocal::com_fixedTic.GetBool() )
+	if ( idSessionLocal::com_fixedTic.GetBool() && com_timescale.GetFloat() == 1 )
 		return time - previousTime;
 	else
 		return USERCMD_MSEC;

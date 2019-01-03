@@ -2754,7 +2754,7 @@ void idSessionLocal::Frame() {
 			minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
 		}
 		// fixedTic lets us run a forced number of usercmd each frame without timing
-		if (com_fixedTic.GetInteger() && com_tstic.GetBool() ) {
+		if ( com_fixedTic.GetInteger() ) {
 			minTic = latchedTicNumber;
 		}
 
@@ -2767,7 +2767,7 @@ void idSessionLocal::Frame() {
 		while (true) {
 			latchedTicNumber = com_ticNumber;
 			if (latchedTicNumber >= minTic)
-				if (com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 1000000 / com_maxFPS.GetInteger() )
+				if ( com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 1000000 / com_maxFPS.GetInteger() )
 					break;
 			Sys_Sleep( 1 );
 		}
@@ -2855,7 +2855,7 @@ void idSessionLocal::Frame() {
 		}
 		// we may need to dump older commands
 		lastGameTic = latchedTicNumber - fixedTic;
-	} else if ( com_fixedTic.GetInteger() > 0 ) {
+	} else if ( (com_fixedTic.GetInteger() > 0) && com_timescale.GetFloat() == 1 ) {
 		// this may cause commands run in a previous frame to
 		// be run again if we are going at above the real time rate
 		lastGameTic = latchedTicNumber - com_fixedTic.GetInteger();
