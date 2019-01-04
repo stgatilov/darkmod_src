@@ -3948,13 +3948,17 @@ void idPhysics_Player::StartMantle
 	// when the jump key is released outside a mantle phase
 	m_mantleStartPossible = false;
 
+	// Check if at high velocity to play grunt sound based on that
+	const bool bIsHighVelocity = 
+		current.velocity.LengthSqr() >
+		pow(cv_pm_mantle_pushNonCrouched_playgrunt_speedthreshold.GetFloat(), 2);
+
 	// If mantling from a jump, cancel any velocity so that it does
 	// not continue after the mantle is completed.
 	current.velocity.Zero();
 
 	// Calculate mantle distance
 	idVec3 mantleDistanceVec = endPos - startPos;
-//	float mantleDistance = mantleDistanceVec.Length();
 
 	idPlayer* player = static_cast<idPlayer*>(self); // grayman #3010
 
@@ -3972,6 +3976,7 @@ void idPhysics_Player::StartMantle
 			if (info.invMass != 0.0f) 
 			{
 				m_p_mantledEntity->ActivatePhysics(self);
+				// STiFU: Why access current.velocity here when we zero'd it before?
 				m_p_mantledEntity->ApplyImpulse( self, m_mantledEntityID, endPos, current.velocity / ( info.invMass * 2.0f ) );
 			}
 		}
@@ -4000,8 +4005,10 @@ void idPhysics_Player::StartMantle
 	}
 	else if (initialMantlePhase == pushNonCrouched_DarkModMantlePhase)
 	{
-		// STiFU #4930: Skip playing sound for this very easy mantle
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push non-crouched upward\r");
+  		if (bIsHighVelocity)
+			// Only play sound at high velocity
+			player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 	}
 
 
@@ -4727,11 +4734,22 @@ void idPhysics_Player::PerformMantle()
 			// Start with mantle phase dependent on position relative
 			// to the mantle end point
 			const float mantleEndHeight = -(mantleEndPoint * gravityNormal);			
+			float floorHeight = std::numeric_limits<float>::lowest();
+			idVec3 floorPos;
+			if (self->GetFloorPos(pm_normalviewheight.GetFloat(), floorPos))
+				floorHeight = -floorPos * gravityNormal;
+
+			const bool bFallingFast = 
+				(current.velocity * gravityNormal) > 
+				cv_pm_mantle_fallingFast_speedthreshold.GetFloat();
+
 			if (cv_pm_mantle_fastLowObstaces.GetBool()) // STiFU #4930
 			{
 				const float feetHeight = -(GetOrigin() * gravityNormal);
-				if (   IsMantleable == EMantleable_YesUpstraight
-					&& mantleEndHeight < feetHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat())
+				if (   IsMantleable == EMantleable_YesUpstraight	// Upstraight mantle possible
+					&& !bFallingFast
+					&& (mantleEndHeight < floorHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat() // Only allow the full obstacle height when near the floor
+					|| mantleEndHeight < feetHeight + cv_pm_mantle_maxLowObstacleHeight.GetFloat()*0.66f)) // Reduce allowed obstacle height mid-air
 				{
 					// Do a fast mantle over low obstacle
 					StartMantle(pushNonCrouched_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
@@ -4741,15 +4759,11 @@ void idPhysics_Player::PerformMantle()
 			if (cv_pm_mantle_fastMediumObstaclesCrouched.GetBool()) // STiFU #4945
 			{
 				// Use floorHeight instead of feetHeight to allow this mantle also when jump-mantling medium sized obstacles
-				float floorHeight = std::numeric_limits<float>::lowest();
-				idVec3 floorPos;
-				if (self->GetFloorPos(pm_normalviewheight.GetFloat(), floorPos))
-					floorHeight = -floorPos * gravityNormal;
-
 				const bool bIsCrouched = current.movementFlags & PMF_DUCKED;
 
 				if (   bIsCrouched
-					&& mantleEndHeight >= floorHeight + pm_crouchviewheight.GetFloat()
+					&& !bFallingFast
+					&& mantleEndHeight >= floorHeight + pm_crouchviewheight.GetFloat() // When smaller than crouchviewheight, the regular push mantle should be performed
 					&& mantleEndHeight < floorHeight + pm_normalviewheight.GetFloat())
 				{
 					// Do a fast pull-push mantle over medium sized obstacle
@@ -4757,8 +4771,7 @@ void idPhysics_Player::PerformMantle()
 					return;
 				}
 			}
-			if (-eyePos * gravityNormal < mantleEndHeight 
-				&& !m_bOnClimb) // STiFU: Do the faster push when climbing
+			if (-eyePos * gravityNormal < mantleEndHeight)
 			{
 				// Start with pull if on the ground, hang if not
 				if (groundPlane)
