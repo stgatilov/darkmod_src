@@ -194,10 +194,17 @@ idCVar cv_pm_mantle_minflatness(	"pm_mantle_minflatness",		"0.707",			CVAR_GAME 
 idCVar cv_pm_mantle_jump_hold_trigger(	"pm_mantle_jump_hold_trigger",		"100",			CVAR_GAME | CVAR_INTEGER , "Default length of time for holding down jump key to start mantling." );
 idCVar cv_pm_mantle_min_velocity_for_damage(	"pm_mantle_min_velocity_for_damage",		"15",			CVAR_GAME | CVAR_FLOAT , "Default damage scale for mantling at high velocities." );
 idCVar cv_pm_mantle_damage_per_velocity_over_minimum(	"pm_mantle_damage_per_velocity_over_minimum",		"0.5",			CVAR_GAME | CVAR_FLOAT , "The meters per second of relative velocity beyond which the player takes damage when trying to mantle a target." );
-idCVar cv_pm_mantle_hang_msecs(	"pm_mantle_hang_msecs",		"750",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time that player hangs if mantle begins with the player's feet of the ground." );
-idCVar cv_pm_mantle_pull_msecs(	"pm_mantle_pull_msecs",		"750",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to pull themselves up to shoulder level with the mantle surface." );
-idCVar cv_pm_mantle_shift_hands_msecs(	"pm_mantle_shift_hands_msecs",		"500",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to shift their hands from pulling to pushing." );
-idCVar cv_pm_mantle_push_msecs(	"pm_mantle_push_msecs",		"800",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to push themselves up onto the mantle surface." );
+idCVar cv_pm_mantle_hang_msecs(	"pm_mantle_hang_msecs",		"750",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time that player hangs if mantle begins with the player's feet of the ground.", 0, 10000);
+idCVar cv_pm_mantle_pull_msecs(	"pm_mantle_pull_msecs",		"750",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to pull themselves up to shoulder level with the mantle surface.", 0, 10000);
+idCVar cv_pm_mantle_shift_hands_msecs(	"pm_mantle_shift_hands_msecs",		"500",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to shift their hands from pulling to pushing.", 0, 10000);
+idCVar cv_pm_mantle_push_msecs(	"pm_mantle_push_msecs",		"800",			CVAR_GAME | CVAR_INTEGER , "Milliseconds of time it takes for the player to push themselves up onto the mantle surface.", 0, 10000);
+idCVar cv_pm_mantle_pushNonCrouched_msecs("pm_mantle_pushNonCrouched_msecs","550", CVAR_GAME | CVAR_INTEGER, "Milliseconds of time it takes for the player to push themselves up onto the mantle surface without crouching.",0,100000);
+idCVar cv_pm_mantle_pushNonCrouched_playgrunt_speedthreshold("pm_mantle_pushNonCrouched_playgrunt_speedthreshold", "120.0", CVAR_GAME | CVAR_FLOAT, "If the player speed exceeds this threshold, a grund sound is played when performing the mantle.", 0.0f, 100000.0f);
+idCVar cv_pm_mantle_fastLowObstaces("pm_mantle_fastLowObstacles", "1", CVAR_GAME | CVAR_BOOL, "If true, a faster mantle will be performed for low obstacles.", 0, 1);
+idCVar cv_pm_mantle_maxLowObstacleHeight("pm_mantle_maxLowObstacleHeight", "36.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The maximum height of obstacles over which a fast mantle can be performed", 0.0f, 60.0f);
+idCVar cv_pm_mantle_fastMediumObstaclesCrouched("pm_mantle_fastMediumObstaclesCrouched", "1", CVAR_GAME | CVAR_BOOL, "If true, a faster mantle will be performed for medium-high obstacles in crouched state", 0, 1);
+idCVar cv_pm_mantle_pullFast_msecs("pm_mantle_pullFast_msecs", "450.0", CVAR_GAME | CVAR_INTEGER |CVAR_ARCHIVE, "The duration it takes for a fast pull.", 0, 10000);
+idCVar cv_pm_mantle_fallingFast_speedthreshold("pm_mantle_fallingFast_speedthreshold", "360.0", CVAR_GAME | CVAR_FLOAT, "If falling faster than this threshold, no fast mantles will be performed.", 0.0f, 100000.0f);
 
 /**
 * Dark Mod Jumping 

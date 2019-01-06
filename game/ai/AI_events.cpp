@@ -3457,7 +3457,7 @@ void idAI::Event_HitByDoor(idEntity* door)
 
 void idAI::Event_GetVectorToIdealOrigin()
 {
-	idThread::ReturnVector(vectorToIdealOrigin);
+	idThread::ReturnVector(GetMemory().startSitLocation - GetPhysics()->GetOrigin()); // grayman #4936
 }
 
 

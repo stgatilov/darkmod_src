@@ -479,8 +479,6 @@ idAI::idAI()
 	lastTimePlayerSeen = -1;
 	lastTimePlayerLost = -1;
 
-	vectorToIdealOrigin.Zero(); // grayman #3989
-
 	fleeingEvent = false; // grayman #3317
 	emitFleeBarks = false;
 
@@ -665,75 +663,75 @@ idAI::~idAI()
 idAI::Save
 =====================
 */
-void idAI::Save( idSaveGame *savefile ) const {
+void idAI::Save(idSaveGame *savefile) const {
 	int i;
 
-	savefile->WriteInt( travelFlags );
+	savefile->WriteInt(travelFlags);
 	savefile->WriteInt(lastAreaReevaluationTime);
 	savefile->WriteInt(maxAreaReevaluationInterval);
 	savefile->WriteInt(doorRetryTime);
 
-	move.Save( savefile );
-	savedMove.Save( savefile );
+	move.Save(savefile);
+	savedMove.Save(savefile);
 
 	// greebo: save the movestack
 	savefile->WriteInt(static_cast<int>(moveStack.size()));
-	for (std::list<idMoveState>::const_iterator m = moveStack.begin(); m != moveStack.end(); ++m)
+	for ( std::list<idMoveState>::const_iterator m = moveStack.begin(); m != moveStack.end(); ++m )
 	{
 		m->Save(savefile);
 	}
 
-	savefile->WriteFloat( kickForce );
-	savefile->WriteBool( ignore_obstacles );
-	savefile->WriteFloat( blockedRadius );
-	savefile->WriteInt( blockedMoveTime );
-	savefile->WriteInt( blockedAttackTime );
+	savefile->WriteFloat(kickForce);
+	savefile->WriteBool(ignore_obstacles);
+	savefile->WriteFloat(blockedRadius);
+	savefile->WriteInt(blockedMoveTime);
+	savefile->WriteInt(blockedAttackTime);
 
-	savefile->WriteFloat( ideal_yaw );
-	savefile->WriteFloat( current_yaw );
-	savefile->WriteFloat( turnRate );
-	savefile->WriteFloat( turnVel );
-	savefile->WriteFloat( anim_turn_yaw );
-	savefile->WriteFloat( anim_turn_amount );
-	savefile->WriteFloat( anim_turn_angles );
+	savefile->WriteFloat(ideal_yaw);
+	savefile->WriteFloat(current_yaw);
+	savefile->WriteFloat(turnRate);
+	savefile->WriteFloat(turnVel);
+	savefile->WriteFloat(anim_turn_yaw);
+	savefile->WriteFloat(anim_turn_amount);
+	savefile->WriteFloat(anim_turn_angles);
 	savefile->WriteVec3(sitting_turn_pivot);
 
 	savefile->WriteFloat(reachedpos_bbox_expansion);
 	savefile->WriteFloat(aas_reachability_z_tolerance);
 
-	savefile->WriteStaticObject( physicsObj );
+	savefile->WriteStaticObject(physicsObj);
 
-	savefile->WriteFloat( fly_speed );
-	savefile->WriteFloat( fly_bob_strength );
-	savefile->WriteFloat( fly_bob_vert );
-	savefile->WriteFloat( fly_bob_horz );
-	savefile->WriteInt( fly_offset );
-	savefile->WriteFloat( fly_seek_scale );
-	savefile->WriteFloat( fly_roll_scale );
-	savefile->WriteFloat( fly_roll_max );
-	savefile->WriteFloat( fly_roll );
-	savefile->WriteFloat( fly_pitch_scale );
-	savefile->WriteFloat( fly_pitch_max );
-	savefile->WriteFloat( fly_pitch );
+	savefile->WriteFloat(fly_speed);
+	savefile->WriteFloat(fly_bob_strength);
+	savefile->WriteFloat(fly_bob_vert);
+	savefile->WriteFloat(fly_bob_horz);
+	savefile->WriteInt(fly_offset);
+	savefile->WriteFloat(fly_seek_scale);
+	savefile->WriteFloat(fly_roll_scale);
+	savefile->WriteFloat(fly_roll_max);
+	savefile->WriteFloat(fly_roll);
+	savefile->WriteFloat(fly_pitch_scale);
+	savefile->WriteFloat(fly_pitch_max);
+	savefile->WriteFloat(fly_pitch);
 
-	savefile->WriteBool( allowMove );
-	savefile->WriteBool( allowHiddenMovement );
-	savefile->WriteBool( disableGravity );
+	savefile->WriteBool(allowMove);
+	savefile->WriteBool(allowHiddenMovement);
+	savefile->WriteBool(disableGravity);
 
-	savefile->WriteBool( lastHitCheckResult );
-	savefile->WriteInt( lastHitCheckTime );
-	savefile->WriteInt( lastAttackTime );
-	savefile->WriteFloat( fire_range );
-	savefile->WriteFloat( projectile_height_to_distance_ratio );
+	savefile->WriteBool(lastHitCheckResult);
+	savefile->WriteInt(lastHitCheckTime);
+	savefile->WriteInt(lastAttackTime);
+	savefile->WriteFloat(fire_range);
+	savefile->WriteFloat(projectile_height_to_distance_ratio);
 
-	savefile->WriteInt( missileLaunchOffset.Num() );
-	for( i = 0; i < missileLaunchOffset.Num(); i++ ) {
-		savefile->WriteVec3( missileLaunchOffset[ i ] );
+	savefile->WriteInt(missileLaunchOffset.Num());
+	for ( i = 0; i < missileLaunchOffset.Num(); i++ ) {
+		savefile->WriteVec3(missileLaunchOffset[i]);
 	}
 
 	savefile->WriteInt(projectileInfo.Num());
 
-	for (i = 0; i < projectileInfo.Num(); ++i)
+	for ( i = 0; i < projectileInfo.Num(); ++i )
 	{
 		const ProjectileInfo& info = projectileInfo[i];
 
@@ -757,12 +755,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(activeProjectile.info.gravity);
 	activeProjectile.projEnt.Save(savefile);
 
-	savefile->WriteString( attack );
+	savefile->WriteString(attack);
 
 	// grayman #2603 - delayed stim list
 
 	savefile->WriteInt(delayedStims.Num());
-	for (i = 0 ; i < delayedStims.Num() ; i++)
+	for ( i = 0; i < delayedStims.Num(); i++ )
 	{
 		DelayedStim ds = delayedStims[i];
 
@@ -773,7 +771,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	// grayman #4002 - entity alert list
 
 	savefile->WriteInt(alertQueue.Num());
-	for (i = 0 ; i < alertQueue.Num() ; i++)
+	for ( i = 0; i < alertQueue.Num(); i++ )
 	{
 		EntityAlert ea = alertQueue[i];
 
@@ -783,54 +781,54 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteBool(ea.ignore);
 	}
 
-	savefile->WriteInt( talk_state );
-	talkTarget.Save( savefile );
+	savefile->WriteInt(talk_state);
+	talkTarget.Save(savefile);
 
-	savefile->WriteInt( num_cinematics );
-	savefile->WriteInt( current_cinematic );
+	savefile->WriteInt(num_cinematics);
+	savefile->WriteInt(current_cinematic);
 
-	savefile->WriteBool( allowJointMod );
-	focusEntity.Save( savefile );
-	savefile->WriteVec3( currentFocusPos );
-	savefile->WriteInt( focusTime );
-	savefile->WriteInt( alignHeadTime );
-	savefile->WriteInt( forceAlignHeadTime );
-	savefile->WriteAngles( eyeAng );
-	savefile->WriteAngles( lookAng );
-	savefile->WriteAngles( destLookAng );
-	savefile->WriteAngles( lookMin );
-	savefile->WriteAngles( lookMax );
+	savefile->WriteBool(allowJointMod);
+	focusEntity.Save(savefile);
+	savefile->WriteVec3(currentFocusPos);
+	savefile->WriteInt(focusTime);
+	savefile->WriteInt(alignHeadTime);
+	savefile->WriteInt(forceAlignHeadTime);
+	savefile->WriteAngles(eyeAng);
+	savefile->WriteAngles(lookAng);
+	savefile->WriteAngles(destLookAng);
+	savefile->WriteAngles(lookMin);
+	savefile->WriteAngles(lookMax);
 
-	savefile->WriteInt( lookJoints.Num() );
-	for( i = 0; i < lookJoints.Num(); i++ ) {
-		savefile->WriteJoint( lookJoints[ i ] );
-		savefile->WriteAngles( lookJointAngles[ i ] );
+	savefile->WriteInt(lookJoints.Num());
+	for ( i = 0; i < lookJoints.Num(); i++ ) {
+		savefile->WriteJoint(lookJoints[i]);
+		savefile->WriteAngles(lookJointAngles[i]);
 	}
-	savefile->WriteInt( lookJointsCombat.Num() );
-	for( i = 0; i < lookJointsCombat.Num(); i++ ) {
-		savefile->WriteJoint( lookJointsCombat[ i ] );
-		savefile->WriteAngles( lookJointAnglesCombat[ i ] );
+	savefile->WriteInt(lookJointsCombat.Num());
+	for ( i = 0; i < lookJointsCombat.Num(); i++ ) {
+		savefile->WriteJoint(lookJointsCombat[i]);
+		savefile->WriteAngles(lookJointAnglesCombat[i]);
 	}
 
-	savefile->WriteFloat( shrivel_rate );
-	savefile->WriteInt( shrivel_start );
+	savefile->WriteFloat(shrivel_rate);
+	savefile->WriteInt(shrivel_start);
 
-	savefile->WriteInt( particles.Num() );
-	for  ( i = 0; i < particles.Num(); i++ ) {
-		savefile->WriteParticle( particles[i].particle );
-		savefile->WriteInt( particles[i].time );
-		savefile->WriteJoint( particles[i].joint );
+	savefile->WriteInt(particles.Num());
+	for ( i = 0; i < particles.Num(); i++ ) {
+		savefile->WriteParticle(particles[i].particle);
+		savefile->WriteInt(particles[i].time);
+		savefile->WriteJoint(particles[i].joint);
 	}
-	savefile->WriteBool( restartParticles );
-	savefile->WriteBool( useBoneAxis );
+	savefile->WriteBool(restartParticles);
+	savefile->WriteBool(useBoneAxis);
 
-	enemy.Save( savefile );
-	savefile->WriteVec3( lastVisibleEnemyPos );
-	savefile->WriteVec3( lastVisibleEnemyEyeOffset );
-	savefile->WriteVec3( lastVisibleReachableEnemyPos );
-	savefile->WriteVec3( lastReachableEnemyPos );
-	savefile->WriteBool( enemyReachable );
-	savefile->WriteBool( wakeOnFlashlight );
+	enemy.Save(savefile);
+	savefile->WriteVec3(lastVisibleEnemyPos);
+	savefile->WriteVec3(lastVisibleEnemyEyeOffset);
+	savefile->WriteVec3(lastVisibleReachableEnemyPos);
+	savefile->WriteVec3(lastReachableEnemyPos);
+	savefile->WriteBool(enemyReachable);
+	savefile->WriteBool(wakeOnFlashlight);
 	savefile->WriteInt(lastUpdateEnemyPositionTime);
 
 	savefile->WriteInt(lastTimePlayerSeen);		// grayman #2887
@@ -841,14 +839,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(emitFleeBarks);			// grayman #3474
 	fleeingFromPerson.Save(savefile);			// grayman #3847
 
-	savefile->WriteAngles( eyeMin );
-	savefile->WriteAngles( eyeMax );
+	savefile->WriteAngles(eyeMin);
+	savefile->WriteAngles(eyeMax);
 
-	savefile->WriteFloat( eyeVerticalOffset );
-	savefile->WriteFloat( eyeHorizontalOffset );
-	savefile->WriteFloat( eyeFocusRate );
-	savefile->WriteFloat( headFocusRate );
-	savefile->WriteInt( focusAlignTime );
+	savefile->WriteFloat(eyeVerticalOffset);
+	savefile->WriteFloat(eyeHorizontalOffset);
+	savefile->WriteFloat(eyeFocusRate);
+	savefile->WriteFloat(headFocusRate);
+	savefile->WriteInt(focusAlignTime);
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
 	savefile->WriteObject(m_bloodMarker);		// grayman #3075
 	m_lastKilled.Save(savefile);				// grayman #2816
@@ -861,56 +859,56 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_allowAudioAlerts);	// grayman #3424
 	savefile->WriteInt(m_searchID);				// grayman #3857
 	savefile->WriteFloat(m_pathWaitTaskEndtime); // grayman #4046
-	savefile->WriteJoint( flashJointWorld );
-	savefile->WriteInt( muzzleFlashEnd );
+	savefile->WriteJoint(flashJointWorld);
+	savefile->WriteInt(muzzleFlashEnd);
 
-	savefile->WriteJoint( focusJoint );
-	savefile->WriteJoint( orientationJoint );
-	savefile->WriteJoint( flyTiltJoint );
+	savefile->WriteJoint(focusJoint);
+	savefile->WriteJoint(orientationJoint);
+	savefile->WriteJoint(flyTiltJoint);
 
 	// TDM Alerts:
-	savefile->WriteInt( m_Acuities.Num() );
-	for( i = 0; i < m_Acuities.Num(); i++ )
+	savefile->WriteInt(m_Acuities.Num());
+	for ( i = 0; i < m_Acuities.Num(); i++ )
 	{
-		savefile->WriteFloat( m_Acuities[ i ] );
+		savefile->WriteFloat(m_Acuities[i]);
 	}
 	savefile->WriteFloat(m_oldVisualAcuity);
 	savefile->WriteFloat(m_sleepFloorZ); // grayman #2416
 	savefile->WriteInt(m_getupEndTime);	 // grayman #2416
-	savefile->WriteFloat( m_AudThreshold );
-	savefile->WriteVec3( m_SoundDir );
-	savefile->WriteVec3( m_LastSight );
-	savefile->WriteFloat( m_AlertLevelThisFrame );
-	savefile->WriteBool( m_lookAtAlertSpot ); // grayman #3520
-	savefile->WriteVec3( m_lookAtPos ); // grayman #3520
-	savefile->WriteInt( m_prevAlertIndex );
-	savefile->WriteFloat( m_maxAlertLevel);
-	savefile->WriteInt( m_maxAlertIndex);
+	savefile->WriteFloat(m_AudThreshold);
+	savefile->WriteVec3(m_SoundDir);
+	savefile->WriteVec3(m_LastSight);
+	savefile->WriteFloat(m_AlertLevelThisFrame);
+	savefile->WriteBool(m_lookAtAlertSpot); // grayman #3520
+	savefile->WriteVec3(m_lookAtPos); // grayman #3520
+	savefile->WriteInt(m_prevAlertIndex);
+	savefile->WriteFloat(m_maxAlertLevel);
+	savefile->WriteInt(m_maxAlertIndex);
 	savefile->WriteFloat(m_recentHighestAlertLevel);
-	savefile->WriteBool( m_bIgnoreAlerts );
+	savefile->WriteBool(m_bIgnoreAlerts);
 
-	m_AlertedByActor.Save( savefile );
+	m_AlertedByActor.Save(savefile);
 
-	for (i = 0; i < ai::EAlertTypeCount; i++)
+	for ( i = 0; i < ai::EAlertTypeCount; i++ )
 	{
 		savefile->WriteInt(alertTypeWeight[i]);
 	}
 
-	m_TactAlertEnt.Save( savefile );
-	m_AlertGraceActor.Save( savefile );
-	savefile->WriteInt( m_AlertGraceStart );
-	savefile->WriteInt( m_AlertGraceTime );
-	savefile->WriteFloat( m_AlertGraceThresh );
-	savefile->WriteInt( m_AlertGraceCount );
-	savefile->WriteInt( m_AlertGraceCountLimit );
+	m_TactAlertEnt.Save(savefile);
+	m_AlertGraceActor.Save(savefile);
+	savefile->WriteInt(m_AlertGraceStart);
+	savefile->WriteInt(m_AlertGraceTime);
+	savefile->WriteFloat(m_AlertGraceThresh);
+	savefile->WriteInt(m_AlertGraceCount);
+	savefile->WriteInt(m_AlertGraceCountLimit);
 
 	savefile->WriteInt(m_Messages.Num());
-	for ( i = 0 ; i < m_Messages.Num() ; i++ )
+	for ( i = 0; i < m_Messages.Num(); i++ )
 	{
 		m_Messages[i]->Save(savefile);
 	}
 
-	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
+	savefile->WriteBool(GetPhysics() == static_cast<const idPhysics *>(&physicsObj));
 
 	/* grayman #3857
 	// grayman #3424
@@ -927,9 +925,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_HeadBodyID);
 	savefile->WriteJoint(m_HeadJointID);
 
-	savefile->WriteBool( m_bHeadCMSwapped );
-//	if( m_bHeadCMSwapped && m_OrigHeadCM )
-//		m_OrigHeadCM->Save( savefile );
+	savefile->WriteBool(m_bHeadCMSwapped);
+	//	if( m_bHeadCMSwapped && m_OrigHeadCM )
+	//		m_OrigHeadCM->Save( savefile );
 
 	savefile->WriteInt(m_AirTics);
 	savefile->WriteInt(m_AirTicksMax);
@@ -952,9 +950,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_koState);				// grayman #2604
 	savefile->WriteInt(m_earlyThinkCounter);	// grayman #2654
 	savefile->WriteBool(m_bCanExtricate);		// grayman #2603
-	savefile->WriteBool( m_ignorePlayer );		// grayman #3063
+	savefile->WriteBool(m_ignorePlayer);		// grayman #3063
 	//savefile->WriteBounds(m_searchLimits);		// grayman #2422 // grayman #3857
-	
+
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
 	savefile->WriteFloat(thresh_3);
@@ -998,7 +996,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_headTurnMaxDuration);
 
 	savefile->WriteInt(static_cast<int>(backboneStates.size()));
-	for (BackboneStateMap::const_iterator i = backboneStates.begin(); i != backboneStates.end(); ++i)
+	for ( BackboneStateMap::const_iterator i = backboneStates.begin(); i != backboneStates.end(); ++i )
 	{
 		savefile->WriteInt(i->first);
 		savefile->WriteString(i->second);
@@ -1013,7 +1011,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString(m_barkName); // grayman #3857
 	savefile->WriteInt(m_barkEndTime); // grayman #3857
-	
+
 	savefile->WriteBool(m_bPushOffPlayer);
 
 	savefile->WriteBool(m_bCanBeFlatFooted);
@@ -1070,8 +1068,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	}
 	
 	savefile->WriteVec3( lastSearchedSpot ); // grayman #4220
-
-	savefile->WriteVec3(vectorToIdealOrigin); // grayman #3989
 
 	mind->Save(savefile);
 
@@ -1570,8 +1566,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	}
 	
 	savefile->ReadVec3(lastSearchedSpot); // grayman #4220
-
-	savefile->ReadVec3(vectorToIdealOrigin); // grayman #3989
 
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
@@ -2312,6 +2306,7 @@ void idAI::DormantBegin( void ) {
 		// remove ourselves from the enemy's enemylist
 		enemyNode.Remove();
 	}
+
 	idActor::DormantBegin();
 }
 
@@ -13342,16 +13337,6 @@ void idAI::SitDown()
 	}
 	SetMoveType(MOVETYPE_SIT_DOWN);
 	SetWaitState("sit_down");
-
-	// grayman #3989 - If startSitLocation is set,
-	// then save the vector from my origin to startSitLocation.
-	// This is useful when sitting down and lying down, to make sure I sit
-	// or lay down in the most accurate place.
-	ai::Memory& memory = GetMemory();
-	if ( memory.startSitLocation.x < idMath::INFINITY )
-	{
-		vectorToIdealOrigin = memory.startSitLocation - GetPhysics()->GetOrigin();
-	}
 }
 
 void idAI::GetUp()
@@ -13408,7 +13393,7 @@ void idAI::FallAsleep()
 
 	SetMoveType(MOVETYPE_FALL_ASLEEP);
 	SetWaitState("fall_asleep");
-
+	/*
 	// grayman #3989 - If startSitLocation is set,
 	// then save the vector from my origin to startSitLocation.
 	// This is useful when sitting down and lying down, to make sure I sit
@@ -13418,7 +13403,7 @@ void idAI::FallAsleep()
 	{
 		vectorToIdealOrigin = memory.startSitLocation - GetPhysics()->GetOrigin();
 	}
-
+	*/
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
 	// floor yet when mappers start them floating above the floor.
