@@ -11515,27 +11515,88 @@ void idPlayer::SetJumpHinderance( const char *source, float mCap, float aCap )
 	}
 }
 
-void idPlayer::PlayFootStepSound()
+void idPlayer::PlayFootStepSound(idVec3* pPointOfContact /*= NULL*/, const bool skipTimeCheck /*= false */)
 {
-	if ( !GetPhysics()->HasGroundContacts() ) {
-		return;
+	// Check wether there is actual contact with the ground
+	const idMaterial* contactMaterial = NULL;
+	if (pPointOfContact)
+	{
+		// STiFU #4947: Use passed position
+		trace_t groundtrace;
+		const idVec3 traceEnd = *pPointOfContact + GetPhysics()->GetGravityNormal() * MANTLE_TEST_INCREMENT; // STiFU: Use same check distance as mantling code
+		const idClipModel* cm = GetPhysics()->GetClipModel();
+		gameLocal.clip.Translation(groundtrace, *pPointOfContact, traceEnd, cm, cm->GetAxis(), GetPhysics()->GetClipMask(), this);
+		if (groundtrace.fraction >= 1.0)
+			return;
+		contactMaterial = groundtrace.c.material;
+	} else
+	{
+		// Use current player position
+		if (!GetPhysics()->HasGroundContacts()) {
+			return;
+		}
+		contactMaterial = GetPhysics()->GetContact(0).material;
 	}
 
 	// This implements a certain dead time before the next footstep is allowed to be played
-	if (gameLocal.time <= lastFootstepPlaytime + cv_pm_min_stepsound_interval.GetInteger())
+	if (!skipTimeCheck && gameLocal.time <= lastFootstepPlaytime + cv_pm_min_stepsound_interval.GetInteger())
 	{
 		return;
 	}
 
-	idStr localSound;
+	UpdateMoveVolumes();
 	
+	// Construct sound string based on contact material or waterlevel
+	idStr localSound("");
+	const bool skipWaterLevelCheck = pPointOfContact != NULL; // STiFU #4947: waterlevel is invalid at point of contact
+	waterLevel_t waterLevel = skipWaterLevelCheck ? WATERLEVEL_NONE : physicsObj.GetWaterLevel();	
+	switch (waterLevel)
+	{
+	case WATERLEVEL_NONE:
+		{
+			if (contactMaterial != NULL)
+			{
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Player %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact(0).entityNum]->name.c_str(), contactMaterial->GetName());
+				g_Global.GetSurfName(contactMaterial, localSound);
+				if (hasLanded)
+				{
+					localSound = "snd_jump_" + localSound;
+				}
+				else
+				{
+					localSound = "snd_footstep_" + localSound;
+				}
+
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str());
+			}
+		}
+		break;
+	case WATERLEVEL_FEET:
+		if (hasLanded)
+		{
+			localSound = "snd_jump_puddle";
+		}
+		else
+		{
+			localSound = "snd_footstep_puddle";
+		}
+		break;
+	case WATERLEVEL_WAIST:
+		localSound = "snd_footstep_wading";
+		break;
+	case WATERLEVEL_HEAD:
+		// greebo: Added this to disable the walking sound when completely underwater
+		// this should be replaced by snd_
+		localSound = "snd_footstep_swim";
+		break;
+	default:
+		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Footstep sound: Invalid waterlevel: %d", (int)waterLevel);
+		return;
+	}
+
 	// DarkMod: make the string to identify the movement speed (crouch_run, creep, etc)
 	// Currently only players have movement flags set up this way, not AI.  We could change that later.
 	idStr moveType("");
-
-	UpdateMoveVolumes();
-
-	// angua: check whether the player has just landed from jumping or a fall
 	if (!hasLanded)
 	{
 		if (AI_CROUCH)
@@ -11544,7 +11605,8 @@ void idPlayer::PlayFootStepSound()
 		}
 
 		// greebo: Make sure that "_run" is only applied when actually running
-		if (AI_RUN && physicsObj.HasRunningVelocity())
+		// STiFU #4947: Removed AI_RUN to allow for running quick-mantle footstep sound, see pushNonCrouched_DarkModMantlePhase
+		if (/*AI_RUN &&*/ physicsObj.HasRunningVelocity())
 		{
 			moveType += "_run";
 		}
@@ -11557,59 +11619,9 @@ void idPlayer::PlayFootStepSound()
 			moveType += "_walk";
 		}
 	}
-
-	// start footstep sound based on material type
-	const idMaterial* material = GetPhysics()->GetContact( 0 ).material;
-
-	bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < JUMP_DETECTION_TIME; // SteveL #3716
-	float crouchVolAdjust = 0.0f; // grayman #3485 - volume adjustment for landing when crouched
-	if (hasLanded && AI_CROUCH && !isJumping)
-	{
-		crouchVolAdjust = FALL_CROUCH_VOL_ADJUST;
-	}
-
-	if ( material != NULL ) 
-	{
-		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Player %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
-		g_Global.GetSurfName(material, localSound);
-		if (hasLanded)
-		{
-			localSound = "snd_jump_" + localSound;
-		}
-		else
-		{
-			localSound = "snd_footstep_" + localSound;
-		}
-
-		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Found surface type sound: %s\r", localSound.c_str() ); 
-	}
-
-	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
-	// If player is walking in liquid, replace the bottom surface sound with water sounds
-	if (waterLevel == WATERLEVEL_FEET )
-	{
-		if (hasLanded)
-		{
-			localSound = "snd_jump_puddle";
-		}
-		else
-		{
-			localSound = "snd_footstep_puddle";
-		}
-	}
-	else if (waterLevel == WATERLEVEL_WAIST)
-	{
-		localSound = "snd_footstep_wading";
-	}
-	// greebo: Added this to disable the walking sound when completely underwater
-	// this should be replaced by snd_
-	else if (waterLevel == WATERLEVEL_HEAD)
-	{
-		localSound = "snd_footstep_swim";
-	}
-
+		
+	// Construct final sound string
 	idStr sound;
-
 	if (cv_tdm_footfalls_movetype_specific.GetBool())
 	{
 		sound = spawnArgs.GetString( localSound + moveType );
@@ -11627,11 +11639,6 @@ void idPlayer::PlayFootStepSound()
 		sound = spawnArgs.GetString( localSound );
 	}
 
-	if ( sound.IsEmpty() && waterLevel != WATERLEVEL_HEAD ) 
-	{
-		localSound = "snd_footstep";
-	}
-
 	// if a sound was not found for that specific material, use default
 	if( sound.IsEmpty() && waterLevel != WATERLEVEL_HEAD )
 	{
@@ -11647,6 +11654,14 @@ void idPlayer::PlayFootStepSound()
 
 	if ( !sound.IsEmpty() ) 
 	{
+		// grayman #3485 - volume adjustment for landing when crouched
+		bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < JUMP_DETECTION_TIME; // SteveL #3716
+		float crouchVolAdjust = 0.0f;
+		if (hasLanded && AI_CROUCH && !isJumping)
+		{
+			crouchVolAdjust = FALL_CROUCH_VOL_ADJUST;
+		}
+
 		// apply the movement type modifier to the volume
 		const idSoundShader* sndShader = declManager->FindSound( sound );
 		SetSoundVolume( sndShader->GetParms()->volume + GetMovementVolMod() + crouchVolAdjust); // grayman #3485

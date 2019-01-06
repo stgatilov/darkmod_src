@@ -84,6 +84,8 @@ enum EMantlePhase
 	NumMantlePhases,
 };
 
+extern const float MANTLE_TEST_INCREMENT;
+
 class CForcePush;
 typedef std::shared_ptr<CForcePush> CForcePushPtr;
 
