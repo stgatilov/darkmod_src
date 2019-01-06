@@ -4400,10 +4400,9 @@ idPhysics_Player::EMantleable idPhysics_Player::DetermineIfMantleTargetHasMantle
 		if (b_mantlePossible)
 		{
 			trace_t ceilTrace;
-			gameLocal.clip.Translation(ceilTrace, testPosition,
-				testPosition - (gravityNormal * MANTLE_TEST_INCREMENT),
+			gameLocal.clip.Translation(ceilTrace, testPosition,	testPosition,
 				clipModel, clipModel->GetAxis(), clipMask, self);
-			if (ceilTrace.fraction > 0.0f)
+			if (ceilTrace.fraction >= 1.0f)
 			{
 				Mantleable = EMantleable_YesUpstraight;
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Surface can be mantled upstraight\r");
@@ -4711,7 +4710,7 @@ void idPhysics_Player::PerformMantle()
 		// possible
 		idVec3 mantleEndPoint;
 		EMantleable IsMantleable = ComputeMantlePathForTarget
-		(
+    		(
 			maxVerticalReachDistance,
 			maxHorizontalReachDistance,
 			eyePos,
