@@ -2895,6 +2895,28 @@ void Cmd_ShowLoot_f( const idCmdArgs& args )
 	gameLocal.Printf( "Gold: %d, Jewels: %d, Goods: %d\n", gold, jewels, goods );
 }
 
+void Cmd_GiveLoot_f(const idCmdArgs& args)
+{
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (ent == NULL) continue;
+
+		int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
+
+		if (value <= 0) continue; // no loot item
+
+		player->AddToInventory(ent);
+	}
+}
+
 void Cmd_ShowFrobs_f( const idCmdArgs& args )
 {
 	if ( gameLocal.GameState() != GAMESTATE_ACTIVE )
@@ -3941,6 +3963,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_show_frobs",		Cmd_ShowFrobs_f, CMD_FL_GAME | CMD_FL_CHEAT, "Highlight all frobables in the map." );
 	cmdSystem->AddCommand( "tdm_show_keys",			Cmd_ShowKeys_f,	CMD_FL_GAME | CMD_FL_CHEAT,	"Highlight all keys in the map." );
 	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f, CMD_FL_GAME | CMD_FL_CHEAT, "Highlight all loot items in the map." );
+	cmdSystem->AddCommand( "tdm_give_loot",			Cmd_GiveLoot_f, CMD_FL_GAME | CMD_FL_CHEAT, "Adds all loot items in the map to in inventory of the player.");
 
 	cmdSystem->AddCommand( "tdm_activatelogclass",		Cmd_ActivateLog_f,			CMD_FL_GAME,	"Activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
 	cmdSystem->AddCommand( "tdm_deactivatelogclass",	Cmd_DeactivateLog_f,		CMD_FL_GAME,	"De-activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
