@@ -29,6 +29,7 @@
 #include "../StimResponse/StimResponseCollection.h"
 #include "../Missions/MissionManager.h"
 
+#include "Objective.h"
 #include "CampaignStatistics.h"
 #include "ObjectiveLocation.h"
 #include "ObjectiveCondition.h"
@@ -2407,6 +2408,7 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 
 void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui)
 {
+   
 	if (cmd == "mainmenu_heartbeat")
 	{
 		// The main menu is visible, check if we should display the "Objectives" option
@@ -2430,7 +2432,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		// Let the GUI know which map to load
 		gui->SetStateString("mapStartCmd", va("exec 'map %s'", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str()));
 
-		if (!gui->GetStateBool("ingame"))
+		if (!gui->GetStateBool("ingame") && gameLocal.m_MissionResult != MISSION_COMPLETE )
 		{
 			// We're coming from the start screen
 			// Clear the objectives data and load them from the map
