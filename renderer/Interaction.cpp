@@ -941,16 +941,22 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		// when the ambient surface isn't in view, and we can get shared vertex
 		// and shadow data from the source surface
 		sint->ambientTris = tri;
+		
+		// nbohr1more: #4379 lightgem culling
+		if ( !HasShadows() && !shader->IsLightgemSurf() && tr.viewDef->IsLightGem() ) { 
+			continue; 
+		}
 
 		// "invisible ink" lights and shaders
 		if ( shader->Spectrum() != lightShader->Spectrum() ) {
 			continue;
 		}
+		
+		// nbohr1more: #3662 fix noFog keyword
+		if ( !shader->ReceivesFog() && lightShader->IsFogLight() ) {
+           continue;
+        }
 
-		// nbohr1more: #4379 lightgem culling
-		if ( !HasShadows() && !shader->IsLightgemSurf() && tr.viewDef->IsLightGem() ) { 
-			continue; 
-		}
 
 		// generate a lighted surface and add it
 		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 && shader->SurfaceCastsShadow() ) {
