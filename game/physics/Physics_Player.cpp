@@ -4734,9 +4734,12 @@ void idPhysics_Player::PerformMantle()
 			// to the mantle end point
 			const float mantleEndHeight = -(mantleEndPoint * gravityNormal);			
 			float floorHeight = std::numeric_limits<float>::lowest();
-			idVec3 floorPos;
-			if (self->GetFloorPos(pm_normalviewheight.GetFloat(), floorPos))
-				floorHeight = -floorPos * gravityNormal;
+			{
+				idVec3 floorPos;
+				if (self->GetFloorPos(pm_normalviewheight.GetFloat(), floorPos))
+					floorHeight = -floorPos * gravityNormal;
+			}
+			const float eyeHeight = -eyePos * gravityNormal;
 
 			const bool bFallingFast = 
 				(current.velocity * gravityNormal) > 
@@ -4762,7 +4765,7 @@ void idPhysics_Player::PerformMantle()
 
 				if (   bIsCrouched
 					&& !bFallingFast
-					&& mantleEndHeight >= floorHeight + pm_crouchviewheight.GetFloat() // When smaller than crouchviewheight, the regular push mantle should be performed
+					&& eyeHeight < mantleEndHeight // When endheight lower than eyes, use the regular push mantle
 					&& mantleEndHeight < floorHeight + pm_normalviewheight.GetFloat())
 				{
 					// Do a fast pull-push mantle over medium sized obstacle
@@ -4770,7 +4773,7 @@ void idPhysics_Player::PerformMantle()
 					return;
 				}
 			}
-			if (-eyePos * gravityNormal < mantleEndHeight)
+			if (eyeHeight < mantleEndHeight)
 			{
 				// Start with pull if on the ground, hang if not
 				if (groundPlane)

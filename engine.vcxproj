@@ -107,6 +107,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithMemoryLog.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -116,6 +117,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithMemoryLog.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -124,6 +126,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_DoomDLL.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -132,6 +135,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_DoomDLL.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -139,6 +143,7 @@
     <Import Project="sys\msvc\properties\Common_x86.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_DoomDLL.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -146,6 +151,7 @@
     <Import Project="sys\msvc\properties\Common_x64.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_DoomDLL.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -153,6 +159,7 @@
     <Import Project="sys\msvc\properties\Common_x86.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_DoomDLL.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -160,6 +167,7 @@
     <Import Project="sys\msvc\properties\Common_x64.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_DoomDLL.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
+    <Import Project="sys\msvc\properties\DisableXPDeprecatedWarning.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
