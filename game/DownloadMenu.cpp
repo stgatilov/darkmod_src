@@ -153,6 +153,9 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 					UpdateNextScreenshotData(gui, nextScreenNum);
 
+					const char* sNext = gui->GetStateString("av_mission_next_screenshot");
+					DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Download Finished, Fading: %s.", sNext);
+
 					// Ready to fade
 					gui->HandleNamedEvent("onStartFadeToNextScreenshot");
 				}
@@ -377,8 +380,10 @@ void CDownloadMenu::PerformScreenshotStep(idUserInterface* gui, int step)
 		{
 			// Load data necessary to fade into the GUI
 			UpdateNextScreenshotData(gui, nextScreenNum);
-			
-			// There is a local file, this means we already downloaded that screenshot
+
+			const char* sNext = gui->GetStateString("av_mission_next_screenshot");
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("PerformScreenshotStep: %s.", sNext);
+
 			gui->HandleNamedEvent("onStartFadeToNextScreenshot");
 		}
 	}
