@@ -391,7 +391,8 @@ public:
 
 						// returns true if the material will generate interactions with fog/blend lights
 						// All non-translucent surfaces receive fog unless they are explicitly noFog
-	bool				ReceivesFog( void ) const { return ( IsDrawn() && !noFog && coverage != MC_TRANSLUCENT ); }
+						//nbohr1more: #3662 fix the noFog material flag. translucent materials should be fogged
+	bool				ReceivesFog( void ) const { return ( IsDrawn() && !noFog /* && coverage != MC_TRANSLUCENT */ ); }
 
 						// returns true if the material will generate interactions with normal lights
 						// Many special effect surfaces don't have any bump/diffuse/specular
