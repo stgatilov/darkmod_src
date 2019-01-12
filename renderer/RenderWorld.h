@@ -137,6 +137,8 @@ typedef struct renderEntity_s {
 													// for the gigantic outdoor meshes in the monorail map, so
 													// all the lights in the moving monorail don't touch the meshes
     bool                    isLightgem;             //nbohr1more: #4379 lightgem culling
+	
+	bool					noFog;                  //nbohr1more: #3662 noFog for entities
 
 	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
 													// this automatically implies noShadow

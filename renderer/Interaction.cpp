@@ -953,7 +953,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		}
 		
 		// nbohr1more: #3662 fix noFog keyword
-		if ( !shader->ReceivesFog() && lightShader->IsFogLight() ) {
+		if ( (!shader->ReceivesFog() || entityDef->parms.noFog) && lightShader->IsFogLight() ) {
            continue;
         }
 
