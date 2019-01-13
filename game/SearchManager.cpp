@@ -63,6 +63,8 @@ void CSearchManager::Clear()
 
 Search* CSearchManager::StartNewSearch(idAI* ai)
 {
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Starting new search: AI=0x%p\r", ai);
+
 	ai::Memory& memory = ai->GetMemory();
 
 	idVec3 searchPoint = memory.alertPos;
@@ -789,6 +791,8 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 
 bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 {
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI joining search: AI=0x%p SearchID=%d\r", ai, searchID);
+
 	Search *search = GetSearch(searchID);
 	if (search == NULL)
 	{
@@ -1492,6 +1496,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 {
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI Leaving search: AI=0x%p SearchId=%d\r", ai, searchID);
+
 	Search *search = GetSearch(searchID);
 	if (search == NULL)
 	{
