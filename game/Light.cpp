@@ -181,6 +181,7 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	args->GetBool( "parallel", "0", renderLight->parallel );
 
 	args->GetBool( "noFogBoundary", "0", renderLight->noFogBoundary ); // Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
+	args->GetInt( "spectrum", "0", renderLight->spectrum );
 
 	args->GetString( "texture", "lights/squarelight1", &texture );
 	// allow this to be NULL

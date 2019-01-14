@@ -824,6 +824,9 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	
 	//nbohr1more: #3662 noFog entity def
 	renderEntity->noFog = args->GetBool( "noFog" );
+	
+	//nbohr1more: #4956 spectrum entity def
+	renderEntity->spectrum = args->GetInt( "spectrum", "0" );
 
 	// check noshadows flag
 	renderEntity->noShadow = args->GetBool( "noshadows" );

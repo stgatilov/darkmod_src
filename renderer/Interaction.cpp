@@ -952,6 +952,11 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			continue;
 		}
 		
+		//nbohr1more: #4956 spectrum for entities
+		  if ( entityDef->parms.spectrum != lightDef->parms.spectrum ) {
+		     continue;
+		}
+		
 		// nbohr1more: #3662 fix noFog keyword
 		if ( (!shader->ReceivesFog() || entityDef->parms.noFog) && lightShader->IsFogLight() ) {
            continue;
