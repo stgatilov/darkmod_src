@@ -237,8 +237,6 @@ void idSessionLocal::Clear() {
 	insideUpdateScreen = false;
 	insideExecuteMapChange = false;
 
-	loadingSaveGame = false;
-	savegameFile = NULL;
 	savegameVersion = 0;
 
 	currentMapName.Clear();
@@ -1432,7 +1430,7 @@ create a game at all.
 Exits with mapSpawned = true
 ===============
 */
-void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
+bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	int		i;
 	bool	reloadingSameMap;
 
@@ -1563,13 +1561,15 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	}
 
 	// load and spawn all other entities ( from a savegame possibly )
-	if ( loadingSaveGame && savegameFile ) {
+	if ( savegameFile ) {
 		if ( game->InitFromSaveGame( fullMapName + ".map", rw, sw, savegameFile ) == false ) {
-			// If the loadgame failed, restart the map with the player persistent data
-			loadingSaveGame = false;
-			fileSystem->CloseFile( savegameFile );
-			savegameFile = NULL;
-
+			
+			// Loadgame failed
+			// STiFU #4531: We used to do an initialized load of the map at this point. 
+			// This is now controlled from the outside, however.
+			return false;
+			
+			/*		
 			game->SetServerInfo( mapSpawnData.serverInfo );
 			game->InitFromNewMap( fullMapName + ".map", rw, sw, 
 #ifdef MULTIPLAYER
@@ -1577,7 +1577,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 #else
 				false, false,
 #endif
-				Sys_Milliseconds() );
+				Sys_Milliseconds() );*/
 		}
 	} else {
 		game->SetServerInfo( mapSpawnData.serverInfo );
@@ -1594,7 +1594,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 #ifdef MULTIPLAYER
 		!idAsyncNetwork::IsActive() && 
 #endif
-		!loadingSaveGame) {
+		!savegameFile) {
 		// spawn players
 		for ( i = 0; i < numClients; i++ ) {
 			game->SpawnPlayer( i );
@@ -1614,7 +1614,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 #ifdef MULTIPLAYER
 		!idAsyncNetwork::IsActive() && 
 #endif
-		!loadingSaveGame) {
+		!savegameFile) {
 		// run a few frames to allow everything to settle
 		for ( i = 0; i < 10; i++ ) {
 			game->RunFrame( mapSpawnData.mapSpawnUsercmd );
@@ -1681,6 +1681,8 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	// we are valid for game draws now
 	mapSpawned = true;
 	Sys_ClearEvents();
+
+	return true;
 }
 
 /*
@@ -2076,19 +2078,112 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 #endif
 }
 
+
+bool idSessionLocal::LoadGame(const char *saveName, eSaveConflictHandling conflictHandling)
+{
+	if (strlen(saveName) == 0)
+		saveName = lastSaveName;
+	else
+		lastSaveName = saveName;
+
+	bool error = false;
+
+	const bool checkVersion = conflictHandling == eSaveConflictHandling_QueryUser;
+	if (checkVersion)
+	{
+		int savegameRevision = 0;
+		const SavegameValidity val = IsSavegameValid(saveName, &savegameRevision);
+		if (val == savegame_invalid)
+			error = true;
+		else if (val == savegame_versionMismatch)
+		{
+			// Version conflict. Ask what to do.
+
+			// If not yet active, open the main menu		
+			if (!guiActive)
+			{
+				console->Close();
+				StartMenu();
+			}
+
+			GuiMessage msg;
+			msg.type = GuiMessage::MSG_CUSTOM;
+			msg.title = common->Translate("#str_10180"); // "Savegame Version Mismatch"
+
+			msg.positiveCmd = "close_msg_box;LoadGameInitialized;";
+			msg.positiveLabel = common->Translate("#str_10183"); // "Mapstart";
+
+			msg.negativeCmd = "close_msg_box;";
+			msg.negativeLabel = common->Translate("#str_07203"); // "Cancel";
+
+			if (cv_force_savegame_load.GetBool())
+			{
+				msg.message = va(
+					common->Translate("#str_10182"), // "You are running TDM revision %d, but this savegame has been created with TDM revision %d. You can cancel loading (highly recommended!), try to force load (crash to desktop likely) or load to mapstart (issues likely to occur)."
+					RevisionTracker::Instance().GetHighestRevision(), savegameRevision
+				);
+
+				// Add third button for force-load
+				msg.okCmd = "close_msg_box;LoadGameForced;";
+				msg.okLabel = common->Translate("#str_10184"); // "Force-Load";
+			}
+			else
+			{
+				msg.message = va(
+					common->Translate("#str_10181"), // "You are running TDM revision %d, but this savegame has been created with TDM revision %d. You can cancel loading (highly recommended!) or load to mapstart (issues likely to occur)."
+					RevisionTracker::Instance().GetHighestRevision(), savegameRevision
+				);
+			}
+
+			gameLocal.AddMainMenuMessage(msg);
+
+			return false;
+		}
+	}
+
+	if (!error)
+	{
+		// Savegame is valid, so load it
+		const bool doInitializedLoad = conflictHandling == eSaveConflictHandling_LoadMapStart;
+		if (!DoLoadGame(saveName, doInitializedLoad))
+		{
+			error = true;
+		}
+	}
+
+	if (error)
+	{
+		// If not yet active, open the main menu		
+		if (!guiActive)
+		{
+			console->Close();
+			StartMenu();
+		}
+
+		// Show error message
+		GuiMessage msg;
+		msg.type = GuiMessage::MSG_OK;
+		msg.title = common->Translate("#str_02000"); //  "Error";
+		msg.message = common->Translate("#str_10185"); // "Failed to load savegame.";
+		msg.okCmd = "close_msg_box;";
+
+		gameLocal.AddMainMenuMessage(msg);
+		return false;
+	}
+
+	return true;
+}
+
 /*
 ===============
-idSessionLocal::LoadGame
+idSessionLocal::DoLoadGame
 ===============
 */
-bool idSessionLocal::LoadGame( const char *saveName ) { 
+bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoad) {
 #ifdef	ID_DEDICATED
 	common->Printf( "Dedicated servers cannot load games.\n" );
 	return false;
 #else
-	int i;
-	idStr in, loadFile, saveMap, gamename;
-
 #ifdef MULTIPLAYER
 	if ( IsMultiplayer() ) {
 		common->Printf( "Can't load during net play.\n" );
@@ -2098,95 +2193,148 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 	//Hide the dialog box if it is up.
 	StopBox();
 
+	idFile* savegameFile = NULL;
+	idStr saveMap;
+	if (!ParseSavegamePreamble(saveName, &savegameFile, &saveMap))
+	{
+		fileSystem->CloseFile(savegameFile);
+		savegameFile = NULL;
+
+		return false;
+	}
+
+	if (initializedLoad)
+	{
+		fileSystem->CloseFile(savegameFile);
+		savegameFile = NULL;
+		common->DPrintf("Doing initialized load instead of loading a v%d savegame\n", savegameVersion);
+	}
+	else
+	{
+		common->DPrintf("loading a v%d savegame\n", savegameVersion);
+	}
+
+	// Start loading map
+	mapSpawnData.serverInfo.Clear();
+
+	mapSpawnData.serverInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
+	mapSpawnData.serverInfo.Set( "si_gameType", "singleplayer" );
+
+	mapSpawnData.serverInfo.Set( "si_map", saveMap );
+
+	mapSpawnData.syncedCVars.Clear();
+	mapSpawnData.syncedCVars = *cvarSystem->MoveCVarsToDict( CVAR_NETWORKSYNC );
+
+	mapSpawnData.mapSpawnUsercmd[0] = usercmdGen->TicCmd( latchedTicNumber );
+	// make sure no buttons are pressed
+	mapSpawnData.mapSpawnUsercmd[0].buttons = 0;
+
+	bool success = ExecuteMapChange(savegameFile);
+	if (success)
+		SetGUI( NULL, NULL );
+
+	if (savegameFile) {
+		fileSystem->CloseFile( savegameFile );
+		savegameFile = NULL;
+	}
+
+	return success;
+#endif
+}
+
+// STiFU #4531: TDM savegame version check
+idSessionLocal::SavegameValidity idSessionLocal::IsSavegameValid(const char *saveName, int* savegameRevision)
+{
+	if (!saveName)
+		return savegame_invalid;
+
+	SavegameValidity retVal = savegame_valid;
+	idStr saveMap;
+	idFile* savegameFile = NULL;
+	if (!ParseSavegamePreamble(saveName, &savegameFile, &saveMap))
+	{
+		retVal = savegame_invalid;
+		if (savegameRevision)
+			*savegameRevision = -1;
+	}
+
+	if (retVal == savegame_valid)
+	{
+		idRestoreGame savegame(savegameFile);
+		savegame.ReadHeader();
+		if (savegameRevision)
+			*savegameRevision = savegame.GetCodeRevision();
+
+		RevisionTracker& RevTracker = RevisionTracker::Instance();
+
+		// TODO: possibly delete old id savegame version
+		if (savegameVersion != SAVEGAME_VERSION &&
+			!(savegameVersion == 16 && SAVEGAME_VERSION == 17)
+			|| savegame.GetCodeRevision() != RevTracker.GetHighestRevision()
+			|| RevTracker.GetHighestRevision() != RevTracker.GetLowestRevision())
+		{
+			common->Warning("Savegame Version mismatch!");
+			retVal = savegame_versionMismatch;
+		}
+	}
+
+	if (savegameFile)
+	{
+		fileSystem->CloseFile(savegameFile);
+		savegameFile = NULL;
+	}
+
+	return retVal;
+}
+
+bool idSessionLocal::ParseSavegamePreamble(const char * saveName, idFile** savegameFile, idStr* pSaveMap)
+{
+	if (!saveName || !pSaveMap || !savegameFile)
+		return false;
+
+	idStr in, loadFile, gamename;
+
 	loadFile = saveName;
-	ScrubSaveGameFileName( loadFile );
-	loadFile.SetFileExtension( ".save" );
+	ScrubSaveGameFileName(loadFile);
+	loadFile.SetFileExtension(".save");
 
 	in = "savegames/";
 	in += loadFile;
 
 	// Open savegame file
 	// only allow loads from the game directory because we don't want a base game to load
-	idStr game = cvarSystem->GetCVarString( "fs_currentfm" );
-    savegameFile = fileSystem->OpenFileRead( in, game.Length() ? game : NULL );
+	idStr game = cvarSystem->GetCVarString("fs_currentfm");
+	*savegameFile = fileSystem->OpenFileRead(in, game.Length() ? game : NULL);
 
-	if ( savegameFile == NULL ) {
-		common->Warning( "Couldn't open savegame file %s", in.c_str() );
+	if (*savegameFile == NULL) {
+		common->Warning("Couldn't open savegame file %s", in.c_str());
 		return false;
 	}
-
-	loadingSaveGame = true;
 
 	// Read in save game header
 	// Game Name / Version / Map Name / Persistant Player Info
 
 	// game
-	savegameFile->ReadString( gamename );
+	(*savegameFile)->ReadString(gamename);
 
 	// if this isn't a savegame for the correct game, abort loadgame
-	if ( gamename != GAME_NAME ) {
-		common->Warning( "Attempted to load an invalid savegame: %s", in.c_str() );
-
-		loadingSaveGame = false;
-		fileSystem->CloseFile( savegameFile );
-		savegameFile = NULL;
+	if (gamename != GAME_NAME) {
+		common->Warning("Attempted to load an invalid savegame: %s", in.c_str());
 		return false;
 	}
 
 	// version
-	savegameFile->ReadInt( savegameVersion );
+	(*savegameFile)->ReadInt(savegameVersion);
 
 	// map
-	savegameFile->ReadString( saveMap );
+	(*savegameFile)->ReadString(*pSaveMap);
 
 	// persistent player info
-	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle( savegameFile );
+	for (int i = 0; i < MAX_ASYNC_CLIENTS; i++) {
+		mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle(*savegameFile);
 	}
 
-	// check the version, if it doesn't match, cancel the loadgame,
-	// but still load the map with the persistant playerInfo from the header
-	// so that the player doesn't lose too much progress.
-	if ( savegameVersion != SAVEGAME_VERSION &&
-		 !( savegameVersion == 16 && SAVEGAME_VERSION == 17 ) ) {	// handle savegame v16 in v17
-		common->Warning( "Savegame Version mismatch: aborting loadgame and starting level with persistent data" );
-		loadingSaveGame = false;
-		fileSystem->CloseFile( savegameFile );
-		savegameFile = NULL;
-	}
-
-	common->DPrintf( "loading a v%d savegame\n", savegameVersion );
-
-	if ( saveMap.Length() > 0 ) {
-
-		// Start loading map
-		mapSpawnData.serverInfo.Clear();
-
-		mapSpawnData.serverInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
-		mapSpawnData.serverInfo.Set( "si_gameType", "singleplayer" );
-
-		mapSpawnData.serverInfo.Set( "si_map", saveMap );
-
-		mapSpawnData.syncedCVars.Clear();
-		mapSpawnData.syncedCVars = *cvarSystem->MoveCVarsToDict( CVAR_NETWORKSYNC );
-
-		mapSpawnData.mapSpawnUsercmd[0] = usercmdGen->TicCmd( latchedTicNumber );
-		// make sure no buttons are pressed
-		mapSpawnData.mapSpawnUsercmd[0].buttons = 0;
-
-		ExecuteMapChange();
-
-		SetGUI( NULL, NULL );
-	}
-
-	if ( loadingSaveGame ) {
-		fileSystem->CloseFile( savegameFile );
-		loadingSaveGame = false;
-		savegameFile = NULL;
-	}
-
-	return true;
-#endif
+	return pSaveMap->Length() > 0;
 }
 
 /*
@@ -3294,5 +3442,6 @@ idSessionLocal::GetSaveGameVersion
 ===============
 */
 int idSessionLocal::GetSaveGameVersion( void ) {
+	// TODO STiFU: Possibly refactor to use proper TDM revision instead of old id savegameVersion
 	return savegameVersion;
 }

@@ -144,7 +144,27 @@ public:
 	void				ScrubSaveGameFileName( idStr &saveFileName ) const;
 	idStr				GetAutoSaveName( const char *mapName ) const;
 
-	bool				LoadGame(const char *saveName);
+	enum eSaveConflictHandling
+	{
+		eSaveConflictHandling_QueryUser,
+		eSaveConflictHandling_Ignore,
+		eSaveConflictHandling_LoadMapStart,
+	};
+
+	bool				LoadGame(const char *saveName, eSaveConflictHandling conflictHandling = eSaveConflictHandling_QueryUser);
+
+private: // Helper methods for LoadGame
+	bool				ParseSavegamePreamble(const char * saveName, idFile** savegameFile, idStr* saveMap);
+	enum SavegameValidity
+	{
+		savegame_valid,
+		savegame_invalid,
+		savegame_versionMismatch
+	};
+	SavegameValidity	IsSavegameValid(const char *saveName, int* savegameRevision = NULL);
+	bool				DoLoadGame(const char *saveName, const bool initialializedLoad);
+
+public:
 	bool				SaveGame(const char *saveName, bool autosave = false, bool skipCheck = false);
 
 	//=====================================
@@ -204,8 +224,7 @@ public:
 
 	bool				insideUpdateScreen;	// true while inside ::UpdateScreen()
 
-	bool				loadingSaveGame;	// currently loading map from a SaveGame
-	idFile *			savegameFile;		// this is the savegame file to load from
+	idStr				lastSaveName;
 	int					savegameVersion;
 
 	idFile *			cmdDemoFile;		// if non-zero, we are reading commands from a file
@@ -314,7 +333,7 @@ public:
 //	int					GetBytesNeededForMapLoad( const char *mapName ); // #3763 debug - no longer used
 	void				SetBytesNeededForMapLoad( const char *mapName, int bytesNeeded );
 
-	void				ExecuteMapChange( bool noFadeWipe = false );
+	bool				ExecuteMapChange( idFile* savegameFile = NULL, bool noFadeWipe = false );
 	void				UnloadMap();
 
 	//------------------
@@ -346,6 +365,8 @@ private:
 	bool				BoxDialogSanityCheck( void );
 	idStr				authMsg;
 };
+
+
 
 extern idSessionLocal	sessLocal;
 

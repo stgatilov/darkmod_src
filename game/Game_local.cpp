@@ -2025,11 +2025,12 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadHeader();
 
-	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
-	{
-		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n", savegame.GetCodeRevision());
-		return false;
-	}
+	// STiFU #4531: All version checking has already been done in idSessionLocal::IsSavegameValid()
+// 	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
+// 	{
+// 		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n", savegame.GetCodeRevision());
+// 		return false;
+// 	}
 
 	// Read and initialize  cache from file
 	savegame.InitializeCache();
@@ -3905,6 +3906,29 @@ void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 
 		ui->SetStateString("MsgBoxLeftButtonText", common->Translate("#str_02501"));	// Yes
 		ui->SetStateString("MsgBoxRightButtonText", common->Translate("#str_02502"));	// No
+		break;
+	case GuiMessage::MSG_CUSTOM:
+		// Left button
+		if (!msg.positiveLabel.IsEmpty())
+		{
+			ui->SetStateBool("MsgBoxLeftButtonVisible", true);
+			ui->SetStateString("MsgBoxLeftButtonText", msg.positiveLabel);
+		} else
+			ui->SetStateBool("MsgBoxLeftButtonVisible", false);
+		// Middle button
+		if (!msg.okLabel.IsEmpty())
+		{
+			ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
+			ui->SetStateString("MsgBoxMiddleButtonText", msg.okLabel);
+		} else
+			ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
+		// Right button
+		if (!msg.negativeLabel.IsEmpty())
+		{
+			ui->SetStateBool("MsgBoxRightButtonVisible", true);
+			ui->SetStateString("MsgBoxRightButtonText", msg.negativeLabel);
+		} else
+			ui->SetStateBool("MsgBoxRightButtonVisible", false);
 		break;
 	};
 

@@ -266,6 +266,7 @@ struct GuiMessage
 		MSG_OK,
 		MSG_YES_NO,
 		MSG_OK_CANCEL,
+		MSG_CUSTOM, // STiFU: Define message box with custom button labels. Ever button with non-empty label string will be added
 	};
 
 	Type type;
@@ -273,6 +274,11 @@ struct GuiMessage
 	idStr positiveCmd;	// which "cmd" to execute on OK / Yes
 	idStr negativeCmd;	// which "cmd" to execute on Cancel / No
 	idStr okCmd;		// which "cmd" to execute on OK (only for MSG_OK)
+
+	 // STiFU: Labels of buttons. Only needed for MSG_CUSTOM
+	idStr positiveLabel;	// Normally: OK / Yes
+	idStr negativeLabel;	// Normally: Cancel / No
+	idStr okLabel;			// Normally: OK
 };
 
 typedef struct {

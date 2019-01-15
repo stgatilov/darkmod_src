@@ -333,7 +333,17 @@ bool idSessionLocal::HandleSaveGameMenuCommand( idCmdArgs &args, int &icmd ) {
 		}
 		return true;
 	}
-
+	
+	if (!idStr::Icmp(cmd, "loadgameforced")) {
+		sessLocal.LoadGame("", idSessionLocal::eSaveConflictHandling_Ignore);
+		return true;
+	}
+	
+	if (!idStr::Icmp(cmd, "loadgameinitialized")) {
+		sessLocal.LoadGame("", idSessionLocal::eSaveConflictHandling_LoadMapStart);
+		return true;
+	}
+	
 	if ( !idStr::Icmp( cmd, "saveGame" ) ) {
 		const char *saveGameName = guiActive->State().GetString("saveGameName");
 		if ( saveGameName && saveGameName[0] ) {
@@ -380,7 +390,7 @@ bool idSessionLocal::HandleSaveGameMenuCommand( idCmdArgs &args, int &icmd ) {
 			guiActive->StateChanged( com_frameTime );
 		}
 		return true;
-	}
+	} 
 
 	if ( !idStr::Icmp( cmd, "deleteGame" ) ) {
 		int choice = guiActive->State().GetInt( "loadgame_sel_0" );
@@ -394,7 +404,7 @@ bool idSessionLocal::HandleSaveGameMenuCommand( idCmdArgs &args, int &icmd ) {
 		}
 		return true;
 	}
-
+	
 	if ( !idStr::Icmp( cmd, "updateSaveGameInfo" ) ) {
 		int choice = guiActive->State().GetInt( "loadgame_sel_0" );
 		if ( choice >= 0 && choice < loadGameList.Num() ) {
