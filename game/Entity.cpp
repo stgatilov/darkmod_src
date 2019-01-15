@@ -827,6 +827,10 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	
 	//nbohr1more: #4956 spectrum entity def
 	renderEntity->spectrum = args->GetInt( "spectrum", "0" );
+	
+	renderEntity->lightspectrum = args->GetInt( "lightspectrum" );
+	
+	renderEntity->nospectrum = args->GetInt( "nospectrum" );
 
 	// check noshadows flag
 	renderEntity->noShadow = args->GetBool( "noshadows" );
@@ -835,6 +839,10 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	renderEntity->noSelfShadow = args->GetBool( "noselfshadows" );
 	
 	renderEntity->shadowMapOffset = args->GetFloat( "shadowmapOffset" );
+	
+	if ( (args->GetInt( "spectrum" )  < 1 ) && ( args->GetInt( "lightspectrum" ) > 0 ) ) {
+	renderEntity->spectrum = renderEntity->lightspectrum;
+	}
 
 	// init any guis, including entity-specific states
 	for( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) {

@@ -141,6 +141,10 @@ typedef struct renderEntity_s {
 	bool					noFog;                  //nbohr1more: #3662 noFog for entities
 	
 	int						spectrum;				//nbohr1more: #4956 spectrum entity arg
+	
+	int						lightspectrum;
+	
+	int						nospectrum;
 
 	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
 													// this automatically implies noShadow
@@ -200,6 +204,7 @@ typedef struct renderLight_s {
 	bool					noFogBoundary;		// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 	
 	int						spectrum;			//nbohr1more: #4956 spectrum entity arg
+
 
 } renderLight_t;
 

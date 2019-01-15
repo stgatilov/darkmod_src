@@ -863,6 +863,7 @@ The results of this are cached and valid until the light or entity change.
 void idInteraction::CreateInteraction( const idRenderModel *model ) {
 	const idMaterial *	lightShader = lightDef->lightShader;
 	const idMaterial*	shader;
+	bool				spectrumbypass;
 	bool				interactionGenerated;
 	idBounds			bounds;
 
@@ -952,10 +953,21 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			continue;
 		}
 		
+		spectrumbypass = false;
+		
+		if ( (entityDef->parms.nospectrum != lightDef->parms.spectrum) && entityDef->parms.nospectrum > 0 ) {
+            spectrumbypass = true;
+		}
+		
+		if ( (entityDef->parms.lightspectrum != lightDef->parms.spectrum) && lightShader->IsAmbientLight() ) {
+		    spectrumbypass = true;
+		}			
+		
 		//nbohr1more: #4956 spectrum for entities
-		  if ( entityDef->parms.spectrum != lightDef->parms.spectrum ) {
+		if ( ( entityDef->parms.spectrum != lightDef->parms.spectrum ) && !spectrumbypass ) {
 		     continue;
 		}
+		
 		
 		// nbohr1more: #3662 fix noFog keyword
 		if ( (!shader->ReceivesFog() || entityDef->parms.noFog) && lightShader->IsFogLight() ) {
