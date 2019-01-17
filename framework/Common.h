@@ -164,9 +164,17 @@ public:
 								// Activates or deactivates a tool.
 	virtual void				ActivateTool( bool active ) = 0;
 
+	enum eConfigExport
+	{
+		eConfigExport_cvars,
+		eConfigExport_keybinds,
+		eConfigExport_all,
+	};
+
 								// Writes the user's configuration to a file
 								// greebo: Added the basePath option to allow for more control
-    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath" ) = 0;
+								// STiFU #4797: Added the enum to allow exporting cvars and keybinds separately
+    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath", const eConfigExport configexport = eConfigExport_all) = 0;
 
 								// Writes cvars with the given flags to a file.
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd ) = 0;

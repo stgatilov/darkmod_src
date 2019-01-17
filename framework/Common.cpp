@@ -148,7 +148,7 @@ public:
 	virtual void				StartupVariable( const char *match, bool once );
 	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
 	virtual void				ActivateTool( bool active );
-    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath" );
+    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath", const eConfigExport configexport = eConfigExport_all);
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd );
 	virtual void				BeginRedirect( char *buffer, int buffersize, void (*flush)( const char * ) );
 	virtual void				EndRedirect( void );
@@ -1257,7 +1257,11 @@ void idCommonLocal::WriteFlaggedCVarsToFile( const char *filename, int flags, co
 idCommonLocal::WriteConfigToFile
 ==================
 */
-void idCommonLocal::WriteConfigToFile( const char *filename, const char* basePath ) {
+void idCommonLocal::WriteConfigToFile( 
+	const char*						filename, 
+	const char*						basePath, 
+	const eConfigExport	configexport)
+{
 	idFile *f;
 #ifdef ID_WRITE_VERSION
 	ID_TIME_T t;
@@ -1285,8 +1289,11 @@ void idCommonLocal::WriteConfigToFile( const char *filename, const char* basePat
 	f->Printf( "// %s\n", out.c_str() );
 #endif
 
-	idKeyInput::WriteBindings( f );
-	cvarSystem->WriteFlaggedVariables( CVAR_ARCHIVE, "seta", f );
+	if (configexport == eConfigExport_all || configexport == eConfigExport_keybinds)
+		idKeyInput::WriteBindings( f );
+	if (configexport == eConfigExport_all || configexport == eConfigExport_cvars)
+		cvarSystem->WriteFlaggedVariables( CVAR_ARCHIVE, "seta", f );
+
 	fileSystem->CloseFile( f );
 }
 
@@ -1314,7 +1321,9 @@ void idCommonLocal::WriteConfiguration( void ) {
 	bool developer = com_developer.GetBool();
 	com_developer.SetBool( false );
 
-	WriteConfigToFile( CONFIG_FILE, "fs_savepath" );
+	// STiFU #4797: Separate config files for cvars and keybinds
+	WriteConfigToFile( CONFIG_FILE,	  "fs_savepath", idCommon::eConfigExport_cvars    );
+	WriteConfigToFile( KEYBINDS_FILE, "fs_savepath", idCommon::eConfigExport_keybinds );
 
 	// restore the developer cvar
 	com_developer.SetBool( developer );
@@ -2948,9 +2957,17 @@ void idCommonLocal::InitGame( void )
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec default.cfg\n" );
 
 	// skip the config file if "safe" is on the command line
-        if ( !SafeMode() && (fileSystem->FindFile(CONFIG_FILE) != FIND_NO) ) {
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );		// Darkmod.cfg
-		// if it does not exist, ignore it and only use "default.cfg", Darkmod.cfg will be written upon exit
+	if (!SafeMode())
+	{
+		// if any config file does not exist, ignore it and only use "default.cfg".
+		// Darkmod.cfg and DarkmodKeybinds.cfg will be written upon exit
+		if (fileSystem->FindFile(CONFIG_FILE) != FIND_NO) {
+			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n");		// Darkmod.cfg
+			
+		}
+		if (fileSystem->FindFile(KEYBINDS_FILE) != FIND_NO) { // STiFU #4797
+			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " KEYBINDS_FILE "\n");		// DarkmodKeybinds.cfg
+		}
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 
