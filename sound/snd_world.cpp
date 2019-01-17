@@ -2113,7 +2113,8 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				}
 			}
 
-			if ( ( !looping && chan->leadinSample->hardwareBuffer ) || ( looping && chan->soundShader->entries[0]->hardwareBuffer ) ) {
+			bool isStreaming = !( ( !looping && chan->leadinSample->hardwareBuffer ) || ( looping && chan->soundShader->entries[0]->hardwareBuffer ) );
+			if ( !isStreaming ) {
 				// handle uncompressed (non streaming) single shot and looping sounds
 				if ( chan->triggered ) {
 					alSourcei( chan->openalSource, AL_BUFFER, looping ? chan->soundShader->entries[0]->openalBuffer : chan->leadinSample->openalBuffer );
@@ -2175,9 +2176,15 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			}
 			
 			// (re)start if needed..
-			ALint state = 0;
-			alGetSourcei( chan->openalSource, AL_SOURCE_STATE, &state);
-			if ( chan->triggered || state != AL_PLAYING ) {
+			bool restart = chan->triggered;
+			if (isStreaming) {
+				// #4540,#4949 stgatilov: force restart on streaming sounds
+				ALint state = 0;
+				alGetSourcei( chan->openalSource, AL_SOURCE_STATE, &state);
+				if (state != AL_PLAYING)
+					restart = true;
+			}
+			if ( restart ) {
 				alSourcePlay( chan->openalSource );
 				chan->triggered = false;
 			}
