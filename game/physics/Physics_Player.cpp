@@ -3820,7 +3820,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			case hang_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pulling up...\r");
 				m_mantlePhase = pull_DarkModMantlePhase;
-				player->StartSound("snd_player_mantle_rustleS", SND_CHANNEL_BODY3, 0, false, NULL);
+				player->StartSound("snd_player_mantle_rustle_short", SND_CHANNEL_BODY3, 0, false, NULL);
 				player->StartSound("snd_player_mantle_pull", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
@@ -3836,7 +3836,7 @@ void idPhysics_Player::UpdateMantleTimers()
 				// Go into crouch
 				current.movementFlags |= PMF_DUCKED;
 
-				player->StartSound("snd_player_mantle_rustleS", SND_CHANNEL_BODY3, 0, false, NULL);
+				player->StartSound("snd_player_mantle_rustle_short", SND_CHANNEL_BODY3, 0, false, NULL);
 				player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
@@ -3847,7 +3847,7 @@ void idPhysics_Player::UpdateMantleTimers()
 				// Go into crouch
 				current.movementFlags |= PMF_DUCKED;
 
-				player->StartSound("snd_player_mantle_rustleS", SND_CHANNEL_BODY3, 0, false, NULL);
+				player->StartSound("snd_player_mantle_rustle_short", SND_CHANNEL_BODY3, 0, false, NULL);
 				player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
@@ -3988,7 +3988,7 @@ void idPhysics_Player::StartMantle
 	else if (initialMantlePhase == pullFast_DarkModMantlePhase)
 	{
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with quick silent pull upward\r"); 
-		player->StartSound("snd_player_mantle_impact", SND_CHANNEL_BODY2, 0, false, NULL);
+		player->StartSound("snd_player_mantle_impact_subtle", SND_CHANNEL_BODY2, 0, false, NULL);
 		player->StartSound("snd_player_mantle_rustle", SND_CHANNEL_BODY3, 0, false, NULL);
 	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
@@ -4002,7 +4002,7 @@ void idPhysics_Player::StartMantle
 
 		// Start with push upward
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push upward\r");
-		player->StartSound("snd_player_mantle_impact", SND_CHANNEL_BODY2, 0, false, NULL);
+		player->StartSound("snd_player_mantle_impact_subtle", SND_CHANNEL_BODY2, 0, false, NULL);
 		player->StartSound("snd_player_mantle_rustle", SND_CHANNEL_BODY3, 0, false, NULL);
 		player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 	}
