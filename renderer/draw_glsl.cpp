@@ -160,7 +160,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 4 );
 	din->specularImage->Bind();
 
-	if( !(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps) ) // special case - no softening
+	//if( !(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps) ) // special case - no softening
 	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2 ) {
 		FB_BindShadowTexture();
 	}
@@ -256,7 +256,7 @@ RB_GLSL_DrawLight_Stencil
 void RB_GLSL_DrawLight_Stencil() {
 	GL_PROFILE( "GLSL_DrawLight_Stencil" );
 
-	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() && (r_shadows.GetInteger() != 2);
+	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
 
 	// set depth bounds for the whole light
 	if ( backEnd.useLightDepthBounds ) {
@@ -1055,7 +1055,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1i( softShadowsQuality, 0 );
 	}
 	qglUniform1f( softShadowsRadius, GetEffectiveLightRadius() ); // for soft stencil and all shadow maps
-	if ( r_shadows.GetInteger() == 2 ) {
+	if ( vLight->shadowMapIndex ) {
 		qglUniform1i( shadowMap, 6 );
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS + 2 );
