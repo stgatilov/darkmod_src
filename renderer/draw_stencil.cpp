@@ -201,7 +201,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	}
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 
-	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() || r_shadows.GetInteger()==2 && backEnd.vLight->tooBigForShadowMaps ) {
-		qglStencilFunc( GL_GEQUAL, 128, 255 );
-	}
+	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() /*|| r_shadows.GetInteger()==2 && backEnd.vLight->tooBigForShadowMaps*/ )
+		qglStencilFunc( GL_GEQUAL, 128, 255 ); // enable stencil test - the shadow volume path
 }
