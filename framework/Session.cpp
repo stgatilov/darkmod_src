@@ -1804,6 +1804,7 @@ void SaveGame_f( const idCmdArgs &args ) {
 			common->Printf( "Saved %s\n", args.Argv(1) );
 		}
 	}
+	qglFinish();
 }
 
 /*
@@ -2081,6 +2082,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	}
 
 	syncNextGameFrame = true;
+	qglFinish();
 
 
 	return true;
