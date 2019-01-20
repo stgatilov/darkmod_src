@@ -335,7 +335,8 @@ void CheckCreateShadow() {
 
 	bool depthBitsModified = r_fboDepthBits.IsModified();
 	// reset textures
-	if ( r_shadows.GetInteger() == 1 )
+	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight->tooBigForShadowMaps;
+	if ( stencilPath )
 		if ( r_fboSeparateStencil.GetBool() ) {
 			// currentDepthImage is initialized there
 			CheckCreatePrimary();
@@ -343,7 +344,7 @@ void CheckCreateShadow() {
 		} else {
 			globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 		}
-	if ( r_shadows.GetInteger() == 2 )
+	if ( !stencilPath )
 		globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize.GetInteger(), 6 * r_shadowMapSize.GetInteger(), GL_DEPTH );
 
 	auto check = []( GLuint &fbo ) {
@@ -358,7 +359,7 @@ void CheckCreateShadow() {
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	};
 
-	if ( r_shadows.GetInteger() == 2 ) {
+	if ( !stencilPath ) {
 		if( !fboShadowAtlas ) {
 			qglGenFramebuffers( 1, &fboShadowAtlas );
 			qglBindFramebuffer( GL_FRAMEBUFFER, fboShadowAtlas );
@@ -429,7 +430,7 @@ Others: combined stencil & depth, copy to a separate FBO, meh
 */
 void FB_BindShadowTexture() {
 	GL_CheckErrors();
-	if ( r_shadows.GetInteger() == 2 ) {
+	if ( backEnd.vLight->shadowMapIndex ) {
 		GL_SelectTexture( 6 );
 		globalImages->shadowAtlas->Bind();
 	} else {
@@ -460,7 +461,8 @@ void FB_ApplyScissor() {
 
 void FB_ToggleShadow( bool on ) {
 	CheckCreateShadow();
-	if ( on && r_shadows.GetInteger() == 1 ) {
+	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight->tooBigForShadowMaps;
+	if ( on && stencilPath ) {
 		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {
 			if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
@@ -479,21 +481,19 @@ void FB_ToggleShadow( bool on ) {
 		}
 		GL_CheckErrors();
 	}
-	qglBindFramebuffer( GL_FRAMEBUFFER, on ? (r_shadows.GetInteger() == 1 ? fboShadowStencil : fboShadowAtlas) : primaryOn ? fboPrimary : 0 );
-	if( on && r_shadows.GetInteger() == 1 && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+	qglBindFramebuffer( GL_FRAMEBUFFER, on ? (stencilPath ? fboShadowStencil : fboShadowAtlas) : primaryOn ? fboPrimary : 0 );
+	if( on && stencilPath && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
 		// with MSAA on, we need to render against the multisampled primary buffer, otherwise stencil is drawn
 		// against a lower-quality depth map which may cause render errors with shadows
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 	}
 
 	// stencil softshadows
-	if ( r_shadows.GetInteger() == 1 ) {
+	if ( stencilPath )
 		shadowOn = on;
-	}
 	GL_CheckErrors();
 
-	// additional steps for shadowmaps
-	if ( r_shadows.GetInteger() == 2 ) {
+	if ( !stencilPath ) { // additional steps for shadowmaps
 		qglDepthMask( on );
 		if ( on ) {
 			/*int mipmap = ShadowFboIndex / MAX_SHADOW_MAPS;
