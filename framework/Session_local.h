@@ -159,7 +159,7 @@ private: // Helper methods for LoadGame
 	{
 		savegame_valid,
 		savegame_invalid,
-		savegame_versionMismatch
+		savegame_versionMismatch,
 	};
 	SavegameValidity	IsSavegameValid(const char *saveName, int* savegameRevision = NULL);
 	bool				DoLoadGame(const char *saveName, const bool initialializedLoad);
@@ -365,7 +365,6 @@ private:
 	bool				BoxDialogSanityCheck( void );
 	idStr				authMsg;
 };
-
 
 
 extern idSessionLocal	sessLocal;
