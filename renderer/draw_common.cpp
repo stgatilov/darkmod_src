@@ -1151,8 +1151,6 @@ RB_STD_FogAllLights
 ==================
 */
 void RB_STD_FogAllLights( void ) {
-	viewLight_t	*vLight;
-
 	if ( r_skipFogLights.GetBool() ||
 		r_showOverDraw.GetInteger() != 0 ||
 		backEnd.viewDef->isXraySubview /* dont fog in xray mode*/ ) {
@@ -1162,18 +1160,16 @@ void RB_STD_FogAllLights( void ) {
 
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
-	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
-		backEnd.vLight = vLight;
-
-		if ( !vLight->lightShader->IsFogLight() && !vLight->lightShader->IsBlendLight() ) {
+	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+		if ( !backEnd.vLight->lightShader->IsFogLight() && !backEnd.vLight->lightShader->IsBlendLight() ) {
 			continue;
 		}
 		qglDisable( GL_STENCIL_TEST );
 
-		if ( vLight->lightShader->IsFogLight() ) {
-			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
-		} else if ( vLight->lightShader->IsBlendLight() ) {
-			RB_BlendLight( vLight->globalInteractions, vLight->localInteractions );
+		if ( backEnd.vLight->lightShader->IsFogLight() ) {
+			RB_FogPass( backEnd.vLight->globalInteractions, backEnd.vLight->localInteractions );
+		} else if ( backEnd.vLight->lightShader->IsBlendLight() ) {
+			RB_BlendLight( backEnd.vLight->globalInteractions, backEnd.vLight->localInteractions );
 		}
 	}
 	qglEnable( GL_STENCIL_TEST );

@@ -161,9 +161,8 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	din->specularImage->Bind();
 
 	//if( !(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps) ) // special case - no softening
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2 ) {
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || (r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps) )
 		FB_BindShadowTexture();
-	}
 
 	// draw it
 	GL_CheckErrors();
@@ -224,7 +223,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 3 );
 
 	// disable features
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2 ) {
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || (r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps) ) {
 		GL_SelectTexture( 6 );
 		globalImages->BindNull();
 		GL_SelectTexture( 7 );
@@ -352,6 +351,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 
 	qglUniform4fv( shadowmapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	qglUniform1f( shadowmapShader.lightRadius, GetEffectiveLightRadius() );
+	qglUniform1f( shadowmapShader.alphaTest, -1 );	// no alpha test by default
 	backEnd.currentSpace = NULL;
 
 	GL_Cull( CT_TWO_SIDED );
@@ -579,10 +579,10 @@ void RB_GLSL_DrawInteractions() {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
-		for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-			auto shader = backEnd.vLight->lightShader;
-			if ( shader->LightCastsShadows() && !backEnd.vLight->tooBigForShadowMaps )
-				backEnd.vLight->shadowMapIndex = ++ShadowAtlasIndex;
+		for ( auto vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
+			auto shader = vLight->lightShader;
+			if ( shader->LightCastsShadows() && !vLight->tooBigForShadowMaps )
+				vLight->shadowMapIndex = ++ShadowAtlasIndex;
 		}
 		ShadowAtlasIndex = 0; // reset for next run
 
@@ -1110,9 +1110,9 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 			lightIndex.Append( *pIndex );
 #endif
 	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		backEnd.vLight = vLight;
+		backEnd.vLight = vLight; // GetEffectiveLightRadius needs this
 		if ( shadowPass ) {
-			if ( !backEnd.vLight->shadowMapIndex )
+			if ( !vLight->shadowMapIndex )
 				continue;
 		} else {
 			if ( vLight->singleLightOnly )
@@ -1161,6 +1161,7 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 		}
 		softShadowRads.push_back( GetEffectiveLightRadius() );
 	}
+	backEnd.vLight = NULL; // just in case
 }
 
 void multiLightInteractionProgram_t::AfterLoad() {
@@ -1306,17 +1307,17 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 
 			// bind the texture
 			pStage->texture.image->Bind();
-
-			// set texture matrix and texGens
-			extern void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
-			RB_PrepareStageTexturing( pStage, surf, ac );
+			if ( pStage->texture.hasMatrix ) 
+				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
 
 			// draw it
 			RB_DrawElementsWithCounters( surf );
 
-			// take down texture matrix and texGens
-			extern void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
-			RB_FinishStageTexturing( pStage, surf, ac );
+			if ( pStage->texture.hasMatrix ) {
+				qglMatrixMode( GL_TEXTURE );
+				qglLoadIdentity();
+				qglMatrixMode( GL_MODELVIEW );
+			}
 
 			qglUniform1f( alphaTest, -1 ); // hint the glsl to skip texturing
 		}
@@ -1418,6 +1419,7 @@ void shadowMapProgram_t::RenderAllLights() {
 
 	float texSize = globalImages->shadowAtlas->uploadHeight;
 	qglUniform1f( shadowTexelStep, 1/texSize );
+	qglUniform1f( alphaTest, -1 );	// no alpha test by default
 
 	qglViewport( 0, 0, texSize, texSize );
 	if ( r_useScissor.GetBool() )
@@ -1430,7 +1432,6 @@ void shadowMapProgram_t::RenderAllLights() {
 		RenderAllLights( viewDef->drawSurfs[i] );
 	for ( int i = 0; i < 4; i++ )
 		qglDisable( GL_CLIP_PLANE0 + i );
-
 	qglDisable( GL_POLYGON_OFFSET_FILL );
 	GL_Cull( CT_FRONT_SIDED );
 
