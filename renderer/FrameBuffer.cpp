@@ -335,7 +335,7 @@ void CheckCreateShadow() {
 
 	bool depthBitsModified = r_fboDepthBits.IsModified();
 	// reset textures
-	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight->tooBigForShadowMaps;
+	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight && backEnd.vLight->tooBigForShadowMaps;
 	if ( stencilPath )
 		if ( r_fboSeparateStencil.GetBool() ) {
 			// currentDepthImage is initialized there
@@ -461,7 +461,7 @@ void FB_ApplyScissor() {
 
 void FB_ToggleShadow( bool on ) {
 	CheckCreateShadow();
-	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight->tooBigForShadowMaps;
+	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight && backEnd.vLight->tooBigForShadowMaps;
 	if ( on && stencilPath ) {
 		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {
