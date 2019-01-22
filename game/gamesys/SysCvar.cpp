@@ -166,7 +166,7 @@ idCVar cv_sr_show(					"tdm_show_stimresponse",    "0",           CVAR_GAME | CV
 idCVar cv_debug_mainmenu(			"tdm_debug_mainmenu",      "0",            CVAR_BOOL, "Set to 1 to enable main menu GUI debugging in the console." );
 idCVar cv_mainmenu_confirmquit(		"tdm_mainmenu_confirmquit",      "1", CVAR_ARCHIVE | CVAR_BOOL, "Set to 0 to disable the 'Quit Game' confirmation dialog when exiting the game." );
 
-idCVar cv_force_savegame_load(		"tdm_force_savegame_load", "0",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 1 to skip code revision check on savegame load." );
+idCVar cv_force_savegame_load(		"tdm_force_savegame_load", "0",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 1 to enable force loading of save games in case of version mismatch." );
 idCVar cv_savegame_compress(		"tdm_savegame_compress", "1",   CVAR_BOOL|CVAR_ARCHIVE, "Set to 0 to disable savegame file compression." );
 
 /**
@@ -339,7 +339,7 @@ idCVar cv_tdm_inv_loot_item_def("tdm_inv_loot_item_def", "atdm:inv_loot_info_ite
 
 idCVar cv_tdm_obj_gui_file(	"tdm_obj_hud_file", "guis/tdm_objectives.gui",	CVAR_GAME, "The name of the gui file that defines the in-game objectives.");
 idCVar cv_tdm_waituntilready_gui_file(	"tdm_waituntilready_gui_file", "guis/tdm_waituntilready.gui",	CVAR_GAME, "The name of the gui file that is displayed after loading a map and before starting the gameplay action.");
-idCVar cv_tdm_invgrid_gui_file(  "tdm_invgrid_hud_file", "guis/tdm_invgrid.gui",  CVAR_GAME, "The name of the gui file that defines the in-game inventory grid.");
+idCVar cv_tdm_invgrid_gui_file(  "tdm_invgrid_hud_file", "guis/tdm_invgrid_parchment.gui",  CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that defines the in-game inventory grid.");
 
 idCVar cv_tdm_hud_opacity(	"tdm_hud_opacity", "0.7",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The opacity of the HUD GUIs. [0..1]", 0, 1 );
 idCVar cv_tdm_hud_hide_lightgem(	"tdm_hud_hide_lightgem", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,	"If set to 1, the lightgem will be hidden." );
