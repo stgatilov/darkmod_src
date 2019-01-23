@@ -1070,6 +1070,9 @@ void idPlayer::Spawn( void )
 	m_TurnHinderance.Clear();
 	m_TurnHinderanceCache = 1.0f;
 
+	m_JumpHinderance.Clear();
+	m_JumpHinderanceCache = 1.0f;
+
 	// set our collision model
 	physicsObj.SetSelf( this );
 	SetClipModel();
@@ -2210,6 +2213,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( m_hinderanceCache );
 	savefile->WriteDict( &m_TurnHinderance );
 	savefile->WriteFloat( m_TurnHinderanceCache );
+	savefile->WriteDict(&m_JumpHinderance);
+	savefile->WriteFloat(m_JumpHinderanceCache);
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->WriteAngles( loggedViewAngles[ i ] );
@@ -2543,6 +2548,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( m_hinderanceCache );
 	savefile->ReadDict( &m_TurnHinderance );
 	savefile->ReadFloat( m_TurnHinderanceCache );
+	savefile->ReadDict(&m_JumpHinderance);
+	savefile->ReadFloat(m_JumpHinderanceCache);
 
 	for( i = 0; i < NUM_LOGGED_VIEW_ANGLES; i++ ) {
 		savefile->ReadAngles( loggedViewAngles[ i ] );
