@@ -1476,18 +1476,12 @@ void RB_ShowLights( void ) {
 		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
 
 		common->Printf( " %i", index );
-		if ( vLight->viewInsideLight ) {
-			// view is in this volume
-			common->Printf( "i", index );
-		}
-		if ( vLight->lightShader->IsAmbientLight() ) {
-			// view is in this volume
-			common->Printf( "a", index );
-		}
-		if ( vLight->lightShader->LightCastsShadows() ) {
-			// view is in this volume
-			common->Printf( "s", index );
-		}
+		if ( vLight->viewInsideLight ) // view is in this volume
+			common->Printf( "i" );
+		if ( vLight->lightShader->IsAmbientLight() ) // ambient
+			common->Printf( "a" );
+		if ( vLight->lightShader->LightCastsShadows() ) // shadows
+			common->Printf( "s" );
 	}
 	qglEnable( GL_DEPTH_TEST );
 	qglDisable( GL_POLYGON_OFFSET_LINE );
