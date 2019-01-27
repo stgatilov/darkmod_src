@@ -525,6 +525,8 @@ void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEn
 	if ( !shader ) {
 		// shadows won't have a shader
 		drawSurf->shaderRegisters = NULL;
+		if ( !(drawSurf->dsFlags & DSF_VIEW_INSIDE_SHADOW) )
+			drawSurf->numIndexes = tri->numShadowIndexesNoCaps;
 	} else {
 		// process the shader expressions for conditionals / color / texcoords
 		const float *constRegs = shader->ConstantRegisters();

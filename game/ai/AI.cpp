@@ -52,6 +52,7 @@
 #include "../TimerManager.h"
 #include "../ProjectileResult.h" // grayman #2872
 #include "../Grabber.h"
+#include "../SearchManager.h"
 
 // For handling the opening of doors and other binary Frob movers
 #include "../BinaryFrobMover.h"
@@ -644,6 +645,14 @@ idAI::~idAI
 */
 idAI::~idAI()
 {
+	if (m_searchID > 0)
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Destroying AI while search still active. Actively leaving search: SearchID=%d, AI=0x%p\r", m_searchID, this);
+		CSearchManager::Instance()->LeaveSearch(m_searchID, this);
+	}
+ 		
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Destroying AI: 0x%p\r", this);
+
 	DeconstructScriptObject();
 	scriptObject.Free();
 	if ( worldMuzzleFlashHandle != -1 )
