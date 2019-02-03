@@ -1237,8 +1237,10 @@
     <ClInclude Include="renderer\Profiling.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="game\Listener.h" />
     <ClInclude Include="game\FrobHelper.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Listener.h">
       <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2924,8 +2926,10 @@
     <ClCompile Include="renderer\Profiling.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="game\Listener.cpp" />
     <ClCompile Include="game\FrobHelper.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Listener.cpp">
       <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
