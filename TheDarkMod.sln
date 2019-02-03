@@ -27,6 +27,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "natvis", "natvis", "{C9B22D
 		sys\msvc\natvis\idlib.natvis = sys\msvc\natvis\idlib.natvis
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "editorconfig", "editorconfig", "{13B78CB5-7292-43F0-855D-FCB014FC27E2}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug with inlines and memory log|Win32 = Debug with inlines and memory log|Win32
