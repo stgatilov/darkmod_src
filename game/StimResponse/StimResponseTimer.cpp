@@ -19,11 +19,6 @@
 
 #include "StimResponseTimer.h"
 
-static_assert(offsetof(TimerValue, Time) == 0, "TimerValue type has wrong packing");
-static_assert(offsetof(TimerValue, Val) == 0, "TimerValue type has wrong packing");
-static_assert(offsetof(TimerValue::TimeView, Millisecond) == 4, "TimerValue type has wrong packing");
-static_assert(offsetof(TimerValue::ValView, Millisecond) == 4, "TimerValue type has wrong packing");
-
 /********************************************************************/
 /*                 CStimResponseTimer                               */
 /********************************************************************/
@@ -33,8 +28,8 @@ CStimResponseTimer::CStimResponseTimer()
 	m_State = SRTS_DISABLED;
 	m_Reload = 0;
 	m_ReloadVal = 0;
-	m_Timer.Time.Flags = TIMER_UNDEFINED;
-	m_TimerVal.Time.Flags = TIMER_UNDEFINED;
+	m_Timer.Flags = TIMER_UNDEFINED;
+	m_TimerVal.Flags = TIMER_UNDEFINED;
 	m_LastTick = 0;
 	m_Ticker = 0;
 	m_TicksPerMilliSecond = 0;
@@ -46,14 +41,20 @@ CStimResponseTimer::~CStimResponseTimer(void)
 }
 
 static void Save(idSaveGame *savefile, const TimerValue &val) {
-	savefile->WriteInt(val.Val.TimerVal);
-	savefile->WriteInt(val.Val.Millisecond);
+	savefile->WriteSignedChar(val.Flags);
+	savefile->WriteSignedChar(val.Hour);
+	savefile->WriteSignedChar(val.Minute);
+	savefile->WriteSignedChar(val.Second);
+	savefile->WriteInt(val.Millisecond);
 }
 static void Restore(idRestoreGame *savefile, TimerValue &val) {
-	savefile->ReadInt(val.Val.TimerVal);
+	savefile->ReadSignedChar(val.Flags);
+	savefile->ReadSignedChar(val.Hour);
+	savefile->ReadSignedChar(val.Minute);
+	savefile->ReadSignedChar(val.Second);
 	int tmp;
 	savefile->ReadInt(tmp);
-	val.Val.Millisecond = (short)tmp;
+	val.Millisecond = (short)tmp;
 }
 
 void CStimResponseTimer::Save(idSaveGame *savefile) const
@@ -113,7 +114,7 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 	int h, m, s, ms;
 	idStr source = str;
 
-	v.Time.Flags = TIMER_UNDEFINED;
+	v.Flags = TIMER_UNDEFINED;
 
 	if(str.Length() == 0)
 		goto Quit;
@@ -154,10 +155,10 @@ TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
 
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Parsed timer string: [%s] to %d:%d:%d:%d\r", str.c_str(), h, m, s, ms);
 
-	v.Time.Hour = h;
-	v.Time.Minute = m;
-	v.Time.Second = s;
-	v.Time.Millisecond = ms;
+	v.Hour = h;
+	v.Minute = m;
+	v.Second = s;
+	v.Millisecond = ms;
 
 Quit:
 	return v;
@@ -172,10 +173,10 @@ void CStimResponseTimer::SetReload(int Reload)
 void CStimResponseTimer::SetTimer(int Hour, int Minute, int Second, int Millisecond)
 {
 //	m_Timer = SetHours(Hour) |  SetMinutes(Minute) | SetSeconds(Seconds) | SetMSeconds(Milisecond);
-	m_TimerVal.Time.Hour = Hour;
-	m_TimerVal.Time.Minute = Minute;
-	m_TimerVal.Time.Second = Second;
-	m_TimerVal.Time.Millisecond = Millisecond;
+	m_TimerVal.Hour = Hour;
+	m_TimerVal.Minute = Minute;
+	m_TimerVal.Second = Second;
+	m_TimerVal.Millisecond = Millisecond;
 	memset(&m_Timer, 0, sizeof(TimerValue));
 }
 
@@ -250,24 +251,24 @@ bool CStimResponseTimer::Tick(unsigned int sysTicks)
 	m_Ticker %= m_TicksPerMilliSecond;
 
 	// Increase the hours/minutes/seconds/milliseconds
-	m_Timer.Time.Millisecond += static_cast<short int>(msPassed);
+	m_Timer.Millisecond += static_cast<short int>(msPassed);
 
-	if (m_Timer.Time.Millisecond > 999)
+	if (m_Timer.Millisecond > 999)
 	{
 		// Increase the seconds
-		m_Timer.Time.Second += static_cast<signed char>(floor(m_Timer.Time.Millisecond / 1000.0));
-		m_Timer.Time.Millisecond %= 1000;
+		m_Timer.Second += static_cast<signed char>(floor(m_Timer.Millisecond / 1000.0));
+		m_Timer.Millisecond %= 1000;
 
-		m_Timer.Time.Minute += static_cast<signed char>(floor(m_Timer.Time.Second / 60.0));
-		m_Timer.Time.Second %= 60;
+		m_Timer.Minute += static_cast<signed char>(floor(m_Timer.Second / 60.0));
+		m_Timer.Second %= 60;
 
-		m_Timer.Time.Hour += static_cast<signed char>(floor(m_Timer.Time.Minute / 60.0));
-		m_Timer.Time.Minute %= 60;
+		m_Timer.Hour += static_cast<signed char>(floor(m_Timer.Minute / 60.0));
+		m_Timer.Minute %= 60;
 	}
 
 	// Now check if the timer already expired.
-	if (m_Timer.Time.Hour >= m_TimerVal.Time.Hour && m_Timer.Time.Minute >= m_TimerVal.Time.Minute && 
-		m_Timer.Time.Second >= m_TimerVal.Time.Second && m_Timer.Time.Millisecond >= m_TimerVal.Time.Millisecond) 
+	if (m_Timer.Hour >= m_TimerVal.Hour && m_Timer.Minute >= m_TimerVal.Minute && 
+		m_Timer.Second >= m_TimerVal.Second && m_Timer.Millisecond >= m_TimerVal.Millisecond) 
 	{
 		m_Fired = true;
 		returnValue = true;
@@ -288,16 +289,16 @@ void CStimResponseTimer::MakeTime(TimerValue &t, unsigned int Ticks)
 	double msPassed = floor(static_cast<double>(Ticks) / m_TicksPerMilliSecond);
 
 	memset(&t, 0, sizeof(TimerValue));
-	t.Time.Millisecond = static_cast<short int>(msPassed);
+	t.Millisecond = static_cast<short int>(msPassed);
 
-	t.Time.Second += static_cast<signed char>(floor(t.Time.Millisecond / 1000.0));
-	t.Time.Millisecond %= 1000;
+	t.Second += static_cast<signed char>(floor(t.Millisecond / 1000.0));
+	t.Millisecond %= 1000;
 
-	t.Time.Minute += static_cast<signed char>(floor(t.Time.Second / 60.0));
-	t.Time.Second %= 60;
+	t.Minute += static_cast<signed char>(floor(t.Second / 60.0));
+	t.Second %= 60;
 
-	t.Time.Hour += static_cast<signed char>(floor(t.Time.Minute / 60.0));
-	t.Time.Minute %= 60;
+	t.Hour += static_cast<signed char>(floor(t.Minute / 60.0));
+	t.Minute %= 60;
 }
 
 bool CStimResponseTimer::WasExpired(void)

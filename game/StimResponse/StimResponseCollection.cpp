@@ -528,12 +528,12 @@ void CStimResponseCollection::CreateTimer(const idDict& args, const CStimPtr& st
     TimerValue val = CStimResponseTimer::ParseTimeString(str);
 	
 	// if timer is actually set
-	if (val.Time.Hour || val.Time.Minute || val.Time.Second || val.Time.Millisecond)
+	if (val.Hour || val.Minute || val.Second || val.Millisecond)
 	{
 		// TODO: Return a bool here so that the outer function knows not to add this to m_Stim in the collection?
 
 		stim->AddTimerToGame();
-		timer->SetTimer(val.Time.Hour, val.Time.Minute, val.Time.Second, val.Time.Millisecond);
+		timer->SetTimer(val.Hour, val.Minute, val.Second, val.Millisecond);
 		
 		// timer starts on map startup by default, otherwise wait for start
 		if (!args.GetBool(va("sr_timer_waitforstart_%u", index), "0"))

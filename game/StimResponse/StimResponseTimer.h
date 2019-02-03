@@ -29,19 +29,12 @@
 
 #define TIMER_UNDEFINED		-1
 
-typedef union {
-public:
-	struct TimeView {
-		signed char Flags;
-		signed char Hour;
-		signed char Minute;
-		signed char Second;
-		signed short Millisecond;
-	} Time;
-	struct ValView {
-		signed int TimerVal;
-		signed short Millisecond;
-	} Val;
+typedef struct {
+	signed char Flags;
+	signed char Hour;
+	signed char Minute;
+	signed char Second;
+	signed short Millisecond;
 } TimerValue;
 
 /**
