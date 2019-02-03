@@ -675,22 +675,18 @@ shaderProgram_t::CompileShader
 =================
 */
 GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) {
-	char *source;
-	GLuint shader;
-	GLint length, result;
-
 	/* get shader source */
-	char    *fileBuffer;
-
+	char *fileBuffer = NULL;
 	// load the program even if we don't support it
-	fileSystem->ReadFile( fileName, ( void ** )&fileBuffer, NULL );
-
-	if ( !fileBuffer ) {
+	int length = fileSystem->ReadFile( fileName, ( void ** )&fileBuffer, NULL );
+	if ( !fileBuffer || length < 0 ) {
 		if ( ShaderType != GL_GEOMETRY_SHADER ) {
 			common->Warning( "CompileShader(%s) file not found", fileName );
 		}
 		return 0;
 	}
+	//note: ReadFile guarantees null-termination
+	assert(fileBuffer && fileBuffer[length] == 0);
 
 	switch ( ShaderType ) {
 	case GL_VERTEX_SHADER:
@@ -706,28 +702,26 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 		common->Warning( "Unknown ShaderType in shaderProgram_t::CompileShader" );
 		break;
 	}
-	source = fileBuffer;
+	const char *source = fileBuffer;
 
 	/* create shader object, set the source, and compile */
-	shader = qglCreateShader( ShaderType );
-	length = ( GLint )strlen( source ) + 1;
-	qglShaderSource( shader, 1, ( const char ** )&source, &length );
+	GLuint shader = qglCreateShader( ShaderType );
+	qglShaderSource( shader, 1, &source, NULL );
 	qglCompileShader( shader );
 	fileSystem->FreeFile( fileBuffer );
 
 	/* make sure the compilation was successful */
+	GLint result;
 	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
 
-	char *log;
 	/* get the shader info log */
 	qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
-	log = new char[length + 1];
-	log[0] = 0;
+	char *log = (char*)Mem_ClearedAlloc(length + 1);
 	qglGetShaderInfoLog( shader, length, NULL, log );
 	//TODO: print compile log always (bad idea now due to tons of warnings)
 	if (result == GL_FALSE)
 		common->Warning( "CompileShader(%s): %s\n%s\n", fileName, (result ? "ok" : "FAILED"), log );
-	delete log;
+	Mem_Free(log);
 
 	if ( result == GL_FALSE ) {
 		qglDeleteShader( shader );
