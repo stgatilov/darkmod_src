@@ -1247,57 +1247,10 @@ static char				mem_leakName[256] = "";
 Mem_CleanupFileName
 ==================
 */
+const char *CleanupSourceCodeFileName(const char *fileName);	//defined in Debug.cpp
 const char *Mem_CleanupFileName( const char *fileName ) {
-	static char newFileNames[4][MAX_STRING_CHARS];
-	static int index;
-
-	index = (index + 1) & 3;
-	char *path = newFileNames[index];
-	strcpy(path, fileName);
-
-	for (int i = 0; path[i]; i++)
-		if (path[i] == '\\')
-			path[i] = '/';
-	static const char *BASE_DIR = "tdm/";
-	char *tdm = strstr(path, BASE_DIR);
-	if (tdm)
-		path = tdm + strlen(BASE_DIR);
-	while (char *topar = strstr(path, "/../")) {
-		char *ptr;
-		for (ptr = topar; ptr > path && *(ptr-1) != '/'; ptr--);
-		topar += 4;
-		memmove(ptr, topar, strlen(topar) + 1);
-	}
-	return path;
-
-	//stgatilov: the original code was allocating idStr
-	//which is wrong because string pool is already dead
-/*	int i1, i2;
-	idStr newFileName;
-	static char newFileNames[4][MAX_STRING_CHARS];
-	static int index;
-
-	newFileName = fileName;
-	newFileName.BackSlashesToSlashes();
-	i1 = newFileName.Find( "neo", false );
-	if ( i1 >= 0 ) {
-		i1 = newFileName.Find( "/", false, i1 );
-		newFileName = newFileName.Right( newFileName.Length() - ( i1 + 1 ) );
-	}
-	while( 1 ) {
-		i1 = newFileName.Find( "/../" );
-		if ( i1 <= 0 ) {
-			break;
-		}
-		i2 = i1 - 1;
-		while( i2 > 1 && newFileName[i2-1] != '/' ) {
-			i2--;
-		}
-		newFileName = newFileName.Left( i2 - 1 ) + newFileName.Right( newFileName.Length() - ( i1 + 4 ) );
-	}
-	index = ( index + 1 ) & 3;
-	strncpy( newFileNames[index], newFileName.c_str(), sizeof( newFileNames[index] ) );
-	return newFileNames[index];*/
+	//moved to debug system
+	return CleanupSourceCodeFileName(fileName);
 }
 
 /*

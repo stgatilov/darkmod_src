@@ -254,6 +254,7 @@
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
+    <ClCompile Include="idlib\Debug.cpp" />
     <ClCompile Include="idlib\geometry\DrawVert.cpp" />
     <ClCompile Include="idlib\geometry\JointTransform.cpp" />
     <ClCompile Include="idlib\geometry\RenderMatrix.cpp" />
@@ -342,6 +343,7 @@
     <ClInclude Include="idlib\containers\StrList.h" />
     <ClInclude Include="idlib\containers\StrPool.h" />
     <ClInclude Include="idlib\containers\VectorSet.h" />
+    <ClInclude Include="idlib\Debug.h" />
     <ClInclude Include="idlib\geometry\DrawVert.h" />
     <ClInclude Include="idlib\geometry\JointTransform.h" />
     <ClInclude Include="idlib\geometry\RenderMatrix.h" />

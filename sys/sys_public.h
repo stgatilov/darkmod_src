@@ -406,6 +406,19 @@ void			Sys_SetFatalError( const char *error );
 // display perference dialog
 void			Sys_DoPreferences( void );
 
+
+struct debugStackFrame_t {
+	static const int MAX_LEN = 88;
+	void *pointer;
+	char functionName[MAX_LEN];
+	char fileName[MAX_LEN];
+	int lineNumber;
+};
+
+void Sys_CaptureStackTrace(int ignoreFrames, uint8_t *data, int &len);
+int Sys_GetStackTraceFramesCount(uint8_t *data, int len);
+void Sys_DecodeStackTrace(uint8_t *data, int len, debugStackFrame_t *frames);
+
 /*
 ==============================================================
 

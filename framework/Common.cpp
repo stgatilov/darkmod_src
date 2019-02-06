@@ -21,6 +21,7 @@
 #include "../idlib/RevisionTracker.h"
 #include "../renderer/Image.h"
 #include "Session_local.h"
+#include "Debug.h"
 #include <iostream>
 
 #define MAX_WARNING_LIST	256
@@ -156,6 +157,7 @@ public:
 	virtual void				Printf( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	virtual void				VPrintf( const char *fmt, va_list arg );
 	virtual void				DPrintf( const char *fmt, ... ) id_attribute((format(printf,2,3)));
+	virtual void				PrintCallStack();
 	virtual void				Warning( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	virtual void				DWarning( const char *fmt, ...) id_attribute((format(printf,2,3)));
 	virtual void				PrintWarnings( void );
@@ -574,6 +576,23 @@ void idCommonLocal::DWarning( const char *fmt, ... ) {
 	msg[sizeof(msg)-1] = '\0';
 
 	Printf( S_COLOR_YELLOW "WARNING:" S_COLOR_RED "%s\n", msg );
+}
+
+
+void idCommonLocal::PrintCallStack() {
+	uint8_t traceData[4096];
+	int traceSize = sizeof(traceData);
+	uint32_t hash = idDebugSystem::GetStack(traceData, traceSize);
+
+	idList<debugStackFrame_t> callstack;
+	idDebugSystem::DecodeStack(traceData, traceSize, callstack);
+	idDebugSystem::CleanStack(callstack);
+
+	callstack.RemoveIndex(0);	//drop this function
+	char message[4096];
+	idDebugSystem::StringifyStack(hash, callstack.Ptr(), callstack.Num(), message, sizeof(message));
+
+	Printf(message);
 }
 
 /*

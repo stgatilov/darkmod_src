@@ -29,7 +29,9 @@
 #ifndef _D3SDK
 #ifndef GAME_DLL
 
-#define WINVER				0x501
+//stgatilov: use WinAPI functionality of WinXP SP2 of later
+#define _WIN32_WINNT 0x0501	//XP
+#define NTDDI_VERSION NTDDI_WINXPSP2
 
 #if 0
 // Dedicated server hits unresolved when trying to link this way now. Likely because of the 2010/Win7 transition? - TTimo

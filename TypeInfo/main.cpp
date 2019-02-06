@@ -64,6 +64,7 @@ public:
 	virtual void			Printf( const char *fmt, ... ) { STDIO_PRINT( "", "" ); }
 	virtual void			VPrintf( const char *fmt, va_list arg ) { vprintf( fmt, arg ); }
 	virtual void			DPrintf( const char *fmt, ... ) { /*STDIO_PRINT( "", "" );*/ }
+	virtual void			PrintCallStack() {}
 	virtual void			Warning( const char *fmt, ... ) { STDIO_PRINT( "WARNING: ", "\n" ); }
 	virtual void			DWarning( const char *fmt, ...) { /*STDIO_PRINT( "WARNING: ", "\n" );*/ }
 	virtual void			PrintWarnings( void ) {}

@@ -51,6 +51,7 @@ idlib_string = ' \
 	Base64.cpp \
 	BitMsg.cpp \
 	CmdArgs.cpp \
+	Debug.cpp \
 	Dict.cpp \
 	Heap.cpp \
 	Heap_Embedded.cpp \

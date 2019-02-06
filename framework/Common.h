@@ -194,6 +194,9 @@ public:
 								// Same as Printf, with a more usable API - Printf pipes to this.
 	virtual void				VPrintf( const char *fmt, va_list arg ) = 0;
 
+								//Prints current C++ call stack to console
+	virtual void				PrintCallStack( void ) = 0;
+
 								// Prints message that only shows up if the "developer" cvar is set,
 								// and NEVER forces a screen update, which could cause reentrancy problems.
 	virtual void				DPrintf( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;

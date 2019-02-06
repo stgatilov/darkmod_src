@@ -23,6 +23,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <execinfo.h>
+#include <stdio.h>
 
 #ifdef ID_MCHECK
 #include <mcheck.h>
@@ -511,6 +513,115 @@ void Sys_FPU_SetFTZ( bool enable ) {
 	}
 	*/
 }
+
+/*
+================
+stgatilov: stacktrace
+================
+*/
+
+void Sys_CaptureStackTrace(int ignoreFrames, uint8_t *data, int &len) {
+	int cnt = backtrace((void**)data, len / sizeof(void*));
+	if (ignoreFrames > cnt)
+		ignoreFrames = cnt;
+	len = (cnt - ignoreFrames) * sizeof(void*);
+	memmove(data, data + ignoreFrames * sizeof(void*), len);
+}
+
+int Sys_GetStackTraceFramesCount(uint8_t *data, int len) {
+	return len / sizeof(void*);
+}
+
+void Sys_DecodeStackTrace(uint8_t *data, int len, debugStackFrame_t *frames) {
+	//interpret input blob as array of addresses
+	void **addresses = (void**)data;
+	int framesCount = Sys_GetStackTraceFramesCount(data, len);
+	//fill output with zeros
+	memset(frames, 0, framesCount * sizeof(frames[0]));
+
+	//decode the whole bunch of addresses
+	char **messages = backtrace_symbols(addresses, framesCount);
+
+	//the persistent set of addr2line processes
+	struct Addr2lineProcess {
+		char moduleName[248];
+		FILE *pipe;
+	};
+	static const int MAX_DECODERS = 16;
+	static int decodersCount = 0;
+	static Addr2lineProcess decoders[MAX_DECODERS];
+
+	for (int i = 0; i < framesCount; i++) {
+		frames[i].pointer = addresses[i];
+
+		if (!addresses[i])
+			continue;	//null function?
+		if (!messages[i])
+			continue;	//no info from system?
+
+		//copy results of backtrace (in case we fail to decode it)
+		idStr::Copynz(frames[i].functionName, messages[i], sizeof(frames[i].functionName));
+
+		//extract name of module from backtrace_symbols line
+		int brOpen = strcspn(messages[i], "()[]");
+		char moduleName[256];
+		idStr::Copynz(moduleName, messages[i], sizeof(moduleName));
+		moduleName[brOpen] = 0;
+
+		//find existing addr2line process
+		int idx;
+		for (idx = 0; idx < decodersCount; idx++) {
+			if (strcmp(decoders[idx].moduleName, moduleName) == 0)
+				break;
+		}
+		if (idx == decodersCount) {	//not found
+			if (decodersCount == MAX_DECODERS)
+				continue;
+			//create addr2line command line
+			char cmdLine[1024];
+			idStr::snPrintf(cmdLine, sizeof(cmdLine), "addr2line -e %s -f -C", moduleName);
+			//printf("%d: %s\n", idx, cmdLine);
+
+			//NOTE: in order to make it work, someone needs to make this pipe bidirectional
+			//I f*cked with popen2 long enough to no avail =(
+
+			//start process
+			decoders[idx].pipe = popen(cmdLine, "r");
+			if (!decoders[idx].pipe)
+				continue;
+			idStr::Copynz(decoders[idx].moduleName, moduleName, sizeof(decoders[idx].moduleName));
+			decodersCount++;
+		}
+		FILE *f = decoders[idx].pipe;
+
+		//ask addr2line process about this address
+		fprintf(f, "%p\n", addresses[i]);
+		fflush(f);
+		char lines[2][1024];
+		fgets(lines[0], sizeof(lines[0]), f);
+		fgets(lines[1], sizeof(lines[1]), f);
+
+		//parse first line (function name)
+		int l = strcspn(lines[0], "()\n");
+		if (l == 0) continue;
+		lines[0][l] = 0;
+		idStr::Copynz(frames[i].functionName, lines[0], sizeof(frames[i].functionName));
+
+		//parse second line (file and line)
+		l = strcspn(lines[1], ":");
+		int r = l + strcspn(lines[1] + l, " ");
+		if (l == 0 || r == l) continue;
+		lines[1][l] = lines[1][r] = 0;
+		int lineNo = 0;
+		sscanf(lines[1] + l+1, "%d", &lineNo);
+		idStr::Copynz(frames[i].fileName, lines[1], sizeof(frames[i].fileName));
+		frames[i].lineNumber = lineNo;
+	}
+
+	//note: strings must not be freed
+	free(messages);
+}
+
 
 /*
 ===============
