@@ -29,7 +29,10 @@
 #include <sys/stat.h>
 #endif
 
+#pragma warning(push)
+#pragma warning(disable: 4091)
 #include "dbghelp.h"
+#pragma warning(pop)
 
 #include "../sys_local.h"
 #include "win_local.h"
@@ -1463,7 +1466,7 @@ void Sys_DecodeStackTrace(uint8_t *data, int len, debugStackFrame_t *frames) {
 
 	if (!AreSymbolsInitialized) {
 		AreSymbolsInitialized = true;
-		SymInitialize(hProcess, NULL, TRUE);
+		BOOL ok = SymInitialize(hProcess, NULL, TRUE);
 	}
 
 	//allocate symbol structures
@@ -1475,7 +1478,8 @@ void Sys_DecodeStackTrace(uint8_t *data, int len, debugStackFrame_t *frames) {
 	line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 
 	for (int i = 0; i < framesCount; i++) {
-		frames[i].pointer = (void*)(uintptr_t)addresses[i];
+		frames[i].pointer = addresses[i];
+		sprintf(frames[i].functionName, "[%p]", frames[i].pointer);	//in case PDB not found
 
 		if (!addresses[i])
 			continue;	//null function?
