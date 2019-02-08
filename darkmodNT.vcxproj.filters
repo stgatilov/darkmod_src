@@ -1414,6 +1414,9 @@
     <ClInclude Include="game\FrobHelper.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\Debug.h">
+      <Filter>idLib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2796,6 +2799,9 @@
     </ClCompile>
     <ClCompile Include="game\FrobHelper.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\Debug.cpp">
+      <Filter>idLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
