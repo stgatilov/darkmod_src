@@ -211,7 +211,7 @@ RB_CopyDepthBuffer
 
 Revelator: Create a depth copy of the entire map.
 =====================
-*/
+*//*
 static void RB_CopyDepthBuffer( void ) {
 	globalImages->currentDepthImage->CopyDepthBuffer(
 		backEnd.viewDef->viewport.x1,
@@ -220,7 +220,7 @@ static void RB_CopyDepthBuffer( void ) {
 		backEnd.viewDef->viewport.x1 + 1,
 		backEnd.viewDef->viewport.y2 -
 		backEnd.viewDef->viewport.y1 + 1, true);
-}
+}*/
 
 /*
 =====================
@@ -269,11 +269,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
-		if ( r_useFbo.GetBool() ) {
-			FB_CopyDepthBuffer();
-		} else {
-			RB_CopyDepthBuffer();
-		}
+		FB_CopyDepthBuffer();
 		RB_SetProgramEnvironment();
 	}
 	qglUseProgram( 0 );

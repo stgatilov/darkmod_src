@@ -27,6 +27,7 @@ GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
 uint ShadowAtlasIndex;
 renderCrop_t ShadowAtlasPages[42];
+idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
 #pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
@@ -141,7 +142,7 @@ void FB_CopyColorBuffer() {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
 	} else {
 		GL_SelectTexture( 0 );
-		globalImages->currentRenderImage->CopyFramebuffer(
+		FB_CopyRender(globalImages->currentRenderImage,
 		    backEnd.viewDef->viewport.x1,
 		    backEnd.viewDef->viewport.y1,
 		    backEnd.viewDef->viewport.x2 -
@@ -149,6 +150,65 @@ void FB_CopyColorBuffer() {
 		    backEnd.viewDef->viewport.y2 -
 		    backEnd.viewDef->viewport.y1 + 1, true );
 	}
+}
+
+/*
+====================
+CopyDepthbuffer
+
+This should just be part of copyFramebuffer once we have a proper image type field
+Fixed #3877. Allow shaders to access scene depth -- revelator + SteveL
+Moved from image_load.cpp so that can use internal FBO resolution ratio and state
+====================
+*/
+void CopyDepthBuffer( idImage *image, int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
+	image->Bind();
+	// Ensure we are reading from the back buffer:
+	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer( GL_BACK );
+	if ( primaryOn ) {
+		x *= r_fboResolution.GetFloat();
+		y *= r_fboResolution.GetFloat();
+		imageWidth *= r_fboResolution.GetFloat();
+		imageHeight *= r_fboResolution.GetFloat();
+	}
+	// only resize if the current dimensions can't hold it at all,
+	// otherwise subview renderings could thrash this
+	if ( (useOversizedBuffer && (image->uploadWidth < imageWidth || image->uploadHeight < imageHeight)) ||
+		(!useOversizedBuffer && (image->uploadWidth != imageWidth || image->uploadHeight != imageHeight)) ) {
+		image->uploadWidth = imageWidth;
+		image->uploadHeight = imageHeight;
+
+		// This bit runs once only at map start, because it tests whether the image is too small to hold the screen.
+		// It resizes the texture to a power of two that can hold the screen,
+		// and then subsequent captures to the texture put the depth component into the RGB channels
+		// this part sets depthbits to the max value the gfx card supports, it could also be used for FBO.
+		switch ( r_fboDepthBits.GetInteger() ) {
+		case 16:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+			break;
+		case 32:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+			break;
+		default:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+			break;
+		}
+	}   //REVELATOR: dont need an else condition here.
+
+	// otherwise, just subimage upload it so that drivers can tell we are going to be changing
+	// it and don't try and do texture compression or some other silliness.
+	qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
+
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); // GL_NEAREST for Soft Shadow ~SS
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); // GL_NEAREST
+
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	backEnd.c_copyDepthBuffer++;
+
+	// Debug this as well
+	GL_CheckErrors();
 }
 
 void FB_CopyDepthBuffer() {
@@ -160,7 +220,7 @@ void FB_CopyDepthBuffer() {
 		FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT );
 	} else {
 		GL_SelectTexture( 0 );
-		globalImages->currentDepthImage->CopyDepthBuffer(
+		CopyDepthBuffer( globalImages->currentDepthImage,
 			backEnd.viewDef->viewport.x1,
 			backEnd.viewDef->viewport.y1,
 			backEnd.viewDef->viewport.x2 -
@@ -170,7 +230,45 @@ void FB_CopyDepthBuffer() {
 	}
 }
 
-// system mem only
+/*
+====================
+CopyFramebuffer
+x, y, imageWidth, imageHeigh for subviews are full screen size, scissored by backend.viewdef
+Moved from image_load.cpp so that can use internal FBO resolution ratio and state
+====================
+*/
+void FB_CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
+	image->Bind();
+	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer( GL_BACK );
+	if ( primaryOn ) {
+		x *= r_fboResolution.GetFloat();
+		y *= r_fboResolution.GetFloat();
+		imageWidth *= r_fboResolution.GetFloat();
+		imageHeight *= r_fboResolution.GetFloat();
+	}
+	// only resize if the current dimensions can't hold it at all, otherwise subview renderings could thrash this
+	if ( (useOversizedBuffer && (image->uploadWidth < imageWidth || image->uploadHeight < imageHeight)) ||
+		(!useOversizedBuffer && (image->uploadWidth != imageWidth || image->uploadHeight != imageHeight)) ) {
+		image->uploadWidth = imageWidth;
+		image->uploadHeight = imageHeight;
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
+	} else {
+		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
+		// it and don't try and do a texture compression or some other silliness
+		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
+	}
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	backEnd.c_copyFrameBuffer++;
+
+	// Debug
+	GL_CheckErrors();
+}
+
 void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 	//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
 	if ( cmd.imageWidth * cmd.imageHeight == 0 ) {
@@ -221,9 +319,8 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 		}
 	}
 
-	if ( cmd.image ) {
-		cmd.image->CopyFramebuffer( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, false );
-	}
+	if ( cmd.image )
+		FB_CopyRender( cmd.image, cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, false );
 
 	if ( primaryOn && r_multiSamples.GetInteger() > 1 ) {
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
@@ -565,9 +662,9 @@ void EnterPrimary() {
 
 // switch from fbo to default framebuffer, copy content
 void LeavePrimary() {
-	if ( !primaryOn ) {
+	if ( !primaryOn ) 
 		return;
-	}
+	primaryOn = false;
 	GL_CheckErrors();
 
 	GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
@@ -621,8 +718,6 @@ void LeavePrimary() {
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-	primaryOn = false;
-
 	if ( r_frontBuffer.GetBool() ) {
 		qglFinish();
 	}
@@ -635,4 +730,46 @@ void FB_TogglePrimary( bool on ) {
 	} else {
 		LeavePrimary();
 	}
+}
+
+/*
+====================
+GL_Scissor
+
+Utility function,
+if you absolutely must check for anything out of the ordinary, then do it here.
+====================
+*/
+void GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h ) {
+	// x and y can be negative, but neither width nor height must be.
+	if ( w <= 0 || h <= 0 )
+		return;
+	if ( primaryOn ) {
+		x *= r_fboResolution.GetFloat();
+		y *= r_fboResolution.GetFloat();
+		w *= r_fboResolution.GetFloat();
+		h *= r_fboResolution.GetFloat();
+	}
+	qglScissor( x, y, w, h );
+}
+
+/*
+====================
+GL_Viewport
+
+Utility function,
+if you absolutly must check for anything out of the ordinary, then do it here.
+====================
+*/
+void GL_Viewport( int x /* left */, int y /* bottom */, int w, int h ) {
+	// x and y can be negative, but neither width nor height must be.
+	if ( w <= 0 || h <= 0 )
+		return;
+	if ( primaryOn ) {
+		x *= r_fboResolution.GetFloat();
+		y *= r_fboResolution.GetFloat();
+		w *= r_fboResolution.GetFloat();
+		h *= r_fboResolution.GetFloat();
+	}
+	qglViewport( x, y, w, h );
 }

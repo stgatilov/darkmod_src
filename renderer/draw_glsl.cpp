@@ -361,7 +361,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	auto &page = ShadowAtlasPages[backEnd.vLight->shadowMapIndex-1];
 	qglViewport( page.x, page.y, 6*page.width, page.width );
 	if ( r_useScissor.GetBool() )
-		GL_Scissor( page.x, page.y, 6*page.width, page.width );
+		qglScissor( page.x, page.y, 6*page.width, page.width );
 	if ( clear )
 		qglClear( GL_DEPTH_BUFFER_BIT );
 	for ( int i = 0; i < 4; i++ )

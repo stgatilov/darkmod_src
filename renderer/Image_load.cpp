@@ -1464,7 +1464,7 @@ CopyFramebuffer
 x, y, imageWidth, imageHeigh for subviews are full screen size, scissored by backend.viewdef
 ====================
 */
-void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
+/*void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
 	this->Bind();
 	if ( !r_useFbo.GetBool() ) { // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
@@ -1490,7 +1490,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 
 	// Debug
 	GL_CheckErrors();
-}
+}*/
 
 /*
 ====================
@@ -1500,12 +1500,11 @@ This should just be part of copyFramebuffer once we have a proper image type fie
 Fixed #3877. Allow shaders to access scene depth -- revelator + SteveL
 ====================
 */
-void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
+/*void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
 	this->Bind();
 	// Ensure we are reading from the back buffer:
-	if ( !r_useFbo.GetBool() ) { // duzenko #4425: not applicable, raises gl errors
+	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
-	}
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
 	if ( ( useOversizedBuffer && ( uploadWidth < imageWidth || uploadHeight < imageHeight) ) ||
@@ -1543,7 +1542,7 @@ void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bo
 
 	// Debug this as well
 	GL_CheckErrors();
-}
+}*/
 
 /*
 =============

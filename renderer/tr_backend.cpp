@@ -150,42 +150,6 @@ void GL_Cull( const int cullType ) {
 }
 
 /*
-====================
-GL_Scissor
-
-Utility function,
-if you absolutly must
-check for anything out of the ordinary,
-then do it here.
-====================
-*/
-void GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h ) {
-	// x and y can be negative, but neither width nor height must be.
-	if ( w <= 0 || h <= 0 ) {
-		return;
-	}
-	qglScissor( x, y, w, h );
-}
-
-/*
-====================
-GL_Viewport
-
-Utility function,
-if you absolutly must
-check for anything out of the ordinary,
-then do it here.
-====================
-*/
-void GL_Viewport( int x /* left */, int y /* bottom */, int w, int h ) {
-	// x and y can be negative, but neither width nor height must be.
-	if ( w <= 0 || h <= 0 ) {
-		return;
-	}
-	qglViewport( x, y, w, h );
-}
-
-/*
 =================
 GL_ClearStateDelta
 
@@ -698,7 +662,8 @@ void RB_Bloom( void ) {
 	parm[3] = 1;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+	//globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+	FB_CopyRender( globalImages->bloomCookedMath, 0, 0, 256, 1, false );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
@@ -708,7 +673,8 @@ void RB_Bloom( void ) {
 	parm[3] = Max( Min( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+	//globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+	FB_CopyRender( globalImages->bloomCookedMath, 0, 0, 256, 1, false );
 
 	GL_Viewport( 0, 0, w / 2, h / 2 );
 	GL_SelectTexture( 0 );
@@ -719,7 +685,8 @@ void RB_Bloom( void ) {
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	//globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
 	globalImages->bloomImage->Bind();
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
@@ -730,14 +697,16 @@ void RB_Bloom( void ) {
 	parm[3] = 1;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	//globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
 	parm[0] = 2 / h;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	//globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
 	FB_SelectPrimary();
 	GL_Viewport( 0, 0, w, h );

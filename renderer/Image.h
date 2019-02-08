@@ -173,9 +173,9 @@ public:
 
 
 
-	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
+	//void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
-	void		CopyDepthBuffer( int x, int y, int width, int height, bool useOversizedBuffer );
+	//void		CopyDepthBuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
 	void		UploadScratch( const byte *pic, int width, int height );
 

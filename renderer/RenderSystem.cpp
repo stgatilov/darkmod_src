@@ -541,10 +541,10 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	renderCrops[0].x = 0;
 	renderCrops[0].y = 0;
 
-	if ( r_useFbo.GetBool() ) { // duzenko #4425: allow virtual resolution
+/*	if ( r_useFbo.GetBool() ) { // duzenko #4425: allow virtual resolution
 		renderCrops[0].width = windowWidth * r_fboResolution.GetFloat();
 		renderCrops[0].height = windowHeight * r_fboResolution.GetFloat();
-	} else {
+	} else */{
 		renderCrops[0].width = windowWidth;
 		renderCrops[0].height = windowHeight;
 	}
@@ -879,10 +879,10 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool use
 		return; 
 	}
 	renderCrop_t rc = renderCrops[currentRenderCrop];
-	if ( r_useFbo.GetBool() && !usePbo ) { // 4676 duzenko FIXME usePbo has double function
+	/*if ( r_useFbo.GetBool() && !usePbo ) { // 4676 duzenko FIXME usePbo has double function
 		rc.width /= r_fboResolution.GetFloat();
 		rc.height /= r_fboResolution.GetFloat();
-	}
+	}*/
 	rc.width = ( rc.width + 3 ) & ~3; //opengl wants width padded to 4x
 
 	//guiModel->EmitFullScreen();
