@@ -520,8 +520,8 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewer );
 		newStage->megaTexture->BindForViewOrigin( localViewer );
 	}
-	const float	*regs = surf->shaderRegisters;
 
+	const float	*regs = surf->shaderRegisters;
 	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
 		float	parm[4];
 		parm[0] = regs[newStage->vertexParms[i][0]];
@@ -564,22 +564,79 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	//note: is it certain that these attribs map to gl_MUltiTexCoord{012} and gl_Normal ?...
 	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+	qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+	qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+	qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+
 	qglEnableVertexAttribArray( 8 );
-	auto newStage = pStage->newStage;
+	qglEnableVertexAttribArray( 9 );
+	qglEnableVertexAttribArray( 10 );
+	qglEnableVertexAttribArray( 2 );
+
+	GL_State( pStage->drawStateBits );
+
+	newShaderStage_t *newStage = pStage->newStage;
+	qglUseProgram( pStage->newStage->vertexProgram );	
+
+	const float	*regs = surf->shaderRegisters;
+	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
+		float parm[4];
+		parm[0] = regs[newStage->vertexParms[i][0]];
+		parm[1] = regs[newStage->vertexParms[i][1]];
+		parm[2] = regs[newStage->vertexParms[i][2]];
+		parm[3] = regs[newStage->vertexParms[i][3]];
+		//TODO: get location once
+		char buff[256];
+		sprintf(buff, "program_local_%d", i);
+		int loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+		qglUniform4fv(loc, 1, parm);
+	}
+
 	for ( int i = 0; i < newStage->numFragmentProgramImages; i++ ) {
 		if ( newStage->fragmentProgramImages[i] ) {
 			GL_SelectTexture( i );
 			newStage->fragmentProgramImages[i]->Bind();
+			//TODO: get location once
+			char buff[256];
+			sprintf(buff, "texture_%d", i);
+			int loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+			qglUniform1i(loc, i);
 		}
 	}
-	GL_State( pStage->drawStateBits );
-	qglUseProgram( pStage->newStage->fragmentProgram );	
-	
-	idMat4 modelView, proj;
+
+	//TODO: find better means of getting env parameters
+	static PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB = (PFNGLGETPROGRAMENVPARAMETERFVARBPROC) GLimp_ExtensionPointer("glGetProgramEnvParameterfvARB");
+	for (int i = 0; i < PP_MISC_0 + 5; i++) {
+		//TODO: get location once
+		//TODO: use better names for env params (instead of indices)
+
+		char buff[256];
+		sprintf(buff, "program_vpenv_%d", i);
+		int loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+		if (loc >= 0) {
+			float parm[4] = {0.0f};
+			qglGetProgramEnvParameterfvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
+			qglUniform4fv(loc, 1, parm);
+		}
+
+		sprintf(buff, "program_fpenv_%d", i);
+		loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+		if (loc >= 0) {
+			float parm[4] = {0.0f};
+			qglGetProgramEnvParameterfvARB( GL_FRAGMENT_PROGRAM_ARB, i, parm );
+			qglUniform4fv(loc, 1, parm);
+		}
+	}
+	qglGetError();	//ignore missing env parameters
+
+
+	//I guess this chunk of code would be useful when upgrading GLSL version
+	/*idMat4 modelView, proj;
 	memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
 	memcpy( proj.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( proj ) );
-	auto MVP = modelView * proj;
+	idMat4 MVP = modelView * proj;
 	qglUniformMatrix4fv( 0, 1, false, MVP.ToFloatPtr() );
 	
 	float	parm[4][4];
@@ -590,10 +647,10 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 		parm[i][2] = regs[newStage->vertexParms[i][2]];
 		parm[i][3] = regs[newStage->vertexParms[i][3]];
 	}
-	qglUniform4fv( 1, 4, parm[0] );
+	qglUniform4fv( 1, 4, parm[0] );*/
 
+	//draw it
 	RB_DrawElementsWithCounters( surf );
-	qglUseProgram( 0 );
 
 	for ( int i = 1; i < newStage->numFragmentProgramImages; i++ ) {
 		if ( newStage->fragmentProgramImages[i] ) {
@@ -602,7 +659,13 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 		}
 	}
 	GL_SelectTexture( 0 );
+
+	qglUseProgram( 0 );
+
 	qglDisableVertexAttribArray( 8 );
+	qglDisableVertexAttribArray( 9 );
+	qglDisableVertexAttribArray( 10 );
+	qglDisableVertexAttribArray( 2 );
 }
 
 /*
