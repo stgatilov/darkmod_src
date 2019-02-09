@@ -66,6 +66,7 @@ typedef struct glconfig_s {
 	bool				framebufferMultisampleAvailable;
 	bool				framebufferPackedDepthStencilAvailable;
 	bool				geometryShaderAvailable;
+	bool				gpuShader4Available;	// usampler in GLSL 120
 	bool				fenceSyncAvailable;
 	bool				timerQueriesAvailable;
 	bool				debugGroupsAvailable;

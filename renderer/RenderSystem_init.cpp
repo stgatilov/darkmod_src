@@ -607,6 +607,8 @@ static void R_CheckPortableExtensions( void ) {
 		}
 	}
 
+	glConfig.gpuShader4Available = R_CheckExtension( "GL_EXT_gpu_shader4" );
+
 	// geometry shaders
 	glConfig.geometryShaderAvailable = R_CheckExtension( "GL_ARB_geometry_shader4"/*, 3.2*/ );
 	if (glConfig.geometryShaderAvailable) {

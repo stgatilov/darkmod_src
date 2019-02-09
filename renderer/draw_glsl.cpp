@@ -669,6 +669,14 @@ int R_FindGLSLProgram( const char *program ) {
 		return iter->second->program;
 }
 
+// pass supported extensions for shader IFDEFS
+void PrimitivePreprocess(idStr &source) {
+	idStr injections;
+	if ( glConfig.gpuShader4Available )
+		injections = "#define EXT_gpu_shader4";
+	source.Replace( "// TDM INJECTIONS", injections );
+}
+
 /*
 =================
 shaderProgram_t::CompileShader
@@ -702,11 +710,13 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 		common->Warning( "Unknown ShaderType in shaderProgram_t::CompileShader" );
 		break;
 	}
-	const char *source = fileBuffer;
+	idStr source( fileBuffer );
+	PrimitivePreprocess( source );
+	const char *pSource = source.c_str();
 
 	/* create shader object, set the source, and compile */
 	GLuint shader = qglCreateShader( ShaderType );
-	qglShaderSource( shader, 1, &source, NULL );
+	qglShaderSource( shader, 1, &pSource, NULL );
 	qglCompileShader( shader );
 	fileSystem->FreeFile( fileBuffer );
 
