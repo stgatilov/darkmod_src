@@ -791,11 +791,12 @@ bool shaderProgram_t::Load( const char *fileName ) {
 	AttachShader( GL_GEOMETRY_SHADER, fileName );
 	AttachShader( GL_FRAGMENT_SHADER, fileName );
 	common->Printf( "\n" );
+	qglBindAttribLocation( program, 0, "attr_Position" );
+	qglBindAttribLocation( program, 2, "attr_Normal" );
 	qglBindAttribLocation( program, 3, "attr_Color" );
 	qglBindAttribLocation( program, 8, "attr_TexCoord" );
 	qglBindAttribLocation( program, 9, "attr_Tangent" );
 	qglBindAttribLocation( program, 10, "attr_Bitangent" );
-	qglBindAttribLocation( program, 11, "attr_Normal" );
 
 	GLint result;/* link the program and make sure that there were no errors */
 	qglLinkProgram( program );

@@ -564,7 +564,7 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	//note: is it certain that these attribs map to gl_MUltiTexCoord{012} and gl_Normal ?...
+	//note: named attributes bound to locations during creation in shaderProgram_t::Load
 	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 	qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 	qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
@@ -578,7 +578,8 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	GL_State( pStage->drawStateBits );
 
 	newShaderStage_t *newStage = pStage->newStage;
-	qglUseProgram( pStage->newStage->vertexProgram );	
+	int program = newStage->vertexProgram;
+	qglUseProgram( program );
 
 	const float	*regs = surf->shaderRegisters;
 	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
@@ -589,8 +590,8 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 		parm[3] = regs[newStage->vertexParms[i][3]];
 		//TODO: get location once
 		char buff[256];
-		sprintf(buff, "program_local_%d", i);
-		int loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+		sprintf(buff, "u_localParam%d", i);
+		int loc = qglGetUniformLocation(program, buff);
 		qglUniform4fv(loc, 1, parm);
 	}
 
@@ -600,8 +601,8 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 			newStage->fragmentProgramImages[i]->Bind();
 			//TODO: get location once
 			char buff[256];
-			sprintf(buff, "texture_%d", i);
-			int loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+			sprintf(buff, "u_texture%d", i);
+			int loc = qglGetUniformLocation(program, buff);
 			qglUniform1i(loc, i);
 		}
 	}
@@ -613,16 +614,16 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 		//TODO: use better names for env params (instead of indices)
 
 		char buff[256];
-		sprintf(buff, "program_vpenv_%d", i);
-		int loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+		sprintf(buff, "u_envvpParam%d", i);
+		int loc = qglGetUniformLocation(program, buff);
 		if (loc >= 0) {
 			float parm[4] = {0.0f};
 			qglGetProgramEnvParameterfvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
 			qglUniform4fv(loc, 1, parm);
 		}
 
-		sprintf(buff, "program_fpenv_%d", i);
-		loc = qglGetUniformLocation(pStage->newStage->vertexProgram, buff);
+		sprintf(buff, "u_envfpParam%d", i);
+		loc = qglGetUniformLocation(program, buff);
 		if (loc >= 0) {
 			float parm[4] = {0.0f};
 			qglGetProgramEnvParameterfvARB( GL_FRAGMENT_PROGRAM_ARB, i, parm );
@@ -631,23 +632,19 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	}
 	qglGetError();	//ignore missing env parameters
 
-
-	//I guess this chunk of code would be useful when upgrading GLSL version
-	/*idMat4 modelView, proj;
+	idMat4 modelView, projection;
 	memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
-	memcpy( proj.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( proj ) );
-	idMat4 MVP = modelView * proj;
-	qglUniformMatrix4fv( 0, 1, false, MVP.ToFloatPtr() );
-	
-	float	parm[4][4];
-	const float	*regs = surf->shaderRegisters;
-	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
-		parm[i][0] = regs[newStage->vertexParms[i][0]];
-		parm[i][1] = regs[newStage->vertexParms[i][1]];
-		parm[i][2] = regs[newStage->vertexParms[i][2]];
-		parm[i][3] = regs[newStage->vertexParms[i][3]];
+	memcpy( projection.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( projection ) );
+	idMat4 modelViewProjection = modelView * projection;
+	{
+		//TODO: query locations once
+		int locMV  = qglGetUniformLocation(program, "u_modelViewMatrix");
+		qglUniformMatrix4fv(locMV, 1, false, modelView.ToFloatPtr());
+		int locP   = qglGetUniformLocation(program, "u_projectionMatrix");
+		qglUniformMatrix4fv(locP, 1, false, projection.ToFloatPtr());
+		int locMVP  = qglGetUniformLocation(program, "u_modelViewProjectionMatrix");
+		qglUniformMatrix4fv(locMVP, 1, false, modelViewProjection.ToFloatPtr());
 	}
-	qglUniform4fv( 1, 4, parm[0] );*/
 
 	//draw it
 	RB_DrawElementsWithCounters( surf );
