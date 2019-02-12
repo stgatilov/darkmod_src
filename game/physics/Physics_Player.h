@@ -186,7 +186,7 @@ public:
 	* from a climbable and is still holding down the button
 	* This is not saved/restored but cleared on restore, just to be safe
 	**/
-	bool					m_bClimbDetachCrouchHeld;
+	bool					m_bSlideClimb;
 
 public:	// common physics interface
 
@@ -408,7 +408,7 @@ private:
 private:
 	float					CmdScale( const usercmd_t &cmd ) const;
 	void					Accelerate( const idVec3 &wishdir, const float wishspeed, const float accel );
-	bool					SlideMove( bool gravity, bool stepUp, bool stepDown, bool push );
+	bool					SlideMove( bool gravity, bool stepUp, bool stepDown, bool push, const float velocityLimit = -1.0);
 	void					Friction( const idVec3 &wishdir = idVec3(), const float forceFriction = -1 );
 	void					WaterMove( void );
 	void					FlyMove( void );

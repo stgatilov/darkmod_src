@@ -255,7 +255,7 @@ Returns true if the velocity was clipped in some way
 */
 #define	MAX_CLIP_PLANES	5
 
-bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool push ) {
+bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool push, const float velocityLimit /*= -1.0*/ ) {
 	int			i, j, k, pushFlags;
 	int			bumpcount, numbumps, numplanes;
 	float		d, time_left, into;
@@ -633,6 +633,16 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	endClipVelocity = endVelocity - gravityNormal * endVelocity * gravityNormal;
 	if ( clipVelocity * endClipVelocity < 0.0f ) {
 		current.velocity = gravityNormal * current.velocity * gravityNormal;
+	}
+
+	// Limit velocity
+	if (velocityLimit >= 0.0)
+	{
+		const float fSqrdVelocity = current.velocity.LengthSqr();
+		if (fSqrdVelocity > velocityLimit*velocityLimit)
+		{
+			current.velocity *= idMath::RSqrt(fSqrdVelocity) * velocityLimit;
+		}
 	}
 
 	return (bool)( bumpcount == 0 );
@@ -1539,21 +1549,11 @@ void idPhysics_Player::LadderMove( void )
 	idVec3  dir( vec3_zero ), start( vec3_zero ), end( vec3_zero ), delta( vec3_zero );
 	idVec3	AttachVel( vec3_zero ), RefFrameVel( vec3_zero );
 	idVec3	vReqVert( vec3_zero ), vReqHoriz( vec3_zero ), vHorizVect( vec3_zero );
-	float	wishspeed(0.0f), scale(0.0f), accel(0.0f);
+	float	wishspeed(0.0f), scale(0.0f), accel(PM_ACCELERATE);
 	float	upscale(0.0f), horizscale(0.0f), NormalDot(0.0f);
 	trace_t SurfTrace;
 	bool	bMoveAllowed( true );
 
-	accel = PM_ACCELERATE;
-
-	// TODO: Support non-rope climbable AFs by storing the AF body hit in the trace?
-	SetRefEntVel( m_ClimbingOnEnt.GetEntity() );
-
-	// Move player into climbed on ent reference frame
-	current.velocity -= m_RefEntVelocity;
-
-	idVec3 ClimbNormXY = m_vClimbNormal - (m_vClimbNormal * gravityNormal) * gravityNormal;
-	ClimbNormXY.Normalize();
 
 	// jump off the climbable surface if they jump, or fall off if they hit crouch
 	// angua: detaching when hitting crouch is handled in idPlayer::PerformImpulse
@@ -1563,6 +1563,9 @@ void idPhysics_Player::LadderMove( void )
 		return;
 	}
 
+	idVec3 ClimbNormXY = m_vClimbNormal - (m_vClimbNormal * gravityNormal) * gravityNormal;
+	ClimbNormXY.Normalize();
+
 	NormalDot = ClimbNormXY * viewForward;
 	// detach if their feet are on the ground walking away from the surface
 	if ( walking && -NormalDot * command.forwardmove < LADDER_WALKDETACH_DOT )
@@ -1570,6 +1573,7 @@ void idPhysics_Player::LadderMove( void )
 		ClimbDetach();
 		return;
 	}
+
 
 	// ====================== stick to the ladder ========================
 	// Do a trace to figure out where to attach the player:
@@ -1664,6 +1668,19 @@ void idPhysics_Player::LadderMove( void )
 		// We should already have m_vClimbPoint stored from the initial trace
 		AttachVel = 12.0f * (m_vClimbPoint - current.origin);
 	}
+
+	// stifu #4948: Do a ladder slide with non-damange terminal velocity
+	if (m_bSlideClimb)
+	{
+		idPhysics_Player::SlideMove(true, false, false, false, cv_pm_ladderSlide_speedLimit.GetFloat());
+		return;
+	}
+
+	// TODO: Support non-rope climbable AFs by storing the AF body hit in the trace?
+	SetRefEntVel(m_ClimbingOnEnt.GetEntity());
+
+	// Move player into climbed on ent reference frame
+	current.velocity -= m_RefEntVelocity;
 
 	current.velocity = (gravityNormal * current.velocity) * gravityNormal + AttachVel;
 
@@ -2169,8 +2186,11 @@ void idPhysics_Player::CheckClimbable( void )
 	if ( IsMantling() )
 		return;
 
-	if ( m_bClimbDetachCrouchHeld )
+	if ( m_bOnRope && m_bSlideClimb )
 		return;
+	// stifu #4948: Continue checking when sliding vine and ladder. A non-damaging
+	// slide speed is only achieved when the player is looking at the climb. 
+	// Otherwise, player will be detached.
 
 /*
 	// Don't attach if we are holding an object in our hands
@@ -2251,6 +2271,8 @@ void idPhysics_Player::CheckClimbable( void )
 		if ( ( ( trace.c.material && ( trace.c.material->IsLadder() ) ) || isVine )
 			&& 	( gameLocal.time > m_NextAttachTime ) )
 		{
+			m_bClimbableAhead = true;
+
 			idVec3 vStickPoint = trace.endpos;
 			// check a step height higher
 			end = current.origin - gravityNormal * ( maxStepHeight * 0.75f );
@@ -2285,13 +2307,20 @@ void idPhysics_Player::CheckClimbable( void )
 						static_cast<idPlayer *>(self)->SetImmobilization( "ClimbMove", EIM_WEAPON_SELECT | EIM_ATTACK );
 					}
 
-					m_bClimbableAhead = true;
 					m_bOnClimb = true;					
 
 					return;
 				}
 			}
 		}
+	}
+
+
+	if (!m_bClimbableAhead && m_bOnClimb && m_bSlideClimb)
+	{
+		// Not facing towards climbable surface. Cancel slide.
+		ClimbDetach();
+		m_bSlideClimb = false;
 	}
 
 	// Rope attachment failsafe: Check intersection with the rope as well
@@ -2915,7 +2944,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_ClimbMaxVelVert = 0.0f;
 	m_ClimbSndRepDistVert = 0;
 	m_ClimbSndRepDistHoriz = 0;
-	m_bClimbDetachCrouchHeld = false;
+	m_bSlideClimb = false;
 
 	m_NextAttachTime = -1;
 
@@ -3185,7 +3214,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadStaticObject( *m_PushForce );
 
 	// ishtvan: To avoid accidental latching, clear held crouch key var
-	m_bClimbDetachCrouchHeld = false;
+	m_bSlideClimb = false;
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }

@@ -170,6 +170,8 @@ extern idCVar cv_pm_mantle_pullFast_msecs;
 extern idCVar cv_pm_mantle_pushNonCrouched_playgrunt_speedthreshold;
 extern idCVar cv_pm_mantle_fallingFast_speedthreshold;
 
+extern idCVar cv_pm_ladderSlide_speedLimit;
+
 extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
 extern idCVar cv_pm_rope_swing_impulse;

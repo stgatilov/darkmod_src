@@ -6309,12 +6309,12 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 				if (physicsObj.OnRope())
 				{
 					physicsObj.RopeDetach();
-					physicsObj.m_bClimbDetachCrouchHeld = true;
+					physicsObj.m_bSlideClimb = true;
 				}
 				else if (physicsObj.OnLadder())
 				{
-					physicsObj.ClimbDetach();
-					physicsObj.m_bClimbDetachCrouchHeld = true;
+					// #4948: Do not detach here, but do a ladder slide
+					physicsObj.m_bSlideClimb = true;
 				}
 			}
 
@@ -6362,7 +6362,7 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 			}
 
 			// clear climb detach intent when crouch is released
-			physicsObj.m_bClimbDetachCrouchHeld = false;
+			physicsObj.m_bSlideClimb = false;
 
 		break;
 
@@ -7237,49 +7237,54 @@ void idPlayer::Move( void )
 		
 		// nbohr1more: #4852 prevent flickering lantern on ropes and ladders
 		SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
-		
-		// Correct for moving reference frame
-		int startTime = gameLocal.previousTime;
-		int endTime = gameLocal.time;
-		idVec3 RefFrameOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel();
-		idVec3 GravNormal = physicsObj.GetGravityNormal();
-		idVec3 RefFrameOffsetXY = RefFrameOffset - (RefFrameOffset * GravNormal ) * GravNormal;
 
-		int old_vert = static_cast<int>(savedOrigin.z / physicsObj.GetClimbSndRepDistVert());
-		int new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert());
-
-		int old_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( savedOrigin ) / physicsObj.GetClimbSndRepDistHoriz());
-		int new_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord( physicsObj.GetOrigin() - RefFrameOffsetXY ) / physicsObj.GetClimbSndRepDistHoriz());
-
-		idStr localSound;
-
-		if (old_vert != new_vert) 
+		// Player ladder sounds
+		if (!physicsObj.m_bSlideClimb)
 		{
-			localSound = "snd_climb_vert_";
-		}
-		else if (old_horiz != new_horiz)
-		{
-			localSound = "snd_climb_horiz_";
-		}
+			// Test if new sound must be played
 
-		if (localSound.Length() > 0)
-		{
-			idStr surfaceName = physicsObj.GetClimbSurfaceType();
+			// Correct for moving reference frame
+			int startTime = gameLocal.previousTime;
+			int endTime = gameLocal.time;
+			idVec3 RefFrameOffset = MS2SEC(endTime - startTime) * physicsObj.GetRefEntVel();
+			idVec3 GravNormal = physicsObj.GetGravityNormal();
+			idVec3 RefFrameOffsetXY = RefFrameOffset - (RefFrameOffset * GravNormal) * GravNormal;
 
-			idStr tempStr = localSound + surfaceName;
-			idStr sound = spawnArgs.GetString(tempStr.c_str());
+			int old_vert = static_cast<int>(savedOrigin.z / physicsObj.GetClimbSndRepDistVert());
+			int new_vert = static_cast<int>((physicsObj.GetOrigin().z - RefFrameOffset.z) / physicsObj.GetClimbSndRepDistVert());
 
-			if (sound.Length() == 0)
+			int old_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord(savedOrigin) / physicsObj.GetClimbSndRepDistHoriz());
+			int new_horiz = static_cast<int>(physicsObj.GetClimbLateralCoord(physicsObj.GetOrigin() - RefFrameOffsetXY) / physicsObj.GetClimbSndRepDistHoriz());
+
+			idStr localSound;
+			if (old_vert != new_vert)
 			{
-				tempStr = localSound + "default";
-				sound = spawnArgs.GetString(tempStr.c_str());
+				localSound = "snd_climb_vert_";
 			}
-			// DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Climb sound: %s\r", TempStr.c_str() );
-			if (sound.Length() > 0)
+			else if (old_horiz != new_horiz)
 			{
-				StartSound(tempStr.c_str(), SND_CHANNEL_BODY, 0, false, NULL); // grayman - #2341 - was SND_CHANNEL_ANY
+				localSound = "snd_climb_horiz_";
 			}
-		}
+
+			if (localSound.Length() > 0)
+			{
+				idStr surfaceName = physicsObj.GetClimbSurfaceType();
+
+				idStr tempStr = localSound + surfaceName;
+				idStr sound = spawnArgs.GetString(tempStr.c_str());
+
+				if (sound.Length() == 0)
+				{
+					tempStr = localSound + "default";
+					sound = spawnArgs.GetString(tempStr.c_str());
+				}
+				// DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Climb sound: %s\r", TempStr.c_str() );
+				if (sound.Length() > 0)
+				{
+					StartSound(tempStr.c_str(), SND_CHANNEL_BODY, 0, false, NULL); // grayman - #2341 - was SND_CHANNEL_ANY
+				}
+			}
+		}		
 	}
 
 	if (health > 0)
