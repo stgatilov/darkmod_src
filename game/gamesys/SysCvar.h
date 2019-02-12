@@ -228,6 +228,7 @@ extern idCVar cv_frob_weapon_selects_weapon;
 extern idCVar cv_frob_debug_hud;
 
 extern idCVar cv_frobhelper_active;
+extern idCVar cv_frobhelper_alwaysVisible;
 extern idCVar cv_frobhelper_alpha;
 extern idCVar cv_frobhelper_fadein_delay;
 extern idCVar cv_frobhelper_fadein_duration;

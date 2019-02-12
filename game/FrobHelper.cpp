@@ -109,7 +109,8 @@ const float CFrobHelper::GetAlpha()
 	const int iTime = gameLocal.time;
 
 	// Calculate current FrobHelper alpha based on delay and fade-in / fade-out
-	if (m_bShouldBeDisplayed) 
+	if (!cv_frobhelper_alwaysVisible.GetBool() && m_bShouldBeDisplayed 
+		|| cv_frobhelper_alwaysVisible.GetBool() && cv_frobhelper_active.GetBool())
 	{		
 		// Skip the fade delay if a fade was already active
 		const bool bPreviousFadeoutNotCompleted = m_fLastStateChangeAlpha > 0.0f;

@@ -45,7 +45,7 @@ public:
 	  * @author		STiFU */
 	inline const bool IsActive()
 	{
-		return cv_frobhelper_active.GetBool();
+		return cv_frobhelper_active.GetBool() || cv_frobhelper_alwaysVisible.GetBool(); 
 	}
 
 private:
@@ -59,17 +59,28 @@ private:
 	
 	inline void CheckCvars()
 	{
+		if (cv_frobhelper_alwaysVisible.GetBool() && cv_frobhelper_active.IsModified())
+		{
+			// stifu #4990: If always visible, players control frobhelper visibility 
+			// via cv_frobhelper_active. So, remember current state whenever 
+			// that cvar changes.
+			m_iLastStateChangeTime = gameLocal.time;
+			m_fLastStateChangeAlpha = m_fCurrentAlpha;
+		}
+
 		if (   cv_frobhelper_active.IsModified()
 			|| cv_frobhelper_fadein_delay.IsModified()
 			|| cv_frobhelper_fadein_duration.IsModified()
 			|| cv_frobhelper_fadeout_duration.IsModified()
-			|| cv_frobhelper_alpha.IsModified())
+			|| cv_frobhelper_alpha.IsModified()
+			|| cv_frobhelper_alwaysVisible.IsModified())
 		{
 			cv_frobhelper_active.ClearModified();
 			cv_frobhelper_fadein_delay.ClearModified();
 			cv_frobhelper_fadein_duration.ClearModified();
 			cv_frobhelper_fadeout_duration.ClearModified();
 			cv_frobhelper_alpha.ClearModified();
+			cv_frobhelper_alwaysVisible.ClearModified();
 			Reset();
 		}
 	}
@@ -78,9 +89,12 @@ private:
 	{
 		m_bShouldBeDisplayed = false;
 		m_bReachedTargetAlpha = false;
-		m_fCurrentAlpha = 0.0f;
-		m_fLastStateChangeAlpha = 0.0f;
-		m_iLastStateChangeTime = 0;
+		if (!cv_frobhelper_alwaysVisible.GetBool())
+		{
+			m_fCurrentAlpha = 0.0f;
+			m_fLastStateChangeAlpha = 0.0f;
+			m_iLastStateChangeTime = 0;
+		}
 	}
 	
 private:
