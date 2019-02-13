@@ -229,6 +229,11 @@ idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVA
 // nbohr1more: #558 Toggle Creep
 idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
+// stifu #3607: Shouldering animation
+idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Duration of the shouldering animation in msecs.", 0.0f, 5000.0f);
+idCVar cv_pm_shoulderAnim_rockDist(     "pm_shoulderAnim_rockDist",     "10.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The animation distance.", 0.0f, 50.0f);
+idCVar cv_pm_shoulderAnim_delay_msecs(	"pm_shoulderAnim_delay_msecs",  "300.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If the shouldered body is low, player will crouch and wait this delay before playing the shoulder animation", 0.0f, 500.0f);
+
 /**
 * Dark Mod Leaning
 **/

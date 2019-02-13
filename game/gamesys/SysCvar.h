@@ -203,6 +203,11 @@ extern idCVar cv_tdm_reattach_delay;
 // nbohr1more: #558 TDM toggle creep
 extern idCVar cv_tdm_creep_toggle;
 
+// stifu #3607: Shouldering animation
+extern idCVar cv_pm_shoulderAnim_msecs;
+extern idCVar cv_pm_shoulderAnim_rockDist;
+extern idCVar cv_pm_shoulderAnim_delay_msecs;
+
 /**
 * TDM Leaning vars:
 **/

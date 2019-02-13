@@ -2040,7 +2040,7 @@ void idPhysics_Player::CheckDuck( void ) {
 			// greebo: Update the lean physics when crouching
 			UpdateLeanPhysics();
 		}
-		else if (!IsMantling() && idealCrouchState == false) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
+		else if (!IsMantling() && !IsShouldering() && idealCrouchState == false) // MantleMod: SophisticatedZombie (DH): Don't stand up if crouch during mantle
 		{
 			// ideal crouch state is not negative anymore, check if we are still in crouch mode
 			// stand up if appropriate
@@ -2705,6 +2705,11 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		// dead
 		DeadMove();
 	}
+	else if (m_eShoulderAnimState == eShoulderingAnimation_Active)
+	{
+		// Shouldering viewport animation
+		ShoulderingMove();
+	}
 	// continue moving on the rope if still attached
 	else if ( m_bOnRope )
 	{
@@ -2761,6 +2766,10 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		// airborne
 		AirMove();
 	}
+
+	if (m_eShoulderAnimState == eShoulderingAnimation_Scheduled)
+		// Try to start shouldering animation
+		StartShoulderingAnim();
 
 	// enable weapon if not swimming
 	if ( ( waterLevel <= WATERLEVEL_FEET ) && static_cast<idPlayer*>(self)->GetImmobilization("WaterMove") && walking ) // grayman #3413
@@ -2896,6 +2905,10 @@ idPhysics_Player::idPhysics_Player
 ================
 */
 idPhysics_Player::idPhysics_Player( void ) 
+	: m_eShoulderAnimState(eShoulderingAnimation_NotStarted)
+	, m_fShoulderingTime(0.0f)
+	, m_ShoulderingStartPos(vec3_zero)
+    , m_bShouldering_SkipDucking(false)
 {
 	debugLevel = false;
 	clipModel = NULL;
@@ -2966,7 +2979,6 @@ idPhysics_Player::idPhysics_Player( void )
 	m_mantleStartPossible = true;
 
 	// Leaning Mod
-	m_bIsLeaning = false;
 	m_leanYawAngleDegrees = 0.0;
 	m_CurrentLeanTiltDegrees = 0.0;
 	m_CurrentLeanStretch = 0.0;
@@ -3116,6 +3128,12 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteStaticObject(*m_PushForce);
 
 	savefile->WriteBool(m_bSlideInitialized);
+
+	// Shouldering anim
+	savefile->WriteInt(m_eShoulderAnimState);
+	savefile->WriteFloat(m_fShoulderingTime);
+	savefile->WriteVec3(m_ShoulderingStartPos);
+	savefile->WriteBool(m_bShouldering_SkipDucking);
 }
 
 /*
@@ -3184,10 +3202,12 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( waterType );
 
 	// Mantle mod
-	int temp;
-	savefile->ReadInt(temp);
-	assert(temp >= 0 && temp < NumMantlePhases); // sanity check
-	m_mantlePhase = static_cast<EMantlePhase>(temp);
+	{
+		int temp;
+		savefile->ReadInt(temp);
+		assert(temp >= 0 && temp < NumMantlePhases); // sanity check
+		m_mantlePhase = static_cast<EMantlePhase>(temp);
+	}
 
 	savefile->ReadBool(m_mantleStartPossible);
 	savefile->ReadVec3(m_mantlePullStartPos);
@@ -3220,6 +3240,18 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	m_bSlideOrDetachClimb = false;
 
 	savefile->ReadBool(m_bSlideInitialized);
+
+	// Shouldering anim
+	{
+		int iSAS = 0;
+		savefile->ReadInt(iSAS);
+		assert(iSAS >= eShoulderingAnimation_NotStarted 
+			&& iSAS <= eShoulderingAnimation_Active); // sanity check
+		m_eShoulderAnimState = static_cast<eShoulderingAnimation>(iSAS);
+	}
+	savefile->ReadFloat(m_fShoulderingTime);
+	savefile->ReadVec3(m_ShoulderingStartPos);
+	savefile->ReadBool(m_bShouldering_SkipDucking);
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }
@@ -4852,6 +4884,16 @@ void idPhysics_Player::PerformMantle()
 
 void idPhysics_Player::ToggleLean(float leanYawAngleDegrees)
 {
+	idPlayer* pPlayer = static_cast<idPlayer*>(self);
+	if (pPlayer == NULL)
+	{
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("pPlayer is NULL\r");
+		return;
+	}
+	if (pPlayer->GetImmobilization() & EIM_LEAN)
+		// If lean immobilization is set, do nothing!
+		return;
+
 	//if (m_CurrentLeanTiltDegrees < 0.0001) // prevent floating point compare errors
 	if (m_CurrentLeanTiltDegrees < 0.00001) // prevent floating point compare errors
 	{
@@ -5146,6 +5188,24 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 
 void idPhysics_Player::LeanMove()
 {
+	// Test for leaning immobilization
+	idPlayer* pPlayer = static_cast<idPlayer*>(self);
+	if (pPlayer == NULL)
+	{
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("pPlayer is NULL\r");
+		return;
+	}
+	if (pPlayer->GetImmobilization() & EIM_LEAN)
+	{
+		// Cancel all leaning
+		if (m_leanMoveEndTilt > 0.0f)
+		{
+			m_leanMoveStartTilt = m_CurrentLeanTiltDegrees;
+			m_leanTime = cv_pm_lean_forward_time.GetFloat();
+			m_b_leanFinished = false;
+			m_leanMoveEndTilt = 0.0f;
+		}
+	}
 
 	// Change in lean tilt this frame
 	float deltaLeanTiltDegrees = 0.0;
@@ -5679,4 +5739,118 @@ int idPhysics_Player::GetMovementFlags( void )
 void idPhysics_Player::SetMovementFlags( int flags )
 {
 	current.movementFlags = flags;
+}
+
+
+void idPhysics_Player::StartShouldering(idEntity const * const pBody)
+{
+	// Initialize
+	if (m_eShoulderAnimState == eShoulderingAnimation_NotStarted)
+	{
+		if (pBody == nullptr)
+		{
+			DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("Shouldering: pBody is NULL\r");
+			return;
+		}
+
+		idPlayer* pPlayer = static_cast<idPlayer*>(self);
+		if (pPlayer == nullptr)
+		{
+			DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("Shouldering: pPlayer is NULL\r");
+			return;
+		}
+
+		static const int iImmobilization =
+			EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE
+			| EIM_MANTLE | EIM_FROB_COMPLEX | EIM_MOVEMENT | EIM_CROUCH_HOLD
+			| EIM_CROUCH | EIM_JUMP | EIM_FROB | EIM_FROB_HILIGHT | EIM_LEAN;
+
+		pPlayer->SetImmobilization("ShoulderingAnimation", iImmobilization);
+
+		// Check height of body: If heigher than crouched, do not go to crouched state
+		const float fBodyHeight = pBody->GetPhysics()->GetOrigin() * (-gravityNormal);
+		const float fCrouchedHeight = GetOrigin() * (-gravityNormal) + pm_crouchviewheight.GetFloat();
+		m_bShouldering_SkipDucking = fBodyHeight > fCrouchedHeight;
+		
+		m_eShoulderAnimState = eShoulderingAnimation_Initialized;
+	}
+
+	StartShoulderingAnim();
+}
+
+bool idPhysics_Player::IsShouldering() const
+{
+	return m_eShoulderAnimState == eShoulderingAnimation_Active;
+}
+
+void idPhysics_Player::StartShoulderingAnim()
+{
+	// Try starting the animation
+	if (m_eShoulderAnimState == eShoulderingAnimation_Initialized
+		|| m_eShoulderAnimState == eShoulderingAnimation_Scheduled)
+	{
+		if (IsLeaning())
+		{
+			// Wait for unlean first
+			m_eShoulderAnimState = eShoulderingAnimation_Scheduled;
+		}
+		else
+		{
+			// Start animation right away
+			m_fShoulderingTime = cv_pm_shoulderAnim_msecs.GetFloat();
+			m_ShoulderingStartPos = GetOrigin();
+			m_eShoulderAnimState = eShoulderingAnimation_Active;
+			if (!m_bShouldering_SkipDucking && !IsCrouching())
+			{
+				current.movementFlags |= PMF_DUCKED;
+				
+				// Reserve some additional time for going to ducked state
+				// before playing the animation
+				m_fShoulderingTime += cv_pm_shoulderAnim_delay_msecs.GetFloat();
+			}
+		}
+	}
+}
+
+void idPhysics_Player::ShoulderingMove()
+{
+	if (m_eShoulderAnimState != eShoulderingAnimation_Active)
+		return;
+
+	idPlayer* pPlayer = static_cast<idPlayer*>(self);
+	if (pPlayer == nullptr)
+	{
+		DM_LOG(LC_MOVEMENT, LT_ERROR)LOGSTRING("ShoulderingMove: pPlayer is NULL\r");
+
+		// Cancel
+		static_cast<idPlayer*>(self)->SetImmobilization("ShoulderingAnimation", 0);
+		m_eShoulderAnimState = eShoulderingAnimation_NotStarted;
+		return;
+	}
+
+	// Are we allowed to play the view animation already?
+	if (m_fShoulderingTime <= cv_pm_shoulderAnim_msecs.GetFloat())
+	{
+		// Compute view angles and position
+		idVec3 newPosition = m_ShoulderingStartPos;
+		const float timeRadians = idMath::PI * m_fShoulderingTime / cv_pm_shoulderAnim_msecs.GetFloat();
+		viewAngles.roll = idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat();
+		newPosition += (idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat()) * viewRight;
+
+		pPlayer->SetViewAngles(viewAngles);
+		SetOrigin(newPosition);
+	}
+
+	// Are we done?
+	if (m_fShoulderingTime == 0.0f) // We explicitly set 0.0f below, so equality check with 0.0f is ok.
+	{
+		static_cast<idPlayer*>(self)->SetImmobilization("ShoulderingAnimation", 0);
+		m_eShoulderAnimState = eShoulderingAnimation_NotStarted;
+		return;
+	}
+
+	// Update animation timer
+	m_fShoulderingTime -= framemsec;
+	if (m_fShoulderingTime < 0.0f)
+		m_fShoulderingTime = 0.0f;
 }

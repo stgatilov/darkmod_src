@@ -709,11 +709,6 @@ protected:
 
 protected:
 
-	/**
-	* Set to true if the player is leaning at all from the vertical
-	**/
-	bool m_bIsLeaning;
-
 	/*!
 	* An axis which is perpendicular to the gravity normal and
 	* rotated by the given yaw angle clockwise (when looking down in direction of
@@ -906,6 +901,46 @@ public:
 	* Does nothing if the player is not leaned
 	**/
 	void UpdateLeanedInputYaw( idAngles &InputAngles );
+
+	//#####################################################
+	// Shouldering viewport animation (#3607)
+	// by STiFU
+	//#####################################################
+public: 
+		
+	/** @brief	  	Initialize and schedule shouldering animation (#3607)
+	  * @param 		pBody Pointer to the body to be shouldered
+	  * @author		STiFU */
+	void StartShouldering(idEntity const * const pBody);
+	
+	/** @brief	  	Check if shouldering animation plays out (#3607)
+	  * @return   	True, if animation is active
+	  * @author		STiFU */
+	bool IsShouldering() const;
+
+private:
+		
+	/** @brief	  	Try to start the shouldering animation (#3607)
+	  * @author		STiFU */
+	void StartShoulderingAnim();
+
+	
+	/** @brief	  	Perform the shouldering animation (#3607)
+	  * @author		STiFU */
+	void ShoulderingMove();
+
+	enum eShoulderingAnimation
+	{
+		eShoulderingAnimation_NotStarted = 0,
+		eShoulderingAnimation_Initialized = 1,
+		eShoulderingAnimation_Scheduled = 2,
+		eShoulderingAnimation_Active = 3,
+	};
+
+	eShoulderingAnimation	m_eShoulderAnimState;
+	float					m_fShoulderingTime;
+	idVec3					m_ShoulderingStartPos;
+	bool					m_bShouldering_SkipDucking;
 };
 
 #endif /* !__PHYSICS_PLAYER_H__ */

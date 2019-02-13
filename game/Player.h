@@ -233,6 +233,7 @@ enum {
 	EIM_ITEM_USE			= BIT(14),	// Using items
 	EIM_ITEM_SELECT			= BIT(15),	// Selecting items.
 	EIM_ITEM_DROP			= BIT(16),	// Dropping inventory items.
+	EIM_LEAN				= BIT(17),  // Leaning
 };
 
 typedef struct {
