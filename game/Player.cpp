@@ -6772,7 +6772,9 @@ void idPlayer::AdjustSpeed( void )
 	float speed(0.0f);
 	float crouchspeed(0.0f);
 	
-	float maxSpeed = pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() * GetHinderance();
+	const float fCurrentHinderence = GetHinderance();
+	float maxSpeedGlobal = 
+		pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() * fCurrentHinderence;
 
 	if ( spectating )
 	{
@@ -6815,6 +6817,13 @@ void idPlayer::AdjustSpeed( void )
 			const idVec3& vel = physicsObj.GetLinearVelocity();
 			bobFrac = idMath::ClampFloat(0, 1, (vel.LengthFast() - walkSpeed) / (speed - walkSpeed));
 		}
+
+		// STiFU #1932: Apply hinderence not only to max speed but to all speeds.
+		if (cv_pm_softhinderence_active.GetBool())
+		{
+			speed *= (cv_pm_softhinderence_run.GetFloat() * fCurrentHinderence 
+				+ 1.0f - cv_pm_softhinderence_run.GetFloat());
+		}
 		
 		// ishtvan: we'll see if this works to prevent backwards running, depends on order things are set
 		// Don't apply backwards run penalty to crouch run.  It's already slow enough.
@@ -6825,8 +6834,8 @@ void idPlayer::AdjustSpeed( void )
 		}
 
 		// Clamp to encumbrance limits:
-		speed = idMath::ClampFloat(0, maxSpeed, speed);
-		crouchspeed = idMath::ClampFloat(0, maxSpeed, crouchspeed);
+		speed = idMath::ClampFloat(0, maxSpeedGlobal, speed);
+		crouchspeed = idMath::ClampFloat(0, maxSpeedGlobal, crouchspeed);			
 	}
 	else // standing still, walking, or creeping case
 	{
@@ -6834,17 +6843,33 @@ void idPlayer::AdjustSpeed( void )
 		bobFrac = 0.0f;
 
 		// apply creep modifier; creep is on button_5
-		if( (usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool())
+		const bool bCreeping = (usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool();
+		if(bCreeping)
 		{
 			speed *= cv_pm_creepmod.GetFloat();
+		}		
+
+		// STiFU #1932: Apply hinderence not only to max speed but to all speeds.
+		if (cv_pm_softhinderence_active.GetBool())
+		{
+			if (bCreeping)
+			{
+				speed *= (cv_pm_softhinderence_creep.GetFloat() * fCurrentHinderence 
+					+ 1.0f - cv_pm_softhinderence_creep.GetFloat());
+			}
+			else
+			{
+				speed *= (cv_pm_softhinderence_walk.GetFloat() * fCurrentHinderence
+					+ 1.0f - cv_pm_softhinderence_walk.GetFloat());
+			}
 		}
 
 		// apply movement multipliers to crouch as well
 		crouchspeed = speed * cv_pm_crouchmod.GetFloat();
 
 		// Clamp to encumbrance limits:
-		speed = idMath::ClampFloat(0, maxSpeed, speed);
-		crouchspeed = idMath::ClampFloat(0, maxSpeed, crouchspeed);
+		speed = idMath::ClampFloat(0, maxSpeedGlobal, speed);
+		crouchspeed = idMath::ClampFloat(0, maxSpeedGlobal, crouchspeed);
 	}
 
 	// greebo: Clamp speed if swimming to 1.3 x walkspeed

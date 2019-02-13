@@ -136,6 +136,11 @@ extern idCVar cv_pm_push_accel_time;
 extern idCVar cv_pm_push_heavy_threshold;
 extern idCVar cv_pm_push_max_mass;
 
+// STiFU #1932: Soft-hinderences: Effectiveness of hinderences on certain walk speed modifiers
+extern idCVar cv_pm_softhinderence_active;
+extern idCVar cv_pm_softhinderence_creep;
+extern idCVar cv_pm_softhinderence_walk;
+extern idCVar cv_pm_softhinderence_run;
 
 /**
 * TDM CVARs for controlling jumping

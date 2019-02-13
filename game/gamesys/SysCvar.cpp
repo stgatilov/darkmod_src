@@ -185,6 +185,12 @@ idCVar cv_pm_push_accel_time(		"pm_push_accel_time",	"1000",			CVAR_GAME | CVAR_
 idCVar cv_pm_push_heavy_threshold(	"pm_push_heavy_threshold",	"0.15",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Defines the fraction of the player mass, above which pushable things are considered as 'heavy'. Default is 0.75." );
 idCVar cv_pm_push_max_mass(			"pm_push_max_mass",		"200",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Defines the maximum mass in kg a moveable can have to be pushable at all. Default is 200 kg.");
 
+// STiFU #1932: Soft-hinderences: Effectiveness of hinderences on certain walk speed modifiers
+idCVar cv_pm_softhinderence_active(	"pm_softhinderence_active",		"1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,		"If true, hinderences will be applied to all player speed modifiers and not just to max speed.", 0, 1);
+idCVar cv_pm_softhinderence_creep(	"pm_softhinderence_creep",	"0.2",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,		"How strong hinderances affect creeping speed.", 0.0f, 1.0f);
+idCVar cv_pm_softhinderence_walk(	"pm_softhinderence_walk",	"0.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,		"How strong hinderances affect walking speed.", 0.0f, 1.0f);
+idCVar cv_pm_softhinderence_run(	"pm_softhinderence_run",	"1.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,		"How strong hinderances affect running speed.", 0.0f, 1.0f);
+
 idCVar cv_pm_weightmod(				"pm_weightmod",			"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Gets multiplied to the force applied to objects below the player model. Defaults to 1." );
 
 idCVar cv_pm_mantle_reach(			"pm_mantle_reach",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Horizontal reach of mantle ability, as fraction of player height.  Default is 0.5" );
