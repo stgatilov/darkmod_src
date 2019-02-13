@@ -1670,7 +1670,7 @@ void idPhysics_Player::LadderMove( void )
 	}
 
 	// stifu #4948: Do a ladder slide with non-damange terminal velocity
-	if (m_bSlideClimb)
+	if (m_bSlideOrDetachClimb)
 	{
 		idPhysics_Player::SlideMove(true, false, false, false, cv_pm_ladderSlide_speedLimit.GetFloat());
 		return;
@@ -2186,7 +2186,7 @@ void idPhysics_Player::CheckClimbable( void )
 	if ( IsMantling() )
 		return;
 
-	if ( m_bOnRope && m_bSlideClimb )
+	if ( m_bOnRope && m_bSlideOrDetachClimb )
 		return;
 	// stifu #4948: Continue checking when sliding vine and ladder. A non-damaging
 	// slide speed is only achieved when the player is looking at the climb. 
@@ -2316,11 +2316,11 @@ void idPhysics_Player::CheckClimbable( void )
 	}
 
 
-	if (!m_bClimbableAhead && m_bOnClimb && m_bSlideClimb)
+	if (!m_bClimbableAhead && m_bOnClimb && m_bSlideOrDetachClimb)
 	{
 		// Not facing towards climbable surface. Cancel slide.
 		ClimbDetach();
-		m_bSlideClimb = false;
+		m_bSlideOrDetachClimb = false;
 	}
 
 	// Rope attachment failsafe: Check intersection with the rope as well
@@ -2944,7 +2944,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_ClimbMaxVelVert = 0.0f;
 	m_ClimbSndRepDistVert = 0;
 	m_ClimbSndRepDistHoriz = 0;
-	m_bSlideClimb = false;
+	m_bSlideOrDetachClimb = false;
+	m_bSlideInitialized = false;
 
 	m_NextAttachTime = -1;
 
@@ -3113,6 +3114,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	m_LeanEnt.Save( savefile );
 
 	savefile->WriteStaticObject(*m_PushForce);
+
+	savefile->WriteBool(m_bSlideInitialized);
 }
 
 /*
@@ -3214,7 +3217,9 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadStaticObject( *m_PushForce );
 
 	// ishtvan: To avoid accidental latching, clear held crouch key var
-	m_bSlideClimb = false;
+	m_bSlideOrDetachClimb = false;
+
+	savefile->ReadBool(m_bSlideInitialized);
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }

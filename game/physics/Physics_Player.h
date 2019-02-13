@@ -186,7 +186,8 @@ public:
 	* from a climbable and is still holding down the button
 	* This is not saved/restored but cleared on restore, just to be safe
 	**/
-	bool					m_bSlideClimb;
+	bool					m_bSlideOrDetachClimb;
+	bool					m_bSlideInitialized;
 
 public:	// common physics interface
 

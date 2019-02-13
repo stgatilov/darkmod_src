@@ -6309,12 +6309,12 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 				if (physicsObj.OnRope())
 				{
 					physicsObj.RopeDetach();
-					physicsObj.m_bSlideClimb = true;
+					physicsObj.m_bSlideOrDetachClimb = true;
 				}
 				else if (physicsObj.OnLadder())
 				{
 					// #4948: Do not detach here, but do a ladder slide
-					physicsObj.m_bSlideClimb = true;
+					physicsObj.m_bSlideOrDetachClimb = true;
 				}
 			}
 
@@ -6361,8 +6361,8 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 				m_CrouchIntent = false;
 			}
 
-			// clear climb detach intent when crouch is released
-			physicsObj.m_bSlideClimb = false;
+			// clear climb detach or slide intent when crouch is released
+			physicsObj.m_bSlideOrDetachClimb = false;
 
 		break;
 
@@ -7238,9 +7238,38 @@ void idPlayer::Move( void )
 		// nbohr1more: #4852 prevent flickering lantern on ropes and ladders
 		SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 
-		// Player ladder sounds
-		if (!physicsObj.m_bSlideClimb)
+		if (physicsObj.m_bSlideOrDetachClimb)
 		{
+			if (!physicsObj.m_bSlideInitialized)
+			{
+				// STiFU #4948: Start playing slide sound
+				idStr slocalSound("snd_climb_slide_");
+				idStr sMatDef = slocalSound + physicsObj.GetClimbSurfaceType();
+				idStr sSound = spawnArgs.GetString(sMatDef.c_str());
+
+				if (sSound.Length() == 0)
+				{
+					sMatDef = slocalSound + "default";
+					sSound = spawnArgs.GetString(sMatDef.c_str());
+				}
+
+				if (sSound.Length() > 0)
+				{
+					StartSound(sMatDef.c_str(), SND_CHANNEL_BODY3, 0, false, NULL);
+				}
+
+				physicsObj.m_bSlideInitialized = true;
+			}
+		}
+		else
+		{
+			if (physicsObj.m_bSlideInitialized)
+			{
+				// STiFU #4948: We stopped sliding. Stop playing the sound
+				StopSound(SND_CHANNEL_BODY3, false);
+				physicsObj.m_bSlideInitialized = false;
+			}
+
 			// Test if new sound must be played
 
 			// Correct for moving reference frame
@@ -7285,6 +7314,12 @@ void idPlayer::Move( void )
 				}
 			}
 		}		
+	}
+	else if (physicsObj.m_bSlideInitialized)
+	{
+		// STiFU #4948: We stopped sliding. Stop playing the sound
+		StopSound(SND_CHANNEL_BODY3, false);
+		physicsObj.m_bSlideInitialized = false;
 	}
 
 	if (health > 0)
