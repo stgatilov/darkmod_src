@@ -941,6 +941,7 @@ private:
 	float					m_fShoulderingTime;
 	idVec3					m_ShoulderingStartPos;
 	bool					m_bShouldering_SkipDucking;
+	float					m_fShouldering_TimeToNextSound;
 };
 
 #endif /* !__PHYSICS_PLAYER_H__ */

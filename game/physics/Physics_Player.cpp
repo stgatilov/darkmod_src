@@ -2909,6 +2909,7 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_fShoulderingTime(0.0f)
 	, m_ShoulderingStartPos(vec3_zero)
     , m_bShouldering_SkipDucking(false)
+	, m_fShouldering_TimeToNextSound(0.0f)
 {
 	debugLevel = false;
 	clipModel = NULL;
@@ -3134,6 +3135,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_fShoulderingTime);
 	savefile->WriteVec3(m_ShoulderingStartPos);
 	savefile->WriteBool(m_bShouldering_SkipDucking);
+	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
 }
 
 /*
@@ -3252,6 +3254,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_fShoulderingTime);
 	savefile->ReadVec3(m_ShoulderingStartPos);
 	savefile->ReadBool(m_bShouldering_SkipDucking);
+	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }
@@ -5771,7 +5774,21 @@ void idPhysics_Player::StartShouldering(idEntity const * const pBody)
 		const float fBodyHeight = pBody->GetPhysics()->GetOrigin() * (-gravityNormal);
 		const float fCrouchedHeight = GetOrigin() * (-gravityNormal) + pm_crouchviewheight.GetFloat();
 		m_bShouldering_SkipDucking = fBodyHeight > fCrouchedHeight;
-		
+
+		// Get rustle sound to play while shouldering
+		const idKeyValue* const pKeyValue = pBody->spawnArgs.FindKey("snd_rustle");
+		if (pKeyValue != nullptr)
+		{
+			pPlayer->spawnArgs.Set("snd_shouldering_rustle", pKeyValue->GetValue());
+			m_fShouldering_TimeToNextSound = 0.0f;
+		}
+		else
+		{
+			// No appropriate rustle sound found. Skip playing rustle sound
+			m_fShouldering_TimeToNextSound = FLT_MAX;
+			pPlayer->spawnArgs.Set("snd_shouldering_rustle", "");
+		}
+				
 		m_eShoulderAnimState = eShoulderingAnimation_Initialized;
 	}
 
@@ -5831,6 +5848,22 @@ void idPhysics_Player::ShoulderingMove()
 	// Are we allowed to play the view animation already?
 	if (m_fShoulderingTime <= cv_pm_shoulderAnim_msecs.GetFloat())
 	{
+		// Play a rustle sound if the time is up
+		if (m_fShouldering_TimeToNextSound <= 0.0f)
+		{
+			const idKeyValue* const pKeyValue = pPlayer->spawnArgs.FindKey("snd_shouldering_rustle");
+			if (pKeyValue != nullptr && pKeyValue->GetValue().Length() > 0)
+			{
+				int iLength_ms = 0;
+				pPlayer->StartSound("snd_shouldering_rustle", SND_CHANNEL_ANY, SSF_GLOBAL, 0, &iLength_ms);
+				static idRandom randGen;
+				m_fShouldering_TimeToNextSound = 
+					static_cast<float>(iLength_ms) * 0.5 * (1 + randGen.RandomFloat());
+			}
+			else
+				m_fShouldering_TimeToNextSound = FLT_MAX;
+		}
+
 		// Compute view angles and position
 		idVec3 newPosition = m_ShoulderingStartPos;
 		const float timeRadians = idMath::PI * m_fShoulderingTime / cv_pm_shoulderAnim_msecs.GetFloat();
@@ -5850,6 +5883,7 @@ void idPhysics_Player::ShoulderingMove()
 	}
 
 	// Update animation timer
+	m_fShouldering_TimeToNextSound -= framemsec;
 	m_fShoulderingTime -= framemsec;
 	if (m_fShoulderingTime < 0.0f)
 		m_fShoulderingTime = 0.0f;
