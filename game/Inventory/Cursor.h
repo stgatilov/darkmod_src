@@ -42,7 +42,7 @@ public:
 	 * stifu #2993: This changes the cursor to the default category and dummy item to make
 	 * 	       sure the item index is always valid
 	 */
-	inline void					ClearItem();
+	void					ClearItem();
 
 	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
