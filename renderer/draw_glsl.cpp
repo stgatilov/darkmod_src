@@ -193,7 +193,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
-	qglEnableVertexAttribArray( 11 );
+	qglEnableVertexAttribArray( 2 );
 	qglEnableVertexAttribArray( 3 );
 
 	for ( /**/; surf; surf = surf->nextOnLight ) {
@@ -206,7 +206,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		// set the vertex pointers
 		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -219,7 +219,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 11 );
+	qglDisableVertexAttribArray( 2 );
 	qglDisableVertexAttribArray( 3 );
 
 	// disable features
@@ -510,7 +510,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
-	qglEnableVertexAttribArray( 11 );
+	qglEnableVertexAttribArray( 2 );
 
 	GL_SelectTexture( 5 );
 	globalImages->shadowAtlas->Bind();
@@ -539,7 +539,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
 		extern void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
 		RB_CreateMultiDrawInteractions( surf );
@@ -565,7 +565,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 11 );
+	qglDisableVertexAttribArray( 2 );
 }
 
 /*
