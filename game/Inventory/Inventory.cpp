@@ -798,20 +798,27 @@ bool CInventory::ReplaceItem(idEntity* oldItemEnt, idEntity* newItemEnt)
 
 void CInventory::RemoveItem(const CInventoryItemPtr& item)
 {
-	if (item == NULL) return;
+	if (item == nullptr || item->Category() == nullptr) return;
 
-	// Update the cursors first
+	idStr sCategoryName = item->Category()->GetName();
+
+	item->Category()->RemoveItem(item);
+
+	// Validate all cursors of the same category
+	int iCursorIdx = -1;
 	for (int i = 0; i < m_Cursor.Num(); i++)
 	{
-		if (m_Cursor[i]->GetCurrentItem() == item)
-		{
-			// Advance the cursor, this should be enough
-			m_Cursor[i]->GetNextItem();
-		}
-	}
+		CInventoryCursorPtr& pCursor(m_Cursor[i]);
+		if (pCursor == nullptr)
+			continue;
 
-	// Now remove the item, the cursors are updated.
-	item->Category()->RemoveItem(item);
+		CInventoryCategoryPtr pCategory(pCursor->GetCurrentCategory());
+		if (pCategory == nullptr)
+			continue;
+
+		if (pCategory->GetName() == sCategoryName)
+			pCursor->Validate();
+	}
 }
 
 CInventoryItemPtr CInventory::GetItem(const idStr& name, const idStr& categoryName, bool createCategory)

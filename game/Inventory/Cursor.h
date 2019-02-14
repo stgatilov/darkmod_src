@@ -39,8 +39,10 @@ public:
 	/**
 	 * greebo: Clears the cursor. After calling this, the cursor is pointing
 	 *         at nothing. The category lock and other settings are not affected by this call.
+	 * stifu #2993: This changes the cursor to the default category and dummy item to make
+	 * 	       sure the item index is always valid
 	 */
-	void					ClearItem();
+	inline void					ClearItem();
 
 	/**
 	 * Get the next/prev item in the inventory. Which item is actually returned, 
@@ -67,8 +69,11 @@ public:
 	 * Set the current item index.
 	 * Validation of the index is done when doing Nex/Prev Category
 	 * so we don't really care whether this is a valid index or not.
+	 * STiFU #2993: Add validation after all to make sure the index is always valid
 	 */
-	void					SetCurrentItem(int index) { m_CurrentItem = index; }
+	void					SetCurrentItem(int index);
+
+	void					Validate();
 
 	/**
 	 * Returns the current index within the category of the item pointed at.

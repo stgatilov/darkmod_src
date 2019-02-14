@@ -79,8 +79,13 @@ CInventoryItemPtr CInventoryCursor::GetCurrentItem()
 
 void CInventoryCursor::ClearItem()
 {
-	// greebo: Invalidate the item index, this should be enough
-	m_CurrentItem = -1;
+	// stifu #2993: Make sure the item index is always valid. Switch to dummy item
+	// WARNING: Implicit logic - Assumes TDM_DUMMY_ITEM always exists
+	if (!SetCurrentItem(TDM_DUMMY_ITEM))
+	{
+		m_CurrentItem = 0;
+		m_CurrentCategory = 0;
+	}	
 }
 
 bool CInventoryCursor::SetCurrentItem(CInventoryItemPtr item)
@@ -122,6 +127,34 @@ bool CInventoryCursor::SetCurrentItem(const idStr& itemName)
 	return true;
 }
 
+
+void CInventoryCursor::SetCurrentItem(int index)
+{
+	m_CurrentItem = index;
+
+	Validate();
+}
+
+
+void CInventoryCursor::Validate()
+{
+	CInventoryCategoryPtr pCurCategory = m_Inventory->GetCategory(m_CurrentCategory);
+
+	if (pCurCategory == nullptr)
+	{
+		ClearItem();
+		return;
+	}
+
+	if (pCurCategory->GetNumItems() == 0)
+	{
+		ClearItem();
+		return;
+	}
+
+	m_CurrentItem = idMath::ClampInt(0, pCurCategory->GetNumItems() - 1, m_CurrentItem);
+}
+
 CInventoryItemPtr CInventoryCursor::GetNextItem()
 {
 	CInventoryCategoryPtr curCategory = m_Inventory->GetCategory(m_CurrentCategory);
@@ -140,6 +173,11 @@ CInventoryItemPtr CInventoryCursor::GetNextItem()
 	{
 		// Advance to the next allowed category
 		curCategory = GetNextCategory();
+		if (curCategory->GetNumItems() == 0)
+		{
+			ClearItem();
+			return GetCurrentItem();
+		}
 
 		if (m_WrapAround) 
 		{
@@ -170,6 +208,11 @@ CInventoryItemPtr CInventoryCursor::GetPrevItem()
 	if (m_CurrentItem < 0)
 	{
 		curCategory = GetPrevCategory();
+		if (curCategory->GetNumItems() == 0)
+		{
+			ClearItem();
+			return GetCurrentItem();
+		}
 
 		if (m_WrapAround)
 		{
