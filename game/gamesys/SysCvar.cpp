@@ -240,6 +240,10 @@ idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",
 idCVar cv_pm_shoulderAnim_rockDist(     "pm_shoulderAnim_rockDist",     "10.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The animation distance.", 0.0f, 50.0f);
 idCVar cv_pm_shoulderAnim_delay_msecs(	"pm_shoulderAnim_delay_msecs",  "300.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If the shouldered body is low, player will crouch and wait this delay before playing the shoulder animation", 0.0f, 500.0f);
 
+// stifu #4107: Try multiple drop positions for shouldered bodies
+idCVar cv_pm_shoulderDrop_maxAngle(		"pm_shoulderDrop_maxAngle",			"100.0",	CVAR_GAME |CVAR_ARCHIVE | CVAR_FLOAT,	"When testing if an entity can be droped, the drop point candidates are rotated around the player by pm_shoulderDrop_maxAngle in increments of pm_shoulderDrop_angleIncrement.", 0.0f, 180.0f);
+idCVar cv_pm_shoulderDrop_angleIncrement("pm_shoulderDrop_angleIncrement",	"15.0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,  "When testing if an entity can be droped, the drop point candidates are rotated around the player by pm_shoulderDrop_maxAngle in increments of pm_shoulderDrop_angleIncrement.", 1.0f, 179.0f);
+
 /**
 * Dark Mod Leaning
 **/

@@ -10700,82 +10700,106 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 	idMat3 playViewYaw = viewYaw.ToMat3();
 
 	// Set up the initial orientation and point at which we want to drop
-	idMat3 dropAxis;
+	idMat3 originalDropAxis;
 	if( item != NULL )
-		dropAxis = item->GetDropOrientation();
+		originalDropAxis = item->GetDropOrientation();
 	else if( ent->spawnArgs.FindKey("drop_angles") )
 	{
 		idAngles dropAngles = ent->spawnArgs.GetAngles("drop_angles");
-		dropAxis = dropAngles.ToMat3();
+		originalDropAxis = dropAngles.ToMat3();
 	}
 	else
-		dropAxis = ent->GetPhysics()->GetAxis();
+		originalDropAxis = ent->GetPhysics()->GetAxis();
 
-	dropAxis *= playViewYaw;
+	originalDropAxis *= playViewYaw;
 
 	// flip dropped bodies if appropriate... move elsewhere?
 	if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
 	{
 		if( grabber->m_bDropBodyFaceUp )
-			dropAxis *= idAngles(0.0f,0.0f,180.0f).ToMat3();
+			originalDropAxis *= idAngles(0.0f,0.0f,180.0f).ToMat3();
 	}
 
-	idVec3 dropPoint;
+	idVec3 originalTestOffset;
 	if( ent->spawnArgs.FindKey("drop_point") )
 	{
-		dropPoint = ent->spawnArgs.GetVector("drop_point");
-		dropPoint *= playViewYaw;
-		dropPoint += playViewPos;
+		originalTestOffset = ent->spawnArgs.GetVector("drop_point");
+		originalTestOffset *= playViewYaw;
 	}
 	else
 	{
-		dropPoint = grabber->GetHoldPoint( ent );
+		originalTestOffset = grabber->GetHoldPoint( ent ) - playViewPos;
 	}
 
-	// Stackables: Test that the item fits in world with dummy item first, before spawning the drop item
-	// NOTE: TestDropItemRotations will overwrite DropAxis if the supplied doesn't work and it finds a working one
-	if( TestDropItemRotations(ent, playViewPos, dropPoint, dropAxis) ) 
+	// STiFU #4107: Try to drop entity in multiple angles away from the player
+	float fDropAngle = 0.0f;	
+	while (fDropAngle <= cv_pm_shoulderDrop_maxAngle.GetFloat())
 	{
-		// Drop the item into the grabber hands 
-		DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item fits in hands.\r");
-		
-		// Stackable items only have one "real" entity for the whole item stack.
-		// When the stack size == 1, this entity can be dropped as it is,
-		// otherwise we need to spawn a new entity.
-		if( item && item->IsStackable() && item->GetCount() > 1 ) 
+		for (int iAngleSign = 1; iAngleSign > -2; iAngleSign -= 2)
 		{
-			DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Spawning new entity from stackable inventory item...\r");
-			// Spawn a new entity of this type
-			idEntity* spawnedEntity;
-			const idDict* entityDef = gameLocal.FindEntityDefDict(ent->GetEntityDefName());            
-			gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
+			idVec3 dropPoint(originalTestOffset);
+			idMat3 matTestAngle(idAngles(0.0f, iAngleSign * fDropAngle, 0.0f).ToMat3());
+			dropPoint *= matTestAngle;
+			dropPoint += playViewPos;
 
-			// Replace the entity to be dropped with the newly spawned one.
-			ent = spawnedEntity;
-	    }
-            
-	    // If the item is referenced by any objective with a item-location component set the flag
-	    // so it will be considered by location entities.
-	    if ( gameLocal.m_MissionData->MatchLocationObjectives( ent ) )
-	    {
-	        ent->m_bIsObjective = true;
-	    }
+			idMat3 dropAxis(originalDropAxis);
+			dropAxis *= matTestAngle;
 
-		grabber->PutInHands( ent, dropPoint, dropAxis );
-		DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());
-		rc = true;
+			// Stackables: Test that the item fits in world with dummy item first, before spawning the drop item
+			// NOTE: TestDropItemRotations will overwrite DropAxis if the supplied doesn't work and it finds a working one
+			if (TestDropItemRotations(ent, playViewPos, dropPoint, dropAxis))
+			{
+				// Drop the item into the grabber hands 
+				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item fits in hands.\r");
 
-		// check if the item drops straight to the ground, not going in hands first
-		if( !ent->spawnArgs.GetBool("drop_to_hands","1") )
-		{
-			grabber->Update( this, false );
+				// Stackable items only have one "real" entity for the whole item stack.
+				// When the stack size == 1, this entity can be dropped as it is,
+				// otherwise we need to spawn a new entity.
+				if (item && item->IsStackable() && item->GetCount() > 1)
+				{
+					DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Spawning new entity from stackable inventory item...\r");
+					// Spawn a new entity of this type
+					idEntity* spawnedEntity;
+					const idDict* entityDef = gameLocal.FindEntityDefDict(ent->GetEntityDefName());
+					gameLocal.SpawnEntityDef(*entityDef, &spawnedEntity);
+
+					// Replace the entity to be dropped with the newly spawned one.
+					ent = spawnedEntity;
+				}
+
+				// If the item is referenced by any objective with a item-location component set the flag
+				// so it will be considered by location entities.
+				if (gameLocal.m_MissionData->MatchLocationObjectives(ent))
+				{
+					ent->m_bIsObjective = true;
+				}
+
+				grabber->PutInHands(ent, dropPoint, dropAxis);
+				DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());
+
+				// check if the item drops straight to the ground, not going in hands first
+				if (!ent->spawnArgs.GetBool("drop_to_hands", "1"))
+				{
+					grabber->Update(this, false);
+				}
+
+				// Tels: #2826: re-enable LOD again, in case the entity was in the inventory (like a shoulderable body)
+				ent->EnableLOD(true);
+
+				return true;
+			}
+
+			if (fDropAngle <= 0.0f)
+				// Only try one sign of this angle
+				break;
 		}
 
-		// Tels: #2826: re-enable LOD again, in case the entity was in the inventory (like a shoulderable body)
-		ent->EnableLOD( true );
+		// Increment of angle is at least one, so it is ensured that this is not 
+		// an infinite loop
+		fDropAngle += cv_pm_shoulderDrop_angleIncrement.GetFloat();
 	}
 
-	return rc;
+	return false;
 }
 
 bool idPlayer::TestDropItemRotations( idEntity *ent, idVec3 viewPoint, idVec3 DropPoint, idMat3 &DropAxis )

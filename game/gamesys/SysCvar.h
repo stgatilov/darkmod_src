@@ -213,6 +213,10 @@ extern idCVar cv_pm_shoulderAnim_msecs;
 extern idCVar cv_pm_shoulderAnim_rockDist;
 extern idCVar cv_pm_shoulderAnim_delay_msecs;
 
+// stifu #4107: Try multiple drop positions for shouldered bodies
+extern idCVar cv_pm_shoulderDrop_maxAngle;
+extern idCVar cv_pm_shoulderDrop_angleIncrement;
+
 /**
 * TDM Leaning vars:
 **/
