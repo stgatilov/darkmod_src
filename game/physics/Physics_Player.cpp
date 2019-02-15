@@ -817,9 +817,10 @@ void idPhysics_Player::WaterMove()
 		// Sum of all phase portions has to be 1.0f
 		static const float fLeadInPortion = 0.4f;
 		static const float fLeadOutPortion = 0.2f;
-		assert(fLeadInPortion + fLeadOutPortion < 1.0f); // just to be sure
-		static const float fMaxSpeedPortion = 
-			idMath::ClampInt(0.0f, 1.0f, 1.0f - fLeadInPortion - fLeadOutPortion);
+		assert(fLeadInPortion + fLeadOutPortion < 1.0f);
+
+		static const float fMaxSpeedPortion = 1.0f - fLeadInPortion - fLeadOutPortion;
+		assert(fMaxSpeedPortion >= 0.0f && fMaxSpeedPortion < 1.0f);
 
 		// (Re-)initialize members
 		if (cv_pm_swimspeed_frequency.IsModified() || cv_pm_swimspeed_variation.IsModified()
@@ -831,8 +832,23 @@ void idPhysics_Player::WaterMove()
 			const float fSwimMaxSpeedDuration_s = fMaxSpeedPortion / fFrequency;
 			m_fSwimLeadOutStart_s = m_fSwimLeadInDuration_s + fSwimMaxSpeedDuration_s;
 			m_fSwimLeadOutDuration_s = fLeadOutPortion / fFrequency;
-			m_fSwimSpeedModCompensation = 1.0f - cv_pm_swimspeed_variation.GetFloat() * fSwimMaxSpeedDuration_s
-				/ (m_fSwimLeadInDuration_s + fSwimMaxSpeedDuration_s + m_fSwimLeadOutDuration_s);
+
+			// Max-speed plateau changes avg. speed -> Compensate that by subtracting
+			// a constant offset from the speed
+			for (int i = 0; i < 2; i++) // In case the first computation is invalid
+			{
+				const float fMaxSpeedPortionTotal = fSwimMaxSpeedDuration_s
+					/ (m_fSwimLeadInDuration_s + fSwimMaxSpeedDuration_s + m_fSwimLeadOutDuration_s);
+
+				m_fSwimSpeedModCompensation = 1.0f - cv_pm_swimspeed_variation.GetFloat() * fMaxSpeedPortionTotal;
+
+				// NOTE: cv_pm_swimspeed_variation could be incompatible with function.
+				//       Try to correct the value in that case and recompute compensation
+				if (m_fSwimSpeedModCompensation - cv_pm_swimspeed_variation.GetFloat() < 0.0f)
+					cv_pm_swimspeed_variation.SetFloat(1/fMaxSpeedPortionTotal);
+				else
+					break;
+			}
 			
 			cv_pm_swimspeed_frequency.ClearModified();
 			cv_pm_swimspeed_variation.ClearModified();
@@ -846,6 +862,8 @@ void idPhysics_Player::WaterMove()
 		} else if (m_fSwimTimeStart_s < m_fSwimLeadOutStart_s)
 		{
 			wishvel *= (m_fSwimSpeedModCompensation + cv_pm_swimspeed_variation.GetFloat());
+			if (!m_bSwimSoundStarted)
+				PlaySwimBurstSound();
 		}
 		else if (m_fSwimTimeStart_s < (m_fSwimLeadOutStart_s + m_fSwimLeadOutDuration_s))
 		{
@@ -857,6 +875,7 @@ void idPhysics_Player::WaterMove()
 		{
 			// Animation finished. Restart it!
 			m_fSwimTimeStart_s = -frametime;
+			m_bSwimSoundStarted = false;
 		}
 		
 		m_fSwimTimeStart_s += frametime;
@@ -885,6 +904,36 @@ void idPhysics_Player::WaterMove()
 	}
 
 	idPhysics_Player::SlideMove( false, true, false, false );
+}
+
+void idPhysics_Player::PlaySwimBurstSound()
+{
+	idStr sSound("snd_swim_burst");
+	
+	idPlayer* pPlayer = static_cast<idPlayer*>(self);
+	if (pPlayer == nullptr)
+		return;
+
+	// speed mod
+	if ((pPlayer->usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool())
+	{
+		sSound += "_creep";
+	} else if (pPlayer->usercmd.buttons & BUTTON_RUN)
+	{
+		sSound += "_run";
+	}
+	else
+	{
+		sSound += "_walk";
+	}	
+
+	// waterlevel mod
+	if (waterLevel >= WATERLEVEL_HEAD)
+		sSound += "_underwater";
+	
+	pPlayer->StartSound(sSound, SND_CHANNEL_BODY, 0, false, nullptr);
+
+	m_bSwimSoundStarted = true;
 }
 
 /*
@@ -2971,6 +3020,7 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_fSwimLeadOutStart_s(-1.0f)
 	, m_fSwimLeadOutDuration_s(-1.0f)
 	, m_fSwimSpeedModCompensation(-1.0f)
+	, m_bSwimSoundStarted(false)
 {
 	debugLevel = false;
 	clipModel = NULL;
@@ -3198,7 +3248,9 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
 
+	// Swimming
 	savefile->WriteFloat(m_fSwimTimeStart_s);
+	savefile->WriteBool(m_bSwimSoundStarted);
 }
 
 /*
@@ -3319,7 +3371,9 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
 
+	// Swimming
 	savefile->ReadFloat(m_fSwimTimeStart_s);
+	savefile->ReadBool(m_bSwimSoundStarted);
 	m_fSwimLeadInDuration_s = -1.0f;
 	m_fSwimLeadOutStart_s = -1.0f;
 	m_fSwimLeadOutDuration_s = -1.0f;

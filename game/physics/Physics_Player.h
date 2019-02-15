@@ -265,6 +265,7 @@ private:
 
 	// swimming animation
 	float					m_fSwimTimeStart_s;
+	bool					m_bSwimSoundStarted;
 	float					m_fSwimLeadInDuration_s;
 	float					m_fSwimLeadOutStart_s;
 	float					m_fSwimLeadOutDuration_s;
@@ -449,6 +450,8 @@ private:
 #endif
 	void					DropTimers( void );
 	void					MovePlayer( int msec );
+
+	void					PlaySwimBurstSound();
 
 public:
 	void					ClimbDetach( bool bStepUp = false );
