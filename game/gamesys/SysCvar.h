@@ -128,6 +128,8 @@ extern idCVar cv_pm_runmod;
 extern idCVar cv_pm_run_backmod;
 extern idCVar cv_pm_crouchmod;
 extern idCVar cv_pm_max_swimspeed_mod;
+extern idCVar cv_pm_swimspeed_variation;
+extern idCVar cv_pm_swimspeed_frequency;
 extern idCVar cv_pm_creepmod;
 extern idCVar cv_pm_pushmod;
 extern idCVar cv_pm_push_maximpulse;

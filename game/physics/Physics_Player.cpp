@@ -806,8 +806,60 @@ void idPhysics_Player::WaterMove()
 		}
 	} else {
 
+		// Regular swim speed
 		wishvel = scale * (viewForward * command.forwardmove + viewRight * command.rightmove);
 		wishvel -= scale * gravityNormal * command.upmove;
+
+		// stifu #3550: Simulate swimming motion via additive modulation of speed
+		// 1) Sinosodial lead-in
+		// 2) max-speed plateau
+		// 3) Sinosodial lead-out
+		// Sum of all phase portions has to be 1.0f
+		static const float fLeadInPortion = 0.4f;
+		static const float fLeadOutPortion = 0.2f;
+		assert(fLeadInPortion + fLeadOutPortion < 1.0f); // just to be sure
+		static const float fMaxSpeedPortion = 
+			idMath::ClampInt(0.0f, 1.0f, 1.0f - fLeadInPortion - fLeadOutPortion);
+
+		// (Re-)initialize members
+		if (cv_pm_swimspeed_frequency.IsModified() || cv_pm_swimspeed_variation.IsModified()
+			|| m_fSwimLeadInDuration_s < 0.0f	   || m_fSwimLeadOutStart_s < 0.0f 
+			|| m_fSwimLeadOutDuration_s < 0.0f     || m_fSwimSpeedModCompensation < 0.0f)
+		{
+			const float fFrequency = cv_pm_swimspeed_frequency.GetFloat();
+			m_fSwimLeadInDuration_s = fLeadInPortion / fFrequency;
+			const float fSwimMaxSpeedDuration_s = fMaxSpeedPortion / fFrequency;
+			m_fSwimLeadOutStart_s = m_fSwimLeadInDuration_s + fSwimMaxSpeedDuration_s;
+			m_fSwimLeadOutDuration_s = fLeadOutPortion / fFrequency;
+			m_fSwimSpeedModCompensation = 1.0f - cv_pm_swimspeed_variation.GetFloat() * fSwimMaxSpeedDuration_s
+				/ (m_fSwimLeadInDuration_s + fSwimMaxSpeedDuration_s + m_fSwimLeadOutDuration_s);
+			
+			cv_pm_swimspeed_frequency.ClearModified();
+			cv_pm_swimspeed_variation.ClearModified();
+		}
+
+		// Modulate swimming speed for the animation
+		if (m_fSwimTimeStart_s < m_fSwimLeadInDuration_s)
+		{
+			wishvel *= (m_fSwimSpeedModCompensation - cv_pm_swimspeed_variation.GetFloat() 
+				* idMath::Cos(idMath::PI * m_fSwimTimeStart_s / m_fSwimLeadInDuration_s));
+		} else if (m_fSwimTimeStart_s < m_fSwimLeadOutStart_s)
+		{
+			wishvel *= (m_fSwimSpeedModCompensation + cv_pm_swimspeed_variation.GetFloat());
+		}
+		else if (m_fSwimTimeStart_s < (m_fSwimLeadOutStart_s + m_fSwimLeadOutDuration_s))
+		{
+			const float fTimeInLeadOut_s = m_fSwimTimeStart_s - m_fSwimLeadOutStart_s;
+			wishvel *= (m_fSwimSpeedModCompensation + cv_pm_swimspeed_variation.GetFloat() 
+				* idMath::Cos(idMath::PI * fTimeInLeadOut_s / m_fSwimLeadOutDuration_s));
+		}
+		else
+		{
+			// Animation finished. Restart it!
+			m_fSwimTimeStart_s = -frametime;
+		}
+		
+		m_fSwimTimeStart_s += frametime;
 	}
 
 	idVec3 wishdir = wishvel;
@@ -2767,6 +2819,10 @@ void idPhysics_Player::MovePlayer( int msec ) {
 		AirMove();
 	}
 
+	if (waterLevel <= WATERLEVEL_FEET && m_fSwimTimeStart_s != 0.0f)
+		// Reset swimming animation timer
+		m_fSwimTimeStart_s = 0.0f;
+
 	if (m_eShoulderAnimState == eShoulderingAnimation_Scheduled)
 		// Try to start shouldering animation
 		StartShoulderingAnim();
@@ -2910,6 +2966,11 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_ShoulderingStartPos(vec3_zero)
     , m_bShouldering_SkipDucking(false)
 	, m_fShouldering_TimeToNextSound(0.0f)
+	, m_fSwimTimeStart_s(0.0f)
+	, m_fSwimLeadInDuration_s(-1.0f)
+	, m_fSwimLeadOutStart_s(-1.0f)
+	, m_fSwimLeadOutDuration_s(-1.0f)
+	, m_fSwimSpeedModCompensation(-1.0f)
 {
 	debugLevel = false;
 	clipModel = NULL;
@@ -3136,6 +3197,8 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(m_ShoulderingStartPos);
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
+
+	savefile->WriteFloat(m_fSwimTimeStart_s);
 }
 
 /*
@@ -3255,6 +3318,12 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3(m_ShoulderingStartPos);
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
+
+	savefile->ReadFloat(m_fSwimTimeStart_s);
+	m_fSwimLeadInDuration_s = -1.0f;
+	m_fSwimLeadOutStart_s = -1.0f;
+	m_fSwimLeadOutDuration_s = -1.0f;
+	m_fSwimSpeedModCompensation = -1.0f;
 
 	DM_LOG (LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Restore finished\n");
 }

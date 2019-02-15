@@ -263,6 +263,13 @@ private:
 	idVec3					viewForward;
 	idVec3					viewRight;
 
+	// swimming animation
+	float					m_fSwimTimeStart_s;
+	float					m_fSwimLeadInDuration_s;
+	float					m_fSwimLeadOutStart_s;
+	float					m_fSwimLeadOutDuration_s;
+	float					m_fSwimSpeedModCompensation;
+
 	// walk movement
 	bool					walking;
 	bool					groundPlane;
