@@ -6772,9 +6772,9 @@ void idPlayer::AdjustSpeed( void )
 	float speed(0.0f);
 	float crouchspeed(0.0f);
 	
-	const float fCurrentHinderence = GetHinderance();
+	const float fCurrentHinderance = GetHinderance();
 	float maxSpeedGlobal = 
-		pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() * fCurrentHinderence;
+		pm_walkspeed.GetFloat() * cv_pm_runmod.GetFloat() * fCurrentHinderance;
 
 	if ( spectating )
 	{
@@ -6818,11 +6818,11 @@ void idPlayer::AdjustSpeed( void )
 			bobFrac = idMath::ClampFloat(0, 1, (vel.LengthFast() - walkSpeed) / (speed - walkSpeed));
 		}
 
-		// STiFU #1932: Apply hinderence not only to max speed but to all speeds.
-		if (cv_pm_softhinderence_active.GetBool())
+		// STiFU #1932: Apply hinderance not only to max speed but to all speeds.
+		if (cv_pm_softhinderance_active.GetBool())
 		{
-			speed *= (cv_pm_softhinderence_run.GetFloat() * fCurrentHinderence 
-				+ 1.0f - cv_pm_softhinderence_run.GetFloat());
+			speed *= (cv_pm_softhinderance_run.GetFloat() * fCurrentHinderance 
+				+ 1.0f - cv_pm_softhinderance_run.GetFloat());
 		}
 		
 		// ishtvan: we'll see if this works to prevent backwards running, depends on order things are set
@@ -6849,18 +6849,18 @@ void idPlayer::AdjustSpeed( void )
 			speed *= cv_pm_creepmod.GetFloat();
 		}		
 
-		// STiFU #1932: Apply hinderence not only to max speed but to all speeds.
-		if (cv_pm_softhinderence_active.GetBool())
+		// STiFU #1932: Apply hinderance not only to max speed but to all speeds.
+		if (cv_pm_softhinderance_active.GetBool())
 		{
 			if (bCreeping)
 			{
-				speed *= (cv_pm_softhinderence_creep.GetFloat() * fCurrentHinderence 
-					+ 1.0f - cv_pm_softhinderence_creep.GetFloat());
+				speed *= (cv_pm_softhinderance_creep.GetFloat() * fCurrentHinderance 
+					+ 1.0f - cv_pm_softhinderance_creep.GetFloat());
 			}
 			else
 			{
-				speed *= (cv_pm_softhinderence_walk.GetFloat() * fCurrentHinderence
-					+ 1.0f - cv_pm_softhinderence_walk.GetFloat());
+				speed *= (cv_pm_softhinderance_walk.GetFloat() * fCurrentHinderance
+					+ 1.0f - cv_pm_softhinderance_walk.GetFloat());
 			}
 		}
 
