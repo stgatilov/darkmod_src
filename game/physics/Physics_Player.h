@@ -81,6 +81,7 @@ enum EMantlePhase
 	push_DarkModMantlePhase,
 	pushNonCrouched_DarkModMantlePhase, // STiFU #4930: Quicker low obstacles
 	fixClipping_DarkModMantlePhase,		
+	canceling_DarkModMantlePhase, // STiFU #4509: Cancel mantle when target is clipping
 	NumMantlePhases,
 };
 
@@ -509,6 +510,15 @@ protected:
 	idVec3 m_mantlePullStartPos;
 	idVec3 m_mantlePullEndPos;
 	idVec3 m_mantlePushEndPos;
+	
+	/*!
+	* STiFU #4509: Mantle canceling animation
+	*/
+	float m_mantleCancelStartRoll;
+	float m_fmantleCancelDist;
+	idVec3 m_mantleCancelStartPos;
+	idVec3 m_mantleCancelEndPos;
+	idVec3 m_mantleStartPosWorld;
 
 	/*!
 	* Pointer to the entity being mantled.
@@ -702,6 +712,14 @@ protected:
 	* 
 	*/
 	void MantleMove();
+
+	
+	/** @brief	  	Test if the mantle end position intersects with world geomtry
+	  * @param 		pPhysicsMantledEntity Pointer to the mantled entity
+	  * @return   	True, if the player is clipping into world geometry at the 
+	  *				mantle endposition
+	  * @author		STiFU #4509: Test entposition for clipping, cancel in that case */
+	const bool IsMantleEndPosClipping(idPhysics* pPhysicsMantledEntity);
 
 	// Tests if player is holding down jump while already jumping
 	// (can be used to trigger mantle)

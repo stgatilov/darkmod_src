@@ -3021,6 +3021,11 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_fSwimLeadOutDuration_s(-1.0f)
 	, m_fSwimSpeedModCompensation(-1.0f)
 	, m_bSwimSoundStarted(false)
+	, m_mantleCancelStartRoll(0.0f)
+	, m_fmantleCancelDist(0.0f)
+	, m_mantleCancelStartPos(vec3_zero)
+	, m_mantleCancelEndPos(vec3_zero)
+	, m_mantleStartPosWorld(vec3_zero)
 {
 	debugLevel = false;
 	clipModel = NULL;
@@ -3220,6 +3225,13 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_mantledEntityID);
 	savefile->WriteFloat(m_mantleTime);
 	savefile->WriteFloat(m_jumpHeldDownTime);
+
+	// Mantle cancel animation
+	savefile->WriteFloat(m_mantleCancelStartRoll);
+	savefile->WriteFloat(m_fmantleCancelDist);
+	savefile->WriteVec3(m_mantleCancelStartPos);
+	savefile->WriteVec3(m_mantleCancelEndPos);
+	savefile->WriteVec3(m_mantleStartPosWorld);
 	
 	// Lean mod
 	savefile->WriteFloat (m_leanYawAngleDegrees);
@@ -3334,6 +3346,13 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_mantledEntityID);
 	savefile->ReadFloat(m_mantleTime);
 	savefile->ReadFloat(m_jumpHeldDownTime);
+
+	// Mantle Cancel animation
+	savefile->ReadFloat(m_mantleCancelStartRoll);
+	savefile->ReadFloat(m_fmantleCancelDist);
+	savefile->ReadVec3(m_mantleCancelStartPos);
+	savefile->ReadVec3(m_mantleCancelEndPos);
+	savefile->ReadVec3(m_mantleStartPosWorld);
 
 	// Lean mod
 	savefile->ReadFloat (m_leanYawAngleDegrees);
@@ -3871,6 +3890,10 @@ float idPhysics_Player::GetMantleTimeForPhase(EMantlePhase mantlePhase)
 	case pushNonCrouched_DarkModMantlePhase:
 		return cv_pm_mantle_pushNonCrouched_msecs.GetFloat();
 
+	case canceling_DarkModMantlePhase:
+		assert(m_fmantleCancelDist >= 0.0f);
+		return m_fmantleCancelDist * 1000.0 / cv_pm_mantle_cancel_speed.GetFloat();
+
 	default:
 		return 0.0f;
 	}
@@ -3961,6 +3984,22 @@ void idPhysics_Player::MantleMove()
 			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
 		}
 	}
+	else if (m_mantlePhase == canceling_DarkModMantlePhase)
+	{
+		// STiFU #4509: Use linear animation instead of sinus here so that we can
+		// maintain speed when the animation is finished resulting in a smoother 
+		// transition to AirMove()
+		totalMove = m_mantleCancelEndPos - m_mantleCancelStartPos;
+		newPosition = m_mantleCancelStartPos + timeRatio*totalMove;
+
+		float timeRadians = idMath::HALF_PI * timeRatio;
+		viewAngles.roll = idMath::Cos(timeRadians) * m_mantleCancelStartRoll;
+
+		if (self != NULL)
+		{
+			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
+		}
+	}
 
 	// If there is a mantled entity, positions are relative to it.
 	// Transform position to be relative to world origin.
@@ -3973,10 +4012,66 @@ void idPhysics_Player::MantleMove()
 			// Ishtvan: Track rotation as well
 			// newPosition += p_physics->GetOrigin();
 			newPosition = p_physics->GetOrigin() + p_physics->GetAxis() * newPosition;
+
+			if (IsMantleEndPosClipping(p_physics))
+				CancelMantle();
 		}
 	}
 
 	SetOrigin(newPosition);
+}
+
+
+const bool idPhysics_Player::IsMantleEndPosClipping(idPhysics* pPhysicsMantledEntity)
+{
+	if (pPhysicsMantledEntity == nullptr)
+		return false;
+
+	// Transform coordinates relative to entity to world
+	const idVec3 mantleEndWorld = pPhysicsMantledEntity->GetOrigin() 
+		+ pPhysicsMantledEntity->GetAxis() * m_mantlePushEndPos;
+
+	// Load appropriate clipping model
+	if (current.movementFlags & PMF_DUCKED)
+	{
+		// Load crouching model
+		idBounds bounds = clipModel->GetBounds();
+		bounds[1][2] = pm_crouchheight.GetFloat();
+
+		clipModel->LoadModel(pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds));
+	}
+	else
+	{
+		// Load standing model
+		idBounds bounds = clipModel->GetBounds();
+		bounds[1][2] = pm_normalheight.GetFloat();
+
+		clipModel->LoadModel(pm_usecylinder.GetBool() ? idTraceModel(bounds, 8) : idTraceModel(bounds));
+	}
+
+	// Check clipping
+	trace_t endPosTrace;
+	gameLocal.clip.Translation(endPosTrace, mantleEndWorld, mantleEndWorld,
+		clipModel, clipModel->GetAxis(), clipMask, self);
+	if (endPosTrace.fraction >= 1.0f)
+	{
+		// No clipping
+		return false;
+	}
+	else
+	{
+		// We intersect with world geometry
+
+		if ((current.movementFlags & PMF_DUCKED) == 0)
+		{
+			// We will clip standing up. Go to ducked state and retry
+			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: Clipping into world. Going to crouched state\r");
+			current.movementFlags |= PMF_DUCKED;
+			return IsMantleEndPosClipping(pPhysicsMantledEntity);
+		}
+		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: Clipping into world. Canceling mantle.\r");
+		return true;
+	}		
 }
 
 //----------------------------------------------------------------------
@@ -4057,6 +4152,15 @@ void idPhysics_Player::UpdateMantleTimers()
 
 				break;
 
+			case canceling_DarkModMantlePhase:
+				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("MantleMod: cancel mantle completed\r");
+				MantleMove();
+				static_cast<idPlayer*>(self)->SetImmobilization("MantleMove", 0);
+				m_fmantleCancelDist = -1.0f;
+				m_mantlePhase = notMantling_DarkModMantlePhase;
+				m_mantleTime = 0.0f;
+				break;
+
 			default:
 				m_mantlePhase = notMantling_DarkModMantlePhase;
 				break;
@@ -4109,8 +4213,39 @@ void idPhysics_Player::CancelMantle()
 {
 	DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("Mantle cancelled\r");
 
-	m_mantlePhase = notMantling_DarkModMantlePhase;
-	m_mantleTime = 0.0f;
+	// STiFU #4509: Add canceling animation
+	// - Move back to last non-clipping location
+	// - Rotate back viewAngles.roll to 0
+	m_p_mantledEntity = NULL;
+	m_mantlePhase = canceling_DarkModMantlePhase;
+
+	m_mantleCancelStartPos = GetOrigin();
+	m_mantleCancelStartRoll = viewAngles.roll;
+
+	// Find last non clipping location
+	// NOTE: There is no guarantee the end position does not clip by the time the 
+	// canceling animation is finished. But there is nothing we can do about that.	
+	trace_t cancelEndPosTrace;
+	gameLocal.clip.Translation(cancelEndPosTrace, m_mantleStartPosWorld, m_mantleCancelStartPos,
+		clipModel, clipModel->GetAxis(), clipMask, self);
+	m_mantleCancelEndPos = m_mantleStartPosWorld + cancelEndPosTrace.fraction * (m_mantleCancelStartPos - m_mantleStartPosWorld);
+
+	// Set current velocity: Null the XY-component so the player falls down after the cancel animation
+	idVec3 mantleCancelDir = m_mantleCancelEndPos - m_mantleCancelStartPos;
+	m_fmantleCancelDist = fabs(mantleCancelDir.NormalizeFast());
+	current.velocity = ((mantleCancelDir * cv_pm_mantle_cancel_speed.GetFloat()) * gravityNormal) * gravityNormal;
+
+	// Set mantle time. Must be called AFTER setting m_fmantleCancelDist
+	m_mantleTime = GetMantleTimeForPhase(canceling_DarkModMantlePhase);
+
+	// Prevent awkward returning to uncrouched state while falling after
+	// canceling the mantle
+	idPlayer* pPlayer = static_cast<idPlayer*>(self);
+	if (pPlayer != nullptr && (current.movementFlags & PMF_DUCKED) != 0)
+	{
+		pPlayer->m_CrouchIntent = true;
+		pPlayer->m_IdealCrouchState = true;
+	}
 }
 
 //----------------------------------------------------------------------
@@ -4257,6 +4392,8 @@ void idPhysics_Player::StartMantle
 		// Starting with push from current position
 		m_mantlePullEndPos = startPos;
 	}
+
+	m_mantleStartPosWorld = GetOrigin();
 }
 
 //----------------------------------------------------------------------
