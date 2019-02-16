@@ -60,7 +60,7 @@ typedef struct portalArea_s {
 	int				connectedAreaNum[NUM_PORTAL_ATTRIBUTES];	// if two areas have matching connectedAreaNum, they are
 									// not separated by a portal with the apropriate PS_BLOCK_* blockingBits
 	int				areaViewCount;		// set by R_FindViewLightsAndEntities. Marks whether anything in this area has been drawn this frame for r_showPortals
-	std::vector<portal_t*> areaPortals;		// never changes after load
+	idList<portal_t*> areaPortals;		// never changes after load
 	areaReference_t	entityRefs;		// head/tail of doubly linked list, may change
 	areaReference_t	lightRefs;		// head/tail of doubly linked list, may change
 	idScreenRect	areaScreenRect;
@@ -168,11 +168,11 @@ public:
 	areaNode_t *			areaNodes;
 	int						numAreaNodes;
 
-	std::vector<portalArea_t> portalAreas;
+	idList<portalArea_t> portalAreas;
 	//int						numPortalAreas;
 	int						connectedAreaNum;		// incremented every time a door portal state changes
 
-	std::vector<doublePortal_t>	doublePortals;
+	idList<doublePortal_t>	doublePortals;
 	//int						numInterAreaPortals;
 
 	idList<idRenderModel *>	localModels;

@@ -756,7 +756,7 @@ NumAreas
 ===================
 */
 int idRenderWorldLocal::NumAreas( void ) const {
-	return (int)portalAreas.size();
+	return portalAreas.Num();
 }
 
 /*
@@ -768,11 +768,11 @@ int idRenderWorldLocal::NumPortalsInArea( int areaNum ) {
 	//int				count;
 	//portal_t		*portal;
 
-	if ( areaNum >= (int)portalAreas.size() || areaNum < 0 ) {
+	if ( areaNum >= portalAreas.Num() || areaNum < 0 ) {
 		common->Error( "idRenderWorld::NumPortalsInArea: bad areanum %i", areaNum );
 	}
 	auto& area = portalAreas[areaNum];
-	return (int)area.areaPortals.size();
+	return (int)area.areaPortals.Num();
 	/*count = 0;
 	for ( portal = area->portals ; portal ; portal = portal->next ) {
 		count++;
@@ -787,7 +787,7 @@ GetPortal
 */
 exitPortal_t idRenderWorldLocal::GetPortal( int areaNum, int portalNum ) {
 	//int				count;
-	if ( areaNum > (int)portalAreas.size() ) {
+	if ( areaNum > portalAreas.Num() ) {
 		common->Error( "idRenderWorld::GetPortal: areaNum > numAreas" );
 	}
 	auto& area = portalAreas[areaNum];
@@ -827,7 +827,7 @@ void idRenderWorldLocal::SetPortalPlayerLoss( qhandle_t portal, float loss ) // 
 		return;
 	}
 
-	if ( ( portal < 1 ) || ( portal > (int)doublePortals.size() ) )
+	if ( ( portal < 1 ) || ( portal > doublePortals.Num() ) )
 	{
 		common->Error( "SetPortalPlayerLoss: bad portal number %i", portal );
 	}
@@ -871,7 +871,7 @@ int idRenderWorldLocal::PointInArea( const idVec3 &point ) const {
 		}
 		if ( nodeNum < 0 ) {
 			nodeNum = -1 - nodeNum;
-			if ( nodeNum >= (int)portalAreas.size() ) {
+			if ( nodeNum >= portalAreas.Num() ) {
 				common->Error( "idRenderWorld::PointInArea: area out of range" );
 			}
 			return nodeNum;

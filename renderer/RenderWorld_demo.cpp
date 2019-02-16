@@ -42,7 +42,7 @@ void		idRenderWorldLocal::StartWritingDemo( idDemoFile *demo ) {
 	WriteLoadMap();
 
 	// write the door portal state
-	for ( i = 0 ; i < (int)doublePortals.size() ; i++ ) {
+	for ( i = 0 ; i < doublePortals.Num() ; i++ ) {
 		if ( doublePortals[i].blockingBits ) {
 			SetPortalState( i+1, doublePortals[i].blockingBits );
 		}

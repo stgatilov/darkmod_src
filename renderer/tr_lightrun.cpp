@@ -1094,7 +1094,7 @@ void R_ReCreateWorldReferences( void ) {
 
 			// the world model entities are put specifically in a single
 			// area, instead of just pushing their bounds into the tree
-			if ( i < (int)rw->portalAreas.size() ) {
+			if ( i < rw->portalAreas.Num() ) {
 				rw->AddEntityRefToArea( def, &rw->portalAreas[i] );
 			} else {
 				R_CreateEntityRefs( def );

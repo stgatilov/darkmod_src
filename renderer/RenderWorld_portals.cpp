@@ -301,7 +301,7 @@ void idRenderWorldLocal::FlowViewThroughPortals( const idVec3 origin, int numPla
 		}
 
 		// if outside the world, mark everything
-		for ( i = 0; i < ( int )portalAreas.size(); i++ ) {
+		for ( i = 0; i < portalAreas.Num(); i++ ) {
 			AddAreaRefs( i, &ps );
 		}
 	} else {
@@ -955,19 +955,19 @@ This is only valid for a given view, not all views in a frame
 void idRenderWorldLocal::BuildConnectedAreas( void ) {
 	int		i;
 
-	tr.viewDef->connectedAreas = ( bool * )R_FrameAlloc( ( int )portalAreas.size()
+	tr.viewDef->connectedAreas = ( bool * )R_FrameAlloc( portalAreas.Num()
 	                             * sizeof( tr.viewDef->connectedAreas[0] ) );
 
 	// if we are outside the world, we can see all areas
 	if ( tr.viewDef->areaNum == -1 ) {
-		for ( i = 0; i < ( int )portalAreas.size(); i++ ) {
+		for ( i = 0; i < portalAreas.Num(); i++ ) {
 			tr.viewDef->connectedAreas[i] = true;
 		}
 		return;
 	}
 
 	// start with none visible, and flood fill from the current area
-	memset( tr.viewDef->connectedAreas, 0, portalAreas.size() * sizeof( tr.viewDef->connectedAreas[0] ) );
+	memset( tr.viewDef->connectedAreas, 0, portalAreas.Num() * sizeof( tr.viewDef->connectedAreas[0] ) );
 	BuildConnectedAreas_r( tr.viewDef->areaNum );
 }
 
@@ -1038,7 +1038,7 @@ NumPortals
 ==============
 */
 int idRenderWorldLocal::NumPortals( void ) const {
-	return ( int )doublePortals.size();
+	return doublePortals.Num();
 }
 
 /*
@@ -1055,7 +1055,7 @@ qhandle_t idRenderWorldLocal::FindPortal( const idBounds &b ) const {
 	//doublePortal_t	*portal;
 	//idWinding		*w;
 
-	for ( i = 0; i < ( int )doublePortals.size(); i++ ) {
+	for ( i = 0; i < doublePortals.Num(); i++ ) {
 		auto &portal = doublePortals[i];
 		auto &w = portal.portals[0].w;
 		wb.Clear();
@@ -1099,7 +1099,7 @@ bool idRenderWorldLocal::AreasAreConnected( int areaNum1, int areaNum2, portalCo
 		return false;
 	}
 
-	if ( areaNum1 > ( int )portalAreas.size() || areaNum2 > ( int )portalAreas.size() || areaNum1 < 0 || areaNum2 < 0 ) {
+	if ( areaNum1 > portalAreas.Num() || areaNum2 > ( int )portalAreas.Num() || areaNum1 < 0 || areaNum2 < 0 ) {
 		common->Error( "idRenderWorldLocal::AreAreasConnected: bad parms: %i, %i", areaNum1, areaNum2 );
 	}
 	int	attribute = 0;
@@ -1129,7 +1129,7 @@ void idRenderWorldLocal::SetPortalState( qhandle_t portal, int blockTypes ) {
 		return;
 	}
 
-	if ( portal < 1 || portal > ( int )doublePortals.size() ) {
+	if ( portal < 1 || portal > doublePortals.Num() ) {
 		common->Error( "SetPortalState: bad portal number %i", portal );
 	}
 	int	old = doublePortals[portal - 1].blockingBits;
@@ -1166,7 +1166,7 @@ int		idRenderWorldLocal::GetPortalState( qhandle_t portal ) {
 		return 0;
 	}
 
-	if ( portal < 1 || portal > ( int )doublePortals.size() ) {
+	if ( portal < 1 || portal > doublePortals.Num() ) {
 		common->Error( "GetPortalState: bad portal number %i", portal );
 	}
 	return doublePortals[portal - 1].blockingBits;
