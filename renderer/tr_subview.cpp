@@ -740,7 +740,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 	const idMaterial		*shader;
 
 	// for testing the performance hit
-	if ( r_skipSubviews.GetBool() ) 
+	if ( r_skipSubviews ) 
 		return false;
 
 	if ( R_PreciseCullSurface( drawSurf, ndcBounds ) ) 
@@ -819,7 +819,7 @@ bool R_GenerateSubViews( void ) {
 	const idMaterial		*shader;
 
 	// for testing the performance hit
-	if ( r_skipSubviews.GetBool() ) 
+	if ( r_skipSubviews || r_showPortals ) 
 		return false;
 
 	// duzenko #4420: no mirrors on lightgem stage

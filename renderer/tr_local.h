@@ -941,7 +941,7 @@ extern idCVar r_skipAmbient;			// bypasses all non-interaction drawing
 extern idCVar r_skipNewAmbient;			// bypasses all vertex/fragment program ambients
 extern idCVar r_skipBlendLights;		// skip all blend lights
 extern idCVar r_skipFogLights;			// skip all fog lights
-extern idCVar r_skipSubviews;			// 1 = don't render any mirrors / cameras / etc
+extern idCVarBool r_skipSubviews;			// 1 = don't render any mirrors / cameras / etc
 extern idCVar r_skipGuiShaders;			// 1 = don't render any gui elements on surfaces
 extern idCVar r_skipParticles;			// 1 = don't render any particles
 extern idCVar r_skipUpdates;			// 1 = don't accept any entity or light updates, making everything static

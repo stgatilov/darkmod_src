@@ -1182,8 +1182,8 @@ Debugging tool, won't work correctly with SMP or when mirrors are present
 void idRenderWorldLocal::ShowPortals() {
 	int	j;
 	int viewCount = tr.viewCount; // 4659 - subviews may have screwed this, try harder
-	if ( backEnd.vLight && backEnd.vLight->lightDef ) 
-		viewCount = backEnd.vLight->lightDef->viewCount; 
+	if ( backEnd.viewDef->viewLights && backEnd.viewDef->viewLights->lightDef )
+		viewCount = backEnd.viewDef->viewLights->lightDef->viewCount;
 	// Check viewcount on areas and portals to see which got used this frame.
 	for ( auto &area : portalAreas ) {
 		if ( area.areaViewCount != viewCount ) { 
