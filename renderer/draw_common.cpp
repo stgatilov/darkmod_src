@@ -635,15 +635,12 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	idMat4 modelView, projection;
 	memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
 	memcpy( projection.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( projection ) );
-	idMat4 modelViewProjection = modelView * projection;
 	{
 		//TODO: query locations once
 		int locMV  = qglGetUniformLocation(program, "u_modelViewMatrix");
 		qglUniformMatrix4fv(locMV, 1, false, modelView.ToFloatPtr());
 		int locP   = qglGetUniformLocation(program, "u_projectionMatrix");
 		qglUniformMatrix4fv(locP, 1, false, projection.ToFloatPtr());
-		int locMVP  = qglGetUniformLocation(program, "u_modelViewProjectionMatrix");
-		qglUniformMatrix4fv(locMVP, 1, false, modelViewProjection.ToFloatPtr());
 	}
 
 	//draw it
