@@ -1501,9 +1501,8 @@ Debugging tool, won't work correctly with SMP or when mirrors are present
 =====================
 */
 void RB_ShowPortals( void ) {
-	if ( !r_showPortals.GetBool() ) {
+	if ( !r_showPortals ) 
 		return;
-	}
 
 	// all portals are expressed in world coordinates
 	RB_SimpleWorldSetup();

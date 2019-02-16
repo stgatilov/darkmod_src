@@ -178,6 +178,13 @@ private:
 	static idCVar *			staticVars;
 };
 
+class idCVarInt : idCVar {
+public:
+	idCVarInt( const char *name, const char *value, int flags, const char *description )
+		: idCVar( name, value, flags | CVAR_INTEGER, description ) {}
+	operator				int() { return GetInteger(); }
+};
+
 ID_INLINE idCVar::idCVar( const char *name, const char *value, int flags, const char *description,
 							argCompletion_t valueCompletion ) {
 	if ( !valueCompletion && ( flags & CVAR_BOOL ) ) {

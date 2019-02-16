@@ -221,7 +221,8 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		// go through this portal
 		newStack.p = p;
 		newStack.next = ps;
-		p->doublePortal->portalViewCount = tr.viewCount;	// For r_showPortals. Keep track whether the player's view flows through
+		if ( r_showPortals ) // For r_showPortals. Keep track whether the player's view flows through
+			p->doublePortal->portalViewCount = tr.viewCount;
 		// individual portals, not just whole visleafs.  -- SteveL #4162
 
 		// find the screen pixel bounding box of the remaining portal
@@ -1207,9 +1208,9 @@ void idRenderWorldLocal::ShowPortals() {
 				qglVertex3fv( p->w[j].ToFloatPtr() ); 
 			qglEnd();
 		}
-		if ( r_showPortals.GetInteger() > 1 )
+		if ( r_showPortals > 1 )
 			common->Printf( consoleMsg += " " );
 	}
-	if ( r_showPortals.GetInteger() > 1 )
+	if ( r_showPortals > 1 )
 		common->Printf( "\n" );
 }
