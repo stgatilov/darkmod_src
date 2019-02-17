@@ -1128,6 +1128,9 @@ void R_RenderView( viewDef_t &parms ) {
 	// sort all the ambient surfaces for translucency ordering
 	R_SortDrawSurfs();
 
+	if ( r_showPortals ) // moved from backend to allow subviews and SMP
+		parms.renderWorld->ShowPortals();
+
 	// generate any subviews (mirrors, cameras, etc) before adding this view
 	if ( R_GenerateSubViews() ) {
 		// if we are debugging subviews, allow the skipping of the

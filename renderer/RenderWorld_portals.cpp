@@ -1176,41 +1176,29 @@ int		idRenderWorldLocal::GetPortalState( qhandle_t portal ) {
 =====================
 idRenderWorldLocal::ShowPortals
 
-Debugging tool, won't work correctly with SMP or when mirrors are present
+Originally calculated and rendered in backend. Converted to only generate results to frame data.
 =====================
 */
 void idRenderWorldLocal::ShowPortals() {
-	int	j;
-	int viewCount = tr.viewCount; // 4659 - subviews may have screwed this, try harder
-	if ( backEnd.viewDef->viewLights && backEnd.viewDef->viewLights->lightDef )
-		viewCount = backEnd.viewDef->viewLights->lightDef->viewCount;
+	idStr results;
 	// Check viewcount on areas and portals to see which got used this frame.
 	for ( auto &area : portalAreas ) {
-		if ( area.areaViewCount != viewCount ) { 
-			continue; 
-		}
-		idStr consoleMsg( area.areaNum );
+		if ( area.areaViewCount != tr.viewCount ) {
+			results += 'C';
+			continue;
+		} else
+			results += 'O';
 		for ( auto p : area.areaPortals ) {
 			// Changed to show 3 colours. -- SteveL #4162
-			if ( p->doublePortal->portalViewCount == viewCount ) { 
-				GL_FloatColor( 0, 1, 0 ); 	// green = we see through this portal
-				consoleMsg += "-^2";
-			} else if ( portalAreas[p->intoArea].areaViewCount == viewCount )	{ 
-				GL_FloatColor( 1, 1, 0 );	// yellow = we see into this visleaf but not through this portal
-				consoleMsg += "-^3";
-			} else {
-				GL_FloatColor( 1, 0, 0 ); 	// red = can't see
-				consoleMsg += "-^1";
-			}
-			consoleMsg += p->intoArea;
-			qglBegin( GL_LINE_LOOP );
-			for ( j = 0; j < p->w.GetNumPoints(); j++ )	
-				qglVertex3fv( p->w[j].ToFloatPtr() ); 
-			qglEnd();
+			if ( p->doublePortal->portalViewCount == tr.viewCount )
+				results += 'G';
+			else if ( portalAreas[p->intoArea].areaViewCount == tr.viewCount )
+				results += 'Y';
+			else
+				results += 'R';
 		}
-		if ( r_showPortals > 1 )
-			common->Printf( consoleMsg += " " );
 	}
-	if ( r_showPortals > 1 )
-		common->Printf( "\n" );
+	auto size = sizeof( char ) * results.Length();
+	tr.viewDef->portalStates = (char*)R_FrameAlloc( size );
+	memcpy( tr.viewDef->portalStates, results.c_str(), size );
 }

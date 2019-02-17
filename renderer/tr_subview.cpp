@@ -819,7 +819,7 @@ bool R_GenerateSubViews( void ) {
 	const idMaterial		*shader;
 
 	// for testing the performance hit
-	if ( r_skipSubviews || r_showPortals ) 
+	if ( r_skipSubviews ) 
 		return false;
 
 	// duzenko #4420: no mirrors on lightgem stage

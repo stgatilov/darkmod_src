@@ -1497,11 +1497,12 @@ void RB_ShowLights( void ) {
 =====================
 RB_ShowPortals
 
-Debugging tool, won't work correctly with SMP or when mirrors are present
+Duzenko: split into frontend/backend parts to allow SMP and subviews
 =====================
 */
 void RB_ShowPortals( void ) {
-	if ( !r_showPortals ) 
+	auto portalStates = backEnd.viewDef->portalStates;
+	if ( !r_showPortals || !portalStates )
 		return;
 
 	// all portals are expressed in world coordinates
@@ -1512,7 +1513,38 @@ void RB_ShowPortals( void ) {
 
 	GL_State( GLS_DEFAULT );
 
-	((idRenderWorldLocal *)backEnd.viewDef->renderWorld)->ShowPortals();
+	//((idRenderWorldLocal *)backEnd.viewDef->renderWorld)->ShowPortals();
+	auto world = (idRenderWorldLocal *)backEnd.viewDef->renderWorld;
+	for ( auto &area : world->portalAreas ) {
+		if ( *portalStates++ == 'C' ) // area closed
+			continue;
+		idStr consoleMsg( area.areaNum );
+		for ( auto p : area.areaPortals ) {
+			switch ( *portalStates++ ) {	// Changed to show 3 colours. -- SteveL #4162
+			case 'G':
+				GL_FloatColor( 0, 1, 0 ); 	// green = we see through this portal
+				consoleMsg += "-^2";
+				break;
+			case 'Y':
+				GL_FloatColor( 1, 1, 0 );	// yellow = we see into this visleaf but not through this portal
+				consoleMsg += "-^3";
+				break;
+			default:
+				GL_FloatColor( 1, 0, 0 ); 	// red = can't see
+				consoleMsg += "-^1";			
+				break;
+			}
+			consoleMsg += p->intoArea;
+			qglBegin( GL_LINE_LOOP );		// FIXME convert to modern OpenGL
+			for ( int j = 0; j < p->w.GetNumPoints(); j++ )
+				qglVertex3fv( p->w[j].ToFloatPtr() );
+			qglEnd();
+		}
+		if ( r_showPortals > 1 )
+			common->Printf( consoleMsg += " " );
+	}
+	if ( r_showPortals > 1 )
+		common->Printf( "\n" );
 
 	qglEnable( GL_DEPTH_TEST );
 }
