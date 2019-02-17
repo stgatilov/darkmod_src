@@ -3259,6 +3259,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(m_ShoulderingStartPos);
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
+	savefile->WriteFloat(m_fShoulderingStartPitch);
 
 	// Swimming
 	savefile->WriteFloat(m_fSwimTimeStart_s);
@@ -3389,6 +3390,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3(m_ShoulderingStartPos);
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
+	savefile->ReadFloat(m_fShoulderingStartPitch);
 
 	// Swimming
 	savefile->ReadFloat(m_fSwimTimeStart_s);
@@ -6026,14 +6028,14 @@ void idPhysics_Player::StartShouldering(idEntity const * const pBody)
 		static const int iImmobilization =
 			EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE
 			| EIM_MANTLE | EIM_FROB_COMPLEX | EIM_MOVEMENT | EIM_CROUCH_HOLD
-			| EIM_CROUCH | EIM_JUMP | EIM_FROB | EIM_FROB_HILIGHT | EIM_LEAN;
+			| EIM_CROUCH | EIM_JUMP | EIM_FROB | EIM_FROB_HILIGHT | EIM_LEAN | EIM_VIEW_ANGLE;
 
 		pPlayer->SetImmobilization("ShoulderingAnimation", iImmobilization);
 
 		// Check height of body: If heigher than crouched, do not go to crouched state
 		const float fBodyHeight = pBody->GetPhysics()->GetOrigin() * (-gravityNormal);
 		const float fCrouchedHeight = GetOrigin() * (-gravityNormal) + pm_crouchviewheight.GetFloat();
-		m_bShouldering_SkipDucking = fBodyHeight > fCrouchedHeight;
+		m_bShouldering_SkipDucking = fBodyHeight > fCrouchedHeight || cv_pm_shoulderAnim_delay_msecs.GetFloat() <= 0.0f;
 
 		// Get rustle sound to play while shouldering
 		const idKeyValue* const pKeyValue = pBody->spawnArgs.FindKey("snd_rustle");
@@ -6075,6 +6077,7 @@ void idPhysics_Player::StartShoulderingAnim()
 		{
 			// Start animation right away
 			m_fShoulderingTime = cv_pm_shoulderAnim_msecs.GetFloat();
+			m_fShoulderingStartPitch = viewAngles.pitch;
 			m_ShoulderingStartPos = GetOrigin();
 			m_eShoulderAnimState = eShoulderingAnimation_Active;
 			if (!m_bShouldering_SkipDucking && !IsCrouching())
@@ -6124,11 +6127,24 @@ void idPhysics_Player::ShoulderingMove()
 				m_fShouldering_TimeToNextSound = FLT_MAX;
 		}
 
-		// Compute view angles and position
+		// Compute view angles and position for lean
 		idVec3 newPosition = m_ShoulderingStartPos;
 		const float timeRadians = idMath::PI * m_fShoulderingTime / cv_pm_shoulderAnim_msecs.GetFloat();
-		viewAngles.roll = idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat();
-		newPosition += (idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat()) * viewRight;
+		viewAngles.pitch = m_fShoulderingStartPitch + idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat();
+		newPosition += (idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat()) * viewForward;
+
+		// Add vertical dip animation
+		const float fAbsoluteDipDuration = 
+			cv_pm_shoulderAnim_dip_duration.GetFloat()*cv_pm_shoulderAnim_msecs.GetFloat();
+		const float fDipStart =
+			cv_pm_shoulderAnim_msecs.GetFloat()*0.5f + fAbsoluteDipDuration * 0.5f;
+		const float fDipEnd = 
+			cv_pm_shoulderAnim_msecs.GetFloat()*0.5f - fAbsoluteDipDuration * 0.5f;
+		if (m_fShoulderingTime >= fDipEnd && m_fShoulderingTime < fDipStart)
+		{
+			const float fDipTimeRadians = idMath::PI * (fDipEnd - m_fShoulderingTime) / fAbsoluteDipDuration;
+			newPosition += (-idMath::Sin(fDipTimeRadians) * cv_pm_shoulderAnim_dip_dist.GetFloat()) * gravityNormal;
+		}
 
 		pPlayer->SetViewAngles(viewAngles);
 		SetOrigin(newPosition);

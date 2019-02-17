@@ -213,7 +213,9 @@ extern idCVar cv_tdm_creep_toggle;
 
 // stifu #3607: Shouldering animation
 extern idCVar cv_pm_shoulderAnim_msecs;
+extern idCVar cv_pm_shoulderAnim_dip_duration;
 extern idCVar cv_pm_shoulderAnim_rockDist;
+extern idCVar cv_pm_shoulderAnim_dip_dist;
 extern idCVar cv_pm_shoulderAnim_delay_msecs;
 
 // stifu #4107: Try multiple drop positions for shouldered bodies

@@ -967,6 +967,7 @@ private:
 
 	eShoulderingAnimation	m_eShoulderAnimState;
 	float					m_fShoulderingTime;
+	float					m_fShoulderingStartPitch;
 	idVec3					m_ShoulderingStartPos;
 	bool					m_bShouldering_SkipDucking;
 	float					m_fShouldering_TimeToNextSound;
