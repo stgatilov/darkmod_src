@@ -117,7 +117,7 @@ multiLightInteractionProgram_t multiLightShader;
 
 interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
-std::map<idStr, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
+std::map<std::string, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
 
 idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
 
@@ -637,7 +637,7 @@ bool R_ReloadGLSLPrograms() {
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
 		auto& shader = it->second;
-		shader->Load( fileName );
+		shader->Load( fileName.c_str() );
 	}
 	return ok;
 }
