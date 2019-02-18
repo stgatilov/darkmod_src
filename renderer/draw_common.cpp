@@ -607,7 +607,79 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 		}
 	}
 
-	//TODO: find better means of getting env parameters
+//============ note: copied from RB_SetProgramEnvironment and RB_SetProgramEnvironmentSpace
+
+	float	parm[4];
+	int		pot;
+	// screen power of two correction factor, assuming the copy to _currentRender
+	// also copied an extra row and column for the bilerp
+	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
+	pot = globalImages->currentRenderImage->uploadWidth;
+	parm[0] = ( float )w / pot;
+	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
+	pot = globalImages->currentRenderImage->uploadHeight;
+	parm[1] = ( float )h / pot;
+	parm[2] = 0;
+	parm[3] = 1;
+	qglUniform4fv(qglGetUniformLocation(program, "u_scalePotToWindow"), 1, parm);
+
+	// window coord to 0.0 to 1.0 conversion
+	parm[0] = 1.0 / w;
+	parm[1] = 1.0 / h;
+	parm[2] = 0;
+	parm[3] = 1;
+	qglUniform4fv(qglGetUniformLocation(program, "u_scaleWindowToUnit"), 1, parm);
+
+	// #3877: Allow shaders to access depth buffer.
+	// Two useful ratios are packed into this parm: [0] and [1] hold the x,y multipliers you need to map a screen
+	// coordinate (fragment position) to the depth image: those are simply the reciprocal of the depth
+	// image size, which has been rounded up to a power of two. Slots [3] and [4] hold the ratio of the depth image
+	// size to the current render image size. These sizes can differ if the game crops the render viewport temporarily
+	// during post-processing effects. The depth render is smaller during the effect too, but the depth image doesn't
+	// need to be downsized, whereas the current render image does get downsized when it's captured by the game after
+	// the skybox render pass. The ratio is needed to map between the two render images.
+	parm[0] = 1.0f / globalImages->currentDepthImage->uploadWidth;
+	parm[1] = 1.0f / globalImages->currentDepthImage->uploadHeight;
+	parm[2] = static_cast<float>( globalImages->currentRenderImage->uploadWidth ) / globalImages->currentDepthImage->uploadWidth;
+	parm[3] = static_cast<float>( globalImages->currentRenderImage->uploadHeight ) / globalImages->currentDepthImage->uploadHeight;
+	qglUniform4fv(qglGetUniformLocation(program, "u_scaleDepthCoords"), 1, parm);
+
+	//
+	// set eye position in global space
+	//
+	parm[0] = backEnd.viewDef->renderView.vieworg[0];
+	parm[1] = backEnd.viewDef->renderView.vieworg[1];
+	parm[2] = backEnd.viewDef->renderView.vieworg[2];
+	parm[3] = 1.0;
+	qglUniform4fv(qglGetUniformLocation(program, "u_viewOriginGlobal"), 1, parm);
+
+	const struct viewEntity_s *space = backEnd.currentSpace;
+	// set eye position in local space
+	R_GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, *( idVec3 * )parm );
+	parm[3] = 1.0;
+	qglUniform4fv(qglGetUniformLocation(program, "u_viewOriginLocal"), 1, parm);
+
+	// we need the model matrix without it being combined with the view matrix
+	// so we can transform local vectors to global coordinates
+	parm[0] = space->modelMatrix[0];
+	parm[1] = space->modelMatrix[4];
+	parm[2] = space->modelMatrix[8];
+	parm[3] = space->modelMatrix[12];
+	qglUniform4fv(qglGetUniformLocation(program, "u_modelMatrixRow0"), 1, parm);
+	parm[0] = space->modelMatrix[1];
+	parm[1] = space->modelMatrix[5];
+	parm[2] = space->modelMatrix[9];
+	parm[3] = space->modelMatrix[13];
+	qglUniform4fv(qglGetUniformLocation(program, "u_modelMatrixRow1"), 1, parm);
+	parm[0] = space->modelMatrix[2];
+	parm[1] = space->modelMatrix[6];
+	parm[2] = space->modelMatrix[10];
+	parm[3] = space->modelMatrix[14];
+	qglUniform4fv(qglGetUniformLocation(program, "u_modelMatrixRow2"), 1, parm);
+
+//============ (note end)
+
+	/*//TODO: find better means of getting env parameters
 	static PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB = (PFNGLGETPROGRAMENVPARAMETERFVARBPROC) GLimp_ExtensionPointer("glGetProgramEnvParameterfvARB");
 	for (int i = 0; i < PP_MISC_0 + 5; i++) {
 		//TODO: get location once
@@ -630,7 +702,7 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 			qglUniform4fv(loc, 1, parm);
 		}
 	}
-	qglGetError();	//ignore missing env parameters
+	qglGetError();	//ignore missing env parameters*/
 
 	idMat4 modelView, projection;
 	memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
