@@ -1495,9 +1495,11 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				idStr fileExt;
 				token.ExtractFileExtension( fileExt );
-				if ( newStage.GLSL = fileExt.Icmp( "vfp" ) != 0 )
-					newStage.vertexProgram = newStage.fragmentProgram =
-						R_FindGLSLProgram( token );
+				newStage.GLSL = fileExt.Icmp( "vfp" ) != 0 || r_forceGlslPrograms.GetBool();
+				if ( newStage.GLSL ) {
+					token.StripFileExtension();
+					newStage.vertexProgram = newStage.fragmentProgram =	R_FindGLSLProgram( token );
+				}
 				else {
 					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
 					newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
@@ -1507,13 +1509,27 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 		else if ( !token.Icmp( "fragmentProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
+				if (r_forceGlslPrograms.GetBool()) {
+					newStage.GLSL = true;
+					token.StripFileExtension();
+					newStage.fragmentProgram =	R_FindGLSLProgram( token );
+				}
+				else {
+					newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
+				}
 			}
 			continue;
 		}
 		else if ( !token.Icmp( "vertexProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
+				if (r_forceGlslPrograms.GetBool()) {
+					newStage.GLSL = true;
+					token.StripFileExtension();
+					newStage.vertexProgram =	R_FindGLSLProgram( token );
+				}
+				else {
+					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
+				}
 			}
 			continue;
 		}

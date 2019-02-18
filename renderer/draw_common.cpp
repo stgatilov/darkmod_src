@@ -579,6 +579,14 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 
 	newShaderStage_t *newStage = pStage->newStage;
 	int program = newStage->vertexProgram;
+	if (newStage->fragmentProgram != newStage->vertexProgram) {
+		//fragmentProgram and vertexProgram point to different shaders
+		common->Warning(
+			"New-stage vertex and fragment shaders point to different programs: %d and %d",
+			newStage->vertexProgram,
+			newStage->fragmentProgram
+		);
+	}
 	qglUseProgram( program );
 
 	const float	*regs = surf->shaderRegisters;

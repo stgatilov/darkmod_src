@@ -1053,6 +1053,10 @@ extern idCVar r_cinematic_legacyRoq;
 // nbohr1more nvidia driver workarounds
 extern idCVar r_nVidiaOverride;
 
+//stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
+extern idCVar r_forceGlslPrograms;
+
+
 // HDR related - J.C.Denton
 extern idCVar r_postprocess;
 extern idCVar r_postprocess_brightPassThreshold;
