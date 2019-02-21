@@ -4243,11 +4243,16 @@ void idPhysics_Player::CancelMantle()
 	// Prevent awkward returning to uncrouched state while falling after
 	// canceling the mantle
 	idPlayer* pPlayer = static_cast<idPlayer*>(self);
-	if (pPlayer != nullptr && (current.movementFlags & PMF_DUCKED) != 0)
+	if (pPlayer == nullptr)
+		return;	
+	if ((current.movementFlags & PMF_DUCKED) != 0)
 	{
 		pPlayer->m_CrouchIntent = true;
 		pPlayer->m_IdealCrouchState = true;
 	}
+
+	// Play a canceling sound
+ 	pPlayer->StartSound("snd_player_mantle_cancel", SND_CHANNEL_ANY, 0, false, NULL);
 }
 
 //----------------------------------------------------------------------
