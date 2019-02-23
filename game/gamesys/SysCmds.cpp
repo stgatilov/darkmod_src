@@ -1176,7 +1176,13 @@ void Cmd_SetViewpos_f( const idCmdArgs &args ) {
 	for ( i = 0 ; i < 3 ; i++ ) {
 		origin[i] = atof( args.Argv( i + 1 ) );
 	}
-	origin.z -= pm_normalviewheight.GetFloat() - 0.25f;
+
+	// STiFU: Correct z based on current view height
+	idPhysics_Player* pPlayerPhysics = dynamic_cast<idPhysics_Player*>(player->GetPhysics());
+	if (pPlayerPhysics != nullptr && pPlayerPhysics->IsCrouching())
+		origin.z -= pm_crouchviewheight.GetFloat() - 0.25f;
+	else
+		origin.z -= pm_normalviewheight.GetFloat() - 0.25f;
 
 	player->Teleport( origin, angles, NULL );
 }
