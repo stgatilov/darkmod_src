@@ -94,7 +94,7 @@ typedef struct {
 
 static const int MAX_SHADOW_TRIS = 32768;
 
-static	shadowTri_t	outputTris[MAX_SHADOW_TRIS];
+static	shadowTri_t	*outputTris = NULL;
 static	int		numOutputTris;
 
 typedef struct shadowOptEdge_s {
@@ -103,7 +103,7 @@ typedef struct shadowOptEdge_s {
 } shadowOptEdge_t;
 
 static const int MAX_SIL_EDGES = MAX_SHADOW_TRIS*3;
-static	shadowOptEdge_t	silEdges[MAX_SIL_EDGES];
+static	shadowOptEdge_t	*silEdges = NULL;
 static	int		numSilEdges;
 
 typedef struct silQuad_s {
@@ -113,7 +113,7 @@ typedef struct silQuad_s {
 } silQuad_t;
 
 static const int MAX_SIL_QUADS = MAX_SHADOW_TRIS*3;
-static	silQuad_t	silQuads[MAX_SIL_QUADS];
+static	silQuad_t	*silQuads = NULL;
 static int		numSilQuads;
 
 
@@ -279,6 +279,9 @@ static void ClipTriangle_r( const shadowTri_t *tri, int startTri, int skipTri, i
 		// any fragments will have been added recursively
 		return;
 	}
+
+	if ( !outputTris )
+		outputTris = new shadowTri_t[MAX_SHADOW_TRIS];
 
 	// this fragment is frontmost, so add it to the output list
 	if ( numOutputTris == MAX_SHADOW_TRIS ) {
@@ -501,6 +504,8 @@ static void GenerateSilEdges( void ) {
 			v2 = ( edges[i] >> 1 ) & 0x7fff;
 		}
 
+		if ( !silEdges )
+			silEdges = new shadowOptEdge_t[MAX_SIL_EDGES];
 		if ( numSilEdges == MAX_SIL_EDGES ) {
 			common->Error( "numSilEdges == MAX_SIL_EDGES" );
 		}
@@ -568,6 +573,8 @@ SaveQuad
 */
 static void SaveQuad( silPlane_t *silPlane, silQuad_t &quad ) {
 	// this fragment is a final fragment
+	if ( !silQuads )
+		silQuads = new silQuad_t[MAX_SIL_QUADS];
 	if ( numSilQuads == MAX_SIL_QUADS ) {
 		common->Error( "numSilQuads == MAX_SIL_QUADS" );
 	}
