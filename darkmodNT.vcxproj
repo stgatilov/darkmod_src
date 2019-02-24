@@ -1282,7 +1282,6 @@
     <ClCompile Include="tools\compilers\dmap\leakfile.cpp" />
     <ClCompile Include="tools\compilers\dmap\map.cpp" />
     <ClCompile Include="tools\compilers\dmap\optimize.cpp" />
-    <ClCompile Include="tools\compilers\dmap\optimize_gcc.cpp" />
     <ClCompile Include="tools\compilers\dmap\output.cpp" />
     <ClCompile Include="tools\compilers\dmap\portals.cpp" />
     <ClCompile Include="tools\compilers\dmap\shadowopt3.cpp" />

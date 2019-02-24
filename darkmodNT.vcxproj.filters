@@ -2716,9 +2716,6 @@
     <ClCompile Include="tools\compilers\dmap\optimize.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
-    <ClCompile Include="tools\compilers\dmap\optimize_gcc.cpp">
-      <Filter>Tools\Compilers\DMap</Filter>
-    </ClCompile>
     <ClCompile Include="tools\compilers\dmap\output.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
