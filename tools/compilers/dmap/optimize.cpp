@@ -40,7 +40,7 @@ idBounds	optBounds;
 
 #define	MAX_OPT_VERTEXES	0x10000
 int			numOptVerts;
-optVertex_t optVerts[MAX_OPT_VERTEXES];
+optVertex_t *optVerts = NULL;
 
 #define	MAX_OPT_EDGES		0x40000
 static	int		numOptEdges;
@@ -198,6 +198,9 @@ static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) {
 			return &optVerts[i];
 		}
 	}
+
+	if ( !optVerts )
+		optVerts = new optVertex_s[MAX_OPT_VERTEXES];
 
 	if ( numOptVerts >= MAX_OPT_VERTEXES ) {
 		common->Error( "MAX_OPT_VERTEXES" );
