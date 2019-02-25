@@ -142,10 +142,9 @@ public:
 		// Acquire an SVN client implementation
 		SvnClientPtr svnClient = SvnClient::Create();
 
-		if (skipVersioningCheck)
+		if (!skipVersioningCheck)
 		{
-			// Deactivate the client class (won't perform checks, will always return true)
-			svnClient->SetActive(false);
+			svnClient->SetActive(repositoryRoot);
 		}
 
 		// Process the inclusion commands and exclude all files as instructed

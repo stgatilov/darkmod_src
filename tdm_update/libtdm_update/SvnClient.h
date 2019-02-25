@@ -37,30 +37,15 @@ class SvnClient
 public:
 	virtual ~SvnClient() {}
 
-	// Activate/Deacticate the client. Deactivated clients will return true in FileIsUnderVersionControl().
-	virtual void SetActive(bool active) = 0;
+	// Try to activate the client in the specified SVN repository.
+	// Deactivated clients will return true in FileIsUnderVersionControl().
+	virtual bool SetActive(const fs::path& repoRoot) = 0;
 
 	// Returns true if the given file is under version control, false in all other cases
 	virtual bool FileIsUnderVersionControl(const fs::path& path) = 0;
 
 	// Factory method to retrieve an implementation of this class
 	static SvnClientPtr Create();
-};
-
-// Dummy implementation returning false on all queries / doing nothing
-class SvnClientDummy :
-	public SvnClient
-{
-public:
-	// Activate/Deacticate the client. Deactivated clients will return true in FileIsUnderVersionControl().
-	void SetActive(bool active)
-	{}
-
-	// Returns true if the given file is under version control, false in all other cases
-	bool FileIsUnderVersionControl(const fs::path& path)
-	{
-		return false;
-	}
 };
 
 } // namespace
