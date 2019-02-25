@@ -23,7 +23,7 @@
 #include <cstdint>
 
 #include "StdString.h"
-#include <boost/format.hpp>
+#include "StdFormat.h"
 #include "StdFilesystem.h"
 
 #include "File.h"
@@ -64,7 +64,7 @@ public:
 
 	static std::string ToString(uint32_t crc)
 	{
-		return (boost::format("%x") % crc).str();
+		return stdext::format("%x", crc);
 	}
 
 	/**
@@ -118,7 +118,7 @@ public:
 			break;
 		}
 
-		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for file " + file.string() + " = " + (boost::format("%x") % crc).str());
+		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for file " + file.string() + " = " + stdext::format("%x", crc));
 
 		fclose(fh);
 
@@ -134,7 +134,7 @@ public:
 
 		uint32_t crc = zipFile->GetCumulativeCrc();
 
-		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for zip file " + file.string() + " = " + (boost::format("%x") % crc).str());
+		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for zip file " + file.string() + " = " + stdext::format("%x", crc));
 
 		return crc;
 	}

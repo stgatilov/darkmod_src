@@ -252,14 +252,14 @@ public:
 						file.filesize = info.uncompressedSize;
 
 						TraceLog::WriteLine(LOG_VERBOSE, "  Adding archive member " + info.filename + 
-							" with CRC " + (boost::format("%x") % file.crc).str());
+							" with CRC " + stdext::format("%x", file.crc));
 
 						_archive.members.insert(file);
 					}
 
 				} _visitor(archive);
 
-				TraceLog::WriteLine(LOG_STANDARD, "  This is an archive, checksum is: " + (boost::format("%x") % archive.crc).str());
+				TraceLog::WriteLine(LOG_STANDARD, "  This is an archive, checksum is: " + stdext::format("%x", archive.crc));
 
 				// Open this archive
 				ZipFileReadPtr zipFile = Zip::OpenFileRead(file);
@@ -272,7 +272,7 @@ public:
 
 				zipFile->ForeachFile(_visitor);
 
-				TraceLog::WriteLine(LOG_STANDARD, (boost::format("  Archive has %d members") % archive.members.size()).str());
+				TraceLog::WriteLine(LOG_STANDARD, stdext::format("  Archive has %d members", archive.members.size()));
 				
 				set[relativePath.string()] = archive;
 			}

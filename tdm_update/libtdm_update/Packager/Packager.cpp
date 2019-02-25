@@ -60,7 +60,7 @@ void Packager::CalculateSetDifference()
 		std::set_difference(_baseSet.begin(), _baseSet.end(), _headSet.begin(), _headSet.end(), 
 			std::back_inserter(toBeRemoved), _baseSet.value_comp());
 		
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("PK4s to be removed: %d") % toBeRemoved.size()).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("PK4s to be removed: %d", toBeRemoved.size()));
 
 		for (DiffContainer::iterator i = toBeRemoved.begin(); i != toBeRemoved.end(); ++i)
 		{
@@ -82,7 +82,7 @@ void Packager::CalculateSetDifference()
 		std::set_difference(_headSet.begin(), _headSet.end(), _baseSet.begin(), _baseSet.end(), 
 			std::back_inserter(toBeAdded), _headSet.value_comp());
 		
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("PK4s to be added: %d") % toBeAdded.size()).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("PK4s to be added: %d", toBeAdded.size()));
 
 		for (DiffContainer::iterator i = toBeAdded.begin(); i != toBeAdded.end(); ++i)
 		{
@@ -125,11 +125,11 @@ void Packager::CalculateSetDifference()
 			// Compare the release files (note the non-trivial ==/!= operators)
 			if (headFile == baseFile)
 			{
-				TraceLog::WriteLine(LOG_STANDARD, (boost::format("%s (HEAD) is equal to %s (BASE)") % h->first % b->first).str());
+				TraceLog::WriteLine(LOG_STANDARD, stdext::format("%s (HEAD) is equal to %s (BASE)", h->first, b->first));
 				continue;
 			}
 
-			TraceLog::WriteLine(LOG_STANDARD, (boost::format("%s (HEAD) is different from %s (BASE)") % h->first % b->first).str());
+			TraceLog::WriteLine(LOG_STANDARD, stdext::format("%s (HEAD) is different from %s (BASE)", h->first, b->first));
 
 			// In-depth PK4 comparison
 
@@ -184,15 +184,14 @@ void Packager::CalculateSetDifference()
 				}
 			}
 
-			TraceLog::WriteLine(LOG_STANDARD, (boost::format("  %d files changed, %d files to be added, %d files to be removed, %d files equal.") % 
-				pk4Diff.membersToBeReplaced.size() % pk4Diff.membersToBeAdded.size() % pk4Diff.membersToBeRemoved.size() % equalMembers).str());
+			TraceLog::WriteLine(LOG_STANDARD, stdext::format("  %d files changed, %d files to be added, %d files to be removed, %d files equal.", pk4Diff.membersToBeReplaced.size(), pk4Diff.membersToBeAdded.size(), pk4Diff.membersToBeRemoved.size(), equalMembers));
 		}
 	}
 }
 
 void Packager::CreateUpdatePackage()
 {
-	std::string updatePackageFileName = (boost::format("tdm_update_%s_to_%s.zip") % _options.Get("baseversion") % _options.Get("headversion")).str();
+	std::string updatePackageFileName = stdext::format("tdm_update_%s_to_%s.zip", _options.Get("baseversion"), _options.Get("headversion"));
 
 	fs::path headDir = _options.Get("headdir");
 	fs::path outputDir = _options.Get("outputdir");
@@ -350,7 +349,7 @@ void Packager::CreateVersionInformation()
 	// Merge the information into the file
 	for (ReleaseFileSet::const_iterator f = _baseSet.begin(); f != _baseSet.end(); ++f)
 	{
-		std::string section = (boost::format("Version%s File %s") % _options.Get("baseversion") % f->second.file.string()).str();
+		std::string section = stdext::format("Version%s File %s", _options.Get("baseversion"), f->second.file.string());
 
 		if (File::IsPK4(f->second.file))
 		{
@@ -362,7 +361,7 @@ void Packager::CreateVersionInformation()
 		{
 			for (std::set<ReleaseFile>::const_iterator m = f->second.members.begin(); m != f->second.members.end(); ++m)
 			{
-				std::string memberSection = (boost::format("Version%s File %s") % _options.Get("baseversion") % m->file.string()).str();
+				std::string memberSection = stdext::format("Version%s File %s", _options.Get("baseversion"), m->file.string());
 
 				versionInfo->SetValue(memberSection, "crc", CRC::ToString(m->crc));
 				versionInfo->SetValue(memberSection, "filesize", std::to_string(m->filesize));
@@ -436,7 +435,7 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 
 	TraceLog::WriteLine(LOG_STANDARD, "Registering update package from version " + fromVersion + " to version " + toVersion);
 
-	std::string section = (boost::format("UpdatePackage from %s to %s") % fromVersion % toVersion).str();
+	std::string section = stdext::format("UpdatePackage from %s to %s", fromVersion, toVersion);
 
 	// Store the information
 	targetFile->SetValue(section, "package", path.filename().string());
@@ -459,7 +458,7 @@ void Packager::LoadManifest()
 	_manifest.LoadFromFile(manifestPath);
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest contains %d files.") % _manifest.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("The manifest contains %d files.", _manifest.size()));
 }
 
 void Packager::SaveManifestAsOldManifest()
@@ -478,7 +477,7 @@ void Packager::LoadBaseManifest()
 	_baseManifest.LoadFromFile(baseManifestPath);
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The base manifest contains %d files.") % _baseManifest.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("The base manifest contains %d files.", _baseManifest.size()));
 }
 
 void Packager::CheckRepository()
@@ -493,7 +492,7 @@ void Packager::CheckRepository()
 	{
 		if (!fs::exists(darkmodPath / i->sourceFile))
 		{
-			TraceLog::WriteLine(LOG_STANDARD, (boost::format("Could not find file %s in your darkmod path: ") % i->sourceFile.string()).str());
+			TraceLog::WriteLine(LOG_STANDARD, stdext::format("Could not find file %s in your darkmod path: ", i->sourceFile.string()));
 			missingFiles++;
 		}
 	}
@@ -502,7 +501,7 @@ void Packager::CheckRepository()
 
 	if (missingFiles > 0)
 	{
-		TraceLog::Error((boost::format("The manifest contains %d files which are missing in your darkmod path.") % missingFiles).str());
+		TraceLog::Error(stdext::format("The manifest contains %d files which are missing in your darkmod path.", missingFiles));
 	}
 }
 
@@ -510,14 +509,14 @@ void Packager::LoadInstructionFile()
 {
 	fs::path instrFile = _options.Get("darkmoddir");
 	instrFile /= TDM_MANIFEST_PATH;
-	instrFile /= (boost::format("%s_maps%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_maps.txt
+	instrFile /= stdext::format("%s_maps%s", _options.Get("release-name"), TDM_MANIFEST_EXTENSION); // e.g. darkmod_maps.txt
 
 	TraceLog::WriteLine(LOG_STANDARD, "Loading package instruction file: " + instrFile.string() + "...");
 
 	_instructionFile.LoadFromFile(instrFile);
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The package instruction file has %d entries.") % _instructionFile.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("The package instruction file has %d entries.", _instructionFile.size()));
 }
 
 void Packager::CollectFilesForManifest()
@@ -529,32 +528,32 @@ void Packager::CollectFilesForManifest()
 	_manifest.CollectFilesFromRepository(_options.Get("darkmoddir"), _instructionFile);
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest has now %d entries.") % _manifest.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("The manifest has now %d entries.", _manifest.size()));
 }
 
 void Packager::CleanupAndSortManifest()
 {
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Sorting manifest...")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Sorting manifest..."));
 
 	// Sort manifest
 	_manifest.sort();
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Sorting done.")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Sorting done."));
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Removing duplicates...")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Removing duplicates..."));
 
 	// Remove dupes using the standard algorithm (requires the list to be sorted)
 	_manifest.unique();
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Removal done.")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Removal done."));
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The manifest has now %d entries.") % _manifest.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("The manifest has now %d entries.", _manifest.size()));
 }
 
 void Packager::ShowManifestComparison()
 {
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Sorting old manifest and removing duplicates...")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Sorting old manifest and removing duplicates..."));
 
 	// Sort the old manifest before doing a set difference
 	_oldManifest.sort();
@@ -562,12 +561,12 @@ void Packager::ShowManifestComparison()
 	// Remove dupes using the standard algorithm (requires the list to be sorted)
 	_oldManifest.unique();
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("done.")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("done."));
 
 	std::list<ManifestFile> removedFiles;
 	std::list<ManifestFile> addedFiles;
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Calculating changes...")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Calculating changes..."));
 
 	std::set_difference(_oldManifest.begin(), _oldManifest.end(), _manifest.begin(), _manifest.end(), 
 						std::back_inserter(removedFiles));
@@ -575,34 +574,34 @@ void Packager::ShowManifestComparison()
 	std::set_difference(_manifest.begin(), _manifest.end(), _oldManifest.begin(), _oldManifest.end(), 
 						std::back_inserter(addedFiles));
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("done.")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("done."));
 
 	if (!removedFiles.empty())
 	{
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("The following %d files were removed:") % removedFiles.size()).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("The following %d files were removed:", removedFiles.size()));
 
 		for (std::list<ManifestFile>::const_iterator i = removedFiles.begin(); i != removedFiles.end(); ++i)
 		{
-			TraceLog::WriteLine(LOG_STANDARD, (boost::format("  Removed: %s") % i->sourceFile.string()).str());
+			TraceLog::WriteLine(LOG_STANDARD, stdext::format("  Removed: %s", i->sourceFile.string()));
 		}
 	}
 	else
 	{
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("No files were removed.")).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("No files were removed."));
 	}
 
 	if (!addedFiles.empty())
 	{
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("The following %d files were added:") % addedFiles.size()).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("The following %d files were added:", addedFiles.size()));
 
 		for (std::list<ManifestFile>::const_iterator i = addedFiles.begin(); i != addedFiles.end(); ++i)
 		{
-			TraceLog::WriteLine(LOG_STANDARD, (boost::format("  Added: %s") % i->sourceFile.string()).str());
+			TraceLog::WriteLine(LOG_STANDARD, stdext::format("  Added: %s", i->sourceFile.string()));
 		}
 	}
 	else
 	{
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("No files were added.")).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("No files were added."));
 	}
 }
 
@@ -610,28 +609,28 @@ void Packager::SaveManifest()
 {
 	fs::path manifestPath = _options.Get("darkmoddir");
 	manifestPath /= TDM_MANIFEST_PATH;
-	manifestPath /= (boost::format("%s%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod.txt
+	manifestPath /= stdext::format("%s%s", _options.Get("release-name"), TDM_MANIFEST_EXTENSION); // e.g. darkmod.txt
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Writing manifest to %s...") % manifestPath.string()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Writing manifest to %s...", manifestPath.string()));
 
 	_manifest.WriteToFile(manifestPath);
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Done writing manifest file.")).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Done writing manifest file."));
 }
 
 void Packager::LoadPk4Mapping()
 {
 	fs::path mappingFile = _options.Get("darkmoddir");
 	mappingFile /= TDM_MANIFEST_PATH;
-	mappingFile /= (boost::format("%s_pk4s%s") % _options.Get("name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_pk4s.txt
+	mappingFile /= stdext::format("%s_pk4s%s", _options.Get("name"), TDM_MANIFEST_EXTENSION); // e.g. darkmod_pk4s.txt
 
 	TraceLog::Write(LOG_STANDARD, "Loading PK4 mapping file: " + mappingFile.string() + "...");
 
 	_pk4Mappings.LoadFromFile(mappingFile);
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("The mapping file defines %d PK4s.") % _pk4Mappings.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("The mapping file defines %d PK4s.", _pk4Mappings.size()));
 }
 
 void Packager::SortFilesIntoPk4s()
@@ -696,7 +695,7 @@ void Packager::SortFilesIntoPk4s()
 
 	TraceLog::WriteLine(LOG_STANDARD, "done");
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("%d entries in the manifest could not be matched, check the logs.") % _manifest.size()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("%d entries in the manifest could not be matched, check the logs.", _manifest.size()));
 }
 
 #include "../framework/CompressionParameters.h"
@@ -730,17 +729,17 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 	// Copy-only switch for PK4 files mentioned in the manifest (those have 0 members to compress, like tdm_game01.pk4)
 	if (File::IsArchive(p->first) && p->second.empty())
 	{
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("Copying file: %s") % pk4Path.string()).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("Copying file: %s", pk4Path.string()));
 
 		if (!File::Copy(darkmodPath / p->first, pk4Path))
 		{
-			TraceLog::Error((boost::format("Could not copy file: %s") % pk4Path.string()).str());
+			TraceLog::Error(stdext::format("Could not copy file: %s", pk4Path.string()));
 		}
 
 		return;
 	}
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Compressing package: %s") % pk4Path.string()).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Compressing package: %s", pk4Path.string()));
 	
 	ZipFileWritePtr pk4 = Zip::OpenFileWrite(pk4Path, Zip::CREATE);
 
@@ -768,9 +767,7 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 				method = ZipFileWrite::STORE;
 
 		TraceLog::WriteLine(LOG_VERBOSE,
-			(boost::format("%s file %s.")
-			% (method == ZipFileWrite::STORE ? "Storing" : "Deflating")
-			% sourceFile.string()).str()
+			stdext::format("%s file %s.", (method == ZipFileWrite::STORE ? "Storing" : "Deflating"), sourceFile.string())
 		);
 
 		pk4->DeflateFile(sourceFile, targetFile.string(), method);
@@ -788,7 +785,7 @@ void Packager::CreatePackage()
 		numHardwareThreads = 1;
 	}
 
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Using %d threads to compress files.") % numHardwareThreads).str());
+	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Using %d threads to compress files.", numHardwareThreads));
 
 	std::vector<ExceptionSafeThreadPtr> threads(numHardwareThreads);
 
@@ -865,7 +862,7 @@ void Packager::CreateCrcInfoFile()
 
 	for (ReleaseFileSet::const_iterator i = _baseSet.begin(); i != _baseSet.end(); ++i)
 	{
-		std::string section = (boost::format("File %s") % i->second.file.string()).str();
+		std::string section = stdext::format("File %s", i->second.file.string());
 
 		iniFile->SetValue(section, "crc", CRC::ToString(i->second.crc));
 		iniFile->SetValue(section, "size", std::to_string(i->second.filesize));
@@ -876,7 +873,7 @@ void Packager::CreateCrcInfoFile()
 		{
 			for (std::set<ReleaseFile>::const_iterator m = i->second.members.begin(); m != i->second.members.end(); ++m)
 			{
-				section = (boost::format("Member %s:%s") % i->second.file.string() % m->file.string()).str();
+				section = stdext::format("Member %s:%s", i->second.file.string(), m->file.string());
 
 				iniFile->SetValue(section, "crc", CRC::ToString(m->crc));
 				iniFile->SetValue(section, "size", std::to_string(m->filesize));

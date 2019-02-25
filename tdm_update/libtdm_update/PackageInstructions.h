@@ -84,7 +84,7 @@ public:
 			if (std::regex_search(relativePath, i->regex))
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, 
-					(boost::format("[PackageInstructions]: Relative path %s excluded by regex %s") % relativePath % i->value).str());
+					stdext::format("[PackageInstructions]: Relative path %s excluded by regex %s", relativePath, i->value));
 				return true;
 			}
 		}
@@ -151,8 +151,7 @@ public:
 			}
 		}
 
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("Parsed %d INCLUDEs, %d EXCLUDEs and ignored %d lines.") % 
-			includeStatements % excludeStatements % ignoredLines).str());
+		TraceLog::WriteLine(LOG_STANDARD, stdext::format("Parsed %d INCLUDEs, %d EXCLUDEs and ignored %d lines.", includeStatements, excludeStatements, ignoredLines));
 	}
 
 	void LoadFromString(const std::string& str)

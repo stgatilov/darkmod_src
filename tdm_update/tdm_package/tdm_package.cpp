@@ -25,7 +25,7 @@
 #include "Util.h"
 
 #include <functional>
-#include <boost/format.hpp>
+#include "StdFormat.h"
 #include <svn_version.h>
 
 #include <map>

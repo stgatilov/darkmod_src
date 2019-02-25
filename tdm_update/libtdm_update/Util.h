@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <boost/format.hpp>
+#include "StdFormat.h"
 #include "StdFilesystem.h"
 
 // Platform-specific Sleep(int msec) definition
@@ -43,19 +43,19 @@ public:
 	{
 		if (size > 1024*1024*1024)
 		{
-			return (boost::format("%0.2f GB") % (static_cast<double>(size) / (1024*1024*1024))).str();
+			return stdext::format("%0.2f GB", (static_cast<double>(size) / (1024*1024*1024)));
 		}
 		else if (size > 1024*1024)
 		{
-			return (boost::format("%0.1f MB") % (static_cast<double>(size) / (1024*1024))).str();
+			return stdext::format("%0.1f MB", (static_cast<double>(size) / (1024*1024)));
 		}
 		else if (size > 1024)
 		{
-			return (boost::format("%0.0f kB") % (static_cast<double>(size) / 1024)).str();
+			return stdext::format("%0.0f kB", (static_cast<double>(size) / 1024));
 		}
 		else
 		{
-			return (boost::format("%d bytes") % size).str();
+			return stdext::format("%d bytes", size);
 		}
 	}
 

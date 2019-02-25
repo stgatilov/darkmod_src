@@ -253,42 +253,37 @@ bool Download::CheckIntegrity()
 {
 	if (_filesizeCheckEnabled)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking filesize of downloaded file, expecting %d") %
-				_requiredFilesize).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Checking filesize of downloaded file, expecting %d", _requiredFilesize));
 
 		if (fs::file_size(_tempFilename) != _requiredFilesize)
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file has the wrong size, expected %d but found %d") %
-				_requiredFilesize % fs::file_size(_tempFilename)).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Downloaded file has the wrong size, expected %d but found %d", _requiredFilesize, fs::file_size(_tempFilename)));
 			return false; // failed the file size check
 		}
 	}
 
 	if (_pk4CheckEnabled)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking download for 'is-a-zipfile'.")).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Checking download for 'is-a-zipfile'."));
 
 		ZipFileReadPtr zipFile = Zip::OpenFileRead(_tempFilename);
 
 		if (zipFile == NULL) 
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file failed the zip check: %s") %
-				_tempFilename.string()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Downloaded file failed the zip check: %s", _tempFilename.string()));
 			return false; // failed the ZIP check
 		}
 	}
 
 	if (_crcCheckEnabled)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking CRC of downloaded file, expecting %x") %
-				_requiredCrc).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Checking CRC of downloaded file, expecting %x", _requiredCrc));
 
 		uint32_t crc = CRC::GetCrcForFile(_tempFilename);
 
 		if (crc != _requiredCrc)
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file has the wrong size, expected %x but found %x") %
-				_requiredCrc % crc).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Downloaded file has the wrong size, expected %x but found %x", _requiredCrc, crc));
 			return false; // failed the crc check
 		}
 	}

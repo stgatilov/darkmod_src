@@ -87,13 +87,9 @@ public:
 
 		TraceLog::WriteLine(LOG_VERBOSE, "Update Package Parse results:");
 		TraceLog::WriteLine(LOG_VERBOSE, 
-			(boost::format("PK4s to be removed: %d, PK4s to be added: %d, PK4s to be changed: %d") %
-				pk4sToBeRemoved.size() % pk4sToBeAdded.size() % pk4Differences.size()
-			).str());
+			stdext::format("PK4s to be removed: %d, PK4s to be added: %d, PK4s to be changed: %d", pk4sToBeRemoved.size(), pk4sToBeAdded.size(), pk4Differences.size()));
 		TraceLog::WriteLine(LOG_VERBOSE, 
-			(boost::format("Non-Archive files to be removed: %d, to be added: %d, to be replaced: %d") %
-				nonArchiveFiles.toBeRemoved.size() % nonArchiveFiles.toBeAdded.size() % nonArchiveFiles.toBeReplaced.size()
-			).str());
+			stdext::format("Non-Archive files to be removed: %d, to be added: %d, to be replaced: %d", nonArchiveFiles.toBeRemoved.size(), nonArchiveFiles.toBeAdded.size(), nonArchiveFiles.toBeReplaced.size()));
 	}
 
 	void VisitSection(const IniFile& iniFile, const std::string& sectionName)

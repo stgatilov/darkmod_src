@@ -64,8 +64,7 @@ public:
 			package.toVersion = toVersion;
 
 			TraceLog::WriteLine(LOG_VERBOSE, 
-				(boost::format("Found update package %s, checksum %x, from version %s to version %s") %
-				package.filename.string() % package.crc % package.fromVersion % package.toVersion).str());
+				stdext::format("Found update package %s, checksum %x, from version %s to version %s", package.filename.string(), package.crc, package.fromVersion, package.toVersion));
 
 			insert(value_type(package.fromVersion, package));
 		}

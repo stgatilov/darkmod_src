@@ -25,7 +25,7 @@
 #include "../ThreadControl.h"
 
 #include "../StdFilesystem.h"
-#include <boost/format.hpp>
+#include "../StdFormat.h"
 
 #ifndef WIN32
 #include <limits.h>
@@ -106,7 +106,7 @@ void Updater::UpdateMirrors()
 	{
 		std::string fullLocation = std::string(*mirror) + TDM_MIRRORS_FILE;
 
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Download from mirror list location %s...") % fullLocation).str()); // grayman - fixed
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Download from mirror list location %s...", fullLocation)); // grayman - fixed
 
 		HttpRequestPtr request = _conn->CreateRequest(fullLocation, tmpMirrorPath.string());
 
@@ -250,20 +250,20 @@ void Updater::DetermineLocalVersion()
 
 			if (stdext::to_lower_copy(candidate.filename().string()) == stdext::to_lower_copy(_executable.filename().string()))
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Ignoring updater executable: %s.") % candidate.string()).str());
+				TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Ignoring updater executable: %s.", candidate.string()));
 				continue;
 			}
 
 			if (!fs::exists(candidate))
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is missing.") % candidate.string()).str());
+				TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s is missing.", candidate.string()));
 				mismatch = true;
 				continue;
 			}
 
 			if (f->second.localChangesAllowed) 
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s exists, local changes are allowed, skipping.") % candidate.string()).str());
+				TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s exists, local changes are allowed, skipping.", candidate.string()));
 				continue;
 			}
 
@@ -271,8 +271,7 @@ void Updater::DetermineLocalVersion()
 
 			if (candidateFilesize != f->second.filesize)
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching size, expected %d but found %d.")
-					% candidate.string() % f->second.filesize % candidateFilesize).str());
+				TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s has mismatching size, expected %d but found %d.", candidate.string(), f->second.filesize, candidateFilesize));
 				mismatch = true;
 				continue;
 			}
@@ -282,14 +281,13 @@ void Updater::DetermineLocalVersion()
 
 			if (crc != f->second.crc)
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching CRC, expected %x but found %x.")
-					% candidate.string() % f->second.crc % crc).str());
+				TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s has mismatching CRC, expected %x but found %x.", candidate.string(), f->second.crc, crc));
 				mismatch = true;
 				continue;
 			}
 
 			// The file is matching - record this version
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is matching version %s.") % candidate.string() % v->first).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s is matching version %s.", candidate.string(), v->first));
 
 			_fileVersions[candidate.string()] = v->first;
 		}
@@ -313,7 +311,7 @@ void Updater::DetermineLocalVersion()
 		total.filesize += static_cast<std::size_t>(fs::file_size(i->first));
 	}
 
-	TraceLog::WriteLine(LOG_VERBOSE, (boost::format("The local files are matching %d different versions.") % _localVersions.size()).str());
+	TraceLog::WriteLine(LOG_VERBOSE, stdext::format("The local files are matching %d different versions.", _localVersions.size()));
 
 	if (_fileProgressCallback != NULL)
 	{
@@ -331,8 +329,7 @@ void Updater::DetermineLocalVersion()
 		{
 			const std::string& version = i->first;
 
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Files matching version %s: %d (size: %s)") % 
-				version % i->second.numFiles % Util::GetHumanReadableBytes(i->second.filesize)).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Files matching version %s: %d (size: %s)", version, i->second.numFiles, Util::GetHumanReadableBytes(i->second.filesize)));
 
 			// Check if this differential update is wise, from an economic point of view
 			UpdatePackageInfo::const_iterator package = _updatePackages.find(version);
@@ -520,14 +517,13 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 {
 	if (!fs::exists(package))
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("VerifyUpdatePackageAt: File %s does not exist.") % package.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("VerifyUpdatePackageAt: File %s does not exist.", package.string()));
 		return false;
 	}
 
 	if (fs::file_size(package) != info.filesize)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching size, expected %d but found %d.")
-			% package.string() % info.filesize % fs::file_size(package)).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s has mismatching size, expected %d but found %d.", package.string(), info.filesize, fs::file_size(package)));
 		return false;
 	}
 
@@ -536,13 +532,11 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 
 	if (crc != info.crc)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching CRC, expected %x but found %x.")
-			% package.string() % info.crc % crc).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s has mismatching CRC, expected %x but found %x.", package.string(), info.crc, crc));
 		return false;
 	}
 
-	TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is intact with checksum %x.")
-			% package.string() % crc).str());
+	TraceLog::WriteLine(LOG_VERBOSE, stdext::format("File %s is intact with checksum %x.", package.string(), crc));
 	return true; // all checks passed, file is ok
 }
 
@@ -621,7 +615,7 @@ void Updater::PerformDifferentialUpdateStep()
 	for (std::set<ReleaseFile>::const_iterator pk4 = info.pk4sToBeRemoved.begin(); 
 		 pk4 != info.pk4sToBeRemoved.end(); ++pk4)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Removing PK4: %s") % pk4->file.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Removing PK4: %s", pk4->file.string()));
 
 		NotifyFileProgress(pk4->file, CurFileInfo::Delete, static_cast<double>(curOperation++) / totalFileOperations);
 		
@@ -632,7 +626,7 @@ void Updater::PerformDifferentialUpdateStep()
 	for (std::set<ReleaseFile>::const_iterator pk4 = info.pk4sToBeAdded.begin(); 
 		 pk4 != info.pk4sToBeAdded.end(); ++pk4)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Adding PK4: %s") % pk4->file.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Adding PK4: %s", pk4->file.string()));
 
 		NotifyFileProgress(pk4->file, CurFileInfo::Add, static_cast<double>(curOperation++) / totalFileOperations);
 
@@ -642,7 +636,7 @@ void Updater::PerformDifferentialUpdateStep()
 
 		if (File::IsZip(targetPk4Path))
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Extracting file after adding package: %s") % pk4->file.string()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Extracting file after adding package: %s", pk4->file.string()));
 
 			// Extract this ZIP archive after adding it to the local inventory
 			ExtractAndRemoveZip(targetPk4Path);
@@ -653,7 +647,7 @@ void Updater::PerformDifferentialUpdateStep()
 	for (UpdatePackage::Pk4DifferenceMap::const_iterator pk4Diff = info.pk4Differences.begin(); 
 		 pk4Diff != info.pk4Differences.end(); ++pk4Diff)
 	{
-		TraceLog::Write(LOG_VERBOSE, (boost::format(" Changing PK4: %s...") % pk4Diff->first).str());
+		TraceLog::Write(LOG_VERBOSE, stdext::format(" Changing PK4: %s...", pk4Diff->first));
 
 		fs::path targetPk4Path = targetPath / pk4Diff->first;
 
@@ -745,8 +739,7 @@ void Updater::PerformDifferentialUpdateStep()
 		}
 		else
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" OK - Files added: %d, removed: %d, changed: %d") %
-				diff.membersToBeAdded.size() % diff.membersToBeRemoved.size() % diff.membersToBeReplaced.size()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" OK - Files added: %d, removed: %d, changed: %d", diff.membersToBeAdded.size(), diff.membersToBeRemoved.size(), diff.membersToBeReplaced.size()));
 		}
 	}
 
@@ -760,11 +753,11 @@ void Updater::PerformDifferentialUpdateStep()
 
 		if (_ignoreList.find(stdext::to_lower_copy(f->file.string())) != _ignoreList.end())
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Ignoring non-archive file: %s") % f->file.string()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Ignoring non-archive file: %s", f->file.string()));
 			continue;
 		}
 
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Adding non-archive file: %s") % f->file.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Adding non-archive file: %s", f->file.string()));
 
 		package->ExtractFileTo(f->file.string(), targetPath / f->file);
 	}
@@ -777,11 +770,11 @@ void Updater::PerformDifferentialUpdateStep()
 
 		if (_ignoreList.find(stdext::to_lower_copy(f->file.string())) != _ignoreList.end())
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Ignoring non-archive file: %s") % f->file.string()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Ignoring non-archive file: %s", f->file.string()));
 			continue;
 		}
 
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Removing non-archive file: %s") % f->file.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Removing non-archive file: %s", f->file.string()));
 
 		File::Remove(targetPath / f->file);
 	}
@@ -794,13 +787,13 @@ void Updater::PerformDifferentialUpdateStep()
 
 		if (_ignoreList.find(stdext::to_lower_copy(f->file.string())) != _ignoreList.end())
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Ignoring non-archive file: %s") % f->file.string()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Ignoring non-archive file: %s", f->file.string()));
 			continue;
 		}
 
 		File::Remove(targetPath / f->file);
 
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Replacing non-archive file: %s") % f->file.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Replacing non-archive file: %s", f->file.string()));
 
 		package->ExtractFileTo(f->file.string(), targetPath / f->file);
 	}
@@ -829,12 +822,12 @@ void Updater::PerformDifferentialUpdateStep()
 	// Remove the update package after completion
 	if (!_options.IsSet("keep-update-packages"))
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Removing package after differential update completion: %s") % packageTargetPath.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Removing package after differential update completion: %s", packageTargetPath.string()));
 		File::Remove(packageTargetPath);
 	}
 	else
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Keeping package after differential update completion: %s") % packageTargetPath.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, stdext::format(" Keeping package after differential update completion: %s", packageTargetPath.string()));
 	}
 }
 

@@ -54,8 +54,7 @@ public:
             file.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(sectionName, "filesize")));
 			file.localChangesAllowed = iniFile.GetValue(sectionName, "allow_local_modifications") == "1";
 
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Found version %s file: %s with checksum %x") %
-				version % filename % file.crc).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("Found version %s file: %s with checksum %x", version, filename, file.crc));
 
 			set.insert(ReleaseFileSet::value_type(filename, file));
 		}

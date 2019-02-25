@@ -27,7 +27,7 @@
 #endif
 
 #include <curl/curl.h>
-#include <boost/format.hpp>
+#include "../StdFormat.h"
 
 namespace tdm
 {
@@ -75,8 +75,7 @@ void HttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_WRITEDATA, this);
 
 	// Set agent
-	std::string agent = (boost::format("The Dark Mod Updater / libtdm_update v%s/%s") % 
-		LIBTDM_UPDATE_VERSION % LIBTDM_UPDATE_PLATFORM).str();
+	std::string agent = stdext::format("The Dark Mod Updater / libtdm_update v%s/%s", LIBTDM_UPDATE_VERSION, LIBTDM_UPDATE_PLATFORM);
 	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
 
 	// Tels: #3261: only allow FTP, FTPS, HTTP and HTTPS (HTTPS and FTPS need SSL support compiled in)

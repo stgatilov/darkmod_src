@@ -73,7 +73,7 @@ public:
 private:
 	void PrintFileInfo(const updater::CurDownloadInfo& info)
 	{
-		std::string text = (boost::format(" Downloading from Mirror %s: %s") % info.mirrorDisplayName % info.file.string()).str();
+		std::string text = stdext::format(" Downloading from Mirror %s: %s", info.mirrorDisplayName, info.file.string());
 
 		_dialog.SetProgressText(text);
 		TraceLog::WriteLine(LOG_STANDARD, text);
@@ -92,7 +92,7 @@ private:
 
 		TraceLog::Write(LOG_STANDARD, " [" + progressBar + progressSpace + "]");
 
-		TraceLog::Write(LOG_STANDARD, (boost::format(" %2.1f%%") % (_info.progressFraction*100)).str());
+		TraceLog::Write(LOG_STANDARD, stdext::format(" %2.1f%%", (_info.progressFraction*100)));
 
 		TraceLog::Write(LOG_STANDARD, " at " + Util::GetHumanReadableBytes(static_cast<std::size_t>(_info.downloadSpeed)) + "/sec ");
 	}

@@ -265,7 +265,7 @@ void UpdaterDialog::OnFail()
 
 	SetTaskbarProgress(TBP_Error, 0);
 
-	std::string totalBytesStr = (boost::format("Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller->GetTotalBytesDownloaded())).str();
+	std::string totalBytesStr = stdext::format("Total bytes downloaded: %s", Util::GetHumanReadableBytes(_controller->GetTotalBytesDownloaded()));
 	_progressSpeedText.SetWindowText(CString(totalBytesStr.c_str()));
 }
 
@@ -318,11 +318,7 @@ void UpdaterDialog::SetFullDownloadProgress(const ProgressInfo& info)
 {
 	std::string totalBytesStr = Util::GetHumanReadableBytes(info.bytesToDownload);
 
-	std::string str = (boost::format("Downloading updates... %0.2f%% of %s (%d %s)") % 
-		(info.progressFraction*100) % 
-		totalBytesStr %
-		info.filesToDownload %
-		(info.filesToDownload == 1 ? "file" : "files")).str();
+	std::string str = stdext::format("Downloading updates... %0.2f%% of %s (%d %s)", (info.progressFraction*100), totalBytesStr, info.filesToDownload, (info.filesToDownload == 1 ? "file" : "files"));
 	_step5Text.SetWindowText(CString(str.c_str()));
 }
 
@@ -589,7 +585,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		if (numMirrors > 0)
 		{
 			prevText += (keepMirrors ? " skipped." : " done.");
-			prevText += (boost::format(" Found %d mirror%s.") % numMirrors % (numMirrors == 1 ? "" : "s")).str().c_str();
+			prevText += stdext::format(" Found %d mirror%s.", numMirrors, (numMirrors == 1 ? "" : "s")).c_str();
 
 			_step1Text.SetWindowText(prevText);
 			_statusText.SetWindowText(CString("Done downloading mirrors."));
@@ -625,7 +621,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		
 		if (!_controller->GetNewestVersion().empty())
 		{
-			newest = (boost::format(" done. Newest version is %s.") % _controller->GetNewestVersion()).str();
+			newest = stdext::format(" done. Newest version is %s.", _controller->GetNewestVersion());
 		}
 		else
 		{
@@ -650,7 +646,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		}
 		else
 		{
-			versionFound = (boost::format(" done. Local version is %s.") % _controller->GetLocalVersion()).str();
+			versionFound = stdext::format(" done. Local version is %s.", _controller->GetLocalVersion());
 		}
 
 		_step3Text.SetWindowText(prevText + versionFound.c_str());
@@ -669,8 +665,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		std::string sizeStr = Util::GetHumanReadableBytes(_controller->GetTotalDownloadSize());
 		std::size_t numFiles = _controller->GetNumFilesToBeUpdated();
 
-		std::string totalSize = (boost::format("%d %s to be downloaded (total size: %s).") % 
-								 numFiles % (numFiles == 1 ? "file needs" : "files need") % sizeStr).str();
+		std::string totalSize = stdext::format("%d %s to be downloaded (total size: %s).", numFiles, (numFiles == 1 ? "file needs" : "files need"), sizeStr);
 
 		// Print a summary
 		if (_controller->NewUpdaterAvailable())
@@ -686,7 +681,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 			if (_controller->DifferentialUpdateAvailable())
 			{
 				sizeStr = Util::GetHumanReadableBytes(_controller->GetTotalDifferentialUpdateSize());
-				totalSize = (boost::format("Total download size for differential update: %s") % sizeStr).str();	
+				totalSize = stdext::format("Total download size for differential update: %s", sizeStr);	
 
 				_statusText.SetWindowText(CString("Differential updates available - click continue to start download"));
 
@@ -780,7 +775,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 		_continueButton.ShowWindow(FALSE);
 		_abortButton.SetWindowText(CString("Close"));
 
-		std::string totalBytesStr = (boost::format("Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller->GetTotalBytesDownloaded())).str();
+		std::string totalBytesStr = stdext::format("Total bytes downloaded: %s", Util::GetHumanReadableBytes(_controller->GetTotalBytesDownloaded()));
 		_progressSpeedText.SetWindowText(CString(totalBytesStr.c_str()));
 	}
 	break;
@@ -901,15 +896,12 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 			_progressSpeedText.SetWindowText(CString(""));
 			SetProgress(info.progressFraction);
 
-			std::string text = (boost::format("Downloading from mirror %s: %s") % 
-								info.mirrorDisplayName % info.file.string()).str();
+			std::string text = stdext::format("Downloading from mirror %s: %s", info.mirrorDisplayName, info.file.string());
 			SetProgressText(text);
 
 			if (info.progressFraction < 1.0f)
 			{
-				std::string speed = (boost::format("Downloaded: %s - Current download speed: %s/sec.") % 
-									Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadedBytes)) % 
-									Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadSpeed))).str();
+				std::string speed = stdext::format("Downloaded: %s - Current download speed: %s/sec.", Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadedBytes)), Util::GetHumanReadableBytes(static_cast<std::size_t>(info.downloadSpeed)));
 				SetProgressSpeedText(speed);
 			}
 		}
@@ -946,7 +938,7 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 				verb = "Working on file: ";
 			};
 
-			std::string text = (boost::format("%s%s...") % verb % info.file.string()).str();
+			std::string text = stdext::format("%s%s...", verb, info.file.string());
 			SetProgressText(text);
 		}
 		break;
@@ -959,8 +951,7 @@ void UpdaterDialog::OnStartDifferentialUpdate(const DifferentialUpdateInfo& info
 	_controller->DontPauseAt(DownloadDifferentialUpdate);
 
 	std::string sizeStr = Util::GetHumanReadableBytes(info.filesize);
-	std::string text = (boost::format("Downloading update package for version %s to %s (size: %s)...") % 
-		info.fromVersion % info.toVersion % sizeStr).str();
+	std::string text = stdext::format("Downloading update package for version %s to %s (size: %s)...", info.fromVersion, info.toVersion, sizeStr);
 
 	_step5Text.SetWindowText(CString(text.c_str()));
 }
@@ -968,8 +959,7 @@ void UpdaterDialog::OnStartDifferentialUpdate(const DifferentialUpdateInfo& info
 void UpdaterDialog::OnPerformDifferentialUpdate(const DifferentialUpdateInfo& info)
 {
 	std::string sizeStr = Util::GetHumanReadableBytes(info.filesize);
-	std::string text = (boost::format("Applying update package for version %s to %s...") % 
-		info.fromVersion % info.toVersion).str();
+	std::string text = stdext::format("Applying update package for version %s to %s...", info.fromVersion, info.toVersion);
 
 	_step6Text.SetWindowText(CString(text.c_str()));
 }

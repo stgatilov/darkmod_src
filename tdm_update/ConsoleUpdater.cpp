@@ -221,7 +221,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
 
         std::size_t numMirrors = _controller.GetNumMirrors();
 
-        TraceLog::WriteLine(LOG_STANDARD, (boost::format("   Found %d mirror%s.") % numMirrors % (numMirrors == 1 ? "" : "s")).str());
+        TraceLog::WriteLine(LOG_STANDARD, stdext::format("   Found %d mirror%s.", numMirrors, (numMirrors == 1 ? "" : "s")));
 
         if (numMirrors == 0)
         {
@@ -245,7 +245,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
 
         if (!_controller.GetNewestVersion().empty())
         {
-            std::string newest = (boost::format(" Newest version is %s.") % _controller.GetNewestVersion()).str();
+            std::string newest = stdext::format(" Newest version is %s.", _controller.GetNewestVersion());
             TraceLog::WriteLine(LOG_STANDARD, newest);
         }
         else
@@ -265,7 +265,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
         }
         else
         {
-            std::string versionFound = (boost::format("local version is %s.") % _controller.GetLocalVersion()).str();
+            std::string versionFound = stdext::format("local version is %s.", _controller.GetLocalVersion());
             TraceLog::WriteLine(LOG_STANDARD, versionFound);
         }
     }
@@ -278,8 +278,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
         std::string sizeStr = Util::GetHumanReadableBytes(_controller.GetTotalDownloadSize());
         std::size_t numFiles = _controller.GetNumFilesToBeUpdated();
 
-        std::string totalSize = (boost::format("  %d %s to be downloaded (size: %s).") %
-            numFiles % (numFiles == 1 ? "file needs" : "files need") % sizeStr).str();
+        std::string totalSize = stdext::format("  %d %s to be downloaded (size: %s).", numFiles, (numFiles == 1 ? "file needs" : "files need"), sizeStr);
 
         // Print a summary
         if (_controller.NewUpdaterAvailable())
@@ -293,7 +292,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
                 TraceLog::Write(LOG_STANDARD, " A differential update is available.");
 
                 sizeStr = Util::GetHumanReadableBytes(_controller.GetTotalDifferentialUpdateSize());
-                totalSize = (boost::format(" Download size: %s") % sizeStr).str();
+                totalSize = stdext::format(" Download size: %s", sizeStr);
             }
             else
             {
@@ -331,7 +330,7 @@ void ConsoleUpdater::OnFinishStep(UpdateStep step)
     {
         TraceLog::WriteLine(LOG_STANDARD, " Done downloading updates.");
 
-        std::string totalBytesStr = (boost::format(" Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller.GetTotalBytesDownloaded())).str();
+        std::string totalBytesStr = stdext::format(" Total bytes downloaded: %s", Util::GetHumanReadableBytes(_controller.GetTotalBytesDownloaded()));
         TraceLog::WriteLine(LOG_STANDARD, totalBytesStr);
     }
     break;
@@ -404,13 +403,13 @@ void ConsoleUpdater::OnProgressChange(const ProgressInfo& info)
 			TraceLog::WriteLine(LOG_PROGRESS, "");
 
 			TraceLog::WriteLine(LOG_PROGRESS, 
-				(boost::format(" Downloading from Mirror %s: %s") % info.mirrorDisplayName % info.file.string()).str());
+				stdext::format(" Downloading from Mirror %s: %s", info.mirrorDisplayName, info.file.string()));
 		}
 		else if (_info.file.empty())
 		{
 			// First file
 			TraceLog::WriteLine(LOG_PROGRESS, 
-				(boost::format(" Downloading from Mirror %s: %s") % info.mirrorDisplayName % info.file.string()).str());
+				stdext::format(" Downloading from Mirror %s: %s", info.mirrorDisplayName, info.file.string()));
 		}
 
 		_info = info;
@@ -453,7 +452,7 @@ void ConsoleUpdater::PrintProgress()
 	std::string line = " [" + progressBar + progressSpace + "]";
 	
 	// Percent
-	line += (boost::format(" %2.1f%%") % (_info.progressFraction*100)).str();
+	line += stdext::format(" %2.1f%%", (_info.progressFraction*100));
 
 	switch (_info.type)
 	{

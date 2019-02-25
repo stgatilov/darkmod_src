@@ -24,7 +24,7 @@
 #include "CommandLineInfo.h"
 
 #include "Constants.h"
-#include <boost/format.hpp>
+#include "StdFormat.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -68,7 +68,7 @@ BOOL UpdaterApplication::InitInstance()
 	}
 
 	TraceLog::WriteLine(LOG_STANDARD, 
-        (boost::format("TDM Updater v%s/%d (c) 2009-2017 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION % (sizeof(void*) * 8)).str());
+        stdext::format("TDM Updater v%s/%d (c) 2009-2017 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).", LIBTDM_UPDATE_VERSION, (sizeof(void*) * 8)));
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	// InitCommonControlsEx() is required on Windows XP if an application

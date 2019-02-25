@@ -25,7 +25,7 @@
 #include "../File.h"
 
 #include "../StdFilesystem.h"
-#include <boost/format.hpp>
+#include "../StdFormat.h"
 #include "../StdString.h"
 
 namespace tdm
@@ -734,7 +734,7 @@ ZipFileWritePtr Zip::OpenFileWrite(const fs::path& fullPath, WriteMode mode)
 
 		if (checkExisting == NULL || checkExisting->GetNumFiles() == 0)
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("The existing file appears to be empty, we're going to overwrite the file afresh: %s") % fullPath.string()).str());
+			TraceLog::WriteLine(LOG_VERBOSE, stdext::format("The existing file appears to be empty, we're going to overwrite the file afresh: %s", fullPath.string()));
 			mode = CREATE;
 		}
 	}
@@ -794,7 +794,7 @@ void Zip::RecreateArchive(const fs::path& fullPath, const std::set<std::string>&
     if (membersToRemove.size() > 0)
     {
         TraceLog::WriteLine(LOG_VERBOSE,
-            (boost::format("Removing %d files from archive %s") % membersToRemove.size() % fullPath.string()).str());
+            stdext::format("Removing %d files from archive %s", membersToRemove.size(), fullPath.string()));
     }
 
 	{
