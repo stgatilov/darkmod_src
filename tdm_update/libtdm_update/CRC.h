@@ -84,11 +84,7 @@ public:
 			}
 			else
 			{
-#ifdef TDM_USE_OLD_CRC
-				return GetCrcForNonZipFileOld(file);
-#else
 				return GetCrcForNonZipFile(file);
-#endif
 			}
 		}
 		catch (std::runtime_error& ex)
@@ -96,46 +92,6 @@ public:
 			TraceLog::Write(LOG_ERROR, ex.what());
 			throw ex;
 		}
-	}
-	
-	// This is the algorithm as used in the TDM 1.02 tdm_update.pl version 0.46
-	// It fails to produce the same CRC as the one found in the ZIP archives
-	// See http://modetwo.net/darkmod/index.php?/topic/11473-problem-with-crcs-and-the-updater/
-
-	static uint32_t GetCrcForNonZipFileOld(const fs::path& file)
-	{
-		// Open the file for reading
-		FILE* fh = fopen(file.string().c_str(), "rb");
-
-		if (fh == NULL) throw std::runtime_error("Could not open file: " + file.string());
-
-		uint32_t crc = 0;
-		
-		while (true)
-		{
-			// Read the file in 32kb chunks
-			char buf[32*1024];
-
-			size_t bytesRead = fread(buf, 1, sizeof(buf), fh);
-
-			if (bytesRead > 0)
-			{
-				boost::crc_32_type processor;
-				processor.process_bytes(buf, bytesRead);
-
-				crc ^= processor.checksum();
-
-				continue;
-			}
-			
-			break;
-		}
-
-		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for file " + file.string() + " = " + (boost::format("%x") % crc).str());
-
-		fclose(fh);
-
-		return crc;
 	}
 	
 	static uint32_t GetCrcForNonZipFile(const fs::path& file)
