@@ -30,7 +30,7 @@ extern idBounds optBounds;
 
 #define MAX_OPT_VERTEXES 0x10000
 extern int numOptVerts;
-extern optVertex_t optVerts[MAX_OPT_VERTEXES];
+extern optVertex_t *optVerts;
 
 /*
 ================
