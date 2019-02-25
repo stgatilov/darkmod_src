@@ -25,12 +25,12 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
-#include <boost/crc.hpp>
 #include <boost/filesystem.hpp>
 
 #include "File.h"
 #include "Zip/Zip.h"
 #include "TraceLog.h"
+#include "zlib.h"
 
 namespace fs = boost::filesystem;
 
@@ -101,8 +101,7 @@ public:
 
 		if (fh == NULL) throw std::runtime_error("Could not open file: " + file.string());
 
-		uint32_t crc = 0;
-		boost::crc_32_type processor;
+		uint32_t crc = crc32(0, NULL, 0);
 		
 		while (true)
 		{
@@ -113,14 +112,12 @@ public:
 
 			if (bytesRead > 0)
 			{
-				processor.process_bytes(buf, bytesRead);
+				crc = crc32(crc, (Bytef*)buf, bytesRead);
 				continue;
 			}
 			
 			break;
 		}
-
-		crc = processor.checksum();
 
 		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for file " + file.string() + " = " + (boost::format("%x") % crc).str());
 
