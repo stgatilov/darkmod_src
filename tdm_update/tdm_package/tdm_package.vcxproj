@@ -55,7 +55,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/libtdm_update;$(SolutionDir)/../win32/subversion/include;$(SolutionDir)/../win32/subversion/include/apr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/libtdm_update;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -68,8 +68,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libtdm_update.lib;ZipLoader.lib;WS2_32.lib;libsvn_client-1.lib;libapr-1.lib;libsvn_subr-1.lib;libsvn_fs_fs-1.lib;libsvn_fs_base-1.lib;libsvn_fs-1.lib;libsvn_wc-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;$(SolutionDir)/../win32/subversion/lib;$(SolutionDir)/../win32/subversion/lib/apr;$(SolutionDir)/../win32/subversion/lib/apr-util;$(SolutionDir)/../win32/subversion/lib/serf;$(SolutionDir)/../win32/subversion/lib/neon;$(SolutionDir)/../win32/subversion/lib/sasl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtdm_update.lib;ZipLoader.lib;WS2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
@@ -78,19 +78,13 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Message>Copying Subversion binaries to bin/</Message>
-      <Command>echo copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir).
-copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)
-</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/libtdm_update;$(SolutionDir)/../win32/subversion/include;$(SolutionDir)/../win32/subversion/include/apr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/libtdm_update;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -102,8 +96,8 @@ copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libtdm_update.lib;ZipLoader.lib;WS2_32.lib;libsvn_client-1.lib;libapr-1.lib;libsvn_subr-1.lib;libsvn_fs_fs-1.lib;libsvn_fs_base-1.lib;libsvn_fs-1.lib;libsvn_wc-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;$(SolutionDir)/../win32/subversion/lib;$(SolutionDir)/../win32/subversion/lib/apr;$(SolutionDir)/../win32/subversion/lib/apr-util;$(SolutionDir)/../win32/subversion/lib/serf;$(SolutionDir)/../win32/subversion/lib/neon;$(SolutionDir)/../win32/subversion/lib/sasl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtdm_update.lib;ZipLoader.lib;WS2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
@@ -115,12 +109,6 @@ copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Message>Copying Subversion binaries to bin/</Message>
-      <Command>echo copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir).
-copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)
-</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="LogWriters.h" />

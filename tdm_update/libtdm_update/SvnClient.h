@@ -28,9 +28,7 @@ typedef std::shared_ptr<SvnClient> SvnClientPtr;
 
 /**
  * An object providing a few SVN client methods.
- * This is used to query file states. The implementation is
- * dependent on the preprocessor variables. In Linux the tdm_update
- * project compiles with a dummy implementation to reduce linker deps.
+ * This is used to query file states.
  */
 class SvnClient
 {

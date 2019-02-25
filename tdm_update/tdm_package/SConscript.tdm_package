@@ -43,8 +43,6 @@ local_env.Append(CPPPATH = '#/../libtdm_update')
 if g_os == 'MacOSX':
 	local_env.Append(LIBS = [
 		File('#/../../macosx/libcurl/libcurl.a'),
-		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libsvn_fs-1.dylib'),
-		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libapr-1.dylib'),
 	])
 elif g_os == 'FreeBSD':
 	# use distro installed libs - easier and safer to use 

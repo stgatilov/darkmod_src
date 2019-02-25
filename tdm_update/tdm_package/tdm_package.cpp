@@ -26,7 +26,6 @@
 
 #include <functional>
 #include "StdFormat.h"
-#include <svn_version.h>
 
 #include <map>
 
@@ -39,7 +38,6 @@ int main(int argc, char* argv[])
 	RegisterLogWriters();
 
 	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.05 (c) 2016 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
-	TraceLog::WriteLine(LOG_STANDARD, "Linked against libsvn " + std::string(SVN_VER_NUM));
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	// Parse the command line

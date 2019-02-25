@@ -224,9 +224,6 @@ else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
 
-# Use libsvn for tdm_package
-LIBTDM_USES_LIBSVN = 1
-
 # create the build environements
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 
@@ -238,24 +235,6 @@ g_base_env.Append(CPPPATH = '#/')
 g_base_env.Append(CPPPATH = '#/../../include')
 g_base_env.Append(CPPPATH = '#/../../include/zlib')
 	
-if LIBTDM_USES_LIBSVN == 1:
-	# Tell the code to compile the SVN clients (LIBTDM_UPDATE_WITH_LIBSVN)
-	g_base_env.Append(CPPFLAGS = '-DUSE_LIBSVN')
-
-	# greebo: Add the subversion and apr header directories, they are not added to PATH when installing the packages?
-	# -- subdirs of the include folder should included using #include <sub/header.h>
-
-	if g_os == 'MacOSX':
-		g_base_env.Append(CPPPATH = '/Developer/SDKs/MacOSX10.6.sdk/usr/include/apr-1/')
-	elif g_os == 'FreeBSD':
-		g_base_env.Append(CPPPATH = '/usr/local/include/subversion-1')
-		g_base_env.Append(CPPPATH = '/usr/local/include/apr-1')
-	elif g_os == 'Linux':
-		g_base_env.Append(CPPPATH = '/usr/include/subversion-1')
-		g_base_env.Append(CPPPATH = '/usr/include/apr-1.0')
-	g_base_env.Append(BASELINKFLAGS = '-L/usr/lib/apr-1.0')
-	g_base_env.Append(LIBS = ['svn_client-1', 'svn_subr-1', 'apr-1', 'svn_fs-1'])
-
 
 g_env = g_base_env.Clone()
 
