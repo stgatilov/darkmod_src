@@ -49,12 +49,14 @@ elif TARGET_ARCH == 'x64':
 		File('#/../linux/libcurl/lib64/libcurl.a'),
 		File('#/../linux/polarssl/lib64/libpolarssl.a'),
 		'rt',
+		'stdc++fs',
 	])
 else:
 	local_env.Append(LIBS = [
 		File('#/../linux/libcurl/libcurl.a'),
 		File('#/../linux/polarssl/libpolarssl.a'),
 		'rt',
+		'stdc++fs',
 	])
 
 minizip_list = SConscript( './SConscript.minizip' )

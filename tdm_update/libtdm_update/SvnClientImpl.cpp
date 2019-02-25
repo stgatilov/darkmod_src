@@ -17,6 +17,7 @@
 
 #include "TraceLog.h"
 #include <fstream>
+#include <cstring>
 #include "StdString.h"
 
 namespace tdm

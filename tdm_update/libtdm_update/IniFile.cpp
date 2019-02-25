@@ -20,6 +20,7 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <algorithm>
 
 #include "StdString.h"
 

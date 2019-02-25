@@ -56,7 +56,8 @@ else:
 	# Linux
 	if LINUX_TARGET_ARCH == 'i386':
 		local_env.Append(LIBS = [
-			File('#/../../linux/libcurl/libcurl.a')
+			File('#/../../linux/libcurl/libcurl.a'),
+			'stdc++fs',
 		])
 	elif LINUX_TARGET_ARCH == 'debian50-amd64':
 		local_env.Append(LIBS = [

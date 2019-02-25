@@ -32,6 +32,8 @@ libtdm_update_string = ' \
 	IniFile.cpp \
 	SvnClient.cpp \
 	SvnClientImpl.cpp \
+	StdString.cpp \
+	StdFilesystem.cpp \
 	ThreadControl.cpp \
 	TraceLog.cpp \
 	Util.cpp \
