@@ -216,8 +216,8 @@ bool Util::TDMIsRunning()
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
 	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
 	{
-		if (CheckProcessFile(i->path().leaf().string(), TDM_PROCESS_NAME) ||
-            CheckProcessFile(i->path().leaf().string(), TDM_PROCESS_NAME_X64)) // grayman - looking for tdm now instead of doom3
+		if (CheckProcessFile(i->path().filename().string(), TDM_PROCESS_NAME) ||
+            CheckProcessFile(i->path().filename().string(), TDM_PROCESS_NAME_X64)) // grayman - looking for tdm now instead of doom3
 		{
 			return true;
 		}
@@ -231,7 +231,7 @@ bool Util::DarkRadiantIsRunning()
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
 	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
 	{
-		if (CheckProcessFile(i->path().leaf().string(), "darkradiant"))
+		if (CheckProcessFile(i->path().filename().string(), "darkradiant"))
 		{
 			return true;
 		}

@@ -97,7 +97,7 @@ BOOL UpdaterApplication::InitInstance()
 	std::string str;
 	str.assign(ws.begin(), ws.end()); 
 
-	fs::path executableName = fs::path(str).leaf();
+	fs::path executableName = fs::path(str).filename();
 
 	// Parse the command line into our program options
 	tdm::updater::CommandLineInfo commandLine;

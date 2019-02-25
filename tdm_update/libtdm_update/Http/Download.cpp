@@ -79,8 +79,8 @@ void Download::Start()
 	}
 
 	// Construct the temporary filename
-	fs::path filename = fs::path(_destFilename).leaf();
-	fs::path folder = fs::path(_destFilename).branch_path();
+	fs::path filename = fs::path(_destFilename).filename();
+	fs::path folder = fs::path(_destFilename).parent_path();
 
 	if (!fs::exists(folder))
 	{
@@ -246,7 +246,7 @@ const fs::path& Download::GetDestFilename() const
 
 std::string Download::GetFilename() const
 {
-	return _destFilename.leaf().string();
+	return _destFilename.filename().string();
 }
 
 bool Download::CheckIntegrity()

@@ -26,7 +26,7 @@ namespace updater
 UpdateController::UpdateController(IUpdateView& view, const fs::path& executableName, UpdaterOptions& options) :
 	_view(view),
 	_curStep(Init),
-	_updater(options, executableName.leaf()),
+	_updater(options, executableName.filename()),
 	_abortFlag(false),
 	_progress(new ProgressHandler(_view)),
 	_differentialUpdatePerformed(false)

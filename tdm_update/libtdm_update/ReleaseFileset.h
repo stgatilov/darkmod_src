@@ -30,7 +30,7 @@ struct ReleaseFile
 	bool isArchive;
 
 	// Filename including path
-	boost::filesystem::path file;
+	fs::path file;
 
 	// CRC32 checksum
 	uint32_t	crc;
@@ -54,14 +54,14 @@ struct ReleaseFile
 		downloadId(-1)
 	{}
 
-	ReleaseFile(const boost::filesystem::path& pathToFile) :
+	ReleaseFile(const fs::path& pathToFile) :
 		isArchive(false),
 		file(pathToFile),
 		localChangesAllowed(false),
 		downloadId(-1)
 	{}
 
-	ReleaseFile(const boost::filesystem::path& pathToFile, uint32_t crc_) :
+	ReleaseFile(const fs::path& pathToFile, uint32_t crc_) :
 		isArchive(false),
 		file(pathToFile),
 		crc(crc_),
@@ -215,7 +215,7 @@ public:
 				continue; // skip directories
 			}
 
-			std::string filename = file.leaf().string();
+			std::string filename = file.filename().string();
 
 			fs::path relativePath = File::GetRelativePath(file, folder);
 

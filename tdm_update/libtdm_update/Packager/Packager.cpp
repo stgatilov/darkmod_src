@@ -439,7 +439,7 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 	std::string section = (boost::format("UpdatePackage from %s to %s") % fromVersion % toVersion).str();
 
 	// Store the information
-	targetFile->SetValue(section, "package", path.leaf().string());
+	targetFile->SetValue(section, "package", path.filename().string());
 	targetFile->SetValue(section, "filesize", std::to_string(fs::file_size(path)));
 	targetFile->SetValue(section, "crc", CRC::ToString(CRC::GetCrcForFile(path)));
 
@@ -717,7 +717,7 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 
 	// Make sure all folders exist
 	fs::path pk4Folder = pk4Path;
-	pk4Folder.remove_leaf();
+	pk4Folder.remove_filename();
 
 	if (!fs::exists(pk4Folder))
 	{

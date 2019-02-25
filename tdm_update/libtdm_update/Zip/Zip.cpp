@@ -194,7 +194,7 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 
 		bool success = false;
 
-		fs::path directory = fs::path(destPath).branch_path();
+		fs::path directory = fs::path(destPath).parent_path();
 
 		if (!fs::exists(directory))
 		{
@@ -531,14 +531,14 @@ void ZipFileWrite::SetGlobalComment(const std::string& comment)
 
 bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string& destPath, CompressionMethod method)
 {
-	if (!boost::filesystem::exists(fileToCompress))
+	if (!fs::exists(fileToCompress))
 	{
 		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Cannot find file for compression " + fileToCompress.string());
 		return false;
 	}
 
 	// Get the current time and date from the given file
-	std::time_t changeTime = boost::filesystem::last_write_time(fileToCompress);
+	std::time_t changeTime = fs::last_write_time(fileToCompress);
 
 	tm timeinfo = safe_localtime(&changeTime);
 
@@ -787,9 +787,9 @@ void Zip::RecreateArchive(const fs::path& fullPath)
 void Zip::RecreateArchive(const fs::path& fullPath, const std::set<std::string>& membersToRemove)
 {
 	fs::path temporaryPath = fullPath;
-	//temporaryPath.remove_leaf().remove_leaf(); // grayman #3514 - don't go so far up
-	temporaryPath.remove_leaf();
-	temporaryPath /= TMP_FILE_PREFIX + fullPath.leaf().string();
+	//temporaryPath.remove_filename().remove_filename(); // grayman #3514 - don't go so far up
+	temporaryPath.remove_filename();
+	temporaryPath /= TMP_FILE_PREFIX + fullPath.filename().string();
 
     if (membersToRemove.size() > 0)
     {

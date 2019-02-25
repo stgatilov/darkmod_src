@@ -55,7 +55,7 @@ namespace
 ConsoleUpdater::ConsoleUpdater(int argc, char* argv[]) :
 	_outcome(None),
 	_options(argc, argv),
-	_controller(*this, fs::path(argv[0]).leaf(), _options),
+	_controller(*this, fs::path(argv[0]).filename(), _options),
 	_done(false)
 {
 	_abortSignalHandler = std::bind(&ConsoleUpdater::OnAbort, this, std::placeholders::_1);
@@ -494,7 +494,7 @@ void ConsoleUpdater::PrintProgress()
 		line += " " + verb;
 
 		std::size_t remainingLength = line.length() > 79 ? 0 : 79 - line.length();
-		line += GetShortenedString(_info.file.leaf().string(), remainingLength);
+		line += GetShortenedString(_info.file.filename().string(), remainingLength);
 	}
 	break;
 	};

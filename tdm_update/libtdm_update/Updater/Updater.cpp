@@ -75,7 +75,7 @@ bool Updater::MirrorsNeedUpdate()
 {
 	fs::path mirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
 
-	if (!boost::filesystem::exists(mirrorPath))
+	if (!fs::exists(mirrorPath))
 	{
 		// No mirrors file
 		TraceLog::WriteLine(LOG_VERBOSE, "No mirrors file present on this machine.");
@@ -248,7 +248,7 @@ void Updater::DetermineLocalVersion()
 			
 			fs::path candidate = GetTargetPath() / f->second.file;
 
-			if (stdext::to_lower_copy(candidate.leaf().string()) == stdext::to_lower_copy(_executable.leaf().string()))
+			if (stdext::to_lower_copy(candidate.filename().string()) == stdext::to_lower_copy(_executable.filename().string()))
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Ignoring updater executable: %s.") % candidate.string()).str());
 				continue;
@@ -1337,8 +1337,8 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 
 	std::ofstream batch(_updateBatchFile.string().c_str());
 
-	fs::path tempUpdater = temporaryUpdater.leaf();
-	fs::path updater = _executable.leaf();
+	fs::path tempUpdater = temporaryUpdater.filename();
+	fs::path updater = _executable.filename();
 
 	// Append the current set of command line arguments to the new instance
 	std::string arguments;
@@ -1596,8 +1596,8 @@ void Updater::RestartUpdater()
 		siStartupInfo.cb = sizeof(siStartupInfo);
 
 		fs::path parentPath = _updateBatchFile;
-		parentPath.remove_leaf(); // grayman #3514 - only remove one leaf
-		//parentPath.remove_leaf().remove_leaf();
+		parentPath.remove_filename(); // grayman #3514 - only remove one leaf
+		//parentPath.remove_filename().remove_filename();
 
 		TraceLog::WriteLine(LOG_VERBOSE, "Starting batch file " + _updateBatchFile.string() + " in " + parentPath.string());
 
