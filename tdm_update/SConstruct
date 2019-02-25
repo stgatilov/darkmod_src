@@ -151,7 +151,7 @@ BASECPPFLAGS.append( '-Wall' )
 BASECPPFLAGS.append( '-std=c++11' )
 if ( g_os == 'Linux' ):
 	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
-	# This allows to link with libraries (like boost), which were built in older versions of GCC
+	# This allows to link with C++ libraries, which were built in older versions of GCC
 	BASECPPFLAGS.append( '-D_GLIBCXX_USE_CXX11_ABI=0' )
 
 # Don't throw warnings for unknown pragmas (used by VC++)

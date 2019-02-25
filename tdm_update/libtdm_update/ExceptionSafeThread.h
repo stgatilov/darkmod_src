@@ -36,7 +36,7 @@ public:
 
 /**
  * greebo: A wrapper class which is able to pass exceptions 
- * back to the calling thread. The function passed to boost::thread
+ * back to the calling thread. The function passed to std::thread
  * is decorated with a try/catch block, which is storing the exception's
  * error message locally. After joining the thread the exception is 
  * re-generated such that the calling thread gets a chance to catch it.

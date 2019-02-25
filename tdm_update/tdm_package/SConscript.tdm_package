@@ -40,14 +40,8 @@ local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtua
 local_env.Append(CPPPATH = '#/../../include')
 local_env.Append(CPPPATH = '#/../libtdm_update')
 
-# Use local Boost
 if g_os == 'MacOSX':
 	local_env.Append(LIBS = [
-		File('#/../../macosx/boost/lib/libboost_filesystem.a'),
-		File('#/../../macosx/boost/lib/libboost_program_options.a'),
-		File('#/../../macosx/boost/lib/libboost_thread.a'),
-		File('#/../../macosx/boost/lib/libboost_regex.a'),
-		File('#/../../macosx/boost/lib/libboost_system.a'),
 		File('#/../../macosx/libcurl/libcurl.a'),
 		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libsvn_fs-1.dylib'),
 		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libapr-1.dylib'),
@@ -58,25 +52,16 @@ elif g_os == 'FreeBSD':
 	local_env.Append(LIBS = [
 		'ssl', 
 		'crypto',
-		File('/usr/local/lib/libboost_filesystem.a'),
-		File('/usr/local/lib/libboost_program_options.a'),
-		File('/usr/local/lib/libboost_system.a'),
 		File('/usr/local/lib/libcurl.a')
 	])
 else:
 	# Linux
 	if LINUX_TARGET_ARCH == 'i386':
 		local_env.Append(LIBS = [
-			File('#/../../linux/boost/lib/libboost_filesystem.a'),
-			File('#/../../linux/boost/lib/libboost_program_options.a'),
-			File('#/../../linux/boost/lib/libboost_system.a'),
 			File('#/../../linux/libcurl/libcurl.a')
 		])
 	elif LINUX_TARGET_ARCH == 'debian50-amd64':
 		local_env.Append(LIBS = [
-			File('#/../../linux/boost/lib.debian50-amd64/libboost_filesystem.a'),
-			File('#/../../linux/boost/lib.debian50-amd64/libboost_program_options.a'),
-			File('#/../../linux/boost/lib.debian50-amd64/libboost_system.a'),
 			File('#/../../linux/libcurl/libcurl.debian50-amd64.a')
 		])
 
