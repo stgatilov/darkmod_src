@@ -3139,6 +3139,8 @@ void idSessionLocal::RunGameTic() {
 
 	// save the cmd for cmdDemo archiving
 	if ( logIndex < MAX_LOGGED_USERCMDS ) {
+		if ( !loggedUsercmds )
+			loggedUsercmds = new logCmd_t[MAX_LOGGED_USERCMDS];
 		loggedUsercmds[logIndex].cmd = cmd;
 		// save the consistencyHash for demo playback verification
 		loggedUsercmds[logIndex].consistencyHash = ret.consistencyHash;

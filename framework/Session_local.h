@@ -216,7 +216,7 @@ public:
 	int					numClients;				// from serverInfo
 
 	int					logIndex;
-	logCmd_t			loggedUsercmds[MAX_LOGGED_USERCMDS];
+	logCmd_t *			loggedUsercmds;
 	int					statIndex;
 	logStats_t			loggedStats[MAX_LOGGED_STATS];
 	int					lastSaveIndex;
