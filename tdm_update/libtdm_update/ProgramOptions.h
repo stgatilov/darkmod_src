@@ -15,22 +15,49 @@
 
 #pragma once
 
-#include <boost/program_options.hpp>
 #include "StdString.h"
 
 #include "Http/HttpConnection.h"
 #include "TraceLog.h"
+#include <map>
+#include <sstream>
+#undef max
+#include <algorithm>
 
-namespace bpo = boost::program_options;
 
 namespace tdm
 {
 
 class ProgramOptions
 {
+public:
+	struct Option {
+		std::string key;
+		bool needsValue;				//if false, then it is "key" argument
+		std::string defValue;			//if empty => no default value
+		std::string description;
+
+		static Option Flag(const std::string &key, const std::string &desc) {
+			Option res;
+			res.key = key;
+			res.needsValue = false;
+			res.description = desc;
+			return res;
+		}
+		static Option Str(const std::string &key, const std::string &desc, const std::string &defValue = std::string()) {
+			Option res;
+			res.key = key;
+			res.needsValue = true;
+			res.description = desc;
+			res.defValue = defValue;
+			return res;
+		}
+	};
+
 protected:
-	bpo::options_description _desc;
-	bpo::variables_map _vm;
+
+	std::vector<Option> _desc;
+	std::map<std::string, std::string> _vm;
 
 	// The command line arguments for reference
 	std::vector<std::string> _cmdLineArgs;
@@ -41,26 +68,61 @@ public:
 
 	void ParseFromCommandLine(int argc, char* argv[])
 	{
-		try
-		{
-			bpo::store(bpo::parse_command_line(argc, argv, _desc), _vm);
-			bpo::notify(_vm);
+		auto check = [](bool condition, const std::string &message, const std::string &arg) {
+			if (condition)
+				return;
+			throw std::runtime_error(message + ": " + arg);
+		};
+
+		try {
+			for (int i = 1; i < argc; i++) {
+				std::string arg = argv[i];
+				bool handled = false;
+				for (const Option &opt : _desc) {
+					if (arg == "--" + opt.key) {
+						if (opt.needsValue) {
+							check(i+1 < argc && !stdext::starts_with(argv[i+1], "--"), "Missing value for parameter", arg);
+							_vm[opt.key] = argv[i+1];
+							i++;
+						}
+						else {
+							_vm[opt.key] = "";
+						}
+						handled = true;
+						break;
+					}
+					if (stdext::starts_with(arg, "--" + opt.key + "=")) {
+						check(opt.needsValue, "Specified value for key parameter", arg);
+						std::string value = arg.substr(opt.key.size() + 3);
+						_vm[opt.key] = value;
+						handled = true;
+						break;
+					}
+				}
+				check(handled, "Unknown argument", arg);
+			}
+
+			//set default values for non-set options (where appropriate)
+			for (const Option &opt : _desc) {
+				if (opt.needsValue && !opt.defValue.empty() && !IsSet(opt.key)) {
+					_vm[opt.key] = opt.defValue;
+				}
+			}
 		}
-		catch (bpo::unknown_option& o)
-		{
-			TraceLog::WriteLine(LOG_STANDARD, " " + std::string(o.what()));
+		catch (std::runtime_error &e) {
+			TraceLog::WriteLine(LOG_STANDARD, " " + std::string(e.what()));
 		}
 	}
 
 	void Set(const std::string& key)
 	{
-		_vm.insert(std::make_pair(key, bpo::variable_value()));
+		_vm.insert(std::make_pair(key, ""));
 		_cmdLineArgs.push_back("--" + key);
 	}
 
 	void Set(const std::string& key, const std::string& value)
 	{
-		_vm.insert(std::make_pair(key, bpo::variable_value(value, false)));
+		_vm.insert(std::make_pair(key, value));
 		_cmdLineArgs.push_back("--" + key + "=" + value);
 	}
 
@@ -91,7 +153,7 @@ public:
 
 	std::string Get(const std::string& key) const
 	{
-		return _vm.count(key) > 0 ? _vm[key].as<std::string>() : "";
+		return _vm.count(key) > 0 ? _vm.find(key)->second : "";
 	}
 
 	const std::vector<std::string>& GetRawCmdLineArgs() const
@@ -102,7 +164,28 @@ public:
 	virtual void PrintHelp()
 	{
 		std::ostringstream stream;
-		_desc.print(stream);
+		stream << "\n";
+
+		//format list of options into a two-column table
+		std::vector<std::pair<std::string, std::string>> table;
+		int leftLength = 0;
+		for (const Option &opt : _desc) {
+			std::string leftS = std::string("--") + opt.key;
+			if (opt.needsValue)
+				leftS += " arg";
+			if (opt.defValue.size())
+				leftS += " (=" + opt.defValue + ")";
+			std::string rightS = opt.description;
+			rightS = stdext::replace_all_copy(rightS, "\n", " ");
+			table.emplace_back(leftS, rightS);
+			leftLength = std::max(leftLength, (int)leftS.size());
+		}
+		//print the table
+		for (auto line : table) {
+			std::string leftS = line.first;
+			leftS += std::string(leftLength - leftS.size(), ' ');
+			stream << "  " << leftS << "  " << line.second << "\n";
+		}
 
 		TraceLog::WriteLine(LOG_STANDARD, " " + stream.str());
 	}

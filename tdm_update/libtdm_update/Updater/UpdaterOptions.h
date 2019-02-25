@@ -111,16 +111,13 @@ private:
 	// Implement base class method
 	void SetupDescription()
 	{
-		// Get options from command line
-		_desc.add_options()
-			("proxy", bpo::value<std::string>(), "Use a proxy to connect to the internet, example \n--proxy=http://user:pass@proxy:port\n")
-			("targetdir", bpo::value<std::string>(), "The folder which should be updated.\n--targetdir=c:\\games\\tdm\\darkmod\n")
-			("help", "Display this help page")
-			("keep-mirrors", "Don't download updated mirrors list from the server, use local one.")
-			("keep-update-packages", "Don't delete downloaded update packages after applying them.")
-			("noselfupdate", "Don't perform any special 'update the updater' routines.")
-			("dry-run", "Don't do any updates, just perform checks.")
-			;
+		_desc.push_back(Option::Str("proxy", "Use a proxy to connect to the internet, example \n--proxy=http://user:pass@proxy:port\n"));
+		_desc.push_back(Option::Str("targetdir", "The folder which should be updated.\n--targetdir=c:\\games\\tdm\\darkmod\n"));
+		_desc.push_back(Option::Flag("help", "Display this help page"));
+		_desc.push_back(Option::Flag("keep-mirrors", "Don't download updated mirrors list from the server, use local one."));
+		_desc.push_back(Option::Flag("keep-update-packages", "Don't delete downloaded update packages after applying them."));
+		_desc.push_back(Option::Flag("noselfupdate", "Don't perform any special 'update the updater' routines."));
+		_desc.push_back(Option::Flag("dry-run", "Don't do any updates, just perform checks."));
 	}
 };
 
