@@ -24,7 +24,7 @@
 #include "../Util.h"
 #include "../ThreadControl.h"
 
-#include <boost/filesystem.hpp>
+#include "../StdFilesystem.h"
 #include <boost/format.hpp>
 
 #ifndef WIN32
@@ -956,12 +956,11 @@ void Updater::CheckLocalFiles()
 	TraceLog::WriteLine(LOG_VERBOSE, "Checking target folder: " + targetPath.string());
 
 	// List PK4 inventory to logfile, for reference
-	for (fs::directory_iterator i = fs::directory_iterator(targetPath); 
-		 i != fs::directory_iterator(); ++i)
+	for (fs::path file : fs::directory_enumerate(targetPath))
 	{
-		if (File::IsPK4(*i))
+		if (File::IsPK4(file))
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "[PK4 Inventory] Found " + i->path().string());
+			TraceLog::WriteLine(LOG_VERBOSE, "[PK4 Inventory] Found " + file.string());
 		}
 	}
 
@@ -1400,30 +1399,33 @@ void Updater::FixPK4Dates()
 
     TraceLog::WriteLine(LOG_VERBOSE, "Checking PK4 dates in target folder: " + targetPath.string());
 
+	std::vector<fs::path> dirContents = fs::directory_enumerate(targetPath);
+
+	// get the number of PK4 files in the target directory
+	std::size_t totalFileOperations = 0;
+	for (fs::path file : dirContents) {
+		if (File::IsPK4(file))
+			totalFileOperations++;
+	}
     // Some math for the progress meter
     std::size_t curOperation = 0;
-    // get the number of PK4 files in the target directory
-    std::size_t totalFileOperations = std::count_if(
-        fs::directory_iterator(targetPath),
-        fs::directory_iterator(),
-        bind(static_cast<bool(*)(const fs::path&)>(File::IsPK4), std::bind(&fs::directory_entry::path, std::placeholders::_1)));
 
     // Search for and fix bad PK4 dates
-    for (fs::directory_iterator i(targetPath); i != fs::directory_iterator(); ++i)
-    {
-        if (File::IsPK4(i->path()))
+	for (fs::path file : dirContents)
+	{
+        if (File::IsPK4(file))
         {
-            TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Checking " + i->path().string());
+            TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Checking " + file.string());
 
             curOperation++;
 
-            if (PK4ContainsBadDates(i->path()))
+            if (PK4ContainsBadDates(file))
             {
-                TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Found bad date in " + i->path().string());
+                TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Found bad date in " + file.string());
                 
-                NotifyFileProgress(i->path(), CurFileInfo::RegeneratePK4, static_cast<double>(curOperation) / totalFileOperations);
+                NotifyFileProgress(file, CurFileInfo::RegeneratePK4, static_cast<double>(curOperation) / totalFileOperations);
                 
-                FixPK4Dates(i->path());
+                FixPK4Dates(file);
             }
         }
     }
@@ -1770,16 +1772,11 @@ void Updater::InstallVCRedist(bool x64) {
 
 void Updater::PostUpdateCleanup()
 {
-	for (fs::directory_iterator i = fs::directory_iterator(GetTargetPath()); 
-		i != fs::directory_iterator(); )
+	for (fs::path file : fs::directory_enumerate(GetTargetPath()))
 	{
-		if (stdext::starts_with(i->path().string(), TMP_FILE_PREFIX))
+		if (stdext::starts_with(file.string(), TMP_FILE_PREFIX))
 		{
-			File::Remove(*i++);
-		}
-		else
-		{
-			++i;
+			File::Remove(file);
 		}
 	}
 

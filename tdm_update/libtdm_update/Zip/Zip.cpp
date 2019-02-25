@@ -24,7 +24,7 @@
 #include "../TraceLog.h"
 #include "../File.h"
 
-#include <boost/filesystem.hpp>
+#include "../StdFilesystem.h"
 #include <boost/format.hpp>
 #include "../StdString.h"
 

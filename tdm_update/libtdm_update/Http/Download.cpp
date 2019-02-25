@@ -24,7 +24,7 @@
 
 #include <functional>
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

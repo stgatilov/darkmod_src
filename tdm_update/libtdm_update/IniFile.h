@@ -19,11 +19,11 @@
 #include <map>
 #include <set>
 #include <istream>
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 #include <memory>
 #include "StdString.h"
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

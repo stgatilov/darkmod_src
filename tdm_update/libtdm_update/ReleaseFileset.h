@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 
 #include "IniFile.h"
 #include "CRC.h"
@@ -205,11 +205,8 @@ public:
 	{
 		ReleaseFileSet set;
 
-		for (fs::recursive_directory_iterator i = fs::recursive_directory_iterator(folder); 
-			i != fs::recursive_directory_iterator(); ++i)
+		for (fs::path file : fs::recursive_directory_enumerate(folder))
 		{
-			fs::path file = *i;
-
 			if (fs::is_directory(file))
 			{
 				continue; // skip directories

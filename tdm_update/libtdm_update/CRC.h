@@ -24,14 +24,14 @@
 
 #include "StdString.h"
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 
 #include "File.h"
 #include "Zip/Zip.h"
 #include "TraceLog.h"
 #include "zlib.h"
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

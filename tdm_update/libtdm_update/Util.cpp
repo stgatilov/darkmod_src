@@ -15,11 +15,11 @@
 
 #include "Util.h"
 
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 #include "StdString.h"
 #include "TraceLog.h"
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 #ifdef WIN32
 
@@ -214,10 +214,10 @@ namespace
 bool Util::TDMIsRunning()
 {
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
-	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
+	for (fs::path file : fs::directory_enumerate(PROC_FOLDER))
 	{
-		if (CheckProcessFile(i->path().filename().string(), TDM_PROCESS_NAME) ||
-            CheckProcessFile(i->path().filename().string(), TDM_PROCESS_NAME_X64)) // grayman - looking for tdm now instead of doom3
+		if (CheckProcessFile(file.filename().string(), TDM_PROCESS_NAME) ||
+            CheckProcessFile(file.filename().string(), TDM_PROCESS_NAME_X64)) // grayman - looking for tdm now instead of doom3
 		{
 			return true;
 		}
@@ -229,9 +229,9 @@ bool Util::TDMIsRunning()
 bool Util::DarkRadiantIsRunning()
 {
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
-	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
+	for (fs::path file : fs::directory_enumerate(PROC_FOLDER))
 	{
-		if (CheckProcessFile(i->path().filename().string(), "darkradiant"))
+		if (CheckProcessFile(file.filename().string(), "darkradiant"))
 		{
 			return true;
 		}

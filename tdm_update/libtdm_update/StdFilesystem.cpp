@@ -59,6 +59,9 @@ namespace stdext {
 	std::string path::string() const {
 		return d->string();
 	}
+	bool path::empty() const {
+		return d->empty();
+	}
 	path path::parent_path() const {
 		return path_impl(d->parent_path());
 	}
@@ -85,6 +88,9 @@ namespace stdext {
 	bool operator==(const path& lhs, const path& rhs) {
 		return get(lhs) == get(rhs);
 	}
+	bool operator!=(const path& lhs, const path& rhs) {
+		return get(lhs) != get(rhs);
+	}
 	bool operator<(const path& lhs, const path& rhs) {
 		return get(lhs) < get(rhs);
 	}
@@ -94,6 +100,12 @@ namespace stdext {
 	bool is_directory(const path &path) {
 		bool res;
 		try {	res = stdfsys::is_directory(get(path)); }
+		catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
+		return res;
+	}
+	bool is_regular_file(const path &path) {
+		bool res;
+		try {	res = stdfsys::is_regular_file(get(path)); }
 		catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
 		return res;
 	}
@@ -127,6 +139,12 @@ namespace stdext {
 		catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
 		return res;
 	}
+	std::time_t last_write_time(const path& p) {
+		std::time_t res;
+		try {	res = stdfsys::last_write_time(get(p)); }
+		catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
+		return res;
+	}
 	uint64_t remove_all(const path& path) {
 		uint64_t res;
 		try {	res = stdfsys::remove_all(get(path)); }
@@ -140,6 +158,15 @@ namespace stdext {
 	void rename(const path &from, const path &to) {
 		try {	stdfsys::rename(get(from), get(to)); }
 		catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
+	}
+	std::string extension(const path &path) {
+		return path.extension().string();
+	}
+	path current_path() {
+		path_impl res;
+		try {	res = stdfsys::current_path<stdfsys::path>(); }
+		catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
+		return path(res);
 	}
 
 	std::vector<path> directory_enumerate(const path &rootPath) {

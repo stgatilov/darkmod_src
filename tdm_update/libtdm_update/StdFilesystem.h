@@ -17,6 +17,7 @@
 #define STD_FILESYSTEM_H_
 
 #include <stdint.h>
+#include <ctime>
 #include <string>
 #include <memory>
 #include <vector>
@@ -41,6 +42,7 @@ namespace stdext {
 		path(const char *source);
 		path(const std::string &source);
 		std::string string() const;
+		bool empty() const;
 		path parent_path() const;
 		path filename() const;
 		path extension() const;
@@ -56,17 +58,22 @@ namespace stdext {
 	path operator/(const path& lhs, const path& rhs);
 	path& operator/=(path& lhs, const path& rhs);
 	bool operator==(const path& lhs, const path& rhs);
+	bool operator!=(const path& lhs, const path& rhs);
 	bool operator<(const path& lhs, const path& rhs);
 
 	bool is_directory(const path &path);
+	bool is_regular_file(const path &path);
 	bool create_directory(const path &path);
 	bool exists(const path &path);
 	bool create_directories(const path &path);
 	bool remove(const path &path);
 	uint64_t file_size(const path &path);
+	std::time_t last_write_time(const path& p);
 	uint64_t remove_all(const path& path);
 	void copy_file(const path &from, const path &to);
 	void rename(const path &from, const path &to);
+	std::string extension(const path &path);
+	path current_path();
 
 	//below is some replacement for C++ iterator mess
 	//(cost of memory allocation should be negligible compare to cost of filesystem access)

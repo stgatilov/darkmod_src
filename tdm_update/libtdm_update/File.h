@@ -15,11 +15,11 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 #include "StdString.h"
 #include "TraceLog.h"
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

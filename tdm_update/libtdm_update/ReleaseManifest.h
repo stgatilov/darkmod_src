@@ -272,26 +272,25 @@ private:
 		std::size_t itemsAdded = 0;
 
 		// Traverse this folder
-		for (fs::directory_iterator i = fs::directory_iterator(dir);
-			 i != fs::directory_iterator(); ++i)
+		for (fs::path file : fs::directory_enumerate(dir))
 		{
-			if (stdext::ends_with(i->path().string(), ".svn"))
+			if (stdext::ends_with(file.string(), ".svn"))
 			{
 				// Prevent adding .svn folders
 				continue;
 			}
 
 			// Ensure this item is under version control
-			if (!svn.FileIsUnderVersionControl(*i))
+			if (!svn.FileIsUnderVersionControl(file))
 			{
-				TraceLog::WriteLine(LOG_PROGRESS, "Skipping unversioned item: " + i->path().string());
+				TraceLog::WriteLine(LOG_PROGRESS, "Skipping unversioned item: " + file.string());
 				continue;
 			}
 
-			TraceLog::WriteLine(LOG_VERBOSE, "Investigating item: " + i->path().string());
+			TraceLog::WriteLine(LOG_VERBOSE, "Investigating item: " + file.string());
 
 			// Cut off the repository path to receive a relative path (cut off the trailing slash too)
-			std::string relativePath = i->path().string().substr(repositoryRoot.string().length() + 1);
+			std::string relativePath = file.string().substr(repositoryRoot.string().length() + 1);
 
 			// Consider the exclusion list
 			if (instructions.IsExcluded(relativePath))
@@ -300,10 +299,10 @@ private:
 				continue;
 			}
 			
-			if (fs::is_directory(*i))
+			if (fs::is_directory(file))
 			{
 				// Versioned folder, enter recursion
-				std::size_t folderItems = ProcessDirectory(repositoryRoot, *i, instructions, svn);
+				std::size_t folderItems = ProcessDirectory(repositoryRoot, file, instructions, svn);
 
 				if (folderItems > 0)
 				{

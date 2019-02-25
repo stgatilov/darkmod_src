@@ -17,7 +17,7 @@
 
 #include "DifferentialUpdateInfo.h"
 #include "UpdateStep.h"
-#include <boost/filesystem.hpp>
+#include "../StdFilesystem.h"
 
 namespace tdm
 {

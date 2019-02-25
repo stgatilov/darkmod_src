@@ -18,7 +18,7 @@
 #include <vector>
 #include <list>
 #include <fstream>
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 #include <boost/spirit/include/classic.hpp>
 #include <functional>
 #include <regex>

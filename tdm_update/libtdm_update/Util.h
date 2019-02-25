@@ -16,7 +16,7 @@
 #pragma once
 
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 
 // Platform-specific Sleep(int msec) definition
 #ifdef WIN32
@@ -27,7 +27,7 @@
 	#define Sleep(x) usleep(static_cast<int>(1000 * (x)))
 #endif 
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

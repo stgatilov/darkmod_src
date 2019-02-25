@@ -16,9 +16,9 @@
 #pragma once
 
 #include <memory>
-#include <boost/filesystem.hpp>
+#include "StdFilesystem.h"
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

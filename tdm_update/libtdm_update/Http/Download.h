@@ -18,10 +18,10 @@
 #include "HttpConnection.h"
 #include "HttpRequest.h"
 #include <memory>
-#include <boost/filesystem.hpp>
+#include "../StdFilesystem.h"
 #include <thread>
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 namespace tdm
 {

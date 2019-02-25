@@ -21,9 +21,9 @@
 #include <time.h>
 #include <cstdint>
 #include <memory>
-#include <boost/filesystem.hpp>
+#include "../StdFilesystem.h"
 
-namespace fs = boost::filesystem;
+namespace fs = stdext;
 
 typedef void* zipFile;
 typedef void* unzFile;
