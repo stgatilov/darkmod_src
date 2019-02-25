@@ -13,6 +13,9 @@
     <Filter Include="Packager">
       <UniqueIdentifier>{9ffd21da-5f63-47c3-9f90-89781d64e5d8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Stubs">
+      <UniqueIdentifier>{472b3262-5073-4f72-b135-bad0bda08405}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Http\Download.cpp">
@@ -49,6 +52,12 @@
     <ClCompile Include="TraceLog.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="ThreadControl.cpp" />
+    <ClCompile Include="StdString.cpp">
+      <Filter>Stubs</Filter>
+    </ClCompile>
+    <ClCompile Include="StdFilesystem.cpp">
+      <Filter>Stubs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http\Download.h">
@@ -117,5 +126,11 @@
     <ClInclude Include="UpdatePackageInfo.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="ThreadControl.h" />
+    <ClInclude Include="StdString.h">
+      <Filter>Stubs</Filter>
+    </ClInclude>
+    <ClInclude Include="StdFilesystem.h">
+      <Filter>Stubs</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

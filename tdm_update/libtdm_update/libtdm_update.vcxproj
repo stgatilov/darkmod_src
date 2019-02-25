@@ -91,6 +91,8 @@
     <ClCompile Include="Http\HttpConnection.cpp" />
     <ClCompile Include="Http\HttpRequest.cpp" />
     <ClCompile Include="Http\MirrorDownload.cpp" />
+    <ClCompile Include="StdFilesystem.cpp" />
+    <ClCompile Include="StdString.cpp" />
     <ClCompile Include="ThreadControl.cpp" />
     <ClCompile Include="Zip\Zip.cpp" />
     <ClCompile Include="Updater\UpdateController.cpp" />
@@ -110,6 +112,8 @@
     <ClInclude Include="Http\HttpRequest.h" />
     <ClInclude Include="Http\MirrorDownload.h" />
     <ClInclude Include="Http\MirrorList.h" />
+    <ClInclude Include="StdFilesystem.h" />
+    <ClInclude Include="StdString.h" />
     <ClInclude Include="ThreadControl.h" />
     <ClInclude Include="Zip\Zip.h" />
     <ClInclude Include="Updater\DifferentialUpdateInfo.h" />
