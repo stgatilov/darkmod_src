@@ -19,14 +19,9 @@
 #include <set>
 #include <fstream>
 #include <sstream>
-
-#include <boost/program_options/detail/config_file.hpp>
+#include <cassert>
 
 #include "StdString.h"
-#include <boost/spirit/include/classic.hpp>
-#include <boost/bind.hpp>
-
-namespace bs = boost::spirit::classic;
 
 namespace tdm
 {
@@ -219,98 +214,79 @@ public:
 		_self(self)
 	{}
 
-	void AddSection(char const* beg, char const* end)
+	void AddSection(const std::string &token)
 	{
 		// Remember this section name
-		_lastSection = std::string(beg, end);
+		_lastSection = token;
 
 		_self.AddSection(_lastSection);
 	}
 
-	void AddKey(char const* beg, char const* end)
+	void AddKey(const std::string &token)
 	{
 		assert(!_lastSection.empty()); // need to have parsed a section beforehand
 
 		// Just remember the key name, an AddValue() call is imminent
-		_lastKey = std::string(beg, end);
+		_lastKey = token;
 
 		stdext::trim(_lastKey);
 	}
 
-	void AddValue(char const* beg, char const* end)
+	void AddValue(const std::string &token)
 	{
 		assert(!_lastSection.empty());
 		assert(!_lastKey.empty());
 
-		_self.SetValue(_lastSection, _lastKey, std::string(beg, end));
+		_self.SetValue(_lastSection, _lastKey, token);
 	}
 };
 
 void IniFile::ParseFromString(const std::string& str)
 {
-	bs::rule<> char_ident_start = bs::alpha_p | bs::ch_p('_') ;
-
-	// Allow anthing but the closing bracket for section names
-	bs::rule<> char_section_ident_middle = ~(bs::ch_p(']'));
-
-	// Allow anthing but the "=" for key names
-	bs::rule<> char_ident_middle = ~(bs::ch_p('='));
-
-	bs::rule<> ident = char_ident_start >> * char_ident_middle ;
-	bs::rule<> sectionIdent = char_ident_start >> * char_section_ident_middle;
-	bs::rule<> char_start_comment = bs::ch_p('#') | bs::ch_p(';') | bs::str_p("//");
-	bs::rule<> blanks_p = * bs::blank_p;
-	bs::rule<> value_p = * ( bs::alnum_p | bs::blank_p | bs::punct_p );
-
-	// Create the helper object pushing the data
+	auto npos = std::string::npos;
 	IniParser parser(*this);
-	
-	bs::rule<> l_category = 
-					blanks_p >> 
-					bs::ch_p('[') >> 
-					blanks_p >> 
-					sectionIdent [ bind(&IniParser::AddSection, &parser, _1, _2) ] >>
-					blanks_p >> 
-					bs::ch_p(']') >> 
-					blanks_p >> 
-					bs::eol_p
-	;
-	
-	bs::rule<> l_comment = blanks_p >> char_start_comment >> * bs::print_p >> bs::eol_p; 
-	bs::rule<> l_empty = blanks_p >> bs::eol_p; 
-	bs::rule<> c_comment_rule = bs::confix_p("/*", *bs::anychar_p, "*/");
 
-	bs::rule<> b_comment = 
-					blanks_p >> 
-					c_comment_rule >>
-					blanks_p >> 
-					bs::eol_p
-	; 
-
-	bs::rule<> l_entry =  
-					blanks_p >>
-					ident [ bind(&IniParser::AddKey, &parser, _1, _2) ] >> 
-					blanks_p >>
-					bs::ch_p('=') >> 
-					blanks_p >>
-					value_p [ bind(&IniParser::AddValue, &parser, _1, _2) ] >> 
-					blanks_p >>
-					bs::eol_p
-	; 
-
-	bs::rule<> lines = l_comment | b_comment | l_category | l_entry | l_empty;
-	bs::rule<> iniFileDef =  bs::lexeme_d [ * lines ] ;
-
-	bs::parse_info<> info = bs::parse(str.c_str(), iniFileDef);
-
-	if (info.full)
-	{
-		tdm::TraceLog::WriteLine(LOG_VERBOSE, "Successfully parsed the whole INI file.");
+	//split file into non-empty lines
+	std::vector<std::string> lines;
+	stdext::split(lines, str, "\r\n");
+	for (auto line : lines) {
+		//remove comment (if present)
+		size_t commentStart = line.find_first_of("#;");
+		if (commentStart != npos)
+			line.resize(commentStart);
+		//remove spaces at both ends
+		stdext::trim(line);
+		if (line.empty())
+			continue;
+		//check if it is section start
+		if (line.front() == '[' && line.back() == ']') {
+			auto sectionName = line.substr(1, line.length() - 2);
+			parser.AddSection(sectionName);
+			continue;
+		}
+		//check if it is "key=value" definition
+		size_t equalCount = std::count(line.begin(), line.end(), '=');
+		if (equalCount == 1) {
+			size_t equalPos = line.find('=');
+			std::string key = line.substr(0, equalPos), value = line.substr(equalPos + 1);
+			stdext::trim(key);
+			stdext::trim(value);
+			if (key.empty()) {
+				tdm::TraceLog::WriteLine(LOG_VERBOSE, "Empty key in INI file: '" + line + "'");
+				continue;
+			}
+			parser.AddKey(key);
+			parser.AddValue(value);
+			continue;
+		}
+		//check what sort of error it is
+		if (equalCount > 1)
+			tdm::TraceLog::WriteLine(LOG_VERBOSE, std::to_string(equalCount) + " equality signs in a line of INI file: '" + line + "'");
+		else
+			tdm::TraceLog::WriteLine(LOG_VERBOSE, "Excessive line in INI file: '" + line + "'");
 	}
-	else
-	{
-		tdm::TraceLog::WriteLine(LOG_VERBOSE, "Could not fully parse the INI file.");
-	}
+
+	tdm::TraceLog::WriteLine(LOG_VERBOSE, "Parsed the INI file.");
 }
 
 } // namespace

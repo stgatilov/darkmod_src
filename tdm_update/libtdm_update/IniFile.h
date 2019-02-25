@@ -38,8 +38,7 @@ public:
 	typedef std::vector<KeyValuePair> KeyValuePairList;
 
 private:
-	struct SectionCompareFunctor : 
-		public std::binary_function<std::string, std::string, bool>
+	struct SectionCompareFunctor
 	{
 		bool operator()(const std::string& s1, const std::string& s2) const
 		{
@@ -47,8 +46,7 @@ private:
 		}
 	};
 
-	struct KeyCompareFunctor : 
-		public std::binary_function<std::string, std::string, bool>
+	struct KeyCompareFunctor
 	{
 		bool operator()(const KeyValuePair& kvp1, const KeyValuePair& kvp2) const
 		{
