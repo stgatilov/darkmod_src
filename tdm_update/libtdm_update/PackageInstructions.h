@@ -21,7 +21,7 @@
 #include "TraceLog.h"
 
 #include <regex>
-#include <boost/algorithm/string/trim.hpp>
+#include "StdString.h"
 
 namespace tdm
 {
@@ -118,7 +118,7 @@ public:
 
 		while (std::getline(stream, line, '\n'))
 		{
-			boost::algorithm::trim_if(line, boost::algorithm::is_any_of(" \t"));
+			stdext::trim(line, " \t");
 
 			// Skip empty lines
 			if (line.empty()) continue;
@@ -126,19 +126,19 @@ public:
 			// Skip line comments
 			if (line[0] == '#') continue;
 
-			if (boost::algorithm::starts_with(line, "INCLUDE"))
+			if (stdext::starts_with(line, "INCLUDE"))
 			{
 				std::string value = line.substr(7);
-				boost::algorithm::trim_if(value, boost::algorithm::is_any_of(" \t"));
+				stdext::trim(value, " \t");
 
 				push_back(PackageInstruction(PackageInstruction::Include, value));
 
 				includeStatements++;
 			}
-			else if (boost::algorithm::starts_with(line, "EXCLUDE"))
+			else if (stdext::starts_with(line, "EXCLUDE"))
 			{
 				std::string value = line.substr(7);
-				boost::algorithm::trim_if(value, boost::algorithm::is_any_of(" \t"));
+				stdext::trim(value, " \t");
 
 				push_back(PackageInstruction(PackageInstruction::Exclude, value));
 

@@ -16,7 +16,7 @@
 #include "Util.h"
 
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#include "StdString.h"
 #include "TraceLog.h"
 
 namespace fs = boost::filesystem;
@@ -134,7 +134,7 @@ bool Util::DarkRadiantIsRunning()
 				GetModuleBaseName(hProcess, hMod, szProcessName, sizeof(szProcessName));
 
 				std::string processName(szProcessName);
-				boost::algorithm::to_lower(processName);
+				processName = stdext::to_lower_copy(processName);
 
 				if (processName == "darkradiant.exe")
 				{

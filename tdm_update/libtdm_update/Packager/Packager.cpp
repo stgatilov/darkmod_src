@@ -367,7 +367,7 @@ void Packager::CreateVersionInformation()
 				versionInfo->SetValue(memberSection, "crc", CRC::ToString(m->crc));
 				versionInfo->SetValue(memberSection, "filesize", std::to_string(m->filesize));
 
-				if (noCrcFiles.find(boost::algorithm::to_lower_copy(m->file.string())) != noCrcFiles.end())
+				if (noCrcFiles.find(stdext::to_lower_copy(m->file.string())) != noCrcFiles.end())
 				{
 					versionInfo->SetValue(memberSection, "allow_local_modifications", "1");
 				}
@@ -762,9 +762,9 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 
 		//stgatilov: some files must be stored uncompressed, e.g. ROQ and OGG
 		ZipFileWrite::CompressionMethod method = ZipFileWrite::DEFLATE_MAX;
-		auto ext = fs::extension(sourceFile);
+		std::string ext = fs::extension(sourceFile);
 		for (int i = 0; i < PK4_UNCOMPRESSED_EXTENSIONS_COUNT; i++)
-			if (boost::iequals(ext, std::string(".") + PK4_UNCOMPRESSED_EXTENSIONS[i]))
+			if (stdext::to_lower_copy(ext) == stdext::to_lower_copy(std::string(".") + PK4_UNCOMPRESSED_EXTENSIONS[i]))
 				method = ZipFileWrite::STORE;
 
 		TraceLog::WriteLine(LOG_VERBOSE,
@@ -805,7 +805,7 @@ void Packager::CreatePackage()
 				if (threads[threadNum] == NULL || threads[threadNum]->done())
 				{
 					// Allocate a new thread using the package being pointed at
-					threads[threadNum].reset(new ExceptionSafeThread(boost::bind(&Packager::ProcessPackageElement, this, i)));
+					threads[threadNum].reset(new ExceptionSafeThread(std::bind(&Packager::ProcessPackageElement, this, i)));
 
 					// Next candidate
 					++i;

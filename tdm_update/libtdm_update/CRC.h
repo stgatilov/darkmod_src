@@ -22,8 +22,7 @@
 #include <cstdio>
 #include <cstdint>
 
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string/predicate.hpp>
+#include "StdString.h"
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
@@ -49,7 +48,7 @@ public:
 
 		std::stringstream ss;
 
-		if (!boost::algorithm::starts_with(hexaStr, "0x"))
+		if (!stdext::starts_with(hexaStr, "0x"))
 		{
 			ss << ("0x" + hexaStr);
 		}

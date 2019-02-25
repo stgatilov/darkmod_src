@@ -16,6 +16,7 @@
 #pragma once
 
 #include <regex>
+#include "../StdString.h"
 #include "../ProgramOptions.h"
 
 namespace tdm
@@ -55,7 +56,7 @@ public:
 			return; // nothing to do
 		}
 
-		if (boost::algorithm::ends_with(proxyStr, "/"))
+		if (stdext::ends_with(proxyStr, "/"))
 		{
 			proxyStr = proxyStr.substr(proxyStr.length() - 1);
 		}
@@ -83,7 +84,7 @@ public:
 				// Split the username and password
 				std::vector<std::string> parts;
 				std::string userPassStr = matches[4].str();
-				boost::algorithm::split(parts, userPassStr, boost::algorithm::is_any_of(":"));
+				stdext::split(parts, userPassStr, ":");
 
 				if (parts.size() == 2)
 				{

@@ -26,7 +26,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#include "../StdString.h"
 
 namespace tdm
 {
@@ -290,11 +290,11 @@ std::list<fs::path> ZipFileRead::ExtractAllFilesTo(const fs::path& destPath,
 
 		std::string filename = filenameBuf;
 
-		if (ignoreList.find(boost::algorithm::to_lower_copy(filename)) == ignoreList.end())
+		if (ignoreList.find(stdext::to_lower_copy(filename)) == ignoreList.end())
 		{
 			// File not on hard ignore list, check for "ignore if exists"
 			
-			if (ignoreIfExisting.find(boost::algorithm::to_lower_copy(filename)) != ignoreIfExisting.end() &&
+			if (ignoreIfExisting.find(stdext::to_lower_copy(filename)) != ignoreIfExisting.end() &&
 				fs::exists(destPath / filename))
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, "Ignoring file, as destination exists: " + filename);

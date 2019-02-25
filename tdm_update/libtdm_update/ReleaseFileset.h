@@ -107,7 +107,7 @@ struct ReleaseFile
 	{
 		for (std::set<ReleaseFile>::const_iterator m = members.begin(); m != members.end(); ++m)
 		{
-			if (boost::algorithm::to_lower_copy(m->file.string()) == boost::algorithm::to_lower_copy(executable))
+			if (stdext::to_lower_copy(m->file.string()) == stdext::to_lower_copy(executable))
 			{
 				return true;
 			}
@@ -149,7 +149,7 @@ public:
 				
 			void VisitSection(const IniFile& iniFile, const std::string& section)
 			{
-				if (boost::algorithm::istarts_with(section, "File"))
+				if (stdext::istarts_with(section, "File"))
 				{
 					std::string filename = section.substr(5);
 
@@ -159,8 +159,8 @@ public:
 					result.first->second.crc = CRC::ParseFromString(iniFile.GetValue(section, "crc"));
 					result.first->second.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(section, "size")));
 
-					if (boost::algorithm::iends_with(filename, "pk4") || 
-						boost::algorithm::iends_with(filename, "zip"))
+					if (stdext::iends_with(filename, "pk4") || 
+						stdext::iends_with(filename, "zip"))
 					{
 						result.first->second.isArchive = true;
 					}
@@ -169,7 +169,7 @@ public:
 						result.first->second.isArchive = false;
 					}
 				}
-				else if (boost::algorithm::istarts_with(section, "Member"))
+				else if (stdext::istarts_with(section, "Member"))
 				{
 					std::string combo = section.substr(7);
 
@@ -219,7 +219,7 @@ public:
 
 			fs::path relativePath = File::GetRelativePath(file, folder);
 
-			if (ignoreList.find(boost::to_lower_copy(filename)) != ignoreList.end())
+			if (ignoreList.find(stdext::to_lower_copy(filename)) != ignoreList.end())
 			{
 				TraceLog::WriteLine(LOG_STANDARD, "Ignoring file: " + relativePath.string());
 				continue;

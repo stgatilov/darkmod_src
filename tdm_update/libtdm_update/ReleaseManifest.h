@@ -211,13 +211,13 @@ private:
 
 		// Construct the starting path
 		fs::path inclusionPath = repositoryRoot;
-		inclusionPath /= boost::algorithm::trim_copy(inclusion.value);
+		inclusionPath /= stdext::trim_copy(inclusion.value);
 
 		// Add the inclusion path itself
 		std::string relativeInclusionPath = inclusionPath.string().substr(repositoryRoot.string().length() + 1);
 
 		// Cut off the trailing slash
-		if (boost::algorithm::ends_with(relativeInclusionPath, "/"))
+		if (stdext::ends_with(relativeInclusionPath, "/"))
 		{
 			relativeInclusionPath = relativeInclusionPath.substr(0, relativeInclusionPath.length() - 1);
 		}
@@ -275,7 +275,7 @@ private:
 		for (fs::directory_iterator i = fs::directory_iterator(dir);
 			 i != fs::directory_iterator(); ++i)
 		{
-			if (boost::algorithm::ends_with(i->path().string(), ".svn"))
+			if (stdext::ends_with(i->path().string(), ".svn"))
 			{
 				// Prevent adding .svn folders
 				continue;
@@ -335,7 +335,7 @@ private:
 			beg += 2; // skip leading ./
 		}
 
-		push_back(ManifestFile(boost::algorithm::trim_copy(std::string(beg, end))));
+		push_back(ManifestFile(stdext::trim_copy(std::string(beg, end))));
 	}
 
 	void AddDestFile(char const* beg, char const* end)
@@ -350,7 +350,7 @@ private:
 		// Set the destination on the last element
 		assert(!empty());
 
-		back().destFile = boost::algorithm::trim_copy(std::string(beg, end));
+		back().destFile = stdext::trim_copy(std::string(beg, end));
 	}
 
 };

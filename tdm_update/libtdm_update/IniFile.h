@@ -21,7 +21,7 @@
 #include <istream>
 #include <boost/filesystem.hpp>
 #include <memory>
-#include <boost/algorithm/string/predicate.hpp>
+#include "StdString.h"
 
 namespace fs = boost::filesystem;
 
@@ -43,7 +43,7 @@ private:
 	{
 		bool operator()(const std::string& s1, const std::string& s2) const
 		{
-			return boost::algorithm::ilexicographical_compare(s1, s2);
+			return stdext::to_lower_copy(s1) < stdext::to_lower_copy(s2);
 		}
 	};
 
@@ -52,7 +52,7 @@ private:
 	{
 		bool operator()(const KeyValuePair& kvp1, const KeyValuePair& kvp2) const
 		{
-			return boost::algorithm::lexicographical_compare(kvp1.first, kvp2.first);
+			return kvp1.first < kvp2.first;
 		}
 	};
 

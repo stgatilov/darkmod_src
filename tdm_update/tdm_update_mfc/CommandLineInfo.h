@@ -17,7 +17,6 @@
 
 #include "stdafx.h"
 #include "Updater/UpdaterOptions.h"
-#include <boost/algorithm/string/predicate.hpp>
 
 namespace tdm
 {
@@ -53,20 +52,20 @@ public:
 		{
 			options.Set("noselfupdate");
 		}
-		else if (boost::algorithm::starts_with(arg, "-proxy="))
+		else if (stdext::starts_with(arg, "-proxy="))
 		{
 			options.Set("proxy", arg.substr(7));
 		}
-		else if (boost::algorithm::starts_with(arg, "-targetdir="))
+		else if (stdext::starts_with(arg, "-targetdir="))
 		{
 			std::string value = arg.substr(11);
 
-			if (boost::algorithm::starts_with(value, "\""))
+			if (stdext::starts_with(value, "\""))
 			{
 				value = value.substr(1);
 			}
 
-			if (boost::algorithm::ends_with(value, "\""))
+			if (stdext::ends_with(value, "\""))
 			{
 				value = value.substr(0, value.length() - 1);
 			}

@@ -149,7 +149,7 @@ public:
 				}
 			}
 		}
-		else if (boost::algorithm::starts_with(sectionName, "Change "))
+		else if (stdext::starts_with(sectionName, "Change "))
 		{
 			std::string pk4File = sectionName.substr(7);
 

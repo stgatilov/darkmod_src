@@ -16,9 +16,7 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#include "StdString.h"
 #include "TraceLog.h"
 
 namespace fs = boost::filesystem;
@@ -34,9 +32,9 @@ public:
 	{
 		std::string fullString = absolute.string();
 
-		if (boost::algorithm::starts_with(fullString, root.string()))
+		if (stdext::starts_with(fullString, root.string()))
 		{
-			boost::algorithm::replace_first(fullString, root.string(), "");
+			fullString = fullString.substr(root.string().size());
 
 			if (fullString.length() > 0 && (fullString[0] == '/' || fullString[0] == '\\'))
 			{
@@ -53,7 +51,7 @@ public:
 	// True if the given file has ending PK4 or ZIP
 	static bool IsArchive(const fs::path& file)
 	{
-		std::string extension = boost::to_lower_copy(fs::extension(file));
+		std::string extension = stdext::to_lower_copy(fs::extension(file));
 
 		return (extension == ".pk4" || extension == ".zip");
 	}
@@ -61,7 +59,7 @@ public:
 	// True if the given file has ending ZIP
 	static bool IsZip(const fs::path& file)
 	{
-		std::string extension = boost::to_lower_copy(fs::extension(file));
+		std::string extension = stdext::to_lower_copy(fs::extension(file));
 
 		return extension == ".zip";
 	}
@@ -69,7 +67,7 @@ public:
 	// True if the given file has ending PK4
 	static bool IsPK4(const fs::path& file)
 	{
-		std::string extension = boost::to_lower_copy(fs::extension(file));
+		std::string extension = stdext::to_lower_copy(fs::extension(file));
 
 		return extension == ".pk4";
 	}
@@ -77,7 +75,7 @@ public:
 	// Predicate to check whether the given file is a compressed one and whether it makes sense to deflate it at all
 	static bool IsCompressed(const fs::path& file)
 	{
-		std::string extension = boost::to_lower_copy(fs::extension(file));
+		std::string extension = stdext::to_lower_copy(fs::extension(file));
 
 		return extension == ".pk4" || extension == ".jpg" || extension == ".ogg" ||
 			   extension == ".zip";

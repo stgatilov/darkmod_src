@@ -67,7 +67,7 @@ ConsoleUpdater::ConsoleUpdater(int argc, char* argv[]) :
 
 ConsoleUpdater::~ConsoleUpdater()
 {
-	_abortSignalHandler = boost::function<void(int)>();
+	_abortSignalHandler = std::function<void(int)>();
 }
 
 void ConsoleUpdater::Run()
@@ -524,7 +524,7 @@ void ConsoleUpdater::OnFinishDifferentialUpdate(const DifferentialUpdateInfo& in
 {
 }
 
-boost::function<void(int)> ConsoleUpdater::_abortSignalHandler;
+std::function<void(int)> ConsoleUpdater::_abortSignalHandler;
 
 } // namespace
 

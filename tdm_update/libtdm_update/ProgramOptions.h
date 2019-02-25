@@ -16,9 +16,7 @@
 #pragma once
 
 #include <boost/program_options.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include "StdString.h"
 
 #include "Http/HttpConnection.h"
 #include "TraceLog.h"
@@ -73,7 +71,7 @@ public:
 		for (std::vector<std::string>::iterator i = _cmdLineArgs.begin(); 
 			 i != _cmdLineArgs.end(); ++i)
 		{
-			if (boost::algorithm::starts_with(*i, "--" + key))
+			if (stdext::starts_with(*i, "--" + key))
 			{
 				_cmdLineArgs.erase(i);
 				break;

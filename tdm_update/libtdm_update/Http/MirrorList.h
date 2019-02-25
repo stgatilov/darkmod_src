@@ -19,9 +19,8 @@
 #include "../TraceLog.h"
 
 #include <map>
-#include <boost/algorithm/string/predicate.hpp>
+#include "../StdString.h"
 #include <string>
-#include <boost/algorithm/string/erase.hpp> // grayman #3208
 
 namespace tdm
 {
@@ -46,10 +45,11 @@ struct Mirror
 		weight(weight_)
 	{
 		// grayman #3208 - remove all spaces in the url
-		boost::algorithm::ierase_all(url, " ");
+		auto end_iter = std::remove(url.begin(), url.end(), ' ');
+		url.erase(end_iter, url.end());
 
 		// url should terminate with "/"
-		if (!boost::algorithm::ends_with(url, "/"))
+		if (!stdext::ends_with(url, "/"))
 		{
 			url += "/";
 		}
@@ -80,7 +80,7 @@ public:
 
 	void VisitSection(const IniFile& iniFile, const std::string& sectionName)
 	{
-		if (!boost::algorithm::istarts_with(sectionName, "Mirror "))
+		if (!stdext::istarts_with(sectionName, "Mirror "))
 		{
 			return; // ignore non-Mirror sections
 		}

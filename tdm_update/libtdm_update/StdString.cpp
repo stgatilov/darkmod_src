@@ -15,6 +15,29 @@
 
 #include "StdString.h"
 
+static char mytolower(char ch) {
+	if (ch >= 'A' && ch <= 'Z')
+		return ch + ('a' - 'A');
+	return ch;
+}
+static bool is_part_of(const std::string &text, const std::string &part, bool caseInsensitive, bool asSuffix) {
+	int n = text.size(), k = part.size();
+	if (k > n)
+		return false;
+	for (int i = 0; i < k; i++) {
+		char partCh = part[i];
+		char textCh = (asSuffix ? text[n - k + i] : text[i]);
+		if (caseInsensitive) {
+			partCh = mytolower(partCh);
+			textCh = mytolower(textCh);
+		}
+		if (partCh != textCh)
+			return false;
+	}
+	return true;
+}
+
+
 namespace stdext {
 	void split(std::vector<std::string> &tokens, const std::string &text, const char *delimiters) {
 		tokens.clear();
@@ -53,11 +76,10 @@ namespace stdext {
 		pos = text.find_last_not_of(delimiters) + 1;
 		text.erase(text.begin() + pos, text.end());
 	}
-
-	char mytolower(char ch) {
-		if (ch >= 'A' && ch <= 'Z')
-			return ch + ('a' - 'A');
-		return ch;
+	std::string trim_copy(const std::string &text) {
+		std::string res = text;
+		trim(res);
+		return res;
 	}
 
 	std::string to_lower_copy(const std::string &text) {
@@ -67,15 +89,29 @@ namespace stdext {
 		return data;
 	}
 
+	bool ends_with(const std::string &text, const std::string &suffix) {
+		return is_part_of(text, suffix, false, true);
+	}
 	bool iends_with(const std::string &text, const std::string &suffix) {
-		int n = text.size(), k = suffix.size();
-		if (k > n)
-			return false;
-		for (int i = 0; i < k; i++) {
-			char tt = text[n - k + i], ss = suffix[i];
-			if (mytolower(tt) != mytolower(ss))
-				return false;
+		return is_part_of(text, suffix, true, true);
+	}
+	bool starts_with(const std::string &text, const std::string &prefix) {
+		return is_part_of(text, prefix, false, false);
+	}
+	bool istarts_with(const std::string &text, const std::string &prefix) {
+		return is_part_of(text, prefix, true, false);
+	}
+
+	std::string replace_all_copy(const std::string &text, const std::string &from, const std::string &to) {
+		std::string res = text;
+		size_t pos = 0;
+		while (1) {
+			pos = res.find(from, pos);
+			if (pos == std::string::npos)
+				break;
+			res.replace(pos, from.length(), to);
+			pos += to.length();
 		}
-		return true;
+		return res;
 	}
 }

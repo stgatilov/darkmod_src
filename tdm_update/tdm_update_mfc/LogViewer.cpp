@@ -19,7 +19,7 @@
 #include "stdafx.h"
 #include "tdm_update_mfc.h"
 #include "LogViewer.h"
-#include <boost/algorithm/string/replace.hpp>
+#include "StdString.h"
 
 // LogViewer dialog
 
@@ -64,7 +64,7 @@ void LogViewer::WriteLog(LogClass lc, const std::string& str)
 	_logView.SetSel(nLength, nLength);
 
 	// replace the \n character with \r\n for multiline edits
-	std::string tweaked = boost::algorithm::replace_all_copy(str, "\n", "\r\n");
+	std::string tweaked = stdext::replace_all_copy(str, "\n", "\r\n");
 
 	_logView.ReplaceSel(CString(tweaked.c_str()));
 }

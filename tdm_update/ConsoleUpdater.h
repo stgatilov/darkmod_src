@@ -53,7 +53,7 @@ private:
 	// Exit flag
 	volatile bool _done;
 
-	static boost::function<void(int)> _abortSignalHandler;
+	static std::function<void(int)> _abortSignalHandler;
 
 	// Most recent progress info
 	ProgressInfo _info;

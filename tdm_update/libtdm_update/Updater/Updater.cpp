@@ -42,7 +42,7 @@ namespace updater
 Updater::Updater(const UpdaterOptions& options, const fs::path& executable) :
 	_options(options),
 	_downloadManager(new DownloadManager),
-	_executable(boost::algorithm::to_lower_copy(executable.string())), // convert that file to lower to be sure
+	_executable(stdext::to_lower_copy(executable.string())), // convert that file to lower to be sure
 	_updatingUpdater(false)
 {
 	// Set up internet connectivity
@@ -248,7 +248,7 @@ void Updater::DetermineLocalVersion()
 			
 			fs::path candidate = GetTargetPath() / f->second.file;
 
-			if (boost::algorithm::to_lower_copy(candidate.leaf().string()) == boost::algorithm::to_lower_copy(_executable.leaf().string()))
+			if (stdext::to_lower_copy(candidate.leaf().string()) == stdext::to_lower_copy(_executable.leaf().string()))
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Ignoring updater executable: %s.") % candidate.string()).str());
 				continue;
@@ -758,7 +758,7 @@ void Updater::PerformDifferentialUpdateStep()
 	{
 		NotifyFileProgress(f->file, CurFileInfo::Add, static_cast<double>(curOperation++) / totalFileOperations);
 
-		if (_ignoreList.find(boost::algorithm::to_lower_copy(f->file.string())) != _ignoreList.end())
+		if (_ignoreList.find(stdext::to_lower_copy(f->file.string())) != _ignoreList.end())
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Ignoring non-archive file: %s") % f->file.string()).str());
 			continue;
@@ -775,7 +775,7 @@ void Updater::PerformDifferentialUpdateStep()
 	{
 		NotifyFileProgress(f->file, CurFileInfo::Delete, static_cast<double>(curOperation++) / totalFileOperations);
 
-		if (_ignoreList.find(boost::algorithm::to_lower_copy(f->file.string())) != _ignoreList.end())
+		if (_ignoreList.find(stdext::to_lower_copy(f->file.string())) != _ignoreList.end())
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Ignoring non-archive file: %s") % f->file.string()).str());
 			continue;
@@ -792,7 +792,7 @@ void Updater::PerformDifferentialUpdateStep()
 	{
 		NotifyFileProgress(f->file, CurFileInfo::Replace, static_cast<double>(curOperation++) / totalFileOperations);
 
-		if (_ignoreList.find(boost::algorithm::to_lower_copy(f->file.string())) != _ignoreList.end())
+		if (_ignoreList.find(stdext::to_lower_copy(f->file.string())) != _ignoreList.end())
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Ignoring non-archive file: %s") % f->file.string()).str());
 			continue;
@@ -1031,7 +1031,7 @@ bool Updater::CheckLocalFile(const fs::path& installPath, const ReleaseFile& rel
 	if (fs::exists(localFile))
 	{
 		// File exists, check ignore list
-		if (_ignoreList.find(boost::algorithm::to_lower_copy(releaseFile.file.string())) != _ignoreList.end())
+		if (_ignoreList.find(stdext::to_lower_copy(releaseFile.file.string())) != _ignoreList.end())
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "OK, file will not be updated. ");
 			return true; // ignore this file
@@ -1307,7 +1307,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 		// In Linux or Mac, mark *.linux files as executable after extraction
 		for (std::list<fs::path>::const_iterator i = extractedFiles.begin(); i != extractedFiles.end(); ++i)
 		{
-			std::string extension = boost::to_lower_copy(fs::extension(*i));
+			std::string extension = stdext::to_lower_copy(fs::extension(*i));
 
 			if (extension == ".linux" || extension == ".macosx")
 			{
@@ -1773,7 +1773,7 @@ void Updater::PostUpdateCleanup()
 	for (fs::directory_iterator i = fs::directory_iterator(GetTargetPath()); 
 		i != fs::directory_iterator(); )
 	{
-		if (boost::algorithm::starts_with(i->path().string(), TMP_FILE_PREFIX))
+		if (stdext::starts_with(i->path().string(), TMP_FILE_PREFIX))
 		{
 			File::Remove(*i++);
 		}
