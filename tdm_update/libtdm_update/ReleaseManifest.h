@@ -17,13 +17,9 @@
 
 #include <list>
 #include <fstream>
-#include <boost/spirit/include/classic.hpp>
-#include <boost/bind.hpp>
 
 #include "PackageInstructions.h"
 #include "SvnClient.h"
-
-namespace bs = boost::spirit::classic;
 
 namespace tdm
 {
@@ -100,50 +96,39 @@ public:
 	void LoadFromString(const std::string& str)
 	{
 		clear();
+		auto npos = std::string::npos;
 
-		// Comment starting character: #
-		bs::rule<> char_start_comment = bs::ch_p('#');
+		//split file into non-empty lines
+		std::vector<std::string> lines;
+		stdext::split(lines, str, "\r\n");
 
-		// Define blank characters
-		bs::rule<> blanks_p = * bs::blank_p;
+		for (std::string line : lines) {
+			//remove comment (if present)
+			size_t commentStart = line.find_first_of("#");
+			if (commentStart != npos)
+				line.resize(commentStart);
 
-		// Define comment lines
-		bs::rule<> l_comment = blanks_p >> char_start_comment >> *bs::print_p >> bs::eol_p; 
+			//remove spaces at both ends
+			stdext::trim(line);
+			if (line.empty())
+				continue;
 
-		// Define empty lines
-		bs::rule<> l_empty = blanks_p >> bs::eol_p; 
-
-		// A filename
-		bs::rule<> filename_ident = +(bs::print_p - bs::ch_p('='));
-
-		// The relocator => 
-		bs::rule<> relocator_ident = bs::ch_p('=') >> bs::ch_p('>');
-
-		// Define relocation rules
-		bs::rule<> l_filename = 
-					blanks_p >> 
-					filename_ident[ boost::bind(&ReleaseManifest::AddSourceFile, this, _1, _2) ] >> 
-					blanks_p >> 
-					*relocator_ident >> 
-					blanks_p >> 
-					(*filename_ident) [ boost::bind(&ReleaseManifest::AddDestFile, this, _1, _2) ] >>
-					blanks_p >> 
-					bs::eol_p
-		;
-
-		bs::rule<> lines = l_comment | l_filename | l_empty;
-		bs::rule<> manifestDef =  bs::lexeme_d [ * lines ] ;
-
-		bs::parse_info<> info = bs::parse(str.c_str(), manifestDef);
-
-		if (info.full)
-		{
-			TraceLog::WriteLine(LOG_VERBOSE, "Successfully parsed the whole manifest.");
+			//try to split into filename and replacement
+			auto arrow = line.find("=>");
+			if (arrow == npos) {
+				AddSourceFile(line);
+			}
+			else {
+				std::string leftS = line.substr(0, arrow);
+				std::string rightS = line.substr(arrow + 2);
+				stdext::trim(leftS);
+				stdext::trim(rightS);
+				AddSourceFile(leftS);
+				AddDestFile(rightS);
+			}
 		}
-		else
-		{
-			TraceLog::WriteLine(LOG_VERBOSE, "Could not fully parse the manifest.");
-		}
+
+		TraceLog::WriteLine(LOG_VERBOSE, "Parsed the manifest.");
 	}
 
 	/**
@@ -325,31 +310,31 @@ private:
 		return itemsAdded;
 	}
 
-	void AddSourceFile(char const* beg, char const* end)
+	void AddSourceFile(std::string token)
 	{
-		if (end - beg < 2) return; // skip strings smaller than 2 chars
+		if (token.size() < 2) return; // skip strings smaller than 2 chars
 
-		if (beg[0] == '.' && beg[1] == '/') 
+		if (token[0] == '.' && token[1] == '/') 
 		{
-			beg += 2; // skip leading ./
+			token.erase(0, 2); // skip leading ./
 		}
 
-		push_back(ManifestFile(stdext::trim_copy(std::string(beg, end))));
+		push_back(ManifestFile(stdext::trim_copy(token)));
 	}
 
-	void AddDestFile(char const* beg, char const* end)
+	void AddDestFile(std::string token)
 	{
-		if (end - beg < 2) return; // skip strings smaller than 2 chars
+		if (token.size() < 2) return; // skip strings smaller than 2 chars
 
-		if (beg[0] == '.' && beg[1] == '/') 
+		if (token[0] == '.' && token[1] == '/') 
 		{
-			beg += 2; // skip leading ./
+			token.erase(0, 2); // skip leading ./
 		}
 
 		// Set the destination on the last element
 		assert(!empty());
 
-		back().destFile = stdext::trim_copy(std::string(beg, end));
+		back().destFile = stdext::trim_copy(token);
 	}
 
 };
