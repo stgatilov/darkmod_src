@@ -113,6 +113,7 @@
     <ClInclude Include="Http\MirrorDownload.h" />
     <ClInclude Include="Http\MirrorList.h" />
     <ClInclude Include="StdFilesystem.h" />
+    <ClInclude Include="StdFormat.h" />
     <ClInclude Include="StdString.h" />
     <ClInclude Include="ThreadControl.h" />
     <ClInclude Include="Zip\Zip.h" />

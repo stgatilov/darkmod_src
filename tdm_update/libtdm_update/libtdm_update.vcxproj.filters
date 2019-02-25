@@ -132,5 +132,8 @@
     <ClInclude Include="StdFilesystem.h">
       <Filter>Stubs</Filter>
     </ClInclude>
+    <ClInclude Include="StdFormat.h">
+      <Filter>Stubs</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
