@@ -628,7 +628,7 @@ void FB_Clear() {
 
 void EnterPrimary() {
 	if ( r_softShadowsQuality.GetBool() ) {
-		r_useGLSL.SetBool( true );
+		r_useGLSL = true;
 	}
 	depthCopiedThisView = false;
 

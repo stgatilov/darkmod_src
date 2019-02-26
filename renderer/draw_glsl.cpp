@@ -651,7 +651,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 	common->Printf( "---------- R_ReloadGLSLPrograms_f -----------\n" );
 
 	if ( !R_ReloadGLSLPrograms() ) {
-		r_useGLSL.SetBool( false );
+		r_useGLSL = false;
 		common->Printf( "GLSL shaders failed to init.\n" );
 		return;
 	}

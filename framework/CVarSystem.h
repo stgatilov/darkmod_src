@@ -189,7 +189,8 @@ class idCVarBool : idCVar {
 public:
 	idCVarBool( const char *name, const char *value, int flags, const char *description )
 		: idCVar( name, value, flags | CVAR_BOOL, description ) {}
-	operator bool() { return GetBool(); }
+	operator				bool() { return GetBool(); }
+	void operator			= ( bool newValue ) { SetBool( newValue ); }
 };
 
 ID_INLINE idCVar::idCVar( const char *name, const char *value, int flags, const char *description,

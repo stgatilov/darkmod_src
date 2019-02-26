@@ -52,7 +52,13 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		qglUniformMatrix4fv( cubeMapShader.modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
 		qglUniform3fv( cubeMapShader.viewOrigin, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
 	} else {
-		R_UseProgramARB( VPROG_ENVIRONMENT );
+		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+		qglEnableVertexAttribArray( 3 );
+		if ( r_useGLSL ) {
+			auto environmentShader = R_FindGLSLProgram( "environment" ); // TODO add this shader to R_ReloadGLSLPrograms 
+			qglUseProgram( environmentShader );							 // probably makes sense to merge environment with cubeMap
+		}  else
+			R_UseProgramARB( VPROG_ENVIRONMENT );
 	}
 }
 
@@ -111,8 +117,9 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableVertexAttribArray( 9 );
 			qglDisableVertexAttribArray( 10 );
 			qglUniform1f( cubeMapShader.reflective, 0 );
-			qglUseProgram( 0 );
 		}
+		qglDisableVertexAttribArray( 3 );
+		qglUseProgram( 0 );
 
 		// per-pixel reflection mapping without bump mapping
 		qglDisableVertexAttribArray( 2 );
@@ -1337,7 +1344,7 @@ void RB_STD_DrawView( void ) {
 		// fill the depth buffer and clear color buffer to black except on subviews
 		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
-		if ( r_useGLSL.GetBool() ) {
+		if ( r_useGLSL ) {
 			RB_GLSL_DrawInteractions();
 		} else {
 			RB_ARB2_DrawInteractions();

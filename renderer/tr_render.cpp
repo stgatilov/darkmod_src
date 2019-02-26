@@ -518,7 +518,7 @@ static void RB_SubmittInteraction( drawInteraction_t *din, bool multi = false ) 
 		din->specularImage = globalImages->blackImage;
 	}
 
-	if ( r_useGLSL.GetBool() ) {
+	if ( r_useGLSL ) {
 		if ( multi ) {
 			extern void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din );
 			RB_GLSL_DrawInteraction_MultiLight( din );
