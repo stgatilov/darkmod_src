@@ -619,7 +619,7 @@ filenames hardcoded here since they're not used elsewhere
 FIXME split the stencil and shadowmap interactions in separate shaders as the latter might not compile on DX10 and older hardware
 ==================
 */
-bool R_ReloadGLSLPrograms() { 
+ID_NOINLINE bool R_ReloadGLSLPrograms() { 
 	bool ok = true;
 	ok &= stencilInteractionShader.Load( "interaction" ); 
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
@@ -791,7 +791,7 @@ bool shaderProgram_t::Load( const char *fileName ) {
 	AttachShader( GL_GEOMETRY_SHADER, fileName );
 	AttachShader( GL_FRAGMENT_SHADER, fileName );
 	common->Printf( "\n" );
-	qglBindAttribLocation( program, 0, "attr_Position" );
+//	qglBindAttribLocation( program, 0, "attr_Position" );
 	qglBindAttribLocation( program, 2, "attr_Normal" );
 	qglBindAttribLocation( program, 3, "attr_Color" );
 	qglBindAttribLocation( program, 8, "attr_TexCoord" );

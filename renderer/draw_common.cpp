@@ -57,6 +57,10 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		if ( r_useGLSL ) {
 			auto environmentShader = R_FindGLSLProgram( "environment" ); // TODO add this shader to R_ReloadGLSLPrograms 
 			qglUseProgram( environmentShader );							 // probably makes sense to merge environment with cubeMap
+			auto viewOriginLocal = qglGetUniformLocation( environmentShader, "u_viewOriginLocal" );
+			idVec4 v;
+			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
+			qglUniform4fv( viewOriginLocal, 1, v.ToFloatPtr() );
 		}  else
 			R_UseProgramARB( VPROG_ENVIRONMENT );
 	}
