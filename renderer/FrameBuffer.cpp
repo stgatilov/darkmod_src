@@ -461,7 +461,7 @@ void CheckCreateShadow() {
 			qglGenFramebuffers( 1, &fboShadowAtlas );
 			qglBindFramebuffer( GL_FRAMEBUFFER, fboShadowAtlas );
 			GLuint depthTex = globalImages->shadowAtlas->texnum;
-			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
+			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
 			check( fboShadowAtlas );
 		}
