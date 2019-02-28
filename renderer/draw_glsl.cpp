@@ -791,7 +791,7 @@ bool shaderProgram_t::Load( const char *fileName ) {
 	AttachShader( GL_GEOMETRY_SHADER, fileName );
 	AttachShader( GL_FRAGMENT_SHADER, fileName );
 	common->Printf( "\n" );
-//	qglBindAttribLocation( program, 0, "attr_Position" );
+	qglBindAttribLocation( program, 0, "attr_Position" );
 	qglBindAttribLocation( program, 2, "attr_Normal" );
 	qglBindAttribLocation( program, 3, "attr_Color" );
 	qglBindAttribLocation( program, 8, "attr_TexCoord" );
