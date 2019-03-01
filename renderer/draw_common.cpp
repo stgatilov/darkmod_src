@@ -61,6 +61,17 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 			idVec4 v;
 			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
 			qglUniform4fv( viewOriginLocal, 1, v.ToFloatPtr() );
+
+			idMat4 modelView, projection;
+			memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
+			memcpy( projection.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( projection ) );
+			{
+				//TODO: query locations once
+				int locMV  = qglGetUniformLocation(environmentShader, "u_modelViewMatrix");
+				qglUniformMatrix4fv(locMV, 1, false, modelView.ToFloatPtr());
+				int locP   = qglGetUniformLocation(environmentShader, "u_projectionMatrix");
+				qglUniformMatrix4fv(locP, 1, false, projection.ToFloatPtr());
+			}
 		}  else
 			R_UseProgramARB( VPROG_ENVIRONMENT );
 	}
