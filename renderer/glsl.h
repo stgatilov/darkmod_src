@@ -83,7 +83,6 @@ extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 
-extern idCVar r_ambient_testadd;
 extern idCVarBool r_useGLSL;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );

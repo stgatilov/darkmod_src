@@ -437,7 +437,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	if ( ( pStage->drawStateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) == ( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) && color[3] <= 0 ) {
 		return;
 	}
-	const float zero[4] = { r_ambient_testadd.GetFloat(), r_ambient_testadd.GetFloat(), r_ambient_testadd.GetFloat(), 0 };
+	const float zero[4] = { 0, 0, 0, 0 };
 	static const float one[4] = { 1, 1, 1, 1 };
 	const float negOne[4] = { -color[0], -color[1], -color[2], -1 };
 
