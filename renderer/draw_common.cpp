@@ -52,8 +52,8 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		qglUniformMatrix4fv( cubeMapShader.modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
 		qglUniform3fv( cubeMapShader.viewOrigin, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
 	} else {
-		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglEnableVertexAttribArray( 3 );
+		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
+		qglDisableVertexAttribArray( 3 );
 		if ( r_useGLSL ) {
 			auto environmentShader = R_FindGLSLProgram( "environment" ); // TODO add this shader to R_ReloadGLSLPrograms 
 			qglUseProgram( environmentShader );							 // probably makes sense to merge environment with cubeMap

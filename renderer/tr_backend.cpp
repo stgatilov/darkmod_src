@@ -371,6 +371,9 @@ void GL_FloatColor( const float *color ) {
 		parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
 	}
 	qglColor4fv( parm );
+	//stgatilov: duplicate parameter to 3-rd vertex attribute
+	//needed for new GLSL shaders (e.g. environment.vs on glass materials)
+	qglVertexAttrib4fv(3, parm);
 }
 
 /*
