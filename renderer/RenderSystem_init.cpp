@@ -355,6 +355,43 @@ PFNGLDELETESHADERPROC						qglDeleteShader;
 PFNGLGETPROGRAMIVPROC						qglGetProgramiv;
 PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
 PFNGLBINDATTRIBLOCATIONPROC					qglBindAttribLocation;
+PFNGLVERTEXATTRIB1DPROC						qglVertexAttrib1d;
+PFNGLVERTEXATTRIB1DVPROC					qglVertexAttrib1dv;
+PFNGLVERTEXATTRIB1FPROC						qglVertexAttrib1f;
+PFNGLVERTEXATTRIB1FVPROC					qglVertexAttrib1fv;
+PFNGLVERTEXATTRIB1SPROC						qglVertexAttrib1s;
+PFNGLVERTEXATTRIB1SVPROC					qglVertexAttrib1sv;
+PFNGLVERTEXATTRIB2DPROC						qglVertexAttrib2d;
+PFNGLVERTEXATTRIB2DVPROC					qglVertexAttrib2dv;
+PFNGLVERTEXATTRIB2FPROC						qglVertexAttrib2f;
+PFNGLVERTEXATTRIB2FVPROC					qglVertexAttrib2fv;
+PFNGLVERTEXATTRIB2SPROC						qglVertexAttrib2s;
+PFNGLVERTEXATTRIB2SVPROC					qglVertexAttrib2sv;
+PFNGLVERTEXATTRIB3DPROC						qglVertexAttrib3d;
+PFNGLVERTEXATTRIB3DVPROC					qglVertexAttrib3dv;
+PFNGLVERTEXATTRIB3FPROC						qglVertexAttrib3f;
+PFNGLVERTEXATTRIB3FVPROC					qglVertexAttrib3fv;
+PFNGLVERTEXATTRIB3SPROC						qglVertexAttrib3s;
+PFNGLVERTEXATTRIB3SVPROC					qglVertexAttrib3sv;
+PFNGLVERTEXATTRIB4NBVPROC					qglVertexAttrib4Nbv;
+PFNGLVERTEXATTRIB4NIVPROC					qglVertexAttrib4Niv;
+PFNGLVERTEXATTRIB4NSVPROC					qglVertexAttrib4Nsv;
+PFNGLVERTEXATTRIB4NUBPROC					qglVertexAttrib4Nub;
+PFNGLVERTEXATTRIB4NUBVPROC					qglVertexAttrib4Nubv;
+PFNGLVERTEXATTRIB4NUIVPROC					qglVertexAttrib4Nuiv;
+PFNGLVERTEXATTRIB4NUSVPROC					qglVertexAttrib4Nusv;
+PFNGLVERTEXATTRIB4BVPROC					qglVertexAttrib4bv;
+PFNGLVERTEXATTRIB4DPROC						qglVertexAttrib4d;
+PFNGLVERTEXATTRIB4DVPROC					qglVertexAttrib4dv;
+PFNGLVERTEXATTRIB4FPROC						qglVertexAttrib4f;
+PFNGLVERTEXATTRIB4FVPROC					qglVertexAttrib4fv;
+PFNGLVERTEXATTRIB4IVPROC					qglVertexAttrib4iv;
+PFNGLVERTEXATTRIB4SPROC						qglVertexAttrib4s;
+PFNGLVERTEXATTRIB4SVPROC					qglVertexAttrib4sv;
+PFNGLVERTEXATTRIB4UBVPROC					qglVertexAttrib4ubv;
+PFNGLVERTEXATTRIB4UIVPROC					qglVertexAttrib4uiv;
+PFNGLVERTEXATTRIB4USVPROC					qglVertexAttrib4usv;
+
 
 // GL fence sync
 PFNGLFENCESYNCPROC						qglFenceSync;
@@ -549,6 +586,44 @@ static void R_CheckPortableExtensions( void ) {
 	qglGetProgramiv = ( PFNGLGETPROGRAMIVPROC )GLimp_ExtensionPointer( "glGetProgramiv" );
 	qglGetProgramInfoLog = ( PFNGLGETPROGRAMINFOLOGPROC )GLimp_ExtensionPointer( "glGetProgramInfoLog" );
 	qglBindAttribLocation = ( PFNGLBINDATTRIBLOCATIONPROC )GLimp_ExtensionPointer( "glBindAttribLocation" );
+
+	qglVertexAttrib1d = ( PFNGLVERTEXATTRIB1DPROC )GLimp_ExtensionPointer( "glVertexAttrib1d" );
+	qglVertexAttrib1dv = ( PFNGLVERTEXATTRIB1DVPROC )GLimp_ExtensionPointer( "glVertexAttrib1dv" );
+	qglVertexAttrib1f = ( PFNGLVERTEXATTRIB1FPROC )GLimp_ExtensionPointer( "glVertexAttrib1f" );
+	qglVertexAttrib1fv = ( PFNGLVERTEXATTRIB1FVPROC )GLimp_ExtensionPointer( "glVertexAttrib1fv" );
+	qglVertexAttrib1s = ( PFNGLVERTEXATTRIB1SPROC )GLimp_ExtensionPointer( "glVertexAttrib1s" );
+	qglVertexAttrib1sv = ( PFNGLVERTEXATTRIB1SVPROC )GLimp_ExtensionPointer( "glVertexAttrib1sv" );
+	qglVertexAttrib2d = ( PFNGLVERTEXATTRIB2DPROC )GLimp_ExtensionPointer( "glVertexAttrib2d" );
+	qglVertexAttrib2dv = ( PFNGLVERTEXATTRIB2DVPROC )GLimp_ExtensionPointer( "glVertexAttrib2dv" );
+	qglVertexAttrib2f = ( PFNGLVERTEXATTRIB2FPROC )GLimp_ExtensionPointer( "glVertexAttrib2f" );
+	qglVertexAttrib2fv = ( PFNGLVERTEXATTRIB2FVPROC )GLimp_ExtensionPointer( "glVertexAttrib2fv" );
+	qglVertexAttrib2s = ( PFNGLVERTEXATTRIB2SPROC )GLimp_ExtensionPointer( "glVertexAttrib2s" );
+	qglVertexAttrib2sv = ( PFNGLVERTEXATTRIB2SVPROC )GLimp_ExtensionPointer( "glVertexAttrib2sv" );
+	qglVertexAttrib3d = ( PFNGLVERTEXATTRIB3DPROC )GLimp_ExtensionPointer( "glVertexAttrib3d" );
+	qglVertexAttrib3dv = ( PFNGLVERTEXATTRIB3DVPROC )GLimp_ExtensionPointer( "glVertexAttrib3dv" );
+	qglVertexAttrib3f = ( PFNGLVERTEXATTRIB3FPROC )GLimp_ExtensionPointer( "glVertexAttrib3f" );
+	qglVertexAttrib3fv = ( PFNGLVERTEXATTRIB3FVPROC )GLimp_ExtensionPointer( "glVertexAttrib3fv" );
+	qglVertexAttrib3s = ( PFNGLVERTEXATTRIB3SPROC )GLimp_ExtensionPointer( "glVertexAttrib3s" );
+	qglVertexAttrib3sv = ( PFNGLVERTEXATTRIB3SVPROC )GLimp_ExtensionPointer( "glVertexAttrib3sv" );
+	qglVertexAttrib4Nbv = ( PFNGLVERTEXATTRIB4NBVPROC )GLimp_ExtensionPointer( "glVertexAttrib4Nbv" );
+	qglVertexAttrib4Niv = ( PFNGLVERTEXATTRIB4NIVPROC )GLimp_ExtensionPointer( "glVertexAttrib4Niv" );
+	qglVertexAttrib4Nsv = ( PFNGLVERTEXATTRIB4NSVPROC )GLimp_ExtensionPointer( "glVertexAttrib4Nsv" );
+	qglVertexAttrib4Nub = ( PFNGLVERTEXATTRIB4NUBPROC )GLimp_ExtensionPointer( "glVertexAttrib4Nub" );
+	qglVertexAttrib4Nubv = ( PFNGLVERTEXATTRIB4NUBVPROC )GLimp_ExtensionPointer( "glVertexAttrib4Nubv" );
+	qglVertexAttrib4Nuiv = ( PFNGLVERTEXATTRIB4NUIVPROC )GLimp_ExtensionPointer( "glVertexAttrib4Nuiv" );
+	qglVertexAttrib4Nusv = ( PFNGLVERTEXATTRIB4NUSVPROC )GLimp_ExtensionPointer( "glVertexAttrib4Nusv" );
+	qglVertexAttrib4bv = ( PFNGLVERTEXATTRIB4BVPROC )GLimp_ExtensionPointer( "glVertexAttrib4bv" );
+	qglVertexAttrib4d = ( PFNGLVERTEXATTRIB4DPROC )GLimp_ExtensionPointer( "glVertexAttrib4d" );
+	qglVertexAttrib4dv = ( PFNGLVERTEXATTRIB4DVPROC )GLimp_ExtensionPointer( "glVertexAttrib4dv" );
+	qglVertexAttrib4f = ( PFNGLVERTEXATTRIB4FPROC )GLimp_ExtensionPointer( "glVertexAttrib4f" );
+	qglVertexAttrib4fv = ( PFNGLVERTEXATTRIB4FVPROC )GLimp_ExtensionPointer( "glVertexAttrib4fv" );
+	qglVertexAttrib4iv = ( PFNGLVERTEXATTRIB4IVPROC )GLimp_ExtensionPointer( "glVertexAttrib4iv" );
+	qglVertexAttrib4s = ( PFNGLVERTEXATTRIB4SPROC )GLimp_ExtensionPointer( "glVertexAttrib4s" );
+	qglVertexAttrib4sv = ( PFNGLVERTEXATTRIB4SVPROC )GLimp_ExtensionPointer( "glVertexAttrib4sv" );
+	qglVertexAttrib4ubv = ( PFNGLVERTEXATTRIB4UBVPROC )GLimp_ExtensionPointer( "glVertexAttrib4ubv" );
+	qglVertexAttrib4uiv = ( PFNGLVERTEXATTRIB4UIVPROC )GLimp_ExtensionPointer( "glVertexAttrib4uiv" );
+	qglVertexAttrib4usv = ( PFNGLVERTEXATTRIB4USVPROC )GLimp_ExtensionPointer( "glVertexAttrib4usv" );
+
 
 	bool hasArbFramebuffer = R_CheckExtension( "GL_ARB_framebuffer_object", 3.0 );
 	if ( hasArbFramebuffer ) {
