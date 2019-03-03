@@ -182,7 +182,11 @@ class idCVarInt : idCVar {
 public:
 	idCVarInt( const char *name, const char *value, int flags, const char *description )
 		: idCVar( name, value, flags | CVAR_INTEGER, description ) {}
-	operator int() { return GetInteger(); }
+	operator				int() { return GetInteger(); }
+	void operator			= ( int newValue ) { SetInteger( newValue ); }
+	using idCVar::SetModified;
+	using idCVar::IsModified;
+	using idCVar::ClearModified;
 };
 
 class idCVarBool : idCVar {

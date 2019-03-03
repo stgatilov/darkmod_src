@@ -950,7 +950,7 @@ void GLimp_SwapBuffers( void ) {
 	if ( r_swapIntervalTemp.IsModified() ) {
 		r_swapIntervalTemp.ClearModified();
 		if ( wglSwapIntervalEXT ) {
-			wglSwapIntervalEXT( r_swapIntervalTemp.GetInteger() );
+			wglSwapIntervalEXT( r_swapIntervalTemp );
 		}
 	}
 	qwglSwapBuffers( win32.hDC );

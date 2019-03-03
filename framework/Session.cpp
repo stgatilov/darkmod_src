@@ -2969,14 +2969,15 @@ void idSessionLocal::Frame() {
 
 	gameTicsToRun = 0;
 	
-	if (!mapSpawned || guiActive) {
+	if ( !mapSpawned || guiActive ) {
 		if ( !com_asyncInput.GetBool() ) {
 			// early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
 			usercmdGen->GetDirectUsercmd();
 		}
-		r_swapIntervalTemp.SetInteger( 1 );
+		r_swapIntervalTemp = 1;
 	} else
-		r_swapIntervalTemp.SetInteger( r_swapInterval.GetInteger() );
+		if ( r_swapIntervalTemp ^ r_swapInterval ) // avoid useless hassle
+			r_swapIntervalTemp = r_swapInterval;
 
 	if ( !mapSpawned ) {
 		return;
