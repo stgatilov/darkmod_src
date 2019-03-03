@@ -22,6 +22,7 @@
 
 import sys, os, time, commands, re, pickle, StringIO, commands, pdb, string
 import SCons
+import scons_utils
 
 # choose configuration variables which should be saved between runs
 # ( we handle all those as strings )
@@ -236,27 +237,15 @@ Export( 'GLOBALS ' + GLOBALS )
 VariantDir( g_build, '.', duplicate = 0 )
 Export( 'GLOBALS ' + GLOBALS )
 
-def executable_name(base_name):
-	if g_os == 'Linux':
-		if TARGET_ARCH == 'x86':
-			return base_name + '.linux'
-		elif TARGET_ARCH == 'x64':
-			return base_name + '.linux64'
-	elif g_os == 'FreeBSD':
-		return base_name + '.fbsd'
-	elif g_os == 'MacOSX':
-		return base_name + '.macosx'
-	return base_name
-
 # Build the updater
 tdm_update = SConscript('SConscript.tdm_update')
 # Specify executable
-InstallAs( '#' + executable_name('tdm_update'), tdm_update )
+InstallAs( '#' + scons_utils.ExecutableName('tdm_update', g_os, TARGET_ARCH), tdm_update )
 
 # Build the packager
 tdm_package = SConscript('SConscript.tdm_package')
 # Specify executable
-InstallAs( '#' + executable_name('tdm_package'), tdm_package )
+InstallAs( '#' + scons_utils.ExecutableName('tdm_package', g_os, TARGET_ARCH), tdm_package )
 
 # end targets ------------------------------------
 

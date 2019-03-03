@@ -21,18 +21,13 @@
 # Author: greebo
 
 import sys, os, string
+import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
-def BuildList( s_prefix, s_string ):
-	s_list = string.split( s_string )
-	for i in range( len( s_list ) ):
-		s_list[ i ] = s_prefix + '/' + s_list[ i ]
-	return s_list
-
 # Master list of source files to compile
-tdm_package_list = BuildList('tdm_package', 'tdm_package.cpp')
+tdm_package_list = scons_utils.BuildList('tdm_package', 'tdm_package.cpp')
 
 local_env = g_env.Clone()
 local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtual-dtor' ])
@@ -69,5 +64,5 @@ elif g_os == 'Linux':
 minizip_list = SConscript( 'SConscript.minizip' )
 libtdm_update_list = SConscript( 'SConscript.libtdm_update' )
 
-ret = local_env.Program(target = 'tdm_packager', source = tdm_package_list + minizip_list + libtdm_update_list)
+ret = local_env.Program(target = 'package', source = tdm_package_list + minizip_list + libtdm_update_list)
 Return( 'ret' )

@@ -17,12 +17,7 @@
 #*****************************************************************************
 
 import string
-
-def BuildList( s_prefix, s_string ):
-	s_list = string.split( s_string )
-	for i in range( len( s_list ) ):
-		s_list[ i ] = s_prefix + '/' + s_list[ i ]
-	return s_list
+import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
@@ -47,10 +42,7 @@ libtdm_update_string = ' \
 	Http/MirrorDownload.cpp \
 	Zip/Zip.cpp'
 
-libtdm_update_list = BuildList( '', libtdm_update_string )
-
-for i in range( len( libtdm_update_list ) ):
-	libtdm_update_list[ i ] = './libtdm_update/' + libtdm_update_list[ i ]
+libtdm_update_list = scons_utils.BuildList( 'libtdm_update', libtdm_update_string )
 
 local_env = g_env.Clone()
 

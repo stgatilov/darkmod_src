@@ -17,12 +17,7 @@
 #*****************************************************************************
 
 import string
-
-def BuildList( s_prefix, s_string ):
-	s_list = string.split( s_string )
-	for i in range( len( s_list ) ):
-		s_list[ i ] = s_prefix + '/' + s_list[ i ]
-	return s_list
+import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
@@ -48,10 +43,7 @@ ziploader_string = ' \
 	minizip/unzip.c \
 	minizip/zip.c'
 
-ziploader_list = BuildList( '', ziploader_string )
-
-for i in range( len( ziploader_list ) ):
-	ziploader_list[ i ] = './../lib/' + ziploader_list[ i ]
+ziploader_list = scons_utils.BuildList( '../lib', ziploader_string )
 
 local_env = g_env.Clone()
 
