@@ -57,9 +57,5 @@ elif g_os == 'Linux':
 			'stdc++fs',
 		])
 
-# Build the dependencies
-minizip_list = SConscript( 'SConscript.minizip' )
-libtdm_update_list = SConscript( 'SConscript.libtdm_update' )
-
 ret = local_env.Program(target = 'package', source = tdm_package_list + minizip_list + libtdm_update_list)
 Return( 'ret' )

@@ -229,29 +229,32 @@ g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env['CPPFLAGS'] += CORECPPFLAGS
 
 # mark the globals
-GLOBALS = 'g_env g_os TARGET_ARCH'
+GLOBALS = 'g_env g_os TARGET_ARCH minizip_list libtdm_update_list'
 
 # end general configuration ----------------------
 
 # targets ----------------------------------------
 
+minizip_list = libtdm_update_list = None
 Export( 'GLOBALS ' + GLOBALS )
 
 # map this whole directory into build dir
 VariantDir( g_build, '.', duplicate = 0 )
 # map 'lib' dir from parent directory into 'lib' subdir
 VariantDir( g_build + '/lib', '../lib', duplicate = 0 )
+Export( 'GLOBALS ' + GLOBALS )
 
+# build libraries
+minizip_list = SConscript( g_build + '/SConscript.minizip' )
+libtdm_update_list = SConscript( g_build + '/SConscript.libtdm_update' )
 Export( 'GLOBALS ' + GLOBALS )
 
 # Build the updater
 tdm_update = SConscript(g_build + '/SConscript.tdm_update')
-# Specify executable
 InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_update', g_os, TARGET_ARCH), tdm_update )
 
 # Build the packager
 tdm_package = SConscript(g_build + '/SConscript.tdm_package')
-# Specify executable
 InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_package', g_os, TARGET_ARCH), tdm_package )
 
 # end targets ------------------------------------
