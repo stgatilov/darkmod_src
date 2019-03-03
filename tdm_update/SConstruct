@@ -25,7 +25,7 @@ import SCons
 
 # choose configuration variables which should be saved between runs
 # ( we handle all those as strings )
-serialized=['CC', 'CXX', 'JOBS', 'BUILD']
+serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'TARGET_ARCH']
 
 # global build mode ------------------------------
 
@@ -55,11 +55,6 @@ BUILD (default debug)
 
 TARGET_ARCH (default: "x86")
 	Build for either x86 or x64 architecture.
-
-MACOSX_TARGET_ARCH (default 'i386')
-	The target architecture when building in Mac OS X.
-	valid values: 'ppc' or 'i386'. 
-	TODO (#4818): either remove this option or merge with TARGET_ARCH
 
 """
 
@@ -102,7 +97,6 @@ JOBS = '1'
 BUILD = 'release'
 BASEFLAGS = ''
 TARGET_ARCH = 'x86'
-MACOSX_TARGET_ARCH = 'i386'
 
 # end default settings ---------------------------
 
@@ -120,7 +114,8 @@ if TARGET_ARCH == 'x32':
 
 # general configuration, target selection --------
 
-g_build = './build/' + BUILD
+BUILD_ROOT = './build'
+g_build = BUILD_ROOT + '/scons_' + TARGET_ARCH + '/' + BUILD
 
 SConsignFile( 'scons.signatures' )
 Decider('MD5-timestamp')
@@ -130,10 +125,6 @@ SetOption('num_jobs', JOBS)
 LINK = CXX
 
 # common flags
-# BASE + CORE + OPT for engine
-# BASE + GAME + OPT for game
-# _noopt versions of the environements are built without the OPT
-
 BASECPPFLAGS = [ ]
 CORECPPPATH = [ ]
 CORELIBPATH = [ ]
@@ -163,45 +154,38 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
 
-if ( g_os == 'Linux' or g_os == 'MacOSX' ):
-	if ( TARGET_ARCH == 'x86' ):
-		BASECPPFLAGS.append( '-m32' )
-		BASELINKFLAGS.append( '-m32' )
-	if ( TARGET_ARCH == 'x64' ):
-		BASECPPFLAGS.append( '-m64' )
-		BASELINKFLAGS.append( '-m64' )
+if ( TARGET_ARCH == 'x86' ):
+	BASECPPFLAGS.append( '-m32' )
+	BASELINKFLAGS.append( '-m32' )
+if ( TARGET_ARCH == 'x64' ):
+	BASECPPFLAGS.append( '-m64' )
+	BASELINKFLAGS.append( '-m64' )
 
-	if g_os == 'Linux':
+if g_os == 'Linux':
+	if TARGET_ARCH == 'x86':
 		# help 64 bit machines to find the compatibility 32bit libraries
 		BASELINKFLAGS.append( '-L/lib32' )
 		BASELINKFLAGS.append( '-L/usr/lib32' )
-		BASELINKFLAGS.append( '-pthread' )
-		BASELINKFLAGS.append( '-lrt' )
-	
-		# Add the __linux__ define
-		BASECPPFLAGS.append('-D__linux__')
-	else:
-		# Mac OS X
-		BASECPPFLAGS.append('-DMACOS_X')
-
-		if MACOSX_TARGET_ARCH == 'i386':
-			# Perform an Intel build
-			BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
-			BASELINKFLAGS.append(['-arch', 'i386'])
-		elif MACOSX_TARGET_ARCH == 'ppc':
-			# Perform a PowerPC build
-			BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
-			BASELINKFLAGS.append(['-arch', 'ppc'])
+	BASELINKFLAGS.append( '-pthread' )
+	BASELINKFLAGS.append( '-lrt' )
+	# Add the __linux__ define
+	BASECPPFLAGS.append('-D__linux__')
+elif g_os == 'MacOSX':
+	# Mac OS X
+	BASECPPFLAGS.append('-DMACOS_X')
+	if TARGET_ARCH == 'x86':
+		# Perform an Intel build
+		BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
+		BASELINKFLAGS.append(['-arch', 'i386'])
+	elif TARGET_ARCH == 'ppc':
+		# Perform a PowerPC build
+		BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
+		BASELINKFLAGS.append(['-arch', 'ppc'])
 
 if ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]
 elif ( BUILD == 'release' ):
-	# -fomit-frame-pointer: "-O also turns on -fomit-frame-pointer on machines where doing so does not interfere with debugging."
-	#   on x86 have to set it explicitely
-	# -finline-functions: implicit at -O3
-	# -fschedule-insns2: implicit at -O2
-	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+	OPTCPPFLAGS = [ '-O2' ]
 else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
@@ -218,11 +202,8 @@ g_env['CPPFLAGS'] += OPTCPPFLAGS
 g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env['CPPFLAGS'] += CORECPPFLAGS
 
-minizip_list = []
-libtdm_update_list = []
-
 # mark the globals
-GLOBALS = 'g_env g_os OPTCPPFLAGS minizip_list libtdm_update_list TARGET_ARCH'
+GLOBALS = 'g_env g_os TARGET_ARCH'
 
 # end general configuration ----------------------
 
@@ -235,7 +216,18 @@ VariantDir( g_build, '.', duplicate = 0 )
 Export( 'GLOBALS ' + GLOBALS )
 
 # Build the updater
-SConscript('SConscript.tdm_update')
+tdm_update = SConscript('SConscript.tdm_update')
+# Specify executable
+exe_name = 'tdm_update'
+if g_os == 'Linux':
+	if TARGET_ARCH == 'x86':
+		exe_name = exe_name + '.linux'
+	elif TARGET_ARCH == 'x64':
+		exe_name = exe_name + '.linux64'
+if g_os == 'MacOSX':
+	exe_name = exe_name + '.macosx'
+InstallAs( '#' + exe_name, tdm_update )
+
 
 # end targets ------------------------------------
 

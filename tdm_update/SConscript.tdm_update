@@ -44,31 +44,25 @@ if g_os == 'MacOSX':
 	local_env.Append(LIBS = [
 		File('#/../macosx/libcurl/libcurl.a')
 	])
-elif TARGET_ARCH == 'x64':
-	local_env.Append(LIBS = [
-		File('#/../linux/libcurl/lib64/libcurl.a'),
-		File('#/../linux/polarssl/lib64/libpolarssl.a'),
-		'rt',
-		'stdc++fs',
-	])
-else:
-	local_env.Append(LIBS = [
-		File('#/../linux/libcurl/libcurl.a'),
-		File('#/../linux/polarssl/libpolarssl.a'),
-		'rt',
-		'stdc++fs',
-	])
+elif g_os == 'Linux':
+	if TARGET_ARCH == 'x64':
+		local_env.Append(LIBS = [
+			File('#/../linux/libcurl/lib64/libcurl.a'),
+			File('#/../linux/polarssl/lib64/libpolarssl.a'),
+			'rt',
+			'stdc++fs',
+		])
+	else:
+		local_env.Append(LIBS = [
+			File('#/../linux/libcurl/libcurl.a'),
+			File('#/../linux/polarssl/libpolarssl.a'),
+			'rt',
+			'stdc++fs',
+		])
 
 minizip_list = SConscript( './SConscript.minizip' )
 libtdm_update_list = SConscript( './SConscript.libtdm_update' )
 
-executable_name = 'tdm_update'
-
-if g_os == 'MacOSX':
-	executable_name = executable_name + '.macosx'
-else:
-	executable_name = executable_name + '.linux'
-
-ret = local_env.Program(executable_name, tdm_update_list + minizip_list + libtdm_update_list)
+ret = local_env.Program(target = 'tdm_update', source = tdm_update_list + minizip_list + libtdm_update_list)
 Return( 'ret' )
 

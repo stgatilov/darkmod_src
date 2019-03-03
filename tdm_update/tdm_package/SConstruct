@@ -53,17 +53,8 @@ BUILD (default debug)
 	debug: -O -g
 	release: all optimisations, including CPU target etc.
 
-MACOSX_TARGET_ARCH (default 'i386')
-	The target architecture when building in Mac OS X.
-	valid values: 'ppc' or 'i386'.
-
-LINUX_TARGET_ARCH (default: 'i386')
-	The target architecture when building in Linux.
-	valid values: 'i386' or 'debian50-amd64'
-
-FREEBSD_TARGET_ARCH (default: 'amd64')
-	The target architecture when building in FreeBSD.
-	valid values: 'amd64'
+TARGET_ARCH (default: "x86")
+	Build for either x86 or x64 architecture.
 
 """
 
@@ -115,9 +106,7 @@ if g_os == 'FreeBSD':
 JOBS = '1'
 BUILD = 'debug'
 BASEFLAGS = ''
-MACOSX_TARGET_ARCH = 'i386'
-LINUX_TARGET_ARCH = 'i386'
-FREEBSD_TARGET_ARCH = 'amd64'
+TARGET_ARCH = 'x86'
 
 # end default settings ---------------------------
 
@@ -128,11 +117,15 @@ for k in ARGUMENTS.keys():
 	print 'Command line: ' + exec_cmd
 	exec( exec_cmd )
 
+if TARGET_ARCH == 'x32':
+	TARGET_ARCH = 'x86'
+
 # end command line settings ----------------------
 
 # general configuration, target selection --------
 
-g_build = './build/' + BUILD
+BUILD_ROOT = './build'
+g_build = BUILD_ROOT + '/scons_' + TARGET_ARCH + '/' + BUILD
 
 SConsignFile( 'scons.signatures' )
 Decider('MD5-timestamp')
@@ -142,10 +135,6 @@ SetOption('num_jobs', JOBS)
 LINK = CXX
 
 # common flags
-# BASE + CORE + OPT for engine
-# BASE + GAME + OPT for game
-# _noopt versions of the environements are built without the OPT
-
 BASECPPFLAGS = [ ]
 CORECPPPATH = [ ]
 CORELIBPATH = [ ]
@@ -159,6 +148,12 @@ BASECPPFLAGS.append( BASEFLAGS )
 BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
+# Use C++11 features
+BASECPPFLAGS.append( '-std=c++11' )
+if ( g_os == 'Linux' ):
+	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
+	# This allows to link with C++ libraries, which were built in older versions of GCC
+	BASECPPFLAGS.append( '-D_GLIBCXX_USE_CXX11_ABI=0' )
 
 # Don't throw warnings for unknown pragmas (used by VC++)
 BASECPPFLAGS.append('-Wno-unknown-pragmas')
@@ -169,57 +164,45 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
 
-if ( g_os == 'Linux' or g_os == 'MacOSX' or g_os == 'FreeBSD' ):
+if ( TARGET_ARCH == 'x86' ):
+	BASECPPFLAGS.append( '-m32' )
+	BASELINKFLAGS.append( '-m32' )
+if ( TARGET_ARCH == 'x64' ):
+	BASECPPFLAGS.append( '-m64' )
+	BASELINKFLAGS.append( '-m64' )
 
-	if g_os == 'Linux':
-
-		if LINUX_TARGET_ARCH == 'i386':
-			# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
-			BASECPPFLAGS.append( '-m32' )
-			BASELINKFLAGS.append( '-m32' )
-
-			# help 64 bit machines to find the compatibility 32bit libraries
-			BASELINKFLAGS.append( '-L/lib32' )
-			BASELINKFLAGS.append( '-L/usr/lib32' )
-		
-		BASELINKFLAGS.append( '-pthread' )
-		BASELINKFLAGS.append( '-lrt' )
-	
-		# Add the __linux__ define
-		BASECPPFLAGS.append('-D__linux__')
-	elif g_os == 'FreeBSD':
-		# FreeBSD 10
-		BASELINKFLAGS.append( '-L/usr/local/lib' )
-		BASELINKFLAGS.append( '-pthread' )
-		BASELINKFLAGS.append( '-lrt' )
-     	# Add the __linux__ define - leave as is even though it isn't true
-		BASECPPFLAGS.append('-D__linux__')
-	else:
-		# Mac OS X
-		# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
-		BASECPPFLAGS.append( '-m32' )
-		BASELINKFLAGS.append( '-m32' )
-
-		BASECPPFLAGS.append('-DMACOS_X')
-
-		if MACOSX_TARGET_ARCH == 'i386':
-			# Perform an Intel build
-			BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
-			BASELINKFLAGS.append(['-arch', 'i386'])
-		elif MACOSX_TARGET_ARCH == 'ppc':
-			# Perform a PowerPC build
-			BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
-			BASELINKFLAGS.append(['-arch', 'ppc'])
+if g_os == 'Linux':
+	if TARGET_ARCH == 'x86':
+		# help 64 bit machines to find the compatibility 32bit libraries
+		BASELINKFLAGS.append( '-L/lib32' )
+		BASELINKFLAGS.append( '-L/usr/lib32' )
+	BASELINKFLAGS.append( '-pthread' )
+	BASELINKFLAGS.append( '-lrt' )
+	# Add the __linux__ define
+	BASECPPFLAGS.append('-D__linux__')
+elif g_os == 'FreeBSD':
+	# FreeBSD 10
+	BASELINKFLAGS.append( '-L/usr/local/lib' )
+	BASELINKFLAGS.append( '-pthread' )
+	BASELINKFLAGS.append( '-lrt' )
+ 	# Add the __linux__ define - leave as is even though it isn't true
+	BASECPPFLAGS.append('-D__linux__')
+elif g_os == 'MacOSX':
+	# Mac OS X
+	BASECPPFLAGS.append('-DMACOS_X')
+	if TARGET_ARCH == 'x86':
+		# Perform an Intel build
+		BASECPPFLAGS.append(['-arch', 'i386', '-D__i386__'])
+		BASELINKFLAGS.append(['-arch', 'i386'])
+	elif TARGET_ARCH == 'ppc':
+		# Perform a PowerPC build
+		BASECPPFLAGS.append(['-arch', 'ppc', '-D__ppc__'])
+		BASELINKFLAGS.append(['-arch', 'ppc'])
 
 if ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]
 elif ( BUILD == 'release' ):
-	# -fomit-frame-pointer: "-O also turns on -fomit-frame-pointer on machines where doing so does not interfere with debugging."
-	#   on x86 have to set it explicitely
-	# -finline-functions: implicit at -O3
-	# -fschedule-insns2: implicit at -O2
-	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ]
+	OPTCPPFLAGS = [ '-O2' ]
 else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
@@ -241,18 +224,12 @@ g_env = g_base_env.Clone()
 g_env['CPPFLAGS'] += OPTCPPFLAGS
 g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env['CPPFLAGS'] += CORECPPFLAGS
-# Use C++11 features
-g_env.Append(CXXFLAGS = '-std=c++11')
-if ( g_os == 'Linux' ):
-	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
-	# This allows to link with C++ libraries, which were built in older versions of GCC
-	g_env.Append( CPPFLAGS = '-D_GLIBCXX_USE_CXX11_ABI=0' )
 
 minizip_list = []
 libtdm_update_list = []
 
 # mark the globals
-GLOBALS = 'g_env g_os OPTCPPFLAGS LINUX_TARGET_ARCH'
+GLOBALS = 'g_env g_os TARGET_ARCH'
 
 # end general configuration ----------------------
 
@@ -265,7 +242,19 @@ VariantDir( g_build, '.', duplicate = 0 )
 Export( 'GLOBALS ' + GLOBALS )
 
 # Build the packager
-SConscript('#/SConscript.tdm_package')
+tdm_package = SConscript('#/SConscript.tdm_package')
+# Specify executable
+exe_name = 'tdm_package'
+if g_os == 'MacOSX':
+	exe_name = exe_name + '.macosx'
+elif g_os == 'FreeBSD':
+	exe_name = exe_name + '.fbsd'
+elif g_os == 'Linux':
+	if TARGET_ARCH == 'x86':
+		exe_name = exe_name + '.linux'
+	elif TARGET_ARCH == 'x64':
+		exe_name = exe_name + '.linux64'
+InstallAs( '#' + exe_name, tdm_package )
 
 # end targets ------------------------------------
 

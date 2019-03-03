@@ -52,33 +52,22 @@ elif g_os == 'FreeBSD':
 		'crypto',
 		File('/usr/local/lib/libcurl.a')
 	])
-else:
+elif g_os == 'Linux':
 	# Linux
-	if LINUX_TARGET_ARCH == 'i386':
+	if TARGET_ARCH == 'x86':
 		local_env.Append(LIBS = [
 			File('#/../../linux/libcurl/libcurl.a'),
 			'stdc++fs',
 		])
-	elif LINUX_TARGET_ARCH == 'debian50-amd64':
+	elif TARGET_ARCH == 'x64':
 		local_env.Append(LIBS = [
-			File('#/../../linux/libcurl/libcurl.debian50-amd64.a')
+			File('#/../../linux/libcurl/lib64/libcurl.a'),
+			'stdc++fs',
 		])
 
 # Build the dependencies
 minizip_list = SConscript( '../SConscript.minizip' )
 libtdm_update_list = SConscript( '../SConscript.libtdm_update' )
 
-executable_name = 'tdm_package'
-
-if g_os == 'MacOSX':
-	executable_name = executable_name + '.macosx'
-elif g_os == 'FreeBSD':
-	executable_name = executable_name + '.fbsd'
-else:
-	if LINUX_TARGET_ARCH == 'i386':
-		executable_name = executable_name + '.linux'
-	elif LINUX_TARGET_ARCH == 'debian50-amd64':
-		executable_name = executable_name + '.linux.debian50-amd64'
-
-ret = local_env.Program(executable_name, tdm_package_list + minizip_list + libtdm_update_list)
+ret = local_env.Program(target = 'tdm_package', source = tdm_package_list + minizip_list + libtdm_update_list)
 Return( 'ret' )
