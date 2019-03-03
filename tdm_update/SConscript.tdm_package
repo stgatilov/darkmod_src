@@ -32,17 +32,17 @@ def BuildList( s_prefix, s_string ):
 	return s_list
 
 # Master list of source files to compile
-tdm_package_list = BuildList('./', 'tdm_package.cpp')
+tdm_package_list = BuildList('tdm_package', 'tdm_package.cpp')
 
 local_env = g_env.Clone()
 local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtual-dtor' ])
 
-local_env.Append(CPPPATH = '#/../../include')
-local_env.Append(CPPPATH = '#/../libtdm_update')
+local_env.Append(CPPPATH = '#/../include')
+local_env.Append(CPPPATH = '#/libtdm_update')
 
 if g_os == 'MacOSX':
 	local_env.Append(LIBS = [
-		File('#/../../macosx/libcurl/libcurl.a'),
+		File('#/../macosx/libcurl/libcurl.a'),
 	])
 elif g_os == 'FreeBSD':
 	# use distro installed libs - easier and safer to use 
@@ -56,18 +56,18 @@ elif g_os == 'Linux':
 	# Linux
 	if TARGET_ARCH == 'x86':
 		local_env.Append(LIBS = [
-			File('#/../../linux/libcurl/libcurl.a'),
+			File('#/../linux/libcurl/libcurl.a'),
 			'stdc++fs',
 		])
 	elif TARGET_ARCH == 'x64':
 		local_env.Append(LIBS = [
-			File('#/../../linux/libcurl/lib64/libcurl.a'),
+			File('#/../linux/libcurl/lib64/libcurl.a'),
 			'stdc++fs',
 		])
 
 # Build the dependencies
-minizip_list = SConscript( '../SConscript.minizip' )
-libtdm_update_list = SConscript( '../SConscript.libtdm_update' )
+minizip_list = SConscript( 'SConscript.minizip' )
+libtdm_update_list = SConscript( 'SConscript.libtdm_update' )
 
-ret = local_env.Program(target = 'tdm_package', source = tdm_package_list + minizip_list + libtdm_update_list)
+ret = local_env.Program(target = 'tdm_packager', source = tdm_package_list + minizip_list + libtdm_update_list)
 Return( 'ret' )
