@@ -156,8 +156,10 @@ const idEventDef EV_Thread_RadiusDamage( "radiusDamage",
 	"causing the damage and can be the same as the attacker (in the case \n " \
 	"of projectiles, the projectile is the inflictor, while the attacker is the character \n" \
 	"that fired the projectile).");
+#ifdef MULTIPLAYER
 const idEventDef EV_Thread_IsClient( "isClient", EventArgs(), 'f', "networking - checks for client" );
 const idEventDef EV_Thread_IsMultiplayer( "isMultiplayer", EventArgs(), 'f', "checks if it's a multiplayer game" );
+#endif
 const idEventDef EV_Thread_GetFrameTime( "getFrameTime", EventArgs(), 'f', "returns the length of time between game frames.  this is not related to renderer frame rate." );
 const idEventDef EV_Thread_GetTicsPerSecond( "getTicsPerSecond", EventArgs(), 'f', "returns the number of game frames per second.  this is not related to renderer frame rate." );
 
@@ -358,8 +360,10 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_StrToFloat,			idThread::Event_StrToFloat )
 	EVENT( EV_Thread_StrToInt,				idThread::Event_StrToInt )
 	EVENT( EV_Thread_RadiusDamage,			idThread::Event_RadiusDamage )
+#ifdef MULTIPLAYER
 	EVENT( EV_Thread_IsClient,				idThread::Event_IsClient )
 	EVENT( EV_Thread_IsMultiplayer,			idThread::Event_IsMultiplayer )
+#endif
 	EVENT( EV_Thread_GetFrameTime,			idThread::Event_GetFrameTime )
 	EVENT( EV_Thread_GetTicsPerSecond,		idThread::Event_GetTicsPerSecond )
 	EVENT( EV_CacheSoundShader,				idThread::Event_CacheSoundShader )
@@ -2111,7 +2115,8 @@ void idThread::Event_RadiusDamage( const idVec3 &origin, idEntity *inflictor, id
 idThread::Event_IsClient
 ================
 */
-void idThread::Event_IsClient( void ) { 
+#ifdef MULTIPLAYER
+void idThread::Event_IsClient( void ) {
 	idThread::ReturnFloat( gameLocal.isClient );
 }
 
@@ -2123,6 +2128,7 @@ idThread::Event_IsMultiplayer
 void idThread::Event_IsMultiplayer( void ) { 
 	idThread::ReturnFloat( gameLocal.isMultiplayer );
 }
+#endif
 
 /*
 ================

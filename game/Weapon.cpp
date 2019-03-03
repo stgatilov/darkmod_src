@@ -174,7 +174,10 @@ idWeapon::Spawn
 ================
 */
 void idWeapon::Spawn( void ) {
-	if ( !gameLocal.isClient ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isClient ) 
+#endif
+	{
 		// setup the world model
 		worldModel = static_cast< idAnimatedEntity * >( gameLocal.SpawnEntityType( idAnimatedEntity::Type, NULL ) );
 		worldModel.GetEntity()->fl.networkSync = true;
@@ -2185,7 +2188,11 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	if ( worldModel.GetEntity() && worldModel.GetEntity()->GetRenderEntity() ) {
 		// deal with the third-person visible world model
 		// don't show shadows of the world model in first person
-		if ( gameLocal.isMultiplayer || g_showPlayerShadow.GetBool() || pm_thirdPerson.GetBool() ) {
+		if ( 
+#ifdef MULTIPLAYER
+			gameLocal.isMultiplayer || 
+#endif
+			g_showPlayerShadow.GetBool() || pm_thirdPerson.GetBool() ) {
 			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID	= 0;
 		} else {
 			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID	= owner->entityNumber+1;
@@ -2239,7 +2246,11 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
 
 		// wake up monsters with the flashlight
-		if ( !gameLocal.isMultiplayer && lightOn && !owner->fl.notarget ) {
+		if ( 
+#ifdef MULTIPLAYER
+			!gameLocal.isMultiplayer && 
+#endif
+			lightOn && !owner->fl.notarget ) {
 			AlertMonsters();
 		}
 	}
@@ -2729,9 +2740,11 @@ idWeapon::Event_UseAmmo
 ===============
 */
 void idWeapon::Event_UseAmmo( int amount ) {
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	owner->GetCurrentWeaponItem()->UseAmmo(( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	if ( clipSize && ammoRequired ) {
@@ -2750,9 +2763,11 @@ idWeapon::Event_AddToClip
 void idWeapon::Event_AddToClip( int amount ) {
 	int ammoAvail;
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	ammoClip += amount;
 	if ( ammoClip > clipSize ) {
@@ -2813,9 +2828,11 @@ idWeapon::Event_NetReload
 */
 void idWeapon::Event_NetReload( void ) {
 	assert( owner );
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer ) {
 		ServerSendEvent( EVENT_RELOAD, NULL, false, -1 );
 	}
+#endif
 }
 
 /*
@@ -2825,9 +2842,11 @@ idWeapon::Event_NetEndReload
 */
 void idWeapon::Event_NetEndReload( void ) {
 	assert( owner );
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer ) {
 		ServerSendEvent( EVENT_ENDRELOAD, NULL, false, -1 );
 	}
+#endif
 }
 
 /*
@@ -3092,7 +3111,12 @@ idWeapon::Event_CreateProjectile
 */
 void idWeapon::Event_CreateProjectile()
 {
-	if ( !gameLocal.isClient )
+#ifdef MULTIPLAYER
+	if ( gameLocal.isClient )
+	{
+		idThread::ReturnEntity( NULL );
+	} else
+#endif
 	{
 		projectileEnt = NULL;
 
@@ -3123,10 +3147,6 @@ void idWeapon::Event_CreateProjectile()
 		}
 
 		idThread::ReturnEntity( projectileEnt );
-	}
-	else
-	{
-		idThread::ReturnEntity( NULL );
 	}
 }
 
@@ -3177,7 +3197,10 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	}
 
 	// avoid all ammo considerations on an MP client
-	if ( !gameLocal.isClient ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isClient ) 
+#endif
+	{
 
 		CInventoryWeaponItemPtr weaponItem = owner->GetCurrentWeaponItem();
 
@@ -3223,6 +3246,7 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 
 		// predict instant hit projectiles
@@ -3242,7 +3266,9 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			}
 		}
 
-	} else {
+	} else
+#endif
+	{
 
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
 
@@ -3343,7 +3369,10 @@ void idWeapon::Event_Melee( void ) {
 		gameLocal.Error( "No meleeDef on '%s'", weaponDef->dict.GetString( "classname" ) );
 	}
 
-	if ( !gameLocal.isClient ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isClient ) 
+#endif
+	{
 		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
 		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
@@ -3514,9 +3543,11 @@ void idWeapon::Event_EjectBrass( void ) {
 		return;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	idMat3 axis;
 	idVec3 origin, linear_velocity, angular_velocity;

@@ -678,13 +678,13 @@ public:
 
 #ifdef MULTIPLAYER
 	gameType_t				gameType;
-#endif
 
 	bool					isMultiplayer;			// set if the game is run in multiplayer mode
 	bool					isServer;				// set if the game is run for a dedicated or listen server
 	bool					isClient;				// set if the game is run for a client
 													// discriminates between the RunFrame path and the ClientPrediction path
 													// NOTE: on a listen server, isClient is false
+#endif
 	int						localClientNum;			// number of the local client. MP: -1 on a dedicated
 	idLinkList<idEntity>	snapshotEntities;		// entities from the last snapshot
 	int						realClientTime;			// real client time
@@ -781,7 +781,9 @@ public:
 	virtual bool			Draw( int clientNum );
 	virtual void			DrawLightgem( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
+#ifdef MULTIPLAYER
 	virtual idUserInterface	*StartMenu( void );
+#endif
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
 	/**
@@ -1185,7 +1187,9 @@ private:
 	void					ClientShowSnapshot( int clientNum ) const;
 							// call after any change to serverInfo. Will update various quick-access flags
 	void					UpdateServerInfoFlags( void );
+#ifdef MULTIPLAYER
 	void					RandomizeInitialSpawns( void );
+#endif
 	static int				sortSpawnPoints( const void *ptr1, const void *ptr2 );
 
 	void					DumpOggSounds( void );

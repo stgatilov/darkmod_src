@@ -343,7 +343,11 @@ void idItem::Spawn( void )
 		PostEventMS( &EV_Touch, 0, ent, 0 );
 	}
 
-	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer )
+	if ( spawnArgs.GetBool( "spin" ) 
+#ifdef MULTIPLAYER
+		|| gameLocal.isMultiplayer 
+#endif
+		)
 	{
 		spin = true;
 		BecomeActive( TH_THINK );
@@ -532,10 +536,12 @@ bool idItem::Pickup( idPlayer *player )
 		return false;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer )
 	{
 		ServerSendEvent( EVENT_PICKUP, NULL, false, -1 );
 	}
+#endif
 
 	// play pickup sound
 	StartSound( "snd_acquire", SND_CHANNEL_ITEM, 0, false, NULL );
@@ -563,10 +569,11 @@ bool idItem::Pickup( idPlayer *player )
 	bool dropped = spawnArgs.GetBool( "dropped" );
 	bool no_respawn = spawnArgs.GetBool( "no_respawn" );
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer && respawn == 0.0f ) {
 		respawn = 20.0f;
 	}
-
+#endif
 	if ( respawn && !dropped && !no_respawn ) {
 		const char *sfx = spawnArgs.GetString( "fxRespawn" );
 		if ( sfx && *sfx ) {
@@ -716,9 +723,11 @@ idItem::Event_Respawn
 ================
 */
 void idItem::Event_Respawn( void ) {
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer ) {
 		ServerSendEvent( EVENT_RESPAWN, NULL, false, -1 );
 	}
+#endif
 	BecomeActive( TH_THINK );
 	Show();
 	inViewTime = -1000;
@@ -739,9 +748,11 @@ idItem::Event_RespawnFx
 ================
 */
 void idItem::Event_RespawnFx( void ) {
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer ) {
 		ServerSendEvent( EVENT_RESPAWNFX, NULL, false, -1 );
 	}
+#endif
 	const char *sfx = spawnArgs.GetString( "fxRespawn" );
 	if ( sfx && *sfx ) {
 		idEntityFx::StartFx( sfx, NULL, NULL, this, true );

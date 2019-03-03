@@ -390,9 +390,11 @@ void idGameLocal::Clear( void )
 	influenceActive = false;
 
 	localClientNum = 0;
+#ifdef MULTIPLAYER
 	isMultiplayer = false;
 	isServer = false;
 	isClient = false;
+#endif
 	realClientTime = 0;
 	isNewFrame = true;
 	clientSmoothing = 0.1f;
@@ -1018,9 +1020,11 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( inCinematic );
 	savegame.WriteBool( skipCinematic );
 
-	savegame.WriteBool( isMultiplayer );
 #ifdef MULTIPLAYER
 	savegame.WriteInt( gameType );
+	savegame.WriteBool( isMultiplayer );
+	savegame.WriteBool( isServer );
+	savegame.WriteBool( isClient );
 #endif
 	savegame.WriteInt( framenum );
 	savegame.WriteInt( previousTime );
@@ -1029,8 +1033,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteInt( vacuumAreaNum );
 
 	savegame.WriteInt( entityDefBits );
-	savegame.WriteBool( isServer );
-	savegame.WriteBool( isClient );
 
 	savegame.WriteInt( localClientNum );
 
@@ -1401,7 +1403,9 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	int i;
 	bool modifiedInfo = false;
 
+#ifdef MULTIPLAYER
 	this->isClient = isClient;
+#endif
 
 	if ( clientNum >= 0 && clientNum < MAX_CLIENTS ) {
 		idGameLocal::userInfo[ clientNum ] = userInfo;
@@ -1744,9 +1748,12 @@ void idGameLocal::MapRestart( ) {
 	int			i;
 	const idKeyValue *keyval, *keyval2;
 
+#ifdef MULTIPLAYER
 	if ( isClient ) {
 		LocalMapRestart();
-	} else {
+	} else 
+#endif
+	{
 		newInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
 		for ( i = 0; i < newInfo.GetNumKeyVals(); i++ ) {
 			keyval = newInfo.GetKeyVal( i );
@@ -1785,6 +1792,7 @@ void idGameLocal::MapRestart( ) {
 idGameLocal::MapRestart_f
 ===================
 */
+#ifdef MULTIPLAYER
 void idGameLocal::MapRestart_f( const idCmdArgs &args ) {
 	if ( !gameLocal.isMultiplayer || gameLocal.isClient ) {
 		common->Printf( "server is not running - use spawnServer\n" );
@@ -1860,6 +1868,7 @@ void idGameLocal::NextMap_f( const idCmdArgs &args ) {
 	// next map was either voted for or triggered by a server command - always restart
 	gameLocal.MapRestart( );
 }
+#endif
 
 /*
 ===================
@@ -1869,9 +1878,11 @@ Dark Mod: Sound prop initialization added
 */
 void idGameLocal::MapPopulate( void ) {
 
+#ifdef MULTIPLAYER
 	if ( isMultiplayer ) {
 		cvarSystem->SetCVarBool( "r_skipSpecular", false );
 	}
+#endif
 
 	// parse the key/value pairs and spawn entities
 	SpawnMapEntities();
@@ -1879,8 +1890,10 @@ void idGameLocal::MapPopulate( void ) {
 	// mark location entities in all connected areas
 	SpreadLocations();
 
+#ifdef MULTIPLAYER
 	// prepare the list of randomized initial spawn spots
 	RandomizeInitialSpawns( );
+#endif
 
 	// spawnCount - 1 is the number of entities spawned into the map, their indexes started at MAX_CLIENTS (included)
 	// mapSpawnCount is used as the max index of map entities, it's the first index of non-map entities
@@ -1920,9 +1933,11 @@ idGameLocal::InitFromNewMap
 */
 void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randseed ) {
 
+#ifdef MULTIPLAYER
 	this->isServer = isServer;
 	this->isClient = isClient;
 	this->isMultiplayer = isServer || isClient;
+#endif
 
 	if ( mapFileName.Length() ) {
 		MapShutdown();
@@ -2239,9 +2254,11 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( inCinematic );
 	savegame.ReadBool( skipCinematic );
 
-	savegame.ReadBool( isMultiplayer );
 #ifdef MULTIPLAYER
 	savegame.ReadInt( (int &)gameType );
+	savegame.ReadBool( isMultiplayer );
+	savegame.ReadBool( isServer );
+	savegame.ReadBool( isClient );
 #endif
 	savegame.ReadInt( framenum );
 	savegame.ReadInt( previousTime );
@@ -2250,8 +2267,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadInt( vacuumAreaNum );
 
 	savegame.ReadInt( entityDefBits );
-	savegame.ReadBool( isServer );
-	savegame.ReadBool( isClient );
 
 	savegame.ReadInt( localClientNum );
 
@@ -2878,10 +2893,18 @@ void idGameLocal::SpawnPlayer( int clientNum )
 	// they can connect
 	Printf( "SpawnPlayer: %i\n", clientNum );
 
-	idStr playerClass = isMultiplayer ? "player_tdm_thief_mp" : cv_player_spawnclass.GetString();
+	idStr playerClass = 
+#ifdef MULTIPLAYER
+		isMultiplayer ? "player_tdm_thief_mp" : 
+#endif
+		cv_player_spawnclass.GetString();
 
 	// greebo: Allow worldspawn to specify a different player classname
-	if (!isMultiplayer && world != NULL && world->spawnArgs.FindKey("player_classname") != NULL)
+	if (
+#ifdef MULTIPLAYER
+		!isMultiplayer && 
+#endif
+		world != NULL && world->spawnArgs.FindKey("player_classname") != NULL)
 	{
 		playerClass = world->spawnArgs.GetString("player_classname", cv_player_spawnclass.GetString());
 	}
@@ -3289,7 +3312,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// Update the gameplay timer
 		m_GamePlayTimer.Update();
 
-		if ( !isMultiplayer && g_stopTime.GetBool() ) {
+		if ( 
+#ifdef MULTIPLAYER
+			!isMultiplayer && 
+#endif
+			g_stopTime.GetBool() ) {
 			// clear any debug lines from a previous frame
 			gameRenderWorld->DebugClearLines( time + 1 );
 
@@ -3492,7 +3519,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			ret.consistencyHash = 0;
 			ret.sessionCommand[0] = 0;
 
-			if ( !isMultiplayer && player ) {
+			if ( 
+#ifdef MULTIPLAYER
+				!isMultiplayer && 
+#endif
+				player ) {
 				ret.health = player->health;
 
 #ifdef PLAYER_HEARTBEAT
@@ -3687,11 +3718,13 @@ idGameLocal::HandleESC
 */
 escReply_t idGameLocal::HandleESC( idUserInterface **gui ) {
 
+#ifdef MULTIPLAYER
 	if ( isMultiplayer ) {
 		*gui = StartMenu();
 		// we may set the gui back to NULL to hide it
 		return ESC_GUI;
 	}
+#endif
 
 	// If we're in the process of ending the mission, ignore all ESC keys.
 	if (GameState() == GAMESTATE_COMPLETED) {
@@ -3718,14 +3751,14 @@ escReply_t idGameLocal::HandleESC( idUserInterface **gui ) {
 idGameLocal::StartMenu
 ================
 */
+#ifdef MULTIPLAYER
 idUserInterface* idGameLocal::StartMenu( void ) {
 	if ( isMultiplayer ) {
-#ifdef MULTIPLAYER
 		return mpGame.StartMenu();
-#endif
 	}
 	return NULL;
 }
+#endif
 
 /*
 ================
@@ -5258,10 +5291,12 @@ idGameLocal::CheatsOk
 bool idGameLocal::CheatsOk( bool requirePlayer ) {
 	idPlayer *player;
 
+#ifdef MULTIPLAYER
 	if ( isMultiplayer && !cvarSystem->GetCVarBool( "net_allowCheats" ) ) {
 		Printf( "Not allowed in multiplayer.\n" );
 		return false;
 	}
+#endif
 
 	if ( developer.GetBool() ) {
 		return true;
@@ -5467,9 +5502,11 @@ idGameLocal::FindEntityDef
 */
 const idDeclEntityDef *idGameLocal::FindEntityDef( const char *name, bool makeDefault ) const {
 	const idDecl *decl = NULL;
+#ifdef MULTIPLAYER
 	if ( isMultiplayer ) {
 		decl = declManager->FindType( DECL_ENTITYDEF, va( "%s_mp", name ), false );
 	}
+#endif
 	if ( !decl ) {
 		decl = declManager->FindType( DECL_ENTITYDEF, name, makeDefault );
 	}
@@ -6010,7 +6047,10 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 			hit->Damage( ent, ent, vec3_origin, "damage_telefrag", 1.0f, INVALID_JOINT );
 		}
 
-		if ( !gameLocal.isMultiplayer ) {
+#ifdef MULTIPLAYER
+		if ( !gameLocal.isMultiplayer )
+#endif
+		{
 			// let the mapper know about it
 			Warning( "'%s' telefragged '%s'", ent->name.c_str(), hit->name.c_str() );
 		}
@@ -6103,9 +6143,11 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 		}
 
 		// don't damage a dead player
+#ifdef MULTIPLAYER
 		if ( isMultiplayer && ent->entityNumber < MAX_CLIENTS && ent->IsType( idPlayer::Type ) && static_cast< idPlayer * >( ent )->health < 0 ) {
 			continue;
 		}
+#endif
 
 		// find the distance from the edge of the bounding box
 		for ( i = 0; i < 3; i++ ) {
@@ -6691,6 +6733,7 @@ randomize the order of the initial spawns
 prepare for a sequence of initial player spawns
 ============
 */
+#ifdef MULTIPLAYER
 void idGameLocal::RandomizeInitialSpawns( void ) {
 	spawnSpot_t	spot;
 	int i, j;
@@ -6731,6 +6774,7 @@ void idGameLocal::RandomizeInitialSpawns( void ) {
 	// reset the counter
 	currentInitialSpot = 0;
 }
+#endif
 
 /*
 ===========
@@ -6748,7 +6792,9 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	float			dist;
 	bool			alone;
 
+#ifdef MULTIPLAYER
 	if ( !isMultiplayer || !spawnSpots.Num() )
+#endif
 	{
 		// grayman #2933 - Did the player specify
 		// a starting point in the briefing?

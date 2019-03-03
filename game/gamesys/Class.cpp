@@ -652,9 +652,11 @@ bool idClass::PostEventArgs( const idEventDef *ev, int time, int numargs, ... ) 
 	// we service events on the client to avoid any bad code filling up the event pool
 	// we don't want them processed usually, unless when the map is (re)loading.
 	// we allow threads to run fine, though.
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient && ( gameLocal.GameState() != GAMESTATE_STARTUP ) && !IsType( idThread::Type ) ) {
 		return true;
 	}
+#endif
 
 	va_start( args, numargs );
 	event = idEvent::Alloc( ev, numargs, args );

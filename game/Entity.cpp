@@ -4615,6 +4615,7 @@ void idEntity::StopSound( const s_channelType channel, bool broadcast ) {
 		return;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer && broadcast ) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -4624,6 +4625,7 @@ void idEntity::StopSound( const s_channelType channel, bool broadcast ) {
 		msg.WriteByte( channel );
 		ServerSendEvent( EVENT_STOPSOUNDSHADER, &msg, false, -1 );
 	}
+#endif
 
 	if ( refSound.referenceSound ) {
 		refSound.referenceSound->StopSound( channel );
@@ -6181,9 +6183,11 @@ bool idEntity::RunPhysics( void ) {
 		// restore the positions of any pushed entities
 		gameLocal.push.RestorePushedEntityPositions();
 
+#ifdef MULTIPLAYER
 		if ( gameLocal.isClient ) {
 			return false;
 		}
+#endif
 
 		// if the master pusher has a "blocked" function, call it
 		Signal( SIG_BLOCKED );
@@ -6199,9 +6203,11 @@ bool idEntity::RunPhysics( void ) {
 		ent->physics->SetPushed( endTime - startTime );
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return true;
 	}
+#endif
 
 	// post reached event if the current time is at or past the end point of the motion
 	for ( part = this; part != NULL; part = part->teamChain ) {
@@ -9356,7 +9362,11 @@ void idAnimatedEntity::AddLocalDamageEffect
 	}
 
 	// can't see wounds on the player model in single player mode
-	if ( !( IsType( idPlayer::Type ) && !gameLocal.isMultiplayer ) ) {
+	if ( !( IsType( idPlayer::Type ) 
+#ifdef MULTIPLAYER
+		&& !gameLocal.isMultiplayer 
+#endif
+		) ) {
 		// place a wound overlay on the model
 		key = va( "mtr_wound_%s", surfName.c_str() );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );

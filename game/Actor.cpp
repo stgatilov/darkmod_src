@@ -1057,9 +1057,10 @@ idActor::SetupHead
 */
 void idActor::SetupHead()
 {
+#ifdef MULTIPLAYER
 	if(gameLocal.isClient)
 		return;
-
+#endif
 	idStr headModelDefName = spawnArgs.GetString( "def_head", "" );
 
 	if (!headModelDefName.IsEmpty())
@@ -3380,9 +3381,11 @@ idActor::Gib
 */
 void idActor::Gib( const idVec3 &dir, const char *damageDefName ) {
 	// no gibbing in multiplayer - by self damage or by moving objects
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		return;
 	}
+#endif
 	// only gib once
 	if ( gibbed ) {
 		return;

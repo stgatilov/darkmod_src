@@ -1005,10 +1005,10 @@ idLight::BecomeBroken
 ================
 */
 void idLight::BecomeBroken( idEntity *activator ) {
-	const char *damageDefName;
-
 	idEntity::BecomeBroken ( activator );
 
+#ifdef MULTIPLAYER
+	const char *damageDefName;
 	if ( gameLocal.isServer ) {
 
 		ServerSendEvent( EVENT_BECOMEBROKEN, NULL, true, -1 );
@@ -1019,6 +1019,7 @@ void idLight::BecomeBroken( idEntity *activator ) {
 		}
 
 	}
+#endif
 
 	ActivateTargets( activator );
 

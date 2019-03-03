@@ -140,8 +140,10 @@ public:
 	// Let the game do it's own UI when ESCAPE is used
 	virtual escReply_t			HandleESC( idUserInterface **gui ) = 0;
 
+#ifdef MULTIPLAYER
 	// get the games menu if appropriate ( multiplayer )
 	virtual idUserInterface *	StartMenu() = 0;
+#endif
 
 	// When the game is running it's own UI fullscreen, GUI commands are passed through here
 	// return NULL once the fullscreen UI mode should stop, or "main" to go to main menu

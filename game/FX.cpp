@@ -140,9 +140,11 @@ void idEntityFx::Setup( const char *fx ) {
 	}
 
 	// early during MP Spawn() with no information. wait till we ReadFromSnapshot for more
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient && ( !fx || fx[0] == '\0' ) ) {
 		return;
 	}
+#endif
 
 	systemName = fx;
 	started = 0;
@@ -459,19 +461,24 @@ void idEntityFx::Run( int time ) {
 					for ( j = 0; j < gameLocal.numClients; j++ ) {
 						idPlayer *player = gameLocal.GetClientByNum( j );
 						if ( player && ( player->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin() ).LengthSqr() < Square( fxaction.shakeDistance ) ) {
-							if ( !gameLocal.isMultiplayer || !fxaction.shakeIgnoreMaster || GetBindMaster() != player ) {
+#ifdef MULTIPLAYER
+							if ( !gameLocal.isMultiplayer || !fxaction.shakeIgnoreMaster || GetBindMaster() != player ) 
+#endif
+							{
 								player->playerView.DamageImpulse( fxaction.offset, &args );
 							}
 						}
 					}
 					if ( fxaction.shakeImpulse != 0.0f && fxaction.shakeDistance != 0.0f ) {
 						idEntity *ignore_ent = NULL;
+#ifdef MULTIPLAYER
 						if ( gameLocal.isMultiplayer ) {
 							ignore_ent = this;
 							if ( fxaction.shakeIgnoreMaster ) {
 								ignore_ent = GetBindMaster();
 							}
 						}
+#endif
 						// lookup the ent we are bound to?
 						gameLocal.RadiusPush( GetPhysics()->GetOrigin(), fxaction.shakeDistance, fxaction.shakeImpulse, this, ignore_ent, 1.0f, true );
 					}
@@ -505,11 +512,13 @@ void idEntityFx::Run( int time ) {
 				break;
 			}
 			case FX_LAUNCH: {
+#ifdef MULTIPLAYER
 				if ( gameLocal.isClient ) {
 					// client never spawns entities outside of ClientReadSnapshot
 					useAction->launched = true;
 					break;
 				}
+#endif
 				if ( !useAction->launched ) {
 					useAction->launched = true;
 					projectile = NULL;

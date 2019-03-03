@@ -459,7 +459,10 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 
 	thruster.SetPosition( &physicsObj, 0, idVec3( GetPhysics()->GetBounds()[ 0 ].x, 0, 0 ) );
 
-	if ( !gameLocal.isClient ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isClient ) 
+#endif
+	{
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
 			RunPhysics();
@@ -710,6 +713,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	}
 
 	// predict the explosion
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		if ( ClientPredictionCollide( this, spawnArgs, collision, velocity, !spawnArgs.GetBool( "net_instanthit" ) ) ) {
 			Explode( collision, NULL );
@@ -717,6 +721,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		}
 		return false;
 	}
+#endif
 
 	// remove projectile when a 'noimpact' surface is hit
 	if ( ( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
@@ -1089,9 +1094,11 @@ void idProjectile::Fizzle( void ) {
 
 	state = FIZZLED;
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	CancelEvents( &EV_Fizzle );
 	PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
@@ -1281,9 +1288,11 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	state = EXPLODED;
 	BecomeInactive( TH_ARMED ); // grayman #2478 - disable armed thinking
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	//
 	// bind the projectile to the impact entity if necesary
@@ -2474,7 +2483,10 @@ void idDebris::Launch( void ) {
 	physicsObj.SetAxis( axis );
 	SetPhysics( &physicsObj );
 
-	if ( !gameLocal.isClient ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isClient ) 
+#endif
+	{
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
 			RunPhysics();
@@ -2585,9 +2597,11 @@ void idDebris::Fizzle( void ) {
 
 	Hide();
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	CancelEvents( &EV_Fizzle );
 	PostEventMS( &EV_Remove, 0 );

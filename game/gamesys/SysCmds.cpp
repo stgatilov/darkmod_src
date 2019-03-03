@@ -942,15 +942,14 @@ Cmd_Kill_f
 void Cmd_Kill_f( const idCmdArgs &args ) {
 	idPlayer	*player;
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		if ( gameLocal.isClient ) {
-#ifdef MULTIPLAYER
 			idBitMsg	outMsg;
 			byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
 			outMsg.Init( msgBuf, sizeof( msgBuf ) );
 			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_KILL );
 			networkSystem->ClientSendReliableMessage( outMsg );
-#endif
 		} else {
 			player = gameLocal.GetClientByCmdArgs( args );
 			if ( !player ) {
@@ -960,7 +959,9 @@ void Cmd_Kill_f( const idCmdArgs &args ) {
 			player->Kill( false, false );
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "say killed client %d '%s^0'\n", player->entityNumber, gameLocal.userInfo[ player->entityNumber ].GetString( "ui_name" ) ) );
 		}
-	} else {
+	} else 
+#endif
+	{
 		player = gameLocal.GetLocalPlayer();
 		if ( !player ) {
 			return;
@@ -1003,6 +1004,7 @@ void Cmd_PlayerModel_f( const idCmdArgs &args ) {
 Cmd_Say
 ==================
 */
+#ifdef MULTIPLAYER
 static void Cmd_Say( bool team, const idCmdArgs &args ) {
 	const char *name;
 	idStr text;
@@ -1041,7 +1043,6 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 		name = "server";
 	}
 
-#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		idBitMsg	outMsg;
 		byte		msgBuf[ 256 ];
@@ -1053,7 +1054,6 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 	} else {
 		gameLocal.mpGame.ProcessChatMessage( gameLocal.localClientNum, team, name, text, NULL );
 	}
-#endif
 }
 
 /*
@@ -1080,9 +1080,7 @@ Cmd_AddChatLine_f
 ==================
 */
 static void Cmd_AddChatLine_f( const idCmdArgs &args ) {
-#ifdef MULTIPLAYER
 	gameLocal.mpGame.AddChatLine( args.Argv( 1 ) );
-#endif
 }
 
 /*
@@ -1111,6 +1109,7 @@ static void Cmd_Kick_f( const idCmdArgs &args ) {
 	cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "say kicking out client %d '%s^0'\n", player->entityNumber, gameLocal.userInfo[ player->entityNumber ].GetString( "ui_name" ) ) );
 	cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "kick %d\n", player->entityNumber ) );
 }
+#endif
 
 /*
 ==================
@@ -3873,10 +3872,12 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "listActiveEntities",	Cmd_ActiveEntityList_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"lists active game entities" );
 	cmdSystem->AddCommand( "listMonsters",			idAI::List_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"lists monsters" );
 	cmdSystem->AddCommand( "listSpawnArgs",			Cmd_ListSpawnArgs_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"list the spawn args of an entity", idGameLocal::ArgCompletion_EntityName );
+#ifdef MULTIPLAYER
 	cmdSystem->AddCommand( "say",					Cmd_Say_f,					CMD_FL_GAME,				"text chat" );
 	cmdSystem->AddCommand( "sayTeam",				Cmd_SayTeam_f,				CMD_FL_GAME,				"team text chat" );
 	cmdSystem->AddCommand( "addChatLine",			Cmd_AddChatLine_f,			CMD_FL_GAME,				"internal use - core to game chat lines" );
 	cmdSystem->AddCommand( "gameKick",				Cmd_Kick_f,					CMD_FL_GAME,				"same as kick, but recognizes player names" );
+#endif
 	cmdSystem->AddCommand( "give",					Cmd_Give_f,					CMD_FL_GAME|CMD_FL_CHEAT,	"gives one or more items" );
 	cmdSystem->AddCommand( "centerview",			Cmd_CenterView_f,			CMD_FL_GAME,				"centers the view" );
 	cmdSystem->AddCommand( "god",					Cmd_God_f,					CMD_FL_GAME|CMD_FL_CHEAT,	"enables god mode" );
@@ -3997,11 +3998,11 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "clientVoiceChat",		idMultiplayerGame::VoiceChat_f,	CMD_FL_GAME,			"voice chats: clientVoiceChat <sound shader>" );
 	cmdSystem->AddCommand( "clientVoiceChatTeam",	idMultiplayerGame::VoiceChatTeam_f,	CMD_FL_GAME,		"team voice chats: clientVoiceChat <sound shader>" );
 	cmdSystem->AddCommand( "serverForceReady", idMultiplayerGame::ForceReady_f, CMD_FL_GAME, "force all players ready" );
-#endif
 
 	// multiplayer server commands
 	cmdSystem->AddCommand( "serverMapRestart",		idGameLocal::MapRestart_f,	CMD_FL_GAME,				"restart the current game" );
 	cmdSystem->AddCommand( "serverNextMap",			idGameLocal::NextMap_f,		CMD_FL_GAME,				"change to the next map" );
+#endif
 
 	// greebo: Added commands to alter the clipmask/contents of entities.
 	cmdSystem->AddCommand( "setClipMask",			Cmd_SetClipMask,			CMD_FL_GAME,				"Set the clipmask of the target entity, usage: 'setClipMask crate01 1313'", idGameLocal::ArgCompletion_EntityName);

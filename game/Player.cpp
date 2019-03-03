@@ -774,7 +774,11 @@ void idPlayer::SetupWeaponEntity()
 		weapon.GetEntity()->Clear();
 		currentWeapon = -1;
 	}
-	else if ( !gameLocal.isClient ) {
+	else 
+#ifdef MULTIPLAYER
+		if ( !gameLocal.isClient )
+#endif
+	{
 		weapon = static_cast<idWeapon *>( gameLocal.SpawnEntityType( idWeapon::Type, NULL ) );
 		weapon.GetEntity()->SetOwner( this );
 		currentWeapon = -1;
@@ -879,7 +883,10 @@ void idPlayer::Init( void ) {
 	oldViewYaw = 0.0f;
 
 	// set the pm_ cvars
-	if ( !gameLocal.isMultiplayer || gameLocal.isServer ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isMultiplayer || gameLocal.isServer ) 
+#endif 
+	{
 		kv = spawnArgs.MatchPrefix( "pm_", NULL );
 		while( kv ) {
 			cvarSystem->SetCVarString( kv->GetKey(), kv->GetValue() );
@@ -930,7 +937,11 @@ void idPlayer::Init( void ) {
 		cursor->SetStateString( "guicursor", "0" );
 	}
 
-	if ( ( gameLocal.isMultiplayer || g_testDeath.GetBool() ) && skin ) {
+	if ( ( 
+#ifdef MULTIPLAYER
+		gameLocal.isMultiplayer || 
+#endif
+		g_testDeath.GetBool() ) && skin ) {
 		SetSkin( skin );
 		renderEntity.shaderParms[6] = 0.0f;
 	} else if ( spawnArgs.GetString( "spawn_skin", NULL, &value ) ) {
@@ -1053,11 +1064,13 @@ void idPlayer::Spawn( void )
 	// allow thinking during cinematics
 	cinematic = true;
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		// always start in spectating state waiting to be spawned in
 		// do this before SetClipModel to get the right bounding box
 		spectating = true;
 	}
+#endif
 
 	maxHealth = spawnArgs.GetInt("maxhealth", "100");
 
@@ -1089,14 +1102,19 @@ void idPlayer::Spawn( void )
 	skin = renderEntity.customSkin;
 
 	// only the local player needs guis
-	if ( !gameLocal.isMultiplayer || entityNumber == gameLocal.localClientNum ) {
-
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isMultiplayer || entityNumber == gameLocal.localClientNum ) 
+#endif
+	{
 		// load HUD
+#ifdef MULTIPLAYER
 		if ( gameLocal.isMultiplayer ) {
 			// I need the HUD uniqued for the inventory code to interact with it.
 			//hud = uiManager->FindGui( "guis/mphud.gui", true, false, true );
 			hud = uiManager->FindGui( "guis/mphud.gui", true, true );
-		} else if ( spawnArgs.GetString( "hud", "", temp ) ) {
+		} else 
+#endif
+		if ( spawnArgs.GetString( "hud", "", temp ) ) {
 			// I need the HUD uniqued for the inventory code to interact with it.
 			//hud = uiManager->FindGui( temp, true, false, true );
 			hud = uiManager->FindGui( temp, true, true );
@@ -1107,7 +1125,11 @@ void idPlayer::Spawn( void )
 
 		// load cursor
 		if ( spawnArgs.GetString( "cursor", "", temp ) ) {
-			cursor = uiManager->FindGui( temp, true, gameLocal.isMultiplayer, gameLocal.isMultiplayer );
+			cursor = uiManager->FindGui( temp, true
+#ifdef MULTIPLAYER
+				, gameLocal.isMultiplayer, gameLocal.isMultiplayer
+#endif
+			);
 		}
 		if ( cursor ) {
 			cursor->Activate( true, gameLocal.time );
@@ -1138,7 +1160,11 @@ void idPlayer::Spawn( void )
 
 	// initialize user info related settings
 	// on server, we wait for the userinfo broadcast, as this controls when the player is initially spawned in game
-	if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) {
+	if ( 
+#ifdef MULTIPLAYER
+		gameLocal.isClient || 
+#endif
+		entityNumber == gameLocal.localClientNum ) {
 		UserInfoChanged(false);
 	}
 
@@ -1160,6 +1186,7 @@ void idPlayer::Spawn( void )
 		headEnt->GetRenderEntity()->noSelfShadow = true;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer )
 	{
 		Init();
@@ -1174,6 +1201,7 @@ void idPlayer::Spawn( void )
 		}
 	}
 	else
+#endif
 	{
 		SetupWeaponEntity();
 		SpawnFromSpawnSpot();
@@ -1182,7 +1210,11 @@ void idPlayer::Spawn( void )
 	// trigger playtesting item gives, if we didn't get here from a previous level
 	// the devmap key will be set on the first devmap, but cleared on any level
 	// transitions
-	if ( !gameLocal.isMultiplayer && gameLocal.serverInfo.FindKey( "devmap" ) ) {
+	if ( 
+#ifdef MULTIPLAYER
+		!gameLocal.isMultiplayer && 
+#endif
+		gameLocal.serverInfo.FindKey( "devmap" ) ) {
 		// fire a trigger with the name "devmap"
 		idEntity *ent = gameLocal.FindEntity( "devmap" );
 		if ( ent ) {
@@ -2714,9 +2746,12 @@ void idPlayer::Restart( void ) {
 	idActor::Restart();
 	
 	// client needs to setup the animation script object again
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		Init();
-	} else {
+	} else
+#endif
+	{
 		// choose a random spot and prepare the point of view in case player is left spectating
 		assert( spectating );
 		SpawnFromSpawnSpot();
@@ -2861,6 +2896,7 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 		Show();
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		if ( !spectating ) {
 			// we may be called twice in a row in some situations. avoid a double fx and 'fly to the roof'
@@ -2870,7 +2906,9 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 			}
 		}
 		AI_TELEPORT = true;
-	} else {
+	} else 
+#endif
+	{
 		AI_TELEPORT = false;
 	}
 
@@ -2932,9 +2970,11 @@ Restores any inventory and player stats when changing levels.
 ===============
 */
 void idPlayer::RestorePersistantInfo( void ) {
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		gameLocal.persistentPlayerInfo[entityNumber].Clear();
 	}
+#endif
 
 	// greebo: TDM doesn't need to load health or weapon from the dict, that is not (yet) intended since
 	// map switching within missions is not yet planned or fleshed out
@@ -3045,7 +3085,10 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	userInfo = GetUserInfo();
 	showWeaponViewModel = userInfo->GetBool( "ui_showGun" );
 
-	if ( !gameLocal.isMultiplayer ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isMultiplayer ) 
+#endif
+	{
 		return false;
 	}
 
@@ -3776,9 +3819,11 @@ idPlayer::Reload
 ===============
 */
 void idPlayer::Reload( void ) {
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	if ( spectating || gameLocal.inCinematic || influenceActive ) {
 		return;
@@ -3836,9 +3881,11 @@ void idPlayer::NextWeapon() {
 		return;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	if (m_WeaponCursor == NULL || m_WeaponCursor->GetCurrentCategory() == NULL) {
 		return;
@@ -3886,9 +3933,11 @@ void idPlayer::PrevWeapon( void ) {
 		return;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 
 	if (m_WeaponCursor == NULL || m_WeaponCursor->GetCurrentCategory() == NULL) {
 		return;
@@ -3937,10 +3986,11 @@ bool idPlayer::SelectWeapon( int num, bool force )
 		return false;
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return false;
 	}
-
+#endif
 	if ( gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) ) {
 		num = weapon_fists;
 		hiddenWeapon ^= 1;
@@ -4365,9 +4415,11 @@ void idPlayer::Weapon_GUI( void )
 	weapon.GetEntity()->LowerWeapon();
 
 	// disable click prediction for the GUIs. handy to check the state sync does the right thing
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient && !net_clientPredictGUI.GetBool() ) {
 		return;
 	}
+#endif
 
 	if ( ( oldButtons ^ usercmd.buttons ) & BUTTON_ATTACK )
 	{
@@ -4386,11 +4438,13 @@ void idPlayer::Weapon_GUI( void )
 			}
 #endif
 		}
+#ifdef MULTIPLAYER
 		if ( gameLocal.isClient )
 		{
 			// we predict enough, but don't want to execute commands
 			return;
 		}
+#endif
 
 #if 0
 		if ( focusGUIent )
@@ -4419,6 +4473,7 @@ void idPlayer::UpdateWeapon( void ) {
 
 	assert( !spectating );
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		// clients need to wait till the weapon and it's world model entity
 		// are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
@@ -4426,6 +4481,7 @@ void idPlayer::UpdateWeapon( void ) {
 			return;
 		}
 	}
+#endif
 
 	// always make sure the weapon is correctly setup before accessing it
 	if ( !weapon.GetEntity()->IsLinked() ) {
@@ -4677,7 +4733,10 @@ void idPlayer::UpdateSpectating( void ) {
 	assert( !gameLocal.isClient );
 	assert( IsHidden() );
 	idPlayer *player;
-	if ( !gameLocal.isMultiplayer ) {
+#ifdef MULTIPLAYER
+	if ( !gameLocal.isMultiplayer ) 
+#endif
+	{
 		return;
 	}
 	player = gameLocal.GetClientByNum( spectator );
@@ -4752,7 +4811,9 @@ idPlayer::Collide
 
 bool idPlayer::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	if( collision.fraction == 1.0f || collision.c.type == CONTACT_NONE // didnt hit anything
+#ifdef MULTIPLAYER
 		|| gameLocal.isClient // server computes
+#endif
 		)
 	{
 		return false;
@@ -5149,13 +5210,19 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 
 	// do not evaluate the bob for other clients
 	// when doing a spectate follow, don't do any weapon bobbing
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient && entityNumber != gameLocal.localClientNum ) {
 		viewBobAngles.Zero();
 		viewBob.Zero();
 		return;
 	}
+#endif
 
-	if ( !physicsObj.HasGroundContacts() || influenceActive == INFLUENCE_LEVEL2 || ( gameLocal.isMultiplayer && spectating ) ) {
+	if ( !physicsObj.HasGroundContacts() || influenceActive == INFLUENCE_LEVEL2 
+#ifdef MULTIPLAYER
+		|| ( gameLocal.isMultiplayer && spectating )
+#endif
+		) {
 		// airborne
 		bobCycle = 0;
 		bobFoot = 0;
@@ -5777,7 +5844,6 @@ idPlayer::Spectate
 */
 void idPlayer::Spectate( bool spectate ) {
 	idBitMsg	msg;
-	byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
 	// track invisible player bug
 	// all hiding and showing should be performed through Spectate calls
@@ -5790,11 +5856,14 @@ void idPlayer::Spectate( bool spectate ) {
 
 	spectating = spectate;
 
+#ifdef MULTIPLAYER
+	byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 	if ( gameLocal.isServer ) {
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.WriteBits( spectating, 1 );
 		ServerSendEvent( EVENT_SPECTATE, &msg, false, -1 );
 	}
+#endif
 
 	if ( spectating ) {
 		// join the spectators
@@ -5880,6 +5949,7 @@ idPlayer::PerformImpulse
 */
 void idPlayer::PerformImpulse( int impulse ) {
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -5890,6 +5960,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		msg.WriteBits( impulse, 6 );
 		ClientSendEvent( EVENT_IMPULSE, &msg );
 	}
+#endif
 
 	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) 
 	{
@@ -6016,7 +6087,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_24:
 		{
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			if ( 
+#ifdef MULTIPLAYER
+				gameLocal.isClient || 
+#endif
+				entityNumber == gameLocal.localClientNum )
 			{
 					physicsObj.PerformMantle();
 			}
@@ -6151,7 +6226,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 		case IMPULSE_44:		// Lean forward
 		{
 			m_ButtonStateTracker.StartTracking(impulse);
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			if ( 
+#ifdef MULTIPLAYER
+				gameLocal.isClient || 
+#endif
+				entityNumber == gameLocal.localClientNum )
 				physicsObj.ToggleLean(90.0);
 		}
 		break;
@@ -6163,7 +6242,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			m_ButtonStateTracker.StartTracking(impulse);
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left lean impulse pressed\r");
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			if ( 
+#ifdef MULTIPLAYER
+				gameLocal.isClient || 
+#endif
+				entityNumber == gameLocal.localClientNum )
 			{
 				// Do we need to enter the leaning state?
 				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left leaning started\r");
@@ -6179,7 +6262,11 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			m_ButtonStateTracker.StartTracking(impulse);
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right lean impulse pressed\r");
-			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+			if ( 
+#ifdef MULTIPLAYER
+				gameLocal.isClient || 
+#endif
+				entityNumber == gameLocal.localClientNum )
 				physicsObj.ToggleLean(0.0);
 		}
 		break;
@@ -6354,7 +6441,11 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 		case IMPULSE_23:		// TDM crouch
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
-				if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum ) 
+				if ( 
+#ifdef MULTIPLAYER
+					gameLocal.isClient || 
+#endif
+					entityNumber == gameLocal.localClientNum )
 				{
 					m_CrouchIntent = !m_CrouchIntent;
 				}
@@ -6530,7 +6621,11 @@ void idPlayer::EvaluateControls( void )
 	// TDM: Added lean key check
 
 	// in MP, idMultiplayerGame decides spawns
-	if ( forceRespawn && !gameLocal.isMultiplayer && !g_testDeath.GetBool() ) {
+	if ( forceRespawn 
+#ifdef MULTIPLAYER
+		&& !gameLocal.isMultiplayer 
+#endif
+		&& !g_testDeath.GetBool() ) {
 		// in single player, we let the session handle restarting the level or loading a game
 		gameLocal.sessionCommand = "died";
 	}
@@ -7548,7 +7643,11 @@ idPlayer::UpdateDeathSkin
 ==============
 */
 void idPlayer::UpdateDeathSkin( bool state_hitch ) {
-	if ( !( gameLocal.isMultiplayer || g_testDeath.GetBool() ) ) {
+	if ( !( 
+#ifdef MULTIPLAYER
+		gameLocal.isMultiplayer || 
+#endif
+		g_testDeath.GetBool() ) ) {
 		return;
 	}
 	if ( health <= 0 ) {
@@ -7895,7 +7994,11 @@ void idPlayer::Think( void )
 		}
 	}
 
-	if ( gameLocal.isMultiplayer || g_showPlayerShadow.GetBool() ) {
+	if ( 
+#ifdef MULTIPLAYER
+		gameLocal.isMultiplayer || 
+#endif
+		g_showPlayerShadow.GetBool() ) {
 		renderEntity.suppressShadowInViewID	= 0;
 		if ( headRenderEnt ) {
 			headRenderEnt->suppressShadowInViewID = 0;
@@ -8126,8 +8229,8 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	// grayman #3848 - note who killed you
 	m_killedBy = attacker;
 
-	if ( gameLocal.isMultiplayer || g_testDeath.GetBool() ) {
 #ifdef MULTIPLAYER
+	if ( gameLocal.isMultiplayer || g_testDeath.GetBool() ) {
 		idPlayer *killer = NULL;
 		// no gibbing in MP. Event_Gib will early out in MP
 		if ( attacker->IsType( idPlayer::Type ) ) {
@@ -8139,8 +8242,8 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 			}
 		}
 		gameLocal.mpGame.PlayerDeath( this, killer, isTelefragged );
-#endif
 	} else
+#endif
 	{
 		physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
 		// SR CONTENTS_RESPONSE FIX
@@ -8240,12 +8343,14 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	// always give half damage if hurting self
 	if ( attacker == this )
 	{
+#ifdef MULTIPLAYER
 		if ( gameLocal.isMultiplayer )
 		{
 			// only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
 			damage *= damageDef->GetFloat( "selfDamageScale", "0.5" );
 		}
 		else
+#endif
 		{
 			damage *= damageDef->GetFloat( "selfDamageScale", "1" );
 		}
@@ -8305,9 +8410,11 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	float		attackerPushScale;
 
 	// damage is only processed on server
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		return;
 	}
+#endif
 	
 	if ( !fl.takedamage || noclip || spectating || gameLocal.inCinematic ) {
 		return;
@@ -8386,7 +8493,9 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	// do the damage
 	if ( damage > 0 ) 
 	{
-		if ( !gameLocal.isMultiplayer ) 
+#ifdef MULTIPLAYER
+		if ( !gameLocal.isMultiplayer )
+#endif
 		{
 			float scale = g_damageScale.GetFloat();
 			if ( scale > 0.0f ) 
@@ -8484,7 +8593,11 @@ void idPlayer::Teleport( const idVec3 &origin, const idAngles &angles, idEntity 
 	}
 
 	SetOrigin( origin + idVec3( 0, 0, CM_CLIP_EPSILON ) );
-	if ( !gameLocal.isMultiplayer && GetFloorPos( 16.0f, org ) ) {
+	if ( 
+#ifdef MULTIPLAYER
+		!gameLocal.isMultiplayer && 
+#endif
+		GetFloorPos( 16.0f, org ) ) {
 		SetOrigin( org );
 	}
 
@@ -8499,19 +8612,28 @@ void idPlayer::Teleport( const idVec3 &origin, const idAngles &angles, idEntity 
 	idealLegsYaw = 0.0f;
 	oldViewYaw = viewAngles.yaw;
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		playerView.Flash( colorWhite, 140 );
 	}
+#endif
 
 	UpdateVisuals();
 
 	teleportEntity = destination;
 
-	if ( !gameLocal.isClient && !noclip ) {
+	if ( 
+#ifdef MULTIPLAYER
+		!gameLocal.isClient && 
+#endif
+		!noclip ) {
+#ifdef MULTIPLAYER
 		if ( gameLocal.isMultiplayer ) {
 			// kill anything at the new position or mark for kill depending on immediate or delayed teleport
 			gameLocal.KillBox( this, destination != NULL );
-		} else {
+		} else 
+#endif
+		{
 			// kill anything at the new position
 			gameLocal.KillBox( this, true );
 		}
@@ -8546,6 +8668,7 @@ float idPlayer::DefaultFov( void ) const {
 	float fov;
 
 	fov = g_fov.GetFloat();
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		if ( fov < 90.0f ) {
 			return 90.0f;
@@ -8553,6 +8676,7 @@ float idPlayer::DefaultFov( void ) const {
 			return 110.0f;
 		}
 	}
+#endif
 
 	return fov;
 }
@@ -8738,11 +8862,14 @@ void idPlayer::CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis ) {
 	angles.pitch	= xyspeed * bobfracsin * 0.005f;
 
 	// gun angles from turning
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer ) {
 		idAngles offset = GunTurningOffset();
 		offset *= g_mpWeaponAngleScale.GetFloat();
 		angles += offset;
-	} else {
+	} else 
+#endif
+	{
 		angles += GunTurningOffset();
 	}
 
@@ -8850,9 +8977,12 @@ idVec3 idPlayer::GetEyePosition( void ) const
 	idVec3 org;
  
 	// use the smoothed origin if spectating another player in multiplayer
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient && entityNumber != gameLocal.localClientNum ) {
 		org = smoothedOrigin;
-	} else {
+	} else 
+#endif
+	{
 		org = GetPhysics()->GetOrigin();
 	}
 
@@ -9111,10 +9241,12 @@ void idPlayer::SetLastHitTime( int time ) {
 		// level start and inits
 		return;
 	}
+#ifdef MULTIPLAYER
 	if ( gameLocal.isMultiplayer && ( time - lastSndHitTime ) > 10 ) {
 		lastSndHitTime = time;
 		StartSound( "snd_hit_feedback", SND_CHANNEL_ANY, SSF_PRIVATE_SOUND, false, NULL );
 	}
+#endif
 	if ( cursor ) {
 		cursor->HandleNamedEvent( "hitTime" );
 	}
@@ -9359,10 +9491,12 @@ idPlayer::Event_SelectWeapon
 */
 void idPlayer::Event_SelectWeapon( const char *weaponName )
 {
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		gameLocal.Warning( "Cannot switch weapons from script in multiplayer" );
 		return;
 	}
+#endif
 
 	if ( hiddenWeapon && gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) ) {
 		idealWeapon = weapon_fists;
@@ -9415,9 +9549,11 @@ void idPlayer::Event_ExitTeleporter( void ) {
 
 	pushVel = exitEnt->spawnArgs.GetFloat( "push", "300" );
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isServer ) {
 		ServerSendEvent( EVENT_EXIT_TELEPORTER, NULL, false, -1 );
 	}
+#endif
 
 	SetPrivateCameraView( NULL );
 	// setup origin and push according to the exit target
@@ -9533,7 +9669,11 @@ void idPlayer::ClientPredictionThink( void ) {
 	// this may use firstPersonView, or a thirdPerson / camera view
 	CalculateRenderView();
 
-	if ( !gameLocal.inCinematic && weapon.GetEntity() && ( health > 0 ) && !( gameLocal.isMultiplayer && spectating ) ) {
+	if ( !gameLocal.inCinematic && weapon.GetEntity() && ( health > 0 ) 
+#ifdef MULTIPLAYER
+		&& !( gameLocal.isMultiplayer && spectating ) 
+#endif
+		) {
 		UpdateWeapon();
 	}
 
@@ -9559,7 +9699,11 @@ void idPlayer::ClientPredictionThink( void ) {
 		}
 	}
 
-	if ( gameLocal.isMultiplayer || g_showPlayerShadow.GetBool() ) {
+	if ( 
+#ifdef MULTIPLAYER
+		gameLocal.isMultiplayer || 
+#endif
+		g_showPlayerShadow.GetBool() ) {
 		renderEntity.suppressShadowInViewID	= 0;
 		if ( headRenderEnt ) {
 			headRenderEnt->suppressShadowInViewID = 0;
@@ -9617,6 +9761,7 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 	}
 
 	// smoothen the rendered origin and angles of other clients
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient && gameLocal.framenum >= smoothedFrame && ( entityNumber != gameLocal.localClientNum || selfSmooth ) ) {
 
 		// render origin and axis
@@ -9628,7 +9773,6 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 			idVec2 originDiff = renderOrigin.ToVec2() - smoothedOrigin.ToVec2();
 			if ( originDiff.LengthSqr() < Square( 100.0f ) ) {
 				// smoothen by pushing back to the previous position
-#ifdef MULTIPLAYER
 				if (selfSmooth) {
 
 					assert( entityNumber == gameLocal.localClientNum );
@@ -9636,7 +9780,6 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 					renderOrigin.ToVec2() -= net_clientSelfSmoothing.GetFloat() * originDiff;
 
 				} else 
-#endif
 				{
 					renderOrigin.ToVec2() -= gameLocal.clientSmoothing * originDiff;
 				}
@@ -9650,7 +9793,9 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 		axis = idAngles( 0.0f, smoothedAngles.yaw, 0.0f ).ToMat3();
 		origin = ( smoothedOrigin - GetPhysics()->GetOrigin() ) * axis.Transpose();
 
-	} else {
+	} else 
+#endif
+	{
 
 		axis = viewAxis;
 		origin = modelOffset;
