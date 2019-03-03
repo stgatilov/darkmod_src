@@ -43,13 +43,9 @@ ziploader_string = ' \
 	minizip/unzip.c \
 	minizip/zip.c'
 
-ziploader_list = scons_utils.BuildList( '../lib', ziploader_string )
+ziploader_list = scons_utils.BuildList( 'lib', ziploader_string )
 
 local_env = g_env.Clone()
-
-local_env.Append(CPPPATH = './../include')
-local_env.Append(CPPPATH = './../include/minizip')
-local_env.Append(CPPPATH = './../include/zlib')
 
 ret_list = []
 

@@ -32,9 +32,6 @@ tdm_package_list = scons_utils.BuildList('tdm_package', 'tdm_package.cpp')
 local_env = g_env.Clone()
 local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtual-dtor' ])
 
-local_env.Append(CPPPATH = '#/../include')
-local_env.Append(CPPPATH = '#/libtdm_update')
-
 if g_os == 'MacOSX':
 	local_env.Append(LIBS = [
 		File('#/../macosx/libcurl/libcurl.a'),

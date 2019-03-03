@@ -125,7 +125,7 @@ if TARGET_ARCH == 'x32':
 
 # general configuration, target selection --------
 
-BUILD_ROOT = './build'
+BUILD_ROOT = 'build'
 g_build = BUILD_ROOT + '/scons_' + TARGET_ARCH + '/' + BUILD
 
 SConsignFile( 'scons.signatures' )
@@ -219,6 +219,8 @@ if g_os == 'FreeBSD':
 g_base_env.Append(CPPPATH = '#/')
 g_base_env.Append(CPPPATH = '#/../include')
 g_base_env.Append(CPPPATH = '#/../include/zlib')
+g_base_env.Append(CPPPATH = '#/../include/minizip')
+g_base_env.Append(CPPPATH = '#/libtdm_update')
 
 g_env = g_base_env.Clone()
 
@@ -234,18 +236,23 @@ GLOBALS = 'g_env g_os TARGET_ARCH'
 # targets ----------------------------------------
 
 Export( 'GLOBALS ' + GLOBALS )
+
+# map this whole directory into build dir
 VariantDir( g_build, '.', duplicate = 0 )
+# map 'lib' dir from parent directory into 'lib' subdir
+VariantDir( g_build + '/lib', '../lib', duplicate = 0 )
+
 Export( 'GLOBALS ' + GLOBALS )
 
 # Build the updater
-tdm_update = SConscript('SConscript.tdm_update')
+tdm_update = SConscript(g_build + '/SConscript.tdm_update')
 # Specify executable
-InstallAs( '#' + scons_utils.ExecutableName('tdm_update', g_os, TARGET_ARCH), tdm_update )
+InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_update', g_os, TARGET_ARCH), tdm_update )
 
 # Build the packager
-tdm_package = SConscript('SConscript.tdm_package')
+tdm_package = SConscript(g_build + '/SConscript.tdm_package')
 # Specify executable
-InstallAs( '#' + scons_utils.ExecutableName('tdm_package', g_os, TARGET_ARCH), tdm_package )
+InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_package', g_os, TARGET_ARCH), tdm_package )
 
 # end targets ------------------------------------
 
