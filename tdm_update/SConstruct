@@ -173,10 +173,6 @@ if ( TARGET_ARCH == 'x64' ):
 	BASELINKFLAGS.append( '-m64' )
 
 if g_os == 'Linux':
-	if TARGET_ARCH == 'x86':
-		# help 64 bit machines to find the compatibility 32bit libraries
-		BASELINKFLAGS.append( '-L/lib32' )
-		BASELINKFLAGS.append( '-L/usr/lib32' )
 	BASELINKFLAGS.append( '-pthread' )
 	BASELINKFLAGS.append( '-lrt' )
 	# Add the __linux__ define

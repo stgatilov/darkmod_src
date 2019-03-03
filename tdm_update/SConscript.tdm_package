@@ -49,11 +49,13 @@ elif g_os == 'Linux':
 	if TARGET_ARCH == 'x86':
 		local_env.Append(LIBS = [
 			File('#/../linux/libcurl/libcurl.a'),
+			File('#/../linux/polarssl/libpolarssl.a'),
 			'stdc++fs',
 		])
 	elif TARGET_ARCH == 'x64':
 		local_env.Append(LIBS = [
 			File('#/../linux/libcurl/lib64/libcurl.a'),
+			File('#/../linux/polarssl/lib64/libpolarssl.a'),
 			'stdc++fs',
 		])
 
