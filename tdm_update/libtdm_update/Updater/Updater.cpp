@@ -1773,20 +1773,13 @@ void Updater::PostUpdateCleanup()
 		}
 	}
 
-	// grayman #3514 - Remove DLL file in case the user is updating an existing installation.
-	// Also remove leftover updater file.
-
+	// Remove leftover updater file.
 #if WIN32
-	std::string tdmDLLName = "gamex86.dll";
-	std::string tdmUpdateName = "_tdm_update.exe";
+	File::Remove(GetTargetPath() / "_tdm_update.exe");
 #else 
-	std::string tdmDLLName = "gamex86.so";
-	std::string tdmUpdateName = "_tdm_update.linux";
+	File::Remove(GetTargetPath() / "_tdm_update.linux");
+	File::Remove(GetTargetPath() / "_tdm_update.linux64");
 #endif
-    
-    // disable the removal of the game dll to test changes to FindDLL related to issue #3224 --> reverted
-	File::Remove(GetTargetPath() / tdmDLLName); 
-	File::Remove(GetTargetPath() / tdmUpdateName);
 }
 
 void Updater::CancelDownloads()
