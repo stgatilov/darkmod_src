@@ -2010,7 +2010,9 @@ void idAFEntity_Gibbable::SpawnGibs( const idVec3 &dir, const char *damageDefNam
 	idVec3 entityCenter, velocity;
 	idList<idEntity *> list;
 
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 
 	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName, true ); // grayman #3391 - don't create a default 'damageDef'
 																				// We want 'false' here, but FindEntityDefDict()

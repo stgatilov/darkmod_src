@@ -1746,7 +1746,9 @@ idWeapon::WeaponStolen
 ================
 */
 void idWeapon::WeaponStolen( void ) {
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 	if ( projectileEnt ) {
 		if ( isLinked ) {
 			SetState( "WeaponStolen", 0 );

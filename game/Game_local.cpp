@@ -3274,9 +3274,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
 
 #ifdef _DEBUG
+#ifdef MULTIPLAYER
 	if ( isMultiplayer ) {
 		assert( !isClient );
 	}
+#endif
 #endif
 
 	player = GetLocalPlayer();
@@ -5379,9 +5381,11 @@ idEntity *idGameLocal::SpawnEntityType( const idTypeInfo &classdef, const idDict
 	idClass *obj;
 
 #ifdef _DEBUG
+#ifdef MULTIPLAYER
 	if ( isClient ) {
 		assert( bIsClientReadSnapshot );
 	}
+#endif
 #endif
 
 	if ( !classdef.IsType( idEntity::Type ) ) {

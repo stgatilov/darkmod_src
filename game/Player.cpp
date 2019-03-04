@@ -2767,7 +2767,9 @@ idPlayer::ServerSpectate
 ================
 */
 void idPlayer::ServerSpectate( bool spectate ) {
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 
 	if ( spectating != spectate ) {
 		Spectate( spectate );
@@ -2844,7 +2846,9 @@ when called here with spectating set to true, just place yourself and init
 void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_angles ) {
 	idVec3 spec_origin;
 
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 
 	respawning = true;
 
@@ -3731,7 +3735,9 @@ void idPlayer::UpdatePowerUps( void ) {
 	}
 
 	if ( healthPool && gameLocal.time > nextHealthPulse && !AI_DEAD && health > 0 ) {
+#ifdef MULTIPLAYER
 		assert( !gameLocal.isClient );	// healthPool never be set on client
+#endif
 
 		//int amt = ( healthPool > 5 ) ? 5 : healthPool; // old code
 		// greebo: Changed step amount to be a variable that can be set from the "outside"
@@ -4075,7 +4081,9 @@ void idPlayer::DropWeapon( bool died ) {
 	idVec3 forward, up;
 	int inclip, ammoavailable;
 
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 	
 	if ( spectating || weaponGone || weapon.GetEntity() == NULL ) {
 		return;
@@ -4138,7 +4146,9 @@ steal the target player's current weapon
 */
 void idPlayer::StealWeapon( idPlayer *player )
 {
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 
 	// make sure there's something to steal
 	idWeapon *player_weapon = static_cast< idWeapon * >( player->weapon.GetEntity() );
@@ -4216,7 +4226,9 @@ void idPlayer::Weapon_Combat( void ) {
 
 	if ( idealWeapon != currentWeapon ) {
 		if ( weaponCatchup ) {
+#ifdef MULTIPLAYER
 			assert( gameLocal.isClient );
+#endif
 
 			currentWeapon = idealWeapon;
 			weaponGone = false;
@@ -4730,7 +4742,9 @@ idPlayer::UpdateSpectating
 */
 void idPlayer::UpdateSpectating( void ) {
 	assert( spectating );
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 	assert( IsHidden() );
 	idPlayer *player;
 #ifdef MULTIPLAYER
@@ -8151,8 +8165,9 @@ idPlayer::Killed
 void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
 	float delay;
 
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
-
+#endif
 	// stop taking knockback once dead
 	fl.noknockback = true;
 	if ( health < -999 ) {
@@ -8287,7 +8302,9 @@ callback function for when another entity recieved damage from this entity.  dam
 ================
 */
 void idPlayer::DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage ) {
+#ifdef MULTIPLAYER
 	assert( !gameLocal.isClient );
+#endif
 	if ( damage && ( victim != this ) && victim->IsType( idActor::Type ) ) {
 		SetLastHitTime( gameLocal.time );
 	}
