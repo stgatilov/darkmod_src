@@ -15,6 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "precompiled.h"
 #include "GLSLProgram.h"
+#include <memory>
 #include <regex>
 
 GLuint GLSLProgram::currentProgram = 0;
@@ -240,9 +241,11 @@ namespace {
 				totalIncludedLines += std::count( includeContents.begin(), includeContents.end(), '\n' ) + 2;
 
 				// replace include statement with content of included file
-				source.replace( match[ 0 ].first, match[ 0 ].second, includeBeginMarker + includeContents + includeEndMarker );
+				std::string replacement = includeBeginMarker + includeContents + includeEndMarker;
+				source.replace( match.position( 0 ), match.length( 0 ), replacement );
 			} else {
-				source.replace( match[ 0 ].first, match[ 0 ].second, "// already included " + fileToInclude );
+				std::string replacement = "// already included " + fileToInclude;
+				source.replace( match.position( 0 ), match.length( 0 ), replacement );
 			}
 		}
 	}
@@ -270,10 +273,10 @@ namespace {
 			auto defIt = defines.FindKey( define.c_str() );
 			if( defIt != nullptr ) {
 				std::string replacement = "#define " + define + " " + defIt->GetValue().c_str();
-				source.replace( match[ 0 ].first, match[ 0 ].second, replacement );
+				source.replace( match.position( 0 ), match.length( 0 ), replacement );
 			} else {
 				std::string replacement = "// #undef " + define;
-				source.replace( match[ 0 ].first, match[ 0 ].second, replacement );
+				source.replace( match.position( 0 ), match.length( 0 ), replacement );
 			}
 		}
 	}
@@ -361,7 +364,7 @@ void GLSL_DestroyPrograms() {
 
 /// UNIT TESTS FOR SHADER INCLUDES AND DEFINES
 
-#include "../tests/doctest.h"
+#include "../tests/testing.h"
 
 namespace {
 	const std::string BASIC_SHADER =
@@ -437,7 +440,7 @@ namespace {
 		return source;
 	}
 
-	TEST_CASE("Shader include handling", "[shaders]") {
+	TEST_CASE("Shader include handling") {
 		INFO( "Preparing test shaders" );
 		fileSystem->WriteFile( "glprogs/tests/basic_shader.glsl", BASIC_SHADER.c_str(), BASIC_SHADER.size(), "fs_savepath", "" );
 		fileSystem->WriteFile( "glprogs/tests/shared_common.glsl", SHARED_COMMON.c_str(), SHARED_COMMON.size(), "fs_savepath", "" );
@@ -465,7 +468,7 @@ namespace {
 		fileSystem->RemoveFile( "tests/advanced_includes.glsl", "" );
 	}
 
-	TEST_CASE("Shader defines handling", "[shaders]") {
+	TEST_CASE("Shader defines handling") {
 		const std::string shaderWithDynamicDefines =
 			"#version 140\n"
 			"#pragma tdm_define \"FIRST_DEFINE\"\n"

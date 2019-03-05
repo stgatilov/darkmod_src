@@ -238,7 +238,7 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
 # C++11 features
-BASECPPFLAGS.append( '-std=c++11' )
+BASECPPFLAGS.append( '-std=c++14' )
 # maintain this dangerous optimization off at all times
 BASECPPFLAGS.append( '-fno-strict-aliasing' )
 

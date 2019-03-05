@@ -1255,6 +1255,9 @@
     <ClInclude Include="tests\doctest.h">
       <Filter>Tests</Filter>
     </ClInclude>
+    <ClInclude Include="tests\testing.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">

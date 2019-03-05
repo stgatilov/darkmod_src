@@ -630,6 +630,7 @@
     <ClInclude Include="sys\win32\rc\ScriptEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\SoundEditor_resource.h" />
     <ClInclude Include="tests\doctest.h" />
+    <ClInclude Include="tests\testing.h" />
     <ClInclude Include="tests\TestRun.h" />
     <ClInclude Include="tools\edit_public.h" />
     <ClInclude Include="tools\af\DialogAF.h" />

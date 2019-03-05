@@ -1,8 +1,6 @@
 #include "precompiled.h"
 #define DOCTEST_CONFIG_IMPLEMENT
-#undef min
-#undef max
-#include "doctest.h"
+#include "testing.h"
 #include "TestRun.h"
 
 /*
