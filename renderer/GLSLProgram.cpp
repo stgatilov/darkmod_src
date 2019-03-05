@@ -14,11 +14,120 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 
 #include "precompiled.h"
-#include "Shader.h"
+#include "GLSLProgram.h"
 #include <regex>
+
+GLuint GLSLProgram::currentProgram = 0;
+
+GLSLProgram * GLSLProgram::Load( const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
+	return Load( ShaderDefines(), vertexSourceFile, fragmentSourceFile, geometrySourceFile );	
+}
+
+GLSLProgram * GLSLProgram::Load( const ShaderDefines &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
+	GLSLProgramLoader loader;
+	loader.AddVertexShader( vertexSourceFile, defines );
+	loader.AddFragmentShader( fragmentSourceFile, defines );
+	if( geometrySourceFile != nullptr ) {
+		loader.AddGeometryShader( geometrySourceFile, defines );
+	}
+	return loader.LinkProgram();
+}
+
+GLSLProgram::GLSLProgram( GLuint program ) : program( program ) {}
+
+GLSLProgram::~GLSLProgram() {
+	qglDeleteProgram( program );
+}
+
+void GLSLProgram::Activate() {
+	if( currentProgram != program ) {
+		qglUseProgram( program );
+		currentProgram = program;
+	}
+}
+
+void GLSLProgram::Deactivate() {
+	qglUseProgram( 0 );
+	currentProgram = 0;
+}
+
+void GLSLProgram::AddUniformAlias( int alias, const char *uniformName ) {
+	int location = qglGetUniformLocation( program, uniformName );
+	if( location == -1 ) {
+		common->Warning( "Did not find active uniform: %s\n", uniformName );
+		return;
+	}
+	aliasLocationMap.Append( aliasLocation_t { alias, location } );
+}
+
+void GLSLProgram::Uniform1fL( int location, GLfloat value ) {
+	Activate();
+	qglUniform1f( location, value );
+}
+
+void GLSLProgram::Uniform2fL( int location, GLfloat v1, GLfloat v2 ) {
+	Activate();
+	qglUniform2f( location, v1, v2 );
+}
+
+void GLSLProgram::Uniform3fL( int location, GLfloat v1, GLfloat v2, GLfloat v3 ) {
+	Activate();
+	qglUniform3f( location, v1, v2, v3 );
+}
+
+void GLSLProgram::Uniform4fL( int location, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4 ) {
+	Activate();
+	qglUniform4f( location, v1, v2, v3, v4 );
+}
+
+void GLSLProgram::Uniform1iL( int location, GLint value ) {
+	Activate();
+	qglUniform1i( location, value );
+}
+
+void GLSLProgram::Uniform2iL( int location, GLint v1, GLint v2 ) {
+	Activate();
+	qglUniform2i( location, v1, v2 );
+}
+
+void GLSLProgram::Uniform3iL( int location, GLint v1, GLint v2, GLint v3 ) {
+	Activate();
+	qglUniform3i( location, v1, v2, v3 );
+}
+
+void GLSLProgram::Uniform4iL( int location, GLint v1, GLint v2, GLint v3, GLint v4 ) {
+	Activate();
+	qglUniform4i( location, v1, v2, v3, v4 );
+}
+
+void GLSLProgram::Uniform2fL( int location, const idVec2 &value ) {
+	Activate();
+	qglUniform2fv( location, 1, value.ToFloatPtr() );
+}
+
+void GLSLProgram::Uniform3fL( int location, const idVec3 &value ) {
+	Activate();
+	qglUniform3fv( location, 1, value.ToFloatPtr() );
+}
+
+void GLSLProgram::Uniform4fL( int location, const idVec4 &value ) {
+	Activate();
+	qglUniform4fv( location, 1, value.ToFloatPtr() );
+}
+
+void GLSLProgram::UniformMatrix4L( int location, const GLfloat *matrix ) {
+	Activate();
+	qglUniformMatrix4fv( location, 1, GL_FALSE, matrix );
+}
 
 GLSLProgramLoader::GLSLProgramLoader(): program(0) {
 	program = qglCreateProgram();
+}
+
+GLSLProgramLoader::~GLSLProgramLoader() {
+	if( program != 0) {
+		qglDeleteProgram( program );
+	}
 }
 
 void GLSLProgramLoader::AddVertexShader( const char *sourceFile, const ShaderDefines &defines ) {
@@ -33,7 +142,44 @@ void GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const ShaderD
 	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
 }
 
+GLSLProgram * GLSLProgramLoader::LinkProgram() {
+	GLint result = GL_FALSE;
+
+	qglLinkProgram( program );
+	qglGetProgramiv( program, GL_LINK_STATUS, &result );
+	if( result != GL_TRUE ) {
+		// display program info log, which may contain clues to the linking error
+		GLint length;
+		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
+		auto log = std::make_unique<char[]>( length );
+		qglGetProgramInfoLog( program, length, &result, log.get() );
+		common->Warning( "Program linking failed:\n%s\n", log.get() );
+		return nullptr;
+	}
+
+	qglValidateProgram( program );
+	qglGetProgramiv( program, GL_VALIDATE_STATUS, &result );
+	if( result != GL_TRUE ) {
+		// display program info log, which may contain clues to the linking error
+		GLint length;
+		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
+		auto log = std::make_unique<char[]>( length );
+		qglGetProgramInfoLog( program, length, &result, log.get() );
+		common->Warning( "Program validation failed:\n%s\n", log.get() );
+		return nullptr;
+	}
+
+	GLSLProgram *glslProgram = new GLSLProgram( program );
+	program = 0;  // ownership passed to glslProgram
+	return glslProgram;
+}
+
 void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines ) {
+	if( program == 0 ) {
+		common->Warning( "Tried to attach shader to an already linked program\n" );
+		return;
+	}
+
 	GLuint shader = CompileShader( shaderType, sourceFile, defines );
 	if( shader != 0) {
 		qglAttachShader( program, shader );
@@ -103,6 +249,7 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 
 	std::vector<std::string> sourceFiles { sourceFile };
 	ResolveIncludes(source, sourceFiles);
+	// TODO: set shader defines
 
 	GLuint shader = qglCreateShader( shaderType );
 	GLint length = source.size();

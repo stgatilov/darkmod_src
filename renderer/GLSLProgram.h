@@ -1,5 +1,3 @@
-/*****************************************************************************
-The Dark Mod GPL Source Code
 
 This file is part of the The Dark Mod Source Code, originally based
 on the Doom 3 GPL Source Code as published in 2011.

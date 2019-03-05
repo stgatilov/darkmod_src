@@ -585,6 +585,7 @@
     <ClInclude Include="renderer\FrameBuffer.h" />
     <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
+    <ClInclude Include="renderer\GLSLProgram.h" />
     <ClInclude Include="renderer\GuiModel.h" />
     <ClInclude Include="renderer\Image.h" />
     <ClInclude Include="renderer\Interaction.h" />
@@ -605,7 +606,6 @@
     <ClInclude Include="renderer\RenderSystem.h" />
     <ClInclude Include="renderer\RenderWorld.h" />
     <ClInclude Include="renderer\RenderWorld_local.h" />
-    <ClInclude Include="renderer\Shader.h" />
     <ClInclude Include="renderer\simplex.h" />
     <ClInclude Include="renderer\tr_local.h" />
     <ClInclude Include="renderer\VertexCache.h" />
@@ -1153,6 +1153,7 @@
     <ClCompile Include="renderer\draw_glsl.cpp" />
     <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBuffer.cpp" />
+    <ClCompile Include="renderer\GLSLProgram.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />
     <ClCompile Include="renderer\Image_init.cpp" />
@@ -1183,7 +1184,6 @@
     <ClCompile Include="renderer\RenderWorld_demo.cpp" />
     <ClCompile Include="renderer\RenderWorld_load.cpp" />
     <ClCompile Include="renderer\RenderWorld_portals.cpp" />
-    <ClCompile Include="renderer\Shader.cpp" />
     <ClCompile Include="renderer\tr_backend.cpp" />
     <ClCompile Include="renderer\tr_deform.cpp" />
     <ClCompile Include="renderer\tr_font.cpp" />
@@ -1222,7 +1222,7 @@
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
     <ClCompile Include="sys\win32\rc\CreateResourceIDs.cpp" />
-    <ClCompile Include="tests\ShaderTest.cpp" />
+    <ClCompile Include="tests\GLSLProgramTest.cpp" />
     <ClCompile Include="tests\TestRun.cpp" />
     <ClCompile Include="tools\af\DialogAF.cpp" />
     <ClCompile Include="tools\af\DialogAFBody.cpp" />
