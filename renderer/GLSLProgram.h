@@ -26,6 +26,8 @@ public:
 	void Activate();
 	static void Deactivate();
 
+	void BindAttribLocation( GLuint index, const char *name );
+
 	void AddUniformAlias( int alias, const char *uniformName );
 
 	// use these functions to bind a value directly to a uniform location
@@ -105,8 +107,14 @@ private:
 	GLuint CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 };
 
+enum glslUniformAlias_t {
+	PROJECTION_MATRIX,
+	MODELVIEW_MATRIX,
+	MVP_MATRIX,
+};
+
 struct globalPrograms_t {
-	GLSLProgram *stencilInteractionShader;
+	GLSLProgram *interactionShader;
 };
 
 extern globalPrograms_t globalPrograms;

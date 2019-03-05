@@ -51,6 +51,10 @@ void GLSLProgram::Deactivate() {
 	currentProgram = 0;
 }
 
+void GLSLProgram::BindAttribLocation( GLuint index, const char *name ) {
+	qglBindAttribLocation( program, index, name );
+}
+
 void GLSLProgram::AddUniformAlias( int alias, const char *uniformName ) {
 	int location = qglGetUniformLocation( program, uniformName );
 	if( location == -1 ) {
@@ -320,21 +324,38 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 
 globalPrograms_t globalPrograms { nullptr };
 
-void GLSL_InitPrograms() {
-	idDict stencilShadowDefines;
-	stencilShadowDefines.Set( "SHADOW_TYPE", "1" );
-	globalPrograms.stencilInteractionShader = GLSLProgram::Load( stencilShadowDefines, "glprogs/interaction.vs", "glprogs/interaction.fs" );
-	if( !globalPrograms.stencilInteractionShader ) {
-		common->Error( "Failed to load stencil interaction shader" );
+namespace {
+	void BindDefaultAttribLocations( GLSLProgram *program ) {
+		program->BindAttribLocation( 0, "attr_Position" );
+		program->BindAttribLocation( 2, "attr_Normal" );
+		program->BindAttribLocation( 3, "attr_Color" );
+		program->BindAttribLocation( 8, "attr_TexCoord" );
+		program->BindAttribLocation( 9, "attr_Tangent" );
+		program->BindAttribLocation( 10, "attr_Bitangent" );
 	}
-	globalPrograms.stencilInteractionShader->AddUniformAlias( 0, "u_shadows" );
+
+	void LoadInteractionShader() {
+		// stub, change/expand as needed
+		idDict interactionDefines;
+		interactionDefines.Set( "SHADOW_TYPE", "1" );
+		globalPrograms.interactionShader = GLSLProgram::Load( interactionDefines, "glprogs/interaction.vs", "glprogs/interaction.fs" );
+		if( !globalPrograms.interactionShader ) {
+			common->Error( "Failed to load interaction shader" );
+		}
+		BindDefaultAttribLocations( globalPrograms.interactionShader );
+		globalPrograms.interactionShader->AddUniformAlias( MVP_MATRIX, "u_mvpMatrix" );
+	}
+}
+
+void GLSL_InitPrograms() {
+	LoadInteractionShader();
 }
 
 void GLSL_DestroyPrograms() {
 	GLSLProgram::Deactivate();
 
-	delete globalPrograms.stencilInteractionShader;
-	globalPrograms.stencilInteractionShader = nullptr;
+	delete globalPrograms.interactionShader;
+	globalPrograms.interactionShader = nullptr;
 }
 
 

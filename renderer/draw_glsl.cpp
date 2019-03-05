@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "glsl.h"
 #include "FrameBuffer.h"
 #include "Profiling.h"
+#include "GLSLProgram.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
@@ -639,6 +640,11 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 		auto& shader = it->second;
 		shader->Load( fileName.c_str() );
 	}
+
+	// incorporate new shader interface:
+	GLSL_DestroyPrograms();
+	GLSL_InitPrograms();
+
 	return ok;
 }
 
