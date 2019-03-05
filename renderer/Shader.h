@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define __SHADER_H__
 #include <unordered_map>
 
+using ShaderDefines = idHashTable<idStr>;
+
 class Shader {
 public:
 	~Shader();
@@ -27,31 +29,19 @@ private:
 	idHashIndex virtualLocationMap;
 };
 
-struct sourceBlock_t {
-	idStr sourceFile;
-	unsigned int startingLine;
-	unsigned int lineCount;
-};
-
-struct originalLine_t {
-	idStr file;
-	unsigned int line;
-};
-
-class ShaderSource {
+class GLSLProgramLoader {
 public:
-	ShaderSource( const idStr &sourceFile );
-	void EnableFeature( const std::string &feature );
-	void DisableFeature( const std::string &feature );
-	std::string GetSource();
-	originalLine_t MapExpandedLineToOriginalSource( unsigned int expandedLineNo ) const;
+	GLSLProgramLoader();
+
+	void AddVertexShader( const char *sourceFile, const ShaderDefines &defines = ShaderDefines() );
+	void AddFragmentShader( const char *sourceFile, const ShaderDefines &defines = ShaderDefines() );
+	void AddGeometryShader( const char *sourceFile, const ShaderDefines &defines = ShaderDefines() );
 
 private:
-	idStr sourceFile;
-	std::unordered_map<std::string, bool> features;
-	std::vector<sourceBlock_t> sourceBlocks;
+	GLuint program;
 
-	std::string ReadFile( const idStr &file );
-	std::string ResolveIncludes( std::string source );
+	void LoadAndAttachShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines );
+	GLuint CompileShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines );
 };
+
 #endif

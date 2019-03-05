@@ -1222,7 +1222,7 @@
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
     <ClCompile Include="sys\win32\rc\CreateResourceIDs.cpp" />
-    <ClCompile Include="tests\ShaderSourceTest.cpp" />
+    <ClCompile Include="tests\ShaderTest.cpp" />
     <ClCompile Include="tests\TestRun.cpp" />
     <ClCompile Include="tools\af\DialogAF.cpp" />
     <ClCompile Include="tools\af\DialogAFBody.cpp" />

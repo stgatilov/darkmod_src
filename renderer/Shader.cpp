@@ -16,86 +16,122 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #include "Shader.h"
 #include <regex>
-#include <unordered_set>
-#include <iostream>
 
-ShaderSource::ShaderSource( const idStr &sourceFile ) : sourceFile( sourceFile ) { }
-
-void ShaderSource::EnableFeature( const std::string &feature ) {
-	features[ feature ] = true;
+GLSLProgramLoader::GLSLProgramLoader(): program(0) {
+	program = qglCreateProgram();
 }
 
-void ShaderSource::DisableFeature( const std::string &feature ) {
-	features[ feature ] = false;
+void GLSLProgramLoader::AddVertexShader( const char *sourceFile, const ShaderDefines &defines ) {
+	LoadAndAttachShader( GL_VERTEX_SHADER, sourceFile, defines );
 }
 
-std::string ShaderSource::GetSource() {
-	std::string contents = ResolveIncludes( ReadFile( sourceFile ) );
-
-	return contents;
+void GLSLProgramLoader::AddFragmentShader( const char *sourceFile, const ShaderDefines &defines ) {
+	LoadAndAttachShader( GL_FRAGMENT_SHADER, sourceFile, defines );
 }
 
-originalLine_t ShaderSource::MapExpandedLineToOriginalSource( unsigned expandedLineNo ) const {
-	assert( expandedLineNo >= 1 );
-	
-	unsigned int accumulatedLines = 0;
-	auto it = sourceBlocks.cbegin();
-	while( it < sourceBlocks.cend() - 1 && accumulatedLines + it->lineCount < expandedLineNo ) {
-		accumulatedLines += it->lineCount;
-		++it;
+void GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const ShaderDefines &defines ) {
+	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
+}
+
+void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines ) {
+	GLuint shader = CompileShader( shaderType, sourceFile, defines );
+	if( shader != 0) {
+		qglAttachShader( program, shader );
+		// won't actually be deleted until the program it's attached to is deleted
+		qglDeleteShader( shader );
 	}
-
-	return originalLine_t{ it->sourceFile, expandedLineNo - accumulatedLines - 1 + it->startingLine };
 }
 
-std::string ShaderSource::ReadFile( const idStr &file ) {
+std::string ReadFile( const char *sourceFile ) {
 	void *buf = nullptr;
-	int len = fileSystem->ReadFile( file, &buf );
+	int len = fileSystem->ReadFile( sourceFile, &buf );
 	if( buf == nullptr ) {
-		common->Warning( "Could not open shader file %s", file.c_str() );
+		common->Warning( "Could not open shader file %s", sourceFile );
 		return "";
 	}
 	std::string contents( static_cast< char* >( buf ), len );
-	Mem_Free( buf );
+	fileSystem->FreeFile( buf );
+
 	return contents;
 }
 
-std::string ShaderSource::ResolveIncludes( std::string source ) {
-	// valid include directive looks something like this:
-	// #pragma tdm_include "somefile.glsl" // optional comment
-	static const std::regex includeRegex( R"regex(^[ \t]*#[ \t]*pragma[ \t]*tdm_include[ \t]"(.*)"[ \t]*(?:\/\/.*)?$)regex" );
+/**
+ * Resolves include statements in GLSL source files.
+ * Note that the parsing is primitive and not context-sensitive. It will not respect multi-line comments
+ * or conditional preprocessor blocks, so keep includes simple in the source files!
+ * 
+ * Include directives should look like this:
+ * 
+ * #pragma tdm_include "somefile.glsl" // optional comment
+ */
+void ResolveIncludes( std::string &source, std::vector<std::string> &includedFiles ) {
+	static const std::regex includeRegex( R"regex(^[ \t]*#[ \t]*pragma[ \t]+tdm_include[ \t]+"(.*)"[ \t]*(?:\/\/.*)?$)regex" );
 
-	sourceBlocks.clear();
-	unsigned int totalSourceLines = std::count( source.begin(), source.end(), '\n' ) + 1;
-	sourceBlocks.push_back( sourceBlock_t{ sourceFile, 1, totalSourceLines } );
-	std::unordered_set<std::string> alreadyIncludedFiles;
+	unsigned int currentFileNo = includedFiles.size() - 1;
+	unsigned int totalIncludedLines = 0;
 
 	std::smatch match;
 	while( std::regex_search( source, match, includeRegex ) ) {
 		std::string fileToInclude( match[ 1 ].first, match[ 1 ].second );
-		if( alreadyIncludedFiles.find( fileToInclude ) == alreadyIncludedFiles.end() ) {
+		if( std::find( includedFiles.begin(), includedFiles.end(), fileToInclude ) == includedFiles.end() ) {
+			int nextFileNo = includedFiles.size();
 			std::string includeContents = ReadFile( fileToInclude.c_str() );
-			// update source blocks so that we can map line nos of the expanded source back to the original source files
-			unsigned int currentLine = std::count( source.cbegin(), match[ 0 ].first, '\n' ) + 1;
-			unsigned int includeLines = std::count( includeContents.begin(), includeContents.end(), '\n' ) + 1;
-			auto curBlock = sourceBlocks.begin();
-			unsigned int accumulatedLines = 0;
-			while( accumulatedLines + curBlock->lineCount < currentLine ) {
-				accumulatedLines += curBlock->lineCount;
-				++curBlock;
-			}
-			auto continuationBlock = sourceBlock_t{ curBlock->sourceFile, currentLine - accumulatedLines + 1, curBlock->lineCount - ( currentLine - accumulatedLines ) };
-			curBlock->lineCount -= continuationBlock.lineCount + 1;
-			auto includedBlock = sourceBlock_t{ fileToInclude.c_str(), 1, includeLines };
-			auto includedIt = sourceBlocks.insert( curBlock + 1, includedBlock );
-			sourceBlocks.insert( includedIt + 1, continuationBlock );
+			includedFiles.push_back( fileToInclude );
+			ResolveIncludes( includeContents, includedFiles );
+
+			// also add a #line instruction at beginning and end of include so that
+			// compile errors are mapped to the correct file and line
+			// unfortunately, #line does not take an actual filename, but only an integral reference to a file :(
+			unsigned int currentLine = std::count( source.cbegin(), match[ 0 ].first, '\n' ) + 1 - totalIncludedLines;
+			std::string includeBeginMarker = "#line 1 " + std::to_string( nextFileNo ) + '\n';
+			std::string includeEndMarker = "\n#line " + std::to_string( currentLine + 1 ) + ' ' + std::to_string( currentFileNo );
+			totalIncludedLines += std::count( includeContents.begin(), includeContents.end(), '\n' ) + 2;
 
 			// replace include statement with content of included file
-			source.replace( match[ 0 ].first, match[ 0 ].second, includeContents );
-			alreadyIncludedFiles.insert( fileToInclude );
+			source.replace( match[ 0 ].first, match[ 0 ].second, includeBeginMarker + includeContents + includeEndMarker );
 		} else {
 			source.replace( match[ 0 ].first, match[ 0 ].second, "// already included " + fileToInclude );
 		}
 	}
-	return source;
+}
+
+GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines ) {
+	std::string source = ReadFile( sourceFile );
+	if( source.empty() ) {
+		return 0;
+	}
+
+	std::vector<std::string> sourceFiles { sourceFile };
+	ResolveIncludes(source, sourceFiles);
+
+	GLuint shader = qglCreateShader( shaderType );
+	GLint length = source.size();
+	const char *sourcePtr = source.c_str();
+	qglShaderSource( shader, 1, &sourcePtr, &length );
+	qglCompileShader( shader );
+
+	// check if compilation was successful
+	GLint result;
+	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
+	if( result == GL_FALSE ) {
+		// display the shader info log, which contains compile errors
+		int length;
+		qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
+		auto log = std::make_unique<char[]>( length );
+		qglGetShaderInfoLog( shader, length, &result, log.get() );
+		std::stringstream ss;
+		ss << "Compiling shader file " << sourceFile << " failed:\n" << log.get() << "\n\n";
+		// unfortunately, GLSL compilers don't reference any actual source files in their errors, but only
+		// file index numbers. So we'll display a short legend which index corresponds to which file.
+		ss << "File indexes:\n";
+		for( int i = 0; i < sourceFiles.size(); ++i ) {
+			ss << "  " << i << " - " << sourceFiles[i] << "\n";
+		}
+		common->Warning( ss.str().c_str() );
+
+		qglDeleteShader( shader );
+		return 0;
+	}
+
+	return shader;
 }

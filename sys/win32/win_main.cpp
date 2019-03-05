@@ -1285,11 +1285,16 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	common->Init( 0, NULL, lpCmdLine );
 
-	if( com_runTests.GetBool() ) {
-		AllocConsole();
-		freopen( "CONOUT$", "w+", stdout );
+	int runTests = com_runTests.GetInteger();
+	if( runTests ) {
+		if( runTests == 2 ) {
+			AllocConsole();
+			freopen( "CONOUT$", "w+", stdout );
+		}
 		int result = RunTests();
-		getch();
+		if( runTests == 2 ) {
+			getch();
+		}
 		common->Shutdown();
 		return result;
 	}
