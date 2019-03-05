@@ -629,9 +629,7 @@
     <ClInclude Include="sys\win32\rc\Radiant_resource.h" />
     <ClInclude Include="sys\win32\rc\ScriptEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\SoundEditor_resource.h" />
-    <ClInclude Include="tests\catch.hpp" />
     <ClInclude Include="tests\doctest.h" />
-    <ClInclude Include="tests\Test.h" />
     <ClInclude Include="tests\TestRun.h" />
     <ClInclude Include="tools\edit_public.h" />
     <ClInclude Include="tools\af\DialogAF.h" />
@@ -1222,7 +1220,6 @@
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
     <ClCompile Include="sys\win32\rc\CreateResourceIDs.cpp" />
-    <ClCompile Include="tests\GLSLProgramTest.cpp" />
     <ClCompile Include="tests\TestRun.cpp" />
     <ClCompile Include="tools\af\DialogAF.cpp" />
     <ClCompile Include="tools\af\DialogAFBody.cpp" />

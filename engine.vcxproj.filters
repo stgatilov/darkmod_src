@@ -1246,13 +1246,7 @@
     <ClInclude Include="game\Listener.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="tests\catch.hpp">
-      <Filter>Tests</Filter>
-    </ClInclude>
     <ClInclude Include="tests\TestRun.h">
-      <Filter>Tests</Filter>
-    </ClInclude>
-    <ClInclude Include="tests\Test.h">
       <Filter>Tests</Filter>
     </ClInclude>
     <ClInclude Include="renderer\GLSLProgram.h">
@@ -2944,8 +2938,10 @@
     <ClCompile Include="renderer\Profiling.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="game\Listener.cpp" />
     <ClCompile Include="game\FrobHelper.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Listener.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="tests\TestRun.cpp">
@@ -2953,9 +2949,6 @@
     </ClCompile>
     <ClCompile Include="renderer\GLSLProgram.cpp">
       <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="tests\GLSLProgramTest.cpp">
-      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
