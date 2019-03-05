@@ -14,7 +14,7 @@ namespace {
 		"}\n";
 	const std::string INCLUDE_SHADER =
 		"#version 140\n"
-		"#pragma tdm_include \"tests/shared_common.glsl\"\n"
+		"#pragma tdm_include \"tests/shared_common.glsl\"\r\n"
 		"void main() {}\n";
 
 	const std::string NESTED_INCLUDE =
@@ -36,38 +36,38 @@ namespace {
 
 	const std::string EXPANDED_INCLUDE_SHADER =
 		"#version 140\n"
-		"#line 1 1\n"
+		"#line 0 1\n"
 		"uniform vec4 someParam;\n"
 		"\n"
 		"vec4 doSomething {\n"
 		"  return someParam * 2;\n"
 		"}\n"
-		"\n#line 3 0\n"
+		"\n#line 2 0\n"
 		"void main() {}\n";
 	const std::string EXPANDED_ADVANCED_INCLUDES =
 		"#version 330\n"
 		"\n"
-		"#line 1 1\n"
-		"#line 1 2\n"
+		"#line 0 1\n"
+		"#line 0 2\n"
 		"uniform vec4 someParam;\n"
 		"\n"
 		"vec4 doSomething {\n"
 		"  return someParam * 2;\n"
 		"}\n"
-		"\n#line 2 1\n"
+		"\n#line 1 1\n"
 		"float myFunc() {\n"
 		"  return 0.3;\n"
 		"}"
-		"\n#line 4 0\n"
+		"\n#line 3 0\n"
 		"// already included tests/shared_common.glsl\n"
 		"// already included tests/advanced_includes.glsl\n"
 		"void main() {\n"
 		"  float myVar = myFunc();\n"
 		"}\n"
-		"#line 1 3\n"
+		"#line 0 3\n"
 		"#version 150\n"
 		"void main() {}"
-		"\n#line 10 0\n";
+		"\n#line 9 0\n";
 
 	void PrepareTestShaders() {
 		INFO( "Preparing test shaders" );
@@ -90,6 +90,7 @@ namespace {
 
 std::string ReadFile( const char *sourceFile );
 void ResolveIncludes( std::string &source, std::vector<std::string> &includedFiles );
+void ResolveDefines( std::string &source, const idDict &defines );
 
 TEST_CASE("Shader include handling", "[shaders]") {
 	PrepareTestShaders();
@@ -116,4 +117,34 @@ TEST_CASE("Shader include handling", "[shaders]") {
 	}
 
 	CleanupTestShaders();
+}
+
+TEST_CASE("Shader defines handling", "[shaders]") {
+	const std::string shaderWithDynamicDefines =
+		"#version 140\n"
+		"#pragma tdm_define \"FIRST_DEFINE\"\n"
+		"\n"
+		"  # pragma   tdm_define   \"SECOND_DEFINE\"\n"
+		"void main() {\n"
+		"#ifdef FIRST_DEFINE\n"
+		"  return;\n"
+		"#endif\n"
+		"}\n" ;
+
+	const std::string expectedResult =
+		"#version 140\n"
+		"#define FIRST_DEFINE 1\n"
+		"\n"
+		"// #undef SECOND_DEFINE\n"
+		"void main() {\n"
+		"#ifdef FIRST_DEFINE\n"
+		"  return;\n"
+		"#endif\n"
+		"}\n" ;
+
+	std::string source = shaderWithDynamicDefines;
+	idDict defines;
+	defines.Set( "FIRST_DEFINE", "1" );
+	ResolveDefines( source, defines );
+	REQUIRE( source == expectedResult );
 }

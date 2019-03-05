@@ -18,6 +18,7 @@
 
 #include "tr_local.h"
 #include "FrameBuffer.h"
+#include "GLSLProgram.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -858,6 +859,7 @@ void R_InitOpenGL( void ) {
 
 	R_ReloadARBPrograms_f( idCmdArgs() );
 	R_ReloadGLSLPrograms_f( idCmdArgs() );
+	GLSL_InitPrograms();
 
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init();
@@ -2017,6 +2019,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		// free the context and close the window
 		session->TerminateFrontendThread();
 		vertexCache.Shutdown();
+		GLSL_DestroyPrograms();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 
@@ -2354,6 +2357,7 @@ idRenderSystemLocal::ShutdownOpenGL
 */
 void idRenderSystemLocal::ShutdownOpenGL( void ) {
 	// free the context and close the window
+	GLSL_DestroyPrograms();
 	R_ShutdownFrameData();
 	GLimp_Shutdown();
 	glConfig.isInitialized = false;

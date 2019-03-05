@@ -20,10 +20,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 GLuint GLSLProgram::currentProgram = 0;
 
 GLSLProgram * GLSLProgram::Load( const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
-	return Load( ShaderDefines(), vertexSourceFile, fragmentSourceFile, geometrySourceFile );	
+	return Load( idDict(), vertexSourceFile, fragmentSourceFile, geometrySourceFile );	
 }
 
-GLSLProgram * GLSLProgram::Load( const ShaderDefines &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
+GLSLProgram * GLSLProgram::Load( const idDict &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
 	GLSLProgramLoader loader;
 	loader.AddVertexShader( vertexSourceFile, defines );
 	loader.AddFragmentShader( fragmentSourceFile, defines );
@@ -130,15 +130,15 @@ GLSLProgramLoader::~GLSLProgramLoader() {
 	}
 }
 
-void GLSLProgramLoader::AddVertexShader( const char *sourceFile, const ShaderDefines &defines ) {
+void GLSLProgramLoader::AddVertexShader( const char *sourceFile, const idDict &defines ) {
 	LoadAndAttachShader( GL_VERTEX_SHADER, sourceFile, defines );
 }
 
-void GLSLProgramLoader::AddFragmentShader( const char *sourceFile, const ShaderDefines &defines ) {
+void GLSLProgramLoader::AddFragmentShader( const char *sourceFile, const idDict &defines ) {
 	LoadAndAttachShader( GL_FRAGMENT_SHADER, sourceFile, defines );
 }
 
-void GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const ShaderDefines &defines ) {
+void GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const idDict &defines ) {
 	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
 }
 
@@ -174,7 +174,7 @@ GLSLProgram * GLSLProgramLoader::LinkProgram() {
 	return glslProgram;
 }
 
-void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines ) {
+void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
 	if( program == 0 ) {
 		common->Warning( "Tried to attach shader to an already linked program\n" );
 		return;
@@ -211,7 +211,7 @@ std::string ReadFile( const char *sourceFile ) {
  * #pragma tdm_include "somefile.glsl" // optional comment
  */
 void ResolveIncludes( std::string &source, std::vector<std::string> &includedFiles ) {
-	static const std::regex includeRegex( R"regex(^[ \t]*#[ \t]*pragma[ \t]+tdm_include[ \t]+"(.*)"[ \t]*(?:\/\/.*)?$)regex" );
+	static const std::regex includeRegex( R"regex(^[ \t]*#[ \t]*pragma[ \t]+tdm_include[ \t]+"(.*)"[ \t]*(?:\/\/.*)?\r?$)regex" );
 
 	unsigned int currentFileNo = includedFiles.size() - 1;
 	unsigned int totalIncludedLines = 0;
@@ -229,8 +229,8 @@ void ResolveIncludes( std::string &source, std::vector<std::string> &includedFil
 			// compile errors are mapped to the correct file and line
 			// unfortunately, #line does not take an actual filename, but only an integral reference to a file :(
 			unsigned int currentLine = std::count( source.cbegin(), match[ 0 ].first, '\n' ) + 1 - totalIncludedLines;
-			std::string includeBeginMarker = "#line 1 " + std::to_string( nextFileNo ) + '\n';
-			std::string includeEndMarker = "\n#line " + std::to_string( currentLine + 1 ) + ' ' + std::to_string( currentFileNo );
+			std::string includeBeginMarker = "#line 0 " + std::to_string( nextFileNo ) + '\n';
+			std::string includeEndMarker = "\n#line " + std::to_string( currentLine ) + ' ' + std::to_string( currentFileNo );
 			totalIncludedLines += std::count( includeContents.begin(), includeContents.end(), '\n' ) + 2;
 
 			// replace include statement with content of included file
@@ -241,15 +241,46 @@ void ResolveIncludes( std::string &source, std::vector<std::string> &includedFil
 	}
 }
 
-GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFile, const ShaderDefines &defines ) {
+/**
+ * Resolves dynamic defines statements in GLSL source files.
+ * Note that the parsing is primitive and not context-sensitive. It will not respect multi-line comments
+ * or conditional preprocessor blocks!
+ * 
+ * Define directives should look like this:
+ * 
+ * #pragma tdm_define "DEF_NAME" // optional comment
+ * 
+ * If DEF_NAME is contained in defines, the line will be replaced by
+ * #define DEF_NAME <value>
+ * 
+ * Otherwise, it will be commented out.
+ */
+void ResolveDefines( std::string &source, const idDict &defines ) {
+	static const std::regex defineRegex( R"regex(^[ \t]*#[ \t]*pragma[ \t]+tdm_define[ \t]+"(.*)"[ \t]*(?:\/\/.*)?\r?$)regex" );
+	
+	std::smatch match;
+	while( std::regex_search( source, match, defineRegex ) ) {
+		std::string define( match[ 1 ].first, match[ 1 ].second );
+		auto defIt = defines.FindKey( define.c_str() );
+		if( defIt != nullptr ) {
+			std::string replacement = "#define " + define + " " + defIt->GetValue().c_str();
+			source.replace( match[ 0 ].first, match[ 0 ].second, replacement );
+		} else {
+			std::string replacement = "// #undef " + define;
+			source.replace( match[ 0 ].first, match[ 0 ].second, replacement );
+		}
+	}
+}
+
+GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
 	std::string source = ReadFile( sourceFile );
 	if( source.empty() ) {
 		return 0;
 	}
 
 	std::vector<std::string> sourceFiles { sourceFile };
-	ResolveIncludes(source, sourceFiles);
-	// TODO: set shader defines
+	ResolveIncludes( source, sourceFiles );
+	ResolveDefines( source, defines );
 
 	GLuint shader = qglCreateShader( shaderType );
 	GLint length = source.size();
@@ -281,4 +312,23 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 	}
 
 	return shader;
+}
+
+globalPrograms_t globalPrograms { nullptr };
+
+void GLSL_InitPrograms() {
+	idDict stencilShadowDefines;
+	stencilShadowDefines.Set( "SHADOW_TYPE", "1" );
+	globalPrograms.stencilInteractionShader = GLSLProgram::Load( stencilShadowDefines, "glprogs/interaction.vs", "glprogs/interaction.fs" );
+	if( !globalPrograms.stencilInteractionShader ) {
+		common->Error( "Failed to load stencil interaction shader" );
+	}
+	globalPrograms.stencilInteractionShader->AddUniformAlias( 0, "u_shadows" );
+}
+
+void GLSL_DestroyPrograms() {
+	GLSLProgram::Deactivate();
+
+	delete globalPrograms.stencilInteractionShader;
+	globalPrograms.stencilInteractionShader = nullptr;
 }
