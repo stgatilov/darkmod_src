@@ -1684,11 +1684,6 @@ void idImageManager::EndLevelLoad() {
 	const int start = Sys_Milliseconds();
 	insideLevelLoad = false;
 
-#ifdef MULTIPLAYER
-	if ( idAsyncNetwork::serverDedicated.GetInteger() ) {
-		return;
-	}
-#endif
 	common->Printf( "----- idImageManager::EndLevelLoad -----\n" );
 
 	int	purgeCount = 0;

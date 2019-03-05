@@ -52,9 +52,7 @@ struct fileTIME_T {
 					operator int() const { return timeStamp; }
 };
 
-#ifndef MULTIPLAYER
 #define MAX_ASYNC_CLIENTS 1
-#endif
 
 typedef struct {
 	idDict			serverInfo;
@@ -93,9 +91,6 @@ public:
 
 	virtual void		Frame();
 
-#ifdef MULTIPLAYER
-	virtual bool		IsMultiplayer();
-#endif
 	virtual bool		ProcessEvent( const sysEvent_t *event );
 
 	virtual void		StartMenu( bool playIntro = false );

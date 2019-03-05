@@ -232,61 +232,6 @@ int SCR_DrawMemoryUsage( int y ) {
 
 /*
 ==================
-SCR_DrawAsyncStats
-==================
-*/
-#ifdef MULTIPLAYER
-int SCR_DrawAsyncStats( int y ) {
-	int outgoingRate, incomingRate;
-	float outgoingCompression, incomingCompression;
-
-	if ( idAsyncNetwork::server.IsActive() ) {
-
-		SCR_DrawTextRightAlign( y, "server delay = %d msec", idAsyncNetwork::server.GetDelay() );
-		SCR_DrawTextRightAlign( y, "total outgoing rate = %d KB/s", idAsyncNetwork::server.GetOutgoingRate() >> 10 );
-		SCR_DrawTextRightAlign( y, "total incoming rate = %d KB/s", idAsyncNetwork::server.GetIncomingRate() >> 10 );
-
-		for ( int i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-
-			outgoingRate = idAsyncNetwork::server.GetClientOutgoingRate( i );
-			incomingRate = idAsyncNetwork::server.GetClientIncomingRate( i );
-			outgoingCompression = idAsyncNetwork::server.GetClientOutgoingCompression( i );
-			incomingCompression = idAsyncNetwork::server.GetClientIncomingCompression( i );
-
-			if ( outgoingRate != -1 && incomingRate != -1 ) {
-				SCR_DrawTextRightAlign( y, "client %d: out rate = %d B/s (% -2.1f%%), in rate = %d B/s (% -2.1f%%)",
-											i, outgoingRate, outgoingCompression, incomingRate, incomingCompression );
-			}
-		}
-
-		idStr msg;
-		idAsyncNetwork::server.GetAsyncStatsAvgMsg( msg );
-		SCR_DrawTextRightAlign( y, msg.c_str() );
-
-	} else if ( idAsyncNetwork::client.IsActive() ) {
-
-		outgoingRate = idAsyncNetwork::client.GetOutgoingRate();
-		incomingRate = idAsyncNetwork::client.GetIncomingRate();
-		outgoingCompression = idAsyncNetwork::client.GetOutgoingCompression();
-		incomingCompression = idAsyncNetwork::client.GetIncomingCompression();
-
-		if ( outgoingRate != -1 && incomingRate != -1 ) {
-			SCR_DrawTextRightAlign( y, "out rate = %d B/s (% -2.1f%%), in rate = %d B/s (% -2.1f%%)",
-										outgoingRate, outgoingCompression, incomingRate, incomingCompression );
-		}
-
-		SCR_DrawTextRightAlign( y, "packet loss = %d%%, client prediction = %d",
-									(int)idAsyncNetwork::client.GetIncomingPacketLoss(), idAsyncNetwork::client.GetPrediction() );
-
-		SCR_DrawTextRightAlign( y, "predicted frames: %d", idAsyncNetwork::client.GetPredictedFrames() );
-
-	}
-
-	return y;
-}
-#endif
-/*
-==================
 SCR_DrawSoundDecoders
 ==================
 */
@@ -1228,9 +1173,4 @@ void idConsoleLocal::Draw( bool forceFullScreen ) {
 		y = SCR_DrawSoundDecoders( y );
 	}
 
-#ifdef MULTIPLAYER
-	if (com_showAsyncStats.GetBool()) {
-		y = SCR_DrawAsyncStats( y );
-	}
-#endif
 }

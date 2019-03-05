@@ -297,11 +297,7 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 
 	// flag for in-game menu
 	if ( mapSpawned ) {
-		guiMainMenu->SetStateString( "inGame", 
-#ifdef MULTIPLAYER
-			IsMultiplayer() ? "2" : 
-#endif
-			"1" );
+		guiMainMenu->SetStateString( "inGame", "1" );
 	} else {
 		guiMainMenu->SetStateString( "inGame", "0" );
 	}
@@ -567,10 +563,6 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 		if ( !idStr::Icmp( cmd, "UpdateServers" ) ) {
 			if ( guiActive->State().GetBool( "lanSet" ) ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "LANScan" );
-			} else {
-#ifdef MULTIPLAYER
-				idAsyncNetwork::GetNETServers();
-#endif
 			}
 			continue;
 		}
@@ -578,55 +570,9 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 		if ( !idStr::Icmp( cmd, "RefreshServers" ) ) {
 			if ( guiActive->State().GetBool( "lanSet" ) ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "LANScan" );
-			} else {
-#ifdef MULTIPLAYER
-				idAsyncNetwork::client.serverList.NetScan();
-#endif
 			}
 			continue;
 		}
-
-#ifdef MULTIPLAYER
-		if (!idStr::Icmp( cmd, "FilterServers" )) {
-			idAsyncNetwork::client.serverList.ApplyFilter( );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "sortServerName" ) ) {
-			idAsyncNetwork::client.serverList.SetSorting( SORT_SERVERNAME );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "sortGame" ) ) {
-			idAsyncNetwork::client.serverList.SetSorting( SORT_GAME );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "sortPlayers" ) ) {
-			idAsyncNetwork::client.serverList.SetSorting( SORT_PLAYERS );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "sortPing" ) ) {
-			idAsyncNetwork::client.serverList.SetSorting( SORT_PING );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "sortGameType" ) ) {
-			idAsyncNetwork::client.serverList.SetSorting( SORT_GAMETYPE );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "sortMap" ) ) {
-			idAsyncNetwork::client.serverList.SetSorting( SORT_MAP );
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "serverList" ) ) {
-			idAsyncNetwork::client.serverList.GUIUpdateSelected();
-			continue;
-		}
-#endif
 
 		if (!idStr::Icmp( cmd, "LANConnect" )) {
 			int sel = guiActive->State().GetInt( "serverList_selid_0" ); 
@@ -931,18 +877,6 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			guiActive->HandleNamedEvent( "cvar read sound" );
 			continue;
 		}
-
-#ifdef MULTIPLAYER
-		if (!idStr::Icmp( cmd, "CheckUpdate" )) {
-			idAsyncNetwork::client.SendVersionCheck();
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "CheckUpdate2" ) ) {
-			idAsyncNetwork::client.SendVersionCheck( true );
-			continue;
-		}
-#endif
 	}
 }
 

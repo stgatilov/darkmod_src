@@ -87,11 +87,6 @@ Session_RescanSI_f
 */
 void Session_RescanSI_f( const idCmdArgs &args ) {
 	sessLocal.mapSpawnData.serverInfo = *cvarSystem->MoveCVarsToDict( CVAR_SERVERINFO );
-#ifdef MULTIPLAYER
-	if (game && idAsyncNetwork::server.IsActive()) {
-		game->SetServerInfo( sessLocal.mapSpawnData.serverInfo );
-	}
-#endif
 }
 
 /*
@@ -314,14 +309,6 @@ void idSessionLocal::Stop() {
 	// clear mapSpawned and demo playing flags
 	UnloadMap();
 
-#ifdef MULTIPLAYER
-	// disconnect async client
-	idAsyncNetwork::client.DisconnectFromServer();
-
-	// kill async server
-	idAsyncNetwork::server.Kill();
-#endif
-
 	if ( sw ) {
 		sw->StopAllSounds();
 	}
@@ -395,17 +382,6 @@ void idSessionLocal::Shutdown() {
 
 	Clear();
 }
-
-#ifdef MULTIPLAYER
-/*
-===============
-idSessionLocal::IsMultiplayer
-===============
-*/
-bool	idSessionLocal::IsMultiplayer() {
-	return idAsyncNetwork::IsActive();
-}
-#endif
 
 /*
 ================
@@ -1085,16 +1061,6 @@ void idSessionLocal::StartNewGame( const char *mapName, bool devmap ) {
 	common->Printf( "Dedicated servers cannot start singleplayer games.\n" );
 	return;
 #else
-#ifdef MULTIPLAYER
-	if (idAsyncNetwork::server.IsActive()) {
-		common->Printf("Server running, use si_map / serverMapRestart\n");
-		return;
-	}
-	if ( idAsyncNetwork::client.IsActive() ) {
-		common->Printf("Client running, disconnect from server first\n");
-		return;
-	}
-#endif
 	// clear the userInfo so the player starts out with the defaults
 	mapSpawnData.userInfo[0].Clear();
 	mapSpawnData.persistentPlayerInfo[0].Clear();
@@ -1437,13 +1403,6 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	// close console and remove any prints from the notify lines
 	console->Close();
 
-#ifdef MULTIPLAYER
-	if ( IsMultiplayer() ) {
-		// make sure the mp GUI isn't up, or when players get back in the
-		// map, mpGame's menu and the gui will be out of sync.
-		SetGUI( NULL, NULL );
-	}
-#endif
 	// mute sound
 	soundSystem->SetMute( true );
 
@@ -1525,10 +1484,6 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	// before we do this potentially long operation
 	Sys_GrabMouseCursor( false );
 
-	// if net play, we get the number of clients during mapSpawnInfo processing
-#ifdef MULTIPLAYER
-	if (!idAsyncNetwork::IsActive()) 
-#endif
 	{
 		numClients = 1;
 	} 
@@ -1550,13 +1505,7 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 
 	// set the user info
 	for ( i = 0; i < numClients; i++ ) {
-		game->SetUserInfo( i, mapSpawnData.userInfo[i], 
-#ifdef MULTIPLAYER
-			idAsyncNetwork::client.IsActive()
-#else
-			false
-#endif
-			, false );
+		game->SetUserInfo( i, mapSpawnData.userInfo[i], false, false );
 		game->SetPersistentPlayerInfo( i, mapSpawnData.persistentPlayerInfo[i] );
 	}
 
@@ -1571,30 +1520,14 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 			
 			/*		
 			game->SetServerInfo( mapSpawnData.serverInfo );
-			game->InitFromNewMap( fullMapName + ".map", rw, sw, 
-#ifdef MULTIPLAYER
-				idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), 
-#else
-				false, false,
-#endif
-				Sys_Milliseconds() );*/
+			game->InitFromNewMap( fullMapName + ".map", rw, sw, false, false, Sys_Milliseconds() );*/
 		}
 	} else {
 		game->SetServerInfo( mapSpawnData.serverInfo );
-		game->InitFromNewMap( fullMapName + ".map", rw, sw, 
-#ifdef MULTIPLAYER
-			idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), 
-#else
-			false, false,
-#endif
-			Sys_Milliseconds() );
+		game->InitFromNewMap( fullMapName + ".map", rw, sw, false, false, Sys_Milliseconds() );
 	}
 
-	if ( 
-#ifdef MULTIPLAYER
-		!idAsyncNetwork::IsActive() && 
-#endif
-		!savegameFile) {
+	if ( !savegameFile) {
 		// spawn players
 		for ( i = 0; i < numClients; i++ ) {
 			game->SpawnPlayer( i );
@@ -1610,11 +1543,7 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	}
 	uiManager->EndLevelLoad();
 
-	if ( 
-#ifdef MULTIPLAYER
-		!idAsyncNetwork::IsActive() && 
-#endif
-		!savegameFile) {
+	if (!savegameFile) {
 		// run a few frames to allow everything to settle
 		for ( i = 0; i < 10; i++ ) {
 			game->RunFrame( mapSpawnData.mapSpawnUsercmd );
@@ -1885,12 +1814,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		return false;
 	}
 
-#ifdef MULTIPLAYER
-	if ( IsMultiplayer() ) {
-		common->Printf( "Can't save during net play.\n" );
-		return false;
-	}
-#endif
 	if ( game->GetPersistentPlayerInfo( 0 ).GetInt( "health" ) <= 0 ) {
 		// "Must be alive" and "Unable to save"
 		MessageBox( MSG_OK, common->Translate ( "#str_02012" ), common->Translate ( "#str_02013" ), true );
@@ -2203,12 +2126,6 @@ bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoa
 	common->Printf( "Dedicated servers cannot load games.\n" );
 	return false;
 #else
-#ifdef MULTIPLAYER
-	if ( IsMultiplayer() ) {
-		common->Printf( "Can't load during net play.\n" );
-		return false;
-	}
-#endif
 	//Hide the dialog box if it is up.
 	StopBox();
 
@@ -2684,11 +2601,6 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 	Sys_GenerateEvents();
 
 	UpdateScreen();
-
-#ifdef MULTIPLAYER
-	idAsyncNetwork::client.PacifierUpdate();
-	idAsyncNetwork::server.PacifierUpdate();
-#endif
 }
 
 /*
@@ -2987,14 +2899,6 @@ void idSessionLocal::Frame() {
 		lastGameTic = latchedTicNumber;
 		return;
 	}
-
-	// in message box / GUIFrame, idSessionLocal::Frame is used for GUI interactivity
-	// but we early exit to avoid running game frames
-#ifdef MULTIPLAYER
-	if (idAsyncNetwork::IsActive()) {
-		return;
-	}
-#endif
 
 	// check for user info changes
 	if ( cvarSystem->GetModifiedFlags() & CVAR_USERINFO ) {
@@ -3388,9 +3292,6 @@ void idSessionLocal::Init() {
 	guiMainMenu = uiManager->FindGui( "guis/mainmenu.gui", true, false, true );
 	guiMainMenu_MapList = uiManager->AllocListGUI();
 	guiMainMenu_MapList->Config( guiMainMenu, "mapList" );
-#ifdef MULTIPLAYER
-	idAsyncNetwork::client.serverList.GUIConfig( guiMainMenu, "serverList" );
-#endif
 	guiRestartMenu = uiManager->FindGui( "guis/restart.gui", true, false, true );
 	guiMsg = uiManager->FindGui( "guis/msg.gui", true, false, true );
 
@@ -3414,20 +3315,7 @@ idSessionLocal::GetLocalClientNum
 ===============
 */
 int idSessionLocal::GetLocalClientNum() {
-#ifdef MULTIPLAYER
-	if (idAsyncNetwork::client.IsActive()) {
-		return idAsyncNetwork::client.GetLocalClientNum();
-	} else if ( idAsyncNetwork::server.IsActive() ) {
-		if ( idAsyncNetwork::serverDedicated.GetInteger() == 0 ) {
-			return 0;
-		} else if ( idAsyncNetwork::server.IsClientInGame( idAsyncNetwork::serverDrawClient.GetInteger() ) ) {
-			return idAsyncNetwork::serverDrawClient.GetInteger();
-		} else {
-			return -1;
-		}
-	} else 
-#endif
-		return 0;
+	return 0;
 }
 
 /*

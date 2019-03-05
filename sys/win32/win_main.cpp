@@ -1240,11 +1240,7 @@ Win_Frame
 void Win_Frame( void ) {
 	// if "viewlog" has been modified, show or hide the log console
 	if ( win32.win_viewlog.IsModified() ) {
-		if ( !com_skipRenderer.GetBool()
-#ifdef MULTIPLAYER
-		        && idAsyncNetwork::serverDedicated.GetInteger() != 1
-#endif
-		   ) {
+		if ( !com_skipRenderer.GetBool() ) {
 			Sys_ShowConsole( win32.win_viewlog.GetInteger(), false );
 		}
 		win32.win_viewlog.ClearModified();
@@ -1290,11 +1286,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	Sys_StartAsyncThread();
 
 	// hide or show the early console as necessary
-	if ( win32.win_viewlog.GetInteger() || com_skipRenderer.GetBool()
-#ifdef MULTIPLAYER
-	        || idAsyncNetwork::serverDedicated.GetInteger()
-#endif
-	   ) {
+	if ( win32.win_viewlog.GetInteger() || com_skipRenderer.GetBool() ) {
 		Sys_ShowConsole( 1, true );
 	} else {
 		Sys_ShowConsole( 0, false );

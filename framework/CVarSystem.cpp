@@ -300,29 +300,6 @@ idInternalCVar::Set
 ============
 */
 void idInternalCVar::Set( const char *newValue, bool force, bool fromServer ) {
-#ifdef MULTIPLAYER
-	if ( session && session->IsMultiplayer() && !fromServer ) {
-#ifndef ID_TYPEINFO
-		if ((flags & CVAR_NETWORKSYNC) && idAsyncNetwork::client.IsActive()) {
-			common->Printf( "%s is a synced over the network and cannot be changed on a multiplayer client.\n", nameString.c_str() );
-#if ID_ALLOW_CHEATS
-			common->Printf( "ID_ALLOW_CHEATS override!\n" );
-#else				
-			return;
-#endif
-		}
-#endif
-		if ( ( flags & CVAR_CHEAT ) && !cvarSystem->GetCVarBool( "net_allowCheats" ) ) {
-			common->Printf( "%s cannot be changed in multiplayer.\n", nameString.c_str() );
-#if ID_ALLOW_CHEATS
-			common->Printf( "ID_ALLOW_CHEATS override!\n" );
-#else				
-			return;
-#endif
-		}	
-	}
-#endif
-
 	if ( !newValue ) {
 		newValue = resetString.c_str();
 	}

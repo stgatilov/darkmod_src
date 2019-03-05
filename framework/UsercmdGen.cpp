@@ -521,11 +521,7 @@ Moves the local angle positions
 void idUsercmdGenLocal::AdjustAngles( void ) {
 	float	speed;
 	
-	if ( toggled_run.on 
-#ifdef MULTIPLAYER
-		^ ( in_alwaysRun.GetBool() && idAsyncNetwork::IsActive() )
-#endif
-		) {
+	if ( toggled_run.on ) {
 		speed = idMath::M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat();
 	} else {
 		speed = idMath::M_MS2SEC * USERCMD_MSEC;
@@ -674,11 +670,7 @@ idUsercmdGenLocal::JoystickMove
 void idUsercmdGenLocal::JoystickMove( void ) {
 	float	anglespeed;
 
-	if ( toggled_run.on
-#ifdef MULTIPLAYER
-		^ (in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())
-#endif
-		) {
+	if ( toggled_run.on ) {
 		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat();
 	} else {
 		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC;
@@ -718,11 +710,7 @@ void idUsercmdGenLocal::CmdButtons( void ) {
 	}
 
 	// check the run button
-	if ( toggled_run.on 
-#ifdef MULTIPLAYER
-		^ (in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())
-#endif
-		) {
+	if ( toggled_run.on ) {
 		cmd.buttons |= BUTTON_RUN;
 	}
 
@@ -754,12 +742,7 @@ void idUsercmdGenLocal::InitCurrent( void ) {
 	memset( &cmd, 0, sizeof( cmd ) );
 	cmd.flags = flags;
 	cmd.impulse = impulse;
-	cmd.buttons |= (in_alwaysRun.GetBool() 
-#ifdef MULTIPLAYER
-		&& idAsyncNetwork::IsActive()
-#endif
-		) ? BUTTON_RUN : 0;
-
+	cmd.buttons |= in_alwaysRun.GetBool() ? BUTTON_RUN : 0;
 	cmd.buttons |= in_freeLook.GetBool() ? BUTTON_MLOOK : 0;
 }
 
@@ -779,11 +762,7 @@ void idUsercmdGenLocal::MakeCurrent( void ) {
 	if ( !Inhibited() ) {
 		// update toggled key states
 		toggled_crouch.SetKeyState( ButtonState( UB_DOWN ), in_toggleCrouch.GetBool() );
-		toggled_run.SetKeyState( ButtonState( UB_SPEED ), in_toggleRun.GetBool() 
-#ifdef MULTIPLAYER
-			&& idAsyncNetwork::IsActive()
-#endif
-			);
+		toggled_run.SetKeyState( ButtonState( UB_SPEED ), in_toggleRun.GetBool() );
 		toggled_zoom.SetKeyState( ButtonState( UB_ZOOM ), in_toggleZoom.GetBool() );
 
 		// keyboard angle adjustment

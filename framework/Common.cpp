@@ -1644,11 +1644,7 @@ void Com_ReloadEngine_f( const idCmdArgs &args ) {
 	}
 	commonLocal.ShutdownGame( true );
 	commonLocal.InitGame();
-	if ( !menu 
-#ifdef MULTIPLAYER
-		&& !idAsyncNetwork::serverDedicated.GetBool()
-#endif
-		) {
+	if ( !menu ) {
 		Sys_ShowConsole( 0, false );
 	}
 	common->Printf( "============= ReloadEngine end ===============\n" );
@@ -2485,16 +2481,6 @@ void idCommonLocal::Frame( void ) {
 			//com_frameTime = com_ticNumber * USERCMD_MSEC;
 			com_frameTime += USERCMD_MSEC; // Max(USERCMD_MSEC, (1000 / Max(1, com_maxFPS.GetInteger()) ) );
 
-#ifdef MULTIPLAYER
-		idAsyncNetwork::RunFrame();
-
-		if ( idAsyncNetwork::IsActive() ) {
-			if ( idAsyncNetwork::serverDedicated.GetInteger() != 1 ) {
-				session->GuiFrameEvents();
-				session->UpdateScreen( false );
-			}
-		} else 
-#endif
 		{
 			session->Frame();
 
@@ -2529,12 +2515,6 @@ void idCommonLocal::GUIFrame( bool execCmd, bool network ) {
 	Sys_GenerateEvents();
 	eventLoop->RunEventLoop( execCmd );	// and execute any commands
 	com_frameTime = com_ticNumber * USERCMD_MSEC;
-
-#ifdef MULTIPLAYER
-	if (network) {
-		idAsyncNetwork::RunFrame();
-	}
-#endif
 
 	session->Frame();
 	session->UpdateScreen( false );	
@@ -2876,11 +2856,6 @@ void idCommonLocal::Shutdown( void ) {
 
 	com_shuttingDown = true;
 
-#ifdef MULTIPLAYER
-	idAsyncNetwork::server.Kill();
-	idAsyncNetwork::client.Shutdown();
-#endif
-
     // save persistent console history
     console->SaveHistory();
 
@@ -3023,15 +2998,6 @@ void idCommonLocal::InitGame( void )
 	cvarSystem->SetCVarBool( "s_noSound", true );
 #else
 
-#ifdef MULTIPLAYER
-	// init async network
-	idAsyncNetwork::Init();
-
-	if (idAsyncNetwork::serverDedicated.GetInteger() == 1) {
-		idAsyncNetwork::server.InitPort();
-		cvarSystem->SetCVarBool( "s_noSound", true );
-	} else 
-#endif
 	{
 		// init OpenGL, which will open a window and connect sound and input hardware
 		//PrintLoadingMessage( Translate( "#str_04348" ) );
@@ -3071,13 +3037,6 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 
 	// shutdown the script debugger
 	// DebuggerServerShutdown();
-
-#ifdef MULTIPLAYER
-	idAsyncNetwork::client.Shutdown();
-
-	// shut down async networking
-	idAsyncNetwork::Shutdown();
-#endif
 
 	// shut down the session
 	session->Shutdown();
