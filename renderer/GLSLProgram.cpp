@@ -196,7 +196,7 @@ namespace {
 
 	std::string ReadFile( const char *sourceFile ) {
 		void *buf = nullptr;
-		int len = fileSystem->ReadFile( sourceFile, &buf );
+		int len = fileSystem->ReadFile( idStr("glprogs/") + sourceFile, &buf );
 		if( buf == nullptr ) {
 			common->Warning( "Could not open shader file %s", sourceFile );
 			return "";
@@ -338,7 +338,7 @@ namespace {
 		// stub, change/expand as needed
 		idDict interactionDefines;
 		interactionDefines.Set( "SHADOW_TYPE", "1" );
-		globalPrograms.interactionShader = GLSLProgram::Load( interactionDefines, "glprogs/interaction.vs", "glprogs/interaction.fs" );
+		globalPrograms.interactionShader = GLSLProgram::Load( interactionDefines, "interaction.vs", "interaction.fs" );
 		if( !globalPrograms.interactionShader ) {
 			common->Error( "Failed to load interaction shader" );
 		}
@@ -439,11 +439,11 @@ namespace {
 
 	TEST_CASE("Shader include handling", "[shaders]") {
 		INFO( "Preparing test shaders" );
-		fileSystem->WriteFile( "tests/basic_shader.glsl", BASIC_SHADER.c_str(), BASIC_SHADER.size(), "fs_savepath", "" );
-		fileSystem->WriteFile( "tests/shared_common.glsl", SHARED_COMMON.c_str(), SHARED_COMMON.size(), "fs_savepath", "" );
-		fileSystem->WriteFile( "tests/include_shader.glsl", INCLUDE_SHADER.c_str(), INCLUDE_SHADER.size(), "fs_savepath", "" );
-		fileSystem->WriteFile( "tests/nested_include.glsl", NESTED_INCLUDE.c_str(), NESTED_INCLUDE.size(), "fs_savepath", "" );
-		fileSystem->WriteFile( "tests/advanced_includes.glsl", ADVANCED_INCLUDES.c_str(), ADVANCED_INCLUDES.size(), "fs_savepath", "" );
+		fileSystem->WriteFile( "glprogs/tests/basic_shader.glsl", BASIC_SHADER.c_str(), BASIC_SHADER.size(), "fs_savepath", "" );
+		fileSystem->WriteFile( "glprogs/tests/shared_common.glsl", SHARED_COMMON.c_str(), SHARED_COMMON.size(), "fs_savepath", "" );
+		fileSystem->WriteFile( "glprogs/tests/include_shader.glsl", INCLUDE_SHADER.c_str(), INCLUDE_SHADER.size(), "fs_savepath", "" );
+		fileSystem->WriteFile( "glprogs/tests/nested_include.glsl", NESTED_INCLUDE.c_str(), NESTED_INCLUDE.size(), "fs_savepath", "" );
+		fileSystem->WriteFile( "glprogs/tests/advanced_includes.glsl", ADVANCED_INCLUDES.c_str(), ADVANCED_INCLUDES.size(), "fs_savepath", "" );
 
 		SUBCASE( "Basic shader without includes remains unaltered" ) {
 			REQUIRE( LoadSource( "tests/basic_shader.glsl" ) == BASIC_SHADER );
