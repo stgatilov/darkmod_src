@@ -1294,11 +1294,7 @@ void idExplodingBarrel::Think( void ) {
 		}
 	}
 
-	if ( 
-#ifdef MULTIPLAYER
-		!gameLocal.isClient && 
-#endif
-		state != BURNING && state != EXPLODING ) {
+	if ( state != BURNING && state != EXPLODING ) {
 		BecomeInactive( TH_THINK );
 		return;
 	}
@@ -1424,16 +1420,6 @@ void idExplodingBarrel::Killed( idEntity *inflictor, idEntity *attacker, int dam
 		return;
 	} else {
 		state = EXPLODING;
-#ifdef MULTIPLAYER
-		if ( gameLocal.isServer ) {
-			idBitMsg	msg;
-			byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-			msg.Init( msgBuf, sizeof( msgBuf ) );
-			msg.WriteLong( gameLocal.time );
-			ServerSendEvent( EVENT_EXPLODE, &msg, false, -1 );
-		}		
-#endif
 	}
 
 	// do this before applying radius damage so the ent can trace to any damagable ents nearby

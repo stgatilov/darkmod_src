@@ -174,9 +174,6 @@ idWeapon::Spawn
 ================
 */
 void idWeapon::Spawn( void ) {
-#ifdef MULTIPLAYER
-	if ( !gameLocal.isClient ) 
-#endif
 	{
 		// setup the world model
 		worldModel = static_cast< idAnimatedEntity * >( gameLocal.SpawnEntityType( idAnimatedEntity::Type, NULL ) );
@@ -1746,9 +1743,6 @@ idWeapon::WeaponStolen
 ================
 */
 void idWeapon::WeaponStolen( void ) {
-#ifdef MULTIPLAYER
-	assert( !gameLocal.isClient );
-#endif
 	if ( projectileEnt ) {
 		if ( isLinked ) {
 			SetState( "WeaponStolen", 0 );
@@ -2190,11 +2184,7 @@ void idWeapon::PresentWeapon( bool showViewModel )
 	if ( worldModel.GetEntity() && worldModel.GetEntity()->GetRenderEntity() ) {
 		// deal with the third-person visible world model
 		// don't show shadows of the world model in first person
-		if ( 
-#ifdef MULTIPLAYER
-			gameLocal.isMultiplayer || 
-#endif
-			g_showPlayerShadow.GetBool() || pm_thirdPerson.GetBool() ) {
+		if ( g_showPlayerShadow.GetBool() || pm_thirdPerson.GetBool() ) {
 			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID	= 0;
 		} else {
 			worldModel.GetEntity()->GetRenderEntity()->suppressShadowInViewID	= owner->entityNumber+1;
@@ -2248,11 +2238,7 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		gameRenderWorld->UpdateLightDef( worldMuzzleFlashHandle, &worldMuzzleFlash );
 
 		// wake up monsters with the flashlight
-		if ( 
-#ifdef MULTIPLAYER
-			!gameLocal.isMultiplayer && 
-#endif
-			lightOn && !owner->fl.notarget ) {
+		if ( lightOn && !owner->fl.notarget ) {
 			AlertMonsters();
 		}
 	}
@@ -2568,39 +2554,7 @@ idWeapon::ClientReceiveEvent
 ================
 */
 bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
-#ifdef MULTIPLAYER
-	switch( event ) {
-		case EVENT_RELOAD: {
-			if ( gameLocal.time - time < 1000 ) {
-				if ( WEAPON_NETRELOAD.IsLinked() ) {
-					WEAPON_NETRELOAD = true;
-					WEAPON_NETENDRELOAD = false;
-				}
-			}
-			return true;
-		}
-		case EVENT_ENDRELOAD: {
-			if ( WEAPON_NETENDRELOAD.IsLinked() ) {
-				WEAPON_NETENDRELOAD = true;
-			}
-			return true;
-		}
-		case EVENT_CHANGESKIN: {
-			int index = gameLocal.ClientRemapDecl( DECL_SKIN, msg.ReadLong() );
-			renderEntity.customSkin = ( index != -1 ) ? static_cast<const idDeclSkin *>( declManager->DeclByIndex( DECL_SKIN, index ) ) : NULL;
-			UpdateVisuals();
-			if ( worldModel.GetEntity() ) {
-				worldModel.GetEntity()->SetSkin( renderEntity.customSkin );
-			}
-			return true;
-		}
-		default: {
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
-	}
-#else
 	return false;
-#endif
 }
 
 /*
@@ -2742,12 +2696,6 @@ idWeapon::Event_UseAmmo
 ===============
 */
 void idWeapon::Event_UseAmmo( int amount ) {
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return;
-	}
-#endif
-
 	owner->GetCurrentWeaponItem()->UseAmmo(( powerAmmo ) ? amount : ( amount * ammoRequired ) );
 	if ( clipSize && ammoRequired ) {
 		ammoClip -= powerAmmo ? amount : ( amount * ammoRequired );
@@ -2764,12 +2712,6 @@ idWeapon::Event_AddToClip
 */
 void idWeapon::Event_AddToClip( int amount ) {
 	int ammoAvail;
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return;
-	}
-#endif
 
 	ammoClip += amount;
 	if ( ammoClip > clipSize ) {
@@ -2830,11 +2772,6 @@ idWeapon::Event_NetReload
 */
 void idWeapon::Event_NetReload( void ) {
 	assert( owner );
-#ifdef MULTIPLAYER
-	if ( gameLocal.isServer ) {
-		ServerSendEvent( EVENT_RELOAD, NULL, false, -1 );
-	}
-#endif
 }
 
 /*
@@ -2844,11 +2781,6 @@ idWeapon::Event_NetEndReload
 */
 void idWeapon::Event_NetEndReload( void ) {
 	assert( owner );
-#ifdef MULTIPLAYER
-	if ( gameLocal.isServer ) {
-		ServerSendEvent( EVENT_ENDRELOAD, NULL, false, -1 );
-	}
-#endif
 }
 
 /*
@@ -3031,17 +2963,6 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 	if ( worldModel.GetEntity() ) {
 		worldModel.GetEntity()->SetSkin( skinDecl );
 	}
-
-#ifdef MULTIPLAYER
-	if (gameLocal.isServer) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.WriteLong( ( skinDecl != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_SKIN, skinDecl->Index() ) : -1 );
-		ServerSendEvent( EVENT_CHANGESKIN, &msg, false, -1 );
-	}
-#endif
 }
 
 /*
@@ -3113,12 +3034,6 @@ idWeapon::Event_CreateProjectile
 */
 void idWeapon::Event_CreateProjectile()
 {
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient )
-	{
-		idThread::ReturnEntity( NULL );
-	} else
-#endif
 	{
 		projectileEnt = NULL;
 
@@ -3198,10 +3113,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		return;
 	}
 
-	// avoid all ammo considerations on an MP client
-#ifdef MULTIPLAYER
-	if ( !gameLocal.isClient ) 
-#endif
 	{
 
 		CInventoryWeaponItemPtr weaponItem = owner->GetCurrentWeaponItem();
@@ -3248,28 +3159,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 		kick_endtime = gameLocal.realClientTime + muzzle_kick_maxtime;
 	}
 
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-
-		// predict instant hit projectiles
-		if ( projectileDef->dict.GetBool( "net_instanthit" ) ) {
-			float spreadRad = DEG2RAD( spread );
-			muzzle_pos = muzzleOrigin + playerViewAxis[ 0 ] * 2.0f;
-			for( i = 0; i < num_projectiles; i++ ) {
-				ang = idMath::Sin( spreadRad * gameLocal.random.RandomFloat() );
-				spin = (float)DEG2RAD( 360.0f ) * gameLocal.random.RandomFloat();
-				//dir = playerViewAxis[ 0 ] + playerViewAxis[ 2 ] * ( ang * idMath::Sin( spin ) ) - playerViewAxis[ 1 ] * ( ang * idMath::Cos( spin ) );
-				dir = muzzleAxis[ 0 ]; // Dram: Make the weapon shoot directly from the barrel bone. Found by Ishtvan
-				dir.Normalize();
-				gameLocal.clip.Translation( tr, muzzle_pos, muzzle_pos + dir * 4096.0f, NULL, mat3_identity, MASK_SHOT_RENDERMODEL, owner );
-				if ( tr.fraction < 1.0f ) {
-					idProjectile::ClientPredictionCollide( this, projectileDef->dict, tr, vec3_origin, true );
-				}
-			}
-		}
-
-	} else
-#endif
 	{
 
 		ownerBounds = owner->GetPhysics()->GetAbsBounds();
@@ -3371,9 +3260,6 @@ void idWeapon::Event_Melee( void ) {
 		gameLocal.Error( "No meleeDef on '%s'", weaponDef->dict.GetString( "classname" ) );
 	}
 
-#ifdef MULTIPLAYER
-	if ( !gameLocal.isClient ) 
-#endif
 	{
 		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
@@ -3410,16 +3296,6 @@ void idWeapon::Event_Melee( void ) {
 
 			ent->ApplyImpulse( this, tr.c.id, tr.c.point, impulse );
 
-			// weapon stealing - do this before damaging so weapons are not dropped twice
-#ifdef MULTIPLAYER
-			if (gameLocal.isMultiplayer
-				&& weaponDef && weaponDef->dict.GetBool( "stealing" )
-				&& ent->IsType( idPlayer::Type )
-				&& ( gameLocal.gameType != GAME_TDM || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer * >( ent )->team ) )
-				) {
-				owner->StealWeapon( static_cast< idPlayer * >( ent ) );
-			}
-#endif
 			if ( ent->fl.takedamage ) {
 				idVec3 kickDir, globalKickDir;
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
@@ -3544,12 +3420,6 @@ void idWeapon::Event_EjectBrass( void ) {
 	if ( ejectJointView == INVALID_JOINT || !brassDict.GetNumKeyVals() ) {
 		return;
 	}
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return;
-	}
-#endif
 
 	idMat3 axis;
 	idVec3 origin, linear_velocity, angular_velocity;

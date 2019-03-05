@@ -459,9 +459,6 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 
 	thruster.SetPosition( &physicsObj, 0, idVec3( GetPhysics()->GetBounds()[ 0 ].x, 0, 0 ) );
 
-#ifdef MULTIPLAYER
-	if ( !gameLocal.isClient ) 
-#endif
 	{
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
@@ -711,17 +708,6 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	if ( state == EXPLODED || state == FIZZLED ) {
 		return true;
 	}
-
-	// predict the explosion
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		if ( ClientPredictionCollide( this, spawnArgs, collision, velocity, !spawnArgs.GetBool( "net_instanthit" ) ) ) {
-			Explode( collision, NULL );
-			return true;
-		}
-		return false;
-	}
-#endif
 
 	// remove projectile when a 'noimpact' surface is hit
 	if ( ( collision.c.material != NULL ) && ( collision.c.material->GetSurfaceFlags() & SURF_NOIMPACT ) ) {
@@ -1003,33 +989,6 @@ idProjectile::AddDefaultDamageEffect
 void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity ) {
 
 	DefaultDamageEffect( this, spawnArgs, collision, velocity );
-
-#ifdef MULTIPLAYER
-	if (gameLocal.isServer && fl.networkSync) {
-
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-		int			excludeClient;
-
-		if ( spawnArgs.GetBool( "net_instanthit" ) ) {
-			excludeClient = owner.GetEntityNum();
-		} else {
-			excludeClient = -1;
-		}
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.BeginWriting();
-		msg.WriteFloat( collision.c.point[0] );
-		msg.WriteFloat( collision.c.point[1] );
-		msg.WriteFloat( collision.c.point[2] );
-		msg.WriteDir( collision.c.normal, 24 );
-		msg.WriteLong( ( collision.c.material != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_MATERIAL, collision.c.material->Index() ) : -1 );
-		msg.WriteFloat( velocity[0], 5, 10 );
-		msg.WriteFloat( velocity[1], 5, 10 );
-		msg.WriteFloat( velocity[2], 5, 10 );
-		ServerSendEvent( EVENT_DAMAGE_EFFECT, &msg, false, excludeClient );
-	}
-#endif
 }
 
 /*
@@ -1093,12 +1052,6 @@ void idProjectile::Fizzle( void ) {
 	FreeLightDef();
 
 	state = FIZZLED;
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return;
-	}
-#endif
 
 	CancelEvents( &EV_Fizzle );
 	PostEventMS( &EV_Remove, spawnArgs.GetInt( "remove_time", "1500" ) );
@@ -1287,12 +1240,6 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	state = EXPLODED;
 	BecomeInactive( TH_ARMED ); // grayman #2478 - disable armed thinking
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return;
-	}
-#endif
 
 	//
 	// bind the projectile to the impact entity if necesary
@@ -1810,32 +1757,7 @@ idProjectile::ClientReceiveEvent
 ================
 */
 bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
-#ifdef MULTIPLAYER
-	trace_t collision;
-	idVec3 velocity;
-
-	switch( event ) {
-		case EVENT_DAMAGE_EFFECT: {
-			memset( &collision, 0, sizeof( collision ) );
-			collision.c.point[0] = msg.ReadFloat();
-			collision.c.point[1] = msg.ReadFloat();
-			collision.c.point[2] = msg.ReadFloat();
-			collision.c.normal = msg.ReadDir( 24 );
-			int index = gameLocal.ClientRemapDecl( DECL_MATERIAL, msg.ReadLong() );
-			collision.c.material = ( index != -1 ) ? static_cast<const idMaterial *>( declManager->DeclByIndex( DECL_MATERIAL, index ) ) : NULL;
-			velocity[0] = msg.ReadFloat( 5, 10 );
-			velocity[1] = msg.ReadFloat( 5, 10 );
-			velocity[2] = msg.ReadFloat( 5, 10 );
-			DefaultDamageEffect( this, spawnArgs, collision, velocity );
-			return true;
-		}
-		default: {
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
-	}
-#else
 	return false;
-#endif
 }
 
 /*
@@ -2483,9 +2405,6 @@ void idDebris::Launch( void ) {
 	physicsObj.SetAxis( axis );
 	SetPhysics( &physicsObj );
 
-#ifdef MULTIPLAYER
-	if ( !gameLocal.isClient ) 
-#endif
 	{
 		if ( fuse <= 0 ) {
 			// run physics for 1 second
@@ -2596,12 +2515,6 @@ void idDebris::Fizzle( void ) {
 	physicsObj.PutToRest();
 
 	Hide();
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return;
-	}
-#endif
 
 	CancelEvents( &EV_Fizzle );
 	PostEventMS( &EV_Remove, 0 );

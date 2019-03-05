@@ -718,23 +718,6 @@ void idBrittleFracture::ProjectDecal( const idVec3 &point, const idVec3 &dir, co
 	idMat3 axis, axistemp;
 	idPlane textureAxis[2];
 
-#ifdef MULTIPLAYER
-	if ( gameLocal.isServer ) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.BeginWriting();
-		msg.WriteFloat( point[0] );
-		msg.WriteFloat( point[1] );
-		msg.WriteFloat( point[2] );
-		msg.WriteFloat( dir[0] );
-		msg.WriteFloat( dir[1] );
-		msg.WriteFloat( dir[2] );
-		ServerSendEvent( EVENT_PROJECT_DECAL, &msg, true, -1 );
-	}
-#endif
-
 	if ( time >= gameLocal.time ) {
 		// try to get the sound from the damage def
 		const idDeclEntityDef *damageDef = NULL;
@@ -882,23 +865,6 @@ void idBrittleFracture::Shatter( const idVec3 &point, const idVec3 &impulse, con
 	idVec3 dir;
 	shard_t *shard;
 	float m;
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isServer ) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.BeginWriting();
-		msg.WriteFloat( point[0] );
-		msg.WriteFloat( point[1] );
-		msg.WriteFloat( point[2] );
-		msg.WriteFloat( impulse[0] );
-		msg.WriteFloat( impulse[1] );
-		msg.WriteFloat( impulse[2] );
-		ServerSendEvent( EVENT_SHATTER, &msg, true, -1 );
-	}
-#endif
 
 	if ( time > ( gameLocal.time - shardAliveTime ) ) 
 	{

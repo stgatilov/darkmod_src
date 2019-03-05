@@ -1007,20 +1007,6 @@ idLight::BecomeBroken
 void idLight::BecomeBroken( idEntity *activator ) {
 	idEntity::BecomeBroken ( activator );
 
-#ifdef MULTIPLAYER
-	const char *damageDefName;
-	if ( gameLocal.isServer ) {
-
-		ServerSendEvent( EVENT_BECOMEBROKEN, NULL, true, -1 );
-
-		if ( spawnArgs.GetString( "def_damage", "", &damageDefName ) ) {
-			idVec3 origin = renderEntity.origin + renderEntity.bounds.GetCenter() * renderEntity.axis;
-			gameLocal.RadiusDamage( origin, activator, activator, this, this, damageDefName );
-		}
-
-	}
-#endif
-
 	ActivateTargets( activator );
 
 	// offset the start time of the shader to sync it to the game time

@@ -114,9 +114,6 @@ void gameError( const char *fmt, ... );
 #include "physics/Push.h"
 
 #include "Pvs.h"
-#ifdef MULTIPLAYER
-#include "MultiplayerGame.h"
-#endif
 
 #include "Objectives/EMissionResult.h"
 #include "DifficultyManager.h"
@@ -358,37 +355,6 @@ struct SSprParms
 
 //============================================================================
 
-#ifdef MULTIPLAYER
-class idEventQueue {
-public:
-	typedef enum {
-		OUTOFORDER_IGNORE,
-		OUTOFORDER_DROP,
-		OUTOFORDER_SORT
-	} outOfOrderBehaviour_t;
-
-							idEventQueue() : start( NULL ), end( NULL ) {}
-
-	entityNetEvent_t *		Alloc();
-	void					Free( entityNetEvent_t *event );
-	void					Shutdown();
-
-	void					Init();
-	void					Enqueue( entityNetEvent_t* event, outOfOrderBehaviour_t oooBehaviour );
-	entityNetEvent_t *		Dequeue( void );
-	entityNetEvent_t *		RemoveLast( void );
-
-	entityNetEvent_t *		Start( void ) { return start; }
-
-private:
-	entityNetEvent_t *					start;
-	entityNetEvent_t *					end;
-	idBlockAlloc<entityNetEvent_t,32>	eventAllocator;
-};
-#endif
-
-//============================================================================
-
 template< class type >
 class idEntityPtr {
 public:
@@ -541,10 +507,6 @@ public:
 
 	idStr					sessionCommand;			// a target_sessionCommand can set this to return something to the session 
 
-#ifdef MULTIPLAYER
-	idMultiplayerGame		mpGame;					// handles rules for standard dm
-#endif
-
 	idSmokeParticles *		smokeParticles;			// global smoke trails
 	idEditEntities *		editEntities;			// in game editing
 
@@ -676,15 +638,6 @@ public:
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
-#ifdef MULTIPLAYER
-	gameType_t				gameType;
-
-	bool					isMultiplayer;			// set if the game is run in multiplayer mode
-	bool					isServer;				// set if the game is run for a dedicated or listen server
-	bool					isClient;				// set if the game is run for a client
-													// discriminates between the RunFrame path and the ClientPrediction path
-													// NOTE: on a listen server, isClient is false
-#endif
 	int						localClientNum;			// number of the local client. MP: -1 on a dedicated
 	idLinkList<idEntity>	snapshotEntities;		// entities from the last snapshot
 	int						realClientTime;			// real client time
@@ -748,7 +701,6 @@ public:
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
 	virtual void			SetLocalClient( int clientNum );
-	virtual void			ThrottleUserInfo( void );
 	virtual const idDict *	SetUserInfo( int clientNum, const idDict &userInfo, bool isClient, bool canModify );
 	virtual const idDict *	GetUserInfo( int clientNum );
 	virtual void			SetServerInfo( const idDict &serverInfo );
@@ -781,32 +733,12 @@ public:
 	virtual bool			Draw( int clientNum );
 	virtual void			DrawLightgem( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
-#ifdef MULTIPLAYER
-	virtual idUserInterface	*StartMenu( void );
-#endif
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
 	/**
 	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
     */
 	virtual void			UpdateGUIScaling( idUserInterface *gui );
-#ifdef MULTIPLAYER
-	virtual allowReply_t	ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] );
-	virtual void			ServerClientConnect( int clientNum, const char *guid );
-	virtual void			ServerClientBegin( int clientNum );
-	virtual void			ServerClientDisconnect( int clientNum );
-	virtual void			ServerWriteInitialReliableMessages( int clientNum );
-	virtual void			ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &msg, byte *clientInPVS, int numPVSClients );
-	virtual bool			ServerApplySnapshot( int clientNum, int sequence );
-	virtual void			ServerProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual void			ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg );
-	virtual bool			ClientApplySnapshot( int clientNum, int sequence );
-	virtual void			ClientProcessReliableMessage( int clientNum, const idBitMsg &msg );
-	virtual gameReturn_t	ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame );
-	virtual void			GetClientStats( int clientNum, char *data, const int len );
-	virtual void			SwitchTeam( int clientNum, int team );
-	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[MAX_STRING_CHARS] );
-#endif
 
 	// ---------------------- Public idGameLocal Interface -------------------
 
@@ -937,12 +869,6 @@ public:
 	idEntity *				SelectInitialSpawnPoint( idPlayer *player );
 
 	void					SetPortalState( qhandle_t portal, int blockingBits );
-#ifdef MULTIPLAYER
-	void					SaveEntityNetworkEvent( const idEntity *ent, int event, const idBitMsg *msg );
-	void					ServerSendChatMessage( int to, const char *name, const char *text );
-	int						ServerRemapDecl( int clientNum, declType_t type, int index );
-	int						ClientRemapDecl( declType_t type, int index );
-#endif
 
 	void					SetGlobalMaterial( const idMaterial *mat );
 	const idMaterial *		GetGlobalMaterial();
@@ -1106,11 +1032,6 @@ private:
 	idBlockAlloc<entityState_t,256>entityStateAllocator;
 	idBlockAlloc<snapshot_t,64>snapshotAllocator;
 
-#ifdef MULTIPLAYER
-	idEventQueue			eventQueue;
-	idEventQueue			savedEventQueue;
-#endif
-
 	idStaticList<spawnSpot_t, MAX_GENTITIES> spawnSpots;
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
 	int						currentInitialSpot;
@@ -1170,11 +1091,6 @@ private:
 	void					InitConsoleCommands( void );
 	void					ShutdownConsoleCommands( void );
 
-#ifdef MULTIPLAYER
-	void					InitAsyncNetwork( void );
-	void					ShutdownAsyncNetwork( void );
-	void					ServerProcessEntityNetworkEventQueue( void );
-#endif
 	void					InitLocalClient( int clientNum );
 	void					InitClientDeclRemap( int clientNum );
 	void					ServerSendDeclRemapToClient( int clientNum, declType_t type, int index );
@@ -1186,10 +1102,6 @@ private:
 	void					ClientProcessEntityNetworkEventQueue( void );
 	void					ClientShowSnapshot( int clientNum ) const;
 							// call after any change to serverInfo. Will update various quick-access flags
-	void					UpdateServerInfoFlags( void );
-#ifdef MULTIPLAYER
-	void					RandomizeInitialSpawns( void );
-#endif
 	static int				sortSpawnPoints( const void *ptr1, const void *ptr2 );
 
 	void					DumpOggSounds( void );

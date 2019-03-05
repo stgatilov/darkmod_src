@@ -141,15 +141,6 @@ void idSound::Event_Trigger( idEntity *activator ) {
 			PostEventSec( &EV_Speaker_Timer, wait + gameLocal.random.CRandomFloat() * random );
 		}
 	} else {
-#ifdef MULTIPLAYER
-		if ( gameLocal.isMultiplayer ) {
-			if ( refSound.referenceSound && ( gameLocal.time < playingUntilTime ) ) {
-				DoSound( false );
-			} else {
-				DoSound( true );
-			}
-		} else 
-#endif
 		{
 			if ( refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
 				DoSound( false );

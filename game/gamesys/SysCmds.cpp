@@ -942,25 +942,6 @@ Cmd_Kill_f
 void Cmd_Kill_f( const idCmdArgs &args ) {
 	idPlayer	*player;
 
-#ifdef MULTIPLAYER
-	if ( gameLocal.isMultiplayer ) {
-		if ( gameLocal.isClient ) {
-			idBitMsg	outMsg;
-			byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
-			outMsg.Init( msgBuf, sizeof( msgBuf ) );
-			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_KILL );
-			networkSystem->ClientSendReliableMessage( outMsg );
-		} else {
-			player = gameLocal.GetClientByCmdArgs( args );
-			if ( !player ) {
-				common->Printf( "kill <client nickname> or kill <client index>\n" );
-				return;
-			}
-			player->Kill( false, false );
-			cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "say killed client %d '%s^0'\n", player->entityNumber, gameLocal.userInfo[ player->entityNumber ].GetString( "ui_name" ) ) );
-		}
-	} else 
-#endif
 	{
 		player = gameLocal.GetLocalPlayer();
 		if ( !player ) {
@@ -998,118 +979,6 @@ void Cmd_PlayerModel_f( const idCmdArgs &args ) {
 	ang = player->viewAngles;
 	player->SpawnToPoint( pos, ang );
 }
-
-/*
-==================
-Cmd_Say
-==================
-*/
-#ifdef MULTIPLAYER
-static void Cmd_Say( bool team, const idCmdArgs &args ) {
-	const char *name;
-	idStr text;
-	const char *cmd = team ? "sayTeam" : "say" ;
-
-	if ( !gameLocal.isMultiplayer ) {
-		gameLocal.Printf( "%s can only be used in a multiplayer game\n", cmd );
-		return;
-	}
-
-	if ( args.Argc() < 2 ) {
-		gameLocal.Printf( "usage: %s <text>\n", cmd );
-		return;
-	}
-
-	text = args.Args();
-	if ( text.Length() == 0 ) {
-		return;
-	}
-
-	if ( text[ text.Length() - 1 ] == '\n' ) {
-		text[ text.Length() - 1 ] = '\0';
-	}
-	name = "player";
-
-	idPlayer *	player;
-
-	// here we need to special case a listen server to use the real client name instead of "server"
-	// "server" will only appear on a dedicated server
-	if ( gameLocal.isClient || cvarSystem->GetCVarInteger( "net_serverDedicated" ) == 0 ) {
-		player = gameLocal.localClientNum >= 0 ? static_cast<idPlayer *>( gameLocal.entities[ gameLocal.localClientNum ] ) : NULL;
-		if ( player ) {
-			name = player->GetUserInfo()->GetString( "ui_name", "player" );
-		}
-	} else {
-		name = "server";
-	}
-
-	if ( gameLocal.isClient ) {
-		idBitMsg	outMsg;
-		byte		msgBuf[ 256 ];
-		outMsg.Init( msgBuf, sizeof( msgBuf ) );
-		outMsg.WriteByte( team ? GAME_RELIABLE_MESSAGE_TCHAT : GAME_RELIABLE_MESSAGE_CHAT );
-		outMsg.WriteString( name );
-		outMsg.WriteString( text, -1, false );
-		networkSystem->ClientSendReliableMessage( outMsg );
-	} else {
-		gameLocal.mpGame.ProcessChatMessage( gameLocal.localClientNum, team, name, text, NULL );
-	}
-}
-
-/*
-==================
-Cmd_Say_f
-==================
-*/
-static void Cmd_Say_f( const idCmdArgs &args ) {
-	Cmd_Say( false, args );
-}
-
-/*
-==================
-Cmd_SayTeam_f
-==================
-*/
-static void Cmd_SayTeam_f( const idCmdArgs &args ) {
-	Cmd_Say( true, args );
-}
-
-/*
-==================
-Cmd_AddChatLine_f
-==================
-*/
-static void Cmd_AddChatLine_f( const idCmdArgs &args ) {
-	gameLocal.mpGame.AddChatLine( args.Argv( 1 ) );
-}
-
-/*
-==================
-Cmd_Kick_f
-==================
-*/
-static void Cmd_Kick_f( const idCmdArgs &args ) {
-	idPlayer *player;
-
-	if ( !gameLocal.isMultiplayer ) {
-		gameLocal.Printf( "kick can only be used in a multiplayer game\n" );
-		return;
-	}
-
-	if ( gameLocal.isClient ) {
-		gameLocal.Printf( "You have no such power. This is a server command\n" );
-		return;
-	}
-
-	player = gameLocal.GetClientByCmdArgs( args );
-	if ( !player ) {
-		gameLocal.Printf( "usage: kick <client nickname> or kick <client index>\n" );
-		return;
-	}
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "say kicking out client %d '%s^0'\n", player->entityNumber, gameLocal.userInfo[ player->entityNumber ].GetString( "ui_name" ) ) );
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "kick %d\n", player->entityNumber ) );
-}
-#endif
 
 /*
 ==================
@@ -2660,31 +2529,6 @@ static void ArgCompletion_DefFile( const idCmdArgs &args, void(*callback)( const
 	cmdSystem->ArgCompletion_FolderExtension( args, callback, "def/", true, ".def", NULL );
 }
 
-/*
-===============
-Cmd_TestId_f
-outputs a string from the string table for the specified id
-===============
-*/
-void Cmd_TestId_f( const idCmdArgs &args ) {
-#ifdef MULTIPLAYER
-	idStr	id;
-	int		i;
-	if ( args.Argc() == 1 ) {
-		common->Printf( "usage: testid <string id>\n" );
-		return;
-	}
-
-	for ( i = 1; i < args.Argc(); i++ ) {
-		id += args.Argv( i );
-	}
-	if ( idStr::Cmpn( id, STRTABLE_ID, STRTABLE_ID_LENGTH ) != 0 ) {
-		id = STRTABLE_ID + id;
-	}
-	gameLocal.mpGame.AddChatLine( common->Translate( id ), "<nothing>", "<nothing>", "<nothing>" );	
-#endif
-}
-
 void Cmd_SetClipMask(const idCmdArgs& args)
 {
 	if (args.Argc() != 3)
@@ -3872,12 +3716,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "listActiveEntities",	Cmd_ActiveEntityList_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"lists active game entities" );
 	cmdSystem->AddCommand( "listMonsters",			idAI::List_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"lists monsters" );
 	cmdSystem->AddCommand( "listSpawnArgs",			Cmd_ListSpawnArgs_f,		CMD_FL_GAME|CMD_FL_CHEAT,	"list the spawn args of an entity", idGameLocal::ArgCompletion_EntityName );
-#ifdef MULTIPLAYER
-	cmdSystem->AddCommand( "say",					Cmd_Say_f,					CMD_FL_GAME,				"text chat" );
-	cmdSystem->AddCommand( "sayTeam",				Cmd_SayTeam_f,				CMD_FL_GAME,				"team text chat" );
-	cmdSystem->AddCommand( "addChatLine",			Cmd_AddChatLine_f,			CMD_FL_GAME,				"internal use - core to game chat lines" );
-	cmdSystem->AddCommand( "gameKick",				Cmd_Kick_f,					CMD_FL_GAME,				"same as kick, but recognizes player names" );
-#endif
 	cmdSystem->AddCommand( "give",					Cmd_Give_f,					CMD_FL_GAME|CMD_FL_CHEAT,	"gives one or more items" );
 	cmdSystem->AddCommand( "centerview",			Cmd_CenterView_f,			CMD_FL_GAME,				"centers the view" );
 	cmdSystem->AddCommand( "god",					Cmd_God_f,					CMD_FL_GAME|CMD_FL_CHEAT,	"enables god mode" );
@@ -3988,29 +3826,12 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
 	cmdSystem->AddCommand( "exportmodels",			Cmd_ExportModels_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"exports models", ArgCompletion_DefFile );
 
-#ifdef MULTIPLAYER
-	// multiplayer client commands ( replaces old impulses stuff )
-	cmdSystem->AddCommand( "clientDropWeapon",		idMultiplayerGame::DropWeapon_f, CMD_FL_GAME,			"drop current weapon" );
-	cmdSystem->AddCommand( "clientMessageMode",		idMultiplayerGame::MessageMode_f, CMD_FL_GAME,			"ingame gui message mode" );
-	// FIXME: implement
-//	cmdSystem->AddCommand( "clientVote",			idMultiplayerGame::Vote_f,	CMD_FL_GAME,				"cast your vote: clientVote yes | no" );
-//	cmdSystem->AddCommand( "clientCallVote",		idMultiplayerGame::CallVote_f,	CMD_FL_GAME,			"call a vote: clientCallVote si_.. proposed_value" );
-	cmdSystem->AddCommand( "clientVoiceChat",		idMultiplayerGame::VoiceChat_f,	CMD_FL_GAME,			"voice chats: clientVoiceChat <sound shader>" );
-	cmdSystem->AddCommand( "clientVoiceChatTeam",	idMultiplayerGame::VoiceChatTeam_f,	CMD_FL_GAME,		"team voice chats: clientVoiceChat <sound shader>" );
-	cmdSystem->AddCommand( "serverForceReady", idMultiplayerGame::ForceReady_f, CMD_FL_GAME, "force all players ready" );
-
-	// multiplayer server commands
-	cmdSystem->AddCommand( "serverMapRestart",		idGameLocal::MapRestart_f,	CMD_FL_GAME,				"restart the current game" );
-	cmdSystem->AddCommand( "serverNextMap",			idGameLocal::NextMap_f,		CMD_FL_GAME,				"change to the next map" );
-#endif
-
 	// greebo: Added commands to alter the clipmask/contents of entities.
 	cmdSystem->AddCommand( "setClipMask",			Cmd_SetClipMask,			CMD_FL_GAME,				"Set the clipmask of the target entity, usage: 'setClipMask crate01 1313'", idGameLocal::ArgCompletion_EntityName);
 	cmdSystem->AddCommand( "setClipContents",		Cmd_SetClipContents,		CMD_FL_GAME,				"Set the contents flags of the target entity, usage: 'setClipContents crate01 1313'", idGameLocal::ArgCompletion_EntityName);
 
 	// localization help commands
 	cmdSystem->AddCommand( "nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui" );
-	cmdSystem->AddCommand( "testid",				Cmd_TestId_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"output the string for the specified id." );
 #ifdef TIMING_BUILD
 	cmdSystem->AddCommand( "listTimers",			Cmd_ListTimers_f,			CMD_FL_GAME,				"Shows total run time and max time of timers (TIMING_BUILD only)." );
 	cmdSystem->AddCommand( "writeTimerCSV",			Cmd_WriteTimerCSV_f,		CMD_FL_GAME,				"Writes the timer data to a csv file (usage: writeTimerCSV <separator> <commaChar>). The default separator is ';', the default comma is '.'");

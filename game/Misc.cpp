@@ -197,21 +197,9 @@ void idPlayerStart::TeleportPlayer( idPlayer *player ) {
 		player->StartSound( "snd_teleport_enter", SND_CHANNEL_ANY, 0, false, NULL );
 		player->SetPrivateCameraView( static_cast<idCamera*>(ent) );
 		// the player entity knows where to spawn from the previous Teleport call
-#ifdef MULTIPLAYER
-		if ( !gameLocal.isClient ) {
-			player->PostEventSec( &EV_Player_ExitTeleporter, f );
-		}
-#endif
 	} else {
 		// direct to exit, Teleport will take care of the killbox
 		player->Teleport( GetPhysics()->GetOrigin(), GetPhysics()->GetAxis().ToAngles(), NULL );
-
-		// multiplayer hijacked this entity, so only push the player in multiplayer
-#ifdef MULTIPLAYER
-		if ( gameLocal.isMultiplayer ) {
-			player->GetPhysics()->SetLinearVelocity( GetPhysics()->GetAxis()[0] * pushVel );
-		}
-#endif
 	}
 }
 
@@ -235,18 +223,6 @@ void idPlayerStart::Event_TeleportPlayer( idEntity *activator ) {
 			Event_TeleportStage( player );
 
 		} else {
-
-#ifdef MULTIPLAYER
-			if ( gameLocal.isServer ) {
-				idBitMsg	msg;
-				byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-				msg.Init( msgBuf, sizeof( msgBuf ) );
-				msg.BeginWriting();
-				msg.WriteBits( player->entityNumber, GENTITYNUM_BITS );
-				ServerSendEvent( EVENT_TELEPORTPLAYER, &msg, false, -1 );
-			}
-#endif
 			TeleportPlayer( player );
 		}
 	}

@@ -1930,18 +1930,6 @@ idEntity::~idEntity( void )
 	gameLocal.RemoveResponse(this);
 	gameLocal.RemoveStim(this);
 
-#ifdef MULTIPLAYER
-	if (gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS) {
-		idBitMsg	msg;
-		byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.WriteByte( GAME_RELIABLE_MESSAGE_DELETE_ENT );
-		msg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
-		networkSystem->ServerSendReliableMessage( -1, msg );
-	}
-#endif
-
 	DeconstructScriptObject();
 	scriptObject.Free();
 
@@ -4521,19 +4509,6 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 		return true;
 	}
 
-#ifdef MULTIPLAYER
-	if (gameLocal.isServer && broadcast) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.BeginWriting();
-		msg.WriteInt( gameLocal.ServerRemapDecl( -1, DECL_SOUND, shader->Index() ) );
-		msg.WriteByte( channel );
-		ServerSendEvent( EVENT_STARTSOUNDSHADER, &msg, false, -1 );
-	}
-#endif
-
 	// set a random value for diversity unless one was parsed from the entity
 
 	if ( refSound.diversity < 0.0f )
@@ -4614,18 +4589,6 @@ void idEntity::StopSound( const s_channelType channel, bool broadcast ) {
 	if ( !gameLocal.isNewFrame ) {
 		return;
 	}
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isServer && broadcast ) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.BeginWriting();
-		msg.WriteByte( channel );
-		ServerSendEvent( EVENT_STOPSOUNDSHADER, &msg, false, -1 );
-	}
-#endif
 
 	if ( refSound.referenceSound ) {
 		refSound.referenceSound->StopSound( channel );
@@ -6183,12 +6146,6 @@ bool idEntity::RunPhysics( void ) {
 		// restore the positions of any pushed entities
 		gameLocal.push.RestorePushedEntityPositions();
 
-#ifdef MULTIPLAYER
-		if ( gameLocal.isClient ) {
-			return false;
-		}
-#endif
-
 		// if the master pusher has a "blocked" function, call it
 		Signal( SIG_BLOCKED );
 		ProcessEvent( &EV_TeamBlocked, blockedPart, blockingEntity );
@@ -6202,12 +6159,6 @@ bool idEntity::RunPhysics( void ) {
 		idEntity *ent = gameLocal.push.GetPushedEntity( i );
 		ent->physics->SetPushed( endTime - startTime );
 	}
-
-#ifdef MULTIPLAYER
-	if ( gameLocal.isClient ) {
-		return true;
-	}
-#endif
 
 	// post reached event if the current time is at or past the end point of the motion
 	for ( part = this; part != NULL; part = part->teamChain ) {
@@ -8671,42 +8622,6 @@ idEntity::ServerSendEvent
 ================
 */
 void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient ) const {
-#ifdef MULTIPLAYER
-	idBitMsg	outMsg;
-	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
-
-	if ( !gameLocal.isServer ) {
-		return;
-	}
-
-	// prevent dupe events caused by frame re-runs
-	if ( !gameLocal.isNewFrame ) {
-		return;
-	}
-
-	outMsg.Init( msgBuf, sizeof( msgBuf ) );
-	outMsg.BeginWriting();
-	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );	
-	outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
-	outMsg.WriteByte( eventId );
-	outMsg.WriteLong( gameLocal.time );
-	if ( msg ) {
-		outMsg.WriteBits( msg->GetSize(), idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
-		outMsg.WriteData( msg->GetData(), msg->GetSize() );
-	} else {
-		outMsg.WriteBits( 0, idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
-	}
-
-		if (excludeClient != -1) {
-			networkSystem->ServerSendReliableMessageExcluding( excludeClient, outMsg );
-		} else {
-			networkSystem->ServerSendReliableMessage( -1, outMsg );
-		}
-
-		if (saveEvent) {
-			gameLocal.SaveEntityNetworkEvent( this, eventId, msg );
-		}
-#endif
 }
 
 /*
@@ -8715,34 +8630,6 @@ idEntity::ClientSendEvent
 ================
 */
 void idEntity::ClientSendEvent( int eventId, const idBitMsg *msg ) const {
-#ifdef MULTIPLAYER
-	idBitMsg	outMsg;
-	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
-
-	if ( !gameLocal.isClient ) {
-		return;
-	}
-
-	// prevent dupe events caused by frame re-runs
-	if ( !gameLocal.isNewFrame ) {
-		return;
-	}
-
-	outMsg.Init( msgBuf, sizeof( msgBuf ) );
-	outMsg.BeginWriting();
-	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );
-	outMsg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
-	outMsg.WriteByte( eventId );
-	outMsg.WriteLong( gameLocal.time );
-	if ( msg ) {
-		outMsg.WriteBits( msg->GetSize(), idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
-		outMsg.WriteData( msg->GetData(), msg->GetSize() );
-	} else {
-		outMsg.WriteBits( 0, idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
-	}
-
-	networkSystem->ClientSendReliableMessage( outMsg );
-#endif
 }
 
 /*
@@ -8766,42 +8653,7 @@ idEntity::ClientReceiveEvent
 ================
 */
 bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
-#ifdef MULTIPLAYER
-	int					index;
-	const idSoundShader	*shader;
-	s_channelType		channel;
-
-	switch( event ) {
-		case EVENT_STARTSOUNDSHADER: {
-			// the sound stuff would early out
-			assert( gameLocal.isNewFrame );
-			if ( time < gameLocal.realClientTime - 1000 ) {
-				// too old, skip it ( reliable messages don't need to be parsed in full )
-				common->DPrintf( "ent 0x%x: start sound shader too old (%d ms)\n", entityNumber, gameLocal.realClientTime - time );
-				return true;
-			}
-			index = gameLocal.ClientRemapDecl( DECL_SOUND, msg.ReadLong() );
-			if ( index >= 0 && index < declManager->GetNumDecls( DECL_SOUND ) ) {
-				shader = declManager->SoundByIndex( index, false );
-				channel = (s_channelType)msg.ReadByte();
-				StartSoundShader( shader, channel, 0, false, NULL );
-			}
-			return true;
-		}
-		case EVENT_STOPSOUNDSHADER: {
-			// the sound stuff would early out
-			assert( gameLocal.isNewFrame );
-			channel = (s_channelType)msg.ReadByte();
-			StopSound( channel, false );
-			return true;
-		}
-		default: {
-			return false;
-		}
-	}
-#else
 	return false;
-#endif
 }
 
 /*
@@ -9275,25 +9127,6 @@ void idAnimatedEntity::AddDamageEffect( const trace_t &collision, const idVec3 &
 	localDir = dir * axis.Transpose();
 
 	AddLocalDamageEffect( jointNum, localOrigin, localNormal, localDir, def, collision.c.material );
-
-#ifdef MULTIPLAYER
-	if (gameLocal.isServer) {
-		idBitMsg	msg;
-		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
-
-		msg.Init( msgBuf, sizeof( msgBuf ) );
-		msg.BeginWriting();
-		msg.WriteShort( (int)jointNum );
-		msg.WriteFloat( localOrigin[0] );
-		msg.WriteFloat( localOrigin[1] );
-		msg.WriteFloat( localOrigin[2] );
-		msg.WriteDir( localNormal, 24 );
-		msg.WriteDir( localDir, 24 );
-		msg.WriteLong( gameLocal.ServerRemapDecl( -1, DECL_ENTITYDEF, def->Index() ) );
-		msg.WriteLong( gameLocal.ServerRemapDecl( -1, DECL_MATERIAL, collision.c.material->Index() ) );
-		ServerSendEvent( EVENT_ADD_DAMAGE_EFFECT, &msg, false, -1 );
-	}
-#endif
 }
 
 /*
@@ -9362,11 +9195,7 @@ void idAnimatedEntity::AddLocalDamageEffect
 	}
 
 	// can't see wounds on the player model in single player mode
-	if ( !( IsType( idPlayer::Type ) 
-#ifdef MULTIPLAYER
-		&& !gameLocal.isMultiplayer 
-#endif
-		) ) {
+	if ( !( IsType( idPlayer::Type ) ) ) {
 		// place a wound overlay on the model
 		key = va( "mtr_wound_%s", surfName.c_str() );
 		decal = spawnArgs.RandomPrefix( key, gameLocal.random );
@@ -9448,34 +9277,7 @@ idAnimatedEntity::ClientReceiveEvent
 ================
 */
 bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
-#ifdef MULTIPLAYER
-	int damageDefIndex;
-	int materialIndex;
-	jointHandle_t jointNum;
-	idVec3 localOrigin, localNormal, localDir;
-
-	switch( event ) {
-		case EVENT_ADD_DAMAGE_EFFECT: {
-			jointNum = (jointHandle_t) msg.ReadShort();
-			localOrigin[0] = msg.ReadFloat();
-			localOrigin[1] = msg.ReadFloat();
-			localOrigin[2] = msg.ReadFloat();
-			localNormal = msg.ReadDir( 24 );
-			localDir = msg.ReadDir( 24 );
-			damageDefIndex = gameLocal.ClientRemapDecl( DECL_ENTITYDEF, msg.ReadLong() );
-			materialIndex = gameLocal.ClientRemapDecl( DECL_MATERIAL, msg.ReadLong() );
-			const idDeclEntityDef *damageDef = static_cast<const idDeclEntityDef *>( declManager->DeclByIndex( DECL_ENTITYDEF, damageDefIndex ) );
-			const idMaterial *collisionMaterial = static_cast<const idMaterial *>( declManager->DeclByIndex( DECL_MATERIAL, materialIndex ) );
-			AddLocalDamageEffect( jointNum, localOrigin, localNormal, localDir, damageDef, collisionMaterial );
-			return true;
-		}
-		default: {
-			return idEntity::ClientReceiveEvent( event, time, msg );
-		}
-	}
-#else
 	return false;
-#endif
 }
 
 /*

@@ -820,14 +820,6 @@ public:
 	// Virtal override of idActor::OnElevator()
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
 
-#ifdef MULTIPLAYER
-	idPlayerIcon			playerIcon;
-	virtual	void			UpdatePlayerIcons( void );
-	virtual	void			DrawPlayerIcons( void );
-	virtual	void			HidePlayerIcons( void );
-	bool					NeedsIcon( void );
-#endif
-
 	bool					SelfSmooth( void );
 
 	void					SetSelfSmooth( bool b );

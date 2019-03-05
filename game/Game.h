@@ -89,9 +89,6 @@ public:
 	// Retrieve the game's userInfo dict for a client.
 	virtual const idDict *		GetUserInfo( int clientNum ) = 0;
 
-	// The game gets a chance to alter userinfo before they are emitted to server.
-	virtual void				ThrottleUserInfo( void ) = 0;
-
 	// Sets the serverinfo at map loads and when it changes.
 	virtual void				SetServerInfo( const idDict &serverInfo ) = 0;
 
@@ -140,63 +137,12 @@ public:
 	// Let the game do it's own UI when ESCAPE is used
 	virtual escReply_t			HandleESC( idUserInterface **gui ) = 0;
 
-#ifdef MULTIPLAYER
-	// get the games menu if appropriate ( multiplayer )
-	virtual idUserInterface *	StartMenu() = 0;
-#endif
-
 	// When the game is running it's own UI fullscreen, GUI commands are passed through here
 	// return NULL once the fullscreen UI mode should stop, or "main" to go to main menu
 	virtual const char *		HandleGuiCommands( const char *menuCommand ) = 0;
 
 	// main menu commands not caught in the engine are passed here
 	virtual void				HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui ) = 0;
-
-#ifdef MULTIPLAYER
-	// Early check to deny connect.
-	virtual allowReply_t		ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[MAX_STRING_CHARS] ) = 0;
-
-	// Connects a client.
-	virtual void				ServerClientConnect( int clientNum, const char *guid ) = 0;
-
-	// Spawns the player entity to be used by the client.
-	virtual void				ServerClientBegin( int clientNum ) = 0;
-
-	// Disconnects a client and removes the player entity from the game.
-	virtual void				ServerClientDisconnect( int clientNum ) = 0;
-
-	// Writes initial reliable messages a client needs to recieve when first joining the game.
-	virtual void				ServerWriteInitialReliableMessages( int clientNum ) = 0;
-
-	// Writes a snapshot of the server game state for the given client.
-	virtual void				ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &msg, byte *clientInPVS, int numPVSClients ) = 0;
-
-	// Patches the network entity states at the server with a snapshot for the given client.
-	virtual bool				ServerApplySnapshot( int clientNum, int sequence ) = 0;
-
-	// Processes a reliable message from a client.
-	virtual void				ServerProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
-
-	// Reads a snapshot and updates the client game state.
-	virtual void				ClientReadSnapshot( int clientNum, int sequence, const int gameFrame, const int gameTime, const int dupeUsercmds, const int aheadOfServer, const idBitMsg &msg ) = 0;
-
-	// Patches the network entity states at the client with a snapshot.
-	virtual bool				ClientApplySnapshot( int clientNum, int sequence ) = 0;
-
-	// Processes a reliable message from the server.
-	virtual void				ClientProcessReliableMessage( int clientNum, const idBitMsg &msg ) = 0;
-
-	// Runs prediction on entities at the client.
-	virtual gameReturn_t		ClientPrediction( int clientNum, const usercmd_t *clientCmds, bool lastPredictFrame ) = 0;
-
-	// Returns a summary of stats for a given client
-	virtual void				GetClientStats( int clientNum, char *data, const int len ) = 0;
-
-	// Switch a player to a particular team
-	virtual void				SwitchTeam( int clientNum, int team ) = 0;
-
-	virtual bool				DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] ) = 0;
-#endif
 
 	// Used to manage divergent time-lines
 	virtual void				SelectTimeGroup( int timeGroup ) = 0;
@@ -349,9 +295,6 @@ extern idGameEdit *				gameEdit;
 */
 
 class idCmdSystem;
-#ifdef MULTIPLAYER
-class idNetworkSystem;
-#endif
 class idRenderSystem;
 class idSoundSystem;
 class idRenderModelManager;
@@ -368,9 +311,6 @@ typedef struct {
 	idCmdSystem *				cmdSystem;				// console command system
 	idCVarSystem *				cvarSystem;				// console variable system
 	idFileSystem *				fileSystem;				// file system
-#ifdef MULTIPLAYER
-	idNetworkSystem *			networkSystem;			// network system
-#endif
 	idRenderSystem *			renderSystem;			// render system
 	idSoundSystem *				soundSystem;			// sound system
 	idRenderModelManager *		renderModelManager;		// render model manager
