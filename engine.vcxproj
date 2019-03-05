@@ -605,6 +605,7 @@
     <ClInclude Include="renderer\RenderSystem.h" />
     <ClInclude Include="renderer\RenderWorld.h" />
     <ClInclude Include="renderer\RenderWorld_local.h" />
+    <ClInclude Include="renderer\Shader.h" />
     <ClInclude Include="renderer\simplex.h" />
     <ClInclude Include="renderer\tr_local.h" />
     <ClInclude Include="renderer\VertexCache.h" />
@@ -1178,6 +1179,7 @@
     <ClCompile Include="renderer\RenderWorld_demo.cpp" />
     <ClCompile Include="renderer\RenderWorld_load.cpp" />
     <ClCompile Include="renderer\RenderWorld_portals.cpp" />
+    <ClCompile Include="renderer\Shader.cpp" />
     <ClCompile Include="renderer\tr_backend.cpp" />
     <ClCompile Include="renderer\tr_deform.cpp" />
     <ClCompile Include="renderer\tr_font.cpp" />

@@ -1243,6 +1243,9 @@
     <ClInclude Include="game\Listener.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\Shader.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2926,10 +2929,8 @@
     <ClCompile Include="renderer\Profiling.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="game\Listener.cpp" />
     <ClCompile Include="game\FrobHelper.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\Listener.cpp">
       <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
