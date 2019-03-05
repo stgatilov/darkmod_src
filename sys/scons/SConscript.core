@@ -30,6 +30,7 @@ renderer_string = ' \
 	CinematicID.cpp \
 	CinematicFFMpeg.cpp \
 	FrameBuffer.cpp \
+    GLSLProgram.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
 	Image_init.cpp \
@@ -85,6 +86,10 @@ renderer_string = ' \
 	tr_trisurf.cpp \
 	tr_turboshadow.cpp'
 renderer_list = scons_utils.BuildList( 'renderer', renderer_string )
+
+tests_string = ' \
+    TestRun.cpp'
+tests_list = scons_utils.BuildList( 'tests', tests_string)
 
 framework_string = ' \
 	CVarSystem.cpp \
@@ -219,7 +224,7 @@ tools_list = scons_utils.BuildList( 'tools', tools_string )
 
 
 # Compile the rest of the core engine
-core_list = framework_list + renderer_list + ui_list \
+core_list = framework_list + renderer_list + tests_list + ui_list \
 	+ cm_list + dmap_list + renderbump_list + aas_list + roq_list \
 	+ snd_list + sys_list + tools_list + [ 'TypeInfo/TypeInfoGen.cpp' ]
 for i in range( len( core_list ) ):
