@@ -1,6 +1,5 @@
 #include "precompiled.h"
-#include "Test.h"
-#include "../renderer/Shader.h"
+#include "doctest.h"
 
 namespace {
 	const std::string BASIC_SHADER =
@@ -14,7 +13,7 @@ namespace {
 		"}\n";
 	const std::string INCLUDE_SHADER =
 		"#version 140\n"
-		"#pragma tdm_include \"tests/shared_common.glsl\"\n"
+		"#pragma tdm_include \"tests/shared_common.glsl\"\r\n"
 		"void main() {}\n";
 
 	const std::string NESTED_INCLUDE =
@@ -28,35 +27,46 @@ namespace {
 		"\n"
 		" #  pragma tdm_include \"tests/nested_include.glsl\"\n"
 		"#pragma  tdm_include \"tests/shared_common.glsl\"  // ignore this comment\n"
+		"#pragma tdm_include \"tests/advanced_includes.glsl\"\n"
 		"void main() {\n"
 		"  float myVar = myFunc();\n"
-		"}\n";
+		"}\n"
+		"#pragma tdm_include \"tests/basic_shader.glsl\"\n";
 
 	const std::string EXPANDED_INCLUDE_SHADER =
 		"#version 140\n"
+		"#line 0 1\n"
 		"uniform vec4 someParam;\n"
 		"\n"
 		"vec4 doSomething {\n"
 		"  return someParam * 2;\n"
 		"}\n"
-		"\n"
+		"\n#line 2 0\n"
 		"void main() {}\n";
 	const std::string EXPANDED_ADVANCED_INCLUDES =
 		"#version 330\n"
 		"\n"
+		"#line 0 1\n"
+		"#line 0 2\n"
 		"uniform vec4 someParam;\n"
 		"\n"
 		"vec4 doSomething {\n"
 		"  return someParam * 2;\n"
 		"}\n"
-		"\n"
+		"\n#line 1 1\n"
 		"float myFunc() {\n"
 		"  return 0.3;\n"
-		"}\n"
+		"}"
+		"\n#line 3 0\n"
 		"// already included tests/shared_common.glsl\n"
+		"// already included tests/advanced_includes.glsl\n"
 		"void main() {\n"
 		"  float myVar = myFunc();\n"
-		"}\n";
+		"}\n"
+		"#line 0 3\n"
+		"#version 150\n"
+		"void main() {}"
+		"\n#line 9 0\n";
 
 	void PrepareTestShaders() {
 		INFO( "Preparing test shaders" );
@@ -77,59 +87,63 @@ namespace {
 	}
 }
 
-bool operator==(const originalLine_t &lhs, const originalLine_t &rhs) {
-	return lhs.file == rhs.file && lhs.line == rhs.line;
-}
+std::string ReadFile( const char *sourceFile );
+void ResolveIncludes( std::string &source, std::vector<std::string> &includedFiles );
+void ResolveDefines( std::string &source, const idDict &defines );
 
-std::ostream &operator<<(std::ostream &stream, const originalLine_t l) {
-	return stream << l.file.c_str() << " (" << l.line << ")";
-}
-
-TEST_CASE("Shader source includes", "[shaders]") {
+TEST_CASE("Shader include handling", "[shaders]") {
 	PrepareTestShaders();
 
-	SECTION( "Basic shader without includes remains unaltered" ) {
-		ShaderSource shaderSource = ShaderSource( "tests/basic_shader.glsl" );
-		REQUIRE( shaderSource.GetSource() == BASIC_SHADER );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 1 ) == originalLine_t{ "tests/basic_shader.glsl", 1 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 2 ) == originalLine_t{ "tests/basic_shader.glsl", 2 } );
-		// next case is "beyond" the end of the file, but should still return something sensible
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 3 ) == originalLine_t{ "tests/basic_shader.glsl", 3 } );
+	SUBCASE( "Basic shader without includes remains unaltered" ) {
+		std::vector<std::string> includedFiles {"tests/basic_shader.glsl"};
+		std::string source = ReadFile( "tests/basic_shader.glsl" );
+		ResolveIncludes( source, includedFiles );
+		REQUIRE( source == BASIC_SHADER );
 	}
 
-	SECTION( "Simple include works" ) {
-		ShaderSource shaderSource = ShaderSource( "tests/include_shader.glsl" );
-		REQUIRE( shaderSource.GetSource() == EXPANDED_INCLUDE_SHADER );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 1 ) == originalLine_t{ "tests/include_shader.glsl", 1 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 2 ) == originalLine_t{ "tests/shared_common.glsl", 1 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 3 ) == originalLine_t{ "tests/shared_common.glsl", 2 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 4 ) == originalLine_t{ "tests/shared_common.glsl", 3 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 5 ) == originalLine_t{ "tests/shared_common.glsl", 4 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 6 ) == originalLine_t{ "tests/shared_common.glsl", 5 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 7 ) == originalLine_t{ "tests/shared_common.glsl", 6 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 8 ) == originalLine_t{ "tests/include_shader.glsl", 3 } );
+	SUBCASE( "Simple include works" ) {
+		std::vector<std::string> includedFiles {"tests/include_shader.glsl"};
+		std::string source = ReadFile( "tests/include_shader.glsl" );
+		ResolveIncludes( source, includedFiles );
+		REQUIRE( source == EXPANDED_INCLUDE_SHADER );
 	}
 
-	SECTION( "Multiple and nested includes" ) {
-		ShaderSource shaderSource = ShaderSource( "tests/advanced_includes.glsl" );
-		REQUIRE( shaderSource.GetSource() == EXPANDED_ADVANCED_INCLUDES );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 1 ) == originalLine_t{ "tests/advanced_includes.glsl", 1 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 2 ) == originalLine_t{ "tests/advanced_includes.glsl", 2 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 3 ) == originalLine_t{ "tests/shared_common.glsl", 1 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 4 ) == originalLine_t{ "tests/shared_common.glsl", 2 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 5 ) == originalLine_t{ "tests/shared_common.glsl", 3 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 6 ) == originalLine_t{ "tests/shared_common.glsl", 4 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 7 ) == originalLine_t{ "tests/shared_common.glsl", 5 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 8 ) == originalLine_t{ "tests/shared_common.glsl", 6 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 9 ) == originalLine_t{ "tests/nested_include.glsl", 2 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 10 ) == originalLine_t{ "tests/nested_include.glsl", 3 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 11 ) == originalLine_t{ "tests/nested_include.glsl", 4 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 12 ) == originalLine_t{ "tests/advanced_includes.glsl", 4 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 13 ) == originalLine_t{ "tests/advanced_includes.glsl", 5 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 14 ) == originalLine_t{ "tests/advanced_includes.glsl", 6 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 15 ) == originalLine_t{ "tests/advanced_includes.glsl", 7 } );
-		REQUIRE( shaderSource.MapExpandedLineToOriginalSource( 16 ) == originalLine_t{ "tests/advanced_includes.glsl", 8 } );
+	SUBCASE( "Multiple and nested includes" ) {
+		std::vector<std::string> includedFiles {"tests/advanced_includes.glsl"};
+		std::string source = ReadFile( "tests/advanced_includes.glsl" );
+		ResolveIncludes( source, includedFiles );
+		REQUIRE( source == EXPANDED_ADVANCED_INCLUDES );
 	}
 
 	CleanupTestShaders();
+}
+
+TEST_CASE("Shader defines handling", "[shaders]") {
+	const std::string shaderWithDynamicDefines =
+		"#version 140\n"
+		"#pragma tdm_define \"FIRST_DEFINE\"\n"
+		"\n"
+		"  # pragma   tdm_define   \"SECOND_DEFINE\"\n"
+		"void main() {\n"
+		"#ifdef FIRST_DEFINE\n"
+		"  return;\n"
+		"#endif\n"
+		"}\n" ;
+
+	const std::string expectedResult =
+		"#version 140\n"
+		"#define FIRST_DEFINE 1\n"
+		"\n"
+		"// #undef SECOND_DEFINE\n"
+		"void main() {\n"
+		"#ifdef FIRST_DEFINE\n"
+		"  return;\n"
+		"#endif\n"
+		"}\n" ;
+
+	std::string source = shaderWithDynamicDefines;
+	idDict defines;
+	defines.Set( "FIRST_DEFINE", "1" );
+	ResolveDefines( source, defines );
+	REQUIRE( source == expectedResult );
 }

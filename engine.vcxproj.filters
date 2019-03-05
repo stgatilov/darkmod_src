@@ -133,6 +133,9 @@
     <Filter Include="Game\Network">
       <UniqueIdentifier>{ab1f887d-fe95-4de4-9fa9-94e250aa3e51}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{f2796430-f703-4cad-956a-d3aa24b66499}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1243,8 +1246,20 @@
     <ClInclude Include="game\Listener.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\Shader.h">
+    <ClInclude Include="tests\catch.hpp">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\TestRun.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\Test.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\GLSLProgram.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\doctest.h">
+      <Filter>Tests</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2932,6 +2947,15 @@
     <ClCompile Include="game\Listener.cpp" />
     <ClCompile Include="game\FrobHelper.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\TestRun.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\GLSLProgram.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\GLSLProgramTest.cpp">
+      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

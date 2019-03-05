@@ -42,6 +42,8 @@
 #include <string>
 #include <vector>
 #include "StdString.h"
+#include "../../tests/TestRun.h"
+#include <iostream>
 
 idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
@@ -1282,6 +1284,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 #endif
 
 	common->Init( 0, NULL, lpCmdLine );
+
+	if( com_runTests.GetBool() ) {
+		AllocConsole();
+		freopen( "CONOUT$", "w+", stdout );
+		int result = RunTests();
+		getch();
+		common->Shutdown();
+		return result;
+	}
 
 	Sys_StartAsyncThread();
 
