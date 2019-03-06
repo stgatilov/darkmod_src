@@ -115,6 +115,9 @@
     <Filter Include="Tools\Compilers\RoqVQ">
       <UniqueIdentifier>{c61639f4-7a7b-4dd9-b436-4e62942715ef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Test">
+      <UniqueIdentifier>{f3dbab64-0ae8-4ef2-853f-3decc9d7954b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1416,6 +1419,18 @@
     </ClInclude>
     <ClInclude Include="idlib\Debug.h">
       <Filter>idLib</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\GLSLProgram.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\doctest.h">
+      <Filter>Test</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\testing.h">
+      <Filter>Test</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\TestRun.h">
+      <Filter>Test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2799,6 +2814,12 @@
     </ClCompile>
     <ClCompile Include="idlib\Debug.cpp">
       <Filter>idLib</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\GLSLProgram.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\TestRun.cpp">
+      <Filter>Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

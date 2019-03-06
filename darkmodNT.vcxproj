@@ -741,6 +741,7 @@
     <ClInclude Include="renderer\FrameBuffer.h" />
     <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
+    <ClInclude Include="renderer\GLSLProgram.h" />
     <ClInclude Include="renderer\GuiModel.h" />
     <ClInclude Include="renderer\Image.h" />
     <ClInclude Include="renderer\Interaction.h" />
@@ -772,6 +773,9 @@
     <ClInclude Include="sys\sys_public.h" />
     <ClInclude Include="sys\win32\wglext.h" />
     <ClInclude Include="sys\win32\win_local.h" />
+    <ClInclude Include="tests\doctest.h" />
+    <ClInclude Include="tests\testing.h" />
+    <ClInclude Include="tests\TestRun.h" />
     <ClInclude Include="tools\compilers\aas\AASBuild_local.h" />
     <ClInclude Include="tools\compilers\aas\AASCluster.h" />
     <ClInclude Include="tools\compilers\aas\AASFile.h" />
@@ -1199,6 +1203,7 @@
     <ClCompile Include="renderer\draw_glsl.cpp" />
     <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBuffer.cpp" />
+    <ClCompile Include="renderer\GLSLProgram.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />
     <ClCompile Include="renderer\Image_init.cpp" />
@@ -1266,6 +1271,7 @@
     <ClCompile Include="sys\win32\win_shared.cpp" />
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
+    <ClCompile Include="tests\TestRun.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild_file.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild_gravity.cpp" />
