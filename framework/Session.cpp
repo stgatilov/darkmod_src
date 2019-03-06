@@ -2841,10 +2841,20 @@ void idSessionLocal::Frame() {
 		// fixedTic lets us run a forced number of usercmd each frame without timing
 		if ( com_fixedTic.GetInteger() ) {
 			minTic = latchedTicNumber;
-		}
 
-		// TODO: even for uncapped frames, we want a frame limiter to avoid overusing the GPU
-//		static uint64_t prevMicroSecs = Sys_GetTimeMicroseconds();
+			//stgatilov #4865: impose artificial FPS limit
+			static int64_t prevUsec = INT64_MIN;
+			int64_t neededDelta = 1000000 / com_maxFPS.GetInteger();
+			while (Sys_GetTimeMicroseconds() - prevUsec < neededDelta) {
+				//note: this is busy-wait loop
+				#ifdef __SSE2__
+				_mm_pause();
+				#else
+				prevUsec = prevUsec;	//NOP
+				#endif
+			}
+			prevUsec = Sys_GetTimeMicroseconds();
+		}
 
 		// Spin in place if needed when frame cap is active. 
 		// The game should yield the cpu if it is running over 60 hz, 
@@ -2852,13 +2862,10 @@ void idSessionLocal::Frame() {
 		while (true) {
 			latchedTicNumber = com_ticNumber;
 			if (latchedTicNumber >= minTic) {
-//				if ( com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 1000000 / com_maxFPS.GetInteger() )
-//					break;
 				break;
 			}
 			Sys_WaitForEvent( TRIGGER_EVENT_ONE );
 		}
-//		prevMicroSecs = Sys_GetTimeMicroseconds();
 	 }
 
 	// send frame and mouse events to active guis
