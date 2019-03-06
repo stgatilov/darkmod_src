@@ -132,7 +132,7 @@ typedef struct {
 	static idCVar	win_timerUpdate;
 
 	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
-	HANDLE			backgroundDownloadSemaphore;
+	HANDLE			events[MAX_TRIGGER_EVENTS];
 
 	HINSTANCE		hInstDI;			// direct input
 

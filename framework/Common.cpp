@@ -117,7 +117,7 @@ int				time_backendLast;
 int				com_frameTime;			// time for the current frame in milliseconds
 int				com_frameMsec;
 int				com_frameNumber;		// variable frame number
-volatile int	com_ticNumber;			// 60 hz tics
+std::atomic<int>	com_ticNumber;			// 60 hz tics
 int				com_editors;			// currently opened editor(s)
 bool			com_editorActive;		// true if an editor has focus
 
@@ -2631,6 +2631,7 @@ void idCommonLocal::Async( void ) {
 		SingleAsyncTic();
 		lastTicUsec += ticUsec;
 	}
+	Sys_TriggerEvent( TRIGGER_EVENT_ONE );
 }
 
 /*

@@ -25,6 +25,7 @@
 */
 
 #define	MAX_PRINT_MSG_SIZE	16 * 1024
+#include <atomic>
 
 typedef enum {
 	EDITOR_NONE					= 0,
@@ -74,7 +75,7 @@ extern int			time_backendLast;		// renderer backend time
 
 extern int			com_frameTime;			// time for the current frame in milliseconds
 extern int			com_frameMsec;
-extern volatile int	com_ticNumber;			// 60 hz tics, incremented by async function
+extern std::atomic<int>	com_ticNumber;			// 60 hz tics, incremented by async function
 extern int			com_editors;			// current active editor(s)
 extern bool			com_editorActive;		// true if an editor has focus
 

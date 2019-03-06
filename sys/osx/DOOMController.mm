@@ -886,7 +886,6 @@ THREAD_RETURN_TYPE Sys_AsyncThread( void* ) {
 	while ( 1 ) {
 		usleep( 16666 );
 		common->Async();
-		Sys_TriggerEvent( TRIGGER_EVENT_ONE );
 		pthread_testcancel();
 	}
 

@@ -2843,29 +2843,22 @@ void idSessionLocal::Frame() {
 			minTic = latchedTicNumber;
 		}
 
-		// FIXME: deserves a cleanup and abstraction
-#if defined( _WIN32 )
-		// Spin in place if needed.  The game should yield the cpu if
-		// it is running over 60 hz, because there is fundamentally
-		// nothing useful for it to do.
-		static uint64_t prevMicroSecs = Sys_GetTimeMicroseconds();
+		// TODO: even for uncapped frames, we want a frame limiter to avoid overusing the GPU
+//		static uint64_t prevMicroSecs = Sys_GetTimeMicroseconds();
+
+		// Spin in place if needed when frame cap is active. 
+		// The game should yield the cpu if it is running over 60 hz, 
+		// because there is fundamentally nothing useful for it to do.
 		while (true) {
 			latchedTicNumber = com_ticNumber;
-			if (latchedTicNumber >= minTic)
-				if ( com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 1000000 / com_maxFPS.GetInteger() )
-					break;
-			Sys_Sleep( 1 );
-		}
-		prevMicroSecs = Sys_GetTimeMicroseconds();
-#else
-		while( 1 ) {
-			latchedTicNumber = com_ticNumber;
-			if ( latchedTicNumber >= minTic ) {
+			if (latchedTicNumber >= minTic) {
+//				if ( com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 1000000 / com_maxFPS.GetInteger() )
+//					break;
 				break;
 			}
 			Sys_WaitForEvent( TRIGGER_EVENT_ONE );
 		}
-#endif
+//		prevMicroSecs = Sys_GetTimeMicroseconds();
 	 }
 
 	// send frame and mouse events to active guis
