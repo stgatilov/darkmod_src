@@ -2550,8 +2550,7 @@ typedef struct {
 #define MAX_ASYNC_STATS			1024
 
 asyncStats_t	com_asyncStats[MAX_ASYNC_STATS];		// indexed by com_ticNumber
-int prevAsyncMsec;
-int	lastTicMsec;
+int64_t lastTicUsec;
 
 void idCommonLocal::SingleAsyncTic( void ) {
 	// main thread code can prevent this from happening while modifying
@@ -2602,31 +2601,35 @@ void idCommonLocal::Async( void ) {
 		return;
 	}
 
-	const int msec = Sys_Milliseconds();
-	if ( !lastTicMsec ) {
-		lastTicMsec = msec - USERCMD_MSEC;
+	//stgatilov #4514: game tics happen even X microseconds (in cumulative sense)
+	//to see how often this function is called, see Sys_StartAsyncThread
+	static const int USERCMD_USEC = 16650;		// ~60.06 Hz --- a bit higher than vsync
+
+	const int64_t usec = Sys_GetTimeMicroseconds();
+	if ( !lastTicUsec ) {
+		lastTicUsec = usec - USERCMD_USEC;
 	}
 
-	int ticMsec = USERCMD_MSEC;
+	int64_t ticUsec = USERCMD_USEC;
 	const float timescale = com_timescale.GetFloat();
 
 	// don't skip too many
 	if ( timescale == 1.0f ) {
-		if ( lastTicMsec + (10 * USERCMD_MSEC) < msec ) {
-			lastTicMsec = msec - (10 * USERCMD_MSEC);
+		if ( lastTicUsec + (10 * USERCMD_USEC) < usec ) {
+			lastTicUsec = usec - (10 * USERCMD_USEC);
 		}
 	}
 	// the number of msec per tic can be varies with the timescale cvar
 	else {								// i.e if ( timescale != 1.0f )
-		ticMsec /= timescale;
-		if ( ticMsec < 1 ) {
-			ticMsec = 1;
+		ticUsec /= timescale;
+		if ( ticUsec < 1 ) {
+			ticUsec = 1;
 		}
 	}
 
-	while ( lastTicMsec + ticMsec <= msec ) {
+	while ( lastTicUsec + ticUsec <= usec ) {
 		SingleAsyncTic();
-		lastTicMsec += ticMsec;
+		lastTicUsec += ticUsec;
 	}
 }
 

@@ -994,13 +994,19 @@ Start the thread that will call idCommon::Async()
 void Sys_StartAsyncThread( void ) {
 	// create an auto-reset event that happens 60 times a second
 	hTimer = CreateWaitableTimer( NULL, false, NULL );
-
 	if ( !hTimer ) {
 		common->Error( "idPacketServer::Spawn: CreateWaitableTimer failed" );
 	}
+
+	//stgatilov #4514: run idCommonLocal::Async every 3 ms
+	//ideally, game tic should be incremented every 16.66 ms, but we cannot specify interval up to microseconds
+	//incrementing it every 16 ms causes double frames =( so we do it simply more often
+	//Note: actual tics happen only every 16.66 ms on average (see idCommonLocal::Async)
+	const int intervalMS = 3;		//USERCMD_MSEC;
+
 	LARGE_INTEGER	t;
 	t.HighPart = t.LowPart = 0;
-	SetWaitableTimer( hTimer, &t, USERCMD_MSEC, NULL, NULL, TRUE );
+	SetWaitableTimer( hTimer, &t, intervalMS, NULL, NULL, TRUE );
 
 	Sys_CreateThread( Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads,  &g_thread_count );
 
