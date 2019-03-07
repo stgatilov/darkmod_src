@@ -313,7 +313,7 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 		// unfortunately, GLSL compilers don't reference any actual source files in their errors, but only
 		// file index numbers. So we'll display a short legend which index corresponds to which file.
 		ss << "File indexes:\n";
-		for( int i = 0; i < sourceFiles.size(); ++i ) {
+		for( size_t i = 0; i < sourceFiles.size(); ++i ) {
 			ss << "  " << i << " - " << sourceFiles[i] << "\n";
 		}
 		common->Warning( ss.str().c_str() );

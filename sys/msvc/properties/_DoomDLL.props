@@ -1,11 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <XPDeprecationWarning>false</XPDeprecationWarning>
+  </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>Doom III Executable</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)..\darkmod\</OutDir>
     <TargetName>$(TdmExecutableName)</TargetName>
   </PropertyGroup>
+  <ItemGroup>
+    <BuildMacro Include="XPDeprecationWarning">
+      <Value>$(XPDeprecationWarning)</Value>
+    </BuildMacro>
+  </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)/include/ffmpeg;sound/vorbis/include;$(SolutionDir)framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
