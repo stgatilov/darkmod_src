@@ -119,6 +119,11 @@ void GLSLProgram::Uniform4fL( int location, const idVec4 &value ) {
 	qglUniform4fv( location, 1, value.ToFloatPtr() );
 }
 
+void GLSLProgram::Uniform4fvL( int location, GLfloat *value ) {
+	Activate();
+	qglUniform4fv(location, 1, value);
+}
+
 void GLSLProgram::UniformMatrix4L( int location, const GLfloat *matrix ) {
 	Activate();
 	qglUniformMatrix4fv( location, 1, GL_FALSE, matrix );

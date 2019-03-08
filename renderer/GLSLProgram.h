@@ -42,6 +42,7 @@ public:
 	void Uniform2fL( int location, const idVec2 &value );
 	void Uniform3fL( int location, const idVec3 &value );
 	void Uniform4fL( int location, const idVec4 &value );
+	void Uniform4fvL( int location, GLfloat *value );
 	void UniformMatrix4L( int location, const GLfloat *matrix );
 
 	// use these functions to bind a value by an alias defined for a uniform name via AddUniformAlias
@@ -56,6 +57,7 @@ public:
 	void Uniform2f( int alias, const idVec2 &value ) { Uniform2fL( AliasToLocation( alias ), value ); }
 	void Uniform3f( int alias, const idVec3 &value ) { Uniform3fL( AliasToLocation( alias ), value ); }
 	void Uniform4f( int alias, const idVec4 &value ) { Uniform4fL( AliasToLocation( alias ), value ); }
+	void Uniform4fv( int alias, GLfloat *value ) { Uniform4fvL( AliasToLocation( alias ), value ); }
 	void UniformMatrix4( int alias, const GLfloat *matrix ) { UniformMatrix4L( AliasToLocation( alias ), matrix ); }
 
 	GLSLProgram( const GLSLProgram &other ) = delete;
