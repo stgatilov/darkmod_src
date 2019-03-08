@@ -23,13 +23,16 @@ public:
 	static GLSLProgram * Load( const char *programFileName, const idDict *defines = nullptr );
 
 	~GLSLProgram();
+	void Swap(GLSLProgram *other);
 
 	const char* GetFileName(GLint shaderType) const;
 	const idDict &GetDefines() const { return defines; }
 
 	void Activate();
 	static void Deactivate();
+	void Reload();
 
+	//note: attribute bindings will take effect only after calling Reload!
 	void BindAttribLocation( GLuint index, const char *name );
 
 	void AddUniformAlias( int alias, const char *uniformName );
@@ -64,11 +67,6 @@ public:
 	void Uniform4fv( int alias, GLfloat *value ) { Uniform4fvL( AliasToLocation( alias ), value ); }
 	void UniformMatrix4( int alias, const GLfloat *matrix ) { UniformMatrix4L( AliasToLocation( alias ), matrix ); }
 
-	GLSLProgram( const GLSLProgram &other ) = delete;
-	GLSLProgram & operator=( const GLSLProgram &other ) = delete;
-	GLSLProgram( GLSLProgram &&other ) = delete;
-	GLSLProgram & operator=( GLSLProgram &&other ) = delete;
-
 private:
 	static GLuint currentProgram;
 
@@ -101,6 +99,9 @@ private:
 		common->Warning( "Missing uniform alias %d\n", alias );
 		return -1;
 	}
+
+	GLSLProgram( const GLSLProgram &other ) = default;
+	GLSLProgram & operator=( const GLSLProgram &other ) = default;
 
 	friend class GLSLProgramLoader;
 };

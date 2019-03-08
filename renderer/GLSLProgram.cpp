@@ -47,6 +47,15 @@ GLSLProgram::~GLSLProgram() {
 	qglDeleteProgram( program );
 }
 
+void GLSLProgram::Swap(GLSLProgram *other) {
+	assert(other);
+	//TODO: is there clearer way to do this without stupingly enumerating all members?
+	GLSLProgram temp(0);
+	temp = *this;
+	*this = *other;
+	*other = temp;
+}
+
 const char* GLSLProgram::GetFileName(GLint shaderType) const {
 	if (shaderType == GL_VERTEX_SHADER)
 		return filenames[0];
@@ -70,6 +79,26 @@ void GLSLProgram::Activate() {
 void GLSLProgram::Deactivate() {
 	qglUseProgram( 0 );
 	currentProgram = 0;
+}
+
+void GLSLProgram::Reload() {
+	Deactivate();
+	GLSLProgram *newProg = GLSLProgram::Load(defines, filenames[0], filenames[1], filenames[2]);
+	assert(newProg);
+
+	newProg->Activate();
+	for (int i = 0; i < boundAttributes.Num(); i++) {
+		newProg->BindAttribLocation(boundAttributes[i].index, boundAttributes[i].name);
+	}
+	for (int i = 0; i < aliasLocationMap.Num(); i++) {
+		newProg->AddUniformAlias(aliasLocationMap[i].alias, aliasNames[i]);
+	}
+	//TODO: refactor it so that this returns error messages?...
+	qglLinkProgram(newProg->program);
+	Deactivate();
+
+	Swap(newProg);
+	delete newProg;
 }
 
 void GLSLProgram::BindAttribLocation( GLuint index, const char *name ) {
