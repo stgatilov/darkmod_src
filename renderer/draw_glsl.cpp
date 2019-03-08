@@ -1664,6 +1664,9 @@ void GLSL_InitPrograms() {
 		//Uniforms::Interaction::Alias(globalPrograms.interaction);
 		//Uniforms::LightParams::Alias(globalPrograms.interaction);
 	}
+	globalPrograms.frob = GLSLProgram::Load( "frob" );
+	Attributes::Default::Bind( globalPrograms.interaction );
+	Uniforms::Global::Alias( globalPrograms.interaction );
 }
 
 void GLSL_DestroyPrograms() {

@@ -873,6 +873,35 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 
 /*
 ==================
+RB_STD_T_RenderShaderPasses_Frob
+
+Frob shader stub
+==================
+*/
+ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	static idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER|CVAR_ARCHIVE , "1 = try the new frob shader" );
+	if ( !r_newFrob )
+		return;
+
+	globalPrograms.frob->Activate();
+
+	Uniforms::Global::Set( globalPrograms.frob, backEnd.currentSpace );
+	{
+		using namespace Attributes::Default;
+		Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << TexCoord) | (1 << Normal) | (1 << Tangent) | (1 << Bitangent) );
+	}
+	RB_DrawElementsWithCounters( surf );
+
+	GL_SelectTexture( 0 );
+	qglUseProgram( 0 );
+	qglDisableVertexAttribArray( 8 );
+	qglDisableVertexAttribArray( 9 );
+	qglDisableVertexAttribArray( 10 );
+	qglDisableVertexAttribArray( 2 );
+}
+
+/*
+==================
 RB_STD_T_RenderShaderPasses
 
 This is also called for the generated 2D rendering
@@ -992,6 +1021,9 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
+
+	if ( surf->shaderRegisters[12] ) // even though FROB_SHADERPARM was defined as 11
+		RB_STD_T_RenderShaderPasses_Frob( ac, pStage, surf );
 
 	if ( surf->space->weaponDepthHack || ( !soft_particle && surf->space->modelDepthHack != 0.0f ) ) {
 		RB_LeaveDepthHack();

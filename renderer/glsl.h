@@ -169,6 +169,7 @@ namespace Uniforms {
 
 struct globalPrograms_t {
 	GLSLProgram *interaction;
+	GLSLProgram *frob;
 	//... all other static shaders here
 
 	//this list includes all programs, even dynamically created ones
