@@ -59,10 +59,12 @@ const char* GLSLProgram::GetFileName(GLint shaderType) const {
 }
 
 void GLSLProgram::Activate() {
-	if( currentProgram != program ) {
+	//TODO: uncomment this thing when everything uses GLSLProgram
+	//right now there are too many places where qglUseProgram is called
+	//if( currentProgram != program ) {
 		qglUseProgram( program );
 		currentProgram = program;
-	}
+	//}
 }
 
 void GLSLProgram::Deactivate() {
@@ -77,7 +79,8 @@ void GLSLProgram::BindAttribLocation( GLuint index, const char *name ) {
 void GLSLProgram::AddUniformAlias( int alias, const char *uniformName ) {
 	int location = qglGetUniformLocation( program, uniformName );
 	if( location == -1 ) {
-		common->Warning( "Did not find active uniform: %s\n", uniformName );
+		//note: avoiding such warnings is hardly compatible with reusing packs of uniforms
+		//common->Warning( "Did not find active uniform: %s\n", uniformName );
 	}
 	aliasLocationMap.Append( aliasLocation_t { alias, location } );
 }
