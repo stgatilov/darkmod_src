@@ -709,31 +709,6 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 
 //============ (note end)
 
-	/*//TODO: find better means of getting env parameters
-	static PFNGLGETPROGRAMENVPARAMETERFVARBPROC qglGetProgramEnvParameterfvARB = (PFNGLGETPROGRAMENVPARAMETERFVARBPROC) GLimp_ExtensionPointer("glGetProgramEnvParameterfvARB");
-	for (int i = 0; i < PP_MISC_0 + 5; i++) {
-		//TODO: get location once
-		//TODO: use better names for env params (instead of indices)
-
-		char buff[256];
-		sprintf(buff, "u_envvpParam%d", i);
-		int loc = qglGetUniformLocation(program, buff);
-		if (loc >= 0) {
-			float parm[4] = {0.0f};
-			qglGetProgramEnvParameterfvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
-			qglUniform4fv(loc, 1, parm);
-		}
-
-		sprintf(buff, "u_envfpParam%d", i);
-		loc = qglGetUniformLocation(program, buff);
-		if (loc >= 0) {
-			float parm[4] = {0.0f};
-			qglGetProgramEnvParameterfvARB( GL_FRAGMENT_PROGRAM_ARB, i, parm );
-			qglUniform4fv(loc, 1, parm);
-		}
-	}
-	qglGetError();	//ignore missing env parameters*/
-
 	idMat4 modelView, projection;
 	memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
 	memcpy( projection.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( projection ) );
