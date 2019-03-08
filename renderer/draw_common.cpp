@@ -586,6 +586,7 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+#if 0
 	//note: named attributes bound to locations during creation in shaderProgram_t::Load
 	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 	qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
@@ -737,6 +738,35 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
 	qglDisableVertexAttribArray( 2 );
+#endif
+
+	newShaderStage_t *newStage = pStage->newStage;
+	GL_State( pStage->drawStateBits );
+	newStage->glslProgram->Activate();
+
+	Uniforms::Global::Set(newStage->glslProgram, backEnd.currentSpace);
+	Uniforms::MaterialStage::Set(newStage->glslProgram, pStage, surf);
+	{
+		using namespace Attributes::Default;
+		Attributes::Default::SetDrawVert( (size_t)ac, (1<<Position) | (1<<TexCoord) | (1<<Normal) | (1<<Tangent) | (1<<Bitangent));
+	}
+	RB_DrawElementsWithCounters( surf );
+
+	//TODO: I seriously hope that when we wrap stuff well enough,
+	//such code won't be necessary to write everywhere =(
+	for ( int i = 1; i < newStage->numFragmentProgramImages; i++ ) {
+		if ( newStage->fragmentProgramImages[i] ) {
+			GL_SelectTexture( i );
+			globalImages->BindNull();
+		}
+	}
+	GL_SelectTexture( 0 );
+	qglUseProgram( 0 );
+	qglDisableVertexAttribArray( 8 );
+	qglDisableVertexAttribArray( 9 );
+	qglDisableVertexAttribArray( 10 );
+	qglDisableVertexAttribArray( 2 );
+
 }
 
 /*
@@ -944,7 +974,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		newShaderStage_t *newStage = pStage->newStage;
 
 		if ( newStage ) {
-			if(newStage->GLSL )
+			if(newStage->GLSL || newStage->glslProgram )
 				RB_STD_T_RenderShaderPasses_GLSL( ac, pStage, surf );
 			else
 				RB_STD_T_RenderShaderPasses_ARB( ac, pStage, surf );

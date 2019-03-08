@@ -29,6 +29,8 @@ class idCinematic;
 class idUserInterface;
 class idMegaTexture;
 
+class GLSLProgram;
+
 // moved from image.h for default parm
 typedef enum {
 	TF_LINEAR,
@@ -186,6 +188,8 @@ typedef struct {
 	idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 
 	bool				GLSL;
+	//stgatilov: trying to use new shader framework
+	GLSLProgram			*glslProgram;
 } newShaderStage_t;
 
 typedef struct {

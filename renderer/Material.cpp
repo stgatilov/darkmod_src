@@ -20,6 +20,7 @@
 
 #include "tr_local.h"
 #include "CinematicFFMpeg.h"
+#include "glsl.h"
 
 /*
 
@@ -1498,7 +1499,9 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				newStage.GLSL = fileExt.Icmp( "vfp" ) != 0 || r_forceGlslPrograms.GetBool();
 				if ( newStage.GLSL ) {
 					token.StripFileExtension();
-					newStage.vertexProgram = newStage.fragmentProgram =	R_FindGLSLProgram( token );
+					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
+					newStage.vertexProgram = newStage.fragmentProgram = INT_MAX;
+					//newStage.vertexProgram = newStage.fragmentProgram =	R_FindGLSLProgram( token );
 				}
 				else {
 					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
@@ -1512,7 +1515,9 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				if (r_forceGlslPrograms.GetBool()) {
 					newStage.GLSL = true;
 					token.StripFileExtension();
-					newStage.fragmentProgram =	R_FindGLSLProgram( token );
+					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
+					newStage.fragmentProgram = INT_MAX;
+					//newStage.fragmentProgram = R_FindGLSLProgram( token );
 				}
 				else {
 					newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
@@ -1525,7 +1530,9 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				if (r_forceGlslPrograms.GetBool()) {
 					newStage.GLSL = true;
 					token.StripFileExtension();
-					newStage.vertexProgram =	R_FindGLSLProgram( token );
+					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
+					newStage.vertexProgram = INT_MAX;
+					//newStage.vertexProgram = R_FindGLSLProgram( token );
 				}
 				else {
 					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
