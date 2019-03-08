@@ -82,6 +82,13 @@ private:
 		int location;
 	};
 	idList<aliasLocation_t> aliasLocationMap;
+	idList<idStr> aliasNames;
+
+	struct bindAttribute_t {
+		int index;
+		idStr name;
+	};
+	idList<bindAttribute_t> boundAttributes;
 
 	explicit GLSLProgram( GLuint program );
 

@@ -74,6 +74,14 @@ void GLSLProgram::Deactivate() {
 
 void GLSLProgram::BindAttribLocation( GLuint index, const char *name ) {
 	qglBindAttribLocation( program, index, name );
+	for (int i = 0; i < boundAttributes.Num(); i++) {
+		if (boundAttributes[i].name == name) {
+			boundAttributes[i].index = i;
+			return;
+		}
+	}
+	bindAttribute_t add = { index, name };
+	boundAttributes.Append(add);
 }
 
 void GLSLProgram::AddUniformAlias( int alias, const char *uniformName ) {
@@ -83,6 +91,7 @@ void GLSLProgram::AddUniformAlias( int alias, const char *uniformName ) {
 		//common->Warning( "Did not find active uniform: %s\n", uniformName );
 	}
 	aliasLocationMap.Append( aliasLocation_t { alias, location } );
+	aliasNames.Append(uniformName);
 }
 
 void GLSLProgram::Uniform1fL( int location, GLfloat value ) {
