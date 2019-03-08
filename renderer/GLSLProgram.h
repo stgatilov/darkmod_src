@@ -20,6 +20,7 @@ class GLSLProgram {
 public:
 	static GLSLProgram * Load( const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile = nullptr );
 	static GLSLProgram * Load( const idDict &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile = nullptr );
+	static GLSLProgram * Load( const char *programFileName, const idDict *defines = nullptr );
 
 	~GLSLProgram();
 

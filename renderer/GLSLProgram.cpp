@@ -218,11 +218,13 @@ void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourc
 
 namespace {
 
-	std::string ReadFile( const char *sourceFile ) {
+	std::string ReadFile( const char *sourceFile, bool silent = false ) {
 		void *buf = nullptr;
 		int len = fileSystem->ReadFile( idStr("glprogs/") + sourceFile, &buf );
 		if( buf == nullptr ) {
-			common->Warning( "Could not open shader file %s", sourceFile );
+			if ( !silent ) {
+				common->Warning( "Could not open shader file %s", sourceFile );
+			}
 			return "";
 		}
 		std::string contents( static_cast< char* >( buf ), len );
@@ -346,6 +348,21 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 	}
 
 	return shader;
+}
+
+GLSLProgram * GLSLProgram::Load( const char *programFileName, const idDict *defines ) {
+	idDict empty;
+	if (!defines) {
+		defines = &empty;
+	}
+
+	idStr vsName = idStr(programFileName) + ".vs";
+	idStr fsName = idStr(programFileName) + ".fs";
+	idStr gsName = idStr(programFileName) + ".gs";
+	if (ReadFile(programFileName, true).empty())
+		gsName.Clear();
+
+	return GLSLProgram::Load(*defines, vsName, fsName, gsName);
 }
 
 globalPrograms_t globalPrograms { nullptr };
