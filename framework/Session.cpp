@@ -2843,9 +2843,9 @@ void idSessionLocal::Frame() {
 			minTic = latchedTicNumber;
 
 			//stgatilov #4865: impose artificial FPS limit
-			static uint64_t prevUsec = INT64_MIN;
+			static uint64_t prevUsec = 0;
 			uint64_t neededDelta = 1000000 / com_maxFPS.GetInteger();
-			while (Sys_GetTimeMicroseconds() - prevUsec < neededDelta) {
+			while (Sys_GetTimeMicroseconds() < prevUsec + neededDelta) {
 				//note: this is busy-wait loop
 				#ifdef __SSE2__
 				_mm_pause();
