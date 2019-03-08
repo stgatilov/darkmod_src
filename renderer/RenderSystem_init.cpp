@@ -18,7 +18,7 @@
 
 #include "tr_local.h"
 #include "FrameBuffer.h"
-#include "GLSLProgram.h"
+#include "glsl.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32

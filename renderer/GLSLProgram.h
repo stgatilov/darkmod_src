@@ -124,6 +124,7 @@ private:
 	GLuint CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 };
 
+#if 0
 enum glslUniformAlias_t {
 	PROJECTION_MATRIX,
 	MODELVIEW_MATRIX,
@@ -138,5 +139,6 @@ extern globalPrograms_t globalPrograms;
 
 void GLSL_InitPrograms();
 void GLSL_DestroyPrograms();
+#endif
 
 #endif

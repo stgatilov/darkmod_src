@@ -256,7 +256,6 @@ void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourc
 	}
 }
 
-
 namespace {
 
 	std::string ReadFile( const char *sourceFile, bool silent = false ) {
@@ -406,6 +405,8 @@ GLSLProgram * GLSLProgram::Load( const char *programFileName, const idDict *defi
 	return GLSLProgram::Load(*defines, vsName, fsName, gsName);
 }
 
+#if 0	//moved to (draw_)glsl.h/cpp
+
 globalPrograms_t globalPrograms { nullptr };
 
 namespace {
@@ -442,6 +443,7 @@ void GLSL_DestroyPrograms() {
 	globalPrograms.interactionShader = nullptr;
 }
 
+#endif
 
 /// UNIT TESTS FOR SHADER INCLUDES AND DEFINES
 

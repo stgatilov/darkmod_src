@@ -642,8 +642,7 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	}
 
 	// incorporate new shader interface:
-	GLSL_DestroyPrograms();
-	GLSL_InitPrograms();
+	GLSL_ReloadPrograms();
 
 	return ok;
 }
@@ -1469,3 +1468,243 @@ void cubeMapProgram_t::AfterLoad() {
 	qglUniform1i( normalTexture, 1 );
 	qglUseProgram( 0 );
 }
+
+//=============================================================================
+// Below goes the suggested new way of handling GLSL parameters.
+// TODO: move it to glsl.cpp
+
+
+void Attributes::Default::Bind(GLSLProgram *program) {
+	using namespace Attributes::Default;
+	program->BindAttribLocation(Position, "attr_Position");
+	program->BindAttribLocation(Normal, "attr_Normal");
+	program->BindAttribLocation(Color, "attr_Color");
+	program->BindAttribLocation(TexCoord, "attr_TexCoord");
+	program->BindAttribLocation(Tangent, "attr_Tangent");
+	program->BindAttribLocation(Bitangent, "attr_Bitangent");
+}
+
+//I expect this function should be enough for setting up vertex attrib arrays in most cases..
+//But I am not sure in it =)
+void Attributes::Default::SetDrawVert(size_t startOffset, int arrayMask) {
+	using namespace Attributes::Default;
+	if (arrayMask & (1 << Position)) {
+		qglEnableVertexAttribArray(Position);
+		qglVertexAttribPointer(Position, 3, GL_FLOAT, GL_FALSE, sizeof(idDrawVert), (void*)(startOffset + offsetof(idDrawVert, xyz)));
+	}
+	else {
+		qglDisableVertexAttribArray(Position);
+	}
+
+	if (arrayMask & (1 << Normal)) {
+		qglEnableVertexAttribArray(Normal);
+		qglVertexAttribPointer(Normal, 3, GL_FLOAT, GL_FALSE, sizeof(idDrawVert), (void*)(startOffset + offsetof(idDrawVert, normal)));
+	}
+	else {
+		qglDisableVertexAttribArray(Normal);
+	}
+
+	if (arrayMask & (1 << Color)) {
+		qglEnableVertexAttribArray(Color);
+		qglVertexAttribPointer(Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(idDrawVert), (void*)(startOffset + offsetof(idDrawVert, color)));
+	}
+	else {
+		qglDisableVertexAttribArray(Color);
+	}
+
+	if (arrayMask & (1 << TexCoord)) {
+		qglEnableVertexAttribArray(TexCoord);
+		qglVertexAttribPointer(TexCoord, 2, GL_FLOAT, GL_FALSE, sizeof(idDrawVert), (void*)(startOffset + offsetof(idDrawVert, st)));
+	}
+	else {
+		qglDisableVertexAttribArray(TexCoord);
+	}
+
+	if (arrayMask & (1 << Tangent)) {
+		qglEnableVertexAttribArray(Tangent);
+		qglVertexAttribPointer(Tangent, 3, GL_FLOAT, GL_FALSE, sizeof(idDrawVert), (void*)(startOffset + offsetof(idDrawVert, tangents)));
+	}
+	else {
+		qglDisableVertexAttribArray(Tangent);
+	}
+
+	if (arrayMask & (1 << Bitangent)) {
+		qglEnableVertexAttribArray(Bitangent);
+		qglVertexAttribPointer(Bitangent, 3, GL_FLOAT, GL_FALSE, sizeof(idDrawVert), (void*)(startOffset + offsetof(idDrawVert, tangents) + sizeof(idDrawVert::tangents[0])));
+	}
+	else {
+		qglDisableVertexAttribArray(Bitangent);
+	}
+}
+
+UNIFORMS_GLOBAL(UNIFORMS_ALIAS_BEGIN, UNIFORMS_ALIAS_DEF, UNIFORMS_ALIAS_END)
+void Uniforms::Global::Set(GLSLProgram *program, const viewEntity_t *space) {
+	program->UniformMatrix4(Uniforms::Global::modelMatrix, space->modelMatrix);
+	program->UniformMatrix4(Uniforms::Global::projectionMatrix, backEnd.viewDef->projectionMatrix);
+	program->UniformMatrix4(Uniforms::Global::modelViewMatrix, space->modelViewMatrix);
+	//note: these matrices are either not present or not needed?...
+	//program->UniformMatrix4(Uniforms::Global::viewMatrix, ?);					//is there a way to get View matrix?
+	//program->UniformMatrix4(Uniforms::Global::modelViewProjectionMatrix, ?);	//should we really compute it here?
+}
+
+UNIFORMS_MATERIALSTAGE(UNIFORMS_ALIAS_BEGIN, UNIFORMS_ALIAS_DEF, UNIFORMS_ALIAS_END)
+void Uniforms::MaterialStage::Set(GLSLProgram *program, const shaderStage_t *pStage, const drawSurf_t *surf) {
+	using namespace Uniforms::MaterialStage;
+
+	//============================================================================
+	//note: copied from RB_SetProgramEnvironment and RB_SetProgramEnvironmentSpace
+	//============================================================================
+
+	float	parm[4];
+	int		pot;
+	// screen power of two correction factor, assuming the copy to _currentRender
+	// also copied an extra row and column for the bilerp
+	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
+	pot = globalImages->currentRenderImage->uploadWidth;
+	parm[0] = ( float )w / pot;
+	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
+	pot = globalImages->currentRenderImage->uploadHeight;
+	parm[1] = ( float )h / pot;
+	parm[2] = 0;
+	parm[3] = 1;
+	program->Uniform4fv(scalePotToWindow, parm);
+
+	// window coord to 0.0 to 1.0 conversion
+	parm[0] = 1.0 / w;
+	parm[1] = 1.0 / h;
+	parm[2] = 0;
+	parm[3] = 1;
+	program->Uniform4fv(scaleWindowToUnit, parm);
+
+	// #3877: Allow shaders to access depth buffer.
+	// Two useful ratios are packed into this parm: [0] and [1] hold the x,y multipliers you need to map a screen
+	// coordinate (fragment position) to the depth image: those are simply the reciprocal of the depth
+	// image size, which has been rounded up to a power of two. Slots [3] and [4] hold the ratio of the depth image
+	// size to the current render image size. These sizes can differ if the game crops the render viewport temporarily
+	// during post-processing effects. The depth render is smaller during the effect too, but the depth image doesn't
+	// need to be downsized, whereas the current render image does get downsized when it's captured by the game after
+	// the skybox render pass. The ratio is needed to map between the two render images.
+	parm[0] = 1.0f / globalImages->currentDepthImage->uploadWidth;
+	parm[1] = 1.0f / globalImages->currentDepthImage->uploadHeight;
+	parm[2] = static_cast<float>( globalImages->currentRenderImage->uploadWidth ) / globalImages->currentDepthImage->uploadWidth;
+	parm[3] = static_cast<float>( globalImages->currentRenderImage->uploadHeight ) / globalImages->currentDepthImage->uploadHeight;
+	program->Uniform4fv(scaleDepthCoords, parm);
+
+	//
+	// set eye position in global space
+	//
+	parm[0] = backEnd.viewDef->renderView.vieworg[0];
+	parm[1] = backEnd.viewDef->renderView.vieworg[1];
+	parm[2] = backEnd.viewDef->renderView.vieworg[2];
+	parm[3] = 1.0;
+	program->Uniform4fv(viewOriginGlobal, parm);
+
+	const struct viewEntity_s *space = backEnd.currentSpace;
+	// set eye position in local space
+	R_GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, *( idVec3 * )parm );
+	parm[3] = 1.0;
+	program->Uniform4fv(viewOriginLocal, parm);
+
+	// we need the model matrix without it being combined with the view matrix
+	// so we can transform local vectors to global coordinates
+	parm[0] = space->modelMatrix[0];
+	parm[1] = space->modelMatrix[4];
+	parm[2] = space->modelMatrix[8];
+	parm[3] = space->modelMatrix[12];
+	program->Uniform4fv(modelMatrixRow0, parm);
+	parm[0] = space->modelMatrix[1];
+	parm[1] = space->modelMatrix[5];
+	parm[2] = space->modelMatrix[9];
+	parm[3] = space->modelMatrix[13];
+	program->Uniform4fv(modelMatrixRow1, parm);
+	parm[0] = space->modelMatrix[2];
+	parm[1] = space->modelMatrix[6];
+	parm[2] = space->modelMatrix[10];
+	parm[3] = space->modelMatrix[14];
+	program->Uniform4fv(modelMatrixRow2, parm);
+
+	//============================================================================
+
+	const newShaderStage_t *newStage = pStage->newStage;
+
+	//setting local parameters (specified in material definition)
+	const float	*regs = surf->shaderRegisters;
+	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
+		float parm[4];
+		parm[0] = regs[newStage->vertexParms[i][0]];
+		parm[1] = regs[newStage->vertexParms[i][1]];
+		parm[2] = regs[newStage->vertexParms[i][2]];
+		parm[3] = regs[newStage->vertexParms[i][3]];
+		program->Uniform4fv(localParam0 + i, parm);
+	}
+
+	//setting textures
+	//note: the textures are also bound to TUs at this moment
+	for ( int i = 0; i < newStage->numFragmentProgramImages; i++ ) {
+		if ( newStage->fragmentProgramImages[i] ) {
+			GL_SelectTexture( i );
+			newStage->fragmentProgramImages[i]->Bind();
+			program->Uniform1i(texture0 + i, i);
+		}
+	}
+
+}
+
+void GLSL_InitPrograms() {
+	{//interaction shader
+		idDict interactionDefines;
+		interactionDefines.Set( "SOFT", "1" );
+		globalPrograms.interaction = GLSLProgram::Load( interactionDefines, "interaction.vs", "interaction.fs" );
+		if( !globalPrograms.interaction ) {
+			common->Error( "Failed to load interaction shader" );
+		}
+		Attributes::Default::Bind(globalPrograms.interaction);
+		Uniforms::Global::Alias(globalPrograms.interaction);
+		//note: you can attach more packs of uniforms if you want
+		//Uniforms::Interaction::Alias(globalPrograms.interaction);
+		//Uniforms::LightParams::Alias(globalPrograms.interaction);
+	}
+}
+
+void GLSL_DestroyPrograms() {
+	GLSLProgram::Deactivate();
+
+	for (int i = 0; i < globalPrograms.allList.Num(); i++) {
+		delete globalPrograms.allList[i];
+		globalPrograms.allList[i] = NULL;
+	}
+	globalPrograms.allList.Clear();
+}
+
+void GLSL_ReloadPrograms() {
+	GLSLProgram::Deactivate();
+
+	for (int i = 0; i < globalPrograms.allList.Num(); i++) {
+		globalPrograms.allList[i]->Reload();
+	}
+}
+
+GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name) {
+	for (int i = 0; i < globalPrograms.allList.Num(); i++) {
+		GLSLProgram *prog = globalPrograms.allList[i];
+		idStr progName = prog->GetFileName(GL_VERTEX_SHADER);
+		progName.StripFileExtension();
+		if (progName == name) {
+			//already compiled
+			return prog;
+		}
+	}
+
+	GLSLProgram *prog = GLSLProgram::Load(name);
+	if (!prog) {
+		common->Warning("Failed to load material stage shader %s", name);
+		return nullptr;
+	}
+	Attributes::Default::Bind(prog);
+	Uniforms::Global::Alias(prog);
+	Uniforms::MaterialStage::Alias(prog);
+	globalPrograms.allList.Append(prog);
+	return prog;
+}
+
+globalPrograms_t globalPrograms;
