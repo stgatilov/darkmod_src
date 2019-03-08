@@ -25,19 +25,37 @@ GLSLProgram * GLSLProgram::Load( const char *vertexSourceFile, const char *fragm
 }
 
 GLSLProgram * GLSLProgram::Load( const idDict &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
+	if( !geometrySourceFile )
+		geometrySourceFile = "";
 	GLSLProgramLoader loader;
 	loader.AddVertexShader( vertexSourceFile, defines );
 	loader.AddFragmentShader( fragmentSourceFile, defines );
-	if( geometrySourceFile != nullptr ) {
+	if( geometrySourceFile[0] ) {
 		loader.AddGeometryShader( geometrySourceFile, defines );
 	}
-	return loader.LinkProgram();
+	GLSLProgram *prog = loader.LinkProgram();
+	prog->filenames[0] = vertexSourceFile;
+	prog->filenames[1] = fragmentSourceFile;
+	prog->filenames[2] = geometrySourceFile;
+	prog->defines = defines;
+	return prog;
 }
 
 GLSLProgram::GLSLProgram( GLuint program ) : program( program ) {}
 
 GLSLProgram::~GLSLProgram() {
 	qglDeleteProgram( program );
+}
+
+const char* GLSLProgram::GetFileName(GLint shaderType) const {
+	if (shaderType == GL_VERTEX_SHADER)
+		return filenames[0];
+	if (shaderType == GL_FRAGMENT_SHADER)
+		return filenames[1];
+	if (shaderType == GL_GEOMETRY_SHADER)
+		return filenames[2];
+	assert(0);
+	return nullptr;
 }
 
 void GLSLProgram::Activate() {

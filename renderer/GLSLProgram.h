@@ -23,6 +23,9 @@ public:
 
 	~GLSLProgram();
 
+	const char* GetFileName(GLint shaderType) const;
+	const idDict &GetDefines() const { return defines; }
+
 	void Activate();
 	static void Deactivate();
 
@@ -67,6 +70,9 @@ public:
 
 private:
 	static GLuint currentProgram;
+
+	idStr filenames[3];
+	idDict defines;
 
 	GLuint program;
 
