@@ -1067,6 +1067,24 @@ static void R_SortDrawSurfs( void ) {
 #endif // MULTI_LIGHT_IN_FRONT
 }
 
+/*
+=================
+R_SortDrawSurfs
+=================
+*/
+
+void R_Tools() {
+	if ( r_showPortals ) // moved from backend to allow subviews and SMP
+		tr.viewDef->renderWorld->ShowPortals();
+	static idCVarInt r_maxTri("r_maxTri", "0", CVAR_RENDERER, "Limit max tri per draw call" );
+	if ( r_maxTri ) {
+		auto limitTris = [](drawSurf_t *surf) {
+			surf->numIndexes = min( r_maxTri, surf->numIndexes );
+		};
+		for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ )
+			limitTris( tr.viewDef->drawSurfs[i] );
+	}
+}
 
 //========================================================================
 
@@ -1128,8 +1146,7 @@ void R_RenderView( viewDef_t &parms ) {
 	// sort all the ambient surfaces for translucency ordering
 	R_SortDrawSurfs();
 
-	if ( r_showPortals ) // moved from backend to allow subviews and SMP
-		parms.renderWorld->ShowPortals();
+	R_Tools();
 
 	// generate any subviews (mirrors, cameras, etc) before adding this view
 	if ( R_GenerateSubViews() ) {
