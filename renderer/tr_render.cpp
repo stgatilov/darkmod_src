@@ -102,6 +102,40 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 
 /*
 ================
+RB_DrawElementsInstanced
+================
+*/
+void RB_DrawElementsInstanced( const drawSurf_t *surf ) {
+	if ( vertexCache.currentVertexBuffer == 0 ) {
+		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
+		return;
+	}
+
+	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
+		backEnd.pc.c_drawElements++;
+		backEnd.pc.c_drawIndexes += surf->numIndexes;
+		backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
+	}
+
+	if ( surf->indexCache.IsValid() ) {
+		qglDrawElementsInstanced( GL_TRIANGLES,
+			surf->numIndexes,
+			GL_INDEX_TYPE,
+			vertexCache.IndexPosition( surf->indexCache ),
+			6);
+		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+			backEnd.pc.c_vboIndexes += surf->numIndexes;
+		}
+	} else {
+		vertexCache.UnbindIndex();
+		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXME
+	}
+}
+
+
+
+/*
+================
 RB_DrawShadowElementsWithCounters
 
 May not use all the indexes in the surface if caps are skipped

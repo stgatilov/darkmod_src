@@ -106,6 +106,9 @@ extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
+// instancing
+extern PFNGLDRAWELEMENTSINSTANCEDPROC		qglDrawElementsInstanced;
+
 // Frame Buffer Objects
 extern PFNGLISRENDERBUFFERPROC				qglIsRenderbuffer;
 extern PFNGLBINDRENDERBUFFERPROC			qglBindRenderbuffer;

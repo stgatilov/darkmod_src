@@ -291,6 +291,9 @@ PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
 
+// instancing
+PFNGLDRAWELEMENTSINSTANCEDPROC			qglDrawElementsInstanced;
+
 // arb assembly info
 PFNGLGETPROGRAMIVARBPROC				qglGetProgramivARB;
 
@@ -543,6 +546,9 @@ static void R_CheckPortableExtensions( void ) {
 	if ( glConfig.depthBoundsTestAvailable ) {
 		qglDepthBoundsEXT = ( PFNGLDEPTHBOUNDSEXTPROC )GLimp_ExtensionPointer( "glDepthBoundsEXT" );
 	}
+
+	// instancing
+	qglDrawElementsInstanced = (PFNGLDRAWELEMENTSINSTANCEDPROC)GLimp_ExtensionPointer( "glDrawElementsInstanced" );
 
 	// GL_ARB_draw_buffers
 	//R_CheckExtension( "GL_ARB_draw_buffers", 2.0 );

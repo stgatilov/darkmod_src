@@ -634,6 +634,7 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
 	shadowmapShader.Load( "shadowMapA" );
+	shadowmapShader.instanced = qglDrawElementsInstanced; // or else crashes if GL < 3.1
 	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
@@ -1321,7 +1322,10 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
 
 			// draw it
-			RB_DrawElementsWithCounters( surf );
+			if ( instanced )
+				RB_DrawElementsInstanced( surf );
+			else
+				RB_DrawElementsWithCounters( surf );
 
 			if ( pStage->texture.hasMatrix ) {
 				qglMatrixMode( GL_TEXTURE );
@@ -1339,11 +1343,11 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 		}
 	}
 
-	// draw the entire surface solid
-	if ( drawSolid ) {
-		// draw it
-		RB_DrawElementsWithCounters( surf );
-	}
+	if ( drawSolid )  // draw the entire surface solid
+		if ( instanced ) 
+			RB_DrawElementsInstanced( surf );
+		else
+			RB_DrawElementsWithCounters( surf );
 
 	// reset blending
 	if ( shader->GetSort() == SS_SUBVIEW ) {
@@ -1664,9 +1668,12 @@ void GLSL_InitPrograms() {
 		//Uniforms::Interaction::Alias(globalPrograms.interaction);
 		//Uniforms::LightParams::Alias(globalPrograms.interaction);
 	}
-	globalPrograms.frob = GLSLProgram::Load( "frob" );
-	Attributes::Default::Bind( globalPrograms.frob );
-	Uniforms::Global::Alias( globalPrograms.frob );
+	{
+		globalPrograms.frob = GLSLProgram::Load( "frob" );
+		Attributes::Default::Bind( globalPrograms.frob );
+		Uniforms::Global::Alias( globalPrograms.frob );
+		globalPrograms.frob->Reload();
+	}
 }
 
 void GLSL_DestroyPrograms() {
@@ -1679,7 +1686,7 @@ void GLSL_DestroyPrograms() {
 	globalPrograms.allList.Clear();
 }
 
-void GLSL_ReloadPrograms() {
+ID_NOINLINE void GLSL_ReloadPrograms() {
 	GLSLProgram::Deactivate();
 
 	for (int i = 0; i < globalPrograms.allList.Num(); i++) {

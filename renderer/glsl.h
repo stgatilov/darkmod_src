@@ -36,7 +36,7 @@ struct oldStageProgram_t : shaderProgram_t {
 
 struct basicDepthProgram_t : shaderProgram_t {
 	GLint alphaTest, color;
-	bool acceptsTranslucent;
+	bool acceptsTranslucent, instanced;
 	virtual	void AfterLoad();
 	void FillDepthBuffer( const drawSurf_t *surf );
 };
