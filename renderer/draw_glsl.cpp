@@ -644,8 +644,6 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	// incorporate new shader interface:
 	GLSL_ReloadPrograms();
 
-	r_newFrob.ClearModified();
-
 	return ok;
 }
 

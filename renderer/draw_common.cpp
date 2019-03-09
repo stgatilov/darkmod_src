@@ -879,13 +879,6 @@ Frob shader stub
 ==================
 */
 ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	if ( r_newFrob.IsModified() ) {
-		common->Printf( "Reloading materials. Please wait...\n" );
-		declManager->Reload( true );
-		common->Printf( "Reload complete.\n" );
-		r_newFrob.ClearModified();
-	}
-		
 	if ( !r_newFrob )
 		return;
 
