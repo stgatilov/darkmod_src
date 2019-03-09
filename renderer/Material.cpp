@@ -562,6 +562,8 @@ int idMaterial::ParseTerm( idLexer &src ) {
 		return EXP_REG_PARM10;
 	}
 	else if ( !token.Icmp( "parm11" ) ) {
+		if ( r_newFrob )
+			return GetExpressionConstant( 0 );
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM11;
 	}

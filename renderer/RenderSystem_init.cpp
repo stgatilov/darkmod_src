@@ -237,6 +237,7 @@ idCVar r_useAnonreclaimer( "r_useBfgPortalCulling", "0", CVAR_RENDERER | CVAR_BO
 idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB2" );
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
 idCVar r_forceGlslPrograms( "r_forceGlslPrograms", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force using GLSL shaders instead of ARB ones (when shader is used in material's new stage)" );
+idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
 
 // FBO
 idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );

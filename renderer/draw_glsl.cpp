@@ -644,6 +644,8 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	// incorporate new shader interface:
 	GLSL_ReloadPrograms();
 
+	r_newFrob.ClearModified();
+
 	return ok;
 }
 
@@ -1665,8 +1667,8 @@ void GLSL_InitPrograms() {
 		//Uniforms::LightParams::Alias(globalPrograms.interaction);
 	}
 	globalPrograms.frob = GLSLProgram::Load( "frob" );
-	Attributes::Default::Bind( globalPrograms.interaction );
-	Uniforms::Global::Alias( globalPrograms.interaction );
+	Attributes::Default::Bind( globalPrograms.frob );
+	Uniforms::Global::Alias( globalPrograms.frob );
 }
 
 void GLSL_DestroyPrograms() {

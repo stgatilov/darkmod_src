@@ -195,6 +195,9 @@ public:
 		: idCVar( name, value, flags | CVAR_BOOL, description ) {}
 	operator				bool() { return GetBool(); }
 	void operator			= ( bool newValue ) { SetBool( newValue ); }
+	using idCVar::SetModified;
+	using idCVar::IsModified;
+	using idCVar::ClearModified;
 };
 
 ID_INLINE idCVar::idCVar( const char *name, const char *value, int flags, const char *description,

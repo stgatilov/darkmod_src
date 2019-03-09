@@ -234,7 +234,7 @@ GLSLProgram * GLSLProgramLoader::LinkProgram() {
 		auto log = std::make_unique<char[]>( length );
 		qglGetProgramInfoLog( program, length, &result, log.get() );
 		common->Warning( "Program validation failed:\n%s\n", log.get() );
-		return nullptr;
+		//return nullptr;
 	}
 
 	GLSLProgram *glslProgram = new GLSLProgram( program );
