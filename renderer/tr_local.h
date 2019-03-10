@@ -1390,7 +1390,7 @@ DRAW_STANDARD
 */
 
 void RB_DrawElementsWithCounters( const drawSurf_t *surf );
-void RB_DrawElementsInstanced( const drawSurf_t *surf );
+void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances );
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );

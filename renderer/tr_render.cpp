@@ -105,7 +105,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 RB_DrawElementsInstanced
 ================
 */
-void RB_DrawElementsInstanced( const drawSurf_t *surf ) {
+void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
 	if ( vertexCache.currentVertexBuffer == 0 ) {
 		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
 		return;
@@ -122,7 +122,7 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf ) {
 			surf->numIndexes,
 			GL_INDEX_TYPE,
 			vertexCache.IndexPosition( surf->indexCache ),
-			6);
+			instances );
 		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}

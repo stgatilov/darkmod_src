@@ -491,7 +491,6 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
 	shadowmapShader.Load( "shadowMapA" );
-	shadowmapShader.instanced = qglDrawElementsInstanced; // or else crashes if GL < 3.1
 	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
@@ -1040,8 +1039,8 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
 
 			// draw it
-			if ( instanced )
-				RB_DrawElementsInstanced( surf );
+			if ( instances )
+				RB_DrawElementsInstanced( surf, instances );
 			else
 				RB_DrawElementsWithCounters( surf );
 
@@ -1062,8 +1061,8 @@ void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
 	}
 
 	if ( drawSolid )  // draw the entire surface solid
-		if ( instanced ) 
-			RB_DrawElementsInstanced( surf );
+		if ( instances ) 
+			RB_DrawElementsInstanced( surf, instances );
 		else
 			RB_DrawElementsWithCounters( surf );
 
@@ -1084,6 +1083,7 @@ void shadowMapProgram_t::AfterLoad() {
 	shadowTexelStep = qglGetUniformLocation( program, "u_shadowTexelStep" );
 	lightFrustum = qglGetUniformLocation( program, "u_lightFrustum" );
 	acceptsTranslucent = true;
+	instances = 6;
 }
 
 void cubeMapProgram_t::AfterLoad() {
