@@ -21,13 +21,14 @@
 #include "Profiling.h"
 #include "GLSLProgram.h"
 #include "GLSLUniforms.h"
+#include "GLSLProgramManager.h"
 
 struct CubemapUniforms : public GLSLUniformGroup {
-	UNIFORM_GROUP_DEF(CubemapUniforms)
+	UNIFORM_GROUP_DEF( CubemapUniforms );
 
-	DEFINE_UNIFORM(GLSLUniformFloat, reflective);
-	DEFINE_UNIFORM(GLSLUniformVec3, viewOrigin);
-	DEFINE_UNIFORM(GLSLUniformMat4, modelMatrix);
+	DEFINE_UNIFORM( float, reflective );
+	DEFINE_UNIFORM( vec3, viewOrigin );
+	DEFINE_UNIFORM( mat4, modelMatrix );
 };
 
 /*
@@ -57,11 +58,11 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 
 		// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 		//R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
-		globalPrograms.cubemapShader->Activate();
-		CubemapUniforms *uniforms = globalPrograms.cubemapShader->GetUniformGroup<CubemapUniforms>();
-		uniforms->reflective = 1;
-		uniforms->modelMatrix = backEnd.currentSpace->modelMatrix;
-		uniforms->viewOrigin = backEnd.viewDef->renderView.vieworg;
+		programManager->cubeMapShader->Activate();
+		CubemapUniforms *uniforms = programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>();
+		uniforms->reflective.Set( 1 );
+		uniforms->modelMatrix.Set( backEnd.currentSpace->modelMatrix );
+		uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );
 	} else {
 		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
 		qglDisableVertexAttribArray( 3 );
@@ -142,7 +143,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableVertexAttribArray( 8 );
 			qglDisableVertexAttribArray( 9 );
 			qglDisableVertexAttribArray( 10 );
-			globalPrograms.cubemapShader->GetUniformGroup<CubemapUniforms>()->reflective = 0;
+			programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
 		}
 		qglDisableVertexAttribArray( 3 );
 		qglUseProgram( 0 );
@@ -457,7 +458,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	case TG_WOBBLESKY_CUBE:
 		qglEnableVertexAttribArray( 8 );
 		qglVertexAttribPointer( 8, 3, GL_FLOAT, false, 0, vertexCache.VertexPosition( surf->dynamicTexCoords ) );
-		globalPrograms.cubemapShader->Activate();
+		programManager->cubeMapShader->Activate();
 		break;
 	case TG_REFLECT_CUBE:
 		GL_FloatColor( color );
@@ -755,8 +756,8 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	GL_State( pStage->drawStateBits );
 	newStage->glslProgram->Activate();
 
-	Uniforms::Global::Set(newStage->glslProgram, backEnd.currentSpace);
-	Uniforms::MaterialStage::Set(newStage->glslProgram, pStage, surf);
+	newStage->glslProgram->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+	newStage->glslProgram->GetUniformGroup<Uniforms::MaterialStage>()->Set( pStage, surf );
 	{
 		using namespace Attributes::Default;
 		Attributes::Default::SetDrawVert( (size_t)ac, (1<<Position) | (1<<TexCoord) | (1<<Normal) | (1<<Tangent) | (1<<Bitangent));
@@ -893,9 +894,9 @@ ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderS
 	if ( !r_newFrob )
 		return;
 
-	globalPrograms.frob->Activate();
+	programManager->frobShader->Activate();
 
-	Uniforms::Global::Set( globalPrograms.frob, backEnd.currentSpace );
+	programManager->frobShader->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
 	{
 		using namespace Attributes::Default;
 		Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << TexCoord) | (1 << Normal) | (1 << Tangent) | (1 << Bitangent) );

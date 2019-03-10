@@ -18,13 +18,26 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <unordered_map>
 #include <typeindex>
-#include <typeinfo>
 
 class GLSLUniformGroup;
 
 class GLSLProgram {
 public:
+	explicit GLSLProgram(const char *name);
 	~GLSLProgram();
+
+	void Init();
+	void Destroy();
+
+	void AttachVertexShader( const char *sourceFile, const idDict &defines = idDict() );
+	void AttachGeometryShader( const char *sourceFile, const idDict &defines = idDict() );
+	void AttachFragmentShader( const char *sourceFile, const idDict &defines = idDict() );
+
+	void BindAttribLocation( unsigned int location, const char *attribName );
+	void BindDefaultAttribLocations();
+
+	bool Link();
+	bool Validate();
 
 	void Activate();
 	static void Deactivate();
@@ -40,7 +53,7 @@ public:
 		return static_cast<Group*>(group);
 	}
 
-	void Validate();
+	const idStr &GetName() const { return name; }
 
 	GLSLProgram( const GLSLProgram &other ) = delete;
 	GLSLProgram & operator=( const GLSLProgram &other ) = delete;
@@ -50,45 +63,12 @@ public:
 private:
 	static GLuint currentProgram;
 
+	idStr name;
 	GLuint program;
 	std::unordered_map<std::type_index, GLSLUniformGroup*> uniformGroups;
-
-	explicit GLSLProgram( GLuint program );
-
-	friend class GLSLProgramLoader;
-};
-
-class GLSLProgramLoader {
-public:
-	GLSLProgramLoader();
-	~GLSLProgramLoader();
-
-	GLSLProgramLoader & AddVertexShader( const char *sourceFile, const idDict &defines = idDict() );
-	GLSLProgramLoader & AddFragmentShader( const char *sourceFile, const idDict &defines = idDict() );
-	GLSLProgramLoader & AddGeometryShader( const char *sourceFile, const idDict &defines = idDict() );
-
-	GLSLProgramLoader & BindAttribLocation( unsigned int location, const char *attribName );
-	GLSLProgramLoader & BindDefaultAttribLocations();
-
-	GLSLProgram * LinkProgram();
-
-private:
-	GLuint program;
-	std::unordered_map<unsigned int, std::string> attribBindings;
 
 	void LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 	GLuint CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 };
-
-#if 0
-struct globalPrograms_t {
-	GLSLProgram *cubemapShader;
-};
-
-extern globalPrograms_t globalPrograms;
-
-void GLSL_InitPrograms();
-void GLSL_DestroyPrograms();
-#endif
 
 #endif

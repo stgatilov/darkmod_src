@@ -16,6 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 #include "qgl.h"
+#include "tr_local.h"
 
 struct shaderProgram_t {
 	GLuint program;								// GPU program = vertex + fragment shader
@@ -120,8 +121,7 @@ float GetEffectiveLightRadius();
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.
 
-#include "glsl_def.h"
-#include "GLSLProgram.h"
+#include "GLSLUniforms.h"
 
 
 //pack of attributes used (almost) everywhere
@@ -142,72 +142,53 @@ namespace Attributes {
 	}
 };
 
-
-//pack of uniforms defined in every shader program
-#define UNIFORMS_GLOBAL(BEGIN, DEF, END) \
-	BEGIN(Global, 10000) \
-		DEF(projectionMatrix) \
-		DEF(modelMatrix) \
-		DEF(modelViewMatrix) \
-		/*DEF(viewMatrix)*/ \
-		/*DEF(modelViewProjectionMatrix)*/ \
-	END()
-UNIFORMS_GLOBAL(UNIFORMS_DECLARE_BEGIN, UNIFORMS_DECLARE_DEF, UNIFORMS_DECLARE_END)
 namespace Uniforms {
-	namespace Global {
+	//pack of uniforms defined in every shader program
+	struct Global : public GLSLUniformGroup {
+		UNIFORM_GROUP_DEF(Global);
+
+		DEFINE_UNIFORM( mat4, projectionMatrix );
+		DEFINE_UNIFORM( mat4, modelMatrix );
+		DEFINE_UNIFORM( mat4, modelViewMatrix );
+
 		//TODO: is space necessary as argument, or we can take backEnd->currentSpace ?
-		void Set(GLSLProgram *program, const viewEntity_t *space);
-	}
-}
+		void Set( const viewEntity_t *space );
+	};
 
-//pack of uniforms defined in a shader attached to "new" stage of a material
-#define UNIFORMS_MATERIALSTAGE(BEGIN, DEF, END) \
-	BEGIN(MaterialStage, 100) \
-		DEF(scalePotToWindow) \
-		DEF(scaleWindowToUnit) \
-		DEF(scaleDepthCoords) \
-		DEF(viewOriginGlobal) \
-		DEF(viewOriginLocal) \
-		DEF(modelMatrixRow0) \
-		DEF(modelMatrixRow1) \
-		DEF(modelMatrixRow2) \
-		\
-		DEF(localParam0) \
-		DEF(localParam1) \
-		DEF(localParam2) \
-		DEF(localParam3) \
-		\
-		DEF(texture0) \
-		DEF(texture1) \
-		DEF(texture2) \
-		DEF(texture3) \
-		DEF(texture4) \
-		DEF(texture5) \
-		DEF(texture6) \
-		DEF(texture7) \
-	END()
-UNIFORMS_MATERIALSTAGE(UNIFORMS_DECLARE_BEGIN, UNIFORMS_DECLARE_DEF, UNIFORMS_DECLARE_END)
-namespace Uniforms {
-	namespace MaterialStage {
+	//pack of uniforms defined in a shader attached to "new" stage of a material
+	struct MaterialStage : public GLSLUniformGroup {
+		UNIFORM_GROUP_DEF( MaterialStage );
+
+		DEFINE_UNIFORM( vec4, scalePotToWindow );
+		DEFINE_UNIFORM( vec4, scaleWindowToUnit );
+		DEFINE_UNIFORM( vec4, scaleDepthCoords );
+		DEFINE_UNIFORM( vec4, viewOriginGlobal );
+		DEFINE_UNIFORM( vec4, viewOriginLocal );
+		DEFINE_UNIFORM( vec4, modelMatrixRow0 );
+		DEFINE_UNIFORM( vec4, modelMatrixRow1 );
+		DEFINE_UNIFORM( vec4, modelMatrixRow2 );
+
+		DEFINE_UNIFORM( vec4, localParam0 );
+		DEFINE_UNIFORM( vec4, localParam1 );
+		DEFINE_UNIFORM( vec4, localParam2 );
+		DEFINE_UNIFORM( vec4, localParam3 );
+
+		GLSLUniform_vec4 *localParams[4] = { &localParam0, &localParam1, &localParam2, &localParam3 };
+
+		DEFINE_UNIFORM( sampler, texture0 );
+		DEFINE_UNIFORM( sampler, texture1 );
+		DEFINE_UNIFORM( sampler, texture2 );
+		DEFINE_UNIFORM( sampler, texture3 );
+		DEFINE_UNIFORM( sampler, texture4 );
+		DEFINE_UNIFORM( sampler, texture5 );
+		DEFINE_UNIFORM( sampler, texture6 );
+		DEFINE_UNIFORM( sampler, texture7 );
+
+		GLSLUniform_sampler *textures[8] = { &texture0, &texture1, &texture2, &texture3, &texture4, &texture5, &texture6, &texture7 };
+
 		//note: also binds fragmentProgramImages to texture units
-		void Set(GLSLProgram *program, const shaderStage_t *pStage, const drawSurf_t *surf);
-	}
-}
-
-
-struct globalPrograms_t {
-	GLSLProgram *interaction;
-	GLSLProgram *frob;
-	//... all other static shaders here
-
-	//this list includes all programs, even dynamically created ones
-	idList<GLSLProgram*> allList;
+		void Set( const shaderStage_t *pStage, const drawSurf_t *surf );
+	};
 };
-
-extern globalPrograms_t globalPrograms;
-
-void GLSL_InitPrograms();
-void GLSL_DestroyPrograms();
-void GLSL_ReloadPrograms();
 
 GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name);

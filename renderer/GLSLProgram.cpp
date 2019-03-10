@@ -15,15 +15,73 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "precompiled.h"
 #include "GLSLProgram.h"
+#include "GLSLUniforms.h"
 #include <memory>
 #include <regex>
 
 GLuint GLSLProgram::currentProgram = 0;
 
-GLSLProgram::GLSLProgram( GLuint program ) : program( program ) {}
+GLSLProgram::GLSLProgram( const char *name ) : name( name ), program( 0 ) {}
 
 GLSLProgram::~GLSLProgram() {
-	qglDeleteProgram( program );
+	Destroy();
+}
+
+void GLSLProgram::Init() {
+	program = qglCreateProgram();
+	if( program == 0 ) {
+		common->Error( "Call to glCreateProgram failed for program %s", name.c_str() );
+	}
+}
+
+void GLSLProgram::Destroy() {
+	if( currentProgram == program ) {
+		Deactivate();
+	}
+
+	for( auto it : uniformGroups ) {
+		delete it.second;
+	}
+	uniformGroups.clear();
+
+	if( program != 0 ) {
+		qglDeleteProgram( program );
+		program = 0;
+	}
+}
+
+void GLSLProgram::AttachVertexShader( const char *sourceFile, const idDict &defines ) {
+	LoadAndAttachShader( GL_VERTEX_SHADER, sourceFile, defines );
+}
+
+void GLSLProgram::AttachGeometryShader( const char *sourceFile, const idDict &defines ) {
+	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
+}
+
+void GLSLProgram::AttachFragmentShader( const char *sourceFile, const idDict &defines ) {
+	LoadAndAttachShader( GL_FRAGMENT_SHADER, sourceFile, defines );
+}
+
+void GLSLProgram::BindAttribLocation( unsigned location, const char *attribName ) {
+		qglBindAttribLocation( program, location, attribName );
+}
+
+bool GLSLProgram::Link() {
+	common->Printf( "Linking GLSL program %s ...\n", name.c_str() );
+	qglLinkProgram( program );
+
+	GLint result = GL_FALSE;
+	qglGetProgramiv( program, GL_LINK_STATUS, &result );
+	if( result != GL_TRUE ) {
+		// display program info log, which may contain clues to the linking error
+		GLint length;
+		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
+		auto log = std::make_unique<char[]>( length );
+		qglGetProgramInfoLog( program, length, &result, log.get() );
+		common->Warning( "Linking program %s failed:\n%s\n", name.c_str(), log.get() );
+	}
+
+	return result;
 }
 
 void GLSLProgram::Activate() {
@@ -44,7 +102,7 @@ int GLSLProgram::GetUniformLocation(const char *uniformName) {
     return qglGetUniformLocation( program, uniformName );
 }
 
-void GLSLProgram::Validate() {
+bool GLSLProgram::Validate() {
 	GLint result = GL_FALSE;
 	qglValidateProgram( program );
 	qglGetProgramiv( program, GL_VALIDATE_STATUS, &result );
@@ -54,73 +112,25 @@ void GLSLProgram::Validate() {
 		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
 		auto log = std::make_unique<char[]>( length );
 		qglGetProgramInfoLog( program, length, &result, log.get() );
-		common->Warning( "Program validation failed:\n%s\n", log.get() );
+		common->Warning( "Validation for program %s failed:\n%s\n", name.c_str(), log.get() );
 	}
+	return result;
 }
 
-GLSLProgramLoader::GLSLProgramLoader(): program(0) {
-	program = qglCreateProgram();
-}
-
-GLSLProgramLoader::~GLSLProgramLoader() {
-	if( program != 0) {
-		qglDeleteProgram( program );
-	}
-}
-
-GLSLProgramLoader & GLSLProgramLoader::AddVertexShader( const char *sourceFile, const idDict &defines ) {
-	LoadAndAttachShader( GL_VERTEX_SHADER, sourceFile, defines );
-	return *this;
-}
-
-GLSLProgramLoader & GLSLProgramLoader::AddFragmentShader( const char *sourceFile, const idDict &defines ) {
-	LoadAndAttachShader( GL_FRAGMENT_SHADER, sourceFile, defines );
-	return *this;
-}
-
-GLSLProgramLoader & GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const idDict &defines ) {
-	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
-	return *this;
-}
-
-GLSLProgram * GLSLProgramLoader::LinkProgram() {
-	for( auto it : attribBindings ) {
-		qglBindAttribLocation( program, it.first, it.second.c_str() );
-	}
-
-	GLint result = GL_FALSE;
-
-	qglLinkProgram( program );
-	qglGetProgramiv( program, GL_LINK_STATUS, &result );
-	if( result != GL_TRUE ) {
-		// display program info log, which may contain clues to the linking error
-		GLint length;
-		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		auto log = std::make_unique<char[]>( length );
-		qglGetProgramInfoLog( program, length, &result, log.get() );
-		common->Warning( "Program linking failed:\n%s\n", log.get() );
-		return nullptr;
-	}
-
-	GLSLProgram *glslProgram = new GLSLProgram( program );
-	program = 0;  // ownership passed to glslProgram
-	return glslProgram;
-}
-
-void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
+void GLSLProgram::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
 	if( program == 0 ) {
-		common->Warning( "Tried to attach shader to an already linked program\n" );
-		return;
+		common->Error( "Tried to attach shader to an uninitialized program %s", name.c_str() );
 	}
 
 	GLuint shader = CompileShader( shaderType, sourceFile, defines );
-	if( shader != 0) {
-		qglAttachShader( program, shader );
-		// won't actually be deleted until the program it's attached to is deleted
-		qglDeleteShader( shader );
+	if( shader == 0) {
+		common->Warning( "Failed to attach shader %s to program %s.\n", sourceFile, name.c_str() );
+		return;
 	}
+	qglAttachShader( program, shader );
+	// won't actually be deleted until the program it's attached to is deleted
+	qglDeleteShader( shader );
 }
-
 
 namespace {
 
@@ -212,7 +222,7 @@ namespace {
 
 }
 
-GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
+GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
 	std::string source = ReadFile( sourceFile );
 	if( source.empty() ) {
 		return 0;
@@ -245,7 +255,7 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 		for( size_t i = 0; i < sourceFiles.size(); ++i ) {
 			ss << "  " << i << " - " << sourceFiles[i] << "\n";
 		}
-		common->Warning( ss.str().c_str() );
+		common->Warning( "%s", ss.str().c_str() );
 
 		qglDeleteShader( shader );
 		return 0;
@@ -254,38 +264,6 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 	return shader;
 }
 
-#if 0	//moved to (draw_)glsl.h/cpp
-
-globalPrograms_t globalPrograms { nullptr };
-
-namespace {
-	void LoadCubemapShader() {
-		globalPrograms.cubemapShader = GLSLProgramLoader()
-				.AddVertexShader( "cubeMap.vs" )
-				.AddFragmentShader( "cubeMap.fs" )
-				.BindDefaultAttribLocations()
-				.LinkProgram();
-		if( !globalPrograms.cubemapShader ) {
-			common->Error( "Failed to load cubemap shader" );
-		}
-		// bit of a hack, could probably encapsulate this in a nicer interface
-		globalPrograms.cubemapShader->Activate();
-		GLSLUniformSampler(globalPrograms.cubemapShader, "u_normalTexture") = 1;
-	}
-}
-
-void GLSL_InitPrograms() {
-	LoadCubemapShader();
-}
-
-void GLSL_DestroyPrograms() {
-	GLSLProgram::Deactivate();
-
-	delete globalPrograms.interactionShader;
-	globalPrograms.interactionShader = nullptr;
-}
-
-#endif
 
 /// UNIT TESTS FOR SHADER INCLUDES AND DEFINES
 

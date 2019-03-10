@@ -16,59 +16,49 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __GLSL_UNIFORMS_H__
 #define __GLSL_UNIFORMS_H__
 
-#include <idlib/math/Vector.h>
 #include "GLSLProgram.h"
 #include "qgl.h"
 
 class GLSLUniformGroup {
 public:
 	GLSLUniformGroup( GLSLProgram *program ) : program( program ) {}
+	virtual ~GLSLUniformGroup() {}
 
 protected:
 	GLSLProgram *program;
 };
 
-class GLSLUniformInt {
+class GLSLUniform_int {
 public:
-	GLSLUniformInt(GLSLProgram *program, const char *uniformName)
+	GLSLUniform_int(GLSLProgram *program, const char *uniformName)
 			: paramLocation(program->GetUniformLocation(uniformName)) {}
 
 	void Set(int value) {
 		qglUniform1i(paramLocation, value);
 	}
 
-	GLSLUniformInt &operator=(int value) {
-		Set(value);
-		return *this;
-	}
-
 private:
 	int paramLocation;
 };
 
-typedef GLSLUniformInt GLSLUniformSampler;
+typedef GLSLUniform_int GLSLUniform_sampler;
 
-class GLSLUniformFloat {
+class GLSLUniform_float {
 public:
-	GLSLUniformFloat(GLSLProgram *program, const char *uniformName)
+	GLSLUniform_float(GLSLProgram *program, const char *uniformName)
 			: paramLocation(program->GetUniformLocation(uniformName)) {}
 
 	void Set(float value) {
 		qglUniform1f(paramLocation, value);
 	}
 
-	GLSLUniformFloat &operator=(float value) {
-		Set(value);
-		return *this;
-	}
-
 private:
 	int paramLocation;
 };
 
-class GLSLUniformVec2 {
+class GLSLUniform_vec2 {
 public:
-	GLSLUniformVec2(GLSLProgram *program, const char *uniformName)
+	GLSLUniform_vec2(GLSLProgram *program, const char *uniformName)
 			: paramLocation(program->GetUniformLocation(uniformName)) {}
 
 	void Set(float v1, float v2) {
@@ -79,18 +69,13 @@ public:
 		qglUniform2fv(paramLocation, 1, value.ToFloatPtr());
 	}
 
-	GLSLUniformVec2 &operator=(const idVec2 &value) {
-		Set(value);
-		return *this;
-	}
-
 private:
 	int paramLocation;
 };
 
-class GLSLUniformVec3 {
+class GLSLUniform_vec3 {
 public:
-	GLSLUniformVec3(GLSLProgram *program, const char *uniformName)
+	GLSLUniform_vec3(GLSLProgram *program, const char *uniformName)
 			: paramLocation(program->GetUniformLocation(uniformName)) {}
 
 	void Set(float v1, float v2, float v3) {
@@ -101,18 +86,13 @@ public:
 		qglUniform3fv(paramLocation, 1, value.ToFloatPtr());
 	}
 
-	GLSLUniformVec3 &operator=(const idVec3 &value) {
-		Set(value);
-		return *this;
-	}
-
 private:
 	int paramLocation;
 };
 
-class GLSLUniformVec4 {
+class GLSLUniform_vec4 {
 public:
-	GLSLUniformVec4(GLSLProgram *program, const char *uniformName)
+	GLSLUniform_vec4(GLSLProgram *program, const char *uniformName)
 			: paramLocation(program->GetUniformLocation(uniformName)) {}
 
 	void Set(float v1, float v2, float v3, float v4) {
@@ -123,34 +103,24 @@ public:
 		qglUniform4fv(paramLocation, 1, value.ToFloatPtr());
 	}
 
-	GLSLUniformVec4 &operator=(const idVec4 &value) {
-		Set(value);
-		return *this;
-	}
-
 private:
 	int paramLocation;
 };
 
-class GLSLUniformMat4 {
+class GLSLUniform_mat4 {
 public:
-	GLSLUniformMat4(GLSLProgram *program, const char *uniformName)
+	GLSLUniform_mat4(GLSLProgram *program, const char *uniformName)
 			: paramLocation(program->GetUniformLocation(uniformName)) {}
 
 	void Set(const float *value) {
 		qglUniformMatrix4fv(paramLocation, 1, GL_FALSE, value);
 	}
 
-	GLSLUniformMat4 &operator=(const float *value) {
-		Set(value);
-		return *this;
-	}
-
 private:
 	int paramLocation;
 };
 
-#define DEFINE_UNIFORM(type, name) type name = type(program, "u_" #name)
-#define UNIFORM_GROUP_DEF(type) type(GLSLProgram *program) : GLSLUniformGroup(program) {}
+#define DEFINE_UNIFORM(type, name) GLSLUniform_##type name = GLSLUniform_##type(program, "u_" #name)
+#define UNIFORM_GROUP_DEF(type) explicit type(GLSLProgram *program) : GLSLUniformGroup(program) {}
 
 #endif

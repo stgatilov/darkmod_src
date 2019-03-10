@@ -586,6 +586,8 @@
     <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
     <ClInclude Include="renderer\GLSLProgram.h" />
+    <ClInclude Include="renderer\GLSLProgramManager.h" />
+    <ClInclude Include="renderer\GLSLUniforms.h" />
     <ClInclude Include="renderer\GuiModel.h" />
     <ClInclude Include="renderer\Image.h" />
     <ClInclude Include="renderer\Interaction.h" />
@@ -1154,6 +1156,7 @@
     <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBuffer.cpp" />
     <ClCompile Include="renderer\GLSLProgram.cpp" />
+    <ClCompile Include="renderer\GLSLProgramManager.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />
     <ClCompile Include="renderer\Image_init.cpp" />
