@@ -1150,6 +1150,7 @@
     <ClCompile Include="renderer\draw_arb2.cpp" />
     <ClCompile Include="renderer\draw_common.cpp" />
     <ClCompile Include="renderer\draw_glsl.cpp" />
+    <ClCompile Include="renderer\draw_glsl_multi.cpp" />
     <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBuffer.cpp" />
     <ClCompile Include="renderer\GLSLProgram.cpp" />

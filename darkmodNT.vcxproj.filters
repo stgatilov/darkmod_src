@@ -2821,6 +2821,9 @@
     <ClCompile Include="tests\TestRun.cpp">
       <Filter>Test</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\draw_glsl_multi.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">

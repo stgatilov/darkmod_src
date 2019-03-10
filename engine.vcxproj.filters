@@ -2953,6 +2953,9 @@
     <ClCompile Include="renderer\GLSLProgram.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\draw_glsl_multi.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">

@@ -539,7 +539,7 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 RB_SubmittInteraction
 =================
 */
-static void RB_SubmittInteraction( drawInteraction_t *din, bool multi = false ) {
+static void RB_SubmitInteraction( drawInteraction_t *din, bool multi = false ) {
 	if ( !din->bumpImage && !r_skipBump.GetBool() )
 		return;
 
@@ -760,7 +760,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) // ignore stage that fails the condition
 					break;
 				if ( !r_skipBump.GetBool() ) {
-					RB_SubmittInteraction( &inter ); // draw any previous interaction
+					RB_SubmitInteraction( &inter ); // draw any previous interaction
 					inter.diffuseImage = NULL;
 					inter.specularImage = NULL;
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
@@ -772,7 +772,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 				if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
 					break;
 				} else if ( inter.diffuseImage ) {
-					RB_SubmittInteraction( &inter );
+					RB_SubmitInteraction( &inter );
 				}
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
 				                      inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
@@ -792,7 +792,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 				else if ( backEnd.vLight->noSpecular ) {
 					break;
 				} else if ( inter.specularImage ) {
-					RB_SubmittInteraction( &inter );
+					RB_SubmitInteraction( &inter );
 				}
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
 				                      inter.specularMatrix, inter.specularColor.ToFloatPtr() );
@@ -807,7 +807,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		}
 
 		// draw the final interaction
-		RB_SubmittInteraction( &inter );
+		RB_SubmitInteraction( &inter );
 	}
 
 	// unhack depth range if needed
@@ -902,7 +902,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 					break;
 				}
 				// draw any previous interaction
-				RB_SubmittInteraction( &inter, true );
+				RB_SubmitInteraction( &inter, true );
 				inter.diffuseImage = NULL;
 				inter.specularImage = NULL;
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
@@ -913,7 +913,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 				if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
 					break;
 				} else if ( inter.diffuseImage ) {
-					RB_SubmittInteraction( &inter, true );
+					RB_SubmitInteraction( &inter, true );
 				}
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
 					inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
@@ -926,7 +926,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 					break;
 				}
 				else if ( inter.specularImage ) {
-					RB_SubmittInteraction( &inter, true );
+					RB_SubmitInteraction( &inter, true );
 				}
 				R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
 					inter.specularMatrix, inter.specularColor.ToFloatPtr() );
@@ -937,7 +937,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 		}
 
 		// draw the final interaction
-		RB_SubmittInteraction( &inter, true );
+		RB_SubmitInteraction( &inter, true );
 
 	// unhack depth range if needed
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {

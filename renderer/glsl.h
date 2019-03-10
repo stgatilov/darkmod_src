@@ -65,15 +65,40 @@ struct fogProgram_t : shaderProgram_t {
 	virtual	void AfterLoad();
 };
 
+struct cubeMapProgram_t : shaderProgram_t {
+	GLint reflective, rgtc, viewOrigin, modelMatrix;
+	virtual	void AfterLoad();
+};
+
 struct lightProgram_t : shaderProgram_t {
 	GLint lightOrigin;
 	GLint modelMatrix;
 	virtual	void AfterLoad();
 };
 
-struct cubeMapProgram_t : shaderProgram_t {
-	GLint reflective, rgtc, viewOrigin, modelMatrix;
+struct basicInteractionProgram_t : lightProgram_t {
+	GLint lightProjectionFalloff, bumpMatrix, diffuseMatrix, specularMatrix;
+	GLint colorModulate, colorAdd;
+
 	virtual	void AfterLoad();
+	virtual void UpdateUniforms( bool translucent ) {}
+	virtual void UpdateUniforms( const drawInteraction_t *din );
+};
+
+struct shadowMapProgram_t : basicDepthProgram_t {
+	GLint lightOrigin, lightRadius, modelMatrix;
+	GLint lightCount, shadowRect, shadowTexelStep, lightFrustum; // multi-light stuff
+	virtual	void AfterLoad();
+	void RenderAllLights();
+	void RenderAllLights( drawSurf_t *surf );
+};
+
+struct multiLightInteractionProgram_t : basicInteractionProgram_t {
+	static const uint MAX_LIGHTS = 16;
+	GLint lightCount, lightOrigin, lightColor, shadowRect, softShadowsRadius;
+	GLint minLevel, gamma;
+	virtual	void AfterLoad();
+	virtual void Draw( const drawInteraction_t *din );
 };
 
 extern cubeMapProgram_t cubeMapShader;
@@ -82,12 +107,14 @@ extern depthProgram_t depthShader;
 extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
+extern multiLightInteractionProgram_t multiLightShader;
 
 extern idCVarBool r_useGLSL;
 extern idCVarBool r_newFrob;
+
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );
-
+float GetEffectiveLightRadius();
 
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.
