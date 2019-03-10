@@ -20,51 +20,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 GLuint GLSLProgram::currentProgram = 0;
 
-GLSLProgram * GLSLProgram::Load( const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
-	return Load( idDict(), vertexSourceFile, fragmentSourceFile, geometrySourceFile );	
-}
-
-GLSLProgram * GLSLProgram::Load( const idDict &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile ) {
-	if( !geometrySourceFile )
-		geometrySourceFile = "";
-	GLSLProgramLoader loader;
-	loader.AddVertexShader( vertexSourceFile, defines );
-	loader.AddFragmentShader( fragmentSourceFile, defines );
-	if( geometrySourceFile[0] ) {
-		loader.AddGeometryShader( geometrySourceFile, defines );
-	}
-	GLSLProgram *prog = loader.LinkProgram();
-	prog->filenames[0] = vertexSourceFile;
-	prog->filenames[1] = fragmentSourceFile;
-	prog->filenames[2] = geometrySourceFile;
-	prog->defines = defines;
-	return prog;
-}
-
 GLSLProgram::GLSLProgram( GLuint program ) : program( program ) {}
 
 GLSLProgram::~GLSLProgram() {
 	qglDeleteProgram( program );
-}
-
-void GLSLProgram::Swap(GLSLProgram *other) {
-	assert(other);
-	//TODO: is there clearer way to do this without stupingly enumerating all members?
-	GLSLProgram temp(0);
-	temp = *this;
-	*this = *other;
-	*other = temp;
-}
-
-const char* GLSLProgram::GetFileName(GLint shaderType) const {
-	if (shaderType == GL_VERTEX_SHADER)
-		return filenames[0];
-	if (shaderType == GL_FRAGMENT_SHADER)
-		return filenames[1];
-	if (shaderType == GL_GEOMETRY_SHADER)
-		return filenames[2];
-	assert(0);
-	return nullptr;
 }
 
 void GLSLProgram::Activate() {
@@ -81,111 +40,22 @@ void GLSLProgram::Deactivate() {
 	currentProgram = 0;
 }
 
-void GLSLProgram::Reload() {
-	Deactivate();
-	GLSLProgram *newProg = GLSLProgram::Load(defines, filenames[0], filenames[1], filenames[2]);
-	assert(newProg);
+int GLSLProgram::GetUniformLocation(const char *uniformName) {
+    return qglGetUniformLocation( program, uniformName );
+}
 
-	newProg->Activate();
-	for (int i = 0; i < boundAttributes.Num(); i++) {
-		newProg->BindAttribLocation(boundAttributes[i].index, boundAttributes[i].name);
+void GLSLProgram::Validate() {
+	GLint result = GL_FALSE;
+	qglValidateProgram( program );
+	qglGetProgramiv( program, GL_VALIDATE_STATUS, &result );
+	if( result != GL_TRUE ) {
+		// display program info log, which may contain clues to the linking error
+		GLint length;
+		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
+		auto log = std::make_unique<char[]>( length );
+		qglGetProgramInfoLog( program, length, &result, log.get() );
+		common->Warning( "Program validation failed:\n%s\n", log.get() );
 	}
-	for (int i = 0; i < aliasLocationMap.Num(); i++) {
-		newProg->AddUniformAlias(aliasLocationMap[i].alias, aliasNames[i]);
-	}
-	//TODO: refactor it so that this returns error messages?...
-	qglLinkProgram(newProg->program);
-	Deactivate();
-
-	Swap(newProg);
-	delete newProg;
-}
-
-void GLSLProgram::BindAttribLocation( GLuint index, const char *name ) {
-	qglBindAttribLocation( program, index, name );
-	for (int i = 0; i < boundAttributes.Num(); i++) {
-		if (boundAttributes[i].name == name) {
-			boundAttributes[i].index = i;
-			return;
-		}
-	}
-	bindAttribute_t add = { index, name };
-	boundAttributes.Append(add);
-}
-
-void GLSLProgram::AddUniformAlias( int alias, const char *uniformName ) {
-	int location = qglGetUniformLocation( program, uniformName );
-	if( location == -1 ) {
-		//note: avoiding such warnings is hardly compatible with reusing packs of uniforms
-		//common->Warning( "Did not find active uniform: %s\n", uniformName );
-	}
-	aliasLocationMap.Append( aliasLocation_t { alias, location } );
-	aliasNames.Append(uniformName);
-}
-
-void GLSLProgram::Uniform1fL( int location, GLfloat value ) {
-	Activate();
-	qglUniform1f( location, value );
-}
-
-void GLSLProgram::Uniform2fL( int location, GLfloat v1, GLfloat v2 ) {
-	Activate();
-	qglUniform2f( location, v1, v2 );
-}
-
-void GLSLProgram::Uniform3fL( int location, GLfloat v1, GLfloat v2, GLfloat v3 ) {
-	Activate();
-	qglUniform3f( location, v1, v2, v3 );
-}
-
-void GLSLProgram::Uniform4fL( int location, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4 ) {
-	Activate();
-	qglUniform4f( location, v1, v2, v3, v4 );
-}
-
-void GLSLProgram::Uniform1iL( int location, GLint value ) {
-	Activate();
-	qglUniform1i( location, value );
-}
-
-void GLSLProgram::Uniform2iL( int location, GLint v1, GLint v2 ) {
-	Activate();
-	qglUniform2i( location, v1, v2 );
-}
-
-void GLSLProgram::Uniform3iL( int location, GLint v1, GLint v2, GLint v3 ) {
-	Activate();
-	qglUniform3i( location, v1, v2, v3 );
-}
-
-void GLSLProgram::Uniform4iL( int location, GLint v1, GLint v2, GLint v3, GLint v4 ) {
-	Activate();
-	qglUniform4i( location, v1, v2, v3, v4 );
-}
-
-void GLSLProgram::Uniform2fL( int location, const idVec2 &value ) {
-	Activate();
-	qglUniform2fv( location, 1, value.ToFloatPtr() );
-}
-
-void GLSLProgram::Uniform3fL( int location, const idVec3 &value ) {
-	Activate();
-	qglUniform3fv( location, 1, value.ToFloatPtr() );
-}
-
-void GLSLProgram::Uniform4fL( int location, const idVec4 &value ) {
-	Activate();
-	qglUniform4fv( location, 1, value.ToFloatPtr() );
-}
-
-void GLSLProgram::Uniform4fvL( int location, GLfloat *value ) {
-	Activate();
-	qglUniform4fv(location, 1, value);
-}
-
-void GLSLProgram::UniformMatrix4L( int location, const GLfloat *matrix ) {
-	Activate();
-	qglUniformMatrix4fv( location, 1, GL_FALSE, matrix );
 }
 
 GLSLProgramLoader::GLSLProgramLoader(): program(0) {
@@ -198,19 +68,26 @@ GLSLProgramLoader::~GLSLProgramLoader() {
 	}
 }
 
-void GLSLProgramLoader::AddVertexShader( const char *sourceFile, const idDict &defines ) {
+GLSLProgramLoader & GLSLProgramLoader::AddVertexShader( const char *sourceFile, const idDict &defines ) {
 	LoadAndAttachShader( GL_VERTEX_SHADER, sourceFile, defines );
+	return *this;
 }
 
-void GLSLProgramLoader::AddFragmentShader( const char *sourceFile, const idDict &defines ) {
+GLSLProgramLoader & GLSLProgramLoader::AddFragmentShader( const char *sourceFile, const idDict &defines ) {
 	LoadAndAttachShader( GL_FRAGMENT_SHADER, sourceFile, defines );
+	return *this;
 }
 
-void GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const idDict &defines ) {
+GLSLProgramLoader & GLSLProgramLoader::AddGeometryShader( const char *sourceFile, const idDict &defines ) {
 	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
+	return *this;
 }
 
 GLSLProgram * GLSLProgramLoader::LinkProgram() {
+	for( auto it : attribBindings ) {
+		qglBindAttribLocation( program, it.first, it.second.c_str() );
+	}
+
 	GLint result = GL_FALSE;
 
 	qglLinkProgram( program );
@@ -223,18 +100,6 @@ GLSLProgram * GLSLProgramLoader::LinkProgram() {
 		qglGetProgramInfoLog( program, length, &result, log.get() );
 		common->Warning( "Program linking failed:\n%s\n", log.get() );
 		return nullptr;
-	}
-
-	qglValidateProgram( program );
-	qglGetProgramiv( program, GL_VALIDATE_STATUS, &result );
-	if( result != GL_TRUE ) {
-		// display program info log, which may contain clues to the linking error
-		GLint length;
-		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		auto log = std::make_unique<char[]>( length );
-		qglGetProgramInfoLog( program, length, &result, log.get() );
-		common->Warning( "Program validation failed:\n%s\n", log.get() );
-		//return nullptr;
 	}
 
 	GLSLProgram *glslProgram = new GLSLProgram( program );
@@ -256,15 +121,14 @@ void GLSLProgramLoader::LoadAndAttachShader( GLint shaderType, const char *sourc
 	}
 }
 
+
 namespace {
 
-	std::string ReadFile( const char *sourceFile, bool silent = false ) {
+	std::string ReadFile( const char *sourceFile ) {
 		void *buf = nullptr;
 		int len = fileSystem->ReadFile( idStr("glprogs/") + sourceFile, &buf );
 		if( buf == nullptr ) {
-			if ( !silent ) {
-				common->Warning( "Could not open shader file %s", sourceFile );
-			}
+			common->Warning( "Could not open shader file %s", sourceFile );
 			return "";
 		}
 		std::string contents( static_cast< char* >( buf ), len );
@@ -390,50 +254,28 @@ GLuint GLSLProgramLoader::CompileShader( GLint shaderType, const char *sourceFil
 	return shader;
 }
 
-GLSLProgram * GLSLProgram::Load( const char *programFileName, const idDict *defines ) {
-	idDict empty;
-	if (!defines) {
-		defines = &empty;
-	}
-
-	idStr vsName = idStr(programFileName) + ".vs";
-	idStr fsName = idStr(programFileName) + ".fs";
-	idStr gsName = idStr(programFileName) + ".gs";
-	if (ReadFile(programFileName, true).empty())
-		gsName.Clear();
-
-	return GLSLProgram::Load(*defines, vsName, fsName, gsName);
-}
-
 #if 0	//moved to (draw_)glsl.h/cpp
 
 globalPrograms_t globalPrograms { nullptr };
 
 namespace {
-	void BindDefaultAttribLocations( GLSLProgram *program ) {
-		program->BindAttribLocation( 0, "attr_Position" );
-		program->BindAttribLocation( 2, "attr_Normal" );
-		program->BindAttribLocation( 3, "attr_Color" );
-		program->BindAttribLocation( 8, "attr_TexCoord" );
-		program->BindAttribLocation( 9, "attr_Tangent" );
-		program->BindAttribLocation( 10, "attr_Bitangent" );
-	}
-
-	void LoadInteractionShader() {
-		// stub, change/expand as needed
-		idDict interactionDefines;
-		interactionDefines.Set( "SHADOW_TYPE", "1" );
-		globalPrograms.interactionShader = GLSLProgram::Load( interactionDefines, "interaction.vs", "interaction.fs" );
-		if( !globalPrograms.interactionShader ) {
-			common->Error( "Failed to load interaction shader" );
+	void LoadCubemapShader() {
+		globalPrograms.cubemapShader = GLSLProgramLoader()
+				.AddVertexShader( "cubeMap.vs" )
+				.AddFragmentShader( "cubeMap.fs" )
+				.BindDefaultAttribLocations()
+				.LinkProgram();
+		if( !globalPrograms.cubemapShader ) {
+			common->Error( "Failed to load cubemap shader" );
 		}
-		BindDefaultAttribLocations( globalPrograms.interactionShader );
-		globalPrograms.interactionShader->AddUniformAlias( MVP_MATRIX, "u_mvpMatrix" );
+		// bit of a hack, could probably encapsulate this in a nicer interface
+		globalPrograms.cubemapShader->Activate();
+		GLSLUniformSampler(globalPrograms.cubemapShader, "u_normalTexture") = 1;
 	}
 }
 
 void GLSL_InitPrograms() {
-	LoadInteractionShader();
+	LoadCubemapShader();
 }
 
 void GLSL_DestroyPrograms() {

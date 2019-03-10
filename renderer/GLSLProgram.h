@@ -16,92 +16,44 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __GLSL_PROGRAM_H__
 #define __GLSL_PROGRAM_H__
 
+#include <unordered_map>
+#include <typeindex>
+#include <typeinfo>
+
+class GLSLUniformGroup;
+
 class GLSLProgram {
 public:
-	static GLSLProgram * Load( const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile = nullptr );
-	static GLSLProgram * Load( const idDict &defines, const char *vertexSourceFile, const char *fragmentSourceFile, const char *geometrySourceFile = nullptr );
-	static GLSLProgram * Load( const char *programFileName, const idDict *defines = nullptr );
-
 	~GLSLProgram();
-	void Swap(GLSLProgram *other);
-
-	const char* GetFileName(GLint shaderType) const;
-	const idDict &GetDefines() const { return defines; }
 
 	void Activate();
 	static void Deactivate();
-	void Reload();
 
-	//note: attribute bindings will take effect only after calling Reload!
-	void BindAttribLocation( GLuint index, const char *name );
+	int GetUniformLocation( const char *uniformName );
 
-	void AddUniformAlias( int alias, const char *uniformName );
+	template<typename Group>
+	Group *GetUniformGroup() {
+		GLSLUniformGroup *& group = uniformGroups[typeid(Group)];
+		if( group == nullptr ) {
+			group = new Group( this );
+		}
+		return static_cast<Group*>(group);
+	}
 
-	// use these functions to bind a value directly to a uniform location
-	void Uniform1fL( int location, GLfloat value );
-	void Uniform2fL( int location, GLfloat v1, GLfloat v2 );
-	void Uniform3fL( int location, GLfloat v1, GLfloat v2, GLfloat v3 );
-	void Uniform4fL( int location, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4 );
-	void Uniform1iL( int location, GLint value );
-	void Uniform2iL( int location, GLint v1, GLint v2 );
-	void Uniform3iL( int location, GLint v1, GLint v2, GLint v3 );
-	void Uniform4iL( int location, GLint v1, GLint v2, GLint v3, GLint v4 );
-	void Uniform2fL( int location, const idVec2 &value );
-	void Uniform3fL( int location, const idVec3 &value );
-	void Uniform4fL( int location, const idVec4 &value );
-	void Uniform4fvL( int location, GLfloat *value );
-	void UniformMatrix4L( int location, const GLfloat *matrix );
+	void Validate();
 
-	// use these functions to bind a value by an alias defined for a uniform name via AddUniformAlias
-	void Uniform1f( int alias, GLfloat value ) { Uniform1fL( AliasToLocation( alias ), value ); }
-	void Uniform2f( int alias, GLfloat v1, GLfloat v2 ) { Uniform2fL( AliasToLocation( alias ), v1, v2 ); }
-	void Uniform3f( int alias, GLfloat v1, GLfloat v2, GLfloat v3 ) { Uniform3fL( AliasToLocation( alias ), v1, v2, v3 ); }
-	void Uniform4f( int alias, GLfloat v1, GLfloat v2, GLfloat v3, GLfloat v4 ) { Uniform4fL( AliasToLocation( alias ), v1, v2, v3, v4 ); }
-	void Uniform1i( int alias, GLint value ) { Uniform1iL( AliasToLocation( alias ), value ); }
-	void Uniform2i( int alias, GLint v1, GLint v2 ) { Uniform2iL( AliasToLocation( alias ), v1, v2 ); }
-	void Uniform3i( int alias, GLint v1, GLint v2, GLint v3 ) { Uniform3iL( AliasToLocation( alias ), v1, v2, v3 ); }
-	void Uniform4i( int alias, GLint v1, GLint v2, GLint v3, GLint v4 ) { Uniform4iL( AliasToLocation( alias ), v1, v2, v3, v4 ); }
-	void Uniform2f( int alias, const idVec2 &value ) { Uniform2fL( AliasToLocation( alias ), value ); }
-	void Uniform3f( int alias, const idVec3 &value ) { Uniform3fL( AliasToLocation( alias ), value ); }
-	void Uniform4f( int alias, const idVec4 &value ) { Uniform4fL( AliasToLocation( alias ), value ); }
-	void Uniform4fv( int alias, GLfloat *value ) { Uniform4fvL( AliasToLocation( alias ), value ); }
-	void UniformMatrix4( int alias, const GLfloat *matrix ) { UniformMatrix4L( AliasToLocation( alias ), matrix ); }
+	GLSLProgram( const GLSLProgram &other ) = delete;
+	GLSLProgram & operator=( const GLSLProgram &other ) = delete;
+	GLSLProgram( GLSLProgram &&other ) = delete;
+	GLSLProgram & operator=( GLSLProgram &&other ) = delete;
 
 private:
 	static GLuint currentProgram;
 
-	idStr filenames[3];
-	idDict defines;
-
 	GLuint program;
-
-	struct aliasLocation_t {
-		int alias;
-		int location;
-	};
-	idList<aliasLocation_t> aliasLocationMap;
-	idList<idStr> aliasNames;
-
-	struct bindAttribute_t {
-		int index;
-		idStr name;
-	};
-	idList<bindAttribute_t> boundAttributes;
+	std::unordered_map<std::type_index, GLSLUniformGroup*> uniformGroups;
 
 	explicit GLSLProgram( GLuint program );
-
-	int AliasToLocation( int alias ) const {
-		for( int i = 0; i < aliasLocationMap.Num(); ++i ) {
-			if( aliasLocationMap[i].alias == alias ) {
-				return aliasLocationMap[i].location;
-			}
-		}
-		common->Warning( "Missing uniform alias %d\n", alias );
-		return -1;
-	}
-
-	GLSLProgram( const GLSLProgram &other ) = default;
-	GLSLProgram & operator=( const GLSLProgram &other ) = default;
 
 	friend class GLSLProgramLoader;
 };
@@ -111,28 +63,26 @@ public:
 	GLSLProgramLoader();
 	~GLSLProgramLoader();
 
-	void AddVertexShader( const char *sourceFile, const idDict &defines = idDict() );
-	void AddFragmentShader( const char *sourceFile, const idDict &defines = idDict() );
-	void AddGeometryShader( const char *sourceFile, const idDict &defines = idDict() );
+	GLSLProgramLoader & AddVertexShader( const char *sourceFile, const idDict &defines = idDict() );
+	GLSLProgramLoader & AddFragmentShader( const char *sourceFile, const idDict &defines = idDict() );
+	GLSLProgramLoader & AddGeometryShader( const char *sourceFile, const idDict &defines = idDict() );
+
+	GLSLProgramLoader & BindAttribLocation( unsigned int location, const char *attribName );
+	GLSLProgramLoader & BindDefaultAttribLocations();
 
 	GLSLProgram * LinkProgram();
 
 private:
 	GLuint program;
+	std::unordered_map<unsigned int, std::string> attribBindings;
 
 	void LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 	GLuint CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 };
 
 #if 0
-enum glslUniformAlias_t {
-	PROJECTION_MATRIX,
-	MODELVIEW_MATRIX,
-	MVP_MATRIX,
-};
-
 struct globalPrograms_t {
-	GLSLProgram *interactionShader;
+	GLSLProgram *cubemapShader;
 };
 
 extern globalPrograms_t globalPrograms;

@@ -19,6 +19,16 @@
 #include "glsl.h"
 #include "FrameBuffer.h"
 #include "Profiling.h"
+#include "GLSLProgram.h"
+#include "GLSLUniforms.h"
+
+struct CubemapUniforms : public GLSLUniformGroup {
+	UNIFORM_GROUP_DEF(CubemapUniforms)
+
+	DEFINE_UNIFORM(GLSLUniformFloat, reflective);
+	DEFINE_UNIFORM(GLSLUniformVec3, viewOrigin);
+	DEFINE_UNIFORM(GLSLUniformMat4, modelMatrix);
+};
 
 /*
 ================
@@ -47,10 +57,11 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 
 		// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 		//R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
-		cubeMapShader.Use();
-		qglUniform1f( cubeMapShader.reflective, 1 );
-		qglUniformMatrix4fv( cubeMapShader.modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
-		qglUniform3fv( cubeMapShader.viewOrigin, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
+		globalPrograms.cubemapShader->Activate();
+		CubemapUniforms *uniforms = globalPrograms.cubemapShader->GetUniformGroup<CubemapUniforms>();
+		uniforms->reflective = 1;
+		uniforms->modelMatrix = backEnd.currentSpace->modelMatrix;
+		uniforms->viewOrigin = backEnd.viewDef->renderView.vieworg;
 	} else {
 		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
 		qglDisableVertexAttribArray( 3 );
@@ -131,7 +142,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableVertexAttribArray( 8 );
 			qglDisableVertexAttribArray( 9 );
 			qglDisableVertexAttribArray( 10 );
-			qglUniform1f( cubeMapShader.reflective, 0 );
+			globalPrograms.cubemapShader->GetUniformGroup<CubemapUniforms>()->reflective = 0;
 		}
 		qglDisableVertexAttribArray( 3 );
 		qglUseProgram( 0 );
@@ -446,7 +457,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	case TG_WOBBLESKY_CUBE:
 		qglEnableVertexAttribArray( 8 );
 		qglVertexAttribPointer( 8, 3, GL_FLOAT, false, 0, vertexCache.VertexPosition( surf->dynamicTexCoords ) );
-		cubeMapShader.Use();
+		globalPrograms.cubemapShader->Activate();
 		break;
 	case TG_REFLECT_CUBE:
 		GL_FloatColor( color );
