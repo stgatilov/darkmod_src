@@ -1119,7 +1119,7 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	assert( light != NULL );
 
-	if ( r_shadows.GetInteger() == 0 || r_shadows.GetInteger() == 2 && light->viewLight && !light->viewLight->tooBigForShadowMaps )
+	if ( light->viewLight && light->viewLight->shadows != LS_STENCIL )
 		return NULL;
 
 	if ( tri->numSilEdges == 0 || tri->numIndexes == 0 || tri->numVerts == 0 ) {

@@ -79,6 +79,12 @@ typedef enum {
 	DC_SET_PLAYER_PORTAL_LOSS	// grayman #3042
 } demoCommand_t;
 
+typedef enum {
+	LS_NONE,
+	LS_STENCIL,
+	LS_MAPS
+} lightShadows_t;
+
 /*
 ==============================================================================
 
@@ -352,7 +358,6 @@ typedef struct viewLight_s {
 	int						shadowMapIndex;				// zero - shadow maps not used, positive - shadow page index +1
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
-	bool					tooBigForShadowMaps;		// shadow maps annoyingly pixelated
 	bool					singleLightOnly;			// multi-light shader can't handle it
 	bool					pointLight;
 	bool					noShadows;
@@ -364,6 +369,7 @@ typedef struct viewLight_s {
 	idPlane					lightProject[4];			// light project used by backend
 	idPlane					fogPlane;					// fog plane for backend fog volume rendering
 	srfTriangles_t 			*frustumTris;				// light frustum for backend fog volume rendering
+	lightShadows_t 			shadows;					// per-light shadowing mode, not always == r_shadows
 	const idMaterial 		*lightShader;				// light shader used by backend
 	const float				*shaderRegisters;			// shader registers used by backend
 	idImage 				*falloffImage;				// falloff image used by backend

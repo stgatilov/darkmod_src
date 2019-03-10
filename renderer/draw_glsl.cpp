@@ -161,8 +161,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 4 );
 	din->specularImage->Bind();
 
-	//if( !(r_shadows.GetInteger() == 2 && backEnd.vLight->tooBigForShadowMaps) ) // special case - no softening
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || (r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps) )
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || backEnd.vLight->shadows == LS_MAPS )
 		FB_BindShadowTexture();
 
 	// draw it
@@ -224,7 +223,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 3 );
 
 	// disable features
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || (r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps) ) {
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || backEnd.vLight->shadows == LS_STENCIL ) {
 		GL_SelectTexture( 6 );
 		globalImages->BindNull();
 		GL_SelectTexture( 7 );
@@ -483,7 +482,7 @@ void RB_GLSL_DrawInteractions_SingleLight() {
 	if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions )
 		return;
 
-	if ( r_shadows.GetInteger() == 2 && !backEnd.vLight->tooBigForShadowMaps ) {
+	if ( backEnd.vLight->shadows == LS_MAPS ) {
 		RB_GLSL_DrawLight_ShadowMap();
 	} else {
 		RB_GLSL_DrawLight_Stencil();
@@ -580,11 +579,9 @@ void RB_GLSL_DrawInteractions() {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
-		for ( auto vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-			auto shader = vLight->lightShader;
-			if ( shader->LightCastsShadows() && !vLight->tooBigForShadowMaps )
+		for ( auto vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next )
+			if ( vLight->shadows == LS_MAPS )
 				vLight->shadowMapIndex = ++ShadowAtlasIndex;
-		}
 		ShadowAtlasIndex = 0; // reset for next run
 
 		if ( r_shadowMapSinglePass.GetBool() )
@@ -1034,10 +1031,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	if ( doShadows && r_shadows.GetInteger() == 2 ) // FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 		doShadows = vLight->globalInteractions != NULL;
 	if ( doShadows ) {
-		if(r_shadows.GetInteger() == 2 && vLight->tooBigForShadowMaps )
-			qglUniform1f( shadows, 1 );
-		else
-			qglUniform1f( shadows, r_shadows.GetInteger() );
+		qglUniform1f( shadows, vLight->shadows );
 		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
 		if ( 0 ) { // select the pixels to TexCoords method for interactionA.fs
 			idVec4 v( page.x, page.y, 0, page.width );

@@ -432,7 +432,7 @@ void CheckCreateShadow() {
 
 	bool depthBitsModified = r_fboDepthBits.IsModified();
 	// reset textures
-	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight && backEnd.vLight->tooBigForShadowMaps;
+	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight && backEnd.vLight->shadows == LS_STENCIL;
 	if ( stencilPath )
 		if ( r_fboSeparateStencil.GetBool() ) {
 			// currentDepthImage is initialized there
@@ -441,7 +441,7 @@ void CheckCreateShadow() {
 		} else {
 			globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 		}
-	if ( !stencilPath )
+	else
 		globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize.GetInteger(), 6 * r_shadowMapSize.GetInteger(), GL_DEPTH );
 
 	auto check = []( GLuint &fbo ) {
@@ -558,7 +558,7 @@ void FB_ApplyScissor() {
 
 void FB_ToggleShadow( bool on ) {
 	CheckCreateShadow();
-	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight && backEnd.vLight->tooBigForShadowMaps;
+	auto stencilPath = r_shadows.GetInteger() == 1 || backEnd.vLight && backEnd.vLight->shadows == LS_STENCIL;
 	if ( on && stencilPath ) {
 		// most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 		if ( !depthCopiedThisView && !r_fboSeparateStencil.GetBool() ) {
