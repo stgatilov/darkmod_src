@@ -17,6 +17,7 @@
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "math.h"
 #ifdef __ppc__
 #include <vecLib/vecLib.h>
 #endif
@@ -1079,7 +1080,7 @@ void R_Tools() {
 	static idCVarInt r_maxTri("r_maxTri", "0", CVAR_RENDERER, "Limit max tri per draw call" );
 	if ( r_maxTri ) {
 		auto limitTris = [](drawSurf_t *surf) {
-			surf->numIndexes = min( r_maxTri, surf->numIndexes );
+			surf->numIndexes = Min<int>( r_maxTri, surf->numIndexes );
 		};
 		for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ )
 			limitTris( tr.viewDef->drawSurfs[i] );
