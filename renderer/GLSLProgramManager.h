@@ -30,14 +30,14 @@ public:
 
 	// Load program by convention: assumes that the shader source files are named
 	// <name>.fs, <name>.vs, <name>.gs and that the default attributes should be bound.
-	GLSLProgram *Load( const char *name, const idDict &defines = idDict() );
+	GLSLProgram *Load( const idStr &name, const idDict &defines = idDict() );
 
 	// Load program from individually specified source files. Default attributes will be bound.
-	GLSLProgram *LoadFromFiles( const char *name, const char *vertexSource, const char *fragmentSource, const idDict &defines = idDict() );
-	GLSLProgram *LoadFromFiles( const char *name, const char *vertexSource, const char *fragmentSource, const char *geometrySource, const idDict &defines = idDict() );
+	GLSLProgram *LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idDict &defines = idDict() );
+	GLSLProgram *LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idStr &geometrySource, const idDict &defines = idDict() );
 
 	// Register a GLSLProgram with a generating function.
-	GLSLProgram *LoadFromGenerator( const char *name, Generator generator );
+	GLSLProgram *LoadFromGenerator( const char *name, const Generator &generator );
 
 	GLSLProgram *Find( const char *name );
 

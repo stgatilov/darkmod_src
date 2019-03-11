@@ -22,7 +22,7 @@ GLSLProgramManager programManagerInstance;
 GLSLProgramManager *programManager = &programManagerInstance;
 
 namespace {
-	void GenerateFromFiles( GLSLProgram *program, const char *vertexSource, const char *fragmentSource, const char *geometrySource, const idDict &defines ) {
+	void DefaultProgramInit( GLSLProgram *program, const idDict &defines, const char *vertexSource, const char *fragmentSource, const char *geometrySource = nullptr ) {
 		program->Init();
 		if( vertexSource != nullptr ) {
 			program->AttachVertexShader( vertexSource, defines );
@@ -59,29 +59,29 @@ void GLSLProgramManager::Shutdown() {
 	cubeMapShader = nullptr;
 }
 
-GLSLProgram * GLSLProgramManager::Load( const char *name, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
 	Generator generator = [=]( GLSLProgram *program ) {
 		if( fileSystem->FindFile( idStr("glprogs/") + name + ".gs" ) != FIND_NO ) {
-			GenerateFromFiles( program, idStr(name) + ".vs", idStr(name) + ".fs", idStr(name) + ".gs", defines );
+			DefaultProgramInit( program, defines, name + ".vs", name + ".fs", name + ".gs" );
 		} else {
-			GenerateFromFiles( program, idStr(name) + ".vs", idStr(name) + ".fs", nullptr, defines );
+			DefaultProgramInit( program, defines, name + ".vs", name + ".fs", nullptr );
 		}
 	};
 	return LoadFromGenerator( name, generator );	
 }
 
-GLSLProgram * GLSLProgramManager::LoadFromFiles( const char *name, const char *vertexSource, const char *fragmentSource, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idDict &defines ) {
 	return LoadFromFiles( name, vertexSource, fragmentSource, nullptr, defines );
 }
 
-GLSLProgram * GLSLProgramManager::LoadFromFiles( const char *name, const char *vertexSource, const char *fragmentSource, const char *geometrySource, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idStr &geometrySource, const idDict &defines ) {
 	Generator generator = [=]( GLSLProgram *program ) {
-		GenerateFromFiles( program, vertexSource, fragmentSource, geometrySource, defines );
+		DefaultProgramInit( program, defines, vertexSource, fragmentSource, geometrySource );
 	};
 	return LoadFromGenerator( name, generator );
 }
 
-GLSLProgram * GLSLProgramManager::LoadFromGenerator( const char *name, Generator generator ) {
+GLSLProgram * GLSLProgramManager::LoadFromGenerator( const char *name, const Generator &generator ) {
 	programWithGenerator_t *entry = FindEntry( name );
 	if( entry != nullptr ) {
 		common->Warning( "Program %s already exists and is being overwritten.\n", name );
@@ -139,17 +139,6 @@ void GLSLProgramManager::Reload( programWithGenerator_t *entry ) {
 // INITIALIZE BUILTIN PROGRAMS HERE
 
 namespace {
-	void DefaultProgramInit( GLSLProgram *program, const idDict &defines, const char *vertexSource, const char *fragmentSource, const char *geometrySource = nullptr ) {
-		program->Init();
-		program->AttachVertexShader( vertexSource, defines );
-		program->AttachFragmentShader( fragmentSource, defines );
-		if( geometrySource != nullptr ) {
-			program->AttachGeometryShader( geometrySource, defines );
-		}
-		Attributes::Default::Bind( program );
-		program->Link();
-	}
-
 	void InitInteractionShader( GLSLProgram *program ) {
 		idDict defines;
 		// TODO: set some defines based on cvars
