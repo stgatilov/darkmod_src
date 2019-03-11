@@ -2889,7 +2889,7 @@ void idSessionLocal::Frame() {
 		r_swapIntervalTemp = 1;
 	} else
 		if ( r_swapIntervalTemp ^ r_swapInterval ) // avoid useless hassle
-			r_swapIntervalTemp = r_swapInterval;
+			r_swapIntervalTemp = (int)r_swapInterval;
 
 	if ( !mapSpawned ) {
 		return;

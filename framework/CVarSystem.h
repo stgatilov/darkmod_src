@@ -178,26 +178,20 @@ private:
 	static idCVar *			staticVars;
 };
 
-class idCVarInt : idCVar {
+class idCVarInt : public idCVar {
 public:
 	idCVarInt( const char *name, const char *value, int flags, const char *description )
 		: idCVar( name, value, flags | CVAR_INTEGER, description ) {}
 	operator				int() { return GetInteger(); }
 	void operator			= ( int newValue ) { SetInteger( newValue ); }
-	using idCVar::SetModified;
-	using idCVar::IsModified;
-	using idCVar::ClearModified;
 };
 
-class idCVarBool : idCVar {
+class idCVarBool : public idCVar {
 public:
 	idCVarBool( const char *name, const char *value, int flags, const char *description )
 		: idCVar( name, value, flags | CVAR_BOOL, description ) {}
 	operator				bool() { return GetBool(); }
 	void operator			= ( bool newValue ) { SetBool( newValue ); }
-	using idCVar::SetModified;
-	using idCVar::IsModified;
-	using idCVar::ClearModified;
 };
 
 ID_INLINE idCVar::idCVar( const char *name, const char *value, int flags, const char *description,
