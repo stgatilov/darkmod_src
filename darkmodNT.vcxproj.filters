@@ -1432,6 +1432,9 @@
     <ClInclude Include="tests\TestRun.h">
       <Filter>Test</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\GLSLProgramManager.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2822,6 +2825,9 @@
       <Filter>Test</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_glsl_multi.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\GLSLProgramManager.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
