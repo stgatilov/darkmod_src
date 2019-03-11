@@ -623,7 +623,6 @@ static bool RB_CheckTools( int width, int height ) {
 	     r_showVertexColor.GetBool() ||
 	     r_showShadowCount.GetBool() ||
 	     r_showTris.GetBool() ||
-	     r_showPortals.GetBool() ||
 	     r_showTexturePolarity.GetBool() ||
 	     r_showTangentSpace.GetBool() ||
 	     r_showDepth.GetBool() ) {

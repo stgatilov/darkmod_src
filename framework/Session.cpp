@@ -2691,7 +2691,6 @@ void idSessionLocal::Frame() {
 	r_showSilhouette.GetBool() || 
 	r_showViewEntitys.GetBool() || 
 	r_showEdges.GetBool() || 
-	r_showPortals.GetBool() ||
 	r_showViewEntitys.GetBool() ||
 	r_showShadowCount.GetBool() ||
 	r_showLightCount.GetBool() ||
