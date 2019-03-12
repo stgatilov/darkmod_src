@@ -2025,7 +2025,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadHeader();
 
-	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision())
+	if (!cv_force_savegame_load.GetBool() && savegame.GetCodeRevision() != RevisionTracker::Instance().GetHighestRevision()
+		&& savegame.GetCodeRevision() != 7932)	//stgatilov: allow 2.07-hotfix to load 2.07-original savegames
 	{
 		gameLocal.Printf("Can't load this savegame, was saved with an old revision %d\n", savegame.GetCodeRevision());
 		return false;
