@@ -43,11 +43,6 @@ struct basicDepthProgram_t : shaderProgram_t {
 	void FillDepthBuffer( const drawSurf_t *surf );
 };
 
-struct depthProgram_t : basicDepthProgram_t {
-	GLint clipPlane, matViewRev;
-	virtual	void AfterLoad();
-};
-
 struct blendProgram_t : shaderProgram_t {
 	GLint			tex0PlaneS;
 	GLint			tex0PlaneT;
@@ -64,11 +59,6 @@ struct fogProgram_t : shaderProgram_t {
 	GLint			fogEnter;
 	GLint			texture1;
 	GLint			fogColor;
-	virtual	void AfterLoad();
-};
-
-struct cubeMapProgram_t : shaderProgram_t {
-	GLint reflective, rgtc, viewOrigin, modelMatrix;
 	virtual	void AfterLoad();
 };
 
@@ -103,9 +93,7 @@ struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	virtual void Draw( const drawInteraction_t *din );
 };
 
-extern cubeMapProgram_t cubeMapShader;
 extern oldStageProgram_t oldStageShader;
-extern depthProgram_t depthShader;
 extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;

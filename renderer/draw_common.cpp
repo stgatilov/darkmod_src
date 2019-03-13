@@ -31,6 +31,17 @@ struct CubemapUniforms : public GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix );
 };
 
+struct DepthUniforms : public GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( DepthUniforms );
+
+	DEFINE_UNIFORM( float, alphaTest );
+	DEFINE_UNIFORM( vec4, clipPlane );
+	DEFINE_UNIFORM( mat4, matViewRev );
+	DEFINE_UNIFORM( vec4, color );
+
+	const int instances = 6;
+};
+
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
@@ -171,6 +182,115 @@ FILL DEPTH BUFFER
 */
 
 
+void RB_SingleSurfaceToDepthBuffer( const drawSurf_t *surf ) {
+	idVec4 color;
+	const idMaterial		*shader = surf->material;
+	int						stage;
+	const shaderStage_t		*pStage;
+	const float				*regs = surf->shaderRegisters;
+
+	DepthUniforms *depthUniforms = programManager->depthShader->GetUniformGroup<DepthUniforms>();
+
+	// subviews will just down-modulate the color buffer by overbright
+	if ( shader->GetSort() == SS_SUBVIEW ) {
+		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
+		color[0] = color[1] = color[2] = (1.0 / backEnd.overBright);
+		color[3] = 1;
+	} else {
+		// others just draw black
+		color[0] = 0;
+		color[1] = 0;
+		color[2] = 0;
+		color[3] = 1;
+	}
+	idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+
+	bool drawSolid = false;
+
+	if ( shader->Coverage() == MC_OPAQUE ) {
+		drawSolid = true;
+	}
+	if ( shader->Coverage() == MC_TRANSLUCENT ) {
+		drawSolid = true;
+	}
+
+	// we may have multiple alpha tested stages
+	if ( shader->Coverage() == MC_PERFORATED ) {
+		// if the only alpha tested stages are condition register omitted,
+		// draw a normal opaque surface
+		bool	didDraw = false;
+
+		qglEnableVertexAttribArray( 8 );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+
+		// perforated surfaces may have multiple alpha tested stages
+		for ( stage = 0; stage < shader->GetNumStages(); stage++ ) {
+			pStage = shader->GetStage( stage );
+
+			if ( !pStage->hasAlphaTest ) {
+				continue;
+			}
+
+			// check the stage enable condition
+			if ( regs[pStage->conditionRegister] == 0 ) {
+				continue;
+			}
+
+			// if we at least tried to draw an alpha tested stage,
+			// we won't draw the opaque surface
+			didDraw = true;
+
+			// set the alpha modulate
+			color[3] = regs[pStage->color.registers[3]];
+
+			// skip the entire stage if alpha would be black
+			if ( color[3] <= 0 ) {
+				continue;
+			}
+			depthUniforms->color.Set( color );
+			depthUniforms->alphaTest.Set( regs[pStage->alphaTestRegister] );
+
+			// bind the texture
+			pStage->texture.image->Bind();
+			if ( pStage->texture.hasMatrix ) 
+				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
+
+			// draw it
+			if ( depthUniforms->instances )
+				RB_DrawElementsInstanced( surf, depthUniforms->instances );
+			else
+				RB_DrawElementsWithCounters( surf );
+
+			if ( pStage->texture.hasMatrix ) {
+				qglMatrixMode( GL_TEXTURE );
+				qglLoadIdentity();
+				qglMatrixMode( GL_MODELVIEW );
+			}
+
+			depthUniforms->alphaTest.Set( -1 ); // hint the glsl to skip texturing
+		}
+		depthUniforms->color.Set( colorBlack );
+		qglDisableVertexAttribArray( 8 );
+
+		if ( !didDraw ) {
+			drawSolid = true;
+		}
+	}
+
+	if ( drawSolid )  // draw the entire surface solid
+		if ( depthUniforms->instances ) 
+			RB_DrawElementsInstanced( surf, depthUniforms->instances );
+		else
+			RB_DrawElementsWithCounters( surf );
+
+	// reset blending
+	if ( shader->GetSort() == SS_SUBVIEW ) {
+		depthUniforms->color.Set( colorBlack );
+		GL_State( GLS_DEPTHFUNC_LESS );
+	}
+}
+
 /*
 ==================
 RB_T_FillDepthBuffer
@@ -231,7 +351,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 	}
 
-	depthShader.FillDepthBuffer( surf );
+	RB_SingleSurfaceToDepthBuffer( surf );
 
 	// reset polygon offset
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
@@ -271,17 +391,18 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
-	depthShader.Use();
-	qglUniform1f( depthShader.alphaTest, -1 );	// no alpha test by default
+	programManager->depthShader->Activate();
+	DepthUniforms * depthUniforms = programManager->depthShader->GetUniformGroup<DepthUniforms>();
+	depthUniforms->alphaTest.Set( -1 );	// no alpha test by default
 
 	if ( backEnd.viewDef->numClipPlanes ) {		// pass mirror clip plane details to vertex shader if needed
 		idMat4 m;
 		memcpy( m.ToFloatPtr(), backEnd.viewDef->worldSpace.modelViewMatrix, sizeof( m ) );
 		m.InverseSelf();
-		qglUniformMatrix4fv( depthShader.matViewRev, 1, false, m.ToFloatPtr() );
-		qglUniform4fv( depthShader.clipPlane, 1, backEnd.viewDef->clipPlanes[0].ToFloatPtr() );
+		depthUniforms->matViewRev.Set( m );
+		depthUniforms->clipPlane.Set( backEnd.viewDef->clipPlanes[0] );
 	} else {
-		qglUniform4fv( depthShader.clipPlane, 1, colorBlack.ToFloatPtr() ); // 0 0 0 1, all geometry passes
+		depthUniforms->clipPlane.Set( colorBlack );
 	}
 
 	// the first texture will be used for alpha tested surfaces

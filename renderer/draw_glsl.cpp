@@ -72,9 +72,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
-cubeMapProgram_t cubeMapShader;
 oldStageProgram_t oldStageShader;
-depthProgram_t depthShader;
 lightProgram_t stencilShadowShader;
 shadowMapProgram_t shadowmapShader, shadowmapMultiShader;
 fogProgram_t fogShader;
@@ -484,10 +482,8 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
 	ok &= stencilShadowShader.Load( "stencilShadow" );
 	ok &= oldStageShader.Load( "oldStage" );
-	ok &= depthShader.Load( "depthAlpha" );
 	ok &= fogShader.Load( "fog" );
 	ok &= blendShader.Load( "blend" );
-	ok &= cubeMapShader.Load( "cubeMap" );
 	// these are optional and don't "need" to compile
 	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
@@ -723,12 +719,6 @@ void oldStageProgram_t::AfterLoad() {
 void basicDepthProgram_t::AfterLoad() {
 	color = qglGetUniformLocation( program, "color" );
 	alphaTest = qglGetUniformLocation( program, "alphaTest" );
-}
-
-void depthProgram_t::AfterLoad() {
-	basicDepthProgram_t::AfterLoad();
-	clipPlane = qglGetUniformLocation( program, "clipPlane" );
-	matViewRev = qglGetUniformLocation( program, "matViewRev" );
 }
 
 void blendProgram_t::AfterLoad() {
@@ -1085,22 +1075,6 @@ void shadowMapProgram_t::AfterLoad() {
 	lightFrustum = qglGetUniformLocation( program, "u_lightFrustum" );
 	acceptsTranslucent = true;
 	instances = 6;
-}
-
-void cubeMapProgram_t::AfterLoad() {
-	rgtc = qglGetUniformLocation( program, "u_RGTC" );
-	viewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
-	reflective = qglGetUniformLocation( program, "u_reflective" );
-	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
-
-	GLint normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
-
-	// set texture locations
-	qglUseProgram( program );
-
-	// static bindings
-	qglUniform1i( normalTexture, 1 );
-	qglUseProgram( 0 );
 }
 
 //=============================================================================

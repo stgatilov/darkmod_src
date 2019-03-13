@@ -48,6 +48,7 @@ public:
 	GLSLProgram *interactionShader;
 	GLSLProgram *frobShader;
 	GLSLProgram *cubeMapShader;
+	GLSLProgram *depthShader;
 
 private:
 	struct programWithGenerator_t {

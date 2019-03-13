@@ -57,6 +57,7 @@ void GLSLProgramManager::Shutdown() {
 	interactionShader = nullptr;
 	frobShader = nullptr;
 	cubeMapShader = nullptr;
+	depthShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -153,11 +154,19 @@ namespace {
 		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
 		program->Validate();
 	}
+
+	void InitDepthShader( GLSLProgram *program ) {
+		DefaultProgramInit( program, idDict(), "depthAlpha.vs", "depthAlpha.fs" );
+		program->Activate();
+		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
+		program->Validate();
+	}
 }
 
 void GLSLProgramManager::Init() {
 	interactionShader = LoadFromGenerator( "interaction", InitInteractionShader );
 	cubeMapShader = LoadFromGenerator( "cubeMap", InitCubeMapShader );
-	frobShader = Load( "frob" );	
+	frobShader = Load( "frob" );
+	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
 }
 

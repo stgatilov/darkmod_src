@@ -103,6 +103,10 @@ public:
 		qglUniform4fv(paramLocation, 1, value.ToFloatPtr());
 	}
 
+	void Set(const idPlane &value) {
+		qglUniform4fv( paramLocation, 1, value.ToFloatPtr() );
+	}
+
 private:
 	int paramLocation;
 };
@@ -114,6 +118,10 @@ public:
 
 	void Set(const float *value) {
 		qglUniformMatrix4fv(paramLocation, 1, GL_FALSE, value);
+	}
+
+	void Set(const idMat4 &value) {
+		qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
 	}
 
 private:
