@@ -86,6 +86,10 @@ public:
 		qglUniform3fv(paramLocation, 1, value.ToFloatPtr());
 	}
 
+	void Set(const float *value) {
+		qglUniform3fv( paramLocation, 1, value );
+	}
+
 private:
 	int paramLocation;
 };

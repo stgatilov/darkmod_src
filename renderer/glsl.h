@@ -53,15 +53,6 @@ struct blendProgram_t : shaderProgram_t {
 	virtual	void AfterLoad();
 };
 
-struct fogProgram_t : shaderProgram_t {
-	GLint			tex0PlaneS;
-	GLint			tex1PlaneT;
-	GLint			fogEnter;
-	GLint			texture1;
-	GLint			fogColor;
-	virtual	void AfterLoad();
-};
-
 struct lightProgram_t : shaderProgram_t {
 	GLint lightOrigin;
 	GLint modelMatrix;
@@ -94,7 +85,6 @@ struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 };
 
 extern oldStageProgram_t oldStageShader;
-extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 extern multiLightInteractionProgram_t multiLightShader;

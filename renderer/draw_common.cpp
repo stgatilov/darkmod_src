@@ -23,7 +23,7 @@
 #include "GLSLUniforms.h"
 #include "GLSLProgramManager.h"
 
-struct CubemapUniforms : public GLSLUniformGroup {
+struct CubemapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( CubemapUniforms );
 
 	DEFINE_UNIFORM( float, reflective );
@@ -31,7 +31,7 @@ struct CubemapUniforms : public GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix );
 };
 
-struct DepthUniforms : public GLSLUniformGroup {
+struct DepthUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( DepthUniforms );
 
 	DEFINE_UNIFORM( float, alphaTest );
@@ -40,6 +40,15 @@ struct DepthUniforms : public GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, color );
 
 	const int instances = 6;
+};
+
+struct FogUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( FogUniforms );
+
+	DEFINE_UNIFORM( vec4, tex0PlaneS );
+	DEFINE_UNIFORM( vec4, tex1PlaneT );
+	DEFINE_UNIFORM( vec3, fogColor );
+	DEFINE_UNIFORM( float, fogEnter );
 };
 
 /*
@@ -1352,15 +1361,17 @@ RB_T_BasicFog
 */
 static void RB_T_BasicFog( const drawSurf_t *surf ) {
 	if ( backEnd.currentSpace != surf->space ) {
+		FogUniforms *fogUniforms = programManager->fogShader->GetUniformGroup<FogUniforms>();
+
 		idPlane	local;
 
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[0], local );
 		local[3] += 0.5;
-		qglUniform4fv( fogShader.tex0PlaneS, 1, local.ToFloatPtr() );
+		fogUniforms->tex0PlaneS.Set( local );
 
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[1], local );
 		local[3] += FOG_ENTER;
-		qglUniform4fv( fogShader.tex1PlaneT, 1, local.ToFloatPtr() );
+		fogUniforms->tex1PlaneT.Set( local );
 	}
 	RB_T_RenderTriangleSurface( surf );
 }
@@ -1426,9 +1437,9 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	GL_SelectTexture( 0 );
 	globalImages->fogImage->Bind();
 
-	fogShader.Use();
-	qglUniform1i( fogShader.texture1, 1 );
-	qglUniform3fv( fogShader.fogColor, 1, backEnd.lightColor );
+	programManager->fogShader->Activate();
+	FogUniforms *fogUniforms = programManager->fogShader->GetUniformGroup<FogUniforms>();
+	fogUniforms->fogColor.Set( backEnd.lightColor );
 
 	fogPlanes[0][0] = a * backEnd.viewDef->worldSpace.modelViewMatrix[2];
 	fogPlanes[0][1] = a * backEnd.viewDef->worldSpace.modelViewMatrix[6];
@@ -1447,7 +1458,7 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 
 	// S is based on the view origin
 	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[1].Normal() + fogPlanes[1][3];
-	qglUniform1f( fogShader.fogEnter, FOG_ENTER + s );
+	fogUniforms->fogEnter.Set( FOG_ENTER + s );
 
 	// draw it
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BasicFog );
@@ -1466,7 +1477,7 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 }
 
 /*

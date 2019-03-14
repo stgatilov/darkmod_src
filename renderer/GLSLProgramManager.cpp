@@ -58,6 +58,7 @@ void GLSLProgramManager::Shutdown() {
 	frobShader = nullptr;
 	cubeMapShader = nullptr;
 	depthShader = nullptr;
+	fogShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -161,6 +162,14 @@ namespace {
 		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
 		program->Validate();
 	}
+
+	void InitFogShader( GLSLProgram *program ) {
+		DefaultProgramInit( program, idDict(), "fog.vs", "fog.fs" );
+		program->Activate();
+		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
+		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
+		program->Validate();
+	}
 }
 
 void GLSLProgramManager::Init() {
@@ -168,5 +177,6 @@ void GLSLProgramManager::Init() {
 	cubeMapShader = LoadFromGenerator( "cubeMap", InitCubeMapShader );
 	frobShader = Load( "frob" );
 	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
+	fogShader = LoadFromGenerator( "fog", InitFogShader );
 }
 
