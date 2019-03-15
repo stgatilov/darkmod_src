@@ -16,6 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 #include "glsl.h"
 #include "Profiling.h"
+#include "GLSLProgramManager.h"
 
 /*
 ==============================================================================
@@ -24,6 +25,11 @@ BACK END RENDERING OF STENCIL SHADOWS
 
 ==============================================================================
 */
+
+struct StencilShadowUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( StencilShadowUniforms );
+	DEFINE_UNIFORM( vec4, lightOrigin );
+};
 
 /*
 =====================
@@ -42,7 +48,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
 		if ( r_useGLSL ) {
-			qglUniform4fv( stencilShadowShader.lightOrigin, 1, localLight.ToFloatPtr() );
+			programManager->stencilShadowShader->GetUniformGroup<StencilShadowUniforms>()->lightOrigin.Set( localLight );
 		} else {
 			qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
 		}

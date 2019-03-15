@@ -67,7 +67,6 @@ struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	virtual void Draw( const drawInteraction_t *din );
 };
 
-extern lightProgram_t stencilShadowShader;
 extern multiLightInteractionProgram_t multiLightShader;
 
 extern idCVarBool r_useGLSL;

@@ -61,6 +61,7 @@ void GLSLProgramManager::Shutdown() {
 	fogShader = nullptr;
 	oldStageShader = nullptr;
 	blendShader = nullptr;
+	stencilShadowShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -197,5 +198,6 @@ void GLSLProgramManager::Init() {
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
+	stencilShadowShader = Load( "stencilshadow" );
 }
 

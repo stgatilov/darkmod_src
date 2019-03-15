@@ -242,7 +242,7 @@ void RB_GLSL_DrawLight_Stencil() {
 		// no shadows, so no need to read or write the stencil buffer
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
 	}
-	stencilShadowShader.Use();
+	programManager->stencilShadowShader->Activate();
 
 	RB_StencilShadowPass( backEnd.vLight->globalShadows );
 	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
@@ -261,7 +261,7 @@ void RB_GLSL_DrawLight_Stencil() {
 			FB_ToggleShadow( true );
 		}
 	}
-	stencilShadowShader.Use();
+	programManager->stencilShadowShader->Activate();
 
 	RB_StencilShadowPass( backEnd.vLight->localShadows );
 	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
@@ -477,7 +477,6 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	bool ok = true;
 	ok &= stencilInteractionShader.Load( "interaction" ); 
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
-	ok &= stencilShadowShader.Load( "stencilShadow" );
 	// these are optional and don't "need" to compile
 	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
