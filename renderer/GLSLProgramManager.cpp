@@ -60,6 +60,7 @@ void GLSLProgramManager::Shutdown() {
 	depthShader = nullptr;
 	fogShader = nullptr;
 	oldStageShader = nullptr;
+	blendShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -178,6 +179,14 @@ namespace {
 		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
 		program->Validate();
 	}
+
+	void InitBlendShader( GLSLProgram *program ) {
+		DefaultProgramInit( program, idDict(), "blend.vs", "blend.fs" );
+		program->Activate();
+		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
+		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
+		program->Validate();
+	}
 }
 
 void GLSLProgramManager::Init() {
@@ -187,5 +196,6 @@ void GLSLProgramManager::Init() {
 	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
+	blendShader = LoadFromGenerator( "blend", InitBlendShader );
 }
 

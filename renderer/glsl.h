@@ -36,16 +36,6 @@ struct basicDepthProgram_t : shaderProgram_t {
 	void FillDepthBuffer( const drawSurf_t *surf );
 };
 
-struct blendProgram_t : shaderProgram_t {
-	GLint			tex0PlaneS;
-	GLint			tex0PlaneT;
-	GLint			tex0PlaneQ;
-	GLint			tex1PlaneS;
-	GLint			texture1;
-	GLint			blendColor;
-	virtual	void AfterLoad();
-};
-
 struct lightProgram_t : shaderProgram_t {
 	GLint lightOrigin;
 	GLint modelMatrix;
@@ -77,7 +67,6 @@ struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	virtual void Draw( const drawInteraction_t *din );
 };
 
-extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 extern multiLightInteractionProgram_t multiLightShader;
 

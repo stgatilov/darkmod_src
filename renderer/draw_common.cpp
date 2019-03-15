@@ -59,6 +59,16 @@ struct OldStageUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, colorAdd );
 };
 
+struct BlendUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( BlendUniforms );
+
+	DEFINE_UNIFORM( vec4, tex0PlaneS );
+	DEFINE_UNIFORM( vec4, tex0PlaneT );
+	DEFINE_UNIFORM( vec4, tex0PlaneQ );
+	DEFINE_UNIFORM( vec4, tex1PlaneS );
+	DEFINE_UNIFORM( vec4, blendColor );
+};
+
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
@@ -1270,10 +1280,11 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 		for ( i = 0 ; i < 4 ; i++ ) {
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
 		}
-		qglUniform4fv( blendShader.tex0PlaneS, 1, lightProject[0].ToFloatPtr() );
-		qglUniform4fv( blendShader.tex0PlaneT, 1, lightProject[1].ToFloatPtr() );
-		qglUniform4fv( blendShader.tex0PlaneQ, 1, lightProject[2].ToFloatPtr() );
-		qglUniform4fv( blendShader.tex1PlaneS, 1, lightProject[3].ToFloatPtr() );
+		BlendUniforms *blendUniforms = programManager->blendShader->GetUniformGroup<BlendUniforms>();
+		blendUniforms->tex0PlaneS.Set( lightProject[0] );
+		blendUniforms->tex0PlaneT.Set( lightProject[1] );
+		blendUniforms->tex0PlaneQ.Set( lightProject[2] );
+		blendUniforms->tex1PlaneS.Set( lightProject[3] );
 	}
 
 	// this gets used for both blend lights and shadow draws
@@ -1317,8 +1328,8 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 	backEnd.vLight->falloffImage->Bind();
 
 	// texture 0 will get the projected texture
-	blendShader.Use();
-	qglUniform1i( blendShader.texture1, 1 );
+	programManager->blendShader->Activate();
+	BlendUniforms *blendUniforms = programManager->blendShader->GetUniformGroup<BlendUniforms>();
 
 	for ( i = 0 ; i < lightShader->GetNumStages() ; i++ ) {
 		stage = lightShader->GetStage( i );
@@ -1340,7 +1351,7 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 		backEnd.lightColor[1] = regs[ stage->color.registers[1] ];
 		backEnd.lightColor[2] = regs[ stage->color.registers[2] ];
 		backEnd.lightColor[3] = regs[ stage->color.registers[3] ];
-		qglUniform4fv( blendShader.blendColor, 1, backEnd.lightColor );
+		blendUniforms->blendColor.Set( backEnd.lightColor );
 
 		RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BlendLight );
 		RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BlendLight );

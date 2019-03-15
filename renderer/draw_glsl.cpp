@@ -74,7 +74,6 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 
 lightProgram_t stencilShadowShader;
 shadowMapProgram_t shadowmapShader, shadowmapMultiShader;
-blendProgram_t blendShader;
 pointInteractionProgram_t stencilInteractionShader, shadowmapInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 
@@ -479,7 +478,6 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	ok &= stencilInteractionShader.Load( "interaction" ); 
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
 	ok &= stencilShadowShader.Load( "stencilShadow" );
-	ok &= blendShader.Load( "blend" );
 	// these are optional and don't "need" to compile
 	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
@@ -709,15 +707,6 @@ void shaderProgram_t::Use() {
 void basicDepthProgram_t::AfterLoad() {
 	color = qglGetUniformLocation( program, "color" );
 	alphaTest = qglGetUniformLocation( program, "alphaTest" );
-}
-
-void blendProgram_t::AfterLoad() {
-	tex0PlaneS = qglGetUniformLocation( program, "tex0PlaneS" );
-	tex0PlaneT = qglGetUniformLocation( program, "tex0PlaneT" );
-	tex0PlaneQ = qglGetUniformLocation( program, "tex0PlaneQ" );
-	tex1PlaneS = qglGetUniformLocation( program, "tex1PlaneS" );
-	texture1 = qglGetUniformLocation( program, "texture1" );
-	blendColor = qglGetUniformLocation( program, "blendColor" );
 }
 
 void lightProgram_t::AfterLoad() {
