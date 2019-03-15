@@ -72,7 +72,6 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
-oldStageProgram_t oldStageShader;
 lightProgram_t stencilShadowShader;
 shadowMapProgram_t shadowmapShader, shadowmapMultiShader;
 blendProgram_t blendShader;
@@ -480,7 +479,6 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	ok &= stencilInteractionShader.Load( "interaction" ); 
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
 	ok &= stencilShadowShader.Load( "stencilShadow" );
-	ok &= oldStageShader.Load( "oldStage" );
 	ok &= blendShader.Load( "blend" );
 	// these are optional and don't "need" to compile
 	shadowmapInteractionShader.Load( "interactionA" );
@@ -706,12 +704,6 @@ void shaderProgram_t::AfterLoad() {
 
 void shaderProgram_t::Use() {
 	qglUseProgram( program );
-}
-
-void oldStageProgram_t::AfterLoad() {
-	screenTex = qglGetUniformLocation( program, "screenTex" );
-	colorMul = qglGetUniformLocation( program, "colorMul" );
-	colorAdd = qglGetUniformLocation( program, "colorAdd" );
 }
 
 void basicDepthProgram_t::AfterLoad() {

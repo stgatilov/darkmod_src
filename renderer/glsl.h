@@ -28,13 +28,6 @@ private:
 	GLuint CompileShader( GLint ShaderType, const char *fileName );
 };
 
-struct oldStageProgram_t : shaderProgram_t {
-	GLint			screenTex;
-	GLint			colorMul;
-	GLint			colorAdd;
-	virtual	void AfterLoad();
-};
-
 struct basicDepthProgram_t : shaderProgram_t {
 	GLint alphaTest, color;
 	bool acceptsTranslucent;
@@ -84,7 +77,6 @@ struct multiLightInteractionProgram_t : basicInteractionProgram_t {
 	virtual void Draw( const drawInteraction_t *din );
 };
 
-extern oldStageProgram_t oldStageShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 extern multiLightInteractionProgram_t multiLightShader;

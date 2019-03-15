@@ -51,6 +51,14 @@ struct FogUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( float, fogEnter );
 };
 
+struct OldStageUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( OldStageUniforms );
+
+	DEFINE_UNIFORM( float, screenTex );
+	DEFINE_UNIFORM( vec4, colorMul );
+	DEFINE_UNIFORM( vec4, colorAdd );
+};
+
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
@@ -129,7 +137,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	// texgens
 	switch ( pStage->texture.texgen ) {
 	case TG_SCREEN:
-		qglUniform1f( oldStageShader.screenTex, 1 );
+		programManager->oldStageShader->GetUniformGroup<OldStageUniforms>()->screenTex.Set( 1 );
 		break;
 	case TG_REFLECT_CUBE:
 		RB_PrepareStageTexturing_ReflectCube( pStage, surf, ac );
@@ -150,7 +158,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 
 	switch ( pStage->texture.texgen ) {
 	case TG_SCREEN:
-		qglUniform1f( oldStageShader.screenTex, 0 );
+		programManager->oldStageShader->GetUniformGroup<OldStageUniforms>()->screenTex.Set( 0 );
 		break;
 	case TG_REFLECT_CUBE:
 		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
@@ -598,25 +606,26 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	default:
 		qglEnableVertexAttribArray( 8 );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		oldStageShader.Use();
+		programManager->oldStageShader->Activate();
+		OldStageUniforms *oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
 		switch ( pStage->vertexColor ) {
 		case SVC_IGNORE:
-			qglUniform4fv( oldStageShader.colorMul, 1, zero );
-			qglUniform4fv( oldStageShader.colorAdd, 1, color );
+			oldStageUniforms->colorMul.Set( zero );
+			oldStageUniforms->colorAdd.Set( color );
 			break;
 		case SVC_MODULATE:
 			// select the vertex color source
 			qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 			qglEnableVertexAttribArray( 3 );
-			qglUniform4fv( oldStageShader.colorMul, 1, color );
-			qglUniform4fv( oldStageShader.colorAdd, 1, zero );
+			oldStageUniforms->colorMul.Set( color );
+			oldStageUniforms->colorAdd.Set( zero );
 			break;
 		case SVC_INVERSE_MODULATE:
 			// select the vertex color source
 			qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 			qglEnableVertexAttribArray( 3 );
-			qglUniform4fv( oldStageShader.colorMul, 1, negOne );
-			qglUniform4fv( oldStageShader.colorAdd, 1, color );
+			oldStageUniforms->colorMul.Set( negOne );
+			oldStageUniforms->colorAdd.Set( color );
 			break;
 		}
 	}

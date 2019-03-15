@@ -50,6 +50,7 @@ public:
 	GLSLProgram *cubeMapShader;
 	GLSLProgram *depthShader;
 	GLSLProgram *fogShader;
+	GLSLProgram *oldStageShader;
 
 private:
 	struct programWithGenerator_t {
