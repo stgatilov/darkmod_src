@@ -75,6 +75,7 @@ extern idCVarBool r_newFrob;
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );
 float GetEffectiveLightRadius();
+void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf );
 
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.
@@ -111,6 +112,18 @@ namespace Uniforms {
 
 		//TODO: is space necessary as argument, or we can take backEnd->currentSpace ?
 		void Set( const viewEntity_t *space );
+	};
+
+	struct Depth: GLSLUniformGroup {
+		UNIFORM_GROUP_DEF( Depth);
+
+		DEFINE_UNIFORM( float, alphaTest );
+		DEFINE_UNIFORM( vec4, clipPlane );
+		DEFINE_UNIFORM( mat4, matViewRev );
+		DEFINE_UNIFORM( vec4, color );
+
+		int instances = 0;
+		bool acceptsTranslucent = false;
 	};
 
 	//pack of uniforms defined in a shader attached to "new" stage of a material

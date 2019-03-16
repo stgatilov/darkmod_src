@@ -40,6 +40,15 @@ If you have questions concerning this license or the applicable additional terms
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
 
+struct ShadowMapUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( ShadowMapUniforms );
+
+	DEFINE_UNIFORM( vec4, lightOrigin );
+	DEFINE_UNIFORM( float, lightRadius );
+	DEFINE_UNIFORM( float, alphaTest );
+	DEFINE_UNIFORM( mat4, modelMatrix );
+};
+
 struct interactionProgram_t : basicInteractionProgram_t {
 	GLint localViewOrigin;
 	GLint rgtc, hasTextureDNS;
@@ -73,7 +82,7 @@ struct ambientInteractionProgram_t : interactionProgram_t {
 };
 
 lightProgram_t stencilShadowShader;
-shadowMapProgram_t shadowmapShader, shadowmapMultiShader;
+shadowMapProgram_t shadowmapMultiShader;
 pointInteractionProgram_t stencilInteractionShader, shadowmapInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 
@@ -306,12 +315,18 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 
 	FB_ToggleShadow( true );
 
-	shadowmapShader.Use();
+	programManager->shadowMapShader->Activate();
 	GL_SelectTexture( 0 );
 
-	qglUniform4fv( shadowmapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	qglUniform1f( shadowmapShader.lightRadius, GetEffectiveLightRadius() );
-	qglUniform1f( shadowmapShader.alphaTest, -1 );	// no alpha test by default
+	ShadowMapUniforms *shadowMapUniforms = programManager->shadowMapShader->GetUniformGroup<ShadowMapUniforms>();
+	idVec4 lightOrigin;
+	lightOrigin.x = backEnd.vLight->globalLightOrigin.x;
+	lightOrigin.y = backEnd.vLight->globalLightOrigin.y;
+	lightOrigin.z = backEnd.vLight->globalLightOrigin.z;
+	lightOrigin.w = 0;
+	shadowMapUniforms->lightOrigin.Set( lightOrigin );
+	shadowMapUniforms->lightRadius.Set( GetEffectiveLightRadius() );
+	shadowMapUniforms->alphaTest.Set( -1 );
 	backEnd.currentSpace = NULL;
 
 	GL_Cull( CT_TWO_SIDED );
@@ -338,12 +353,12 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			qglPolygonOffset( customOffset, 0 );
 
 		if ( backEnd.currentSpace != surf->space ) {
-			qglUniformMatrix4fv( shadowmapShader.modelMatrix, 1, false, surf->space->modelMatrix );
+			shadowMapUniforms->modelMatrix.Set( surf->space->modelMatrix );
 			backEnd.currentSpace = surf->space;
 			backEnd.pc.c_matrixLoads++;
 		}
 
-		shadowmapShader.FillDepthBuffer( surf );
+		RB_SingleSurfaceToDepthBuffer( programManager->shadowMapShader, surf );
 		backEnd.pc.c_shadowIndexes += surf->numIndexes;
 		backEnd.pc.c_drawIndexes -= surf->numIndexes;
 
@@ -480,7 +495,6 @@ ID_NOINLINE bool R_ReloadGLSLPrograms() {
 	// these are optional and don't "need" to compile
 	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
-	shadowmapShader.Load( "shadowMapA" );
 	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
@@ -1045,6 +1059,115 @@ void shadowMapProgram_t::AfterLoad() {
 	lightFrustum = qglGetUniformLocation( program, "u_lightFrustum" );
 	acceptsTranslucent = true;
 	instances = 6;
+}
+
+void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf ) {
+	idVec4 color;
+	const idMaterial		*shader = surf->material;
+	int						stage;
+	const shaderStage_t		*pStage;
+	const float				*regs = surf->shaderRegisters;
+
+	Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
+
+	// subviews will just down-modulate the color buffer by overbright
+	if ( shader->GetSort() == SS_SUBVIEW ) {
+		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
+		color[0] = color[1] = color[2] = (1.0 / backEnd.overBright);
+		color[3] = 1;
+	} else {
+		// others just draw black
+		color[0] = 0;
+		color[1] = 0;
+		color[2] = 0;
+		color[3] = 1;
+	}
+	idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+
+	bool drawSolid = false;
+
+	if ( shader->Coverage() == MC_OPAQUE ) {
+		drawSolid = true;
+	}
+	if ( shader->Coverage() == MC_TRANSLUCENT && depthUniforms->acceptsTranslucent ) {
+		drawSolid = true;
+	}
+
+	// we may have multiple alpha tested stages
+	if ( shader->Coverage() == MC_PERFORATED ) {
+		// if the only alpha tested stages are condition register omitted,
+		// draw a normal opaque surface
+		bool	didDraw = false;
+
+		qglEnableVertexAttribArray( 8 );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+
+		// perforated surfaces may have multiple alpha tested stages
+		for ( stage = 0; stage < shader->GetNumStages(); stage++ ) {
+			pStage = shader->GetStage( stage );
+
+			if ( !pStage->hasAlphaTest ) {
+				continue;
+			}
+
+			// check the stage enable condition
+			if ( regs[pStage->conditionRegister] == 0 ) {
+				continue;
+			}
+
+			// if we at least tried to draw an alpha tested stage,
+			// we won't draw the opaque surface
+			didDraw = true;
+
+			// set the alpha modulate
+			color[3] = regs[pStage->color.registers[3]];
+
+			// skip the entire stage if alpha would be black
+			if ( color[3] <= 0 ) {
+				continue;
+			}
+			depthUniforms->color.Set( color );
+			depthUniforms->alphaTest.Set( regs[pStage->alphaTestRegister] );
+
+			// bind the texture
+			pStage->texture.image->Bind();
+			if ( pStage->texture.hasMatrix ) 
+				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
+
+			// draw it
+			if ( depthUniforms->instances )
+				RB_DrawElementsInstanced( surf, depthUniforms->instances );
+			else
+				RB_DrawElementsWithCounters( surf );
+
+			if ( pStage->texture.hasMatrix ) {
+				qglMatrixMode( GL_TEXTURE );
+				qglLoadIdentity();
+				qglMatrixMode( GL_MODELVIEW );
+			}
+
+			depthUniforms->alphaTest.Set( -1 ); // hint the glsl to skip texturing
+		}
+		depthUniforms->color.Set( colorBlack );
+		qglDisableVertexAttribArray( 8 );
+
+		if ( !didDraw ) {
+			drawSolid = true;
+		}
+	}
+
+	if ( drawSolid )  // draw the entire surface solid
+		if ( depthUniforms->instances ) 
+			RB_DrawElementsInstanced( surf, depthUniforms->instances );
+		else
+			RB_DrawElementsWithCounters( surf );
+
+	// reset blending
+	if ( shader->GetSort() == SS_SUBVIEW ) {
+		depthUniforms->color.Set( colorBlack );
+		GL_State( GLS_DEPTHFUNC_LESS );
+	}
 }
 
 //=============================================================================

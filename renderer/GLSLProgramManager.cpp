@@ -62,6 +62,7 @@ void GLSLProgramManager::Shutdown() {
 	oldStageShader = nullptr;
 	blendShader = nullptr;
 	stencilShadowShader = nullptr;
+	shadowMapShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -188,6 +189,14 @@ namespace {
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
 		program->Validate();
 	}
+
+	void InitShadowMapShader( GLSLProgram *program ) {
+		DefaultProgramInit( program, idDict(), "shadowMapA.vs", "shadowMapA.fs" );
+		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
+		depthUniforms->instances = 6;
+		depthUniforms->acceptsTranslucent = true;
+		program->Validate();
+	}
 }
 
 void GLSLProgramManager::Init() {
@@ -199,5 +208,6 @@ void GLSLProgramManager::Init() {
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
 	stencilShadowShader = Load( "stencilshadow" );
+	shadowMapShader = LoadFromGenerator( "shadowMap", InitShadowMapShader );
 }
 

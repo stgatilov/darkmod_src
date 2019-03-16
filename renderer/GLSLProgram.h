@@ -46,9 +46,9 @@ public:
 
 	template<typename Group>
 	Group *GetUniformGroup() {
-		Activate();
 		GLSLUniformGroup *& group = uniformGroups[typeid(Group)];
 		if( group == nullptr ) {
+			Activate();
 			group = new Group( this );
 		}
 		return static_cast<Group*>(group);

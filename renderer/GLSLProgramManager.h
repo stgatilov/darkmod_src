@@ -53,6 +53,7 @@ public:
 	GLSLProgram *oldStageShader;
 	GLSLProgram *blendShader;
 	GLSLProgram *stencilShadowShader;
+	GLSLProgram *shadowMapShader;
 
 private:
 	struct programWithGenerator_t {
