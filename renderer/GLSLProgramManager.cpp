@@ -203,6 +203,7 @@ void GLSLProgramManager::Init() {
 	interactionShader = LoadFromGenerator( "interaction", InitInteractionShader );
 	cubeMapShader = LoadFromGenerator( "cubeMap", InitCubeMapShader );
 	frobShader = Load( "frob" );
+	bumpyEnvironment = LoadFromGenerator( "bumpyEnvironment", InitCubeMapShader );
 	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );

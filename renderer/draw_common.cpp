@@ -83,13 +83,16 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		qglEnableVertexAttribArray( 9 );
 		qglEnableVertexAttribArray( 10 );
 
-		// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
-		//R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
-		programManager->cubeMapShader->Activate();
-		CubemapUniforms *uniforms = programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>();
-		uniforms->reflective.Set( 1 );
-		uniforms->modelMatrix.Set( backEnd.currentSpace->modelMatrix );
-		uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );
+		if ( r_useGLSL ) {
+			/*programManager->cubeMapShader->Activate();
+			CubemapUniforms *uniforms = programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>();
+			uniforms->reflective.Set( 1 );
+			uniforms->modelMatrix.Set( backEnd.currentSpace->modelMatrix );
+			uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );*/
+			programManager->bumpyEnvironment->Activate();
+			programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+		} else // Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
+			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
 		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
 		qglDisableVertexAttribArray( 3 );
@@ -170,7 +173,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableVertexAttribArray( 8 );
 			qglDisableVertexAttribArray( 9 );
 			qglDisableVertexAttribArray( 10 );
-			programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
+			//if ( r_useGLSL )
+			//	programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
 		}
 		qglDisableVertexAttribArray( 3 );
 		qglUseProgram( 0 );

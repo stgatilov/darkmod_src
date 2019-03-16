@@ -48,6 +48,7 @@ public:
 	GLSLProgram *interactionShader;
 	GLSLProgram *frobShader;
 	GLSLProgram *cubeMapShader;
+	GLSLProgram *bumpyEnvironment;
 	GLSLProgram *depthShader;
 	GLSLProgram *fogShader;
 	GLSLProgram *oldStageShader;
