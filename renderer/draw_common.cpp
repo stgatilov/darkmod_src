@@ -31,6 +31,14 @@ struct CubemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix );
 };
 
+struct BumpyEnvironmentUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( BumpyEnvironmentUniforms );
+
+	DEFINE_UNIFORM( vec4, u_viewOriginLocal );
+	DEFINE_UNIFORM( vec4, u_envvpParam16 );
+	DEFINE_UNIFORM( vec4, u_envvpParam17 );
+};
+
 struct FogUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( FogUniforms );
 
@@ -84,13 +92,12 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		qglEnableVertexAttribArray( 10 );
 
 		if ( r_useGLSL ) {
-			/*programManager->cubeMapShader->Activate();
-			CubemapUniforms *uniforms = programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>();
-			uniforms->reflective.Set( 1 );
-			uniforms->modelMatrix.Set( backEnd.currentSpace->modelMatrix );
-			uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );*/
 			programManager->bumpyEnvironment->Activate();
 			programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+			BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
+			idVec4 v;
+			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
+			uniforms->u_viewOriginLocal.Set( v );
 		} else // Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {

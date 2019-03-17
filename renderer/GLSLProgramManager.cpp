@@ -193,7 +193,7 @@ namespace {
 
 	void InitSamplerBindingsForBumpShaders( GLSLProgram *program ) {
 		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
-	}
+}
 
 	GLSLProgram *LoadFromBaseNameWithCustomizer( const idStr &baseName, const std::function<void(GLSLProgram*)> customizer) {
 		return programManager->LoadFromGenerator( "baseName", [=]( GLSLProgram *program ) {
