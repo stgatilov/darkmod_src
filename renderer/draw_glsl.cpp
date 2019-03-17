@@ -52,46 +52,27 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix );
 };
 
-struct interactionProgram_t : basicInteractionProgram_t {
-	GLint localViewOrigin;
-	GLint rgtc, hasTextureDNS;
-
-	GLint cubic;
-	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffTexture;
-
-	GLint diffuseColor, specularColor;
-
-	virtual	void AfterLoad();
-	virtual void UpdateUniforms( bool translucent ) {}
-	virtual void UpdateUniforms( const drawInteraction_t *din );
-	static void ChooseInteractionProgram();
-};
-
-struct pointInteractionProgram_t : interactionProgram_t {
-	GLint advanced, shadows, lightOrigin2;
-	GLint softShadowsQuality, softShadowsRadius, softShadowSamples, shadowRect, renderResolution;
-	GLint shadowMap, stencilTexture, depthTexture;
-	virtual	void AfterLoad();
-	virtual void UpdateUniforms( bool translucent );
-	virtual void UpdateUniforms( const drawInteraction_t *din );
-};
-
-struct ambientInteractionProgram_t : interactionProgram_t {
-	GLint minLevel, gamma, lightFalloffCubemap, rimColor;
-	virtual	void AfterLoad();
-	virtual void UpdateUniforms( const drawInteraction_t *din );
-};
-
-lightProgram_t stencilShadowShader;
 shadowMapProgram_t shadowmapMultiShader;
-pointInteractionProgram_t stencilInteractionShader, shadowmapInteractionShader;
-ambientInteractionProgram_t ambientInteractionShader;
 
 GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
 std::map<std::string, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
 
 idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
+
+static void ChooseInteractionProgram() {
+	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
+		currrentInteractionShader = programManager->ambientInteractionShader;
+	} else {
+		if ( backEnd.vLight->shadowMapIndex )
+			currrentInteractionShader = programManager->shadowMapInteractionShader;
+		else
+			currrentInteractionShader = programManager->stencilInteractionShader;
+	}
+	currrentInteractionShader->Activate();
+	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
+	GL_CheckErrors();
+}
 
 /*
 ==================
@@ -159,7 +140,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	backEnd.currentSpace = NULL; // ambient/interaction shaders conflict
 
 	// bind the vertex and fragment program
-	interactionProgram_t::ChooseInteractionProgram();
+	ChooseInteractionProgram();
 	Uniforms::Interaction *interactionUniforms = currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>();
 	interactionUniforms->SetForShadows( surf == backEnd.vLight->translucentInteractions );
 
@@ -496,10 +477,7 @@ FIXME split the stencil and shadowmap interactions in separate shaders as the la
 */
 ID_NOINLINE bool R_ReloadGLSLPrograms() { 
 	bool ok = true;
-	ok &= stencilInteractionShader.Load( "interaction" ); 
-	ok &= ambientInteractionShader.Load( "ambientInteraction" );
 	// these are optional and don't "need" to compile
-	shadowmapInteractionShader.Load( "interactionA" );
 	multiLightShader.Load( "interactionN" );
 	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
@@ -768,183 +746,6 @@ void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
 		break;
 	}
-}
-
-void interactionProgram_t::ChooseInteractionProgram() {
-	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
-		currrentInteractionShader = programManager->ambientInteractionShader;
-	} else {
-		if ( backEnd.vLight->shadowMapIndex )
-			currrentInteractionShader = programManager->shadowMapInteractionShader;
-		else
-			currrentInteractionShader = programManager->stencilInteractionShader;
-	}
-	currrentInteractionShader->Activate();
-	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
-	GL_CheckErrors();
-}
-
-void interactionProgram_t::AfterLoad() {
-	basicInteractionProgram_t::AfterLoad();
-
-	rgtc = qglGetUniformLocation( program, "u_RGTC" );
-	hasTextureDNS = qglGetUniformLocation( program, "u_hasTextureDNS" );
-
-	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
-
-	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
-	specularColor = qglGetUniformLocation( program, "u_specularColor" );
-
-	cubic = qglGetUniformLocation( program, "u_cubic" );
-
-	GLint normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
-	lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
-	lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
-	lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
-	GLint diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
-	GLint specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
-
-	// set texture locations
-	qglUseProgram( program );
-
-	// static bindings
-	qglUniform1i( normalTexture, 0 );
-	qglUniform1i( lightFalloffTexture, 1 );
-	qglUniform1i( lightProjectionTexture, 2 );
-	qglUniform1i( diffuseTexture, 3 );
-	qglUniform1i( specularTexture, 4 );
-
-	// can't have sampler2D, usampler2D, samplerCube have the same TMU index
-	qglUniform1i( lightProjectionCubemap, 5 );
-	qglUseProgram( 0 );
-}
-
-void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-	basicInteractionProgram_t::UpdateUniforms( din );
-	qglUniformMatrix4fv( lightProjectionFalloff, 1, false, din->lightProjection[0].ToFloatPtr() );
-	// set the constant color
-	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
-	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
-	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		qglUniform1f( cubic, 1.0 );
-		qglUniform1i( lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( lightProjectionCubemap, 2 );
-		qglUniform1i( lightFalloffTexture, MAX_MULTITEXTURE_UNITS );
-	} else {
-		qglUniform1f( cubic, 0.0 );
-		qglUniform1i( lightProjectionTexture, 2 );
-		qglUniform1i( lightProjectionCubemap, MAX_MULTITEXTURE_UNITS + 1 );
-		qglUniform1i( lightFalloffTexture, 1 );
-	}
-	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
-}
-
-void pointInteractionProgram_t::AfterLoad() {
-	interactionProgram_t::AfterLoad();
-	advanced = qglGetUniformLocation( program, "u_advanced" );
-	shadows = qglGetUniformLocation( program, "u_shadows" );
-	softShadowsQuality = qglGetUniformLocation( program, "u_softShadowsQuality" );
-	softShadowsRadius = qglGetUniformLocation( program, "u_softShadowsRadius" );
-	softShadowSamples = qglGetUniformLocation( program, "u_softShadowsSamples" );
-	stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
-	depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
-	shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
-	renderResolution = qglGetUniformLocation( program, "u_renderResolution" );
-	lightOrigin2 = qglGetUniformLocation( program, "u_lightOrigin2" );
-	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
-
-	// set texture locations
-	qglUseProgram( program );
-
-	// can't have sampler2D, usampler2D, samplerCube, samplerCubeShadow on the same TMU
-	qglUniform1i( shadowMap, 6 );
-	qglUniform1i( stencilTexture, 7 );
-	qglUseProgram( 0 );
-	g_softShadowsSamples.Clear();
-}
-
-void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
-	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-
-	auto vLight = backEnd.vLight;
-	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
-	if ( doShadows && r_shadows.GetInteger() == 2 ) // FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
-		doShadows = vLight->globalInteractions != NULL;
-	if ( doShadows ) {
-		qglUniform1f( shadows, vLight->shadows );
-		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
-		if ( 0 ) { // select the pixels to TexCoords method for interactionA.fs
-			idVec4 v( page.x, page.y, 0, page.width );
-			v /= 6 * r_shadowMapSize.GetFloat();
-			qglUniform4fv( shadowRect, 1, v.ToFloatPtr() );
-		} else { // https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
-			idVec4 v( page.x, page.y, 0, page.width-1 );
-			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
-			v.w /= 6 * r_shadowMapSize.GetFloat();
-			qglUniform4fv( shadowRect, 1, v.ToFloatPtr() );
-		}
-	} else
-		qglUniform1f( shadows, 0 );
-
-	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
-		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
-
-		int sampleK = r_softShadowsQuality.GetInteger();
-		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
-			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 ) {
-				GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
-				qglUniform2fv( softShadowSamples, sampleK, ( float * )g_softShadowsSamples.Ptr() );
-			}
-		}
-	} else {
-		qglUniform1i( softShadowsQuality, 0 );
-	}
-	qglUniform1f( softShadowsRadius, GetEffectiveLightRadius() ); // for soft stencil and all shadow maps
-	if ( vLight->shadowMapIndex ) {
-		qglUniform1i( shadowMap, 6 );
-		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS + 2 );
-	} else {
-		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS + 2 );
-		qglUniform1i( depthTexture, 6 );
-		qglUniform1i( stencilTexture, 7 );
-		qglUniform2f( renderResolution, glConfig.vidWidth, glConfig.vidHeight );
-	}
-	GL_CheckErrors();
-}
-
-void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-	interactionProgram_t::UpdateUniforms( din );
-	qglUniform4fv( lightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
-	qglUniform3fv( lightOrigin2, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	GL_CheckErrors();
-}
-
-void ambientInteractionProgram_t::AfterLoad() {
-	interactionProgram_t::AfterLoad();
-	minLevel = qglGetUniformLocation( program, "u_minLevel" );
-	gamma = qglGetUniformLocation( program, "u_gamma" );
-	lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
-	rimColor = qglGetUniformLocation( program, "u_rimColor" );
-	qglUseProgram( program );
-	qglUniform1i( lightFalloffCubemap, 5 );
-	qglUseProgram( 0 );
-}
-
-void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-	interactionProgram_t::UpdateUniforms( din );
-	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
-	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
-	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
-	idVec4 color;
-	din->surf->material->GetAmbientRimColor( color );
-	qglUniform4fv( rimColor, 1, color.ToFloatPtr() );
-	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		qglUniform1i( lightFalloffCubemap, 1 );
-	} else {
-		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS + 1 );
-	}
-	GL_CheckErrors();
 }
 
 void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
