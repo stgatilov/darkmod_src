@@ -126,6 +126,56 @@ namespace Uniforms {
 		bool acceptsTranslucent = false;
 	};
 
+	struct Interaction: GLSLUniformGroup {
+		UNIFORM_GROUP_DEF( Interaction );
+
+		DEFINE_UNIFORM( mat4, modelMatrix );
+		DEFINE_UNIFORM( vec4, diffuseMatrix );
+		DEFINE_UNIFORM( vec4, bumpMatrix );
+		DEFINE_UNIFORM( vec4, specularMatrix );
+		DEFINE_UNIFORM( vec4, colorModulate );
+		DEFINE_UNIFORM( vec4, colorAdd );
+
+		DEFINE_UNIFORM( mat4, lightProjectionFalloff );
+		DEFINE_UNIFORM( vec4, diffuseColor );
+		DEFINE_UNIFORM( vec4, specularColor );
+		DEFINE_UNIFORM( float, cubic );
+		DEFINE_UNIFORM( sampler, normalTexture );
+		DEFINE_UNIFORM( sampler, diffuseTexture );
+		DEFINE_UNIFORM( sampler, specularTexture );
+		DEFINE_UNIFORM( sampler, lightProjectionTexture );
+		DEFINE_UNIFORM( sampler, lightProjectionCubemap );
+		DEFINE_UNIFORM( sampler, lightFalloffTexture );
+		DEFINE_UNIFORM( sampler, lightFalloffCubemap );
+		DEFINE_UNIFORM( vec4, localViewOrigin );
+
+		DEFINE_UNIFORM( vec4, lightOrigin );
+		DEFINE_UNIFORM( vec3, lightOrigin2 );
+
+		DEFINE_UNIFORM( float, minLevel );
+		DEFINE_UNIFORM( float, gamma );
+		DEFINE_UNIFORM( vec4, rimColor );
+
+		DEFINE_UNIFORM( float, advanced );
+		DEFINE_UNIFORM( float, shadows );
+		DEFINE_UNIFORM( vec4, shadowRect );
+		DEFINE_UNIFORM( int, softShadowsQuality );
+		DEFINE_UNIFORM( vec2, softShadowsSamples );
+		DEFINE_UNIFORM( float, softShadowsRadius );
+		DEFINE_UNIFORM( int, shadowMap );
+		DEFINE_UNIFORM( sampler, depthTexture );
+		DEFINE_UNIFORM( sampler, stencilTexture );
+		DEFINE_UNIFORM( vec2, renderResolution );
+
+		DEFINE_UNIFORM( float, RGTC );
+		DEFINE_UNIFORM( vec3, hasTextureDNS );
+
+		bool ambient = false;
+
+		void SetForInteraction( const drawInteraction_t *din );
+		void SetForShadows( bool translucent );
+	};
+
 	//pack of uniforms defined in a shader attached to "new" stage of a material
 	struct MaterialStage : public GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( MaterialStage );

@@ -19,6 +19,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <unordered_map>
 #include <typeindex>
 
+extern idCVar r_debugGLSL;
+
 class GLSLUniformGroup;
 
 class GLSLProgram {
@@ -42,7 +44,7 @@ public:
 	void Activate();
 	static void Deactivate();
 
-	int GetUniformLocation( const char *uniformName );
+	int GetUniformLocation( const char *uniformName ) const;
 
 	template<typename Group>
 	Group *GetUniformGroup() {

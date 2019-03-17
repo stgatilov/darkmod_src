@@ -54,7 +54,6 @@ void GLSLProgramManager::Shutdown() {
 	}
 	programs.Clear();
 
-	interactionShader = nullptr;
 	frobShader = nullptr;
 	cubeMapShader = nullptr;
 	depthShader = nullptr;
@@ -63,6 +62,9 @@ void GLSLProgramManager::Shutdown() {
 	blendShader = nullptr;
 	stencilShadowShader = nullptr;
 	shadowMapShader = nullptr;
+	ambientInteractionShader = nullptr;
+	stencilInteractionShader = nullptr;
+	shadowMapInteractionShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -208,10 +210,35 @@ namespace {
 			program->Validate();
 		});		
 	}
+
+	GLSLProgram *LoadInteractionShader( const idStr &name, const idStr &baseName, bool ambient ) {
+		return programManager->LoadFromGenerator( name, [=]( GLSLProgram *program ) {
+			idDict defines;
+			if( glConfig.gpuShader4Available ) {
+				defines.Set( "EXT_gpu_shader4", "1" );
+			}
+			DefaultProgramInit( program, defines, baseName + ".vs", baseName + ".fs" );			
+			program->Activate();
+			Uniforms::Interaction *interactionUniforms = program->GetUniformGroup<Uniforms::Interaction>();
+			interactionUniforms->ambient = ambient;
+			// static bindings
+			interactionUniforms->normalTexture.Set( 0 );
+			interactionUniforms->lightFalloffTexture.Set( 1 );
+			interactionUniforms->lightProjectionTexture.Set( 2 );
+			interactionUniforms->diffuseTexture.Set( 3 );
+			interactionUniforms->specularTexture.Set( 4 );
+
+			// can't have sampler2D, usampler2D, samplerCube have the same TMU index
+			interactionUniforms->lightProjectionCubemap.Set( 5 );
+			interactionUniforms->shadowMap.Set( 6 );
+			interactionUniforms->stencilTexture.Set( 7 );
+			interactionUniforms->lightFalloffCubemap.Set( 8 );
+			program->Validate();
+		} );
+	}
 }
 
 void GLSLProgramManager::Init() {
-	interactionShader = LoadFromGenerator( "interaction", InitInteractionShader );
 	cubeMapShader = LoadFromBaseNameWithCustomizer( "cubeMap", InitSamplerBindingsForBumpShaders );
 	frobShader = Load( "frob" );
 	bumpyEnvironment = LoadFromBaseNameWithCustomizer( "bumpyEnvironment", InitSamplerBindingsForBumpShaders );
@@ -221,5 +248,8 @@ void GLSLProgramManager::Init() {
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
 	stencilShadowShader = Load( "stencilshadow" );
 	shadowMapShader = LoadFromGenerator( "shadowMap", InitShadowMapShader );
+	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
+	stencilInteractionShader = LoadInteractionShader( "stencilInteraction", "interaction", false );
+	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
 }
 

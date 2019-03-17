@@ -45,7 +45,6 @@ public:
 	void ReloadAllPrograms();
 
 	// global built-in shaders
-	GLSLProgram *interactionShader;
 	GLSLProgram *frobShader;
 	GLSLProgram *cubeMapShader;
 	GLSLProgram *bumpyEnvironment;
@@ -55,6 +54,9 @@ public:
 	GLSLProgram *blendShader;
 	GLSLProgram *stencilShadowShader;
 	GLSLProgram *shadowMapShader;
+	GLSLProgram *ambientInteractionShader;
+	GLSLProgram *stencilInteractionShader;
+	GLSLProgram *shadowMapInteractionShader;
 
 private:
 	struct programWithGenerator_t {

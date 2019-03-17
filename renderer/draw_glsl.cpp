@@ -40,6 +40,9 @@ If you have questions concerning this license or the applicable additional terms
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
 
+//TODO: is this global variable harming multithreading?
+idList<idVec2> g_softShadowsSamples;
+
 struct ShadowMapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapUniforms );
 
@@ -68,8 +71,6 @@ struct pointInteractionProgram_t : interactionProgram_t {
 	GLint advanced, shadows, lightOrigin2;
 	GLint softShadowsQuality, softShadowsRadius, softShadowSamples, shadowRect, renderResolution;
 	GLint shadowMap, stencilTexture, depthTexture;
-	//TODO: is this global variable harming multithreading?
-	idList<idVec2> g_softShadowsSamples;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent );
 	virtual void UpdateUniforms( const drawInteraction_t *din );
@@ -86,7 +87,7 @@ shadowMapProgram_t shadowmapMultiShader;
 pointInteractionProgram_t stencilInteractionShader, shadowmapInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 
-interactionProgram_t *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
+GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
 std::map<std::string, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
 
@@ -100,19 +101,21 @@ RB_GLSL_DrawInteraction
 void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	// load all the shader parameters
 	GL_CheckErrors();
-	currrentInteractionShader->UpdateUniforms( din );
+	Uniforms::Interaction *interactionUniforms = currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>();
+	interactionUniforms->SetForInteraction( din );
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
-	if ( !din->bumpImage && currrentInteractionShader->hasTextureDNS >= 0 )
-		qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 0, 1 );
-	else {
+	if ( !din->bumpImage && interactionUniforms->hasTextureDNS.IsPresent() ) {
+		interactionUniforms->hasTextureDNS.Set( 1, 0, 1 );
+	} else {
 		if( !din->bumpImage ) // FIXME Uh-oh! This should not happen
 			return;
 		GL_SelectTexture( 0 );
 		din->bumpImage->Bind();
-		if ( currrentInteractionShader->hasTextureDNS >= 0 )
-			qglUniform3f( currrentInteractionShader->hasTextureDNS, 1, 1, 1 );
+		if ( interactionUniforms->hasTextureDNS.IsPresent() ) {
+			interactionUniforms->hasTextureDNS.Set( 1, 1, 1 );
+		}
 	}
 
 	// texture 1 will be the light falloff texture
@@ -157,7 +160,8 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	// bind the vertex and fragment program
 	interactionProgram_t::ChooseInteractionProgram();
-	currrentInteractionShader->UpdateUniforms( surf == backEnd.vLight->translucentInteractions );
+	Uniforms::Interaction *interactionUniforms = currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>();
+	interactionUniforms->SetForShadows( surf == backEnd.vLight->translucentInteractions );
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArray( 8 );
@@ -170,8 +174,10 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 			continue;
 		}
-		if ( backEnd.currentSpace != surf->space ) // FIXME needs a better integration with RB_CreateSingleDrawInteractions
-			qglUniformMatrix4fv( currrentInteractionShader->modelMatrix, 1, false, surf->space->modelMatrix );
+		if ( backEnd.currentSpace != surf->space ) {
+			// FIXME needs a better integration with RB_CreateSingleDrawInteractions
+			interactionUniforms->modelMatrix.Set( surf->space->modelMatrix );
+		}
 
 		// set the vertex pointers
 		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
@@ -766,15 +772,15 @@ void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 
 void interactionProgram_t::ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
-		currrentInteractionShader = &ambientInteractionShader;
+		currrentInteractionShader = programManager->ambientInteractionShader;
 	} else {
 		if ( backEnd.vLight->shadowMapIndex )
-			currrentInteractionShader = &shadowmapInteractionShader;
+			currrentInteractionShader = programManager->shadowMapInteractionShader;
 		else
-			currrentInteractionShader = &stencilInteractionShader;
+			currrentInteractionShader = programManager->stencilInteractionShader;
 	}
-	currrentInteractionShader->Use();
-	qglUniform1f( currrentInteractionShader->rgtc, globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
+	currrentInteractionShader->Activate();
+	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
 	GL_CheckErrors();
 }
 
@@ -1340,7 +1346,130 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 		}
 	}
 
+	GL_CheckErrors();
 }
+
+void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
+	if ( din->surf->space != backEnd.currentSpace )
+		modelMatrix.Set( din->surf->space->modelMatrix );
+	diffuseMatrix.SetArray( 2, din->diffuseMatrix[0].ToFloatPtr() );
+	if ( din->bumpImage )
+		bumpMatrix.SetArray( 2, din->bumpMatrix[0].ToFloatPtr() );
+	specularMatrix.SetArray( 2, din->specularMatrix[0].ToFloatPtr() );
+
+	static const idVec4	zero   { 0, 0, 0, 0 },
+	                    one	   { 1, 1, 1, 1 },
+	                    negOne { -1, -1, -1, -1 };
+	switch ( din->vertexColor ) {
+	case SVC_IGNORE:
+		colorModulate.Set( zero );
+		colorAdd.Set( one );
+		break;
+	case SVC_MODULATE:
+		colorModulate.Set( one );
+		colorAdd.Set( zero );
+		break;
+	case SVC_INVERSE_MODULATE:
+		colorModulate.Set( negOne );
+		colorAdd.Set( one );
+		break;
+	}
+
+	lightProjectionFalloff.Set( din->lightProjection[0].ToFloatPtr() );
+	// set the constant color
+	diffuseColor.Set( din->diffuseColor );
+	specularColor.Set( din->specularColor );
+	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+		cubic.Set( 1.f );
+		lightProjectionTexture.Set( MAX_MULTITEXTURE_UNITS );
+		lightProjectionCubemap.Set( 2 );
+		lightFalloffTexture.Set( MAX_MULTITEXTURE_UNITS );
+	} else {
+		cubic.Set( 0.f );
+		lightProjectionTexture.Set( 2 );
+		lightProjectionCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
+		lightFalloffTexture.Set( 1 );
+	}
+	localViewOrigin.Set( din->localViewOrigin );
+
+	if( ambient ) {
+		minLevel.Set(backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
+		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
+		lightOrigin.Set( din->worldUpLocal );
+		idVec4 color;
+		din->surf->material->GetAmbientRimColor( color );
+		rimColor.Set( color );
+		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+			lightFalloffCubemap.Set( 1 );
+		} else {
+			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
+		}
+	} else {
+		lightOrigin.Set( din->localLightOrigin );
+		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
+	}
+
+	GL_CheckErrors();
+}
+
+void Uniforms::Interaction::SetForShadows( bool translucent ) {
+	if( ambient ) {
+		return;
+	}
+
+	advanced.Set( r_testARBProgram.GetFloat() );
+
+	auto vLight = backEnd.vLight;
+	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
+	if ( doShadows && r_shadows.GetInteger() == 2 ) {
+		// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
+		doShadows = vLight->globalInteractions != NULL;
+	}
+	if ( doShadows ) {
+		shadows.Set( vLight->shadows );
+		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
+		if ( 0 ) { // select the pixels to TexCoords method for interactionA.fs
+			idVec4 v( page.x, page.y, 0, page.width );
+			v /= 6 * r_shadowMapSize.GetFloat();
+			shadowRect.Set( v );
+		} else { // https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
+			idVec4 v( page.x, page.y, 0, page.width-1 );
+			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
+			v.w /= 6 * r_shadowMapSize.GetFloat();
+			shadowRect.Set( v );
+		}
+	} else {
+		shadows.Set(0);
+	}
+
+	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
+		softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );
+
+		int sampleK = r_softShadowsQuality.GetInteger();
+		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
+			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 ) {
+				GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
+				softShadowsSamples.SetArray( sampleK, ( float * )g_softShadowsSamples.Ptr() );
+			}
+		}
+	} else {
+		softShadowsQuality.Set( 0 );
+	}
+	softShadowsRadius.Set( GetEffectiveLightRadius() ); // for soft stencil and all shadow maps
+	if ( vLight->shadowMapIndex ) {
+		shadowMap.Set( 6 );
+		depthTexture.Set( MAX_MULTITEXTURE_UNITS );
+		stencilTexture.Set( MAX_MULTITEXTURE_UNITS + 2 );
+	} else {
+		shadowMap.Set( MAX_MULTITEXTURE_UNITS + 2 );
+		depthTexture.Set( 6 );
+		stencilTexture.Set( 7 );
+		renderResolution.Set( glConfig.vidWidth, glConfig.vidHeight );
+	}
+
+	GL_CheckErrors();
+}
+
 
 GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name) {
 	GLSLProgram *program = programManager->Find( name );

@@ -19,6 +19,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <memory>
 #include <regex>
 
+idCVar r_debugGLSL("r_debugGLSL", "0", CVAR_BOOL|CVAR_ARCHIVE, "If enabled, checks and warns about additional potential sources of GLSL shader errors.");
+
 GLuint GLSLProgram::currentProgram = 0;
 
 GLSLProgram::GLSLProgram( const char *name ) : name( name ), program( 0 ) {}
@@ -98,8 +100,12 @@ void GLSLProgram::Deactivate() {
 	currentProgram = 0;
 }
 
-int GLSLProgram::GetUniformLocation(const char *uniformName) {
-    return qglGetUniformLocation( program, uniformName );
+int GLSLProgram::GetUniformLocation(const char *uniformName) const {
+    const int location = qglGetUniformLocation( program, uniformName );
+	if( location < 0 && r_debugGLSL.GetBool() ) {
+		common->Warning( "In program %s: uniform %s is unknown or unused.", name.c_str(), uniformName );
+	}
+	return location;
 }
 
 bool GLSLProgram::Validate() {

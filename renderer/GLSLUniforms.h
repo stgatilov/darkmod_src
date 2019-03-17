@@ -28,38 +28,40 @@ protected:
 	GLSLProgram *program;
 };
 
-class GLSLUniform_int {
+class GLSLUniformBase {
 public:
+	bool IsPresent() const { return paramLocation >= 0; }
+
+protected:
+	GLSLUniformBase(GLSLProgram *program, const char *uniformName)
+		: paramLocation(program->GetUniformLocation( uniformName )) {}
+
+	int paramLocation;
+};
+
+struct GLSLUniform_int : GLSLUniformBase {
 	GLSLUniform_int(GLSLProgram *program, const char *uniformName)
-			: paramLocation(program->GetUniformLocation(uniformName)) {}
+			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(int value) {
 		qglUniform1i(paramLocation, value);
 	}
-
-private:
-	int paramLocation;
 };
 
 typedef GLSLUniform_int GLSLUniform_sampler;
 
-class GLSLUniform_float {
-public:
+struct GLSLUniform_float : GLSLUniformBase {
 	GLSLUniform_float(GLSLProgram *program, const char *uniformName)
-			: paramLocation(program->GetUniformLocation(uniformName)) {}
+			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(float value) {
 		qglUniform1f(paramLocation, value);
 	}
-
-private:
-	int paramLocation;
 };
 
-class GLSLUniform_vec2 {
-public:
+struct GLSLUniform_vec2 : GLSLUniformBase {
 	GLSLUniform_vec2(GLSLProgram *program, const char *uniformName)
-			: paramLocation(program->GetUniformLocation(uniformName)) {}
+			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(float v1, float v2) {
 		qglUniform2f(paramLocation, v1, v2);
@@ -69,14 +71,14 @@ public:
 		qglUniform2fv(paramLocation, 1, value.ToFloatPtr());
 	}
 
-private:
-	int paramLocation;
+	void SetArray(int count, const float *value) {
+		qglUniform2fv(paramLocation, count, value);
+	}
 };
 
-class GLSLUniform_vec3 {
-public:
+struct GLSLUniform_vec3 : GLSLUniformBase {
 	GLSLUniform_vec3(GLSLProgram *program, const char *uniformName)
-			: paramLocation(program->GetUniformLocation(uniformName)) {}
+			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(float v1, float v2, float v3) {
 		qglUniform3f(paramLocation, v1, v2, v3);
@@ -89,15 +91,11 @@ public:
 	void Set(const float *value) {
 		qglUniform3fv( paramLocation, 1, value );
 	}
-
-private:
-	int paramLocation;
 };
 
-class GLSLUniform_vec4 {
-public:
+struct GLSLUniform_vec4 : GLSLUniformBase {
 	GLSLUniform_vec4(GLSLProgram *program, const char *uniformName)
-			: paramLocation(program->GetUniformLocation(uniformName)) {}
+			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(float v1, float v2, float v3, float v4) {
 		qglUniform4f(paramLocation, v1, v2, v3, v4);
@@ -115,14 +113,14 @@ public:
 		qglUniform4fv( paramLocation, 1, value );
 	}
 
-private:
-	int paramLocation;
+	void SetArray(int count, const float *value) {
+		qglUniform4fv( paramLocation, count, value );
+	}
 };
 
-class GLSLUniform_mat4 {
-public:
+struct GLSLUniform_mat4 : GLSLUniformBase {
 	GLSLUniform_mat4(GLSLProgram *program, const char *uniformName)
-			: paramLocation(program->GetUniformLocation(uniformName)) {}
+			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(const float *value) {
 		qglUniformMatrix4fv(paramLocation, 1, GL_FALSE, value);
@@ -131,9 +129,6 @@ public:
 	void Set(const idMat4 &value) {
 		qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
 	}
-
-private:
-	int paramLocation;
 };
 
 #define DEFINE_UNIFORM(type, name) GLSLUniform_##type name = GLSLUniform_##type(program, "u_" #name)
