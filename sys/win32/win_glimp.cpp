@@ -58,6 +58,8 @@ PFNWGLBINDTEXIMAGEARBPROC		wglBindTexImageARB;
 PFNWGLRELEASETEXIMAGEARBPROC	wglReleaseTexImageARB;
 PFNWGLSETPBUFFERATTRIBARBPROC	wglSetPbufferAttribARB;
 
+PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
+
 //
 // function declaration
 //
@@ -229,6 +231,11 @@ void GLW_CheckWGLExtensions( HDC hDC ) {
 	wglReleaseTexImageARB = ( PFNWGLRELEASETEXIMAGEARBPROC )GLimp_ExtensionPointer( "wglReleaseTexImageARB" );
 	wglSetPbufferAttribARB = ( PFNWGLSETPBUFFERATTRIBARBPROC )GLimp_ExtensionPointer( "wglSetPbufferAttribARB" );
 
+	wglCreateContextAttribsARB = ( PFNWGLCREATECONTEXTATTRIBSARBPROC )GLimp_ExtensionPointer( "wglCreateContextAttribsARB" );
+	if( wglCreateContextAttribsARB == nullptr ) {
+		common->FatalError( "wglCreateContextAttribsARB not available - OpenGL version is likely too old" );
+	}
+
 	qglGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
 }
 
@@ -389,7 +396,20 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 
 	// startup the OpenGL subsystem by creating a context and making it current
 	common->Printf( "...creating GL context: " );
-	if ( ( win32.hGLRC = qwglCreateContext( win32.hDC ) ) == 0 ) {
+	if( r_glDebugContext.GetBool() ) {
+		common->Printf("debug ");
+	}
+	int attribs[] = {
+		// we want at least GL 3.1
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+		WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+		// TODO: might want to (optionally) create a core profile once we got rid of the old stuff
+		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+		// enable debug context if asked for
+		WGL_CONTEXT_FLAGS_ARB, r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
+		0
+	};
+	if ( ( win32.hGLRC = wglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {
 		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
 	}

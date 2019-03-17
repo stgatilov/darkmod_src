@@ -31,6 +31,8 @@
 glconfig_t	glConfig;
 
 idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
+idCVar r_glDebugOutput( "r_glDebugOutput", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Enables GL debug messages and displays them on the console. Using a debug context may provide additional insight. 2 - enables synchronous processing (slower)" );
+idCVar r_glDebugContext( "r_glDebugContext", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "If enabled, create a GL debug context." );
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
 idCVar r_multiSamples( "r_multiSamples", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "number of antialiasing samples" );
 idCVar r_displayRefresh( "r_displayRefresh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 200.0f );
@@ -412,9 +414,15 @@ PFNGLQUERYCOUNTERPROC					qglQueryCounter;
 PFNGLGETQUERYOBJECTUI64VPROC			qglGetQueryObjectui64v;
 PFNGLBEGINQUERYPROC						qglBeginQuery;
 PFNGLENDQUERYPROC						qglEndQuery;
-// debug groups
+// debugging
 PFNGLPUSHDEBUGGROUPPROC					qglPushDebugGroup;
 PFNGLPOPDEBUGGROUPPROC					qglPopDebugGroup;
+PFNGLDEBUGMESSAGECALLBACKPROC			qglDebugMessageCallback;
+
+static void APIENTRY R_OpenGLDebugMessageCallback( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam ) {
+	if( severity != GL_DEBUG_SEVERITY_NOTIFICATION )
+		common->Printf( "GL: %s\n", message );
+}
 
 /*
 =================
@@ -718,10 +726,11 @@ static void R_CheckPortableExtensions( void ) {
 		qglGetQueryObjectui64v = ( PFNGLGETQUERYOBJECTUI64VPROC )GLimp_ExtensionPointer( "glGetQueryObjectui64v" );
 	}
 
-	glConfig.debugGroupsAvailable = R_CheckExtension( "GL_KHR_debug" );
+	glConfig.debugGroupsAvailable = R_CheckExtension( "GL_KHR_debug", 4.3 );
 	if( glConfig.debugGroupsAvailable ) {
 		qglPushDebugGroup = ( PFNGLPUSHDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPushDebugGroup" );
 		qglPopDebugGroup = ( PFNGLPOPDEBUGGROUPPROC )GLimp_ExtensionPointer( "glPopDebugGroup" );
+		qglDebugMessageCallback = ( PFNGLDEBUGMESSAGECALLBACKPROC )GLimp_ExtensionPointer( "glDebugMessageCallback" );
 	}
 
 	glConfig.fenceSyncAvailable = R_CheckExtension( "GL_ARB_sync", 3.2 );
@@ -862,6 +871,14 @@ void R_InitOpenGL( void ) {
 
 	// recheck all the extensions (FIXME: this might be dangerous)
 	R_CheckPortableExtensions();
+
+	if( r_glDebugOutput.GetBool() && glConfig.debugGroupsAvailable ) {
+		qglEnable( GL_DEBUG_OUTPUT );
+		qglDebugMessageCallback( R_OpenGLDebugMessageCallback, nullptr );
+		if( r_glDebugOutput.GetInteger() == 2) {
+			qglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+		}
+	}
 
 	cmdSystem->AddCommand( "reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs" );
 	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );

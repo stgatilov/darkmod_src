@@ -224,9 +224,10 @@ extern PFNGLQUERYCOUNTERPROC			qglQueryCounter;
 extern PFNGLGETQUERYOBJECTUI64VPROC		qglGetQueryObjectui64v;
 extern PFNGLBEGINQUERYPROC				qglBeginQuery;
 extern PFNGLENDQUERYPROC				qglEndQuery;
-// debug groups
+// debugging
 extern PFNGLPUSHDEBUGGROUPPROC			qglPushDebugGroup;
 extern PFNGLPOPDEBUGGROUPPROC			qglPopDebugGroup;
+extern PFNGLDEBUGMESSAGECALLBACKPROC    qglDebugMessageCallback;
 
 //===========================================================================
 
