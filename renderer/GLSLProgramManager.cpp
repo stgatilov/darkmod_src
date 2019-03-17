@@ -153,13 +153,6 @@ namespace {
 		program->Validate();
 	}
 
-	void InitCubeMapShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), "cubeMap.vs", "cubeMap.fs" );
-		program->Activate();
-		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
-		program->Validate();
-	}
-
 	void InitDepthShader( GLSLProgram *program ) {
 		DefaultProgramInit( program, idDict(), "depthAlpha.vs", "depthAlpha.fs" );
 		program->Activate();
@@ -197,13 +190,30 @@ namespace {
 		depthUniforms->acceptsTranslucent = true;
 		program->Validate();
 	}
+
+	void InitSamplerBindingsForBumpShaders( GLSLProgram *program ) {
+		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
+	}
+
+	GLSLProgram *LoadFromBaseNameWithCustomizer( const idStr &baseName, const std::function<void(GLSLProgram*)> customizer) {
+		return programManager->LoadFromGenerator( "baseName", [=]( GLSLProgram *program ) {
+			idStr geometrySource = baseName + ".gs";
+			if( fileSystem->FindFile( idStr("glprogs/") + geometrySource ) == FIND_NO ) {
+				geometrySource = nullptr;
+			}
+			DefaultProgramInit( program, idDict(), baseName + ".vs", baseName + ".fs", geometrySource );
+			program->Activate();
+			customizer( program );
+			program->Validate();
+		});		
+	}
 }
 
 void GLSLProgramManager::Init() {
 	interactionShader = LoadFromGenerator( "interaction", InitInteractionShader );
-	cubeMapShader = LoadFromGenerator( "cubeMap", InitCubeMapShader );
+	cubeMapShader = LoadFromBaseNameWithCustomizer( "cubeMap", InitSamplerBindingsForBumpShaders );
 	frobShader = Load( "frob" );
-	bumpyEnvironment = LoadFromGenerator( "bumpyEnvironment", InitCubeMapShader );
+	bumpyEnvironment = LoadFromBaseNameWithCustomizer( "bumpyEnvironment", InitSamplerBindingsForBumpShaders );
 	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
