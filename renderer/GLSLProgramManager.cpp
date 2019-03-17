@@ -196,12 +196,13 @@ namespace {
 }
 
 	GLSLProgram *LoadFromBaseNameWithCustomizer( const idStr &baseName, const std::function<void(GLSLProgram*)> customizer) {
-		return programManager->LoadFromGenerator( "baseName", [=]( GLSLProgram *program ) {
+		return programManager->LoadFromGenerator( baseName, [=]( GLSLProgram *program ) {
 			idStr geometrySource = baseName + ".gs";
-			if( fileSystem->FindFile( idStr("glprogs/") + geometrySource ) == FIND_NO ) {
-				geometrySource = nullptr;
+			if( fileSystem->FindFile( idStr( "glprogs/" ) + baseName + ".gs" ) != FIND_NO ) {
+				DefaultProgramInit( program, idDict(), baseName + ".vs", baseName + ".fs", baseName + ".gs" );
+			} else {
+				DefaultProgramInit( program, idDict(), baseName + ".vs", baseName + ".fs", nullptr );
 			}
-			DefaultProgramInit( program, idDict(), baseName + ".vs", baseName + ".fs", geometrySource );
 			program->Activate();
 			customizer( program );
 			program->Validate();
