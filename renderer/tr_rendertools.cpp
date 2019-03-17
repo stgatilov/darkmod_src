@@ -841,6 +841,55 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 
 /*
 =====================
+RB_ShowEntityDraws
+
+Performance tool
+=====================
+*/
+static void RB_ShowEntityDraws( viewEntity_t *vModels ) {
+	if ( !r_showEntityDraws || backEnd.viewDef->isSubview ) {
+		return;
+	}
+	qglDisableVertexAttribArray( 8 );
+	globalImages->BindNull();
+	qglDisable( GL_TEXTURE_2D );
+	qglDisable( GL_STENCIL_TEST );
+
+	GL_FloatColor( 1, 1, 1 );
+
+	GL_State( GLS_POLYMODE_LINE );
+
+	GL_Cull( CT_TWO_SIDED );
+	qglDisable( GL_DEPTH_TEST );
+	qglDisable( GL_SCISSOR_TEST );
+
+	idStrList list;
+	for ( ; vModels; vModels = vModels->next ) {
+		if ( !vModels->drawCalls ) 
+			continue;
+		renderEntity_t &re = vModels->entityDef->parms;
+		const char *name = "NULL";
+		if ( re.hModel )
+			name = re.hModel->Name();
+		idStr s;
+		sprintf( s, "%3i %3i %s\n", vModels->drawCalls, vModels->entityDef->index, name );
+		list.Append( s );
+	}
+	list.Sort();
+	for ( auto &s : list )
+		common->Printf( s );
+	qglEnable( GL_DEPTH_TEST );
+	qglDisable( GL_POLYGON_OFFSET_LINE );
+
+	qglDepthRange( 0, 1 );
+	GL_State( GLS_DEFAULT );
+	GL_Cull( CT_FRONT_SIDED );
+
+	r_showEntityDraws = false;
+}
+
+/*
+=====================
 RB_ShowTexturePolarity
 
 Shade triangle red if they have a positive texture area
@@ -2239,6 +2288,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_ShowEdges( drawSurfs, numDrawSurfs );
 	RB_ShowNormals( drawSurfs, numDrawSurfs );
 	RB_ShowViewEntitys( backEnd.viewDef->viewEntitys );
+	RB_ShowEntityDraws( backEnd.viewDef->viewEntitys );
 	RB_ShowLights();
 	RB_ShowLightScissors();
 	RB_ShowTextureVectors( drawSurfs, numDrawSurfs );

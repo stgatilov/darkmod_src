@@ -85,6 +85,8 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		backEnd.pc.c_drawIndexes += surf->numIndexes;
 		backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
 	}
+	if ( r_showEntityDraws && surf->space )
+		((viewEntity_t *)surf->space)->drawCalls++;
 
 	if ( surf->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
