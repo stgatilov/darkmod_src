@@ -34,9 +34,9 @@ struct CubemapUniforms : GLSLUniformGroup {
 struct BumpyEnvironmentUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( BumpyEnvironmentUniforms );
 
-	DEFINE_UNIFORM( vec4, u_viewOriginLocal );
-	DEFINE_UNIFORM( vec4, u_envvpParam16 );
-	DEFINE_UNIFORM( vec4, u_envvpParam17 );
+	DEFINE_UNIFORM( vec4, viewOriginLocal );
+	DEFINE_UNIFORM( vec4, envvpParam16 );
+	DEFINE_UNIFORM( vec4, envvpParam17 );
 };
 
 struct FogUniforms : GLSLUniformGroup {
@@ -97,7 +97,7 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 			BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
 			idVec4 v;
 			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
-			uniforms->u_viewOriginLocal.Set( v );
+			uniforms->viewOriginLocal.Set( v );
 		} else // Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
