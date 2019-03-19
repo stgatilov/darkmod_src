@@ -16,7 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __GLSL_PROGRAM_H__
 #define __GLSL_PROGRAM_H__
 
-#include <unordered_map>
 #include <typeindex>
 
 extern idCVar r_debugGLSL;
@@ -48,7 +47,7 @@ public:
 
 	template<typename Group>
 	Group *GetUniformGroup() {
-		GLSLUniformGroup *& group = uniformGroups[typeid(Group)];
+		GLSLUniformGroup *& group = FindUniformGroup(typeid(Group));
 		if( group == nullptr ) {
 			Activate();
 			group = new Group( this );
@@ -68,8 +67,14 @@ private:
 
 	idStr name;
 	GLuint program;
-	std::unordered_map<std::type_index, GLSLUniformGroup*> uniformGroups;
 
+	struct ActiveUniformGroup {
+		std::type_index type;
+		GLSLUniformGroup *group;
+	};
+	std::vector<ActiveUniformGroup> uniformGroups;
+
+	GLSLUniformGroup *&FindUniformGroup( const std::type_index &type );
 	void LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 	GLuint CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 };

@@ -41,8 +41,8 @@ void GLSLProgram::Destroy() {
 		Deactivate();
 	}
 
-	for( auto it : uniformGroups ) {
-		delete it.second;
+	for( auto &it : uniformGroups ) {
+		delete it.group;
 	}
 	uniformGroups.clear();
 
@@ -106,6 +106,15 @@ int GLSLProgram::GetUniformLocation(const char *uniformName) const {
 		common->Warning( "In program %s: uniform %s is unknown or unused.", name.c_str(), uniformName );
 	}
 	return location;
+}
+
+GLSLUniformGroup *&GLSLProgram::FindUniformGroup( const std::type_index &type ) {
+	int n = (int)uniformGroups.size();
+	for (int i = 0; i < n; i++)
+		if (uniformGroups[i].type == type)
+			return uniformGroups[i].group;
+	uniformGroups.push_back(ActiveUniformGroup{type, nullptr});
+	return uniformGroups[n].group;
 }
 
 bool GLSLProgram::Validate() {

@@ -131,7 +131,7 @@ struct GLSLUniform_mat4 : GLSLUniformBase {
 	}
 };
 
-#define DEFINE_UNIFORM(type, name) GLSLUniform_##type name = GLSLUniform_##type(program, "u_" #name)
+#define DEFINE_UNIFORM(type, name) GLSLUniform_##type name = GLSLUniform_##type(program, "u_" #name);
 #define UNIFORM_GROUP_DEF(type) explicit type(GLSLProgram *program) : GLSLUniformGroup(program) {}
 
 #endif

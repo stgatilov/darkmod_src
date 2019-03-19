@@ -44,12 +44,12 @@ If you have questions concerning this license or the applicable additional terms
 idList<idVec2> g_softShadowsSamples;
 
 struct ShadowMapUniforms : GLSLUniformGroup {
-	UNIFORM_GROUP_DEF( ShadowMapUniforms );
+	UNIFORM_GROUP_DEF( ShadowMapUniforms )
 
-	DEFINE_UNIFORM( vec4, lightOrigin );
-	DEFINE_UNIFORM( float, lightRadius );
-	DEFINE_UNIFORM( float, alphaTest );
-	DEFINE_UNIFORM( mat4, modelMatrix );
+	DEFINE_UNIFORM( vec4, lightOrigin )
+	DEFINE_UNIFORM( float, lightRadius )
+	DEFINE_UNIFORM( float, alphaTest )
+	DEFINE_UNIFORM( mat4, modelMatrix )
 };
 
 shadowMapProgram_t shadowmapMultiShader;
