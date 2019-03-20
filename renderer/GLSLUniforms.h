@@ -57,6 +57,10 @@ struct GLSLUniform_float : GLSLUniformBase {
 	void Set(float value) {
 		qglUniform1f(paramLocation, value);
 	}
+
+	void SetArray( int count, const float *value ) {
+		qglUniform1fv( paramLocation, count, value );
+	}
 };
 
 struct GLSLUniform_vec2 : GLSLUniformBase {
@@ -90,6 +94,10 @@ struct GLSLUniform_vec3 : GLSLUniformBase {
 
 	void Set(const float *value) {
 		qglUniform3fv( paramLocation, 1, value );
+	}
+
+	void SetArray( int count, const float * value ) {
+		qglUniform3fv( paramLocation, count, value );
 	}
 };
 
@@ -128,6 +136,10 @@ struct GLSLUniform_mat4 : GLSLUniformBase {
 
 	void Set(const idMat4 &value) {
 		qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
+	}
+
+	void SetArray( int count, const float *value ) {
+		qglUniformMatrix4fv( paramLocation, count, false, value );
 	}
 };
 

@@ -59,16 +59,6 @@ struct shadowMapProgram_t : basicDepthProgram_t {
 	void RenderAllLights( drawSurf_t *surf );
 };
 
-struct multiLightInteractionProgram_t : basicInteractionProgram_t {
-	static const uint MAX_LIGHTS = 16;
-	GLint lightCount, lightOrigin, lightColor, shadowRect, softShadowsRadius;
-	GLint minLevel, gamma;
-	virtual	void AfterLoad();
-	virtual void Draw( const drawInteraction_t *din );
-};
-
-extern multiLightInteractionProgram_t multiLightShader;
-
 extern idCVarBool r_useGLSL;
 extern idCVarBool r_newFrob;
 
@@ -149,7 +139,7 @@ namespace Uniforms {
 		DEFINE_UNIFORM( sampler, lightFalloffCubemap );
 		DEFINE_UNIFORM( vec4, viewOrigin );
 
-		DEFINE_UNIFORM( vec4, lightOrigin );
+		DEFINE_UNIFORM( vec3, lightOrigin );
 		DEFINE_UNIFORM( vec3, lightOrigin2 );
 
 		DEFINE_UNIFORM( float, minLevel );
@@ -170,8 +160,12 @@ namespace Uniforms {
 		DEFINE_UNIFORM( float, RGTC );
 		DEFINE_UNIFORM( vec3, hasTextureDNS );
 
+		DEFINE_UNIFORM( int, lightCount );
+		DEFINE_UNIFORM( vec3, lightColor );
+
 		bool ambient = false;
 
+		void SetForInteractionBasic( const drawInteraction_t *din );
 		void SetForInteraction( const drawInteraction_t *din );
 		void SetForShadows( bool translucent );
 	};

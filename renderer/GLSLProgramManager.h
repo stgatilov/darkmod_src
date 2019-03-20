@@ -57,6 +57,7 @@ public:
 	GLSLProgram *ambientInteractionShader;
 	GLSLProgram *stencilInteractionShader;
 	GLSLProgram *shadowMapInteractionShader;
+	GLSLProgram *multiLightInteractionShader;
 
 private:
 	struct programWithGenerator_t {

@@ -478,7 +478,6 @@ FIXME split the stencil and shadowmap interactions in separate shaders as the la
 ID_NOINLINE bool R_ReloadGLSLPrograms() { 
 	bool ok = true;
 	// these are optional and don't "need" to compile
-	multiLightShader.Load( "interactionN" );
 	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
@@ -1150,7 +1149,7 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 	GL_CheckErrors();
 }
 
-void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
+void Uniforms::Interaction::SetForInteractionBasic( const drawInteraction_t *din ) {
 	if ( din->surf->space != backEnd.currentSpace )
 		modelMatrix.Set( din->surf->space->modelMatrix );
 	diffuseMatrix.SetArray( 2, din->diffuseMatrix[0].ToFloatPtr() );
@@ -1175,6 +1174,10 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		colorAdd.Set( one );
 		break;
 	}
+}
+
+void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
+	SetForInteractionBasic( din );
 
 	lightProjectionFalloff.Set( din->lightProjection[0].ToFloatPtr() );
 	// set the constant color
@@ -1196,7 +1199,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	if( ambient ) {
 		minLevel.Set(backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
-		lightOrigin.Set( din->worldUpLocal );
+		lightOrigin.Set( din->worldUpLocal.ToVec3() );
 		idVec4 color;
 		din->surf->material->GetAmbientRimColor( color );
 		rimColor.Set( color );
@@ -1206,7 +1209,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
 		}
 	} else {
-		lightOrigin.Set( din->localLightOrigin );
+		lightOrigin.Set( din->localLightOrigin.ToVec3() );
 		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
 	}
 

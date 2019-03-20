@@ -31,6 +31,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "glsl.h"
 #include "FrameBuffer.h"
 #include "Profiling.h"
+#include "GLSLProgramManager.h"
+
+static const uint MAX_LIGHTS = 16;
 
 struct MultiLightShaderData { // used by both interaction and shadow map shaders
 	std::vector<viewLight_t *> vLights;
@@ -40,8 +43,6 @@ struct MultiLightShaderData { // used by both interaction and shadow map shaders
 	std::vector<idVec4> lightFrustum;
 	MultiLightShaderData( const drawSurf_t *surf, bool shadowPass );
 };
-
-multiLightInteractionProgram_t multiLightShader;
 
 MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowPass ) {
 #ifdef MULTI_LIGHT_IN_FRONT
@@ -105,24 +106,7 @@ MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowP
 	backEnd.vLight = NULL; // just in case
 }
 
-void multiLightInteractionProgram_t::AfterLoad() {
-	basicInteractionProgram_t::AfterLoad();
-	lightCount = qglGetUniformLocation( program, "u_lightCount" );
-	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
-	lightColor = qglGetUniformLocation( program, "u_diffuseColor" );
-	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
-	minLevel = qglGetUniformLocation( program, "u_minLevel" );
-	gamma = qglGetUniformLocation( program, "u_gamma" );
-	softShadowsRadius = qglGetUniformLocation( program, "u_softShadowsRadius" );
-	auto diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
-	auto shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
-	qglUseProgram( program );
-	qglUniform1i( diffuseTexture, 3 );
-	qglUniform1i( shadowMap, 5 );
-	qglUseProgram( 0 );
-}
-
-void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
+static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
 	auto surf = din->surf;
 	MultiLightShaderData data( surf, false );
 	idList<idVec3> lightColors;
@@ -148,19 +132,20 @@ void multiLightInteractionProgram_t::Draw( const drawInteraction_t *din ) {
 		projectionFalloff.Append( *p );
 	}
 
-	basicInteractionProgram_t::UpdateUniforms( din );
-	qglUniform1f( minLevel, backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
-	qglUniform1f( gamma, backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
+	Uniforms::Interaction *interactionUniforms = programManager->multiLightInteractionShader->GetUniformGroup<Uniforms::Interaction>();
+	interactionUniforms->SetForInteractionBasic( din );
+	interactionUniforms->minLevel.Set( backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
+	interactionUniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 
 	for ( int i = 0; i < (int)data.lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = idMath::Imin( (uint)data.lightOrigins.size() - i, MAX_LIGHTS );
 
-		qglUniform1i( lightCount, thisCount );
-		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
-		qglUniform3fv( lightColor, thisCount, lightColors[i].ToFloatPtr() );
-		qglUniformMatrix4fv( lightProjectionFalloff, thisCount, false, projectionFalloff[i].ToFloatPtr() );
-		qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
-		qglUniform1fv( softShadowsRadius, thisCount, &data.softShadowRads[i] );
+		interactionUniforms->lightCount.Set( thisCount );
+		interactionUniforms->lightOrigin.SetArray( thisCount, data.lightOrigins[i].ToFloatPtr() );
+		interactionUniforms->lightColor.SetArray( thisCount, lightColors[i].ToFloatPtr() );
+		interactionUniforms->lightProjectionFalloff.SetArray( thisCount, projectionFalloff[i].ToFloatPtr() );
+		interactionUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );
+		interactionUniforms->softShadowsRadius.SetArray( thisCount, &data.softShadowRads[i] );
 		GL_CheckErrors();
 
 		RB_DrawElementsWithCounters( surf );
@@ -200,8 +185,8 @@ void shadowMapProgram_t::RenderAllLights( drawSurf_t *surf ) {
 
 	MultiLightShaderData data( surf, true );
 
-	for ( int i = 0; i < (int)data.lightOrigins.size(); i += multiLightInteractionProgram_t::MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( (int)data.lightOrigins.size() - i, multiLightInteractionProgram_t::MAX_LIGHTS );
+	for ( int i = 0; i < (int)data.lightOrigins.size(); i += MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( (int)data.lightOrigins.size() - i, MAX_LIGHTS );
 
 		qglUniform1i( lightCount, thisCount );
 		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
@@ -297,7 +282,7 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 	GL_SelectTexture( 4 );
 	din->specularImage->Bind();
 
-	multiLightShader.Draw( din );
+	RB_DrawMultiLightInteraction( din );
 	GL_CheckErrors();
 }
 
@@ -305,6 +290,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	if ( !backEnd.viewDef->viewLights )
 		return;
 	GL_CheckErrors();
+	GL_PROFILE( "GLSL_MultiLightInteractions" );
 
 	extern void RB_GLSL_GenerateShadowMaps();
 	RB_GLSL_GenerateShadowMaps();
@@ -321,7 +307,9 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	GL_SelectTexture( 5 );
 	globalImages->shadowAtlas->Bind();
 
-	multiLightShader.Use();
+	programManager->multiLightInteractionShader->Activate();
+	Uniforms::Interaction *interactionUniforms = programManager->multiLightInteractionShader->GetUniformGroup<Uniforms::Interaction>();
+	interactionUniforms->shadowMap.Set( 5 );
 
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
 
@@ -336,7 +324,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		if ( surf->space != backEnd.currentSpace ) {
 			backEnd.currentSpace = surf->space;
 			qglLoadMatrixf( surf->space->modelViewMatrix );
-			qglUniformMatrix4fv( multiLightShader.modelMatrix, 1, false, surf->space->modelMatrix );
+			interactionUniforms->modelMatrix.Set( surf->space->modelMatrix );
 		}
 
 		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
@@ -351,7 +339,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		RB_CreateMultiDrawInteractions( surf );
 	}
 
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 
 	GL_SelectTexture( 5 );
 	globalImages->BindNull();

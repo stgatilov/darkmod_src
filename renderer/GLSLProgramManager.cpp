@@ -65,6 +65,7 @@ void GLSLProgramManager::Shutdown() {
 	ambientInteractionShader = nullptr;
 	stencilInteractionShader = nullptr;
 	shadowMapInteractionShader = nullptr;
+	multiLightInteractionShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -251,5 +252,6 @@ void GLSLProgramManager::Init() {
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
 	stencilInteractionShader = LoadInteractionShader( "stencilInteraction", "interaction", false );
 	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
+	multiLightInteractionShader = LoadInteractionShader( "multiLightInteraction", "interactionN", false );
 }
 
