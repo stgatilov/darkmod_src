@@ -1584,13 +1584,21 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 	const idVec3 norm = node->plane.Normal();
 	const float plane3 = node->plane[3];
 
+	static idCVar r_areaCullRatio( "r_areaCullMargin", "0", CVAR_FLOAT | CVAR_RENDERER, "=0 - regular, >0 - stuff missing, <1 - extra draw calls" );
+	const float eps = sphere->GetRadius() * r_areaCullRatio.GetFloat();
+	
 	for ( int i = 0 ; i < numPoints ; i++ ) {
-
-		if ( ( points[i] * norm + plane3 ) >= 0.0f ) {
-		    front = true;
+#if 0	
+		if ( (points[i] * norm + plane3) >= 0.0f ) {
+			front = true;
 		} else {
-		    back = true;
+			back = true;
 		}
+#else	// duzenko 2.08: Dragofer's draw calls optimization
+		float dot = points[i] * norm + plane3;
+		front |= dot > eps;
+		back |= dot < -eps;
+#endif
 
 		if ( back && front ) {
 		    nodeNum = node->children[0];
