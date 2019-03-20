@@ -1191,7 +1191,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		lightProjectionCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
 		lightFalloffTexture.Set( 1 );
 	}
-	localViewOrigin.Set( din->localViewOrigin );
+	viewOrigin.Set( din->localViewOrigin );
 
 	if( ambient ) {
 		minLevel.Set(backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );

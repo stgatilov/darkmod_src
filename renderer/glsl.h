@@ -147,7 +147,7 @@ namespace Uniforms {
 		DEFINE_UNIFORM( sampler, lightProjectionCubemap );
 		DEFINE_UNIFORM( sampler, lightFalloffTexture );
 		DEFINE_UNIFORM( sampler, lightFalloffCubemap );
-		DEFINE_UNIFORM( vec4, localViewOrigin );
+		DEFINE_UNIFORM( vec4, viewOrigin );
 
 		DEFINE_UNIFORM( vec4, lightOrigin );
 		DEFINE_UNIFORM( vec3, lightOrigin2 );
