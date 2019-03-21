@@ -28,37 +28,6 @@ private:
 	GLuint CompileShader( GLint ShaderType, const char *fileName );
 };
 
-struct basicDepthProgram_t : shaderProgram_t {
-	GLint alphaTest, color;
-	bool acceptsTranslucent;
-	int instances;
-	virtual	void AfterLoad();
-	void FillDepthBuffer( const drawSurf_t *surf );
-};
-
-struct lightProgram_t : shaderProgram_t {
-	GLint lightOrigin;
-	GLint modelMatrix;
-	virtual	void AfterLoad();
-};
-
-struct basicInteractionProgram_t : lightProgram_t {
-	GLint lightProjectionFalloff, bumpMatrix, diffuseMatrix, specularMatrix;
-	GLint colorModulate, colorAdd;
-
-	virtual	void AfterLoad();
-	virtual void UpdateUniforms( bool translucent ) {}
-	virtual void UpdateUniforms( const drawInteraction_t *din );
-};
-
-struct shadowMapProgram_t : basicDepthProgram_t {
-	GLint lightOrigin, lightRadius, modelMatrix;
-	GLint lightCount, shadowRect, shadowTexelStep, lightFrustum; // multi-light stuff
-	virtual	void AfterLoad();
-	void RenderAllLights();
-	void RenderAllLights( drawSurf_t *surf );
-};
-
 extern idCVarBool r_useGLSL;
 extern idCVarBool r_newFrob;
 
@@ -94,74 +63,74 @@ namespace Attributes {
 namespace Uniforms {
 	//pack of uniforms defined in every shader program
 	struct Global : public GLSLUniformGroup {
-		UNIFORM_GROUP_DEF(Global);
+		UNIFORM_GROUP_DEF(Global)
 
-		DEFINE_UNIFORM( mat4, projectionMatrix );
-		DEFINE_UNIFORM( mat4, modelMatrix );
-		DEFINE_UNIFORM( mat4, modelViewMatrix );
+		DEFINE_UNIFORM( mat4, projectionMatrix )
+		DEFINE_UNIFORM( mat4, modelMatrix )
+		DEFINE_UNIFORM( mat4, modelViewMatrix )
 
 		//TODO: is space necessary as argument, or we can take backEnd->currentSpace ?
 		void Set( const viewEntity_t *space );
 	};
 
 	struct Depth: GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( Depth);
+		UNIFORM_GROUP_DEF( Depth)
 
-		DEFINE_UNIFORM( float, alphaTest );
-		DEFINE_UNIFORM( vec4, clipPlane );
-		DEFINE_UNIFORM( mat4, matViewRev );
-		DEFINE_UNIFORM( vec4, color );
+		DEFINE_UNIFORM( float, alphaTest )
+		DEFINE_UNIFORM( vec4, clipPlane )
+		DEFINE_UNIFORM( mat4, matViewRev )
+		DEFINE_UNIFORM( vec4, color )
 
 		int instances = 0;
 		bool acceptsTranslucent = false;
 	};
 
 	struct Interaction: GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( Interaction );
+		UNIFORM_GROUP_DEF( Interaction )
 
-		DEFINE_UNIFORM( mat4, modelMatrix );
-		DEFINE_UNIFORM( vec4, diffuseMatrix );
-		DEFINE_UNIFORM( vec4, bumpMatrix );
-		DEFINE_UNIFORM( vec4, specularMatrix );
-		DEFINE_UNIFORM( vec4, colorModulate );
-		DEFINE_UNIFORM( vec4, colorAdd );
+		DEFINE_UNIFORM( mat4, modelMatrix )
+		DEFINE_UNIFORM( vec4, diffuseMatrix )
+		DEFINE_UNIFORM( vec4, bumpMatrix )
+		DEFINE_UNIFORM( vec4, specularMatrix )
+		DEFINE_UNIFORM( vec4, colorModulate )
+		DEFINE_UNIFORM( vec4, colorAdd )
 
-		DEFINE_UNIFORM( mat4, lightProjectionFalloff );
-		DEFINE_UNIFORM( vec4, diffuseColor );
-		DEFINE_UNIFORM( vec4, specularColor );
-		DEFINE_UNIFORM( float, cubic );
-		DEFINE_UNIFORM( sampler, normalTexture );
-		DEFINE_UNIFORM( sampler, diffuseTexture );
-		DEFINE_UNIFORM( sampler, specularTexture );
-		DEFINE_UNIFORM( sampler, lightProjectionTexture );
-		DEFINE_UNIFORM( sampler, lightProjectionCubemap );
-		DEFINE_UNIFORM( sampler, lightFalloffTexture );
-		DEFINE_UNIFORM( sampler, lightFalloffCubemap );
-		DEFINE_UNIFORM( vec4, viewOrigin );
+		DEFINE_UNIFORM( mat4, lightProjectionFalloff )
+		DEFINE_UNIFORM( vec4, diffuseColor )
+		DEFINE_UNIFORM( vec4, specularColor )
+		DEFINE_UNIFORM( float, cubic )
+		DEFINE_UNIFORM( sampler, normalTexture )
+		DEFINE_UNIFORM( sampler, diffuseTexture )
+		DEFINE_UNIFORM( sampler, specularTexture )
+		DEFINE_UNIFORM( sampler, lightProjectionTexture )
+		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
+		DEFINE_UNIFORM( sampler, lightFalloffTexture )
+		DEFINE_UNIFORM( sampler, lightFalloffCubemap )
+		DEFINE_UNIFORM( vec4, viewOrigin )
 
-		DEFINE_UNIFORM( vec3, lightOrigin );
-		DEFINE_UNIFORM( vec3, lightOrigin2 );
+		DEFINE_UNIFORM( vec3, lightOrigin )
+		DEFINE_UNIFORM( vec3, lightOrigin2 )
 
-		DEFINE_UNIFORM( float, minLevel );
-		DEFINE_UNIFORM( float, gamma );
-		DEFINE_UNIFORM( vec4, rimColor );
+		DEFINE_UNIFORM( float, minLevel )
+		DEFINE_UNIFORM( float, gamma )
+		DEFINE_UNIFORM( vec4, rimColor )
 
-		DEFINE_UNIFORM( float, advanced );
-		DEFINE_UNIFORM( float, shadows );
-		DEFINE_UNIFORM( vec4, shadowRect );
-		DEFINE_UNIFORM( int, softShadowsQuality );
-		DEFINE_UNIFORM( vec2, softShadowsSamples );
-		DEFINE_UNIFORM( float, softShadowsRadius );
-		DEFINE_UNIFORM( int, shadowMap );
-		DEFINE_UNIFORM( sampler, depthTexture );
-		DEFINE_UNIFORM( sampler, stencilTexture );
-		DEFINE_UNIFORM( vec2, renderResolution );
+		DEFINE_UNIFORM( float, advanced )
+		DEFINE_UNIFORM( float, shadows )
+		DEFINE_UNIFORM( vec4, shadowRect )
+		DEFINE_UNIFORM( int, softShadowsQuality )
+		DEFINE_UNIFORM( vec2, softShadowsSamples )
+		DEFINE_UNIFORM( float, softShadowsRadius )
+		DEFINE_UNIFORM( int, shadowMap )
+		DEFINE_UNIFORM( sampler, depthTexture )
+		DEFINE_UNIFORM( sampler, stencilTexture )
+		DEFINE_UNIFORM( vec2, renderResolution )
 
-		DEFINE_UNIFORM( float, RGTC );
-		DEFINE_UNIFORM( vec3, hasTextureDNS );
+		DEFINE_UNIFORM( float, RGTC )
+		DEFINE_UNIFORM( vec3, hasTextureDNS )
 
-		DEFINE_UNIFORM( int, lightCount );
-		DEFINE_UNIFORM( vec3, lightColor );
+		DEFINE_UNIFORM( int, lightCount )
+		DEFINE_UNIFORM( vec3, lightColor )
 
 		bool ambient = false;
 
@@ -172,32 +141,32 @@ namespace Uniforms {
 
 	//pack of uniforms defined in a shader attached to "new" stage of a material
 	struct MaterialStage : public GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( MaterialStage );
+		UNIFORM_GROUP_DEF( MaterialStage )
 
-		DEFINE_UNIFORM( vec4, scalePotToWindow );
-		DEFINE_UNIFORM( vec4, scaleWindowToUnit );
-		DEFINE_UNIFORM( vec4, scaleDepthCoords );
-		DEFINE_UNIFORM( vec4, viewOriginGlobal );
-		DEFINE_UNIFORM( vec4, viewOriginLocal );
-		DEFINE_UNIFORM( vec4, modelMatrixRow0 );
-		DEFINE_UNIFORM( vec4, modelMatrixRow1 );
-		DEFINE_UNIFORM( vec4, modelMatrixRow2 );
+		DEFINE_UNIFORM( vec4, scalePotToWindow )
+		DEFINE_UNIFORM( vec4, scaleWindowToUnit )
+		DEFINE_UNIFORM( vec4, scaleDepthCoords )
+		DEFINE_UNIFORM( vec4, viewOriginGlobal )
+		DEFINE_UNIFORM( vec4, viewOriginLocal )
+		DEFINE_UNIFORM( vec4, modelMatrixRow0 )
+		DEFINE_UNIFORM( vec4, modelMatrixRow1 )
+		DEFINE_UNIFORM( vec4, modelMatrixRow2 )
 
-		DEFINE_UNIFORM( vec4, localParam0 );
-		DEFINE_UNIFORM( vec4, localParam1 );
-		DEFINE_UNIFORM( vec4, localParam2 );
-		DEFINE_UNIFORM( vec4, localParam3 );
+		DEFINE_UNIFORM( vec4, localParam0 )
+		DEFINE_UNIFORM( vec4, localParam1 )
+		DEFINE_UNIFORM( vec4, localParam2 )
+		DEFINE_UNIFORM( vec4, localParam3 )
 
 		GLSLUniform_vec4 *localParams[4] = { &localParam0, &localParam1, &localParam2, &localParam3 };
 
-		DEFINE_UNIFORM( sampler, texture0 );
-		DEFINE_UNIFORM( sampler, texture1 );
-		DEFINE_UNIFORM( sampler, texture2 );
-		DEFINE_UNIFORM( sampler, texture3 );
-		DEFINE_UNIFORM( sampler, texture4 );
-		DEFINE_UNIFORM( sampler, texture5 );
-		DEFINE_UNIFORM( sampler, texture6 );
-		DEFINE_UNIFORM( sampler, texture7 );
+		DEFINE_UNIFORM( sampler, texture0 )
+		DEFINE_UNIFORM( sampler, texture1 )
+		DEFINE_UNIFORM( sampler, texture2 )
+		DEFINE_UNIFORM( sampler, texture3 )
+		DEFINE_UNIFORM( sampler, texture4 )
+		DEFINE_UNIFORM( sampler, texture5 )
+		DEFINE_UNIFORM( sampler, texture6 )
+		DEFINE_UNIFORM( sampler, texture7 )
 
 		GLSLUniform_sampler *textures[8] = { &texture0, &texture1, &texture2, &texture3, &texture4, &texture5, &texture6, &texture7 };
 

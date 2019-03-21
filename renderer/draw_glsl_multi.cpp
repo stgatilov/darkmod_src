@@ -35,6 +35,18 @@ If you have questions concerning this license or the applicable additional terms
 
 static const uint MAX_LIGHTS = 16;
 
+struct MultiShadowUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( MultiShadowUniforms )
+
+	DEFINE_UNIFORM( mat4, modelMatrix )
+	DEFINE_UNIFORM( int, lightCount )
+	DEFINE_UNIFORM( vec3, lightOrigin )
+	DEFINE_UNIFORM( vec4, shadowRect )
+	DEFINE_UNIFORM( float, lightRadius )
+	DEFINE_UNIFORM( vec4, lightFrustum )
+	DEFINE_UNIFORM( float, shadowTexelStep )
+};
+
 struct MultiLightShaderData { // used by both interaction and shadow map shaders
 	std::vector<viewLight_t *> vLights;
 	std::vector<idVec3> lightOrigins;
@@ -164,12 +176,15 @@ static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
 	GL_CheckErrors();
 }
 
-void shadowMapProgram_t::RenderAllLights( drawSurf_t *surf ) {
+void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 	if ( !surf->material->SurfaceCastsShadow() )
 		return;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
 
 	if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
 		return;    // this flag is set by entities with parms.noShadow (candles, torches, models with separate shadow geometry, etc)
+
+	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
+	MultiShadowUniforms *shadowUniforms = programManager->shadowMapMultiShader->GetUniformGroup<MultiShadowUniforms>();
 
 	float customOffset = 0;
 	if ( auto entityDef = surf->space->entityDef )
@@ -178,7 +193,7 @@ void shadowMapProgram_t::RenderAllLights( drawSurf_t *surf ) {
 		qglPolygonOffset( customOffset, 0 );
 
 	if ( backEnd.currentSpace != surf->space ) {
-		qglUniformMatrix4fv( modelMatrix, 1, false, surf->space->modelMatrix );
+		shadowUniforms->modelMatrix.Set( surf->space->modelMatrix );
 		backEnd.currentSpace = surf->space;
 		backEnd.pc.c_matrixLoads++;
 	}
@@ -188,15 +203,15 @@ void shadowMapProgram_t::RenderAllLights( drawSurf_t *surf ) {
 	for ( int i = 0; i < (int)data.lightOrigins.size(); i += MAX_LIGHTS ) {
 		int thisCount = idMath::Imin( (int)data.lightOrigins.size() - i, MAX_LIGHTS );
 
-		qglUniform1i( lightCount, thisCount );
-		qglUniform3fv( lightOrigin, thisCount, data.lightOrigins[i].ToFloatPtr() );
-		qglUniform4fv( shadowRect, thisCount, data.shadowRects[i].ToFloatPtr() );
-		qglUniform1fv( lightRadius, thisCount, &data.softShadowRads[i] );
-		qglUniform4fv( lightFrustum, thisCount * 6, data.lightFrustum[i * 6].ToFloatPtr() );
+		shadowUniforms->lightCount.Set( thisCount );
+		shadowUniforms->lightOrigin.SetArray( thisCount, data.lightOrigins[i].ToFloatPtr() );
+		shadowUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );
+		shadowUniforms->lightRadius.SetArray( thisCount, &data.softShadowRads[i] );
+		shadowUniforms->lightFrustum.SetArray( thisCount * 6, data.lightFrustum[i * 6].ToFloatPtr() );
 		GL_CheckErrors();
 
-		instances = thisCount * 6;
-		FillDepthBuffer( surf );
+		depthUniforms->instances = thisCount * 6;
+		RB_SingleSurfaceToDepthBuffer( programManager->shadowMapMultiShader, surf );
 
 		if ( r_showMultiLight.GetInteger() == 2 ) {
 			backEnd.pc.c_interactions++;
@@ -214,15 +229,17 @@ void shadowMapProgram_t::RenderAllLights( drawSurf_t *surf ) {
 		qglPolygonOffset( 0, 0 );
 }
 
-void shadowMapProgram_t::RenderAllLights() {
-	GL_PROFILE( "shadowMapProgram_t::RenderAllLights" );
+void RB_ShadowMap_RenderAllLights() {
+	GL_PROFILE( "ShadowMap_RenderAllLights" );
 
 	if ( !qglDrawElementsInstanced )
 		return;
 
 	FB_ToggleShadow( true );
 
-	Use();
+	programManager->shadowMapMultiShader->Activate();
+	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
+	MultiShadowUniforms *shadowUniforms = programManager->shadowMapMultiShader->GetUniformGroup<MultiShadowUniforms>();
 	GL_SelectTexture( 0 );
 
 	backEnd.currentSpace = NULL;
@@ -232,8 +249,8 @@ void shadowMapProgram_t::RenderAllLights() {
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
 	float texSize = globalImages->shadowAtlas->uploadHeight;
-	qglUniform1f( shadowTexelStep, 1 / texSize );
-	qglUniform1f( alphaTest, -1 );	// no alpha test by default
+	shadowUniforms->shadowTexelStep.Set( 1 / texSize );
+	depthUniforms->alphaTest.Set( -1 );	// no alpha test by default
 
 	qglViewport( 0, 0, texSize, texSize );
 	if ( r_useScissor.GetBool() )
@@ -243,7 +260,7 @@ void shadowMapProgram_t::RenderAllLights() {
 		qglEnable( GL_CLIP_PLANE0 + i );
 	auto viewDef = backEnd.viewDef;
 	for ( int i = 0; i < viewDef->numDrawSurfs + viewDef->numOffscreenSurfs; i++ )
-		RenderAllLights( viewDef->drawSurfs[i] );
+		RB_ShadowMap_RenderAllLights( viewDef->drawSurfs[i] );
 	for ( int i = 0; i < 4; i++ )
 		qglDisable( GL_CLIP_PLANE0 + i );
 	qglDisable( GL_POLYGON_OFFSET_FILL );

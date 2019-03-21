@@ -52,8 +52,6 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix )
 };
 
-shadowMapProgram_t shadowmapMultiShader;
-
 GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
 std::map<std::string, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
@@ -437,6 +435,8 @@ void RB_GLSL_DrawInteractions_SingleLight() {
 RB_GLSL_DrawInteractions
 ==================
 */
+void RB_ShadowMap_RenderAllLights();
+
 void RB_GLSL_DrawInteractions() {
 	GL_PROFILE( "GLSL_DrawInteractions" );
 	GL_SelectTexture( 0 );
@@ -448,7 +448,7 @@ void RB_GLSL_DrawInteractions() {
 				vLight->shadowMapIndex = ++ShadowAtlasIndex;
 		ShadowAtlasIndex = 0; // reset for next run
 		if ( r_shadowMapSinglePass.GetBool() )
-			shadowmapMultiShader.RenderAllLights();
+			RB_ShadowMap_RenderAllLights();
 
 		if ( r_testARBProgram.GetInteger() == 2 ) {
 			extern void RB_GLSL_DrawInteractions_MultiLight();
@@ -478,7 +478,6 @@ FIXME split the stencil and shadowmap interactions in separate shaders as the la
 ID_NOINLINE bool R_ReloadGLSLPrograms() { 
 	bool ok = true;
 	// these are optional and don't "need" to compile
-	shadowmapMultiShader.Load( "shadowMapN" );
 	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
 		auto& fileName = it->first;
 		auto& shader = it->second;
@@ -698,173 +697,6 @@ void shaderProgram_t::AfterLoad() {
 
 void shaderProgram_t::Use() {
 	qglUseProgram( program );
-}
-
-void basicDepthProgram_t::AfterLoad() {
-	color = qglGetUniformLocation( program, "color" );
-	alphaTest = qglGetUniformLocation( program, "alphaTest" );
-}
-
-void lightProgram_t::AfterLoad() {
-	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
-	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
-}
-
-void basicInteractionProgram_t::AfterLoad() {
-	lightProgram_t::AfterLoad();
-	bumpMatrix = qglGetUniformLocation( program, "u_bumpMatrix" );
-	diffuseMatrix = qglGetUniformLocation( program, "u_diffuseMatrix" );
-	specularMatrix = qglGetUniformLocation( program, "u_specularMatrix" );
-	lightProjectionFalloff = qglGetUniformLocation( program, "u_lightProjectionFalloff" );
-	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
-	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
-}
-
-void basicInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-	if ( din->surf->space != backEnd.currentSpace )
-		qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
-	qglUniform4fv( diffuseMatrix, 2, din->diffuseMatrix[0].ToFloatPtr() );
-	if ( din->bumpImage )
-		qglUniform4fv( bumpMatrix, 2, din->bumpMatrix[0].ToFloatPtr() );
-	qglUniform4fv( specularMatrix, 2, din->specularMatrix[0].ToFloatPtr() );
-
-	static const float	zero[4]		= { 0, 0, 0, 0 },
-	                    one[4]		= { 1, 1, 1, 1 },
-	                    negOne[4]	= { -1, -1, -1, -1 };
-	switch ( din->vertexColor ) {
-	case SVC_IGNORE:
-		qglUniform4f( colorModulate, zero[0], zero[1], zero[2], zero[3] );
-		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
-		break;
-	case SVC_MODULATE:
-		qglUniform4f( colorModulate, one[0], one[1], one[2], one[3] );
-		qglUniform4f( colorAdd, zero[0], zero[1], zero[2], zero[3] );
-		break;
-	case SVC_INVERSE_MODULATE:
-		qglUniform4f( colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
-		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
-		break;
-	}
-}
-
-void basicDepthProgram_t::FillDepthBuffer( const drawSurf_t *surf ) {
-	float color[4];
-	const idMaterial		*shader = surf->material;
-	int						stage;
-	const shaderStage_t		*pStage;
-	const float				*regs = surf->shaderRegisters;
-
-	// subviews will just down-modulate the color buffer by overbright
-	if ( shader->GetSort() == SS_SUBVIEW ) {
-		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
-		color[0] = color[1] = color[2] = (1.0 / backEnd.overBright);
-		color[3] = 1;
-	} else {
-		// others just draw black
-		color[0] = 0;
-		color[1] = 0;
-		color[2] = 0;
-		color[3] = 1;
-	}
-	idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-
-	bool drawSolid = false;
-
-	if ( shader->Coverage() == MC_OPAQUE ) {
-		drawSolid = true;
-	}
-	if ( shader->Coverage() == MC_TRANSLUCENT && acceptsTranslucent ) {
-		drawSolid = true;
-	}
-
-	// we may have multiple alpha tested stages
-	if ( shader->Coverage() == MC_PERFORATED ) {
-		// if the only alpha tested stages are condition register omitted,
-		// draw a normal opaque surface
-		bool	didDraw = false;
-
-		qglEnableVertexAttribArray( 8 );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-
-		// perforated surfaces may have multiple alpha tested stages
-		for ( stage = 0; stage < shader->GetNumStages(); stage++ ) {
-			pStage = shader->GetStage( stage );
-
-			if ( !pStage->hasAlphaTest ) {
-				continue;
-			}
-
-			// check the stage enable condition
-			if ( regs[pStage->conditionRegister] == 0 ) {
-				continue;
-			}
-
-			// if we at least tried to draw an alpha tested stage,
-			// we won't draw the opaque surface
-			didDraw = true;
-
-			// set the alpha modulate
-			color[3] = regs[pStage->color.registers[3]];
-
-			// skip the entire stage if alpha would be black
-			if ( color[3] <= 0 ) {
-				continue;
-			}
-			qglUniform4fv( this->color, 1, color );
-			qglUniform1f( alphaTest, regs[pStage->alphaTestRegister] );
-
-			// bind the texture
-			pStage->texture.image->Bind();
-			if ( pStage->texture.hasMatrix ) 
-				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
-
-			// draw it
-			if ( instances )
-				RB_DrawElementsInstanced( surf, instances );
-			else
-				RB_DrawElementsWithCounters( surf );
-
-			if ( pStage->texture.hasMatrix ) {
-				qglMatrixMode( GL_TEXTURE );
-				qglLoadIdentity();
-				qglMatrixMode( GL_MODELVIEW );
-			}
-
-			qglUniform1f( alphaTest, -1 ); // hint the glsl to skip texturing
-		}
-		qglUniform4fv( this->color, 1, colorBlack.ToFloatPtr() );
-		qglDisableVertexAttribArray( 8 );
-
-		if ( !didDraw ) {
-			drawSolid = true;
-		}
-	}
-
-	if ( drawSolid )  // draw the entire surface solid
-		if ( instances ) 
-			RB_DrawElementsInstanced( surf, instances );
-		else
-			RB_DrawElementsWithCounters( surf );
-
-	// reset blending
-	if ( shader->GetSort() == SS_SUBVIEW ) {
-		qglUniform4fv( this->color, 1, colorBlack.ToFloatPtr() );
-		GL_State( GLS_DEPTHFUNC_LESS );
-	}
-}
-
-void shadowMapProgram_t::AfterLoad() {
-	basicDepthProgram_t::AfterLoad();
-	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
-	lightRadius = qglGetUniformLocation( program, "u_lightRadius" );
-	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
-	lightCount = qglGetUniformLocation( program, "u_lightCount" );
-	shadowRect = qglGetUniformLocation( program, "u_shadowRect" );
-	shadowTexelStep = qglGetUniformLocation( program, "u_shadowTexelStep" );
-	lightFrustum = qglGetUniformLocation( program, "u_lightFrustum" );
-	acceptsTranslucent = true;
-	instances = 6;
 }
 
 void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf ) {

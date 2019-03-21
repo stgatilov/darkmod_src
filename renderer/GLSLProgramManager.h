@@ -54,6 +54,7 @@ public:
 	GLSLProgram *blendShader;
 	GLSLProgram *stencilShadowShader;
 	GLSLProgram *shadowMapShader;
+	GLSLProgram *shadowMapMultiShader;
 	GLSLProgram *ambientInteractionShader;
 	GLSLProgram *stencilInteractionShader;
 	GLSLProgram *shadowMapInteractionShader;

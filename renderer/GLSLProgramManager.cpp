@@ -62,6 +62,7 @@ void GLSLProgramManager::Shutdown() {
 	blendShader = nullptr;
 	stencilShadowShader = nullptr;
 	shadowMapShader = nullptr;
+	shadowMapMultiShader = nullptr;
 	ambientInteractionShader = nullptr;
 	stencilInteractionShader = nullptr;
 	shadowMapInteractionShader = nullptr;
@@ -187,7 +188,7 @@ namespace {
 	}
 
 	void InitShadowMapShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), "shadowMapA.vs", "shadowMapA.fs" );
+		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs" );
 		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 		depthUniforms->instances = 6;
 		depthUniforms->acceptsTranslucent = true;
@@ -248,7 +249,8 @@ void GLSLProgramManager::Init() {
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
 	stencilShadowShader = Load( "stencilshadow" );
-	shadowMapShader = LoadFromGenerator( "shadowMap", InitShadowMapShader );
+	shadowMapShader = LoadFromGenerator( "shadowMapA", InitShadowMapShader );
+	shadowMapMultiShader = LoadFromGenerator( "shadowMapN", InitShadowMapShader );
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
 	stencilInteractionShader = LoadInteractionShader( "stencilInteraction", "interaction", false );
 	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
