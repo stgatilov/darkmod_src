@@ -1560,8 +1560,8 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 	}
 
 	// if the bounding sphere is completely on one side, don't bother checking the individual points
+	const float sphereDist = node->plane.Distance( sphere->GetOrigin() );
 	{
-		const float sphereDist = node->plane.Distance( sphere->GetOrigin() );
 		const float sphereRad = sphere->GetRadius();
 		if ( sphereDist >= sphereRad ) {
 			nodeNum = node->children[0];
@@ -1585,7 +1585,7 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 	const float plane3 = node->plane[3];
 
 	static idCVar r_areaCullRatio( "r_areaCullMargin", "0", CVAR_FLOAT | CVAR_RENDERER, "=0 - regular, >0 - stuff missing, <1 - extra draw calls" );
-	const float eps = sphere->GetRadius() * r_areaCullRatio.GetFloat();
+	const float eps = abs(sphereDist) * r_areaCullRatio.GetFloat();
 	
 	for ( int i = 0 ; i < numPoints ; i++ ) {
 #if 0	
