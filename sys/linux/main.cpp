@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <execinfo.h>
 #include <stdio.h>
+#include <tests/TestRun.h>
 
 #ifdef ID_MCHECK
 #include <mcheck.h>
@@ -673,6 +674,12 @@ int main(int argc, const char **argv) {
 	}
 
 	Posix_LateInit( );
+
+	if( com_runTests.GetInteger()) {
+		int result = RunTests();
+		common->Shutdown();
+		return result;
+	}
 
 	while (1) {
 		common->Frame();
