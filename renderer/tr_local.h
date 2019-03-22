@@ -1423,7 +1423,6 @@ int		R_FindARBProgram( GLenum target, const char *program );
 void    RB_GLSL_DrawInteraction( const drawInteraction_t *din );
 void    RB_GLSL_DrawInteractions( void );
 void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
-int		R_FindGLSLProgram( const char *program );
 
 typedef enum {
 	PROG_INVALID,

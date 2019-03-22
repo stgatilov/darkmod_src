@@ -54,8 +54,6 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 
 GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
-std::map<std::string, shaderProgram_t*> dynamicShaders; // shaders referenced from materials, stored by their file names
-
 idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
 
 static void ChooseInteractionProgram() {
@@ -476,18 +474,10 @@ FIXME split the stencil and shadowmap interactions in separate shaders as the la
 ==================
 */
 ID_NOINLINE bool R_ReloadGLSLPrograms() { 
-	bool ok = true;
-	// these are optional and don't "need" to compile
-	for ( auto it = dynamicShaders.begin(); it != dynamicShaders.end(); ++it ) {
-		auto& fileName = it->first;
-		auto& shader = it->second;
-		shader->Load( fileName.c_str() );
-	}
-
 	// incorporate new shader interface:
 	programManager->ReloadAllPrograms();
 
-	return ok;
+	return true;
 }
 
 /*
@@ -506,197 +496,12 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 	common->Printf( "---------------------------------\n" );
 }
 
-int R_FindGLSLProgram( const char *program ) {
-	auto iter = dynamicShaders.find( program );
-	if( iter == dynamicShaders.end() ) {
-		auto shader = new shaderProgram_t();
-		shader->Load( program );
-		dynamicShaders[program] = shader;
-		return shader->program;
-	} else
-		return iter->second->program;
-}
-
-// pass supported extensions for shader IFDEFS
-void PrimitivePreprocess(idStr &source) {
-	idStr injections;
-	if ( glConfig.gpuShader4Available )
-		injections = "#define EXT_gpu_shader4";
-	source.Replace( "// TDM INJECTIONS", injections );
-}
-
-/*
-=================
-shaderProgram_t::CompileShader
-=================
-*/
-GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) {
-	/* get shader source */
-	char *fileBuffer = NULL;
-	// load the program even if we don't support it
-	int length = fileSystem->ReadFile( fileName, ( void ** )&fileBuffer, NULL );
-	if ( !fileBuffer || length < 0 ) {
-		if ( ShaderType != GL_GEOMETRY_SHADER ) {
-			common->Warning( "CompileShader(%s) file not found", fileName );
-		}
-		return 0;
+GLSLProgram *R_FindGLSLProgram( const char *name ) {
+	GLSLProgram *program = programManager->Find( name );
+	if( program == nullptr ) {
+		program = programManager->Load( name );
 	}
-	//note: ReadFile guarantees null-termination
-	assert(fileBuffer && fileBuffer[length] == 0);
-
-	switch ( ShaderType ) {
-	case GL_VERTEX_SHADER:
-		common->Printf( "V" );
-		break;
-	case GL_GEOMETRY_SHADER:
-		common->Printf( "G" );
-		break;
-	case GL_FRAGMENT_SHADER:
-		common->Printf( "F" );
-		break;
-	default:
-		common->Warning( "Unknown ShaderType in shaderProgram_t::CompileShader" );
-		break;
-	}
-	idStr source( fileBuffer );
-	PrimitivePreprocess( source );
-	const char *pSource = source.c_str();
-
-	/* create shader object, set the source, and compile */
-	GLuint shader = qglCreateShader( ShaderType );
-	qglShaderSource( shader, 1, &pSource, NULL );
-	qglCompileShader( shader );
-	fileSystem->FreeFile( fileBuffer );
-
-	/* make sure the compilation was successful */
-	GLint result;
-	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
-
-	/* get the shader info log */
-	qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
-	char *log = (char*)Mem_ClearedAlloc(length + 1);
-	qglGetShaderInfoLog( shader, length, NULL, log );
-	//TODO: print compile log always (bad idea now due to tons of warnings)
-	if (result == GL_FALSE)
-		common->Warning( "CompileShader(%s): %s\n%s\n", fileName, (result ? "ok" : "FAILED"), log );
-	Mem_Free(log);
-
-	if ( result == GL_FALSE ) {
-		qglDeleteShader( shader );
-		return 0;
-	}
-	return shader;
-}
-
-/*
-=================
-shaderProgram_t::AttachShader
-=================
-*/
-void shaderProgram_t::AttachShader( GLint ShaderType, const char *fileName ) {
-	idStr fn( "glprogs/" );
-	fn.Append( fileName );
-	switch ( ShaderType ) {
-	case GL_VERTEX_SHADER:
-		fn.Append( ".vs" );
-		break;
-	case GL_GEOMETRY_SHADER:
-		fn.Append( ".gs" );
-		break;
-	case GL_FRAGMENT_SHADER:
-		fn.Append( ".fs" );
-		break;
-	default:
-		common->Warning( "Unknown ShaderType in shaderProgram_t::AttachShader" );
-		break;
-	}
-	GLuint shader = CompileShader( ShaderType, fn.c_str() );
-
-	if ( shader != 0 ) {
-		/* attach the shader to the program */
-		qglAttachShader( program, shader );
-
-		/* delete the shader - it won't actually be
-		* destroyed until the program that it's attached
-		* to has been destroyed */
-		qglDeleteShader( shader );
-	}
-}
-
-/*
-=================
-shaderProgram_t::Load
-=================
-*/
-bool shaderProgram_t::Load( const char *fileName ) {
-	common->Printf( "%s ", fileName );
-
-	if ( program && qglIsProgram( program ) ) {
-		qglDeleteProgram( program );
-	}
-	program = qglCreateProgram();
-	AttachShader( GL_VERTEX_SHADER, fileName );
-	AttachShader( GL_GEOMETRY_SHADER, fileName );
-	AttachShader( GL_FRAGMENT_SHADER, fileName );
-	common->Printf( "\n" );
-	qglBindAttribLocation( program, 0, "attr_Position" );
-	qglBindAttribLocation( program, 2, "attr_Normal" );
-	qglBindAttribLocation( program, 3, "attr_Color" );
-	qglBindAttribLocation( program, 8, "attr_TexCoord" );
-	qglBindAttribLocation( program, 9, "attr_Tangent" );
-	qglBindAttribLocation( program, 10, "attr_Bitangent" );
-
-	GLint result;/* link the program and make sure that there were no errors */
-	qglLinkProgram( program );
-	qglGetProgramiv( program, GL_LINK_STATUS, &result );
-
-	if ( result != GL_TRUE ) {
-		/* get the program info log */
-		GLint length;
-		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		char *log = new char[length];
-		qglGetProgramInfoLog( program, length, &result, log );
-		/* print an error message and the info log */
-		common->Warning( "Program linking failed\n%s\n", log );
-		delete log;
-
-		/* delete the program */
-		qglDeleteProgram( program );
-		program = 0;
-		return false;
-	}
-	AfterLoad();
-
-	GLint validProgram;
-	qglValidateProgram( program );
-	qglGetProgramiv( program, GL_VALIDATE_STATUS, &validProgram );
-
-	if ( !validProgram ) {
-		/* get the program info log */
-		GLint length;
-		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		char *log = new char[length];
-		qglGetProgramInfoLog( program, length, &result, log );
-		/* print an error message and the info log */
-		common->Warning( "Program validation failed\n%s\n", log );
-		delete log;
-
-		/* delete the program */
-		qglDeleteProgram( program );
-		program = 0;
-		return false;
-	}
-	GL_CheckErrors();
-
-	return true;
-}
-
-void shaderProgram_t::AfterLoad() {
-	// or else abstract class error in primitive shaders (cubeMap)
-}
-
-void shaderProgram_t::Use() {
-	qglUseProgram( program );
+	return program;
 }
 
 void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf ) {

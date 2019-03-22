@@ -104,23 +104,23 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
 		qglDisableVertexAttribArray( 3 );
 		if ( r_useGLSL ) {
-			auto environmentShader = R_FindGLSLProgram( "environment" ); // TODO add this shader to R_ReloadGLSLPrograms 
-			qglUseProgram( environmentShader );							 // probably makes sense to merge environment with cubeMap
-			auto viewOriginLocal = qglGetUniformLocation( environmentShader, "u_viewOriginLocal" );
+			GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
+			environmentShader->Activate();
+
+			struct EnvUniforms : GLSLUniformGroup {
+				UNIFORM_GROUP_DEF( EnvUniforms )
+				DEFINE_UNIFORM( vec4, viewOriginLocal )
+				DEFINE_UNIFORM( mat4, modelViewMatrix )
+				DEFINE_UNIFORM( mat4, projectionMatrix )
+			};
+
+			EnvUniforms *envUniforms = environmentShader->GetUniformGroup<EnvUniforms>();
 			idVec4 v;
 			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
-			qglUniform4fv( viewOriginLocal, 1, v.ToFloatPtr() );
+			envUniforms->viewOriginLocal.Set( v );
 
-			idMat4 modelView, projection;
-			memcpy( modelView.ToFloatPtr(), surf->space->modelViewMatrix, sizeof( modelView ) );
-			memcpy( projection.ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( projection ) );
-			{
-				//TODO: query locations once
-				int locMV  = qglGetUniformLocation(environmentShader, "u_modelViewMatrix");
-				qglUniformMatrix4fv(locMV, 1, false, modelView.ToFloatPtr());
-				int locP   = qglGetUniformLocation(environmentShader, "u_projectionMatrix");
-				qglUniformMatrix4fv(locP, 1, false, projection.ToFloatPtr());
-			}
+			envUniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
+			envUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
 		}  else
 			R_UseProgramARB( VPROG_ENVIRONMENT );
 	}

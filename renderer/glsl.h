@@ -18,16 +18,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "qgl.h"
 #include "tr_local.h"
 
-struct shaderProgram_t {
-	GLuint program;								// GPU program = vertex + fragment shader
-	bool Load( const char *fileName );
-	virtual void AfterLoad();
-	void Use();									// 	qglUseProgram( 0 ) to reset, maybe consider RAII?
-private:
-	void AttachShader( GLint ShaderType, const char *fileName );
-	GLuint CompileShader( GLint ShaderType, const char *fileName );
-};
-
 extern idCVarBool r_useGLSL;
 extern idCVarBool r_newFrob;
 
@@ -35,6 +25,8 @@ void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );
 float GetEffectiveLightRadius();
 void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf );
+
+GLSLProgram *R_FindGLSLProgram( const char *name );
 
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.
