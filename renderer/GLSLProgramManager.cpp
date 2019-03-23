@@ -242,7 +242,6 @@ namespace {
 
 void GLSLProgramManager::Init() {
 	cubeMapShader = LoadFromBaseNameWithCustomizer( "cubeMap", InitSamplerBindingsForBumpShaders );
-	frobShader = Load( "frob" );
 	bumpyEnvironment = LoadFromBaseNameWithCustomizer( "bumpyEnvironment", InitSamplerBindingsForBumpShaders );
 	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
@@ -255,5 +254,6 @@ void GLSLProgramManager::Init() {
 	stencilInteractionShader = LoadInteractionShader( "stencilInteraction", "interaction", false );
 	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
 	multiLightInteractionShader = LoadInteractionShader( "multiLightInteraction", "interactionN", false );
+	frobShader = Load( "frob" );
 }
 

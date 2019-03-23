@@ -66,6 +66,13 @@ struct BlendUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, blendColor );
 };
 
+struct FrobUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( FrobUniforms );
+
+	DEFINE_UNIFORM( float, pulse );
+	DEFINE_UNIFORM( vec3, viewOriginLocal );
+};
+
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
@@ -937,18 +944,22 @@ ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderS
 	programManager->frobShader->Activate();
 
 	programManager->frobShader->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+	auto frobUniforms = programManager->frobShader->GetUniformGroup<FrobUniforms>();
+	frobUniforms->pulse.Set( .7 + .3 * sin( gameLocal.time * 1e-3 ) ); // FIXME move to frontend?
+	if ( !surf->space )
+		return;
+	idVec3 v;
+	R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v );
+	frobUniforms->viewOriginLocal.Set( v );
+
 	{
 		using namespace Attributes::Default;
-		Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << TexCoord) | (1 << Normal) | (1 << Tangent) | (1 << Bitangent) );
+		Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << Normal) );
 	}
 	RB_DrawElementsWithCounters( surf );
 
 	GL_SelectTexture( 0 );
 	qglUseProgram( 0 );
-	qglDisableVertexAttribArray( 8 );
-	qglDisableVertexAttribArray( 9 );
-	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 2 );
 }
 
 /*
