@@ -23,57 +23,75 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
 GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowStencil, pbo, fboShadowAtlas;
-GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
 uint ShadowAtlasIndex;
 renderCrop_t ShadowAtlasPages[42];
 idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
+//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
+
+struct {
+	GLenum attachment, internalformat;
+	GLuint handle;
+	GLsizei width, height;
+	int msaa;
+	void Attach() {
+		if ( internalformat == 0 )
+			common->Warning( "Internal error in Renderbuffer.Attach" );
+		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, handle );
+	}
+	void Size( GLsizei newWidth, GLsizei newHeight, int newMsaa = 0, GLenum newFormat = GL_KEEP ) {
+		if ( internalformat == 0 && newFormat == GL_KEEP ) // that's ok
+			return;
+		if ( width == newWidth && height == newHeight && newMsaa == msaa && (newFormat == GL_KEEP || internalformat == newFormat) )
+			return;
+		Bind();
+		internalformat = newFormat == GL_KEEP ? internalformat : newFormat;
+		width = newWidth;
+		height = newHeight;
+		msaa = newMsaa;
+		if ( msaa > 1 )
+			qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, internalformat, width, height );
+		else
+			qglRenderbufferStorage( GL_RENDERBUFFER, internalformat, width, height );
+	}
+private:
+	void GenerateIf0() {
+		if ( !handle )
+			qglGenRenderbuffers( 1, &handle );
+	}
+	void Bind() {
+		GenerateIf0();
+		qglBindRenderbuffer( GL_RENDERBUFFER, handle );
+	}
+}	renderBufferColor = { GL_COLOR_ATTACHMENT0, GL_RGBA },
+	renderBufferDepthStencil = { GL_DEPTH_STENCIL_ATTACHMENT },
+	renderBufferPostProcess = { GL_COLOR_ATTACHMENT0, GL_RGBA };
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if ( !fboPrimary ) {
 		qglGenFramebuffers( 1, &fboPrimary );
 	}
-	if ( !renderBufferColor ) {
-		qglGenRenderbuffers( 1, &renderBufferColor );
-	}
-
 	if ( !r_fboSharedDepth.GetBool() || msaa > 1 ) {
 		if ( !fboResolve ) {
 			qglGenFramebuffers( 1, &fboResolve );
 		}
-		if ( !renderBufferDepthStencil ) {
-			qglGenRenderbuffers( 1, &renderBufferDepthStencil );
-		}
-
-		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
-		if (msaa > 1)
-			qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
-		else
-			qglRenderbufferStorage( GL_RENDERBUFFER, GL_RGBA, width, height );
-
-		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
+		renderBufferColor.Size( width, height, msaa );
 		// revert to old behaviour, switches are to specific
 		int depthFormat = ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8;
-		if (msaa > 1)
-			qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, depthFormat, width, height );
-		else
-			qglRenderbufferStorage( GL_RENDERBUFFER, depthFormat, width, height );
+		renderBufferDepthStencil.Size( width, height, msaa, depthFormat );
 
-		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
-		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
-		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferDepthStencil );
+		renderBufferColor.Attach();
+		renderBufferDepthStencil.Attach();
 		common->Printf( "Generated render buffers for COLOR & DEPTH/STENCIL: %dx%dx%d\n", width, height, msaa );
 	} else {
 		// only need the color render buffer, depth will be bound directly to texture
-		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
-		qglRenderbufferStorage( GL_RENDERBUFFER, GL_RGBA, width, height );
+		renderBufferColor.Size( width, height );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
-		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
+		renderBufferColor.Attach();
 	}
 }
 
@@ -81,14 +99,9 @@ void FB_CreatePostProcess( GLuint width, GLuint height ) {
 	if ( !fboPostProcess ) {
 		qglGenFramebuffers( 1, &fboPostProcess );
 	}
-	if ( !renderBufferPostProcess ) {
-		qglGenRenderbuffers( 1, &renderBufferPostProcess );
-	}
-	qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferPostProcess );
-	qglRenderbufferStorage( GL_RENDERBUFFER, GL_RGBA, width, height );
-	qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
+	renderBufferPostProcess.Size( width, height );
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPostProcess );
-	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferPostProcess );
+	renderBufferPostProcess.Attach();
 	int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 	if ( GL_FRAMEBUFFER_COMPLETE != status ) {
 		common->Printf( "glCheckFramebufferStatus postProcess: %d\n", status );
@@ -377,8 +390,8 @@ void CheckCreatePrimary() {
 	globalImages->currentRenderImage->GenerateAttachment( curWidth, curHeight, GL_COLOR );
 
 	// recreate FBOs and attach textures to them
+	int msaa = r_multiSamples.GetInteger();
 	if ( !fboPrimary ) {
-		int msaa = r_multiSamples.GetInteger();
 		FB_CreatePrimaryResolve( curWidth, curHeight, msaa );
 		bool useResolveFbo = ( !r_fboSharedDepth.GetBool() || msaa > 1 );
 
@@ -414,6 +427,8 @@ void CheckCreatePrimary() {
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
+	renderBufferColor.Size( curWidth, curHeight, msaa );
+	renderBufferDepthStencil.Size( curWidth, curHeight, msaa );
 }
 
 void CheckCreateShadow() {
@@ -623,7 +638,7 @@ void FB_ToggleShadow( bool on ) {
 
 void FB_Clear() {
 	fboPrimary = fboResolve = fboPostProcess = fboShadowStencil = fboShadowAtlas = pbo = 0;
-	renderBufferColor = renderBufferDepthStencil = renderBufferPostProcess = 0;
+	renderBufferColor.handle = renderBufferDepthStencil.handle = renderBufferPostProcess.handle = 0;
 }
 
 void EnterPrimary() {
