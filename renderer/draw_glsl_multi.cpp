@@ -267,7 +267,7 @@ void RB_ShadowMap_RenderAllLights() {
 	GL_Cull( CT_FRONT_SIDED );
 
 	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 
 	FB_ToggleShadow( false );
 

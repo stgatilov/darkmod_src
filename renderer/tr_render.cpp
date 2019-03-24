@@ -19,6 +19,7 @@
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
+#include "GLSLProgramManager.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
@@ -264,6 +265,10 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			if( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+				Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
+				transformUniforms->Set( drawSurf->space );
+			}
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
@@ -653,6 +658,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		backEnd.currentSpace = surf->space;
 
 		qglLoadMatrixf( surf->space->modelViewMatrix );
+		if( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+			Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
+			transformUniforms->Set( surf->space );
+		}
 
 		//anon bengin
 		// turn off the light depth bounds test if this model is rendered with a depth hack

@@ -191,7 +191,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			//	programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
 		}
 		qglDisableVertexAttribArray( 3 );
-		qglUseProgram( 0 );
+		GLSLProgram::Deactivate();
 
 		// per-pixel reflection mapping without bump mapping
 		qglDisableVertexAttribArray( 2 );
@@ -352,7 +352,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		FB_CopyDepthBuffer();
 		RB_SetProgramEnvironment();
 	}
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 	GL_CheckErrors();
 }
 
@@ -558,7 +558,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	case TG_SCREEN:
 	default:
 		qglDisableVertexAttribArray( 8 );
-		qglUseProgram( 0 );
+		GLSLProgram::Deactivate();
 		switch ( pStage->vertexColor ) {
 		case SVC_MODULATE:
 		case SVC_INVERSE_MODULATE:
@@ -791,7 +791,7 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	}
 	GL_SelectTexture( 0 );
 
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
@@ -820,7 +820,7 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 		}
 	}
 	GL_SelectTexture( 0 );
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
@@ -959,7 +959,7 @@ ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderS
 	RB_DrawElementsWithCounters( surf );
 
 	GL_SelectTexture( 0 );
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 }
 
 /*
@@ -1269,7 +1269,7 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 }
 
 //========================================================================

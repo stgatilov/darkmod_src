@@ -196,7 +196,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	GL_SelectTexture( 0 );
 
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 	GL_CheckErrors();
 }
 
@@ -274,7 +274,7 @@ void RB_GLSL_DrawLight_Stencil() {
 	if ( backEnd.useLightDepthBounds ) {
 		GL_DepthBoundsTest( 0.0f, 0.0f );
 	}
-	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
+	GLSLProgram::Deactivate();	// if there weren't any globalInteractions, it would have stayed on
 }
 
 float GetEffectiveLightRadius() {
@@ -355,7 +355,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	GL_Cull( CT_FRONT_SIDED );
 
 	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 
 	FB_ToggleShadow( false );
 
@@ -392,7 +392,7 @@ void RB_GLSL_DrawLight_ShadowMap() {
 	}
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
-	qglUseProgram( 0 );
+	GLSLProgram::Deactivate();
 
 	GL_CheckErrors();
 }

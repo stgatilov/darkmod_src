@@ -1064,6 +1064,7 @@ extern idCVar r_cinematic_legacyRoq;
 extern idCVar r_nVidiaOverride;
 
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
+extern idCVar r_uniformTransforms;
 extern idCVar r_forceGlslPrograms;
 
 

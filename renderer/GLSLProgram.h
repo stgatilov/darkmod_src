@@ -57,13 +57,15 @@ public:
 
 	const idStr &GetName() const { return name; }
 
+	static GLSLProgram *GetCurrentProgram() { return currentProgram; }
+
 	GLSLProgram( const GLSLProgram &other ) = delete;
 	GLSLProgram & operator=( const GLSLProgram &other ) = delete;
 	GLSLProgram( GLSLProgram &&other ) = delete;
 	GLSLProgram & operator=( GLSLProgram &&other ) = delete;
 
 private:
-	static GLuint currentProgram;
+	static GLSLProgram *currentProgram;
 
 	idStr name;
 	GLuint program;
