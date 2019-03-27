@@ -93,7 +93,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>PolarSSL.lib;libtdm_update.lib;libcurl.lib;ZipLoader.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(TargetPath)</OutputFile>
+      <OutputFile>$(OutDir)\tdm_update.exe</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -129,7 +129,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>PolarSSL.lib;libtdm_update.lib;libcurl.lib;ZipLoader.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(TargetPath)</OutputFile>
+      <OutputFile>$(OutDir)\tdm_update.exe</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
