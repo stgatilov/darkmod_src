@@ -1524,26 +1524,25 @@ to prevent double checking areas.
 We might alternatively choose to do this with an area flow.
 ==================
 */
-void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3 (*points), 
-								 int nodeNum ) {
-	
-	if ( nodeNum < 0 ) {
-		portalArea_t *area = &portalAreas[ (-1 - nodeNum) ];
-		if ( area->areaViewCount == tr.viewCount ) {
-			return;	// already added a reference here
-		}
+void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3( *points ), int nodeNum ) {
+	bool partial = false;
 
+	auto PushOrAdd = [&]() {
+		if ( nodeNum >= 0 ) {
+			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
+			return;
+		}
+		if ( def && partial && def->centerArea && def->centerArea != nodeNum )
+			return; // duzenko 2.08: Dragofer's draw call optimization
+		portalArea_t *area = &portalAreas[( -1 - nodeNum )];
+		if ( area->areaViewCount == tr.viewCount )
+			return; // already added a reference here
 		area->areaViewCount = tr.viewCount;
-
-		if ( def ) {
+		if ( def )
 			AddEntityRefToArea( def, area );
-		}
-		if ( light ) {
+		if ( light )
 			AddLightRefToArea( light, area );
-		}
-
-		return;
-	}
+	};
 
 	areaNode_t	*node = areaNodes + nodeNum;
 
@@ -1560,65 +1559,61 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 	}
 
 	// if the bounding sphere is completely on one side, don't bother checking the individual points
-	const float sphereDist = node->plane.Distance( sphere->GetOrigin() );
-	{
-		const float sphereRad = sphere->GetRadius();
-		if ( sphereDist >= sphereRad ) {
-			nodeNum = node->children[0];
-			if ( nodeNum ) {	// 0 = solid
-				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-			}
+	auto PushIfNZ = [&]( int childNo ) {
+		nodeNum = node->children[childNo];
+		if ( !nodeNum )  // 0 = solid
 			return;
-		} else if ( sphereDist < -sphereRad ) {
-			nodeNum = node->children[1];
-			if ( nodeNum ) {	// 0 = solid
-				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-			}
-			return;
+		if ( !partial ) { // duzenko 2.08: Dragofer's draw call optimization
+			static idCVarBool r_useAreaLocks( "r_useAreaLocks", "0", CVAR_RENDERER, "1 - suppress multiple entity/area refs" );
+			if ( r_useAreaLocks.GetBool() && def && nodeNum < 0 )
+				def->centerArea = nodeNum;
 		}
+		PushOrAdd();
+	};
+
+	const float sphereDist = node->plane.Distance( sphere->GetOrigin() );
+	const float sphereRad = sphere->GetRadius();
+	if ( sphereDist >= sphereRad ) {
+		PushIfNZ( 0 );
+		return;
+	}
+	else if ( sphereDist < -sphereRad ) {
+		PushIfNZ( 1 );
+		return;
 	}
 
 	// exact check all the points against the node plane
+	partial = true;
 	bool front = false;
 	bool back = false;
 	const idVec3 norm = node->plane.Normal();
 	const float plane3 = node->plane[3];
 
-	static idCVar r_areaCullRatio( "r_areaCullMargin", "0", CVAR_FLOAT | CVAR_RENDERER, "=0 - regular, >0 - stuff missing, <1 - extra draw calls" );
-	const float eps = abs(sphereDist) * r_areaCullRatio.GetFloat();
-	
 	for ( int i = 0 ; i < numPoints ; i++ ) {
-#if 0	
+#if 1
 		if ( (points[i] * norm + plane3) >= 0.0f ) {
 			front = true;
 		} else {
 			back = true;
 		}
 #else	// duzenko 2.08: Dragofer's draw calls optimization
+		static idCVar r_areaCullRatio( "r_areaCullMargin", "0", CVAR_FLOAT | CVAR_RENDERER, "=0 - regular, >0 - stuff missing, <1 - extra draw calls" );
+		const float eps = abs( sphereDist ) * r_areaCullRatio.GetFloat();
+
 		float dot = points[i] * norm + plane3;
 		front |= dot > eps;
 		back |= dot < -eps;
 #endif
 
 		if ( back && front ) {
-		    nodeNum = node->children[0];
-			if ( nodeNum ) {	// 0 = solid
-				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-			}
-			nodeNum = node->children[1];
-			if ( nodeNum ) {	// 0 = solid
-				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-			}
+			PushIfNZ( 0 );
+			PushIfNZ( 1 );
 			return;
 		}
 	}
 
-	if ( front || back) {
-		nodeNum = node->children[back];
-		if ( nodeNum ) {	// 0 = solid
-			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-		}
-	} 
+	if ( front || back)
+		PushIfNZ( back );
 }
 
 

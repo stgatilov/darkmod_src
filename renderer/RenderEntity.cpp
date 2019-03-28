@@ -42,6 +42,7 @@ idRenderEntityLocal::idRenderEntityLocal() {
 	firstInteraction		= NULL;
 	lastInteraction			= NULL;
 	needsPortalSky			= false;
+	centerArea				= 0;
 }
 
 void idRenderEntityLocal::FreeRenderEntity() {

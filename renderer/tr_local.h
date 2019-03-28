@@ -324,7 +324,7 @@ public:
 	idInteraction 			*lastInteraction;
 
 	bool					needsPortalSky;
-
+	int						centerArea;
 };
 
 // viewLights are allocated on the frame temporary stack memory
