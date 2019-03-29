@@ -320,8 +320,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->lightProject[2] = light->lightProject[2];
 	vLight->lightProject[3] = light->lightProject[3];
 
-	if (r_useAnonreclaimer.GetBool()) {
-		//anon begin
+	if ( r_useBfgCulling.GetBool() ) {
 		// vLight->fogPlane = light->frustum[5];
 		// the fog plane is the light far clip plane
 		idPlane fogPlane(light->baseLightProject[2][0] - light->baseLightProject[3][0],
@@ -333,7 +332,6 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 		vLight->fogPlane[1] = fogPlane[1] * planeScale;
 		vLight->fogPlane[2] = fogPlane[2] * planeScale;
 		vLight->fogPlane[3] = fogPlane[3] * planeScale;
-		//anon end
 	} else {
 		vLight->fogPlane = light->frustum[5];
 	}

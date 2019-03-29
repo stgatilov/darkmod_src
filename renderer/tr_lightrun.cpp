@@ -189,7 +189,7 @@ void R_CreateEntityRefs( idRenderEntityLocal *def ) {
 		common->Printf( "big entityRef: %f,%f\n", def->referenceBounds[1][0] - def->referenceBounds[0][0], def->referenceBounds[1][1] - def->referenceBounds[0][1] );
 	}
 
-	if (r_useAnonreclaimer.GetBool()) {
+	if ( r_useBfgCulling.GetBool() ) {
 		// derive entity data
 		R_DeriveEntityData(def);
 
@@ -461,7 +461,7 @@ Fills everything in based on light->parms
 =================
 */
 void R_DeriveLightData( idRenderLightLocal *light ) {
-	if (r_useAnonreclaimer.GetBool()) {
+	if ( r_useBfgCulling.GetBool() ) {
 		int i;
 
 		// decide which light shader we are going to use
@@ -591,8 +591,7 @@ void R_DeriveLightData( idRenderLightLocal *light ) {
 
 		// calculate the global light bounds by inverse projecting the zero to one cube with the 'inverseBaseLightProject'
 		idRenderMatrix::ProjectedBounds(light->globalLightBounds, light->inverseBaseLightProject, bounds_zeroOneCube, false);
-	}
-	else {
+	} else { // original D3 code
 		if (light->parms.shader) {
 			light->lightShader = light->parms.shader;
 		}
@@ -675,7 +674,7 @@ R_CreateLightRefs
 */
 #define	MAX_LIGHT_VERTS	40
 void R_CreateLightRefs( idRenderLightLocal *light ) {
-	if (r_useAnonreclaimer.GetBool()) {
+	if ( r_useBfgCulling.GetBool() ) {
 		// determine the areaNum for the light origin, which may let us
 		// cull the light if it is behind a closed door
 		// it is debatable if we want to use the entity origin or the center offset origin,
@@ -779,7 +778,7 @@ WindingCompletelyInsideLight
 ===============
 */
 bool WindingCompletelyInsideLight( const idWinding *w, const idRenderLightLocal *ldef ) {
-	if (r_useAnonreclaimer.GetBool()) {
+	if (r_useBfgCulling.GetBool()) {
 		for (int i = 0; i < w->GetNumPoints(); i++) {
 			if (idRenderMatrix::CullPointToMVP(ldef->baseLightProject, (*w)[i].ToVec3(), true)) {
 				return false;

@@ -220,7 +220,7 @@ public:
 
 	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
 
-	idRenderWorldLocal 	*world;
+	idRenderWorldLocal 		*world;
 	int						index;					// in world lightdefs
 
 	int						areaNum;				// if not -1, we may be able to cull all the light's
@@ -234,29 +234,25 @@ public:
 
 	// derived information
 	idPlane					lightProject[4];
-	//anon begin
 	idRenderMatrix			baseLightProject;		// global xyz1 to projected light strq
 	idRenderMatrix			inverseBaseLightProject;// transforms the zero-to-one cube to exactly cover the light in world space
-	//anon end
 
 	const idMaterial 		*lightShader;			// guaranteed to be valid, even if parms.shader isn't
 	idImage 				*falloffImage;
 
 	idVec3					globalLightOrigin;		// accounting for lightCenter and parallel
-	//anon begin
 	idBounds				globalLightBounds;
-	//anon end
 
 
 	idPlane					frustum[6];				// in global space, positive side facing out, last two are front/back
 	idWinding				frustumWindings[6];		// used for culling
-	srfTriangles_t 		*frustumTris;			// triangulated frustumWindings[]
+	srfTriangles_t 			*frustumTris;			// triangulated frustumWindings[]
 
 	int						numShadowFrustums;		// one for projected lights, usually six for point lights
 	shadowFrustum_t			shadowFrustums[6];
 
 	int						viewCount;				// if == tr.viewCount, the light is on the viewDef->viewLights list
-	struct viewLight_s 	*viewLight;
+	struct viewLight_s 		*viewLight;
 
 	areaReference_t 		*references;				// each area the light is present in will have a lightRef
 	idInteraction 			*firstInteraction;		// doubly linked list
@@ -1053,6 +1049,7 @@ extern idCVar r_softShadowsQuality;
 extern idCVar r_softShadowsRadius;
 
 extern idCVar r_useAnonreclaimer;
+extern idCVar r_useBfgCulling;
 #ifdef MULTI_LIGHT_IN_FRONT
 extern idCVar r_shadowMapSinglePass;
 #endif

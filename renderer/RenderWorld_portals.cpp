@@ -444,7 +444,7 @@ prelight, because shadows are cast from back side which may not be in visible ar
 */
 void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 	portalStack_t	ps;
-	if ( r_useAnonreclaimer.GetBool() ) {
+	if ( r_useBfgCulling.GetBool() ) {
 		// if the light origin areaNum is not in a valid area,
 		// the light won't have any area refs
 		if ( light->areaNum == -1 ) {
@@ -573,7 +573,7 @@ Return true if the entity reference bounds do not intersect the current portal c
 ================
 */
 bool idRenderWorldLocal::CullEntityByPortals( const idRenderEntityLocal *entity, const portalStack_t *ps ) {
-	if ( r_useAnonreclaimer.GetBool() ) {
+	if ( r_useBfgCulling.GetBool() ) {
 		if ( r_useEntityPortalCulling.GetInteger() == 1 ) {
 			ALIGNTYPE16 frustumCorners_t corners;
 			idRenderMatrix::GetFrustumCorners( corners, entity->inverseBaseModelProject, bounds_unitCube );
@@ -718,7 +718,7 @@ The last stack plane is not used because lights are not near clipped.
 ================
 */
 bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, const portalStack_t *ps ) {
-	if ( r_useAnonreclaimer.GetBool() ) {
+	if ( r_useBfgCulling.GetBool() ) {
 		if ( r_useLightPortalCulling.GetInteger() == 1 ) {
 
 			ALIGNTYPE16 frustumCorners_t corners;
@@ -876,7 +876,7 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
-		if ( r_useAnonreclaimer.GetBool() ) {
+		if ( r_useBfgCulling.GetBool() ) {
 			if ( r_useLightAreaCulling.GetInteger() &&
 			    !light->parms.noShadows && light->lightShader->LightCastsShadows() && 
 				light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] ) {

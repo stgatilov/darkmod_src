@@ -237,7 +237,8 @@ idCVar r_postprocess_bloomIntensity( "r_postprocess_bloomIntensity", "0", CVAR_G
 idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, " Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
 
 // 2016-2018 additions by duzenko
-idCVar r_useAnonreclaimer( "r_useBfgPortalCulling", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer culling patch" );
+idCVar r_useAnonreclaimer( "r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer patch" );
+idCVar r_useBfgCulling( "r_useBfgCulling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "1 - Use the D3BFG code" );
 idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB2" );
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
 idCVar r_forceGlslPrograms( "r_forceGlslPrograms", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force using GLSL shaders instead of ARB ones (when shader is used in material's new stage)" );

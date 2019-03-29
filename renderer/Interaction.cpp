@@ -49,7 +49,7 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
 	const int numFaces = tri->numIndexes / 3;
 
-	if ( r_useAnonreclaimer.GetBool() ) {
+	if ( r_useBfgCulling.GetBool() ) {
 		cullInfo.facing = ( byte* )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
 
 		// exact geometric cull against face
@@ -871,7 +871,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 
 	bounds = model->Bounds( &entityDef->parms );
 
-	if ( r_useAnonreclaimer.GetBool() ) {
+	if ( r_useBfgCulling.GetBool() ) {
 		// if it doesn't contact the light frustum, none of the surfaces will
 		if ( R_CullModelBoundsToLight( lightDef, bounds, entityDef->modelRenderMatrix ) ) {
 			MakeEmpty();
@@ -923,7 +923,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			continue;
 		}
 
-		if ( r_useAnonreclaimer.GetBool() ) {
+		if ( r_useBfgCulling.GetBool() ) {
 			// try to cull each surface
 			if ( R_CullModelBoundsToLight( lightDef, tri->bounds, entityDef->modelRenderMatrix ) ) {
 				continue;
