@@ -49,33 +49,19 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
 	const int numFaces = tri->numIndexes / 3;
 
-	if ( r_useBfgCulling.GetBool() ) {
-		cullInfo.facing = ( byte* )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
+	cullInfo.facing = ( byte* )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
 
-		// exact geometric cull against face
-		for ( int i = 0, face = 0; i < tri->numIndexes; i += 3, face++ ) {
-			const idDrawVert& v0 = tri->verts[tri->indexes[i + 0]];
-			const idDrawVert& v1 = tri->verts[tri->indexes[i + 1]];
-			const idDrawVert& v2 = tri->verts[tri->indexes[i + 2]];
+	// exact geometric cull against face
+	for ( int i = 0, face = 0; i < tri->numIndexes; i += 3, face++ ) {
+		const idDrawVert& v0 = tri->verts[tri->indexes[i + 0]];
+		const idDrawVert& v1 = tri->verts[tri->indexes[i + 1]];
+		const idDrawVert& v2 = tri->verts[tri->indexes[i + 2]];
 
-			const idPlane plane( v0.xyz, v1.xyz, v2.xyz );
-			const float d = plane.Distance( localLightOrigin );
+		const idPlane plane( v0.xyz, v1.xyz, v2.xyz );
+		const float d = plane.Distance( localLightOrigin );
 
-			cullInfo.facing[face] = ( d >= 0.0f );
-		}
-	} else {
-		if ( !tri->facePlanes || !tri->facePlanesCalculated ) {
-			R_DeriveFacePlanes( const_cast<srfTriangles_t *>( tri ) );
-		}
-		cullInfo.facing = ( byte * )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
-
-		// duzenko #4424: similar to d3bfg don't use a temp array (no speed difference really)
-		// revelator: removed old codepath, keep source clean.
-		for ( int face = 0; face < numFaces; face++ ) {
-			const float d = tri->facePlanes[face].Distance( localLightOrigin );
-			cullInfo.facing[face] = ( d >= 0.0f );
-		}
-	}	
+		cullInfo.facing[face] = ( d >= 0.0f );
+	}
 	cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
 }
 
@@ -871,18 +857,10 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 
 	bounds = model->Bounds( &entityDef->parms );
 
-	if ( r_useBfgCulling.GetBool() ) {
-		// if it doesn't contact the light frustum, none of the surfaces will
-		if ( R_CullModelBoundsToLight( lightDef, bounds, entityDef->modelRenderMatrix ) ) {
-			MakeEmpty();
-			return;
-		}
-	} else {
-		// if it doesn't contact the light frustum, none of the surfaces will
-		if ( R_CullLocalBox( bounds, entityDef->modelMatrix, 6, lightDef->frustum ) ) {
-			MakeEmpty();
-			return;
-		}
+	// if it doesn't contact the light frustum, none of the surfaces will
+	if ( R_CullModelBoundsToLight( lightDef, bounds, entityDef->modelRenderMatrix ) ) {
+		MakeEmpty();
+		return;
 	}
 
 	// use the turbo shadow path
@@ -923,16 +901,9 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			continue;
 		}
 
-		if ( r_useBfgCulling.GetBool() ) {
-			// try to cull each surface
-			if ( R_CullModelBoundsToLight( lightDef, tri->bounds, entityDef->modelRenderMatrix ) ) {
-				continue;
-			}
-		} else {
-			// try to cull each surface
-			if ( R_CullLocalBox( tri->bounds, entityDef->modelMatrix, 6, lightDef->frustum ) ) {
-				continue;
-			}
+		// try to cull each surface
+		if ( R_CullModelBoundsToLight( lightDef, tri->bounds, entityDef->modelRenderMatrix ) ) {
+			continue;
 		}
 		surfaceInteraction_t *sint = &surfaces[c];
 

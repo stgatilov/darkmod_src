@@ -1049,7 +1049,6 @@ extern idCVar r_softShadowsQuality;
 extern idCVar r_softShadowsRadius;
 
 extern idCVar r_useAnonreclaimer;
-extern idCVar r_useBfgCulling;
 #ifdef MULTI_LIGHT_IN_FRONT
 extern idCVar r_shadowMapSinglePass;
 #endif

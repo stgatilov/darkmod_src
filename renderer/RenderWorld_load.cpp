@@ -616,17 +616,13 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 
 		// the local and global reference bounds are the same for area models
 		def->referenceBounds = def->parms.hModel->Bounds();
-		if ( r_useBfgCulling.GetBool() ) {
-			def->globalReferenceBounds = def->parms.hModel->Bounds();
-		}
+		def->globalReferenceBounds = def->parms.hModel->Bounds();
 
 		def->parms.axis[0][0] = 1;
 		def->parms.axis[1][1] = 1;
 		def->parms.axis[2][2] = 1;
 
-		if ( !r_useBfgCulling.GetBool() ) {
-			R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
-		}
+		R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
 
 		// in case an explicit shader is used on the world, we don't
 		// want it to have a 0 alpha or color
@@ -635,9 +631,7 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 		def->parms.shaderParms[2] =
 		def->parms.shaderParms[3] = 1;
 
-		if ( r_useBfgCulling.GetBool() ) {
-			R_DeriveEntityData(def); 
-		}
+		R_DeriveEntityData(def); 
 		AddEntityRefToArea(def, &portalAreas[i]);
 	}
 }
