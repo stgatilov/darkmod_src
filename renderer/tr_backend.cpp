@@ -296,25 +296,24 @@ void GL_State( const int stateBits ) {
 	backEnd.glState.glStateBits = stateBits;
 }
 
-//anon begin
 /*
 ========================
-GL_DepthBoundsTest
+DepthBoundsTest
 ========================
 */
-void GL_DepthBoundsTest( const float zmin, const float zmax ) {
-	if ( !glConfig.depthBoundsTestAvailable || zmin > zmax ) {
+DepthBoundsTest::DepthBoundsTest( const idScreenRect &scissorRect ) {
+	if ( !glConfig.depthBoundsTestAvailable || !r_useDepthBoundsTest.GetBool() )
 		return;
-	}
-
-	if ( zmin == 0.0f && zmax == 0.0f ) {
-		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
-	} else {
-		qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
-		qglDepthBoundsEXT( zmin, zmax );
-	}
+	assert( scissorRect.zmin <= scissorRect.zmax );
+	qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
+	qglDepthBoundsEXT( scissorRect.zmin, scissorRect.zmax );
 }
-//anon end
+
+DepthBoundsTest::~DepthBoundsTest() {
+	if ( !glConfig.depthBoundsTestAvailable || !r_useDepthBoundsTest.GetBool() )
+		return;
+	qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
+}
 
 /*
 ============================================================================

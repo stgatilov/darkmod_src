@@ -371,12 +371,8 @@ void RB_ARB2_DrawInteractions( void ) {
 		}
 		lightShader = vLight->lightShader;
 
-		//anon begin
 		// set the depth bounds for the whole light
-		if ( backEnd.useLightDepthBounds ) {
-			GL_DepthBoundsTest( vLight->scissorRect.zmin, vLight->scissorRect.zmax );
-		}
-		//anon end
+		const DepthBoundsTest depthBoundsTest( vLight->scissorRect );
 
 		// clear the stencil buffer if needed
 		if ( vLight->globalShadows || vLight->localShadows ) {
@@ -418,13 +414,6 @@ void RB_ARB2_DrawInteractions( void ) {
 			RB_ARB2_CreateDrawInteractions_simple( vLight->globalInteractions );
 			qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
 		}
-
-		//anon begin
-		// reset depth bounds
-		if ( backEnd.useLightDepthBounds ) {
-			GL_DepthBoundsTest( 0.0f, 0.0f );
-		}
-		//anon end
 
 		// translucent surfaces never get stencil shadowed
 		if ( r_skipTranslucent.GetBool() ) {

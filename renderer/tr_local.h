@@ -726,8 +726,8 @@ typedef struct {
 	bool				afterFogRendered;		// added post process pass.
 
 	// Test if lightDepthBounds should be enabled or not
-	bool				useLightDepthBounds;
-	bool				lightDepthBoundsDisabled;
+	/*bool				useLightDepthBounds;
+	bool				lightDepthBoundsDisabled;*/
 
 	// our OpenGL state deltas
 	glstate_t			glState;
@@ -1097,9 +1097,13 @@ void	GL_State( int stateVector );
 void	GL_Cull( int cullType );
 void	GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h );
 void	GL_Viewport( int x /* left */, int y /* bottom */, int w, int h );
-//anon begin
-void    GL_DepthBoundsTest( const float zmin, const float zmax );
-//anon end
+
+// RAII-style wrapper for qglDepthBoundsEXT
+class DepthBoundsTest {
+public:
+	DepthBoundsTest( const idScreenRect &scissorRect );
+	~DepthBoundsTest();
+};
 
 // overloaded color functions vector first
 void	GL_FloatColor( const idVec3 &color );

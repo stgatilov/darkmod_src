@@ -628,12 +628,6 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	const float			*lightRegs = vLight->shaderRegisters;
 	drawInteraction_t	inter;
 
-	//anon begin
-	// must be a modifiable value, we cannot do that with a const, revelator.
-	// this is the only place this is called now that i made it global, revelator.
-	backEnd.useLightDepthBounds = r_useDepthBoundsTest.GetBool();
-	//anon end
-
 	if ( !surf->ambientCache.IsValid() ) {
 		return;
 	}
@@ -649,10 +643,6 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
 	}
 
-	//anon begin
-	backEnd.lightDepthBoundsDisabled = false;
-	//anon end
-
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {
 		backEnd.currentSpace = surf->space;
@@ -663,25 +653,18 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 			transformUniforms->Set( surf->space );
 		}
 
-		//anon bengin
 		// turn off the light depth bounds test if this model is rendered with a depth hack
-		// revelator: test enable this without BFG portal culling.
-		if ( r_useAnonreclaimer.GetBool() ) {
-			if ( backEnd.useLightDepthBounds ) {
-				if ( !surf->space->weaponDepthHack && surf->space->modelDepthHack == 0.0f ) {
-					if ( backEnd.lightDepthBoundsDisabled ) {
-						GL_DepthBoundsTest( vLight->scissorRect.zmin, vLight->scissorRect.zmax );
-						backEnd.lightDepthBoundsDisabled = false;
-					}
-				} else {
-					if ( !backEnd.lightDepthBoundsDisabled ) {
-						GL_DepthBoundsTest( 0.0f, 0.0f );
-						backEnd.lightDepthBoundsDisabled = true;
-					}
-				}
+		/*if ( !surf->space->weaponDepthHack && surf->space->modelDepthHack == 0.0f ) {
+			if ( backEnd.lightDepthBoundsDisabled ) {
+				GL_DepthBoundsTest( vLight->scissorRect.zmin, vLight->scissorRect.zmax );
+				backEnd.lightDepthBoundsDisabled = false;
 			}
-		}
-		//anon end
+		} else {
+			if ( !backEnd.lightDepthBoundsDisabled ) {
+				GL_DepthBoundsTest( 0.0f, 0.0f );
+				backEnd.lightDepthBoundsDisabled = true;
+			}
+		}*/
 	}
 
 	// change the scissor if needed
@@ -826,25 +809,15 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		RB_LeaveDepthHack();
 	}
 
-	//anon begin
-	if ( r_useAnonreclaimer.GetBool() ) {
-		if ( backEnd.useLightDepthBounds && backEnd.lightDepthBoundsDisabled ) {
+	/*	if ( backEnd.useLightDepthBounds && backEnd.lightDepthBoundsDisabled ) {
 			GL_DepthBoundsTest( vLight->scissorRect.zmin, vLight->scissorRect.zmax );
-		}
-	}
-	//anon end
+		}*/
 }
 
 void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	const idMaterial	*surfaceShader = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
 	drawInteraction_t	inter;
-
-	//anon begin
-	// must be a modifiable value, we cannot do that with a const, revelator.
-	// this is the only place this is called now that i made it global, revelator.
-	backEnd.useLightDepthBounds = r_useDepthBoundsTest.GetBool();
-	//anon end
 
 	if ( !surf->ambientCache.IsValid() ) {
 		return;
@@ -857,10 +830,6 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	if ( tr.logFile ) {
 		//RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
 	}
-
-	//anon begin
-	backEnd.lightDepthBoundsDisabled = false;
-	//anon end
 
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {

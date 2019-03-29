@@ -211,9 +211,7 @@ void RB_GLSL_DrawLight_Stencil() {
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
 
 	// set depth bounds for the whole light
-	if ( backEnd.useLightDepthBounds ) {
-		GL_DepthBoundsTest( backEnd.vLight->scissorRect.zmin, backEnd.vLight->scissorRect.zmax );
-	}
+	const DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
 
 	// clear the stencil buffer if needed
 	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) {
@@ -270,10 +268,6 @@ void RB_GLSL_DrawLight_Stencil() {
 	}
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
-	// reset depth bounds
-	if ( backEnd.useLightDepthBounds ) {
-		GL_DepthBoundsTest( 0.0f, 0.0f );
-	}
 	GLSLProgram::Deactivate();	// if there weren't any globalInteractions, it would have stayed on
 }
 

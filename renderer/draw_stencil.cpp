@@ -70,9 +70,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	}
 
 	// set depth bounds
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
-		qglDepthBoundsEXT( surf->scissorRect.zmin, surf->scissorRect.zmax );
-	}
+	const DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
 
 	// debug visualization
 	if ( r_showShadows.GetInteger() ) {
