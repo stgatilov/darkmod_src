@@ -28,7 +28,7 @@ class TdmDepends(ConanFile):
         "devil/1.8.0@thedarkmod/local",
         "openal/1.19.0@bincrafters/stable",
         "libcurl/7.61.1@thedarkmod/local",
-#        "ffmpeg/4.0.2@bincrafters/stable",
+        "ffmpeg/4.0.2@thedarkmod/local",
     )
     default_options = {"zlib:minizip": True}
 
