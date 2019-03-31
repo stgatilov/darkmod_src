@@ -1,23 +1,14 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update", "tdm_update.vcxproj", "{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319} = {46CC0F23-49E6-4FAB-A1A0-BD87C4792319}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtdm_update", "libtdm_update\libtdm_update.vcxproj", "{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_package", "tdm_package\tdm_package.vcxproj", "{A181019F-4348-4574-B88C-DEAAA2B5CB7D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319} = {46CC0F23-49E6-4FAB-A1A0-BD87C4792319}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update_mfc", "tdm_update_mfc\tdm_update_mfc.vcxproj", "{D1A70E0F-90AF-443F-B512-8A25E99FE568}"
-	ProjectSection(ProjectDependencies) = postProject
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319} = {46CC0F23-49E6-4FAB-A1A0-BD87C4792319}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,5 +35,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A9263498-02A5-41BF-805C-3CAA982148DE}
 	EndGlobalSection
 EndGlobal
