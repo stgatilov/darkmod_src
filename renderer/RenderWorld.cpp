@@ -20,6 +20,8 @@
 
 #include "tr_local.h"
 
+static idCVarBool r_useAreaLocks( "r_useAreaLocks", "0", CVAR_RENDERER, "1 - suppress multiple entity/area refs" );
+
 /*
 ===================
 R_ListRenderLightDefs_f
@@ -1511,147 +1513,6 @@ void idRenderWorldLocal::FreeInteractions() {
 
 /*
 ==================
-PushVolumeIntoTree
-
-Used for both light volumes and model volumes.
-
-This does not clip the points by the planes, so some slop
-occurs.
-
-tr.viewCount should be bumped before calling, allowing it
-to prevent double checking areas.
-
-We might alternatively choose to do this with an area flow.
-==================
-*/
-void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3( *points ), int nodeNum ) {
-	bool partial = false;
-
-	auto PushOrAdd = [&]() {
-		if ( nodeNum >= 0 ) {
-			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-			return;
-		}
-		if ( def && partial && def->centerArea && def->centerArea != nodeNum )
-			return; // duzenko 2.08: Dragofer's draw call optimization
-		portalArea_t *area = &portalAreas[( -1 - nodeNum )];
-		if ( area->areaViewCount == tr.viewCount )
-			return; // already added a reference here
-		area->areaViewCount = tr.viewCount;
-		if ( def )
-			AddEntityRefToArea( def, area );
-		if ( light )
-			AddLightRefToArea( light, area );
-	};
-
-	areaNode_t	*node = areaNodes + nodeNum;
-
-	// if we know that all possible children nodes only touch an area
-	// we have already marked, we can early out
-	if ( r_useNodeCommonChildren.GetBool() && node->commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS ) {
-		// note that we do NOT try to set a reference in this area
-		// yet, because the test volume may yet wind up being in the
-		// solid part, which would cause bounds slightly poked into
-		// a wall to show up in the next room
-		if ( portalAreas[node->commonChildrenArea].areaViewCount == tr.viewCount ) {
-			return;
-		}
-	}
-
-	// if the bounding sphere is completely on one side, don't bother checking the individual points
-	auto PushIfNZ = [&]( int childNo ) {
-		nodeNum = node->children[childNo];
-		if ( !nodeNum )  // 0 = solid
-			return;
-		if ( !partial ) { // duzenko 2.08: Dragofer's draw call optimization
-			static idCVarBool r_useAreaLocks( "r_useAreaLocks", "0", CVAR_RENDERER, "1 - suppress multiple entity/area refs" );
-			if ( r_useAreaLocks.GetBool() && def && nodeNum < 0 )
-				def->centerArea = nodeNum;
-		}
-		PushOrAdd();
-	};
-
-	const float sphereDist = node->plane.Distance( sphere->GetOrigin() );
-	const float sphereRad = sphere->GetRadius();
-	if ( sphereDist >= sphereRad ) {
-		PushIfNZ( 0 );
-		return;
-	}
-	else if ( sphereDist < -sphereRad ) {
-		PushIfNZ( 1 );
-		return;
-	}
-
-	// exact check all the points against the node plane
-	partial = true;
-	bool front = false;
-	bool back = false;
-	const idVec3 norm = node->plane.Normal();
-	const float plane3 = node->plane[3];
-
-	for ( int i = 0 ; i < numPoints ; i++ ) {
-#if 1
-		if ( (points[i] * norm + plane3) >= 0.0f ) {
-			front = true;
-		} else {
-			back = true;
-		}
-#else	// duzenko 2.08: Dragofer's draw calls optimization
-		static idCVar r_areaCullRatio( "r_areaCullMargin", "0", CVAR_FLOAT | CVAR_RENDERER, "=0 - regular, >0 - stuff missing, <1 - extra draw calls" );
-		const float eps = abs( sphereDist ) * r_areaCullRatio.GetFloat();
-
-		float dot = points[i] * norm + plane3;
-		front |= dot > eps;
-		back |= dot < -eps;
-#endif
-
-		if ( back && front ) {
-			PushIfNZ( 0 );
-			PushIfNZ( 1 );
-			return;
-		}
-	}
-
-	if ( front || back)
-		PushIfNZ( back );
-}
-
-
-/*
-==============
-PushVolumeIntoTree
-==============
-*/
-void idRenderWorldLocal::PushVolumeIntoTree( idRenderEntityLocal *def, idRenderLightLocal *light, int numPoints, const idVec3 (*points) ) {
-	int i;
-	idVec3 mid;
-	float lr, radius = 0.0f;
-
-	if ( !areaNodes ) {
-		return;
-	}
-
-	// calculate a bounding sphere for the points
-	for ( i = 0; i < numPoints; i++ ) {
-		mid += points[i];
-	}
-
-	mid *= ( 1.0f / numPoints );
-
-	for ( i = 0; i < numPoints; i++ ) {
-		lr = (points[i] - mid).Length();
-		if ( lr > radius ) {
-			radius = lr;
-		}
-	}
-
-	const idSphere sphere( mid, radius );
-
-	PushVolumeIntoTree_r( def, light, &sphere, numPoints, points, 0 );
-}
-
-/*
-==================
 idRenderWorldLocal::PushFrustumIntoTree_r
 
 Used for both light volumes and model volumes.
@@ -1668,30 +1529,6 @@ We might alternatively choose to do this with an area flow.
 void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRenderLightLocal* light,
 	const frustumCorners_t& corners, int nodeNum)
 {
-	//	tr.viewCount++;
-
-	if (nodeNum < 0)
-	{
-		int areaNum = -1 - nodeNum;
-		portalArea_t* area = &portalAreas[areaNum];
-		if ( area->areaViewCount == tr.viewCount )
-		{
-			return;	// already added a reference here
-		}
-		area->areaViewCount = tr.viewCount;
-
-		if (def != NULL)
-		{
-			AddEntityRefToArea(def, area);
-		}
-		if (light != NULL)
-		{
-			AddLightRefToArea(light, area);
-		}
-
-		return;
-	}
-
 	areaNode_t* node = areaNodes + nodeNum;
 
 	// if we know that all possible children nodes only touch an area
@@ -1710,22 +1547,28 @@ void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRende
 
 	// exact check all the corners against the node plane
 	frustumCull_t cull = idRenderMatrix::CullFrustumCornersToPlane(corners, node->plane);
-
-	if (cull != FRUSTUM_CULL_BACK)
-	{
-		nodeNum = node->children[0];
-		if (nodeNum != 0)  	// 0 = solid
-		{
-			PushFrustumIntoTree_r(def, light, corners, nodeNum);
+	bool sideIncluded[2] = { cull != FRUSTUM_CULL_BACK, cull != FRUSTUM_CULL_FRONT };
+	for ( int i = 0; i < 2; i++ ) {
+		if ( !sideIncluded[i] )
+			continue;
+		nodeNum = node->children[i];
+		if ( nodeNum == 0 )  	// 0 = solid
+			continue;
+		if ( nodeNum > 0 ) {	// navigate further down the BSP tree
+			PushFrustumIntoTree_r( def, light, corners, nodeNum );
+			continue;
+		}						// tree leave
+		int areaNum = -1 - nodeNum;
+		portalArea_t* area = &portalAreas[areaNum];
+		if ( area->areaViewCount == tr.viewCount ) {
+			continue;	// already added a reference here
 		}
-	}
-
-	if (cull != FRUSTUM_CULL_FRONT)
-	{
-		nodeNum = node->children[1];
-		if (nodeNum != 0)  	// 0 = solid
-		{
-			PushFrustumIntoTree_r(def, light, corners, nodeNum);
+		area->areaViewCount = tr.viewCount;
+		if ( def != NULL ) {
+			AddEntityRefToArea( def, area );
+		}
+		if ( light != NULL ) {
+			AddLightRefToArea( light, area );
 		}
 	}
 }
@@ -1738,8 +1581,14 @@ idRenderWorldLocal::PushFrustumIntoTree
 void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderLightLocal* light, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds)
 {
 	if (areaNodes == NULL)
-	{
 		return;
+	if ( def && r_useAreaLocks ) { // 2.08 Dragofer's draw call optimization
+		int areaNum = PointInArea( def->globalReferenceBounds.GetCenter() );
+		if ( areaNum >= 0 ) {
+			auto area = &portalAreas[areaNum];
+			AddEntityRefToArea( def, area );
+			return;
+		}
 	}
 
 	// calculate the corners of the frustum in word space
@@ -1748,7 +1597,6 @@ void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderL
 
 	PushFrustumIntoTree_r(def, light, corners, 0);
 }
-//anon end
 
 //===================================================================
 
