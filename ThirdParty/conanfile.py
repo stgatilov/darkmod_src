@@ -23,7 +23,7 @@ class TdmDepends(ConanFile):
     requires = (
         "zlib/1.2.11@conan/stable",
         "pugixml/1.9@bincrafters/stable",
-        "libjpeg/9c@bincrafters/stable",
+        "libjpeg/9c@thedarkmod/local",
         "libpng/1.6.34@bincrafters/stable",
         "devil/1.8.0@thedarkmod/local",
         "openal/1.19.0@bincrafters/stable",
