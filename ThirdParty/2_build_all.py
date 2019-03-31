@@ -16,8 +16,8 @@ assert platform.machine().endswith('64'), "Use 64-bit OS for builds"
 
 sysname = platform.system().lower()
 if 'windows' in sysname:
-    build_arch('Visual Studio', 'x86_64', runtime='MT', buildtype='RelWithDebInfo')
-    build_arch('Visual Studio', 'x86', runtime='MT', buildtype='RelWithDebInfo')
+    build_arch('Visual Studio', 'x86_64', runtime='MT') #, buildtype='RelWithDebInfo')
+    build_arch('Visual Studio', 'x86', runtime='MT') #, buildtype='RelWithDebInfo')
 else:
     build_arch('gcc', 'x86_64', libcxx='libstdc++')
     build_arch('gcc', 'x86', libcxx='libstdc++')
