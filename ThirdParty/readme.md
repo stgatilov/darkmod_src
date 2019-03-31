@@ -43,7 +43,7 @@ Conan builds packages inside a *local cache*, which by default is located somewh
 In order to make the cache truly local, it is strongly recommended to set environment variable in the shell you are going to use:
 
     # set the path to the directory where this readme is located
-    set CONAN_USER_HOME=C:\TheDarkMod\darkmod_src\thirdparty
+    set CONAN_USER_HOME=C:\TheDarkMod\darkmod_src\ThirdParty\temp
 
 Note that if you do so, you should ensure that this environment variable takes effect for all the conan commands you run later.
 Detailed explanation is available [here][4].
