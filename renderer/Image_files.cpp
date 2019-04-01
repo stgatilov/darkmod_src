@@ -35,7 +35,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, bool ma
  * You may also wish to include "jerror.h".
  */
 
-#include "../ExtLibs/jpeg.h"
+#include "jpeglib.h"
 
 extern "C" {
 	// hooks from jpeg lib to our system

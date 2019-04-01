@@ -18,10 +18,10 @@
 #include "gdefs.h"
 #include "roqParam.h"
 #include "quaddefs.h"
+
 #define JPEG_INTERNALS
-extern "C" {
-#include <jpeglib.h>
-}
+#include "jpeglib.h"
+
 #pragma once
 
 class codec;

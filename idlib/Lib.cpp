@@ -22,7 +22,7 @@
 #include <unistd.h>
 #endif
 
-#include <../ExtLibs/devil.h>
+#include "IL/il.h"
 
 /*
 ===============================================================================

@@ -19,7 +19,6 @@
 
 #include "roq.h"
 #include "codec.h"
-#include "../ExtLibs/jpeg.h"
 
 roq		*theRoQ;				// current roq file
 

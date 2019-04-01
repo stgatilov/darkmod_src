@@ -16,7 +16,16 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 #include "Cinematic.h"
-#include "../ExtLibs/ffmpeg.h"
+
+extern "C" {
+#include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
+#include "libswscale/swscale.h"
+#include "libswresample/swresample.h"
+#include "libavformat/avio.h"
+#include "libavutil/avutil.h"
+#include "libavutil/audio_fifo.h"
+}
 
 /**
  * Cinematic driven by the ffmpeg libavcodec library.

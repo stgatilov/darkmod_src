@@ -16,10 +16,7 @@
 #ifndef __CINEMATIC_ID_H__
 #define __CINEMATIC_ID_H__
 
-#define JPEG_INTERNALS
-#include "../ExtLibs/jpeg.h"
-extern "C" {
-}
+#include "jpeglib.h"
 
 #include "tr_local.h"
 #include "Cinematic.h"
