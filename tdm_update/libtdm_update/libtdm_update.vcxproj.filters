@@ -33,9 +33,6 @@
     <ClCompile Include="Http\MirrorDownload.cpp">
       <Filter>Http</Filter>
     </ClCompile>
-    <ClCompile Include="Zip\Zip.cpp">
-      <Filter>Zip</Filter>
-    </ClCompile>
     <ClCompile Include="Updater\UpdateController.cpp">
       <Filter>Updater</Filter>
     </ClCompile>
@@ -58,6 +55,9 @@
     <ClCompile Include="StdFilesystem.cpp">
       <Filter>Stubs</Filter>
     </ClCompile>
+    <ClCompile Include="Zip\TdmZip.cpp">
+      <Filter>Zip</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http\Download.h">
@@ -77,9 +77,6 @@
     </ClInclude>
     <ClInclude Include="Http\MirrorList.h">
       <Filter>Http</Filter>
-    </ClInclude>
-    <ClInclude Include="Zip\Zip.h">
-      <Filter>Zip</Filter>
     </ClInclude>
     <ClInclude Include="Updater\DifferentialUpdateInfo.h">
       <Filter>Updater</Filter>
@@ -134,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="StdFormat.h">
       <Filter>Stubs</Filter>
+    </ClInclude>
+    <ClInclude Include="Zip\TdmZip.h">
+      <Filter>Zip</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
