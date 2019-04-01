@@ -487,4 +487,7 @@ CRadiantApp::~CRadiantApp() {
 	AfxSetModuleState(m_pModuleState);
 }
 //=========================================================
+#else
+void Sys_MfcHack() {}
+CRadiantApp::~CRadiantApp() {}
 #endif
