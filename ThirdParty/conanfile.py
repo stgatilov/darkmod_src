@@ -29,6 +29,7 @@ class TdmDepends(ConanFile):
         "openal/1.19.0@bincrafters/stable",
         "libcurl/7.61.1@thedarkmod/local",
         "ffmpeg/4.0.2@thedarkmod/local",
+        "vorbis/1.3.6@bincrafters/stable",
     )
     default_options = {"zlib:minizip": True}
 
