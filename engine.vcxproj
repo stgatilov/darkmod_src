@@ -1603,9 +1603,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="ExtLibs\ExtLibs.vcxproj">
-      <Project>{5f1a77c3-f94d-4c5f-b14b-03202cdfc317}</Project>
-    </ProjectReference>
     <ProjectReference Include="idlib.vcxproj">
       <Project>{49bec5c6-b964-417a-851e-808886b57400}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
