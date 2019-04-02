@@ -1583,7 +1583,7 @@ void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderL
 	if (areaNodes == NULL)
 		return;
 	if ( def && r_useAreaLocks ) { // 2.08 Dragofer's draw call optimization
-		int areaNum = PointInArea( def->globalReferenceBounds.GetCenter() );
+		int areaNum = PointInArea( def->parms.origin );
 		if ( areaNum >= 0 ) {
 			auto area = &portalAreas[areaNum];
 			AddEntityRefToArea( def, area );
