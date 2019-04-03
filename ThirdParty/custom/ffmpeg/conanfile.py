@@ -243,7 +243,9 @@ class FFMpegConan(ConanFile):
                     args.append('--extra-cflags=-Dinline=__inline' % self.settings.compiler.runtime)
 
             if self.settings.arch == 'x86':
-                args.append('--arch=x86')
+                args.append('--arch=x86_32')
+            elif self.settings.arch == 'x86_64':
+                args.append('--arch=x86_64')
 
             # thedarkmod: remove all third-party dependencies and disable support for everything except a small subset
             args.append('--disable-all')
