@@ -1252,9 +1252,6 @@
     <ClInclude Include="renderer\GLSLProgram.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="tests\doctest.h">
-      <Filter>Tests</Filter>
-    </ClInclude>
     <ClInclude Include="tests\testing.h">
       <Filter>Tests</Filter>
     </ClInclude>
