@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <TdmExecutableName>TheDarkModx64</TdmExecutableName>
-    <ThirdPartyPlatform>\lib\win_vc15_x64</ThirdPartyPlatform>
+    <ThirdPartyPlatform>\lib\win64_s_vc15_rel_mt</ThirdPartyPlatform>
   </PropertyGroup>
   <ItemGroup>
     <BuildMacro Include="ThirdPartyPlatform">
