@@ -44,6 +44,8 @@ class DevilConan(ConanFile):
     def build(self):
         cmake = CMake(self)
         cmake.definitions["BUILD_SHARED_LIBS"] = self.options.shared
+        if self.settings.compiler == 'gcc':
+            cmake.definitions["CMAKE_C_FLAGS"] = "-fgnu89-inline"
         cmake.configure(source_folder = os.path.join(self.source_subfolder, "src-IL"))
         cmake.build()
 
