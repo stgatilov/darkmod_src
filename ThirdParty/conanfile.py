@@ -25,7 +25,7 @@ class TdmDepends(ConanFile):
         "pugixml/1.9@bincrafters/stable",
         "libjpeg/9c@thedarkmod/local",
         "libpng/1.6.34@bincrafters/stable",
-        "devil/1.8.0@thedarkmod/local",
+        "devil/1.7.8@thedarkmod/local",
         "openal/1.19.0@bincrafters/stable",
         "libcurl/7.61.1@thedarkmod/local",
         "ffmpeg/4.0.2@thedarkmod/local",
