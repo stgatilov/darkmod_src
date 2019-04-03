@@ -971,7 +971,7 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 
 	/* Step 3: read file parameters with jpeg_read_header() */
 
-	( void ) ExtLibs::jpeg_read_header( &cinfo, true );
+	( void ) ExtLibs::jpeg_read_header( &cinfo, boolean(true) );
 	/* We can ignore the return value from jpeg_read_header since
 	 *   (a) suspension is not possible with the stdio data source, and
 	 *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
