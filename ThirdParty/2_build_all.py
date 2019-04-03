@@ -9,9 +9,6 @@ def check_msvc_env():
     m = re.search(r'Microsoft \(R\) C\/C\+\+ Optimizing Compiler Version ([\w.]+) for (\w+)', cl_out)
     res = (m.group(1), m.group(2))
     print("CL compiler: version [%s], arch [%s]" % res)
-    yesno = input('continue? (yes/no):')
-    if yesno != 'yes':
-        sys.exit(111)
     return res
 
 def build_arch(compiler, arch, *, libcxx = None, runtime = None, buildtype = 'Release'):
@@ -24,7 +21,11 @@ def build_arch(compiler, arch, *, libcxx = None, runtime = None, buildtype = 'Re
         cmd += ' -s build_type=%s' % buildtype
     cmd += ' --build outdated'
     print("CMD: %s" % cmd)
+    yesno = input('continue? (yes/no):')
+    if yesno != 'yes':
+        sys.exit(111)
     os.system(cmd)
+
 
 assert platform.machine().endswith('64'), "Use 64-bit OS for builds"
 
