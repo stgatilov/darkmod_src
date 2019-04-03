@@ -213,9 +213,10 @@ if g_os == 'FreeBSD':
 	g_base_env.Append(CPPPATH = '/usr/local/include')
 
 g_base_env.Append(CPPPATH = '#/')
-g_base_env.Append(CPPPATH = '#/../include')
-g_base_env.Append(CPPPATH = '#/../include/zlib')
-g_base_env.Append(CPPPATH = '#/../include/minizip')
+path_template = '#/../ThirdParty/artefacts/{0}/include'
+g_base_env.Append(CPPPATH = path_template.format('zlib'))
+g_base_env.Append(CPPPATH = path_template.format('libcurl'))
+g_base_env.Append(CPPPATH = path_template.format('tinyformat'))
 g_base_env.Append(CPPPATH = '#/libtdm_update')
 
 g_env = g_base_env.Clone()
@@ -225,23 +226,22 @@ g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env['CPPFLAGS'] += CORECPPFLAGS
 
 # mark the globals
-GLOBALS = 'g_env g_os TARGET_ARCH minizip_list libtdm_update_list'
+GLOBALS = 'g_env g_os TARGET_ARCH libtdm_update_list'
 
 # end general configuration ----------------------
 
 # targets ----------------------------------------
 
-minizip_list = libtdm_update_list = None
+libtdm_update_list = None
 Export( 'GLOBALS ' + GLOBALS )
 
 # map this whole directory into build dir
 VariantDir( g_build, '.', duplicate = 0 )
-# map 'lib' dir from parent directory into 'lib' subdir
-VariantDir( g_build + '/lib', '../lib', duplicate = 0 )
+# map 'ThirdParty' dir from parent directory into 'ThirdParty' subdir
+VariantDir( g_build + '/ThirdParty', '../ThirdParty', duplicate = 0 )
 Export( 'GLOBALS ' + GLOBALS )
 
 # build libraries
-minizip_list = SConscript( g_build + '/SConscript.minizip' )
 libtdm_update_list = SConscript( g_build + '/SConscript.libtdm_update' )
 Export( 'GLOBALS ' + GLOBALS )
 
