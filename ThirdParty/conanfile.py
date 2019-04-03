@@ -1,22 +1,20 @@
 from conans import ConanFile
 import os
 
-def get_platform_name(settings):
-    arch = None
-    if settings.arch == 'x86':
-        arch = 'x32'
-    elif settings.arch == 'x86_64':
-        arch = 'x64'
-    else:
-        assert False, "unknown architecture %s" % settings.arch
-
-    if settings.compiler == 'Visual Studio':
-        return 'win_vc%s_%s' % (settings.compiler.version, arch)
-    elif settings.compiler == 'gcc':
-        return 'lnx_gcc_%s' % arch
-    else:
-        assert False, "unknown compiler %s" % settings.compiler
-
+def get_build_name(settings, shared=False):
+    os = {'Windows': 'win', 'Linux': 'lnx'}[str(settings.os)]
+    bitness = {'x86': '32', 'x86_64': '64'}[str(settings.arch)]
+    dynamic = 'd' if shared else 's'
+    compiler = {'Visual Studio': 'vc', 'gcc': 'gcc'}[str(settings.compiler)]
+    if compiler in ['vc', 'gcc']:
+        compiler += str(settings.compiler.version)
+    buildtype = {'Release': 'rel', 'Debug': 'dbg', 'RelWithDebInfo': 'rwd'}[str(settings.build_type)]
+    stdlib = '?'
+    if compiler.startswith('vc'):
+        stdlib = str(settings.compiler.runtime).lower()
+    elif compiler.startswith('gcc'):
+        stdlib = {'libstdc++': 'stdcpp'}[str(settings.compiler.libcxx)]
+    return '%s%s_%s_%s_%s_%s' % (os, bitness, dynamic, compiler, buildtype, stdlib)
 
 class TdmDepends(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
@@ -35,7 +33,7 @@ class TdmDepends(ConanFile):
     default_options = {"zlib:minizip": True}
 
     def imports(self):
-        platform = get_platform_name(self.settings)
+        platform = get_build_name(self.settings, False)
         for req in self.info.full_requires:
             name = req[0].name
             print(os.path.abspath("artefacts/%s/lib/%s" % (name, platform)))
