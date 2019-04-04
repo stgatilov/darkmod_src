@@ -22,7 +22,7 @@
 namespace fs = stdext;
 
 // Shared_ptr typedef
-#include "../pugixml/pugixml.hpp"
+#include "pugixml.hpp"
 typedef std::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
 class CMissionDB;

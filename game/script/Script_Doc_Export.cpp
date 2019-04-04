@@ -19,7 +19,7 @@
 
 
 #include "Script_Doc_Export.h"
-#include "../pugixml/pugixml.hpp"
+#include "pugixml.hpp"
 
 namespace
 {

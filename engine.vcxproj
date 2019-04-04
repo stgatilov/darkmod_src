@@ -539,8 +539,6 @@
     <ClInclude Include="game\precompiled_game.h" />
     <ClInclude Include="game\Projectile.h" />
     <ClInclude Include="game\ProjectileResult.h" />
-    <ClInclude Include="game\pugixml\pugiconfig.hpp" />
-    <ClInclude Include="game\pugixml\pugixml.hpp" />
     <ClInclude Include="game\Pvs.h" />
     <ClInclude Include="game\PVSToAASMapping.h" />
     <ClInclude Include="game\RawVector.h" />
@@ -1098,7 +1096,6 @@
     <ClCompile Include="game\precompiled_game.cpp" />
     <ClCompile Include="game\Projectile.cpp" />
     <ClCompile Include="game\ProjectileResult.cpp" />
-    <ClCompile Include="game\pugixml\pugixml.cpp" />
     <ClCompile Include="game\Pvs.cpp" />
     <ClCompile Include="game\PVSToAASMapping.cpp" />
     <ClCompile Include="game\RawVector.cpp" />

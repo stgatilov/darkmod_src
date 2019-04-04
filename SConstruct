@@ -318,6 +318,7 @@ g_env_base.Append(CPPPATH = path_template.format('devil'))
 g_env_base.Append(CPPPATH = path_template.format('libjpeg'))
 g_env_base.Append(CPPPATH = path_template.format('ffmpeg'))
 g_env_base.Append(CPPPATH = path_template.format('doctest'))
+g_env_base.Append(CPPPATH = path_template.format('pugixml'))
 g_env_base.Append(CPPPATH = '#/')
 
 g_env_base['CPPFLAGS'] += OPTCPPFLAGS
