@@ -65,6 +65,7 @@ local_env.Append(LIBS = [
 	File(path_template.format('ffmpeg', 'libavutil.a')),
 	File(path_template.format('ffmpeg', 'libswscale.a')),
 	File(path_template.format('ffmpeg', 'libswresample.a')),
+	File(path_template.format('pugixml', 'libpugixml.a')),
 ])
 
 # Add all standard libraries (taken from system)
