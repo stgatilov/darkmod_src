@@ -67,16 +67,23 @@ It performs `conan export custom/{libraryname} thedarkmod/local` for every libra
 Now you are ready to download and build all the libraries.
 You might want to delete the `artefacts` directory to surely get fresh libs.
 
-If you want to build everything, do:
+The straightforward way to build everything is running:
 
     conan install . --build
 
-You might want to read the documentation of `--build` parameter in `conan install --help`.
+It may be enough to produce artefacts if you don't intend to commit them to SVN.
+You might want to read the documentation of `--build` parameter in `conan install --help` beforehand.
 
-Alternatively, you can use helper for building libraries:
+If you want to build all artefacts and commit them to svn, it is recommended to run the helper script:
 
     python 2_build_all.py
 
+The script also runs `conan install`, but with some specific parameters.
+Note that on Windows you have to run script twice: in 64-bit and in 32-bit environments of Visual Studio.
+Then build all libraries on Linux using GCC.
+
+Given that produced artefacts may differ slightly on different machines (no two .lib-s are exactly equal),
+please commit new artefacts only for the libraries which you have actually changed, don't commit changes in libraries which you did not touch.
 
 ## How to add new library
 
