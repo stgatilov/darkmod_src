@@ -831,9 +831,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		minLevel.Set(backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 		lightOrigin.Set( din->worldUpLocal.ToVec3() );
-		idVec4 color;
-		din->surf->material->GetAmbientRimColor( color );
-		rimColor.Set( color );
+		rimColor.Set( din->ambientRimColor );
 		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
 			lightFalloffCubemap.Set( 1 );
 		} else {

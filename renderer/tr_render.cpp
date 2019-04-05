@@ -621,7 +621,7 @@ interaction into primitive interactions
 =============
 */
 void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
-	const idMaterial	*surfaceShader = surf->material;
+	const idMaterial	*material = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
 	const viewLight_t	*vLight = backEnd.vLight;
 	const idMaterial	*lightShader = vLight->lightShader;
@@ -635,12 +635,18 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		if ( r_skipAmbient.GetInteger() & 2 )
 			return;
+		auto ambientRegs = material->GetAmbientRimColor().registers;
+		if ( ambientRegs[0] )
+			for ( int i = 0; i < 3; i++ )
+				inter.ambientRimColor[i] = surfaceRegs[ambientRegs[i]];
+		else
+			inter.ambientRimColor.Zero();
 	} else if ( r_skipInteractions.GetBool() ) {
 		return;
 	}
 
 	if ( tr.logFile ) {
-		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
+		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );
 	}
 
 	// change the matrix and light projection vectors if needed
@@ -742,8 +748,8 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		};
 
 		// go through the individual stages
-		for ( int surfaceStageNum = 0; surfaceStageNum < surfaceShader->GetNumStages(); surfaceStageNum++ ) {
-			const shaderStage_t	*surfaceStage = surfaceShader->GetStage( surfaceStageNum );
+		for ( int surfaceStageNum = 0; surfaceStageNum < material->GetNumStages(); surfaceStageNum++ ) {
+			const shaderStage_t	*surfaceStage = material->GetStage( surfaceStageNum );
 
 			switch ( surfaceStage->lighting ) {
 			case SL_AMBIENT: {
@@ -815,7 +821,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 }
 
 void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
-	const idMaterial	*surfaceShader = surf->material;
+	const idMaterial	*material = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
 	drawInteraction_t	inter;
 
@@ -828,7 +834,7 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	}
 
 	if ( tr.logFile ) {
-		//RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
+		//RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );
 	}
 
 	// change the matrix and light projection vectors if needed
@@ -868,8 +874,8 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 		inter.specularColor[0] = inter.specularColor[1] = inter.specularColor[2] = inter.specularColor[3] = 0;
 
 		// go through the individual stages
-		for ( int surfaceStageNum = 0; surfaceStageNum < surfaceShader->GetNumStages(); surfaceStageNum++ ) {
-			const shaderStage_t	*surfaceStage = surfaceShader->GetStage( surfaceStageNum );
+		for ( int surfaceStageNum = 0; surfaceStageNum < material->GetNumStages(); surfaceStageNum++ ) {
+			const shaderStage_t	*surfaceStage = material->GetStage( surfaceStageNum );
 
 			switch ( surfaceStage->lighting ) {
 			case SL_AMBIENT: {

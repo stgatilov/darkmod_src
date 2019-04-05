@@ -498,6 +498,7 @@ typedef struct {
 
 	idVec4				diffuseColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
 	idVec4				specularColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
+	idVec4				ambientRimColor;
 	stageVertexColor_t	vertexColor;	// applies to both diffuse and specular
 
 	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
