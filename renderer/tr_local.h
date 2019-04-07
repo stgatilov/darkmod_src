@@ -1051,7 +1051,7 @@ extern idCVar r_softShadowsRadius;
 
 extern idCVar r_useAnonreclaimer;
 #ifdef MULTI_LIGHT_IN_FRONT
-extern idCVar r_shadowMapSinglePass;
+extern idCVarBool r_shadowMapSinglePass;
 #endif
 
 // stgatilov ROQ

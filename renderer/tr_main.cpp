@@ -1025,33 +1025,7 @@ R_SortDrawSurfs
 static void R_SortDrawSurfs( void ) {
 	if ( !tr.viewDef->numDrawSurfs ) // otherwise an assert fails in debug builds
 		return;
-	// sort the drawsurfs by sort type, then orientation, then shader
-	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
-		R_QsortSurfaces );
-#ifdef MULTI_LIGHT_IN_FRONT // calculate the light/entity bounds intersections here to reduce the CPU load in the backend
-	idList<int> lDefInd;	// FIXME this has been calculated already somewhere - make use of that
-	bool backendNeedsThis = r_interactionProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool();
-	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
-		auto surf = tr.viewDef->drawSurfs[i];
-		auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?
-		if ( backendNeedsThis && entDef )	// even if not used, still zero the onLights (else SMP crash when toggling)
-			for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next ) {
-				idVec3 localLightOrigin;
-				R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-				if ( R_CullLocalBox( surf->frontendGeo->bounds, entDef->modelMatrix, 6, vLight->lightDef->frustum ) )
-					continue;
-				lDefInd.Append( vLight->lightDef->index );
-			}
-
-		if ( lDefInd.Num() ) { // expect to at least include the main ambient light
-			lDefInd.Append( -1 );
-			auto frameMem = (int *)R_FrameAlloc( sizeof( int ) * lDefInd.Num() );
-			memcpy( frameMem, lDefInd.Ptr(), lDefInd.MemoryUsed() );
-			surf->onLights = frameMem;
-			lDefInd.SetNum( 0, false );
-		} else
-			surf->onLights = NULL;
-	}
+#ifdef MULTI_LIGHT_IN_FRONT 
 	// filter the offscreen shadow-only surfaces into a separate array
 	idList<drawSurf_t*> visible( tr.viewDef->numDrawSurfs ), offscreen( tr.viewDef->numDrawSurfs );
 	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
@@ -1066,6 +1040,9 @@ static void R_SortDrawSurfs( void ) {
 	memcpy( tr.viewDef->drawSurfs, visible.Ptr(), visible.MemoryUsed() );
 	memcpy( &tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs], offscreen.Ptr(), offscreen.MemoryUsed() );
 #endif // MULTI_LIGHT_IN_FRONT
+	// sort the drawsurfs by sort type, then orientation, then shader
+	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
+		R_QsortSurfaces );
 }
 
 /*
