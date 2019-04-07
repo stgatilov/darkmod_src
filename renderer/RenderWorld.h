@@ -131,6 +131,11 @@ typedef struct renderEntity_s {
 	bool					noSelfShadow;			// cast shadows onto other objects,but not self
 	bool					noShadow;				// no shadow at all
 	float					shadowMapOffset;		// workaround for shadow garbage on thin objects
+	enum areaLock_t {
+		RAL_NONE,
+		RAL_ORIGIN,
+		RAL_CENTER,
+	}						areaLock;				// 2.08 Dragofer's draw call optimization
 
 	bool					noDynamicInteractions;	// don't create any light / shadow interactions after
 													// the level load is completed.  This is a performance hack

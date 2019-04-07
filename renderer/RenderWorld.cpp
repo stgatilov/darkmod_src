@@ -20,7 +20,7 @@
 
 #include "tr_local.h"
 
-static idCVarBool r_useAreaLocks( "r_useAreaLocks", "0", CVAR_RENDERER, "1 - suppress multiple entity/area refs" );
+static idCVarBool r_useAreaLocks( "r_useAreaLocks", "1", CVAR_RENDERER, "1 - suppress multiple entity/area refs" );
 
 /*
 ===================
@@ -1582,8 +1582,10 @@ void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderL
 {
 	if (areaNodes == NULL)
 		return;
-	if ( def && r_useAreaLocks ) { // 2.08 Dragofer's draw call optimization
-		int areaNum = PointInArea( def->parms.origin );
+	renderEntity_s::areaLock_t areaLock;
+	if ( def && r_useAreaLocks && ( areaLock = def->parms.areaLock ) != renderEntity_s::RAL_NONE ) { // 2.08 Dragofer's draw call optimization
+		auto point = areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalReferenceBounds.GetCenter(); // use & ?
+		int areaNum = PointInArea( point );
 		if ( areaNum >= 0 ) {
 			auto area = &portalAreas[areaNum];
 			AddEntityRefToArea( def, area );

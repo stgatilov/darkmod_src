@@ -356,6 +356,7 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteBool( renderEntity.noSelfShadow );
 	WriteBool( renderEntity.noShadow );
 	WriteFloat( renderEntity.shadowMapOffset );
+	WriteInt( renderEntity.areaLock );
 	WriteBool( renderEntity.noDynamicInteractions );
 	WriteBool( renderEntity.weaponDepthHack );
 
@@ -947,6 +948,7 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadBool( renderEntity.noSelfShadow );
 	ReadBool( renderEntity.noShadow );
 	ReadFloat( renderEntity.shadowMapOffset );
+	ReadInt( (int&)renderEntity.areaLock );
 	ReadBool( renderEntity.noDynamicInteractions );
 	ReadBool( renderEntity.weaponDepthHack );
 

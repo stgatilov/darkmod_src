@@ -31,6 +31,7 @@
 #include "Inventory/Cursor.h"
 #include "AbsenceMarker.h"
 #include "Objectives/MissionData.h"
+#include <algorithm>
 
 /*
 ===============================================================================
@@ -838,6 +839,13 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	renderEntity->noSelfShadow = args->GetBool( "noselfshadows" );
 	
 	renderEntity->shadowMapOffset = args->GetFloat( "shadowmapOffset" );
+
+	const char *areaLock = args->GetString( "areaLock" );
+	const char* areaLockOptions[2] = { "origin", "center" };
+	auto *areaLock_find = std::find( std::begin( areaLockOptions ), std::end( areaLockOptions ), areaLock );
+	if ( areaLock_find != std::end( areaLockOptions ) )
+		renderEntity->areaLock = ( renderEntity_s::areaLock_t ) ( std::distance( areaLockOptions, areaLock_find ) + 1 );
+	//else renderEntity->areaLock = renderEntity_s::RAL_NONE; default value
 	
 	if ( (args->GetInt( "spectrum" )  < 1 ) && ( args->GetInt( "lightspectrum" ) > 0 ) ) {
 	renderEntity->spectrum = renderEntity->lightspectrum;
