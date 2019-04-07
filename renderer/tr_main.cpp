@@ -1030,7 +1030,7 @@ static void R_SortDrawSurfs( void ) {
 		R_QsortSurfaces );
 #ifdef MULTI_LIGHT_IN_FRONT // calculate the light/entity bounds intersections here to reduce the CPU load in the backend
 	idList<int> lDefInd;	// FIXME this has been calculated already somewhere - make use of that
-	bool backendNeedsThis = r_testARBProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool();
+	bool backendNeedsThis = r_interactionProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool();
 	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
 		auto surf = tr.viewDef->drawSurfs[i];
 		auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?

@@ -1495,4 +1495,12 @@ void R_RemoveUnecessaryViewLights( void ) {
 	LinkedListBubbleSort( &tr.viewDef->viewLights, &viewLight_s::next, [](const viewLight_t &a, const viewLight_t &b) -> bool {
 		return a.scissorRect.GetArea() > b.scissorRect.GetArea();
 	});
+
+	if ( r_shadows.GetInteger() == 2 ) {
+		int ShadowAtlasIndex = 0;
+		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
+		for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next )
+			if ( vLight->shadows == LS_MAPS )
+				vLight->shadowMapIndex = ++ShadowAtlasIndex;
+	}
 }

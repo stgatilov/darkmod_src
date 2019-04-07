@@ -54,7 +54,7 @@ void RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	}
 
 	// testing fragment based normal mapping
-	if ( r_testARBProgram.GetBool() ) {
+	if ( r_interactionProgram.GetBool() ) {
 		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 2, din->localLightOrigin.ToFloatPtr() );
 		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 3, din->localViewOrigin.ToFloatPtr() );
 	}
@@ -167,7 +167,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	// texture 6 is the specular lookup table
 	GL_SelectTexture( 6 );
 
-	if ( r_testARBProgram.GetBool() ) {
+	if ( r_interactionProgram.GetBool() ) {
 		globalImages->specular2DTableImage->Bind();	// variable specularity in alpha channel
 	} else {
 		globalImages->specularTableImage->Bind();
@@ -282,7 +282,7 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 	// texture 6 is the specular lookup table
 	GL_SelectTexture( 6 );
 
-	if ( r_testARBProgram.GetBool() ) {
+	if ( r_interactionProgram.GetBool() ) {
 		globalImages->specular2DTableImage->Bind();	// variable specularity in alpha channel
 	} else {
 		globalImages->specularTableImage->Bind();
@@ -393,7 +393,7 @@ void RB_ARB2_DrawInteractions( void ) {
 		}
 
 		// nbohr1more #3881: toggle test verse direct shaders further up the tree to reduce bind complexity
-		if ( r_testARBProgram.GetBool() ) {
+		if ( r_interactionProgram.GetBool() ) {
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
 			RB_StencilShadowPass( vLight->globalShadows );

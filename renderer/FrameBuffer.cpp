@@ -24,7 +24,6 @@ bool primaryOn = false, shadowOn = false;
 bool depthCopiedThisView = false;
 GLuint fboPrimary, fboResolve, fboPostProcess, fboShadowStencil, pbo, fboShadowAtlas;
 GLuint postProcessWidth, postProcessHeight;
-uint ShadowAtlasIndex;
 renderCrop_t ShadowAtlasPages[42];
 idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
 

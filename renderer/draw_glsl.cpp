@@ -433,21 +433,15 @@ void RB_GLSL_DrawInteractions() {
 	GL_PROFILE( "GLSL_DrawInteractions" );
 	GL_SelectTexture( 0 );
 
-	if ( r_shadows.GetInteger() == 2 ) {
-		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
-		for ( auto vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next )
-			if ( vLight->shadows == LS_MAPS )
-				vLight->shadowMapIndex = ++ShadowAtlasIndex;
-		ShadowAtlasIndex = 0; // reset for next run
+	if ( r_shadows.GetInteger() == 2 ) 
 		if ( r_shadowMapSinglePass.GetBool() )
 			RB_ShadowMap_RenderAllLights();
-
-		if ( r_testARBProgram.GetInteger() == 2 ) {
+	if ( r_shadows.GetInteger() != 1 )
+		if ( r_interactionProgram.GetInteger() == 2 ) {
 			extern void RB_GLSL_DrawInteractions_MultiLight();
 			RB_GLSL_DrawInteractions_MultiLight();
 			return;
 		}
-	}
 
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) 
@@ -850,7 +844,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		return;
 	}
 
-	advanced.Set( r_testARBProgram.GetFloat() );
+	advanced.Set( r_interactionProgram.GetFloat() );
 
 	auto vLight = backEnd.vLight;
 	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
