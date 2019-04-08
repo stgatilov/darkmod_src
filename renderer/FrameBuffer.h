@@ -37,7 +37,6 @@ extern idCVar r_fboSeparateStencil;
 //extern idCVar r_fboResolution;
 extern idCVar r_shadowMapSize;
 
-extern uint ShadowAtlasIndex;
 extern renderCrop_t ShadowAtlasPages[42];
 
 void FB_Clear();

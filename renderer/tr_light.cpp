@@ -1129,6 +1129,31 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		tr.viewDef->renderView.time = oldTime;
 	}
 
+#ifdef MULTI_LIGHT_IN_FRONT 
+	auto def = space->entityDef;
+	if ( def && ( r_interactionProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool() ) ) { // multi shader data
+		idList<int> lDefInd;	// FIXME this has been calculated already somewhere - make use of that
+		for ( auto inter = def->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {
+			// skip any lights that aren't currently visible
+			if ( inter->lightDef->viewCount != tr.viewCount )
+				continue;
+			idVec3 localLightOrigin;
+			R_GlobalPointToLocal( drawSurf->space->modelMatrix, inter->lightDef->globalLightOrigin, localLightOrigin );
+			if ( R_CullLocalBox( drawSurf->frontendGeo->bounds, space->modelMatrix, 6, inter->lightDef->frustum ) )
+				continue;
+			lDefInd.Append( inter->lightDef->index );
+		}
+		if ( lDefInd.Num() ) { // expect to at least include the main ambient light
+			lDefInd.Append( -1 );
+			auto frameMem = (int *)R_FrameAlloc( sizeof( int ) * lDefInd.Num() );
+			memcpy( frameMem, lDefInd.Ptr(), lDefInd.MemoryUsed() );
+			drawSurf->onLights = frameMem;
+		} else
+			drawSurf->onLights = NULL;
+	} else
+		drawSurf->onLights = NULL;
+#endif // MULTI_LIGHT_IN_FRONT
+
 	// we can't add subviews at this point, because that would
 	// increment tr.viewCount, messing up the rest of the surface
 	// adds for this view
@@ -1495,4 +1520,12 @@ void R_RemoveUnecessaryViewLights( void ) {
 	LinkedListBubbleSort( &tr.viewDef->viewLights, &viewLight_s::next, [](const viewLight_t &a, const viewLight_t &b) -> bool {
 		return a.scissorRect.GetArea() > b.scissorRect.GetArea();
 	});
+
+	if ( r_shadows.GetInteger() == 2 ) {
+		int ShadowAtlasIndex = 0;
+		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
+		for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next )
+			if ( vLight->shadows == LS_MAPS )
+				vLight->shadowMapIndex = ++ShadowAtlasIndex;
+	}
 }

@@ -80,6 +80,7 @@ public:
 
 					idList( int newgranularity = 16 );
 					idList( const idList<type> &other );
+					idList( const std::initializer_list<type> &other );
 					~idList<type>( void );
 
 	void			Clear( void );										// clear the list
@@ -160,6 +161,18 @@ template< class type >
 ID_INLINE idList<type>::idList( const idList<type> &other ) {
 	list = NULL;
 	*this = other;
+}
+
+/*
+================
+idList<type>::idList( const std::initializer_list<type> &other )
+================
+*/
+template< class type >
+ID_INLINE idList<type>::idList( const std::initializer_list<type> &other ) {
+	auto x = other.begin();
+	while ( x != other.end() )
+		Append( *x++ );
 }
 
 /*

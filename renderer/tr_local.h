@@ -498,6 +498,7 @@ typedef struct {
 
 	idVec4				diffuseColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
 	idVec4				specularColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
+	idVec4				ambientRimColor;
 	stageVertexColor_t	vertexColor;	// applies to both diffuse and specular
 
 	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
@@ -1018,7 +1019,7 @@ extern idCVar r_testGamma;				// draw a grid pattern to test gamma levels
 extern idCVar r_testStepGamma;			// draw a grid pattern to test gamma levels
 extern idCVar r_testGammaBias;			// draw a grid pattern to test gamma levels
 
-extern idCVar r_testARBProgram;			// experiment with vertex/fragment programs
+extern idCVar r_interactionProgram;			// experiment with vertex/fragment programs
 
 extern idCVar r_singleLight;			// suppress all but one light
 extern idCVar r_singleEntity;			// suppress all but one entity
@@ -1050,7 +1051,7 @@ extern idCVar r_softShadowsRadius;
 
 extern idCVar r_useAnonreclaimer;
 #ifdef MULTI_LIGHT_IN_FRONT
-extern idCVar r_shadowMapSinglePass;
+extern idCVarBool r_shadowMapSinglePass;
 #endif
 
 // stgatilov ROQ

@@ -54,7 +54,7 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 
 GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
-idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
+idCVarBool r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
 
 static void ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
@@ -433,21 +433,15 @@ void RB_GLSL_DrawInteractions() {
 	GL_PROFILE( "GLSL_DrawInteractions" );
 	GL_SelectTexture( 0 );
 
-	if ( r_shadows.GetInteger() == 2 ) {
-		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
-		for ( auto vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next )
-			if ( vLight->shadows == LS_MAPS )
-				vLight->shadowMapIndex = ++ShadowAtlasIndex;
-		ShadowAtlasIndex = 0; // reset for next run
+	if ( r_shadows.GetInteger() == 2 ) 
 		if ( r_shadowMapSinglePass.GetBool() )
 			RB_ShadowMap_RenderAllLights();
-
-		if ( r_testARBProgram.GetInteger() == 2 ) {
+	if ( r_shadows.GetInteger() != 1 )
+		if ( r_interactionProgram.GetInteger() == 2 ) {
 			extern void RB_GLSL_DrawInteractions_MultiLight();
 			RB_GLSL_DrawInteractions_MultiLight();
 			return;
 		}
-	}
 
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) 
@@ -831,9 +825,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		minLevel.Set(backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 		lightOrigin.Set( din->worldUpLocal.ToVec3() );
-		idVec4 color;
-		din->surf->material->GetAmbientRimColor( color );
-		rimColor.Set( color );
+		rimColor.Set( din->ambientRimColor );
 		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
 			lightFalloffCubemap.Set( 1 );
 		} else {
@@ -852,7 +844,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		return;
 	}
 
-	advanced.Set( r_testARBProgram.GetFloat() );
+	advanced.Set( r_interactionProgram.GetFloat() );
 
 	auto vLight = backEnd.vLight;
 	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 

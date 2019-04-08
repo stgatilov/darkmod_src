@@ -343,6 +343,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed />
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <PostBuildEvent>
       <Message>

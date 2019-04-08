@@ -330,6 +330,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 
 	// the multisample path uses the wgl
 	// duzenko #4425: AA needs to be setup elsewhere
+#if 0
 	if ( wglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
 		int		iAttributes[20];
 		FLOAT	fAttributes[] = {0, 0};
@@ -358,7 +359,9 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		iAttributes[19] = 0;
 
 		wglChoosePixelFormatARB( win32.hDC, iAttributes, fAttributes, 1, &win32.pixelformat, &numFormats );
-	} else {
+	} else 
+#else
+	{
 		// this is the "classic" choose pixel format path
 		// eventually we may need to have more fallbacks, but for
 		// now, ask for everything
@@ -376,6 +379,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		}
 		common->Printf( "...PIXELFORMAT %d selected\n", win32.pixelformat );
 	}
+#endif
 
 	// get the full info
 	DescribePixelFormat( win32.hDC, win32.pixelformat, sizeof( win32.pfd ), &win32.pfd );
