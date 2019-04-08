@@ -46,6 +46,8 @@
 
 #define FIRST_TIME_SOUND_PROP_ALLOWED 2000 // grayman #3768 - no sound propagation before this time
 
+const idStrList areaLockOptions{ "origin", "center" }; // not sure how to make it work with char*[]  
+
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_PostPostSpawn( "<postpostspawn>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3643
@@ -840,12 +842,9 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	
 	renderEntity->shadowMapOffset = args->GetFloat( "shadowmapOffset" );
 
-	const char *areaLock = args->GetString( "areaLock" );
-	const char* areaLockOptions[2] = { "origin", "center" };
-	auto *areaLock_find = std::find( std::begin( areaLockOptions ), std::end( areaLockOptions ), areaLock );
-	if ( areaLock_find != std::end( areaLockOptions ) )
-		renderEntity->areaLock = ( renderEntity_s::areaLock_t ) ( std::distance( areaLockOptions, areaLock_find ) + 1 );
-	//else renderEntity->areaLock = renderEntity_s::RAL_NONE; default value
+	const char* areaLock;
+	if ( args->GetString( "areaLock", "", &areaLock ) )
+		renderEntity->areaLock = ( renderEntity_s::areaLock_t ) ( areaLockOptions.FindIndex( areaLock ) + 1 );
 	
 	if ( (args->GetInt( "spectrum" )  < 1 ) && ( args->GetInt( "lightspectrum" ) > 0 ) ) {
 	renderEntity->spectrum = renderEntity->lightspectrum;
