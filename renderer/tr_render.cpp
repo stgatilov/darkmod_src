@@ -635,14 +635,14 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		if ( r_skipAmbient.GetInteger() & 2 )
 			return;
 		auto ambientRegs = material->GetAmbientRimColor().registers;
-		if ( ambientRegs[0] )
+		if ( ambientRegs[0] ) {
 			for ( int i = 0; i < 3; i++ )
 				inter.ambientRimColor[i] = surfaceRegs[ambientRegs[i]];
-		else
+			inter.ambientRimColor[3] = 1;
+		} else
 			inter.ambientRimColor.Zero();
-	} else if ( r_skipInteractions.GetBool() ) {
+	} else if ( r_skipInteractions.GetBool() ) 
 		return;
-	}
 
 	if ( tr.logFile ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );
