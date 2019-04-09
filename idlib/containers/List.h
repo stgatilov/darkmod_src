@@ -19,6 +19,7 @@
 #ifdef __linux__
 #include <cassert>
 #endif
+#include <initializer_list>
 
 /*
 ===============================================================================
