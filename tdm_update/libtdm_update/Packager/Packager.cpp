@@ -698,7 +698,7 @@ void Packager::SortFilesIntoPk4s()
 	TraceLog::WriteLine(LOG_STANDARD, stdext::format("%d entries in the manifest could not be matched, check the logs.", _manifest.size()));
 }
 
-#include "../framework/CompressionParameters.h"
+#include "../../../framework/CompressionParameters.h"
 
 void Packager::ProcessPackageElement(Package::const_iterator p)
 {

@@ -6,21 +6,28 @@
     <OutDir>$(SolutionDir)\build\$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\build\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Label="UserMacros">
+    <ThirdPartyDir>$(SolutionDir)\ThirdParty\artefacts\</ThirdPartyDir>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_ALLOW_KEYWORD_MACROS;NO_WARN_MBCS_MFC_DEPRECATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_ALLOW_KEYWORD_MACROS;NO_WARN_MBCS_MFC_DEPRECATION;ExtLibs=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)/ExtLibs\openal-soft\include;$(SolutionDir)/include;$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;$(SolutionDir)/include/libjpeg;$(SolutionDir)/idlib;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(UniversalCRT_IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ThirdPartyDir)doctest\include;$(ThirdPartyDir)ffmpeg\include;$(ThirdPartyDir)devil\include;$(ThirdPartyDir)libcurl\include;$(ThirdPartyDir)libjpeg\include;$(ThirdPartyDir)libpng\include;$(ThirdPartyDir)mbedtls\include;$(ThirdPartyDir)openal\include;$(ThirdPartyDir)ogg\include;$(ThirdPartyDir)vorbis\include;$(ThirdPartyDir)pugixml\include;$(ThirdPartyDir)zlib\include;$(SolutionDir)\idlib;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(UniversalCRT_IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
       <DisableSpecificWarnings>4127;4458;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ThirdPartyDir)zlib$(ThirdPartyPlatform);$(ThirdPartyDir)libcurl$(ThirdPartyPlatform);$(ThirdPartyDir)ogg$(ThirdPartyPlatform);$(ThirdPartyDir)vorbis$(ThirdPartyPlatform);$(ThirdPartyDir)openal$(ThirdPartyPlatform);$(ThirdPartyDir)devil$(ThirdPartyPlatform);$(ThirdPartyDir)libjpeg$(ThirdPartyPlatform);$(ThirdPartyDir)libpng$(ThirdPartyPlatform);$(ThirdPartyDir)mbedtls$(ThirdPartyPlatform);$(ThirdPartyDir)ffmpeg$(ThirdPartyPlatform);$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(WindowsSDK_IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="ThirdPartyDir">
+      <Value>$(ThirdPartyDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
 </Project>

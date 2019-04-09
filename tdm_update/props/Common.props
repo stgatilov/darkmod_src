@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../ThirdParty/artefacts/zlib/include;$(SolutionDir)/../ThirdParty/artefacts/libcurl/include;$(SolutionDir)/../ThirdParty/artefacts/tinyformat/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)/../ThirdParty/artefacts/zlib/lib/win32_s_vc15_rel_mt;$(SolutionDir)/../ThirdParty/artefacts/libcurl/lib/win32_s_vc15_rel_mt;$(SolutionDir)/../ThirdParty/artefacts/mbedtls/lib/win32_s_vc15_rel_mt;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

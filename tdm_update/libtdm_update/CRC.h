@@ -27,7 +27,7 @@
 #include "StdFilesystem.h"
 
 #include "File.h"
-#include "Zip/Zip.h"
+#include "Zip/TdmZip.h"
 #include "TraceLog.h"
 #include "zlib.h"
 

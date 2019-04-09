@@ -29,6 +29,9 @@ g_env_game = g_env_base.Clone()
 g_env_game.Append(CPPPATH = '#/idlib')
 g_env_game.Append(CPPPATH = '#/framework')
 g_env_game.Append(CPPPATH = '#/game')
+# stgatilov: turn all ExtLibs::ilInit into simply ::ilInit
+g_env_game.Append(CPPFLAGS = '-DExtLibs=')
+
 Export( 'g_env_game' )
 
 
@@ -39,38 +42,36 @@ source_list += SConscript( '../../sys/scons/SConscript.core' )
 source_list += SConscript( '../../sys/scons/SConscript.game' )
 # Add glimp stuff (built separately)
 source_list += [ '../../glimp/sys/scons/libglimp.a' ]
-# Link against ExtLibs
-source_list += SConscript( '../../sys/scons/SConscript.extlibs' )
 
 local_env = g_env_game.Clone()
 
-# greebo: Add all custom-built libraries
-if (TARGET_ARCH == 'x86'):
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/libcurl.a'),
-		File('#/linux/polarssl/libpolarssl.a'),
-		File('#/linux/ffmpeg/libavformat.a'),
-		File('#/linux/ffmpeg/libavcodec.a'),
-		File('#/linux/ffmpeg/libavutil.a'),
-		File('#/linux/ffmpeg/libswscale.a'),
-		File('#/linux/ffmpeg/libswresample.a')
-	])
-if (TARGET_ARCH == 'x64'):
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/lib64/libcurl.a'),
-		File('#/linux/polarssl/lib64/libpolarssl.a'),
-		File('#/linux/ffmpeg/lib64/libavformat.a'),
-		File('#/linux/ffmpeg/lib64/libavcodec.a'),
-		File('#/linux/ffmpeg/lib64/libavutil.a'),
-		File('#/linux/ffmpeg/lib64/libswscale.a'),
-		File('#/linux/ffmpeg/lib64/libswresample.a')
-	])
+# Add all custom-built libraries
+path_template = '#/ThirdParty/artefacts/{0}/lib/lnx%d_s_gcc5_rel_stdcpp/{1}' % (64 if TARGET_ARCH == 'x64' else 32)
+local_env.Append(LIBS = [
+	File(path_template.format('zlib', 'libz.a')),
+	File(path_template.format('libcurl', 'libcurl.a')),
+	File(path_template.format('mbedtls', 'libmbedtls.a')),
+	File(path_template.format('mbedtls', 'libmbedx509.a')),
+	File(path_template.format('mbedtls', 'libmbedcrypto.a')),
+	File(path_template.format('openal', 'libopenal.a')),
+	File(path_template.format('vorbis', 'libvorbisfile.a')),
+	File(path_template.format('vorbis', 'libvorbis.a')),
+	File(path_template.format('ogg', 'libogg.a')),
+	File(path_template.format('devil', 'libIL.a')),
+	File(path_template.format('libjpeg', 'libjpeg.a')),
+	File(path_template.format('libpng', 'libpng16.a')),
+	File(path_template.format('ffmpeg', 'libavformat.a')),
+	File(path_template.format('ffmpeg', 'libavcodec.a')),
+	File(path_template.format('ffmpeg', 'libavutil.a')),
+	File(path_template.format('ffmpeg', 'libswscale.a')),
+	File(path_template.format('ffmpeg', 'libswresample.a')),
+	File(path_template.format('pugixml', 'libpugixml.a')),
+])
 
 # Add all standard libraries (taken from system)
 local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
 #local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
 local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
-local_env.Append( LIBS = [ 'openal' ] )
 local_env.Append( LIBS = [ 'dl' ] )
 local_env.Append( LIBS = [ 'pthread' ] )
 local_env.Append( LIBS = [ 'stdc++fs' ] )

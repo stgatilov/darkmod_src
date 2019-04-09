@@ -193,6 +193,7 @@ private:
 	dword			mulDataSize;
 
 	void *			ogg;			// only !NULL when !s_realTimeDecoding
+	int				oggStream;		// stgatilov: ogg->stream in original D3 with hacked libogg
 	bool			isOgg;
 
 private:

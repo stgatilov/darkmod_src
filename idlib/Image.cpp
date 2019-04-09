@@ -17,7 +17,7 @@
 #pragma hdrstop
 
 #include "Image.h"
-#include "../ExtLibs/devil.h"
+#include "IL/il.h"
 
 #define IL_IMAGE_NONE ((ILuint)-1)
 

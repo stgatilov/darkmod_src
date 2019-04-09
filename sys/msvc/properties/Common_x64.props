@@ -3,24 +3,15 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <TdmExecutableName>TheDarkModx64</TdmExecutableName>
-    <ExtLibsModule>ExtLibsx64</ExtLibsModule>
+    <ThirdPartyPlatform>\lib\win64_s_vc15_rel_mt</ThirdPartyPlatform>
+    <ThirdPartyPlatformDbg>\lib\win64_s_vc15_dbg_mtd</ThirdPartyPlatformDbg>
   </PropertyGroup>
-  <PropertyGroup />
-  <ItemDefinitionGroup>
-    <Link>
-      <AdditionalLibraryDirectories>$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Link>
-    <PostBuildEvent />
-  </ItemDefinitionGroup>
   <ItemGroup>
-    <BuildMacro Include="OpenALSoftDLLPath">
-      <Value>$(OpenALSoftDLLPath)</Value>
+    <BuildMacro Include="ThirdPartyPlatform">
+      <Value>$(ThirdPartyPlatform)</Value>
     </BuildMacro>
     <BuildMacro Include="TdmExecutableName">
       <Value>$(TdmExecutableName)</Value>
-    </BuildMacro>
-    <BuildMacro Include="ExtLibsModule">
-      <Value>$(ExtLibsModule)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

@@ -32,32 +32,27 @@ tdm_package_list = scons_utils.BuildList('tdm_package', 'tdm_package.cpp')
 local_env = g_env.Clone()
 local_env.Append(CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Wno-non-virtual-dtor' ])
 
-if g_os == 'MacOSX':
-	local_env.Append(LIBS = [
-		File('#/../macosx/libcurl/libcurl.a'),
-	])
-elif g_os == 'FreeBSD':
+if g_os == 'FreeBSD':
 	# use distro installed libs - easier and safer to use 
 	# shared libs for SSL
 	local_env.Append(LIBS = [
 		'ssl', 
 		'crypto',
-		File('/usr/local/lib/libcurl.a')
+		File('/usr/local/lib/libcurl.a'),
+		File('/usr/local/lib/libminizip.a'),
 	])
 elif g_os == 'Linux':
 	# Linux
-	if TARGET_ARCH == 'x86':
-		local_env.Append(LIBS = [
-			File('#/../linux/libcurl/libcurl.a'),
-			File('#/../linux/polarssl/libpolarssl.a'),
-			'stdc++fs',
-		])
-	elif TARGET_ARCH == 'x64':
-		local_env.Append(LIBS = [
-			File('#/../linux/libcurl/lib64/libcurl.a'),
-			File('#/../linux/polarssl/lib64/libpolarssl.a'),
-			'stdc++fs',
-		])
+	path_template = '#/../ThirdParty/artefacts/{0}/lib/lnx%d_s_gcc5_rel_stdcpp/{1}' % (64 if TARGET_ARCH == 'x64' else 32)
+	local_env.Append(LIBS = [
+		File(path_template.format('libcurl', 'libcurl.a')),
+		File(path_template.format('mbedtls', 'libmbedtls.a')),
+		File(path_template.format('mbedtls', 'libmbedx509.a')),
+		File(path_template.format('mbedtls', 'libmbedcrypto.a')),
+		File(path_template.format('zlib', 'libminizip.a')),
+		File(path_template.format('zlib', 'libz.a')),
+		'stdc++fs',
+	])
 
-ret = local_env.Program(target = 'package', source = tdm_package_list + minizip_list + libtdm_update_list)
+ret = local_env.Program(target = 'package', source = tdm_package_list + libtdm_update_list)
 Return( 'ret' )

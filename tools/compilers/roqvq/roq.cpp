@@ -19,7 +19,6 @@
 
 #include "roq.h"
 #include "codec.h"
-#include "../ExtLibs/jpeg.h"
 
 roq		*theRoQ;				// current roq file
 
@@ -246,7 +245,7 @@ void roq::JPEGInitDestination (j_compress_ptr cinfo) {
  */
 
 boolean roq::JPEGEmptyOutputBuffer (j_compress_ptr cinfo) {
-  return true;
+  return boolean(true);
 }
 
 
@@ -455,7 +454,7 @@ void roq::WriteLossless( void ) {
 	/* Now you can set any non-default parameters you wish to.
 	* Here we just illustrate the use of quality (quantization table) scaling:
 	*/
-	ExtLibs::jpeg_set_quality( &cinfo, paramFile->JpegQuality(), true /* limit to baseline-JPEG values */ );
+	ExtLibs::jpeg_set_quality( &cinfo, paramFile->JpegQuality(), boolean(true) /* limit to baseline-JPEG values */ );
 
 	/* Step 4: Start compressor */
 

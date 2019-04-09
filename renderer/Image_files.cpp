@@ -35,7 +35,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, bool ma
  * You may also wish to include "jerror.h".
  */
 
-#include "../ExtLibs/jpeg.h"
+#include "jpeglib.h"
 
 extern "C" {
 	// hooks from jpeg lib to our system
@@ -916,7 +916,6 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 	int		len;		/* Buffer length */
 	unsigned char *out;
 	byte	*fbuffer;
-	byte  *bbuf;
 
 	/* In this example we want to open the input file before doing anything else,
 	 * so that the setjmp() error recovery below can assume the file is open.
@@ -972,7 +971,7 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 
 	/* Step 3: read file parameters with jpeg_read_header() */
 
-	( void ) ExtLibs::jpeg_read_header( &cinfo, true );
+	( void ) ExtLibs::jpeg_read_header( &cinfo, boolean(true) );
 	/* We can ignore the return value from jpeg_read_header since
 	 *   (a) suspension is not possible with the stdio data source, and
 	 *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
@@ -999,9 +998,12 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 	 * In this example, we need to make an output work buffer of the right size.
 	 */
 	/* JSAMPLEs per row in output buffer */
-	row_stride = cinfo.output_width * cinfo.output_components;
+	row_stride = cinfo.output_width * 4;
 
-	if ( cinfo.output_components != 4 ) {
+	//temporary buffer receiving one scanline per read
+	byte *scanline = (byte*)Mem_Alloc(row_stride);
+
+	if ( cinfo.output_components != 4 && cinfo.output_components != 3 ) {
 		common->DWarning( "JPG %s is unsupported color depth (%d)",
 		                  name, cinfo.output_components );
 	}
@@ -1022,9 +1024,21 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 		 * Here the array is only one element long, but you could ask for
 		 * more than one scanline at a time if that's more convenient.
 		 */
-		bbuf = ( ( out + ( row_stride * cinfo.output_scanline ) ) );
+		byte *bbuf = scanline;
 		buffer = &bbuf;
+		byte *dstScanline = ( ( out + ( row_stride * cinfo.output_scanline ) ) );
 		( void )ExtLibs::jpeg_read_scanlines( &cinfo, buffer, 1 );
+		//copy the read scanline into output array
+		if (cinfo.output_components == 4)
+			memcpy(dstScanline, scanline, row_stride);
+		else if (cinfo.output_components == 3) {
+			int w = cinfo.output_width;
+			for (int i = 0; i < w; i++) {
+				dstScanline[4*i+0] = scanline[3*i+0];
+				dstScanline[4*i+1] = scanline[3*i+1];
+				dstScanline[4*i+2] = scanline[3*i+2];
+			}
+		}
 	}
 
 	// clear all the alphas to 255
@@ -1058,6 +1072,7 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 	 * think that jpeg_destroy can do an error exit, but why assume anything...)
 	 */
 	Mem_Free( fbuffer );
+	Mem_Free( scanline );
 
 	/* At this point you may want to check to see whether any corrupt-data
 	 * warnings occurred (test whether jerr.pub.num_warnings is nonzero).

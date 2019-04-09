@@ -111,7 +111,7 @@ typedef unsigned char byte;
 #include "../sys/sys_public.h" //"sys/platform.h"
 #include "../BuildDefines.h"
 #include "../idlib/Heap.h"     //"idlib/Heap.h"
-#include "../ExtLibs/zlib.h"
+#include "zlib.h"
 
 // we don't need crypt support
 #define NOUNCRYPT 1

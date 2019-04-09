@@ -22,7 +22,7 @@
 
 #include "TypeInfo.h"
 
-#include "../ExtLibs/zlib.h"
+#include "zlib.h"
 
 /*
 Save game related helper classes.

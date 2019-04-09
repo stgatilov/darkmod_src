@@ -5,7 +5,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <_PropertySheetDisplayName>Doom III Executable</_PropertySheetDisplayName>
+    <_PropertySheetDisplayName>TheDarkMod Executable</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)..\darkmod\</OutDir>
     <TargetName>$(TdmExecutableName)</TargetName>
   </PropertyGroup>
@@ -16,14 +16,12 @@
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)/include/ffmpeg;sound/vorbis/include;$(SolutionDir)framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__DOOM__;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__DOOM__;CURL_STATICLIB;AL_LIBTYPE_STATIC;IL_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Shell32.lib;Gdi32.lib;Advapi32.lib;$(ExtLibsModule).lib;dbghelp.lib;dinput8.lib;glu32.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;opengl32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\darkmod\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalManifestDependencies>%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
+      <AdditionalDependencies>pugixml.lib;zlib.lib;libcurl.lib;OpenAL32.lib;ogg.lib;vorbis.lib;vorbisfile.lib;DevIL.lib;libjpeg.lib;libpng16.lib;mbedtls.lib;libavcodec.lib;libavformat.lib;libavutil.lib;libswresample.lib;libswscale.lib;bcrypt.lib;Shell32.lib;Gdi32.lib;Advapi32.lib;dbghelp.lib;dinput8.lib;glu32.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;opengl32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <StackReserveSize>16777216</StackReserveSize>
       <StackCommitSize>16777216</StackCommitSize>

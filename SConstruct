@@ -308,12 +308,17 @@ g_env_base = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPP
 scons_utils.SetupUtils( g_env_base )
 
 g_env_base.Prepend(CPPPATH=['.'])
-g_env_base.Append(CPPPATH = '#/include')
-g_env_base.Append(CPPPATH = '#/include/zlib')
-g_env_base.Append(CPPPATH = '#/include/libjpeg')
-g_env_base.Append(CPPPATH = '#/include/libpng')
-g_env_base.Append(CPPPATH = '#/include/devil')
-g_env_base.Append(CPPPATH = '#/include/ffmpeg')
+path_template = '#/ThirdParty/artefacts/{0}/include'
+g_env_base.Append(CPPPATH = path_template.format('zlib'))
+g_env_base.Append(CPPPATH = path_template.format('libcurl'))
+g_env_base.Append(CPPPATH = path_template.format('openal'))
+g_env_base.Append(CPPPATH = path_template.format('ogg'))
+g_env_base.Append(CPPPATH = path_template.format('vorbis'))
+g_env_base.Append(CPPPATH = path_template.format('devil'))
+g_env_base.Append(CPPPATH = path_template.format('libjpeg'))
+g_env_base.Append(CPPPATH = path_template.format('ffmpeg'))
+g_env_base.Append(CPPPATH = path_template.format('doctest'))
+g_env_base.Append(CPPPATH = path_template.format('pugixml'))
 g_env_base.Append(CPPPATH = '#/')
 
 g_env_base['CPPFLAGS'] += OPTCPPFLAGS

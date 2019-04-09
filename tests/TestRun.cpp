@@ -1,4 +1,5 @@
 #include "precompiled.h"
+#define DOCTEST_THREAD_LOCAL	//stgatilov: initialization of threadlocal g_oss crashes because it happens before CRT starts
 #define DOCTEST_CONFIG_IMPLEMENT
 #include "testing.h"
 #include "TestRun.h"

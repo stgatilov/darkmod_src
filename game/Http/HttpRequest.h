@@ -20,7 +20,7 @@
 
 class CHttpConnection;
 
-#include "../pugixml/pugixml.hpp"
+#include "pugixml.hpp"
 typedef void CURL;
 
 // Shared_ptr typedef

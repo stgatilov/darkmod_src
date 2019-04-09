@@ -460,6 +460,7 @@ void Sys_Status(const char *psz, int part )
 	g_pParentWnd->SetStatusText(part, psz);
 }
 
+#if 0	//note: this hack was needed only with dynamic linkage of MFC
 //=========================================================
 //stgatilov: Dirty hack to fix MFC states destruction.
 // Used only in Sys_Quit, when the game is exited.
@@ -486,3 +487,7 @@ CRadiantApp::~CRadiantApp() {
 	AfxSetModuleState(m_pModuleState);
 }
 //=========================================================
+#else
+void Sys_MfcHack() {}
+CRadiantApp::~CRadiantApp() {}
+#endif

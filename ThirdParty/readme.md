@@ -1,0 +1,134 @@
+# General
+
+This directory contains all third-party dependencies of TheDarkMod, both the game and the updater.
+There are some rare exceptions when library is embedded and tightly integrated directly into the engine, but this way is generally avoided.
+
+The dependecies are fetched and built using [conan][1] package manager.
+Note that the code directly uses the artefacts (headers and libs) without interacting with conan in any way.
+Conan only helps us to prepare these artefacts.
+
+## Directory structure
+
+Here are the contents of this directory:
+
+ * `conanfile.py` --- the main file, listing all libraries, options, and import rules
+ * `custom/*` --- custom conan recipes for some libraries (in case stock recipe is not available or does not suit)
+ * `artefacts/*` --- the resulting files (headers and libs) used by TDM projects
+
+All third-party binaries **must** be inside `artefacts` directory!
+Developers using DVCS for local changes should add the whole `artefacts` directory to their ignore filter.
+
+
+# Instructions
+
+## How to build
+
+By following these steps you should be able to rebuild all the third-party dependencies available.
+You might want to delete the whole `artefacts` directory beforehand, to ensure a full rebuild.
+
+### Install
+
+First of all, make sure that you have latest Python 3 installed, e.g. from [download page][2].
+
+Next, install conan if not yet installed.
+Detailed instructions are provided [here][3], the easiest way is via pip:
+
+    pip install conan
+
+You might want to read some "Getting Started" conan docs to get brief understanding of what it is and how it works.
+
+### Prepare workspace
+
+Conan builds packages inside a *local cache*, which by default is located somewhere in `%USERPROFILE%/.conan` and is in fact system-global.
+In order to make the cache truly local, it is strongly recommended to set environment variable in the shell you are going to use:
+
+    # set the path to the directory where this readme is located
+    set CONAN_USER_HOME=C:\TheDarkMod\darkmod_src\ThirdParty\temp
+
+Note that if you do so, you should ensure that this environment variable takes effect for all the conan commands you run later.
+Detailed explanation is available [here][4].
+
+You can omit this step, then system-wide cache will be used for building libraries.
+
+### Custom recipes
+
+Recipes for most libraries are taken directly from central conan repository (i.e. "conan-center" or "bincrafters").
+Some libraries need special handling for TDM, so we manage recipes for them ourselves. They are located in `custom` directory.
+
+Before actually building the libs, it is necessary to copy these recipes into conan's "local cache".
+The easiest way to do that is to run the small helper script:
+
+    python 1_export_custom.py
+
+It performs `conan export custom/{libraryname} thedarkmod/local` for every library, which adds the corresponding recipe to local cache.
+
+### Build libraries
+
+Now you are ready to download and build all the libraries.
+You might want to delete the `artefacts` directory to surely get fresh libs.
+
+The straightforward way to build everything is running:
+
+    conan install . --build
+
+It may be enough to produce artefacts if you don't intend to commit them to SVN.
+You might want to read the documentation of `--build` parameter in `conan install --help` beforehand.
+
+If you want to build all artefacts and commit them to svn, it is recommended to run the helper script:
+
+    python 2_build_all.py
+
+The script also runs `conan install`, but with some specific parameters.
+Note that on Windows you have to run script twice: in 64-bit and in 32-bit environments of Visual Studio.
+Then build all libraries on Linux using GCC.
+
+Given that produced artefacts may differ slightly on different machines (no two .lib-s are exactly equal),
+please commit new artefacts only for the libraries which you have actually changed, don't commit changes in libraries which you did not touch.
+
+## How to add new library
+
+By default conan uses only one very official and stable remote: "conan-center".
+To increase your chances to find anything, better add "bincrafters" and "conan-community" remotes also.
+Read [this article][5] for more details.
+
+Now that you have remotes, you can search for recipes of a library like this:
+
+    conan search {libraryname} -r all
+
+It might be useful to add asterisk at the beginning and at the ending of the library name.
+
+If you manage to find the library, then choose one of the printed references and add it to the list in `conanfile.py`.
+After that you can do usual build and your library will get downloaded and built.
+
+If you fail to find ready-to-use conan recipe, then you have to add a custom one.
+You might want to search it on github with codenames `conan` and library name.
+If you find someone else's recipe, you can add it to `custom` and it will probably work.
+
+Otherwise you have to create recipe yourself, or ask someone else to do it on forums.
+As the last resort option (i.e. no time to waste or nobody agrees to write it), you can build the library manually and add artefacts to `artefacts` directory.
+Make sure to adhere to existing directory structure and naming conventions.
+
+Sometimes there is a recipe for a library, but it does not support some options required.
+In such case you should download the recipe, add it to `custom` too, and edit there.
+Make sure to clearly mark all your changes to the recipe, and also save its original version somehow.
+
+
+## How to update library
+
+Look into `conanfile.py` and find the library reference there.
+Now do `conan search` for a newer version of the library.
+
+If you find one, change the reference in `conanfile.py` and rebuild.
+Otherwise, you are out of luck.
+
+If you want to update a library with custom recipe, it gets more complicated.
+If this is custom-modified recipe, then you can fetch a newer recipe from central repository and apply the same TDM-specified hacks to it.
+If this is a fully custom-made recipe, then try to point it to newer version and rebuild --- in the best case it would be enough.
+
+
+
+[1]: https://conan.io/
+[2]: https://www.python.org/downloads/
+[3]: https://docs.conan.io/en/latest/installation.html
+[4]: https://docs.conan.io/en/latest/mastering/custom_cache.html
+[5]: https://docs.conan.io/en/latest/uploading_packages/remotes.html#bintray-community-repositories

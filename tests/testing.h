@@ -5,6 +5,6 @@
 #undef min
 #undef max
 #undef None
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 #endif

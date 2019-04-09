@@ -57,7 +57,11 @@ namespace stdext {
 	path::path(const char *source) : d(new path_impl(source)) {}
 	path::path(const std::string &source) : d(new path_impl(source)) {}
 	std::string path::string() const {
-		return d->string();
+		std::string res = d->string();
+#ifdef _MSC_VER
+		std::replace(res.begin(), res.end(), '\\', '/');
+#endif
+		return res;
 	}
 	bool path::empty() const {
 		return d->empty();

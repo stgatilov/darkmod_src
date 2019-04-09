@@ -19,7 +19,7 @@
 
 
 #include "snd_local.h"
-#include "../ExtLibs/vorbis.h"
+#include "vorbis/vorbisfile.h"
 
 
 /*
@@ -153,6 +153,7 @@ int idWaveFile::OpenOGG( const char* strFileName, waveformatex_t *pwfx ) {
 	Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
 
 	ov = new OggVorbis_File;
+	oggStream = 0;
 
 	if( ov_openFile( mhmmio, ov ) < 0 ) {
 		delete ov;
@@ -211,7 +212,7 @@ int idWaveFile::ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead ) {
 	OggVorbis_File *ov = (OggVorbis_File *) ogg;
 
 	do {
-		int ret = ExtLibs::ov_read( ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, &ov->stream );
+		int ret = ExtLibs::ov_read( ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, &oggStream );
 		if ( ret == 0 ) {
 			break;
 		}
@@ -246,6 +247,7 @@ int idWaveFile::CloseOGG( void ) {
 		fileSystem->CloseFile( mhmmio );
 		mhmmio = NULL;
 		ogg = NULL;
+		oggStream = -1;
 		return 0;
 	}
 	return -1;
@@ -281,6 +283,7 @@ private:
 	idFile_Memory			file;				// encoded file in memory
 
 	OggVorbis_File			ogg;				// OggVorbis file
+	int						oggStream;			// stgatilov: ogg->stream in original D3 with hacked libogg
 };
 
 idBlockAlloc<idSampleDecoderLocal, 64>		sampleDecoderAllocator;
@@ -291,8 +294,9 @@ idSampleDecoder::Init
 ====================
 */
 void idSampleDecoder::Init( void ) {
-	ov_alloc_callbacks alloc_callbacks = {custom_decoder_malloc, custom_decoder_calloc, custom_decoder_realloc, custom_decoder_free};
-	ExtLibs::ov_use_custom_alloc(alloc_callbacks);
+	//TODO: restore custom memory allocator for vorbis?...
+	//ov_alloc_callbacks alloc_callbacks = {custom_decoder_malloc, custom_decoder_calloc, custom_decoder_realloc, custom_decoder_free};
+	//ExtLibs::ov_use_custom_alloc(alloc_callbacks);
 
 	decoderMemoryAllocator.Init();
 	decoderMemoryAllocator.SetLockMemory( true );
@@ -377,6 +381,7 @@ void idSampleDecoderLocal::ClearDecoder( void ) {
 		case WAVE_FORMAT_TAG_OGG: {
 			ExtLibs::ov_clear( &ogg );
 			memset( &ogg, 0, sizeof( ogg ) );
+			oggStream = 0;
 			break;
 		}
 	}
@@ -553,7 +558,7 @@ int idSampleDecoderLocal::DecodeOGG( idSoundSample *sample, int sampleOffset44k,
 	readSamples = 0;
 	do {
 		float **samples;
-		int ret = ExtLibs::ov_read_float( &ogg, &samples, totalSamples / sample->objectInfo.nChannels, &ogg.stream );
+		int ret = ExtLibs::ov_read_float( &ogg, &samples, totalSamples / sample->objectInfo.nChannels, &oggStream );
 		if ( ret == 0 ) {
 			failed = true;
 			break;

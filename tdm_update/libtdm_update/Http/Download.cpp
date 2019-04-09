@@ -15,7 +15,7 @@
 
 #include "Download.h"
 #include "../Http/HttpConnection.h"
-#include "../Zip/Zip.h"
+#include "../Zip/TdmZip.h"
 #include "../TraceLog.h"
 #include "../File.h"
 #include "../CRC.h"

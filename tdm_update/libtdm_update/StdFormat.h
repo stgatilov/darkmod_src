@@ -14,7 +14,7 @@
 ******************************************************************************/
 #pragma once
 
-#include "tinyformat/tinyformat.h"
+#include "tinyformat.h"
 
 namespace stdext {
 	template<class ...Args> std::string format(const char *formatString, const Args&... args) {
