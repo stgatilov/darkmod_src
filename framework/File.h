@@ -20,8 +20,6 @@
 	#define	MAX_PRINT_MSG_SIZE	16 * 1024
 #endif
 
-#include "minizip/unzip.h"
-
 /*
 ==============================================================
 
@@ -232,7 +230,7 @@ private:
 	idStr					name;			// name of the file in the pak
 	idStr					fullPath;		// full file path including pak file name
 	bool compressed;		// whether the file is actually compressed
-	ZPOS64_T				zipFilePos;		// zip file info position in pak
+	uint64_t				zipFilePos;		// zip file info position in pak
 	int						fileSize;		// size of the file
     ID_TIME_T               fileLastMod;    // last modified date/time of the file
 	void *					z;				// unzip info

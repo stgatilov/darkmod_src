@@ -18,7 +18,8 @@
 
 
 
-#include "minizip/unzip.h"
+#include "unzip.h"
+#include "minizip/minizip_extra.h"	//unzSeek
 
 /*
 =================

@@ -111,11 +111,9 @@ framework_string = ' \
 	EventLoop.cpp \
 	File.cpp \
 	FileSystem.cpp \
+	minizip/minizip_extra.c \
 	I18N.cpp \
 	KeyInput.cpp \
-	minizip/ioapi.c \
-	minizip/unzip.cpp \
-	minizip/zip.cpp \
 	UsercmdGen.cpp \
 	Session_menu.cpp \
 	Session.cpp'

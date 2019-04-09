@@ -49,6 +49,7 @@ local_env = g_env_game.Clone()
 path_template = '#/ThirdParty/artefacts/{0}/lib/lnx%d_s_gcc5_rel_stdcpp/{1}' % (64 if TARGET_ARCH == 'x64' else 32)
 local_env.Append(LIBS = [
 	File(path_template.format('zlib', 'libz.a')),
+	File(path_template.format('zlib', 'libminizip.a')),
 	File(path_template.format('libcurl', 'libcurl.a')),
 	File(path_template.format('mbedtls', 'libmbedtls.a')),
 	File(path_template.format('mbedtls', 'libmbedx509.a')),

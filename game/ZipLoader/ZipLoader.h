@@ -26,6 +26,8 @@
  */
 class CZipFile
 {
+	typedef void* unzFile;	//type from minizip's unzip.h
+
 	// The handle for the zip archive
 	unzFile _handle;
 

@@ -19,6 +19,7 @@
 
 
 #include "ZipLoader.h"
+#include "unzip.h"
 
 #include <fstream>
 
