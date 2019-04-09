@@ -10,6 +10,9 @@
     <BuildMacro Include="ThirdPartyPlatform">
       <Value>$(ThirdPartyPlatform)</Value>
     </BuildMacro>
+    <BuildMacro Include="ThirdPartyPlatformDbg">
+      <Value>$(ThirdPartyPlatformDbg)</Value>
+    </BuildMacro>
     <BuildMacro Include="TdmExecutableName">
       <Value>$(TdmExecutableName)</Value>
     </BuildMacro>
