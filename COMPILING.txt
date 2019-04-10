@@ -8,22 +8,14 @@ Build process outputs TDM binaries to relative path "../darkmod", so you are str
 
 == Compiling on Windows ==
 
-Microsoft Visual Studio 2013 (VS2013) is used to build TDM on Windows.
+Microsoft Visual Studio 2017 (VS2017) is used to build TDM on Windows.
 Open solution file TheDarkMod.sln to start working.
 Choose appropriate platform and configuration, then build solution.
 All built executables will be put into "../darkmod" directory, potentially replacing the TDM executables already located there.
 
-You can use VS2013 Community Edition, which can be downloaded from here:
-  https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs#download-visual-studio-2013-community
-During installation, make sure that "Microsoft Foundation Classes for C++" (MFC) will be installed.
-
-You will also need the "Multibyte MFC Library for Visual Studio 2013", which is downloaded and installed separately:
-  http://www.microsoft.com/en-us/download/details.aspx?id=40770
-
-The code uses DirectInput, which is automatically installed with VS2013 as a part of Windows SDK.
-In case of any trouble with DirectInput, you can download the deprecated "Microsoft DirectX SDK":
-  http://www.microsoft.com/en-us/download/details.aspx?id=6812
-In such case you will have to manually add paths to DirectX SDK to the property sheets.
+You can use VS2017 Community Edition, which can be downloaded from here:
+  https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=15
+During installation, make sure to enable "Visual C++ MFC for x86 and x64", along with everything "Desktop development with C++" workflow enables.
 
 
 == Compiling on Linux ==
