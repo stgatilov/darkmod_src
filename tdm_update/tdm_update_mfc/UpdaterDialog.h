@@ -18,8 +18,6 @@
 #include "afxwin.h"
 #include "afxcmn.h"
 
-#include "Win7Decls.h"
-
 #include "Updater/UpdateController.h"
 #include "Updater/UpdateStep.h"
 #include "ExceptionSafeThread.h"

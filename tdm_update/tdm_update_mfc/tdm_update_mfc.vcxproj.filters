@@ -65,9 +65,6 @@
     <ClInclude Include="UpdaterDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Win7Decls.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\darkmod.ico">
