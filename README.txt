@@ -33,21 +33,12 @@ starting point.
 Compiling on win32:
 -------------------
 
-A project file for Microsoft Visual Studio 2013 is provided in TheDarkMod.sln
-The solution file is compatible with VS2013 Community Edition.
+A project file for Microsoft Visual Studio 2010 is provided in neo\doom.sln
+We expect the solution file is compatible with the Express releases
 
 You will need the Microsoft DirectX SDK installed as well.
 If it does not reside in "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)"
 you will need to update the project files accordingly.
-
-DirectX SDK
-http://www.microsoft.com/en-us/download/details.aspx?id=6812
-
-Multibyte MFC Library for Visual Studio 2013
-http://www.microsoft.com/en-us/download/details.aspx?id=40770
-
-Windows SDK (for Windows 8.1 users)
-http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
 
 Compiling on GNU/Linux x86:
 ---------------------------
@@ -58,7 +49,7 @@ Issue the scons command in the neo/ folder.
 Compiling on MacOS X:
 ---------------------------
 
-XCode 3.2 project is under sys/osx/
+XCode 3.2 project is under neo/sys/osx/
 
 Back End Rendering of Stencil Shadows:
 --------------------------------------
