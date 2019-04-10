@@ -6,7 +6,6 @@
     <ThirdPartyPlatform>\lib\win32_s_vc15_rel_mt</ThirdPartyPlatform>
     <ThirdPartyPlatformDbg>\lib\win32_s_vc15_dbg_mtd</ThirdPartyPlatformDbg>
   </PropertyGroup>
-  <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
