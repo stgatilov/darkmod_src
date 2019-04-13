@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 
 //TODO: is this global variable harming multithreading?
 idList<idVec2> g_softShadowsSamples;
+idCVarBool r_shadowMapCullFront( "r_shadowMapCullFront", "0", CVAR_ARCHIVE | CVAR_RENDERER, "Cull front faces in shadow maps" );
 
 struct ShadowMapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapUniforms )
@@ -306,7 +307,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	shadowMapUniforms->alphaTest.Set( -1 );
 	backEnd.currentSpace = NULL;
 
-	GL_Cull( CT_TWO_SIDED );
+	GL_Cull( r_shadowMapCullFront ? CT_BACK_SIDED : CT_TWO_SIDED );
 	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
@@ -868,6 +869,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 	} else {
 		shadows.Set(0);
 	}
+	shadowMapCullFront.Set( r_shadowMapCullFront );
 
 	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
 		softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );

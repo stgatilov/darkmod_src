@@ -108,7 +108,8 @@ namespace Uniforms {
 		DEFINE_UNIFORM( vec4, rimColor )
 
 		DEFINE_UNIFORM( float, advanced )
-		DEFINE_UNIFORM( float, shadows )
+		DEFINE_UNIFORM( int, shadows )
+		DEFINE_UNIFORM( int, shadowMapCullFront )
 		DEFINE_UNIFORM( vec4, shadowRect )
 		DEFINE_UNIFORM( int, softShadowsQuality )
 		DEFINE_UNIFORM( vec2, softShadowsSamples )
