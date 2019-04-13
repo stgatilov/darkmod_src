@@ -652,6 +652,7 @@ private:
 	int					contentFlags;		// content flags
 	int					surfaceFlags;		// surface flags	
 	mutable int			materialFlags;		// material flags
+	idStr				materialImage;
 	
 	decalInfo_t			decalInfo;
 	colorStage_t		ambientRimColor;

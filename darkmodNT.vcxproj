@@ -342,8 +342,8 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <FavorSizeOrSpeed />
-      <Optimization>MinSpace</Optimization>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <PostBuildEvent>
       <Message>
@@ -361,6 +361,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <PostBuildEvent>
       <Command>

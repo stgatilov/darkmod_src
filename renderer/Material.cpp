@@ -1848,6 +1848,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( CheckSurfaceParm( &token ) ) {
 			continue;
 		}
+		else if ( !token.Icmp( "materialImage" ) ) {
+			src.ReadTokenOnLine( &token );
+			materialImage = token.c_str();
+			continue;
+		}
 		// polygonOffset
 		else if ( !token.Icmp( "polygonOffset" ) ) {
 			SetMaterialFlag( MF_POLYGONOFFSET );
