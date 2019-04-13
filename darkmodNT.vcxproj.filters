@@ -61,9 +61,6 @@
     <Filter Include="Game\Physics">
       <UniqueIdentifier>{c9e9f2e0-3a85-4046-bb18-7ca37d74e5a3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\pugixml">
-      <UniqueIdentifier>{abf77553-10c5-4feb-ba31-19c456f2599f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Game\Script">
       <UniqueIdentifier>{ec546557-2e91-4e8a-b2b7-1e9df86ec9bd}</UniqueIdentifier>
     </Filter>
@@ -347,15 +344,6 @@
     </ClInclude>
     <ClInclude Include="sound\efxlib.h">
       <Filter>Sound</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\minizip\ioapi.h">
-      <Filter>Framework\minizip</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\minizip\unzip.h">
-      <Filter>Framework\minizip</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\minizip\zip.h">
-      <Filter>Framework\minizip</Filter>
     </ClInclude>
     <ClInclude Include="framework\CompressionParameters.h">
       <Filter>Framework</Filter>
@@ -797,12 +785,6 @@
     </ClInclude>
     <ClInclude Include="game\physics\Push.h">
       <Filter>Game\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="game\pugixml\pugiconfig.hpp">
-      <Filter>Game\pugixml</Filter>
-    </ClInclude>
-    <ClInclude Include="game\pugixml\pugixml.hpp">
-      <Filter>Game\pugixml</Filter>
     </ClInclude>
     <ClInclude Include="game\script\Script_Compiler.h">
       <Filter>Game\Script</Filter>
@@ -1435,6 +1417,9 @@
     <ClInclude Include="renderer\GLSLProgramManager.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="framework\minizip\minizip_extra.h">
+      <Filter>Framework\minizip</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1778,15 +1763,6 @@
     </ClCompile>
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\minizip\ioapi.c">
-      <Filter>Framework\minizip</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\minizip\unzip.cpp">
-      <Filter>Framework\minizip</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\minizip\zip.cpp">
-      <Filter>Framework\minizip</Filter>
     </ClCompile>
     <ClCompile Include="renderer\CinematicID.cpp">
       <Filter>Renderer</Filter>
@@ -2213,9 +2189,6 @@
     </ClCompile>
     <ClCompile Include="game\physics\Push.cpp">
       <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="game\pugixml\pugixml.cpp">
-      <Filter>Game\pugixml</Filter>
     </ClCompile>
     <ClCompile Include="game\script\Script_Compiler.cpp">
       <Filter>Game\Script</Filter>
@@ -2829,6 +2802,9 @@
     </ClCompile>
     <ClCompile Include="renderer\GLSLProgramManager.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\minizip\minizip_extra.c">
+      <Filter>Framework\minizip</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
