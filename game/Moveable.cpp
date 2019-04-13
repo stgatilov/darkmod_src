@@ -992,7 +992,6 @@ idBarrel::idBarrel() {
 	lastAxis.Identity();
 	additionalRotation = 0.0f;
 	additionalAxis.Identity();
-	fl.networkSync = true;
 }
 
 /*

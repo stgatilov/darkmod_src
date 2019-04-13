@@ -650,8 +650,6 @@ idPlayer::idPlayer() :
 	smoothedOrigin			= vec3_zero;
 	smoothedAngles			= ang_zero;
 
-	fl.networkSync			= true;
-
 	latchedTeam				= -1;
 	doingDeathSkin			= false;
 	weaponGone				= false;

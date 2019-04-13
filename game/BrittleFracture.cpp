@@ -68,8 +68,6 @@ idBrittleFracture::idBrittleFracture( void ) {
 	lastRenderEntityUpdate = -1;
 	changed = false;
 
-	fl.networkSync = true;
-
 	m_AreaPortal = 0;
 	m_bSoundDamped = false;
 

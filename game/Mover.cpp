@@ -177,7 +177,6 @@ idMover::idMover(void)
 	damage = 0.0f;
 	areaPortal = 0;
 	nextBounceTime = 0; // grayman #4370
-	fl.networkSync = true;
 	m_FrobActionScript = "frob_mover";
 }
 
@@ -1801,7 +1800,6 @@ idMover_Binary::idMover_Binary()
 	updateStatus = 0;
 	areaPortal = 0;
 	blocked = false;
-	fl.networkSync = true;
 	m_FrobActionScript = "frob_binary_mover";
 }
 

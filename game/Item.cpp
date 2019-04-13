@@ -72,7 +72,6 @@ idItem::idItem()
 	shellMaterial = NULL;
 	orgOrigin.Zero();
 	canPickUp = true;
-	fl.networkSync = true;
 
 	m_FrobActionScript = "frob_item";
 

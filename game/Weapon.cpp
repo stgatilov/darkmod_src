@@ -144,8 +144,6 @@ idWeapon::idWeapon() {
 	hideUntilTime			= -1;
 
 	Clear();
-
-	fl.networkSync = true;
 }
 
 /*
@@ -177,7 +175,6 @@ void idWeapon::Spawn( void ) {
 	{
 		// setup the world model
 		worldModel = static_cast< idAnimatedEntity * >( gameLocal.SpawnEntityType( idAnimatedEntity::Type, NULL ) );
-		worldModel.GetEntity()->fl.networkSync = true;
 	}
 
 	thread = new idThread();
@@ -3194,11 +3191,6 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 			if ( !ent || !ent->IsType( idProjectile::Type ) ) {
 				const char *projectileName = weaponDef->dict.GetString( "def_projectile" );
 				gameLocal.Error( "'%s' is not an idProjectile", projectileName );
-			}
-
-			if ( projectileDef->dict.GetBool( "net_instanthit" ) ) {
-				// don't synchronize this on top of the already predicted effect
-				ent->fl.networkSync = false;
 			}
 
 			proj = static_cast<idProjectile *>(ent);

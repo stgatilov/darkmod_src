@@ -187,8 +187,6 @@ protected:
 	bool TestActivated( const char *typeName );
 
 private:
-	bool					netSyncPhysics;
-
 	void					AddDefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
 
 	void					AddObjectsToSaveGame(idSaveGame* savefile); // grayman #2478

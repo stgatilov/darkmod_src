@@ -1451,7 +1451,6 @@ void idEntity::Spawn( void )
 	const char			*temp;
 	idVec3				origin;
 	idMat3				axis;
-	const idKeyValue	*networkSync;
 	const char			*classname;
 	const char			*scriptObjectName;
 
@@ -1514,20 +1513,6 @@ void idEntity::Spawn( void )
 		PostEventMS( &EV_Hide, 0 );
 	}
 	cinematic = spawnArgs.GetBool( "cinematic", "0" );
-
-	networkSync = spawnArgs.FindKey( "networkSync" );
-	if ( networkSync ) {
-		fl.networkSync = ( atoi( networkSync->GetValue() ) != 0 );
-	}
-
-#if 0
-	if ( !gameLocal.isClient ) {
-		// common->DPrintf( "NET: DBG %s - %s is synced: %s\n", spawnArgs.GetString( "classname", "" ), GetType()->classname, fl.networkSync ? "true" : "false" );
-		if ( spawnArgs.GetString( "classname", "" )[ 0 ] == '\0' && !fl.networkSync ) {
-			common->DPrintf( "NET: WRN %s entity, no classname, and no networkSync?\n", GetType()->classname );
-		}
-	}
-#endif
 
 	bool haveTargets = false; // grayman #2603
 	// if we have targets, wait until all entities are spawned to get them

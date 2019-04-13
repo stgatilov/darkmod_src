@@ -86,10 +86,6 @@ idProjectile::idProjectile( void ) {
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
 	memset( &renderLight, 0, sizeof( renderLight ) );
 
-	// note: for net_instanthit projectiles, we will force this back to false at spawn time
-
-	fl.networkSync		= true;
-	netSyncPhysics		= false;
 	m_Lock				= NULL;  // grayman #2478
 	isMine				= false; // grayman #2478
 	replaced			= false; // grayman #2908
@@ -300,11 +296,6 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 	UpdateVisuals();
 
 	state = CREATED;
-
-
-	if ( spawnArgs.GetBool( "net_fullphysics" ) ) {
-		netSyncPhysics = true;
-	}
 }
 
 /*
@@ -1598,38 +1589,27 @@ void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
 
 	msg.WriteBits( fl.hidden, 1 );
 
-	if ( netSyncPhysics ) {
+	msg.WriteBits( 0, 1 );
 
-		msg.WriteBits( 1, 1 );
+	const idVec3 &origin	= physicsObj.GetOrigin();
 
-		physicsObj.WriteToSnapshot( msg );
-
-	} else {
-
-		msg.WriteBits( 0, 1 );
-
-		const idVec3 &origin	= physicsObj.GetOrigin();
-
-		const idVec3 &velocity	= physicsObj.GetLinearVelocity();
+	const idVec3 &velocity	= physicsObj.GetLinearVelocity();
 
 
 
-		msg.WriteFloat( origin.x );
+	msg.WriteFloat( origin.x );
 
-		msg.WriteFloat( origin.y );
+	msg.WriteFloat( origin.y );
 
-		msg.WriteFloat( origin.z );
+	msg.WriteFloat( origin.z );
 
 
 
-		msg.WriteDeltaFloat( 0.0f, velocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+	msg.WriteDeltaFloat( 0.0f, velocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 
-		msg.WriteDeltaFloat( 0.0f, velocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
+	msg.WriteDeltaFloat( 0.0f, velocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 
-		msg.WriteDeltaFloat( 0.0f, velocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );		
-
-	}
-
+	msg.WriteDeltaFloat( 0.0f, velocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );		
 }
 
 /*

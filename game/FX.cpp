@@ -525,7 +525,6 @@ idEntityFx::idEntityFx() {
 	fxEffect = NULL;
 	started = -1;
 	nextTriggerTime = -1;
-	fl.networkSync = true;
 }
 
 /*
