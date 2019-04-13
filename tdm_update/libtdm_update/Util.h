@@ -18,8 +18,8 @@
 #include "StdFormat.h"
 #include "StdFilesystem.h"
 
-// Platform-specific Sleep(int msec) definition
 #ifdef WIN32
+	#define _WIN32_WINNT _WIN32_WINNT_VISTA
 	#include <windows.h>
 #else
 	// Linux doesn't know Sleep(), add a substitute def
