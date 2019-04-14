@@ -904,7 +904,7 @@ idGLDrawableWorld::~idGLDrawableWorld() {
 void idGLDrawableWorld::AddTris(srfTriangles_t *tris, const idMaterial *mat) {
 	modelSurface_t	surf;
 	surf.geometry = tris;
-	surf.shader = mat;
+	surf.material = mat;
 	worldModel->AddSurface( surf );
 }
 

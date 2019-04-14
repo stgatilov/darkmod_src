@@ -44,7 +44,7 @@ DrawRenderModel
 void DrawRenderModel( idRenderModel *model, idVec3 &origin, idMat3 &axis, bool cameraView ) {
 	for ( int i = 0; i < model->NumSurfaces(); i++ ) {
 		const modelSurface_t *surf = model->Surface( i );
-		const idMaterial *material = surf->shader;
+		const idMaterial *material = surf->material;
 
 		int nDrawMode = g_pParentWnd->GetCamera()->Camera().draw_mode;
 

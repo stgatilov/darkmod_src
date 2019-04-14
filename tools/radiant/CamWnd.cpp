@@ -1294,7 +1294,7 @@ void CCamWnd::BuildEntityRenderState( entity_t *ent, bool update) {
 			modelSurface_t	surf;
 			for ( int i = 0 ; i < tris.Num() ; i++ ) {
 				surf.geometry = tris[i];
-				surf.shader = mats[i];
+				surf.material = mats[i];
 				bmodel->AddSurface( surf );
 			}
 
@@ -1478,7 +1478,7 @@ int Brush_TransformModel(brush_t *brush, idTriList *tris, idMatList *mats) {
 					tri2->verts[j].xyz = v;
 				}
 				tris->Append(tri2);
-				mats->Append( surf->shader );
+				mats->Append( surf->material );
 			}
 			return model->NumSurfaces();
 		}
@@ -1738,7 +1738,7 @@ void CCamWnd::BuildRendererState() {
 			modelSurface_t	surf;
 			for ( int i = 0 ; i < tris.Num() ; i++ ) {
 				surf.geometry = tris[i];
-				surf.shader = mats[i];
+				surf.material = mats[i];
 				worldModel->AddSurface( surf );
 			}
 
