@@ -543,6 +543,7 @@ public:
 	int					GetEntityGui( void ) const { return entityGui; }
 
 	decalInfo_t			GetDecalInfo( void ) const { return decalInfo; }
+	const idStr&		GetMaterialImage( void ) const { return materialImage; }
 
 						// spectrums are used for "invisible writing" that can only be
 						// illuminated by a light of matching spectrum

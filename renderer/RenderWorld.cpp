@@ -2027,3 +2027,71 @@ const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSki
 
 	return skin->RemapShaderBySkin( shader );
 }
+
+idVec3 getBarycentricCoordinatesAt( const idVec3 &P, const idVec3 &a, const idVec3 &b, const idVec3 &c ) {
+	idVec3 bary;
+	idPlane triPlane( a, b, c );
+
+	// The area of a triangle is 
+	auto areaABC = (b - a).Cross(c - a) * triPlane.Normal();
+	auto areaPBC = (b - P).Cross(c - P) * triPlane.Normal();
+	auto areaPCA = (c - P).Cross(a - P) * triPlane.Normal();
+
+	bary.x = areaPBC / areaABC; // alpha
+	bary.y = areaPCA / areaABC; // beta
+	bary.z = 1.0f - bary.x - bary.y; // gamma
+
+	return bary;
+}
+
+bool idRenderWorldLocal::MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const {
+	int areaNum = PointInArea( p );
+	if ( areaNum < 0 )
+		return false;
+	auto area = &portalAreas[areaNum];
+	for ( auto eref = area->entityRefs.areaNext; eref != &area->entityRefs; eref = eref->areaNext ) {
+		auto def = eref->entity;
+		if ( def->dynamicModel )
+			continue;
+		idVec3 lp;
+		R_GlobalPointToLocal( def->modelMatrix, p, lp );
+		if ( !def->globalReferenceBounds.ContainsPoint( p ) )
+			continue;
+		auto model = def->parms.hModel;
+		int total = model->NumSurfaces();
+		for ( int i = 0; i < total; i++ ) {
+			auto surf = model->Surface( i );
+			auto geo = surf->geometry;
+			if ( mat != surf->shader )
+				continue;
+			if ( !geo->bounds.ContainsPoint( lp ) )
+				continue;
+			for ( int vInd = 0; vInd < geo->numIndexes; ) {
+				auto &v1 = geo->verts[geo->indexes[vInd++]];
+				auto &v2 = geo->verts[geo->indexes[vInd++]];
+				auto &v3 = geo->verts[geo->indexes[vInd++]];
+				auto v12 = v2.xyz - v1.xyz;
+				auto v13 = v3.xyz - v1.xyz;
+				idPlane triPlane( v1.xyz, v2.xyz, v3.xyz );
+				float d = triPlane.Distance( lp );
+				if ( abs( d ) > 2 * CM_CLIP_EPSILON ) // FIXME is 2x necessary?
+					continue;
+				auto bari = getBarycentricCoordinatesAt( lp, v1.xyz, v2.xyz, v3.xyz );
+				auto st = bari.x * v1.st + bari.y * v2.st + bari.z * v3.st;
+				static byte* pic = NULL;
+				static int width, height;
+				if ( !pic )
+					R_LoadImageProgram( mat->GetMaterialImage(), &pic, &width, &height, NULL );
+				if ( !pic ) 
+					return false;
+				int pixNum = st.x * (width-1) + st.y * (height-1) * width;	// FIXME clamp texcoords
+				auto red = pic[pixNum * 3];									// FIXME use color table
+				if ( red > 99 )
+					matName = "metal";
+				common->Printf( "material map (%.2fx%.2f) %d - %s\n", st.x, st.y, red, matName.c_str() );
+				return true;
+			}
+		}
+	}
+	return false;
+}

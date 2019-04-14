@@ -401,6 +401,8 @@ public:
 	// Traces vs the world model bsp tree.
 	virtual bool			FastWorldTrace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end ) const = 0;
 
+	virtual bool			MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const = 0;
+
 	//-------------- Demo Control  -----------------
 
 	// Writes a loadmap command to the demo, and clears archive counters.

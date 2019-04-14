@@ -1138,6 +1138,12 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// DarkMod: Check material list to see if it's activated
 	g_Global.GetSurfName( collision.c.material, SurfTypeName );
+	if ( collision.c.material ) {
+		auto matImg = collision.c.material->GetMaterialImage();
+		if ( !matImg.IsEmpty() )
+			gameRenderWorld->MaterialTrace( collision.c.point, collision.c.material, SurfTypeName );
+	}
+		
 	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Weapon: Projectile surface was %s\r", SurfTypeName.c_str() );
 
 	bActivated = TestActivated( SurfTypeName.c_str() );

@@ -141,6 +141,7 @@ public:
 	virtual bool			ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius ) const;
 	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true, bool skipPlayer = false ) const;
 	virtual bool			FastWorldTrace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end ) const;
+	virtual bool			MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const;
 
 	virtual void			DebugClearLines( int time );
 	virtual void			DebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime = 0, const bool depthTest = false );
@@ -278,10 +279,9 @@ public:
 
 	void					PushVolumeIntoTree( idRenderEntityLocal *def, idRenderLightLocal *light, int numPoints, const idVec3 (*points) );
 
-	//anon begin
 	void					PushFrustumIntoTree_r(idRenderEntityLocal* def, idRenderLightLocal* light, const frustumCorners_t& corners, int nodeNum);
 	void					PushFrustumIntoTree(idRenderEntityLocal* def, idRenderLightLocal* light, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds);
-	//anon end
+	
 	//-------------------------------
 	// tr_light.c
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );
