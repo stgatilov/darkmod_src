@@ -2044,29 +2044,37 @@ idVec3 getBarycentricCoordinatesAt( const idVec3 &P, const idVec3 &a, const idVe
 	return bary;
 }
 
+/*
+===============
+idRenderWorldLocal::MaterialTrace
+Try to remap materials on a per-pixel basis
+Supposed to be used by game/physics code
+===============
+*/
 bool idRenderWorldLocal::MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const {
+	// only testing the collision area - what if blocker is <.25 units behind the area end?
 	int areaNum = PointInArea( p );
 	if ( areaNum < 0 )
 		return false;
 	auto area = &portalAreas[areaNum];
 	for ( auto eref = area->entityRefs.areaNext; eref != &area->entityRefs; eref = eref->areaNext ) {
-		auto def = eref->entity;
+		auto def = eref->entity;	// loop through all entities in the area, skipping some
 		if ( def->dynamicModel )
 			continue;
 		idVec3 lp;
 		R_GlobalPointToLocal( def->modelMatrix, p, lp );
 		if ( !def->globalReferenceBounds.ContainsPoint( p ) )
-			continue;
+			continue;				// per-entity bounds check
 		auto model = def->parms.hModel;
 		int total = model->NumSurfaces();
 		for ( int i = 0; i < total; i++ ) {
 			auto surf = model->Surface( i );
 			auto geo = surf->geometry;
 			if ( mat != surf->shader )
-				continue;
+				continue;			// we already know from the collision manager what material it should be
 			if ( !geo->bounds.ContainsPoint( lp ) )
-				continue;
-			for ( int vInd = 0; vInd < geo->numIndexes; ) {
+				continue;			// per-surface bounds check
+			for ( int vInd = 0; vInd < geo->numIndexes; ) { // as bad as it is we're looping through the vertices
 				auto &v1 = geo->verts[geo->indexes[vInd++]];
 				auto &v2 = geo->verts[geo->indexes[vInd++]];
 				auto &v3 = geo->verts[geo->indexes[vInd++]];
@@ -2075,12 +2083,12 @@ bool idRenderWorldLocal::MaterialTrace( const idVec3 &p, const idMaterial *mat, 
 				idPlane triPlane( v1.xyz, v2.xyz, v3.xyz );
 				float d = triPlane.Distance( lp );
 				if ( abs( d ) > 2 * CM_CLIP_EPSILON ) // FIXME is 2x necessary?
-					continue;
+					continue;						  // too far from collision point
 				auto bari = getBarycentricCoordinatesAt( lp, v1.xyz, v2.xyz, v3.xyz );
 				auto st = bari.x * v1.st + bari.y * v2.st + bari.z * v3.st;
-				static byte* pic = NULL;
+				static byte* pic = NULL;			  // FIXME check if lp is INSIDE the triangle
 				static int width, height;
-				if ( !pic )
+				if ( !pic )							  // FIXME this needs to be part of material?
 					R_LoadImageProgram( mat->GetMaterialImage(), &pic, &width, &height, NULL );
 				if ( !pic ) 
 					return false;
