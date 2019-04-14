@@ -32,8 +32,11 @@
 #include "FleeState.h"
 #include "../Library.h"
 
-#define REACTION_TIME_MIN      100	// grayman #3063
-#define REACTION_TIME_MAX     1000	// grayman #3063 // grayman #3492
+//#define REACTION_TIME_MIN      100	// grayman #3063
+//#define REACTION_TIME_MAX     1000	// grayman #3063 // grayman #3492
+#define REACTION_TIME_MIN		1000	// grayman #5019
+#define REACTION_TIME_MAX		3000	// grayman #5019
+#define REACTION_TIME_SPREAD	1000	// grayman #5019
 
 namespace ai
 {
@@ -325,7 +328,8 @@ void CombatState::Init(idAI* owner)
 
 	// grayman #3331 - add a bit of variability so multiple AI spotting the enemy in the same frame aren't in sync
 
-	reactionTime += gameLocal.random.RandomInt(REACTION_TIME_MAX/2);
+//	reactionTime += gameLocal.random.RandomInt(REACTION_TIME_MAX/2);
+	reactionTime += gameLocal.random.RandomInt(REACTION_TIME_SPREAD); // grayman #5019
 
 	_combatSubState = EStateReaction;
 	_reactionEndTime = gameLocal.time + reactionTime;

@@ -9709,7 +9709,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	// alert to overwrite another alert this frame
 
 	// grayman #3424 - audio alerts shouldn't be allowed in the delays between
-	// methods like OnDeadPersonEncounter() and Post_OnDeadPersonEnvounter() because
+	// methods like OnDeadPersonEncounter() and Post_OnDeadPersonEncounter() because
 	// they can mess with what's happening in those methods.
 
 	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) && m_allowAudioAlerts )
@@ -10610,7 +10610,7 @@ void idAI::PerformVisualScan(float timecheck)
 		if ( !canWalkToPlayer || ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
 		{
 			SetEnemy(player);
-
+			
 			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
 			// visibility in the mission data
 			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
@@ -10622,7 +10622,7 @@ void idAI::PerformVisualScan(float timecheck)
 		}
 	}
 
-	// If the alert amount is larger than everything else encountered this frame
+ 	// If the alert amount is larger than everything else encountered this frame
 	// ignore the previous alerts and remember this actor as enemy.
 	if ( alertInc > m_AlertLevelThisFrame )
 	{
@@ -10900,12 +10900,12 @@ float idAI::GetCalibratedLightgemValue() const
 
 	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
 
-	float term0 = -0.03f; // grayman #3063 - Wiki says -0.03f, and angua says this is what it's supposed to be
+	float term0 = -0.03f; // grayman #3063 - Wiki (http://wiki.thedarkmod.com/index.php?title=Visual_scan) says -0.03f, and angua says this is what it's supposed to be
 //	float term0 = -0.003f;
 	float term1 = 0.03f * lgem;
 	float term2 = 0.001f * idMath::Pow16(lgem, 2);
 	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
-	float term4 = - 0.000011f * idMath::Pow16(lgem, 4);
+	float term4 = -0.000011f * idMath::Pow16(lgem, 4);
 	float term5 = 0.0000001892f * idMath::Pow16(lgem, 5);
 
 	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;

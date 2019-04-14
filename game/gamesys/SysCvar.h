@@ -54,7 +54,7 @@ extern idCVar cv_ai_show_conversationstate;
 extern idCVar cv_ai_acuity_L3;
 extern idCVar cv_ai_acuity_L4;
 extern idCVar cv_ai_acuity_L5;
-extern idCVar cv_ai_acuity_susp;
+//extern idCVar cv_ai_acuity_susp;
 extern idCVar cv_ai_visdist_show;
 extern idCVar cv_ai_opt_disable;
 extern idCVar cv_ai_opt_noanims;

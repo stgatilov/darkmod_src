@@ -78,7 +78,7 @@ idCVar cv_ai_show_conversationstate("tdm_ai_show_conversationstate", "0",		CVAR_
 idCVar cv_ai_acuity_L3	(			"tdm_ai_acuity_L3",			"1.1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is at alert level 3 but not yet 4");
 idCVar cv_ai_acuity_L4	(			"tdm_ai_acuity_L4",			"1.3",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is at alert level 4 but not yet 5");
 idCVar cv_ai_acuity_L5	(			"tdm_ai_acuity_L5",			"1.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is at alert level 5");
-idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is suspicious due to evidence. It is in addition to the other modifiers.");
+//idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is suspicious due to evidence. It is in addition to the other modifiers.");
 
 idCVar cv_sndprop_disable(			"tdm_sndprop_disable",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation will not be calculated." );
 idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );
@@ -325,10 +325,15 @@ idCVar cv_melee_difficulty(				"tdm_melee_difficulty", "normal", CVAR_GAME | CVA
 
 // grayman #3492 - AI Vision
 idCVar cv_ai_vision(					"tdm_ai_vision", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "AI Vision as set by the menu");
-idCVar cv_ai_vision_nearly_blind(		"tdm_ai_vision_nearly_blind", "0.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Nearly Blind', set by the menu");
-idCVar cv_ai_vision_forgiving(			"tdm_ai_vision_forgiving", "0.6", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Forgiving', set by the menu");
-idCVar cv_ai_vision_challenging(		"tdm_ai_vision_challenging", "1.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Challenging', set by the menu");
-idCVar cv_ai_vision_hardcore(			"tdm_ai_vision_hardcore", "1.5", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Hardcore', set by the menu");
+//idCVar cv_ai_vision_nearly_blind(		"tdm_ai_vision_nearly_blind", "0.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Nearly Blind', set by the menu");
+//idCVar cv_ai_vision_forgiving(			"tdm_ai_vision_forgiving", "0.6", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Forgiving', set by the menu");
+//idCVar cv_ai_vision_challenging(		"tdm_ai_vision_challenging", "1.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Challenging', set by the menu");
+//idCVar cv_ai_vision_hardcore(			"tdm_ai_vision_hardcore", "1.5", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Hardcore', set by the menu");
+// grayman #5019
+idCVar cv_ai_vision_nearly_blind("tdm_ai_vision_nearly_blind", "0.134", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Nearly Blind', set by the menu");
+idCVar cv_ai_vision_forgiving("tdm_ai_vision_forgiving", "0.402", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Forgiving', set by the menu");
+idCVar cv_ai_vision_challenging("tdm_ai_vision_challenging", "0.804", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Challenging', set by the menu");
+idCVar cv_ai_vision_hardcore("tdm_ai_vision_hardcore", "1.005", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Hardcore', set by the menu");
 
 // grayman #3682 - AI Hearing
 idCVar cv_ai_hearing(					"tdm_ai_hearing", "2", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "AI Hearing as set by the menu");
