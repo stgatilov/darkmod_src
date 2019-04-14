@@ -528,13 +528,13 @@ bool idBrittleFracture::UpdateRenderEntity( renderEntity_s *renderEntity, const 
 	SIMDProcessor->MinMax( decalTris->bounds[0], decalTris->bounds[1], decalTris->verts, decalTris->numVerts );
 
 	memset( &surface, 0, sizeof( surface ) );
-	surface.shader = material;
+	surface.material = material;
 	surface.id = 0;
 	surface.geometry = tris;
 	renderEntity->hModel->AddSurface( surface );
 
 	memset( &surface, 0, sizeof( surface ) );
-	surface.shader = decalMaterial;
+	surface.material = decalMaterial;
 	surface.id = 1;
 	surface.geometry = decalTris;
 	renderEntity->hModel->AddSurface( surface );
@@ -1174,7 +1174,7 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	*/
 	for ( i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++ ) {
 		surf = renderModel->Surface( i );
-		material = surf->shader;
+		material = surf->material;
 
 		for ( j = 0; j < surf->geometry->numIndexes; j += 3 ) {
 			w.Clear();

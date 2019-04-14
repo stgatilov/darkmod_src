@@ -299,7 +299,7 @@ idRenderModel *idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 		surf.geometry = tri;
 
 		md3Shader_t* shaders = (md3Shader_t *) ((byte *)surface + surface->ofsShaders);
-		surf.shader = shaders->shader;
+		surf.material = shaders->shader;
 
 		LerpMeshVertexes( tri, surface, backlerp, frame, oldframe );
 

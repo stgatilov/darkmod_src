@@ -128,7 +128,7 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		} else {
 			surf = &staticModel->surfaces.Alloc();
 			surf->id = stageNum;
-			surf->shader = stage->material;
+			surf->material = stage->material;
 			surf->geometry = R_AllocStaticTriSurf();
 			R_AllocStaticTriSurfVerts( surf->geometry, 4 * count );
 			R_AllocStaticTriSurfIndexes( surf->geometry, 6 * count );

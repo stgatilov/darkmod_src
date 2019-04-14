@@ -1222,7 +1222,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		if ( !tri->numIndexes ) {
 			continue;
 		}
-		shader = surf->shader;
+		shader = surf->material;
 		shader = R_RemapShaderBySkin( shader, def.parms.customSkin, def.parms.customShader );
 
 		R_GlobalShaderOverride( &shader );

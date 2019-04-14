@@ -1082,7 +1082,7 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 	for ( i = 0; i < model->NumBaseSurfaces(); i++ ) {
 		surf = model->Surface( i );
 
-		shader = R_RemapShaderBySkin( surf->shader, def->parms.customSkin, def->parms.customShader );
+		shader = R_RemapShaderBySkin( surf->material, def->parms.customSkin, def->parms.customShader );
 
 		if ( shader->GetSurfaceFlags() & SURF_COLLISION ) {
 			collisionSurface = true;
@@ -1094,7 +1094,7 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 	for ( i = 0; i < model->NumBaseSurfaces(); i++ ) {
 		surf = model->Surface( i );
 
-		shader = R_RemapShaderBySkin( surf->shader, def->parms.customSkin, def->parms.customShader );
+		shader = R_RemapShaderBySkin( surf->material, def->parms.customSkin, def->parms.customShader );
 
 		if ( !surf->geometry || !shader ) {
 			continue;
@@ -1224,7 +1224,7 @@ bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const 
 			for ( j = 0; j < model->NumSurfaces(); j++ ) {
 				const modelSurface_t *surf = model->Surface( j );
 
-				shader = R_RemapShaderBySkin( surf->shader, def->parms.customSkin, def->parms.customShader );
+				shader = R_RemapShaderBySkin( surf->material, def->parms.customSkin, def->parms.customShader );
 
 				// if no geometry or no shader
 				if ( !surf->geometry || !shader ) {
@@ -2070,7 +2070,7 @@ bool idRenderWorldLocal::MaterialTrace( const idVec3 &p, const idMaterial *mat, 
 		for ( int i = 0; i < total; i++ ) {
 			auto surf = model->Surface( i );
 			auto geo = surf->geometry;
-			if ( mat != surf->shader )
+			if ( mat != surf->material )
 				continue;			// we already know from the collision manager what material it should be
 			if ( !geo->bounds.ContainsPoint( lp ) )
 				continue;			// per-surface bounds check

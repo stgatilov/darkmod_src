@@ -107,7 +107,7 @@ modelSurface_t idRenderModelLiquid::GenerateSurface( float lerp ) {
 	}
 
 	surf.geometry	= tri;
-	surf.shader		= shader;
+	surf.material = shader;
 
 	return surf;
 }

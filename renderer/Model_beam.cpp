@@ -114,7 +114,7 @@ idRenderModel *idRenderModelBeam::InstantiateDynamicModel( const struct renderEn
 
 		surf.geometry = tri;
 		surf.id = 0;
-		surf.shader = tr.defaultMaterial;
+		surf.material = tr.defaultMaterial;
 		staticModel->AddSurface( surf );
 	}
 

@@ -608,7 +608,7 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 
 				mapTri_t	mapTri;
 				memset( &mapTri, 0, sizeof( mapTri ) );
-				mapTri.material = surface->shader;
+				mapTri.material = surface->material;
 				// don't let discretes (autosprites, etc) merge together
 				if ( mapTri.material->IsDiscrete() ) {
 					mapTri.mergeGroup = (void *)surface;

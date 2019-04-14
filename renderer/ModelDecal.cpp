@@ -290,12 +290,12 @@ void idRenderModelDecal::CreateDecal( const idRenderModel *model, const decalPro
 		const modelSurface_t *surf = model->Surface( surfNum );
 
 		// if no geometry or no shader
-		if ( !surf->geometry || !surf->shader ) {
+		if ( !surf->geometry || !surf->material ) {
 			continue;
 		}
 
 		// decals and overlays use the same rules
-		if ( !localInfo.force && !surf->shader->AllowOverlays() ) {
+		if ( !localInfo.force && !surf->material->AllowOverlays() ) {
 			continue;
 		}
 

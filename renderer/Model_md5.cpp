@@ -271,7 +271,7 @@ void idMD5Mesh::UpdateSurface( const struct renderEntity_s *ent, const idJointMa
 		tr.pc.c_deformedIndexes += deformInfo->numIndexes;
 	}
 
-	surf->shader = shader;
+	surf->material = shader;
 
 	if ( surf->geometry ) {
 		// if the number of verts and indexes are the same we can re-use the triangle surface
@@ -788,7 +788,7 @@ idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEnt
 			mesh->surfaceNum = staticModel->NumSurfaces();
 			surf = &staticModel->surfaces.Alloc();
 			surf->geometry = NULL;
-			surf->shader = NULL;
+			surf->material = NULL;
 			surf->id = i;
 		}
 

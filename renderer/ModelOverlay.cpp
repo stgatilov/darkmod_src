@@ -118,11 +118,11 @@ void idRenderModelOverlay::CreateOverlay( const idRenderModel *model, const idPl
 		const modelSurface_t *surf = model->Surface( surfNum );
 		float d;
 
-		if ( !surf->geometry || !surf->shader ) {
+		if ( !surf->geometry || !surf->material ) {
 			continue;
 		}
 
-		const idMaterial* shader = R_RemapShaderBySkin( surf->shader, customSkin, customShader ); // SteveL #3844
+		const idMaterial* shader = R_RemapShaderBySkin( surf->material, customSkin, customShader ); // SteveL #3844
 		
 		// some surfaces can explicitly disallow overlays
 		if ( !shader->AllowOverlays() ) {
@@ -270,7 +270,7 @@ void idRenderModelOverlay::AddOverlaySurfacesToModel( idRenderModel *baseModel )
 		} else {
 			newSurf = &staticModel->surfaces.Alloc();
 			newSurf->geometry = NULL;
-			newSurf->shader = materials[k]->material;
+			newSurf->material = materials[k]->material;
 			newSurf->id = -1 - k;
 		}
 

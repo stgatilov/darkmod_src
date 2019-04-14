@@ -386,7 +386,7 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 
 			modelSurface_t	surf;
 			surf.geometry = tri;
-			surf.shader = stage->material;
+			surf.material = stage->material;
 			surf.id = 0;
 
 			renderEntity->hModel->AddSurface( surf );

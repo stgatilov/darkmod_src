@@ -125,7 +125,7 @@ typedef idList<srfTriangles_t *> idTriList;
 
 typedef struct modelSurface_s {
 	int							id;
-	const idMaterial *			shader;
+	const idMaterial *			material;
 	srfTriangles_t *			geometry;
 } modelSurface_t;
 

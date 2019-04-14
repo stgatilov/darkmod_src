@@ -163,7 +163,7 @@ void tdmDeclTDM_MatInfo::precacheModel( idRenderModel *model ) {
 	int s;
 	for ( s = 0 ; s < numSurfaces ; s++ ) {
 		const modelSurface_t *surface = model->Surface(s);
-		declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", surface->shader->GetName() );
-		declManager->FindType( DECL_TDM_MATINFO, surface->shader->GetName() );
+		declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", surface->material->GetName() );
+		declManager->FindType( DECL_TDM_MATINFO, surface->material->GetName() );
 	}
 }

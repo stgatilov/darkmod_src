@@ -3018,7 +3018,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 	collisionSurface = false;
 	for ( i = 0; i < renderModel->NumSurfaces(); i++ ) {
 		surf = renderModel->Surface( i );
-		const idMaterial* shader = GetSkinnedShader( surf->shader, skin ); // #4232
+		const idMaterial* shader = GetSkinnedShader( surf->material, skin ); // #4232
 		if ( shader->GetSurfaceFlags() & SURF_COLLISION ) {
 			collisionSurface = true;
 		}
@@ -3026,7 +3026,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 
 	for ( i = 0; i < renderModel->NumSurfaces(); i++ ) {
 		surf = renderModel->Surface( i );
-		const idMaterial* shader = GetSkinnedShader( surf->shader, skin ); // #4232
+		const idMaterial* shader = GetSkinnedShader( surf->material, skin ); // #4232
 		// if this surface has no contents
 		if ( ! ( shader->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
 			continue;
@@ -3053,7 +3053,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 
 	for ( i = 0; i < renderModel->NumSurfaces(); i++ ) {
 		surf = renderModel->Surface( i );
-		const idMaterial* shader = GetSkinnedShader( surf->shader, skin ); // #4232
+		const idMaterial* shader = GetSkinnedShader( surf->material, skin ); // #4232
 		// if this surface has no contents
 		if ( ! ( shader->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
 			continue;

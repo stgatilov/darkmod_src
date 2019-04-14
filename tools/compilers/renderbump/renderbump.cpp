@@ -892,7 +892,7 @@ static idRenderModel *CombineModelSurfaces( idRenderModel *model ) {
 
 	surf.id = 0;
 	surf.geometry = newTri;
-	surf.shader = tr.defaultMaterial;
+	surf.material = tr.defaultMaterial;
 
 	idRenderModel *newModel = renderModelManager->AllocModel();
 	newModel->AddSurface( surf );
@@ -1194,10 +1194,10 @@ void RenderBump_f( const idCmdArgs &args ) {
 		opt.traceFrac = 0.05f;
 
 		// parse the renderbump parameters for this surface
-		cmdLine = ms->shader->GetRenderBump();
+		cmdLine = ms->material->GetRenderBump();
 
 		common->Printf( "surface %i, shader %s\nrenderBump = %s ", i, 
-			ms->shader->GetName(), cmdLine );
+			ms->material->GetName(), cmdLine );
 
 		if ( !ms->geometry ) {
 			common->Printf( "(no geometry)\n" );
@@ -1497,7 +1497,7 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 
 							// NULLNORMAL is used by the artists to force an area to reflect no
 							// light at all
-							if ( surf->shader->GetSurfaceFlags() & SURF_NULLNORMAL ) {
+							if ( surf->material->GetSurfaceFlags() & SURF_NULLNORMAL ) {
 								GL_FloatColor( 0.5, 0.5, 0.5 );
 							} else {
 								GL_FloatColor( 0.5 + 0.5*plane[0], 0.5 - 0.5*plane[2], 0.5 - 0.5*plane[1] );
@@ -1517,7 +1517,7 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 
 								// NULLNORMAL is used by the artists to force an area to reflect no
 								// light at all
-								if ( surf->shader->GetSurfaceFlags() & SURF_NULLNORMAL ) {
+								if ( surf->material->GetSurfaceFlags() & SURF_NULLNORMAL ) {
 									GL_FloatColor( 0.5, 0.5, 0.5 );
 								} else {
 								// we are going to flip the normal Z direction

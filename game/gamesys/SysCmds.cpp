@@ -2397,7 +2397,7 @@ bool FindEntityGUIs( idEntity *ent, const modelSurface_t ** surfaces,  int maxSu
 		if ( surf == NULL ) {
 			continue;
 		}
-		shader = surf->shader;
+		shader = surf->material;
 		if ( shader == NULL ) {
 			continue;
 		}

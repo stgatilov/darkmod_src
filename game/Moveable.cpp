@@ -784,7 +784,7 @@ const idMaterial *idMoveable::GetRenderModelMaterial( void ) const {
 		return renderEntity.customShader;
 	}
 	if ( renderEntity.hModel && renderEntity.hModel->NumSurfaces() ) {
-		 return renderEntity.hModel->Surface( 0 )->shader;
+		 return renderEntity.hModel->Surface( 0 )->material;
 	}
 	return NULL;
 }

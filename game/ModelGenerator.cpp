@@ -502,7 +502,7 @@ int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const 
 
 	firstSurf = source->Surface( surfaceIdx );
 	if (!firstSurf) { return -1; }
-	firstShader = firstSurf->shader;
+	firstShader = firstSurf->material;
 	if (!firstShader) { return -1; }
 
 	// If this is the last surface, it cannot have a flipped backside, because that
@@ -518,10 +518,10 @@ int CModelGenerator::GetBacksideForSurface( const idRenderModel * source, const 
 		const modelSurface_t *surf = source->Surface( s );
 
 		// if the original creates backsides, the clone must do so, too, because it uses the same shader
-		if (!surf || !surf->shader->ShouldCreateBackSides()) { continue; }
+		if (!surf || !surf->material->ShouldCreateBackSides()) { continue; }
 
 		// check if they have the same shader
-		if (surf->shader == firstShader)
+		if (surf->material == firstShader)
 		{
 			// same shader, but has it the same size?
 			if (surf->geometry && firstSurf->geometry && 
@@ -554,7 +554,7 @@ bool CModelGenerator::ModelHasShadow( const idRenderModel * source ) const {
 		const modelSurface_t *surf = source->Surface( s );
 		if (!surf) { continue; }
 
-		const idMaterial *shader = surf->shader;
+		const idMaterial *shader = surf->material;
 		if ( shader->SurfaceCastsShadow() )
 		{
 			// found at least one surface casting a shadow
@@ -670,9 +670,9 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 
 		// If we don't need shadows, and this is a pure shadow caster (e.g. otherwise invisible)
 		// then skip it. Can only happen if noshadows = true:
-		if (!needFinish && surf->shader->SurfaceCastsShadow())
+		if (!needFinish && surf->material->SurfaceCastsShadow())
 		{
-			idStr shaderName = surf->shader->GetName();
+			idStr shaderName = surf->material->GetName();
 			if (shaderName.Left( m_shadowTexturePrefix.Length() ) == m_shadowTexturePrefix )
 			{
 				continue;
@@ -683,7 +683,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		numIndexes += surf->geometry->numIndexes;
 
 		// copy the material
-		newSurf.shader = surf->shader;
+		newSurf.material = surf->material;
 		//gameLocal.Warning("Duplicating %i verts and %i indexes.", surf->geometry->numVerts, surf->geometry->numIndexes );
 
 		newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
@@ -1008,7 +1008,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			{
 				surf = source->Surface( s );
 				if (!surf) { continue; }
-				const idMaterial *curShader = surf->shader;
+				const idMaterial *curShader = surf->material;
 
 				// Surfaces that have the backside bit already set are not considered here
 				// or we would find maybe their source by accident (we only want to skip
@@ -1049,7 +1049,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			surf = source->Surface( s );
 			if (!surf) { continue; }
 
-			const idMaterial *curShader = surf->shader;
+			const idMaterial *curShader = surf->material;
 			const int flags = modelStage->surface_info[s];
 		   
 			/* Two cases: 
@@ -1104,7 +1104,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			int found = -1;
 			for (int j = 0; j < targetSurfInfo.Num(); j++)
 			{
-				if (targetSurfInfo[j].surf.shader->GetName() == n)
+				if (targetSurfInfo[j].surf.material->GetName() == n)
 				{
 					found = j;
 					break;
@@ -1116,7 +1116,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 				newTargetSurfInfo.numIndexes = 0;
 				newTargetSurfInfo.surf.geometry = NULL;
 				// if given a shader, use this instead.
-				newTargetSurfInfo.surf.shader = shader ? shader : curShader;
+				newTargetSurfInfo.surf.material = shader ? shader : curShader;
 				newTargetSurfInfo.surf.id = 0;
 				targetSurfInfo.Append( newTargetSurfInfo );
 #ifdef M_DEBUG	
