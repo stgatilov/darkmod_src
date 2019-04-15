@@ -64,7 +64,6 @@
 #define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon
 //anon end
 
-
 //stgatilov begin
 #ifdef _WIN64
     #define __SSE__
@@ -203,6 +202,15 @@
 #define id_attribute(x) __attribute__(x)
 #else
 #define id_attribute(x)
+#endif
+
+#ifdef _INLINEDEBUG
+//stgatilov: force optimization of some function in "Debug with Inlines" MSVC configuration
+#define DEBUG_OPTIMIZE_ON __pragma(optimize("gt", on))
+#define DEBUG_OPTIMIZE_OFF __pragma(optimize("", on))
+#else
+#define DEBUG_OPTIMIZE_ON
+#define DEBUG_OPTIMIZE_OFF
 #endif
 
 typedef enum {

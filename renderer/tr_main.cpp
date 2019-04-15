@@ -376,6 +376,7 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 	modelMatrix[15] = 1;
 }
 
+DEBUG_OPTIMIZE_ON
 // FIXME: these assume no skewing or scaling transforms
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
 #if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
@@ -411,6 +412,7 @@ void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3
 	         + in[2] * modelMatrix[10] + modelMatrix[14];
 #endif
 }
+DEBUG_OPTIMIZE_OFF
 
 void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out ) {
 	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4]
@@ -423,6 +425,7 @@ void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &
 	         + in[2] * modelMatrix[11] + modelMatrix[15];
 }
 
+DEBUG_OPTIMIZE_ON
 void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
 	idVec3	temp;
 
@@ -432,7 +435,9 @@ void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3
 	out[1] = DotProduct( temp, &modelMatrix[4] );
 	out[2] = DotProduct( temp, &modelMatrix[8] );
 }
+DEBUG_OPTIMIZE_OFF
 
+DEBUG_OPTIMIZE_ON
 void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
 	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4]
 	         + in[2] * modelMatrix[8];
@@ -441,20 +446,26 @@ void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec
 	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6]
 	         + in[2] * modelMatrix[10];
 }
+DEBUG_OPTIMIZE_OFF
 
+DEBUG_OPTIMIZE_ON
 void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
 	out[0] = DotProduct( in, &modelMatrix[0] );
 	out[1] = DotProduct( in, &modelMatrix[4] );
 	out[2] = DotProduct( in, &modelMatrix[8] );
 }
+DEBUG_OPTIMIZE_OFF
 
+DEBUG_OPTIMIZE_ON
 void VPCALL R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
 	out[0] = DotProduct( in, &modelMatrix[0] );
 	out[1] = DotProduct( in, &modelMatrix[4] );
 	out[2] = DotProduct( in, &modelMatrix[8] );
 	out[3] = in[3] + modelMatrix[12] * in[0] + modelMatrix[13] * in[1] + modelMatrix[14] * in[2];
 }
+DEBUG_OPTIMIZE_OFF
 
+DEBUG_OPTIMIZE_ON
 void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
 	float	offset;
 
@@ -463,6 +474,7 @@ void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPla
 	offset = modelMatrix[12] * out[0] + modelMatrix[13] * out[1] + modelMatrix[14] * out[2];
 	out[3] = in[3] - offset;
 }
+DEBUG_OPTIMIZE_OFF
 
 // transform Z in eye coordinates to window coordinates
 void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z ) {

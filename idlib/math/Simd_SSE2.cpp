@@ -857,6 +857,9 @@ void VPCALL idSIMD_SSE2::MixedSoundToSamples( short *samples, const float *mixBu
 //suitable for any compiler, OS and bitness  (intrinsics)
 //generally used on Windows 64-bit and all Linuxes
 
+//in "Debug with Inlines" config, optimize all the remaining functions of this file
+DEBUG_OPTIMIZE_ON
+
 #define OFFSETOF(s, m) offsetof(s, m)
 #define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
 

@@ -46,6 +46,7 @@ CopyBuffer
 ========================
 */
 #ifdef __SSE2__
+DEBUG_OPTIMIZE_ON
 typedef unsigned int uint32;
 void CopyBuffer( byte * dst, const byte * src, int numBytes ) {
 	if (((size_t)dst | (size_t)src) & 15) {
@@ -93,6 +94,7 @@ void CopyBuffer( byte * dst, const byte * src, int numBytes ) {
 	}
 	_mm_sfence();
 }
+DEBUG_OPTIMIZE_OFF
 
 #else
 

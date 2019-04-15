@@ -39,6 +39,9 @@ const char * idSIMD_AVX::GetName( void ) const {
 	return "MMX & SSE* & AVX";
 }
 
+//apply optimizations to this file in Debug with Inlines configuration
+DEBUG_OPTIMIZE_ON
+
 /*
 ============
 idSIMD_AVX::CullByFrustum
