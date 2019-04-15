@@ -51,6 +51,8 @@ public:
 	//if the key is empty (you can check it with IsEmpty), then key is absent in the table
 	//in such case you can put your key/value to this cell to add it
 	Elem &Find(const Key &key) {
+		int size1 = this->size1;
+		Elem *table = this->table.get();
 		int hash = hashFunc(key);
 		for (int curr = hash & size1; ; curr = (curr + 1) & size1)
 			if (table[curr].key == key || table[curr].key == empty)

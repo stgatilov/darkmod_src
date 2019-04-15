@@ -44,6 +44,7 @@ public:
 	virtual	void VPCALL MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count );
 	virtual void VPCALL MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count );
 	virtual void VPCALL DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes );
+	virtual int  VPCALL CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts );
 #endif
 
 };

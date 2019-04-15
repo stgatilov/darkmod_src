@@ -1106,4 +1106,17 @@ void idSIMD_SSE2::DeriveTangents( idPlane *planes, idDrawVert *verts, const int 
 	}
 }
 
+int idSIMD_SSE2::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDrawVert *verts, const int numVerts ) {
+	__m128 xyzMask = _mm_castsi128_ps(_mm_setr_epi32(-1, -1, -1, 0));
+	__m128 oneW = _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0);
+	for ( int i = 0; i < numVerts; i++ ) {
+		const float *v = verts[i].xyz.ToFloatPtr();
+		__m128 vec = _mm_loadu_ps(v);
+		vec = _mm_and_ps(vec, xyzMask);
+		_mm_storeu_ps(&shadowVerts[i*2+0].x, _mm_xor_ps(vec, oneW));
+		_mm_storeu_ps(&shadowVerts[i*2+1].x, vec);
+	}
+	return numVerts * 2;
+}
+
 #endif /* SIMD_USE_ASM */
