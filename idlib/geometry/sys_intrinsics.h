@@ -120,20 +120,20 @@ ID_INLINE_EXTERN float __frndz( float x )
 // make the intrinsics "type unsafe"
 typedef union DECLSPEC_INTRINTYPE _CRT_ALIGN( 16 ) __m128c
 {
-	__m128c() {}
-	__m128c( __m128 f )
+	ID_FORCE_INLINE __m128c() {}
+	ID_FORCE_INLINE __m128c( __m128 f )
 	{
 		m128 = f;
 	}
-	__m128c( __m128i i )
+	ID_FORCE_INLINE __m128c( __m128i i )
 	{
 		m128i = i;
 	}
-	operator	__m128()
+	ID_FORCE_INLINE operator	__m128()
 	{
 		return m128;
 	}
-	operator	__m128i()
+	ID_FORCE_INLINE operator	__m128i()
 	{
 		return m128i;
 	}

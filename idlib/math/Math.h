@@ -93,10 +93,10 @@
 #define IEEE_DBLE_EXPONENT_BIAS	0
 #define IEEE_DBLE_SIGN_BIT		79
 
-template<class T> ID_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
-template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
-template<class T> ID_INLINE int	MaxIndex( T x, T y ) { return  ( x > y ) ? 0 : 1; }
-template<class T> ID_INLINE int	MinIndex( T x, T y ) { return ( x < y ) ? 0 : 1; }
+template<class T> ID_FORCE_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
+template<class T> ID_FORCE_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
+template<class T> ID_FORCE_INLINE int	MaxIndex( T x, T y ) { return  ( x > y ) ? 0 : 1; }
+template<class T> ID_FORCE_INLINE int	MinIndex( T x, T y ) { return ( x < y ) ? 0 : 1; }
 
 template<class T> ID_INLINE T	Max3( T x, T y, T z ) { return ( x > y ) ? ( ( x > z ) ? x : z ) : ( ( y > z ) ? y : z ); }
 template<class T> ID_INLINE T	Min3( T x, T y, T z ) { return ( x < y ) ? ( ( x < z ) ? x : z ) : ( ( y < z ) ? y : z ); }
@@ -104,8 +104,8 @@ template<class T> ID_INLINE int	Max3Index( T x, T y, T z ) { return ( x > y ) ? 
 template<class T> ID_INLINE int	Min3Index( T x, T y, T z ) { return ( x < y ) ? ( ( x < z ) ? 0 : 2 ) : ( ( y < z ) ? 1 : 2 ); }
 
 template<class T> ID_INLINE T	Sign( T f ) { return ( f > 0 ) ? 1 : ( ( f < 0 ) ? -1 : 0 ); }
-template<class T> ID_INLINE T	Square( T x ) { return x * x; }
-template<class T> ID_INLINE T	Cube( T x ) { return x * x * x; }
+template<class T> ID_FORCE_INLINE T	Square( T x ) { return x * x; }
+template<class T> ID_FORCE_INLINE T	Cube( T x ) { return x * x * x; }
 
 
 class idMath {

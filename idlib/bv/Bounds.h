@@ -129,11 +129,11 @@ ID_INLINE idBounds::idBounds( const idVec3 &point ) {
 	b[1] = point;
 }
 
-ID_INLINE const idVec3 &idBounds::operator[]( const int index ) const {
+ID_FORCE_INLINE const idVec3 &idBounds::operator[]( const int index ) const {
 	return b[index];
 }
 
-ID_INLINE idVec3 &idBounds::operator[]( const int index ) {
+ID_FORCE_INLINE idVec3 &idBounds::operator[]( const int index ) {
 	return b[index];
 }
 

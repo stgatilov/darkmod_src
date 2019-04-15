@@ -63,12 +63,12 @@ public:
 											float c0, float c1, float c2, float c3,
 											float d0, float d1, float d2, float d3 );
 											
-	const float* 			operator[]( int index ) const
+	ID_FORCE_INLINE const float* 			operator[]( int index ) const
 	{
 		assert( index >= 0 && index < 4 );
 		return &m[index * 4];
 	}
-	float* 					operator[]( int index )
+	ID_FORCE_INLINE float* 					operator[]( int index )
 	{
 		assert( index >= 0 && index < 4 );
 		return &m[index * 4];

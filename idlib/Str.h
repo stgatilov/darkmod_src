@@ -459,24 +459,24 @@ ID_INLINE size_t idStr::Size( void ) const {
 	return sizeof( *this ) + Allocated();
 }
 
-ID_INLINE const char *idStr::c_str( void ) const {
+ID_FORCE_INLINE const char *idStr::c_str( void ) const {
 	return data;
 }
 
-ID_INLINE idStr::operator const char *( void ) {
+ID_FORCE_INLINE idStr::operator const char *( void ) {
 	return c_str();
 }
 
-ID_INLINE idStr::operator const char *( void ) const {
+ID_FORCE_INLINE idStr::operator const char *( void ) const {
 	return c_str();
 }
 
-ID_INLINE char idStr::operator[]( int index ) const {
+ID_FORCE_INLINE char idStr::operator[]( int index ) const {
 	assert( ( index >= 0 ) && ( index <= len ) );
 	return data[ index ];
 }
 
-ID_INLINE char &idStr::operator[]( int index ) {
+ID_FORCE_INLINE char &idStr::operator[]( int index ) {
 	assert( ( index >= 0 ) && ( index <= len ) );
 	return data[ index ];
 }
@@ -674,7 +674,7 @@ ID_INLINE int idStr::IcmpPrefixPath( const char *text ) const {
     return idStr::IcmpnPath(data, text, static_cast<int>(strlen(text)));
 }
 
-ID_INLINE int idStr::Length( void ) const {
+ID_FORCE_INLINE int idStr::Length( void ) const {
 	return len;
 }
 
@@ -692,7 +692,7 @@ ID_INLINE void idStr::Empty( void ) {
 	len = 0;
 }
 
-ID_INLINE bool idStr::IsEmpty( void ) const {
+ID_FORCE_INLINE bool idStr::IsEmpty( void ) const {
 	return len == 0;
 }
 

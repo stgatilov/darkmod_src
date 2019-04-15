@@ -59,9 +59,9 @@
 #define ID_INLINE						__inline
 #define ID_NOINLINE						__declspec(noinline)
 //anon begin
-#define ID_INLINE_EXTERN				extern inline //anon
-#define ID_FORCE_INLINE					__inline //anon
-#define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon
+#define ID_INLINE_EXTERN				extern inline
+#define ID_FORCE_INLINE					__forceinline
+#define ID_FORCE_INLINE_EXTERN			extern __forceinline
 //anon end
 
 //stgatilov begin
@@ -170,6 +170,8 @@
 
 #define ID_INLINE						inline
 #define ID_NOINLINE						__attribute__((noinline))
+#define ID_FORCE_INLINE					__attribute__((always_inline)) inline
+
 #define ID_STATIC_TEMPLATE
 
 #define assertmem( x, y )

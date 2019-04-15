@@ -140,11 +140,11 @@ ID_INLINE idFrustum::idFrustum( void ) {
 	dNear = dFar = 0.0f;
 }
 
-ID_INLINE void idFrustum::SetOrigin( const idVec3 &origin ) {
+ID_FORCE_INLINE void idFrustum::SetOrigin( const idVec3 &origin ) {
 	this->origin = origin;
 }
 
-ID_INLINE void idFrustum::SetAxis( const idMat3 &axis ) {
+ID_FORCE_INLINE void idFrustum::SetAxis( const idMat3 &axis ) {
 	this->axis = axis;
 }
 
@@ -180,11 +180,11 @@ ID_INLINE void idFrustum::MoveFarDistance( float dFar ) {
 	this->invFar = 1.0f / dFar;
 }
 
-ID_INLINE const idVec3 &idFrustum::GetOrigin( void ) const {
+ID_FORCE_INLINE const idVec3 &idFrustum::GetOrigin( void ) const {
 	return origin;
 }
 
-ID_INLINE const idMat3 &idFrustum::GetAxis( void ) const {
+ID_FORCE_INLINE const idMat3 &idFrustum::GetAxis( void ) const {
 	return axis;
 }
 
@@ -196,19 +196,19 @@ ID_INLINE bool idFrustum::IsValid( void ) const {
 	return ( dFar > dNear );
 }
 
-ID_INLINE float idFrustum::GetNearDistance( void ) const {
+ID_FORCE_INLINE float idFrustum::GetNearDistance( void ) const {
 	return dNear;
 }
 
-ID_INLINE float idFrustum::GetFarDistance( void ) const {
+ID_FORCE_INLINE float idFrustum::GetFarDistance( void ) const {
 	return dFar;
 }
 
-ID_INLINE float idFrustum::GetLeft( void ) const {
+ID_FORCE_INLINE float idFrustum::GetLeft( void ) const {
 	return dLeft;
 }
 
-ID_INLINE float idFrustum::GetUp( void ) const {
+ID_FORCE_INLINE float idFrustum::GetUp( void ) const {
 	return dUp;
 }
 

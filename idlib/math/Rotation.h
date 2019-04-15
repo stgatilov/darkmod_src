@@ -130,15 +130,15 @@ ID_INLINE void idRotation::ReCalculateMatrix( void ) {
 	ToMat3();
 }
 
-ID_INLINE const idVec3 &idRotation::GetOrigin( void ) const {
+ID_FORCE_INLINE const idVec3 &idRotation::GetOrigin( void ) const {
 	return origin;
 }
 
-ID_INLINE const idVec3 &idRotation::GetVec( void ) const  {
+ID_FORCE_INLINE const idVec3 &idRotation::GetVec( void ) const  {
 	return vec;
 }
 
-ID_INLINE float idRotation::GetAngle( void ) const  {
+ID_FORCE_INLINE float idRotation::GetAngle( void ) const  {
 	return angle;
 }
 

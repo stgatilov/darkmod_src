@@ -123,12 +123,12 @@ ID_INLINE idAngles &idAngles::Zero( void ) {
 	return *this;
 }
 
-ID_INLINE float idAngles::operator[]( int index ) const {
+ID_FORCE_INLINE float idAngles::operator[]( int index ) const {
 	assert( ( index >= 0 ) && ( index < 3 ) );
 	return ( &pitch )[ index ];
 }
 
-ID_INLINE float &idAngles::operator[]( int index ) {
+ID_FORCE_INLINE float &idAngles::operator[]( int index ) {
 	assert( ( index >= 0 ) && ( index < 3 ) );
 	return ( &pitch )[ index ];
 }
@@ -242,15 +242,15 @@ ID_INLINE void idAngles::Clamp( const idAngles &min, const idAngles &max ) {
 	}
 }
 
-ID_INLINE int idAngles::GetDimension( void ) const {
+ID_FORCE_INLINE int idAngles::GetDimension( void ) const {
 	return 3;
 }
 
-ID_INLINE const float *idAngles::ToFloatPtr( void ) const {
+ID_FORCE_INLINE const float *idAngles::ToFloatPtr( void ) const {
 	return &pitch;
 }
 
-ID_INLINE float *idAngles::ToFloatPtr( void ) {
+ID_FORCE_INLINE float *idAngles::ToFloatPtr( void ) {
 	return &pitch;
 }
 

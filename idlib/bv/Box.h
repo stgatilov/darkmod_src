@@ -207,15 +207,15 @@ ID_INLINE void idBox::Zero( void ) {
 	axis.Identity();
 }
 
-ID_INLINE const idVec3 &idBox::GetCenter( void ) const {
+ID_FORCE_INLINE const idVec3 &idBox::GetCenter( void ) const {
 	return center;
 }
 
-ID_INLINE const idVec3 &idBox::GetExtents( void ) const {
+ID_FORCE_INLINE const idVec3 &idBox::GetExtents( void ) const {
 	return extents;
 }
 
-ID_INLINE const idMat3 &idBox::GetAxis( void ) const {
+ID_FORCE_INLINE const idMat3 &idBox::GetAxis( void ) const {
 	return axis;
 }
 

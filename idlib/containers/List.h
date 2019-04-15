@@ -275,7 +275,7 @@ Note that this is NOT an indication of the memory allocated.
 ================
 */
 template< class type >
-ID_INLINE int idList<type>::Num( void ) const {
+ID_FORCE_INLINE int idList<type>::Num( void ) const {
 	return num;
 }
 
@@ -287,7 +287,7 @@ Returns the number of elements currently allocated for.
 ================
 */
 template< class type >
-ID_INLINE int idList<type>::NumAllocated( void ) const {
+ID_FORCE_INLINE int idList<type>::NumAllocated( void ) const {
 	return size;
 }
 
@@ -339,7 +339,7 @@ Get the current granularity.
 ================
 */
 template< class type >
-ID_INLINE int idList<type>::GetGranularity( void ) const {
+ID_FORCE_INLINE int idList<type>::GetGranularity( void ) const {
 	return granularity;
 }
 
@@ -571,9 +571,8 @@ Release builds do no range checking.
 ================
 */
 template< class type >
-ID_INLINE const type &idList<type>::operator[]( int index ) const {
-	assert( index >= 0 );
-	assert( index < num );
+ID_FORCE_INLINE const type &idList<type>::operator[]( int index ) const {
+	assert( unsigned(index) < unsigned(num) );
 
 	return list[ index ];
 }
@@ -587,9 +586,8 @@ Release builds do no range checking.
 ================
 */
 template< class type >
-ID_INLINE type &idList<type>::operator[]( int index ) {
-	assert( index >= 0 );
-	assert( index < num );
+ID_FORCE_INLINE type &idList<type>::operator[]( int index ) {
+	assert( unsigned(index) < unsigned(num) );
 
 	return list[ index ];
 }
@@ -606,7 +604,7 @@ FIXME: Create an iterator template for this kind of thing.
 ================
 */
 template< class type >
-ID_INLINE type *idList<type>::Ptr( void ) {
+ID_FORCE_INLINE type *idList<type>::Ptr( void ) {
 	return list;
 }
 
@@ -622,7 +620,7 @@ FIXME: Create an iterator template for this kind of thing.
 ================
 */
 template< class type >
-const ID_INLINE type *idList<type>::Ptr( void ) const {
+const ID_FORCE_INLINE type *idList<type>::Ptr( void ) const {
 	return list;
 }
 
@@ -1037,19 +1035,19 @@ ID_INLINE void idList<type>::Swap( idList<type> &other ) {
 
 
 template< class type >
-ID_INLINE type * idList<type>::begin() {
+ID_FORCE_INLINE type * idList<type>::begin() {
 	return list;
 }
 template< class type >
-ID_INLINE const type * idList<type>::begin() const {
+ID_FORCE_INLINE const type * idList<type>::begin() const {
 	return list;
 }
 template< class type >
-ID_INLINE type * idList<type>::end() {
+ID_FORCE_INLINE type * idList<type>::end() {
 	return list + num;
 }
 template< class type >
-ID_INLINE const type * idList<type>::end() const {
+ID_FORCE_INLINE const type * idList<type>::end() const {
 	return list + num;
 }
 

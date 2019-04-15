@@ -155,11 +155,11 @@ ID_INLINE void idPlane::GetPlaneParams(float &fa, float &fb, float &fc, float &f
 }
 
 
-ID_INLINE float idPlane::operator[]( int index ) const {
+ID_FORCE_INLINE float idPlane::operator[]( int index ) const {
 	return ( &a )[ index ];
 }
 
-ID_INLINE float& idPlane::operator[]( int index ) {
+ID_FORCE_INLINE float& idPlane::operator[]( int index ) {
 	return ( &a )[ index ];
 }
 
@@ -240,11 +240,11 @@ ID_INLINE void idPlane::SetNormal( const idVec3 &normal ) {
 	c = normal.z;
 }
 
-ID_INLINE const idVec3 &idPlane::Normal( void ) const {
+ID_FORCE_INLINE const idVec3 &idPlane::Normal( void ) const {
 	return *reinterpret_cast<const idVec3 *>(&a);
 }
 
-ID_INLINE idVec3 &idPlane::Normal( void ) {
+ID_FORCE_INLINE idVec3 &idPlane::Normal( void ) {
 	return *reinterpret_cast<idVec3 *>(&a);
 }
 
@@ -272,11 +272,11 @@ ID_INLINE bool idPlane::FixDegeneracies( float distEpsilon ) {
 	return fixedNormal;
 }
 
-ID_INLINE float idPlane::Dist( void ) const {
+ID_FORCE_INLINE float idPlane::Dist( void ) const {
 	return -d;
 }
 
-ID_INLINE void idPlane::SetDist( const float dist ) {
+ID_FORCE_INLINE void idPlane::SetDist( const float dist ) {
 	d = -dist;
 }
 
@@ -388,23 +388,23 @@ ID_INLINE bool idPlane::RayIntersection( const idVec3 &start, const idVec3 &dir,
 	return true;
 }
 
-ID_INLINE int idPlane::GetDimension( void ) const {
+ID_FORCE_INLINE int idPlane::GetDimension( void ) const {
 	return 4;
 }
 
-ID_INLINE const idVec4 &idPlane::ToVec4( void ) const {
+ID_FORCE_INLINE const idVec4 &idPlane::ToVec4( void ) const {
 	return *reinterpret_cast<const idVec4 *>(&a);
 }
 
-ID_INLINE idVec4 &idPlane::ToVec4( void ) {
+ID_FORCE_INLINE idVec4 &idPlane::ToVec4( void ) {
 	return *reinterpret_cast<idVec4 *>(&a);
 }
 
-ID_INLINE const float *idPlane::ToFloatPtr( void ) const {
+ID_FORCE_INLINE const float *idPlane::ToFloatPtr( void ) const {
 	return reinterpret_cast<const float *>(&a);
 }
 
-ID_INLINE float *idPlane::ToFloatPtr( void ) {
+ID_FORCE_INLINE float *idPlane::ToFloatPtr( void ) {
 	return reinterpret_cast<float *>(&a);
 }
 

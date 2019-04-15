@@ -186,12 +186,12 @@ ID_INLINE idWinding &idWinding::operator=( const idWinding &winding ) {
 	return *this;
 }
 
-ID_INLINE const idVec5 &idWinding::operator[]( const int index ) const {
+ID_FORCE_INLINE const idVec5 &idWinding::operator[]( const int index ) const {
 	//assert( index >= 0 && index < numPoints );
 	return p[ index ];
 }
 
-ID_INLINE idVec5 &idWinding::operator[]( const int index ) {
+ID_FORCE_INLINE idVec5 &idWinding::operator[]( const int index ) {
 	//assert( index >= 0 && index < numPoints );
 	return p[ index ];
 }
@@ -222,7 +222,7 @@ ID_INLINE void idWinding::AddPoint( const idVec5 &v ) {
 	numPoints++;
 }
 
-ID_INLINE int idWinding::GetNumPoints( void ) const {
+ID_FORCE_INLINE int idWinding::GetNumPoints( void ) const {
 	return numPoints;
 }
 

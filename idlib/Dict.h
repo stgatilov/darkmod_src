@@ -38,8 +38,8 @@ class idKeyValue {
 	friend class idDict;
 
 public:
-	const idStr &		GetKey( void ) const { return *key; }
-	const idStr &		GetValue( void ) const { return *value; }
+	ID_FORCE_INLINE const idStr &GetKey( void ) const { return *key; }
+	ID_FORCE_INLINE const idStr &GetValue( void ) const { return *value; }
 
 	size_t				Allocated( void ) const { return key->Allocated() + value->Allocated(); }
 	size_t				Size( void ) const { return sizeof( *this ) + key->Size() + value->Size(); }

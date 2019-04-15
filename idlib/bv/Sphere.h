@@ -98,11 +98,11 @@ ID_INLINE idSphere::idSphere( const idVec3 &point, const float r ) {
 	radius = r;
 }
 
-ID_INLINE float idSphere::operator[]( const int index ) const {
+ID_FORCE_INLINE float idSphere::operator[]( const int index ) const {
 	return ((float *) &origin)[index];
 }
 
-ID_INLINE float &idSphere::operator[]( const int index ) {
+ID_FORCE_INLINE float &idSphere::operator[]( const int index ) {
 	return ((float *) &origin)[index];
 }
 
@@ -141,19 +141,19 @@ ID_INLINE void idSphere::Zero( void ) {
 	radius = 0.0f;
 }
 
-ID_INLINE void idSphere::SetOrigin( const idVec3 &o ) {
+ID_FORCE_INLINE void idSphere::SetOrigin( const idVec3 &o ) {
 	origin = o;
 }
 
-ID_INLINE void idSphere::SetRadius( const float r ) {
+ID_FORCE_INLINE void idSphere::SetRadius( const float r ) {
 	radius = r;
 }
 
-ID_INLINE const idVec3 &idSphere::GetOrigin( void ) const {
+ID_FORCE_INLINE const idVec3 &idSphere::GetOrigin( void ) const {
 	return origin;
 }
 
-ID_INLINE float idSphere::GetRadius( void ) const {
+ID_FORCE_INLINE float idSphere::GetRadius( void ) const {
 	return radius;
 }
 
