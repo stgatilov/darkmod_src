@@ -1826,14 +1826,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		return false;
 	}
 
-	// stifu #4964 - Added revision check also to saving
-	RevisionTracker& RevTracker = RevisionTracker::Instance();
-	if (RevTracker.GetHighestRevision() != RevTracker.GetLowestRevision())
-	{
-		common->Warning("Savegame could be incompatible. Executable has mixed local revisions: %d:%d",
-			RevTracker.GetHighestRevision(), RevTracker.GetLowestRevision());
-	}
-
 	if (!skipCheck)
 	{
 		if (game->savegamesDisallowed())
@@ -2053,10 +2045,7 @@ bool idSessionLocal::LoadGame(const char *saveName, eSaveConflictHandling confli
 			// Check for mixed revisions
 			RevisionTracker& RevTracker = RevisionTracker::Instance();
 			idStr gameRevision;
-			if (RevTracker.GetHighestRevision() != RevTracker.GetLowestRevision())
-				gameRevision = va("%d:%d (mixed revisions)", RevTracker.GetLowestRevision(), RevTracker.GetHighestRevision());
-			else
-				gameRevision = va("%d", RevTracker.GetHighestRevision());
+			gameRevision = va("%d", RevTracker.GetHighestRevision());
 
 			if (cv_force_savegame_load.GetBool())
 			{
@@ -2174,14 +2163,6 @@ bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoa
 		savegameFile = NULL;
 	}
 
-	// On mixed revisions: Issue a warning at the end (so it doesn't go unnoticed) - STiFU #4964 
-	RevisionTracker& RevTracker = RevisionTracker::Instance();
-	if (RevTracker.GetHighestRevision() != RevTracker.GetLowestRevision())
-	{
-		common->Warning("Savegame could be incompatible. Executable has mixed local revisions: %d:%d",
-			RevTracker.GetHighestRevision(), RevTracker.GetLowestRevision());
-	}
-
 	return success;
 #endif
 }
@@ -2211,10 +2192,7 @@ idSessionLocal::SavegameValidity idSessionLocal::IsSavegameValid(const char *sav
 
 		RevisionTracker& RevTracker = RevisionTracker::Instance();
 
-		// TODO: possibly delete old id savegame version
-		if (savegameVersion != SAVEGAME_VERSION &&
-			!(savegameVersion == 16 && SAVEGAME_VERSION == 17)
-			|| savegame.GetCodeRevision() != RevTracker.GetHighestRevision())
+		if (savegameVersion != SAVEGAME_VERSION || savegame.GetCodeRevision() != RevTracker.GetHighestRevision())
 		{
 			common->Warning("Savegame Version mismatch!");
 			retVal = savegame_versionMismatch;

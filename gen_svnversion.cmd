@@ -6,7 +6,7 @@ rem   https://stackoverflow.com/a/9260308/556899
 rem   https://stackoverflow.com/a/2340018/556899
 
 rem run svnversion and capture its output to SVNVERSION variable
-for /f %%i in ('svnversion') do set SVNVERSION=%%i
+for /f %%i in ('svnversion -c') do set SVNVERSION=%%i
 
 rem read svnversion_template.h line by line and copy to svnversion.h, while doing expansion
 (

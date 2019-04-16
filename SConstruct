@@ -353,7 +353,7 @@ thedarkmod = None
 # insert SVN revision number into header (requires svnversion)
 # svnversion must be run from SVN root, otherwise revision information may be incomplete
 os.chdir(Dir('#').abspath)
-svnversion_command = r'sed "s/\!SVNVERSION\!/$(svnversion)/g" idlib/svnversion_template.h >idlib/svnversion.h'
+svnversion_command = r'sed "s/\!SVNVERSION\!/$(svnversion -c)/g" idlib/svnversion_template.h >idlib/svnversion.h'
 if os.system(svnversion_command) != 0:
 	exit()
 print("Inserted SVN revision number into svnversion.h")
