@@ -29,7 +29,8 @@ public:
 		Value value;
 	};
 
-	idDenseHash() : size1(-1), count(0) {}
+	idDenseHash() : table(nullptr), size1(-1), count(0) {}
+	~idDenseHash() { Reset(); }
 	//note: must be called before any operation!
 	void Init(Key _empty, int loadfactor = 0) {
 		if (loadfactor <= 0 || loadfactor > 75)
@@ -37,22 +38,22 @@ public:
 		maxLoadPercent = loadfactor;
 		empty = _empty;
 		size1 = 3;
-		table.reset(new Elem[size1 + 1]);
+		delete table;
+		table = new Elem[size1 + 1];
 		for (int i = 0; i <= size1; i++)
 			table[i].key = empty;
 	}
 	void Reset() {
 		size1 = -1;
 		count = 0;
-		table.reset();
+		delete[] table;
+		table = 0;
 	}
 
 	//returns reference to the table cell with given key
 	//if the key is empty (you can check it with IsEmpty), then key is absent in the table
 	//in such case you can put your key/value to this cell to add it
 	Elem &Find(const Key &key) {
-		int size1 = this->size1;
-		Elem *table = this->table.get();
 		int hash = hashFunc(key);
 		for (int curr = hash & size1; ; curr = (curr + 1) & size1)
 			if (table[curr].key == key || table[curr].key == empty)
@@ -67,7 +68,7 @@ public:
 	//must be called immediately after you remove an element (found by Find)
 	//it shifts elements back through the table (i.e. backshift paradigm instead of tombstones)
 	void Erase(Elem &elem) {
-		int last = &elem - table.get();
+		int last = &elem - table;
 		for (int curr = (last + 1) & size1; ; curr = (curr + 1) & size1) {
 			if (table[curr].key == empty)
 				break;
@@ -99,7 +100,7 @@ public:
 private:
 	void Reallocate() {
 		int oldSize1 = size1 * 2 + 1;
-		std::unique_ptr<Elem[]> oldTable(new Elem[oldSize1 + 1]);
+		Elem *oldTable = new Elem[oldSize1 + 1];
 		for (int i = 0; i <= oldSize1; i++) oldTable[i].key = empty;
 		int oldCount = 0;
 
@@ -114,6 +115,8 @@ private:
 			assert(count <= oldCount);
 		}
 		assert(count == oldCount);
+
+		delete[] oldTable;
 	}
 
 	int maxLoadPercent;
@@ -121,7 +124,7 @@ private:
 	int count;
 	Key empty;
 	HashFunction hashFunc;
-	std::unique_ptr<Elem[]> table;
+	Elem *table;
 };
 
 #endif
