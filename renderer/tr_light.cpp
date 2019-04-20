@@ -509,6 +509,7 @@ void idInteractionTable::FreeMemory() {
 		SHT_table.Reset();
 	}
 }
+DEBUG_OPTIMIZE_ON
 idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const {
 	if (r_useInteractionTable.GetInteger() == 1) {
 		int idx = ldef->index * INTERACTION_TABLE_MAX_ENTITYS + edef->index;
@@ -530,6 +531,7 @@ idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntity
 	}
 	return nullptr;
 }
+DEBUG_OPTIMIZE_OFF
 bool idInteractionTable::Add(idInteraction *interaction) {
 	if (r_useInteractionTable.GetInteger() == 1) {
 		assert(interaction->lightDef->index < INTERACTION_TABLE_MAX_LIGHTS);
