@@ -517,12 +517,18 @@ idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntity
 	if (r_useInteractionTable.GetInteger() == 2) {
 		int key = (ldef->index << 16) + edef->index;
 		const auto &cell = const_cast<idInteractionTable*>(this)->SHT_table.Find( key );
-		idInteraction *inter = NULL;
+		idInteraction *inter = nullptr;
 		if ( !SHT_table.IsEmpty( cell ) ) {
 			inter = cell.value;
 		}
 		return inter;
 	}
+	for ( idInteraction *inter = edef->lastInteraction; inter; inter = inter->entityPrev ) {
+		if ( inter->lightDef == ldef ) {
+			return inter;
+		}
+	}
+	return nullptr;
 }
 bool idInteractionTable::Add(idInteraction *interaction) {
 	if (r_useInteractionTable.GetInteger() == 1) {
@@ -547,6 +553,7 @@ bool idInteractionTable::Add(idInteraction *interaction) {
 		SHT_table.Added( cell );
 		return true;	//added new interaction
 	}
+	return true;	//don't care
 }
 bool idInteractionTable::Remove(idInteraction *interaction) {
 	if (r_useInteractionTable.GetInteger() == 1) {
@@ -569,6 +576,7 @@ bool idInteractionTable::Remove(idInteraction *interaction) {
 		}
 		return false;		//such interaction not present
 	}
+	return true;	//don't care
 }
 idStr idInteractionTable::Stats() const {
 	char buff[256];
