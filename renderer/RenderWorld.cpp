@@ -130,7 +130,7 @@ idRenderWorldLocal::idRenderWorldLocal() {
 	//doublePortals = NULL;
 	//numInterAreaPortals = 0;
 
-	interactionTable.Init(-1, MAX_INTERACTION_TABLE_LOAD_FACTOR);
+	interactionTable.Init();
 }
 
 /*
@@ -1475,17 +1475,12 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		}
 		for( idInteraction *inter = ldef->firstInteraction; inter != NULL; inter = inter->lightNext ) {
 			idRenderEntityLocal	*edef = inter->entityDef;
-			int key = ( ldef->index << 16 ) + edef->index;
-
-			auto &cell = interactionTable.Find( key );
-			if( interactionTable.IsEmpty( cell ) ) {
-				cell.key = key;
-				cell.value = inter;
-				interactionTable.Added( cell );
-			}
+			bool added = interactionTable.Add(inter);
 		}
 	}
-	common->Printf( "interactionTable generated of size: %i entries\n", interactionTable.Size() );
+	idStr stats = interactionTable.Stats();
+	common->Printf( "Interaction table generated: %s\n", stats.c_str() );
+	common->Printf( "Initial counts:  %d entities  %d lightDefs  %d entityDefs\n", gameLocal.num_entities, lightDefs.Num(), entityDefs.Num() );
 
 	// entities flagged as noDynamicInteractions will no longer make any
 	generateAllInteractionsCalled = true;

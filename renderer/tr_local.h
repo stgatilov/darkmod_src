@@ -922,6 +922,7 @@ extern idCVar r_useFrustumFarDistance;	// if != 0 force the view frustum far dis
 extern idCVar r_useShadowCulling;		// try to cull shadows from partially visible lights
 extern idCVar r_usePreciseTriangleInteractions;	// 1 = do winding clipping to determine if each ambiguous tri should be lit
 extern idCVar r_useTurboShadow;			// 1 = use the infinite projection with W technique for dynamic shadows
+extern idCVar r_useInteractionTable;
 extern idCVar r_useExternalShadows;		// 1 = skip drawing caps when outside the light volume
 extern idCVar r_useOptimizedShadows;	// 1 = use the dmap generated static shadow volumes
 extern idCVar r_useShadowProjectedCull;	// 1 = discard triangles outside light volume before shadowing

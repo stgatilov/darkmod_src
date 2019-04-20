@@ -86,6 +86,7 @@ typedef struct {
 } areaNode_t;
 
 
+//used when r_useInteractionTable = 2
 struct InterTableHashFunction {
 	inline int operator() (int idx) const {
 		//note: f(x) = (A*x % P), where P = 2^31-1 is prime
@@ -96,6 +97,25 @@ struct InterTableHashFunction {
 		mod = mod < MOD ? mod : modm;
 		return (int)mod;
 	}
+};
+
+//this table stores all interactions ever generated and still actual
+class idInteractionTable {
+public:
+	idInteractionTable();
+	~idInteractionTable();
+	void Init();
+	idInteraction *Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const;
+	bool Add(idInteraction *interaction);
+	bool Remove(idInteraction *interaction);
+	idStr Stats() const;
+private:
+	void FreeMemory();
+
+	//r_useInteractionTable = 1: Single Matrix  (light x entity)
+	idInteraction** SM_matrix;
+	//r_useInteractionTable = 2: Single Hash Table
+	idDenseHash<int, idInteraction*, InterTableHashFunction> SHT_table;
 };
 
 class idRenderWorldLocal : public idRenderWorld {
@@ -190,8 +210,7 @@ public:
 	// cache access, because the table is accessed by light in idRenderWorldLocal::CreateLightDefInteractions()
 	// Growing this table is time consuming, so we add a pad value to the number
 	// of entityDefs and lightDefs
-	static const int MAX_INTERACTION_TABLE_LOAD_FACTOR = 75;
-	idDenseHash<int, idInteraction*, InterTableHashFunction> interactionTable;
+	idInteractionTable		interactionTable;
 
 
 	bool					generateAllInteractionsCalled;

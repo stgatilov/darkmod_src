@@ -417,8 +417,9 @@ void idRenderWorldLocal::FreeDefs() {
 		}
 	}
 
-	if (interactionTable.Count() > 0)
+	if (interactionAllocator.GetAllocCount() > 0) {
 		common->Error("idRenderWorldLocal::FreeDefs: not all interactions removed!");
+	}
 }
 
 /*

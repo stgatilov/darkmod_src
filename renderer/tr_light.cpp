@@ -443,11 +443,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			
 			// if any of the edef's interaction match this light, we don't
 			// need to consider it. 
-			idInteraction *inter;
-			int key = (ldef->index << 16) + edef->index;
-			auto &cell = interactionTable.Find(key);
-			inter = interactionTable.IsEmpty(cell) ? NULL : cell.value;
-
+			idInteraction *inter = interactionTable.Find(ldef, edef);
 			if ( inter ) {
 				// if this entity wasn't in view already, the scissor rect will be empty,
 				// so it will only be used for shadow casting
@@ -482,6 +478,110 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			R_SetEntityDefViewEntity( edef );
 		}
 	}
+}
+
+static const int INTERACTION_TABLE_MAX_LIGHTS = 4096;
+static const int INTERACTION_TABLE_MAX_ENTITYS = MAX_GENTITIES;
+idInteractionTable::idInteractionTable() {
+	SM_matrix = nullptr;
+}
+idInteractionTable::~idInteractionTable() {
+	FreeMemory();
+}
+void idInteractionTable::Init() {
+	if (r_useInteractionTable.GetInteger() == 1) {
+		delete[] SM_matrix;
+		SM_matrix = (idInteraction**)R_ClearedStaticAlloc(INTERACTION_TABLE_MAX_LIGHTS * INTERACTION_TABLE_MAX_ENTITYS * sizeof(SM_matrix[0]));
+		if (!SM_matrix) {
+			common->Error("Failed to allocate interaction table");
+		}
+	}
+	if (r_useInteractionTable.GetInteger() == 2) {
+		static const int MAX_INTERACTION_TABLE_LOAD_FACTOR = 75;
+		SHT_table.Init(-1, MAX_INTERACTION_TABLE_LOAD_FACTOR);
+	}
+}
+void idInteractionTable::FreeMemory() {
+	if (r_useInteractionTable.GetInteger() == 1) {
+		delete[] SM_matrix;
+	}
+	if (r_useInteractionTable.GetInteger() == 2) {
+		SHT_table.Reset();
+	}
+}
+idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const {
+	if (r_useInteractionTable.GetInteger() == 1) {
+		int idx = ldef->index * INTERACTION_TABLE_MAX_ENTITYS + edef->index;
+		return SM_matrix[idx];
+	}
+	if (r_useInteractionTable.GetInteger() == 2) {
+		int key = (ldef->index << 16) + edef->index;
+		const auto &cell = const_cast<idInteractionTable*>(this)->SHT_table.Find( key );
+		idInteraction *inter = NULL;
+		if ( !SHT_table.IsEmpty( cell ) ) {
+			inter = cell.value;
+		}
+		return inter;
+	}
+}
+bool idInteractionTable::Add(idInteraction *interaction) {
+	if (r_useInteractionTable.GetInteger() == 1) {
+		assert(interaction->lightDef->index < INTERACTION_TABLE_MAX_LIGHTS);
+		assert(interaction->entityDef->index < INTERACTION_TABLE_MAX_ENTITYS);
+		int idx = interaction->lightDef->index * INTERACTION_TABLE_MAX_ENTITYS + interaction->entityDef->index;
+		idInteraction *&cell = SM_matrix[idx];
+		if (cell) {
+			return false;
+		}
+		cell = interaction;
+		return true;
+	}
+	if (r_useInteractionTable.GetInteger() == 2) {
+		int key = ( interaction->lightDef->index << 16 ) + interaction->entityDef->index;
+		auto &cell = SHT_table.Find( key );
+		if ( !SHT_table.IsEmpty( cell ) ) {
+			return false;	//such interaction already exists
+		}
+		cell.key = key;
+		cell.value = interaction;
+		SHT_table.Added( cell );
+		return true;	//added new interaction
+	}
+}
+bool idInteractionTable::Remove(idInteraction *interaction) {
+	if (r_useInteractionTable.GetInteger() == 1) {
+		int idx = interaction->lightDef->index * INTERACTION_TABLE_MAX_ENTITYS + interaction->entityDef->index;
+		idInteraction *&cell = SM_matrix[idx];
+		if (cell) {
+			assert(cell == interaction);
+			cell = nullptr;
+			return true;
+		}
+		return false;
+	}
+	if (r_useInteractionTable.GetInteger() == 2) {
+		int key = ( interaction->lightDef->index << 16 ) + interaction->entityDef->index;
+		auto &cell = SHT_table.Find( key );
+		if ( cell.key == key ) {
+			assert( cell.value == interaction );
+			SHT_table.Erase( cell );
+			return true;	//removed previously existing interaction
+		}
+		return false;		//such interaction not present
+	}
+}
+idStr idInteractionTable::Stats() const {
+	char buff[256];
+	if (r_useInteractionTable.GetInteger() == 1) {
+		idStr::snPrintf(buff, sizeof(buff), "size = L%d x E%d x %dB = %d MB",
+			INTERACTION_TABLE_MAX_LIGHTS, INTERACTION_TABLE_MAX_ENTITYS, sizeof(SM_matrix[0]),
+			INTERACTION_TABLE_MAX_LIGHTS * INTERACTION_TABLE_MAX_ENTITYS * sizeof(SM_matrix[0])
+		);
+	}
+	if (r_useInteractionTable.GetInteger() == 2) {
+		idStr::snPrintf(buff, sizeof(buff), "size = %d/%d", SHT_table.Count(), SHT_table.Size());
+	}
+	return buff;
 }
 
 //===============================================================================================================
