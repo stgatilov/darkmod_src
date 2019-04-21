@@ -413,18 +413,21 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			// but we don't want to instantiate dynamic models yet, so we can't check that on
 			// most things
 
-			// if the entity isn't viewed
-			if ( tr.viewDef && edef->viewCount != tr.viewCount ) {
-				// if the light doesn't cast shadows, skip
+			if ( tr.viewDef ) {
+				// if the entity isn't viewed and light has now shadows, skip
 				if ( !lightCastsShadows ) {
-					continue;
-				}
-				// if we are suppressing its shadow in this view, skip
-				if ( !r_skipSuppress.GetBool() ) {
-					if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
+					if ( edef->viewCount != tr.viewCount ) {
 						continue;
 					}
-					if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId ) {
+				}
+				// if the entity isn't viewed and shadow is suppressed, skip
+				if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
+					if ( !r_skipSuppress.GetBool() && edef->viewCount != tr.viewCount ) {
+						continue;
+					}
+				}
+				if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId ) {
+					if ( !r_skipSuppress.GetBool() && edef->viewCount != tr.viewCount ) {
 						continue;
 					}
 				}
