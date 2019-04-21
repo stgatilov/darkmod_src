@@ -209,6 +209,7 @@ private:
 	void						SingleAsyncTic( void );
 	void						LoadGameDLL( void );
 	void						UnloadGameDLL( void );
+	idStr						CallStackToString( int dropLastCalls = 1 );
 	//void						PrintLoadingMessage( const char *msg );
 
 	// greebo: used to initialise the fs_currentfm/fs_mod parameters
@@ -579,7 +580,7 @@ void idCommonLocal::DWarning( const char *fmt, ... ) {
 }
 
 
-void idCommonLocal::PrintCallStack() {
+idStr idCommonLocal::CallStackToString(int dropLastCalls) {
 	uint8_t traceData[4096];
 	int traceSize = sizeof(traceData);
 	uint32_t hash = idDebugSystem::GetStack(traceData, traceSize);
@@ -588,10 +589,14 @@ void idCommonLocal::PrintCallStack() {
 	idDebugSystem::DecodeStack(traceData, traceSize, callstack);
 	idDebugSystem::CleanStack(callstack);
 
-	callstack.RemoveIndex(0);	//drop this function
-	char message[4096];
+	for (int t = 0; t < dropLastCalls; t++)
+		callstack.RemoveIndex(0);
+	char message[32<<10];
 	idDebugSystem::StringifyStack(hash, callstack.Ptr(), callstack.Num(), message, sizeof(message));
-
+	return message;
+}
+void idCommonLocal::PrintCallStack() {
+	idStr message = CallStackToString(1);
 	Printf(message);
 }
 
