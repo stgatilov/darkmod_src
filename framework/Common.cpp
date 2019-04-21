@@ -741,6 +741,12 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 		// full screen rendering window covering the
 		// error dialog
 		if ( com_errorEntered == ERP_FATAL ) {
+			if ( logFile ) {	//try to print something to log file
+				static const char *UBER_ERROR = "Recursive fatal error!\n";
+				logFile->Write(UBER_ERROR, idStr::Length(UBER_ERROR));
+				logFile->Flush();
+			}
+			assert(false);		//break in debug build
 			Sys_Quit();
 		}
 		code = ERP_FATAL;
