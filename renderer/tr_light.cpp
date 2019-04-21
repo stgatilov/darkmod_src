@@ -399,16 +399,15 @@ Both shadow and light surfaces have been generated.  Either or both surfaces may
 =================
 */
 void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) {
-	areaReference_t		*eref, *lref; // entity, light
-	idRenderEntityLocal	*edef;
-	portalArea_t		*area;	
 
-	for ( lref = ldef->references ; lref ; lref = lref->ownerNext ) {
-		area = lref->area;
+	bool lightCastsShadows = ldef->lightShader->LightCastsShadows();
+
+	for ( areaReference_t *lref = ldef->references ; lref ; lref = lref->ownerNext ) {
+		portalArea_t *area = lref->area;
 
 		// check all the models in this area
-		for ( eref = area->entityRefs.areaNext ; eref != &area->entityRefs ; eref = eref->areaNext ) {
-			edef = eref->entity;
+		for ( areaReference_t *eref = area->entityRefs.areaNext ; eref != &area->entityRefs ; eref = eref->areaNext ) {
+			idRenderEntityLocal	*edef = eref->entity;
 
 			// if the entity doesn't have any light-interacting surfaces, we could skip this,
 			// but we don't want to instantiate dynamic models yet, so we can't check that on
@@ -417,7 +416,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			// if the entity isn't viewed
 			if ( tr.viewDef && edef->viewCount != tr.viewCount ) {
 				// if the light doesn't cast shadows, skip
-				if ( !ldef->lightShader->LightCastsShadows() ) {
+				if ( !lightCastsShadows ) {
 					continue;
 				}
 				// if we are suppressing its shadow in this view, skip
