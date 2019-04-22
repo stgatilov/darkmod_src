@@ -53,7 +53,7 @@ public:
 	//returns reference to the table cell with given key
 	//if the key is empty (you can check it with IsEmpty), then key is absent in the table
 	//in such case you can put your key/value to this cell to add it
-	FORCEINLINE Elem &Find(const Key &key) {
+	ID_FORCE_INLINE Elem &Find(const Key &key) {
 		int hash = hashFunc(key);
 		for (int curr = hash & size1; ; curr = (curr + 1) & size1)
 			if (table[curr].key == key || table[curr].key == empty)
@@ -61,7 +61,7 @@ public:
 	}
 
 	//checks whether specified cell is empty
-	FORCEINLINE bool IsEmpty(const Elem &elem) const {
+	ID_FORCE_INLINE bool IsEmpty(const Elem &elem) const {
 		return elem.key == empty;
 	}
 

@@ -88,7 +88,7 @@ typedef struct {
 
 //used when r_useInteractionTable = 2
 struct InterTableHashFunction {
-	FORCEINLINE int operator() (int idx) const {
+	ID_FORCE_INLINE int operator() (int idx) const {
 		//note: f(x) = (A*x % P), where P = 2^31-1 is prime
 		static const unsigned MOD = ((1U<<31) - 1);
 		uint64_t prod = 0x04738F51ULL * (unsigned)idx;

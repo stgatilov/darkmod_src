@@ -115,22 +115,22 @@ public:
 
 	virtual					~idCVar( void ) {}
 
-	FORCEINLINE const char *GetName( void ) const { return internalVar->name; }
-	FORCEINLINE int						GetFlags( void ) const { return internalVar->flags; }
-	FORCEINLINE const char *			GetDescription( void ) const { return internalVar->description; }
-	FORCEINLINE float					GetMinValue( void ) const { return internalVar->valueMin; }
-	FORCEINLINE float					GetMaxValue( void ) const { return internalVar->valueMax; }
-	FORCEINLINE const char **			GetValueStrings( void ) const { return valueStrings; }
-	FORCEINLINE argCompletion_t			GetValueCompletion( void ) const { return valueCompletion; }
+	ID_FORCE_INLINE const char *		GetName( void ) const { return internalVar->name; }
+	ID_FORCE_INLINE int					GetFlags( void ) const { return internalVar->flags; }
+	ID_FORCE_INLINE const char *		GetDescription( void ) const { return internalVar->description; }
+	ID_FORCE_INLINE float				GetMinValue( void ) const { return internalVar->valueMin; }
+	ID_FORCE_INLINE float				GetMaxValue( void ) const { return internalVar->valueMax; }
+	ID_FORCE_INLINE const char **		GetValueStrings( void ) const { return valueStrings; }
+	ID_FORCE_INLINE argCompletion_t		GetValueCompletion( void ) const { return valueCompletion; }
 
-	FORCEINLINE bool					IsModified( void ) const { return ( internalVar->flags & CVAR_MODIFIED ) != 0; }
+	ID_FORCE_INLINE bool					IsModified( void ) const { return ( internalVar->flags & CVAR_MODIFIED ) != 0; }
 	void					SetModified( void ) { internalVar->flags |= CVAR_MODIFIED; }
 	void					ClearModified( void ) { internalVar->flags &= ~CVAR_MODIFIED; }
 
-	FORCEINLINE const char *			GetString( void ) const { return internalVar->value; }
-	FORCEINLINE bool					GetBool( void ) const { return ( internalVar->integerValue != 0 ); }
-	FORCEINLINE int						GetInteger( void ) const { return internalVar->integerValue; }
-	FORCEINLINE float					GetFloat( void ) const { return internalVar->floatValue; }
+	ID_FORCE_INLINE const char *			GetString( void ) const { return internalVar->value; }
+	ID_FORCE_INLINE bool					GetBool( void ) const { return ( internalVar->integerValue != 0 ); }
+	ID_FORCE_INLINE int						GetInteger( void ) const { return internalVar->integerValue; }
+	ID_FORCE_INLINE float					GetFloat( void ) const { return internalVar->floatValue; }
 
 	void					SetString( const char *value ) { internalVar->InternalSetString( value ); }
 	void					SetBool( const bool value ) { internalVar->InternalSetBool( value ); }

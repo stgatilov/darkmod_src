@@ -73,6 +73,8 @@
 #include <windows.h>						// for qgl.h
 #undef FindText								// stupid namespace poluting Microsoft monkeys
 
+#undef FORCEINLINE							//stgatilov: use portable ID_FORCE_INLINE instead of FORCEINLINE defined in windows.h
+
 #endif /* _WIN32 */
 
 //-----------------------------------------------------
