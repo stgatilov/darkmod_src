@@ -46,7 +46,7 @@ static_assert(sizeof(idVec3) == 12, "Scripting system assumes idVec3 has 12-byte
 #define	D_EVENT_ENTITY_NULL			'E'			// event can handle NULL entity pointers
 #define D_EVENT_TRACE				't'
 
-#define MAX_EVENTS					8192		// we can have so many different events (functions) overall
+#define MAX_EVENTS					(10<<10)		// we can have so many different events (functions) overall
 
 #define EV_RETURNS_VOID				D_EVENT_VOID
 

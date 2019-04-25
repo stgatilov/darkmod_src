@@ -2268,8 +2268,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) ); 
 
-	// // grayman #4615 - update the camera target (will handle a NULL "cameraTarget")
-	PostEventMS( &EV_UpdateCameraTarget, 0 );
+	if (cameraTarget)
+	{
+		// // grayman #4615 - update the camera target (will handle a NULL "cameraTarget")
+		PostEventMS( &EV_UpdateCameraTarget, 0 );
+	}
 
 	savefile->ReadInt( health );
 	savefile->ReadInt( maxHealth );

@@ -30,7 +30,7 @@ Event are used for scheduling tasks and for linking script commands.
 #include "Event.h"
 #include "../Game_local.h"
 
-#define MAX_EVENTSPERFRAME			8192
+#define MAX_EVENTSPERFRAME			(10<<10)
 //#define CREATE_EVENT_CODE
 
 /***********************************************************************
