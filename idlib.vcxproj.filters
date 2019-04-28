@@ -126,9 +126,6 @@
     <ClCompile Include="idlib\math\Vector.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="idlib\Base64.cpp">
-      <Filter>Text</Filter>
-    </ClCompile>
     <ClCompile Include="idlib\CmdArgs.cpp">
       <Filter>Text</Filter>
     </ClCompile>
@@ -332,9 +329,6 @@
     </ClInclude>
     <ClInclude Include="idlib\math\Vector.h">
       <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="idlib\Base64.h">
-      <Filter>Text</Filter>
     </ClInclude>
     <ClInclude Include="idlib\CmdArgs.h">
       <Filter>Text</Filter>

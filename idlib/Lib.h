@@ -202,7 +202,7 @@ public:
 #include "Token.h"
 #include "Lexer.h"
 #include "Parser.h"
-#include "Base64.h"
+//#include "Base64.h"
 #include "CmdArgs.h"
 
 // containers
