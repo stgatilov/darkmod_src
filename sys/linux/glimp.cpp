@@ -23,10 +23,6 @@
 
 #include <X11/Xatom.h>
 
-extern "C" {
-#	include "libXNVCtrl/NVCtrlLib.h"
-}
-
 idCVar sys_videoRam( "sys_videoRam", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "Texture memory on the video card (in megabytes) - 0: autodetect", 0, 512 );
 idCVar v_nowmfullscreen( "v_nowmfullscreen", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "Do not use the window manager for fullscreen. If this is set and full screen is used, it will not notify the window manager and will monopolize both mouse and keyboard inputs. Only used at screen initialization.");
 
