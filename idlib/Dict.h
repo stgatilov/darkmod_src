@@ -132,9 +132,6 @@ public:
 	void				WriteToFileHandle( idFile *f ) const;
 	void				ReadFromFileHandle( idFile *f );
 
-						// returns a unique checksum for this dictionary's content
-	int					Checksum( void ) const;
-
 	static void			Init( void );
 	static void			Shutdown( void );
 

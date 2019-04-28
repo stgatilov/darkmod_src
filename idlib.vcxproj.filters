@@ -63,9 +63,6 @@
     <ClCompile Include="idlib\geometry\Winding2D.cpp">
       <Filter>Geometry</Filter>
     </ClCompile>
-    <ClCompile Include="idlib\hashing\CRC32.cpp">
-      <Filter>Hashing</Filter>
-    </ClCompile>
     <ClCompile Include="idlib\hashing\MD4.cpp">
       <Filter>Hashing</Filter>
     </ClCompile>
@@ -254,9 +251,6 @@
     </ClInclude>
     <ClInclude Include="idlib\geometry\Winding2D.h">
       <Filter>Geometry</Filter>
-    </ClInclude>
-    <ClInclude Include="idlib\hashing\CRC32.h">
-      <Filter>Hashing</Filter>
     </ClInclude>
     <ClInclude Include="idlib\hashing\MD4.h">
       <Filter>Hashing</Filter>

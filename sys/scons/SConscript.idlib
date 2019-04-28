@@ -25,7 +25,6 @@ idlib_string = ' \
 	geometry/Surface_Patch.cpp \
 	geometry/TraceModel.cpp \
 	geometry/JointTransform.cpp \
-	hashing/CRC32.cpp \
 	hashing/MD4.cpp \
 	hashing/MD5.cpp \
 	math/Angles.cpp \

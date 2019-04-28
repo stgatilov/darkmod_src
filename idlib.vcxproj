@@ -187,7 +187,6 @@
     <ClCompile Include="idlib\geometry\TraceModel.cpp" />
     <ClCompile Include="idlib\geometry\Winding.cpp" />
     <ClCompile Include="idlib\geometry\Winding2D.cpp" />
-    <ClCompile Include="idlib\hashing\CRC32.cpp" />
     <ClCompile Include="idlib\hashing\MD4.cpp" />
     <ClCompile Include="idlib\hashing\MD5.cpp" />
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
@@ -270,7 +269,6 @@
     <ClInclude Include="idlib\geometry\TraceModel.h" />
     <ClInclude Include="idlib\geometry\Winding.h" />
     <ClInclude Include="idlib\geometry\Winding2D.h" />
-    <ClInclude Include="idlib\hashing\CRC32.h" />
     <ClInclude Include="idlib\hashing\MD4.h" />
     <ClInclude Include="idlib\hashing\MD5.h" />
     <ClInclude Include="idlib\Heap_Embedded.h" />

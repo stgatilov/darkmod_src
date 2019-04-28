@@ -241,29 +241,6 @@ int KeyCompare( const idKeyValue *a, const idKeyValue *b ) {
 
 /*
 ================
-idDict::Checksum
-================
-*/
-int	idDict::Checksum( void ) const {
-	unsigned int ret;
-
-	idList<idKeyValue> sorted = args;
-	sorted.Sort( KeyCompare );
-
-	CRC32_InitChecksum( ret );
-	
-	for( int i = 0; i < sorted.Num(); i++ ) {
-		CRC32_UpdateChecksum( ret, sorted[i].GetKey().c_str(),   sorted[i].GetKey().Length() );
-		CRC32_UpdateChecksum( ret, sorted[i].GetValue().c_str(), sorted[i].GetValue().Length() );
-	}
-
-	CRC32_FinishChecksum( ret );
-
-	return ret;
-}
-
-/*
-================
 idDict::Allocated
 ================
 */

@@ -221,7 +221,7 @@ public:
 #include "containers/PlaneSet.h"
 
 // hashing
-#include "hashing/CRC32.h"
+//#include "hashing/CRC32.h"
 #include "hashing/MD4.h"
 #include "hashing/MD5.h"
 
