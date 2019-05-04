@@ -1608,7 +1608,7 @@ void GLimp_LoadBaseFunctions() {
 /**
  * The list of functions from optional extensions follows.
  * Note that any of these functions may be unavailable.
- * These functions are loaded inside R_CheckPortableExtensions.
+ * These functions are loaded inside GLimp_LoadOptionalExtensions.
  */
 
 QGLFUNC PFNGLDEPTHBOUNDSEXTPROC qglDepthBoundsEXT;
