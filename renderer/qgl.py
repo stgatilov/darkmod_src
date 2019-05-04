@@ -93,7 +93,7 @@ def doall():
 
 	# generate initialization preamble
 	codeprintl('#ifdef QGL_DEFINITIONS')
-	codeprintl('void GLimp_LoadCoreFunctions() {')
+	codeprintl('void GLimp_LoadBaseFunctions() {')
 	codeprintl('\tstatic const char* RequiredExtensions[] = {%sNULL};' % ''.join(['"'+req+'", ' for req in requirements['gl'].extensions]))
 	codeprintl('\tGLimp_LoadPreamble(%s, RequiredExtensions);' % requirements['gl'].version)
 	codeprintl()

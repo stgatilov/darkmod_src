@@ -55,7 +55,7 @@ bool GLimp_CheckExtension(const char *name, double coreSince = 1e+10);
  * Please do the following to regenerate it:
  *   1) Install Python 3
  *   2) pip install cogapp
- *   3) cog -r qgl.h
+ *   3) cog -r -U qgl.h
  * The corresponding Python code is available in qgl.py nearby.
  * You can also run it directly to see generated code in stdout.
  */
