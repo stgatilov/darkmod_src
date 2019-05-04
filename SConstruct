@@ -374,8 +374,6 @@ if ( NOCURL == '0' ):
 		curl_lib = [ '#linux/libcurl/lib64/libcurl.a' ]
 
 
-#VariantDir( g_build + '/core/glimp', '.', duplicate = 1 )
-#SConscript( g_build + '/core/glimp/sys/scons/SConscript.gl' )
 VariantDir( g_build + '/core', '.', duplicate = 0 )
 thedarkmod = SConscript( g_build + '/core/sys/scons/SConscript.darkmod' )
 
