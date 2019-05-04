@@ -494,11 +494,11 @@ void rvGEViewer::Render	( HDC dc )
 	qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Render the workspace below
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+	qglMatrixMode(GL_PROJECTION);
+	qglLoadIdentity();
 	qglOrtho(0,mWindowWidth, mWindowHeight, 0, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	qglMatrixMode(GL_MODELVIEW);
+	qglLoadIdentity();
 
 	if ( mInterface )
 	{
@@ -526,7 +526,7 @@ void rvGEViewer::Render	( HDC dc )
 	}
 
 	qglFinish ( );
-	qwglSwapBuffers(dc);
+	SwapBuffers(dc);
 }
 
 void rvGEViewer::RunFrame ( void )

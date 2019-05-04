@@ -19,7 +19,7 @@
 
 
 #include "qe3.h"
-#include <GL/glu.h>
+//#include <GL/glu.h>
 
 #include "../../renderer/tr_local.h"
 #include "../../renderer/model_local.h"	// for idRenderModelMD5
@@ -3607,9 +3607,9 @@ void DrawProjectedLight(brush_t *b, bool bSelected, bool texture) {
 	GL_FloatColor(1, 0, 1);
 	for (i = 0; i < tri->numIndexes; i += 3) {
 		qglBegin(GL_LINE_LOOP);
-		glVertex3fv(tri->verts[tri->indexes[i]].xyz.ToFloatPtr());
-		glVertex3fv(tri->verts[tri->indexes[i + 1]].xyz.ToFloatPtr());
-		glVertex3fv(tri->verts[tri->indexes[i + 2]].xyz.ToFloatPtr());
+		qglVertex3fv(tri->verts[tri->indexes[i]].xyz.ToFloatPtr());
+		qglVertex3fv(tri->verts[tri->indexes[i + 1]].xyz.ToFloatPtr());
+		qglVertex3fv(tri->verts[tri->indexes[i + 2]].xyz.ToFloatPtr());
 		qglEnd();
 	}
 
@@ -3777,6 +3777,7 @@ void DrawSpeaker(brush_t *b, bool bSelected, bool twoD) {
 		qglTranslatef(b->owner->origin.x, b->owner->origin.y, b->owner->origin.z );
 		GL_FloatColor( 0.4f, 0.4f, 0.4f );
 		qglPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+#if 0	//TODO: restore this piece of code without GLU
 		GLUquadricObj* qobj = gluNewQuadric();
 		gluSphere(qobj, min, 8, 8);
 		GL_FloatColor( 0.8f, 0.8f, 0.8f );
@@ -3798,6 +3799,7 @@ void DrawSpeaker(brush_t *b, bool bSelected, bool twoD) {
 		}
 		gluSphere(qobj, max, 8, 8);
 		gluDeleteQuadric(qobj);
+#endif
 		qglPopMatrix();
 	}
 

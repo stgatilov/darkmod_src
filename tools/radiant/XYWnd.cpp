@@ -1605,7 +1605,7 @@ void CXYWnd::OnPaint() {
 			qglPopMatrix();
 		}
 
-		qwglSwapBuffers(dc.m_hDC);
+		SwapBuffers(dc.m_hDC);
 		TRACE("XY Paint\n");
 	}
 }

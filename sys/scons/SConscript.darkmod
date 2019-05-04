@@ -40,8 +40,6 @@ source_list = []
 source_list += SConscript( '../../sys/scons/SConscript.idlib' )
 source_list += SConscript( '../../sys/scons/SConscript.core' )
 source_list += SConscript( '../../sys/scons/SConscript.game' )
-# Add glimp stuff (built separately)
-source_list += [ '../../glimp/sys/scons/libglimp.a' ]
 
 local_env = g_env_game.Clone()
 

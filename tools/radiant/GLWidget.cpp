@@ -179,7 +179,7 @@ void idGLWidget::OnPaint()
 		qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
-	qwglSwapBuffers(dc);
+	SwapBuffers(dc);
 	qglFlush();
 	qwglMakeCurrent(win32.hDC, win32.hGLRC);
 

@@ -35,6 +35,13 @@ bool dga_found = false;
 
 static GLXContext ctx = NULL;
 
+//these functions are loaded prematurely before GL contest is created
+//they are used only in order to create GL context
+static PFNGLXCHOOSEVISUALPROC qinit_glXChooseVisual;
+static PFNGLXCREATECONTEXTPROC qinit_glXCreateContext;
+static PFNGLXDESTROYCONTEXTPROC qinit_glXDestroyContext;
+static PFNGLXMAKECURRENTPROC qinit_glXMakeCurrent;
+
 static bool vidmode_ext = false;
 static int vidmode_MajorVersion = 0, vidmode_MinorVersion = 0;	// major and minor of XF86VidExtensions
 
@@ -52,17 +59,6 @@ static unsigned short *save_red, *save_green, *save_blue;
 void GLimp_WakeBackEnd(void *a) {
 	common->DPrintf("GLimp_WakeBackEnd stub\n");
 }
-
-#ifdef ID_GL_HARDLINK
-void GLimp_EnableLogging(bool log) {
-	static bool logging;
-	if (log != logging)
-	{
-		common->DPrintf("GLimp_EnableLogging - disabled at compile time (ID_GL_HARDLINK)\n");
-		logging = log;
-	}
-}
-#endif
 
 void GLimp_FrontEndSleep() {
 	common->DPrintf("GLimp_FrontEndSleep stub\n");
@@ -175,11 +171,12 @@ void GLimp_Shutdown() {
 	
 		GLimp_RestoreGamma();
 
-		qglXDestroyContext( dpy, ctx );
+		if (ctx && qinit_glXDestroyContext) {
+			qinit_glXDestroyContext( dpy, ctx );
+		}
 
-#if !defined( ID_GL_HARDLINK )
-		GLimp_dlclose();
-#endif
+		common->Printf( "...shutting down QGL\n" );
+		GLimp_UnloadBaseFunctions();
 		
 		XDestroyWindow( dpy, win );
 		if ( vidmode_active ) {
@@ -280,6 +277,11 @@ GLX_Init
 ===============
 */
 int GLX_Init(glimpParms_t a) {
+	GLimp_LoadFunctionPointer(&qinit_glXChooseVisual, "glXChooseVisual");
+	GLimp_LoadFunctionPointer(&qinit_glXCreateContext, "glXCreateContext");
+	GLimp_LoadFunctionPointer(&qinit_glXDestroyContext, "glXDestroyContext");
+	GLimp_LoadFunctionPointer(&qinit_glXMakeCurrent, "glXMakeCurrent");
+
 	int attrib[] = {
 		GLX_RGBA,				// 0
 		GLX_RED_SIZE, 8,		// 1, 2
@@ -447,7 +449,7 @@ int GLX_Init(glimpParms_t a) {
 		attrib[ATTR_DEPTH_IDX] = tdepthbits;	// default to 24 depth
 		attrib[ATTR_STENCIL_IDX] = tstencilbits;
 
-		visinfo = qglXChooseVisual(dpy, scrnum, attrib);
+		visinfo = qinit_glXChooseVisual(dpy, scrnum, attrib);
 		if (!visinfo) {
 			continue;
 		}
@@ -526,21 +528,13 @@ int GLX_Init(glimpParms_t a) {
 
 	XFlush(dpy);
 	XSync(dpy, False);
-	ctx = qglXCreateContext(dpy, visinfo, NULL, True);
+	ctx = qinit_glXCreateContext(dpy, visinfo, NULL, True);
 	XSync(dpy, False);
 
 	// Free the visinfo after we're done with it
 	XFree(visinfo);
 
-	qglXMakeCurrent(dpy, win, ctx);
-
-	glstring = (const char *) qglGetString(GL_RENDERER);
-	common->Printf("GL_RENDERER: %s\n", glstring);
-	
-	glstring = (const char *) qglGetString(GL_EXTENSIONS);
-	common->Printf("GL_EXTENSIONS: %s\n", glstring);
-
-	// FIXME: here, software GL test
+	qinit_glXMakeCurrent(dpy, win, ctx);
 
 	glConfig.isFullscreen = a.fullScreen;
 	
@@ -572,15 +566,12 @@ bool GLimp_Init( glimpParms_t a ) {
 		return false;
 	}
 	
-#ifndef ID_GL_HARDLINK
-	if ( !GLimp_dlopen() ) {
-		return false;
-	}
-#endif
-	
 	if (!GLX_Init(a)) {
 		return false;
 	}
+
+	common->Printf( "...initializing QGL\n" );
+	GLimp_LoadBaseFunctions();
 	
 	return true;
 }

@@ -278,11 +278,11 @@ void rvGEWorkspace::Render ( HDC hdc )
 	qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Render the workspace below
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+	qglMatrixMode(GL_PROJECTION);
+	qglLoadIdentity();
 	qglOrtho(0,mWindowWidth, mWindowHeight, 0, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	qglMatrixMode(GL_MODELVIEW);
+	qglLoadIdentity();
 
 	GL_FloatColor ( mApplication->GetOptions().GetWorkspaceColor()[0], mApplication->GetOptions().GetWorkspaceColor()[1], mApplication->GetOptions().GetWorkspaceColor()[2] );	
 
@@ -327,18 +327,18 @@ void rvGEWorkspace::Render ( HDC hdc )
 	
 	GL_Viewport(0, 0, mWindowWidth, mWindowHeight );
 	GL_Scissor(0, 0, mWindowWidth, mWindowHeight );
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+	qglMatrixMode(GL_PROJECTION);
+	qglLoadIdentity();
 	qglOrtho(0,mWindowWidth, mWindowHeight, 0, -1, 1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	qglMatrixMode(GL_MODELVIEW);
+	qglLoadIdentity();
 
 	RenderGrid ( );
 	
 	mSelections.Render ( );
 	
 	qglFinish ( );
-	qwglSwapBuffers(hdc);
+	SwapBuffers(hdc);
 
 	qglEnable( GL_TEXTURE_CUBE_MAP_EXT );
 	qglEnable( GL_CULL_FACE);

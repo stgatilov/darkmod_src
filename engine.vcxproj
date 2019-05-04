@@ -463,7 +463,6 @@
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
     <ClInclude Include="renderer\FrameBuffer.h" />
-    <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
     <ClInclude Include="renderer\GLSLProgram.h" />
     <ClInclude Include="renderer\GLSLProgramManager.h" />
@@ -484,7 +483,6 @@
     <ClInclude Include="renderer\ModelOverlay.h" />
     <ClInclude Include="renderer\Profiling.h" />
     <ClInclude Include="renderer\qgl.h" />
-    <ClInclude Include="renderer\qgl_linked.h" />
     <ClInclude Include="renderer\RenderSystem.h" />
     <ClInclude Include="renderer\RenderWorld.h" />
     <ClInclude Include="renderer\RenderWorld_local.h" />
@@ -497,7 +495,6 @@
     <ClInclude Include="sound\sound.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
-    <ClInclude Include="sys\win32\wglext.h" />
     <ClInclude Include="sys\win32\win_local.h" />
     <ClInclude Include="sys\win32\rc\AFEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\Common_resource.h" />
@@ -1032,6 +1029,15 @@
     <ClCompile Include="renderer\ModelManager.cpp" />
     <ClCompile Include="renderer\ModelOverlay.cpp" />
     <ClCompile Include="renderer\Profiling.cpp" />
+    <ClCompile Include="renderer\qgl.cpp" />
+    <ClCompile Include="renderer\qgl_defs.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="renderer\RenderEntity.cpp" />
     <ClCompile Include="renderer\RenderSystem.cpp" />
     <ClCompile Include="renderer\RenderSystem_init.cpp" />
@@ -1072,7 +1078,6 @@
     <ClCompile Include="sys\win32\win_input.cpp" />
     <ClCompile Include="sys\win32\win_main.cpp" />
     <ClCompile Include="sys\win32\win_net.cpp" />
-    <ClCompile Include="sys\win32\win_qgl.cpp" />
     <ClCompile Include="sys\win32\win_shared.cpp" />
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
