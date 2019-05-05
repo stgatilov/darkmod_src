@@ -654,7 +654,6 @@
     <ClInclude Include="game\Weapon.h" />
     <ClInclude Include="game\WorldSpawn.h" />
     <ClInclude Include="game\ZipLoader\ZipLoader.h" />
-    <ClInclude Include="idlib\Base64.h" />
     <ClInclude Include="idlib\BitMsg.h" />
     <ClInclude Include="idlib\bv\Bounds.h" />
     <ClInclude Include="idlib\bv\Box.h" />
@@ -688,7 +687,6 @@
     <ClInclude Include="idlib\geometry\TraceModel.h" />
     <ClInclude Include="idlib\geometry\Winding.h" />
     <ClInclude Include="idlib\geometry\Winding2D.h" />
-    <ClInclude Include="idlib\hashing\CRC32.h" />
     <ClInclude Include="idlib\hashing\MD4.h" />
     <ClInclude Include="idlib\hashing\MD5.h" />
     <ClInclude Include="idlib\Heap.h" />
@@ -1103,7 +1101,6 @@
     <ClCompile Include="game\Weapon.cpp" />
     <ClCompile Include="game\WorldSpawn.cpp" />
     <ClCompile Include="game\ZipLoader\ZipLoader.cpp" />
-    <ClCompile Include="idlib\Base64.cpp" />
     <ClCompile Include="idlib\BitMsg.cpp" />
     <ClCompile Include="idlib\bv\Bounds.cpp" />
     <ClCompile Include="idlib\bv\Box.cpp" />
@@ -1124,7 +1121,6 @@
     <ClCompile Include="idlib\geometry\TraceModel.cpp" />
     <ClCompile Include="idlib\geometry\Winding.cpp" />
     <ClCompile Include="idlib\geometry\Winding2D.cpp" />
-    <ClCompile Include="idlib\hashing\CRC32.cpp" />
     <ClCompile Include="idlib\hashing\MD4.cpp" />
     <ClCompile Include="idlib\hashing\MD5.cpp" />
     <ClCompile Include="idlib\Heap.cpp" />

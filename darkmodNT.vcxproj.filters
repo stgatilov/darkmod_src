@@ -1182,9 +1182,6 @@
     <ClInclude Include="idlib\geometry\Winding2D.h">
       <Filter>idLib\Geometry</Filter>
     </ClInclude>
-    <ClInclude Include="idlib\hashing\CRC32.h">
-      <Filter>idLib\Hashing</Filter>
-    </ClInclude>
     <ClInclude Include="idlib\hashing\MD4.h">
       <Filter>idLib\Hashing</Filter>
     </ClInclude>
@@ -1259,9 +1256,6 @@
     </ClInclude>
     <ClInclude Include="idlib\math\Vector.h">
       <Filter>idLib\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="idlib\Base64.h">
-      <Filter>idLib\Text</Filter>
     </ClInclude>
     <ClInclude Include="idlib\CmdArgs.h">
       <Filter>idLib\Text</Filter>
@@ -2532,9 +2526,6 @@
     <ClCompile Include="idlib\geometry\Winding2D.cpp">
       <Filter>idLib\Geometry</Filter>
     </ClCompile>
-    <ClCompile Include="idlib\hashing\CRC32.cpp">
-      <Filter>idLib\Hashing</Filter>
-    </ClCompile>
     <ClCompile Include="idlib\hashing\MD4.cpp">
       <Filter>idLib\Hashing</Filter>
     </ClCompile>
@@ -2597,9 +2588,6 @@
     </ClCompile>
     <ClCompile Include="idlib\math\Vector.cpp">
       <Filter>idLib\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="idlib\Base64.cpp">
-      <Filter>idLib\Text</Filter>
     </ClCompile>
     <ClCompile Include="idlib\CmdArgs.cpp">
       <Filter>idLib\Text</Filter>
