@@ -186,11 +186,11 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
 	MultiShadowUniforms *shadowUniforms = programManager->shadowMapMultiShader->GetUniformGroup<MultiShadowUniforms>();
 
-	float customOffset = 0;
+	/*float customOffset = 0;
 	if ( auto entityDef = surf->space->entityDef )
 		customOffset = entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
 	if ( customOffset != 0 )
-		qglPolygonOffset( customOffset, 0 );
+		qglPolygonOffset( customOffset, 0 );*/
 
 	if ( backEnd.currentSpace != surf->space ) {
 		shadowUniforms->modelMatrix.Set( surf->space->modelMatrix );
@@ -225,8 +225,8 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 		}
 	}
 
-	if ( customOffset != 0 )
-		qglPolygonOffset( 0, 0 );
+	/*if ( customOffset != 0 )
+		qglPolygonOffset( 0, 0 );*/
 }
 
 void RB_ShadowMap_RenderAllLights() {

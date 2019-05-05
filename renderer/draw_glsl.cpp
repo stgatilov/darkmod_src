@@ -326,9 +326,9 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) 
 			continue;    // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
 
-		float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
+		/*float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
 		if ( customOffset != 0 )
-			qglPolygonOffset( customOffset, 0 );
+			qglPolygonOffset( customOffset, 0 );*/
 
 		if ( backEnd.currentSpace != surf->space ) {
 			shadowMapUniforms->modelMatrix.Set( surf->space->modelMatrix );
@@ -340,8 +340,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		backEnd.pc.c_shadowIndexes += surf->numIndexes;
 		backEnd.pc.c_drawIndexes -= surf->numIndexes;
 
-		if ( customOffset != 0 )
-			qglPolygonOffset( 0, 0 );
+		/*if ( customOffset != 0 )
+			qglPolygonOffset( 0, 0 );*/
 	}
 	for ( int i = 0; i < 4; i++ )
 		qglDisable( GL_CLIP_PLANE0 + i );
