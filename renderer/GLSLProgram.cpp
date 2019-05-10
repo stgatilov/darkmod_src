@@ -57,7 +57,7 @@ void GLSLProgram::AttachVertexShader( const char *sourceFile, const idDict &defi
 }
 
 void GLSLProgram::AttachGeometryShader( const char *sourceFile, const idDict &defines ) {
-	LoadAndAttachShader( GL_GEOMETRY_SHADER, sourceFile, defines );
+	LoadAndAttachShader( GL_GEOMETRY_SHADER_ARB, sourceFile, defines );
 }
 
 void GLSLProgram::AttachFragmentShader( const char *sourceFile, const idDict &defines ) {

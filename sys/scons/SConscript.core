@@ -59,7 +59,8 @@ renderer_string = ' \
 	RenderSystem.cpp \
 	RenderSystem_init.cpp \
 	qgl.cpp \
-	qgl_defs.cpp \
+	glad.c \
+	glad_glx.c \
 	RenderWorld.cpp \
 	RenderWorld_demo.cpp \
 	RenderWorld_load.cpp \

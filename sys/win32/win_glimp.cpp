@@ -35,16 +35,6 @@
 #include "../../renderer/tr_local.h"
 #include "../../renderer/FrameBuffer.h"
 
-//these function pointers are saved when fake window is created
-//they are used only in order to create GL context
-//https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)#Create_a_False_Context
-static PFNWGLCREATECONTEXTATTRIBSARBPROC qinit_wglCreateContextAttribsARB;
-static PFNWGLCHOOSEPIXELFORMATARBPROC qinit_wglChoosePixelFormatARB;
-static PFNWGLCREATECONTEXTPROC qinit_wglCreateContext;
-static PFNWGLDELETECONTEXTPROC qinit_wglDeleteContext;
-static PFNWGLMAKECURRENTPROC qinit_wglMakeCurrent;
-static PFNGLGETINTEGERVPROC qinit_glGetIntegerv;
-
 
 /*
 ========================
@@ -164,12 +154,12 @@ LONG WINAPI FakeWndProc(
 	// Set up OpenGL
 	pixelFormat = ChoosePixelFormat( hDC, &pfd );
 	SetPixelFormat( hDC, pixelFormat, &pfd );
-	hGLRC = qinit_wglCreateContext( hDC );
-	qinit_wglMakeCurrent( hDC, hGLRC );
+	hGLRC = qwglCreateContext( hDC );
+	qwglMakeCurrent( hDC, hGLRC );
 
 	// free things
-	qinit_wglMakeCurrent( NULL, NULL );
-	qinit_wglDeleteContext( hGLRC );
+	qwglMakeCurrent( NULL, NULL );
+	qwglDeleteContext( hGLRC );
 	ReleaseDC( hWnd, hDC );
 
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
@@ -184,10 +174,8 @@ static void GLW_GetWGLExtensionsWithFakeWindow( void ) {
 	HWND	hWnd;
 	MSG		msg;
 
-	GLimp_LoadFunctionPointer(&qinit_wglCreateContext, "wglCreateContext");
-	GLimp_LoadFunctionPointer(&qinit_wglDeleteContext, "wglDeleteContext");
-	GLimp_LoadFunctionPointer(&qinit_wglMakeCurrent, "wglMakeCurrent");
-	GLimp_LoadFunctionPointer(&qinit_glGetIntegerv, "glGetIntegerv");
+	//load basic functions like e.g. wglMakeCurrent
+	GLimp_LoadFunctions(false);
 
 	// Create a window for the sole purpose of getting
 	// a valid context to get the wglextensions
@@ -199,13 +187,14 @@ static void GLW_GetWGLExtensionsWithFakeWindow( void ) {
 	                     NULL, NULL, win32.hInstance, NULL );
 	if ( hWnd ) {
 		HDC hDC = GetDC( hWnd );
-		HGLRC gRC = qinit_wglCreateContext( hDC );
-		qinit_wglMakeCurrent( hDC, gRC );
-		GLimp_LoadFunctionPointer(&qinit_wglChoosePixelFormatARB, "wglChoosePixelFormatARB");
-		GLimp_LoadFunctionPointer(&qinit_wglCreateContextAttribsARB, "wglCreateContextAttribsARB");
-		qinit_glGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
-		//GLW_CheckWGLExtensions( hDC );
-		qinit_wglDeleteContext( gRC );
+		HGLRC gRC = qwglCreateContext( hDC );
+		qwglMakeCurrent( hDC, gRC );
+		//reload context creation functions like e.g. wglCreateContextAttribsARB
+		win32.hDC = hDC;
+		GLimp_LoadFunctions();
+		win32.hDC = NULL;
+		qglGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
+		qwglDeleteContext( gRC );
 		ReleaseDC( hWnd, hDC );
 
 		DestroyWindow( hWnd );
@@ -275,7 +264,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	// the multisample path uses the wgl
 	// duzenko #4425: AA needs to be setup elsewhere
 #if 0
-	if ( qinit_wglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
+	if ( qwglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
 		int		iAttributes[20];
 		FLOAT	fAttributes[] = {0, 0};
 		UINT	numFormats;
@@ -357,15 +346,15 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		WGL_CONTEXT_FLAGS_ARB, r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
 		0
 	};
-	if ( ( win32.hGLRC = qinit_wglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {
+	if ( ( win32.hGLRC = qwglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {
 		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
 	}
 	common->Printf( "succeeded\n" );
 
 	common->Printf( "...making context current: " );
-	if ( !qinit_wglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
-		qinit_wglDeleteContext( win32.hGLRC );
+	if ( !qwglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
+		qwglDeleteContext( win32.hGLRC );
 		win32.hGLRC = NULL;
 		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
@@ -730,10 +719,9 @@ bool GLimp_Init( glimpParms_t parms ) {
 		return false;
 	}
 
-	// this will load the dll and set all our qgl* function pointers,
-	// but doesn't create a window
 	common->Printf( "...initializing QGL\n" );
-	GLimp_LoadBaseFunctions();
+	//load all function pointers available in the final context
+	GLimp_LoadFunctions();
 
 	return true;
 }
@@ -844,14 +832,14 @@ void GLimp_Shutdown( void ) {
 	common->Printf( "Shutting down OpenGL subsystem\n" );
 
 	// set current context to NULL
-	if ( qinit_wglMakeCurrent ) {
-		retVal = qinit_wglMakeCurrent( NULL, NULL ) != 0;
+	if ( qwglMakeCurrent ) {
+		retVal = qwglMakeCurrent( NULL, NULL ) != 0;
 		common->Printf( "...wglMakeCurrent( NULL, NULL ): %s\n", success[retVal] );
 	}
 
 	// delete HGLRC
-	if ( win32.hGLRC && qinit_wglDeleteContext ) {
-		retVal = qinit_wglDeleteContext( win32.hGLRC ) != 0;
+	if ( win32.hGLRC && qwglDeleteContext ) {
+		retVal = qwglDeleteContext( win32.hGLRC ) != 0;
 		common->Printf( "...deleting GL context: %s\n", success[retVal] );
 		win32.hGLRC = NULL;
 	}
@@ -890,7 +878,7 @@ void GLimp_Shutdown( void ) {
 
 	// shutdown QGL subsystem
 	common->Printf( "...shutting down QGL\n" );
-	GLimp_UnloadBaseFunctions();
+	GLimp_UnloadFunctions();
 }
 
 

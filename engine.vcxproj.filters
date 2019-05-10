@@ -133,6 +133,9 @@
     <Filter Include="Tests">
       <UniqueIdentifier>{f2796430-f703-4cad-956a-d3aa24b66499}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\glad">
+      <UniqueIdentifier>{47f98cf0-60e3-4fea-ab19-c4ac45ad6cc4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1236,6 +1239,12 @@
     </ClInclude>
     <ClInclude Include="framework\minizip\minizip_extra.h">
       <Filter>Framework\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\glad.h">
+      <Filter>Renderer\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\glad_wgl.h">
+      <Filter>Renderer\glad</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2929,8 +2938,11 @@
     <ClCompile Include="renderer\qgl.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\qgl_defs.cpp">
-      <Filter>Renderer</Filter>
+    <ClCompile Include="renderer\glad.c">
+      <Filter>Renderer\glad</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\glad_wgl.c">
+      <Filter>Renderer\glad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

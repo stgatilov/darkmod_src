@@ -27,20 +27,13 @@ idCVar sys_videoRam( "sys_videoRam", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTE
 idCVar v_nowmfullscreen( "v_nowmfullscreen", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "Do not use the window manager for fullscreen. If this is set and full screen is used, it will not notify the window manager and will monopolize both mouse and keyboard inputs. Only used at screen initialization.");
 
 Display *dpy = NULL;
-static int scrnum = 0;
+int scrnum = 0;
 
 Window win = 0;
 
 bool dga_found = false;
 
 static GLXContext ctx = NULL;
-
-//these functions are loaded prematurely before GL contest is created
-//they are used only in order to create GL context
-static PFNGLXCHOOSEVISUALPROC qinit_glXChooseVisual;
-static PFNGLXCREATECONTEXTPROC qinit_glXCreateContext;
-static PFNGLXDESTROYCONTEXTPROC qinit_glXDestroyContext;
-static PFNGLXMAKECURRENTPROC qinit_glXMakeCurrent;
 
 static bool vidmode_ext = false;
 static int vidmode_MajorVersion = 0, vidmode_MinorVersion = 0;	// major and minor of XF86VidExtensions
@@ -171,12 +164,12 @@ void GLimp_Shutdown() {
 	
 		GLimp_RestoreGamma();
 
-		if (ctx && qinit_glXDestroyContext) {
-			qinit_glXDestroyContext( dpy, ctx );
+		if (ctx && qglXDestroyContext) {
+			qglXDestroyContext( dpy, ctx );
 		}
 
 		common->Printf( "...shutting down QGL\n" );
-		GLimp_UnloadBaseFunctions();
+		GLimp_UnloadFunctions();
 		
 		XDestroyWindow( dpy, win );
 		if ( vidmode_active ) {
@@ -277,11 +270,6 @@ GLX_Init
 ===============
 */
 int GLX_Init(glimpParms_t a) {
-	GLimp_LoadFunctionPointer(&qinit_glXChooseVisual, "glXChooseVisual");
-	GLimp_LoadFunctionPointer(&qinit_glXCreateContext, "glXCreateContext");
-	GLimp_LoadFunctionPointer(&qinit_glXDestroyContext, "glXDestroyContext");
-	GLimp_LoadFunctionPointer(&qinit_glXMakeCurrent, "glXMakeCurrent");
-
 	int attrib[] = {
 		GLX_RGBA,				// 0
 		GLX_RED_SIZE, 8,		// 1, 2
@@ -314,6 +302,9 @@ int GLX_Init(glimpParms_t a) {
 	if ( !GLimp_OpenDisplay() ) {
 		return false;
 	}
+
+	//load basic functions like glXCreateContext
+	GLimp_LoadFunctions(false);
 
 	common->Printf( "Initializing OpenGL display\n" );
 
@@ -449,7 +440,7 @@ int GLX_Init(glimpParms_t a) {
 		attrib[ATTR_DEPTH_IDX] = tdepthbits;	// default to 24 depth
 		attrib[ATTR_STENCIL_IDX] = tstencilbits;
 
-		visinfo = qinit_glXChooseVisual(dpy, scrnum, attrib);
+		visinfo = qglXChooseVisual(dpy, scrnum, attrib);
 		if (!visinfo) {
 			continue;
 		}
@@ -528,13 +519,13 @@ int GLX_Init(glimpParms_t a) {
 
 	XFlush(dpy);
 	XSync(dpy, False);
-	ctx = qinit_glXCreateContext(dpy, visinfo, NULL, True);
+	ctx = qglXCreateContext(dpy, visinfo, NULL, True);
 	XSync(dpy, False);
 
 	// Free the visinfo after we're done with it
 	XFree(visinfo);
 
-	qinit_glXMakeCurrent(dpy, win, ctx);
+	qglXMakeCurrent(dpy, win, ctx);
 
 	glConfig.isFullscreen = a.fullScreen;
 	
@@ -571,7 +562,8 @@ bool GLimp_Init( glimpParms_t a ) {
 	}
 
 	common->Printf( "...initializing QGL\n" );
-	GLimp_LoadBaseFunctions();
+	//load all function pointers available in the final context
+	GLimp_LoadFunctions();
 	
 	return true;
 }
