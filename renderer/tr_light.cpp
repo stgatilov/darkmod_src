@@ -1635,6 +1635,14 @@ void R_RemoveUnecessaryViewLights( void ) {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		int ShadowAtlasIndex = 0;
+		switch ( tr.viewDef->renderView.viewID ) { // force lower precision for shadow maps in subviews
+		case VID_LIGHTGEM:
+			ShadowAtlasIndex = 6;
+			break;
+		case VID_SUBVIEW:
+			ShadowAtlasIndex = 2;
+			break;
+		}
 		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
 		for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next )
 			if ( vLight->shadows == LS_MAPS )
