@@ -246,7 +246,7 @@ idCVar r_uniformTransforms( "r_uniformTransforms", "0", CVAR_RENDERER | CVAR_BOO
 idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
 
 // FBO
-idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );
+idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL, "Use framebuffer objects" );
 idCVar r_nVidiaOverride( "r_nVidiaOverride", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
 idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-4 individual fbo attachments" );
 idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32" );
