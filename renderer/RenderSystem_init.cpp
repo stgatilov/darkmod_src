@@ -456,8 +456,8 @@ R_CheckPortableExtensions
 */
 static void R_CheckPortableExtensions( void ) {
 	glConfig.glVersion = atof( glConfig.version_string );
-	if ( !R_CheckExtension( "GL version 2.0", 2.0 ) ) {
-		common->Error( "OpenGL version must be at least 2.0 for TDM to run!\n" );
+	if ( !R_CheckExtension( "GL version 2.1", 2.1 ) ) {
+		common->Error( "OpenGL version must be at least 2.1 for TDM to run!\n" );
 	}
 	common->Printf( "Checking portable OpenGL extensions...\n" );
 
@@ -711,9 +711,6 @@ static void R_CheckPortableExtensions( void ) {
 		qglFramebufferTexture = ( PFNGLFRAMEBUFFERTEXTUREARBPROC )GLimp_ExtensionPointer( "glFramebufferTextureARB" );
 		qglFramebufferTextureLayer = ( PFNGLFRAMEBUFFERTEXTURELAYERARBPROC )GLimp_ExtensionPointer( "glFramebufferTextureLayerARB" );
 	}
-
-	// PBO
-	glConfig.pixelBufferAvailable = R_CheckExtension( "GL_ARB_pixel_buffer_object"/*, 2.1*/ );
 
 	// Occlusion queries
 	//R_CheckExtension("GL_ARB_occlusion_query", 1.5);

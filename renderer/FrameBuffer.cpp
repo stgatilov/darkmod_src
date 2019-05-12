@@ -299,7 +299,7 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) {
 
 	// #4395 lightem pixel pack buffer optimization
 	if ( cmd.buffer ) {
-		if ( cmd.usePBO && glConfig.pixelBufferAvailable ) {
+		if ( cmd.usePBO ) {
 			static int pboSize = -1;
 
 			if ( !pbo ) {
