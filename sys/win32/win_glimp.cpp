@@ -1201,3 +1201,7 @@ GLExtension_t GLimp_ExtensionPointer( const char *name ) {
 	}
 	return proc;
 }
+
+extern "C" {
+	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+}

@@ -1037,7 +1037,6 @@ R_SortDrawSurfs
 static void R_SortDrawSurfs( void ) {
 	if ( !tr.viewDef->numDrawSurfs ) // otherwise an assert fails in debug builds
 		return;
-#ifdef MULTI_LIGHT_IN_FRONT 
 	// filter the offscreen shadow-only surfaces into a separate array
 	idList<drawSurf_t*> visible( tr.viewDef->numDrawSurfs ), offscreen( tr.viewDef->numDrawSurfs );
 	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
@@ -1051,7 +1050,6 @@ static void R_SortDrawSurfs( void ) {
 	tr.viewDef->numOffscreenSurfs = offscreen.Num();
 	memcpy( tr.viewDef->drawSurfs, visible.Ptr(), visible.MemoryUsed() );
 	memcpy( &tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs], offscreen.Ptr(), offscreen.MemoryUsed() );
-#endif // MULTI_LIGHT_IN_FRONT
 	// sort the drawsurfs by sort type, then orientation, then shader
 	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
 		R_QsortSurfaces );

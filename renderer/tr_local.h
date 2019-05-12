@@ -112,7 +112,7 @@ static const int DSF_SOFT_PARTICLE = 2; // #3878
 static const int DSF_SHADOW_MAP_IGNORE = 4; // #4641
 static const int DSF_SHADOW_MAP_ONLY = 8; // #4641
 
-#define MULTI_LIGHT_IN_FRONT 1 // keep track of the multi light front renderer changes
+struct viewLight_s;
 
 typedef struct drawSurf_s {
 	const srfTriangles_t	*frontendGeo;			// do not use in the backend; may be modified by the frontend
@@ -127,9 +127,7 @@ typedef struct drawSurf_s {
 	const float				*shaderRegisters;	// evaluated and adjusted for referenceShaders
 	/*const*/ struct drawSurf_s	*nextOnLight;	// viewLight chains
 
-#ifdef MULTI_LIGHT_IN_FRONT
-	int						*onLights;			// light/entity bounds intersections, array of light-def index, terminated by -1
-#endif // MULTI_LIGHT_IN_FRONT
+	viewLight_s				**onLights;			// light/entity bounds intersections, terminated by null - multi light shader
 
 	idScreenRect			scissorRect;		// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
@@ -456,9 +454,7 @@ typedef struct viewDef_s {
 	drawSurf_t 			**drawSurfs;			// we don't use an idList for this, because
 	int					numDrawSurfs;			// it is allocated in frame temporary memory
 	int					maxDrawSurfs;			// may be resized
-#ifdef MULTI_LIGHT_IN_FRONT
-	int					numOffscreenSurfs;			// light occluders
-#endif
+	int					numOffscreenSurfs;		// light occluders only, used by multi light shader
 
 	struct viewLight_s	*viewLights;			// chain of all viewLights effecting view
 	struct viewEntity_s	*viewEntitys;			// chain of all viewEntities effecting view, including off screen ones casting shadows
@@ -1051,9 +1047,7 @@ extern idCVar r_softShadowsQuality;
 extern idCVar r_softShadowsRadius;
 
 extern idCVar r_useAnonreclaimer;
-#ifdef MULTI_LIGHT_IN_FRONT
 extern idCVarBool r_shadowMapSinglePass;
-#endif
 
 // stgatilov ROQ
 extern idCVar r_cinematic_legacyRoq;

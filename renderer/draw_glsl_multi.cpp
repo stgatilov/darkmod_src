@@ -48,114 +48,96 @@ struct MultiShadowUniforms : GLSLUniformGroup {
 };
 
 struct MultiLightShaderData { // used by both interaction and shadow map shaders
-	std::vector<viewLight_t *> vLights;
-	std::vector<idVec3> lightOrigins;
-	std::vector<idVec4> shadowRects;
-	std::vector<float> softShadowRads;
-	std::vector<idVec4> lightFrustum;
-	MultiLightShaderData( const drawSurf_t *surf, bool shadowPass );
-};
-
-MultiLightShaderData::MultiLightShaderData( const drawSurf_t *surf, bool shadowPass ) {
-#ifdef MULTI_LIGHT_IN_FRONT
-	idList<int> lightIndex;
-	if ( surf->onLights )
-		for ( int* pIndex = surf->onLights; *pIndex >= 0; pIndex++ )
-			lightIndex.Append( *pIndex );
-#endif
-	for ( auto *vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		backEnd.vLight = vLight; // GetEffectiveLightRadius needs this
-		if ( shadowPass ) {
-			if ( !vLight->shadowMapIndex )
-				continue;
-		} else {
-			if ( vLight->singleLightOnly )
-				continue;
+	//idList<viewLight_t*> vLights;
+	idList<idVec3> lightOrigins;
+	idList<idVec4> shadowRects;
+	idList<float> softShadowRads;
+	idList<idVec3> lightColors;
+	idList<idMat4> projectionFalloff;
+	MultiLightShaderData( const drawSurf_t* surf, bool shadowPass, const drawInteraction_t* din = nullptr ) :
+		surf( surf ), shadowPass( shadowPass ), din( din ) {
+		if ( !surf->onLights )
+			return;
+		for ( auto pLight = surf->onLights; *pLight; pLight++ ) {
+			auto vLight = *pLight;
+			backEnd.vLight = vLight; // GetEffectiveLightRadius needs this
+			if ( shadowPass ) {
+				if ( !vLight->shadowMapIndex )
+					continue;
+			} else {
+				if ( vLight->singleLightOnly )
+					continue;
+			}
+			AddLightData();
 		}
-		if ( surf->material->Spectrum() != vLight->lightShader->Spectrum() )
-			continue;
-		if ( vLight->lightShader->IsAmbientLight() ) {
-			if ( r_skipAmbient.GetInteger() & 2 )
-				continue;
-		} else {
-			if ( r_skipInteractions.GetBool() )
-				continue;
-		}
+		backEnd.vLight = nullptr; // just in case
+	}
+private:
+	const drawSurf_t* surf;
+	bool shadowPass;
+	const drawInteraction_t* din = nullptr;
+	void AddLightData() {
+		auto vLight = backEnd.vLight;
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
-		if ( 1/* !r_ignore.GetBool()*/ ) {
-#ifdef MULTI_LIGHT_IN_FRONT
-			if ( !lightIndex.Find( vLight->lightDef->index ) )
-				continue;
-#else
-			auto entDef = surf->space->entityDef;				// happens to be null - font materials, etc?
-			if ( !entDef || R_CullLocalBox( surf->frontendGeo->bounds, entDef->modelMatrix, 6, vLight->lightDef->frustum ) )
-				continue;
-#endif
-		}
-		vLights.push_back( vLight );
+		//vLights.push_back(vLight);
 		if ( shadowPass )
-			lightOrigins.push_back( vLight->globalLightOrigin );
+			lightOrigins.Append( vLight->globalLightOrigin );
 		else
-			lightOrigins.push_back( localLightOrigin );
-		for ( int i = 0; i < 6; i++ )
-			lightFrustum.push_back( vLight->lightDef->frustum[i].ToVec4() );
+			lightOrigins.Append( localLightOrigin );
 
 		if ( vLight->lightShader->IsAmbientLight() )
-			shadowRects.push_back( idVec4( 0, 0, -2, 0 ) );
+			shadowRects.Append( idVec4( 0, 0, -2, 0 ) );
 		else {
 			if ( vLight->shadowMapIndex <= 0 )
-				shadowRects.push_back( idVec4( 0, 0, -1, 0 ) );
-			auto &page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
+				shadowRects.Append( idVec4( 0, 0, -1, 0 ) );
+			auto & page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
 			idVec4 v( page.x, page.y, 0, page.width - 1 );
 			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
 			v.w /= 6 * r_shadowMapSize.GetFloat();
 			v.z = vLight->shadowMapIndex - 1;
-			shadowRects.push_back( v );
+			shadowRects.Append( v );
 		}
-		softShadowRads.push_back( GetEffectiveLightRadius() );
+		softShadowRads.Append( GetEffectiveLightRadius() );
+		if ( din ) {
+			const float* lightRegs = vLight->shaderRegisters;
+			const idMaterial* lightShader = vLight->lightShader;
+			const shaderStage_t* lightStage = lightShader->GetStage( 0 );
+			idVec4 lightColor(
+				backEnd.lightScale * lightRegs[lightStage->color.registers[0]] * din->diffuseColor[0],
+				backEnd.lightScale * lightRegs[lightStage->color.registers[1]] * din->diffuseColor[1],
+				backEnd.lightScale * lightRegs[lightStage->color.registers[2]] * din->diffuseColor[2],
+				lightRegs[lightStage->color.registers[3]]
+			);
+			lightColors.Append( lightColor.ToVec3() );
+
+			idPlane lightProject[4];
+			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
+			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );
+			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[2], lightProject[2] );
+			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
+			idMat4* p = (idMat4*)& lightProject;
+			projectionFalloff.Append( *p );
+		}
 	}
-	backEnd.vLight = NULL; // just in case
-}
+};
 
 static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
 	auto surf = din->surf;
-	MultiLightShaderData data( surf, false );
-	idList<idVec3> lightColors;
-	idList<idMat4> projectionFalloff;
-	for ( auto vLight : data.vLights ) {
-		const float			*lightRegs = vLight->shaderRegisters;
-		const idMaterial	*lightShader = vLight->lightShader;
-		const shaderStage_t	*lightStage = lightShader->GetStage( 0 );
-		idVec4 lightColor(
-			backEnd.lightScale * lightRegs[lightStage->color.registers[0]] * din->diffuseColor[0],
-			backEnd.lightScale * lightRegs[lightStage->color.registers[1]] * din->diffuseColor[1],
-			backEnd.lightScale * lightRegs[lightStage->color.registers[2]] * din->diffuseColor[2],
-			lightRegs[lightStage->color.registers[3]]
-		);
-		lightColors.Append( lightColor.ToVec3() );
-
-		idPlane lightProject[4];
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[2], lightProject[2] );
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
-		idMat4 *p = (idMat4*)&lightProject;
-		projectionFalloff.Append( *p );
-	}
+	MultiLightShaderData data( surf, false, din );
 
 	Uniforms::Interaction *interactionUniforms = programManager->multiLightInteractionShader->GetUniformGroup<Uniforms::Interaction>();
 	interactionUniforms->SetForInteractionBasic( din );
 	interactionUniforms->minLevel.Set( backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 	interactionUniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 
-	for ( int i = 0; i < (int)data.lightOrigins.size(); i += MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( (uint)data.lightOrigins.size() - i, MAX_LIGHTS );
+	for ( int i = 0; i < (int)data.lightOrigins.Num(); i += MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( (uint)data.lightOrigins.Num() - i, MAX_LIGHTS );
 
 		interactionUniforms->lightCount.Set( thisCount );
 		interactionUniforms->lightOrigin.SetArray( thisCount, data.lightOrigins[i].ToFloatPtr() );
-		interactionUniforms->lightColor.SetArray( thisCount, lightColors[i].ToFloatPtr() );
-		interactionUniforms->lightProjectionFalloff.SetArray( thisCount, projectionFalloff[i].ToFloatPtr() );
+		interactionUniforms->lightColor.SetArray( thisCount, data.lightColors[i].ToFloatPtr() );
+		interactionUniforms->lightProjectionFalloff.SetArray( thisCount, data.projectionFalloff[i].ToFloatPtr() );
 		interactionUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );
 		interactionUniforms->softShadowsRadius.SetArray( thisCount, &data.softShadowRads[i] );
 		GL_CheckErrors();
@@ -164,8 +146,8 @@ static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
 
 		if ( r_showMultiLight.GetInteger() == 1 ) {
 			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += (uint)data.lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint)data.lightOrigins.size() );
+			backEnd.pc.c_interactionLights += (uint)data.lightOrigins.Num();
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint)data.lightOrigins.Num() );
 			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
 				return v.z >= 0;
 			} );
@@ -200,14 +182,13 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 
 	MultiLightShaderData data( surf, true );
 
-	for ( int i = 0; i < (int)data.lightOrigins.size(); i += MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( (int)data.lightOrigins.size() - i, MAX_LIGHTS );
+	for ( int i = 0; i < (int)data.lightOrigins.Num(); i += MAX_LIGHTS ) {
+		int thisCount = idMath::Imin( (int)data.lightOrigins.Num() - i, MAX_LIGHTS );
 
 		shadowUniforms->lightCount.Set( thisCount );
 		shadowUniforms->lightOrigin.SetArray( thisCount, data.lightOrigins[i].ToFloatPtr() );
 		shadowUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );
 		shadowUniforms->lightRadius.SetArray( thisCount, &data.softShadowRads[i] );
-		shadowUniforms->lightFrustum.SetArray( thisCount * 6, data.lightFrustum[i * 6].ToFloatPtr() );
 		GL_CheckErrors();
 
 		depthUniforms->instances = thisCount * 6;
@@ -215,8 +196,8 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 
 		if ( r_showMultiLight.GetInteger() == 2 ) {
 			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += (uint)data.lightOrigins.size();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint)data.lightOrigins.size() );
+			backEnd.pc.c_interactionLights += (uint)data.lightOrigins.Num();
+			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint)data.lightOrigins.Num() );
 			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
 				return v.z >= 0;
 			} );

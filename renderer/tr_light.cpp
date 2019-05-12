@@ -1091,6 +1091,46 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 }
 
 /*
+===============
+R_FindSurfaceLights
+
+The multi light shader needs lights per each surface
+===============
+*/
+static void R_FindSurfaceLights( drawSurf_t& drawSurf ) {
+	drawSurf.onLights = nullptr;
+	auto def = drawSurf.space->entityDef;
+	if ( !def || !(r_interactionProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool()) )
+		return;
+	idList<viewLight_s*> lights; // local list
+	for ( auto inter = def->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {
+		auto light = inter->lightDef;
+		if ( light->viewCount != tr.viewCount )
+			continue; // skip any lights that aren't currently visible
+		if ( drawSurf.material->Spectrum() != light->lightShader->Spectrum() )
+			continue;
+		if ( light->lightShader->IsAmbientLight() ) {
+			if ( r_skipAmbient.GetInteger() & 2 )
+				continue;
+		} else {
+			if ( r_skipInteractions.GetBool() )
+				continue;
+		}
+		idVec3 localLightOrigin;
+		R_GlobalPointToLocal( drawSurf.space->modelMatrix, light->globalLightOrigin, localLightOrigin );
+		if ( R_CullLocalBox( drawSurf.frontendGeo->bounds, drawSurf.space->modelMatrix, 6, light->frustum ) )
+			continue;
+		lights.Append( light->viewLight );
+	}
+	if ( lights.Num() ) { // expect to at least include the main ambient light if exists
+		lights.Append( nullptr );
+		auto frameMem = R_FrameAlloc( lights.MemoryUsed() );
+		memcpy( frameMem, lights.Ptr(), lights.MemoryUsed() );
+		drawSurf.onLights = (viewLight_s * *)frameMem;
+	}
+}
+
+/*
 =================
 R_AddDrawSurf
 =================
@@ -1110,10 +1150,8 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	drawSurf->scissorRect = scissor;
 	drawSurf->sort = shader->GetSort() + tr.sortOffset;
 	drawSurf->dsFlags = 0;
-#ifdef MULTI_LIGHT_IN_FRONT
 	if( scissor.IsEmpty() )
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_ONLY;
-#endif
 	if ( soft_particle_radius != -1.0f ) {	// #3878
 		drawSurf->dsFlags |= DSF_SOFT_PARTICLE;
 		drawSurf->particle_radius = soft_particle_radius;
@@ -1241,37 +1279,13 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		tr.viewDef->renderView.time = oldTime;
 	}
 
-#ifdef MULTI_LIGHT_IN_FRONT 
-	auto def = space->entityDef;
-	if ( def && ( r_interactionProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool() ) ) { // multi shader data
-		idList<int> lDefInd;	// FIXME this has been calculated already somewhere - make use of that
-		for ( auto inter = def->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {
-			// skip any lights that aren't currently visible
-			if ( inter->lightDef->viewCount != tr.viewCount )
-				continue;
-			idVec3 localLightOrigin;
-			R_GlobalPointToLocal( drawSurf->space->modelMatrix, inter->lightDef->globalLightOrigin, localLightOrigin );
-			if ( R_CullLocalBox( drawSurf->frontendGeo->bounds, space->modelMatrix, 6, inter->lightDef->frustum ) )
-				continue;
-			lDefInd.Append( inter->lightDef->index );
-		}
-		if ( lDefInd.Num() ) { // expect to at least include the main ambient light
-			lDefInd.Append( -1 );
-			auto frameMem = (int *)R_FrameAlloc( sizeof( int ) * lDefInd.Num() );
-			memcpy( frameMem, lDefInd.Ptr(), lDefInd.MemoryUsed() );
-			drawSurf->onLights = frameMem;
-		} else
-			drawSurf->onLights = NULL;
-	} else
-		drawSurf->onLights = NULL;
-#endif // MULTI_LIGHT_IN_FRONT
+	R_FindSurfaceLights( *drawSurf ); // multi shader data
 
 	// we can't add subviews at this point, because that would
 	// increment tr.viewCount, messing up the rest of the surface
 	// adds for this view
 }
 
-#ifdef MULTI_LIGHT_IN_FRONT
 /*
 ===============
 R_HasVisibleShadows
@@ -1293,7 +1307,6 @@ static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
 	}
 	return false;
 }
-#endif
 
 /*
 ===============
@@ -1377,10 +1390,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		}
 
 		if ( 
-			!R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) 
-#ifdef MULTI_LIGHT_IN_FRONT
-			|| R_HasVisibleShadows( vEntity )
-#endif
+			!R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) || R_HasVisibleShadows( vEntity )
 		) {
 
 			def.visibleCount = tr.viewCount;
@@ -1517,11 +1527,7 @@ void R_AddModelSurfaces( void ) {
 		}
 
 		// add the ambient surface if it has a visible rectangle
-		if ( !vEntity->scissorRect.IsEmpty() 
-#ifdef MULTI_LIGHT_IN_FRONT
-			|| R_HasVisibleShadows( vEntity )
-#endif
-		) {
+		if ( !vEntity->scissorRect.IsEmpty() || R_HasVisibleShadows( vEntity ) ) {
 			model = R_EntityDefDynamicModel( &def );
 			if ( model == NULL || model->NumSurfaces() <= 0 ) {
 				if ( def.parms.timeGroup ) {
