@@ -35,14 +35,14 @@ class GlProfileScope {
 public:
 	GlProfileScope(const char* section) {
 		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
-			qglPushDebugGroup( GL_DEBUG_SOURCE_APPLICATION, 1, -1, section );
+			qglPushDebugGroupKHR( GL_DEBUG_SOURCE_APPLICATION, 1, -1, section );
 		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
 			ProfilingEnterSection( section );
 	}
 
 	~GlProfileScope() {
 		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
-			qglPopDebugGroup();
+			qglPopDebugGroupKHR();
 		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
 			ProfilingLeaveSection();
 	}

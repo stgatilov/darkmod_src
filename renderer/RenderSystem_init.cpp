@@ -347,6 +347,12 @@ void R_InitOpenGL( void ) {
 	soundSystem->InitHW();
 
 	// get our config strings
+	glConfig.vendor_string = (const char *)qglGetString(GL_VENDOR);
+	glConfig.renderer_string = (const char *)qglGetString(GL_RENDERER);
+	glConfig.version_string = (const char *)qglGetString(GL_VERSION);
+	glConfig.extensions_string = (const char *)qglGetString(GL_EXTENSIONS);
+	glConfig.glVersion = atof(glConfig.version_string);
+
 	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 ) { 
 		glConfig.vendor = glvIntel; 
 	}
@@ -376,11 +382,11 @@ void R_InitOpenGL( void ) {
 	common->Printf( "OpenGL version: %s\n", glConfig.version_string );
 
 	// recheck all the extensions
-	GLimp_LoadOptionalExtensions();
+	GLimp_CheckRequiredFeatures();
 
 	if( r_glDebugOutput.GetBool() && glConfig.debugGroupsAvailable ) {
 		qglEnable( GL_DEBUG_OUTPUT );
-		qglDebugMessageCallback( R_OpenGLDebugMessageCallback, nullptr );
+		qglDebugMessageCallbackKHR( R_OpenGLDebugMessageCallback, nullptr );
 		if( r_glDebugOutput.GetInteger() == 2) {
 			qglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
 		}

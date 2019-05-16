@@ -349,8 +349,8 @@ int CCamWnd::OnCreate(LPCREATESTRUCT lpCreateStruct) {
 		common->Warning( "couldn't create font dlists" );
 	}
 
-	PFNWGLUSEFONTBITMAPSPROC qwglUseFontBitmaps = (PFNWGLUSEFONTBITMAPSPROC)GLimp_AnyPointer("wglUseFontBitmapsA");
-	PFNWGLUSEFONTOUTLINESPROC qwglUseFontOutlines = (PFNWGLUSEFONTOUTLINESPROC)GLimp_AnyPointer("wglUseFontBitmapsA");
+//	PFNWGLUSEFONTBITMAPSPROC qwglUseFontBitmaps = (PFNWGLUSEFONTBITMAPSPROC)GLimp_AnyPointer("wglUseFontBitmapsA");
+//	PFNWGLUSEFONTOUTLINESPROC qwglUseFontOutlines = (PFNWGLUSEFONTOUTLINESPROC)GLimp_AnyPointer("wglUseFontBitmapsA");
 
 	// create the bitmap display lists we're making images of glyphs 0 thru 255
 	if ( !qwglUseFontBitmaps(hDC, 0, 255, g_qeglobals.d_font_list) ) {

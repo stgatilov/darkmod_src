@@ -28,6 +28,7 @@ extern glconfig_t glConfig;
 #include <X11/XKBlib.h>
 
 extern Display *dpy;
+extern int scrnum;
 extern Window win;
 
 extern bool vidmode_nowmfullscreen;
