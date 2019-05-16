@@ -116,3 +116,16 @@ void GLimp_CheckRequiredFeatures( void ) {
 	CHECK_FEATURE(WGL_EXT_swap_control);
 #endif
 }
+
+
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT __attribute__ ((visibility ("default")))
+#endif
+//#4953 http://forums.thedarkmod.com/topic/19979-choose-gpu/
+//hint driver to use discrete GPU on a laptop having both integrated and discrete graphics
+extern "C" {
+	DLLEXPORT int NvOptimusEnablement = 0x00000001;
+	DLLEXPORT int AmdPowerXpressRequestHighPerformance = 0x00000001;
+}

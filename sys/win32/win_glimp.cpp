@@ -1100,7 +1100,3 @@ void GLimp_WakeBackEnd( void *data ) {
 	OutputDebugString( "<--GLimp_WakeBackEnd\n" );
 #endif
 }
-
-extern "C" {
-	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-}
