@@ -1161,7 +1161,6 @@ void R_SetColorMappings( void );
 
 void R_ScreenShot_f( const idCmdArgs &args );
 void R_StencilShot( void );
-bool R_CheckExtension( const char *name, double coreSince = 1e+10 );
 
 
 /*
@@ -1224,7 +1223,7 @@ void		GLimp_DeactivateContext( void );
 // being immediate returns, which lets us guage how much time is
 // being spent inside OpenGL.
 
-void		GLimp_EnableLogging( bool enable );
+//void		GLimp_EnableLogging( bool enable );
 
 /*
 ====================================================================

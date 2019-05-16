@@ -213,7 +213,7 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 void RB_ShadowMap_RenderAllLights() {
 	GL_PROFILE( "ShadowMap_RenderAllLights" );
 
-	if ( !qglDrawElementsInstanced )
+	if ( !qglDrawElementsInstancedARB )
 		return;
 
 	FB_ToggleShadow( true );

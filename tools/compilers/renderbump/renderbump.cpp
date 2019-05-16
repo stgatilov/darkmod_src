@@ -20,8 +20,8 @@
 
 #ifdef WIN32
 #include <windows.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+//#include <GL/gl.h>
+//#include <GL/glu.h>
 #include "../../../sys/win32/win_local.h"
 #endif
 

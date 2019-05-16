@@ -35,36 +35,15 @@
 #include "../../renderer/tr_local.h"
 #include "../../renderer/FrameBuffer.h"
 
-// WGL_ARB_extensions_string
-PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB;
-
-// WGL_EXT_swap_interval
-PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
-
-// WGL_ARB_pixel_format
-PFNWGLGETPIXELFORMATATTRIBIVARBPROC wglGetPixelFormatAttribivARB;
-PFNWGLGETPIXELFORMATATTRIBFVARBPROC wglGetPixelFormatAttribfvARB;
-PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
-
-// WGL_ARB_pbuffer
-PFNWGLCREATEPBUFFERARBPROC	wglCreatePbufferARB;
-PFNWGLGETPBUFFERDCARBPROC	wglGetPbufferDCARB;
-PFNWGLRELEASEPBUFFERDCARBPROC	wglReleasePbufferDCARB;
-PFNWGLDESTROYPBUFFERARBPROC	wglDestroyPbufferARB;
-PFNWGLQUERYPBUFFERARBPROC	wglQueryPbufferARB;
-
-// WGL_ARB_render_texture
-PFNWGLBINDTEXIMAGEARBPROC		wglBindTexImageARB;
-PFNWGLRELEASETEXIMAGEARBPROC	wglReleaseTexImageARB;
-PFNWGLSETPBUFFERATTRIBARBPROC	wglSetPbufferAttribARB;
-
-PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
-
-//
-// function declaration
-//
-bool QGL_Init( const char *dllname );
-void QGL_Shutdown( void );
+//these function pointers are saved when fake window is created
+//they are used only in order to create GL context
+//https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)#Create_a_False_Context
+static PFNWGLCREATECONTEXTATTRIBSARBPROC qinit_wglCreateContextAttribsARB;
+static PFNWGLCHOOSEPIXELFORMATARBPROC qinit_wglChoosePixelFormatARB;
+static PFNWGLCREATECONTEXTPROC qinit_wglCreateContext;
+static PFNWGLDELETECONTEXTPROC qinit_wglDeleteContext;
+static PFNWGLMAKECURRENTPROC qinit_wglMakeCurrent;
+static PFNGLGETINTEGERVPROC qinit_glGetIntegerv;
 
 
 /*
@@ -185,58 +164,15 @@ LONG WINAPI FakeWndProc(
 	// Set up OpenGL
 	pixelFormat = ChoosePixelFormat( hDC, &pfd );
 	SetPixelFormat( hDC, pixelFormat, &pfd );
-	hGLRC = qwglCreateContext( hDC );
-	qwglMakeCurrent( hDC, hGLRC );
+	hGLRC = qinit_wglCreateContext( hDC );
+	qinit_wglMakeCurrent( hDC, hGLRC );
 
 	// free things
-	wglMakeCurrent( NULL, NULL );
-	wglDeleteContext( hGLRC );
+	qinit_wglMakeCurrent( NULL, NULL );
+	qinit_wglDeleteContext( hGLRC );
 	ReleaseDC( hWnd, hDC );
 
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
-}
-
-
-/*
-==================
-GLW_GetWGLExtensionsWithFakeWindow
-==================
-*/
-void GLW_CheckWGLExtensions( HDC hDC ) {
-	wglGetExtensionsStringARB = ( PFNWGLGETEXTENSIONSSTRINGARBPROC )GLimp_ExtensionPointer( "wglGetExtensionsStringARB" );
-
-	if ( wglGetExtensionsStringARB ) {
-		glConfig.wgl_extensions_string = ( const char * ) wglGetExtensionsStringARB( hDC );
-	} else {
-		glConfig.wgl_extensions_string = "";
-	}
-
-	// WGL_EXT_swap_control
-	wglSwapIntervalEXT = ( PFNWGLSWAPINTERVALEXTPROC ) GLimp_ExtensionPointer( "wglSwapIntervalEXT" );
-
-	// WGL_ARB_pixel_format
-	wglGetPixelFormatAttribivARB = ( PFNWGLGETPIXELFORMATATTRIBIVARBPROC )GLimp_ExtensionPointer( "wglGetPixelFormatAttribivARB" );
-	wglGetPixelFormatAttribfvARB = ( PFNWGLGETPIXELFORMATATTRIBFVARBPROC )GLimp_ExtensionPointer( "wglGetPixelFormatAttribfvARB" );
-	wglChoosePixelFormatARB = ( PFNWGLCHOOSEPIXELFORMATARBPROC )GLimp_ExtensionPointer( "wglChoosePixelFormatARB" );
-
-	// WGL_ARB_pbuffer
-	wglCreatePbufferARB = ( PFNWGLCREATEPBUFFERARBPROC )GLimp_ExtensionPointer( "wglCreatePbufferARB" );
-	wglGetPbufferDCARB = ( PFNWGLGETPBUFFERDCARBPROC )GLimp_ExtensionPointer( "wglGetPbufferDCARB" );
-	wglReleasePbufferDCARB = ( PFNWGLRELEASEPBUFFERDCARBPROC )GLimp_ExtensionPointer( "wglReleasePbufferDCARB" );
-	wglDestroyPbufferARB = ( PFNWGLDESTROYPBUFFERARBPROC )GLimp_ExtensionPointer( "wglDestroyPbufferARB" );
-	wglQueryPbufferARB = ( PFNWGLQUERYPBUFFERARBPROC )GLimp_ExtensionPointer( "wglQueryPbufferARB" );
-
-	// WGL_ARB_render_texture
-	wglBindTexImageARB = ( PFNWGLBINDTEXIMAGEARBPROC )GLimp_ExtensionPointer( "wglBindTexImageARB" );
-	wglReleaseTexImageARB = ( PFNWGLRELEASETEXIMAGEARBPROC )GLimp_ExtensionPointer( "wglReleaseTexImageARB" );
-	wglSetPbufferAttribARB = ( PFNWGLSETPBUFFERATTRIBARBPROC )GLimp_ExtensionPointer( "wglSetPbufferAttribARB" );
-
-	wglCreateContextAttribsARB = ( PFNWGLCREATECONTEXTATTRIBSARBPROC )GLimp_ExtensionPointer( "wglCreateContextAttribsARB" );
-	if( wglCreateContextAttribsARB == nullptr ) {
-		common->FatalError( "wglCreateContextAttribsARB not available - OpenGL version is likely too old" );
-	}
-
-	qglGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
 }
 
 /*
@@ -248,6 +184,11 @@ static void GLW_GetWGLExtensionsWithFakeWindow( void ) {
 	HWND	hWnd;
 	MSG		msg;
 
+	GLimp_LoadFunctionPointer(&qinit_wglCreateContext, "wglCreateContext");
+	GLimp_LoadFunctionPointer(&qinit_wglDeleteContext, "wglDeleteContext");
+	GLimp_LoadFunctionPointer(&qinit_wglMakeCurrent, "wglMakeCurrent");
+	GLimp_LoadFunctionPointer(&qinit_glGetIntegerv, "glGetIntegerv");
+
 	// Create a window for the sole purpose of getting
 	// a valid context to get the wglextensions
 	hWnd = CreateWindow( WIN32_FAKE_WINDOW_CLASS_NAME, GAME_NAME,
@@ -258,10 +199,13 @@ static void GLW_GetWGLExtensionsWithFakeWindow( void ) {
 	                     NULL, NULL, win32.hInstance, NULL );
 	if ( hWnd ) {
 		HDC hDC = GetDC( hWnd );
-		HGLRC gRC = wglCreateContext( hDC );
-		wglMakeCurrent( hDC, gRC );
-		GLW_CheckWGLExtensions( hDC );
-		wglDeleteContext( gRC );
+		HGLRC gRC = qinit_wglCreateContext( hDC );
+		qinit_wglMakeCurrent( hDC, gRC );
+		GLimp_LoadFunctionPointer(&qinit_wglChoosePixelFormatARB, "wglChoosePixelFormatARB");
+		GLimp_LoadFunctionPointer(&qinit_wglCreateContextAttribsARB, "wglCreateContextAttribsARB");
+		qinit_glGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
+		//GLW_CheckWGLExtensions( hDC );
+		qinit_wglDeleteContext( gRC );
 		ReleaseDC( hWnd, hDC );
 
 		DestroyWindow( hWnd );
@@ -331,7 +275,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	// the multisample path uses the wgl
 	// duzenko #4425: AA needs to be setup elsewhere
 #if 0
-	if ( wglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
+	if ( qinit_wglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
 		int		iAttributes[20];
 		FLOAT	fAttributes[] = {0, 0};
 		UINT	numFormats;
@@ -358,7 +302,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		iAttributes[18] = 0;
 		iAttributes[19] = 0;
 
-		wglChoosePixelFormatARB( win32.hDC, iAttributes, fAttributes, 1, &win32.pixelformat, &numFormats );
+		qinit_wglChoosePixelFormatARB( win32.hDC, iAttributes, fAttributes, 1, &win32.pixelformat, &numFormats );
 	} else 
 #else
 	{
@@ -404,24 +348,24 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		common->Printf("debug ");
 	}
 	int attribs[] = {
-		// we want at least GL 3.1
-		WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-		WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+		// we want at least this version of GL
+		WGL_CONTEXT_MAJOR_VERSION_ARB, QGL_REQUIRED_VERSION_MAJOR,
+		WGL_CONTEXT_MINOR_VERSION_ARB, QGL_REQUIRED_VERSION_MINOR,
 		// TODO: might want to (optionally) create a core profile once we got rid of the old stuff
 		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
 		// enable debug context if asked for
 		WGL_CONTEXT_FLAGS_ARB, r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
 		0
 	};
-	if ( ( win32.hGLRC = wglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {
+	if ( ( win32.hGLRC = qinit_wglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {
 		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
 	}
 	common->Printf( "succeeded\n" );
 
 	common->Printf( "...making context current: " );
-	if ( !qwglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
-		qwglDeleteContext( win32.hGLRC );
+	if ( !qinit_wglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
+		qinit_wglDeleteContext( win32.hGLRC );
 		win32.hGLRC = NULL;
 		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
@@ -737,7 +681,6 @@ parameters and try again.
 ===================
 */
 bool GLimp_Init( glimpParms_t parms ) {
-	const char	*driverName;
 	HDC			hDC;
 
 	common->Printf( "Initializing OpenGL subsystem\n" );
@@ -761,18 +704,6 @@ bool GLimp_Init( glimpParms_t parms ) {
 
 	// create our window classes if we haven't already
 	GLW_CreateWindowClasses();
-
-	// this will load the dll and set all our qgl* function pointers,
-	// but doesn't create a window
-
-	// r_glDriver is only intended for using instrumented OpenGL
-	// dlls.  Normal users should never have to use it, and it is
-	// not archived.
-	driverName = r_glDriver.GetString()[0] ? r_glDriver.GetString() : "opengl32";
-	if ( !QGL_Init( driverName ) ) {
-		common->Warning( "GLimp_Init: Could not load r_glDriver \"%s\"", driverName );
-		return false;
-	}
 
 	// getting the wgl extensions involves creating a fake window to get a context,
 	// which is pretty disgusting, and seems to mess with the AGP VAR allocation
@@ -799,11 +730,10 @@ bool GLimp_Init( glimpParms_t parms ) {
 		return false;
 	}
 
-	// wglSwapinterval, etc
-	GLW_CheckWGLExtensions( win32.hDC );
-
-	// check logging
-	GLimp_EnableLogging( ( r_logFile.GetInteger() != 0 ) );
+	// this will load the dll and set all our qgl* function pointers,
+	// but doesn't create a window
+	common->Printf( "...initializing QGL\n" );
+	GLimp_LoadBaseFunctions();
 
 	return true;
 }
@@ -914,14 +844,14 @@ void GLimp_Shutdown( void ) {
 	common->Printf( "Shutting down OpenGL subsystem\n" );
 
 	// set current context to NULL
-	if ( qwglMakeCurrent ) {
-		retVal = qwglMakeCurrent( NULL, NULL ) != 0;
+	if ( qinit_wglMakeCurrent ) {
+		retVal = qinit_wglMakeCurrent( NULL, NULL ) != 0;
 		common->Printf( "...wglMakeCurrent( NULL, NULL ): %s\n", success[retVal] );
 	}
 
 	// delete HGLRC
-	if ( win32.hGLRC ) {
-		retVal = qwglDeleteContext( win32.hGLRC ) != 0;
+	if ( win32.hGLRC && qinit_wglDeleteContext ) {
+		retVal = qinit_wglDeleteContext( win32.hGLRC ) != 0;
 		common->Printf( "...deleting GL context: %s\n", success[retVal] );
 		win32.hGLRC = NULL;
 	}
@@ -959,7 +889,8 @@ void GLimp_Shutdown( void ) {
 	GLimp_RestoreGamma();
 
 	// shutdown QGL subsystem
-	QGL_Shutdown();
+	common->Printf( "...shutting down QGL\n" );
+	GLimp_UnloadBaseFunctions();
 }
 
 
@@ -973,11 +904,11 @@ void GLimp_SwapBuffers( void ) {
 	// so we must check for it here instead of portably
 	if ( r_swapIntervalTemp.IsModified() ) {
 		r_swapIntervalTemp.ClearModified();
-		if ( wglSwapIntervalEXT ) {
-			wglSwapIntervalEXT( r_swapIntervalTemp );
+		if ( qwglSwapIntervalEXT ) {
+			qwglSwapIntervalEXT( r_swapIntervalTemp );
 		}
 	}
-	qwglSwapBuffers( win32.hDC );
+	SwapBuffers( win32.hDC );
 
 #ifdef DEBUG_PRINTS
 	//Sys_DebugPrintf( "*** SwapBuffers() ***\n" );
@@ -1180,26 +1111,6 @@ void GLimp_WakeBackEnd( void *data ) {
 #ifdef DEBUG_PRINTS
 	OutputDebugString( "<--GLimp_WakeBackEnd\n" );
 #endif
-}
-
-//===================================================================
-
-/*
-===================
-GLimp_ExtensionPointer
-
-Returns a function pointer for an OpenGL extension entry point
-===================
-*/
-GLExtension_t GLimp_ExtensionPointer( const char *name ) {
-	void	( *proc )( void );
-
-	proc = ( GLExtension_t )qwglGetProcAddress( name );
-
-	if ( !proc ) {
-		common->Printf( "Couldn't find proc address for: %s\n", name );
-	}
-	return proc;
 }
 
 extern "C" {

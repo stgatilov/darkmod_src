@@ -350,7 +350,7 @@ void CNewTexWnd::OnPaint() {
 		// reset the current texture
 		globalImages->BindNull();
 		qglFinish();
-		qwglSwapBuffers(dc.GetSafeHdc());
+		SwapBuffers(dc.GetSafeHdc());
 		TRACE("Texture Paint\n");
 	}
 

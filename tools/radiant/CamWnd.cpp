@@ -23,7 +23,7 @@
 #include "XYWnd.h"
 #include "CamWnd.h"
 #include "splines.h"
-#include <GL/glu.h>
+//#include <GL/glu.h>
 
 #include "../../renderer/tr_local.h"
 #include "../../renderer/model_local.h"	// for idRenderModelMD5
@@ -202,7 +202,7 @@ void CCamWnd::OnPaint() {
 
 		Cam_Draw();
 		QE_CheckOpenGLForErrors();
-		qwglSwapBuffers(dc.m_hDC);
+		SwapBuffers(dc.m_hDC);
 	}
 }
 
@@ -343,11 +343,14 @@ int CCamWnd::OnCreate(LPCREATESTRUCT lpCreateStruct) {
 
 	HFONT hOldFont = (HFONT)SelectObject(hDC, hfont);
 
-	wglMakeCurrent (hDC, win32.hGLRC);
+	qwglMakeCurrent (hDC, win32.hGLRC);
 
 	if ((g_qeglobals.d_font_list = qglGenLists(256)) == 0) {
 		common->Warning( "couldn't create font dlists" );
 	}
+
+	PFNWGLUSEFONTBITMAPSPROC qwglUseFontBitmaps = (PFNWGLUSEFONTBITMAPSPROC)GLimp_AnyPointer("wglUseFontBitmapsA");
+	PFNWGLUSEFONTOUTLINESPROC qwglUseFontOutlines = (PFNWGLUSEFONTOUTLINESPROC)GLimp_AnyPointer("wglUseFontBitmapsA");
 
 	// create the bitmap display lists we're making images of glyphs 0 thru 255
 	if ( !qwglUseFontBitmaps(hDC, 0, 255, g_qeglobals.d_font_list) ) {

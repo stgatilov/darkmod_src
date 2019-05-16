@@ -58,6 +58,8 @@ renderer_string = ' \
 	RenderEntity.cpp \
 	RenderSystem.cpp \
 	RenderSystem_init.cpp \
+	qgl.cpp \
+	qgl_defs.cpp \
 	RenderWorld.cpp \
 	RenderWorld_demo.cpp \
 	RenderWorld_load.cpp \

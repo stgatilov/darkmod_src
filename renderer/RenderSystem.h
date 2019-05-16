@@ -53,17 +53,18 @@ typedef struct glconfig_s {
 
 	int					colorBits, depthBits, stencilBits;
 
-	bool				textureCompressionAvailable;
-	bool				textureCompressionRgtcAvailable;
+	bool				textureCompressionAvailable = true;
+	bool				textureCompressionRgtcAvailable = true;
+	bool				twoSidedStencilAvailable = true;
+	bool				mapBufferRangeAvailable = true;
+	bool				framebufferObjectAvailable = true;
+	bool				framebufferBlitAvailable = true;
+	bool				framebufferMultisampleAvailable = true;
+	bool				framebufferPackedDepthStencilAvailable = true;
+
 	bool				anisotropicAvailable;
 	bool				textureLODBiasAvailable;
-	bool				twoSidedStencilAvailable;
 	bool				depthBoundsTestAvailable;
-	bool				mapBufferRangeAvailable;
-	bool				framebufferObjectAvailable;
-	bool				framebufferBlitAvailable;
-	bool				framebufferMultisampleAvailable;
-	bool				framebufferPackedDepthStencilAvailable;
 	bool				geometryShaderAvailable;
 	bool				gpuShader4Available;	// usampler in GLSL 120
 	bool				fenceSyncAvailable;

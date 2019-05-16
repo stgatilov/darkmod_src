@@ -319,6 +319,7 @@ g_env_base.Append(CPPPATH = path_template.format('libjpeg'))
 g_env_base.Append(CPPPATH = path_template.format('ffmpeg'))
 g_env_base.Append(CPPPATH = path_template.format('doctest'))
 g_env_base.Append(CPPPATH = path_template.format('pugixml'))
+g_env_base.Append(CPPPATH = '#/renderer')
 g_env_base.Append(CPPPATH = '#/')
 
 g_env_base['CPPFLAGS'] += OPTCPPFLAGS
@@ -373,8 +374,6 @@ if ( NOCURL == '0' ):
 		curl_lib = [ '#linux/libcurl/lib64/libcurl.a' ]
 
 
-VariantDir( g_build + '/core/glimp', '.', duplicate = 1 )
-SConscript( g_build + '/core/glimp/sys/scons/SConscript.gl' )
 VariantDir( g_build + '/core', '.', duplicate = 0 )
 thedarkmod = SConscript( g_build + '/core/sys/scons/SConscript.darkmod' )
 

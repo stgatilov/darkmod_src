@@ -121,7 +121,7 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
 	}
 
 	if ( surf->indexCache.IsValid() ) {
-		qglDrawElementsInstanced( GL_TRIANGLES,
+		qglDrawElementsInstancedARB( GL_TRIANGLES,
 			surf->numIndexes,
 			GL_INDEX_TYPE,
 			vertexCache.IndexPosition( surf->indexCache ),

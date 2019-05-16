@@ -213,9 +213,6 @@
     <ClInclude Include="renderer\Cinematic.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\glext.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="renderer\GuiModel.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -259,9 +256,6 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="renderer\qgl.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\qgl_linked.h">
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="renderer\RenderSystem.h">
@@ -437,9 +431,6 @@
     </ClInclude>
     <ClInclude Include="framework\I18N.h">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="sys\win32\wglext.h">
-      <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="sound\efxlib.h">
       <Filter>Sound</Filter>
@@ -1525,9 +1516,6 @@
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="sys\win32\win_net.cpp">
-      <Filter>Sys</Filter>
-    </ClCompile>
-    <ClCompile Include="sys\win32\win_qgl.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="sys\win32\win_shared.cpp">
@@ -2937,6 +2925,12 @@
     </ClCompile>
     <ClCompile Include="framework\minizip\minizip_extra.c">
       <Filter>Framework\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\qgl.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\qgl_defs.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
