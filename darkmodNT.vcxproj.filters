@@ -115,6 +115,9 @@
     <Filter Include="Test">
       <UniqueIdentifier>{f3dbab64-0ae8-4ef2-853f-3decc9d7954b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\glad">
+      <UniqueIdentifier>{552c1804-5a3b-4e1f-a939-984ef7bde14c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1414,6 +1417,12 @@
     <ClInclude Include="framework\minizip\minizip_extra.h">
       <Filter>Framework\minizip</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\glad.h">
+      <Filter>Renderer\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\glad_wgl.h">
+      <Filter>Renderer\glad</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1693,9 +1702,6 @@
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="sys\win32\win_net.cpp">
-      <Filter>Sys</Filter>
-    </ClCompile>
-    <ClCompile Include="sys\win32\win_qgl.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="sys\win32\win_shared.cpp">
@@ -2793,6 +2799,15 @@
     </ClCompile>
     <ClCompile Include="framework\minizip\minizip_extra.c">
       <Filter>Framework\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\glad.c">
+      <Filter>Renderer\glad</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\glad_wgl.c">
+      <Filter>Renderer\glad</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\qgl.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
