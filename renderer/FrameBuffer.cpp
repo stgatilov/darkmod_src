@@ -455,8 +455,10 @@ void CheckCreateShadow() {
 		} else {
 			globalImages->shadowDepthFbo->GenerateAttachment( curWidth, curHeight, GL_DEPTH_STENCIL );
 		}
-	else
-		globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize.GetInteger(), 6 * r_shadowMapSize.GetInteger(), GL_DEPTH );
+	else {
+		globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize, 6 * r_shadowMapSize, GL_DEPTH );
+		globalImages->shadowAtlasHistory->GenerateAttachment( 6 * r_shadowMapSize, 7 * r_shadowMapSize, GL_DEPTH );
+	}
 
 	auto check = []( GLuint &fbo ) {
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );

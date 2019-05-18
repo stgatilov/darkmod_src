@@ -125,6 +125,12 @@ namespace Uniforms {
 		DEFINE_UNIFORM( int, lightCount )
 		DEFINE_UNIFORM( vec3, lightColor )
 
+		// temp
+		DEFINE_UNIFORM( int, shadowMapHistory )
+		DEFINE_UNIFORM( int, frameCount )
+		DEFINE_UNIFORM( vec3, lightSamples )
+
+
 		bool ambient = false;
 
 		void SetForInteractionBasic( const drawInteraction_t *din );

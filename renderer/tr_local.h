@@ -465,6 +465,8 @@ typedef struct viewDef_s {
 	idPlane				frustum[5];				// positive sides face outward, [4] is the front clip plane
 	idFrustum			viewFrustum;
 
+	idVec3				lightSample;
+
 	int					areaNum;				// -1 = not in a valid area
 
 	bool 				*connectedAreas;

@@ -35,7 +35,7 @@ extern idCVar r_fboDepthBits;
 extern idCVar r_fboSharedDepth;
 extern idCVar r_fboSeparateStencil;
 //extern idCVar r_fboResolution;
-extern idCVar r_shadowMapSize;
+extern idCVarInt r_shadowMapSize;
 
 extern renderCrop_t ShadowAtlasPages[42];
 

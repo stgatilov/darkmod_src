@@ -914,14 +914,6 @@ void R_AddLightSurfaces( void ) {
 		// this one stays on the list
 		ptr = &vLight->next;
 
-		// if we are doing a soft-shadow novelty test, regenerate the light with
-		// a random offset every time
-		if ( r_lightSourceRadius.GetFloat() != 0.0f ) {
-			 light->globalLightOrigin[0] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
-			 light->globalLightOrigin[1] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
-			 light->globalLightOrigin[2] += r_lightSourceRadius.GetFloat() * ( -1 + 2 * (rand()&0xfff)/(float)0xfff );
-		}
-
 		// create interactions with all entities the light may touch, and add viewEntities
 		// that may cast shadows, even if they aren't directly visible.  Any real work
 		// will be deferred until we walk through the viewEntities
@@ -1651,7 +1643,21 @@ void R_RemoveUnecessaryViewLights( void ) {
 		}
 		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
 		for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next )
-			if ( vLight->shadows == LS_MAPS )
+			if ( vLight->shadows == LS_MAPS ) {
 				vLight->shadowMapIndex = ++ShadowAtlasIndex;
+				// if we are doing a soft-shadow novelty test, regenerate the light with a random offset every time
+				if ( vLight->shadowMapIndex == 1 ) {
+					/*vLight->globalLightOrigin[0] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
+					vLight->globalLightOrigin[1] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
+					vLight->globalLightOrigin[2] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);*/
+					tr.viewDef->lightSample.z = (backEnd.frameCount & 7) - 3.5;
+					/*cornerPos.x = backEnd.frameCount & 1 ? 1 : -1;
+					cornerPos.y = backEnd.frameCount & 2 ? 1 : -1;
+					cornerPos.z = backEnd.frameCount & 4 ? 1 : -1;*/
+					tr.viewDef->lightSample *= r_lightSourceRadius.GetFloat();
+					vLight->globalLightOrigin += tr.viewDef->lightSample;
+				}
+
+			}
 	}
 }
