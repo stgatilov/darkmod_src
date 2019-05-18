@@ -284,8 +284,7 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 	GL_CheckErrors();
 }
 
-int lightHistoryIndex = 0;
-idVec3 softLightSamples[7];
+idVec3 softLightSamples[8];
 
 void RB_GLSL_DrawInteractions_MultiLight() {
 	if ( !backEnd.viewDef->viewLights )
@@ -316,10 +315,10 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	interactionUniforms->shadowMap.Set( 5 );
 	interactionUniforms->shadowMapHistory.Set( 6 );
 	interactionUniforms->frameCount.Set( backEnd.frameCount );
-	idVec3 fixedLightSamples[7];
-	for ( int i = 0; i < 7; i++ )
+	idVec3 fixedLightSamples[8];
+	for ( int i = 0; i < 8; i++ )
 		fixedLightSamples[i] = softLightSamples[i] - backEnd.viewDef->lightSample;
-	interactionUniforms->lightSamples.SetArray( 7, fixedLightSamples[0].ToFloatPtr() );
+	interactionUniforms->lightSamples.SetArray( 8, fixedLightSamples[0].ToFloatPtr() );
 
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
 
@@ -381,11 +380,12 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 	// FIXME temporary experimental code
 	if ( backEnd.viewDef->viewEntitys && !backEnd.viewDef->isSubview ) {
+		static int lightHistoryIndex = 0;
 		softLightSamples[lightHistoryIndex] = backEnd.viewDef->lightSample;
 		FB_ToggleShadow( true );
 		globalImages->shadowAtlasHistory->Bind();
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, lightHistoryIndex * r_shadowMapSize, 0, 0, r_shadowMapSize * 6, r_shadowMapSize );
 		FB_ToggleShadow( false );
-		lightHistoryIndex = (lightHistoryIndex + 1) % 7;
+		lightHistoryIndex = (lightHistoryIndex + 1) % 8;
 	}
 }
