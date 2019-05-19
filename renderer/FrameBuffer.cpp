@@ -457,7 +457,7 @@ void CheckCreateShadow() {
 		}
 	else {
 		globalImages->shadowAtlas->GenerateAttachment( 6 * r_shadowMapSize, 6 * r_shadowMapSize, GL_DEPTH );
-		globalImages->shadowAtlasHistory->GenerateAttachment( 6 * r_shadowMapSize, 7 * r_shadowMapSize, GL_DEPTH );
+		globalImages->shadowAtlasHistory->GenerateAttachment( 6 * r_shadowMapSize, 8 * r_shadowMapSize, GL_DEPTH );
 	}
 
 	auto check = []( GLuint &fbo ) {

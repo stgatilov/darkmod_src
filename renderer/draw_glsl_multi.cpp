@@ -323,6 +323,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	interactionUniforms->shadowMap.Set( 5 );
 	interactionUniforms->shadowMapHistory.Set( 6 );
 	interactionUniforms->frameCount.Set( backEnd.frameCount );
+	//softLightSamples[7] = backEnd.viewDef->lightSample;
 	interactionUniforms->lightSamples.SetArray( 8, softLightSamples[0].ToFloatPtr() );
 
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
@@ -391,6 +392,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		globalImages->shadowAtlasHistory->Bind();
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, lightHistoryIndex * r_shadowMapSize, 0, 0, r_shadowMapSize * 6, r_shadowMapSize );
 		FB_ToggleShadow( false );
-		lightHistoryIndex = (lightHistoryIndex + 1) % 7;
+		lightHistoryIndex = (lightHistoryIndex + 1) % 8;
 	}
 }
