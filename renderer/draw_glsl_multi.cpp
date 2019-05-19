@@ -78,6 +78,7 @@ private:
 	const drawInteraction_t* din = nullptr;
 	void AddLightData() {
 		auto vLight = backEnd.vLight;
+#if 0
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		//vLights.push_back(vLight);
@@ -85,6 +86,9 @@ private:
 			lightOrigins.Append( vLight->globalLightOrigin );
 		else
 			lightOrigins.Append( localLightOrigin );
+#else
+		lightOrigins.Append( vLight->globalLightOrigin );
+#endif
 
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowRects.Append( idVec4( 0, 0, -2, 0 ) );
@@ -111,12 +115,16 @@ private:
 			);
 			lightColors.Append( lightColor.ToVec3() );
 
+#if 0
 			idPlane lightProject[4];
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[2], lightProject[2] );
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
 			idMat4* p = (idMat4*)& lightProject;
+#else
+			idMat4* p = (idMat4*)& vLight->lightProject;
+#endif
 			projectionFalloff.Append( *p );
 		}
 	}
@@ -315,10 +323,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	interactionUniforms->shadowMap.Set( 5 );
 	interactionUniforms->shadowMapHistory.Set( 6 );
 	interactionUniforms->frameCount.Set( backEnd.frameCount );
-	idVec3 fixedLightSamples[8];
-	for ( int i = 0; i < 8; i++ )
-		fixedLightSamples[i] = softLightSamples[i] - backEnd.viewDef->lightSample;
-	interactionUniforms->lightSamples.SetArray( 8, fixedLightSamples[0].ToFloatPtr() );
+	interactionUniforms->lightSamples.SetArray( 8, softLightSamples[0].ToFloatPtr() );
 
 	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
 
