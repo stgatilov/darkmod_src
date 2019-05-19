@@ -1650,7 +1650,7 @@ void R_RemoveUnecessaryViewLights( void ) {
 					/*vLight->globalLightOrigin[0] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
 					vLight->globalLightOrigin[1] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
 					vLight->globalLightOrigin[2] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);*/
-					tr.viewDef->lightSample.z = (backEnd.frameCount & 7) - 3.5;
+					tr.viewDef->lightSample.z = (backEnd.frameCount % 8) - 3.5;
 					/*cornerPos.x = backEnd.frameCount & 1 ? 1 : -1;
 					cornerPos.y = backEnd.frameCount & 2 ? 1 : -1;
 					cornerPos.z = backEnd.frameCount & 4 ? 1 : -1;*/
