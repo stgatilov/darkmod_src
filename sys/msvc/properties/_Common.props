@@ -16,7 +16,7 @@
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ThirdPartyDir)doctest\include;$(ThirdPartyDir)ffmpeg\include;$(ThirdPartyDir)devil\include;$(ThirdPartyDir)libcurl\include;$(ThirdPartyDir)libjpeg\include;$(ThirdPartyDir)libpng\include;$(ThirdPartyDir)mbedtls\include;$(ThirdPartyDir)openal\include;$(ThirdPartyDir)ogg\include;$(ThirdPartyDir)vorbis\include;$(ThirdPartyDir)pugixml\include;$(ThirdPartyDir)zlib\include;$(SolutionDir)\idlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
-      <DisableSpecificWarnings>4127;4458;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;4458;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ThirdPartyDir)zlib$(ThirdPartyPlatform);$(ThirdPartyDir)libcurl$(ThirdPartyPlatform);$(ThirdPartyDir)ogg$(ThirdPartyPlatform);$(ThirdPartyDir)vorbis$(ThirdPartyPlatform);$(ThirdPartyDir)openal$(ThirdPartyPlatform);$(ThirdPartyDir)devil$(ThirdPartyPlatform);$(ThirdPartyDir)libjpeg$(ThirdPartyPlatform);$(ThirdPartyDir)libpng$(ThirdPartyPlatform);$(ThirdPartyDir)mbedtls$(ThirdPartyPlatform);$(ThirdPartyDir)ffmpeg$(ThirdPartyPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
