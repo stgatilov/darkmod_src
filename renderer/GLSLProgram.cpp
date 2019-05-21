@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "GLSLProgram.h"
 #include "GLSLUniforms.h"
 #include <memory>
-#include <regex>
+#include "StdString.h"
 
 idCVar r_debugGLSL("r_debugGLSL", "0", CVAR_BOOL|CVAR_ARCHIVE, "If enabled, checks and warns about additional potential sources of GLSL shader errors.");
 
@@ -160,6 +160,40 @@ namespace {
 		return contents;
 	}
 
+	struct PragmaLine {
+		size_t from = std::string::npos;	// [from, to) is where the whole line with
+		size_t to = std::string::npos;		// #pragma is located, including EOL
+		std::vector<std::string> tokens;	// set of all tokens after #pragma
+	};
+	/**
+	 * Finds next #pragma directive in text, starting from specified position.
+	 * Syntax example:
+	 *   #pragma tdm_helpmeplease 1 2 3 "rty"
+	 */
+	PragmaLine FindNextPragmaInText(const std::string &text, size_t startFrom = 0) {
+		PragmaLine result;
+
+		size_t start = text.find("#pragma", startFrom);
+		if (start == std::string::npos)
+			return result;
+		size_t pragmaEnd = start + 7;
+
+		size_t end = text.find("\n", start);
+		if (end == std::string::npos)
+			end = text.size();
+		else
+			end++;
+
+		while (start > 0 && text[start-1] != '\n')
+			start--;
+
+		std::string pragmaParams = text.substr(pragmaEnd, end - pragmaEnd);
+		stdext::split(result.tokens, pragmaParams);
+		result.from = start;
+		result.to = end;
+		return result;
+	}
+
 	/**
 	 * Resolves include statements in GLSL source files.
 	 * Note that the parsing is primitive and not context-sensitive. It will not respect multi-line comments
@@ -170,14 +204,23 @@ namespace {
 	 * #pragma tdm_include "somefile.glsl" // optional comment
 	 */
 	void ResolveIncludes( std::string &source, std::vector<std::string> &includedFiles ) {
-		static const std::regex includeRegex( R"regex([ \t]*#[ \t]*pragma[ \t]+tdm_include[ \t]+"(.*)"[ \t]*(?:\/\/.*)?\r?\n)regex" );
-
 		unsigned int currentFileNo = includedFiles.size() - 1;
 		unsigned int totalIncludedLines = 0;
 
-		std::smatch match;
-		while( std::regex_search( source, match, includeRegex ) ) {
-			std::string fileToInclude( match[ 1 ].first, match[ 1 ].second );
+		size_t pos = 0;
+		while (1) {
+			auto pragma = FindNextPragmaInText( source, pos );
+			if ( pragma.from == pragma.to )
+				break;
+			if ( pragma.tokens[0] != "tdm_include" ) {
+				pos = pragma.to;
+				continue;
+			}
+
+			std::string fileToInclude( pragma.tokens[1] );
+			fileToInclude = fileToInclude.substr( 1, fileToInclude.size() - 2 );
+
+			std::string replacement;
 			if( std::find( includedFiles.begin(), includedFiles.end(), fileToInclude ) == includedFiles.end() ) {
 				int nextFileNo = includedFiles.size();
 				std::string includeContents = ReadFile( fileToInclude.c_str() );
@@ -187,18 +230,19 @@ namespace {
 				// also add a #line instruction at beginning and end of include so that
 				// compile errors are mapped to the correct file and line
 				// unfortunately, #line does not take an actual filename, but only an integral reference to a file :(
-				unsigned int currentLine = std::count( source.cbegin(), match[ 0 ].first, '\n' ) + 1 - totalIncludedLines;
+				unsigned int currentLine = std::count( source.cbegin(), source.cbegin() + pragma.from, '\n' ) + 1 - totalIncludedLines;
 				std::string includeBeginMarker = "#line 0 " + std::to_string( nextFileNo ) + '\n';
 				std::string includeEndMarker = "\n#line " + std::to_string( currentLine ) + ' ' + std::to_string( currentFileNo );
 				totalIncludedLines += std::count( includeContents.begin(), includeContents.end(), '\n' ) + 2;
 
 				// replace include statement with content of included file
-				std::string replacement = includeBeginMarker + includeContents + includeEndMarker + "\n";
-				source.replace( match.position( 0 ), match.length( 0 ), replacement );
+				replacement = includeBeginMarker + includeContents + includeEndMarker + "\n";
 			} else {
-				std::string replacement = "// already included " + fileToInclude + "\n";
-				source.replace( match.position( 0 ), match.length( 0 ), replacement );
+				replacement = "// already included " + fileToInclude + "\n";
 			}
+
+			source.replace( source.begin() + pragma.from, source.begin() + pragma.to, replacement );
+			pos = pragma.from;
 		}
 	}
 
@@ -217,22 +261,31 @@ namespace {
 	 * Otherwise, it will be commented out.
 	 */
 	void ResolveDefines( std::string &source, const idDict &defines ) {
-		static const std::regex defineRegex( R"regex([ \t]*#[ \t]*pragma[ \t]+tdm_define[ \t]+"(.*)"[ \t]*(?:\/\/.*)?\r?\n)regex" );
-		
-		std::smatch match;
-		while( std::regex_search( source, match, defineRegex ) ) {
-			std::string define( match[ 1 ].first, match[ 1 ].second );
+		size_t pos = 0;
+		while (1) {
+			auto pragma = FindNextPragmaInText( source, pos );
+			if ( pragma.from == pragma.to )
+				break;
+			if ( pragma.tokens[0] != "tdm_define" ) {
+				pos = pragma.to;
+				continue;
+			}
+
+			std::string define( pragma.tokens[1] );
+			define = define.substr( 1, define.size() - 2 );
+
+			std::string replacement;
 			auto defIt = defines.FindKey( define.c_str() );
 			if( defIt != nullptr ) {
-				std::string replacement = "#define " + define + " " + defIt->GetValue().c_str() + "\n";
-				source.replace( match.position( 0 ), match.length( 0 ), replacement );
+				replacement = "#define " + define + " " + defIt->GetValue().c_str() + "\n";
 			} else {
-				std::string replacement = "// #undef " + define + "\n";
-				source.replace( match.position( 0 ), match.length( 0 ), replacement );
+				replacement = "// #undef " + define + "\n";
 			}
+
+			source.replace( source.begin() + pragma.from, source.begin() + pragma.to, replacement );
+			pos = pragma.from;
 		}
 	}
-
 }
 
 GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
@@ -306,7 +359,7 @@ namespace {
 	const std::string ADVANCED_INCLUDES =
 		"#version 330\n"
 		"\n"
-		" #  pragma tdm_include \"tests/nested_include.glsl\"\n"
+		" #pragma tdm_include \"tests/nested_include.glsl\"\n"
 		"#pragma  tdm_include \"tests/shared_common.glsl\"  // ignore this comment\n"
 		"#pragma tdm_include \"tests/advanced_includes.glsl\"\n"
 		"void main() {\n"
@@ -389,7 +442,7 @@ namespace {
 			"#version 140\n"
 			"#pragma tdm_define \"FIRST_DEFINE\"\n"
 			"\n"
-			"  # pragma   tdm_define   \"SECOND_DEFINE\"\n"
+			"  #pragma   tdm_define   \"SECOND_DEFINE\"\n"
 			"void main() {\n"
 			"#ifdef FIRST_DEFINE\n"
 			"  return;\n"
