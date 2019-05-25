@@ -469,6 +469,8 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 		exstyle = 0;
 		stylebits = WINDOW_STYLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+		if ( win32.win_maximized )
+			stylebits |= WS_MAXIMIZE;
 		AdjustWindowRect( &r, stylebits, FALSE );
 
 		w = r.right - r.left;

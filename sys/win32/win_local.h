@@ -100,6 +100,7 @@ typedef struct {
 	static idCVar	win_username;
 	static idCVar	win_xpos;			// archived X coordinate of window position
 	static idCVar	win_ypos;			// archived Y coordinate of window position
+	static idCVarBool win_maximized;
 	static idCVar	win_outputDebugString;
 	static idCVar	win_outputEditString;
 	static idCVar	win_viewlog;

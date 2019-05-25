@@ -238,7 +238,7 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 	int key;
 	switch( uMsg ) {
 		case WM_WINDOWPOSCHANGED:
-			if (glConfig.isInitialized) {
+			if ( glConfig.isInitialized || win32.win_maximized ) {
 				RECT rect;
 				if (::GetClientRect(win32.hWnd, &rect)) {
 					glConfig.vidWidth = rect.right - rect.left;
@@ -328,6 +328,10 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 			break;
 		}
 		case WM_SYSCOMMAND:
+			if (wParam == 0xF030) // Maximized
+				win32.win_maximized = true;
+			if (wParam == 0xF120) // Restored
+				win32.win_maximized = false;
 			if ( wParam == SC_SCREENSAVE || wParam == SC_KEYMENU ) {
 				return 0;
 			}
