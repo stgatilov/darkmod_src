@@ -674,6 +674,12 @@ void Uniforms::Global::Set(const viewEntity_t *space) {
 	modelMatrix.Set( space->modelMatrix );
 	projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
 	modelViewMatrix.Set( space->modelViewMatrix );
+	{
+		idVec4 vol;
+		R_GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, vol.ToVec3() );
+		vol[3] = 1.0;
+		viewOriginLocal.Set( vol );
+	}
 }
 
 void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t *surf) {

@@ -34,9 +34,8 @@ struct CubemapUniforms : GLSLUniformGroup {
 struct BumpyEnvironmentUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( BumpyEnvironmentUniforms );
 
-	DEFINE_UNIFORM( vec4, viewOriginLocal );
-	DEFINE_UNIFORM( vec4, envvpParam16 );
-	DEFINE_UNIFORM( vec4, envvpParam17 );
+	DEFINE_UNIFORM( vec4, colorAdd );
+	DEFINE_UNIFORM( vec4, colorModulate );
 };
 
 struct FogUniforms : GLSLUniformGroup {
@@ -70,7 +69,6 @@ struct FrobUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( FrobUniforms );
 
 	DEFINE_UNIFORM( float, pulse );
-	DEFINE_UNIFORM( vec3, viewOriginLocal );
 };
 
 /*
@@ -102,9 +100,8 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 			programManager->bumpyEnvironment->Activate();
 			programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
 			BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
-			idVec4 v;
-			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
-			uniforms->viewOriginLocal.Set( v );
+			uniforms->colorAdd.Set(0, 0, 0, 0);
+			uniforms->colorModulate.Set(0, 0, 0, 0);
 		} else // Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
@@ -113,21 +110,7 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		if ( r_useGLSL ) {
 			GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
 			environmentShader->Activate();
-
-			struct EnvUniforms : GLSLUniformGroup {
-				UNIFORM_GROUP_DEF( EnvUniforms )
-				DEFINE_UNIFORM( vec4, viewOriginLocal )
-				DEFINE_UNIFORM( mat4, modelViewMatrix )
-				DEFINE_UNIFORM( mat4, projectionMatrix )
-			};
-
-			EnvUniforms *envUniforms = environmentShader->GetUniformGroup<EnvUniforms>();
-			idVec4 v;
-			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v.ToVec3() );
-			envUniforms->viewOriginLocal.Set( v );
-
-			envUniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
-			envUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
+			environmentShader->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
 		}  else
 			R_UseProgramARB( VPROG_ENVIRONMENT );
 	}
@@ -950,9 +933,6 @@ ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderS
 	frobUniforms->pulse.Set( .7 + .3 * sin( gameLocal.time * 1e-3 ) ); // FIXME move to frontend?
 	if ( !surf->space )
 		return;
-	idVec3 v;
-	R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, v );
-	frobUniforms->viewOriginLocal.Set( v );
 
 	{
 		using namespace Attributes::Default;
