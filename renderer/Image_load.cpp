@@ -547,9 +547,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
 	GL_CheckErrors();
 	if ( mipmapMode == 2 ) { // duzenko #4401
-		auto start = Sys_Milliseconds();
 		qglGenerateMipmap( GL_TEXTURE_2D );
-		backEnd.pc.textureMipmapTime += (Sys_Milliseconds() - start);
 	}
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		if ( strcmp( glConfig.vendor_string, "Intel" ) ) { // known to have crashed on Intel
@@ -1286,7 +1284,7 @@ void BackgroundLoading() {
 		auto start = Sys_Milliseconds();
 		R_LoadImageProgram( img->imgName, &load.pic, &load.width, &load.height, &load.timestamp, &load.depth );
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
-		backEnd.pc.textureLoads++;
+		backEnd.pc.textureBackgroundLoads++;
 		load.state = IS_PARTIAL;
 	}
 }

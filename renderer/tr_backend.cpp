@@ -921,6 +921,6 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	}
 
 	if ( image_showBackgroundLoads && backEnd.pc.textureLoads ) {
-		common->Printf( "%i loads in %i/%i/%i ms\n", backEnd.pc.textureLoads, backEnd.pc.textureLoadTime, backEnd.pc.textureUploadTime, backEnd.pc.textureMipmapTime );
+		common->Printf( "%i/%i loads in %i/%i ms\n", backEnd.pc.textureLoads, backEnd.pc.textureBackgroundLoads, backEnd.pc.textureLoadTime, backEnd.pc.textureUploadTime );
 	}
 }
