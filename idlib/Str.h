@@ -119,6 +119,7 @@ public:
 	friend bool			operator==( const idStr &a, const idStr &b );
 	friend bool			operator==( const idStr &a, const char *b );
 	friend bool			operator==( const char *a, const idStr &b );
+	friend bool			operator<( const idStr& a, const idStr& b );
 
 						// case sensitive compare
 	friend bool			operator!=( const idStr &a, const idStr &b );
@@ -299,6 +300,14 @@ protected:
 
 char *					va( const char *fmt, ... ) id_attribute((format(printf,1,2)));
 
+class idStrFmt: public idStr {
+public:
+	idStrFmt() {}
+	template<typename ... Args>
+	idStrFmt( const char* fmt, Args&& ... args ) {
+		sprintf( *this, fmt, args... );
+	}
+};
 
 ID_INLINE void idStr::EnsureAlloced( int amount, bool keepold ) {
 	if ( amount > alloced ) {
@@ -610,6 +619,10 @@ ID_INLINE bool operator==( const idStr &a, const char *b ) {
 ID_INLINE bool operator==( const char *a, const idStr &b ) {
 	assert( a );
 	return ( !idStr::Cmp( a, b.data ) );
+}
+
+ID_INLINE bool operator<( const idStr& a, const idStr& b ) {
+	return idStr::Cmp( a.data, b.data ) < 0;
 }
 
 ID_INLINE bool operator!=( const idStr &a, const idStr &b ) {

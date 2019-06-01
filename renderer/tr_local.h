@@ -988,7 +988,7 @@ extern idCVar r_showSurfaceInfo;		// show surface material name under crosshair
 extern idCVar r_showNormals;			// draws wireframe normals
 extern idCVar r_showEdges;				// draw the sil edges
 extern idCVar r_showViewEntitys;		// displays the bounding boxes of all view models and optionally the index
-extern idCVarBool r_showEntityDraws;
+extern idCVarInt r_showEntityDraws;
 extern idCVar r_showTexturePolarity;	// shade triangles by texture area polarity
 extern idCVar r_showTangentSpace;		// shade triangles by tangent space
 extern idCVar r_showDominantTri;		// draw lines from vertexes to center of dominant triangles

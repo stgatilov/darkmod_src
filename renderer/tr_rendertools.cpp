@@ -846,7 +846,7 @@ RB_ShowEntityDraws
 Performance tool
 =====================
 */
-static void RB_ShowEntityDraws( viewEntity_t *vModels ) {
+static void RB_ShowEntityDraws() {
 	if ( !r_showEntityDraws || backEnd.viewDef->isSubview ) {
 		return;
 	}
@@ -863,17 +863,43 @@ static void RB_ShowEntityDraws( viewEntity_t *vModels ) {
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_SCISSOR_TEST );
 
+	const bool group = r_showEntityDraws > 1;
 	idStrList list;
+	struct entityCalls {
+		int index, calls;
+		idStr model;
+	};
+	struct modelCalls {
+		int entities, calls;
+	};
+	idList<entityCalls> stats;
+	auto vModels = backEnd.viewDef->viewEntitys;
 	for ( ; vModels; vModels = vModels->next ) {
-		if ( !vModels->drawCalls ) 
+		if ( !vModels->drawCalls )
 			continue;
-		renderEntity_t &re = vModels->entityDef->parms;
-		const char *name = "NULL";
+		renderEntity_t& re = vModels->entityDef->parms;
+		const char* name = "NULL";
 		if ( re.hModel )
 			name = re.hModel->Name();
-		idStr s;
-		sprintf( s, "%3i %3i %s\n", vModels->drawCalls, vModels->entityDef->index, name );
-		list.Append( s );
+		if ( group ) {
+			entityCalls calls{ vModels->entityDef->index, vModels->drawCalls, name, };
+			stats.Append( calls );
+		} else {
+			idStrFmt s("%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name );
+			list.Append( s );
+		}
+	}
+	if ( group ) {
+		std::map<idStr, modelCalls> grouped;
+		for ( auto& stat : stats ) {
+			auto& grp = grouped[stat.model];
+			grp.calls += stat.calls;
+			grp.entities++;
+		}
+		for ( auto& iterator : grouped ) {
+			idStrFmt s( "%3i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() );
+			list.Append( s );
+		}
 	}
 	list.Sort();
 	for ( auto &s : list )
@@ -2288,7 +2314,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_ShowEdges( drawSurfs, numDrawSurfs );
 	RB_ShowNormals( drawSurfs, numDrawSurfs );
 	RB_ShowViewEntitys( backEnd.viewDef->viewEntitys );
-	RB_ShowEntityDraws( backEnd.viewDef->viewEntitys );
+	RB_ShowEntityDraws();
 	RB_ShowLights();
 	RB_ShowLightScissors();
 	RB_ShowTextureVectors( drawSurfs, numDrawSurfs );
