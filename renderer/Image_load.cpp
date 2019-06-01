@@ -18,6 +18,8 @@
 
 #include "tr_local.h"
 #include "FrameBuffer.h"
+#include <thread>
+#include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
 
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
@@ -120,6 +122,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	const byte	*scan;
 	int			rgbOr, rgbAnd, aOr, aAnd;
 	int			rgbDiffer, rgbaDiffer;
+	const bool allowCompress = globalImages->image_useCompression.GetBool() && glConfig.textureCompressionAvailable && globalImages->image_preload.GetBool();
 
 	// determine if the rgb channels are all the same
 	// and if either all rgb or all alpha are 255
@@ -169,13 +172,11 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first
 	if ( minimumDepth == TD_BUMP ) {
-		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() ) {
+		if ( allowCompress && globalImages->image_useNormalCompression.GetInteger() ) {
 			if ( glConfig.textureCompressionRgtcAvailable && globalImages->image_useNormalCompression.GetInteger() > 1 ) {
 				return GL_COMPRESSED_RG_RGTC2;
 			}
-			if ( glConfig.textureCompressionAvailable ) {
-				return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			}
+			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 		}
 		// we always need the alpha channel for bump maps for swizzling
 		return GL_RGBA8;
@@ -188,7 +189,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	if ( minimumDepth == TD_SPECULAR ) {
 		// we are assuming that any alpha channel is unintentional
-		if ( glConfig.textureCompressionAvailable ) {
+		if ( allowCompress ) {
 			return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 		} else {
 			return GL_RGB5;
@@ -196,7 +197,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	}
 	if ( minimumDepth == TD_DIFFUSE ) {
 		// we might intentionally have an alpha channel for alpha tested textures
-		if ( glConfig.textureCompressionAvailable ) {
+		if ( allowCompress ) {
 			if ( !needAlpha ) {
 				return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 			} else {
@@ -225,7 +226,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		if ( minimumDepth == TD_HIGH_QUALITY ) {
 			return GL_RGB8;								// four bytes
 		}
-		if ( glConfig.textureCompressionAvailable ) {
+		if ( allowCompress ) {
 			return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;		// half byte
 		}
 		return GL_RGB5;									// two bytes
@@ -233,7 +234,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// cases with alpha
 	if ( !rgbaDiffer ) {
-		if ( minimumDepth != TD_HIGH_QUALITY && glConfig.textureCompressionAvailable ) {
+		if ( minimumDepth != TD_HIGH_QUALITY && allowCompress ) {
 			return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;	// one byte
 		}
 		return GL_INTENSITY8;							// single byte for all channels
@@ -242,7 +243,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	if ( minimumDepth == TD_HIGH_QUALITY ) {
 		return GL_RGBA8;								// four bytes
 	}
-	if ( glConfig.textureCompressionAvailable ) {
+	if ( allowCompress ) {
 		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;		// one byte
 	}
 	if ( !rgbDiffer ) {
@@ -541,10 +542,14 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE );
 	}
+	auto start = Sys_Milliseconds();
 	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
 	GL_CheckErrors();
 	if ( mipmapMode == 2 ) { // duzenko #4401
+		auto start = Sys_Milliseconds();
 		qglGenerateMipmap( GL_TEXTURE_2D );
+		backEnd.pc.textureMipmapTime += (Sys_Milliseconds() - start);
 	}
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		if ( strcmp( glConfig.vendor_string, "Intel" ) ) { // known to have crashed on Intel
@@ -1235,11 +1240,13 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 		if ( uw > uploadWidth || uh > uploadHeight ) {
 			skipMip++;
 		} else {
+			auto start = Sys_Milliseconds();
 			if ( FormatIsDXT( internalFormat ) ) {
 				qglCompressedTexImage2D( GL_TEXTURE_2D, i - skipMip, internalFormat, uw, uh, 0, size, imagedata );
 			} else {
 				qglTexImage2D( GL_TEXTURE_2D, i - skipMip, internalFormat, uw, uh, 0, externalFormat, GL_UNSIGNED_BYTE, imagedata );
 			}
+			backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
 		}
 		imagedata += size;
 
@@ -1255,6 +1262,37 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 	SetImageFilterAndRepeat();
 }
 
+std::stack<idImage*> backgroundLoads;
+std::mutex mtx;           // mutex for critical section
+
+void BackgroundLoadLocked( std::function<void()> x ) {
+	std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+	lck.lock();
+	x();
+	lck.unlock();
+}
+
+void BackgroundLoading() {
+	while ( 1 ) {
+		Sleep( 1 );
+		if ( backgroundLoads.empty() )
+			continue;
+		idImage* img;
+		BackgroundLoadLocked( [&img]() {
+			img = backgroundLoads.top();
+			backgroundLoads.pop();
+		} );
+		auto& load = img->backgroundLoad;
+		auto start = Sys_Milliseconds();
+		R_LoadImageProgram( img->imgName, &load.pic, &load.width, &load.height, &load.timestamp, &load.depth );
+		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
+		backEnd.pc.textureLoads++;
+		load.state = IS_PARTIAL;
+	}
+}
+
+std::thread backgroundImageLoader(&BackgroundLoading);
+
 /*
 ===============
 ActuallyLoadImage
@@ -1263,9 +1301,9 @@ Absolutely every image goes through this path
 On exit, the idImage will have a valid OpenGL texture number that can be bound
 ===============
 */
-void idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) {
+void idImage::ActuallyLoadImage( bool allowBackground ) {
 	int		width, height;
-	byte	*pic;
+	byte	*pic = NULL;
 
 	if ( session->IsFrontend() ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
@@ -1304,14 +1342,34 @@ void idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 	} else {
 		// see if we have a pre-generated image file that is
 		// already image processed and compressed
-		if ( checkForPrecompressed && globalImages->image_usePrecompressedTextures.GetBool() ) {
+		if ( globalImages->image_usePrecompressedTextures.GetBool() ) {
 			if ( CheckPrecompressedImage( true ) ) {
 				// we got the precompressed image
 				return;
 			}
 			// fall through to load the normal image
 		}
-		R_LoadImageProgram( imgName, &pic, &width, &height, &timestamp, &depth );
+		if ( allowBackground ) {
+			if ( backgroundLoad.state == IS_NONE ) {
+				backgroundLoad.state = IS_SCHEDULED;
+				BackgroundLoadLocked( [this]() {
+					backgroundLoads.push( this );
+				} );
+				return;
+			}
+			if ( backgroundLoad.state == IS_SCHEDULED ) {
+				return;
+			}
+			if ( backgroundLoad.state == IS_PARTIAL ) {
+				pic = backgroundLoad.pic;
+				width = backgroundLoad.width;
+				height = backgroundLoad.height;
+				depth = backgroundLoad.depth;
+				timestamp = backgroundLoad.timestamp;
+				backgroundLoad.state = IS_LOADED;
+			}
+		} else
+			R_LoadImageProgram( imgName, &pic, &width, &height, &timestamp, &depth );
 
 		if ( pic == NULL ) {
 			common->Warning( "Couldn't load image: %s", imgName.c_str() );
@@ -1375,12 +1433,18 @@ void idImage::Bind() {
 
 	// load the image if necessary (FIXME: not SMP safe!)
 	if ( texnum == TEXTURE_NOT_LOADED ) {
-		// load the image on demand here, which isn't our normal game operating mode
-		// duzenko: useful for fast map loading / quick debugging
-		if ( backEnd.pc.textureLoads++ > 4 )
+		auto start = Sys_Milliseconds();
+		ActuallyLoadImage( true );	// check for precompressed, load is from back end
+		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
+		backEnd.pc.textureLoads++;
+		/*if ( backEnd.pc.textureLoadTime < 9 ) {
+		} else {
 			globalImages->whiteImage->Bind();
-		else
-			ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
+		}*/
+	}
+	if ( texnum == TEXTURE_NOT_LOADED ) {
+		globalImages->whiteImage->Bind();
+		return;
 	}
 
 	// bump our statistic counters
@@ -1424,125 +1488,6 @@ void idImage::Bind() {
 		qglPrioritizeTextures( 1, &texnum, &priority );
 	}
 }
-
-/*
-==============
-BindFragment
-
-Fragment programs explicitly say which type of map they want, so we don't need to
-do any enable / disable changes
-==============
-*/
-void idImage::BindFragment() {
-#ifdef _DEBUG
-	if ( tr.logFile ) {
-		RB_LogComment( "idImage::BindFragment %s )\n", imgName.c_str() );
-	}
-#endif
-	// load the image if necessary (FIXME: not SMP safe!)
-	if ( texnum == TEXTURE_NOT_LOADED ) {
-		// load the image on demand here, which isn't our normal game operating mode
-		// duzenko: useful for fast map loading / quick debugging
-		ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
-	}
-
-	// bump our statistic counters
-	frameUsed = backEnd.frameCount;
-	bindCount++;
-
-	// bind the texture
-	if ( type == TT_2D ) {
-		qglBindTexture( GL_TEXTURE_2D, texnum );
-	} else if ( type == TT_CUBIC ) {
-		qglBindTexture( GL_TEXTURE_CUBE_MAP, texnum );
-	}
-}
-
-/*
-====================
-CopyFramebuffer
-x, y, imageWidth, imageHeigh for subviews are full screen size, scissored by backend.viewdef
-====================
-*/
-/*void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
-	this->Bind();
-	if ( !r_useFbo.GetBool() ) { // duzenko #4425: not applicable, raises gl errors
-		qglReadBuffer( GL_BACK );
-	}
-	// only resize if the current dimensions can't hold it at all, otherwise subview renderings could thrash this
-	if ( ( useOversizedBuffer && ( uploadWidth < imageWidth || uploadHeight < imageHeight ) ) ||
-	     ( !useOversizedBuffer && ( uploadWidth != imageWidth || uploadHeight != imageHeight ) ) ) {
-		uploadWidth = imageWidth;
-		uploadHeight = imageHeight;
-		// bim bada bum, looks away...
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
-	} else {
-		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
-		// it and don't try and do a texture compression or some other silliness
-		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
-	}
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	backEnd.c_copyFrameBuffer++;
-
-	// Debug
-	GL_CheckErrors();
-}*/
-
-/*
-====================
-CopyDepthbuffer
-
-This should just be part of copyFramebuffer once we have a proper image type field
-Fixed #3877. Allow shaders to access scene depth -- revelator + SteveL
-====================
-*/
-/*void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
-	this->Bind();
-	// Ensure we are reading from the back buffer:
-	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
-		qglReadBuffer( GL_BACK );
-	// only resize if the current dimensions can't hold it at all,
-	// otherwise subview renderings could thrash this
-	if ( ( useOversizedBuffer && ( uploadWidth < imageWidth || uploadHeight < imageHeight) ) ||
-		 ( !useOversizedBuffer && ( uploadWidth != imageWidth || uploadHeight != imageHeight) ) ) {
-		uploadWidth = imageWidth;
-		uploadHeight = imageHeight;
-
-		// This bit runs once only at map start, because it tests whether the image is too small to hold the screen.
-		// It resizes the texture to a power of two that can hold the screen,
-		// and then subsequent captures to the texture put the depth component into the RGB channels
-		// this part sets depthbits to the max value the gfx card supports, it could also be used for FBO.
-		switch ( r_fboDepthBits.GetInteger() ) {
-			case 16:
-				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
-				break;
-			case 32:
-				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
-				break;
-			default:
-				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
-				break;
-		}
-	}   //REVELATOR: dont need an else condition here.
-
-	// otherwise, just subimage upload it so that drivers can tell we are going to be changing
-	// it and don't try and do texture compression or some other silliness.
-	qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
-
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); // GL_NEAREST for Soft Shadow ~SS
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); // GL_NEAREST
-
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	backEnd.c_copyDepthBuffer++;
-
-	// Debug this as well
-	GL_CheckErrors();
-}*/
 
 /*
 =============

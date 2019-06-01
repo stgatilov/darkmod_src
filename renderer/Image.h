@@ -16,6 +16,8 @@
 #ifndef __R_IMAGE_H__
 #define __R_IMAGE_H__
 
+#include <stack>
+
 /*
 ====================================================================
 
@@ -44,12 +46,6 @@ qglDisable( GL_TEXTURE_* )
 
 ====================================================================
 */
-
-typedef enum {
-	IS_UNLOADED,	// no gl texture number
-	IS_PARTIAL,		// has a texture number and the low mip levels loaded
-	IS_LOADED		// has a texture number and the full mip hierarchy
-} imageState_t;
 
 #define	MAX_TEXTURE_LEVELS				14
 
@@ -137,6 +133,23 @@ typedef enum {
 #define	MAX_IMAGE_NAME	256
 #define MIN_IMAGE_NAME  4
 
+typedef enum {
+	IS_NONE,		// empty/foreground load
+	IS_SCHEDULED,	// waiting in queue
+	IS_PARTIAL,		// data loaded, waiting for GL thread
+	IS_LOADED		// all done
+} imageLoadState_t;
+
+
+struct imageLoad_t {
+	byte* pic;
+	int width;
+	int height;
+	ID_TIME_T timestamp;
+	textureDepth_t depth;
+	imageLoadState_t state;
+};
+
 class idImage {
 public:
 	idImage();
@@ -146,9 +159,6 @@ public:
 	// May perform file loading if the image was not preloaded.
 	// May start a background image read.
 	void		Bind();
-
-	// for use with fragment programs, doesn't change any enable2D/3D/cube states
-	void		BindFragment();
 
 	// deletes the texture object, but leaves the structure so it can be reloaded
 	void		PurgeImage();
@@ -164,18 +174,6 @@ public:
 	                               textureFilter_t filter, bool allowDownSize,
 	                               textureDepth_t depth );
 	void		GenerateAttachment( int width, int height, GLint format );
-	/*	void		GenerateRendertarget(); //~SS
-		// added for soft shadows jitter map, but should be generally useful for storing data
-		// in a 3D texture. No mipmaps, high quality, nearest filtering, user specifies the format.
-		void		GenerateDataCubeImage( const GLvoid* data, int width, int height, int depth, textureRepeat_t repeat,
-										   GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
-	*/
-
-
-
-	//void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
-
-	//void		CopyDepthBuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
 	void		UploadScratch( const byte *pic, int width, int height );
 
@@ -201,10 +199,8 @@ public:
 	void		WritePrecompressedImage();
 	bool		CheckPrecompressedImage( bool fullLoad );
 	void		UploadPrecompressedImage( byte *data, int len );
-	void		ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd );
-	void		StartBackgroundImageLoad();
+	void		ActuallyLoadImage( bool allowBackground = false );
 	int			BitsForInternalFormat( int internalFormat ) const;
-	//void		UploadCompressedNormalMap( int width, int height, const byte *rgba, int mipLevel );
 	GLenum		SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth ) const;
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
 	int			NumLevelsForImageSize( int width, int height ) const;
@@ -242,6 +238,8 @@ public:
 	idImage *			hashNext;				// for hash chains to speed lookup
 
 	int					refCount;				// overall ref count
+
+	imageLoad_t			backgroundLoad;
 };
 
 ID_INLINE idImage::idImage() {
@@ -266,6 +264,7 @@ ID_INLINE idImage::idImage() {
 	internalFormat = 0;
 	hashNext = NULL;
 	refCount = 0;
+	memset( &backgroundLoad, 0, sizeof( backgroundLoad ) );
 }
 
 
@@ -274,7 +273,6 @@ void	R_WriteTGA( const char *filename, const byte *data, int width, int height, 
 // data is an 8 bit index into palette, which is RGB (no A)
 void	R_WritePalTGA( const char *filename, const byte *data, const byte *palette, int width, int height, bool flipVertical = false );
 // data is in top-to-bottom raster order unless flipVertical is set
-
 
 class idImageManager {
 public:

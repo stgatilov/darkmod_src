@@ -19,6 +19,7 @@
 #include "FrameBuffer.h"
 
 backEndState_t	backEnd;
+idCVarBool image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER, "1 = print outstanding background loads" );
 
 /*
 ======================
@@ -917,5 +918,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, drwBloom: %i, CpyRenders: %i, CpyFrameBuf: %i, CpyDepthBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_drawBloom, c_copyRenders, backEnd.c_copyFrameBuffer, backEnd.c_copyDepthBuffer );
 		backEnd.c_copyFrameBuffer = 0;
 		backEnd.c_copyDepthBuffer = 0;
+	}
+
+	if ( image_showBackgroundLoads && backEnd.pc.textureLoads ) {
+		common->Printf( "%i loads in %i/%i/%i ms\n", backEnd.pc.textureLoads, backEnd.pc.textureLoadTime, backEnd.pc.textureUploadTime, backEnd.pc.textureMipmapTime );
 	}
 }

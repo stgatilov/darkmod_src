@@ -63,6 +63,7 @@ idCVar idImageManager::image_ignoreHighQuality( "image_ignoreHighQuality", "0", 
 idCVar idImageManager::image_downSizeLimit( "image_downSizeLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls diffuse map downsample limit" );
 idCVar idImageManager::image_blockChecksum( "image_blockChecksum", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Perform MD4 block checksum calculation for later duplicates check" );
 idCVar idImageManager::image_mipmapMode( "image_mipmapMode", "2", CVAR_RENDERER | CVAR_ARCHIVE, "Mipmap generation mode: 0 - software, 1 - GL 1.4, 2 - GL 3.0" );
+
 // do this with a pointer, in case we want to make the actual manager
 // a private virtual subclass
 idImageManager	imageManager;
@@ -855,7 +856,7 @@ void idImage::Reload( bool checkPrecompressed, bool force ) {
 	// force no precompressed image check, which will cause it to be reloaded
 	// from source, and another precompressed file generated.
 	// Load is from the front end, so the back end must be synced
-	ActuallyLoadImage( checkPrecompressed, false );
+	ActuallyLoadImage();
 }
 
 /*
@@ -1249,7 +1250,7 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void ( *generator
 	// check for precompressed, load is from the front end
 	if ( image_preload.GetBool() ) {
 		image->referencedOutsideLevelLoad = true;
-		image->ActuallyLoadImage( true, false );
+		image->ActuallyLoadImage();
 	}
 	return image;
 }
@@ -1321,7 +1322,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 
 			if ( image_preload.GetBool() && !insideLevelLoad ) {
 				image->referencedOutsideLevelLoad = true;
-				image->ActuallyLoadImage( true, false );	// check for precompressed, load is from front end
+				image->ActuallyLoadImage();	// check for precompressed, load is from front end
 				declManager->MediaPrint( "%ix%i %s (reload for mixed references)\n", image->uploadWidth, image->uploadHeight, image->imgName.c_str() );
 			}
 			return image;
@@ -1365,7 +1366,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	// load it if we aren't in a level preload
 	if ( image_preload.GetBool() && !insideLevelLoad ) {
 		image->referencedOutsideLevelLoad = true;
-		image->ActuallyLoadImage( true, false );	// check for precompressed, load is from front end
+		image->ActuallyLoadImage();	// check for precompressed, load is from front end
 		declManager->MediaPrint( "%ix%i %s\n", image->uploadWidth, image->uploadHeight, image->imgName.c_str() );
 	} else {
 		declManager->MediaPrint( "%s\n", image->imgName.c_str() );
@@ -1717,7 +1718,7 @@ void idImageManager::EndLevelLoad() {
 		if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
 			//common->Printf( "Loading image %d: %s\n",i,image->imgName.c_str() );
 			loadCount++;
-			image->ActuallyLoadImage( true, false );
+			image->ActuallyLoadImage();
 		}
 
 		// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
