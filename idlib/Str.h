@@ -241,6 +241,7 @@ public:
 	static void			Copynz( char *dest, const char *src, int destsize );
 	static int			snPrintf( char *dest, int size, const char *fmt, ... ) id_attribute((format(printf,3,4)));
 	static int			vsnPrintf( char *dest, int size, const char *fmt, va_list argptr );
+	static idStr		Fmt( const char* fmt, ... );
 	// returns -1 if not found otherwise the index of the char
 	static int			FindChar( const char *str, const char c, int start = 0, int end = -1 );
 	static int			CountChar( const char *str, const char c, int start = 0, int end = -1 );
@@ -299,15 +300,6 @@ protected:
 };
 
 char *					va( const char *fmt, ... ) id_attribute((format(printf,1,2)));
-
-class idStrFmt: public idStr {
-public:
-	idStrFmt() {}
-	template<typename ... Args>
-	idStrFmt( const char* fmt, Args&& ... args ) {
-		sprintf( *this, fmt, args... );
-	}
-};
 
 ID_INLINE void idStr::EnsureAlloced( int amount, bool keepold ) {
 	if ( amount > alloced ) {

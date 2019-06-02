@@ -2003,3 +2003,11 @@ idStr idStr::FormatNumber( int number ) {
 	return string;
 }
 
+idStr idStr::Fmt( const char* fmt, ... ) {
+	idStr res;
+	va_list args;
+	va_start( args, fmt );
+	vsprintf( res, fmt, args );
+	va_end( args );
+	return res;
+}

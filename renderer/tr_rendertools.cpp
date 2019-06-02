@@ -884,10 +884,8 @@ static void RB_ShowEntityDraws() {
 		if ( group ) {
 			entityCalls calls{ vModels->entityDef->index, vModels->drawCalls, name, };
 			stats.Append( calls );
-		} else {
-			idStrFmt s("%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name );
-			list.Append( s );
-		}
+		} else
+			list.Append( idStr::Fmt( "%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name ) );
 	}
 	if ( group ) {
 		std::map<idStr, modelCalls> grouped;
@@ -896,10 +894,8 @@ static void RB_ShowEntityDraws() {
 			grp.calls += stat.calls;
 			grp.entities++;
 		}
-		for ( auto& iterator : grouped ) {
-			idStrFmt s( "%3i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() );
-			list.Append( s );
-		}
+		for ( auto& iterator : grouped )
+			list.Append( idStr::Fmt( "%3i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() ) );
 	}
 	list.Sort();
 	for ( auto &s : list )
