@@ -201,6 +201,7 @@
     <ClInclude Include="framework\KeyInput.h" />
     <ClInclude Include="framework\Licensee.h" />
     <ClInclude Include="framework\minizip\minizip_extra.h" />
+    <ClInclude Include="framework\minizip\minizip_private.h" />
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
     <ClInclude Include="framework\UsercmdGen.h" />
