@@ -145,8 +145,6 @@ struct imageLoad_t {
 	byte* pic;
 	int width;
 	int height;
-	ID_TIME_T timestamp;
-	textureDepth_t depth;
 	imageLoadState_t state;
 };
 

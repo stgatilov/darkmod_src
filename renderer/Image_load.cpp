@@ -1282,7 +1282,7 @@ void BackgroundLoading() {
 		} );
 		auto& load = img->backgroundLoad;
 		auto start = Sys_Milliseconds();
-		R_LoadImageProgram( img->imgName, &load.pic, &load.width, &load.height, &load.timestamp, &load.depth );
+		R_LoadImageProgram( img->imgName, &load.pic, &load.width, &load.height, &img->timestamp, &img->depth );
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
 		backEnd.pc.textureBackgroundLoads++;
 		load.state = IS_PARTIAL;
@@ -1362,8 +1362,6 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 				pic = backgroundLoad.pic;
 				width = backgroundLoad.width;
 				height = backgroundLoad.height;
-				depth = backgroundLoad.depth;
-				timestamp = backgroundLoad.timestamp;
 				backgroundLoad.state = IS_LOADED;
 			}
 		} else
