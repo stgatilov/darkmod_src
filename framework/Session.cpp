@@ -2864,10 +2864,7 @@ void idSessionLocal::Frame() {
 			// early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
 			usercmdGen->GetDirectUsercmd();
 		}
-		r_swapIntervalTemp = 1;
-	} else
-		if ( r_swapIntervalTemp ^ r_swapInterval ) // avoid useless hassle
-			r_swapIntervalTemp = (int)r_swapInterval;
+	}
 
 	if ( !mapSpawned ) {
 		return;

@@ -71,7 +71,6 @@ idCVar r_znear( "r_znear", "3", CVAR_RENDERER | CVAR_FLOAT, "near Z clip plane d
 idCVar r_ignoreGLErrors( "r_ignoreGLErrors", "1", CVAR_RENDERER | CVAR_BOOL, "ignore GL errors" );
 idCVar r_finish( "r_finish", "0", CVAR_RENDERER | CVAR_BOOL, "force a call to glFinish() every frame" );
 idCVarInt r_swapInterval( "r_swapInterval", "0", CVAR_RENDERER | CVAR_ARCHIVE, "changes wglSwapIntarval" );
-idCVarInt r_swapIntervalTemp( "r_swapIntervalTemp", "1", CVAR_RENDERER, "forces VSync in GUI - internal use only" );
 
 idCVar r_gamma( "r_gamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables (inverse power function)", 0.1f, 3.0f );
 idCVar r_brightness( "r_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables (premultiplier)", 0.5f, 2.0f );
@@ -1758,7 +1757,7 @@ idRenderSystemLocal::Init
 ===============
 */
 void idRenderSystemLocal::Init( void ) {
-	r_swapIntervalTemp.SetModified();
+	r_swapInterval.SetModified();
 
 	// clear all our internal state
 	viewCount = 1;		// so cleared structures never match viewCount

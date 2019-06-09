@@ -892,10 +892,10 @@ GLimp_SwapBuffers
 void GLimp_SwapBuffers( void ) {
 	// wglSwapinterval is a windows-private extension,
 	// so we must check for it here instead of portably
-	if ( r_swapIntervalTemp.IsModified() ) {
-		r_swapIntervalTemp.ClearModified();
+	if ( r_swapInterval.IsModified() ) {
+		r_swapInterval.ClearModified();
 		if ( qwglSwapIntervalEXT ) {
-			qwglSwapIntervalEXT( r_swapIntervalTemp );
+			qwglSwapIntervalEXT( r_swapInterval );
 		}
 	}
 	SwapBuffers( win32.hDC );
