@@ -366,6 +366,18 @@ void idImage::GetDownsize( int &scaled_width, int &scaled_height ) const {
 	}
 }
 
+bool loading, uploading;
+
+struct Routine {
+	bool* b;
+	Routine( bool* watch ) : b( watch ) {
+		*b = true;
+	}
+	~Routine() {
+		*b = false;
+	}
+};
+
 /*
 ================
 GenerateImage
@@ -542,12 +554,14 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE );
 	}
-	auto start = Sys_Milliseconds();
-	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-	backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
-	GL_CheckErrors();
-	if ( mipmapMode == 2 ) { // duzenko #4401
-		qglGenerateMipmap( GL_TEXTURE_2D );
+	{
+		//Routine test( &uploading );
+		auto start = Sys_Milliseconds();
+		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+		if ( mipmapMode == 2 ) { // duzenko #4401
+			qglGenerateMipmap( GL_TEXTURE_2D );
+		}
+		backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
 	}
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		if ( strcmp( glConfig.vendor_string, "Intel" ) ) { // known to have crashed on Intel
@@ -1116,10 +1130,13 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 		return false;
 	}
 
-	// upload all the levels
-	UploadPrecompressedImage( data, len );
+	backgroundLoad.compressedSize = len;
+	backgroundLoad.pic = data;
 
-	R_StaticFree( data );
+	// upload all the levels
+	//UploadPrecompressedImage( data, len );
+
+	//R_StaticFree( data );
 
 	return true;
 }
@@ -1238,6 +1255,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 		if ( uw > uploadWidth || uh > uploadHeight ) {
 			skipMip++;
 		} else {
+			//Routine test( &uploading );
 			auto start = Sys_Milliseconds();
 			if ( FormatIsDXT( internalFormat ) ) {
 				qglCompressedTexImage2D( GL_TEXTURE_2D, i - skipMip, internalFormat, uw, uh, 0, size, imagedata );
@@ -1260,29 +1278,65 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 	SetImageFilterAndRepeat();
 }
 
+void R_LoadImageData( idImage& image ) {
+	// see if we have a pre-generated image file that is
+	// already image processed and compressed
+	if ( globalImages->image_usePrecompressedTextures.GetBool() ) {
+		/*if ( backEnd.pc.textureLoadTime > 9 )
+			return;*/
+		if ( image.CheckPrecompressedImage( true ) ) {
+			// we got the precompressed image
+			return;
+		}
+		// fall through to load the normal image
+	}
+	auto& load = image.backgroundLoad;
+	R_LoadImageProgram( image.imgName, &load.pic, &load.width, &load.height, &image.timestamp, &image.depth );
+}
+
+void R_UploadImageData( idImage& image ) {
+	auto& load = image.backgroundLoad;
+	if ( load.pic == NULL ) {
+		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
+		image.MakeDefault();
+		return;
+	}
+	if ( load.compressedSize ) {
+		// upload all the levels
+		image.UploadPrecompressedImage( load.pic, load.compressedSize );
+	} else {
+		// build a hash for checking duplicate image files
+		// NOTE: takes about 10% of image load times (SD)
+		// may not be strictly necessary, but some code uses it, so let's leave it in
+		if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
+			image.imageHash = MD4_BlockChecksum( load.pic, load.width * load.height * 4 );
+		image.GenerateImage( load.pic, load.width, load.height, image.filter, image.allowDownSize, image.repeat, image.depth );
+		image.precompressedFile = false;
+		// write out the precompressed version of this file if needed
+		image.WritePrecompressedImage();
+	}
+	R_StaticFree( load.pic );
+}
+
 std::stack<idImage*> backgroundLoads;
 std::mutex mtx;           // mutex for critical section
-
-void BackgroundLoadLocked( std::function<void()> x ) {
-	std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
-	lck.lock();
-	x();
-	lck.unlock();
-}
 
 void BackgroundLoading() {
 	while ( 1 ) {
 		Sleep( 1 );
 		if ( backgroundLoads.empty() )
 			continue;
+		/*if ( loading && !uploading )
+			GetTickCount();*/
 		idImage* img;
-		BackgroundLoadLocked( [&img]() {
+		{
+			std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
 			img = backgroundLoads.top();
 			backgroundLoads.pop();
-		} );
+		}
 		auto& load = img->backgroundLoad;
 		auto start = Sys_Milliseconds();
-		R_LoadImageProgram( img->imgName, &load.pic, &load.width, &load.height, &img->timestamp, &img->depth );
+		R_LoadImageData( *img );
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
 		backEnd.pc.textureBackgroundLoads++;
 		load.state = IS_PARTIAL;
@@ -1300,8 +1354,8 @@ On exit, the idImage will have a valid OpenGL texture number that can be bound
 ===============
 */
 void idImage::ActuallyLoadImage( bool allowBackground ) {
-	int		width, height;
-	byte	*pic = NULL;
+	//Routine test( &loading );
+	auto& load = backgroundLoad;
 
 	if ( session->IsFrontend() ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
@@ -1322,14 +1376,14 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 		byte	*pics[6];
 
 		// we don't check for pre-compressed cube images currently
-		R_LoadCubeImages( imgName, cubeFiles, pics, &width, &timestamp );
+		R_LoadCubeImages( imgName, cubeFiles, pics, &load.width, &timestamp );
 
 		if ( pics[0] == NULL ) {
 			common->Warning( "Couldn't load cube image: %s", imgName.c_str() );
 			MakeDefault();
 			return;
 		}
-		GenerateCubeImage( ( const byte ** )pics, width, filter, allowDownSize, depth );
+		GenerateCubeImage( ( const byte ** )pics, load.width, filter, allowDownSize, depth );
 		precompressedFile = false;
 
 		for ( int i = 0 ; i < 6 ; i++ ) {
@@ -1338,55 +1392,24 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 			}
 		}
 	} else {
-		// see if we have a pre-generated image file that is
-		// already image processed and compressed
-		if ( globalImages->image_usePrecompressedTextures.GetBool() ) {
-			if ( CheckPrecompressedImage( true ) ) {
-				// we got the precompressed image
-				return;
-			}
-			// fall through to load the normal image
-		}
 		if ( allowBackground ) {
-			if ( backgroundLoad.state == IS_NONE ) {
-				backgroundLoad.state = IS_SCHEDULED;
-				BackgroundLoadLocked( [this]() {
-					backgroundLoads.push( this );
-				} );
+			if ( load.state == IS_NONE ) {
+				load.state = IS_SCHEDULED;
+				std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+				backgroundLoads.push( this );
 				return;
 			}
-			if ( backgroundLoad.state == IS_SCHEDULED ) {
+			if ( load.state == IS_SCHEDULED ) {
 				return;
 			}
-			if ( backgroundLoad.state == IS_PARTIAL ) {
-				pic = backgroundLoad.pic;
-				width = backgroundLoad.width;
-				height = backgroundLoad.height;
-				backgroundLoad.state = IS_LOADED;
+			if ( load.state == IS_PARTIAL ) {
+				load.state = IS_LOADED;
+				R_UploadImageData( *this );
 			}
-		} else
-			R_LoadImageProgram( imgName, &pic, &width, &height, &timestamp, &depth );
-
-		if ( pic == NULL ) {
-			common->Warning( "Couldn't load image: %s", imgName.c_str() );
-			MakeDefault();
-			return;
+		} else {
+			R_LoadImageData( *this );
+			R_UploadImageData( *this );
 		}
-
-		// build a hash for checking duplicate image files
-		// NOTE: takes about 10% of image load times (SD)
-		// may not be strictly necessary, but some code uses it, so let's leave it in
-		if ( globalImages->image_blockChecksum.GetBool() ) { // duzenko #4400
-			imageHash = MD4_BlockChecksum( pic, width * height * 4 );
-		}
-		GenerateImage( pic, width, height, filter, allowDownSize, repeat, depth );
-		timestamp = timestamp;
-		precompressedFile = false;
-
-		R_StaticFree( pic );
-
-		// write out the precompressed version of this file if needed
-		WritePrecompressedImage();
 	}
 }
 
@@ -1433,10 +1456,6 @@ void idImage::Bind() {
 		ActuallyLoadImage( true );	// check for precompressed, load is from back end
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
 		backEnd.pc.textureLoads++;
-		/*if ( backEnd.pc.textureLoadTime < 9 ) {
-		} else {
-			globalImages->whiteImage->Bind();
-		}*/
 	}
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		globalImages->whiteImage->Bind();

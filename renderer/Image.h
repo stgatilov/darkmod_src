@@ -145,6 +145,7 @@ struct imageLoad_t {
 	byte* pic;
 	int width;
 	int height;
+	int compressedSize;
 	imageLoadState_t state;
 };
 
