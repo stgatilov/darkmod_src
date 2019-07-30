@@ -1324,22 +1324,22 @@ std::mutex mtx;           // mutex for critical section
 void BackgroundLoading() {
 	while ( 1 ) {
 		Sleep( 1 );
-		if ( backgroundLoads.empty() )
-			continue;
-		/*if ( loading && !uploading )
-			GetTickCount();*/
-		idImage* img;
-		{
-			std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
-			img = backgroundLoads.top();
-			backgroundLoads.pop();
+		while ( !backgroundLoads.empty() ) {
+			/*if ( loading && !uploading )
+				GetTickCount();*/
+			idImage* img;
+			{
+				std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+				img = backgroundLoads.top();
+				backgroundLoads.pop();
+			}
+			auto& load = img->backgroundLoad;
+			auto start = Sys_Milliseconds();
+			R_LoadImageData( *img );
+			backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
+			backEnd.pc.textureBackgroundLoads++;
+			load.state = IS_LOADED;
 		}
-		auto& load = img->backgroundLoad;
-		auto start = Sys_Milliseconds();
-		R_LoadImageData( *img );
-		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
-		backEnd.pc.textureBackgroundLoads++;
-		load.state = IS_PARTIAL;
 	}
 }
 
@@ -1402,8 +1402,8 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 			if ( load.state == IS_SCHEDULED ) {
 				return;
 			}
-			if ( load.state == IS_PARTIAL ) {
-				load.state = IS_LOADED;
+			if ( load.state == IS_LOADED ) {
+				load.state = IS_NONE; // hopefully allow reload to happen
 				R_UploadImageData( *this );
 			}
 		} else {

@@ -136,8 +136,7 @@ typedef enum {
 typedef enum {
 	IS_NONE,		// empty/foreground load
 	IS_SCHEDULED,	// waiting in queue
-	IS_PARTIAL,		// data loaded, waiting for GL thread
-	IS_LOADED		// all done
+	IS_LOADED		// data loaded, waiting for GL thread
 } imageLoadState_t;
 
 
