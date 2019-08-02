@@ -1323,7 +1323,7 @@ std::mutex mtx;           // mutex for critical section
 
 void BackgroundLoading() {
 	while ( 1 ) {
-		Sleep( 1 );
+		Sys_Sleep( 1 );
 		while ( !backgroundLoads.empty() ) {
 			/*if ( loading && !uploading )
 				GetTickCount();*/
