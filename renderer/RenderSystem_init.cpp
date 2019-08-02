@@ -243,6 +243,7 @@ idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use GLSL 
 idCVar r_forceGlslPrograms( "r_forceGlslPrograms", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force using GLSL shaders instead of ARB ones (when shader is used in material's new stage)" );
 idCVar r_uniformTransforms( "r_uniformTransforms", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use uniform variables in shaders for vertex transformations instead of the deprecated ftransform" );
 idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
+idCVarBool r_legacyTangents( "r_legacyTangents", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = legacy CPU tangent calculation" );
 
 // FBO
 idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL, "Use framebuffer objects" );

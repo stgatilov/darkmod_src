@@ -21,6 +21,8 @@
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
 
+extern idCVarBool r_legacyTangents;
+
 //===============================================================
 //
 //	SSE2 implementation of idSIMDProcessor
@@ -875,9 +877,25 @@ DEBUG_OPTIMIZE_ON
 	dst = _mm_sub_ps(dst, _mm_mul_ps(b, _mm_shuffle_ps(a, a, SHUF(1, 2, 0, 3)))); \
 	dst = _mm_shuffle_ps(dst, dst, SHUF(1, 2, 0, 3));
 
+void NormalizeTangentsLess( idDrawVert* verts, const int numVerts ) {
+	for ( int i = 0; i < numVerts; i++ ) {
+		idDrawVert& vertex = verts[i];
+		__m128 normal = _mm_loadu_ps( &vertex.normal.x );
+
+		DOT_PRODUCT( dotNormal, normal, normal )
+			normal = _mm_mul_ps( normal, _mm_rsqrt_ps( dotNormal ) );
+
+		// FIXME somehow check that there's unused space after normal
+		_mm_storeu_ps( &verts[i].normal.x, normal );
+	}
+}
 
 //somewhat slower than ID's code (28.6K vs 21.4K)
 void idSIMD_SSE2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
+	if ( !r_legacyTangents ) {
+		NormalizeTangentsLess( verts, numVerts );
+		return;
+	}
 	for (int i = 0; i < numVerts; i++) {
 		idDrawVert &vertex = verts[i];
 		__m128 normal = _mm_loadu_ps(&vertex.normal.x);
@@ -997,6 +1015,61 @@ void idSIMD_SSE2::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const
 	VertexMinMax(min, max, src, count, [indexes](int i) { return indexes[i]; });
 }
 
+#define NORMAL_EPS 1e-10f
+
+void DeriveTangentsLess( idPlane* planes, idDrawVert* verts, const int numVerts, const int* indexes, const int numIndexes ) {
+	int numTris = numIndexes / 3;
+	for ( int i = 0; i < numTris; i++ ) {
+		int idxA = indexes[3 * i + 0];
+		int idxB = indexes[3 * i + 1];
+		int idxC = indexes[3 * i + 2];
+		idDrawVert& vA = verts[idxA];
+		idDrawVert& vB = verts[idxB];
+		idDrawVert& vC = verts[idxC];
+
+		__m128 posA = _mm_loadu_ps( &vA.xyz.x );		//xyzs A
+		__m128 posB = _mm_loadu_ps( &vB.xyz.x );		//xyzs B
+		__m128 posC = _mm_loadu_ps( &vC.xyz.x );		//xyzs C
+		__m128 tA = _mm_load_ss( &vA.st.y );				//t    A
+		__m128 tB = _mm_load_ss( &vB.st.y );				//t    B
+		__m128 tC = _mm_load_ss( &vC.st.y );				//t    C
+
+		//compute AB/AC differences
+		__m128 dpAB = _mm_sub_ps( posB, posA );			//xyzs AB
+		__m128 dpAC = _mm_sub_ps( posC, posA );			//xyzs AC
+		__m128 dtAB = _mm_sub_ps( tB, tA );					//tttt AB
+		__m128 dtAC = _mm_sub_ps( tC, tA );					//tttt AC
+		dtAB = _mm_shuffle_ps( dtAB, dtAB, SHUF( 0, 0, 0, 0 ) );
+		dtAC = _mm_shuffle_ps( dtAC, dtAC, SHUF( 0, 0, 0, 0 ) );
+
+		//compute normal unit vector
+		CROSS_PRODUCT( normal, dpAC, dpAB )
+			DOT_PRODUCT( normalSqr, normal, normal );
+		normalSqr = _mm_max_ps( normalSqr, _mm_set1_ps( NORMAL_EPS ) );
+		normalSqr = _mm_rsqrt_ps( normalSqr );
+		normal = _mm_mul_ps( normal, normalSqr );
+
+		//fit plane though point A
+		DOT_PRODUCT( planeShift, posA, normal );
+		planeShift = _mm_xor_ps( planeShift, _mm_castsi128_ps( _mm_set1_epi32( 0x80000000 ) ) );
+		//save plane equation
+		static_assert( sizeof( idPlane ) == 16, "Wrong idPlane size" );
+		_mm_storeu_ps( planes[i].ToFloatPtr(), normal );
+		_mm_store_ss( planes[i].ToFloatPtr() + 3, planeShift );
+
+		//check area sign
+		__m128 area = _mm_sub_ps( _mm_mul_ps( dpAB, dtAC ), _mm_mul_ps( dpAC, dtAB ) );
+		area = _mm_shuffle_ps( area, area, SHUF( 3, 3, 3, 3 ) );
+		__m128 sign = _mm_and_ps( area, _mm_castsi128_ps( _mm_set1_epi32( 0x80000000 ) ) );
+
+		//add computed normal and tangents to endpoints' data (for averaging)
+#define ADDV(dst, src) _mm_storeu_ps(dst, _mm_add_ps(_mm_loadu_ps(dst), src));
+		ADDV( &vA.normal.x, normal );
+		ADDV( &vB.normal.x, normal );
+		ADDV( &vC.normal.x, normal );
+#undef ADDV
+	}
+}
 
 //this thing is significantly faster that ID's original code (50K vs 87K)
 //one major difference is: this version zeroes all resulting vectors in preprocessing step
@@ -1019,6 +1092,10 @@ void idSIMD_SSE2::DeriveTangents( idPlane *planes, idDrawVert *verts, const int 
 		_mm_store_ss(ptr + 8, _mm_setzero_ps());
 	}
 
+	if ( !r_legacyTangents ) {
+		DeriveTangentsLess( planes, verts, numVerts, indexes, numIndexes );
+		return;
+	}
 	for (int i = 0; i < numTris; i++) {
 		int idxA = indexes[3 * i + 0];
 		int idxB = indexes[3 * i + 1];
