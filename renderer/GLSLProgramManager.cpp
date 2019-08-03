@@ -71,6 +71,7 @@ void GLSLProgramManager::Shutdown() {
 	stencilInteractionShader = nullptr;
 	shadowMapInteractionShader = nullptr;
 	multiLightInteractionShader = nullptr;
+	r_legacyTangents.RemoveOnModifiedCallback( legacyTangentsCvarCallback );
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -223,7 +224,10 @@ namespace {
 			if( glConfig.gpuShader4Available ) {
 				defines.Set( "EXT_gpu_shader4", "1" );
 			}
-			DefaultProgramInit( program, defines, baseName + ".vs", baseName + ".fs" );			
+			if ( r_legacyTangents.GetBool() ) {
+				defines.Set( "LEGACY_BITANGENTS", "1" );
+			}
+			DefaultProgramInit( program, defines, baseName + ".vs", baseName + ".fs" );
 			program->Activate();
 			Uniforms::Interaction *interactionUniforms = program->GetUniformGroup<Uniforms::Interaction>();
 			interactionUniforms->ambient = ambient;
@@ -259,5 +263,9 @@ void GLSLProgramManager::Init() {
 	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
 	multiLightInteractionShader = LoadInteractionShader( "multiLightInteraction", "interactionN", false );
 	frobShader = Load( "frob" );
+	// FIXME duzenko: is it the right way to do this?
+	legacyTangentsCvarCallback = r_legacyTangents.AddOnModifiedCallback( [this] () {
+		shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
+	} );
 }
 

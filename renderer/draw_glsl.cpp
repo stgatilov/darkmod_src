@@ -143,8 +143,10 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArray( 8 );
-	qglEnableVertexAttribArray( 9 );
-	qglEnableVertexAttribArray( 10 );
+	if ( r_legacyTangents ) {
+		qglEnableVertexAttribArray( 9 );
+		qglEnableVertexAttribArray( 10 );
+	}
 	qglEnableVertexAttribArray( 2 );
 	qglEnableVertexAttribArray( 3 );
 
@@ -161,8 +163,10 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		if ( r_legacyTangents ) {
+			qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+			qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		}
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 

@@ -66,6 +66,7 @@ private:
 		Generator generator;
 	};
 	idList<programWithGenerator_t> programs;
+	int legacyTangentsCvarCallback;
 
 	programWithGenerator_t *FindEntry( const char *name );
 
