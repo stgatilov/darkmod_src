@@ -125,15 +125,6 @@ void idScreenRect::Union( const idScreenRect &rect ) {
 
 /*
 ======================
-idScreenRect::Equals
-======================
-*/
-bool idScreenRect::Equals( const idScreenRect &rect ) const {
-	return ( x1 == rect.x1 && x2 == rect.x2 && y1 == rect.y1 && y2 == rect.y2 );
-}
-
-/*
-======================
 idScreenRect::IsEmpty
 ======================
 */

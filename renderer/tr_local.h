@@ -43,7 +43,9 @@ public:
 	void		Expand();								// expand by one pixel each way to fix roundoffs
 	void		Intersect( const idScreenRect &rect );
 	void		Union( const idScreenRect &rect );
-	bool		Equals( const idScreenRect &rect ) const;
+	bool		Equals( const idScreenRect& rect ) const {
+		return ( x1 == rect.x1 && x2 == rect.x2 && y1 == rect.y1 && y2 == rect.y2 );
+	}
 	bool		IsEmpty() const;
 	int			GetArea() const { //anon
 		return GetWidth() * GetHeight();
