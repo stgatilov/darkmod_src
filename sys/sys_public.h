@@ -222,7 +222,7 @@ typedef enum {
 	CPUID_INTEL							= 0x00004,	// Intel
 	CPUID_AMD							= 0x00008,	// AMD
 
-	CPUID_MMX							= 0x00010,	// Multi Media Extensions
+	//CPUID_MMX							= 0x00010,	// Multi Media Extensions
 	CPUID_SSE							= 0x00020,	// Streaming SIMD Extensions
 	CPUID_SSE2							= 0x00040,	// Streaming SIMD Extensions 2
 	CPUID_SSE3							= 0x00080,	// Streaming SIMD Extentions 3 aka Prescott's New Instructions

@@ -17,7 +17,6 @@
 #pragma hdrstop
 
 #include "Simd_Generic.h"
-#include "Simd_MMX.h"
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
 

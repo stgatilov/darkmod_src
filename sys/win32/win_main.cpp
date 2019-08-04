@@ -1135,9 +1135,9 @@ void Sys_Init( void ) {
 		}
 		string += " with ";
 
-		if ( win32.cpuid & CPUID_MMX ) {
+		/*if ( win32.cpuid & CPUID_MMX ) {
 			string += "MMX & ";
-		}
+		}*/
 		if ( win32.cpuid & CPUID_SSE ) {
 			string += "SSE & ";
 		}
@@ -1178,8 +1178,8 @@ void Sys_Init( void ) {
 				id |= CPUID_INTEL;
 			} else if ( token.Icmp( "amd" ) == 0 ) {
 				id |= CPUID_AMD;
-			} else if ( token.Icmp( "mmx" ) == 0 ) {
-				id |= CPUID_MMX;
+			/*} else if ( token.Icmp( "mmx" ) == 0 ) {
+				id |= CPUID_MMX;*/
 			} else if ( token.Icmp( "sse" ) == 0 ) {
 				id |= CPUID_SSE;
 			} else if ( token.Icmp( "sse2" ) == 0 ) {

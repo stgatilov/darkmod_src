@@ -24,7 +24,7 @@
 ===============================================================================
 */
 
-class idSIMD_SSE : public idSIMD_MMX {
+class idSIMD_SSE : public idSIMD_Generic {
 public:
 	virtual const char * VPCALL GetName( void ) const;
 

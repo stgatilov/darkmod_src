@@ -1245,9 +1245,6 @@
     <ClInclude Include="idlib\math\Simd_Generic.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
-    <ClInclude Include="idlib\math\Simd_MMX.h">
-      <Filter>idLib\Math</Filter>
-    </ClInclude>
     <ClInclude Include="idlib\math\Simd_SSE.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
@@ -2578,9 +2575,6 @@
       <Filter>idLib\Math</Filter>
     </ClCompile>
     <ClCompile Include="idlib\math\Simd_Generic.cpp">
-      <Filter>idLib\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="idlib\math\Simd_MMX.cpp">
       <Filter>idLib\Math</Filter>
     </ClCompile>
     <ClCompile Include="idlib\math\Simd_SSE.cpp">
