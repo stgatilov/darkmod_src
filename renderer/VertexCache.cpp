@@ -28,8 +28,6 @@ idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_A
 
 idVertexCache		vertexCache;
 
-void CopyBuffer( byte *dst, const byte *src, int numBytes );
-
 /*
 ==============
 ClearGeoBufferSet
@@ -384,7 +382,11 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 
 	// Actually perform the data transfer
 	if ( data != NULL ) {
-		CopyBuffer( *base + offset - mapOffset, ( byte * )data, bytes );
+		void* dst = *base + offset - mapOffset;
+		const byte* src = (byte*)data;
+		assert_16_byte_aligned( dst );
+		assert_16_byte_aligned( src );
+		SIMDProcessor->Memcpy( dst, src, bytes );
 	}
 
 	return {
