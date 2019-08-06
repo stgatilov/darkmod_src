@@ -71,7 +71,7 @@ void GLSLProgramManager::Shutdown() {
 	stencilInteractionShader = nullptr;
 	shadowMapInteractionShader = nullptr;
 	multiLightInteractionShader = nullptr;
-	r_legacyTangents.RemoveOnModifiedCallback( legacyTangentsCvarCallback );
+	//r_legacyTangents.RemoveOnModifiedCallback( legacyTangentsCvarCallback );
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
@@ -264,8 +264,8 @@ void GLSLProgramManager::Init() {
 	multiLightInteractionShader = LoadInteractionShader( "multiLightInteraction", "interactionN", false );
 	frobShader = Load( "frob" );
 	// FIXME duzenko: is it the right way to do this?
-	legacyTangentsCvarCallback = r_legacyTangents.AddOnModifiedCallback( [this] () {
+	/*legacyTangentsCvarCallback = r_legacyTangents.AddOnModifiedCallback( [this] () {
 		shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
-	} );
+	} );*/
 }
 

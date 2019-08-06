@@ -20,7 +20,7 @@
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
 
-extern idCVarBool r_legacyTangents;
+idCVarBool r_legacyTangents( "r_legacyTangents", "1", CVAR_RENDERER | CVAR_ARCHIVE, "1 = legacy CPU tangent calculation" );
 
 //===============================================================
 //
