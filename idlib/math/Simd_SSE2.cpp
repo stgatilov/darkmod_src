@@ -1232,7 +1232,10 @@ void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 }
 
 void idSIMD_SSE2::Memcpy( void* dst, const void* src, const int count ) {
-	CopyBufferSSE2( (byte *)dst, (byte*)src, count );
+	if ( ( (size_t)src ^ (size_t)dst ) & 15 ) // FIXME allow SSE2 on differently aligned addresses
+		idSIMD_Generic::Memcpy( dst, src, count );
+	else
+		CopyBufferSSE2( (byte *)dst, (byte*)src, count );
 }
 
 
