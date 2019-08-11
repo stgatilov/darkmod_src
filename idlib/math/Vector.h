@@ -85,6 +85,9 @@ public:
 	const char *	ToString( int precision = 2 ) const;
 
 	void			Lerp( const idVec2 &v1, const idVec2 &v2, const float l );
+	float			Cross( const idVec2 &v2 ) const {
+		return x * v2.y - y * v2.x;
+	}
 };
 
 extern idVec2 vec2_origin;
