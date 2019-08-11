@@ -3986,7 +3986,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 
 	if ( idStr::Length( args.Argv( 1 ) ) != 0 ) {
 		cpuid_t cpuid = idLib::sys->GetProcessorId();
-		idStr argString = args.Args();
+		idStr argString = args.Argv(1);
 
 		argString.Remove( ' ' );
 
@@ -4031,58 +4031,74 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 			return;
 		}
 	}
+	
+	int testBits = -1;
+	if ( idStr::Length( args.Argv( 2 ) ) != 0 ) {
+		idStr argString = args.Argv( 2 );
+		if ( argString.IsNumeric() )
+			testBits = atoi( argString.c_str() );
+	}
+
 	idLib::common->SetRefreshOnPrint( true );
 
 	idLib::common->Printf( "using %s for SIMD processing\n", p_simd->GetName() );
 
 	GetBaseClocks();
 
-	TestMath();
-	TestAdd();
-	TestSub();
-	TestMul();
-	TestDiv();
-	TestMulAdd();
-	TestMulSub();
-	TestDot();
-	TestCompare();
-	TestMinMax();
-	TestClamp();
-	TestMemcpy();
-	TestMemset();
-	TestNegate();
+	if ( testBits & 1 ) {
+		TestMath();
+		TestAdd();
+		TestSub();
+		TestMul();
+		TestDiv();
+		TestMulAdd();
+		TestMulSub();
+		TestDot();
+		TestCompare();
+		TestMinMax();
+		TestClamp();
+		TestMemcpy();
+		TestMemset();
+		TestNegate();
+	}
 
-	TestMatXMultiplyVecX();
-	TestMatXMultiplyAddVecX();
-	TestMatXTransposeMultiplyVecX();
-	TestMatXTransposeMultiplyAddVecX();
-	TestMatXMultiplyMatX();
-	TestMatXTransposeMultiplyMatX();
-	TestMatXLowerTriangularSolve();
-	TestMatXLowerTriangularSolveTranspose();
-	TestMatXLDLTFactor();
+	if ( testBits & 2 ) {
+		TestMatXMultiplyVecX();
+		TestMatXMultiplyAddVecX();
+		TestMatXTransposeMultiplyVecX();
+		TestMatXTransposeMultiplyAddVecX();
+		TestMatXMultiplyMatX();
+		TestMatXTransposeMultiplyMatX();
+		TestMatXLowerTriangularSolve();
+		TestMatXLowerTriangularSolveTranspose();
+		TestMatXLDLTFactor();
+	}
 
-	idLib::common->Printf( "====================================\n" );
+	if ( testBits & 4 ) {
+		idLib::common->Printf( "====================================\n" );
 
-	TestBlendJoints();
-	TestConvertJointQuatsToJointMats();
-	TestConvertJointMatsToJointQuats();
-	TestTransformJoints();
-	TestUntransformJoints();
-	TestTransformVerts();
-	TestTracePointCull();
-	TestDecalPointCull();
-	TestOverlayPointCull();
-	TestDeriveTriPlanes();
-	TestDeriveTangents();
-	TestDeriveUnsmoothedTangents();
-	TestNormalizeTangents();
-	TestCreateShadowCache();
+		TestBlendJoints();
+		TestConvertJointQuatsToJointMats();
+		TestConvertJointMatsToJointQuats();
+		TestTransformJoints();
+		TestUntransformJoints();
+		TestTransformVerts();
+		TestTracePointCull();
+		TestDecalPointCull();
+		TestOverlayPointCull();
+		TestDeriveTriPlanes();
+		TestDeriveTangents();
+		TestDeriveUnsmoothedTangents();
+		TestNormalizeTangents();
+		TestCreateShadowCache();
+	}
 
-	idLib::common->Printf( "====================================\n" );
+	if ( testBits & 8 ) {
+		idLib::common->Printf( "====================================\n" );
 
-	TestSoundUpSampling();
-	TestSoundMixing();
+		TestSoundUpSampling();
+		TestSoundMixing();
+	}
 
 	idLib::common->SetRefreshOnPrint( false );
 
