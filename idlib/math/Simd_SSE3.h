@@ -26,10 +26,10 @@
 
 class idSIMD_SSE3 : public idSIMD_SSE2 {
 public:
-	virtual const char * VPCALL GetName( void ) const;
 
 #if defined(MACOS_X) && defined(__i386__)
 #elif SIMD_USE_ASM
+	idSIMD_SSE3() { name += " & SSE3"; }
 	virtual void VPCALL TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
 
 #endif

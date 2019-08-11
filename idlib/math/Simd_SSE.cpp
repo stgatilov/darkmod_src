@@ -35,15 +35,6 @@
 #define DRAWVERT_TANGENT1_OFFSET	(11*4)
 #define DRAWVERT_COLOR_OFFSET		(14*4)
 
-/*
-============
-idSIMD_SSE::GetName
-============
-*/
-const char * idSIMD_SSE::GetName( void ) const {
-	return "MMX & SSE";
-}
-
 #if defined(MACOS_X) && defined(__i386__)
 
 #include <xmmintrin.h>

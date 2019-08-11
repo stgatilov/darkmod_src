@@ -25,8 +25,10 @@
 */
 
 class idSIMD_SSE : public idSIMD_Generic {
+protected:
+	idStr name = "SSE";
 public:
-	virtual const char * VPCALL GetName( void ) const;
+	virtual const char* VPCALL GetName( void ) const { return name.c_str(); }
 
 #if defined(MACOS_X) && defined(__i386__)
 	virtual void VPCALL Dot( float *dst,			const idPlane &constant,const idDrawVert *src,	const int count );	

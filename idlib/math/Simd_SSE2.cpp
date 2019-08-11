@@ -28,15 +28,6 @@ idCVarBool r_legacyTangents( "r_legacyTangents", "1", CVAR_RENDERER | CVAR_ARCHI
 //
 //===============================================================
 
-/*
-============
-idSIMD_SSE2::GetName
-============
-*/
-const char * idSIMD_SSE2::GetName( void ) const {
-	return "MMX & SSE & SSE2";
-}
-
 #if defined(MACOS_X) && defined(__i386__)
 
 #include <xmmintrin.h>

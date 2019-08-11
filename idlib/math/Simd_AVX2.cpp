@@ -30,15 +30,6 @@
 //
 //===============================================================
 
-/*
-============
-idSIMD_AVX2::GetName
-============
-*/
-const char * idSIMD_AVX2::GetName( void ) const {
-	return "MMX & SSE* & AVX & AVX2 & FMA3";
-}
-
 //apply optimizations to this file in Debug with Inlines configuration
 DEBUG_OPTIMIZE_ON
 

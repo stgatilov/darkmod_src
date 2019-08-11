@@ -33,7 +33,7 @@
 
 class idSIMD_AVX2 : public idSIMD_AVX {
 public:
-	virtual const char * VPCALL GetName( void ) const;
+	idSIMD_AVX2() { name += "2/FMA"; }
 	virtual void VPCALL CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) ALLOW_AVX2;
 	virtual void VPCALL CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) ALLOW_AVX2;
 	virtual void VPCALL DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) ALLOW_AVX2;

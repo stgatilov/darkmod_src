@@ -28,15 +28,6 @@
 //
 //===============================================================
 
-/*
-============
-idSIMD_SSE3::GetName
-============
-*/
-const char * idSIMD_SSE3::GetName( void ) const {
-	return "MMX & SSE & SSE2 & SSE3";
-}
-
 #if defined(MACOS_X) && defined(__i386__)
 
 #elif SIMD_USE_ASM
