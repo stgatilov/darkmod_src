@@ -721,6 +721,10 @@ void TestDiv( void ) {
 	PrintClocks( va( "   simd->Div( float[] * float[] ) %s", result ), COUNT, bestClocksSIMD, bestClocksGeneric );
 }
 
+#define TEST_VECTOR_LENGTH_START	16
+#define TEST_VECTOR_LENGTH_END		25
+#define TEST_VECTOR_LENGTH_STEP		3
+
 /*
 ============
 TestMulAdd
@@ -741,7 +745,7 @@ void TestMulAdd( void ) {
 	}
 	idLib::common->Printf( "====================================\n" );
 
-	for ( j = 0; j < 50 && j < COUNT; j++ ) {
+	for ( j = TEST_VECTOR_LENGTH_START; j < TEST_VECTOR_LENGTH_END && j < COUNT; j += TEST_VECTOR_LENGTH_STEP ) {
 
 		bestClocksGeneric = 0;
 		for ( i = 0; i < NUMTESTS; i++ ) {
@@ -796,7 +800,7 @@ void TestMulSub( void ) {
 	}
 	idLib::common->Printf( "====================================\n" );
 
-	for ( j = 0; j < 50 && j < COUNT; j++ ) {
+	for ( j = TEST_VECTOR_LENGTH_START; j < TEST_VECTOR_LENGTH_END && j < COUNT; j += TEST_VECTOR_LENGTH_STEP ) {
 
 		bestClocksGeneric = 0;
 		for ( i = 0; i < NUMTESTS; i++ ) {
@@ -1051,7 +1055,7 @@ void TestDot( void ) {
 	idLib::common->Printf( "====================================\n" );
 
 	float dot1 = 0.0f, dot2 = 0.0f;
-	for ( j = 0; j < 50 && j < COUNT; j++ ) {
+	for ( j = TEST_VECTOR_LENGTH_START; j < TEST_VECTOR_LENGTH_END && j < COUNT; j += TEST_VECTOR_LENGTH_STEP ) {
 
 		bestClocksGeneric = 0;
 		for ( i = 0; i < NUMTESTS; i++ ) {
@@ -2157,7 +2161,9 @@ void TestMatXTransposeMultiplyMatX( void ) {
 }
 
 #define MATX_LTS_SIMD_EPSILON		1.0f
-#define MATX_LTS_SOLVE_SIZE			100
+#define MATX_LTS_SOLVE_SIZE			25
+#define MATX_LTS_SOLVE_START		1
+#define MATX_LTS_SOLVE_STEP			7
 
 /*
 ============
@@ -2177,7 +2183,7 @@ void TestMatXLowerTriangularSolve( void ) {
 	x.SetSize( MATX_LTS_SOLVE_SIZE );
 	b.Random( MATX_LTS_SOLVE_SIZE, 0, -1.0f, 1.0f );
 
-	for ( i = 1; i < MATX_LTS_SOLVE_SIZE; i++ ) {
+	for ( i = MATX_LTS_SOLVE_START; i < MATX_LTS_SOLVE_SIZE; i += MATX_LTS_SOLVE_STEP ) {
 
 		x.Zero( i );
 
@@ -2223,7 +2229,7 @@ void TestMatXLowerTriangularSolveTranspose( void ) {
 	x.SetSize( MATX_LTS_SOLVE_SIZE );
 	b.Random( MATX_LTS_SOLVE_SIZE, 0, -1.0f, 1.0f );
 
-	for ( i = 1; i < MATX_LTS_SOLVE_SIZE; i++ ) {
+	for ( i = MATX_LTS_SOLVE_START; i < MATX_LTS_SOLVE_SIZE; i += MATX_LTS_SOLVE_STEP ) {
 
 		x.Zero( i );
 
@@ -2272,7 +2278,7 @@ void TestMatXLDLTFactor( void ) {
 	src.Random( MATX_LDLT_FACTOR_SOLVE_SIZE, MATX_LDLT_FACTOR_SOLVE_SIZE, 0, -1.0f, 1.0f );
 	src.TransposeMultiply( original, src );
 
-	for ( i = 1; i < MATX_LDLT_FACTOR_SOLVE_SIZE; i++ ) {
+	for ( i = MATX_LTS_SOLVE_START; i < MATX_LTS_SOLVE_SIZE; i += MATX_LTS_SOLVE_STEP ) {
 
 		bestClocksGeneric = 0;
 		for ( j = 0; j < NUMTESTS; j++ ) {
@@ -3856,7 +3862,7 @@ void TestMath( void ) {
 	}
 	PrintClocks( "  idMath::Log16( tst )", 1, bestClocks );
 
-	idLib::common->Printf( "testvar = %f\n", testvar );
+	//idLib::common->Printf( "testvar = %f\n", testvar );
 
 	idMat3 resultMat3;
 	idQuat fromQuat, toQuat, resultQuat;
