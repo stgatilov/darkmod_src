@@ -1160,6 +1160,8 @@ void idInteraction::AddActiveInteraction( void ) {
 
 	// for each surface of this entity / light interaction
 	for ( int i = 0; i < numSurfaces; i++ ) {
+		if ( r_singleSurface.GetInteger() >= 0 && i != r_singleSurface.GetInteger() ) 
+			continue;
 		surfaceInteraction_t *sint = &surfaces[i];
 
 		// see if the base surface is visible, we may still need to add shadows even if empty
