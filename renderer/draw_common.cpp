@@ -925,6 +925,8 @@ Frob shader stub
 ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( !r_newFrob )
 		return;
+	if ( surf->sort >= SS_DECAL ) // otherwise fills black
+		return;
 
 	programManager->frobShader->Activate();
 
