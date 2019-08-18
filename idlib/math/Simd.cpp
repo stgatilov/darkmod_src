@@ -106,7 +106,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 
 	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s%s\n",
+	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
 	                       // Vendor
 	                       cpuid & CPUID_AMD ? "AMD" :
 	                       cpuid & CPUID_INTEL ? "Intel" :
