@@ -448,6 +448,7 @@ long Sys_DosToUnixTime( unsigned long dostime ) {
         dostm.tm_mday = day;
         dostm.tm_mon = mon - 1;
         dostm.tm_year = year - 1900;
+		dostm.tm_isdst = 0;
         
         unix_time = mktime(&dostm);
     }
