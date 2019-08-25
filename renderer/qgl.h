@@ -27,6 +27,8 @@
 #define GL_ARB_timer_query						1	//core since 3.3
 #define GL_KHR_debug							1	//core since 4.3
 #define GL_ARB_sync								1	//core since 3.2
+#define GL_ARB_stencil_texturing				1	//core since 4.3
+#define GL_ARB_compatibility					1	//check context profile
 #include "glad.h"
 
 #ifdef _WIN32
@@ -52,7 +54,7 @@
 #endif
 
 #define QGL_REQUIRED_VERSION_MAJOR 3
-#define QGL_REQUIRED_VERSION_MINOR 0
+#define QGL_REQUIRED_VERSION_MINOR 1
 
 // Loads all GL/WGL/GLX functions from OpenGL library (using glad-generated loader).
 // Note: no requirements are checked here, run GLimp_CheckRequiredFeatures afterwards.

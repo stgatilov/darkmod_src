@@ -70,7 +70,7 @@ typedef struct glconfig_s {
 	bool				fenceSyncAvailable;
 	bool				timerQueriesAvailable;
 	bool				debugGroupsAvailable;
-
+	bool				stencilTexturing;		// stencil SS
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 	int					displayFrequency;
 	bool				isFullscreen;

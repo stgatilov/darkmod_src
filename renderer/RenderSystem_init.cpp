@@ -378,10 +378,11 @@ void R_InitOpenGL( void ) {
 
 	common->Printf( "OpenGL vendor: %s\n", glConfig.vendor_string );
 	common->Printf( "OpenGL renderer: %s\n", glConfig.renderer_string );
-	common->Printf( "OpenGL version: %s\n", glConfig.version_string );
+	common->Printf( "OpenGL version: %s %s\n", glConfig.version_string, GLAD_GL_ARB_compatibility ? "compatibility" : "core" );
 
 	// recheck all the extensions
 	GLimp_CheckRequiredFeatures();
+
 
 	if( r_glDebugOutput.GetBool() && glConfig.debugGroupsAvailable ) {
 		qglEnable( GL_DEBUG_OUTPUT );

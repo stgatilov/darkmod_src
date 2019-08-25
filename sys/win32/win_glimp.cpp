@@ -217,6 +217,7 @@ GLW_WM_CREATE
 void GLW_WM_CREATE( HWND hWnd ) {
 }
 
+idCVarInt r_glContext( "r_glCoreProfile", "0", CVAR_RENDERER | CVAR_ARCHIVE, "0: compatibility, 1: core, 2: forward core" );
 
 /*
 ====================
@@ -336,14 +337,15 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	if( r_glDebugContext.GetBool() ) {
 		common->Printf("debug ");
 	}
-	int attribs[] = {
+	const int attribs[] = {
 		// we want at least this version of GL
 		WGL_CONTEXT_MAJOR_VERSION_ARB, QGL_REQUIRED_VERSION_MAJOR,
 		WGL_CONTEXT_MINOR_VERSION_ARB, QGL_REQUIRED_VERSION_MINOR,
 		// TODO: might want to (optionally) create a core profile once we got rid of the old stuff
-		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+		WGL_CONTEXT_PROFILE_MASK_ARB, r_glContext > 0 ? WGL_CONTEXT_CORE_PROFILE_BIT_ARB : WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+		// special case for 3.1: even core profiles are still compatible :/
 		// enable debug context if asked for
-		WGL_CONTEXT_FLAGS_ARB, r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
+		WGL_CONTEXT_FLAGS_ARB, (r_glContext > 1 ? WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0) | (r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0),
 		0
 	};
 	if ( ( win32.hGLRC = qwglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {

@@ -759,6 +759,8 @@ struct gladGLversionStruct GLVersion = { 0, 0 };
 #if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0)
 #define _GLAD_IS_SOME_NEW_VERSION 1
 #endif
+// FIXME workaround for _GLAD_IS_SOME_NEW_VERSION not getting defined
+#define _GLAD_IS_SOME_NEW_VERSION 1 
 
 static int max_loaded_major;
 static int max_loaded_minor;
