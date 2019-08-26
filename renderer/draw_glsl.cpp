@@ -180,25 +180,6 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 2 );
 	qglDisableVertexAttribArray( 3 );
 
-	// disable features
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || backEnd.vLight->shadows == LS_STENCIL ) {
-		GL_SelectTexture( 6 );
-		globalImages->BindNull();
-		GL_SelectTexture( 7 );
-		globalImages->BindNull();
-	}
-	GL_SelectTexture( 4 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 3 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 2 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
-
 	GL_SelectTexture( 0 );
 
 	GLSLProgram::Deactivate();

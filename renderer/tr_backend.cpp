@@ -725,10 +725,6 @@ void RB_Bloom( void ) {
 	parm[1] = Max( Min( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	GL_SelectTexture( 2 );
-	globalImages->BindNull(); // or else GUI is screwed
-	GL_SelectTexture( 1 );
-	globalImages->BindNull(); // or else GUI is screwed
 	GL_SelectTexture( 0 );
 
 	qglDisable( GL_VERTEX_PROGRAM_ARB );

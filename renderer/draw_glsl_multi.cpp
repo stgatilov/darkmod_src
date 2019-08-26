@@ -356,18 +356,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 
 	GLSLProgram::Deactivate();
 
-	GL_SelectTexture( 5 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 4 );
-	globalImages->BindNull();
-	GL_SelectTexture( 3 );
-	globalImages->BindNull();
-	GL_SelectTexture( 2 );
-	globalImages->BindNull();
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
-
 	GL_SelectTexture( 0 );
 
 	qglDisableVertexAttribArray( 3 );

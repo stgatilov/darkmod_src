@@ -195,25 +195,6 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 11 );
 	qglDisableVertexAttribArray( 3 );
 
-	// disable features
-	GL_SelectTexture( 6 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 5 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 4 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 3 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 2 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
-
 	backEnd.glState.currenttmu = -1;
 	GL_SelectTexture( 0 );
 
@@ -309,25 +290,6 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 10 );
 	qglDisableVertexAttribArray( 11 );
 	qglDisableVertexAttribArray( 3 );
-
-	// disable features
-	GL_SelectTexture( 6 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 5 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 4 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 3 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 2 );
-	globalImages->BindNull();
-
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
 
 	backEnd.glState.currenttmu = -1;
 	GL_SelectTexture( 0 );

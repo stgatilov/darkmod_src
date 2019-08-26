@@ -162,9 +162,6 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 	case TG_REFLECT_CUBE:
 		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 		if ( bumpStage ) {
-			// per-pixel reflection mapping with bump mapping
-			GL_SelectTexture( 1 );
-			globalImages->BindNull();
 			GL_SelectTexture( 0 );
 
 			qglDisableVertexAttribArray( 8 );
@@ -609,15 +606,6 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 	// draw it
 	RB_DrawElementsWithCounters( surf );
 
-	for ( int i = 1; i < newStage->numFragmentProgramImages; i++ ) {
-		if ( newStage->fragmentProgramImages[i] ) {
-			GL_SelectTexture( i );
-			globalImages->BindNull();
-		}
-	}
-	if ( newStage->megaTexture ) {
-		newStage->megaTexture->Unbind();
-	}
 	GL_SelectTexture( 0 );
 
 	qglDisable( GL_VERTEX_PROGRAM_ARB );
@@ -796,14 +784,6 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	}
 	RB_DrawElementsWithCounters( surf );
 
-	//TODO: I seriously hope that when we wrap stuff well enough,
-	//such code won't be necessary to write everywhere =(
-	for ( int i = 1; i < newStage->numFragmentProgramImages; i++ ) {
-		if ( newStage->fragmentProgramImages[i] ) {
-			GL_SelectTexture( i );
-			globalImages->BindNull();
-		}
-	}
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();
 	qglDisableVertexAttribArray( 8 );
@@ -899,12 +879,7 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 	// draw it
 	RB_DrawElementsWithCounters( surf );
 
-	// Clean up GL state
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
 	GL_SelectTexture( 0 );
-
-	globalImages->BindNull();
 
 	R_UseProgramARB();
 
@@ -1107,8 +1082,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 		backEnd.currentRenderCopied = true;
 	}
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
 	GL_SelectTexture( 0 );
 
 	RB_SetProgramEnvironment();
@@ -1249,9 +1222,6 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 			qglMatrixMode( GL_MODELVIEW );
 		}
 	}
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
-
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();
 }
@@ -1378,9 +1348,6 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 		RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
 	}
 	GL_Cull( CT_FRONT_SIDED );
-
-	GL_SelectTexture( 1 );
-	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();

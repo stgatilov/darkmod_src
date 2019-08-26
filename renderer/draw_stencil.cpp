@@ -160,8 +160,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 
 	RB_LogComment( "---------- RB_StencilShadowPass ----------\n" );
 
-	globalImages->BindNull();
-
 	// for visualizing the shadows
 	switch ( r_showShadows.GetInteger() ) {
 	case -1:

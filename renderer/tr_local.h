@@ -653,7 +653,6 @@ typedef struct {
 typedef struct {
 	int		current2DMap;
 	int		currentCubeMap;
-	textureType_t	textureType;
 } tmu_t;
 
 const int MAX_MULTITEXTURE_UNITS =	8;

@@ -1549,27 +1549,6 @@ int idImageManager::SumOfUsedImages() {
 
 /*
 ===============
-BindNull
-===============
-*/
-void idImageManager::BindNull() {
-	tmu_t	*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-
-	RB_LogComment( "BindNull()\n" );
-
-	switch ( tmu->textureType ) {
-	case TT_2D:
-		qglDisable( GL_TEXTURE_2D );
-		break;
-	case TT_CUBIC:
-		qglDisable( GL_TEXTURE_CUBE_MAP );
-		break;
-	}
-	tmu->textureType = TT_DISABLED;
-}
-
-/*
-===============
 Init
 ===============
 */

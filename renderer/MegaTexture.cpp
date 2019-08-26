@@ -250,22 +250,6 @@ void idMegaTexture::BindForViewOrigin( const idVec3 viewOrigin ) {
 
 /*
 ====================
-Unbind
-
-This can go away once everything uses fragment programs so the enable states don't
-need tracking
-====================
-*/
-void idMegaTexture::Unbind( void ) {
-	for ( int i = 0 ; i < numLevels ; i++ ) {
-		GL_SelectTexture( 1+i );
-		globalImages->BindNull();
-	}
-}
-
-
-/*
-====================
 SetViewOrigin
 ====================
 */

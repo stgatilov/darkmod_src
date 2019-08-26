@@ -399,7 +399,6 @@ void RB_ShowIntensity( void ) {
 	qglRasterPos2f( 0, 0 );
 	qglPopMatrix();
 	GL_FloatColor( 1, 1, 1 );
-	globalImages->BindNull();
 	qglMatrixMode( GL_MODELVIEW );
 
 	qglDrawPixels( glConfig.vidWidth, glConfig.vidHeight, GL_RGBA , GL_UNSIGNED_BYTE, colorReadback );
@@ -434,7 +433,6 @@ void RB_ShowDepthBuffer( void ) {
 
 	GL_State( GLS_DEPTHFUNC_ALWAYS );
 	GL_FloatColor( 1, 1, 1 );
-	globalImages->BindNull();
 
 	depthReadback = R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight*4 );
 	memset( depthReadback, 0, glConfig.vidWidth * glConfig.vidHeight*4 );
@@ -523,7 +521,6 @@ void RB_ShowSilhouette( void ) {
 	// clear all triangle edges to black
 	//
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -671,7 +668,6 @@ static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
@@ -729,7 +725,6 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
@@ -795,7 +790,6 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -851,7 +845,6 @@ static void RB_ShowEntityDraws() {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -927,7 +920,6 @@ static void RB_ShowTexturePolarity( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
@@ -995,7 +987,6 @@ static void RB_ShowUnsmoothedTangents( drawSurf_t **drawSurfs, int numDrawSurfs 
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
@@ -1049,7 +1040,6 @@ static void RB_ShowTangentSpace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
@@ -1103,7 +1093,6 @@ static void RB_ShowVertexColor( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_DEPTHFUNC_LESS );
@@ -1153,7 +1142,6 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	GL_State( GLS_POLYMODE_LINE );
 
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_STENCIL_TEST );
 
 	if ( !r_debugLineDepthTest.GetBool() ) {
@@ -1241,8 +1229,6 @@ static void RB_ShowTextureVectors( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	GL_State( GLS_DEPTHFUNC_LESS );
 
 	qglDisableVertexAttribArray( 8 );
-
-	globalImages->BindNull();
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
@@ -1341,8 +1327,6 @@ static void RB_ShowDominantTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglPolygonOffset( -1, -2 );
 	qglEnable( GL_POLYGON_OFFSET_LINE );
 
-	globalImages->BindNull();
-
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
@@ -1397,7 +1381,6 @@ static void RB_ShowEdges( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	GL_State( GLS_DEFAULT );
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_DEPTH_TEST );
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
@@ -1509,7 +1492,6 @@ void RB_ShowLights( void ) {
 	// all volumes are expressed in world coordinates
 	RB_SimpleWorldSetup();
 	qglDisableVertexAttribArray( 8 );
-	globalImages->BindNull();
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_Cull( CT_TWO_SIDED );
@@ -1579,7 +1561,6 @@ void RB_ShowPortals( void ) {
 	// all portals are expressed in world coordinates
 	RB_SimpleWorldSetup();
 
-	globalImages->BindNull();
 	qglDisable( GL_DEPTH_TEST );
 
 	GL_State( GLS_DEFAULT );
@@ -1811,8 +1792,6 @@ void RB_ShowDebugText( void ) {
 	// all lines are expressed in world coordinates
 	RB_SimpleWorldSetup();
 
-	globalImages->BindNull();
-
 	width = r_debugLineWidth.GetInteger();
 	if ( width < 1 ) {
 		width = 1;
@@ -1916,8 +1895,6 @@ void RB_ShowDebugLines( void ) {
 
 	// all lines are expressed in world coordinates
 	RB_SimpleWorldSetup();
-
-	globalImages->BindNull();
 
 	width = r_debugLineWidth.GetInteger();
 
@@ -2030,8 +2007,6 @@ void RB_ShowDebugPolygons( void ) {
 
 	// all lines are expressed in world coordinates
 	RB_SimpleWorldSetup();
-
-	globalImages->BindNull();
 
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
