@@ -349,7 +349,6 @@ void R_InitOpenGL( void ) {
 	glConfig.vendor_string = (const char *)qglGetString(GL_VENDOR);
 	glConfig.renderer_string = (const char *)qglGetString(GL_RENDERER);
 	glConfig.version_string = (const char *)qglGetString(GL_VERSION);
-	glConfig.extensions_string = (const char *)qglGetString(GL_EXTENSIONS);
 	glConfig.glVersion = atof(glConfig.version_string);
 
 	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 ) { 
@@ -1458,7 +1457,18 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	common->Printf( "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	common->Printf( "GL_RENDERER: %s\n", glConfig.renderer_string );
 	common->Printf( "GL_VERSION: %s\n", glConfig.version_string );
-	common->Printf( "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
+
+	//common->Printf( "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
+	common->Printf( "GL_EXTENSIONS: " );
+	GLint n = 0;
+	qglGetIntegerv( GL_NUM_EXTENSIONS, &n );
+	for ( GLint i = 0; i < n; i++ ) {
+		const char* extension =
+			(const char*)qglGetStringi( GL_EXTENSIONS, i );
+		common->Printf( "%s ", extension );
+	}
+	common->Printf( "\n" );
+
 	if ( glConfig.wgl_extensions_string ) {
 		common->Printf( "WGL_EXTENSIONS: %s\n", glConfig.wgl_extensions_string );
 	}
