@@ -315,8 +315,8 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	GL_SelectTexture( 5 );
 	globalImages->shadowAtlas->Bind();
 
-	GL_SelectTexture( 6 );
-	globalImages->shadowAtlasHistory->Bind();
+	//GL_SelectTexture( 6 );
+	//globalImages->shadowAtlasHistory->Bind();
 
 	programManager->multiLightInteractionShader->Activate();
 	Uniforms::Interaction *interactionUniforms = programManager->multiLightInteractionShader->GetUniformGroup<Uniforms::Interaction>();
@@ -373,7 +373,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	}
 
 	// FIXME temporary experimental code
-	if ( backEnd.viewDef->viewEntitys && !backEnd.viewDef->isSubview ) {
+	/*if ( backEnd.viewDef->viewEntitys && !backEnd.viewDef->isSubview ) {
 		static int lightHistoryIndex = 0;
 		softLightSamples[lightHistoryIndex] = backEnd.viewDef->lightSample;
 		FB_ToggleShadow( true );
@@ -381,5 +381,5 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, lightHistoryIndex * r_shadowMapSize, 0, 0, r_shadowMapSize * 6, r_shadowMapSize );
 		FB_ToggleShadow( false );
 		lightHistoryIndex = (lightHistoryIndex + 1) % 8;
-	}
+	}*/
 }
