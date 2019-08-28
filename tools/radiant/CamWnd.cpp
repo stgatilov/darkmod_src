@@ -810,7 +810,6 @@ void setGLMode(int mode) {
 	{
 		case cd_wire:
 			qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			globalImages->BindNull();
 			qglDisable(GL_BLEND);
 			qglDisable(GL_DEPTH_TEST);
 			GL_FloatColor( 1.0f, 1.0f, 1.0f );
@@ -821,7 +820,6 @@ void setGLMode(int mode) {
 			qglEnable(GL_CULL_FACE);
 			qglShadeModel(GL_FLAT);
 			qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			globalImages->BindNull();
 			qglDisable(GL_BLEND);
 			qglEnable(GL_DEPTH_TEST);
 			qglDepthFunc(GL_LEQUAL);
@@ -1022,7 +1020,6 @@ void CCamWnd::Cam_Draw() {
 	qglEnable(GL_BLEND);
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	globalImages->BindNull();
 	for (brush = pList->next; brush != pList; brush = brush->next) {
 		if (brush->pPatch || brush->modelHandle > 0) {
 			Brush_Draw(brush, true);
@@ -1031,7 +1028,6 @@ void CCamWnd::Cam_Draw() {
 			qglEnable(GL_BLEND);
 			qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			qglColor4f( g_qeglobals.d_savedinfo.colors[COLOR_SELBRUSHES][0],g_qeglobals.d_savedinfo.colors[COLOR_SELBRUSHES][1],g_qeglobals.d_savedinfo.colors[COLOR_SELBRUSHES][2], 0.25f );
-			globalImages->BindNull();
 			continue;
 		}
 
@@ -1124,7 +1120,6 @@ void CCamWnd::Cam_Draw() {
 	// bind back to the default texture so that we don't have problems elsewhere
 	// using/modifying texture maps between contexts
 	//
-	globalImages->BindNull();
 
 	qglFinish();
 	QE_CheckOpenGLForErrors();
@@ -2004,7 +1999,6 @@ void CCamWnd::DrawEntityData() {
 	qglDisable(GL_BLEND);
 	qglDisable(GL_DEPTH_TEST);
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	globalImages->BindNull();
 	idVec3 color(0, 1, 0);
 	qglColor3fv( color.ToFloatPtr() );
 

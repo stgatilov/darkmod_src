@@ -258,7 +258,6 @@ void idGLDrawable::draw(int x, int y, int w, int h) {
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	qglLineWidth(0.5);
 	GL_FloatColor(1, 1, 1);
-	globalImages->BindNull();
 	qglBegin(GL_LINE_LOOP);
 	GL_FloatColor(1, 0, 0);
 	qglVertex2f(x + 3, y + 3);

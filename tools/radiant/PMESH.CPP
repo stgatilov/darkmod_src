@@ -2305,7 +2305,6 @@ void DrawPatchMesh( patchMesh_t *pm,bool bPoints,int *list,bool bShade = false )
 #endif
 
 		if ( list == &pm->nListSelected ) {
-			globalImages->BindNull();
 			qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			GL_FloatColor(1.0f, 1.0f, 1.0f);
 			for ( i = 0 ; i < width - 1; i++ ) {
@@ -2507,7 +2506,6 @@ void Patch_DrawCam( patchMesh_t *pm,bool selected ) {
 	if ( g_bPatchWireFrame || nDrawMode == cd_wire ) {
 		qglDisable(GL_CULL_FACE);
 		qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		globalImages->BindNull();
 		DrawPatchMesh(pm, pm->bSelected, &pm->nListIDCam, true);
 		qglEnable(GL_CULL_FACE);
 	} else {
@@ -2529,8 +2527,6 @@ void Patch_DrawCam( patchMesh_t *pm,bool selected ) {
 		if ( !selected && pm->d_texture->GetEditorAlpha() != 1.0f ) {
 			qglDisable(GL_BLEND);
 		}
-
-		globalImages->BindNull();
 
 		if ( !selected ) {
 			qglCullFace(GL_BACK);

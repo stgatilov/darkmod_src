@@ -3559,7 +3559,6 @@ void Brush_DrawFacingAngle( brush_t *b, entity_t *e, bool particle ) {
 	VectorMA(endpoint, -dist, ( particle ) ? up : forward, tip1);
 	VectorMA(tip1, -dist, ( particle ) ? forward : up, tip1);
 	VectorMA(tip1, 2 * dist, ( particle ) ? forward : up, tip2);
-	globalImages->BindNull();
 	qglColor4f(1, 1, 1, 1);
 	qglLineWidth(2);
 	qglBegin(GL_LINES);
@@ -3863,7 +3862,6 @@ void DrawLight(brush_t *b, bool bSelected) {
 	idVec3	vSave;
 	VectorCopy(vTriColor, vSave);
 
-	globalImages->BindNull();
 	qglBegin(GL_TRIANGLE_FAN);
 	qglVertex3fv(vTop.ToFloatPtr());
 	int i;
@@ -4027,7 +4025,6 @@ void Brush_DrawModel( brush_t *b, bool camera, bool bSelected ) {
 			*/
 
             //draw white triangle outlines
-			globalImages->BindNull();
 
             qglPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
             qglDisable( GL_BLEND );
@@ -4048,7 +4045,6 @@ void Brush_DrawModel( brush_t *b, bool camera, bool bSelected ) {
 		qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
 	else if ( camera ) {
-		globalImages->BindNull();
 	}
 
 	if ( g_bPatchShowBounds ) {
@@ -4166,8 +4162,6 @@ void Brush_DrawAxis(brush_t *b) {
 		xr = (b->modelHandle->Bounds()[1].x > b->modelHandle->Bounds()[0].x) ? b->modelHandle->Bounds()[1].x - b->modelHandle->Bounds()[0].x : b->modelHandle->Bounds()[0].x - b->modelHandle->Bounds()[1].x;
 		yr = (b->modelHandle->Bounds()[1].y > b->modelHandle->Bounds()[0].y) ? b->modelHandle->Bounds()[1].y - b->modelHandle->Bounds()[0].y : b->modelHandle->Bounds()[0].y - b->modelHandle->Bounds()[1].y;
 		zr = (b->modelHandle->Bounds()[1].z > b->modelHandle->Bounds()[0].z) ? b->modelHandle->Bounds()[1].z - b->modelHandle->Bounds()[0].z : b->modelHandle->Bounds()[0].z - b->modelHandle->Bounds()[1].z;
-
-		globalImages->BindNull();
 
 		GLTransformedCircle(0, b->owner->origin, xr, mat, 1.25, idVec3(0, 0, 1), dist);
 		GLTransformedCircle(1, b->owner->origin, yr, mat, 1.25, idVec3(0, 1, 0), dist);
@@ -4294,7 +4288,6 @@ void Brush_DrawEnv( brush_t *b, bool cameraView, bool bSelected ) {
 			GL_FloatColor( 1.f, 1.f, 1.f );
 		}
 		DrawRenderModel( model, origin, axis, true );
-		globalImages->BindNull();
 		delete model;
 		model = NULL;
 
@@ -4504,8 +4497,6 @@ void Brush_Draw(brush_t *b, bool bSelected) {
 			qglDisable(GL_BLEND);
 		}
 	}
-
-	globalImages->BindNull();
 }
 
 /*

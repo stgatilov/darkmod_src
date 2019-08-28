@@ -2977,7 +2977,6 @@ void CXYWnd::XY_DrawBlockGrid() {
 }
 
 void GLColoredBoxWithLabel(float x, float y, float size, idVec4 color, const char *text, idVec4 textColor, float xofs, float yofs, float lineSize) {
-	globalImages->BindNull();	
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	qglDisable(GL_CULL_FACE);
 	qglDisable(GL_BLEND);
@@ -3016,7 +3015,6 @@ void CXYWnd::DrawRotateIcon() {
 	}
 
 	qglEnable(GL_BLEND);
-	globalImages->BindNull();
 	qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	qglDisable(GL_CULL_FACE);
 	qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -3115,7 +3113,6 @@ void CXYWnd::DrawZIcon(void) {
 		float	x = z.origin[0];
 		float	y = z.origin[1];
 		qglEnable(GL_BLEND);
-		globalImages->BindNull();
 		qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		qglDisable(GL_CULL_FACE);
 		qglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -3574,7 +3571,6 @@ void CXYWnd::XY_Draw() {
 	qglOrtho(mins[0], maxs[0], mins[1], maxs[1], MIN_WORLD_COORD, MAX_WORLD_COORD);
 
 	// draw stuff
-	globalImages->BindNull();
 	// now draw the grid
 	qglLineWidth(0.25);
 	XY_DrawGrid();

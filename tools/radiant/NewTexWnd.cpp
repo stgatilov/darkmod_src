@@ -283,7 +283,6 @@ void CNewTexWnd::OnPaint() {
 				// if in use, draw a background
 				qglLineWidth(1);
 				GL_FloatColor(1, 1, 1);
-				globalImages->BindNull();
 				qglBegin(GL_LINE_LOOP);
 				qglVertex2f(draw.x - 1, draw.y + 1 - FONT_HEIGHT);
 				qglVertex2f(draw.x - 1, draw.y - height - 1 - FONT_HEIGHT);
@@ -312,7 +311,6 @@ void CNewTexWnd::OnPaint() {
 				if ( !idStr::Icmp(g_qeglobals.d_texturewin.texdef.name, mat->GetName()) ) {
 					qglLineWidth(3);
 					GL_FloatColor(1, 0, 0);
-					globalImages->BindNull();
 
 					qglBegin(GL_LINE_LOOP);
 					qglVertex2f(draw.x - 4, draw.y - FONT_HEIGHT + 4);
@@ -325,7 +323,6 @@ void CNewTexWnd::OnPaint() {
 				}
 
 				// draw the texture name
-				globalImages->BindNull();
 				GL_FloatColor(1, 1, 1);
 				qglRasterPos2f(draw.x, draw.y - FONT_HEIGHT + 2);
 
@@ -348,7 +345,6 @@ void CNewTexWnd::OnPaint() {
 		g_qeglobals.d_texturewin.m_nTotalHeight = abs(draw.y) + 100;
 
 		// reset the current texture
-		globalImages->BindNull();
 		qglFinish();
 		SwapBuffers(dc.GetSafeHdc());
 		TRACE("Texture Paint\n");
