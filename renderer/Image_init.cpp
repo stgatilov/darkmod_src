@@ -143,7 +143,7 @@ R_SpecularTableImage
 Creates a ramp that matches our fudged specular calculation
 ================
 */
-static void R_SpecularTableImage( idImage *image ) {
+/*static void R_SpecularTableImage( idImage *image ) {
 	byte	data[256][4];
 	float	f;
 	int		b;
@@ -171,7 +171,7 @@ static void R_SpecularTableImage( idImage *image ) {
 	}
 	image->GenerateImage( ( byte * )data, 256, 1,
 	                      TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
-}
+}*/
 
 
 /*
@@ -1568,7 +1568,7 @@ void idImageManager::Init() {
 	//borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );
 	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage );
-	specularTableImage = ImageFromFunction( "_specularTable", R_SpecularTableImage );
+	//specularTableImage = ImageFromFunction( "_specularTable", R_SpecularTableImage );
 	specular2DTableImage = ImageFromFunction( "_specular2DTable", R_Specular2DTableImage );
 	rampImage = ImageFromFunction( "_ramp", R_RampImage );
 	alphaRampImage = ImageFromFunction( "_alphaRamp", R_RampImage );
