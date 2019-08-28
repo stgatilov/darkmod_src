@@ -201,7 +201,7 @@ void	idMegaTexture::SetMappingForSurface( const srfTriangles_t *tri ) {
 BindForViewOrigin
 ====================
 */
-void idMegaTexture::BindForViewOrigin( const idVec3 viewOrigin ) {
+/*void idMegaTexture::BindForViewOrigin( const idVec3 viewOrigin ) {
 
 	SetViewOrigin( viewOrigin );
 
@@ -246,7 +246,7 @@ void idMegaTexture::BindForViewOrigin( const idVec3 viewOrigin ) {
 	parms[2] = r_terrainScale.GetFloat();
 	parms[3] = 1;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 8, parms );
-}
+}*/
 
 /*
 ====================

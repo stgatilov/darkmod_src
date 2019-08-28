@@ -1540,7 +1540,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			}
 			continue;
 		}
-		else if ( !token.Icmp( "megaTexture" ) ) {
+		/*else if ( !token.Icmp( "megaTexture" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				newStage.megaTexture = new idMegaTexture;
 				if ( !newStage.megaTexture->InitFromMegaFile( token.c_str() ) ) {
@@ -1552,7 +1552,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, "megaTexture.vfp" );
 				continue;
 			}
-		}
+		}*/
 
 		else if ( !token.Icmp( "vertexParm" ) ) {
 			ParseVertexParm( src, &newStage );

@@ -55,7 +55,7 @@ class idMegaTexture {
 public:
 	bool	InitFromMegaFile( const char *fileBase );
 	void	SetMappingForSurface( const srfTriangles_t *tri );	// analyzes xyz and st to create a mapping
-	void	BindForViewOrigin( const idVec3 origin );	// binds images and sets program parameters
+	//void	BindForViewOrigin( const idVec3 origin );	// binds images and sets program parameters
 
 	static	void MakeMegaTexture_f( const idCmdArgs &args );
 private:

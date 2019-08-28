@@ -577,12 +577,12 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 
 	// megaTextures bind a lot of images and set a lot of parameters
-	if ( newStage->megaTexture ) {
+	/*if ( newStage->megaTexture ) {
 		newStage->megaTexture->SetMappingForSurface( surf->frontendGeo ); // FIXME
 		idVec3	localViewer;
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewer );
 		newStage->megaTexture->BindForViewOrigin( localViewer );
-	}
+	}*/
 
 	const float	*regs = surf->shaderRegisters;
 	for ( int i = 0; i < newStage->numVertexParms; i++ ) {

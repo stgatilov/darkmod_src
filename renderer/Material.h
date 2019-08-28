@@ -185,7 +185,7 @@ typedef struct {
 	int					numFragmentProgramImages;
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 
-	idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
+	//idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 
 	bool				GLSL;
 	//stgatilov: trying to use new shader framework
