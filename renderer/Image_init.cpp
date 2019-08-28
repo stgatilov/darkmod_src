@@ -25,7 +25,7 @@
 #define	DEEP_RANGE			-30.0
 #define QUADRATIC_WIDTH		32
 #define QUADRATIC_HEIGHT	4
-#define BORDER_CLAMP_SIZE	32
+//#define BORDER_CLAMP_SIZE	32
 
 #define LOAD_KEY_IMAGE_GRANULARITY 10 // grayman #3763
 
@@ -288,7 +288,7 @@ static void R_BlackImage( idImage *image ) {
 }
 
 // the size determines how far away from the edge the blocks start fading
-static void R_BorderClampImage( idImage *image ) {
+/*static void R_BorderClampImage( idImage *image ) {
 	byte	data[BORDER_CLAMP_SIZE][BORDER_CLAMP_SIZE][4];
 
 	// solid white texture with a single pixel black border
@@ -326,7 +326,7 @@ static void R_BorderClampImage( idImage *image ) {
 	float	color[4];
 	color[0] = color[1] = color[2] = color[3] = 0;
 	qglTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color );
-}
+}*/
 
 static void R_RGBA8Image( idImage *image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
@@ -1565,7 +1565,7 @@ void idImageManager::Init() {
 	defaultImage = ImageFromFunction( "_default", R_DefaultImage );
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage );
 	blackImage = ImageFromFunction( "_black", R_BlackImage );
-	borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
+	//borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );
 	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage );
 	specularTableImage = ImageFromFunction( "_specularTable", R_SpecularTableImage );

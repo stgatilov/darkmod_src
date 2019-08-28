@@ -374,7 +374,7 @@ public:
 	idImage *			scratchCubeMapImage;
 	idImage *			specularTableImage;			// 1D intensity texture with our specular function
 	idImage *			specular2DTableImage;		// 2D intensity texture with our specular function with variable specularity
-	idImage *			borderClampImage;			// white inside, black outside
+	//idImage *			borderClampImage;			// white inside, black outside
 
 
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
