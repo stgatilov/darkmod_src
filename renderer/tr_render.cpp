@@ -545,7 +545,7 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 RB_SubmittInteraction
 =================
 */
-static void RB_SubmitInteraction( drawInteraction_t *din, bool multi = false ) {
+static void RB_SubmitInteraction( drawInteraction_t* din, bool multi = false ) {
 	if ( !din->bumpImage && !r_skipBump.GetBool() )
 		return;
 
@@ -558,15 +558,11 @@ static void RB_SubmitInteraction( drawInteraction_t *din, bool multi = false ) {
 		din->specularImage = globalImages->blackImage;
 	}
 
-	if ( r_useGLSL ) {
-		if ( multi ) {
-			extern void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din );
-			RB_GLSL_DrawInteraction_MultiLight( din );
-		} else
-			RB_GLSL_DrawInteraction( din );
-	} else {
-		RB_ARB2_DrawInteraction( din );
-	}
+	if ( multi ) {
+		extern void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t * din );
+		RB_GLSL_DrawInteraction_MultiLight( din );
+	} else
+		RB_GLSL_DrawInteraction( din );
 }
 
 /*

@@ -1412,9 +1412,6 @@ DRAW_*
 ============================================================
 */
 
-// Revelator moved stuff here that should be global.
-void	RB_ARB2_DrawInteraction( const drawInteraction_t *din );  // duzenko FIXME ugly extern, Revelator ok ?
-void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
 
@@ -1433,29 +1430,9 @@ typedef enum {
 	VPROG_STENCIL_SHADOW,
 	VPROG_TEST,
 	FPROG_TEST,
-	VPROG_AMBIENT,
-	FPROG_AMBIENT,
-	// rebb: direct light interactions, related to r_dedicatedAmbient
-	VPROG_TEST_DIRECT,
-	FPROG_TEST_DIRECT,
-	VPROG_INTERACTION_DIRECT,
-	FPROG_INTERACTION_DIRECT,
 	// SteveL #3878: soft particles
 	VPROG_SOFT_PARTICLE,
 	FPROG_SOFT_PARTICLE,
-	// nbohr1more #3881: cubemap based lighting
-	VPROG_CUBIC_LIGHT_POINT,
-	FPROG_CUBIC_LIGHT_POINT,
-	VPROG_CUBIC_LIGHT_PROJ,
-	FPROG_CUBIC_LIGHT_PROJ,
-	// nbohr1more #3881: cubemap based lighting further changes
-	VPROG_TEST_CUBIC_POINT,
-	FPROG_TEST_CUBIC_POINT,
-	VPROG_TEST_CUBIC_PROJ,
-	FPROG_TEST_CUBIC_PROJ,
-	//
-	VPROG_AMBIENT_CUBE_LIGHT,
-	FPROG_AMBIENT_CUBE_LIGHT,
 	// duzenko: backend bloom,
 	VPROG_BLOOM_COOK_MATH1,
 	FPROG_BLOOM_COOK_MATH1,

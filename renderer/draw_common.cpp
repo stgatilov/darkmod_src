@@ -1411,12 +1411,7 @@ void RB_STD_DrawView( void ) {
 	if ( backEnd.viewDef->viewEntitys ) {
 		// fill the depth buffer and clear color buffer to black except on subviews
 		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
-
-		if ( r_useGLSL ) {
-			RB_GLSL_DrawInteractions();
-		} else {
-			RB_ARB2_DrawInteractions();
-		}
+		RB_GLSL_DrawInteractions();
 	}
 		
 	// now draw any non-light dependent shading passes
