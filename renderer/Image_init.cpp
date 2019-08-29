@@ -123,7 +123,7 @@ R_RampImage
 Creates a 0-255 ramp image
 ================
 */
-static void R_RampImage( idImage *image ) {
+/*static void R_RampImage( idImage *image ) {
 	byte	data[256][4];
 
 	for ( int x = 0 ; x < 256 ; x++ ) {
@@ -134,7 +134,7 @@ static void R_RampImage( idImage *image ) {
 	}
 	image->GenerateImage( ( byte * )data, 256, 1,
 	                      TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY );
-}
+}*/
 
 /*
 ================
@@ -1570,8 +1570,8 @@ void idImageManager::Init() {
 	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage );
 	//specularTableImage = ImageFromFunction( "_specularTable", R_SpecularTableImage );
 	//specular2DTableImage = ImageFromFunction( "_specular2DTable", R_Specular2DTableImage );
-	rampImage = ImageFromFunction( "_ramp", R_RampImage );
-	alphaRampImage = ImageFromFunction( "_alphaRamp", R_RampImage );
+	//rampImage = ImageFromFunction( "_ramp", R_RampImage );
+	//alphaRampImage = ImageFromFunction( "_alphaRamp", R_RampImage );
 	alphaNotchImage = ImageFromFunction( "_alphaNotch", R_AlphaNotchImage );
 	fogImage = ImageFromFunction( "_fog", R_FogImage );
 	fogEnterImage = ImageFromFunction( "_fogEnter", R_FogEnterImage );
