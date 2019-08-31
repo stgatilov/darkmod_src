@@ -41,18 +41,17 @@ Used for determining memory utilization
 int idImage::BitsForInternalFormat( int internalFormat ) const {
 	switch ( internalFormat ) {
 		//case GL_INTENSITY8:
-		case GL_RED:
+		case GL_R8:
 		case 1:
 			return 8;
 		case 2:
-		case GL_LUMINANCE8_ALPHA8:
+		//case GL_LUMINANCE8_ALPHA8:
+		case GL_RG8:
 			return 16;
 		case 3:
 			return 32;		// on some future hardware, this may actually be 24, but be conservative
 		case 4:
 			return 32;
-		case GL_LUMINANCE8:
-			return 8;
 		case GL_ALPHA8:
 			return 8;
 		case GL_RGBA8:
@@ -121,7 +120,7 @@ This may need to scan six cube map images
 GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth ) const {
 	int			i, c;
 	const byte	*scan;
-	int			rgbOr, rgbAnd, aOr, aAnd;
+	int			rgbOr, aOr, aAnd;
 	int			rgbDiffer, rgbaDiffer;
 	const bool allowCompress = globalImages->image_useCompression.GetBool() && glConfig.textureCompressionAvailable && globalImages->image_preload.GetBool();
 
@@ -131,7 +130,6 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	rgbDiffer = 0;
 	rgbaDiffer = 0;
 	rgbOr = 0;
-	rgbAnd = -1;
 	aOr = 0;
 	aAnd = -1;
 
@@ -150,7 +148,6 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 			rgbDiffer |= ( cor ^ cand );
 
 			rgbOr |= cor;
-			rgbAnd &= cand;
 
 			cor |= scan[3];
 			cand &= scan[3];
@@ -219,7 +216,6 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		// prevents any of the more compact forms
 		rgbDiffer = 1;
 		rgbaDiffer = 1;
-		rgbAnd = 0;
 	}
 
 	// cases without alpha
@@ -243,7 +239,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 			return GL_RGBA8;
 		static const GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
 		((idImage*)this)->swizzleMask = swizzleMask;
-		return GL_RED;									// single byte for all channels
+		return GL_R8;									// single byte for all channels
 	}
 
 	if ( minimumDepth == TD_HIGH_QUALITY ) {
@@ -253,7 +249,12 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;		// one byte
 	}
 	if ( !rgbDiffer ) {
-		return GL_LUMINANCE8_ALPHA8;					// two bytes, max quality
+		//return GL_LUMINANCE8_ALPHA8;					// two bytes, max quality
+		if ( !glConfig.textureSwizzleAvailable )
+			return GL_RGBA8;
+		static const GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
+		( (idImage*)this )->swizzleMask = swizzleMask;
+		return GL_RG8;									// two bytes, max quality
 	}
 	return GL_RGBA4;									// two bytes
 }
@@ -556,6 +557,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			scaledBuffer[ i ] = 0;
 		}
 	}
+	if ( internalFormat == GL_RG8 ) // 2.08 swizzle alpha to green, replacement for GL_LUMINANCE8_ALPHA8
+		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 )
+			scaledBuffer[i + 1] = scaledBuffer[i + 3];
 
 	// upload the main image level
 	GL_CheckErrors();
@@ -897,14 +901,14 @@ void idImage::WritePrecompressedImage() {
 	switch ( internalFormat ) {
 	case 1:
 	//case GL_INTENSITY8:
-	case GL_RED:
-	case GL_LUMINANCE8:
+	case GL_R8:
 	case 3:
 	case GL_RGB8:
 		altInternalFormat = GL_BGR_EXT;
 		bitSize = 24;
 		break;
-	case GL_LUMINANCE8_ALPHA8:
+	//case GL_LUMINANCE8_ALPHA8:
+	case GL_RG8:
 	case 4:
 	case GL_RGBA8:
 		altInternalFormat = GL_BGRA_EXT;
@@ -1661,22 +1665,20 @@ void idImage::Print() const {
 
 	switch ( internalFormat ) {
 		//case GL_INTENSITY8:
-		case GL_RED:
+		case GL_R8:
 		case 1:
 			common->Printf( "R     " );
 			break;
 		case 2:
-		case GL_LUMINANCE8_ALPHA8:
-			common->Printf( "LA    " );
+		//case GL_LUMINANCE8_ALPHA8:
+		case GL_RG8:
+			common->Printf( "RG    " );
 			break;
 		case 3:
 			common->Printf( "RGB   " );
 			break;
 		case 4:
 			common->Printf( "RGBA  " );
-			break;
-		case GL_LUMINANCE8:
-			common->Printf( "L     " );
 			break;
 		case GL_ALPHA8:
 			common->Printf( "A     " );
