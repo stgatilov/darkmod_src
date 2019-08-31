@@ -12,6 +12,7 @@
 #define GL_VERSION_2_0 1
 #define GL_VERSION_2_1 1
 #define GL_VERSION_3_0 1
+#define GL_VERSION_3_1 1
 // Mandatory extensions:
 #define GL_EXT_texture_compression_s3tc			1
 #define GL_ARB_vertex_program					1
@@ -28,7 +29,8 @@
 #define GL_KHR_debug							1	//core since 4.3
 #define GL_ARB_sync								1	//core since 3.2
 #define GL_ARB_stencil_texturing				1	//core since 4.3
-#define GL_ARB_compatibility					1	//check context profile
+#define GL_ARB_compatibility					1	//check context profile, 3.1 only
+#define GL_ARB_texture_swizzle					1	//deprecated intensity/luminance formats replacement, core since 3.3
 #include "glad.h"
 
 #ifdef _WIN32

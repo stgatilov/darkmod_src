@@ -112,6 +112,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.timerQueriesAvailable = CHECK_FEATURE(GL_ARB_timer_query);
 	glConfig.debugGroupsAvailable = CHECK_FEATURE(GL_KHR_debug);
 	glConfig.fenceSyncAvailable = CHECK_FEATURE(GL_ARB_sync);
+	glConfig.textureSwizzleAvailable = CHECK_FEATURE( GL_ARB_texture_swizzle );
 #ifdef _WIN32
 	CHECK_FEATURE(WGL_EXT_swap_control);
 #endif

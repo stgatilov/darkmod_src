@@ -69,6 +69,7 @@ typedef struct glconfig_s {
 	bool				fenceSyncAvailable;
 	bool				timerQueriesAvailable;
 	bool				debugGroupsAvailable;
+	bool				textureSwizzleAvailable; // replacement for intensity/luminance texture formats
 	bool				stencilTexturing;		// stencil SS
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 	int					displayFrequency;

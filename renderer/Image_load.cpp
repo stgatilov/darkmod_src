@@ -40,7 +40,8 @@ Used for determining memory utilization
 */
 int idImage::BitsForInternalFormat( int internalFormat ) const {
 	switch ( internalFormat ) {
-		case GL_INTENSITY8:
+		//case GL_INTENSITY8:
+		case GL_RED:
 		case 1:
 			return 8;
 		case 2:
@@ -237,7 +238,12 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		if ( minimumDepth != TD_HIGH_QUALITY && allowCompress ) {
 			return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;	// one byte
 		}
-		return GL_INTENSITY8;							// single byte for all channels
+		//return GL_INTENSITY8;							// single byte for all channels
+		if ( !glConfig.textureSwizzleAvailable )
+			return GL_RGBA8;
+		static const GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+		((idImage*)this)->swizzleMask = swizzleMask;
+		return GL_RED;									// single byte for all channels
 	}
 
 	if ( minimumDepth == TD_HIGH_QUALITY ) {
@@ -306,6 +312,9 @@ void idImage::SetImageFilterAndRepeat() const {
 			break;
 		default:
 			common->FatalError( "R_CreateImage: bad texture repeat" );
+	}
+	if ( swizzleMask != NULL ) {
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask );
 	}
 }
 
@@ -549,7 +558,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	}
 
 	// upload the main image level
+	GL_CheckErrors();
 	this->Bind();
+	GL_CheckErrors();
 
 	if ( mipmapMode == 1 ) { // duzenko #4401
 		qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE );
@@ -885,7 +896,8 @@ void idImage::WritePrecompressedImage() {
 	int bitSize = 0;
 	switch ( internalFormat ) {
 	case 1:
-	case GL_INTENSITY8:
+	//case GL_INTENSITY8:
+	case GL_RED:
 	case GL_LUMINANCE8:
 	case 3:
 	case GL_RGB8:
@@ -1648,9 +1660,10 @@ void idImage::Print() const {
 	}
 
 	switch ( internalFormat ) {
-		case GL_INTENSITY8:
+		//case GL_INTENSITY8:
+		case GL_RED:
 		case 1:
-			common->Printf( "I     " );
+			common->Printf( "R     " );
 			break;
 		case 2:
 		case GL_LUMINANCE8_ALPHA8:

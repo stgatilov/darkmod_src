@@ -232,6 +232,7 @@ public:
 	// data for listImages
 	int					uploadWidth, uploadHeight;	// after power of two, downsample, and MAX_TEXTURE_SIZE
 	int					internalFormat;
+	const GLint *		swizzleMask;			// replacement for deprecated intensity/luminance formats
 
 	idImage *			hashNext;				// for hash chains to speed lookup
 
@@ -262,6 +263,7 @@ ID_INLINE idImage::idImage() {
 	internalFormat = 0;
 	hashNext = NULL;
 	refCount = 0;
+	swizzleMask = NULL;
 	memset( &backgroundLoad, 0, sizeof( backgroundLoad ) );
 }
 
