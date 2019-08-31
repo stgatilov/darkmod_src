@@ -62,6 +62,7 @@ namespace Uniforms {
 		DEFINE_UNIFORM( mat4, modelMatrix )
 		DEFINE_UNIFORM( mat4, modelViewMatrix )
 		DEFINE_UNIFORM( vec4, viewOriginLocal )
+		DEFINE_UNIFORM( mat4, textureMatrix )
 
 		//TODO: is space necessary as argument, or we can take backEnd->currentSpace ?
 		void Set( const viewEntity_t *space );

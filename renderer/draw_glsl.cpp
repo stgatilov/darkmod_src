@@ -549,8 +549,7 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 
 			// bind the texture
 			pStage->texture.image->Bind();
-			if ( pStage->texture.hasMatrix ) 
-				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
+			RB_LoadShaderTextureMatrix( surf->shaderRegisters, pStage );
 
 			// draw it
 			if ( depthUniforms->instances )
@@ -558,11 +557,12 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 			else
 				RB_DrawElementsWithCounters( surf );
 
-			if ( pStage->texture.hasMatrix ) {
+			RB_LoadShaderTextureMatrix( NULL, pStage );
+			/*if ( pStage->texture.hasMatrix ) {
 				qglMatrixMode( GL_TEXTURE );
 				qglLoadIdentity();
 				qglMatrixMode( GL_MODELVIEW );
-			}
+			}*/
 
 			depthUniforms->alphaTest.Set( -1 ); // hint the glsl to skip texturing
 		}

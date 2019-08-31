@@ -129,9 +129,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	}
 
 	// set the texture matrix if needed
-	if ( pStage->texture.hasMatrix ) {
-		RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
-	}
+	RB_LoadShaderTextureMatrix( surf->shaderRegisters, pStage );
 
 	// texgens
 	switch ( pStage->texture.texgen ) {
@@ -180,11 +178,12 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		break;
 	}
 
-	if ( pStage->texture.hasMatrix ) {
+	RB_LoadShaderTextureMatrix( NULL, pStage );
+	/*if ( pStage->texture.hasMatrix ) {
 		qglMatrixMode( GL_TEXTURE );
 		qglLoadIdentity();
 		qglMatrixMode( GL_MODELVIEW );
-	}
+	}*/
 }
 
 /*
@@ -1201,9 +1200,7 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 		GL_SelectTexture( 0 );
 		stage->texture.image->Bind();
 
-		if ( stage->texture.hasMatrix ) {
-			RB_LoadShaderTextureMatrix( regs, &stage->texture );
-		}
+		RB_LoadShaderTextureMatrix( regs, stage );
 
 		// get the modulate values from the light, including alpha, unlike normal lights
 		backEnd.lightColor[0] = regs[ stage->color.registers[0] ];
@@ -1215,12 +1212,13 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 		RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BlendLight );
 		RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BlendLight );
 
-		if ( stage->texture.hasMatrix ) {
+		RB_LoadShaderTextureMatrix( NULL, stage );
+		/*if ( stage->texture.hasMatrix ) {
 			GL_SelectTexture( 0 );
 			qglMatrixMode( GL_TEXTURE );
 			qglLoadIdentity();
 			qglMatrixMode( GL_MODELVIEW );
-		}
+		}*/
 	}
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();

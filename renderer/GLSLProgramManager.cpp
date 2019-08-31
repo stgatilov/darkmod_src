@@ -166,6 +166,7 @@ namespace {
 		DefaultProgramInit( program, idDict(), "depthAlpha.vs", "depthAlpha.fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
+		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
 		program->Validate();
 	}
 
@@ -181,6 +182,7 @@ namespace {
 		DefaultProgramInit( program, idDict(), "oldStage.vs", "oldStage.fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
+		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
 		program->Validate();
 	}
 

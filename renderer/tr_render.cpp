@@ -405,14 +405,25 @@ void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage
 RB_LoadShaderTextureMatrix
 ======================
 */
-void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture ) {
-	float	matrix[16];
+void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const shaderStage_t* pStage ) {
+	const auto *texture = &pStage->texture;
+	if ( !texture->hasMatrix )
+		return;
 
-	RB_GetShaderTextureMatrix( shaderRegisters, texture, matrix );
+	auto prog = GLSLProgram::GetCurrentProgram();
+	if ( !prog )
+		return;
 
-	qglMatrixMode( GL_TEXTURE );
+	if ( shaderRegisters ) {
+		float	matrix[16];
+		RB_GetShaderTextureMatrix( shaderRegisters, texture, matrix );
+		prog->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( matrix );
+	} else 
+		prog->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
+
+	/*qglMatrixMode( GL_TEXTURE );
 	qglLoadMatrixf( matrix );
-	qglMatrixMode( GL_MODELVIEW );
+	qglMatrixMode( GL_MODELVIEW );*/
 }
 
 /*
