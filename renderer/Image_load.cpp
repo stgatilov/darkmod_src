@@ -422,7 +422,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureRepeat_t repeatParm, textureDepth_t depthParm ) {
 	bool		preserveBorder;
 	byte		*scaledBuffer;
-	int			scaled_width, scaled_height;
+	int			scaled_width=width, scaled_height=height;
 	byte		*shrunk;
 
 	PurgeImage();
@@ -445,14 +445,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		preserveBorder = true;
 	} else {
 		preserveBorder = false;
-	}
-
-	// make sure it is a power of 2
-	scaled_width = idMath::CeilPowerOfTwo(width);
-	scaled_height = idMath::CeilPowerOfTwo(height);
-
-	if ( scaled_width != width || scaled_height != height ) {
-		common->Error( "R_CreateImage: not a power of 2 image" );
 	}
 
 	// Optionally modify our width/height based on options/hardware
