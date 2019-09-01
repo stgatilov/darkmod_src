@@ -62,7 +62,6 @@ idCVar idImageManager::image_downSizeBumpLimit( "image_downSizeBumpLimit", "128"
 idCVar idImageManager::image_ignoreHighQuality( "image_ignoreHighQuality", "0", CVAR_RENDERER | CVAR_ARCHIVE, "ignore high quality setting on materials" );
 idCVar idImageManager::image_downSizeLimit( "image_downSizeLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls diffuse map downsample limit" );
 idCVar idImageManager::image_blockChecksum( "image_blockChecksum", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Perform MD4 block checksum calculation for later duplicates check" );
-idCVar idImageManager::image_mipmapMode( "image_mipmapMode", "2", CVAR_RENDERER | CVAR_ARCHIVE, "Mipmap generation mode: 0 - software, 1 - GL 1.4, 2 - GL 3.0" );
 
 // do this with a pointer, in case we want to make the actual manager
 // a private virtual subclass

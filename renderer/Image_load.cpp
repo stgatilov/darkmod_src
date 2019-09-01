@@ -301,10 +301,6 @@ void idImage::SetImageFilterAndRepeat() const {
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 			break;
-		case TR_CLAMP_TO_BORDER:
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
-			break;
 		case TR_CLAMP_TO_ZERO:
 		case TR_CLAMP_TO_ZERO_ALPHA:
 		case TR_CLAMP:
@@ -420,7 +416,6 @@ There is no way to specify explicit mip map levels
 void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
                              textureRepeat_t repeatParm, textureDepth_t depthParm ) {
-	bool		preserveBorder;
 	byte		*scaledBuffer;
 	int			scaled_width=width, scaled_height=height;
 	byte		*shrunk;
@@ -440,13 +435,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		return;
 	}
 
-	// don't let mip mapping smear the texture into the clamped border
-	if ( repeat == TR_CLAMP_TO_ZERO ) {
-		preserveBorder = true;
-	} else {
-		preserveBorder = false;
-	}
-
 	// Optionally modify our width/height based on options/hardware
 	GetDownsize( scaled_width, scaled_height );
 
@@ -457,13 +445,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	// select proper internal format before we resample
 	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth );
-
-	int mipmapMode = globalImages->image_mipmapMode.GetInteger(); // duzenko #4401
-	if ( preserveBorder ) {
-		mipmapMode = 0;
-	} else if ( mipmapMode == 2 && !qglGenerateMipmap ) {
-		mipmapMode = 1;
-	}
 
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
@@ -477,7 +458,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 	} else {
 		// resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
-		scaledBuffer = R_MipMap( pic, width, height, preserveBorder );
+		scaledBuffer = R_MipMap( pic, width, height);
 		width >>= 1;
 		height >>= 1;
 		if ( width < 1 ) {
@@ -488,7 +469,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 
 		while ( width > scaled_width || height > scaled_height ) {
-			shrunk = R_MipMap( scaledBuffer, width, height, preserveBorder );
+			shrunk = R_MipMap( scaledBuffer, width, height);
 			R_StaticFree( scaledBuffer );
 			scaledBuffer = shrunk;
 
@@ -512,7 +493,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	// zero the border if desired, allowing clamped projection textures
 	// even after picmip resampling or careless artists.
-	if ( repeat == TR_CLAMP_TO_ZERO ) {
+	/*if ( repeat == TR_CLAMP_TO_ZERO ) {
 		byte	rgba[4];
 
 		rgba[0] = rgba[1] = rgba[2] = 0;
@@ -525,7 +506,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		rgba[0] = rgba[1] = rgba[2] = 255;
 		rgba[3] = 0;
 		R_SetBorderTexels( ( byte * )scaledBuffer, width, height, rgba );
-	}
+	}*/
 
 	if ( generatorFunction == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) ) ) {
 		// Optionally write out the texture to a .tga
@@ -558,59 +539,11 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	this->Bind();
 	GL_CheckErrors();
 
-	if ( mipmapMode == 1 ) { // duzenko #4401
-		qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE );
-	}
-	{
 		//Routine test( &uploading );
 		auto start = Sys_Milliseconds();
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-		if ( mipmapMode == 2 ) { // duzenko #4401
 			qglGenerateMipmap( GL_TEXTURE_2D );
-		}
 		backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
-	}
-	if ( mipmapMode == 1 ) { // duzenko #4401
-		if ( strcmp( glConfig.vendor_string, "Intel" ) ) { // known to have crashed on Intel
-			qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE );
-		}
-	}
-
-	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
-	int	miplevel = 0;
-	while ( scaled_width > 1 || scaled_height > 1 ) {
-		if ( mipmapMode > 0 ) { // duzenko #4401
-			break;
-		}
-		// preserve the border after mip map unless repeating
-		shrunk = R_MipMap( scaledBuffer, scaled_width, scaled_height, preserveBorder );
-		if ( pic != scaledBuffer ) { // duzenko #4401
-			R_StaticFree( scaledBuffer );
-		}
-		scaledBuffer = shrunk;
-
-		scaled_width >>= 1;
-		scaled_height >>= 1;
-		if ( scaled_width < 1 ) {
-			scaled_width = 1;
-		}
-		if ( scaled_height < 1 ) {
-			scaled_height = 1;
-		}
-		miplevel++;
-
-		// this is a visualization tool that shades each mip map
-		// level with a different color so you can see the
-		// rasterizer's texture level selection algorithm
-		// Changing the color doesn't help with lumminance/alpha/intensity formats...
-		if ( depth == TD_DIFFUSE && globalImages->image_colorMipLevels.GetBool() ) {
-			R_BlendOverTexture( ( byte * )scaledBuffer, scaled_width * scaled_height, mipBlendColors[miplevel] );
-		}
-
-		// upload the mip map
-		qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height,
-		               0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-	}
 
 	if ( scaledBuffer != 0 && pic != scaledBuffer ) { // duzenko #4401
 		R_StaticFree( scaledBuffer );
@@ -770,7 +703,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	byte	*shrunk[6];
 
 	for ( i = 0 ; i < 6 ; i++ ) {
-		shrunk[i] = R_MipMap( pic[i], scaled_width, scaled_height, false );
+		shrunk[i] = R_MipMap( pic[i], scaled_width, scaled_height);
 	}
 	miplevel = 1;
 
@@ -783,7 +716,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 			               GL_RGBA, GL_UNSIGNED_BYTE, shrunk[i] );
 
 			if ( scaled_width > 2 ) {
-				shrunken = R_MipMap( shrunk[i], scaled_width / 2, scaled_height / 2, false );
+				shrunken = R_MipMap( shrunk[i], scaled_width / 2, scaled_height / 2 );
 			} else {
 				shrunken = NULL;
 			}

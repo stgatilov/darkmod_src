@@ -173,7 +173,7 @@ will result in a slight shrinking of the texture as it mips, but better than
 smeared clamps...
 ================
 */
-byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder ) {
+byte *R_MipMap( const byte *in, int width, int height ) {
 	int		i, j;
 	const byte	*in_p;
 	byte	*out, *out_p;
@@ -207,26 +207,6 @@ byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder ) {
 	width >>= 1;
 	height >>= 1;
 
-	if ( width == 0 || height == 0 ) {
-		width += height;	// get largest
-		if ( preserveBorder ) {
-			for (i=0 ; i<width ; i++, out_p+=4 ) {
-				out_p[0] = border[0];
-				out_p[1] = border[1];
-				out_p[2] = border[2];
-				out_p[3] = border[3];
-			}
-		} else {
-			for (i=0 ; i<width ; i++, out_p+=4, in_p+=8 ) {
-				out_p[0] = ( in_p[0] + in_p[4] )>>1;
-				out_p[1] = ( in_p[1] + in_p[5] )>>1;
-				out_p[2] = ( in_p[2] + in_p[6] )>>1;
-				out_p[3] = ( in_p[3] + in_p[7] )>>1;
-			}
-		}
-		return out;
-	}
-
 	for (i=0 ; i<height ; i++, in_p+=row) {
 		for (j=0 ; j<width ; j++, out_p+=4, in_p+=8) {
 			out_p[0] = (in_p[0] + in_p[4] + in_p[row+0] + in_p[row+4])>>2;
@@ -236,10 +216,6 @@ byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder ) {
 		}
 	}
 
-	// copy the old border texel back around if desired
-	if ( preserveBorder ) {
-		R_SetBorderTexels( out, width, height, border );
-	}
 	return out;
 }
 

@@ -1017,15 +1017,15 @@ static void WriteRenderBump( renderBump_t *rb, int outLinePixels ) {
 		byte	*old;
 
 		old = rb->localPic;
-		rb->localPic = R_MipMap( rb->localPic, width, height, false );
+		rb->localPic = R_MipMap( rb->localPic, width, height );
 		Mem_Free( old );
 
 		old = rb->globalPic;
-		rb->globalPic = R_MipMap( rb->globalPic, width, height, false );
+		rb->globalPic = R_MipMap( rb->globalPic, width, height );
 		Mem_Free( old );
 
 		old = rb->colorPic;
-		rb->colorPic = R_MipMap( rb->colorPic, width, height, false );
+		rb->colorPic = R_MipMap( rb->colorPic, width, height );
 		Mem_Free( old );
 
 		width >>= 1;
