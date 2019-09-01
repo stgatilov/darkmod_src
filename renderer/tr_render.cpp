@@ -207,9 +207,17 @@ void RB_EnterWeaponDepthHack() {
 
 	matrix[14] *= 0.25f;
 
-	qglMatrixMode( GL_PROJECTION );
-	qglLoadMatrixf( matrix );
-	qglMatrixMode( GL_MODELVIEW );
+	if ( r_uniformTransforms.GetBool() ) {
+		auto prog = GLSLProgram::GetCurrentProgram();
+		if ( prog ) {
+			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+			transformUniforms->projectionMatrix.Set( matrix );
+		}
+	} else {
+		qglMatrixMode( GL_PROJECTION );
+		qglLoadMatrixf( matrix );
+		qglMatrixMode( GL_MODELVIEW );
+	}
 }
 
 /*
@@ -239,9 +247,16 @@ RB_LeaveDepthHack
 void RB_LeaveDepthHack() {
 	qglDepthRange( 0.0f, 1.0f );
 
-	qglMatrixMode( GL_PROJECTION );
-	qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
-	qglMatrixMode( GL_MODELVIEW );
+	if ( r_uniformTransforms.GetBool()) {
+		if ( auto prog = GLSLProgram::GetCurrentProgram() ) {
+			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+			transformUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
+		}
+	} else {
+		qglMatrixMode( GL_PROJECTION );
+		qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
+		qglMatrixMode( GL_MODELVIEW );
+	}
 }
 
 /*
@@ -564,6 +579,7 @@ RB_SubmittInteraction
 =================
 */
 static void RB_SubmitInteraction( drawInteraction_t* din, bool multi = false ) {
+	GL_CheckErrors();
 	if ( !din->bumpImage && !r_skipBump.GetBool() )
 		return;
 
@@ -644,6 +660,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf->ambientCache.IsValid() ) {
 		return;
 	}
+	GL_CheckErrors();
 
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		if ( r_skipAmbient.GetInteger() & 2 )
@@ -661,16 +678,19 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	if ( tr.logFile ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );
 	}
+	GL_CheckErrors();
 
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {
 		backEnd.currentSpace = surf->space;
 
-		qglLoadMatrixf( surf->space->modelViewMatrix );
+		GL_CheckErrors();
 		if( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
 			Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 			transformUniforms->Set( surf->space );
-		}
+		} else
+			qglLoadMatrixf( surf->space->modelViewMatrix );
+		GL_CheckErrors();
 
 		// turn off the light depth bounds test if this model is rendered with a depth hack
 		/*if ( !surf->space->weaponDepthHack && surf->space->modelDepthHack == 0.0f ) {
@@ -693,15 +713,18 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+		GL_CheckErrors();
 	}
 
 	// hack depth range if needed
 	if ( surf->space->weaponDepthHack ) {
 		RB_EnterWeaponDepthHack();
+		GL_CheckErrors();
 	}
 
 	if ( surf->space->modelDepthHack != 0.0f ) {
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
+		GL_CheckErrors();
 	}
 	inter.surf = surf;
 	inter.lightFalloffImage = vLight->falloffImage;
@@ -821,11 +844,13 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 
 		// draw the final interaction
 		RB_SubmitInteraction( &inter );
+		GL_CheckErrors();
 	}
 
 	// unhack depth range if needed
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
 		RB_LeaveDepthHack();
+		GL_CheckErrors();
 	}
 
 	/*	if ( backEnd.useLightDepthBounds && backEnd.lightDepthBoundsDisabled ) {

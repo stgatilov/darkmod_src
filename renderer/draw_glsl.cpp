@@ -173,6 +173,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		// this may cause RB_GLSL_DrawInteraction to be executed multiple
 		// times with different colors and images if the surface or light have multiple layers
 		RB_CreateSingleDrawInteractions( surf );
+		GL_CheckErrors();
 	}
 	qglDisableVertexAttribArray( 8 );
 	qglDisableVertexAttribArray( 9 );
@@ -379,6 +380,7 @@ void RB_GLSL_DrawLight_ShadowMap() {
 
 void RB_GLSL_DrawInteractions_SingleLight() {
 	// do fogging later
+	GL_CheckErrors();
 	if ( backEnd.vLight->lightShader->IsFogLight() ) {
 		return;
 	}

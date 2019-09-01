@@ -904,7 +904,7 @@ ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderS
 
 	programManager->frobShader->Activate();
 
-	programManager->frobShader->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+	programManager->frobShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 	auto frobUniforms = programManager->frobShader->GetUniformGroup<FrobUniforms>();
 	frobUniforms->pulse.Set( .7 + .3 * sin( gameLocal.time * 1e-3 ) ); // FIXME move to frontend?
 	if ( !surf->space )
