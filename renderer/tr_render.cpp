@@ -264,11 +264,11 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		const drawSurf_t *drawSurf = drawSurfs[i];
 
 		if ( drawSurf->space != backEnd.currentSpace ) {
-			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 			if( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
 				Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 				transformUniforms->Set( drawSurf->space );
-			}
+			} else
+				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
@@ -327,7 +327,11 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 	for ( const drawSurf_t *drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			//common->Printf( "Yay i just loaded the matrix again, because (drawSurf->space does not equal backEnd.currentSpace) because it is NULL\n" );
-			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+				Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
+				transformUniforms->Set( drawSurf->space );
+			} else
+				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
