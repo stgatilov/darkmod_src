@@ -950,11 +950,12 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );
 
 	// change the matrix if needed
-	if ( surf->space != backEnd.currentSpace ) {
+	if ( !r_uniformTransforms.GetBool() && surf->space != backEnd.currentSpace ) {
 		qglLoadMatrixf( surf->space->modelViewMatrix );
 		backEnd.currentSpace = surf->space;
 		RB_SetProgramEnvironmentSpace();
 	}
+	GL_CheckErrors();
 
 	// change the scissor if needed
 	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
@@ -964,6 +965,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 	}
+	GL_CheckErrors();
 
 	// some deforms may disable themselves by setting numIndexes = 0
 	if ( !surf->numIndexes ) {
@@ -983,23 +985,29 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 
 	// set face culling appropriately
 	GL_Cull( shader->GetCullType() );
+	GL_CheckErrors();
 
 	// set polygon offset if necessary
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
+		GL_CheckErrors();
 	}
 
 	if ( surf->space->weaponDepthHack ) {
 		RB_EnterWeaponDepthHack();
+		GL_CheckErrors();
 	}
 
 	if ( surf->space->modelDepthHack != 0.0f && !soft_particle ) { // #3878 soft particles don't want modelDepthHack, which is
 		// an older way to slightly "soften" particles
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
+		GL_CheckErrors();
 	}
 	idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
+	GL_CheckErrors();
 	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	GL_CheckErrors();
 
 	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
 		pStage = shader->GetStage( stage );
@@ -1048,6 +1056,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( surf->space->weaponDepthHack || ( !soft_particle && surf->space->modelDepthHack != 0.0f ) ) {
 		RB_LeaveDepthHack();
 	}
+	GL_CheckErrors();
 }
 
 /*
@@ -1084,6 +1093,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	GL_SelectTexture( 0 );
 
 	RB_SetProgramEnvironment();
+	GL_CheckErrors();
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
 	// because we want to defer the matrix load because many
@@ -1110,6 +1120,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			break;
 		}
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
+		GL_CheckErrors();
 	}
 	GL_Cull( CT_FRONT_SIDED );
 
@@ -1401,6 +1412,7 @@ void RB_STD_DrawView( void ) {
 
 	// clear the z buffer, set the projection matrix, etc
 	RB_BeginDrawingView();
+	GL_CheckErrors();
 
 	backEnd.lightScale = r_lightScale.GetFloat();
 	backEnd.overBright = 1.0f;
@@ -1409,11 +1421,14 @@ void RB_STD_DrawView( void ) {
 	if ( backEnd.viewDef->viewEntitys ) {
 		// fill the depth buffer and clear color buffer to black except on subviews
 		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
+		GL_CheckErrors();
 		RB_GLSL_DrawInteractions();
+		GL_CheckErrors();
 	}
 		
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
+	GL_CheckErrors();
 
 	// fog and blend lights
 	RB_STD_FogAllLights();
@@ -1426,4 +1441,5 @@ void RB_STD_DrawView( void ) {
 		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed );
 	}
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
+	GL_CheckErrors();
 }

@@ -165,7 +165,7 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		vbo = frameData[backendListNum].vertexBuffer.GetAPIObject();
 	}
 	if ( vbo != currentVertexBuffer ) {
-		qglBindBuffer( GL_ARRAY_BUFFER_ARB, vbo );
+		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
 	}
 	return ( void * )( size_t )( handle.offset );
@@ -234,6 +234,11 @@ void idVertexCache::Init() {
 		AllocGeoBufferSet( frameData[i], currentVertexCacheSize, currentIndexCacheSize );
 	}
 	EndFrame();
+
+	// 2.08 core context https://stackoverflow.com/questions/13403807/glvertexattribpointer-raising-gl-invalid-operation
+	GLuint vao;
+	qglGenVertexArrays( 1, &vao );
+	qglBindVertexArray( vao );
 }
 
 /*

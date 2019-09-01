@@ -440,7 +440,7 @@ GL_CheckErrors
 ==================
 */
 void GL_CheckErrors( void ) {
-	if ( 0&&r_ignoreGLErrors.GetBool() ) {
+	if ( r_ignoreGLErrors.GetBool() ) {
 		return;
 	}
 	int		err;

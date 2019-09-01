@@ -469,9 +469,11 @@ to actually render the visible surfaces for this view
 */
 void RB_BeginDrawingView( void ) {
 	// set the modelview matrix for the viewer
-	qglMatrixMode( GL_PROJECTION );
-	qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
-	qglMatrixMode( GL_MODELVIEW );
+	if ( !r_uniformTransforms.GetBool() ) {
+		qglMatrixMode( GL_PROJECTION );
+		qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
+		qglMatrixMode( GL_MODELVIEW );
+	}
 
 	// set the window clipping
 	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
@@ -504,6 +506,7 @@ void RB_BeginDrawingView( void ) {
 	backEnd.glState.faceCulling = -1;		// force face culling to set next time
 
 	GL_Cull( CT_FRONT_SIDED );
+	GL_CheckErrors();
 }
 
 /*

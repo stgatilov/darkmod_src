@@ -861,7 +861,6 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 					}
 				}
 			}
-			GL_CheckErrors();
 			RB_DrawView();
 			GL_CheckErrors();
 			if ( isv3d ) {
