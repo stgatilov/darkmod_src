@@ -34,7 +34,7 @@ void RB_SetDefaultGLState( void ) {
 	GL_CheckErrors();
 
 	qglClearDepth( 1.0f );
-	qglColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+	GL_FloatColor( 1.0f, 1.0f, 1.0f, 1.0f );
 
 	// the vertex array is always enabled
 	qglEnableVertexAttribArray( 0 );
@@ -49,8 +49,6 @@ void RB_SetDefaultGLState( void ) {
 	qglEnable( GL_BLEND );
 	qglEnable( GL_SCISSOR_TEST );
 	qglEnable( GL_CULL_FACE );
-	qglDisable( GL_LIGHTING );
-	qglDisable( GL_LINE_STIPPLE );
 	qglDisable( GL_STENCIL_TEST );
 
 	qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
@@ -64,12 +62,7 @@ void RB_SetDefaultGLState( void ) {
 		GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 
-	for ( int i = MAX_MULTITEXTURE_UNITS - 1 ; i >= 0 ; i-- ) {
-		GL_SelectTexture( i );
-
-		qglDisable( GL_TEXTURE_2D );
-		qglDisable( GL_TEXTURE_CUBE_MAP );
-	}
+	GL_CheckErrors();
 }
 
 /*
@@ -352,7 +345,8 @@ void GL_FloatColor( const idVec4 &color ) {
 	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
 	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
 	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
-	qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+	//qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+	qglVertexAttrib4fv( 3, parm );
 }
 
 /*
@@ -370,7 +364,7 @@ void GL_FloatColor( const float *color ) {
 	if ( color[3] ) {
 		parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
 	}
-	qglColor4fv( parm );
+	//qglColor4fv( parm );
 	//stgatilov: duplicate parameter to 3-rd vertex attribute
 	//needed for new GLSL shaders (e.g. environment.vs on glass materials)
 	qglVertexAttrib4fv(3, parm);
@@ -384,11 +378,12 @@ Float color 3 component (clamped)
 ====================
 */
 void GL_FloatColor( float r, float g, float b ) {
-	GLfloat parm[3];
+	GLfloat parm[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, r );
 	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, g );
 	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, b );
-	qglColor3f( parm[0], parm[1], parm[2] );
+//	qglColor3f( parm[0], parm[1], parm[2] );
+	qglVertexAttrib4fv( 3, parm );
 }
 
 /*
@@ -404,7 +399,8 @@ void GL_FloatColor( float r, float g, float b, float a ) {
 	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, g );
 	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, b );
 	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, a );
-	qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+//	qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+	qglVertexAttrib4fv( 3, parm );
 }
 
 /*
@@ -422,7 +418,8 @@ void GL_ByteColor( const byte *color ) {
 	if ( color[3] ) {
 		parm[3] = idMath::ClampByte( 0, 255, color[3] );
 	}
-	qglColor3ub( parm[0], parm[1], parm[2] );
+//	qglColor3ub( parm[0], parm[1], parm[2] );
+	qglVertexAttrib4ubv( 3, parm );
 }
 
 
@@ -434,11 +431,12 @@ Byte color 3 component (clamped)
 ====================
 */
 void GL_ByteColor( byte r, byte g, byte b ) {
-	GLubyte parm[3];
+	GLubyte parm[4] = { 255, 255, 255, 255 };
 	parm[0] = idMath::ClampByte( 0, 255, r );
 	parm[1] = idMath::ClampByte( 0, 255, g );
 	parm[2] = idMath::ClampByte( 0, 255, b );
-	qglColor3ub( parm[0], parm[1], parm[2] );
+	//qglColor3ub( parm[0], parm[1], parm[2] );
+	qglVertexAttrib4ubv( 3, parm );
 }
 
 /*
@@ -449,12 +447,13 @@ Byte color 4 component (clamped)
 ====================
 */
 void GL_ByteColor( byte r, byte g, byte b, byte a ) {
-	GLubyte parm[4];
+	GLubyte parm[4] = { 255, 255, 255, 255 };
 	parm[0] = idMath::ClampByte( 0, 255, r );
 	parm[1] = idMath::ClampByte( 0, 255, g );
 	parm[2] = idMath::ClampByte( 0, 255, b );
 	parm[3] = idMath::ClampByte( 0, 255, a );
-	qglColor4ub( parm[0], parm[1], parm[2], parm[3] );
+	//qglColor4ub( parm[0], parm[1], parm[2], parm[3] );
+	qglVertexAttrib4ubv( 3, parm );
 }
 
 /*
@@ -862,7 +861,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 					}
 				}
 			}
+			GL_CheckErrors();
 			RB_DrawView();
+			GL_CheckErrors();
 			if ( isv3d ) {
 				c_draw3d++;
 			} else {
