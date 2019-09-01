@@ -203,6 +203,13 @@ namespace {
 		program->Validate();
 	}
 
+	void InitSoftParticleShader( GLSLProgram *program ) {
+		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs" );
+		program->Activate();
+		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
+		program->Validate();
+	}
+
 	void InitSamplerBindingsForBumpShaders( GLSLProgram *program ) {
 		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
 }
@@ -266,6 +273,7 @@ void GLSLProgramManager::Init() {
 	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
 	multiLightInteractionShader = LoadInteractionShader( "multiLightInteraction", "interactionN", false );
 	frobShader = Load( "frob" );
+	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	// FIXME duzenko: is it the right way to do this?
 	/*legacyTangentsCvarCallback = r_legacyTangents.AddOnModifiedCallback( [this] () {
 		shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );

@@ -80,6 +80,15 @@ namespace Uniforms {
 		bool acceptsTranslucent = false;
 	};
 
+	struct SoftParticle : GLSLUniformGroup {
+		UNIFORM_GROUP_DEF( SoftParticle )
+
+			DEFINE_UNIFORM( sampler, u_texture1 )
+
+			int instances = 0;
+		bool acceptsTranslucent = false;
+	};
+
 	struct Interaction: GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( Interaction )
 

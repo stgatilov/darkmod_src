@@ -45,7 +45,8 @@ public:
 	void ReloadAllPrograms();
 
 	// global built-in shaders
-	GLSLProgram *frobShader;
+	GLSLProgram* frobShader;
+	GLSLProgram *softParticleShader;
 	GLSLProgram *cubeMapShader;
 	GLSLProgram *bumpyEnvironment;
 	GLSLProgram *depthShader;

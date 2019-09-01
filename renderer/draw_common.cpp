@@ -831,7 +831,11 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 	// Disable depth clipping. The fragment program will handle it to allow overdraw.
 	GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS );
 
-	R_UseProgramARB( VPROG_SOFT_PARTICLE );
+	if ( r_useGLSL ) {
+		programManager->softParticleShader->Activate();
+		programManager->softParticleShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
+	} else
+		R_UseProgramARB( VPROG_SOFT_PARTICLE );
 
 	// Bind image and _currentDepth
 	GL_SelectTexture( 0 );
