@@ -775,7 +775,7 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	GL_State( pStage->drawStateBits );
 	newStage->glslProgram->Activate();
 
-	newStage->glslProgram->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+	newStage->glslProgram->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 	newStage->glslProgram->GetUniformGroup<Uniforms::MaterialStage>()->Set( pStage, surf );
 	{
 		using namespace Attributes::Default;

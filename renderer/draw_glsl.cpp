@@ -717,7 +717,7 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 	parm[3] = 1.0;
 	viewOriginGlobal.Set( parm );
 
-	const struct viewEntity_s *space = backEnd.currentSpace;
+	const struct viewEntity_s *space = surf->space;
 	// set eye position in local space
 	R_GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, parm.ToVec3() );
 	parm[3] = 1.0;
