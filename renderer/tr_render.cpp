@@ -234,9 +234,17 @@ void RB_EnterModelDepthHack( float depth ) {
 
 	matrix[14] -= depth;
 
-	qglMatrixMode( GL_PROJECTION );
-	qglLoadMatrixf( matrix );
-	qglMatrixMode( GL_MODELVIEW );
+	if ( r_uniformTransforms.GetBool() ) {
+		auto prog = GLSLProgram::GetCurrentProgram();
+		if ( prog ) {
+			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+			transformUniforms->projectionMatrix.Set( matrix );
+		}
+	} else {
+		qglMatrixMode( GL_PROJECTION );
+		qglLoadMatrixf( matrix );
+		qglMatrixMode( GL_MODELVIEW );
+	}
 }
 
 /*
@@ -284,14 +292,17 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 				transformUniforms->Set( drawSurf->space );
 			} else
 				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			GL_CheckErrors();
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
 			RB_EnterWeaponDepthHack();
+			GL_CheckErrors();
 		}
 
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+			GL_CheckErrors();
 		}
 
 		/* change the scissor if needed
@@ -300,6 +311,7 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 			backEnd.currentScissor = drawSurf->scissorRect;
 			// revelator: test. parts of the functions loaded here also runs through the fbo transforms (the code for filling the depthbuffer for instance)
 			FB_ApplyScissor();
+			GL_CheckErrors();
 			// revelator: if unwanted just remove the above and uncomment the below.
 			/*GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 			              backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
@@ -309,9 +321,11 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 
 		// render it
 		triFunc_( drawSurf );
+		GL_CheckErrors();
 
 		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
 			RB_LeaveDepthHack();
+			GL_CheckErrors();
 		}
 
 		// mark currentSpace if we have drawn.

@@ -487,6 +487,7 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 	const shaderStage_t		*pStage;
 	const float				*regs = surf->shaderRegisters;
 
+	GL_CheckErrors();
 	Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 
 	// subviews will just down-modulate the color buffer by overbright
@@ -519,6 +520,7 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 		// draw a normal opaque surface
 		bool	didDraw = false;
 
+		GL_CheckErrors();
 		qglEnableVertexAttribArray( 8 );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 
@@ -546,18 +548,21 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 			if ( color[3] <= 0 ) {
 				continue;
 			}
+			GL_CheckErrors();
 			depthUniforms->color.Set( color );
 			depthUniforms->alphaTest.Set( regs[pStage->alphaTestRegister] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
 			RB_LoadShaderTextureMatrix( surf->shaderRegisters, pStage );
+			GL_CheckErrors();
 
 			// draw it
 			if ( depthUniforms->instances )
 				RB_DrawElementsInstanced( surf, depthUniforms->instances );
 			else
 				RB_DrawElementsWithCounters( surf );
+			GL_CheckErrors();
 
 			RB_LoadShaderTextureMatrix( NULL, pStage );
 			/*if ( pStage->texture.hasMatrix ) {
@@ -567,9 +572,11 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 			}*/
 
 			depthUniforms->alphaTest.Set( -1 ); // hint the glsl to skip texturing
+			GL_CheckErrors();
 		}
 		depthUniforms->color.Set( colorBlack );
 		qglDisableVertexAttribArray( 8 );
+		GL_CheckErrors();
 
 		if ( !didDraw ) {
 			drawSolid = true;
@@ -581,11 +588,13 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 			RB_DrawElementsInstanced( surf, depthUniforms->instances );
 		else
 			RB_DrawElementsWithCounters( surf );
+	GL_CheckErrors();
 
 	// reset blending
 	if ( shader->GetSort() == SS_SUBVIEW ) {
 		depthUniforms->color.Set( colorBlack );
 		GL_State( GLS_DEPTHFUNC_LESS );
+		GL_CheckErrors();
 	}
 }
 

@@ -42,7 +42,7 @@ bool GLimp_CheckExtension( const char *name, int available ) {
 void GLimp_CheckRequiredFeatures( void ) {
 	common->Printf( "Checking required OpenGL features...\n" );
 	bool reqs = true;
-	reqs = reqs && CHECK_FEATURE(GL_VERSION_3_0);
+	reqs = reqs && CHECK_FEATURE(GL_VERSION_3_1);
 	reqs = reqs && CHECK_FEATURE(GL_EXT_texture_compression_s3tc);
 	reqs = reqs && CHECK_FEATURE(GL_ARB_vertex_program);
 	reqs = reqs && CHECK_FEATURE(GL_ARB_fragment_program);
