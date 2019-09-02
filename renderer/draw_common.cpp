@@ -98,7 +98,7 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 
 		if ( r_useGLSL ) {
 			programManager->bumpyEnvironment->Activate();
-			programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+			programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 			BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
 			uniforms->colorAdd.Set(0, 0, 0, 0);
 			uniforms->colorModulate.Set(0, 0, 0, 0);
