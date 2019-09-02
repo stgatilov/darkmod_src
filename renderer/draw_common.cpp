@@ -110,7 +110,7 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		if ( r_useGLSL ) {
 			GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
 			environmentShader->Activate();
-			environmentShader->GetUniformGroup<Uniforms::Global>()->Set( backEnd.currentSpace );
+			environmentShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 		}  else
 			R_UseProgramARB( VPROG_ENVIRONMENT );
 	}
