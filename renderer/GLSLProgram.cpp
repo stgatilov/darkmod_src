@@ -296,7 +296,11 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 
 	std::vector<std::string> sourceFiles { sourceFile };
 	ResolveIncludes( source, sourceFiles );
-	ResolveDefines( source, defines );
+	idDict definesPlus( defines );
+	if ( shaderType == GL_VERTEX_SHADER )
+		definesPlus.Set("VERTEX_SHADER", "1");
+	ResolveDefines( source, definesPlus );
+	//ResolveDefines( source, defines);
 
 	GLuint shader = qglCreateShader( shaderType );
 	GLint length = source.size();
