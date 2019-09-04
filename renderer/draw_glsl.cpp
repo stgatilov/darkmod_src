@@ -273,7 +273,7 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
-	if ( r_shadowMapSinglePass.GetBool() || r_skipInteractions.GetBool() ) 
+	if ( r_shadowMapSinglePass.GetBool() /*|| r_skipInteractions.GetBool()*/ ) // duzenko: let shadow maps render for benchmarking
 		return;
 	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
 
