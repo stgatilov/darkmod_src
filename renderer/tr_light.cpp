@@ -604,7 +604,7 @@ R_LinkLightSurf
 =================
 */
 void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
-		const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
+		const idMaterial *material, const idScreenRect &scissor, bool viewInsideShadow ) {
 	if ( !space ) {
 		space = &tr.viewDef->worldSpace;
 	}
@@ -612,10 +612,10 @@ void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEn
 
 	drawSurf->CopyGeo( tri );
 	drawSurf->space = space;
-	drawSurf->material = shader;
+	drawSurf->material = material;
 	drawSurf->scissorRect = scissor;
 	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
-	if ( space->entityDef && space->entityDef->parms.noShadow ) {
+	if ( space->entityDef && space->entityDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) { // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 	}
 	
@@ -635,22 +635,22 @@ void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEn
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
 	}
 
-	if ( !shader ) {
+	if ( !material ) {
 		// shadows won't have a shader
 		drawSurf->shaderRegisters = NULL;
 		if ( !(drawSurf->dsFlags & DSF_VIEW_INSIDE_SHADOW) )
 			drawSurf->numIndexes = tri->numShadowIndexesNoCaps;
 	} else {
 		// process the shader expressions for conditionals / color / texcoords
-		const float *constRegs = shader->ConstantRegisters();
+		const float *constRegs = material->ConstantRegisters();
 		if ( constRegs ) {
 			// this shader has only constants for parameters
 			drawSurf->shaderRegisters = constRegs;
 		} else {
 			// FIXME: share with the ambient surface?
-			float *regs = (float *)R_FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
+			float *regs = (float *)R_FrameAlloc( material->GetNumRegisters() * sizeof( float ) );
 			drawSurf->shaderRegisters = regs;
-			shader->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, tr.viewDef, space->entityDef->parms.referenceSound );
+			material->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, tr.viewDef, space->entityDef->parms.referenceSound );
 		}
 	}
 
@@ -929,7 +929,7 @@ void R_AddLightSurfaces( void ) {
 		}
 
 		// add the prelight shadows for the static world geometry
-		if ( light->parms.prelightModel && r_useOptimizedShadows.GetBool() ) {
+		if ( light->parms.prelightModel && r_useOptimizedShadows.GetBool() && vLight->shadows == LS_STENCIL ) {
 			srfTriangles_t	*tri = light->parms.prelightModel->Surface( 0 )->geometry;
 
 			// these shadows will all have valid bounds, and can be culled normally
@@ -941,16 +941,6 @@ void R_AddLightSurfaces( void ) {
 			if ( !vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 				R_CreatePrivateShadowCache( tri );
 			}
-
-			// Serp : Pretty sure this wont be possible
-#ifdef _DEBUG
-			if ( !light->parms.prelightModel->NumSurfaces() ) {
-				common->Error( "no surfs in prelight model '%s'", light->parms.prelightModel->Name() );
-			}
-			if ( !tri->shadowVertexes ) {
-				common->Error( "R_AddLightSurfaces: prelight model '%s' without shadowVertexes", light->parms.prelightModel->Name() );
-			}
-#endif
 
 			if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
 				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
@@ -1128,7 +1118,7 @@ R_AddDrawSurf
 =================
 */
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius )
+					const idMaterial *material, const idScreenRect &scissor, const float soft_particle_radius )
 {
 	drawSurf_t		*drawSurf;
 	const float		*shaderParms;
@@ -1138,9 +1128,9 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 	drawSurf->CopyGeo( tri );
 	drawSurf->space = space;
-	drawSurf->material = shader;
+	drawSurf->material = material;
 	drawSurf->scissorRect = scissor;
-	drawSurf->sort = shader->GetSort() + tr.sortOffset;
+	drawSurf->sort = material->GetSort() + tr.sortOffset;
 	drawSurf->dsFlags = 0;
 	if( scissor.IsEmpty() )
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_ONLY;
@@ -1150,7 +1140,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	} else {
 		drawSurf->particle_radius = 0.0f;
 	}
-	if ( space->entityDef && space->entityDef->parms.noShadow ) {
+	if ( space->entityDef && space->entityDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) {
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
 		tr.pc.c_noshadowSurfs++;
 	}
@@ -1178,12 +1168,12 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	tr.viewDef->numDrawSurfs++;
 
 	// process the shader expressions for conditionals / color / texcoords
-	const float	*constRegs = shader->ConstantRegisters();
+	const float	*constRegs = material->ConstantRegisters();
 	if ( constRegs ) {
 		// shader only uses constant values
 		drawSurf->shaderRegisters = constRegs;
 	} else {
-		float *regs = (float *)R_FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
+		float *regs = (float *)R_FrameAlloc( material->GetNumRegisters() * sizeof( float ) );
 		drawSurf->shaderRegisters = regs;
 
 		// a reference shader will take the calculated stage color value from another shader
@@ -1215,12 +1205,12 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			tr.viewDef->floatTime = game->GetTimeGroupTime( space->entityDef->parms.timeGroup ) * 0.001f;
 			tr.viewDef->renderView.time = game->GetTimeGroupTime( space->entityDef->parms.timeGroup );
 
-			shader->EvaluateRegisters( regs, shaderParms, tr.viewDef, renderEntity->referenceSound );
+			material->EvaluateRegisters( regs, shaderParms, tr.viewDef, renderEntity->referenceSound );
 
 			tr.viewDef->floatTime = oldFloatTime;
 			tr.viewDef->renderView.time = oldTime;
 		} else {
-			shader->EvaluateRegisters( regs, shaderParms, tr.viewDef, renderEntity->referenceSound );
+			material->EvaluateRegisters( regs, shaderParms, tr.viewDef, renderEntity->referenceSound );
 		}
 	}
 
@@ -1228,7 +1218,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	R_DeformDrawSurf( drawSurf );
 
 	// skybox surfaces need a dynamic texgen
-	switch( shader->Texgen() ) {
+	switch( material->Texgen() ) {
 		case TG_SKYBOX_CUBE:
 			R_SkyboxTexGen( drawSurf, tr.viewDef->renderView.vieworg );
 			return;
@@ -1241,14 +1231,14 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	idUserInterface	*gui = NULL;
 
 	if ( !space->entityDef ) {
-		gui = shader->GlobalGui();
+		gui = material->GlobalGui();
 	} else {
-		int guiNum = shader->GetEntityGui() - 1;
+		int guiNum = material->GetEntityGui() - 1;
 		if ( guiNum >= 0 && guiNum < MAX_RENDERENTITY_GUI ) {
 			gui = renderEntity->gui[ guiNum ];
 		}
 		if ( !gui ) {
-			gui = shader->GlobalGui();
+			gui = material->GlobalGui();
 		}
 	}
 
