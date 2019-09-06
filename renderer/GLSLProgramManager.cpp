@@ -175,6 +175,7 @@ namespace {
 		program->Activate();
 		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
+		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
 		program->Validate();
 	}
 
