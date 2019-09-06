@@ -303,7 +303,7 @@ void idImage::SetImageFilterAndRepeat() const {
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 			break;
 		case TR_CLAMP_TO_ZERO_ALPHA:
-			qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, trCtZA );
+			qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, trCtZA );
 		case TR_CLAMP_TO_ZERO:
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
