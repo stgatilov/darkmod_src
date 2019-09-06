@@ -296,13 +296,18 @@ void idImage::SetImageFilterAndRepeat() const {
 	}
 
 	// set the wrap/clamp modes
+	static const int trCtZA[] = { 255,255,255,0 };
 	switch ( repeat ) {
 		case TR_REPEAT:
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 			break;
-		case TR_CLAMP_TO_ZERO:
 		case TR_CLAMP_TO_ZERO_ALPHA:
+			qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, trCtZA );
+		case TR_CLAMP_TO_ZERO:
+			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
+			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
+			break;
 		case TR_CLAMP:
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
