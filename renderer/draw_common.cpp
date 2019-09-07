@@ -179,11 +179,6 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 	}
 
 	RB_LoadShaderTextureMatrix( NULL, pStage );
-	/*if ( pStage->texture.hasMatrix ) {
-		qglMatrixMode( GL_TEXTURE );
-		qglLoadIdentity();
-		qglMatrixMode( GL_MODELVIEW );
-	}*/
 }
 
 /*

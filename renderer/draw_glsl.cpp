@@ -665,7 +665,7 @@ void Attributes::Default::SetDrawVert(size_t startOffset, int arrayMask) {
 
 void Uniforms::Global::Set(const viewEntity_t *space) {
 	modelMatrix.Set( space->modelMatrix );
-	projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
+	//projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
 	modelViewMatrix.Set( space->modelViewMatrix );
 	{
 		idVec4 vol;

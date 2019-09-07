@@ -211,7 +211,7 @@ void RB_EnterWeaponDepthHack() {
 		auto prog = GLSLProgram::GetCurrentProgram();
 		if ( prog ) {
 			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
-			transformUniforms->projectionMatrix.Set( matrix );
+			//transformUniforms->projectionMatrix.Set( matrix );
 		}
 	} else {
 		qglMatrixMode( GL_PROJECTION );
@@ -238,7 +238,7 @@ void RB_EnterModelDepthHack( float depth ) {
 		auto prog = GLSLProgram::GetCurrentProgram();
 		if ( prog ) {
 			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
-			transformUniforms->projectionMatrix.Set( matrix );
+			//transformUniforms->projectionMatrix.Set( matrix );
 		}
 	} else {
 		qglMatrixMode( GL_PROJECTION );
@@ -258,7 +258,7 @@ void RB_LeaveDepthHack() {
 	if ( r_uniformTransforms.GetBool()) {
 		if ( auto prog = GLSLProgram::GetCurrentProgram() ) {
 			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
-			transformUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
+			//transformUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
 		}
 	} else {
 		qglMatrixMode( GL_PROJECTION );
@@ -502,6 +502,8 @@ void RB_BeginDrawingView( void ) {
 		qglMatrixMode( GL_PROJECTION );
 		qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
 		qglMatrixMode( GL_MODELVIEW );
+	} else {
+		qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), backEnd.viewDef->projectionMatrix, GL_DYNAMIC_DRAW );
 	}
 
 	// set the window clipping

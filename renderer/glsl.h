@@ -58,7 +58,7 @@ namespace Uniforms {
 	struct Global : public GLSLUniformGroup {
 		UNIFORM_GROUP_DEF(Global)
 
-		DEFINE_UNIFORM( mat4, projectionMatrix )
+		//DEFINE_UNIFORM( mat4, projectionMatrix )
 		DEFINE_UNIFORM( mat4, modelMatrix )
 		DEFINE_UNIFORM( mat4, modelViewMatrix )
 		DEFINE_UNIFORM( vec4, viewOriginLocal )

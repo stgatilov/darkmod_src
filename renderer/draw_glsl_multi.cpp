@@ -223,6 +223,7 @@ void RB_ShadowMap_RenderAllLights() {
 
 	FB_ToggleShadow( true );
 
+	GL_CheckErrors();
 	programManager->shadowMapMultiShader->Activate();
 	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
 	MultiShadowUniforms *shadowUniforms = programManager->shadowMapMultiShader->GetUniformGroup<MultiShadowUniforms>();
@@ -245,6 +246,7 @@ void RB_ShadowMap_RenderAllLights() {
 	for ( int i = 0; i < 4; i++ ) // clip the geometry shader output to each of the atlas pages
 		qglEnable( GL_CLIP_PLANE0 + i );
 	auto viewDef = backEnd.viewDef;
+	GL_CheckErrors();
 	for ( int i = 0; i < viewDef->numDrawSurfs + viewDef->numOffscreenSurfs; i++ )
 		RB_ShadowMap_RenderAllLights( viewDef->drawSurfs[i] );
 	for ( int i = 0; i < 4; i++ )
