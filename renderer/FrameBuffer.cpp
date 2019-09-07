@@ -174,6 +174,8 @@ Moved from image_load.cpp so that can use internal FBO resolution ratio and stat
 ====================
 */
 void CopyDepthBuffer( idImage *image, int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED )
+		return; // 2.08: Bind() can bind _white if image has not initialized yet
 	image->Bind();
 	// Ensure we are reading from the back buffer:
 	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
@@ -197,13 +199,13 @@ void CopyDepthBuffer( idImage *image, int x, int y, int imageWidth, int imageHei
 		// this part sets depthbits to the max value the gfx card supports, it could also be used for FBO.
 		switch ( r_fboDepthBits.GetInteger() ) {
 		case 16:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
 			break;
 		case 32:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
 			break;
 		default:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr );
 			break;
 		}
 	}   //REVELATOR: dont need an else condition here.
