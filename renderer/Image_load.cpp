@@ -171,7 +171,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	// catch normal maps first
 	if ( minimumDepth == TD_BUMP ) {
 		if ( allowCompress && globalImages->image_useNormalCompression.GetInteger() ) {
-			if ( glConfig.textureCompressionRgtcAvailable && globalImages->image_useNormalCompression.GetInteger() > 1 ) {
+			if ( globalImages->image_useNormalCompression.GetInteger() > 1 ) {
 				return GL_COMPRESSED_RG_RGTC2;
 			}
 			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
@@ -527,7 +527,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// one fragment program
 	// if the image is precompressed
 	// then it is loaded above and the swap never happens here
-	if ( depth == TD_BUMP && ( globalImages->image_useNormalCompression.GetInteger() < 2 || !glConfig.textureCompressionRgtcAvailable ) ) {
+	if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() < 2 ) {
 		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
 			scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
 			scaledBuffer[ i ] = 0;
