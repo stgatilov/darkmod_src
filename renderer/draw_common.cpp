@@ -617,6 +617,8 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	if ( r_skipNewAmbient.GetBool() ) 
+		return;
 #if 0
 	//note: named attributes bound to locations during creation in shaderProgram_t::Load
 	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
