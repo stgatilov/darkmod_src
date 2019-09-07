@@ -233,9 +233,6 @@ namespace {
 	GLSLProgram *LoadInteractionShader( const idStr &name, const idStr &baseName, bool ambient ) {
 		return programManager->LoadFromGenerator( name, [=]( GLSLProgram *program ) {
 			idDict defines;
-			if( glConfig.gpuShader4Available ) {
-				defines.Set( "EXT_gpu_shader4", "1" );
-			}
 			if ( r_legacyTangents.GetBool() ) {
 				defines.Set( "LEGACY_BITANGENTS", "1" );
 			}

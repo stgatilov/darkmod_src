@@ -63,7 +63,6 @@ typedef struct glconfig_s {
 	bool				anisotropicAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				geometryShaderAvailable;
-	bool				gpuShader4Available;	// usampler in GLSL 120
 	bool				fenceSyncAvailable;
 	bool				timerQueriesAvailable;
 	bool				debugGroupsAvailable;

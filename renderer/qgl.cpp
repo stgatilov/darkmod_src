@@ -89,8 +89,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 		glConfig.maxTextureAnisotropy = 1;
 	}
 
-	//TODO: remove?
-	glConfig.gpuShader4Available = CHECK_FEATURE(GL_EXT_gpu_shader4);
 	glConfig.stencilTexturing = CHECK_FEATURE( GL_ARB_stencil_texturing );
 	glConfig.depthBoundsTestAvailable = CHECK_FEATURE(GL_EXT_depth_bounds_test);
 	glConfig.geometryShaderAvailable = CHECK_FEATURE(GL_ARB_geometry_shader4);

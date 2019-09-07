@@ -18,9 +18,8 @@
 #define GL_ARB_vertex_program					1	// ARB2 assembly shader language
 #define GL_ARB_fragment_program					1
 // Optional extensions:
-#define GL_EXT_texture_filter_anisotropic		1
+#define GL_EXT_texture_filter_anisotropic		1	//core since 4.6
 #define GL_EXT_depth_bounds_test				1
-#define GL_EXT_gpu_shader4						1
 #define GL_ARB_geometry_shader4					1	//similar feature core since 3.2
 #define GL_ARB_timer_query						1	//core since 3.3
 #define GL_KHR_debug							1	//core since 4.3
