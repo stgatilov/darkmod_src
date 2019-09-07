@@ -216,9 +216,12 @@ void CopyDepthBuffer( idImage *image, int x, int y, int imageWidth, int imageHei
 
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); // GL_NEAREST for Soft Shadow ~SS
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); // GL_NEAREST
-
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	static const GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+	if ( glConfig.textureSwizzleAvailable )
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask );
+	
 	backEnd.c_copyDepthBuffer++;
 
 	// Debug this as well
