@@ -46,7 +46,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 	reqs = reqs && CHECK_FEATURE(GL_EXT_texture_compression_s3tc);
 	reqs = reqs && CHECK_FEATURE(GL_ARB_vertex_program);
 	reqs = reqs && CHECK_FEATURE(GL_ARB_fragment_program);
-	reqs = reqs && CHECK_FEATURE(GL_ARB_draw_instanced);
 #if defined(_WIN32)
 	reqs = reqs && CHECK_FEATURE(WGL_VERSION_1_0);
 	reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context);
