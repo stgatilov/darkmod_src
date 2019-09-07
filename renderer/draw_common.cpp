@@ -858,26 +858,36 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 		fadeRange = surf->particle_radius;
 	}
 
-	float parm[4] = {
+	float params[4] = {
 		surf->particle_radius,
 		1.0f / ( fadeRange ),
 		1.0f / surf->particle_radius,
 		0.0f
 	};
-	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, parm );
 
 	// program.env[6] is the color channel mask. It gets added to the fade multiplier, so adding 1
 	//    to a channel will make sure it doesn't get faded at all. Particles with additive blend
 	//    need their RGB channels modifying to blend them out. Particles with an alpha blend need
 	//    their alpha channel modifying.
+	float blend[4];
 	if ( src_blend == GLS_SRCBLEND_SRC_ALPHA ) { // an alpha blend material
-		parm[0] = parm[1] = parm[2] = 1.0f; // Leave the rgb channels at full strength when fading
-		parm[3] = 0.0f;						// but fade the alpha channel
+		blend[0] = blend[1] = blend[2] = 1.0f; // Leave the rgb channels at full strength when fading
+		blend[3] = 0.0f;						// but fade the alpha channel
 	} else if ( src_blend == GLS_SRCBLEND_ONE ) { // an additive (blend add) material
-		parm[0] = parm[1] = parm[2] = 0.0f; // Fade the rgb channels but
-		parm[3] = 1.0f;						// leave the alpha channel at full strength
+		blend[0] = blend[1] = blend[2] = 0.0f; // Fade the rgb channels but
+		blend[3] = 1.0f;						// leave the alpha channel at full strength
 	}
-	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 6, parm );
+	if ( r_useGLSL ) {
+		auto group = programManager->softParticleShader->GetUniformGroup<Uniforms::SoftParticle>();
+		group->softParticleParams.Set(params);
+		group->softParticleBlend.Set(blend);
+		//note: we need only u_scaleDepthCoords, but this is the easiest way to reuse code
+		programManager->softParticleShader->GetUniformGroup<Uniforms::MaterialStage>()->Set(pStage, surf);
+	}
+	else {
+		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, params );
+		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 6, blend );
+	}
 
 	// draw it
 	RB_DrawElementsWithCounters( surf );

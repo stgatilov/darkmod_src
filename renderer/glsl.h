@@ -83,9 +83,12 @@ namespace Uniforms {
 	struct SoftParticle : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( SoftParticle )
 
-			DEFINE_UNIFORM( sampler, u_texture1 )
+		DEFINE_UNIFORM( sampler, texture0 )
+		DEFINE_UNIFORM( sampler, texture1 )
+		DEFINE_UNIFORM( vec4, softParticleBlend )
+		DEFINE_UNIFORM( vec4, softParticleParams )
 
-			int instances = 0;
+		int instances = 0;
 		bool acceptsTranslucent = false;
 	};
 

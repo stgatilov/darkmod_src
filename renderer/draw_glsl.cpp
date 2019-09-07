@@ -750,24 +750,25 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 	//============================================================================
 
 	const newShaderStage_t *newStage = pStage->newStage;
+	if (newStage) {
+		//setting local parameters (specified in material definition)
+		const float	*regs = surf->shaderRegisters;
+		for ( int i = 0; i < newStage->numVertexParms; i++ ) {
+			parm[0] = regs[newStage->vertexParms[i][0]];
+			parm[1] = regs[newStage->vertexParms[i][1]];
+			parm[2] = regs[newStage->vertexParms[i][2]];
+			parm[3] = regs[newStage->vertexParms[i][3]];
+	 		localParams[ i ]->Set( parm );
+		}
 
-	//setting local parameters (specified in material definition)
-	const float	*regs = surf->shaderRegisters;
-	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
-		parm[0] = regs[newStage->vertexParms[i][0]];
-		parm[1] = regs[newStage->vertexParms[i][1]];
-		parm[2] = regs[newStage->vertexParms[i][2]];
-		parm[3] = regs[newStage->vertexParms[i][3]];
- 		localParams[ i ]->Set( parm );
-	}
-
-	//setting textures
-	//note: the textures are also bound to TUs at this moment
-	for ( int i = 0; i < newStage->numFragmentProgramImages; i++ ) {
-		if ( newStage->fragmentProgramImages[i] ) {
-			GL_SelectTexture( i );
-			newStage->fragmentProgramImages[i]->Bind();
- 			textures[ i ]->Set( i );
+		//setting textures
+		//note: the textures are also bound to TUs at this moment
+		for ( int i = 0; i < newStage->numFragmentProgramImages; i++ ) {
+			if ( newStage->fragmentProgramImages[i] ) {
+				GL_SelectTexture( i );
+				newStage->fragmentProgramImages[i]->Bind();
+	 			textures[ i ]->Set( i );
+			}
 		}
 	}
 

@@ -207,6 +207,7 @@ namespace {
 	void InitSoftParticleShader( GLSLProgram *program ) {
 		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs" );
 		program->Activate();
+		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
 		program->Validate();
 	}
