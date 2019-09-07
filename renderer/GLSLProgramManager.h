@@ -61,6 +61,8 @@ public:
 	GLSLProgram *shadowMapInteractionShader;
 	GLSLProgram *multiLightInteractionShader;
 
+	GLuint uboHandle;
+
 private:
 	struct programWithGenerator_t {
 		GLSLProgram *program;

@@ -87,17 +87,10 @@ bool GLSLProgram::Link() {
 	return result;
 }
 
-GLuint uboHandle;
-
 void GLSLProgram::Activate() {
 	if( currentProgram != this ) {
 		qglUseProgram( program );
 		currentProgram = this;
-	}
-	if ( !uboHandle ) {
-		qglGenBuffers( 1, &uboHandle );
-		qglBindBuffer( GL_UNIFORM_BUFFER, uboHandle );
-		qglBindBufferBase( GL_UNIFORM_BUFFER, 0, uboHandle );
 	}
 }
 

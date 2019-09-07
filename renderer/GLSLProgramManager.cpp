@@ -129,6 +129,11 @@ void GLSLProgramManager::Reload( const char *name ) {
 }
 
 void GLSLProgramManager::ReloadAllPrograms() {
+	if ( uboHandle ) 
+		qglDeleteBuffers( 1, &uboHandle );
+	qglGenBuffers( 1, &uboHandle );
+	qglBindBuffer( GL_UNIFORM_BUFFER, uboHandle );
+	qglBindBufferBase( GL_UNIFORM_BUFFER, 0, uboHandle );
 	for( auto &it : programs ) {
 		Reload( &it );
 	}
