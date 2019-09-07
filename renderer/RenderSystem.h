@@ -54,7 +54,6 @@ typedef struct glconfig_s {
 
 	bool				textureCompressionAvailable = true;
 	bool				textureCompressionRgtcAvailable = true;
-	bool				twoSidedStencilAvailable = true;
 	bool				mapBufferRangeAvailable = true;
 	bool				framebufferObjectAvailable = true;
 	bool				framebufferBlitAvailable = true;

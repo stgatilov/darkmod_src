@@ -21,7 +21,6 @@
 // Optional extensions:
 #define GL_EXT_texture_filter_anisotropic		1
 #define GL_EXT_texture_lod_bias					1
-#define GL_EXT_stencil_wrap						1
 #define GL_EXT_depth_bounds_test				1
 #define GL_EXT_gpu_shader4						1
 #define GL_ARB_geometry_shader4					1	//similar feature core since 3.2

@@ -49,7 +49,6 @@ idCVar r_useShadowProjectedCull( "r_useShadowProjectedCull", "1", CVAR_RENDERER 
 idCVar r_useShadowSurfaceScissor( "r_useShadowSurfaceScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor shadows by the scissor rect of the interaction surfaces" );
 idCVar r_useInteractionTable( "r_useInteractionTable", "2", CVAR_RENDERER | CVAR_INTEGER, "which implementation to use for table of existing interactions: 0 = none, 1 = single full matrix, 2 = single hash table" );
 idCVar r_useTurboShadow( "r_useTurboShadow", "1", CVAR_RENDERER | CVAR_BOOL, "use the infinite projection with W technique for dynamic shadows" );
-idCVar r_useTwoSidedStencil( "r_useTwoSidedStencil", "1", CVAR_RENDERER | CVAR_BOOL, "do stencil shadows in one pass with different ops on each side" );
 idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR_BOOL, "defer tangents calculations after deform" );
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
 
@@ -1502,14 +1501,6 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 		common->Printf( "swapInterval not forced\n" );
 	}
 #endif
-
-	if ( !r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
-		common->Printf( "Two sided stencil available but disabled\n" );
-	} else if ( glConfig.twoSidedStencilAvailable ) {
-		common->Printf( "Two sided stencil available and enabled\n" );
-	} else if ( !glConfig.twoSidedStencilAvailable ) {
-		common->Printf( "Two sided stencil not available\n" );
-	}
 }
 
 /*
@@ -1749,8 +1740,6 @@ void idRenderSystemLocal::Clear( void ) {
 	memset( &lockSurfacesCmd, 0, sizeof( lockSurfacesCmd ) );
 	memset( &identitySpace, 0, sizeof( identitySpace ) );
 	logFile = NULL;
-	stencilIncr = 0;
-	stencilDecr = 0;
 	memset( renderCrops, 0, sizeof( renderCrops ) );
 	currentRenderCrop = 0;
 	guiRecursionLevel = 0;

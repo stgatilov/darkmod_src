@@ -90,19 +90,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 		glConfig.maxTextureAnisotropy = 1;
 	}
 
-	// EXT_stencil_wrap
-	// This isn't very important, but some pathological case might cause a clamp error and give a shadow bug.
-	// Nvidia also believes that future hardware may be able to run faster with this enabled to avoid the
-	// serialization of clamping.
-	if ( CHECK_FEATURE(GL_EXT_stencil_wrap) ) {
-		tr.stencilIncr = GL_INCR_WRAP_EXT;
-		tr.stencilDecr = GL_DECR_WRAP_EXT;
-	} else {
-		tr.stencilIncr = GL_INCR;
-		tr.stencilDecr = GL_DECR;
-	}
-
-
 	//TODO: remove?
 	glConfig.gpuShader4Available = CHECK_FEATURE(GL_EXT_gpu_shader4);
 	glConfig.stencilTexturing = CHECK_FEATURE( GL_ARB_stencil_texturing );
