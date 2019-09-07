@@ -291,9 +291,7 @@ void idImage::SetImageFilterAndRepeat() const {
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
 		}
 	}
-	if ( glConfig.textureLODBiasAvailable ) {
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS_EXT, globalImages->textureLODBias );
-	}
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
 
 	// set the wrap/clamp modes
 	static const int trCtZA[] = { 255,255,255,0 };

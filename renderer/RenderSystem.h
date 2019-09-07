@@ -61,7 +61,6 @@ typedef struct glconfig_s {
 	bool				framebufferPackedDepthStencilAvailable = true;
 
 	bool				anisotropicAvailable;
-	bool				textureLODBiasAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				geometryShaderAvailable;
 	bool				gpuShader4Available;	// usampler in GLSL 120

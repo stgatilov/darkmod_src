@@ -816,9 +816,7 @@ void idImageManager::ChangeTextureFilter( void ) {
 			if ( glConfig.anisotropicAvailable ) {
 				qglTexParameterf( texEnum, GL_TEXTURE_MAX_ANISOTROPY_EXT, globalImages->textureAnisotropy );
 			}
-			if ( glConfig.textureLODBiasAvailable ) {
-				qglTexParameterf( texEnum, GL_TEXTURE_LOD_BIAS_EXT, globalImages->textureLODBias );
-			}
+			qglTexParameterf( texEnum, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
 		}
 	}
 }
