@@ -174,8 +174,8 @@ Moved from image_load.cpp so that can use internal FBO resolution ratio and stat
 ====================
 */
 void CopyDepthBuffer( idImage *image, int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
-	if ( image->texnum == idImage::TEXTURE_NOT_LOADED )
-		return; // 2.08: Bind() can bind _white if image has not initialized yet
+	if (image->texnum == idImage::TEXTURE_NOT_LOADED) // 2.08: Bind() can bind _white if image has not initialized yet
+		image->GenerateAttachment( imageWidth, imageHeight, GL_DEPTH );
 	image->Bind();
 	// Ensure we are reading from the back buffer:
 	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
