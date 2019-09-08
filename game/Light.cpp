@@ -86,6 +86,9 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_GetShader,		idLight::Event_GetShader )		// SteveL  #3765
 END_CLASS
 
+const idStrList areaLockOptions {
+	"origin", "center"
+}; // not sure how to make it work with char*[]  
 
 /*
 ================
@@ -191,6 +194,10 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	{
 		renderLight->suppressLightInViewID = VID_LIGHTGEM;
 	}
+
+	const char* areaLock;
+	if (args->GetString("areaLock", "", &areaLock))
+		renderLight->areaLock = (renderEntity_s::areaLock_t) (areaLockOptions.FindIndex(areaLock) + 1);
 }
 
 /*
