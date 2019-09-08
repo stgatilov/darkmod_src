@@ -275,8 +275,11 @@ RB_GLSL_CreateDrawInteractions
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
 	if ( r_shadowMapSinglePass.GetBool() /*|| r_skipInteractions.GetBool()*/ ) // duzenko: let shadow maps render for benchmarking
 		return;
+	if ( backEnd.vLight->shadowMapIndex >= 42 )
+		return;
 	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
 
+	GL_CheckErrors();
 	FB_ToggleShadow( true );
 
 	programManager->shadowMapShader->Activate();
