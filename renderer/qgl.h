@@ -48,6 +48,9 @@
 #define GLX_VERSION_1_2 1
 #define GLX_VERSION_1_3 1
 #define GLX_VERSION_1_4 1
+// Mandatory extensions:
+#define GLX_ARB_create_context					1
+#define GLX_ARB_create_context_profile			1
 #include "glad_glx.h"
 #endif
 

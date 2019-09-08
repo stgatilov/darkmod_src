@@ -289,6 +289,7 @@ int GLX_Init(glimpParms_t a) {
 #define ATTR_STENCIL_IDX 11
 #define ATTR_ALPHA_IDX 13
 	Window root;
+	GLXFBConfig bestFbc;
 	XVisualInfo *visinfo;
 	XSetWindowAttributes attr;
 	XSizeHints sizehints;
@@ -307,6 +308,11 @@ int GLX_Init(glimpParms_t a) {
 	GLimp_LoadFunctions(false);
 
 	common->Printf( "Initializing OpenGL display\n" );
+
+	if (!GLAD_GLX_ARB_create_context || !GLAD_GLX_ARB_create_context_profile) {
+		common->Printf("Missing GLX extensions required to create GL3+ contexts\n");
+		return false;
+	}
 
 	root = RootWindow( dpy, scrnum );
 
@@ -371,96 +377,142 @@ int GLX_Init(glimpParms_t a) {
 			common->Printf( "XFree86-VidModeExtension: not fullscreen, ignored\n" );
 		}
 	}
-	// color, depth and stencil
-	colorbits = 24;
-	depthbits = 24;
-	stencilbits = 8;
 
-	for (i = 0; i < 16; i++) {
-		// 0 - default
-		// 1 - minus colorbits
-		// 2 - minus depthbits
-		// 3 - minus stencil
-		if ((i % 4) == 0 && i) {
-			// one pass, reduce
-			switch (i / 4) {
-			case 2:
-				if (colorbits == 24)
-					colorbits = 16;
-				break;
-			case 1:
-				if (depthbits == 24)
-					depthbits = 16;
-				else if (depthbits == 16)
-					depthbits = 8;
-			case 3:
-				if (stencilbits == 24)
-					stencilbits = 16;
-				else if (stencilbits == 16)
-					stencilbits = 8;
+	if (r_glCoreProfile.GetInteger() == 0) {
+		//stgatilov: old code using deprecated glXChooseVisual and glXCreateContext
+		//should be removed completely by TDM 2.09
+
+		// color, depth and stencil
+		colorbits = 24;
+		depthbits = 24;
+		stencilbits = 8;
+
+		for (i = 0; i < 16; i++) {
+			// 0 - default
+			// 1 - minus colorbits
+			// 2 - minus depthbits
+			// 3 - minus stencil
+			if ((i % 4) == 0 && i) {
+				// one pass, reduce
+				switch (i / 4) {
+				case 2:
+					if (colorbits == 24)
+						colorbits = 16;
+					break;
+				case 1:
+					if (depthbits == 24)
+						depthbits = 16;
+					else if (depthbits == 16)
+						depthbits = 8;
+				case 3:
+					if (stencilbits == 24)
+						stencilbits = 16;
+					else if (stencilbits == 16)
+						stencilbits = 8;
+				}
 			}
+
+			tcolorbits = colorbits;
+			tdepthbits = depthbits;
+			tstencilbits = stencilbits;
+
+			if ((i % 4) == 3) {		// reduce colorbits
+				if (tcolorbits == 24)
+					tcolorbits = 16;
+			}
+
+			if ((i % 4) == 2) {		// reduce depthbits
+				if (tdepthbits == 24)
+					tdepthbits = 16;
+				else if (tdepthbits == 16)
+					tdepthbits = 8;
+			}
+
+			if ((i % 4) == 1) {		// reduce stencilbits
+				if (tstencilbits == 24)
+					tstencilbits = 16;
+				else if (tstencilbits == 16)
+					tstencilbits = 8;
+				else
+					tstencilbits = 0;
+			}
+
+			if (tcolorbits == 24) {
+				attrib[ATTR_RED_IDX] = 8;
+				attrib[ATTR_GREEN_IDX] = 8;
+				attrib[ATTR_BLUE_IDX] = 8;
+			} else {
+				// must be 16 bit
+				attrib[ATTR_RED_IDX] = 4;
+				attrib[ATTR_GREEN_IDX] = 4;
+				attrib[ATTR_BLUE_IDX] = 4;
+			}
+			
+			attrib[ATTR_DEPTH_IDX] = tdepthbits;	// default to 24 depth
+			attrib[ATTR_STENCIL_IDX] = tstencilbits;
+
+			visinfo = qglXChooseVisual(dpy, scrnum, attrib);
+			if (!visinfo) {
+				continue;
+			}
+
+			common->Printf( "Using %d/%d/%d Color bits, %d Alpha bits, %d depth, %d stencil display.\n",
+				 attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX],
+				 attrib[ATTR_BLUE_IDX], attrib[ATTR_ALPHA_IDX],
+				 attrib[ATTR_DEPTH_IDX],
+				 attrib[ATTR_STENCIL_IDX]);
+
+			glConfig.colorBits = tcolorbits;
+			glConfig.depthBits = tdepthbits;
+			glConfig.stencilBits = tstencilbits;
+			break;
 		}
 
-		tcolorbits = colorbits;
-		tdepthbits = depthbits;
-		tstencilbits = stencilbits;
-
-		if ((i % 4) == 3) {		// reduce colorbits
-			if (tcolorbits == 24)
-				tcolorbits = 16;
-		}
-
-		if ((i % 4) == 2) {		// reduce depthbits
-			if (tdepthbits == 24)
-				tdepthbits = 16;
-			else if (tdepthbits == 16)
-				tdepthbits = 8;
-		}
-
-		if ((i % 4) == 1) {		// reduce stencilbits
-			if (tstencilbits == 24)
-				tstencilbits = 16;
-			else if (tstencilbits == 16)
-				tstencilbits = 8;
-			else
-				tstencilbits = 0;
-		}
-
-		if (tcolorbits == 24) {
-			attrib[ATTR_RED_IDX] = 8;
-			attrib[ATTR_GREEN_IDX] = 8;
-			attrib[ATTR_BLUE_IDX] = 8;
-		} else {
-			// must be 16 bit
-			attrib[ATTR_RED_IDX] = 4;
-			attrib[ATTR_GREEN_IDX] = 4;
-			attrib[ATTR_BLUE_IDX] = 4;
-		}
-		
-		attrib[ATTR_DEPTH_IDX] = tdepthbits;	// default to 24 depth
-		attrib[ATTR_STENCIL_IDX] = tstencilbits;
-
-		visinfo = qglXChooseVisual(dpy, scrnum, attrib);
 		if (!visinfo) {
-			continue;
+			common->Printf("Couldn't get a visual\n");
+			return false;
 		}
 
-		common->Printf( "Using %d/%d/%d Color bits, %d Alpha bits, %d depth, %d stencil display.\n",
-			 attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX],
-			 attrib[ATTR_BLUE_IDX], attrib[ATTR_ALPHA_IDX],
-			 attrib[ATTR_DEPTH_IDX],
-			 attrib[ATTR_STENCIL_IDX]);
+	}
+	else {
+		//stgatilov: new code using qglXChooseFBConfig and qglXCreateContextAttribsARB
+		//supportgs GL3+ and choosing core profile
 
-		glConfig.colorBits = tcolorbits;
-		glConfig.depthBits = tdepthbits;
-		glConfig.stencilBits = tstencilbits;
-		break;
+		int config_attribs[] = {
+			GLX_X_RENDERABLE  , True,              //have associated X visuals
+			GLX_DRAWABLE_TYPE , GLX_WINDOW_BIT,    //window, not pixmap/pbuffer
+			GLX_RENDER_TYPE   , GLX_RGBA_BIT,      //render RGBA, not color index
+			GLX_X_VISUAL_TYPE , GLX_TRUE_COLOR,    //???
+			GLX_RED_SIZE      , 8,
+			GLX_GREEN_SIZE    , 8,
+			GLX_BLUE_SIZE     , 8,
+			GLX_ALPHA_SIZE    , 8,
+			GLX_DEPTH_SIZE    , 24,
+			GLX_STENCIL_SIZE  , 8,
+			GLX_DOUBLEBUFFER  , True,
+			GLX_SAMPLE_BUFFERS, 0,                  //no multisampling
+			GLX_SAMPLES       , 0,                  //no multisampling
+			None
+		};
+		int fbcount;
+		GLXFBConfig *fbc = qglXChooseFBConfig( dpy, scrnum, config_attribs, &fbcount );
+
+		int best_fbc = -1;
+		for (int i = 0; i<fbcount; ++i) {
+			XVisualInfo *vi = qglXGetVisualFromFBConfig( dpy, fbc[i] );
+			if ( vi && best_fbc < 0 )
+				best_fbc = i;
+			XFree( vi );
+		}
+		if (best_fbc < 0) {
+			common->Printf("Couldn't choose FBConfig\n");
+			return false;
+		}
+		bestFbc = fbc[ best_fbc ];
+		visinfo = qglXGetVisualFromFBConfig( dpy, bestFbc );
+		common->Printf("Chosen visual: 0x%03x\n", (int)XVisualIDFromVisual(visinfo->visual));
 	}
 
-	if (!visinfo) {
-		common->Printf("Couldn't get a visual\n");
-		return false;
-	}
 	// window attributes
 	attr.background_pixel = BlackPixel(dpy, scrnum);
 	attr.border_pixel = 0;
@@ -519,7 +571,19 @@ int GLX_Init(glimpParms_t a) {
 
 	XFlush(dpy);
 	XSync(dpy, False);
-	ctx = qglXCreateContext(dpy, visinfo, NULL, True);
+	if (r_glCoreProfile.GetInteger() == 0) {
+		ctx = qglXCreateContext(dpy, visinfo, NULL, True);    //old-style context creation
+	}
+	else {
+		int context_attribs[] = {
+			GLX_CONTEXT_MAJOR_VERSION_ARB, QGL_REQUIRED_VERSION_MAJOR,
+			GLX_CONTEXT_MINOR_VERSION_ARB, QGL_REQUIRED_VERSION_MINOR,
+			GLX_CONTEXT_PROFILE_MASK_ARB , GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+			GLX_CONTEXT_FLAGS_ARB        , (r_glCoreProfile.GetInteger() > 1 ? GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0) | (r_glDebugContext.GetBool() ? GLX_CONTEXT_DEBUG_BIT_ARB : 0),
+			None
+		};
+		ctx = qglXCreateContextAttribsARB(dpy, bestFbc, NULL, True, context_attribs);
+	}
 	XSync(dpy, False);
 
 	// Free the visinfo after we're done with it

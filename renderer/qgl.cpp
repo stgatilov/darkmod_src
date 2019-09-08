@@ -53,6 +53,8 @@ void GLimp_CheckRequiredFeatures( void ) {
 	reqs = reqs && CHECK_FEATURE(WGL_ARB_pixel_format);
 #elif defined(__linux__)
 	reqs = reqs && CHECK_FEATURE(GLX_VERSION_1_4);
+	reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context);
+	reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context_profile);
 #endif
 	if (!reqs) {
 		common->Error("OpenGL minimum requirements not satisfied");
@@ -78,8 +80,8 @@ void GLimp_CheckRequiredFeatures( void ) {
 	common->Printf( "Max geometry output components: %d\n", n );
 	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
-	qglGetProgramivARB( GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &n );
-	common->Printf( "Max env parameters: %d\n", n );
+	//qglGetProgramivARB( GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &n );
+	//common->Printf( "Max env parameters: %d\n", n );
 
 	glConfig.anisotropicAvailable = CHECK_FEATURE(GL_EXT_texture_filter_anisotropic);
 	if ( glConfig.anisotropicAvailable ) {
