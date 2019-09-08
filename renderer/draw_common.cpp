@@ -47,14 +47,6 @@ struct FogUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( float, fogEnter );
 };
 
-struct OldStageUniforms : GLSLUniformGroup {
-	UNIFORM_GROUP_DEF( OldStageUniforms );
-
-	DEFINE_UNIFORM( float, screenTex );
-	DEFINE_UNIFORM( vec4, colorMul );
-	DEFINE_UNIFORM( vec4, colorAdd );
-};
-
 struct BlendUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( BlendUniforms );
 

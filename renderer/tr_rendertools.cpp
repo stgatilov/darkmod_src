@@ -19,6 +19,8 @@
 #include "tr_local.h"
 #include "simplex.h"	// line font definition
 #include "Profiling.h"
+#include "glsl.h"
+#include "GLSLProgramManager.h"
 
 #define MAX_DEBUG_LINES			16384
 
@@ -133,14 +135,21 @@ RB_SimpleWorldSetup
 ================
 */
 void RB_SimpleWorldSetup( void ) {
+	GL_CheckErrors();
 	backEnd.currentSpace = &backEnd.viewDef->worldSpace;
-	qglLoadMatrixf( backEnd.viewDef->worldSpace.modelViewMatrix );
+	if ( r_uniformTransforms.GetBool() ) {
+		Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+		globalUniforms->Set( backEnd.currentSpace );
+	} else
+		qglLoadMatrixf( backEnd.viewDef->worldSpace.modelViewMatrix );
 
 	backEnd.currentScissor = backEnd.viewDef->scissor;
-	GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
+	GL_CheckErrors();
+	GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+	GL_CheckErrors();
 }
 
 /*
@@ -1480,9 +1489,8 @@ r_showLights 3	: also draw edges of each volume
 ==============
 */
 void RB_ShowLights( void ) {
-	const idRenderLightLocal	*light;
+	//const idRenderLightLocal	*light;
 	int					count;
-	srfTriangles_t		*tri;
 	viewLight_t			*vLight;
 
 	if ( !r_showLights.GetInteger() ) {
@@ -1490,43 +1498,55 @@ void RB_ShowLights( void ) {
 	}
 
 	// all volumes are expressed in world coordinates
+	GL_CheckErrors();
 	RB_SimpleWorldSetup();
+	GL_CheckErrors();
 	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_Cull( CT_TWO_SIDED );
 	qglDisable( GL_DEPTH_TEST );
+	GL_CheckErrors();
 
 	common->Printf( "volumes:" );	// FIXME: not in back end!
 
 	count = 0;
 
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
-		light = vLight->lightDef;
+		GL_CheckErrors();
+		//light = vLight->lightDef;
 		count++;
-		tri = light->frustumTris;
+		srfTriangles_t& tri = *vLight->frustumTris;
 
-		// depth buffered planes
-		if ( r_showLights.GetInteger() >= 3 ) {
-			GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHMASK );
-			GL_FloatColor( 0, 0, 1, 0.25 );
-			qglEnable( GL_DEPTH_TEST );
-			RB_DrawElementsImmediate( tri );
-		}
-
-		// non-hidden lines
-		if ( r_showLights.GetInteger() == 2 ) {
-			GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK );
-			qglDisable( GL_DEPTH_TEST );
-			GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA );
-			int c = light->index % 7 + 1;
-			GL_FloatColor( c & 1, c & 2, c & 4, 0.4f );
-			qglDisable( GL_DEPTH_TEST );
-			RB_DrawElementsImmediate( tri );
-			GL_FloatColor( c & 1, c & 2, c & 4 );
-			qglEnable( GL_DEPTH_TEST );
-		}
 		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
+		
+		// non-hidden lines
+		if ( tri.ambientCache.IsValid() ) {
+			const idDrawVert* ac = (idDrawVert*)vertexCache.VertexPosition( tri.ambientCache );
+			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+
+			// depth buffered planes
+			if ( r_showLights.GetInteger() >= 3 ) {
+				GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHMASK );
+				GL_FloatColor( 0, 0, 1, 0.25 );
+				qglEnable( GL_DEPTH_TEST );
+				RB_DrawTriangles( tri );
+			}
+
+			if ( r_showLights.GetInteger() == 2 ) {
+				GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK );
+				qglDisable( GL_DEPTH_TEST );
+				GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA );
+				int c = index % 7 + 1;
+				GL_FloatColor( c & 1, c & 2, c & 4, 0.4f );
+				qglDisable( GL_DEPTH_TEST );
+				GL_CheckErrors();
+				RB_DrawTriangles( tri );
+				GL_CheckErrors();
+				GL_FloatColor( c & 1, c & 2, c & 4 );
+				qglEnable( GL_DEPTH_TEST );
+			}
+		}
 
 		common->Printf( " %i", index );
 		if ( vLight->viewInsideLight ) // view is in this volume
@@ -1535,6 +1555,7 @@ void RB_ShowLights( void ) {
 			common->Printf( "a" );
 		if ( vLight->lightShader->LightCastsShadows() ) // shadows
 			common->Printf( "s" );
+		GL_CheckErrors();
 	}
 	qglEnable( GL_DEPTH_TEST );
 	qglDisable( GL_POLYGON_OFFSET_LINE );
@@ -1544,6 +1565,7 @@ void RB_ShowLights( void ) {
 	GL_Cull( CT_FRONT_SIDED );
 
 	common->Printf( " = %i total\n", count );
+	GL_CheckErrors();
 }
 
 /*
@@ -2273,6 +2295,11 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+	programManager->oldStageShader->Activate();
+	OldStageUniforms* oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
+	oldStageUniforms->colorMul.Set( 1, 1, 1, 1 );
+	oldStageUniforms->colorAdd.Set( 0, 0, 0, 0 );
+	globalImages->whiteImage->Bind();
 
 	RB_ShowLightCount();
 	RB_ShowShadowCount();

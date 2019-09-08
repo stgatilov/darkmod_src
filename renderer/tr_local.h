@@ -990,7 +990,7 @@ extern idCVar r_showTexturePolarity;	// shade triangles by texture area polarity
 extern idCVar r_showTangentSpace;		// shade triangles by tangent space
 extern idCVar r_showDominantTri;		// draw lines from vertexes to center of dominant triangles
 extern idCVar r_showTextureVectors;		// draw each triangles texture (tangent) vectors
-extern idCVar r_showLights;				// 1 = print light info, 2 = also draw volumes
+extern idCVarInt r_showLights;			// 1 = print light info, 2 = also draw volumes
 extern idCVar r_showLightCount;			// colors surfaces based on light count
 extern idCVar r_showShadows;			// visualize the stencil shadow volumes
 extern idCVar r_showShadowCount;		// colors screen based on shadow volume depth complexity
@@ -1388,8 +1388,9 @@ DRAW_STANDARD
 ============================================================
 */
 
-void RB_DrawElementsWithCounters( const drawSurf_t *surf );
+void RB_DrawElementsWithCounters( const drawSurf_t* surf );
 void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances );
+void RB_DrawTriangles( const srfTriangles_t& tri );
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );

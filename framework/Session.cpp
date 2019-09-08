@@ -2759,8 +2759,9 @@ void idSessionLocal::Frame() {
 	r_showShadowCount.GetBool() ||
 	r_showLightCount.GetBool() ||
 	r_showDepth.GetBool() ||
-	r_showTris.GetInteger() > 0 ||
-	r_showLights.GetInteger() > 0 ) {
+	r_showTris.GetInteger() > 0
+	//||r_showLights.GetInteger() > 0 
+	) {
 	no_smp = true;
 	} else {
 	no_smp = false;

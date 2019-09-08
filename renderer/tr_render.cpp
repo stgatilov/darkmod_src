@@ -103,6 +103,26 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 	}
 }
 
+void RB_DrawTriangles( const srfTriangles_t &tri) {
+	if ( vertexCache.currentVertexBuffer == 0 ) {
+		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
+		return;
+	}
+
+	if ( tri.indexCache.IsValid() ) {
+		qglDrawElements( GL_TRIANGLES,
+			tri.numIndexes,
+			GL_INDEX_TYPE,
+			vertexCache.IndexPosition( tri.indexCache ) );
+		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+			backEnd.pc.c_vboIndexes += tri.numIndexes;
+		}
+	} else {
+		vertexCache.UnbindIndex();
+		qglDrawElements( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes ); 
+	}
+}
+
 /*
 ================
 RB_DrawElementsInstanced
