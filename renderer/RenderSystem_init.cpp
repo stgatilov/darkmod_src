@@ -241,6 +241,7 @@ idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use GLSL 
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
 idCVar r_forceGlslPrograms( "r_forceGlslPrograms", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force using GLSL shaders instead of ARB ones (when shader is used in material's new stage)" );
 idCVar r_uniformTransforms( "r_uniformTransforms", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use uniform variables in shaders for vertex transformations instead of the deprecated ftransform" );
+idCVar r_glCoreProfile( "r_glCoreProfile", "0", CVAR_RENDERER | CVAR_ARCHIVE, "0: compatibility, 1: core, 2: forward core" );
 idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
 
 // FBO
