@@ -1496,7 +1496,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				idStr fileExt;
 				token.ExtractFileExtension( fileExt );
-				newStage.GLSL = fileExt.Icmp( "vfp" ) != 0 || r_forceGlslPrograms.GetBool();
+				newStage.GLSL = fileExt.Icmp( "vfp" ) != 0;// || r_forceGlslPrograms.GetBool();
 #if 0
 				if ( newStage.GLSL ) {
 					token.StripFileExtension();

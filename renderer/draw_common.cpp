@@ -1037,7 +1037,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 
 		if ( newStage ) {
 			//if ( newStage->GLSL || newStage->glslProgram )
-			if ( r_forceGlslPrograms.GetBool() )
+			if ( r_useGLSL )
 				RB_STD_T_RenderShaderPasses_GLSL( ac, pStage, surf );
 			else
 				RB_STD_T_RenderShaderPasses_ARB( ac, pStage, surf );
