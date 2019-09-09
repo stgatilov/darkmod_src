@@ -88,7 +88,7 @@ idCVar r_skipRender( "r_skipRender", "0", CVAR_RENDERER | CVAR_BOOL, "skip 3D re
 idCVar r_skipRenderContext( "r_skipRenderContext", "0", CVAR_RENDERER | CVAR_BOOL, "NULL the rendering context during backend 3D rendering" );
 idCVar r_skipTranslucent( "r_skipTranslucent", "0", CVAR_RENDERER | CVAR_BOOL, "skip the translucent interaction rendering" );
 idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = bypasses all non-interaction drawing, 2 = skips ambient light interactions, 3 = both" );
-idCVar r_skipNewAmbient( "r_skipNewAmbient", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "bypasses all vertex/fragment program ambient drawing" );
+idCVarInt r_skipNewAmbient( "r_skipNewAmbient", "0", CVAR_RENDERER, "bypasses non-standard ambient drawing, 1 - per-material, 2 - soft particles, 3 - both" );
 idCVar r_skipBlendLights( "r_skipBlendLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all blend lights" );
 idCVar r_skipFogLights( "r_skipFogLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all fog lights" );
 idCVar r_skipDeforms( "r_skipDeforms", "0", CVAR_RENDERER | CVAR_BOOL, "leave all deform materials in their original state" );

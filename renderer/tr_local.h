@@ -943,7 +943,7 @@ extern idCVar r_skipRender;				// skip 3D rendering, but pass 2D
 extern idCVar r_skipRenderContext;		// NULL the rendering context during backend 3D rendering
 extern idCVar r_skipTranslucent;		// skip the translucent interaction rendering
 extern idCVar r_skipAmbient;			// bypasses all non-interaction drawing
-extern idCVar r_skipNewAmbient;			// bypasses all vertex/fragment program ambients
+extern idCVarInt r_skipNewAmbient;			// bypasses all vertex/fragment program ambients
 extern idCVar r_skipBlendLights;		// skip all blend lights
 extern idCVar r_skipFogLights;			// skip all fog lights
 extern idCVarBool r_skipSubviews;			// 1 = don't render any mirrors / cameras / etc

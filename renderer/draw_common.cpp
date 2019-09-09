@@ -444,6 +444,8 @@ Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
 void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetInteger() & 1 )
+		return;
 	// set the color
 	float		color[4];
 	const float	*regs = surf->shaderRegisters;
@@ -543,7 +545,7 @@ Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
 void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	if ( r_skipNewAmbient.GetBool() ) {
+	if ( r_skipNewAmbient & 1 ) {
 		return;
 	}
 	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -604,7 +606,7 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	if ( r_skipNewAmbient.GetBool() ) 
+	if ( r_skipNewAmbient & 1 ) 
 		return;
 #if 0
 	//note: named attributes bound to locations during creation in shaderProgram_t::Load
@@ -791,7 +793,7 @@ Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	// determine the blend mode (used by soft particles #3878)
 	const int src_blend = pStage->drawStateBits & GLS_SRCBLEND_BITS;
-	if ( r_skipNewAmbient.GetBool() || !( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) ) {
+	if ( (r_skipNewAmbient & 2) || !( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) ) {
 		return;
 	}
 	qglEnableVertexAttribArray( 8 );
@@ -1034,7 +1036,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		newShaderStage_t *newStage = pStage->newStage;
 
 		if ( newStage ) {
-			if(newStage->GLSL || newStage->glslProgram )
+			//if ( newStage->GLSL || newStage->glslProgram )
+			if ( r_forceGlslPrograms.GetBool() )
 				RB_STD_T_RenderShaderPasses_GLSL( ac, pStage, surf );
 			else
 				RB_STD_T_RenderShaderPasses_ARB( ac, pStage, surf );
@@ -1073,7 +1076,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	int	 i;
 
 	// only obey skipAmbient if we are rendering a view
-	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetInteger() & 1 || !numDrawSurfs ) {
+	if ( !numDrawSurfs ) {
 		return numDrawSurfs;
 	}
 	GL_PROFILE( "STD_DrawShaderPasses" );
