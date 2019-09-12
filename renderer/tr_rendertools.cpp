@@ -1553,7 +1553,11 @@ void RB_ShowLights( void ) {
 			common->Printf( "i" );
 		if ( vLight->lightShader->IsAmbientLight() ) // ambient
 			common->Printf( "a" );
-		if ( vLight->lightShader->LightCastsShadows() ) // shadows
+		if ( vLight->lightShader->IsFogLight() ) 
+			common->Printf( "f" );
+		else if ( vLight->lightShader->IsBlendLight() ) 
+			common->Printf( "b" );
+		else if ( vLight->lightShader->LightCastsShadows() ) // shadows
 			common->Printf( "s" );
 		GL_CheckErrors();
 	}
