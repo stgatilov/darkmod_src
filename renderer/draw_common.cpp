@@ -1272,7 +1272,7 @@ static void RB_T_BasicFog( const drawSurf_t *surf ) {
 RB_FogPass
 ==================
 */
-static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 ) {
+static void RB_FogPass( bool translucent ) {
 	const srfTriangles_t *frustumTris;
 	drawSurf_t			ds;
 	const idMaterial	*lightShader;
@@ -1351,17 +1351,24 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[1].Normal() + fogPlanes[1][3];
 	fogUniforms->fogEnter.Set( FOG_ENTER + s );
 
-	// draw it
-	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BasicFog );
-	RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BasicFog );
-
-	if ( !backEnd.vLight->noFogBoundary ) { // Let mappers suppress fogging the bounding box -- SteveL #3664
-		// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
-		// of depthfunc_equal
+	if ( translucent ) {
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
-		GL_Cull( CT_BACK_SIDED );
-		RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
+		GL_Cull( CT_TWO_SIDED );
+		RB_RenderDrawSurfChainWithFunction( backEnd.vLight->translucentInteractions, RB_T_BasicFog );
+	} else {
+		// draw it
+		RB_RenderDrawSurfChainWithFunction( backEnd.vLight->globalInteractions, RB_T_BasicFog );
+		RB_RenderDrawSurfChainWithFunction( backEnd.vLight->localInteractions, RB_T_BasicFog );
+
+		if ( !backEnd.vLight->noFogBoundary ) { // Let mappers suppress fogging the bounding box -- SteveL #3664
+			// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
+			// of depthfunc_equal
+			GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
+			GL_Cull( CT_BACK_SIDED );
+			RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
+		}
 	}
+
 	GL_Cull( CT_FRONT_SIDED );
 
 	GL_SelectTexture( 0 );
@@ -1373,7 +1380,7 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 RB_STD_FogAllLights
 ==================
 */
-void RB_STD_FogAllLights( void ) {
+void RB_STD_FogAllLights( bool translucent ) {
 	if ( r_skipFogLights.GetBool() ||
 		r_showOverDraw.GetInteger() != 0 ||
 		backEnd.viewDef->isXraySubview /* dont fog in xray mode*/ ) {
@@ -1390,8 +1397,11 @@ void RB_STD_FogAllLights( void ) {
 		qglDisable( GL_STENCIL_TEST );
 
 		if ( backEnd.vLight->lightShader->IsFogLight() ) {
-			RB_FogPass( backEnd.vLight->globalInteractions, backEnd.vLight->localInteractions );
-		} else if ( backEnd.vLight->lightShader->IsBlendLight() ) {
+			RB_FogPass( translucent );
+		} 
+		if ( translucent )
+			continue;
+		if ( backEnd.vLight->lightShader->IsBlendLight() ) {
 			RB_BlendLight( backEnd.vLight->globalInteractions, backEnd.vLight->localInteractions );
 		}
 	}
@@ -1437,7 +1447,7 @@ void RB_STD_DrawView( void ) {
 	GL_CheckErrors();
 
 	// fog and blend lights
-	RB_STD_FogAllLights();
+	RB_STD_FogAllLights( false );
 
 	// refresh fog and blend status 
 	backEnd.afterFogRendered = true;
@@ -1446,6 +1456,9 @@ void RB_STD_DrawView( void ) {
 	if ( processed < numDrawSurfs ) {
 		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed );
 	}
+
+	RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
+
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
 	GL_CheckErrors();
 }
