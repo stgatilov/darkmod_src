@@ -219,6 +219,7 @@ namespace {
 
 	void InitSamplerBindingsForBumpShaders( GLSLProgram *program ) {
 		GLSLUniform_sampler( program, "u_normalTexture" ).Set( 1 );
+		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
 }
 
 	GLSLProgram *LoadFromBaseNameWithCustomizer( const idStr &baseName, const std::function<void(GLSLProgram*)> customizer) {

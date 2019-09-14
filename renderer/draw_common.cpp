@@ -483,8 +483,6 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		qglEnableVertexAttribArray( 8 );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		programManager->oldStageShader->Activate();
-		Uniforms::Global *globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
-		globalUniforms->Set(surf->space);
 		OldStageUniforms *oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
 		switch ( pStage->vertexColor ) {
 		case SVC_IGNORE:
@@ -506,6 +504,11 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 			oldStageUniforms->colorAdd.Set( color );
 			break;
 		}
+	}
+	auto prog = GLSLProgram::GetCurrentProgram();
+	if ( prog ) {
+		Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+		transformUniforms->Set( surf->space );
 	}
 	RB_PrepareStageTexturing( pStage, surf, ac );
 
