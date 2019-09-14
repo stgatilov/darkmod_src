@@ -420,6 +420,8 @@ void RB_ShadowMap_RenderAllLights();
 void RB_GLSL_DrawInteractions() {
 	GL_PROFILE( "GLSL_DrawInteractions" );
 	GL_SelectTexture( 0 );
+	if ( r_fboSRGB && !backEnd.viewDef->IsLightGem() )
+		qglEnable( GL_FRAMEBUFFER_SRGB );
 
 	if ( r_shadows.GetInteger() == 2 ) 
 		if ( r_shadowMapSinglePass.GetBool() )
@@ -436,6 +438,7 @@ void RB_GLSL_DrawInteractions() {
 		RB_GLSL_DrawInteractions_SingleLight();
 
 	// disable stencil shadow test
+	qglDisable( GL_FRAMEBUFFER_SRGB );
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 	GL_SelectTexture( 0 );
 }

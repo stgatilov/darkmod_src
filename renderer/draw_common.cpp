@@ -1434,6 +1434,8 @@ void RB_STD_DrawView( void ) {
 	GL_CheckErrors();
 
 	backEnd.lightScale = r_lightScale.GetFloat();
+	if ( r_fboSRGB && !backEnd.viewDef->IsLightGem() )
+		backEnd.lightScale /= 2;
 	backEnd.overBright = 1.0f;
 
 	// if we are just doing 2D rendering, no need to fill the depth buffer

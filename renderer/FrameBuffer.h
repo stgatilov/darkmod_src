@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 extern idCVar r_useFbo;
 extern idCVar r_showFBO;
 extern idCVar r_fboColorBits;
+extern idCVarBool r_fboSRGB;
 extern idCVar r_fboDepthBits;
 extern idCVar r_fboSharedDepth;
 extern idCVar r_fboSeparateStencil;
