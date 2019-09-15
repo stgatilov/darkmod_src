@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 extern idCVarBool r_useGLSL;
 extern idCVarBool r_newFrob;
 extern idCVarBool r_legacyTangents;
+extern idCVarBool r_shadowMapCullFront;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );

@@ -231,7 +231,7 @@ void RB_ShadowMap_RenderAllLights() {
 
 	backEnd.currentSpace = NULL;
 
-	//	GL_Cull( CT_TWO_SIDED );
+	GL_Cull( r_shadowMapCullFront ? CT_BACK_SIDED : CT_TWO_SIDED );
 	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
 
