@@ -63,8 +63,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 
 	common->Printf( "Checking optional OpenGL extensions...\n" );
 
-	qglGetIntegerv( GL_MAX_TEXTURE_COORDS, &glConfig.maxTextureCoords );
-	common->Printf( "Max texture coords: %d\n", glConfig.maxTextureCoords );
 	qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &glConfig.maxTextureUnits );
 	common->Printf( "Max texture units: %d\n", glConfig.maxTextureUnits );
 	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );

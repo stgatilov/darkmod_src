@@ -45,7 +45,6 @@ typedef struct glconfig_s {
 
 	int					maxTextureSize;			// queried from GL
 	int					maxTextures;
-	int					maxTextureCoords;
 	int					maxTextureUnits;
 	float				maxTextureAnisotropy;
 	int					maxSamples;
