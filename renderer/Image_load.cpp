@@ -1426,11 +1426,6 @@ void idImage::Bind() {
 			qglBindTexture( GL_TEXTURE_CUBE_MAP, texnum );
 		}
 	}
-
-	if ( com_purgeAll.GetBool() ) {
-		GLclampf priority = 1.0f;
-		qglPrioritizeTextures( 1, &texnum, &priority );
-	}
 }
 
 /*

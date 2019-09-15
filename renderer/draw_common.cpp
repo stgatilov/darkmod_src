@@ -1354,6 +1354,9 @@ static void RB_FogPass( bool translucent ) {
 	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[1].Normal() + fogPlanes[1][3];
 	fogUniforms->fogEnter.Set( FOG_ENTER + s );
 
+	if ( r_fboSRGB && !backEnd.viewDef->IsLightGem() )
+		qglEnable( GL_FRAMEBUFFER_SRGB );
+
 	if ( translucent ) {
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
 		GL_Cull( CT_TWO_SIDED );
@@ -1373,6 +1376,7 @@ static void RB_FogPass( bool translucent ) {
 	}
 
 	GL_Cull( CT_FRONT_SIDED );
+	qglDisable( GL_FRAMEBUFFER_SRGB );
 
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();
