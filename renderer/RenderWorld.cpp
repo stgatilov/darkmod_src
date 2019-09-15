@@ -1580,19 +1580,19 @@ void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderL
 	renderEntity_s::areaLock_t areaLock;
 	// 2.08 Dragofer's draw call optimization
 	if (def && (areaLock = def->parms.areaLock) != renderEntity_s::RAL_NONE && r_useAreaLocks & 1) { // 2.08 Dragofer's draw call optimization
-		auto& point = areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalReferenceBounds.GetCenter();
+		idVec3 point = areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalReferenceBounds.GetCenter();
 		int areaNum = PointInArea(point);
 		if (areaNum >= 0) {
-			auto area = &portalAreas[areaNum];
+			portalArea_t *area = &portalAreas[areaNum];
 			AddEntityRefToArea(def, area);
 			return;
 		}
 	}
 	if (light && (areaLock = light->parms.areaLock) != renderEntity_s::RAL_NONE && r_useAreaLocks & 2) {
-		auto point = areaLock == renderEntity_s::RAL_ORIGIN ? light->parms.origin : light->globalLightBounds.GetCenter();
+		idVec3 point = areaLock == renderEntity_s::RAL_ORIGIN ? light->parms.origin : light->globalLightBounds.GetCenter();
 		int areaNum = PointInArea(point);
 		if (areaNum >= 0) {
-			auto area = &portalAreas[areaNum];
+			portalArea_t *area = &portalAreas[areaNum];
 			AddLightRefToArea(light, area);
 			return;
 		}

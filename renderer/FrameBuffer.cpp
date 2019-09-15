@@ -66,7 +66,7 @@ private:
 		GenerateIf0();
 		qglBindRenderbuffer( GL_RENDERBUFFER, handle );
 	}
-}	renderBufferColor = { GL_COLOR_ATTACHMENT0, GL_SRGB_ALPHA },
+}	renderBufferColor = { GL_COLOR_ATTACHMENT0, GL_RGBA },
 	renderBufferDepthStencil = { GL_DEPTH_STENCIL_ATTACHMENT },
 	renderBufferPostProcess = { GL_COLOR_ATTACHMENT0, GL_RGBA };
 
