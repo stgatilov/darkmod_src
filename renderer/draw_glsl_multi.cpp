@@ -62,7 +62,7 @@ struct MultiLightShaderData { // used by both interaction and shadow map shaders
 			auto vLight = *pLight;
 			backEnd.vLight = vLight; // GetEffectiveLightRadius needs this
 			if ( shadowPass ) {
-				if ( !vLight->shadowMapIndex )
+				if ( !vLight->shadowMapIndex || vLight->shadowMapIndex > 42 )
 					continue;
 			} else {
 				if ( vLight->singleLightOnly )
