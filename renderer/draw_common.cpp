@@ -276,7 +276,9 @@ to force the alpha test to fail when behind that clip plane
 =====================
 */
 void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	GL_CheckErrors();
+	static idCVarBool r_skipDepthPass( "r_skipDepthPass", "0", CVAR_RENDERER, "" );
+	if ( r_skipDepthPass )
+		return;
 	
 	GL_PROFILE( "STD_FillDepthBuffer" );
 

@@ -865,7 +865,8 @@ static void RB_ShowEntityDraws() {
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_SCISSOR_TEST );
 
-	const bool group = r_showEntityDraws > 1;
+	const bool group = !r_showEntityDraws & 1;
+	const bool verts = r_showEntityDraws > 2;
 	idStrList list;
 	struct entityCalls {
 		int index, calls;
@@ -880,14 +881,19 @@ static void RB_ShowEntityDraws() {
 		if ( !vModels->drawCalls )
 			continue;
 		renderEntity_t& re = vModels->entityDef->parms;
-		const char* name = "NULL";
+		idStr name = "NULL";
 		if ( re.hModel )
 			name = re.hModel->Name();
+		//name.CapLength( 26 );
 		if ( group ) {
 			entityCalls calls{ vModels->entityDef->index, vModels->drawCalls, name, };
 			stats.Append( calls );
-		} else
-			list.Append( idStr::Fmt( "%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name ) );
+		} else {
+			if ( verts )
+				list.Append( idStr::Fmt( "%6i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name.c_str() ) );
+			else
+				list.Append( idStr::Fmt( "%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name.c_str() ) );
+		}
 	}
 	if ( group ) {
 		std::map<idStr, modelCalls> grouped;
@@ -900,6 +906,14 @@ static void RB_ShowEntityDraws() {
 			list.Append( idStr::Fmt( "%3i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() ) );
 	}
 	list.Sort();
+	int runningTotal = 0;
+	for ( int i = 0; i < list.Num(); i++ ) {
+		std::stringstream stream( list[i].c_str() );
+		int n;
+		stream >> n;
+		runningTotal += n;
+		list[i] = idStr::Fmt( "%6i %s", runningTotal, list[i].c_str() );
+	}
 	for ( auto &s : list )
 		common->Printf( s );
 	qglEnable( GL_DEPTH_TEST );
