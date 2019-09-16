@@ -1390,7 +1390,7 @@ RB_STD_FogAllLights
 ==================
 */
 void RB_STD_FogAllLights( bool translucent ) {
-	if ( r_skipFogLights.GetBool() ||
+	if ( r_skipFogLights & 1 && !translucent || r_skipFogLights & 2 && translucent ||
 		r_showOverDraw.GetInteger() != 0 ||
 		backEnd.viewDef->isXraySubview /* dont fog in xray mode*/ ) {
 		return;

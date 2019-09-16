@@ -1503,7 +1503,6 @@ r_showLights 3	: also draw edges of each volume
 ==============
 */
 void RB_ShowLights( void ) {
-	//const idRenderLightLocal	*light;
 	int					count;
 	viewLight_t			*vLight;
 
@@ -1522,7 +1521,7 @@ void RB_ShowLights( void ) {
 	qglDisable( GL_DEPTH_TEST );
 	GL_CheckErrors();
 
-	common->Printf( "volumes:" );	// FIXME: not in back end!
+	idStr output = "volumes:";
 
 	count = 0;
 
@@ -1562,19 +1561,20 @@ void RB_ShowLights( void ) {
 			}
 		}
 
-		common->Printf( " %i", index );
+		output += idStr::Fmt( " %i", index );
 		if ( vLight->viewInsideLight ) // view is in this volume
-			common->Printf( "i" );
+			output +=  "i";
 		if ( vLight->lightShader->IsAmbientLight() ) // ambient
-			common->Printf( "a" );
+			output += "a";
 		if ( vLight->lightShader->IsFogLight() ) 
-			common->Printf( "f" );
+			output += "f";
 		else if ( vLight->lightShader->IsBlendLight() ) 
-			common->Printf( "b" );
+			output += "b";
 		else if ( vLight->lightShader->LightCastsShadows() ) // shadows
-			common->Printf( "s" );
+			output += "s";
 		GL_CheckErrors();
 	}
+
 	qglEnable( GL_DEPTH_TEST );
 	qglDisable( GL_POLYGON_OFFSET_LINE );
 
@@ -1582,7 +1582,7 @@ void RB_ShowLights( void ) {
 	GL_State( GLS_DEFAULT );
 	GL_Cull( CT_FRONT_SIDED );
 
-	common->Printf( " = %i total\n", count );
+	common->Printf( "%s = %i total\n", output.c_str(), count );
 	GL_CheckErrors();
 }
 
@@ -2369,5 +2369,21 @@ RB_ShutdownDebugTools
 void RB_ShutdownDebugTools( void ) {
 	for ( int i = 0; i < MAX_DEBUG_POLYGONS; i++ ) {
 		rb_debugPolygons[i].winding.Clear();
+	}
+}
+
+void R_Tools() {
+	if ( r_showPortals ) // moved from backend to allow subviews and SMP
+		tr.viewDef->renderWorld->ShowPortals();
+	static idCVarInt r_maxTri( "r_maxTri", "0", CVAR_RENDERER, "Limit max tri per draw call" );
+	if ( r_maxTri ) {
+		auto limitTris = []( drawSurf_t* surf ) {
+			surf->numIndexes = Min<int>( r_maxTri, surf->numIndexes );
+		};
+		for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ )
+			limitTris( tr.viewDef->drawSurfs[i] );
+	}
+	for ( auto ent = tr.viewDef->viewEntitys; ent; ent = ent->next ) {
+		ent->drawCalls = 0;
 	}
 }

@@ -945,7 +945,7 @@ extern idCVar r_skipTranslucent;		// skip the translucent interaction rendering
 extern idCVar r_skipAmbient;			// bypasses all non-interaction drawing
 extern idCVarInt r_skipNewAmbient;			// bypasses all vertex/fragment program ambients
 extern idCVar r_skipBlendLights;		// skip all blend lights
-extern idCVar r_skipFogLights;			// skip all fog lights
+extern idCVarInt r_skipFogLights;			// skip all fog lights
 extern idCVarBool r_skipSubviews;			// 1 = don't render any mirrors / cameras / etc
 extern idCVar r_skipGuiShaders;			// 1 = don't render any gui elements on surfaces
 extern idCVar r_skipParticles;			// 1 = don't render any particles
@@ -1708,6 +1708,7 @@ void RB_PolygonClear( void );
 void RB_ScanStencilBuffer( void );
 void RB_ShowDestinationAlpha( void );
 void RB_ShowOverdraw( void );
+void R_Tools();
 void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_ShutdownDebugTools( void );
 

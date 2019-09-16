@@ -1046,28 +1046,6 @@ static void R_SortDrawSurfs( void ) {
 		R_QsortSurfaces );
 }
 
-/*
-=================
-R_SortDrawSurfs
-=================
-*/
-
-void R_Tools() {
-	if ( r_showPortals ) // moved from backend to allow subviews and SMP
-		tr.viewDef->renderWorld->ShowPortals();
-	static idCVarInt r_maxTri("r_maxTri", "0", CVAR_RENDERER, "Limit max tri per draw call" );
-	if ( r_maxTri ) {
-		auto limitTris = [](drawSurf_t *surf) {
-			surf->numIndexes = Min<int>( r_maxTri, surf->numIndexes );
-		};
-		for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ )
-			limitTris( tr.viewDef->drawSurfs[i] );
-	}
-	for ( auto ent = tr.viewDef->viewEntitys; ent; ent = ent->next ) {
-		ent->drawCalls = 0;
-	}
-}
-
 //========================================================================
 
 /*
