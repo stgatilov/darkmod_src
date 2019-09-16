@@ -166,6 +166,8 @@ static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
 	GL_CheckErrors();
 }
 
+static idCVarInt r_warnMultiLight( "r_warnMultiLight", "0", CVAR_RENDERER, "warns about heavy draw calls" );
+
 void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 	if ( !surf->material->SurfaceCastsShadow() )
 		return;    // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
@@ -215,6 +217,11 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps )
 				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
 		}
+	}
+
+	if ( r_warnMultiLight > 0 ) {
+		if ( data.lightOrigins.Num() > r_warnMultiLight )
+			common->Warning("%i %i %i %s", surf->space->entityDef->index, data.lightOrigins.Num(), surf->numIndexes, surf->space->entityDef->parms.hModel->Name() );
 	}
 
 	/*if ( customOffset != 0 )
