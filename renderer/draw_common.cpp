@@ -1327,6 +1327,8 @@ static void RB_FogPass( bool translucent ) {
 		// otherwise, distance = alpha color
 		a = -0.5f / backEnd.lightColor[3];
 	}
+	if ( r_ignore.GetBool() && translucent )
+		a *= .5;
 	GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
 
 	// texture 0 is the falloff image
