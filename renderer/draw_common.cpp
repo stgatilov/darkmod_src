@@ -45,6 +45,10 @@ struct FogUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, tex1PlaneT );
 	DEFINE_UNIFORM( vec3, fogColor );
 	DEFINE_UNIFORM( float, fogEnter );
+	DEFINE_UNIFORM( float, fogDensity );
+	DEFINE_UNIFORM( int, newFog );
+	DEFINE_UNIFORM( vec3, viewOrigin );
+	DEFINE_UNIFORM( vec4, frustumPlanes );
 };
 
 struct BlendUniforms : GLSLUniformGroup {
@@ -1327,7 +1331,7 @@ static void RB_FogPass( bool translucent ) {
 		// otherwise, distance = alpha color
 		a = -0.5f / backEnd.lightColor[3];
 	}
-	if ( r_ignore.GetBool() && translucent )
+	if ( translucent )
 		a *= .5;
 	GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
 
@@ -1357,6 +1361,24 @@ static void RB_FogPass( bool translucent ) {
 	// S is based on the view origin
 	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[1].Normal() + fogPlanes[1][3];
 	fogUniforms->fogEnter.Set( FOG_ENTER + s );
+	
+	// 2.08: new fog
+	static idCVarBool r_newFog( "r_newFog", "0", CVAR_RENDERER || CVAR_ARCHIVE, "alternative fog implementation" );
+	if ( r_newFog.GetBool() ) {
+		float distToFrustum = 0;
+		for ( int i = 0; i < 6; i++ ) {
+			auto& plane = backEnd.vLight->lightDef->frustum[i];
+			float dist2Plane = plane.Distance( backEnd.viewDef->renderView.vieworg );
+			if ( dist2Plane > distToFrustum )
+				distToFrustum = dist2Plane;
+		}
+		fogUniforms->fogEnter.Set( distToFrustum );
+		fogUniforms->fogDensity.Set( -a );
+		fogUniforms->newFog.Set( 1 );
+		fogUniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );
+		fogUniforms->frustumPlanes.SetArray( 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
+	} else
+		fogUniforms->newFog.Set( 0 );
 
 	if ( r_fboSRGB && !backEnd.viewDef->IsLightGem() )
 		qglEnable( GL_FRAMEBUFFER_SRGB );
