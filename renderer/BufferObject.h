@@ -48,6 +48,7 @@ public:
 	// Allocate or free the buffer.
 	void				AllocBufferObject(int allocSize, const void *initialData = nullptr);
 	void				FreeBufferObject();
+	void				Resize( int allocSize );
 
 	// Map / flush / unmap buffer
 	void *				MapBuffer(int mapOffset = 0);

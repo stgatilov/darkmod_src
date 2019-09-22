@@ -109,26 +109,8 @@ public:
 	}
 
 	// this data is valid until the next map load
-	vertCacheHandle_t AllocStaticVertex( const void *data, int bytes ) {
-		if( staticData.mappedVertexBase == nullptr ) {
-			common->Error( "AllocStaticVertex called, but static vertex cache is not ready for upload." );
-		}
-		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_VERTEX );
-		if( !handle.IsValid() ) {
-			common->FatalError( "AllocStaticVertex failed, out of memory" );
-		}
-		return handle;
-	}
-	vertCacheHandle_t AllocStaticIndex( const void *data, int bytes ) {
-		if( staticData.mappedIndexBase == nullptr ) {
-			common->Error( "AllocStaticIndex called, but static index cache is not ready for upload." );
-		}
-		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
-		if( !handle.IsValid() ) {
-			common->FatalError( "AllocStaticIndex failed, out of memory" );
-		}
-		return handle;
-	}
+	vertCacheHandle_t AllocStaticVertex( const void* data, int bytes );
+	vertCacheHandle_t AllocStaticIndex( const void* data, int bytes );
 
 	// Returns false if it's been purged
 	// This can only be called by the front end, the back end should only be looking at
@@ -150,7 +132,7 @@ public:
 	int				backendListNum;
 
 	geoBufferSet_t	dynamicData;
-	geoBufferSet_t  staticData;
+	//geoBufferSet_t  staticData;
 
 	GLuint			currentVertexBuffer;
 	GLuint			currentIndexBuffer;

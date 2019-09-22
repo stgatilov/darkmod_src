@@ -550,7 +550,6 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 	}
 
 	// create static vertex/index buffers for all models
-	vertexCache.PrepareStaticCacheForUpload();
 	for( int i = 0; i < models.Num(); i++ ) {
 		idRenderModel *model = models[i];
 		if( model->IsLoaded() ) {
@@ -559,6 +558,7 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 			}
 		}
 	}
+	vertexCache.PrepareStaticCacheForUpload();
 
 	// _D3XP added this
 	int	end = Sys_Milliseconds();

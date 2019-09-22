@@ -28,6 +28,7 @@ idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_A
 
 idVertexCache		vertexCache;
 GLsync				bufferLock[3] = { 0,0,0 };
+uint32_t			staticVertexSize, staticIndexSize;
 
 /*
 ==============
@@ -47,11 +48,15 @@ MapGeoBufferSet
 */
 static void MapGeoBufferSet( geoBufferSet_t &gbs, int frame ) {
 	if ( gbs.mappedVertexBase == NULL ) {
-		gbs.vertexMapOffset = gbs.vertexBuffer.size * frame / VERTCACHE_NUM_FRAMES;
+		int dynamicSize = gbs.vertexBuffer.size - staticVertexSize;
+		gbs.vertexBuffer.mappedSize = dynamicSize / VERTCACHE_NUM_FRAMES;
+		gbs.vertexMapOffset = staticVertexSize + gbs.vertexBuffer.mappedSize * frame;
 		gbs.mappedVertexBase = ( byte * )gbs.vertexBuffer.MapBuffer( gbs.vertexMapOffset );
 	}
 	if ( gbs.mappedIndexBase == NULL ) {
-		gbs.indexMapOffset = gbs.indexBuffer.size * frame / VERTCACHE_NUM_FRAMES;
+		int dynamicSize = gbs.indexBuffer.size - staticIndexSize;
+		gbs.indexBuffer.mappedSize = dynamicSize / VERTCACHE_NUM_FRAMES;
+		gbs.indexMapOffset = staticIndexSize + gbs.indexBuffer.mappedSize * frame;
 		gbs.mappedIndexBase = ( byte * )gbs.indexBuffer.MapBuffer( gbs.indexMapOffset );
 	}
 }
@@ -121,14 +126,14 @@ static void RecreateGeoBufferSet( geoBufferSet_t &gbs, int vertexBytes, int inde
 	AllocGeoBufferSet( gbs, vertexBytes, indexBytes );
 }
 
-static void PrepareStaticGeoBufferSet( geoBufferSet_t &gbs, int vertexBytes, int indexBytes ) {
-	gbs.vertexBuffer.size = gbs.vertexBuffer.mappedSize = vertexBytes;
-	gbs.mappedVertexBase = ( byte * )Mem_Alloc16( gbs.vertexBuffer.GetAllocedSize() );
-	gbs.indexBuffer.size = gbs.indexBuffer.mappedSize = indexBytes;
-	gbs.mappedIndexBase = ( byte * )Mem_Alloc16( gbs.indexBuffer.GetAllocedSize() );
-	//gbs.bufferLock = 0;
-	ClearGeoBufferSet( gbs );
-}
+//static void PrepareStaticGeoBufferSet( geoBufferSet_t &gbs, int vertexBytes, int indexBytes ) {
+//	gbs.vertexBuffer.size = gbs.vertexBuffer.mappedSize = vertexBytes;
+//	gbs.mappedVertexBase = ( byte * )Mem_Alloc16( gbs.vertexBuffer.GetAllocedSize() );
+//	gbs.indexBuffer.size = gbs.indexBuffer.mappedSize = indexBytes;
+//	gbs.mappedIndexBase = ( byte * )Mem_Alloc16( gbs.indexBuffer.GetAllocedSize() );
+//	//gbs.bufferLock = 0;
+//	ClearGeoBufferSet( gbs );
+//}
 
 static void UploadStaticGeoBufferSet( geoBufferSet_t &gbs ) {
 	if ( gbs.mappedVertexBase != nullptr ) {
@@ -155,12 +160,6 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 	GLuint vbo;
 	if ( !handle.IsValid() ) {
 		vbo = 0;
-	} else if ( handle.isStatic ) {
-		++staticBufferUsed;
-		if ( staticData.mappedVertexBase != nullptr ) {
-			UploadStaticGeoBufferSet( staticData );
-		}
-		vbo = staticData.vertexBuffer.GetAPIObject();
 	} else {
 		++tempBufferUsed;
 		vbo = dynamicData.vertexBuffer.GetAPIObject();
@@ -181,12 +180,6 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 	GLuint vbo;
 	if ( !handle.IsValid() ) {
 		vbo = 0;
-	} else if ( handle.isStatic ) {
-		++staticBufferUsed;
-		if ( staticData.mappedIndexBase != nullptr ) {
-			UploadStaticGeoBufferSet( staticData );
-		}
-		vbo = staticData.indexBuffer.GetAPIObject();
 	} else {
 		++tempBufferUsed;
 		vbo = dynamicData.indexBuffer.GetAPIObject();
@@ -212,8 +205,8 @@ void idVertexCache::UnbindIndex() {
 
 //================================================================================
 
-geoBufferSet_t::geoBufferSet_t( GLenum usage ) : indexBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, usage ), vertexBuffer( GL_ARRAY_BUFFER_ARB, usage ) {}
-idVertexCache::idVertexCache() : staticData( GL_STATIC_DRAW_ARB ) {}
+geoBufferSet_t::geoBufferSet_t( GLenum usage ) : indexBuffer( GL_ELEMENT_ARRAY_BUFFER, usage ), vertexBuffer( GL_ARRAY_BUFFER, usage ) {}
+idVertexCache::idVertexCache() /*: staticData( GL_STATIC_DRAW_ARB )*/ {}
 
 /*
 ===========
@@ -267,9 +260,9 @@ void idVertexCache::Shutdown() {
 		dynamicData.vertexBuffer.FreeBufferObject();
 		dynamicData.indexBuffer.FreeBufferObject();
 //	}
-	ClearGeoBufferSet( staticData );
-	staticData.vertexBuffer.FreeBufferObject();
-	staticData.indexBuffer.FreeBufferObject();
+	//ClearGeoBufferSet( staticData );
+	//staticData.vertexBuffer.FreeBufferObject();
+	//staticData.indexBuffer.FreeBufferObject();
 }
 
 /*
@@ -280,8 +273,8 @@ idVertexCache::EndFrame
 void idVertexCache::EndFrame() {
 	// display debug information
 	if ( r_showVertexCache.GetBool() ) {
-		common->Printf( "(backend) used temp buffers: %d - used static buffers: %d\n", tempBufferUsed, staticBufferUsed );
-		common->Printf( "(frontend) temp vertex alloc: %d kB - temp index alloc: %d kB - static vertex alloc: %d kB - static index alloc: %d kB\n", dynamicData.vertexMemUsed / 1024, dynamicData.indexMemUsed / 1024, staticData.vertexMemUsed / 1024, staticData.indexMemUsed / 1024 );
+		common->Printf( "(BACK) use count: %d, vertex: %dx %d/%d kB, index: %dx %d/%d kB\n", tempBufferUsed, VERTCACHE_NUM_FRAMES, currentVertexCacheSize>>10, dynamicData.vertexBuffer.GetAllocedSize()>>10, VERTCACHE_NUM_FRAMES, currentIndexCacheSize>>10, dynamicData.indexBuffer.GetAllocedSize()>>10 );
+		common->Printf( "(FRONT) vertex: %d kB, index: %d kB\n", dynamicData.vertexMemUsed / 1024, dynamicData.indexMemUsed / 1024 );
 	}
 
 	// unmap the current frame so the GPU can read it
@@ -289,18 +282,16 @@ void idVertexCache::EndFrame() {
 
 	// check if we need to increase the buffer size
 	if ( dynamicData.indexMemUsed > currentIndexCacheSize ) {
-		common->Printf( "Exceeded index cache size (%d kb), resizing...\n", currentIndexCacheSize / 1024 );
+		common->Printf( "Exceeded index frame limit (%d kb), resizing...\n", currentIndexCacheSize / 1024 );
 		while ( currentIndexCacheSize <= MAX_VERTCACHE_SIZE / VERTCACHE_NUM_FRAMES / 2 && currentIndexCacheSize < dynamicData.indexMemUsed ) {
 			currentIndexCacheSize *= 2;
 		}
-		common->Printf( "New index cache size: %d kb\n", currentIndexCacheSize / 1024 );
 	}
 	if ( dynamicData.vertexMemUsed > currentVertexCacheSize ) {
-		common->Printf( "Exceeded vertex cache size (%d kb), resizing...\n", currentVertexCacheSize / 1024 );
+		common->Printf( "Exceeded vertex frame limit (%d kb), resizing...\n", currentVertexCacheSize / 1024 );
 		while ( currentVertexCacheSize < MAX_VERTCACHE_SIZE / VERTCACHE_NUM_FRAMES / 2 && currentVertexCacheSize < dynamicData.vertexMemUsed ) {
 			currentVertexCacheSize *= 2;
 		}
-		common->Printf( "New vertex cache size: %d kb\n", currentVertexCacheSize / 1024 );
 	}
 
 	// ensure no GL draws are still active on the next buffer to write to
@@ -319,30 +310,24 @@ void idVertexCache::EndFrame() {
 	staticBufferUsed = 0;
 
 	// check if we need to resize current buffer set
-	if ( dynamicData.vertexBuffer.GetSize() < currentVertexCacheSize * VERTCACHE_NUM_FRAMES || dynamicData.indexBuffer.GetSize() < currentIndexCacheSize * VERTCACHE_NUM_FRAMES ) {
-		common->Printf( "Resizing current cache buffer set...\n" );
-		RecreateGeoBufferSet( dynamicData, currentVertexCacheSize * VERTCACHE_NUM_FRAMES, currentIndexCacheSize * VERTCACHE_NUM_FRAMES );
+	if ( (uint32_t)dynamicData.vertexBuffer.GetSize() < staticVertexSize + currentVertexCacheSize * VERTCACHE_NUM_FRAMES ) {
+		dynamicData.vertexBuffer.Resize( staticVertexSize + currentVertexCacheSize * VERTCACHE_NUM_FRAMES );
+		//RecreateGeoBufferSet( dynamicData, currentVertexCacheSize * VERTCACHE_NUM_FRAMES, currentIndexCacheSize * VERTCACHE_NUM_FRAMES );
+	}
+	if ( ( uint32_t) dynamicData.indexBuffer.GetSize() < staticIndexSize + currentIndexCacheSize * VERTCACHE_NUM_FRAMES ) {
+		dynamicData.indexBuffer.Resize( staticIndexSize + currentIndexCacheSize * VERTCACHE_NUM_FRAMES );
 	}
 
 	// prepare the next frame for writing to by the CPU
 	MapGeoBufferSet( dynamicData, listNum );
 	ClearGeoBufferSet( dynamicData );
-	staticData.indexMapOffset = staticData.indexMemUsed;
-	staticData.vertexMapOffset = staticData.vertexMemUsed;
+	//staticData.indexMapOffset = staticData.indexMemUsed;
+	//staticData.vertexMapOffset = staticData.vertexMemUsed;
 
 	qglBindBuffer( GL_ARRAY_BUFFER_ARB, 0 );
 	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 	currentVertexBuffer = 0;
 	currentIndexBuffer = 0;
-}
-
-/*
-==============
-idVertexCache::PrepareStaticCacheForUpload
-==============
-*/
-void idVertexCache::PrepareStaticCacheForUpload() {
-	PrepareStaticGeoBufferSet( staticData, MAX_VERTCACHE_SIZE, MAX_VERTCACHE_SIZE );
 }
 
 /*
@@ -399,6 +384,57 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 		static_cast<uint32_t>( bytes & VERTCACHE_SIZE_MASK ),
 		static_cast<uint32_t>( (mapOffset + offset) & VERTCACHE_OFFSET_MASK ),
 		static_cast<uint16_t>( currentFrame & VERTCACHE_FRAME_MASK ),
-		&vcs == &staticData
+		false //&vcs == &staticData
+	};
+}
+
+idList <std::pair<const void*, int>> staticVertexList, staticIndexList;
+
+/*
+==============
+idVertexCache::PrepareStaticCacheForUpload
+==============
+*/
+void idVertexCache::PrepareStaticCacheForUpload() {
+	UnmapGeoBufferSet( dynamicData, listNum );
+	common->Printf( "Static vertex data ready\n" );
+	dynamicData.vertexBuffer.Resize( staticVertexSize + currentVertexCacheSize * VERTCACHE_NUM_FRAMES );
+	int offset = 0;
+	for ( auto& pair : staticVertexList ) {
+		qglBufferSubData( GL_ARRAY_BUFFER, offset, pair.second, pair.first );
+		offset += pair.second;
+	}
+	staticVertexList.Clear();
+	common->Printf( "Static index data ready\n" );
+	dynamicData.indexBuffer.Resize( staticIndexSize + currentIndexCacheSize * VERTCACHE_NUM_FRAMES );
+	offset = 0;
+	for ( auto& pair : staticIndexList ) {
+		qglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, offset, pair.second, pair.first );
+		offset += pair.second;
+	}
+	staticIndexList.Clear();
+	MapGeoBufferSet( dynamicData, listNum );
+	ClearGeoBufferSet( dynamicData );
+}
+
+vertCacheHandle_t idVertexCache::AllocStaticVertex( const void* data, int bytes ) {
+	staticVertexList.Append( std::make_pair( data, bytes ) );
+	staticVertexSize += bytes;
+	return {
+		static_cast<uint32_t>( bytes & VERTCACHE_SIZE_MASK ),
+		static_cast<uint32_t>( (staticVertexSize-bytes) & VERTCACHE_OFFSET_MASK ),
+		0,
+		true,
+	};
+}
+
+vertCacheHandle_t idVertexCache::AllocStaticIndex( const void* data, int bytes ) {
+	staticIndexList.Append( std::make_pair( data, bytes ) );
+	staticIndexSize += bytes;
+	return {
+		static_cast<uint32_t>( bytes & VERTCACHE_SIZE_MASK ),
+		static_cast<uint32_t>( (staticIndexSize-bytes) & VERTCACHE_OFFSET_MASK ),
+		0,
+		true,
 	};
 }

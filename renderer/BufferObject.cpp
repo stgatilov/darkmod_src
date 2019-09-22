@@ -73,6 +73,31 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	if( allocSize <= 0 ) {
 		idLib::Error( "BufferObject::AllocBufferObject: allocSize = %i", allocSize );
 	}
+	//size = allocSize;
+
+	//int numBytes = GetAllocedSize();
+
+	//// clear out any previous error
+	//qglGetError();
+
+	//qglGenBuffers( 1, &bufferObject );
+	//if( bufferObject == 0 ) {
+	//	common->FatalError( "BufferObject::AllocBufferObject: failed" );
+	//}
+	//qglBindBuffer( bufferType, bufferObject );
+	////qglBufferData( bufferType, numBytes, initialData, bufferUsage );
+	//qglBufferStorage( bufferType, numBytes, initialData, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+
+	//GLenum err = qglGetError();
+	//if( err == GL_OUT_OF_MEMORY ) {
+	//	common->FatalError( "BufferObject::AllocBufferObject: allocation failed - out of memory" );
+	//}
+}
+
+void BufferObject::Resize( int allocSize ) {
+	common->Printf( "New index cache size: %d kb\n", allocSize / 1024 );
+
+	int oldSize = GetAllocedSize();
 	size = allocSize;
 
 	int numBytes = GetAllocedSize();
@@ -80,17 +105,25 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	// clear out any previous error
 	qglGetError();
 
+	GLuint oldBuffObj = bufferObject;
 	qglGenBuffers( 1, &bufferObject );
-	if( bufferObject == 0 ) {
+	if ( bufferObject == 0 ) {
 		common->FatalError( "BufferObject::AllocBufferObject: failed" );
 	}
 	qglBindBuffer( bufferType, bufferObject );
 	//qglBufferData( bufferType, numBytes, initialData, bufferUsage );
-	qglBufferStorage( bufferType, numBytes, initialData, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+	qglBufferStorage( bufferType, numBytes, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
 
 	GLenum err = qglGetError();
-	if( err == GL_OUT_OF_MEMORY ) {
+	if ( err == GL_OUT_OF_MEMORY ) {
 		common->FatalError( "BufferObject::AllocBufferObject: allocation failed - out of memory" );
+	}
+
+	if ( oldBuffObj ) {
+		qglBindBuffer( GL_COPY_READ_BUFFER, oldBuffObj );
+		qglBindBuffer( GL_COPY_WRITE_BUFFER, bufferObject );
+		qglCopyBufferSubData( GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, oldSize );
+		qglDeleteBuffers( 1, &oldBuffObj );
 	}
 }
 
@@ -126,7 +159,6 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	mappedSize = size / VERTCACHE_NUM_FRAMES;
 	buffer = qglMapBufferRange(bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT);
 
 	if( buffer == NULL ) {
