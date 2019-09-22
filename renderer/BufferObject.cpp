@@ -177,6 +177,8 @@ FlushBuffer
 void BufferObject::FlushBuffer( int offset, int length ) {
 	assert( bufferObject != 0 );
 	assert( IsMapped() );
+	if ( !length )
+		return;
 
 	qglBindBuffer( bufferType, bufferObject );
 

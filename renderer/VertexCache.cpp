@@ -69,12 +69,12 @@ UnmapGeoBufferSet
 
 static void UnmapGeoBufferSet( geoBufferSet_t &gbs, int frame ) {
 	if ( gbs.mappedVertexBase != NULL ) {
-		gbs.vertexBuffer.FlushBuffer( 0, gbs.vertexMemUsed - gbs.vertexMapOffset );
+		gbs.vertexBuffer.FlushBuffer( 0, gbs.vertexMemUsed );
 		gbs.vertexBuffer.UnmapBuffer();
 		gbs.mappedVertexBase = NULL;
 	}
 	if ( gbs.mappedIndexBase != NULL ) {
-		gbs.indexBuffer.FlushBuffer( 0, gbs.indexMemUsed - gbs.indexMapOffset );
+		gbs.indexBuffer.FlushBuffer( 0, gbs.indexMemUsed );
 		gbs.indexBuffer.UnmapBuffer();
 		gbs.mappedIndexBase = NULL;
 	}
@@ -121,36 +121,6 @@ static void FreeGeoBufferSet( geoBufferSet_t &gbs ) {
 	gbs.indexBuffer.FreeBufferObject();
 }
 
-static void RecreateGeoBufferSet( geoBufferSet_t &gbs, int vertexBytes, int indexBytes ) {
-	FreeGeoBufferSet( gbs );
-	AllocGeoBufferSet( gbs, vertexBytes, indexBytes );
-}
-
-//static void PrepareStaticGeoBufferSet( geoBufferSet_t &gbs, int vertexBytes, int indexBytes ) {
-//	gbs.vertexBuffer.size = gbs.vertexBuffer.mappedSize = vertexBytes;
-//	gbs.mappedVertexBase = ( byte * )Mem_Alloc16( gbs.vertexBuffer.GetAllocedSize() );
-//	gbs.indexBuffer.size = gbs.indexBuffer.mappedSize = indexBytes;
-//	gbs.mappedIndexBase = ( byte * )Mem_Alloc16( gbs.indexBuffer.GetAllocedSize() );
-//	//gbs.bufferLock = 0;
-//	ClearGeoBufferSet( gbs );
-//}
-
-static void UploadStaticGeoBufferSet( geoBufferSet_t &gbs ) {
-	if ( gbs.mappedVertexBase != nullptr ) {
-		gbs.vertexBuffer.FreeBufferObject();
-		gbs.vertexBuffer.AllocBufferObject( gbs.vertexMemUsed, gbs.mappedVertexBase );
-		Mem_Free16( gbs.mappedVertexBase );
-		gbs.mappedVertexBase = nullptr;
-		common->Printf( "VertexCache static vertex buffer uploaded, memory used: %d kb\n", gbs.vertexBuffer.GetAllocedSize() / 1024 );
-	}
-	if ( gbs.mappedIndexBase != nullptr ) {
-		gbs.indexBuffer.FreeBufferObject();
-		gbs.indexBuffer.AllocBufferObject( gbs.indexMemUsed, gbs.mappedIndexBase );
-		Mem_Free16( gbs.mappedIndexBase );
-		gbs.mappedIndexBase = 0;
-		common->Printf( "VertexCache static index buffer uploaded, memory used: %d kb\n", gbs.indexBuffer.GetAllocedSize() / 1024 );
-	}
-}
 /*
 ==============
 idVertexCache::VertexPosition
@@ -185,7 +155,7 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		vbo = dynamicData.indexBuffer.GetAPIObject();
 	}
 	if ( vbo != currentIndexBuffer ) {
-		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, vbo );
+		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo );
 		currentIndexBuffer = vbo;
 	}
 	return ( void * )( size_t )( handle.offset );
@@ -198,7 +168,7 @@ idVertexCache::UnbindIndex
 */
 void idVertexCache::UnbindIndex() {
 	if ( currentIndexBuffer != 0 ) {
-		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 		currentIndexBuffer = 0;
 	}
 }
