@@ -61,6 +61,8 @@ public:
 	GLuint				GetAPIObject() const { return bufferObject; }
 
 	int					size;					// size in bytes
+	int					mappedSize;
+
 private:
 	GLuint				bufferObject;
 	GLenum              bufferType;

@@ -54,7 +54,6 @@ struct geoBufferSet_t {
 	int					allocations;	// number of index and vertex allocations combined
 	int					vertexMapOffset;
 	int					indexMapOffset;
-	GLsync				bufferLock;
 
 	geoBufferSet_t( GLenum usage = GL_DYNAMIC_DRAW_ARB );
 };
@@ -103,10 +102,10 @@ public:
 
 	// this data is only valid for one frame of rendering
 	vertCacheHandle_t AllocVertex( const void * data, int bytes ) {
-		return ActuallyAlloc( frameData[listNum], data, bytes, CACHE_VERTEX );
+		return ActuallyAlloc( dynamicData, data, bytes, CACHE_VERTEX );
 	}
 	vertCacheHandle_t AllocIndex( const void * data, int bytes ) {
-		return ActuallyAlloc( frameData[listNum], data, bytes, CACHE_INDEX );
+		return ActuallyAlloc( dynamicData, data, bytes, CACHE_INDEX );
 	}
 
 	// this data is valid until the next map load
@@ -150,7 +149,7 @@ public:
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
 	int				backendListNum;
 
-	geoBufferSet_t	frameData[VERTCACHE_NUM_FRAMES];
+	geoBufferSet_t	dynamicData;
 	geoBufferSet_t  staticData;
 
 	GLuint			currentVertexBuffer;

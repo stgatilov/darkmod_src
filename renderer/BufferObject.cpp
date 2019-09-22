@@ -85,7 +85,8 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 		common->FatalError( "BufferObject::AllocBufferObject: failed" );
 	}
 	qglBindBuffer( bufferType, bufferObject );
-	qglBufferData( bufferType, numBytes, initialData, bufferUsage );
+	//qglBufferData( bufferType, numBytes, initialData, bufferUsage );
+	qglBufferStorage( bufferType, numBytes, initialData, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
 
 	GLenum err = qglGetError();
 	if( err == GL_OUT_OF_MEMORY ) {
@@ -125,14 +126,8 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	if (qglMapBufferRange) {
-		buffer = qglMapBufferRange(bufferType, mapOffset, GetAllocedSize() - mapOffset, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
-	} else {
-		if (mapOffset != 0) {
-			common->FatalError("Cannot map range of buffer starting from %d without glMapBufferRange", mapOffset);
-		}
-		buffer = qglMapBuffer(bufferType, GL_WRITE_ONLY);
-	}
+	mappedSize = size / VERTCACHE_NUM_FRAMES;
+	buffer = qglMapBufferRange(bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT);
 
 	if( buffer == NULL ) {
 		common->Error( "BufferObject::MapBuffer: failed" );
@@ -153,9 +148,7 @@ void BufferObject::FlushBuffer( int offset, int length ) {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	if (qglFlushMappedBufferRange) {
-		qglFlushMappedBufferRange( bufferType, offset, length );
-	}
+	qglFlushMappedBufferRange( bufferType, offset, length );
 }
 
 /*
