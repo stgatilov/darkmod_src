@@ -22,6 +22,8 @@ $Author$ (Author of last commit)
 #include "tr_local.h"
 #include "BufferObject.h"
 
+idCVarBool r_usePersistentMapping( "r_usePersistentMapping", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use persistent buffer mapping" );
+
 /*
 ================================================================================================
 
@@ -36,8 +38,8 @@ UnbindBufferObjects
 ========================
 */
 void UnbindBufferObjects() {
-	qglBindBuffer( GL_ARRAY_BUFFER_ARB, 0 );
-	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+	qglBindBuffer( GL_ARRAY_BUFFER, 0 );
+	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 }
 
 /*
@@ -73,29 +75,11 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	if( allocSize <= 0 ) {
 		idLib::Error( "BufferObject::AllocBufferObject: allocSize = %i", allocSize );
 	}
-	//size = allocSize;
-
-	//int numBytes = GetAllocedSize();
-
-	//// clear out any previous error
-	//qglGetError();
-
-	//qglGenBuffers( 1, &bufferObject );
-	//if( bufferObject == 0 ) {
-	//	common->FatalError( "BufferObject::AllocBufferObject: failed" );
-	//}
-	//qglBindBuffer( bufferType, bufferObject );
-	////qglBufferData( bufferType, numBytes, initialData, bufferUsage );
-	//qglBufferStorage( bufferType, numBytes, initialData, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-
-	//GLenum err = qglGetError();
-	//if( err == GL_OUT_OF_MEMORY ) {
-	//	common->FatalError( "BufferObject::AllocBufferObject: allocation failed - out of memory" );
-	//}
+	Resize( allocSize );
 }
 
 void BufferObject::Resize( int allocSize ) {
-	common->Printf( "New index cache size: %d kb\n", allocSize / 1024 );
+	common->Printf( "New buffer size: %d kb\n", allocSize / 1024 );
 
 	int oldSize = GetAllocedSize();
 	size = allocSize;
@@ -111,8 +95,11 @@ void BufferObject::Resize( int allocSize ) {
 		common->FatalError( "BufferObject::AllocBufferObject: failed" );
 	}
 	qglBindBuffer( bufferType, bufferObject );
-	//qglBufferData( bufferType, numBytes, initialData, bufferUsage );
-	qglBufferStorage( bufferType, numBytes, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+	canMap = glConfig.bufferStorageAvailable && r_usePersistentMapping;
+	if ( canMap )
+		qglBufferStorage( bufferType, numBytes, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+	else
+		qglBufferData( bufferType, numBytes, NULL, bufferUsage );
 
 	GLenum err = qglGetError();
 	if ( err == GL_OUT_OF_MEMORY ) {
@@ -159,7 +146,12 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	buffer = qglMapBufferRange(bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT);
+	if ( canMap )
+		buffer = qglMapBufferRange( bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+	else {
+		lastMapOffset = mapOffset;
+		mapBuff = buffer = Mem_Alloc16( mappedSize );
+	}
 
 	if( buffer == NULL ) {
 		common->Error( "BufferObject::MapBuffer: failed" );
@@ -179,10 +171,15 @@ void BufferObject::FlushBuffer( int offset, int length ) {
 	assert( IsMapped() );
 	if ( !length )
 		return;
+	if ( length > mappedSize )
+		length = mappedSize;
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	qglFlushMappedBufferRange( bufferType, offset, length );
+	if ( canMap )
+		qglFlushMappedBufferRange( bufferType, offset, length );
+	else
+		qglBufferSubData( bufferType, lastMapOffset, length, mapBuff );
 }
 
 /*
@@ -196,8 +193,13 @@ void BufferObject::UnmapBuffer() {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	if( !qglUnmapBuffer( bufferType ) ) {
-		common->Warning( "BufferObject::UnmapBuffer failed\n" );
+	if ( canMap ) {
+		if ( !qglUnmapBuffer( bufferType ) ) {
+			common->Warning( "BufferObject::UnmapBuffer failed\n" );
+		}
+	} else {
+		//qglBufferSubData( bufferType, lastMapOffset, mappedSize, mapBuff );
+		Mem_Free16( mapBuff );
 	}
 	SetUnmapped();
 }

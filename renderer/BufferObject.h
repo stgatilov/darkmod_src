@@ -69,6 +69,10 @@ private:
 	GLenum              bufferType;
 	GLenum              bufferUsage;
 
+	bool				canMap;
+	void *				mapBuff;
+	int					lastMapOffset;
+
 	// sizeof() confuses typeinfo...
 	static const int	MAPPED_FLAG = 1 << ( 4 /* sizeof( int ) */ * 8 - 1 );
 
