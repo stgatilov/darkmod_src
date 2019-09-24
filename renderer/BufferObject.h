@@ -72,6 +72,8 @@ private:
 	bool				canMap;
 	void *				mapBuff;
 	int					lastMapOffset;
+	int					lastTempSize;
+	GLuint				tempBuff;
 
 	// sizeof() confuses typeinfo...
 	static const int	MAPPED_FLAG = 1 << ( 4 /* sizeof( int ) */ * 8 - 1 );
