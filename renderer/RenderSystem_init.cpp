@@ -260,7 +260,11 @@ idCVar r_cinematic_legacyRoq( "r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR
                               "0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg" );
 
 
+idStrList GLDebugMessages;
 static void APIENTRY R_OpenGLDebugMessageCallback( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam ) {
+	while ( GLDebugMessages.Num() > 10 )
+		GLDebugMessages.RemoveIndex( 0 );
+	GLDebugMessages.Append( message );
 	if( severity != GL_DEBUG_SEVERITY_NOTIFICATION )
 		common->Printf( "GL: %s\n", message );
 }
