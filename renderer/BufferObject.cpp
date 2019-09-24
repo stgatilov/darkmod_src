@@ -156,10 +156,10 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 			qglGenBuffers( 1, &tempBuff );
 		qglBindBuffer( bufferType, tempBuff );
 		if ( lastTempSize != mappedSize ) {
-			qglBufferData( bufferType, lastTempSize = mappedSize, NULL, GL_STATIC_DRAW );
+			//qglBufferData( bufferType, lastTempSize = mappedSize, NULL, GL_STATIC_DRAW );
 		}
-		//qglBufferData( bufferType, lastTempSize = mappedSize, NULL, GL_STREAM_DRAW );
-		buffer = qglMapBufferRange( bufferType, 0, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
+		qglBufferData( bufferType, lastTempSize = mappedSize, NULL, GL_STATIC_DRAW );
+		buffer = qglMapBufferRange( bufferType, 0, mappedSize, GL_MAP_WRITE_BIT | /*GL_MAP_UNSYNCHRONIZED_BIT |*/ GL_MAP_FLUSH_EXPLICIT_BIT );
 	}
 
 	if( buffer == NULL ) {
