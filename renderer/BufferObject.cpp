@@ -95,8 +95,8 @@ void BufferObject::Resize( int allocSize ) {
 		common->FatalError( "BufferObject::AllocBufferObject: failed" );
 	}
 	qglBindBuffer( bufferType, bufferObject );
-	canMap = glConfig.bufferStorageAvailable && r_usePersistentMapping;
-	if ( canMap )
+	persistentMap = glConfig.bufferStorageAvailable && r_usePersistentMapping;
+	if ( persistentMap )
 		qglBufferStorage( bufferType, numBytes, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
 	else
 		qglBufferData( bufferType, numBytes, NULL, GL_STATIC_DRAW );
@@ -112,6 +112,8 @@ void BufferObject::Resize( int allocSize ) {
 		qglCopyBufferSubData( GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, oldSize );
 		qglDeleteBuffers( 1, &oldBuffObj );
 	}
+	if ( persistentMap )
+		mapBuff = qglMapBufferRange( bufferType, 0, numBytes, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
 }
 
 /*
@@ -147,9 +149,11 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	if ( canMap )
-		buffer = qglMapBufferRange( bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
-	else {
+	if ( persistentMap ) {
+		//buffer = qglMapBufferRange( bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+		lastMapOffset = mapOffset;
+		buffer = (byte*)mapBuff + mapOffset;
+	} else {
 		lastMapOffset = mapOffset;
 		//mapBuff = buffer = Mem_Alloc16( mappedSize );
 		if ( !tempBuff )
@@ -186,9 +190,10 @@ void BufferObject::FlushBuffer( int offset, int length ) {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	if ( canMap )
-		qglFlushMappedBufferRange( bufferType, offset, length );
-	else {
+	if ( persistentMap ) {
+		//qglFlushMappedBufferRange( bufferType, offset, length );
+		qglFlushMappedBufferRange( bufferType, offset + lastMapOffset, length );
+	} else {
 #if 0
 		qglBufferSubData( bufferType, lastMapOffset, length, mapBuff );
 #else
@@ -214,10 +219,10 @@ void BufferObject::UnmapBuffer() {
 
 	qglBindBuffer( bufferType, bufferObject );
 
-	if ( canMap ) {
-		if ( !qglUnmapBuffer( bufferType ) ) {
+	if ( persistentMap ) {
+		/*if ( !qglUnmapBuffer( bufferType ) ) {
 			common->Warning( "BufferObject::UnmapBuffer failed\n" );
-		}
+		}*/
 	} else {
 		//Mem_Free16( mapBuff );
 	}

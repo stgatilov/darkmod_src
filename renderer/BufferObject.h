@@ -69,7 +69,7 @@ private:
 	GLenum              bufferType;
 	GLenum              bufferUsage;
 
-	bool				canMap;
+	bool				persistentMap;
 	void *				mapBuff;
 	int					lastMapOffset;
 	int					lastTempSize;
