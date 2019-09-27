@@ -62,8 +62,6 @@ typedef struct {
 
 	const idMaterial *		shader;
 
-	int						expCulled;			// only for the experimental shadow buffer renderer
-
 	srfCullInfo_t			cullInfo;
 } surfaceInteraction_t;
 
