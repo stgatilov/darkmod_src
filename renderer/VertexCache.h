@@ -55,7 +55,7 @@ struct geoBufferSet_t {
 	int					vertexMapOffset;
 	int					indexMapOffset;
 
-	geoBufferSet_t( GLenum usage = GL_DYNAMIC_DRAW_ARB );
+	geoBufferSet_t();
 };
 
 /**
@@ -76,8 +76,6 @@ static const vertCacheHandle_t NO_CACHE = { 0, 0, 0, false };
 
 class idVertexCache {
 public:
-	idVertexCache();
-
 	void			Init();
 	void			Shutdown();
 
@@ -132,13 +130,12 @@ public:
 	int				backendListNum;
 
 	geoBufferSet_t	dynamicData;
-	//geoBufferSet_t  staticData;
 
 	GLuint			currentVertexBuffer;
 	GLuint			currentIndexBuffer;
 
-	int				staticBufferUsed;
-	int				tempBufferUsed;
+	int				indexAllocCount, vertexAllocCount;
+	int				indexUseCount, vertexUseCount;
 
 	int				currentVertexCacheSize;
 	int				currentIndexCacheSize;

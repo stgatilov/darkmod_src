@@ -42,7 +42,7 @@ BufferObject
 */
 class BufferObject {
 public:
-	BufferObject(GLenum targetType, GLenum usage = GL_DYNAMIC_DRAW_ARB);
+	BufferObject(GLenum targetType);
 	~BufferObject();
 
 	// Allocate or free the buffer.
@@ -51,9 +51,8 @@ public:
 	void				Resize( int allocSize );
 
 	// Map / flush / unmap buffer
-	void *				MapBuffer(int mapOffset = 0);
-	void				FlushBuffer(int offset, int length);
-	void				UnmapBuffer();
+	void *				MapBuffer( int mapOffset, int size );
+	void				UnmapBuffer( int length );
 
 	bool				IsMapped() const { return ( size & MAPPED_FLAG ) != 0; }
 	int					GetSize() const { return ( size & ~MAPPED_FLAG ); }
@@ -62,17 +61,15 @@ public:
 	GLuint				GetAPIObject() const { return bufferObject; }
 
 	int					size;					// size in bytes
-	int					mappedSize;
 
 private:
 	GLuint				bufferObject;
 	GLenum              bufferType;
-	GLenum              bufferUsage;
 
 	bool				persistentMap;
 	void *				mapBuff;
+	int					mappedSize;
 	int					lastMapOffset;
-	int					lastTempSize;
 	GLuint				tempBuff;
 
 	// sizeof() confuses typeinfo...
