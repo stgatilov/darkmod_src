@@ -77,7 +77,7 @@ void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	Resize( allocSize );
 }
 
-void BufferObject::Resize( int allocSize ) {
+void BufferObject::Resize( int allocSize, void* data ) {
 	common->Printf( "New buffer size: %d kb\n", allocSize / 1024 );
 
 	int oldSize = GetAllocedSize();
@@ -96,9 +96,11 @@ void BufferObject::Resize( int allocSize ) {
 	qglBindBuffer( bufferType, bufferObject );
 	persistentMap = glConfig.bufferStorageAvailable && r_usePersistentMapping;
 	if ( persistentMap )
-		qglBufferStorage( bufferType, numBytes, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		qglBufferStorage( bufferType, numBytes, data, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT 
+			//| GL_DYNAMIC_STORAGE_BIT 
+		);
 	else
-		qglBufferData( bufferType, numBytes, NULL, GL_STATIC_DRAW );
+		qglBufferData( bufferType, numBytes, data, GL_STATIC_DRAW );
 
 	GLenum err = qglGetError();
 	if ( err == GL_OUT_OF_MEMORY ) {
@@ -106,13 +108,15 @@ void BufferObject::Resize( int allocSize ) {
 	}
 
 	if ( oldBuffObj ) {
-		qglBindBuffer( GL_COPY_READ_BUFFER, oldBuffObj );
-		qglBindBuffer( GL_COPY_WRITE_BUFFER, bufferObject );
-		qglCopyBufferSubData( GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, oldSize );
+		if ( !data ) {
+			qglBindBuffer( GL_COPY_READ_BUFFER, oldBuffObj );
+			qglBindBuffer( GL_COPY_WRITE_BUFFER, bufferObject );
+			qglCopyBufferSubData( GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, oldSize );
+		}
 		qglDeleteBuffers( 1, &oldBuffObj );
 	}
 	if ( persistentMap ) {
-		mapBuff = qglMapBufferRange( bufferType, 0, numBytes, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		mapBuff = qglMapBufferRange( bufferType, 0, numBytes, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 		if ( mapBuff == NULL ) {
 			GL_CheckErrors();
 			common->Error( "BufferObject::MapBuffer: failed" );
@@ -149,12 +153,12 @@ void * BufferObject::MapBuffer( int mapOffset, int size ) {
 	assert( bufferObject != 0 );
 	assert( IsMapped() == false );
 
+	mappedSize = size;
 	void *buffer = NULL;
 
 	qglBindBuffer( bufferType, bufferObject );
 
 	if ( persistentMap ) {
-		//buffer = qglMapBufferRange( bufferType, mapOffset, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
 		lastMapOffset = mapOffset;
 		buffer = (byte*)mapBuff + mapOffset;
 	} else {
@@ -162,8 +166,8 @@ void * BufferObject::MapBuffer( int mapOffset, int size ) {
 		if ( !tempBuff )
 			qglGenBuffers( 1, &tempBuff );
 		qglBindBuffer( bufferType, tempBuff );
-		qglBufferData( bufferType, mappedSize = size, NULL, GL_STATIC_DRAW );
-		buffer = qglMapBufferRange( bufferType, 0, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
+		qglBufferData( bufferType, mappedSize, NULL, GL_STATIC_DRAW );
+		buffer = qglMapBufferRange( bufferType, 0, mappedSize, GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 	}
 
 	if( buffer == NULL ) {
@@ -182,10 +186,8 @@ UnmapBuffer
 */
 void BufferObject::UnmapBuffer( int length ) {
 	assert( bufferObject != 0 );
-	assert( tempBuff != 0 );
+	assert( persistentMap || tempBuff != 0 );
 	assert( IsMapped() );
-	//if ( !length )
-	//	return;
 	if ( length > mappedSize )
 		length = mappedSize;
 
@@ -193,7 +195,9 @@ void BufferObject::UnmapBuffer( int length ) {
 
 	if ( persistentMap ) {
 		//qglFlushMappedBufferRange( bufferType, offset, length );
-		//qglFlushMappedBufferRange( bufferType, offset + lastMapOffset, length );
+		if ( length )
+			qglFlushMappedBufferRange( bufferType, lastMapOffset, length );
+		GL_CheckErrors();
 	} else {
 		qglBindBuffer( bufferType, tempBuff );
 		if ( length )

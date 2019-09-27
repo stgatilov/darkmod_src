@@ -343,7 +343,8 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 	};
 }
 
-idList <std::pair<const void*, int>> staticVertexList, staticIndexList;
+typedef idList <std::pair<const void*, int>> StaticList;
+StaticList staticVertexList, staticIndexList;
 
 /*
 ==============
@@ -351,29 +352,41 @@ idVertexCache::PrepareStaticCacheForUpload
 ==============
 */
 void idVertexCache::PrepareStaticCacheForUpload() {
+	auto upload = [](char *msg, BufferObject &buffer, int size, StaticList &staticList ) {
+		common->Printf( msg );
+		int offset = 0;
+#if 1	// AMD
+#if 1	// init storage
+		byte* ptr = (byte*)Mem_Alloc16( size );
+		for ( auto& pair : staticList ) {
+			memcpy( ptr + offset, pair.first, pair.second );
+			offset += pair.second;
+		}
+		buffer.Resize( size, ptr );
+		Mem_Free16( ptr );
+#else	// SubData
+		buffer.Resize( size );
+		for ( auto& pair : staticList ) {
+			qglBufferSubData( buffer.GetBufferType(), offset, pair.second, pair.first );
+			offset += pair.second;
+		}
+#endif
+#else	// all
+		buffer.Resize( size );
+		byte* ptr = (byte*)buffer.MapBuffer( offset, size );
+		for ( auto& pair : staticList ) {
+			memcpy( ptr + offset, pair.first, pair.second );
+			offset += pair.second;
+		}
+		buffer.UnmapBuffer( offset );
+#endif
+		staticList.Clear();
+	};
+	for ( int i = 0; i < VERTCACHE_NUM_FRAMES; i++ )
+		EndFrame();
 	UnmapGeoBufferSet( dynamicData, listNum );
-	common->Printf( "Static vertex data ready\n" );
-	dynamicData.vertexBuffer.Resize( staticVertexSize + currentVertexCacheSize * VERTCACHE_NUM_FRAMES );
-	int offset = 0;
-	byte * ptr = (byte*)dynamicData.vertexBuffer.MapBuffer( 0, staticVertexSize );
-	for ( auto& pair : staticVertexList ) {
-		//qglBufferSubData( GL_ARRAY_BUFFER, offset, pair.second, pair.first );
-		memcpy( ptr+offset, pair.first, pair.second );
-		offset += pair.second;
-	}
-	dynamicData.vertexBuffer.UnmapBuffer( staticVertexSize );
-	staticVertexList.Clear();
-	common->Printf( "Static index data ready\n" );
-	dynamicData.indexBuffer.Resize( staticIndexSize + currentIndexCacheSize * VERTCACHE_NUM_FRAMES );
-	offset = 0;
-	ptr = (byte*)dynamicData.indexBuffer.MapBuffer( 0, staticVertexSize );
-	for ( auto& pair : staticIndexList ) {
-		//qglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, offset, pair.second, pair.first );
-		memcpy( ptr + offset, pair.first, pair.second );
-		offset += pair.second;
-	}
-	dynamicData.indexBuffer.UnmapBuffer( staticIndexSize );
-	staticIndexList.Clear();
+	upload( "Static vertex data ready\n", dynamicData.vertexBuffer, staticVertexSize + currentVertexCacheSize * VERTCACHE_NUM_FRAMES, staticVertexList );
+	upload( "Static index data ready\n", dynamicData.indexBuffer, staticIndexSize + currentIndexCacheSize * VERTCACHE_NUM_FRAMES, staticIndexList );
 	MapGeoBufferSet( dynamicData, listNum );
 	EndFrame();
 }

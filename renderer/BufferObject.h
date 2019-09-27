@@ -48,7 +48,7 @@ public:
 	// Allocate or free the buffer.
 	void				AllocBufferObject(int allocSize, const void *initialData = nullptr);
 	void				FreeBufferObject();
-	void				Resize( int allocSize );
+	void				Resize( int allocSize, void* data=NULL );
 
 	// Map / flush / unmap buffer
 	void *				MapBuffer( int mapOffset, int size );
@@ -59,6 +59,7 @@ public:
 	int					GetAllocedSize() const { return ( ( size & ~MAPPED_FLAG ) + 15 ) & ~15;	}
 
 	GLuint				GetAPIObject() const { return bufferObject; }
+	GLenum				GetBufferType() const { return bufferType; }
 
 	int					size;					// size in bytes
 
