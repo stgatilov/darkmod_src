@@ -133,7 +133,7 @@ typedef struct drawSurf_s {
 
 	idScreenRect			scissorRect;		// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
-	vertCacheHandle_t		dynamicTexCoords;	// float * in vertex cache memory
+	//vertCacheHandle_t		dynamicTexCoords;	// float * in vertex cache memory // duzenko: disabled in 2.08, to be removed in 2.09
 	// specular directions for non vertex program cards, skybox texcoords, etc
 	float					particle_radius;	// The radius of individual quads for soft particles #3878
 

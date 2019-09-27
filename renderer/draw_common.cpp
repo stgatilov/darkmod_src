@@ -27,6 +27,7 @@ struct CubemapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( CubemapUniforms );
 
 	DEFINE_UNIFORM( float, reflective );
+	DEFINE_UNIFORM( int, skybox );
 	DEFINE_UNIFORM( vec3, viewOrigin );
 	DEFINE_UNIFORM( mat4, modelMatrix );
 };
@@ -476,9 +477,17 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	switch ( pStage->texture.texgen ) {
 	case TG_SKYBOX_CUBE:
 	case TG_WOBBLESKY_CUBE:
-		qglEnableVertexAttribArray( 8 );
-		qglVertexAttribPointer( 8, 3, GL_FLOAT, false, 0, vertexCache.VertexPosition( surf->dynamicTexCoords ) );
+		//qglEnableVertexAttribArray( 8 );
+		//qglVertexAttribPointer( 8, 3, GL_FLOAT, false, 0, vertexCache.VertexPosition( surf->dynamicTexCoords ) );
 		programManager->cubeMapShader->Activate();
+		{
+			auto uniforms = programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>();
+			uniforms->skybox.Set( 1 );
+			uniforms->modelMatrix.Set( surf->space->modelMatrix );
+			idVec3 localViewOrigin;
+			R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewOrigin );
+			uniforms->viewOrigin.Set( localViewOrigin );
+		}
 		break;
 	case TG_REFLECT_CUBE:
 		GL_FloatColor( color );
@@ -534,6 +543,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		break;
 	case TG_SKYBOX_CUBE:
 	case TG_WOBBLESKY_CUBE:
+		programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->skybox.Set( 0 );
 	case TG_SCREEN:
 	default:
 		qglDisableVertexAttribArray( 8 );

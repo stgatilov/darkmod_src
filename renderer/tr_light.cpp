@@ -96,98 +96,98 @@ void R_CreateVertexProgramShadowCache( srfTriangles_t *tri ) {
 R_SkyboxTexGen
 ==================
 */
-void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
-	idVec3	localViewOrigin;
-
-	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
-
-	const idDrawVert *verts = surf->frontendGeo->verts;
-	const int numVerts = surf->frontendGeo->numVerts;
-	const int size = numVerts * sizeof( idVec3 );
-	idVec3 *texCoords = (idVec3 *) _alloca16( size );
-
-	for ( int i = 0; i < numVerts; i++ ) {
-		texCoords[i][0] = verts[i].xyz[0] - localViewOrigin[0];
-		texCoords[i][1] = verts[i].xyz[1] - localViewOrigin[1];
-		texCoords[i][2] = verts[i].xyz[2] - localViewOrigin[2];
-	}
-	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
-}
+//void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
+//	idVec3	localViewOrigin;
+//
+//	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
+//
+//	const idDrawVert *verts = surf->frontendGeo->verts;
+//	const int numVerts = surf->frontendGeo->numVerts;
+//	const int size = numVerts * sizeof( idVec3 );
+//	idVec3 *texCoords = (idVec3 *) _alloca16( size );
+//
+//	for ( int i = 0; i < numVerts; i++ ) {
+//		texCoords[i][0] = verts[i].xyz[0] - localViewOrigin[0];
+//		texCoords[i][1] = verts[i].xyz[1] - localViewOrigin[1];
+//		texCoords[i][2] = verts[i].xyz[2] - localViewOrigin[2];
+//	}
+//	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
+//}
 
 /*
 ==================
 R_WobbleskyTexGen
 ==================
 */
-void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
-	idVec3	localViewOrigin;
-
-	const int *parms = surf->material->GetTexGenRegisters();
-
-	const float	wobbleDegrees = surf->shaderRegisters[ parms[0] ] * idMath::PI / 180.0f;
-	const float	wobbleSpeed   = surf->shaderRegisters[ parms[1] ] * 2.0f * idMath::PI / 60.0f;
-	const float	rotateSpeed   = surf->shaderRegisters[ parms[2] ] * 2.0f * idMath::PI / 60.0f;
-
-	// very ad-hoc "wobble" transform
-	float	transform[16];
-	const float	a = tr.viewDef->floatTime * wobbleSpeed;
-	const float	z = cos( wobbleDegrees );
-	float	s = sin( a ) * sin( wobbleDegrees );
-	float	c = cos( a ) * sin( wobbleDegrees );
-
-	idVec3	axis[3];
-
-	axis[2][0] = c;
-	axis[2][1] = s;
-	axis[2][2] = z;
-
-	axis[1][0] = -sin( a * 2.0f ) * sin( wobbleDegrees );
-	axis[1][2] = -s * sin( wobbleDegrees );
-	axis[1][1] = sqrt( 1.0f - ( axis[1][0] * axis[1][0] + axis[1][2] * axis[1][2] ) );
-
-	// make the second vector exactly perpendicular to the first
-	axis[1] -= ( axis[2] * axis[1] ) * axis[2];
-	axis[1].Normalize();
-
-	// construct the third with a cross
-	axis[0].Cross( axis[1], axis[2] );
-
-	// add the rotate
-	s = sin( rotateSpeed * tr.viewDef->floatTime );
-	c = cos( rotateSpeed * tr.viewDef->floatTime );
-
-	transform[0] = axis[0][0] * c + axis[1][0] * s;
-	transform[4] = axis[0][1] * c + axis[1][1] * s;
-	transform[8] = axis[0][2] * c + axis[1][2] * s;
-
-	transform[1] = axis[1][0] * c - axis[0][0] * s;
-	transform[5] = axis[1][1] * c - axis[0][1] * s;
-	transform[9] = axis[1][2] * c - axis[0][2] * s;
-
-	transform[2] = axis[2][0];
-	transform[6] = axis[2][1];
-	transform[10] = axis[2][2];
-
-	transform[3] = transform[7] = transform[11] = 0.0f;
-	transform[12] = transform[13] = transform[14] = 0.0f;
-
-	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
-
-	const int numVerts = surf->frontendGeo->numVerts;
-	const int size = numVerts * sizeof( idVec3 );
-	idVec3 *texCoords = (idVec3 *) _alloca16( size );
-	const idDrawVert *verts = surf->frontendGeo->verts;
-	idVec3 v;
-
-	for (int i = 0; i < numVerts; i++ ) {
-		v[0] = verts[i].xyz[0] - localViewOrigin[0];
-		v[1] = verts[i].xyz[1] - localViewOrigin[1];
-		v[2] = verts[i].xyz[2] - localViewOrigin[2];
-
-		R_LocalPointToGlobal( transform, v, texCoords[i] );
-	}
-	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
-}
+//void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
+//	idVec3	localViewOrigin;
+//
+//	const int *parms = surf->material->GetTexGenRegisters();
+//
+//	const float	wobbleDegrees = surf->shaderRegisters[ parms[0] ] * idMath::PI / 180.0f;
+//	const float	wobbleSpeed   = surf->shaderRegisters[ parms[1] ] * 2.0f * idMath::PI / 60.0f;
+//	const float	rotateSpeed   = surf->shaderRegisters[ parms[2] ] * 2.0f * idMath::PI / 60.0f;
+//
+//	// very ad-hoc "wobble" transform
+//	float	transform[16];
+//	const float	a = tr.viewDef->floatTime * wobbleSpeed;
+//	const float	z = cos( wobbleDegrees );
+//	float	s = sin( a ) * sin( wobbleDegrees );
+//	float	c = cos( a ) * sin( wobbleDegrees );
+//
+//	idVec3	axis[3];
+//
+//	axis[2][0] = c;
+//	axis[2][1] = s;
+//	axis[2][2] = z;
+//
+//	axis[1][0] = -sin( a * 2.0f ) * sin( wobbleDegrees );
+//	axis[1][2] = -s * sin( wobbleDegrees );
+//	axis[1][1] = sqrt( 1.0f - ( axis[1][0] * axis[1][0] + axis[1][2] * axis[1][2] ) );
+//
+//	// make the second vector exactly perpendicular to the first
+//	axis[1] -= ( axis[2] * axis[1] ) * axis[2];
+//	axis[1].Normalize();
+//
+//	// construct the third with a cross
+//	axis[0].Cross( axis[1], axis[2] );
+//
+//	// add the rotate
+//	s = sin( rotateSpeed * tr.viewDef->floatTime );
+//	c = cos( rotateSpeed * tr.viewDef->floatTime );
+//
+//	transform[0] = axis[0][0] * c + axis[1][0] * s;
+//	transform[4] = axis[0][1] * c + axis[1][1] * s;
+//	transform[8] = axis[0][2] * c + axis[1][2] * s;
+//
+//	transform[1] = axis[1][0] * c - axis[0][0] * s;
+//	transform[5] = axis[1][1] * c - axis[0][1] * s;
+//	transform[9] = axis[1][2] * c - axis[0][2] * s;
+//
+//	transform[2] = axis[2][0];
+//	transform[6] = axis[2][1];
+//	transform[10] = axis[2][2];
+//
+//	transform[3] = transform[7] = transform[11] = 0.0f;
+//	transform[12] = transform[13] = transform[14] = 0.0f;
+//
+//	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
+//
+//	const int numVerts = surf->frontendGeo->numVerts;
+//	const int size = numVerts * sizeof( idVec3 );
+//	idVec3 *texCoords = (idVec3 *) _alloca16( size );
+//	const idDrawVert *verts = surf->frontendGeo->verts;
+//	idVec3 v;
+//
+//	for (int i = 0; i < numVerts; i++ ) {
+//		v[0] = verts[i].xyz[0] - localViewOrigin[0];
+//		v[1] = verts[i].xyz[1] - localViewOrigin[1];
+//		v[2] = verts[i].xyz[2] - localViewOrigin[2];
+//
+//		R_LocalPointToGlobal( transform, v, texCoords[i] );
+//	}
+//	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
+//}
 
 //=======================================================================================================
 
@@ -1220,14 +1220,14 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	R_DeformDrawSurf( drawSurf );
 
 	// skybox surfaces need a dynamic texgen
-	switch( material->Texgen() ) {
-		case TG_SKYBOX_CUBE:
-			R_SkyboxTexGen( drawSurf, tr.viewDef->renderView.vieworg );
-			return;
-		case TG_WOBBLESKY_CUBE:
-			R_WobbleskyTexGen( drawSurf, tr.viewDef->renderView.vieworg );
-			return;
-	}
+	//switch( material->Texgen() ) {
+	//	case TG_SKYBOX_CUBE:
+	//		R_SkyboxTexGen( drawSurf, tr.viewDef->renderView.vieworg );
+	//		return;
+	//	case TG_WOBBLESKY_CUBE:
+	//		R_WobbleskyTexGen( drawSurf, tr.viewDef->renderView.vieworg );
+	//		return;
+	//}
 
 	// check for gui surfaces
 	idUserInterface	*gui = NULL;
