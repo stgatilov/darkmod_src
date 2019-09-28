@@ -53,6 +53,7 @@ static void MapGeoBufferSet( geoBufferSet_t &gbs, int frame ) {
 		int frameSize = dynamicSize / VERTCACHE_NUM_FRAMES;
 		gbs.vertexMapOffset = staticVertexSize + frameSize * frame;
 		gbs.mappedVertexBase = ( byte * )gbs.vertexBuffer.MapBuffer( gbs.vertexMapOffset, frameSize );
+		gbs.vertexMemUsed = ALIGN( gbs.vertexMapOffset, VERTEX_CACHE_ALIGN ) - gbs.vertexMapOffset;
 	}
 	if ( gbs.mappedIndexBase == NULL ) {
 		int dynamicSize = gbs.indexBuffer.size - staticIndexSize;
@@ -120,7 +121,20 @@ static void FreeGeoBufferSet( geoBufferSet_t &gbs ) {
 	gbs.indexBuffer.FreeBufferObject();
 }
 
-void BindAttributes( attribBind_t attrib ) {
+void BindAttributes( int pointer, attribBind_t attrib ) {
+	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
+		idDrawVert* ac = (idDrawVert*)(size_t)pointer;
+		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		//		if ( r_legacyTangents ) {
+		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		//		}
+	} else {
+		qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
+	}
 }
 
 /*
@@ -136,24 +150,21 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		++vertexUseCount;
 		vbo = dynamicData.vertexBuffer.GetAPIObject();
 	}
+	bool useBasePointer = glConfig.drawBaseVertexAvailable && r_useBasePointer;
 	if ( vbo != currentVertexBuffer ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
+		if ( useBasePointer )
+			BindAttributes( 0, attrib );
 	}
-	basePointer = ( handle.offset );
-	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
-		idDrawVert* ac = (idDrawVert*)(size_t)basePointer;
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		//		if ( r_legacyTangents ) {
-		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-//		}
-	} else {
-		auto pointer = (void*)(size_t)basePointer;
-		qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), pointer );
+	if ( useBasePointer )
+		if ( attrib == attribBind_t::ATTRIB_REGULAR ) 
+			basePointer = handle.offset / sizeof( idDrawVert );
+		else
+			basePointer = handle.offset / sizeof( shadowCache_t );
+	else {
+		basePointer = -1;
+		BindAttributes( handle.offset, attrib );
 	}
 }
 
@@ -294,8 +305,8 @@ void idVertexCache::EndFrame() {
 	}
 
 	// prepare the next frame for writing to by the CPU
-	MapGeoBufferSet( dynamicData, listNum );
 	ClearGeoBufferSet( dynamicData );
+	MapGeoBufferSet( dynamicData, listNum );
 
 	qglBindBuffer( GL_ARRAY_BUFFER, currentVertexBuffer = 0 );
 	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, currentIndexBuffer = 0 );

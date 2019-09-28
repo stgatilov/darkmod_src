@@ -92,18 +92,21 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		} else
 			((viewEntity_t *)surf->space)->drawCalls++;
 
+	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
-		qglDrawElements( GL_TRIANGLES,
-		                 surf->numIndexes,
-		                 GL_INDEX_TYPE,
-		                 vertexCache.IndexPosition( surf->indexCache ) );
+		indexPtr = vertexCache.IndexPosition( surf->indexCache );
 		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXME
+		indexPtr = surf->frontendGeo->indexes; // FIXME
 	}
+	int basePointer = vertexCache.GetBasePointer();
+	if ( basePointer < 0 )
+		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr );
+	else
+		qglDrawElementsBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, basePointer );
 }
 
 void RB_DrawTriangles( const srfTriangles_t &tri) {
@@ -147,22 +150,22 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
 	} else
 		((viewEntity_t*)surf->space)->drawCalls++;
 
+	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
-		qglDrawElementsInstanced( GL_TRIANGLES,
-			surf->numIndexes,
-			GL_INDEX_TYPE,
-			vertexCache.IndexPosition( surf->indexCache ),
-			instances );
+		indexPtr = vertexCache.IndexPosition( surf->indexCache );
 		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}
 	} else {
+		indexPtr = surf->frontendGeo->indexes; // FIXME?
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXME
 	}
+	int basePointer = vertexCache.GetBasePointer();
+	if ( basePointer < 0 )
+		qglDrawElementsInstanced( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, instances );
+	else
+		qglDrawElementsInstancedBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, instances, basePointer );
 }
-
-
 
 /*
 ================

@@ -95,7 +95,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.timerQueriesAvailable = CHECK_FEATURE(GL_ARB_timer_query);
 	glConfig.debugGroupsAvailable = CHECK_FEATURE(GL_KHR_debug);
 	glConfig.fenceSyncAvailable = CHECK_FEATURE( GL_ARB_sync );
-	glConfig.drawBaseVertex = CHECK_FEATURE( GL_ARB_draw_elements_base_vertex );
+	glConfig.drawBaseVertexAvailable = CHECK_FEATURE( GL_ARB_draw_elements_base_vertex );
 	glConfig.textureSwizzleAvailable = CHECK_FEATURE( GL_ARB_texture_swizzle );
 	glConfig.bufferStorageAvailable = CHECK_FEATURE( GL_ARB_buffer_storage );
 #ifdef _WIN32

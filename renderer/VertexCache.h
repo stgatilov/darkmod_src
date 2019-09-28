@@ -122,7 +122,7 @@ public:
 		return handle.isStatic || ( handle.IsValid() && handle.frameNumber == ( currentFrame & VERTCACHE_FRAME_MASK ) );
 	}
 
-	bool GetBasePointer() {
+	int GetBasePointer() {
 		return basePointer;
 	}
 

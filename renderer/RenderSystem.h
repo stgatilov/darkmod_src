@@ -66,7 +66,7 @@ typedef struct glconfig_s {
 	bool				debugGroupsAvailable;
 	bool				bufferStorageAvailable; // persistent mapping
 	bool				textureSwizzleAvailable; // replacement for intensity/luminance texture formats
-	bool				drawBaseVertex;			// bind vertex attrib optimizatiion
+	bool				drawBaseVertexAvailable;			// bind vertex attrib optimizatiion
 	bool				stencilTexturing;		// stencil SS
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 	int					displayFrequency;
