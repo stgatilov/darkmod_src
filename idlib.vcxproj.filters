@@ -19,6 +19,9 @@
     <Filter Include="Text">
       <UniqueIdentifier>{767fafaf-96d2-4d2b-b4d8-479344d8537c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sys">
+      <UniqueIdentifier>{8f51832b-5d50-4605-b043-ac8ea0f42301}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="idlib\bv\Bounds.cpp">
@@ -368,6 +371,15 @@
     </ClInclude>
     <ClInclude Include="idlib\math\Simd_AVX2.h">
       <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_defines.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_types.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_assert.h">
+      <Filter>Sys</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

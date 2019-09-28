@@ -135,9 +135,9 @@ void AssertFailed( const char *file, int line, const char *expression );
 #endif
 
 //anon begin
-#define assert_16_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 15 ) == 0 ) //anon
+//#define assert_16_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 15 ) == 0 ) //anon
 
-#define compile_time_assert( x ) static_assert( x, "Assertion failure" )
+//#define compile_time_assert( x ) static_assert( x, "Assertion failure" )
 //anon end
 
 class idException {

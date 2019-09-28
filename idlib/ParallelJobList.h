@@ -28,8 +28,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __PARALLELJOBLIST_H__
 #define __PARALLELJOBLIST_H__
 
-#include "Lib.h"
-
 struct CellSpursJob128;
 class idColor;
 
@@ -50,8 +48,6 @@ enum jobListId_t {
 	MAX_JOBLISTS				= 32			// the editor may cause quite a few to be allocated
 };
 
-#define CONST_ISPOWEROFTWO(x)		( ( (x) & ( (x) - 1 ) ) == 0 && (x) > 0 )
-
 compile_time_assert( CONST_ISPOWEROFTWO( MAX_JOBLISTS ) );
 
 enum jobListPriority_t {
@@ -69,8 +65,6 @@ enum jobListParallelism_t {
 
 #define assert_spu_local_store( ptr )
 #define assert_not_spu_local_store( ptr )
-
-typedef unsigned long long	uint64;
 
 /*
 ================================================

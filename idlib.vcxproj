@@ -304,6 +304,9 @@
     <ClInclude Include="idlib\StdString.h" />
     <ClInclude Include="idlib\Str.h" />
     <ClInclude Include="idlib\svnversion.h" />
+    <ClInclude Include="idlib\sys\sys_assert.h" />
+    <ClInclude Include="idlib\sys\sys_defines.h" />
+    <ClInclude Include="idlib\sys\sys_types.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="idlib\BitMsg.h" />
     <ClInclude Include="idlib\Dict.h" />

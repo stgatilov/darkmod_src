@@ -36,7 +36,7 @@
 // to support the large models that renderBump loads, they need to be 32 bits
 #if 1
 
-#define GL_INDEX_TYPE		GL_UNSIGNED_INT
+//#define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef int glIndex_t;
 
 #else

@@ -97,6 +97,10 @@
 #include <math.h>
 //-----------------------------------------------------
 
+#include "sys/sys_defines.h"
+#include "sys/sys_assert.h"
+#include "sys/sys_types.h"
+
 // non-portable system services
 #include "../sys/sys_public.h"
 

@@ -32,7 +32,6 @@
 #define	BUILD_STRING					"win-x64"
 #define	CPUSTRING						"x64"
 #else
-#define	BUILD_STRING					"win-x86"
 #define	CPUSTRING						"x86"
 #endif
 
@@ -49,14 +48,14 @@
 #define ALIGNTYPE16						__declspec(align(16)) // anon
 #define PACKED
 
-#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
+//#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
 
 #define ID_STATIC_TEMPLATE				static
 
-#define ID_INLINE						__inline
+//#define ID_INLINE						__inline
 #define ID_NOINLINE						__declspec(noinline)
 //anon begin
 #define ID_INLINE_EXTERN				extern inline
@@ -83,7 +82,7 @@
 #define THREAD_RETURN_TYPE unsigned long
 
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
-#define ID_LITTLE_ENDIAN			1
+//#define ID_LITTLE_ENDIAN			1
 #endif
 
 #endif
