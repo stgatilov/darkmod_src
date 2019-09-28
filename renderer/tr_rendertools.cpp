@@ -493,8 +493,7 @@ void RB_ShowLightCount( void ) {
 				if (!surf->ambientCache.IsValid()) {
 					continue;
 				}
-				const idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
-				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
+				vertexCache.VertexPosition( surf->ambientCache );
 				RB_DrawElementsWithCounters( surf );
 			}
 		}
@@ -557,7 +556,7 @@ void RB_ShowSilhouette( void ) {
 
 				const srfTriangles_t	*tri = surf->frontendGeo;
 
-				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.VertexPosition( tri->shadowCache ) );
+				vertexCache.VertexPosition( tri->shadowCache, ATTRIB_SHADOW );
 				qglBegin( GL_LINES );
 
 				for ( int j = 0 ; j < tri->numIndexes ; j+=3 ) {
@@ -641,8 +640,7 @@ static void RB_ShowShadowCount( void ) {
 						continue;
 					}
 				}
-				shadowCache_t *cache = (shadowCache_t *)vertexCache.VertexPosition( surf->shadowCache );
-				qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), &cache->xyz );
+				vertexCache.VertexPosition( surf->shadowCache, ATTRIB_SHADOW );
 				RB_DrawElementsWithCounters( surf );
 			}
 		}
@@ -1535,8 +1533,7 @@ void RB_ShowLights( void ) {
 		
 		// non-hidden lines
 		if ( tri.ambientCache.IsValid() ) {
-			const idDrawVert* ac = (idDrawVert*)vertexCache.VertexPosition( tri.ambientCache );
-			qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+			vertexCache.VertexPosition( tri.ambientCache );
 
 			// depth buffered planes
 			if ( r_showLights.GetInteger() >= 3 ) {

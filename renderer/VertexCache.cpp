@@ -124,7 +124,7 @@ static void FreeGeoBufferSet( geoBufferSet_t &gbs ) {
 idVertexCache::VertexPosition
 ==============
 */
-void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
+void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attrib ) {
 	GLuint vbo;
 	if ( !handle.IsValid() ) {
 		vbo = 0;
@@ -136,7 +136,20 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
 	}
-	return ( void * )( size_t )( handle.offset );
+	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
+		idDrawVert* ac = (idDrawVert*)(size_t)( handle.offset );
+		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		//		if ( r_legacyTangents ) {
+		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+//		}
+	} else {
+		auto pointer = (void*)(size_t)( handle.offset );
+		qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), pointer );
+	}
 }
 
 /*

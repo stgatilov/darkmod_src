@@ -160,15 +160,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		}
 
 		// set the vertex pointers
-		idDrawVert	*ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
-		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		if ( r_legacyTangents ) {
-			qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-			qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		}
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		vertexCache.VertexPosition( surf->ambientCache );
 
 		// this may cause RB_GLSL_DrawInteraction to be executed multiple
 		// times with different colors and images if the surface or light have multiple layers
@@ -505,8 +497,7 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 		color[2] = 0;
 		color[3] = 1;
 	}
-	idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	vertexCache.VertexPosition( surf->ambientCache );
 
 	bool drawSolid = false;
 
@@ -525,7 +516,6 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 
 		GL_CheckErrors();
 		qglEnableVertexAttribArray( 8 );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages(); stage++ ) {
@@ -618,7 +608,7 @@ void Attributes::Default::Bind(GLSLProgram *program) {
 
 //I expect this function should be enough for setting up vertex attrib arrays in most cases..
 //But I am not sure in it =)
-void Attributes::Default::SetDrawVert(size_t startOffset, int arrayMask) {
+/*void Attributes::Default::SetDrawVert(size_t startOffset, int arrayMask) {
 	using namespace Attributes::Default;
 	if (arrayMask & (1 << Position)) {
 		qglEnableVertexAttribArray(Position);
@@ -667,7 +657,7 @@ void Attributes::Default::SetDrawVert(size_t startOffset, int arrayMask) {
 	else {
 		qglDisableVertexAttribArray(Bitangent);
 	}
-}
+}*/
 
 void Uniforms::Global::Set(const viewEntity_t *space) {
 	modelMatrix.Set( space->modelMatrix );

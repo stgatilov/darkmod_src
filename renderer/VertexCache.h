@@ -74,6 +74,11 @@ struct vertCacheHandle_t {
 
 static const vertCacheHandle_t NO_CACHE = { 0, 0, 0, false };
 
+enum attribBind_t {
+	ATTRIB_REGULAR,
+	ATTRIB_SHADOW,
+};
+
 class idVertexCache {
 public:
 	void			Init();
@@ -84,7 +89,7 @@ public:
 	void			PurgeAll();
 
 	// will be an int offset cast to a pointer of ARB_vertex_buffer_object
-	void *			VertexPosition( vertCacheHandle_t handle );
+	void			VertexPosition( vertCacheHandle_t handle, attribBind_t attrib = attribBind_t::ATTRIB_REGULAR );
 	void *			IndexPosition( vertCacheHandle_t handle );
 
 	// if you need to draw something without an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB

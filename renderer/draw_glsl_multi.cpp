@@ -351,13 +351,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 			interactionUniforms->modelMatrix.Set( surf->space->modelMatrix );
 		}
 
-		idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( surf->ambientCache );
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		vertexCache.VertexPosition( surf->ambientCache );
 
 		extern void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
 		RB_CreateMultiDrawInteractions( surf );

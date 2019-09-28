@@ -50,7 +50,7 @@ namespace Attributes {
 		void Bind(GLSLProgram *program);
 		//startOffset is byte offset of first idDrawVert in current VBO
 		//arrayMask is a bitmask with attributes fetched from vertex array (arrays are disabled for unset attributes)
-		void SetDrawVert(size_t startOffset, int arrayMask);
+		//void SetDrawVert(size_t startOffset, int arrayMask);
 	}
 };
 

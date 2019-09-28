@@ -53,7 +53,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	if ( !surf->shadowCache.IsValid() ) {
 		return;
 	}
-	qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.VertexPosition( surf->shadowCache ) );
+	vertexCache.VertexPosition( surf->shadowCache, ATTRIB_SHADOW );
 
 	// we always draw the sil planes, but we may not need to draw the front or rear caps
 	const int numIndexes = surf->numIndexes;

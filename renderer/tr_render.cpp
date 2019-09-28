@@ -205,8 +205,7 @@ void RB_RenderTriangleSurface( const drawSurf_t *surf ) {
 		RB_DrawElementsImmediate( surf->frontendGeo );
 		return;
 	}
-	const idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	vertexCache.VertexPosition( surf->ambientCache );
 	RB_DrawElementsWithCounters( surf );
 }
 

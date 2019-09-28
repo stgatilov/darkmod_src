@@ -74,8 +74,7 @@ RB_PrepareStageTexturing_ReflectCube
 Extracted from RB_PrepareStageTexturing
 ================
 */
-ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
-	qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	qglEnableVertexAttribArray( 2 );
 	// see if there is also a bump map specified
 	const shaderStage_t *bumpStage = surf->material->GetBumpStage();
@@ -84,10 +83,6 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		GL_SelectTexture( 1 );
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
-
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 
 		qglEnableVertexAttribArray( 8 );
 		qglEnableVertexAttribArray( 9 );
@@ -118,7 +113,7 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 RB_PrepareStageTexturing
 ================
 */
-void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
+void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	// set privatePolygonOffset if necessary
 	if ( pStage->privatePolygonOffset ) {
 		qglEnable( GL_POLYGON_OFFSET_FILL );
@@ -134,7 +129,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 		programManager->oldStageShader->GetUniformGroup<OldStageUniforms>()->screenTex.Set( 1 );
 		break;
 	case TG_REFLECT_CUBE:
-		RB_PrepareStageTexturing_ReflectCube( pStage, surf, ac );
+		RB_PrepareStageTexturing_ReflectCube( pStage, surf );
 		break;
 	}
 }
@@ -144,7 +139,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 RB_FinishStageTexturing
 ================
 */
-void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
+void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	// unset privatePolygonOffset if necessary
 	if ( pStage->privatePolygonOffset && !surf->material->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
@@ -450,7 +445,7 @@ RB_STD_T_RenderShaderPasses_OldStage
 Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
-void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetInteger() & 1 )
 		return;
 	// set the color
@@ -496,7 +491,6 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		GL_FloatColor( color );
 	default:
 		qglEnableVertexAttribArray( 8 );
-		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		programManager->oldStageShader->Activate();
 		OldStageUniforms *oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
 		switch ( pStage->vertexColor ) {
@@ -506,14 +500,12 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 			break;
 		case SVC_MODULATE:
 			// select the vertex color source
-			qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 			qglEnableVertexAttribArray( 3 );
 			oldStageUniforms->colorMul.Set( color );
 			oldStageUniforms->colorAdd.Set( zero );
 			break;
 		case SVC_INVERSE_MODULATE:
 			// select the vertex color source
-			qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 			qglEnableVertexAttribArray( 3 );
 			oldStageUniforms->colorMul.Set( negOne );
 			oldStageUniforms->colorAdd.Set( color );
@@ -525,7 +517,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
 		transformUniforms->Set( surf->space );
 	}
-	RB_PrepareStageTexturing( pStage, surf, ac );
+	RB_PrepareStageTexturing( pStage, surf );
 
 	// bind the texture
 	RB_BindVariableStageImage( &pStage->texture, regs );
@@ -536,7 +528,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	// draw it
 	RB_DrawElementsWithCounters( surf );
 
-	RB_FinishStageTexturing( pStage, surf, ac );
+	RB_FinishStageTexturing( pStage, surf );
 
 	switch ( pStage->texture.texgen ) {
 	case TG_REFLECT_CUBE:
@@ -563,14 +555,10 @@ RB_STD_T_RenderShaderPasses_New
 Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
-void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+void RB_STD_T_RenderShaderPasses_ARB( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( r_skipNewAmbient & 1 ) {
 		return;
 	}
-	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-	qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-	qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-	qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
 	qglEnableVertexAttribArray( 8 );
 	qglEnableVertexAttribArray( 9 );
@@ -624,7 +612,7 @@ void RB_STD_T_RenderShaderPasses_ARB( idDrawVert *ac, const shaderStage_t *pStag
 	qglDisableVertexAttribArray( 2 );
 }
 
-void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+void RB_STD_T_RenderShaderPasses_GLSL( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( r_skipNewAmbient & 1 ) 
 		return;
 #if 0
@@ -789,7 +777,7 @@ void RB_STD_T_RenderShaderPasses_GLSL( idDrawVert *ac, const shaderStage_t *pSta
 	newStage->glslProgram->GetUniformGroup<Uniforms::MaterialStage>()->Set( pStage, surf );
 	{
 		using namespace Attributes::Default;
-		Attributes::Default::SetDrawVert( (size_t)ac, (1<<Position) | (1<<TexCoord) | (1<<Normal) | (1<<Tangent) | (1<<Bitangent));
+		//Attributes::Default::SetDrawVert( (size_t)ac, (1<<Position) | (1<<TexCoord) | (1<<Normal) | (1<<Tangent) | (1<<Bitangent));
 	}
 	RB_DrawElementsWithCounters( surf );
 
@@ -809,14 +797,13 @@ RB_STD_T_RenderShaderPasses_SoftParticle
 Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
-void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	// determine the blend mode (used by soft particles #3878)
 	const int src_blend = pStage->drawStateBits & GLS_SRCBLEND_BITS;
 	if ( (r_skipNewAmbient & 2) || !( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) ) {
 		return;
 	}
 	qglEnableVertexAttribArray( 8 );
-	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 
 	// SteveL #3878. Particles are automatically softened by the engine, unless they have shader programs of
 	// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that if a
@@ -835,7 +822,6 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 	} else {
 		// A properly set-up particle shader
 		qglEnableVertexAttribArray( 3 );
-		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 	}
 
 	// Disable depth clipping. The fragment program will handle it to allow overdraw.
@@ -920,7 +906,7 @@ RB_STD_T_RenderShaderPasses_Frob
 Frob shader stub
 ==================
 */
-ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( !r_newFrob )
 		return;
 	if ( surf->sort >= SS_DECAL ) // otherwise fills black
@@ -936,7 +922,7 @@ ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( idDrawVert *ac, const shaderS
 
 	{
 		using namespace Attributes::Default;
-		Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << Normal) );
+		//Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << Normal) );
 	}
 	RB_DrawElementsWithCounters( surf );
 
@@ -1028,10 +1014,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
 		GL_CheckErrors();
 	}
-	idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
-	GL_CheckErrors();
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	GL_CheckErrors();
+	vertexCache.VertexPosition( surf->ambientCache );
 
 	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
 		pStage = shader->GetStage( stage );
@@ -1057,17 +1040,17 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		if ( newStage ) {
 			//if ( newStage->GLSL || newStage->glslProgram )
 			if ( r_useGLSL )
-				RB_STD_T_RenderShaderPasses_GLSL( ac, pStage, surf );
+				RB_STD_T_RenderShaderPasses_GLSL( pStage, surf );
 			else
-				RB_STD_T_RenderShaderPasses_ARB( ac, pStage, surf );
+				RB_STD_T_RenderShaderPasses_ARB( pStage, surf );
 			continue;
 		}
 
 		if ( soft_particle && surf->particle_radius > 0.0f ) {
-			RB_STD_T_RenderShaderPasses_SoftParticle( ac, pStage, surf );
+			RB_STD_T_RenderShaderPasses_SoftParticle( pStage, surf );
 			continue;
 		}
-		RB_STD_T_RenderShaderPasses_OldStage( ac, pStage, surf );
+		RB_STD_T_RenderShaderPasses_OldStage( pStage, surf );
 	}
 
 	// reset polygon offset
@@ -1076,7 +1059,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	}
 
 	if ( surf->shaderRegisters[12] ) // even though FROB_SHADERPARM was defined as 11
-		RB_STD_T_RenderShaderPasses_Frob( ac, pStage, surf );
+		RB_STD_T_RenderShaderPasses_Frob( pStage, surf );
 
 	if ( surf->space->weaponDepthHack || ( !soft_particle && surf->space->modelDepthHack != 0.0f ) ) {
 		RB_LeaveDepthHack();
@@ -1183,11 +1166,9 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 
 	// this gets used for both blend lights and shadow draws
 	if ( surf->ambientCache.IsValid() ) {
-		idDrawVert *ac = ( idDrawVert * )vertexCache.VertexPosition( surf->ambientCache );
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		vertexCache.VertexPosition( surf->ambientCache );
 	} else if ( surf->shadowCache.IsValid() ) {
-		shadowCache_t *sc = ( shadowCache_t * )vertexCache.VertexPosition( surf->shadowCache );
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
+		vertexCache.VertexPosition( surf->shadowCache, ATTRIB_SHADOW );
 	}
 	RB_DrawElementsWithCounters( surf );
 }
