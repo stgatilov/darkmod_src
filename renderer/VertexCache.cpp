@@ -24,6 +24,7 @@ const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK+1;
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
 idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
+idCVarBool idVertexCache::r_useBasePointer( "r_useBasePointer", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use glDrawElementsBaseVertex extension" );
 idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Use GPU sync" );
 
 idVertexCache		vertexCache;
@@ -119,6 +120,9 @@ static void FreeGeoBufferSet( geoBufferSet_t &gbs ) {
 	gbs.indexBuffer.FreeBufferObject();
 }
 
+void BindAttributes( attribBind_t attrib ) {
+}
+
 /*
 ==============
 idVertexCache::VertexPosition
@@ -136,8 +140,9 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
 	}
+	basePointer = ( handle.offset );
 	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
-		idDrawVert* ac = (idDrawVert*)(size_t)( handle.offset );
+		idDrawVert* ac = (idDrawVert*)(size_t)basePointer;
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
@@ -147,7 +152,7 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 //		}
 	} else {
-		auto pointer = (void*)(size_t)( handle.offset );
+		auto pointer = (void*)(size_t)basePointer;
 		qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), pointer );
 	}
 }
