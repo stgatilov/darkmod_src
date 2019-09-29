@@ -79,8 +79,6 @@
 
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
 
-#define THREAD_RETURN_TYPE unsigned long
-
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
 //#define ID_LITTLE_ENDIAN			1
 #endif
@@ -528,39 +526,9 @@ void			Sys_ShutdownNetworking( void );
 ==============================================================
 */
 
-typedef THREAD_RETURN_TYPE (*xthread_t)( void * );
-
-typedef enum {
-	THREAD_NORMAL,
-	THREAD_ABOVE_NORMAL,
-	THREAD_HIGHEST
-} xthreadPriority;
-
-typedef struct {
-	const char *	name;
-	intptr_t		threadHandle;
-    unsigned long	threadId;
-} xthreadInfo;
-
-const int MAX_THREADS				= 10;
-extern xthreadInfo *g_threads[MAX_THREADS];
-extern int			g_thread_count;
-
-void				Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count );
-void				Sys_DestroyThread( xthreadInfo& info ); // sets threadHandle back to 0
-
 // find the name of the calling thread
 // if index != NULL, set the index in g_threads array (use -1 for "main" thread)
 const char *		Sys_GetThreadName( int *index = 0 );
-
-const int MAX_CRITICAL_SECTIONS		= 4;
-
-enum {
-	CRITICAL_SECTION_ZERO = 0,
-	CRITICAL_SECTION_ONE,
-	CRITICAL_SECTION_TWO,
-	CRITICAL_SECTION_THREE
-};
 
 void				Sys_EnterCriticalSection( int index = CRITICAL_SECTION_ZERO );
 void				Sys_LeaveCriticalSection( int index = CRITICAL_SECTION_ZERO );

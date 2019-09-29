@@ -84,6 +84,7 @@ template<class T> T	Min( T x, T y ) { return ( x < y ) ? x : y; }
 
 class idFile;
 
+#if 0
 struct idNullPtr {
 	// one pointer member initialized to zero so you can pass NULL as a vararg
 	void *value; idNullPtr() : value( 0 ) { }
@@ -94,6 +95,7 @@ struct idNullPtr {
 	// implicit conversion to all pointer to member types
 	template<typename T1, typename T2> operator T1 T2::* () const { return 0; }
 };
+#endif
 
 //#undef NULL
 //#if defined( ID_PC_WIN ) && !defined( ID_TOOL_EXTERNAL ) && !defined( _lint )

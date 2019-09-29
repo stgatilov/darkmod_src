@@ -228,8 +228,8 @@ private:
 		void *		data;
 		int			executed;
 	};
-	idList< job_t, TAG_JOBLIST >		jobList;
-	idList< idSysInterlockedInteger, TAG_JOBLIST >	signalJobCount;
+	idList< job_t >		jobList;
+	idList< idSysInterlockedInteger >	signalJobCount;
 	idSysInterlockedInteger				currentJob;
 	idSysInterlockedInteger				fetchLock;
 	idSysInterlockedInteger				numThreadsExecuting;

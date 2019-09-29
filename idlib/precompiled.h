@@ -100,6 +100,7 @@
 #include "sys/sys_defines.h"
 #include "sys/sys_assert.h"
 #include "sys/sys_types.h"
+#include "sys/sys_threading.h"
 
 // non-portable system services
 #include "../sys/sys_public.h"

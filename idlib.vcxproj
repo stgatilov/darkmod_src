@@ -298,6 +298,7 @@
     <ClInclude Include="idlib\math\Vector.h" />
     <ClInclude Include="idlib\CmdArgs.h" />
     <ClInclude Include="idlib\Lexer.h" />
+    <ClInclude Include="idlib\ParallelJobList_JobHeaders.h" />
     <ClInclude Include="idlib\Parser.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
     <ClInclude Include="idlib\StdFilesystem.h" />
@@ -306,6 +307,7 @@
     <ClInclude Include="idlib\svnversion.h" />
     <ClInclude Include="idlib\sys\sys_assert.h" />
     <ClInclude Include="idlib\sys\sys_defines.h" />
+    <ClInclude Include="idlib\sys\sys_threading.h" />
     <ClInclude Include="idlib\sys\sys_types.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="idlib\BitMsg.h" />

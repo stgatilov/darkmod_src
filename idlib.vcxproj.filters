@@ -381,5 +381,9 @@
     <ClInclude Include="idlib\sys\sys_assert.h">
       <Filter>Sys</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\ParallelJobList_JobHeaders.h" />
+    <ClInclude Include="idlib\sys\sys_threading.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

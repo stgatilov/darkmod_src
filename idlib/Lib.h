@@ -46,6 +46,7 @@ public:
 	static void					ShutDown( void );
 
 	// wrapper to idCommon functions 
+	static void					Printf( const char* fmt, ... );
 	static void					Error( const char *fmt, ... );
 	static void					Warning( const char *fmt, ... );
 };
@@ -155,6 +156,10 @@ public:
 ===============================================================================
 */
 
+// System
+#include "sys/sys_assert.h"
+#include "sys/sys_threading.h"
+
 // memory management and arrays
 #include "Heap.h"
 #include "Allocators.h"
@@ -231,6 +236,7 @@ public:
 #include "BitMsg.h"
 #include "MapFile.h"
 #include "Timer.h"
+#include "Thread.h"
 #include "Image.h"
 #include "RevisionTracker.h"
 

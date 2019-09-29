@@ -61,14 +61,9 @@ Win32Vars_t	win32;
 
 static char		sys_cmdline[MAX_STRING_CHARS];
 
-// not a hard limit, just what we keep track of for debugging
-xthreadInfo *g_threads[MAX_THREADS];
-
-int g_thread_count = 0;
-
-static	xthreadInfo	threadInfo;
 static	HANDLE		hTimer;
 
+#if 0
 /*
 ==================
 Sys_Createthread
@@ -116,6 +111,98 @@ void Sys_DestroyThread( xthreadInfo &info ) {
 	info.threadHandle = 0;
 }
 
+#else
+
+#define MS_VC_EXCEPTION 0x406D1388
+
+typedef struct tagTHREADNAME_INFO {
+	DWORD dwType;		// Must be 0x1000.
+	LPCSTR szName;		// Pointer to name (in user addr space).
+	DWORD dwThreadID;	// Thread ID (-1=caller thread).
+	DWORD dwFlags;		// Reserved for future use, must be zero.
+} THREADNAME_INFO;
+/*
+========================
+Sys_SetThreadName
+========================
+*/
+void Sys_SetThreadName( DWORD threadID, const char* name ) {
+	THREADNAME_INFO info;
+	info.dwType = 0x1000;
+	info.szName = name;
+	info.dwThreadID = threadID;
+	info.dwFlags = 0;
+
+	__try {
+		RaiseException( MS_VC_EXCEPTION, 0, sizeof( info ) / sizeof( DWORD ), (const ULONG_PTR*)&info );
+	}
+	// this much is just to keep /analyze quiet
+	__except ( GetExceptionCode() == MS_VC_EXCEPTION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH ) {
+		info.dwFlags = 0;
+	}
+}
+
+/*
+========================
+Sys_SetCurrentThreadName
+========================
+*/
+void Sys_SetCurrentThreadName( const char* name ) {
+	Sys_SetThreadName( GetCurrentThreadId(), name );
+}
+
+/*
+========================
+Sys_Createthread
+========================
+*/
+uintptr_t Sys_CreateThread( xthread_t function, void* parms, xthreadPriority priority, const char* name, core_t core, int stackSize, bool suspended ) {
+
+	DWORD flags = ( suspended ? CREATE_SUSPENDED : 0 );
+	// Without this flag the 'dwStackSize' parameter to CreateThread specifies the "Stack Commit Size"
+	// and the "Stack Reserve Size" is set to the value specified at link-time.
+	// With this flag the 'dwStackSize' parameter to CreateThread specifies the "Stack Reserve Size"
+	// and the “Stack Commit Size” is set to the value specified at link-time.
+	// For various reasons (some of which historic) we reserve a large amount of stack space in the
+	// project settings. By setting this flag and by specifying 64 kB for the "Stack Commit Size" in
+	// the project settings we can create new threads with a much smaller reserved (and committed)
+	// stack space. It is very important that the "Stack Commit Size" is set to a small value in
+	// the project settings. If it is set to a large value we may be both reserving and committing
+	// a lot of memory by setting the STACK_SIZE_PARAM_IS_A_RESERVATION flag. There are some
+	// 50 threads allocated for normal game play. If, for instance, the commit size is set to 16 MB
+	// then by adding this flag we would be reserving and committing 50 x 16 = 800 MB of memory.
+	// On the other hand, if this flag is not set and the "Stack Reserve Size" is set to 16 MB in the
+	// project settings, then we would still be reserving 50 x 16 = 800 MB of virtual address space.
+	flags |= STACK_SIZE_PARAM_IS_A_RESERVATION;
+
+	DWORD threadId;
+	HANDLE handle = CreateThread( NULL,	// LPSECURITY_ATTRIBUTES lpsa, //-V513
+		stackSize,
+		(LPTHREAD_START_ROUTINE)function,
+		parms,
+		flags,
+		&threadId );
+	if ( handle == 0 ) {
+		idLib::common->FatalError( "CreateThread error: %i", GetLastError() );
+		return (uintptr_t)0;
+	}
+	Sys_SetThreadName( threadId, name );
+	if ( priority == THREAD_HIGHEST ) {
+		SetThreadPriority( (HANDLE)handle, THREAD_PRIORITY_HIGHEST );		//  we better sleep enough to do this
+	} else if ( priority == THREAD_ABOVE_NORMAL ) {
+		SetThreadPriority( (HANDLE)handle, THREAD_PRIORITY_ABOVE_NORMAL );
+	} else if ( priority == THREAD_BELOW_NORMAL ) {
+		SetThreadPriority( (HANDLE)handle, THREAD_PRIORITY_BELOW_NORMAL );
+	} else if ( priority == THREAD_LOWEST ) {
+		SetThreadPriority( (HANDLE)handle, THREAD_PRIORITY_LOWEST );
+	}
+
+	// Under Windows, we don't set the thread affinity and let the OS deal with scheduling
+
+	return (uintptr_t)handle;
+}
+#endif
+
 /*
 ==================
 Sys_Sentry
@@ -124,28 +211,6 @@ Sys_Sentry
 void Sys_Sentry() {
 	int j = 0;
 }
-
-/*
-==================
-Sys_GetThreadName
-==================
-*/
-const char *Sys_GetThreadName( int *index ) {
-	DWORD id = GetCurrentThreadId();
-	for ( int i = 0; i < g_thread_count; i++ ) {
-		if ( id == g_threads[i]->threadId ) {
-			if ( index ) {
-				*index = i;
-			}
-			return g_threads[i]->name;
-		}
-	}
-	if ( index ) {
-		*index = -1;
-	}
-	return "main";
-}
-
 
 /*
 ==================
@@ -951,7 +1016,7 @@ void Sys_In_Restart_f( const idCmdArgs &args ) {
 Sys_AsyncThread
 ==================
 */
-static THREAD_RETURN_TYPE Sys_AsyncThread( void *parm ) {
+static void Sys_AsyncThread( void *parm ) {
 	int		wakeNumber;
 	int		startTime;
 
@@ -981,7 +1046,6 @@ static THREAD_RETURN_TYPE Sys_AsyncThread( void *parm ) {
 
 		common->Async();
 	}
-	return ( THREAD_RETURN_TYPE )0;
 }
 
 /*
@@ -1008,14 +1072,14 @@ void Sys_StartAsyncThread( void ) {
 	t.HighPart = t.LowPart = 0;
 	SetWaitableTimer( hTimer, &t, intervalMS, NULL, NULL, TRUE );
 
-	Sys_CreateThread( Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads,  &g_thread_count );
+	auto threadInfo = Sys_CreateThread( (xthread_t)Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, "Async" );
 
 #ifdef SET_THREAD_AFFINITY
 	// give the async thread an affinity for the second cpu
 	SetThreadAffinityMask( ( HANDLE )threadInfo.threadHandle, 2 );
 #endif
 
-	if ( !threadInfo.threadHandle ) {
+	if ( !threadInfo ) {
 		common->Error( "Sys_StartAsyncThread: failed" );
 	}
 }

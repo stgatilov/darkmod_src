@@ -256,7 +256,7 @@ public:
 	static void				TouchFileList_f( const idCmdArgs &args );
 
 private:
-    friend THREAD_RETURN_TYPE 			BackgroundDownloadThread(void *parms);
+    friend void				BackgroundDownloadThread(void *parms);
 
 	searchpath_t *			searchPaths;
 	int						readCount;			// total bytes read
@@ -287,7 +287,7 @@ private:
 
 	backgroundDownload_t *	backgroundDownloads;
 	backgroundDownload_t	defaultBackgroundDownload;
-	xthreadInfo				backgroundThread;
+	uintptr_t				backgroundThread;
 
 	idList<pack_t *>		serverPaks;
 	bool					loadedFileFromDir;		// set to true once a file was loaded from a directory
@@ -3100,7 +3100,7 @@ BackgroundDownload
 Reads part of a file from a background thread.
 ===================
 */
-THREAD_RETURN_TYPE BackgroundDownloadThread(void *parms) {
+void BackgroundDownloadThread(void *parms) {
 	while( 1 ) {
 		Sys_EnterCriticalSection();
 		backgroundDownload_t	*bgl = fileSystemLocal.backgroundDownloads;
@@ -3214,7 +3214,6 @@ THREAD_RETURN_TYPE BackgroundDownloadThread(void *parms) {
 #endif
 		}
 	}
-    return (THREAD_RETURN_TYPE)0;
 }
 
 /*
@@ -3223,9 +3222,9 @@ idFileSystemLocal::StartBackgroundReadThread
 =================
 */
 void idFileSystemLocal::StartBackgroundDownloadThread() {
-	if ( !backgroundThread.threadHandle ) {
-		Sys_CreateThread( BackgroundDownloadThread, NULL, THREAD_NORMAL, backgroundThread, "backgroundDownload", g_threads, &g_thread_count );
-		if ( !backgroundThread.threadHandle ) {
+	if ( !backgroundThread ) {
+		backgroundThread = Sys_CreateThread( (xthread_t)BackgroundDownloadThread, NULL, THREAD_NORMAL, "backgroundDownload" );
+		if ( !backgroundThread ) {
 			common->Warning( "idFileSystemLocal::StartBackgroundDownloadThread: failed" );
 		}
 	} else {

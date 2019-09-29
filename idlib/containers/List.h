@@ -124,7 +124,7 @@ public:
 	void			SortSubSection( int startIndex, int endIndex, cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
 	void			Reverse();											// stgatilov: reverse order of elements
 	void			Swap( idList<type> &other );						// swap the contents of the lists
-	void			DeleteContents( bool clear );						// delete the contents of the list
+	void			DeleteContents( bool clear = true );				// delete the contents of the list
 
 	//stgatilov: for "range-based for" from C++11
 	type *			begin();
