@@ -118,6 +118,9 @@
     <Filter Include="Renderer\glad">
       <UniqueIdentifier>{552c1804-5a3b-4e1f-a939-984ef7bde14c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="idLib\Sys">
+      <UniqueIdentifier>{ec979f94-95e6-4757-a337-e3fccae54fa4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1419,6 +1422,18 @@
     </ClInclude>
     <ClInclude Include="renderer\glad_wgl.h">
       <Filter>Renderer\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_assert.h">
+      <Filter>idLib\Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_defines.h">
+      <Filter>idLib\Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_types.h">
+      <Filter>idLib\Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_threading.h">
+      <Filter>idLib\Sys</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

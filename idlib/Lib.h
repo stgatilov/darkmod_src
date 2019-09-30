@@ -145,6 +145,11 @@ class idException {
 public:
 	char error[MAX_STRING_CHARS];
 
+	// this really, really should be a const function, but it's referenced too many places to change right now
+	const char* GetError() {
+		return error;
+	}	
+
 	idException( const char *text = "" ) { strcpy( error, text ); }
 };
 

@@ -28,13 +28,6 @@
 // Win32
 #if defined(WIN32) || defined(_WIN32)
 
-#ifdef _WIN64
-#define	BUILD_STRING					"win-x64"
-#define	CPUSTRING						"x64"
-#else
-#define	CPUSTRING						"x86"
-#endif
-
 #define BUILD_OS_ID						0
 
 #ifdef _WIN64
