@@ -2818,6 +2818,9 @@
     <ClCompile Include="renderer\qgl.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\sys\sys_assert.cpp">
+      <Filter>idLib\Sys</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">

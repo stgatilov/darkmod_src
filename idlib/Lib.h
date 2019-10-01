@@ -129,18 +129,6 @@ void	SixtetsForInt( byte *out, int src);
 int		IntForSixtets( byte *in );
 
 
-#ifdef _DEBUG
-void AssertFailed( const char *file, int line, const char *expression );
-#undef assert
-#define assert( X )		if ( X ) { } else AssertFailed( __FILE__, __LINE__, #X )
-#endif
-
-//anon begin
-//#define assert_16_byte_aligned( ptr )		assert( ( ((uintptr_t)(ptr)) & 15 ) == 0 ) //anon
-
-//#define compile_time_assert( x ) static_assert( x, "Assertion failure" )
-//anon end
-
 class idException {
 public:
 	char error[MAX_STRING_CHARS];

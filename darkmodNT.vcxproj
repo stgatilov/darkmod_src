@@ -1170,6 +1170,7 @@
     <ClCompile Include="idlib\StdFilesystem.cpp" />
     <ClCompile Include="idlib\StdString.cpp" />
     <ClCompile Include="idlib\Str.cpp" />
+    <ClCompile Include="idlib\sys\sys_assert.cpp" />
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
     <ClCompile Include="renderer\BufferObject.cpp" />
