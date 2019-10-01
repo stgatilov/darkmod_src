@@ -142,31 +142,37 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <ShowIncludes>true</ShowIncludes>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -218,6 +224,8 @@
     <ClCompile Include="idlib\StdFilesystem.cpp" />
     <ClCompile Include="idlib\StdString.cpp" />
     <ClCompile Include="idlib\Str.cpp" />
+    <ClCompile Include="idlib\sys\sys_assert.cpp" />
+    <ClCompile Include="idlib\sys\win32\win_thread.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
     <ClCompile Include="idlib\BitMsg.cpp" />
     <ClCompile Include="idlib\Dict.cpp" />

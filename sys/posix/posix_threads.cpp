@@ -135,12 +135,6 @@ thread create and destroy
 ======================================================
 */
 
-// not a hard limit, just what we keep track of for debugging
-#define MAX_THREADS 10
-xthreadInfo *g_threads[MAX_THREADS];
-
-int g_thread_count = 0;
-
 typedef void *(*pthread_function_t) (void *);
 
 /*
@@ -148,24 +142,106 @@ typedef void *(*pthread_function_t) (void *);
 Sys_CreateThread
 ==================
 */
-void Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority, xthreadInfo& info, const char *name, xthreadInfo **threads, int *thread_count ) {
-	Sys_EnterCriticalSection( );		
+uintptr_t Sys_CreateThread( xthread_t function, void* parms, xthreadPriority priority, const char* name, core_t core, int stackSize, bool suspended )
+{
 	pthread_attr_t attr;
 	pthread_attr_init( &attr );
-	if ( pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_JOINABLE ) != 0 ) {
-		common->Error( "ERROR: pthread_attr_setdetachstate %s failed\n", name );
+	
+	if( pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_JOINABLE ) != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_attr_setdetachstate %s failed\n", name );
+		return ( uintptr_t )0;
 	}
-	if ( pthread_create( ( pthread_t* )&info.threadHandle, &attr, function, parms ) != 0 ) {
-		common->Error( "ERROR: pthread_create %s failed\n", name );
+	
+	pthread_t handle;
+	if( pthread_create( ( pthread_t* )&handle, &attr, ( pthread_function_t )function, parms ) != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_create %s failed\n", name );
+		return ( uintptr_t )0;
 	}
+	
+#if defined(DEBUG_THREADS)
+	if( Sys_SetThreadName( handle, name ) != 0 )
+	{
+		idLib::common->Warning( "Warning: pthread_setname_np %s failed\n", name );
+		return ( uintptr_t )0;
+	}
+#endif
+	
 	pthread_attr_destroy( &attr );
-	info.name = name;
-	if ( *thread_count < MAX_THREADS ) {
-		threads[ ( *thread_count )++ ] = &info;
-	} else {
-		common->DPrintf( "WARNING: MAX_THREADS reached\n" );
+	
+	
+#if 0
+	// RB: realtime policies require root privileges
+	
+	// all Linux threads have one of the following scheduling policies:
+	
+	// SCHED_OTHER or SCHED_NORMAL: the default policy,  priority: [-20..0..19], default 0
+	
+	// SCHED_FIFO: first in/first out realtime policy
+	
+	// SCHED_RR: round-robin realtime policy
+	
+	// SCHED_BATCH: similar to SCHED_OTHER, but with a throughput orientation
+	
+	// SCHED_IDLE: lower priority than SCHED_OTHER
+	
+	int schedulePolicy = SCHED_OTHER;
+	struct sched_param scheduleParam;
+	
+	int error = pthread_getschedparam( handle, &schedulePolicy, &scheduleParam );
+	if( error != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_getschedparam %s failed: %s\n", name, strerror( error ) );
+		return ( uintptr_t )0;
 	}
-	Sys_LeaveCriticalSection( );
+	
+	schedulePolicy = SCHED_FIFO;
+	
+	int minPriority = sched_get_priority_min( schedulePolicy );
+	int maxPriority = sched_get_priority_max( schedulePolicy );
+	
+	if( priority == THREAD_HIGHEST )
+	{
+		//  we better sleep enough to do this
+		scheduleParam.__sched_priority = maxPriority;
+	}
+	else if( priority == THREAD_ABOVE_NORMAL )
+	{
+		scheduleParam.__sched_priority = Lerp( minPriority, maxPriority, 0.75f );
+	}
+	else if( priority == THREAD_NORMAL )
+	{
+		scheduleParam.__sched_priority = Lerp( minPriority, maxPriority, 0.5f );
+	}
+	else if( priority == THREAD_BELOW_NORMAL )
+	{
+		scheduleParam.__sched_priority = Lerp( minPriority, maxPriority, 0.25f );
+	}
+	else if( priority == THREAD_LOWEST )
+	{
+		scheduleParam.__sched_priority = minPriority;
+	}
+	
+	// set new priority
+	error = pthread_setschedparam( handle, schedulePolicy, &scheduleParam );
+	if( error != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_setschedparam( name = %s, policy = %i, priority = %i ) failed: %s\n", name, schedulePolicy, scheduleParam.__sched_priority, strerror( error ) );
+		return ( uintptr_t )0;
+	}
+	
+	pthread_getschedparam( handle, &schedulePolicy, &scheduleParam );
+	if( error != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_getschedparam %s failed: %s\n", name, strerror( error ) );
+		return ( uintptr_t )0;
+	}
+#endif
+	
+	// Under Linux, we don't set the thread affinity and let the OS deal with scheduling
+	
+	return ( uintptr_t )handle;
 }
 
 /*
@@ -173,30 +249,31 @@ void Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority
 Sys_DestroyThread
 ==================
 */
-void Sys_DestroyThread( xthreadInfo& info ) {
-	// the target thread must have a cancelation point, otherwise pthread_cancel is useless
-	assert( info.threadHandle );
-	if ( pthread_cancel( ( pthread_t )info.threadHandle ) != 0 ) {
-		common->Error( "ERROR: pthread_cancel %s failed\n", info.name );
+void Sys_DestroyThread( uintptr_t threadHandle )
+{
+	if( threadHandle == 0 )
+	{
+		return;
 	}
-	if ( pthread_join( ( pthread_t )info.threadHandle, NULL ) != 0 ) {
-		common->Error( "ERROR: pthread_join %s failed\n", info.name );
+	
+	char	name[128];
+	name[0] = '\0';
+	
+#if defined(DEBUG_THREADS)
+	Sys_GetThreadName( ( pthread_t )threadHandle, name, sizeof( name ) );
+#endif
+	
+#if 0 //!defined(__ANDROID__)
+	if( pthread_cancel( ( pthread_t )threadHandle ) != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_cancel %s failed\n", name );
 	}
-	info.threadHandle = 0;
-	Sys_EnterCriticalSection( );
-	for( int i = 0 ; i < g_thread_count ; i++ ) {
-		if ( &info == g_threads[ i ] ) {
-			g_threads[ i ] = NULL;
-			int j;
-			for( j = i+1 ; j < g_thread_count ; j++ ) {
-				g_threads[ j-1 ] = g_threads[ j ];
-			}
-			g_threads[ j-1 ] = NULL;
-			g_thread_count--;
-            break;
-		}
+#endif
+	
+	if( pthread_join( ( pthread_t )threadHandle, NULL ) != 0 )
+	{
+		idLib::common->FatalError( "ERROR: pthread_join %s failed\n", name );
 	}
-	Sys_LeaveCriticalSection( );
 }
 
 /*
@@ -205,23 +282,22 @@ Sys_GetThreadName
 find the name of the calling thread
 ==================
 */
-const char* Sys_GetThreadName( int *index ) {
-	Sys_EnterCriticalSection( );
-	pthread_t thread = pthread_self();
-	for( int i = 0 ; i < g_thread_count ; i++ ) {
-		if ( thread == (pthread_t)g_threads[ i ]->threadHandle ) {
-			if ( index ) {
-				*index = i;
-			}
-			Sys_LeaveCriticalSection( );
-			return g_threads[ i ]->name;
-		}
-	}
-	if ( index ) {
-		*index = -1;
-	}
-	Sys_LeaveCriticalSection( );
-	return "main";
+static int Sys_GetThreadName( pthread_t handle, char* namebuf, size_t buflen )
+{
+	int ret = 0;
+#ifdef __linux__
+	ret = pthread_getname_np( handle, namebuf, buflen );
+	if( ret != 0 )
+		idLib::common->Printf( "Getting threadname failed, reason: %s (%i)\n", strerror( errno ), errno );
+#elif defined(__FreeBSD__)
+	// seems like there is no pthread_getname_np equivalent on FreeBSD
+	idStr::snPrintf( namebuf, buflen, "Can't read threadname on this platform!" );
+#endif
+	/* TODO: OSX:
+		// int pthread_getname_np(pthread_t, char*, size_t);
+	*/
+	
+	return ret;
 }
 
 /*
@@ -230,7 +306,7 @@ Async Thread
 =========================================================
 */
 
-xthreadInfo asyncThread;
+uintptr_t asyncThread;
 
 /*
 =================
@@ -238,41 +314,10 @@ Posix_StartAsyncThread
 =================
 */
 void Posix_StartAsyncThread() {
-	if ( asyncThread.threadHandle == 0 ) {
-		Sys_CreateThread( Sys_AsyncThread, NULL, THREAD_NORMAL, asyncThread, "Async", g_threads, &g_thread_count );
+	if ( asyncThread == 0 ) {
+		asyncThread = Sys_CreateThread( (xthread_t) Sys_AsyncThread, NULL, THREAD_NORMAL, "Async" );
 	} else {
 		common->Printf( "Async thread already running\n" );
 	}
 	common->Printf( "Async thread started\n" );
 }
-
-/*
-==================
-Posix_InitPThreads
-==================
-*/
-void Posix_InitPThreads( ) {
-	int i;
-	pthread_mutexattr_t attr;
-
-	// init critical sections
-	for ( i = 0; i < MAX_LOCAL_CRITICAL_SECTIONS; i++ ) {
-		pthread_mutexattr_init( &attr );
-		pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_ERRORCHECK );
-		pthread_mutex_init( &global_lock[i], &attr );
-		pthread_mutexattr_destroy( &attr );
-	}
-
-	// init event sleep/triggers
-	for ( i = 0; i < MAX_TRIGGER_EVENTS; i++ ) {
-		pthread_cond_init( &event_cond[ i ], NULL );
-		signaled[i] = false;
-		waiting[i] = false;
-	}
-
-	// init threads table
-	for ( i = 0; i < MAX_THREADS; i++ ) {
-		g_threads[ i ] = NULL;
-	}	
-}
-

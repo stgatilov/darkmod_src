@@ -36,7 +36,7 @@ const int VERTCACHE_FRAME_MASK = 0xfff;		// 12 bits = 4k frames to wrap around
 // functions.
 const int VERTEX_CACHE_ALIGN = 240;
 const int INDEX_CACHE_ALIGN = 16;
-#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % a ) )
+//#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % a ) )
 
 enum cacheType_t {
 	CACHE_VERTEX,

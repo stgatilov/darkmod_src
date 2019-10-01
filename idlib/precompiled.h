@@ -18,64 +18,15 @@
 
 #ifdef __cplusplus
 
+#include "sys/sys_defines.h"
+#include "sys/sys_includes.h"
+#include "sys/sys_assert.h"
+#include "sys/sys_types.h"
+#include "sys/sys_threading.h"
+
 //-----------------------------------------------------
 
 #define ID_TIME_T time_t
-
-#ifdef _WIN32
-
-#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS	// prevent auto literal to string conversion
-
-#ifndef _D3SDK
-#ifndef GAME_DLL
-
-//stgatilov: use only WinAPI functionality present on Vista and above
-#define _WIN32_WINNT _WIN32_WINNT_VISTA
-
-#if 0
-// Dedicated server hits unresolved when trying to link this way now. Likely because of the 2010/Win7 transition? - TTimo
-
-#ifdef	ID_DEDICATED
-// dedicated sets windows version here
-#define	_WIN32_WINNT WINVER
-#define	WIN32_LEAN_AND_MEAN
-#else
-// non-dedicated includes MFC and sets windows version here
-#include "../tools/comafx/StdAfx.h"			// this will go away when MFC goes away
-#endif
-
-#else
-
-#ifndef NO_MFC
-#include "../tools/comafx/StdAfx.h"
-#endif
-
-#endif
-
-#include <winsock2.h>
-#include <mmsystem.h>
-#include <mmreg.h>
-
-#include <InitGuid.h>						//https://social.msdn.microsoft.com/Forums/vstudio/en-US/16fe61c7-0ff0-400a-9f9e-39768edbb6b4/what-is-dxguidlib?forum=vcgeneral
-#define DIRECTINPUT_VERSION  0x0800			// was 0x0700 with the old mssdk
-#include <dinput.h>
-
-#endif /* !GAME_DLL */
-#endif /* !_D3SDK */
-
-#pragma warning(disable : 4100)				// unreferenced formal parameter
-#pragma warning(disable : 4244)				// conversion to smaller type, possible loss of data
-#pragma warning(disable : 4714)				// function marked as __forceinline not inlined
-#pragma warning(disable : 4996)				// unsafe string operations
-
-#include <malloc.h>							// no malloc.h on mac or unix
-#include <winsock2.h>						// greebo: Include this before windows.h
-#include <windows.h>						// for qgl.h
-#undef FindText								// stupid namespace poluting Microsoft monkeys
-
-#undef FORCEINLINE							//stgatilov: use portable ID_FORCE_INLINE instead of FORCEINLINE defined in windows.h
-
-#endif /* _WIN32 */
 
 //-----------------------------------------------------
 
@@ -83,24 +34,6 @@
 	// don't generate asserts
 	#define NDEBUG
 #endif
-
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <ctype.h>
-#include <typeinfo>
-#include <errno.h>
-#include <math.h>
-//-----------------------------------------------------
-
-#include "sys/sys_defines.h"
-#include "sys/sys_assert.h"
-#include "sys/sys_types.h"
-#include "sys/sys_threading.h"
 
 // non-portable system services
 #include "../sys/sys_public.h"

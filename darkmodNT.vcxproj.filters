@@ -121,6 +121,9 @@
     <Filter Include="idLib\Sys">
       <UniqueIdentifier>{ec979f94-95e6-4757-a337-e3fccae54fa4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="idLib\Sys\Win32">
+      <UniqueIdentifier>{981009fd-4a0e-4ecb-83c0-bc3123061e58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1433,6 +1436,12 @@
       <Filter>idLib\Sys</Filter>
     </ClInclude>
     <ClInclude Include="idlib\sys\sys_threading.h">
+      <Filter>idLib\Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\Thread.h">
+      <Filter>idLib</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\sys\sys_includes.h">
       <Filter>idLib\Sys</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2820,6 +2829,12 @@
     </ClCompile>
     <ClCompile Include="idlib\sys\sys_assert.cpp">
       <Filter>idLib\Sys</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\Thread.cpp">
+      <Filter>idLib</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\sys\win32\win_thread.cpp">
+      <Filter>idLib\Sys\Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

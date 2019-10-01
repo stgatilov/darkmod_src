@@ -35,7 +35,7 @@ void		Posix_SetExit(int ret); // override the exit code
 void		Posix_SetExitSpawn( const char *exeName ); // set the process to be spawned when we quit
 
 void		Posix_StartAsyncThread( void );
-extern xthreadInfo asyncThread;
+extern 		uintptr_t asyncThread;
 
 bool		Posix_AddKeyboardPollEvent( int key, bool state );
 bool		Posix_AddMousePollEvent( int action, int value );

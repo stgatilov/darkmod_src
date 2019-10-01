@@ -73,7 +73,7 @@ void Posix_Exit(int ret) {
 	}
 	// at this point, too late to catch signals
 	Posix_ClearSigs();
-	if ( asyncThread.threadHandle ) {
+	if ( asyncThread ) {
 		Sys_DestroyThread( asyncThread );
 	}
 	// process spawning. it's best when it happens after everything has shut down
@@ -542,7 +542,7 @@ void Posix_EarlyInit( void ) {
 	Posix_InitSigs();
 	// set the base time
 	Sys_Milliseconds();
-	Posix_InitPThreads();
+	//Posix_InitPThreads();
 }
 
 /*

@@ -22,6 +22,9 @@
     <Filter Include="Sys">
       <UniqueIdentifier>{8f51832b-5d50-4605-b043-ac8ea0f42301}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sys\Win32">
+      <UniqueIdentifier>{8ecbcecf-a585-40ca-961b-3f6ff280867d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="idlib\bv\Bounds.cpp">
@@ -168,6 +171,12 @@
     </ClCompile>
     <ClCompile Include="idlib\containers\LinkList.cpp">
       <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\sys\sys_assert.cpp">
+      <Filter>Sys</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\sys\win32\win_thread.cpp">
+      <Filter>Sys\Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
