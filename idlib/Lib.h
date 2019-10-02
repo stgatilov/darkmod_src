@@ -232,5 +232,6 @@ public:
 #include "Thread.h"
 #include "Image.h"
 #include "RevisionTracker.h"
+#include "ParallelJobList.h"
 
 #endif	/* !__LIB_H__ */

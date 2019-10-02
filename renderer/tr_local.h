@@ -856,6 +856,7 @@ public:
 	class idGuiModel 		*demoGuiModel;
 
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
+	idParallelJobList*		frontEndJobList;
 };
 
 extern backEndState_t		backEnd;

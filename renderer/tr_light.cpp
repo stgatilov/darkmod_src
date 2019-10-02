@@ -29,6 +29,7 @@
 #define CHECK_BOUNDS_EPSILON			1.0f
 
 idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
+idCVar r_useParallelAddModels( "r_useParallelAddModels", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "add all models in parallel with jobs" );
 
 /*
 ===========================================================================================
@@ -1434,6 +1435,113 @@ idScreenRect R_CalcEntityScissorRectangle( viewEntity_t *vEntity ) {
 	return R_ScreenRectFromViewFrustumBounds( bounds );
 }
 
+void R_AddSingleModel( viewEntity_t* vEntity ) {
+	idInteraction* inter, * next;
+	idRenderModel* model;
+
+	idRenderEntityLocal& def = *vEntity->entityDef;
+	if ( ( r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0 ) && ( def.dynamicModel || def.cachedDynamicModel ) ) { // debug filters
+		return;
+	}
+
+	if ( r_skipModels.GetInteger() == 2 && !( def.dynamicModel || def.cachedDynamicModel ) ) {
+		return;
+	}
+
+	if ( r_useEntityScissors.GetBool() ) {
+		// calculate the screen area covered by the entity
+		idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
+
+		// intersect with the portal crossing scissor rectangle
+		vEntity->scissorRect.Intersect( scissorRect );
+
+		if ( r_showEntityScissors.GetBool() ) {
+			R_ShowColoredScreenRect( vEntity->scissorRect, def.index );
+		}
+	}
+	float oldFloatTime = 0.0f;
+	int oldTime = 0;
+
+	game->SelectTimeGroup( def.parms.timeGroup );
+
+	if ( def.parms.timeGroup ) {
+		oldFloatTime = tr.viewDef->floatTime;
+		oldTime = tr.viewDef->renderView.time;
+
+		tr.viewDef->floatTime = game->GetTimeGroupTime( def.parms.timeGroup ) * 0.001;
+		tr.viewDef->renderView.time = game->GetTimeGroupTime( def.parms.timeGroup );
+	}
+
+	if ( tr.viewDef->isXraySubview && def.parms.xrayIndex == 1 ) {
+		if ( def.parms.timeGroup ) {
+			tr.viewDef->floatTime = oldFloatTime;
+			tr.viewDef->renderView.time = oldTime;
+		}
+		return;
+	} else if ( !tr.viewDef->isXraySubview && def.parms.xrayIndex == 2 ) {
+		if ( def.parms.timeGroup ) {
+			tr.viewDef->floatTime = oldFloatTime;
+			tr.viewDef->renderView.time = oldTime;
+		}
+		return;
+	}
+
+	// Don't let particle entities re-instantiate their dynamic model during non-visible views (in TDM, the light gem render) -- SteveL #3970
+	if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>( def.parms.hModel ) != NULL ) {
+		return;
+	}
+
+	// add the ambient surface if it has a visible rectangle
+	if ( !vEntity->scissorRect.IsEmpty() || R_HasVisibleShadows( vEntity ) ) {
+		model = R_EntityDefDynamicModel( &def );
+		if ( model == NULL || model->NumSurfaces() <= 0 ) {
+			if ( def.parms.timeGroup ) {
+				tr.viewDef->floatTime = oldFloatTime;
+				tr.viewDef->renderView.time = oldTime;
+			}
+			return;
+		}
+		R_AddAmbientDrawsurfs( vEntity );
+		tr.pc.c_visibleViewEntities++;
+	} else {
+		tr.pc.c_shadowViewEntities++;
+	}
+
+	//
+	// for all the entity / light interactions on this entity, add them to the view
+	//
+	if ( tr.viewDef->isXraySubview ) {
+		if ( def.parms.xrayIndex == 2 ) {
+			for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
+				next = inter->entityNext;
+				if ( inter->lightDef->viewCount != tr.viewCount ) {
+					continue;
+				}
+				inter->AddActiveInteraction();
+			}
+		}
+	} else {
+		// all empty interactions are at the end of the list so once the
+		// first is encountered all the remaining interactions are empty
+		for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
+			next = inter->entityNext;
+
+			// skip any lights that aren't currently visible
+			// this is run after any lights that are turned off have already
+			// been removed from the viewLights list, and had their viewCount cleared
+			if ( inter->lightDef->viewCount != tr.viewCount ) {
+				continue;
+			}
+			inter->AddActiveInteraction();
+		}
+	}
+
+	if ( def.parms.timeGroup ) {
+		tr.viewDef->floatTime = oldFloatTime;
+		tr.viewDef->renderView.time = oldTime;
+	}
+}
+
 /*
 ===================
 R_AddModelSurfaces
@@ -1446,121 +1554,25 @@ two or more lights.
 ===================
 */
 void R_AddModelSurfaces( void ) {
-	viewEntity_t		*vEntity;
-	idInteraction		*inter, *next;
-	idRenderModel		*model;
-
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
 
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
-	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
-
-		idRenderEntityLocal &def = *vEntity->entityDef;
-		if ( (r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0) && (def.dynamicModel || def.cachedDynamicModel) ) { // debug filters
-			continue;
+	if ( r_useParallelAddModels.GetBool() ) {
+		for ( viewEntity_t* vEntity = tr.viewDef->viewEntitys; vEntity != NULL; vEntity = vEntity->next ) {
+			tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
 		}
-
-		if ( r_skipModels.GetInteger() == 2 && !(def.dynamicModel || def.cachedDynamicModel) ) {
-			continue;
+		tr.frontEndJobList->Submit();
+		tr.frontEndJobList->Wait();
+	} else
+		for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+			R_AddSingleModel( vEntity );
 		}
-
-		if ( r_useEntityScissors.GetBool() ) {
-			// calculate the screen area covered by the entity
-			idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
-
-			// intersect with the portal crossing scissor rectangle
-			vEntity->scissorRect.Intersect( scissorRect );
-
-			if ( r_showEntityScissors.GetBool() ) {
-				R_ShowColoredScreenRect( vEntity->scissorRect, def.index );
-			}
-		}
-        float oldFloatTime = 0.0f;
-        int oldTime = 0;
-
-		game->SelectTimeGroup( def.parms.timeGroup );
-
-		if ( def.parms.timeGroup ) {
-			oldFloatTime = tr.viewDef->floatTime;
-			oldTime = tr.viewDef->renderView.time;
-
-			tr.viewDef->floatTime = game->GetTimeGroupTime( def.parms.timeGroup ) * 0.001;
-			tr.viewDef->renderView.time = game->GetTimeGroupTime( def.parms.timeGroup );
-		}
-
-		if ( tr.viewDef->isXraySubview && def.parms.xrayIndex == 1 ) {
-			if ( def.parms.timeGroup ) {
-				tr.viewDef->floatTime = oldFloatTime;
-				tr.viewDef->renderView.time = oldTime;
-			}
-			continue;
-		} else if ( !tr.viewDef->isXraySubview && def.parms.xrayIndex == 2 ) {
-			if ( def.parms.timeGroup ) {
-				tr.viewDef->floatTime = oldFloatTime;
-				tr.viewDef->renderView.time = oldTime;
-			}
-			continue;
-		}
-
-		// Don't let particle entities re-instantiate their dynamic model during non-visible views (in TDM, the light gem render) -- SteveL #3970
-		if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>(def.parms.hModel ) != NULL ) {
-			continue;
-		}
-
-		// add the ambient surface if it has a visible rectangle
-		if ( !vEntity->scissorRect.IsEmpty() || R_HasVisibleShadows( vEntity ) ) {
-			model = R_EntityDefDynamicModel( &def );
-			if ( model == NULL || model->NumSurfaces() <= 0 ) {
-				if ( def.parms.timeGroup ) {
-					tr.viewDef->floatTime = oldFloatTime;
-					tr.viewDef->renderView.time = oldTime;
-				}
-				continue;
-			}
-			R_AddAmbientDrawsurfs( vEntity );
-			tr.pc.c_visibleViewEntities++;
-		} else {
-			tr.pc.c_shadowViewEntities++;
-		}
-
-		//
-		// for all the entity / light interactions on this entity, add them to the view
-		//
-		if ( tr.viewDef->isXraySubview ) {
-			if ( def.parms.xrayIndex == 2 ) {
-				for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
-					next = inter->entityNext;
-					if ( inter->lightDef->viewCount != tr.viewCount ) {
-						continue;
-					}
-					inter->AddActiveInteraction();
-				}
-			}
-		} else {
-			// all empty interactions are at the end of the list so once the
-			// first is encountered all the remaining interactions are empty
-			for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
-				next = inter->entityNext;
-
-				// skip any lights that aren't currently visible
-				// this is run after any lights that are turned off have already
-				// been removed from the viewLights list, and had their viewCount cleared
-				if ( inter->lightDef->viewCount != tr.viewCount ) {
-					continue;
-				}
-				inter->AddActiveInteraction();
-			}
-		}
-
-		if ( def.parms.timeGroup ) {
-			tr.viewDef->floatTime = oldFloatTime;
-			tr.viewDef->renderView.time = oldTime;
-		}
-	}
 }
+
+REGISTER_PARALLEL_JOB( R_AddSingleModel, "R_AddSingleModel" );
 
 /*
 =====================

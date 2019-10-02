@@ -1755,6 +1755,7 @@ void idRenderSystemLocal::Clear( void ) {
 	demoGuiModel = NULL;
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	takingScreenshot = false;
+	frontEndJobList = NULL;
 	// duzenko #4425 reset fbo
 	FB_Clear();
 }
@@ -1807,6 +1808,8 @@ void idRenderSystemLocal::Init( void ) {
 	identitySpace.modelMatrix[0 * 4 + 0] = 1.0f;
 	identitySpace.modelMatrix[1 * 4 + 1] = 1.0f;
 	identitySpace.modelMatrix[2 * 4 + 2] = 1.0f;
+
+	frontEndJobList = parallelJobManager->AllocJobList( JOBLIST_RENDERER_FRONTEND, JOBLIST_PRIORITY_MEDIUM, 2048, 0, NULL );
 }
 
 /*
@@ -1847,6 +1850,8 @@ void idRenderSystemLocal::Shutdown( void ) {
 
 	delete guiModel;
 	delete demoGuiModel;
+
+	parallelJobManager->FreeJobList( frontEndJobList );
 
 	Clear();
 
