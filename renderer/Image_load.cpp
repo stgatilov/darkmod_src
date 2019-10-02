@@ -1265,10 +1265,16 @@ void R_UploadImageData( idImage& image ) {
 
 std::stack<idImage*> backgroundLoads;
 std::mutex mtx;           // mutex for critical section
+std::mutex signalMutex;
+std::condition_variable signalImageThread;
 
 void BackgroundLoading() {
 	while ( 1 ) {
-		Sys_Sleep( 20 );
+//		Sys_Sleep( 20 );
+		{
+			std::unique_lock< std::mutex > lock( signalMutex );
+			signalImageThread.wait( lock );
+		}
 		while ( !backgroundLoads.empty() ) {
 			/*if ( loading && !uploading )
 				GetTickCount();*/
@@ -1288,7 +1294,7 @@ void BackgroundLoading() {
 	}
 }
 
-std::thread backgroundImageLoader(&BackgroundLoading);
+uintptr_t backgroundImageLoader = Sys_CreateThread((xthread_t)BackgroundLoading, NULL, THREAD_NORMAL, "Image Loader" );
 
 /*
 ===============
@@ -1342,6 +1348,7 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 				load.state = IS_SCHEDULED;
 				std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
 				backgroundLoads.push( this );
+				signalImageThread.notify_one();
 				return;
 			}
 			if ( load.state == IS_SCHEDULED ) {

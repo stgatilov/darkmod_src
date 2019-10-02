@@ -321,6 +321,7 @@ void idSessionLocal::Stop() {
 }
 
 void idSessionLocal::TerminateFrontendThread() {
+#if 0
 	if (frontendThread.joinable()) {
 		{  // lock scope
 			std::lock_guard<std::mutex> lock( signalMutex );
@@ -329,6 +330,12 @@ void idSessionLocal::TerminateFrontendThread() {
 		}
 		frontendThread.join();
 	}
+#else
+	std::lock_guard<std::mutex> lock( signalMutex );
+	shutdownFrontend = true;
+	signalFrontendThread.notify_one();
+	//Sys_DestroyThread( frontendThread );
+#endif
 }
 
 /*
@@ -3149,7 +3156,11 @@ void idSessionLocal::FrontendThreadFunction() {
 }
 
 bool idSessionLocal::IsFrontend() const {
+#if 0	
 	return std::this_thread::get_id() == frontendThread.get_id();
+#else
+	return Sys_GetCurrentThreadID() == frontendThread;
+#endif
 }
 
 void idSessionLocal::LogFrontendTimings( idFile &logFile ) const {
@@ -3204,7 +3215,13 @@ void idSessionLocal::WaitForFrontendCompletion() {
 
 void idSessionLocal::StartFrontendThread() {
 	frontendActive = shutdownFrontend = false;
-	frontendThread = std::thread( &idSessionLocal::FrontendThreadFunction, this );
+	//frontendThread = std::thread( &idSessionLocal::FrontendThreadFunction, this );
+	auto func = []( void *x ) -> unsigned int {
+		idSessionLocal* s = (idSessionLocal*)x;
+		s->FrontendThreadFunction();
+		return 0; 
+	};
+	frontendThread = Sys_CreateThread( (xthread_t)func, this, THREAD_NORMAL, "Frontend" );
 }
 
 /*

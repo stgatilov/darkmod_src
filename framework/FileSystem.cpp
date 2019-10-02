@@ -3223,7 +3223,7 @@ idFileSystemLocal::StartBackgroundReadThread
 */
 void idFileSystemLocal::StartBackgroundDownloadThread() {
 	if ( !backgroundThread ) {
-		backgroundThread = Sys_CreateThread( (xthread_t)BackgroundDownloadThread, NULL, THREAD_NORMAL, "backgroundDownload" );
+		backgroundThread = Sys_CreateThread( (xthread_t)BackgroundDownloadThread, NULL, THREAD_NORMAL, "Background Download" );
 		if ( !backgroundThread ) {
 			common->Warning( "idFileSystemLocal::StartBackgroundDownloadThread: failed" );
 		}

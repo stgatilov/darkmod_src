@@ -275,7 +275,7 @@ public:
 #endif
 
 	int					gameTicsToRun;
-	std::thread			frontendThread;
+	uintptr_t			frontendThread;
 	std::condition_variable signalFrontendThread;
 	std::condition_variable signalMainThread;
 	std::mutex			signalMutex;
