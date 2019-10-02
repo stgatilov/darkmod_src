@@ -2926,6 +2926,9 @@ void idCommonLocal::InitGame( void )
 	// init journalling, etc
 	eventLoop->Init();
 
+	// init the parallel job manager
+	parallelJobManager->Init();
+
 	// initialize the declaration manager
 	declManager->Init();
 

@@ -16,8 +16,6 @@
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
 
-#ifdef __cplusplus
-
 #include "sys/sys_defines.h"
 #include "sys/sys_includes.h"
 #include "sys/sys_assert.h"
@@ -135,6 +133,8 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 //-----------------------------------------------------
 
-#endif	/* __cplusplus */
+#undef min
+#undef max
+#include <algorithm>	// for min / max / swap
 
 #endif /* !__PRECOMPILED_H__ */
