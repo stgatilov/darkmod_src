@@ -720,6 +720,8 @@
     <ClInclude Include="idlib\math\Simd_SSE2.h" />
     <ClInclude Include="idlib\math\Simd_SSE3.h" />
     <ClInclude Include="idlib\math\Vector.h" />
+    <ClInclude Include="idlib\ParallelJobList.h" />
+    <ClInclude Include="idlib\ParallelJobList_JobHeaders.h" />
     <ClInclude Include="idlib\Parser.h" />
     <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
@@ -1157,6 +1159,7 @@
     <ClCompile Include="idlib\math\Simd_SSE2.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE3.cpp" />
     <ClCompile Include="idlib\math\Vector.cpp" />
+    <ClCompile Include="idlib\ParallelJobList.cpp" />
     <ClCompile Include="idlib\Parser.cpp" />
     <ClCompile Include="idlib\precompiled.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">Create</PrecompiledHeader>

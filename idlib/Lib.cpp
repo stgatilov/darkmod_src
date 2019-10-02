@@ -250,6 +250,20 @@ void idLib::Warning( const char *fmt, ... ) {
 }
 
 /*
+===============
+idLib::Printf
+===============
+*/
+void idLib::Printf( const char* fmt, ... ) {
+	va_list		argptr;
+	va_start( argptr, fmt );
+	if ( common ) {
+		common->VPrintf( fmt, argptr );
+	}
+	va_end( argptr );
+}
+
+/*
 ===============================================================================
 
 	Byte order functions

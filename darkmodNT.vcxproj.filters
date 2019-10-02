@@ -1444,6 +1444,12 @@
     <ClInclude Include="idlib\sys\sys_includes.h">
       <Filter>idLib\Sys</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\ParallelJobList.h">
+      <Filter>idLib</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\ParallelJobList_JobHeaders.h">
+      <Filter>idLib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2835,6 +2841,9 @@
     </ClCompile>
     <ClCompile Include="idlib\sys\win32\win_thread.cpp">
       <Filter>idLib\Sys\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\ParallelJobList.cpp">
+      <Filter>idLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

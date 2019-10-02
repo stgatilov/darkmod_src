@@ -714,7 +714,7 @@ idParallelJobList::idParallelJobList
 */
 idParallelJobList::idParallelJobList( jobListId_t id, jobListPriority_t priority, unsigned int maxJobs, unsigned int maxSyncs, const idColor * color ) {
 	assert( priority > JOBLIST_PRIORITY_NONE );
-	this->jobListThreads = new (TAG_JOBLIST) idParallelJobList_Threads( id, priority, maxJobs, maxSyncs );
+	this->jobListThreads = new idParallelJobList_Threads( id, priority, maxJobs, maxSyncs );
 	this->color = color;
 }
 
@@ -1186,7 +1186,7 @@ idParallelJobList * idParallelJobManagerLocal::AllocJobList( jobListId_t id, job
 			// idStudio may cause job lists to be allocated multiple times
 		}
 	}
-	idParallelJobList * jobList = new (TAG_JOBLIST) idParallelJobList( id, priority, maxJobs, maxSyncs, color );
+	idParallelJobList * jobList = new idParallelJobList( id, priority, maxJobs, maxSyncs, color );
 	jobLists.Append( jobList );
 	return jobList;
 }

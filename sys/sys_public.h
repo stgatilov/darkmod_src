@@ -314,6 +314,7 @@ double			Sys_ClockTicksPerSecond( void );
 // returns number of microseconds passed after 1970-Jan-01
 // uses GetSystemTimeAsFileTime on Windows and gettimeofday on other platforms
 uint64_t Sys_GetTimeMicroseconds( void );
+#define Sys_Microseconds Sys_GetTimeMicroseconds
 
 // returns a selection of the CPUID_* flags
 cpuid_t			Sys_GetProcessorId( void );
