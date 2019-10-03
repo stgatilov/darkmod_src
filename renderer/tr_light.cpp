@@ -1167,8 +1167,10 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] ) );
 		memcpy( tr.viewDef->drawSurfs, old, count );
 	}
+//	Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
 	tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs] = drawSurf;
 	tr.viewDef->numDrawSurfs++;
+//	Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
 
 	// process the shader expressions for conditionals / color / texcoords
 	const float	*constRegs = material->ConstantRegisters();

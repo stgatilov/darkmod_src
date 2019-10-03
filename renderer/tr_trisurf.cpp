@@ -111,7 +111,9 @@ static silEdge_t *	silEdges;
 static idHashIndex	silEdgeHash( SILEDGE_HASH_SIZE, MAX_SIL_EDGES );
 static int			numPlanes;
 
+#if LEGACY_ALLOCATOR
 static idBlockAlloc<srfTriangles_t, 1<<8>				srfTrianglesAllocator;
+#endif
 
 #ifdef USE_TRI_DATA_ALLOCATOR
 static idDynamicBlockAlloc<idDrawVert, 1<<20, 1<<10>	triVertexAllocator;
@@ -175,7 +177,9 @@ R_ShutdownTriSurfData
 void R_ShutdownTriSurfData( void ) {
 	R_StaticFree( silEdges );
 	silEdgeHash.Free();
+#if LEGACY_ALLOCATOR
 	srfTrianglesAllocator.Shutdown();
+#endif
 	triVertexAllocator.Shutdown();
 	triIndexAllocator.Shutdown();
 	triShadowVertexAllocator.Shutdown();
@@ -214,10 +218,11 @@ R_ShowTriMemory_f
 ===============
 */
 void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
+#if LEGACY_ALLOCATOR
 	common->Printf( "%6d kB in %d triangle surfaces\n",
 		( srfTrianglesAllocator.GetAllocCount() * sizeof( srfTriangles_t ) ) >> 10,
 			srfTrianglesAllocator.GetAllocCount() );
-
+#endif
 	common->Printf( "%6d kB vertex memory (%d kB free in %d blocks, %d empty base blocks)\n",
 		triVertexAllocator.GetBaseBlockMemory() >> 10, triVertexAllocator.GetFreeBlockMemory() >> 10,
 			triVertexAllocator.GetNumFreeBlocks(), triVertexAllocator.GetNumEmptyBaseBlocks() );
@@ -254,6 +259,7 @@ void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
 		triDupVertAllocator.GetBaseBlockMemory() >> 10, triDupVertAllocator.GetFreeBlockMemory() >> 10,
 			triDupVertAllocator.GetNumFreeBlocks(), triDupVertAllocator.GetNumEmptyBaseBlocks() );
 
+#if LEGACY_ALLOCATOR
 	common->Printf( "%6d kB total triangle memory\n",
 		( srfTrianglesAllocator.GetAllocCount() * sizeof( srfTriangles_t ) +
 			triVertexAllocator.GetBaseBlockMemory() +
@@ -265,6 +271,7 @@ void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
 			triDominantTrisAllocator.GetBaseBlockMemory() +
 			triMirroredVertAllocator.GetBaseBlockMemory() +
 			triDupVertAllocator.GetBaseBlockMemory() ) >> 10 );
+#endif
 }
 
 /*
@@ -403,7 +410,14 @@ void R_ReallyFreeStaticTriSurf( srfTriangles_t *tri ) {
 	memset( tri, 0, sizeof( srfTriangles_t ) );
 #endif
 
+#if LEGACY_ALLOCATOR
 	srfTrianglesAllocator.Free( tri );
+#else
+	// clear the tri out so we don't retain stale data
+	memset( tri, 0, sizeof( srfTriangles_t ) );
+
+	Mem_Free( tri );
+#endif
 }
 
 /*
@@ -502,11 +516,19 @@ void R_FreeStaticTriSurf( srfTriangles_t *tri ) {
 R_AllocStaticTriSurf
 ==============
 */
+#if LEGACY_ALLOCATOR
 srfTriangles_t *R_AllocStaticTriSurf( void ) {
 	srfTriangles_t *tris = srfTrianglesAllocator.Alloc();
 	memset( tris, 0, sizeof( srfTriangles_t ) );
 	return tris;
 }
+#else
+srfTriangles_t* R_AllocStaticTriSurf()
+{
+	srfTriangles_t* tris = (srfTriangles_t*)Mem_ClearedAlloc( sizeof( srfTriangles_t ) );
+	return tris;
+}
+#endif
 
 /*
 =================
@@ -593,7 +615,7 @@ void R_ResizeStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) {
 #ifdef USE_TRI_DATA_ALLOCATOR
 	tri->indexes = triIndexAllocator.Resize( tri->indexes, numIndexes );
 #else
-	assert( false );
+//	assert( false ); duzenko: is it supposed to do anything?
 #endif
 }
 
@@ -1292,6 +1314,7 @@ static void	R_DuplicateMirroredVertexes( srfTriangles_t *tri ) {
 	tri->verts = triVertexAllocator.Resize( tri->verts, totalVerts );
 #else
 	idDrawVert *oldVerts = tri->verts;
+	tri->verts = NULL; // to pass internal R_AllocStaticTriSurfVerts check
 	R_AllocStaticTriSurfVerts( tri, totalVerts );
 	memcpy( tri->verts, oldVerts, tri->numVerts * sizeof( tri->verts[0] ) );
 	triVertexAllocator.Free( oldVerts );
