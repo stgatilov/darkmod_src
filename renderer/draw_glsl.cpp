@@ -805,17 +805,6 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	// set the constant color
 	diffuseColor.Set( din->diffuseColor );
 	specularColor.Set( din->specularColor );
-	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		cubic.Set( 1.f );
-		lightProjectionTexture.Set( MAX_MULTITEXTURE_UNITS );
-		lightProjectionCubemap.Set( 2 );
-		lightFalloffTexture.Set( MAX_MULTITEXTURE_UNITS );
-	} else {
-		cubic.Set( 0.f );
-		lightProjectionTexture.Set( 2 );
-		lightProjectionCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
-		lightFalloffTexture.Set( 1 );
-	}
 	viewOrigin.Set( din->localViewOrigin );
 
 	if( ambient ) {
@@ -837,6 +826,18 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 }
 
 void Uniforms::Interaction::SetForShadows( bool translucent ) {
+	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+		cubic.Set( 1.f );
+		lightProjectionTexture.Set( MAX_MULTITEXTURE_UNITS );
+		lightProjectionCubemap.Set( 2 );
+		lightFalloffTexture.Set( MAX_MULTITEXTURE_UNITS );
+	} else {
+		cubic.Set( 0.f );
+		lightProjectionTexture.Set( 2 );
+		lightProjectionCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
+		lightFalloffTexture.Set( 1 );
+	}
+
 	if( ambient ) {
 		return;
 	}
