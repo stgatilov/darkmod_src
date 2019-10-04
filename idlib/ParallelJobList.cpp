@@ -289,6 +289,8 @@ idParallelJobList_Threads::~idParallelJobList_Threads() {
 	Wait();
 }
 
+static idCVarBool jobs_debugCheck( "jobs_debugCheck", "0", CVAR_TOOL, "check job data integrity" );
+
 /*
 ========================
 idParallelJobList_Threads::AddJob
@@ -296,20 +298,24 @@ idParallelJobList_Threads::AddJob
 */
 ID_INLINE void idParallelJobList_Threads::AddJob( jobRun_t function, void * data ) {
 	assert( done );
-#if defined( _DEBUG )
 	// make sure there isn't already a job with the same function and data in the list
-	if ( jobList.Num() < 1000 ) {	// don't do this N^2 slow check on big lists
+	if ( jobs_debugCheck ) {	
 		for ( int i = 0; i < jobList.Num(); i++ ) {
-			assert( jobList[i].function != function || jobList[i].data != data );
+			//assert( jobList[i].function != function || jobList[i].data != data );
+			if ( jobList[i].function != function || jobList[i].data != data )
+				; // ok
+			else
+				common->Warning( "jobs_debugCheck failed\n" );
 		}
 	}
-#endif
-	if ( 1 ) { // JDC: this never worked in tech5!  !jobList.IsFull() ) {
+//	if ( 1 ) { // JDC: this never worked in tech5!  !jobList.IsFull() ) {
+#if 1
 		job_t & job = jobList.Alloc();
 		job.function = function;
 		job.data = data;
 		job.executed = 0;
-	} else {
+//	} else {
+#else
 		// debug output to show us what is overflowing
 		int currentJobCount[MAX_REGISTERED_JOBS] = {};
 		
@@ -330,7 +336,8 @@ ID_INLINE void idParallelJobList_Threads::AddJob( jobRun_t function, void * data
 			}
 		}
 		idLib::Error( "Can't add job '%s', too many jobs %d", GetJobName( function ), jobList.Num() );
-	}
+//	}
+#endif
 }
 
 /*

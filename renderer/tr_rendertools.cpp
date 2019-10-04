@@ -2380,7 +2380,8 @@ void R_Tools() {
 		for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ )
 			limitTris( tr.viewDef->drawSurfs[i] );
 	}
-	for ( auto ent = tr.viewDef->viewEntitys; ent; ent = ent->next ) {
-		ent->drawCalls = 0;
-	}
+	if ( r_showEntityDraws )
+		for ( auto ent = tr.viewDef->viewEntitys; ent; ent = ent->next ) {
+			ent->drawCalls = 0;
+		}
 }
