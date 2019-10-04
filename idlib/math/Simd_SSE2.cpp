@@ -1186,6 +1186,8 @@ int idSIMD_SSE2::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDr
 	return numVerts * 2;
 }
 
+#endif /* SIMD_USE_ASM */
+
 void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 	typedef unsigned int uint32;
 	int i = 0;
@@ -1226,8 +1228,5 @@ void idSIMD_SSE2::Memcpy( void* dst, const void* src, const int count ) {
 	if ( ( (size_t)src ^ (size_t)dst ) & 15 ) // FIXME allow SSE2 on differently aligned addresses
 		idSIMD_Generic::Memcpy( dst, src, count );
 	else
-		CopyBufferSSE2( (byte *)dst, (byte*)src, count );
+		CopyBufferSSE2( (byte*)dst, (byte*)src, count );
 }
-
-
-#endif /* SIMD_USE_ASM */
