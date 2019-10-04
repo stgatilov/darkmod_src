@@ -1153,6 +1153,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	tr.sortOffset += 0.000001f;
 
 	// if it doesn't fit, resize the list
+	Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
 	if ( tr.viewDef->numDrawSurfs == tr.viewDef->maxDrawSurfs ) {
 		drawSurf_t	**old = tr.viewDef->drawSurfs;
 		int			count;
@@ -1164,13 +1165,14 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			count = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
 			tr.viewDef->maxDrawSurfs *= 2;
 		}
-		tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] ) );
+		int newSize = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
+		tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( newSize );
+		//memset( tr.viewDef->drawSurfs, -1, newSize );
 		memcpy( tr.viewDef->drawSurfs, old, count );
 	}
-//	Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
 	tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs] = drawSurf;
 	tr.viewDef->numDrawSurfs++;
-//	Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
+	Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
 
 	// process the shader expressions for conditionals / color / texcoords
 	const float	*constRegs = material->ConstantRegisters();
@@ -1563,6 +1565,7 @@ void R_AddModelSurfaces( void ) {
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
 	if ( r_useParallelAddModels.GetBool() ) {
+		r_useInteractionScissors.SetInteger( 0 );
 		for ( viewEntity_t* vEntity = tr.viewDef->viewEntitys; vEntity != NULL; vEntity = vEntity->next ) {
 			tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
 		}
