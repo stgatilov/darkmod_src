@@ -655,9 +655,11 @@ void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEn
 		}
 	}
 
+	Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
 	// actually link it in
 	drawSurf->nextOnLight = *link;
 	*link = drawSurf;
+	Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
 }
 
 /*
