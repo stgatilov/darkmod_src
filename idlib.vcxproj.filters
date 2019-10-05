@@ -179,6 +179,7 @@
       <Filter>Sys\Win32</Filter>
     </ClCompile>
     <ClCompile Include="idlib\ParallelJobList.cpp" />
+    <ClCompile Include="idlib\Thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -396,5 +397,9 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="idlib\ParallelJobList.h" />
+    <ClInclude Include="idlib\Thread.h" />
+    <ClInclude Include="idlib\sys\sys_includes.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

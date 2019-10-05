@@ -200,11 +200,12 @@ int				Sys_ListFiles( const char *directory, const char *extension, idStrList &l
 
 #endif
 
-xthreadInfo *	g_threads[MAX_THREADS];
-int				g_thread_count;
-
-void			Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count ) {}
-void			Sys_DestroyThread( xthreadInfo& info ) {}
+uintptr_t		Sys_CreateThread( xthread_t function, void* parms, xthreadPriority priority,
+	const char* name, core_t core, int stackSize,
+	bool suspended ) {
+	return  0; 
+}
+void			Sys_DestroyThread( uintptr_t info ) {}
 
 void			Sys_EnterCriticalSection( int index ) {}
 void			Sys_LeaveCriticalSection( int index ) {}

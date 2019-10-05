@@ -2730,7 +2730,7 @@ void CXYWnd::XY_DrawGrid() {
 	int		w, h;
 	char	text[32];
 
-	int startPos = max ( 64 , g_qeglobals.d_gridsize );
+	int startPos = std::max<float> ( 64 , g_qeglobals.d_gridsize );
 
 	w = m_nWidth / 2 / m_fScale;
 	h = m_nHeight / 2 / m_fScale;
@@ -2772,7 +2772,7 @@ void CXYWnd::XY_DrawGrid() {
 
 	int stepSize = 64 * 0.1 / m_fScale;
 	if (stepSize < 64) {
-		stepSize = max ( 64 , g_qeglobals.d_gridsize ); 
+		stepSize = std::max<float> ( 64 , g_qeglobals.d_gridsize ); 
 	}
 	else {
 		int i;

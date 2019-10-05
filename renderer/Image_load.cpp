@@ -20,7 +20,8 @@
 #include "FrameBuffer.h"
 #include <thread>
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
-
+#include <condition_variable>
+	
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
 */

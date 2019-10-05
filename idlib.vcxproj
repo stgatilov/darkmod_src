@@ -221,6 +221,7 @@
     <ClCompile Include="idlib\Str.cpp" />
     <ClCompile Include="idlib\sys\sys_assert.cpp" />
     <ClCompile Include="idlib\sys\win32\win_thread.cpp" />
+    <ClCompile Include="idlib\Thread.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
     <ClCompile Include="idlib\BitMsg.cpp" />
     <ClCompile Include="idlib\Dict.cpp" />
@@ -311,8 +312,10 @@
     <ClInclude Include="idlib\svnversion.h" />
     <ClInclude Include="idlib\sys\sys_assert.h" />
     <ClInclude Include="idlib\sys\sys_defines.h" />
+    <ClInclude Include="idlib\sys\sys_includes.h" />
     <ClInclude Include="idlib\sys\sys_threading.h" />
     <ClInclude Include="idlib\sys\sys_types.h" />
+    <ClInclude Include="idlib\Thread.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="idlib\BitMsg.h" />
     <ClInclude Include="idlib\Dict.h" />
