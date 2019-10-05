@@ -73,6 +73,7 @@ public:
 						// Command and argument completion using callback for each valid string.
 	virtual void		CommandCompletion( void(*callback)( const char *s ) ) = 0;
 	virtual void		ArgCompletion( const char *cmdString, void(*callback)( const char *s ) ) = 0;
+	virtual void		AppendCommandText( const char* text ) = 0;
 
 						// Adds command text to the command buffer, does not add a final \n
 	virtual void		BufferCommandText( cmdExecution_t exec, const char *text ) = 0;

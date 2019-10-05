@@ -49,5 +49,7 @@ void		Sys_DoStartProcess( const char *exeName, bool dofork = true ); // if not f
 
 THREAD_RETURN_TYPE		Sys_AsyncThread(void*);
 
+double 		MeasureClockTicks();
+
 #endif
 

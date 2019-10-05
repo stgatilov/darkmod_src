@@ -137,26 +137,6 @@ const char* Sys_ModSavePath() {
 }
 
 /*
-==============
-Sys_EXEPath
-==============
-*/
-const char *Sys_EXEPath( void ) {
-	static char	buf[ 2048 ];
-	idStr		linkpath;
-	int			len;
-
-	buf[ 0 ] = '\0';
-	sprintf( linkpath, "/proc/%d/exe", getpid() );
-	len = readlink( linkpath.c_str(), buf, sizeof( buf ) );
-	if ( len == -1 ) {
-		Sys_Printf("Couldn't stat exe path link %s\n", linkpath.c_str());
-		buf[ 0 ] = '\0';
-	}
-	return buf;
-}
-
-/*
 ================
 Sys_DefaultBasePath
 
@@ -245,24 +225,6 @@ void Sys_Shutdown( void ) {
 
 /*
 ===============
-Sys_GetProcessorId
-===============
-*/
-cpuid_t Sys_GetProcessorId( void ) {
-	return CPUID_GENERIC;
-}
-
-/*
-===============
-Sys_GetProcessorString
-===============
-*/
-const char *Sys_GetProcessorString( void ) {
-	return "generic";
-}
-
-/*
-===============
 Sys_FPE_handler
 ===============
 */
@@ -294,124 +256,6 @@ double MeasureClockTicks( void ) {
 	Sys_Sleep( 1000 );
 	t1 = Sys_GetClockTicks( );	
 	return t1 - t0;
-}
-
-/*
-===============
-Sys_ClockTicksPerSecond
-===============
-*/
-double Sys_ClockTicksPerSecond(void) {
-	static bool		init = false;
-	static double	ret;
-
-	int		fd, len, pos, end;
-	char	buf[ 4096 ];
-
-	if ( init ) {
-		return ret;
-	}
-
-	fd = open( "/proc/cpuinfo", O_RDONLY );
-	if ( fd == -1 ) {
-		common->Printf( "couldn't read /proc/cpuinfo\n" );
-		ret = MeasureClockTicks();
-		init = true;
-		common->Printf( "measured CPU frequency: %g MHz\n", ret / 1000000.0 );
-		return ret;		
-	}
-	len = read( fd, buf, 4096 );
-	close( fd );
-	pos = 0;
-	while ( pos < len ) {
-		if ( !idStr::Cmpn( buf + pos, "cpu MHz", 7 ) ) {
-			pos = strchr( buf + pos, ':' ) - buf + 2;
-			end = strchr( buf + pos, '\n' ) - buf;
-			if ( pos < len && end < len ) {
-				buf[end] = '\0';
-				ret = atof( buf + pos );
-			} else {
-				common->Printf( "failed parsing /proc/cpuinfo\n" );
-				ret = MeasureClockTicks();
-				init = true;
-				common->Printf( "measured CPU frequency: %g MHz\n", ret / 1000000.0 );
-				return ret;		
-			}
-			common->Printf( "/proc/cpuinfo CPU frequency: %g MHz\n", ret );
-			ret *= 1000000;
-			init = true;
-			return ret;
-		}
-		pos = strchr( buf + pos, '\n' ) - buf + 1;
-	}
-	common->Printf( "failed parsing /proc/cpuinfo\n" );
-	ret = MeasureClockTicks();
-	init = true;
-	common->Printf( "measured CPU frequency: %g MHz\n", ret / 1000000.0 );
-	return ret;		
-}
-
-/*
-==================
-Sys_DoStartProcess
-if we don't fork, this function never returns
-the no-fork lets you keep the terminal when you're about to spawn an installer
-
-if the command contains spaces, system() is used. Otherwise the more straightforward execl ( system() blows though )
-==================
-*/
-void Sys_DoStartProcess( const char *exeName, bool dofork ) {	
-	bool use_system = false;
-	if ( strchr( exeName, ' ' ) ) {
-		use_system = true;
-	} else {
-		// set exec rights when it's about a single file to execute
-		struct stat buf;
-		if ( stat( exeName, &buf ) == -1 ) {
-			printf( "stat %s failed: %s\n", exeName, strerror( errno ) );
-		} else {
-			if ( chmod( exeName, buf.st_mode | S_IXUSR ) == -1 ) {
-				printf( "cmod +x %s failed: %s\n", exeName, strerror( errno ) );
-			}
-		}
-	}
-	if ( dofork ) {
-		switch ( fork() ) {
-		case -1:
-			// main thread
-            printf( "fork failed: %s\n", strerror( errno ) );
-			break;
-		case 0:
-			if ( use_system ) {
-				printf( "system %s\n", exeName );
-				if (system( exeName ) == -1)
-					printf( "system failed: %s\n", strerror( errno ) );
-				_exit( 0 );
-			} else {
-				printf( "execl %s\n", exeName );
-				execl( exeName, exeName, NULL );
-				printf( "execl failed: %s\n", strerror( errno ) );
-				_exit( -1 );
-			}
-			break;
-        default:
-            break;
-		}
-	} else {
-		if ( use_system ) {
-			printf( "system %s\n", exeName );
-			if (system( exeName ) == -1)
-				printf( "system failed: %s\n", strerror( errno ) );
-			else
-				sleep( 1 );	// on some systems I've seen that starting the new process and exiting this one should not be too close
-		} else {
-			printf( "execl %s\n", exeName );
-			execl( exeName, exeName, NULL );
-			printf( "execl failed: %s\n", strerror( errno ) );
-		}
-		// terminate
-		_exit( 0 );
-	}
 }
 
 /*
@@ -460,13 +304,6 @@ void idSysLocal::OpenURL( const char *url, bool quit ) {
 	idStr::snPrintf( cmdline, 1024, "%s '%s' &",  script_path, url );
 	sys->StartProcess( cmdline, quit );
 }
-
-/*
-==================
-Sys_DoPreferences
-==================
-*/
-void Sys_DoPreferences( void ) { }
 
 /*
 ================
@@ -646,42 +483,3 @@ void abrt_func( mcheck_status status ) {
 }
 
 #endif
-
-/*
-===============
-main
-===============
-*/
-int main(int argc, const char **argv) {
-#ifdef ID_MCHECK
-	// must have -lmcheck linkage
-	mcheck( abrt_func );
-	Sys_Printf( "memory consistency checking enabled\n" );
-#endif
-	
-    // do not allow TDM to be run as root
-    if ( getuid() == 0 ) {
-        Sys_Printf( "The Dark Mod should not be run as root.\n" );
-        Posix_Exit( EXIT_FAILURE );
-    }
-
-	Posix_EarlyInit( );
-
-	if ( argc > 1 ) {
-		common->Init( argc-1, &argv[1], NULL );
-	} else {
-		common->Init( 0, NULL, NULL );
-	}
-
-	Posix_LateInit( );
-
-	if( com_runTests.GetInteger()) {
-		int result = RunTests();
-		common->Shutdown();
-		return result;
-	}
-
-	while (1) {
-		common->Frame();
-	}
-}

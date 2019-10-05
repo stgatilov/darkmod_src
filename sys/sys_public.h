@@ -37,8 +37,6 @@
 #define CPU_EASYARGS					1
 #endif
 
-#define ALIGN16( x )					__declspec(align(16)) x
-#define ALIGNTYPE16						__declspec(align(16)) // anon
 #define PACKED
 
 //#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
@@ -96,9 +94,6 @@
 	#define CPU_EASYARGS				1
 #endif
 
-#define ALIGN16( x )					x __attribute__ ((aligned (16)))
-#define ALIGNTYPE16						__attribute__ ((aligned (16))) // anon
-
 #ifdef __MWERKS__
 #define PACKED
 #include <alloca.h>
@@ -148,8 +143,6 @@
 #define _alloca							alloca
 #define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
-#define ALIGN16( x )					x
-#define ALIGNTYPE16						 // anon
 #define PACKED							__attribute__((packed))
 
 #define PATHSEPERATOR_STR				"/"

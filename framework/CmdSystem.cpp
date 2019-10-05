@@ -47,6 +47,8 @@ public:
 
 	virtual void			CommandCompletion( void(*callback)( const char *s ) );
 	virtual void			ArgCompletion( const char *cmdString, void(*callback)( const char *s ) );
+	virtual void			ExecuteCommandText( const char* text );
+	virtual void			AppendCommandText( const char* text );
 
 	virtual void			BufferCommandText( cmdExecution_t exec, const char *text );
 	virtual void			ExecuteCommandBuffer( void );
@@ -82,9 +84,7 @@ private:
 
 private:	
 	void					ExecuteTokenizedString( const idCmdArgs &args );
-	void					ExecuteCommandText( const char *text );
 	void					InsertCommandText( const char *text );
-	void					AppendCommandText( const char *text );
 
 	static void				ListByFlags( const idCmdArgs &args, cmdFlags_t flags );
 	static void				List_f( const idCmdArgs &args );

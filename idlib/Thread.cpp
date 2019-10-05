@@ -215,7 +215,7 @@ int idSysThread::ThreadProc( idSysThread * thread ) {
 	} catch ( idException & ex ) {
 		idLib::Warning( "Fatal error in thread %s: %s", thread->GetName(), ex.GetError() );
 		// We don't handle threads terminating unexpectedly very well, so just terminate the whole process
-		_exit( 0 );
+		std::exit( 0 );
 	}
 
 	thread->isRunning = false;
