@@ -358,7 +358,6 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	end = start + 4000 * backEnd.viewDef->renderView.viewaxis[0];
 
 	// check and draw the surfaces
-	qglDisableVertexAttribArray( 8 );
 	globalImages->whiteImage->Bind();
 
 	// find how many are ambient

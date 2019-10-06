@@ -528,7 +528,6 @@ void RB_ShowSilhouette( void ) {
 	//
 	// clear all triangle edges to black
 	//
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -674,7 +673,6 @@ static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !r_showTris.GetInteger() ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
@@ -731,7 +729,6 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false, true ) ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
@@ -796,7 +793,6 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 			r_showViewEntitys.SetInteger( 0 );
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -851,7 +847,6 @@ static void RB_ShowEntityDraws() {
 	if ( !r_showEntityDraws || backEnd.viewDef->isSubview ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
@@ -940,7 +935,6 @@ static void RB_ShowTexturePolarity( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !r_showTexturePolarity.GetBool() ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
@@ -1007,7 +1001,6 @@ static void RB_ShowUnsmoothedTangents( drawSurf_t **drawSurfs, int numDrawSurfs 
 	if ( !r_showUnsmoothedTangents.GetBool() ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
@@ -1060,7 +1053,6 @@ static void RB_ShowTangentSpace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !r_showTangentSpace.GetInteger() ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
@@ -1113,7 +1105,6 @@ static void RB_ShowVertexColor( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !r_showVertexColor.GetBool() ) {
 		return;
 	}
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_State( GLS_DEPTHFUNC_LESS );
@@ -1162,7 +1153,6 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	GL_State( GLS_POLYMODE_LINE );
 
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	if ( !r_debugLineDepthTest.GetBool() ) {
@@ -1248,8 +1238,6 @@ static void RB_ShowTextureVectors( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	GL_State( GLS_DEPTHFUNC_LESS );
-
-	qglDisableVertexAttribArray( 8 );
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
@@ -1343,8 +1331,6 @@ static void RB_ShowDominantTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	GL_State( GLS_DEPTHFUNC_LESS );
 
-	qglDisableVertexAttribArray( 8 );
-
 	qglPolygonOffset( -1, -2 );
 	qglEnable( GL_POLYGON_OFFSET_LINE );
 
@@ -1401,7 +1387,6 @@ static void RB_ShowEdges( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 	GL_State( GLS_DEFAULT );
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_DEPTH_TEST );
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
@@ -1512,7 +1497,6 @@ void RB_ShowLights( void ) {
 	GL_CheckErrors();
 	RB_SimpleWorldSetup();
 	GL_CheckErrors();
-	qglDisableVertexAttribArray( 8 );
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_Cull( CT_TWO_SIDED );

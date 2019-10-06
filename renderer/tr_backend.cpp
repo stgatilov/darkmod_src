@@ -36,8 +36,10 @@ void RB_SetDefaultGLState( void ) {
 	qglClearDepth( 1.0f );
 	GL_FloatColor( 1.0f, 1.0f, 1.0f, 1.0f );
 
-	// the vertex array is always enabled
-	qglEnableVertexAttribArray( 0 );
+	// the vertex arrays are always enabled. FIXME: Not exactly a 'default GL state'
+	const int attrib_indices[] = { 0,2,3,8,9,10 };
+	for ( auto attr_index : attrib_indices )
+		qglEnableVertexAttribArray( attr_index );
 
 	// make sure our GL state vector is set correctly
 	memset( &backEnd.glState, 0, sizeof( backEnd.glState ) );

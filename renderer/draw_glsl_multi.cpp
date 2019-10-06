@@ -315,12 +315,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	GL_CheckErrors();
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
-	qglEnableVertexAttribArray( 3 );
-	qglEnableVertexAttribArray( 8 );
-	qglEnableVertexAttribArray( 9 );
-	qglEnableVertexAttribArray( 10 );
-	qglEnableVertexAttribArray( 2 );
-
 	GL_SelectTexture( 5 );
 	globalImages->shadowAtlas->Bind();
 
@@ -360,12 +354,6 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	GLSLProgram::Deactivate();
 
 	GL_SelectTexture( 0 );
-
-	qglDisableVertexAttribArray( 3 );
-	qglDisableVertexAttribArray( 8 );
-	qglDisableVertexAttribArray( 9 );
-	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 2 );
 
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( backEnd.vLight->singleLightOnly ) {

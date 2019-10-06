@@ -63,11 +63,7 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 	static vertCacheHandle_t nil;
 	vertexCache.VertexPosition( nil );
 	auto ac = tri->verts;
-	qglEnableVertexAttribArray( 8 );
-	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 	qglDrawElements( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
-	qglDisableVertexAttribArray( 8 );
 }
 
 /*

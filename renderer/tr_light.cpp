@@ -1264,7 +1264,9 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		if ( !R_PreciseCullSurface( drawSurf, ndcBounds ) ) {
 			// did we ever use this to forward an entity color to a gui that didn't set color?
 //			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
+			Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
 			R_RenderGuiSurf( gui, drawSurf );
+			Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
 		}
 		tr.viewDef->floatTime = oldFloatTime;
 		tr.viewDef->renderView.time = oldTime;

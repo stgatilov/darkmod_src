@@ -141,15 +141,6 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	Uniforms::Interaction *interactionUniforms = currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>();
 	interactionUniforms->SetForShadows( surf == backEnd.vLight->translucentInteractions );
 
-	// enable the vertex arrays
-	qglEnableVertexAttribArray( 8 );
-	if ( r_legacyTangents ) {
-		qglEnableVertexAttribArray( 9 );
-		qglEnableVertexAttribArray( 10 );
-	}
-	qglEnableVertexAttribArray( 2 );
-	qglEnableVertexAttribArray( 3 );
-
 	for ( /**/; surf; surf = surf->nextOnLight ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 			continue;
@@ -167,11 +158,6 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		RB_CreateSingleDrawInteractions( surf );
 		GL_CheckErrors();
 	}
-	qglDisableVertexAttribArray( 8 );
-	qglDisableVertexAttribArray( 9 );
-	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 2 );
-	qglDisableVertexAttribArray( 3 );
 
 	GL_SelectTexture( 0 );
 
@@ -515,7 +501,6 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 		bool	didDraw = false;
 
 		GL_CheckErrors();
-		qglEnableVertexAttribArray( 8 );
 
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages(); stage++ ) {
@@ -568,7 +553,6 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 			GL_CheckErrors();
 		}
 		depthUniforms->color.Set( colorBlack );
-		qglDisableVertexAttribArray( 8 );
 		GL_CheckErrors();
 
 		if ( !didDraw ) {

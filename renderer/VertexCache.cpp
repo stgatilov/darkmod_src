@@ -121,6 +121,11 @@ static void FreeGeoBufferSet( geoBufferSet_t &gbs ) {
 	gbs.indexBuffer.FreeBufferObject();
 }
 
+/* duzenko 2.08
+Vanilla D3 called VertexAttribPointer/Enable/DisableVertexAttribArray a few times for each draw
+The whole purpose of moving to a single VBO was to be able to set base attrib pointer for many calls
+Unrelated to that, we now also enable all attributes once and not bother driver with toggling them off and on all the time
+*/
 void BindAttributes( int pointer, attribBind_t attrib ) {
 	if ( attrib == attribBind_t::ATTRIB_REGULAR ) {
 		idDrawVert* ac = (idDrawVert*)(size_t)pointer;
@@ -133,7 +138,9 @@ void BindAttributes( int pointer, attribBind_t attrib ) {
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		//		}
 	} else {
-		qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
+		const int attrib_indices[] = { 0,2,3,8,9,10 };
+		for ( auto attr_index : attrib_indices )
+			qglVertexAttribPointer( attr_index, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
 	}
 }
 

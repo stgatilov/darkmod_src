@@ -75,7 +75,6 @@ Extracted from RB_PrepareStageTexturing
 ================
 */
 ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	qglEnableVertexAttribArray( 2 );
 	// see if there is also a bump map specified
 	const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 	if ( bumpStage ) {
@@ -83,10 +82,6 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		GL_SelectTexture( 1 );
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
-
-		qglEnableVertexAttribArray( 8 );
-		qglEnableVertexAttribArray( 9 );
-		qglEnableVertexAttribArray( 10 );
 
 		if ( r_useGLSL ) {
 			programManager->bumpyEnvironment->Activate();
@@ -98,7 +93,6 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
 		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
-		qglDisableVertexAttribArray( 3 );
 		if ( r_useGLSL ) {
 			GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
 			environmentShader->Activate();
@@ -154,17 +148,11 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		if ( bumpStage ) {
 			GL_SelectTexture( 0 );
 
-			qglDisableVertexAttribArray( 8 );
-			qglDisableVertexAttribArray( 9 );
-			qglDisableVertexAttribArray( 10 );
 			//if ( r_useGLSL )
 			//	programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
 		}
-		qglDisableVertexAttribArray( 3 );
 		GLSLProgram::Deactivate();
 
-		// per-pixel reflection mapping without bump mapping
-		qglDisableVertexAttribArray( 2 );
 		R_UseProgramARB();
 
 		break;
@@ -490,7 +478,6 @@ void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const dr
 	case TG_SCREEN:
 		GL_FloatColor( color );
 	default:
-		qglEnableVertexAttribArray( 8 );
 		programManager->oldStageShader->Activate();
 		OldStageUniforms *oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
 		switch ( pStage->vertexColor ) {
@@ -500,13 +487,11 @@ void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const dr
 			break;
 		case SVC_MODULATE:
 			// select the vertex color source
-			qglEnableVertexAttribArray( 3 );
 			oldStageUniforms->colorMul.Set( color );
 			oldStageUniforms->colorAdd.Set( zero );
 			break;
 		case SVC_INVERSE_MODULATE:
 			// select the vertex color source
-			qglEnableVertexAttribArray( 3 );
 			oldStageUniforms->colorMul.Set( negOne );
 			oldStageUniforms->colorAdd.Set( color );
 			break;
@@ -538,13 +523,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const dr
 		programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->skybox.Set( 0 );
 	case TG_SCREEN:
 	default:
-		qglDisableVertexAttribArray( 8 );
 		GLSLProgram::Deactivate();
-		switch ( pStage->vertexColor ) {
-		case SVC_MODULATE:
-		case SVC_INVERSE_MODULATE:
-			qglDisableVertexAttribArray( 3 );
-		}
 	}
 }
 
@@ -559,11 +538,6 @@ void RB_STD_T_RenderShaderPasses_ARB( const shaderStage_t *pStage, const drawSur
 	if ( r_skipNewAmbient & 1 ) {
 		return;
 	}
-
-	qglEnableVertexAttribArray( 8 );
-	qglEnableVertexAttribArray( 9 );
-	qglEnableVertexAttribArray( 10 );
-	qglEnableVertexAttribArray( 2 );
 
 	GL_State( pStage->drawStateBits );
 
@@ -605,11 +579,6 @@ void RB_STD_T_RenderShaderPasses_ARB( const shaderStage_t *pStage, const drawSur
 
 	qglDisable( GL_VERTEX_PROGRAM_ARB );
 	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-
-	qglDisableVertexAttribArray( 8 );
-	qglDisableVertexAttribArray( 9 );
-	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 2 );
 }
 
 void RB_STD_T_RenderShaderPasses_GLSL( const shaderStage_t *pStage, const drawSurf_t *surf ) {
@@ -783,11 +752,6 @@ void RB_STD_T_RenderShaderPasses_GLSL( const shaderStage_t *pStage, const drawSu
 
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();
-	qglDisableVertexAttribArray( 8 );
-	qglDisableVertexAttribArray( 9 );
-	qglDisableVertexAttribArray( 10 );
-	qglDisableVertexAttribArray( 2 );
-
 }
 
 /*
@@ -803,7 +767,6 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 	if ( (r_skipNewAmbient & 2) || !( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) ) {
 		return;
 	}
-	qglEnableVertexAttribArray( 8 );
 
 	// SteveL #3878. Particles are automatically softened by the engine, unless they have shader programs of
 	// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that if a
@@ -891,12 +854,6 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 	GL_SelectTexture( 0 );
 
 	R_UseProgramARB();
-
-	qglDisableVertexAttribArray( 8 );
-
-	if ( pStage->vertexColor != SVC_IGNORE ) {
-		qglDisableVertexAttribArray( 3 );
-	}
 }
 
 /*
