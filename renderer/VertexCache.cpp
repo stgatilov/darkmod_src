@@ -24,7 +24,7 @@ const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK+1;
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
 idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
-idCVarBool idVertexCache::r_useBasePointer( "r_useBasePointer", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use glDrawElementsBaseVertex extension" );
+idCVarBool idVertexCache::r_useBaseVertex( "r_useBaseVertex", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use glDrawElementsBaseVertex extension" );
 idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Use GPU sync" );
 
 idVertexCache		vertexCache;
@@ -157,7 +157,7 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		++vertexUseCount;
 		vbo = dynamicData.vertexBuffer.GetAPIObject();
 	}
-	bool useBasePointer = glConfig.drawBaseVertexAvailable && r_useBasePointer;
+	bool useBasePointer = glConfig.drawBaseVertexAvailable && r_useBaseVertex;
 	if ( vbo != currentVertexBuffer ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;

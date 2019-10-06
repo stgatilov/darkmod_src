@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 //TODO: is this global variable harming multithreading?
 idList<idVec2> g_softShadowsSamples;
 idCVarBool r_shadowMapCullFront( "r_shadowMapCullFront", "0", CVAR_ARCHIVE | CVAR_RENDERER, "Cull front faces in shadow maps" );
+idCVarBool r_useMultiDraw( "r_useMultiDraw", "1", CVAR_ARCHIVE | CVAR_RENDERER, "Use glMultiDrawElements to save on draw calls" );
 
 struct ShadowMapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapUniforms )
@@ -461,7 +462,12 @@ GLSLProgram *R_FindGLSLProgram( const char *name ) {
 	return program;
 }
 
+idCVarInt r_depthColor("r_depthColor", "0", 0, "Depth pass debug color");
+idVec4 colorMagentaHalf = idVec4( 1.00f, 0.00f, 1.00f, 1.00f ) * 0.3f;
+
 void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf ) {
+
+	idVec4& depthColor = r_depthColor == 0 ? colorBlack : colorMagentaHalf;
 	idVec4 color;
 	const idMaterial		*shader = surf->material;
 	int						stage;
@@ -552,7 +558,7 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 			depthUniforms->alphaTest.Set( -1 ); // hint the glsl to skip texturing
 			GL_CheckErrors();
 		}
-		depthUniforms->color.Set( colorBlack );
+		depthUniforms->color.Set( depthColor );
 		GL_CheckErrors();
 
 		if ( !didDraw ) {
@@ -560,16 +566,21 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 		}
 	}
 
-	if ( drawSolid )  // draw the entire surface solid
-		if ( depthUniforms->instances ) 
-			RB_DrawElementsInstanced( surf, depthUniforms->instances );
-		else
-			RB_DrawElementsWithCounters( surf );
+	if ( drawSolid ) {  // draw the entire surface solid
+		if ( r_useMultiDraw && surf->indexCache.IsValid() && !depthUniforms->instances 
+			&& !memcmp( backEnd.viewDef->worldSpace.modelViewMatrix, surf->space->modelViewMatrix, 64) ) {
+			RB_Multi_AddSurf( *surf );
+		} else
+			if ( depthUniforms->instances )
+				RB_DrawElementsInstanced( surf, depthUniforms->instances );
+			else
+				RB_DrawElementsWithCounters( surf );
+	}
 	GL_CheckErrors();
 
 	// reset blending
 	if ( shader->GetSort() == SS_SUBVIEW ) {
-		depthUniforms->color.Set( colorBlack );
+		depthUniforms->color.Set( depthColor );
 		GL_State( GLS_DEPTHFUNC_LESS );
 		GL_CheckErrors();
 	}
@@ -792,15 +803,8 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	viewOrigin.Set( din->localViewOrigin );
 
 	if( ambient ) {
-		minLevel.Set(backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
-		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 		lightOrigin.Set( din->worldUpLocal.ToVec3() );
 		rimColor.Set( din->ambientRimColor );
-		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-			lightFalloffCubemap.Set( 1 );
-		} else {
-			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
-		}
 	} else {
 		lightOrigin.Set( din->localLightOrigin.ToVec3() );
 		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
@@ -823,6 +827,13 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 	}
 
 	if( ambient ) {
+		minLevel.Set( backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
+		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
+		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+			lightFalloffCubemap.Set( 1 );
+		} else {
+			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
+		}
 		return;
 	}
 

@@ -98,7 +98,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		vertexCache.UnbindIndex();
 		indexPtr = surf->frontendGeo->indexes; // FIXME
 	}
-	int basePointer = vertexCache.GetBasePointer();
+	int basePointer = vertexCache.GetBaseVertex();
 	if ( basePointer < 0 )
 		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr );
 	else
@@ -156,11 +156,55 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
 		indexPtr = surf->frontendGeo->indexes; // FIXME?
 		vertexCache.UnbindIndex();
 	}
-	int basePointer = vertexCache.GetBasePointer();
+	int basePointer = vertexCache.GetBaseVertex();
 	if ( basePointer < 0 )
 		qglDrawElementsInstanced( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, instances );
 	else
 		qglDrawElementsInstancedBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, instances, basePointer );
+}
+
+/*
+================
+RB_DrawElementsMulti
+
+Useful for batched calls with no state changes (depth pass, shadow maps)
+================
+*/
+idList<GLsizei> multiDrawCount( 1 << 10 );
+idList<void*> multiDrawIndices( 1 << 10 );
+idList<GLint> multiDrawBaseVertices( 1 << 10 );
+
+void RB_Multi_AddSurf( const drawSurf_t& surf ) {
+	multiDrawCount.Append( surf.numIndexes );
+	void* offset = (void*)(size_t)surf.indexCache.offset;
+	multiDrawIndices.Append( offset );
+	int baseVertex = vertexCache.GetBaseVertex();
+	if ( baseVertex < 0 )
+		common->Error( "Invalid base vertex in RB_Multi_AddSurf" );
+	multiDrawBaseVertices.Append( baseVertex );
+}
+
+void RB_Multi_DrawElements( int instances ) {
+	if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+		Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
+		transformUniforms->Set( &backEnd.viewDef->worldSpace );
+	} else
+		qglLoadMatrixf( backEnd.viewDef->worldSpace.modelViewMatrix );
+	vertCacheHandle_t zeroHandle{ 1,0,0 };
+	vertexCache.IndexPosition( zeroHandle );
+	vertexCache.VertexPosition( zeroHandle );
+	auto indices = (const void* const*)multiDrawIndices.Ptr();
+#if 1
+	qglMultiDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount.Ptr(), GL_INDEX_TYPE, indices, multiDrawCount.Num(), multiDrawBaseVertices.Ptr() );
+#else
+	for ( int i = 0; i < multiDrawCount.Num(); i++ ) {
+		qglDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount[i], GL_INDEX_TYPE, indices[i], multiDrawBaseVertices[i] );
+		GL_CheckErrors();
+	}
+#endif
+	multiDrawCount.SetNum( 0, false );
+	multiDrawIndices.SetNum( 0, false );
+	multiDrawBaseVertices.SetNum( 0, false );
 }
 
 /*

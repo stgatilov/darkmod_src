@@ -122,7 +122,7 @@ public:
 		return handle.isStatic || ( handle.IsValid() && handle.frameNumber == ( currentFrame & VERTCACHE_FRAME_MASK ) );
 	}
 
-	int GetBasePointer() {
+	int GetBaseVertex() {
 		return basePointer;
 	}
 
@@ -132,7 +132,7 @@ public:
 	static idCVar	r_staticIndexMemory;
 	static idCVar	r_frameVertexMemory;
 	static idCVar	r_frameIndexMemory;
-	static idCVarBool r_useBasePointer;
+	static idCVarBool r_useBaseVertex;
 
 	int				currentFrame;			// for purgable block tracking
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use

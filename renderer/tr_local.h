@@ -1396,7 +1396,10 @@ void RB_BindVariableStageImage( const textureStage_t *texture, const float *shad
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
 void RB_SetProgramEnvironment( void ); // Defined in the shader passes section next, now re-used for depth capture in #3877
 void RB_STD_DrawView( void );
-void RB_STD_FogAllLights( void );
+
+// multi draw
+void RB_Multi_AddSurf( const drawSurf_t& surf );
+void RB_Multi_DrawElements( int instances = 0 );
 
 // bloom related
 void RB_DrawFullScreenQuad( void );
