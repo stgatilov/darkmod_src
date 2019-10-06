@@ -170,41 +170,85 @@ RB_DrawElementsMulti
 Useful for batched calls with no state changes (depth pass, shadow maps)
 ================
 */
-idList<GLsizei> multiDrawCount( 1 << 10 );
-idList<void*> multiDrawIndices( 1 << 10 );
-idList<GLint> multiDrawBaseVertices( 1 << 10 );
+idCVarInt r_skipMultiDraw( "r_skipMultiDraw", "0", CVAR_RENDERER, "1 - skip single only, 2 - skip multi only" );
 
-void RB_Multi_AddSurf( const drawSurf_t& surf ) {
-	multiDrawCount.Append( surf.numIndexes );
-	void* offset = (void*)(size_t)surf.indexCache.offset;
-	multiDrawIndices.Append( offset );
-	int baseVertex = vertexCache.GetBaseVertex();
-	if ( baseVertex < 0 )
-		common->Error( "Invalid base vertex in RB_Multi_AddSurf" );
-	multiDrawBaseVertices.Append( baseVertex );
+idList<const drawSurf_t*> allSurfaces( 1 << 11 );
+
+void RB_Multi_AddSurf( const drawSurf_t* surf ) {
+	allSurfaces.Append( surf );
 }
 
 void RB_Multi_DrawElements( int instances ) {
-	if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
-		Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
-		transformUniforms->Set( &backEnd.viewDef->worldSpace );
-	} else
-		qglLoadMatrixf( backEnd.viewDef->worldSpace.modelViewMatrix );
-	vertCacheHandle_t zeroHandle{ 1,0,0 };
-	vertexCache.IndexPosition( zeroHandle );
-	vertexCache.VertexPosition( zeroHandle );
-	auto indices = (const void* const*)multiDrawIndices.Ptr();
+	idList<const drawSurf_t*> spaceSurfaces( 1 << 7 );
+	idList<GLsizei> multiDrawCount( 1 << 7 );
+	idList<void*> multiDrawIndices( 1 << 7 );
+	idList<GLint> multiDrawBaseVertices( 1 << 7 );
+
+	auto DrawSpaceSurfaces = [&]() {
+		if ( !spaceSurfaces.Num() )
+			return;
+		if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+			Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
+			transformUniforms->Set( spaceSurfaces[0]->space );
+		} else
+			qglLoadMatrixf( spaceSurfaces[0]->space->modelViewMatrix );
+		if ( spaceSurfaces.Num() == 1 ) {
+			if ( !( r_skipMultiDraw & 1 ) ) {
+				vertexCache.VertexPosition( spaceSurfaces[0]->ambientCache );
+				RB_DrawElementsWithCounters( spaceSurfaces[0] );
+			}
+			spaceSurfaces.SetNum( 0, false );
+			return;
+		}
+		if ( r_skipMultiDraw & 2 ) {
+			spaceSurfaces.SetNum( 0, false );
+			return;
+		}
+		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
+			backEnd.pc.c_drawElements++;
+		}
+		for ( auto surf : spaceSurfaces ) {
+			multiDrawCount.Append( surf->numIndexes );
+			void* offset = (void*)(size_t)surf->indexCache.offset;
+			multiDrawIndices.Append( offset );
+			vertexCache.VertexPosition( surf->ambientCache );
+			int baseVertex = vertexCache.GetBaseVertex();
+			if ( baseVertex < 0 )
+				common->Error( "Invalid base vertex in RB_Multi_AddSurf" );
+			multiDrawBaseVertices.Append( baseVertex );
+			if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
+				backEnd.pc.c_drawIndexes += surf->numIndexes * instances;
+				backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
+			}
+			vertCacheHandle_t hBufferStart{ 1,0,0 };
+			vertexCache.IndexPosition( hBufferStart );
+			vertexCache.VertexPosition( hBufferStart );
+			auto indices = (const void* const*)multiDrawIndices.Ptr();
 #if 1
-	qglMultiDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount.Ptr(), GL_INDEX_TYPE, indices, multiDrawCount.Num(), multiDrawBaseVertices.Ptr() );
+			qglMultiDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount.Ptr(), GL_INDEX_TYPE, indices, multiDrawCount.Num(), multiDrawBaseVertices.Ptr() );
 #else
-	for ( int i = 0; i < multiDrawCount.Num(); i++ ) {
-		qglDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount[i], GL_INDEX_TYPE, indices[i], multiDrawBaseVertices[i] );
-		GL_CheckErrors();
-	}
+			for ( int i = 0; i < multiDrawCount.Num(); i++ ) {
+				qglDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount[i], GL_INDEX_TYPE, indices[i], multiDrawBaseVertices[i] );
+				GL_CheckErrors();
+			}
 #endif
-	multiDrawCount.SetNum( 0, false );
-	multiDrawIndices.SetNum( 0, false );
-	multiDrawBaseVertices.SetNum( 0, false );
+		}
+		multiDrawCount.SetNum( 0, false );
+		multiDrawIndices.SetNum( 0, false );
+		multiDrawBaseVertices.SetNum( 0, false );
+		spaceSurfaces.SetNum( 0, false );
+	};
+
+	backEnd.currentSpace = NULL;
+	for ( auto surf : allSurfaces ) {
+		if ( surf->space != backEnd.currentSpace ) {
+			DrawSpaceSurfaces();
+			backEnd.currentSpace = surf->space;
+		}
+		spaceSurfaces.Append( surf );
+	}
+	DrawSpaceSurfaces();
+	allSurfaces.SetNum( 0, false );
 }
 
 /*

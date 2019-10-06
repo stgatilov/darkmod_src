@@ -1398,7 +1398,7 @@ void RB_SetProgramEnvironment( void ); // Defined in the shader passes section n
 void RB_STD_DrawView( void );
 
 // multi draw
-void RB_Multi_AddSurf( const drawSurf_t& surf );
+void RB_Multi_AddSurf( const drawSurf_t* surf );
 void RB_Multi_DrawElements( int instances = 0 );
 
 // bloom related

@@ -1006,10 +1006,8 @@ R_QsortSurfaces
 =======================
 */
 static int R_QsortSurfaces( const void *a, const void *b ) {
-	const drawSurf_t	*ea, *eb;
-
-	ea = *( drawSurf_t ** )a;
-	eb = *( drawSurf_t ** )b;
+	drawSurf_t* ea = *( drawSurf_t ** )a;
+	drawSurf_t* eb = *( drawSurf_t ** )b;
 
 	if ( ea->sort < eb->sort ) {
 		return -1;
@@ -1017,7 +1015,7 @@ static int R_QsortSurfaces( const void *a, const void *b ) {
 	if ( ea->sort > eb->sort ) {
 		return 1;
 	}
-	return 0;
+	return ea->space - eb->space;
 }
 
 /*

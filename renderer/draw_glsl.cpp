@@ -568,8 +568,9 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 
 	if ( drawSolid ) {  // draw the entire surface solid
 		if ( r_useMultiDraw && surf->indexCache.IsValid() && !depthUniforms->instances 
-			&& !memcmp( backEnd.viewDef->worldSpace.modelViewMatrix, surf->space->modelViewMatrix, 64) ) {
-			RB_Multi_AddSurf( *surf );
+			//&& !memcmp( backEnd.viewDef->worldSpace.modelViewMatrix, surf->space->modelViewMatrix, 64) 
+		) {
+			RB_Multi_AddSurf( surf );
 		} else
 			if ( depthUniforms->instances )
 				RB_DrawElementsInstanced( surf, depthUniforms->instances );
