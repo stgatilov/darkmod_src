@@ -75,8 +75,26 @@ bool AssertFailed( const char * file, int line, const char * expression ) {
 
 	idLib::Warning( "ASSERTION FAILED! %s(%d): '%s'", file, line, expression );
 
-	if ( IsDebuggerPresent() || com_assertOutOfDebugger.GetBool() ) {
-			__debugbreak();
+	// RB begin
+#ifdef _WIN32
+	if ( IsDebuggerPresent() || com_assertOutOfDebugger.GetBool() )
+#else
+	//if( com_assertOutOfDebugger.GetBool() )
+#endif
+// RB end
+	{
+#ifdef _WIN32
+#ifdef _MSC_VER
+		__debugbreak();
+#else
+		// DG: mingw support
+		DebugBreak();
+#endif
+#else // not _WIN32
+		// DG: POSIX support
+		raise( SIGTRAP );
+		// DG: end
+#endif // _WIN32
 	}
 
 	if ( skipThisAssertion ) {

@@ -48,6 +48,7 @@ idlib_string = ' \
 	math/Vector.cpp \
 	math/Line.cpp \
 	sys/posix/posix_thread.cpp \
+	sys/sys_assert.cpp \
 	BitMsg.cpp \
 	CmdArgs.cpp \
 	Debug.cpp \
