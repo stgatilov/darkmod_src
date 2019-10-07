@@ -39,18 +39,15 @@
 
 #define PACKED
 
-//#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
 
 #define ID_STATIC_TEMPLATE				static
 
-//#define ID_INLINE						__inline
 #define ID_NOINLINE						__declspec(noinline)
 //anon begin
 #define ID_INLINE_EXTERN				extern inline
-#define ID_FORCE_INLINE					__forceinline
 #define ID_FORCE_INLINE_EXTERN			extern __forceinline
 //anon end
 
@@ -84,13 +81,10 @@
 // Mac OSX
 #if defined(MACOS_X)
 
-#define BUILD_STRING				"MacOSX-universal"
 #define BUILD_OS_ID					1
 #ifdef __ppc__
-	#define	CPUSTRING					"ppc"
 	#define CPU_EASYARGS				0
 #elif defined(__i386__)
-	#define	CPUSTRING					"x86"
 	#define CPU_EASYARGS				1
 #endif
 
@@ -102,7 +96,6 @@
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"/"
 #define PATHSEPERATOR_CHAR				'/'
@@ -110,7 +103,6 @@
 #define __cdecl
 #define ASSERT							assert
 
-#define ID_INLINE						inline
 #define ID_STATIC_TEMPLATE
 
 #define ID_INLINE_EXTERN				extern inline //anon
@@ -127,21 +119,14 @@
 #define BUILD_OS_ID					2
 
 #ifdef __i386__
-	#define	BUILD_STRING				"linux-x86"
-	#define CPUSTRING					"x86"
 	#define CPU_EASYARGS				1
 #elif defined(__x86_64__)
-	#define	BUILD_STRING				"linux-x86_64"
-	#define CPUSTRING					"x64"
 	#define CPU_EASYARGS				0
 #elif defined(__ppc__)
-	#define	BUILD_STRING				"linux-ppc"
-	#define CPUSTRING					"ppc"
 	#define CPU_EASYARGS				0
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define PACKED							__attribute__((packed))
 
@@ -151,9 +136,7 @@
 #define __cdecl
 #define ASSERT							assert
 
-#define ID_INLINE						inline
 #define ID_NOINLINE						__attribute__((noinline))
-#define ID_FORCE_INLINE					__attribute__((always_inline)) inline
 
 #define ID_STATIC_TEMPLATE
 
