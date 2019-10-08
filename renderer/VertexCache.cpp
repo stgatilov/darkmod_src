@@ -28,8 +28,9 @@ idCVarBool idVertexCache::r_useBaseVertex( "r_useBaseVertex", "1", CVAR_RENDERER
 idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Use GPU sync" );
 
 idVertexCache		vertexCache;
-GLsync				bufferLock[3] = { 0,0,0 };
+GLsync				bufferLock[VERTCACHE_NUM_FRAMES] = { 0,0,0 };
 uint32_t			staticVertexSize, staticIndexSize;
+attribBind_t		currentAttribBinding;
 
 /*
 ==============
@@ -142,6 +143,7 @@ void BindAttributes( int pointer, attribBind_t attrib ) {
 		for ( auto attr_index : attrib_indices )
 			qglVertexAttribPointer( attr_index, 4, GL_FLOAT, false, sizeof( shadowCache_t ), (void*)(size_t)pointer );
 	}
+	currentAttribBinding = attrib;
 }
 
 /*
@@ -163,7 +165,9 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		currentVertexBuffer = vbo;
 		if ( useBasePointer )
 			BindAttributes( 0, attrib );
-	}
+	} else // still need to switch to shadow attrib bindings when remain in the same VBO
+		if ( useBasePointer && currentAttribBinding != attrib )
+			BindAttributes( 0, attrib );
 	if ( useBasePointer )
 		if ( attrib == attribBind_t::ATTRIB_REGULAR ) 
 			basePointer = handle.offset / sizeof( idDrawVert );

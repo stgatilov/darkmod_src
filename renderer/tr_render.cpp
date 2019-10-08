@@ -265,18 +265,18 @@ void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf ) {
 		backEnd.pc.c_shadowVertexes += surf->frontendGeo->numVerts;
 	}
 
+	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
-		qglDrawElements( GL_TRIANGLES,
-		                 surf->numIndexes,
-		                 GL_INDEX_TYPE,
-		                 vertexCache.IndexPosition( surf->indexCache ) );
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += surf->numIndexes;
-		}
+		indexPtr = vertexCache.IndexPosition( surf->indexCache );
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, surf->frontendGeo->numIndexes, GL_INDEX_TYPE, surf->frontendGeo->indexes ); // FIXME
+		indexPtr = surf->frontendGeo->indexes; // FIXME
 	}
+	int basePointer = vertexCache.GetBaseVertex();
+	if ( basePointer < 0 )
+		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr );
+	else
+		qglDrawElementsBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, basePointer );
 }
 
 
