@@ -72,7 +72,7 @@ void R_CreatePrivateShadowCache( srfTriangles_t *tri ) {
 	if ( vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 		return;
 	}
-	tri->shadowCache = vertexCache.AllocVertex( tri->shadowVertexes, ALIGN( tri->numVerts * sizeof( *tri->shadowVertexes ), VERTEX_CACHE_ALIGN ) );
+	tri->shadowCache = vertexCache.AllocVertex( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ) );
 }
 
 /*

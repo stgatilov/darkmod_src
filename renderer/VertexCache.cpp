@@ -333,7 +333,9 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 		return NO_CACHE;
 	}
 	assert( ( ( ( uintptr_t )( data ) ) & 15 ) == 0 );
-	assert( ( bytes & 15 ) == 0 );
+	const int alignSize = ( type == CACHE_INDEX ) ? INDEX_CACHE_ALIGN : VERTEX_CACHE_ALIGN;
+	const int alignedBytes = ALIGN( bytes, alignSize );
+	assert( ( alignedBytes & 15 ) == 0 );
 
 	// thread safe interlocked adds
 	byte **base = NULL;
@@ -342,7 +344,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 
 	if ( type == CACHE_INDEX ) {
 		base = &vcs.mappedIndexBase;
-		endPos = vcs.indexMemUsed += bytes;
+		endPos = vcs.indexMemUsed += alignedBytes;
 		mapOffset = vcs.indexMapOffset;
 		if ( endPos > currentIndexCacheSize ) {
 			// out of index cache, will be resized next frame
@@ -351,7 +353,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 		indexAllocCount++;
 	} else if ( type == CACHE_VERTEX ) {
 		base = &vcs.mappedVertexBase;
-		endPos = vcs.vertexMemUsed += bytes;
+		endPos = vcs.vertexMemUsed += alignedBytes;
 		mapOffset = vcs.vertexMapOffset;
 		if ( endPos > currentVertexCacheSize ) {
 			// out of vertex cache, will be resized next frame
@@ -364,7 +366,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 	}
 	vcs.allocations++;
 
-	int offset = endPos - bytes;
+	int offset = endPos - alignedBytes;
 
 	// Actually perform the data transfer
 	if ( data != NULL ) {
