@@ -611,13 +611,11 @@ to actually render the visible surfaces for this view
 */
 void RB_BeginDrawingView( void ) {
 	// set the modelview matrix for the viewer
-	if ( !r_uniformTransforms.GetBool() ) {
-		qglMatrixMode( GL_PROJECTION );
-		qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
-		qglMatrixMode( GL_MODELVIEW );
-	} else {
-		qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), backEnd.viewDef->projectionMatrix, GL_DYNAMIC_DRAW );
+	if ( r_uniformTransforms.IsModified() ) {
+		programManager->ReloadAllPrograms();
+		r_uniformTransforms.ClearModified();
 	}
+	GL_SetProjection( (float *)backEnd.viewDef->projectionMatrix );
 
 	// set the window clipping
 	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,

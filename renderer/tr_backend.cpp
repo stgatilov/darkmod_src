@@ -458,6 +458,16 @@ void GL_ByteColor( byte r, byte g, byte b, byte a ) {
 	qglVertexAttrib4ubv( 3, parm );
 }
 
+void GL_SetProjection( float* matrix ) {
+	if ( !r_uniformTransforms.GetBool() ) {
+		qglMatrixMode( GL_PROJECTION );
+		qglLoadMatrixf( matrix );
+		qglMatrixMode( GL_MODELVIEW );
+	} else {
+		qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), matrix, GL_DYNAMIC_DRAW );
+	}
+}
+
 /*
 ============================================================================
 
@@ -607,15 +617,16 @@ Moved to backend: Revelator
 =============
 */
 void RB_DrawFullScreenQuad( void ) {
+	const float e = 0.9;
 	qglBegin( GL_QUADS );
 	qglTexCoord2f( 0, 0 );
-	qglVertex2f( 0, 0 );
+	qglVertex2f( -e, -e );
 	qglTexCoord2f( 0, 1 );
-	qglVertex2f( 0, 1 );
+	qglVertex2f( -e, e );
 	qglTexCoord2f( 1, 1 );
-	qglVertex2f( 1, 1 );
+	qglVertex2f( e, e );
 	qglTexCoord2f( 1, 0 );
-	qglVertex2f( 1, 0 );
+	qglVertex2f( e, -e );
 	qglEnd();
 }
 

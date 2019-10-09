@@ -1088,6 +1088,7 @@ void	GL_State( int stateVector );
 void	GL_Cull( int cullType );
 void	GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h );
 void	GL_Viewport( int x /* left */, int y /* bottom */, int w, int h );
+void	GL_SetProjection( float* matrix );
 
 // RAII-style wrapper for qglDepthBoundsEXT
 class DepthBoundsTest {

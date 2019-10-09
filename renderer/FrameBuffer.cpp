@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 #include "FrameBuffer.h"
 #include "glsl.h"
+#include "GLSLProgramManager.h"
 
 // all false at start
 bool primaryOn = false, shadowOn = false;
@@ -707,15 +708,12 @@ void LeavePrimary() {
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 		qglLoadIdentity();
-		qglMatrixMode( GL_PROJECTION );
-		qglPushMatrix();
-		qglLoadIdentity();
-		qglOrtho( 0, 1, 0, 1, -1, 1 );
+		GL_SetProjection( mat4_identity.ToFloatPtr() );
 
 		GL_State( GLS_DEFAULT );
 		qglDisable( GL_DEPTH_TEST );
-		qglColor3f( 1, 1, 1 );
 
+		GL_SelectTexture( 0 );
 		switch ( r_showFBO.GetInteger() ) {
 		case 1:
 			globalImages->shadowAtlas->Bind();
@@ -733,9 +731,6 @@ void LeavePrimary() {
 		RB_DrawFullScreenQuad();
 
 		qglEnable( GL_DEPTH_TEST );
-		qglPopMatrix();
-		qglMatrixMode( GL_MODELVIEW );
-		GL_SelectTexture( 0 );
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
