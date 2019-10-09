@@ -55,7 +55,7 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 	if ( needsLighting && !tri->tangentsCalculated ) {
 		R_DeriveTangents( tri );
 	}
-	tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( tri->verts[0] ), VERTEX_CACHE_ALIGN ) );
+	tri->ambientCache = vertexCache.AllocVertex( tri->verts, tri->numVerts * sizeof( tri->verts[0] ) );
 
 	return tri->ambientCache.IsValid();
 }

@@ -298,6 +298,13 @@ idParallelJobList_Threads::AddJob
 */
 ID_INLINE void idParallelJobList_Threads::AddJob( jobRun_t function, void * data ) {
 	assert( done );
+	if ( maxJobs == jobList.Num() ) {
+		static int runOnce = []() {
+			common->Warning( "idParallelJobList_Threads overflow\n" );
+			return 0;
+		} ( );
+		return;
+	}
 	// make sure there isn't already a job with the same function and data in the list
 	if ( jobs_debugCheck ) {	
 		for ( int i = 0; i < jobList.Num(); i++ ) {
