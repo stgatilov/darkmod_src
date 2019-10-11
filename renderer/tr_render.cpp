@@ -418,19 +418,14 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 			GL_CheckErrors();
 		}
 
-		/* change the scissor if needed
-		#7627 revelator */
+#if 0 // duzenko: I don't think this is doing anything for non-interaction draws		
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
 			// revelator: test. parts of the functions loaded here also runs through the fbo transforms (the code for filling the depthbuffer for instance)
 			FB_ApplyScissor();
 			GL_CheckErrors();
-			// revelator: if unwanted just remove the above and uncomment the below.
-			/*GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-			              backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			              backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			              backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );*/
 		}
+#endif
 
 		// render it
 		triFunc_( drawSurf );

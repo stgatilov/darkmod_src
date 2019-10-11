@@ -2158,11 +2158,11 @@ void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
 
 	// index cache
 	if( tri.indexes != NULL && tri.numIndexes > 0 ) {
-		tri.indexCache = vertexCache.AllocStaticIndex( tri.indexes, ALIGN( tri.numIndexes * sizeof( tri.indexes[0] ), INDEX_CACHE_ALIGN ) );
+		tri.indexCache = vertexCache.AllocStaticIndex( tri.indexes, tri.numIndexes * sizeof( tri.indexes[0] ) );
 	}
 
 	// vertex cache
 	if( tri.verts != NULL && tri.numVerts > 0) {
-		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, ALIGN( tri.numVerts * sizeof( tri.verts[0] ), VERTEX_CACHE_ALIGN ) );
+		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, tri.numVerts * sizeof( tri.verts[0] ) );
 	}
 }

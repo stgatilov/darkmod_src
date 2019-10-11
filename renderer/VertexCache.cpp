@@ -61,6 +61,7 @@ static void MapGeoBufferSet( geoBufferSet_t &gbs, int frame ) {
 		int frameSize = dynamicSize / VERTCACHE_NUM_FRAMES;
 		gbs.indexMapOffset = staticIndexSize + frameSize * frame;
 		gbs.mappedIndexBase = ( byte * )gbs.indexBuffer.MapBuffer( gbs.indexMapOffset, frameSize );
+		gbs.indexMemUsed = ALIGN( gbs.indexMapOffset, INDEX_CACHE_ALIGN ) - gbs.indexMapOffset;
 	}
 }
 

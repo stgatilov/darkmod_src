@@ -203,7 +203,6 @@ public:
 
 	idBlockAlloc<areaReference_t, 1024> areaReferenceAllocator;
 	idBlockAlloc<idInteraction, 256>	interactionAllocator;
-	idBlockAlloc<areaNumRef_t, 1024>	areaNumRefAllocator;
 
 	// all light / entity interactions are referenced here for fast lookup without
 	// having to crawl the doubly linked lists.  EnntityDefs are sequential for better
@@ -241,7 +240,6 @@ public:
 	void					FlowViewThroughPortals( const idVec3 origin, int numPlanes, const idPlane *planes );
 	void					FloodLightThroughArea_r( idRenderLightLocal *light, int areaNum, const struct portalStack_s *ps );
 	void					FlowLightThroughPortals( idRenderLightLocal *light );
-	areaNumRef_t *			FloodFrustumAreas_r( const idFrustum &frustum, const int areaNum, const idBounds &bounds, areaNumRef_t *areas );
 	areaNumRef_t *			FloodFrustumAreas( const idFrustum &frustum, areaNumRef_t *areas );
 	bool					CullEntityByPortals( const idRenderEntityLocal *entity, const struct portalStack_s *ps );
 	void					AddAreaEntityRefs( int areaNum, const struct portalStack_s *ps );

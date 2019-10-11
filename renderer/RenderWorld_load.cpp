@@ -58,7 +58,6 @@ void idRenderWorldLocal::FreeWorld() {
 
 	areaReferenceAllocator.Shutdown();
 	interactionAllocator.Shutdown();
-	areaNumRefAllocator.Shutdown();
 
 	mapName = "<FREED>";
 }

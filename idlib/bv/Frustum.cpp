@@ -45,8 +45,9 @@ BoxToPoints
 ============
 */
 void BoxToPoints( const idVec3 &center, const idVec3 &extents, const idMat3 &axis, idVec3 points[8] ) {
-	idMat3 ax;
+	//idMat3 ax;
 	//idVec3 temp[4]; duzenko: unnecessary implicit loop for(int 0<=i<4): temp[i][0]=[1]=[2]=0
+	idVec3* ax = (idVec3*)_alloca( 3 * sizeof( idVec3 ) );
 	idVec3* temp = (idVec3*)_alloca( 4 * sizeof( idVec3 ) );
 
 	ax[0] = extents[0] * axis[0];
