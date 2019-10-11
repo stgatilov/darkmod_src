@@ -130,18 +130,8 @@ public:
 	// makes sure all necessary light surfaces and shadow surfaces are created, and
 	// calls R_LinkLightSurf() for each one
 	void					AddActiveInteraction( void );
-	bool					HasActive( idScreenRect &shadowScissor );
 
 private:
-	enum {
-		FRUSTUM_UNINITIALIZED,
-		FRUSTUM_INVALID,
-		FRUSTUM_VALID,
-		FRUSTUM_VALIDAREAS,
-	}						frustumState;
-	idFrustum				frustum;				// frustum which contains the interaction
-	areaNumRef_t *			frustumAreas;			// numbers of the areas the frustum touches
-
 	int						dynamicModelFrameCount;	// so we can tell if a callback model animated
 
 private:
@@ -154,10 +144,6 @@ private:
 	// try to determine if the entire interaction, including shadows, is guaranteed
 	// to be outside the view frustum
 	bool					CullInteractionByViewFrustum( const idFrustum &viewFrustum );
-
-	// determine the minimum scissor rect that will include the interaction shadows
-	// projected to the bounds of the light
-	idScreenRect			CalcInteractionScissorRectangle( const idFrustum &viewFrustum );
 };
 
 

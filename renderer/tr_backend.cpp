@@ -617,7 +617,7 @@ Moved to backend: Revelator
 =============
 */
 void RB_DrawFullScreenQuad( void ) {
-	const float e = 0.9;
+	const float e = 0.9f;
 	qglBegin( GL_QUADS );
 	qglTexCoord2f( 0, 0 );
 	qglVertex2f( -e, -e );

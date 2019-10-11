@@ -915,6 +915,12 @@ void R_SetupProjection( void ) {
 	tr.viewDef->projectionMatrix[7] = 0;
 	tr.viewDef->projectionMatrix[11] = -1;
 	tr.viewDef->projectionMatrix[15] = 0;
+
+	// setup render matrices for faster culling
+	idRenderMatrix::Transpose( *(idRenderMatrix*)tr.viewDef->projectionMatrix, tr.viewDef->projectionRenderMatrix );
+	idRenderMatrix viewRenderMatrix;
+	idRenderMatrix::Transpose( *(idRenderMatrix*)tr.viewDef->worldSpace.modelViewMatrix, viewRenderMatrix );
+	idRenderMatrix::Multiply( tr.viewDef->projectionRenderMatrix, viewRenderMatrix, tr.viewDef->worldSpace.mvp );
 }
 
 /*

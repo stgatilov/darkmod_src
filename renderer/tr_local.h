@@ -403,6 +403,8 @@ typedef struct viewEntity_s {
 
 	float				modelMatrix[16];		// local coords to global coords
 	float				modelViewMatrix[16];	// local coords to eye coords
+	idRenderMatrix		mvp;
+
 	int					drawCalls;				// perf tool
 } viewEntity_t;
 
@@ -415,6 +417,8 @@ typedef struct viewDef_s {
 	renderView_t		renderView;
 
 	float				projectionMatrix[16];
+	idRenderMatrix		projectionRenderMatrix;	// tech5 version of projectionMatrix
+
 	viewEntity_t		worldSpace;
 
 	idRenderWorldLocal *renderWorld;

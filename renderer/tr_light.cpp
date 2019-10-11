@@ -18,6 +18,7 @@
 #include <unordered_set>
 #pragma hdrstop
 
+#include "../idlib/geometry/sys_intrinsics.h"
 #include "tr_local.h"
 #include "Model_local.h" // Added in #3878 (soft particles) to allow r_AddAmbientDrawSurfs to access info about particles to 
 						 // pass to the backend without bloating the modelSurface_t struct used everywhere. That struct is the only
@@ -1280,6 +1281,29 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 }
 
 /*
+============================
+R_ShadowBounds
+
+Even though the extruded shadows are drawn projected to infinity, their effects are limited
+to a fraction of the light's volume.  An extruded box would require 12 faces to specify and
+be a lot of trouble, but an axial bounding box is quick and easy to determine.
+
+If the light is completely contained in the view, there is no value in trying to cull the
+shadows, as they will all pass.
+
+Pure function.
+============================
+*/
+void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, const idVec3& lightOrigin, idBounds& shadowBounds )
+{
+	for ( int i = 0; i < 3; i++ )
+	{
+		shadowBounds[0][i] = __fsels( modelBounds[0][i] - lightOrigin[i], modelBounds[0][i], lightBounds[0][i] );
+		shadowBounds[1][i] = __fsels( lightOrigin[i] - modelBounds[1][i], modelBounds[1][i], lightBounds[1][i] );
+	}
+}
+
+/*
 ===============
 R_HasVisibleShadows
 
@@ -1294,8 +1318,13 @@ static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
 		if ( inter->lightDef->viewCount != tr.viewCount ) {
 			continue;
 		}
-		idScreenRect shadowRect;
-		if ( inter->HasActive( shadowRect ) )
+		// check more precisely for shadow visibility
+		idBounds shadowBounds;
+		R_ShadowBounds( def.globalReferenceBounds, inter->lightDef->globalLightBounds, inter->lightDef->globalLightOrigin, shadowBounds );
+
+		// this doesn't say that the shadow can't effect anything, only that it can't
+		// effect anything in the view
+		if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
 			return true;
 	}
 	return false;
