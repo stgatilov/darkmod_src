@@ -1156,6 +1156,7 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		}
 	}
 
+#if 0
 	//
 	// convert to exact power of 2 sizes
 	//
@@ -1186,6 +1187,7 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 			*height = scaled_height;
 		}
 	}
+#endif
 }
 
 static idMat3 cubeAxis[6];

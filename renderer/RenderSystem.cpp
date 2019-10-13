@@ -394,11 +394,25 @@ void idRenderSystemLocal::DrawSmallChar( int x, int y, int ch, const idMaterial 
 	frow = row * 0.0625f;
 	fcol = col * 0.0625f;
 	size = 0.0625f;
+	
+// 2.08: dense char map texel overlap
+	float texelSize = 0.f / material->GetImageHeight();
+	frow += texelSize / 2;
 
+#if 0
 	DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
 	                fcol, frow,
 	                fcol + size, frow + size,
 	                material );
+#else
+	float fontAspect = (float) material->GetImageWidth() / material->GetImageHeight();
+	float screenAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
+	float virtualAspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
+	DrawStretchPic( x, y, fontAspect / screenAspect * virtualAspect * SMALLCHAR_HEIGHT, SMALLCHAR_HEIGHT,
+		fcol, frow,
+		fcol + size, frow + size - texelSize,
+		material );
+#endif
 }
 
 /*
