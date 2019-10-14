@@ -1533,14 +1533,17 @@ SumOfUsedImages
 */
 int idImageManager::SumOfUsedImages() {
 	idImage	*image;
-	int	total = 0;
+	int	total = 0, used = 0;
 
 	for ( int i = 0; i < images.Num(); i++ ) {
 		image = images[i];
 		if ( image->frameUsed == backEnd.frameCount ) {
 			total += image->StorageSize();
+			used++;
 		}
 	}
+	if ( r_showPrimitives.GetInteger()  > 1 )
+		return used;
 	return total;
 }
 

@@ -34,10 +34,10 @@ only be called when the back end thread is idle.
 static void R_PerformanceCounters( void ) {
 	if ( r_showPrimitives.GetInteger() != 0 ) {
 
-		float megaBytes = globalImages->SumOfUsedImages() / ( 1024 * 1024.0 );
+		int megaBytes = globalImages->SumOfUsedImages();
 
 		if ( r_showPrimitives.GetInteger() > 1 ) {
-			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i image:%5.1f MB ml:%i\n",
+			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i images:%d ml:%i\n",
 				tr.pc.c_numViews,
 				backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
 				backEnd.pc.c_drawIndexes / 3,
@@ -50,13 +50,13 @@ static void R_PerformanceCounters( void ) {
 				backEnd.pc.c_matrixLoads
 			);
 		} else {
-			common->Printf( "views:%i draws:%i tris:%i (shdw:%i) (vbo:%i) image:%5.1f MB\n",
+			common->Printf( "views:%i draws:%i tris:%i (shdw:%i) (vbo:%i) image:%d MB\n",
 			                tr.pc.c_numViews,
 			                backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
 			                ( backEnd.pc.c_drawIndexes + backEnd.pc.c_shadowIndexes ) / 3,
 			                backEnd.pc.c_shadowIndexes / 3,
 			                backEnd.pc.c_vboIndexes / 3,
-			                megaBytes
+			                megaBytes >> 20
 			              );
 		}
 	}
