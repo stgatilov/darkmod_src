@@ -131,15 +131,18 @@ struct GLSLUniform_mat4 : GLSLUniformBase {
 			: GLSLUniformBase(program, uniformName) {}
 
 	void Set(const float *value) {
-		qglUniformMatrix4fv(paramLocation, 1, GL_FALSE, value);
+		if ( IsPresent() )
+			qglUniformMatrix4fv( paramLocation, 1, GL_FALSE, value );
 	}
 
 	void Set(const idMat4 &value) {
-		qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
+		if ( IsPresent() )
+			qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
 	}
 
 	void SetArray( int count, const float *value ) {
-		qglUniformMatrix4fv( paramLocation, count, false, value );
+		if ( IsPresent() )
+			qglUniformMatrix4fv( paramLocation, count, false, value );
 	}
 };
 

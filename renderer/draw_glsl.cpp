@@ -117,9 +117,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		FB_BindShadowTexture();
 
 	// draw it
-	GL_CheckErrors();
 	RB_DrawElementsWithCounters( din->surf );
-	GL_CheckErrors();
 }
 
 /*
@@ -359,7 +357,6 @@ void RB_GLSL_DrawLight_ShadowMap() {
 
 void RB_GLSL_DrawInteractions_SingleLight() {
 	// do fogging later
-	GL_CheckErrors();
 	if ( backEnd.vLight->lightShader->IsFogLight() ) {
 		return;
 	}
