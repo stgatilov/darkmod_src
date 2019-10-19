@@ -1078,7 +1078,6 @@ m_ImageAnisotropyHandle	(-1)
 		m_ImageAnisotropyHandle = imageAnistropy->AddOnModifiedCallback(
             [&]() { OnImageAnisotropyChanged(); });
 	}
-	r_postprocess = cvarSystem->Find( "r_postprocess" );
 }
 
 idPlayerView::dnPostProcessManager::~dnPostProcessManager()
@@ -1100,6 +1099,5 @@ void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
 void idPlayerView::dnPostProcessManager::Update( void )
 {
 	// duzenko: do bloom in the back renderer
-	if (r_postprocess->GetBool()) 
-		renderSystem->PostProcess(); 
+	renderSystem->PostProcess(); 
 }

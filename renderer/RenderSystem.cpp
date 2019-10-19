@@ -848,7 +848,7 @@ PostProcess
 ================
 */
 void idRenderSystemLocal::PostProcess() {
-	emptyCommand_t *cmd = ( emptyCommand_t * )R_GetCommandBuffer( sizeof( *cmd ) );
+	emptyCommand_t* cmd = (emptyCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_BLOOM;
 }
 

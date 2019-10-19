@@ -145,7 +145,6 @@ private:
 		const idMaterial *m_matFinalScenePass;*/
 
 		int					m_ImageAnisotropyHandle;
-		idCVar*				r_postprocess;
 
 	public:
 		dnPostProcessManager();

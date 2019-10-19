@@ -876,13 +876,7 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 
 	bool		normalsOnly = false, force = false;
 	bool		checkPrecompressed = false;		// if we are doing this as a vid_restart, look for precompressed like normal
-	static bool postProcessCheck = false;
 	static int	msaaCheck = 0;
-
-	if ( r_postprocess.GetBool() ) {
-		postProcessCheck = true;
-		r_postprocess.SetBool( 0 );
-	}
 
 	if ( r_multiSamples.GetInteger() > 0 ) {
 		msaaCheck = r_multiSamples.GetInteger();
@@ -916,14 +910,9 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 		game->OnReloadImages();
 	}
 
-	if ( postProcessCheck ) {
-		r_postprocess.SetBool( 1 );
-	}
-
 	if ( msaaCheck > 0 ) {
 		r_multiSamples.SetInteger( msaaCheck );
 	}
-	postProcessCheck = false;
 	msaaCheck = 0;
 }
 

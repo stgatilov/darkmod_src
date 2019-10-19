@@ -631,6 +631,20 @@ void RB_DrawFullScreenQuad( float e ) {
 	qglEnd();
 }
 
+// bloom related - J.C.Denton
+idCVar r_postprocess_debugMode( "r_postprocess_debugMode", "0", CVAR_GAME | CVAR_INTEGER, " Shows all the textures generated for postprocessing effects. \n 1: Shows currentRender \n 2: Shows bloom Images \n 3: Shows Cooked Math Data." );
+idCVarInt r_postprocess( "r_postprocess", "0", CVAR_RENDERER | CVAR_ARCHIVE, " Activates bloom" );
+idCVar r_postprocess_brightPassThreshold( "r_postprocess_brightPassThreshold", "0.2", CVAR_GAME | CVAR_FLOAT, " Intensities of this value are subtracted from scene render to extract bloom image" );
+idCVar r_postprocess_brightPassOffset( "r_postprocess_brightPassOffset", "2", CVAR_GAME | CVAR_FLOAT, " Bloom image receives smooth fade along a curve from bright to very bright areas based on this variable's value" );
+idCVar r_postprocess_colorCurveBias( "r_postprocess_colorCurveBias", "0.8", CVAR_GAME | CVAR_FLOAT, " Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve" );
+idCVar r_postprocess_colorCorrection( "r_postprocess_colorCorrection", "5", CVAR_GAME | CVAR_FLOAT, " Applies an exponential color correction function to final scene " );
+idCVar r_postprocess_colorCorrectBias( "r_postprocess_colorCorrectBias", "0.1", CVAR_GAME | CVAR_FLOAT, " Applies an exponential color correction function to final scene with this bias. \n E.g. value ranges between 0-1. A blend is performed between scene render and color corrected image based on this value " );
+idCVar r_postprocess_desaturation( "r_postprocess_desaturation", "0.05", CVAR_GAME | CVAR_FLOAT, " Desaturates the scene " );
+idCVar r_postprocess_sceneExposure( "r_postprocess_sceneExposure", "0.9", CVAR_GAME | CVAR_FLOAT, " Scene render is linearly scaled up. Try values lower or greater than 1.0" );
+idCVar r_postprocess_sceneGamma( "r_postprocess_sceneGamma", "0.82", CVAR_GAME | CVAR_FLOAT, " Gamma Correction." );
+idCVar r_postprocess_bloomIntensity( "r_postprocess_bloomIntensity", "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, " Adjusts the Bloom intensity. 0.0 disables the bloom but other postprocessing effects remain unaffected." );
+idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, " Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
+
 /*
 =============
 RB_Bloom
@@ -640,23 +654,27 @@ Moved to backend: Revelator
 =============
 */
 void RB_Bloom( void ) {
-#if 1
-	FB_CopyRender( globalImages->bloomImage,
-		backEnd.viewDef->viewport.x1,
-		backEnd.viewDef->viewport.y1,
-		backEnd.viewDef->viewport.x2 -
-		backEnd.viewDef->viewport.x1 + 1,
-		backEnd.viewDef->viewport.y2 -
-		backEnd.viewDef->viewport.y1 + 1, false );
+	if ( !r_postprocess )
+		return;
 
-	GL_SelectTexture( 0 );
-	globalImages->bloomImage->Bind();
-	qglGenerateMipmap( GL_TEXTURE_2D );
+	if ( r_postprocess == 2 ) {
+		FB_CopyRender( globalImages->bloomImage,
+			backEnd.viewDef->viewport.x1,
+			backEnd.viewDef->viewport.y1,
+			backEnd.viewDef->viewport.x2 -
+			backEnd.viewDef->viewport.x1 + 1,
+			backEnd.viewDef->viewport.y2 -
+			backEnd.viewDef->viewport.y1 + 1, false );
 
-	programManager->autoExposureShader->Activate();
-	RB_DrawFullScreenQuad();
+		GL_SelectTexture( 0 );
+		globalImages->bloomImage->Bind();
+		qglGenerateMipmap( GL_TEXTURE_2D );
 
-#else // <= 2.07
+		programManager->autoExposureShader->Activate();
+		RB_DrawFullScreenQuad();
+		return;
+	}
+
 	int w = globalImages->currentRenderImage->uploadWidth;
 	int h = globalImages->currentRenderImage->uploadHeight;
 
@@ -668,44 +686,45 @@ void RB_Bloom( void ) {
 	}
 	float	parm[4];
 
+	GL_SetProjection( mat4_identity.ToFloatPtr() );
 	FB_SelectPostProcess();
-
-	// full screen blends
-	qglLoadIdentity();
-	qglMatrixMode( GL_PROJECTION );
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglOrtho( 0, 1, 0, 1, -1, 1 );
 
 	GL_State( GLS_DEPTHMASK );
 
 	qglDisable( GL_DEPTH_TEST );
 
-	qglEnable( GL_VERTEX_PROGRAM_ARB );
-	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	//qglEnable( GL_VERTEX_PROGRAM_ARB );
+	//qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 	GL_SelectTexture( 0 );
 
 	GL_Viewport( 0, 0, 256, 1 );
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
+
+	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
+	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
+	GLSLProgram* cook1 = R_FindGLSLProgram( "cookMath_pass1" );
+	cook1->Activate();
 	parm[0] = r_postprocess_colorCurveBias.GetFloat();
 	parm[1] = r_postprocess_sceneGamma.GetFloat();
 	parm[2] = r_postprocess_sceneExposure.GetFloat();
 	parm[3] = 1;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	//qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	int lp0 = cook1->GetUniformLocation( "u_localParam0" );
+	qglUniform4fv( lp0, 1, parm );
 	RB_DrawFullScreenQuad();
-	//globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
 	FB_CopyRender( globalImages->bloomCookedMath, 0, 0, 256, 1, false );
 
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
+	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
+	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
+	GLSLProgram* cook2 = R_FindGLSLProgram( "cookMath_pass1" );
+	cook2->Activate();
 	parm[0] = r_postprocess_brightPassThreshold.GetFloat();
 	parm[1] = r_postprocess_brightPassOffset.GetFloat();
 	parm[2] = r_postprocess_colorCorrection.GetFloat();
 	parm[3] = Max( Min( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	//qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	lp0 = cook2->GetUniformLocation( "u_localParam0" );
+	qglUniform4fv( lp0, 1, parm );
 	RB_DrawFullScreenQuad();
-	//globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
 	FB_CopyRender( globalImages->bloomCookedMath, 0, 0, 256, 1, false );
 
 	GL_Viewport( 0, 0, w / 2, h / 2 );
@@ -713,31 +732,38 @@ void RB_Bloom( void ) {
 	globalImages->currentRenderImage->Bind();
 	GL_SelectTexture( 1 );
 	globalImages->bloomCookedMath->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
+	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
+	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
+	GLSLProgram* brightPass = R_FindGLSLProgram( "brightPass_opt" );
+	brightPass->Activate();
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
-	//globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
 	globalImages->bloomImage->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
+	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
+	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
+	GLSLProgram* blurX = R_FindGLSLProgram( "blurx" );
+	blurX->Activate();
 	parm[0] = 2 / w;
 	parm[1] = 1;
 	parm[2] = 1;
 	parm[3] = 1;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	//qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	lp0 = blurX->GetUniformLocation( "u_localParam0" );
+	qglUniform4fv( lp0, 1, parm );
 	RB_DrawFullScreenQuad();
-	//globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
+	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
+	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
+	GLSLProgram* blurY = R_FindGLSLProgram( "blury" );
+	blurY->Activate();
 	parm[0] = 2 / h;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	//qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	lp0 = blurY->GetUniformLocation( "u_localParam0" );
+	qglUniform4fv( lp0, 1, parm );
 	RB_DrawFullScreenQuad();
-	//globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
 	FB_SelectPrimary();
@@ -749,21 +775,27 @@ void RB_Bloom( void ) {
 	globalImages->bloomImage->Bind();
 	GL_SelectTexture( 2 );
 	globalImages->bloomCookedMath->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
+	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
+	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
+	GLSLProgram* finalPass = R_FindGLSLProgram( "finalScenePass_opt" );
+	finalPass->Activate();
+	int tex1 = finalPass->GetUniformLocation( "u_texture1" );
+	qglUniform1i( tex1, 1 );
+	int tex2 = finalPass->GetUniformLocation( "u_texture2" );
+	qglUniform1i( tex2, 2 );
 	parm[0] = r_postprocess_bloomIntensity.GetFloat();
 	parm[1] = Max( Min( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	//qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	lp0 = finalPass->GetUniformLocation( "u_localParam0" );
+	qglUniform4fv( lp0, 1, parm );
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
 
-	qglDisable( GL_VERTEX_PROGRAM_ARB );
-	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+	//qglDisable( GL_VERTEX_PROGRAM_ARB );
+	//qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+	finalPass->Deactivate();
 
-	qglPopMatrix();
 	qglEnable( GL_DEPTH_TEST );
-	qglMatrixMode( GL_MODELVIEW );
-#endif
 }
 
 /*

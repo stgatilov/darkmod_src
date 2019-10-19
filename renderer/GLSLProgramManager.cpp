@@ -39,6 +39,11 @@ namespace {
 		}
 		Attributes::Default::Bind( program );
 		program->Link();
+		program->Activate();
+		int mv = program->GetUniformLocation( "u_modelViewMatrix" );
+		if ( mv >= 0 )
+			qglUniformMatrix4fv( mv, 1, false, mat4_identity.ToFloatPtr() );
+		program->Deactivate();
 	}
 }
 
