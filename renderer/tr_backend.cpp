@@ -17,6 +17,8 @@
 
 #include "tr_local.h"
 #include "FrameBuffer.h"
+#include "glsl.h"
+#include "GLSLProgramManager.h"
 
 backEndState_t	backEnd;
 idCVarBool image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER, "1 = print outstanding background loads" );
@@ -616,8 +618,7 @@ RB_DrawFullScreenQuad
 Moved to backend: Revelator
 =============
 */
-void RB_DrawFullScreenQuad( void ) {
-	const float e = 0.9f;
+void RB_DrawFullScreenQuad( float e ) {
 	qglBegin( GL_QUADS );
 	qglTexCoord2f( 0, 0 );
 	qglVertex2f( -e, -e );
@@ -639,6 +640,23 @@ Moved to backend: Revelator
 =============
 */
 void RB_Bloom( void ) {
+#if 1
+	FB_CopyRender( globalImages->bloomImage,
+		backEnd.viewDef->viewport.x1,
+		backEnd.viewDef->viewport.y1,
+		backEnd.viewDef->viewport.x2 -
+		backEnd.viewDef->viewport.x1 + 1,
+		backEnd.viewDef->viewport.y2 -
+		backEnd.viewDef->viewport.y1 + 1, false );
+
+	GL_SelectTexture( 0 );
+	globalImages->bloomImage->Bind();
+	qglGenerateMipmap( GL_TEXTURE_2D );
+
+	programManager->autoExposureShader->Activate();
+	RB_DrawFullScreenQuad();
+
+#else // <= 2.07
 	int w = globalImages->currentRenderImage->uploadWidth;
 	int h = globalImages->currentRenderImage->uploadHeight;
 
@@ -745,6 +763,7 @@ void RB_Bloom( void ) {
 	qglPopMatrix();
 	qglEnable( GL_DEPTH_TEST );
 	qglMatrixMode( GL_MODELVIEW );
+#endif
 }
 
 /*

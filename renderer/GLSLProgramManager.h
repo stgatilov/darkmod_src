@@ -47,6 +47,7 @@ public:
 	// global built-in shaders
 	GLSLProgram* frobShader;
 	GLSLProgram *softParticleShader;
+	GLSLProgram* autoExposureShader;
 	GLSLProgram *cubeMapShader;
 	GLSLProgram *bumpyEnvironment;
 	GLSLProgram *depthShader;

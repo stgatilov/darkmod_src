@@ -1407,7 +1407,7 @@ void RB_Multi_AddSurf( const drawSurf_t* surf );
 void RB_Multi_DrawElements( int instances = 0 );
 
 // bloom related
-void RB_DrawFullScreenQuad( void );
+void RB_DrawFullScreenQuad( float e = 1 );
 void RB_Bloom( void );
 
 /*
