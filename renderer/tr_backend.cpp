@@ -715,7 +715,7 @@ void RB_Bloom( void ) {
 
 	//qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
 	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
-	GLSLProgram* cook2 = R_FindGLSLProgram( "cookMath_pass1" );
+	GLSLProgram* cook2 = R_FindGLSLProgram( "cookMath_pass2" );
 	cook2->Activate();
 	parm[0] = r_postprocess_brightPassThreshold.GetFloat();
 	parm[1] = r_postprocess_brightPassOffset.GetFloat();
@@ -736,6 +736,8 @@ void RB_Bloom( void ) {
 	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
 	GLSLProgram* brightPass = R_FindGLSLProgram( "brightPass_opt" );
 	brightPass->Activate();
+	int tex1 = brightPass->GetUniformLocation( "u_texture1" );
+	qglUniform1i( tex1, 1 );
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
 	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
@@ -779,7 +781,7 @@ void RB_Bloom( void ) {
 	//qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
 	GLSLProgram* finalPass = R_FindGLSLProgram( "finalScenePass_opt" );
 	finalPass->Activate();
-	int tex1 = finalPass->GetUniformLocation( "u_texture1" );
+	tex1 = finalPass->GetUniformLocation( "u_texture1" );
 	qglUniform1i( tex1, 1 );
 	int tex2 = finalPass->GetUniformLocation( "u_texture2" );
 	qglUniform1i( tex2, 2 );
