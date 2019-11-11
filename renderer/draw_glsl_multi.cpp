@@ -92,9 +92,9 @@ private:
 
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowRects.Append( idVec4( 0, 0, -2, 0 ) );
+		else if ( vLight->shadowMapIndex <= 0 )
+			shadowRects.Append( idVec4( 0, 0, -1, 0 ) ); 
 		else {
-			if ( vLight->shadowMapIndex <= 0 )
-				shadowRects.Append( idVec4( 0, 0, -1, 0 ) );
 			auto & page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
 			idVec4 v( page.x, page.y, 0, page.width - 1 );
 			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());

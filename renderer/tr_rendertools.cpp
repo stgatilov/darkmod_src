@@ -681,21 +681,17 @@ static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	GL_State( GLS_POLYMODE_LINE );
 
-	switch ( r_showTris.GetInteger() ) {
-	case 1:	// only draw visible ones
+	if ( r_showTris.GetInteger() & 1 ) {
+		// only draw visible ones
 		qglPolygonOffset( -1, -2 );
 		qglEnable( GL_POLYGON_OFFSET_LINE );
-		break;
-	default:
-	case 2:	// draw all front facing
+	} else 
+		qglDisable( GL_DEPTH_TEST );
+	if ( r_showTris.GetInteger() & 2 ) 
+		// draw all front facing
 		GL_Cull( CT_FRONT_SIDED );
-		qglDisable( GL_DEPTH_TEST );
-		break;
-	case 3: // draw all
+	else
 		GL_Cull( CT_TWO_SIDED );
-		qglDisable( GL_DEPTH_TEST );
-		break;
-	}
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_RenderTriangleSurface );
 
 	qglEnable( GL_DEPTH_TEST );
