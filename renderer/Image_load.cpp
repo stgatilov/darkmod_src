@@ -1271,10 +1271,10 @@ std::condition_variable signalImageThread;
 
 void BackgroundLoading() {
 	while ( 1 ) {
-//		Sys_Sleep( 20 );
 		{
-			std::unique_lock< std::mutex > lock( signalMutex );
-			signalImageThread.wait( lock );
+//			std::unique_lock< std::mutex > lock( signalMutex );
+//			signalImageThread.wait( lock );
+			std::lock_guard<std::mutex> lock( signalMutex );
 		}
 		while ( !backgroundLoads.empty() ) {
 			/*if ( loading && !uploading )
