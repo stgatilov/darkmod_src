@@ -34,7 +34,8 @@ only be called when the back end thread is idle.
 static void R_PerformanceCounters( void ) {
 	if ( r_showPrimitives.GetInteger() != 0 ) {
 
-		int megaBytes = globalImages->SumOfUsedImages();
+		int numUsed = -1;
+		int bytesUsed = globalImages->SumOfUsedImages(&numUsed);
 
 		if ( r_showPrimitives.GetInteger() > 1 ) {
 			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i images:%d ml:%i\n",
@@ -46,7 +47,7 @@ static void R_PerformanceCounters( void ) {
 				(backEnd.pc.c_drawVertexes - backEnd.pc.c_drawRefVertexes),
 				backEnd.pc.c_shadowIndexes / 3,
 				backEnd.pc.c_shadowVertexes,
-				megaBytes,
+				numUsed,
 				backEnd.pc.c_matrixLoads
 			);
 		} else {
@@ -56,7 +57,7 @@ static void R_PerformanceCounters( void ) {
 			                ( backEnd.pc.c_drawIndexes + backEnd.pc.c_shadowIndexes ) / 3,
 			                backEnd.pc.c_shadowIndexes / 3,
 			                backEnd.pc.c_vboIndexes / 3,
-			                megaBytes >> 20
+			                bytesUsed >> 20
 			              );
 		}
 	}

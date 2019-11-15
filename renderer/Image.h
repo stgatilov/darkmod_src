@@ -298,7 +298,7 @@ public:
 	idImage *			ImageFromFunction( const char *name, void ( *generatorFunction )( idImage *image ) );
 
 	// returns the number of bytes of image data bound in the previous frame
-	int					SumOfUsedImages();
+	int					SumOfUsedImages( int *numberOfUsed = nullptr );
 
 	// called each frame to allow some cvars to automatically force changes
 	void				CheckCvars();

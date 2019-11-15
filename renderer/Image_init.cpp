@@ -1520,7 +1520,7 @@ void idImageManager::CheckCvars() {
 SumOfUsedImages
 ===============
 */
-int idImageManager::SumOfUsedImages() {
+int idImageManager::SumOfUsedImages(int *numberOfUsed) {
 	idImage	*image;
 	int	total = 0, used = 0;
 
@@ -1531,8 +1531,8 @@ int idImageManager::SumOfUsedImages() {
 			used++;
 		}
 	}
-	if ( r_showPrimitives.GetInteger()  > 1 )
-		return used;
+	if (numberOfUsed)
+		*numberOfUsed = used;
 	return total;
 }
 
