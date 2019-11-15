@@ -79,6 +79,7 @@ public:
 	virtual bool PerformTask();
 
 	void StartPatrol();
+	void StopPatrol(); // grayman #5056
 	void RestartPatrol();
 
 	void Patrol();

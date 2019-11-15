@@ -172,6 +172,22 @@ void MovementSubsystem::StartPatrol()
 	}
 }
 
+void MovementSubsystem::StopPatrol() // grayman #5056
+{
+	if ( !_patrolling )
+	{
+		return;
+	}
+
+	idAI* owner = _owner.GetEntity();
+	Memory& memory = owner->GetMemory();
+	ClearTasks();
+	owner->StopMove(MOVE_STATUS_DONE);
+	memory.lastPath = NULL;
+	memory.currentPath = NULL;
+	memory.nextPath = NULL;
+}
+
 idPathCorner* MovementSubsystem::GetNextPathCorner(idPathCorner* curPath, idAI* owner)
 {
 	if (curPath == NULL)

@@ -2306,6 +2306,9 @@ public:
 	// grayman #2920
 	void Event_RestartPatrol();
 
+	// grayman #5056
+	void Event_StopPatrol();
+
 	void Event_OnDeadPersonEncounter(idActor* person); // grayman #3317
 	void Event_OnUnconsciousPersonEncounter(idActor* person); // grayman #3317
 

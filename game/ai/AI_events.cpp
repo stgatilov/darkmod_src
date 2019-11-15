@@ -386,6 +386,7 @@ const idEventDef AI_IsPlayerResponsibleForDeath( "isPlayerResponsibleForDeath", 
 	"Returns true if the player was responsible for the AI's caller's death."); // grayman #3679
 
 const idEventDef AI_GetVectorToIdealOrigin("getVectorToIdealOrigin", EventArgs(), 'v', "Returns the vector from where the AI is to where he ideally should be"); // grayman #3679
+const idEventDef AI_StopPatrol("stopPatrol", EventArgs(), EV_RETURNS_VOID, "Stops an AI from patrolling"); // grayman #5056
 
 /*
 * This is the AI event table class for a generic NPC actor.
@@ -529,7 +530,6 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
 	EVENT( AI_ReEvaluateArea,					idAI::Event_ReEvaluateArea )
 	EVENT( AI_PlayCustomAnim,					idAI::Event_PlayCustomAnim )	// #3597
-
 	
 	// greebo: State manipulation interface
 	EVENT(  AI_PushState,						idAI::Event_PushState )
@@ -580,6 +580,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_NoisemakerDone,					idAI::Event_NoisemakerDone) // grayman #3681
 	EVENT ( AI_OnHitByDoor,						idAI::Event_HitByDoor) // grayman #3681
 	EVENT ( AI_GetVectorToIdealOrigin,			idAI::Event_GetVectorToIdealOrigin) // grayman #3989
+	EVENT ( AI_StopPatrol,						idAI::Event_StopPatrol) // grayman #5056
 
 END_CLASS
 
@@ -3343,6 +3344,11 @@ void idAI::Event_EmptyHand(const char* hand) // grayman #3154
 			}
 		}
 	}
+}
+
+void idAI::Event_StopPatrol() // grayman #5056
+{
+	movementSubsystem->StopPatrol();
 }
 
 void idAI::Event_RestartPatrol() // grayman #2920
