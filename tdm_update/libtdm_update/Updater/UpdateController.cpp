@@ -253,6 +253,7 @@ void UpdateController::PerformStep(UpdateStep step)
 		break;
 
 	case InstallVcRedist:
+#if 0
 		bool need32bit; need32bit = _updater.NeedsVCRedist(false);
 		bool need64bit; need64bit = _updater.NeedsVCRedist(true);
 		if (need32bit || need64bit) {
@@ -276,6 +277,7 @@ void UpdateController::PerformStep(UpdateStep step)
 				);
 			}
 		}
+#endif
 		break;
 
 	case PostUpdateCleanup:

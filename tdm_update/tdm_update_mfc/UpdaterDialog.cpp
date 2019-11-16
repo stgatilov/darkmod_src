@@ -519,6 +519,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		break;
 
     case InstallVcRedist:
+#if 0
         // Update header title in this step
         _subTitle.SetWindowText(CString("Finalizing installation"));
 
@@ -530,6 +531,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 
         _step8Text.SetWindowText(CString(""));
         _step8State.SetWindowText(CString(""));
+#endif
         break;
 
     case PostUpdateCleanup:
@@ -749,11 +751,13 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 	break;
 
 	case InstallVcRedist:
+#if 0
 	{
 		_progressMain.SetPos(100);
 		_step7Text.SetWindowText(CString("Installing Microsoft Visual C++ redistributable packages... done."));
 		_statusText.SetWindowText(CString("Done installing VC++ redistributable."));
 	}
+#endif
 	break;
 
     case PostUpdateCleanup:
