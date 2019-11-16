@@ -233,7 +233,7 @@ void* Sys_InterlockedCompareExchangePointer( void*& ptr, void* comparand, void* 
 
 void				Sys_Yield();
 
-const int MAX_CRITICAL_SECTIONS = 8;
+const int MAX_CRITICAL_SECTIONS = 4;
 
 enum criticalSection_t
 {
@@ -241,7 +241,6 @@ enum criticalSection_t
 	CRITICAL_SECTION_ONE,		// sound
 	CRITICAL_SECTION_TWO,		// front end parallel jobs
 	CRITICAL_SECTION_THREE,		// cinematic log
-	CRITICAL_SECTION_IMAGELOADER,
 };
 
 #endif	// !__SYS_THREADING_H__

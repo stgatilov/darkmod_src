@@ -1265,44 +1265,26 @@ void R_UploadImageData( idImage& image ) {
 }
 
 std::stack<idImage*> backgroundLoads;
-//std::mutex mtx;           // mutex for critical section
 std::mutex signalMutex;
 std::condition_variable imageThreadSignal;
 
-struct CriticalSectionLock {
-	criticalSection_t id;
-	CriticalSectionLock( criticalSection_t id ) : id( id ) {
-		Sys_EnterCriticalSection( id );
-	}
-	~CriticalSectionLock() {
-		Sys_LeaveCriticalSection( id );
-	}
-};
-
 void BackgroundLoading() {
 	while ( 1 ) {
+		idImage* img = nullptr;
 		{
-			std::unique_lock< std::mutex > lock( signalMutex );
-//			std::lock_guard<std::mutex> lock( signalMutex );
-			imageThreadSignal.wait( lock );
+			std::unique_lock<std::mutex> lock( signalMutex );
+			imageThreadSignal.wait( lock, []() { return backgroundLoads.size() > 0; } );
+			img = backgroundLoads.top();
+			backgroundLoads.pop();
 		}
-		while ( !backgroundLoads.empty() ) {
-			/*if ( loading && !uploading )
-				GetTickCount();*/
-			idImage* img;
-			{
-				//std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
-				CriticalSectionLock lock( CRITICAL_SECTION_IMAGELOADER );
-				img = backgroundLoads.top();
-				backgroundLoads.pop();
-			}
-			auto& load = img->backgroundLoad;
-			auto start = Sys_Milliseconds();
-			R_LoadImageData( *img );
-			backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
-			backEnd.pc.textureBackgroundLoads++;
-			load.state = IS_LOADED;
-		}
+		/*if ( loading && !uploading ) // debug state check
+			GetTickCount();*/
+		auto& load = img->backgroundLoad;
+		auto start = Sys_Milliseconds();
+		R_LoadImageData( *img );
+		backEnd.pc.textureLoadTime += ( Sys_Milliseconds() - start );
+		backEnd.pc.textureBackgroundLoads++;
+		load.state = IS_LOADED;
 	}
 }
 
@@ -1358,10 +1340,9 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 		if ( allowBackground ) {
 			if ( load.state == IS_NONE ) {
 				load.state = IS_SCHEDULED;
-				//std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
-				CriticalSectionLock lock( CRITICAL_SECTION_IMAGELOADER );
+				std::unique_lock<std::mutex> lock( signalMutex );
 				backgroundLoads.push( this );
-				imageThreadSignal.notify_one();
+				imageThreadSignal.notify_all();
 				return;
 			}
 			if ( load.state == IS_SCHEDULED ) {
