@@ -69,13 +69,7 @@ If you have questions concerning this license or the applicable additional terms
 #define DIRECTINPUT_VERSION  0x0800			// was 0x0700 with the old mssdk
 #include <dinput.h>
 
-#define DIRECTSOUND_VERSION  0x0800
-
-#ifdef _MSC_VER
-#include <dsound.h>
-#else
-// DG: MinGW is incompatible with the original dsound.h because it contains MSVC specific annotations
-#include <wine-dsound.h>
+#ifndef _MSC_VER
 
 // RB: was missing in MinGW/include/winuser.h
 #ifndef MAPVK_VSC_TO_VK_EX
@@ -96,9 +90,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #endif
 
-
-
-#include <dinput.h>
 
 #endif /* !GAME_DLL */
 #endif /* !_D3SDK */
