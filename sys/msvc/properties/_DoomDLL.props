@@ -16,7 +16,7 @@
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>pugixml.lib;zlib.lib;minizip.lib;libcurl.lib;OpenAL32.lib;ogg.lib;vorbis.lib;vorbisfile.lib;DevIL.lib;libjpeg.lib;libpng16.lib;mbedtls.lib;libavcodec.lib;libavformat.lib;libavutil.lib;libswresample.lib;libswscale.lib;bcrypt.lib;Shell32.lib;Gdi32.lib;Advapi32.lib;dbghelp.lib;dxguid.lib;dinput8.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pugixml.lib;zlib.lib;minizip.lib;libcurl.lib;OpenAL32.lib;ogg.lib;vorbis.lib;vorbisfile.lib;DevIL.lib;libjpeg.lib;libpng16.lib;mbedtls.lib;libavcodec.lib;libavformat.lib;libavutil.lib;libswresample.lib;libswscale.lib;bcrypt.lib;Shell32.lib;Gdi32.lib;Advapi32.lib;dbghelp.lib;dinput8.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <StackReserveSize>16777216</StackReserveSize>
       <StackCommitSize>16777216</StackCommitSize>
