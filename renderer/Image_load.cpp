@@ -1265,23 +1265,34 @@ void R_UploadImageData( idImage& image ) {
 }
 
 std::stack<idImage*> backgroundLoads;
-std::mutex mtx;           // mutex for critical section
+//std::mutex mtx;           // mutex for critical section
 std::mutex signalMutex;
-std::condition_variable signalImageThread;
+std::condition_variable imageThreadSignal;
+
+struct CriticalSectionLock {
+	criticalSection_t id;
+	CriticalSectionLock( criticalSection_t id ) : id( id ) {
+		Sys_EnterCriticalSection( id );
+	}
+	~CriticalSectionLock() {
+		Sys_LeaveCriticalSection( id );
+	}
+};
 
 void BackgroundLoading() {
 	while ( 1 ) {
 		{
-//			std::unique_lock< std::mutex > lock( signalMutex );
-//			signalImageThread.wait( lock );
-			std::lock_guard<std::mutex> lock( signalMutex );
+			std::unique_lock< std::mutex > lock( signalMutex );
+//			std::lock_guard<std::mutex> lock( signalMutex );
+			imageThreadSignal.wait( lock );
 		}
 		while ( !backgroundLoads.empty() ) {
 			/*if ( loading && !uploading )
 				GetTickCount();*/
 			idImage* img;
 			{
-				std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+				//std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+				CriticalSectionLock lock( CRITICAL_SECTION_IMAGELOADER );
 				img = backgroundLoads.top();
 				backgroundLoads.pop();
 			}
@@ -1347,9 +1358,10 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 		if ( allowBackground ) {
 			if ( load.state == IS_NONE ) {
 				load.state = IS_SCHEDULED;
-				std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+				//std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
+				CriticalSectionLock lock( CRITICAL_SECTION_IMAGELOADER );
 				backgroundLoads.push( this );
-				signalImageThread.notify_one();
+				imageThreadSignal.notify_one();
 				return;
 			}
 			if ( load.state == IS_SCHEDULED ) {
