@@ -331,10 +331,12 @@ void idSessionLocal::TerminateFrontendThread() {
 		frontendThread.join();
 	}
 #else
-	std::lock_guard<std::mutex> lock( signalMutex );
-	shutdownFrontend = true;
-	signalFrontendThread.notify_one();
-	//Sys_DestroyThread( frontendThread );
+	{
+		std::lock_guard<std::mutex> lock( signalMutex );
+		shutdownFrontend = true;
+		signalFrontendThread.notify_one();
+	}
+	Sys_DestroyThread( frontendThread );
 #endif
 }
 
