@@ -1156,6 +1156,8 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		}
 	}
 
+//duzenko: modern GPUs all support NPOT textures "as is"
+//this software rescaling is being removed
 #if 0
 	//
 	// convert to exact power of 2 sizes
