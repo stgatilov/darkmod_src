@@ -175,7 +175,10 @@ idCVarInt r_skipMultiDraw( "r_skipMultiDraw", "0", CVAR_RENDERER, "1 - skip sing
 idList<const drawSurf_t*> allSurfaces( 1 << 11 );
 
 void RB_Multi_AddSurf( const drawSurf_t* surf ) {
-	allSurfaces.Append( surf );
+	if ( glConfig.drawBaseVertexAvailable && idVertexCache::r_useBaseVertex )
+		allSurfaces.Append( surf );
+	else
+		RB_DrawElementsWithCounters( surf );
 }
 
 void RB_Multi_DrawElements( int instances ) {
