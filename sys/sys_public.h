@@ -364,7 +364,6 @@ bool			Sys_GetCurrentMonitorResolution( int &width, int &height );
 
 void			Sys_Mkdir( const char *path );
 ID_TIME_T		Sys_FileTimeStamp( FILE *fp );
-ID_TIME_T       Sys_DosToUnixTime( unsigned long dostime );
 // NOTE: do we need to guarantee the same output on all platforms?
 const char *	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 const char *	Sys_DefaultBasePath( void );

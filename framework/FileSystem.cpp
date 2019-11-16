@@ -2685,7 +2685,6 @@ idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pa
 	file->fullPath = pak->pakFilename + "/" + relativePath;
 	file->zipFilePos = pakFile->pos;
 	file->fileSize = file_info.uncompressed_size;
-	file->fileLastMod = Sys_DosToUnixTime(file_info.dosDate);
 
 	return file;
 }
@@ -3356,6 +3355,11 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 
 	sys->DLL_GetFileName( name, dllName, MAX_OSPATH );
 	dllHash = HashFileName( dllName );
+
+	//stgatilov #5042: timestamps of files in zip packages are no longer read
+	//they are all zero now, just as in the original Doom 3
+	//hence, this method can be seriously broken now...
+	common->Warning("idFileSystemLocal::FindDLL: timestamps of files inside pk4 are no longer extracted");
 
     // try locate a game dll/so in the executable directory as well as in a pak file.
     // compare the last modified timestamps and use the latest version of the game dll/so.

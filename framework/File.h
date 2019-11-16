@@ -232,7 +232,7 @@ private:
 	bool compressed;		// whether the file is actually compressed
 	uint64_t				zipFilePos;		// zip file info position in pak
 	int						fileSize;		// size of the file
-    ID_TIME_T               fileLastMod;    // last modified date/time of the file
+	static const ID_TIME_T	fileLastMod = 0;	//stgatilov #5042: not used any more
 	void *					z;				// unzip info
 };
 

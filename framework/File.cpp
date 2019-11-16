@@ -1273,7 +1273,6 @@ idFile_InZip::idFile_InZip( void ) {
 	zipFilePos = 0;
 	compressed = false;
 	fileSize = 0;
-	fileLastMod = 0;
 	memset( &z, 0, sizeof( z ) );
 }
 
