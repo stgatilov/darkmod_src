@@ -430,22 +430,22 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	// compute width and height
 	if ( parms.fullScreen ) {
-	
-	    if ( r_fullscreen.GetInteger() == 1 )
+		if ( r_fullscreen.GetInteger() == 1 || r_fullscreen.GetInteger() == 2 )
 		{
-		exstyle = WS_EX_TOPMOST;
-		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
+			exstyle = 0;
+			stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 
-		x = 0;
-		y = 0;
-		}
-		if ( r_fullscreen.GetInteger() == 2 )
-		{
-		exstyle = 0; // WS_EX_TOPMOST;
-		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
+			if (win32.win_topmost)
+				 exstyle |= WS_EX_TOPMOST;
 
-		x = 0;
-		y = 0;
+			x = 0;
+			y = 0;
+			if ( r_fullscreen.GetInteger() == 2 ) {
+				//adding excessive lines above and below screen, so that OS does NOT put us into exclusive mode
+				//this hack was found here: https://stackoverflow.com/q/22259067/556899
+				y = -1;
+				parms.height += 2;
+			}
 		}
 		if ( r_useFbo.GetBool() && parms.height != win32.desktopHeight ) {
 			extern idCVar r_customWidth, r_customHeight, cv_r_fovRatio;

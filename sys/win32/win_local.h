@@ -105,6 +105,7 @@ typedef struct {
 	static idCVar	win_outputEditString;
 	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
+	static idCVarBool win_topmost;
 
 	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 	HANDLE			events[MAX_TRIGGER_EVENTS];

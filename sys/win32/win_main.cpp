@@ -56,6 +56,7 @@ idCVar Win32Vars_t::win_outputDebugString( "win_outputDebugString", "0", CVAR_SY
 idCVar Win32Vars_t::win_outputEditString( "win_outputEditString", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar Win32Vars_t::win_viewlog( "win_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER, "" );
 idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_BOOL, "allows the game to be updated while dragging the window" );
+idCVarBool Win32Vars_t::win_topmost("win_topmost", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "add topmost flag to Doom 3 window during creation: no other window can occlude it");
 
 Win32Vars_t	win32;
 
