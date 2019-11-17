@@ -772,10 +772,12 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		// and shadow data from the source surface
 		sint->ambientTris = tri;
 		
+#if 0	// duzenko: interactions disabled this way remain disabled during the main view render
 		// nbohr1more: #4379 lightgem culling
 		if ( !HasShadows() && !shader->IsLightgemSurf() && tr.viewDef->IsLightGem() ) { 
 			continue; 
 		}
+#endif		
 
 		// "invisible ink" lights and shaders
 		if ( shader->Spectrum() != lightShader->Spectrum() ) {
