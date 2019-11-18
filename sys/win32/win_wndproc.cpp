@@ -47,8 +47,8 @@ void WIN_Sizing(WORD side, RECT *rect)
 	height -= decoHeight;
 
 	// Clamp to a minimum size
-	int currentHeight = cvarSystem->GetCVarInteger("r_customHeight");
-	int currentWidth = cvarSystem->GetCVarInteger("r_customWidth");
+	int currentHeight = r_customHeight.GetInteger();
+	int currentWidth = r_customWidth.GetInteger();
 	int minWidth = 256;
 	int minHeight = minWidth * currentHeight / currentWidth;
 

@@ -421,43 +421,27 @@ void idGameLocal::Clear( void )
 // grayman #3807
 int idGameLocal::DetermineAspectRatio()
 {
+	int viewX = r_customWidth.GetInteger();
+	int viewY = r_customHeight.GetInteger();
+	if (viewX <= 0 || viewY <= 0)
+		Error( "idGameLocal::CalcFov: screen dimensions are %d x %d <= 0", viewX, viewY );
+	float ratio_fov = float(viewX) / float(viewY);
+
+	// There are several overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9 TV, 16:9.
+	// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.770833, 1.777778.
+	// To match an overlay to a given 'ratio_fov', we'll assume that halfway between two
+	// ratios, we'll switch from the lower aspect ratio to the higher.
 	int result = 0;
-
-	// if r_fovRatio != 0, use it directly:
-	float ratio_fov = cv_r_fovRatio.GetFloat();
-
-	if (ratio_fov > 0.01)
-	{
-		// There are several overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9 TV, 16:9.
-		// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.770833, 1.777778.
-		// To match an overlay to a given 'ratio_fov', we'll assume that halfway between two
-		// ratios, we'll switch from the lower aspect ratio to the higher.
-
-		if (ratio_fov < (1.25 + (1.333333 - 1.25)/2))
-		{
-			result = 3; // 5:4
-		}
-		else if (ratio_fov < (1.333333 + (1.6 - 1.333333)/2))
-		{
-			result = 0; // 4:3
-		}
-		else if (ratio_fov < (1.6 + (1.770833 - 1.6)/2))
-		{
-			result = 2; // 16:10
-		}
-		else if (ratio_fov < (1.770833 + (1.777778 - 1.770833)/2))
-		{
-			result = 4; // 16:9 TV
-		}
-		else
-		{
-			result = 1; // 16:9
-		}
-	}
+	if (ratio_fov < (1.25 + (1.333333 - 1.25)/2))
+		result = 3; // 5:4
+	else if (ratio_fov < (1.333333 + (1.6 - 1.333333)/2))
+		result = 0; // 4:3
+	else if (ratio_fov < (1.6 + (1.770833 - 1.6)/2))
+		result = 2; // 16:10
+	else if (ratio_fov < (1.770833 + (1.777778 - 1.770833)/2))
+		result = 4; // 16:9 TV
 	else
-	{
-		result = r_aspectRatio.GetInteger(); // use r_aspectRatio
-	}
+		result = 1; // 16:9
 
 	return result;
 }
@@ -3370,80 +3354,22 @@ Calculates the horizontal and vertical field of view based on a horizontal field
 ====================
 */
 void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
-	float	x;
-	float	y;
-	float	ratio_x;
-	float	ratio_y;
-	float	ratio_fov;
+	int viewX = r_customWidth.GetInteger();
+	int viewY = r_customHeight.GetInteger();
 
-   
-	// first, calculate the vertical fov based on a 640x480 view
-	x = 640.0f / tan( base_fov / 360.0f * idMath::PI );
-	y = atan2( 480.0f, x );
-	fov_y = y * 360.0f / idMath::PI;
+	if (viewX <= 0 || viewY <= 0)
+		Error( "idGameLocal::CalcFov: screen dimensions are %d x %d <= 0", viewX, viewY );
+	if (base_fov <= 1e-3f || base_fov >= 180.0f - 1e-3f)
+		Error( "idGameLocal::CalcFov: bad base value %f", base_fov );
 
-	// FIXME: somehow, this is happening occasionally
-	assert( fov_y > 0 );
-	if ( fov_y <= 0 ) {
-       
-		Error( "idGameLocal::CalcFov: bad result" );
-	}
+	float aspect = float(viewX) / float(viewY);
+	float fovX = DEG2RAD(base_fov);
+	float ratioX = idMath::Tan(fovX * 0.5f);
+	float ratioY = ratioX / aspect;
+	float fovY = idMath::ATan(ratioY) * 2.0f;
 
-	// if r_fovRatio != 0, use it directly:
-	ratio_fov = cv_r_fovRatio.GetFloat();
-
-	if (ratio_fov > 0.01)
-	{
-		ratio_x = ratio_fov;
-		ratio_y = 1.0f;
-	}
-	else
-	{
-		// old code, use r_aspectRatio
-		switch( r_aspectRatio.GetInteger() ) {
-		default :
-		case 0 :
-			// 4:3
-			fov_x = base_fov;
-			return;
-			break;
-		case 1 :
-			// 16:9
-		case 4 :
-			// TV 16:9
-			ratio_x = 16.0f;
-			ratio_y = 9.0f;
-			break;
-		case 2 :
-			// 16:10
-			ratio_x = 16.0f;
-			ratio_y = 10.0f;
-			break;
-		case 3 :
-			// 5:4
-			ratio_x = 5.0f;
-			ratio_y = 4.0f;
-			break;
-		}
-	}
-
-//	Printf( "Using FOV ratio %0.3f:%0.0f\n", ratio_x, ratio_y );
-	
-	y = ratio_y / tan( fov_y / 360.0f * idMath::PI );
-	fov_x = atan2( ratio_x, y ) * 360.0f / idMath::PI;
-
-	if ( fov_x < base_fov ) {
-		fov_x = base_fov;
-		x = ratio_x / tan( fov_x / 360.0f * idMath::PI );
-		fov_y = atan2( ratio_y, x ) * 360.0f / idMath::PI;
-	}
-
-	// FIXME: somehow, this is happening occasionally
-	assert( ( fov_x > 0 ) && ( fov_y > 0 ) );
-	if ( ( fov_y <= 0 ) || ( fov_x <= 0 ) ) {
-    
-		Error( "idGameLocal::CalcFov: bad result" );
-	}
+	fov_x = RAD2DEG(fovX);
+	fov_y = RAD2DEG(fovY);
 }
 
 /*
@@ -3610,7 +3536,7 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 	// Set the custom height and width
 	int mode = cv_tdm_widescreenmode.GetInteger();
 	if (mode < 0 || mode >= VideoModesNum) {
-		Printf("widesreenmode %i: out of range\n", mode);
+		Printf("widescreenmode %i: out of range\n", mode);
 		return;
 	}
 	auto vm = VideoModes[mode];
@@ -3618,16 +3544,16 @@ void idGameLocal::UpdateScreenResolutionFromGUI(idUserInterface* gui)
 	int height = vm.height;
 	int aspect = vm.aspect;
 
-	Printf("widesreenmode %i: setting r_customWidth|r_customHeight = %ix%i, r_aspectRatio = %i\n", mode, width, height, aspect);
-	cvarSystem->SetCVarInteger("r_customWidth", width);
-	cvarSystem->SetCVarInteger("r_customHeight", height);
-	cvarSystem->SetCVarInteger("r_aspectRatio", aspect);
+	Printf("widescreenmode %i: setting r_customWidth|r_customHeight = %ix%i, r_aspectRatio = %i\n", mode, width, height, aspect);
+	r_customWidth.SetInteger(width);
+	r_customHeight.SetInteger(height);
+	r_aspectRatio.SetInteger(aspect);
 }
 
 void idGameLocal::UpdateWidescreenModeFromScreenResolution(idUserInterface* gui)
 {
-	int width = cvarSystem->GetCVarInteger("r_customWidth");
-	int height = cvarSystem->GetCVarInteger("r_customHeight");
+	int width = r_customWidth.GetInteger();
+	int height = r_customHeight.GetInteger();
 
 	int mode = -1;
 	for (int m = 0; m < VideoModesNum; m++) {

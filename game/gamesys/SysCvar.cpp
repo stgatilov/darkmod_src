@@ -116,6 +116,9 @@ idCVar cv_show_health (							"tdm_show_health",					"0",            CVAR_ARCHIV
 
 idCVar cv_ai_show_aasfuncobstacle_state(		"tdm_ai_show_aasfuncobstacle_state",	"0",		CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
 
+idCVar r_customWidth( "r_customWidth", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "video resolution, horizontal" );
+idCVar r_customHeight( "r_customHeight", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "video resolution, vertical" );
+idCVar r_aspectRatio("r_aspectRatio", "0", CVAR_INTEGER | CVAR_ARCHIVE, "Aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n3 = 5:4\n4 = 16:9 TV", 0, 4 );
 idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "The widescreen mode selected in the main menu (for internal use)." );
 idCVar cv_tdm_menu_music("tdm_menu_music",	"1", CVAR_ARCHIVE | CVAR_BOOL, "Whether to play background music in the main menu (for internal use)." );
 
@@ -512,10 +515,6 @@ idCVar ui_chat(						"ui_chat",					"0",			CVAR_GAME | CVAR_USERINFO | CVAR_BOOL
 
 // change anytime vars
 idCVar developer(					"developer",				"0",			CVAR_GAME | CVAR_BOOL, "" );
-
-idCVar r_aspectRatio( 				"r_aspectRatio",			"0",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Aspect ratio of view, determines the ratio between FOV for x and y. Only used if r_fovRatio is 0:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n3 = 5:4\n4 = 16:9 TV", 0, 4 );
-
-idCVar cv_r_fovRatio( 				"r_fovRatio",			"0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Aspect ratio of view, if set to greater than 0, determines the ratio between FOV for x and y directly, and r_aspectRatio is ignored. The value should closely match r_customWidth / r_customHeight." );
 
 idCVar cv_gui_Width( 				"gui_Width",			"1.0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Size of the GUI as factor of the screen width. Default is 1.0 and stretches the GUI over the entire screen." );
 idCVar cv_gui_Height( 				"gui_Height",			"1.0",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Size of the GUI as factor of the screen height. Default is 1.0 and stretches the GUI over the entire screen." );

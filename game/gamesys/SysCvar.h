@@ -79,6 +79,9 @@ extern idCVar cv_show_health;
 
 extern idCVar cv_ai_show_aasfuncobstacle_state;
 
+extern idCVar r_customWidth;
+extern idCVar r_customHeight;
+extern idCVar r_aspectRatio;
 extern idCVar cv_tdm_widescreenmode;
 extern idCVar cv_tdm_menu_music;
 
@@ -419,11 +422,6 @@ extern idCVar cv_ai_debug_greetings;
 extern idCVar cv_ai_fov_show;
 extern idCVar cv_ai_ko_show;
 
-/**
-* If != 0, use this ratio between FOV X and Y and ignore r_aspectRatio.
-*/
-extern idCVar	cv_r_fovRatio;
-
 /** Screen width * gui_Width = GUI width */
 extern idCVar	cv_gui_Width;
 /** Screen height * gui_Height = GUI height */
@@ -441,8 +439,6 @@ extern idCVar	developer;
 
 extern idCVar	g_cinematic;
 extern idCVar	g_cinematicMaxSkipTime;
-
-extern idCVar	r_aspectRatio;
 
 extern idCVar	g_monsters;
 extern idCVar	g_decals;
