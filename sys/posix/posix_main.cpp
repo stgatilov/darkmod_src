@@ -505,7 +505,7 @@ void Posix_EarlyInit( void ) {
 	Posix_InitSigs();
 	// set the base time
 	Sys_Milliseconds();
-	//Posix_InitPThreads();
+	Posix_InitPThreads();
 }
 
 /*

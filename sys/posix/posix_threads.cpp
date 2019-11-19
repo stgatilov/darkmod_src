@@ -182,3 +182,34 @@ void Posix_StartAsyncThread() {
 	}
 	common->Printf( "Async thread started\n" );
 }
+
+/*
+==================
+Posix_InitPThreads
+==================
+*/
+void Posix_InitPThreads( ) {
+	int i;
+	pthread_mutexattr_t attr;
+
+	// init critical sections
+	for ( i = 0; i < MAX_LOCAL_CRITICAL_SECTIONS; i++ ) {
+		pthread_mutexattr_init( &attr );
+		pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_ERRORCHECK );
+		pthread_mutex_init( &global_lock[i], &attr );
+		pthread_mutexattr_destroy( &attr );
+	}
+
+	// init event sleep/triggers
+	for ( i = 0; i < MAX_TRIGGER_EVENTS; i++ ) {
+		pthread_cond_init( &event_cond[ i ], NULL );
+		signaled[i] = false;
+		waiting[i] = false;
+	}
+
+	/* stgatilov: this was removed by duzenko
+	// init threads table
+	for ( i = 0; i < MAX_THREADS; i++ ) {
+		g_threads[ i ] = NULL;
+	}*/
+}
