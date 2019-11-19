@@ -44,8 +44,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 	bool reqs = true;
 	reqs = reqs && CHECK_FEATURE(GL_VERSION_3_1);
 	reqs = reqs && CHECK_FEATURE(GL_EXT_texture_compression_s3tc);
-	reqs = reqs && CHECK_FEATURE(GL_ARB_vertex_program);
-	reqs = reqs && CHECK_FEATURE(GL_ARB_fragment_program);
 #if defined(_WIN32)
 	reqs = reqs && CHECK_FEATURE(WGL_VERSION_1_0);
 	reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context);
@@ -78,8 +76,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 	common->Printf( "Max geometry output components: %d\n", n );
 	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
-	//qglGetProgramivARB( GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &n );
-	//common->Printf( "Max env parameters: %d\n", n );
 
 	glConfig.anisotropicAvailable = CHECK_FEATURE(GL_EXT_texture_filter_anisotropic);
 	if ( glConfig.anisotropicAvailable ) {
@@ -89,6 +85,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 		glConfig.maxTextureAnisotropy = 1;
 	}
 
+	glConfig.arbAssemblyShadersAvailable = CHECK_FEATURE(GL_ARB_vertex_program) && CHECK_FEATURE(GL_ARB_fragment_program);
 	glConfig.stencilTexturing = CHECK_FEATURE( GL_ARB_stencil_texturing );
 	glConfig.depthBoundsTestAvailable = CHECK_FEATURE(GL_EXT_depth_bounds_test);
 	glConfig.geometryShaderAvailable = CHECK_FEATURE(GL_ARB_geometry_shader4);

@@ -15,9 +15,9 @@
 #define GL_VERSION_3_1 1
 // Mandatory extensions:
 #define GL_EXT_texture_compression_s3tc			1
-#define GL_ARB_vertex_program					1	// ARB2 assembly shader language
-#define GL_ARB_fragment_program					1
 // Optional extensions:
+#define GL_ARB_vertex_program					1	//ARB2 assembly shader language
+#define GL_ARB_fragment_program					1	//ARB2 assembly shader language
 #define GL_EXT_texture_filter_anisotropic		1	//core since 4.6
 #define GL_EXT_depth_bounds_test				1
 #define GL_ARB_compatibility					1	//check context profile, 3.1 only

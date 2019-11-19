@@ -153,7 +153,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		}
 		GLSLProgram::Deactivate();
 
-		R_UseProgramARB();
+		if (!r_useGLSL)
+			R_UseProgramARB();
 
 		break;
 	}
@@ -341,6 +342,9 @@ Parameters 5 and 6 are used by soft particles #3878. Note these can be freely re
 ==================
 */
 void RB_SetProgramEnvironment( void ) {
+	if (r_useGLSL)
+		return;
+
 	float	parm[4];
 	int		pot;
 
@@ -400,6 +404,9 @@ Sets variables related to the current space that can be used by all vertex progr
 ==================
 */
 void RB_SetProgramEnvironmentSpace( void ) {
+	if (r_useGLSL)
+		return;
+
 	const struct viewEntity_s *space = backEnd.currentSpace;
 	float	parm[4];
 
@@ -854,7 +861,9 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 
 	GL_SelectTexture( 0 );
 
-	R_UseProgramARB();
+	if ( !r_useGLSL ) {
+		R_UseProgramARB();
+	}
 }
 
 /*

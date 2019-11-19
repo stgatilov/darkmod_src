@@ -160,6 +160,9 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	int		i;
 	idStr	stripped = program;
 
+	if (!glConfig.arbAssemblyShadersAvailable)
+		return 0;
+
 	stripped.StripFileExtension();
 
 	// see if it is already loaded
@@ -221,11 +224,14 @@ R_ReloadARBPrograms_f
 ==================
 */
 void R_ReloadARBPrograms_f( const idCmdArgs &args ) {
-	int		i;
+	if (!glConfig.arbAssemblyShadersAvailable) {
+		common->Printf("No ARB programs loaded\n");
+		return;
+	}
 
 	common->Printf( "----- R_ReloadARBPrograms -----\n" );
 
-	for ( i = 0; progs[i].name && progs[i].name[0]; i++ ) {
+	for ( int i = 0; progs[i].name && progs[i].name[0]; i++ ) {
 		R_LoadARBProgram( i );
 	}
 	common->Printf( "-------------------------------\n" );

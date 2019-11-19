@@ -58,6 +58,7 @@ typedef struct glconfig_s {
 	bool				framebufferMultisampleAvailable = true;
 	bool				framebufferPackedDepthStencilAvailable = true;
 
+	bool				arbAssemblyShadersAvailable;
 	bool				anisotropicAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				geometryShaderAvailable;
