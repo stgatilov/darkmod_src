@@ -67,9 +67,14 @@ private:
 		GenerateIf0();
 		qglBindRenderbuffer( GL_RENDERBUFFER, handle );
 	}
-}	renderBufferColor = { GL_COLOR_ATTACHMENT0, GL_SRGB_ALPHA },
+}	renderBufferColor = { GL_COLOR_ATTACHMENT0 },
 	renderBufferDepthStencil = { GL_DEPTH_STENCIL_ATTACHMENT },
 	renderBufferPostProcess = { GL_COLOR_ATTACHMENT0, GL_RGBA };
+
+
+GLsizei ColorRenderBufferInternalFormat() {
+	return (r_fboSRGB ? GL_SRGB_ALPHA : GL_RGBA);
+}
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if ( !fboPrimary ) {
@@ -79,7 +84,7 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		if ( !fboResolve ) {
 			qglGenFramebuffers( 1, &fboResolve );
 		}
-		renderBufferColor.Size( width, height, msaa );
+		renderBufferColor.Size( width, height, msaa, ColorRenderBufferInternalFormat() );
 		// revert to old behaviour, switches are to specific
 		int depthFormat = ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8;
 		renderBufferDepthStencil.Size( width, height, msaa, depthFormat );
@@ -89,7 +94,7 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		renderBufferDepthStencil.Attach();
 	} else {
 		// only need the color render buffer, depth will be bound directly to texture
-		renderBufferColor.Size( width, height );
+		renderBufferColor.Size( width, height, 1, ColorRenderBufferInternalFormat() );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		renderBufferColor.Attach();
 	}
@@ -432,7 +437,7 @@ void CheckCreatePrimary() {
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
-	renderBufferColor.Size( curWidth, curHeight, msaa );
+	renderBufferColor.Size( curWidth, curHeight, msaa, ColorRenderBufferInternalFormat() );
 	renderBufferDepthStencil.Size( curWidth, curHeight, msaa );
 }
 
