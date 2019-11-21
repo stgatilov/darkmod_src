@@ -254,9 +254,10 @@ void Sys_DestroyThread( uintptr_t threadHandle )
 #endif
 	
 #if !defined(__ANDROID__)
-	if( pthread_cancel( ( pthread_t )threadHandle ) != 0 )
+	int cancel_ret = pthread_cancel( ( pthread_t )threadHandle );
+	if( cancel_ret != 0 )
 	{
-		idLib::common->FatalError( "ERROR: pthread_cancel %s failed\n", name );
+		idLib::common->Warning( "pthread_cancel %s failed\n", name );
 	}
 #endif
 	
