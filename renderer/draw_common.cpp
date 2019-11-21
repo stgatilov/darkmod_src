@@ -92,7 +92,6 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		} else // Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
-		//note: value of color attribute is set in GL_FloatColor; don't read vertex arrays for it!
 		if ( r_useGLSL ) {
 			GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
 			environmentShader->Activate();
@@ -481,9 +480,11 @@ void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const dr
 		}
 		break;
 	case TG_REFLECT_CUBE:
+		qglDisableVertexAttribArray( 3 );
 		GL_FloatColor( color );
 		break;
 	case TG_SCREEN:
+		qglDisableVertexAttribArray( 3 );
 		GL_FloatColor( color );
 	default:
 		programManager->oldStageShader->Activate();
@@ -525,11 +526,13 @@ void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const dr
 
 	switch ( pStage->texture.texgen ) {
 	case TG_REFLECT_CUBE:
+		qglEnableVertexAttribArray( 3 );
 		break;
 	case TG_SKYBOX_CUBE:
 	case TG_WOBBLESKY_CUBE:
 		programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->skybox.Set( 0 );
 	case TG_SCREEN:
+		qglEnableVertexAttribArray( 3 );
 	default:
 		GLSLProgram::Deactivate();
 	}
@@ -789,10 +792,8 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 		color[1] = regs[pStage->color.registers[1]];
 		color[2] = regs[pStage->color.registers[2]];
 		color[3] = regs[pStage->color.registers[3]];
+		qglDisableVertexAttribArray( 3 );
 		GL_FloatColor( color );
-	} else {
-		// A properly set-up particle shader
-		qglEnableVertexAttribArray( 3 );
 	}
 
 	// Disable depth clipping. The fragment program will handle it to allow overdraw.
@@ -860,6 +861,7 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 	RB_DrawElementsWithCounters( surf );
 
 	GL_SelectTexture( 0 );
+	qglEnableVertexAttribArray( 3 );
 
 	if ( !r_useGLSL ) {
 		R_UseProgramARB();
