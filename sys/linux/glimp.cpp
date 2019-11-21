@@ -462,9 +462,6 @@ int GLX_Init(glimpParms_t a) {
 				 attrib[ATTR_DEPTH_IDX],
 				 attrib[ATTR_STENCIL_IDX]);
 
-			glConfig.colorBits = tcolorbits;
-			glConfig.depthBits = tdepthbits;
-			glConfig.stencilBits = tstencilbits;
 			break;
 		}
 
@@ -476,7 +473,7 @@ int GLX_Init(glimpParms_t a) {
 	}
 	else {
 		//stgatilov: new code using qglXChooseFBConfig and qglXCreateContextAttribsARB
-		//supportgs GL3+ and choosing core profile
+		//supports GL3+ and choosing core profile
 
 		int config_attribs[] = {
 			GLX_X_RENDERABLE  , True,              //have associated X visuals

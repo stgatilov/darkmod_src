@@ -634,9 +634,9 @@ void RB_BeginDrawingView( void ) {
 	// we don't have to clear the depth / stencil buffer for 2D rendering
 	if ( backEnd.viewDef->viewEntitys ) {
 		qglStencilMask( 0xff );
-		// some cards may have 7 bit stencil buffers, so don't assume this
-		// should be 128
-		qglClearStencil( 1 << ( glConfig.stencilBits - 1 ) );
+		// we use framebuffers with one of attachments: GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8 or GL_STENCIL_INDEX8
+		// all of them are exactly 8-bit, so middle value 128 serves as "zero" for us
+		qglClearStencil( 128 );
 		qglClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 		qglEnable( GL_DEPTH_TEST );
 	} else {

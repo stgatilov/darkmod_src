@@ -1443,7 +1443,8 @@ GfxInfo_f
 static void GfxInfo_f( const idCmdArgs &args ) {
 	const char *fsstrings[] = {
 		"windowed",
-		"fullscreen"
+		"fullscreen",
+		"borderless"
 	};
 
 	common->Printf( "\nGL_VENDOR: %s\n", glConfig.vendor_string );
@@ -1466,8 +1467,8 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	}
 	common->Printf( "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	common->Printf( "GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: %d\n", glConfig.maxTextures );
-	common->Printf( "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
-	common->Printf( "MODE: %d x %d %s hz:", glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen.GetBool()] );
+	//common->Printf( "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
+	common->Printf( "MODE: %d x %d %s hz:", glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen.GetInteger()] );
 
 	if ( glConfig.displayFrequency ) {
 		common->Printf( "%d\n", glConfig.displayFrequency );
@@ -1475,8 +1476,6 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 		common->Printf( "N/A\n" );
 	}
 	common->Printf( "CPU: %s\n", Sys_GetProcessorString() );
-
-	common->Printf( "ARB2 path ENABLED\n" );
 
 	//=============================
 

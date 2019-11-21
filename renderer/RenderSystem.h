@@ -49,8 +49,6 @@ typedef struct glconfig_s {
 	float				maxTextureAnisotropy;
 	int					maxSamples;
 
-	int					colorBits, depthBits, stencilBits;
-
 	bool				textureCompressionAvailable = true;
 	bool				mapBufferRangeAvailable = true;
 	bool				framebufferObjectAvailable = true;

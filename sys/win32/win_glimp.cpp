@@ -315,14 +315,6 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 
 	// get the full info
 	DescribePixelFormat( win32.hDC, win32.pixelformat, sizeof( win32.pfd ), &win32.pfd );
-	glConfig.colorBits = win32.pfd.cColorBits;
-	glConfig.depthBits = win32.pfd.cDepthBits;
-	glConfig.stencilBits = win32.pfd.cStencilBits;
-
-	// XP seems to set this incorrectly
-	if ( !glConfig.stencilBits ) {
-		glConfig.stencilBits = 8;
-	}
 
 	// the same SetPixelFormat is used either way
 	if ( SetPixelFormat( win32.hDC, win32.pixelformat, &win32.pfd ) == FALSE ) {
