@@ -3563,7 +3563,8 @@ void idGameLocal::UpdateWidescreenModeFromScreenResolution(idUserInterface* gui)
 	}
 	int aspect = (mode < 0 ? 0 : VideoModes[mode].aspect);
 
-	Printf("r_customWidth|Height = %ix%i => widescreenmode = %i, r_aspectRatio = %i\n", width, height, mode, aspect );
+	if (cv_tdm_widescreenmode.GetInteger() != mode || r_aspectRatio.GetInteger() != aspect)
+		Printf("r_customWidth|Height = %ix%i => widescreenmode = %i, r_aspectRatio = %i\n", width, height, mode, aspect );
 	cv_tdm_widescreenmode.SetInteger(mode);
 	r_aspectRatio.SetInteger(aspect);
 }
@@ -4285,6 +4286,9 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			idStr missionTitle = info->_missionTitles[0];
 			gui->SetStateString("MissionTitleText",common->Translate(missionTitle.c_str())); // grayman #3733
 		}
+		//stgatilov #4724: resolution is changed on start on Windows + fullscreen
+		//update gui variables here so that correct resolution is shown to player
+		UpdateWidescreenModeFromScreenResolution(gui);
 	}
 	else if (cmd == "mainmenuingame_init") // grayman #3733
 	{
