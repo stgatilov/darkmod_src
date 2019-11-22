@@ -539,7 +539,7 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
         _statusText.SetWindowText(CString("Performing cleanup steps"));
         _progressMain.SetPos(0);
 
-        _step8Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files..."));
+        _step8Text.SetWindowText(CString("Performing cleanup steps..."));
         _step8State.SetWindowText(CString("--"));
         break;
 	};
@@ -763,7 +763,7 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
     case PostUpdateCleanup:
     {
         _progressMain.SetPos(100);
-        _step8Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files... done."));
+        _step8Text.SetWindowText(CString("Performing cleanup steps... done."));
         _statusText.SetWindowText(CString("Done performing cleanup steps."));
     }
     break;

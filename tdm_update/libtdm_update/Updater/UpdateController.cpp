@@ -281,7 +281,9 @@ void UpdateController::PerformStep(UpdateStep step)
 		break;
 
 	case PostUpdateCleanup:
-        _updater.FixPK4Dates();
+		//stgatilov #4864 and #5042: timestamps of files inside ZIP should not matter any more
+		//_updater.FixPK4Dates();
+
 		_updater.PostUpdateCleanup();
 		break;
 
