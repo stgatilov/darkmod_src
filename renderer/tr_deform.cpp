@@ -1044,6 +1044,25 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 				g.age = g.frac * stage->particleLife;
 
+#if 1 // particle collision experiment
+				static idCVarBool r_checkParticleCollision( "r_checkParticleCollision", "0", CVAR_RENDERER, "1 = test particle collision" );
+
+				if ( r_checkParticleCollision ) {
+					idVec3 origin;
+					auto g_copy = g;
+					stage->ParticleOrigin( &g_copy, origin );
+					modelTrace_t mt;
+
+					// start far enough away that we don't hit the player model
+					const idVec3 start = g_copy.origin;
+					const idVec3 end = origin;
+
+					if ( tr.primaryWorld->Trace( mt, start, end, 0.0f, true, true ) ) {
+						continue;
+					}
+				}
+#endif
+
 				// if the particle doesn't get drawn because it is faded out or beyond a kill region,
 				// don't increment the verts
 				tri->numVerts += stage->CreateParticle( &g, tri->verts + tri->numVerts );
