@@ -4219,7 +4219,7 @@ void Brush_DrawModelInfo(brush_t *b, bool selected) {
 			qglColor3fv(b->owner->eclass->color.ToFloatPtr());
 		}
 		Brush_DrawModel(b, true, selected);
-		GL_FloatColor(color);
+		GL_FloatColor override(color);
 
 		if ( selected ) {
 			Brush_DrawAxis(b);
