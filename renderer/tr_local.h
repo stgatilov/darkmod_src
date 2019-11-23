@@ -1088,16 +1088,25 @@ public:
 };
 
 // overloaded color functions vector first
-void	GL_FloatColor( const idVec3 &color );
-void	GL_FloatColor( const idVec4 &color );
+struct GL_FloatColor {
+	bool enabled = false;
 
-// float type
-void	GL_FloatColor( const float *color );
-void	GL_FloatColor( float r, float g, float b );
-void	GL_FloatColor( float r, float g, float b, float a );
+	GL_FloatColor() {} // conditional override
+	//GL_FloatColor( const idVec3& color );
+	GL_FloatColor( const idVec4& color );
+
+	// float type
+	GL_FloatColor( const float* color );
+	GL_FloatColor( float r, float g, float b );
+	GL_FloatColor( float r, float g, float b, float a );
+
+	void Enable( const float* color );
+	
+	~GL_FloatColor();
+};
 
 // byte type
-void	GL_ByteColor( const byte *color );
+void	GL_ByteColor( const byte* color );
 void	GL_ByteColor( byte r, byte g, byte b );
 void	GL_ByteColor( byte r, byte g, byte b, byte a );
 

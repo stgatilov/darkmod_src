@@ -677,7 +677,7 @@ static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
-	GL_FloatColor( 1, 1, 1 );
+	GL_FloatColor colorOverride( 1, 1, 1 );
 
 	GL_State( GLS_POLYMODE_LINE );
 

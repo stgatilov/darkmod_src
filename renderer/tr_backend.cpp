@@ -36,7 +36,7 @@ void RB_SetDefaultGLState( void ) {
 	GL_CheckErrors();
 
 	qglClearDepth( 1.0f );
-	GL_FloatColor( 1.0f, 1.0f, 1.0f, 1.0f );
+	//GL_FloatColor( 1.0f, 1.0f, 1.0f, 1.0f );
 
 	// the vertex arrays are always enabled. FIXME: Not exactly a 'default GL state'
 	const int attrib_indices[] = { 0,2,3,8,9,10 };
@@ -328,13 +328,13 @@ GL_Color
 Vector color 3 component (clamped)
 ====================
 */
-void GL_FloatColor( const idVec3 &color ) {
+/*GL_FloatColor( const idVec3 &color ) {
 	GLfloat parm[3];
 	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
 	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
 	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
 	qglColor3f( parm[0], parm[1], parm[2] );
-}
+}*/
 
 /*
 ====================
@@ -343,14 +343,8 @@ GL_Color
 Vector color 4 component (clamped)
 ====================
 */
-void GL_FloatColor( const idVec4 &color ) {
-	GLfloat parm[4];
-	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
-	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
-	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
-	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
-	//qglColor4f( parm[0], parm[1], parm[2], parm[3] );
-	qglVertexAttrib4fv( 3, parm );
+GL_FloatColor::GL_FloatColor( const idVec4 &color ) {
+	Enable( color.ToFloatPtr() );
 }
 
 /*
@@ -360,18 +354,8 @@ GL_Color
 Float to vector color 3 or 4 component (clamped)
 ====================
 */
-void GL_FloatColor( const float *color ) {
-	GLfloat parm[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
-	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
-	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
-	if ( color[3] ) {
-		parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
-	}
-	//qglColor4fv( parm );
-	//stgatilov: duplicate parameter to 3-rd vertex attribute
-	//needed for new GLSL shaders (e.g. environment.vs on glass materials)
-	qglVertexAttrib4fv(3, parm);
+GL_FloatColor::GL_FloatColor( const float *color ) {
+	Enable( color );
 }
 
 /*
@@ -381,13 +365,9 @@ GL_Color
 Float color 3 component (clamped)
 ====================
 */
-void GL_FloatColor( float r, float g, float b ) {
-	GLfloat parm[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, r );
-	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, g );
-	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, b );
-//	qglColor3f( parm[0], parm[1], parm[2] );
-	qglVertexAttrib4fv( 3, parm );
+GL_FloatColor::GL_FloatColor( float r, float g, float b ) {
+	GLfloat parm[4] = { r,g,b,1 };
+	Enable( parm );
 }
 
 /*
@@ -397,14 +377,27 @@ GL_Color
 Float color 4 component (clamped)
 ====================
 */
-void GL_FloatColor( float r, float g, float b, float a ) {
+GL_FloatColor::GL_FloatColor( float r, float g, float b, float a ) {
+	GLfloat parm[4] = {r,g,b,a};
+	Enable( parm );
+}
+
+GL_FloatColor::~GL_FloatColor() {
+	if ( !enabled )
+		return;
+	qglEnableVertexAttribArray( 3 );
+}
+
+void GL_FloatColor::Enable( const float* color ) {
 	GLfloat parm[4];
-	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, r );
-	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, g );
-	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, b );
-	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, a );
-//	qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
+	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );
+	parm[2] = idMath::ClampFloat( 0.0f, 1.0f, color[2] );
+	parm[3] = idMath::ClampFloat( 0.0f, 1.0f, color[3] );
+	//qglColor4f( parm[0], parm[1], parm[2], parm[3] );
+	qglDisableVertexAttribArray( 3 );
 	qglVertexAttrib4fv( 3, parm );
+	enabled = true;
 }
 
 /*
