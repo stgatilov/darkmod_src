@@ -179,7 +179,7 @@ void GLimp_Shutdown() {
 		XFlush( dpy );
 
 		// FIXME: that's going to crash
-		//XCloseDisplay( dpy );
+		XCloseDisplay( dpy );
 
 		vidmode_active = false;
 		dpy = NULL;
@@ -261,6 +261,8 @@ bool GLimp_OpenDisplay( void ) {
 		return false;
 	}
 	scrnum = DefaultScreen( dpy );
+
+	common->Printf( "Using screen %d of %p display\n", scrnum, dpy );
 	return true;
 }
 
@@ -270,36 +272,6 @@ GLX_Init
 ===============
 */
 int GLX_Init(glimpParms_t a) {
-	int attrib[] = {
-		GLX_RGBA,				// 0
-		GLX_RED_SIZE, 8,		// 1, 2
-		GLX_GREEN_SIZE, 8,		// 3, 4
-		GLX_BLUE_SIZE, 8,		// 5, 6
-		GLX_DOUBLEBUFFER,		// 7
-		GLX_DEPTH_SIZE, 24,		// 8, 9
-		GLX_STENCIL_SIZE, 8,	// 10, 11
-		GLX_ALPHA_SIZE, 8, // 12, 13
-		None
-	};
-	// these match in the array
-#define ATTR_RED_IDX 2
-#define ATTR_GREEN_IDX 4
-#define ATTR_BLUE_IDX 6
-#define ATTR_DEPTH_IDX 9
-#define ATTR_STENCIL_IDX 11
-#define ATTR_ALPHA_IDX 13
-	Window root;
-	GLXFBConfig bestFbc;
-	XVisualInfo *visinfo;
-	XSetWindowAttributes attr;
-	XSizeHints sizehints;
-	unsigned long mask;
-	int colorbits, depthbits, stencilbits;
-	int tcolorbits, tdepthbits, tstencilbits;
-	int actualWidth, actualHeight;
-	int i;
-	const char *glstring;
-
 	if ( !GLimp_OpenDisplay() ) {
 		return false;
 	}
@@ -314,10 +286,10 @@ int GLX_Init(glimpParms_t a) {
 		return false;
 	}
 
-	root = RootWindow( dpy, scrnum );
+	Window root = RootWindow( dpy, scrnum );
 
-	actualWidth = glConfig.vidWidth;
-	actualHeight = glConfig.vidHeight;
+	int actualWidth = glConfig.vidWidth;
+	int actualHeight = glConfig.vidHeight;
 
 	// Get video mode list
 	if ( !XF86VidModeQueryVersion( dpy, &vidmode_MajorVersion, &vidmode_MinorVersion ) ) {
@@ -341,7 +313,7 @@ int GLX_Init(glimpParms_t a) {
 			best_dist = 9999999;
 			best_fit = -1;
 
-			for (i = 0; i < num_vidmodes; i++) {
+			for (int i = 0; i < num_vidmodes; i++) {
 				if (a.width > vidmodes[i]->hdisplay ||
 					a.height > vidmodes[i]->vdisplay)
 					continue;
@@ -378,16 +350,38 @@ int GLX_Init(glimpParms_t a) {
 		}
 	}
 
+	GLXFBConfig bestFbc = 0;
+	XVisualInfo *visinfo = NULL;
+
 	if (r_glCoreProfile.GetInteger() == 0) {
 		//stgatilov: old code using deprecated glXChooseVisual and glXCreateContext
 		//should be removed completely by TDM 2.09
 
-		// color, depth and stencil
-		colorbits = 24;
-		depthbits = 24;
-		stencilbits = 8;
+		int attrib[] = {
+			GLX_RGBA,				// 0
+			GLX_RED_SIZE, 8,		// 1, 2
+			GLX_GREEN_SIZE, 8,		// 3, 4
+			GLX_BLUE_SIZE, 8,		// 5, 6
+			GLX_DOUBLEBUFFER,		// 7
+			GLX_DEPTH_SIZE, 24,		// 8, 9
+			GLX_STENCIL_SIZE, 8,	// 10, 11
+			GLX_ALPHA_SIZE, 8, // 12, 13
+			None
+		};
+		// these match in the array
+		#define ATTR_RED_IDX 2
+		#define ATTR_GREEN_IDX 4
+		#define ATTR_BLUE_IDX 6
+		#define ATTR_DEPTH_IDX 9
+		#define ATTR_STENCIL_IDX 11
+		#define ATTR_ALPHA_IDX 13
 
-		for (i = 0; i < 16; i++) {
+		// color, depth and stencil
+		int colorbits = 24;
+		int depthbits = 24;
+		int stencilbits = 8;
+
+		for (int i = 0; i < 16; i++) {
 			// 0 - default
 			// 1 - minus colorbits
 			// 2 - minus depthbits
@@ -412,9 +406,9 @@ int GLX_Init(glimpParms_t a) {
 				}
 			}
 
-			tcolorbits = colorbits;
-			tdepthbits = depthbits;
-			tstencilbits = stencilbits;
+			int tcolorbits = colorbits;
+			int tdepthbits = depthbits;
+			int tstencilbits = stencilbits;
 
 			if ((i % 4) == 3) {		// reduce colorbits
 				if (tcolorbits == 24)
@@ -511,10 +505,12 @@ int GLX_Init(glimpParms_t a) {
 	}
 
 	// window attributes
+	XSetWindowAttributes attr;
 	attr.background_pixel = BlackPixel(dpy, scrnum);
 	attr.border_pixel = 0;
 	attr.colormap = XCreateColormap(dpy, root, visinfo->visual, AllocNone);
 	attr.event_mask = X_MASK;
+	unsigned long mask;
 	if (vidmode_active) {
 		if(v_nowmfullscreen.GetBool()) {
 			/*We're not going to cooperate with any window managers, so the window will grab full control.*/
@@ -554,6 +550,7 @@ int GLX_Init(glimpParms_t a) {
 
 	// don't let the window be resized
 	// FIXME: allow resize (win32 does)
+	XSizeHints sizehints;
 	sizehints.flags = PMinSize | PMaxSize;
 	sizehints.min_width = sizehints.max_width = actualWidth;
 	sizehints.min_height = sizehints.max_height = actualHeight;
@@ -582,11 +579,14 @@ int GLX_Init(glimpParms_t a) {
 		ctx = qglXCreateContextAttribsARB(dpy, bestFbc, NULL, True, context_attribs);
 	}
 	XSync(dpy, False);
+	if (!ctx)
+		common->Error("Failed to create OpenGL context");
 
 	// Free the visinfo after we're done with it
 	XFree(visinfo);
 
-	qglXMakeCurrent(dpy, win, ctx);
+	if (!qglXMakeCurrent(dpy, win, ctx))
+		common->Error("Failed to make created GL context current");
 
 	glConfig.isFullscreen = a.fullScreen;
 	
