@@ -60,7 +60,7 @@ void RB_SetDefaultGLState( void ) {
 	qglDepthFunc( GL_ALWAYS );
 
 	qglCullFace( GL_FRONT_AND_BACK );
-	qglShadeModel( GL_SMOOTH );
+	//qglShadeModel( GL_SMOOTH );
 
 	if ( r_useScissor.GetBool() ) {
 		GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
