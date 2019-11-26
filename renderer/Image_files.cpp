@@ -99,51 +99,6 @@ void R_WriteTGA( const char *filename, const byte *data, int width, int height, 
 }
 
 
-/*
-================
-R_WritePalTGA
-================
-*/
-void R_WritePalTGA( const char *filename, const byte *data, const byte *palette, int width, int height, bool flipVertical ) {
-	byte	*buffer;
-	int		i;
-	int		bufferSize = ( width * height ) + ( 256 * 3 ) + 18;
-	int     palStart = 18;
-	int     imgStart = 18 + ( 256 * 3 );
-
-	buffer = ( byte * )Mem_Alloc( bufferSize );
-	memset( buffer, 0, 18 );
-	buffer[1] = 1;		// color map type
-	buffer[2] = 1;		// uncompressed color mapped image
-	buffer[5] = 0;		// number of palette entries (lo)
-	buffer[6] = 1;		// number of palette entries (hi)
-	buffer[7] = 24;		// color map bpp
-	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
-	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
-	buffer[16] = 8;	// pixel size
-
-	if ( !flipVertical ) {
-		buffer[17] = ( 1 << 5 );	// flip bit, for normal top to bottom raster order
-	}
-
-	// store palette, swapping rgb to bgr
-	for ( i = palStart ; i < imgStart ; i += 3 ) {
-		buffer[i] = palette[i - palStart + 2];			// blue
-		buffer[i + 1] = palette[i - palStart + 1];		// green
-		buffer[i + 2] = palette[i - palStart + 0];		// red
-	}
-
-	// store the image data
-	for ( i = imgStart ; i < bufferSize ; i++ ) {
-		buffer[i] = data[i - imgStart];
-	}
-	fileSystem->WriteFile( filename, buffer, bufferSize );
-
-	Mem_Free( buffer );
-}
-
 static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );

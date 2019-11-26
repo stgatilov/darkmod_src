@@ -88,6 +88,7 @@ public:
 	float			Cross( const idVec2 &v2 ) const {
 		return x * v2.y - y * v2.x;
 	}
+	void			MulCW( const idVec2& a );									// multiply on vector component-wise
 };
 
 extern idVec2 vec2_origin;

@@ -2338,6 +2338,37 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 }
 
+void R_GenerateHeightmap( idStr materialName ) {
+	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
+		const drawSurf_t* drawSurf = tr.viewDef->drawSurfs[i];
+		idStr shortName( drawSurf->material->GetName() );
+		shortName.StripPath();
+		if ( materialName != shortName )
+			continue;
+		const int N = 1024;
+		int *pixels = (int *)Mem_Alloc( N * N * 4 );
+		// scan the top plane
+		idVec3 corner1 = drawSurf->frontendGeo->bounds[0], corner2 = drawSurf->frontendGeo->bounds[1];
+		corner2.z -= 1;												// else it will trace to itself
+		idVec2 step = ( corner2.ToVec2() - corner1.ToVec2() ) / N;	// loop optimization
+		modelTrace_t mt;
+		for ( int y = 0; y < N; y++ )
+			for ( int x = 0; x < N; x++ ) {
+				idVec2 relative( x + .5, y + .5 );					// use loop increment here for speed?
+				relative.MulCW( step );
+				idVec3 start( corner1.x, corner1.y, corner2.z );
+				start.ToVec2() += relative;
+				idVec3 end( start.x, start.y, corner1.z );
+				byte d = tr.primaryWorld->Trace( mt, start, end, 0.0f, true, true ) ? mt.fraction * 255 : 255;
+				pixels[y * N + x] = d;
+			}
+		auto fileName = idStr::Fmt( "heightmap%d.tga", i );			// generate separate files for all matching surfaces, to avoid possible confusion
+		R_WriteTGA( fileName, (byte*)pixels, N, N, true );
+		Mem_Free( pixels );
+		common->Printf( "Processed material %s > %s\n", shortName.c_str(), fileName.c_str() );
+	}
+}
+
 /*
 =================
 RB_ShutdownDebugTools
@@ -2364,4 +2395,9 @@ void R_Tools() {
 		for ( auto ent = tr.viewDef->viewEntitys; ent; ent = ent->next ) {
 			ent->drawCalls = 0;
 		}
+	static idCVar r_genHeightMap( "r_generateHeightMap", "", CVAR_TOOL, "Generate height maps for bounded boxes" );
+	if ( strlen( r_genHeightMap.GetString() ) && tr.viewDef->renderView.viewID == VID_PLAYER_VIEW ) {
+		R_GenerateHeightmap( r_genHeightMap.GetString() );
+		r_genHeightMap.SetString( "" );
+	}
 }
