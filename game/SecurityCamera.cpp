@@ -606,6 +606,7 @@ void idSecurityCamera::AddSparks( void )
 	args.Set("classname","func_emitter");
 	args.Set("origin", GetPhysics()->GetOrigin().ToString());
 	args.Set("model","sparks_wires.prt");
+	args.Set("cycleTrigger", "1");
 	gameLocal.SpawnEntityDef( args, &sparkEntity );
 	sparks = sparkEntity;
 	sparkEntity->Show();
