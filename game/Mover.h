@@ -95,7 +95,7 @@ protected:
 		DIR_REL_BACK		= -12
 	} moverDir_t;
 
-	typedef struct {
+	typedef struct moveStage_s {
 		moveStage_t			stage;
 		int					acceleration;
 		int					movetime;
@@ -103,7 +103,7 @@ protected:
 		idVec3				dir;
 	} moveState_t;
 
-	typedef struct {
+	typedef struct rotationState_s {
 		moveStage_t			stage;
 		int					acceleration;
 		int					movetime;
