@@ -58,20 +58,6 @@ struct geoBufferSet_t {
 	geoBufferSet_t();
 };
 
-/**
- * Describes a single entry in the static or dynamic vertex or index cache in 64 bits.
- */
-struct vertCacheHandle_t {
-	uint32_t	size		: 23;
-	uint32_t	offset		: 28;
-	uint16_t	frameNumber : 12;
-	bool		isStatic	:  1;
-
-	bool IsValid() const { 
-		return size != 0;
-	}
-};
-
 static const vertCacheHandle_t NO_CACHE = { 0, 0, 0, false };
 
 enum attribBind_t {

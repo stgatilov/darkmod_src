@@ -30,7 +30,21 @@
 #define MD5_ANIM_EXT			"md5anim"
 #define MD5_CAMERA_EXT			"md5camera"
 #define MD5_VERSION				10
-#include "VertexCache.h"
+
+//#include "VertexCache.h"
+/**
+ * Describes a single entry in the static or dynamic vertex or index cache in 64 bits.
+ */
+struct vertCacheHandle_t {
+	uint32_t	size : 23;
+	uint32_t	offset : 28;
+	uint16_t	frameNumber : 12;
+	bool		isStatic : 1;
+
+	bool IsValid() const {
+		return size != 0;
+	}
+};
 
 // using shorts for triangle indexes can save a significant amount of traffic, but
 // to support the large models that renderBump loads, they need to be 32 bits
