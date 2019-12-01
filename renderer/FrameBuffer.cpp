@@ -712,11 +712,17 @@ void LeavePrimary() {
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-		qglLoadIdentity();
 		GL_SetProjection( mat4_identity.ToFloatPtr() );
 
 		GL_State( GLS_DEFAULT );
 		qglDisable( GL_DEPTH_TEST );
+
+		programManager->oldStageShader->Activate();
+		Uniforms::Global* transformUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+		idMat4 ninety = mat4_identity * .9f;
+		ninety[3][3] = 1;
+		transformUniforms->modelViewMatrix.Set( ninety );
+		//transformUniforms->textureMatrix.Set( ninety );
 
 		GL_SelectTexture( 0 );
 		switch ( r_showFBO.GetInteger() ) {
@@ -734,6 +740,8 @@ void LeavePrimary() {
 			globalImages->currentRenderImage->Bind();
 		}
 		RB_DrawFullScreenQuad();
+		transformUniforms->modelViewMatrix.Set( mat4_identity );
+		programManager->oldStageShader->Deactivate();
 
 		qglEnable( GL_DEPTH_TEST );
 	}
