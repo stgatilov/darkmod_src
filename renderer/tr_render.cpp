@@ -72,11 +72,6 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
-	if ( vertexCache.currentVertexBuffer == 0 ) {
-		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
-		return;
-	}
-
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += surf->numIndexes;
@@ -106,11 +101,6 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 }
 
 void RB_DrawTriangles( const srfTriangles_t &tri) {
-	if ( vertexCache.currentVertexBuffer == 0 ) {
-		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
-		return;
-	}
-
 	if ( tri.indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
 			tri.numIndexes,
@@ -131,11 +121,6 @@ RB_DrawElementsInstanced
 ================
 */
 void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
-	if ( vertexCache.currentVertexBuffer == 0 ) {
-		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
-		return;
-	}
-
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += surf->numIndexes * instances;

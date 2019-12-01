@@ -109,6 +109,10 @@ public:
 	}
 
 	int GetBaseVertex() {
+		if ( currentVertexBuffer == 0 ) {
+			common->Printf( "GetBaseVertex called, but no vertex buffer is bound. Vertex cache resize?\n" );
+			//return;
+		}
 		return basePointer;
 	}
 
@@ -119,6 +123,10 @@ public:
 	static idCVar	r_frameVertexMemory;
 	static idCVar	r_frameIndexMemory;
 	static idCVarBool r_useBaseVertex;
+
+	drawSurf_t		screenRectSurf;
+
+private:
 
 	int				currentFrame;			// for purgable block tracking
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use

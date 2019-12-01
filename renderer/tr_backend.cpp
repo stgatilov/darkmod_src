@@ -612,6 +612,10 @@ Moved to backend: Revelator
 =============
 */
 void RB_DrawFullScreenQuad( float e ) {
+#if 1
+	vertexCache.VertexPosition( vertexCache.screenRectSurf.ambientCache );
+	RB_DrawElementsWithCounters( &vertexCache.screenRectSurf );
+#else
 	qglBegin( GL_QUADS );
 	qglTexCoord2f( 0, 0 );
 	qglVertex2f( -e, -e );
@@ -622,6 +626,7 @@ void RB_DrawFullScreenQuad( float e ) {
 	qglTexCoord2f( 1, 0 );
 	qglVertex2f( e, -e );
 	qglEnd();
+#endif
 }
 
 // bloom related - J.C.Denton
