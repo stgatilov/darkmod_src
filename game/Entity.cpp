@@ -13243,7 +13243,7 @@ void idEntity::Event_GetTeam()
 
 void idEntity::Event_SetTeam(int newTeam)
 {
-	gameLocal.Printf("%s: Changing to team %i.\n", GetName(), newTeam);
+	//gameLocal.Printf("%s: Changing to team %i.\n", GetName(), newTeam);
 	// greebo: No validity checking so far - todo?
 	team = newTeam;
 }
@@ -13253,7 +13253,7 @@ void idEntity::SetEntityRelation(idEntity* entity, int relation)
 	m_EntityRelations[entity] = relation;
 }
 
-	// angua: this changes the current relation to an actor by adding the new amount
+// angua: this changes the current relation to an actor by adding the new amount
 void idEntity::ChangeEntityRelation(idEntity* entity, int relationChange)
 {
 	assert(entity);
