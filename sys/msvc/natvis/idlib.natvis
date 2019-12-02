@@ -10,6 +10,14 @@
   <Type Name="idVec4">
     <DisplayString>({x}, {y}, {z}, {w})</DisplayString>
   </Type>
+  <Type Name="idVecX">
+    <Expand>
+      <ArrayItems>
+        <Size>size</Size>
+        <ValuePointer>p</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
   <Type Name="idMat2">
     <DisplayString>2 x 2 matrix</DisplayString>
     <Expand>
@@ -26,6 +34,16 @@
     <DisplayString>4 x 4 matrix</DisplayString>
     <Expand>
       <ExpandedItem>mat</ExpandedItem>
+    </Expand>
+  </Type>
+  <Type Name="idMatX">
+    <DisplayString>mat [{numRows} x {numColumns}]</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Rank>2</Rank>
+        <Size>$i==0 ? numRows : numColumns</Size>
+        <ValuePointer>mat</ValuePointer>
+      </ArrayItems>
     </Expand>
   </Type>
   <Type Name="idRenderMatrix">
