@@ -343,7 +343,7 @@ GL_Color
 Vector color 4 component (clamped)
 ====================
 */
-GL_FloatColor::GL_FloatColor( const idVec4 &color ) {
+GLColorOverride::GLColorOverride( const idVec4 &color ) {
 	Enable( color.ToFloatPtr() );
 }
 
@@ -354,7 +354,7 @@ GL_Color
 Float to vector color 3 or 4 component (clamped)
 ====================
 */
-GL_FloatColor::GL_FloatColor( const float *color ) {
+GLColorOverride::GLColorOverride( const float *color ) {
 	Enable( color );
 }
 
@@ -365,7 +365,7 @@ GL_Color
 Float color 3 component (clamped)
 ====================
 */
-GL_FloatColor::GL_FloatColor( float r, float g, float b ) {
+GLColorOverride::GLColorOverride( float r, float g, float b ) {
 	GLfloat parm[4] = { r,g,b,1 };
 	Enable( parm );
 }
@@ -377,18 +377,18 @@ GL_Color
 Float color 4 component (clamped)
 ====================
 */
-GL_FloatColor::GL_FloatColor( float r, float g, float b, float a ) {
+GLColorOverride::GLColorOverride( float r, float g, float b, float a ) {
 	GLfloat parm[4] = {r,g,b,a};
 	Enable( parm );
 }
 
-GL_FloatColor::~GL_FloatColor() {
+GLColorOverride::~GLColorOverride() {
 	if ( !enabled )
 		return;
 	qglEnableVertexAttribArray( 3 );
 }
 
-void GL_FloatColor::Enable( const float* color ) {
+void GLColorOverride::Enable( const float* color ) {
 	GLfloat parm[4];
 	parm[0] = idMath::ClampFloat( 0.0f, 1.0f, color[0] );
 	parm[1] = idMath::ClampFloat( 0.0f, 1.0f, color[1] );

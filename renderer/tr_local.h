@@ -1088,22 +1088,26 @@ public:
 };
 
 // overloaded color functions vector first
-struct GL_FloatColor {
+struct GLColorOverride {
 	bool enabled = false;
 
-	GL_FloatColor() {} // conditional override
+	GLColorOverride() {} // conditional override
 	//GL_FloatColor( const idVec3& color );
-	GL_FloatColor( const idVec4& color );
+	GLColorOverride( const idVec4& color );
 
 	// float type
-	GL_FloatColor( const float* color );
-	GL_FloatColor( float r, float g, float b );
-	GL_FloatColor( float r, float g, float b, float a );
+	GLColorOverride( const float* color );
+	GLColorOverride( float r, float g, float b );
+	GLColorOverride( float r, float g, float b, float a );
 
 	void Enable( const float* color );
 	
-	~GL_FloatColor();
+	~GLColorOverride();
 };
+
+#define MERGE_(a,b)  a##b
+#define LABEL_(a) MERGE_(colorOverride_, a)
+#define GL_FloatColor GLColorOverride LABEL_(__LINE__);
 
 // byte type
 void	GL_ByteColor( const byte* color );

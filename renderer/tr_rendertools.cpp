@@ -674,10 +674,11 @@ static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 
-	qglDisable( GL_TEXTURE_2D );
+	//qglDisable( GL_TEXTURE_2D );
+	globalImages->whiteImage->Bind();
 	qglDisable( GL_STENCIL_TEST );
 
-	GL_FloatColor colorOverride( 1, 1, 1 );
+	GL_FloatColor( 1, 1, 1 );
 
 	GL_State( GLS_POLYMODE_LINE );
 
@@ -1588,21 +1589,23 @@ void RB_ShowPortals( void ) {
 		if ( *portalStates++ == 'C' ) // area closed
 			continue;
 		idStr consoleMsg( area.areaNum );
+		idVec4 color;
 		for ( auto p : area.areaPortals ) {
 			switch ( *portalStates++ ) {	// Changed to show 3 colours. -- SteveL #4162
 			case 'G':
-				GL_FloatColor( 0, 1, 0 ); 	// green = we see through this portal
+				color.Set( 0, 1, 0, 1 ); 	// green = we see through this portal
 				consoleMsg += "-^2";
 				break;
 			case 'Y':
-				GL_FloatColor( 1, 1, 0 );	// yellow = we see into this visleaf but not through this portal
+				color.Set( 1, 1, 0, 1 );	// yellow = we see into this visleaf but not through this portal
 				consoleMsg += "-^3";
 				break;
 			default:
-				GL_FloatColor( 1, 0, 0 ); 	// red = can't see
+				color.Set( 1, 0, 0, 1 ); 	// red = can't see
 				consoleMsg += "-^1";			
 				break;
 			}
+			GL_FloatColor( color );
 			consoleMsg += p->intoArea;
 			qglBegin( GL_LINE_LOOP );		// FIXME convert to modern OpenGL
 			for ( int j = 0; j < p->w.GetNumPoints(); j++ )

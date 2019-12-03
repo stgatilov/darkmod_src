@@ -464,7 +464,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( const shaderStage_t *pStage, const dr
 	static const float one[4] = { 1, 1, 1, 1 };
 	const float negOne[4] = { -color[0], -color[1], -color[2], -1 };
 
-	GL_FloatColor colorOverride;
+	GLColorOverride colorOverride;
 
 	switch ( pStage->texture.texgen ) {
 	case TG_SKYBOX_CUBE:
@@ -777,7 +777,7 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 		return;
 	}
 
-	GL_FloatColor colorOverride;
+	GLColorOverride colorOverride;
 
 	// SteveL #3878. Particles are automatically softened by the engine, unless they have shader programs of
 	// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that if a
