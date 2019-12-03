@@ -1107,7 +1107,7 @@ struct GLColorOverride {
 
 #define MERGE_(a,b)  a##b
 #define LABEL_(a) MERGE_(colorOverride_, a)
-#define GL_FloatColor GLColorOverride LABEL_(__LINE__);
+#define GL_FloatColor GLColorOverride LABEL_(__LINE__)
 
 // byte type
 void	GL_ByteColor( const byte* color );
