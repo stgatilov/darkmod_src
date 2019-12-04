@@ -693,13 +693,18 @@ void idRenderModelStatic::FinishSurfaces() {
 				break;
 			case DFRM_PARTICLE:
 			case DFRM_PARTICLE2:
+			case DFRM_RAIN:
 				{
 				// expand surface bounds to include any emitted particles
 				// Note that this is an approximation. True bounds could be
 				// calculated by simulating R_ParticleDeform().
 				srfTriangles_t *tri = surf->geometry;
 				const idDeclParticle *particleSystem = (idDeclParticle *)surf->material->GetDeformDecl();
+#if 0			// duzenko 2.08: seems generally broken. This here is a dirty quick fix
 				tri->bounds.AddBounds(particleSystem->bounds);
+#else
+				tri->bounds[0].z = idMath::Fmin( tri->bounds[0].z, particleSystem->bounds[0].z );
+#endif
 				}
 				break;
 			default:

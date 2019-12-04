@@ -1093,6 +1093,242 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 	}
 }
 
+/*
+=====================
+R_ParticleDeformRain
+
+Specialized version of R_ParticleDeform
+=====================
+*/
+static void R_ParticleDeformRain( drawSurf_t* surf ) {
+	const struct renderEntity_s* renderEntity = &surf->space->entityDef->parms;
+	const struct viewDef_s* viewDef = tr.viewDef;
+	const idDeclParticle* particleSystem = (idDeclParticle*)surf->material->GetDeformDecl();
+
+	if ( r_skipParticles.GetBool() ) {
+		return;
+	}
+
+	//
+	// calculate the area of all the triangles
+	//
+	float	totalArea = 0;
+	float* sourceTriAreas = NULL;
+	const srfTriangles_t* srcTri = surf->frontendGeo;
+	int		numSourceTris = srcTri->numIndexes / 3;
+
+#define useArea true
+
+	if ( useArea ) {
+		sourceTriAreas = (float*)_alloca( sizeof( *sourceTriAreas ) * numSourceTris );
+		int	triNum = 0;
+		for ( int i = 0; i < srcTri->numIndexes; i += 3, triNum++ ) {
+			float	area;
+			area = idWinding::TriangleArea( srcTri->verts[srcTri->indexes[i]].xyz, srcTri->verts[srcTri->indexes[i + 1]].xyz, srcTri->verts[srcTri->indexes[i + 2]].xyz );
+			sourceTriAreas[triNum] = totalArea;
+			totalArea += area;
+		}
+	}
+
+	// Generate a random number seed from the surface world position. Original code used SHADERPARM_DIVERSITY (shaderParm5) for this
+	// purpose, which mirrors func_emitters, but weather patches tend to be worldspawn so all share the same shaderparm, and produce
+	// identical particles when side-by-side. The seed needs to be the same every frame for a given emitter to ensure continuity of 
+	// particles from frame to frame, so using the centre of the emitting surface is a good way of randomizing them. -- SteveL #4132
+	float randomizer = renderEntity->shaderParms[SHADERPARM_DIVERSITY];
+
+	if ( randomizer == 0.0f && renderEntity->entityNum == 0 ) {
+		const idVec3 centre = srcTri->bounds.GetCenter();
+		randomizer = idMath::Abs( centre.x + centre.y + centre.z ) / 1000.0f;
+		randomizer = randomizer - idMath::Floor( randomizer );
+	}
+
+	//
+	// create the particles almost exactly the way idRenderModelPrt does
+	//
+	particleGen_t g;
+
+	g.renderEnt = renderEntity;
+	g.renderView = &viewDef->renderView;
+	g.origin.Zero();
+	g.axis = mat3_identity;
+
+#define currentTri 0
+
+	for ( int stageNum = 0; stageNum < particleSystem->stages.Num(); stageNum++ ) {
+		idParticleStage* stage = particleSystem->stages[stageNum];
+
+		if ( !stage->material ) {
+			continue;
+		}
+
+		if ( !stage->cycleMsec ) {
+			continue;
+		}
+
+		if ( stage->hidden ) {		// just for gui particle editor use
+			continue;
+		}
+
+		// we interpret stage->totalParticles as "particles per map square area"
+		// so the systems look the same on different size surfaces
+		int		totalParticles = stage->totalParticles * totalArea * 1e-5;
+
+		int	count = totalParticles * stage->NumQuadsPerParticle();
+
+		// allocate a srfTriangles in temp memory that can hold all the particles
+		srfTriangles_t* tri;
+
+		tri = (srfTriangles_t*)R_ClearedFrameAlloc( sizeof( *tri ) );
+		tri->numVerts = 4 * count;
+		tri->numIndexes = 6 * count;
+		tri->verts = (idDrawVert*)R_FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
+		tri->indexes = (glIndex_t*)R_FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
+
+		// just always draw the particles
+		tri->bounds = stage->bounds;
+
+		tri->numVerts = 0;
+
+		idRandom	steppingRandom, steppingRandom2;
+
+		int stageAge = g.renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
+		int	stageCycle = stageAge / stage->cycleMsec;
+
+		// some particles will be in this cycle, some will be in the previous cycle
+		steppingRandom.SetSeed( ( ( stageCycle << 10 ) & idRandom::MAX_RAND ) ^ (int)( randomizer * idRandom::MAX_RAND ) );
+		steppingRandom2.SetSeed( ( ( ( stageCycle - 1 ) << 10 ) & idRandom::MAX_RAND ) ^ (int)( randomizer * idRandom::MAX_RAND ) );
+
+		int sectors = idMath::Sqrt( totalParticles );
+		totalParticles = sectors * sectors;
+
+		for ( int index = 0; index < totalParticles; index++ ) {
+			g.index = index;
+
+			// bump the random
+			steppingRandom.RandomInt();
+			steppingRandom2.RandomInt();
+
+			// calculate local age for this index 
+			int	bunchOffset = stage->particleLife * 1000 * stage->spawnBunching * index / totalParticles;
+			int particleAge = stageAge - bunchOffset;
+			int	particleCycle = particleAge / stage->cycleMsec;
+
+			if ( particleCycle < 0 ) {
+				// before the particleSystem spawned
+				continue;
+			}
+			if ( stage->cycles && particleCycle >= stage->cycles ) {
+				// cycled systems will only run cycle times
+				continue;
+			}
+
+			if ( particleCycle == stageCycle ) {
+				g.random = steppingRandom;
+			} else {
+				g.random = steppingRandom2;
+			}
+			int	inCycleTime = particleAge - particleCycle * stage->cycleMsec;
+
+			if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] &&
+				g.renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] * 1000 ) {
+				// don't fire any more particles
+				continue;
+			}
+
+			// supress particles before or after the age clamp
+			g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
+
+			if ( g.frac < 0 ) {
+				// yet to be spawned
+				continue;
+			}
+
+			if ( g.frac > 1.0 ) {
+				// this particle is in the deadTime band
+				continue;
+			}
+
+			//---------------
+			// locate the particle origin and axis somewhere on the surface
+			//---------------
+			int pointTri = currentTri;
+
+			if ( useArea ) {
+				// select a triangle based on an even area distribution
+				pointTri = idBinSearch_LessEqual<float>( sourceTriAreas, numSourceTris, g.random.RandomFloat() * totalArea );
+			}
+
+
+			// now pick a random point inside pointTri
+			const idDrawVert* v1 = &srcTri->verts[srcTri->indexes[pointTri * 3 + 0]];
+			const idDrawVert* v2 = &srcTri->verts[srcTri->indexes[pointTri * 3 + 1]];
+			const idDrawVert* v3 = &srcTri->verts[srcTri->indexes[pointTri * 3 + 2]];
+
+			float	f1 = g.random.RandomFloat();
+			float	f2 = g.random.RandomFloat();
+			float	f3 = g.random.RandomFloat();
+
+			float	ft = 1.0f / ( f1 + f2 + f3 + 0.0001f );
+
+			f1 *= ft;
+			f2 *= ft;
+			f3 *= ft;
+
+			g.origin = v1->xyz * f1 + v2->xyz * f2 + v3->xyz * f3;
+			g.axis[0] = v1->tangents[0] * f1 + v2->tangents[0] * f2 + v3->tangents[0] * f3;
+			g.axis[1] = v1->tangents[1] * f1 + v2->tangents[1] * f2 + v3->tangents[1] * f3;
+			g.axis[2] = v1->normal * f1 + v2->normal * f2 + v3->normal * f3;
+
+			//-----------------------
+
+			// this is needed so aimed particles can calculate origins at different times
+			g.originalRandom = g.random;
+
+			g.age = g.frac * stage->particleLife;
+
+			// if the particle doesn't get drawn because it is faded out or beyond a kill region,
+			// don't increment the verts
+			//tri->numVerts += stage->CreateParticle( &g, tri->verts + tri->numVerts );
+
+			idVec2 step( srcTri->bounds.GetSize().ToVec2() / sectors );
+
+			for ( int i = 0; i < 4; i++ ) {
+				idDrawVert& v = tri->verts[tri->numVerts];
+				idVec2 sectorXY( index % sectors, index / sectors );
+				sectorXY.x += i % 2;
+				sectorXY.y += i / 2;
+				v.st = sectorXY / sectors;
+				sectorXY.MulCW( step );
+				v.xyz.z = srcTri->bounds[1].z;
+				v.xyz.ToVec2() = srcTri->bounds[0].ToVec2() + sectorXY;
+				tri->numVerts++;
+			}
+		}
+
+		if ( tri->numVerts > 0 ) {
+			// build the index list
+			int	indexes = 0;
+
+			for ( int i = 0; i < tri->numVerts; i += 4 ) {
+				tri->indexes[indexes + 0] = i;
+				tri->indexes[indexes + 1] = i + 2;
+				tri->indexes[indexes + 2] = i + 3;
+				tri->indexes[indexes + 3] = i;
+				tri->indexes[indexes + 4] = i + 3;
+				tri->indexes[indexes + 5] = i + 1;
+				indexes += 6;
+			}
+			tri->numIndexes = indexes;
+			tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
+
+			if ( tri->ambientCache.IsValid() ) {
+				// add the drawsurf
+				R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect );
+			}
+		}
+	}
+}
+
 //========================================================================================
 
 /*
@@ -1101,7 +1337,7 @@ R_DeformDrawSurf
 =================
 */
 void R_DeformDrawSurf( drawSurf_t *drawSurf ) {
-	if ( !drawSurf->material ) {
+	if ( !drawSurf->material || tr.viewDef->IsLightGem() ) {
 		return;
 	}
 
@@ -1137,6 +1373,9 @@ void R_DeformDrawSurf( drawSurf_t *drawSurf ) {
 		break;
 	case DFRM_PARTICLE2:
 		R_ParticleDeform( drawSurf, false );
+		break;
+	case DFRM_RAIN:
+		R_ParticleDeformRain( drawSurf );
 		break;
 	}
 }

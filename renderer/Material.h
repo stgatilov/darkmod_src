@@ -64,6 +64,7 @@ typedef enum {
 	DFRM_EYEBALL,
 	DFRM_PARTICLE,
 	DFRM_PARTICLE2,
+	DFRM_RAIN,				// 2.08
 	DFRM_TURB
 } deform_t;
 

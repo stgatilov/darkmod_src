@@ -1227,6 +1227,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	// check for deformations
 	R_DeformDrawSurf( drawSurf );
 
+	// 2.08: to be removed after release
 	// skybox surfaces need a dynamic texgen
 	//switch( material->Texgen() ) {
 	//	case TG_SKYBOX_CUBE:
