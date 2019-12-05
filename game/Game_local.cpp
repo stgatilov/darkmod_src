@@ -3037,7 +3037,7 @@ void idGameLocal::SortActiveEntityList( void ) {
 idGameLocal::RunFrame
 ================
 */
-gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
+gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs ) {
 	idEntity *	ent;
 	int			num(-1);
 	float		ms;
@@ -3099,12 +3099,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		{
 			// update the game time
 			framenum++;
-			// duzenko #4409 - game time modified using game timer
 			previousTime = time;
-			if ( idSessionLocal::com_fixedTic.GetBool() && com_timescale.GetFloat() == 1 )
-				time += m_GamePlayTimer.LastTickCapped();
-			else 
-				time += (int)(USERCMD_MSEC * g_timeModifier.GetFloat());
+			time += idMath::Imax(int(timestepMs * g_timeModifier.GetFloat()), 1);
 			realClientTime = time;
 
 #ifdef GAME_DLL
@@ -7818,12 +7814,8 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 }
 
 // duzenko #4409 - last frame time in msec, used for head bob cycling, physics
-
 int idGameLocal::getMsec() {
-	if ( idSessionLocal::com_fixedTic.GetBool() && com_timescale.GetFloat() == 1 )
-		return time - previousTime;
-	else
-		return USERCMD_MSEC;
+	return time - previousTime;
 }
 
 int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman #3857   

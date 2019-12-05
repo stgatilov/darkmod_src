@@ -721,7 +721,7 @@ public:
 	virtual void			MapShutdown( void );
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
-	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
+	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds, int timestepMs );
 	virtual int				GetSpyglassOverlay(); // grayman #3807
 	virtual int				GetPeekOverlay(); // grayman #4882
 	virtual int				DetermineAspectRatio(); // grayman #3807

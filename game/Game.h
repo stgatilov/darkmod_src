@@ -128,7 +128,7 @@ public:
 	virtual void				SpawnPlayer( int clientNum ) = 0;
 
 	// Runs a game frame, may return a session command for level changing, etc
-	virtual gameReturn_t		RunFrame( const usercmd_t *clientCmds ) = 0;
+	virtual gameReturn_t		RunFrame( const usercmd_t *clientCmds, int timestepMs = USERCMD_MSEC ) = 0;
 
 	// Makes rendering and sound system calls to display for a given clientNum.
 	virtual bool				Draw( int clientNum ) = 0;

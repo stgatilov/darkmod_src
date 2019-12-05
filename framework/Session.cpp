@@ -26,7 +26,19 @@
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "", 0, 10);
+idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER,
+	" 0 -- game tics have fixed duration of 16 ms (stable physics but 60 FPS limit)\n"
+	" 1 -- game tics can have shorter duration (removes 60 FPS limit)",
+0, 1);
+idCVar	idSessionLocal::com_maxTicTimestep("com_maxTicTimestep", "17", CVAR_SYSTEM | CVAR_INTEGER,
+	"Timestep of a game tic must not exceed this number of milliseconds. "
+	"If frame takes more time, then its duration is split into several game tics.\n"
+	"Note: takes effect only when FPS is uncapped.",
+1, 1000);
+idCVar	idSessionLocal::com_maxTicsPerFrame("com_maxTicsPerFrame", "10", CVAR_SYSTEM | CVAR_INTEGER,
+	"Never do more than this number of game tics per one frame. "
+	"When frames take too much time, allow game time to run slower than astronomical time.",
+1, 1000);
 idCVar	idSessionLocal::com_showDemo("com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
@@ -256,6 +268,7 @@ void idSessionLocal::Clear() {
 	timeDemo = TD_NO;
 	waitingOnBind = false;
 	lastPacifierTime = 0;
+	lastFrameTimestamp = Sys_GetTimeMicroseconds() / 1000;
 	
 	msgRunning = false;
 	guiMsgRestore = NULL;
@@ -1249,7 +1262,7 @@ void idSessionLocal::StartPlayingCmdDemo(const char *demoName) {
 	LoadCmdDemoFromFile(cmdDemoFile);
 
 	// run one frame to get the view angles correct
-	RunGameTic();
+	RunGameTic(USERCMD_MSEC);
 }
 
 /*
@@ -1271,7 +1284,7 @@ void idSessionLocal::TimeCmdDemo( const char *demoName ) {
 	minuteStart = startTime;
 
 	while( cmdDemoFile ) {
-		RunGameTic();
+		RunGameTic(USERCMD_MSEC);
 		count++;
 
 		if ( count / 3600 != ( count - 1 ) / 3600 ) {
@@ -2826,6 +2839,7 @@ void idSessionLocal::Frame() {
 		} else if (writeDemo) {
 			minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
 		}
+
 		// fixedTic lets us run a forced number of usercmd each frame without timing
 		if ( com_fixedTic.GetInteger() ) {
 			minTic = latchedTicNumber;
@@ -2842,6 +2856,11 @@ void idSessionLocal::Frame() {
 				#endif
 			}
 			prevUsec = Sys_GetTimeMicroseconds();
+
+			//stgatilov #4924: compute game timestep from astronomic time passed since last frame
+			int64_t nowTimestampMs = prevUsec / 1000;
+			currentTimestep = nowTimestampMs - lastFrameTimestamp;
+			lastFrameTimestamp = nowTimestampMs;
 		}
 
 		// Spin in place if needed when frame cap is active. 
@@ -2904,8 +2923,8 @@ void idSessionLocal::Frame() {
 	}
 
 	// don't get too far behind after a hitch
-	if ( numCmdsToRun > 10 ) {
-		lastGameTic = latchedTicNumber - 10;
+	if ( numCmdsToRun > com_maxTicsPerFrame.GetInteger() ) {
+		lastGameTic = latchedTicNumber - com_maxTicsPerFrame.GetInteger();
 	}
 
 	// never use more than USERCMD_PER_DEMO_FRAME,
@@ -2934,7 +2953,22 @@ void idSessionLocal::Frame() {
 		syncNextGameFrame = false;
 	}
 
-	gameTicsToRun = latchedTicNumber - lastGameTic;
+	if (com_fixedTic.GetInteger() > 0) {
+		//stgatilov #4924: if too much time passed since last frame,
+		//then split this game tic into many short tics
+		//long tics easily make physics unstable, so game tic duration should be under control
+		gameTicsToRun = (currentTimestep - 1) / com_maxTicTimestep.GetInteger() + 1;	//divide by 17 ms, rounding up
+		if (gameTicsToRun > com_maxTicsPerFrame.GetInteger()) {
+			//if everything is too bad, slow game down instead of modelling insane amount of ticks per frame
+			gameTicsToRun = com_maxTicsPerFrame.GetInteger();
+			currentTimestep = USERCMD_MSEC * gameTicsToRun;
+		}
+	}
+	else {
+		gameTicsToRun = latchedTicNumber - lastGameTic;
+		currentTimestep = USERCMD_MSEC * gameTicsToRun;
+	}
+
 	// create client commands, which will be sent directly
 	// to the game
 	if ( com_showTics.GetBool() ) {
@@ -2947,7 +2981,7 @@ void idSessionLocal::Frame() {
 idSessionLocal::RunGameTic
 ================
 */
-void idSessionLocal::RunGameTic() {
+void idSessionLocal::RunGameTic(int timestepMs) {
 	logCmd_t	logCmd;
 	usercmd_t	cmd;
 
@@ -3013,8 +3047,7 @@ void idSessionLocal::RunGameTic() {
 
 	// run the game logic every player move
 	int	start = Sys_Milliseconds();
-	gameReturn_t	ret = game->RunFrame( &cmd );
-
+	gameReturn_t	ret = game->RunFrame( &cmd, timestepMs );
 	int end = Sys_Milliseconds();
 	time_gameFrame += end - start;	// note time used for com_speeds
 
@@ -3085,7 +3118,11 @@ void idSessionLocal::RunGameTic() {
 void idSessionLocal::RunGameTics() {
 	// run game tics
 	for (int i = 0; i < gameTicsToRun; ++i) {
-		RunGameTic();
+		int deltaMs = currentTimestep * (i+1) / gameTicsToRun - currentTimestep * i / gameTicsToRun;
+		if (com_fixedTic.GetInteger() == 0) 
+			assert(deltaMs == USERCMD_MSEC);
+
+		RunGameTic(deltaMs);
 		if (!mapSpawned || syncNextGameFrame) {
 			break;
 		}

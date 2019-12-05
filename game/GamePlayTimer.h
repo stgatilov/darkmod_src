@@ -121,17 +121,6 @@ public:
 		return _timePassed;
 	}
 
-	// Returns diff between last two updates in milliseconds, capped to avoid physics glitches
-	uint32_t LastTickCapped() const
-	{
-		if (_lastTick < 0)
-			return 0;
-		else
-			if (_lastTick < 50)
-				return _lastTick;
-		return 50;
-	}
-
 	void Save(idSaveGame *savefile) const
 	{
 #if 1

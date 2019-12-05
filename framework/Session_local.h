@@ -108,7 +108,7 @@ public:
 
 	virtual int			GetSaveGameVersion( void );
     
-	virtual void		RunGameTic();
+	virtual void		RunGameTic(int timestepMs);
 	virtual void		ActivateFrontend();
 	virtual void		WaitForFrontendCompletion();
 	virtual void		StartFrontendThread();
@@ -168,6 +168,8 @@ public:
 	static idCVar		com_showTics;
 	static idCVar		com_minTics;
 	static idCVar		com_fixedTic;
+	static idCVar		com_maxTicTimestep;
+	static idCVar		com_maxTicsPerFrame;
 	static idCVar		com_showDemo;
 	static idCVar		com_skipGameDraw;
 	static idCVar		com_aviDemoWidth;
@@ -274,6 +276,8 @@ public:
 	int					emptyDrawCount;				// watchdog to force the main menu to restart
 #endif
 
+	int64_t				lastFrameTimestamp;	// in ms, updated every frame
+	int					currentTimestep;	// in ms
 	int					gameTicsToRun;
 	uintptr_t			frontendThread;
 	std::condition_variable signalFrontendThread;

@@ -112,7 +112,7 @@ public:
 
 	virtual int		GetSaveGameVersion( void ) = 0;
     
-	virtual void    RunGameTic() = 0;
+	virtual void    RunGameTic(int timestepMs = USERCMD_MSEC) = 0;
 	virtual void	ActivateFrontend() = 0;
 	virtual void	WaitForFrontendCompletion() = 0;
 	virtual void	LogFrontendTimings( idFile& file ) const = 0;
