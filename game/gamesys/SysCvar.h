@@ -186,6 +186,7 @@ extern idCVar cv_pm_ladderSlide_speedLimit;
 extern idCVar cv_pm_rope_snd_rep_dist;
 extern idCVar cv_pm_rope_velocity_letgo;
 extern idCVar cv_pm_rope_swing_impulse;
+extern idCVar cv_pm_rope_swing_duration;
 extern idCVar cv_pm_rope_swing_reptime;
 extern idCVar cv_pm_rope_swing_kickdist;
 extern idCVar cv_pm_water_downwards_velocity;

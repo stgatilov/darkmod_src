@@ -1343,54 +1343,60 @@ void idPhysics_Player::RopeMove( void )
 	}
 
 // ======================== Rope Swinging =====================
-	if( ( player->usercmd.buttons & BUTTON_ATTACK ) && !( player->oldButtons & BUTTON_ATTACK )
-		&& (gameLocal.time - m_RopeKickTime) > cv_pm_rope_swing_reptime.GetInteger() )
-	{
-		// default kick direction is forward
-		idVec3 kickDir = player->firstPersonViewAxis[0];
-		idVec3 bodyOrig = ropePhys->GetOrigin(bodID);
-		idMat3 rotDir = mat3_identity;
-		// apply modifiers if holding left/right/back
-		if( common->ButtonState(UB_MOVELEFT) )
-		{
-			rotDir = idAngles(0.0f, 90.0f, 0.0f).ToMat3();
-		}
-		else if( common->ButtonState(UB_MOVERIGHT) )
-		{
-			rotDir = idAngles(0.0f, 270.0f, 0.0f).ToMat3();
-		}
-		else if( common->ButtonState(UB_BACK) )
-		{
-			rotDir = idAngles(0.0f, 180.0f, 0.0f).ToMat3();
-		}
-		kickDir = rotDir * kickDir;
+	if ( player->usercmd.buttons & BUTTON_ATTACK ) {
+		bool newKick = !(player->oldButtons & BUTTON_ATTACK) && (gameLocal.time - m_RopeKickTime) > cv_pm_rope_swing_reptime.GetInteger();
+		bool kickContinued = (gameLocal.time - m_RopeKickTime) < cv_pm_rope_swing_duration.GetInteger();
+		if (newKick || kickContinued) {
+			// default kick direction is forward
+			idVec3 kickDir = player->firstPersonViewAxis[0];
+			idVec3 bodyOrig = ropePhys->GetOrigin(bodID);
+			idMat3 rotDir = mat3_identity;
+			// apply modifiers if holding left/right/back
+			if( common->ButtonState(UB_MOVELEFT) )
+			{
+				rotDir = idAngles(0.0f, 90.0f, 0.0f).ToMat3();
+			}
+			else if( common->ButtonState(UB_MOVERIGHT) )
+			{
+				rotDir = idAngles(0.0f, 270.0f, 0.0f).ToMat3();
+			}
+			else if( common->ButtonState(UB_BACK) )
+			{
+				rotDir = idAngles(0.0f, 180.0f, 0.0f).ToMat3();
+			}
+			kickDir = rotDir * kickDir;
 
-		// do a trace to see if a solid is in the way, if so, kick off of it
-		trace_t trKick;
+			if (newKick) {
+				// do a trace to see if a solid is in the way, if so, kick off of it
+				trace_t trKick;
 		
-		gameLocal.clip.TracePoint
-			( 
-				trKick, bodyOrig, 
-				bodyOrig + cv_pm_rope_swing_kickdist.GetFloat()*kickDir,
-				MASK_SOLID, self 
-			);
-		if( trKick.fraction < 1.0f )
-		{
-			// reverse direction to kick off
-			kickDir *= -1.0f;
-			// apply reaction force to entity kicked (TODO: watch out for exploits)
-			idEntity *kickedEnt = gameLocal.entities[trKick.c.entityNum];
-			float kickMag = cv_pm_rope_swing_impulse.GetFloat() / 25.0f; // divide by 25, it takes a lot to move AFs for some reason
-			kickedEnt->ApplyImpulse( self, trKick.c.id, trKick.c.point, -kickMag * kickDir );
-		}
+				gameLocal.clip.TracePoint
+					( 
+						trKick, bodyOrig, 
+						bodyOrig + cv_pm_rope_swing_kickdist.GetFloat()*kickDir,
+						MASK_SOLID, self 
+					);
+				if( trKick.fraction < 1.0f )
+				{
+					// reverse direction to kick off
+					kickDir *= -1.0f;
+					// apply reaction force to entity kicked (TODO: watch out for exploits)
+					idEntity *kickedEnt = gameLocal.entities[trKick.c.entityNum];
+					float kickMag = cv_pm_rope_swing_impulse.GetFloat();// / 25.0f; // divide by 25, it takes a lot to move AFs for some reason
+					kickedEnt->ApplyImpulse( self, trKick.c.id, trKick.c.point, -kickMag * kickDir );
+				}
 
-		// project to XY plane
-		kickDir -= GetGravityNormal() * (kickDir*GetGravityNormal());
-		kickDir.Normalize();
+				// test: apply velocity to all bodies lower as well?
+				m_RopeKickTime = gameLocal.time;
+			}
+
+			// project to XY plane
+			kickDir -= GetGravityNormal() * (kickDir*GetGravityNormal());
+			kickDir.Normalize();
 		
-		ropePhys->AddForce( bodID, bodyOrig, kickDir * cv_pm_rope_swing_impulse.GetFloat() );
-		// test: apply velocity to all bodies lower as well?
-		m_RopeKickTime = gameLocal.time;
+			float force = cv_pm_rope_swing_impulse.GetFloat() / MS2SEC(cv_pm_rope_swing_duration.GetFloat());
+			ropePhys->AddForce( bodID, bodyOrig, kickDir * force );
+		}
 	}
 
 // ==== Translate the player to the rope attachment point =====
