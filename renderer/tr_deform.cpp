@@ -1101,7 +1101,7 @@ Specialized version of R_ParticleDeform
 =====================
 */
 static void R_ParticleDeformRain( drawSurf_t* surf ) {
-	const struct renderEntity_s* renderEntity = &surf->space->entityDef->parms;
+	renderEntity_s* renderEntity = &surf->space->entityDef->parms;
 	const struct viewDef_s* viewDef = tr.viewDef;
 	const idDeclParticle* particleSystem = (idDeclParticle*)surf->material->GetDeformDecl();
 
@@ -1117,7 +1117,7 @@ static void R_ParticleDeformRain( drawSurf_t* surf ) {
 	const srfTriangles_t* srcTri = surf->frontendGeo;
 	int		numSourceTris = srcTri->numIndexes / 3;
 
-#define useArea true
+	constexpr auto useArea = true;
 
 	if ( useArea ) {
 		sourceTriAreas = (float*)_alloca( sizeof( *sourceTriAreas ) * numSourceTris );
@@ -1152,7 +1152,7 @@ static void R_ParticleDeformRain( drawSurf_t* surf ) {
 	g.origin.Zero();
 	g.axis = mat3_identity;
 
-#define currentTri 0
+	constexpr auto currentTri = 0;
 
 	for ( int stageNum = 0; stageNum < particleSystem->stages.Num(); stageNum++ ) {
 		idParticleStage* stage = particleSystem->stages[stageNum];
@@ -1172,15 +1172,17 @@ static void R_ParticleDeformRain( drawSurf_t* surf ) {
 		// we interpret stage->totalParticles as "particles per map square area"
 		// so the systems look the same on different size surfaces
 		int		totalParticles = stage->totalParticles * totalArea * 1e-5;
-
-		int	count = totalParticles * stage->NumQuadsPerParticle();
+		int sectors = idMath::Sqrt( totalParticles );
+		totalParticles = sectors * sectors;
+		if ( totalParticles <= 0 )
+			continue;
 
 		// allocate a srfTriangles in temp memory that can hold all the particles
 		srfTriangles_t* tri;
 
 		tri = (srfTriangles_t*)R_ClearedFrameAlloc( sizeof( *tri ) );
-		tri->numVerts = 4 * count;
-		tri->numIndexes = 6 * count;
+		tri->numVerts = 4 * totalParticles;
+		tri->numIndexes = 6 * totalParticles;
 		tri->verts = (idDrawVert*)R_FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
 		tri->indexes = (glIndex_t*)R_FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
 
@@ -1197,9 +1199,6 @@ static void R_ParticleDeformRain( drawSurf_t* surf ) {
 		// some particles will be in this cycle, some will be in the previous cycle
 		steppingRandom.SetSeed( ( ( stageCycle << 10 ) & idRandom::MAX_RAND ) ^ (int)( randomizer * idRandom::MAX_RAND ) );
 		steppingRandom2.SetSeed( ( ( ( stageCycle - 1 ) << 10 ) & idRandom::MAX_RAND ) ^ (int)( randomizer * idRandom::MAX_RAND ) );
-
-		int sectors = idMath::Sqrt( totalParticles );
-		totalParticles = sectors * sectors;
 
 		for ( int index = 0; index < totalParticles; index++ ) {
 			g.index = index;
@@ -1286,10 +1285,6 @@ static void R_ParticleDeformRain( drawSurf_t* surf ) {
 
 			g.age = g.frac * stage->particleLife;
 
-			// if the particle doesn't get drawn because it is faded out or beyond a kill region,
-			// don't increment the verts
-			//tri->numVerts += stage->CreateParticle( &g, tri->verts + tri->numVerts );
-
 			idVec2 step( srcTri->bounds.GetSize().ToVec2() / sectors );
 
 			for ( int i = 0; i < 4; i++ ) {
@@ -1305,26 +1300,26 @@ static void R_ParticleDeformRain( drawSurf_t* surf ) {
 			}
 		}
 
-		if ( tri->numVerts > 0 ) {
-			// build the index list
-			int	indexes = 0;
+		// build the index list
+		int	indexes = 0;
 
-			for ( int i = 0; i < tri->numVerts; i += 4 ) {
-				tri->indexes[indexes + 0] = i;
-				tri->indexes[indexes + 1] = i + 2;
-				tri->indexes[indexes + 2] = i + 3;
-				tri->indexes[indexes + 3] = i;
-				tri->indexes[indexes + 4] = i + 3;
-				tri->indexes[indexes + 5] = i + 1;
-				indexes += 6;
-			}
-			tri->numIndexes = indexes;
-			tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
+		for ( int i = 0; i < tri->numVerts; i += 4 ) {
+			tri->indexes[indexes + 0] = i;
+			tri->indexes[indexes + 1] = i + 2;
+			tri->indexes[indexes + 2] = i + 3;
+			tri->indexes[indexes + 3] = i;
+			tri->indexes[indexes + 4] = i + 3;
+			tri->indexes[indexes + 5] = i + 1;
+			indexes += 6;
+		}
+		tri->numIndexes = indexes;
+		tri->ambientCache = vertexCache.AllocVertex( tri->verts, tri->numVerts * sizeof( idDrawVert ) );
 
-			if ( tri->ambientCache.IsValid() ) {
-				// add the drawsurf
-				R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect );
-			}
+		renderEntity->shaderParms[0] = srcTri->bounds.GetSize().z; // FIXME dangerous?
+
+		if ( tri->ambientCache.IsValid() ) {
+			// add the drawsurf
+			R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect );
 		}
 	}
 }

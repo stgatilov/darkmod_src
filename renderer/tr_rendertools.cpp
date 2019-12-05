@@ -2366,7 +2366,7 @@ void R_GenerateHeightmap( idStr materialName ) {
 				pixels[y * N + x] = d;
 			}
 		auto fileName = idStr::Fmt( "heightmap%d.tga", i );			// generate separate files for all matching surfaces, to avoid possible confusion
-		R_WriteTGA( fileName, (byte*)pixels, N, N, true );
+		R_WriteTGA( fileName, (byte*)pixels, N, N, false );
 		Mem_Free( pixels );
 		common->Printf( "Processed material %s > %s\n", shortName.c_str(), fileName.c_str() );
 	}
