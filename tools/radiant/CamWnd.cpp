@@ -806,13 +806,16 @@ void CCamWnd::DrawLightRadius(brush_t *pBrush) {
  =======================================================================================================================
  */
 void setGLMode(int mode) {
+	GLColorOverride scopedColor;
+	float color[4] = {1, 1, 1, 1};
+
 	switch (mode)
 	{
 		case cd_wire:
 			qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			qglDisable(GL_BLEND);
 			qglDisable(GL_DEPTH_TEST);
-			GL_FloatColor( 1.0f, 1.0f, 1.0f );
+			scopedColor.Enable( color );
 			break;
 
 		case cd_solid:
