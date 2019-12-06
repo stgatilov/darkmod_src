@@ -47,7 +47,7 @@ class TdmDepends(ConanFile):
         "libjpeg/9c@thedarkmod/local",
         "libpng/1.6.34@bincrafters/stable",
         "ffmpeg/4.0.2@thedarkmod/local",
-        "openal/1.18.2@bincrafters/stable",
+        "openal/1.19.1@thedarkmod/local",
         "vorbis/1.3.6@bincrafters/stable",
     )
     # these deps must be built separately for each configuration (both debug and release)
