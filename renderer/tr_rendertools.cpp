@@ -744,10 +744,18 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	tr.primaryWorld->DrawText( mt.material->GetName(), mt.point, 
 		0.35f, colorBlue, tr.primaryView->renderView.viewaxis );
 	if ( r_showSurfaceInfo.GetInteger() == 2 ) {
+#if 1
+		idStr index;
+		for ( auto def : tr.primaryWorld->entityDefs ) {
+			if ( &def->parms == mt.entity )
+				index = idStr( def->index );
+		}
+#else
 		auto ge = gameLocal.entities[mt.entity->entityNum];
 		auto mh = ge->GetModelDefHandle();
 		auto rel = backEnd.viewDef->renderWorld->entityDefs[mh];
 		idStr index( rel->index );
+#endif
 		tr.primaryWorld->DrawText( index.c_str(), mt.point + tr.primaryView->renderView.viewaxis[2] * 32,
 			0.35f, colorBlue, tr.primaryView->renderView.viewaxis );
 	}
