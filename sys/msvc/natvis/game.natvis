@@ -143,4 +143,17 @@
     </Expand>
   </Type>
 
+  <Type Name="CInventory">
+    <DisplayString>Inventory: {m_Category}</DisplayString>
+  </Type>
+  <Type Name="CInventoryCategory">
+    <DisplayString>InvCat {m_Name}</DisplayString>
+  </Type>
+  <Type Name="CInventoryCursor">
+    <DisplayString>InvCur {m_CursorId}: {m_CurrentCategory}\{m_CurrentItem}</DisplayString>
+  </Type>
+  <Type Name="CInventoryItem">
+    <DisplayString>InvItem {m_Name} | {m_Item}</DisplayString>
+  </Type>
+
 </AutoVisualizer>
