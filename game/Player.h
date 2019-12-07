@@ -477,8 +477,8 @@ public:
 
 	// A pointer to our weaponslot.
 	CInventoryCursorPtr		m_WeaponCursor;
-	// A pointer to the current map/floorplan.
-	CInventoryCursorPtr		m_MapCursor;
+	// An index of the current map/floorplan.
+	int						m_MapCursorIdx;
 	// The name of the item that was current before pressing inventory clear
 	idStr					m_LastItemNameBeforeClear;
 

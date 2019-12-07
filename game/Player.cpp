@@ -707,7 +707,7 @@ idPlayer::idPlayer() :
 	objectivesOverlay		= -1;
 	inventoryGridOverlay	= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
-	m_MapCursor				= CInventoryCursorPtr();
+	m_MapCursorIdx			= -1;
 	m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
 
 	m_LightgemModifier		= 0;
@@ -1353,37 +1353,37 @@ void idPlayer::NextInventoryMap()
 {
 	if (GetImmobilization() & EIM_ITEM_SELECT) return;
 
-	if (m_MapCursor == NULL)
-	{
-		return; // We have no cursor!
-	}
-
-	CInventoryItemPtr prevMapItem = m_MapCursor->GetCurrentItem();
-
-	if (prevMapItem != NULL)
-	{
-		// We already have a map selected, toggle it off
-		UseInventoryItem(EPressed, prevMapItem, 0, false); 
-	}
-
-	// Clear any previously active maps
-	ClearActiveInventoryMap();
-
-	if (m_MapCursor->IsLastItemInCategory())
-	{
-		// Reached last map, return without cycling to the next map
-		// Clear the item, so that we start afresh next time
-		m_MapCursor->ClearItem();
+	CInventoryPtr inventory = Inventory();
+	if (!inventory)
 		return;
+	CInventoryCategoryPtr mapsCategory = inventory->GetCategory(TDM_PLAYER_MAPS_CATEGORY);
+	if (!mapsCategory)
+		return;
+
+	if (!m_ActiveInventoryMapEnt.IsValid()) {
+		//no map yet, try to take one
+		ClearActiveInventoryMap();
+		m_MapCursorIdx = -1;
+
+		if (!mapsCategory->IsEmpty()) {
+			//some maps exist, so take the first one
+			CInventoryItemPtr currItem = mapsCategory->GetItem(m_MapCursorIdx = 0);
+			assert(currItem && currItem->GetName() != TDM_DUMMY_ITEM);
+			UseInventoryItem(EPressed, currItem, 0, false);
+		}
 	}
+	else {
+		//already have some map active, look for next map
+		ClearActiveInventoryMap();
+		m_MapCursorIdx++;
 
-	// Advance the cursor to the next item
-	CInventoryItemPtr nextMapItem = m_MapCursor->GetNextItem();
-
-	if (nextMapItem != NULL && nextMapItem != prevMapItem)
-	{
-		// Use this new item
-		UseInventoryItem(EPressed, nextMapItem, 0, false);
+		if (m_MapCursorIdx < mapsCategory->GetNumItems()) {
+			//next map available, enable it
+			CInventoryItemPtr currItem = mapsCategory->GetItem(m_MapCursorIdx);
+			UseInventoryItem(EPressed, currItem, 0, false); 
+		}
+		else
+			m_MapCursorIdx = -1;
 	}
 }
 
@@ -1836,14 +1836,6 @@ void idPlayer::SetupInventory()
 		}
 	}
 
-	// greebo: Create the cursor for map/floorplan inventory items.
-	m_MapCursor = inv->CreateCursor();
-	inv->CreateCategory(TDM_PLAYER_MAPS_CATEGORY, &idx);
-	m_MapCursor->SetCurrentCategory(idx);
-	m_MapCursor->SetCategoryLock(true);
-	m_MapCursor->SetWrapAround(true);
-	m_MapCursor->ClearItem(); // invalidate the cursor
-
 	// give the player weapon ammo based on shop purchases
 	category = m_WeaponCursor->GetCurrentCategory();
 	const ShopItemList& startingItems = gameLocal.m_Shop->GetPlayerStartingEquipment();
@@ -2267,10 +2259,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(m_WeaponCursor->GetId());
 	}
 
-	savefile->WriteBool(m_MapCursor != NULL);
-	if (m_MapCursor != NULL) {
-		savefile->WriteInt(m_MapCursor->GetId());
-	}
+	savefile->WriteInt(m_MapCursorIdx);
 
 	savefile->WriteString(m_LastItemNameBeforeClear.c_str());
 
@@ -2615,13 +2604,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		m_WeaponCursor = Inventory()->GetCursor(cursorId);
 	}
 
-	bool hasMapCursor;
-	savefile->ReadBool(hasMapCursor);
-	if (hasMapCursor) {
-		int cursorId;
-		savefile->ReadInt(cursorId);
-		m_MapCursor = Inventory()->GetCursor(cursorId);
-	}
+	savefile->ReadInt(m_MapCursorIdx);
 
 	savefile->ReadString(m_LastItemNameBeforeClear);
 
