@@ -29,7 +29,10 @@
 #define CACHETYPE_AREA				1
 #define CACHETYPE_PORTAL			2
 
-#define MAX_ROUTING_CACHE_MEMORY	(2*1024*1024)
+//stgatilov #4755: should be large enough for EAS initialization
+//if cache is not large enough, then EAS setup becomes much slower
+//P.S. Shadowhide WIP needs at least 6 MB
+#define MAX_ROUTING_CACHE_MEMORY	(20*1024*1024)
 
 #define LEDGE_TRAVELTIME_PENALTY	250
 
