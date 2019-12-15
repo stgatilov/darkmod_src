@@ -30,7 +30,7 @@
 class idSIMD {
 public:
 	static void			Init( void );
-	static void			InitProcessor( const char *module, bool forceGeneric );
+	static void			InitProcessor( const char *module, const char *forceImpl = nullptr );
 	static void			Shutdown( void );
 	static void			Test_f( const class idCmdArgs &args );
 };

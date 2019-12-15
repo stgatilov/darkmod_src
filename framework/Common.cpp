@@ -85,7 +85,11 @@ idCVar com_asyncSound( "com_asyncSound", "3", CVAR_INTEGER|CVAR_SYSTEM|CVAR_ROM,
 idCVar com_asyncSound( "com_asyncSound", "1", CVAR_INTEGER|CVAR_SYSTEM, ASYNCSOUND_INFO, 0, 1 );
 #endif
 
-idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
+idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_SYSTEM | CVAR_NOCHEAT,
+	"Force specified implementation of SIMD processor (if supported)\n"
+	"Value 1 or Generic forces slow platform-independent implementation. "
+	"Other options include: SSE, SSE2, SSE3, AVX, AVX2"
+);
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "developer mode" );
 idCVar com_allowConsole( "com_allowConsole", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "allow toggling console with the tilde key" );
 idCVar com_speeds( "com_speeds", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show engine timings" );
@@ -2454,7 +2458,12 @@ idCommonLocal::InitSIMD
 =================
 */
 void idCommonLocal::InitSIMD( void ) {
-	idSIMD::InitProcessor( "TDM", com_forceGenericSIMD.GetBool() );
+	const char *cvarStr = com_forceGenericSIMD.GetString();
+	if (idStr::Cmp(cvarStr, "1") == 0)
+		cvarStr = "Generic";
+	if (idStr::Cmp(cvarStr, "0") == 0)
+		cvarStr = nullptr;
+	idSIMD::InitProcessor( "TDM", cvarStr );
 	com_forceGenericSIMD.ClearModified();
 }
 

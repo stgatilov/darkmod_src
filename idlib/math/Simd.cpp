@@ -52,8 +52,12 @@ void idSIMD::Init( void ) {
 idSIMD::InitProcessor
 ============
 */
-void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
-	idSIMDProcessor *newProcessor;
+void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
+	if (processor != generic) {
+		delete processor;
+		processor = nullptr;
+		SIMDProcessor = generic;
+	}
 
 	cpuid_t cpuid = idLib::sys->GetProcessorId();
 
@@ -126,43 +130,31 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	                       cpuid & CPUID_AVX ? " AVX" : "",
 	                       cpuid & CPUID_AVX2 ? " AVX2" : "",
 	                       cpuid & CPUID_FMA3 ? " FMA3" : "" );
-	if ( forceGeneric ) {
 
-		newProcessor = generic;
-
+	bool upToSSE = ( cpuid & CPUID_SSE );
+	bool upToSSE2 = upToSSE && ( cpuid & CPUID_SSE2 );
+	bool upToSSE3 = upToSSE2 && ( cpuid & CPUID_SSE3 );
+	bool upToSSSE3 = upToSSE3 && ( cpuid & CPUID_SSSE3 );
+	bool upToSSE41 = upToSSSE3 && ( cpuid & CPUID_SSE41 );
+	bool upToAVX = upToSSE41 && ( cpuid & CPUID_AVX );
+	bool upToAVX2 = upToAVX && ( cpuid & CPUID_AVX2 ) && ( cpuid & CPUID_FMA3 );
+	if ( upToAVX2 && (!forceImpl || idStr::Icmp(forceImpl, "AVX2") == 0) ) {
+		processor = new idSIMD_AVX2;
+	} else if ( upToAVX && (!forceImpl || idStr::Icmp(forceImpl, "AVX") == 0) ) {
+		processor = new idSIMD_AVX;
+	} else if ( upToSSE3 && (!forceImpl || idStr::Icmp(forceImpl, "SSE3") == 0) ) {
+		processor = new idSIMD_SSE3;
+	} else if ( upToSSE2 && (!forceImpl || idStr::Icmp(forceImpl, "SSE2") == 0) ) {
+		processor = new idSIMD_SSE2;
+	} else if ( upToSSE && (!forceImpl || idStr::Icmp(forceImpl, "SSE") == 0) ) {
+		processor = new idSIMD_SSE;
 	} else {
-
-		if ( !processor ) {
-			//bool upToMMX = ( cpuid & CPUID_MMX ) ? true : false;
-			bool upToSSE = /*upToMMX &&*/ ( cpuid & CPUID_SSE );
-			bool upToSSE2 = upToSSE && ( cpuid & CPUID_SSE2 );
-			bool upToSSE3 = upToSSE2 && ( cpuid & CPUID_SSE3 );
-			bool upToSSSE3 = upToSSE3 && ( cpuid & CPUID_SSSE3 );
-			bool upToSSE41 = upToSSSE3 && ( cpuid & CPUID_SSE41 );
-			bool upToAVX = upToSSE41 && ( cpuid & CPUID_AVX );
-			bool upToAVX2 = upToAVX && ( cpuid & CPUID_AVX2 ) && ( cpuid & CPUID_FMA3 );
-			if ( upToAVX2 ) {
-				processor = new idSIMD_AVX2;
-			} else if ( upToAVX ) {
-				processor = new idSIMD_AVX;
-			} else if ( upToSSE3 ) {
-				processor = new idSIMD_SSE3;
-			} else if ( upToSSE2 ) {
-				processor = new idSIMD_SSE2;
-			} else if ( upToSSE ) {
-				processor = new idSIMD_SSE;
-/*			} else if ( upToMMX ) {
-				processor = new idSIMD_MMX;*/
-			} else {
-				processor = generic;
-			}
-			processor->cpuid = cpuid;
-		}
-		newProcessor = processor;
+		processor = generic;
 	}
+	processor->cpuid = cpuid;
 
-	if ( newProcessor != SIMDProcessor ) {
-		SIMDProcessor = newProcessor;
+	if ( processor != SIMDProcessor ) {
+		SIMDProcessor = processor;
 	}
 	idLib::common->Printf( "%s using %s for SIMD processing.\n", module, SIMDProcessor->GetName() );
 
