@@ -105,6 +105,7 @@ void tdmEAS::SetupClusterInfoStructures()
         _clusterInfo[i]->clusterNum = static_cast<int>(i);
 		// Make sure each ClusterInfo structure can hold RouteInfo pointers to every other cluster
 		_clusterInfo[i]->routeToCluster.resize(_clusterInfo.size());
+		_clusterInfo[i]->visitedToCluster.assign(_clusterInfo.size(), false);
 	}
 }
 
@@ -591,7 +592,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	{
 		// Do nothing for start == goal
 	}
-	else if (_clusterInfo[startCluster]->routeToCluster[goalCluster].size() > 0)
+	else if (_clusterInfo[startCluster]->visitedToCluster[goalCluster])
 	{
 		// Routing information to the goal cluster is right there, return it
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("We already tried to find a route from cluster %d to %d.\r", startCluster, goalCluster);
@@ -600,9 +601,8 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Route from cluster %d to %d doesn't exist yet, check walk path.\r", startCluster, goalCluster);
 
-		// Insert a dummy route into the _clusterInfo matrix, so that we don't come here again
-		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
-		_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(dummyRoute);
+		// Remember that we have computed this info in _clusterInfo matrix, so that we don't come here again
+		_clusterInfo[startCluster]->visitedToCluster[goalCluster] = true;
 
 		// No routing information, check walk path to the goal cluster
 		idReachability* reach;
@@ -755,13 +755,6 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 
 	// Purge all empty RouteInfo nodes
 	CleanRouteInfo(startCluster, goalCluster);
-
-	// Keep one dummy node anyway, to signal that we already traversed this combination
-	if (_clusterInfo[startCluster]->routeToCluster[goalCluster].empty())
-	{
-		RouteInfoPtr dummyRoute(new RouteInfo(ROUTE_DUMMY, goalCluster));
-		_clusterInfo[startCluster]->routeToCluster[goalCluster].push_back(dummyRoute);
-	}
 
 	assert(_routingIterations > 0);
 	_routingIterations--;

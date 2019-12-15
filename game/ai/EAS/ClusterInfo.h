@@ -27,6 +27,7 @@ struct ClusterInfo
 	unsigned short numElevatorStations;				// the number of elevator stations in this cluster
 	ElevatorStationInfoList reachableElevatorStations;	// references to the reachable elevator stations
 	RouteInfoListVector routeToCluster;					// for each cluster, a std::list of possible routes (can be empty)
+	std::vector<byte> visitedToCluster;					// for each cluster: holds true iff this route has already been evaluated (only used inside SetupClusterRouting)
 
 	ClusterInfo() :
 		clusterNum(-1),
