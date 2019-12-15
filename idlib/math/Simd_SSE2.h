@@ -26,7 +26,7 @@
 
 class idSIMD_SSE2 : public idSIMD_SSE {
 public:
-	idSIMD_SSE2() { name += " & SSE2"; }
+	idSIMD_SSE2() { name = "SSE2"; }
 
 #if defined(MACOS_X) && defined(__i386__)
 	virtual void VPCALL CmpLT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count );		

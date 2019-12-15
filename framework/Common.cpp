@@ -2454,7 +2454,7 @@ idCommonLocal::InitSIMD
 =================
 */
 void idCommonLocal::InitSIMD( void ) {
-	idSIMD::InitProcessor( "tdm", com_forceGenericSIMD.GetBool() );
+	idSIMD::InitProcessor( "TDM", com_forceGenericSIMD.GetBool() );
 	com_forceGenericSIMD.ClearModified();
 }
 

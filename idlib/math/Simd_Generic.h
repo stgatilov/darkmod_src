@@ -25,7 +25,10 @@
 */
 
 class idSIMD_Generic : public idSIMDProcessor {
+protected:
+	idStr name;
 public:
+	idSIMD_Generic() { name = "Generic"; }
 	virtual const char * VPCALL GetName( void ) const;
 
 	virtual void VPCALL Add( float *dst,			const float constant,	const float *src,		const int count );

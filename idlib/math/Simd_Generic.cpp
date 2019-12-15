@@ -45,7 +45,7 @@ idSIMD_Generic::GetName
 ============
 */
 const char * idSIMD_Generic::GetName( void ) const {
-	return "generic code";
+	return name.c_str();
 }
 
 /*
