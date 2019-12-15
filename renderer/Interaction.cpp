@@ -52,16 +52,7 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 	cullInfo.facing = ( byte* )R_StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) );
 
 	// exact geometric cull against face
-	for ( int i = 0, face = 0; i < tri->numIndexes; i += 3, face++ ) {
-		const idDrawVert& v0 = tri->verts[tri->indexes[i + 0]];
-		const idDrawVert& v1 = tri->verts[tri->indexes[i + 1]];
-		const idDrawVert& v2 = tri->verts[tri->indexes[i + 2]];
-
-		const idPlane plane( v0.xyz, v1.xyz, v2.xyz );
-		const float d = plane.Distance( localLightOrigin );
-
-		cullInfo.facing[face] = ( d >= 0.0f );
-	}
+	SIMDProcessor->CalcTriFacing(tri->verts, tri->numVerts, tri->indexes, tri->numIndexes, localLightOrigin, cullInfo.facing);
 	cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
 }
 

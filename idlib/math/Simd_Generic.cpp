@@ -2424,6 +2424,19 @@ void VPCALL idSIMD_Generic::OverlayPointCull( byte *cullBits, idVec2 *texCoords,
 	}
 }
 
+void VPCALL idSIMD_Generic::CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) {
+	for ( int i = 0, face = 0; i < numIndexes; i += 3, face++ ) {
+		const idDrawVert& v0 = verts[indexes[i + 0]];
+		const idDrawVert& v1 = verts[indexes[i + 1]];
+		const idDrawVert& v2 = verts[indexes[i + 2]];
+
+		const idPlane plane( v0.xyz, v1.xyz, v2.xyz );
+		const float d = plane.Distance( lightOrigin );
+
+		facing[face] = ( d >= 0.0f );
+	}
+}
+
 /*
 ============
 idSIMD_Generic::DeriveTriPlanes

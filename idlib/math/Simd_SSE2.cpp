@@ -1188,6 +1188,37 @@ int idSIMD_SSE2::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDr
 
 #endif /* SIMD_USE_ASM */
 
+void VPCALL idSIMD_SSE2::CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) {
+	int numTris = numIndexes / 3;
+	__m128 orig = _mm_setr_ps(lightOrigin.x, lightOrigin.y, lightOrigin.z, 0.0f);
+
+	for (int i = 0; i < numTris; i++) {
+		int idxA = indexes[3 * i + 0];
+		int idxB = indexes[3 * i + 1];
+		int idxC = indexes[3 * i + 2];
+		const idDrawVert &vA = verts[idxA];
+		const idDrawVert &vB = verts[idxB];
+		const idDrawVert &vC = verts[idxC];
+
+		__m128 posA = _mm_loadu_ps( &vA.xyz.x );		//xyzs A
+		__m128 posB = _mm_loadu_ps( &vB.xyz.x );		//xyzs B
+		__m128 posC = _mm_loadu_ps( &vC.xyz.x );		//xyzs C
+		//compute AB/AC differences
+		__m128 dpAB = _mm_sub_ps( posB, posA );			//xyzs AB
+		__m128 dpAC = _mm_sub_ps( posC, posA );			//xyzs AC
+		//compute normal vector (length can be arbitrary)
+		CROSS_PRODUCT( normal, dpAC, dpAB );
+
+		//get orientation
+		__m128 vertToOrig = _mm_sub_ps(orig, posA);
+		DOT_PRODUCT( signedVolume, vertToOrig, normal );
+		__m128 oriPositive = _mm_cmple_ss(_mm_setzero_ps(), signedVolume);
+		int num = _mm_cvtsi128_si32(_mm_castps_si128(oriPositive));
+
+		facing[i] = -num;		//-1 when true, 0 when false
+	}
+}
+
 void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 	typedef unsigned int uint32;
 	int i = 0;

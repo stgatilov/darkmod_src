@@ -47,7 +47,7 @@ public:
 	virtual int  VPCALL CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts );
 #endif
 	virtual void VPCALL Memcpy( void* dst, const void* src, const int count );
-
+	virtual void VPCALL CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing );
 };
 
 #endif /* !__MATH_SIMD_SSE2_H__ */
