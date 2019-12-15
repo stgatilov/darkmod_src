@@ -97,8 +97,10 @@ endif ()
 
 # configure precompiled header
 # note TypeInfo.cpp must be excluded from precompiled header because it uses some dirty hacks
-add_precompiled_header(TheDarkMod "idlib/precompiled.h" "idlib/precompiled.cpp" "precompiled.h"
-		EXCLUDE "game/gamesys/TypeInfo.cpp")
+add_precompiled_header(TheDarkMod
+		"idlib/precompiled.h" "idlib/precompiled.cpp" "precompiled.h"
+		EXCLUDE "game/gamesys/TypeInfo.cpp"
+)
 
 add_compile_definitions(
 		"ExtLibs="
@@ -164,7 +166,7 @@ elseif (MSVC)
 	else ()
 		set(PACKAGE_PLATFORM "win32_s_vc15_rel_mt")
 		set(PACKAGE_PLATFORM_DEBUG "win32_s_vc15_dbg_mtd")
-        set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkMod")
+		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkMod")
 	endif ()
 	set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/vc15")
 	# we want debug symbols even with Release builds
@@ -221,7 +223,7 @@ if (WIN32)
 	set_target_properties(TheDarkMod PROPERTIES WIN32_EXECUTABLE TRUE)
 elseif (UNIX)
 	target_link_libraries(TheDarkMod pthread dl stdc++fs X11 Xext Xxf86vm)
-    # strip debug symbols from executable and put them into a separate symbols file
+	# strip debug symbols from executable and put them into a separate symbols file
 	add_custom_command(
 			TARGET TheDarkMod POST_BUILD
 			COMMAND objcopy --only-keep-debug "$<TARGET_FILE:TheDarkMod>" "$<TARGET_FILE:TheDarkMod>.debug"
@@ -241,5 +243,6 @@ if (COPY_EXE)
 	add_custom_command(
 			TARGET TheDarkMod POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod> "${GAME_DIR}"
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod>.debug "${GAME_DIR}"
 	)
 endif ()
