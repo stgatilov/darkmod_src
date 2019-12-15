@@ -264,9 +264,14 @@ void tdmEAS::SetupRoutesBetweenClusters()
 
 	// Clear routing lists.
 
+	//stgatilov #4755: precompute areas for clusters to improve asymptotic time complexity
+	std::vector<int> areaOfCluster(_clusterInfo.size());
+	for (int cluster = 0; cluster < _clusterInfo.size(); cluster++)
+		areaOfCluster[cluster] = _aas->GetAreaInCluster(cluster);
+
 	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
 	{
-        int startArea = _aas->GetAreaInCluster(static_cast<int>(startCluster));
+		int startArea = areaOfCluster[startCluster];
 
 		if (startArea <= 0)
 		{
@@ -283,7 +288,7 @@ void tdmEAS::SetupRoutesBetweenClusters()
 
 	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
 	{
-        int startArea = _aas->GetAreaInCluster(static_cast<int>(startCluster));
+		int startArea = areaOfCluster[startCluster];
 
 		if (startArea <= 0)
 		{
@@ -302,14 +307,14 @@ void tdmEAS::SetupRoutesBetweenClusters()
 				continue;
 			}
 
-            int goalArea = _aas->GetAreaInCluster(static_cast<int>(goalCluster));
+			int goalArea = areaOfCluster[goalCluster];
 			if ( goalArea <= 0 )
 			{
 				continue;
 			}
 			
 			_routingIterations = 0;
-            FindRoutesToCluster(static_cast<int>(startCluster), startArea, static_cast<int>(goalCluster), goalArea);
+			FindRoutesToCluster(static_cast<int>(startCluster), startArea, static_cast<int>(goalCluster), goalArea);
 		}
 
 		common->PacifierUpdate(LOAD_KEY_ROUTING_INTERIM,(int)startCluster + 1); // grayman #3763
