@@ -22,6 +22,25 @@
 
 idCVarBool r_legacyTangents( "r_legacyTangents", "1", CVAR_RENDERER | CVAR_ARCHIVE, "1 = legacy CPU tangent calculation" );
 
+//in "Debug with Inlines" config, optimize all the remaining functions of this file
+DEBUG_OPTIMIZE_ON
+
+#define OFFSETOF(s, m) offsetof(s, m)
+#define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
+
+#define DOT_PRODUCT(xyz, a, b) \
+	__m128 xyz = _mm_mul_ps(a, b); \
+	{ \
+		__m128 yzx = _mm_shuffle_ps(xyz, xyz, SHUF(1, 2, 0, 3)); \
+		__m128 zxy = _mm_shuffle_ps(xyz, xyz, SHUF(2, 0, 1, 3)); \
+		xyz = _mm_add_ps(_mm_add_ps(xyz, yzx), zxy); \
+	}
+#define CROSS_PRODUCT(dst, a, b) \
+	__m128 dst = _mm_mul_ps(a, _mm_shuffle_ps(b, b, SHUF(1, 2, 0, 3))); \
+	dst = _mm_sub_ps(dst, _mm_mul_ps(b, _mm_shuffle_ps(a, a, SHUF(1, 2, 0, 3)))); \
+	dst = _mm_shuffle_ps(dst, dst, SHUF(1, 2, 0, 3));
+
+
 //===============================================================
 //
 //	SSE2 implementation of idSIMDProcessor
@@ -848,24 +867,6 @@ void VPCALL idSIMD_SSE2::MixedSoundToSamples( short *samples, const float *mixBu
 
 //suitable for any compiler, OS and bitness  (intrinsics)
 //generally used on Windows 64-bit and all Linuxes
-
-//in "Debug with Inlines" config, optimize all the remaining functions of this file
-DEBUG_OPTIMIZE_ON
-
-#define OFFSETOF(s, m) offsetof(s, m)
-#define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
-
-#define DOT_PRODUCT(xyz, a, b) \
-	__m128 xyz = _mm_mul_ps(a, b); \
-	{ \
-		__m128 yzx = _mm_shuffle_ps(xyz, xyz, SHUF(1, 2, 0, 3)); \
-		__m128 zxy = _mm_shuffle_ps(xyz, xyz, SHUF(2, 0, 1, 3)); \
-		xyz = _mm_add_ps(_mm_add_ps(xyz, yzx), zxy); \
-	}
-#define CROSS_PRODUCT(dst, a, b) \
-	__m128 dst = _mm_mul_ps(a, _mm_shuffle_ps(b, b, SHUF(1, 2, 0, 3))); \
-	dst = _mm_sub_ps(dst, _mm_mul_ps(b, _mm_shuffle_ps(a, a, SHUF(1, 2, 0, 3)))); \
-	dst = _mm_shuffle_ps(dst, dst, SHUF(1, 2, 0, 3));
 
 void NormalizeTangentsLess( idDrawVert* verts, const int numVerts ) {
 	for ( int i = 0; i < numVerts; i++ ) {
