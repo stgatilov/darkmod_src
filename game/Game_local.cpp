@@ -3356,11 +3356,16 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	if (base_fov <= 1e-3f || base_fov >= 180.0f - 1e-3f)
 		Error( "idGameLocal::CalcFov: bad base value %f", base_fov );
 
+	//stgatilov: simulating the formula of TDM 2.07 and earlier
+	//g_fov specifies horizontal FOV or a virtual 4:3 screen inscribed into the real screen
+	float cvarFov = DEG2RAD(base_fov);
+	float fovY = idMath::ATan(idMath::Tan(cvarFov * 0.5f) * 0.75) * 2.0f;
+	//float fovY = DEG2RAD(base_fov);
+
 	float aspect = float(viewX) / float(viewY);
-	float fovX = DEG2RAD(base_fov);
-	float ratioX = idMath::Tan(fovX * 0.5f);
-	float ratioY = ratioX / aspect;
-	float fovY = idMath::ATan(ratioY) * 2.0f;
+	float ratioY = idMath::Tan(fovY * 0.5f);
+	float ratioX = ratioY * aspect;
+	float fovX = idMath::ATan(ratioX) * 2.0f;
 
 	fov_x = RAD2DEG(fovX);
 	fov_y = RAD2DEG(fovY);
