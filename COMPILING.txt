@@ -22,22 +22,19 @@ During installation, make sure to enable "Visual C++ MFC for x86 and x64", along
 
 You need GCC 5 or newer to build TDM on Linux.
 Anything older than GCC 4.7 surely won't work.
-Just as the original Doom 3, TDM is built using Scons build system.
+CMake >= 3.12 is required to build TDM.
 
-Being in the source code root directory ("darkmod_src"), you can build TDM with a command like this:
-  scons BUILD="release" TARGET_ARCH="x64" -j6 ..
-If you omit some parameters, Scons will either use the previously defined values or the default ones.
+You first need to create a build directory. Easiest option is to create a subdirectory in the source code
+root directory ("darkmod_src"):
+  mkdir build && cd build
+From your build directory, call CMake:
+  cmake -DCMAKE_BUILD_TYPE="Release" ..
+The '..' indicate the path to the source directory. If you chose a different location for your build directory
+instead of the suggested subdirectory, you have to adjust this parameter accordingly. Finally, build TDM by calling
+  make -j
+where the '-j' parameter instructs make to build the project in parallel for faster compile times.
 
-Here is the explanation of parameters:
-* BUILD="release": build release (i.e. optimized) executable
-* TARGET_ARCH="x64": build for 64-bit platform (pass "x86" or "x32" for 32-bit build)
-* -j6: run six instances of compiler in parallel for faster build (better specify the number of cores in your CPU)
-* ..: put executables with debug information to "../darkmod" (scons cannot access parent directory without it)
-Run "scons --help" for more information about arguments.
-
-Note: by default the deploy-ready executables are put into the current directory (which is source code root directory).
-They are stripped of debug information, so you won't be able to debug them.
-If you need debug information, make sure to specify ".." argument: then debuggable executables will be put into "../darkmod".
+If you wish to compile a debug executable, pass '-DCMAKE_BUILD_TYPE="Debug"' to the CMake call.
 
 
 === Ubuntu 16.04: native ===
@@ -45,18 +42,14 @@ If you need debug information, make sure to specify ".." argument: then debuggab
 The best approach is to build binaries for the platform you have, i.e.: build 32-bit TDM on 32-bit OS, or 64-bit TDM on 64-bit OS.
 Here is the list of packages you need to install (on a clean Ubuntu installation):
 
-  sudo apt-get install scons                    //'scons' is currently not installed
-  sudo apt-get install m4                       //'SCons Environment' object has no attribute 'M4'
   sudo apt-get install subversion               //svnversion: not found
   sudo apt-get install mesa-common-dev          //no such file: "Gl/gl.h"
   sudo apt-get install libxxf86vm-dev           //no such file: "X11/extensions/xf86vmode.h"
   sudo apt-get install libopenal-dev            //no such file: "AL/al.h"
   sudo apt-get install libxext-dev              //no such file: "X11/extensions/Xext.h"
+  sudo snap install cmake                       //we need a recent version of CMake, so install from snap instead of apt
 
-Now run scons build with one of the commands:
-
-  scons BUILD="release" TARGET_ARCH="x86" ..    //on 32-bit OS
-  scons BUILD="release" TARGET_ARCH="x64" ..    //on 64-bit OS
+Now run CMake as instructed above.
 
 
 === Ubuntu 16.04: 32-bit version on 64-bit OS ===
@@ -72,11 +65,12 @@ You have to install the following packages in addition to the ones listed above:
   sudo apt-get install libopenal-dev:i386       //cannot find "-lopenal"
   sudo apt-get install libxext-dev:i386         //cannot find "-lXext"
 
-Then run build as usual:
+Then you need to call CMake with a toolchain file to target 32-bit:
 
-  scons BUILD="release" TARGET_ARCH="x86" ..
+  cmake -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="../sys/cmake/gcc_32bit.cmake" ..
 
-The 64-bit and 32-bit versions can be built independently on a single 64-bit Linux.
+The 64-bit and 32-bit versions can be built independently on a single 64-bit Linux, but you need to use different
+build directories for each version.
 
 
 == Details ==
