@@ -1073,6 +1073,24 @@ void idInteraction::AddActiveInteraction( void ) {
 					}
 				}
 
+			// check more precisely for shadow visibility
+			idBounds shadowBounds;
+			extern void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, const idVec3& lightOrigin, idBounds& shadowBounds );
+			R_ShadowBounds( entityDef->globalReferenceBounds, lightDef->globalLightBounds, lightDef->globalLightOrigin, shadowBounds );
+
+			// this doesn't say that the shadow can't effect anything, only that it can't
+			// effect anything in the view
+			if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
+			{
+				continue;
+			}
+
+			idBounds shadowProjectionBounds;
+			tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
+			auto shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
+			if ( !shadowRect.Overlaps( vLight->scissorRect ) )
+				continue;
+
 			// copy the shadow vertexes to the vertex cache if they have been purged
 			// if we are using shared shadowVertexes and letting a vertex program fix them up,
 			// get the shadowCache from the parent ambient surface

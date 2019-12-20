@@ -46,6 +46,19 @@ public:
 	bool		Equals( const idScreenRect& rect ) const {
 		return ( x1 == rect.x1 && x2 == rect.x2 && y1 == rect.y1 && y2 == rect.y2 );
 	}
+	bool		Overlaps( const idScreenRect& rect ) const {
+		// The rectangles don't overlap if
+		// one rectangle's minimum in some dimension 
+		// is greater than the other's maximum in
+		// that dimension.
+
+		bool noOverlap = rect.x1 > x2 ||
+			x1 > rect.x2 ||
+			rect.y1 > y2 ||
+			y1 > rect.y2;
+
+		return !noOverlap;
+	}
 	bool		IsEmpty() const;
 	int			GetArea() const { //anon
 		return GetWidth() * GetHeight();
