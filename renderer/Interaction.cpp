@@ -1050,6 +1050,29 @@ void idInteraction::AddActiveInteraction( void ) {
 				}
 			}
 
+			// 2.08: as we removed the interaction scissor check in favor of BFG style 
+			// we now need to at least check if light/entity are in the same/connected areas
+			if ( vEntity->scissorRect.IsEmpty() ) // only interested in the off-screen models
+				if ( lightDef->areaNum != -1 )
+				{
+					// if no part of the model is in an area that is connected to
+					// the light center (it is behind a solid, closed door), we can ignore it
+					bool areasConnected = false;
+					for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->ownerNext )
+					{
+						if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->area->areaNum, PS_BLOCK_VIEW ) )
+						{
+							areasConnected = true;
+							break;
+						}
+					}
+					if ( areasConnected == false )
+					{
+						// can't possibly be seen or shadowed
+						continue;
+					}
+				}
+
 			// copy the shadow vertexes to the vertex cache if they have been purged
 			// if we are using shared shadowVertexes and letting a vertex program fix them up,
 			// get the shadowCache from the parent ambient surface
