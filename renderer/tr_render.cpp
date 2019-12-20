@@ -101,7 +101,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 }
 
 void RB_DrawTriangles( const srfTriangles_t &tri) {
-	if ( tri.indexCache.IsValid() ) {
+/*	if ( tri.indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES,
 			tri.numIndexes,
 			GL_INDEX_TYPE,
@@ -112,7 +112,22 @@ void RB_DrawTriangles( const srfTriangles_t &tri) {
 	} else {
 		vertexCache.UnbindIndex();
 		qglDrawElements( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes ); 
+	}*/
+	void* indexPtr;
+	if ( tri.indexCache.IsValid() ) {
+		indexPtr = vertexCache.IndexPosition( tri.indexCache );
+		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+			backEnd.pc.c_vboIndexes += tri.numIndexes;
+		}
+	} else {
+		vertexCache.UnbindIndex();
+		indexPtr = tri.indexes;
 	}
+	int basePointer = vertexCache.GetBaseVertex();
+	if ( basePointer < 0 )
+		qglDrawElements( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes );
+	else
+		qglDrawElementsBaseVertex( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes, basePointer );
 }
 
 /*
