@@ -28,6 +28,7 @@ idInteraction implementation
 
 // FIXME: use private allocator for srfCullInfo_t
 idCVar r_useInteractionTriCulling("r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris");
+idCVarInt r_singleShadowEntity( "r_singleShadowEntity", "-1", CVAR_RENDERER, "suppress all but one shadowing entity" );
 
 /*
 ================
@@ -1089,6 +1090,9 @@ void idInteraction::AddActiveInteraction( void ) {
 			tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
 			auto shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
 			if ( !shadowRect.Overlaps( vLight->scissorRect ) )
+				continue;
+
+			if ( r_singleShadowEntity >= 0 && r_singleShadowEntity != vEntity->entityDef->index )
 				continue;
 
 			// copy the shadow vertexes to the vertex cache if they have been purged
