@@ -935,6 +935,47 @@ void idInteraction::AddActiveInteraction( void ) {
 	vLight = lightDef->viewLight;
 	vEntity = entityDef->viewEntity;
 
+	// 2.08: as we removed the interaction scissor check in favor of BFG style 
+	// we now need to at least check if light/entity are in the same/connected areas
+	if ( vEntity->scissorRect.IsEmpty() ) // only interested in the off-screen models
+		if ( lightDef->areaNum != -1 )
+		{
+			// if no part of the model is in an area that is connected to
+			// the light center (it is behind a solid, closed door), we can ignore it
+			bool areasConnected = false;
+			for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->ownerNext )
+			{
+				if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->area->areaNum, PS_BLOCK_VIEW ) )
+				{
+					areasConnected = true;
+					break;
+				}
+			}
+			if ( areasConnected == false )
+			{
+				// can't possibly be seen or shadowed
+				return;
+			}
+		}
+
+	// check more precisely for shadow visibility
+	idBounds shadowBounds;
+	extern void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, const idVec3& lightOrigin, idBounds& shadowBounds );
+	R_ShadowBounds( entityDef->globalReferenceBounds, lightDef->globalLightBounds, lightDef->globalLightOrigin, shadowBounds );
+
+	// this doesn't say that the shadow can't effect anything, only that it can't
+	// effect anything in the view
+	if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
+	{
+		return;
+	}
+
+	idBounds shadowProjectionBounds;
+	tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
+	auto shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
+	if ( !shadowRect.Overlaps( vLight->scissorRect ) )
+		return;
+
 	// We will need the dynamic surface created to make interactions, even if the
 	// model itself wasn't visible.  This just returns a cached value after it
 	// has been generated once in the view.
@@ -1050,47 +1091,6 @@ void idInteraction::AddActiveInteraction( void ) {
 					continue;
 				}
 			}
-
-			// 2.08: as we removed the interaction scissor check in favor of BFG style 
-			// we now need to at least check if light/entity are in the same/connected areas
-			if ( vEntity->scissorRect.IsEmpty() ) // only interested in the off-screen models
-				if ( lightDef->areaNum != -1 )
-				{
-					// if no part of the model is in an area that is connected to
-					// the light center (it is behind a solid, closed door), we can ignore it
-					bool areasConnected = false;
-					for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->ownerNext )
-					{
-						if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->area->areaNum, PS_BLOCK_VIEW ) )
-						{
-							areasConnected = true;
-							break;
-						}
-					}
-					if ( areasConnected == false )
-					{
-						// can't possibly be seen or shadowed
-						continue;
-					}
-				}
-
-			// check more precisely for shadow visibility
-			idBounds shadowBounds;
-			extern void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, const idVec3& lightOrigin, idBounds& shadowBounds );
-			R_ShadowBounds( entityDef->globalReferenceBounds, lightDef->globalLightBounds, lightDef->globalLightOrigin, shadowBounds );
-
-			// this doesn't say that the shadow can't effect anything, only that it can't
-			// effect anything in the view
-			if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
-			{
-				continue;
-			}
-
-			idBounds shadowProjectionBounds;
-			tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
-			auto shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
-			if ( !shadowRect.Overlaps( vLight->scissorRect ) )
-				continue;
 
 			if ( r_singleShadowEntity >= 0 && r_singleShadowEntity != vEntity->entityDef->index )
 				continue;
