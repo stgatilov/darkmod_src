@@ -971,7 +971,7 @@ void idInteraction::AddActiveInteraction( void ) {
 		surfaceInteraction_t *sint = &surfaces[i];
 
 		// see if the base surface is visible, we may still need to add shadows even if empty
-		if ( r_shadows.GetInteger() == 2 || // duzenko: send off-screen surfaces to backend in case they cast shadows
+		if ( vLight->shadows == LS_MAPS || // duzenko: send off-screen surfaces to backend in case they cast shadows
 			!lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
 
 			// make sure we have created this interaction, which may have been deferred
