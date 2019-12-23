@@ -415,10 +415,13 @@ void idRenderSystemLocal::DrawSmallChar( int x, int y, int ch, const idMaterial 
 	float fontAspect = (float) material->GetImageWidth() / material->GetImageHeight();
 	float screenAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
 	float virtualAspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
-	DrawStretchPic( x, y, fontAspect / screenAspect * virtualAspect * SMALLCHAR_HEIGHT, SMALLCHAR_HEIGHT,
-		fcol, frow,
-		fcol + size, frow + size - texelSize,
-		material );
+	float charAspect = fontAspect / screenAspect * virtualAspect;
+	float charWidth = charAspect * SMALLCHAR_HEIGHT, charHeight = SMALLCHAR_HEIGHT;
+	if ( charWidth > SMALLCHAR_WIDTH ) {
+		charWidth = SMALLCHAR_WIDTH;
+		charHeight = charWidth / charAspect;
+	}
+	DrawStretchPic( x, y, charWidth, charHeight, fcol, frow, fcol + size, frow + size - texelSize, material );
 #endif
 }
 
