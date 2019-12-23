@@ -328,9 +328,9 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 			break;
 		}
 		case WM_SYSCOMMAND:
-			if (wParam == 0xF030) // Maximized
+			if ( wParam == SC_MAXIMIZE || wParam == 0xf032 ) // Maximized
 				win32.win_maximized = true;
-			if (wParam == 0xF120) // Restored
+			if ( wParam == SC_RESTORE || wParam == 0xf012 ) // Restored
 				win32.win_maximized = false;
 			if ( wParam == SC_SCREENSAVE || wParam == SC_KEYMENU ) {
 				return 0;
