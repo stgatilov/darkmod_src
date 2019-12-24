@@ -254,6 +254,7 @@ public:
 	static void				Path_f( const idCmdArgs &args );
 	static void				TouchFile_f( const idCmdArgs &args );
 	static void				TouchFileList_f( const idCmdArgs &args );
+	static void				TestThreads_f( const idCmdArgs &args );
 
 private:
     friend void				BackgroundDownloadThread(void *parms);
@@ -656,7 +657,7 @@ idFileSystemLocal::BuildOSPath
 ===================
 */
 const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, const char *relativePath ) {
-	static char OSPath[MAX_STRING_CHARS];
+	thread_local static char OSPath[MAX_STRING_CHARS];
 	idStr newPath;
 
 	if ( fs_caseSensitiveOS.GetBool() || com_developer.GetBool() ) {
@@ -1810,6 +1811,56 @@ int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension
 	return ret;
 }
 
+#include <thread>
+#include "../renderer/Image.h"
+void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
+	struct fileRec_t {
+		idStr name;
+		byte data[999];
+	};
+	idList<fileRec_t> testFiles;
+	extern idImageManager* globalImages;
+	idList<idImage*> images = globalImages->images;
+
+	for ( auto & image: images ) {
+		auto fn = image->imgName + ".tga";
+		auto f = fileSystemLocal.OpenFileRead( fn );
+		if ( f ) {
+			fileRec_t testFile;
+			testFile.name = fn;
+			f->Read( testFile.data, 999 );
+			testFiles.Append( testFile );
+			fileSystemLocal.CloseFile( f );
+		}
+	}
+	common->Printf( "Testing %d files\n", testFiles.Num() );
+	auto testFileFunc = [&] {
+		for ( auto & testFile : testFiles ) {
+			auto f = fileSystemLocal.OpenFileRead( testFile.name );
+			if ( !f ) {
+				common->Warning( "File read error" );
+				return;
+			} 
+			byte b[999];
+			f->Read( b, 999 );
+			auto dataCheck = memcmp( b, testFile.data, 999 );
+			if(dataCheck)
+				common->Warning( "File read mismatch" );
+			fileSystemLocal.CloseFile( f );
+		}
+	};
+	const int N = 1<<5;
+	std::thread threads[N];
+	for ( int i = 0; i < N; i++ ) {
+		threads[i] = std::thread( testFileFunc );
+	}
+
+	for ( auto& th : threads ) {
+		th.join();
+	}
+	common->Printf( "Tested %d threads\n", N );
+}
+
 /*
 ================
 idFileSystemLocal::Dir_f
@@ -2288,6 +2339,7 @@ void idFileSystemLocal::Startup( void ) {
 	cmdSystem->AddCommand( "path", Path_f, CMD_FL_SYSTEM, "lists search paths" );
 	cmdSystem->AddCommand( "touchFile", TouchFile_f, CMD_FL_SYSTEM, "touches a file" );
 	cmdSystem->AddCommand( "touchFileList", TouchFileList_f, CMD_FL_SYSTEM, "touches a list of files" );
+	cmdSystem->AddCommand( "fstestthreads", TestThreads_f, CMD_FL_RENDERER, "deletes all currently loaded images" );
 
 	// print the current search paths
 	Path_f( idCmdArgs() );
