@@ -209,6 +209,7 @@ public:
 
 	idDeclType *				GetDeclType( int type ) const { return declTypes[type]; }
 	const idDeclFile *			GetImplicitDeclFile( void ) const { return &implicitDecls; }
+	idList<idDeclFile*> &		GetLoadedFiles() { return loadedFiles; }
 
 private:
 	idList<idDeclType *>		declTypes;
@@ -236,6 +237,11 @@ idCVar idDeclManagerLocal::decl_show( "decl_show", "0", CVAR_SYSTEM, "set to 1 t
 
 idDeclManagerLocal	declManagerLocal;
 idDeclManager *		declManager = &declManagerLocal;
+
+void GetDeclLoadedFiles(idStrList &list) {
+	for ( auto& file : declManagerLocal.GetLoadedFiles() )
+		list.Append( file->fileName );
+}
 
 /*
 ====================================================================================

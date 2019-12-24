@@ -1812,24 +1812,30 @@ int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension
 }
 
 #include <thread>
-#include "../renderer/Image.h"
 void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
+	static constexpr int B = 555;
 	struct fileRec_t {
 		idStr name;
-		byte data[999];
+		char data[B];
 	};
 	idList<fileRec_t> testFiles;
-	extern idImageManager* globalImages;
-	idList<idImage*> images = globalImages->images;
+	extern void GetDeclLoadedFiles( idStrList &list );		
+	idStrList files;
+	GetDeclLoadedFiles( files );
 
-	for ( auto & image: images ) {
-		auto fn = image->imgName + ".tga";
+	for ( auto & file: files ) {
+		auto & fn = file;
 		auto f = fileSystemLocal.OpenFileRead( fn );
 		if ( f ) {
-			fileRec_t testFile;
-			testFile.name = fn;
-			f->Read( testFile.data, 999 );
-			testFiles.Append( testFile );
+			if ( f->Length() >= B ) {
+				fileRec_t testFile;
+				testFile.name = fn;
+				if ( f->Read( testFile.data, B ) != B ) {
+					common->Warning( "File read error" );
+					return;
+				}
+				testFiles.Append( testFile );
+			}
 			fileSystemLocal.CloseFile( f );
 		}
 	}
@@ -1838,18 +1844,21 @@ void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
 		for ( auto & testFile : testFiles ) {
 			auto f = fileSystemLocal.OpenFileRead( testFile.name );
 			if ( !f ) {
-				common->Warning( "File read error" );
+				common->Warning( "File open error" );
 				return;
 			} 
-			byte b[999];
-			f->Read( b, 999 );
-			auto dataCheck = memcmp( b, testFile.data, 999 );
+			char b[B];
+			if ( f->Read( b, B ) != B ) {
+				common->Warning( "File read error" );
+				return;
+			}
+			auto dataCheck = memcmp( b, testFile.data, B );
 			if(dataCheck)
 				common->Warning( "File read mismatch" );
 			fileSystemLocal.CloseFile( f );
 		}
 	};
-	const int N = 1<<5;
+	const int N = 1<<4;
 	std::thread threads[N];
 	for ( int i = 0; i < N; i++ ) {
 		threads[i] = std::thread( testFileFunc );
