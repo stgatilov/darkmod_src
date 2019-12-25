@@ -1704,7 +1704,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "listRenderEntityDefs", R_ListRenderEntityDefs_f, CMD_FL_RENDERER, "lists the entity defs" );
 	cmdSystem->AddCommand( "listRenderLightDefs", R_ListRenderLightDefs_f, CMD_FL_RENDERER, "lists the light defs" );
 	cmdSystem->AddCommand( "reloadSurface", R_ReloadSurface_f, CMD_FL_RENDERER, "reloads the decl and images for selected surface" );
-	cmdSystem->AddCommand( "purgeimages", R_PurgeImages_f, CMD_FL_RENDERER, "deletes all currently loaded images" );
+	cmdSystem->AddCommand( "purgeImages", R_PurgeImages_f, CMD_FL_RENDERER, "deletes all currently loaded images" );
 }
 
 /*
