@@ -146,20 +146,20 @@ public:
 							// The returned files will not include any directories or '/' unless fullRelativePath is set.
 							// The extension must include a leading dot and may not contain wildcards.
 							// If extension is "/", only subdirectories will be returned.
-	virtual idFileList *	ListFiles( const char *relativePath, const char *extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL ) = 0;
+	virtual idFileList *	ListFiles( const char *relativePath, const char *extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL ) const = 0;
 							// Lists files in the given directory and all subdirectories with the given extension.
 							// Directory should not have either a leading or trailing '/'
 							// The returned files include a full relative path.
 							// The extension must include a leading dot and may not contain wildcards.
-	virtual idFileList *	ListFilesTree( const char *relativePath, const char *extension, bool sort = false, const char* gamedir = NULL ) = 0;
+	virtual idFileList *	ListFilesTree( const char *relativePath, const char *extension, bool sort = false, const char* gamedir = NULL ) const = 0;
 							// Frees the given file list.
-	virtual void			FreeFileList( idFileList *fileList ) = 0;
+	virtual void			FreeFileList( idFileList *fileList ) const = 0;
 							// Converts a relative path to a full OS path.
 	virtual const char *	OSPathToRelativePath( const char *OSPath ) = 0;
 							// Converts a full OS path to a relative path.
 	virtual const char *	RelativePathToOSPath( const char *relativePath, const char *basePath = "fs_devpath", const char *gamedir = NULL ) = 0;
 							// Builds a full OS path from the given components.
-	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath ) = 0;
+	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath ) const = 0;
 							// Creates the given OS path for as far as it doesn't exist already.
 	virtual void			CreateOSPath( const char *OSPath ) = 0;
 							// Returns true if a file is in a pak file.
@@ -201,7 +201,7 @@ public:
 							// resets the bytes read counter
 	virtual void			ResetReadCount( void ) = 0;
 							// retrieves the current read count
-	virtual int				GetReadCount( void ) = 0;
+	virtual int				GetReadCount( void ) const = 0;
 							// adds to the read count
 	virtual void			AddToReadCount( int c ) = 0;
 							// look for a dynamic module
@@ -209,7 +209,7 @@ public:
 							// case sensitive filesystems use an internal directory cache
 							// the cache is cleared when calling OpenFileWrite and RemoveFile
 							// in some cases you may need to use this directly
-	virtual void			ClearDirCache( void ) = 0;
+	virtual void			ClearDirCache( void ) const = 0;
 
 							// don't use for large copies - allocates a single memory block for the copy
 	virtual bool			CopyFile( const char *fromOSPath, const char *toOSPath ) = 0;

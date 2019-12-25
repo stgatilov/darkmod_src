@@ -202,52 +202,52 @@ class idFileSystemLocal : public idFileSystem {
 public:
 							idFileSystemLocal( void );
 
-	virtual void			Init( void );
-	virtual void			StartBackgroundDownloadThread( void );
-	virtual void			Restart( void );
-	virtual void			Shutdown( bool reloading );
-	virtual bool			IsInitialized( void ) const;
-	virtual idModList *		ListMods( void );
-	virtual void			FreeModList( idModList *modList );
-	virtual idFileList *	ListFiles( const char *relativePath, const char *extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL );
-	virtual idFileList *	ListFilesTree( const char *relativePath, const char *extension, bool sort = false, const char* gamedir = NULL );
-	virtual void			FreeFileList( idFileList *fileList );
-	virtual const char *	OSPathToRelativePath( const char *OSPath );
-	virtual const char *	RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir = NULL );
-	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath );
-	virtual void			CreateOSPath( const char *OSPath );
-	virtual bool			FileIsInPAK( const char *relativePath );
-	virtual bool			UpdateGamePakChecksums( void );
-	virtual int				GetOSMask( void );
-	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp );
-	virtual void			FreeFile( void *buffer );
-	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
-	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL);
-    virtual idFile *		OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, const char* gamedir = NULL );
-    virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL );
-	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
-	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
-	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode );
-	virtual idFile *		OpenExplicitFileRead( const char *OSPath );
-	virtual idFile *		OpenExplicitFileWrite( const char *OSPath );
-	virtual void			CloseFile( idFile *f );
-	virtual void			BackgroundDownload( backgroundDownload_t *bgl );
-	virtual void			ResetReadCount( void ) { readCount = 0; }
-	virtual void			AddToReadCount( int c ) { readCount += c; }
-	virtual int				GetReadCount( void ) { return readCount; }
-	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum );
-	virtual void			ClearDirCache( void );
-	virtual bool			CopyFile( const char *fromOSPath, const char *toOSPath );
-	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary );
-	virtual idFile *		MakeTemporaryFile( void );
-	virtual int				AddZipFile( const char *path );
-	virtual findFile_t		FindFile( const char *path, bool scheduleAddons );
-	virtual int				GetNumMaps();
-	virtual const idDict *	GetMapDecl( int i );
-	virtual void			FindMapScreenshot( const char *path, char *buf, int len );
-	virtual bool			FilenameCompare( const char *s1, const char *s2 ) const;
+	virtual void			Init( void ) override;
+	void					StartBackgroundDownloadThread( void );
+	virtual void			Restart( void ) override;
+	virtual void			Shutdown( bool reloading ) override;
+	virtual bool			IsInitialized( void ) const override;
+	virtual idModList *		ListMods( void ) override;
+	virtual void			FreeModList( idModList *modList ) override;
+	virtual idFileList *	ListFiles( const char *relativePath, const char *extension, bool sort = false, bool fullRelativePath = false, const char* gamedir = NULL ) const override;
+	virtual idFileList *	ListFilesTree( const char *relativePath, const char *extension, bool sort = false, const char* gamedir = NULL ) const override;
+	virtual void			FreeFileList( idFileList *fileList ) const override;
+	virtual const char *	OSPathToRelativePath( const char *OSPath ) override;
+	virtual const char *	RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir = NULL ) override;
+	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath ) const override;
+	virtual void			CreateOSPath( const char *OSPath ) override;
+	virtual bool			FileIsInPAK( const char *relativePath ) override;
+	bool					UpdateGamePakChecksums( void );
+	virtual int				GetOSMask( void ) override;
+	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp ) override;
+	virtual void			FreeFile( void *buffer ) override;
+	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) override;
+	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL) override;
+    idFile *				OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, const char* gamedir = NULL );	//Note: thread-unsafe!
+    virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL ) override;
+	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) override;
+	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) override;
+	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode ) override;
+	virtual idFile *		OpenExplicitFileRead( const char *OSPath ) override;
+	virtual idFile *		OpenExplicitFileWrite( const char *OSPath ) override;
+	virtual void			CloseFile( idFile *f ) override;
+	virtual void			BackgroundDownload( backgroundDownload_t *bgl ) override;
+	virtual void			ResetReadCount( void ) override { readCount.SetValue(0); }
+	virtual void			AddToReadCount( int c ) override { readCount.Add(c); }
+	virtual int				GetReadCount( void ) const override { return readCount.GetValue(); }
+	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum ) override;
+	virtual void			ClearDirCache( void ) const override;
+	virtual bool			CopyFile( const char *fromOSPath, const char *toOSPath ) override;
+	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary ) override;
+	virtual idFile *		MakeTemporaryFile( void ) override;
+	virtual int				AddZipFile( const char *path ) override;
+	virtual findFile_t		FindFile( const char *path, bool scheduleAddons ) override;
+	virtual int				GetNumMaps() override;
+	virtual const idDict *	GetMapDecl( int i ) override;
+	virtual void			FindMapScreenshot( const char *path, char *buf, int len ) override;
+	virtual bool			FilenameCompare( const char *s1, const char *s2 ) const override;
 
-	virtual const char*		ModPath() const;
+	virtual const char*		ModPath() const override;
 
 	static void				Dir_f( const idCmdArgs &args );
 	static void				DirTree_f( const idCmdArgs &args );
@@ -259,10 +259,12 @@ public:
 private:
     friend void				BackgroundDownloadThread(void *parms);
 
+	mutable idSysMutex		globalMutex;		// locked on most filesystem operations
+
 	searchpath_t *			searchPaths;
-	int						readCount;			// total bytes read
-	int						loadCount;			// total files read
-	int						loadStack;			// total files in memory
+	idSysInterlockedInteger	readCount;			// total bytes read
+	idSysInterlockedInteger	loadCount;			// total files read
+	idSysInterlockedInteger	loadStack;			// total files in memory
 	idStr					gameFolder;			// this will be a single name without separators
 
 	searchpath_t			*addonPaks;			// not loaded up, but we saw them
@@ -300,36 +302,37 @@ private:
 
 	int						gamePakForOS[ MAX_GAME_OS ];
 
-	idDEntry				dir_cache[ MAX_CACHED_DIRS ]; // fifo
-	int						dir_cache_index;
-	int						dir_cache_count;
+	mutable idSysMutex		dir_cache_mutex;
+	mutable idDEntry		dir_cache[ MAX_CACHED_DIRS ]; // fifo
+	mutable int				dir_cache_index;
+	mutable int				dir_cache_count;
 
 private:
-	void					ReplaceSeparators( idStr &path, char sep = PATHSEPERATOR_CHAR );
-    int 					HashFileName(const char *fname) const;
-	int						ListOSFiles( const char *directory, const char *extension, idStrList &list );
-	FILE *					OpenOSFile( const char *name, const char *mode, idStr *caseSensitiveName = NULL );
-	FILE *					OpenOSFileCorrectName( idStr &path, const char *mode );
-	int						DirectFileLength( FILE *o );
+	static void				ReplaceSeparators( idStr &path, char sep = PATHSEPERATOR_CHAR );
+    static int 				HashFileName(const char *fname);
+	int						ListOSFiles( const char *directory, const char *extension, idStrList &list ) const;
+	FILE *					OpenOSFile( const char *name, const char *mode, idStr *caseSensitiveName = NULL ) const;
+	FILE *					OpenOSFileCorrectName( idStr &path, const char *mode ) const;
+	static int				DirectFileLength( FILE *o );
 	bool					CopyFile( idFile *src, const char *toOSPath );
-	int						AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex ) const;
-	void					GetExtensionList( const char *extension, idStrList &extensionList ) const;
-	int						GetFileList( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, bool fullRelativePath, const char* gamedir = NULL );
+	static int				AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex );
+	static void				GetExtensionList( const char *extension, idStrList &extensionList );
+	int						GetFileList( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, bool fullRelativePath, const char* gamedir = NULL ) const; //note: thread-unsafe!
 
-	int						GetFileListTree( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, const char* gamedir = NULL );
-	pack_t *				LoadZipFile( const char *zipfile );
-	void					AddGameDirectory( const char *path, const char *dir );
-	void					SetupGameDirectories( const char *gameName );
-	void					Startup( void );
+	int						GetFileListTree( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, const char* gamedir = NULL ) const; //note: thread-unsafe!
+	pack_t *				LoadZipFile( const char *zipfile ); //note: thread-unsafe!
+	void					AddGameDirectory( const char *path, const char *dir ); //note: thread-unsafe!
+	void					SetupGameDirectories( const char *gameName ); //note: thread-unsafe!
+	void					Startup( void ); //note: thread-unsafe!
 
-	bool					FileAllowedFromDir( const char *path );
+	static bool				FileAllowedFromDir( const char *path );
 							// searches all the paks
-	pack_t *				GetPackForChecksum( int checksum, bool searchAddons = false );
+	pack_t *				GetPackForChecksum( int checksum, bool searchAddons = false ); //note: thread-unsafe!
 							// searches all the paks
-	pack_t *				FindPakForFileChecksum( const char *relativePath, int fileChecksum, bool bReference );
-	idFile_InZip *			ReadFileFromZip( pack_t *pak, fileInPack_t *pakFile, const char *relativePath );
-	int						GetFileChecksum( idFile *file );
-	addonInfo_t *			ParseAddonDef( const char *buf, const int len );
+	pack_t *				FindPakForFileChecksum( const char *relativePath, int fileChecksum, bool bReference ); //note: thread-unsafe!
+	idFile_InZip *			ReadFileFromZip( pack_t *pak, fileInPack_t *pakFile, const char *relativePath ); //note: thread-unsafe!
+	static int				GetFileChecksum( idFile *file );
+	static addonInfo_t *	ParseAddonDef( const char *buf, const int len );
 	void					FollowAddonDependencies( pack_t *pak );
 
 	static size_t			CurlWriteFunction( void *ptr, size_t size, size_t nmemb, void *stream );
@@ -365,9 +368,9 @@ idFileSystemLocal::idFileSystemLocal
 */
 idFileSystemLocal::idFileSystemLocal( void ) {
 	searchPaths = NULL;
-	readCount = 0;
-	loadCount = 0;
-	loadStack = 0;
+	readCount.SetValue(0);
+	loadCount.SetValue(0);
+	loadStack.SetValue(0);
 	dir_cache_index = 0;
 	dir_cache_count = 0;
 	loadedFileFromDir = false;
@@ -383,7 +386,7 @@ idFileSystemLocal::HashFileName
 return a hash value for the filename
 ================
 */
-int idFileSystemLocal::HashFileName( const char *fname ) const {
+int idFileSystemLocal::HashFileName( const char *fname ) {
 	int		i;
 	int	hash;
 	char	letter;
@@ -449,7 +452,8 @@ idFileSystemLocal::OpenOSFile
 optional caseSensitiveName is set to case sensitive file name as found on disc (fs_caseSensitiveOS only)
 ================
 */
-FILE *idFileSystemLocal::OpenOSFile( const char *fileName, const char *mode, idStr *caseSensitiveName ) {
+FILE *idFileSystemLocal::OpenOSFile( const char *fileName, const char *mode, idStr *caseSensitiveName ) const {
+	//supposedly, no lock required (fopen and ListOSFiles should be relatively threadsafe)
 	FILE *fp;
 	idStr fpath, entry;
 	idStrList list;
@@ -503,7 +507,7 @@ FILE *idFileSystemLocal::OpenOSFile( const char *fileName, const char *mode, idS
 idFileSystemLocal::OpenOSFileCorrectName
 ================
 */
-FILE *idFileSystemLocal::OpenOSFileCorrectName( idStr &path, const char *mode ) {
+FILE *idFileSystemLocal::OpenOSFileCorrectName( idStr &path, const char *mode ) const {
 	idStr caseName;
 	FILE *f = OpenOSFile( path.c_str(), mode, &caseName );
 	if ( f ) {
@@ -520,7 +524,6 @@ idFileSystemLocal::DirectFileLength
 ================
 */
 int idFileSystemLocal::DirectFileLength( FILE *o ) {
-
 	const int pos = ftell( o );
 	fseek( o, 0, SEEK_END );
 	const int end = ftell( o );
@@ -567,6 +570,7 @@ Copy a fully specified file from one place to another
 =================
 */
 bool idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath ) {
+	//supposedly, no lock required (also, this might be a time-consuming method)
 	FILE	*f;
 	byte	*buf;
 
@@ -656,7 +660,7 @@ void idFileSystemLocal::ReplaceSeparators( idStr &path, char sep ) {
 idFileSystemLocal::BuildOSPath
 ===================
 */
-const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, const char *relativePath ) {
+const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, const char *relativePath ) const {
 	thread_local static char OSPath[MAX_STRING_CHARS];
 	idStr newPath;
 
@@ -722,7 +726,7 @@ search paths.
 */
 #define GPATH_COUNT 4
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
-	static char relativePath[MAX_STRING_CHARS];
+	thread_local static char relativePath[MAX_STRING_CHARS];
 	const char *s, *base = NULL;
      
 	// skip a drive letter?
@@ -739,7 +743,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
     idStr dynbase = fs_basepath.GetString();
     dynbase.StripPath();
 
-    static const char * gamePath = NULL;
+    const char * gamePath = NULL;
     for ( int gpath = 0; gpath < GPATH_COUNT; gpath++) {
         switch (gpath) {
             case 0: gamePath = BASE_GAMEDIR; break; // taaaki - seems to be some issues with removing this - need to look into it further
@@ -795,7 +799,6 @@ Returns a fully qualified path that can be used with stdio libraries
 =====================
 */
 const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir ) {
-
 	const char *path = cvarSystem->GetCVarString( basePath );
 	if ( !path[0] ) {
 		path = fs_savepath.GetString(); // taaaki - need to re-evaluate this as the default
@@ -810,6 +813,9 @@ idFileSystemLocal::RemoveFile
 =================
 */
 void idFileSystemLocal::RemoveFile( const char *relativePath, const char *gamedir ) {
+	//better forbid doing other modifications in parallel
+	idScopedCriticalSection lock(globalMutex);
+
 	idStr OSPath;
     int removeResult = -1;
 
@@ -833,6 +839,9 @@ idFileSystemLocal::FileIsInPAK
 ================
 */
 bool idFileSystemLocal::FileIsInPAK( const char *relativePath ) {
+	//the only reason to lock here is to forbid adding searchPaths in parallel
+	idScopedCriticalSection lock(globalMutex);
+
 	searchpath_t	*search;
 	pack_t			*pak;
 	fileInPack_t	*pakFile;
@@ -893,7 +902,7 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 	int			len;
 	bool		isConfig;
 
-	if ( !searchPaths ) {
+	if ( !IsInitialized() ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
 	} else if ( !relativePath || !relativePath[0] ) {
 		common->FatalError( "idFileSystemLocal::ReadFile: NULL 'relativePath' parameter passed\n" );
@@ -912,11 +921,12 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 	// if this is a .cfg file and we are playing back a journal, read
 	// it from the journal file
 	if ( strstr( relativePath, ".cfg" ) == relativePath + strlen( relativePath ) - 4 ) {
+		idScopedCriticalSection lock(globalMutex);	//just in case (normally, never executed)
 		isConfig = true;
 		if ( eventLoop && eventLoop->JournalLevel() == 2 ) {
 
-			loadCount++;
-			loadStack++;
+			loadCount.Increment();
+			loadStack.Increment();
 
 			common->DPrintf( "Loading %s from journal file.\n", relativePath );
 
@@ -962,8 +972,8 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 		return len;
 	}
 
-	loadCount++;
-	loadStack++;
+	loadCount.Increment();
+	loadStack.Increment();
 
 	*buffer = buf = (byte *)Mem_ClearedAlloc(len+1);
 
@@ -975,6 +985,7 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 
 	// if we are journalling and it is a config file, write it to the journal file
 	if ( isConfig && eventLoop && eventLoop->JournalLevel() == 1 ) {
+		idScopedCriticalSection lock(globalMutex);	//just in case
 		common->DPrintf( "Writing %s to journal file.\n", relativePath );
 		eventLoop->com_journalDataFile->Write( &len, sizeof( len ) );
 		eventLoop->com_journalDataFile->Write( buf, len );
@@ -995,7 +1006,7 @@ void idFileSystemLocal::FreeFile( void *buffer ) {
 	} else if ( !buffer ) {
 		common->FatalError( "idFileSystemLocal::FreeFile( NULL )" );
 	}
-	loadStack--;
+	loadStack.Decrement();
 
 	Mem_Free( buffer );
 }
@@ -1010,7 +1021,7 @@ Filenames are relative to the search path
 int idFileSystemLocal::WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath, const char *gamedir ) {
 	idFile *f;
 
-	if ( !searchPaths ) {
+	if ( !IsInitialized() ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
 	} else if ( !relativePath || !buffer ) {
 		common->FatalError( "idFileSystemLocal::WriteFile: NULL parameter" );
@@ -1351,6 +1362,8 @@ the isNew flag is set to true, indicating that we cannot add this pak to the sea
 ===============
 */
 int idFileSystemLocal::AddZipFile( const char *path ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	idStr			fullpath = fs_savepath.GetString(); // taaaki - is savepath the correct place to look?
 	pack_t			*pak;
 	searchpath_t	*search, *last;
@@ -1384,7 +1397,7 @@ int idFileSystemLocal::AddZipFile( const char *path ) {
 idFileSystemLocal::AddUnique
 ===============
 */
-int idFileSystemLocal::AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex ) const {
+int idFileSystemLocal::AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex ) {
 	const int hashKey = hashIndex.GenerateKey( name );
 
 	for ( int i = hashIndex.First( hashKey ); i >= 0; i = hashIndex.Next( i ) ) {
@@ -1404,7 +1417,7 @@ int idFileSystemLocal::AddUnique( const char *name, idStrList &list, idHashIndex
 idFileSystemLocal::GetExtensionList
 ===============
 */
-void idFileSystemLocal::GetExtensionList( const char *extension, idStrList &extensionList ) const {
+void idFileSystemLocal::GetExtensionList( const char *extension, idStrList &extensionList ) {
 	int s, e;
 	const int l = idStr::Length( extension );
 
@@ -1429,7 +1442,7 @@ Does not clear the list first so this can be used to progressively build a file 
 When 'sort' is true only the new files added to the list are sorted.
 ===============
 */
-int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, bool fullRelativePath, const char* gamedir ) {
+int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, bool fullRelativePath, const char* gamedir ) const {
 	searchpath_t *	search;
 	fileInPack_t *	buildBuffer;
 	int				pathLength;
@@ -1556,7 +1569,9 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 idFileSystemLocal::ListFiles
 ===============
 */
-idFileList *idFileSystemLocal::ListFiles( const char *relativePath, const char *extension, bool sort, bool fullRelativePath, const char* gamedir ) {
+idFileList *idFileSystemLocal::ListFiles( const char *relativePath, const char *extension, bool sort, bool fullRelativePath, const char* gamedir ) const {
+	idScopedCriticalSection lock(globalMutex);
+
 	idHashIndex hashIndex( 4096, 4096 );
 	idStrList extensionList;
 
@@ -1579,7 +1594,7 @@ idFileList *idFileSystemLocal::ListFiles( const char *relativePath, const char *
 idFileSystemLocal::GetFileListTree
 ===============
 */
-int idFileSystemLocal::GetFileListTree( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, const char* gamedir ) {
+int idFileSystemLocal::GetFileListTree( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, const char* gamedir ) const {
 	idStrList slash, folders( 128 );
 	idHashIndex folderHashIndex( 1024, 128 );
 
@@ -1607,7 +1622,9 @@ int idFileSystemLocal::GetFileListTree( const char *relativePath, const idStrLis
 idFileSystemLocal::ListFilesTree
 ===============
 */
-idFileList *idFileSystemLocal::ListFilesTree( const char *relativePath, const char *extension, bool sort, const char* gamedir ) {
+idFileList *idFileSystemLocal::ListFilesTree( const char *relativePath, const char *extension, bool sort, const char* gamedir ) const {
+	idScopedCriticalSection lock(globalMutex);
+
 	idHashIndex hashIndex( 4096, 4096 );
 	idStrList extensionList;
 
@@ -1631,7 +1648,7 @@ idFileList *idFileSystemLocal::ListFilesTree( const char *relativePath, const ch
 idFileSystemLocal::FreeFileList
 ===============
 */
-void idFileSystemLocal::FreeFileList( idFileList *fileList ) {
+void idFileSystemLocal::FreeFileList( idFileList *fileList ) const {
 	delete fileList;
 }
 
@@ -1644,6 +1661,8 @@ Tels: Could entirely be removed unless we want to have "mods to darkmod".
 */
 #define MAX_DESCRIPTION		256
 idModList *idFileSystemLocal::ListMods( void ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	char 		desc[ MAX_DESCRIPTION ];
 	idStrList	dirs;
 	idStrList	pk4s;
@@ -1766,7 +1785,7 @@ idFileSystemLocal::ListOSFiles
  optionally, perform some caching of the entries
 ===============
 */
-int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension, idStrList &list ) {
+int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension, idStrList &list ) const {
 	int j, ret;
 
 	if ( !extension ) {
@@ -1777,15 +1796,18 @@ int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension
 		return Sys_ListFiles( directory, extension, list );
 	}
 
-	// try in cache
-	for ( int i = dir_cache_index - 1; i >= (dir_cache_index - dir_cache_count); i-- ) {
-		j = (i+MAX_CACHED_DIRS) % MAX_CACHED_DIRS;
-		if ( dir_cache[j].Matches( directory, extension ) ) {
-			if ( fs_debug.GetInteger() ) {
-				//common->Printf( "idFileSystemLocal::ListOSFiles: cache hit: %s\n", directory );
+	{
+		idScopedCriticalSection lock(dir_cache_mutex);
+		// try in cache
+		for ( int i = dir_cache_index - 1; i >= (dir_cache_index - dir_cache_count); i-- ) {
+			j = (i+MAX_CACHED_DIRS) % MAX_CACHED_DIRS;
+			if ( dir_cache[j].Matches( directory, extension ) ) {
+				if ( fs_debug.GetInteger() ) {
+					//common->Printf( "idFileSystemLocal::ListOSFiles: cache hit: %s\n", directory );
+				}
+				list = dir_cache[j];
+				return list.Num();
 			}
-			list = dir_cache[j];
-			return list.Num();
 		}
 	}
 
@@ -1801,11 +1823,14 @@ int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension
 		return -1;
 	}
 
-	// push a new entry
-	dir_cache[dir_cache_index].Init( directory, extension, list );
-	dir_cache_index = (dir_cache_index + 1) % MAX_CACHED_DIRS;
-	if ( dir_cache_count < MAX_CACHED_DIRS ) {
-		dir_cache_count++;
+	{
+		idScopedCriticalSection lock(dir_cache_mutex);
+		// push a new entry
+		dir_cache[dir_cache_index].Init( directory, extension, list );
+		dir_cache_index = (dir_cache_index + 1) % MAX_CACHED_DIRS;
+		if ( dir_cache_count < MAX_CACHED_DIRS ) {
+			dir_cache_count++;
+		}
 	}
 
 	return ret;
@@ -1823,6 +1848,8 @@ void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
 	idStrList files;
 	GetDeclLoadedFiles( files );
 
+	idTimer tOneThread, tManyThreads;
+	tOneThread.Start();
 	for ( auto & file: files ) {
 		auto & fn = file;
 		auto f = fileSystemLocal.OpenFileRead( fn );
@@ -1839,9 +1866,12 @@ void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
 			fileSystemLocal.CloseFile( f );
 		}
 	}
+	tOneThread.Stop();
 	common->Printf( "Testing %d files\n", testFiles.Num() );
 	auto testFileFunc = [&] {
-		for ( auto & testFile : testFiles ) {
+		auto fileList = testFiles;
+		std::random_shuffle(fileList.begin(), fileList.end());
+		for ( auto & testFile : fileList ) {
 			auto f = fileSystemLocal.OpenFileRead( testFile.name );
 			if ( !f ) {
 				common->Warning( "File open error" );
@@ -1858,16 +1888,24 @@ void idFileSystemLocal::TestThreads_f( const idCmdArgs& args ) {
 			fileSystemLocal.CloseFile( f );
 		}
 	};
+
+	tManyThreads.Start();
 	const int N = 1<<4;
 	std::thread threads[N];
 	for ( int i = 0; i < N; i++ ) {
 		threads[i] = std::thread( testFileFunc );
 	}
-
 	for ( auto& th : threads ) {
 		th.join();
 	}
+	tManyThreads.Stop();
+
 	common->Printf( "Tested %d threads\n", N );
+	//note: while time is reported, it is a very bad performance test =)
+	common->Printf( "Times: %0.3lf %0.3lf  (x %0.2lf)\n",
+		tOneThread.Milliseconds(), tManyThreads.Milliseconds(), 
+		tOneThread.Milliseconds() / tManyThreads.Milliseconds()
+	);
 }
 
 /*
@@ -2017,6 +2055,8 @@ idFileSystemLocal::GetOSMask
 ============
 */
 int idFileSystemLocal::GetOSMask( void ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	int ret = 0;
 
 	for( int i = 0; i < MAX_GAME_OS; i++ ) {
@@ -2431,7 +2471,6 @@ idFileSystemLocal::GetPackForChecksum
 =====================
 */
 pack_t* idFileSystemLocal::GetPackForChecksum( int checksum, bool searchAddons ) {
-
 	searchpath_t *search = searchPaths;
 	while ( search ) {
 		if ( !search->pack ) {
@@ -2463,6 +2502,8 @@ idFileSystemLocal::ValidateDownloadPakForChecksum
 ===============
 */
 int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	int			i;
 	idStrList	testList;
 	idStr		name;
@@ -2521,6 +2562,8 @@ is resetting due to a game change
 ================
 */
 void idFileSystemLocal::Init( void ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	// allow command line parms to override our defaults
 	// we have to specially handle this, because normal command
 	// line variable sets don't happen until after the filesystem
@@ -2577,6 +2620,8 @@ idFileSystemLocal::Restart
 ================
 */
 void idFileSystemLocal::Restart( void ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	// free anything we currently have loaded
 	Shutdown( true );
 
@@ -2598,6 +2643,8 @@ Frees all resources and closes all files
 ================
 */
 void idFileSystemLocal::Shutdown( bool reloading ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	searchpath_t *sp, *next, *loop;
 
 	gameFolder.Clear();
@@ -2769,7 +2816,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 	int			hash;
 	FILE *			fp;
 	
-	if ( !searchPaths ) {
+	if ( !IsInitialized() ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
 	} else if ( !relativePath ) {
 		common->FatalError( "idFileSystemLocal::OpenFileRead: NULL 'relativePath' parameter passed\n" );
@@ -2919,6 +2966,7 @@ idFileSystemLocal::OpenFileRead
 ===========
 */
 idFile *idFileSystemLocal::OpenFileRead( const char *relativePath, const char* gamedir ) {
+	idScopedCriticalSection lock(globalMutex);
     return OpenFileReadFlags( relativePath, FSFLAG_SEARCH_DIRS | FSFLAG_SEARCH_PAKS, NULL, gamedir );
 }
 
@@ -2928,6 +2976,8 @@ idFileSystemLocal::OpenFileWrite
 ===========
 */
 idFile *idFileSystemLocal::OpenFileWrite( const char *relativePath, const char *basePath, const char *gamedir ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	const char *path;
 	idStr OSpath;
 	idFile_Permanent *f;
@@ -2975,9 +3025,11 @@ idFileSystemLocal::OpenExplicitFileRead
 ===========
 */
 idFile *idFileSystemLocal::OpenExplicitFileRead( const char *OSPath ) {
+	//no lock required here...
+
 	idFile_Permanent *f;
 
-	if ( !searchPaths ) {
+	if ( !IsInitialized() ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
 	}
 
@@ -3008,6 +3060,7 @@ idFileSystemLocal::OpenExplicitFileWrite
 ===========
 */
 idFile *idFileSystemLocal::OpenExplicitFileWrite( const char *OSPath ) {
+	//no lock required here...
 	idFile_Permanent *f;
 
 	if ( !searchPaths ) {
@@ -3042,11 +3095,13 @@ idFileSystemLocal::OpenFileAppend
 ===========
 */
 idFile *idFileSystemLocal::OpenFileAppend( const char *relativePath, bool sync, const char *basePath, const char *gamedir ) {
+	idScopedCriticalSection lock(globalMutex);	//actually, I think no lock required here
+
 	const char *path;
 	idStr OSpath;
 	idFile_Permanent *f;
 
-	if ( !searchPaths ) {
+	if ( !IsInitialized() ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
 	}
 
@@ -3397,6 +3452,8 @@ idFileSystemLocal::FindDLL
 =================
 */
 void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], bool updateChecksum ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	idFile			*dllFile = NULL;
     idFile          *dllFileInPak = NULL;
 	char			dllName[MAX_OSPATH];
@@ -3539,8 +3596,8 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 idFileSystemLocal::ClearDirCache
 ================
 */
-void idFileSystemLocal::ClearDirCache( void ) {
-
+void idFileSystemLocal::ClearDirCache( void ) const {
+	idScopedCriticalSection lock(dir_cache_mutex);
 	dir_cache_index = 0;
 	dir_cache_count = 0;
 	for( int i = 0; i < MAX_CACHED_DIRS; i++ ) {
@@ -3554,6 +3611,7 @@ idFileSystemLocal::MakeTemporaryFile
 ===============
 */
 idFile * idFileSystemLocal::MakeTemporaryFile( void ) {
+	//no lock required =)
 	FILE *f = tmpfile();
 	if ( f ) {
 		idFile_Permanent *file = new idFile_Permanent();
@@ -3575,6 +3633,8 @@ idFileSystemLocal::FindFile
 ===============
 */
  findFile_t idFileSystemLocal::FindFile( const char *path, bool scheduleAddons ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	pack_t *pak;
 	idFile *f = OpenFileReadFlags( path, FSFLAG_SEARCH_DIRS | FSFLAG_SEARCH_PAKS | FSFLAG_SEARCH_ADDONS, &pak );
 	if ( !f ) {
@@ -3605,6 +3665,8 @@ account for actual decls and for addon maps
 ===============
 */
 int idFileSystemLocal::GetNumMaps() {
+	idScopedCriticalSection lock(globalMutex);
+
 	searchpath_t	*search = NULL;
 	int				ret = declManager->GetNumDecls( DECL_MAPDEF );
 	
@@ -3632,6 +3694,8 @@ retrieve the decl dictionary, add a 'path' value
 ===============
 */
 const idDict * idFileSystemLocal::GetMapDecl( int idecl ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	const idDecl			*mapDecl;
 	const idDeclEntityDef	*mapDef;
 	const int				numdecls = declManager->GetNumDecls( DECL_MAPDEF );
@@ -3680,6 +3744,8 @@ idFileSystemLocal::FindMapScreenshot
 ===============
 */
 void idFileSystemLocal::FindMapScreenshot( const char *path, char *buf, int len ) {
+	idScopedCriticalSection lock(globalMutex);
+
 	idFile	*file;
 	idStr	mapname = path;
 
@@ -3707,7 +3773,7 @@ void idFileSystemLocal::FindMapScreenshot( const char *path, char *buf, int len 
 
 const char* idFileSystemLocal::ModPath() const {
     // basepath = something like c:\games\tdm, modBaseName is usually darkmod
-	static char path[MAX_STRING_CHARS];
+	thread_local static char path[MAX_STRING_CHARS];
 	path[0] = '\0';
 
 	const char* modPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_savepath"), "", "");
