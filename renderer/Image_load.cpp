@@ -1300,6 +1300,8 @@ On exit, the idImage will have a valid OpenGL texture number that can be bound
 */
 void idImage::ActuallyLoadImage( bool allowBackground ) {
 	//Routine test( &loading );
+	if ( allowBackground )
+		allowBackground = !globalImages->image_preload.GetBool();
 	auto& load = backgroundLoad;
 
 	if ( session->IsFrontend() ) {
