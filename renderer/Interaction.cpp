@@ -456,6 +456,8 @@ idInteraction::idInteraction( void ) {
 	entityNext				= NULL;
 	entityPrev				= NULL;
 	dynamicModelFrameCount	= 0;
+	frustumState			= FRUSTUM_UNINITIALIZED;
+	frustumAreas			= NULL;
 }
 
 /*
@@ -478,6 +480,9 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 
 	interaction->numSurfaces = -1;		// not checked yet
 	interaction->surfaces = NULL;
+
+	interaction->frustumState = idInteraction::FRUSTUM_UNINITIALIZED;
+	interaction->frustumAreas = NULL;
 
 	// link at the start of the entity's list
 	interaction->lightNext = ldef->firstInteraction;
@@ -601,6 +606,13 @@ void idInteraction::UnlinkAndFree( void ) {
 
 	FreeSurfaces();
 
+	// free the interaction area references
+	areaNumRef_t *area, *nextArea;
+	for ( area = frustumAreas; area; area = nextArea ) {
+		nextArea = area->next;
+		renderWorld->areaNumRefAllocator.Free( area );
+	}
+
 	// put it back on the free list
 	renderWorld->interactionAllocator.Free( this );
 }
@@ -669,6 +681,130 @@ int idInteraction::MemoryUsed( void ) {
 		total += R_TriSurfMemory( inter->shadowTris );
 	}
 	return total;
+}
+
+/*
+==================
+idInteraction::CalcInteractionScissorRectangle
+==================
+*/
+idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &viewFrustum ) {
+	idBounds		projectionBounds;
+	idScreenRect	portalRect;
+	idScreenRect	scissorRect;
+
+	if ( r_useInteractionScissors.GetInteger() == 0 ) {
+		return lightDef->viewLight->scissorRect;
+	}
+
+	if ( r_useInteractionScissors.GetInteger() < 0 ) {
+		// this is the code from Cass at nvidia, it is more precise, but slower
+		return R_CalcIntersectionScissor( lightDef, entityDef, tr.viewDef );
+	}
+
+	// the following is Mr.E's code
+	// frustum must be initialized and valid
+	if ( frustumState == idInteraction::FRUSTUM_UNINITIALIZED || frustumState == idInteraction::FRUSTUM_INVALID ) {
+		return lightDef->viewLight->scissorRect;
+	}
+
+	// calculate scissors for the portals through which the interaction is visible
+	if ( r_useInteractionScissors.GetInteger() > 1 ) {
+		areaNumRef_t *area;
+
+		if ( frustumState == idInteraction::FRUSTUM_VALID ) {
+			// retrieve all the areas the interaction frustum touches
+			for ( areaReference_t *ref = entityDef->entityRefs; ref; ref = ref->ownerNext ) {
+				area = entityDef->world->areaNumRefAllocator.Alloc();
+				area->areaNum = ref->area->areaNum;
+				area->next = frustumAreas;
+				frustumAreas = area;
+			}
+			frustumAreas = tr.viewDef->renderWorld->FloodFrustumAreas( frustum, frustumAreas );
+			frustumState = idInteraction::FRUSTUM_VALIDAREAS;
+		}
+		portalRect.Clear();
+
+		for ( area = frustumAreas; area; area = area->next ) {
+			portalRect.Union( entityDef->world->GetAreaScreenRect( area->areaNum ) );
+		}
+		portalRect.Intersect( lightDef->viewLight->scissorRect );
+	} else {
+		portalRect = lightDef->viewLight->scissorRect;
+	}
+
+	// early out if the interaction is not visible through any portals
+	if ( portalRect.IsEmpty() ) {
+		return portalRect;
+	}
+
+	// calculate bounds of the interaction frustum projected into the view frustum
+	if ( lightDef->parms.pointLight ) {
+		viewFrustum.ClippedProjectionBounds( frustum, idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), projectionBounds );
+	} else {
+		viewFrustum.ClippedProjectionBounds( frustum, idBox( lightDef->frustumTris->bounds ), projectionBounds );
+	}
+
+	if ( projectionBounds.IsCleared() ) {
+		return portalRect;
+	}
+
+	// derive a scissor rectangle from the projection bounds
+	scissorRect = R_ScreenRectFromViewFrustumBounds( projectionBounds );
+
+	// intersect with the portal crossing scissor rectangle
+	scissorRect.Intersect( portalRect );
+
+	if ( r_showInteractionScissors.GetInteger() > 0 ) {
+		R_ShowColoredScreenRect( scissorRect, lightDef->index );
+	}
+	return scissorRect;
+}
+
+/*
+===================
+idInteraction::CullInteractionByViewFrustum
+===================
+*/
+bool idInteraction::CullInteractionByViewFrustum( const idFrustum &viewFrustum ) {
+
+	if ( !r_useInteractionCulling.GetBool() ) {
+		return false;
+	}
+
+	if ( frustumState == idInteraction::FRUSTUM_INVALID ) {
+		return false;
+	}
+
+	if ( frustumState == idInteraction::FRUSTUM_UNINITIALIZED ) {
+
+		frustum.FromProjection( idBox( entityDef->referenceBounds, entityDef->parms.origin, entityDef->parms.axis ), lightDef->globalLightOrigin, MAX_WORLD_SIZE );
+
+		if ( !frustum.IsValid() ) {
+			frustumState = idInteraction::FRUSTUM_INVALID;
+			return false;
+		}
+
+		if ( lightDef->parms.pointLight ) {
+			frustum.ConstrainToBox( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ) );
+		} else {
+			frustum.ConstrainToBox( idBox( lightDef->frustumTris->bounds ) );
+		}
+		frustumState = idInteraction::FRUSTUM_VALID;
+	}
+
+	if ( !viewFrustum.IntersectsFrustum( frustum ) ) {
+		return true;
+	}
+
+	if ( r_showInteractionFrustums.GetInteger() ) {
+		static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
+		tr.viewDef->renderWorld->DebugFrustum( colors[lightDef->index & 7], frustum, ( r_showInteractionFrustums.GetInteger() > 1 ) );
+		if ( r_showInteractionFrustums.GetInteger() > 2 ) {
+			tr.viewDef->renderWorld->DebugBox( colorWhite, idBox( entityDef->referenceBounds, entityDef->parms.origin, entityDef->parms.axis ) );
+		}
+	}
+	return false;
 }
 
 /*
@@ -916,6 +1052,55 @@ static bool R_PotentiallyInsideInfiniteShadow( const srfTriangles_t *occluder,
 
 /*
 ==================
+idInteraction::IsPotentiallyVisible
+
+==================
+*/
+bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
+	viewLight_t *	vLight;
+	viewEntity_t *	vEntity;
+
+	vLight = lightDef->viewLight;
+	vEntity = entityDef->viewEntity;
+
+
+	// nbohr1more: #4379 lightgem culling
+	if ( !HasShadows() && !entityDef->parms.isLightgem && tr.viewDef->IsLightGem() ) {
+		return false;
+	} else if ( !HasShadows() ) { // do not waste time culling the interaction frustum if there will be no shadows
+
+								  // use the entity scissor rectangle
+		shadowScissor = vEntity->scissorRect;
+
+		// culling does not seem to be worth it for static world models
+	} else if ( entityDef->parms.hModel->IsStaticWorldModel() ) {
+
+		// use the light scissor rectangle
+		shadowScissor = vLight->scissorRect;
+
+	} else {
+
+		// try to cull the interaction by view frustum
+		// this will also cull the case where the light origin is inside the
+		// view frustum and the entity bounds are outside the view frustum
+		if ( CullInteractionByViewFrustum( tr.viewDef->viewFrustum ) ) {
+			return false;
+		}
+
+		// try to cull the interaction by portals (culled away if empty scissor is returned)
+		// as a by-product, calculate more precise shadow scissor rectangle
+		shadowScissor = CalcInteractionScissorRectangle( tr.viewDef->viewFrustum );
+	}
+
+	// get out before making the dynamic model if the shadow scissor rectangle is empty
+	if ( shadowScissor.IsEmpty() ) {
+		return false;
+	}
+	return true;
+}
+
+/*
+==================
 idInteraction::AddActiveInteraction
 
 Create and add any necessary light and shadow triangles
@@ -974,6 +1159,10 @@ void idInteraction::AddActiveInteraction( void ) {
 	tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
 	auto shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
 	if ( !shadowRect.Overlaps( vLight->scissorRect ) )
+		return;
+
+	idScreenRect shadowScissor = vLight->scissorRect;
+	if ( !IsPotentiallyVisible( shadowScissor ) )
 		return;
 
 	// We will need the dynamic surface created to make interactions, even if the
@@ -1127,10 +1316,10 @@ void idInteraction::AddActiveInteraction( void ) {
 
 			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
 				R_LinkLightSurf( &vLight->localShadows,
-				                 shadowTris, vEntity, NULL, vLight->scissorRect, inside );
+				                 shadowTris, vEntity, NULL, shadowScissor, inside );
 			} else {
 				R_LinkLightSurf( &vLight->globalShadows,
-				                 shadowTris, vEntity, NULL, vLight->scissorRect, inside );
+				                 shadowTris, vEntity, NULL, shadowScissor, inside );
 			}
 		}
 	}

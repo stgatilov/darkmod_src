@@ -463,6 +463,89 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 //======================================================================================================
 
 /*
+===================
+idRenderWorldLocal::FloodFrustumAreas_r
+===================
+*/
+areaNumRef_t *idRenderWorldLocal::FloodFrustumAreas_r( const idFrustum &frustum, const int areaNum, const idBounds &bounds, areaNumRef_t *areas ) {
+
+	// go through all the portals
+	const portalArea_t &portalArea = portalAreas[ areaNum ];
+	for ( portal_t *p : portalArea.areaPortals ) {
+		// check if we already visited the area the portal leads to
+		areaNumRef_t *foundArea;
+		for ( foundArea = areas; foundArea; foundArea = foundArea->next ) {
+			if ( foundArea->areaNum == p->intoArea ) {
+				break;
+			}
+		}
+
+		if ( foundArea ) {
+			continue;
+		}
+
+		// the frustum origin must be at the front of the portal plane
+		if ( p->plane.Side( frustum.GetOrigin(), 0.1f ) == SIDE_BACK ) {
+			continue;
+		}
+
+		// the frustum must cross the portal plane
+		if ( frustum.PlaneSide( p->plane, 0.0f ) != PLANESIDE_CROSS ) {
+			continue;
+		}
+
+		// get the bounds for the portal winding projected in the frustum
+		idBounds newBounds;
+		frustum.ProjectionBounds( p->w, newBounds );
+
+		newBounds.IntersectSelf( bounds );
+		if (newBounds.IsBackwards()) {
+			continue;	//no intersection
+		}
+		newBounds[1][0] = frustum.GetFarDistance();
+
+		areaNumRef_t *newArea = areaNumRefAllocator.Alloc();
+		newArea->areaNum = p->intoArea;
+		newArea->next = areas;
+		areas = newArea;
+
+		areas = FloodFrustumAreas_r( frustum, p->intoArea, newBounds, areas );
+	}
+	return areas;
+}
+
+/*
+===================
+idRenderWorldLocal::FloodFrustumAreas
+
+  Retrieves all the portal areas the frustum floods into where the frustum starts in the given areas.
+  All portals are assumed to be open.
+===================
+*/
+areaNumRef_t *idRenderWorldLocal::FloodFrustumAreas( const idFrustum &frustum, areaNumRef_t *areas ) {
+	idBounds bounds;
+	areaNumRef_t *a;
+
+	// bounds that cover the whole frustum
+	bounds[0].Set( frustum.GetNearDistance(), -1.0f, -1.0f );
+	bounds[1].Set( frustum.GetFarDistance(), 1.0f, 1.0f );
+
+	for ( a = areas; a; a = a->next ) {
+		areas = FloodFrustumAreas_r( frustum, a->areaNum, bounds, areas );
+	}
+	return areas;
+}
+
+
+/*
+=======================================================================
+
+R_FindViewLightsAndEntities
+
+=======================================================================
+*/
+
+/*
 ================
 CullEntityByPortals
 

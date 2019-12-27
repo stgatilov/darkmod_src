@@ -1325,8 +1325,11 @@ static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
 
 		// this doesn't say that the shadow can't effect anything, only that it can't
 		// effect anything in the view
-		if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
-			return true;
+		if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) ) {
+			idScreenRect shadowRect;
+			if ( inter->IsPotentiallyVisible( shadowRect ) )
+				return true;
+		}
 	}
 	return false;
 }
@@ -1599,7 +1602,6 @@ void R_AddModelSurfaces( void ) {
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
 	if ( r_useParallelAddModels.GetBool() ) {
-		r_useInteractionScissors.SetInteger( 0 );
 		for ( viewEntity_t* vEntity = tr.viewDef->viewEntitys; vEntity != NULL; vEntity = vEntity->next ) {
 			tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
 		}
