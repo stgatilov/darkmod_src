@@ -299,64 +299,22 @@ ID_INLINE bool idBounds::AddBounds( const idBounds &a ) {
 
 ID_INLINE idBounds idBounds::Intersect( const idBounds &a ) const {
 	idBounds n;
-
-	// grayman #2734 - Check for intersecting first. Note that if there's
-	// no intersection, a bounds with zero min/max points is returned, so
-	// if that matters, you should check for that at the spot where this
-	// is called.
-
-	n.Zero();
-	if (IntersectsBounds(a))
-	{
-		n.b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
-		n.b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
-		n.b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
-		n.b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
-		n.b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
-		n.b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
-	}
+	n.b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
+	n.b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
+	n.b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
+	n.b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
+	n.b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
+	n.b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
 	return n;
 }
 
 ID_INLINE idBounds &idBounds::IntersectSelf( const idBounds &a ) {
-
-	// grayman #2734 - Check for intersecting first. Note that if there's
-	// no intersection, "this" bounds' max point is set to the min point, so
-	// if that matters, you should check for that at the spot where this
-	// is called. As of this writing, IntersectSelf() isn't used anywhere.
-
-	if (IntersectsBounds(a))
-	{
-		if ( a.b[0][0] > b[0][0] )
-		{
-			b[0][0] = a.b[0][0];
-		}
-		if ( a.b[0][1] > b[0][1] )
-		{
-			b[0][1] = a.b[0][1];
-		}
-		if ( a.b[0][2] > b[0][2] )
-		{
-			b[0][2] = a.b[0][2];
-		}
-		if ( a.b[1][0] < b[1][0] )
-		{
-			b[1][0] = a.b[1][0];
-		}
-		if ( a.b[1][1] < b[1][1] )
-		{
-			b[1][1] = a.b[1][1];
-		}
-		if ( a.b[1][2] < b[1][2] )
-		{
-			b[1][2] = a.b[1][2];
-		}
-	}
-	else
-	{
-		b[1] = b[0]; // no intersection, so collapse the bounds
-	}
-
+	b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
+	b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
+	b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
+	b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
+	b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
+	b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
 	return *this;
 }
 
