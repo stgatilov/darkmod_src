@@ -673,6 +673,8 @@ void EnterPrimary() {
 
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 
+	primaryOn = true; // needs to set before GL_Viewport/GL_Scissor
+
 	GL_Viewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,	// FIXME: must not use tr in backend
 	             tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
 	             backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
@@ -684,8 +686,6 @@ void EnterPrimary() {
 	            backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
 
 	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
-
-	primaryOn = true;
 
 	GL_CheckErrors();
 }
