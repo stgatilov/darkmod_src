@@ -462,79 +462,122 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 
 //======================================================================================================
 
+struct idRenderWorldLocal::FloodShadowFrustumContext {
+	//algorithm fails if this number of portal checks is not enough to finish
+	static const int PORTALS_BUDGET = 32;
+
+	idScreenRect scissorBounds;		//caller-specified bounds on resulting scissor rect
+	idScreenRect scissorRect;		//union of rects of all areas visited so far
+	idFrustum frustum;				//shadow frustum
+	int portalBudgetRemains;
+	int areaStack[PORTALS_BUDGET], areaStackNum;
+};
+
 /*
 ===================
-idRenderWorldLocal::FloodFrustumAreas_r
+idRenderWorldLocal::FloodShadowFrustumThroughArea_r
 ===================
 */
-areaNumRef_t *idRenderWorldLocal::FloodFrustumAreas_r( const idFrustum &frustum, const int areaNum, const idBounds &bounds, areaNumRef_t *areas ) {
+bool idRenderWorldLocal::FloodShadowFrustumThroughArea_r( FloodShadowFrustumContext &context, const idBounds &bounds ) const {
+	int areaNum = context.areaStack[context.areaStackNum - 1];
+
+	// add screen rect from the current area to result
+	idScreenRect addedRect = GetAreaScreenRect(areaNum);
+	addedRect.Intersect(context.scissorBounds);
+	//TODO: transform "bounds" into screen space and take into account?
+	if (!addedRect.IsEmpty())
+		context.scissorRect.Union(addedRect);
+	if (context.scissorRect.Equals(context.scissorBounds))
+		return false;	//full scissor already -> finish immediately
 
 	// go through all the portals
 	const portalArea_t &portalArea = portalAreas[ areaNum ];
-	for ( portal_t *p : portalArea.areaPortals ) {
-		// check if we already visited the area the portal leads to
-		areaNumRef_t *foundArea;
-		for ( foundArea = areas; foundArea; foundArea = foundArea->next ) {
-			if ( foundArea->areaNum == p->intoArea ) {
+	for ( const portal_t *p : portalArea.areaPortals ) {
+		// note: unlike what original D3 did, it is wrong to forbid visiting the same area twice
+		// but we should omit portal if we already visited its area on the current recursion stack (avoid looping)
+		int s;
+		for (s = context.areaStackNum - 1; s >= 0; s--)
+			if (context.areaStack[s] == p->intoArea)
 				break;
-			}
-		}
-
-		if ( foundArea ) {
+		if (s >= 0)
 			continue;
+
+		// avoid spending too much time in complicated cases
+		if (--context.portalBudgetRemains < 0) {
+			context.scissorRect = context.scissorBounds;
+			return false;	//give up -> finish immediately
 		}
 
 		// the frustum origin must be at the front of the portal plane
-		if ( p->plane.Side( frustum.GetOrigin(), 0.1f ) == SIDE_BACK ) {
+		if ( p->plane.Side( context.frustum.GetOrigin(), 0.1f ) == SIDE_BACK )
 			continue;
-		}
+
+		// assume that blocked portals (i.e. closed doors) block both light and shadows completely
+		if (p->doublePortal->blockingBits & PS_BLOCK_VIEW)
+			continue;
 
 		// the frustum must cross the portal plane
-		if ( frustum.PlaneSide( p->plane, 0.0f ) != PLANESIDE_CROSS ) {
+		if ( context.frustum.PlaneSide( p->plane, 0.0f ) != PLANESIDE_CROSS )
 			continue;
-		}
 
-		// get the bounds for the portal winding projected in the frustum
+		// get the bounds for the portal winding projected in the frustum 
 		idBounds newBounds;
-		if (!frustum.ProjectionBounds( p->w, newBounds ))
+		if (!context.frustum.ProjectionBounds( p->w, newBounds ))
 			continue;
 
 		newBounds.IntersectSelf( bounds );
-		if (newBounds.IsBackwards()) {
+		if (newBounds.IsBackwards())
 			continue;	//no intersection
-		}
-		newBounds[1][0] = frustum.GetFarDistance();
+		newBounds[1][0] = context.frustum.GetFarDistance();
 
-		areaNumRef_t *newArea = areaNumRefAllocator.Alloc();
-		newArea->areaNum = p->intoArea;
-		newArea->next = areas;
-		areas = newArea;
+		// visit the new area recursively
+		context.areaStack[context.areaStackNum++] = p->intoArea;
+		bool res = FloodShadowFrustumThroughArea_r(context, newBounds);
+		--context.areaStackNum;
 
-		areas = FloodFrustumAreas_r( frustum, p->intoArea, newBounds, areas );
+		if (!res)
+			return false;
 	}
-	return areas;
+
+	return true;
 }
 
 /*
 ===================
-idRenderWorldLocal::FloodFrustumAreas
+idRenderWorldLocal::FlowShadowFrustumThroughPortals
 
-  Retrieves all the portal areas the frustum floods into where the frustum starts in the given areas.
-  All portals are assumed to be open.
+Flows shadow frustum through portals, trying to reduce the scissor rect bounding it.
+scissorRect should have some initial value, usually scissor rect of the light volume.
+If it gets inverted, then the shadow can be completely culled away.
+startAreas[0..startAreasNum) lists all areas which contain the object generating the shadow.
 ===================
 */
-areaNumRef_t *idRenderWorldLocal::FloodFrustumAreas( const idFrustum &frustum, areaNumRef_t *areas ) {
-	idBounds bounds;
-	areaNumRef_t *a;
-
+void idRenderWorldLocal::FlowShadowFrustumThroughPortals( idScreenRect &scissorRect, const idFrustum &frustum, const int *startAreas, int startAreasNum ) const {
 	// bounds that cover the whole frustum
+	idBounds bounds;
 	bounds[0].Set( frustum.GetNearDistance(), -1.0f, -1.0f );
 	bounds[1].Set( frustum.GetFarDistance(), 1.0f, 1.0f );
 
-	for ( a = areas; a; a = a->next ) {
-		areas = FloodFrustumAreas_r( frustum, a->areaNum, bounds, areas );
+	//TODO: start tracing frustum from light source?
+	//then we would be able to detect that light doesn't hit object via portals
+
+	FloodShadowFrustumContext context;
+	context.scissorRect.Clear();
+	context.scissorBounds = scissorRect;
+	context.frustum = frustum;
+	context.portalBudgetRemains = FloodShadowFrustumContext::PORTALS_BUDGET;
+	context.areaStackNum = 0;
+
+	for (int i = 0; i < startAreasNum; i++) {
+		context.areaStack[0] = startAreas[i];
+		context.areaStackNum = 1;
+		bool res = FloodShadowFrustumThroughArea_r(context, bounds);
+		assert(context.areaStackNum == 1);
+		if (!res)
+			return;
 	}
-	return areas;
+
+	scissorRect = context.scissorRect;
 }
 
 

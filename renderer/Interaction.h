@@ -66,12 +66,6 @@ typedef struct {
 } surfaceInteraction_t;
 
 
-typedef struct areaNumRef_s {
-	struct areaNumRef_s *	next;
-	int						areaNum;
-} areaNumRef_t;
-
-
 class idRenderEntityLocal;
 class idRenderLightLocal;
 
@@ -138,11 +132,9 @@ private:
 	enum {
 		FRUSTUM_UNINITIALIZED,
 		FRUSTUM_INVALID,
-		FRUSTUM_VALID,
-		FRUSTUM_VALIDAREAS,
+		FRUSTUM_VALID
 	}						frustumState;
 	idFrustum				frustum;				// frustum which contains the interaction
-	areaNumRef_t *			frustumAreas;			// numbers of the areas the frustum touches
 
 	int						dynamicModelFrameCount;	// so we can tell if a callback model animated
 

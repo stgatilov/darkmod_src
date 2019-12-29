@@ -457,7 +457,6 @@ idInteraction::idInteraction( void ) {
 	entityPrev				= NULL;
 	dynamicModelFrameCount	= 0;
 	frustumState			= FRUSTUM_UNINITIALIZED;
-	frustumAreas			= NULL;
 }
 
 /*
@@ -482,7 +481,6 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	interaction->surfaces = NULL;
 
 	interaction->frustumState = idInteraction::FRUSTUM_UNINITIALIZED;
-	interaction->frustumAreas = NULL;
 
 	// link at the start of the entity's list
 	interaction->lightNext = ldef->firstInteraction;
@@ -606,13 +604,6 @@ void idInteraction::UnlinkAndFree( void ) {
 
 	FreeSurfaces();
 
-	// free the interaction area references
-	areaNumRef_t *area, *nextArea;
-	for ( area = frustumAreas; area; area = nextArea ) {
-		nextArea = area->next;
-		renderWorld->areaNumRefAllocator.Free( area );
-	}
-
 	// put it back on the free list
 	renderWorld->interactionAllocator.Free( this );
 }
@@ -710,25 +701,26 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 
 	// calculate scissors for the portals through which the interaction is visible
 	if ( r_useInteractionScissors.GetInteger() > 1 ) {
-		areaNumRef_t *area;
+		bool fullScissor = false;
+		int viewerArea = tr.viewDef->areaNum;
 
-		if ( frustumState == idInteraction::FRUSTUM_VALID ) {
-			// retrieve all the areas the interaction frustum touches
-			for ( areaReference_t *ref = entityDef->entityRefs; ref; ref = ref->ownerNext ) {
-				area = entityDef->world->areaNumRefAllocator.Alloc();
-				area->areaNum = ref->area->areaNum;
-				area->next = frustumAreas;
-				frustumAreas = area;
+		// retrieve all the areas the entity belongs to
+		static const int MAX_AREAS_NUM = 32;
+		int areas[MAX_AREAS_NUM], areasCnt = 0;
+		for ( areaReference_t *ref = entityDef->entityRefs; ref; ref = ref->ownerNext ) {
+			int area = ref->area->areaNum;
+			if (area == viewerArea || areasCnt == MAX_AREAS_NUM) {
+				fullScissor = true;
+				break;
 			}
-			frustumAreas = tr.viewDef->renderWorld->FloodFrustumAreas( frustum, frustumAreas );
-			frustumState = idInteraction::FRUSTUM_VALIDAREAS;
+			areas[areasCnt++] = area;
 		}
-		portalRect.Clear();
 
-		for ( area = frustumAreas; area; area = area->next ) {
-			portalRect.Union( entityDef->world->GetAreaScreenRect( area->areaNum ) );
+		// flood into areas along frustum, try to reduce interaction scissor
+		portalRect = lightDef->viewLight->scissorRect;
+		if (!fullScissor) {
+			tr.viewDef->renderWorld->FlowShadowFrustumThroughPortals(portalRect, frustum, areas, areasCnt);
 		}
-		portalRect.Intersect( lightDef->viewLight->scissorRect );
 	} else {
 		portalRect = lightDef->viewLight->scissorRect;
 	}
@@ -1069,13 +1061,12 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 		return false;
 	} else if ( !HasShadows() ) { // do not waste time culling the interaction frustum if there will be no shadows
 
-								  // use the entity scissor rectangle
+		// use the entity scissor rectangle
 		shadowScissor = vEntity->scissorRect;
 
-		// culling does not seem to be worth it for static world models
 	} else if ( entityDef->parms.hModel->IsStaticWorldModel() ) {
 
-		// use the light scissor rectangle
+		// culling does not seem to be worth it for static world models
 		shadowScissor = vLight->scissorRect;
 
 	} else {
