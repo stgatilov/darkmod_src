@@ -496,7 +496,8 @@ areaNumRef_t *idRenderWorldLocal::FloodFrustumAreas_r( const idFrustum &frustum,
 
 		// get the bounds for the portal winding projected in the frustum
 		idBounds newBounds;
-		frustum.ProjectionBounds( p->w, newBounds );
+		if (!frustum.ProjectionBounds( p->w, newBounds ))
+			continue;
 
 		newBounds.IntersectSelf( bounds );
 		if (newBounds.IsBackwards()) {
