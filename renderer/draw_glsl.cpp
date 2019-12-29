@@ -675,16 +675,20 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
 	int pot = globalImages->currentRenderImage->uploadWidth;
 	parm[0] = ( float )w / pot;
+	parm[0] = 1;
 	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
 	pot = globalImages->currentRenderImage->uploadHeight;
 	parm[1] = ( float )h / pot;
+	parm[1] = 1;
 	parm[2] = 0;
 	parm[3] = 1;
  	scalePotToWindow.Set( parm );
 
 	// window coord to 0.0 to 1.0 conversion
 	parm[0] = 1.0 / w;
+	parm[0] = 1.0 / globalImages->currentRenderImage->uploadWidth;
 	parm[1] = 1.0 / h;
+	parm[1] = 1.0 / globalImages->currentRenderImage->uploadHeight;
 	parm[2] = 0;
 	parm[3] = 1;
  	scaleWindowToUnit.Set( parm );
