@@ -1320,16 +1320,9 @@ static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
 			continue;
 		}
 		// check more precisely for shadow visibility
-		idBounds shadowBounds;
-		R_ShadowBounds( def.globalReferenceBounds, inter->lightDef->globalLightBounds, inter->lightDef->globalLightOrigin, shadowBounds );
-
-		// this doesn't say that the shadow can't effect anything, only that it can't
-		// effect anything in the view
-		if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) ) {
-			idScreenRect shadowRect;
-			if ( inter->IsPotentiallyVisible( shadowRect ) )
-				return true;
-		}
+		idScreenRect shadowRect;
+		if ( inter->IsPotentiallyVisible( shadowRect ) )
+			return true;
 	}
 	return false;
 }

@@ -1055,38 +1055,77 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 	vLight = lightDef->viewLight;
 	vEntity = entityDef->viewEntity;
 
+	shadowScissor = vLight->scissorRect;
 
-	// nbohr1more: #4379 lightgem culling
-	if ( !HasShadows() && !entityDef->parms.isLightgem && tr.viewDef->IsLightGem() ) {
-		return false;
-	} else if ( !HasShadows() ) { // do not waste time culling the interaction frustum if there will be no shadows
+	// do not waste time culling the interaction frustum if there will be no shadows
+	if ( !HasShadows() ) {
+		// nbohr1more: #4379 lightgem culling
+		if ( !entityDef->parms.isLightgem && tr.viewDef->IsLightGem() )
+			return false;
 
 		// use the entity scissor rectangle
-		shadowScissor = vEntity->scissorRect;
-
-	} else if ( entityDef->parms.hModel->IsStaticWorldModel() ) {
-
-		// culling does not seem to be worth it for static world models
-		shadowScissor = vLight->scissorRect;
-
-	} else {
-
-		// try to cull the interaction by view frustum
-		// this will also cull the case where the light origin is inside the
-		// view frustum and the entity bounds are outside the view frustum
-		if ( CullInteractionByViewFrustum( tr.viewDef->viewFrustum ) ) {
+		shadowScissor.Intersect(vEntity->scissorRect);
+		if (shadowScissor.IsEmpty())
 			return false;
-		}
-
-		// try to cull the interaction by portals (culled away if empty scissor is returned)
-		// as a by-product, calculate more precise shadow scissor rectangle
-		shadowScissor = CalcInteractionScissorRectangle( tr.viewDef->viewFrustum );
+		return true;
 	}
 
-	// get out before making the dynamic model if the shadow scissor rectangle is empty
+	// duzenko: cull away interaction if light and entity are in disconnected areas
+	// note: this cannot be done for noshadows lights, since they light objects through closed doors!
+	assert(HasShadows());
+	if ( lightDef->areaNum != -1 ) {
+		// if no part of the model is in an area that is connected to
+		// the light center (it is behind a solid, closed door), we can ignore it
+		bool areasConnected = false;
+		for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->ownerNext ) {
+			if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->area->areaNum, PS_BLOCK_VIEW ) ) {
+				areasConnected = true;
+				break;
+			}
+		}
+		if ( areasConnected == false ) {
+			// can't possibly be lit
+			return false;
+		}
+	}
+
+	// sophisticated culling does not seem to be worth it for static world models
+	if ( entityDef->parms.hModel->IsStaticWorldModel() ) {
+		return true;
+	}
+
+	// try to cull by loose shadow bounds
+	idBounds shadowBounds;
+	extern void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, const idVec3& lightOrigin, idBounds& shadowBounds );
+	R_ShadowBounds( entityDef->globalReferenceBounds, lightDef->globalLightBounds, lightDef->globalLightOrigin, shadowBounds );
+	// duzenko: cull away if shadow is surely out of viewport
+	// note: a more precise version of such check is done later inside CullInteractionByViewFrustum
+	if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
+		return false;
+
+	// duzenko: intersect light scissor with shadow bounds
+	idBounds shadowProjectionBounds;
+	tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
+	idScreenRect shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
+	shadowScissor.Intersect(shadowRect);
+	if ( shadowScissor.IsEmpty() )
+		return false;
+
+	// try to cull the interaction by view frustum
+	// this will also cull the case where the light origin is inside the
+	// view frustum and the entity bounds are outside the view frustum
+	if ( CullInteractionByViewFrustum( tr.viewDef->viewFrustum ) ) {
+		return false;
+	}
+
+	// try to cull the interaction by portals (culled away if empty scissor is returned)
+	// as a by-product, calculate more precise shadow scissor rectangle
+	shadowRect = CalcInteractionScissorRectangle( tr.viewDef->viewFrustum );
+	shadowScissor.Intersect(shadowRect);
 	if ( shadowScissor.IsEmpty() ) {
 		return false;
 	}
+
 	return true;
 }
 
@@ -1111,47 +1150,8 @@ void idInteraction::AddActiveInteraction( void ) {
 	vLight = lightDef->viewLight;
 	vEntity = entityDef->viewEntity;
 
-	// 2.08: as we removed the interaction scissor check in favor of BFG style 
-	// we now need to at least check if light/entity are in the same/connected areas
-	if ( vEntity->scissorRect.IsEmpty() ) // only interested in the off-screen models
-		if ( lightDef->areaNum != -1 )
-		{
-			// if no part of the model is in an area that is connected to
-			// the light center (it is behind a solid, closed door), we can ignore it
-			bool areasConnected = false;
-			for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->ownerNext )
-			{
-				if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->area->areaNum, PS_BLOCK_VIEW ) )
-				{
-					areasConnected = true;
-					break;
-				}
-			}
-			if ( areasConnected == false )
-			{
-				// can't possibly be seen or shadowed
-				return;
-			}
-		}
-
-	// check more precisely for shadow visibility
-	idBounds shadowBounds;
-	extern void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, const idVec3& lightOrigin, idBounds& shadowBounds );
-	R_ShadowBounds( entityDef->globalReferenceBounds, lightDef->globalLightBounds, lightDef->globalLightOrigin, shadowBounds );
-
-	// this doesn't say that the shadow can't effect anything, only that it can't
-	// effect anything in the view
-	if ( idRenderMatrix::CullBoundsToMVP( tr.viewDef->worldSpace.mvp, shadowBounds ) )
-	{
-		return;
-	}
-
-	idBounds shadowProjectionBounds;
-	tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
-	auto shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
-	if ( !shadowRect.Overlaps( vLight->scissorRect ) )
-		return;
-
+	// Try to cull the whole interaction away in a multitide of ways
+	// Also, reduce scissor rect of the interaction if possible
 	idScreenRect shadowScissor = vLight->scissorRect;
 	if ( !IsPotentiallyVisible( shadowScissor ) )
 		return;
