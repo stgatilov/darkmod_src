@@ -175,7 +175,8 @@ idCVarInt r_skipMultiDraw( "r_skipMultiDraw", "0", CVAR_RENDERER, "1 - skip sing
 idList<const drawSurf_t*> allSurfaces( 1 << 11 );
 
 void RB_Multi_AddSurf( const drawSurf_t* surf ) {
-	if ( glConfig.drawBaseVertexAvailable && idVertexCache::r_useBaseVertex )
+	auto ent = surf->space;
+	if ( glConfig.drawBaseVertexAvailable && idVertexCache::r_useBaseVertex && !ent->weaponDepthHack && ent->modelDepthHack == 0 )
 		allSurfaces.Append( surf );
 	else
 		RB_DrawElementsWithCounters( surf );
