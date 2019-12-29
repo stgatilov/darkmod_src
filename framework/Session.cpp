@@ -1457,6 +1457,7 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	UnloadMap();
 
 	R_ToggleSmpFrame(); // duzenko 4848: FIXME find a better place to clear the "next frame" data
+	R_ToggleSmpFrame();	// duzenko 5065: apparently R_ToggleSmpFrame does not like being called once
 
 	// don't do the deferred caching if we are reloading the same map
 	if ( fullMapName == currentMapName ) {

@@ -462,7 +462,7 @@ R_FreeDeferredTriSurfs
 void R_FreeDeferredTriSurfs( frameData_t *frame ) {
 	srfTriangles_t	*tri, *next;
 
-	if ( !frame ) {
+	if ( !frame || !frame->firstDeferredFreeTriSurf ) {
 		return;
 	}
 
