@@ -41,8 +41,6 @@ typedef struct glconfig_s {
 	const char			*wgl_extensions_string;
 	glVendor_t			vendor;
 
-	float				glVersion;				// atof( version_string )
-
 	int					maxTextureSize;			// queried from GL
 	int					maxTextures;
 	int					maxTextureUnits;

@@ -337,7 +337,6 @@ void R_InitOpenGL( void ) {
 	glConfig.vendor_string = (const char *)qglGetString(GL_VENDOR);
 	glConfig.renderer_string = (const char *)qglGetString(GL_RENDERER);
 	glConfig.version_string = (const char *)qglGetString(GL_VERSION);
-	glConfig.glVersion = atof(glConfig.version_string);
 
 	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 ) { 
 		glConfig.vendor = glvIntel; 
