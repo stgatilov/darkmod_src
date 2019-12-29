@@ -883,7 +883,8 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		shadowMap.Set( MAX_MULTITEXTURE_UNITS + 2 );
 		depthTexture.Set( 6 );
 		stencilTexture.Set( 7 );
-		renderResolution.Set( glConfig.vidWidth, glConfig.vidHeight );
+		//renderResolution.Set( glConfig.vidWidth, glConfig.vidHeight );
+		renderResolution.Set( globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight ); // 5055 respect r_fboResolution
 	}
 
 	GL_CheckErrors();
