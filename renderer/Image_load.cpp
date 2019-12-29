@@ -571,7 +571,7 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 		changed = true;
 		r_fboColorBits.ClearModified();
 	}
-	if ( !changed ) {
+	if ( !changed && texnum != TEXTURE_NOT_LOADED ) {
 		return;
 	}
 	if ( texnum == TEXTURE_NOT_LOADED ) { // for color textures usually generated elsewhere, but for depth here

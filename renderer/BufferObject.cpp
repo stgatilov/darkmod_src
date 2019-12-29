@@ -130,7 +130,6 @@ FreeBufferObject
 ========================
 */
 void BufferObject::FreeBufferObject() {
-	qglDeleteBuffers( 1, &tempBuff );
 	if( bufferObject == 0 ) {
 		return;
 	}
@@ -138,10 +137,11 @@ void BufferObject::FreeBufferObject() {
 	if( IsMapped() ) {
 		UnmapBuffer( 0 );
 	}
+	qglDeleteBuffers( 1, &tempBuff );
 	qglDeleteBuffers( 1, &bufferObject );
 
 	size = 0;
-	bufferObject = 0;
+	tempBuff = bufferObject = 0;
 }
 
 /*

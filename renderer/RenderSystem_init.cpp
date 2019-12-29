@@ -1547,6 +1547,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		// free the context and close the window
 		session->TerminateFrontendThread();
 		vertexCache.Shutdown();
+		FB_Clear();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 

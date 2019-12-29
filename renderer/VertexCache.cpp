@@ -63,6 +63,7 @@ static void MapGeoBufferSet( geoBufferSet_t &gbs, int frame ) {
 		gbs.vertexMapOffset = staticVertexSize + frameSize * frame;
 		gbs.mappedVertexBase = ( byte * )gbs.vertexBuffer.MapBuffer( gbs.vertexMapOffset, frameSize );
 		gbs.vertexMemUsed = ALIGN( gbs.vertexMapOffset, VERTEX_CACHE_ALIGN ) - gbs.vertexMapOffset;
+//		gbs.vertexMemUsed = ALIGN( (size_t)gbs.mappedVertexBase, VERTEX_CACHE_ALIGN ) - (size_t)gbs.mappedVertexBase;
 	}
 	if ( gbs.mappedIndexBase == NULL ) {
 		int dynamicSize = gbs.indexBuffer.size - staticIndexSize;
@@ -70,6 +71,7 @@ static void MapGeoBufferSet( geoBufferSet_t &gbs, int frame ) {
 		gbs.indexMapOffset = staticIndexSize + frameSize * frame;
 		gbs.mappedIndexBase = ( byte * )gbs.indexBuffer.MapBuffer( gbs.indexMapOffset, frameSize );
 		gbs.indexMemUsed = ALIGN( gbs.indexMapOffset, INDEX_CACHE_ALIGN ) - gbs.indexMapOffset;
+//		gbs.indexMemUsed = ALIGN( (size_t)gbs.mappedIndexBase, INDEX_CACHE_ALIGN ) - (size_t)gbs.mappedIndexBase;
 	}
 }
 
@@ -442,7 +444,9 @@ void idVertexCache::PrepareStaticCacheForUpload() {
 	for ( int i = 0; i < VERTCACHE_NUM_FRAMES; i++ )
 		EndFrame();
 	UnmapGeoBufferSet( dynamicData, listNum );
+	staticVertexSize = ALIGN( staticVertexSize, VERTEX_CACHE_ALIGN );
 	upload( "Static vertex data ready\n", dynamicData.vertexBuffer, staticVertexSize + currentVertexCacheSize * VERTCACHE_NUM_FRAMES, staticVertexList );
+	staticIndexSize = ALIGN( staticIndexSize, INDEX_CACHE_ALIGN );
 	upload( "Static index data ready\n", dynamicData.indexBuffer, staticIndexSize + currentIndexCacheSize * VERTCACHE_NUM_FRAMES, staticIndexList );
 	MapGeoBufferSet( dynamicData, listNum );
 	EndFrame();

@@ -1233,7 +1233,7 @@ void idInteraction::AddActiveInteraction( void ) {
 					lightTris->ambientCache = tri->ambientCache;
 
 					if ( !vertexCache.CacheIsCurrent( lightTris->indexCache ) ) {
-						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, ALIGN( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ) );
 					}
 
 					// add the surface to the light list

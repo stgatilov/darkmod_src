@@ -43,6 +43,7 @@ struct {
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, handle );
 	}
 	void Size( GLsizei newWidth, GLsizei newHeight, int newMsaa = 1, GLenum newFormat = GL_KEEP ) {
+		GenerateIf0(); // vid_restart
 		if ( internalformat == 0 && newFormat == GL_KEEP ) // that's ok
 			return;
 		if ( width == newWidth && height == newHeight && newMsaa == msaa && (newFormat == GL_KEEP || internalformat == newFormat) )
@@ -60,8 +61,10 @@ struct {
 	}
 private:
 	void GenerateIf0() {
-		if ( !handle )
-			qglGenRenderbuffers( 1, &handle );
+		if ( handle )
+			return;
+		qglGenRenderbuffers( 1, &handle );
+		width = height = msaa = 0;
 	}
 	void Bind() {
 		GenerateIf0();
