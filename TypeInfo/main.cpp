@@ -191,6 +191,8 @@ int Sys_ListFiles( const char *directory, const char *extension, idStrList &list
 	return list.Num();
 }
 
+void GetDeclLoadedFiles(idList<idStr> &) {}
+
 #else
 
 const char *	Sys_DefaultBasePath( void ) { return ""; }
@@ -199,12 +201,14 @@ int				Sys_ListFiles( const char *directory, const char *extension, idStrList &l
 
 #endif
 
+#if 0
 uintptr_t		Sys_CreateThread( xthread_t function, void* parms, xthreadPriority priority,
 	const char* name, core_t core, int stackSize,
 	bool suspended ) {
 	return  0; 
 }
 void			Sys_DestroyThread( uintptr_t info ) {}
+#endif
 
 void			Sys_EnterCriticalSection( int index ) {}
 void			Sys_LeaveCriticalSection( int index ) {}
