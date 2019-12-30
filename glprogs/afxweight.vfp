@@ -1,0 +1,107 @@
+######################################################
+######################################################
+
+!!ARBvp1.0 OPTION ARB_position_invariant;
+
+# basic texcoord
+MOV 	result.texcoord[0], vertex.texcoord[0];
+
+END;
+
+######################################################
+######################################################
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+###
+
+PARAM	xero = { 0.0, 0.0, 0.0 };
+
+# measure points
+PARAM	w1 = { 0.3, 0.5 };
+PARAM	w2 = { 0.7, 0.5 };
+PARAM	w3 = { 0.5, 0.7 };
+PARAM	w4 = { 0.5, 0.3 };
+
+PARAM	w5 = { 0.5, 0.5 }; # eye center
+
+PARAM	w6 = { 0.45, 0.55 };
+PARAM	w7 = { 0.55, 0.55 };
+PARAM	w8 = { 0.55, 0.45 };
+PARAM	w9 = { 0.45, 0.45 };
+
+PARAM	w10 = { 0.4, 0.4 };
+PARAM	w11 = { 0.6, 0.4 };
+PARAM	w12 = { 0.6, 0.6 };
+PARAM	w13 = { 0.4, 0.6 };
+
+###
+
+TEMP R1, R2, W;
+
+TEX	W, w1, texture[0], 2D;
+
+TEX	R1, w2, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w3, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w4, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w6, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w7, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w8, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w9, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w10, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w11, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w12, texture[0], 2D;
+ADD	W, W, R1;
+
+TEX	R1, w13, texture[0], 2D;
+ADD	W, W, R1;
+
+###
+
+TEX	R1, w5, texture[0], 2D;
+ADD	W, W, R1;
+
+MUL	W, W, 0.1111111; # amount to affect the brightness of the bloom by
+
+# make monochromatic
+
+MAX	W.a, W.r, W.g;
+MAX	W.a, W.a, W.b;
+
+MUL	W.a, W.a, W.a;
+
+### fetch last weight
+
+TEX	R2, xero, texture[1], 2D;
+
+### 
+
+SUB	R1, 1.0, W.aaaa;
+
+SUB	R1, R1, R2; # form last - current difference
+MUL	R1, R1, 0.1; # amount to shift brightness by
+
+ADD	result.color, R1, R2;
+
+###
+
+END;

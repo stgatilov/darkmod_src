@@ -1,0 +1,82 @@
+######################################################
+######################################################
+
+!!ARBvp1.0 OPTION ARB_position_invariant;
+#---------------------------------------------------------
+#	CookMath0.vfp
+#	Author:		JC Denton
+#	Cooks Following Data to a Texture. 
+#	Red		- Final Scene Pass Calculations
+#	Green	- Bright pass Calculations.
+#---------------------------------------------------------
+# basic texcoord
+MOV 	result.texcoord[0], vertex.texcoord[0];
+
+#Store Parameters sent to this shader to Result.
+MOV 	result.texcoord[1], program.local[0];
+
+END;
+
+######################################################
+######################################################
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+#------------------------------------------
+TEMP	 TC, R1, R2, blendParams;
+TEMP	 color, brightPassThreshold, brightPassOffset, brightPassColor, colorCorrection, colorCorrectionBias;
+
+PARAM	brightPassGamma = { 1.0 };
+
+MOV		TC, fragment.texcoord[0];
+
+#------------------------------------------
+#	Variables for Cooking: X = scene color texture, Y = None.
+#------------------------------------------
+MOV		color,		TC.x;
+
+#------------------------------------------
+#	Rest of the parameters are constant.
+#------------------------------------------
+MOV		R1, fragment.texcoord[1];
+
+MOV		brightPassThreshold,	R1.x;
+MOV		brightPassOffset,		R1.y;
+MOV		colorCorrection,		R1.z;
+MOV		colorCorrectionBias,	R1.w;
+
+#----------------------------------------
+# Cook Bright pass data 
+#----------------------------------------
+SUB		brightPassColor, color, brightPassThreshold;
+
+MAX		brightPassColor, brightPassColor, 0.0;
+
+POW		brightPassColor.x, brightPassColor.x, brightPassGamma.x;
+
+ADD		R1, brightPassOffset, brightPassColor;
+RCP		R1.x, R1.x;
+
+MUL		brightPassColor, brightPassColor, R1.x;
+
+#----------------------------------------
+# Pass over the previously cooked data to x 
+# and store the now cooked data to y.
+#----------------------------------------
+TEX		color, TC, texture[0], 2D;
+
+#---------------------------------------------------------
+#	Apply Smooth Exponential color correction with a bias
+#---------------------------------------------------------
+MUL		R1.x, color.x, -colorCorrection;
+POW		R1.x, 2.718282.x, R1.x;
+SUB		R1.x, 1, R1.x;
+LRP		color.x, colorCorrectionBias, R1.x, color.x;
+#---------------------------------------------------------
+
+
+MOV		color.y, brightPassColor.x;
+MOV		result.color,  color;
+
+END;

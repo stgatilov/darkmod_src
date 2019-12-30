@@ -1,0 +1,48 @@
+!!ARBvp1.0
+# Vertex program for projected shadow volumes
+#
+# How this works [notes from SteveL #3958]
+#
+# The shape of the model (which can be any shadowcasting surface) is stretched 
+# out to infinity in the direction opposite to the light. This stretched shape is the
+# shadow volume. 
+#
+# The engine creates *two* vertices for every vertex in the shadowcasting surface, and 
+# passes them to this program to be drawn as a shadow volume.
+# Each pair of vertices has the same xyz coordinates (using the model's axis), but one 
+# from each pair has 0 in its 'w' (4th) slot and the other has 1 in there.
+#
+# The 'w=0' coordinate is the one that ends up being projected to infinity by this program. 
+# The 'w=1' coordinate stays where it is.
+#
+# program.env[4] is set by the engine. It's the light vertex position, relative to the model origin.
+#
+# Step 1 below works out the vector from the light to the vertex, by subtracting 
+# the light's coordinate from the model vertex's coordinate. That, plus a 
+# w-value of 0, is enough to represent a point infinitely far away in the opposite direction to the 
+# light, because the w-value represents scale when the model coords are transformed into view coords 
+# in step 3. The xyz coordinates are scaled by 1/w. 
+#
+# Step 2 performs a trick using the w=0 or 1 values: for the w=0 vertex,
+# there's no change to the value in R0. The w=1 coordinate gets the light origin added back on,
+# so it gets put back at it's original vertex.position.
+#
+
+# declare the temporary variable
+TEMP R0;
+
+# STEP 1: RO = original position - light, this assumes light.w = 0
+SUB	R0, vertex.position, program.env[4];
+
+# STEP 2: RO -= original position.w * light
+MAD	R0, R0.wwww, program.env[4], R0;
+
+# STEP 3: transform the coordinates from the model axis to the view projection as normal
+DP4	result.position.x, R0, state.matrix.mvp.row[0];
+DP4	result.position.y, R0, state.matrix.mvp.row[1];
+DP4	result.position.z, R0, state.matrix.mvp.row[2];
+DP4	result.position.w, R0, state.matrix.mvp.row[3];
+
+# For debug coloring ( r_showShadows )
+MUL 	result.color, vertex.color, { 0.1, 0.1, 0.1, 1.0 }; # Tone down the colour so we can see more detail / layers.
+END

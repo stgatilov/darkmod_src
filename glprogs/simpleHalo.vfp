@@ -1,0 +1,41 @@
+######################################################
+######################################################
+
+!!ARBvp1.0 OPTION ARB_position_invariant;
+
+# basic texcoord
+MOV 	result.texcoord[0], vertex.texcoord[0];
+END;
+
+######################################################
+######################################################
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+#-----------------------------------
+# Params resp. ImageExposure, ImageGamma
+#-----------------------------------
+PARAM	haloParams = { 1.0, 2.0 };
+#-----------------------------------
+
+TEMP	colBrightPassImage;
+TEMP	TC, color;
+
+MOV		TC, fragment.texcoord[0];
+
+TEX		colBrightPassImage, TC, texture[0], 2D;
+
+#MUL		colBrightPassImage, colBrightPassImage, haloParams.x;
+#POW		color.x, colBrightPassImage.x, haloParams.y; 
+#POW		color.y, colBrightPassImage.y, haloParams.y; 
+#POW		color.z, colBrightPassImage.z, haloParams.y; 
+
+#This is same as above but faster than POW.
+#MUL		color, colBrightPassImage, colBrightPassImage; 
+#MOV		color.w, 1.0; 
+
+
+MOV		result.color, colBrightPassImage;
+
+END;

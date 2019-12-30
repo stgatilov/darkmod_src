@@ -1,0 +1,91 @@
+# Author : rebb
+# simple view-based shading, meant for frob-highlight
+
+# parameters
+# vertexParm 0  - controls the amount of an additional overlay-effect, if a time-based variable is bound to this, it can be made to "pulse"
+# fragmentMap 0 - normal-map of the base material. should there be none, pass in "_flat"
+# fragmentMap 1 - diffuse-map
+# fragmentMap 2 - specular-map. should there be none, pass in "_black"
+
+!!ARBvp1.0
+OPTION ARB_position_invariant;
+
+TEMP R0;
+
+# texture 0 takes the unodified texture coordinates
+MOV		result.texcoord[0], vertex.texcoord[0];
+
+# texture 1 is the vector to the eye in global coordinates
+SUB		R0, program.env[5], vertex.position;
+DP3		result.texcoord[1].x, R0, program.env[6];
+DP3		result.texcoord[1].y, R0, program.env[7];
+DP3		result.texcoord[1].z, R0, program.env[8];
+
+# texture 2 gets the transformed tangent
+DP3		result.texcoord[2].x, vertex.attrib[9], program.env[6];
+DP3		result.texcoord[3].x, vertex.attrib[9], program.env[7];
+DP3		result.texcoord[4].x, vertex.attrib[9], program.env[8];
+
+# texture 3 gets the transformed tangent
+DP3		result.texcoord[2].y, vertex.attrib[10], program.env[6];
+DP3		result.texcoord[3].y, vertex.attrib[10], program.env[7];
+DP3		result.texcoord[4].y, vertex.attrib[10], program.env[8];
+
+# texture 4 gets the transformed tangent
+DP3		result.texcoord[2].z, vertex.normal, program.env[6];
+DP3		result.texcoord[3].z, vertex.normal, program.env[7];
+DP3		result.texcoord[4].z, vertex.normal,program.env[8];
+
+MOV		result.texcoord[5], program.local[0];
+
+MOV		result.color, vertex.color;
+
+END
+
+!!ARBfp1.0
+OPTION ARB_precision_hint_fastest;
+
+PARAM parms = { 1, 1, 1, 12 };
+PARAM pulseCol = { 1, 1, 1, 1 };
+
+TEMP localNormal, viewVec, facing, diff, spec, globalNormal;
+
+DP3 viewVec.w, fragment.texcoord[1], fragment.texcoord[1];
+RSQ viewVec.w, viewVec.w;
+MUL viewVec.xyz, fragment.texcoord[1], viewVec.w;
+
+TEX	localNormal, fragment.texcoord[0], texture[0], 2D;
+MOV localNormal.x, localNormal.a;
+MAD	localNormal, localNormal, 2.0, -1.0;
+
+DP3 localNormal.w, localNormal, localNormal;
+RSQ localNormal.w, localNormal.w;
+MUL localNormal.xyz, localNormal, localNormal.w;
+
+DP3	globalNormal.x, localNormal, fragment.texcoord[2];
+DP3	globalNormal.y, localNormal, fragment.texcoord[3];
+DP3	globalNormal.z, localNormal, fragment.texcoord[4];
+
+TEX diff, fragment.texcoord[0], texture[1], 2D;
+TEX spec, fragment.texcoord[0], texture[2], 2D;
+ADD spec, spec, spec;
+
+DP3_SAT facing.x, viewVec, globalNormal;
+
+POW facing.y, facing.x, parms.w;
+SUB facing.z, 1, facing.x;
+MUL facing.z, facing.z, facing.z;
+MUL facing.w, facing.z, facing.z;
+MAD facing.x, facing.w, 2, facing.x;
+MIN facing.x, facing.x, 1.25;
+
+MAD diff, spec, facing.y, diff;
+
+#MUL diff, diff, fragment.texcoord[5].x;
+# add overlay effect
+MAD diff, pulseCol, fragment.texcoord[5].x, diff;
+
+MUL result.color.xyz, diff, facing.x;
+MOV result.color.w, 1;
+
+END

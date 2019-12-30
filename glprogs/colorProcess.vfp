@@ -1,0 +1,46 @@
+!!ARBvp1.0
+OPTION ARB_position_invariant ;
+
+# parameter 0 is the fraction from the current hue to the target hue to map
+# parameter 1.rgb is the target hue
+# texture 0 is _currentRender
+
+# nothing to do but pass the parameters along
+
+# 1 - fraction
+SUB		result.texcoord[0], 1.0, program.local[0];
+
+# fraction * target color
+MUL		result.texcoord[1], program.local[1], program.local[0];
+
+END
+
+#======================================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+TEMP	R0, SRC;
+
+# calculate the screen texcoord in the 0.0 to 1.0 range
+MUL		R0, fragment.position, program.env[1];
+
+# scale by the screen non-power-of-two-adjust
+MUL		R0, R0, program.env[0];
+
+# load the screen render
+TEX		SRC, R0, texture[0], 2D;
+
+# calculate the grey scale version of the color
+ADD		R0.x, SRC.x, SRC.y;
+ADD		R0.x, R0.x, SRC.z;
+MUL		R0, R0.x, 0.33;
+
+# scale by the target color
+MUL		R0, R0, fragment.texcoord[1];
+
+# lerp between the source color and the target color
+MAD		result.color.xyz, SRC, fragment.texcoord[0], R0;
+
+
+END

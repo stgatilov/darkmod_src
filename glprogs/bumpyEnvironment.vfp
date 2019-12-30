@@ -1,0 +1,132 @@
+!!ARBvp1.0 OPTION ARB_position_invariant ;
+
+# input:
+# 
+# attrib[8] (former texcoord[0]) TEX0	texcoords
+# attrib[9] TEX1			tangent[0]
+# attrib[10] TEX2			tangent[1]
+# attrib[2] (former normal) TEX3	normal
+#
+# c[5]	localViewOrigin
+# c[6]	modelMatrix[0]
+# c[7]	modelMatrix[1]
+# c[8]	modelMatrix[2]
+# env[16-17] control if color is by vertex or global
+# 
+# output:
+# 
+# texture 0 is the environment cube map
+# texture 1 is the normal map
+#
+# texCoord[0] is the normal map texcoord
+# texCoord[1] is the vector to the eye in global space
+# texCoord[2] is the surface tangent to global coordiantes
+# texCoord[3] is the surface bitangent to global coordiantes
+# texCoord[4] is the surface normal to global coordiantes
+
+TEMP	R0, R1, R2;
+
+# texture 0 takes the unodified texture coordinates
+MOV		result.texcoord[0], vertex.attrib[8];
+
+# texture 1 is the vector to the eye in global coordinates
+SUB		R0, program.env[5], vertex.position;
+DP3		result.texcoord[1].x, R0, program.env[6];
+DP3		result.texcoord[1].y, R0, program.env[7];
+DP3		result.texcoord[1].z, R0, program.env[8];
+
+# texture 2 gets the transformed tangent
+DP3		result.texcoord[2].x, vertex.attrib[9], program.env[6];
+DP3		result.texcoord[3].x, vertex.attrib[9], program.env[7];
+DP3		result.texcoord[4].x, vertex.attrib[9], program.env[8];
+
+# texture 3 gets the transformed tangent
+DP3		result.texcoord[2].y, vertex.attrib[10], program.env[6];
+DP3		result.texcoord[3].y, vertex.attrib[10], program.env[7];
+DP3		result.texcoord[4].y, vertex.attrib[10], program.env[8];
+
+# texture 4 gets the transformed tangent
+DP3		result.texcoord[2].z, vertex.attrib[2], program.env[6];
+DP3		result.texcoord[3].z, vertex.attrib[2], program.env[7];
+DP3		result.texcoord[4].z, vertex.attrib[2], program.env[8];
+
+#MOV		result.color, vertex.color;
+MAD	result.color, vertex.color, program.env[16], program.env[17];
+
+END
+
+#==================================================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+# per-pixel cubic reflextion map calculation
+
+# texture 0 is the environment cube map
+# texture 1 is the normal map
+#
+# texCoord[0] is the normal map texcoord
+# texCoord[1] is the vector to the eye in global space
+# texCoord[3] is the surface tangent to global coordiantes
+# texCoord[4] is the surface bitangent to global coordiantes
+# texCoord[5] is the surface normal to global coordiantes
+
+TEMP	globalEye, localNormal, globalNormal, R0, R1;
+
+PARAM	subOne			= { -1, -1, -1, -1 };
+PARAM	scaleTwo		= { 2, 2, 2, 2 };
+PARAM	rimStrength		= {3.0, 0.4, 0.0 };
+
+# load the filtered normal map, then normalize to full scale,
+TEX		localNormal, fragment.texcoord[0], texture[1], 2D;
+MOV		localNormal.x, localNormal.a;				# rxgb normal compression
+MAD		localNormal, localNormal, scaleTwo, subOne;
+DP3		R1, localNormal,localNormal;
+RSQ		R1, R1.x;
+MUL		localNormal.xyz, localNormal, R1;
+
+# transform the surface normal by the local tangent space 
+DP3		globalNormal.x, localNormal, fragment.texcoord[2];
+DP3		globalNormal.y, localNormal, fragment.texcoord[3];
+DP3		globalNormal.z, localNormal, fragment.texcoord[4];
+
+# normalize vector to eye
+DP3		R0, fragment.texcoord[1], fragment.texcoord[1];
+RSQ		R0, R0.x;
+MUL		globalEye, fragment.texcoord[1], R0;
+
+# calculate reflection vector
+DP3		R0, globalEye, globalNormal;
+#-----------------------------------------
+#		Calculate fresnel reflectance.
+#-----------------------------------------
+SUB		R1.x, 1, R0.x;
+MUL		R1.x, R1.x, R1.x;
+MUL		R1.x, R1.x, R1.x;
+MUL		R1.x, R1.x, rimStrength.x;
+#-----------------------------------------
+
+MUL		R0, R0, globalNormal;
+MAD		R0, R0, scaleTwo, -globalEye;
+
+# read the environment map with the reflection vector
+TEX		R0, R0, texture[0], CUBE;
+
+ADD		R1, R1, rimStrength.y;
+MUL		R0, R0, R1.x;
+
+#---------------------------------------------------------
+# Tone Map to convert HDR values to range 0.0 - 1.0
+#---------------------------------------------------------
+ADD		R1, 1.0, R0;
+RCP		R1.x, R1.x;
+RCP		R1.y, R1.y;
+RCP		R1.z, R1.z;
+#---------------------------------------------------------
+
+#MUL		result.color.xyz, R0, fragment.color;
+#MOV		result.color.xyz, R0;
+MUL		result.color.xyz, R0, R1;
+
+END
+

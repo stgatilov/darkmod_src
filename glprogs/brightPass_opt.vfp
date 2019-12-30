@@ -1,0 +1,37 @@
+######################################################
+######################################################
+
+!!ARBvp1.0 OPTION ARB_position_invariant;
+
+# basic texcoord
+MOV 	result.texcoord[0], vertex.texcoord[0];
+
+END;
+
+######################################################
+######################################################
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+PARAM X1_Y0_Z0 = {1.0, 0.0, 0.0};
+
+TEMP	TC, color, R1, R2, R3;
+#---------------------------------------------------------
+TEX		color, fragment.texcoord[0], texture[0], 2D;
+#---------------------------------------------------------
+
+MUL		TC, color.r, X1_Y0_Z0;
+TEX		R1, TC, texture[1], 2D;
+
+MUL		TC, color.g, X1_Y0_Z0;
+TEX		result.color, TC, texture[1], 2D;
+
+MUL		TC, color.b, X1_Y0_Z0;
+TEX		R2, TC, texture[1], 2D;
+
+MOV		result.color.x, R1.y;
+MOV		result.color.z, R2.y;
+MOV		result.color.w, 1.0;
+
+END;

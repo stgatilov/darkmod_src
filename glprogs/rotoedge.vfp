@@ -1,0 +1,165 @@
+# Rotoscope Shader v1.0 by Hellborg  leif@gravity-music.net
+# 30/7/06
+# Credits:
+# Edge detection algorithm was adopted from sobel filter by John Rittenhouse
+# The steep edge rotoscope effect was inspired by the Black-white shader from
+# XPac_27; SDK changes to render the effect on all guis were originally
+# posted by leahcim.
+
+##############
+# VERTEX SHADER #
+#############
+
+!!ARBvp1.0 OPTION ARB_position_invariant ;
+
+#from sobel filter by John Rittenhouse
+PARAM size = 0.0016;
+MUL	result.texcoord[0], size, program.local[0];
+
+END
+
+#############
+# PIXEL SHADER #
+############
+
+!!ARBfp1.0
+OPTION ARB_precision_hint_fastest;
+TEMP huetemp;
+
+
+#sobel edge filter algorithm by John Rittenhouse
+
+TEMP	R0,R1,R2,R3,R4,R5,R6, XEdge,YEdge,sobel;
+
+PARAM off00 = {-0.5, -0.5, 0, 0 };
+PARAM off01 = {-0.5,  0.0, 0, 0 };
+PARAM off02 = {-0.5,  0.5, 0, 0 };
+PARAM off03 = { 0.5, -0.5, 0, 0 };
+PARAM off04 = { 0.5,  0.0, 0, 0 };
+PARAM off05 = { 0.5,  0.5, 0, 0 };
+PARAM off06 = { 0.0, -0.5, 0, 0 };
+PARAM off07 = { 0.0,  0.5, 0, 0 };
+
+PARAM specExp = { 0.5, 0, 0, 0 };
+
+# calculate the screen texcoord in the 0.0 to 1.0 range
+MUL		R0, fragment.position, program.env[1];
+
+# scale by the screen non-power-of-two-adjust to give us normal screen coords in R0
+MUL		R0, R0, program.env[0];
+
+# Calculate offsets
+MAD		R1, fragment.texcoord[0], off01, R0;
+MAD		R2, fragment.texcoord[0], off04, R0;
+MAD		R3, fragment.texcoord[0], off06, R0;
+MAD		R4, fragment.texcoord[0], off07, R0;
+
+# Look at the values along the center
+TEX		R1, R1, texture[0], 2D;
+TEX		R3, R3, texture[0], 2D;
+TEX		R2, R2, texture[0], 2D;
+TEX		R4, R4, texture[0], 2D;
+
+# Each of them have a scale value of two in
+MOV		XEdge, R1;
+MOV		YEdge, R3;
+ADD		XEdge, XEdge, R1;
+ADD		YEdge, YEdge, R3;
+SUB		XEdge, XEdge, R2;
+SUB		YEdge, YEdge, R4;
+SUB		XEdge, XEdge, R2;
+SUB		YEdge, YEdge, R4;
+
+# Calculate offsets for the corners
+MAD		R1, fragment.texcoord[0], off00, R0;
+MAD		R2, fragment.texcoord[0], off02, R0;
+MAD		R3, fragment.texcoord[0], off03, R0;
+MAD		R4, fragment.texcoord[0], off05, R0;
+
+# Look at the values along the center
+TEX		R1, R1, texture[0], 2D;
+TEX		R2, R2, texture[0], 2D;
+TEX		R3, R3, texture[0], 2D;
+TEX		R4, R4, texture[0], 2D;
+
+ADD		XEdge, XEdge, R1;
+ADD		YEdge, YEdge, R1;
+ADD		XEdge, XEdge, R2;
+SUB		YEdge, YEdge, R2;
+SUB		XEdge, XEdge, R3;
+ADD		YEdge, YEdge, R3;
+SUB		XEdge, XEdge, R4;
+SUB		YEdge, YEdge, R4;
+
+#Square each and add and take the sqrt
+MUL		XEdge, XEdge, XEdge;
+MUL		YEdge, YEdge, YEdge;
+ADD		R1, XEdge, YEdge;
+
+MAX		R1.x, R1.x, R1.y;
+MAX		R1.x, R1.x, R1.z;
+
+###write result from edge detection into sobel variable
+#POW		sobel, R1.x, specExp.x;
+
+MOV         sobel,R1;
+
+###load texture information
+TEX R0, R0, texture[0], 2D;
+
+###normalize the color hue
+
+#calculate [sum RGB]
+ADD huetemp.x, R0.x, R0.y;
+ADD huetemp.x, huetemp.x, R0.z;
+
+#calculate 1/[sum RGB]
+RCP huetemp.y, huetemp.x;
+
+#multiply pixel color with 1/[sum RGB]
+MUL R0, R0, huetemp.y;
+
+###calculate the pixel intensity
+
+# make everything with [sum RGB] <.2 black
+
+# define darktones ([sum RGB] >.2) and store in channel z
+SGE huetemp.z, huetemp.x, .2;
+# darktones will be normalized HUE * 0.5
+MUL huetemp.z, huetemp.z, 0.5;
+
+# define midtones ([sum RGB] >.8) and store in channel y
+SGE huetemp.y, huetemp.x, 0.8;
+# midtones will be normalized HUE * (0.5+0.5)
+MUL huetemp.y, huetemp.y, 0.5;
+
+# define brighttones ([sum RGB] >1.5) and store in channel x
+SGE huetemp.x, huetemp.x, 1.5;
+# brighttones will be normalized HUE * (0.5+0.5+1.5)
+MUL huetemp.x, huetemp.x, 1.5;
+
+# sum darktones+midtones+brighttones to calculate final pixel intensity
+ADD huetemp.x, huetemp.x, huetemp.y;
+ADD huetemp.x, huetemp.x, huetemp.z;
+
+#multiply pixel color with rotoscope intensity
+MUL R0, R0, huetemp.x;
+
+#generate edge mask -> make 1 for all regions not belonging to an edge
+#use 0.8 as threshold for edge detection
+SLT sobel.x, sobel.x, 0.1;
+
+#blend white into edge artifacts (occuring in bright areas)
+#find pixels with intensity>2
+SGE sobel.y, huetemp.x, 2;
+#set the edge mask to 1 in such areas
+MAX sobel.x, sobel.x, sobel.y;
+
+#multiply cleaned up edge mask with final color image
+MUL R0, R0, sobel.x;
+
+#transfer image to output
+MOV result.color, R0;
+#MOV result.color, sobel.x;
+
+END

@@ -1,0 +1,53 @@
+# Fresnel shader written by inolen 2005
+# http://www.inolen.com
+
+#################
+# vertex shader #
+#################
+
+!!ARBvp1.0
+OPTION ARB_position_invariant;
+
+TEMP R1, R2, R3, R4;
+
+SUB R1, program.env[5], vertex.position;
+DP3 R2, R1, R1;
+RSQ R2, R2.x;
+MUL R1, R1, R2.x;
+
+DP3 R2, R1, vertex.normal;
+
+SUB R3, 1.0, R2;
+
+MUL R4, R3, R3;
+
+MUL R4, R4, R3;
+
+MUL R4, R4, R3;
+
+MUL R4, R4, R3;
+
+SUB R3, 1.0, program.local[0];
+
+MAD result.texcoord[2].x, R4, R3, program.local[0];
+
+END
+
+################
+# pixel shader #
+################
+
+!!ARBfp1.0
+OPTION ARB_precision_hint_fastest;
+
+TEMP A, C;
+
+MUL A, fragment.position, program.env[1];
+
+TEX C, A, texture[0], 2D;
+
+MOV result.color, C;
+
+MOV result.color.a, fragment.texcoord[2].x;
+
+END

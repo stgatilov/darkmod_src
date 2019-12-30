@@ -1,0 +1,53 @@
+!!ARBvp1.0 OPTION ARB_position_invariant ;
+
+# env[5] is the eye position in local coordinates
+# env[16-17] control if color is by vertex or global
+
+#MOV	result.texcoord[0], vertex.normal;
+MOV	result.texcoord[0], vertex.attrib[2];
+SUB	result.texcoord[1], program.env[5], vertex.position;
+
+MOV	result.color, vertex.color;
+#MAD	result.color, vertex.color, program.env[16], program.env[17];
+
+END
+
+#==========================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+# per-pixel cubic reflextion map calculation
+
+# texture 0 is the cube map
+# texCord[0] is the surface normal
+# texCord[1] is toEye, the eye XYZ - the surface XYZ
+
+TEMP	toEye, normal, R0;
+
+PARAM	scaleTwo = { 2, 2, 2, 2 };
+
+# normalize surface normal
+DP3	R0, fragment.texcoord[0], fragment.texcoord[0];
+RSQ	R0, R0.x;
+MUL	normal, fragment.texcoord[0], R0;
+
+# normalize vector to eye
+DP3	R0, fragment.texcoord[1], fragment.texcoord[1];
+RSQ	R0, R0.x;
+MUL	toEye, fragment.texcoord[1], R0;
+
+# calculate reflection vector
+DP3 	R0, toEye, normal;
+MUL	R0, R0, normal;
+MAD	R0, R0, scaleTwo, -toEye;
+
+TEX	R0, R0, texture[0], CUBE;
+
+# this should be better on future hardware, but current drivers make it slower
+#MUL	result.color.xyz, R0, fragment.color;
+
+MUL	result.color, R0, fragment.color;
+#MOV	result.color, fragment.texcoord[1];
+
+END

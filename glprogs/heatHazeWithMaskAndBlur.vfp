@@ -1,0 +1,137 @@
+
+!!ARBvp1.0 OPTION ARB_position_invariant ;
+
+# input:
+# 
+# attrib[8] (former texcoord[0]) TEX0 texcoords
+#
+# local[0]	scroll
+# local[1]	deform magnitude (1.0 is reasonable, 2.0 is twice as wavy, 0.5 is half as wavy, etc)
+#
+# output:
+# 
+# texture 0 is _currentRender
+# texture 1 is a normal map that we will use to deform texture 0
+#
+# texCoord[0] is the model surface texture coords unmodified for the mask
+# texCoord[1] is the model surface texture coords with a scroll
+# texCoord[2] is the copied deform magnitude
+
+TEMP	R0, R1, R2;
+
+# texture 0 takes the texture coordinates unmodified
+MOV		result.texcoord[0], vertex.attrib[8];
+
+# texture 1 takes the texture coordinates and adds a scroll
+ADD		result.texcoord[1], vertex.attrib[8], program.local[0];
+
+# texture 2 takes the deform magnitude and scales it by the projection distance
+PARAM	vec = { 1, 0, 0, 1 };
+
+MOV		R0, vec;
+DP4		R0.z, vertex.position, state.matrix.modelview.row[2];
+
+DP4		R1, R0, state.matrix.projection.row[0];
+DP4		R2, R0, state.matrix.projection.row[3];
+
+# don't let the recip get near zero for polygons that cross the view plane
+MAX		R2, R2, 1;
+
+RCP		R2, R2.w;
+MUL		R1, R1, R2;
+
+# clamp the distance so the the deformations don't get too wacky near the view
+MIN		R1, R1, 0.02;
+
+MUL		result.texcoord[2], R1, program.local[1];
+
+END
+
+#======================================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+# texture 0 is _currentRender
+# texture 1 is a normal map that we will use to deform texture 0
+# texture 2 is a mask texture
+#
+# env[0] is the 1.0 to _currentRender conversion
+# env[1] is the fragment.position to 0.0 - 1.0 conversion
+
+TEMP	localNormal, mask, pos0, pos1, pos2, pos3, pos4;
+TEMP	coord0, coord1, coord2, coord3, coord4;
+TEMP	input0, input1, input2, input3, input4;
+
+PARAM	subOne = { -1, -1, -1, -1 };
+PARAM	scaleTwo = { 2, 2, 2, 2 };
+
+# load the distortion map
+TEX		mask, fragment.texcoord[0], texture[2], 2D;
+
+# kill the pixel if the distortion wound up being very small
+SUB		mask.xy, mask, 0.01;
+KIL		mask;
+
+# load the filtered normal map and convert to -1 to 1 range
+TEX		localNormal, fragment.texcoord[1], texture[1], 2D;
+MOV		localNormal.x, localNormal.a;
+MAD		localNormal, localNormal, scaleTwo, subOne;
+MUL		localNormal, localNormal, mask;
+
+# calculate the screen texcoord in the 0.0 to 1.0 range
+
+# greebo: Initialise the positions
+MOV pos0, fragment.position;
+MOV pos1, pos0;
+MOV pos2, pos0;
+MOV pos3, pos0;
+MOV pos4, pos0;
+
+# greebo: Offset the positions by a certain amount to the left/right/top/bottom
+ADD pos1.y, pos1.y, -3;
+ADD pos2.x, pos2.x, 3;
+ADD pos3.y, pos3.y, 4;
+ADD pos4.x, pos4.x, -5;
+
+# convert pixel's screen position to a fraction of the screen width & height
+# fraction will be between 0.0 and 1.0.
+# result is stored in temp1.
+MUL  coord0, pos0, program.env[1];
+MUL  coord1, pos1, program.env[1];
+MUL  coord2, pos2, program.env[1];
+MUL  coord3, pos3, program.env[1];
+MUL  coord4, pos4, program.env[1];
+
+# scale by the screen non-power-of-two-adjust
+MUL		coord0, coord0, program.env[0];
+MUL		coord1, coord1, program.env[0];
+MUL		coord2, coord2, program.env[0];
+MUL		coord3, coord3, program.env[0];
+MUL		coord4, coord4, program.env[0];
+
+# offset by the scaled localNormal and clamp it to 0.0 - 1.0
+MAD_SAT	coord0, localNormal, fragment.texcoord[2], coord0;
+MAD_SAT	coord1, localNormal, fragment.texcoord[2], coord1;
+MAD_SAT	coord2, localNormal, fragment.texcoord[2], coord2;
+MAD_SAT	coord3, localNormal, fragment.texcoord[2], coord3;
+MAD_SAT	coord4, localNormal, fragment.texcoord[2], coord4;
+
+# load the screen render
+TEX		input0, coord0, texture[0], 2D;
+TEX		input1, coord1, texture[0], 2D;
+TEX		input2, coord2, texture[0], 2D;
+TEX		input3, coord3, texture[0], 2D;
+TEX		input4, coord4, texture[0], 2D;
+
+# greebo: Average the values and pump it into the fragment's color
+ADD input0, input0, input1;
+ADD input0, input0, input2;
+ADD input0, input0, input3;
+ADD input0, input0, input4;
+MUL input0, input0, 0.2;
+
+MOV		result.color.xyz, input0;
+
+END
+

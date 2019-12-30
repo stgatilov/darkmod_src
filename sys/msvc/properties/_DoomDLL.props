@@ -28,5 +28,12 @@
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
+    <PostBuildEvent>
+      <Command>robocopy $(SolutionDir)glprogs $(OutDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy glprogs (shaders)</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>

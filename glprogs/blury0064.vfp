@@ -1,0 +1,60 @@
+!!ARBvp1.0 OPTION ARB_position_invariant;
+
+MOV result.texcoord[0], vertex.texcoord[0];
+
+END
+
+!!ARBfp1.0 OPTION ARB_precision_hint_fastest;
+
+# gaussian distribution in 1D, standard deviation of 3
+PARAM x0 = 0.132981;
+PARAM x1 = 0.125794;
+PARAM x2 = 0.106483;
+PARAM x3 = 0.080657;
+PARAM x4 = 0.054670;
+
+# pixel locations, assuming texture height of 64
+PARAM c0 = {0, 0, 0, 0};
+PARAM c1 = {0, 0.015625, 0, 0};
+PARAM c2 = {0, 0.03125, 0, 0};
+PARAM c3 = {0, 0.046875, 0, 0};
+PARAM c4 = {0, 0.0625, 0, 0};
+
+TEMP color0, color1, color2, color3, color4, final;
+
+MOV color0, fragment.texcoord[0];
+ADD color1, color0, c1;
+ADD color2, color0, c2;
+ADD color3, color0, c3;
+ADD color4, color0, c4;
+
+TEX color1, color1, texture[0], 2D;
+TEX color2, color2, texture[0], 2D;
+TEX color3, color3, texture[0], 2D;
+TEX color4, color4, texture[0], 2D;
+
+MUL final, color1, x1;
+MAD final, color2, x2, final;
+MAD final, color3, x3, final;
+MAD final, color4, x4, final;
+
+SUB color1, color0, c1;
+SUB color2, color0, c2;
+SUB color3, color0, c3;
+SUB color4, color0, c4;
+
+TEX color0, color0, texture[0], 2D;
+TEX color1, color1, texture[0], 2D;
+TEX color2, color2, texture[0], 2D;
+TEX color3, color3, texture[0], 2D;
+TEX color4, color4, texture[0], 2D;
+
+MAD final, color0, x0, final;
+MAD final, color1, x1, final;
+MAD final, color2, x2, final;
+MAD final, color3, x3, final;
+MAD final, color4, x4, final;
+
+MOV result.color, final;
+
+END

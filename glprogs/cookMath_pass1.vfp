@@ -1,0 +1,62 @@
+######################################################
+######################################################
+
+!!ARBvp1.0 OPTION ARB_position_invariant;
+#---------------------------------------------------------
+#	CookMath0.vfp
+#	Author:		JC Denton
+#	Cooks Following Data to a Texture. 
+#	Red		- Final Scene Pass Calculations
+#---------------------------------------------------------
+# basic texcoord
+MOV 	result.texcoord[0], vertex.texcoord[0];
+
+#Store Parameters sent to this shader to Result.
+MOV 	result.texcoord[1], program.local[0];
+
+END;
+
+######################################################
+######################################################
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+#------------------------------------------
+TEMP	 TC, R1, R2;
+TEMP	 colorCurveBias, gamma, sceneExposure, color;
+
+PARAM	R1_G0_B0 = { 1, 0, 0 };
+
+MOV		TC, fragment.texcoord[0];
+
+#------------------------------------------
+#	Variables for Cooking: X = scene color texture, Y = None.
+#------------------------------------------
+MOV		color,		TC.x;
+
+#------------------------------------------
+#	Rest of the parameters are constant.
+#------------------------------------------
+MOV		R1, fragment.texcoord[1];
+
+MOV		colorCurveBias,			R1.x; 
+MOV		gamma,					R1.y;
+MOV		sceneExposure,			R1.z;
+#------------------------------------------
+MUL		color, color, sceneExposure;
+
+POW		color.x, color.x, gamma.x;
+#---------------------------------------------------------
+#	Apply Smooth Exponential color falloff on cooked data of pass 1
+#---------------------------------------------------------
+MUL		R1.x, color.x, color.x;
+MUL		R1.x, R1.x, -3.0;
+POW		R1.x, 2.718282.x, R1.x;
+SUB		R1.x, 1, R1.x;
+LRP		color.x, colorCurveBias, R1.x, color.x;
+#---------------------------------------------------------
+
+MUL		result.color,  color, R1_G0_B0;
+
+END;

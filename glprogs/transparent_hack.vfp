@@ -1,0 +1,38 @@
+!!ARBvp1.0 OPTION ARB_position_invariant ;
+
+# input:
+# 
+# texcoord[0] TEX0	texcoords
+#
+# output:
+# 
+# texture 0 is _currentRender
+#
+# texCoord[2] is the copied deform magnitude
+
+TEMP	R0, R1;
+MUL		result.texcoord[2], R1, 1.0;
+END
+
+#======================================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+# texture 0 is _currentRender
+#
+# env[0] is the 1.0 to _currentRender conversion
+# env[1] is the fragment.position to 0.0 - 1.0 conversion
+
+TEMP	R0;
+
+# calculate the screen texcoord in the 0.0 to 1.0 range
+MUL		R0, fragment.position, program.env[1];
+
+# scale by the screen non-power-of-two-adjust
+MUL		R0, R0, program.env[0];
+
+# load the screen render
+TEX		result.color.xyz, R0, texture[0], 2D;
+
+END

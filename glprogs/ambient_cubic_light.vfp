@@ -1,0 +1,294 @@
+###==============================================================================
+#	Doom 3 Interaction Vertex/Fragment Program 
+#
+#	Blinn-Phong Lighting Model (Isotropic)
+###==============================================================================
+#
+# --------------------------------------
+# input:
+# 
+# attrib[8]		= texture coordinates
+# attrib[9]		= global tangent
+# attrib[10]	= global bitangent
+# attrib[11]	= global normal
+#
+# env[0]  		= diffuse modifier
+# env[1]  		= specular modifier
+# env[2]  		= ?
+# env[3]  		= ?
+# env[4]  		= localLightOrigin
+# env[5]		= localViewOrigin
+# env[6]		= lightProjection S
+# env[7]		= lightProjection T
+# env[8]		= lightProjection Q
+# env[9]		= lightFalloff S
+# env[10]		= bumpMatrix S
+# env[11]		= bumpMatrix T
+# env[12]		= diffuseMatrix S
+# env[13]		= diffuseMatrix T
+# env[14]		= specularMatrix S
+# env[15]		= specularMatrix T
+# env[16]		= vertex color modulate
+# env[17]		= vertex color add
+#
+#--------------------------------------
+# output:
+# 
+# texture 0		= normalization cube map
+# texture 1		= per-surface normal map
+# texture 2		= 1D light falloff texture
+# texture 3		= 2D light projection texture
+# texture 4		= per-surface diffuse map
+# texture 5		= per-surface specular map
+# texture 6		= specular lookup table
+#
+#--------------------------------------
+###==============================================================================
+
+!!ARBvp1.0
+OPTION ARB_position_invariant;
+
+# Instruction Count: 25
+
+PARAM	defaultTexCoord = { 0.0, 0.5, 0.0, 1.0 };
+
+TEMP	R0;
+
+# world space light vector
+ADD		R0, program.env[4], -vertex.position;
+
+# put into texture space for TEX0
+DP3		result.texcoord[0].x, vertex.attrib[9], R0;
+DP3		result.texcoord[0].y, vertex.attrib[10], R0;
+DP3		result.texcoord[0].z, vertex.attrib[11], R0;
+
+# texture 1 takes the base coordinates by the texture matrix
+MOV		result.texcoord[1], defaultTexCoord;
+DP4 	result.texcoord[1].x, vertex.attrib[8], program.env[10];
+DP4 	result.texcoord[1].y, vertex.attrib[8], program.env[11];
+
+# texture 2 has three texgens (cubemap projection)
+DP4		result.texcoord[2].x, vertex.position, program.env[6];
+DP4		result.texcoord[2].y, vertex.position, program.env[7];
+DP4		result.texcoord[2].z, vertex.position, program.env[9];
+DP4		result.texcoord[2].w, vertex.position, program.env[8];
+
+# tangent space -> world space conversion matrix
+DP3		result.texcoord[3].x, vertex.attrib[9], program.env[6];
+DP3		result.texcoord[3].y, vertex.attrib[10], program.env[6];
+DP3		result.texcoord[3].z, vertex.attrib[11], program.env[6];
+
+DP3		result.texcoord[4].x, vertex.attrib[9], program.env[7];
+DP3		result.texcoord[4].y, vertex.attrib[10], program.env[7];
+DP3		result.texcoord[4].z, vertex.attrib[11], program.env[7];
+
+DP3		result.texcoord[5].x, vertex.attrib[9], program.env[9];
+DP3		result.texcoord[5].y, vertex.attrib[10], program.env[9];
+DP3		result.texcoord[5].z, vertex.attrib[11], program.env[9];
+
+# world space view vector
+ADD		R0, program.env[5], -vertex.position;
+
+# put into texture space for TEX6
+DP3		result.texcoord[6].x, vertex.attrib[9], R0;
+DP3		result.texcoord[6].y, vertex.attrib[10], R0;
+DP3		result.texcoord[6].z, vertex.attrib[11], R0;
+
+# move world space view vector to TEX7
+DP3		result.texcoord[7].x, vertex.attrib[9], program.env[21];
+DP3		result.texcoord[7].y, vertex.attrib[10], program.env[21];
+DP3		result.texcoord[7].z, vertex.attrib[11], program.env[21];
+MOV		result.texcoord[7], R0;
+
+# generate the vertex color, which can be 1.0, color, or 1.0 - color
+# for 1.0 			: env[16] =  0.0, env[17] = 1.0
+# for color			: env[16] =  1.0, env[17] = 0.0
+# for 1.0 - color	: env[16] = -1.0, env[17] = 1.0
+MAD		result.color, vertex.color, program.env[16], program.env[17];
+
+END
+
+#==================================================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+# Instruction Count: ALU: 56 TEX: 6 Total: 88
+
+OUTPUT 	oColor 		= result.color;
+ATTRIB 	vColor 		= fragment.color;
+
+ATTRIB 	lightVecTS 	= fragment.texcoord[0];
+ATTRIB 	defaultTC	= fragment.texcoord[1];
+ATTRIB 	lightProjTC = fragment.texcoord[2];
+ATTRIB 	tangent 	= fragment.texcoord[3];
+ATTRIB 	bitangent 	= fragment.texcoord[4];
+ATTRIB 	normal 		= fragment.texcoord[5];
+ATTRIB 	viewVecTS 	= fragment.texcoord[6];
+ATTRIB 	viewVecWS	= fragment.texcoord[7];
+
+PARAM 	lightColor 	= program.env[0];
+PARAM 	specColor 	= program.env[1];
+
+PARAM	subOne		= { -1.4, -1.4, -1.0, -1.0 };
+PARAM	scaleTwo	= {  2.8,  2.8,  2.0,  2.0 };
+
+PARAM	const		= { 1.0,  2.0,  4.0,  5.0  };
+
+PARAM   lightParms	= { .7, 1.8, 4.0, 20.0 };
+PARAM	colSky		= { .88, .88, .88, 1.0 };
+PARAM	colGround	= { .35, .32, .32, 1.0 };
+
+PARAM   M_inv8PI = 0.039788735772973833942220940843129;
+
+TEMP	lightVec, viewVec, normalVec, halfVec, reflectVec, wViewVec, wNormalVec; 
+TEMP	diffuse, specular, gloss, color, ambient, rough, fresnel; 
+TEMP	light, atten, pos, lightCube, lightProj;
+TEMP	NdotL, NdotV, NdotH, VdotL;
+TEMP	R1, R2;
+TEMP 	C1, C2, C3;
+
+# calculate point light tc
+MAD 	R1.xyz, lightProjTC, 2.0, -1.0;
+
+# calculate projected light tc
+MOV 	R2, lightProjTC;
+MOV 	R2.z, -1.0;
+RCP 	R2.w, lightProjTC.w;
+MUL 	R2.xy, R2, R2.w;
+MAD 	R2.xy, R2, 2.0, -1.0;
+
+# sample projection cube map
+TEX 	lightCube, R1, texture[3], CUBE;
+TEX 	lightProj, R2, texture[3], CUBE;
+
+# calculate attenuation (x = point, y = projected)
+DP3 	R1.x, R1, R1;
+POW 	R1.x, R1.x, 0.5.x;
+MOV		R1.y, lightProjTC.z;
+ADD_SAT R1.xy, 1.0, -R1;
+MUL 	R1.xy, R1, R1;
+MUL 	lightCube, lightCube, R1.x;
+MUL 	lightProj, lightProj, R1.y;
+
+# if w > 1.0, light = projected, else light = point
+SLT 	R1.w, 1.0, lightProjTC.w;
+CMP 	atten, -R1.w, lightProj, lightCube;
+
+# early out
+# DP3 	atten.w, atten, atten;
+# SLT 	atten.w, atten.w, 0.00001;
+MOV 	atten.w, R1.x;
+
+# load texture maps
+TEX 	ambient, lightProjTC, texture[3], CUBE;
+TEX 	normalVec, defaultTC, texture[1], 2D;
+TEX		diffuse, defaultTC, texture[4], 2D;
+TEX		gloss, defaultTC, texture[5], 2D;
+SUB		specular, specColor, 0.001;  # See if there's a specular map for this material
+CMP		gloss, specular, .026, gloss;		#  If not then give a constant artifical value as spec.
+
+# normalize world space light vector
+DP3 	lightVec.w, lightVecTS, lightVecTS;
+RSQ 	lightVec.w, lightVec.w;
+MUL 	lightVec.xyz, lightVecTS, lightVec.w;
+
+# normalize tangent space view vector
+DP3 	viewVec.w, viewVecTS, viewVecTS;
+RSQ 	viewVec.w, viewVec.w;
+MUL 	viewVec.xyz, viewVecTS, viewVec.w;
+
+# normalize world space view vector
+DP3 	wViewVec.w, viewVecWS, viewVecWS;
+RSQ 	wViewVec.w, wViewVec.w;
+MUL 	wViewVec.xyz, viewVecWS, wViewVec.w;
+
+# calculate the half angle vector and normalize
+ADD 	halfVec, lightVec, viewVec;
+DP3 	halfVec.w, halfVec, halfVec;
+RSQ 	halfVec.w, halfVec.w;
+MUL 	halfVec.xyz, halfVec, halfVec.w;
+
+# scale tangent space normal vector to -1.0<->1.0 range
+MAD		normalVec.xyz, normalVec.wyzx, scaleTwo, subOne;
+
+# transform tangent space normal vector into world space
+DP3		wNormalVec.x, normalVec, tangent;
+DP3		wNormalVec.y, normalVec, bitangent;
+DP3		wNormalVec.z, normalVec, normal;
+
+# normalize tangent space normal vector
+DP3 	normalVec.w, normalVec, normalVec;
+RSQ 	normalVec.w, normalVec.w;
+MUL 	normalVec.xyz, normalVec, normalVec.w;
+
+# normalize world space normal vector
+DP3 	wNormalVec.w, wNormalVec, wNormalVec;
+RSQ 	wNormalVec.w, wNormalVec.w;
+MUL 	wNormalVec.xyz, wNormalVec, wNormalVec.w;
+
+# calculate vector dot products
+DP3_SAT NdotL.x, normalVec, lightVec;
+DP3_SAT NdotV.x, normalVec, viewVec;
+DP3 	NdotV.y, wNormalVec, wViewVec;
+DP3_SAT NdotH.x, normalVec, halfVec;
+
+# calculate ambient diffuse term
+MUL 	R1, wNormalVec, wNormalVec;
+CMP 	C1, wNormalVec.x, { -1.0,  0.0,  0.0 }, { 1.0, 0.0, 0.0 };
+CMP 	C2, wNormalVec.y, {  0.0, -1.0,  0.0 }, { 0.0, 1.0, 0.0 };
+CMP 	C3, wNormalVec.z, {  0.0,  0.0, -1.0 }, { 0.0, 0.0, 1.0 };
+TEX 	C1, C1, texture[3], CUBE;
+TEX 	C2, C2, texture[3], CUBE;
+TEX 	C3, C3, texture[3], CUBE;
+
+MUL 	ambient.xyz, C1, R1.x;
+MAD 	ambient.xyz, C2, R1.y, ambient;
+MAD 	ambient.xyz, C3, R1.z, ambient;
+# TEX 	ambient.xyz, wNormalVec, texture[3], CUBE;
+
+MUL 	diffuse.xyz, diffuse, lightColor;
+MUL		diffuse, diffuse, 0.15;
+
+# calculate ambient specular term
+MUL 	reflectVec, NdotV.y, wNormalVec;
+MAD 	reflectVec.xyz, reflectVec, const.y, -wViewVec;
+ADD 	reflectVec.w, 1.75, -NdotV.y;
+TEX 	specular, reflectVec, texture[3], CUBE;
+
+POW 	specular.x, specular.x, gloss.a;
+POW 	specular.y, specular.y, gloss.a;
+POW 	specular.z, specular.z, gloss.a;
+MUL 	specular, specular, reflectVec.w;
+MUL		specular, specular, 0.75;
+
+
+# calculate directional specular term
+POW_SAT specular.w, NdotH.x, 64.0.x;
+
+SLT 	ambient.w, ambient.w, const.x;
+CMP_SAT light, -ambient.w, NdotL.x, ambient;
+CMP 	specular, -ambient.w, specular.w, specular;
+CMP_SAT atten, -ambient.w, atten, atten.w;
+
+# combine diffuse and specular terms
+ADD 	gloss, gloss, gloss;
+POW 	diffuse.x, diffuse.x, 2.2.x;
+POW 	diffuse.y, diffuse.y, 2.2.x;
+POW 	diffuse.z, diffuse.z, 2.2.x;
+MUL 	diffuse, diffuse, lightColor;
+MUL 	specular, specular, specColor;
+MUL		specular, specular, 0.7;
+MAD 	color, specular, gloss, diffuse;
+
+# modulate by light & attenuation
+MUL		color, color, light;
+MUL 	color, color, atten;
+POW 	color.x, color.x, 0.45454545454545454545454545454545.x;
+POW 	color.y, color.y, 0.45454545454545454545454545454545.x;
+POW 	color.z, color.z, 0.45454545454545454545454545454545.x;
+
+# modify by the vertex color
+MUL 	oColor.xyz, color, vColor;
+
+END

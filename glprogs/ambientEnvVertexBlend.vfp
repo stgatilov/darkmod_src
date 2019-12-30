@@ -1,0 +1,217 @@
+!!ARBvp1.0 OPTION ARB_position_invariant ;
+
+# input:
+# 
+# attrib[8] (former texcoord[0]) TEX0	texcoords
+# attrib[9] TEX1	tangent[0]
+# attrib[10] TEX2	tangent[1]
+# attrib[2] TEX3	normal
+#
+# c[5]	localViewOrigin
+# c[6]	modelMatrix[0]
+# c[7]	modelMatrix[1]
+# c[8]	modelMatrix[2]
+# 
+# output:
+# 
+# texture 0 is the environment cube map
+# texture 1 is the normal map 1
+# texture 2 is the diffuse map 1
+# texture 3 is the specular map 1
+# texture 4 is the normal map 2
+# texture 5 is the diffuse map 2
+# texture 6 is the specular map 2
+#
+# texCoord[0] is the normal map texcoord
+# texCoord[1] is the vector to the eye in global space
+# texCoord[2] is the surface tangent to global coordiantes
+# texCoord[3] is the surface bitangent to global coordiantes
+# texCoord[4] is the surface normal to global coordiantes
+
+TEMP	R0, R1, R2;
+
+PARAM	defaultTexCoord = { 1.0, 1.0, 1.0, 1.0 };
+
+# texcoord 0 takes the scaled texture coordinates for diffusemap1 and bumpmap1 respectively.
+MUL	result.texcoord[0].xy, vertex.attrib[8], program.local[0];
+MUL	result.texcoord[0].zw, vertex.attrib[8].xxxy, program.local[0];
+
+# texcoord 6 takes the scaled texture coordinates for specularmap1 and diffusemap2 .
+MUL	result.texcoord[6].xy, vertex.attrib[8], program.local[1];
+MUL	result.texcoord[6].zw, vertex.attrib[8].xxxy, program.local[1];
+
+# texcoord 7 takes the scaled texture coordinates for bumpmap2 and specularmap2 respectively.
+MUL	result.texcoord[7].xy, vertex.attrib[8], program.local[2];
+MUL	result.texcoord[7].zw, vertex.attrib[8].xxxy, program.local[2];
+
+#texCoord 5 gets ambient light color.
+MOV	result.texcoord[5], program.local[3];
+
+# texture 1 is the vector to the eye in global coordinates
+SUB	R0, program.env[5], vertex.position;
+DP3	result.texcoord[1].x, R0, program.env[6];
+DP3	result.texcoord[1].y, R0, program.env[7];
+DP3	result.texcoord[1].z, R0, program.env[8];
+
+# texture 2 gets the transformed tangent
+DP3	result.texcoord[2].x, vertex.attrib[9], program.env[6];
+DP3	result.texcoord[3].x, vertex.attrib[9], program.env[7];
+DP3	result.texcoord[4].x, vertex.attrib[9], program.env[8];
+
+# texture 3 gets the transformed tangent
+DP3	result.texcoord[2].y, vertex.attrib[10], program.env[6];
+DP3	result.texcoord[3].y, vertex.attrib[10], program.env[7];
+DP3	result.texcoord[4].y, vertex.attrib[10], program.env[8];
+
+# texture 4 gets the transformed tangent
+DP3	result.texcoord[2].z, vertex.normal, program.env[6];
+DP3	result.texcoord[3].z, vertex.normal, program.env[7];
+DP3	result.texcoord[4].z, vertex.normal, program.env[8];
+
+#Send vertex color down to fragment pass.
+#MOV	result.color, vertex.color;
+MAD	result.color, vertex.color, program.env[16], program.env[17];
+
+END
+
+#==================================================================================
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+# per-pixel cubic reflextion map calculation
+
+# texture 0 is the environment cube map
+# texture 1 is the normal map
+#
+# texCoord[0] is the normal map texcoord
+# texCoord[1] is the vector to the eye in global space
+# texCoord[3] is the surface tangent to global coordiantes
+# texCoord[4] is the surface bitangent to global coordiantes
+# texCoord[5] is the surface normal to global coordiantes
+
+TEMP	globalEye, localNormal, globalNormal, R0, R1, R2, ambientContrib;
+TEMP	colDiffuse, colSpecular, fresnelFactor, globalSkyDir1, globalSkyDir2;
+
+PARAM	subOne				= { -1.4, -1.4, -1, -1 };
+PARAM	scaleTwo			= { 2.8, 2.8, 2, 2 };
+
+# Respectively : Ambient Rim Scale, Ambient constant Reflection Factor, Ambient Rim Reflection Scale; 
+PARAM	rimStrength		= {1.0, .1, 2.0 };	# rim strength was 1.4
+
+#  Respectively : unused, Ambient Reflection Scale
+PARAM	ambientParms	= {0., 55, 0.0 };
+
+PARAM	texCoord	= {.1, .1, 0.0, 0.0 };
+
+PARAM	dirFromSky		= { .0, 0.0, 1.0 };
+
+
+PARAM	colGround				= { .44, .4, .4, 1.0 };    
+PARAM	colSky					= { 1.0, 1.0, 1.05, 1.0 };  
+
+
+# Load the filtered normal map1
+TEX	localNormal, fragment.texcoord[0].zwxx, texture[1], 2D;
+MOV	localNormal.x, localNormal.a;				# rxgb normal compression
+MAD	localNormal, localNormal, scaleTwo, subOne;
+
+# Load the filtered normal map2
+TEX	R1, fragment.texcoord[7].xyxx, texture[4], 2D;
+MOV	R1.x, localNormal.a;				# rxgb normal compression
+MAD	R1, R1, scaleTwo, subOne;
+
+# perform vertex blend
+LRP	localNormal, fragment.color, localNormal, R1;
+
+# Renormalize the blended normal map
+DP3	R1, localNormal,localNormal;
+RSQ	R1, R1.x;
+MUL	localNormal.xyz, localNormal, R1;
+
+#  Load Diffuse maps
+TEX	colDiffuse, fragment.texcoord[0].xyxx, texture[2], 2D;
+TEX	R1, fragment.texcoord[6].zwxx, texture[5], 2D;
+
+# perform vertex blend
+LRP	colDiffuse, fragment.color, colDiffuse, R1;
+
+# Load Specular maps
+TEX	colSpecular, fragment.texcoord[6].xyxx, texture[3], 2D;
+TEX	R1, fragment.texcoord[7].zwxx, texture[6], 2D;
+
+# perform vertex blend
+LRP	colSpecular, fragment.color, colSpecular, R1;
+
+
+SUB	R1, 1, colDiffuse;
+MAD	colSpecular, R1, 0.17, colSpecular;			#  Add a constast value to specular.
+
+
+
+# transform the surface normal by the local tangent space 
+DP3	globalNormal.x, localNormal, fragment.texcoord[2];
+DP3	globalNormal.y, localNormal, fragment.texcoord[3];
+DP3	globalNormal.z, localNormal, fragment.texcoord[4];
+
+
+# normalize vector to eye
+DP3	R0, fragment.texcoord[1], fragment.texcoord[1];
+RSQ	R0, R0.x;
+MUL	globalEye, fragment.texcoord[1], R0;
+
+# calculate reflection vector
+DP3	R0, globalEye, globalNormal;
+#-----------------------------------------
+#		Calculate fresnel reflectance.
+#-----------------------------------------
+SUB_SAT	fresnelFactor.x, 1, R0.x;
+MUL	fresnelFactor.x, fresnelFactor.x, fresnelFactor.x;
+MUL	fresnelFactor.x, fresnelFactor.x, fresnelFactor.x;
+#-----------------------------------------
+
+MUL	R0, R0, globalNormal;
+MAD	R0, R0, 2.0, -globalEye;
+
+# read the environment map with the reflection vector
+TEX	R0, R0, texture[0], CUBE;
+
+#---------------------------------------------------------
+# Calculate Hemispheric Ambient Lighting 
+#---------------------------------------------------------
+DP3	ambientContrib, globalNormal, dirFromSky;
+MAD	ambientContrib, ambientContrib, 0.5, 0.5;	
+LRP	ambientContrib, ambientContrib, colSky, colGround;
+
+
+# Modulate with ambient rim scale
+MUL	R1.x, fresnelFactor.x, rimStrength.x;	
+MAD	R2, colSpecular, .6, .4;
+MUL	R1, R1.x, R2;
+
+# Multiply with ambient reflection rim factor and add constant reflection factor
+MAD	fresnelFactor.x, fresnelFactor.x, rimStrength.z, rimStrength.y;	
+
+MAD	ambientContrib, ambientContrib, R1, ambientContrib; 
+
+MUL	colSpecular, colSpecular, colDiffuse;
+MUL	R1,	colSpecular, fresnelFactor.xxxx; 
+MIN	R1, 0.04, R1;
+MUL	R1,	R1, R0;
+MUL	R1,	R1, ambientParms.y;				#modulate reflection by by ambient reflection scale
+MAD	R0, ambientContrib, colDiffuse, R1;			#modulate by diffuse and add reflection 
+MUL	result.color.xyz, R0,  fragment.texcoord[5];
+
+
+#---------------------------------------------------------
+# Tone Map to convert HDR values to range 0.0 - 1.0
+#---------------------------------------------------------
+#ADD		R1, 1.0, R0;
+#RCP		R1.x, R1.x;
+#RCP		R1.y, R1.y;
+#RCP		R1.z, R1.z;
+#---------------------------------------------------------
+
+#MUL		result.color.xyz, R0, R1;
+
+END

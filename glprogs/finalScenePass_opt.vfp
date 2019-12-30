@@ -1,0 +1,53 @@
+######################################################
+######################################################
+
+!!ARBvp1.0 OPTION ARB_position_invariant;
+
+# basic texcoord
+MOV 	result.texcoord[0], vertex.texcoord[0];
+
+# copy shader parameters to texcoord 1
+MOV 	result.texcoord[1], program.local[0];
+
+END;
+
+######################################################
+######################################################
+
+!!ARBfp1.0 
+OPTION ARB_precision_hint_fastest;
+
+#------------------------------------------
+PARAM X1_Y0_Z0 = {1.0, 0.0, 0.0};
+PARAM lum_vec = { 0.2125, 0.7154, 0.0721 };
+#------------------------------------------
+TEMP	TC, color, R1, R2, R3, bloom;
+
+MOV		TC, fragment.texcoord[0];
+
+TEX		color,		TC, texture[0], 2D;
+TEX		bloom,		TC, texture[1], 2D;
+
+
+MUL		TC, color.r, X1_Y0_Z0;
+TEX		R1, TC, texture[2], 2D;
+
+MUL		TC, color.g, X1_Y0_Z0;
+TEX		R2, TC, texture[2], 2D;
+
+MUL		TC, color.b, X1_Y0_Z0;
+TEX		R3, TC, texture[2], 2D;
+
+MOV		R1.y, R2.x;
+MOV		R1.z, R3.x;
+MOV		R1.w, 1.0;
+
+#Add bloom
+MAD		color, bloom, fragment.texcoord[1].x, R1;
+
+#Desaturate.
+DP3_SAT	R1, lum_vec,color; 
+
+LRP		result.color, fragment.texcoord[1].y, R1, color;
+
+END;

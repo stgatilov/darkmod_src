@@ -1,0 +1,71 @@
+!!ARBvp1.0
+OPTION ARB_position_invariant;
+MOV	   result.texcoord, vertex.attrib[8];
+MOV	   result.color, vertex.attrib[3];
+END
+
+!!ARBfp1.0
+# == Fragment Program ==
+#
+# Input textures
+#   texture[0]   particle diffusemap
+#   texture[1]   _currentDepth
+# 	
+# Constants set by the engine:
+#   program.env[4] is reciprocal of _currentDepth size. Lets us convert a screen position to a texcoord in _currentDepth
+#   program.env[5] is the particle radius, given as { radius, 1/(fadeRange), 1/radius } 
+#		fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive 
+# 		blends (light glares), because additive effects work differently. Fog is half as apparent when a wall 
+# 		is in the middle of it. Light glares lose no visibility when they have something to reflect off.
+#   program.env[6] is the color channel mask. Particles with additive blend need their RGB channels modifying to blend them out. 
+#                                             Particles with an alpha blend need their alpha channel modifying.
+#
+# Hard-coded constants
+#    depth_consts allows us to recover the original depth in Doom units of anything in the depth 
+#    buffer. TDM's projection matrix differs slightly from the classic projection matrix as it 
+#    implements a "nearly-infinite" zFar. The matrix is hard-coded in the engine, so we use hard-coded 
+#    constants here for efficiency. depth_consts is derived from the numbers in that matrix.
+#
+
+PARAM   depth_consts = { 0.33333333, -0.33316667, 0.0, 0.0 }; 
+PARAM	particle_radius  = program.env[5];
+TEMP    tmp, scene_depth, particle_depth, near_fade, fade;
+
+# Map the fragment to a texcoord on our depth image, and sample to find scene_depth
+MUL   tmp.xy, fragment.position, program.env[4];
+TEX   scene_depth, tmp, texture[1], 2D;
+MIN	  scene_depth, scene_depth, 0.9994;	# Required by TDM projection matrix. Equates to max recoverable 
+										# depth of 30k units, which is enough. 0.9995 is infinite depth. This
+										# is needed only if there is caulk sky on show (which writes no depth, 
+										# so leaves 1 in the depth texture).
+
+# Recover original depth in doom units
+MAD   tmp, scene_depth, depth_consts.x, depth_consts.y;
+RCP   scene_depth, tmp.x;
+
+# Convert particle depth to doom units too
+MAD   tmp, fragment.position.z, depth_consts.x, depth_consts.y;
+RCP   particle_depth, tmp.x;
+
+# Scale the depth difference by the particle diameter to calc an alpha 
+# value based on how much of the 3d volume represented by the particle 
+# is in front of the solid scene
+ADD		 tmp, -scene_depth, particle_depth;	 # NB depth is negative. 0 at the eye, -100 at 100 units into the screen.
+ADD      tmp, tmp, particle_radius.x; 		 # Add the radius so a depth difference of particle radius now equals 0
+MUL_SAT  fade, tmp, particle_radius.y; 		 # divide by the particle radius or diameter and clamp
+
+# Also fade if the particle is too close to our eye position, so it doesn't 'pop' in and out of view
+# Start a linear fade at particle_radius distance from the particle.
+MUL_SAT  near_fade, particle_depth, -particle_radius.z; 
+
+# Calculate final fade and apply the channel mask
+MUL      fade, near_fade, fade;
+ADD_SAT  fade, fade, program.env[6];  # saturate the channels that don't want modifying
+
+# Set the color. Multiply by vertex/fragment color as that's how the particle system fades particles in and out
+TEMP  oColor;
+TEX   oColor, fragment.texcoord, texture[0], 2D;
+MUL   oColor, oColor, fade;
+MUL   result.color, oColor, fragment.color; 
+
+END

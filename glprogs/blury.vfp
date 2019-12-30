@@ -1,0 +1,103 @@
+!!ARBvp1.0 OPTION ARB_position_invariant;
+
+MOV result.texcoord[0], vertex.texcoord[0];
+
+#input vertex parameter 0: blur texture height
+MOV 	result.texcoord[1], program.local[0];
+
+END
+
+!!ARBfp1.0 OPTION ARB_precision_hint_fastest;
+
+# gaussian distribution in 1D, standard deviation of 3
+PARAM x0 = 0.132981;
+PARAM x1 = 0.125794;
+PARAM x2 = 0.106483;
+PARAM x3 = 0.080657;
+PARAM x4 = 0.054670;
+PARAM x5 = 0.033159;
+PARAM x6 = 0.017997;
+PARAM x7 = 0.008741;
+PARAM x8 = 0.003799;
+
+# pixel locations still not converted in range 0-1
+
+PARAM c1 = {0, 1.0, 0, 0};
+PARAM c2 = {0, 2.0, 0, 0};
+PARAM c3 = {0, 3.0, 0, 0};
+PARAM c4 = {0, 4.0, 0, 0};
+PARAM c5 = {0, 5.0, 0, 0};
+PARAM c6 = {0, 6.0, 0, 0};
+PARAM c7 = {0, 7.0, 0, 0};
+PARAM c8 = {0, 8.0, 0, 0};
+
+PARAM vec_X0_Y1 = { 0.0, 1.0 };
+
+TEMP color0, color1, color2, color3, color4, color5, color6, color7, color8, final;
+
+TEMP	TC;
+
+# convert the texcoords in 0-1 range.
+MUL	TC, fragment.texcoord[1].x, vec_X0_Y1;
+
+MOV color0, fragment.texcoord[0];
+MAD	color1, c1, TC, color0; 
+MAD	color2, c2, TC, color0; 
+MAD	color3, c3, TC, color0; 
+MAD	color4, c4, TC, color0; 
+MAD	color5, c5, TC, color0; 
+MAD	color6, c6, TC, color0; 
+MAD	color7, c7, TC, color0; 
+MAD	color8, c8, TC, color0; 
+
+
+TEX color1, color1, texture[0], 2D;
+TEX color2, color2, texture[0], 2D;
+TEX color3, color3, texture[0], 2D;
+TEX color4, color4, texture[0], 2D;
+TEX color5, color5, texture[0], 2D;
+TEX color6, color6, texture[0], 2D;
+TEX color7, color7, texture[0], 2D;
+TEX color8, color8, texture[0], 2D;
+
+MUL final, color1, x1;
+MAD final, color2, x2, final;
+MAD final, color3, x3, final;
+MAD final, color4, x4, final;
+MAD final, color5, x5, final;
+MAD final, color6, x6, final;
+MAD final, color7, x7, final;
+MAD final, color8, x8, final;
+
+MAD	color1, c1, -TC, color0; 
+MAD	color2, c2, -TC, color0; 
+MAD	color3, c3, -TC, color0; 
+MAD	color4, c4, -TC, color0; 
+MAD	color5, c5, -TC, color0; 
+MAD	color6, c6, -TC, color0; 
+MAD	color7, c7, -TC, color0; 
+MAD	color8, c8, -TC, color0; 
+
+TEX color0, color0, texture[0], 2D;
+TEX color1, color1, texture[0], 2D;
+TEX color2, color2, texture[0], 2D;
+TEX color3, color3, texture[0], 2D;
+TEX color4, color4, texture[0], 2D;
+TEX color5, color5, texture[0], 2D;
+TEX color6, color6, texture[0], 2D;
+TEX color7, color7, texture[0], 2D;
+TEX color8, color8, texture[0], 2D;
+
+MAD final, color0, x0, final;
+MAD final, color1, x1, final;
+MAD final, color2, x2, final;
+MAD final, color3, x3, final;
+MAD final, color4, x4, final;
+MAD final, color5, x5, final;
+MAD final, color6, x6, final;
+MAD final, color7, x7, final;
+MAD final, color8, x8, final;
+
+MOV result.color, final;
+
+END
