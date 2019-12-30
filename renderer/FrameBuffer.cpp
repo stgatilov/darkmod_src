@@ -264,10 +264,12 @@ Moved from image_load.cpp so that can use internal FBO resolution ratio and stat
 ====================
 */
 void FB_CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
+	GL_CheckErrors();
 	image->Bind();
+	GL_CheckErrors();
 	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
-	if ( primaryOn ) {
+	if ( primaryOn && image != globalImages->bloomCookedMath ) {
 		x *= r_fboResolution.GetFloat();
 		y *= r_fboResolution.GetFloat();
 		imageWidth *= r_fboResolution.GetFloat();
@@ -531,18 +533,20 @@ void CheckCreateShadow() {
 	GL_CheckErrors();
 }
 
-void FB_SelectPrimary() {
-	if ( primaryOn ) {
+void FB_SelectPrimary( bool force ) {
+	if ( primaryOn || force ) {
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 	}
+	primaryOn = true;
 }
 
 void FB_SelectPostProcess() {
 	if ( !primaryOn ) {
 		return;
 	}
-	GLuint curWidth = glConfig.vidWidth * r_fboResolution.GetFloat();
-	GLuint curHeight = glConfig.vidHeight * r_fboResolution.GetFloat();
+	primaryOn = false;
+	GLuint curWidth = glConfig.vidWidth;// *r_fboResolution.GetFloat();
+	GLuint curHeight = glConfig.vidHeight;// *r_fboResolution.GetFloat();
 
 	if ( !fboPostProcess || curWidth != postProcessWidth || curHeight != postProcessHeight ) {
 		FB_CreatePostProcess( curWidth, curHeight );

@@ -48,7 +48,7 @@ void FB_CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeigh
 void FB_TogglePrimary( bool on );
 void FB_ToggleShadow( bool on );
 void FB_BindShadowTexture();
-void FB_SelectPrimary();
+void FB_SelectPrimary( bool force = false );
 void FB_SelectPostProcess();
 void FB_ResolveMultisampling( GLbitfield mask = GL_COLOR_BUFFER_BIT, GLenum filter = GL_NEAREST );
 void FB_ResolveShadowAA();

@@ -766,7 +766,7 @@ void RB_Bloom( void ) {
 	RB_DrawFullScreenQuad();
 	FB_CopyRender( globalImages->bloomImage, 0, 0, w / 2, h / 2, false );
 
-	FB_SelectPrimary();
+	FB_SelectPrimary( true );
 	GL_Viewport( 0, 0, w, h );
 	FB_TogglePrimary( false );
 	GL_SelectTexture( 0 );
