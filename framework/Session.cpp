@@ -3199,7 +3199,11 @@ bool idSessionLocal::IsFrontend() const {
 #if 0	
 	return std::this_thread::get_id() == frontendThread.get_id();
 #else
+#if WIN32
+	return Sys_GetCurrentThreadID() == GetThreadId( (HANDLE)frontendThread );
+#else
 	return Sys_GetCurrentThreadID() == frontendThread;
+#endif
 #endif
 }
 
