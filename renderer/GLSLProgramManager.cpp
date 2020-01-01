@@ -279,9 +279,9 @@ void GLSLProgramManager::Init() {
 	shadowMapShader = LoadFromGenerator( "shadowMapA", InitShadowMapShader );
 	shadowMapMultiShader = LoadFromGenerator( "shadowMapN", InitShadowMapShader );
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
-	stencilInteractionShader = LoadInteractionShader( "stencilInteraction", "interaction", false );
-	shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );
-	multiLightInteractionShader = LoadInteractionShader( "multiLightInteraction", "interactionN", false );
+	stencilInteractionShader = LoadInteractionShader( "interactionStencil", "interactionStencil", false );
+	shadowMapInteractionShader = LoadInteractionShader( "interactionShadowMaps", "interactionShadowMaps", false );
+	multiLightInteractionShader = LoadInteractionShader( "interactionMultiLight", "interactionMultiLight", false );
 	frobShader = Load( "frob" );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	autoExposureShader = Load( "autoExposure" );
