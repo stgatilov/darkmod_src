@@ -1,133 +1,25 @@
 #version 140
 #extension GL_ARB_texture_gather: enable
 
+#pragma tdm_include "tdm_interaction.fs.glsl"
+
+
 #define STGATILOV_OCCLUDER_SEARCH 1
 #define STGATILOV_USEGATHER 1
 
-in vec3 var_Position;
-in vec3 var_WorldLightDir;
-in vec2 var_TexDiffuse;        
-in vec2 var_TexNormal;        
-in vec2 var_TexSpecular;       
-in vec4 var_TexLight; 
-in vec4 var_Color;        
-
-out vec4 fragColor;        
-
-uniform sampler2D u_normalTexture;
-uniform sampler2D u_lightFalloffTexture;         
-uniform sampler2D u_lightProjectionTexture;         
-uniform samplerCube	u_lightProjectionCubemap;
-uniform sampler2D u_diffuseTexture;         
-uniform sampler2D u_specularTexture;        
-uniform sampler2D u_depthTexture;        
-uniform usampler2D u_stencilTexture;        
-uniform sampler2D u_shadowMap;
-         
-uniform vec3 	u_lightOrigin;
-uniform vec3 	u_lightOrigin2;
-uniform vec4 	u_viewOrigin;
-uniform vec4 	u_diffuseColor;
-uniform vec4 	u_specularColor;
-
 uniform bool 	u_shadows;
-uniform bool 	u_shadowMapCullFront; 
-uniform float	u_advanced;    
-uniform float	u_cubic;
+uniform bool 	u_shadowMapCullFront;
 uniform int		u_softShadowsQuality;
 uniform float	u_softShadowsRadius;
 uniform vec4	u_shadowRect;
 uniform mat4	u_modelMatrix;
-uniform float	u_RGTC;
+uniform vec2	u_softShadowsSamples[150];
+uniform sampler2D u_shadowMap;
+in vec3 var_WorldLightDir;
 
-// common local variables
-vec3 RawN, N, lightDir, viewDir, L, V, H;
+out vec4 fragColor;
 
-#pragma tdm_include "tdm_bitangents.glsl"
 
-float NdotH, NdotL, NdotV;
-
-void InitGlobals() {
-    lightDir	= u_lightOrigin.xyz - var_Position;
-    viewDir	= u_viewOrigin.xyz - var_Position;
-
-    // compute normalized light, view and half angle vectors 
-    L = normalize( lightDir ); 
-    V = normalize( viewDir ); 
-    H = normalize( L + V );
-	
-	calcNormals(); // tdm_bitangents_fragment.glsl
-
-    NdotH = clamp( dot( N, H ), 0.0, 1.0 );
-    NdotL = clamp( dot( N, L ), 0.0, 1.0 );
-    NdotV = clamp( dot( N, V ), 0.0, 1.0 );
-}
-
-vec3 lightColor() {
-	// compute light projection and falloff 
-	vec3 lightColor;
-	if (u_cubic == 1.0) {
-		vec3 cubeTC = var_TexLight.xyz * 2.0 - 1.0;
-		lightColor = texture(u_lightProjectionCubemap, cubeTC).rgb;
-		float att = clamp(1.0-length(cubeTC), 0.0, 1.0);
-		lightColor *= att*att;
-	} else {
-		vec3 lightProjection = textureProj( u_lightProjectionTexture, var_TexLight.xyw ).rgb; 
-		vec3 lightFalloff = texture( u_lightFalloffTexture, vec2( var_TexLight.z, 0.5 ) ).rgb;
-		lightColor = lightProjection * lightFalloff;
-	}
-	return lightColor;
-} 
-
-vec3 simpleInteraction() {
-	// compute the diffuse term    
-	vec3 diffuse = texture( u_diffuseTexture, var_TexDiffuse ).rgb * u_diffuseColor.rgb;
-
-	// compute the specular term
-    float specularPower = 10.0;
-    float specularContribution = pow( NdotH, specularPower );
-	vec3 specular = texture( u_specularTexture, var_TexSpecular ).rgb * specularContribution * u_specularColor.rgb;
-
-	// compute lighting model
-    vec3 finalColor = ( diffuse + specular ) * NdotL * lightColor() * var_Color.rgb;
- 
-	return finalColor;
-} 
-
-vec3 advancedInteraction() {
-	vec4 fresnelParms		= vec4( 1.0, .23, .5, 1.0  );			
-	vec4 fresnelParms2		= vec4( .2, .023, 120.0, 4.0 );
-	vec4 lightParms			= vec4( .7, 1.8, 10.0, 30.0 );
-
-	vec3 diffuse = texture( u_diffuseTexture, var_TexDiffuse ).rgb;
-
-	vec3 specular = vec3(0.026);	//default value if texture not set?...
-	if (dot(u_specularColor, u_specularColor) > 0.0)
-		specular = texture( u_specularTexture, var_TexSpecular ).rgb;
-
-	vec3 localL = normalize(var_tc0);
-	vec3 localV = normalize(var_tc6);
-	//must be done in tangent space, otherwise smoothing will suffer (see #4958)
-	float NdotL = clamp(dot(RawN, localL), 0.0, 1.0);
-	float NdotV = clamp(dot(RawN, localV), 0.0, 1.0);
-	float NdotH = clamp(dot(RawN, normalize(localV + localL)), 0.0, 1.0);
-
-	// fresnel part, ported from test_direct.vfp
-	float fresnelTerm = pow(1.0 - NdotV, fresnelParms2.w);
-	float rimLight = fresnelTerm * clamp(NdotL - 0.3, 0.0, fresnelParms.z) * lightParms.y;
-	float specularPower = mix(lightParms.z, lightParms.w, specular.z);
-	float specularCoeff = pow(NdotH, specularPower) * fresnelParms2.z;
-	float fresnelCoeff = fresnelTerm * fresnelParms.y + fresnelParms2.y;
-
-	vec3 specularColor = specularCoeff * fresnelCoeff * specular * (diffuse * 0.25 + vec3(0.75));
-	float R2f = clamp(localL.z * 4.0, 0.0, 1.0);
-	float light = rimLight * R2f + NdotL;
-	vec3 totalColor = (specularColor * R2f + diffuse) * light * u_diffuseColor.rgb * lightColor() * var_Color.rgb;
-
-	return totalColor;
-}
-
-uniform vec2 u_softShadowsSamples[150];  //TODO: what cap is appropriate here?
 
 vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
 	vec3 v1 = abs(v);
@@ -135,7 +27,7 @@ vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
 	faceIdx = 0;
 	if(maxV == v.x) {
 		v1 = -v.zyx;
-	} 
+	}
 	else if(maxV == -v.x) {
 		v1 = v.zyx * vec3(1, -1, 1);
 		faceIdx = 1;
@@ -201,7 +93,7 @@ void UseShadowMap() {
 	//some very generic error estimation...
 	float errorMargin = 5.0 * maxAbsL / ( shadowMapResolution * max(lightFallAngle, 0.1) );
 	if(u_shadowMapCullFront)
-       errorMargin = -errorMargin;
+	   errorMargin = -errorMargin;
 
 	//process central shadow sample
 	float centerFragZ = maxAbsL;
@@ -259,7 +151,7 @@ void UseShadowMap() {
 		return;
 	}
 	*/
-	avgBlockerZ /= blockerCnt;  
+	avgBlockerZ /= blockerCnt;
 	#endif
 
 	//radius of light source
@@ -306,15 +198,9 @@ void UseShadowMap() {
 }
 
 void main() {
-    InitGlobals();
-	
-	if (u_advanced == 1.0)
-		fragColor.rgb = advancedInteraction();
-	else
-		fragColor.rgb = simpleInteraction();
-	                           
+	fetchDNS();
+	fragColor.rgb = computeInteraction();
 	if (u_shadows)
 		UseShadowMap();
-		
-    fragColor.a = 1.0;              
+	fragColor.a = 1.0;
 }

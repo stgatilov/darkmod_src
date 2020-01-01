@@ -1,143 +1,18 @@
 #version 140
 
-#pragma tdm_include "tdm_transform.glsl"
+#pragma tdm_include "tdm_interaction.fs.glsl"
 
-in vec3 var_Position;
-in vec3 var_WorldLightDir;
-in vec3 var_tc0;  
-in vec3 var_tc6;  
-in vec2 var_TexDiffuse;        
-in vec2 var_TexNormal;        
-in vec2 var_TexSpecular;       
-in vec4 var_TexLight; 
-in mat3 var_TangentBitangentNormalMatrix; 
-in vec4 var_Color;        
-     
-out vec4 FragColor;
-
-uniform sampler2D u_normalTexture;
-uniform sampler2D u_lightFalloffTexture;         
-uniform sampler2D u_lightProjectionTexture;         
-uniform samplerCube	u_lightProjectionCubemap;
-uniform sampler2D u_diffuseTexture;         
-uniform sampler2D u_specularTexture;        
-uniform sampler2D u_depthTexture;        
-//uniform samplerCubeShadow u_shadowMap;
-uniform samplerCube	u_shadowMap;
-
-uniform usampler2D u_stencilTexture;        
-         
-uniform vec3 	u_lightOrigin;
-uniform vec3 	u_lightOrigin2;
-uniform vec4 	u_viewOrigin;
-uniform vec4 	u_diffuseColor;
-uniform vec4 	u_specularColor;
 
 uniform bool	u_shadows;
-uniform float	u_advanced;    
-uniform float	u_cubic;
 uniform int		u_softShadowsQuality;
 uniform float	u_softShadowsRadius;
-uniform int		u_shadowMipMap;
 uniform vec2	u_renderResolution;
-uniform mat4	u_modelMatrix;
-uniform float	u_RGTC;
-uniform vec3	u_hasTextureDNS;
+uniform vec2	u_softShadowsSamples[150];
+uniform usampler2D u_stencilTexture;
+uniform sampler2D u_depthTexture;
 
-// common local variables
-vec3 lightDir	= u_lightOrigin.xyz - var_Position;
-vec3 viewDir	= u_viewOrigin.xyz - var_Position;
+out vec4 FragColor;
 
-// compute normalized light, view and half angle vectors 
-vec3 L = normalize( lightDir ); 
-vec3 V = normalize( viewDir ); 
-vec3 H = normalize( L + V );
-
-// compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
-vec3 RawN, N;
-float NdotH, NdotL, NdotV;
-
-void fetchDNS() {
-	if( u_hasTextureDNS[1] != 0) {
-		vec4 bumpTexel = texture ( u_normalTexture, var_TexNormal.st ) * 2. - 1.;
-		RawN = u_RGTC == 1. 
-			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
-		: normalize( bumpTexel.wyz ); 
-		N = var_TangentBitangentNormalMatrix * RawN; 
-	} else {
-		RawN = vec3(0, 0, 1);
-		N = var_TangentBitangentNormalMatrix[2];
-	}
-	NdotH = clamp( dot( N, H ), 0.0, 1.0 );
-	NdotL = clamp( dot( N, L ), 0.0, 1.0 );
-	NdotV = clamp( dot( N, V ), 0.0, 1.0 );
-}
-
-vec3 lightColor() {
-	// compute light projection and falloff 
-	vec3 lightColor;
-	if (u_cubic == 1.0) {
-		vec3 cubeTC = var_TexLight.xyz * 2.0 - 1.0;
-		lightColor = texture(u_lightProjectionCubemap, cubeTC).rgb;
-		float att = clamp(1.0-length(cubeTC), 0.0, 1.0);
-		lightColor *= att*att;
-	} else {
-		vec3 lightProjection = textureProj( u_lightProjectionTexture, var_TexLight.xyw ).rgb; 
-		vec3 lightFalloff = texture( u_lightFalloffTexture, vec2( var_TexLight.z, 0.5 ) ).rgb;
-		lightColor = lightProjection * lightFalloff;
-	}
-	return lightColor;
-} 
-
-vec3 simpleInteraction() {
-	// compute the diffuse term    
-	vec3 diffuse = texture( u_diffuseTexture, var_TexDiffuse ).rgb * u_diffuseColor.rgb;
-
-	// compute the specular term
-    float specularPower = 10.0;
-    float specularContribution = pow( NdotH, specularPower );
-	vec3 specular = texture( u_specularTexture, var_TexSpecular ).rgb * specularContribution * u_specularColor.rgb;
-
-	// compute lighting model
-    vec3 finalColor = ( diffuse + specular ) * NdotL * lightColor() * var_Color.rgb;
-
-	return finalColor;
-} 
-
-vec3 advancedInteraction() {
-	vec4 fresnelParms		= vec4( 1.0, .23, .5, 1.0  );			
-	vec4 fresnelParms2		= vec4( .2, .023, 120.0, 4.0 );
-	vec4 lightParms			= vec4( .7, 1.8, 10.0, 30.0 );
-
-	vec3 diffuse = texture( u_diffuseTexture, var_TexDiffuse ).rgb;
-
-	vec3 specular = vec3(0.026);	//default value if texture not set?...
-	if (dot(u_specularColor, u_specularColor) > 0.0)
-		specular = texture( u_specularTexture, var_TexSpecular ).rgb;
-
-	vec3 localL = normalize(var_tc0);
-	vec3 localV = normalize(var_tc6);
-	//must be done in tangent space, otherwise smoothing will suffer (see #4958)
-	float NdotL = clamp(dot(RawN, localL), 0.0, 1.0);
-	float NdotV = clamp(dot(RawN, localV), 0.0, 1.0);
-	float NdotH = clamp(dot(RawN, normalize(localV + localL)), 0.0, 1.0);
-
-	// fresnel part, ported from test_direct.vfp
-	float fresnelTerm = pow(1.0 - NdotV, fresnelParms2.w);
-	float rimLight = fresnelTerm * clamp(NdotL - 0.3, 0.0, fresnelParms.z) * lightParms.y;
-	float specularPower = mix(lightParms.z, lightParms.w, specular.z);
-	float specularCoeff = pow(NdotH, specularPower) * fresnelParms2.z;
-	float fresnelCoeff = fresnelTerm * fresnelParms.y + fresnelParms2.y;
-
-	vec3 specularColor = specularCoeff * fresnelCoeff * specular * (diffuse * 0.25 + vec3(0.75));
-	float R2f = clamp(localL.z * 4.0, 0.0, 1.0);
-	float light = rimLight * R2f + NdotL;
-	vec3 totalColor = (specularColor * R2f + diffuse) * light * u_diffuseColor.rgb * lightColor() * var_Color.rgb;
-
-	return totalColor;
-}
-
-uniform vec2 u_softShadowsSamples[150];  //TODO: what cap is appropriate here?
 
 //returns eye Z coordinate with reversed sign (monotonically increasing with depth)
 float depthToZ(float depth) {
@@ -227,7 +102,8 @@ void StencilSoftShadow() {
 	}
 	FragColor.rgb *= stencil / sumWeight;
 
-	/*vec2 StTc = baseTC + vec2(1, 0) * 1e-2;
+	/* //for debug only:
+	vec2 StTc = baseTC + vec2(1, 0) * 1e-2;
 	StTex = texture( u_stencilTexture, StTc ).r;
 	stencil = .25*(128. - StTex);
 	FragColor.rgb = vec3(stencil, -stencil, stencil==0?.3:0);
@@ -236,13 +112,8 @@ void StencilSoftShadow() {
 
 void main() {
 	fetchDNS();
-
-	if (u_advanced == 1.0)
-		FragColor.rgb = advancedInteraction();
-	else
-		FragColor.rgb = simpleInteraction();
-	                           
-	if (u_shadows && u_softShadowsQuality > 0) 
+	FragColor.rgb = computeInteraction();
+	if (u_shadows && u_softShadowsQuality > 0)
 		StencilSoftShadow();
-    FragColor.a = 1.0;              
+	FragColor.a = 1.0;
 }

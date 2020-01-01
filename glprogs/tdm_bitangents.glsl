@@ -5,14 +5,14 @@
 #ifdef LEGACY_BITANGENTS
 
 out mat3 var_TangentBitangentNormalMatrix; 
-out vec3 var_tc0;  
-out vec3 var_tc6;  
+out vec3 var_LightDirLocal;  
+out vec3 var_ViewDirLocal;  
 
 void sendTBN() {
 	// construct tangent-bitangent-normal 3x3 matrix   
 	var_TangentBitangentNormalMatrix = mat3( clamp(attr_Tangent,-1,1), clamp(attr_Bitangent,-1,1), clamp(attr_Normal,-1,1) );
-	var_tc0 = (u_lightOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
-	var_tc6 = (u_viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
+	var_LightDirLocal = (u_lightOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
+	var_ViewDirLocal = (u_viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
 }
 
 #else
@@ -30,8 +30,8 @@ void sendTBN() {
 #ifdef LEGACY_BITANGENTS
 
 in mat3 var_TangentBitangentNormalMatrix; 
-in vec3 var_tc0;  
-in vec3 var_tc6;  
+in vec3 var_LightDirLocal;  
+in vec3 var_ViewDirLocal;
 
 void calcNormals() {
     // compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
@@ -45,8 +45,8 @@ void calcNormals() {
 #else
 
 in vec3 var_Normal;  
-vec3 var_tc0;  
-vec3 var_tc6;  
+vec3 var_LightDirLocal;  
+vec3 var_ViewDirLocal;  
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv ) {
 	/* get edge vectors of the pixel triangle */
@@ -77,8 +77,8 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord ) {
 	// map.y = -map.y;
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	if (u_advanced == 1.0) {
-		var_tc0 = (u_lightOrigin.xyz - var_Position).xyz * TBN;
-		var_tc6 = (u_viewOrigin.xyz - var_Position).xyz * TBN;	
+		var_LightDirLocal = (u_lightOrigin.xyz - var_Position).xyz * TBN;
+		var_ViewDirLocal = (u_viewOrigin.xyz - var_Position).xyz * TBN;	
 	}
 	return normalize( TBN * RawN );
 }
