@@ -2,10 +2,6 @@
 
 #pragma tdm_include "tdm_transform.glsl"
 
-//when = 1: the samples are filtered so that "halos" do not appear (new)
-//     = 0: the samples are weighted based on heuristic (old)
-#define ENABLE_ANTI_HALO_PATCH 1
-
 in vec3 var_Position;
 in vec3 var_WorldLightDir;
 in vec3 var_tc0;  
@@ -209,43 +205,28 @@ void StencilSoftShadow() {
 		orthoDir /= oversize;
 	}
 
-#if ENABLE_ANTI_HALO_PATCH
 	//compute partial derivatives of eye -Z by screen X and Y (normalized)
 	float Z00 = depthToZ(gl_FragCoord.z);
 	vec2 dzdxy = vec2(dFdx(Z00), dFdy(Z00));
-	//this is a stupid version, which gets derivatives from depth texture:
-/*	float Z00 = depthToZ(texture(u_depthTexture, baseTC).r);
-	float Zp0 = depthToZ(texture(u_depthTexture, baseTC + vec2(pixSize.x, 0)).r);
-	float Zm0 = depthToZ(texture(u_depthTexture, baseTC - vec2(pixSize.x, 0)).r);
-	float Z0p = depthToZ(texture(u_depthTexture, baseTC + vec2(0, pixSize.y)).r);
-	float Z0m = depthToZ(texture(u_depthTexture, baseTC - vec2(0, pixSize.y)).r);
-	float dzdx = (abs(Zp0 - Z00) < abs(Z00 - Zm0) ? Zp0 - Z00 : Z00 - Zm0);
-	float dzdy = (abs(Z0p - Z00) < abs(Z00 - Z0m) ? Z0p - Z00 : Z00 - Z0m);
-	vec2 dzdxy = vec2(dzdx, dzdy);*/
 	//rescale to derivatives by texture coordinates (not pixels)
 	dzdxy *= texSize;
 	//compute Z derivatives on a theoretical wall visible under 45-degree angle
 	vec2 tanFovHalf = vec2(1.0 / u_projectionMatrix[0][0], 1.0 / u_projectionMatrix[1][1]);
 	vec2 canonDerivs = 2.0 * Z00 * tanFovHalf;
-#endif
 
 	for( int i = 0; i < u_softShadowsQuality; i++ ) {
 		vec2 delta = u_softShadowsSamples[i].x * alongDir + u_softShadowsSamples[i].y * orthoDir;
 		vec2 StTc = baseTC + delta;
-#if ENABLE_ANTI_HALO_PATCH
 		float Zdiff = depthToZ(texture(u_depthTexture, StTc).r) - Z00;
 		float tangentZdiff = dot(dzdxy, delta);
 		float deg45diff = dot(canonDerivs, abs(delta));
 		float weight = float(abs(Zdiff - tangentZdiff) <= abs(tangentZdiff) * 0.5 + deg45diff * 0.2);
-#else
-		float ZDiff = (gl_FragCoord.z-texture( u_depthTexture, StTc ).r) / gl_FragCoord.w;
-		float weight = 1. / (1. + ZDiff*ZDiff);
-#endif
 		float StTex = float(texture( u_stencilTexture, StTc ).r);
 		stencil += clamp( 129. - StTex, 0., 1. ) * weight;
 		sumWeight += weight;
 	}
 	FragColor.rgb *= stencil / sumWeight;
+
 	/*vec2 StTc = baseTC + vec2(1, 0) * 1e-2;
 	StTex = texture( u_stencilTexture, StTc ).r;
 	stencil = .25*(128. - StTex);
