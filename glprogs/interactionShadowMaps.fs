@@ -60,6 +60,7 @@ float ShadowAtlasForVector(vec3 v) {
 	float d = textureLod(u_shadowMap, shadow2d, 0).r;
 	return u_softShadowsRadius / (1 - d);
 }
+#if defined(GL_ARB_texture_gather)
 vec4 ShadowAtlasForVector4(vec3 v, out vec4 sampleWeights) {
 	int faceIdx;
 	vec3 v1 = CubeMapDirectionToUv(v, faceIdx);
@@ -72,6 +73,7 @@ vec4 ShadowAtlasForVector4(vec3 v, out vec4 sampleWeights) {
 	sampleWeights = vec4(mwgt.x, wgt.x, wgt.x, mwgt.x) * vec4(wgt.y, wgt.y, mwgt.y, mwgt.y);
 	return vec4(u_softShadowsRadius) / (vec4(1) - d);
 }
+#endif
 
 void UseShadowMap() {
 	float shadowMapResolution = (textureSize(u_shadowMap, 0).x * u_shadowRect.w);
@@ -97,7 +99,7 @@ void UseShadowMap() {
 
 	//process central shadow sample
 	float centerFragZ = maxAbsL;
-#if STGATILOV_USEGATHER
+#if STGATILOV_USEGATHER && defined(GL_ARB_texture_gather)
 	vec4 wgt;
 	vec4 centerBlockerZ = ShadowAtlasForVector4(L, wgt);
 	float lit = dot(wgt, step(centerFragZ - errorMargin, centerBlockerZ));
