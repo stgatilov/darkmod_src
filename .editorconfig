@@ -10,6 +10,12 @@ indent_style = tab
 indent_size = 4
 end_of_line = lf
 
+# shader files
+[**/*.{fs,vs,gs,glsl}]
+indent_style = tab
+indent_size = 4
+end_of_line = lf
+
 
 # files managed by MSVC
 [**/{*.vcxproj,*.vcxproj.*,*.props,*.natvis}]
@@ -27,6 +33,7 @@ indent_style = tab
 indent_size = 4
 end_of_line = lf
 
+# CMake scripts
 [**/{CMakeLists.txt,*.cmake}]
 indent_style = tab
 indent_size = 4
