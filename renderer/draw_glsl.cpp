@@ -812,6 +812,32 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
 	}
 
+	//stgatilov #5044: see also
+	//  https://forums.thedarkmod.com/index.php?/topic/20205-5044-rgb-value-in-specular-stage/
+	static idCVar r_testSpecularFix(
+		"r_testSpecularFix", "0", CVAR_RENDERER | CVAR_INTEGER,
+		"Use specular color instead of diffuse color to modulate specular term in \"enhanced\" interaction.\n"
+		"  1 --- apply the change as described: use specular color\n"
+		"  0 --- enable old way: use diffuse color\n"
+		" -1 --- toggle between two ways every second"
+	);
+	bool testSpecularFix_CurrentValue;
+	if (r_testSpecularFix.GetInteger() < 0) {
+		static bool currValue = false;
+		static uint64_t lastChange = Sys_GetTimeMicroseconds();
+		int64_t deltaTime = Sys_GetTimeMicroseconds() - lastChange;
+		if (deltaTime > 1000000) {
+			lastChange += deltaTime;
+			currValue ^= 1;
+			common->Printf("testSpecularFix set to %d\n", int(currValue));
+		}
+		testSpecularFix_CurrentValue = currValue;
+	}
+	else {
+		testSpecularFix_CurrentValue = r_testSpecularFix.GetBool();
+	}
+	testSpecularFix.Set(testSpecularFix_CurrentValue);
+
 	GL_CheckErrors();
 }
 

@@ -27,6 +27,7 @@ uniform vec3 	u_lightOrigin;
 uniform vec4 	u_viewOrigin;
 uniform vec4 	u_diffuseColor;
 uniform vec4 	u_specularColor;
+uniform int		u_testSpecularFix;	//stgatilov #5044: for testing only!
 
 
 // output of fetchDNS
@@ -128,7 +129,12 @@ vec3 advancedInteraction() {
 	vec3 specularColor = specularCoeff * fresnelCoeff * specular * (diffuse * 0.25 + vec3(0.75));
 	float R2f = clamp(localL.z * 4.0, 0.0, 1.0);
 	float light = rimLight * R2f + NdotL;
-	vec3 totalColor = (specularColor * R2f + diffuse) * light * u_diffuseColor.rgb * lightColor() * var_Color.rgb;
+
+	vec3 totalColor;
+	if (u_testSpecularFix != 0)
+		totalColor = (specularColor * u_specularColor.rgb * R2f + diffuse * u_diffuseColor.rgb) * light * lightColor() * var_Color.rgb;
+	else
+		totalColor = (specularColor * R2f + diffuse) * light * u_diffuseColor.rgb * lightColor() * var_Color.rgb;
 
 	return totalColor;
 }
