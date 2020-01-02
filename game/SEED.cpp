@@ -1327,7 +1327,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		// so pick one map at random:
 		if (mapName.Find(',') >= 0)
 		{
-			mapName = mapName.RandomPart(',', RandomFloat() );			// use our random generator, so a "randseed" spawnarg "fixes" it
+			mapName = mapName.RandomPart(RandomFloat(), ',');			// use our random generator, so a "randseed" spawnarg "fixes" it
 			// one of the parts said "don't use a map"? Ok, we'll do.
 			if (mapName == "''")
 			{
