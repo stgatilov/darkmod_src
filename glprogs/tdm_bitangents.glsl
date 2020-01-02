@@ -35,11 +35,22 @@ in vec3 var_ViewDirLocal;
 
 void calcNormals() {
     // compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
-	vec4 bumpTexel = texture ( u_normalTexture, var_TexNormal.st ) * 2. - 1.;
-    RawN = u_RGTC == 1. 
-	    ? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
-	    : normalize( bumpTexel.wyz ); 
-    N = var_TangentBitangentNormalMatrix * RawN; 
+	if (u_hasTextureDNS[1] != 0) {
+/*		vec4 bumpTexel = texture (u_normalTexture, var_TexNormal.st) * 2. - 1.;
+		RawN = u_RGTC == 1.0
+			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1. - bumpTexel.x*bumpTexel.x - bumpTexel.y*bumpTexel.y, 0)))
+			: normalize(bumpTexel.wyz);
+		N = var_TangentBitangentNormalMatrix * RawN;*/
+		vec4 bumpTexel = texture ( u_normalTexture, var_TexNormal.st ) * 2. - 1.;
+    	RawN = u_RGTC == 1. 
+	    	? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
+		    : normalize( bumpTexel.wyz ); 
+    	N = var_TangentBitangentNormalMatrix * RawN; 
+	}
+	else {
+		RawN = vec3(0, 0, 1);
+		N = var_TangentBitangentNormalMatrix[2];
+	}
 }
 
 #else
@@ -47,6 +58,7 @@ void calcNormals() {
 in vec3 var_Normal;  
 vec3 var_LightDirLocal;  
 vec3 var_ViewDirLocal;  
+mat3 var_TangentBitangentNormalMatrix;
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv ) {
 	/* get edge vectors of the pixel triangle */
@@ -84,7 +96,10 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord ) {
 }
 
 void calcNormals() {
-	N = perturb_normal( normalize( var_Normal ), V, var_TexNormal.st );
+	if (u_hasTextureDNS[1] != 0) 
+		N = perturb_normal( normalize( var_Normal ), V, var_TexNormal.st );
+	else
+		N = var_TangentBitangentNormalMatrix[2] = var_Normal;
 }
 
 #endif

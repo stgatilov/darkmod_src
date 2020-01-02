@@ -33,17 +33,16 @@ uniform int		u_testSpecularFix;	//stgatilov #5044: for testing only!
 // output of fetchDNS
 vec3 RawN, N;
 
-#pragma tdm_include "tdm_bitangents.glsl"
-
 // common variables
 vec3 lightDir, viewDir;     //direction to light/eye in model coords
 vec3 L, V, H;               //normalized light, view and half angle vectors 
 float NdotH, NdotL, NdotV;
 
+#pragma tdm_include "tdm_bitangents.glsl"
 
 //fetch surface normal at fragment
 void fetchDNS() {
-	if (u_hasTextureDNS[1] != 0) {
+/*	if (u_hasTextureDNS[1] != 0) {
 		vec4 bumpTexel = texture (u_normalTexture, var_TexNormal.st) * 2. - 1.;
 		RawN = u_RGTC == 1.0
 			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1. - bumpTexel.x*bumpTexel.x - bumpTexel.y*bumpTexel.y, 0)))
@@ -54,13 +53,14 @@ void fetchDNS() {
 		RawN = vec3(0, 0, 1);
 		N = var_TangentBitangentNormalMatrix[2];
 	}
-
+*/
 	//initialize common variables (TODO: move somewhere else?)
 	lightDir = u_lightOrigin.xyz - var_Position;
 	viewDir = u_viewOrigin.xyz - var_Position;
 	L = normalize(lightDir);
 	V = normalize(viewDir);
 	H = normalize(L + V);
+	calcNormals();
 	NdotH = clamp(dot(N, H), 0.0, 1.0);
 	NdotL = clamp(dot(N, L), 0.0, 1.0);
 	NdotV = clamp(dot(N, V), 0.0, 1.0);
