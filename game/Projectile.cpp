@@ -1170,7 +1170,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	if ( spawnArgs.GetVector( "detonation_axis", "", normal ) ) {
 		GetPhysics()->SetAxis( normal.ToMat3() );
 	}
-	GetPhysics()->SetOrigin( collision.endpos + 2.0f * collision.c.normal );
+	GetPhysics()->SetOrigin( collision.endpos + 5.0f * collision.c.normal );
 
 	// default remove time
 	removeTime = spawnArgs.GetInt( "remove_time", "1500" );
