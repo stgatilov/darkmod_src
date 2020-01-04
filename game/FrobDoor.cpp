@@ -1420,16 +1420,6 @@ void CFrobDoor::Event_HandleLockRequest()
 	}
 }
 
-/* grayman #3643 - moved to CBinaryFrobMover
-void CFrobDoor::Event_ClearPlayerImmobilization(idEntity* player)
-{
-	if (!player->IsType(idPlayer::Type)) return;
-
-	// Release the immobilization imposed on the player by Lockpicking
-	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
-}
-*/
-
 // grayman #2859
 
 void CFrobDoor::SetLastUsedBy(idEntity* ent)
