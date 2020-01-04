@@ -838,6 +838,14 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	}
 	testSpecularFix.Set(testSpecularFix_CurrentValue);
 
+	//stgatilov #4825: see also
+	//  http://forums.thedarkmod.com/topic/19139-nonsmooth-graphics-due-to-bumpmapping/
+	static idCVar r_fixBumpmapLightToggling(
+		"r_fixBumpmapLightToggling", "0", CVAR_RENDERER | CVAR_BOOL,
+		"Reduce light toggling due to difference between bumpmapped normal and interpolated normal in \"enhanced\" interaction.\n"
+	);
+	fixBumpmapLightToggling.Set(r_fixBumpmapLightToggling.GetBool());
+
 	GL_CheckErrors();
 }
 
