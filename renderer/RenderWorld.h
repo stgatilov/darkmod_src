@@ -160,6 +160,8 @@ typedef struct renderEntity_s {
 
 
 typedef struct renderLight_s {
+	int						entityNum;			//index of owning idLight in game (foe debugging)
+
 	idMat3					axis;				// rotation vectors, must be unit length
 	idVec3					origin;
 

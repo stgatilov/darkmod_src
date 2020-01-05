@@ -472,6 +472,8 @@ void idLight::Spawn( void )
 	// do the parsing the same way dmap and the editor do
 	gameEdit->ParseSpawnArgsToRenderLight( &spawnArgs, &renderLight );
 
+	renderLight.entityNum = entityNumber;
+
 	// we need the origin and axis relative to the physics origin/axis
 	localLightOrigin = ( renderLight.origin - GetPhysics()->GetOrigin() ) * GetPhysics()->GetAxis().Transpose();
 	localLightAxis = renderLight.axis * GetPhysics()->GetAxis().Transpose();

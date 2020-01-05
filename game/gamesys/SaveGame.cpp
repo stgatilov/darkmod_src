@@ -366,6 +366,8 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	int i;
 
+	WriteInt( renderLight.entityNum );
+
 	WriteMat3( renderLight.axis );
 	WriteVec3( renderLight.origin );
 
@@ -959,6 +961,8 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	int index;
 	int i;
+
+	ReadInt( renderLight.entityNum );
 
 	ReadMat3( renderLight.axis );
 	ReadVec3( renderLight.origin );
