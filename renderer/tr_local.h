@@ -1069,9 +1069,6 @@ extern idCVarBool r_shadowMapSinglePass;
 // stgatilov ROQ
 extern idCVar r_cinematic_legacyRoq;
 
-// nbohr1more nvidia driver workarounds
-extern idCVar r_nVidiaOverride;
-
 //stgatilov: temporary cvars, to be removed when ARB->GLSL migration is complete and settled
 extern idCVar r_uniformTransforms;
 extern idCVar r_glCoreProfile;

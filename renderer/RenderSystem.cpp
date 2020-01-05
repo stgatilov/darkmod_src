@@ -276,15 +276,6 @@ static void R_CheckCvars( void ) {
 		R_SetColorMappings();
 	}
 
-	// Force FBO for nVidia
-	if ( ( glConfig.vendor == glvNVIDIA ) && r_softShadowsQuality.GetBool() && r_nVidiaOverride.GetBool() && !r_useFbo.GetBool() ) {
-		GL_CheckErrors();
-		qglFinish();
-		common->Printf( "Nvidia Hardware Detected. Forcing FBO\n" );
-		r_useFbo.SetBool( true );
-		qglFinish();
-	}
-
 	// revelator: autoset depth bits to the max of what the gfx card supports, in case someone tries to supply an invalid bit depth.
 	// unsupported bit depth will be forced back to the max the card supports.
 	/*if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {

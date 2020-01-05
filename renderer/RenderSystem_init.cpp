@@ -229,7 +229,6 @@ idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use t
 
 // FBO
 idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL, "Use framebuffer objects" );
-idCVar r_nVidiaOverride( "r_nVidiaOverride", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
 idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-4 individual fbo attachments" );
 idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32" );
 idCVarBool r_fboSRGB( "r_fboSRGB", "0", CVAR_RENDERER | CVAR_ARCHIVE, "Use framebuffer-level gamma correction" );
@@ -396,11 +395,6 @@ void R_InitOpenGL( void ) {
 
 	// Reset our gamma
 	R_SetColorMappings();
-
-	if ( ( glConfig.vendor == glvNVIDIA ) && r_softShadowsQuality.GetBool() && r_nVidiaOverride.GetBool() ) {
-		common->Printf( "Nvidia Hardware Detected. Forcing FBO\n" );
-		r_useFbo.SetBool( true );
-	}
 
 #ifdef _WIN32
 	static bool glCheck = false;
