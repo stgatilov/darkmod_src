@@ -156,4 +156,78 @@
     <DisplayString>InvItem {m_Name} | {m_Item}</DisplayString>
   </Type>
 
+  <!-- this is a bit hacky, but allows to inspect game entity of a render entity
+       without having to enumerate all fields of idRenderEntityLocal -->
+  <Type Name="renderEntity_s">
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Item Name="[entity]">gameLocal.entities[entityNum]</Item>
+    </Expand>
+  </Type>
+  <Type Name="renderLight_s">
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Item Name="[entity]">gameLocal.entities[entityNum]</Item>
+    </Expand>
+  </Type>
+
+  <!-- dmap has a habit of storing triangles in linked list -->
+  <Type Name="mapTri_s">
+    <DisplayString>{v[0].xyz} {v[1].xyz} {v[2].xyz}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All tris]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="srfTriangles_s">
+    <DisplayString>srfTriangles V{numVerts} I{numIndexes}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All verts]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numVerts</Size>
+            <ValuePointer>verts</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All indexes]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numIndexes</Size>
+            <ValuePointer>indexes</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All silEdges]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numSilEdges</Size>
+            <ValuePointer>silEdges</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Condition="facePlanesCalculated" Name="[All planes]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numIndexes/3</Size>
+            <ValuePointer>facePlanes</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="silEdge_s">
+    <DisplayString>V: {v1} -> {v2}    P: {p1} | {p2}</DisplayString>
+  </Type>
+
 </AutoVisualizer>

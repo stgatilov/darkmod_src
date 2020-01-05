@@ -52,6 +52,9 @@
       <ExpandedItem>((idVec4*)m),4na</ExpandedItem>
     </Expand>
   </Type>
+  <Type Name="idPlane">
+    <DisplayString>(a={a}, b={b}, c={c}, d={d})</DisplayString>
+  </Type>
 
   <Type Name="idBounds">
     <Expand>

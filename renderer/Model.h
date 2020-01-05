@@ -61,7 +61,7 @@ typedef short glIndex_t;
 #endif
 
 
-typedef struct {
+typedef struct silEdge_s {
 	// NOTE: making this a glIndex is dubious, as there can be 2x the faces as verts
 	glIndex_t					p1, p2;					// planes defining the edge
 	glIndex_t					v1, v2;					// verts defining the edge
