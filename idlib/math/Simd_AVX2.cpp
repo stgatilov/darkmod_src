@@ -70,7 +70,7 @@ void VPCALL idSIMD_AVX2::CullByFrustum2( idDrawVert *verts, const int numVerts, 
 	const __m256 fB = _mm256_set_ps( 0, 0, frustum[5][1], frustum[4][1], frustum[3][1], frustum[2][1], frustum[1][1], frustum[0][1] );
 	const __m256 fC = _mm256_set_ps( 0, 0, frustum[5][2], frustum[4][2], frustum[3][2], frustum[2][2], frustum[1][2], frustum[0][2] );
 	const __m256 fD = _mm256_set_ps( 0, 0, frustum[5][3], frustum[4][3], frustum[3][3], frustum[2][3], frustum[1][3], frustum[0][3] );
-	const __m256 eps = _mm256_set1_ps( epsilon );
+	const __m256 eps  = _mm256_set1_ps(  epsilon );
 	const __m256 epsM = _mm256_set1_ps( -epsilon );
 	const short mask6 = (1 << 6) - 1;
 	for ( int j = 0; j < numVerts; j++ ) {
@@ -82,8 +82,8 @@ void VPCALL idSIMD_AVX2::CullByFrustum2( idDrawVert *verts, const int numVerts, 
 			_mm256_fmadd_ps( fB, vY,
 				_mm256_fmadd_ps( fC, vZ, fD )
 			) );
-		int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
-		int mask_hi = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_GT_OQ ) );
+		int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps , _CMP_LT_OQ ) );
+		int mask_hi = _mm256_movemask_ps( _mm256_cmp_ps( d, epsM, _CMP_GT_OQ ) );
 		pointCull[j] = (unsigned short)(mask_lo & mask6 | (mask_hi & mask6) << 6);
 	}
 	_mm256_zeroupper();

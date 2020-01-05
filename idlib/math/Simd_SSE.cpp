@@ -17008,6 +17008,8 @@ void VPCALL idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, c
 	__m128 fC56 = _mm_set_ps( 0, 0, frustum[5][2], frustum[4][2] );
 	__m128 fD14 = _mm_set_ps( frustum[3][3], frustum[2][3], frustum[1][3], frustum[0][3] );
 	__m128 fD56 = _mm_set_ps( 0, 0, frustum[5][3], frustum[4][3] );
+	const __m128 eps  = _mm_set1_ps(  epsilon );
+	const __m128 epsM = _mm_set1_ps( -epsilon );
 	for ( int j = 0; j < numVerts; j++ ) {
 		auto &vec = verts[j].xyz;
 		__m128 vX = _mm_set1_ps( vec.x );
@@ -17034,12 +17036,10 @@ void VPCALL idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, c
 			)
 		);
 		const short mask6 = (1 << 6) - 1;
-		__m128 eps = _mm_set1_ps( epsilon );
-		int mask_lo14 = _mm_movemask_ps( _mm_cmplt_ps( d14, eps ) );
-		int mask_lo56 = _mm_movemask_ps( _mm_cmplt_ps( d56, eps ) );
-		eps = _mm_set1_ps( -epsilon );
-		int mask_hi14 = _mm_movemask_ps( _mm_cmpgt_ps( d14, eps ) );
-		int mask_hi56 = _mm_movemask_ps( _mm_cmpgt_ps( d56, eps ) );
+		int mask_lo14 = _mm_movemask_ps( _mm_cmplt_ps( d14, eps  ) );
+		int mask_lo56 = _mm_movemask_ps( _mm_cmplt_ps( d56, eps  ) );
+		int mask_hi14 = _mm_movemask_ps( _mm_cmpgt_ps( d14, epsM ) );
+		int mask_hi56 = _mm_movemask_ps( _mm_cmpgt_ps( d56, epsM ) );
 		int mask_lo = mask_lo14 | mask_lo56 << 4;
 		int mask_hi = mask_hi14 | mask_hi56 << 4;
 		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
