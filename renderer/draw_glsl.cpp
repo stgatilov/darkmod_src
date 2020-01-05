@@ -840,11 +840,11 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 
 	//stgatilov #4825: see also
 	//  http://forums.thedarkmod.com/topic/19139-nonsmooth-graphics-due-to-bumpmapping/
-	static idCVar r_fixBumpmapLightToggling(
-		"r_fixBumpmapLightToggling", "0", CVAR_RENDERER | CVAR_BOOL,
+	static idCVar r_testBumpmapLightTogglingFix(
+		"r_testBumpmapLightTogglingFix", "0", CVAR_RENDERER | CVAR_BOOL,
 		"Reduce light toggling due to difference between bumpmapped normal and interpolated normal in \"enhanced\" interaction.\n"
 	);
-	fixBumpmapLightToggling.Set(r_fixBumpmapLightToggling.GetBool());
+	testBumpmapLightTogglingFix.Set(r_testBumpmapLightTogglingFix.GetBool());
 
 	//stgatilov #4825: fix against self-shadowing
 	static idCVar r_testStencilSelfShadowFix(

@@ -28,7 +28,7 @@ uniform vec4 	u_viewOrigin;
 uniform vec4 	u_diffuseColor;
 uniform vec4 	u_specularColor;
 uniform int		u_testSpecularFix;	//stgatilov #5044: for testing only!
-uniform int		u_fixBumpmapLightToggling;  //stgatilov #4825: for testing only
+uniform int		u_testBumpmapLightTogglingFix;  //stgatilov #4825: for testing only
 
 
 // output of fetchDNS
@@ -131,7 +131,7 @@ vec3 advancedInteraction() {
 	float R2f = clamp(localL.z * 4.0, 0.0, 1.0);
 
 	float NdotL_adjusted = NdotL;
-	if (u_fixBumpmapLightToggling != 0) {
+	if (u_testBumpmapLightTogglingFix != 0) {
 		//stgatilov: hacky coefficient to make lighting smooth when L is almost in surface tangent plane
 		vec3 meshNormal = normalize(var_TangentBitangentNormalMatrix[2]);
 		float MNdotL = dot(meshNormal, L);

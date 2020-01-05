@@ -146,7 +146,7 @@ namespace Uniforms {
 		DEFINE_UNIFORM( int, frameCount )
 		DEFINE_UNIFORM( vec3, lightSamples )
 		DEFINE_UNIFORM( int, testSpecularFix )
-		DEFINE_UNIFORM( int, fixBumpmapLightToggling )
+		DEFINE_UNIFORM( int, testBumpmapLightTogglingFix )
 		DEFINE_UNIFORM( int, testStencilSelfShadowFix )
 
 
