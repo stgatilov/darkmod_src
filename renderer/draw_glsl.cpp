@@ -846,6 +846,24 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	);
 	fixBumpmapLightToggling.Set(r_fixBumpmapLightToggling.GetBool());
 
+	//stgatilov #4825: fix against self-shadowing
+	static idCVar r_testStencilSelfShadowFix(
+		"r_testStencilSelfShadowFix", "0", CVAR_RENDERER | CVAR_BOOL,
+		"Hack around self-shadowing issues with stencil shadows.\n"
+	);
+	testStencilSelfShadowFix.Set(r_testStencilSelfShadowFix.GetBool());
+	if (r_testStencilSelfShadowFix.GetBool() && r_shadows.GetInteger() == 1) {
+		//turn on cvars this hack depends on
+		if (!r_lightAllBackFaces.GetInteger()) {
+			common->Printf("Forcing: r_lightAllBackFaces 1\n");
+			r_lightAllBackFaces.SetInteger(1);
+		}
+		if (r_softShadowsQuality.GetInteger() == 0) {
+			common->Printf("Forcing: r_softShadowsQuality 6\n");
+			r_softShadowsQuality.SetInteger(6);
+		}
+	}
+
 	GL_CheckErrors();
 }
 

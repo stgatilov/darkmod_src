@@ -11,6 +11,9 @@ uniform vec2	u_softShadowsSamples[150];
 uniform usampler2D u_stencilTexture;
 uniform sampler2D u_depthTexture;
 
+uniform int u_testStencilSelfShadowFix;
+in vec3 var_WorldLightDir;
+
 out vec4 FragColor;
 
 
@@ -27,8 +30,19 @@ void StencilSoftShadow() {
 	vec2 pixSize = vec2(1.0, 1.0) / texSize;
 	vec2 baseTC = gl_FragCoord.xy * pixSize;
 
+	float StLevel = 129.0;
+	if (u_testStencilSelfShadowFix != 0) {
+		vec3 derX = dFdx(var_WorldLightDir);
+		vec3 derY = dFdy(var_WorldLightDir);
+		vec3 triNormal = cross(derX, derY);
+		if (dot(triNormal, var_WorldLightDir) > 0) {
+			//consider backfacing fragments shadowed only when inside 2+ shadow volumes
+			StLevel = 130.0;
+		}
+	}
+
 	float StTex = float(texture( u_stencilTexture, baseTC ).r);
-	float stencil = clamp( 129. - StTex, 0., 1.);
+	float stencil = clamp( StLevel - StTex, 0., 1.);
 	float sumWeight = 1.;
 
 	float LightDist = min(length(lightDir), 1e3); // crutch !
@@ -97,7 +111,7 @@ void StencilSoftShadow() {
 		float deg45diff = dot(canonDerivs, abs(delta));
 		float weight = float(abs(Zdiff - tangentZdiff) <= abs(tangentZdiff) * 0.5 + deg45diff * 0.2);
 		float StTex = float(texture( u_stencilTexture, StTc ).r);
-		stencil += clamp( 129. - StTex, 0., 1. ) * weight;
+		stencil += clamp( StLevel - StTex, 0., 1. ) * weight;
 		sumWeight += weight;
 	}
 	FragColor.rgb *= stencil / sumWeight;
