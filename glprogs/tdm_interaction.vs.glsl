@@ -33,6 +33,7 @@ out vec4 var_Color;
 
 #pragma tdm_include "tdm_bitangents.glsl"
 
+out vec3 var_WorldLightDir;
 
 
 void interactionProcessVertex() {
@@ -62,4 +63,7 @@ void interactionProcessVertex() {
 
 	// primary color
 	var_Color = (attr_Color * u_colorModulate) + u_colorAdd;
+
+	// light->fragment vector in world coordinates
+	var_WorldLightDir = (u_modelMatrix * attr_Position).xyz - u_lightOrigin2;
 }
