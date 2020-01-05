@@ -494,7 +494,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 	count = 0;
 	size = 0;
 
-	gameLocal.Printf( "%-4s  %-20s %-20s %s\n", " Num", "EntityDef", "Class", "Name" );
+	gameLocal.Printf( "%-4s %-4s %-4s   %-20s %-12s %s\n", " Ent", "Mod", "Lgt", "EntityDef", "Class", "Name" );
 	gameLocal.Printf( "--------------------------------------------------------------------\n" );
 	for( e = 0; e < MAX_GENTITIES; e++ ) {
 		check = gameLocal.entities[ e ];
@@ -507,8 +507,15 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 			continue;
 		}
 
-		gameLocal.Printf( "%4i: %-20s %-20s %s\n", e,
-			check->GetEntityDefName(), check->GetClassname(), check->name.c_str() );
+		int modelDefHandle = check->GetModelDefHandle();
+		int lightDefHandle = -1;
+		if (check->IsType(idLight::Type))
+			lightDefHandle = ((idLight*)check)->GetLightDefHandle();
+
+		gameLocal.Printf( "%4i %4i %3i: %-20s %-12s %s\n",
+			e, modelDefHandle, lightDefHandle,
+			check->GetEntityDefName(), check->GetClassname(), check->name.c_str()
+		);
 
 		count++;
 		size += check->spawnArgs.Allocated();
