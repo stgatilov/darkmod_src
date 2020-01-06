@@ -159,7 +159,7 @@
     <Expand>
       <ArrayItems>
         <Size>size1 + 1</Size>
-        <ValuePointer>table._Myptr</ValuePointer>
+        <ValuePointer>table</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-  
+
+  <Type Name="idScreenRect">
+    <DisplayString>[{x1}..{x2}] x [{y1}..{y2}] x [{zmin}..{zmax}]</DisplayString>
+  </Type>
+
   <Type Name="CRawVector">
     <DisplayString>[{num}]{{...}}</DisplayString>
     <Expand>
@@ -26,6 +30,7 @@
   </Type>
 
   <Type Name="idEntity">
+    <DisplayString IncludeView="simple">Entity[{entityNumber}]={name}</DisplayString>
     <DisplayString>Entity {name}: num={entityNumber} def={entityDefNumber}</DisplayString>
   </Type>
 
@@ -159,17 +164,108 @@
   <!-- this is a bit hacky, but allows to inspect game entity of a render entity
        without having to enumerate all fields of idRenderEntityLocal -->
   <Type Name="renderEntity_s">
+    <DisplayString IncludeView="simple">{*gameLocal.entities[entityNum],view(simple)}</DisplayString>
+    <DisplayString>renderEntity: {gameLocal.entities[entityNum],view(simple)}</DisplayString>
     <Expand>
       <ExpandedItem>this,!</ExpandedItem>
       <Item Name="[entity]">gameLocal.entities[entityNum]</Item>
     </Expand>
   </Type>
   <Type Name="renderLight_s">
+    <DisplayString IncludeView="simple">{*gameLocal.entities[entityNum],view(simple)}</DisplayString>
+    <DisplayString>renderLight: {gameLocal.entities[entityNum],view(simple)}</DisplayString>
     <Expand>
       <ExpandedItem>this,!</ExpandedItem>
       <Item Name="[entity]">gameLocal.entities[entityNum]</Item>
     </Expand>
   </Type>
+  <Type Name="idRenderEntityLocal">
+    <DisplayString IncludeView="simple">{parms,view(simple)}</DisplayString>
+    <DisplayString>idRenderEntity: {parms,view(simple)}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All refAreas]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>entityRefs</HeadPointer>
+            <NextPointer>ownerNext</NextPointer>
+            <ValueNode>area</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All interactions]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>firstInteraction</HeadPointer>
+            <NextPointer>entityNext</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="idRenderLightLocal">
+    <DisplayString IncludeView="simple">{parms,view(simple)}</DisplayString>
+    <DisplayString>idRenderLight: {parms,view(simple)}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All refAreas]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>references</HeadPointer>
+            <NextPointer>ownerNext</NextPointer>
+            <ValueNode>area</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All interactions]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>firstInteraction</HeadPointer>
+            <NextPointer>entityNext</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="viewEntity_s">
+    <DisplayString>viewEntity: {entityDef->parms,view(simple)}</DisplayString>
+  </Type>
+  <Type Name="viewLight_s">
+    <DisplayString>viewLight: {lightDef->parms,view(simple)}</DisplayString>
+  </Type>
+
+  <Type Name="idInteraction">
+    <DisplayString>interaction({numSurfaces}): {*lightDef,view(simple)} &amp; {*entityDef,view(simple)}</DisplayString>
+  </Type>
+  <Type Name="portalArea_s">
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All entityRefs]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>entityRefs.areaNext</HeadPointer>
+            <NextPointer>areaNext</NextPointer>
+            <ValueNode>entity</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All lightRefs]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>lightRefs.areaNext</HeadPointer>
+            <NextPointer>areaNext</NextPointer>
+            <ValueNode>light</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="doublePortal_s">
+    <DisplayString>dblPortal: {portals[0].intoArea} | {portals[1].intoArea}  block={blockingBits}</DisplayString>
+  </Type>
+
 
   <!-- dmap has a habit of storing triangles in linked list -->
   <Type Name="mapTri_s">
@@ -228,6 +324,47 @@
   </Type>
   <Type Name="silEdge_s">
     <DisplayString>V: {v1} -> {v2}    P: {p1} | {p2}</DisplayString>
+  </Type>
+
+  <Type Name="viewDef_s">
+    <DisplayString>{renderView}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All viewLights]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>viewLights</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All viewEntitys]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>viewEntitys</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All drawSurfs]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numDrawSurfs</Size>
+            <ValuePointer>drawSurfs</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All clipPlanes]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numClipPlanes</Size>
+            <ValuePointer>clipPlanes</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
   </Type>
 
 </AutoVisualizer>
