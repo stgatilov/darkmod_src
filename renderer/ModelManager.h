@@ -78,6 +78,11 @@ public:
 
 	// print memory info
 	virtual	void			PrintMemInfo( MemInfo_t *mi ) = 0;
+
+	// stgatilov #4970: embed non-orthogonal transform into model geometry
+	// returns new model with rotation string appended to its name
+	// or NULL if rotation is not supported/allowed
+	virtual idRenderModel * TransformModel( idRenderModel *model, const char *rotationMatrix ) = 0;
 };
 
 // this will be statically pointed at a private implementation

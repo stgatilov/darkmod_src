@@ -726,6 +726,10 @@ public:
 	virtual int				GetPeekOverlay(); // grayman #4882
 	virtual int				DetermineAspectRatio(); // grayman #3807
 
+	int m_rotationHackEnabled = -1;		//stgatilov #4970: value of g_rotationHack when game was started
+	void					AdjustDictionaryMedia( idDict *dict );		//stgatilov #4970
+	void					FixRotationHackedEntity( idDict *dict );	//stgatilov #4970
+
 	/**
 	* TDM: Pause/Unpause game
 	**/
