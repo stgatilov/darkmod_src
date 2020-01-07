@@ -379,49 +379,50 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon( cm_traceWork_t *tw, cm_poly
 
 /*
 ================
-idCollisionModelManagerLocal::PointNode
-================
-*/
-cm_node_t *idCollisionModelManagerLocal::PointNode( const idVec3 &p, cm_model_t *model ) {
-	cm_node_t *node = model->node;
-	while ( node->planeType != -1 ) {
-		if (p[node->planeType] > node->planeDist) {
-			node = node->children[0];
-		}
-		else {
-			node = node->children[1];
-		}
-
-		assert( node != NULL );
-	}
-	return node;
-}
-
-/*
-================
 idCollisionModelManagerLocal::PointContents
 ================
 */
-int idCollisionModelManagerLocal::PointContents( const idVec3 p, cmHandle_t model ) {
-	cm_node_t *node = idCollisionModelManagerLocal::PointNode( p, idCollisionModelManagerLocal::models[model] );
-	for ( cm_brushRef_t *bref = node->brushes; bref; bref = bref->next ) {
-		cm_brush_t *b = bref->b;
-		// test if the point is within the brush bounds
-		if ( !b->bounds.ContainsPoint(p) )
-			continue;
-		// test if the point is inside the brush
-		idPlane *plane = b->planes;
-		int i;
-		for ( i = 0; i < b->numPlanes; i++, plane++ ) {
-			float d = plane->Distance( p );
-			if ( d >= 0 ) {
-				break;
+int idCollisionModelManagerLocal::PointContents( const idVec3 p, cmHandle_t hModel ) {
+	cm_model_t *model = idCollisionModelManagerLocal::models[hModel];
+
+	cm_node_t *node = model->node;
+	while ( 1 ) {
+
+		//stgatilov #5014: uncomment it to restore the old and buggy behavior
+		//if (node->planeType != -1) goto bug5014;
+
+		// check all against brushes in the current node
+		for ( cm_brushRef_t *bref = node->brushes; bref; bref = bref->next ) {
+			cm_brush_t *b = bref->b;
+			if ( !b->bounds.ContainsPoint(p) )
+				continue;
+
+			// test if the point is inside the brush
+			idPlane *plane = b->planes;
+			int i;
+			for ( i = 0; i < b->numPlanes; i++, plane++ ) {
+				float d = plane->Distance( p );
+				if ( d >= 0 ) {
+					break;
+				}
+			}
+			if ( i >= b->numPlanes ) {
+				return b->contents;
 			}
 		}
-		if ( i >= b->numPlanes ) {
-			return b->contents;
-		}
+//bug5014:
+
+		// don't go beyond leaf node
+		if ( node->planeType == -1 )
+			break;
+
+		if (p[node->planeType] > node->planeDist)
+			node = node->children[0];
+		else
+			node = node->children[1];
+		assert( node != NULL );
 	}
+
 	return 0;
 }
 
