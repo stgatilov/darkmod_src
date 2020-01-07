@@ -5429,6 +5429,27 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 			}
 		}
 
+		// grayman 5109 - if this door is part of a double door, and one of the doors
+		// requires a controller (switch or button) to open it, and it's not _this_ door,
+		// see if the paired door requires the controller. If so, switch from this door
+		// to the other door. This lets an AI use the controller to open the double doors.
+
+		int num = frobDoor->GetControllerNumber();
+		if (num == 0)
+		{
+			CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
+			if ( doubleDoor != NULL )
+			{
+				// does the paired door use a controller?
+				int numDouble = doubleDoor->GetControllerNumber();
+				if ( numDouble > 0 )
+				{
+					// let the AI use the paired door rather than the one pathfinding found
+					frobDoor = doubleDoor;
+				}
+			}
+		}
+
 		memory.doorRelated.currentDoor = frobDoor;
 		owner->m_DoorQueued = true; // grayman #3647
 		if (useSwitchTask)

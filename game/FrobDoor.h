@@ -101,6 +101,11 @@ public:
 	CFrobDoor*				GetDoubleDoor();
 
 	/**
+	 * Return the number of controllers targeting the door.
+	 **/
+	int						GetControllerNumber(); // grayman 5109
+
+	/**
 	 * Close the visportal, but only if the double door is also closed.
 	 **/
 	virtual void			ClosePortal();
