@@ -283,6 +283,36 @@
       </Synthetic>
     </Expand>
   </Type>
+  <Type Name="primitive_s">
+    <DisplayString>{brush}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All prims]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="bspbrush_s">
+    <DisplayString>{brushnum}: {bounds}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All brushes]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
 
   <Type Name="srfTriangles_s">
     <DisplayString>srfTriangles V{numVerts} I{numIndexes}</DisplayString>
@@ -362,6 +392,31 @@
             <Size>numClipPlanes</Size>
             <ValuePointer>clipPlanes</ValuePointer>
           </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="cm_node_s">
+    <DisplayString>cmNode: [{planeType}] = {planeDist}  (P{polygons?1:0} B{brushes?1:0})</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All brushes]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>brushes</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>b</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All polygons]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>polygons</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>p</ValueNode>
+          </LinkedListItems>
         </Expand>
       </Synthetic>
     </Expand>
