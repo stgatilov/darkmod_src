@@ -142,6 +142,34 @@ bool ProcessModels( void ) {
 	uEntity_t			*entity;
 	uint				counter = 0;  // 4123
 
+	{	//stgatilov #4970: check for rotation-hacked entities
+		idList<const char *> badRotationFuncStatics;
+		for (int i = 0; i < dmapGlobals.num_entities; i++) {
+			entity = &dmapGlobals.uEntities[i];
+			const idDict &spawnArgs = entity->mapEntity->epairs;
+			const char *name = spawnArgs.GetString("name", "{unnamed}");
+			idMat3 rotation = spawnArgs.GetMatrix("rotation");
+			if (!rotation.IsOrthogonal(1e-3f)) {
+				if (idStr::Cmp(spawnArgs.GetString("classname"), "func_static") == 0)
+					badRotationFuncStatics.Append(name);
+				else
+					common->Warning("Entity \"%s\" has bad rotation matrix", name);
+			}
+		}
+		//complain about func_static-s with bad rotation only once
+		if (int k = badRotationFuncStatics.Num()) {
+			idStr list;
+			std::shuffle(badRotationFuncStatics.begin(), badRotationFuncStatics.end(), std::default_random_engine(std::time(0)));
+			for (int i = 0; i < idMath::Imin(k, 10); i++) {
+				if (i) list += ", ";
+				list += idStr("\"") + badRotationFuncStatics[i] + "\"";
+			}
+			if (k > 10)
+				list += ", ...";
+			common->Warning("Detected %d func_static-s with bad rotation: [%s]", k, list.c_str());
+		}
+	}
+
 	oldVerbose = dmapGlobals.verbose;
 
 	for ( dmapGlobals.entityNum = 0 ; dmapGlobals.entityNum < dmapGlobals.num_entities ; dmapGlobals.entityNum++ ) {
