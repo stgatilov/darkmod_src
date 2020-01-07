@@ -368,6 +368,7 @@ public:
 	bool			IsIdentity( const float epsilon = MATRIX_EPSILON ) const;
 	bool			IsSymmetric( const float epsilon = MATRIX_EPSILON ) const;
 	bool			IsDiagonal( const float epsilon = MATRIX_EPSILON ) const;
+	bool			IsOrthogonal( const float epsilon = MATRIX_EPSILON ) const;
 	bool			IsRotated( void ) const;
 
 	void			ProjectVector( const idVec3 &src, idVec3 &dst ) const;
@@ -625,6 +626,11 @@ ID_INLINE bool idMat3::IsDiagonal( const float epsilon ) const {
 		return false;
 	}
 	return true;
+}
+
+ID_INLINE bool idMat3::IsOrthogonal( const float epsilon ) const {
+	idMat3 gram = TransposeMultiply(*this);
+	return gram.IsIdentity(epsilon);
 }
 
 ID_INLINE bool idMat3::IsRotated( void ) const {

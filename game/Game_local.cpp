@@ -1914,6 +1914,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
 		idMapEntity *mapEnt = mapFile->GetEntity( i );
+		const char *entName = mapEnt->epairs.GetString("name");
 
 		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
 			CacheDictionaryMedia( &mapEnt->epairs );
@@ -2505,6 +2506,7 @@ avoid the fast pre-cache check associated with each entityDef.
 */
 void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	const idKeyValue *kv;
+	const char *name = dict->GetString("name");
 
 	if ( dict == NULL ) {
 		if ( cvarSystem->GetCVarBool( "com_makingBuild") ) {
@@ -2519,16 +2521,17 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 
 	kv = dict->MatchPrefix( "model" );
 	while( kv ) {
-		if ( kv->GetValue().Length() ) {
-			declManager->MediaPrint( "CacheDictionaryMedia - Precaching model %s\n", kv->GetValue().c_str() );
+		const char *modelName = kv->GetValue();
+		if ( modelName[0] ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching model %s\n", modelName );
 			// precache model/animations
-			if ( declManager->FindType( DECL_MODELDEF, kv->GetValue(), false ) == NULL ) {
+			if ( declManager->FindType( DECL_MODELDEF, modelName, false ) == NULL ) {
 				// precache the render model
-				renderModelManager->FindModel( kv->GetValue() );
+				idRenderModel *renderModel = renderModelManager->FindModel( modelName );
 				// precache .cm files only
-				collisionModelManager->LoadModel( kv->GetValue(), true );
+				cmHandle_t cmHandle = collisionModelManager->LoadModel( modelName, true );
 				// load any tdm_matinfo decls for materials referenced by the model
-				tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( kv->GetValue() ) );
+				tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( modelName ) );
 			}
 		}
 		kv = dict->MatchPrefix( "model", kv );
@@ -5296,6 +5299,7 @@ void idGameLocal::SpawnMapEntities( void )
 	{
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
+		const char *entName = args.GetString("name");
 
 #ifdef LOGBUILD
 		// Tels: This might need a lot of time, even when the logging is disabled, so make
