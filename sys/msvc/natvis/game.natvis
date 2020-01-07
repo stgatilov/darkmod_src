@@ -222,7 +222,7 @@
         <Expand>
           <LinkedListItems>
             <HeadPointer>firstInteraction</HeadPointer>
-            <NextPointer>entityNext</NextPointer>
+            <NextPointer>lightNext</NextPointer>
             <ValueNode>this</ValueNode>
           </LinkedListItems>
         </Expand>
