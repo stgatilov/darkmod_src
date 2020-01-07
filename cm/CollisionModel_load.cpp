@@ -2692,9 +2692,9 @@ void idCollisionModelManagerLocal::ConvertBrush( cm_model_t *model, const idMapB
 		planes[i].FixDegeneracies( DEGENERATE_DIST_EPSILON );
 	}
 
-	// we are only getting the bounds for the brush so there's no need
-	// to create a winding for the last brush side
-	for ( i = 0; i < mapBrush->GetNumSides() - 1; i++ ) {
+	// stgatilov #5014: unlike what original D3 said,
+	// we MUST include the last brush too, because we are looking for "contents" here!
+	for ( i = 0; i < mapBrush->GetNumSides()/* - 1*/; i++ ) {
 		mapSide = mapBrush->GetSide(i);
 		material = declManager->FindMaterial( mapSide->GetMaterial() );
 		contents |= ( material->GetContentFlags() & CONTENTS_REMOVE_UTIL );
