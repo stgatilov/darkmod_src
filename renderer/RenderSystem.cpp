@@ -781,12 +781,14 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 		height = renderView.height;
 	}
 
+#if 0 // duzenko 5068, remove the makePowerOfTwo param after 2.08 release
 	// if makePowerOfTwo, drop to next lower power of two after scaling to physical pixels
 	if ( makePowerOfTwo ) {
 		width = RoundDownToPowerOfTwo( width );
 		height = RoundDownToPowerOfTwo( height );
 		// FIXME: megascreenshots with offset viewports don't work right with this yet
 	}
+#endif
 
 	// we might want to clip these to the crop window instead
 	while ( width > glConfig.vidWidth )

@@ -267,7 +267,7 @@ void tdmEAS::SetupRoutesBetweenClusters()
 
 	//stgatilov #4755: precompute areas for clusters to improve asymptotic time complexity
 	std::vector<int> areaOfCluster(_clusterInfo.size());
-	for (int cluster = 0; cluster < _clusterInfo.size(); cluster++)
+	for (size_t cluster = 0; cluster < _clusterInfo.size(); cluster++)
 		areaOfCluster[cluster] = _aas->GetAreaInCluster(cluster);
 
 	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
