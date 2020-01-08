@@ -819,9 +819,7 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 		// a light that doesn't cast shadows will still light even if it is behind a door
 		if ( r_useLightAreaCulling.GetInteger() &&
 			!light->parms.noShadows && light->lightShader->LightCastsShadows() && 
-			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] &&
-			!light->parms.parallel	//stgatilov #3818: parallel light has no single "start point"
-		) {
+			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] ) {
 			continue;
 		}
 
