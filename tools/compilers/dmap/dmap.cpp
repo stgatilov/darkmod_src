@@ -167,6 +167,13 @@ bool ProcessModels( void ) {
 			if (k > 10)
 				list += ", ...";
 			common->Warning("Detected %d func_static-s with bad rotation: [%s]", k, list.c_str());
+			//annoy mapper if he has g_rotationHack enabled
+			if (g_rotationHack.GetBool()) {
+				common->Error(
+					"Fix bad rotations on all func_static-s or set cvar g_rotationHack to 0\n"
+					"See more details in TDM wiki page \"Resizing Models\""
+				);
+			}
 		}
 	}
 
