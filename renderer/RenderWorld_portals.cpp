@@ -443,21 +443,32 @@ prelight, because shadows are cast from back side which may not be in visible ar
 =======================
 */
 void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
+	idPlane frustumPlanes[6];
+	idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
+
 	portalStack_t	ps;
+	memset( &ps, 0, sizeof( ps ) );
+	ps.numPortalPlanes = 6;
+	for ( int i = 0; i < 6; i++ ) {
+		ps.portalPlanes[i] = -frustumPlanes[i];
+	}
+
+	if (light->parms.parallelSky) {
+		//stgatilov #5121: trace light rays from every area having portalSky
+		idList<int> areas;
+		areas.SetNum(light->world->NumAreas());
+		int k = light->world->BoundsInAreas(light->globalLightBounds, areas.Ptr(), areas.Num());
+		areas.SetNum(k, false);
+		for (int areaNum : areas) {
+			if (light->world->CheckAreaForPortalSky(areaNum))
+				FloodLightThroughArea_r( light, areaNum, &ps );
+		}
+	}
+
 	// if the light origin areaNum is not in a valid area,
 	// the light won't have any area refs
 	if ( light->areaNum == -1 ) {
 		return;
-	}
-	idPlane frustumPlanes[6];
-	idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
-
-	memset( &ps, 0, sizeof( ps ) );
-
-	ps.numPortalPlanes = 6;
-
-	for ( int i = 0; i < 6; i++ ) {
-		ps.portalPlanes[i] = -frustumPlanes[i];
 	}
 	FloodLightThroughArea_r( light, light->areaNum, &ps );
 }

@@ -182,6 +182,10 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	args->GetBool( "noshadows", "0", renderLight->noShadows );
 	args->GetBool( "nospecular", "0", renderLight->noSpecular );
 	args->GetBool( "parallel", "0", renderLight->parallel );
+	// stgatilov #5121: parallel light starting in all sky areas
+	args->GetBool( "parallelSky", "0", renderLight->parallelSky );
+	if (renderLight->parallelSky)
+		renderLight->parallel = true;
 
 	args->GetBool( "noFogBoundary", "0", renderLight->noFogBoundary ); // Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 	args->GetInt( "spectrum", "0", renderLight->spectrum );
