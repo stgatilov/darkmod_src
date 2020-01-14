@@ -817,6 +817,12 @@ void ClearAreas_r( node_t *node ) {
 
 //=============================================================
 
+bool IsPortalSame( interAreaPortal_s *a, interAreaPortal_s *b ) {
+	return a->side == b->side && (
+		a->area0 == b->area0 && a->area1 == b->area1 ||
+		a->area1 == b->area0 && a->area0 == b->area1
+	);
+}
 
 /*
 =================
@@ -829,7 +835,6 @@ static void FindInterAreaPortals_r( node_t *node ) {
 	int			s;
 	int			i;
 	idWinding	*w;
-	interAreaPortal_t	*iap;
 	side_t		*side;
 
 	if ( node->planenum != PLANENUM_LEAF ) {
@@ -869,32 +874,26 @@ static void FindInterAreaPortals_r( node_t *node ) {
 			continue;
 		}
 
+		interAreaPortal_t iap;
+		if ( side->planenum == p->onnode->planenum ) {
+			iap.area0 = p->nodes[0]->area;
+			iap.area1 = p->nodes[1]->area;
+		} else {
+			iap.area0 = p->nodes[1]->area;
+			iap.area1 = p->nodes[0]->area;
+		}
+		iap.side = side;
+
 		// see if we have created this portal before
 		for ( i = 0 ; i < numInterAreaPortals ; i++ ) {
-			iap = &interAreaPortals[i];
-
-			if ( side == iap->side &&
-				( ( p->nodes[0]->area == iap->area0 && p->nodes[1]->area == iap->area1 )
-				|| ( p->nodes[1]->area == iap->area0 && p->nodes[0]->area == iap->area1 ) ) ) {
+			if ( IsPortalSame( &iap, &interAreaPortals[i] ) )
 				break;
-			}
 		}
-
 		if ( i != numInterAreaPortals ) {
 			continue;	// already emited
 		}
 
-		iap = &interAreaPortals[numInterAreaPortals];
-		numInterAreaPortals++;
-		if ( side->planenum == p->onnode->planenum ) {
-			iap->area0 = p->nodes[0]->area;
-			iap->area1 = p->nodes[1]->area;
-		} else {
-			iap->area0 = p->nodes[1]->area;
-			iap->area1 = p->nodes[0]->area;
-		}
-		iap->side = side;
-
+		interAreaPortals[numInterAreaPortals++] = iap;
 	}
 }
 

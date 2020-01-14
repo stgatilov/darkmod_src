@@ -63,6 +63,16 @@
     </Expand>
   </Type>
 
+  <Type Name="idWinding">
+    <Expand>
+      <Item Name="num">numPoints</Item>
+      <ArrayItems>
+        <Size>numPoints</Size>
+        <ValuePointer>p</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
   <Type Name="idStr">
     <DisplayString>{data,s}</DisplayString>
     <StringView>data,s</StringView>

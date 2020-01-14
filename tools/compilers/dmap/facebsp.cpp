@@ -384,11 +384,14 @@ tree_t *FaceBSP( bspface_t *list ) {
 	}
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i faces\n", count );
 
+	c_faceLeafs = 0;
+	c_nodes = 0;
 	tree->headnode = AllocNode();
 	tree->headnode->bounds = tree->bounds;
-	c_faceLeafs = 0;
 
 	BuildFaceTree_r ( tree->headnode, list );
+	tree->nodeCnt = c_nodes;
+	tree->leafCnt = c_faceLeafs;
 
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i leafs\n", c_faceLeafs );
 

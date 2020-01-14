@@ -6,7 +6,7 @@
   </Type>
 
   <Type Name="CRawVector">
-    <DisplayString>[{num}]{{...}}</DisplayString>
+    <DisplayString>[{m_Size} / {m_Capacity}]</DisplayString>
     <Expand>
       <ArrayItems>
         <Size>m_Size</Size>
@@ -116,16 +116,6 @@
         <DisplayString>{file}:{gameLocal.program.fileList.list[file],s}</DisplayString>
       </Synthetic>
       <Item Name="linenumber">linenumber</Item>
-    </Expand>
-  </Type>
-
-  <Type Name="CRawVector">
-    <DisplayString>[{m_Size} / {m_Capacity}]</DisplayString>
-    <Expand>
-      <ArrayItems>
-        <Size>m_Size</Size>
-        <ValuePointer>m_Pointer</ValuePointer>
-      </ArrayItems>
     </Expand>
   </Type>
 
@@ -266,54 +256,6 @@
     <DisplayString>dblPortal: {portals[0].intoArea} | {portals[1].intoArea}  block={blockingBits}</DisplayString>
   </Type>
 
-
-  <!-- dmap has a habit of storing triangles in linked list -->
-  <Type Name="mapTri_s">
-    <DisplayString>{v[0].xyz} {v[1].xyz} {v[2].xyz}</DisplayString>
-    <Expand>
-      <ExpandedItem>this,!</ExpandedItem>
-      <Synthetic Name="[All tris]" ExcludeView="raw">
-        <Expand>
-          <LinkedListItems>
-            <HeadPointer>this</HeadPointer>
-            <NextPointer>next</NextPointer>
-            <ValueNode>this</ValueNode>
-          </LinkedListItems>
-        </Expand>
-      </Synthetic>
-    </Expand>
-  </Type>
-  <Type Name="primitive_s">
-    <DisplayString>{brush}</DisplayString>
-    <Expand>
-      <ExpandedItem>this,!</ExpandedItem>
-      <Synthetic Name="[All prims]" ExcludeView="raw">
-        <Expand>
-          <LinkedListItems>
-            <HeadPointer>this</HeadPointer>
-            <NextPointer>next</NextPointer>
-            <ValueNode>this</ValueNode>
-          </LinkedListItems>
-        </Expand>
-      </Synthetic>
-    </Expand>
-  </Type>
-  <Type Name="bspbrush_s">
-    <DisplayString>{brushnum}: {bounds}</DisplayString>
-    <Expand>
-      <ExpandedItem>this,!</ExpandedItem>
-      <Synthetic Name="[All brushes]" ExcludeView="raw">
-        <Expand>
-          <LinkedListItems>
-            <HeadPointer>this</HeadPointer>
-            <NextPointer>next</NextPointer>
-            <ValueNode>this</ValueNode>
-          </LinkedListItems>
-        </Expand>
-      </Synthetic>
-    </Expand>
-  </Type>
-
   <Type Name="srfTriangles_s">
     <DisplayString>srfTriangles V{numVerts} I{numIndexes}</DisplayString>
     <Expand>
@@ -420,6 +362,118 @@
         </Expand>
       </Synthetic>
     </Expand>
+  </Type>
+
+  <!-- dmap data structures -->
+  <Type Name="mapTri_s">
+    <DisplayString>{v[0].xyz} {v[1].xyz} {v[2].xyz}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All tris]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="primitive_s">
+    <DisplayString>{*brush}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All prims]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="bspbrush_s">
+    <DisplayString>{brushnum}: {bounds}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All brushes]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="bspface_s">
+    <DisplayString>{planenum}: {w}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All faces]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="tree_s">
+    <DisplayString>tree: {bounds}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All nodes]" ExcludeView="raw">
+        <Expand>
+          <TreeItems>
+            <Size>nodeCnt</Size>
+            <HeadPointer>headnode</HeadPointer>
+            <LeftPointer>children[0]</LeftPointer>
+            <RightPointer>children[1]</RightPointer>
+            <ValueNode>this</ValueNode>
+          </TreeItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="node_s">
+    <DisplayString>node[{nodeNumber}]: {planenum} {bounds}</DisplayString>
+    <Expand>
+      <Item Name="[plane]" Condition="planenum != -1">dmapGlobals.mapPlanes[planenum]</Item>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All portals]" ExcludeView="raw">
+        <Expand>
+          <CustomListItems MaxItemsPerView="1000">
+            <Variable Name="node" InitialValue="this"/>
+            <Variable Name="ptr" InitialValue="portals"/>
+            <Loop>
+              <Break Condition="!ptr"/>
+              <Item>*ptr</Item>
+              <Exec>ptr = ptr->next[ptr->nodes[1] == node]</Exec>
+            </Loop>
+          </CustomListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All split planes]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>parent</HeadPointer>
+            <NextPointer>parent</NextPointer>
+            <ValueNode>dmapGlobals.mapPlanes[planenum]</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="uPortal_s">
+    <DisplayString>portal: {plane} #pts={winding->numPoints}</DisplayString>
   </Type>
 
 </AutoVisualizer>

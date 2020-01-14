@@ -160,6 +160,7 @@ typedef struct tree_s {
 	node_t		*headnode;
 	node_t		outside_node;
 	idBounds	bounds;
+	int			nodeCnt, leafCnt;
 } tree_t;
 
 #define	MAX_QPATH			256			// max length of a game pathname
@@ -224,7 +225,7 @@ typedef enum {
 	VL_VERBOSE				// The original extra-verbose mode
 } verbosityLevel_t;
 
-typedef struct {
+typedef struct dmapGlobals_s {
 	// mapFileBase will contain the qpath without any extension: "maps/test_box"
 	char		mapFileBase[1024];
 
@@ -332,7 +333,7 @@ void GLS_EndScene( void );
 
 #define	MAX_INTER_AREA_PORTALS	1024
 
-typedef struct {
+typedef struct interAreaPortal_s {
 	int		area0, area1;
 	side_t	*side;
 } interAreaPortal_t;
@@ -345,6 +346,7 @@ void FillOutside( uEntity_t *e );
 void FloodAreas( uEntity_t *e );
 void MakeTreePortals( tree_t *tree );
 void FreePortal( uPortal_t *p );
+bool IsPortalSame( interAreaPortal_s *a, interAreaPortal_s *b );
 
 //=============================================================================
 

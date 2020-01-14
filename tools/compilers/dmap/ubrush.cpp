@@ -479,6 +479,7 @@ node_t *AllocNode (void)
 
 	node = (node_t *)Mem_Alloc(sizeof(*node));
 	memset (node, 0, sizeof(*node));
+	c_nodes++;
 
 	return node;
 }

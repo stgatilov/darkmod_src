@@ -100,6 +100,7 @@ public:
 	bool			PlanesConcave( const idWinding &w2, const idVec3 &normal1, const idVec3 &normal2, float dist1, float dist2 ) const;
 
 	bool			PointInside( const idVec3 &normal, const idVec3 &point, const float epsilon ) const;
+	bool			PointInsideDst( const idVec3 &normal, const idVec3 &point, const float epsilon ) const;
 					// returns true if the line or ray intersects the winding
 	bool			LineIntersection( const idPlane &windingPlane, const idVec3 &start, const idVec3 &end, bool backFaceCull = false ) const;
 					// intersection point is start + dir * scale

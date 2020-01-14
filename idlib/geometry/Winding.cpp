@@ -1357,6 +1357,28 @@ bool idWinding::PointInside( const idVec3 &normal, const idVec3 &point, const fl
 	}
 	return true;
 }
+/*
+=============
+idWinding::PointInsideDst
+=============
+*/
+bool idWinding::PointInsideDst( const idVec3 &normal, const idVec3 &point, const float epsilon ) const {
+	int i;
+	idVec3 dir, n, pointvec;
+	assert( fabs( normal.Length() - 1.0f ) <= 1e-3f );
+
+	for ( i = 0; i < numPoints; i++ ) {
+		dir = p[(i+1) % numPoints].ToVec3() - p[i].ToVec3();
+		pointvec = point - p[i].ToVec3();
+
+		n = dir.Cross( normal );
+
+		if ( pointvec * n < -epsilon * dir.Length() ) {
+			return false;
+		}
+	}
+	return true;
+}
 
 /*
 =============
