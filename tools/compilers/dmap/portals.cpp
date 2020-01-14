@@ -667,22 +667,17 @@ FindSideForPortal
 =================
 */
 static side_t	*FindSideForPortal( uPortal_t *p ) {
-	int		i, j, k;
-	node_t	*node;
-	uBrush_t	*b, *orig;
-	side_t	*s, *s2;
-
 	// scan both bordering nodes brush lists for a portal brush
 	// that shares the plane
-	for ( i = 0 ; i < 2 ; i++ ) {
-		node = p->nodes[i];
-		for ( b = node->brushlist ; b ; b = b->next ) {
+	for ( int i = 0 ; i < 2 ; i++ ) {
+		node_t *node = p->nodes[i];
+		for ( uBrush_t *b = node->brushlist ; b ; b = b->next ) {
 			if ( !( b->contents & CONTENTS_AREAPORTAL ) ) {
 				continue;
 			}
-			orig = b->original;
-			for ( j = 0 ; j < orig->numsides ; j++ ) {
-				s = orig->sides + j;
+			uBrush_t *orig = b->original;
+			for ( int j = 0 ; j < orig->numsides ; j++ ) {
+				side_t *s = orig->sides + j;
 				if ( !s->visibleHull ) {
 					continue;
 				}
@@ -693,11 +688,11 @@ static side_t	*FindSideForPortal( uPortal_t *p ) {
 					continue;
 				}
 				// remove the visible hull from any other portal sides of this portal brush
-				for ( k = 0; k < orig->numsides; k++ ) {
+				for ( int k = 0; k < orig->numsides; k++ ) {
 					if ( k == j ) {
 						continue;
 					}
-					s2 = orig->sides + k;
+					side_t *s2 = orig->sides + k;
 					if ( s2->visibleHull == NULL ) {
 						continue;
 					}
