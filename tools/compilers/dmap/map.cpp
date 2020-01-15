@@ -70,6 +70,12 @@ int FindFloatPlane( const idPlane &plane, bool *fixedDegeneracies ) {
 	return dmapGlobals.mapPlanes.FindPlane( p, NORMAL_EPSILON, DIST_EPSILON );
 }
 
+idCVar dmap_fixBrushOpacityFirstSide(
+	"dmap_fixBrushOpacityFirstSide", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"If set to 0, then dmap ignores first side of a brush when deciding whether it is solid or not. "
+	"This is a bug fixed in TDM 2.08. "
+);
+
 /*
 ===========
 SetBrushContents
@@ -91,8 +97,10 @@ static void SetBrushContents( uBrush_t *b ) {
 	// a brush is only opaque if all sides are opaque
 	b->opaque = true;
 
-	for ( i=1 ; i<b->numsides ; i++, s++ ) {
+	for ( i=0 ; i<b->numsides ; i++, s++ ) {
 		s = &b->sides[i];
+		if ( i == 0 && !dmap_fixBrushOpacityFirstSide.GetBool() )
+			continue;	//stgatilov #5129
 
 		if ( !s->material ) {
 			continue;

@@ -15,6 +15,10 @@
 
 #include "../../../renderer/tr_local.h"
 
+extern idCVar dmap_fixBrushOpacityFirstSide;
+extern idCVar dmap_bspAllSidesOfVisportal;
+extern idCVar dmap_fixVisportalOutOfBoundaryEffects;
+
 
 typedef struct primitive_s {
 	struct primitive_s *next;

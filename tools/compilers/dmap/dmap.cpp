@@ -410,7 +410,18 @@ void Dmap( const idCmdArgs &args ) {
 	// delete any old line leak files
 	sprintf( path, "%s.lin", dmapGlobals.mapFileBase );
 	fileSystem->RemoveFile( path, "" );
-
+	// stgatilov #5129: remove all portal leak files too
+	idStr mapFn = dmapGlobals.mapFileBase;
+	mapFn.BackSlashesToSlashes();
+	idStr dir = mapFn;
+	dir.StripFilename();
+	idFileList *allLinFiles = fileSystem->ListFiles(dir, "lin", false, true, "");
+	for (int i = 0; i < allLinFiles->GetNumFiles(); i++) {
+		idStr fn = allLinFiles->GetFile(i);
+		if (fn.IcmpPrefix(mapFn) == 0 && fn.CheckExtension(".lin"))
+			fileSystem->RemoveFile(fn, "");
+	}
+	fileSystem->FreeFileList(allLinFiles);
 
 	//
 	// start from scratch

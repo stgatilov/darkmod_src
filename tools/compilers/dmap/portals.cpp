@@ -1,4 +1,5 @@
 /*****************************************************************************
+/*****************************************************************************
                     The Dark Mod GPL Source Code
  
  This file is part of the The Dark Mod Source Code, originally based 
@@ -23,6 +24,11 @@
 
 interAreaPortal_t interAreaPortals[MAX_INTER_AREA_PORTALS];
 int					numInterAreaPortals;
+// stgatilov #5129: the arrays below are stored only to avoid duplicate reports
+static interAreaPortal_t droppedAreaPortals[MAX_INTER_AREA_PORTALS];
+static int					numDroppedAreaPortals;
+static interAreaPortal_t overlappingAreaPortals[MAX_INTER_AREA_PORTALS];
+static int					numOverlappingAreaPortals;
 
 
 int		c_active_portals;
@@ -661,12 +667,24 @@ FLOOD AREAS
 static	int		c_areas;
 static	int		c_areaFloods;
 
-/*
-=================
-FindSideForPortal
-=================
-*/
-static side_t	*FindSideForPortal( uPortal_t *p ) {
+idCVar dmap_fixVisportalOutOfBoundaryEffects(
+	"dmap_fixVisportalOutOfBoundaryEffects", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"If set to 0, then visportal sometimes blocks areas on its plane outside of its boundary polygon. "
+	"This is a bug fixed in TDM 2.08. "
+);
+
+// complete information about one visportal found for a BSP portal
+// see also FindVisportalsAtPortal
+typedef struct visportalInfo_s {
+	side_t *side;			// brush side being visportal (original brush)
+	uBrush_t *brush;		// brush with this side (original brush)
+	node_t *node;			// incident BSP node where the brush was found
+	uBrush_t *brushPiece;	// piece of the brush inside BSP node
+} visportalInfo_t;
+
+static int FindVisportalsAtPortal( uPortal_t *p, visportalInfo_t *arrFound, int arrCapacity ) {
+	int numFound = 0;
+	idVec3 pctr = p->winding->GetCenter();
 	// scan both bordering nodes brush lists for a portal brush
 	// that shares the plane
 	for ( int i = 0 ; i < 2 ; i++ ) {
@@ -687,6 +705,14 @@ static side_t	*FindSideForPortal( uPortal_t *p ) {
 				if ( ( s->planenum & ~1 ) != ( p->onnode->planenum & ~1 ) ) {
 					continue;
 				}
+				if ( dmap_fixVisportalOutOfBoundaryEffects.GetBool() ) {
+					// stgatilov #5129: visportal side boundary must contain BSP portal to have effect
+					idPlane sidePlane;
+					s->winding->GetPlane( sidePlane );
+					if ( !s->winding->PointInsideDst( sidePlane.Normal(), pctr, CLIP_EPSILON ) ) {
+						continue;
+					}
+				}
 				// remove the visible hull from any other portal sides of this portal brush
 				for ( int k = 0; k < orig->numsides; k++ ) {
 					if ( k == j ) {
@@ -699,15 +725,35 @@ static side_t	*FindSideForPortal( uPortal_t *p ) {
 					if ( !( s2->material->GetContentFlags() & CONTENTS_AREAPORTAL ) ) {
 						continue;
 					}
-					common->Warning( "brush has multiple area portal sides at %s", s2->visibleHull->GetCenter().ToString() );
+					common->Warning( "brush %d has multiple area portal sides at %s", b->brushnum, s2->visibleHull->GetCenter().ToString() );
 					delete s2->visibleHull;
 					s2->visibleHull = NULL;
 				}
-				return s;
+				visportalInfo_t info;
+				info.side = s;
+				info.brush = orig;
+				info.brushPiece = b;
+				info.node = node;
+				if (numFound < arrCapacity) {
+					arrFound[numFound++] = info;
+				}
 			}
 		}
 	}
-	return NULL;
+	return numFound;
+}
+
+/*
+=================
+FindSideForPortal
+=================
+*/
+static side_t	*FindSideForPortal( uPortal_t *p ) {
+	visportalInfo_s info;
+	if ( FindVisportalsAtPortal(p, &info, 1) )
+		return info.side;
+	else
+		return NULL;
 }
 
 /*
@@ -810,6 +856,15 @@ void ClearAreas_r( node_t *node ) {
 	node->area = -1;
 }
 
+void ClearOccupied_r( node_t *node ) {
+	if ( node->planenum != PLANENUM_LEAF ) {
+		ClearOccupied_r (node->children[0]);
+		ClearOccupied_r (node->children[1]);
+		return;
+	}
+	node->occupied = 0;
+}
+
 //=============================================================
 
 bool IsPortalSame( interAreaPortal_s *a, interAreaPortal_s *b ) {
@@ -817,6 +872,34 @@ bool IsPortalSame( interAreaPortal_s *a, interAreaPortal_s *b ) {
 		a->area0 == b->area0 && a->area1 == b->area1 ||
 		a->area1 == b->area0 && a->area0 == b->area1
 	);
+}
+
+static void ReportOverlappingPortals( uPortal_t *portal, visportalInfo_t *visportals, int multiplicity ) {
+	idStr brushlist;
+	for ( int i = 0; i < multiplicity; i++ ) {
+		if (i) brushlist += ',';
+		brushlist += idStr(visportals[i].brush->brushnum);
+	}
+	idStr pos = portal->winding->GetCenter().ToString();
+	common->Warning ( "Portals [%s] at (%s) overlap", brushlist.c_str(), pos.c_str() );
+	pos.Replace('.', 'd');
+	pos.Replace('-', 'm');
+	pos.Replace(' ', '_');
+	idStr filename;
+	sprintf( filename, "%s_portalO_%s.lin", dmapGlobals.mapFileBase, pos.c_str() );
+
+	idStr ospath = fileSystem->RelativePathToOSPath( filename, "fs_devpath", "" );
+	FILE *linefile = fopen( ospath, "w" );
+	if ( !linefile )
+		common->Error( "Couldn't open %s\n", ospath.c_str() );
+	int pn = portal->winding->GetNumPoints();
+	for ( int i = 0; i <= pn; i++ ) {
+		idVec3 p = (*portal->winding)[i % pn].ToVec3();
+		fprintf( linefile, "%f %f %f\n", p.x, p.y, p.z );
+	}
+	fclose( linefile );
+
+	common->Printf( "saved %s (%i points)\n", filename.c_str(), pn + 1 );
 }
 
 /*
@@ -858,12 +941,13 @@ static void FindInterAreaPortals_r( node_t *node ) {
 			continue;
 		}
 
-		side = FindSideForPortal( p );
-//		w = p->winding;
-		if ( !side ) {
+		visportalInfo_t info[32];
+		int num = FindVisportalsAtPortal( p, info, 32 );
+		if ( num == 0 ) {
 			common->Warning( "FindSideForPortal failed at %s", p->winding->GetCenter().ToString() );
 			continue;
 		}
+		side = info[0].side;
 		w = side->visibleHull;
 		if ( !w ) {
 			continue;
@@ -879,6 +963,24 @@ static void FindInterAreaPortals_r( node_t *node ) {
 		}
 		iap.side = side;
 
+		if ( dmap_bspAllSidesOfVisportal.GetBool() && num > 1 ) {
+			// stgatilov #5129: given that all sides were inserted
+			// every found visportal side must cover this entire BSP portal
+			for ( i = 0 ; i < numOverlappingAreaPortals ; i++ ) {
+				if ( IsPortalSame( &iap, &overlappingAreaPortals[i] ) )
+					break;
+			}
+			if ( i == numOverlappingAreaPortals ) {
+				ReportOverlappingPortals( p, info, num );
+				// avoid reporting ALL overlapping sides between these areas in future
+				for ( i = 0; i < num; i++ ) {
+					interAreaPortal_t temp = iap;
+					temp.side = info[i].side;
+					overlappingAreaPortals[numOverlappingAreaPortals++] = temp;
+				}
+			}
+		}
+
 		// see if we have created this portal before
 		for ( i = 0 ; i < numInterAreaPortals ; i++ ) {
 			if ( IsPortalSame( &iap, &interAreaPortals[i] ) )
@@ -892,9 +994,188 @@ static void FindInterAreaPortals_r( node_t *node ) {
 	}
 }
 
+// given a BSP portal having same area on both of its sides with visportal on it,
+// finds and reports a path from one side to the other one
+static bool FindPortalCycleBFS( uEntity_t *entity, uPortal_t *startPortal ) {
+	int brushnum = -1;
+	visportalInfo_t info;
+	if ( FindVisportalsAtPortal( startPortal, &info, 1 ) )
+		brushnum = info.brush->brushnum;
 
+	bool found = false;
+	idList<node_t*> nodesQueue;
+	idList<int> prevIdx;
+	idList<uPortal_t*> byPortal;
 
+	// do two attempts: try to find nicer path on the first one
+	for ( int attempt = 0; attempt < 2; attempt++ ) {
 
+		// occupied is used as visited mark and (1 + shortest distance) at once
+		ClearOccupied_r( entity->tree->headnode );
+		nodesQueue.Clear();
+		prevIdx.Clear();
+		byPortal.Clear();
+
+		nodesQueue.Append( startPortal->nodes[0] );
+		nodesQueue[0]->occupied = 1;
+		prevIdx.Append( -1 );
+		byPortal.Append( startPortal );
+
+		// pretty standard Breadth-First-Search over leaf-nodes follows:
+		found = false;
+		for ( int done = 0; done < nodesQueue.Num() && !found; done++ ) {
+			node_t *node = nodesQueue[done];
+
+			for ( uPortal_t *p = node->portals, *np; p; p = np ) {
+				int s = (p->nodes[1] == node);
+				np = p->next[s];
+				node_t *otherNode = p->nodes[!s];
+
+				if ( !Portal_Passable(p) )
+					continue;					// going into solid
+				if ( FindSideForPortal( p ) )
+					continue;					// going through visportal
+				if ( otherNode->occupied > 0 )
+					continue;					// already visited that node
+
+				if ( attempt == 0 ) {
+					// limit transitions on first attempt: forbid going through all sides of
+					// the considered visportal brush, except for a side parallel to the visportalled one
+					// if such search succeeds, the leak path will be visible on both sides of visportal brush
+					bool forbidden = false;
+					for ( int u = 0; u < info.brush->numsides; u++ ) {
+						side_t *uside = &info.brush->sides[u];
+						if ( (p->onnode->planenum & ~1) != (uside->planenum & ~1) )
+							continue;
+						if ( dmapGlobals.mapPlanes[uside->planenum].Normal().Cross( dmapGlobals.mapPlanes[info.side->planenum].Normal() ).LengthSqr() <= VECTOR_EPSILON * VECTOR_EPSILON )
+							continue;
+						idPlane windingPlane;
+						uside->winding->GetPlane( windingPlane );
+						if ( !uside->winding->PointInsideDst( windingPlane.Normal(), p->winding->GetCenter(), CLIP_EPSILON ) )
+							continue;
+						forbidden = true;
+					}
+					if (forbidden)
+						continue;
+				}
+
+				otherNode->occupied = node->occupied + 1;
+				nodesQueue.Append(otherNode);
+				prevIdx.Append(done);
+				byPortal.Append(p);
+
+				if ( otherNode == startPortal->nodes[1] ) {
+					// terminate as soon as path found: hope to avoid visiting the whole map
+					found = true;
+					break;
+				}
+			}
+		}
+
+		if ( found )
+			break;
+	}
+	if ( !found )
+		return false;
+
+	// backtrace shortest path found by BFS
+	idList<idVec3> path;
+	for ( int idx = nodesQueue.Num() - 1; idx >= 0; idx = prevIdx[idx] ) {
+		node_t *node = nodesQueue[idx];
+		uPortal_t *p = byPortal[idx];
+		path.Append( p->winding->GetCenter() );
+	}
+	path.Reverse();
+	path.Append(idVec3(path[0]));
+
+	idStr pos = startPortal->winding->GetCenter().ToString();
+	common->Warning ( "Portal %d at (%s) dropped", brushnum, pos.c_str() );
+	pos.Replace('.', 'd');
+	pos.Replace('-', 'm');
+	pos.Replace(' ', '_');
+	idStr filename;
+	sprintf( filename, "%s_portalL_%s.lin", dmapGlobals.mapFileBase, pos.c_str() );
+
+	idStr ospath = fileSystem->RelativePathToOSPath( filename, "fs_devpath", "" );
+	FILE *linefile = fopen( ospath, "w" );
+	if ( !linefile )
+		common->Error( "Couldn't open %s\n", ospath.c_str() );
+	for ( idVec3 p : path )
+		fprintf( linefile, "%f %f %f\n", p.x, p.y, p.z );
+	fclose( linefile );
+
+	common->Printf( "saved %s (%i points)\n", filename.c_str(), path.Num() );
+	return true;
+}
+
+// traverses whole BSP tree, finds "dropped" visportals (i.e. having same area on both sides)
+static void DetectUnusedAreaPortals_r( uEntity_t *entity, node_t *node ) {
+	if ( node->planenum != PLANENUM_LEAF ) {
+		DetectUnusedAreaPortals_r( entity, node->children[0] );
+		DetectUnusedAreaPortals_r( entity, node->children[1] );
+		return;
+	}
+
+	if ( node->opaque )
+		return;
+
+	int s;
+	for ( uPortal_t *p = node->portals; p; p = p->next[s] ) {
+		s = (p->nodes[1] == node);
+
+		node_t *other = other = p->nodes[!s];
+		if ( other->opaque )
+			continue;
+
+		side_t *side = FindSideForPortal( p );
+		if ( !side )
+			continue;
+
+		idWinding *w = side->visibleHull;
+		if ( !w )
+			continue;
+
+		interAreaPortal_t iap;
+		if ( side->planenum == p->onnode->planenum ) {
+			iap.area0 = p->nodes[0]->area;
+			iap.area1 = p->nodes[1]->area;
+		} else {
+			iap.area0 = p->nodes[1]->area;
+			iap.area1 = p->nodes[0]->area;
+		}
+		iap.side = side;
+
+		// see if we have created visportal here
+		int i;
+		for ( i = 0 ; i < numInterAreaPortals ; i++ ) {
+			if ( IsPortalSame( &iap, &interAreaPortals[i] ) )
+				break;
+		}
+		if ( i != numInterAreaPortals )
+			continue;
+
+		// see if we already reported it as dropped
+		for ( i = 0 ; i < numDroppedAreaPortals ; i++ ) {
+			if ( IsPortalSame( &iap, &droppedAreaPortals[i] ) )
+				break;
+		}
+		if ( i != numDroppedAreaPortals )
+			continue;
+
+		// TODO: what about dropped visportals separating two areas?
+		// is it true that such situation never happens?
+		if ( other->area != node->area ) {
+			common->Warning("Inter-area portal dropped at %s", p->winding->GetCenter().ToString());
+			continue;
+		}
+
+		// stop wasting time if there are too many dropped portals already
+		if (numDroppedAreaPortals < 100) {
+			FindPortalCycleBFS(entity, p);
+		}
+		droppedAreaPortals[numDroppedAreaPortals++] = iap;
+	}
+}
 
 /*
 =============
@@ -923,7 +1204,12 @@ void FloodAreas( uEntity_t *e ) {
 	// identify all portals between areas if this is the world
 	if ( e == &dmapGlobals.uEntities[0] ) {
 		numInterAreaPortals = 0;
+		numOverlappingAreaPortals = 0;
 		FindInterAreaPortals_r( e->tree->headnode );
+
+		//stgatilov #5129: detecting dropped portals
+		numDroppedAreaPortals = 0;
+		DetectUnusedAreaPortals_r(e, e->tree->headnode);
 	}
 }
 

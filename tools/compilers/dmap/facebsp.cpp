@@ -405,6 +405,13 @@ tree_t *FaceBSP( bspface_t *list ) {
 
 //==========================================================================
 
+idCVar dmap_bspAllSidesOfVisportal(
+	"dmap_bspAllSidesOfVisportal", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"If set to 1, then all sides of a visportal brush are inserted into BSP tree. "
+	"If set to 0, then only the side with visportal material is inserted (old style). "
+	"When dmapping old missions, either fix all visportal warnings or set this to 0. "
+);
+
 /*
 =================
 MakeStructuralBspFaceList
@@ -432,7 +439,8 @@ bspface_t	*MakeStructuralBspFaceList( primitive_t *list ) {
 			if ( !w ) {
 				continue;
 			}
-			if ( ( b->contents & CONTENTS_AREAPORTAL ) && ! ( s->material->GetContentFlags() & CONTENTS_AREAPORTAL ) ) {
+			if ( !dmap_bspAllSidesOfVisportal.GetBool() &&	//stgatilov #5129
+				( b->contents & CONTENTS_AREAPORTAL ) && ! ( s->material->GetContentFlags() & CONTENTS_AREAPORTAL ) ) {
 				continue;
 			}
 			f = AllocBspFace();
