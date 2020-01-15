@@ -410,6 +410,13 @@
       </Synthetic>
     </Expand>
   </Type>
+  <Type Name="side_s">
+    <DisplayString>side: {planenum} {((idDeclLocal*)material->base)->name} {dmapGlobals.mapPlanes[planenum]}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Item Name="[plane]" ExcludeView="raw">dmapGlobals.mapPlanes[planenum]</Item>
+    </Expand>
+  </Type>
   <Type Name="bspface_s">
     <DisplayString>{planenum}: {w}</DisplayString>
     <Expand>
