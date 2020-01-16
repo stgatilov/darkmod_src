@@ -507,7 +507,13 @@ bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 
 	R_LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
 
-	worldRadius = ( bounds[0] - localOrigin ).Length();	// FIXME: won't be correct for scaled objects
+	//stgatilov #4970: should be 1 for orthogonal transformations
+	float maxScale = idMath::Sqrt( idMath::Fmax( idMath::Fmax (
+		idVec3(modelMatrix[0], modelMatrix[1], modelMatrix[2]).LengthSqr(),
+		idVec3(modelMatrix[4], modelMatrix[5], modelMatrix[6]).LengthSqr() ),
+		idVec3(modelMatrix[8], modelMatrix[9], modelMatrix[10]).LengthSqr() )
+	);
+	worldRadius = ( bounds[0] - localOrigin ).Length() * maxScale;
 
 	for ( i = 0 ; i < numPlanes ; i++ ) {
 		frust = planes + i;
