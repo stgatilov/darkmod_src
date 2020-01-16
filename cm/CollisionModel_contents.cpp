@@ -377,6 +377,12 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon( cm_traceWork_t *tw, cm_poly
 	return false;
 }
 
+static idCVar cm_fixPointContentsQuery("cm_fixPointContentsQuery", "1", CVAR_BOOL | CVAR_SYSTEM, 
+	"If set to 0, then some of the brushes are sometimes ignored in \"contents\" point queries. "
+	"This usually affects water brushes, making them non-liquid. "
+	"This bug was fixed in TDM 2.08."
+);
+
 /*
 ================
 idCollisionModelManagerLocal::PointContents
@@ -388,8 +394,9 @@ int idCollisionModelManagerLocal::PointContents( const idVec3 p, cmHandle_t hMod
 	cm_node_t *node = model->node;
 	while ( 1 ) {
 
-		//stgatilov #5014: uncomment it to restore the old and buggy behavior
-		//if (node->planeType != -1) goto bug5014;
+		//stgatilov #5014: old and buggy behavior was to ignore all brushes in non-leaf nodes
+		if ( !cm_fixPointContentsQuery.GetBool() && node->planeType != -1 )
+			goto bug5014;
 
 		// check all against brushes in the current node
 		for ( cm_brushRef_t *bref = node->brushes; bref; bref = bref->next ) {
@@ -410,7 +417,7 @@ int idCollisionModelManagerLocal::PointContents( const idVec3 p, cmHandle_t hMod
 				return b->contents;
 			}
 		}
-//bug5014:
+bug5014:
 
 		// don't go beyond leaf node
 		if ( node->planeType == -1 )

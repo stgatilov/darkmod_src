@@ -2668,6 +2668,13 @@ void idCollisionModelManagerLocal::ConvertBrushSides( cm_model_t *model, const i
 	}
 }
 
+static idCVar cm_fixBrushContentsIgnoreLastSide("cm_fixBrushContentsIgnoreLastSide", "1", CVAR_BOOL | CVAR_SYSTEM, 
+	"If set to 0, then the last side of a brush is ignored when determining brush contents. "
+	"This usually affects water brushes, making them non-liquid. "
+	"Takes effect during dmap, and only if you have deleted .cm file beforehand! "
+	"This bug was fixed in TDM 2.08."
+);
+
 /*
 ================
 idCollisionModelManagerLocal::ConvertBrush
@@ -2694,7 +2701,9 @@ void idCollisionModelManagerLocal::ConvertBrush( cm_model_t *model, const idMapB
 
 	// stgatilov #5014: unlike what original D3 said,
 	// we MUST include the last brush too, because we are looking for "contents" here!
-	for ( i = 0; i < mapBrush->GetNumSides()/* - 1*/; i++ ) {
+	for ( i = 0; i < mapBrush->GetNumSides(); i++ ) {
+		if ( !cm_fixBrushContentsIgnoreLastSide.GetBool() && i == mapBrush->GetNumSides() - 1 )
+			continue;
 		mapSide = mapBrush->GetSide(i);
 		material = declManager->FindMaterial( mapSide->GetMaterial() );
 		contents |= ( material->GetContentFlags() & CONTENTS_REMOVE_UTIL );
