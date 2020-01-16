@@ -2681,6 +2681,10 @@ void idGameLocal::FixRotationHackedEntity( idDict *dict ) {
 	if (rotation.IsOrthogonal(1e-3f))
 		return;	//such rotation is OK "as is"
 
+	if (const idKeyValue *pKV = dict->FindKey("bind"))
+		return;	//this func_static is not static! bind master rotates it
+				//(e.g. moving objects near talking skull in AC2)
+
 	//list of key-value pairs to be changed
 	idDict modelChanges;
 
