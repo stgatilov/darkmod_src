@@ -1177,6 +1177,40 @@ static void DetectUnusedAreaPortals_r( uEntity_t *entity, node_t *node ) {
 	}
 }
 
+// find any portals which did not get into level and was not otherwise reported yet
+void ReportUnreferencedAreaPortals( uEntity_t *entity ) {
+	for ( primitive_t *prim = entity->primitives; prim; prim = prim->next ) {
+		uBrush_t *b = prim->brush;
+		if ( !b )
+			continue;
+		if ( !(b->contents & CONTENTS_AREAPORTAL) )
+			continue;
+
+		for ( int i = 0 ; i < b->numsides ; i++ ) {
+			side_t *side = &b->sides[i];
+			if ( !(side->material->GetContentFlags() & CONTENTS_AREAPORTAL) )
+				continue;
+
+			bool referenced = false;
+			for ( int j = 0 ; !referenced && j < numInterAreaPortals ; j++ )
+				if ( interAreaPortals[j].side == side )
+					referenced = true;
+			for ( int j = 0 ; !referenced && j < numDroppedAreaPortals ; j++ )
+				if ( droppedAreaPortals[j].side == side )
+					referenced = true;
+			for ( int j = 0 ; !referenced && j < numOverlappingAreaPortals ; j++ )
+				if ( overlappingAreaPortals[j].side == side )
+					referenced = true;
+
+			if ( !referenced ) {
+				common->Warning( "Portal %d at %s is useless", b->brushnum, side->winding->GetCenter().ToString() );
+			}
+			break;
+		}
+	}
+}
+
+
 /*
 =============
 FloodAreas
@@ -1210,6 +1244,9 @@ void FloodAreas( uEntity_t *e ) {
 		//stgatilov #5129: detecting dropped portals
 		numDroppedAreaPortals = 0;
 		DetectUnusedAreaPortals_r(e, e->tree->headnode);
+		//stgatilov #5129: detecting other issues
+		//for instance, portals fully inside opaque or on opaque surface
+		ReportUnreferencedAreaPortals(e);
 	}
 }
 
