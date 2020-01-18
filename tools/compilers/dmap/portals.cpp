@@ -1203,7 +1203,7 @@ void ReportUnreferencedAreaPortals( uEntity_t *entity ) {
 					referenced = true;
 
 			if ( !referenced ) {
-				common->Warning( "Portal %d at %s is useless", b->brushnum, side->winding->GetCenter().ToString() );
+				common->Warning( "Portal %d at (%s) is useless", b->brushnum, side->winding->GetCenter().ToString() );
 			}
 			break;
 		}
