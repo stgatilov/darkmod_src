@@ -1260,6 +1260,9 @@ void idParticleStage::ParticleColors( particleGen_t *g, idDrawVert *verts ) cons
 	// individual gun smoke particles get more and more faded as the
 	// cycle goes on (note that totalParticles won't be correct for a surface-particle deform)
 	if ( fadeIndexFraction ) {
+		int totalParticles = this->totalParticles;
+		if ( g->totalParticlesOverride )	//stgatilov #5130
+			totalParticles = g->totalParticlesOverride;
 		float	indexFrac = ( totalParticles - g->index ) / (float)totalParticles;
 		if ( indexFrac < fadeIndexFraction ) {
 			fadeFraction *= indexFrac / fadeIndexFraction;

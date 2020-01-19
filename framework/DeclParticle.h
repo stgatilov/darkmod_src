@@ -82,6 +82,7 @@ typedef struct {
 	float					age;				// in seconds, calculated as fraction * stage->particleLife
 	idRandom				originalRandom;		// needed so aimed particles can reset the random for another origin calculation
 	float					animationFrameFrac;	// set by ParticleTexCoords, used to make the cross faded version
+	int						totalParticlesOverride = 0;		//stgatilov #5130: used if positive, fixes R_ParticleDeform with useArea = true and fadeIndex
 } particleGen_t;
 
 

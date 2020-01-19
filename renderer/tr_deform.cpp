@@ -934,6 +934,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 			// we interpret stage->totalParticles as "particles per map square area"
 			// so the systems look the same on different size surfaces
 			int		totalParticles = ( useArea ) ? stage->totalParticles * totalArea / 4096.0 : ( stage->totalParticles );
+			g.totalParticlesOverride = totalParticles;		// #5130: needed if useArea = true
 
 			int	count = totalParticles * stage->NumQuadsPerParticle();
 
