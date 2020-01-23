@@ -1185,9 +1185,6 @@ static void RB_FogPass( bool translucent ) {
 	} else
 		fogUniforms->newFog.Set( 0 );
 
-	if ( r_fboSRGB && !backEnd.viewDef->IsLightGem() )
-		qglEnable( GL_FRAMEBUFFER_SRGB );
-
 	if ( translucent ) {
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
 		GL_Cull( CT_TWO_SIDED );
@@ -1207,7 +1204,6 @@ static void RB_FogPass( bool translucent ) {
 	}
 
 	GL_Cull( CT_FRONT_SIDED );
-	qglDisable( GL_FRAMEBUFFER_SRGB );
 
 	GL_SelectTexture( 0 );
 	GLSLProgram::Deactivate();
@@ -1269,8 +1265,6 @@ void RB_STD_DrawView( void ) {
 	GL_CheckErrors();
 
 	backEnd.lightScale = r_lightScale.GetFloat();
-	if ( r_fboSRGB && !backEnd.viewDef->IsLightGem() )
-		backEnd.lightScale /= 2;
 	backEnd.overBright = 1.0f;
 
 	// if we are just doing 2D rendering, no need to fill the depth buffer

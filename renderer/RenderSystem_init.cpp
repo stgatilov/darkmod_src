@@ -332,6 +332,9 @@ void R_InitOpenGL( void ) {
 	Sys_InitInput();
 	soundSystem->InitHW();
 
+	if ( glConfig.srgb = r_fboSRGB )
+		qglEnable( GL_SRGB );
+
 	// get our config strings
 	glConfig.vendor_string = (const char *)qglGetString(GL_VENDOR);
 	glConfig.renderer_string = (const char *)qglGetString(GL_RENDERER);

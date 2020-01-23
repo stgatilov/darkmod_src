@@ -589,7 +589,7 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	const GLint colorInternalFormat = /*r_fboSRGB ? GL_SRGB_ALPHA : */r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA;
+	const GLint colorInternalFormat = /*glConfig.srgb ? GL_SRGB_ALPHA :*/ r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA;
 	switch ( format ) {
 		case GL_DEPTH_STENCIL:
 			// revert to old behaviour, switches are to specific

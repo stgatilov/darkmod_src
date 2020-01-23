@@ -262,7 +262,22 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 
 	// the multisample path uses the wgl
 	// duzenko #4425: AA needs to be setup elsewhere
-#if 0
+#if 1	// ChoosePixelFormatARB is the only way to get sRGB with the default FBO?
+	UINT	numFormats;
+	int		iAttributes[] = {
+		WGL_SAMPLE_BUFFERS_ARB,				1,
+		WGL_SAMPLES_ARB,					1,
+		WGL_DOUBLE_BUFFER_ARB,				TRUE,
+		WGL_STENCIL_BITS_ARB,				8,
+		WGL_DEPTH_BITS_ARB,					24,
+		WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB,	TRUE,
+		0,									0
+	};
+	FLOAT	fAttributes[] = { 0, 0 };
+	if ( qwglChoosePixelFormatARB && r_fboSRGB ) {
+		qwglChoosePixelFormatARB( win32.hDC, iAttributes, fAttributes, 1, &win32.pixelformat, &numFormats );
+	} else
+#else	// used to do this in older TDM versions
 	if ( qwglChoosePixelFormatARB && ( parms.multiSamples > 1 && !r_useFbo.GetBool() ) ) {
 		int		iAttributes[20];
 		FLOAT	fAttributes[] = {0, 0};
@@ -292,7 +307,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 
 		qinit_wglChoosePixelFormatARB( win32.hDC, iAttributes, fAttributes, 1, &win32.pixelformat, &numFormats );
 	} else 
-#else
+#endif
 	{
 		// this is the "classic" choose pixel format path
 		// eventually we may need to have more fallbacks, but for
@@ -311,7 +326,6 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		}
 		common->Printf( "...PIXELFORMAT %d selected\n", win32.pixelformat );
 	}
-#endif
 
 	// get the full info
 	DescribePixelFormat( win32.hDC, win32.pixelformat, sizeof( win32.pfd ), &win32.pfd );

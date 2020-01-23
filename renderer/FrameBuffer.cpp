@@ -76,7 +76,7 @@ private:
 
 
 GLsizei ColorRenderBufferInternalFormat() {
-	return (r_fboSRGB ? GL_SRGB_ALPHA : GL_RGBA);
+	return ( glConfig.srgb ? GL_SRGB_ALPHA : GL_RGBA );
 }
 
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
