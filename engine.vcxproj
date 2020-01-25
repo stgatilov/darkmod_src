@@ -513,6 +513,7 @@
     <ClInclude Include="sys\win32\rc\SoundEditor_resource.h" />
     <ClInclude Include="tests\testing.h" />
     <ClInclude Include="tests\TestRun.h" />
+    <ClInclude Include="tools\compilers\compiler_common.h" />
     <ClInclude Include="tools\edit_public.h" />
     <ClInclude Include="tools\af\DialogAF.h" />
     <ClInclude Include="tools\af\DialogAFBody.h" />
@@ -1148,6 +1149,7 @@
     <ClCompile Include="tools\compilers\aas\AASReach.cpp" />
     <ClCompile Include="tools\compilers\aas\Brush.cpp" />
     <ClCompile Include="tools\compilers\aas\BrushBSP.cpp" />
+    <ClCompile Include="tools\compilers\compiler_common.cpp" />
     <ClCompile Include="tools\compilers\dmap\dmap.cpp" />
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />

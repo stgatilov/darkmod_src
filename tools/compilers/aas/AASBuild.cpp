@@ -19,6 +19,7 @@
 
 
 #include "AASBuild_local.h"
+#include "../compiler_common.h"
 
 #define BFL_PATCH		0x1000
 
@@ -899,20 +900,7 @@ void RunAAS_f( const idCmdArgs &args ) {
 			settings.FromDict( kv->GetValue(), settingsDict );
 			i = ParseOptions( args, settings );
 			mapName = args.Argv(i);
-			mapName.BackSlashesToSlashes();
-			if ( mapName.Icmpn( "maps/", 4 ) != 0 ) {
-				mapName = "maps/" + mapName;
-			}
-
-            // taaaki - support map files from darkmod/fms/<mission>/maps as well as darkmod/maps
-            //          this is done by opening the file to get the true full path, then converting
-            //          the path back to a RelativePath based off fs_devpath
-            mapName.SetFileExtension( "map" );
-            idFile *fp = idLib::fileSystem->OpenFileRead( mapName, "" );
-            if ( fp ) {
-                mapName = idLib::fileSystem->OSPathToRelativePath(fp->GetFullPath());
-                idLib::fileSystem->CloseFile( fp );
-            }
+			FindMapFile(mapName);
 
 			aas.Build( mapName, &settings );
 		}

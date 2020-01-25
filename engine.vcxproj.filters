@@ -1249,6 +1249,9 @@
     <ClInclude Include="framework\minizip\minizip_private.h">
       <Filter>Framework\minizip</Filter>
     </ClInclude>
+    <ClInclude Include="tools\compilers\compiler_common.h">
+      <Filter>Tools\Compilers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2946,6 +2949,9 @@
     </ClCompile>
     <ClCompile Include="renderer\glad_wgl.c">
       <Filter>Renderer\glad</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\compiler_common.cpp">
+      <Filter>Tools\Compilers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

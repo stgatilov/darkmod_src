@@ -19,6 +19,7 @@
 
 
 #include "dmap.h"
+#include "../compiler_common.h"
 
 dmapGlobals_t	dmapGlobals;
 
@@ -375,21 +376,8 @@ void Dmap( const idCmdArgs &args ) {
 		common->Error( "usage: dmap [options] mapfile" );
 	}
 
-	passedName = args.Argv(i);		// may have an extension
-	passedName.BackSlashesToSlashes();
-	if ( passedName.Icmpn( "maps/", 4 ) != 0 ) {
-		passedName = "maps/" + passedName;
-	}
-
-    // taaaki - support map files from darkmod/fms/<mission>/maps as well as darkmod/maps
-    //          this is done by opening the file to get the true full path, then converting
-    //          the path back to a RelativePath based off fs_devpath
-    passedName.SetFileExtension( "map" );
-    idFile *fp = idLib::fileSystem->OpenFileRead( passedName, "" );
-    if ( fp ) {
-        passedName = idLib::fileSystem->OSPathToRelativePath(fp->GetFullPath());
-        idLib::fileSystem->CloseFile( fp );
-    }
+	passedName = args.Argv(i);
+	FindMapFile(passedName);
 
     idStr stripped = passedName;
 	stripped.StripFileExtension();
