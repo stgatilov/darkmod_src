@@ -222,12 +222,12 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	// cases without alpha
 	if ( !needAlpha ) {
 		if ( minimumDepth == TD_HIGH_QUALITY ) {
-			return GL_RGB8;								// four bytes
+			return glConfig.srgb ? GL_SRGB8 : GL_RGB8;	// four bytes
 		}
 		if ( allowCompress ) {
 			return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;		// half byte
 		}
-		return glConfig.srgb ? GL_SRGB : GL_RGB565;		// two bytes
+		return glConfig.srgb ? GL_SRGB8 : GL_RGB565;	// two bytes
 	}
 
 	// cases with alpha
