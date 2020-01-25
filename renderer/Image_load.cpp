@@ -227,7 +227,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		if ( allowCompress ) {
 			return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;		// half byte
 		}
-		return GL_RGB5;									// two bytes
+		return glConfig.srgb ? GL_SRGB : GL_RGB565;		// two bytes
 	}
 
 	// cases with alpha
@@ -1132,16 +1132,16 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 		switch ( header->ddspf.dwFourCC ) {
 		case DDS_MAKEFOURCC( 'D', 'X', 'T', '1' ):
 			if ( header->ddspf.dwFlags & DDSF_ALPHAPIXELS ) {
-				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+				internalFormat = glConfig.srgb ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 			} else {
-				internalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+				internalFormat = glConfig.srgb ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 			}
 			break;
 		case DDS_MAKEFOURCC( 'D', 'X', 'T', '3' ):
-			internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+			internalFormat = glConfig.srgb ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT : GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 			break;
 		case DDS_MAKEFOURCC( 'D', 'X', 'T', '5' ):
-			internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			internalFormat = glConfig.srgb ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			break;
 		case DDS_MAKEFOURCC( 'R', 'X', 'G', 'B' ):
 			internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
@@ -1194,6 +1194,9 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 		if ( FormatIsDXT( internalFormat ) ) {
 			size = ( ( uw + 3 ) / 4 ) * ( ( uh + 3 ) / 4 ) *
 			       ( internalFormat <= GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16 );
+			if(glConfig.srgb)
+				size = ( ( uw + 3 ) / 4 ) * ( ( uh + 3 ) / 4 ) *
+				( internalFormat <= GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT ? 8 : 16 );
 		} else {
 			size = uw * uh * ( header->ddspf.dwRGBBitCount / 8 );
 		}
