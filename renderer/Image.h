@@ -241,32 +241,6 @@ public:
 	imageLoad_t			backgroundLoad;
 };
 
-ID_INLINE idImage::idImage() {
-	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
-	type = TT_DISABLED;
-	frameUsed = 0;
-	classification = 0;
-	imgName[0] = '\0';
-	generatorFunction = NULL;
-	allowDownSize = false;
-	filter = TF_DEFAULT;
-	repeat = TR_REPEAT;
-	depth = TD_DEFAULT;
-	cubeFiles = CF_2D;
-	referencedOutsideLevelLoad = false;
-	levelLoadReferenced = false;
-	precompressedFile = false;
-	defaulted = false;
-	timestamp = 0;
-	bindCount = 0;
-	uploadWidth = uploadHeight = 0;
-	internalFormat = 0;
-	hashNext = NULL;
-	refCount = 0;
-	swizzleMask = NULL;
-	memset( &backgroundLoad, 0, sizeof( backgroundLoad ) );
-}
-
 
 // data is RGBA
 void	R_WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical = false );

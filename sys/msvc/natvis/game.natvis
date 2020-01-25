@@ -151,6 +151,10 @@
     <DisplayString>InvItem {m_Name} | {m_Item}</DisplayString>
   </Type>
 
+  <Type Name="idRenderModelStatic">
+    <DisplayString>rModelStatic {name.data,na} {bounds}</DisplayString>
+  </Type>
+
   <!-- this is a bit hacky, but allows to inspect game entity of a render entity
        without having to enumerate all fields of idRenderEntityLocal -->
   <Type Name="renderEntity_s">

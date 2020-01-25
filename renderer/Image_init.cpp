@@ -204,6 +204,32 @@ Create a 2D table that calculates ( reflection dot , specularity )
 	image->GenerateImage( ( byte * )data, 256, 256, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
 }*/
 
+idImage::idImage() {
+	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
+	type = TT_DISABLED;
+	frameUsed = 0;
+	classification = 0;
+	imgName[0] = '\0';
+	generatorFunction = NULL;
+	allowDownSize = false;
+	filter = TF_DEFAULT;
+	repeat = TR_REPEAT;
+	depth = TD_DEFAULT;
+	cubeFiles = CF_2D;
+	referencedOutsideLevelLoad = false;
+	levelLoadReferenced = false;
+	precompressedFile = false;
+	defaulted = false;
+	timestamp = 0;
+	bindCount = 0;
+	uploadWidth = uploadHeight = 0;
+	internalFormat = 0;
+	hashNext = NULL;
+	refCount = 0;
+	swizzleMask = NULL;
+	memset( &backgroundLoad, 0, sizeof( backgroundLoad ) );
+}
+
 /*
 ==================
 R_CreateDefaultImage
