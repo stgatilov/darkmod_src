@@ -1031,7 +1031,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 				f1 *= ft;
 				f2 *= ft;
-				f3 *= ft;
+				f3 = 1.0f - f1 - f2;
 
 				g.origin = v1->xyz * f1 + v2->xyz * f2 + v3->xyz * f3;
 				g.axis[0] = v1->tangents[0] * f1 + v2->tangents[0] * f2 + v3->tangents[0] * f3;
