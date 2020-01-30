@@ -204,6 +204,11 @@ Create a 2D table that calculates ( reflection dot , specularity )
 	image->GenerateImage( ( byte * )data, 256, 256, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
 }*/
 
+void imageBlock_s::Purge() {
+	R_StaticFree(pic);
+	memset(this, 0, sizeof(imageBlock_s));
+}
+
 idImage::idImage() {
 	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
 	type = TT_DISABLED;
@@ -227,7 +232,9 @@ idImage::idImage() {
 	hashNext = NULL;
 	refCount = 0;
 	swizzleMask = NULL;
-	memset( &backgroundLoad, 0, sizeof( backgroundLoad ) );
+	memset( &cpuData, 0, sizeof( cpuData ) );
+	residency = IR_GRAPHICS;
+	backgroundLoadState = IS_NONE;
 }
 
 /*
@@ -285,7 +292,7 @@ void idImage::MakeDefault() {
 		}
 	}
 	GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT );
+	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT, IR_BOTH );
 
 	defaulted = true;
 }
@@ -1276,7 +1283,8 @@ Loading of the image may be deferred for dynamic loading.
 ==============
 */
 idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filter, bool allowDownSize,
-                                        textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap ) {
+                                        textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap, imageResidency_t residency
+) {
 	if ( !_name || !_name[0] || idStr::Icmp( _name, "default" ) == 0 || idStr::Icmp( _name, "_default" ) == 0 ) {
 		declManager->MediaPrint( "DEFAULTED\n" );
 		return globalImages->defaultImage;
@@ -1307,7 +1315,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 				continue;
 			}
 
-			if ( image->allowDownSize == allowDownSize && image->depth == depth ) {
+			if ( image->allowDownSize == allowDownSize && image->depth == depth && image->residency == residency ) {
 				// note that it is used this level load
 				image->levelLoadReferenced = true;
 				return image;
@@ -1323,13 +1331,17 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 				depth = image->depth;
 			}
 
-			if ( image->allowDownSize == allowDownSize && image->depth == depth ) {
+			if ( image->residency & (~residency) )
+				residency = imageResidency_t( residency | image->residency );
+
+			if ( image->allowDownSize == allowDownSize && image->depth == depth && image->residency == residency ) {
 				// the already created one is already the highest quality
 				image->levelLoadReferenced = true;
 				return image;
 			}
 			image->allowDownSize = allowDownSize;
 			image->depth = depth;
+			image->residency = residency;
 			image->levelLoadReferenced = true;
 
 			if ( image_preload.GetBool() && !insideLevelLoad ) {
@@ -1372,6 +1384,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	image->type = TT_2D;
 	image->cubeFiles = cubeMap;
 	image->filter = filter;
+	image->residency = residency;
 
 	image->levelLoadReferenced = true;
 
@@ -1846,6 +1859,10 @@ void idImageManager::PrintMemInfo( MemInfo_t *mi ) {
 		total += size;
 
 		f->Printf( "%s %3i %s\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
+		if (im->cpuData.IsValid()) {
+			size = im->cpuData.GetSizeInBytes();
+			f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
+		}
 	}
 	delete[] sortIndex;
 	mi->imageAssetsTotal = total;

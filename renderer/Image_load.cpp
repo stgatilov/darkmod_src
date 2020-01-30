@@ -419,17 +419,33 @@ There is no way to specify explicit mip map levels
 */
 void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
-                             textureRepeat_t repeatParm, textureDepth_t depthParm ) {
+                             textureRepeat_t repeatParm, textureDepth_t depthParm, imageResidency_t residencyParm
+) {
 	byte		*scaledBuffer;
 	int			scaled_width=width, scaled_height=height;
 	byte		*shrunk;
 
-	PurgeImage();
+	bool loadingFromItself = (pic == cpuData.pic);
+	PurgeImage( !loadingFromItself );
 
 	filter = filterParm;
 	allowDownSize = allowDownSizeParm;
 	repeat = repeatParm;
 	depth = depthParm;
+	residency = residencyParm;
+
+	if ( residency & IR_CPU ) {
+		if ( !loadingFromItself ) {
+			cpuData.compressedSize = 0;
+			cpuData.width = width;
+			cpuData.height = height;
+			cpuData.pic = ( byte* ) R_StaticAlloc( cpuData.GetSizeInBytes() );
+			memcpy(cpuData.pic, pic, cpuData.GetSizeInBytes() );
+		}
+		assert( cpuData.width == width && cpuData.height == height && cpuData.compressedSize == 0 );
+	}
+	if ( !(residency & IR_GRAPHICS) )
+		return;
 
 	// if we don't have a rendering context, just return after we
 	// have filled in the parms.  We must have the values set, or
@@ -1076,8 +1092,10 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 		return false;
 	}
 
-	backgroundLoad.compressedSize = len;
-	backgroundLoad.pic = data;
+	cpuData.Purge();
+	cpuData.pic = data;
+	cpuData.compressedSize = len;
+	//TODO: set proper width/height here?
 
 	// upload all the levels
 	//UploadPrecompressedImage( data, len );
@@ -1239,32 +1257,36 @@ void R_LoadImageData( idImage& image ) {
 		}
 		// fall through to load the normal image
 	}
-	auto& load = image.backgroundLoad;
-	R_LoadImageProgram( image.imgName, &load.pic, &load.width, &load.height, &image.timestamp, &image.depth );
+	imageBlock_t& data = image.cpuData;
+	data.Purge();
+	R_LoadImageProgram( image.imgName, &data.pic, &data.width, &data.height, &image.timestamp, &image.depth );
 }
 
 void R_UploadImageData( idImage& image ) {
-	auto& load = image.backgroundLoad;
+	auto& load = image.cpuData;
 	if ( load.pic == NULL ) {
 		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
 		image.MakeDefault();
 		return;
 	}
-	if ( load.compressedSize ) {
-		// upload all the levels
-		image.UploadPrecompressedImage( load.pic, load.compressedSize );
-	} else {
-		// build a hash for checking duplicate image files
-		// NOTE: takes about 10% of image load times (SD)
-		// may not be strictly necessary, but some code uses it, so let's leave it in
-		if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
-			image.imageHash = MD4_BlockChecksum( load.pic, load.width * load.height * 4 );
-		image.GenerateImage( load.pic, load.width, load.height, image.filter, image.allowDownSize, image.repeat, image.depth );
-		image.precompressedFile = false;
-		// write out the precompressed version of this file if needed
-		image.WritePrecompressedImage();
+	if (image.residency & IR_GRAPHICS) {
+		if ( load.compressedSize ) {
+			// upload all the levels
+			image.UploadPrecompressedImage( load.pic, load.compressedSize );
+		} else {
+			// build a hash for checking duplicate image files
+			// NOTE: takes about 10% of image load times (SD)
+			// may not be strictly necessary, but some code uses it, so let's leave it in
+			if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
+				image.imageHash = MD4_BlockChecksum( load.pic, load.width * load.height * 4 );
+			image.GenerateImage( load.pic, load.width, load.height, image.filter, image.allowDownSize, image.repeat, image.depth, image.residency );
+			image.precompressedFile = false;
+			// write out the precompressed version of this file if needed
+			image.WritePrecompressedImage();
+		}
 	}
-	R_StaticFree( load.pic );
+	if (!(image.residency & IR_CPU))
+		load.Purge();
 }
 
 std::stack<idImage*> backgroundLoads;
@@ -1282,12 +1304,11 @@ void BackgroundLoading() {
 		}
 		/*if ( loading && !uploading ) // debug state check
 			GetTickCount();*/
-		auto& load = img->backgroundLoad;
 		auto start = Sys_Milliseconds();
 		R_LoadImageData( *img );
 		backEnd.pc.textureLoadTime += ( Sys_Milliseconds() - start );
 		backEnd.pc.textureBackgroundLoads++;
-		load.state = IS_LOADED;
+		img->backgroundLoadState = IS_LOADED;
 	}
 }
 
@@ -1305,7 +1326,7 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 	//Routine test( &loading );
 	if ( allowBackground )
 		allowBackground = !globalImages->image_preload.GetBool();
-	auto& load = backgroundLoad;
+	imageBlock_t& load = cpuData;
 
 	if ( session->IsFrontend() ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
@@ -1343,18 +1364,18 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 		}
 	} else {
 		if ( allowBackground ) {
-			if ( load.state == IS_NONE ) {
-				load.state = IS_SCHEDULED;
+			if ( backgroundLoadState == IS_NONE ) {
+				backgroundLoadState = IS_SCHEDULED;
 				std::unique_lock<std::mutex> lock( signalMutex );
 				backgroundLoads.push( this );
 				imageThreadSignal.notify_all();
 				return;
 			}
-			if ( load.state == IS_SCHEDULED ) {
+			if ( backgroundLoadState == IS_SCHEDULED ) {
 				return;
 			}
-			if ( load.state == IS_LOADED ) {
-				load.state = IS_NONE; // hopefully allow reload to happen
+			if ( backgroundLoadState == IS_LOADED ) {
+				backgroundLoadState = IS_NONE; // hopefully allow reload to happen
 				R_UploadImageData( *this );
 			}
 		} else {
@@ -1371,7 +1392,7 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 PurgeImage
 ===============
 */
-void idImage::PurgeImage() {
+void idImage::PurgeImage( bool purgeCpuData ) {
 	if ( texnum != TEXTURE_NOT_LOADED ) {
 		// sometimes is NULL when exiting with an error
 		if ( qglDeleteTextures ) {
@@ -1379,6 +1400,9 @@ void idImage::PurgeImage() {
 		}
 		texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
 	}
+
+	if ( purgeCpuData && cpuData.IsValid() )
+		cpuData.Purge();
 
 	// clear all the current binding caches, so the next bind will do a real one
 	for ( int i = 0 ; i < MAX_MULTITEXTURE_UNITS ; i++ ) {
@@ -1576,6 +1600,22 @@ void idImage::Print() const {
 			common->Printf( "<BAD TYPE:%i>", type );
 			break;
 	}
+
+	switch ( residency ) {
+		case IR_GRAPHICS:
+			common->Printf( " " );
+			break;
+		case IR_CPU:
+			common->Printf( "C" );
+			break;
+		case IR_BOTH:
+			common->Printf( "B" );
+			break;
+		default:
+			common->Printf( "<BAD RES:%i>", residency );
+			break;
+	}
+
 	common->Printf( "%4i %4i ",	uploadWidth, uploadHeight );
 
 	switch ( filter ) {

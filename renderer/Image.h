@@ -134,19 +134,31 @@ typedef enum {
 #define MIN_IMAGE_NAME  4
 
 typedef enum {
+	IR_NONE = 0,			// should never happen
+	IR_GRAPHICS = 0x1,
+	IR_CPU = 0x2,
+	IR_BOTH = IR_GRAPHICS | IR_CPU,
+} imageResidency_t;
+
+typedef enum {
 	IS_NONE,		// empty/foreground load
 	IS_SCHEDULED,	// waiting in queue
 	IS_LOADED		// data loaded, waiting for GL thread
 } imageLoadState_t;
 
-
-struct imageLoad_t {
-	byte* pic;
+// stgatilov: represents image data on CPU side
+typedef struct imageBlock_s {
+	byte *pic;
 	int width;
 	int height;
-	int compressedSize;
-	imageLoadState_t state;
-};
+	int compressedSize;	//if zero, then data is 8-bit RGBA
+
+	bool IsValid() const { return pic != nullptr; }
+	bool IsCompressed() const { return compressedSize != 0; }
+	int GetSizeInBytes() const { return (compressedSize == 0 ? width * height * 4 : compressedSize); }
+	void Purge();
+} imageBlock_t;
+
 
 class idImage {
 public:
@@ -159,7 +171,7 @@ public:
 	void		Bind();
 
 	// deletes the texture object, but leaves the structure so it can be reloaded
-	void		PurgeImage();
+	void		PurgeImage( bool purgeCpuData = true );
 
 	// used by callback functions to specify the actual data
 	// data goes from the bottom to the top line of the image, as OpenGL expects it
@@ -167,7 +179,8 @@ public:
 	// FIXME: should we implement cinematics this way, instead of with explicit calls?
 	void		GenerateImage( const byte *pic, int width, int height,
 	                           textureFilter_t filter, bool allowDownSize,
-	                           textureRepeat_t repeat, textureDepth_t depth );
+	                           textureRepeat_t repeat, textureDepth_t depth,
+	                           imageResidency_t residency = IR_GRAPHICS );
 	void		GenerateCubeImage( const byte *pic[6], int size,
 	                               textureFilter_t filter, bool allowDownSize,
 	                               textureDepth_t depth );
@@ -238,7 +251,10 @@ public:
 
 	int					refCount;				// overall ref count
 
-	imageLoad_t			backgroundLoad;
+	// stgatilov: storing image data on CPU side
+	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
+	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
+	imageLoadState_t	backgroundLoadState;	// state of background loading (usually disabled)
 };
 
 
@@ -259,7 +275,8 @@ public:
 	// Will automatically resample non-power-of-two images and execute image programs if needed.
 	idImage *			ImageFromFile( const char *name,
 	                                   textureFilter_t filter, bool allowDownSize,
-	                                   textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D );
+	                                   textureRepeat_t repeat, textureDepth_t depth, cubeFiles_t cubeMap = CF_2D,
+	                                   imageResidency_t residency = IR_GRAPHICS );
 
 	// look for a loaded image, whatever the parameters
 	idImage *			GetImage( const char *name ) const;
