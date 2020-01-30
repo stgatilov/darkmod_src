@@ -42,6 +42,9 @@
   <Type Name="idDeclLocal">
     <DisplayString>Decl {name} from {sourceFile->fileName}</DisplayString>
   </Type>
+  <Type Name="idDecl" Inheritable="true">
+    <DisplayString>{*base}</DisplayString>
+  </Type>
   <Type Name="idDeclFile">
     <DisplayString>DeclFile {fileName}  ({numLines} lines)</DisplayString>
     <Expand>
@@ -385,7 +388,8 @@
     </Expand>
   </Type>
   <Type Name="primitive_s">
-    <DisplayString>{*brush}</DisplayString>
+    <DisplayString Condition="brush">Br {*brush}</DisplayString>
+    <DisplayString>Tri {*tris}</DisplayString>
     <Expand>
       <ExpandedItem>this,!</ExpandedItem>
       <Synthetic Name="[All prims]" ExcludeView="raw">
@@ -485,6 +489,21 @@
   </Type>
   <Type Name="uPortal_s">
     <DisplayString>portal: {plane} #pts={winding->numPoints}</DisplayString>
+  </Type>
+  <Type Name="optimizeGroup_s">
+    <DisplayString>Grp {bounds}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All groups]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>this</HeadPointer>
+            <NextPointer>nextGroup</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
   </Type>
 
 </AutoVisualizer>
