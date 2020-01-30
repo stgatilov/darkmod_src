@@ -1313,145 +1313,37 @@ const char* playerMaterialExcludeList[] = {
 };
 
 bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic, bool skipPlayer /*_D3XP*/ ) const {
-	areaReference_t * ref;
-	idRenderEntityLocal *def;
-	idRenderModel * model;
-	srfTriangles_t * tri;
-	localTrace_t localTrace;
-	int areas[128], numAreas, i, j, numSurfaces;
-	idBounds traceBounds, bounds;
-	float modelMatrix[16];
-	idVec3 localStart, localEnd;
-	const idMaterial *shader;
-
-	trace.fraction = 1.0f;
-	trace.point = end;
-
-	// bounds for the whole trace
-	traceBounds.Clear();
-	traceBounds.AddPoint( start );
-	traceBounds.AddPoint( end );
-
-	// get the world areas the trace is in
-	numAreas = BoundsInAreas( traceBounds, areas, 128 );
-
-	numSurfaces = 0;
-
-	// check all areas for models
-	for ( i = 0; i < numAreas; i++ ) {
-
-		const portalArea_t &area = portalAreas[areas[i]];
-
-		// check all models in this area
-		for ( ref = area.entityRefs.areaNext; ref != &area.entityRefs; ref = ref->areaNext ) {
-			def = ref->entity;
-
-			model = def->parms.hModel;
-			if ( !model ) {
-				continue;
-			}
-
-			if ( model->IsDynamicModel() != DM_STATIC ) {
-				if ( skipDynamic ) {
-					continue;
-				}
-
-#if 1	/* _D3XP addition. FIXME: could use a cleaner approach */
-				if ( skipPlayer ) {
-					idStr name = model->Name();
-					const char *exclude;
-					int k;
-
-					for ( k = 0; playerModelExcludeList[k]; k++ ) {
-						exclude = playerModelExcludeList[k];
-						if ( name == exclude ) {
-							break;
-						}
-					}
-
-					if ( playerModelExcludeList[k] ) {
-						continue;
-					}
-				}
-#endif
-
-				model = R_EntityDefDynamicModel( def );
-				if ( !model ) {
-					continue;	// can happen with particle systems, which don't instantiate without a valid view
-				}
-			}
-
-			bounds.FromTransformedBounds( model->Bounds( &def->parms ), def->parms.origin, def->parms.axis );
-
-			// if the model bounds do not overlap with the trace bounds
-			if ( !traceBounds.IntersectsBounds( bounds ) || !bounds.LineIntersection( start, trace.point ) ) {
-				continue;
-			}
-
-			// check all model surfaces
-			for ( j = 0; j < model->NumSurfaces(); j++ ) {
-				const modelSurface_t *surf = model->Surface( j );
-
-				shader = R_RemapShaderBySkin( surf->material, def->parms.customSkin, def->parms.customShader );
-
-				// if no geometry or no shader
-				if ( !surf->geometry || !shader ) {
-					continue;
-				}
-
-#if 1 /* _D3XP addition. FIXME: could use a cleaner approach */
-				if ( skipPlayer ) {
-					idStr name = shader->GetName();
-					const char *exclude;
-					int k;
-
-					for ( k = 0; playerMaterialExcludeList[k]; k++ ) {
-						exclude = playerMaterialExcludeList[k];
-						if ( name == exclude ) {
-							break;
-						}
-					}
-
-					if ( playerMaterialExcludeList[k] ) {
-						continue;
-					}
-				}
-#endif
-
-				tri = surf->geometry;
-
-				bounds.FromTransformedBounds( tri->bounds, def->parms.origin, def->parms.axis );
-
-				// if triangle bounds do not overlap with the trace bounds
-				if ( !traceBounds.IntersectsBounds( bounds ) || !bounds.LineIntersection( start, trace.point ) ) {
-					continue;
-				}
-
-				numSurfaces++;
-
-				// transform the points into local space
-				R_AxisToModelMatrix( def->parms.axis, def->parms.origin, modelMatrix );
-				R_GlobalPointToLocal( modelMatrix, start, localStart );
-				R_GlobalPointToLocal( modelMatrix, end, localEnd );
-
-				localTrace = R_LocalTrace( localStart, localEnd, radius, surf->geometry );
-
-				if ( localTrace.fraction < trace.fraction ) {
-					trace.fraction = localTrace.fraction;
-					R_LocalPointToGlobal( modelMatrix, localTrace.point, trace.point );
-					trace.normal = localTrace.normal * def->parms.axis;
-					trace.material = shader;
-					trace.entity = &def->parms;
-					trace.jointNumber = model->NearestJoint( j, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2] );
-
-					traceBounds.Clear();
-					traceBounds.AddPoint( start );
-					traceBounds.AddPoint( start + trace.fraction * (end - start) );
+	auto filter = [&](const renderEntity_t *renderEntity, const idRenderModel *renderModel, const idMaterial *material) -> bool {
+		if (material) {
+			/* _D3XP addition. */
+			if ( skipPlayer ) {
+				const char *name = material->GetName();
+				for ( int k = 0; playerMaterialExcludeList[k]; k++ ) {
+					const char *exclude = playerMaterialExcludeList[k];
+					if ( strcmp(name, exclude) == 0 )
+						return false;
 				}
 			}
 		}
-	}
-	return ( trace.fraction < 1.0f );
+		else if ( renderEntity ) {
+			idRenderModel *model = renderEntity->hModel;
+			if ( model->IsDynamicModel() != DM_STATIC ) {
+				if ( skipDynamic )
+					return false;
+				/* _D3XP addition. */
+				if ( skipPlayer ) {
+					const char *name = model->Name();
+					for ( int k = 0; playerModelExcludeList[k]; k++ ) {
+						const char *exclude = playerModelExcludeList[k];
+						if ( strcmp(name, exclude) == 0 )
+							return false;
+					}
+				}
+			}
+		}
+		return true;
+	};
+	return TraceAll(trace, start, end, false, radius, LambdaToFuncPtr(filter), &filter);
 }
 
 /*

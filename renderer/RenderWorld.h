@@ -398,7 +398,8 @@ public:
 	// Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
 	virtual bool			ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius ) const = 0;
 
-	// Traces vs the whole rendered world. FIXME: we need some kind of material flags.
+	// Traces vs the whole rendered world.
+	// stgatilov: calls new TraceAll method internally
 	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true, bool skipPlayer = false ) const = 0;
 
 	// Traces vs the world model bsp tree.
@@ -408,11 +409,14 @@ public:
 
 	typedef bool (*TraceFilterFunc)(void *context, const renderEntity_t *, const idRenderModel *, const idMaterial *);
 	// stgatilov: traces the whole rendered world with flexible filtering
-	// if fastWorld is true, then filter is not called for world-area models (defaults to true)
+	// if fastWorld is true, then:
+	//    1) filter is not called for world-area models (defaults to true)
+	//    2) does not return entity/material if trace hits world
+	//    3) works faster due to BSP traversal
 	virtual bool			TraceAll(
 		modelTrace_t &trace,
 		const idVec3 &start, const idVec3 &end,
-		bool fastWorld = true, float radius = 0.0f,
+		bool fastWorld = false, float radius = 0.0f,
 		TraceFilterFunc filterCallback = nullptr, void *context = nullptr
 	) const = 0;
 
