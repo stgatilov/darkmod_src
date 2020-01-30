@@ -2330,8 +2330,8 @@ void VPCALL idSIMD_Generic::TracePointCull( byte *cullBits, byte &totalOr, const
 	tOr = 0;
 
 	for ( i = 0; i < numVerts; i++ ) {
-		byte bits;
-		float d0, d1, d2, d3, t;
+		byte bits, b0, b1, b2, b3;
+		float d0, d1, d2, d3;
 		const idVec3 &v = verts[i].xyz;
 
 		d0 = planes[0].Distance( v );
@@ -2339,25 +2339,11 @@ void VPCALL idSIMD_Generic::TracePointCull( byte *cullBits, byte &totalOr, const
 		d2 = planes[2].Distance( v );
 		d3 = planes[3].Distance( v );
 
-		t = d0 + radius;
-		bits  = FLOATSIGNBITSET( t ) << 0;
-		t = d1 + radius;
-		bits |= FLOATSIGNBITSET( t ) << 1;
-		t = d2 + radius;
-		bits |= FLOATSIGNBITSET( t ) << 2;
-		t = d3 + radius;
-		bits |= FLOATSIGNBITSET( t ) << 3;
-
-		t = d0 - radius;
-		bits |= FLOATSIGNBITSET( t ) << 4;
-		t = d1 - radius;
-		bits |= FLOATSIGNBITSET( t ) << 5;
-		t = d2 - radius;
-		bits |= FLOATSIGNBITSET( t ) << 6;
-		t = d3 - radius;
-		bits |= FLOATSIGNBITSET( t ) << 7;
-
-		bits ^= 0x0F;		// flip lower four bits
+		b0 = ( (d0 > -radius) << 0 ) + ( (d0 < radius) << 4 );
+		b1 = ( (d1 > -radius) << 1 ) + ( (d1 < radius) << 5 );
+		b2 = ( (d2 > -radius) << 2 ) + ( (d2 < radius) << 6 );
+		b3 = ( (d3 > -radius) << 3 ) + ( (d3 < radius) << 7 );
+		bits = (b0 + b1) + (b2 + b3);
 
 		tOr |= bits;
 		cullBits[i] = bits;

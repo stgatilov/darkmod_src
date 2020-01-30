@@ -1187,6 +1187,36 @@ int idSIMD_SSE2::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDr
 	return numVerts * 2;
 }
 
+void VPCALL idSIMD_SSE2::TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
+	__m128 pA = _mm_loadu_ps(planes[0].ToFloatPtr());
+	__m128 pB = _mm_loadu_ps(planes[1].ToFloatPtr());
+	__m128 pC = _mm_loadu_ps(planes[2].ToFloatPtr());
+	__m128 pD = _mm_loadu_ps(planes[3].ToFloatPtr());
+	_MM_TRANSPOSE4_PS(pA, pB, pC, pD);
+
+	__m128 radP = _mm_set1_ps( radius);
+	__m128 radM = _mm_set1_ps(-radius);
+
+	size_t orAll = 0;
+	for ( int i = 0; i < numVerts; i++ ) {
+		__m128 xyzs = _mm_loadu_ps(&verts[i].xyz.x);
+		__m128 vX = _mm_shuffle_ps(xyzs, xyzs, SHUF(0, 0, 0, 0));
+		__m128 vY = _mm_shuffle_ps(xyzs, xyzs, SHUF(1, 1, 1, 1));
+		__m128 vZ = _mm_shuffle_ps(xyzs, xyzs, SHUF(2, 2, 2, 2));
+		__m128 dist = _mm_add_ps(
+			_mm_add_ps(_mm_mul_ps(pA, vX), _mm_mul_ps(pB, vY)), 
+			_mm_add_ps(_mm_mul_ps(pC, vZ), pD)
+		);
+		size_t lower = _mm_movemask_ps(_mm_cmpgt_ps(dist, radM));
+		size_t upper = _mm_movemask_ps(_mm_cmplt_ps(dist, radP));
+		size_t mask = lower + (upper << 4);
+		cullBits[i] = mask;
+		orAll |= mask;
+	}
+
+	totalOr = orAll;
+}
+
 #endif /* SIMD_USE_ASM */
 
 void VPCALL idSIMD_SSE2::CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) {
