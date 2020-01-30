@@ -739,7 +739,10 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// transform the object verts into global space
 	R_AxisToModelMatrix( mt.entity->axis, mt.entity->origin, matrix );
 
-	tr.primaryWorld->DrawText( mt.entity->hModel->Name(), mt.point + tr.primaryView->renderView.viewaxis[2] * 16,
+	idStr modelText;
+	sprintf( modelText, "%s : %d", mt.entity->hModel->Name(), mt.surfIdx );
+
+	tr.primaryWorld->DrawText( modelText, mt.point + tr.primaryView->renderView.viewaxis[2] * 16,
 		0.35f, colorRed, tr.primaryView->renderView.viewaxis );
 	tr.primaryWorld->DrawText( mt.material->GetName(), mt.point, 
 		0.35f, colorBlue, tr.primaryView->renderView.viewaxis );

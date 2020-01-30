@@ -270,6 +270,8 @@ typedef struct modelTrace_s {
 	idVec3					normal;				// hit triangle normal vector in global space
 	const idMaterial *		material;			// material of hit surface
 	const renderEntity_t *	entity;				// render entity that was hit
+	const idRenderModel *	model;				// render model that was hit
+	int						surfIdx;			// index of model's surface which was hit
 	int						jointNumber;		// md5 joint nearest to the hit triangle
 } modelTrace_t;
 

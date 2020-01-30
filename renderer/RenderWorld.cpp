@@ -1122,6 +1122,8 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 			trace.normal = localTrace.normal * refEnt->axis;
 			trace.material = shader;
 			trace.entity = &def->parms;
+			trace.model = model;
+			trace.surfIdx = i;
 			trace.jointNumber = refEnt->hModel->NearestJoint( i, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2] );
 		}
 	}
@@ -1284,6 +1286,8 @@ bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, con
 			trace.normal = localTrace.normal * def->parms.axis;
 			trace.material = material;
 			trace.entity = &def->parms;
+			trace.model = model;
+			trace.surfIdx = surfIdx;
 			trace.jointNumber = model->NearestJoint( surfIdx, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2] );
 
 			traceBounds.Clear();
