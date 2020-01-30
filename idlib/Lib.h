@@ -129,6 +129,22 @@ void	SixtetsForInt( byte *out, int src);
 int		IntForSixtets( byte *in );
 
 
+
+
+template<class Context, class MethodPtr> struct LambdaToFuncPtr_detail {};
+template<class Context, class Lambda, class Ret, class... Args> struct LambdaToFuncPtr_detail<Context, Ret (Lambda::*)(Args...) const> {
+	// Oh crap! Why are they doing this to my beloved language?! =)))
+	static inline Ret thunk(Context context, Args... args) {
+		return ((Lambda*)context)->operator()(args...);
+	}
+};
+//stgatilov: converts C++11 lambda into function pointer with void* context as first argument
+//note: if you need function pointer without context, just assign a noncapturing lambda to function pointer (C++ allows that)
+template<class Lambda> inline auto LambdaToFuncPtr(Lambda &lambda) -> auto {
+	return &LambdaToFuncPtr_detail<void*, decltype(&Lambda::operator())>::thunk;
+}
+
+
 class idException {
 public:
 	char error[MAX_STRING_CHARS];
