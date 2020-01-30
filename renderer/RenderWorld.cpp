@@ -19,6 +19,7 @@
 
 
 #include "tr_local.h"
+#include "math/Line.h"
 
 static idCVarInt r_useAreaLocks( "r_useAreaLocks", "3", CVAR_RENDERER, "1 - suppress multiple entity/area refs, 2 - lights, 3 - both" );
 
@@ -1128,6 +1129,172 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 	return ( trace.fraction < 1.0f );
 }
 
+bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, bool fastWorld, float radius, TraceFilterFunc filterCallback, void *context ) const {
+	memset( &trace, 0, sizeof( modelTrace_t ) );
+	trace.fraction = 1.0f;
+	trace.point = end;
+	idVec3 radiusVec(radius, radius, radius);
+
+	// stgatilov: this is almost the same algorithm that I put into idClip
+
+	// bounds for the whole trace
+	idBounds traceBounds;
+	traceBounds.Clear();
+	traceBounds.AddPoint( start );
+	traceBounds.AddPoint( end );
+	idVec3 invDirection = GetInverseMovementVelocity( start, end );
+
+	int areas[4096];		// I have seen max 750 visportals on map
+	int numAreas = 0;
+
+	// collide vs whole world using BSP tree optimization
+	// also get the world areas the trace is in
+	if ( fastWorld ) {
+		//FastWorldTrace( trace, start, end );
+		// note: it is faster to collide with BSP and enumerate areas in one pass:
+		if ( areaNodes != NULL ) {
+			RecurseProcBSP_r( &trace, areas, &numAreas, 4096, -1, 0, 0.0f, 1.0f, start, end );
+		}
+	}
+	else {
+		numAreas = BoundsInAreas( traceBounds, areas, 4096 );
+	}
+	if (numAreas >= 4096)
+		common->Warning("idRenderWorldLocal::TraceAll: areas array overflow");
+
+	struct Candidate {
+		idRenderEntityLocal *def;
+		const idRenderModel *model;
+		int surfIdx;
+		const idMaterial *material;
+		float fractionLower;
+	};
+	idList<Candidate> candidates;
+
+	// check all areas for models
+	for ( int a = 0; a < numAreas; a++ ) {
+		const portalArea_t &area = portalAreas[areas[a]];
+
+		// check all models in this area
+		for ( const areaReference_t *ref = area.entityRefs.areaNext; ref != &area.entityRefs; ref = ref->areaNext ) {
+			idRenderEntityLocal *def = ref->entity;
+
+			const idRenderModel *model = def->parms.hModel;
+			if ( !model )
+				continue;
+
+			// note: the very first reference must be for "_areaN" model, i.e. world geometry of the area
+			if ( ref == area.entityRefs.areaNext )
+				assert( model->IsStaticWorldModel() );
+			if ( model->IsStaticWorldModel() ) {
+				idBounds areaBounds = model->Bounds();
+				if ( !areaBounds.LineIntersection( start, trace.point ) ) {
+					// does not intersect area => does not intersect any entities inside it
+					break;
+				}
+			}
+
+			// filter 1: by entity
+			if ( filterCallback && !filterCallback(context, &def->parms, nullptr, nullptr) )
+				continue;
+
+			model = R_EntityDefDynamicModel( def );
+			if ( !model )
+				continue;
+
+			// filter 2: by entity & model
+			if ( filterCallback && !filterCallback(context, &def->parms, model, nullptr) )
+				continue;
+
+			idBounds entityBounds;
+			entityBounds.FromTransformedBounds( model->Bounds( &def->parms ), def->parms.origin, def->parms.axis );
+			// if the model bounds do not overlap with the trace bounds
+			if ( !traceBounds.IntersectsBounds( entityBounds ) || !entityBounds.LineIntersection( start, trace.point )  )
+				continue;
+
+			for ( int s = 0; s < model->NumSurfaces(); s++ ) {
+				const modelSurface_t *surf = model->Surface( s );
+
+				const idMaterial *material = R_RemapShaderBySkin( surf->material, def->parms.customSkin, def->parms.customShader );
+
+				// if no geometry or no shader
+				if ( !surf->geometry || !material )
+					continue;
+
+				if ( fastWorld && model->IsStaticWorldModel() && (material->Coverage() == MC_OPAQUE) )
+					continue;	// already intersected
+
+				idBounds surfBounds;
+				surfBounds.FromTransformedBounds( surf->geometry->bounds, def->parms.origin, def->parms.axis );
+				float interval[2] = { 0.0f, trace.fraction };
+				// intersect surface bounds with trace line
+				if ( !MovingBoundsIntersectBounds( start, invDirection, radiusVec, surfBounds, interval ) )
+					continue;	// no intersection
+
+				// filter 3: by entity & model & material
+				if ( filterCallback && !filterCallback( context, &def->parms, model, material ) )
+					continue;
+
+				bool duplicate = false;
+				for ( int j = 0; j < candidates.Num(); j++ )
+					if ( candidates[j].def == def && candidates[j].surfIdx == s ) {
+						duplicate = true;
+						break;
+					}
+				// avoid tracing multi-area entity many times
+				if ( duplicate )
+					continue;
+
+				Candidate c = {def, model, s, material, interval[0]};
+				candidates.Append(c);
+			}
+		}
+	}
+
+	// be greedy: sort by min fraction possible (as deduced from bounds)
+	std::sort( candidates.begin(), candidates.end(), []( const Candidate &a, const Candidate &b) -> bool {
+		return a.fractionLower < b.fractionLower;
+	} );
+
+	for ( int c = 0; c < candidates.Num(); c++ ) {
+		// all the rest candidates are surely even farther along line
+		if ( candidates[c].fractionLower >= trace.fraction ) {
+			break;
+		}
+		idRenderEntityLocal *def = candidates[c].def;
+		const idRenderModel *model = candidates[c].model;
+		int surfIdx = candidates[c].surfIdx;
+		const modelSurface_t *surf = model->Surface( surfIdx );
+		const idMaterial *material = candidates[c].material;
+
+		const srfTriangles_t *tri = surf->geometry;
+
+		// transform the points into local space
+		float modelMatrix[16];
+		idVec3 localStart, localEnd;
+		R_AxisToModelMatrix( def->parms.axis, def->parms.origin, modelMatrix );
+		R_GlobalPointToLocal( modelMatrix, start, localStart );
+		R_GlobalPointToLocal( modelMatrix, end, localEnd );
+
+		localTrace_t localTrace = R_LocalTrace( localStart, localEnd, radius, surf->geometry );
+
+		if ( localTrace.fraction < trace.fraction ) {
+			trace.fraction = localTrace.fraction;
+			R_LocalPointToGlobal( modelMatrix, localTrace.point, trace.point );
+			trace.normal = localTrace.normal * def->parms.axis;
+			trace.material = material;
+			trace.entity = &def->parms;
+			trace.jointNumber = model->NearestJoint( surfIdx, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2] );
+
+			traceBounds.Clear();
+			traceBounds.AddPoint( start );
+			traceBounds.AddPoint( start + trace.fraction * (end - start) );
+		}
+	}
+
+	return trace.fraction < 1.0f;
+}
+
 /*
 ===================
 idRenderWorldLocal::Trace
@@ -1292,7 +1459,7 @@ bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const 
 idRenderWorldLocal::RecurseProcBSP
 ==================
 */
-void idRenderWorldLocal::RecurseProcBSP_r( modelTrace_t *results, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3 &p1, const idVec3 &p2 ) const {
+void idRenderWorldLocal::RecurseProcBSP_r( modelTrace_t *results, int *areas, int *numAreas, int maxAreas, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3 &p1, const idVec3 &p2 ) const {
 	float		t1, t2;
 	float		frac;
 	idVec3		mid;
@@ -1305,6 +1472,17 @@ void idRenderWorldLocal::RecurseProcBSP_r( modelTrace_t *results, int parentNode
 	}
 	// empty leaf
 	if ( nodeNum < 0 ) {
+		if ( maxAreas == 0 )
+			return;
+		nodeNum = -1 - nodeNum;
+		int i;
+		for ( int i = 0; i < *numAreas; i++ ) {
+			if ( areas[i] == nodeNum )
+				break;
+		}
+		if ( i >= *numAreas && *numAreas < maxAreas ) {
+			areas[(*numAreas)++] = nodeNum;
+		}
 		return;
 	}
 	// if solid leaf node
@@ -1325,11 +1503,11 @@ void idRenderWorldLocal::RecurseProcBSP_r( modelTrace_t *results, int parentNode
 	t2 = node->plane.Normal() * p2 + node->plane[3];
 
 	if ( t1 >= 0.0f && t2 >= 0.0f ) {
-		RecurseProcBSP_r( results, nodeNum, node->children[0], p1f, p2f, p1, p2 );
+		RecurseProcBSP_r( results, areas, numAreas, maxAreas, nodeNum, node->children[0], p1f, p2f, p1, p2 );
 		return;
 	}
 	if ( t1 < 0.0f && t2 < 0.0f ) {
-		RecurseProcBSP_r( results, nodeNum, node->children[1], p1f, p2f, p1, p2 );
+		RecurseProcBSP_r( results, areas, numAreas, maxAreas, nodeNum, node->children[1], p1f, p2f, p1, p2 );
 		return;
 	}
 	side = t1 < t2;
@@ -1338,8 +1516,8 @@ void idRenderWorldLocal::RecurseProcBSP_r( modelTrace_t *results, int parentNode
 	mid[0] = p1[0] + frac*(p2[0] - p1[0]);
 	mid[1] = p1[1] + frac*(p2[1] - p1[1]);
 	mid[2] = p1[2] + frac*(p2[2] - p1[2]);
-	RecurseProcBSP_r( results, nodeNum, node->children[side], p1f, midf, p1, mid );
-	RecurseProcBSP_r( results, nodeNum, node->children[side^1], midf, p2f, mid, p2 );
+	RecurseProcBSP_r( results, areas, numAreas, maxAreas, nodeNum, node->children[side], p1f, midf, p1, mid );
+	RecurseProcBSP_r( results, areas, numAreas, maxAreas, nodeNum, node->children[side^1], midf, p2f, mid, p2 );
 }
 
 /*
@@ -1351,7 +1529,7 @@ bool idRenderWorldLocal::FastWorldTrace( modelTrace_t &results, const idVec3 &st
 	memset( &results, 0, sizeof( modelTrace_t ) );
 	results.fraction = 1.0f;
 	if ( areaNodes != NULL ) {
-		RecurseProcBSP_r( &results, -1, 0, 0.0f, 1.0f, start, end );
+		RecurseProcBSP_r( &results, NULL, NULL, 0, -1, 0, 0.0f, 1.0f, start, end );
 		return ( results.fraction < 1.0f );
 	}
 	return false;

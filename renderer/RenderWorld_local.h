@@ -162,6 +162,7 @@ public:
 	virtual bool			Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic = true, bool skipPlayer = false ) const;
 	virtual bool			FastWorldTrace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end ) const;
 	virtual bool			MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const;
+	virtual bool			TraceAll( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, bool fastWorld = true, float radius = 0.0f, TraceFilterFunc filterCallback = nullptr, void *context = nullptr ) const;
 
 	virtual void			DebugClearLines( int time );
 	virtual void			DebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime = 0, const bool depthTest = false );
@@ -287,7 +288,7 @@ public:
 	void					AddEntityRefToArea( idRenderEntityLocal *def, portalArea_t *area );
 	void					AddLightRefToArea( idRenderLightLocal *light, portalArea_t *area );
 
-	void					RecurseProcBSP_r( modelTrace_t *results, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3 &p1, const idVec3 &p2 ) const;
+	void					RecurseProcBSP_r( modelTrace_t *results, int *areas, int *numAreas, int maxAreas, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3 &p1, const idVec3 &p2 ) const;
 
 	void					BoundsInAreas_r( int nodeNum, const idBounds &bounds, int *areas, int *numAreas, int maxAreas ) const;
 
