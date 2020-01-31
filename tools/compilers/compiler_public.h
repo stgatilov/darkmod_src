@@ -39,4 +39,7 @@ void RunReach_f( const idCmdArgs &args );
 // video file encoding
 void RoQFileEncode_f( const idCmdArgs &args );
 
+// stgatilov: particle systems precomputation
+void RunParticle_f( const idCmdArgs &args );
+
 #endif	/* !__COMPILER_PUBLIC_H__ */

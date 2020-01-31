@@ -40,7 +40,9 @@ typedef enum {
 	EDITOR_PARTICLE				= BIT(9),
 	//EDITOR_PDA					= BIT(10),
 	EDITOR_AAS					= BIT(11),
-	EDITOR_MATERIAL				= BIT(12)
+	EDITOR_MATERIAL				= BIT(12),
+
+	EDITOR_RUNPARTICLE			= BIT(13),
 } toolFlag_t;
 
 #define STRTABLE_ID				"#str_"

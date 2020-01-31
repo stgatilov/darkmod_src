@@ -931,6 +931,59 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 				continue;
 			}
 
+			idImage *cutoffMap = stage->cutoffTimeMap;
+			int cutoffBegX, cutoffBegY, cutoffWidth, cutoffHeight;
+			if (cutoffMap) {
+				cutoffBegX = cutoffBegY = 0;
+				cutoffWidth = cutoffMap->cpuData.width;
+				cutoffHeight = cutoffMap->cpuData.height;
+			}
+			if ( stage->collisionStatic ) {
+				idRenderModel *rm = renderEntity->hModel;
+				int surfNum = rm->NumSurfaces();
+				int surfIdx;
+				for ( surfIdx = 0; surfIdx < surfNum; surfIdx++ )
+					if ( rm->Surface(surfIdx)->geometry == surf->frontendGeo )
+						break;
+				if ( surfIdx < surfNum ) {
+					char filename[256];
+					sprintf( filename, "textures/_prt_gen/cstm__%s__%d_%d.tga", rm->Name(), surfIdx, stageNum );
+					cutoffMap = globalImages->ImageFromFile( filename, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
+					if ( cutoffMap->defaulted )
+						cutoffMap = nullptr;	//image not found
+					const imageBlock_t &data = cutoffMap->cpuData;
+					if ( data.GetSizeInBytes() == 4 && data.pic[0] == 255 && data.pic[1] == 255 && data.pic[2] == 255 )
+						cutoffMap = nullptr;	//collisionStatic was disabled for this emitter
+
+					//this is the same code as in ParticleCollisionStatic.cpp
+					//TODO: factor it out into single place
+					idBounds texBounds;
+					texBounds.Clear();
+					for (int i = 0; i < srcTri->numIndexes; i++) {
+						idVec2 tc = srcTri->verts[srcTri->indexes[i]].st;
+						texBounds.AddPoint(idVec3(tc.x, tc.y, 0.0));
+					}
+					texBounds.IntersectsBounds(bounds_zeroOneCube);
+					if (texBounds.IsBackwards())
+						texBounds.Zero();
+
+					//find minimal subrectangle to be computed and saved
+					int w = stage->mapLayoutSizes[0], h = stage->mapLayoutSizes[1];
+					int xBeg = (int)idMath::Floor(texBounds[0].x * w);
+					int xEnd = (int)idMath::Ceil (texBounds[1].x * w);
+					int yBeg = (int)idMath::Floor(texBounds[0].y * h);
+					int yEnd = (int)idMath::Ceil (texBounds[1].y * h);
+					if (xEnd == xBeg)
+						(xEnd < w ? xEnd++ : xBeg--);
+					if (yEnd == yBeg)
+						(yEnd < h ? yEnd++ : yBeg--);
+					cutoffBegX = xBeg;
+					cutoffBegY = yBeg;
+					cutoffWidth = w;
+					cutoffHeight = h;
+				}
+			}
+
 			// we interpret stage->totalParticles as "particles per map square area"
 			// so the systems look the same on different size surfaces
 			int		totalParticles = ( useArea ) ? stage->totalParticles * totalArea / 4096.0 : ( stage->totalParticles );
@@ -1044,6 +1097,22 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 				g.originalRandom = g.random;
 
 				g.age = g.frac * stage->particleLife;
+
+				if ( cutoffMap ) {
+					int w = cutoffMap->cpuData.width, h = cutoffMap->cpuData.height;
+					idVec2 texCoord = v1->st * f1 + v2->st * f2 + v3->st * f3;
+					texCoord.Clamp( idVec2(0.0f, 0.0f), idVec2(1.0f - FLT_EPSILON, 1.0f - FLT_EPSILON) );		// GL_CLAMP_TO_EDGE
+					texCoord.MulCW( idVec2(cutoffWidth, cutoffHeight) );
+					int x = int(texCoord.x), y = int(texCoord.y);			// GL_NEAREST
+					assert(x >= cutoffBegX && y >= cutoffBegY && x < cutoffBegX + w && y < cutoffBegY + h);
+					byte *texel = &cutoffMap->cpuData.pic[4 * ((y - cutoffBegY) * w + (x - cutoffBegX))];
+					static const float TWO_POWER_MINUS_24 = 1.0f / (1<<24);
+					// convert from 8-bit RGB into 24-bit time ratio
+					// note: 8-bit grayscale image turns into ratio = (val/255)
+					float ratio = ((texel[0] * 256 + texel[1]) * 256 + texel[2]) * TWO_POWER_MINUS_24;
+					if ( g.frac > ratio )
+						continue;
+				}
 
 #if 1 // particle collision experiment
 				static idCVarBool r_checkParticleCollision( "r_checkParticleCollision", "0", CVAR_RENDERER, "1 = test particle collision" );

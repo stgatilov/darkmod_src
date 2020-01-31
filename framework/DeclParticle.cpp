@@ -15,6 +15,7 @@
 
 #include "precompiled.h"
 #pragma hdrstop
+#include "../renderer/Image.h"
 
 
 
@@ -407,12 +408,47 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 			stage->softeningRadius = src.ParseFloat();
 			continue;
 		}
+		if ( !token.Icmp( "cutoffTimeMap" ) ) {
+			src.ReadToken( &token );
+			stage->cutoffTimeMap = globalImages->ImageFromFile( token.c_str(), TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
+			continue;
+		}
+		if ( !token.Icmp( "mapLayout" ) ) {
+			src.ReadToken( &token );
+			if ( !token.Icmp("linear") ) {
+				stage->mapLayoutType = PML_LINEAR;
+				stage->mapLayoutSizes[0] = src.ParseInt();
+				stage->mapLayoutSizes[1] = -1;
+			}
+			else if ( !token.Icmp("texture") ) {
+				stage->mapLayoutType = PML_TEXTURE;
+				stage->mapLayoutSizes[0] = src.ParseInt();
+				stage->mapLayoutSizes[1] = src.ParseInt();
+			}
+			else {
+				src.Error( "unknown mapLayout type %s", token.c_str() );
+			}
+			continue;
+		}
+		if ( !token.Icmp( "collisionStatic" ) ) {
+			stage->collisionStatic = true;
+			continue;
+		}
+		if ( !token.Icmp( "collisionStaticWorldOnly" ) ) {
+			stage->collisionStaticWorldOnly = true;
+			continue;
+		}
 
 		src.Error( "unknown token %s\n", token.c_str() );
 	}
 
 	// derive values
 	stage->cycleMsec = ( stage->particleLife + stage->deadTime ) * 1000;
+
+	if ( stage->collisionStatic && stage->cutoffTimeMap ) {
+		src.Warning( "collisionStatic is ignored in favor of cutoffTimeMap" );
+		stage->collisionStatic = false;
+	}
 
 	return stage;
 }
@@ -808,6 +844,12 @@ void idParticleStage::Default() {
 	entityColor = false;
 	cycleMsec = ( particleLife + deadTime ) * 1000;
 	softeningRadius = -2.0f; // -2 means "auto"
+	cutoffTimeMap = nullptr;
+	collisionStatic = false;
+	collisionStaticWorldOnly = false;
+	mapLayoutType = PML_LINEAR;
+	mapLayoutSizes[0] = 1;
+	mapLayoutSizes[1] = -1;
 }
 
 /*

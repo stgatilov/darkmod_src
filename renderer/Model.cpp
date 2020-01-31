@@ -554,6 +554,13 @@ int idRenderModelStatic::NearestJoint( int surfaceNum, int a, int b, int c ) con
 //=====================================================================
 
 
+idCVar r_tempFixBoundsOfParticleDeformedSurfs(
+	"r_tempFixBoundsOfParticleDeformedSurfs", "0", CVAR_BOOL | CVAR_RENDERER,
+	"Bounding box for particle-emitting surfaces is wrong. "
+	"This cvar makes it wrong in different way =)"
+	"Note: only for temporary testing, should be removed soon!"
+);
+
 /*
 ================
 idRenderModelStatic::FinishSurfaces
@@ -693,19 +700,45 @@ void idRenderModelStatic::FinishSurfaces() {
 				break;
 			case DFRM_PARTICLE:
 			case DFRM_PARTICLE2:
-				{
+			{
 				// expand surface bounds to include any emitted particles
 				// Note that this is an approximation. True bounds could be
 				// calculated by simulating R_ParticleDeform().
 				srfTriangles_t *tri = surf->geometry;
 				const idDeclParticle *particleSystem = (idDeclParticle *)surf->material->GetDeformDecl();
-#if 1			// duzenko 2.08: seems generally broken. Below is a dirty quick fix
-				tri->bounds.AddBounds(particleSystem->bounds);
-#else
-				tri->bounds[0].z = idMath::Fmin( tri->bounds[0].z, particleSystem->bounds[0].z );
-#endif
+				if ( r_tempFixBoundsOfParticleDeformedSurfs.GetBool() == 0 )
+					// duzenko & stgatilov 2.08: seems generally broken.
+					tri->bounds.AddBounds(particleSystem->bounds);
+				else {
+					// stgatilov: this is a bit of straightforward interval math
+					// does not work properly when there is gravity or worldAxis
+					idBounds csysBounds[4];
+					for (int l = 0; l < 4; l++)
+						csysBounds[l].Clear();
+					for (int v = 0; v < tri->numVerts; v++) {
+						csysBounds[0].AddPoint(tri->verts[v].tangents[0]);
+						csysBounds[1].AddPoint(tri->verts[v].tangents[1]);
+						csysBounds[2].AddPoint(tri->verts[v].normal);
+						csysBounds[3].AddPoint(tri->verts[v].xyz);
+					}
+					idBounds sum = csysBounds[3];
+					for (int l = 0; l < 3; l++) {
+						float minCoeff = particleSystem->bounds[0][l];
+						float maxCoeff = particleSystem->bounds[1][l];
+						idBounds scaled;
+						scaled.Clear();
+						scaled.AddPoint(minCoeff * csysBounds[l][0]);
+						scaled.AddPoint(maxCoeff * csysBounds[l][0]);
+						scaled.AddPoint(minCoeff * csysBounds[l][1]);
+						scaled.AddPoint(maxCoeff * csysBounds[l][1]);
+						sum[0] += scaled[0];
+						sum[1] += scaled[1];
+					}
+					assert( sum.ContainsPoint(tri->bounds[0]) && sum.ContainsPoint(tri->bounds[1]) );
+					tri->bounds = sum;
 				}
 				break;
+			}
 			case DFRM_RAIN: 
 			{
 				const idDeclParticle* particleSystem = (idDeclParticle*)surf->material->GetDeformDecl();

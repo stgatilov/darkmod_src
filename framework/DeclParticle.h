@@ -16,6 +16,8 @@
 #ifndef __DECLPARTICLE_H__
 #define __DECLPARTICLE_H__
 
+class idImage;
+
 /*
 ===============================================================================
 
@@ -65,6 +67,11 @@ typedef enum {
 	POR_Y,
 	POR_Z
 } prtOrientation_t;
+
+typedef enum {
+	PML_LINEAR,
+	PML_TEXTURE
+} prtMapLayout_t;
 
 typedef struct renderEntity_s renderEntity_t;
 typedef struct renderView_s renderView_t;
@@ -184,6 +191,19 @@ public:
 	can be turned off for specific stages to stop them poking through walls.
 	*/
 	float					softeningRadius;
+
+
+	// stgatilov: Particle "time" is multiplied by the number from this map (in range [0..1])
+	// If this is less than "1" at tex coords where particle emits, then its death moment happens earlier
+	// Note: fade-out time moment is not changed, since this is collision (TODO: do we need to support both cases?)
+	idImage *				cutoffTimeMap;
+
+	//stgatilov: if set to true, then cutoffTimeMap is auto-generated when map is compiled
+	bool collisionStatic;
+	bool collisionStaticWorldOnly;
+	//stgatilov: configuration of cutoff texture (and possibly other textures added in future)
+	prtMapLayout_t mapLayoutType;
+	int mapLayoutSizes[2];
 };
 
 

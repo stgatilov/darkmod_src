@@ -1165,6 +1165,7 @@
     <ClCompile Include="tools\compilers\dmap\tritools.cpp" />
     <ClCompile Include="tools\compilers\dmap\ubrush.cpp" />
     <ClCompile Include="tools\compilers\dmap\usurface.cpp" />
+    <ClCompile Include="tools\compilers\particle\ParticleCollisionStatic.cpp" />
     <ClCompile Include="tools\compilers\renderbump\renderbump.cpp" />
     <ClCompile Include="tools\compilers\roqvq\codec.cpp" />
     <ClCompile Include="tools\compilers\roqvq\NSBitmapImageRep.cpp" />
