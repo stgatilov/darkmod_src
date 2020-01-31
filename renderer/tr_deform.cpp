@@ -951,9 +951,11 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					cutoffMap = globalImages->ImageFromFile( filename, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
 					if ( cutoffMap->defaulted )
 						cutoffMap = nullptr;	//image not found
-					const imageBlock_t &data = cutoffMap->cpuData;
-					if ( data.GetSizeInBytes() == 4 && data.pic[0] == 255 && data.pic[1] == 255 && data.pic[2] == 255 )
-						cutoffMap = nullptr;	//collisionStatic was disabled for this emitter
+					else {
+						const imageBlock_t &data = cutoffMap->cpuData;
+						if ( data.GetSizeInBytes() == 4 && data.pic[0] == 255 && data.pic[1] == 255 && data.pic[2] == 255 )
+							cutoffMap = nullptr;	//collisionStatic was disabled for this emitter
+					}
 
 					//this is the same code as in ParticleCollisionStatic.cpp
 					//TODO: factor it out into single place
