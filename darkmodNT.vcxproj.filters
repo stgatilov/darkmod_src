@@ -1450,6 +1450,9 @@
     <ClInclude Include="idlib\ParallelJobList_JobHeaders.h">
       <Filter>idLib</Filter>
     </ClInclude>
+    <ClInclude Include="tools\compilers\compiler_common.h">
+      <Filter>Tools\Compilers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2844,6 +2847,9 @@
     </ClCompile>
     <ClCompile Include="idlib\ParallelJobList.cpp">
       <Filter>idLib</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\compiler_common.cpp">
+      <Filter>Tools\Compilers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -790,6 +790,7 @@
     <ClInclude Include="tools\compilers\aas\AASReach.h" />
     <ClInclude Include="tools\compilers\aas\Brush.h" />
     <ClInclude Include="tools\compilers\aas\BrushBSP.h" />
+    <ClInclude Include="tools\compilers\compiler_common.h" />
     <ClInclude Include="tools\compilers\compiler_public.h" />
     <ClInclude Include="tools\compilers\dmap\dmap.h" />
     <ClInclude Include="tools\compilers\roqvq\codec.h" />
@@ -1293,6 +1294,7 @@
     <ClCompile Include="tools\compilers\aas\AASReach.cpp" />
     <ClCompile Include="tools\compilers\aas\Brush.cpp" />
     <ClCompile Include="tools\compilers\aas\BrushBSP.cpp" />
+    <ClCompile Include="tools\compilers\compiler_common.cpp" />
     <ClCompile Include="tools\compilers\dmap\dmap.cpp" />
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />
