@@ -1305,6 +1305,11 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 			if ( name[0] == '_' ) {
 				return image;
 			}
+			// stgatilov: this image was not found and replaced with _default
+			// hence, other parameters don't matter too
+			if ( image->defaulted ) {
+				return image;
+			}
 
 			if ( image->cubeFiles != cubeMap ) {
 				common->Error( "Image '%s' has been referenced with conflicting cube map states", _name );
