@@ -2027,6 +2027,9 @@ void idTextEntity::Spawn( void )
 	text = spawnArgs.GetString( "text" );
 	playerOriented = spawnArgs.GetBool( "playerOriented" );
 
+	// stgatilov: fix \n to make it possible to show multiline text
+	text.Replace("\\n", "\n");
+
 	// grayman #3042 - this used to only start thinking if the "developer"
 	// boolean was set. I couldn't get that to work at map start, and changing
 	// it while playing wouldn't get the text to show, so I changed how it was done.
