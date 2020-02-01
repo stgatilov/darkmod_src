@@ -112,6 +112,8 @@ public:
 	virtual void		ActivateFrontend();
 	virtual void		WaitForFrontendCompletion();
 	virtual void		StartFrontendThread();
+	virtual void        AddAfterFrameCommand(std::function<void()> command);
+	virtual void        ExecuteAfterFrameCommands();
 
 	virtual const char *GetCurrentMapName();
 
@@ -363,6 +365,7 @@ public:
 private:
 	bool				BoxDialogSanityCheck( void );
 	idStr				authMsg;
+	idList<std::function<void()>> afterFrameCommands;
 };
 
 
