@@ -739,13 +739,6 @@ void idRenderModelStatic::FinishSurfaces() {
 				}
 				break;
 			}
-			case DFRM_RAIN: 
-			{
-				const idDeclParticle* particleSystem = (idDeclParticle*)surf->material->GetDeformDecl();
-				srfTriangles_t* tri = surf->geometry;
-				tri->bounds[0].z -= particleSystem->stages[0]->particleLife * 400; // https://hypertextbook.com/facts/2007/EvanKaplan.shtml
-			}
-				break;
 			default:
 				{
 				// the amount here is somewhat arbitrary, designed to handle

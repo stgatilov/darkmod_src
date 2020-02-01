@@ -1705,15 +1705,6 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		}
 		deformDecl = declManager->FindType( DECL_PARTICLE, token.c_str(), true );
 		return;
-	} else if ( !token.Icmp( "rain" ) ) {
-		deform = DFRM_RAIN;
-		if ( !src.ExpectAnyToken( &token ) ) {
-			src.Warning( "deform particle missing particle name" );
-			SetMaterialFlag( MF_DEFAULTED );
-			return;
-		}
-		deformDecl = declManager->FindType( DECL_PARTICLE, token.c_str(), true );
-		return;
 	} else {
 		src.Warning( "Bad deform type '%s'", token.c_str() );
 		SetMaterialFlag( MF_DEFAULTED );
