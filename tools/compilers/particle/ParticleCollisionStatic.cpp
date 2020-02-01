@@ -67,7 +67,12 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 		prtStage->speed.from == prtStage->speed.to && !prtStage->speed.table &&
 	true);
 
-	assert(prtStage->mapLayoutType == PML_TEXTURE);
+	if (prtStage->mapLayoutType != PML_TEXTURE) {
+		common->Error("Particle %s stage %d: only 'texture' is supported as 'mapLayout' yet");
+	}
+	if (prtStage->worldAxis) {
+		common->Error("Particle %s stage %d: worldAxis not supported yet");
+	}
 	if (!supportedWithTextureLayout) {
 		common->Error("Particle %s stage %d: nonzero distribution not supported with texture mapLayout", prtName, stageIdx);
 	}
