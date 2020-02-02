@@ -189,8 +189,8 @@ static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) {
 	optVertex_t	*vert;
 
 	// deal with everything strictly as 2D
-	x = v->xyz * opt->axis[0];
-	y = v->xyz * opt->axis[1];
+	x = (float)idVec3d(v->xyz).Dot(idVec3d(opt->axis[0]));
+	y = (float)idVec3d(v->xyz).Dot(idVec3d(opt->axis[1]));
 
 	// should we match based on the t-junction fixing hash verts?
 	for ( i = 0 ; i < numOptVerts ; i++ ) {
@@ -316,12 +316,12 @@ VertexBetween
 =================
 */
 static bool VertexBetween( const optVertex_t *p1, const optVertex_t *v1, const optVertex_t *v2 ) {
-	idVec3	d1, d2;
+	idVec3d	d1, d2;
 	float	d;
 
-	d1 = p1->pv - v1->pv;
-	d2 = p1->pv - v2->pv;
-	d = d1 * d2;
+	d1 = idVec3d(p1->pv) - idVec3d(v1->pv);
+	d2 = idVec3d(p1->pv) - idVec3d(v2->pv);
+	d = (float) d1.Dot(d2);
 	if ( d < 0 ) {
 		return true;
 	}
@@ -341,19 +341,19 @@ Will return NULL if the lines are colinear
 */
 static	optVertex_t *EdgeIntersection( const optVertex_t *p1, const optVertex_t *p2, 
 									  const optVertex_t *l1, const optVertex_t *l2, optimizeGroup_t *opt ) {
-	float	f;
+	double	f;
 	idDrawVert	*v;
-	idVec3	dir1, dir2, cross1, cross2;
+	idVec3d	dir1, dir2, cross1, cross2;
 
-	dir1 = p1->pv - l1->pv;
-	dir2 = p1->pv - l2->pv;
+	dir1 = idVec3d(p1->pv) - idVec3d(l1->pv);
+	dir2 = idVec3d(p1->pv) - idVec3d(l2->pv);
 	cross1 = dir1.Cross( dir2 );
 
-	dir1 = p2->pv - l1->pv;
-	dir2 = p2->pv - l2->pv;
+	dir1 = idVec3d(p2->pv) - idVec3d(l1->pv);
+	dir2 = idVec3d(p2->pv) - idVec3d(l2->pv);
 	cross2 = dir1.Cross( dir2 );
 
-	if ( cross1[2] - cross2[2] == 0 ) {
+	if ( float(cross1[2] - cross2[2]) == 0 ) {
 		return NULL;
 	}
 
@@ -363,8 +363,8 @@ static	optVertex_t *EdgeIntersection( const optVertex_t *p1, const optVertex_t *
 	v = (idDrawVert *)Mem_Alloc( sizeof( *v ) );
 	memset( v, 0, sizeof( *v ) );
 
-	v->xyz = p1->v.xyz * ( 1.0 - f ) + p2->v.xyz * f;
-	v->normal = p1->v.normal * ( 1.0 - f ) + p2->v.normal * f;
+	v->xyz = idVec3( idVec3d(p1->v.xyz) * ( 1.0 - f ) + idVec3d(p2->v.xyz) * f );
+	v->normal = idVec3( idVec3d(p1->v.normal) * ( 1.0 - f ) + idVec3d(p2->v.normal) * f );
 	v->normal.Normalize();
 	v->st[0] = p1->v.st[0] * ( 1.0 - f ) + p2->v.st[0] * f;
 	v->st[1] = p1->v.st[1] * ( 1.0 - f ) + p2->v.st[1] * f;
@@ -799,26 +799,26 @@ consider it invalid if any one of the possibilities is invalid.
 =================
 */
 static bool IsTriangleValid( const optVertex_t *v1, const optVertex_t *v2, const optVertex_t *v3 ) {
-	idVec3	d1, d2, normal;
+	idVec3d	d1, d2, normal;
 
-	d1 = v2->pv - v1->pv;
-	d2 = v3->pv - v1->pv;
+	d1 = idVec3d(v2->pv) - idVec3d(v1->pv);
+	d2 = idVec3d(v3->pv) - idVec3d(v1->pv);
 	normal = d1.Cross( d2 );
-	if ( normal[2] <= 0 ) {
+	if ( float(normal[2]) <= 0 ) {
 		return false;
 	}
 
-	d1 = v3->pv - v2->pv;
-	d2 = v1->pv - v2->pv;
+	d1 = idVec3d(v3->pv) - idVec3d(v2->pv);
+	d2 = idVec3d(v1->pv) - idVec3d(v2->pv);
 	normal = d1.Cross( d2 );
-	if ( normal[2] <= 0 ) {
+	if ( float(normal[2]) <= 0 ) {
 		return false;
 	}
 
-	d1 = v1->pv - v3->pv;
-	d2 = v2->pv - v3->pv;
+	d1 = idVec3d(v1->pv) - idVec3d(v3->pv);
+	d2 = idVec3d(v2->pv) - idVec3d(v3->pv);
 	normal = d1.Cross( d2 );
-	if ( normal[2] <= 0 ) {
+	if ( float(normal[2]) <= 0 ) {
 		return false;
 	}
 
@@ -835,12 +835,10 @@ Returns false if it is either front or back facing
 */
 static bool IsTriangleDegenerate( const optVertex_t *v1, const optVertex_t *v2, const optVertex_t *v3 ) {
 #if 1
-	idVec3	d1, d2, normal;
-
-	d1 = v2->pv - v1->pv;
-	d2 = v3->pv - v1->pv;
-	normal = d1.Cross( d2 );
-	if ( normal[2] == 0 ) {
+	auto d1 = idVec3d(v2->pv) - idVec3d(v1->pv);
+	auto d2 = idVec3d(v3->pv) - idVec3d(v1->pv);
+	idVec3d normal = d1.Cross( d2 );
+	if ( float(normal[2]) == 0 ) {
 		return true;
 	}
 	return false;
@@ -858,29 +856,29 @@ Tests if a 2D point is inside an original triangle
 ==================
 */
 static bool PointInTri( const idVec3 &p, const mapTri_t *tri, optIsland_t *island ) {
-	idVec3	d1, d2, normal;
+	idVec3d	d1, d2, normal;
 
 	// the normal[2] == 0 case is not uncommon when a square is triangulated in
 	// the opposite manner to the original
 
-	d1 = tri->optVert[0]->pv - p;
-	d2 = tri->optVert[1]->pv - p;
+	d1 = idVec3d(tri->optVert[0]->pv) - idVec3d(p);
+	d2 = idVec3d(tri->optVert[1]->pv) - idVec3d(p);
 	normal = d1.Cross( d2 );
-	if ( normal[2] < 0 ) {
+	if ( (float)normal[2] < 0 ) {
 		return false;
 	}
 
-	d1 = tri->optVert[1]->pv - p;
-	d2 = tri->optVert[2]->pv - p;
+	d1 = idVec3d(tri->optVert[1]->pv) - idVec3d(p);
+	d2 = idVec3d(tri->optVert[2]->pv) - idVec3d(p);
 	normal = d1.Cross( d2 );
-	if ( normal[2] < 0 ) {
+	if ( (float)normal[2] < 0 ) {
 		return false;
 	}
 
-	d1 = tri->optVert[2]->pv - p;
-	d2 = tri->optVert[0]->pv - p;
+	d1 = idVec3d(tri->optVert[2]->pv) - idVec3d(p);
+	d2 = idVec3d(tri->optVert[0]->pv) - idVec3d(p);
 	normal = d1.Cross( d2 );
-	if ( normal[2] < 0 ) {
+	if ( (float)normal[2] < 0 ) {
 		return false;
 	}
 
