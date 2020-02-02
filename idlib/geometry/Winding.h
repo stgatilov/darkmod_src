@@ -107,6 +107,7 @@ public:
 	bool			RayIntersection( const idPlane &windingPlane, const idVec3 &start, const idVec3 &dir, float &scale, bool backFaceCull = false ) const;
 
 	static float	TriangleArea( const idVec3 &a, const idVec3 &b, const idVec3 &c );
+	static double	TriangleAreaDbl( const idVec3 &a, const idVec3 &b, const idVec3 &c );
 
 protected:
 	int				numPoints;				// number of points

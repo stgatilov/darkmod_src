@@ -77,7 +77,7 @@ idWinding::Split
 =============
 */
 int idWinding::Split( const idPlane &plane, const float epsilon, idWinding **front, idWinding **back ) const {
-	float *			dists;
+	double *			dists;
 	byte *			sides;
 	int				counts[3];
 	float			dot;
@@ -89,14 +89,14 @@ int idWinding::Split( const idPlane &plane, const float epsilon, idWinding **fro
 
 	assert( this );
 
-	dists = (float *) _alloca( (numPoints+4) * sizeof( float ) );
+	dists = (double *) _alloca( (numPoints+4) * sizeof( double ) );
 	sides = (byte *) _alloca( (numPoints+4) * sizeof( byte ) );
 
 	counts[0] = counts[1] = counts[2] = 0;
 
 	// determine sides for each point
 	for ( i = 0; i < numPoints; i++ ) {
-		dists[i] = dot = plane.Distance( p[i].ToVec3() );
+		dists[i] = dot = idVec3d(plane.Normal()).Dot(idVec3d(p[i].ToVec3())) + plane[3];
 		if ( dot > epsilon ) {
 			sides[i] = SIDE_FRONT;
 		} else if ( dot < -epsilon ) {
@@ -219,7 +219,7 @@ idWinding::Clip
 =============
 */
 idWinding *idWinding::Clip( const idPlane &plane, const float epsilon, const bool keepOn ) {
-	float *		dists;
+	double *		dists;
 	byte *		sides;
 	idVec5 *	newPoints;
 	int			newNumPoints;
@@ -232,14 +232,14 @@ idWinding *idWinding::Clip( const idPlane &plane, const float epsilon, const boo
 
 	assert( this );
 
-	dists = (float *) _alloca( (numPoints+4) * sizeof( float ) );
+	dists = (double *) _alloca( (numPoints+4) * sizeof( double ) );
 	sides = (byte *) _alloca( (numPoints+4) * sizeof( byte ) );
 
 	counts[SIDE_FRONT] = counts[SIDE_BACK] = counts[SIDE_ON] = 0;
 
 	// determine sides for each point
 	for ( i = 0; i < numPoints; i++ ) {
-		dists[i] = dot = plane.Distance( p[i].ToVec3() );
+		dists[i] = dot = idVec3d(plane.Normal()).Dot(idVec3d(p[i].ToVec3())) + plane[3];
 		if ( dot > epsilon ) {
 			sides[i] = SIDE_FRONT;
 		} else if ( dot < -epsilon ) {
@@ -641,20 +641,18 @@ idWinding::GetPlane
 =============
 */
 void idWinding::GetPlane( idVec3 &normal, float &dist ) const {
-	idVec3 v1, v2, center;
-
 	if ( numPoints < 3 ) {
 		normal.Zero();
 		dist = 0.0f;
 		return;
 	}
-
-	center = GetCenter();
-	v1 = p[0].ToVec3() - center;
-	v2 = p[1].ToVec3() - center;
-	normal = v2.Cross( v1 );
-	normal.Normalize();
-	dist = p[0].ToVec3() * normal;
+	auto pnt = [&](int i) { return idVec3d(p[i].ToVec3()); };
+	idVec3d directedArea = idVec3d(0.0);
+	for (int i = 1; i+1 < numPoints; i++)
+		directedArea += (pnt(i+1) - pnt(0)).Cross(pnt(i) - pnt(0));
+	directedArea.Normalize();
+	normal = idVec3(directedArea);
+	dist = (float) pnt(0).Dot(idVec3d(normal));
 }
 
 /*
@@ -663,20 +661,8 @@ idWinding::GetPlane
 =============
 */
 void idWinding::GetPlane( idPlane &plane ) const {
-	idVec3 v1, v2;
-	idVec3 center;
-
-	if ( numPoints < 3 ) {
-		plane.Zero();
-		return;
-	}
-
-	center = GetCenter();
-	v1 = p[0].ToVec3() - center;
-	v2 = p[1].ToVec3() - center;
-	plane.SetNormal( v2.Cross( v1 ) );
-	plane.Normalize();
-	plane.FitThroughPoint( p[0].ToVec3() );
+	GetPlane(plane.Normal(), plane[3]);
+	plane[3] = -plane[3];
 }
 
 /*
@@ -1460,6 +1446,12 @@ float idWinding::TriangleArea( const idVec3 &a, const idVec3 &b, const idVec3 &c
 	v2 = c - a;
 	cross = v1.Cross( v2 );
 	return 0.5f * cross.Length();
+}
+double idWinding::TriangleAreaDbl( const idVec3 &a, const idVec3 &b, const idVec3 &c ) {
+	idVec3d v1 = idVec3d(b) - idVec3d(a);
+	idVec3d v2 = idVec3d(c) - idVec3d(a);
+	idVec3d cross = v1.Cross( v2 );
+	return 0.5 * cross.Length();
 }
 
 

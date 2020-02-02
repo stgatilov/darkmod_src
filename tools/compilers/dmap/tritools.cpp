@@ -144,7 +144,7 @@ MapTriArea
 ===============
 */
 float MapTriArea( const mapTri_t *tri ) {
-	return idWinding::TriangleArea( tri->v[0].xyz, tri->v[1].xyz, tri->v[2].xyz );
+	return (float) idWinding::TriangleAreaDbl( tri->v[0].xyz, tri->v[1].xyz, tri->v[2].xyz );
 }
 
 /*
