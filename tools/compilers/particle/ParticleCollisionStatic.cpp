@@ -181,8 +181,9 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 						if (!(material->GetContentFlags() & (CONTENTS_WATER | CONTENTS_SOLID)))
 							return false;		//skip light flares (but don't skip water)
 					}
-					else if (model) {
-						if (model->IsDynamicModel() != DM_STATIC)
+					else if (rent) {
+						idRenderModel *hModel = rent->hModel;
+						if (hModel && hModel->IsDynamicModel() != DM_STATIC)
 							return false;		//we should not load dynamic models, but just in case
 					}
 					return true;
