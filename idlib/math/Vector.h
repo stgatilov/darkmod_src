@@ -2025,4 +2025,156 @@ ID_INLINE idVec3 idPolar3::ToVec3( void ) const {
 #define VectorCopy( a, b )			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
 
 
+/*
+===============================================================================
+
+	stgatilov: double precision equivalents (use sparingly!)
+
+===============================================================================
+*/
+
+class idVec3d {
+public:	
+	double			x;
+	double			y;
+	double			z;
+
+					idVec3d( void );
+	explicit		idVec3d(const double xyz);
+	explicit		idVec3d(const double x, const double y, const double z);
+	//stgatilov: conversions between idVec3 and idVec3d are explicit for a reason!
+	// I want the code to show very clearly where double precision is used.
+	explicit		idVec3d( idVec3 v );
+	explicit		operator idVec3() const;
+
+	double			operator[]( const int index ) const;
+	double &		operator[]( const int index );
+	idVec3d			operator-() const;
+	idVec3d			operator*( const double a ) const;
+	idVec3d			operator/( const double a ) const;
+	idVec3d			operator+( const idVec3d &a ) const;
+	idVec3d			operator-( const idVec3d &a ) const;
+	friend idVec3d	operator*( const double a, const idVec3d &b );
+	idVec3d &		operator+=( const idVec3d &a );
+	idVec3d &		operator-=( const idVec3d &a );
+	idVec3d &		operator/=( const double a );
+	idVec3d &		operator*=( const double a );
+
+	idVec3d			Cross( const idVec3d &a ) const;
+	double			Dot( const idVec3d &a ) const;
+	double			Length( void ) const;
+	double			LengthSqr( void ) const;
+	double			Normalize( void );
+
+	int				GetDimension( void ) const;
+
+	const double *	ToDoublePtr( void ) const;
+	double *		ToDoublePtr( void );
+};
+
+ID_FORCE_INLINE idVec3d::idVec3d( void ) : x(0.0), y(0.0), z(0.0) {}
+ID_FORCE_INLINE	idVec3d::idVec3d(const double xyz) : x(xyz), y(xyz), z(xyz) {}
+ID_FORCE_INLINE	idVec3d::idVec3d(const double x, const double y, const double z) : x(x), y(y), z(z) {}
+ID_FORCE_INLINE	idVec3d::idVec3d( idVec3 v ) : x(double(v.x)), y(double(v.y)), z(double(v.z)) {}
+ID_FORCE_INLINE	idVec3d::operator idVec3() const { return idVec3(float(x), float(y), float(z)); }
+
+ID_FORCE_INLINE double idVec3d::operator[]( const int index ) const {
+	return ( &x )[ index ];
+}
+
+ID_FORCE_INLINE double &idVec3d::operator[]( const int index ) {
+	return ( &x )[ index ];
+}
+
+ID_FORCE_INLINE idVec3d idVec3d::operator-() const {
+	return idVec3d( -x, -y, -z );
+}
+
+ID_FORCE_INLINE idVec3d idVec3d::operator*( const double a ) const {
+	return idVec3d( x * a, y * a, z * a );
+}
+
+ID_FORCE_INLINE idVec3d idVec3d::operator/( const double a ) const {
+	double inva = 1.0 / a;
+	return idVec3d( x * inva, y * inva, z * inva );
+}
+
+ID_FORCE_INLINE idVec3d operator*( const double a, const idVec3d b ) {
+	return idVec3d( b.x * a, b.y * a, b.z * a );
+}
+
+ID_FORCE_INLINE idVec3d idVec3d::operator+( const idVec3d &a ) const {
+	return idVec3d( x + a.x, y + a.y, z + a.z );
+}
+
+ID_FORCE_INLINE idVec3d idVec3d::operator-( const idVec3d &a ) const {
+	return idVec3d( x - a.x, y - a.y, z - a.z );
+}
+
+ID_FORCE_INLINE idVec3d &idVec3d::operator+=( const idVec3d &a ) {
+	x += a.x;
+	y += a.y;
+	z += a.z;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec3d &idVec3d::operator-=( const idVec3d &a ) {
+	x -= a.x;
+	y -= a.y;
+	z -= a.z;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec3d &idVec3d::operator/=( const double a ) {
+	double inva = 1.0 / a;
+	x *= inva;
+	y *= inva;
+	z *= inva;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec3d &idVec3d::operator*=( const double a ) {
+	x *= a;
+	y *= a;
+	z *= a;
+
+	return *this;
+}
+
+ID_FORCE_INLINE double idVec3d::Dot( const idVec3d &a ) const {
+	return x * a.x + y * a.y + z * a.z;
+}
+
+ID_FORCE_INLINE idVec3d idVec3d::Cross( const idVec3d &a ) const {
+	return idVec3d( y * a.z - z * a.y, z * a.x - x * a.z, x * a.y - y * a.x );
+}
+
+ID_INLINE double idVec3d::Length( void ) const {
+	return sqrt( x * x + y * y + z * z );
+}
+
+ID_FORCE_INLINE double idVec3d::LengthSqr( void ) const {
+	return ( x * x + y * y + z * z );
+}
+
+ID_INLINE double idVec3d::Normalize( void ) {
+	double len = Length();
+	operator/=(len);
+	return len;
+}
+
+ID_INLINE int idVec3d::GetDimension( void ) const { return 3; }
+
+ID_FORCE_INLINE const double *idVec3d::ToDoublePtr( void ) const {
+	return &x;
+}
+
+ID_FORCE_INLINE double *idVec3d::ToDoublePtr( void ) {
+	return &x;
+}
+
+
 #endif /* !__MATH_VECTOR_H__ */
