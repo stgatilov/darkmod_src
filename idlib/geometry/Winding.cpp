@@ -334,7 +334,7 @@ idWinding::ClipInPlace
 =============
 */
 bool idWinding::ClipInPlace( const idPlane &plane, const float epsilon, const bool keepOn ) {
-	float*		dists;
+	double*		dists;
 	byte *		sides;
 	idVec5 *	newPoints;
 	int			newNumPoints;
@@ -347,14 +347,14 @@ bool idWinding::ClipInPlace( const idPlane &plane, const float epsilon, const bo
 
 	assert( this );
 
-	dists = (float *) _alloca( (numPoints+4) * sizeof( float ) );
+	dists = (double *) _alloca( (numPoints+4) * sizeof( double ) );
 	sides = (byte *) _alloca( (numPoints+4) * sizeof( byte ) );
 
 	counts[SIDE_FRONT] = counts[SIDE_BACK] = counts[SIDE_ON] = 0;
 
 	// determine sides for each point
 	for ( i = 0; i < numPoints; i++ ) {
-		dists[i] = dot = plane.Distance( p[i].ToVec3() );
+		dists[i] = dot = idVec3d(plane.Normal()).Dot(idVec3d(p[i].ToVec3())) + plane[3];
 		if ( dot > epsilon ) {
 			sides[i] = SIDE_FRONT;
 		} else if ( dot < -epsilon ) {
