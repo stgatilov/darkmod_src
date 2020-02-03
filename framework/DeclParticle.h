@@ -117,6 +117,10 @@ public:
 	void					SetCustomPathType( const char *p );
 	void					operator=( const idParticleStage &src );
 
+	//stgatilov #4957: single place which finds and loads collisionStatic images
+	static const char *		GetCollisionStaticDirectory();
+	static idStr			GetCollisionStaticImagePath(const char *modelName, int surfIdx, int stageIdx);
+	static idImage *		LoadCutoffTimeMap(const char *imagePath);
 
 	//------------------------------
 

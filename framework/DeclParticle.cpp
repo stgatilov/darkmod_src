@@ -410,7 +410,7 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 		}
 		if ( !token.Icmp( "cutoffTimeMap" ) ) {
 			src.ReadToken( &token );
-			stage->cutoffTimeMap = globalImages->ImageFromFile( token.c_str(), TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
+			stage->cutoffTimeMap = idParticleStage::LoadCutoffTimeMap( token.c_str() );
 			continue;
 		}
 		if ( !token.Icmp( "mapLayout" ) ) {
@@ -1441,6 +1441,22 @@ void idParticleStage::SetCustomPathType( const char *p ) {
 			break;
 		}
 	}
+}
+
+const char *idParticleStage::GetCollisionStaticDirectory() {
+	return "textures/_prt_gen";
+}
+idStr idParticleStage::GetCollisionStaticImagePath(const char *modelName, int surfIdx, int stageIdx) {
+	idStr imageName;
+	//  modelName --- as "model" is named in .proc file
+	//  surfIdx --- in order of "surface" appearance inside "model"
+	//  stageIdx --- in order of appearance in .prt file
+	sprintf(imageName, "%s/cstm__%s__%d_%d.tga", GetCollisionStaticDirectory(), modelName, surfIdx, stageIdx);
+	return imageName;
+}
+idImage *idParticleStage::LoadCutoffTimeMap(const char *imagePath) {
+	idImage *image = globalImages->ImageFromFile( imagePath, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
+	return image;
 }
 
 /*

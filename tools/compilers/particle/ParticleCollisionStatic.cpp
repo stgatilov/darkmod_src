@@ -19,8 +19,6 @@
 #include "../compiler_common.h"
 #include "../../../renderer/Image.h"
 
-static const char *PRT_GEN_DIRECTORY = "textures/_prt_gen";
-
 
 class PrtCollision {
 public:
@@ -234,11 +232,7 @@ void PrtCollision::ProcessModel(const char *modelName, const idVec3 &origin, con
 			for (int g = 0; g < prtStages.Num(); g++) {
 				const idParticleStage *stage = prtStages[g];
 				if (stage->collisionStatic) {
-					idStr imageName;
-					//  modelName --- as "model" is named in .proc file
-					//  s --- in order of "surface" appearance inside "model"
-					//  g --- in order of appearance in .prt file
-					sprintf(imageName, "%s/cstm__%s__%d_%d.tga", PRT_GEN_DIRECTORY, modelName, s, g);
+					idStr imageName = idParticleStage::GetCollisionStaticImagePath(modelName, s, g);
 					numSurfsProcessed++;
 					if (!disabled)
 						ProcessSurfaceEmitter(surf->geometry, origin, axis, stage, imageName.c_str(), particleDecl->GetName(), g);
@@ -376,9 +370,10 @@ void PrtCollision::Run(const char *mapFileName) {
 	if (!mapFile->Parse(mapFileName))
 		common->Error( "Couldn't load map file: '%s'", mapFileName );
 
-	common->Printf("Cleaning %s...\n", PRT_GEN_DIRECTORY);
+	const char *prtGenDir = idParticleStage::GetCollisionStaticDirectory();
+	common->Printf("Cleaning %s...\n", prtGenDir);
 	//clear _prt_gen directory
-	idFileList *allPrtGenFiles = fileSystem->ListFiles(PRT_GEN_DIRECTORY, "", false, true);
+	idFileList *allPrtGenFiles = fileSystem->ListFiles(prtGenDir, "", false, true);
 	for (int i = 0; i < allPrtGenFiles->GetNumFiles(); i++) {
 		idStr fn = allPrtGenFiles->GetFile(i);
 		fileSystem->RemoveFile(fn);

@@ -946,9 +946,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					if ( rm->Surface(surfIdx)->geometry == surf->frontendGeo )
 						break;
 				if ( surfIdx < surfNum ) {
-					char filename[256];
-					sprintf( filename, "textures/_prt_gen/cstm__%s__%d_%d.tga", rm->Name(), surfIdx, stageNum );
-					cutoffMap = globalImages->ImageFromFile( filename, TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU );
+					idStr imagePath = idParticleStage::GetCollisionStaticImagePath( rm->Name(), surfIdx, stageNum );
+					cutoffMap = idParticleStage::LoadCutoffTimeMap( imagePath );
 					if ( cutoffMap->defaulted )
 						cutoffMap = nullptr;	//image not found
 					else {
