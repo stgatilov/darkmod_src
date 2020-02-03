@@ -116,8 +116,8 @@ public:
 	virtual void	ActivateFrontend() = 0;
 	virtual void	WaitForFrontendCompletion() = 0;
 	virtual void	LogFrontendTimings( idFile& file ) const = 0;
-	virtual void    AddAfterFrameCommand(std::function<void()> command) = 0;
-	virtual void    ExecuteAfterFrameCommands() = 0;
+	virtual void    ExecuteFrameCommand(const char *command, bool delayed) = 0;
+	virtual void    ExecuteDelayedFrameCommands() = 0;
 
 	// The render world and sound world used for this session.
 	idRenderWorld *	rw;

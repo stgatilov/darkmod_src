@@ -3081,53 +3081,8 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 	syncNextGameFrame = ret.syncNextGameFrame;
 
 	if ( ret.sessionCommand[0] ) {
-		idCmdArgs args;
-
-		args.TokenizeString( ret.sessionCommand, false );
-
-		if ( !idStr::Icmp( args.Argv(0), "map" ) ) {
-			// get current player states
-			for ( int i = 0 ; i < numClients ; i++ ) {
-				mapSpawnData.persistentPlayerInfo[i] = game->GetPersistentPlayerInfo( i );
-			}
-			// clear the devmap key on serverinfo, so player spawns
-			// won't get the map testing items
-			mapSpawnData.serverInfo.Delete( "devmap" );
-
-			AddAfterFrameCommand( [this, args]() {
-				// go to the next map
-				MoveToNewMap( args.Argv(1) );
-			} );
-
-			// do not process any additional game tics this frame
-			syncNextGameFrame = true;
-		} else if ( !idStr::Icmp( args.Argv(0), "devmap" ) ) {
-			mapSpawnData.serverInfo.Set( "devmap", "1" );
-			AddAfterFrameCommand( [this, args]() {
-				MoveToNewMap( args.Argv(1) );
-			} );
-
-			// do not process any additional game tics this frame
-			syncNextGameFrame = true;
-		} else if ( !idStr::Icmp( args.Argv(0), "died" ) ) {
-			AddAfterFrameCommand( [this]() {
-				// restart on the same map
-				UnloadMap();
-				SetGUI(guiRestartMenu, NULL);
-			} );
-
-			// do not process any additional game tics this frame
-			syncNextGameFrame = true;
-		} else if ( !idStr::Icmp( args.Argv(0), "disconnect" ) ) {
-			cmdSystem->BufferCommandText( CMD_EXEC_INSERT, "stoprecording ; disconnect" );
-			// Check for final save trigger - the player PVS is freed at this point, so we can go ahead and save the game
-			if( gameLocal.m_TriggerFinalSave ) {
-				gameLocal.m_TriggerFinalSave = false;
-
-				idStr savegameName = va( "Mission %d Final Save", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1 );
-				cmdSystem->BufferCommandText( CMD_EXEC_INSERT, va( "savegame '%s'", savegameName.c_str() ) );
-			}
-		}
+		// execute commands from backend, most importantly map change
+		ExecuteFrameCommand(ret.sessionCommand, true);
 	}
 }
 
@@ -3283,15 +3238,61 @@ void idSessionLocal::StartFrontendThread() {
 	frontendThread = Sys_CreateThread( (xthread_t)func, this, THREAD_NORMAL, "Frontend" );
 }
 
-void idSessionLocal::AddAfterFrameCommand( std::function<void()> command ) {
-	afterFrameCommands.Append( command );
+
+void idSessionLocal::ExecuteFrameCommand(const char *command, bool delayed) {
+	if (delayed) {
+		delayedFrameCommands.Append(command);
+		return;
+	}
+
+	idCmdArgs args;
+	args.TokenizeString( command, false );
+
+	if ( !idStr::Icmp( args.Argv(0), "map" ) ) {
+		// get current player states
+		for ( int i = 0 ; i < numClients ; i++ ) {
+			mapSpawnData.persistentPlayerInfo[i] = game->GetPersistentPlayerInfo( i );
+		}
+		// clear the devmap key on serverinfo, so player spawns
+		// won't get the map testing items
+		mapSpawnData.serverInfo.Delete( "devmap" );
+
+		// go to the next map
+		MoveToNewMap( args.Argv(1) );
+
+		// do not process any additional game tics this frame
+		syncNextGameFrame = true;
+	} else if ( !idStr::Icmp( args.Argv(0), "devmap" ) ) {
+		mapSpawnData.serverInfo.Set( "devmap", "1" );
+		MoveToNewMap( args.Argv(1) );
+
+		// do not process any additional game tics this frame
+		syncNextGameFrame = true;
+	} else if ( !idStr::Icmp( args.Argv(0), "died" ) ) {
+		// restart on the same map
+		UnloadMap();
+		SetGUI(guiRestartMenu, NULL);
+
+		// do not process any additional game tics this frame
+		syncNextGameFrame = true;
+	} else if ( !idStr::Icmp( args.Argv(0), "disconnect" ) ) {
+		cmdSystem->BufferCommandText( CMD_EXEC_INSERT, "stoprecording ; disconnect" );
+		// Check for final save trigger - the player PVS is freed at this point, so we can go ahead and save the game
+		if( gameLocal.m_TriggerFinalSave ) {
+			gameLocal.m_TriggerFinalSave = false;
+
+			idStr savegameName = va( "Mission %d Final Save", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1 );
+			cmdSystem->BufferCommandText( CMD_EXEC_INSERT, va( "savegame '%s'", savegameName.c_str() ) );
+		}
+	}
 }
 
-void idSessionLocal::ExecuteAfterFrameCommands() {
-	for( auto &command : afterFrameCommands ) {
-		command();
-	}
-	afterFrameCommands.Clear();
+void idSessionLocal::ExecuteDelayedFrameCommands() {
+	if (delayedFrameCommands.Num() == 0)
+		return;
+	for (int i = 0; i < delayedFrameCommands.Num(); i++)
+		ExecuteFrameCommand(delayedFrameCommands[i], false);
+	delayedFrameCommands.SetNum(0);
 }
 
 /*

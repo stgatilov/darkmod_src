@@ -663,7 +663,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		{ common->DoError( e->ErrorMessage(), e->ErrorCode() ); }
 	}
 
-	session->ExecuteAfterFrameCommands();
+	session->ExecuteDelayedFrameCommands();
 
 	// check for dynamic changes that require some initialization
 	R_CheckCvars();
