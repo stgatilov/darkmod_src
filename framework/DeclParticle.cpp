@@ -454,10 +454,11 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 			src.Warning( "'cutoffTimeMap' ignored: 'mapLayout' must be 'texture'" );
 			stage->cutoffTimeMap = nullptr;
 		}
-		else if ( stage->cutoffTimeMap->cpuData.width != stage->mapLayoutSizes[0] || stage->cutoffTimeMap->cpuData.height != stage->mapLayoutSizes[1] ) {
+		//stgatilov: image does not get loaded immediately =(
+		/*else if ( stage->cutoffTimeMap->cpuData.width != stage->mapLayoutSizes[0] || stage->cutoffTimeMap->cpuData.height != stage->mapLayoutSizes[1] ) {
 			src.Warning( "'cutoffTimeMap' ignored: dimensions must match specified in 'mapLayout'" );
 			stage->cutoffTimeMap = nullptr;
-		}
+		}*/
 	}
 
 	return stage;
