@@ -950,6 +950,9 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					cutoffMap = idParticleStage::LoadCutoffTimeMap( imagePath );
 					if ( cutoffMap->defaulted )
 						cutoffMap = nullptr;	//image not found
+					else if ( !cutoffMap->cpuData.pic ) {
+						cutoffMap = nullptr;	//some SMP weirdness: do not crash at least
+					}
 					else {
 						const imageBlock_t &data = cutoffMap->cpuData;
 						if ( data.GetSizeInBytes() == 4 && data.pic[0] == 255 && data.pic[1] == 255 && data.pic[2] == 255 )
