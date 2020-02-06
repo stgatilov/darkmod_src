@@ -472,6 +472,7 @@
     <ClInclude Include="renderer\GLSLUniforms.h" />
     <ClInclude Include="renderer\GuiModel.h" />
     <ClInclude Include="renderer\Image.h" />
+    <ClInclude Include="renderer\ImmediateRendering.h" />
     <ClInclude Include="renderer\Interaction.h" />
     <ClInclude Include="renderer\Material.h" />
     <ClInclude Include="renderer\MegaTexture.h" />
@@ -1032,6 +1033,7 @@
     <ClCompile Include="renderer\Image_load.cpp" />
     <ClCompile Include="renderer\Image_process.cpp" />
     <ClCompile Include="renderer\Image_program.cpp" />
+    <ClCompile Include="renderer\ImmediateRendering.cpp" />
     <ClCompile Include="renderer\Interaction.cpp" />
     <ClCompile Include="renderer\Material.cpp" />
     <ClCompile Include="renderer\MegaTexture.cpp" />

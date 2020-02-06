@@ -1255,6 +1255,9 @@
     <ClInclude Include="tools\compilers\compiler_common.h">
       <Filter>Tools\Compilers</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\ImmediateRendering.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2958,6 +2961,9 @@
     </ClCompile>
     <ClCompile Include="tools\compilers\particle\ParticleCollisionStatic.cpp">
       <Filter>Tools\Compilers\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\ImmediateRendering.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
