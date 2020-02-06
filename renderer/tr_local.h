@@ -1719,10 +1719,8 @@ void RB_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &en
 void RB_ClearDebugLines( int time );
 void RB_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest );
 void RB_ClearDebugPolygons( int time );
-void RB_DrawBounds( const idBounds &bounds );
 void RB_ShowLights( void );
 void RB_ShowLightCount( void );
-void RB_PolygonClear( void );
 void RB_ScanStencilBuffer( void );
 void RB_ShowDestinationAlpha( void );
 void RB_ShowOverdraw( void );
@@ -1803,7 +1801,6 @@ typedef struct {
 } localTrace_t;
 
 localTrace_t R_LocalTrace( const idVec3 &start, const idVec3 &end, const float radius, const srfTriangles_t *tri );
-void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs );
 
 /*
 =============================================================
