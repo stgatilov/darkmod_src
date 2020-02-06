@@ -82,7 +82,7 @@ public:
 					idList( int newgranularity = 16 );
 					idList( const idList<type> &other );
 					idList( const std::initializer_list<type> &other );
-					~idList<type>( void );
+					~idList( void );
 
 	void			Clear( void );										// clear the list
 	int				Num( void ) const;									// returns number of elements in list
@@ -111,6 +111,7 @@ public:
 	type &			Alloc( void );										// returns reference to a new data element at the end of the list
 	int				Append( const type & obj );							// append element
 	int				Append( const idList<type> &other );				// append list
+	int				AddGrow( type obj );								// append with exponential growth (like std::vector::push_back)
 	int				AddUnique( const type & obj );						// add unique element
 	int				Insert( const type & obj, int index = 0 );			// insert the element at the given index
 	int				FindIndex( const type & obj ) const;				// find the index for the given element
@@ -170,7 +171,8 @@ idList<type>::idList( const std::initializer_list<type> &other )
 ================
 */
 template< class type >
-ID_INLINE idList<type>::idList( const std::initializer_list<type> &other ) {
+ID_INLINE idList<type>::idList( const std::initializer_list<type> &other ) : idList() {
+	Resize( other.size() );
 	auto x = other.begin();
 	while ( x != other.end() )
 		Append( *x++ );
@@ -682,6 +684,40 @@ ID_INLINE int idList<type>::Append( type const & obj ) {
 	return num - 1;
 }
 
+/*
+================
+idList<type>::AddGrow
+
+Increases the size of the list by one element and copies the supplied data into it.
+Returns the index of the new element.
+
+stgatilov: this method is different from Append, because it grows exponentially like std::vector.
+This allows to grow to size N in O(N) time.
+================
+*/
+template< class type >
+ID_INLINE int idList<type>::AddGrow( type obj ) {
+	if ( !list ) {
+		Resize( granularity );
+	}
+
+	if ( num == size ) {
+		int newsize;
+
+		if ( granularity == 0 ) {	// this is a hack to fix our memset classes
+			granularity = 16;
+		}
+		newsize = (size * 3) >> 1;			// + 50% size
+		newsize += granularity;				// round up to granularity
+		newsize -= newsize % granularity;	//
+		Resize( newsize );
+	}
+
+	list[ num ] = obj;
+	num++;
+
+	return num - 1;
+}
 
 /*
 ================
