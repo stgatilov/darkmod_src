@@ -2315,34 +2315,29 @@ void RB_TestImage( void ) {
 
 		w *= (float)glConfig.vidHeight / glConfig.vidWidth;
 	}
-	qglLoadIdentity();
 
-	qglMatrixMode( GL_PROJECTION );
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
-	GL_FloatColor( 1, 1, 1 );
-	qglPushMatrix();
-	qglLoadIdentity(); 
-    qglOrtho( 0, 1, 0, 1, -1, 1 );
+	RB_SimpleScreenSetup();
+
+	ImmediateRendering ir;
+	ir.glColor3f(1, 1, 1);
 
 	tr.testImage->Bind();
-	qglBegin( GL_QUADS );
+	ir.glBegin( GL_QUADS );
 	
-	qglTexCoord2f( 0, 1 );
-	qglVertex2f( 0.5 - w, 0 );
+	ir.glTexCoord2f( 0, 1 );
+	ir.glVertex2f( 0.5 - w, 0 );
 
-	qglTexCoord2f( 0, 0 );
-	qglVertex2f( 0.5 - w, h*2 );
+	ir.glTexCoord2f( 0, 0 );
+	ir.glVertex2f( 0.5 - w, h*2 );
 
-	qglTexCoord2f( 1, 0 );
-	qglVertex2f( 0.5 + w, h*2 );
+	ir.glTexCoord2f( 1, 0 );
+	ir.glVertex2f( 0.5 + w, h*2 );
 
-	qglTexCoord2f( 1, 1 );
-	qglVertex2f( 0.5 + w, 0 );
+	ir.glTexCoord2f( 1, 1 );
+	ir.glVertex2f( 0.5 + w, 0 );
 
-	qglEnd();
-
-	qglPopMatrix();
-	qglMatrixMode( GL_MODELVIEW );
+	ir.glEnd();
 }
 
 /*
