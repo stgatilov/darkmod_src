@@ -125,6 +125,9 @@ the size of the gamma ramp can not be changed on X (I need to confirm this)
 =================
 */
 void GLimp_SetGamma(unsigned short red[256], unsigned short green[256], unsigned short blue[256]) {
+	//stgatilov: brightness and gamma adjustments are done in final shader pass
+	return;
+
 	if ( dpy ) {		
 		int size;
 		

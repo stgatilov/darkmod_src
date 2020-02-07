@@ -643,6 +643,51 @@ idCVar r_postprocess_sceneGamma( "r_postprocess_sceneGamma", "0.82", CVAR_GAME |
 idCVar r_postprocess_bloomIntensity( "r_postprocess_bloomIntensity", "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, " Adjusts the Bloom intensity. 0.0 disables the bloom but other postprocessing effects remain unaffected." );
 idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, " Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
 
+
+/*
+=============
+RB_Tonemap
+
+GLSL replacement for legacy hardware gamma ramp
+=============
+*/
+void RB_Tonemap( void ) {
+	FB_CopyColorBuffer();
+
+	int w = globalImages->currentRenderImage->uploadWidth;
+	int h = globalImages->currentRenderImage->uploadHeight;
+	if ( RB_CheckTools( w, h ) || r_gamma.GetFloat() <= 0 || r_gamma.GetFloat() == 1 ) {
+		return;
+	}
+
+	GL_SetProjection( mat4_identity.ToFloatPtr() );
+	FB_SelectPostProcess();
+
+	GL_State( GLS_DEPTHMASK );
+	qglDisable( GL_DEPTH_TEST );
+
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	GL_Viewport( 0, 0, w, h );
+
+	FB_SelectPrimary( true );
+	GL_Viewport( 0, 0, w, h );
+	FB_TogglePrimary( false );
+	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
+	tonemap->Activate();
+	qglUniform1i( tonemap->GetUniformLocation( "u_texture" ), 0 );
+	qglUniform1f( tonemap->GetUniformLocation( "u_gamma" ), r_gamma.GetFloat() );
+	qglUniform1f( tonemap->GetUniformLocation( "u_brightness" ), r_brightness.GetFloat() );
+
+	RB_DrawFullScreenQuad();
+
+	GL_SelectTexture( 0 );
+	tonemap->Deactivate();
+	qglEnable( GL_DEPTH_TEST );
+}
+
 /*
 =============
 RB_Bloom
@@ -652,7 +697,7 @@ Moved to backend: Revelator
 =============
 */
 void RB_Bloom( void ) {
-	if ( !r_postprocess )
+	if ( r_postprocess < 1 )
 		return;
 
 	if ( r_postprocess == 2 ) {
@@ -943,6 +988,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_BLOOM:
 			RB_Bloom();
+			RB_Tonemap();
 			c_drawBloom++;
 			fboOff = true;
 			break;
