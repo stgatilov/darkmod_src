@@ -146,6 +146,28 @@ void RB_SimpleSurfaceSetup( const drawSurf_t *drawSurf ) {
 
 /*
 ================
+RB_SimpleScreenSetup
+================
+*/
+void RB_SimpleScreenSetup( void ) {
+	GL_CheckErrors();
+	backEnd.currentSpace = nullptr;
+	if ( r_uniformTransforms.GetBool() ) {
+		Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+		globalUniforms->modelMatrix.Set( mat4_identity.ToFloatPtr() );			//not used, actually
+		globalUniforms->modelViewMatrix.Set( mat4_identity.ToFloatPtr() );
+	} else
+		qglLoadIdentity();
+	//specify coordinates in [0..1] x [0..1] instead of [-1..1] x [-1..1]
+	idMat4 proj = mat4_identity;
+	proj[0][0] = proj[1][1] = 2.0;
+	proj[3][0] = proj[3][1] = -1.0;
+	GL_SetProjection( proj.ToFloatPtr() );
+	GL_CheckErrors();
+}
+
+/*
+================
 RB_SimpleWorldSetup
 ================
 */
@@ -177,22 +199,23 @@ glColorMask, and the enabled state of depth buffering and
 stenciling will matter.
 =================
 */
-void RB_PolygonClear( void ) {
-	qglPushMatrix();
-	qglPushAttrib( GL_ALL_ATTRIB_BITS  );
-	qglLoadIdentity();
-	qglDisable( GL_TEXTURE_2D );
+void RB_PolygonClear( ImmediateRendering &ir ) {
+	//qglPushMatrix();
+	//qglPushAttrib( GL_ALL_ATTRIB_BITS  );
+	RB_SimpleScreenSetup();
+	//qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_CULL_FACE );
 	qglDisable( GL_SCISSOR_TEST );
-	qglBegin( GL_POLYGON );
-	qglVertex3f( -20, -20, -10 );
-	qglVertex3f( 20, -20, -10 );
-	qglVertex3f( 20, 20, -10 );
-	qglVertex3f( -20, 20, -10 );
-	qglEnd();
-	qglPopAttrib();
-	qglPopMatrix();
+	ir.glBegin( GL_POLYGON );
+	ir.glVertex3f( -20, -20, 0/*-10*/ );
+	ir.glVertex3f( 20, -20, 0/*-10*/ );
+	ir.glVertex3f( 20, 20, 0/*-10*/ );
+	ir.glVertex3f( -20, 20, 0/*-10*/ );
+	ir.glEnd();
+	ir.Flush();
+	//qglPopAttrib();
+	//qglPopMatrix();
 }
 
 /*
@@ -202,8 +225,9 @@ RB_ShowDestinationAlpha
 */
 void RB_ShowDestinationAlpha( void ) {
 	GL_State( GLS_SRCBLEND_DST_ALPHA | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
-	GL_FloatColor( 1, 1, 1 );
-	RB_PolygonClear();
+	ImmediateRendering ir;
+	ir.glColor3f( 1, 1, 1 );
+	RB_PolygonClear(ir);
 }
 
 /*
@@ -291,10 +315,11 @@ static void R_ColorByStencilBuffer( void ) {
 	// now draw color for each stencil value
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 
+	ImmediateRendering ir;
 	for ( int i = 0 ; i < 6 ; i++ ) {
-		qglColor3fv( colors[i] );
+		ir.glColor3fv( colors[i] );
 		qglStencilFunc( GL_EQUAL, i, 255 );
-		RB_PolygonClear();
+		RB_PolygonClear(ir);
 	}
 	qglStencilFunc( GL_ALWAYS, 0, 255 );
 }
@@ -499,8 +524,6 @@ void RB_ShowLightCount( void ) {
 	}
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	globalImages->defaultImage->Bind();
-
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
 		for ( i = 0 ; i < 2 ; i++ ) {
 			for ( surf = i ? vLight->localInteractions: vLight->globalInteractions; surf; surf = (drawSurf_t *)surf->nextOnLight ) {
@@ -626,8 +649,6 @@ static void RB_ShowShadowCount( void ) {
 
 	qglStencilOp( GL_KEEP, GL_INCR, GL_INCR );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
-
-	globalImages->defaultImage->Bind();
 
 	// draw both sides
 	GL_Cull( CT_TWO_SIDED );
