@@ -117,8 +117,10 @@ void ImmediateRendering::glEnd() {
 	qglBindVertexArray(vao);
 	qglEnableVertexAttribArray(0);
 	qglEnableVertexAttribArray(3);
+	qglEnableVertexAttribArray(8);
 	qglVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, vertex));
-	qglVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, color));
+	qglVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (void*)offsetof(VertexData, color));
+	qglVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, texCoord));
 
 	qglDrawArrays(actualMode, 0, vertexList.Num());
 
@@ -130,7 +132,10 @@ void ImmediateRendering::glVertex4f(float x, float y, float z, float w) {
 	if (redirectToGL)
 		return qglVertex4f(x, y, z, w);
 
-	VertexData v = {idVec4(x, y, z, w), state_currentColor};
+	VertexData v;
+	v.vertex = idVec4(x, y, z, w);
+	memcpy(v.color, state_currentColor, sizeof(v.color));
+	v.texCoord = state_currentTexCoord.ToVec2();
 	vertexList.AddGrow(v);
 }
 
@@ -138,13 +143,25 @@ void ImmediateRendering::glColor4f(float r, float g, float b, float a) {
 	if (redirectToGL)
 		return qglColor4f(r, g, b, a);
 
-	state_currentColor.Set(r, g, b, a);
+	state_currentColor[0] = (byte) idMath::Rint(r * 255.0f);
+	state_currentColor[1] = (byte) idMath::Rint(g * 255.0f);
+	state_currentColor[2] = (byte) idMath::Rint(b * 255.0f);
+	state_currentColor[3] = (byte) idMath::Rint(a * 255.0f);
 }
 
 void ImmediateRendering::glColor4ub(byte r, byte g, byte b, byte a) {
 	if (redirectToGL)
 		return qglColor4ub(r, g, b, a);
 
-	static const float coeff = 1.0f / 255.0f;
-	state_currentColor.Set(r*coeff, g*coeff, b*coeff, a*coeff);
+	state_currentColor[0] = r;
+	state_currentColor[0] = g;
+	state_currentColor[0] = b;
+	state_currentColor[0] = a;
+}
+
+void ImmediateRendering::glTexCoord4f(float s, float t, float r, float q) {
+	if (redirectToGL)
+		return qglTexCoord4f(s, t, r, q);
+
+	state_currentTexCoord.Set(s, t, r, q);
 }

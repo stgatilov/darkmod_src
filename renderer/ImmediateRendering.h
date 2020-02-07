@@ -32,26 +32,36 @@ public:
 	void glVertex4f(float x, float y, float z, float w);
 	void glColor4f(float r, float g, float b, float a);
 	void glColor4ub(byte r, byte g, byte b, byte a);
+	void glTexCoord4f(float s, float t, float r, float q);
 
 	ID_FORCE_INLINE void glVertex3f(float x, float y, float z) { glVertex4f(x, y, z, 1.0f); }
+	ID_FORCE_INLINE void glVertex2f(float x, float y) { glVertex4f(x, y, 0.0f, 1.0f); }
 	ID_FORCE_INLINE void glColor3f(float r, float g, float b) { glColor4f(r, g, b, 1.0f); }
 	ID_FORCE_INLINE void glColor3ub(byte r, byte g, byte b) { glColor4ub(r, g, b, 255U); }
+	ID_FORCE_INLINE void glTexCoord3f(float s, float t, float r) { glTexCoord4f(s, t, r, 1.0f); }
+	ID_FORCE_INLINE void glTexCoord2f(float s, float t) { glTexCoord4f(s, t, 0.0f, 1.0f); }
 
 	ID_FORCE_INLINE void glVertex4fv(const float *ptr) { glVertex4f(ptr[0], ptr[1], ptr[2], ptr[3]); }
 	ID_FORCE_INLINE void glColor4fv(const float *ptr) { glColor4f(ptr[0], ptr[1], ptr[2], ptr[3]); }
 	ID_FORCE_INLINE void glColor4ubv(const byte *ptr) { glColor4ub(ptr[0], ptr[1], ptr[2], ptr[3]); }
+	ID_FORCE_INLINE void glTexCoord4fv(const float *ptr) { glTexCoord4f(ptr[0], ptr[1], ptr[2], ptr[3]); }
 	ID_FORCE_INLINE void glVertex3fv(const float *ptr) { glVertex3f(ptr[0], ptr[1], ptr[2]); }
 	ID_FORCE_INLINE void glColor3fv(const float *ptr) { glColor3f(ptr[0], ptr[1], ptr[2]); }
 	ID_FORCE_INLINE void glColor3ubv(const byte *ptr) { glColor3ub(ptr[0], ptr[1], ptr[2]); }
+	ID_FORCE_INLINE void glTexCoord3fv(const float *ptr) { glTexCoord3f(ptr[0], ptr[1], ptr[2]); }
+	ID_FORCE_INLINE void glVertex2fv(const float *ptr) { glVertex2f(ptr[0], ptr[1]); }
+	ID_FORCE_INLINE void glTexCoord2fv(const float *ptr) { glTexCoord2f(ptr[0], ptr[1]); }
 
 	struct VertexData {
 		idVec4 vertex;
-		idVec4 color;
+		byte color[4];
+		idVec2 texCoord;
 	};
 private:
 
 	GLenum state_currentMode = -1;
-	idVec4 state_currentColor = idVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	byte state_currentColor[4] = {255, 255, 255, 255};
+	idVec4 state_currentTexCoord = idVec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	idList<VertexData> vertexList, tempList;
 
