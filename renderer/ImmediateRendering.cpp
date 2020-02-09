@@ -154,9 +154,9 @@ void ImmediateRendering::glColor4ub(byte r, byte g, byte b, byte a) {
 		return qglColor4ub(r, g, b, a);
 
 	state_currentColor[0] = r;
-	state_currentColor[0] = g;
-	state_currentColor[0] = b;
-	state_currentColor[0] = a;
+	state_currentColor[1] = g;
+	state_currentColor[2] = b;
+	state_currentColor[3] = a;
 }
 
 void ImmediateRendering::glTexCoord4f(float s, float t, float r, float q) {
