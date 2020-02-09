@@ -697,10 +697,6 @@ This allows to grow to size N in O(N) time.
 */
 template< class type >
 ID_INLINE int idList<type>::AddGrow( type obj ) {
-	if ( !list ) {
-		Resize( granularity );
-	}
-
 	if ( num == size ) {
 		int newsize;
 
