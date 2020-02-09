@@ -852,7 +852,7 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 	for ( ; vModels ; vModels = vModels->next ) {
 		idBounds	b;
 
-		RB_SimpleSpaceSetup( vModels );
+		ir.DrawSetup( RB_SimpleSpaceSetup, vModels );
 
 		if ( !vModels->entityDef || r_singleEntity.GetInteger() >= 0 && vModels->entityDef->index != r_singleEntity.GetInteger()  ) {
 			continue;
@@ -893,16 +893,6 @@ static void RB_ShowEntityDraws() {
 	if ( !r_showEntityDraws || backEnd.viewDef->isSubview ) {
 		return;
 	}
-	qglDisable( GL_TEXTURE_2D );
-	qglDisable( GL_STENCIL_TEST );
-
-	GL_FloatColor( 1, 1, 1 );
-
-	GL_State( GLS_POLYMODE_LINE );
-
-	GL_Cull( CT_TWO_SIDED );
-	qglDisable( GL_DEPTH_TEST );
-	qglDisable( GL_SCISSOR_TEST );
 
 	const bool group = !r_showEntityDraws & 1;
 	const bool verts = r_showEntityDraws > 2;
@@ -955,12 +945,6 @@ static void RB_ShowEntityDraws() {
 	}
 	for ( auto &s : list )
 		common->Printf( s );
-	qglEnable( GL_DEPTH_TEST );
-	qglDisable( GL_POLYGON_OFFSET_LINE );
-
-	qglDepthRange( 0, 1 );
-	GL_State( GLS_DEFAULT );
-	GL_Cull( CT_FRONT_SIDED );
 
 	r_showEntityDraws = false;
 }
@@ -994,7 +978,7 @@ static void RB_ShowTexturePolarity( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		if ( !tri->verts ) {
 			continue;
 		}
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		ir.glBegin( GL_TRIANGLES );
 		for ( j = 0 ; j < tri->numIndexes ; j+=3 ) {
@@ -1059,7 +1043,7 @@ static void RB_ShowUnsmoothedTangents( drawSurf_t **drawSurfs, int numDrawSurfs 
 		if ( !drawSurf->material->UseUnsmoothedTangents() ) {
 			continue;
 		}
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		tri = drawSurf->frontendGeo;
 
@@ -1108,7 +1092,7 @@ static void RB_ShowTangentSpace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		tri = drawSurf->frontendGeo;
 		if ( !tri->verts ) {
@@ -1163,7 +1147,7 @@ static void RB_ShowVertexColor( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		tri = drawSurf->frontendGeo;
 		if ( !tri->verts ) {
@@ -1225,7 +1209,7 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		tri = drawSurf->frontendGeo;
 		if ( !tri->verts ) {
@@ -1307,7 +1291,7 @@ static void RB_ShowTextureVectors( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		if ( !tri->facePlanes ) {
 			continue;
 		}
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		// draw non-shared edges in yellow
 		ir.glBegin( GL_LINES );
@@ -1403,7 +1387,7 @@ static void RB_ShowDominantTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		if ( !tri->dominantTris ) {
 			continue;
 		}
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		ir.glColor3f( 1, 1, 0 );
 		ir.glBegin( GL_LINES );
@@ -1459,7 +1443,7 @@ static void RB_ShowEdges( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		if ( !ac ) {
 			continue;
 		}
-		RB_SimpleSurfaceSetup( drawSurf );
+		ir.DrawSetup( RB_SimpleSurfaceSetup, drawSurf );
 
 		// draw non-shared edges in yellow
 		ir.glColor3f( 1, 1, 0 );
@@ -1894,12 +1878,12 @@ void RB_ShowDebugText( void ) {
 	text = rb_debugText;
 
 	ImmediateRendering ir;
-
 	for ( i = 0 ; i < rb_numDebugText; i++, text++ ) {
 		if ( !text->depthTest ) {
 			RB_DrawText( ir, text->text, text->origin, text->scale, text->color, text->viewAxis, text->align );
 		}
 	}
+	ir.Flush();
 
 	if ( !r_debugLineDepthTest.GetBool() ) {
 		qglEnable( GL_DEPTH_TEST );
@@ -1911,6 +1895,7 @@ void RB_ShowDebugText( void ) {
 			RB_DrawText( ir, text->text, text->origin, text->scale, text->color, text->viewAxis, text->align );
 		}
 	}
+	ir.Flush();
 	qglLineWidth( 1 );
 
 	GL_State( GLS_DEFAULT );
@@ -2000,7 +1985,6 @@ void RB_ShowDebugLines( void ) {
 	}
 
 	ImmediateRendering ir;
-
 	ir.glBegin( GL_LINES );
 	line = rb_debugLines;
 	for ( i = 0 ; i < rb_numDebugLines; i++, line++ ) {
@@ -2319,10 +2303,11 @@ void RB_TestImage( void ) {
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 	RB_SimpleScreenSetup();
 
+	tr.testImage->Bind();
+
 	ImmediateRendering ir;
 	ir.glColor3f(1, 1, 1);
 
-	tr.testImage->Bind();
 	ir.glBegin( GL_QUADS );
 	
 	ir.glTexCoord2f( 0, 1 );

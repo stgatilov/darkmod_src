@@ -22,9 +22,21 @@ public:
 	ImmediateRendering();
 	~ImmediateRendering();
 
-	//ensure that all geometry collected to this moment gets drawn
-	//this should be called e.g. before changing textures/shaders/...
+	// Ensures that all geometry collected to this moment gets drawn right now.
+	// Although destructor flushes implicitly, you must call flush explicitly before changing GL state.
+	// As a rule of thumb, you must flush before every modification of GL state, unless you do it via ImmediateRendering methods.
 	void Flush();
+
+	typedef void (*DrawSetupFunc)(void *context);
+	void DrawSetupRaw(DrawSetupFunc func, void *context);
+	template<class Object, class Ret> ID_FORCE_INLINE void DrawSetup(Ret (*func)(Object *) = nullptr, Object *context = nullptr) {
+		DrawSetupRaw(reinterpret_cast<DrawSetupFunc>(func), context);
+	}
+	// Call specified function with specified argument just before drawing the next glBegin/glEnd pair.
+	// Use this to set matrices/scissors individually for every glBegin/glEnd without having to flush after each of them.
+	template<class Object, class Ret> ID_FORCE_INLINE void DrawSetup(Ret (*func)(const Object *) = nullptr, Object *context = nullptr) {
+		DrawSetupRaw(reinterpret_cast<DrawSetupFunc>(func), context);
+	}
 
 	void glBegin(GLenum mode);
 	void glEnd();
@@ -57,13 +69,23 @@ public:
 		byte color[4];
 		idVec2 texCoord;
 	};
+	struct DrawCall {
+		GLenum mode;
+		int viBegin, viEnd;	//index range in vertex buffer
+		DrawSetupFunc setupFunc;
+		void *setupContext;
+	};
 private:
+	void FlushInternal();
 
 	GLenum state_currentMode = -1;
-	byte state_currentColor[4] = {255, 255, 255, 255};
-	idVec4 state_currentTexCoord = idVec4(0.0f, 0.0f, 0.0f, 1.0f);
+	VertexData state_vertex = {idVec4{0.0f, 0.0f, 0.0f, 1.0f}, {255, 255, 255, 255}, idVec2{0.0f, 0.0f}};
+	DrawSetupFunc state_setupFunc = nullptr;
+	void *state_setupContext = nullptr;
 
 	idList<VertexData> vertexList, tempList;
+	idList<DrawCall> drawList;
+	int viBeginCurrent = -1;
 
 	GLint restore_vao = 0;
 	GLint restore_vbo = 0;

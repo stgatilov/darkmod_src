@@ -24,144 +24,221 @@
 #include "tr_local.h"
 
 
-//OpenGL can be only called from one thread anyway
-//so it is perfectly OK to have two global buffers
-static idList<ImmediateRendering::VertexData> buffers[2];
-static uintptr_t lastThreadId = 0;
+idCVar r_immediateRenderingEmulate(
+	"r_immediateRenderingEmulate", "0", CVAR_BOOL | CVAR_RENDERER,
+	"Enable emulation of deprecated immediate-mode OpenGL rendering? "
+	"It is used mainly in debug tools. "
+	"Note that this cannot be disabled in GL Core profile. "
+);
+idCVar r_immediateRenderingChunk(
+	"r_immediateRenderingChunk", "32", CVAR_INTEGER | CVAR_RENDERER,
+	"Flush accumulated draws prematurely if VBO size exceeds this number of kilobytes. "
+	"If set to 0, then flushes after every glEnd. "
+	"Only matters when r_immediateRenderingEmulate is ON. ",
+	0, 1000000
+);
 
-static bool redirectToGL = false;
+struct ImmediateRenderingGlobals {
+	idList<ImmediateRendering::VertexData> vertexBuffers[2];
+	idList<ImmediateRendering::DrawCall> drawBuffers;
+	bool redirectToGL = false;
+};
+//OpenGL can be only called from one thread anyway
+//so it is perfectly OK to have global buffers
+static ImmediateRenderingGlobals globals;
+
 
 ImmediateRendering::ImmediateRendering() {
-	redirectToGL = r_glCoreProfile.GetInteger() == 0;
-	if (redirectToGL)
+	if (r_glCoreProfile.GetInteger() > 0 && r_immediateRenderingEmulate.GetBool() == false)
+		r_immediateRenderingEmulate.SetBool(true);
+	globals.redirectToGL = (r_immediateRenderingEmulate.GetBool() == false);
+	if (globals.redirectToGL)
 		return;
 
-	vertexList.Swap(buffers[0]);
-	tempList.Swap(buffers[1]);
+	vertexList.Swap(globals.vertexBuffers[0]);
+	tempList.Swap(globals.vertexBuffers[1]);
+	drawList.Swap(globals.drawBuffers);
 
 	qglGetIntegerv(GL_VERTEX_ARRAY_BINDING, &restore_vao);
 	qglGetIntegerv(GL_ARRAY_BUFFER_BINDING, &restore_vbo);
 }
 
 ImmediateRendering::~ImmediateRendering() {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return;
 
-	Flush();
+	FlushInternal();
 
 	qglBindVertexArray(restore_vao);
 	qglBindBuffer(GL_ARRAY_BUFFER, restore_vbo);
 
 	vertexList.SetNum(0, false);
 	tempList.SetNum(0, false);
-	vertexList.Swap(buffers[0]);
-	tempList.Swap(buffers[1]);
+	drawList.SetNum(0, false);
+	vertexList.Swap(globals.vertexBuffers[0]);
+	tempList.Swap(globals.vertexBuffers[1]);
+	drawList.Swap(globals.drawBuffers);
+}
+
+void ImmediateRendering::FlushInternal() {
+	if (globals.redirectToGL)
+		return;
+
+	//must be outside glBegin/glEnd
+	assert(viBeginCurrent < 0);
+
+	if (vertexList.Num() > 0) {
+		GLuint vbo = 0;
+		GLuint vao = 0;
+		qglGenBuffers(1, &vbo);
+		qglGenVertexArrays(1, &vao);
+
+		qglBindBuffer(GL_ARRAY_BUFFER, vbo);
+		qglBufferData(GL_ARRAY_BUFFER, vertexList.Num() * sizeof(VertexData), vertexList.Ptr(), GL_STREAM_DRAW);
+
+		qglBindVertexArray(vao);
+		qglEnableVertexAttribArray(0);
+		qglEnableVertexAttribArray(3);
+		qglEnableVertexAttribArray(8);
+		qglVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, vertex));
+		qglVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (void*)offsetof(VertexData, color));
+		qglVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, texCoord));
+
+		for (int i = 0; i < drawList.Num(); i++) {
+			auto draw = drawList[i];
+			if (draw.setupFunc)
+				(*draw.setupFunc)(draw.setupContext);
+			qglDrawArrays(draw.mode, draw.viBegin, draw.viEnd - draw.viBegin);
+		}
+
+		qglDeleteVertexArrays(1, &vao);
+		qglDeleteBuffers(1, &vbo);
+	}
+
+	vertexList.SetNum(0, false);
+	drawList.SetNum(0, false);
 }
 
 void ImmediateRendering::Flush() {
-	if (redirectToGL)
-		return;
-	//Note: currently we send geometry for drawing straight in glEnd
-	//however, it might be faster to collect it into larger batch and send all at once
+	FlushInternal();
+	state_setupFunc = nullptr;
+	state_setupContext = nullptr;
+}
+
+void ImmediateRendering::DrawSetupRaw(DrawSetupFunc func, void *context) {
+	if (globals.redirectToGL)
+		return (*func)(context);
+
+	assert(viBeginCurrent < 0);		//outside of glBegin/glEnd
+	state_setupFunc = func;
+	state_setupContext = context;
 }
 
 void ImmediateRendering::glBegin(GLenum mode) {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return qglBegin(mode);
 
+	//check that glBegin was NOT opened yet
+	assert(viBeginCurrent < 0);
+
 	state_currentMode = mode;
-	vertexList.SetNum(0, false);
-	//Note: it seems that color state persists...
+	viBeginCurrent = vertexList.Num();
 }
 
 void ImmediateRendering::glEnd() {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return qglEnd();
 
-	GLenum actualMode = state_currentMode;
+	//check that glBegin was opened
+	assert(viBeginCurrent >= 0);
 
-	if (actualMode == GL_QUADS) {
-		actualMode = GL_TRIANGLES;
-		int n = vertexList.Num() / 4;
-		tempList.SetNum(6 * n, false);
+	//preprocess vertices if the draw type is missing in Core profile
+	auto CopyToTemp = [&]() {
+		int cnt = vertexList.Num() - viBeginCurrent;
+		tempList.SetNum(cnt, false);
+		memcpy(tempList.Ptr(), vertexList.Ptr() + viBeginCurrent, cnt * sizeof(vertexList[0]));
+	};
+	if (state_currentMode == GL_QUADS) {
+		CopyToTemp();
+		int n = tempList.Num() / 4;
+		vertexList.SetNum(viBeginCurrent + 6 * n, false);
+		state_currentMode = GL_TRIANGLES;
 		for (int i = 0; i < n; i++) {
-			tempList[6 * i + 0] = vertexList[4 * i + 0];
-			tempList[6 * i + 1] = vertexList[4 * i + 1];
-			tempList[6 * i + 2] = vertexList[4 * i + 2];
-			tempList[6 * i + 3] = vertexList[4 * i + 0];
-			tempList[6 * i + 4] = vertexList[4 * i + 2];
-			tempList[6 * i + 5] = vertexList[4 * i + 3];
+			vertexList[viBeginCurrent + 6 * i + 0] = tempList[4 * i + 0];
+			vertexList[viBeginCurrent + 6 * i + 1] = tempList[4 * i + 1];
+			vertexList[viBeginCurrent + 6 * i + 2] = tempList[4 * i + 2];
+			vertexList[viBeginCurrent + 6 * i + 3] = tempList[4 * i + 0];
+			vertexList[viBeginCurrent + 6 * i + 4] = tempList[4 * i + 2];
+			vertexList[viBeginCurrent + 6 * i + 5] = tempList[4 * i + 3];
 		}
-		vertexList.Swap(tempList);
 	}
-	if (actualMode == GL_POLYGON) {
-		actualMode = GL_TRIANGLES;
-		int n = idMath::Imax(vertexList.Num() - 2, 0);
-		tempList.SetNum(3 * n, false);
+	if (state_currentMode == GL_POLYGON) {
+		CopyToTemp();
+		int n = idMath::Imax(tempList.Num() - 2, 0);
+		vertexList.SetNum(viBeginCurrent + 3 * n, false);
+		state_currentMode = GL_TRIANGLES;
 		for (int i = 0; i < n; i++) {
-			tempList[3 * i + 0] = vertexList[0];
-			tempList[3 * i + 1] = vertexList[i + 1];
-			tempList[3 * i + 2] = vertexList[i + 2];
+			vertexList[viBeginCurrent + 3 * i + 0] = tempList[0];
+			vertexList[viBeginCurrent + 3 * i + 1] = tempList[i + 1];
+			vertexList[viBeginCurrent + 3 * i + 2] = tempList[i + 2];
 		}
-		vertexList.Swap(tempList);
 	}
+	tempList.SetNum(0, false);
 
-	GLuint vbo = 0;
-	GLuint vao = 0;
-	qglGenBuffers(1, &vbo);
-	qglGenVertexArrays(1, &vao);
+	DrawCall dc = {
+		state_currentMode,
+		viBeginCurrent, vertexList.Num(),
+		state_setupFunc, state_setupContext
+	};
+	drawList.AddGrow(dc);
+	viBeginCurrent = -1;
 
-	qglBindBuffer(GL_ARRAY_BUFFER, vbo);
-	qglBufferData(GL_ARRAY_BUFFER, vertexList.Num() * sizeof(VertexData), vertexList.Ptr(), GL_STREAM_DRAW);
-
-	qglBindVertexArray(vao);
-	qglEnableVertexAttribArray(0);
-	qglEnableVertexAttribArray(3);
-	qglEnableVertexAttribArray(8);
-	qglVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, vertex));
-	qglVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (void*)offsetof(VertexData, color));
-	qglVertexAttribPointer(8, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), (void*)offsetof(VertexData, texCoord));
-
-	qglDrawArrays(actualMode, 0, vertexList.Num());
-
-	qglDeleteVertexArrays(1, &vao);
-	qglDeleteBuffers(1, &vbo);
+	int vboCurrentSize = vertexList.Num() * sizeof(VertexData);
+	if (vboCurrentSize >= r_immediateRenderingChunk.GetInteger() * 1024)
+		FlushInternal();
 }
 
 void ImmediateRendering::glVertex4f(float x, float y, float z, float w) {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return qglVertex4f(x, y, z, w);
 
-	VertexData v;
-	v.vertex = idVec4(x, y, z, w);
-	memcpy(v.color, state_currentColor, sizeof(v.color));
-	v.texCoord = state_currentTexCoord.ToVec2();
-	vertexList.AddGrow(v);
+	state_vertex.vertex.Set(x, y, z, w);
+	vertexList.AddGrow(state_vertex);
 }
 
 void ImmediateRendering::glColor4f(float r, float g, float b, float a) {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return qglColor4f(r, g, b, a);
 
+#ifdef __SSE2__
+	__m128 vec = _mm_setr_ps(r, g, b, a);
+	vec = _mm_add_ps(_mm_mul_ps(vec, _mm_set1_ps(255.0f)), _mm_set1_ps(0.5f));
+	__m128i icol = _mm_cvttps_epi32(vec);
+	icol = _mm_packs_epi32(icol, icol);
+	icol = _mm_packus_epi16(icol, icol);
+	int wcol = _mm_cvtsi128_si32(icol);
+	*(int*)(state_vertex.color) = wcol;
+#else
 	state_currentColor[0] = (byte) idMath::Rint(r * 255.0f);
 	state_currentColor[1] = (byte) idMath::Rint(g * 255.0f);
 	state_currentColor[2] = (byte) idMath::Rint(b * 255.0f);
 	state_currentColor[3] = (byte) idMath::Rint(a * 255.0f);
+#endif
 }
 
 void ImmediateRendering::glColor4ub(byte r, byte g, byte b, byte a) {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return qglColor4ub(r, g, b, a);
 
-	state_currentColor[0] = r;
-	state_currentColor[1] = g;
-	state_currentColor[2] = b;
-	state_currentColor[3] = a;
+	state_vertex.color[0] = r;
+	state_vertex.color[1] = g;
+	state_vertex.color[2] = b;
+	state_vertex.color[3] = a;
 }
 
 void ImmediateRendering::glTexCoord4f(float s, float t, float r, float q) {
-	if (redirectToGL)
+	if (globals.redirectToGL)
 		return qglTexCoord4f(s, t, r, q);
 
-	state_currentTexCoord.Set(s, t, r, q);
+	state_vertex.texCoord.Set(s, t);
 }
