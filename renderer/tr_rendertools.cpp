@@ -2522,21 +2522,22 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_ShowLightScissors();
 	RB_ShowTextureVectors( drawSurfs, numDrawSurfs );
 	RB_ShowDominantTris( drawSurfs, numDrawSurfs );
-	if ( r_testGamma.GetInteger() > 0 ) {	// test here so stack check isn't so damn slow on debug builds
-		RB_TestGamma();
-	}
-	if ( r_testGammaBias.GetInteger() > 0 ) {
-		RB_TestGammaBias();
-	}
 	RB_TestImage();
 	RB_ShowPortals();
-	RB_ShowSilhouette();
-	RB_ShowDepthBuffer();
-	RB_ShowIntensity();
 	RB_ShowDebugLines();
 	RB_ShowDebugText();
 	RB_ShowDebugPolygons();
 	RB_ShowTrace( drawSurfs, numDrawSurfs );
+
+	if (r_glCoreProfile.GetInteger() == 0) {
+		//stgatilov: this one uses qglArrayElement to fetch vertices from VBO
+		RB_ShowSilhouette();
+		//stgatilov: these ones use qglDrawPixels to display FBO contents
+		RB_ShowDepthBuffer();
+		RB_ShowIntensity();
+		RB_TestGamma();
+		RB_TestGammaBias();
+	}
 
 	if ( r_showMultiLight.GetBool() ) {
 		common->Printf( "multi-light:%i/%i avg:%2.2f max:%i/%i/%i\n",
