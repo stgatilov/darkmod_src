@@ -224,7 +224,13 @@ idCVar r_useAnonreclaimer( "r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL 
 idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB2" );
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
 idCVar r_uniformTransforms( "r_uniformTransforms", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use uniform variables in shaders for vertex transformations instead of the deprecated ftransform" );
-idCVar r_glCoreProfile( "r_glCoreProfile", "0", CVAR_RENDERER | CVAR_ARCHIVE, "0: compatibility, 1: core, 2: forward core" );
+idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
+	"Which profile of OpenGL to use:\n"
+	"  0: compatibility profile\n"
+	"  1: core profile\n"
+	"  2: forward-compatible core profile\n"
+	"Note: restarting TDM is required after change!"
+);
 idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
 
 // FBO
