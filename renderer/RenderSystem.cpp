@@ -276,6 +276,21 @@ static void R_CheckCvars( void ) {
 		R_SetColorMappings();
 	}
 
+	// GL debug messages
+	if( r_glDebugOutput.IsModified() && glConfig.debugGroupsAvailable ) {
+		r_glDebugOutput.ClearModified();
+		if( r_glDebugOutput.GetBool() ) {
+			qglEnable( GL_DEBUG_OUTPUT );
+		} else {
+			qglDisable( GL_DEBUG_OUTPUT );
+		}
+		if( r_glDebugOutput.GetInteger() == 2 ) {
+			qglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+		} else {
+			qglDisable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+		}
+	}
+
 	// revelator: autoset depth bits to the max of what the gfx card supports, in case someone tries to supply an invalid bit depth.
 	// unsupported bit depth will be forced back to the max the card supports.
 	/*if ( glConfig.depthBits != r_fboDepthBits.GetInteger() ) {

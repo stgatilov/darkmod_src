@@ -20,6 +20,7 @@
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
+#include <unordered_map>
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -248,14 +249,22 @@ idCVar r_cinematic_legacyRoq( "r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR
                               "Play cinematics with original Doom3 code or with FFmpeg libraries. "
                               "0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg" );
 
+namespace {
+	std::unordered_map<int, int> glDebugMessageIdLastSeenInFrame;
+	const int SUPPRESS_FOR_NUM_FRAMES = 300;
+}
 
-idStrList GLDebugMessages;
 static void APIENTRY R_OpenGLDebugMessageCallback( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam ) {
-	while ( GLDebugMessages.Num() > 10 )
-		GLDebugMessages.RemoveIndex( 0 );
-	GLDebugMessages.Append( message );
-	if( severity != GL_DEBUG_SEVERITY_NOTIFICATION )
+	if( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
+		return;
+	}
+
+	int msgHash = idStr::Hash( message );
+	if( glDebugMessageIdLastSeenInFrame.find( msgHash ) == glDebugMessageIdLastSeenInFrame.end() ||
+			tr.frameCount - glDebugMessageIdLastSeenInFrame[msgHash] > SUPPRESS_FOR_NUM_FRAMES ) {
 		common->Printf( "GL: %s\n", message );
+		glDebugMessageIdLastSeenInFrame[msgHash] = tr.frameCount;
+	}
 }
 
 /*
@@ -382,11 +391,17 @@ void R_InitOpenGL( void ) {
 	GLimp_CheckRequiredFeatures();
 
 
-	if( r_glDebugOutput.GetBool() && glConfig.debugGroupsAvailable ) {
-		qglEnable( GL_DEBUG_OUTPUT );
+	if( glConfig.debugGroupsAvailable ) {
 		qglDebugMessageCallbackKHR( R_OpenGLDebugMessageCallback, nullptr );
+		if( r_glDebugOutput.GetBool() ) {
+			qglEnable( GL_DEBUG_OUTPUT );
+		} else {
+			qglDisable( GL_DEBUG_OUTPUT );
+		}
 		if( r_glDebugOutput.GetInteger() == 2) {
 			qglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+		} else {
+			qglDisable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
 		}
 	}
 
