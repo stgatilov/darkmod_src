@@ -4425,13 +4425,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "resetbrightness")
 	{
-		idCVar * cvar = cvarSystem->Find( "r_brightness" );
-		cvar ? cvar->SetFloat( 1.0f ) :	Warning("Cannot find CVAR r_brightness.");
+		idCVar * cvar = cvarSystem->Find( "r_postprocess_brightness" );
+		cvar ? cvar->SetFloat( 1.0f ) :	Warning("Cannot find CVAR r_postprocess_brightness.");
 	}
 	else if (cmd == "resetgamma")
 	{
-		idCVar * cvar = cvarSystem->Find( "r_gamma" );
-		cvar ? cvar->SetFloat( 1.0f ) :	Warning("Cannot find CVAR r_gamma.");
+		idCVar * cvar = cvarSystem->Find( "r_postprocess_gamma" );
+		cvar ? cvar->SetFloat( 1.2f ) :	Warning("Cannot find CVAR r_postprocess_gamma.");
 	}
 	else if (cmd == "resethud") // Obsttorte
 	{

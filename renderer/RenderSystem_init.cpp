@@ -70,8 +70,6 @@ idCVar r_ignoreGLErrors( "r_ignoreGLErrors", "1", CVAR_RENDERER | CVAR_BOOL, "ig
 idCVar r_finish( "r_finish", "0", CVAR_RENDERER | CVAR_BOOL, "force a call to glFinish() every frame" );
 idCVarInt r_swapInterval( "r_swapInterval", "0", CVAR_RENDERER | CVAR_ARCHIVE, "changes wglSwapIntarval" );
 
-idCVar r_gamma( "r_gamma", "1.2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables (inverse power function)", 0.1f, 3.0f );
-idCVar r_brightness( "r_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables (premultiplier)", 0.5f, 2.0f );
 idCVar r_ambientMinLevel( "r_ambientMinLevel", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "specifies minimal level of ambient light brightness, making linear change in ambient color", 0.0f, 1.0f);
 idCVar r_ambientGamma( "r_ambientGamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "specifies power of gamma correction applied solely to ambient light", 0.1f, 3.0f);
 
@@ -1421,7 +1419,7 @@ R_SetColorMappings
 void R_SetColorMappings( void ) {
 	//stgatilov: brightness and gamma adjustments are done in final shader pass
 	return;
-
+#if 0
 	int		j;
 	float	g, b;
 	int		inf;
@@ -1452,6 +1450,7 @@ void R_SetColorMappings( void ) {
 		tr.gammaTable[i] = inf;
 	}
 	GLimp_SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
+#endif
 }
 
 

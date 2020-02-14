@@ -284,7 +284,7 @@ void GLSLProgramManager::Init() {
 	multiLightInteractionShader = LoadInteractionShader( "interactionMultiLight", "interactionMultiLight", false );
 	frobShader = Load( "frob" );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
-	autoExposureShader = Load( "autoExposure" );
+	toneMapShader = Load( "tonemap" );
 	// FIXME duzenko: is it the right way to do this?
 	/*legacyTangentsCvarCallback = r_legacyTangents.AddOnModifiedCallback( [this] () {
 		shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );

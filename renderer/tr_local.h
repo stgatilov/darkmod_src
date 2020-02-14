@@ -910,8 +910,6 @@ extern idCVar r_subviewOnly;			// 1 = don't render main view, allowing subviews 
 extern idCVar r_lightScale;				// all light intensities are multiplied by this, which is normally 2
 extern idCVar r_flareSize;				// scale the flare deforms from the material def
 
-extern idCVar r_gamma;					// changes gamma tables
-extern idCVar r_brightness;				// changes gamma tables
 extern idCVar r_ambientMinLevel;		// tweaking overall ambient brightness
 extern idCVar r_ambientGamma;			// tweaking overall ambient brightness
 
@@ -1415,9 +1413,8 @@ void RB_STD_DrawView( void );
 void RB_Multi_AddSurf( const drawSurf_t* surf );
 void RB_Multi_DrawElements( int instances = 0 );
 
-// bloom related
+// postprocessing related
 void RB_DrawFullScreenQuad( float e = 1 );
-void RB_Bloom( void );
 
 /*
 ============================================================

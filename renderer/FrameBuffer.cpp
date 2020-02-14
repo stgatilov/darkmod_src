@@ -269,7 +269,7 @@ void FB_CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeigh
 	GL_CheckErrors();
 	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
-	if ( primaryOn && image != globalImages->bloomCookedMath ) {
+	if ( primaryOn ) {
 		x *= r_fboResolution.GetFloat();
 		y *= r_fboResolution.GetFloat();
 		imageWidth *= r_fboResolution.GetFloat();

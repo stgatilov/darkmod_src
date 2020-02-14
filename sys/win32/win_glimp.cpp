@@ -76,7 +76,7 @@ static void GLimp_RestoreGamma( void ) {
 ========================
 GLimp_SetGamma
 
-The renderer calls this when the user adjusts r_gamma or r_brightness
+The renderer calls this when the user adjusts gamma or brightness
 ========================
 */
 void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] ) {

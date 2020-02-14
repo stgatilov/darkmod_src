@@ -10,4 +10,3 @@ void main() {
 	gl_Position = tdm_transform(attr_Position);
 	var_TexCoord = attr_TexCoord;
 }
-

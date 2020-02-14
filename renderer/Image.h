@@ -372,8 +372,6 @@ public:
 	//idImage *			shadowAtlasHistory;
 	idImage *			currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
 	idImage *			shadowStencilFbo;
-	idImage *			bloomCookedMath;
-	idImage *			bloomImage;
 
 	//--------------------------------------------------------
 

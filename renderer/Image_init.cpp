@@ -1379,8 +1379,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 		|| name.Find( "video/" ) >= 0
 		|| name.Find( "fsfx" ) >= 0
 		|| name.Find( "/AFX" ) >= 0
-		|| name.Find( "_afxweight" ) >= 0
-		|| name.Find( "_bloomImage" ) >= 0 ) {
+		|| name.Find( "_afxweight" ) >= 0 ) {
 		allowDownSize = false;
 	}
 	image->allowDownSize = allowDownSize;
@@ -1626,9 +1625,6 @@ void idImageManager::Init() {
 	//shadowAtlasHistory = ImageFromFunction( "_shadowAtlasHistory", R_DepthTexture );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
 	//shadowStencilFbo = ImageFromFunction( "_shadowStencilFbo", R_RGBA8Image ); unused for now
-
-	bloomCookedMath = ImageFromFunction( "_cookedMath", R_RGBA8Image );
-	bloomImage = ImageFromFunction( "_bloomImage", R_RGBA8Image );
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );

@@ -269,13 +269,6 @@ static void R_CheckCvars( void ) {
 		r_useGLSL.SetBool(true);
 	}
 
-	// gamma stuff
-	if ( r_brightness.IsModified() || r_gamma.IsModified() ) {
-		r_brightness.ClearModified();
-		r_gamma.ClearModified();
-		R_SetColorMappings();
-	}
-
 	// GL debug messages
 	if( r_glDebugOutput.IsModified() && glConfig.debugGroupsAvailable ) {
 		r_glDebugOutput.ClearModified();
