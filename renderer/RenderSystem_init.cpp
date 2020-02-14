@@ -20,7 +20,6 @@
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
-#include <unordered_map>
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -248,7 +247,7 @@ idCVar r_cinematic_legacyRoq( "r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR
                               "0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg" );
 
 namespace {
-	std::unordered_map<int, int> glDebugMessageIdLastSeenInFrame;
+	std::map<int, int> glDebugMessageIdLastSeenInFrame;
 	const int SUPPRESS_FOR_NUM_FRAMES = 300;
 }
 
