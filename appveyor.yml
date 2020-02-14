@@ -60,6 +60,7 @@ for:
           EXECUTABLE="thedarkmod.x86"
       else
           EXECUTABLE="thedarkmod.x64"
+      fi
       tar -cSvf thedarkmod.tar "${EXECUTABLE}" "../glprogs"
       bzip2 thedarkmod.tar
 
