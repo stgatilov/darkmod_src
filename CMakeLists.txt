@@ -24,6 +24,55 @@ cmake_dependent_option(WITH_TOOLS "Compile with Tools" ON "MSVC" OFF)
 set(GAME_DIR "${PROJECT_SOURCE_DIR}/../darkmod" CACHE STRING "The directory where the game assets are stored")
 option(COPY_EXE "Copy executable to GAME_DIR after build" ON)
 
+if (UNIX)
+	# configure sensible warnings
+	add_compile_options(
+			-Wall
+			-Wno-unknown-pragmas            # MSVC specific pragmas
+			-Wno-unused-variable            # too many
+			-Wno-unused-but-set-variable
+			-Wno-sign-compare               # in particular, int/size_t conversions
+			-Wno-class-memaccess            # memcpy into custom structs
+	)
+	# configure other compile options
+	add_compile_options(
+			-pipe
+			-fno-strict-aliasing
+			-fmessage-length=0
+			-fvisibility=hidden
+			-fno-unsafe-math-optimizations
+			-std=c++14
+			-msse2
+	)
+	# TODO: do we really want to keep using this
+	# use old ABI for std::string and std::list to allow TDM to run on distros with old
+	# glibcxx (e.g. Ubuntu 14.04). the old ABI is not fully compliant with C++11 standard.
+	add_compile_definitions("_GLIBCXX_USE_CXX11_ABI=0")
+	# ensure threading support in X
+	add_compile_definitions(XTHREADS)
+
+	# disable optimizations for certain problematic files
+	set_property(SOURCE
+			"idlib/Token.cpp"
+			"idlib/bv/Frustum_gcc.cpp"
+			PROPERTY COMPILE_OPTIONS -O1
+	)
+	set_property(SOURCE
+			"tools/compilers/dmap/optimize_gcc.cpp"
+			PROPERTY COMPILE_OPTIONS -O0
+	)
+elseif (MSVC)
+	add_compile_definitions("WIN32" _WINDOWS
+			_CRT_SECURE_NO_DEPRECATE
+			_CRT_NONSTDC_NO_DEPRECATE
+			_ALLOW_KEYWORD_MACROS
+			NO_WARN_MBCS_MFC_DEPRECATION
+			_MBCS
+			)
+	add_compile_options("/MP /Gm- /arch:SSE2")
+	ucm_add_linker_flags(EXE "/DEBUG" CONFIG Release)
+endif ()
+
 add_executable(TheDarkMod)
 
 get_svn_revision(SVNVERSION)
@@ -99,7 +148,7 @@ endif ()
 # note TypeInfo.cpp must be excluded from precompiled header because it uses some dirty hacks
 add_precompiled_header(TheDarkMod
 		"idlib/precompiled.h" "idlib/precompiled.cpp" "precompiled.h"
-		EXCLUDE "game/gamesys/TypeInfo.cpp"
+		EXCLUDE "game/gamesys/TypeInfo.cpp" "idlib/Token.cpp" "idlib/bv/Frustum_gcc.cpp"
 )
 
 add_compile_definitions(
@@ -111,30 +160,6 @@ add_compile_definitions(
 )
 
 if (UNIX)
-	# configure sensible warnings
-	add_compile_options(
-			-Wall
-			-Wno-unknown-pragmas            # MSVC specific pragmas
-			-Wno-unused-variable            # too many
-			-Wno-unused-but-set-variable
-			-Wno-sign-compare               # in particular, int/size_t conversions
-			-Wno-class-memaccess            # memcpy into custom structs
-	)
-	# configure other compile options
-	add_compile_options(
-			-pipe
-			-fno-strict-aliasing
-			-fmessage-length=0
-			-fvisibility=hidden
-			-fno-unsafe-math-optimizations
-			-std=c++14
-			-msse2
-	)
-	# TODO: do we really want to keep using this
-	# use old ABI for std::string and std::list to allow TDM to run on distros with old
-	# glibcxx (e.g. Ubuntu 14.04). the old ABI is not fully compliant with C++11 standard.
-	add_compile_definitions("_GLIBCXX_USE_CXX11_ABI=0")
-
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PACKAGE_PLATFORM "lnx64_s_gcc5_rel_stdcpp")
 		set(PACKAGE_PLATFORM_DEBUG "lnx64_s_gcc5_rel_stdcpp")
@@ -147,18 +172,8 @@ if (UNIX)
 		set(PACKAGE_PLATFORM_DEBUG "lnx32_s_gcc5_rel_stdcpp")
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.x86")
 	endif ()
-	# ensure threading support in X
-	add_compile_definitions(XTHREADS)
 	set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/linux")
 elseif (MSVC)
-	add_compile_definitions("WIN32" _WINDOWS
-			_CRT_SECURE_NO_DEPRECATE
-			_CRT_NONSTDC_NO_DEPRECATE
-			_ALLOW_KEYWORD_MACROS
-			NO_WARN_MBCS_MFC_DEPRECATION
-			_MBCS
-	)
-	add_compile_options("/MP /Gm- /arch:SSE2")
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PACKAGE_PLATFORM "win64_s_vc15_rel_mt")
 		set(PACKAGE_PLATFORM_DEBUG "win64_s_vc15_dbg_mtd")
@@ -169,8 +184,6 @@ elseif (MSVC)
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkMod")
 	endif ()
 	set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/vc15")
-	# we want debug symbols even with Release builds
-	ucm_add_linker_flags(EXE "/DEBUG" CONFIG Release)
 endif ()
 ucm_set_runtime(STATIC)
 

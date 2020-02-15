@@ -29,9 +29,10 @@ macro(add_precompiled_header Target PrecompiledHeader PrecompiledSource Included
 		# we need to use custom commands to compile the header
 		# first step, copy it to the build dir
 		set(CopiedPch "${PrecompiledOutputDir}/${IncludedAs}")
+		set(PchDepFile "${CopiedPch}.dep")
 		add_custom_command(OUTPUT "${CopiedPch}"
-				COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${PrecompiledHeader}" "${CopiedPch}"
-				DEPENDS "${PrecompiledHeader}"
+				COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/${PrecompiledHeader}" "${CopiedPch}"
+				MAIN_DEPENDENCY "${CMAKE_CURRENT_SOURCE_DIR}/${PrecompiledHeader}"
 				COMMENT "Copying header")
 		# second step, we need to gather the same compile flags as for the target so that the compiled header works
 		set(PchFlagsFile "${PrecompiledOutputDir}/compile_flags.rsp")
@@ -40,10 +41,21 @@ macro(add_precompiled_header Target PrecompiledHeader PrecompiledSource Included
 		# third step, compile the header
 		get_filename_component(BaseName ${IncludedAs} NAME)
 		set(CompiledPch "${PrecompiledOutputDir}/${BaseName}.gch")
-		add_custom_command(OUTPUT "${CompiledPch}"
-				COMMAND "${CMAKE_CXX_COMPILER}" ${CompilerFlags} -x c++-header -o "${CompiledPch}" "${CopiedPch}"
-				DEPENDS "${CopiedPch}" "${PchFlagsFile}"
-				COMMENT "Precompiling header")
+		if(CMAKE_GENERATOR STREQUAL "Ninja")
+			# tell G++ to produce a depfile for the Ninja generator to keep track of when to rebuild the PCH
+			add_custom_command(OUTPUT "${CompiledPch}"
+					COMMAND "${CMAKE_CXX_COMPILER}" ${CompilerFlags} -x c++-header -o "${CompiledPch}" "${CopiedPch}" -MD -MF "${PchDepFile}"
+					DEPENDS "${CopiedPch}" "${PchFlagsFile}"
+                    DEPFILE "${PchDepFile}"
+					COMMENT "Precompiling header")
+		else()
+			# use CMake's implicit dependency scanner for Makefiles to determine when to rebuild PCH
+			add_custom_command(OUTPUT "${CompiledPch}"
+					COMMAND "${CMAKE_CXX_COMPILER}" ${CompilerFlags} -x c++-header -o "${CompiledPch}" "${CopiedPch}"
+					DEPENDS "${CopiedPch}" "${PchFlagsFile}"
+                    IMPLICIT_DEPENDS CXX "${CopiedPch}"
+					COMMENT "Precompiling header")
+		endif()
 
 		SET_SOURCE_FILES_PROPERTIES(${Sources}
 				PROPERTIES COMPILE_FLAGS "-include \"${CopiedPch}\" -Winvalid-pch"
