@@ -6,6 +6,7 @@ macro(add_precompiled_header Target PrecompiledHeader PrecompiledSource Included
 	get_target_property(Sources ${Target} SOURCES)
 	# precompiled headers for C/C++ sources are different, so don't apply to .c files
 	list(FILTER Sources EXCLUDE REGEX "\\.c$")
+	list(FILTER Sources EXCLUDE REGEX "\\.rc$")
 	ucm_remove_files(${PCH_EXCLUDE} ${PrecompiledSource} FROM Sources)
 
 	# determine output paths

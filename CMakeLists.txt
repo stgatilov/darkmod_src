@@ -69,7 +69,14 @@ elseif (MSVC)
 			NO_WARN_MBCS_MFC_DEPRECATION
 			_MBCS
 			)
-	add_compile_options("/MP /Gm- /arch:SSE2")
+	# disable certain warnings
+	add_compile_options(/wd4127 /wd4458 /wd4267)
+	add_compile_options(/MP /Gm-)
+	ucm_add_flags(/GS- /Gy /Zi /GF /FC /Oi /Oy /Ot CONFIG Release)
+	ucm_add_linker_flags(EXE /LARGEADDRESSAWARE /NXCOMPAT /SAFESEH:NO /STACK:16777216,16777216)
+	if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+		add_compile_options(/arch:SSE2)
+	endif()
 	ucm_add_linker_flags(EXE "/DEBUG" CONFIG Release)
 endif ()
 
@@ -120,6 +127,7 @@ if (UNIX)
 	)
 elseif (WIN32)
 	ucm_add_dirs("sys/win32" TO TDM_SOURCE_FILES RECURSIVE)
+	ucm_add_files("sys/win32/rc/doom.rc" TO TDM_SOURCE_FILES)
 	ucm_remove_directories("idlib/sys/posix" FROM TDM_SOURCE_FILES)
 	ucm_remove_files("renderer/glad_glx.c" "tools/compilers/dmap/optimize_gcc.cpp" "idlib/bv/Frustum_gcc.cpp" FROM TDM_SOURCE_FILES)
 endif ()
@@ -148,7 +156,7 @@ endif ()
 # note TypeInfo.cpp must be excluded from precompiled header because it uses some dirty hacks
 add_precompiled_header(TheDarkMod
 		"idlib/precompiled.h" "idlib/precompiled.cpp" "precompiled.h"
-		EXCLUDE "game/gamesys/TypeInfo.cpp" "idlib/Token.cpp" "idlib/bv/Frustum_gcc.cpp"
+		EXCLUDE "game/gamesys/TypeInfo.cpp" "idlib/Token.cpp" "idlib/bv/Frustum_gcc.cpp" "sys/win32/rc/CreateResourceIDs.cpp"
 )
 
 add_compile_definitions(
@@ -256,7 +264,12 @@ if (COPY_EXE)
 	add_custom_command(
 			TARGET TheDarkMod POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod> "${GAME_DIR}"
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod>.debug "${GAME_DIR}"
 			COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/glprogs" "${GAME_DIR}/glprogs"
 	)
+	if (UNIX)
+		add_custom_command(
+				TARGET TheDarkMod POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:TheDarkMod>.debug "${GAME_DIR}"
+		)
+	endif()
 endif ()
