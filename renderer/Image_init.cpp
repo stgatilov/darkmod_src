@@ -993,33 +993,29 @@ void R_ListImages_f( const idCmdArgs &args ) {
 	bool	byClassification = false;
 	bool	overSized = false;
 
-	if ( args.Argc() == 1 ) {
-
-	} else if ( args.Argc() == 2 ) {
-		if ( idStr::Icmp( args.Argv( 1 ), "uncompressed" ) == 0 ) {
+	for ( int i = 1; i < args.Argc(); i++ ) {
+		if ( idStr::Icmp( args.Argv( i ), "uncompressed" ) == 0 ) {
 			uncompressedOnly = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "sorted" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "sorted" ) == 0 ) {
 			sorted = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "unloaded" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "unloaded" ) == 0 ) {
 			unloaded = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "tagged" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "tagged" ) == 0 ) {
 			matchTag = 1;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "duplicated" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "duplicated" ) == 0 ) {
 			duplicated = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "touched" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "touched" ) == 0 ) {
 			touched = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "classify" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "classify" ) == 0 ) {
 			byClassification = true;
 			sorted = true;
-		} else if ( idStr::Icmp( args.Argv( 1 ), "oversized" ) == 0 ) {
+		} else if ( idStr::Icmp( args.Argv( i ), "oversized" ) == 0 ) {
 			byClassification = true;
 			sorted = true;
 			overSized = true;
 		} else {
 			failed = true;
 		}
-	} else {
-		failed = true;
 	}
 
 	if ( failed ) {
@@ -1267,7 +1263,7 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void ( *generator
 	image->generatorFunction = generatorFunction;
 
 	// check for precompressed, load is from the front end
-	if ( image_preload.GetBool() ) {
+	if (	image_preload.GetBool() ) {
 		image->referencedOutsideLevelLoad = true;
 		image->ActuallyLoadImage();
 	}

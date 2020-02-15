@@ -72,6 +72,8 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 			return 8;
 		case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
 			return 8;
+		case GL_COMPRESSED_RG_RGTC2:
+			return 8;
 		case GL_RGBA4:
 			return 16;
 		case GL_RGB5:
@@ -80,10 +82,11 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 			return 4;			// not sure
 		case GL_COMPRESSED_RGBA_ARB:
 			return 8;			// not sure
-		case GL_DEPTH:
-		case GL_DEPTH_STENCIL:
-		case GL_STENCIL:
 		case GL_COLOR: // FBO attachments
+		case GL_DEPTH_STENCIL:
+			return 32;
+		case GL_DEPTH:
+		case GL_STENCIL:
 			return 0;
 		default:
 			common->Warning( "\nR_BitsForInternalFormat: bad internalFormat:%i", internalFormat );
@@ -124,7 +127,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	const byte	*scan;
 	int			rgbOr, aOr, aAnd;
 	int			rgbDiffer, rgbaDiffer;
-	const bool allowCompress = globalImages->image_useCompression.GetBool() && glConfig.textureCompressionAvailable && globalImages->image_preload.GetBool();
+	const bool allowCompress = globalImages->image_useCompression.GetBool() && glConfig.textureCompressionAvailable;//&& globalImages->image_preload.GetBool();
 
 	// determine if the rgb channels are all the same
 	// and if either all rgb or all alpha are 255
@@ -1442,7 +1445,9 @@ void idImage::Bind() {
 	if ( r_showPrimitives.GetBool() && backEnd.viewDef && !backEnd.viewDef->IsLightGem() ) { // backEnd.viewDef is null when changing map
 		frameUsed = backEnd.frameCount;
 		bindCount++;
-	}
+	} else
+		if ( com_developer.GetBool() ) // duzenko: very rarely used, but sometimes without r_showPrimitives. Otherwise avoid unnecessary memory writes
+			bindCount++;
 	tmu_t *tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
 
 	// bind the texture
@@ -1571,7 +1576,8 @@ int idImage::StorageSize() const {
 	baseSize /= 8;
 
 	// account for mip mapping
-	baseSize = baseSize * 4 / 3;
+	if ( imgName[0] != '_' )
+		baseSize = baseSize * 4 / 3;
 
 	return baseSize;
 }
@@ -1645,10 +1651,14 @@ void idImage::Print() const {
 		case GL_RG8:
 			common->Printf( "RG    " );
 			break;
+		case GL_RGB565:
+			common->Printf( "RGB565" );
+			break;
 		case 3:
 			common->Printf( "RGB   " );
 			break;
 		case 4:
+		case GL_COLOR:
 			common->Printf( "RGBA  " );
 			break;
 		case GL_ALPHA8:
@@ -1690,6 +1700,12 @@ void idImage::Print() const {
 		case GL_COMPRESSED_RGBA_ARB:
 			common->Printf( "RGBAC " );
 			break;
+		case GL_COMPRESSED_RG_RGTC2:
+			common->Printf( "RGTC2 " );
+			break;
+		case GL_DEPTH_STENCIL:
+			common->Printf( "DP/ST " );
+			break;
 		case 0:
 			common->Printf( "      " );
 			break;
@@ -1715,6 +1731,13 @@ void idImage::Print() const {
 			common->Printf( "<BAD REPEAT:%i>", repeat );
 			break;
 	}
-	common->Printf( "%4ik ", StorageSize() / 1024 );
+	int storSize = StorageSize();
+	for ( int i = 0; i < 3; i++ ) {
+		if ( storSize < 1024 ) {
+			common->Printf( "%4i%s ", storSize, i == 0 ? "B" : i == 1 ? "K" : "M" );
+			break;
+		}
+		storSize /= 1024;
+	}
 	common->Printf( " %s\n", imgName.c_str() );
 }
