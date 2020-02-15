@@ -48,6 +48,7 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 		case 2:
 		//case GL_LUMINANCE8_ALPHA8:
 		case GL_RG8:
+		case GL_RGB565:
 			return 16;
 		case 3:
 			return 32;		// on some future hardware, this may actually be 24, but be conservative
