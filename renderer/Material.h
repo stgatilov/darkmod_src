@@ -549,7 +549,7 @@ public:
 	
 		                // nbohr1more: #4379 lightgem culling
 	bool				IsLightgemSurf( void ) const { return isLightgemSurf; }
-	colorStage_t const  GetAmbientRimColor() const { return ambientRimColor; }
+	colorStage_t const& GetAmbientRimColor() const { return ambientRimColor; }
 
 	float				GetPolygonOffset( void ) const { return polygonOffset; }
 	float				GetShadowMapOffset( void ) const { return shadowmapOffset; }
