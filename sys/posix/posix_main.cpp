@@ -84,9 +84,9 @@ void Posix_Exit(int ret) {
 	// in case of signal, handler tries a common->Quit
 	// we use set_exit to maintain a correct exit code
 	if ( set_exit ) {
-		exit( set_exit );
+		std::quick_exit( set_exit );
 	}
-	exit( ret );
+	std::quick_exit( ret );
 }
 
 /*
