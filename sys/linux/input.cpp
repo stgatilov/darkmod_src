@@ -69,6 +69,125 @@ static byte s_scantokey[128] = {
 /* 78 */ 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+static byte MapKeySym(XKeyEvent *event) {
+	KeySym keysym = XLookupKeysym(event, 0);
+	switch (keysym) {
+		case XK_Tab:
+			return K_TAB;
+		case XK_Return:
+			return K_ENTER;
+		case XK_Escape:
+			return K_ESCAPE;
+		case XK_space:
+			return K_SPACE;
+		case XK_BackSpace:
+			return K_BACKSPACE;
+		case XK_Caps_Lock:
+			return K_CAPSLOCK;
+		case XK_Scroll_Lock:
+			return K_SCROLL;
+		case XK_Pause:
+			return K_PAUSE;
+		case XK_Up:
+			return K_UPARROW;
+		case XK_Down:
+			return K_DOWNARROW;
+		case XK_Left:
+			return K_LEFTARROW;
+		case XK_Right:
+			return K_RIGHTARROW;
+		case XK_Meta_L:
+			return K_LWIN;
+		case XK_Meta_R:
+			return K_RWIN;
+		case XK_Menu:
+			return K_MENU;
+		case XK_Alt_L:
+			return K_ALT;
+		case XK_Control_L: case XK_Control_R:
+			return K_CTRL;
+		case XK_Shift_L: case XK_Shift_R:
+			return K_SHIFT;
+		case XK_Insert:
+			return K_INS;
+		case XK_Delete:
+			return K_DEL;
+		case XK_Page_Down:
+			return K_PGDN;
+		case XK_Page_Up:
+			return K_PGUP;
+		case XK_Home:
+			return K_HOME;
+		case XK_End:
+			return K_END;
+		case XK_F1:
+			return K_F1;
+		case XK_F2:
+			return K_F2;
+		case XK_F3:
+			return K_F3;
+		case XK_F4:
+			return K_F4;
+		case XK_F5:
+			return K_F5;
+		case XK_F6:
+			return K_F6;
+		case XK_F7:
+			return K_F7;
+		case XK_F8:
+			return K_F8;
+		case XK_F9:
+			return K_F9;
+		case XK_F10:
+			return K_F10;
+		case XK_F11:
+			return K_F11;
+		case XK_F12:
+			return K_F12;
+		case XK_KP_Home:
+			return K_KP_HOME;
+		case XK_KP_Up:
+			return K_KP_UPARROW;
+		case XK_KP_Page_Up:
+			return K_KP_PGUP;
+		case XK_KP_Left:
+			return K_KP_LEFTARROW;
+		case XK_KP_5:
+			return K_KP_5;
+		case XK_KP_Right:
+			return K_KP_RIGHTARROW;
+		case XK_KP_End:
+			return K_KP_END;
+		case XK_KP_Down:
+			return K_KP_DOWNARROW;
+		case XK_KP_Page_Down:
+			return K_KP_PGDN;
+		case XK_KP_Enter:
+			return K_KP_ENTER;
+		case XK_KP_Insert:
+			return K_KP_INS;
+		case XK_KP_Delete:
+			return K_KP_DEL;
+		case XK_KP_Divide:
+			return K_KP_SLASH;
+		case XK_KP_Subtract:
+			return K_KP_MINUS;
+		case XK_KP_Add:
+			return K_KP_PLUS;
+		case XK_KP_Multiply:
+			return K_KP_STAR;
+		case XK_KP_Equal:
+			return K_KP_EQUALS;
+		case XK_Print:
+			return K_PRINT_SCR;
+		case XK_Alt_R: case XK_ISO_Level3_Shift:
+			return K_RIGHT_ALT;
+		default:
+			// use the legacy Doom3 keycode mapping to remain as backwards-compatible as possible
+			return s_scantokey[event->keycode & 0x7F];
+	}
+}
+
 /*
 =================
 IN_Clear_f
@@ -373,8 +492,9 @@ static bool Sys_XRepeatPress( XEvent *event ) {
 			} else {
 				// shouldn't we be doing a release/press in this order rather?
 				// ( doesn't work .. but that's what I would have expected to do though )
-				Posix_QueEvent( SE_KEY, s_scantokey[peekevent.xkey.keycode], true, 0, NULL);
-				Posix_QueEvent( SE_KEY, s_scantokey[peekevent.xkey.keycode], false, 0, NULL);
+				byte mappedKey = MapKeySym((XKeyEvent*)&peekevent);
+				Posix_QueEvent( SE_KEY, mappedKey, true, 0, NULL);
+				Posix_QueEvent( SE_KEY, mappedKey, false, 0, NULL);
 			}
 		}
   	}
@@ -393,7 +513,8 @@ void Posix_PollInput() {
 	static XKeyEvent *key_event = (XKeyEvent*)&event;
   	int lookupRet;
 	int b, dx, dy;
-	KeySym keysym;	
+	KeySym keysym;
+	byte mappedKey;
 	
 	if ( !dpy ) {
 		return;
@@ -406,15 +527,8 @@ void Posix_PollInput() {
 		XNextEvent( dpy, &event );
 		switch (event.type) {
 			case KeyPress:
-				#ifdef XEVT_DBG
-				if (key_event->keycode > 0x7F)
-					common->DPrintf("WARNING: KeyPress keycode > 0x7F");
-				#endif
-				key_event->keycode &= 0x7F;
-				#ifdef XEVT_DBG2
-					printf("SE_KEY press %d\n", key_event->keycode);
-				#endif
-				Posix_QueEvent( SE_KEY, s_scantokey[key_event->keycode], true, 0, NULL);
+				mappedKey = MapKeySym(key_event);
+				Posix_QueEvent( SE_KEY, mappedKey, true, 0, NULL);
 				lookupRet = XLookupString(key_event, buf, sizeof(buf), &keysym, NULL);
 				if (lookupRet > 0) {
 					char s = buf[0];
@@ -427,7 +541,7 @@ void Posix_PollInput() {
 					#endif
 					Posix_QueEvent( SE_CHAR, s, 0, 0, NULL);
 				}
-				if (!Posix_AddKeyboardPollEvent( s_scantokey[key_event->keycode], true ))
+				if (!Posix_AddKeyboardPollEvent( mappedKey, true ))
 					return;
 			break;			
 				
@@ -438,16 +552,9 @@ void Posix_PollInput() {
 					#endif
 					continue;
 				}
-				#ifdef XEVT_DBG
-				if (key_event->keycode > 0x7F)
-					common->DPrintf("WARNING: KeyRelease keycode > 0x7F");
-				#endif
-				key_event->keycode &= 0x7F;
-				#ifdef XEVT_DBG2
-					printf("SE_KEY release %d\n", key_event->keycode);
-				#endif
-				Posix_QueEvent( SE_KEY, s_scantokey[key_event->keycode], false, 0, NULL);
-				if (!Posix_AddKeyboardPollEvent( s_scantokey[key_event->keycode], false ))
+				mappedKey = MapKeySym(key_event);
+				Posix_QueEvent( SE_KEY, mappedKey, false, 0, NULL);
+				if (!Posix_AddKeyboardPollEvent( mappedKey, false ))
 					return;
 			break;
 				
