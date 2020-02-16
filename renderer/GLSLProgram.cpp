@@ -15,10 +15,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "precompiled.h"
 #include "GLSLProgram.h"
-#include "tr_local.h"
 #include "GLSLUniforms.h"
 #include <memory>
 #include "StdString.h"
+#include "Profiling.h"
 
 idCVar r_debugGLSL("r_debugGLSL", "0", CVAR_BOOL|CVAR_ARCHIVE, "If enabled, checks and warns about additional potential sources of GLSL shader errors.");
 
@@ -72,6 +72,7 @@ void GLSLProgram::BindAttribLocation( unsigned location, const char *attribName 
 bool GLSLProgram::Link() {
 	common->Printf( "Linking GLSL program %s ...\n", name.c_str() );
 	qglLinkProgram( program );
+	GL_SetDebugLabel( GL_PROGRAM, program, name );
 
 	GLint result = GL_FALSE;
 	qglGetProgramiv( program, GL_LINK_STATUS, &result );
@@ -142,6 +143,7 @@ void GLSLProgram::LoadAndAttachShader( GLint shaderType, const char *sourceFile,
 		return;
 	}
 	qglAttachShader( program, shader );
+	GL_SetDebugLabel( GL_SHADER, shader, sourceFile );
 	// won't actually be deleted until the program it's attached to is deleted
 	qglDeleteShader( shader );
 }

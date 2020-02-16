@@ -21,7 +21,8 @@
 #include <thread>
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
 #include <condition_variable>
-	
+#include "Profiling.h"
+
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
 */
@@ -562,6 +563,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	GL_CheckErrors();
 	this->Bind();
 	GL_CheckErrors();
+	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
 		//Routine test( &uploading );
 		auto start = Sys_Milliseconds();
@@ -694,6 +696,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	uploadWidth = scaled_width;
 
 	this->Bind();
+	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
 	// no other clamp mode makes sense
 	qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -1197,6 +1200,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 	type = TT_2D;			// FIXME: we may want to support pre-compressed cube maps in the future
 
 	this->Bind();
+	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
 	int numMipmaps = 1;
 	if ( header->dwFlags & DDSF_MIPMAPCOUNT ) {
@@ -1429,13 +1433,14 @@ void idImage::Bind() {
 	}
 #endif
 
-	// load the image if necessary (FIXME: not SMP safe!)
+	// load the image if necessary
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		auto start = Sys_Milliseconds();
 		ActuallyLoadImage( true );	// check for precompressed, load is from back end
 		backEnd.pc.textureLoadTime += (Sys_Milliseconds() - start);
 		backEnd.pc.textureLoads++;
 	}
+
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		globalImages->whiteImage->Bind();
 		return;

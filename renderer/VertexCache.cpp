@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "Profiling.h"
 
 const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK+1;
 
@@ -106,6 +107,7 @@ static void AllocGeoBufferSet( geoBufferSet_t &gbs, const int vertexBytes, const
 static void LockGeoBufferSet( int frame ) {
 	GL_CheckErrors();
 	bufferLock[frame] = qglFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
+	GL_SetDebugLabel( bufferLock[frame], "VertexCache Frame Lock" );
 }
 
 static void WaitForGeoBufferSet( int frame ) {
@@ -247,6 +249,8 @@ void idVertexCache::Init() {
 	qglBindVertexArray( vao ); 
 	
 	AllocGeoBufferSet( dynamicData, currentVertexCacheSize * VERTCACHE_NUM_FRAMES, currentIndexCacheSize * VERTCACHE_NUM_FRAMES );
+	GL_SetDebugLabel( GL_BUFFER, dynamicData.vertexBuffer.GetAPIObject(), "VertexCache" );
+	GL_SetDebugLabel( GL_BUFFER, dynamicData.indexBuffer.GetAPIObject(), "IndexCache" );
 	EndFrame();
 }
 

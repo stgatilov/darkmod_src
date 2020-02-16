@@ -31,6 +31,9 @@ void ProfilingEndFrame();
 void ProfilingDrawCurrentTimings();
 void ProfilingPrintTimings_f( const idCmdArgs &args );
 
+void GL_SetDebugLabel(GLenum identifier, GLuint name, const idStr &label );
+void GL_SetDebugLabel(void *ptr, const idStr &label );
+
 class GlProfileScope {
 public:
 	GlProfileScope(const char* section) {

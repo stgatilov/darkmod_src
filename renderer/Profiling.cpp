@@ -220,3 +220,15 @@ void ProfilingPrintTimings_f( const idCmdArgs &args ) {
 	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
 	ProfilingPrintSectionTimings( *s, "" );
 }
+
+void GL_SetDebugLabel(GLenum identifier, GLuint name, const idStr &label ) {
+	if( r_useDebugGroups.GetBool() ) {
+		qglObjectLabel( identifier, name, std::min(label.Length(), 256), label.c_str() );
+	}
+}
+
+void GL_SetDebugLabel(void *ptr, const idStr &label ) {
+	if( r_useDebugGroups.GetBool() ) {
+		qglObjectPtrLabel( ptr, std::min(label.Length(), 256), label.c_str() );
+	}
+}
