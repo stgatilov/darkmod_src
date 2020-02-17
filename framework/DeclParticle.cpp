@@ -978,17 +978,23 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 
 		switch( directionType ) {
 			case PDIR_CONE: {
-				// angle is the full angle, so 360 degrees is any spherical direction
-				angle1 = g->random.CRandomFloat() * directionParms[0] * idMath::M_DEG2RAD;
-				angle2 = g->random.CRandomFloat() * idMath::PI;
+				if (directionParms[0] != 0.0) {
+					// angle is the full angle, so 360 degrees is any spherical direction
+					angle1 = g->random.CRandomFloat() * directionParms[0] * idMath::M_DEG2RAD;
+					angle2 = g->random.CRandomFloat() * idMath::PI;
 		
-				float s1, c1, s2, c2;
-				idMath::SinCos16( angle1, s1, c1 );
-				idMath::SinCos16( angle2, s2, c2 );
+					float s1, c1, s2, c2;
+					idMath::SinCos16( angle1, s1, c1 );
+					idMath::SinCos16( angle2, s2, c2 );
 
-				dir[0] = s1 * c2;
-				dir[1] = s1 * s2;
-				dir[2] = c1;
+					dir[0] = s1 * c2;
+					dir[1] = s1 * s2;
+					dir[2] = c1;
+				}
+				else {
+					// constant direction optimization
+					dir.Set(0.0f, 0.0f, 1.0f);
+				}
 				break;
 			}
 			case PDIR_OUTWARD: {
