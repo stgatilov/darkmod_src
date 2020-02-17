@@ -13482,7 +13482,7 @@ void idEntity::CheckCollision(idEntity* collidedWith)
 		bindMaster = parent->GetBindMaster();
 	}
 
-	// If we found a parent, am I on the list of all children?
+	// If we found a parent, is held item on the list of all children?
 	if (parent)
 	{
 		idList<idEntity *> children;
@@ -13490,7 +13490,7 @@ void idEntity::CheckCollision(idEntity* collidedWith)
 		for ( int i = 0 ; i < children.Num() ; i++ )
 		{
 			idEntity *child = children[i];
-			if ( child == this )
+			if ( child == entHeld )
 			{
 				grabber->StopDrag();
 				return;
