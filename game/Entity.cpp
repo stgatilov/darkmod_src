@@ -834,6 +834,9 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	
 	renderEntity->nospectrum = args->GetInt( "nospectrum" );
 
+	// translucent sort order control
+	renderEntity->sortOffset = args->GetInt( "drawSortOffset" );
+
 	// check noshadows flag
 	renderEntity->noShadow = args->GetBool( "noshadows" );
 

@@ -1146,9 +1146,15 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	} else {
 		drawSurf->particle_radius = 0.0f;
 	}
-	if ( space->entityDef && space->entityDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) {
-		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
-		tr.pc.c_noshadowSurfs++;
+	if ( auto eDef = space->entityDef ) {
+		if ( eDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) {
+			drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
+			tr.pc.c_noshadowSurfs++;
+		}
+		if ( !r_ignore.GetBool() )
+			drawSurf->sort += eDef->parms.sortOffset;
+		if ( eDef->parms.sortOffset )
+			Sleep(0);
 	}
 
 	// bumping this offset each time causes surfaces with equal sort orders to still

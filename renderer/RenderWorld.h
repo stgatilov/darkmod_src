@@ -156,6 +156,7 @@ typedef struct renderEntity_s {
 	int						forceUpdate;			// force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
 	int						timeGroup;
 	int						xrayIndex;
+	int						sortOffset;				// 2.08: mappers finetune translucent draw order
 } renderEntity_t;
 
 
