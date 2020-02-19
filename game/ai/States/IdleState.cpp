@@ -240,7 +240,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 	{
 		// No idle position saved yet, take the current one
 		memory.idlePosition = owner->GetPhysics()->GetOrigin();
-		memory.startSitLocation = memory.idlePosition; // grayman #3989
+		memory.returnSitPosition = memory.idlePosition; // grayman #3989
 		memory.idleYaw = owner->GetCurrentYaw();
 	}
 

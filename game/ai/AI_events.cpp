@@ -3463,7 +3463,7 @@ void idAI::Event_HitByDoor(idEntity* door)
 
 void idAI::Event_GetVectorToIdealOrigin()
 {
-	idThread::ReturnVector(GetMemory().startSitLocation - GetPhysics()->GetOrigin()); // grayman #4936
+	idThread::ReturnVector(GetMemory().returnSitPosition - GetPhysics()->GetOrigin()); // grayman #4936
 }
 
 

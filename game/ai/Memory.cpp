@@ -39,7 +39,7 @@ Memory::Memory(idAI* owningAI) :
 	currentlyHeadTurning(false),
 	headTurnEndTime(0),
 	idlePosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-	startSitLocation(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY), // grayman #3989
+	returnSitPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY), // grayman #3989
 	idleYaw(0),
 	playIdleAnimations(true),
 	enemiesHaveBeenSeen(false),
@@ -138,7 +138,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(currentlyBarking); // grayman #3182
 	savefile->WriteInt(headTurnEndTime);
 	savefile->WriteVec3(idlePosition);
-	savefile->WriteVec3(startSitLocation); // grayman #3989
+	savefile->WriteVec3(returnSitPosition); // grayman #3989
 	savefile->WriteFloat(idleYaw);
 	savefile->WriteBool(playIdleAnimations);
 	savefile->WriteBool(enemiesHaveBeenSeen);
@@ -279,7 +279,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(currentlyBarking); // grayman #3182
 	savefile->ReadInt(headTurnEndTime);
 	savefile->ReadVec3(idlePosition);
-	savefile->ReadVec3(startSitLocation); // grayman #3989
+	savefile->ReadVec3(returnSitPosition); // grayman #3989
 	savefile->ReadFloat(idleYaw);
 	savefile->ReadBool(playIdleAnimations);
 	savefile->ReadBool(enemiesHaveBeenSeen);

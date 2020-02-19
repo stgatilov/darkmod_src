@@ -13402,17 +13402,7 @@ void idAI::FallAsleep()
 
 	SetMoveType(MOVETYPE_FALL_ASLEEP);
 	SetWaitState("fall_asleep");
-	/*
-	// grayman #3989 - If startSitLocation is set,
-	// then save the vector from my origin to startSitLocation.
-	// This is useful when sitting down and lying down, to make sure I sit
-	// or lay down in the most accurate place.
-	ai::Memory& memory = GetMemory();
-	if ( memory.startSitLocation.x < idMath::INFINITY )
-	{
-		vectorToIdealOrigin = memory.startSitLocation - GetPhysics()->GetOrigin();
-	}
-	*/
+
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
 	// floor yet when mappers start them floating above the floor.

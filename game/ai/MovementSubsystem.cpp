@@ -296,25 +296,25 @@ void MovementSubsystem::NextPath()
 	idPathCorner* path = memory.currentPath.GetEntity();
 
 	// The current path gets stored in lastPath (grayman #2345 - but only if it's a path_corner)
-	if ((path == NULL) || (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0)) // grayman #2683 - check for null
+	if ( (path == NULL) || (idStr::Cmp(path->spawnArgs.GetString("classname"), "path_corner") == 0) ) // grayman #2683 - check for null
 	{
 		memory.lastPath = path;
 	}
 
-    // The pre-selected "next path" is now our current one
-    idPathCorner* currentPath = memory.nextPath.GetEntity();
+	// The pre-selected "next path" is now our current one
+	idPathCorner* currentPath = memory.nextPath.GetEntity();
 
 	memory.currentPath = currentPath;
 
-    // Now pre-select a new (random) path entity for the next round
-    // this information is important for the PathCornerTask to decide which action to take on exit
+	// Now pre-select a new (random) path entity for the next round
+	// this information is important for the PathCornerTask to decide which action to take on exit
 	idPathCorner* next(NULL);
-	if (currentPath != NULL)
+	if ( currentPath != NULL )
 	{
 		next = idPathCorner::RandomPath(currentPath, NULL, owner);
 	}
-	
-    memory.nextPath = next;
+
+	memory.nextPath = next;
 }
 
 void MovementSubsystem::StartPathTask()

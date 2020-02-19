@@ -299,7 +299,7 @@ public:
 	int headTurnEndTime;
 
 	idVec3 idlePosition;
-	idVec3 startSitLocation; // grayman #3989
+	idVec3 returnSitPosition; // grayman #3989
 	float idleYaw;
 
 	// angua: whether the AI should play idle animations
