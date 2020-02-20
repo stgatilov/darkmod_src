@@ -389,7 +389,7 @@ void R_InitOpenGL( void ) {
 
 
 	if( glConfig.debugGroupsAvailable ) {
-		qglDebugMessageCallbackKHR( R_OpenGLDebugMessageCallback, nullptr );
+		qglDebugMessageCallback( R_OpenGLDebugMessageCallback, nullptr );
 		if( r_glDebugOutput.GetBool() ) {
 			qglEnable( GL_DEBUG_OUTPUT );
 		} else {
