@@ -277,6 +277,12 @@ void idVertexCache::Shutdown() {
 	ClearGeoBufferSet( dynamicData );
 	dynamicData.vertexBuffer.FreeBufferObject();
 	dynamicData.indexBuffer.FreeBufferObject();
+	for ( int i = 0; i < VERTCACHE_NUM_FRAMES; ++i ) {
+		if( bufferLock[i] != 0 ) {
+			qglDeleteSync( bufferLock[i] );
+			bufferLock[i] = 0;
+		}
+	}
 }
 
 /*
