@@ -1151,7 +1151,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
 			tr.pc.c_noshadowSurfs++;
 		}
-		if ( !r_ignore.GetBool() )
+		if ( !r_ignore.GetBool() && eDef->parms.sortOffset )
 			drawSurf->sort += eDef->parms.sortOffset;
 	}
 

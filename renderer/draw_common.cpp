@@ -901,7 +901,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
-	if ( drawSurfs[0]->material->GetSort() >= SS_AFTER_FOG && !backEnd.viewDef->IsLightGem() ) {
+	if ( drawSurfs[0]->sort >= SS_AFTER_FOG && !backEnd.viewDef->IsLightGem() ) {
 		if ( r_skipPostProcess.GetBool() ) {
 			return 0;
 		}
@@ -934,11 +934,11 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// we need to draw the post process shaders after we have drawn the fog lights
-		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
+		if ( drawSurfs[i]->sort >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
 			break;
 		}
 
-		if ( drawSurfs[i]->material->GetSort() == SS_AFTER_FOG && !backEnd.afterFogRendered ) {
+		if ( drawSurfs[i]->sort == SS_AFTER_FOG && !backEnd.afterFogRendered ) {
 			break;
 		}
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );

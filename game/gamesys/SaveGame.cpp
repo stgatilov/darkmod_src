@@ -361,6 +361,7 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteBool( renderEntity.weaponDepthHack );
 
 	WriteInt( renderEntity.forceUpdate );
+	WriteInt( renderEntity.sortOffset );
 }
 
 void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
@@ -956,6 +957,7 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadBool( renderEntity.weaponDepthHack );
 
 	ReadInt( renderEntity.forceUpdate );
+	ReadInt( renderEntity.sortOffset );
 }
 
 void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
