@@ -589,6 +589,9 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 		}
 	}
 	vertexCache.PrepareStaticCacheForUpload();
+	// previous frame contents are now invalid, purge them
+	R_ToggleSmpFrame();
+	R_ToggleSmpFrame();
 
 	// _D3XP added this
 	int	end = Sys_Milliseconds();
