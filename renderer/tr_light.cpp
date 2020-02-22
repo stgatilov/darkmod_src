@@ -1153,8 +1153,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		}
 		if ( !r_ignore.GetBool() )
 			drawSurf->sort += eDef->parms.sortOffset;
-		if ( eDef->parms.sortOffset )
-			Sleep(0);
 	}
 
 	// bumping this offset each time causes surfaces with equal sort orders to still
