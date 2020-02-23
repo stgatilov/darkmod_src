@@ -20,6 +20,7 @@
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
+#include "AmbientOcclusionStage.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -233,7 +234,7 @@ idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use t
 
 // FBO
 idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL, "Use framebuffer objects" );
-idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-4 individual fbo attachments" );
+idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-5 individual fbo attachments" );
 idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32" );
 idCVarBool r_fboSRGB( "r_fboSRGB", "0", CVAR_RENDERER | CVAR_ARCHIVE, "Use framebuffer-level gamma correction" );
 idCVar r_fboDepthBits( "r_fboDepthBits", "24", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "16, 24, 32" );
@@ -1567,6 +1568,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		session->TerminateFrontendThread();
 		vertexCache.Shutdown();
 		FB_Clear();
+		ambientOcclusion->Shutdown();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 
@@ -1854,6 +1856,8 @@ void idRenderSystemLocal::Shutdown( void ) {
 	R_ShutdownTriSurfData();
 
 	RB_ShutdownDebugTools();
+
+	ambientOcclusion->Shutdown();
 
 	delete guiModel;
 	delete demoGuiModel;

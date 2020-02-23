@@ -22,6 +22,7 @@
 #include "GLSLProgram.h"
 #include "GLSLUniforms.h"
 #include "GLSLProgramManager.h"
+#include "AmbientOcclusionStage.h"
 
 struct CubemapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( CubemapUniforms );
@@ -1272,6 +1273,11 @@ void RB_STD_DrawView( void ) {
 		// fill the depth buffer and clear color buffer to black except on subviews
 		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 		GL_CheckErrors();
+
+		if( r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+			ambientOcclusion->ComputeSSAOFromDepth();
+		}
+
 		RB_GLSL_DrawInteractions();
 		GL_CheckErrors();
 	}

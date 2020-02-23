@@ -91,7 +91,10 @@ GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines
 }
 
 GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idDict &defines ) {
-	return LoadFromFiles( name, vertexSource, fragmentSource, nullptr, defines );
+	Generator generator = [=]( GLSLProgram *program ) {
+		DefaultProgramInit( program, defines, vertexSource, fragmentSource );
+	};
+	return LoadFromGenerator( name, generator );
 }
 
 GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idStr &geometrySource, const idDict &defines ) {

@@ -643,6 +643,10 @@ void idImage::GenerateAttachment( int width, int height, GLint format ) {
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, width, height, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, nullptr );
 			common->Printf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
 			break;
+		case GL_RED:
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr );
+			common->Printf( "Generated framebuffer GL_RED attachment: %dx%d\n", width, height );
+			break;
 		default:
 			common->Error( "Unsupported format in GenerateAttachment\n" );
 	}
