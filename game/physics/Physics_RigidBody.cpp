@@ -1704,7 +1704,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	}
 
 	// if putting the body to rest
-	if (dropToFloor && !self->m_droppedByAI) // grayman #1330 - only go straight to the floor if an AI didn't drop it
+	if (dropToFloor && !self->m_droppedByAI && !self->m_isFlinder)	// grayman #1330 - only go straight to the floor if an AI didn't drop it
+																	// grayman #4230 - and it's not a flinder
 	{
 		DropToFloorAndRest();
 		current.externalForce.Zero();

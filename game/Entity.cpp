@@ -974,6 +974,8 @@ idEntity::idEntity()
 
 	m_droppedByAI	= false;	// grayman #1330
 
+	m_isFlinder		= false;	// grayman #4230
+
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
 	m_CustomContents		= -1;
@@ -2187,6 +2189,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_droppedByAI);		// grayman #1330
 
+	savefile->WriteBool(m_isFlinder);		// grayman #4230
+
 	savefile->WriteInt(m_LODHandle);
 	savefile->WriteInt(m_DistCheckTimeStamp);
 	savefile->WriteInt(m_LODLevel);
@@ -2502,7 +2506,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_LightQuotient);
 	savefile->ReadInt(m_LightQuotientLastEvalTime);
 
-	savefile->ReadBool(m_droppedByAI); // grayman #1330
+	savefile->ReadBool(m_droppedByAI);	// grayman #1330
+
+	savefile->ReadBool(m_isFlinder);	// grayman #4230
 
 	savefile->ReadUnsignedInt(m_LODHandle);
 	savefile->ReadInt(m_DistCheckTimeStamp);
@@ -3118,17 +3124,17 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 {
 	int spawned = 0;
 	
-	for (int i = 0; i < fs.m_Count; i++)
+	for ( int i = 0 ; i < fs.m_Count ; i++ )
 	{
-		// probability 0.6 => spawn in only 60% of all cases
-		if (fs.m_Probability < 1.0 &&
-			gameLocal.random.RandomFloat() >= fs.m_Probability)
+		// probability of spawning
+
+		if ( (fs.m_Probability < 1.0) && (gameLocal.random.RandomFloat() > fs.m_Probability) )
 		{
 			continue;
 		}
 
 		const idDict *p_entityDef = gameLocal.FindEntityDefDict( fs.m_Entity.c_str(), false );
-	    if( p_entityDef )
+	    if ( p_entityDef )
 		{
 			idEntity *flinder;
 			gameLocal.SpawnEntityDef( *p_entityDef, &flinder, false );
@@ -3140,27 +3146,31 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 				gameLocal.Error( "Failed to spawn flinder entity %s", fs.m_Entity.c_str() );
 				return -1;
 	        }
-			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Spawned entity %s\r", flinder->GetName() ); 
 
-			physics = flinder->GetPhysics();
+			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING(" Spawned entity %s\r", flinder->GetName());
+
+			flinder->m_isFlinder = true; // grayman #4230 - flinders fly, they don't drop straight to the floor
 
 			// move the entity to the origin (plus offset) and orientation of the original
+
+			physics = flinder->GetPhysics();
 			physics->SetOrigin( GetPhysics()->GetOrigin() + fs.m_Offset );
 			physics->SetAxis( GetPhysics()->GetAxis() );
+
 			// give the flinders the same speed as the original entity (in case it breaks
-			// up while on the move
+			// up while on the move)
 			// tels FIXME: We would need to count how many flinders were spawned then distribute
 			//			   the impulse from the activator in equal parts to each of them.
 			// tels FIXME: Currently these are zero when an arrow hits a bottle.
 
 			// for now add a small random speed so the object moves
-			// tels FIXME: Doesn't work. Because the flinder is inside the still solid
-			//				entity?
+			// tels FIXME: Doesn't work. Because the flinder is inside the still solid entity?
+
 			TumbleVec[0] += (gameLocal.random.RandomFloat() * 20) - 10;
 			TumbleVec[1] += (gameLocal.random.RandomFloat() * 20) - 10;
 			TumbleVec[2] += (gameLocal.random.RandomFloat() * 20) - 10;
 
-			physics->SetLinearVelocity( 
+			physics->SetLinearVelocity(
 				GetPhysics()->GetLinearVelocity() 
 				+ activator->GetPhysics()->GetLinearVelocity()
 				+ TumbleVec
@@ -3183,7 +3193,7 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 				physics->GetAngularVelocity().z ); 
 			*/
 
-			if( activator->IsType(idActor::Type) )
+			if ( activator->IsType(idActor::Type) )
 			{
 				idActor *actor = static_cast<idActor *>(activator);
 				flinder->m_SetInMotionByActor = actor;
@@ -3191,9 +3201,12 @@ int idEntity::SpawnFlinder( const FlinderSpawn& fs, idEntity *activator )
 			}
 
 			// activate the flinder, so it falls realistically down
+
 			flinder->BecomeActive(TH_PHYSICS|TH_THINK);
+
 			// FIXME if this entity has a skin, set the same skin on the flinder
 			// FIXME add a small random impulse outwards from entity origin
+
 			spawned++;
 		}
 	} // end for m_Count
@@ -9751,11 +9764,11 @@ void idEntity::Flinderize( idEntity *activator )
 
 	// tels: go through all the def_flinder spawnargs and call SpawnFlinder() for each
 	const idKeyValue *kv = spawnArgs.MatchPrefix( "def_flinder", NULL );
-	while( kv )
+	while ( kv )
 	{
 		idStr temp = kv->GetValue();
 		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Loading def_flinder %s:\r", temp.c_str() );
-		if( !temp.IsEmpty() )
+		if ( !temp.IsEmpty() )
 		{
 			// fill in the name and some defaults
 			fs.m_Entity = temp;
@@ -9776,13 +9789,15 @@ void idEntity::Flinderize( idEntity *activator )
 			spawnArgs.GetInt   ("flinder_count"       + index,   "1", fs.m_Count);
 			spawnArgs.GetFloat ("flinder_probability" + index, "1.0", fs.m_Probability);
 
-			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Offset is %f,%f,%f:\r", fs.m_Offset.x, fs.m_Offset.y, fs.m_Offset.z );
-			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Count is %i:\r", fs.m_Count );
-			// DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Probability is %f:\r", fs.m_Probability );
-			// evaluate what we found and spawn the individual pieces
-			spawned += SpawnFlinder( fs, activator );
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Offset is %f,%f,%f:\r", fs.m_Offset.x, fs.m_Offset.y, fs.m_Offset.z );
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Count is %i:\r", fs.m_Count );
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Probability is %f:\r", fs.m_Probability );
 
+			// evaluate what we found and spawn the individual pieces
+
+			spawned += SpawnFlinder( fs, activator );
 		}
+
 		kv = spawnArgs.MatchPrefix( "def_flinder", kv );
 	} // while MatchPrefix ("def_flinder")
 

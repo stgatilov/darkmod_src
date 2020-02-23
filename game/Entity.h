@@ -416,6 +416,8 @@ public:
 
 	bool					m_droppedByAI;	// grayman #1330
 
+	bool					m_isFlinder;	// grayman #4230
+
 	/**
 	* Tels: Contains handle to (sharable, constant) LOD data if != 0.
 	*/
