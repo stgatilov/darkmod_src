@@ -104,7 +104,7 @@ namespace {
 		idRandom rnd(12345);
 		idList<idVec3> noise;
 		for ( int i = 0; i < 16; ++i ) {
-			idVec3 randomVec(rnd.RandomFloat(), rnd.RandomFloat(), rnd.RandomFloat());
+			idVec3 randomVec(rnd.RandomFloat(), rnd.RandomFloat(), 0.5);
 			noise.Append(randomVec);
 		}
 		image->type = TT_2D;

@@ -28,33 +28,24 @@ uniform block {
 float nearZ = -0.5 * u_projectionMatrix[3][2];
 vec2 halfTanFov = vec2(1 / u_projectionMatrix[0][0], 1 / u_projectionMatrix[1][1]);
 
-// map a texel in the depth texture back to view space coordinates by reversing the projection
-vec3 texCoordToViewPos(vec2 texCoord) {
+float depthToZ(vec2 texCoord) {
 	float depth = texture(u_depthTexture, texCoord).r;
-	vec3 viewPos;
-	viewPos.z = nearZ / (depth - 1.999/2);
-	viewPos.xy = -halfTanFov * (2 * texCoord - 1) * viewPos.z;
-	return viewPos;
+	return nearZ / (depth + 0.5 * (u_projectionMatrix[2][2] - 1));
 }
 
-vec2 depthTexSize = vec2(textureSize(u_depthTexture, 0));
-vec2 texOffsets[] = vec2[](vec2(1/depthTexSize.x, 0), vec2(0, 1/depthTexSize.y));
-
-// approximate the current texel's normal in view space by projecting two adjacent texels to view space
-// to calculate tangent vectors, which can then be crossed for a normal
-vec3 approximateViewSpaceNormal(vec3 position, vec2 texCoords) {
-	vec3 a = texCoordToViewPos(texCoords + texOffsets[0]) - position;
-	vec3 b = texCoordToViewPos(texCoords + texOffsets[1]) - position;
-	vec3 normal = cross(a, b);
-	return normalize(normal);
+// map a texel in the depth texture back to view space coordinates by reversing the projection
+vec3 texCoordToViewPos(vec2 texCoord) {
+	vec3 viewPos;
+	viewPos.z = depthToZ(texCoord);
+	viewPos.xy = -halfTanFov * (2 * texCoord - 1) * viewPos.z;
+	return viewPos;
 }
 
 // determine the actual occluding depth value in view space for a given view space position
 float occluderZAtViewPos(vec3 viewPos) {
 	vec4 clipPos = u_projectionMatrix * vec4(viewPos, 1);
 	vec2 texCoord = 0.5 + 0.5 * (clipPos.xy / clipPos.w);
-	float depth = texture(u_depthTexture, texCoord).r;
-	return nearZ / (depth - 1.999/2);
+	return depthToZ(texCoord);
 }
 
 // the actual sample kernel, samples should be distributed over the unit hemisphere with z >= 0
@@ -64,7 +55,9 @@ uniform int u_kernelSize;
 void main() {
 	// calculate the position and normal of the current texel in view space
 	vec3 position = texCoordToViewPos(var_TexCoord);
-	vec3 normal = approximateViewSpaceNormal(position, var_TexCoord);
+	vec3 dx = dFdx(position);
+	vec3 dy = dFdy(position);
+	vec3 normal = normalize(cross(dx, dy));
 
 	// query a small noise texture to acquire a random rotation vector
 	vec2 noiseScale = vec2(textureSize(u_depthTexture, 0)) / 4;
