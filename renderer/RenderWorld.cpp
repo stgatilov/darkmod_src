@@ -1372,7 +1372,7 @@ void idRenderWorldLocal::RecurseProcBSP_r( modelTrace_t *results, int *areas, in
 			return;
 		nodeNum = -1 - nodeNum;
 		int i;
-		for ( int i = 0; i < *numAreas; i++ ) {
+		for ( i = 0; i < *numAreas; i++ ) {
 			if ( areas[i] == nodeNum )
 				break;
 		}
