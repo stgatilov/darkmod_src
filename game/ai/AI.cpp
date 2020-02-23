@@ -1047,6 +1047,7 @@ void idAI::Save(idSaveGame *savefile) const {
 	savefile->WriteBool(m_LatchedSearch);	// grayman #2603
 	savefile->WriteBool(m_ReactingToPickedPocket); // grayman #3559
 	savefile->WriteBool(m_InConversation);	// grayman #3559
+	savefile->WriteInt(m_nextWarningTime);	// grayman #5164
 
 	// grayman #2603
 	savefile->WriteInt( m_dousedLightsSeen.Num() );
@@ -1536,6 +1537,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_LatchedSearch);	// grayman #2603
 	savefile->ReadBool(m_ReactingToPickedPocket); // grayman #3559
 	savefile->ReadBool(m_InConversation);	// grayman #3559
+	savefile->ReadInt(m_nextWarningTime);	// grayman #5164
 
 	// grayman #2603
 	m_dousedLightsSeen.Clear();
@@ -2109,6 +2111,7 @@ void idAI::Spawn( void )
 	m_DroppingTorch = false;	// grayman #2603
 	m_ReactingToPickedPocket = false; // grayman #3559
 	m_InConversation = false;	// grayman #3559
+	m_nextWarningTime = 0;		// grayman #5164
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");

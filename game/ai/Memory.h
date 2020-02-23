@@ -250,7 +250,7 @@ public:
 	// Our next path entity
 	idEntityPtr<idPathCorner> nextPath;
 
-	// Our last path entity
+	// Our last path_corner entity
 	idEntityPtr<idPathCorner> lastPath;
 
 	// The game time, the AlertLevel was last increased.

@@ -49,6 +49,32 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 
 	idPathCorner* path = _path.GetEntity();
 
+	// grayman #5164 - Am I too far away to sit?
+
+	idPathCorner* lastPath = owner->GetMemory().lastPath.GetEntity(); // path_corner preceding path_sit
+	if ( lastPath )
+	{
+		idVec3 aiOrigin = owner->GetPhysics()->GetOrigin();
+		idVec3 sitLocation = lastPath->GetPhysics()->GetOrigin();
+		sitLocation.z = aiOrigin.z; // remove z vector
+		float dist = (sitLocation - aiOrigin).LengthFast();
+
+		// if dist is too far, terminate the sit.
+
+		float accuracy = _accuracy; // move_to_position_tolerance
+		if ( accuracy <= 0 )
+		{
+			accuracy = 16; // default
+		}
+
+		if ( dist > accuracy )
+		{
+			gameLocal.Warning("%s (%s) can't sit: too far from sitting location %s (%s)\n",owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString());
+			subsystem.FinishTask();
+			return;
+		}
+	}
+
 	// Parse animation spawnargs here
 	
 	float waittime = path->spawnArgs.GetFloat("wait","0");

@@ -1197,6 +1197,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_InConversation;
 
 	/**
+	 * grayman #5164 - the next time a warning can be issued about an AI not being able to reach its starting sit/sleep location
+	 */
+	int						m_nextWarningTime;
+
+	/**
 	 * grayman #2706: is set true when the move prior to door handling is saved
 	 */
 	bool					m_RestoreMove;

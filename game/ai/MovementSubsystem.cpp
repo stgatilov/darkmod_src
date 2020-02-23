@@ -507,7 +507,7 @@ void MovementSubsystem::StartPathTask()
 	else
 	{
 		// Finish this task
-		gameLocal.Warning("Unknown path corner classname '%s' on %s", classname.c_str(),path->name.c_str());
+		gameLocal.Warning("Unknown path node classname '%s' on %s", classname.c_str(),path->name.c_str());
 		return;
 	}
 

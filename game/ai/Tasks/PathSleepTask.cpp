@@ -51,6 +51,36 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	PathTask::Init(owner, subsystem);
 
+	idPathCorner* lastPath = owner->GetMemory().lastPath.GetEntity(); // grayman #5164
+
+	// grayman #5164 - Am I too far away to sleep?
+
+	if ( lastPath )
+	{
+		idVec3 aiOrigin = owner->GetPhysics()->GetOrigin();
+		idVec3 sleepLocation = lastPath->GetPhysics()->GetOrigin();
+		sleepLocation.z = aiOrigin.z; // remove z vector
+		float dist = (sleepLocation - aiOrigin).LengthFast();
+
+		// if dist is too far, terminate the sleep.
+
+		float accuracy = _accuracy;
+		if ( accuracy <= 0 )
+		{
+			accuracy = 16; // default
+		}
+
+		if ( dist > accuracy )
+		{
+			gameLocal.Warning("%s (%s) can't sleep: too far from sleeping location %s (%s)\n", owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString()); // grayman #5164
+			_activateTargets = false; // don't activate targets if you didn't sleep
+			subsystem.FinishTask();
+			return;
+		}
+	}
+
+	_activateTargets = true; // grayman #5164 - activate targets after you sleep
+
 	// grayman #3820 - AI can fall asleep on the floor, on a bed, or on a chair.
 	// This is defined by the 'sleep_location' spawnarg on the path_sleep entity.
 	// To support 2.05 and earlier, where the 'sleep_location' is defined on the AI,
@@ -119,12 +149,15 @@ bool PathSleepTask::Perform(Subsystem& subsystem)
 
 void PathSleepTask::OnFinish(idAI* owner)
 {
-	// grayman #3670 - fire targets
-	idPathCorner* path = _path.GetEntity();
+	if ( _activateTargets ) // grayman #5164 - activate targets if allowed to sleep
+	{
+		// grayman #3670 - fire targets
+		idPathCorner* path = _path.GetEntity();
 
-	// This task may not be performed with an empty path pointer
-	assert( path != NULL );
-	path->ActivateTargets(owner);
+		// This task may not be performed with an empty path pointer
+		assert( path != NULL );
+		path->ActivateTargets(owner);
+	}
 }
 
 PathSleepTaskPtr PathSleepTask::CreateInstance()

@@ -115,6 +115,10 @@ Memory::Memory(idAI* owningAI) :
 	blockedDoorCount(0)		// grayman #3523; grayman #4830
 {
 	attacker = NULL; // grayman #3679 - who attacked me
+
+	lastPath = NULL;	// grayman #5164
+	currentPath = NULL;	// grayman #5164
+	nextPath = NULL;	// grayman #5164
 }
 
 // Save/Restore routines

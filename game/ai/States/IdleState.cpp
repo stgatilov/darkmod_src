@@ -32,9 +32,10 @@
 #include "ObservantState.h"
 #include "../Library.h"
 
+#define		WARNING_DELAY 10000 // grayman #5164 - ms delay between "unreachable" WARNINGs
+
 namespace ai
 {
-
 
 // Get the name of this state
 const idStr& IdleState::GetName() const
@@ -66,7 +67,7 @@ void IdleState::Init(idAI* owner)
 
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
-	
+
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
@@ -199,6 +200,16 @@ void IdleState::Think(idAI* owner)
 			owner->GetMind()->SwitchState(STATE_IDLE_SLEEP);
 			return;
 		}
+		else if ( owner->AI_DEST_UNREACHABLE ) // grayman #5164
+		{
+			if ( gameLocal.time >= owner->m_nextWarningTime )
+			{
+				gameLocal.Warning("%s (%s) can't sleep: too far from sleeping location (%s)\n", owner->GetName(), owner->GetPhysics()->GetOrigin().ToString(), memory.idlePosition.ToString());
+				owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
+				owner->m_nextWarningTime = gameLocal.time + WARNING_DELAY;
+			}
+			return;
+		}
 	}
 	else if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
@@ -211,6 +222,16 @@ void IdleState::Think(idAI* owner)
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
 			owner->SitDown();
+		}
+		else if ( owner->AI_DEST_UNREACHABLE ) // grayman #5164
+		{
+			if ( gameLocal.time >= owner->m_nextWarningTime )
+			{
+				gameLocal.Warning("%s (%s) can't sit: too far from sitting location (%s)\n", owner->GetName(), owner->GetPhysics()->GetOrigin().ToString(), memory.idlePosition.ToString());
+				owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
+				owner->m_nextWarningTime = gameLocal.time + WARNING_DELAY;
+			}
+			return;
 		}
 	}
 
@@ -236,7 +257,7 @@ void IdleState::InitialiseMovement(idAI* owner)
 	owner->movementSubsystem->ClearTasks();
 
 	// angua: store the position at map start
-	if (memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	if ( memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY) )
 	{
 		// No idle position saved yet, take the current one
 		memory.idlePosition = owner->GetPhysics()->GetOrigin();
@@ -244,11 +265,11 @@ void IdleState::InitialiseMovement(idAI* owner)
 		memory.idleYaw = owner->GetCurrentYaw();
 	}
 
-	if (owner->spawnArgs.GetBool("patrol", "1")) // grayman #2683 - only start patrol if you're supposed to 
+	if ( owner->spawnArgs.GetBool("patrol", "1") ) // grayman #2683 - only start patrol if you're supposed to 
 	{
 		// grayman #3528 - if you need to stay where you are, don't start patrolling yet
 
-		if (memory.stayPut)
+		if ( memory.stayPut )
 		{
 			memory.stayPut = false; // reset
 		}
