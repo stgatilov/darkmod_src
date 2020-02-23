@@ -17,6 +17,7 @@ uniform sampler2D u_noiseTexture;
 
 // Adjustable SSAO parameters
 uniform float u_sampleRadius;
+uniform float u_depthCutoff;
 uniform float u_depthBias;
 uniform float u_baseValue;
 uniform float u_power;
@@ -79,9 +80,9 @@ void main() {
 		float occluderZ = occluderZAtViewPos(samplePos);
 		float difference = occluderZ - samplePos.z;
 
-		// introduce a cut-off factor if the depth difference is larger than the radius to avoid unwanted
+		// introduce a cut-off factor if the depth difference is larger than the cutoff to avoid unwanted
 		// shadow halos for objects that are actually a distance apart
-		float rangeCheck = smoothstep(0.0, 1.0, u_sampleRadius / abs(position.z - occluderZ));
+		float rangeCheck = smoothstep(0.0, 1.0, u_depthCutoff / abs(position.z - occluderZ));
 		occlusion += step(u_depthBias, difference) * rangeCheck;
 	}
 

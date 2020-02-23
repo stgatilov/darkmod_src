@@ -29,6 +29,8 @@
 idCVar r_ssao("r_ssao", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Enable screen space ambient occlusion");
 idCVar r_ssao_radius("r_ssao_radius", "24", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 					 "View space sample radius - larger values provide a softer, spread effect, but risk causing unwanted halo shadows around objects");
+idCVar r_ssao_cutoff("r_ssao_cutoff", "8", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+					 "Max view space depth difference - larger distances are considered to not occlude");
 idCVar r_ssao_bias("r_ssao_bias", "0.025", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 				   "Min depth difference to count for occlusion, used to avoid some acne effects");
 idCVar r_ssao_power("r_ssao_power", "1.5", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
@@ -50,6 +52,7 @@ namespace {
 		DEFINE_UNIFORM(sampler, depthTexture)
 		DEFINE_UNIFORM(sampler, noiseTexture)
 		DEFINE_UNIFORM(float, sampleRadius)
+		DEFINE_UNIFORM(float, depthCutoff)
 		DEFINE_UNIFORM(float, depthBias)
 		DEFINE_UNIFORM(float, baseValue)
 		DEFINE_UNIFORM(vec3, sampleKernel)
@@ -62,14 +65,17 @@ namespace {
 	void CreateHemisphereSampleKernel(AOUniforms *uniforms) {
 		// Create random vectors within a unit hemisphere. Used in the SSAO shader
 		// to sample the surrounding geometry.
-		idRandom rnd(54321);
+		std::uniform_real_distribution<float> uniformRandom(0.f, 1.f);
+		std::mt19937 generator (54321);
 		idList<idVec3> kernel;
 		for ( int i = 0; i < MAX_KERNEL_SIZE; ++i ) {
-			// x and y in [-1, 1], z in [0, 1] to stay in the hemisphere
-			idVec3 sample(rnd.CRandomFloat(), rnd.CRandomFloat(), rnd.RandomFloat());
-			sample.Normalize();
-			// ensure a sample distribution closer to the origin
-			float scale = rnd.RandomFloat();
+			// generate a random point on the unit hemisphere
+			float u = uniformRandom(generator), v = uniformRandom(generator);
+			float theta = idMath::ACos(idMath::Sqrt(1 - u));
+			float phi = v * idMath::TWO_PI;
+			idVec3 sample(idMath::Sin(theta)*idMath::Cos(phi), idMath::Sin(theta)*idMath::Sin(phi), idMath::Cos(theta));
+			// now choose a random length, but with a distribution closer to the origin
+			float scale = uniformRandom(generator);
 			scale = Lerp(0.1f, 1.0f, scale * scale);
 			kernel.Append(sample * scale);
 		}
@@ -207,6 +213,7 @@ void AmbientOcclusionStage::SSAOPass() {
 	ssaoShader->Activate();
 	AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
 	uniforms->sampleRadius.Set(r_ssao_radius.GetFloat());
+	uniforms->depthCutoff.Set(r_ssao_cutoff.GetFloat());
 	uniforms->depthBias.Set(r_ssao_bias.GetFloat());
 	uniforms->baseValue.Set(r_ssao_base.GetFloat());
 	uniforms->power.Set(r_ssao_power.GetFloat());
