@@ -27,15 +27,15 @@
 #include "glsl.h"
 
 idCVar r_ssao("r_ssao", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Enable screen space ambient occlusion");
-idCVar r_ssao_radius("r_ssao_radius", "16", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_ssao_radius("r_ssao_radius", "24", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 					 "View space sample radius - larger values provide a softer, spread effect, but risk causing unwanted halo shadows around objects");
 idCVar r_ssao_bias("r_ssao_bias", "0.025", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 				   "Min depth difference to count for occlusion, used to avoid some acne effects");
-idCVar r_ssao_power("r_ssao_power", "4", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_ssao_power("r_ssao_power", "1.5", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 					"SSAO exponential factor, the higher the value, the stronger the effect");
-idCVar r_ssao_base("r_ssao_base", "0.2", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_ssao_base("r_ssao_base", "0.1", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 				   "Minimum baseline visibility below which AO cannot drop");
-idCVar r_ssao_kernelSize("r_ssao_kernelSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_ssao_kernelSize("r_ssao_kernelSize", "12", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE,
 						 "Size of sample kernel (max 128) - higher values will impact performance!");
 
 extern idCVar r_fboResolution;
