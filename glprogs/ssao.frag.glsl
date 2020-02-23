@@ -80,7 +80,7 @@ void main() {
 	float occlusion = 0.0;
 	for (int i = 0; i < u_kernelSize; i++) {
 		// determine sample position in view space
-		vec3 samplePos = position + u_sampleRadius * TBN * u_sampleKernel[i];
+		vec3 samplePos = position + u_sampleRadius * (TBN * u_sampleKernel[i]);
 
 		// determine actual depth at sample position and compare to sample
 		float occluderZ = occluderZAtViewPos(samplePos);
