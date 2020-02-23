@@ -9,6 +9,7 @@ in mat3 var_TangentBinormalNormalMatrix;
 in vec4 var_Color;        
 in vec3 var_tc0;  
 in vec3 var_localViewDir;
+in vec4 var_ClipPosition;
 
 out vec4 FragColor;
      
@@ -28,7 +29,13 @@ uniform float u_gamma, u_minLevel;
 uniform mat4 u_modelMatrix;
 uniform float u_RGTC;
 uniform vec4 u_rimColor;   
-      
+
+uniform sampler2D u_ssaoTexture;
+uniform int u_ssaoEnabled;
+float sampleSSAO() {
+	return texture(u_ssaoTexture, 0.5 + 0.5 * var_ClipPosition.xy / var_ClipPosition.w).r;
+}
+
 void main() {         
 	// compute the diffuse term     
 	vec4 matDiffuse = texture( u_diffuseTexture, var_TexDiffuse );
@@ -92,6 +99,9 @@ void main() {
 		light.rgb += u_rimColor.rgb * NV * NV;
 	}
 
+    if (u_ssaoEnabled == 1) {
+		light *= sampleSSAO();
+	}
 	FragColor = light;
 }
 

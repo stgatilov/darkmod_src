@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
+#include "AmbientOcclusionStage.h"
 
 // all false at start
 bool primaryOn = false, shadowOn = false;
@@ -742,6 +743,9 @@ void LeavePrimary() {
 		case 3:
 			globalImages->shadowDepthFbo->Bind();
 			qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
+			break;
+		case 4:
+			ambientOcclusion->BindSSAOTexture( 0 );
 			break;
 		default:
 			globalImages->currentRenderImage->Bind();

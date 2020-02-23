@@ -35,6 +35,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Profiling.h"
 #include "GLSLProgram.h"
 #include "GLSLProgramManager.h"
+#include "AmbientOcclusionStage.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
@@ -139,6 +140,9 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	ChooseInteractionProgram();
 	Uniforms::Interaction *interactionUniforms = currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>();
 	interactionUniforms->SetForShadows( surf == backEnd.vLight->translucentInteractions );
+	if( r_ssao.GetBool() && backEnd.vLight->lightShader->IsAmbientLight() && !backEnd.viewDef->IsLightGem() ) {
+		ambientOcclusion->BindSSAOTexture( 6 );
+	}
 
 	for ( /**/; surf; surf = surf->nextOnLight ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
@@ -885,6 +889,8 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		} else {
 			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
 		}
+		ssaoTexture.Set( 6 );
+		ssaoEnabled.Set( r_ssao.GetBool() );
 		return;
 	}
 

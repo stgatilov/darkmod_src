@@ -1830,6 +1830,8 @@ void idRenderSystemLocal::Shutdown( void ) {
 	common->Printf( "idRenderSystem::Shutdown()\n" );
 	R_DoneFreeType( );
 
+	ambientOcclusion->Shutdown();
+
 	if ( glConfig.isInitialized ) {
 		globalImages->PurgeAllImages();
 	}
@@ -1856,8 +1858,6 @@ void idRenderSystemLocal::Shutdown( void ) {
 	R_ShutdownTriSurfData();
 
 	RB_ShutdownDebugTools();
-
-	ambientOcclusion->Shutdown();
 
 	delete guiModel;
 	delete demoGuiModel;
