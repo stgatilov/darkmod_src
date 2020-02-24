@@ -1459,6 +1459,9 @@
     <ClInclude Include="renderer\ImmediateRendering.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\AmbientOcclusionStage.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2861,6 +2864,9 @@
       <Filter>Tools\Compilers\Particle</Filter>
     </ClCompile>
     <ClCompile Include="renderer\ImmediateRendering.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\AmbientOcclusionStage.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
