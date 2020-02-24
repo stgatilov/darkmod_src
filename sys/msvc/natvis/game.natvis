@@ -155,7 +155,7 @@
   </Type>
 
   <Type Name="idRenderModelStatic">
-    <DisplayString>rModelStatic {name.data,na} {bounds}</DisplayString>
+    <DisplayString>rModel {name.data,na} {bounds}</DisplayString>
   </Type>
 
   <!-- this is a bit hacky, but allows to inspect game entity of a render entity

@@ -297,6 +297,9 @@ idRenderModel *idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 		modelSurface_t	surf;
 
 		surf.geometry = tri;
+		//stgatilov: surfaces with negative "id" are considered as "overlays" and removed
+		//this caused random flickering of MD3 models (e.g. md3_water_test)
+		surf.id = i;
 
 		md3Shader_t* shaders = (md3Shader_t *) ((byte *)surface + surface->ofsShaders);
 		surf.material = shaders->shader;
