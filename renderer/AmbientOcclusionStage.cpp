@@ -37,7 +37,7 @@ idCVar r_ssao_power("r_ssao_power", "1.5", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARC
 					"SSAO exponential factor, the higher the value, the stronger the effect");
 idCVar r_ssao_base("r_ssao_base", "0.1", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 				   "Minimum baseline visibility below which AO cannot drop");
-idCVar r_ssao_kernelSize("r_ssao_kernelSize", "12", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_ssao_kernelSize("r_ssao_kernelSize", "8", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE,
 						 "Size of sample kernel (max 128) - higher values will impact performance!");
 
 extern idCVar r_fboResolution;
@@ -66,7 +66,7 @@ namespace {
 		// Create random vectors within a unit hemisphere. Used in the SSAO shader
 		// to sample the surrounding geometry.
 		std::uniform_real_distribution<float> uniformRandom(0.f, 1.f);
-		std::mt19937 generator (54321);
+		std::mt19937 generator (543210);
 		idList<idVec3> kernel;
 		for ( int i = 0; i < MAX_KERNEL_SIZE; ++i ) {
 			// generate a random point on the unit hemisphere
@@ -74,11 +74,12 @@ namespace {
 			float theta = idMath::ACos(idMath::Sqrt(1 - u));
 			float phi = v * idMath::TWO_PI;
 			idVec3 sample(idMath::Sin(theta)*idMath::Cos(phi), idMath::Sin(theta)*idMath::Sin(phi), idMath::Cos(theta));
-			// now choose a random length, but with a distribution closer to the origin
-			float scale = uniformRandom(generator);
+			// now choose a distribution with points concentrated closer to the origin
+			float scale = i / (float)MAX_KERNEL_SIZE;
 			scale = Lerp(0.1f, 1.0f, scale * scale);
 			kernel.Append(sample * scale);
 		}
+		std::shuffle(kernel.begin(), kernel.end(), generator);
 		uniforms->sampleKernel.SetArray(MAX_KERNEL_SIZE, kernel[ 0 ].ToFloatPtr());
 	}
 
