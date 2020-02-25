@@ -492,6 +492,7 @@ idRenderModel *idRenderModelLiquid::InstantiateDynamicModel( const struct render
 	// create the surface
 	lerp = ( float )( t - time ) / ( float )update_tics;
 	modelSurface_t surf = GenerateSurface( lerp );
+	surf.id = 0;
 
 	staticModel = new idRenderModelStatic;
 	staticModel->AddSurface( surf );
