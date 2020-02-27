@@ -816,7 +816,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	//stgatilov #5044: see also
 	//  https://forums.thedarkmod.com/index.php?/topic/20205-5044-rgb-value-in-specular-stage/
 	static idCVar r_testSpecularFix(
-		"r_testSpecularFix", "0", CVAR_RENDERER | CVAR_INTEGER,
+		"r_testSpecularFix", "1", CVAR_RENDERER | CVAR_INTEGER,
 		"Use specular color instead of diffuse color to modulate specular term in \"enhanced\" interaction.\n"
 		"  1 --- apply the change as described: use specular color\n"
 		"  0 --- enable old way: use diffuse color\n"
