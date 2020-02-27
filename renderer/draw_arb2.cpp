@@ -30,8 +30,6 @@ typedef struct {
 
 // a single file can have both a vertex program and a fragment program
 static progDef_t	progs[MAX_GLPROGS] = {
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_TEST, "test.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST, "test.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION, "interaction.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION, "interaction.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_BUMPY_ENVIRONMENT, "bumpyEnvironment.vfp" },
@@ -42,20 +40,6 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	// SteveL #3878: Particle softening applied by the engine
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_SOFT_PARTICLE, "soft_particle.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_SOFT_PARTICLE, "soft_particle.vfp" },
-
-	// duzenko: backend bloom
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1, "cookMath_pass1.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1, "cookMath_pass1.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2, "cookMath_pass2.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2, "cookMath_pass2.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS, "brightPass_opt.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS, "brightPass_opt.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX, "blurx.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX, "blurx.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY, "blury.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY, "blury.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 
 	// additional programs can be dynamically specified in materials
 };
