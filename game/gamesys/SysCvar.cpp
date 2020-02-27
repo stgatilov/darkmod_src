@@ -467,7 +467,7 @@ idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from t
 /**
  * Ambient light method variable
  */
-idCVar cv_ambient_method("tdm_ambient_method", "0",    CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "Method used for ambient light rendering.\n\n0 = Enhanced, ambient light method (uses the ambient light for the ambient brightness)\n1 = Texture Brightness method (uses texture brightness instead of light. This is faster but looks worse)", 0, 1 );
+idCVar cv_ambient_method("tdm_ambient_method", "0",    CVAR_GAME | CVAR_INTEGER, "Method used for ambient light rendering.\n\n0 = Enhanced, ambient light method (uses the ambient light for the ambient brightness)\n1 = Texture Brightness method (uses texture brightness instead of light. This is faster but looks worse)", 0, 1 );
 /**
  * Volume of speakers with s_music set
  */
