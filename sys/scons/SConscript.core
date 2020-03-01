@@ -25,19 +25,21 @@ Import( GLOBALS )
 Import( 'g_env_game' )
 
 renderer_string = ' \
+	AmbientOcclusionStage.cpp \
 	BufferObject.cpp \
 	Cinematic.cpp \
 	CinematicID.cpp \
 	CinematicFFMpeg.cpp \
 	FrameBuffer.cpp \
-    GLSLProgram.cpp \
-    GLSLProgramManager.cpp \
+	GLSLProgram.cpp \
+	GLSLProgramManager.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
 	Image_init.cpp \
 	Image_load.cpp \
 	Image_process.cpp \
 	Image_program.cpp \
+	ImmediateRendering.cpp \
 	Interaction.cpp \
 	Material.cpp \
 	MegaTexture.cpp \
@@ -133,6 +135,10 @@ cm_string = ' \
 	CollisionModel_translate.cpp'
 cm_list = scons_utils.BuildList( 'cm', cm_string )
 
+compiler_string = ' \
+	compiler_common.cpp'
+compiler_list = scons_utils.BuildList( 'tools/compilers', compiler_string )
+
 dmap_string = ' \
 	dmap.cpp \
 	facebsp.cpp \
@@ -174,6 +180,10 @@ roq_string = ' \
 roq_list = scons_utils.BuildList( 'tools/compilers/roqvq', roq_string )
 
 renderbump_list = [ 'tools/compilers/renderbump/renderbump.cpp' ]
+
+particle_string = ' \
+	ParticleCollisionStatic.cpp'
+particle_list = scons_utils.BuildList( 'tools/compilers/particle', particle_string )
 
 snd_string = ' \
 	snd_cache.cpp \
@@ -227,8 +237,8 @@ tools_list = scons_utils.BuildList( 'tools', tools_string )
 
 
 # Compile the rest of the core engine
-core_list = framework_list + renderer_list + tests_list + ui_list \
-	+ cm_list + dmap_list + renderbump_list + aas_list + roq_list \
+core_list = framework_list + renderer_list + tests_list + ui_list + cm_list \
+	+ compiler_list + dmap_list + renderbump_list + aas_list + roq_list + particle_list \
 	+ snd_list + sys_list + tools_list + [ 'TypeInfo/TypeInfoGen.cpp' ]
 for i in range( len( core_list ) ):
 	core_list[ i ] = '../../' + core_list[ i ]
