@@ -362,6 +362,7 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 
 	WriteInt( renderEntity.forceUpdate );
 	WriteInt( renderEntity.sortOffset );
+	WriteInt( renderEntity.xrayIndex );
 }
 
 void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
@@ -958,6 +959,7 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 
 	ReadInt( renderEntity.forceUpdate );
 	ReadInt( renderEntity.sortOffset );
+	ReadInt( renderEntity.xrayIndex );
 }
 
 void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {

@@ -1511,16 +1511,8 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 	}
 
 	if ( tr.viewDef->isXraySubview && def.parms.xrayIndex == 1 ) {
-		if ( def.parms.timeGroup ) {
-			tr.viewDef->floatTime = oldFloatTime;
-			tr.viewDef->renderView.time = oldTime;
-		}
 		return;
 	} else if ( !tr.viewDef->isXraySubview && def.parms.xrayIndex == 2 ) {
-		if ( def.parms.timeGroup ) {
-			tr.viewDef->floatTime = oldFloatTime;
-			tr.viewDef->renderView.time = oldTime;
-		}
 		return;
 	}
 

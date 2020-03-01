@@ -1479,6 +1479,15 @@ void idEntity::Spawn( void )
 
 	renderEntity.entityNum = entityNumber;
 	
+	xraySkin = NULL;
+	renderEntity.xrayIndex = 1;
+
+	idStr str;
+	if ( spawnArgs.GetString( "skin_xray", "", str ) )
+	{
+		xraySkin = declManager->FindSkin( str.c_str() );
+	}
+
 	// go dormant within 5 frames so that when the map starts most monsters are dormant
 	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + USERCMD_MSEC * 5;
 
@@ -3931,6 +3940,22 @@ void idEntity::UpdateModel( void ) {
 
 	// ensure that we call Present this frame
 	BecomeActive( TH_UPDATEVISUALS );
+
+	// If the entity has an xray skin, go ahead and add it
+	if ( xraySkin != NULL )
+	{
+		xrayEntity = renderEntity;
+		xrayEntity.xrayIndex = 2;
+		xrayEntity.customSkin = xraySkin;
+
+		if ( xrayEntityHandle == -1 )
+		{
+			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
+		} else
+		{
+			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
+		}
+	}
 }
 
 /*

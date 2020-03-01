@@ -287,6 +287,10 @@ public:
 		bool				inaudible			:1; // if true this entity cannot be heard
 	} fl;
 
+	renderEntity_t			xrayEntity;
+	qhandle_t				xrayEntityHandle;
+	const idDeclSkin* 		xraySkin;
+
 	/**
 	* When an entity is hidden, these store the following information just before the hide:
 	* These store the clipmodel contents, clipmask and whether the clipmodel was enabled
