@@ -92,6 +92,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		}
 	} else {
 		vertexCache.UnbindIndex();
+		if ( !surf->frontendGeo ) return;
 		indexPtr = surf->frontendGeo->indexes; // FIXME
 	}
 	int basePointer = vertexCache.GetBaseVertex();

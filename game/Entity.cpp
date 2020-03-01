@@ -1057,6 +1057,11 @@ idEntity::idEntity()
 
 	// SteveL #3817. Make decals and overlays persistant.
 	needsDecalRestore = false;
+
+	memset( &xrayEntity, 0, sizeof( xrayEntity ) );
+
+	xrayEntityHandle = -1;
+	xraySkin = NULL;
 }
 
 /*
@@ -1974,6 +1979,12 @@ idEntity::~idEntity( void )
 	FreeModelDef();
 	FreeSoundEmitter( false );
 
+	if ( xrayEntityHandle != -1 )
+	{
+		gameRenderWorld->FreeEntityDef( xrayEntityHandle );
+		xrayEntityHandle = -1;
+	}
+
 	if ( m_renderTriggerHandle != -1 ) {
 		gameRenderWorld->FreeEntityDef( m_renderTriggerHandle );
 	}
@@ -2123,6 +2134,10 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteString( brokenModel );
 
 	m_StimResponseColl->Save(savefile);
+
+	savefile->WriteRenderEntity( xrayEntity );
+	savefile->WriteInt( xrayEntityHandle );
+	savefile->WriteSkin( xraySkin );
 
 	savefile->WriteRenderEntity( renderEntity );
 	savefile->WriteInt( modelDefHandle );
@@ -2405,6 +2420,13 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	m_StimResponseColl->Restore(savefile);
 
+	savefile->ReadRenderEntity( xrayEntity );
+	savefile->ReadInt( xrayEntityHandle );
+	if ( xrayEntityHandle != -1 )
+	{
+		xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
+	}
+	savefile->ReadSkin( xraySkin );
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
