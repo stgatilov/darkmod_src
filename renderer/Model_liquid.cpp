@@ -34,6 +34,8 @@ idRenderModelLiquid::idRenderModelLiquid() {
 	verts_y		= 32;
 	scale_x		= 256.0f;
 	scale_y		= 256.0f;
+	tile_x		= -1.0f;
+	tile_y		= -1.0f;
 	liquid_type = 0;
 	density		= 0.97f;
 	drop_height = 4;
@@ -369,6 +371,10 @@ void idRenderModelLiquid::InitFromFile( const char *fileName ) {
 				MakeDefaultModel();
 				return;
 			}
+		} else if ( !token.Icmp( "tile_x" ) ) {
+			tile_x = parser.ParseFloat();
+		} else if ( !token.Icmp( "tile_y" ) ) {
+			tile_y = parser.ParseFloat();
 		} else if ( !token.Icmp( "liquid_type" ) ) {
 			liquid_type = parser.ParseInt() - 1;
 			if ( ( liquid_type < 0 ) || ( liquid_type >= LIQUID_MAX_TYPES ) ) {
@@ -406,6 +412,10 @@ void idRenderModelLiquid::InitFromFile( const char *fileName ) {
 
 	scale_x = size_x / ( verts_x - 1 );
 	scale_y = size_y / ( verts_y - 1 );
+	if (tile_x <= 1e-3f)
+		tile_x = size_x;
+	if (tile_y <= 1e-3f)
+		tile_y = size_y;
 
 	pages.SetNum( 2 * verts_x * verts_y );
 	page1 = pages.Ptr();
@@ -418,7 +428,7 @@ void idRenderModelLiquid::InitFromFile( const char *fileName ) {
 			page2[ i ] = 0.0f;
 			verts[ i ].Clear();
 			verts[ i ].xyz.Set( x * scale_x, y * scale_y, 0.0f );
-			verts[ i ].st.Set( (float) x / (float)( verts_x - 1 ), (float) -y / (float)( verts_y - 1 ) );
+			verts[ i ].st.Set( verts[i].xyz.x / tile_x, verts[i].xyz.y / tile_y );
 		}
 	}
 

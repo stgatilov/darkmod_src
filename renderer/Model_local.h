@@ -239,6 +239,8 @@ private:
 	int							verts_y;
 	float						scale_x;
 	float						scale_y;
+	float						tile_x;
+	float						tile_y;
 	int							time;
 	int							liquid_type;
 	int							update_tics;
