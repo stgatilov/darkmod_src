@@ -169,12 +169,15 @@ void AmbientOcclusionStage::Shutdown() {
 	}
 	if ( ssaoResult != nullptr ) {
 		ssaoResult->PurgeImage();
+		ssaoResult = nullptr;
 	}
 	if ( ssaoBlurred != nullptr ) {
 		ssaoBlurred->PurgeImage();
+		ssaoBlurred = nullptr;
 	}
 	if ( ssaoNoise != nullptr ) {
 		ssaoNoise->PurgeImage();
+		ssaoNoise = nullptr;
 	}
 }
 
