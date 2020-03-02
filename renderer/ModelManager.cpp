@@ -522,6 +522,9 @@ void idRenderModelManagerLocal::BeginLevelLoad() {
 	R_PurgeTriSurfData( frameData );
 }
 
+static idCVarInt r_capModelSize( "r_capModelSize", "0", CVAR_TOOL, "" );
+static idCVarBool r_modelSizeStats( "r_modelSizeStats", "0", CVAR_TOOL, "" );
+
 /*
 =================
 idRenderModelManagerLocal::EndLevelLoad
@@ -579,15 +582,68 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 		}
 	}
 
+	std::map<int, int> modelStats;
+	std::vector<int> modelSizes;
+	std::vector<int> modelOffsets;
+
 	// create static vertex/index buffers for all models
 	for( int i = 0; i < models.Num(); i++ ) {
 		idRenderModel *model = models[i];
 		if( model->IsLoaded() ) {
+			int totalSize = 0;
 			for( int j = 0; j < model->NumSurfaces(); j++ ) {
-				R_CreateStaticBuffersForTri( *( model->Surface( j )->geometry ) );
+				auto& tri = *model->Surface( j )->geometry;
+				R_CreateStaticBuffersForTri( tri );
+				totalSize += tri.ambientCache.size;
+			}
+			if ( r_capModelSize > 0 ) {
+				if ( totalSize > 1024 * r_capModelSize )
+					common->Warning( "Model capped: %dKB - %s\n", totalSize / 1024, model->Name() );
+			}
+			if ( r_modelSizeStats ) {
+				modelSizes.push_back( totalSize );
+				extern uint32_t staticVertexSize;
+				modelOffsets.push_back( staticVertexSize );
+				int index = 0;
+				while ( totalSize ) {
+					totalSize /= 10;
+					modelStats[index]++;
+					index++;
+				}
 			}
 		}
 	}
+	if ( r_modelSizeStats ) {
+		common->Printf( "Total models: %d, ", models.Num() );
+		int size = 1;
+		for ( auto it = modelStats.begin(); it != modelStats.end(); ++it )
+		{
+			int value = it->second;
+			common->Printf( ">%d bytes: %d, ", size, value );
+			size *= 10;
+		}
+		common->Printf( "\n" );
+		std::sort( modelSizes.begin(), modelSizes.end() );
+		int rollGrp = 1, rollSum = 0;
+		common->Printf( "Size distribution grouped by 10%, from smallest to biggest:\n", models.Num() );
+		for ( int index = 0; index < modelSizes.size(); index++ ) {
+			rollSum += modelSizes[index];
+			if ( index == modelSizes.size() * rollGrp / 10 - 1 ) {
+				common->Printf( "  %d%%: %d KB\n", rollGrp * 10, rollSum / 1024 );
+				rollGrp++;
+				rollSum = 0;
+			}
+		}
+		common->Printf( "Offset distribution grouped by 10%, from low to high:\n", models.Num() );
+		rollGrp = 1;
+		for ( int index = 0; index < modelOffsets.size(); index++ ) {
+			if ( index == modelOffsets.size() * rollGrp / 10 - 1 ) {
+				common->Printf( "  %d%%: %d KB\n", rollGrp * 10, modelOffsets[index] / 1024 );
+				rollGrp++;
+			}
+		}
+	}
+
 	vertexCache.PrepareStaticCacheForUpload();
 	// previous frame contents are now invalid, purge them
 	R_ToggleSmpFrame();
