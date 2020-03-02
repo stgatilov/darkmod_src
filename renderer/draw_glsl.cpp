@@ -140,7 +140,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	ChooseInteractionProgram();
 	Uniforms::Interaction *interactionUniforms = currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>();
 	interactionUniforms->SetForShadows( surf == backEnd.vLight->translucentInteractions );
-	if( r_ssao.GetBool() && backEnd.vLight->lightShader->IsAmbientLight() && !backEnd.viewDef->IsLightGem() ) {
+	if( backEnd.vLight->lightShader->IsAmbientLight() && ambientOcclusion->ShouldEnableForCurrentView() ) {
 		ambientOcclusion->BindSSAOTexture( 6 );
 	}
 
@@ -890,7 +890,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
 		}
 		ssaoTexture.Set( 6 );
-		ssaoEnabled.Set( r_ssao.GetBool() );
+		ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() );
 		return;
 	}
 

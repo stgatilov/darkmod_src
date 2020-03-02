@@ -240,5 +240,13 @@ void AmbientOcclusionStage::BlurPass() {
 
 void AmbientOcclusionStage::BindSSAOTexture(int index) {
 	GL_SelectTexture(index);
-	ssaoBlurred->Bind();
+	if (ShouldEnableForCurrentView()) {
+        ssaoBlurred->Bind();
+    } else {
+	    globalImages->whiteImage->Bind();
+	}
+}
+
+bool AmbientOcclusionStage::ShouldEnableForCurrentView() const {
+    return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && !backEnd.viewDef->isSubview && !backEnd.viewDef->isXraySubview;
 }

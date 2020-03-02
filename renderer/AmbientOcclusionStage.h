@@ -27,6 +27,8 @@ public:
 
 	void ComputeSSAOFromDepth();
 
+	bool ShouldEnableForCurrentView() const;
+
 	void BindSSAOTexture(int index);
 
 private:

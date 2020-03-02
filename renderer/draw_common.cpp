@@ -1274,7 +1274,7 @@ void RB_STD_DrawView( void ) {
 		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 		GL_CheckErrors();
 
-		if( r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+		if( ambientOcclusion->ShouldEnableForCurrentView() ) {
 			ambientOcclusion->ComputeSSAOFromDepth();
 		}
 
