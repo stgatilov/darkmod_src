@@ -739,26 +739,28 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	}
 	miplevel = 1;
 
-	while ( scaled_width > 1 ) {
+	while ( scaled_width > 1 || scaled_height > 1 ) {
+		int newWidth  = idMath::Imax(scaled_width  >> 1, 1);
+		int newHeight = idMath::Imax(scaled_height >> 1, 1);
 		for ( i = 0 ; i < 6 ; i++ ) {
 			byte	*shrunken;
-
 			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, miplevel, internalFormat,
-			               scaled_width / 2, scaled_height / 2, 0,
+			               newWidth, newHeight, 0,
 			               GL_RGBA, GL_UNSIGNED_BYTE, shrunk[i] );
 
-			if ( scaled_width > 2 ) {
-				shrunken = R_MipMap( shrunk[i], scaled_width / 2, scaled_height / 2 );
+			if ( newWidth > 1 || newHeight > 1 ) {
+				shrunken = R_MipMap( shrunk[i], newWidth, newHeight );
 			} else {
 				shrunken = NULL;
 			}
 			R_StaticFree( shrunk[i] );
 			shrunk[i] = shrunken;
 		}
-		scaled_width >>= 1;
-		scaled_height >>= 1;
+		scaled_width = newWidth;
+		scaled_height = newHeight;
 		miplevel++;
 	}
+	for ( i = 0; i < 6; i++ ) assert(shrunk[i] == NULL);	//check for leak
 
 #ifdef _DEBUG
 	// see if we messed anything up
