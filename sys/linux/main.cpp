@@ -97,7 +97,9 @@ THREAD_RETURN_TYPE Sys_AsyncThread(void*) {
 			ticked++;
 		}
 		// thread exit
-		pthread_testcancel();
+		//pthread_testcancel();
+		if (asyncThreadShutdown)
+			break;
 	}
 
     return (THREAD_RETURN_TYPE)0;

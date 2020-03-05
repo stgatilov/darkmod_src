@@ -36,6 +36,7 @@ void		Posix_SetExitSpawn( const char *exeName ); // set the process to be spawne
 
 void		Posix_StartAsyncThread( void );
 extern 		uintptr_t asyncThread;
+extern		volatile bool asyncThreadShutdown;
 
 bool		Posix_AddKeyboardPollEvent( int key, bool state );
 bool		Posix_AddMousePollEvent( int action, int value );

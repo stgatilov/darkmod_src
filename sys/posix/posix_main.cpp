@@ -74,6 +74,7 @@ void Posix_Exit(int ret) {
 	// at this point, too late to catch signals
 	Posix_ClearSigs();
 	if ( asyncThread ) {
+		asyncThreadShutdown = true;
 		Sys_DestroyThread( asyncThread );
 	}
 	// process spawning. it's best when it happens after everything has shut down
@@ -501,6 +502,7 @@ Posix_EarlyInit
 */
 void Posix_EarlyInit( void ) {
 	memset( &asyncThread, 0, sizeof( asyncThread ) );
+	asyncThreadShutdown = false;
 	exit_spawn[0] = '\0';
 	Posix_InitSigs();
 	// set the base time

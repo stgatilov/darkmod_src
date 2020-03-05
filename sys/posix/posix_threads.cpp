@@ -168,6 +168,7 @@ Async Thread
 */
 
 uintptr_t asyncThread;
+volatile bool asyncThreadShutdown;
 
 /*
 =================
