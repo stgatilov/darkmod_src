@@ -46,13 +46,13 @@ void GLimp_CheckRequiredFeatures( void ) {
 	reqs = reqs && CHECK_FEATURE(GL_EXT_texture_compression_s3tc);
 #if defined(_WIN32)
 	reqs = reqs && CHECK_FEATURE(WGL_VERSION_1_0);
-	reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context);
-	reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context_profile);
+	//reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context);
+	//reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context_profile);
 	reqs = reqs && CHECK_FEATURE(WGL_ARB_pixel_format);
 #elif defined(__linux__)
 	reqs = reqs && CHECK_FEATURE(GLX_VERSION_1_4);
-	reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context);
-	reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context_profile);
+	//reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context);
+	//reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context_profile);
 #endif
 	if (!reqs) {
 		common->Error("OpenGL minimum requirements not satisfied");

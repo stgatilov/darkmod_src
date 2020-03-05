@@ -336,27 +336,42 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		return false;
 	}
 
-	// startup the OpenGL subsystem by creating a context and making it current
-	common->Printf( "...creating GL context: " );
-	if( r_glDebugContext.GetBool() ) {
-		common->Printf("debug ");
+	if (GLAD_WGL_ARB_create_context && GLAD_WGL_ARB_create_context_profile) {
+		// create OpenGL context for rendering (new GL3+ approach with context and debug)
+		common->Printf( "...creating GL context: " );
+		if( r_glCoreProfile.GetInteger() == 0 )
+			common->Printf("compatibility ");
+		else if( r_glCoreProfile.GetInteger() == 1 )
+			common->Printf("core ");
+		else if( r_glCoreProfile.GetInteger() == 2 )
+			common->Printf("core-fc ");
+		if( r_glDebugContext.GetBool() )
+			common->Printf("debug ");
+		common->Printf("\n");
+		const int attribs[] = {
+			// we want at least this version of GL
+			WGL_CONTEXT_MAJOR_VERSION_ARB, QGL_REQUIRED_VERSION_MAJOR,
+			WGL_CONTEXT_MINOR_VERSION_ARB, QGL_REQUIRED_VERSION_MINOR,
+			// TODO: might want to (optionally) create a core profile once we got rid of the old stuff
+			WGL_CONTEXT_PROFILE_MASK_ARB, r_glCoreProfile.GetInteger() > 0 ? WGL_CONTEXT_CORE_PROFILE_BIT_ARB : WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+			// special case for 3.1: even core profiles are still compatible :/
+			// enable debug context if asked for
+			WGL_CONTEXT_FLAGS_ARB, (r_glCoreProfile.GetInteger() > 1 ? WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0) | (r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0),
+			0
+		};
+		win32.hGLRC = qwglCreateContextAttribsARB( win32.hDC, NULL, attribs );
 	}
-	const int attribs[] = {
-		// we want at least this version of GL
-		WGL_CONTEXT_MAJOR_VERSION_ARB, QGL_REQUIRED_VERSION_MAJOR,
-		WGL_CONTEXT_MINOR_VERSION_ARB, QGL_REQUIRED_VERSION_MINOR,
-		// TODO: might want to (optionally) create a core profile once we got rid of the old stuff
-		WGL_CONTEXT_PROFILE_MASK_ARB, r_glCoreProfile.GetInteger() > 0 ? WGL_CONTEXT_CORE_PROFILE_BIT_ARB : WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
-		// special case for 3.1: even core profiles are still compatible :/
-		// enable debug context if asked for
-		WGL_CONTEXT_FLAGS_ARB, (r_glCoreProfile.GetInteger() > 1 ? WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0) | (r_glDebugContext.GetBool() ? WGL_CONTEXT_DEBUG_BIT_ARB : 0),
-		0
-	};
-	if ( ( win32.hGLRC = qwglCreateContextAttribsARB( win32.hDC, NULL, attribs ) ) == 0 ) {
-		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
+	else {
+		// create OpenGL context for rendering (deprecated GL1 approach)
+		r_glCoreProfile.SetInteger(0);
+		common->Printf( "...creating GL context: deprecated\n" );
+		win32.hGLRC = qwglCreateContext( win32.hDC );
+	}
+
+	if ( win32.hGLRC == 0 ) {
+		common->Printf( S_COLOR_YELLOW "Failed to create OpenGL context\n" S_COLOR_DEFAULT );
 		return false;
 	}
-	common->Printf( "succeeded\n" );
 
 	common->Printf( "...making context current: " );
 	if ( !qwglMakeCurrent( win32.hDC, win32.hGLRC ) ) {

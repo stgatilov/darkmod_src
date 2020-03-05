@@ -568,10 +568,22 @@ int GLX_Init(glimpParms_t a) {
 
 	XFlush(dpy);
 	XSync(dpy, False);
-	if (r_glCoreProfile.GetInteger() == 0) {
+	if (r_glCoreProfile.GetInteger() == 0 || !(GLAD_GLX_ARB_create_context && GLAD_GLX_ARB_create_context_profile)) {
+		r_glCoreProfile.SetInteger(0);
+		common->Printf( "...creating GL context: deprecated\n" );
 		ctx = qglXCreateContext(dpy, visinfo, NULL, True);    //old-style context creation
 	}
 	else {
+		common->Printf( "...creating GL context: " );
+		if( r_glCoreProfile.GetInteger() == 0 )
+			common->Printf("compatibility ");
+		else if( r_glCoreProfile.GetInteger() == 1 )
+			common->Printf("core ");
+		else if( r_glCoreProfile.GetInteger() == 2 )
+			common->Printf("core-fc ");
+		if( r_glDebugContext.GetBool() )
+			common->Printf("debug ");
+		common->Printf("\n");
 		int context_attribs[] = {
 			GLX_CONTEXT_MAJOR_VERSION_ARB, QGL_REQUIRED_VERSION_MAJOR,
 			GLX_CONTEXT_MINOR_VERSION_ARB, QGL_REQUIRED_VERSION_MINOR,
