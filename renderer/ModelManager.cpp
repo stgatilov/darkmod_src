@@ -623,22 +623,39 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 			size *= 10;
 		}
 		common->Printf( "\n" );
-		std::sort( modelSizes.begin(), modelSizes.end() );
 		int rollGrp = 1, rollSum = 0;
-		common->Printf( "Size distribution grouped by 10%, from smallest to biggest:\n", models.Num() );
+		common->Printf( "Size distribution grouped by 10%%, from low to high:\n" );
 		for ( int index = 0; index < modelSizes.size(); index++ ) {
 			rollSum += modelSizes[index];
 			if ( index == modelSizes.size() * rollGrp / 10 - 1 ) {
 				common->Printf( "  %d%%: %d KB\n", rollGrp * 10, rollSum / 1024 );
 				rollGrp++;
-				rollSum = 0;
 			}
 		}
-		common->Printf( "Offset distribution grouped by 10%, from low to high:\n", models.Num() );
+		common->Printf( "Offset distribution grouped by 10%%, from low to high:\n" );
 		rollGrp = 1;
 		for ( int index = 0; index < modelOffsets.size(); index++ ) {
 			if ( index == modelOffsets.size() * rollGrp / 10 - 1 ) {
 				common->Printf( "  %d%%: %d KB\n", rollGrp * 10, modelOffsets[index] / 1024 );
+				rollGrp++;
+			}
+		}
+		std::sort( modelSizes.begin(), modelSizes.end() );
+		rollGrp = 1, rollSum = 0;
+		common->Printf( "Size distribution grouped by 10%%, from smallest to biggest:\n" );
+		for ( int index = 0; index < modelSizes.size(); index++ ) {
+			rollSum += modelSizes[index];
+			if ( index == modelSizes.size() * rollGrp / 10 - 1 ) {
+				common->Printf( "  %d%%: %d KB\n", rollGrp * 10, rollSum / 1024 );
+				rollGrp++;
+			}
+		}
+		rollSum = 0, rollGrp = 0;
+		common->Printf( "Size distribution - top N:\n" );
+		for ( int index = modelSizes.size() - 1; index >= 0; index-- ) {
+			rollSum += modelSizes[index];
+			if( modelSizes.size() - index == (int64)1 << (rollGrp * 2)) {
+				common->Printf( "  top %d: %d KB\n", 1 << ( rollGrp * 2 ), rollSum / 1024 );
 				rollGrp++;
 			}
 		}

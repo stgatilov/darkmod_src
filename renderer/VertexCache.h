@@ -23,13 +23,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 const int VERTCACHE_NUM_FRAMES = 3;
 
-const int VERTCACHE_STATIC = 1;					// in the static set, not the per-frame set
-const int VERTCACHE_SIZE_SHIFT = 1;
-const int VERTCACHE_SIZE_MASK = 0x7fffff;		// 8 megs 
-const int VERTCACHE_OFFSET_SHIFT = 24;
-const int VERTCACHE_OFFSET_MASK = 0xfffffff;	// 256 megs 
-const int VERTCACHE_FRAME_SHIFT = 52;
-const int VERTCACHE_FRAME_MASK = 0xfff;		// 12 bits = 4k frames to wrap around
+static const uint32 VERTCACHE_SIZE_MASK = -1;// ( (int64)1 << VERTCACHE_SIZE_BITS ) - 1;
+static const uint32 VERTCACHE_OFFSET_MASK = -1;// ( (int64)1 << VERTCACHE_OFFSET_BITS ) - 1;
+static const uint32 VERTCACHE_FRAME_MASK = ( 1 << VERTCACHE_FRAMENUM_BITS ) - 1;
 
 // 240 is the least common multiple between 16-byte alignment and the size of idDrawVert and shadowCache_t.
 // The vertex cache positions need to be divisible by either size for glDrawElementsBaseVertex and similar
