@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 #include "Profiling.h"
 
-const int32 MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK < MAXINT32 ? VERTCACHE_OFFSET_MASK+1 : MAXINT32;
+const int32 MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK < INT_MAX ? VERTCACHE_OFFSET_MASK+1 : INT_MAX;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
