@@ -213,7 +213,7 @@ namespace {
 		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs" );
 		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 		depthUniforms->instances = 6;
-		//depthUniforms->acceptsTranslucent = true; duzenko: wait, what?
+		depthUniforms->acceptsTranslucent = true; //duzenko: wait, what?
 		program->Validate();
 	}
 
