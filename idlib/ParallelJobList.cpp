@@ -298,7 +298,7 @@ idParallelJobList_Threads::AddJob
 */
 ID_INLINE void idParallelJobList_Threads::AddJob( jobRun_t function, void * data ) {
 	assert( done );
-	if ( maxJobs == jobList.Num() ) {
+	if ( int(maxJobs) == jobList.Num() ) {
 		static int runOnce = []() {
 			common->Warning( "idParallelJobList_Threads overflow\n" );
 			return 0;
