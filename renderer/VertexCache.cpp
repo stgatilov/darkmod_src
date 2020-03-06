@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 #include "Profiling.h"
 
-const int32 MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK < INT_MAX ? VERTCACHE_OFFSET_MASK+1 : INT_MAX;
+const int32 MAX_VERTCACHE_SIZE = INT_MAX;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
@@ -398,12 +398,12 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 		SIMDProcessor->Memcpy( dst, src, bytes );
 	}
 
-	return {
-		static_cast<uint32_t>( bytes & VERTCACHE_SIZE_MASK ),
-		static_cast<uint32_t>( (mapOffset + offset) & VERTCACHE_OFFSET_MASK ),
-		static_cast<uint16_t>( currentFrame & VERTCACHE_FRAME_MASK ),
+	return vertCacheHandle_t::Create(
+		bytes,
+		(mapOffset + offset),
+		currentFrame & VERTCACHE_FRAME_MASK,
 		false //&vcs == &staticData
-	};
+	);
 }
 
 typedef idList <std::pair<const void*, int>> StaticList;
@@ -467,12 +467,7 @@ vertCacheHandle_t idVertexCache::AllocStaticVertex( const void* data, int bytes 
 		staticVertexSize = 0;
 	staticVertexList.Append( std::make_pair( data, bytes ) );
 	staticVertexSize += bytes;
-	return {
-		static_cast<uint32_t>( bytes & VERTCACHE_SIZE_MASK ),
-		static_cast<uint32_t>( (staticVertexSize-bytes) & VERTCACHE_OFFSET_MASK ),
-		0,
-		true,
-	};
+	return vertCacheHandle_t::Create( bytes, staticVertexSize - bytes, 0, true );
 }
 
 vertCacheHandle_t idVertexCache::AllocStaticIndex( const void* data, int bytes ) {
@@ -480,10 +475,5 @@ vertCacheHandle_t idVertexCache::AllocStaticIndex( const void* data, int bytes )
 		staticIndexSize = 0;
 	staticIndexList.Append( std::make_pair( data, bytes ) );
 	staticIndexSize += bytes;
-	return {
-		static_cast<uint32_t>( bytes & VERTCACHE_SIZE_MASK ),
-		static_cast<uint32_t>( (staticIndexSize-bytes) & VERTCACHE_OFFSET_MASK ),
-		0,
-		true,
-	};
+	return vertCacheHandle_t::Create( bytes, staticIndexSize - bytes, 0, true );
 }

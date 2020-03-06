@@ -32,20 +32,26 @@
 #define MD5_VERSION				10
 
 //#include "VertexCache.h"
-#define VERTCACHE_SIZE_BITS 32
-#define VERTCACHE_OFFSET_BITS 32
 #define VERTCACHE_FRAMENUM_BITS 15
 /**
- * Describes a single entry in the static or dynamic vertex or index cache in 64 bits.
+ * Describes a single entry in the static or dynamic vertex or index cache in 80 bits.
  */
 struct vertCacheHandle_t {
-	uint32_t	size : VERTCACHE_SIZE_BITS;
-	uint32_t	offset : VERTCACHE_OFFSET_BITS;
+	uint32_t	size;
+	uint32_t	offset;
 	uint16_t	frameNumber : VERTCACHE_FRAMENUM_BITS;
 	bool		isStatic : 1;
 
 	bool IsValid() const {
 		return size != 0;
+	}
+	static vertCacheHandle_t Create(uint32_t size, uint32_t offset, uint16_t frameNumber, bool isStatic) {
+		vertCacheHandle_t res;
+		res.size = size;
+		res.offset = offset;
+		res.frameNumber = frameNumber;
+		res.isStatic = isStatic;
+		return res;
 	}
 };
 

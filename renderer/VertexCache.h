@@ -23,8 +23,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 const int VERTCACHE_NUM_FRAMES = 3;
 
-static const uint32 VERTCACHE_SIZE_MASK = -1;// ( (int64)1 << VERTCACHE_SIZE_BITS ) - 1;
-static const uint32 VERTCACHE_OFFSET_MASK = -1;// ( (int64)1 << VERTCACHE_OFFSET_BITS ) - 1;
 static const uint32 VERTCACHE_FRAME_MASK = ( 1 << VERTCACHE_FRAMENUM_BITS ) - 1;
 
 // 240 is the least common multiple between 16-byte alignment and the size of idDrawVert and shadowCache_t.
