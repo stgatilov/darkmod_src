@@ -1,5 +1,5 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+					The Dark Mod GPL Source Code
 
  This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
@@ -31,18 +31,27 @@ public:
 
 	void BindSSAOTexture(int index);
 
+	void ShowSSAO();
+
+	static const int MAX_DEPTH_MIPS = 5;
 private:
 	GLuint ssaoFBO;
 	GLuint ssaoBlurFBO;
+	GLuint depthMipFBOs[MAX_DEPTH_MIPS + 1];
+	idImage *viewspaceDepth;
 	idImage *ssaoResult;
 	idImage *ssaoBlurred;
-	idImage *ssaoNoise;
 	GLSLProgram *ssaoShader;
 	GLSLProgram *ssaoBlurShader;
+	GLSLProgram *depthShader;
+	GLSLProgram *depthMipShader;
+	GLSLProgram *showSSAOShader;
 
+	void PrepareDepthPass();
 	void SSAOPass();
-
 	void BlurPass();
+
+	void SetQualityLevelUniforms();
 };
 
 extern AmbientOcclusionStage *ambientOcclusion;

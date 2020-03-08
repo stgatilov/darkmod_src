@@ -1,5 +1,5 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+					The Dark Mod GPL Source Code
 
  This file is part of the The Dark Mod Source Code, originally based
  on the Doom 3 GPL Source Code as published in 2011.
@@ -26,19 +26,16 @@
 #include "GLSLUniforms.h"
 #include "glsl.h"
 
-idCVar r_ssao("r_ssao", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Enable screen space ambient occlusion");
-idCVar r_ssao_radius("r_ssao_radius", "24", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
-					 "View space sample radius - larger values provide a softer, spread effect, but risk causing unwanted halo shadows around objects");
-idCVar r_ssao_cutoff("r_ssao_cutoff", "8", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
-					 "Max view space depth difference - larger distances are considered to not occlude");
-idCVar r_ssao_bias("r_ssao_bias", "0.025", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
-				   "Min depth difference to count for occlusion, used to avoid some acne effects");
-idCVar r_ssao_power("r_ssao_power", "1.5", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
-					"SSAO exponential factor, the higher the value, the stronger the effect");
+idCVar r_ssao("r_ssao", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Screen space ambient occlusion: 0 - off, 1 - low, 2 - medium, 3 - high");
+idCVar r_ssao_radius("r_ssao_radius", "32", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+	"View space sample radius - larger values provide a softer, spread effect, but risk causing unwanted halo shadows around objects");
+idCVar r_ssao_bias("r_ssao_bias", "2.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+	"Min depth difference to count for occlusion, used to avoid some acne effects");
+idCVar r_ssao_intensity("r_ssao_intensity", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+	"SSAO intensity factor, the higher the value, the stronger the effect");
 idCVar r_ssao_base("r_ssao_base", "0.1", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
-				   "Minimum baseline visibility below which AO cannot drop");
-idCVar r_ssao_kernelSize("r_ssao_kernelSize", "8", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE,
-						 "Size of sample kernel (max 128) - higher values will impact performance!");
+	"Minimum baseline visibility below which AO cannot drop");
+idCVar r_ssao_edgesharpness("r_ssao_edgesharpness", "1", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Edge sharpness in SSAO blur");
 
 extern idCVar r_fboResolution;
 
@@ -50,38 +47,29 @@ namespace {
 		UNIFORM_GROUP_DEF(AOUniforms)
 
 		DEFINE_UNIFORM(sampler, depthTexture)
-		DEFINE_UNIFORM(sampler, noiseTexture)
 		DEFINE_UNIFORM(float, sampleRadius)
-		DEFINE_UNIFORM(float, depthCutoff)
 		DEFINE_UNIFORM(float, depthBias)
 		DEFINE_UNIFORM(float, baseValue)
-		DEFINE_UNIFORM(vec3, sampleKernel)
-		DEFINE_UNIFORM(int, kernelSize)
-		DEFINE_UNIFORM(float, power)
+		DEFINE_UNIFORM(int, numSamples)
+		DEFINE_UNIFORM(int, numSpiralTurns)
+		DEFINE_UNIFORM(float, intensityDivR6)
+		DEFINE_UNIFORM(int, maxMipLevel)
 	};
 
-	const int MAX_KERNEL_SIZE = 128;
+	struct BlurUniforms : GLSLUniformGroup {
+		UNIFORM_GROUP_DEF(BlurUniforms)
 
-	void CreateHemisphereSampleKernel(AOUniforms *uniforms) {
-		// Create random vectors within a unit hemisphere. Used in the SSAO shader
-		// to sample the surrounding geometry.
-		std::uniform_real_distribution<float> uniformRandom(0.f, 1.f);
-		std::mt19937 generator (543210);
-		idList<idVec3> kernel;
-		for ( int i = 0; i < MAX_KERNEL_SIZE; ++i ) {
-			// generate a random point on the unit hemisphere
-			float u = uniformRandom(generator), v = uniformRandom(generator);
-			float theta = idMath::ACos(idMath::Sqrt(1 - u));
-			float phi = v * idMath::TWO_PI;
-			idVec3 sample(idMath::Sin(theta)*idMath::Cos(phi), idMath::Sin(theta)*idMath::Sin(phi), idMath::Cos(theta));
-			// now choose a distribution with points concentrated closer to the origin
-			float scale = i / (float)MAX_KERNEL_SIZE;
-			scale = Lerp(0.1f, 1.0f, scale * scale);
-			kernel.Append(sample * scale);
-		}
-		std::shuffle(kernel.begin(), kernel.end(), generator);
-		uniforms->sampleKernel.SetArray(MAX_KERNEL_SIZE, kernel[ 0 ].ToFloatPtr());
-	}
+		DEFINE_UNIFORM(sampler, source)
+		DEFINE_UNIFORM(vec2, axis)
+		DEFINE_UNIFORM(float, edgeSharpness)
+	};
+
+	struct DepthMipUniforms : GLSLUniformGroup {
+		UNIFORM_GROUP_DEF(DepthMipUniforms)
+
+		DEFINE_UNIFORM(sampler, depth)
+		DEFINE_UNIFORM(int, previousMipLevel)
+	};
 
 	void LoadSSAOShader(GLSLProgram *ssaoShader) {
 		ssaoShader->Init();
@@ -92,43 +80,53 @@ namespace {
 		ssaoShader->Activate();
 		AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
 		uniforms->depthTexture.Set(0);
-		uniforms->noiseTexture.Set(1);
-		CreateHemisphereSampleKernel(uniforms);
 		ssaoShader->Deactivate();
+	}
+
+	void LoadSSAOBlurShader(GLSLProgram *blurShader) {
+		blurShader->Init();
+		blurShader->AttachVertexShader("ssao.vert.glsl");
+		blurShader->AttachFragmentShader("ssao_blur.frag.glsl");
+		Attributes::Default::Bind(blurShader);
+		blurShader->Link();
+		blurShader->Activate();
+		BlurUniforms *uniforms = blurShader->GetUniformGroup<BlurUniforms>();
+		uniforms->source.Set(0);
+		blurShader->Deactivate();
 	}
 
 	void CreateSSAOColorBuffer(idImage *image) {
 		image->type = TT_2D;
 		GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth;
 		GLuint curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
-		image->GenerateAttachment(curWidth, curHeight, GL_RED);
+		image->GenerateAttachment(curWidth, curHeight, GL_COLOR);
 	}
 
-	void CreateSSAONoiseTexture(idImage *image) {
-		// Create a small noise texture to introduce some randomness in the SSAO
-		// sampling. Allows us to get away with fewer samples by blurring over the
-		// randomness afterwards.
-		idRandom rnd(12345);
-		idList<idVec3> noise;
-		for ( int i = 0; i < 16; ++i ) {
-			idVec3 randomVec(rnd.RandomFloat(), rnd.RandomFloat(), 0.5);
-			noise.Append(randomVec);
-		}
+	void CreateViewspaceDepthBuffer(idImage *image) {
 		image->type = TT_2D;
-		image->uploadWidth = 4;
-		image->uploadHeight = 4;
+		image->uploadWidth = r_fboResolution.GetFloat() * glConfig.vidWidth;
+		image->uploadHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 		qglGenTextures(1, &image->texnum);
 		qglBindTexture(GL_TEXTURE_2D, image->texnum);
-		qglTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, noise.Ptr());
+		for (int i = 0; i <= AmbientOcclusionStage::MAX_DEPTH_MIPS; ++i) {
+			qglTexImage2D(GL_TEXTURE_2D, i, GL_R32F, image->uploadWidth >> i, image->uploadHeight >> i, 0, GL_RED, GL_FLOAT, nullptr);
+		}
+		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, AmbientOcclusionStage::MAX_DEPTH_MIPS);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		GL_SetDebugLabel(GL_TEXTURE, image->texnum, image->imgName);
 	}
 }
 
-AmbientOcclusionStage::AmbientOcclusionStage() : ssaoFBO(0), ssaoBlurFBO(0), ssaoResult(nullptr), ssaoBlurred(nullptr),
-												 ssaoNoise(nullptr), ssaoShader(nullptr) {
+AmbientOcclusionStage::AmbientOcclusionStage() : ssaoFBO(0), ssaoBlurFBO(0),
+		ssaoResult(nullptr), ssaoBlurred(nullptr), viewspaceDepth(nullptr),
+		ssaoShader(nullptr), ssaoBlurShader(nullptr), depthShader(nullptr) {
+	for (int i = 0; i < MAX_DEPTH_MIPS; ++i) {
+		depthMipFBOs[i] = 0;
+	}
 }
 
 void AmbientOcclusionStage::Init() {
@@ -136,7 +134,7 @@ void AmbientOcclusionStage::Init() {
 	ssaoResult->ActuallyLoadImage();
 	ssaoBlurred = globalImages->ImageFromFunction("SSAO Blurred", CreateSSAOColorBuffer);
 	ssaoBlurred->ActuallyLoadImage();
-	ssaoNoise = globalImages->ImageFromFunction("SSAO Noise", CreateSSAONoiseTexture);
+	viewspaceDepth = globalImages->ImageFromFunction("SSAO Depth", CreateViewspaceDepthBuffer);
 
 	qglGenFramebuffers(1, &ssaoFBO);
 	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
@@ -144,40 +142,61 @@ void AmbientOcclusionStage::Init() {
 	qglGenFramebuffers(1, &ssaoBlurFBO);
 	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
 	qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBlurred->texnum, 0);
+	qglGenFramebuffers(MAX_DEPTH_MIPS, depthMipFBOs);
+	for (int i = 0; i <= MAX_DEPTH_MIPS; ++i) {
+		qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
+		qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewspaceDepth->texnum, i);
+		int status = qglCheckFramebufferStatus(GL_FRAMEBUFFER);
+		common->Printf("Status for depth FBO level %d: %d\n", i, status);
+	}
 	qglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	ssaoShader = programManager->Find("ssao");
-	if ( ssaoShader == nullptr ) {
+	if (ssaoShader == nullptr) {
 		ssaoShader = programManager->LoadFromGenerator("ssao", LoadSSAOShader);
 	}
-	ssaoShader->Activate();
-
 	ssaoBlurShader = programManager->Find("ssao_blur");
-	if ( ssaoBlurShader == nullptr ) {
-		ssaoBlurShader = programManager->LoadFromFiles("ssao_blur", "ssao.vert.glsl", "ssao_blur.frag.glsl");
+	if (ssaoBlurShader == nullptr) {
+		ssaoBlurShader = programManager->LoadFromGenerator("ssao_blur", LoadSSAOBlurShader);
+	}
+	depthShader = programManager->Find("ssao_depth");
+	if (depthShader == nullptr) {
+		depthShader = programManager->LoadFromFiles("ssao_depth", "ssao.vert.glsl", "ssao_depth.frag.glsl");
+	}
+	depthMipShader = programManager->Find("ssao_depth_mip");
+	if (depthMipShader == nullptr) {
+		depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "ssao.vert.glsl", "ssao_depthmip.frag.glsl");
+	}
+	showSSAOShader = programManager->Find("ssao_show");
+	if (showSSAOShader == nullptr) {
+		showSSAOShader = programManager->LoadFromFiles("ssao_show", "ssao.vert.glsl", "ssao_show.frag.glsl");
 	}
 }
 
 void AmbientOcclusionStage::Shutdown() {
-	if ( ssaoFBO != 0 ) {
+	if (ssaoFBO != 0) {
 		qglDeleteFramebuffers(1, &ssaoFBO);
 		ssaoFBO = 0;
 	}
-	if ( ssaoBlurFBO != 0 ) {
+	if (ssaoBlurFBO != 0) {
 		qglDeleteFramebuffers(1, &ssaoBlurFBO);
 		ssaoBlurFBO = 0;
 	}
-	if ( ssaoResult != nullptr ) {
+	if (depthMipFBOs[0] != 0) {
+		qglDeleteFramebuffers(MAX_DEPTH_MIPS, depthMipFBOs);
+		depthMipFBOs[0] = 0;
+	}
+	if (viewspaceDepth != nullptr) {
+		viewspaceDepth->PurgeImage();
+		viewspaceDepth = nullptr;
+	}
+	if (ssaoResult != nullptr) {
 		ssaoResult->PurgeImage();
 		ssaoResult = nullptr;
 	}
-	if ( ssaoBlurred != nullptr ) {
+	if (ssaoBlurred != nullptr) {
 		ssaoBlurred->PurgeImage();
 		ssaoBlurred = nullptr;
-	}
-	if ( ssaoNoise != nullptr ) {
-		ssaoNoise->PurgeImage();
-		ssaoNoise = nullptr;
 	}
 }
 
@@ -187,16 +206,17 @@ extern bool primaryOn;
 void AmbientOcclusionStage::ComputeSSAOFromDepth() {
 	GL_PROFILE("AmbientOcclusionStage");
 
-	if ( ssaoFBO != 0 && (globalImages->currentDepthImage->uploadWidth != ssaoResult->uploadWidth ||
-						  globalImages->currentDepthImage->uploadHeight != ssaoResult->uploadHeight)) {
+	if (ssaoFBO != 0 && (globalImages->currentDepthImage->uploadWidth != ssaoResult->uploadWidth ||
+		globalImages->currentDepthImage->uploadHeight != ssaoResult->uploadHeight)) {
 		// resolution changed, need to recreate our resources
 		Shutdown();
 	}
 
-	if ( ssaoFBO == 0 ) {
+	if (ssaoFBO == 0) {
 		Init();
 	}
 
+	PrepareDepthPass();
 	SSAOPass();
 	BlurPass();
 
@@ -208,45 +228,113 @@ void AmbientOcclusionStage::SSAOPass() {
 	GL_PROFILE("SSAOPass");
 
 	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+	qglClearColor(1, 1, 1, 1);
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
-	globalImages->currentDepthImage->Bind();
-	GL_SelectTexture(1);
-	ssaoNoise->Bind();
+	viewspaceDepth->Bind();
 
 	ssaoShader->Activate();
-	AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
-	uniforms->sampleRadius.Set(r_ssao_radius.GetFloat());
-	uniforms->depthCutoff.Set(r_ssao_cutoff.GetFloat());
-	uniforms->depthBias.Set(r_ssao_bias.GetFloat());
-	uniforms->baseValue.Set(r_ssao_base.GetFloat());
-	uniforms->power.Set(r_ssao_power.GetFloat());
-	int kernelSize = std::max(1, std::min(MAX_KERNEL_SIZE, r_ssao_kernelSize.GetInteger()));
-	uniforms->kernelSize.Set(kernelSize);
-
+	SetQualityLevelUniforms();
 	RB_DrawFullScreenQuad();
 }
 
 void AmbientOcclusionStage::BlurPass() {
 	GL_PROFILE("BlurPass");
 
+	ssaoBlurShader->Activate();
+	BlurUniforms *uniforms = ssaoBlurShader->GetUniformGroup<BlurUniforms>();
+	uniforms->edgeSharpness.Set(r_ssao_edgesharpness.GetFloat());
+	uniforms->source.Set(0);
+	uniforms->axis.Set(1, 0);
+
+	// first horizontal pass
 	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+	qglClearColor(1, 1, 1, 1);
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
 	ssaoResult->Bind();
-	ssaoBlurShader->Activate();
+	RB_DrawFullScreenQuad();
+
+	// second vertical pass
+	uniforms->axis.Set(0, 1);
+	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+	qglClear(GL_COLOR_BUFFER_BIT);
+	ssaoBlurred->Bind();
 	RB_DrawFullScreenQuad();
 }
 
 void AmbientOcclusionStage::BindSSAOTexture(int index) {
 	GL_SelectTexture(index);
 	if (ShouldEnableForCurrentView()) {
-        ssaoBlurred->Bind();
-    } else {
-	    globalImages->whiteImage->Bind();
+		ssaoResult->Bind();
+	}
+	else {
+		globalImages->whiteImage->Bind();
 	}
 }
 
 bool AmbientOcclusionStage::ShouldEnableForCurrentView() const {
-    return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && !backEnd.viewDef->isSubview && !backEnd.viewDef->isXraySubview;
+	return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && !backEnd.viewDef->isSubview && !backEnd.viewDef->isXraySubview;
+}
+
+void AmbientOcclusionStage::PrepareDepthPass() {
+	GL_PROFILE("PrepareDepthPass");
+
+	qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[0]);
+	qglClear(GL_COLOR_BUFFER_BIT);
+	GL_SelectTexture(0);
+	globalImages->currentDepthImage->Bind();
+
+	depthShader->Activate();
+	RB_DrawFullScreenQuad();
+
+	if (r_ssao.GetInteger() > 1) {
+		GL_PROFILE("DepthMips");
+		// generate mip levels - used by the AO shader for distant samples to ensure we hit the texture cache as much as possible
+		depthMipShader->Activate();
+		DepthMipUniforms *uniforms = depthMipShader->GetUniformGroup<DepthMipUniforms>();
+		uniforms->depth.Set(0);
+		viewspaceDepth->Bind();
+		for (int i = 1; i <= MAX_DEPTH_MIPS; ++i) {
+			qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
+			uniforms->previousMipLevel.Set(i - 1);
+			RB_DrawFullScreenQuad();
+		}
+	}
+}
+
+void AmbientOcclusionStage::ShowSSAO() {
+	showSSAOShader->Activate();
+	BindSSAOTexture(0);
+	RB_DrawFullScreenQuad();
+}
+
+void AmbientOcclusionStage::SetQualityLevelUniforms() {
+	AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
+	uniforms->depthBias.Set(r_ssao_bias.GetFloat());
+	uniforms->baseValue.Set(r_ssao_base.GetFloat());
+	float sampleRadius;
+	switch (r_ssao.GetInteger()) {
+	case 1:
+		 uniforms->maxMipLevel.Set(0);
+		 uniforms->numSpiralTurns.Set(5);
+		 uniforms->numSamples.Set(7);
+		 sampleRadius = 0.5f * r_ssao_radius.GetFloat();
+		 break;
+	case 2:
+		 uniforms->maxMipLevel.Set(MAX_DEPTH_MIPS);
+		 uniforms->numSpiralTurns.Set(7);
+		 uniforms->numSamples.Set(12);
+		 sampleRadius = r_ssao_radius.GetFloat();
+		 break;
+	case 3:
+	default:
+		 uniforms->maxMipLevel.Set(MAX_DEPTH_MIPS);
+		 uniforms->numSpiralTurns.Set(7);
+		 uniforms->numSamples.Set(24);
+		 sampleRadius = 1.5f * r_ssao_radius.GetFloat();
+		 break;
+	}
+	uniforms->intensityDivR6.Set(r_ssao_intensity.GetFloat() / pow(sampleRadius, 6));
+	uniforms->sampleRadius.Set(sampleRadius);
 }

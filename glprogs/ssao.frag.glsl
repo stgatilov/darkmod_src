@@ -1,91 +1,191 @@
 #version 140
+#extension GL_ARB_gpu_shader5 : enable
 
-// This is an SSAO implementation working purely from the depth buffer.
-// The implementation is inspired by: https://learnopengl.com/Advanced-Lighting/SSAO
-//
-// For each texel in the output, its view space position and normal are inferred
-// from the depth buffer, then the surrounding geometry is probed with a small
-// kernel of samples distributed over a hemisphere aligned with the normal.
-// Each sample is compared with the actual depth in the depth buffer, and if it is
-// occluded, it contributes to this texel's AO term.
+/**
+ Based on the SAO algorithm by Morgan McGuire and Michael Mara, NVIDIA Research
+
+  Open Source under the "BSD" license: http://www.opensource.org/licenses/bsd-license.php
+
+  Copyright (c) 2011-2012, NVIDIA
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 in vec2 var_TexCoord;
-out float FragColor;
+in vec2 var_ViewRayXY;
+out vec3 occlusionAndDepth;
 
 uniform sampler2D u_depthTexture;
-uniform sampler2D u_noiseTexture;
 
+uniform float u_intensityDivR6;
 // Adjustable SSAO parameters
+uniform int u_numSamples;
+uniform int u_numSpiralTurns;
 uniform float u_sampleRadius;
-uniform float u_depthCutoff;
 uniform float u_depthBias;
 uniform float u_baseValue;
-uniform float u_power;
 
 uniform block {
 	mat4 u_projectionMatrix;
 };
 
 float nearZ = -0.5 * u_projectionMatrix[3][2];
-vec2 halfTanFov = vec2(1 / u_projectionMatrix[0][0], 1 / u_projectionMatrix[1][1]);
+vec2 minusTwohalfTanFov = -2 * vec2(1 / u_projectionMatrix[0][0], 1 / u_projectionMatrix[1][1]);
+vec2 invTextureSize = vec2(1.0, 1.0) / textureSize(u_depthTexture, 0);
 
-float depthToZ(vec2 texCoord) {
-	float depth = texture(u_depthTexture, texCoord).r;
-	return nearZ / (depth + 0.5 * (u_projectionMatrix[2][2] - 1));
-}
+// The height in pixels of an object of height 1 world unit at distance z = -1 world unit.
+// Used to scale the radius of the sampling disc appropriately
+float projectionScale = textureSize(u_depthTexture, 0).y / (2 * u_projectionMatrix[1][1]);
 
-// map a texel in the depth texture back to view space coordinates by reversing the projection
-vec3 texCoordToViewPos(vec2 texCoord) {
+vec3 currentTexelViewPos() {
 	vec3 viewPos;
-	viewPos.z = depthToZ(texCoord);
-	viewPos.xy = -halfTanFov * (2 * texCoord - 1) * viewPos.z;
+	viewPos.z = texelFetch(u_depthTexture, ivec2(gl_FragCoord.xy), 0).r;
+	viewPos.xy = var_ViewRayXY * viewPos.z;
 	return viewPos;
 }
 
-// determine the actual occluding depth value in view space for a given view space position
-float occluderZAtViewPos(vec3 viewPos) {
-	vec4 clipPos = u_projectionMatrix * vec4(viewPos, 1);
-	vec2 texCoord = 0.5 + 0.5 * (clipPos.xy / clipPos.w);
-	return depthToZ(texCoord);
+vec3 deriveViewSpaceNormal(vec3 viewPos) {
+	return normalize(cross(dFdx(viewPos), dFdy(viewPos)));
 }
 
-// the actual sample kernel, samples should be distributed over the unit hemisphere with z >= 0
-uniform vec3 u_sampleKernel[128];
-uniform int u_kernelSize;
+/** Returns a unit vector and a screen-space radius for the tap on a unit disk (the caller should scale by the actual disk radius) */
+vec2 tapLocation(int sampleNumber, float spinAngle, out float ssR){
+	// Radius relative to ssR
+	float alpha = float(sampleNumber + 0.5) * (1.0 / u_numSamples);
+	float angle = alpha * (u_numSpiralTurns * 6.28) + spinAngle;
+
+	ssR = alpha;
+	return vec2(cos(angle), sin(angle));
+}
+
+// If using depth mip levels, the log of the maximum pixel offset before we need to switch to a lower
+// miplevel to maintain reasonable spatial locality in the cache
+// If this number is too small (< 3), too many taps will land in the same pixel, and we'll get bad variance that manifests as flashing.
+// If it is too high (> 5), we'll get bad performance because we're not using the MIP levels effectively
+#define LOG_MAX_OFFSET (3)
+
+// This must be less than or equal to the MAX_DEPTH_MIPS defined in AmbientOcclusionStage
+uniform int u_maxMipLevel;
+
+/** Read the camera-space position of the point at screen-space pixel ssP + unitOffset * ssR.  Assumes length(unitOffset) == 1 */
+vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR) {
+	// Derivation:
+	//  mipLevel = floor(log(ssR / MAX_OFFSET));
+	#   ifdef GL_ARB_gpu_shader5
+	int mipLevel = clamp(findMSB(int(ssR)) - LOG_MAX_OFFSET, 0, u_maxMipLevel);
+	#   else
+	int mipLevel = clamp(int(floor(log2(ssR))) - LOG_MAX_OFFSET, 0, u_maxMipLevel);
+	#   endif
+	//int mipLevel = 0;
+
+	ivec2 ssP = ivec2(ssR * unitOffset) + ssC;
+
+	vec3 P;
+
+	// We need to divide by 2^mipLevel to read the appropriately scaled coordinate from a MIP-map.
+	// Manually clamp to the texture size because texelFetch bypasses the texture unit
+	ivec2 mipP = clamp(ssP >> mipLevel, ivec2(0), textureSize(u_depthTexture, mipLevel) - ivec2(1));
+	P.z = texelFetch(u_depthTexture, mipP, mipLevel).r;
+
+	// Offset to pixel center
+	vec2 pixCenter = vec2(ssP) + vec2(0.5);
+	P.xy = minusTwohalfTanFov * (invTextureSize * pixCenter - 0.5) * P.z;
+
+	return P;
+}
+
+/** Compute the occlusion due to sample with index \a i about the pixel at \a ssC that corresponds
+    to camera-space point \a C with unit normal \a n_C, using maximum screen-space sampling radius \a ssDiskRadius
+
+    Note that units of H() in the HPG12 paper are meters, not
+    unitless.  The whole falloff/sampling function is therefore
+    unitless.  In this implementation, we factor out (9 / radius).
+
+    Four versions of the falloff function are implemented below
+*/
+float radiusSqr = u_sampleRadius * u_sampleRadius;
+float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in int tapIndex, in float randomPatternRotationAngle) {
+	// Offset on the unit disk, spun for this pixel
+	float ssR;
+	vec2 unitOffset = tapLocation(tapIndex, randomPatternRotationAngle, ssR);
+	ssR *= ssDiskRadius;
+
+	// The occluding point in camera space
+	vec3 Q = getOffsetPosition(ssC, unitOffset, ssR);
+
+	vec3 v = Q - C;
+
+	float vv = dot(v, v);
+	float vn = dot(v, n_C);
+
+	const float epsilon = 0.01;
+
+	// A: From the HPG12 paper
+	// Note large epsilon to avoid overdarkening within cracks
+	// return float(vv < radius2) * max((vn - bias) / (epsilon + vv), 0.0) * radius2 * 0.6;
+
+	// B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
+	float f = max(radiusSqr - vv, 0.0);
+	return f * f * f * max((vn - u_depthBias) / (epsilon + vv), 0.0);
+
+	// C: Medium contrast (which looks better at high radii), no division.  Note that the
+	// contribution still falls off with radius^2, but we've adjusted the rate in a way that is
+	// more computationally efficient and happens to be aesthetically pleasing.
+	//return 4.0 * max(1.0 - vv / radiusSqr, 0.0) * max(vn - u_depthBias, 0.0);
+
+	// D: Low contrast, no division operation
+	// return 2.0 * float(vv < u_sampleRadius * u_sampleRadius) * max(vn - u_depthBias, 0.0);
+}
+
+// we don't have an actual far Z, but this value is a "cutoff" used for packing the Z values for the edge-aware blur filter
+const float farZ = -1500.0;
+
+vec2 packViewSpaceZ(float viewSpaceZ) {
+	float compressedZ = clamp(viewSpaceZ * (1.0 / farZ), 0, 1);
+	float temp = floor(compressedZ * 256.0);
+	float integerPart = temp * (1.0 / 256.0);
+	float fractionalPart = compressedZ * 256.0 - temp;
+	return vec2(integerPart, fractionalPart);
+}
 
 void main() {
-	// calculate the position and normal of the current texel in view space
-	vec3 position = texCoordToViewPos(var_TexCoord);
-	vec3 dx = dFdx(position);
-	vec3 dy = dFdy(position);
-	vec3 normal = normalize(cross(dx, dy));
+	ivec2 screenPos = ivec2(gl_FragCoord.xy);
+	vec3 position = currentTexelViewPos();
 
-	// query a small noise texture to acquire a random rotation vector
-	vec2 noiseScale = vec2(textureSize(u_depthTexture, 0)) / 4;
-	vec3 random = normalize(-1 + 2 * texture(u_noiseTexture, var_TexCoord * noiseScale).rgb);
-
-	// use the random vector to build a randomly rotated tangent space for the current texel
-	// this is done to require fewer samples per texel
-	vec3 tangent = normalize(random - normal * dot(random, normal));
-	vec3 bitangent = cross(normal, tangent);
-	mat3 TBN = mat3(tangent, bitangent, normal);
-
-	// calculate actual occlusion value
-	float occlusion = 0.0;
-	for (int i = 0; i < u_kernelSize; i++) {
-		// determine sample position in view space
-		vec3 samplePos = position + u_sampleRadius * (TBN * u_sampleKernel[i]);
-
-		// determine actual depth at sample position and compare to sample
-		float occluderZ = occluderZAtViewPos(samplePos);
-		float difference = occluderZ - samplePos.z;
-
-		// introduce a cut-off factor if the depth difference is larger than the cutoff to avoid unwanted
-		// shadow halos for objects that are actually a distance apart
-		float rangeCheck = smoothstep(0.0, 1.0, u_depthCutoff / abs(position.z - occluderZ));
-		occlusion += step(u_depthBias, difference) * rangeCheck;
+	if (position.z > 0) {
+		// these values are leftovers from subviews, e.g. the skybox
+		discard;
 	}
 
-	float ao = clamp(u_baseValue + 1.0 - occlusion / u_kernelSize, 0, 1);
-	FragColor = pow(ao, u_power);
+	vec3 normal = deriveViewSpaceNormal(position);
+	// "random" rotation factor from a hash function proposed by the AlchemyAO HPG12 paper
+	float randomPatternRotationAngle = (3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y) * 10;
+	// calculate screen-space sample radius from view space radius
+	float screenDiskRadius = -projectionScale * u_sampleRadius / position.z;
+
+	float sum = 0.0;
+	for (int i = 0; i < u_numSamples; ++i) {
+		sum += sampleAO(screenPos, position, normal, screenDiskRadius, i, randomPatternRotationAngle);
+	}
+
+	float occlusion = max(u_baseValue, 1.0 - sum * u_intensityDivR6 * (100.0 / u_numSamples));
+
+	// Bilateral box-filter over a quad for free, respecting depth edges
+	// (the difference that this makes is subtle)
+	if (abs(dFdx(position.z)) < 0.02) {
+		occlusion -= dFdx(occlusion) * ((screenPos.x & 1) - 0.5);
+	}
+	if (abs(dFdy(position.z)) < 0.02) {
+		occlusion -= dFdy(occlusion) * ((screenPos.y & 1) - 0.5);
+	}
+
+	occlusionAndDepth.r = occlusion;
+
+	// pack the Z value for the edge-aware blur filter
+	occlusionAndDepth.gb = packViewSpaceZ(position.z);
 }
