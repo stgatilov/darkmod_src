@@ -32,6 +32,8 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 #define CONSOLE_FIRSTREPEAT		200 // delay before initial key repeat
 #define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
 
+idCVarBool con_legacyFont( "con_legacyFont", "0", CVAR_SYSTEM, "0 - new 2.08 font, 1 - old D3 font" );
+
 // the console will query the cvar and command systems for
 // command completion information
 
@@ -57,7 +59,9 @@ public:
 
 	//============================
 
-	const idMaterial *	charSetShader;
+	const idMaterial *	charSetOldMaterial;
+	const idMaterial *	charSet24Material;
+	const idMaterial *	charSetMaterial() { return con_legacyFont ? charSetOldMaterial : charSet24Material; }
 
 private:
 	void				KeyDownEvent( int key );
@@ -113,6 +117,7 @@ private:
 
 	const idMaterial *	whiteShader;
 	const idMaterial *	consoleShader;
+
 };
 
 static idConsoleLocal localConsole;
@@ -148,7 +153,7 @@ void SCR_DrawTextLeftAlign( int &y, const char *text, ... ) {
 	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
 
-	renderSystem->DrawSmallStringExt( 0, y + 2, string, colorWhite, true, localConsole.charSetShader );
+	renderSystem->DrawSmallStringExt( 0, y + 2, string, colorWhite, true, localConsole.charSetMaterial() );
 	y += SMALLCHAR_HEIGHT + 4;
 }
 
@@ -165,7 +170,7 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) {
 	const int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
 
-	renderSystem->DrawSmallStringExt( SCREEN_WIDTH - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true, localConsole.charSetShader );
+	renderSystem->DrawSmallStringExt( SCREEN_WIDTH - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true, localConsole.charSetMaterial() );
 	y += SMALLCHAR_HEIGHT + 4;
 }
 
@@ -206,7 +211,7 @@ int SCR_DrawFPS( int y ) {
 	char *s = va("%ifps", fps);
 	showFPS_currentValue = fps;
 
-    renderSystem->DrawBigStringExt(SCREEN_WIDTH - static_cast<int>(strlen(s)*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
+    renderSystem->DrawBigStringExt(SCREEN_WIDTH - static_cast<int>(strlen(s)*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetMaterial());
 
 	return (y + BIGCHAR_HEIGHT + 4);
 }
@@ -348,7 +353,8 @@ the renderSystem is initialized
 ==============
 */
 void idConsoleLocal::LoadGraphics() {
-	charSetShader = declManager->FindMaterial( "textures/consolefont" );
+	charSetOldMaterial = declManager->FindMaterial( "textures/consolefont" );
+	charSet24Material = declManager->FindMaterial( "textures/consolefont_24" );
 	whiteShader = declManager->FindMaterial( "_white" );
 	consoleShader = declManager->FindMaterial( "console" );
 }
@@ -961,9 +967,9 @@ void idConsoleLocal::DrawInput() {
 
 	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 
-	renderSystem->DrawSmallChar( 1 * SMALLCHAR_WIDTH, y, '>', localConsole.charSetShader );
+	renderSystem->DrawSmallChar( 1 * SMALLCHAR_WIDTH, y, '>', charSetMaterial() );
 
-	consoleField.Draw(2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetShader );
+	consoleField.Draw(2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetMaterial() );
 }
 
 
@@ -1009,7 +1015,7 @@ void idConsoleLocal::DrawNotify() {
 				currentColor = idStr::ColorIndex(text_p[x]>>8);
 				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 			}
-			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, v, text_p[x] & 0xff, localConsole.charSetShader );
+			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, v, text_p[x] & 0xff, charSetMaterial() );
 		}
 
 		v += SMALLCHAR_HEIGHT;
@@ -1063,7 +1069,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 
 		for ( x = 0; x < vlen; x++ ) {
 			renderSystem->DrawSmallChar( SCREEN_WIDTH - ( vlen - x ) * SMALLCHAR_WIDTH, 
-				(lines-SMALLCHAR_HEIGHT), version[x], localConsole.charSetShader );
+				(lines-SMALLCHAR_HEIGHT), version[x], charSetMaterial() );
 		}
 	}
 
@@ -1078,7 +1084,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 		// draw arrows to show the buffer is backscrolled
 		renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 		for ( x = 0; x < LINE_WIDTH; x += 4 ) {
-			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), '^', localConsole.charSetShader );
+			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), '^', charSetMaterial() );
 		}
 		y -= SMALLCHAR_HEIGHT;
 		rows--;
@@ -1109,7 +1115,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 				currentColor = idStr::ColorIndex(text_p[x]>>8);
 				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 			}
-			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x] & 0xff, localConsole.charSetShader );
+			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x] & 0xff, charSetMaterial() );
 		}
 	}
 
@@ -1130,7 +1136,7 @@ ForceFullScreen is used by the editor
 void idConsoleLocal::Draw( bool forceFullScreen ) {
 #if 0
 	//Is this even possible?
-	if ( !charSetShader ) {
+	if ( !charSetMaterial ) {
 		return;
 	}
 #endif
