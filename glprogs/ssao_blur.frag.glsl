@@ -75,7 +75,7 @@ void main() {
 
 			float tapZ = unpackZ(temp.gb);
 			// range domain (the "bilateral" weight). As depth difference increases, decrease weight.
-		  	weight *= max(0.0, 1.0 - 400 * u_edgeSharpness * abs(tapZ - z));
+		  	weight *= max(0.0, 1.0 - 2000 * u_edgeSharpness * abs(tapZ - z));
 
 			sum += value * weight;
 			totalWeight += weight;

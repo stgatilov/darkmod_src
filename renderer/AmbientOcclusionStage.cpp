@@ -29,7 +29,7 @@
 idCVar r_ssao("r_ssao", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Screen space ambient occlusion: 0 - off, 1 - low, 2 - medium, 3 - high");
 idCVar r_ssao_radius("r_ssao_radius", "32", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 	"View space sample radius - larger values provide a softer, spread effect, but risk causing unwanted halo shadows around objects");
-idCVar r_ssao_bias("r_ssao_bias", "2.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_ssao_bias("r_ssao_bias", "0.05", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 	"Min depth difference to count for occlusion, used to avoid some acne effects");
 idCVar r_ssao_intensity("r_ssao_intensity", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
 	"SSAO intensity factor, the higher the value, the stronger the effect");
@@ -332,9 +332,9 @@ void AmbientOcclusionStage::SetQualityLevelUniforms() {
 		 uniforms->maxMipLevel.Set(MAX_DEPTH_MIPS);
 		 uniforms->numSpiralTurns.Set(7);
 		 uniforms->numSamples.Set(24);
-		 sampleRadius = 1.5f * r_ssao_radius.GetFloat();
+		 sampleRadius = 2.0f * r_ssao_radius.GetFloat();
 		 break;
 	}
-	uniforms->intensityDivR6.Set(r_ssao_intensity.GetFloat() / pow(sampleRadius, 6));
+	uniforms->intensityDivR6.Set(r_ssao_intensity.GetFloat() / pow(sampleRadius * 0.02309f, 6));
 	uniforms->sampleRadius.Set(sampleRadius);
 }

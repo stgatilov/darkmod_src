@@ -41,12 +41,13 @@ vec2 invTextureSize = vec2(1.0, 1.0) / textureSize(u_depthTexture, 0);
 // The height in pixels of an object of height 1 world unit at distance z = -1 world unit.
 // Used to scale the radius of the sampling disc appropriately
 float projectionScale = textureSize(u_depthTexture, 0).y / (2 * u_projectionMatrix[1][1]);
+float tdmToMetres = 0.02309;
 
 vec3 currentTexelViewPos() {
 	vec3 viewPos;
 	viewPos.z = texelFetch(u_depthTexture, ivec2(gl_FragCoord.xy), 0).r;
 	viewPos.xy = var_ViewRayXY * viewPos.z;
-	return viewPos;
+	return viewPos * tdmToMetres;
 }
 
 vec3 deriveViewSpaceNormal(vec3 viewPos) {
@@ -96,7 +97,7 @@ vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR) {
 	vec2 pixCenter = vec2(ssP) + vec2(0.5);
 	P.xy = minusTwohalfTanFov * (invTextureSize * pixCenter - 0.5) * P.z;
 
-	return P;
+	return P * tdmToMetres;
 }
 
 /** Compute the occlusion due to sample with index \a i about the pixel at \a ssC that corresponds
@@ -108,7 +109,8 @@ vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR) {
 
     Four versions of the falloff function are implemented below
 */
-float radiusSqr = u_sampleRadius * u_sampleRadius;
+float radiusInMetres = u_sampleRadius * tdmToMetres;
+float radiusSqr = radiusInMetres * radiusInMetres;
 float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in int tapIndex, in float randomPatternRotationAngle) {
 	// Offset on the unit disk, spun for this pixel
 	float ssR;
@@ -127,7 +129,7 @@ float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in i
 
 	// A: From the HPG12 paper
 	// Note large epsilon to avoid overdarkening within cracks
-	// return float(vv < radius2) * max((vn - bias) / (epsilon + vv), 0.0) * radius2 * 0.6;
+	// return float(vv < radiusSqr) * max((vn - u_depthBias) / (epsilon + vv), 0.0) * radiusSqr * 0.6;
 
 	// B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
 	float f = max(radiusSqr - vv, 0.0);
@@ -139,7 +141,7 @@ float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in i
 	//return 4.0 * max(1.0 - vv / radiusSqr, 0.0) * max(vn - u_depthBias, 0.0);
 
 	// D: Low contrast, no division operation
-	// return 2.0 * float(vv < u_sampleRadius * u_sampleRadius) * max(vn - u_depthBias, 0.0);
+	// return 2.0 * float(vv < radiusSqr) * max(vn - u_depthBias, 0.0);
 }
 
 // we don't have an actual far Z, but this value is a "cutoff" used for packing the Z values for the edge-aware blur filter
@@ -166,14 +168,14 @@ void main() {
 	// "random" rotation factor from a hash function proposed by the AlchemyAO HPG12 paper
 	float randomPatternRotationAngle = (3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y) * 10;
 	// calculate screen-space sample radius from view space radius
-	float screenDiskRadius = -projectionScale * u_sampleRadius / position.z;
+	float screenDiskRadius = -projectionScale * u_sampleRadius * tdmToMetres / position.z;
 
 	float sum = 0.0;
 	for (int i = 0; i < u_numSamples; ++i) {
 		sum += sampleAO(screenPos, position, normal, screenDiskRadius, i, randomPatternRotationAngle);
 	}
 
-	float occlusion = max(u_baseValue, 1.0 - sum * u_intensityDivR6 * (100.0 / u_numSamples));
+	float occlusion = max(u_baseValue, 1.0 - sum * u_intensityDivR6 * (2.5 / u_numSamples));
 
 	// Bilateral box-filter over a quad for free, respecting depth edges
 	// (the difference that this makes is subtle)
