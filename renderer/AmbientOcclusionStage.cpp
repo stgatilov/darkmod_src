@@ -274,7 +274,7 @@ void AmbientOcclusionStage::BindSSAOTexture(int index) {
 }
 
 bool AmbientOcclusionStage::ShouldEnableForCurrentView() const {
-	return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && !backEnd.viewDef->isSubview && !backEnd.viewDef->isXraySubview;
+	return r_ssao.GetBool() && !backEnd.viewDef->IsLightGem() && !backEnd.viewDef->isSubview && !backEnd.viewDef->isXraySubview && !backEnd.viewDef->renderWorld->mapName.IsEmpty();
 }
 
 void AmbientOcclusionStage::PrepareDepthPass() {
