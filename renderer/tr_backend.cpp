@@ -19,6 +19,7 @@
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
+#include "Profiling.h"
 
 backEndState_t	backEnd;
 idCVarBool image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER, "1 = print outstanding background loads" );
@@ -646,6 +647,7 @@ GLSL replacement for legacy hardware gamma ramp
 =============
 */
 void RB_Tonemap( void ) {
+	GL_PROFILE("Tonemap");
 	FB_CopyColorBuffer();
 
 	int w = globalImages->currentRenderImage->uploadWidth;
@@ -669,6 +671,13 @@ void RB_Tonemap( void ) {
 	FB_SelectPrimary( true );
 	GL_Viewport( 0, 0, w, h );
 	FB_TogglePrimary( false );
+
+	if (r_showFBO.GetBool()) {
+	    // FIXME: r_showFBO debug output is handled within FB_TogglePrimary
+	    // and the tonemap here then potentially overwrites/affects its output
+	    return;
+	}
+
 	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
 	tonemap->Activate();
 	qglUniform1i( tonemap->GetUniformLocation( "u_texture" ), 0 );

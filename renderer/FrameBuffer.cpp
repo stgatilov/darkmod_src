@@ -745,7 +745,7 @@ void LeavePrimary() {
 			qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
 			break;
 		case 4:
-			ambientOcclusion->BindSSAOTexture( 0 );
+			ambientOcclusion->ShowSSAO();
 			break;
 		default:
 			globalImages->currentRenderImage->Bind();
