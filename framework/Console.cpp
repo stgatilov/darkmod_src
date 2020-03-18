@@ -32,7 +32,7 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 #define CONSOLE_FIRSTREPEAT		200 // delay before initial key repeat
 #define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
 
-idCVarBool con_legacyFont( "con_legacyFont", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "0 - new 2.08 font, 1 - old D3 font" ); // grayman - archive and change default
+idCVarBool con_legacyFont( "con_legacyFont", "0", CVAR_SYSTEM | CVAR_ARCHIVE, "0 - new 2.08 font, 1 - old D3 font" ); // grayman - add archive
 
 // the console will query the cvar and command systems for
 // command completion information
