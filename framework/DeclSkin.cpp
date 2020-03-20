@@ -67,7 +67,10 @@ bool idDeclSkin::Parse( const char *text, const int textLength ) {
 		} else {
 			skinMapping_t	map;
 
-			if ( !token.Icmp( "*" ) ) {
+			if ( !token.Icmp( "-" ) ) {
+				//stgatilov: there is stupid tradition to write paths onquoted in skins =(
+				src.Warning("Path with hyphens must be surrounded in double quotes");
+			} else if ( !token.Icmp( "*" ) ) {
 				map.from = NULL; // wildcard
 			} else {
 				map.from = declManager->FindMaterial( token );
