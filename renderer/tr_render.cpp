@@ -226,19 +226,19 @@ void RB_Multi_DrawElements( int instances ) {
 				backEnd.pc.c_drawIndexes += surf->numIndexes * instances;
 				backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
 			}
-			vertCacheHandle_t hBufferStart{ 1,0,0 };
-			vertexCache.IndexPosition( hBufferStart );
-			vertexCache.VertexPosition( hBufferStart );
-			auto indices = (const void* const*)multiDrawIndices.Ptr();
-#if 1
-			qglMultiDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount.Ptr(), GL_INDEX_TYPE, indices, multiDrawCount.Num(), multiDrawBaseVertices.Ptr() );
-#else
-			for ( int i = 0; i < multiDrawCount.Num(); i++ ) {
-				qglDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount[i], GL_INDEX_TYPE, indices[i], multiDrawBaseVertices[i] );
-				GL_CheckErrors();
-			}
-#endif
 		}
+		vertCacheHandle_t hBufferStart{ 1,0,0 };
+		vertexCache.IndexPosition( hBufferStart );
+		vertexCache.VertexPosition( hBufferStart );
+		auto indices = (const void* const*)multiDrawIndices.Ptr();
+#if 1
+		qglMultiDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount.Ptr(), GL_INDEX_TYPE, indices, multiDrawCount.Num(), multiDrawBaseVertices.Ptr() );
+#else
+		for ( int i = 0; i < multiDrawCount.Num(); i++ ) {
+			qglDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount[i], GL_INDEX_TYPE, indices[i], multiDrawBaseVertices[i] );
+			GL_CheckErrors();
+		}
+#endif
 		multiDrawCount.SetNum( 0, false );
 		multiDrawIndices.SetNum( 0, false );
 		multiDrawBaseVertices.SetNum( 0, false );

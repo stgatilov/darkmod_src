@@ -401,27 +401,24 @@ void idRenderSystemLocal::DrawSmallChar( int x, int y, int ch, const idMaterial 
 	fcol = col * 0.0625f;
 	size = 0.0625f;
 	
-// 2.08: dense char map texel overlap
-	float texelSize = 0.f / material->GetImageHeight();
-	frow += texelSize / 2;
-
-#if 0
-	DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
+	extern idCVarBool con_legacyFont;
+	if ( con_legacyFont ) 
+		DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
 	                fcol, frow,
 	                fcol + size, frow + size,
 	                material );
-#else
-	float fontAspect = (float) material->GetImageWidth() / material->GetImageHeight();
-	float screenAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
-	float virtualAspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
-	float charAspect = fontAspect / screenAspect * virtualAspect;
-	float charWidth = charAspect * SMALLCHAR_HEIGHT, charHeight = SMALLCHAR_HEIGHT;
-	if ( charWidth > SMALLCHAR_WIDTH ) {
-		charWidth = SMALLCHAR_WIDTH;
-		charHeight = charWidth / charAspect;
+	else {
+		float fontAspect = (float)material->GetImageWidth() / material->GetImageHeight();
+		float screenAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
+		float virtualAspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
+		float charAspect = fontAspect / screenAspect * virtualAspect;
+		float charWidth = charAspect * SMALLCHAR_HEIGHT, charHeight = SMALLCHAR_HEIGHT;
+		if ( charWidth > SMALLCHAR_WIDTH ) {
+			charWidth = SMALLCHAR_WIDTH;
+			charHeight = charWidth / charAspect;
+		}
+		DrawStretchPic( x, y, charWidth, charHeight, fcol, frow, fcol + size, frow + size, material );
 	}
-	DrawStretchPic( x, y, charWidth, charHeight, fcol, frow, fcol + size, frow + size - texelSize, material );
-#endif
 }
 
 /*

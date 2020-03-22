@@ -2975,7 +2975,9 @@ void idCommonLocal::InitGame( void )
 	//PrintLoadingMessage( Translate( "#str_04345" ) );
 
 	// exec the startup scripts
+#ifdef NO_MFC
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec editor.cfg\n" );
+#endif
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec default.cfg\n" );
 
 	// skip the config file if "safe" is on the command line
