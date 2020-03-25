@@ -41,7 +41,7 @@ vec2 invTextureSize = vec2(1.0, 1.0) / textureSize(u_depthTexture, 0);
 // The height in pixels of an object of height 1 world unit at distance z = -1 world unit.
 // Used to scale the radius of the sampling disc appropriately
 float projectionScale = textureSize(u_depthTexture, 0).y / (2 * u_projectionMatrix[1][1]);
-float tdmToMetres = 0.02309;
+const float tdmToMetres = 0.02309;
 
 vec3 currentTexelViewPos() {
 	vec3 viewPos;
@@ -82,7 +82,6 @@ vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR) {
 	#   else
 	int mipLevel = clamp(int(floor(log2(ssR))) - LOG_MAX_OFFSET, 0, u_maxMipLevel);
 	#   endif
-	//int mipLevel = 0;
 
 	ivec2 ssP = ivec2(ssR * unitOffset) + ssC;
 
@@ -145,7 +144,7 @@ float sampleAO(in ivec2 ssC, in vec3 C, in vec3 n_C, in float ssDiskRadius, in i
 }
 
 // we don't have an actual far Z, but this value is a "cutoff" used for packing the Z values for the edge-aware blur filter
-const float farZ = -1500.0;
+const float farZ = -1500.0 * tdmToMetres;
 
 vec2 packViewSpaceZ(float viewSpaceZ) {
 	float compressedZ = clamp(viewSpaceZ * (1.0 / farZ), 0, 1);
@@ -166,9 +165,9 @@ void main() {
 
 	vec3 normal = deriveViewSpaceNormal(position);
 	// "random" rotation factor from a hash function proposed by the AlchemyAO HPG12 paper
-	float randomPatternRotationAngle = (3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y) * 10;
+	float randomPatternRotationAngle = (3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y);
 	// calculate screen-space sample radius from view space radius
-	float screenDiskRadius = -projectionScale * u_sampleRadius * tdmToMetres / position.z;
+	float screenDiskRadius = -projectionScale * radiusInMetres / position.z;
 
 	float sum = 0.0;
 	for (int i = 0; i < u_numSamples; ++i) {
