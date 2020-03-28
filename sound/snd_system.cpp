@@ -61,7 +61,8 @@ idCVar idSoundSystemLocal::s_enviroSuitVolumeScale( "s_enviroSuitVolumeScale", "
 idCVar idSoundSystemLocal::s_skipHelltimeFX( "s_skipHelltimeFX", "0", CVAR_SOUND | CVAR_BOOL, "" );
 
 #if ID_OPENAL
-idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EAX reverb" );
+idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EFX reverb effects (also formerly known as EAX)" );
+idCVar idSoundSystemLocal::s_useHRTF( "s_useHRTF", "1", CVAR_SOUND | CVAR_ARCHIVE, "use HRTF for better positional sound on headphones.\nvalue -1 means automatic choice." );
 idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ARCHIVE, "specifies maximum uncompressed sample length in seconds" );
 #else
 idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "EAX not available in this build" );
@@ -70,6 +71,9 @@ idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CV
 
 bool idSoundSystemLocal::useEFXReverb = false;
 int idSoundSystemLocal::EFXAvailable = -1;
+
+bool idSoundSystemLocal::useHRTF = false;
+bool idSoundSystemLocal::HRTFAvailable = false;
 
 idSoundSystemLocal	soundSystemLocal;
 idSoundSystem	*soundSystem  = &soundSystemLocal;
@@ -355,9 +359,30 @@ void idSoundSystemLocal::Init() {
 	else {
 		common->Printf("OpenAL: no device found, sound disabled\n");
 		s_noSound.SetBool(true);
+		return;
 	}
 
-	openalContext = alcCreateContext(openalDevice, NULL);
+	idList<ALCint> attribs;
+
+	if (alcIsExtensionPresent(openalDevice, "ALC_SOFT_HRTF")) {
+		HRTFAvailable = true;
+		attribs.Append(ALC_HRTF_SOFT);
+		int value = s_useHRTF.GetInteger() < 0 ? ALC_DONT_CARE_SOFT : (s_useHRTF.GetInteger() ? ALC_TRUE : ALC_FALSE);
+		attribs.Append(value);
+	}
+	else {
+		HRTFAvailable = false;
+	}
+	common->Printf("OpenAL: HRTF is %s\n", (HRTFAvailable ? "available" : "NOT available"));
+
+
+	attribs.Append(0);
+	openalContext = alcCreateContext(openalDevice, attribs.Ptr());
+	if (!openalContext) {
+		common->Warning("OpenAL: failed to create context. Sound disabled");
+		s_noSound.SetBool(true);
+		return;
+	}
 	alcMakeContextCurrent(openalContext);
 
 
@@ -409,6 +434,25 @@ void idSoundSystemLocal::Init() {
 		alAuxiliaryEffectSloti = NULL;
 	}
 
+	if (HRTFAvailable) {
+		ALCint value = -1;
+		alcGetIntegerv(openalDevice, ALC_HRTF_SOFT, 1, &value);
+		useHRTF = (value == ALC_TRUE);
+		alcGetIntegerv(openalDevice, ALC_HRTF_STATUS_SOFT, 1, &value);
+		const char *status = "unknown";
+		if (value == ALC_HRTF_DISABLED_SOFT) status = "ALC_HRTF_DISABLED_SOFT";
+		if (value == ALC_HRTF_ENABLED_SOFT) status = "ALC_HRTF_ENABLED_SOFT";
+		if (value == ALC_HRTF_DENIED_SOFT) status = "ALC_HRTF_DENIED_SOFT";
+		if (value == ALC_HRTF_REQUIRED_SOFT) status = "ALC_HRTF_REQUIRED_SOFT";
+		if (value == ALC_HRTF_HEADPHONES_DETECTED_SOFT) status = "ALC_HRTF_HEADPHONES_DETECTED_SOFT";
+		if (value == ALC_HRTF_UNSUPPORTED_FORMAT_SOFT) status = "ALC_HRTF_UNSUPPORTED_FORMAT_SOFT";
+		common->Printf("OpenAL: HRTF is %s (reason: %d = %s)\n", (useHRTF ? "enabled" : "disabled"), value, status);
+	}
+	else {
+		useHRTF = false;
+		common->Printf("OpenAL: HRTF is %s (reason: not supported)\n", (useHRTF ? "enabled" : "disabled"));
+	}
+
 	ALuint handle;
 	openalSourceCount = 0;
 
@@ -447,6 +491,9 @@ void idSoundSystemLocal::Init() {
 	if ( !s_noSound.GetBool() ) {
 		idSampleDecoder::Init();
 		soundCache = new idSoundCache();
+	}
+	else {
+		common->Printf("Sound disabled by s_noSound\n");
 	}
 
 	cmdSystem->AddCommand( "listSounds", ListSounds_f, CMD_FL_SOUND, "lists all sounds" );
