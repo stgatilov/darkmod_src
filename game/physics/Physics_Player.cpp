@@ -3018,9 +3018,10 @@ idPhysics_Player::idPhysics_Player
 idPhysics_Player::idPhysics_Player( void ) 
 	: m_eShoulderAnimState(eShoulderingAnimation_NotStarted)
 	, m_fShoulderingTime(0.0f)
-	, m_ShoulderingStartPos(vec3_zero)
     , m_bShouldering_SkipDucking(false)
 	, m_fShouldering_TimeToNextSound(0.0f)
+	, m_fPrevShoulderingPitchOffset(0.0f)
+	, m_PrevShoulderingPosOffset(vec3_zero)
 	, m_fSwimTimeStart_s(0.0f)
 	, m_fSwimLeadInDuration_s(-1.0f)
 	, m_fSwimLeadOutStart_s(-1.0f)
@@ -3262,10 +3263,10 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	// Shouldering anim
 	savefile->WriteInt(m_eShoulderAnimState);
 	savefile->WriteFloat(m_fShoulderingTime);
-	savefile->WriteVec3(m_ShoulderingStartPos);
+	savefile->WriteVec3(m_PrevShoulderingPosOffset);
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
-	savefile->WriteFloat(m_fShoulderingStartPitch);
+	savefile->WriteFloat(m_fPrevShoulderingPitchOffset);
 
 	// Swimming
 	savefile->WriteFloat(m_fSwimTimeStart_s);
@@ -3393,10 +3394,10 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 		m_eShoulderAnimState = static_cast<eShoulderingAnimation>(iSAS);
 	}
 	savefile->ReadFloat(m_fShoulderingTime);
-	savefile->ReadVec3(m_ShoulderingStartPos);
+	savefile->ReadVec3(m_PrevShoulderingPosOffset);
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
-	savefile->ReadFloat(m_fShoulderingStartPitch);
+	savefile->ReadFloat(m_fPrevShoulderingPitchOffset);
 
 	// Swimming
 	savefile->ReadFloat(m_fSwimTimeStart_s);
@@ -6088,8 +6089,9 @@ void idPhysics_Player::StartShoulderingAnim()
 		{
 			// Start animation right away
 			m_fShoulderingTime = cv_pm_shoulderAnim_msecs.GetFloat();
-			m_fShoulderingStartPitch = viewAngles.pitch;
-			m_ShoulderingStartPos = GetOrigin();
+			m_fPrevShoulderingPitchOffset = 0.0f;
+			m_PrevShoulderingPosOffset = vec3_zero;
+			
 			m_eShoulderAnimState = eShoulderingAnimation_Active;
 			if (!m_bShouldering_SkipDucking && !IsCrouching())
 			{
@@ -6139,10 +6141,9 @@ void idPhysics_Player::ShoulderingMove()
 		}
 
 		// Compute view angles and position for lean
-		idVec3 newPosition = m_ShoulderingStartPos;
-		const float timeRadians = idMath::PI * m_fShoulderingTime / cv_pm_shoulderAnim_msecs.GetFloat();
-		viewAngles.pitch = m_fShoulderingStartPitch + idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat();
-		newPosition += (idMath::Sin(timeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat()) * viewForward;
+		const float fTimeRadians = idMath::PI * m_fShoulderingTime / cv_pm_shoulderAnim_msecs.GetFloat();
+		idVec3 newPositionOffset = (idMath::Sin(fTimeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat()) * viewForward;		
+		const float fPitchOffset = idMath::Sin(fTimeRadians) * cv_pm_shoulderAnim_rockDist.GetFloat();
 
 		// Add vertical dip animation
 		const float fAbsoluteDipDuration = 
@@ -6154,11 +6155,17 @@ void idPhysics_Player::ShoulderingMove()
 		if (m_fShoulderingTime >= fDipEnd && m_fShoulderingTime < fDipStart)
 		{
 			const float fDipTimeRadians = idMath::PI * (fDipEnd - m_fShoulderingTime) / fAbsoluteDipDuration;
-			newPosition += (-idMath::Sin(fDipTimeRadians) * cv_pm_shoulderAnim_dip_dist.GetFloat()) * gravityNormal;
+			newPositionOffset += (-idMath::Sin(fDipTimeRadians) * cv_pm_shoulderAnim_dip_dist.GetFloat()) * gravityNormal;
 		}
 
-		pPlayer->SetViewAngles(viewAngles);
+		// Apply animation to player position and view angle
+		const idVec3 newPosition = current.origin + (newPositionOffset - m_PrevShoulderingPosOffset);
+		m_PrevShoulderingPosOffset = newPositionOffset;
 		SetOrigin(newPosition);
+
+		viewAngles.pitch += (fPitchOffset - m_fPrevShoulderingPitchOffset);
+		m_fPrevShoulderingPitchOffset = fPitchOffset;
+		pPlayer->SetViewAngles(viewAngles);		
 	}
 
 	// Are we done?
