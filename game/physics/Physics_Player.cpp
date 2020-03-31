@@ -6040,7 +6040,7 @@ void idPhysics_Player::StartShouldering(idEntity const * const pBody)
 		static const int iImmobilization =
 			EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE
 			| EIM_MANTLE | EIM_FROB_COMPLEX | EIM_MOVEMENT | EIM_CROUCH_HOLD
-			| EIM_CROUCH | EIM_JUMP | EIM_FROB | EIM_FROB_HILIGHT | EIM_LEAN | EIM_VIEW_ANGLE;
+			| EIM_CROUCH | EIM_JUMP | EIM_FROB | EIM_FROB_HILIGHT | EIM_LEAN;
 
 		pPlayer->SetImmobilization("ShoulderingAnimation", iImmobilization);
 
