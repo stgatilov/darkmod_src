@@ -242,7 +242,7 @@ idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVA
 idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
 // stifu #3607: Shouldering animation
-idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the shouldering animation in msecs.", 0.0f, 5000.0f);
+idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the shouldering animation in msecs. Set to 0 to disable shouldering animation.", 0.0f, 5000.0f);
 idCVar cv_pm_shoulderAnim_dip_duration(	"pm_shoulderAnim_dip_duration", "0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the dip during the shouldering animation relative to pm_shoulderAnim_msecs.", 0.0f, 1.0f);
 idCVar cv_pm_shoulderAnim_rockDist(     "pm_shoulderAnim_rockDist",     "3.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The animation distance.", 0.0f, 50.0f);
 idCVar cv_pm_shoulderAnim_dip_dist(		"pm_shoulderAnim_dip_dist",		"5.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The animation distance of the vertical dip.", 0.0f, 50.0f);

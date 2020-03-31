@@ -6036,6 +6036,9 @@ void idPhysics_Player::SetMovementFlags( int flags )
 
 void idPhysics_Player::StartShouldering(idEntity const * const pBody)
 {
+	if (cv_pm_shoulderAnim_msecs.GetFloat() <= 0.0f)
+		return;
+
 	// Initialize
 	if (m_eShoulderAnimState == eShoulderingAnimation_NotStarted)
 	{
