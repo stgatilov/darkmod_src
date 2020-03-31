@@ -969,6 +969,7 @@ private:
 	float					m_fShoulderingTime;
 	float					m_fPrevShoulderingPitchOffset;
 	idVec3					m_PrevShoulderingPosOffset;
+	idVec3					m_ShoulderingStartPos;
 	bool					m_bShouldering_SkipDucking;
 	float					m_fShouldering_TimeToNextSound;
 };

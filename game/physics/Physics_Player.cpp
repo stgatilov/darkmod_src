@@ -3022,6 +3022,7 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_fShouldering_TimeToNextSound(0.0f)
 	, m_fPrevShoulderingPitchOffset(0.0f)
 	, m_PrevShoulderingPosOffset(vec3_zero)
+	, m_ShoulderingStartPos(vec3_zero)
 	, m_fSwimTimeStart_s(0.0f)
 	, m_fSwimLeadInDuration_s(-1.0f)
 	, m_fSwimLeadOutStart_s(-1.0f)
@@ -3264,6 +3265,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_eShoulderAnimState);
 	savefile->WriteFloat(m_fShoulderingTime);
 	savefile->WriteVec3(m_PrevShoulderingPosOffset);
+	savefile->WriteVec3(m_ShoulderingStartPos);
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
 	savefile->WriteFloat(m_fPrevShoulderingPitchOffset);
@@ -3395,6 +3397,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	}
 	savefile->ReadFloat(m_fShoulderingTime);
 	savefile->ReadVec3(m_PrevShoulderingPosOffset);
+	savefile->ReadVec3(m_ShoulderingStartPos);
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
 	savefile->ReadFloat(m_fPrevShoulderingPitchOffset);
@@ -6091,6 +6094,7 @@ void idPhysics_Player::StartShoulderingAnim()
 			m_fShoulderingTime = cv_pm_shoulderAnim_msecs.GetFloat();
 			m_fPrevShoulderingPitchOffset = 0.0f;
 			m_PrevShoulderingPosOffset = vec3_zero;
+			m_ShoulderingStartPos = GetOrigin();
 			
 			m_eShoulderAnimState = eShoulderingAnimation_Active;
 			if (!m_bShouldering_SkipDucking && !IsCrouching())
@@ -6173,6 +6177,10 @@ void idPhysics_Player::ShoulderingMove()
 	{
 		static_cast<idPlayer*>(self)->SetImmobilization("ShoulderingAnimation", 0);
 		m_eShoulderAnimState = eShoulderingAnimation_NotStarted;
+
+		// Explicitly return to start position to avoid clipping due to quantization errors
+		SetOrigin(m_ShoulderingStartPos);
+
 		return;
 	}
 
