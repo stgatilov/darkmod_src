@@ -180,6 +180,11 @@ public:
 	float					GetDeltaViewYaw();
 	float					GetDeltaViewPitch();
 
+	/**
+	* True if the player is mid-air
+	**/
+	bool					IsMidAir() const;
+
 public:
 
 	/**
@@ -972,6 +977,7 @@ private:
 	idVec3					m_ShoulderingStartPos;
 	bool					m_bShouldering_SkipDucking;
 	float					m_fShouldering_TimeToNextSound;
+	bool					m_bMidAir;
 };
 
 #endif /* !__PHYSICS_PLAYER_H__ */

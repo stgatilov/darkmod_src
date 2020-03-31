@@ -1011,6 +1011,8 @@ void idPhysics_Player::AirMove( void ) {
 	}
 
 	idPhysics_Player::SlideMove( true, false, false, false );
+
+	m_bMidAir = true;
 }
 
 /*
@@ -2720,6 +2722,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	m_bRopeContact = false;
 	m_bClimbableAhead = false;
 	m_bClimbDetachThisFrame = false;
+	m_bMidAir = false;
 
 	// default speed
 	playerSpeed = walkSpeed;
@@ -3020,6 +3023,7 @@ idPhysics_Player::idPhysics_Player( void )
 	, m_fShoulderingTime(0.0f)
     , m_bShouldering_SkipDucking(false)
 	, m_fShouldering_TimeToNextSound(0.0f)
+	, m_bMidAir(false)
 	, m_fPrevShoulderingPitchOffset(0.0f)
 	, m_PrevShoulderingPosOffset(vec3_zero)
 	, m_ShoulderingStartPos(vec3_zero)
@@ -3269,6 +3273,7 @@ void idPhysics_Player::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bShouldering_SkipDucking);
 	savefile->WriteFloat(m_fShouldering_TimeToNextSound);
 	savefile->WriteFloat(m_fPrevShoulderingPitchOffset);
+	savefile->WriteBool(m_bMidAir);
 
 	// Swimming
 	savefile->WriteFloat(m_fSwimTimeStart_s);
@@ -3401,6 +3406,7 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bShouldering_SkipDucking);
 	savefile->ReadFloat(m_fShouldering_TimeToNextSound);
 	savefile->ReadFloat(m_fPrevShoulderingPitchOffset);
+	savefile->ReadBool(m_bMidAir);
 
 	// Swimming
 	savefile->ReadFloat(m_fSwimTimeStart_s);
@@ -5680,6 +5686,12 @@ float idPhysics_Player::GetDeltaViewYaw( void )
 float idPhysics_Player::GetDeltaViewPitch( void )
 {
 	return m_DeltaViewPitch;
+}
+
+
+bool idPhysics_Player::IsMidAir() const
+{
+	return m_bMidAir;
 }
 
 void idPhysics_Player::UpdateLeanedInputYaw( idAngles &InputAngles )
