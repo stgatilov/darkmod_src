@@ -78,6 +78,7 @@ public:
 	bool						LoadLWO( const char *fileName );
 	bool						LoadFLT( const char *fileName );
 	bool						LoadMA( const char *filename );
+	bool						LoadProxy( const char *filename );
 
 	bool						ConvertASEToModelSurfaces( const struct aseModel_s *ase );
 	bool						ConvertLWOToModelSurfaces( const struct st_lwObject *lwo );
@@ -85,6 +86,7 @@ public:
 
 	struct aseModel_s *			ConvertLWOToASE( const struct st_lwObject *obj, const char *fileName );
 
+	void						TransformModel( const idRenderModelStatic *sourceModel, const idMat3 &rotation );
 	bool						DeleteSurfaceWithId( int id );
 	void						DeleteSurfacesWithNegativeId( void );
 	bool						FindSurfaceWithId( int id, int &surfaceNum );
@@ -107,6 +109,7 @@ protected:
 	bool						reloadable;				// if not, reloadModels won't check timestamp
 	bool						levelLoadReferenced;	// for determining if it needs to be freed
 	ID_TIME_T					timeStamp;
+	idStr						proxySourceName;		// stgatilov #4970: name of the source model (only for proxy models)
 
 	static idCVar				r_mergeModelSurfaces;	// combine model surfaces with the same material
 	static idCVar				r_slopVertex;			// merge xyz coordinates this far apart

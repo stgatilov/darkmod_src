@@ -284,6 +284,10 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 	} else if ( extension.Icmp( "ma" ) == 0 ) {
 		model = new idRenderModelStatic;
 		model->InitFromFile( modelName );
+	} else if ( extension.Icmp( "proxy" ) == 0 ) {
+		//stgatilov #4970: proxy models substitute rotation hack
+		model = new idRenderModelStatic;
+		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( MD5_MESH_EXT ) == 0 ) {
 		model = new idRenderModelMD5;
 		model->InitFromFile( modelName );
