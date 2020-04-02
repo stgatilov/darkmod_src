@@ -41,7 +41,7 @@ public:
 	virtual void			WritePrecacheCommands( idFile *file );
 	virtual void			BeginLevelLoad();
 	virtual void			EndLevelLoad();
-	virtual idRenderModel * TransformModel( idRenderModel *model, const char *rotationMatrix );
+
 	virtual	void			PrintMemInfo( MemInfo_t *mi );
 
 private:
@@ -276,11 +276,7 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 
 	idRenderModel	*model;
 
-	//stgatilov #4970: don't try to load model with composite name
-	if (idStr::FindChar(modelName, '\1') >= 0)
-		extension = "";
-	else
-		canonical.ExtractFileExtension( extension );
+	canonical.ExtractFileExtension( extension );
 
 	if ( ( extension.Icmp( "ase" ) == 0 ) || ( extension.Icmp( "lwo" ) == 0 ) || ( extension.Icmp( "flt" ) == 0 ) ) {
 		model = new idRenderModelStatic;
@@ -329,32 +325,6 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 	AddModel( model );
 
 	return model;
-}
-
-/*
-=================
-idRenderModelManagerLocal::TransformModel
-=================
-*/
-idRenderModel *idRenderModelManagerLocal::TransformModel( idRenderModel *model, const char *rotationString ) {
-	//new model will have composite name to distinguish it from ordinary models
-	idStr newName = idStr(model->Name()) + '\1' + "\"rotation\"=\"" + rotationString + "\"";
-	if (idRenderModel *existingModel = CheckModel(newName.c_str()))
-		return existingModel;
-
-	idMat3 rot;
-	sscanf(rotationString, "%f %f %f %f %f %f %f %f %f", &rot[0].x, &rot[0].y, &rot[0].z, &rot[1].x, &rot[1].y, &rot[1].z, &rot[2].x, &rot[2].y, &rot[2].z);
-
-	idRenderModelStatic *newModel = nullptr;
-	if (auto modelStatic = dynamic_cast<idRenderModelStatic*>(model)) {
-		newModel = modelStatic->TransformModel(rot, newName);
-	}
-
-	if (newModel) {
-		newModel->SetLevelLoadReferenced(true);
-		AddModel(newModel);
-	}
-	return newModel;
 }
 
 /*

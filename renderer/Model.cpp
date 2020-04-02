@@ -2401,37 +2401,3 @@ bool idRenderModelStatic::FindSurfaceWithId( int id, int &surfaceNum ) {
 	}
 	return false;
 }
-
-
-idRenderModelStatic *idRenderModelStatic::TransformModel( const idMat3 &rotation, const char *newName ) {
-	idRenderModelStatic *newModel = new idRenderModelStatic;
-	newModel->name = newName;
-	newModel->reloadable = false;
-	newModel->overlaysAdded = overlaysAdded;
-
-	idMat3 normalRotation = rotation.Inverse().Transpose();
-
-	for (int s = 0; s < surfaces.Num(); s++) {
-		const modelSurface_t &surf = surfaces[s];
-		//clone data
-		modelSurface_t newSurf;
-		newSurf.id = surf.id;
-		newSurf.material = surf.material;
-		srfTriangles_t *newTri = R_CopyStaticTriSurf(surf.geometry);
-		newSurf.geometry = newTri;
-
-		for (int v = 0; v < newTri->numVerts; v++) {
-			idDrawVert &vert = newTri->verts[v];
-			vert.xyz = rotation * vert.xyz;
-			vert.normal = normalRotation * vert.normal;
-			vert.normal.Normalize();
-			vert.tangents[0] = rotation * vert.tangents[0];
-			vert.tangents[1] = rotation * vert.tangents[1];
-		}
-
-		newModel->AddSurface(newSurf);
-	}
-
-	newModel->FinishSurfaces();
-	return newModel;
-}

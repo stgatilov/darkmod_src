@@ -85,8 +85,6 @@ public:
 
 	struct aseModel_s *			ConvertLWOToASE( const struct st_lwObject *obj, const char *fileName );
 
-	idRenderModelStatic *		TransformModel( const idMat3 &rotation, const char *newName );
-
 	bool						DeleteSurfaceWithId( int id );
 	void						DeleteSurfacesWithNegativeId( void );
 	bool						FindSurfaceWithId( int id, int &surfaceNum );

@@ -571,13 +571,6 @@ idCVar g_frametime(					"g_frametime",				"0",			CVAR_GAME | CVAR_BOOL, "display
 idCVar g_timeModifier(				"g_timeModifier",			"1",			CVAR_GAME | CVAR_FLOAT, "Use this to stretch the hardcoded 16 msec each frame takes. This can be used to let the game run ultra-slow." );
 idCVar g_timeentities(				"g_timeEntities",			"0",			CVAR_GAME | CVAR_FLOAT, "when non-zero, shows entities whose think functions exceeded the # of milliseconds specified" );
 
-//stgatilov #4970: applies some changes/fixes to spawnargs of entity before spawning
-//also related to game media: models and similar stuff
-idCVar g_rotationHack("g_rotationHack", "1", CVAR_ARCHIVE | CVAR_BOOL | CVAR_GAME,
-	"Automatically fix all func_static entities with non-orthogonal rotation on map load. "
-	"Should fix collision, culling, shadowing, and lighting issues with rotation-hacked models. "
-	"Note: changes only takes effect after starting a !NEW! game."
-);
 
 idCVar g_enablePortalSky(			"g_enablePortalSky",		"2",			CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "enables the portal sky: 1 - old method, 2 - new method, -1 - debug tool" );
 
