@@ -1646,6 +1646,18 @@ bool CGrabber::Equip( void )
 		// greebo: Only shoulderable AF should get "equipped"
 		if (ent->spawnArgs.GetBool("shoulderable"))
 		{
+			{
+				idPlayer *player = m_player.GetEntity();
+				idPhysics_Player* playerPyhsics = dynamic_cast<idPhysics_Player*>(player->GetPlayerPhysics());
+				if (playerPyhsics && playerPyhsics->IsMidAir())
+				{
+					// Cannot shoulder midair
+					player->StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
+					DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Cannot shoulder midair!\r");
+					return false;
+				}
+			}
+
 			m_EquippedEnt = ent;
 
 			StopDrag();

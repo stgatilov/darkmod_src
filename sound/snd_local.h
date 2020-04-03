@@ -754,6 +754,9 @@ public:
 							// mark available during initialization, or through an explicit test
 	static int				EFXAvailable;
 
+	static bool				HRTFAvailable;	// can be used on this OpenAL implementation?
+	static bool				useHRTF;		// actually used in this runtime?
+
 
 	static idCVar			s_noSound;
 	static idCVar			s_diffractionMax; // grayman #4219
@@ -783,6 +786,7 @@ public:
 	static idCVar			s_clipVolumes;
 	static idCVar			s_realTimeDecoding;
 	static idCVar			s_useEAXReverb;
+	static idCVar			s_useHRTF;
 	static idCVar			s_decompressionLimit;
 
 	static idCVar			s_slowAttenuate;

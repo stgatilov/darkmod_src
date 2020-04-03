@@ -484,7 +484,6 @@ extern idCVar	g_frametime;
 extern idCVar	g_timeentities;
 
 extern idCVar	g_timeModifier;
-extern idCVar	g_rotationHack;
 
 extern idCVar	ai_debugScript;
 extern idCVar	ai_debugMove;

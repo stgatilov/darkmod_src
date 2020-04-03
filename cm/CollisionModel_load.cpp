@@ -2999,16 +2999,9 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 	bool collisionSurface;
 	idStr extension;
 
-	{ //stgatilov #4970: check if this is a rendermodel with embedded rotation
-		idStr filenameClean = fileName;
-		int pos = filenameClean.Find('\1');
-		if (pos >= 0)
-			filenameClean.CapLength(pos);
-		filenameClean.ExtractFileExtension( extension );
-	}
-
 	// only load ASE and LWO models
-	if ( ( extension.Icmp( "ase" ) != 0 ) && ( extension.Icmp( "lwo" ) != 0 ) && ( extension.Icmp( "ma" ) != 0 ) ) {
+	idStr( fileName ).ExtractFileExtension( extension );
+	if ( ( extension.Icmp( "ase" ) != 0 ) && ( extension.Icmp( "lwo" ) != 0 ) && ( extension.Icmp( "ma" ) != 0 ) && ( extension.Icmp( "proxy" ) != 0 ) ) {
 		return NULL;
 	}
 

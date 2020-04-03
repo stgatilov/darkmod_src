@@ -242,7 +242,7 @@ idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVA
 idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
 // stifu #3607: Shouldering animation
-idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the shouldering animation in msecs.", 0.0f, 5000.0f);
+idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the shouldering animation in msecs. Set to 0 to disable shouldering animation.", 0.0f, 5000.0f);
 idCVar cv_pm_shoulderAnim_dip_duration(	"pm_shoulderAnim_dip_duration", "0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the dip during the shouldering animation relative to pm_shoulderAnim_msecs.", 0.0f, 1.0f);
 idCVar cv_pm_shoulderAnim_rockDist(     "pm_shoulderAnim_rockDist",     "3.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The animation distance.", 0.0f, 50.0f);
 idCVar cv_pm_shoulderAnim_dip_dist(		"pm_shoulderAnim_dip_dist",		"5.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The animation distance of the vertical dip.", 0.0f, 50.0f);
@@ -571,13 +571,6 @@ idCVar g_frametime(					"g_frametime",				"0",			CVAR_GAME | CVAR_BOOL, "display
 idCVar g_timeModifier(				"g_timeModifier",			"1",			CVAR_GAME | CVAR_FLOAT, "Use this to stretch the hardcoded 16 msec each frame takes. This can be used to let the game run ultra-slow." );
 idCVar g_timeentities(				"g_timeEntities",			"0",			CVAR_GAME | CVAR_FLOAT, "when non-zero, shows entities whose think functions exceeded the # of milliseconds specified" );
 
-//stgatilov #4970: applies some changes/fixes to spawnargs of entity before spawning
-//also related to game media: models and similar stuff
-idCVar g_rotationHack("g_rotationHack", "1", CVAR_ARCHIVE | CVAR_BOOL | CVAR_GAME,
-	"Automatically fix all func_static entities with non-orthogonal rotation on map load. "
-	"Should fix collision, culling, shadowing, and lighting issues with rotation-hacked models. "
-	"Note: changes only takes effect after starting a !NEW! game."
-);
 
 idCVar g_enablePortalSky(			"g_enablePortalSky",		"2",			CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "enables the portal sky: 1 - old method, 2 - new method, -1 - debug tool" );
 

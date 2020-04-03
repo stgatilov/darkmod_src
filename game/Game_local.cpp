@@ -883,9 +883,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	debugtools::TimerManager::Instance().Save(&savegame);
 #endif
 
-	//stgatilov #4970: save value of g_rotationHack
-	savegame.WriteInt(m_rotationHackEnabled);
-
 	savegame.WriteDict( &serverInfo );
 
 	savegame.WriteInt( numClients );
@@ -1914,22 +1911,14 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	m_lightGem.SpawnLightGemEntity( mapFile );
 
-	//stgatilov #4970: restore value of g_rotationHack
-	savegame.ReadInt(m_rotationHackEnabled);
-	if (m_rotationHackEnabled != g_rotationHack.GetInteger()) {
-		common->Warning("Saved g_rotationHack = %d takes effect, current value %d is ignored", m_rotationHackEnabled, g_rotationHack.GetInteger());
-	}
-
 	// precache any media specified in the map
 	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
 		idMapEntity *mapEnt = mapFile->GetEntity( i );
 		const char *entName = mapEnt->epairs.GetString("name");
-		idDict args = mapEnt->epairs;
 
-		if ( !InhibitEntitySpawn( args ) ) {
-			CacheDictionaryMedia( &args );
-			AdjustDictionaryMedia( &args );
-			const char *classname = args.GetString( "classname" );
+		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
+			CacheDictionaryMedia( &mapEnt->epairs );
+			const char *classname = mapEnt->epairs.GetString( "classname" );
 			if ( classname != NULL ) {
 				FindEntityDef( classname, false );
 			}
@@ -2660,63 +2649,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		}
 		kv = dict->MatchPrefix( "xdata", kv );
 	}
-}
-
-void idGameLocal::AdjustDictionaryMedia( idDict *dict ) {
-	if (m_rotationHackEnabled) {
-		//stgatilov #4970: if this is func_static with bad rotation, then clone & transform models and erase rotation
-		FixRotationHackedEntity(dict);
-	}
-}
-
-void idGameLocal::FixRotationHackedEntity( idDict *dict ) {
-	const char *entName = dict->GetString("name");
-
-	const char *entClass = dict->GetString("classname");
-	if (idStr::Cmp(entClass, "func_static") != 0)
-		return;	//never mess with anything except for func_static-s: we hope that rotation never changes!
-
-	const char *rotationStr = dict->GetString("rotation");
-	idMat3 rotation = dict->GetMatrix("rotation");
-	if (rotation.IsOrthogonal(1e-3f))
-		return;	//such rotation is OK "as is"
-
-	if (const idKeyValue *pKV = dict->FindKey("bind"))
-		return;	//this func_static is not static! bind master rotates it
-				//(e.g. moving objects near talking skull in AC2)
-
-	//list of key-value pairs to be changed
-	idDict modelChanges;
-
-	const idKeyValue *kv = dict->MatchPrefix( "model" );
-	while( kv ) {
-		idStr modelName = kv->GetValue();
-		if ( modelName.Length() ) {
-			declManager->MediaPrint( "AdjustDictionaryMedia - Embedding hacky rotation into model %s\n", modelName.c_str() );
-			if ( declManager->FindType( DECL_MODELDEF, modelName, false ) == NULL ) {
-				//note: this code exactly duplicates model caching from CacheDictionaryMedia
-				idRenderModel *renderModel = renderModelManager->FindModel( modelName );
-				cmHandle_t cmHandle = collisionModelManager->LoadModel( modelName, true );
-
-				if (cmHandle > 0 && idStr::Cmp(renderModel->Name(), collisionModelManager->GetModelName(cmHandle)) != 0)
-					return;	//custom collision model (i.e. not generated from rendermodel)
-
-				//attempt to produce a rotated copy of the model
-				renderModel = renderModelManager->TransformModel(renderModel, rotationStr);
-				if (!renderModel)
-					return;	//transforming this model not implemented
-
-				//remember that this "model" arg should be changed
-				modelChanges.Set(kv->GetKey(), renderModel->Name());
-			}
-		}
-		kv = dict->MatchPrefix( "model", kv );
-	}
-
-	//replace model names with the new ones
-	dict->Copy(modelChanges);
-	//erase rotation
-	dict->Delete("rotation");
 }
 
 /*
@@ -5363,10 +5295,6 @@ void idGameLocal::SpawnMapEntities( void )
 
 	common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_START,numEntities/LOAD_KEY_ENTITY_GRANULARITY); // grayman #3763
 
-	//stgatilov #4970: take value from cvar
-	//it is not possible to change it afterwards
-	m_rotationHackEnabled = g_rotationHack.GetBool();
-
 	for ( i = 1 ; i < numEntities ; i++ )
 	{
 		mapEnt = mapFile->GetEntity( i );
@@ -5393,8 +5321,6 @@ void idGameLocal::SpawnMapEntities( void )
 		{
 			// precache any media specified in the map entity
 			CacheDictionaryMedia(&args);
-			// stgatilov #4970: change some media-related spawnargs
-			AdjustDictionaryMedia(&args);
 
 			SpawnEntityDef(args);
 			num++;

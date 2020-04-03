@@ -295,6 +295,10 @@ void idRenderModelStatic::InitFromFile( const char *fileName ) {
 	} else if ( extension.Icmp( "ma" ) == 0 ) {
 		loaded		= LoadMA( name );
 		reloadable	= true;
+	} else if ( extension.Icmp( "proxy" ) == 0 ) {
+		//stgatilov #4970: proxy models substitute rotation hack
+		loaded		= LoadProxy( name );
+		reloadable  = true;
 	} else {
 		common->Warning( "idRenderModelStatic::InitFromFile: unknown type for model: \'%s\'", name.c_str() );
 		loaded		= false;
@@ -2178,6 +2182,57 @@ bool idRenderModelStatic::LoadFLT( const char *fileName ) {
 	return true;
 }
 
+/*
+=================
+idRenderModelStatic::LoadProxy
+=================
+*/
+bool idRenderModelStatic::LoadProxy( const char *fileName ) {
+	idParser parser( LEXFL_ALLOWPATHNAMES | LEXFL_NOSTRINGESCAPECHARS );
+	if ( !parser.LoadFile( fileName ) ) {
+		return false;
+	}
+
+	idRenderModel *sourceModel = nullptr;
+	idMat3 rotation = mat3_identity;
+
+	idToken token;
+	while( parser.ReadToken( &token ) ) {
+		if ( !token.Icmp( "model" ) ) {
+			if ( parser.ReadToken( &token ) ) {
+				sourceModel = renderModelManager->CheckModel( token );
+				proxySourceName = token;
+			}
+		} else if ( !token.Icmp( "rotation" ) ) {
+			if ( parser.ReadToken( &token ) ) {
+				if (sscanf( token, "%f %f %f %f %f %f %f %f %f",
+					&rotation[0].x, &rotation[0].y, &rotation[0].z,
+					&rotation[1].x, &rotation[1].y, &rotation[1].z,
+					&rotation[2].x, &rotation[2].y, &rotation[2].z
+				) != 9) {
+					rotation.Identity();
+				}
+			}
+		} else {
+			parser.Warning( "Unknown parameter '%s'", token.c_str() );
+			return false;
+		}
+	}
+	if ( !sourceModel ) {
+		parser.Warning( "Source model not specified" );
+		return false;
+	}
+
+	auto sourceModelStatic = dynamic_cast<idRenderModelStatic*>( sourceModel );
+	if ( !sourceModelStatic ) {
+		common->Warning( "Proxy model implemented only for static models, cannot handle '%s'", sourceModel->Name() );
+		return false;
+	}
+
+	TransformModel( sourceModelStatic, rotation );
+	return true;
+}
+
 
 //=============================================================================
 
@@ -2403,16 +2458,11 @@ bool idRenderModelStatic::FindSurfaceWithId( int id, int &surfaceNum ) {
 }
 
 
-idRenderModelStatic *idRenderModelStatic::TransformModel( const idMat3 &rotation, const char *newName ) {
-	idRenderModelStatic *newModel = new idRenderModelStatic;
-	newModel->name = newName;
-	newModel->reloadable = false;
-	newModel->overlaysAdded = overlaysAdded;
-
+void idRenderModelStatic::TransformModel( const idRenderModelStatic *sourceModel, const idMat3 &rotation ) {
 	idMat3 normalRotation = rotation.Inverse().Transpose();
 
-	for (int s = 0; s < surfaces.Num(); s++) {
-		const modelSurface_t &surf = surfaces[s];
+	for (int s = 0; s < sourceModel->surfaces.Num(); s++) {
+		const modelSurface_t &surf = sourceModel->surfaces[s];
 		//clone data
 		modelSurface_t newSurf;
 		newSurf.id = surf.id;
@@ -2429,9 +2479,6 @@ idRenderModelStatic *idRenderModelStatic::TransformModel( const idMat3 &rotation
 			vert.tangents[1] = rotation * vert.tangents[1];
 		}
 
-		newModel->AddSurface(newSurf);
+		AddSurface(newSurf);
 	}
-
-	newModel->FinishSurfaces();
-	return newModel;
 }
