@@ -106,13 +106,7 @@ void VPCALL idSIMD_AVX2::CullByFrustum2( idDrawVert *verts, const int numVerts, 
 	Res##_y = _mm256_mul_ps(A##_y, S); \
 	Res##_z = _mm256_mul_ps(A##_z, S); \
 
-//TODO: remove this cvar after testing is over
-idCVar com_deriveTangentsAVX("com_deriveTangentsAVX", "1", CVAR_BOOL, "enable new AVX2+FMA implementation of DeriveTangents?");
-
 void VPCALL idSIMD_AVX2::DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
-	if (!com_deriveTangentsAVX.GetBool())
-		return idSIMD_SSE2::DeriveTangents(planes, verts, numVerts, indexes, numIndexes);
-
 	for (int i = 0; i < numVerts; i++) {
 		float *ptr = &verts[i].normal.x;
 		_mm256_storeu_ps(ptr, _mm256_setzero_ps());
@@ -352,13 +346,7 @@ void VPCALL idSIMD_AVX2::DeriveTangents( idPlane *planes, idDrawVert *verts, con
 	}
 }
 
-//TODO: remove this cvar after testing is over
-idCVar com_normalizeTangentsAVX("com_normalizeTangentsAVX", "1", CVAR_BOOL, "enable new AVX2+FMA implementation of NormalizeTangents?");
-
 void VPCALL idSIMD_AVX2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
-	if (!com_normalizeTangentsAVX.GetBool())
-		return idSIMD_SSE2::NormalizeTangents(verts, numVerts);
-
 	size_t i, n = numVerts;
 	for (i = 0; i + 8 <= n; i += 8) {
 		#define LOAD(k) \
