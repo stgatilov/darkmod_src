@@ -41,6 +41,7 @@ public:
 		NOT_PERFORMED_YET,
 		OK,	// successful
 		IN_PROGRESS,
+		FILE_NO_ACCESS,		//cannot open file --- most likely problem with rights
 		FAILED,
 		ABORTED,
 	};
