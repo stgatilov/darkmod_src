@@ -120,6 +120,10 @@ void Updater::UpdateMirrors()
 
 		// Check if the file is OK
 		IniFilePtr mirrorsIni = IniFile::ConstructFromFile(tmpMirrorPath);
+		if (!mirrorsIni)
+		{
+			throw FailureException(std::string("Cannot open list of mirrors in ") + TDM_MIRRORS_FILE);
+		}
 
 		// Interpret the info and build the mirror list
 		MirrorList tempMirrors(*mirrorsIni);
@@ -148,6 +152,10 @@ void Updater::LoadMirrors()
 
 	// Load the tdm_mirrors.txt into an INI file
 	IniFilePtr mirrorsIni = IniFile::ConstructFromFile(mirrorPath);
+	if (!mirrorsIni)
+	{
+		throw FailureException(std::string("Cannot open list of mirrors in ") + TDM_MIRRORS_FILE);
+	}
 
 	// Interpret the info and build the mirror list
 	_mirrors = MirrorList(*mirrorsIni);
