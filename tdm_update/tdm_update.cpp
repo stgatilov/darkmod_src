@@ -37,14 +37,18 @@ int main(int argc, char* argv[])
 	try {
 		RegisterLogWriters();
 	} 
-	catch (FileOpenException &e) {
-		// basic error-checking - most common cause of failure at this point is a read-only directory or log file.
-		// if other issues are detected by the users, this will have to be expanded to cater for other types of errors
-		std::cerr << "TDM Updater Error:" << std::endl
-				  << "Unable to open log file and start updater." << std::endl << std::endl << "Please ensure that the current directory is not set to 'Read-only'. " 
-				  << "If tdm_update.log already exists, please ensure that it is not 'Read-only'. On Windows, this may also be caused by the write protections "
-				  << "placed on the contents of the 'Program Files' and 'Program Files (x86)' directories." << std::endl;
-
+	catch (FileOpenException &) {
+		// most common cause of failure is: having updater in admin-owned directory where normal user cannot create files
+		// other reasons are: file marked as readonly, file opened by running process
+		(std::cerr
+			<< "TDM Updater Error:\n"
+			<< "Unable to open log file and start updater.\n"
+			<< "\n"
+			<< "Please ensure that:\n"
+			<< "1. You can create files in the current directory without admin rights (better avoid Program Files).\n"
+			<< "2. The current directory is not set to 'Read-only'. Neither is tdm_update.log, if it exists.\n"
+			<< "3. Another instance of tdm_update.exe is not running.\n"
+		);
         return EXIT_FAILURE;
 	}
 

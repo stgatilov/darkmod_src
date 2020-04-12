@@ -59,11 +59,18 @@ BOOL UpdaterApplication::InitInstance()
 	} 
 	catch (FileOpenException& )
     {
-		// basic error-checking - most common cause of failure at this point is a read-only directory or log file.
-		// if other issues are detected by the users, this will have to be expanded to cater for other types of errors
-		AfxMessageBox(L"TDM Updater Error:\nUnable to open log file and start updater. Please ensure that the current directory is not set to 'Read-only'.\n\n"
-					  L"If tdm_update.log already exists, please ensure that it is not 'Read-only'. This may also be caused by the write protections "
-					  L"placed on the contents of the 'Program Files' and 'Program Files (x86)' directories.", MB_OK | MB_ICONSTOP);
+		// most common cause of failure is: having updater in admin-owned directory where normal user cannot create files
+		// other reasons are: file marked as readonly, file opened by running process
+		AfxMessageBox(
+			L"TDM Updater Error:\n"
+			L"Unable to open log file and start updater.\n"
+			L"\n"
+			L"Please ensure that:\n"
+			L"1. You can create files in the current directory without admin rights (better avoid Program Files).\n"
+			L"2. The current directory is not set to 'Read-only'. Neither is tdm_update.log, if it exists.\n"
+			L"3. Another instance of tdm_update.exe is not running.\n",
+			MB_OK | MB_ICONSTOP
+		);
 		return EXIT_FAILURE;
 	}
 
