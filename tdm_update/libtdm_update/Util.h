@@ -96,6 +96,10 @@ public:
 
 	// Platform-dependent process check routine (searches for the DarkRadiant executable among active processes)
 	static bool DarkRadiantIsRunning();
+
+	// Is current process run "under admin"?
+	// Returns false on Non-Windows platforms
+	static bool HasElevatedPrivilegesWindows();
 };
 
 } // namespace
