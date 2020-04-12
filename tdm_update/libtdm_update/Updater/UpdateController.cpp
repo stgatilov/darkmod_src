@@ -183,6 +183,18 @@ void UpdateController::PerformStep(UpdateStep step)
 			_view.OnWarning("DarkRadiant was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit DarkRadiant before continuing.");
 		}
 
+		if (Util::HasElevatedPrivilegesWindows())
+		{
+			_view.OnWarning(
+				"The updater was run \"as admin\". This is strongly discouraged!\n"
+				"Please abort installation and restart updater without admin rights.\n"
+				"Otherwise admin rights will most likely be necessary to play the game.\n"
+				"\n"
+				"Note: Better install TDM into a directory where you can normally save files without UAC prompt. "
+				"Avoid \"Program Files\", install into something like C:\\games\\thedarkmod instead. "
+			);
+		}
+
 		break;
 
 	case CleanupPreviousSession:
