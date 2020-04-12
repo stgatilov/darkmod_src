@@ -1819,6 +1819,24 @@ void idBrushBSP::PruneMergedTree_r( idBrushBSPNode *node ) {
 	if ( !node ) {
 		return;
 	}
+	// stgatilov #5212: moved here from explicit call to RemoveFlagRecurse in idAASBuild::MergeLeafNodes
+	node->RemoveFlag( NODE_DONE );
+
+	// stgatilov #5212: replace references to zombies with references to merged nodes
+	for ( int i = 0; i < 2; i++ ) {
+		idBrushBSPNode *&child = node->children[i];
+		if ( child && ( child->GetFlags() & NODE_ZOMBIE ) ) {
+			idBrushBSPNode *x;
+			// find out where this chain ends
+			for ( x = child; x->GetFlags() & NODE_ZOMBIE; x = x->parent );
+			idBrushBSPNode *head = x;
+			// path compression: direct every node in chain directly fo the head
+			for ( x = child; x != head; x = x->parent )
+				x->parent = head;
+			// replace child link with the merged node
+			child = head;
+		}
+	}
 
 	PruneMergedTree_r( node->children[0] );
 	PruneMergedTree_r( node->children[1] );
@@ -1880,7 +1898,7 @@ idBrushBSP::TryMergeLeafNodes
   NOTE: multiple brances of the BSP tree might point to the same leaf node after merging
 ============
 */
-bool idBrushBSP::TryMergeLeafNodes( idBrushBSPPortal *portal, int side ) {
+bool idBrushBSP::TryMergeLeafNodes( idBrushBSPPortal *portal, int side, idList<idBrushBSPNode*> &zombieNodes ) {
 	int i, j, k, s1, s2, s;
 	idBrushBSPNode *nodes[2], *node1, *node2;
 	idBrushBSPPortal *p1, *p2, *p, *nextp;
@@ -1959,10 +1977,21 @@ bool idBrushBSP::TryMergeLeafNodes( idBrushBSPPortal *portal, int side ) {
 		bounds += b;
 	}
 
+#if 0
 	// replace every reference to node2 by a reference to node1
+	// stgatilov: this is unreliable since it uses numeric pruning to find references!
+	// sometimes a reference go unnoticed, which result in crash from accessing deleted memory later
 	UpdateTreeAfterMerge_r( root, bounds, node2, node1 );
-
 	delete node2;
+#else
+	// stgatilov #5212: mark node as "zombie" for now, and remember its parent
+	// whenever we get into this node in BSP tree traversal, we'll redirect to the parent
+	node2->~idBrushBSPNode();
+	memset(node2, 0, sizeof(*node2));
+	node2->flags = NODE_ZOMBIE;
+	node2->parent = node1;
+	zombieNodes.Append(node2);
+#endif
 
 	return true;
 }
