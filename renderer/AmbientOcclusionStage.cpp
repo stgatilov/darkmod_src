@@ -135,6 +135,7 @@ void AmbientOcclusionStage::Init() {
 	ssaoBlurred = globalImages->ImageFromFunction("SSAO Blurred", CreateSSAOColorBuffer);
 	ssaoBlurred->ActuallyLoadImage();
 	viewspaceDepth = globalImages->ImageFromFunction("SSAO Depth", CreateViewspaceDepthBuffer);
+	viewspaceDepth->ActuallyLoadImage();
 
 	qglGenFramebuffers(1, &ssaoFBO);
 	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
@@ -146,8 +147,6 @@ void AmbientOcclusionStage::Init() {
 	for (int i = 0; i <= MAX_DEPTH_MIPS; ++i) {
 		qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
 		qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewspaceDepth->texnum, i);
-		int status = qglCheckFramebufferStatus(GL_FRAMEBUFFER);
-		common->Printf("Status for depth FBO level %d: %d\n", i, status);
 	}
 	qglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -183,7 +182,7 @@ void AmbientOcclusionStage::Shutdown() {
 		ssaoBlurFBO = 0;
 	}
 	if (depthMipFBOs[0] != 0) {
-		qglDeleteFramebuffers(MAX_DEPTH_MIPS, depthMipFBOs);
+		qglDeleteFramebuffers(MAX_DEPTH_MIPS + 1, depthMipFBOs);
 		depthMipFBOs[0] = 0;
 	}
 	if (viewspaceDepth != nullptr) {
