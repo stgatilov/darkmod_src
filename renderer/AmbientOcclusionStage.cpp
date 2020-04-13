@@ -142,7 +142,7 @@ void AmbientOcclusionStage::Init() {
 	qglGenFramebuffers(1, &ssaoBlurFBO);
 	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
 	qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBlurred->texnum, 0);
-	qglGenFramebuffers(MAX_DEPTH_MIPS, depthMipFBOs);
+	qglGenFramebuffers(MAX_DEPTH_MIPS + 1, depthMipFBOs);
 	for (int i = 0; i <= MAX_DEPTH_MIPS; ++i) {
 		qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
 		qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewspaceDepth->texnum, i);
@@ -297,6 +297,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 		viewspaceDepth->Bind();
 		for (int i = 1; i <= MAX_DEPTH_MIPS; ++i) {
 			qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
+			qglClear(GL_COLOR_BUFFER_BIT);
 			uniforms->previousMipLevel.Set(i - 1);
 			RB_DrawFullScreenQuad();
 		}
