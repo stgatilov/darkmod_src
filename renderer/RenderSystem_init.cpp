@@ -1269,7 +1269,7 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	blends = 1;
 	if ( args.Argc() == 4 ) {
 		size = atoi( args.Argv( 2 ) );
-		if( !stricmp(args.Argv( 3 ), "playerView") )
+		if( !idStr::Icmp(args.Argv( 3 ), "playerView") )
 			playerView = true;
 		else
 			blends = atoi( args.Argv( 3 ) );
