@@ -40,7 +40,7 @@ vec2 invTextureSize = vec2(1.0, 1.0) / textureSize(u_depthTexture, 0);
 
 // The height in pixels of an object of height 1 world unit at distance z = -1 world unit.
 // Used to scale the radius of the sampling disc appropriately
-float projectionScale = textureSize(u_depthTexture, 0).y / (2 * u_projectionMatrix[1][1]);
+float projectionScale = textureSize(u_depthTexture, 0).y * (0.5 * u_projectionMatrix[1][1]);
 const float tdmToMetres = 0.02309;
 
 vec3 currentTexelViewPos() {
@@ -167,7 +167,8 @@ void main() {
 	// "random" rotation factor from a hash function proposed by the AlchemyAO HPG12 paper
 	float randomPatternRotationAngle = (3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y);
 	// calculate screen-space sample radius from view space radius
-	float screenDiskRadius = -projectionScale * radiusInMetres / position.z;
+	// note: factor 0.5625 is just an adjustment to keep radius values consistent after a math change
+	float screenDiskRadius = -0.5625 * projectionScale * radiusInMetres / position.z;
 
 	float sum = 0.0;
 	for (int i = 0; i < u_numSamples; ++i) {

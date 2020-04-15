@@ -115,11 +115,17 @@ void Updater::UpdateMirrors()
 		if (request->GetStatus() != HttpRequest::OK)
 		{
 			TraceLog::Error("Mirrors download failed for URL " + fullLocation + ": " + request->GetErrorMessage());
+			if (request->GetStatus() == HttpRequest::FILE_NO_ACCESS)
+				TraceLog::WriteLine(LOG_STANDARD, "Note: verify that you can create files in the installation directory without admin rights.");
 			continue;
 		}
 
 		// Check if the file is OK
 		IniFilePtr mirrorsIni = IniFile::ConstructFromFile(tmpMirrorPath);
+		if (!mirrorsIni)
+		{
+			throw FailureException(std::string("Cannot open list of mirrors in ") + TDM_MIRRORS_FILE);
+		}
 
 		// Interpret the info and build the mirror list
 		MirrorList tempMirrors(*mirrorsIni);
@@ -148,6 +154,10 @@ void Updater::LoadMirrors()
 
 	// Load the tdm_mirrors.txt into an INI file
 	IniFilePtr mirrorsIni = IniFile::ConstructFromFile(mirrorPath);
+	if (!mirrorsIni)
+	{
+		throw FailureException(std::string("Cannot open list of mirrors in ") + TDM_MIRRORS_FILE);
+	}
 
 	// Interpret the info and build the mirror list
 	_mirrors = MirrorList(*mirrorsIni);

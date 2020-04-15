@@ -78,6 +78,7 @@ private:
 	int						numLedgeSubdivisions;
 	idList<idLedge>			ledgeList;
 	idBrushMap *			ledgeMap;
+	idList<idBrushBSPNode*>	zombieNodes;	//stgatilov #5212: used during leaf merging
 
 private:	// map loading
 	void					ParseProcNodes( idLexer *src );

@@ -116,6 +116,11 @@ void HttpRequest::Perform()
 	if (!_destFilename.empty())
 	{
 		_destStream.open(_destFilename.c_str(), std::ofstream::out|std::ofstream::binary);
+		if (_destStream.fail()) {
+			_status = FILE_NO_ACCESS;
+			_errorMessage = std::string("Cannot write to file ") + _destFilename;
+			return;
+		}
 	}
 
 	CURLcode result = curl_easy_perform(_handle);

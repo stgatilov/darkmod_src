@@ -150,6 +150,28 @@ bool Util::DarkRadiantIsRunning()
 	return false;
 }
 
+bool Util::HasElevatedPrivilegesWindows() {
+	bool underAdmin = false;
+	HANDLE hProcess = GetCurrentProcess();
+	HANDLE hToken;
+	if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+		// Get the Integrity level.
+		DWORD dwLengthNeeded;
+		if (!GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded)) {
+			PTOKEN_MANDATORY_LABEL pTIL = (PTOKEN_MANDATORY_LABEL)malloc(dwLengthNeeded);
+			if (GetTokenInformation(hToken, TokenIntegrityLevel, pTIL, dwLengthNeeded, &dwLengthNeeded)) {
+				DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid, (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL->Label.Sid)-1));
+				if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID) {
+					underAdmin = true;
+				}
+			}
+			free(pTIL);
+		}
+		CloseHandle(hToken);
+	}
+	return underAdmin;
+}
+
 } // namespace
 
 #elif defined(__linux__)
@@ -237,6 +259,10 @@ bool Util::DarkRadiantIsRunning()
 		}
 	}
 	
+	return false;
+}
+
+bool Util::HasElevatedPrivilegesWindows() {
 	return false;
 }
 
