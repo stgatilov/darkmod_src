@@ -1254,12 +1254,13 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	renderView_t ref;
 	viewDef_t primary;
 	int	blends, size;
+	bool playerView = false;
 
 	if ( !tr.primaryView ) {
 		common->Printf( "No primary view.\n" );
 		return;
 	} else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
-		common->Printf( "USAGE: envshot <basename> [size] [blends]\n" );
+		common->Printf( "USAGE: envshot <basename> [size] [blends|playerView]\n" );
 		return;
 	}
 	primary = *tr.primaryView;
@@ -1268,7 +1269,10 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	blends = 1;
 	if ( args.Argc() == 4 ) {
 		size = atoi( args.Argv( 2 ) );
-		blends = atoi( args.Argv( 3 ) );
+		if( !stricmp(args.Argv( 3 ), "playerView") )
+			playerView = true;
+		else
+			blends = atoi( args.Argv( 3 ) );
 	} else if ( args.Argc() == 3 ) {
 		size = atoi( args.Argv( 2 ) );
 		blends = 1;
@@ -1311,6 +1315,9 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		ref.width = SCREEN_WIDTH;// glConfig.vidWidth;
 		ref.height = SCREEN_HEIGHT;// glConfig.vidHeight;
 		ref.viewaxis = axis[i];
+		if ( playerView ) {
+			ref.viewaxis = /*axis[1] **/ ref.viewaxis * gameLocal.GetLocalPlayer()->renderView->viewaxis;
+		}
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
