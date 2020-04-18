@@ -40,11 +40,11 @@ idBounds	optBounds;
 
 #define	MAX_OPT_VERTEXES	0x10000
 int			numOptVerts;
-optVertex_t *optVerts = NULL;
+optVertex_t optVerts[MAX_OPT_VERTEXES];
 
 #define	MAX_OPT_EDGES		0x40000
 static	int		numOptEdges;
-static	optEdge_t	*optEdges = NULL; // converted from static array to save memory for gamers
+static	optEdge_t	optEdges[MAX_OPT_EDGES];
 
 static bool IsTriangleValid( const optVertex_t *v1, const optVertex_t *v2, const optVertex_t *v3 );
 static bool IsTriangleDegenerate( const optVertex_t *v1, const optVertex_t *v2, const optVertex_t *v3 );
@@ -89,8 +89,6 @@ AllocEdge
 static optEdge_t	*AllocEdge( void ) {
 	optEdge_t	*e;
 
-	if ( !optEdges )
-		optEdges = new optEdge_t[MAX_OPT_EDGES];
 	if ( numOptEdges == MAX_OPT_EDGES ) {
 		common->Error( "MAX_OPT_EDGES" );
 	}
@@ -198,9 +196,6 @@ static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) {
 			return &optVerts[i];
 		}
 	}
-
-	if ( !optVerts )
-		optVerts = new optVertex_s[MAX_OPT_VERTEXES];
 
 	if ( numOptVerts >= MAX_OPT_VERTEXES ) {
 		common->Error( "MAX_OPT_VERTEXES" );
