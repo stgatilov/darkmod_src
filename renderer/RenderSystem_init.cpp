@@ -21,6 +21,7 @@
 #include "glsl.h"
 #include "GLSLProgramManager.h"
 #include "AmbientOcclusionStage.h"
+#include "BloomStage.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -1576,6 +1577,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		vertexCache.Shutdown();
 		FB_Clear();
 		ambientOcclusion->Shutdown();
+		bloom->Shutdown();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 
@@ -1838,6 +1840,7 @@ void idRenderSystemLocal::Shutdown( void ) {
 	R_DoneFreeType( );
 
 	ambientOcclusion->Shutdown();
+	bloom->Shutdown();
 
 	if ( glConfig.isInitialized ) {
 		globalImages->PurgeAllImages();

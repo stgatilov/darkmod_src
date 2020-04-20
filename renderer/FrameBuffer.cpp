@@ -20,6 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "glsl.h"
 #include "GLSLProgramManager.h"
 #include "AmbientOcclusionStage.h"
+#include "BloomStage.h"
 
 // all false at start
 bool primaryOn = false, shadowOn = false;
@@ -746,6 +747,9 @@ void LeavePrimary() {
 			break;
 		case 4:
 			ambientOcclusion->ShowSSAO();
+			break;
+		case 5:
+			bloom->BindBloomTexture();
 			break;
 		default:
 			globalImages->currentRenderImage->Bind();

@@ -3,11 +3,13 @@
 in vec4 var_TexCoord;
 out vec4 draw_Color;
 uniform sampler2D u_texture;
+uniform sampler2D u_bloomTex;
 
 uniform float u_gamma, u_brightness;
 uniform float u_desaturation;
 uniform float u_colorCurveBias;
 uniform float u_colorCorrection, u_colorCorrectBias;
+uniform float u_bloomWeight;
 
 float mapColorComponent(float value) {
 	float color = value;
@@ -35,6 +37,10 @@ float mapColorComponent(float value) {
 
 void main() {
 	vec4 color = texture(u_texture, var_TexCoord.xy);
+	if (u_bloomWeight > 0) {
+		vec4 bloom = texture(u_bloomTex, var_TexCoord.xy);
+		color = color + u_bloomWeight * bloom;
+	}
 
 	color.r = mapColorComponent(color.r);
 	color.g = mapColorComponent(color.g);
