@@ -90,6 +90,7 @@ void main() {
 		light.rgb *= matDiffuse.rgb * light1;
 	}
 
+	light = max(light, vec4(0));  // avoid negative values, which with floating point render buffers can lead to NaN artefacts
 	if(u_gamma != 1 ) // old-school exponential
 		light.rgb = pow(light.rgb, vec3(1.0 / u_gamma));
 

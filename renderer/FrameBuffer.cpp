@@ -78,6 +78,9 @@ private:
 
 
 GLsizei ColorRenderBufferInternalFormat() {
+	if( r_fboColorBits.GetInteger() == 64 ) {
+		return GL_RGBA16F;
+	} 
 	return ( glConfig.srgb ? GL_SRGB_ALPHA : GL_RGBA );
 }
 
@@ -383,7 +386,8 @@ void CheckCreatePrimary() {
 		r_multiSamples.IsModified() || 
 		r_fboSeparateStencil.IsModified() ||
 		r_fboSharedDepth.IsModified() ||
-		r_fboResolution.IsModified()
+		r_fboResolution.IsModified() ||
+		r_fboColorBits.IsModified()
 	) {
 		// something FBO-related has changed, let's recreate everything from scratch
 		r_multiSamples.ClearModified();
