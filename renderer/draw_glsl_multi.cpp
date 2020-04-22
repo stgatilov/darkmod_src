@@ -175,7 +175,7 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 	if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
 		return;    // this flag is set by entities with parms.noShadow (candles, torches, models with separate shadow geometry, etc)
 
-	if ( surf->sort >= SS_PORTAL_SKY )
+	if ( surf->sort >= SS_AFTER_FOG )
 		return;
 
 	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
