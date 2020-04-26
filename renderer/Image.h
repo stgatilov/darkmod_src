@@ -330,7 +330,7 @@ public:
 	static idCVar		image_writePrecompressedTextures; // write .dds files if necessary
 	static idCVar		image_writeNormalTGA;		// debug tool to write out .tgas of the final normal maps
 	static idCVar		image_writeTGA;				// debug tool to write out .tgas of the non normal maps
-	static idCVar		image_useNormalCompression;	// use rxgb compression
+	static idCVar		image_useNormalCompression;	// use RGTC2 compression
 	static idCVar		image_useOffLineCompression; // will write a batch file with commands for the offline compression
 	static idCVar		image_preload;				// if 0, dynamically load all images
 	static idCVar		image_forceDownSize;		// allows the ability to force a downsize

@@ -176,14 +176,10 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first
 	if ( minimumDepth == TD_BUMP ) {
-		if ( allowCompress && globalImages->image_useNormalCompression.GetInteger() ) {
-			if ( globalImages->image_useNormalCompression.GetInteger() > 1 ) {
-				return GL_COMPRESSED_RG_RGTC2;
-			}
-			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		if ( allowCompress && globalImages->image_useNormalCompression.GetBool() ) {
+			return GL_COMPRESSED_RG_RGTC2;
 		}
-		// we always need the alpha channel for bump maps for swizzling
-		return GL_RGBA8;
+		return GL_RG8;
 	}
 
 	// allow a complete override of image compression with a cvar
@@ -544,18 +540,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 	}
 
-	// swap the red and alpha for rxgb support
-	// do this even on tga normal maps so we only have to use
-	// one fragment program
-	// if the image is precompressed
-	// then it is loaded above and the swap never happens here
-	if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() < 2 ) {
-		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-			scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
-			scaledBuffer[ i ] = 0;
-		}
-	}
-	if ( internalFormat == GL_RG8 ) // 2.08 swizzle alpha to green, replacement for GL_LUMINANCE8_ALPHA8
+	if ( internalFormat == GL_RG8 && swizzleMask ) // 2.08 swizzle alpha to green, replacement for GL_LUMINANCE8_ALPHA8
 		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 )
 			scaledBuffer[i + 1] = scaledBuffer[i + 3];
 

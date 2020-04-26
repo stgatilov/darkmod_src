@@ -69,7 +69,7 @@ static void ChooseInteractionProgram() {
 			currrentInteractionShader = programManager->stencilInteractionShader;
 	}
 	currrentInteractionShader->Activate();
-	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( globalImages->image_useNormalCompression.GetInteger() == 2 ? 1 : 0 );
+	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( 1 ); // FIXME remove the RGTC uniform
 	GL_CheckErrors();
 }
 

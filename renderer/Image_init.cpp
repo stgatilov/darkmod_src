@@ -49,7 +49,7 @@ idCVar idImageManager::image_colorMipLevels( "image_colorMipLevels", "0", CVAR_R
 idCVar idImageManager::image_preload( "image_preload", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "if 0, dynamically load all images" );
 idCVar idImageManager::image_useCompression( "image_useCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = load compressed (DDS) images, 0 = force everything to high quality. 0 does not work for TDM as all our textures are DDS." );
 idCVar idImageManager::image_useAllFormats( "image_useAllFormats", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "allow alpha/intensity/luminance/luminance+alpha" );
-idCVar idImageManager::image_useNormalCompression( "image_useNormalCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE, "use rxgb/rgtc compression for normal maps if available, 0 = no, 1 - GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 2 = GL_COMPRESSED_RG_RGTC2" );
+idCVar idImageManager::image_useNormalCompression( "image_useNormalCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE, "use compression for normal maps if available, 0 = no, 1 = GL_COMPRESSED_RG_RGTC2" );
 idCVar idImageManager::image_usePrecompressedTextures( "image_usePrecompressedTextures", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use .dds files if present." );
 idCVar idImageManager::image_writePrecompressedTextures( "image_writePrecompressedTextures", "0", CVAR_RENDERER | CVAR_BOOL, "write .dds files if necessary" );
 idCVar idImageManager::image_writeNormalTGA( "image_writeNormalTGA", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the final normal maps for debugging" );
@@ -1626,14 +1626,6 @@ void idImageManager::Init() {
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );
 	cmdSystem->AddCommand( "combineCubeImages", R_CombineCubeImages_f, CMD_FL_RENDERER, "combines six images for roq compression" );
 
-	image_useNormalCompression.AddOnModifiedCallback( [&]() {
-		common->SetRefreshOnPrint( true );
-		common->Printf( "Reloading normal maps. Please wait...\n" );
-		idCmdArgs args( "reloadImages bump", true );
-		R_ReloadImages_f( args );
-		common->Printf( "Reload complete.\n" );
-		common->SetRefreshOnPrint( false );
-	} );
 	// should forceLoadImages be here?
 }
 

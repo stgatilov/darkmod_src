@@ -278,6 +278,7 @@ void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
+	if ( !din->bumpImage ) return;// FIXME support textureDNS
 	GL_SelectTexture( 0 );
 	din->bumpImage->Bind();
 

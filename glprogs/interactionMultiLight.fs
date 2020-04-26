@@ -33,7 +33,8 @@ uniform sampler2D u_shadowMap;
 // compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize
 vec4 diffuse = texture( u_diffuseTexture, var_TexDiffuse );
 vec4 bumpTexel = texture ( u_normalTexture, var_TexNormal ) * 2. - 1.;
-vec3 RawN = normalize( bumpTexel.wyz );
+//vec3 RawN = normalize( bumpTexel.wyz );
+vec3 RawN = bumpTexel.xyz;
 vec3 N = var_TangentBitangentNormalMatrix * RawN;
 //float NdotH = clamp( dot( N, H ), 0.0, 1.0 );
 
