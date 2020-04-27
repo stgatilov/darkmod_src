@@ -28,8 +28,9 @@ void main() {
 	
 	// load the filtered normal map and convert to -1 to 1 range
 	localNormal = texture(u_texture1, var_tc1.xy);                                                      //TEX		localNormal, fragment.texcoord[1], texture[1], 2D;
-	localNormal.x = localNormal.a;                                                                      //MOV		localNormal.x, localNormal.a;
+//	localNormal.x = localNormal.a;                                                                      //MOV		localNormal.x, localNormal.a;
 	localNormal = (localNormal) * (scaleTwo) + (subOne);                                                //MAD		localNormal, localNormal, scaleTwo, subOne;
+	localNormal.z = sqrt(max(0, 1-localNormal.x*localNormal.x-localNormal.y*localNormal.y));
 	
 	// calculate the screen texcoord in the 0.0 to 1.0 range
 	R0 = (gl_FragCoord) * (u_scaleWindowToUnit);                                                        //MUL		R0, fragment.position, program.env[1];

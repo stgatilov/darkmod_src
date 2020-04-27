@@ -40,6 +40,7 @@ void main() {
 	localNormal = texture(u_texture1, var_tc1.xy);                                                      //TEX		localNormal, fragment.texcoord[1], texture[1], 2D;
 	localNormal.x = localNormal.a;                                                                      //MOV		localNormal.x, localNormal.a;
 	localNormal = (localNormal) * (scaleTwo) + (subOne);                                                //MAD		localNormal, localNormal, scaleTwo, subOne;
+	localNormal.z = sqrt(max(0, 1-localNormal.x*localNormal.x-localNormal.y*localNormal.y));
 	localNormal = (localNormal) * (mask);                                                               //MUL		localNormal, localNormal, mask;
 	
 	// calculate the screen texcoord in the 0.0 to 1.0 range

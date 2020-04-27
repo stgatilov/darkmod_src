@@ -32,8 +32,9 @@ void main() {
 	
 	// load the filtered normal map, then normalize to full scale,
 	localNormal = texture(u_normalTexture, var_tc0.xy);                                                 //TEX		localNormal, fragment.texcoord[0], texture[1], 2D;
-	localNormal.x = localNormal.a;                                                                      //MOV		localNormal.x, localNormal.a;				
+//	localNormal.x = localNormal.a;                                                                      //MOV		localNormal.x, localNormal.a;				
 	localNormal = (localNormal) * (scaleTwo) + (subOne);                                                //MAD		localNormal, localNormal, scaleTwo, subOne;
+	localNormal.z = sqrt(max(0, 1-localNormal.x*localNormal.x-localNormal.y*localNormal.y));
 	R1 = vec4(dot(localNormal.xyz, localNormal.xyz));                                                   //DP3		R1, localNormal,localNormal;
 	R1 = vec4(1.0 / sqrt(R1.x));                                                                        //RSQ		R1, R1.x;
 	localNormal.xyz = (localNormal.xyz) * (R1.xyz);                                                     //MUL		localNormal.xyz, localNormal, R1;
