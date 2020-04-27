@@ -16,10 +16,11 @@ out vec3 var_worldPos;
 out vec3 var_cubeMapCapturePos;
 out vec3 var_proxyAABBMin;
 out vec3 var_proxyAABBMax;
+out float var_normalWeight;
 
 uniform mat4 u_modelMatrix;
 uniform vec4 u_viewOriginLocal;
-uniform vec4 u_localParam0;  // cubemap capture position
+uniform vec4 u_localParam0;  // cubemap capture position, normal weight factor
 uniform vec4 u_localParam1;  // geometry proxy AABB min
 uniform vec4 u_localParam2;  // geometry proxy AABB max
 
@@ -40,6 +41,7 @@ void main() {
     var_worldPos = (u_modelMatrix * attr_Position).xyz;
     
     var_cubeMapCapturePos = u_localParam0.xyz;
+    var_normalWeight = u_localParam0.w;
     var_proxyAABBMin = u_localParam1.xyz;
     var_proxyAABBMax = u_localParam2.xyz;
 	

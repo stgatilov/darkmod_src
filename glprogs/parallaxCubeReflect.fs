@@ -9,6 +9,7 @@ in vec3 var_worldPos;
 in vec3 var_cubeMapCapturePos;
 in vec3 var_proxyAABBMin;
 in vec3 var_proxyAABBMax;
+in float var_normalWeight;
 
 out vec4 draw_Color;
 
@@ -33,11 +34,15 @@ vec3 parallaxCorrect(vec3 reflected) {
 void main() {
 	vec2 rimStrength = vec2(3.0, 0.4);
 	
-	// load the filtered normal map, then normalize to full scale,
-	vec3 localNormal = normalize(2 * texture(u_texture1, var_uvNormal).ayz - 1);
-	
-	// transform the surface normal by the local tangent space
-    vec3 globalNormal = var_tbn * localNormal;
+    vec3 globalNormal = var_tbn[2];
+    if (var_normalWeight > 0) {
+        // load the filtered normal map, then normalize to full scale
+	    vec3 localNormal = normalize(2 * texture(u_texture1, var_uvNormal).ayz - 1);
+	    // transform the surface normal by the local tangent space
+        globalNormal = var_tbn * localNormal;
+        // interpolate between vertex and mapped normal by weight factor
+        globalNormal = normalize(mix(var_tbn[2], globalNormal, var_normalWeight));
+    }
 	
 	// normalize vector to eye
 	vec3 globalEye = normalize(var_globalEye);
