@@ -37,7 +37,11 @@ void main() {
     vec3 globalNormal = var_tbn[2];
     if (var_normalWeight > 0) {
         // load the filtered normal map, then normalize to full scale
-	    vec3 localNormal = normalize(2 * texture(u_texture1, var_uvNormal).ayz - 1);
+	    vec3 localNormal;
+        localNormal.xy = 2 * texture(u_texture1, var_uvNormal).xy - 1;
+        localNormal.z = sqrt(max(0, 1 - localNormal.x*localNormal.x - localNormal.y*localNormal.y));
+        localNormal = normalize(localNormal);
+        
 	    // transform the surface normal by the local tangent space
         globalNormal = var_tbn * localNormal;
         // interpolate between vertex and mapped normal by weight factor
