@@ -132,8 +132,14 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	}
 	GL_PROFILE( "GLSL_CreateDrawInteractions" );
 
+	// if using float buffers, alpha values are not clamped and can stack up quite high, since most interactions add 1 to its value
+	// this in turn causes issues with some shader stage materials that use DST_ALPHA blending.
+	// masking the alpha channel for interactions seems to fix those issues, but only do it for float buffers in case it has
+	// unwanted side effects
+	int alphaMask = r_fboColorBits.GetInteger() == 64 ? GLS_ALPHAMASK : 0;
+
 	// perform setup here that will be constant for all interactions
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | alphaMask | backEnd.depthFunc );
 	backEnd.currentSpace = NULL; // ambient/interaction shaders conflict
 
 	// bind the vertex and fragment program

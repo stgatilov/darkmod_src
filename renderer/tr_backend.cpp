@@ -20,6 +20,7 @@
 #include "glsl.h"
 #include "GLSLProgramManager.h"
 #include "Profiling.h"
+#include "BloomStage.h"
 
 backEndState_t	backEnd;
 idCVarBool image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER, "1 = print outstanding background loads" );
@@ -646,9 +647,26 @@ RB_Tonemap
 GLSL replacement for legacy hardware gamma ramp
 =============
 */
+struct TonemapUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( TonemapUniforms )
+	DEFINE_UNIFORM(sampler, texture)
+	DEFINE_UNIFORM(sampler, bloomTex)
+	DEFINE_UNIFORM(float, gamma)
+	DEFINE_UNIFORM(float, brightness)
+	DEFINE_UNIFORM(float, desaturation)
+	DEFINE_UNIFORM(float, colorCurveBias)
+	DEFINE_UNIFORM(float, colorCorrection)
+	DEFINE_UNIFORM(float, colorCorrectBias)
+	DEFINE_UNIFORM(float, bloomWeight)
+};
+
 void RB_Tonemap( void ) {
 	GL_PROFILE("Tonemap");
 	FB_CopyColorBuffer();
+
+	if (r_bloom.GetBool()) {
+		bloom->ComputeBloomFromRenderImage();
+	}
 
 	int w = globalImages->currentRenderImage->uploadWidth;
 	int h = globalImages->currentRenderImage->uploadHeight;
@@ -680,13 +698,23 @@ void RB_Tonemap( void ) {
 
 	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
 	tonemap->Activate();
-	qglUniform1i( tonemap->GetUniformLocation( "u_texture" ), 0 );
-	qglUniform1f( tonemap->GetUniformLocation( "u_gamma" ), idMath::ClampFloat( 1e-3f, 1e+3f, r_postprocess_gamma.GetFloat() ) );
-	qglUniform1f( tonemap->GetUniformLocation( "u_brightness" ), r_postprocess_brightness.GetFloat() );
-	qglUniform1f( tonemap->GetUniformLocation("u_desaturation"), idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
-	qglUniform1f( tonemap->GetUniformLocation("u_colorCurveBias"), r_postprocess_colorCurveBias.GetFloat() );
-	qglUniform1f( tonemap->GetUniformLocation("u_colorCorrection"), r_postprocess_colorCorrection.GetFloat() );
-	qglUniform1f( tonemap->GetUniformLocation("u_colorCorrectBias"), idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_colorCorrectBias.GetFloat() ) );
+	TonemapUniforms *uniforms = tonemap->GetUniformGroup<TonemapUniforms>();
+	uniforms->texture.Set( 0 );
+	uniforms->gamma.Set( idMath::ClampFloat( 1e-3f, 1e+3f, r_postprocess_gamma.GetFloat() ) );
+	uniforms->brightness.Set( r_postprocess_brightness.GetFloat() );
+	uniforms->desaturation.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
+	uniforms->colorCurveBias.Set(r_postprocess_colorCurveBias.GetFloat() );
+	uniforms->colorCorrection.Set(r_postprocess_colorCorrection.GetFloat() );
+	uniforms->colorCorrectBias.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_colorCorrectBias.GetFloat() ) );
+
+	if( r_bloom.GetBool() ) {
+		GL_SelectTexture( 1 );
+		bloom->BindBloomTexture();
+		uniforms->bloomWeight.Set( r_bloom_weight.GetFloat() );
+		uniforms->bloomTex.Set( 1 );
+	} else {
+		uniforms->bloomWeight.Set( 0 );
+	}
 
 	RB_DrawFullScreenQuad();
 

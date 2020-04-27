@@ -34,10 +34,10 @@ uint32_t			staticVertexSize, staticIndexSize;
 attribBind_t		currentAttribBinding;
 
 const idDrawVert screenRectVerts[4] = {
-	{idVec3( -1,-1,0 ),idVec2( 0,0 )},
-	{idVec3( +1,-1,0 ),idVec2( 1,0 )},
-	{idVec3( -1,+1,0 ),idVec2( 0,1 )},
-	{idVec3( +1,+1,0 ),idVec2( 1,1 ) },
+	{idVec3( -1,-1,0 ),idVec2( 0,0 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
+	{idVec3( +1,-1,0 ),idVec2( 1,0 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
+	{idVec3( -1,+1,0 ),idVec2( 0,1 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
+	{idVec3( +1,+1,0 ),idVec2( 1,1 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 };
 const glIndex_t screenRectIndices[6] = { 0, 2, 1, 1, 2, 3 };
 

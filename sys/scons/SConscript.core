@@ -26,6 +26,7 @@ Import( 'g_env_game' )
 
 renderer_string = ' \
 	AmbientOcclusionStage.cpp \
+	BloomStage.cpp \
 	BufferObject.cpp \
 	Cinematic.cpp \
 	CinematicID.cpp \
