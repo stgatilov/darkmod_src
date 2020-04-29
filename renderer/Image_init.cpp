@@ -17,6 +17,8 @@
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "BloomStage.h"
+#include "AmbientOcclusionStage.h"
 
 #define	DEFAULT_SIZE		16
 #define	NORMAL_MAP_SIZE		32
@@ -947,6 +949,10 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 		r_multiSamples.SetInteger( msaaCheck );
 	}
 	msaaCheck = 0;
+
+	// SSAO and Bloom FBOs need to be regenerated after their render images have been recreated
+	ambientOcclusion->Shutdown();
+	bloom->Shutdown();
 }
 
 typedef struct {
