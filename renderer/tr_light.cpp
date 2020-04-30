@@ -1521,6 +1521,7 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 		return;
 	}
 
+	if ( !tr.viewDef->isXraySubview || def.parms.xrayIndex == 2 )
 	// add the ambient surface if it has a visible rectangle
 	if ( !vEntity->scissorRect.IsEmpty() || R_HasVisibleShadows( vEntity ) ) {
 		model = R_EntityDefDynamicModel( &def );
@@ -1544,7 +1545,7 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 		if ( def.parms.xrayIndex == 2 ) {
 			for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
 				next = inter->entityNext;
-				if ( inter->lightDef->viewCount != tr.viewCount ) {
+				if ( inter->lightDef->viewCount != tr.viewCount || inter->lightDef->lightShader->IsFogLight() ) {
 					continue;
 				}
 				inter->AddActiveInteraction();

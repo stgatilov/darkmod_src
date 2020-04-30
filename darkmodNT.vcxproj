@@ -746,7 +746,6 @@
     <ClInclude Include="renderer\FrameBuffer.h" />
     <ClInclude Include="renderer\glad.h" />
     <ClInclude Include="renderer\glad_wgl.h" />
-    <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
     <ClInclude Include="renderer\GLSLProgram.h" />
     <ClInclude Include="renderer\GLSLProgramManager.h" />

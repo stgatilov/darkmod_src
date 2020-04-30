@@ -285,7 +285,7 @@ void FB_CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeigh
 		(!useOversizedBuffer && (image->uploadWidth != imageWidth || image->uploadHeight != imageHeight)) ) {
 		image->uploadWidth = imageWidth;
 		image->uploadHeight = imageHeight;
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, x, y, imageWidth, imageHeight, 0 );
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness

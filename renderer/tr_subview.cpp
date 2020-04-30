@@ -543,7 +543,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 		return;
 	}
 
-	tr.CropRenderSize( stage->width, stage->height, true );
+	//tr.CropRenderSize( stage->width, stage->height, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;
@@ -571,7 +571,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 	stage->image = globalImages->scratchImage2;
 
 	tr.CaptureRenderToImage( *stage->image );
-	tr.UnCrop();
+	//tr.UnCrop();
 }
 
 /*

@@ -207,9 +207,6 @@
     <ClInclude Include="renderer\Cinematic.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\glext.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="renderer\GuiModel.h">
       <Filter>Renderer</Filter>
     </ClInclude>

@@ -928,12 +928,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			continue;
 		}
 
-		if ( backEnd.viewDef->isXraySubview && drawSurfs[i]->space->entityDef ) {
-			if ( drawSurfs[i]->space->entityDef->parms.xrayIndex != 2 ) {
-				continue;
-			}
-		}
-
 		// we need to draw the post process shaders after we have drawn the fog lights
 		if ( drawSurfs[i]->sort >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
 			break;
@@ -1217,8 +1211,7 @@ RB_STD_FogAllLights
 */
 void RB_STD_FogAllLights( bool translucent ) {
 	if ( r_skipFogLights & 1 && !translucent || r_skipFogLights & 2 && translucent ||
-		r_showOverDraw.GetInteger() != 0 ||
-		backEnd.viewDef->isXraySubview /* dont fog in xray mode*/ ) {
+		r_showOverDraw.GetInteger() != 0 ) {
 		return;
 	}
 	GL_PROFILE( "STD_FogAllLights" );
@@ -1273,7 +1266,6 @@ void RB_STD_DrawView( void ) {
 		// fill the depth buffer and clear color buffer to black except on subviews
 		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 		GL_CheckErrors();
-
 		if( ambientOcclusion->ShouldEnableForCurrentView() ) {
 			ambientOcclusion->ComputeSSAOFromDepth();
 		}
