@@ -215,6 +215,7 @@ void AmbientOcclusionStage::ComputeSSAOFromDepth() {
 		Init();
 	}
 
+	qglScissor(0, 0, viewspaceDepth->uploadWidth, viewspaceDepth->uploadHeight);
 	PrepareDepthPass();
 	SSAOPass();
 	BlurPass();
