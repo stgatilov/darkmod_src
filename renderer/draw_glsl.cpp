@@ -44,7 +44,7 @@ If you have questions concerning this license or the applicable additional terms
 //TODO: is this global variable harming multithreading?
 idList<idVec2> g_softShadowsSamples;
 idCVarBool r_shadowMapCullFront( "r_shadowMapCullFront", "0", CVAR_ARCHIVE | CVAR_RENDERER, "Cull front faces in shadow maps" );
-idCVarBool r_useMultiDraw( "r_useMultiDraw", "1", CVAR_ARCHIVE | CVAR_RENDERER, "Use glMultiDrawElements to save on draw calls" );
+idCVarBool r_useMultiDraw( "r_useMultiDraw", "0", CVAR_RENDERER, "Use glMultiDrawElements to save on draw calls" );
 
 struct ShadowMapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapUniforms )
