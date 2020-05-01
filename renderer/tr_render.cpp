@@ -424,7 +424,7 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 			GL_CheckErrors();
 		}
 
-#if 0 // duzenko: I don't think this is doing anything for non-interaction draws		
+#if 1 // duzenko: this is needed for portal fogging e.g. in Lone Salvation
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
 			backEnd.currentScissor = drawSurf->scissorRect;
 			// revelator: test. parts of the functions loaded here also runs through the fbo transforms (the code for filling the depthbuffer for instance)
