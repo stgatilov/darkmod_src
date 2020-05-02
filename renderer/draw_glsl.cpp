@@ -41,8 +41,6 @@ If you have questions concerning this license or the applicable additional terms
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
 #endif
 
-//TODO: is this global variable harming multithreading?
-idList<idVec2> g_softShadowsSamples;
 idCVarBool r_shadowMapCullFront( "r_shadowMapCullFront", "0", CVAR_ARCHIVE | CVAR_RENDERER, "Cull front faces in shadow maps" );
 idCVarBool r_useMultiDraw( "r_useMultiDraw", "0", CVAR_RENDERER, "Use glMultiDrawElements to save on draw calls" );
 
@@ -931,9 +929,9 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 
 		int sampleK = r_softShadowsQuality.GetInteger();
 		if ( sampleK > 0 ) { // texcoords for screen-space softener filter
-			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 ) {
-				GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
-				softShadowsSamples.SetArray( sampleK, ( float * )g_softShadowsSamples.Ptr() );
+			if ( poissonSamples.Num() != sampleK || poissonSamples.Num() == 0 ) {
+				GeneratePoissonDiskSampling( poissonSamples, sampleK );
+				softShadowsSamples.SetArray( sampleK, ( float * )poissonSamples.Ptr() );
 			}
 		}
 	} else {
