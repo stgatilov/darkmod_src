@@ -738,6 +738,7 @@
     <ClInclude Include="idlib\Timer.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="renderer\AmbientOcclusionStage.h" />
+    <ClInclude Include="renderer\BloomStage.h" />
     <ClInclude Include="renderer\BufferObject.h" />
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
@@ -745,7 +746,6 @@
     <ClInclude Include="renderer\FrameBuffer.h" />
     <ClInclude Include="renderer\glad.h" />
     <ClInclude Include="renderer\glad_wgl.h" />
-    <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
     <ClInclude Include="renderer\GLSLProgram.h" />
     <ClInclude Include="renderer\GLSLProgramManager.h" />
@@ -1184,6 +1184,7 @@
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp" />
+    <ClCompile Include="renderer\BloomStage.cpp" />
     <ClCompile Include="renderer\BufferObject.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\CinematicFFMpeg.cpp" />

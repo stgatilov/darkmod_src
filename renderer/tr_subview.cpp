@@ -543,7 +543,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 		return;
 	}
 
-	tr.CropRenderSize( stage->width, stage->height, true );
+	//tr.CropRenderSize( stage->width, stage->height, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;
@@ -571,7 +571,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 	stage->image = globalImages->scratchImage2;
 
 	tr.CaptureRenderToImage( *stage->image );
-	tr.UnCrop();
+	//tr.UnCrop();
 }
 
 /*
@@ -819,7 +819,7 @@ bool R_GenerateSubViews( void ) {
 	const idMaterial		*shader;
 
 	// for testing the performance hit
-	if ( r_skipSubviews ) 
+	if ( r_skipSubviews || tr.viewDef->areaNum < 0 ) 
 		return false;
 
 	// duzenko #4420: no mirrors on lightgem stage

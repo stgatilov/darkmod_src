@@ -207,9 +207,6 @@
     <ClInclude Include="renderer\Cinematic.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\glext.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="renderer\GuiModel.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -1460,6 +1457,9 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="renderer\AmbientOcclusionStage.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\BloomStage.h">
       <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2867,6 +2867,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\BloomStage.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
