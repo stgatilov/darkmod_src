@@ -155,14 +155,18 @@
   </Type>
 
   <Type Name="idRenderModelStatic">
+    <DisplayString IncludeView="simple">rModel {name.data,na}</DisplayString>
     <DisplayString>rModel {name.data,na} {bounds}</DisplayString>
   </Type>
 
   <!-- this is a bit hacky, but allows to inspect game entity of a render entity
        without having to enumerate all fields of idRenderEntityLocal -->
   <Type Name="renderEntity_s">
-    <DisplayString IncludeView="simple">{*gameLocal.entities[entityNum],view(simple)}</DisplayString>
-    <DisplayString>renderEntity: {gameLocal.entities[entityNum],view(simple)}</DisplayString>
+    <!-- note: entityNum == 0 means no game entity, i.e. world area or smoke -->
+    <DisplayString Condition="entityNum != 0" IncludeView="simple">{*gameLocal.entities[entityNum],view(simple)}</DisplayString>
+    <DisplayString Condition="entityNum == 0" IncludeView="simple">{*hModel,view(simple)}</DisplayString>
+    <DisplayString Condition="entityNum != 0">renderEntity: {gameLocal.entities[entityNum],view(simple)}</DisplayString>
+    <DisplayString Condition="entityNum == 0">renderEntity: {*hModel,view(simple)}</DisplayString>
     <Expand>
       <ExpandedItem>this,!</ExpandedItem>
       <Item Name="[entity]">gameLocal.entities[entityNum]</Item>
@@ -199,6 +203,7 @@
           </LinkedListItems>
         </Expand>
       </Synthetic>
+      <Item Condition="parms.entityNum==0" Name="[world area]" ExcludeView="raw">world->portalAreas[index]</Item>
     </Expand>
   </Type>
   <Type Name="idRenderLightLocal">
