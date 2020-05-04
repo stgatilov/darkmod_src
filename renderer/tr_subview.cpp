@@ -416,8 +416,6 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		// It should keep going even when not active.
 	}
 
-	//if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
-
 		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
 			PSOrigin = gameLocal.portalSkyOrigin;
 		}
@@ -465,55 +463,6 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 
 		R_RenderView( *parms );
 
-		//if ( g_enablePortalSky.GetInteger() == 1 ) // duzenko #4414 - the new method will use the left-over pixels in framebuffer
-		//	renderSystem->CaptureRenderToImage( "_currentRender" );
-
-		//hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
-	/*} else // grayman #3108 - contributed by 7318 
-	{
-		// So if g_enablePortalSky is disabled, GlobalPortalSkies doesn't break.
-		// When g_enablePortalSky gets re-enabled, GlobalPortalSkies keeps working. 
-		gameLocal.playerOldEyePos = currentEyePos;
-	}*/
-
-	//hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
-	
-	/*viewDef_t		*parms;
-
-	// remote views can be reused in a single frame
-	if ( stage->dynamicFrameCount == tr.frameCount ) {
-		return;
-	}
-
-	// issue a new view command
-	parms = R_MirrorViewBySurface( surf );
-	if ( !parms ) {
-		return;
-	}
-
-	//tr.CropRenderSize( stage->width, stage->height, true, true );
-
-	parms->renderView.x = 0;
-	parms->renderView.y = 0;
-	parms->renderView.width = SCREEN_WIDTH;
-	parms->renderView.height = SCREEN_HEIGHT;
-
-	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
-
-	parms->scissor = scissor;
-
-	parms->superView = tr.viewDef;
-	parms->subviewSurface = surf;
-
-	// triangle culling order changes with mirroring
-	parms->isMirror = (((int)parms->isMirror ^ (int)tr.viewDef->isMirror) != 0);
-
-	// generate render commands for it
-	R_RenderView( parms );
-
-	// copy this rendering to the image
-	stage->dynamicFrameCount = tr.frameCount;
-	tr.UnCrop();*/
 	if ( g_enablePortalSky.GetInteger() == 1 ) {
 		idImage *image = NULL;
 		if ( stage )
@@ -856,14 +805,9 @@ bool R_GenerateSubViews( void ) {
 		&& !tr.viewDef->renderWorld->mapName.IsEmpty()  // FIXME a better way to check for RenderWindow views? (compass, etc)
 	) {
 		dontReenter = true;
-		if ( skySurf ) { // textures/smf/portal_sky
-			idScreenRect sc;
-			R_PortalRender( skySurf, NULL, sc );
-		} else { // caulk 
-			idScreenRect sc;
-			R_PortalRender( NULL, NULL, sc );
-			subviews = true;
-		}
+		idScreenRect sc;
+		R_PortalRender( skySurf, NULL, sc ); // even if skySurf null
+		subviews = true;
 		dontReenter = false;
 	}
 
