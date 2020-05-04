@@ -725,6 +725,8 @@ void idVarDef::SetString( const char *string, bool constant ) {
 	
 	assert( typeDef && ( typeDef->Type() == ev_string ) );
 	idStr::Copynz( value.stringPtr, string, MAX_STRING_LEN );
+	if ( strlen( string ) > MAX_STRING_LEN )
+		common->Warning( "Script string length exceeded: '%s...'\n", value.stringPtr );
 }
 
 /*
