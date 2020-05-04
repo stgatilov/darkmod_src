@@ -336,7 +336,7 @@ R_MirrorRender
 void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scissor ) {
 	viewDef_t		*parms;
 
-	if ( tr.viewDef->superView && tr.viewDef->superView->isSubview ) // #4615 HOM effect - only draw mirrors from player's view and top-level asubviews
+	if ( tr.viewDef->superView && tr.viewDef->superView->isSubview ) // #4615 HOM effect - only draw mirrors from player's view and top-level subviews
 		return;
 
 	// remote views can be reused in a single frame
@@ -843,11 +843,12 @@ bool R_GenerateSubViews( void ) {
 		if ( !shader || !shader->HasSubview() )
 			continue;
 
-		if ( R_GenerateSurfaceSubview( drawSurf ) ) {
-			subviews = true;
-			if ( shader->GetSort() == SS_PORTAL_SKY ) // portal sky needs to be the last one, and only once
-				skySurf = drawSurf;
-		}
+		if ( shader->GetSort() == SS_PORTAL_SKY ) // portal sky needs to be the last one, and only once
+			skySurf = drawSurf;
+		else
+			if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+				subviews = true;
+			}
 	}
 
 	static bool dontReenter = false;

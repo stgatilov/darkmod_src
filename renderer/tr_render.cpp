@@ -646,7 +646,7 @@ void RB_BeginDrawingView( void ) {
 		qglDisable( GL_DEPTH_TEST );
 		qglDisable( GL_STENCIL_TEST );
 	}
-	if ( backEnd.viewDef && backEnd.viewDef->isXraySubview && !r_ignore.GetBool() ) {	// allow alpha blending with background
+	if ( backEnd.viewDef && backEnd.viewDef->isXraySubview ) {	// allow alpha blending with background
 		qglClearColor( 1.0f, 0, 0, 0 );
 		qglClear( GL_COLOR_BUFFER_BIT );
 	}
