@@ -29,10 +29,10 @@
 idCVar r_bloom("r_bloom", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Enable Bloom effect");
 idCVar r_bloom_threshold("r_bloom_threshold", "0.7", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Brightness threshold for Bloom effect");
 idCVar r_bloom_threshold_falloff("r_bloom_threshold_falloff", "8", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Exponential factor with which values below the brightness threshold fall off");
-idCVar r_bloom_detailblend("r_bloom_detailblend", "0.01", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Blend factor for mixing detail into the blurred Bloom result");
-idCVar r_bloom_weight("r_bloom_weight", "0.7", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Multiplicative weight factor for adding Bloom to the final image");
+idCVar r_bloom_detailblend("r_bloom_detailblend", "0.5", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Blend factor for mixing detail into the blurred Bloom result");
+idCVar r_bloom_weight("r_bloom_weight", "0.3", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Multiplicative weight factor for adding Bloom to the final image");
 idCVar r_bloom_downsample_limit("r_bloom_downsample_limit", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Downsample render image until vertical resolution approximately reaches this value");
-idCVar r_bloom_blursteps("r_bloom_blursteps", "3", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Number of blur steps to perform after downsampling");
+idCVar r_bloom_blursteps("r_bloom_blursteps", "2", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Number of blur steps to perform after downsampling");
 
 extern idCVar r_fboResolution;
 
@@ -325,7 +325,8 @@ void BloomStage::Upsample() {
 
 	upsampleShader->Activate();
 	BloomUpsampleUniforms *uniforms = upsampleShader->GetUniformGroup<BloomUpsampleUniforms>();
-	uniforms->detailBlendWeight.Set( r_bloom_detailblend.GetFloat() );
+	float detailBlendWeight = 1.f - pow(1.f - r_bloom_detailblend.GetFloat(), 1.f/(numDownsamplingSteps - 1));
+	uniforms->detailBlendWeight.Set(detailBlendWeight);
 
 	GL_SelectTexture( 1 );
 	bloomDownSamplers->Bind();
