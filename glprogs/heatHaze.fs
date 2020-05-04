@@ -39,6 +39,7 @@ void main() {
 	R0 = (R0) * (u_scalePotToWindow);                                                                   //MUL		R0, R0, program.env[0];
 	
 	// load the screen render
-	draw_Color.xyz = texture(u_texture0, R0.xy).xyz;                                                    //TEX		result.color.xyz, R0, texture[0], 2D;
+	//draw_Color.xyz = texture(u_texture0, R0.xy).xyz;                                                    //TEX		result.color.xyz, R0, texture[0], 2D;
+	draw_Color = texture(u_texture0, R0.xy);                                                    //TEX		result.color.xyz, R0, texture[0], 2D;
 	
 }

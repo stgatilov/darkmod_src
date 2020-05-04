@@ -94,6 +94,7 @@ void main() {
 	input0 = (input0) + (input4);                                                                       //ADD input0, input0, input4;
 	input0 = (input0) * (vec4(0.2));                                                                    //MUL input0, input0, 0.2;
 	
-	draw_Color.xyz = input0.xyz;                                                                        //MOV		result.color.xyz, input0;
+	//draw_Color.xyz = input0.xyz;                                                                        //MOV		result.color.xyz, input0;
+	draw_Color = input0;                                                                        //MOV		result.color.xyz, input0;
 	
 }
