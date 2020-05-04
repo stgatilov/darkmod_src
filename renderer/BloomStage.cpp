@@ -39,6 +39,8 @@ extern idCVar r_fboResolution;
 BloomStage bloomImpl;
 BloomStage *bloom = &bloomImpl;
 
+const int BloomStage::MAX_DOWNSAMPLING_STEPS;
+
 namespace {
 	struct BloomDownsampleUniforms : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF(BloomDownsampleUniforms)
