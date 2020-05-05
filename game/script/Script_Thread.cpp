@@ -1364,6 +1364,16 @@ idThread::Event_SetSpawnArg
 ================
 */
 void idThread::Event_SetSpawnArg( const char *key, const char *value ) {
+	if ( strstr( value, "${" ) ) { // 5236 workaround for strings > MAX_STRING_LEN
+		idStr text( value );
+		for ( int index = 0; index < spawnArgs.GetNumKeyVals(); index++ ) {
+			auto keyVal = spawnArgs.GetKeyVal( index );
+			idStr old = idStr::Fmt( "${%s}", keyVal->GetKey().c_str() );
+			text.Replace( old.c_str(), keyVal->GetValue().c_str() );
+		}
+		spawnArgs.Set( key, text.c_str() );
+		return;
+	}
 	spawnArgs.Set( key, value );
 }
 
