@@ -222,11 +222,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <PreprocessorDefinitions>NO_MFC;ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
     <Link />
     <Link>
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -244,11 +240,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <PreprocessorDefinitions>NO_MFC;ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <Link />
@@ -259,12 +251,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <PreprocessorDefinitions>_INLINEDEBUG;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
     <Link>
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -281,12 +268,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <PreprocessorDefinitions>NO_MFC;_INLINEDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-      <Message>
-      </Message>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -301,12 +283,7 @@
       <AdditionalOptions>/arch:SSE2 %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>NO_MFC;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -320,13 +297,8 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <PreprocessorDefinitions>_DEBUG;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-    </PostBuildEvent>
+    <PostBuildEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
@@ -345,12 +317,7 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link />
@@ -363,12 +330,7 @@
       <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-      <Message>
-      </Message>
-    </PostBuildEvent>
+    <PostBuildEvent />
     <Link>
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
