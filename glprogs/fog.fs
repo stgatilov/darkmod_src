@@ -6,6 +6,7 @@ uniform vec3 u_fogColor;
 uniform bool u_newFog;
 uniform float u_fogEnter;
 uniform float u_fogDensity;
+uniform float u_fogAlpha;
 uniform vec4 u_frustumPlanes[6];
 uniform vec3 u_viewOrigin;
 
@@ -44,4 +45,5 @@ void main() {
 		float fogged = length(points[1]-points[0]) * u_fogDensity * 5;
 		FragColor = vec4(u_fogColor, fogged);
 	}
+	FragColor.a *= u_fogAlpha;
 }

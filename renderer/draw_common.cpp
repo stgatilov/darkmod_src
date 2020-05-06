@@ -48,6 +48,7 @@ struct FogUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec3, fogColor );
 	DEFINE_UNIFORM( float, fogEnter );
 	DEFINE_UNIFORM( float, fogDensity );
+	DEFINE_UNIFORM( float, fogAlpha );
 	DEFINE_UNIFORM( int, newFog );
 	DEFINE_UNIFORM( vec3, viewOrigin );
 	DEFINE_UNIFORM( vec4, frustumPlanes );
@@ -1060,8 +1061,8 @@ RB_T_BasicFog
 =====================
 */
 static void RB_T_BasicFog( const drawSurf_t *surf ) {
+	FogUniforms* fogUniforms = programManager->fogShader->GetUniformGroup<FogUniforms>();
 	if ( backEnd.currentSpace != surf->space ) {
-		FogUniforms *fogUniforms = programManager->fogShader->GetUniformGroup<FogUniforms>();
 
 		idPlane	local;
 
@@ -1073,6 +1074,9 @@ static void RB_T_BasicFog( const drawSurf_t *surf ) {
 		local[3] += FOG_ENTER;
 		fogUniforms->tex1PlaneT.Set( local );
 	}
+	if ( surf->material && surf->material->Coverage() == MC_TRANSLUCENT && surf->material->ReceivesLighting() )
+		fogUniforms->fogAlpha.Set( surf->material->FogAlpha() );
+
 	RB_T_RenderTriangleSurface( surf );
 }
 
@@ -1131,8 +1135,6 @@ static void RB_FogPass( bool translucent ) {
 		// otherwise, distance = alpha color
 		a = -0.5f / backEnd.lightColor[3];
 	}
-	if ( translucent )
-		a *= .5;
 	GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
 
 	// texture 0 is the falloff image
@@ -1179,6 +1181,7 @@ static void RB_FogPass( bool translucent ) {
 		fogUniforms->frustumPlanes.SetArray( 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
 	} else
 		fogUniforms->newFog.Set( 0 );
+	fogUniforms->fogAlpha.Set( 1 );
 
 	if ( translucent ) {
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );

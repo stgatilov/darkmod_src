@@ -102,6 +102,7 @@ void idMaterial::CommonInit() {
 	spectrum = 0;
 	polygonOffset = 0.0f;
 	shadowmapOffset = 0;
+	fogAlpha = 0;
 	ambientRimColor.registers[0] = 0;
 	suppressInSubview = false;
 	refCount = 0;
@@ -1890,6 +1891,15 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 				continue;
 			}
 			shadowmapOffset = token.GetFloatValue();
+			continue;
+		}
+		// fogAlpha
+		else if ( !token.Icmp( "fogAlpha" ) ) {
+			if ( !src.ReadTokenOnLine( &token ) ) {
+				fogAlpha = 1.0f;
+				continue;
+			}
+			fogAlpha = token.GetFloatValue();
 			continue;
 		}
 		// noshadow
