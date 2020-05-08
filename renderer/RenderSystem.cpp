@@ -858,10 +858,11 @@ PostProcess
 ================
 */
 void idRenderSystemLocal::PostProcess() {
-	idCVarBool r_postProcess( "r_postProcess", "1", CVAR_RENDERER, "" );
+	idCVarBool r_postProcess( "r_postProcess", "1", CVAR_RENDERER | CVAR_ARCHIVE, "" );
 	if ( !r_postProcess ) return;
-	emptyCommand_t* cmd = (emptyCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
+	bloomCommand_t* cmd = (bloomCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_BLOOM;
+	cmd->screenRect.Clear();
 }
 
 /*

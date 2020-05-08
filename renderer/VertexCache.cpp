@@ -342,6 +342,13 @@ void idVertexCache::EndFrame() {
 
 	qglBindBuffer( GL_ARRAY_BUFFER, currentVertexBuffer = 0 );
 	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, currentIndexBuffer = 0 );
+
+	// 2.08 temp helper for RB_DrawFullScreenQuad on core contexts
+	auto tmp = _alloca16( sizeof( screenRectVerts ) );
+	memcpy( tmp, screenRectVerts, sizeof( screenRectVerts ) );
+	screenRectSurf.ambientCache = AllocVertex( tmp, sizeof( screenRectVerts ) );
+	screenRectSurf.indexCache = AllocIndex( &screenRectIndices, sizeof( screenRectIndices ) );
+	screenRectSurf.numIndexes = 6;
 }
 
 /*
@@ -415,11 +422,6 @@ idVertexCache::PrepareStaticCacheForUpload
 ==============
 */
 void idVertexCache::PrepareStaticCacheForUpload() {
-	// 2.08 temp helper for RB_DrawFullScreenQuad on core contexts
-	screenRectSurf.ambientCache = AllocStaticVertex( &screenRectVerts, sizeof(screenRectVerts) );
-	screenRectSurf.indexCache = AllocStaticIndex( &screenRectIndices, sizeof( screenRectIndices ) );
-	screenRectSurf.numIndexes = 6;
-	
 	// upload function to be called twice for vertex and index data
 	auto upload = [](char *msg, BufferObject &buffer, int size, StaticList &staticList ) {
 		common->Printf( msg );

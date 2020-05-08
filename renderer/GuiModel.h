@@ -13,6 +13,7 @@
  
 ******************************************************************************/
 
+#include "..\ui\Rectangle.h"
 
 typedef struct {
 	const idMaterial	*material;
@@ -34,6 +35,7 @@ public:
 	
 	void	EmitToCurrentView( float modelMatrix[16], bool depthHack );
 	void	EmitFullScreen();
+	void	SetTonemapRect( const idRectangle& rect );
 
 	// these calls are forwarded from the renderer
 	void	SetColor( float r, float g, float b, float a );
@@ -53,5 +55,6 @@ private:
 	idList<guiModelSurface_t>	surfaces;
 	idList<glIndex_t>		indexes;
 	idList<idDrawVert>	verts;
+	idRectangle tonemapRect;
 };
 

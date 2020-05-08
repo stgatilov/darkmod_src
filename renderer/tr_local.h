@@ -558,7 +558,11 @@ struct baseCommand_t {
 };
 
 struct emptyCommand_t : baseCommand_t {
-	baseCommand_t *next;
+	baseCommand_t* next;
+};
+
+struct bloomCommand_t : emptyCommand_t {
+	idScreenRect screenRect;
 };
 
 struct setBufferCommand_t : emptyCommand_t {
