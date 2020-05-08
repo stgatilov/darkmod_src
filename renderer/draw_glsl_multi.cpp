@@ -35,6 +35,12 @@ If you have questions concerning this license or the applicable additional terms
 
 static const uint MAX_LIGHTS = 16;
 
+const bool useGeometryShader = true;
+
+GLSLProgram* shadowShader() {
+	return useGeometryShader ? programManager->shadowMapMultiGShader: programManager->shadowMapMultiShader;
+}
+
 struct MultiShadowUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( MultiShadowUniforms )
 
@@ -43,8 +49,9 @@ struct MultiShadowUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec3, lightOrigin )
 	DEFINE_UNIFORM( vec4, shadowRect )
 	DEFINE_UNIFORM( float, lightRadius )
-	DEFINE_UNIFORM( vec4, lightFrustum )
+	//DEFINE_UNIFORM( vec4, lightFrustum )
 	DEFINE_UNIFORM( float, shadowTexelStep )
+	DEFINE_UNIFORM( mat4, lightProjectionFalloff )
 };
 
 struct MultiLightShaderData { // used by both interaction and shadow map shaders
@@ -54,6 +61,7 @@ struct MultiLightShaderData { // used by both interaction and shadow map shaders
 	idList<float> softShadowRads;
 	idList<idVec3> lightColors;
 	idList<idMat4> projectionFalloff;
+	idList<idMat3> bounds;
 	MultiLightShaderData( const drawSurf_t* surf, bool shadowPass, const drawInteraction_t* din = nullptr ) :
 		surf( surf ), shadowPass( shadowPass ), din( din ) {
 		if ( !surf->onLights )
@@ -114,18 +122,22 @@ private:
 				lightRegs[lightStage->color.registers[3]]
 			);
 			lightColors.Append( lightColor.ToVec3() );
-
 #if 0
 			idPlane lightProject[4];
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[2], lightProject[2] );
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[3], lightProject[3] );
-			idMat4* p = (idMat4*)& lightProject;
+			idMat4* p = (idMat4*)&lightProject;
 #else
-			idMat4* p = (idMat4*)& vLight->lightProject;
+			idMat4* p = (idMat4*)&vLight->lightProject;
 #endif
 			projectionFalloff.Append( *p );
+		} else {
+			idMat4 bounds;
+			bounds[0].ToVec3() = vLight->frustumTris->bounds[0];
+			bounds[1].ToVec3() = vLight->frustumTris->bounds[1];
+			projectionFalloff.Append( bounds );
 		}
 	}
 };
@@ -178,8 +190,8 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 	if ( surf->sort >= SS_AFTER_FOG )
 		return;
 
-	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
-	MultiShadowUniforms *shadowUniforms = programManager->shadowMapMultiShader->GetUniformGroup<MultiShadowUniforms>();
+	Uniforms::Depth *depthUniforms = shadowShader()->GetUniformGroup<Uniforms::Depth>();
+	MultiShadowUniforms* shadowUniforms = shadowShader()->GetUniformGroup<MultiShadowUniforms>();
 
 	/*float customOffset = 0;
 	if ( auto entityDef = surf->space->entityDef )
@@ -202,10 +214,12 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 		shadowUniforms->lightOrigin.SetArray( thisCount, data.lightOrigins[i].ToFloatPtr() );
 		shadowUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );
 		shadowUniforms->lightRadius.SetArray( thisCount, &data.softShadowRads[i] );
+		shadowUniforms->lightProjectionFalloff.SetArray( thisCount, data.projectionFalloff[i].ToFloatPtr() );
 		GL_CheckErrors();
 
-		depthUniforms->instances = thisCount * 6;
-		RB_SingleSurfaceToDepthBuffer( programManager->shadowMapMultiShader, surf );
+		//depthUniforms->instances = thisCount * 6;
+		depthUniforms->instances = useGeometryShader ? 0 : thisCount * 6;
+		RB_SingleSurfaceToDepthBuffer( shadowShader(), surf );
 
 		if ( r_showMultiLight.GetInteger() == 2 ) {
 			backEnd.pc.c_interactions++;
@@ -218,7 +232,10 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
 		}
 	}
-
+#ifdef 0
+	if ( r_ignore.GetBool() && data.lightOrigins.Num() * (int)surf->ambientCache.size > r_ignore.GetInteger() )
+		common->Warning( "%d %d %d\n", surf->space->entityDef->index, data.lightOrigins.Num(), surf->ambientCache.size );
+#endif
 	if ( r_warnMultiLight > 0 ) {
 		if ( data.lightOrigins.Num() > r_warnMultiLight )
 			common->Warning("%i %i %i %s", surf->space->entityDef->index, data.lightOrigins.Num(), surf->numIndexes, surf->space->entityDef->parms.hModel->Name() );
@@ -234,9 +251,9 @@ void RB_ShadowMap_RenderAllLights() {
 	FB_ToggleShadow( true );
 
 	GL_CheckErrors();
-	programManager->shadowMapMultiShader->Activate();
-	Uniforms::Depth *depthUniforms = programManager->shadowMapMultiShader->GetUniformGroup<Uniforms::Depth>();
-	MultiShadowUniforms *shadowUniforms = programManager->shadowMapMultiShader->GetUniformGroup<MultiShadowUniforms>();
+	shadowShader()->Activate();
+	Uniforms::Depth *depthUniforms = shadowShader()->GetUniformGroup<Uniforms::Depth>();
+	MultiShadowUniforms *shadowUniforms = shadowShader()->GetUniformGroup<MultiShadowUniforms>();
 	GL_SelectTexture( 0 );
 
 	backEnd.currentSpace = NULL;

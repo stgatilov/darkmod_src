@@ -210,7 +210,7 @@ namespace {
 	}
 
 	void InitShadowMapShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs" );
+		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs", program->GetName() + ".gs" );
 		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 		depthUniforms->instances = 6;
 		depthUniforms->acceptsTranslucent = true; //duzenko: wait, what?
@@ -281,6 +281,7 @@ void GLSLProgramManager::Init() {
 	stencilShadowShader = Load( "stencilshadow" );
 	shadowMapShader = LoadFromGenerator( "shadowMapA", InitShadowMapShader );
 	shadowMapMultiShader = LoadFromGenerator( "shadowMapN", InitShadowMapShader );
+	shadowMapMultiGShader = LoadFromGenerator( "shadowMapNG", InitShadowMapShader );
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
 	stencilInteractionShader = LoadInteractionShader( "interactionStencil", "interactionStencil", false );
 	shadowMapInteractionShader = LoadInteractionShader( "interactionShadowMaps", "interactionShadowMaps", false );

@@ -433,9 +433,12 @@ filenames hardcoded here since they're not used elsewhere
 FIXME split the stencil and shadowmap interactions in separate shaders as the latter might not compile on DX10 and older hardware
 ==================
 */
-ID_NOINLINE bool R_ReloadGLSLPrograms() { 
+ID_NOINLINE bool R_ReloadGLSLPrograms(const char *programName) { 
 	// incorporate new shader interface:
-	programManager->ReloadAllPrograms();
+	if ( programName )
+		programManager->Reload( programName );
+	else
+		programManager->ReloadAllPrograms();
 
 	return true;
 }
@@ -448,7 +451,8 @@ R_ReloadGLSLPrograms_f
 void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 	common->Printf( "---------- R_ReloadGLSLPrograms_f -----------\n" );
 
-	if ( !R_ReloadGLSLPrograms() ) {
+	const char *programName = args.Argc() > 1 ? args.Argv( 1 ) : nullptr;
+	if ( !R_ReloadGLSLPrograms( programName ) ) {
 		r_useGLSL = false;
 		common->Printf( "GLSL shaders failed to init.\n" );
 		return;
