@@ -421,9 +421,6 @@ typedef struct viewEntity_s {
 	int					drawCalls;				// perf tool
 } viewEntity_t;
 
-
-const int	MAX_CLIP_PLANES	= 1;				// we may expand this to six for some subview issues
-
 // viewDefs are allocated on the frame temporary stack memory
 typedef struct viewDef_s {
 	// specified in the call to DrawScene()
@@ -454,8 +451,7 @@ typedef struct viewDef_s {
 
 	bool				isEditor;
 
-	int					numClipPlanes;			// mirrors will often use a single clip plane
-	idPlane				clipPlanes[MAX_CLIP_PLANES];		// in world space, the positive side
+	idPlane				*clipPlane;			// in world space, the positive side, mirrors will often use a single clip plane
 	// of the plane is the visible side
 	idScreenRect		viewport;				// in real pixels and proper Y flip
 

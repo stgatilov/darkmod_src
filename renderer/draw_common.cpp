@@ -278,12 +278,12 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	Uniforms::Depth * depthUniforms = programManager->depthShader->GetUniformGroup<Uniforms::Depth>();
 	depthUniforms->alphaTest.Set( -1 );	// no alpha test by default
 
-	if ( backEnd.viewDef->numClipPlanes ) {		// pass mirror clip plane details to vertex shader if needed
+	if ( backEnd.viewDef->clipPlane) {		// pass mirror clip plane details to vertex shader if needed
 		idMat4 m;
 		memcpy( m.ToFloatPtr(), backEnd.viewDef->worldSpace.modelViewMatrix, sizeof( m ) );
 		m.InverseSelf();
 		depthUniforms->matViewRev.Set( m );
-		depthUniforms->clipPlane.Set( backEnd.viewDef->clipPlanes[0] );
+		depthUniforms->clipPlane.Set( *backEnd.viewDef->clipPlane );
 	} else {
 		depthUniforms->clipPlane.Set( colorBlack );
 	}

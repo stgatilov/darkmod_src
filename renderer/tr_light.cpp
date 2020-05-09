@@ -31,6 +31,7 @@
 
 idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
 idCVar r_useParallelAddModels( "r_useParallelAddModels", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "add all models in parallel with jobs" );
+idCVarBool r_useClipPlaneCulling( "r_useClipPlaneCulling", "1", CVAR_RENDERER, "cull surfaces behind mirrors" );
 
 /*
 ===========================================================================================
@@ -1415,6 +1416,13 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		if ( 
 			!R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) || R_HasVisibleShadows( vEntity )
 		) {
+
+			if ( r_useClipPlaneCulling && tr.viewDef->clipPlane ) { // 4946 - try to cull transparent objects behind mirrors, that are ignored by clip plane during depth pass
+				idPlane inversePlane( -tr.viewDef->clipPlane->Normal(), -tr.viewDef->clipPlane->Dist() ); // for some reason, the clipPlane normal points to the wrong side
+				if ( R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 1, &inversePlane ) ) { // can't just inverse R_CullLocalBox result, or else intersecting objects will disappear
+					return; // maybe save a couple draw calls for solid objecets, too
+				}
+			}
 
 			def.visibleCount = tr.viewCount;
 
