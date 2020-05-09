@@ -13,7 +13,7 @@
  
 ******************************************************************************/
 
-#include "..\ui\Rectangle.h"
+#include "../ui/Rectangle.h"
 
 typedef struct {
 	const idMaterial	*material;
