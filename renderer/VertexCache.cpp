@@ -33,13 +33,13 @@ GLsync				bufferLock[VERTCACHE_NUM_FRAMES] = { 0,0,0 };
 uint32_t			staticVertexSize, staticIndexSize;
 attribBind_t		currentAttribBinding;
 
-const idDrawVert screenRectVerts[4] = {
+ALIGNTYPE16 const idDrawVert screenRectVerts[4] = {
 	{idVec3( -1,-1,0 ),idVec2( 0,0 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 	{idVec3( +1,-1,0 ),idVec2( 1,0 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 	{idVec3( -1,+1,0 ),idVec2( 0,1 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 	{idVec3( +1,+1,0 ),idVec2( 1,1 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 };
-const glIndex_t screenRectIndices[6] = { 0, 2, 1, 1, 2, 3 };
+ALIGNTYPE16 const glIndex_t screenRectIndices[6] = { 0, 2, 1, 1, 2, 3 };
 
 /*
 ==============
@@ -344,9 +344,7 @@ void idVertexCache::EndFrame() {
 	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, currentIndexBuffer = 0 );
 
 	// 2.08 temp helper for RB_DrawFullScreenQuad on core contexts
-	auto tmp = _alloca16( sizeof( screenRectVerts ) );
-	memcpy( tmp, screenRectVerts, sizeof( screenRectVerts ) );
-	screenRectSurf.ambientCache = AllocVertex( tmp, sizeof( screenRectVerts ) );
+	screenRectSurf.ambientCache = AllocVertex( screenRectVerts, sizeof( screenRectVerts ) );
 	screenRectSurf.indexCache = AllocIndex( &screenRectIndices, sizeof( screenRectIndices ) );
 	screenRectSurf.numIndexes = 6;
 }
