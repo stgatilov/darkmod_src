@@ -353,6 +353,8 @@ void idMaterial::ParseSort( idLexer &src ) {
 		sort = SS_AFTER_FOG;
 	} else if ( !token.Icmp( "postProcess" ) ) {
 		sort = SS_POST_PROCESS;
+	} else if ( !token.Icmp( "last" ) ) {
+		sort = SS_LAST;
 	} else if ( !token.Icmp( "portalSky" ) ) {
 		sort = SS_PORTAL_SKY;
 	} else {
