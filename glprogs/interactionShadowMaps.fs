@@ -95,7 +95,7 @@ void UseShadowMap() {
 	//some very generic error estimation...
 	float errorMargin = 5.0 * maxAbsL / ( shadowMapResolution * max(lightFallAngle, 0.1) );
 	if(u_shadowMapCullFront)
-	   errorMargin = -errorMargin;
+	   errorMargin *= -.5;
 
 	//process central shadow sample
 	float centerFragZ = maxAbsL;
