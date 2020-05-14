@@ -1582,12 +1582,12 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		glConfig.isInitialized = false;
 
 		// create the new context and vertex cache
-		bool latch = cvarSystem->GetCVarBool( "r_fullscreen" );
+		int latch = cvarSystem->GetCVarInteger( "r_fullscreen" );
 		if ( forceWindow ) {
-			cvarSystem->SetCVarBool( "r_fullscreen", false );
+			cvarSystem->SetCVarInteger( "r_fullscreen", 0 );
 		}
 		R_InitOpenGL();
-		cvarSystem->SetCVarBool( "r_fullscreen", latch );
+		cvarSystem->SetCVarInteger( "r_fullscreen", latch );
 
 		// regenerate all images
 		globalImages->ReloadAllImages();
