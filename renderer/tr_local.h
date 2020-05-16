@@ -100,6 +100,12 @@ typedef enum {
 	LS_MAPS
 } lightShadows_t;
 
+typedef enum {
+	XR_IGNORE,
+	XR_ONLY,
+	XR_SUBSTITUTE
+} xrayEntityMask_t;
+
 /*
 ==============================================================================
 
@@ -447,7 +453,7 @@ typedef struct viewDef_s {
 
 	bool				isSubview;				// true if this view is not the main view
 	bool				isMirror;				// the portal is a mirror, invert the face culling
-	bool				isXraySubview;
+	xrayEntityMask_t	xrayEntityMask;
 
 	bool				isEditor;
 

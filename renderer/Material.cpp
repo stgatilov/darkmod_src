@@ -1165,6 +1165,12 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			ts->dynamic = DI_XRAY_RENDER;
 			//ts->width = src.ParseInt();
 			//ts->height = src.ParseInt();
+			ts->width = 0;
+			if ( src.ReadToken( &token ) ) {
+				if ( !token.Icmp( "inclusive" ) ) {
+					ts->width = 1;
+				}
+			}
 			src.SkipRestOfLine();
 			ts->texgen = TG_SCREEN;
 			continue;

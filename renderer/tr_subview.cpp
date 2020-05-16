@@ -268,7 +268,7 @@ static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
 
 	parms->isSubview = true;
-	parms->isXraySubview = true;
+	parms->xrayEntityMask = XR_ONLY;
 
 	return parms;
 }
@@ -490,6 +490,10 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 	parms = R_XrayViewBySurface( surf );
 	if ( !parms ) {
 		return;
+	}
+
+	if ( stage->width ) { // FIXME wrong field use?
+		parms->xrayEntityMask = XR_SUBSTITUTE;
 	}
 
 	//tr.CropRenderSize( stage->width, stage->height, true );

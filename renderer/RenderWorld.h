@@ -155,7 +155,7 @@ typedef struct renderEntity_s {
 													// this automatically implies noShadow
 	int						forceUpdate;			// force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
 	int						timeGroup;
-	int						xrayIndex;
+	int						xrayIndex;				// 1 - regular entity, no substitute, 2 - xray view substitute, 4 - has substitute
 	int						sortOffset;				// 2.08: mappers finetune translucent draw order
 } renderEntity_t;
 

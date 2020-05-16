@@ -3966,6 +3966,7 @@ void idEntity::UpdateModel( void ) {
 	// If the entity has an xray skin, go ahead and add it
 	if ( xraySkin != NULL )
 	{
+		renderEntity.xrayIndex = 4;
 		xrayEntity = renderEntity;
 		xrayEntity.xrayIndex = 2;
 		xrayEntity.customSkin = xraySkin;
