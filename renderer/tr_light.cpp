@@ -1485,17 +1485,17 @@ bool R_CullXray( idRenderEntityLocal& def ) {
 	int entXrayMask = def.parms.xrayIndex;
 	switch ( tr.viewDef->xrayEntityMask ) {
 	case XR_ONLY:
-		return !( entXrayMask & 2 );	// only substitutes show
+		return !( entXrayMask & 2 );					// only substitutes show
 	case XR_SUBSTITUTE:
 	{
 		auto viewEnt = tr.viewDef->subviewSurface->space;
 		if ( viewEnt->entityDef->index == def.index )	// this would overlap everything else
 			return true;
-		return entXrayMask & 4;			// substitutes show instead of their counterparts, everything else as usual
+		return entXrayMask & 4;							// substitutes show instead of their counterparts, everything else as usual
 	}
 	case XR_IGNORE:
 	default:
-		return entXrayMask & 2;			// hide substitutes
+		return entXrayMask && !(entXrayMask & 5);		// only regulars (including having a substitute), xrayIndex = 0 for non-spawned entities
 	}
 }
 

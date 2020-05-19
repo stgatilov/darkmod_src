@@ -265,7 +265,7 @@ static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	// copy the viewport size from the original
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
-	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
+	parms->renderView.viewID = VID_PLAYER_VIEW;	// clear to allow player bodies to show up, and suppress view weapons
 
 	parms->isSubview = true;
 	parms->xrayEntityMask = XR_ONLY;

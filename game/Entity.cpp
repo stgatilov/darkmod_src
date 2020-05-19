@@ -1062,6 +1062,7 @@ idEntity::idEntity()
 
 	xrayEntityHandle = -1;
 	xraySkin = NULL;
+	xrayModelHandle = nullptr;
 }
 
 /*
@@ -1485,13 +1486,16 @@ void idEntity::Spawn( void )
 	renderEntity.entityNum = entityNumber;
 	
 	xraySkin = NULL;
+	xrayModelHandle = nullptr;
 	renderEntity.xrayIndex = 1;
 
 	idStr str;
 	if ( spawnArgs.GetString( "skin_xray", "", str ) )
-	{
 		xraySkin = declManager->FindSkin( str.c_str() );
-	}
+	if ( spawnArgs.GetString( "model_xray", "", str ) )
+		xrayModelHandle = renderModelManager->FindModel( str );
+	if ( spawnArgs.GetString( "xray", "", str ) )
+		renderEntity.xrayIndex = 3;
 
 	// go dormant within 5 frames so that when the map starts most monsters are dormant
 	dormantStart = gameLocal.time - DELAY_DORMANT_TIME + USERCMD_MSEC * 5;
@@ -3976,6 +3980,18 @@ void idEntity::UpdateModel( void ) {
 			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
 		} else
 		{
+			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
+		}
+	} 
+	if ( xrayModelHandle ) {
+		renderEntity.xrayIndex = 4;
+		xrayEntity = renderEntity;
+		xrayEntity.xrayIndex = 2;
+		xrayEntity.hModel = xrayModelHandle;
+
+		if ( xrayEntityHandle == -1 ) {
+			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
+		} else {
 			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
 		}
 	}

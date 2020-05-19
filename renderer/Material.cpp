@@ -1166,7 +1166,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			//ts->width = src.ParseInt();
 			//ts->height = src.ParseInt();
 			ts->width = 0;
-			if ( src.ReadToken( &token ) ) {
+			if ( src.ReadTokenOnLine( &token ) ) {
 				if ( !token.Icmp( "inclusive" ) ) {
 					ts->width = 1;
 				}

@@ -290,6 +290,7 @@ public:
 	renderEntity_t			xrayEntity;
 	qhandle_t				xrayEntityHandle;
 	const idDeclSkin* 		xraySkin;
+	idRenderModel*			xrayModelHandle;
 
 	/**
 	* When an entity is hidden, these store the following information just before the hide:
