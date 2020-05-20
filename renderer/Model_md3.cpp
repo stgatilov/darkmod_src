@@ -280,6 +280,10 @@ idRenderModel *idRenderModelMD3::InstantiateDynamicModel( const struct renderEnt
 	staticModel = new idRenderModelStatic;
 	staticModel->bounds.Clear();
 
+	if ( !md3 ) {
+		common->FatalError( "NULL model for entity %s\n", ent->hModel->Name() );
+	}
+
 	surface = (md3Surface_t *) ((byte *)md3 + md3->ofsSurfaces);
 
 	// TODO: these need set by an entity
