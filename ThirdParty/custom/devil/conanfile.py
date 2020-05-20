@@ -31,7 +31,7 @@ class DevilConan(ConanFile):
         # Download and extract tag tarball from SourceForge
         source_url = "https://sourceforge.net/projects/openil/files/DevIL"
         tools.get("{0}/{1}/DevIL-{1}.tar.gz".format(source_url, self.version))
-        extracted_dir = "DevIL-" + self.version
+        extracted_dir = "devil-" + self.version
         os.rename(extracted_dir, self.source_subfolder)
         shutil.copy("CMakeLists.txt", os.path.join(self.source_subfolder, "src-IL", "CMakeLists.txt"))
         # note: custom config --- set manually
@@ -39,7 +39,9 @@ class DevilConan(ConanFile):
         # patch function used for less-than-8-bit grayscale images: it was deprecated and removed in new libpng
         tools.replace_in_file(os.path.join(self.source_subfolder, "src-IL/src", "il_icon.c"), "png_set_gray_1_2_4_to_8", "png_set_expand_gray_1_2_4_to_8")
         tools.replace_in_file(os.path.join(self.source_subfolder, "src-IL/src", "il_png.c"), "png_set_gray_1_2_4_to_8", "png_set_expand_gray_1_2_4_to_8")
-         
+        # stgatilov: remove __LCC__ define to fix compilation on Elbrus
+        tools.replace_in_file(os.path.join(self.source_subfolder, "include/IL", "il.h"), "defined(__LCC__)", "0/*defined(__LCC__)*/")
+
 
     def build(self):
         cmake = CMake(self)

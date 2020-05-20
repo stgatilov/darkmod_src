@@ -126,7 +126,8 @@ class FFMpegConan(ConanFile):
             self.options.remove("qsv")
 
     def build_requirements(self):
-        self.build_requires("yasm_installer/1.3.0@bincrafters/stable")
+        if any([str(self.settings.arch).startswith(prefix) for prefix in ['x86', 'arm', 'ppc', 'mips', 'avr']]):
+            self.build_requires("yasm_installer/1.3.0@bincrafters/stable")
         if self.settings.os == 'Windows':
             self.build_requires("msys2_installer/latest@bincrafters/stable")
 

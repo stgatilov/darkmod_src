@@ -572,7 +572,7 @@ ForceReload will cause it to reload even if the timestamp hasn't changed
 */
 void idDeclFile::Reload( bool force ) {
 	// check for an unchanged timestamp
-	if ( !force && timestamp != 0 ) {
+	if ( !force ) {
 		ID_TIME_T	testTimeStamp;
 		fileSystem->ReadFile( fileName, NULL, &testTimeStamp );
 

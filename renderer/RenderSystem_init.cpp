@@ -520,6 +520,49 @@ static void R_ReloadSurface_f( const idCmdArgs &args ) {
 }
 
 /*
+=====================
+R_OverrideSurfaceMaterial_f
+
+Change the material on surface under cursor (as displayed by r_showSurfaceInfo)
+=====================
+*/
+static void R_OverrideSurfaceMaterial_f( const idCmdArgs &args ) {
+	// Skip if the current render is the lightgem render (default RENDERTOOLS_SKIP_ID)
+	if ( tr.primaryView->IsLightGem() )	{
+		return;
+	}
+
+	const char *materialName = args.Argv(1);
+	if ( materialName[0] == 0 ) {
+		common->Printf( "Write material name as parameter\n" );
+		return;
+	}
+	const idMaterial *material = declManager->FindMaterial( materialName, false );
+	if ( !material ) {
+		common->Printf( "Could not find material with specified name\n" );
+		return;
+	}
+
+	// start far enough away that we don't hit the player model
+	const idVec3 start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
+	const idVec3 end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
+	modelTrace_t mt;
+	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false, true ) ) {
+		return;
+	}
+	common->Printf( "Overriding material %s with %s at surface %s : %d\n", mt.material->GetName(), material->GetName(), mt.model->Name(), mt.surfIdx );
+
+	const modelSurface_t *surf = mt.model->Surface( mt.surfIdx );
+	// change the material
+	// note: this is very dirty and should never be done in ordinary code!
+	// but this is only a debug tool, and I won't regret if it suddenly stops working or breaks something else after usage =)
+	const_cast<modelSurface_t*>(surf)->material = material;
+
+	// refresh renderer like in "reloadModels" command
+	R_ReCreateWorldReferences();
+}
+
+/*
 =============
 R_TestImage_f
 
@@ -1582,12 +1625,12 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		glConfig.isInitialized = false;
 
 		// create the new context and vertex cache
-		bool latch = cvarSystem->GetCVarBool( "r_fullscreen" );
+		int latch = cvarSystem->GetCVarInteger( "r_fullscreen" );
 		if ( forceWindow ) {
-			cvarSystem->SetCVarBool( "r_fullscreen", false );
+			cvarSystem->SetCVarInteger( "r_fullscreen", 0 );
 		}
 		R_InitOpenGL();
-		cvarSystem->SetCVarBool( "r_fullscreen", latch );
+		cvarSystem->SetCVarInteger( "r_fullscreen", latch );
 
 		// regenerate all images
 		globalImages->ReloadAllImages();
@@ -1734,6 +1777,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "listRenderEntityDefs", R_ListRenderEntityDefs_f, CMD_FL_RENDERER, "lists the entity defs" );
 	cmdSystem->AddCommand( "listRenderLightDefs", R_ListRenderLightDefs_f, CMD_FL_RENDERER, "lists the light defs" );
 	cmdSystem->AddCommand( "reloadSurface", R_ReloadSurface_f, CMD_FL_RENDERER, "reloads the decl and images for selected surface" );
+	cmdSystem->AddCommand( "overrideSurfaceMaterial", R_OverrideSurfaceMaterial_f, CMD_FL_RENDERER, "changes the material of the surface currently under cursor", idCmdSystem::ArgCompletion_Decl<DECL_MATERIAL> );
 	cmdSystem->AddCommand( "purgeImages", R_PurgeImages_f, CMD_FL_RENDERER, "deletes all currently loaded images" );
 }
 
