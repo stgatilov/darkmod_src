@@ -660,7 +660,7 @@ struct TonemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM(float, bloomWeight)
 };
 
-void RB_Tonemap( void ) {
+void RB_Tonemap( bloomCommand_t *cmd ) {
 	GL_PROFILE("Tonemap");
 	FB_CopyColorBuffer();
 
@@ -686,9 +686,11 @@ void RB_Tonemap( void ) {
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	GL_Viewport( 0, 0, w, h );
 
-	FB_SelectPrimary( true );
-	GL_Viewport( 0, 0, w, h );
-	FB_TogglePrimary( false );
+	if ( cmd->screenRect.IsEmpty() ) {
+		FB_SelectPrimary( true );
+		GL_Viewport( 0, 0, w, h );
+		FB_TogglePrimary( false );
+	}
 
 	if (r_showFBO.GetBool()) {
 	    // FIXME: r_showFBO debug output is handled within FB_TogglePrimary
@@ -716,7 +718,12 @@ void RB_Tonemap( void ) {
 		uniforms->bloomWeight.Set( 0 );
 	}
 
+	if ( !cmd->screenRect.IsEmpty() ) {
+		auto& r = cmd->screenRect;
+		GL_Scissor( r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1 );
+	}
 	RB_DrawFullScreenQuad();
+	GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
 	GL_SelectTexture( 0 );
 	tonemap->Deactivate();
@@ -867,7 +874,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			c_setBuffers++;
 			break;
 		case RC_BLOOM:
-			RB_Tonemap();
+			RB_Tonemap( (bloomCommand_t*)cmds );
 			c_drawBloom++;
 			fboOff = true;
 			break;

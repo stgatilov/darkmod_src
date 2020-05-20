@@ -23,6 +23,8 @@
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
 
+idCVarBool r_tonemap( "r_tonemap", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use the tonemap correction (gamma, brightness, etc)" );
+
 /*
 =====================
 R_PerformanceCounters
@@ -858,8 +860,10 @@ PostProcess
 ================
 */
 void idRenderSystemLocal::PostProcess() {
-	emptyCommand_t* cmd = (emptyCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !r_tonemap ) return;
+	bloomCommand_t* cmd = (bloomCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_BLOOM;
+	cmd->screenRect.Clear();
 }
 
 /*

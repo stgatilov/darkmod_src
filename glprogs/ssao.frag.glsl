@@ -78,10 +78,11 @@ vec3 getOffsetPosition(ivec2 ssC, vec2 unitOffset, float ssR) {
 	// Derivation:
 	//  mipLevel = floor(log(ssR / MAX_OFFSET));
 	#   ifdef GL_ARB_gpu_shader5
-	int mipLevel = clamp(findMSB(int(ssR)) - LOG_MAX_OFFSET, 0, u_maxMipLevel);
+    int msb = findMSB(int(ssR));
 	#   else
-	int mipLevel = clamp(int(floor(log2(ssR))) - LOG_MAX_OFFSET, 0, u_maxMipLevel);
+    int msb = int(floor(log2(ssR)));
 	#   endif
+	int mipLevel = clamp(msb - LOG_MAX_OFFSET, 0, u_maxMipLevel);
 
 	ivec2 ssP = ivec2(ssR * unitOffset) + ssC;
 

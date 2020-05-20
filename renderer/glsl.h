@@ -155,6 +155,8 @@ namespace Uniforms {
 
 		bool ambient = false;
 
+		idList<idVec2> poissonSamples;
+
 		void SetForInteractionBasic( const drawInteraction_t *din );
 		void SetForInteraction( const drawInteraction_t *din );
 		void SetForShadows( bool translucent );

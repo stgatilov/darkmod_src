@@ -102,6 +102,7 @@ void idMaterial::CommonInit() {
 	spectrum = 0;
 	polygonOffset = 0.0f;
 	shadowmapOffset = 0;
+	fogAlpha = 0;
 	ambientRimColor.registers[0] = 0;
 	suppressInSubview = false;
 	refCount = 0;
@@ -352,6 +353,8 @@ void idMaterial::ParseSort( idLexer &src ) {
 		sort = SS_AFTER_FOG;
 	} else if ( !token.Icmp( "postProcess" ) ) {
 		sort = SS_POST_PROCESS;
+	} else if ( !token.Icmp( "last" ) ) {
+		sort = SS_LAST;
 	} else if ( !token.Icmp( "portalSky" ) ) {
 		sort = SS_PORTAL_SKY;
 	} else {
@@ -1890,6 +1893,15 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 				continue;
 			}
 			shadowmapOffset = token.GetFloatValue();
+			continue;
+		}
+		// fogAlpha
+		else if ( !token.Icmp( "fogAlpha" ) ) {
+			if ( !src.ReadTokenOnLine( &token ) ) {
+				fogAlpha = 1.0f;
+				continue;
+			}
+			fogAlpha = token.GetFloatValue();
 			continue;
 		}
 		// noshadow

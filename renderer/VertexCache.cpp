@@ -33,13 +33,13 @@ GLsync				bufferLock[VERTCACHE_NUM_FRAMES] = { 0,0,0 };
 uint32_t			staticVertexSize, staticIndexSize;
 attribBind_t		currentAttribBinding;
 
-const idDrawVert screenRectVerts[4] = {
+ALIGNTYPE16 const idDrawVert screenRectVerts[4] = {
 	{idVec3( -1,-1,0 ),idVec2( 0,0 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 	{idVec3( +1,-1,0 ),idVec2( 1,0 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 	{idVec3( -1,+1,0 ),idVec2( 0,1 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 	{idVec3( +1,+1,0 ),idVec2( 1,1 ), idVec3(), {idVec3(), idVec3()}, {255, 255, 255, 0}},
 };
-const glIndex_t screenRectIndices[6] = { 0, 2, 1, 1, 2, 3 };
+ALIGNTYPE16 const glIndex_t screenRectIndices[6] = { 0, 2, 1, 1, 2, 3 };
 
 /*
 ==============
@@ -342,6 +342,11 @@ void idVertexCache::EndFrame() {
 
 	qglBindBuffer( GL_ARRAY_BUFFER, currentVertexBuffer = 0 );
 	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, currentIndexBuffer = 0 );
+
+	// 2.08 temp helper for RB_DrawFullScreenQuad on core contexts
+	screenRectSurf.ambientCache = AllocVertex( screenRectVerts, sizeof( screenRectVerts ) );
+	screenRectSurf.indexCache = AllocIndex( &screenRectIndices, sizeof( screenRectIndices ) );
+	screenRectSurf.numIndexes = 6;
 }
 
 /*
@@ -415,11 +420,6 @@ idVertexCache::PrepareStaticCacheForUpload
 ==============
 */
 void idVertexCache::PrepareStaticCacheForUpload() {
-	// 2.08 temp helper for RB_DrawFullScreenQuad on core contexts
-	screenRectSurf.ambientCache = AllocStaticVertex( &screenRectVerts, sizeof(screenRectVerts) );
-	screenRectSurf.indexCache = AllocStaticIndex( &screenRectIndices, sizeof( screenRectIndices ) );
-	screenRectSurf.numIndexes = 6;
-	
 	// upload function to be called twice for vertex and index data
 	auto upload = [](char *msg, BufferObject &buffer, int size, StaticList &staticList ) {
 		common->Printf( msg );

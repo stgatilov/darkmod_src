@@ -197,6 +197,7 @@ struct md3Surface_s;
 
 class idRenderModelMD3 : public idRenderModelStatic {
 public:
+	idRenderModelMD3() : md3( nullptr ) {}
 	virtual void				InitFromFile( const char *fileName );
 	virtual dynamicModel_t		IsDynamicModel() const;
 	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel );

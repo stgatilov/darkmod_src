@@ -88,8 +88,7 @@ else:
 
 if sys.platform == 'darwin':
 	g_os = 'MacOSX'
-elif sys.platform == 'freebsd10':
-	# taaaki: only tested on FreeBSD 10 so far
+elif sys.platform.startswith('freebsd'):
 	g_os = 'FreeBSD'
 else:
 	g_os = 'Linux'
@@ -100,14 +99,15 @@ else:
 
 CC = 'gcc'
 CXX = 'g++'
-if g_os == 'FreeBSD':
-	# FreeBSD 10 uses Clang instead of GCC
-	CC = 'cc'
-	CXX = 'c++'
 JOBS = '1'
 BUILD = 'release'
 BASEFLAGS = ''
 TARGET_ARCH = 'x86'
+if g_os == 'FreeBSD':
+        # FreeBSD uses Clang instead of GCC
+        CC = 'cc'
+        CXX = 'c++'
+        TARGET_ARCH = 'x64'
 
 # end default settings ---------------------------
 
@@ -178,12 +178,14 @@ if g_os == 'Linux':
 	# Add the __linux__ define
 	BASECPPFLAGS.append('-D__linux__')
 elif g_os == 'FreeBSD':
-	# FreeBSD 10
+	# FreeBSD
 	BASELINKFLAGS.append( '-L/usr/local/lib' )
 	BASELINKFLAGS.append( '-pthread' )
 	BASELINKFLAGS.append( '-lrt' )
- 	# Add the __linux__ define - leave as is even though it isn't true
-	BASECPPFLAGS.append('-D__linux__')
+	BASELINKFLAGS.append( '-lz' )
+	BASELINKFLAGS.append( '-lnghttp2' )
+ 	# Add the __freebsd__ define
+	BASECPPFLAGS.append('-D__freebsd__')
 elif g_os == 'MacOSX':
 	# Mac OS X
 	BASECPPFLAGS.append('-DMACOS_X')
@@ -207,17 +209,17 @@ else:
 # create the build environements
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 
-# use includes from fbsd userland before darkmod includes
-# note: used only on TDM server
-if g_os == 'FreeBSD':
-	g_base_env.Append(CPPPATH = '/usr/local/include')
-
 g_base_env.Append(CPPPATH = '#/')
 path_template = '#/../ThirdParty/artefacts/{0}/include'
 g_base_env.Append(CPPPATH = path_template.format('zlib'))
 g_base_env.Append(CPPPATH = path_template.format('libcurl'))
 g_base_env.Append(CPPPATH = path_template.format('tinyformat'))
 g_base_env.Append(CPPPATH = '#/libtdm_update')
+
+# use includes from fbsd userland
+# note: used only on TDM server
+if g_os == 'FreeBSD':
+	g_base_env.Append(CPPPATH = '/usr/local/include')
 
 g_env = g_base_env.Clone()
 
@@ -245,13 +247,14 @@ Export( 'GLOBALS ' + GLOBALS )
 libtdm_update_list = SConscript( g_build + '/SConscript.libtdm_update' )
 Export( 'GLOBALS ' + GLOBALS )
 
-# Build the updater
-tdm_update = SConscript(g_build + '/SConscript.tdm_update')
-InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_update', g_os, TARGET_ARCH), tdm_update )
-
-# Build the packager
-tdm_package = SConscript(g_build + '/SConscript.tdm_package')
-InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_package', g_os, TARGET_ARCH), tdm_package )
+# Build the updater except on the TDM server
+if g_os != 'FreeBSD':
+    tdm_update = SConscript(g_build + '/SConscript.tdm_update')
+    InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_update', g_os, TARGET_ARCH), tdm_update )
+else:
+    # Build the packager
+    tdm_package = SConscript(g_build + '/SConscript.tdm_package')
+    InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_package', g_os, TARGET_ARCH), tdm_package )
 
 # end targets ------------------------------------
 

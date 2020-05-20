@@ -174,8 +174,8 @@ bool Util::HasElevatedPrivilegesWindows() {
 
 } // namespace
 
-#elif defined(__linux__)
-// Linux implementation
+#elif defined(__linux__) || defined(__freebsd__)
+// Linux/FreeBSD implementation
 
 #include <iostream>
 #include <fstream>

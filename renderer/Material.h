@@ -233,7 +233,9 @@ typedef enum {
 
 	SS_AFTER_FOG = 90,
 
-	SS_POST_PROCESS = 100	// after a screen copy to texture
+	SS_POST_PROCESS = 100,	// after a screen copy to texture
+
+	SS_LAST = 200		// e.g. a fake glow that we might want draw after postProcess/water
 } materialSort_t;
 
 typedef enum {
@@ -550,6 +552,7 @@ public:
 		                // nbohr1more: #4379 lightgem culling
 	bool				IsLightgemSurf( void ) const { return isLightgemSurf; }
 	colorStage_t const& GetAmbientRimColor() const { return ambientRimColor; }
+	float				FogAlpha() const { return fogAlpha; }
 
 	float				GetPolygonOffset( void ) const { return polygonOffset; }
 	float				GetShadowMapOffset( void ) const { return shadowmapOffset; }
@@ -642,6 +645,7 @@ private:
 	mutable idUserInterface	*gui;			// non-custom guis are shared by all users of a material
 
 	bool				noFog;				// surface does not create fog interactions
+	float				fogAlpha;			// fog intensity for translucent surfaces
 
 	int					spectrum;			// for invisible writing, used for both lights and surfaces
 
