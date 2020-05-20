@@ -251,10 +251,9 @@ Export( 'GLOBALS ' + GLOBALS )
 if g_os != 'FreeBSD':
     tdm_update = SConscript(g_build + '/SConscript.tdm_update')
     InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_update', g_os, TARGET_ARCH), tdm_update )
-else:
-    # Build the packager
-    tdm_package = SConscript(g_build + '/SConscript.tdm_package')
-    InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_package', g_os, TARGET_ARCH), tdm_package )
+# Build the packager
+tdm_package = SConscript(g_build + '/SConscript.tdm_package')
+InstallAs( '#' + scons_utils.ExecutableName('bin/tdm_package', g_os, TARGET_ARCH), tdm_package )
 
 # end targets ------------------------------------
 
