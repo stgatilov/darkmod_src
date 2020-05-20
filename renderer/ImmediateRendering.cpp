@@ -219,10 +219,10 @@ void ImmediateRendering::glColor4f(float r, float g, float b, float a) {
 	int wcol = _mm_cvtsi128_si32(icol);
 	*(int*)(state_vertex.color) = wcol;
 #else
-	state_currentColor[0] = (byte) idMath::Rint(r * 255.0f);
-	state_currentColor[1] = (byte) idMath::Rint(g * 255.0f);
-	state_currentColor[2] = (byte) idMath::Rint(b * 255.0f);
-	state_currentColor[3] = (byte) idMath::Rint(a * 255.0f);
+	state_vertex.color[0] = (byte) idMath::Rint(r * 255.0f);
+	state_vertex.color[1] = (byte) idMath::Rint(g * 255.0f);
+	state_vertex.color[2] = (byte) idMath::Rint(b * 255.0f);
+	state_vertex.color[3] = (byte) idMath::Rint(a * 255.0f);
 #endif
 }
 

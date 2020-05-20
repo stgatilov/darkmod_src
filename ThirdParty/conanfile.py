@@ -2,7 +2,7 @@ from conans import ConanFile
 import os
 
 
-def get_build_name(settings, shared=False):
+def get_platform_name(settings, shared=False):
     os = {'Windows': 'win', 'Linux': 'lnx'}[str(settings.os)]
     bitness = {'x86': '32', 'x86_64': '64'}[str(settings.arch)]
     dynamic = 'd' if shared else 's'
@@ -24,11 +24,13 @@ class TdmDepends(ConanFile):
         "with_headeronly": [True, False],
         "with_releaseonly": [True, False],
         "with_perbuild": [True, False],
+        "platform_name": "ANY",
     }
     default_options = {
         "with_headeronly": True,
         "with_releaseonly": True,
         "with_perbuild": True,
+        "platform_name": None,
         # build minizip too (it is part of zlib package)
         "zlib:minizip": True,
     }
@@ -68,7 +70,9 @@ class TdmDepends(ConanFile):
                 self.requires.add(dep)
 
     def imports(self):
-        platform = get_build_name(self.settings, False)
+        if self.options.platform_name == "None":
+            self.options.platform_name = get_platform_name(self.settings, False)
+        platform = self.options.platform_name
         for req in self.info.full_requires:
             name = req[0].name
             print(os.path.abspath("artefacts/%s/lib/%s" % (name, platform)))

@@ -23,6 +23,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 cmake_dependent_option(WITH_TOOLS "Compile with Tools" ON "MSVC" OFF)
 set(GAME_DIR "${PROJECT_SOURCE_DIR}/../darkmod" CACHE STRING "The directory where the game assets are stored")
 option(COPY_EXE "Copy executable to GAME_DIR after build" ON)
+set(THIRDPARTY_PLATFORM_OVERRIDE "" CACHE STRING "If you build conan dependencies yourself with custom platform_name, pass platform_name string here")
 
 if (UNIX)
 	# configure sensible warnings
@@ -167,7 +168,17 @@ add_compile_definitions(
 		AL_LIBTYPE_STATIC
 )
 
-if (UNIX)
+if (NOT THIRDPARTY_PLATFORM_OVERRIDE STREQUAL "")
+	set(PACKAGE_PLATFORM ${THIRDPARTY_PLATFORM_OVERRIDE})
+	set(PACKAGE_PLATFORM_DEBUG ${THIRDPARTY_PLATFORM_OVERRIDE})
+	if (UNIX)
+		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.custom")
+		set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/linux")
+	elseif (MSVC)
+		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod_custom.exe")
+		set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/vc15")
+	endif ()
+elseif (UNIX)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(PACKAGE_PLATFORM "lnx64_s_gcc5_rel_stdcpp")
 		set(PACKAGE_PLATFORM_DEBUG "lnx64_s_gcc5_rel_stdcpp")

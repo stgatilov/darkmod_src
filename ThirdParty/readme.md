@@ -40,10 +40,10 @@ You might want to read some "Getting Started" conan docs to get brief understand
 ### Prepare workspace
 
 Conan builds packages inside a *local cache*, which by default is located somewhere in `%USERPROFILE%/.conan` and is in fact system-global.
-In order to make the cache truly local, it is strongly recommended to set environment variable in the shell you are going to use:
+In order to make the cache truly local, it is recommended to set environment variable in the shell you are going to use:
 
-    # set the path to the directory where this readme is located
-    set CONAN_USER_HOME=C:\TheDarkMod\darkmod_src\ThirdParty\temp
+    # set the path to a custom directory
+    set CONAN_USER_HOME=C:\tdm_conan
 
 Note that if you do so, you should ensure that this environment variable takes effect for all the conan commands you run later.
 Detailed explanation is available [here][4].
@@ -72,7 +72,7 @@ The straightforward way to build everything is running:
     conan install . --build
 
 It may be enough to produce artefacts if you don't intend to commit them to SVN.
-You might want to read the documentation of `--build` parameter in `conan install --help` beforehand.
+You might want to read the documentation of `--build` parameter in `conan install --help` beforehand (e.g. `--build=outdated` is useful).
 
 If you want to build all artefacts and commit them to svn, it is recommended to run the helper script:
 
@@ -84,6 +84,29 @@ Then build all libraries on Linux using GCC.
 
 Given that produced artefacts may differ slightly on different machines (no two .lib-s are exactly equal),
 please commit new artefacts only for the libraries which you have actually changed, don't commit changes in libraries which you did not touch.
+
+### Unsupported platform
+
+The SVN repo contains artefacts only for the main supported platforms, i.e. MSVC+Windows and GCC+Linux on x86/x64.
+If you want to build TDM for custom CPU architecture, custom OS, or with some custom settings, then you have to do custom steps.
+
+First of all, find codename of your CPU architecture in `.conan/settings.yml`.
+If it is not present there, then decide on a codename and add it to the following arrays in yml: `arch_target`, `arch_build`, `arch`.
+For instance, for Elbrus-8C I added `e2kv4` as architecture codename.
+Same applies to your OS and compiler: if conan does not know it out of the box, then you have to add it to `settings.yml` somehow.
+
+In order to build dependencies, run `conan install` with additional arguments:
+
+    conan install . --build -s arch=e2kv4 -o platform_name=myelbrus
+
+The additional **s**etting `arch=e2kv4` says: build for e2kv4 architecture.
+The additional **o**ption `platform_name=myelbrus` says: put resulting binaries into `artefacts/{packagename}/lib/myelbrus` subdirectories.
+
+When building TDM, you have to pass the chosen value of platform_name as `THIRDPARTY_PLATFORM_OVERRIDE` option to CMake generate step:
+
+    cmake -B build/linux64 -DCMAKE_BUILD_TYPE=Release -DTHIRDPARTY_PLATFORM_OVERRIDE=myelbrus
+
+Without this argument, CMake won't know where to get proper artefacts, and will most likely fail with linking error.
 
 ## How to add new library
 

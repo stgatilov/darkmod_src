@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#ifdef __linux__
+#if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
 #include <cpuid.h>
 #endif
 
@@ -59,13 +59,13 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 		SIMDProcessor = generic;
 	}
 
-	cpuid_t cpuid = idLib::sys->GetProcessorId();
+	int cpuid = idLib::sys->GetProcessorId();
 
 	/*
 	* Tels: Bug #2413: Under Linux, cpuid_t is 0, so use inline assembly to get
 	*       the correct flags:
 	*/
-#ifdef __linux__
+#if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
 	int cores = 0;
 	unsigned int a, b, c, d, result;
 
@@ -93,20 +93,27 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 
 	// These tests are the same for AMD and Intel
 /*	if ( ( d >> 23 ) & 0x1 ) {
-		result += CPUID_MMX;
+		result |= CPUID_MMX;
 	}*/
 	if ( ( d >> 25 ) & 0x1 ) {
-		result += CPUID_SSE;
+		result |= CPUID_SSE;
 	}
 	if ( ( d >> 26 ) & 0x1 ) {
-		result += CPUID_SSE2;
+		result |= CPUID_SSE2;
 	}
 	if ( c & 0x1 ) {
-		result += CPUID_SSE3;
+		result |= CPUID_SSE3;
 	}
 
 	//idLib::common->Printf( "cpuid result is %i (c = %i d = %i)\n", result, c, d);
-	cpuid = ( cpuid_t )result;
+	cpuid = result;
+#else
+	#ifdef __SSE__
+		cpuid |= CPUID_SSE;
+	#endif
+	#ifdef __SSE2__
+		cpuid |= CPUID_SSE2;
+	#endif
 #endif
 
 	// Print what we found to console
@@ -151,7 +158,7 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 	} else {
 		processor = generic;
 	}
-	processor->cpuid = cpuid;
+	processor->cpuid = (cpuid_t)cpuid;
 
 	if ( processor != SIMDProcessor ) {
 		SIMDProcessor = processor;

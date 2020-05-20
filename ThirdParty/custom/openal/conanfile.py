@@ -12,7 +12,7 @@ class OpenALConan(ConanFile):
     author = "Bincrafters <bincrafters@gmail.com>"
     license = "MIT"
     exports = ["LICENSE.md"]
-    exports_sources = ["CMakeLists.txt"]
+    exports_sources = ["CMakeLists.txt", "mxcsr.patch"]
     generators = "cmake"
 
     settings = "os", "arch", "compiler", "build_type"
@@ -37,6 +37,7 @@ class OpenALConan(ConanFile):
         tools.get("{0}/archive/openal-soft-{1}.tar.gz".format(source_url, self.version), sha256=sha256)
         extracted_dir = "openal-soft-openal-soft-" + self.version
         os.rename(extracted_dir, self._source_subfolder)
+        tools.patch(patch_file = "mxcsr.patch", base_path = self._source_subfolder)
 
     def _configure_cmake(self):
         cmake = CMake(self)
@@ -73,3 +74,4 @@ class OpenALConan(ConanFile):
         self.cpp_info.includedirs = ["include", "include/AL"]
         if not self.options.shared:
             self.cpp_info.defines.append('AL_LIBTYPE_STATIC')
+

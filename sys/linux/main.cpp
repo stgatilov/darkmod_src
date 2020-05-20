@@ -241,9 +241,15 @@ Sys_GetClockticks
 ===============
 */
 double Sys_GetClockTicks( void ) {
+#if defined(__i386__) || defined(__x86_64__)
 	unsigned int hi, lo;
 	__asm__ volatile("rdtsc" : "=a" (lo), "=d" (hi));
 	return (double) (((uint64_t)hi << 32) | lo);
+#else
+	timespec timestamp;
+	clock_gettime(CLOCK_MONOTONIC, &timestamp);
+	return timestamp.tv_sec * 1e+9 + timestamp.tv_nsec;
+#endif
 }
 
 /*
@@ -256,7 +262,7 @@ double MeasureClockTicks( void ) {
 
 	t0 = Sys_GetClockTicks( );
 	Sys_Sleep( 1000 );
-	t1 = Sys_GetClockTicks( );	
+	t1 = Sys_GetClockTicks( );
 	return t1 - t0;
 }
 
