@@ -3530,6 +3530,10 @@ VideoMode VideoModes[] = {
 	{0,  1152,	864  },	//25
 	{0,  1280,	1024 },	//26
 	{0,  1600,	1200 },	//27
+	{5,  2560,  1080 },	//28
+	{5,  3440,	1440 },	//29
+	{5,  3840,  1600 }, //30
+	{5,  5120,	2160 },	//31
 };
 static int VideoModesNum = ( sizeof(VideoModes) / sizeof(VideoModes[0]) );
 
