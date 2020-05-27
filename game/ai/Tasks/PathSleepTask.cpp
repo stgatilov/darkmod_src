@@ -55,27 +55,32 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// grayman #5164 - Am I too far away to sleep?
 
-	if ( lastPath )
+	// grayman #5265 - if already sitting, there's no problem going to sleep
+
+	if ( owner->GetMoveType() != MOVETYPE_SIT )
 	{
-		idVec3 aiOrigin = owner->GetPhysics()->GetOrigin();
-		idVec3 sleepLocation = lastPath->GetPhysics()->GetOrigin();
-		sleepLocation.z = aiOrigin.z; // remove z vector
-		float dist = (sleepLocation - aiOrigin).LengthFast();
-
-		// if dist is too far, terminate the sleep.
-
-		float accuracy = _accuracy;
-		if ( accuracy <= 0 )
+		if ( lastPath )
 		{
-			accuracy = 16; // default
-		}
+			idVec3 aiOrigin = owner->GetPhysics()->GetOrigin();
+			idVec3 sleepLocation = lastPath->GetPhysics()->GetOrigin();
+			sleepLocation.z = aiOrigin.z; // remove z vector
+			float dist = (sleepLocation - aiOrigin).LengthFast();
 
-		if ( dist > accuracy )
-		{
-			gameLocal.Warning("%s (%s) can't sleep: too far from sleeping location %s (%s)\n", owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString()); // grayman #5164
-			_activateTargets = false; // don't activate targets if you didn't sleep
-			subsystem.FinishTask();
-			return;
+			// if dist is too far, terminate the sleep.
+
+			float accuracy = _accuracy;
+			if ( accuracy <= 0 )
+			{
+				accuracy = 16; // default
+			}
+
+			if ( dist > idMath::Sqrt(2 * accuracy*accuracy) ) // grayman #5265 extend the required distance
+			{
+				gameLocal.Warning("%s (%s) can't sleep: too far from sleeping location %s (%s)\n", owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString()); // grayman #5164
+				_activateTargets = false; // don't activate targets if you didn't sleep
+				subsystem.FinishTask();
+				return;
+			}
 		}
 	}
 
