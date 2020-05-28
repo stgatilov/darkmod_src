@@ -68,15 +68,11 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 
 			// if dist is too far, terminate the sleep.
 
-			float accuracy = _accuracy;
-			if ( accuracy <= 0 )
-			{
-				accuracy = 16; // default
-			}
+			float accuracy = 16; // default
 
 			if ( dist > idMath::Sqrt(2 * accuracy*accuracy) ) // grayman #5265 extend the required distance
 			{
-				gameLocal.Warning("%s (%s) can't sleep: too far from sleeping location %s (%s)\n", owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString()); // grayman #5164
+				gameLocal.Warning("PathSleepTask::Init %s (%s) can't sleep: too far from sleeping location %s (%s)\n", owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString()); // grayman #5164
 				_activateTargets = false; // don't activate targets if you didn't sleep
 				subsystem.FinishTask();
 				return;

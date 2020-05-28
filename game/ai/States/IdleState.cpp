@@ -204,7 +204,7 @@ void IdleState::Think(idAI* owner)
 		{
 			if ( gameLocal.time >= owner->m_nextWarningTime )
 			{
-				gameLocal.Warning("%s (%s) can't sleep: too far from sleeping location (%s)\n", owner->GetName(), owner->GetPhysics()->GetOrigin().ToString(), memory.idlePosition.ToString());
+				gameLocal.Warning("IdleState::Think %s (%s) can't sleep: too far from sleeping location (%s)\n", owner->GetName(), owner->GetPhysics()->GetOrigin().ToString(), memory.idlePosition.ToString());
 				owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
 				owner->m_nextWarningTime = gameLocal.time + WARNING_DELAY;
 			}

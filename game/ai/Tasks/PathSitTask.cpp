@@ -63,11 +63,7 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 
 		// if dist is too far, terminate the sit.
 
-		float accuracy = _accuracy; // move_to_position_tolerance
-		if ( accuracy <= 0 )
-		{
-			accuracy = 16; // default
-		}
+		float accuracy = 16; // default
 
 		if ( dist > idMath::Sqrt(2 * accuracy*accuracy) ) // grayman #5265 extend the required distance
 		{
