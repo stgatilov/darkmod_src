@@ -3320,6 +3320,23 @@ void State::OnMovementBlocked(idAI* owner)
 			ent = tactileEntity;
 		}
 	}
+	else if ( result.fraction == 0.0f ) // grayman #5268
+	{
+		ent = gameLocal.entities[result.c.entityNum];
+
+		// is this entity behind you?
+
+		idVec3 entOrigin = ent->GetPhysics()->GetAbsBounds().GetCenter();
+		idVec3 fromAI2ent = entOrigin - ownerOrigin;
+		fromAI2ent.z = dir.z; // use same height, only interested in x/y plane
+		bool entIsBehindMe = ((fromAI2ent * dir) < 0);
+		if ( entIsBehindMe )
+		{
+			// grayman #5268 - make this entity temporarily non-solid
+			ent->BecomeNonSolid(owner);
+			ent = NULL; // ignore this entity
+		}
+	}
 	else
 	{
 		ent = gameLocal.entities[result.c.entityNum];

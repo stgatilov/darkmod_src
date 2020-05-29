@@ -293,6 +293,7 @@ const idEventDef EV_ActivateContacts("activateContacts", EventArgs(), EV_RETURNS
 const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', 
 	"Returns the idLocation entity corresponding to the entity's current location.\n" \
 	"This was player-specific before, but is now available to all entities."); // grayman #3013
+const idEventDef EV_CheckSolidity("<checkSolidity>", EventArgs(), EV_RETURNS_VOID, "check whether it's time to become solid again"); // grayman #5268
 
 //===============================================================
 //                   TDM GUI interface
@@ -690,7 +691,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )		// grayman #3013
 	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )		// tels #3113
 	EVENT( EV_PropagateSound,		idEntity::Event_PropSoundDirect )	// grayman #3355
-	
+	EVENT( EV_CheckSolidity,		idEntity::Event_CheckSolidity)		// grayman #5268
+
 END_CLASS
 
 /*
@@ -978,6 +980,9 @@ idEntity::idEntity()
 
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
+	m_preContents = -1; // grayman #5268
+	m_preOrigin = vec3_zero; // grayman #5268
+	m_blockingEnt = NULL; // grayman #5268
 	m_CustomContents		= -1;
 
 	physics			= NULL;
@@ -2041,6 +2046,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt( m_preHideContents );
 	savefile->WriteInt( m_preHideClipMask );
+	savefile->WriteInt(m_preContents);    // grayman #5268
+	savefile->WriteVec3(m_preOrigin);     // grayman #5268
+	savefile->WriteObject(m_blockingEnt); // grayman #5268
 	savefile->WriteInt( m_CustomContents );
 
 	savefile->WriteInt( targets.Num() );
@@ -2314,6 +2322,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadInt( m_preHideContents );
 	savefile->ReadInt( m_preHideClipMask );
+	savefile->ReadInt(m_preContents); // grayman #5268
+	savefile->ReadVec3(m_preOrigin);  // grayman #5268
+	savefile->ReadObject(reinterpret_cast<idClass *&>(m_blockingEnt)); // grayman #5268
 	savefile->ReadInt( m_CustomContents );
 
 	targets.Clear();
@@ -13577,6 +13588,46 @@ void idEntity::CheckCollision(idEntity* collidedWith)
 				grabber->StopDrag();
 				return;
 			}
+		}
+	}
+}
+
+void idEntity::BecomeNonSolid(idEntity* blockingEnt) // grayman #5268
+{
+	m_preContents = GetPhysics()->GetContents();
+	m_preOrigin = blockingEnt->GetPhysics()->GetOrigin();
+	m_blockingEnt = blockingEnt;
+
+	GetPhysics()->SetContents(0);
+
+	// Set all attachments to nonsolid, temporarily
+
+	SaveAttachmentContents();
+	SetAttachmentContents(0);
+
+	PostEventSec(&EV_CheckSolidity, 1); // come back later to check on returning to solid
+}
+
+void idEntity::Event_CheckSolidity() // grayman #5268
+{
+	if ( m_preContents != -1 )
+	{
+		// is blocking entity far enough away?
+
+		idVec3 entOrigin = m_blockingEnt->GetPhysics()->GetOrigin();
+		entOrigin.z = m_preOrigin.z; // ignore vertical component
+		if ( (entOrigin - m_preOrigin).LengthFast() > (32 + 4) )
+		{
+			GetPhysics()->SetContents(m_preContents);
+			m_preContents = -1;
+
+			// Restore attachment contents again
+
+			RestoreAttachmentContents();
+		}
+		else
+		{
+			PostEventSec(&EV_CheckSolidity, 1); // come back later to check on returning to solid
 		}
 	}
 }
