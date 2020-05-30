@@ -409,7 +409,8 @@ static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRen
 	localProject[1][2] += ofs1 * localProject[3][2];
 	localProject[1][3] += ofs1 * localProject[3][3];
 
-	return 1.0f / (zNear + zFar);
+	//return 1.0f / ( zNear + zFar );
+	return 1.0f / zFar;
 }
 
 /*
