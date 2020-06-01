@@ -3333,7 +3333,7 @@ void State::OnMovementBlocked(idAI* owner)
 		if ( entIsBehindMe )
 		{
 			// grayman #5268 - make this entity temporarily non-solid
-			ent->BecomeNonSolid(owner);
+			ent->FSBecomeNonSolid(owner);
 			ent = NULL; // ignore this entity
 		}
 	}

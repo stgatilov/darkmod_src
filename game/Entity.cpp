@@ -293,6 +293,7 @@ const idEventDef EV_ActivateContacts("activateContacts", EventArgs(), EV_RETURNS
 const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', 
 	"Returns the idLocation entity corresponding to the entity's current location.\n" \
 	"This was player-specific before, but is now available to all entities."); // grayman #3013
+const idEventDef EV_FSBecomeNonSolidActual("<FSBecomeNonSolid>", EventArgs('e',"blockingEnt","AI blocked by me"), EV_RETURNS_VOID, "Become non-solid"); // grayman #5268
 const idEventDef EV_CheckSolidity("<checkSolidity>", EventArgs(), EV_RETURNS_VOID, "check whether it's time to become solid again"); // grayman #5268
 
 //===============================================================
@@ -980,9 +981,9 @@ idEntity::idEntity()
 
 	m_preHideContents		= -1; // greebo: initialise this to invalid values
 	m_preHideClipMask		= -1;
-	m_preContents = -1; // grayman #5268
+	m_preContents = -1;		 // grayman #5268
 	m_preOrigin = vec3_zero; // grayman #5268
-	m_blockingEnt = NULL; // grayman #5268
+	m_blockingEnt = NULL;	 // grayman #5268
 	m_CustomContents		= -1;
 
 	physics			= NULL;
@@ -13592,36 +13593,65 @@ void idEntity::CheckCollision(idEntity* collidedWith)
 	}
 }
 
-void idEntity::BecomeNonSolid(idEntity* blockingEnt) // grayman #5268
+void idEntity::FSBecomeNonSolid(idEntity* blockingEnt) // grayman #5268
 {
-	m_preContents = GetPhysics()->GetContents();
-	m_preOrigin = blockingEnt->GetPhysics()->GetOrigin();
-	m_blockingEnt = blockingEnt;
+	int contents = GetPhysics()->GetContents();
+	if ( contents != 0 ) // only run if solid
+	{
+		// Limit this to human-like AI immediately coming out of the
+		// sit->stand or sleep->stand animation.
 
-	GetPhysics()->SetContents(0);
+		if ( m_blockingEnt->spawnArgs.GetString("AIUse") == "AIUSE_PERSON")
+		{
+			idActor* entActor = static_cast<idActor*>(m_blockingEnt);
+			if ( entActor->m_AnimSitSleepComplete )
+			{
+				entActor->m_AnimSitSleepComplete = false; // reset
+				m_preContents = contents;
+				m_preOrigin = blockingEnt->GetPhysics()->GetOrigin();
+				m_blockingEnt = blockingEnt;
 
-	// Set all attachments to nonsolid, temporarily
+				GetPhysics()->SetContents(0);
 
-	SaveAttachmentContents();
-	SetAttachmentContents(0);
+				// Set all attachments to nonsolid, temporarily
 
-	PostEventSec(&EV_CheckSolidity, 1); // come back later to check on returning to solid
+				SaveAttachmentContents();
+				SetAttachmentContents(0);
+
+				PostEventSec(&EV_CheckSolidity, 1); // come back later to check on returning to solid
+			}
+		}
+	}
 }
 
 void idEntity::Event_CheckSolidity() // grayman #5268
 {
-	if ( m_preContents != -1 )
+	if ( GetPhysics()->GetContents() == 0 ) // only run if non-solid
 	{
-		// is blocking entity far enough away?
+		// Blocking entity far enough away if it has traveled at least
+		// an AAS size away from its original location. We assume a square
+		// AAS box.
 
 		idVec3 entOrigin = m_blockingEnt->GetPhysics()->GetOrigin();
 		entOrigin.z = m_preOrigin.z; // ignore vertical component
-		if ( (entOrigin - m_preOrigin).LengthFast() > (32 + 4) )
+
+		// An AI AAS box extends from [p1.x, p1.y, p1.z] to [p2.x, p2.y, p2.z].
+		// For human-like AI, this will be [-16,-16,0] to [16,16,82].
+		idVec3 p2(16, 16, 82); // default human-like AAS box end point
+		idAI* entAI = static_cast<idAI*>(m_blockingEnt); // only AI will cause us to be here
+		idAAS* aas = entAI->GetAAS();
+		if ( aas )
+		{
+			p2 = aas->GetSettings()->boundingBoxes[0][1];
+		}
+
+		if ( (entOrigin - m_preOrigin).LengthFast() >= (2*p2.x + 4) ) // Allow a bit of extra distance
 		{
 			GetPhysics()->SetContents(m_preContents);
 			m_preContents = -1;
+			m_blockingEnt = NULL;
 
-			// Restore attachment contents again
+			// Restore attachment contents
 
 			RestoreAttachmentContents();
 		}
