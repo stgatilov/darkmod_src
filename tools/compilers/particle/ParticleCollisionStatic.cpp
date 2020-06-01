@@ -183,7 +183,7 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 						return true;			//mapper asked to disable all the remaining checks
 
 					if (material) {
-						if (material->Deform() != DFRM_NONE)
+						if (material->Deform() != DFRM_NONE && material->Deform() != DFRM_TURB)
 							return false;		//most importantly, skip particle systems
 						if (!(material->GetContentFlags() & (CONTENTS_WATER | CONTENTS_SOLID)))
 							return false;		//skip light flares (but don't skip water)
