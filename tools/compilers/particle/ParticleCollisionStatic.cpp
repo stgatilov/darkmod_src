@@ -37,6 +37,10 @@ private:
 	idMapFile *mapFile = nullptr;
 	// used to parse map/proc file and to compute traces
 	idRenderWorld *renderWorld = nullptr;
+	// for some entities, the internal filter checks are disabled
+	// meaning: material contents/deform check, dynamic model exclusion
+	// the array is indexed by map-entity indices
+	idList<bool> entityBlockFilterOverride;
 
 	int numSurfsProcessed = 0;
 	int numSurfsDisabled = 0;
@@ -172,7 +176,12 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 				//hitsCount += renderWorld->FastWorldTrace(mt, start, end);
 				auto traceFilter = [&](const renderEntity_t *rent, const idRenderModel *model, const idMaterial *material) -> bool {
 					if (prtStage->collisionStaticWorldOnly)
-						return false;		//note: world is included automatically (fastWorld = true)
+						return false;			//note: world is included automatically (fastWorld = true)
+
+					bool disableInternalChecks = rent && (unsigned)rent->entityNum < (unsigned)entityBlockFilterOverride.Num() && entityBlockFilterOverride[rent->entityNum];
+					if (disableInternalChecks)
+						return true;			//mapper asked to disable all the remaining checks
+
 					if (material) {
 						if (material->Deform() != DFRM_NONE)
 							return false;		//most importantly, skip particle systems
@@ -184,6 +193,7 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 						if (hModel && hModel->IsDynamicModel() != DM_STATIC)
 							return false;		//we should not load dynamic models, but just in case
 					}
+
 					return true;
 				};
 				hitsCount += renderWorld->TraceAll(mt, start, end, true, 0.0f, LambdaToFuncPtr(traceFilter), &traceFilter);
@@ -308,6 +318,8 @@ idRenderWorld *PrtCollision::RenderWorld() {
 
 	common->Printf("Loading map entities...\n");
 	int numEnts = mapFile->GetNumEntities();
+	entityBlockFilterOverride.SetNum(numEnts);
+	memset(entityBlockFilterOverride.Ptr(), 0, entityBlockFilterOverride.MemoryUsed());
 	for (int e = 0; e < numEnts; e++) {
 		idMapEntity *ent = mapFile->GetEntity(e);
 		const char *name = ent->epairs.GetString("name", NULL);
@@ -319,6 +331,10 @@ idRenderWorld *PrtCollision::RenderWorld() {
 		//check for special spawnarg which can override our decision
 		int isBlocker = spawnArgs.GetInt("particle_collision_static_blocker", "-1");
 		if (isBlocker >= 0) {
+			if (isBlocker == 2) {
+				//value 2: override internal material/model checks
+				entityBlockFilterOverride[e] = true;
+			}
 			//value 0 or 1: override decision
 			isBlocker = (isBlocker != 0);
 		}
