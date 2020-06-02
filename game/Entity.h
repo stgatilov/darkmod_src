@@ -1304,7 +1304,6 @@ public:
 	idLocationEntity*		GetLocation( void ) const;	// grayman #3013
 	bool					CastsShadows( void ) const;	// grayman #3047
 	void					CheckCollision(idEntity* collidedWith); // grayman #3516
-	void					BecomeNonSolid(idEntity* blockingEnt);  // grayman #5268
 
 	/**
 	 * This triggers a stand-alone response (without an actual Stim) on this entity.
