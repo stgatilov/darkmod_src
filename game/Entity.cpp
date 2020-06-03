@@ -13601,7 +13601,7 @@ void idEntity::FSBecomeNonSolid(idEntity* blockingEnt) // grayman #5268
 		// Limit this to human-like AI immediately coming out of the
 		// sit->stand or sleep->stand animation.
 
-		if ( blockingEnt->spawnArgs.GetString("AIUse") == "AIUSE_PERSON")
+		if ( idStr::Cmp(blockingEnt->spawnArgs.GetString("AIUse"), "AIUSE_PERSON") == 0)
 		{
 			idActor* entActor = static_cast<idActor*>(blockingEnt);
 			if ( entActor->m_AnimSitSleepComplete )
