@@ -13605,7 +13605,7 @@ void idEntity::FSBecomeNonSolid(idEntity* blockingEnt) // grayman #5268
 			idActor* entActor = static_cast<idActor*>(blockingEnt);
 			if ( entActor->m_AnimSitSleepComplete )
 			{
-				entActor->m_AnimSitSleepComplete = false; // reset // grayman debug - wasn't true first time here?
+				entActor->m_AnimSitSleepComplete = false; // reset
 				m_preContents = contents;
 				m_preOrigin = blockingEnt->GetPhysics()->GetOrigin();
 				m_blockingEnt = blockingEnt;
