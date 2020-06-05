@@ -82,8 +82,8 @@
 class idReachability {
 public:
 	int							travelType;			// type of travel required to get to the area
-	short						toAreaNum;			// number of the reachable area
-	short						fromAreaNum;		// number of area the reachability starts
+	int							toAreaNum;			// number of the reachable area
+	int							fromAreaNum;		// number of area the reachability starts
 	idVec3						start;				// start point of inter area movement
 	idVec3						end;				// end point of inter area movement
 	int							edgeNum;			// edge crossed by this reachability
@@ -133,11 +133,11 @@ typedef struct aasEdge_s {
 
 // area boundary face
 typedef struct aasFace_s {
-	unsigned short				planeNum;			// number of the plane this face is on
-	unsigned short				flags;				// face flags
+	unsigned int				planeNum;			// number of the plane this face is on
+	unsigned int				flags;				// face flags
 	int							numEdges;			// number of edges in the boundary of the face
 	int							firstEdge;			// first edge in the edge index
-	short						areas[2];			// area at the front and back of this face
+	int							areas[2];			// area at the front and back of this face
 } aasFace_t;
 
 // area with a boundary of faces
@@ -146,10 +146,10 @@ typedef struct aasArea_s {
 	int							firstFace;			// first face in the face index used for the boundary of the area
 	idBounds					bounds;				// bounds of the area
 	idVec3						center;				// center of the area an AI can move towards
-	unsigned short				flags;				// several area flags
-	unsigned short				contents;			// contents of the area
-	short						cluster;			// cluster the area belongs to, if negative it's a portal
-	short						clusterAreaNum;		// number of the area in the cluster
+	unsigned int				flags;				// several area flags
+	unsigned int				contents;			// contents of the area
+	int							cluster;			// cluster the area belongs to, if negative it's a portal
+	int							clusterAreaNum;		// number of the area in the cluster
 	int							travelFlags;		// travel flags for traveling through this area
 	idReachability *			reach;				// reachabilities that start from this area
 	idReachability *			rev_reach;			// reachabilities that lead to this area
@@ -157,16 +157,16 @@ typedef struct aasArea_s {
 
 // nodes of the bsp tree
 typedef struct aasNode_s {
-	unsigned short				planeNum;			// number of the plane that splits the subspace at this node
+	unsigned int				planeNum;			// number of the plane that splits the subspace at this node
 	int							children[2];		// child nodes, zero is solid, negative is -(area number)
 } aasNode_t;
 
 // cluster portal
 typedef struct aasPortal_s {
-	short						areaNum;			// number of the area that is the actual portal
-	short						clusters[2];		// number of cluster at the front and back of the portal
-	short						clusterAreaNum[2];	// number of this portal area in the front and back cluster
-	unsigned short				maxAreaTravelTime;	// maximum travel time through the portal area
+	int							areaNum;			// number of the area that is the actual portal
+	int							clusters[2];		// number of cluster at the front and back of the portal
+	int							clusterAreaNum[2];	// number of this portal area in the front and back cluster
+	unsigned int				maxAreaTravelTime;	// maximum travel time through the portal area
 } aasPortal_t;
 
 // cluster
