@@ -62,7 +62,12 @@
       </Synthetic>
     </Expand>
   </Type>
-  
+
+  <Type Name="idEvent">
+    <DisplayString Condition="eventdef==&amp;EV_Thread_Execute">idThread::Execute ({time}): {((idThread*)object)->threadName}</DisplayString>
+    <DisplayString>{typeinfo->classname,s}::{eventdef->name,s} ({time}): {*object}</DisplayString>
+  </Type>
+
   <Type Name="idVarDef">
     <DisplayString>VarDef {name->name}: {typeDef->type}</DisplayString>
     <Expand>
