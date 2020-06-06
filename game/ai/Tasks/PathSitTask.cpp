@@ -23,6 +23,8 @@
 #include "PathTurnTask.h"
 #include "../Library.h"
 
+#define		WARNING_DELAY 10000 // grayman #5164 - ms delay between "unreachable" WARNINGs
+
 namespace ai
 {
 
@@ -61,15 +63,15 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 
 		// if dist is too far, terminate the sit.
 
-		float accuracy = _accuracy; // move_to_position_tolerance
-		if ( accuracy <= 0 )
-		{
-			accuracy = 16; // default
-		}
+		float accuracy = 16; // default
 
-		if ( dist > accuracy )
+		if ( dist > idMath::Sqrt(2 * accuracy*accuracy) ) // grayman #5265 extend the required distance
 		{
-			gameLocal.Warning("%s (%s) can't sit: too far from sitting location %s (%s)\n",owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString());
+			if ( gameLocal.time >= owner->m_nextWarningTime )
+			{
+				gameLocal.Warning("%s (%s) can't sit: too far from sitting location %s (%s)\n", owner->GetName(), aiOrigin.ToString(), lastPath->GetName(), lastPath->GetPhysics()->GetOrigin().ToString());
+				owner->m_nextWarningTime = gameLocal.time + WARNING_DELAY;
+			}
 			subsystem.FinishTask();
 			return;
 		}
