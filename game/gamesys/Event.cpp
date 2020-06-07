@@ -227,6 +227,7 @@ void idEventDef::SortEventDefs() {
 ***********************************************************************/
 
 static idLinkList<idEvent> FreeEvents;
+static int FreeEventsNum = 0;
 static idLinkList<idEvent> EventQueue;
 static idEvent EventPool[ MAX_EVENTS ];
 
@@ -261,8 +262,18 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 		gameLocal.Error( "idEvent::Alloc : No more free events" );
 	}
 
+#if _DEBUG
+	//stgatilov: check that free events counter is valid
+	int nonFreeNum = sizeof(EventPool) / sizeof(EventPool[0]) - FreeEventsNum;
+	if (nonFreeNum <= 100) {	//avoid wasting too much time
+		int aliveNum = EventQueue.Num();
+		assert(aliveNum == nonFreeNum || aliveNum + 1 == nonFreeNum);
+	}
+#endif
+
 	ev = FreeEvents.Next();
 	ev->eventNode.Remove();
+	FreeEventsNum--;
 
 	ev->eventdef = evdef;
 
@@ -385,6 +396,7 @@ void idEvent::Free( void ) {
 
 	eventNode.SetOwner( this );
 	eventNode.AddToEnd( FreeEvents );
+	FreeEventsNum++;
 }
 
 /*
@@ -456,6 +468,7 @@ void idEvent::ClearEventList( void ) {
 	//
 	FreeEvents.Clear();
 	EventQueue.Clear();
+	FreeEventsNum = 0;
    
 	// 
 	// add the events to the free list
@@ -711,6 +724,7 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 		event = FreeEvents.Next();
 		event->eventNode.Remove();
 		event->eventNode.AddToEnd( EventQueue );
+		FreeEventsNum--;
 
 		savefile->ReadInt( event->time );
 
