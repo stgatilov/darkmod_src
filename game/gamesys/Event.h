@@ -150,6 +150,8 @@ public:
 	
 };
 
+void Cmd_EventList_f(const idCmdArgs &args);
+
 /*
 ================
 idEvent::GetData
