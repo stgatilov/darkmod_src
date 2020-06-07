@@ -42,7 +42,7 @@ public:
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 
-	void AddForbiddenArea(int areanum, const idAI* ai);
+	bool AddForbiddenArea(int areanum, const idAI* ai);
 	bool AreaIsForbidden(int areanum, const idAI* ai) const;
 	void RemoveForbiddenArea(int areanum, const idAI* ai);
 

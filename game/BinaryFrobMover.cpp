@@ -1647,6 +1647,8 @@ void CBinaryFrobMover::RegisterAI(idAI* ai)
 {
 	idEntityPtr<idAI> aiPtr;
 	aiPtr = ai;
+	if (auto dupe = m_registeredAI.Find(aiPtr))
+		return;
 	m_registeredAI.Append(aiPtr);
 }
 
