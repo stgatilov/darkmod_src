@@ -75,6 +75,12 @@ idCVar com_purgeAll( "com_purgeAll", "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM
 idCVar com_memoryMarker( "com_memoryMarker", "-1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "used as a marker for memory stats" );
 idCVar com_preciseTic( "com_preciseTic", "1", CVAR_BOOL|CVAR_SYSTEM, "run one game tick every async thread update" );
 idCVar com_asyncInput( "com_asyncInput", "0", CVAR_BOOL | CVAR_SYSTEM, "sample input from the async thread" );
+idCVar com_warning_as_error( "com_warning_as_error", "0", CVAR_BOOL | CVAR_SYSTEM, "when enabled to 1, all warnings trigger error" );
+idCVar com_error_crash( "com_error_crash", "0", CVAR_INTEGER | CVAR_SYSTEM, "crash the hard way on the following:\n"
+	"  fatal errors   when >= 1\n"
+	"  normal errors  when >= 2\n"
+	"  warnings       when >= 3\n"
+, 0, 3);
 
 #define ASYNCSOUND_INFO "0: mix sound inline, 1: memory mapped async mix, 2: callback mixing, 3: write async mix"
 #if defined( MACOS_X )
@@ -135,6 +141,8 @@ unsigned int	com_msgID = -1;
 idGame *		game = NULL;
 idGameEdit *	gameEdit = NULL;
 #endif
+
+void Com_Crash_f( const idCmdArgs &args );
 
 // writes si_version to the config file - in a kinda obfuscated way
 //#define ID_WRITE_VERSION
@@ -625,6 +633,12 @@ void idCommonLocal::Warning( const char *fmt, ... ) {
 	if ( warningList.Num() < MAX_WARNING_LIST ) {
 		warningList.AddUnique( msg );
 	}
+	if ( com_error_crash.GetInteger() >= 3 ) {
+		Com_Crash_f(idCmdArgs());
+	}
+	if ( com_warning_as_error.GetBool() ) {
+		Error("Promoted to error (com_warning_as_error = 1)");
+	}
 }
 
 /*
@@ -729,6 +743,10 @@ idCommonLocal::Error
 */
 void idCommonLocal::Error( const char *fmt, ... ) {
 	va_list		argptr;
+
+	if ( com_error_crash.GetInteger() >= 2 ) {
+		Com_Crash_f(idCmdArgs());
+	}
 
 	int code = ERP_DROP;
 
@@ -844,6 +862,10 @@ Dump out of the game to a system dialog
 void idCommonLocal::FatalError( const char *fmt, ... ) {
 	va_list		argptr;
 	char msgBuf[MAX_PRINT_MSG_SIZE];
+
+	if ( com_error_crash.GetInteger() >= 1 ) {
+		Com_Crash_f(idCmdArgs());
+	}
 
 	// if we got a recursive error, make it fatal
 	if ( com_errorEntered ) {
@@ -1598,7 +1620,7 @@ Com_Crash_f
 A way to force a bus error for development reasons
 =================
 */
-static void Com_Crash_f( const idCmdArgs &args ) {
+void Com_Crash_f( const idCmdArgs &args ) {
 	/*if ( !com_developer.GetBool() ) {
 		commonLocal.Printf( "crash may only be used in developer mode\n" );
 		return;
