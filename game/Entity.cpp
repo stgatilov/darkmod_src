@@ -13605,7 +13605,6 @@ void idEntity::FSBecomeNonSolid(idEntity* blockingEnt) // grayman #5268
 			idActor* entActor = static_cast<idActor*>(blockingEnt);
 			if ( entActor->m_AnimSitSleepComplete )
 			{
-				entActor->m_AnimSitSleepComplete = false; // reset
 				m_preContents = contents;
 				m_preOrigin = blockingEnt->GetPhysics()->GetOrigin();
 				m_blockingEnt = blockingEnt;
@@ -13646,6 +13645,7 @@ void idEntity::Event_CheckSolidity() // grayman #5268
 
 		if ( (entOrigin - m_preOrigin).LengthFast() >= (2*p2.x + 4) ) // Allow a bit of extra distance
 		{
+			entAI->m_AnimSitSleepComplete = false; // reset
 			GetPhysics()->SetContents(m_preContents);
 			m_preContents = -1;
 			m_blockingEnt = NULL;
