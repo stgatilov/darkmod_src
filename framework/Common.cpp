@@ -1546,10 +1546,10 @@ Just throw a fatal error to test error shutdown procedures.
 ==================
 */
 static void Com_Error_f( const idCmdArgs &args ) {
-	if ( !com_developer.GetBool() ) {
+	/*if ( !com_developer.GetBool() ) {
 		commonLocal.Printf( "error may only be used in developer mode\n" );
 		return;
-	}
+	}*/
 
 	if ( args.Argc() > 1 ) {
 		commonLocal.FatalError( "Testing fatal error" );
@@ -1574,10 +1574,10 @@ static void Com_Freeze_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	if ( !com_developer.GetBool() ) {
+	/*if ( !com_developer.GetBool() ) {
 		commonLocal.Printf( "freeze may only be used in developer mode\n" );
 		return;
-	}
+	}*/
 
 	s = atof( args.Argv(1) );
 
@@ -1599,10 +1599,10 @@ A way to force a bus error for development reasons
 =================
 */
 static void Com_Crash_f( const idCmdArgs &args ) {
-	if ( !com_developer.GetBool() ) {
+	/*if ( !com_developer.GetBool() ) {
 		commonLocal.Printf( "crash may only be used in developer mode\n" );
 		return;
-	}
+	}*/
 
 	* ( int * ) 0 = 0x12345678;
 }
