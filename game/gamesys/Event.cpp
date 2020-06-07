@@ -33,6 +33,23 @@ Event are used for scheduling tasks and for linking script commands.
 #define MAX_EVENTSPERFRAME			(10<<10)
 //#define CREATE_EVENT_CODE
 
+idCVar g_eventAliveSoftLimit(
+	"g_eventAliveSoftLimit", "2048", CVAR_INTEGER | CVAR_GAME,
+	"Post warning when number of events alive exceeds this limit",
+	1, MAX_EVENTS
+);
+idCVar g_eventPerFrameSoftLimit(
+	"g_eventPerFrameSoftLimit", "5120", CVAR_INTEGER | CVAR_GAME,
+	"Post warning when number of events processed in single frame exceeds this limit",
+	1, MAX_EVENTSPERFRAME
+);
+idCVar g_eventNumberPrintedOnLimit(
+	"g_eventNumberPrintedOnLimit", "10", CVAR_INTEGER | CVAR_GAME,
+	"How many events are printed to console when soft limit is exceeded",
+	0, MAX_EVENTS + MAX_EVENTSPERFRAME
+);
+
+
 /***********************************************************************
 
   idEventDef
@@ -258,18 +275,29 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 	int			i;
 	const char	*materialName;
 
-	if ( FreeEvents.IsListEmpty() ) {
-		gameLocal.Error( "idEvent::Alloc : No more free events" );
-	}
-
+	int nonFreeNum = sizeof(EventPool) / sizeof(EventPool[0]) - FreeEventsNum;
 #if _DEBUG
 	//stgatilov: check that free events counter is valid
-	int nonFreeNum = sizeof(EventPool) / sizeof(EventPool[0]) - FreeEventsNum;
 	if (nonFreeNum <= 100) {	//avoid wasting too much time
 		int aliveNum = EventQueue.Num();
 		assert(aliveNum == nonFreeNum || aliveNum + 1 == nonFreeNum);
 	}
 #endif
+
+	if ( FreeEvents.IsListEmpty() ) {
+		gameLocal.Error( "idEvent::Alloc : No more free events" );
+	}
+	if ( nonFreeNum >= g_eventAliveSoftLimit.GetInteger() ) {
+		static int previousPrintTime = 0;
+		if ( gameLocal.realClientTime - previousPrintTime > 5000 ) {	//spam every 5 seconds
+			previousPrintTime = gameLocal.realClientTime;
+			gameLocal.Warning( "Soft limit of alive events exceeded (%d)! Some events printed below:", nonFreeNum );
+			idCmdArgs args;
+			args.AppendArg("");
+			args.AppendArg(g_eventNumberPrintedOnLimit.GetString());
+			Cmd_EventList_f(args);
+		}
+	}
 
 	ev = FreeEvents.Next();
 	ev->eventNode.Remove();
@@ -551,6 +579,15 @@ void idEvent::ServiceEvents( void ) {
 			}
 		}
 
+		num++;
+		if ( num == g_eventPerFrameSoftLimit.GetInteger() ) {
+			gameLocal.Warning( "Soft limit of %d events per frame exceeded! Some events printed below:", num );
+		}
+		//stgatilov: print information about events, so that mappers can debug the issue
+		if ( num >= g_eventPerFrameSoftLimit.GetInteger() && num < g_eventPerFrameSoftLimit.GetInteger() + g_eventNumberPrintedOnLimit.GetInteger() ) {
+			event->Print();
+		}
+
 		// the event is removed from its list so that if then object
 		// is deleted, the event won't be freed twice
 		event->eventNode.Remove();
@@ -562,10 +599,13 @@ void idEvent::ServiceEvents( void ) {
 
 		// Don't allow ourselves to stay in here too long.  An abnormally high number
 		// of events being processed is evidence of an infinite loop of events.
-		num++;
 		if ( num > MAX_EVENTSPERFRAME ) {
 			gameLocal.Error( "Event overflow.  Possible infinite loop in script." );
 		}
+	}
+
+	if ( num >= g_eventPerFrameSoftLimit.GetInteger() ) {
+		gameLocal.Warning( "Soft limit of events per frame exceeded (%d)! See events above.", num );
 	}
 }
 
