@@ -438,7 +438,7 @@ const idEventDef AI_SetBlendFrames( "setBlendFrames", EventArgs('d', "channel", 
 const idEventDef AI_GetBlendFrames( "getBlendFrames", EventArgs('d', "channel", ""), 'd', "Returns the number of frames to blend between animations on the given channel.");
 const idEventDef AI_AnimState( "animState", EventArgs('d', "channel", "", 's', "stateFunction", "", 'd', "blendFrame", ""), 
 	EV_RETURNS_VOID, "Sets a new animation state script function for the given channel.");
-const idEventDef AI_SetGetUp( "setGetUpTime", EventArgs(),EV_RETURNS_VOID,"Flags that a sitting up or waking up animation completed"); // grayman #5268
+const idEventDef AI_SetGetUp( "setGetUpTime", EventArgs('d', "set/clear", ""),EV_RETURNS_VOID,"Flags that a sitting up or waking up animation completed"); // grayman #5268
 const idEventDef AI_GetAnimState( "getAnimState", EventArgs('d', "channel", ""), 's', "Returns the name of the current animation state script function used for the given channel.");
 const idEventDef AI_InAnimState( "inAnimState", EventArgs('d', "channel", "", 's', "stateFunc", ""), 
 	'd', "Returns true if the given animation state script function is currently used for the given channel.");
@@ -766,7 +766,7 @@ idActor::idActor( void ) {
 
 	m_victorHasKnealt = false; // grayman #3848
 
-	m_AnimSitSleepComplete = false; // grayman #5268
+	m_AnimSitSleepComplete = 0; // grayman #5268
 
 	m_Attachments.SetGranularity( 1 );
 
@@ -1290,7 +1290,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	m_killedBy.Save(savefile); // grayman #3848
 
-	savefile->WriteBool(m_AnimSitSleepComplete); // grayman #5268
+	savefile->WriteInt(m_AnimSitSleepComplete); // grayman #5268
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
@@ -1518,7 +1518,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 
 	m_killedBy.Restore(savefile); // grayman #3848
 
-	savefile->ReadBool(m_AnimSitSleepComplete); // grayman #5268
+	savefile->ReadInt(m_AnimSitSleepComplete); // grayman #5268
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
 	savefile->ReadVec3( eyeOffset );
@@ -4641,9 +4641,22 @@ void idActor::Event_AnimState( int channel, const char *statename, int blendFram
 idActor::Event_SetGetUp
 ===========================
 */
-void idActor::Event_SetGetUp() // grayman #5268
+void idActor::Event_SetGetUp(int set) // grayman #5268
 {
-	m_AnimSitSleepComplete = true;
+	if ( set == 1 )
+	{
+		m_AnimSitSleepComplete = 1;
+
+		// Wait some time and clear this, to handle the case where 
+		// the actor sat/slept but wasn't involved in an obstruction 
+		// situation with the chair or bed.
+
+		PostEventSec(&AI_SetGetUp, 2, 0); // come back later to clear the flag
+	}
+	else
+	{
+		m_AnimSitSleepComplete = 0;
+	}
 }
 
 /*

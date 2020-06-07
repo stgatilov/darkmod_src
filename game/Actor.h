@@ -434,7 +434,7 @@ public:
 	/**
 	* grayman #5268 - recent sitting up or waking up anim completed
 	**/
-	bool					m_AnimSitSleepComplete;
+	int						m_AnimSitSleepComplete;
 
 	/**
 	* grayman #3424 - List of warnings this actor has either given or received.
@@ -893,7 +893,7 @@ public:
 	void					Event_SetBlendFrames( int channel, int blendFrames );
 	void					Event_GetBlendFrames( int channel );
 	void					Event_AnimState( int channel, const char *name, int blendFrames );
-	void					Event_SetGetUp(); // grayman #5268
+	void					Event_SetGetUp( int set ); // grayman #5268
 	void					Event_GetAnimState( int channel );
 	void					Event_InAnimState( int channel, const char *name );
 	void					Event_FinishAction( const char *name );

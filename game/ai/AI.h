@@ -985,7 +985,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	float					m_sleepFloorZ;  // grayman #2416
 	int						m_getupEndTime; // grayman #2416
-	bool					m_AnimSitSleepComplete; // grayman #5268
 
 	/**
 	* Audio detection threshold (in dB of Sound Pressure Level)

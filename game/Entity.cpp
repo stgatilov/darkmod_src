@@ -13603,7 +13603,7 @@ void idEntity::FSBecomeNonSolid(idEntity* blockingEnt) // grayman #5268
 		if ( idStr::Cmp(blockingEnt->spawnArgs.GetString("AIUse"), "AIUSE_PERSON") == 0)
 		{
 			idActor* entActor = static_cast<idActor*>(blockingEnt);
-			if ( entActor->m_AnimSitSleepComplete )
+			if ( entActor->m_AnimSitSleepComplete == 1 )
 			{
 				m_preContents = contents;
 				m_preOrigin = blockingEnt->GetPhysics()->GetOrigin();
@@ -13645,7 +13645,7 @@ void idEntity::Event_CheckSolidity() // grayman #5268
 
 		if ( (entOrigin - m_preOrigin).LengthFast() >= (2*p2.x + 4) ) // Allow a bit of extra distance
 		{
-			entAI->m_AnimSitSleepComplete = false; // reset
+			entAI->m_AnimSitSleepComplete = 0; // reset
 			GetPhysics()->SetContents(m_preContents);
 			m_preContents = -1;
 			m_blockingEnt = NULL;
