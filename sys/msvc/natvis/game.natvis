@@ -66,6 +66,10 @@
   <Type Name="idEvent">
     <DisplayString Condition="eventdef==&amp;EV_Thread_Execute">idThread::Execute ({time}): {((idThread*)object)->threadName}</DisplayString>
     <DisplayString>{typeinfo->classname,s}::{eventdef->name,s} ({time}): {*object}</DisplayString>
+    <Expand HideRawView="true">
+      <ExpandedItem>this,!</ExpandedItem>
+      <Item Name="[Full Data]">data,[eventdef->argsize]</Item>
+    </Expand>
   </Type>
 
   <Type Name="idVarDef">
