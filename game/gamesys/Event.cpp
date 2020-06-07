@@ -837,6 +837,20 @@ void idEvent::SaveTrace( idSaveGame *savefile, const trace_t &trace ) {
 	savefile->WriteInt( trace.c.id );
 }
 
+//stgatilov: prints event to console
+//used when getting to much events (exceed soft limits)
+void idEvent::Print() {
+	common->Printf("Event %s::%s on %s at %d\n",
+		typeinfo ? typeinfo->classname : "[null]",
+		eventdef ? eventdef->GetName() : "[null]",
+		object ? (
+			object->IsType(idEntity::Type) ? ((idEntity*)object)->name.c_str() :
+			object->IsType(idThread::Type) ? ((idThread*)object)->GetThreadName() :
+			"[unknown]"
+		) : "[null]",
+		time
+	);
+}
 
 
 #ifdef CREATE_EVENT_CODE
