@@ -11988,6 +11988,9 @@ void idPlayer::Event_SetSpyglassOverlayBackground()
 	case 3:
 		m_overlays.broadcastNamedEvent("initBackground_5x4");
 		break;
+	case 5:
+		m_overlays.broadcastNamedEvent("initBackground_21x9");
+		break;
 	}
 }
 
@@ -12009,6 +12012,9 @@ void idPlayer::Event_SetPeekOverlayBackground()
 		break;
 	case 3:
 		m_overlays.broadcastNamedEvent("initBackground_5x4");
+		break;
+	case 5:
+		m_overlays.broadcastNamedEvent("initBackground_21x9");
 		break;
 	}
 }
