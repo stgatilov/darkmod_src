@@ -49,7 +49,7 @@ void AreaManager::Restore(idRestoreGame* savefile)
 	}
 }
 
-void AreaManager::AddForbiddenArea(int areanum, const idAI* ai)
+bool AreaManager::AddForbiddenArea(int areanum, const idAI* ai)
 {
 	if (!AreaIsForbidden(areanum, ai))
 	{
@@ -67,7 +67,9 @@ void AreaManager::AddForbiddenArea(int areanum, const idAI* ai)
 			std::pair<AiAreasMap::iterator, bool> result = _aiAreas.insert(AiAreasMap::value_type(ai, AreaSet()) );
 			result.first->second.insert(areanum);
 		}
+		return true;
 	}
+	return false;
 }
 
 bool AreaManager::AreaIsForbidden(int areanum, const idAI* ai) const

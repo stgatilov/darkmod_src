@@ -425,21 +425,23 @@ int idGameLocal::DetermineAspectRatio()
 		Error( "idGameLocal::CalcFov: screen dimensions are %d x %d <= 0", viewX, viewY );
 	float ratio_fov = float(viewX) / float(viewY);
 
-	// There are several overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9 TV, 16:9.
-	// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.770833, 1.777778.
+	// There are several overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9 TV, 16:9, 21:9.
+	// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.770833, 1.777778, 2.333333
 	// To match an overlay to a given 'ratio_fov', we'll assume that halfway between two
 	// ratios, we'll switch from the lower aspect ratio to the higher.
 	int result = 0;
-	if (ratio_fov < (1.25 + (1.333333 - 1.25)/2))
+	if (ratio_fov < (1.25 + (1.333333 - 1.25) / 2)) //1.2916665
 		result = 3; // 5:4
-	else if (ratio_fov < (1.333333 + (1.6 - 1.333333)/2))
+	else if (ratio_fov < (1.333333 + (1.6 - 1.333333) / 2)) //1.4666665
 		result = 0; // 4:3
-	else if (ratio_fov < (1.6 + (1.770833 - 1.6)/2))
+	else if (ratio_fov < (1.6 + (1.770833 - 1.6) / 2)) //1.6854165
 		result = 2; // 16:10
-	else if (ratio_fov < (1.770833 + (1.777778 - 1.770833)/2))
+	else if (ratio_fov < (1.770833 + (1.777778 - 1.770833) / 2)) //1.770833
 		result = 4; // 16:9 TV
-	else
+	else if (ratio_fov < (1.777778 + (2.333333 - 1.777778) / 2)) //2.0555555
 		result = 1; // 16:9
+	else
+		result = 5; // 21:9
 
 	return result;
 }
@@ -3671,7 +3673,7 @@ void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 	gui->SetStateFloat("HEIGHT", y_mul);
 	// We have only one scaling factor to scale text, so use the average of X and Y
 	// This will have odd effects if W and H differ greatly, but is better than to not scale the text
-	gui->SetStateFloat("SCALE", (y_mul + x_mul) / 2);
+	gui->SetStateFloat("SCALE", (y_mul + x_mul) / 2);	
 	
 	/*
 	gui->SetStateFloat("iconSize", cvarSystem->GetCVarFloat("gui_iconSize"));

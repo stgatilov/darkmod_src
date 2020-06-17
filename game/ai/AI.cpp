@@ -2460,8 +2460,9 @@ void idAI::Think( void )
 					if ( foundImpassableDoor )
 					{
 						// add AAS area number of the door to forbidden areas
-						gameLocal.m_AreaManager.AddForbiddenArea(areaNum, this);
-						PostEventMS(&AI_ReEvaluateArea, doorRetryTime, areaNum);
+						if ( gameLocal.m_AreaManager.AddForbiddenArea(areaNum, this) ) {
+							PostEventMS(&AI_ReEvaluateArea, doorRetryTime, areaNum);
+						}
 						frobDoor->RegisterAI(this); // grayman #1145 - this AI is interested in this door
 					}
 					else

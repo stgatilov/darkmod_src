@@ -837,6 +837,50 @@ void idEvent::SaveTrace( idSaveGame *savefile, const trace_t &trace ) {
 	savefile->WriteInt( trace.c.id );
 }
 
+//stgatilov: prints event to console
+//used when getting to much events (exceed soft limits)
+void idEvent::Print() {
+	common->Printf("Event %s::%s on %s at %d\n",
+		typeinfo ? typeinfo->classname : "[null]",
+		eventdef ? eventdef->GetName() : "[null]",
+		object ? (
+			object->IsType(idEntity::Type) ? ((idEntity*)object)->name.c_str() :
+			object->IsType(idThread::Type) ? ((idThread*)object)->GetThreadName() :
+			"[unknown]"
+		) : "[null]",
+		time
+	);
+}
+
+void Cmd_EventList_f(const idCmdArgs &args) {
+	int limit = -1;
+	if (args.Argc() > 1) {
+		limit = atoi(args.Argv(1));
+	}
+
+	int num = EventQueue.Num();
+	if (limit >= num/2)
+		limit = -1;
+
+	std::set<int> printIds;
+	if (limit > 0) {
+		idRandom rnd = gameLocal.random;
+		//print last events (half of limit)
+		for (int i = 0; i < limit/2; i++)
+			printIds.insert(num - 1 - i);
+		//print random events (another half)
+		while (printIds.size() < limit)
+			printIds.insert(rnd.RandomInt(num));
+	}
+
+	int idx = 0;
+	for (idLinkList<idEvent> *node = EventQueue.NextNode(); node; node = node->NextNode()) {
+		if (limit < 0 || printIds.count(idx))
+			node->Owner()->Print();
+		idx++;
+	}
+	common->Printf("Total: %d/%d events alive\n", num, MAX_EVENTS);
+}
 
 
 #ifdef CREATE_EVENT_CODE

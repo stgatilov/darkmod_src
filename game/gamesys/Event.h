@@ -133,6 +133,7 @@ public:
 	void						Free( void );
 	void						Schedule( idClass *object, const idTypeInfo *cls, int time );
 	byte						*GetData( void );
+	void						Print();
 
 	static void					CancelEvents( const idClass *obj, const idEventDef *evdef = NULL );
 	static void					ClearEventList( void );
@@ -148,6 +149,8 @@ public:
 	static void					RestoreTrace( idRestoreGame *savefile, trace_t &trace );
 	
 };
+
+void Cmd_EventList_f(const idCmdArgs &args);
 
 /*
 ================
