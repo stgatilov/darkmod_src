@@ -1,0 +1,10 @@
+include(${CMAKE_CURRENT_LIST_DIR}/tdm_find_package.cmake)
+
+set(libcurl_FOUND 1)
+set(libcurl_INCLUDE_DIRS "${ARTEFACTS_DIR}/libcurl/include")
+set(libcurl_LIBRARY_DIR "${ARTEFACTS_DIR}/libcurl/lib/${PACKAGE_PLATFORM}")
+if(MSVC)
+	set(libcurl_LIBRARIES "${libcurl_LIBRARY_DIR}/libcurl.lib")
+else()
+	set(libcurl_LIBRARIES "${libcurl_LIBRARY_DIR}/libcurl.a")
+endif()

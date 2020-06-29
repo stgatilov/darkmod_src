@@ -8,7 +8,11 @@ elseif(MSVC)
 	set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 endif()
 
+# find ordinary cmake includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/sys/cmake")
+# find third-party package modules
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/ThirdParty/cmake_find_package")
+
 include(CMakeDependentOption)
 include(ucm)
 include(PrecompiledHeader)
@@ -168,87 +172,73 @@ add_compile_definitions(
 		AL_LIBTYPE_STATIC
 )
 
-if (NOT THIRDPARTY_PLATFORM_OVERRIDE STREQUAL "")
-	set(PACKAGE_PLATFORM ${THIRDPARTY_PLATFORM_OVERRIDE})
-	set(PACKAGE_PLATFORM_DEBUG ${THIRDPARTY_PLATFORM_OVERRIDE})
+if (THIRDPARTY_PLATFORM_OVERRIDE)
 	if (UNIX)
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.custom")
-		set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/linux")
 	elseif (MSVC)
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod_custom.exe")
-		set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/vc15")
 	endif ()
 elseif (UNIX)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(PACKAGE_PLATFORM "lnx64_s_gcc5_rel_stdcpp")
-		set(PACKAGE_PLATFORM_DEBUG "lnx64_s_gcc5_rel_stdcpp")
 		# ffmpeg dep was compiled without -fPIC, so need to disable on 64bit builds
 		set_target_properties(TheDarkMod PROPERTIES POSITION_INDEPENDENT_CODE OFF)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.x64")
 	else ()
-		set(PACKAGE_PLATFORM "lnx32_s_gcc5_rel_stdcpp")
-		set(PACKAGE_PLATFORM_DEBUG "lnx32_s_gcc5_rel_stdcpp")
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.x86")
 	endif ()
-	set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/linux")
 elseif (MSVC)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		set(PACKAGE_PLATFORM "win64_s_vc15_rel_mt")
-		set(PACKAGE_PLATFORM_DEBUG "win64_s_vc15_dbg_mtd")
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkModx64")
 	else ()
-		set(PACKAGE_PLATFORM "win32_s_vc15_rel_mt")
-		set(PACKAGE_PLATFORM_DEBUG "win32_s_vc15_dbg_mtd")
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkMod")
 	endif ()
-	set(PACKAGE_CONFIG_PATH "${PROJECT_SOURCE_DIR}/sys/cmake/packages/vc15")
 endif ()
 ucm_set_runtime(STATIC)
 
-find_package(ZLIB REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(CURL REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(OPENAL REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(OGG REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(VORBIS REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(DEVIL REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(JPEG REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(FFMPEG REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(PUGIXML REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(PNG REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
-find_package(MBEDTLS REQUIRED HINTS ${PACKAGE_CONFIG_PATH})
+find_package(zlib REQUIRED)
+find_package(libcurl REQUIRED)
+find_package(openal REQUIRED)
+find_package(ogg REQUIRED)
+find_package(vorbis REQUIRED)
+find_package(devil REQUIRED)
+find_package(libjpeg REQUIRED)
+find_package(ffmpeg REQUIRED)
+find_package(pugixml REQUIRED)
+find_package(libpng REQUIRED)
+find_package(mbedtls REQUIRED)
 
 include_directories(
 		"${PROJECT_SOURCE_DIR}"
 		"${PROJECT_SOURCE_DIR}/idlib"
 		"${PROJECT_SOURCE_DIR}/framework"
 		"${PROJECT_SOURCE_DIR}/ThirdParty/artefacts/doctest/include"
-		${ZLIB_INCLUDE_DIRS}
-		${CURL_INCLUDE_DIRS}
-		${OPENAL_INCLUDE_DIRS}
-		${OGG_INCLUDE_DIRS}
-		${VORBIS_INCLUDE_DIRS}
-		${DEVIL_INCLUDE_DIRS}
-		${JPEG_INCLUDE_DIRS}
-		${FFMPEG_INCLUDE_DIRS}
-		${PUGIXML_INCLUDE_DIRS}
-		${PNG_INCLUDE_DIRS}
-		${MBEDTLS_INCLUDE_DIRS}
+		${zlib_INCLUDE_DIRS}
+		${libcurl_INCLUDE_DIRS}
+		${openal_INCLUDE_DIRS}
+		${ogg_INCLUDE_DIRS}
+		${vorbis_INCLUDE_DIRS}
+		${devil_INCLUDE_DIRS}
+		${libjpeg_INCLUDE_DIRS}
+		${ffmpeg_INCLUDE_DIRS}
+		${pugixml_INCLUDE_DIRS}
+		${libpng_INCLUDE_DIRS}
+		${mbedtls_INCLUDE_DIRS}
 )
 
 target_link_libraries(TheDarkMod
-		${ZLIB_LIBRARIES}
-		${CURL_LIBRARIES}
-		${OPENAL_LIBRARIES}
-		${VORBIS_LIBRARIES}
-		${OGG_LIBRARIES}
-		${DEVIL_LIBRARIES}
-		${JPEG_LIBRARIES}
-		${FFMPEG_LIBRARIES}
-		${PNG_LIBRARIES}
-		${MBEDTLS_LIBRARIES}
+		${zlib_LIBRARIES}
+		${libcurl_LIBRARIES}
+		${openal_LIBRARIES}
+		${vorbis_LIBRARIES}
+		${ogg_LIBRARIES}
+		${devil_LIBRARIES}
+		${libjpeg_LIBRARIES}
+		${ffmpeg_LIBRARIES}
+		${libpng_LIBRARIES}
+		${mbedtls_LIBRARIES}
 )
-target_link_libraries(TheDarkMod debug ${PUGIXML_LIBRARIES_D} optimized ${PUGIXML_LIBRARIES})
+target_link_libraries(TheDarkMod debug ${pugixml_LIBRARIES_D} optimized ${pugixml_LIBRARIES})
 
 if (WIN32)
 	target_link_libraries(TheDarkMod ws2_32 iphlpapi winmm bcrypt dinput8 dbghelp)

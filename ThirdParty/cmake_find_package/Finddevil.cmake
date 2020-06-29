@@ -1,0 +1,10 @@
+include(${CMAKE_CURRENT_LIST_DIR}/tdm_find_package.cmake)
+
+set(devil_FOUND 1)
+set(devil_INCLUDE_DIRS "${ARTEFACTS_DIR}/devil/include")
+set(devil_LIBRARY_DIR "${ARTEFACTS_DIR}/devil/lib/${PACKAGE_PLATFORM}")
+if(MSVC)
+	set(devil_LIBRARIES "${devil_LIBRARY_DIR}/DevIL.lib")
+else()
+	set(devil_LIBRARIES "${devil_LIBRARY_DIR}/libIL.a")
+endif()

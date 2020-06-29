@@ -1,0 +1,10 @@
+include(${CMAKE_CURRENT_LIST_DIR}/tdm_find_package.cmake)
+
+set(openal_FOUND 1)
+set(openal_INCLUDE_DIRS "${ARTEFACTS_DIR}/openal/include")
+set(openal_LIBRARY_DIR "${ARTEFACTS_DIR}/openal/lib/${PACKAGE_PLATFORM}")
+if(MSVC)
+	set(openal_LIBRARIES "${openal_LIBRARY_DIR}/OpenAL32.lib")
+else()
+	set(openal_LIBRARIES "${openal_LIBRARY_DIR}/libopenal.a")
+endif()
