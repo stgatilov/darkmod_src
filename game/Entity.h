@@ -301,13 +301,6 @@ public:
 	int					m_preHideClipMask;
 
 	/**
-	* grayman #5268 - when an entity goes non-solid ...
-	**/
-	int					m_preContents;  // when an entity goes non - solid, this holds the contents
-	idVec3				m_preOrigin;	// where a blocking entity begins the distance check
-	idEntity*			m_blockingEnt;  // and this holds the blocking entity
-
-	/**
 	* Entity contents may be overwritten by a custom contents spawnarg
 	* Store it here to keep track of it, because derived classes can
 	* set the contents in their spawn method, and need to know to overwrite it
@@ -664,10 +657,9 @@ public:
 	int						GetListenerId( void ) const;
 	idSoundEmitter *		GetSoundEmitter( void ) const;
 	void					FreeSoundEmitter( bool immediate );
-	void					FSBecomeNonSolid(idEntity* ent); // grayman #5268
 
 	void					Event_PropSoundDirect( const char *soundName, float propVolMod, int msgTag ); // grayman #3355
-	void					Event_CheckSolidity(void); // grayman #5268
+
 
 	// Returns the soundprop name for the given material (e.g. "sprS_bounce_small_hard_on_soft")
 	idStr					GetSoundPropNameForMaterial(const idStr& materialName);
