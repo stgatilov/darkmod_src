@@ -17,6 +17,7 @@
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "Interaction.h"
 
 /*
 ===========================================================================
@@ -29,6 +30,60 @@ idInteraction implementation
 // FIXME: use private allocator for srfCullInfo_t
 idCVar r_useInteractionTriCulling("r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris");
 idCVarInt r_singleShadowEntity( "r_singleShadowEntity", "-1", CVAR_RENDERER, "suppress all but one shadowing entity" );
+
+void idInteraction::PrepareLightSurf( drawSurf_s **link, const srfTriangles_t *tri, const viewEntity_s *space,
+		const idMaterial *material, const idScreenRect &scissor, bool viewInsideShadow ) {
+	if ( !space ) {
+		space = &tr.viewDef->worldSpace;
+	}
+	drawSurf_t *drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
+
+	drawSurf->CopyGeo( tri );
+	drawSurf->space = space;
+	drawSurf->material = material;
+	drawSurf->scissorRect = scissor;
+	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
+	if ( space->entityDef && space->entityDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) { // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
+		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
+	}
+	
+	static idCVar r_skipDynamicShadows( "r_skipDynamicShadows", "0", CVAR_ARCHIVE | CVAR_BOOL | CVAR_RENDERER, "" );
+	if ( r_skipDynamicShadows.GetBool() )
+		for ( auto ent = space; ent; ent = ent->next ) {
+			//&& !space->entityDef->parms.hModel->IsStaticWorldModel() 
+			//	&& space->entityDef->lastModifiedFrameNum == tr.viewCount 
+			if ( ent->entityDef && ent->entityDef->parms.hModel && ent->entityDef->parms.hModel->IsDynamicModel() ) {
+				drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
+			}
+		}
+
+	drawSurf->particle_radius = 0.0f; // #3878
+
+	if ( viewInsideShadow ) {
+		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
+	}
+
+	if ( !material ) {
+		// shadows won't have a shader
+		drawSurf->shaderRegisters = NULL;
+		if ( !(drawSurf->dsFlags & DSF_VIEW_INSIDE_SHADOW) )
+			drawSurf->numIndexes = tri->numShadowIndexesNoCaps;
+	} else {
+		// process the shader expressions for conditionals / color / texcoords
+		const float *constRegs = material->ConstantRegisters();
+		if ( constRegs ) {
+			// this shader has only constants for parameters
+			drawSurf->shaderRegisters = constRegs;
+		} else {
+			// FIXME: share with the ambient surface?
+			float *regs = (float *)R_FrameAlloc( material->GetNumRegisters() * sizeof( float ) );
+			drawSurf->shaderRegisters = regs;
+			material->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, tr.viewDef, space->entityDef->parms.referenceSound );
+		}
+	}
+
+	surfsToLink.Append( surfLink_t { link, drawSurf } );
+}
 
 /*
 ================
@@ -837,7 +892,8 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 
 	// if it doesn't contact the light frustum, none of the surfaces will
 	if ( R_CullModelBoundsToLight( lightDef, bounds, entityDef->modelRenderMatrix ) ) {
-		MakeEmpty();
+		//MakeEmpty();
+		flagMakeEmpty = true;
 		return;
 	}
 
@@ -966,7 +1022,8 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 
 	// if none of the surfaces generated anything, don't even bother checking?
 	if ( !interactionGenerated ) {
-		MakeEmpty();
+		//MakeEmpty();
+		flagMakeEmpty = true;
 	}
 }
 
@@ -1130,6 +1187,15 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 	return true;
 }
 
+void idInteraction::LinkPreparedSurfaces() {
+	for (auto it : surfsToLink) {
+		// actually link it in
+		it.surf->nextOnLight = *it.link;
+		*it.link = it.surf;
+	}
+	surfsToLink.Clear();
+}
+
 /*
 ==================
 idInteraction::AddActiveInteraction
@@ -1150,6 +1216,8 @@ void idInteraction::AddActiveInteraction( void ) {
 
 	vLight = lightDef->viewLight;
 	vEntity = entityDef->viewEntity;
+
+	flagMakeEmpty = false;
 
 	// Try to cull the whole interaction away in a multitide of ways
 	// Also, reduce scissor rect of the interaction if possible
@@ -1234,13 +1302,13 @@ void idInteraction::AddActiveInteraction( void ) {
 
 					// there will only be localSurfaces if the light casts shadows and there are surfaces with NOSELFSHADOW
 					if ( sint->shader->Coverage() == MC_TRANSLUCENT && sint->shader->ReceivesLighting() ) {
-						R_LinkLightSurf( &vLight->translucentInteractions, lightTris,
+						PrepareLightSurf( &vLight->translucentInteractions, lightTris,
 						                 vEntity, shader, lightScissor, false );
 					} else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
-						R_LinkLightSurf( &vLight->localInteractions, lightTris,
+						PrepareLightSurf( &vLight->localInteractions, lightTris,
 						                 vEntity, shader, lightScissor, false );
 					} else {
-						R_LinkLightSurf( &vLight->globalInteractions, lightTris,
+						PrepareLightSurf( &vLight->globalInteractions, lightTris,
 						                 vEntity, shader, lightScissor, false );
 					}
 				}
@@ -1307,10 +1375,10 @@ void idInteraction::AddActiveInteraction( void ) {
 			bool inside = R_PotentiallyInsideInfiniteShadow( sint->ambientTris, localViewOrigin, localLightOrigin );
 
 			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
-				R_LinkLightSurf( &vLight->localShadows,
+				PrepareLightSurf( &vLight->localShadows,
 				                 shadowTris, vEntity, NULL, shadowScissor, inside );
 			} else {
-				R_LinkLightSurf( &vLight->globalShadows,
+				PrepareLightSurf( &vLight->globalShadows,
 				                 shadowTris, vEntity, NULL, shadowScissor, inside );
 			}
 		}

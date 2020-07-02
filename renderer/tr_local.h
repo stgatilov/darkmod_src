@@ -17,6 +17,8 @@
 #define __TR_LOCAL_H__
 
 #include <atomic>
+#include <mutex>
+
 #include "Image.h"
 #include "MegaTexture.h"
 
@@ -340,6 +342,8 @@ public:
 
 	bool					needsPortalSky;
 	int						centerArea;
+
+	std::mutex				mutex;						// needed to synchronize R_EntityDefDynamicModel over multiple threads
 };
 
 // viewLights are allocated on the frame temporary stack memory
@@ -396,7 +400,11 @@ typedef struct viewLight_s {
 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
 } viewLight_t;
 
-
+struct preparedSurf_t {
+	drawSurf_t		*surf;
+	idUserInterface *gui;
+	preparedSurf_t	*next;
+};
 // a viewEntity is created whenever a idRenderEntityLocal is considered for inclusion
 // in the current view, but it may still turn out to be culled.
 // viewEntity are allocated on the frame temporary stack memory
@@ -423,6 +431,8 @@ typedef struct viewEntity_s {
 	float				modelMatrix[16];		// local coords to global coords
 	float				modelViewMatrix[16];	// local coords to eye coords
 	idRenderMatrix		mvp;
+
+	preparedSurf_t		*preparedSurfs;
 
 	int					drawCalls;				// perf tool
 } viewEntity_t;
@@ -613,6 +623,7 @@ typedef struct {
 
 	srfTriangles_t 		*firstDeferredFreeTriSurf;
 	srfTriangles_t 		*lastDeferredFreeTriSurf;
+	std::mutex			deferredFreeMutex;
 
 	int					memoryHighwater;	// max used on any frame
 
@@ -1327,7 +1338,7 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def );
 viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
 
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = -1.0f ); // soft particles in #3878
+					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = -1.0f, bool deferred = false ); // soft particles in #3878
 
 void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
 					const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );

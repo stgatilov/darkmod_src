@@ -68,6 +68,8 @@ typedef struct {
 
 class idRenderEntityLocal;
 class idRenderLightLocal;
+struct drawSurf_s;
+struct viewEntity_s;
 
 class idInteraction {
 public:
@@ -104,6 +106,7 @@ public:
 	// free the interaction surfaces
 	void					FreeSurfaces( void );
 
+	bool flagMakeEmpty;
 	// makes the interaction empty for when the light and entity do not actually intersect
 	// all empty interactions are linked at the end of the light's and entity's interaction list
 	void					MakeEmpty( void );
@@ -128,6 +131,8 @@ public:
 	// also writes screen scissor bounding the visible part of interaction
 	bool					IsPotentiallyVisible( idScreenRect &shadowScissor );
 
+	void					LinkPreparedSurfaces();
+
 private:
 	enum {
 		FRUSTUM_UNINITIALIZED,
@@ -138,7 +143,6 @@ private:
 
 	int						dynamicModelFrameCount;	// so we can tell if a callback model animated
 
-private:
 	// actually create the interaction
 	void					CreateInteraction( const idRenderModel *model );
 
@@ -152,6 +156,15 @@ private:
 	// determine the minimum scissor rect that will include the interaction shadows
 	// projected to the bounds of the light
 	idScreenRect			CalcInteractionScissorRectangle( const idFrustum &viewFrustum );
+
+	struct surfLink_t {
+		drawSurf_s **link;
+		drawSurf_s *surf;
+	};
+	idList<surfLink_t>		surfsToLink;
+
+	void PrepareLightSurf( drawSurf_s **link, const srfTriangles_t *tri, const viewEntity_s *space,
+		const idMaterial *material, const idScreenRect &scissor, bool viewInsideShadow );
 };
 
 

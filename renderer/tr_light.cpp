@@ -14,8 +14,6 @@
 ******************************************************************************/
 
 #include "precompiled.h"
-#include <set>
-#include <unordered_set>
 #pragma hdrstop
 
 #include "../idlib/geometry/sys_intrinsics.h"
@@ -1007,6 +1005,7 @@ it and any necessary overlays
 ===================
 */
 idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
+	std::lock_guard<std::mutex> lock (def->mutex);
 
 	bool callbackUpdate = false;
 
@@ -1125,7 +1124,7 @@ R_AddDrawSurf
 =================
 */
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *material, const idScreenRect &scissor, const float soft_particle_radius )
+					const idMaterial *material, const idScreenRect &scissor, const float soft_particle_radius, bool deferred )
 {
 	drawSurf_t		*drawSurf;
 	const float		*shaderParms;
@@ -1156,31 +1155,32 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			drawSurf->sort += eDef->parms.sortOffset;
 	}
 
-	// bumping this offset each time causes surfaces with equal sort orders to still
-	// deterministically draw in the order they are added
-	tr.sortOffset += 0.000001f;
+	if (!deferred) {
+		// bumping this offset each time causes surfaces with equal sort orders to still
+		// deterministically draw in the order they are added
+		tr.sortOffset += 0.000001f;
+		// if it doesn't fit, resize the list
+		Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
+		if ( tr.viewDef->numDrawSurfs == tr.viewDef->maxDrawSurfs ) {
+			drawSurf_t	**old = tr.viewDef->drawSurfs;
+			int			count;
 
-	// if it doesn't fit, resize the list
-	Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
-	if ( tr.viewDef->numDrawSurfs == tr.viewDef->maxDrawSurfs ) {
-		drawSurf_t	**old = tr.viewDef->drawSurfs;
-		int			count;
-
-		if ( tr.viewDef->maxDrawSurfs == 0 ) {
-			tr.viewDef->maxDrawSurfs = INITIAL_DRAWSURFS;
-			count = 0;
-		} else {
-			count = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
-			tr.viewDef->maxDrawSurfs *= 2;
+			if ( tr.viewDef->maxDrawSurfs == 0 ) {
+				tr.viewDef->maxDrawSurfs = INITIAL_DRAWSURFS;
+				count = 0;
+			} else {
+				count = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
+				tr.viewDef->maxDrawSurfs *= 2;
+			}
+			int newSize = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
+			tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( newSize );
+			//memset( tr.viewDef->drawSurfs, -1, newSize );
+			memcpy( tr.viewDef->drawSurfs, old, count );
 		}
-		int newSize = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
-		tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( newSize );
-		//memset( tr.viewDef->drawSurfs, -1, newSize );
-		memcpy( tr.viewDef->drawSurfs, old, count );
+		tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs] = drawSurf;
+		tr.viewDef->numDrawSurfs++;
+		Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
 	}
-	tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs] = drawSurf;
-	tr.viewDef->numDrawSurfs++;
-	Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
 
 	// process the shader expressions for conditionals / color / texcoords
 	const float	*constRegs = material->ConstantRegisters();
@@ -1259,27 +1259,39 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	}
 
 	if ( gui ) {
-		// force guis on the fast time
+		/*// force guis on the fast time
 		const float oldFloatTime = tr.viewDef->floatTime;
 		const int oldTime = tr.viewDef->renderView.time;
 
 		tr.viewDef->floatTime = game->GetTimeGroupTime( 1 ) * 0.001f;
-		tr.viewDef->renderView.time = game->GetTimeGroupTime( 1 );
+		tr.viewDef->renderView.time = game->GetTimeGroupTime( 1 );*/
 
 		idBounds ndcBounds;
 
 		if ( !R_PreciseCullSurface( drawSurf, ndcBounds ) ) {
-			// did we ever use this to forward an entity color to a gui that didn't set color?
-//			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
-			Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
-			R_RenderGuiSurf( gui, drawSurf );
-			Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
+			if (!deferred) {
+				// did we ever use this to forward an entity color to a gui that didn't set color?
+	//			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
+				Sys_EnterCriticalSection( CRITICAL_SECTION_TWO );
+				R_RenderGuiSurf( gui, drawSurf );
+				Sys_LeaveCriticalSection( CRITICAL_SECTION_TWO );
+			}
+		} else {
+			gui = nullptr;
 		}
-		tr.viewDef->floatTime = oldFloatTime;
-		tr.viewDef->renderView.time = oldTime;
+		/*tr.viewDef->floatTime = oldFloatTime;
+		tr.viewDef->renderView.time = oldTime;*/
 	}
 
 	R_FindSurfaceLights( *drawSurf ); // multi shader data
+
+	if (deferred) {
+		preparedSurf_t *preparedSurf = (preparedSurf_t*)R_FrameAlloc( sizeof(preparedSurf_t) );
+		preparedSurf->surf = drawSurf;
+		preparedSurf->gui = gui;
+		preparedSurf->next = space->preparedSurfs;
+		const_cast<viewEntity_t *>(space)->preparedSurfs = preparedSurf;
+	}
 
 	// we can't add subviews at this point, because that would
 	// increment tr.viewCount, messing up the rest of the surface
@@ -1447,7 +1459,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			}
 
 			// add the surface for drawing
-			R_AddDrawSurf( tri, vEntity, &vEntity->entityDef->parms, shader, vEntity->scissorRect, particle_radius );
+			R_AddDrawSurf( tri, vEntity, &vEntity->entityDef->parms, shader, vEntity->scissorRect, particle_radius, true );
 
 			// ambientViewCount is used to allow light interactions to be rejected
 			// if the ambient surface isn't visible at all
@@ -1499,7 +1511,7 @@ bool R_CullXray( idRenderEntityLocal& def ) {
 	}
 }
 
-void R_AddSingleModel( viewEntity_t* vEntity ) {
+void R_AddSingleModel( viewEntity_t *vEntity ) {
 	idInteraction* inter, * next;
 	idRenderModel* model;
 
@@ -1519,10 +1531,12 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 		// intersect with the portal crossing scissor rectangle
 		vEntity->scissorRect.Intersect( scissorRect );
 
-		if ( r_showEntityScissors.GetBool() ) {
+		if ( r_showEntityScissors.GetBool() && !r_useParallelAddModels.GetBool() ) {
 			R_ShowColoredScreenRect( vEntity->scissorRect, def.index );
 		}
 	}
+
+	/* this time stuff is inherently not thread-safe, but apparently also not used in TDM
 	float oldFloatTime = 0.0f;
 	int oldTime = 0;
 
@@ -1534,7 +1548,7 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 
 		tr.viewDef->floatTime = game->GetTimeGroupTime( def.parms.timeGroup ) * 0.001;
 		tr.viewDef->renderView.time = game->GetTimeGroupTime( def.parms.timeGroup );
-	}
+	}*/
 
 	if ( R_CullXray( def) ) 
 		return;
@@ -1548,10 +1562,10 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 	if ( !vEntity->scissorRect.IsEmpty() || R_HasVisibleShadows( vEntity ) ) {
 		model = R_EntityDefDynamicModel( &def );
 		if ( model == NULL || model->NumSurfaces() <= 0 ) {
-			if ( def.parms.timeGroup ) {
+			/*if ( def.parms.timeGroup ) {
 				tr.viewDef->floatTime = oldFloatTime;
 				tr.viewDef->renderView.time = oldTime;
-			}
+			}*/
 			return;
 		}
 		R_AddAmbientDrawsurfs( vEntity );
@@ -1574,9 +1588,51 @@ void R_AddSingleModel( viewEntity_t* vEntity ) {
 		inter->AddActiveInteraction();
 	}
 
-	if ( def.parms.timeGroup ) {
+	/*if ( def.parms.timeGroup ) {
 		tr.viewDef->floatTime = oldFloatTime;
 		tr.viewDef->renderView.time = oldTime;
+	}*/
+}
+
+void R_AddPreparedSurfaces( viewEntity_t *vEntity ) {
+	for (preparedSurf_t *it = vEntity->preparedSurfs; it; it = it->next) {
+		// bumping this offset each time causes surfaces with equal sort orders to still
+		// deterministically draw in the order they are added
+		tr.sortOffset += 0.000001f;
+		it->surf->sort += 0.000001f;
+		// if it doesn't fit, resize the list
+		if ( tr.viewDef->numDrawSurfs == tr.viewDef->maxDrawSurfs ) {
+			drawSurf_t	**old = tr.viewDef->drawSurfs;
+			int			count;
+
+			if ( tr.viewDef->maxDrawSurfs == 0 ) {
+				tr.viewDef->maxDrawSurfs = INITIAL_DRAWSURFS;
+				count = 0;
+			} else {
+				count = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
+				tr.viewDef->maxDrawSurfs *= 2;
+			}
+			int newSize = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
+			tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( newSize );
+			//memset( tr.viewDef->drawSurfs, -1, newSize );
+			memcpy( tr.viewDef->drawSurfs, old, count );
+		}
+		tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs] = it->surf;
+		tr.viewDef->numDrawSurfs++;
+
+		if (it->gui) {
+			R_RenderGuiSurf( it->gui, it->surf );
+		}
+	}
+	vEntity->preparedSurfs = nullptr;
+	
+	idInteraction *inter, *next;
+	for ( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
+		next = inter->entityNext;
+		if (inter->flagMakeEmpty) {
+			inter->MakeEmpty();
+		}
+		inter->LinkPreparedSurfaces();
 	}
 }
 
@@ -1596,18 +1652,21 @@ void R_AddModelSurfaces( void ) {
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
 
-	// go through each entity that is either visible to the view, or to
-	// any light that intersects the view (for shadows)
 	if ( r_useParallelAddModels.GetBool() ) {
-		for ( viewEntity_t* vEntity = tr.viewDef->viewEntitys; vEntity != NULL; vEntity = vEntity->next ) {
+		for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
 			tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
 		}
 		tr.frontEndJobList->Submit();
 		tr.frontEndJobList->Wait();
-	} else
+	} else {
 		for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
 			R_AddSingleModel( vEntity );
 		}
+	}
+	// actually add prepared surfaces in single-threaded mode since this can't be parallelized due to shared state
+	for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+		R_AddPreparedSurfaces( vEntity );
+	}
 }
 
 REGISTER_PARALLEL_JOB( R_AddSingleModel, "R_AddSingleModel" );
