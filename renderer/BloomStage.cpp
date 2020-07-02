@@ -68,54 +68,30 @@ namespace {
 	};
 
 	void LoadBloomDownsampleShader(GLSLProgram *downsampleShader) {
-		downsampleShader->Init();
-		downsampleShader->AttachVertexShader("bloom.vert.glsl");
-		downsampleShader->AttachFragmentShader("bloom_downsample.frag.glsl");
-		Attributes::Default::Bind(downsampleShader);
-		downsampleShader->Link();
-		downsampleShader->Activate();
+		downsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl" );
 		BloomDownsampleUniforms *uniforms = downsampleShader->GetUniformGroup<BloomDownsampleUniforms>();
 		uniforms->sourceTexture.Set(0);
-		downsampleShader->Deactivate();
 	}
 
 	void LoadBloomDownsampleWithBrightPassShader(GLSLProgram *downsampleShader) {
-		downsampleShader->Init();
-		downsampleShader->AttachVertexShader("bloom.vert.glsl");
 		idDict defines;
 		defines.Set( "BLOOM_BRIGHTPASS", "1" );
-		downsampleShader->AttachFragmentShader("bloom_downsample.frag.glsl", defines);
-		Attributes::Default::Bind(downsampleShader);
-		downsampleShader->Link();
-		downsampleShader->Activate();
+		downsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl", defines );
 		BloomDownsampleUniforms *uniforms = downsampleShader->GetUniformGroup<BloomDownsampleUniforms>();
 		uniforms->sourceTexture.Set(0);
-		downsampleShader->Deactivate();
 	}
 
 	void LoadBloomBlurShader(GLSLProgram *blurShader) {
-		blurShader->Init();
-		blurShader->AttachVertexShader("bloom.vert.glsl");
-		blurShader->AttachFragmentShader("bloom_blur.frag.glsl");
-		Attributes::Default::Bind(blurShader);
-		blurShader->Link();
-		blurShader->Activate();
+		blurShader->InitFromFiles( "bloom.vert.glsl", "bloom_blur.frag.glsl" );
 		BloomBlurUniforms *uniforms = blurShader->GetUniformGroup<BloomBlurUniforms>();
 		uniforms->source.Set(0);
-		blurShader->Deactivate();
 	}
 
 	void LoadBloomUpsampleShader(GLSLProgram *upsampleShader) {
-		upsampleShader->Init();
-		upsampleShader->AttachVertexShader("bloom.vert.glsl");
-		upsampleShader->AttachFragmentShader("bloom_upsample.frag.glsl");
-		Attributes::Default::Bind(upsampleShader);
-		upsampleShader->Link();
-		upsampleShader->Activate();
+		upsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_upsample.frag.glsl" );
 		BloomUpsampleUniforms *uniforms = upsampleShader->GetUniformGroup<BloomUpsampleUniforms>();
 		uniforms->blurredTexture.Set(0);
 		uniforms->detailTexture.Set(1);
-		upsampleShader->Deactivate();
 	}
 
 	int CalculateNumDownsamplingSteps(int imageHeight) {

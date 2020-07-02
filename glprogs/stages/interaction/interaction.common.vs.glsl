@@ -31,6 +31,7 @@ void sendTBN() {
 	var_ViewDirLocal = (params[attr_DrawId].viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
 }
 
+uniform vec3 u_globalLightOrigin;
 out vec3 var_WorldLightDir;
 
 
@@ -62,6 +63,6 @@ void interactionProcessVertex() {
 	var_Color = (attr_Color * params[attr_DrawId].colorModulate) + params[attr_DrawId].colorAdd;
 
 	// light->fragment vector in world coordinates
-	var_WorldLightDir = (params[attr_DrawId].modelMatrix * vec4(attr_Position.xyz - params[attr_DrawId].lightOrigin.xyz, 1)).xyz;
+	var_WorldLightDir = (params[attr_DrawId].modelMatrix * attr_Position).xyz - u_globalLightOrigin;
     var_DrawId = attr_DrawId;
 }

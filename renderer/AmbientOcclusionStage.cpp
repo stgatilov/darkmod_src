@@ -78,27 +78,15 @@ namespace {
 	}
 
 	void LoadSSAOShader(GLSLProgram *ssaoShader) {
-		ssaoShader->Init();
-		ssaoShader->AttachVertexShader("ssao.vert.glsl");
-		ssaoShader->AttachFragmentShader("ssao.frag.glsl");
-		Attributes::Default::Bind(ssaoShader);
-		ssaoShader->Link();
-		ssaoShader->Activate();
+		ssaoShader->InitFromFiles( "ssao.vert.glsl", "ssao.frag.glsl" );
 		AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
 		uniforms->depthTexture.Set(0);
-		ssaoShader->Deactivate();
 	}
 
 	void LoadSSAOBlurShader(GLSLProgram *blurShader) {
-		blurShader->Init();
-		blurShader->AttachVertexShader("ssao.vert.glsl");
-		blurShader->AttachFragmentShader("ssao_blur.frag.glsl");
-		Attributes::Default::Bind(blurShader);
-		blurShader->Link();
-		blurShader->Activate();
+		blurShader->InitFromFiles( "ssao.vert.glsl", "ssao_blur.frag.glsl" );
 		BlurUniforms *uniforms = blurShader->GetUniformGroup<BlurUniforms>();
 		uniforms->source.Set(0);
-		blurShader->Deactivate();
 	}
 
 	void CreateSSAOColorFBO(FrameBuffer *fbo, idImage *color) {

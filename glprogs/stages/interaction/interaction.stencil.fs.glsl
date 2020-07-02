@@ -1,13 +1,7 @@
-#version 140
+#version 330 core
 
 #pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
 
-
-uniform bool	u_shadows;
-uniform int		u_softShadowsQuality;
-uniform float	u_softShadowsRadius;
-uniform vec2	u_renderResolution;
-uniform vec2	u_softShadowsSamples[150];
 uniform usampler2D u_stencilTexture;
 uniform sampler2D u_depthTexture;
 
@@ -16,8 +10,8 @@ in vec3 var_WorldLightDir;
 
 out vec4 FragColor;
 
+vec2 renderResolution = vec2(textureSize(u_depthTexture, 0));
 
-/*
 //returns eye Z coordinate with reversed sign (monotonically increasing with depth)
 float depthToZ(float depth) {
 	float clipZ = 2.0 * depth - 1.0;
@@ -27,7 +21,7 @@ float depthToZ(float depth) {
 }
 
 void StencilSoftShadow() {
-	vec2 texSize = u_renderResolution;
+	vec2 texSize = renderResolution;
 	vec2 pixSize = vec2(1.0, 1.0) / texSize;
 	vec2 baseTC = gl_FragCoord.xy * pixSize;
 
@@ -63,7 +57,7 @@ void StencilSoftShadow() {
 	orthoDirW *= blurRadiusWorld;
 
 	//convert both vectors into clip space (get only X and Y components)
-	mat4 modelViewProjectionMatrix = u_projectionMatrix*u_modelViewMatrix;
+	mat4 modelViewProjectionMatrix = u_projectionMatrix * params[var_DrawId].modelViewMatrix;
 	vec2 alongDir = (mat3(modelViewProjectionMatrix) * alongDirW).xy;
 	vec2 orthoDir = (mat3(modelViewProjectionMatrix) * orthoDirW).xy;
 	//now also get W component from multiplication by gl_ModelViewProjectionMatrix
@@ -117,12 +111,11 @@ void StencilSoftShadow() {
 	}
 	FragColor.rgb *= stencil / sumWeight;
 }
-*/
 
 void main() {
 	fetchDNS();
 	FragColor.rgb = computeInteraction();
-	//if (u_shadows && u_softShadowsQuality > 0)
-	//	StencilSoftShadow();
+	if (u_shadows && u_softShadowsQuality > 0)
+		StencilSoftShadow();
 	FragColor.a = 1.0;
 }

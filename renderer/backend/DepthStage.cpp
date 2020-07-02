@@ -198,39 +198,33 @@ bool DepthStage::ShouldDrawSurf(const drawSurf_t *surf) const {
 }
 
 void DepthStage::DrawSurf( const drawSurf_t *surf ) {
-	/* TODO
-	if ( drawSurf->space->weaponDepthHack ) {
+	if ( surf->space->weaponDepthHack ) {
+		// this is a state change, need to finish any previous calls
+		ExecuteDrawCalls();
 		RB_EnterWeaponDepthHack();
-		GL_CheckErrors();
 	}
-
-	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-		backEnd.currentScissor = drawSurf->scissorRect;
-		FB_ApplyScissor();
-		GL_CheckErrors();
-	}*/
-
-	// render it
 
 	const idMaterial *shader = surf->material;
 
-	/*// set polygon offset if necessary
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
+		// this is a state change, need to finish any previous calls
+		ExecuteDrawCalls();
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
-	}*/
+	}
 
 	CreateDrawCommands( surf );
 
 	// reset polygon offset
-	/*if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
+	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
+		ExecuteDrawCalls();
 		qglDisable( GL_POLYGON_OFFSET_FILL );
-	}*/
+	}
 
-	/*if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
+	if ( surf->space->weaponDepthHack ) {
+		ExecuteDrawCalls();
 		RB_LeaveDepthHack();
-		GL_CheckErrors();
-	}*/
+	}
 }
 
 void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {

@@ -1,4 +1,4 @@
-uniform block {
+uniform ViewParamsBlock {
 	uniform mat4 u_projectionMatrix;
 };
 
@@ -28,4 +28,8 @@ struct ShaderParams {
 
 layout (std140) uniform ShaderParamsBlock {
     ShaderParams params[MAX_SHADER_PARAMS];
+};
+
+layout (std140) uniform ShadowSamplesBlock {
+	vec2 u_softShadowsSamples[150];
 };

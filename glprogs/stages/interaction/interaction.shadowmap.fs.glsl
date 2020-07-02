@@ -1,24 +1,17 @@
-#version 140
+#version 330 core
 #extension GL_ARB_texture_gather: enable
 
-#pragma tdm_include "tdm_interaction.fs.glsl"
-
+#pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
 
 #define STGATILOV_OCCLUDER_SEARCH 1
 #define STGATILOV_USEGATHER 1
 
-uniform bool 	u_shadows;
 uniform bool 	u_shadowMapCullFront;
-uniform int		u_softShadowsQuality;
-uniform float	u_softShadowsRadius;
 uniform vec4	u_shadowRect;
-uniform mat4	u_modelMatrix;
-uniform vec2	u_softShadowsSamples[150];
 uniform sampler2D u_shadowMap;
 in vec3 var_WorldLightDir;
 
 out vec4 fragColor;
-
 
 
 vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
@@ -86,7 +79,7 @@ void UseShadowMap() {
 
 	//get interpolated normal / normal of triangle (using different normal affects near-tangent lighting greatly)
 	//vec3 normal = normalize(cross(dFdx(var_WorldLightDir), dFdy(var_WorldLightDir)));
-	vec3 normal = mat3(u_modelMatrix) * N;//var_TangentBitangentNormalMatrix[2];
+	vec3 normal = mat3(params[var_DrawId].modelMatrix) * N;//var_TangentBitangentNormalMatrix[2];
 	float lightFallAngle = -dot(normal, L);
 
 	//note: choosing normal and how to cap angles is the hardest question for now
@@ -95,7 +88,7 @@ void UseShadowMap() {
 	//some very generic error estimation...
 	float errorMargin = 5.0 * maxAbsL / ( shadowMapResolution * max(lightFallAngle, 0.1) );
 	if(u_shadowMapCullFront)
-	   errorMargin = -errorMargin;
+	   errorMargin *= -.5;
 
 	//process central shadow sample
 	float centerFragZ = maxAbsL;

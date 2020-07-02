@@ -319,9 +319,6 @@ RB_EnterWeaponDepthHack
 ===============
 */
 void RB_EnterWeaponDepthHack() {
-	if (r_useNewBackend.GetBool())
-		return;  // FIXME: this is partially broken, is it even still needed?
-	
 	qglDepthRange( 0.0f, 0.5f );
 
 	float	matrix[16];
@@ -331,6 +328,7 @@ void RB_EnterWeaponDepthHack() {
 	matrix[14] *= 0.25f;
 
 	if ( r_uniformTransforms.GetBool() ) {
+		// FIXME: this part is broken since storing projection matrix in uniform block
 		auto prog = GLSLProgram::GetCurrentProgram();
 		if ( prog ) {
 			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
@@ -349,8 +347,7 @@ RB_EnterModelDepthHack
 ===============
 */
 void RB_EnterModelDepthHack( float depth ) {
-	if (r_useNewBackend.GetBool())
-		return; // FIXME: this is partially broken, is it even still needed?
+	// FIXME: this is completely broken, is it even still needed?
 	
 	qglDepthRange( 0.0f, 1.0f );
 
@@ -379,9 +376,6 @@ RB_LeaveDepthHack
 ===============
 */
 void RB_LeaveDepthHack() {
-	if (r_useNewBackend.GetBool())
-		return;
-	
 	qglDepthRange( 0.0f, 1.0f );
 
 	if ( r_uniformTransforms.GetBool()) {

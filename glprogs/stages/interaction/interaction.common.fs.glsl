@@ -60,6 +60,9 @@ uniform int 	u_cubic;
 uniform int		u_testSpecularFix;	//stgatilov #5044: for testing only!
 uniform int		u_testBumpmapLightTogglingFix;  //stgatilov #4825: for testing only
 
+uniform bool	u_shadows;
+uniform int		u_softShadowsQuality;
+uniform float	u_softShadowsRadius;
 
 // output of fetchDNS
 vec3 RawN, N;
