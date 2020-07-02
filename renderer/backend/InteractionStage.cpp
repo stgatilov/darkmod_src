@@ -25,6 +25,7 @@
 #include "../FrameBuffer.h"
 #include "ShaderParamsBuffer.h"
 #include "../AmbientOcclusionStage.h"
+#include "DrawBatchExecutor.h"
 
 // NOTE: must match struct in shader, beware of std140 layout requirements and alignment!
 struct InteractionStage::ShaderParams {

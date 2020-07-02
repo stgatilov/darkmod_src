@@ -31,16 +31,19 @@ idCVar r_useNewBackend( "r_useNewBackend", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARC
 idCVar r_useBindlessTextures("r_useBindlessTextures", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental bindless texturing to reduce drawcall overhead (if supported by hardware)");
 
 RenderBackend::RenderBackend() 
-	: interactionStage( &shaderParamsBuffer, &drawBatchExecutor )
+	: interactionStage( &shaderParamsBuffer, &drawBatchExecutor ),
+	  stencilShadowStage( &shaderParamsBuffer, &drawBatchExecutor )
 {}
 
 void RenderBackend::Init() {
 	shaderParamsBuffer.Init();
 	drawBatchExecutor.Init();
 	interactionStage.Init();
+	stencilShadowStage.Init();
 }
 
 void RenderBackend::Shutdown() {
+	stencilShadowStage.Shutdown();
 	interactionStage.Shutdown();
 	drawBatchExecutor.Destroy();
 	shaderParamsBuffer.Destroy();
@@ -178,9 +181,8 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 		// no shadows, so no need to read or write the stencil buffer
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
 	}
-	programManager->stencilShadowShader->Activate();
 
-	RB_StencilShadowPass( vLight->globalShadows );
+	stencilShadowStage.DrawStencilShadows( vLight, vLight->globalShadows );
 	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
 		frameBuffers->ResolveShadowStencilAA();
 	}
@@ -193,9 +195,8 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( useShadowFbo ) {
 		frameBuffers->EnterShadowStencil();
 	}
-	programManager->stencilShadowShader->Activate();
 
-	RB_StencilShadowPass( vLight->localShadows );
+	stencilShadowStage.DrawStencilShadows( vLight, vLight->localShadows );
 	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
 		frameBuffers->ResolveShadowStencilAA();
 	}

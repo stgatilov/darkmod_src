@@ -31,6 +31,7 @@ public:
 
 	void BeginBatch(int maxDrawCalls);
 	void AddDrawVertSurf(const drawSurf_t *surf);
+	void AddShadowSurf( const drawSurf_t * surf );
 	void DrawBatch();
 	void Lock();
 
@@ -47,6 +48,7 @@ private:
 
 	uint numVerts = 0;
 	uint numIndexes = 0;
+	bool shadows = false;
 
 	bool ShouldUseMultiDraw() const;
 	void InitDrawIdBuffer();

@@ -70,6 +70,26 @@ void DrawBatchExecutor::AddDrawVertSurf( const drawSurf_t *surf ) {
 	numIndexes += surf->numIndexes;
 }
 
+void DrawBatchExecutor::AddShadowSurf( const drawSurf_t *surf ) {
+	if (currentIndex >= maxDrawCommands) {
+		common->Warning( "Add shadow surf to batch: exceeded allocated draw commands" );
+		return;
+	}
+
+	int idx = currentIndex++;
+	DrawElementsIndirectCommand &cmd = currentCommands[idx];
+	cmd.count = surf->numIndexes;
+	cmd.instanceCount = 1;
+	cmd.firstIndex = surf->indexCache.offset / sizeof(glIndex_t);
+	cmd.baseVertex = surf->shadowCache.offset / sizeof(shadowCache_t);
+	cmd.baseInstance = idx;
+
+	if (surf->frontendGeo)
+		numVerts += surf->frontendGeo->numVerts;
+	numIndexes += surf->numIndexes;
+	shadows = true;
+}
+
 void DrawBatchExecutor::DrawBatch() {
 	int numDrawCalls = currentIndex;
 
@@ -106,10 +126,16 @@ void DrawBatchExecutor::DrawBatch() {
 	maxDrawCommands = 0;
 
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
-		backEnd.pc.c_drawElements += numDrawCalls;
-		backEnd.pc.c_drawIndexes += numIndexes;
-		backEnd.pc.c_drawVertexes += numVerts;
-		backEnd.pc.c_vboIndexes += numIndexes;
+		if (shadows) {
+			backEnd.pc.c_shadowElements += numDrawCalls;
+			backEnd.pc.c_shadowIndexes += numIndexes;
+			backEnd.pc.c_shadowVertexes += numVerts;
+		} else {
+			backEnd.pc.c_drawElements += numDrawCalls;
+			backEnd.pc.c_drawIndexes += numIndexes;
+			backEnd.pc.c_drawVertexes += numVerts;
+			backEnd.pc.c_vboIndexes += numIndexes;
+		}
 	}
 }
 

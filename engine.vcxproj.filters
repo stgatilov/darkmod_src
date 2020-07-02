@@ -1273,6 +1273,9 @@
     <ClInclude Include="renderer\backend\ShaderParamsBuffer.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\StencilShadowStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
     <ClInclude Include="renderer\backend\InteractionStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
@@ -3002,6 +3005,9 @@
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\ShaderParamsBuffer.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\StencilShadowStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\InteractionStage.cpp">

@@ -13,11 +13,11 @@
 
 ******************************************************************************/
 #pragma once
-#include "DrawBatchExecutor.h"
 #include "../tr_local.h"
 
 class GLSLProgram;
 class ShaderParamsBuffer;
+class DrawBatchExecutor;
 
 class InteractionStage {
 public:

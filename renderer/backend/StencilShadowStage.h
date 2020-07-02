@@ -13,37 +13,28 @@
 
 ******************************************************************************/
 #pragma once
-#include "ShaderParamsBuffer.h"
-#include "DrawBatchExecutor.h"
-#include "InteractionStage.h"
-#include "StencilShadowStage.h"
 #include "../tr_local.h"
 
-extern idCVar r_useNewBackend;
-extern idCVar r_useBindlessTextures;
+class ShaderParamsBuffer;
+class DrawBatchExecutor;
 
-class RenderBackend {
+class StencilShadowStage {
 public:
-	RenderBackend();
+	StencilShadowStage( ShaderParamsBuffer *shaderParamsBuffer, DrawBatchExecutor *drawBatchExecutor );
 
 	void Init();
 	void Shutdown();
 
-	void DrawView( const viewDef_t *viewDef );
-
-	void EndFrame();
-
-	bool ShouldUseBindlessTextures() const;
+	void DrawStencilShadows( viewLight_t *vLight, const drawSurf_t *shadowSurfs );
 
 private:
-	ShaderParamsBuffer shaderParamsBuffer;
-	DrawBatchExecutor drawBatchExecutor;
-	InteractionStage interactionStage;
-	StencilShadowStage stencilShadowStage;
+	struct ShaderParams;
 
-	void DrawInteractionsWithShadowMapping( viewLight_t *vLight );
-	void DrawInteractionsWithStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight );
-	void DrawShadowsAndInteractions( const viewDef_t *viewDef );
+	ShaderParamsBuffer *shaderParamsBuffer = nullptr;
+	DrawBatchExecutor *drawBatches = nullptr;
+	GLSLProgram *stencilShadowShader = nullptr;
+
+	int maxSupportedDrawsPerBatch = 0;
+
+	void DrawSurfs(const drawSurf_t **surfs, size_t count);
 };
-
-extern RenderBackend *renderBackend;
