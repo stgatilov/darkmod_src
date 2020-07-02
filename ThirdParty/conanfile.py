@@ -33,6 +33,8 @@ class TdmDepends(ConanFile):
         "platform_name": None,
         # build minizip too (it is part of zlib package)
         "zlib:minizip": True,
+        # enable SSE2 in hash library
+        "BLAKE2:SSE": "SSE2",
     }
 
     # these deps are header-only, hence they don't need per-configuration builds
@@ -51,6 +53,8 @@ class TdmDepends(ConanFile):
         "ffmpeg/4.0.2@thedarkmod/local",
         "openal/1.19.1@thedarkmod/local",
         "vorbis/1.3.6@bincrafters/stable",
+        "fltk/1.3.5@thedarkmod/local",
+        "BLAKE2/master@thedarkmod/local",
     )
     # these deps must be built separately for each configuration (both debug and release)
     # this is required for C++ libs because iterator debugging and runtime differences are not allowed by MSVC
@@ -83,3 +87,8 @@ class TdmDepends(ConanFile):
             # compiled binaries are put under subdirectory named by build settings
             self.copy("*.lib", root_package=name, src="lib"     , dst="artefacts/%s/lib/%s" % (name, platform))
             self.copy("*.a"  , root_package=name, src="lib"     , dst="artefacts/%s/lib/%s" % (name, platform))
+            # while we don't use dynamic libraries, some packages provide useful executables (e.g. FLTK gives fluid.exe)
+            self.copy("*.dll", root_package=name, src="bin"     , dst="artefacts/%s/bin/%s" % (name, platform))
+            self.copy("*.so" , root_package=name, src="bin"     , dst="artefacts/%s/bin/%s" % (name, platform))
+            self.copy("*.exe", root_package=name, src="bin"     , dst="artefacts/%s/bin/%s" % (name, platform))
+            self.copy("*.bin", root_package=name, src="bin"     , dst="artefacts/%s/bin/%s" % (name, platform))
