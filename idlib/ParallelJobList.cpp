@@ -25,8 +25,8 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#pragma hdrstop
 #include "precompiled.h"
+#pragma hdrstop
 #include "ParallelJobList.h"
 
 /*
@@ -1104,9 +1104,7 @@ extern void Sys_CPUCount( int & logicalNum, int & coreNum, int & packageNum );
 //
 // Hyperthreading is not dead yet.  Intel's Core i7 Processor is quad-core with HT for 8 logicals.
 
-// DOOM3: We don't have that many jobs, so just set this fairly low so we don't spin up a ton of idle threads
-#define MAX_JOB_THREADS		8
-#define NUM_JOB_THREADS		"4"
+#define MAX_JOB_THREADS		32
 #define JOB_THREAD_CORES	{	CORE_ANY, CORE_ANY, CORE_ANY, CORE_ANY,	\
 								CORE_ANY, CORE_ANY, CORE_ANY, CORE_ANY,	\
 								CORE_ANY, CORE_ANY, CORE_ANY, CORE_ANY,	\
@@ -1117,7 +1115,7 @@ extern void Sys_CPUCount( int & logicalNum, int & coreNum, int & packageNum );
 								CORE_ANY, CORE_ANY, CORE_ANY, CORE_ANY }
 
 
-idCVar jobs_numThreads( "jobs_numThreads", NUM_JOB_THREADS, CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE, "number of threads used to crunch through jobs", 0, MAX_JOB_THREADS );
+idCVar jobs_numThreads( "jobs_numThreads", "2", CVAR_INTEGER | CVAR_NOCHEAT | CVAR_ARCHIVE, "number of threads used to crunch through jobs", 0, MAX_JOB_THREADS );
 
 class idParallelJobManagerLocal : public idParallelJobManager {
 public:
@@ -1141,11 +1139,14 @@ public:
 
 private:
 	idJobThread						threads[MAX_JOB_THREADS];
+	unsigned int					currentActiveThreads;
 	unsigned int					maxThreads;
 	int								numPhysicalCpuCores;
 	int								numLogicalCpuCores;
 	int								numCpuPackages;
 	idStaticList< idParallelJobList *, MAX_JOBLISTS >	jobLists;
+
+	void							RescaleThreadList();
 };
 
 idParallelJobManagerLocal parallelJobManagerLocal;
@@ -1160,21 +1161,28 @@ void SubmitJobList( idParallelJobList_Threads * jobList, int parallelism ) {
 	parallelJobManagerLocal.Submit( jobList, parallelism );
 }
 
+void idParallelJobManagerLocal::RescaleThreadList() {
+	// on consoles this will have specific cores for the threads, but on PC they will all be CORE_ANY
+	core_t cores[] = JOB_THREAD_CORES;
+	maxThreads = idMath::ClampInt( 0, MAX_JOB_THREADS, jobs_numThreads.GetInteger() );
+	while (currentActiveThreads < maxThreads) {
+		int idx = currentActiveThreads++;
+		threads[idx].Start( cores[idx], idx );
+	}
+	while (currentActiveThreads > maxThreads) {
+		int idx = --currentActiveThreads;
+		threads[idx].StopThread( false );
+	}
+}
+
 /*
 ========================
 idParallelJobManagerLocal::Init
 ========================
 */
 void idParallelJobManagerLocal::Init() {
-	// on consoles this will have specific cores for the threads, but on PC they will all be CORE_ANY
-	core_t cores[] = JOB_THREAD_CORES;
-	assert( sizeof( cores ) / sizeof( cores[0] ) >= MAX_JOB_THREADS );
-
-	for ( int i = 0; i < MAX_JOB_THREADS; i++ ) {
-		threads[i].Start( cores[i], i );
-	}
-	maxThreads = jobs_numThreads.GetInteger();
-
+	currentActiveThreads = 0;
+	RescaleThreadList();
 	Sys_CPUCount( numPhysicalCpuCores, numLogicalCpuCores, numCpuPackages );
 }
 
@@ -1184,9 +1192,10 @@ idParallelJobManagerLocal::Shutdown
 ========================
 */
 void idParallelJobManagerLocal::Shutdown() {
-	for ( int i = 0; i < MAX_JOB_THREADS; i++ ) {
+	for ( int i = 0; i < currentActiveThreads; i++ ) {
 		threads[i].StopThread();
 	}
+	currentActiveThreads = 0;
 }
 
 /*
@@ -1280,24 +1289,15 @@ idParallelJobManagerLocal::Submit
 */
 void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int parallelism ) {
 	if ( jobs_numThreads.IsModified() ) {
-		maxThreads = idMath::ClampInt( 0, MAX_JOB_THREADS, jobs_numThreads.GetInteger() );
+		RescaleThreadList();
 		jobs_numThreads.ClearModified();
 	}
 
 	// determine the number of threads to use
 	int numThreads = maxThreads;
-	if ( parallelism == JOBLIST_PARALLELISM_DEFAULT ) {
-		numThreads = maxThreads;
-	} else if ( parallelism == JOBLIST_PARALLELISM_MAX_CORES ) {
-		numThreads = numLogicalCpuCores;
-	} else if ( parallelism == JOBLIST_PARALLELISM_MAX_THREADS ) {
-		numThreads = MAX_JOB_THREADS;
-	} else if ( parallelism > MAX_JOB_THREADS ) {
-		numThreads = MAX_JOB_THREADS;
-	} else {
-		numThreads = parallelism;
+	if ( parallelism == JOBLIST_PARALLELISM_MAX_CORES ) {
+		numThreads = idMath::ClampInt(0, maxThreads, numLogicalCpuCores);
 	}
-
 	if ( numThreads <= 0 ) {
 		threadJobListState_t state( jobList->GetVersion() );
 		jobList->RunJobs( 0, state, false );
