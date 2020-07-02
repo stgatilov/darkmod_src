@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "GLSLProgram.h"
 #include "GLSLUniforms.h"
 #include <memory>
+
+#include "glsl.h"
 #include "StdString.h"
 #include "Profiling.h"
 
@@ -66,7 +68,12 @@ void GLSLProgram::AttachFragmentShader( const char *sourceFile, const idDict &de
 }
 
 void GLSLProgram::BindAttribLocation( unsigned location, const char *attribName ) {
-		qglBindAttribLocation( program, location, attribName );
+	qglBindAttribLocation( program, location, attribName );
+}
+
+void GLSLProgram::BindUniformBlockLocation( unsigned location, const char *blockName ) {
+	GLuint blockIndex = qglGetUniformBlockIndex( program, blockName );
+	qglUniformBlockBinding( program, blockIndex, location );
 }
 
 bool GLSLProgram::Link() {
@@ -131,6 +138,14 @@ bool GLSLProgram::Validate() {
 		common->Warning( "Validation for program %s failed:\n%s\n", name.c_str(), log.get() );
 	}
 	return result;
+}
+
+void GLSLProgram::InitFromFiles( const char *vertexFile, const char *fragmentFile, const idDict &defines ) {
+	Init();
+	AttachVertexShader( vertexFile, defines );
+	AttachFragmentShader( fragmentFile, defines );
+	Attributes::Default::Bind( this );
+	Link();
 }
 
 void GLSLProgram::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {

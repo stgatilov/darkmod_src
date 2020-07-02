@@ -100,13 +100,14 @@ void DrawBatchExecutor::DrawBatch() {
 		return;		
 	}
 
+	vertexCache.BindIndex();
+
 	if (ShouldUseMultiDraw()) {
 		if (!drawIdVertexEnabled) {
 			drawIdVertexEnabled = true;
 			qglEnableVertexAttribArray( Attributes::Default::DrawId );
 		}
 		drawCommandBuffer.Commit( reinterpret_cast< byte* >( currentCommands ), numDrawCalls * sizeof(DrawElementsIndirectCommand) );
-		vertexCache.BindIndex();
 		qglMultiDrawElementsIndirect(GL_TRIANGLES, GL_INDEX_TYPE, drawCommandBuffer.BufferOffset(currentCommands), numDrawCalls, 0);
 	} else {
 		if (drawIdVertexEnabled) {

@@ -15,6 +15,7 @@
 #pragma once
 #include "ShaderParamsBuffer.h"
 #include "DrawBatchExecutor.h"
+#include "DepthStage.h"
 #include "InteractionStage.h"
 #include "StencilShadowStage.h"
 #include "../tr_local.h"
@@ -38,6 +39,7 @@ public:
 private:
 	ShaderParamsBuffer shaderParamsBuffer;
 	DrawBatchExecutor drawBatchExecutor;
+	DepthStage depthStage;
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;
 

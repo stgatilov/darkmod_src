@@ -36,9 +36,12 @@ public:
 
 	void BindAttribLocation( unsigned int location, const char *attribName );
 	void BindDefaultAttribLocations();
+	void BindUniformBlockLocation( unsigned int location, const char *blockName );
 
 	bool Link();
 	bool Validate();
+
+	void InitFromFiles( const char *vertexFile, const char *fragmentFile, const idDict &defines = idDict() );
 
 	void Activate();
 	static void Deactivate();

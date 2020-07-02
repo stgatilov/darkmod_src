@@ -31,13 +31,15 @@ idCVar r_useNewBackend( "r_useNewBackend", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARC
 idCVar r_useBindlessTextures("r_useBindlessTextures", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental bindless texturing to reduce drawcall overhead (if supported by hardware)");
 
 RenderBackend::RenderBackend() 
-	: interactionStage( &shaderParamsBuffer, &drawBatchExecutor ),
+	: depthStage( &shaderParamsBuffer, &drawBatchExecutor ),
+	  interactionStage( &shaderParamsBuffer, &drawBatchExecutor ),
 	  stencilShadowStage( &shaderParamsBuffer, &drawBatchExecutor )
 {}
 
 void RenderBackend::Init() {
 	shaderParamsBuffer.Init();
 	drawBatchExecutor.Init();
+	depthStage.Init();
 	interactionStage.Init();
 	stencilShadowStage.Init();
 }
@@ -45,6 +47,7 @@ void RenderBackend::Init() {
 void RenderBackend::Shutdown() {
 	stencilShadowStage.Shutdown();
 	interactionStage.Shutdown();
+	depthStage.Shutdown();
 	drawBatchExecutor.Destroy();
 	shaderParamsBuffer.Destroy();
 }
@@ -89,12 +92,10 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	// if we are just doing 2D rendering, no need to fill the depth buffer
 	if ( viewDef->viewEntitys ) {
 		// fill the depth buffer and clear color buffer to black except on subviews
-        void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs );
-		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
+		depthStage.DrawDepth( viewDef, drawSurfs, numDrawSurfs );
 		if( ambientOcclusion->ShouldEnableForCurrentView() ) {
 			ambientOcclusion->ComputeSSAOFromDepth();
 		}
-
 		DrawShadowsAndInteractions( viewDef );
 	}
 		

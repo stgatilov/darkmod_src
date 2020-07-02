@@ -1028,6 +1028,10 @@ static int R_QsortSurfaces( const void *a, const void *b ) {
 	if ( ea->sort > eb->sort ) {
 		return 1;
 	}
+	// sort by material to reduce texture state changes in depth stage
+	if ( ea->material != eb->material ) {
+		return ea->material - eb->material;
+	}
 	return ea->space - eb->space;
 }
 

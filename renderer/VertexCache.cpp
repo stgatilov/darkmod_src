@@ -212,6 +212,17 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 	return ( void * )( size_t )( handle.offset );
 }
 
+void idVertexCache::BindVertex( attribBind_t attrib ) {
+	if (currentVertexBuffer != dynamicData.vertexBuffer.GetAPIObject()) {
+		currentVertexBuffer = dynamicData.vertexBuffer.GetAPIObject();
+		qglBindBuffer( GL_ARRAY_BUFFER, currentVertexBuffer );
+		BindAttributes( 0, attrib );
+	}
+	else if (attrib != currentAttribBinding) {
+		BindAttributes( 0, attrib );
+	}
+}
+
 void idVertexCache::BindIndex() {
 	if (currentIndexBuffer != dynamicData.indexBuffer.GetAPIObject()) {
 		currentIndexBuffer = dynamicData.indexBuffer.GetAPIObject();

@@ -1279,6 +1279,9 @@
     <ClInclude Include="renderer\backend\InteractionStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\DepthStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
     <ClInclude Include="renderer\AmbientOcclusionStage.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -3011,6 +3014,9 @@
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\InteractionStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\DepthStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp">

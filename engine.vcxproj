@@ -465,6 +465,7 @@
     <ClInclude Include="renderer\backend\UniversalGpuBuffer.h" />
     <ClInclude Include="renderer\backend\StencilShadowStage.h" />
     <ClInclude Include="renderer\backend\InteractionStage.h" />
+    <ClInclude Include="renderer\backend\DepthStage.h" />
     <ClInclude Include="renderer\backend\RenderBackend.h" />
     <ClInclude Include="renderer\BufferObject.h" />
     <ClInclude Include="renderer\Cinematic.h" />
@@ -1014,6 +1015,7 @@
     <ClCompile Include="renderer\backend\UniversalGpuBuffer.cpp" />
     <ClCompile Include="renderer\backend\StencilShadowStage.cpp" />
     <ClCompile Include="renderer\backend\InteractionStage.cpp" />
+    <ClCompile Include="renderer\backend\DepthStage.cpp" />
     <ClCompile Include="renderer\backend\RenderBackend.cpp" />
     <ClCompile Include="renderer\BufferObject.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
