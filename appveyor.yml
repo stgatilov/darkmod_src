@@ -1,14 +1,13 @@
-version: 2.07.{build}
+version: 2.09.{build}
 
 image:
-- Visual Studio 2017
+- Visual Studio 2019
 - Ubuntu1804
 
 configuration:
 - Release
 - Debug
 platform:
-- Win32
 - x64
 shallow_clone: true
 
@@ -39,28 +38,17 @@ for:
   install:
   - sh: |
       sudo apt-get update && sudo apt-get -y install mesa-common-dev libxxf86vm-dev libxext-dev
-      if [ $PLATFORM = "Win32" ]; then
-          sudo apt-get -y install g++-multilib libx11-dev:i386 libxxf86vm-dev:i386 libxext-dev:i386
-      fi
 
   build_script:
   - sh: |
       mkdir build
       cd build
-      if [ $PLATFORM = "Win32" ]; then
-          cmake .. -DCMAKE_BUILD_TYPE="${CONFIGURATION}" -DCOPY_EXE=OFF -DCMAKE_TOOLCHAIN_FILE=../sys/cmake/gcc_32bit.cmake
-      else
-          cmake .. -DCMAKE_BUILD_TYPE="${CONFIGURATION}" -DCOPY_EXE=OFF
-      fi
+      cmake .. -DCMAKE_BUILD_TYPE="${CONFIGURATION}" -DCOPY_EXE=OFF
       make -j6
 
   after_build:
   - sh: |
-      if [ $PLATFORM = "Win32" ]; then
-          EXECUTABLE="thedarkmod.x86"
-      else
-          EXECUTABLE="thedarkmod.x64"
-      fi
+      EXECUTABLE="thedarkmod.x64"
       tar -cSvf thedarkmod.tar "${EXECUTABLE}" "../glprogs"
       bzip2 thedarkmod.tar
 
