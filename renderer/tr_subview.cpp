@@ -16,6 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
+#include "Profiling.h"
 #include "tr_local.h"
 #include "../game/Grabber.h"
 
@@ -766,6 +767,8 @@ would change tr.viewCount.
 ================
 */
 bool R_GenerateSubViews( void ) {
+	FRONTEND_PROFILE( "R_GenerateSubViews" )
+
 	drawSurf_t *drawSurf, *skySurf = NULL;
 	int				i;
 	bool			subviews;

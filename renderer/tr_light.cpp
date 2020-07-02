@@ -19,7 +19,8 @@
 #include "../idlib/geometry/sys_intrinsics.h"
 #include "tr_local.h"
 #include "Model_local.h" // Added in #3878 (soft particles) to allow r_AddAmbientDrawSurfs to access info about particles to 
-						 // pass to the backend without bloating the modelSurface_t struct used everywhere. That struct is the only
+#include "Profiling.h"
+// pass to the backend without bloating the modelSurface_t struct used everywhere. That struct is the only
 						 // output of ALL dynamic model updates, and it's a POD (non-initialized), so adding the info to it would 
 						 // mean initializing it, or adding code to every single dynamic model update function. Model_local.h 
 						 // has no #defines and adds no includes of its own, and tr_light.cpp already has sight of DeclParticle.h 
@@ -821,6 +822,8 @@ and the viewEntitys due to game movement
 =================
 */
 void R_AddLightSurfaces( void ) {
+	FRONTEND_PROFILE( "R_AddLightSurfaces" );
+	
 	viewLight_t			*vLight;
 	idRenderLightLocal	*light;
 	viewLight_t			**ptr;
@@ -1648,6 +1651,8 @@ two or more lights.
 ===================
 */
 void R_AddModelSurfaces( void ) {
+	FRONTEND_PROFILE( "R_AddModelSurfaces ")
+	
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
@@ -1677,6 +1682,8 @@ R_RemoveUnecessaryViewLights
 =====================
 */
 void R_RemoveUnecessaryViewLights( void ) {
+	FRONTEND_PROFILE( "R_RemoveUnnecessaryViewLights" )
+
 	viewLight_t		*vLight;
 
 	// go through each visible light

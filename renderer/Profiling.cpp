@@ -18,7 +18,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Profiling.h"
 
 idCVar r_useDebugGroups( "r_useDebugGroups", "0", CVAR_RENDERER | CVAR_BOOL, "Emit GL debug groups during rendering. Useful for frame debugging and analysis with e.g. nSight, which will group render calls accordingly." );
-idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_INTEGER, "Collect profiling information about GPU and CPU time spent in the rendering backend." );
+idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_BOOL, "Collect profiling information about GPU and CPU time spent in the rendering backend." );
+idCVar r_frontendProfiling( "r_frontendProfiling", "0", CVAR_RENDERER| CVAR_BOOL, "Collect profiling information about CPU time spent in the rendering frontend." );
 
 /**
  * Tracks CPU and GPU time spent in profiled sections.
@@ -26,9 +27,9 @@ idCVar r_glProfiling( "r_glProfiling", "0", CVAR_RENDERER | CVAR_INTEGER, "Colle
  * Each section has a name; sections with the same name at the same place in the hierarchy will
  * be accumulated to a single total time in the end.
  */
-class GlProfiler {
+class Profiler {
 public:
-	GlProfiler() : profilingActive(false), lastTimingCopy(0), frameMarker(0), frameNumber(0) {}
+	Profiler(bool gpuTimes) : recordGpuTimes(gpuTimes), profilingActive(false), lastTimingCopy(0), frameMarker(0), frameNumber(0) {}
 
 	void BeginFrame() {
 		++frameNumber;
@@ -96,6 +97,7 @@ public:
 private:
 	static const int NUM_FRAMES = 3;
 
+	bool recordGpuTimes;
 	bool profilingActive;
 	std::vector<section*> sectionStack;
 	section currentTimingInfos;
@@ -122,14 +124,18 @@ private:
 		s->queries.push_back( query() );
 		query &q = s->queries.back();
 		q.cpuStartTime = Sys_GetClockTicks();
-		qglGenQueries( 2, q.glQueries );
-		qglQueryCounter( q.glQueries[ 0 ], GL_TIMESTAMP );
+		if (recordGpuTimes) {
+			qglGenQueries( 2, q.glQueries );
+			qglQueryCounter( q.glQueries[ 0 ], GL_TIMESTAMP );
+		}
 	}
 
 	void CompleteProfilingQuery( section *s ) {
 		query &q = s->queries.back();
 		q.cpuStopTime = Sys_GetClockTicks();
-		qglQueryCounter( q.glQueries[ 1 ], GL_TIMESTAMP );
+		if (recordGpuTimes) {
+			qglQueryCounter( q.glQueries[ 1 ], GL_TIMESTAMP );
+		}
 	}
 
 	void AccumulateTotalTimes( section &s) {
@@ -137,11 +143,13 @@ private:
 		s.count = (int)s.queries.size();
 		for ( auto& q : s.queries ) {
 			s.totalCpuTimeMillis += ( q.cpuStopTime - q.cpuStartTime ) * 1000 / Sys_ClockTicksPerSecond();
+			if (recordGpuTimes) {
 			uint64_t gpuStartNanos, gpuStopNanos;
-			qglGetQueryObjectui64v( q.glQueries[ 0 ], GL_QUERY_RESULT, &gpuStartNanos );
-			qglGetQueryObjectui64v( q.glQueries[ 1 ], GL_QUERY_RESULT, &gpuStopNanos );
-			s.totalGpuTimeMillis += ( gpuStopNanos - gpuStartNanos ) / 1000000.0;
-			qglDeleteQueries( 2, q.glQueries );
+				qglGetQueryObjectui64v( q.glQueries[ 0 ], GL_QUERY_RESULT, &gpuStartNanos );
+				qglGetQueryObjectui64v( q.glQueries[ 1 ], GL_QUERY_RESULT, &gpuStopNanos );
+				s.totalGpuTimeMillis += ( gpuStopNanos - gpuStartNanos ) / 1000000.0;
+				qglDeleteQueries( 2, q.glQueries );
+			}
 		}
 		s.queries.clear();
 
@@ -151,26 +159,35 @@ private:
 	}
 };
 
-GlProfiler glProfiler;
+Profiler glProfilerImpl(true);
+Profiler frontendProfilerImpl(false);
+Profiler *glProfiler = &glProfilerImpl;
+Profiler *frontendProfiler = &frontendProfilerImpl;
 static const int NAME_COLUMN_WIDTH = -40;
 
-void ProfilingEnterSection( const char *section ) {
-	glProfiler.EnterSection( section );
+void ProfilingEnterSection( Profiler *profiler, const char *section ) {
+	profiler->EnterSection( section );
 }
 
-void ProfilingLeaveSection() {
-	glProfiler.LeaveSection();
+void ProfilingLeaveSection( Profiler *profiler ) {
+	profiler->LeaveSection();
 }
 
 void ProfilingBeginFrame() {
 	if( r_glProfiling.GetBool() ) {
-		glProfiler.BeginFrame();
+		glProfiler->BeginFrame();
+	}
+	if( r_frontendProfiling.GetBool() ) {
+		frontendProfiler->BeginFrame();
 	}
 }
 
 void ProfilingEndFrame() {
 	if( r_glProfiling.GetBool() ) {
-		glProfiler.EndFrame();
+		glProfiler->EndFrame();
+	}
+	if( r_frontendProfiling.GetBool() ) {
+		frontendProfiler->EndFrame();
 	}
 }
 
@@ -187,7 +204,7 @@ void ProfilingDrawSingleLine( int &y, const char *text, ... ) {
 	y += SMALLCHAR_HEIGHT + 4;
 }
 
-void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent ) {
+void ProfilingDrawSectionTimings( int &y, Profiler::section &s, idStr indent ) {
 	idStr level = indent + s.name;
 	ProfilingDrawSingleLine( y, "%*s %6d  %6.3f ms  %6.3f ms", NAME_COLUMN_WIDTH, level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
 	for( auto& c : s.children ) {
@@ -196,29 +213,24 @@ void ProfilingDrawSectionTimings( int &y, GlProfiler::section &s, idStr indent )
 }
 
 void ProfilingDrawCurrentTimings() {
-	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
 	int y = 4;
 	ProfilingDrawSingleLine( y, "%*s %6s  %9s  %9s", NAME_COLUMN_WIDTH, "# Section", "Count", "CPU", "GPU" );
-	ProfilingDrawSectionTimings( y, *s, "" );
+	if (r_glProfiling.GetBool()) {
+		Profiler::section *s = glProfiler->GetCurrentTimingInfo();
+		ProfilingDrawSectionTimings( y, *s, "" );
+	}
+	if (r_frontendProfiling.GetBool()) {
+		Profiler::section *s = frontendProfiler->GetCurrentTimingInfo();
+		ProfilingDrawSectionTimings( y, *s, "" );
+	}
 }
 
-void ProfilingPrintSectionTimings( GlProfiler::section &s, idStr indent ) {
+void ProfilingPrintSectionTimings( Profiler::section &s, idStr indent ) {
 	idStr level = indent + s.name;
 	common->Printf( "%*s %6d  %6.3f ms  %6.3f ms\n", NAME_COLUMN_WIDTH, level.c_str(), s.count, s.totalCpuTimeMillis, s.totalGpuTimeMillis );
 	for( auto& c : s.children ) {
 		ProfilingPrintSectionTimings( c, indent + "  " );
 	}
-}
-
-void ProfilingPrintTimings_f( const idCmdArgs &args ) {
-	if( !r_glProfiling.GetBool() ) {
-		common->Printf( "Profiling is not enabled. Enable r_glProfiling." );
-		return;
-	}
-
-	common->Printf( "%*s  %6s  %9s  %9s\n", NAME_COLUMN_WIDTH, "# Section", "Count", "CPU", "GPU" );
-	GlProfiler::section *s = glProfiler.GetCurrentTimingInfo();
-	ProfilingPrintSectionTimings( *s, "" );
 }
 
 void GL_SetDebugLabel(GLenum identifier, GLuint name, const idStr &label ) {

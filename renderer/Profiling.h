@@ -21,15 +21,19 @@
 
 extern idCVar r_useDebugGroups;
 extern idCVar r_glProfiling;
+extern idCVar r_frontendProfiling;
 
-void ProfilingEnterSection( const char* section );
-void ProfilingLeaveSection();
+class Profiler;
+extern Profiler *glProfiler;
+extern Profiler *frontendProfiler;
+
+void ProfilingEnterSection( Profiler *profiler, const char* section );
+void ProfilingLeaveSection( Profiler *profiler );
 
 void ProfilingBeginFrame();
 void ProfilingEndFrame();
 
 void ProfilingDrawCurrentTimings();
-void ProfilingPrintTimings_f( const idCmdArgs &args );
 
 void GL_SetDebugLabel(GLenum identifier, GLuint name, const idStr &label );
 void GL_SetDebugLabel(void *ptr, const idStr &label );
@@ -40,17 +44,31 @@ public:
 		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
 			qglPushDebugGroupKHR( GL_DEBUG_SOURCE_APPLICATION, 1, -1, section );
 		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
-			ProfilingEnterSection( section );
+			ProfilingEnterSection( glProfiler, section );
 	}
 
 	~GlProfileScope() {
 		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
 			qglPopDebugGroupKHR();
 		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
-			ProfilingLeaveSection();
+			ProfilingLeaveSection( glProfiler );
+	}
+};
+
+class FrontendProfileScope {
+public:
+	FrontendProfileScope(const char* section) {
+		if( r_frontendProfiling.GetBool() )
+			ProfilingEnterSection( frontendProfiler, section );
+	}
+
+	~FrontendProfileScope() {
+		if( r_frontendProfiling.GetBool() )
+			ProfilingLeaveSection( frontendProfiler );
 	}
 };
 
 #define GL_PROFILE(section) GlProfileScope __glProfileCurrentScope(section);
+#define FRONTEND_PROFILE(section) FrontendProfileScope __frontendProfileCurrentScope(section);
 
 #endif

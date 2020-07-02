@@ -18,6 +18,7 @@
 
 #include "tr_local.h"
 #include "math.h"
+#include "Profiling.h"
 #ifdef __ppc__
 #include <vecLib/vecLib.h>
 #endif
@@ -1036,6 +1037,8 @@ R_SortDrawSurfs
 =================
 */
 static void R_SortDrawSurfs( void ) {
+	FRONTEND_PROFILE( "R_SortDrawSurfs" )
+
 	if ( !tr.viewDef->numDrawSurfs ) // otherwise an assert fails in debug builds
 		return;
 	// filter the offscreen shadow-only surfaces into a separate array
@@ -1069,6 +1072,8 @@ Parms will typically be allocated with R_FrameAlloc
 ================
 */
 void R_RenderView( viewDef_t &parms ) {
+	FRONTEND_PROFILE( "R_RenderView" )
+	
 	viewDef_t		*oldView;
 
 	if ( parms.renderView.width <= 0 || parms.renderView.height <= 0 ) {
