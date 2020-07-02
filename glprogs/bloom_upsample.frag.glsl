@@ -7,21 +7,20 @@
 
 uniform sampler2D u_blurredTexture;
 uniform sampler2D u_detailTexture;
-uniform int u_mipLevel;
 uniform float u_detailBlendWeight;
 
 in vec2 var_TexCoord;
 out vec4 FragColor;
 
 // sample at half-pixel offsets in the lower mipmap level
-vec2 offset = vec2(0.5, 0.5) / textureSize(u_blurredTexture, u_mipLevel + 1);
+vec2 offset = vec2(0.5, 0.5) / textureSize(u_blurredTexture, 0);
 
 vec4 sampleBlurred(vec2 offset) {
-	return textureLod(u_blurredTexture, var_TexCoord + offset, u_mipLevel + 1);
+	return texture(u_blurredTexture, var_TexCoord + offset);
 }
 
 vec4 sampleDetail() {
-	return textureLod(u_detailTexture, var_TexCoord, u_mipLevel);
+	return texture(u_detailTexture, var_TexCoord);
 }
 
 void main() {

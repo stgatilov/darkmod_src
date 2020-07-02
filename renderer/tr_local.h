@@ -1090,8 +1090,21 @@ void	GL_CheckErrors( void );
 void	GL_ClearStateDelta( void );
 void	GL_State( int stateVector );
 void	GL_Cull( int cullType );
-void	GL_Scissor( int x /* left*/, int y /* bottom */, int w, int h );
-void	GL_Viewport( int x /* left */, int y /* bottom */, int w, int h );
+
+/* Set scissor region in absolute screen coordinates */
+void	GL_ScissorAbsolute( int x /* left*/, int y /* bottom */, int w, int h );
+/* Set scissor region in glConfig vidSize screen coordinates, scaled by current FBO resolution */
+void	GL_ScissorVidSize( int x /* left*/, int y /* bottom */, int w, int h );
+/* Set scissor region in relative coordinates [0,1] */
+void	GL_ScissorRelative( float x /* left*/, float y /* bottom */, float w, float h );
+
+/* Set viewport in absolute screen coordinates */
+void	GL_ViewportAbsolute( int x /* left */, int y /* bottom */, int w, int h );
+/* Set viewport in glConfig vidSize screen coordinates, scaled by current FBO resolution */
+void	GL_ViewportVidSize( int x /* left */, int y /* bottom */, int w, int h );
+/* Set viewport in relative coordinates [0,1] */
+void	GL_ViewportRelative( float x /* left */, float y /* bottom */, float w, float h );
+
 void	GL_SetProjection( float* matrix );
 
 // RAII-style wrapper for qglDepthBoundsEXT

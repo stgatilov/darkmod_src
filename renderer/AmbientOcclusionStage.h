@@ -17,10 +17,10 @@
 
 extern idCVar r_ssao;
 
+class FrameBuffer;
+
 class AmbientOcclusionStage {
 public:
-	AmbientOcclusionStage();
-
 	void Init();
 
 	void Shutdown();
@@ -35,17 +35,17 @@ public:
 
 	static const int MAX_DEPTH_MIPS = 5;
 private:
-	GLuint ssaoFBO;
-	GLuint ssaoBlurFBO;
-	GLuint depthMipFBOs[MAX_DEPTH_MIPS + 1];
-	idImage *viewspaceDepth;
-	idImage *ssaoResult;
-	idImage *ssaoBlurred;
-	GLSLProgram *ssaoShader;
-	GLSLProgram *ssaoBlurShader;
-	GLSLProgram *depthShader;
-	GLSLProgram *depthMipShader;
-	GLSLProgram *showSSAOShader;
+	FrameBuffer *ssaoFBO = nullptr;
+	FrameBuffer *ssaoBlurFBO = nullptr;
+	FrameBuffer *depthMipFBOs[MAX_DEPTH_MIPS + 1] = { nullptr };
+	idImage *viewspaceDepth = nullptr;
+	idImage *ssaoResult = nullptr;
+	idImage *ssaoBlurred = nullptr;
+	GLSLProgram *ssaoShader = nullptr;
+	GLSLProgram *ssaoBlurShader = nullptr;
+	GLSLProgram *depthShader = nullptr;
+	GLSLProgram *depthMipShader = nullptr;
+	GLSLProgram *showSSAOShader = nullptr;
 
 	void PrepareDepthPass();
 	void SSAOPass();

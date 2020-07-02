@@ -184,7 +184,8 @@ public:
 	void		GenerateCubeImage( const byte *pic[6], int size,
 	                               textureFilter_t filter, bool allowDownSize,
 	                               textureDepth_t depth );
-	void		GenerateAttachment( int width, int height, GLint format );
+	void		GenerateAttachment( int width, int height, GLenum format,
+									GLenum filter = GL_LINEAR, GLenum wrapMode = GL_CLAMP_TO_EDGE );
 
 	void		UploadScratch( const byte *pic, int width, int height );
 
@@ -371,7 +372,6 @@ public:
 	idImage *			shadowAtlas;
 	//idImage *			shadowAtlasHistory;
 	idImage *			currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
-	idImage *			shadowStencilFbo;
 
 	//--------------------------------------------------------
 

@@ -156,8 +156,8 @@ void idGLWidget::OnPaint()
 
 	if (!qwglMakeCurrent(dc.m_hDC, win32.hGLRC)) {
 	}
-	GL_Viewport(0, 0, rect.Width(), rect.Height());
-	GL_Scissor(0, 0, rect.Width(), rect.Height());
+	GL_ViewportVidSize(0, 0, rect.Width(), rect.Height());
+	GL_ScissorVidSize(0, 0, rect.Width(), rect.Height());
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadIdentity();
 	qglClearColor (0.4f, 0.4f, 0.4f, 0.7f);
@@ -171,8 +171,8 @@ void idGLWidget::OnPaint()
 	if (drawable) {
 		drawable->draw(1, 1, rect.Width()-1, rect.Height()-1);
 	} else {
-		GL_Viewport(0, 0, rect.Width(), rect.Height());
-		GL_Scissor(0, 0, rect.Width(), rect.Height());
+		GL_ViewportVidSize(0, 0, rect.Width(), rect.Height());
+		GL_ScissorVidSize(0, 0, rect.Width(), rect.Height());
 		qglMatrixMode(GL_PROJECTION);
 		qglLoadIdentity();
 		qglClearColor (0.4f, 0.4f, 0.4f, 0.7f);
@@ -250,8 +250,8 @@ void idGLDrawable::mouseMove(float x, float y) {
 
 void idGLDrawable::draw(int x, int y, int w, int h) {
 	GL_State( GLS_DEFAULT );
-	GL_Viewport(x, y, w, h);
-	GL_Scissor(x, y, w, h);
+	GL_ViewportVidSize(x, y, w, h);
+	GL_ScissorVidSize(x, y, w, h);
 	qglMatrixMode(GL_PROJECTION);
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 	qglClear(GL_COLOR_BUFFER_BIT);
@@ -341,8 +341,8 @@ void idGLDrawableMaterial::mouseMove(float x, float y) {
 void idGLDrawableMaterial::draw(int x, int y, int w, int h) {
 	const idMaterial *mat = material;
 	if (mat) {
-		GL_Viewport(x, y, w, h);
-		GL_Scissor(x, y, w, h);
+		GL_ViewportVidSize(x, y, w, h);
+		GL_ScissorVidSize(x, y, w, h);
 		qglMatrixMode(GL_PROJECTION);
 		qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 		qglClear(GL_COLOR_BUFFER_BIT);
@@ -615,8 +615,8 @@ void idGLDrawableModel::draw(int x, int y, int w, int h) {
 	}
 	rect.Set( x, y, w, h );
 
-	GL_Viewport(x, y, w, h);
-	GL_Scissor(x, y, w, h);
+	GL_ViewportVidSize(x, y, w, h);
+	GL_ScissorVidSize(x, y, w, h);
 	qglMatrixMode(GL_PROJECTION);
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
 	qglClear(GL_COLOR_BUFFER_BIT);
@@ -813,7 +813,7 @@ idGLDrawable::idGLDrawable() {
 void idGLDrawableConsole::draw(int x, int y, int w, int h) {
 	qglPushAttrib( GL_ALL_ATTRIB_BITS );
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
-	GL_Scissor( 0, 0, w, h );
+	GL_ScissorVidSize( 0, 0, w, h );
 	qglClear( GL_COLOR_BUFFER_BIT );
 	renderSystem->BeginFrame( w, h );
 

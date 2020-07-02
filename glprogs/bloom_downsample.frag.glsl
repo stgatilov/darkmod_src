@@ -7,7 +7,6 @@
  */
 
 uniform sampler2D u_sourceTexture;
-uniform int u_sourceMipLevel;
 
 in vec2 var_TexCoord;
 out vec4 FragColor;
@@ -24,12 +23,12 @@ float brightpass(vec3 color) {
 #endif
 
 vec4 sampleTexture(vec2 offset) {
-	return textureLod(u_sourceTexture, var_TexCoord + offset, u_sourceMipLevel);
+	return texture(u_sourceTexture, var_TexCoord + offset);
 }
 
 void main() {
 	// query previous mipmap level by a full-pixel offset (corresponds to half-pixel in our output framebuffer)
-	vec2 offset = vec2(1, 1) / textureSize(u_sourceTexture, u_sourceMipLevel);
+	vec2 offset = vec2(1, 1) / textureSize(u_sourceTexture, 0);
 	vec4 sum = sampleTexture(vec2(0, 0)) * 4;
 	sum += sampleTexture(-offset);
 	sum += sampleTexture(offset);

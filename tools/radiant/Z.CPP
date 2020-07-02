@@ -339,8 +339,8 @@ void Z_Draw(void) {
 	}
 
 	// clear
-	GL_Viewport(0, 0, z.width, z.height);
-	GL_Scissor(0, 0, z.width, z.height);
+	GL_ViewportVidSize(0, 0, z.width, z.height);
+	GL_ScissorVidSize(0, 0, z.width, z.height);
 
 	qglClearColor
 	(

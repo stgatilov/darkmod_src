@@ -955,8 +955,8 @@ void CCamWnd::Cam_Draw() {
 	if (renderMode) {
 		Cam_Render();
 	}
-	GL_Viewport(0, 0, m_Camera.width, m_Camera.height);
-	GL_Scissor(0, 0, m_Camera.width, m_Camera.height);
+	GL_ViewportVidSize(0, 0, m_Camera.width, m_Camera.height);
+	GL_ScissorVidSize(0, 0, m_Camera.width, m_Camera.height);
 	qglClearColor(g_qeglobals.d_savedinfo.colors[COLOR_CAMERABACK][0], g_qeglobals.d_savedinfo.colors[COLOR_CAMERABACK][1], g_qeglobals.d_savedinfo.colors[COLOR_CAMERABACK][2], 0);
 
 	if (!renderMode) {
@@ -2059,7 +2059,7 @@ void CCamWnd::Cam_Render() {
 	// save the editor state
 	//qglPushAttrib( GL_ALL_ATTRIB_BITS );
 	qglClearColor( 0.1f, 0.1f, 0.1f, 0.0f );
-	GL_Scissor( 0, 0, m_Camera.width, m_Camera.height );
+	GL_ScissorVidSize( 0, 0, m_Camera.width, m_Camera.height );
 	qglClear( GL_COLOR_BUFFER_BIT );
 
 	//	qwglSwapBuffers(dc.m_hDC);

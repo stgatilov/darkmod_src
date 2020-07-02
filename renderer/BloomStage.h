@@ -18,6 +18,8 @@
 extern idCVar r_bloom;
 extern idCVar r_bloom_weight;
 
+class FrameBuffer;
+
 class BloomStage {
 public:
 	void Init();
@@ -29,10 +31,10 @@ public:
 
 	static const int MAX_DOWNSAMPLING_STEPS = 16;
 private:
-	GLuint downsampleFBOs[MAX_DOWNSAMPLING_STEPS] = { 0 };
-	GLuint upsampleFBOs[MAX_DOWNSAMPLING_STEPS] = { 0 };
-	idImage *bloomDownSamplers = nullptr;
-	idImage *bloomUpSamplers = nullptr;
+	FrameBuffer *downsampleFBOs[MAX_DOWNSAMPLING_STEPS] = { nullptr };
+	FrameBuffer *upsampleFBOs[MAX_DOWNSAMPLING_STEPS] = { nullptr };
+	idImage *bloomDownSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
+	idImage *bloomUpSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
 	GLSLProgram *downsampleShader = nullptr;
 	GLSLProgram *downsampleWithBrightPassShader = nullptr;
 	GLSLProgram *blurShader = nullptr;

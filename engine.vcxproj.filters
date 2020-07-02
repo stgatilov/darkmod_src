@@ -1264,6 +1264,9 @@
     <ClInclude Include="renderer\BloomStage.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\FrameBufferManager.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2975,6 +2978,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\BloomStage.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\FrameBufferManager.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>

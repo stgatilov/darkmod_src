@@ -23,6 +23,7 @@
 #include "GLSLUniforms.h"
 #include "GLSLProgramManager.h"
 #include "AmbientOcclusionStage.h"
+#include "FrameBufferManager.h"
 
 struct CubemapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( CubemapUniforms );
@@ -308,7 +309,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
-		FB_CopyDepthBuffer();
+		frameBuffers->UpdateCurrentDepthCopy();
 		RB_SetProgramEnvironment();
 	}
 	GLSLProgram::Deactivate();
@@ -786,7 +787,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	// change the scissor if needed
 	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
 		backEnd.currentScissor = surf->scissorRect;
-		GL_Scissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
@@ -910,7 +911,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		// only dump if in a 3d view
 		if ( backEnd.viewDef->viewEntitys ) {
-			FB_CopyColorBuffer();
+			frameBuffers->UpdateCurrentRenderCopy();
 		}
 		backEnd.currentRenderCopied = true;
 	}

@@ -19,6 +19,7 @@
 #include "tr_local.h"
 #include "BloomStage.h"
 #include "AmbientOcclusionStage.h"
+#include "FrameBufferManager.h"
 
 #define	DEFAULT_SIZE		16
 #define	NORMAL_MAP_SIZE		32
@@ -950,9 +951,8 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 	}
 	msaaCheck = 0;
 
-	// SSAO and Bloom FBOs need to be regenerated after their render images have been recreated
-	ambientOcclusion->Shutdown();
-	bloom->Shutdown();
+	// FBOs may need to be recreated since their render textures may have been recreated
+	frameBuffers->PurgeAll();
 }
 
 typedef struct {
@@ -1626,7 +1626,6 @@ void idImageManager::Init() {
 	shadowAtlas = ImageFromFunction( "_shadowAtlas", R_DepthTexture );
 	//shadowAtlasHistory = ImageFromFunction( "_shadowAtlasHistory", R_DepthTexture );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
-	//shadowStencilFbo = ImageFromFunction( "_shadowStencilFbo", R_RGBA8Image ); unused for now
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );

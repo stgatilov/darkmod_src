@@ -468,7 +468,7 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 				parms.height += 2;
 			}
 		}
-		if ( r_useFbo.GetBool() && parms.height != win32.desktopHeight ) {
+		if ( parms.height != win32.desktopHeight ) {
 			glConfig.vidWidth = w = win32.desktopWidth;
 			glConfig.vidHeight = h = win32.desktopHeight;
 			r_customWidth.SetInteger( w );
@@ -585,10 +585,9 @@ GLW_SetFullScreen
 ===================
 */
 static bool GLW_SetFullScreen( glimpParms_t parms ) {
-	if ( r_useFbo.GetBool() ) {
-		win32.cdsFullscreen = true;
-		return true;
-	}
+	win32.cdsFullscreen = true;
+	return true;
+
 	DEVMODE		dm;
 	int			cdsRet;
 	DEVMODE		devmode;
@@ -816,26 +815,21 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 		common->Printf( "%i %i %i %i\n", x, y, w, h );
 	}
 
-	if ( r_useFbo.GetBool() ) { // duzenko #4425: always use desktop resolution when using fbo
-		if ( parms.fullScreen ) {
-			HMONITOR hMonitor = MonitorFromWindow( win32.hWnd, MONITOR_DEFAULTTOPRIMARY );
-			MONITORINFO lpmi;
-			lpmi.cbSize = sizeof( lpmi );
-			if ( GetMonitorInfo( hMonitor, &lpmi ) ) {
-				SetWindowPos( win32.hWnd, 0, lpmi.rcMonitor.left, lpmi.rcMonitor.top,
-				              lpmi.rcMonitor.right - lpmi.rcMonitor.left, lpmi.rcMonitor.bottom - lpmi.rcMonitor.top, SWP_SHOWWINDOW );
-			} else {
-				SetWindowPos( win32.hWnd, 0, 0, 0, win32.desktopWidth, win32.desktopHeight, SWP_SHOWWINDOW );
-			}
+	// duzenko #4425: always use desktop resolution when using fbo
+	if ( parms.fullScreen ) {
+		HMONITOR hMonitor = MonitorFromWindow( win32.hWnd, MONITOR_DEFAULTTOPRIMARY );
+		MONITORINFO lpmi;
+		lpmi.cbSize = sizeof( lpmi );
+		if ( GetMonitorInfo( hMonitor, &lpmi ) ) {
+			SetWindowPos( win32.hWnd, 0, lpmi.rcMonitor.left, lpmi.rcMonitor.top,
+						  lpmi.rcMonitor.right - lpmi.rcMonitor.left, lpmi.rcMonitor.bottom - lpmi.rcMonitor.top, SWP_SHOWWINDOW );
 		} else {
-			SetWindowPos( win32.hWnd, 0, x, y, w, h, SWP_SHOWWINDOW );
+			SetWindowPos( win32.hWnd, 0, 0, 0, win32.desktopWidth, win32.desktopHeight, SWP_SHOWWINDOW );
 		}
-		return true;
 	} else {
-		bool ret = ( ChangeDisplaySettings( &dm, parms.fullScreen ? CDS_FULLSCREEN : 0 ) == DISP_CHANGE_SUCCESSFUL );
-		SetWindowPos( win32.hWnd, parms.fullScreen ? HWND_TOPMOST : HWND_NOTOPMOST, x, y, w, h, parms.fullScreen ? SWP_NOSIZE | SWP_NOMOVE : SWP_SHOWWINDOW );
-		return ret;
+		SetWindowPos( win32.hWnd, 0, x, y, w, h, SWP_SHOWWINDOW );
 	}
+	return true;
 }
 
 /*

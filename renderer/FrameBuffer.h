@@ -28,28 +28,68 @@ If you have questions concerning this license or the applicable additional terms
 
 #pragma once
 
-extern idCVar r_useFbo;
+class FrameBuffer {
+public:
+	using Generator = std::function<void( FrameBuffer* )>;
+
+	// do not use directly, use FrameBufferManager::CreateFromGenerator
+	FrameBuffer(const idStr &name, const Generator &generator);
+	~FrameBuffer();
+
+	void Init(int width, int height, int msaa = 1);
+	void Destroy();
+
+	void AddColorRenderBuffer(int attachment, GLenum format);
+	void AddColorRenderTexture(int attachment, idImage *texture, int mipLevel = 0);
+	void AddDepthStencilRenderBuffer(GLenum format);
+	void AddDepthStencilRenderTexture(idImage *texture);
+	void AddDepthRenderTexture(idImage *texture);
+	void AddStencilRenderTexture(idImage *texture);
+
+	void Validate();
+
+	void Bind();
+	void BindDraw();
+
+	void BlitTo(FrameBuffer *target, GLbitfield mask, GLenum filter = GL_LINEAR);
+
+	int Width() const { return width; }
+	int Height() const { return height; }
+	int MultiSamples() const { return msaa; }
+
+	const char *Name() const { return name.c_str(); }
+
+	static void CreateDefaultFrameBuffer(FrameBuffer *fbo);
+
+	static const int MAX_COLOR_ATTACHMENTS = 8;
+private:
+	idStr name;
+	Generator generator;
+	bool initialized = false;
+
+	GLuint fbo = 0;
+	int width = 0;
+	int height = 0;
+	int msaa = 0;
+
+	GLuint colorRenderBuffers[MAX_COLOR_ATTACHMENTS] = { 0 };
+	GLuint depthRenderBuffer = 0;
+
+	void Generate();
+
+	void AddRenderBuffer(GLuint &buffer, GLenum attachment, GLenum format, const idStr &name);
+	void AddRenderTexture(idImage *texture, GLenum attachment, int mipLevel);
+};
+
 extern idCVar r_showFBO;
 extern idCVar r_fboColorBits;
 extern idCVarBool r_fboSRGB;
 extern idCVar r_fboDepthBits;
-extern idCVar r_fboSharedDepth;
-extern idCVar r_fboSeparateStencil;
-//extern idCVar r_fboResolution;
 extern idCVarInt r_shadowMapSize;
+extern idCVar r_fboResolution;
 
 extern renderCrop_t ShadowAtlasPages[42];
 
-void FB_Clear();
-void FB_CopyColorBuffer();
-void FB_CopyDepthBuffer();
-void FB_CopyRender( const copyRenderCommand_t &cmd );
-void FB_CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer );
-void FB_TogglePrimary( bool on );
-void FB_ToggleShadow( bool on );
-void FB_BindShadowTexture();
-void FB_SelectPrimary( bool force = false );
-void FB_SelectPostProcess();
-void FB_ResolveMultisampling( GLbitfield mask = GL_COLOR_BUFFER_BIT, GLenum filter = GL_NEAREST );
-void FB_ResolveShadowAA();
+void FB_RenderTexture(idImage *texture);
+void FB_DebugShowContents();
 void FB_ApplyScissor();

@@ -269,8 +269,8 @@ void rvGEWorkspace::Render ( HDC hdc )
 
 	// Prepare the view and clear it
 	GL_State( GLS_DEFAULT );
-	GL_Viewport(0, 0, mWindowWidth, mWindowHeight );
-	GL_Scissor(0, 0, mWindowWidth, mWindowHeight );
+	GL_ViewportVidSize(0, 0, mWindowWidth, mWindowHeight );
+	GL_ScissorVidSize(0, 0, mWindowWidth, mWindowHeight );
 	qglClearColor ( 0.75f, 0.75f, 0.75f, 0 );
 
 	qglDisable(GL_DEPTH_TEST);
@@ -325,8 +325,8 @@ void rvGEWorkspace::Render ( HDC hdc )
 //	qglDisable(GL_BLEND);
 	qglDisable(GL_CULL_FACE);
 	
-	GL_Viewport(0, 0, mWindowWidth, mWindowHeight );
-	GL_Scissor(0, 0, mWindowWidth, mWindowHeight );
+	GL_ViewportVidSize(0, 0, mWindowWidth, mWindowHeight );
+	GL_ScissorVidSize(0, 0, mWindowWidth, mWindowHeight );
 	qglMatrixMode(GL_PROJECTION);
 	qglLoadIdentity();
 	qglOrtho(0,mWindowWidth, mWindowHeight, 0, -1, 1);

@@ -466,6 +466,7 @@
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
     <ClInclude Include="renderer\FrameBuffer.h" />
+    <ClInclude Include="renderer\FrameBufferManager.h" />
     <ClInclude Include="renderer\glad.h" />
     <ClInclude Include="renderer\glad_wgl.h" />
     <ClInclude Include="renderer\glsl.h" />
@@ -1013,6 +1014,7 @@
     <ClCompile Include="renderer\draw_glsl_multi.cpp" />
     <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBuffer.cpp" />
+    <ClCompile Include="renderer\FrameBufferManager.cpp" />
     <ClCompile Include="renderer\glad.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>

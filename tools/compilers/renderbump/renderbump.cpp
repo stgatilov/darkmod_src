@@ -1404,7 +1404,7 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 	ResizeWindow( width, height );
 
 	// for small images, the viewport may be less than the minimum window
-	GL_Viewport( 0, 0, width, height );
+	GL_ViewportVidSize( 0, 0, width, height );
 
 	qglEnable( GL_CULL_FACE );
 	qglCullFace( GL_FRONT );

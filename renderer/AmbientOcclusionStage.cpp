@@ -25,6 +25,8 @@
 #include "Profiling.h"
 #include "GLSLUniforms.h"
 #include "glsl.h"
+#include "FrameBufferManager.h"
+#include "FrameBuffer.h"
 
 idCVar r_ssao("r_ssao", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Screen space ambient occlusion: 0 - off, 1 - low, 2 - medium, 3 - high");
 idCVar r_ssao_radius("r_ssao_radius", "32", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE,
@@ -71,6 +73,10 @@ namespace {
 		DEFINE_UNIFORM(int, previousMipLevel)
 	};
 
+	void RenderTexture(idImage *image) {
+		image->type = TT_2D;
+	}
+
 	void LoadSSAOShader(GLSLProgram *ssaoShader) {
 		ssaoShader->Init();
 		ssaoShader->AttachVertexShader("ssao.vert.glsl");
@@ -95,95 +101,70 @@ namespace {
 		blurShader->Deactivate();
 	}
 
-	void CreateSSAOColorBuffer(idImage *image) {
-		image->type = TT_2D;
-		GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth;
-		GLuint curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
-		image->GenerateAttachment(curWidth, curHeight, GL_COLOR);
+	void CreateSSAOColorFBO(FrameBuffer *fbo, idImage *color) {
+		fbo->Init( frameBuffers->renderWidth, frameBuffers->renderHeight );
+		color->GenerateAttachment( frameBuffers->renderWidth, frameBuffers->renderHeight, GL_RGBA8, GL_LINEAR, GL_CLAMP_TO_EDGE );
+		fbo->AddColorRenderTexture( 0, color );
 	}
 
-	void CreateViewspaceDepthBuffer(idImage *image) {
-		image->type = TT_2D;
-		image->uploadWidth = r_fboResolution.GetFloat() * glConfig.vidWidth;
-		image->uploadHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
-		qglGenTextures(1, &image->texnum);
-		qglBindTexture(GL_TEXTURE_2D, image->texnum);
-		for (int i = 0; i <= AmbientOcclusionStage::MAX_DEPTH_MIPS; ++i) {
-			qglTexImage2D(GL_TEXTURE_2D, i, GL_R32F, image->uploadWidth >> i, image->uploadHeight >> i, 0, GL_RED, GL_FLOAT, nullptr);
+	void CreateViewspaceDepthFBO(FrameBuffer *fbo, idImage *image, int mipLevel) {
+		// create texture, if necessary
+		if (image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != frameBuffers->renderWidth || image->uploadHeight != frameBuffers->renderHeight ) {
+			image->PurgeImage();
+			qglGenTextures(1, &image->texnum);
+			image->uploadWidth = frameBuffers->renderWidth;
+			image->uploadHeight = frameBuffers->renderHeight;
+			qglBindTexture(GL_TEXTURE_2D, image->texnum);
+			for (int i = 0; i <= AmbientOcclusionStage::MAX_DEPTH_MIPS; ++i) {
+				qglTexImage2D(GL_TEXTURE_2D, i, GL_R32F, image->uploadWidth >> i, image->uploadHeight >> i, 0, GL_RED, GL_FLOAT, nullptr);
+			}
+			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, AmbientOcclusionStage::MAX_DEPTH_MIPS);
+			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			GL_SetDebugLabel( GL_TEXTURE_2D, image->texnum, image->imgName );
 		}
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, AmbientOcclusionStage::MAX_DEPTH_MIPS);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-		GL_SetDebugLabel(GL_TEXTURE, image->texnum, image->imgName);
-	}
-}
 
-AmbientOcclusionStage::AmbientOcclusionStage() : ssaoFBO(0), ssaoBlurFBO(0),
-		ssaoResult(nullptr), ssaoBlurred(nullptr), viewspaceDepth(nullptr),
-		ssaoShader(nullptr), ssaoBlurShader(nullptr), depthShader(nullptr) {
-	for (int i = 0; i < MAX_DEPTH_MIPS; ++i) {
-		depthMipFBOs[i] = 0;
+		fbo->Init( frameBuffers->renderWidth >> mipLevel, frameBuffers->renderHeight >> mipLevel );
+		fbo->AddColorRenderTexture( 0, image, mipLevel );
 	}
 }
 
 void AmbientOcclusionStage::Init() {
-	ssaoResult = globalImages->ImageFromFunction("SSAO ColorBuffer", CreateSSAOColorBuffer);
-	ssaoResult->ActuallyLoadImage();
-	ssaoBlurred = globalImages->ImageFromFunction("SSAO Blurred", CreateSSAOColorBuffer);
-	ssaoBlurred->ActuallyLoadImage();
-	viewspaceDepth = globalImages->ImageFromFunction("SSAO Depth", CreateViewspaceDepthBuffer);
-	viewspaceDepth->ActuallyLoadImage();
+	ssaoResult = globalImages->ImageFromFunction("SSAO ColorBuffer", RenderTexture);
+	ssaoBlurred = globalImages->ImageFromFunction("SSAO Blurred", RenderTexture);
+	viewspaceDepth = globalImages->ImageFromFunction("SSAO Depth", RenderTexture);
 
-	qglGenFramebuffers(1, &ssaoFBO);
-	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
-	qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoResult->texnum, 0);
-	qglGenFramebuffers(1, &ssaoBlurFBO);
-	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
-	qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBlurred->texnum, 0);
-	qglGenFramebuffers(MAX_DEPTH_MIPS + 1, depthMipFBOs);
+	ssaoFBO = frameBuffers->CreateFromGenerator( "ssao_color", [this](FrameBuffer *fbo) { CreateSSAOColorFBO( fbo, ssaoResult ); } );
+	ssaoBlurFBO = frameBuffers->CreateFromGenerator( "ssao_blurred", [this](FrameBuffer *fbo) { CreateSSAOColorFBO( fbo, ssaoBlurred ); } );
 	for (int i = 0; i <= MAX_DEPTH_MIPS; ++i) {
-		qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
-		qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, viewspaceDepth->texnum, i);
+		depthMipFBOs[i] = frameBuffers->CreateFromGenerator( idStr("ssao_depth_") + i, [this, i](FrameBuffer *fbo) { CreateViewspaceDepthFBO( fbo, viewspaceDepth, i ); } );
 	}
-	qglBindFramebuffer(GL_FRAMEBUFFER, 0);
+	frameBuffers->defaultFbo->Bind();
 
-	ssaoShader = programManager->Find("ssao");
-	if (ssaoShader == nullptr) {
-		ssaoShader = programManager->LoadFromGenerator("ssao", LoadSSAOShader);
-	}
-	ssaoBlurShader = programManager->Find("ssao_blur");
-	if (ssaoBlurShader == nullptr) {
-		ssaoBlurShader = programManager->LoadFromGenerator("ssao_blur", LoadSSAOBlurShader);
-	}
-	depthShader = programManager->Find("ssao_depth");
-	if (depthShader == nullptr) {
-		depthShader = programManager->LoadFromFiles("ssao_depth", "ssao.vert.glsl", "ssao_depth.frag.glsl");
-	}
-	depthMipShader = programManager->Find("ssao_depth_mip");
-	if (depthMipShader == nullptr) {
-		depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "ssao.vert.glsl", "ssao_depthmip.frag.glsl");
-	}
-	showSSAOShader = programManager->Find("ssao_show");
-	if (showSSAOShader == nullptr) {
-		showSSAOShader = programManager->LoadFromFiles("ssao_show", "ssao.vert.glsl", "ssao_show.frag.glsl");
-	}
+	ssaoShader = programManager->LoadFromGenerator("ssao", LoadSSAOShader);
+	ssaoBlurShader = programManager->LoadFromGenerator("ssao_blur", LoadSSAOBlurShader);
+	depthShader = programManager->LoadFromFiles("ssao_depth", "ssao.vert.glsl", "ssao_depth.frag.glsl");
+	depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "ssao.vert.glsl", "ssao_depthmip.frag.glsl");
+	showSSAOShader = programManager->LoadFromFiles("ssao_show", "ssao.vert.glsl", "ssao_show.frag.glsl");
 }
 
 void AmbientOcclusionStage::Shutdown() {
-	if (ssaoFBO != 0) {
-		qglDeleteFramebuffers(1, &ssaoFBO);
-		ssaoFBO = 0;
+	if (ssaoFBO != nullptr) {
+		ssaoFBO->Destroy();
+		ssaoFBO = nullptr;
 	}
-	if (ssaoBlurFBO != 0) {
-		qglDeleteFramebuffers(1, &ssaoBlurFBO);
-		ssaoBlurFBO = 0;
+	if (ssaoBlurFBO != nullptr) {
+		ssaoBlurFBO->Destroy();
+		ssaoBlurFBO = nullptr;
 	}
-	if (depthMipFBOs[0] != 0) {
-		qglDeleteFramebuffers(MAX_DEPTH_MIPS + 1, depthMipFBOs);
-		depthMipFBOs[0] = 0;
+	for (int i = 0; i <= MAX_DEPTH_MIPS; ++i) {
+		if (depthMipFBOs[i] != nullptr) {
+			depthMipFBOs[i]->Destroy();
+			depthMipFBOs[i] = nullptr;
+		}
 	}
 	if (viewspaceDepth != nullptr) {
 		viewspaceDepth->PurgeImage();
@@ -205,29 +186,21 @@ extern bool primaryOn;
 void AmbientOcclusionStage::ComputeSSAOFromDepth() {
 	GL_PROFILE("AmbientOcclusionStage");
 
-	if (ssaoFBO != 0 && (globalImages->currentDepthImage->uploadWidth != ssaoResult->uploadWidth ||
-		globalImages->currentDepthImage->uploadHeight != ssaoResult->uploadHeight)) {
-		// resolution changed, need to recreate our resources
-		Shutdown();
-	}
-
-	if (ssaoFBO == 0) {
+	if (ssaoFBO == nullptr) {
 		Init();
 	}
 
-	qglScissor(0, 0, viewspaceDepth->uploadWidth, viewspaceDepth->uploadHeight);
 	PrepareDepthPass();
 	SSAOPass();
 	BlurPass();
 
-	// FIXME: this is a bit hacky, needs better FBO control
-	qglBindFramebuffer(GL_FRAMEBUFFER, primaryOn ? fboPrimary : 0);
+	frameBuffers->currentRenderFbo->Bind();
 }
 
 void AmbientOcclusionStage::SSAOPass() {
 	GL_PROFILE("SSAOPass");
 
-	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+	ssaoFBO->Bind();
 	qglClearColor(1, 1, 1, 1);
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
@@ -248,7 +221,7 @@ void AmbientOcclusionStage::BlurPass() {
 	uniforms->axis.Set(1, 0);
 
 	// first horizontal pass
-	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+	ssaoBlurFBO->Bind();
 	qglClearColor(1, 1, 1, 1);
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
@@ -257,7 +230,7 @@ void AmbientOcclusionStage::BlurPass() {
 
 	// second vertical pass
 	uniforms->axis.Set(0, 1);
-	qglBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+	ssaoFBO->Bind();
 	qglClear(GL_COLOR_BUFFER_BIT);
 	ssaoBlurred->Bind();
 	RB_DrawFullScreenQuad();
@@ -280,7 +253,8 @@ bool AmbientOcclusionStage::ShouldEnableForCurrentView() const {
 void AmbientOcclusionStage::PrepareDepthPass() {
 	GL_PROFILE("PrepareDepthPass");
 
-	qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[0]);
+	depthMipFBOs[0]->Bind();
+	GL_ScissorRelative( 0, 0, 1, 1 );
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
 	globalImages->currentDepthImage->Bind();
@@ -296,7 +270,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 		uniforms->depth.Set(0);
 		viewspaceDepth->Bind();
 		for (int i = 1; i <= MAX_DEPTH_MIPS; ++i) {
-			qglBindFramebuffer(GL_FRAMEBUFFER, depthMipFBOs[i]);
+			depthMipFBOs[i]->Bind();
 			qglClear(GL_COLOR_BUFFER_BIT);
 			uniforms->previousMipLevel.Set(i - 1);
 			RB_DrawFullScreenQuad();

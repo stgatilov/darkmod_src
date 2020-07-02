@@ -568,73 +568,44 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 }
 
 // FBO attachments need specific setup, rarely changed
-void idImage::GenerateAttachment( int width, int height, GLint format ) {
-	bool changed = ( uploadWidth != width || uploadHeight != height || internalFormat != format );
-	if ( ( format == GL_DEPTH || format == GL_DEPTH_STENCIL ) && r_fboDepthBits.IsModified() ) {
-		changed = true;
-		r_fboDepthBits.ClearModified();
+void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum filter, GLenum wrapMode ) {
+	GLenum dataFormat = GL_RGBA;
+	GLenum dataType = GL_FLOAT;
+	switch ( format ) {
+	case GL_DEPTH32F_STENCIL8:
+		dataFormat = GL_DEPTH_STENCIL;
+		dataType = GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+		break;
+	case GL_DEPTH24_STENCIL8:
+		dataFormat = GL_DEPTH_STENCIL;
+		dataType = GL_UNSIGNED_INT_24_8;
+		break;
+	case GL_DEPTH_COMPONENT32F: case GL_DEPTH_COMPONENT24: case GL_DEPTH_COMPONENT16: case GL_DEPTH_COMPONENT:
+		dataFormat = GL_DEPTH_COMPONENT;
+		break;
+	case GL_RED: case GL_R8: case GL_R16: case GL_R16F: case GL_R32F:
+		dataFormat = GL_RED;
+		break;
+	case GL_RG: case GL_RG8: case GL_RG16: case GL_RG16F: case GL_RG32F:
+		dataFormat = GL_RG;
+		break;
+	case GL_RGB: case GL_RGB8: case GL_RGB16: case GL_RGB16F: case GL_RGB32F:
+		dataFormat = GL_RGB;
+		break;
 	}
-	if ( format == GL_COLOR && r_fboColorBits.IsModified() ) { // IGPs might benefit from reduced color depth
-		changed = true;
-		r_fboColorBits.ClearModified();
-	}
-	if ( !changed && texnum != TEXTURE_NOT_LOADED ) {
-		return;
-	}
-	if ( texnum == TEXTURE_NOT_LOADED ) { // for color textures usually generated elsewhere, but for depth here
+
+	if ( texnum == TEXTURE_NOT_LOADED ) {
 		qglGenTextures( 1, &texnum );
 	}
-	switch ( format ) {
-		case GL_COLOR:
-			filter = TF_LINEAR;
-			break;
-		default:
-			filter = TF_NEAREST;
-	}
 	this->Bind();
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	const GLint colorInternalFormat = r_fboColorBits.GetInteger() == 64 ? GL_RGBA16F : /*glConfig.srgb ? GL_SRGB_ALPHA :*/ r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA;
-	switch ( format ) {
-		case GL_DEPTH_STENCIL:
-			// revert to old behaviour, switches are to specific
-			qglTexImage2D( GL_TEXTURE_2D, 0, ( r_fboDepthBits.GetInteger() == 32 ) ? GL_DEPTH32F_STENCIL8 : GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, 
-											 ( r_fboDepthBits.GetInteger() == 32 ) ? GL_FLOAT_32_UNSIGNED_INT_24_8_REV : GL_UNSIGNED_INT_24_8, nullptr );
-			common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
-			break;
-		case GL_COLOR:
-			qglTexImage2D( GL_TEXTURE_2D, 0, colorInternalFormat, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr );
-			common->Printf( "Generated framebuffer COLOR attachment: %dx%d\n", width, height );
-			break;
-		// these two are for Intel separate stencil optimization
-		case GL_DEPTH:
-			switch ( r_fboDepthBits.GetInteger() ) {
-				case 16:
-					qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-				case 32:
-					qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-				default:
-					qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
-					break;
-			}
-			r_fboDepthBits.ClearModified();
-			common->Printf( "Generated framebuffer DEPTH attachment: %dx%d\n", width, height );
-			break;
-		case GL_STENCIL:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, width, height, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, nullptr );
-			common->Printf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
-			break;
-		case GL_RED:
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr );
-			common->Printf( "Generated framebuffer GL_RED attachment: %dx%d\n", width, height );
-			break;
-		default:
-			common->Error( "Unsupported format in GenerateAttachment\n" );
-	}
+	GL_SetDebugLabel( GL_TEXTURE_2D, texnum, imgName );
+
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter );
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter );
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode );
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode );
+	qglTexImage2D( GL_TEXTURE_2D, 0, format, width, height, 0, dataFormat, dataType, nullptr );
+
 	uploadWidth = width;
 	uploadHeight = height;
 	internalFormat = format;

@@ -3536,8 +3536,8 @@ void CXYWnd::XY_Draw() {
 	m_bDirty = false;
 
 	GL_State( GLS_DEFAULT );
-	GL_Viewport(0, 0, m_nWidth, m_nHeight);
-	GL_Scissor(0, 0, m_nWidth, m_nHeight);
+	GL_ViewportVidSize(0, 0, m_nWidth, m_nHeight);
+	GL_ScissorVidSize(0, 0, m_nWidth, m_nHeight);
 	qglClearColor
 	(
 		g_qeglobals.d_savedinfo.colors[COLOR_GRIDBACK][0],

@@ -254,8 +254,8 @@ void CNewTexWnd::OnPaint() {
 			g_qeglobals.d_savedinfo.colors[COLOR_TEXTUREBACK][2],
 			0
 		);
-		GL_Viewport(0, 0, rectClient.Width(), rectClient.Height());
-		GL_Scissor(0, 0, rectClient.Width(), rectClient.Height());
+		GL_ViewportVidSize(0, 0, rectClient.Width(), rectClient.Height());
+		GL_ScissorVidSize(0, 0, rectClient.Width(), rectClient.Height());
 		qglMatrixMode(GL_PROJECTION);
 		qglLoadIdentity();
 		qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

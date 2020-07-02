@@ -19,6 +19,7 @@
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "Profiling.h"
+#include "FrameBufferManager.h"
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
@@ -633,6 +634,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		double startLoop = Sys_GetClockTicks();
 		session->ActivateFrontend();
 		double endSignal = Sys_GetClockTicks();
+		frameBuffers->BeginFrame();
 		// start the back end up again with the new command list
 		R_IssueRenderCommands( backendFrameData );
 		double endRender = Sys_GetClockTicks();
@@ -947,10 +949,6 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 	R_IssueRenderCommands( frameData );
-
-	if ( !r_useFbo.GetBool() ) {	// duzenko #4425: not applicable, raises gl errors
-		qglReadBuffer( GL_BACK );
-	}
 
 	// calculate pitch of buffer that will be returned by qglReadPixels()
 	int alignment;

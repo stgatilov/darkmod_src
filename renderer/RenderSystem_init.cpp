@@ -22,6 +22,7 @@
 #include "GLSLProgramManager.h"
 #include "AmbientOcclusionStage.h"
 #include "BloomStage.h"
+#include "FrameBufferManager.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -234,14 +235,11 @@ idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
 
 // FBO
-idCVar r_useFbo( "r_useFBO", "1", CVAR_RENDERER | CVAR_BOOL, "Use framebuffer objects" );
 idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-5 individual fbo attachments" );
-idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32, 64" );
+idCVar r_fboColorBits( "r_fboColorBits", "64", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "32, 64" );
 idCVarBool r_fboSRGB( "r_fboSRGB", "0", CVAR_RENDERER | CVAR_ARCHIVE, "Use framebuffer-level gamma correction" );
 idCVar r_fboDepthBits( "r_fboDepthBits", "24", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "16, 24, 32" );
-idCVar r_fboSharedDepth( "r_fboSharedDepth", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "1 = don't copy depth buffer before postprocessing (no effect when multisampling is enabled)" );
 idCVarInt r_shadowMapSize( "r_shadowMapSize", "1024", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Shadow map texture resolution" );
-idCVar r_fboSeparateStencil( "r_fboSeparateStencil", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use separate depth and stencil FBO attachments. Only supported on some Intel GPU's" );
 
 // relocate stgatilov ROQ options
 idCVar r_cinematic_legacyRoq( "r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
@@ -320,12 +318,7 @@ void R_InitOpenGL( void ) {
 		parms.fullScreen = r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
 		parms.stereo = false;
-
-		if ( !r_useFbo.GetBool() ) {
-			parms.multiSamples = r_multiSamples.GetInteger();
-		} else {
-			parms.multiSamples = 0;
-		}
+		parms.multiSamples = 0;
 
 		if ( GLimp_Init( parms ) ) {
 			// it worked
@@ -1618,9 +1611,6 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		// free the context and close the window
 		session->TerminateFrontendThread();
 		vertexCache.Shutdown();
-		FB_Clear();
-		ambientOcclusion->Shutdown();
-		bloom->Shutdown();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 
@@ -1634,6 +1624,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 		// regenerate all images
 		globalImages->ReloadAllImages();
+		frameBuffers->PurgeAll();
 		session->StartFrontendThread();
 	} else {
 		glimpParms_t	parms;
@@ -1641,11 +1632,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.height = glConfig.vidHeight = r_customHeight.GetInteger();
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
-		if ( !r_useFbo.GetBool() ) {
-			parms.multiSamples = r_multiSamples.GetInteger();
-		} else {
-			parms.multiSamples = 0;
-		}
+		parms.multiSamples = 0;
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
 	}
@@ -1818,8 +1805,6 @@ void idRenderSystemLocal::Clear( void ) {
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	takingScreenshot = false;
 	frontEndJobList = NULL;
-	// duzenko #4425 reset fbo
-	FB_Clear();
 }
 
 /*
@@ -1855,6 +1840,7 @@ void idRenderSystemLocal::Init( void ) {
 	R_InitTriSurfData();
 
 	globalImages->Init();
+	frameBuffers->Init();
 	programManager->Init();
 
 	idCinematic::InitCinematic( );
@@ -1893,6 +1879,7 @@ void idRenderSystemLocal::Shutdown( void ) {
 
 	idCinematic::ShutdownCinematic( );
 
+	frameBuffers->Shutdown();
 	globalImages->Shutdown();
 	programManager->Shutdown();
 

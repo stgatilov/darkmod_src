@@ -32,6 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "FrameBuffer.h"
 #include "Profiling.h"
 #include "GLSLProgramManager.h"
+#include "FrameBufferManager.h"
 
 static const uint MAX_LIGHTS = 16;
 
@@ -248,7 +249,7 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 void RB_ShadowMap_RenderAllLights() {
 	GL_PROFILE( "ShadowMap_RenderAllLights" );
 
-	FB_ToggleShadow( true );
+	frameBuffers->EnterShadowMap();
 
 	GL_CheckErrors();
 	shadowShader()->Activate();
@@ -268,7 +269,7 @@ void RB_ShadowMap_RenderAllLights() {
 
 	qglViewport( 0, 0, texSize, texSize );
 	if ( r_useScissor.GetBool() )
-		GL_Scissor( 0, 0, texSize, texSize );
+		GL_ScissorVidSize( 0, 0, texSize, texSize );
 	qglClear( GL_DEPTH_BUFFER_BIT );
 	for ( int i = 0; i < 4; i++ ) // clip the geometry shader output to each of the atlas pages
 		qglEnable( GL_CLIP_PLANE0 + i );
@@ -284,7 +285,7 @@ void RB_ShadowMap_RenderAllLights() {
 	backEnd.currentSpace = NULL; // or else conflicts with qglLoadMatrixf
 	GLSLProgram::Deactivate();
 
-	FB_ToggleShadow( false );
+	frameBuffers->LeaveShadowMap();
 
 	GL_CheckErrors();
 }

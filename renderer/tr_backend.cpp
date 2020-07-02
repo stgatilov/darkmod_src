@@ -18,9 +18,9 @@
 #include "tr_local.h"
 #include "FrameBuffer.h"
 #include "glsl.h"
-#include "GLSLProgramManager.h"
 #include "Profiling.h"
 #include "BloomStage.h"
+#include "FrameBufferManager.h"
 
 backEndState_t	backEnd;
 idCVarBool image_showBackgroundLoads( "image_showBackgroundLoads", "0", CVAR_RENDERER, "1 = print outstanding background loads" );
@@ -65,7 +65,7 @@ void RB_SetDefaultGLState( void ) {
 	//qglShadeModel( GL_SMOOTH );
 
 	if ( r_useScissor.GetBool() ) {
-		GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 
 	GL_CheckErrors();
@@ -482,9 +482,9 @@ This is not used by the normal game paths, just by some tools
 */
 void RB_SetGL2D( void ) {
 	// set 2D virtual screen size
-	GL_Viewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	GL_ViewportVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	if ( r_useScissor.GetBool() ) {
-		GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 	qglMatrixMode( GL_PROJECTION );
 	qglLoadIdentity();
@@ -515,10 +515,6 @@ static void	RB_SetBuffer( const void *data ) {
 
 	backEnd.frameCount = cmd->frameCount;
 
-	if ( !r_useFbo.GetBool() ) { // duzenko #4425: not applicable, raises gl errors
-		qglDrawBuffer( cmd->buffer );
-	}
-
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
 	// that might leave unrendered portions of the screen
@@ -533,7 +529,7 @@ static void	RB_SetBuffer( const void *data ) {
 		} else {
 			qglClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
 		}
-		if ( !r_useFbo.GetBool() || !game->PlayerReady() ) { // duzenko #4425: happens elsewhere for fbo, "Click when ready" skips FBO even with r_useFbo 1
+		if ( !game->PlayerReady() ) {
 			qglClear( GL_COLOR_BUFFER_BIT );
 		}
 	}
@@ -550,10 +546,6 @@ void RB_DumpFramebuffer( const char *fileName ) {
 	renderCrop_t r;
 
 	qglGetIntegerv( GL_VIEWPORT, &r.x );
-
-	if (!r_useFbo.GetBool()) {
-		qglReadBuffer( GL_BACK );
-	}
 
 	// calculate pitch of buffer that will be returned by qglReadPixels()
 	int alignment;
@@ -662,7 +654,7 @@ struct TonemapUniforms : GLSLUniformGroup {
 
 void RB_Tonemap( bloomCommand_t *cmd ) {
 	GL_PROFILE("Tonemap");
-	FB_CopyColorBuffer();
+	frameBuffers->UpdateCurrentRenderCopy();
 
 	if (r_bloom.GetBool()) {
 		bloom->ComputeBloomFromRenderImage();
@@ -675,7 +667,6 @@ void RB_Tonemap( bloomCommand_t *cmd ) {
 	}
 
 	GL_SetProjection( mat4_identity.ToFloatPtr() );
-	FB_SelectPostProcess();
 
 	GL_State( GLS_DEPTHMASK );
 	qglDisable( GL_DEPTH_TEST );
@@ -683,19 +674,11 @@ void RB_Tonemap( bloomCommand_t *cmd ) {
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
 
-	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-	GL_Viewport( 0, 0, w, h );
+	frameBuffers->defaultFbo->BindDraw();
+	GL_ViewportVidSize( 0, 0, w, h );
 
 	if ( cmd->screenRect.IsEmpty() ) {
-		FB_SelectPrimary( true );
-		GL_Viewport( 0, 0, w, h );
-		FB_TogglePrimary( false );
-	}
-
-	if (r_showFBO.GetBool()) {
-	    // FIXME: r_showFBO debug output is handled within FB_TogglePrimary
-	    // and the tonemap here then potentially overwrites/affects its output
-	    return;
+		frameBuffers->LeavePrimary(false);
 	}
 
 	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
@@ -720,10 +703,10 @@ void RB_Tonemap( bloomCommand_t *cmd ) {
 
 	if ( !cmd->screenRect.IsEmpty() ) {
 		auto& r = cmd->screenRect;
-		GL_Scissor( r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1 );
+		GL_ScissorVidSize( r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1 );
 	}
 	RB_DrawFullScreenQuad();
-	GL_Scissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
 	GL_SelectTexture( 0 );
 	tonemap->Deactivate();
@@ -812,7 +795,7 @@ void RB_CopyRender( const void *data ) {
 
 	RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
-	FB_CopyRender( cmd );
+	frameBuffers->CopyRender( cmd );
 }
 
 /*
@@ -850,9 +833,10 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			if ( !backEnd.viewDef->IsLightGem() ) {					// duzenko #4425: create/switch to framebuffer object
 				if ( !fboOff ) {									// don't switch to FBO if bloom or some 2d has happened
 					if ( isv3d ) {
-						FB_TogglePrimary( true );
+						frameBuffers->EnterPrimary();
 					} else {
-						FB_TogglePrimary( false );					// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
+						frameBuffers->LeavePrimary();	// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
+						FB_DebugShowContents();
 						fboOff = true;
 					}
 				}
@@ -875,6 +859,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_BLOOM:
 			RB_Tonemap( (bloomCommand_t*)cmds );
+			FB_DebugShowContents();
 			c_drawBloom++;
 			fboOff = true;
 			break;
@@ -884,7 +869,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content
-			FB_TogglePrimary( false );
+			frameBuffers->LeavePrimary();
 			RB_SwapBuffers( cmds );
 			c_swapBuffers++;
 			break;

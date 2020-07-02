@@ -107,7 +107,6 @@ GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr 
 GLSLProgram * GLSLProgramManager::LoadFromGenerator( const char *name, const Generator &generator ) {
 	programWithGenerator_t *entry = FindEntry( name );
 	if( entry != nullptr ) {
-		common->Warning( "Program %s already exists and is being overwritten.\n", name );
 		entry->generator = generator;
 		if( renderSystem->IsOpenGLRunning() ) {
 			Reload( entry );
