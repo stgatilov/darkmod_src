@@ -72,6 +72,7 @@ public:
 	void			VertexPosition( vertCacheHandle_t handle, attribBind_t attrib = attribBind_t::ATTRIB_REGULAR );
 	void *			IndexPosition( vertCacheHandle_t handle );
 
+	void BindIndex();
 	// if you need to draw something without an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB
 	void			UnbindIndex();
 

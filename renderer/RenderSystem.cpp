@@ -19,6 +19,7 @@
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "Profiling.h"
+#include "backend/RenderBackend.h"
 #include "FrameBufferManager.h"
 
 idRenderSystemLocal	tr;
@@ -637,6 +638,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		frameBuffers->BeginFrame();
 		// start the back end up again with the new command list
 		R_IssueRenderCommands( backendFrameData );
+		renderBackend->EndFrame();
 		double endRender = Sys_GetClockTicks();
 		session->WaitForFrontendCompletion();
 		double endWait = Sys_GetClockTicks();

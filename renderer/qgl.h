@@ -29,6 +29,9 @@
 #define GL_KHR_debug							1	//core since 4.3
 #define GL_ARB_stencil_texturing				1	//core since 4.3
 #define GL_ARB_buffer_storage					1	//single VBO, core since 4.4
+#define GL_ARB_multi_draw_indirect				1	//core since 4.3
+#define GL_ARB_vertex_attrib_binding			1	//core since 4.3
+#define GL_ARB_bindless_texture					1
 #include "glad.h"
 
 #ifdef _WIN32
@@ -57,7 +60,7 @@
 #endif
 
 #define QGL_REQUIRED_VERSION_MAJOR 3
-#define QGL_REQUIRED_VERSION_MINOR 1
+#define QGL_REQUIRED_VERSION_MINOR 3
 
 // Loads all GL/WGL/GLX functions from OpenGL library (using glad-generated loader).
 // Note: no requirements are checked here, run GLimp_CheckRequiredFeatures afterwards.

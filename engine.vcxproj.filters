@@ -139,6 +139,9 @@
     <Filter Include="Tools\Compilers\Particle">
       <UniqueIdentifier>{383ce183-feff-45cb-b59d-fdebabb847fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Backend">
+      <UniqueIdentifier>{26537bda-7135-4d5d-b420-3003aa3a506b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1257,6 +1260,21 @@
     </ClInclude>
     <ClInclude Include="renderer\ImmediateRendering.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\RenderBackend.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\DrawBatchExecutor.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\UniversalGpuBuffer.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\ShaderParamsBuffer.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\InteractionStage.h">
+      <Filter>Renderer\Backend</Filter>
     </ClInclude>
     <ClInclude Include="renderer\AmbientOcclusionStage.h">
       <Filter>Renderer</Filter>
@@ -2973,6 +2991,21 @@
     </ClCompile>
     <ClCompile Include="renderer\ImmediateRendering.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\RenderBackend.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\UniversalGpuBuffer.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ShaderParamsBuffer.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\InteractionStage.cpp">
+      <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp">
       <Filter>Renderer</Filter>

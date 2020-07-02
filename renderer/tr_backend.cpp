@@ -18,6 +18,8 @@
 #include "tr_local.h"
 #include "FrameBuffer.h"
 #include "glsl.h"
+#include "GLSLProgramManager.h"
+#include "backend/RenderBackend.h"
 #include "Profiling.h"
 #include "BloomStage.h"
 #include "FrameBufferManager.h"
@@ -461,6 +463,7 @@ void GL_SetProjection( float* matrix ) {
 		qglLoadMatrixf( matrix );
 		qglMatrixMode( GL_MODELVIEW );
 	} else {
+		qglBindBuffer( GL_UNIFORM_BUFFER, programManager->uboHandle );
 		qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), matrix, GL_DYNAMIC_DRAW );
 	}
 }
@@ -841,7 +844,11 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 					}
 				}
 			}
-			RB_DrawView();
+			if( r_useNewBackend.GetBool() ) {
+				renderBackend->DrawView( backEnd.viewDef );
+			} else {
+				RB_DrawView();
+			}
 			GL_CheckErrors();
 			if ( isv3d ) {
 				c_draw3d++;

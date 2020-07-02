@@ -621,6 +621,7 @@ void Attributes::Default::Bind(GLSLProgram *program) {
 	program->BindAttribLocation(TexCoord, "attr_TexCoord");
 	program->BindAttribLocation(Tangent, "attr_Tangent");
 	program->BindAttribLocation(Bitangent, "attr_Bitangent");
+	program->BindAttribLocation(DrawId, "attr_DrawId");
 }
 
 //I expect this function should be enough for setting up vertex attrib arrays in most cases..

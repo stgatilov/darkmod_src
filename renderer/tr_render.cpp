@@ -20,6 +20,7 @@
 #include "glsl.h"
 #include "FrameBuffer.h"
 #include "GLSLProgramManager.h"
+#include "backend/RenderBackend.h"
 
 #if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
 //#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
@@ -318,6 +319,9 @@ RB_EnterWeaponDepthHack
 ===============
 */
 void RB_EnterWeaponDepthHack() {
+	if (r_useNewBackend.GetBool())
+		return;  // FIXME: this is partially broken, is it even still needed?
+	
 	qglDepthRange( 0.0f, 0.5f );
 
 	float	matrix[16];
@@ -345,6 +349,9 @@ RB_EnterModelDepthHack
 ===============
 */
 void RB_EnterModelDepthHack( float depth ) {
+	if (r_useNewBackend.GetBool())
+		return; // FIXME: this is partially broken, is it even still needed?
+	
 	qglDepthRange( 0.0f, 1.0f );
 
 	float	matrix[16];
@@ -372,6 +379,9 @@ RB_LeaveDepthHack
 ===============
 */
 void RB_LeaveDepthHack() {
+	if (r_useNewBackend.GetBool())
+		return;
+	
 	qglDepthRange( 0.0f, 1.0f );
 
 	if ( r_uniformTransforms.GetBool()) {

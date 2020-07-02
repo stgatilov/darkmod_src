@@ -46,6 +46,7 @@ namespace Attributes {
 			TexCoord  = 8,
 			Tangent	  = 9,
 			Bitangent = 10,
+			DrawId    = 15,
 		};
 		void Bind(GLSLProgram *program);
 		//startOffset is byte offset of first idDrawVert in current VBO

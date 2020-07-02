@@ -22,6 +22,7 @@
 #include "../renderer/FrameBuffer.h"
 #include "../game/gamesys/SysCvar.h"
 #include "../game/Missions/MissionManager.h"
+#include "../renderer/Profiling.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -3212,6 +3213,7 @@ Waits for the frontend to finish preparing the next frame.
 */
 void idSessionLocal::WaitForFrontendCompletion() {
 	if( com_smp.GetBool() ) {
+		GL_PROFILE( "WaitForFrontend" );
 		std::unique_lock<std::mutex> lock( signalMutex );
 		if( r_showSmp.GetBool() )
 			backEnd.pc.waitedFor = frontendActive ? 'F' : '.';

@@ -85,6 +85,7 @@ bool GLSLProgram::Link() {
 		common->Warning( "Linking program %s failed:\n%s\n", name.c_str(), log.get() );
 	}
 
+	SetDefaultUniformBlockBindings();
 	return result;
 }
 
@@ -335,6 +336,19 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 	}
 
 	return shader;
+}
+
+void GLSLProgram::SetDefaultUniformBlockBindings() {
+	GLuint projMatrixBlockIndex = qglGetUniformBlockIndex( program, "block" );	
+	if( projMatrixBlockIndex != GL_INVALID_INDEX ) {
+		common->Printf( "Setting projection matrix uniform block binding for %s\n", name.c_str() );
+		qglUniformBlockBinding( program, projMatrixBlockIndex, 0 );
+	}
+	GLuint shaderParamsBlockIndex = qglGetUniformBlockIndex( program, "ShaderParamsBlock" );
+	if( shaderParamsBlockIndex != GL_INVALID_INDEX ) {
+		common->Printf( "Setting shader params uniform block binding for %s\n", name.c_str() );
+		qglUniformBlockBinding( program, shaderParamsBlockIndex, 1 );
+	}
 }
 
 

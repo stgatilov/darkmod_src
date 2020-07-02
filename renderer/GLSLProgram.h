@@ -79,6 +79,7 @@ private:
 	GLSLUniformGroup *&FindUniformGroup( const std::type_index &type );
 	void LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines );
 	GLuint CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines );
+	void SetDefaultUniformBlockBindings();
 };
 
 #endif

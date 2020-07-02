@@ -256,6 +256,16 @@ public:
 	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
 	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
 	imageLoadState_t	backgroundLoadState;	// state of background loading (usually disabled)
+
+	// START bindless texture support
+private:
+	GLuint64			textureHandle;
+	bool				isGpuResident;
+public:
+	int					lastNeededInFrame;
+	void				MakeResident();
+	void				MakeNonResident();
+	GLuint64			BindlessHandle();
 };
 
 
@@ -395,6 +405,8 @@ public:
 	float				textureLODBias;
 
 	idImage *			imageHashTable[FILE_HASH_SIZE];
+
+	void				MakeUnusedImagesNonResident();
 };
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system

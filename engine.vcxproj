@@ -461,6 +461,10 @@
     <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="renderer\AmbientOcclusionStage.h" />
     <ClInclude Include="renderer\BloomStage.h" />
+    <ClInclude Include="renderer\backend\DrawBatchExecutor.h" />
+    <ClInclude Include="renderer\backend\UniversalGpuBuffer.h" />
+    <ClInclude Include="renderer\backend\InteractionStage.h" />
+    <ClInclude Include="renderer\backend\RenderBackend.h" />
     <ClInclude Include="renderer\BufferObject.h" />
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
@@ -493,6 +497,7 @@
     <ClInclude Include="renderer\RenderSystem.h" />
     <ClInclude Include="renderer\RenderWorld.h" />
     <ClInclude Include="renderer\RenderWorld_local.h" />
+    <ClInclude Include="renderer\backend\ShaderParamsBuffer.h" />
     <ClInclude Include="renderer\simplex.h" />
     <ClInclude Include="renderer\tr_local.h" />
     <ClInclude Include="renderer\VertexCache.h" />
@@ -1004,6 +1009,10 @@
     </ClCompile>
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp" />
     <ClCompile Include="renderer\BloomStage.cpp" />
+    <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp" />
+    <ClCompile Include="renderer\backend\UniversalGpuBuffer.cpp" />
+    <ClCompile Include="renderer\backend\InteractionStage.cpp" />
+    <ClCompile Include="renderer\backend\RenderBackend.cpp" />
     <ClCompile Include="renderer\BufferObject.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\CinematicFFMpeg.cpp" />
@@ -1065,6 +1074,7 @@
     <ClCompile Include="renderer\RenderWorld_demo.cpp" />
     <ClCompile Include="renderer\RenderWorld_load.cpp" />
     <ClCompile Include="renderer\RenderWorld_portals.cpp" />
+    <ClCompile Include="renderer\backend\ShaderParamsBuffer.cpp" />
     <ClCompile Include="renderer\tr_backend.cpp" />
     <ClCompile Include="renderer\tr_deform.cpp" />
     <ClCompile Include="renderer\tr_font.cpp" />

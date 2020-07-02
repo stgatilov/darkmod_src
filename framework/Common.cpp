@@ -23,6 +23,7 @@
 #include "Session_local.h"
 #include "Debug.h"
 #include <iostream>
+#include "../renderer/backend/RenderBackend.h"
 
 #define MAX_WARNING_LIST	256
 
@@ -3105,7 +3106,9 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 	// shut down the event loop
 	eventLoop->Shutdown();
 
+
 	// shut down the renderSystem
+	renderBackend->Shutdown();
 	renderSystem->Shutdown();
 
 	// destroy the i18n manager

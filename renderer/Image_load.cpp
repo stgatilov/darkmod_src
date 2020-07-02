@@ -1366,6 +1366,7 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 	if ( texnum != TEXTURE_NOT_LOADED ) {
 		// sometimes is NULL when exiting with an error
 		if ( qglDeleteTextures ) {
+			MakeNonResident();
 			qglDeleteTextures( 1, &texnum );	// this should be the ONLY place it is ever called!
 		}
 		texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
@@ -1707,4 +1708,51 @@ void idImage::Print() const {
 		storSize /= 1024;
 	}
 	common->Printf( " %s\n", imgName.c_str() );
+}
+
+void idImage::MakeResident() {
+	if (residency & IR_GRAPHICS == 0) {
+		common->Warning( "Trying to make resident a texture that does not reside in GPU memory: %s", imgName.c_str() );
+		return;
+	}
+    lastNeededInFrame = backEnd.frameCount;
+    if (!isGpuResident) {
+		// Bind will try to load the texture, if necessary
+		Bind();
+		if (texnum == TEXTURE_NOT_LOADED || backgroundLoadState != IS_NONE) {
+			common->Warning( "Trying to make a texture resident that isn't loaded: %s", imgName.c_str() );
+			textureHandle = 0;
+			return;
+		}
+
+        isGpuResident = true;
+        textureHandle = qglGetTextureHandleARB(texnum);
+		if (textureHandle == 0) {
+			common->Warning( "Failed to get bindless texture handle: %s", imgName.c_str() );
+			return;
+		}
+        qglMakeTextureHandleResidentARB(textureHandle);
+    }
+}
+
+void idImage::MakeNonResident() {
+    if (isGpuResident) {
+        qglMakeTextureHandleNonResidentARB(textureHandle);
+        isGpuResident = false;
+		textureHandle = 0;
+    }
+}
+
+GLuint64 idImage::BindlessHandle() {
+	if (!isGpuResident) {
+		common->Warning( "Acquiring bindless handle for non-resident texture. Diverting to white image" );
+		globalImages->whiteImage->MakeResident();
+		return globalImages->whiteImage->BindlessHandle();
+	}	
+	if( textureHandle == 0 ) {
+		// acquiring a texture handle failed, so redirect to white image quietly
+		globalImages->whiteImage->MakeResident();
+		return globalImages->whiteImage->BindlessHandle();
+	}
+	return textureHandle;
 }
