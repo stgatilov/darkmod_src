@@ -13,43 +13,92 @@
 
 ******************************************************************************/
 #pragma once
-#include "UniversalGpuBuffer.h"
 #include "../tr_local.h"
+#include "GpuBuffer.h"
 
-struct DrawElementsIndirectCommand {
-    uint count;
-    uint instanceCount;
-    uint firstIndex;
-    uint baseVertex;
-    uint baseInstance;
+template< typename ShaderParams >
+struct DrawBatch {
+    ShaderParams *shaderParams;
+    const drawSurf_t **surfs;
+    uint maxBatchSize;
 };
 
+/**
+ * Use this class to batch draw calls sharing the same GL state together.
+ * Depending on hardware capabilities and active cvars, the batch will be
+ * submitted in a single MultiDrawIndirect call or in separate
+ * DrawElementsBaseVertex calls. To pass draw call parameters to the shader,
+ * the class also manages and provides a UBO that can be filled with the
+ * relevant data.
+ *
+ * To start a batch, call `BeginBatch` with the ShaderParams struct that
+ * represents your UBO params structure. Note that this struct must adhere
+ * to the std140 layout rules specified in the OpenGL specification. You
+ * will receive a DrawBatch struct that contains two arrays - one for your
+ * ShaderParams and one for the drawSurfs to render. For each surf you want
+ * to render, store the drawSurf_t* in batch.surfs[i] and the corresponding
+ * shader parameters in batch.shaderParams[i] (with i < `maxBatchSize`).
+ * Then call `ExecuteDrawVertBatch` or `ExecuteShadowVertBatch`, depending
+ * on what you intend to draw, with the actual number of surfs to draw.
+ */
 class DrawBatchExecutor {
 public:
+	static const GLuint DEFAULT_UBO_INDEX = 1;
+	
 	void Init();
 	void Destroy();
 
-	void BeginBatch(int maxDrawCalls);
-	void AddDrawVertSurf(const drawSurf_t *surf);
-	void AddShadowSurf( const drawSurf_t * surf );
-	void DrawBatch();
-	void Lock();
+	template< typename ShaderParams >
+	DrawBatch<ShaderParams> BeginBatch();
 
-	static const int MAX_DRAW_COMMANDS = 4096;
+	void ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
+	void ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
+
+	void EndFrame();
+
+	template< typename ShaderParams >
+	uint MaxShaderParamsArraySize() const {
+		return maxUniformBlockSize / sizeof( ShaderParams );
+	}
+
 private:
-	UniversalGpuBuffer drawCommandBuffer;
+	static const uint MAX_SHADER_PARAMS_SIZE = 512;
+	
+	GpuBuffer shaderParamsBuffer;
+	GpuBuffer drawCommandBuffer;
 	GLuint drawIdBuffer = 0;
 	bool drawIdVertexEnabled = false;
-	std::vector<DrawElementsIndirectCommand> fallbackBuffer;
-	
-	DrawElementsIndirectCommand *currentCommands = nullptr;
-	uint maxDrawCommands = 0;
-	uint currentIndex = 0;
 
-	uint numVerts = 0;
-	uint numIndexes = 0;
-	bool shadows = false;
+	int maxUniformBlockSize = 0;
+
+	uint maxBatchSize = 0;
+	uint shaderParamsSize = 0;
+
+	idList<const drawSurf_t *> drawSurfs;
 
 	bool ShouldUseMultiDraw() const;
 	void InitDrawIdBuffer();
+
+	uint EnsureAvailableStorageInBuffers( uint shaderParamsSize );
+
+	typedef uint (*BaseVertexFn)(const drawSurf_t *);
+	void ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn );
+	void BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVertexFn );
+	void BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVertexFn );
 };
+
+template<typename ShaderParams>
+DrawBatch<ShaderParams> DrawBatchExecutor::BeginBatch() {
+	static_assert( sizeof(ShaderParams) % 16 == 0,
+		"UBO structs must be 16-byte aligned, use padding if necessary. Be sure to obey the std140 layout rules." );
+	static_assert( sizeof(ShaderParams) <= MAX_SHADER_PARAMS_SIZE,
+		"Struct surpasses assumed max shader params size. Make struct smaller or increase MAX_SHADER_PARAMS_SIZE if necessary");
+
+	shaderParamsSize = sizeof(ShaderParams);
+
+    ::DrawBatch<ShaderParams> drawBatch;
+    drawBatch.maxBatchSize = maxBatchSize = EnsureAvailableStorageInBuffers( sizeof(ShaderParams) );
+    drawBatch.shaderParams = reinterpret_cast<ShaderParams *>( shaderParamsBuffer.CurrentWriteLocation() );
+	drawBatch.surfs = drawSurfs.Ptr();
+    return drawBatch;
+}

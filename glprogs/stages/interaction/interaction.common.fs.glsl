@@ -20,18 +20,18 @@ flat in int var_DrawId;
 
 #ifdef BINDLESS_TEXTURES
 vec4 textureNormal(vec2 uv) {
-    sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
-    return texture(normalTexture, uv);
+	sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
+	return texture(normalTexture, uv);
 }
 
 vec4 textureDiffuse(vec2 uv) {
-    sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
-    return texture(diffuseTexture, uv);
+	sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
+	return texture(diffuseTexture, uv);
 }
 
 vec4 textureSpecular(vec2 uv) {
-    sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
-    return texture(specularTexture, uv);
+	sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
+	return texture(specularTexture, uv);
 }
 #else
 uniform sampler2D u_normalTexture;
@@ -39,15 +39,15 @@ uniform sampler2D u_diffuseTexture;
 uniform sampler2D u_specularTexture;
 
 vec4 textureNormal(vec2 uv) {
-    return texture(u_normalTexture, uv);
+	return texture(u_normalTexture, uv);
 }
 
 vec4 textureDiffuse(vec2 uv) {
-    return texture(u_diffuseTexture, uv);
+	return texture(u_diffuseTexture, uv);
 }
 
 vec4 textureSpecular(vec2 uv) {
-    return texture(u_specularTexture, uv);
+	return texture(u_specularTexture, uv);
 }
 #endif
 
@@ -77,11 +77,11 @@ in vec3 var_LightDirLocal;
 in vec3 var_ViewDirLocal;
 
 void calcNormals() {
-    // compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
+	// compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
 	if (params[var_DrawId].hasTextureDNS[1] != 0) {
 		vec4 bumpTexel = textureNormal( var_TexNormal.st ) * 2. - 1.;
-    	RawN = vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0))); 
-    	N = var_TangentBitangentNormalMatrix * RawN; 
+		RawN = vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0))); 
+		N = var_TangentBitangentNormalMatrix * RawN; 
 	}
 	else {
 		RawN = vec3(0, 0, 1);

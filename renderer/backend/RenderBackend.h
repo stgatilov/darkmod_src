@@ -13,7 +13,6 @@
 
 ******************************************************************************/
 #pragma once
-#include "ShaderParamsBuffer.h"
 #include "DrawBatchExecutor.h"
 #include "DepthStage.h"
 #include "InteractionStage.h"
@@ -37,7 +36,6 @@ public:
 	bool ShouldUseBindlessTextures() const;
 
 private:
-	ShaderParamsBuffer shaderParamsBuffer;
 	DrawBatchExecutor drawBatchExecutor;
 	DepthStage depthStage;
 	InteractionStage interactionStage;

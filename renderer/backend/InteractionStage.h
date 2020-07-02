@@ -14,14 +14,13 @@
 ******************************************************************************/
 #pragma once
 #include "../tr_local.h"
+#include "DrawBatchExecutor.h"
 
 class GLSLProgram;
-class ShaderParamsBuffer;
-class DrawBatchExecutor;
 
 class InteractionStage {
 public:
-	InteractionStage( ShaderParamsBuffer *shaderParamsBuffer, DrawBatchExecutor *drawBatchExecutor );
+	InteractionStage( DrawBatchExecutor *drawBatchExecutor );
 
 	void Init();
 	void Shutdown();
@@ -31,8 +30,7 @@ public:
 private:
 	struct ShaderParams;
 
-	ShaderParamsBuffer *shaderParamsBuffer;
-	DrawBatchExecutor *drawBatches;
+	DrawBatchExecutor *drawBatchExecutor;
 	GLSLProgram *stencilInteractionShader;
 	GLSLProgram *shadowMapInteractionShader;
 	GLSLProgram *ambientInteractionShader;
@@ -40,10 +38,10 @@ private:
 	GLSLProgram *bindlessShadowMapInteractionShader;
 	GLSLProgram *bindlessAmbientInteractionShader;
 	GLSLProgram *interactionShader;
-	ShaderParams *shaderParams;
-	int currentIndex;
+	uint maxShaderParamsArraySize;
 
-	int maxSupportedDrawsPerBatch;
+	DrawBatch<ShaderParams> drawBatch;
+	int currentIndex;
 
 	GLuint poissonSamplesUbo = 0;
 	idList<idVec2> poissonSamples;
@@ -53,7 +51,7 @@ private:
 	void ChooseInteractionProgram( viewLight_t *vLight, bool translucent );
 	void ProcessSingleSurface( viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf );
 	void PrepareDrawCommand( drawInteraction_t * inter );
-	void ResetShaderParams();
+	void BeginDrawBatch();
 	void ExecuteDrawCalls();
 
 	void PreparePoissonSamples();

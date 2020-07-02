@@ -13,12 +13,10 @@
 
 ******************************************************************************/
 #include "precompiled.h"
-#pragma hdrstop
 
 #include "../tr_local.h"
 #include "DepthStage.h"
 #include "RenderBackend.h"
-#include "ShaderParamsBuffer.h"
 #include "../FrameBuffer.h"
 #include "../Profiling.h"
 #include "../glsl.h"
@@ -50,16 +48,14 @@ namespace {
 		shader->BindUniformBlockLocation( 1, "ShaderParamsBlock" );
 	}
 
-	idVec4 CalcScissorParam( const idScreenRect &screenRect ) {
+	void CalcScissorParam( uint32_t scissor[4], const idScreenRect &screenRect ) {
 		float xScale = static_cast<float>(frameBuffers->activeFbo->Width()) / glConfig.vidWidth;
 		float yScale = static_cast<float>(frameBuffers->activeFbo->Height()) / glConfig.vidHeight;
 
-		idVec4 r;
-		r.x = xScale * (backEnd.viewDef->viewport.x1 + screenRect.x1);
-		r.y = yScale * (backEnd.viewDef->viewport.y1 + screenRect.y1);
-		r.z = xScale * (backEnd.viewDef->viewport.x1 + screenRect.x2);
-		r.w = yScale * (backEnd.viewDef->viewport.y1 + screenRect.y2);
-		return r;
+		scissor[0] = xScale * (backEnd.viewDef->viewport.x1 + screenRect.x1);
+		scissor[1] = yScale * (backEnd.viewDef->viewport.y1 + screenRect.y1);
+		scissor[2] = xScale * (screenRect.x2 + 1 - screenRect.x1);
+		scissor[3] = yScale * (screenRect.y2 + 1 - screenRect.y1);
 	}
 }
 
@@ -67,22 +63,23 @@ struct DepthStage::ShaderParams {
 	idMat4 modelViewMatrix;
 	idMat4 textureMatrix;
 	idVec4 color;
-	idVec4 scissor;
-	idVec2 alphaTest;
+	uint32_t scissor[4];
 	uint64_t textureHandle;
+	float alphaTest;
+	float padding;
 };
 
-DepthStage::DepthStage(ShaderParamsBuffer* shaderParamsBuffer, DrawBatchExecutor* drawBatchExecutor)
-	: shaderParamsBuffer(shaderParamsBuffer), drawBatchExecutor(drawBatchExecutor)
+DepthStage::DepthStage( DrawBatchExecutor* drawBatchExecutor )
+	: drawBatchExecutor(drawBatchExecutor)
 {
 }
 
 void DepthStage::Init() {
-	maxSupportedDrawsPerBatch = shaderParamsBuffer->MaxSupportedParamBufferSize<ShaderParams>();
-	depthShader = programManager->LoadFromGenerator( "depth_pass", [=](GLSLProgram *program) { LoadShader(program, maxSupportedDrawsPerBatch, false); } );
+	uint maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
+	depthShader = programManager->LoadFromGenerator( "depth", [=](GLSLProgram *program) { LoadShader(program, maxShaderParamsArraySize, false); } );
 
 	if( GLAD_GL_ARB_bindless_texture ) {
-		depthShaderBindless = programManager->LoadFromGenerator( "depth_bindless", [=](GLSLProgram *program) { LoadShader(program, maxSupportedDrawsPerBatch, true); } );
+		depthShaderBindless = programManager->LoadFromGenerator( "depth_bindless", [=](GLSLProgram *program) { LoadShader(program, maxShaderParamsArraySize, true); } );
 	}
 }
 
@@ -124,7 +121,7 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 
 	vertexCache.BindVertex();
 
-	ResetShaderParams();
+	BeginDrawBatch();
 
 	bool subViewEnabled = false;
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -280,16 +277,16 @@ void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 }
 
 void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage ) {
-	if( stage && !renderBackend->ShouldUseBindlessTextures() && stage->texture.image->texnum != backEnd.glState.tmu[0].current2DMap ) {
+	if( stage && !renderBackend->ShouldUseBindlessTextures() && !stage->texture.image->IsBound( 0 ) ) {
 		ExecuteDrawCalls();
 		stage->texture.image->Bind();
 	}
 
-	ShaderParams &params = shaderParams[currentIndex++];
+	ShaderParams &params = drawBatch.shaderParams[currentIndex];
 
 	memcpy( params.modelViewMatrix.ToFloatPtr(), surf->space->modelViewMatrix, sizeof(idMat4) );
-	params.scissor = CalcScissorParam( surf->scissorRect );
-	params.alphaTest.x = -1.f;
+	CalcScissorParam( params.scissor, surf->scissorRect );
+	params.alphaTest = -1.f;
 
 	if ( surf->material->GetSort() == SS_SUBVIEW ) {
 		// subviews will just down-modulate the color buffer by overbright
@@ -303,7 +300,7 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 	if( stage ) {
 		// set the alpha modulate
 		params.color[3] = surf->shaderRegisters[stage->color.registers[3]];
-		params.alphaTest.x = surf->shaderRegisters[stage->alphaTestRegister];
+		params.alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
 
 		if( renderBackend->ShouldUseBindlessTextures() ) {
 			stage->texture.image->MakeResident();
@@ -317,27 +314,23 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 		}
 	}
 
-	drawBatchExecutor->AddDrawVertSurf( surf );
-	if ( currentIndex == maxSupportedDrawsPerBatch ) {
+	drawBatch.surfs[currentIndex] = surf;
+	++currentIndex;
+	if ( currentIndex == drawBatch.maxBatchSize ) {
 		ExecuteDrawCalls();
 	}
 }
 
-void DepthStage::ResetShaderParams() {
+void DepthStage::BeginDrawBatch() {
 	currentIndex = 0;
-	shaderParams = shaderParamsBuffer->Request<ShaderParams>( maxSupportedDrawsPerBatch );
-	drawBatchExecutor->BeginBatch( maxSupportedDrawsPerBatch );
+	drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
 }
 
 void DepthStage::ExecuteDrawCalls() {
-	int totalDrawCalls = currentIndex;
-	if (totalDrawCalls == 0) {
+	if (currentIndex == 0) {
 		return;
 	}
 
-	shaderParamsBuffer->Commit( shaderParams, totalDrawCalls );
-	shaderParamsBuffer->BindRange( 1, shaderParams, totalDrawCalls );
-	drawBatchExecutor->DrawBatch();
-
-	ResetShaderParams();
+	drawBatchExecutor->ExecuteDrawVertBatch(currentIndex);
+	BeginDrawBatch();
 }

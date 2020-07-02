@@ -10,8 +10,6 @@ in vec3 var_WorldLightDir;
 
 out vec4 FragColor;
 
-vec2 renderResolution = vec2(textureSize(u_depthTexture, 0));
-
 //returns eye Z coordinate with reversed sign (monotonically increasing with depth)
 float depthToZ(float depth) {
 	float clipZ = 2.0 * depth - 1.0;
@@ -21,7 +19,7 @@ float depthToZ(float depth) {
 }
 
 void StencilSoftShadow() {
-	vec2 texSize = renderResolution;
+	vec2 texSize = vec2(textureSize(u_depthTexture, 0));
 	vec2 pixSize = vec2(1.0, 1.0) / texSize;
 	vec2 baseTC = gl_FragCoord.xy * pixSize;
 

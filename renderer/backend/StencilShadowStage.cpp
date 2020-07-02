@@ -14,11 +14,9 @@
 ******************************************************************************/
 
 #include "precompiled.h"
-#pragma hdrstop
 
 #include "StencilShadowStage.h"
 #include "../Profiling.h"
-#include "ShaderParamsBuffer.h"
 #include "DrawBatchExecutor.h"
 #include "../GLSLProgram.h"
 #include "../GLSLProgramManager.h"
@@ -28,16 +26,14 @@ struct StencilShadowStage::ShaderParams {
 	idVec4 localLightOrigin;
 };
 
-StencilShadowStage::StencilShadowStage( ShaderParamsBuffer *shaderParamsBuffer, DrawBatchExecutor *drawBatchExecutor ) {
-	this->shaderParamsBuffer = shaderParamsBuffer;
-	this->drawBatches = drawBatchExecutor;
+StencilShadowStage::StencilShadowStage( DrawBatchExecutor *drawBatchExecutor ) {
+	this->drawBatchExecutor = drawBatchExecutor;
 }
 
 void StencilShadowStage::Init() {
-	maxSupportedDrawsPerBatch = shaderParamsBuffer->MaxSupportedParamBufferSize<ShaderParams>();
 	idDict defines;
-	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt("%d", maxSupportedDrawsPerBatch) );
-	stencilShadowShader = programManager->LoadFromFiles( "shadows_stencil", 
+	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt("%d", drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>()) );
+	stencilShadowShader = programManager->LoadFromFiles( "stencilshadow", 
 		"stages/stencil/stencilshadow.vert.glsl",
 		"stages/stencil/stencilshadow.frag.glsl",
 		defines );
@@ -64,8 +60,8 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 	GL_Cull( CT_TWO_SIDED );
 	stencilShadowShader->Activate();
 
-	std::vector<const drawSurf_t*> depthFailSurfs;
-	std::vector<const drawSurf_t*> depthPassSurfs;
+	idList<const drawSurf_t*> depthFailSurfs;
+	idList<const drawSurf_t*> depthPassSurfs;
 	for (const drawSurf_t *surf = shadowSurfs; surf; surf = surf->nextOnLight) {
 		if (!surf->shadowCache.IsValid()) {
 			continue;
@@ -73,20 +69,20 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 
 		bool external = r_useExternalShadows.GetInteger() && !(surf->dsFlags & DSF_VIEW_INSIDE_SHADOW);
 		if (external) {
-			depthPassSurfs.push_back( surf );
+			depthPassSurfs.AddGrow( surf );
 		} else {
-			depthFailSurfs.push_back( surf );
+			depthFailSurfs.AddGrow( surf );
 		}
 	}
 
 	// draw depth-fail stencil shadows
 	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
 	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
-	DrawSurfs( depthFailSurfs.data(), depthFailSurfs.size() );
+	DrawSurfs( depthFailSurfs.Ptr(), depthFailSurfs.Num() );
 	// draw traditional depth-pass stencil shadows
 	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
 	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
-	DrawSurfs( depthPassSurfs.data(), depthPassSurfs.size() );
+	DrawSurfs( depthPassSurfs.Ptr(), depthPassSurfs.Num() );
 
 	// reset state
 	GL_Cull( CT_FRONT_SIDED );
@@ -108,30 +104,26 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 		return;
 	}
 
-	vertexCache.VertexPosition( surfs[0]->shadowCache, ATTRIB_SHADOW );
+	vertexCache.BindVertex( ATTRIB_SHADOW );
 
-	ShaderParams *paramsBuffer = shaderParamsBuffer->Request<ShaderParams>( maxSupportedDrawsPerBatch );
-	int paramsIdx = 0;
-	drawBatches->BeginBatch( maxSupportedDrawsPerBatch );
+	DrawBatch<ShaderParams> drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
+	uint paramsIdx = 0;
 
 	for (size_t i = 0; i < count; ++i) {
 		const drawSurf_t *surf = surfs[i];
-		ShaderParams &params = paramsBuffer[paramsIdx++];
+		ShaderParams &params = drawBatch.shaderParams[paramsIdx];
 		memcpy( params.modelViewMatrix.ToFloatPtr(), surf->space->modelViewMatrix, sizeof(idMat4) );
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, params.localLightOrigin.ToVec3() );
 		params.localLightOrigin.w = 0.0f;
-		drawBatches->AddShadowSurf( surf );
+		drawBatch.surfs[paramsIdx] = surf;
+		++paramsIdx;
 
-		if (paramsIdx == maxSupportedDrawsPerBatch) {
-			shaderParamsBuffer->Commit( paramsBuffer, paramsIdx );
-			shaderParamsBuffer->BindRange( 1, paramsBuffer, paramsIdx );
-			drawBatches->DrawBatch();
-			paramsBuffer = shaderParamsBuffer->Request<ShaderParams>( maxSupportedDrawsPerBatch );
-			drawBatches->BeginBatch( maxSupportedDrawsPerBatch );
+		if (paramsIdx == drawBatch.maxBatchSize) {
+			drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
+			drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
+			paramsIdx = 0;
 		}
 	}
 
-	shaderParamsBuffer->Commit( paramsBuffer, paramsIdx );
-	shaderParamsBuffer->BindRange( 1, paramsBuffer, paramsIdx );
-	drawBatches->DrawBatch();
+	drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
 }

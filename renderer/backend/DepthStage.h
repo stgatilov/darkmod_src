@@ -14,13 +14,12 @@
 ******************************************************************************/
 #pragma once
 
-class ShaderParamsBuffer;
-class DrawBatchExecutor;
+#include "DrawBatchExecutor.h"
 
 class DepthStage
 {
 public:
-	DepthStage( ShaderParamsBuffer *shaderParamsBuffer, DrawBatchExecutor *drawBatchExecutor );
+	DepthStage( DrawBatchExecutor *drawBatchExecutor );
 
 	void Init();
 	void Shutdown();
@@ -30,21 +29,18 @@ public:
 private:
 	struct ShaderParams;
 
-	ShaderParamsBuffer *shaderParamsBuffer;
 	DrawBatchExecutor *drawBatchExecutor;
 	GLSLProgram *depthShader = nullptr;
 	GLSLProgram *depthShaderBindless = nullptr;
 
-	int maxSupportedDrawsPerBatch = 0;
-
-	int currentIndex = 0;
-	ShaderParams *shaderParams;
+	uint currentIndex = 0;
+	DrawBatch<ShaderParams> drawBatch;
 
 	bool ShouldDrawSurf( const drawSurf_t *surf ) const;
 	void DrawSurf( const drawSurf_t * drawSurf );
 	void CreateDrawCommands( const drawSurf_t *surf );
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );
 
-	void ResetShaderParams();
+	void BeginDrawBatch();
 	void ExecuteDrawCalls();
 };

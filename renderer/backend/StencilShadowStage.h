@@ -14,13 +14,11 @@
 ******************************************************************************/
 #pragma once
 #include "../tr_local.h"
-
-class ShaderParamsBuffer;
-class DrawBatchExecutor;
+#include "DrawBatchExecutor.h"
 
 class StencilShadowStage {
 public:
-	StencilShadowStage( ShaderParamsBuffer *shaderParamsBuffer, DrawBatchExecutor *drawBatchExecutor );
+	StencilShadowStage( DrawBatchExecutor *drawBatchExecutor );
 
 	void Init();
 	void Shutdown();
@@ -30,11 +28,8 @@ public:
 private:
 	struct ShaderParams;
 
-	ShaderParamsBuffer *shaderParamsBuffer = nullptr;
-	DrawBatchExecutor *drawBatches = nullptr;
+	DrawBatchExecutor *drawBatchExecutor = nullptr;
 	GLSLProgram *stencilShadowShader = nullptr;
-
-	int maxSupportedDrawsPerBatch = 0;
 
 	void DrawSurfs(const drawSurf_t **surfs, size_t count);
 };

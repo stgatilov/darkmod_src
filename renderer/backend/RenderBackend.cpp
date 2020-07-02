@@ -21,7 +21,6 @@
 #include "../AmbientOcclusionStage.h"
 #include "../Profiling.h"
 #include "../GLSLProgram.h"
-#include "../GLSLProgramManager.h"
 #include "../FrameBufferManager.h"
 
 RenderBackend renderBackendImpl;
@@ -31,13 +30,12 @@ idCVar r_useNewBackend( "r_useNewBackend", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARC
 idCVar r_useBindlessTextures("r_useBindlessTextures", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental bindless texturing to reduce drawcall overhead (if supported by hardware)");
 
 RenderBackend::RenderBackend() 
-	: depthStage( &shaderParamsBuffer, &drawBatchExecutor ),
-	  interactionStage( &shaderParamsBuffer, &drawBatchExecutor ),
-	  stencilShadowStage( &shaderParamsBuffer, &drawBatchExecutor )
+	: depthStage( &drawBatchExecutor ),
+	  interactionStage( &drawBatchExecutor ),
+	  stencilShadowStage( &drawBatchExecutor )
 {}
 
 void RenderBackend::Init() {
-	shaderParamsBuffer.Init();
 	drawBatchExecutor.Init();
 	depthStage.Init();
 	interactionStage.Init();
@@ -49,7 +47,6 @@ void RenderBackend::Shutdown() {
 	interactionStage.Shutdown();
 	depthStage.Shutdown();
 	drawBatchExecutor.Destroy();
-	shaderParamsBuffer.Destroy();
 }
 
 void RenderBackend::DrawView( const viewDef_t *viewDef ) {
@@ -104,7 +101,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
 	// fog and blend lights
-	void RB_STD_FogAllLights( bool translucent );
+	extern void RB_STD_FogAllLights( bool translucent );
 	RB_STD_FogAllLights( false );
 
 	// refresh fog and blend status 
@@ -127,8 +124,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 }
 
 void RenderBackend::EndFrame() {
-	shaderParamsBuffer.Lock();
-	drawBatchExecutor.Lock();
+	drawBatchExecutor.EndFrame();
 	if (GLAD_GL_ARB_bindless_texture) {
 		globalImages->MakeUnusedImagesNonResident();
 	}
@@ -139,14 +135,14 @@ bool RenderBackend::ShouldUseBindlessTextures() const {
 }
 
 void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
-	void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false );
+	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
 
 	GL_PROFILE( "DrawLight_ShadowMap" );
 
 	if ( vLight->lightShader->LightCastsShadows() ) {
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalInteractions, true );
 		interactionStage.DrawInteractions( vLight, vLight->localInteractions );
-		RB_GLSL_DrawInteractions_ShadowMap( vLight->localInteractions );
+		RB_GLSL_DrawInteractions_ShadowMap( vLight->localInteractions, false );
 	} else {
 		interactionStage.DrawInteractions( vLight, vLight->localInteractions );
 	}
@@ -217,7 +213,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		if ( r_shadowMapSinglePass.GetBool() ) {
-			void RB_ShadowMap_RenderAllLights();
+			extern void RB_ShadowMap_RenderAllLights();
 			RB_ShadowMap_RenderAllLights();
 		}
 	}

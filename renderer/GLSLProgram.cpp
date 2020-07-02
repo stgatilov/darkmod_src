@@ -73,7 +73,9 @@ void GLSLProgram::BindAttribLocation( unsigned location, const char *attribName 
 
 void GLSLProgram::BindUniformBlockLocation( unsigned location, const char *blockName ) {
 	GLuint blockIndex = qglGetUniformBlockIndex( program, blockName );
-	qglUniformBlockBinding( program, blockIndex, location );
+	if ( blockIndex != GL_INVALID_INDEX ) {
+		qglUniformBlockBinding( program, blockIndex, location );
+	}
 }
 
 bool GLSLProgram::Link() {
@@ -354,16 +356,9 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 }
 
 void GLSLProgram::SetDefaultUniformBlockBindings() {
-	GLuint projMatrixBlockIndex = qglGetUniformBlockIndex( program, "block" );	
-	if( projMatrixBlockIndex != GL_INVALID_INDEX ) {
-		common->Printf( "Setting projection matrix uniform block binding for %s\n", name.c_str() );
-		qglUniformBlockBinding( program, projMatrixBlockIndex, 0 );
-	}
-	GLuint shaderParamsBlockIndex = qglGetUniformBlockIndex( program, "ShaderParamsBlock" );
-	if( shaderParamsBlockIndex != GL_INVALID_INDEX ) {
-		common->Printf( "Setting shader params uniform block binding for %s\n", name.c_str() );
-		qglUniformBlockBinding( program, shaderParamsBlockIndex, 1 );
-	}
+	BindUniformBlockLocation( 0, "block" );
+	BindUniformBlockLocation( 0, "ViewParamsBlock" );
+	BindUniformBlockLocation( 1, "PerDrawCallParamsBlock" );
 }
 
 

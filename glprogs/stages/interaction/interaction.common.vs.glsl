@@ -64,5 +64,5 @@ void interactionProcessVertex() {
 
 	// light->fragment vector in world coordinates
 	var_WorldLightDir = (params[attr_DrawId].modelMatrix * attr_Position).xyz - u_globalLightOrigin;
-    var_DrawId = attr_DrawId;
+	var_DrawId = attr_DrawId;
 }

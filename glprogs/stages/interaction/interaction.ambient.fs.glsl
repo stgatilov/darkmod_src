@@ -21,21 +21,21 @@ in vec4 var_ClipPosition;
 flat in int var_DrawId;
 
 out vec4 FragColor;
-     
+	 
 #ifdef BINDLESS_TEXTURES
 vec4 textureNormal(vec2 uv) {
-    sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
-    return texture(normalTexture, uv);
+	sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
+	return texture(normalTexture, uv);
 }
 
 vec4 textureDiffuse(vec2 uv) {
-    sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
-    return texture(diffuseTexture, uv);
+	sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
+	return texture(diffuseTexture, uv);
 }
 
 vec4 textureSpecular(vec2 uv) {
-    sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
-    return texture(specularTexture, uv);
+	sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
+	return texture(specularTexture, uv);
 }
 #else
 uniform sampler2D u_normalTexture;
@@ -43,15 +43,15 @@ uniform sampler2D u_diffuseTexture;
 uniform sampler2D u_specularTexture;
 
 vec4 textureNormal(vec2 uv) {
-    return texture(u_normalTexture, uv);
+	return texture(u_normalTexture, uv);
 }
 
 vec4 textureDiffuse(vec2 uv) {
-    return texture(u_diffuseTexture, uv);
+	return texture(u_diffuseTexture, uv);
 }
 
 vec4 textureSpecular(vec2 uv) {
-    return texture(u_specularTexture, uv);
+	return texture(u_specularTexture, uv);
 }
 #endif
 
@@ -59,7 +59,7 @@ uniform sampler2D u_lightProjectionTexture;
 uniform samplerCube	u_lightProjectionCubemap;
 uniform sampler2D u_lightFalloffTexture;         
 uniform samplerCube	u_lightFalloffCubemap;
-         
+		 
 uniform int u_cubic;
 uniform float u_gamma, u_minLevel;
    
@@ -131,7 +131,7 @@ void main() {
 		light.rgb += params[var_DrawId].ambientRimColor.rgb * NV * NV;
 	}
 
-    if (u_ssaoEnabled == 1) {
+	if (u_ssaoEnabled == 1) {
 		light *= sampleSSAO();
 	}
 

@@ -1267,12 +1267,6 @@
     <ClInclude Include="renderer\backend\DrawBatchExecutor.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\backend\UniversalGpuBuffer.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\ShaderParamsBuffer.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
     <ClInclude Include="renderer\backend\StencilShadowStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
@@ -1290,6 +1284,9 @@
     </ClInclude>
     <ClInclude Include="renderer\FrameBufferManager.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\GpuBuffer.h">
+      <Filter>Renderer\Backend</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -3004,12 +3001,6 @@
     <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\UniversalGpuBuffer.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\ShaderParamsBuffer.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
     <ClCompile Include="renderer\backend\StencilShadowStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
@@ -3027,6 +3018,9 @@
     </ClCompile>
     <ClCompile Include="renderer\FrameBufferManager.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\GpuBuffer.cpp">
+      <Filter>Renderer\Backend</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
