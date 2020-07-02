@@ -310,7 +310,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		qglEnable( GL_CLIP_PLANE0 + i );
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) 
-			continue;    // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
+			continue;    // this flag is set by entities with parms.noShadow in R_PrepareLightSurf (candles, torches, etc)
 
 		/*float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
 		if ( customOffset != 0 )

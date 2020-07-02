@@ -17,7 +17,6 @@
 #define __TR_LOCAL_H__
 
 #include <atomic>
-#include <mutex>
 
 #include "Image.h"
 #include "MegaTexture.h"
@@ -343,7 +342,7 @@ public:
 	bool					needsPortalSky;
 	int						centerArea;
 
-	std::mutex				mutex;						// needed to synchronize R_EntityDefDynamicModel over multiple threads
+	idSysMutex				mutex;						// needed to synchronize R_EntityDefDynamicModel over multiple threads
 };
 
 // viewLights are allocated on the frame temporary stack memory
@@ -623,7 +622,7 @@ typedef struct {
 
 	srfTriangles_t 		*firstDeferredFreeTriSurf;
 	srfTriangles_t 		*lastDeferredFreeTriSurf;
-	std::mutex			deferredFreeMutex;
+	idSysMutex			deferredFreeMutex;
 
 	int					memoryHighwater;	// max used on any frame
 
@@ -1340,7 +1339,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
 					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = -1.0f, bool deferred = false ); // soft particles in #3878
 
-void R_LinkLightSurf( drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
+drawSurf_t *R_PrepareLightSurf( const srfTriangles_t *tri, const viewEntity_t *space,
 					const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
 
 bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
