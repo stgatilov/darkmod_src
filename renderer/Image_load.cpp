@@ -598,7 +598,7 @@ void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum f
 		qglGenTextures( 1, &texnum );
 	}
 	this->Bind();
-	GL_SetDebugLabel( GL_TEXTURE_2D, texnum, imgName );
+	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter );
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter );

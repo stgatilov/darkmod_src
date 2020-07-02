@@ -124,7 +124,7 @@ namespace {
 			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 			qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-			GL_SetDebugLabel( GL_TEXTURE_2D, image->texnum, image->imgName );
+			GL_SetDebugLabel( GL_TEXTURE, image->texnum, image->imgName );
 		}
 
 		fbo->Init( frameBuffers->renderWidth >> mipLevel, frameBuffers->renderHeight >> mipLevel );
