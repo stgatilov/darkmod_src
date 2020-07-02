@@ -1138,8 +1138,8 @@ public:
 
 private:
 	idJobThread						threads[MAX_JOB_THREADS];
-	unsigned int					currentActiveThreads;
-	unsigned int					maxThreads;
+	int								currentActiveThreads;
+	int								maxThreads;
 	int								numPhysicalCpuCores;
 	int								numLogicalCpuCores;
 	int								numCpuPackages;
@@ -1223,7 +1223,7 @@ void idParallelJobManagerLocal::FreeJobList( idParallelJobList * jobList ) {
 		return;
 	}
 	// wait for all job threads to finish because job list deletion is not thread safe
-	for ( unsigned int i = 0; i < maxThreads; i++ ) {
+	for ( int i = 0; i < maxThreads; i++ ) {
 		threads[i].WaitForThread();
 	}
 	int index = jobLists.FindIndex( jobList );
