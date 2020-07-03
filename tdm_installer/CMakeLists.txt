@@ -24,7 +24,10 @@ set(sources
 
     Actions.h
     Actions.cpp
+    InstallerConfig.h
+    InstallerConfig.cpp
 
+    Constants.h
     OsUtils.cpp
     OsUtils.h
     LogUtils.cpp

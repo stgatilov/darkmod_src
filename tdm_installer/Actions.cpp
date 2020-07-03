@@ -4,6 +4,8 @@
 #include "LogUtils.h"
 #include "OsUtils.h"
 #include "CommandLine.h"
+#include "Constants.h"
+#include "InstallerConfig.h"
 
 //TODO: move to better place?
 static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir) {
@@ -59,11 +61,33 @@ void Actions::RestartWithInstallDir(const std::string &installDir) {
 	OsUtils::ReplaceAndRestartExecutable(newExePath, "");
 }
 
-void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndicator *progress) {
+void Actions::StartLogFile() {
 	//from now on, write logs to a logfile in CWD
 	delete g_logger;
 	g_logger = new LoggerTdm();
+}
 
+void Actions::ReadConfigFile(bool download) {
+	g_config->Clear();
+
+	if (download) {
+		//TODO
+	}
+
+	//read the file (throws exception if not present)
+	auto iniData = ZipSync::ReadIniFile(TDM_INSTALLER_CONFIG_FILENAME);
+	//analyze and check it
+	try {
+		g_config->InitFromIni(iniData);
+	}
+	catch(...) {
+		//make sure corrupted config does not remain after error
+		g_config->Clear();
+		throw;
+	}
+}
+
+void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndicator *progress) {
 	bool doScan;
 	if (force) {
 		g_logger->debugf("Do scanning because forced by user");

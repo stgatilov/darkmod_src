@@ -82,6 +82,8 @@ IniData ReadIniFile(const char *path, IniMode mode) {
         stdext::trim(line);
         if (line.empty())
             continue;
+        if (line[0] == '#') //comment
+            continue;
         if (line.front() == '[' && line.back() == ']') {
             CommitSec();
             name = line.substr(1, line.size() - 2);

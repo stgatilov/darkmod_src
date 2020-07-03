@@ -1,6 +1,7 @@
 #include "LogUtils.h"
 #include "OsUtils.h"
 #include <time.h>
+#include "Constants.h"
 
 #ifdef _MSC_VER
 #define _WIN32_LEAN_AND_MEAN
@@ -19,7 +20,7 @@ LoggerTdm::LoggerTdm() {
 	}
 
 	if (!logFile) {
-		logFile = fopen("tdm_installer.log", "wt");
+		logFile = fopen(TDM_INSTALLER_LOG_FILENAME, "wt");
 		if (!logFile)
 			throw ErrorException("cannot open log file", lcCantOpenFile);
 		time_t timestamp = time(0);

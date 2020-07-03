@@ -115,6 +115,23 @@ void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 
 void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
+		Actions::StartLogFile();
+	}
+	catch(const std::exception &e) {
+		fl_alert("Error: %s", e.what());
+		return;
+	}
+
+	try {
+		bool skipUpdate = g_Settings_CheckSkipMirrorsUpdate->value();
+		Actions::ReadConfigFile(!skipUpdate);
+	}
+	catch(const std::exception &e) {
+		fl_alert("Error: %s", e.what());
+		return;
+	}
+
+	try {
 		g_Settings_ProgressScanning->show();
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
 		Actions::ScanInstallDirectoryIfNecessary(g_Settings_CheckForceScan->value(), &progress);
