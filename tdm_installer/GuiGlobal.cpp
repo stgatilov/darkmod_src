@@ -2,6 +2,7 @@
 #include "GuiFluidAutoGen.h"
 #include "OsUtils.h"
 #include "GuiPageSettings.h"
+#include "GuiPageVersion.h"
 
 void cb_Settings_ButtonReset(Fl_Widget *self) {
 	g_Settings_InputInstallDirectory->value(OsUtils::GetCwd().c_str());
@@ -68,6 +69,8 @@ void GuiInitAll() {
 	g_Settings_ButtonNext->callback(cb_Settings_ButtonNext);
 
 	g_Settings_ButtonReset->do_callback();
+
+	g_Version_TreeVersions->callback(cb_Version_TreeVersions);
 }
 
 void GuiUpdateAll(void*) {

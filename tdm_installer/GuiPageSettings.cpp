@@ -2,8 +2,10 @@
 #include "GuiFluidAutoGen.h"
 #include <FL/Fl_File_Chooser.H>
 #include "StdFilesystem.h"
+#include "StdString.h"
 #include "OsUtils.h"
 #include "Actions.h"
+#include "InstallerConfig.h"
 
 //TODO: move to better place
 #include "CommandLine.h"
@@ -143,9 +145,23 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 		return;
 	}
 
+	//update versions tree on page "Version"
+	g_Version_TreeVersions->clear();
+	std::vector<std::string> allVersions = g_config->GetAllVersions();
+	std::string defaultVersion = g_config->GetDefaultVersion();
+	for (const std::string &version : allVersions) {
+		std::vector<std::string> guiPath = g_config->GetFolderPath(version);
+		guiPath.push_back(version);
+		std::string wholePath = stdext::join(guiPath, "/");
+		Fl_Tree_Item *item = g_Version_TreeVersions->add(wholePath.c_str());
+		if (defaultVersion == version)
+			g_Version_TreeVersions->select(item);
+	}
+
 	bool customVersion = g_Settings_CheckCustomVersion->value();
-	if (customVersion)
+	if (customVersion) {
 		g_Wizard->value(g_PageVersion);
+	}
 	else {
 		//TODO: select default version
 		g_Wizard->value(g_PageConfirm);

@@ -149,6 +149,17 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 	}
 }
 
+std::vector<std::string> InstallerConfig::GetAllVersions() const {
+	std::vector<std::string> res;
+	for (const auto &pNV : _versions)
+		res.push_back(pNV.first);
+	return res;
+}
+
+std::vector<std::string> InstallerConfig::GetFolderPath(const std::string &version) const {
+	return get(_versions, version)._folderPath;
+}
+
 std::string InstallerConfig::GetDefaultVersion() const {
 	ZipSyncAssertF(!_defaultVersion.empty(), "Cannot return default version: %s was not read", TDM_INSTALLER_CONFIG_FILENAME);
 	return _defaultVersion;

@@ -21,6 +21,8 @@ set(sources
     GuiGlobal.h
     GuiPageSettings.cpp
     GuiPageSettings.h
+    GuiPageVersion.cpp
+    GuiPageVersion.h
 
     Actions.h
     Actions.cpp

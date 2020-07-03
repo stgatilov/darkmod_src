@@ -31,6 +31,13 @@ public:
 	//creates InstallerConfig object by reading specified ini file
 	void InitFromIni(const ZipSync::IniData &iniData);
 
+	//returns sequence of all known versions
+	std::vector<std::string> GetAllVersions() const;
+
+	//returns GUI tree pathname for specified version
+	//consists of sequence of path elements, excluding the version element at the end
+	std::vector<std::string> GetFolderPath(const std::string &version) const;
+
 	//default version is installed if user has not chosen any specific version
 	std::string GetDefaultVersion() const;
 
