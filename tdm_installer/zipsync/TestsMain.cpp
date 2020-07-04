@@ -11,6 +11,7 @@
 #include "HttpServer.h"
 #include "Downloader.h"
 #include "TestCreator.h"
+#include "ChecksummedZip.h"
 using namespace ZipSync;
 
 #include <zip.h>
@@ -927,6 +928,122 @@ TEST_CASE("CleanInstall") {
             CHECK(resMani[i].props.compressionMethod == params.method);
         }
     }
+}
+
+TEST_CASE("ChecksummedZip") {
+    static const int NUM = 10;
+    auto tempDir = GetTempDir() / "chkZip";
+    stdext::create_directories(tempDir);
+
+    TestCreator creator;
+    std::vector<std::vector<uint8_t>> datas;
+    for (int i = 0; i < NUM; i++) {
+        int k = creator.RndInt(100000, 200000);
+        int seed = creator.RndInt(0, INT_MAX);
+        std::vector<uint8_t> data(k, 0);
+        for (int j = 0; j < k; j++) {
+            data[j] = ((seed >> 16) & 255);
+            seed = seed * 1103515245 + 12345;
+        }
+        datas.push_back(std::move(data));
+    }
+
+    //write local file
+    std::vector<PathAR> filePaths;
+    for (int i = 0; i < NUM; i++) {
+        std::string fn = "data" + std::to_string(i) + ".zip";
+        filePaths.push_back(PathAR::FromRel(fn, tempDir.string()));
+        WriteChecksummedZip(filePaths[i].abs.c_str(), datas[i].data(), datas[i].size(), "trashData.bin");
+    }
+
+    //read local file (correct)
+    for (int i = 0; i < NUM; i++) {
+        std::vector<uint8_t> readData = ReadChecksummedZip(filePaths[i].abs.c_str(), "trashData.bin");
+        CHECK(readData == datas[i]);
+    }
+
+    //read checksums only
+    std::vector<HashDigest> hashes;
+    for (int i = 0; i < NUM; i++) {
+        HashDigest hash = GetHashOfChecksummedZip(filePaths[i].abs.c_str());
+        HashDigest expected = Hasher().Update(datas[i].data(), datas[i].size()).Finalize();
+        CHECK(hash == expected);
+        hashes.push_back(hash);
+    }
+
+    for (int t = 0; t < 2; t++) {
+        //read local file (wrong)
+        std::string path = (tempDir / ("wrongData0.zip")).string();
+        {
+            ZipFileHolder zf(path.c_str());
+            std::string str = CHECKSUMMED_HASH_PREFIX + hashes[0].Hex();
+            if (t == 1) {
+                for (int i = strlen(CHECKSUMMED_HASH_PREFIX); i < str.size(); i++) {
+                    char &ch = str[i];
+                    ch = (isdigit(ch) ? 'a' : '0');
+                }
+            }
+            SAFE_CALL(zipOpenNewFileInZip(zf, CHECKSUMMED_HASH_FILENAME, NULL, NULL, 0, NULL, 0, NULL, Z_NO_COMPRESSION, Z_NO_COMPRESSION));
+            SAFE_CALL(zipWriteInFileInZip(zf, str.data(), str.size()));
+            SAFE_CALL(zipCloseFileInZip(zf));
+            SAFE_CALL(zipOpenNewFileInZip(zf, "trashData.bin", NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION));
+            SAFE_CALL(zipWriteInFileInZip(zf, datas[0].data(), datas[0].size()));
+            SAFE_CALL(zipCloseFileInZip(zf));
+        }
+        if (t == 0)
+            CHECK(ReadChecksummedZip(path.c_str(), "trashData.bin") == datas[0]);
+        else
+            CHECK_THROWS(ReadChecksummedZip(path.c_str(), "trashData.bin"));
+    }
+
+    HttpServer server;
+    server.SetRootDir(tempDir.string());
+    server.Start();
+    std::string rootUrl = server.GetRootUrl();
+
+    std::vector<std::string> allUrls;
+    for (int i = 0; i < NUM; i++)
+        allUrls.push_back(PathAR::FromRel(filePaths[i].rel, rootUrl).abs);
+
+    //check remote hashes retrieval
+    Downloader downloader0;
+    std::vector<HashDigest> remoteHashes = GetHashesOfRemoteChecksummedZips(downloader0, allUrls);
+    CHECK(remoteHashes == hashes);
+    int downTotal0 = downloader0.TotalBytesDownloaded();
+    CHECK(downTotal0 <= NUM * 256);
+
+    std::vector<std::string> cacheFilePaths;
+    std::vector<int> expectedMatching(NUM, -1);
+    int sumDownloadSizes = 0;
+    for (int i = 0; i < NUM; i++) {
+        bool inCache = !creator.RndInt(0, 1);
+        if (inCache || i == 3)
+            cacheFilePaths.push_back(filePaths[i].abs);
+        if (inCache && i != 3)
+            expectedMatching[i] = cacheFilePaths.size() - 1;
+        else
+            sumDownloadSizes += datas[i].size();
+    }
+    std::vector<std::string> outPaths, outPathsOrig;
+    for (int i = 0; i < NUM; i++)
+        outPaths.push_back(PathAR::FromRel("out" + filePaths[i].rel, tempDir.string()).abs);
+    outPathsOrig = outPaths;
+
+    //check optimized download
+    Downloader downloader1;
+    remoteHashes[3].Clear();    //let's suppose it has no hash
+    std::vector<int> matching = DownloadChecksummedZips(downloader1, allUrls, remoteHashes, cacheFilePaths, outPaths);
+    CHECK(matching == expectedMatching);
+    for (int i = 0; i < NUM; i++) {
+        if (matching[i] < 0)
+            CHECK(outPaths[i] == outPathsOrig[i]);
+        else
+            CHECK(outPaths[i] == cacheFilePaths[matching[i]]);
+        std::vector<uint8_t> obtainedData = ReadChecksummedZip(outPaths[i].c_str(), "trashData.bin");
+        CHECK(obtainedData == datas[i]);
+    }
+    int downTotal1 = downloader1.TotalBytesDownloaded();
+    CHECK(downTotal1 <= sumDownloadSizes + NUM * 1024);
 }
 
 

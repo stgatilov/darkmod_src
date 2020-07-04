@@ -5,6 +5,7 @@
 #include "ZipUtils.h"
 #include "Hash.h"
 #include <string.h>
+#include "ChecksummedZip.h"
 
 
 namespace ZipSync {
@@ -24,18 +25,8 @@ void WriteIniFile(const char *path, const IniData &data, IniMode mode) {
     }
     if (mode == IniMode::Auto)
         mode = (path[strlen(path)-1] == 'z' ? IniMode::Zipped : IniMode::Plain);
-    if (mode == IniMode::Zipped) {
-        std::string hash = "zsMH:" + Hasher().Update(text.data(), text.size()).Finalize().Hex();
-        ZipFileHolder zf(path);
-        zip_fileinfo info = {0};
-        info.dosDate = 0x28210000;  //1 January 2000 --- set it just to make date valid
-        SAFE_CALL(zipOpenNewFileInZip(zf, "hash.txt", &info, NULL, 0, NULL, 0, NULL, Z_NO_COMPRESSION, Z_NO_COMPRESSION));
-        SAFE_CALL(zipWriteInFileInZip(zf, hash.data(), hash.size()));
-        SAFE_CALL(zipCloseFileInZip(zf));
-        SAFE_CALL(zipOpenNewFileInZip(zf, "data.ini", &info, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION));
-        SAFE_CALL(zipWriteInFileInZip(zf, text.data(), text.size()));
-        SAFE_CALL(zipCloseFileInZip(zf));
-    }
+    if (mode == IniMode::Zipped)
+        WriteChecksummedZip(path, text.data(), text.size(), "data.ini");
     else {
         StdioFileHolder f(path, "wb");
         fwrite(text.data(), 1, text.size(), f);
@@ -47,15 +38,8 @@ IniData ReadIniFile(const char *path, IniMode mode) {
     if (mode == IniMode::Auto)
         mode = (path[strlen(path)-1] == 'z' ? IniMode::Zipped : IniMode::Plain);
     if (mode == IniMode::Zipped) {
-        UnzFileHolder zf(path);
-        SAFE_CALL(unzLocateFile(zf, "data.ini", true));
-        unz_file_info info;
-        SAFE_CALL(unzGetCurrentFileInfo(zf, &info, NULL, 0, NULL, 0, NULL, 0));
-        SAFE_CALL(unzOpenCurrentFile(zf));
-        text.resize(info.uncompressed_size);
-        int read = unzReadCurrentFile(zf, text.data(), text.size());
-        ZipSyncAssert(read == text.size());
-        SAFE_CALL(unzCloseCurrentFile(zf));
+        auto data = ReadChecksummedZip(path, "data.ini");
+        text.assign(data.begin(), data.end());
     }
     else {
         StdioFileHolder f(path, "rb");

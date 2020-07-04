@@ -25,6 +25,8 @@ set(lib_sources
     Utils.cpp
     ZipUtils.h
     ZipUtils.cpp
+    ChecksummedZip.h
+    ChecksummedZip.cpp
     Manifest.h
     Manifest.cpp
     LocalCache.h
