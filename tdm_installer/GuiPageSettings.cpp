@@ -5,25 +5,8 @@
 #include "StdString.h"
 #include "OsUtils.h"
 #include "Actions.h"
-#include "InstallerConfig.h"
-
-//TODO: move to better place
-#include "CommandLine.h"
-class ProgressIndicatorGui : public ZipSync::ProgressIndicator {
-	Fl_Progress *_widget;
-public:
-	ProgressIndicatorGui(Fl_Progress *widget) : _widget(widget) {}
-    virtual void Update(const char *line) {
-		_widget->label(line);
-		Fl::flush();
-	}
-    virtual void Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") {
-		_widget->value(100.0 * globalRatio);
-		_widget->label(globalComment.c_str());
-		Fl::flush();
-	}
-};
-
+#include "State.h"
+#include "ProgressIndicatorGui.h"
 
 
 void cb_Settings_InputInstallDirectory(Fl_Widget *self) {
@@ -35,7 +18,7 @@ void cb_Settings_InputInstallDirectory(Fl_Widget *self) {
 	if (normalizedDir.find("..") != -1) {
 		try {
 			normalizedDir = stdext::canonical(normalizedDir).string();	//collapse parents
-		} catch(stdext::filesystem_error &e) {
+		} catch(stdext::filesystem_error &) {
 			invalid = true;	//happens on Linux sometimes
 		}
 	}
@@ -147,15 +130,17 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 
 	//update versions tree on page "Version"
 	g_Version_TreeVersions->clear();
-	std::vector<std::string> allVersions = g_config->GetAllVersions();
-	std::string defaultVersion = g_config->GetDefaultVersion();
+	g_Version_TreeVersions->sortorder(FL_TREE_SORT_DESCENDING);
+	std::vector<std::string> allVersions = g_state->_config.GetAllVersions();
+	std::string defaultVersion = g_state->_config.GetDefaultVersion();
 	for (const std::string &version : allVersions) {
-		std::vector<std::string> guiPath = g_config->GetFolderPath(version);
+		std::vector<std::string> guiPath = g_state->_config.GetFolderPath(version);
 		guiPath.push_back(version);
 		std::string wholePath = stdext::join(guiPath, "/");
 		Fl_Tree_Item *item = g_Version_TreeVersions->add(wholePath.c_str());
-		if (defaultVersion == version)
+		if (defaultVersion == version) {
 			g_Version_TreeVersions->select(item);
+		}
 	}
 
 	bool customVersion = g_Settings_CheckCustomVersion->value();

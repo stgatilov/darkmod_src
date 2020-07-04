@@ -23,9 +23,13 @@ set(sources
     GuiPageSettings.h
     GuiPageVersion.cpp
     GuiPageVersion.h
+    ProgressIndicatorGui.cpp
+    ProgressIndicatorGui.h
 
     Actions.h
     Actions.cpp
+    State.h
+    State.cpp
     InstallerConfig.h
     InstallerConfig.cpp
 
@@ -35,6 +39,11 @@ set(sources
     LogUtils.cpp
     LogUtils.h
 )
+
+if(MSVC)
+    add_compile_options("/W2")
+    add_compile_options("$<$<CONFIG:RelWithDebInfo>:/Ob2>")
+endif()
 
 find_package(fltk REQUIRED)
 find_package(libjpeg REQUIRED)

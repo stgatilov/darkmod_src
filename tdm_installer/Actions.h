@@ -21,4 +21,15 @@ public:
 	//called when user clicks "Next" button on settings page
 	//generates manifest in the install directory
 	static void ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndicator *progress);
+
+	struct VersionInfo {
+		uint64_t currentSize = 0;
+		uint64_t finalSize = 0;
+		uint64_t addedSize = 0;
+		uint64_t removedSize = 0;
+		uint64_t downloadSize = 0;
+	};
+	//user wants to know stats about possible update to specified version
+	//this action can trigger downloading manifests (note: they are cached in g_state)
+	static VersionInfo RefreshVersionInfo(const std::string &version, ZipSync::ProgressIndicator *progress);
 };

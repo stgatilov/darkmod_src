@@ -45,10 +45,7 @@ public:
 	//if there are several possibilities, then random one is chosen
 	std::string ChooseManifestUrl(const std::string &version) const;
 
-	//returns a set of additional provided URLs that the specified version needs
-	//it tales every version in _providedVersions, and chooses its manifest by ChooseManifestUrl
-	std::vector<std::string> ChooseAdditionalProvidedManifests(const std::string &version) const;
+	//returns a set of versions whose manifest must be provided additionally for update to specified version
+	//pass them ChooseManifestUrl to get set of additional provided manifests
+	std::vector<std::string> GetAdditionalProvidedVersions(const std::string &version) const;
 };
-
-//global instance of config
-extern InstallerConfig *g_config;

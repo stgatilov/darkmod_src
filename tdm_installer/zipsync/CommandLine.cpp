@@ -13,6 +13,13 @@ namespace ZipSync {
 
 ProgressIndicator::~ProgressIndicator() {}
 
+std::function<void(double, const char*)> ProgressIndicator::GetDownloaderCallback() {
+    return [this](double ratio, const char *comment) -> void {
+        Update(ratio, comment);
+    };
+}
+
+
 std::vector<std::string> EnumerateFilesInDirectory(const std::string &root) {
     using ZipSync::PathAR;
     std::vector<std::string> res;

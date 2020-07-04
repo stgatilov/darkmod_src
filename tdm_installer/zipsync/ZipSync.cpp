@@ -669,7 +669,7 @@ void UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progressCa
 
             //verify hash of the downloaded file (we must be sure that it is correct)
             //TODO: what if bad mirror changes file local header?...
-            uint32_t size = (provided->byterange[1] - provided->byterange[0]);
+            uint32_t size = provided->Size();
             zf.LocateByByterange(offset, offset + size);
             SAFE_CALL(unzOpenCurrentFile2(zf, NULL, NULL, true));
             Hasher hasher;

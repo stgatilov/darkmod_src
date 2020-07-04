@@ -8,8 +8,6 @@
 #include "Path.h"
 #include "Constants.h"
 
-InstallerConfig *g_config = new InstallerConfig();
-
 template<class K, class V> static const V &get(const std::map<K, V> &dict, const K &key) {
 	auto iter = dict.find(key);
 	ZipSyncAssert(iter != dict.end());
@@ -175,12 +173,8 @@ std::string InstallerConfig::ChooseManifestUrl(const std::string &version) const
 	return url;
 }
 
-std::vector<std::string> InstallerConfig::ChooseAdditionalProvidedManifests(const std::string &version) const {
+std::vector<std::string> InstallerConfig::GetAdditionalProvidedVersions(const std::string &version) const {
 	const Version &ver = get(_versions, version);
-
-	std::vector<std::string> providedUrls;
-	for (const std::string &pv : ver._providedVersions)
-		providedUrls.push_back(ChooseManifestUrl(pv));
-
-	return providedUrls;
+	std::vector<std::string> res(ver._providedVersions.begin(), ver._providedVersions.end());
+	return res;
 }

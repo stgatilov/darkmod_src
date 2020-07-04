@@ -71,6 +71,7 @@ void GuiInitAll() {
 	g_Settings_ButtonReset->do_callback();
 
 	g_Version_TreeVersions->callback(cb_Version_TreeVersions);
+	g_Version_ButtonRefreshInfo->callback(cb_Version_ButtonRefreshInfo);
 }
 
 void GuiUpdateAll(void*) {

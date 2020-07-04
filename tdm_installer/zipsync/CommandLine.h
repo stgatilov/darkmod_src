@@ -14,6 +14,7 @@ public:
     virtual ~ProgressIndicator();
     virtual void Update(const char *line) = 0;
     virtual void Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") = 0;
+    std::function<void(double, const char*)> GetDownloaderCallback();
 };
 
 std::vector<std::string> EnumerateFilesInDirectory(const std::string &root);

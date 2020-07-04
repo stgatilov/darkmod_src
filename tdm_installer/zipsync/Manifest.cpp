@@ -31,6 +31,11 @@ void FileMetainfo::DontProvide() {
     location = FileLocation::Nowhere;
 }
 
+uint32_t FileMetainfo::Size() const {
+    ZipSyncAssert(location != FileLocation::Nowhere);
+    return byterange[1] - byterange[0];
+}
+
 
 void AnalyzeCurrentFile(unzFile zf, FileMetainfo &filemeta, bool hashContents, bool hashCompressed) {
     char filename[SIZE_PATH];
