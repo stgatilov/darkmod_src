@@ -31,11 +31,6 @@ void FileMetainfo::DontProvide() {
     location = FileLocation::Nowhere;
 }
 
-uint32_t FileMetainfo::Size() const {
-    ZipSyncAssert(location != FileLocation::Nowhere);
-    return byterange[1] - byterange[0];
-}
-
 
 void AnalyzeCurrentFile(unzFile zf, FileMetainfo &filemeta, bool hashContents, bool hashCompressed) {
     char filename[SIZE_PATH];
@@ -175,15 +170,24 @@ void Manifest::ReadFromIni(const IniData &data, const std::string &rootDir) {
         if (!stdext::starts_with(name, "File "))
             continue;
         name = name.substr(5);
+        const IniSect &sec = pNS.second;
 
         ParseFullPath(name, pf.zipPath.rel, pf.filename);
         pf.zipPath = PathAR::FromRel(pf.zipPath.rel, rootDir);
 
-        std::map<std::string, std::string> dict(pNS.second.begin(), pNS.second.end());
-        pf.contentsHash.Parse(dict.at("contentsHash").c_str());
-        pf.compressedHash.Parse(dict.at("compressedHash").c_str());
+        //note: since nobody would ever write manifest by hand
+        //here we rely on order of properties as written in WriteToIni
+        int propIdx = 0;
+        auto ReadProperty = [&sec,&propIdx](const char *key) -> const std::string& {
+            ZipSyncAssertF(propIdx < sec.size(), "No property while %s expected", key);
+            ZipSyncAssertF(sec[propIdx].first == key, "Expected property %s, got %s", key, sec[propIdx].first.c_str());
+            return sec[propIdx++].second;
+        };
 
-        std::string byterange = dict.at("byterange");
+        pf.contentsHash.Parse(ReadProperty("contentsHash").c_str());
+        pf.compressedHash.Parse(ReadProperty("compressedHash").c_str());
+
+        const std::string &byterange = ReadProperty("byterange");
         size_t pos = byterange.find('-');
         ZipSyncAssertF(pos != std::string::npos, "Byterange %s has no hyphen", byterange.c_str());
         pf.byterange[0] = std::stoul(byterange.substr(0, pos));
@@ -193,15 +197,15 @@ void Manifest::ReadFromIni(const IniData &data, const std::string &rootDir) {
         }
         else
             pf.location = FileLocation::Nowhere;
-        pf.package = dict.at("package");
-        pf.props.crc32 = std::stoul(dict.at("crc32"));
-        pf.props.lastModTime = std::stoul(dict.at("lastModTime"));
-        pf.props.compressionMethod = std::stoul(dict.at("compressionMethod"));
-        pf.props.generalPurposeBitFlag = std::stoul(dict.at("gpbitFlag"));
-        pf.props.compressedSize = std::stoul(dict.at("compressedSize"));
-        pf.props.contentsSize = std::stoul(dict.at("contentsSize"));
-        pf.props.internalAttribs = std::stoul(dict.at("internalAttribs"));
-        pf.props.externalAttribs = std::stoul(dict.at("externalAttribs"));
+        pf.package = ReadProperty("package");
+        pf.props.crc32 = std::stoul(ReadProperty("crc32"));
+        pf.props.lastModTime = std::stoul(ReadProperty("lastModTime"));
+        pf.props.compressionMethod = std::stoul(ReadProperty("compressionMethod"));
+        pf.props.generalPurposeBitFlag = std::stoul(ReadProperty("gpbitFlag"));
+        pf.props.compressedSize = std::stoul(ReadProperty("compressedSize"));
+        pf.props.contentsSize = std::stoul(ReadProperty("contentsSize"));
+        pf.props.internalAttribs = std::stoul(ReadProperty("internalAttribs"));
+        pf.props.externalAttribs = std::stoul(ReadProperty("externalAttribs"));
 
         AppendFile(pf);
     }

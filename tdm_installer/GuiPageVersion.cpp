@@ -6,12 +6,11 @@
 #include "FL/fl_ask.H"
 #include "ProgressIndicatorGui.h"
 
-//the version for which currently displayed download stats were computed
-static std::string g_VersionRefreshed;
 
 void cb_Version_TreeVersions(Fl_Widget *self) {
 	Fl_Tree_Reason reason = g_Version_TreeVersions->callback_reason();
 	if (reason == FL_TREE_REASON_SELECTED || reason == FL_TREE_REASON_DESELECTED) {
+		g_Version_OutputCurrentSize->deactivate();
 		g_Version_OutputFinalSize->deactivate();
 		g_Version_OutputAddedSize->deactivate();
 		g_Version_OutputRemovedSize->deactivate();
@@ -34,10 +33,11 @@ void cb_Version_TreeVersions(Fl_Widget *self) {
 	bool correctStats = false;
 	if (isVersionSelected) {
 		std::string selVersion = firstSel->label();
-		if (selVersion == g_VersionRefreshed)
+		if (selVersion == g_state->_versionRefreshed)
 			correctStats = true;
 	}
 	if (correctStats) {
+		g_Version_OutputCurrentSize->activate();
 		g_Version_OutputFinalSize->activate();
 		g_Version_OutputAddedSize->activate();
 		g_Version_OutputRemovedSize->activate();
@@ -45,6 +45,7 @@ void cb_Version_TreeVersions(Fl_Widget *self) {
 		g_Version_ButtonRefreshInfo->hide();
 	}
 	else {
+		g_Version_OutputCurrentSize->deactivate();
 		g_Version_OutputFinalSize->deactivate();
 		g_Version_OutputAddedSize->deactivate();
 		g_Version_OutputRemovedSize->deactivate();
@@ -76,13 +77,44 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 	auto BytesToString = [](uint64_t bytes) -> std::string {
 		return std::to_string((bytes + 999999) / 1000000) + " MB";
 	};
+	g_Version_OutputCurrentSize->value(BytesToString(info.currentSize).c_str());
 	g_Version_OutputFinalSize->value(BytesToString(info.finalSize).c_str());
 	g_Version_OutputAddedSize->value(BytesToString(info.addedSize).c_str());
 	g_Version_OutputRemovedSize->value(BytesToString(info.removedSize).c_str());
 	g_Version_OutputDownloadSize->value(BytesToString(info.downloadSize).c_str());
 
 	//remember that we display info for this version
-	g_VersionRefreshed = version;
+	g_state->_versionRefreshed = version;
 	//will activate outputs and hide refresh button
 	g_Version_TreeVersions->do_callback();
+}
+
+void cb_Version_ButtonNext(Fl_Widget *self) {
+	//make sure selected version has been evaluated/refreshed
+	if (g_Version_ButtonRefreshInfo->visible() && g_Version_ButtonRefreshInfo->active()) {
+		g_Version_ButtonRefreshInfo->do_callback();
+		ZipSyncAssert(!g_Version_ButtonRefreshInfo->visible());	//never happens
+	}
+
+	g_Confirm_OutputInstallDirectory->value(g_Settings_InputInstallDirectory->value());
+	g_Confirm_OutputLastInstalledVersion->value(g_Version_OutputLastInstalledVersion->value());
+	g_Confirm_OutputVersionToInstall->value(g_state->_versionRefreshed.c_str());
+
+	g_Confirm_OutputCurrentSize->value(g_Version_OutputCurrentSize->value());
+	g_Confirm_OutputFinalSize->value(g_Version_OutputFinalSize->value());
+	g_Confirm_OutputAddedSize->value(g_Version_OutputAddedSize->value());
+	g_Confirm_OutputRemovedSize->value(g_Version_OutputRemovedSize->value());
+	g_Confirm_OutputDownloadSize->value(g_Version_OutputDownloadSize->value());
+
+	g_Wizard->next();
+}
+
+void cb_Version_ButtonPrev(Fl_Widget *self) {
+	bool customVersion = g_Settings_CheckCustomVersion->value();
+	if (customVersion) {
+		g_Wizard->value(g_PageVersion);
+	}
+	else {
+		g_Wizard->value(g_PageSettings);
+	}
 }

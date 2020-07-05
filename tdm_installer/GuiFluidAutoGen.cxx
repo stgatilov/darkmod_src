@@ -50,6 +50,8 @@ Fl_Input *g_Version_InputCustomManifestUrl=(Fl_Input *)0;
 
 Fl_Box *g_Version_TextCustomManifestMessage=(Fl_Box *)0;
 
+Fl_Output *g_Version_OutputCurrentSize=(Fl_Output *)0;
+
 Fl_Output *g_Version_OutputFinalSize=(Fl_Output *)0;
 
 Fl_Output *g_Version_OutputAddedSize=(Fl_Output *)0;
@@ -83,6 +85,8 @@ Fl_Output *g_Confirm_OutputInstallDirectory=(Fl_Output *)0;
 Fl_Output *g_Confirm_OutputLastInstalledVersion=(Fl_Output *)0;
 
 Fl_Output *g_Confirm_OutputVersionToInstall=(Fl_Output *)0;
+
+Fl_Output *g_Confirm_OutputCurrentSize=(Fl_Output *)0;
 
 Fl_Output *g_Confirm_OutputFinalSize=(Fl_Output *)0;
 
@@ -4267,6 +4271,7 @@ void FluidAllGui() {
   { g_Window = new Fl_Double_Window(1200, 675, "TheDarkMod installer v?.?\?");
     { g_Wizard = new Fl_Wizard(400, -2, 825, 702);
       { g_PageSettings = new Fl_Group(400, 0, 800, 675, "Page 1: Settings");
+        g_PageSettings->hide();
         { g_Settings_TextGreetings = new Fl_Text_Display(425, 25, 748, 91);
           g_Settings_TextGreetings->box(FL_NO_BOX);
           g_Settings_TextGreetings->color(FL_BACKGROUND_COLOR);
@@ -4357,38 +4362,44 @@ sed to share quick test patches and unofficial versions.");
         { g_Version_TextCustomManifestMessage = new Fl_Box(470, 574, 640, 25, "In the GUI tree above, select the base version from which the custom one was \
 branched.");
         } // Fl_Box* g_Version_TextCustomManifestMessage
-        { g_Version_OutputFinalSize = new Fl_Output(1025, 102, 105, 33, "Final Size:");
+        { g_Version_OutputCurrentSize = new Fl_Output(1025, 83, 105, 33, "Current Size:");
+          g_Version_OutputCurrentSize->box(FL_THIN_DOWN_FRAME);
+          g_Version_OutputCurrentSize->labelsize(18);
+          g_Version_OutputCurrentSize->textsize(18);
+          g_Version_OutputCurrentSize->align(Fl_Align(FL_ALIGN_TOP));
+        } // Fl_Output* g_Version_OutputCurrentSize
+        { g_Version_OutputFinalSize = new Fl_Output(1025, 154, 105, 33, "Final Size:");
           g_Version_OutputFinalSize->box(FL_THIN_DOWN_FRAME);
           g_Version_OutputFinalSize->labelsize(18);
           g_Version_OutputFinalSize->textsize(18);
           g_Version_OutputFinalSize->align(Fl_Align(FL_ALIGN_TOP));
         } // Fl_Output* g_Version_OutputFinalSize
-        { g_Version_OutputAddedSize = new Fl_Output(1025, 177, 105, 33, "Added Size:");
+        { g_Version_OutputAddedSize = new Fl_Output(1025, 225, 105, 33, "Added Size:");
           g_Version_OutputAddedSize->box(FL_THIN_DOWN_FRAME);
           g_Version_OutputAddedSize->labelsize(18);
           g_Version_OutputAddedSize->textsize(18);
           g_Version_OutputAddedSize->align(Fl_Align(FL_ALIGN_TOP));
         } // Fl_Output* g_Version_OutputAddedSize
-        { g_Version_OutputRemovedSize = new Fl_Output(1025, 257, 105, 33, "Removed Size:");
+        { g_Version_OutputRemovedSize = new Fl_Output(1025, 296, 105, 33, "Removed Size:");
           g_Version_OutputRemovedSize->box(FL_THIN_DOWN_FRAME);
           g_Version_OutputRemovedSize->labelsize(18);
           g_Version_OutputRemovedSize->textsize(18);
           g_Version_OutputRemovedSize->align(Fl_Align(FL_ALIGN_TOP));
         } // Fl_Output* g_Version_OutputRemovedSize
-        { g_Version_OutputDownloadSize = new Fl_Output(1025, 337, 105, 33, "Download Size:");
+        { g_Version_OutputDownloadSize = new Fl_Output(1025, 367, 105, 33, "Download Size:");
           g_Version_OutputDownloadSize->box(FL_THIN_DOWN_FRAME);
           g_Version_OutputDownloadSize->labelsize(18);
           g_Version_OutputDownloadSize->textsize(18);
           g_Version_OutputDownloadSize->align(Fl_Align(FL_ALIGN_TOP));
         } // Fl_Output* g_Version_OutputDownloadSize
-        { g_Version_ButtonRefreshInfo = new Fl_Button(1016, 435, 129, 40, "Refresh Info");
+        { g_Version_ButtonRefreshInfo = new Fl_Button(1016, 455, 129, 40, "Refresh Info");
           g_Version_ButtonRefreshInfo->tooltip("Click to update the numbers shown above. It can trigger downloading a bit of \
 data, but it will be downloaded sooner or later anyway.");
           g_Version_ButtonRefreshInfo->box(FL_GTK_UP_BOX);
           g_Version_ButtonRefreshInfo->down_box(FL_GTK_DOWN_BOX);
           g_Version_ButtonRefreshInfo->labelsize(18);
         } // Fl_Button* g_Version_ButtonRefreshInfo
-        { g_Version_ProgressDownloadManifests = new Fl_Progress(1014, 400, 131, 20, "downloading...");
+        { g_Version_ProgressDownloadManifests = new Fl_Progress(1014, 420, 131, 20, "downloading...");
         } // Fl_Progress* g_Version_ProgressDownloadManifests
         { g_Version_ButtonNext = new Fl_Button(1070, 620, 100, 40, "Next");
           g_Version_ButtonNext->tooltip("To unlock it, select one version of the game to install.");
@@ -4406,14 +4417,13 @@ data, but it will be downloaded sooner or later anyway.");
         g_PageVersion->end();
       } // Fl_Group* g_PageVersion
       { g_PageConfirm = new Fl_Group(400, 0, 800, 675, "Page 3: Confirmation");
-        g_PageConfirm->hide();
         { g_Confirm_TextReadyToInstall = new Fl_Text_Display(430, 19, 748, 72);
           g_Confirm_TextReadyToInstall->box(FL_NO_BOX);
           g_Confirm_TextReadyToInstall->color(FL_BACKGROUND_COLOR);
           g_Confirm_TextReadyToInstall->textsize(18);
           g_Confirm_TextReadyToInstall->align(Fl_Align(FL_ALIGN_LEFT));
         } // Fl_Text_Display* g_Confirm_TextReadyToInstall
-        { g_Confirm_OutputInstallDirectory = new Fl_Output(760, 126, 360, 29, "Install directory:  ");
+        { g_Confirm_OutputInstallDirectory = new Fl_Output(600, 126, 520, 28, "Install directory:  ");
           g_Confirm_OutputInstallDirectory->box(FL_THIN_DOWN_FRAME);
           g_Confirm_OutputInstallDirectory->labelsize(18);
           g_Confirm_OutputInstallDirectory->textsize(18);
@@ -4428,25 +4438,31 @@ data, but it will be downloaded sooner or later anyway.");
           g_Confirm_OutputVersionToInstall->labelsize(18);
           g_Confirm_OutputVersionToInstall->textsize(18);
         } // Fl_Output* g_Confirm_OutputVersionToInstall
-        { g_Confirm_OutputFinalSize = new Fl_Output(760, 297, 105, 33, "Final Size:");
+        { g_Confirm_OutputCurrentSize = new Fl_Output(760, 297, 105, 33, "Current Size:");
+          g_Confirm_OutputCurrentSize->tooltip("The full size of currently installed TDM files.");
+          g_Confirm_OutputCurrentSize->box(FL_THIN_DOWN_FRAME);
+          g_Confirm_OutputCurrentSize->labelsize(18);
+          g_Confirm_OutputCurrentSize->textsize(18);
+        } // Fl_Output* g_Confirm_OutputCurrentSize
+        { g_Confirm_OutputFinalSize = new Fl_Output(760, 347, 105, 33, "Final Size:");
           g_Confirm_OutputFinalSize->tooltip("The full size of the version being installed.");
           g_Confirm_OutputFinalSize->box(FL_THIN_DOWN_FRAME);
           g_Confirm_OutputFinalSize->labelsize(18);
           g_Confirm_OutputFinalSize->textsize(18);
         } // Fl_Output* g_Confirm_OutputFinalSize
-        { g_Confirm_OutputAddedSize = new Fl_Output(760, 347, 105, 33, "Added Size:");
+        { g_Confirm_OutputAddedSize = new Fl_Output(760, 397, 105, 33, "Added Size:");
           g_Confirm_OutputAddedSize->tooltip("How much data will be added to the installation.");
           g_Confirm_OutputAddedSize->box(FL_THIN_DOWN_FRAME);
           g_Confirm_OutputAddedSize->labelsize(18);
           g_Confirm_OutputAddedSize->textsize(18);
         } // Fl_Output* g_Confirm_OutputAddedSize
-        { g_Confirm_OutputRemovedSize = new Fl_Output(760, 397, 105, 33, "Removed Size:");
+        { g_Confirm_OutputRemovedSize = new Fl_Output(760, 447, 105, 33, "Removed Size:");
           g_Confirm_OutputRemovedSize->tooltip("How much existing data will be removed from installation.");
           g_Confirm_OutputRemovedSize->box(FL_THIN_DOWN_FRAME);
           g_Confirm_OutputRemovedSize->labelsize(18);
           g_Confirm_OutputRemovedSize->textsize(18);
         } // Fl_Output* g_Confirm_OutputRemovedSize
-        { g_Confirm_OutputDownloadSize = new Fl_Output(760, 447, 105, 33, "Download Size:");
+        { g_Confirm_OutputDownloadSize = new Fl_Output(760, 497, 105, 33, "Download Size:");
           g_Confirm_OutputDownloadSize->tooltip("The installer will download approximately this amount of data.");
           g_Confirm_OutputDownloadSize->box(FL_THIN_DOWN_FRAME);
           g_Confirm_OutputDownloadSize->labelsize(18);

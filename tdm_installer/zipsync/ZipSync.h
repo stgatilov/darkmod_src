@@ -61,7 +61,8 @@ public:
     bool DevelopPlan(UpdateType type);
 
     //download all remote files which are necessary for update
-    void DownloadRemoteFiles(const GlobalProgressCallback &progressCallback = GlobalProgressCallback());
+    //returns total number of bytes downloaded
+    uint64_t DownloadRemoteFiles(const GlobalProgressCallback &progressCallback = GlobalProgressCallback());
 
     //having all matches available locally, perform the update
     void RepackZips();

@@ -581,7 +581,7 @@ void UpdateProcess::RepackZips() {
     impl.DoAll();
 }
 
-void UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progressCallback) {
+uint64_t UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progressCallback) {
     struct UrlData {
         PathAR path;
         StdioFileHolder file;
@@ -669,7 +669,7 @@ void UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progressCa
 
             //verify hash of the downloaded file (we must be sure that it is correct)
             //TODO: what if bad mirror changes file local header?...
-            uint32_t size = provided->Size();
+            uint32_t size = provided->byterange[1] - provided->byterange[0];
             zf.LocateByByterange(offset, offset + size);
             SAFE_CALL(unzOpenCurrentFile2(zf, NULL, NULL, true));
             Hasher hasher;
@@ -710,6 +710,7 @@ void UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progressCa
         AddManagedZip(state.path.abs);
     }
 
+    return downloader.TotalBytesDownloaded();
 }
 
 }

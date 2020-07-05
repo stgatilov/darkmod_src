@@ -195,7 +195,10 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		g_logger->infof("Downloading hashes of remote manifests");
 		std::vector<ZipSync::HashDigest> allHashes;
 		ZipSync::Downloader downloaderPreliminary;
+		if (progress)
+			downloaderPreliminary.SetProgressCallback(progress->GetDownloaderCallback());
 		allHashes = ZipSync::GetHashesOfRemoteChecksummedZips(downloaderPreliminary, downloadedManifestUrls);
+		g_logger->infof("Downloaded bytes: %lld", downloaderPreliminary.TotalBytesDownloaded());
 
 		g_logger->infof("Downloading actual remote manifests");
 		for (int i = 0; i < n; i++)
@@ -206,6 +209,7 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		if (progress)
 			downloaderFull.SetProgressCallback(progress->GetDownloaderCallback());
 		std::vector<int> matching = ZipSync::DownloadChecksummedZips(downloaderFull, downloadedManifestUrls, allHashes, cachedManiNames, newManiNames);
+		g_logger->infof("Downloaded bytes: %lld", downloaderFull.TotalBytesDownloaded());
 
 		g_logger->infof("Downloaded all manifests successfully");
 		for (int i = 0; i < n; i++)
@@ -213,12 +217,15 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 
 		g_logger->infof("Loading downloaded manifests");
 		for (int i = 0; i < n; i++) {
+			if (progress)
+				progress->Update(double(i) / n, "Loading manifests");
 			ZipSync::IniData ini = ZipSync::ReadIniFile(newManiNames[i].c_str());
 			ZipSync::Manifest mani;
 			mani.ReadFromIni(std::move(ini), OsUtils::GetCwd());
 			mani.ReRoot(ZipSync::GetDirPath(downloadedManifestUrls[i]));
 			g_state->_loadedManifests[downloadedVersions[i]] = std::move(mani);
 		}
+		progress->Update(1.0, "Manifests loaded");
 	}
 
 	//look at locally present zips
@@ -250,11 +257,10 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	Actions::VersionInfo info;
 	for (int i = 0; i < ownedZips.size(); i++)
 		info.currentSize += ZipSync::SizeOfFile(ownedZips[i]);
-	for (int i = 0; i < targetMani.size(); i++)
-		info.finalSize += targetMani[i].Size();
 	for (int i = 0; i < updater->MatchCount(); i++) {
 		auto m = updater->GetMatch(i);
-		uint32_t sz = m.target->Size();
+		uint32_t sz = m.target->props.compressedSize;
+		info.finalSize += sz;
 		if (m.provided->location == ZipSync::FileLocation::RemoteHttp)
 			info.downloadSize += sz;
 		if (m.provided->location != ZipSync::FileLocation::Inplace)
@@ -273,4 +279,31 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	g_state->_updater = std::move(updater);
 	g_logger->infof("");
 	return info;
+}
+
+void Actions::PerformInstallDownload(ZipSync::ProgressIndicator *progress) {
+	g_logger->infof("Starting installation: download");
+	ZipSync::UpdateProcess *updater = g_state->_updater.get();
+	ZipSyncAssert(updater);
+
+	auto callback = (progress ? progress->GetDownloaderCallback() : ZipSync::GlobalProgressCallback());
+	uint64_t totalBytesDownloaded = updater->DownloadRemoteFiles(callback);
+	g_logger->infof("Downloaded bytes: %lld", totalBytesDownloaded);
+
+	g_logger->infof("");
+}
+
+void Actions::PerformInstallRepack(ZipSync::ProgressIndicator *progress) {
+	g_logger->infof("Starting installation: repack");
+	ZipSync::UpdateProcess *updater = g_state->_updater.get();
+	ZipSyncAssert(updater);
+
+	if (progress)
+		progress->Update(0.0, "Repacking...");
+	updater->RepackZips();
+	if (progress)
+		progress->Update(1.0, "Repacking finished");
+	g_logger->infof("Repacking finished");
+
+	g_logger->infof("");
 }

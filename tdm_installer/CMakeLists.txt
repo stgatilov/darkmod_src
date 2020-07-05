@@ -5,8 +5,14 @@ project(tdm_installer)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(TDM_INSTALLER_FAST_DEBUG "faster debug build: optimized libzipsync, disabled runtime checks" OFF)
+
 # TDM: use prebuilt artefacts for third-party libraries
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../ThirdParty/cmake_find_package")
+
+if(TDM_INSTALLER_FAST_DEBUG AND MSVC)
+    string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+endif()
 
 set(ZIPSYNC_OPTION_BUILD_TESTS OFF CACHE BOOL "")
 set(ZIPSYNC_OPTION_BUILD_TOOL OFF CACHE BOOL "")
@@ -23,6 +29,10 @@ set(sources
     GuiPageSettings.h
     GuiPageVersion.cpp
     GuiPageVersion.h
+    GuiPageConfirm.cpp
+    GuiPageConfirm.h
+    GuiPageInstall.cpp
+    GuiPageInstall.h
     ProgressIndicatorGui.cpp
     ProgressIndicatorGui.h
 
@@ -65,3 +75,7 @@ target_link_libraries(libzipsync INTERFACE ${mbedtls_LIBRARIES} ${zlib_LIBRARIES
 
 # ensure same type of runtime on used zipsync libraries
 set_property(TARGET libzipsync libzipsyncextra PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+if(TDM_INSTALLER_FAST_DEBUG AND MSVC)
+    target_compile_options(libzipsync PRIVATE /O2 /Ob2)
+endif()

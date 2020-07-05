@@ -52,14 +52,16 @@ namespace stdext {
 	}
 
 	void trim(std::string &text, const char *delimiters) {
-		size_t pos = text.find_first_not_of(delimiters);
-		if (pos == std::string::npos) {
+		size_t beg = text.find_first_not_of(delimiters);
+		if (beg == std::string::npos) {
 			text.clear();
 			return;
 		}
-		text.erase(text.begin(), text.begin() + pos);
-		pos = text.find_last_not_of(delimiters) + 1;
-		text.erase(text.begin() + pos, text.end());
+		size_t end = text.find_last_not_of(delimiters) + 1;
+        if (beg == 0 && end == text.size())
+            return;
+        text.resize(end);
+        text.erase(0, beg);
 	}
 	std::string trim_copy(const std::string &text) {
 		std::string res = text;

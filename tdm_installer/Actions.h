@@ -32,4 +32,10 @@ public:
 	//user wants to know stats about possible update to specified version
 	//this action can trigger downloading manifests (note: they are cached in g_state)
 	static VersionInfo RefreshVersionInfo(const std::string &version, ZipSync::ProgressIndicator *progress);
+
+	//perform prepared update: download all data
+	static void PerformInstallDownload(ZipSync::ProgressIndicator *progress);
+
+	//perform prepared update: repack installation
+	static void PerformInstallRepack(ZipSync::ProgressIndicator *progress);
 };

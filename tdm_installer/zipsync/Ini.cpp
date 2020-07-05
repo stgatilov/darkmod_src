@@ -58,9 +58,10 @@ IniData ReadIniFile(const char *path, IniMode mode) {
         sec.clear();
     };
     size_t textPos = 0;
+    std::string line;
     while (textPos < text.size()) {
-        size_t eolPos = std::find(text.begin() + textPos, text.end(), '\n') - text.begin();
-        std::string line(text.begin() + textPos, text.begin() + eolPos);
+        size_t eolPos = std::find(text.data() + textPos, text.data() + text.size(), '\n') - text.data();
+        line.assign(text.data() + textPos, text.data() + eolPos);
         textPos = eolPos + 1;
 
         stdext::trim(line);
@@ -75,9 +76,7 @@ IniData ReadIniFile(const char *path, IniMode mode) {
         else {
             size_t pos = line.find('=');
             ZipSyncAssertF(pos != std::string::npos, "Cannot parse ini line: %s", line.c_str());
-            std::string key = line.substr(0, pos);
-            std::string value = line.substr(pos+1);
-            sec.push_back(std::make_pair(std::move(key), std::move(value)));
+            sec.emplace_back(line.substr(0, pos), line.substr(pos+1));
         }
     }
     CommitSec();

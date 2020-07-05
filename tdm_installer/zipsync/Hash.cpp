@@ -21,12 +21,24 @@ std::string HashDigest::Hex() const {
 void HashDigest::Parse(const char *hex) {
     ZipSyncAssertF(strlen(hex) == 2 * sizeof(_data), "Hex digest has wrong length %d", strlen(hex));
     for (int i = 0; i < sizeof(_data); i++) {
-        char octet[4] = {0};
+        /*char octet[4] = {0};
         memcpy(octet, hex + 2*i, 2);
         uint32_t value;
         int k = sscanf(octet, "%02x", &value);
         ZipSyncAssertF(k == 1, "Cannot parse hex digest byte %s", octet);
-        _data[i] = value;
+        _data[i] = value;*/
+
+        uint32_t digits[2];
+        for (int d = 0; d < 2; d++) {
+            char ch = hex[2*i+d];
+            if (ch >= '0' && ch <= '9')
+                digits[d] = ch - '0';
+            else if (ch >= 'a' && ch <= 'f')
+                digits[d] = ch - 'a' + 10;
+            else
+                ZipSyncAssertF(false, "Cannot parse hex digest digit %c", ch);
+        }
+        _data[i] = (digits[0] << 4) + digits[1];
     }
 }
 void HashDigest::Clear() {

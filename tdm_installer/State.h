@@ -15,10 +15,14 @@ struct State {
 	ZipSync::Manifest _localManifest;
 	//set of versions for which manifest has already been loaded
 	std::map<std::string, ZipSync::Manifest> _loadedManifests;
+	//which version was last evaluated with "refresh" button
+	std::string _versionRefreshed;
 	//the update which is going to be made (or is made right now)
+	//if present, then it is prepared to update to _versionRefreshed
 	//action RefreshVersionInfo stores it here if plan is successfully developed
 	std::unique_ptr<ZipSync::UpdateProcess> _updater;
 
+	void Reset();
 	~State();
 };
 

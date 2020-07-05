@@ -1,16 +1,28 @@
 #include "GuiGlobal.h"
 #include "GuiFluidAutoGen.h"
 #include "OsUtils.h"
+#include "State.h"
 #include "GuiPageSettings.h"
 #include "GuiPageVersion.h"
+#include "GuiPageConfirm.h"
+#include "GuiPageInstall.h"
+
 
 void cb_Settings_ButtonReset(Fl_Widget *self) {
+	g_state->Reset();
 	g_Settings_InputInstallDirectory->value(OsUtils::GetCwd().c_str());
 	g_Settings_InputInstallDirectory->do_callback();
 	g_Settings_CheckCustomVersion->value(false);
 	g_Settings_CheckAdvancedSettings->value(false);
 	g_Settings_CheckAdvancedSettings->do_callback();
-	//TODO: reset all other pages too?
+
+	g_Version_InputCustomManifestUrl->value("");
+	g_Version_TreeVersions->do_callback();
+	g_Version_OutputCurrentSize->value("");
+	g_Version_OutputFinalSize->value("");
+	g_Version_OutputAddedSize->value("");
+	g_Version_OutputRemovedSize->value("");
+	g_Version_OutputDownloadSize->value("");
 }
 
 //============================================================
@@ -72,6 +84,12 @@ void GuiInitAll() {
 
 	g_Version_TreeVersions->callback(cb_Version_TreeVersions);
 	g_Version_ButtonRefreshInfo->callback(cb_Version_ButtonRefreshInfo);
+	g_Version_ButtonNext->callback(cb_Version_ButtonNext);
+
+	g_Confirm_ButtonBack->callback(cb_Confirm_ButtonBack);
+	g_Confirm_ButtonStart->callback(cb_Confirm_ButtonStart);
+
+	g_Install_ButtonClose->callback(cb_Install_ButtonClose);
 }
 
 void GuiUpdateAll(void*) {
