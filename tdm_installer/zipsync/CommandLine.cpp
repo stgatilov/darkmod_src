@@ -287,7 +287,7 @@ Manifest DoAnalyze(std::string root, std::vector<std::string> zipPaths, bool aut
             {
                 std::lock_guard<std::mutex> lock(mutex);
                 doneSize += SizeOfFile(zipPath);
-                if (progress) progress->Update(doneSize / totalSize, "Analysed  \"" + zipPathRel + "\"...");
+                if (progress) progress->Update(doneSize / totalSize, "Analysed  \"" + zipPathRel + "\"");
             }
         }, threadsNum);
         if (progress) progress->Update(1.0, "Analysing done");

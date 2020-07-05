@@ -87,14 +87,17 @@ void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 		g_Settings_CheckSkipSelfUpdate->activate();
 		g_Settings_CheckSkipMirrorsUpdate->activate();
 		g_Settings_CheckForceScan->activate();
+		g_Settings_CheckBitwiseExact->activate();
 	}
 	else {
 		g_Settings_CheckSkipSelfUpdate->deactivate();
 		g_Settings_CheckSkipMirrorsUpdate->deactivate();
 		g_Settings_CheckForceScan->deactivate();
+		g_Settings_CheckBitwiseExact->deactivate();
 		g_Settings_CheckSkipSelfUpdate->value(false);
 		g_Settings_CheckSkipMirrorsUpdate->value(false);
 		g_Settings_CheckForceScan->value(false);
+		g_Settings_CheckBitwiseExact->value(false);
 	}
 }
 
@@ -117,6 +120,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	}
 
 	try {
+		GuiDeactivateGuard deactivator(g_PageSettings, {});
 		g_Settings_ProgressScanning->show();
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
 		Actions::ScanInstallDirectoryIfNecessary(g_Settings_CheckForceScan->value(), &progress);

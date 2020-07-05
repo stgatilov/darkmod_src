@@ -215,7 +215,8 @@ void Manifest::ReRoot(const std::string &rootDir) {
     bool remote = PathAR::IsHttp(rootDir);
     for (FileMetainfo &filemeta : _files) {
         filemeta.zipPath = PathAR::FromRel(filemeta.zipPath.rel, rootDir);
-        filemeta.location = (remote ? FileLocation::RemoteHttp : FileLocation::Local);
+        if (filemeta.location != FileLocation::Nowhere)
+            filemeta.location = (remote ? FileLocation::RemoteHttp : FileLocation::Local);
     }
 }
 

@@ -61,10 +61,11 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 
 	//find information for the new version
 	Actions::VersionInfo info;
-	g_Version_ProgressDownloadManifests->show();
-	ProgressIndicatorGui progress(g_Version_ProgressDownloadManifests);
 	try {
-		info = Actions::RefreshVersionInfo(version, &progress);
+		GuiDeactivateGuard deactivator(g_PageVersion, {});
+		g_Version_ProgressDownloadManifests->show();
+		ProgressIndicatorGui progress(g_Version_ProgressDownloadManifests);
+		info = Actions::RefreshVersionInfo(version, g_Settings_CheckBitwiseExact->value(), &progress);
 		g_Version_ProgressDownloadManifests->hide();
 	}
 	catch(const std::exception &e) {

@@ -2,6 +2,7 @@
 #include "GuiFluidAutoGen.h"
 #include "FL/fl_ask.H"
 #include "Actions.h"
+#include "OsUtils.h"
 #include "ProgressIndicatorGui.h"
 
 
@@ -22,28 +23,31 @@ void cb_Confirm_ButtonStart(Fl_Widget *self) {
 	g_Wizard->next();
 	g_Install_ButtonClose->deactivate();
 	g_Install_ButtonCancel->activate();
-	Fl::flush();
 
-	g_Install_ProgressDownload->show();
-	Fl::flush();
 	try {
+		GuiDeactivateGuard deactivator(g_PageInstall, {g_Install_ButtonCancel});
+		g_Install_ProgressDownload->show();
+		Fl::flush();
 		ProgressIndicatorGui progress(g_Install_ProgressDownload);
 		Actions::PerformInstallDownload(&progress);
 	}
 	catch(std::exception &e) {
 		fl_alert("Error: %s", e.what());
+		ZipSync::DoClean(OsUtils::GetCwd());
 		g_Wizard->value(g_PageConfirm);
 		return;
 	}
 
-	g_Install_ProgressRepack->show();
-	Fl::flush();
 	try {
+		GuiDeactivateGuard deactivator(g_PageInstall, {});
+		g_Install_ProgressRepack->show();
+		Fl::flush();
 		ProgressIndicatorGui progress(g_Install_ProgressRepack);
 		Actions::PerformInstallRepack(&progress);
 	}
 	catch(std::exception &e) {
 		fl_alert("Error: %s", e.what());
+		ZipSync::DoClean(OsUtils::GetCwd());
 		g_Wizard->value(g_PageConfirm);
 		return;
 	}

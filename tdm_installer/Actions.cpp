@@ -143,7 +143,7 @@ void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndic
 	g_logger->infof("");
 }
 
-Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersion, ZipSync::ProgressIndicator *progress) {
+Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersion, bool bitwiseExact, ZipSync::ProgressIndicator *progress) {
 	g_logger->infof("Evaluating version %s", targetVersion.c_str());
 	g_state->_updater.reset();
 
@@ -218,14 +218,17 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		g_logger->infof("Loading downloaded manifests");
 		for (int i = 0; i < n; i++) {
 			if (progress)
-				progress->Update(double(i) / n, "Loading manifests");
+				progress->Update(double(i) / n, ZipSync::formatMessage("Loading manifest \"%s\"...", newManiNames[i].c_str()));
 			ZipSync::IniData ini = ZipSync::ReadIniFile(newManiNames[i].c_str());
 			ZipSync::Manifest mani;
 			mani.ReadFromIni(std::move(ini), OsUtils::GetCwd());
 			mani.ReRoot(ZipSync::GetDirPath(downloadedManifestUrls[i]));
 			g_state->_loadedManifests[downloadedVersions[i]] = std::move(mani);
+			if (progress)
+				progress->Update(double(i+1) / n, ZipSync::formatMessage("Manifest \"%s\" loaded", newManiNames[i].c_str()));
 		}
-		progress->Update(1.0, "Manifests loaded");
+		if (progress)
+			progress->Update(1.0, "Manifests loaded");
 	}
 
 	//look at locally present zips
@@ -239,10 +242,14 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	ZipSync::Manifest providMani = targetMani.Filter([](const ZipSync::FileMetainfo &mf) -> bool {
 		return mf.location != ZipSync::FileLocation::Nowhere;
 	});
-	providMani.ReRoot(ZipSync::GetDirPath(targetManifestUrl));
 	providMani.AppendManifest(g_state->_localManifest);
-	for (const std::string &ver : addProvidedVersions)
-		providMani.AppendManifest(g_state->_loadedManifests[ver]);
+	for (const std::string &ver : addProvidedVersions) {
+		const ZipSync::Manifest &mani = g_state->_loadedManifests[ver];
+		ZipSync::Manifest added = mani.Filter([](const ZipSync::FileMetainfo &mf) -> bool {
+			return mf.location != ZipSync::FileLocation::Nowhere;
+		});
+		providMani.AppendManifest(added);
+	}
 	g_logger->infof("Collected full manifest: target (%d files) and provided (%d files)", (int)targetMani.size(), (int)providMani.size());
 
 	//develop update plan
@@ -251,7 +258,8 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	updater->Init(targetMani, providMani, OsUtils::GetCwd());
 	for (const std::string &path : ownedZips)
 		updater->AddManagedZip(path);
-	updater->DevelopPlan(ZipSync::UpdateType::SameContents);	//TODO: optional SameCompressed?
+	auto updateType = (bitwiseExact ? ZipSync::UpdateType::SameCompressed : ZipSync::UpdateType::SameContents);
+	updater->DevelopPlan(updateType);
 
 	//compute stats
 	Actions::VersionInfo info;

@@ -24,6 +24,8 @@ Fl_Check_Button *g_Settings_CheckSkipMirrorsUpdate=(Fl_Check_Button *)0;
 
 Fl_Check_Button *g_Settings_CheckForceScan=(Fl_Check_Button *)0;
 
+Fl_Check_Button *g_Settings_CheckBitwiseExact=(Fl_Check_Button *)0;
+
 Fl_Progress *g_Settings_ProgressScanning=(Fl_Progress *)0;
 
 Fl_Button *g_Settings_ButtonNext=(Fl_Button *)0;
@@ -4271,7 +4273,6 @@ void FluidAllGui() {
   { g_Window = new Fl_Double_Window(1200, 675, "TheDarkMod installer v?.?\?");
     { g_Wizard = new Fl_Wizard(400, -2, 825, 702);
       { g_PageSettings = new Fl_Group(400, 0, 800, 675, "Page 1: Settings");
-        g_PageSettings->hide();
         { g_Settings_TextGreetings = new Fl_Text_Display(425, 25, 748, 91);
           g_Settings_TextGreetings->box(FL_NO_BOX);
           g_Settings_TextGreetings->color(FL_BACKGROUND_COLOR);
@@ -4288,7 +4289,7 @@ oose some directory where you can write, like: C:/Games/TheDarkMod");
           g_Settings_ButtonBrowseInstallDirectory->box(FL_GTK_UP_BOX);
           g_Settings_ButtonBrowseInstallDirectory->down_box(FL_GTK_DOWN_BOX);
         } // Fl_Button* g_Settings_ButtonBrowseInstallDirectory
-        { Fl_Box* o = new Fl_Box(520, 358, 330, 132);
+        { Fl_Box* o = new Fl_Box(520, 358, 570, 132);
           o->box(FL_ENGRAVED_BOX);
         } // Fl_Box* o
         { g_Settings_CheckAdvancedSettings = new Fl_Check_Button(500, 323, 205, 20, "Advanced settings");
@@ -4319,7 +4320,13 @@ oceeding. This can be useful if local version is suspected to be corrupted.");
           g_Settings_CheckForceScan->down_box(FL_DOWN_BOX);
           g_Settings_CheckForceScan->labelsize(18);
         } // Fl_Check_Button* g_Settings_CheckForceScan
-        { g_Settings_ProgressScanning = new Fl_Progress(445, 545, 710, 20, "scanning...");
+        { g_Settings_CheckBitwiseExact = new Fl_Check_Button(835, 376, 230, 20, "Bitwise exact zips");
+          g_Settings_CheckBitwiseExact->tooltip("Make zip files bitwise the same as on server, possible at the cost of more do\
+wnload.");
+          g_Settings_CheckBitwiseExact->down_box(FL_DOWN_BOX);
+          g_Settings_CheckBitwiseExact->labelsize(18);
+        } // Fl_Check_Button* g_Settings_CheckBitwiseExact
+        { g_Settings_ProgressScanning = new Fl_Progress(445, 575, 710, 20, "scanning...");
         } // Fl_Progress* g_Settings_ProgressScanning
         { g_Settings_ButtonNext = new Fl_Button(1070, 620, 100, 40, "Next");
           g_Settings_ButtonNext->box(FL_GTK_UP_BOX);
@@ -4351,15 +4358,15 @@ t the installation procedure in any way, and is displayed only for information\
           g_Version_OutputLastInstalledVersion->labelsize(18);
           g_Version_OutputLastInstalledVersion->textsize(18);
         } // Fl_Output* g_Version_OutputLastInstalledVersion
-        { g_Version_TreeVersions = new Fl_Tree(425, 60, 530, 440);
+        { g_Version_TreeVersions = new Fl_Tree(425, 60, 530, 405);
         } // Fl_Tree* g_Version_TreeVersions
-        { g_Version_InputCustomManifestUrl = new Fl_Input(640, 536, 500, 28, "Custom manifest URL:   ");
+        { g_Version_InputCustomManifestUrl = new Fl_Input(640, 497, 500, 28, "Custom manifest URL:   ");
           g_Version_InputCustomManifestUrl->tooltip("Do not enter anything here unless you know what you are doing! This is only u\
 sed to share quick test patches and unofficial versions.");
           g_Version_InputCustomManifestUrl->labelsize(18);
           g_Version_InputCustomManifestUrl->textsize(18);
         } // Fl_Input* g_Version_InputCustomManifestUrl
-        { g_Version_TextCustomManifestMessage = new Fl_Box(470, 574, 640, 25, "In the GUI tree above, select the base version from which the custom one was \
+        { g_Version_TextCustomManifestMessage = new Fl_Box(470, 535, 640, 25, "In the GUI tree above, select the base version from which the custom one was \
 branched.");
         } // Fl_Box* g_Version_TextCustomManifestMessage
         { g_Version_OutputCurrentSize = new Fl_Output(1025, 83, 105, 33, "Current Size:");
@@ -4392,14 +4399,14 @@ branched.");
           g_Version_OutputDownloadSize->textsize(18);
           g_Version_OutputDownloadSize->align(Fl_Align(FL_ALIGN_TOP));
         } // Fl_Output* g_Version_OutputDownloadSize
-        { g_Version_ButtonRefreshInfo = new Fl_Button(1016, 455, 129, 40, "Refresh Info");
+        { g_Version_ButtonRefreshInfo = new Fl_Button(1016, 415, 129, 40, "Refresh Info");
           g_Version_ButtonRefreshInfo->tooltip("Click to update the numbers shown above. It can trigger downloading a bit of \
 data, but it will be downloaded sooner or later anyway.");
           g_Version_ButtonRefreshInfo->box(FL_GTK_UP_BOX);
           g_Version_ButtonRefreshInfo->down_box(FL_GTK_DOWN_BOX);
           g_Version_ButtonRefreshInfo->labelsize(18);
         } // Fl_Button* g_Version_ButtonRefreshInfo
-        { g_Version_ProgressDownloadManifests = new Fl_Progress(1014, 420, 131, 20, "downloading...");
+        { g_Version_ProgressDownloadManifests = new Fl_Progress(445, 575, 710, 20, "downloading...");
         } // Fl_Progress* g_Version_ProgressDownloadManifests
         { g_Version_ButtonNext = new Fl_Button(1070, 620, 100, 40, "Next");
           g_Version_ButtonNext->tooltip("To unlock it, select one version of the game to install.");
@@ -4417,6 +4424,7 @@ data, but it will be downloaded sooner or later anyway.");
         g_PageVersion->end();
       } // Fl_Group* g_PageVersion
       { g_PageConfirm = new Fl_Group(400, 0, 800, 675, "Page 3: Confirmation");
+        g_PageConfirm->hide();
         { g_Confirm_TextReadyToInstall = new Fl_Text_Display(430, 19, 748, 72);
           g_Confirm_TextReadyToInstall->box(FL_NO_BOX);
           g_Confirm_TextReadyToInstall->color(FL_BACKGROUND_COLOR);
@@ -4491,14 +4499,11 @@ data, but it will be downloaded sooner or later anyway.");
           g_Install_TextInstalling->textsize(18);
           g_Install_TextInstalling->align(Fl_Align(FL_ALIGN_LEFT));
         } // Fl_Text_Display* g_Install_TextInstalling
-        { g_Install_ProgressDownload = new Fl_Progress(480, 230, 630, 30, "Downloading {somefilename}...");
-          g_Install_ProgressDownload->labelsize(18);
+        { g_Install_ProgressDownload = new Fl_Progress(480, 230, 630, 20, "Downloading...");
         } // Fl_Progress* g_Install_ProgressDownload
-        { g_Install_ProgressRepack = new Fl_Progress(480, 300, 630, 30, "Repacking {somefilename}...");
-          g_Install_ProgressRepack->labelsize(18);
+        { g_Install_ProgressRepack = new Fl_Progress(480, 300, 630, 20, "Repacking...");
         } // Fl_Progress* g_Install_ProgressRepack
-        { g_Install_ProgressFinalize = new Fl_Progress(480, 370, 630, 30, "Finalizing...");
-          g_Install_ProgressFinalize->labelsize(18);
+        { g_Install_ProgressFinalize = new Fl_Progress(480, 370, 630, 20, "Finalizing...");
         } // Fl_Progress* g_Install_ProgressFinalize
         { g_Install_TextFinishedInstall = new Fl_Text_Display(435, 442, 737, 68);
           g_Install_TextFinishedInstall->box(FL_NO_BOX);

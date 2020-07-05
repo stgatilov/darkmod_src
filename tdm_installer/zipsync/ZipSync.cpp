@@ -304,7 +304,7 @@ public:
     }
 
     void RepackZip(ZipInfo &zip) {
-        g_logger->infof(lcRepackZip, "Repacking %s...\n", zip._zipPathRepacked.c_str());
+        g_logger->infof(lcRepackZip, "Repacking %s...", zip._zipPathRepacked.c_str());
 
         //ensure all directories are created if missing
         CreateDirectoriesForFile(zip._zipPath, _owner._rootDir);

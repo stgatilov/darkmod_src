@@ -22,6 +22,7 @@ extern Fl_Check_Button *g_Settings_CheckCustomVersion;
 extern Fl_Check_Button *g_Settings_CheckSkipSelfUpdate;
 extern Fl_Check_Button *g_Settings_CheckSkipMirrorsUpdate;
 extern Fl_Check_Button *g_Settings_CheckForceScan;
+extern Fl_Check_Button *g_Settings_CheckBitwiseExact;
 #include <FL/Fl_Progress.H>
 extern Fl_Progress *g_Settings_ProgressScanning;
 extern Fl_Button *g_Settings_ButtonNext;
