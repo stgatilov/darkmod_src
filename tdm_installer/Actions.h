@@ -38,4 +38,7 @@ public:
 
 	//perform prepared update: repack installation
 	static void PerformInstallRepack(ZipSync::ProgressIndicator *progress);
+
+	//finalize update (cleanup, manifest, unpacking, etc.)
+	static void PerformInstallFinalize(ZipSync::ProgressIndicator *progress);
 };

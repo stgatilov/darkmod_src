@@ -74,8 +74,12 @@ void Actions::ReadConfigFile(bool download) {
 	g_state->_config.Clear();
 
 	if (download) {
-		g_logger->infof("Downloading config file from %s", "TODO");
-		//TODO
+		g_logger->infof("Downloading config file from %s", TDM_INSTALLER_CONFIG_URL);
+		std::string downloadedFilename = ZipSync::DownloadSimple(TDM_INSTALLER_CONFIG_URL, OsUtils::GetCwd());
+		g_logger->infof("Replacing %s with downloaded file", TDM_INSTALLER_CONFIG_FILENAME);
+		if (stdext::is_regular_file(TDM_INSTALLER_CONFIG_FILENAME))
+			stdext::remove(TDM_INSTALLER_CONFIG_FILENAME);
+		stdext::rename(downloadedFilename, TDM_INSTALLER_CONFIG_FILENAME);
 	}
 
 	g_logger->infof("Reading INI file %s", TDM_INSTALLER_CONFIG_FILENAME);
@@ -312,6 +316,28 @@ void Actions::PerformInstallRepack(ZipSync::ProgressIndicator *progress) {
 	if (progress)
 		progress->Update(1.0, "Repacking finished");
 	g_logger->infof("Repacking finished");
+
+	g_logger->infof("");
+}
+
+void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
+	ZipSync::UpdateProcess *updater = g_state->_updater.get();
+	ZipSyncAssert(updater);
+
+	if (progress)
+		progress->Update(0.0, "Saving resulting manifest...");
+	ZipSync::Manifest mani = updater->GetProvidedManifest().Filter([](const ZipSync::FileMetainfo &mf) -> bool {
+		return mf.location == ZipSync::FileLocation::Inplace;
+	});
+	ZipSync::WriteIniFile(TDM_INSTALLER_LOCAL_MANIFEST, mani.WriteToIni());
+	if (progress)
+		progress->Update(0.5, "Manifest saved");
+
+	if (progress)
+		progress->Update(0.5, "Cleaning directory...");
+	ZipSync::DoClean(OsUtils::GetCwd());
+	if (progress)
+		progress->Update(1.0, "Cleaning finished");
 
 	g_logger->infof("");
 }

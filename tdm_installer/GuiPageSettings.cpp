@@ -85,17 +85,17 @@ void cb_Settings_ButtonRestartNewDir(Fl_Widget *self) {
 void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 	if (g_Settings_CheckAdvancedSettings->value()) {
 		g_Settings_CheckSkipSelfUpdate->activate();
-		g_Settings_CheckSkipMirrorsUpdate->activate();
+		g_Settings_CheckSkipConfigDownload->activate();
 		g_Settings_CheckForceScan->activate();
 		g_Settings_CheckBitwiseExact->activate();
 	}
 	else {
 		g_Settings_CheckSkipSelfUpdate->deactivate();
-		g_Settings_CheckSkipMirrorsUpdate->deactivate();
+		g_Settings_CheckSkipConfigDownload->deactivate();
 		g_Settings_CheckForceScan->deactivate();
 		g_Settings_CheckBitwiseExact->deactivate();
 		g_Settings_CheckSkipSelfUpdate->value(false);
-		g_Settings_CheckSkipMirrorsUpdate->value(false);
+		g_Settings_CheckSkipConfigDownload->value(false);
 		g_Settings_CheckForceScan->value(false);
 		g_Settings_CheckBitwiseExact->value(false);
 	}
@@ -111,7 +111,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	}
 
 	try {
-		bool skipUpdate = g_Settings_CheckSkipMirrorsUpdate->value();
+		bool skipUpdate = g_Settings_CheckSkipConfigDownload->value();
 		Actions::ReadConfigFile(!skipUpdate);
 	}
 	catch(const std::exception &e) {
@@ -149,6 +149,8 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 
 	bool customVersion = g_Settings_CheckCustomVersion->value();
 	if (customVersion) {
+		g_state->_versionRefreshed.clear();
+		g_Version_TreeVersions->do_callback();
 		g_Wizard->value(g_PageVersion);
 	}
 	else {

@@ -6,3 +6,5 @@
 
 #define TDM_INSTALLER_ZIPSYNC_DIR ".zipsync"
 #define TDM_INSTALLER_MANICACHE_SUBDIR "mani"
+
+#define TDM_INSTALLER_CONFIG_URL "http://darkmod.taaaki.za.net/zipsync/tdm_installer.ini"

@@ -20,7 +20,7 @@ Fl_Check_Button *g_Settings_CheckCustomVersion=(Fl_Check_Button *)0;
 
 Fl_Check_Button *g_Settings_CheckSkipSelfUpdate=(Fl_Check_Button *)0;
 
-Fl_Check_Button *g_Settings_CheckSkipMirrorsUpdate=(Fl_Check_Button *)0;
+Fl_Check_Button *g_Settings_CheckSkipConfigDownload=(Fl_Check_Button *)0;
 
 Fl_Check_Button *g_Settings_CheckForceScan=(Fl_Check_Button *)0;
 
@@ -4308,12 +4308,12 @@ the most recent official release will be installed.");
           g_Settings_CheckSkipSelfUpdate->down_box(FL_DOWN_BOX);
           g_Settings_CheckSkipSelfUpdate->labelsize(18);
         } // Fl_Check_Button* g_Settings_CheckSkipSelfUpdate
-        { g_Settings_CheckSkipMirrorsUpdate = new Fl_Check_Button(540, 411, 220, 20, "Skip mirrors update");
-          g_Settings_CheckSkipMirrorsUpdate->tooltip("Do not download up-to-date mirrors file. Use information from tdm_zs_mirrors.\
-txt in the install directory instead.");
-          g_Settings_CheckSkipMirrorsUpdate->down_box(FL_DOWN_BOX);
-          g_Settings_CheckSkipMirrorsUpdate->labelsize(18);
-        } // Fl_Check_Button* g_Settings_CheckSkipMirrorsUpdate
+        { g_Settings_CheckSkipConfigDownload = new Fl_Check_Button(540, 411, 225, 20, "Skip config file download");
+          g_Settings_CheckSkipConfigDownload->tooltip("Do not download up-to-date configuration file. Use information from tdm_insta\
+ller.ini in the install directory instead.");
+          g_Settings_CheckSkipConfigDownload->down_box(FL_DOWN_BOX);
+          g_Settings_CheckSkipConfigDownload->labelsize(18);
+        } // Fl_Check_Button* g_Settings_CheckSkipConfigDownload
         { g_Settings_CheckForceScan = new Fl_Check_Button(540, 446, 220, 20, "Force scan");
           g_Settings_CheckForceScan->tooltip("Be sure to reanalyze all pk4 and zip files in the install directory before pr\
 oceeding. This can be useful if local version is suspected to be corrupted.");

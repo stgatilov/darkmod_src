@@ -52,7 +52,19 @@ void cb_Confirm_ButtonStart(Fl_Widget *self) {
 		return;
 	}
 
-	//TODO: finalization?
+	try {
+		GuiDeactivateGuard deactivator(g_PageInstall, {});
+		g_Install_ProgressFinalize->show();
+		Fl::flush();
+		ProgressIndicatorGui progress(g_Install_ProgressFinalize);
+		Actions::PerformInstallFinalize(&progress);
+	}
+	catch(std::exception &e) {
+		fl_alert("Error: %s", e.what());
+		ZipSync::DoClean(OsUtils::GetCwd());
+		g_Wizard->value(g_PageConfirm);
+		return;
+	}
 
 	g_Install_ButtonClose->activate();
 	g_Install_ButtonCancel->deactivate();
