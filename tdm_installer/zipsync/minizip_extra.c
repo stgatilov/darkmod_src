@@ -1,6 +1,7 @@
 #include "minizip_extra.h"
 #include <string.h>
 #include "minizip_private.h"
+#include "zlib.h"
 
 extern unzFile unzReOpen (const char* path, unzFile file)
 {
@@ -157,4 +158,22 @@ extern int ZEXPORT minizipCopyDataRaw(unzFile srcHandle, zipFile dstHandle, void
     }
 
     return UNZ_OK;
+}
+
+extern int ZEXPORT zipForceDataType(zipFile file, uLong internalAttrib)
+{
+    zip64_internal* zi = (zip64_internal*)file;
+
+    if (zi == NULL)
+        return ZIP_PARAMERROR;
+    if (zi->in_opened_file_inzip == 0)
+        return ZIP_PARAMERROR;
+
+    curfile64_info *ci = &zi->ci;
+    if (!ci)
+        return ZIP_PARAMERROR;
+
+    ci->stream.data_type = (internalAttrib & 1 ? Z_ASCII : Z_BINARY);
+
+    return ZIP_OK;
 }

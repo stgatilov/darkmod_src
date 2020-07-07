@@ -2,6 +2,7 @@
 #include "StdString.h"
 #include "StdFilesystem.h"
 #include <string.h>
+#include "minizip_extra.h"
 
 
 namespace ZipSync {
@@ -478,6 +479,7 @@ void TestCreator::WriteState(const std::string &localRoot, const std::string &rr
             info.external_fa = params.externalAttribs;
             SAFE_CALL(zipOpenNewFileInZip(zf, filePair.first.c_str(), &info, NULL, 0, NULL, 0, NULL, params.method, params.level));
             SAFE_CALL(zipWriteInFileInZip(zf, contents.data(), contents.size()));
+            SAFE_CALL(zipForceDataType(zf, info.internal_fa));
             SAFE_CALL(zipCloseFileInZip(zf));
         }
         zf.reset();

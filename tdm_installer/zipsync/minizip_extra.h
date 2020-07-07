@@ -21,6 +21,12 @@ extern int ZEXPORT minizipCopyDataRaw(unzFile srcHandle, zipFile dstHandle, void
 /* Directly copies current file data from unz file to zip file.
    Both unz and zip file must be opened in raw mode, without any bytes read/written to them. */
 
+extern int ZEXPORT zipForceDataType(zipFile file, uLong internalAttrib);
+/* Sets "data type" of zlib stream to ASCII or binary depending on passed internalAttrib.
+   The data type is set so that it matches the lowest bit of internalAttrib.
+   This is only needed when writing files into zip in non-raw zlib-compressing mode.
+   Must be called just before closing the file. */
+
 #ifdef __cplusplus
 }
 #endif

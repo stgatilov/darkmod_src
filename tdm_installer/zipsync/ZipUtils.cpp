@@ -152,6 +152,8 @@ void minizipCopyFile(unzFile zf, zipFile zfOut, const char *filename, int method
             SAFE_CALL(zipWriteInFileInZip(zfOut, buffer, bytes));
         }
     }
+    if (!copyRaw)
+        SAFE_CALL(zipForceDataType(zfOut, info.internal_fa));
     SAFE_CALL(copyRaw ? zipCloseFileInZipRaw(zfOut, contentsSize, crc) : zipCloseFileInZip(zfOut));
     SAFE_CALL(unzCloseCurrentFile(zf));
 }
