@@ -31,4 +31,6 @@ public:
     operator FILE*() const { return get(); }
 };
 
+std::vector<uint8_t> ReadWholeFile(const std::string &filename);
+
 }

@@ -1,5 +1,7 @@
 #include "CommandLine.h"
 #include "ZipSync.h"
+#include "ChecksummedZip.h"
+#include "Utils.h"
 #include "args.hxx"
 #include <stdio.h>
 #include <iostream>
@@ -318,6 +320,23 @@ void CommandUpdate(args::Subparser &parser) {
         DoClean(root);
 }
 
+void CommandHashzip(args::Subparser &parser) {
+    args::Positional<std::string> argInputFile(parser, "input", "Name of file which should be put into checksummed zip", args::Options::Required);
+    args::ValueFlag<std::string> argOutputFile(parser, "output", "Name of output zip file to be created (default: same as input with .zip appended)", {'o', "output"}, "");
+    parser.Parse();
+
+    std::string inPath = NormalizeSlashes(argInputFile.Get());
+    std::string outPath = inPath + ".zip";
+    if (argOutputFile)
+        outPath = argOutputFile.Get();
+
+    int pos = inPath.find_last_of('/');
+    std::string filename = inPath.substr(pos + 1);
+
+    auto data = ReadWholeFile(inPath);
+    WriteChecksummedZip(outPath.c_str(), data.data(), data.size(), filename.c_str());
+}
+
 int main(int argc, char **argv) {
     args::ArgumentParser parser("ZipSync command line tool.");
     parser.helpParams.programName = "zipsync";
@@ -330,6 +349,7 @@ int main(int argc, char **argv) {
     args::Command analyze(parser, "analyze", "Create manifests for specified set of zips (on local machine)", CommandAnalyze);
     args::Command diff(parser, "diff", "Remove files available in given manifests from the set of zips", CommandDiff);
     args::Command update(parser, "update", "Perform update of the set of zips to specified target", CommandUpdate);
+    args::Command hashzip(parser, "hashzip", "Put specified file into \"checksummed\" zip (with hash of its contents at the beginning of the file)", CommandHashzip);
     try {
         parser.ParseCLI(argc, argv);
     }

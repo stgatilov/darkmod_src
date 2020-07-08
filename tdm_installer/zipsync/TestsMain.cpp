@@ -652,18 +652,11 @@ static std::string CurlSimple(const std::string &url, const std::string &ranges 
     CHECK(httpRes == wantedHttpCode[0]);
     return data;
 }
-static std::string ReadWholeFile(const std::string &filename) {
-    StdioFileHolder f(filename.c_str(), "rb");
-    fseek(f.get(), 0, SEEK_END);
-    int size = ftell(f.get());
-    fseek(f.get(), 0, SEEK_SET);
-    std::vector<char> res;
-    res.resize(size);
-    int numRead = fread(res.data(), 1, size, f.get());
-    CHECK(numRead == size);
-    return std::string(res.begin(), res.end());
-}
 
+std::string ReadWholeFileAsStr(const std::string &filename) {
+    auto data = ReadWholeFile(filename);
+    return std::string((char*)data.data(), data.size());
+}
 static void PrepareFilesForHttpServer() {
     stdext::create_directories(GetTempDir());
     StdioFileHolder test((GetTempDir() / "test.txt").string().c_str(), "wb");
@@ -678,9 +671,9 @@ static void PrepareFilesForHttpServer() {
 }
 TEST_CASE("HttpServer") {
     PrepareFilesForHttpServer();
-    std::string DataTestTxt = ReadWholeFile((GetTempDir() / "test.txt").string());
-    std::string DataIdentityBin = ReadWholeFile((GetTempDir() / "identity.bin").string());
-    std::string DataSquaresTxt = ReadWholeFile((GetTempDir() / "subdir" / "squares.txt").string());
+    std::string DataTestTxt = ReadWholeFileAsStr((GetTempDir() / "test.txt").string());
+    std::string DataIdentityBin = ReadWholeFileAsStr((GetTempDir() / "identity.bin").string());
+    std::string DataSquaresTxt = ReadWholeFileAsStr((GetTempDir() / "subdir" / "squares.txt").string());
 
     for (int blk = 0; blk < 2; blk++) {
         HttpServer server;
@@ -747,9 +740,9 @@ tpd
 
 TEST_CASE("Downloader") {
     PrepareFilesForHttpServer();
-    std::string DataTestTxt = ReadWholeFile((GetTempDir() / "test.txt").string());
-    std::string DataIdentityBin = ReadWholeFile((GetTempDir() / "identity.bin").string());
-    std::string DataSquaresTxt = ReadWholeFile((GetTempDir() / "subdir" / "squares.txt").string());
+    std::string DataTestTxt = ReadWholeFileAsStr((GetTempDir() / "test.txt").string());
+    std::string DataIdentityBin = ReadWholeFileAsStr((GetTempDir() / "identity.bin").string());
+    std::string DataSquaresTxt = ReadWholeFileAsStr((GetTempDir() / "subdir" / "squares.txt").string());
     auto CreateDownloadCallback = [](std::string &buffer) -> DownloadFinishedCallback {
         return [&buffer](const void *ptr, uint32_t bytes) -> void {
             buffer.assign((char*)ptr, (char*)ptr + bytes);
