@@ -6,6 +6,7 @@
 #include "CommandLine.h"
 #include "ChecksummedZip.h"
 #include "Downloader.h"
+#include "Utils.h"
 #include "ZipSync.h"
 #include "Constants.h"
 #include "State.h"
@@ -70,16 +71,77 @@ void Actions::StartLogFile() {
 	g_logger = new LoggerTdm();
 }
 
-void Actions::ReadConfigFile(bool download) {
+void Actions::TrySelfUpdate(ZipSync::ProgressIndicator *progress) {
+	std::string exeFilename = OsUtils::GetExecutableName();
+	std::string exePath = OsUtils::GetExecutablePath();
+	std::string exeTempPath = OsUtils::GetExecutablePath() + ".__temp__";
+	std::string exeZipPath = OsUtils::GetExecutablePath() + ".__temp__.zip";
+	std::string exeUrl = TDM_INSTALLER_EXECUTABLE_URL_PREFIX + OsUtils::GetExecutableName() + ".zip";
+
+	ZipSync::HashDigest myHash;
+	{
+		g_logger->infof("Computing hash of myself at %s...", exePath.c_str());
+		std::vector<uint8_t> selfExeData = ZipSync::ReadWholeFile(exePath);
+		myHash = ZipSync::Hasher().Update(selfExeData.data(), selfExeData.size()).Finalize();
+		g_logger->infof("My hash is %s", myHash.Hex().c_str());
+	}
+
+	//fast pass: download hash of updater
+	g_logger->infof("Checking installer executable at %s...", exeUrl.c_str());
+	ZipSync::Downloader downloaderPreliminary;
+	if (progress)
+		downloaderPreliminary.SetProgressCallback(progress->GetDownloaderCallback());
+	ZipSync::HashDigest desiredHash = ZipSync::GetHashesOfRemoteChecksummedZips(downloaderPreliminary, {exeUrl})[0];
+	g_logger->infof("Downloaded bytes: %lld", downloaderPreliminary.TotalBytesDownloaded());
+	g_logger->infof("Hash of installer on server is %s", desiredHash.Hex().c_str());
+
+	if (myHash == desiredHash) {
+		g_logger->infof("Hashes match, update not needed");
+	}
+	else {
+		//second pass: download full manifests when necessary
+		g_logger->infof("Downloading installer executable from %s...", exeUrl.c_str());
+		ZipSync::Downloader downloaderFull;
+		if (progress)
+			downloaderFull.SetProgressCallback(progress->GetDownloaderCallback());
+		std::vector<std::string> outPaths = {exeZipPath};
+		ZipSync::DownloadChecksummedZips(downloaderFull, {exeUrl}, {desiredHash}, {}, outPaths);
+		g_logger->infof("Downloaded bytes: %lld", downloaderFull.TotalBytesDownloaded());
+		ZipSyncAssert(exeZipPath == outPaths[0]);
+
+		g_logger->infof("Unpacking data from %s to temporary file %s", exeZipPath.c_str(), exeTempPath.c_str());
+		std::vector<uint8_t> data = ZipSync::ReadChecksummedZip(exeZipPath.c_str(), exeFilename.c_str());
+		{
+			ZipSync::StdioFileHolder f(exeTempPath.c_str(), "wb");
+			int wr = fwrite(data.data(), 1, data.size(), f);
+			ZipSyncAssert(wr == data.size());
+		}
+		stdext::remove(exeZipPath);
+
+		//replace executable and rerun it
+		g_logger->infof("Replacing and restarting myself...");
+		OsUtils::ReplaceAndRestartExecutable(exePath, exeTempPath);
+	}
+
+	g_logger->infof("");
+}
+
+void Actions::ReadConfigFile(bool download, ZipSync::ProgressIndicator *progress) {
 	g_state->_config.Clear();
 
 	if (download) {
-		g_logger->infof("Downloading config file from %s", TDM_INSTALLER_CONFIG_URL);
-		std::string downloadedFilename = ZipSync::DownloadSimple(TDM_INSTALLER_CONFIG_URL, OsUtils::GetCwd());
-		g_logger->infof("Replacing %s with downloaded file", TDM_INSTALLER_CONFIG_FILENAME);
-		if (stdext::is_regular_file(TDM_INSTALLER_CONFIG_FILENAME))
-			stdext::remove(TDM_INSTALLER_CONFIG_FILENAME);
-		stdext::rename(downloadedFilename, TDM_INSTALLER_CONFIG_FILENAME);
+		g_logger->infof("Downloading config file from %s...", TDM_INSTALLER_CONFIG_URL);
+		ZipSync::Downloader downloader;
+		auto DataCallback = [](const void *data, int len) {
+			ZipSync::StdioFileHolder f(TDM_INSTALLER_CONFIG_FILENAME, "wb");
+			int res = fwrite(data, 1, len, f);
+			ZipSyncAssert(res == len);
+		};
+		downloader.EnqueueDownload(ZipSync::DownloadSource(TDM_INSTALLER_CONFIG_URL), DataCallback);
+		if (progress)
+			downloader.SetProgressCallback(progress->GetDownloaderCallback());
+		downloader.DownloadAll();
+		g_logger->infof("Downloaded bytes: %lld", downloader.TotalBytesDownloaded());
 	}
 
 	g_logger->infof("Reading INI file %s", TDM_INSTALLER_CONFIG_FILENAME);

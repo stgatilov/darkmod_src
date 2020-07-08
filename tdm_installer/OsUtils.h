@@ -38,4 +38,6 @@ public:
 	//  3) starts targetPath as executable
 	//note: if temporaryPath is empty, then steps 1 and 2 are omitted
 	static void ReplaceAndRestartExecutable(const std::string &targetPath, const std::string &temporaryPath, const std::vector<std::string> &cmdArgs = {});
+	//returns name of batch file (for deleting it)
+	static std::string GetBatchForReplaceAndRestartExecutable(const std::string &targetPath);
 };

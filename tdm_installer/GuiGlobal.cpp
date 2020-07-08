@@ -2,6 +2,7 @@
 #include "GuiFluidAutoGen.h"
 #include "OsUtils.h"
 #include "State.h"
+#include "Constants.h"
 #include "GuiPageSettings.h"
 #include "GuiPageVersion.h"
 #include "GuiPageConfirm.h"
@@ -28,6 +29,12 @@ void cb_Settings_ButtonReset(Fl_Widget *self) {
 //============================================================
 
 void GuiInitAll() {
+	{
+		static char buff[256];
+		sprintf(buff, "TheDarkMod installer v%s (built on %s)", TDM_INSTALLER_VERSION, __DATE__);
+		g_Window->label(buff);
+	}
+
 	//----- "settings" page -----
 	static Fl_Text_Buffer g_Settings_StringGreetings;
 	g_Settings_StringGreetings.text(

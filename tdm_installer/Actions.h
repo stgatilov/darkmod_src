@@ -14,9 +14,13 @@ public:
 	//called when we are sure user won't change install dir any more
 	static void StartLogFile();
 
+	//check if central server offers different executable
+	//if yes, then update and restart installer
+	static void TrySelfUpdate(ZipSync::ProgressIndicator *progress);
+
 	//read g_config from file in install dir
 	//if download = true, then the file is downloaded from TDM server first
-	static void ReadConfigFile(bool download);
+	static void ReadConfigFile(bool download, ZipSync::ProgressIndicator *progress);
 
 	//called when user clicks "Next" button on settings page
 	//generates manifest in the install directory

@@ -111,11 +111,31 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	}
 
 	try {
-		bool skipUpdate = g_Settings_CheckSkipConfigDownload->value();
-		Actions::ReadConfigFile(!skipUpdate);
+		bool skipUpdate = g_Settings_CheckSkipSelfUpdate->value();
+		GuiDeactivateGuard deactivator(g_PageSettings, {});
+		g_Settings_ProgressScanning->show();
+		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
+		if (!skipUpdate)
+			Actions::TrySelfUpdate(&progress);
+		g_Settings_ProgressScanning->hide();
 	}
 	catch(const std::exception &e) {
 		fl_alert("Error: %s", e.what());
+		g_Settings_ProgressScanning->hide();
+		return;
+	}
+
+	try {
+		bool skipUpdate = g_Settings_CheckSkipConfigDownload->value();
+		GuiDeactivateGuard deactivator(g_PageSettings, {});
+		g_Settings_ProgressScanning->show();
+		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
+		Actions::ReadConfigFile(!skipUpdate, &progress);
+		g_Settings_ProgressScanning->hide();
+	}
+	catch(const std::exception &e) {
+		fl_alert("Error: %s", e.what());
+		g_Settings_ProgressScanning->hide();
 		return;
 	}
 
@@ -148,13 +168,12 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	}
 
 	bool customVersion = g_Settings_CheckCustomVersion->value();
-	if (customVersion) {
-		g_state->_versionRefreshed.clear();
-		g_Version_TreeVersions->do_callback();
-		g_Wizard->value(g_PageVersion);
-	}
-	else {
-		//TODO: select default version
-		g_Wizard->value(g_PageConfirm);
+	g_state->_versionRefreshed.clear();
+	g_Version_TreeVersions->do_callback();
+	g_Wizard->next();
+
+	if (!customVersion) {
+		//user wants default version, so auto-click "Next" button for him
+		g_Version_ButtonNext->do_callback();
 	}
 }
