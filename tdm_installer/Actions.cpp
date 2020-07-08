@@ -71,7 +71,7 @@ void Actions::StartLogFile() {
 	g_logger = new LoggerTdm();
 }
 
-void Actions::TrySelfUpdate(ZipSync::ProgressIndicator *progress) {
+bool Actions::NeedsSelfUpdate(ZipSync::ProgressIndicator *progress) {
 	std::string exeFilename = OsUtils::GetExecutableName();
 	std::string exePath = OsUtils::GetExecutablePath();
 	std::string exeTempPath = OsUtils::GetExecutablePath() + ".__temp__";
@@ -97,6 +97,7 @@ void Actions::TrySelfUpdate(ZipSync::ProgressIndicator *progress) {
 
 	if (myHash == desiredHash) {
 		g_logger->infof("Hashes match, update not needed");
+		return false;
 	}
 	else {
 		//second pass: download full manifests when necessary
@@ -118,13 +119,18 @@ void Actions::TrySelfUpdate(ZipSync::ProgressIndicator *progress) {
 		}
 		stdext::remove(exeZipPath);
 
-		//replace executable and rerun it
-		g_logger->infof("Replacing and restarting myself...");
-		OsUtils::ReplaceAndRestartExecutable(exePath, exeTempPath);
+		g_logger->infof("");
+		return true;
 	}
-
-	g_logger->infof("");
 }
+void Actions::DoSelfUpdate() {
+	std::string exePath = OsUtils::GetExecutablePath();
+	std::string exeTempPath = OsUtils::GetExecutablePath() + ".__temp__";
+	//replace executable and rerun it
+	g_logger->infof("Replacing and restarting myself...");
+	OsUtils::ReplaceAndRestartExecutable(exePath, exeTempPath);
+}
+
 
 void Actions::ReadConfigFile(bool download, ZipSync::ProgressIndicator *progress) {
 	g_state->_config.Clear();

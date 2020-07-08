@@ -94,7 +94,10 @@ void cb_Version_ButtonNext(Fl_Widget *self) {
 	//make sure selected version has been evaluated/refreshed
 	if (g_Version_ButtonRefreshInfo->visible() && g_Version_ButtonRefreshInfo->active()) {
 		g_Version_ButtonRefreshInfo->do_callback();
-		ZipSyncAssert(!g_Version_ButtonRefreshInfo->visible());	//never happens
+		if (g_Version_ButtonRefreshInfo->visible()) {
+			//could not load manifest -> stop
+			return;
+		}
 	}
 
 	g_Confirm_OutputInstallDirectory->value(g_Settings_InputInstallDirectory->value());

@@ -66,6 +66,11 @@ if(MSVC)
     target_link_libraries(libzipsync INTERFACE ws2_32)                  # libzipsync -> libcurl -> ?
 else()
     target_link_libraries(tdm_installer PRIVATE m dl X11 Xext pthread)  # fltk -> *
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.linux64")
+    else()
+        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.linux32")
+    endif()
 endif()
 
 # fix libcurl dependencies

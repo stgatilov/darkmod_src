@@ -3,6 +3,7 @@
 #include "Utils.h"
 #include "Hash.h"
 #include "Downloader.h"
+#include <string.h>
 
 
 namespace ZipSync {

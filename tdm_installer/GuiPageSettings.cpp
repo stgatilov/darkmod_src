@@ -115,8 +115,12 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 		GuiDeactivateGuard deactivator(g_PageSettings, {});
 		g_Settings_ProgressScanning->show();
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
-		if (!skipUpdate)
-			Actions::TrySelfUpdate(&progress);
+		if (!skipUpdate) {
+			if (Actions::NeedsSelfUpdate(&progress)) {
+				fl_alert("New version of installer has been downloaded. Installer will be restarted to finish update.");
+				Actions::DoSelfUpdate();
+			}
+		}
 		g_Settings_ProgressScanning->hide();
 	}
 	catch(const std::exception &e) {

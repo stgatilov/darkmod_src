@@ -15,8 +15,10 @@ public:
 	static void StartLogFile();
 
 	//check if central server offers different executable
-	//if yes, then update and restart installer
-	static void TrySelfUpdate(ZipSync::ProgressIndicator *progress);
+	static bool NeedsSelfUpdate(ZipSync::ProgressIndicator *progress);
+	//update and restart installer
+	//must be called immediately after NeedsSelfUpdate returns true
+	static void DoSelfUpdate();
 
 	//read g_config from file in install dir
 	//if download = true, then the file is downloaded from TDM server first

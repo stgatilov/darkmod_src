@@ -4,6 +4,6 @@
 
 
 void cb_Install_ButtonClose(Fl_Widget *self) {
-	g_logger->infof("Closing installer after successfull install");
+	g_logger->infof("Closing installer after successful install");
 	exit(0);
 }
