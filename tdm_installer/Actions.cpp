@@ -372,11 +372,7 @@ void Actions::PerformInstallRepack(ZipSync::ProgressIndicator *progress) {
 	ZipSync::UpdateProcess *updater = g_state->_updater.get();
 	ZipSyncAssert(updater);
 
-	if (progress)
-		progress->Update(0.0, "Repacking...");
-	updater->RepackZips();
-	if (progress)
-		progress->Update(1.0, "Repacking finished");
+	updater->RepackZips(progress->GetDownloaderCallback());
 	g_logger->infof("Repacking finished");
 
 	g_logger->infof("");
