@@ -213,6 +213,7 @@ void DoClean(std::string root) {
             if (StartsWith(fn, p))
                 shouldRestore = fn.substr(p.size());
         if (!shouldRestore.empty()) {
+            shouldRestore = GetDirPath(filename) + '/' + shouldRestore;
             std::string fullOldPath = root + '/' + filename;
             std::string fullNewPath = root + '/' + shouldRestore;
             if (!ZipSync::IfFileExists(fullNewPath)) {

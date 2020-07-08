@@ -65,7 +65,7 @@ public:
     uint64_t DownloadRemoteFiles(const GlobalProgressCallback &progressCallback = GlobalProgressCallback());
 
     //having all matches available locally, perform the update
-    void RepackZips();
+    void RepackZips(const GlobalProgressCallback &progressCallback = GlobalProgressCallback());
 
     //TODO: local cache for reduced zips?
     void RemoveOldZips(const LocalCache *cache);

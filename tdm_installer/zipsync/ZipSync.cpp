@@ -124,6 +124,9 @@ public:
         bool _repacked = false;
         bool _reduced = false;
 
+        //for progress indicator
+        uint64_t _totalTargetSize = 0;
+
         //cached during repacking to avoid reopening
         mutable UnzFileIndexed zfCache;
 
@@ -155,6 +158,8 @@ public:
     //the manifest containing no-longer-needed files from target zips
     Manifest _reducedMani;
 
+    //calling back to report current progress
+    GlobalProgressCallback _progress;
 
     Repacker(UpdateProcess &owner) : _owner(owner) {}
 
@@ -192,7 +197,9 @@ public:
             FindZip(zipPath)._managed = true;
         for (int i = 0; i < _owner._targetMani.size(); i++) {
             const FileMetainfo &tf = _owner._targetMani[i];
-            FindZip(tf.zipPath.abs)._target.push_back(ManifestIter(_owner._targetMani, i));
+            ZipInfo &zi = FindZip(tf.zipPath.abs);
+            zi._target.push_back(ManifestIter(_owner._targetMani, i));
+            zi._totalTargetSize += tf.props.compressedSize;
         }
         for (int i = 0; i < _owner._providedMani.size(); i++) {
             const FileMetainfo &pf = _owner._providedMani[i];
@@ -205,6 +212,19 @@ public:
             FindZip(m.target->zipPath.abs)._matchIds.push_back(i);
             FindZip(m.provided->zipPath.abs)._usedCnt++;
         }
+    }
+
+    double ComputeProgressRatio() const {
+        uint64_t totalBytes = 0;
+        uint64_t doneBytes = 0;
+        for (const ZipInfo &zi : _zips) {
+            totalBytes += zi._totalTargetSize;
+            if (zi._repacked)
+                doneBytes += zi._totalTargetSize;
+        }
+        if (totalBytes == 0)
+            return 0.0;
+        return double(doneBytes) / totalBytes;
     }
 
     void ProcessZipsWithoutRepacking() {
@@ -300,11 +320,16 @@ public:
                 pf->Nullify();
                 pf = newIter;
             }
+
+            if (_progress)
+                _progress(ComputeProgressRatio(), formatMessage("Renamed %s to %s", srcZip._zipPath.c_str(), dstZip._zipPathRepacked.c_str()).c_str());
         }
     }
 
     void RepackZip(ZipInfo &zip) {
         g_logger->infof(lcRepackZip, "Repacking %s...", zip._zipPathRepacked.c_str());
+        if (_progress)
+            _progress(ComputeProgressRatio(), formatMessage("Repacking %s...", zip._zipPathRepacked.c_str()).c_str());
 
         //ensure all directories are created if missing
         CreateDirectoriesForFile(zip._zipPath, _owner._rootDir);
@@ -343,6 +368,9 @@ public:
         //flush and close new zip
         zfOut.reset();
         zip._repacked = true;
+
+        if (_progress)
+            _progress(ComputeProgressRatio(), formatMessage("Repacking %s...", zip._zipPathRepacked.c_str()).c_str());
     }
 
     void ValidateFile(const FileMetainfo &want, const FileMetainfo &have) const {
@@ -546,6 +574,9 @@ public:
     }
 
     void DoAll() {
+        if (_progress)
+            _progress(0.0, "Repacking started");
+
         CheckPreconditions();
         ClassifyMatchesByTargetZip();
 
@@ -573,11 +604,15 @@ public:
 
         RenameRepackedZips();
         RewriteProvidedManifest();
+
+        if (_progress)
+            _progress(1.0, "Repacking finished");
     }
 };
 
-void UpdateProcess::RepackZips() {
+void UpdateProcess::RepackZips(const GlobalProgressCallback &progressCallback) {
     Repacker impl(*this);
+    impl._progress = progressCallback;
     impl.DoAll();
 }
 
