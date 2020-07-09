@@ -33,9 +33,9 @@ StencilShadowStage::StencilShadowStage( DrawBatchExecutor *drawBatchExecutor ) {
 void StencilShadowStage::Init() {
 	idDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt("%d", drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>()) );
-	stencilShadowShader = programManager->LoadFromFiles( "stencilshadow", 
-		"stages/stencil/stencilshadow.vert.glsl",
-		"stages/stencil/stencilshadow.frag.glsl",
+	stencilShadowShader = programManager->LoadFromFiles( "stencil_shadow", 
+		"stages/stencil/stencil_shadow.vert.glsl",
+		"stages/stencil/stencil_shadow.frag.glsl",
 		defines );
 }
 
