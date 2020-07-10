@@ -11,7 +11,8 @@
 #include "Constants.h"
 #include "State.h"
 
-//TODO: move to better place?
+//=======================================================================================
+
 static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir) {
 	std::vector<std::string> res;
 	auto allPaths = stdext::recursive_directory_enumerate(installDir);
@@ -21,7 +22,7 @@ static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir
 			std::string relPath = ZipSync::PathAR::FromAbs(absPath, installDir).rel;
 			bool managed = false;
 
-			//common caregories:
+			//common categories:
 			if (stdext::istarts_with(relPath, "tdm_") && stdext::iends_with(relPath, ".pk4"))
 				managed = true;		//e.g. tdm_ai_base01.pk4
 			if (stdext::istarts_with(relPath, "tdm_") && stdext::iends_with(relPath, ".zip"))
@@ -45,6 +46,46 @@ static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir
 	}
 	return res;
 }
+
+static std::vector<std::string> CollectTdmUnpackedFilesToDelete(const std::string &installDir) {
+	static const char *TDM_EXECUTABLES[] = {
+		//Windows executables
+		"TheDarkMod.exe",
+		"TheDarkModx64.exe",
+		//Windows DLLs (2.06)
+		"ExtLibs.dll",
+		"ExtLibsx64.dll",
+		//Linux executables
+		"thedarkmod.x86",
+		"thedarkmod.x64",
+		//game DLLs (2.05 and before)
+		"gamex86.dll",
+		"gamex86.so"
+	};
+	//note: let's leave all the rest intact
+	std::vector<std::string> res;
+	auto allPaths = stdext::recursive_directory_enumerate(installDir);
+	for (const auto &entry : allPaths) {
+		if (stdext::is_regular_file(entry)) {
+			std::string absPath = entry.string();
+			std::string relPath = ZipSync::PathAR::FromAbs(absPath, installDir).rel;
+
+			bool shouldDelete = false;
+			for (const char *s : TDM_EXECUTABLES)
+				if (relPath == s)
+					shouldDelete = true;
+
+			if (shouldDelete)
+				res.push_back(absPath);
+		}
+	}
+	return res;
+}
+
+static const char *ZIPS_TO_UNPACK[] = {"tdm_shared_stuff.zip"};
+static int ZIPS_TO_UNPACK_NUM = sizeof(ZIPS_TO_UNPACK) / sizeof(ZIPS_TO_UNPACK[0]);
+
+//=======================================================================================
 
 void Actions::RestartWithInstallDir(const std::string &installDir) {
 	g_logger->infof("Restarting TDM installer in directory: %s", installDir.c_str());
@@ -384,6 +425,31 @@ void Actions::PerformInstallRepack(ZipSync::ProgressIndicator *progress) {
 	g_logger->infof("");
 }
 
+static void UnpackZip(unzFile zf) {
+	SAFE_CALL(unzGoToFirstFile(zf));
+	while (1) {
+		char currFilename[4096];
+		SAFE_CALL(unzGetCurrentFileInfo(zf, NULL, currFilename, sizeof(currFilename), NULL, 0, NULL, 0));
+		ZipSync::StdioFileHolder outfile(currFilename, "wb");
+
+		SAFE_CALL(unzOpenCurrentFile(zf));
+		char buffer[64<<10];
+		while (1) {
+			int read = unzReadCurrentFile(zf, buffer, sizeof(buffer));
+			ZipSyncAssert(read >= 0);
+			if (read == 0)
+				break;
+			int wr = fwrite(buffer, 1, read, outfile);
+			ZipSyncAssert(read == wr);
+		}
+		SAFE_CALL(unzCloseCurrentFile(zf));
+
+		int res = unzGoToNextFile(zf);
+		if (res == UNZ_END_OF_LIST_OF_FILE)
+			break;   //finished
+		SAFE_CALL(res);
+	}
+}
 void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 	ZipSync::UpdateProcess *updater = g_state->_updater.get();
 	ZipSyncAssert(updater);
@@ -398,10 +464,30 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 		progress->Update(0.5, "Manifest saved");
 
 	if (progress)
-		progress->Update(0.5, "Cleaning directory...");
+		progress->Update(0.5, "Cleaning temporary zips...");
 	ZipSync::DoClean(OsUtils::GetCwd());
 	if (progress)
-		progress->Update(1.0, "Cleaning finished");
+		progress->Update(0.6, "Cleaning finished");
+
+	if (progress)
+		progress->Update(0.6, "Deleting old files...");
+	std::vector<std::string> delFiles = CollectTdmUnpackedFilesToDelete(OsUtils::GetCwd());
+	for (const std::string &fn : delFiles)
+		stdext::remove(fn);
+	if (progress)
+		progress->Update(0.7, "Deleting finished");
+
+	for (int i = 0; i < ZIPS_TO_UNPACK_NUM; i++) {
+		const char *fn = ZIPS_TO_UNPACK[i];
+		ZipSync::UnzFileHolder zf(unzOpen(fn));
+		if (!zf)
+			continue;
+		if (progress)
+			progress->Update(0.7 + 0.3 * (i+0)/ZIPS_TO_UNPACK_NUM, formatMessage("Unpacking %s...", fn).c_str());
+		UnpackZip(zf);
+		if (progress)
+			progress->Update(1.0 + 0.3 * (i+1)/ZIPS_TO_UNPACK_NUM, "Unpacking finished");
+	}
 
 	g_logger->infof("");
 }

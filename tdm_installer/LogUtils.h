@@ -8,6 +8,7 @@ using ZipSync::LogCode;
 using ZipSync::Severity;
 using ZipSync::lcAssertFailed;
 using ZipSync::lcCantOpenFile;
+using ZipSync::lcMinizipError;
 using ZipSync::assertFailedMessage;
 using ZipSync::ErrorException;
 
