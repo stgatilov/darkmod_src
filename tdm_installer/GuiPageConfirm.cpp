@@ -18,6 +18,7 @@ void cb_Confirm_ButtonBack(Fl_Widget *self) {
 
 void cb_Confirm_ButtonStart(Fl_Widget *self) {
 	g_Install_ProgressDownload->hide();
+	g_Install_OutputRemainDownload->hide();
 	g_Install_ProgressRepack->hide();
 	g_Install_ProgressFinalize->hide();
 	g_Wizard->next();
@@ -29,6 +30,7 @@ void cb_Confirm_ButtonStart(Fl_Widget *self) {
 		g_Install_ProgressDownload->show();
 		Fl::flush();
 		ProgressIndicatorGui progress(g_Install_ProgressDownload);
+		progress.AttachRemainsLabel(g_Install_OutputRemainDownload);
 		Actions::PerformInstallDownload(&progress);
 	}
 	catch(std::exception &e) {

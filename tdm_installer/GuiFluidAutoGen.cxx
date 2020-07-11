@@ -116,6 +116,8 @@ Fl_Text_Display *g_Install_TextInstalling=(Fl_Text_Display *)0;
 
 Fl_Progress *g_Install_ProgressDownload=(Fl_Progress *)0;
 
+Fl_Box *g_Install_OutputRemainDownload=(Fl_Box *)0;
+
 Fl_Progress *g_Install_ProgressRepack=(Fl_Progress *)0;
 
 Fl_Progress *g_Install_ProgressFinalize=(Fl_Progress *)0;
@@ -3054,6 +3056,7 @@ void FluidAllGui() {
   { g_Window = new Fl_Double_Window(1200, 675, "TheDarkMod installer v?.?\?");
     { g_Wizard = new Fl_Wizard(400, -2, 825, 702);
       { g_PageSettings = new Fl_Group(400, 0, 800, 675, "Page 1: Settings");
+        g_PageSettings->hide();
         { g_Settings_TextGreetings = new Fl_Text_Display(425, 25, 748, 91);
           g_Settings_TextGreetings->box(FL_NO_BOX);
           g_Settings_TextGreetings->color(FL_BACKGROUND_COLOR);
@@ -3275,20 +3278,21 @@ data, but it will be downloaded sooner or later anyway.");
         g_PageConfirm->end();
       } // Fl_Group* g_PageConfirm
       { g_PageInstall = new Fl_Group(400, 0, 800, 675, "Page 4: Installing");
-        g_PageInstall->hide();
         { g_Install_TextInstalling = new Fl_Text_Display(435, 102, 737, 68);
           g_Install_TextInstalling->box(FL_NO_BOX);
           g_Install_TextInstalling->color(FL_BACKGROUND_COLOR);
           g_Install_TextInstalling->textsize(18);
           g_Install_TextInstalling->align(Fl_Align(FL_ALIGN_LEFT));
         } // Fl_Text_Display* g_Install_TextInstalling
-        { g_Install_ProgressDownload = new Fl_Progress(480, 230, 630, 20, "Downloading...");
+        { g_Install_ProgressDownload = new Fl_Progress(440, 230, 710, 20, "Downloading...");
           g_Install_ProgressDownload->selection_color((Fl_Color)71);
         } // Fl_Progress* g_Install_ProgressDownload
-        { g_Install_ProgressRepack = new Fl_Progress(480, 300, 630, 20, "Repacking...");
+        { g_Install_OutputRemainDownload = new Fl_Box(590, 254, 405, 16, "Remaining ~ ?:?\?:?\?");
+        } // Fl_Box* g_Install_OutputRemainDownload
+        { g_Install_ProgressRepack = new Fl_Progress(440, 300, 710, 20, "Repacking...");
           g_Install_ProgressRepack->selection_color((Fl_Color)71);
         } // Fl_Progress* g_Install_ProgressRepack
-        { g_Install_ProgressFinalize = new Fl_Progress(480, 370, 630, 20, "Finalizing...");
+        { g_Install_ProgressFinalize = new Fl_Progress(440, 370, 710, 20, "Finalizing...");
           g_Install_ProgressFinalize->selection_color((Fl_Color)71);
         } // Fl_Progress* g_Install_ProgressFinalize
         { g_Install_TextFinishedInstall = new Fl_Text_Display(435, 442, 737, 68);

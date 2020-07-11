@@ -170,6 +170,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 			g_Version_TreeVersions->select(item);
 		}
 	}
+	g_Version_OutputLastInstalledVersion->value(g_state->_lastInstalledVersion.c_str());
 
 	bool customVersion = g_Settings_CheckCustomVersion->value();
 	g_state->_versionRefreshed.clear();

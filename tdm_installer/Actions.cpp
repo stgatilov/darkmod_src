@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include "ZipSync.h"
 #include "Constants.h"
+#include "ScanState.h"
 #include "State.h"
 
 //=======================================================================================
@@ -209,29 +210,6 @@ void Actions::ReadConfigFile(bool download, ZipSync::ProgressIndicator *progress
 
 void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndicator *progress) {
 	g_state->_localManifest.Clear();
-	bool doScan = false;
-	if (force) {
-		g_logger->infof("Do scanning because forced by user");
-		doScan = true;
-	}
-	else {
-		try {
-			g_logger->infof("Trying to read local %s", TDM_INSTALLER_LOCAL_MANIFEST);
-			ZipSync::IniData ini = ZipSync::ReadIniFile(TDM_INSTALLER_LOCAL_MANIFEST);
-			g_state->_localManifest.ReadFromIni(ini, OsUtils::GetCwd());
-		}
-		catch(const std::exception &) {
-			g_logger->infof("Failed to read it, fallback to scanning");
-			doScan = true;
-			g_state->_localManifest.Clear();
-		}
-		g_logger->infof("Local manifest read successfully");
-		//TODO: check validity?
-	}
-	if (!doScan) {
-		g_logger->infof("");
-		return;
-	}
 
 	std::string root = OsUtils::GetCwd();
 	g_logger->infof("Cleaning temporary files");	//possibly remained from previous run
@@ -239,6 +217,50 @@ void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndic
 
 	g_logger->infof("Collecting set of already existing TDM-owned zips");
 	std::vector<std::string> managedZips = CollectTdmZipPaths(root);
+	std::vector<std::string> managedZipsAndMani = managedZips;
+	managedZipsAndMani.push_back((stdext::path(root) / TDM_INSTALLER_LOCAL_MANIFEST).string());
+
+	bool doScan = true;
+	g_state->_lastInstalledVersion.clear();
+	try {
+		//read last scan state, also last installed version
+		g_logger->infof("Trying to read %s", TDM_INSTALLER_LASTSCAN_PATH);
+		ZipSync::IniData ini = ZipSync::ReadIniFile(TDM_INSTALLER_LASTSCAN_PATH);
+		ScanState lastScan = ScanState::ReadFromIni(ini);
+		g_logger->infof("Last scan state read successfully");
+		g_state->_lastInstalledVersion = lastScan.GetVersion();
+
+		//generate current scan state
+		ScanState nowScan = ScanState::ScanZipSet(managedZipsAndMani, root);
+
+		//read existing local manifest
+		g_logger->infof("Trying to read local %s", TDM_INSTALLER_LOCAL_MANIFEST);
+		ini = ZipSync::ReadIniFile(TDM_INSTALLER_LOCAL_MANIFEST);
+		g_state->_localManifest.ReadFromIni(ini, OsUtils::GetCwd());
+		g_logger->infof("Local manifest read successfully");
+
+		if (nowScan.NotChangedSince(lastScan)) {
+			doScan = false;
+			g_logger->infof("Zips seem to have not changed since last time");
+		}
+		else {
+			g_logger->infof("Perform scan because something changed since last run");
+		}
+	}
+	catch(const std::exception &) {
+		g_logger->infof("Failed to read it, fallback to scanning");
+		g_state->_localManifest.Clear();
+		doScan = true;
+	}
+	if (force) {
+		g_logger->infof("Do scanning because forced by user");
+		doScan = true;
+	}
+
+	if (!doScan) {
+		g_logger->infof("");
+		return;
+	}
 
 	g_logger->infof("Installation currently contains of %d TDM-owned zips", managedZips.size());
 	uint64_t totalSize = 0;
@@ -253,6 +275,13 @@ void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndic
 	g_logger->infof("Saving results of analysis to manifest file");
 	ZipSync::WriteIniFile((root + "/manifest.iniz").c_str(), manifest.WriteToIni());
 	g_state->_localManifest = std::move(manifest);
+
+	g_logger->infof("Saving current scan at %s", TDM_INSTALLER_LASTSCAN_PATH);
+	ScanState nowScan = ScanState::ScanZipSet(managedZipsAndMani, root, g_state->_lastInstalledVersion);
+	ZipSync::IniData ini = nowScan.WriteToIni();
+	stdext::create_directories(stdext::path(TDM_INSTALLER_LASTSCAN_PATH).parent_path());
+	ZipSync::WriteIniFile(TDM_INSTALLER_LASTSCAN_PATH, ini);
+
 	g_logger->infof("");
 }
 
@@ -453,6 +482,7 @@ static void UnpackZip(unzFile zf) {
 void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 	ZipSync::UpdateProcess *updater = g_state->_updater.get();
 	ZipSyncAssert(updater);
+	std::string root = OsUtils::GetCwd();
 
 	if (progress)
 		progress->Update(0.0, "Saving resulting manifest...");
@@ -465,17 +495,28 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 
 	if (progress)
 		progress->Update(0.5, "Cleaning temporary zips...");
-	ZipSync::DoClean(OsUtils::GetCwd());
+	ZipSync::DoClean(root);
 	if (progress)
 		progress->Update(0.6, "Cleaning finished");
 
 	if (progress)
-		progress->Update(0.6, "Deleting old files...");
-	std::vector<std::string> delFiles = CollectTdmUnpackedFilesToDelete(OsUtils::GetCwd());
+		progress->Update(0.6, "Saving " TDM_INSTALLER_LASTSCAN_PATH "...");
+	std::vector<std::string> managedZipsAndMani = CollectTdmZipPaths(root);
+	managedZipsAndMani.push_back((stdext::path(root) / TDM_INSTALLER_LOCAL_MANIFEST).string());
+	ScanState nowScan = ScanState::ScanZipSet(managedZipsAndMani, root, g_state->_versionRefreshed);
+	ZipSync::IniData ini = nowScan.WriteToIni();
+	stdext::create_directories(stdext::path(TDM_INSTALLER_LASTSCAN_PATH).parent_path());
+	ZipSync::WriteIniFile(TDM_INSTALLER_LASTSCAN_PATH, ini);
+	if (progress)
+		progress->Update(0.7, "Saved properly");
+
+	if (progress)
+		progress->Update(0.7, "Deleting old files...");
+	std::vector<std::string> delFiles = CollectTdmUnpackedFilesToDelete(root);
 	for (const std::string &fn : delFiles)
 		stdext::remove(fn);
 	if (progress)
-		progress->Update(0.7, "Deleting finished");
+		progress->Update(0.8, "Deleting finished");
 
 	for (int i = 0; i < ZIPS_TO_UNPACK_NUM; i++) {
 		const char *fn = ZIPS_TO_UNPACK[i];
@@ -483,10 +524,10 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 		if (!zf)
 			continue;
 		if (progress)
-			progress->Update(0.7 + 0.3 * (i+0)/ZIPS_TO_UNPACK_NUM, formatMessage("Unpacking %s...", fn).c_str());
+			progress->Update(0.8 + 0.2 * (i+0)/ZIPS_TO_UNPACK_NUM, formatMessage("Unpacking %s...", fn).c_str());
 		UnpackZip(zf);
 		if (progress)
-			progress->Update(1.0 + 0.3 * (i+1)/ZIPS_TO_UNPACK_NUM, "Unpacking finished");
+			progress->Update(0.8 + 0.2 * (i+1)/ZIPS_TO_UNPACK_NUM, "Unpacking finished");
 	}
 
 	g_logger->infof("");

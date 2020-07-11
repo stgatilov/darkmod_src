@@ -59,6 +59,7 @@ extern Fl_Button *g_Confirm_ButtonBack;
 extern Fl_Group *g_PageInstall;
 extern Fl_Text_Display *g_Install_TextInstalling;
 extern Fl_Progress *g_Install_ProgressDownload;
+extern Fl_Box *g_Install_OutputRemainDownload;
 extern Fl_Progress *g_Install_ProgressRepack;
 extern Fl_Progress *g_Install_ProgressFinalize;
 extern Fl_Text_Display *g_Install_TextFinishedInstall;

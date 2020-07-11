@@ -13,6 +13,8 @@ struct State {
 	InstallerConfig _config;
 	//describes local state of the installation dir
 	ZipSync::Manifest _localManifest;
+	//this is read from TDM_INSTALLER_LASTSCAN_PATH (for display only)
+	std::string _lastInstalledVersion;
 	//set of versions for which manifest has already been loaded
 	std::map<std::string, ZipSync::Manifest> _loadedManifests;
 	//which version was last evaluated with "refresh" button

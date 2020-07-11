@@ -73,6 +73,7 @@ void GuiInitAll() {
 	g_Install_TextFinishedInstall->buffer(g_Install_StringFinishedInstall);
 	g_Install_TextFinishedInstall->hide();
 	g_Install_ProgressDownload->hide();
+	g_Install_OutputRemainDownload->hide();
 	g_Install_ProgressRepack->hide();
 	g_Install_ProgressFinalize->hide();
 

@@ -10,9 +10,12 @@ option(TDM_INSTALLER_FAST_DEBUG "faster debug build: optimized libzipsync, disab
 # TDM: use prebuilt artefacts for third-party libraries
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../ThirdParty/cmake_find_package")
 
+set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithDebInfo" CACHE STRING "" FORCE) 
+
 if(TDM_INSTALLER_FAST_DEBUG AND MSVC)
     string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 endif()
+
 
 set(ZIPSYNC_OPTION_BUILD_TESTS OFF CACHE BOOL "")
 set(ZIPSYNC_OPTION_BUILD_TOOL OFF CACHE BOOL "")
@@ -42,6 +45,8 @@ set(sources
     State.cpp
     InstallerConfig.h
     InstallerConfig.cpp
+    ScanState.h
+    ScanState.cpp
 
     Constants.h
     OsUtils.cpp
@@ -53,6 +58,7 @@ set(sources
 if(MSVC)
     add_compile_options("/W2")
     add_compile_options("$<$<CONFIG:RelWithDebInfo>:/Ob2>")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /INCREMENTAL:NO /OPT:REF")
 endif()
 
 find_package(fltk REQUIRED)
