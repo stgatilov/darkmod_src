@@ -9,7 +9,8 @@ namespace ZipSync {
 
 class LocalCache;
 
-typedef std::function<void(double, const char*)> GlobalProgressCallback;
+//called to report progress: returning nonzero value interrupts processing
+typedef std::function<int(double, const char*)> GlobalProgressCallback;
 
 enum class UpdateType {
     SameContents,       //uncompressed contents of every file must match (and compression settings too)

@@ -154,7 +154,8 @@ void Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
         if (dltotal > 0 && dlnow > 0) {
             resp.progressRatio = double(dlnow) / std::max(dltotal, dlnow);
             resp.bytesDownloaded = dlnow;
-            ((Downloader*)userdata)->UpdateProgress();
+            if (int code = ((Downloader*)userdata)->UpdateProgress())
+                return code;   //interrupt!
         }
         return 0;
     };
@@ -174,6 +175,8 @@ void Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     UpdateProgress();
     CURLcode ret = curl_easy_perform(curl);
     long httpRes = 0;
+    if (ret == CURLE_ABORTED_BY_CALLBACK)
+        g_logger->errorf(lcUserInterrupt, "Interrupted by user");
     curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &httpRes);
     ZipSyncAssertF(httpRes != 404, "not found result for URL %s", url.c_str());
     ZipSyncAssertF(ret != CURLE_WRITE_ERROR, "Response without byteranges for URL %s", url.c_str());
@@ -267,15 +270,18 @@ void Downloader::BreakMultipartResponse(const CurlResponse &response, std::vecto
     }
 }
 
-void Downloader::UpdateProgress() {
+int Downloader::UpdateProgress() {
     char buffer[256] = "Downloading...";
     double progress = _totalProgress;
     if (_currResponse) {
         sprintf(buffer, "Downloading \"%s\"...", _currResponse->url.c_str());
         progress += _currResponse->progressWeight * _currResponse->progressRatio;
     }
-    if (_progressCallback)
-        _progressCallback(progress, buffer);
+    if (_progressCallback) {
+        int code = _progressCallback(progress, buffer);
+        return code;
+    }
+    return 0;
 }
 
 size_t Downloader::BytesToTransfer(const Download &download) {

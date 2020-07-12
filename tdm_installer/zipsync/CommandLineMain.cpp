@@ -18,19 +18,17 @@ public:
     ~ProgressIndicatorConsole() override {
         Finish();
     }
-    void Update(const char *line) override {
-        Erase();
-        content = line;
-        printf("%s", content.c_str());
-    }
-    void Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") override {
+    int Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") override {
         auto PercentOf = [](double value) { return int(value * 100.0 + 0.5); };
         char buffer[1024];
         if (localRatio != -1.0 && localComment.size())
             sprintf(buffer, " %3d%% | %3d%% : %s : %s", PercentOf(globalRatio), PercentOf(localRatio), globalComment.c_str(), localComment.c_str());
         else
             sprintf(buffer, " %3d%%        : %s", PercentOf(globalRatio), globalComment.c_str());
-        Update(buffer);
+        Erase();
+        content = buffer;
+        printf("%s", content.c_str());
+        return 0;
     }
 private:
     void Erase() {
@@ -300,8 +298,8 @@ void CommandUpdate(args::Subparser &parser) {
     printf("Downloading missing files...\n");
     {
         ProgressIndicatorConsole progress;
-        update.DownloadRemoteFiles([&progress](double ratio, const char *comment) {
-            progress.Update(ratio, comment);
+        update.DownloadRemoteFiles([&progress](double ratio, const char *comment) -> int {
+            return progress.Update(ratio, comment);
         });
         progress.Update(1.0, "All downloads complete");
     }

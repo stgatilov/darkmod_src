@@ -28,7 +28,8 @@ struct DownloadSource {
 
 //called when download is complete
 typedef std::function<void(const void*, uint32_t)> DownloadFinishedCallback;
-typedef std::function<void(double, const char*)> GlobalProgressCallback;
+//called during download to report progress: returning nonzero value interrupts download
+typedef std::function<int(double, const char*)> GlobalProgressCallback;
 
 /**
  * Smart downloader over HTTP protocol.
@@ -79,7 +80,7 @@ private:
     void DownloadAllForUrl(const std::string &url);
     void DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds);
     void BreakMultipartResponse(const CurlResponse &response, std::vector<CurlResponse> &parts);
-    void UpdateProgress();
+    int UpdateProgress();
     size_t BytesToTransfer(const Download &download);
 };
 

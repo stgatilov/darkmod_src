@@ -23,6 +23,7 @@ enum LogCode {
     lcAssertFailed,             //ZipSyncAssert has failed
     lcCantOpenFile,             //unexpected fail when opening file
     lcMinizipError,             //unexpected error from minizip function
+    lcUserInterrupt,            //generated because progress callback asked to interrupt
 
     //the remaining log codes are intercepted during testing
     lcRenameZipWithoutRepack,

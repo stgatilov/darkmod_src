@@ -676,9 +676,10 @@ uint64_t UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progre
         });
     }
 
-    downloader.SetProgressCallback([this,&progressCallback](double ratio, const char *message) {
+    downloader.SetProgressCallback([this,&progressCallback](double ratio, const char *message) -> int {
         if (progressCallback)
-            progressCallback(ratio, message);
+            return progressCallback(ratio, message);
+        return 0;
     });
     downloader.DownloadAll();
 

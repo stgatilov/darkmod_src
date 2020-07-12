@@ -766,12 +766,13 @@ TEST_CASE("Downloader") {
             }
             double progressRatio = -1.0;
             int progressCnt = 0;
-            GlobalProgressCallback progressCallback = [&](double ratio, const char *message) {
+            GlobalProgressCallback progressCallback = [&](double ratio, const char *message) -> int {
                 if (progressCnt == 0)
                     CHECK(ratio == 0.0);
                 CHECK(ratio >= progressRatio);
                 progressRatio = ratio;
                 progressCnt++;
+                return 0;
             };
             down.SetProgressCallback(progressCallback);
             down.DownloadAll();
@@ -854,6 +855,39 @@ TEST_CASE("Downloader") {
             down.DownloadAll();
             int totalDownloaded = down.TotalBytesDownloaded();
             CHECK(totalDownloaded == 0);
+        }
+
+        { //download interruption
+            Downloader down;
+            std::string data1, data2, data3;
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "test.txt"), CreateDownloadCallback(data1));
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "identity.bin"), CreateDownloadCallback(data2));
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt"), CreateDownloadCallback(data3));
+            double progressRatio = -1.0;
+            int progressCnt = 0;
+            int interruptCnt = 0;
+            GlobalProgressCallback progressCallback = [&](double ratio, const char *message) -> int {
+                progressRatio = ratio;
+                progressCnt++;
+                if (ratio >= 0.3) {
+                    CHECK(interruptCnt == 0);
+                    interruptCnt = progressCnt;
+                    return 1;   //interrupt in the middle
+                }
+                return 0;
+            };
+            down.SetProgressCallback(progressCallback);
+            try {
+                down.DownloadAll();
+                CHECK(false);
+            } catch(const ErrorException &e) {
+                CHECK(e.code() == lcUserInterrupt);
+            }
+            CHECK(progressRatio >= 0.3);
+            CHECK(progressRatio < 1.0);
+            CHECK(interruptCnt == progressCnt);
+            int cntEmpty = int(data1.empty()) + int(data2.empty()) + int(data3.empty());
+            CHECK(cntEmpty > 0);
         }
     }
 }

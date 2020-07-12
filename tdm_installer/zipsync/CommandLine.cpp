@@ -13,9 +13,9 @@ namespace ZipSync {
 
 ProgressIndicator::~ProgressIndicator() {}
 
-std::function<void(double, const char*)> ProgressIndicator::GetDownloaderCallback() {
-    return [this](double ratio, const char *comment) -> void {
-        Update(ratio, comment);
+std::function<int(double, const char*)> ProgressIndicator::GetDownloaderCallback() {
+    return [this](double ratio, const char *comment) -> int {
+        return Update(ratio, comment);
     };
 }
 
