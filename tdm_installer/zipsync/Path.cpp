@@ -122,7 +122,7 @@ bool CreateDir(const std::string &dirPath) {
 #ifdef _WIN32
     res = _mkdir(dirPath.c_str());
 #else
-    res = mkdir(dirPath.c_str(), DEFFILEMODE);
+    res = mkdir(dirPath.c_str(), ACCESSPERMS);
 #endif
     if (res == -1)
         res = errno;
