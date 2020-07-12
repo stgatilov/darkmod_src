@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace ZipSync {
 	class ProgressIndicator;
@@ -10,6 +11,10 @@ class Actions {
 public:
 	//called when user clicks "Restart" button with custom install dir
 	static void RestartWithInstallDir(const std::string &installDir);
+
+	//checks that we can write files at installation directory, and for free space
+	//errors are thrown as exceptions, but warnings are returned as array of strings
+	static std::vector<std::string> CheckSpaceAndPermissions(const std::string &installDir);
 
 	//called when we are sure user won't change install dir any more
 	static void StartLogFile();

@@ -74,8 +74,23 @@ void cb_Settings_ButtonBrowseInstallDirectory(Fl_Widget *self) {
 }
 
 void cb_Settings_ButtonRestartNewDir(Fl_Widget *self) {
+	std::string installDir = g_Settings_InputInstallDirectory->value();
+
 	try {
-		Actions::RestartWithInstallDir(g_Settings_InputInstallDirectory->value());
+		auto warnings = Actions::CheckSpaceAndPermissions(installDir);
+		for (const std::string &message : warnings) {
+			int idx = fl_choice(message.c_str(), "I know what I'm doing", "Stop", nullptr);
+			if (idx == 1)
+				return;
+		}
+	}
+	catch(const std::exception &e) {
+		fl_alert("Error: %s", e.what());
+		return;
+	}
+
+	try {
+		Actions::RestartWithInstallDir(installDir);
 		//note: this line is never executed
 	} catch(const std::exception &e) {
 		fl_alert("Error: %s", e.what());
@@ -102,6 +117,19 @@ void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 }
 
 void cb_Settings_ButtonNext(Fl_Widget *self) {
+	try {
+		auto warnings = Actions::CheckSpaceAndPermissions(OsUtils::GetCwd());
+		for (const std::string &message : warnings) {
+			int idx = fl_choice(message.c_str(), "I know what I'm doing", "Stop", nullptr);
+			if (idx == 1)
+				return;
+		}
+	}
+	catch(const std::exception &e) {
+		fl_alert("Error: %s", e.what());
+		return;
+	}
+
 	try {
 		Actions::StartLogFile();
 	}

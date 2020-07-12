@@ -159,3 +159,10 @@ void OsUtils::ReplaceAndRestartExecutable(const std::string &targetPath, const s
 	//terminate this process
 	exit(0);
 }
+
+uint64_t OsUtils::GetAvailableDiskSpace(const std::string &path) {
+	stdext::space_info info = stdext::space(path);
+	if (info.available == UINT64_MAX)	//e.g. invalid path
+		memset(&info, 0, sizeof(info));
+	return uint64_t(info.available);
+}

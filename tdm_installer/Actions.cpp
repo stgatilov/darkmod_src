@@ -107,6 +107,49 @@ void Actions::RestartWithInstallDir(const std::string &installDir) {
 	OsUtils::ReplaceAndRestartExecutable(newExePath, "");
 }
 
+std::vector<std::string> Actions::CheckSpaceAndPermissions(const std::string &installDir) {
+	std::vector<std::string> warnings;
+
+	stdext::path currPath = installDir;
+	while (!stdext::is_directory(currPath)) {
+		//note: this is possible is user entered arbitrary path and clicked "Create and Restart"
+		auto parentPath = currPath.parent_path();
+		ZipSyncAssertF(parentPath != currPath, "Invalid installation directory %s: no ancestor directory exists", installDir.c_str());
+		currPath = parentPath;
+	};
+	std::string lastExistingDir = currPath.string();
+
+	std::string checkPath = (stdext::path(lastExistingDir) / "__permissions_test").string();
+	g_logger->infof("Test writing file %s", checkPath.c_str());
+	FILE *f = fopen(checkPath.c_str(), "wt");
+	ZipSyncAssertF(f,
+		"Cannot write anything in installation directory \"%s\".\n"
+		"Please choose a directory where files can be created without admin rights.\n"
+		"Directory \"C:\\Games\\TheDarkMod\" is a usually good.\n"
+		"Do NOT try to install TheDarkMod into Program Files! ",
+		installDir.c_str()
+	);
+	fclose(f);
+	stdext::remove(checkPath);
+
+	g_logger->infof("Checking for free space at %s", lastExistingDir.c_str());
+	uint64_t freeSpace = OsUtils::GetAvailableDiskSpace(lastExistingDir) >> 20;
+	ZipSyncAssertF(freeSpace >= TDM_INSTALLER_FREESPACE_MINIMUM, 
+		"Only %0.0lf MB of free space is available in installation directory.\n"
+		"Installer surely won't work without at least %0.0lf MB of free space!",
+		freeSpace / 1.0, TDM_INSTALLER_FREESPACE_MINIMUM / 1.0
+	);
+	if (freeSpace < TDM_INSTALLER_FREESPACE_RECOMMENDED) {
+		warnings.push_back(ZipSync::formatMessage(
+			"Only %0.2lf GB of free space is available in installation directory.\n"
+			"Installation or update can fail due to lack of space.\n"
+			"Better free at least %0.2lf GB and restart updater.\n",
+			freeSpace / 1024.0, TDM_INSTALLER_FREESPACE_RECOMMENDED / 1024.0
+		));
+	}
+	return warnings;
+}
+
 void Actions::StartLogFile() {
 	//from now on, write logs to a logfile in CWD
 	delete g_logger;

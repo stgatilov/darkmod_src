@@ -185,6 +185,17 @@ namespace stdext {
         return path(res);
     }
 
+    space_info space(const path& p) {
+        stdfsys::space_info stdres;
+        try { stdres = stdfsys::space(get(p)); }
+        catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
+        space_info res;
+        res.capacity = stdres.capacity;
+        res.free = stdres.free;
+        res.available = stdres.available;
+        return res;
+    }
+
     std::vector<path> directory_enumerate(const path &rootPath) {
         std::vector<path> res;
         try {

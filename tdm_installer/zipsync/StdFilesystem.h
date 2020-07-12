@@ -63,6 +63,13 @@ namespace stdext {
     void current_path(const path& to);
     path canonical(const path& path);
 
+    struct space_info {
+        std::uintmax_t capacity;
+        std::uintmax_t free;
+        std::uintmax_t available;
+    };
+    space_info space(const path& p);
+
     //below is some replacement for C++ iterator mess
     //(cost of memory allocation should be negligible compare to cost of filesystem access)
 

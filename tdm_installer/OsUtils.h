@@ -24,7 +24,6 @@ public:
 	//change working directory to the location of the launched executable
 	//location is taken from argv[0], set by InitArgs
 	static bool SetCwd(const std::string &newCwd);
-
 	//returns current working directory
 	static std::string GetCwd();
 
@@ -40,4 +39,7 @@ public:
 	static void ReplaceAndRestartExecutable(const std::string &targetPath, const std::string &temporaryPath, const std::vector<std::string> &cmdArgs = {});
 	//returns name of batch file (for deleting it)
 	static std::string GetBatchForReplaceAndRestartExecutable(const std::string &targetPath);
+
+	//return number of bytes available at path
+	static uint64_t GetAvailableDiskSpace(const std::string &path);
 };
