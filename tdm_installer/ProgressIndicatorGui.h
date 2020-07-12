@@ -18,11 +18,15 @@ class ProgressIndicatorGui : public ZipSync::ProgressIndicator {
 	double _startTime = DBL_MAX;
 	double _lastUpdateTime = DBL_MAX;
 
+	//set this to nonzero to generate interruption on next progress callback
+	static int InterruptFlag;
+
 public:
 	ProgressIndicatorGui(Fl_Progress *widget);
 	void AttachRemainsLabel(Fl_Widget *label);
-	void Update(const char *line) override;
-	void Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") override;
+	int Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") override;
+
+	static void Interrupt(int code = 1) { InterruptFlag = code; }
 };
 
 

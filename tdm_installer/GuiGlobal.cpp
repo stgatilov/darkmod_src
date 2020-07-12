@@ -7,6 +7,7 @@
 #include "GuiPageVersion.h"
 #include "GuiPageConfirm.h"
 #include "GuiPageInstall.h"
+#include "ProgressIndicatorGui.h"
 
 
 void cb_Settings_ButtonReset(Fl_Widget *self) {
@@ -24,6 +25,10 @@ void cb_Settings_ButtonReset(Fl_Widget *self) {
 	g_Version_OutputAddedSize->value("");
 	g_Version_OutputRemovedSize->value("");
 	g_Version_OutputDownloadSize->value("");
+}
+
+void cb_RaiseInterruptFlag(Fl_Widget *self) {
+	ProgressIndicatorGui::Interrupt();
 }
 
 //============================================================
@@ -97,6 +102,7 @@ void GuiInitAll() {
 	g_Confirm_ButtonBack->callback(cb_Confirm_ButtonBack);
 	g_Confirm_ButtonStart->callback(cb_Confirm_ButtonStart);
 
+	g_Install_ButtonCancel->callback(cb_RaiseInterruptFlag);
 	g_Install_ButtonClose->callback(cb_Install_ButtonClose);
 }
 

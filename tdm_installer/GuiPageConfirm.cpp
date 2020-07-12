@@ -23,7 +23,7 @@ void cb_Confirm_ButtonStart(Fl_Widget *self) {
 	g_Install_ProgressFinalize->hide();
 	g_Wizard->next();
 	g_Install_ButtonClose->deactivate();
-	g_Install_ButtonCancel->deactivate(); //g_Install_ButtonCancel->activate();
+	g_Install_ButtonCancel->activate();
 
 	try {
 		GuiDeactivateGuard deactivator(g_PageInstall, {g_Install_ButtonCancel});

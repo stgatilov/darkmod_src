@@ -9,22 +9,19 @@
 #include "time.h"
 
 
+int ProgressIndicatorGui::InterruptFlag = 0;
+
 ProgressIndicatorGui::ProgressIndicatorGui(Fl_Progress *widget) : _progressWidget(widget) {
 	_progressWidget->value(0.0);
 	_progressWidget->label("starting...");
+	InterruptFlag = 0;
 }
 
 void ProgressIndicatorGui::AttachRemainsLabel(Fl_Widget *label) {
 	_labelWidget = label;
 }
 
-void ProgressIndicatorGui::Update(const char *line) {
-	//TODO: is it ever called?...
-	_lastProgressText = line;
-	_progressWidget->label(_lastProgressText.c_str());
-}
-
-void ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, double localRatio, std::string localComment) {
+int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, double localRatio, std::string localComment) {
 	_progressWidget->value(100.0 * globalRatio);
 
 	if (_lastProgressText != globalComment) {
@@ -59,6 +56,10 @@ void ProgressIndicatorGui::Update(double globalRatio, std::string globalComment,
 	}
 
 	Fl::check();
+	if (InterruptFlag)
+		return InterruptFlag;	//interrupted by some GUI callback
+
+	return 0;
 }
 
 
