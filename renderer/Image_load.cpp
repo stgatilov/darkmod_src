@@ -57,6 +57,7 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 			return 32;
 		case GL_ALPHA8:
 			return 8;
+		case GL_RGBA:		// current render texture
 		case GL_RGBA8:
 			return 32;
 		case GL_RGB8:
@@ -85,6 +86,8 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 			return 8;			// not sure
 		case GL_COLOR: // FBO attachments
 		case GL_DEPTH_STENCIL:
+		case GL_DEPTH24_STENCIL8:		// current depth texture
+		case GL_DEPTH_COMPONENT32F:		// shadow atlas
 			return 32;
 		case GL_DEPTH:
 		case GL_STENCIL:
