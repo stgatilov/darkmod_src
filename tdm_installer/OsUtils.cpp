@@ -3,6 +3,7 @@
 #include "Utils.h"
 #include "StdString.h"
 #include "LogUtils.h"
+#include <string.h>
 
 std::string OsUtils::_argv0;
 

@@ -48,22 +48,7 @@ static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir
 	return res;
 }
 
-static std::vector<std::string> CollectTdmUnpackedFilesToDelete(const std::string &installDir) {
-	static const char *TDM_EXECUTABLES[] = {
-		//Windows executables
-		"TheDarkMod.exe",
-		"TheDarkModx64.exe",
-		//Windows DLLs (2.06)
-		"ExtLibs.dll",
-		"ExtLibsx64.dll",
-		//Linux executables
-		"thedarkmod.x86",
-		"thedarkmod.x64",
-		//game DLLs (2.05 and before)
-		"gamex86.dll",
-		"gamex86.so"
-	};
-	//note: let's leave all the rest intact
+static std::vector<std::string> CollectFilesInList(const std::string &installDir, const char *filenames[]) {
 	std::vector<std::string> res;
 	auto allPaths = stdext::recursive_directory_enumerate(installDir);
 	for (const auto &entry : allPaths) {
@@ -71,17 +56,47 @@ static std::vector<std::string> CollectTdmUnpackedFilesToDelete(const std::strin
 			std::string absPath = entry.string();
 			std::string relPath = ZipSync::PathAR::FromAbs(absPath, installDir).rel;
 
-			bool shouldDelete = false;
-			for (const char *s : TDM_EXECUTABLES)
-				if (relPath == s)
-					shouldDelete = true;
+			bool matches = false;
+			for (int i = 0; filenames[i]; i++)
+				if (relPath == filenames[i])
+					matches = true;
 
-			if (shouldDelete)
+			if (matches)
 				res.push_back(absPath);
 		}
 	}
 	return res;
 }
+
+static const char *TDM_DELETE_ON_INSTALL[] = {
+	//Windows executables
+	"TheDarkMod.exe",
+	"TheDarkModx64.exe",
+	//Windows DLLs (2.06)
+	"ExtLibs.dll",
+	"ExtLibsx64.dll",
+	//Linux executables
+	"thedarkmod.x86",
+	"thedarkmod.x64",
+	//game DLLs (2.05 and before)
+	"gamex86.dll",
+	"gamex86.so",
+	nullptr
+};
+static std::vector<std::string> CollectTdmUnpackedFilesToDelete(const std::string &installDir) {
+	return CollectFilesInList(installDir, TDM_DELETE_ON_INSTALL);
+}
+
+static const char *TDM_MARK_EXECUTABLE[] = {
+	//Linux executables
+	"thedarkmod.x86",
+	"thedarkmod.x64",
+	nullptr
+};
+static std::vector<std::string> CollectTdmUnpackedFilesMarkExecutable(const std::string &installDir) {
+	return CollectFilesInList(installDir, TDM_MARK_EXECUTABLE);
+}
+
 
 static const char *ZIPS_TO_UNPACK[] = {"tdm_shared_stuff.zip"};
 static int ZIPS_TO_UNPACK_NUM = sizeof(ZIPS_TO_UNPACK) / sizeof(ZIPS_TO_UNPACK[0]);
@@ -154,6 +169,7 @@ void Actions::StartLogFile() {
 	//from now on, write logs to a logfile in CWD
 	delete g_logger;
 	g_logger = new LoggerTdm();
+	g_logger->infof("Install directory: %s", OsUtils::GetCwd().c_str());
 }
 
 bool Actions::NeedsSelfUpdate(ZipSync::ProgressIndicator *progress) {
@@ -566,11 +582,20 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 		if (!zf)
 			continue;
 		if (progress)
-			progress->Update(0.8 + 0.2 * (i+0)/ZIPS_TO_UNPACK_NUM, formatMessage("Unpacking %s...", fn).c_str());
+			progress->Update(0.8 + 0.1 * (i+0)/ZIPS_TO_UNPACK_NUM, formatMessage("Unpacking %s...", fn).c_str());
 		UnpackZip(zf);
 		if (progress)
-			progress->Update(0.8 + 0.2 * (i+1)/ZIPS_TO_UNPACK_NUM, "Unpacking finished");
+			progress->Update(0.8 + 0.1 * (i+1)/ZIPS_TO_UNPACK_NUM, "Unpacking finished");
 	}
 
+	if (progress)
+		progress->Update(0.9, "Mark as executable...");
+	std::vector<std::string> execFiles = CollectTdmUnpackedFilesMarkExecutable(root);
+	for (const std::string &fn : execFiles)
+		OsUtils::MarkAsExecutable(fn);
+	if (progress)
+		progress->Update(1.0, "Executables marked");
+
+	progress->Update(1.0, "Finalization complete");
 	g_logger->infof("");
 }
