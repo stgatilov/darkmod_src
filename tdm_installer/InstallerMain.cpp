@@ -13,11 +13,11 @@ int main(int argc, char **argv) {
 
 	//additional GUI initialization (out of FLUID)
 	GuiInitAll();
-	//automatic update of GUI (TODO: is it needed?)
-	Fl::add_check(GuiUpdateAll);
 
 	//display the window
 	g_Window->show();
+	//run some checks immediately after start
+	Fl::add_timeout(0.3, GuiLoaded);
 	//enter event loop of FLTK
 	int ret = Fl::run();
 

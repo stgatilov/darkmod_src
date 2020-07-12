@@ -42,4 +42,8 @@ public:
 
 	//return number of bytes available at path
 	static uint64_t GetAvailableDiskSpace(const std::string &path);
+
+	//is current process run "under admin"?
+	//returns false on Non-Windows platforms
+	static bool HasElevatedPrivilegesWindows();
 };

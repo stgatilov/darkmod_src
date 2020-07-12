@@ -167,3 +167,27 @@ uint64_t OsUtils::GetAvailableDiskSpace(const std::string &path) {
 		memset(&info, 0, sizeof(info));
 	return uint64_t(info.available);
 }
+
+bool OsUtils::HasElevatedPrivilegesWindows() {
+	bool underAdmin = false;
+#ifdef _WIN32
+	HANDLE hProcess = GetCurrentProcess();
+	HANDLE hToken;
+	if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
+		//get the Integrity level
+		DWORD dwLengthNeeded;
+		if (!GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &dwLengthNeeded)) {
+			PTOKEN_MANDATORY_LABEL pTIL = (PTOKEN_MANDATORY_LABEL)malloc(dwLengthNeeded);
+			if (GetTokenInformation(hToken, TokenIntegrityLevel, pTIL, dwLengthNeeded, &dwLengthNeeded)) {
+				DWORD dwIntegrityLevel = *GetSidSubAuthority(pTIL->Label.Sid, (DWORD)(UCHAR)(*GetSidSubAuthorityCount(pTIL->Label.Sid)-1));
+				if (dwIntegrityLevel >= SECURITY_MANDATORY_HIGH_RID) {
+					underAdmin = true;
+				}
+			}
+			free(pTIL);
+		}
+		CloseHandle(hToken);
+	}
+#endif
+	return underAdmin;
+}

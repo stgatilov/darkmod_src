@@ -3,5 +3,5 @@
 //reset all GUI widgets to initial state
 void GuiInitAll();
 
-//updates widgets visibility, disabled status, etc.
-void GuiUpdateAll(void*);
+//shows some warnings/alerts immediately on start
+void GuiLoaded(void*);

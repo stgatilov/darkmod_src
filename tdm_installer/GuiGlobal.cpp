@@ -8,6 +8,7 @@
 #include "GuiPageConfirm.h"
 #include "GuiPageInstall.h"
 #include "ProgressIndicatorGui.h"
+#include <FL/fl_ask.H>
 
 
 void cb_Settings_ButtonReset(Fl_Widget *self) {
@@ -106,5 +107,14 @@ void GuiInitAll() {
 	g_Install_ButtonClose->callback(cb_Install_ButtonClose);
 }
 
-void GuiUpdateAll(void*) {
+void GuiLoaded(void*) {
+	if (OsUtils::HasElevatedPrivilegesWindows()) {
+		int idx = fl_choice(
+			"The installer was run \"as admin\". This is strongly discouraged!\n"
+			"If you continue, admin rights will most likely be necessary to play the game.",
+			"I know what I'm doing", "Exit", nullptr
+		);
+		if (idx == 1)
+			exit(0);
+	}
 }
