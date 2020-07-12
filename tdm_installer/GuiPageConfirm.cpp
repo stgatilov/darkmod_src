@@ -68,6 +68,7 @@ void cb_Confirm_ButtonStart(Fl_Widget *self) {
 		return;
 	}
 
+	g_Install_TextFinishedInstall->show();
 	g_Install_ButtonClose->activate();
 	g_Install_ButtonCancel->deactivate();
 }
