@@ -256,6 +256,9 @@ void FrameBufferManager::CreateResolve( FrameBuffer *resolve ) {
 	globalImages->currentRenderImage->GenerateAttachment( renderWidth, renderHeight, colorFormat, GL_LINEAR );
 	resolve->AddColorRenderTexture( 0, globalImages->currentRenderImage );
 	globalImages->currentDepthImage->GenerateAttachment( renderWidth, renderHeight, depthStencilFormat, GL_NEAREST );
+	globalImages->currentDepthImage->Bind();
+	GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+	qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask );
 	resolve->AddDepthRenderTexture( globalImages->currentDepthImage );
 }
 
