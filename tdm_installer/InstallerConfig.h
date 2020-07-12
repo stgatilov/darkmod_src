@@ -17,7 +17,7 @@ class InstallerConfig {
 		std::vector<std::string> _manifestUrls;
 		std::vector<std::string> _depends;
 		std::vector<std::string> _folderPath;
-		std::set<std::string> _providedVersions;		//transitive closure by _depends (itself excluded)
+		std::vector<std::string> _providedVersions;		//transitive closure by _depends (itself included first)
 		std::string _name;
 		ZipSync::IniSect _ini;
 	};
@@ -43,9 +43,10 @@ public:
 
 	//returns url to manifest file of the version
 	//if there are several possibilities, then random one is chosen
-	std::string ChooseManifestUrl(const std::string &version) const;
+	//if trusted is set, then only URLs starting with TDM_INSTALLER_TRUSTED_URL_PREFIX are considered
+	std::string ChooseManifestUrl(const std::string &version, bool trusted = false) const;
 
-	//returns a set of versions whose manifest must be provided additionally for update to specified version
-	//pass them ChooseManifestUrl to get set of additional provided manifests
-	std::vector<std::string> GetAdditionalProvidedVersions(const std::string &version) const;
+	//returns a set of versions whose manifest must be provided for update to specified version
+	//pass them ChooseManifestUrl to get set of provided manifests
+	std::vector<std::string> GetProvidedVersions(const std::string &version) const;
 };

@@ -332,23 +332,25 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	g_logger->infof("Evaluating version %s", targetVersion.c_str());
 	g_state->_updater.reset();
 
-	std::vector<std::string> addProvidedVersions = g_state->_config.GetAdditionalProvidedVersions(targetVersion);
-	std::string targetManifestUrl = g_state->_config.ChooseManifestUrl(targetVersion);
-	std::vector<std::string> providManifestUrls;
-	for (int i = 0; i < addProvidedVersions.size(); i++)
-		providManifestUrls.push_back(g_state->_config.ChooseManifestUrl(addProvidedVersions[i]));
+	//note: target manifest always comes from trusted source
+	std::string targetManifestUrl = g_state->_config.ChooseManifestUrl(targetVersion, true);
+	std::vector<std::string> providedVersions = g_state->_config.GetProvidedVersions(targetVersion);
+	std::vector<std::string> providedManifestUrls;
+	for (int i = 0; i < providedVersions.size(); i++)
+		providedManifestUrls.push_back(g_state->_config.ChooseManifestUrl(providedVersions[i]));
 
 	g_logger->infof("Target manifest at %s", targetManifestUrl.c_str());
-	g_logger->infof("Version %s needs files from %d other versions", targetVersion.c_str(), int(addProvidedVersions.size()));
-	for (int i = 0; i < addProvidedVersions.size(); i++)
-		g_logger->debugf("  %s at %s", addProvidedVersions[i].c_str(), providManifestUrls[i].c_str());
+	g_logger->infof("Version %s needs files from %d versions", targetVersion.c_str(), int(providedVersions.size()));
+	for (int i = 0; i < providedVersions.size(); i++)
+		g_logger->debugf("  %s at %s", providedVersions[i].c_str(), providedManifestUrls[i].c_str());
 
 	//see which manifests were not loaded in this updater session
+	std::string targetVersionTrusted = "trusted::" + targetVersion;
 	std::vector<std::string> downloadedVersions;
 	std::vector<std::string> downloadedManifestUrls;
-	for (int i = -1; i < (int)addProvidedVersions.size(); i++) {
-		std::string ver = (i < 0 ? targetVersion : addProvidedVersions[i]);
-		std::string url = (i < 0 ? targetManifestUrl : providManifestUrls[i]);
+	for (int i = -1; i < (int)providedVersions.size(); i++) {
+		std::string ver = (i < 0 ? targetVersionTrusted : providedVersions[i]);
+		std::string url = (i < 0 ? targetManifestUrl : providedManifestUrls[i]);
 		if (g_state->_loadedManifests.count(ver))
 			continue;
 		downloadedVersions.push_back(ver);
@@ -423,13 +425,10 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		g_logger->debugf("  %s", ownedZips[i].c_str());
 
 	//gather full manifests for update
-	ZipSync::Manifest targetMani = g_state->_loadedManifests[targetVersion];
-	ZipSync::Manifest providMani = targetMani.Filter([](const ZipSync::FileMetainfo &mf) -> bool {
-		return mf.location != ZipSync::FileLocation::Nowhere;
-	});
-	providMani.AppendManifest(g_state->_localManifest);
-	for (const std::string &ver : addProvidedVersions) {
-		const ZipSync::Manifest &mani = g_state->_loadedManifests[ver];
+	ZipSync::Manifest targetMani = g_state->_loadedManifests.at(targetVersionTrusted);
+	ZipSync::Manifest providMani = g_state->_localManifest;
+	for (const std::string &ver : providedVersions) {
+		const ZipSync::Manifest &mani = g_state->_loadedManifests.at(ver);
 		ZipSync::Manifest added = mani.Filter([](const ZipSync::FileMetainfo &mf) -> bool {
 			return mf.location != ZipSync::FileLocation::Nowhere;
 		});

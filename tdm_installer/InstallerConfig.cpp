@@ -8,12 +8,6 @@
 #include "Path.h"
 #include "Constants.h"
 
-template<class K, class V> static const V &get(const std::map<K, V> &dict, const K &key) {
-	auto iter = dict.find(key);
-	ZipSyncAssert(iter != dict.end());
-	return iter->second;
-}
-
 void InstallerConfig::Clear() {
 	_mirrorSets.clear();
 	_versions.clear();
@@ -100,7 +94,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 				std::string mirsetName = url.substr(5, pos-5);
 				std::string tail = url.substr(pos + 1);
 				ZipSyncAssertF(_mirrorSets.count(mirsetName), "Version %s: unknown MirrorSet %s", ver._name.c_str(), mirsetName.c_str());
-				const auto &replacements = get(_mirrorSets, mirsetName)._urls;
+				const auto &replacements = _mirrorSets.at(mirsetName)._urls;
 				for (const std::string &repl : replacements)
 					newUrls.push_back(repl + tail);
 			}
@@ -113,6 +107,13 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 		}
 		ver._manifestUrls = std::move(newUrls);
 
+		int trustedCnt = 0;
+		for (const std::string &url : ver._manifestUrls) {
+			if (stdext::starts_with(url, TDM_INSTALLER_TRUSTED_URL_PREFIX))
+				trustedCnt++;
+		}
+		ZipSyncAssertF(trustedCnt > 0, "Version %s: has no manifest URL at trusted location", ver._name.c_str());
+
 		for (const std::string &dep : ver._depends) {
 			ZipSyncAssertF(_versions.count(dep), "Version %s: depends on missing Version %s", ver._name.c_str(), dep.c_str());
 		}
@@ -123,17 +124,17 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 		const std::string &name = pNV.first;
 		Version &ver = pNV.second;
 
-		std::set<std::string> providedVersions;
+		std::vector<std::string> providedVersions;
 		std::set<std::string> inRecursion;
 		std::function<void(const std::string &)> TraverseDependencies = [&](const std::string &version) -> void {
 			ZipSyncAssertF(inRecursion.count(version) == 0, "Version %s: at dependency cycle", version.c_str());
 			inRecursion.insert(version);
 
-			if (providedVersions.count(version))
+			if (std::count(providedVersions.begin(), providedVersions.end(), version))
 				return;
-			providedVersions.insert(version);
+			providedVersions.push_back(version);
 
-			const auto &depends = get(_versions, version)._depends;
+			const auto &depends = _versions.at(version)._depends;
 			for (const std::string &dep : depends) {
 				TraverseDependencies(dep);
 			}
@@ -142,7 +143,6 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 		};
 		TraverseDependencies(name);
 
-		providedVersions.erase(name);
 		ver._providedVersions = std::move(providedVersions);
 	}
 }
@@ -155,7 +155,7 @@ std::vector<std::string> InstallerConfig::GetAllVersions() const {
 }
 
 std::vector<std::string> InstallerConfig::GetFolderPath(const std::string &version) const {
-	return get(_versions, version)._folderPath;
+	return _versions.at(version)._folderPath;
 }
 
 std::string InstallerConfig::GetDefaultVersion() const {
@@ -163,18 +163,26 @@ std::string InstallerConfig::GetDefaultVersion() const {
 	return _defaultVersion;
 }
 
-std::string InstallerConfig::ChooseManifestUrl(const std::string &version) const {
+std::string InstallerConfig::ChooseManifestUrl(const std::string &version, bool trusted) const {
 	static std::mt19937 MirrorChoosingRandom((int)time(0) ^ clock());	//RNG here!!!
 
-	const Version &ver = get(_versions, version);
-	int k = (int)ver._manifestUrls.size();
+	const Version &ver = _versions.at(version);
+	std::vector<std::string> candidates = ver._manifestUrls;
+	if (trusted) {
+		candidates.clear();
+		for (const std::string &url : ver._manifestUrls)
+			if (stdext::starts_with(url, TDM_INSTALLER_TRUSTED_URL_PREFIX))
+				candidates.push_back(url);
+	}
+
+	int k = (int)candidates.size();
 	int idx = MirrorChoosingRandom() % k;
-	const std::string& url = ver._manifestUrls[idx];
+	const std::string& url = candidates[idx];
+
 	return url;
 }
 
-std::vector<std::string> InstallerConfig::GetAdditionalProvidedVersions(const std::string &version) const {
-	const Version &ver = get(_versions, version);
-	std::vector<std::string> res(ver._providedVersions.begin(), ver._providedVersions.end());
-	return res;
+std::vector<std::string> InstallerConfig::GetProvidedVersions(const std::string &version) const {
+	const Version &ver = _versions.at(version);
+	return ver._providedVersions;
 }

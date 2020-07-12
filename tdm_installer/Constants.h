@@ -12,6 +12,7 @@
 
 #define TDM_INSTALLER_CONFIG_URL "http://darkmod.taaaki.za.net/zipsync/tdm_installer.ini"
 #define TDM_INSTALLER_EXECUTABLE_URL_PREFIX "http://darkmod.taaaki.za.net/zipsync/"
+#define TDM_INSTALLER_TRUSTED_URL_PREFIX "http://darkmod.taaaki.za.net/"
 
 #define TDM_INSTALLER_FREESPACE_MINIMUM 100				//100 MB --- hardly enough even for differential update
 #define TDM_INSTALLER_FREESPACE_RECOMMENDED (5<<10)		//5 GB --- enough for any update, since it is larger than size of TDM
