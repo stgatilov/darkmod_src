@@ -42,7 +42,7 @@ bool GLimp_CheckExtension( const char *name, int available ) {
 void GLimp_CheckRequiredFeatures( void ) {
 	common->Printf( "Checking required OpenGL features...\n" );
 	bool reqs = true;
-	reqs = reqs && CHECK_FEATURE(GL_VERSION_3_1);
+	reqs = reqs && CHECK_FEATURE(GL_VERSION_3_3);
 	reqs = reqs && CHECK_FEATURE(GL_EXT_texture_compression_s3tc);
 #if defined(_WIN32)
 	reqs = reqs && CHECK_FEATURE(WGL_VERSION_1_0);
@@ -88,12 +88,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.arbAssemblyShadersAvailable = CHECK_FEATURE(GL_ARB_vertex_program) && CHECK_FEATURE(GL_ARB_fragment_program);
 	glConfig.stencilTexturing = CHECK_FEATURE( GL_ARB_stencil_texturing );
 	glConfig.depthBoundsTestAvailable = CHECK_FEATURE(GL_EXT_depth_bounds_test);
-	glConfig.geometryShaderAvailable = CHECK_FEATURE(GL_ARB_geometry_shader4);
-	glConfig.timerQueriesAvailable = CHECK_FEATURE(GL_ARB_timer_query);
 	glConfig.debugGroupsAvailable = CHECK_FEATURE(GL_KHR_debug);
-	glConfig.fenceSyncAvailable = CHECK_FEATURE( GL_ARB_sync );
-	glConfig.drawBaseVertexAvailable = CHECK_FEATURE( GL_ARB_draw_elements_base_vertex );
-	glConfig.textureSwizzleAvailable = CHECK_FEATURE( GL_ARB_texture_swizzle );
 	glConfig.bufferStorageAvailable = CHECK_FEATURE( GL_ARB_buffer_storage );
 #ifdef _WIN32
 	CHECK_FEATURE(WGL_EXT_swap_control);
