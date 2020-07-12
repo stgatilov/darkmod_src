@@ -265,6 +265,7 @@ private:
 	GLuint64			textureHandle;
 	bool				isBindlessHandleResident;
 public:
+	bool				isImmutable;
 	int					lastNeededInFrame;
 	void				MakeResident();
 	void				MakeNonResident();

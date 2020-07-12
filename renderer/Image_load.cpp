@@ -1746,6 +1746,7 @@ void idImage::MakeResident() {
 			return;
 		}
         qglMakeTextureHandleResidentARB(textureHandle);
+		isImmutable = true;
     }
 }
 

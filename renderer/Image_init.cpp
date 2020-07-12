@@ -241,6 +241,7 @@ idImage::idImage() {
 	isBindlessHandleResident = false;
 	textureHandle = 0;
 	lastNeededInFrame = -1;
+	isImmutable = false;
 }
 
 /*
@@ -846,6 +847,11 @@ void idImageManager::ChangeTextureFilter( void ) {
 		// make sure we don't start a background load
 		if ( glt->texnum == idImage::TEXTURE_NOT_LOADED ) {
 			continue;
+		}
+
+		if ( glt->isImmutable ) {
+			// textures with bindless handles are immutable, need to recreate
+			glt->PurgeImage( false );
 		} else {
 			glt->Bind();
 			if ( glt->filter == TF_DEFAULT ) {
@@ -858,6 +864,9 @@ void idImageManager::ChangeTextureFilter( void ) {
 			qglTexParameterf( texEnum, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
 		}
 	}
+
+	// if any framebuffers are using render textures, they will need to be recreated after this
+	frameBuffers->PurgeAll();
 }
 
 /*
