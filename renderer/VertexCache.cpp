@@ -172,7 +172,7 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		++vertexUseCount;
 		vbo = dynamicData.vertexBuffer.GetAPIObject();
 	}
-	bool useBasePointer = glConfig.drawBaseVertexAvailable && r_useBaseVertex;
+	bool useBasePointer = r_useBaseVertex;
 	if ( vbo != currentVertexBuffer ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
@@ -334,7 +334,7 @@ void idVertexCache::EndFrame() {
 
 	// ensure no GL draws are still active on the next buffer to write to
 	int nextListNum = ( listNum + 1 ) % VERTCACHE_NUM_FRAMES;
-	if ( glConfig.fenceSyncAvailable && r_useFenceSync.GetBool() ) {
+	if ( r_useFenceSync.GetBool() ) {
 		LockGeoBufferSet( backendListNum );
 		WaitForGeoBufferSet( nextListNum );
 	} else {

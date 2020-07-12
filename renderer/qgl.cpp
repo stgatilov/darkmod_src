@@ -88,7 +88,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.arbAssemblyShadersAvailable = CHECK_FEATURE(GL_ARB_vertex_program) && CHECK_FEATURE(GL_ARB_fragment_program);
 	glConfig.stencilTexturing = CHECK_FEATURE( GL_ARB_stencil_texturing );
 	glConfig.depthBoundsTestAvailable = CHECK_FEATURE(GL_EXT_depth_bounds_test);
-	glConfig.debugGroupsAvailable = CHECK_FEATURE(GL_KHR_debug);
 	glConfig.bufferStorageAvailable = CHECK_FEATURE( GL_ARB_buffer_storage );
 #ifdef _WIN32
 	CHECK_FEATURE(WGL_EXT_swap_control);

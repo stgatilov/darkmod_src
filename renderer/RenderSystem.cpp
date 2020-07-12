@@ -274,7 +274,7 @@ static void R_CheckCvars( void ) {
 	}
 
 	// GL debug messages
-	if( r_glDebugOutput.IsModified() && glConfig.debugGroupsAvailable ) {
+	if( r_glDebugOutput.IsModified() && GLAD_GL_KHR_debug ) {
 		r_glDebugOutput.ClearModified();
 		if( r_glDebugOutput.GetBool() ) {
 			qglEnable( GL_DEBUG_OUTPUT );

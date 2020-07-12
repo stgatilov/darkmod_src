@@ -179,7 +179,7 @@ idList<const drawSurf_t*> allSurfaces( 1 << 11 );
 
 void RB_Multi_AddSurf( const drawSurf_t* surf ) {
 	auto ent = surf->space;
-	if ( glConfig.drawBaseVertexAvailable && idVertexCache::r_useBaseVertex && !ent->weaponDepthHack && ent->modelDepthHack == 0 )
+	if ( idVertexCache::r_useBaseVertex && !ent->weaponDepthHack && ent->modelDepthHack == 0 )
 		allSurfaces.Append( surf );
 	else
 		RB_DrawElementsWithCounters( surf );

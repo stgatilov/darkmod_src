@@ -17,7 +17,6 @@
 #define __PROFILING_H__
 
 #include "qgl.h"
-#include "tr_local.h"
 
 extern idCVar r_useDebugGroups;
 extern idCVar r_glProfiling;
@@ -41,16 +40,16 @@ void GL_SetDebugLabel(void *ptr, const idStr &label );
 class GlProfileScope {
 public:
 	GlProfileScope(const char* section) {
-		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
+		if( GLAD_GL_KHR_debug && r_useDebugGroups.GetBool() )
 			qglPushDebugGroupKHR( GL_DEBUG_SOURCE_APPLICATION, 1, -1, section );
-		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
+		if( r_glProfiling.GetBool() )
 			ProfilingEnterSection( glProfiler, section );
 	}
 
 	~GlProfileScope() {
-		if( glConfig.debugGroupsAvailable && r_useDebugGroups.GetBool() )
+		if( GLAD_GL_KHR_debug && r_useDebugGroups.GetBool() )
 			qglPopDebugGroupKHR();
-		if( glConfig.timerQueriesAvailable && r_glProfiling.GetBool() )
+		if( r_glProfiling.GetBool() )
 			ProfilingLeaveSection( glProfiler );
 	}
 };
