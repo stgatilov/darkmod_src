@@ -127,6 +127,9 @@
     <Filter Include="Tools\Compilers\Particle">
       <UniqueIdentifier>{b602a60b-9b06-4cba-a575-5ec753acf392}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Backend">
+      <UniqueIdentifier>{16a792a5-ae3f-4d05-b7cc-1c497c34aa43}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1460,6 +1463,27 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="renderer\BloomStage.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\DepthStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\DrawBatchExecutor.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\GpuBuffer.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\InteractionStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\RenderBackend.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\StencilShadowStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\FrameBufferManager.h">
       <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2870,6 +2894,27 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\BloomStage.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\DepthStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\GpuBuffer.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\InteractionStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\RenderBackend.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\StencilShadowStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\FrameBufferManager.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>

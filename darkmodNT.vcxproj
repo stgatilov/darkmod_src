@@ -700,12 +700,19 @@
     <ClInclude Include="idlib\Timer.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="renderer\AmbientOcclusionStage.h" />
+    <ClInclude Include="renderer\backend\DepthStage.h" />
+    <ClInclude Include="renderer\backend\DrawBatchExecutor.h" />
+    <ClInclude Include="renderer\backend\GpuBuffer.h" />
+    <ClInclude Include="renderer\backend\InteractionStage.h" />
+    <ClInclude Include="renderer\backend\RenderBackend.h" />
+    <ClInclude Include="renderer\backend\StencilShadowStage.h" />
     <ClInclude Include="renderer\BloomStage.h" />
     <ClInclude Include="renderer\BufferObject.h" />
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
     <ClInclude Include="renderer\FrameBuffer.h" />
+    <ClInclude Include="renderer\FrameBufferManager.h" />
     <ClInclude Include="renderer\glad.h" />
     <ClInclude Include="renderer\glad_wgl.h" />
     <ClInclude Include="renderer\glsl.h" />
@@ -1146,6 +1153,12 @@
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp" />
+    <ClCompile Include="renderer\backend\DepthStage.cpp" />
+    <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp" />
+    <ClCompile Include="renderer\backend\GpuBuffer.cpp" />
+    <ClCompile Include="renderer\backend\InteractionStage.cpp" />
+    <ClCompile Include="renderer\backend\RenderBackend.cpp" />
+    <ClCompile Include="renderer\backend\StencilShadowStage.cpp" />
     <ClCompile Include="renderer\BloomStage.cpp" />
     <ClCompile Include="renderer\BufferObject.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
@@ -1157,6 +1170,7 @@
     <ClCompile Include="renderer\draw_glsl_multi.cpp" />
     <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBuffer.cpp" />
+    <ClCompile Include="renderer\FrameBufferManager.cpp" />
     <ClCompile Include="renderer\glad.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
