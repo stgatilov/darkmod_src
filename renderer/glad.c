@@ -625,6 +625,9 @@
 #define GLAD_COMPILE_LOADER
 #include "glad.h"
 
+//stgatilov: query extensions using new interface
+#define GL_VERSION_3_0
+
 static void* get_proc(const char *namez);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
