@@ -41,6 +41,9 @@ public:
 	//default version is installed if user has not chosen any specific version
 	std::string GetDefaultVersion() const;
 
+	//return true if URL points to trusted (main) mirror
+	bool IsUrlTrusted(const std::string &url) const;
+
 	//returns url to manifest file of the version
 	//if there are several possibilities, then random one is chosen
 	//if trusted is set, then only URLs starting with TDM_INSTALLER_TRUSTED_URL_PREFIX are considered

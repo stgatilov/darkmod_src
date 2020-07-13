@@ -97,6 +97,8 @@ void GuiInitAll() {
 	g_Settings_ButtonReset->do_callback();
 
 	g_Version_TreeVersions->callback(cb_Version_TreeVersions);
+	g_Version_InputCustomManifestUrl->when(FL_WHEN_CHANGED);
+	g_Version_InputCustomManifestUrl->callback(cb_Version_InputCustomManifestUrl);
 	g_Version_ButtonRefreshInfo->callback(cb_Version_ButtonRefreshInfo);
 	g_Version_ButtonNext->callback(cb_Version_ButtonNext);
 

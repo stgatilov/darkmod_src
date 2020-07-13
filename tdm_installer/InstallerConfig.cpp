@@ -109,7 +109,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 
 		int trustedCnt = 0;
 		for (const std::string &url : ver._manifestUrls) {
-			if (stdext::starts_with(url, TDM_INSTALLER_TRUSTED_URL_PREFIX))
+			if (IsUrlTrusted(url))
 				trustedCnt++;
 		}
 		ZipSyncAssertF(trustedCnt > 0, "Version %s: has no manifest URL at trusted location", ver._name.c_str());
@@ -163,15 +163,22 @@ std::string InstallerConfig::GetDefaultVersion() const {
 	return _defaultVersion;
 }
 
+bool InstallerConfig::IsUrlTrusted(const std::string &url) const {
+	return stdext::starts_with(url, TDM_INSTALLER_TRUSTED_URL_PREFIX);
+}
+
 std::string InstallerConfig::ChooseManifestUrl(const std::string &version, bool trusted) const {
 	static std::mt19937 MirrorChoosingRandom((int)time(0) ^ clock());	//RNG here!!!
+
+	if (ZipSync::PathAR::IsHttp(version))
+		return version;	//this is custom manifest, not a version
 
 	const Version &ver = _versions.at(version);
 	std::vector<std::string> candidates = ver._manifestUrls;
 	if (trusted) {
 		candidates.clear();
 		for (const std::string &url : ver._manifestUrls)
-			if (stdext::starts_with(url, TDM_INSTALLER_TRUSTED_URL_PREFIX))
+			if (IsUrlTrusted(url))
 				candidates.push_back(url);
 	}
 

@@ -18,6 +18,7 @@ struct State {
 	//set of versions for which manifest has already been loaded
 	std::map<std::string, ZipSync::Manifest> _loadedManifests;
 	//which version was last evaluated with "refresh" button
+	//if custom url was specified, then it is appended to based version (with " & " separator)
 	std::string _versionRefreshed;
 	//the update which is going to be made (or is made right now)
 	//if present, then it is prepared to update to _versionRefreshed

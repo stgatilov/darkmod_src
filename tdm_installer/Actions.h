@@ -39,10 +39,12 @@ public:
 		uint64_t addedSize = 0;
 		uint64_t removedSize = 0;
 		uint64_t downloadSize = 0;
+		uint64_t missingSize = 0;		//only possible with custom manifest
 	};
 	//user wants to know stats about possible update to specified version
 	//this action can trigger downloading manifests (note: they are cached in g_state)
-	static VersionInfo RefreshVersionInfo(const std::string &version, bool bitwiseExact, ZipSync::ProgressIndicator *progress);
+	//if customManifestUrl is nonempty, then it overrides target manifest location
+	static VersionInfo RefreshVersionInfo(const std::string &version, const std::string &customManifestUrl, bool bitwiseExact, ZipSync::ProgressIndicator *progress);
 
 	//perform prepared update: download all data
 	static void PerformInstallDownload(ZipSync::ProgressIndicator *progress);

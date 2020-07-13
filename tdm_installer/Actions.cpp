@@ -344,13 +344,26 @@ void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndic
 	g_logger->infof("");
 }
 
-Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersion, bool bitwiseExact, ZipSync::ProgressIndicator *progress) {
+Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersion, const std::string &customManifestUrl, bool bitwiseExact, ZipSync::ProgressIndicator *progress) {
 	g_logger->infof("Evaluating version %s", targetVersion.c_str());
-	g_state->_updater.reset();
+	if (!customManifestUrl.empty())
+		g_logger->infof("With custom manifest URL: %s", customManifestUrl.c_str());
 
-	//note: target manifest always comes from trusted source
-	std::string targetManifestUrl = g_state->_config.ChooseManifestUrl(targetVersion, true);
+	std::string targetVersionCached;
+	std::string targetManifestUrl;
+	if (customManifestUrl.empty()) {
+		//note: target manifest always comes from trusted source
+		targetManifestUrl = g_state->_config.ChooseManifestUrl(targetVersion, true);
+		targetVersionCached = targetVersion + "$$" + "trusted";
+	}
+	else {
+		targetManifestUrl = customManifestUrl;
+		targetVersionCached = customManifestUrl;
+	}
+
 	std::vector<std::string> providedVersions = g_state->_config.GetProvidedVersions(targetVersion);
+	if (!customManifestUrl.empty())
+		providedVersions.insert(providedVersions.begin(), customManifestUrl);
 	std::vector<std::string> providedManifestUrls;
 	for (int i = 0; i < providedVersions.size(); i++)
 		providedManifestUrls.push_back(g_state->_config.ChooseManifestUrl(providedVersions[i]));
@@ -361,11 +374,10 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		g_logger->debugf("  %s at %s", providedVersions[i].c_str(), providedManifestUrls[i].c_str());
 
 	//see which manifests were not loaded in this updater session
-	std::string targetVersionTrusted = "trusted::" + targetVersion;
 	std::vector<std::string> downloadedVersions;
 	std::vector<std::string> downloadedManifestUrls;
 	for (int i = -1; i < (int)providedVersions.size(); i++) {
-		std::string ver = (i < 0 ? targetVersionTrusted : providedVersions[i]);
+		std::string ver = (i < 0 ? targetVersionCached : providedVersions[i]);
 		std::string url = (i < 0 ? targetManifestUrl : providedManifestUrls[i]);
 		if (g_state->_loadedManifests.count(ver))
 			continue;
@@ -441,7 +453,7 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		g_logger->debugf("  %s", ownedZips[i].c_str());
 
 	//gather full manifests for update
-	ZipSync::Manifest targetMani = g_state->_loadedManifests.at(targetVersionTrusted);
+	ZipSync::Manifest targetMani = g_state->_loadedManifests.at(targetVersionCached);
 	ZipSync::Manifest providMani = g_state->_localManifest;
 	for (const std::string &ver : providedVersions) {
 		const ZipSync::Manifest &mani = g_state->_loadedManifests.at(ver);
@@ -459,7 +471,7 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	for (const std::string &path : ownedZips)
 		updater->AddManagedZip(path);
 	auto updateType = (bitwiseExact ? ZipSync::UpdateType::SameCompressed : ZipSync::UpdateType::SameContents);
-	updater->DevelopPlan(updateType);
+	bool ok = updater->DevelopPlan(updateType);
 
 	//compute stats
 	Actions::VersionInfo info;
@@ -469,12 +481,18 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		auto m = updater->GetMatch(i);
 		uint32_t sz = m.target->props.compressedSize;
 		info.finalSize += sz;
-		if (m.provided->location == ZipSync::FileLocation::RemoteHttp)
-			info.downloadSize += sz;
-		if (m.provided->location != ZipSync::FileLocation::Inplace)
-			info.addedSize += sz;
+		if (m.provided) {
+			if (m.provided->location == ZipSync::FileLocation::RemoteHttp)
+				info.downloadSize += sz;
+			if (m.provided->location != ZipSync::FileLocation::Inplace)
+				info.addedSize += sz;
+		}
+		else {
+			info.missingSize += sz;
+		}
 	}
-	uint64_t remainsSize = info.finalSize - info.addedSize;
+	ZipSyncAssert(ok == (info.missingSize == 0));	//always so by construction
+	uint64_t remainsSize = info.finalSize - info.addedSize - info.missingSize;
 	info.removedSize = info.currentSize - remainsSize;
 	g_logger->infof("Update statistics:");
 	g_logger->infof("  current: %llu", info.currentSize);
@@ -482,6 +500,11 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	g_logger->infof("  download: %llu", info.downloadSize);
 	g_logger->infof("  added: %llu", info.addedSize);
 	g_logger->infof("  removed: %llu", info.removedSize);
+	g_logger->infof("  missing: %llu", info.missingSize);
+	if (!ok) {
+		ZipSyncAssert(!customManifestUrl.empty());
+		updater.reset();
+	}
 
 	//save updater --- perhaps it would be used to actually perform the update
 	g_state->_updater = std::move(updater);

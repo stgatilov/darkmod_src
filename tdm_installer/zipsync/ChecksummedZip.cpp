@@ -125,10 +125,10 @@ std::vector<int> DownloadChecksummedZips(Downloader &downloader,
     for (int i = 0; i < n; i++) {
         if (remoteHashes[i] == HashDigest())
             continue;       //hash not available
-        for (int j = 0; j < m; j++)
-            if (remoteHashes[i] == cachedHashes[j]) {
+        for (int j = 0; j < m + i; j++)
+            if (remoteHashes[i] == (j < m ? cachedHashes[j] : remoteHashes[j-m])) {
                 matching[i] = j;
-                outputPaths[i] = cachedZipPaths[j];
+                outputPaths[i] = (j < m ? cachedZipPaths[j] : outputPaths[j-m]);
                 break;
             }
     }
