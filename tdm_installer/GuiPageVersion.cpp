@@ -79,10 +79,10 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 
 	std::string customUrl = g_Version_InputCustomManifestUrl->value();
 	if (!customUrl.empty() && !g_state->_config.IsUrlTrusted(customUrl)) {
-		int idx = fl_choice(
+		int idx = fl_choice("%s", 
+			"Stop", "Continue", nullptr,
 			"The custom URL you entered does NOT belong to TheDarkMod main server.\n"
-			"Make sure you got this URL from a trusted source!",
-			"Stop", "Continue", nullptr
+			"Make sure you got this URL from a trusted source!"
 		);
 		if (idx == 0)
 			return;

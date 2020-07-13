@@ -79,7 +79,7 @@ void cb_Settings_ButtonRestartNewDir(Fl_Widget *self) {
 	try {
 		auto warnings = Actions::CheckSpaceAndPermissions(installDir);
 		for (const std::string &message : warnings) {
-			int idx = fl_choice(message.c_str(), "I know what I'm doing", "Stop", nullptr);
+			int idx = fl_choice("%s", "I know what I'm doing", "Stop", nullptr, message.c_str());
 			if (idx == 1)
 				return;
 		}
@@ -120,7 +120,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
 		auto warnings = Actions::CheckSpaceAndPermissions(OsUtils::GetCwd());
 		for (const std::string &message : warnings) {
-			int idx = fl_choice(message.c_str(), "I know what I'm doing", "Stop", nullptr);
+			int idx = fl_choice("%s", "I know what I'm doing", "Stop", nullptr, message.c_str());
 			if (idx == 1)
 				return;
 		}

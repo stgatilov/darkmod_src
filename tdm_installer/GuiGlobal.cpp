@@ -111,10 +111,10 @@ void GuiInitAll() {
 
 void GuiLoaded(void*) {
 	if (OsUtils::HasElevatedPrivilegesWindows()) {
-		int idx = fl_choice(
+		int idx = fl_choice("%s",
+			"I know what I'm doing", "Exit", nullptr,
 			"The installer was run \"as admin\". This is strongly discouraged!\n"
-			"If you continue, admin rights will most likely be necessary to play the game.",
-			"I know what I'm doing", "Exit", nullptr
+			"If you continue, admin rights will most likely be necessary to play the game."
 		);
 		if (idx == 1)
 			exit(0);
