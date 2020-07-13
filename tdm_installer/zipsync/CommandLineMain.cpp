@@ -85,7 +85,7 @@ void CommandAnalyze(args::Subparser &parser) {
     args::ValueFlag<std::string> argRootDir(parser, "root", "Manifests would contain paths relative to this root directory\n"
         "(all relative paths are based from the root directory)", {'r', "root"});
     args::Flag argClean(parser, "clean", "Run \"clean\" command before doing analysis", {'c', "clean"});
-    args::Flag argNormalize(parser, "normalize", "Run \"normalize\" command before doing analysis", {'n', "normalize"});
+    args::Flag argNormalize(parser, "normalize", "Run \"normalize\" command before analysis (on demand)", {'n', "normalize"});
     args::ValueFlag<std::string> argManifest(parser, "mani", "Path where full manifest would be written (default: manifest.iniz)", {'m', "manifest"}, "manifest.iniz");
     args::ValueFlag<int> argThreads(parser, "threads", "Use this number of parallel threads to accelerate analysis (0 = max)", {'j', "threads"}, 1);
     args::PositionalList<std::string> argZips(parser, "zips", "List of files or globs specifying which zips in root directory to analyze", args::Options::Required);
@@ -114,9 +114,9 @@ void CommandAnalyze(args::Subparser &parser) {
 void CommandDiff(args::Subparser &parser) {
     args::ValueFlag<std::string> argRootDir(parser, "root", "The set of zips is located in this root directory\n"
         "(all relative paths are based from it)", {'r', "root"});
-    args::ValueFlag<std::string> argManifest(parser, "mani", "Path to provided manifest of the zips set", {'m', "manifest"}, "manifest.iniz");
+    args::ValueFlag<std::string> argManifest(parser, "mani", "Path to full manifest of the zips set", {'m', "manifest"}, "manifest.iniz");
     args::ValueFlagList<std::string> argSubtractedMani(parser, "subm", "Paths or URLs of provided manifests being subtracted", {'s', "subtract"}, {}, args::Options::Required);
-    args::ValueFlag<std::string> argOutDir(parser, "output", "Difference zips and manifests will be written to this directory", {'o', "output"}, args::Options::Required);
+    args::ValueFlag<std::string> argOutDir(parser, "output", "Difference zips and manifest will be written to this directory", {'o', "output"}, args::Options::Required);
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"}, args::Options::HiddenFromDescription);
     parser.Parse();
 
@@ -186,6 +186,81 @@ void CommandDiff(args::Subparser &parser) {
     }
     printf("Saving manifest of the diff to %s\n", outManiPath.c_str());
     WriteIniFile(outManiPath.c_str(), fullMani.WriteToIni());
+}
+
+void CommandPatch(args::Subparser &parser) {
+    args::ValueFlag<std::string> argRootDir(parser, "root", "The set of zips is located in this root directory\n"
+        "(all relative paths are based from it)", {'r', "root"});
+    args::ValueFlag<std::string> argPatchMani(parser, "mani", "Path to manifest describing added set of zips", {'m', "manifest"}, "manifest.iniz");
+    args::ValueFlag<std::string> argBaseMani(parser, "base", "Path or URL of manifest, which is the base being patched", {'b', "base"}, args::Options::Required);
+    args::ValueFlag<std::string> argOutMani(parser, "outMani", "Path to new manifest describing the whole patched version", {'o', "output"}, "manifest.iniz");
+    args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"}, args::Options::HiddenFromDescription);
+    parser.Parse();
+
+    std::string root = GetCwd();
+    if (argRootDir)
+        root = argRootDir.Get();
+    root = NormalizeSlashes(root);
+    std::string patchManiPath = GetPath(argPatchMani.Get(), root);
+    std::string baseManiPath = GetPath(argBaseMani.Get(), root);
+    std::string outManiPath = GetPath(argOutMani.Get(), root);
+    CreateDirectories(root);
+
+    printf("Reading patch manifest %s and base manifest %s\n", patchManiPath.c_str(), baseManiPath.c_str());
+    Manifest patchMani, baseMani;
+    patchMani.ReadFromIni(ReadIniFile(patchManiPath.c_str()), root);
+    if (PathAR::IsHttp(baseManiPath))
+        baseManiPath = DownloadSimple(baseManiPath, root, "  ");
+    baseMani.ReadFromIni(ReadIniFile(baseManiPath.c_str()), root);
+
+    std::map<std::string, ManifestIter> fullnameToIter;
+    for (int i = 0; i < patchMani.size(); i++) {
+        const FileMetainfo &mf = patchMani[i];
+        ZipSyncAssertF(mf.location != FileLocation::Nowhere, "Patch manifest must provide all files it decribes");
+        std::string fullname = GetFullPath(mf.zipPath.rel, mf.filename);
+        fullnameToIter[fullname] = ManifestIter(patchMani, &mf);
+    }
+
+    printf("Applying patch with %d files of size %0.3lf MB to base set with %d files of size %0.3lf MB\n", 
+        TotalCount(patchMani), TotalCompressedSize(patchMani) * 1e-6,
+        TotalCount(baseMani, false), TotalCompressedSize(baseMani, false) * 1e-6
+    );
+
+    std::vector<bool> usedPatchIds(patchMani.size(), false);
+    Manifest outMani = patchMani;
+    for (int i = 0; i < baseMani.size(); i++) {
+        FileMetainfo mf = baseMani[i];
+        std::string fullname = GetFullPath(mf.zipPath.rel, mf.filename);
+        auto mit = fullnameToIter.find(fullname);
+        if (mit != fullnameToIter.end()) {
+            //overriden by patch
+            ManifestIter iter = mit->second;
+            usedPatchIds[iter._index] = true;
+            printf("  Replaced %s: size %u -> %u  hash %s -> %s\n",
+                fullname.c_str(), iter->props.contentsSize, mf.props.contentsSize,
+                iter->contentsHash.Hex().c_str(), mf.contentsHash.Hex().c_str()
+            );
+        }
+        else {
+            //provided by base
+            mf.DontProvide();
+            outMani.AppendFile(mf);
+        }
+    }
+
+    for (int i = 0; i < patchMani.size(); i++) {
+        if (usedPatchIds[i])
+            continue;
+        const FileMetainfo &mf = patchMani[i];
+        std::string fullname = GetFullPath(mf.zipPath.rel, mf.filename);
+        printf("  Added %s: size %u  hash %s\n",
+            fullname.c_str(), mf.props.contentsSize,
+            mf.contentsHash.Hex().c_str()
+        );
+    }
+
+    printf("Saving resulting manifest to %s\n", outManiPath.c_str());
+    WriteIniFile(outManiPath.c_str(), outMani.WriteToIni());
 }
 
 void CommandUpdate(args::Subparser &parser) {
@@ -344,9 +419,10 @@ int main(int argc, char **argv) {
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
     args::Command clean(parser, "clean", "Delete temporary and intermediate files after repacking", CommandClean);
     args::Command normalize(parser, "normalize", "Normalize specified set of zips (on local machine)", CommandNormalize);
-    args::Command analyze(parser, "analyze", "Create manifests for specified set of zips (on local machine)", CommandAnalyze);
-    args::Command diff(parser, "diff", "Remove files available in given manifests from the set of zips", CommandDiff);
-    args::Command update(parser, "update", "Perform update of the set of zips to specified target", CommandUpdate);
+    args::Command analyze(parser, "analyze", "Create manifest for specified set of zips (on local machine)", CommandAnalyze);
+    args::Command diff(parser, "diff", "Produce differential package, containing only those files from the set of zips which are not provided by given manifests", CommandDiff);
+    args::Command patch(parser, "patch", "Create differential package from zipped set of file, which are to be added/overwriten on top of specified target", CommandPatch);
+    args::Command update(parser, "update", "Update the set of zips to the specified target", CommandUpdate);
     args::Command hashzip(parser, "hashzip", "Put specified file into \"checksummed\" zip (with hash of its contents at the beginning of the file)", CommandHashzip);
     try {
         parser.ParseCLI(argc, argv);
