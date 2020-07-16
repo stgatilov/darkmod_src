@@ -306,7 +306,7 @@ void			Sys_FPU_SetFTZ( bool enable );
 void			Sys_FPU_SetDAZ( bool enable );
 
 // enable/disable floating point exceptions when operations produce NaN or Inf
-void Sys_FPU_SetExceptions(bool enable);
+void			Sys_FPU_SetExceptions(bool enable);
 
 // returns amount of drive space in path
 int				Sys_GetDriveFreeSpace( const char *path );
