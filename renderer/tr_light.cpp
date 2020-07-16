@@ -741,8 +741,11 @@ idScreenRect R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 	if ( vLight->lightDef->parms.pointLight ) {
 		idBounds bounds;
 		idRenderLightLocal *lightDef = vLight->lightDef;
-		tr.viewDef->viewFrustum.ProjectionBounds( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), bounds );
-		return R_ScreenRectFromViewFrustumBounds( bounds );
+		if ( tr.viewDef->viewFrustum.ProjectionBounds( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), bounds ) )
+			r = R_ScreenRectFromViewFrustumBounds( bounds );
+		else
+			r.Clear();
+		return r;
 	}
 
 	if ( r_useClippedLightScissors.GetInteger() == 2 ) {
@@ -1478,17 +1481,20 @@ R_CalcEntityScissorRectangle
 */
 idScreenRect R_CalcEntityScissorRectangle( viewEntity_t *vEntity ) {
 	idRenderEntityLocal *def = vEntity->entityDef;
-	auto bounds = def->referenceBounds;
+	idBounds bounds = def->referenceBounds;
 
 	// duzenko: the dynamic model does not always fit the reference bounds
 	idRenderModel *model = R_EntityDefDynamicModel( def );
 	if ( model ) 
 		bounds = model->Bounds( &def->parms );
 
-	tr.viewDef->viewFrustum.ProjectionBounds( idBox( bounds, def->parms.origin, def->parms.axis ), bounds );
+	idScreenRect rect;
+	if ( tr.viewDef->viewFrustum.ProjectionBounds( idBox( bounds, def->parms.origin, def->parms.axis ), bounds ) )
+		rect = R_ScreenRectFromViewFrustumBounds( bounds );
+	else
+		rect.Clear();
 
-
-	return R_ScreenRectFromViewFrustumBounds( bounds );
+	return rect;
 }
 
 bool R_CullXray( idRenderEntityLocal& def ) {

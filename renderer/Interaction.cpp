@@ -1117,7 +1117,8 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 
 	// duzenko: intersect light scissor with shadow bounds
 	idBounds shadowProjectionBounds;
-	tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds );
+	if ( !tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds ) )
+		return false;
 	idScreenRect shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
 	shadowScissor.Intersect(shadowRect);
 	if ( shadowScissor.IsEmpty() )
