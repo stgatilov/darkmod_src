@@ -22,6 +22,8 @@
 extern idCVar r_useNewBackend;
 extern idCVar r_useBindlessTextures;
 
+class FrameBuffer;
+
 class RenderBackend {
 public:
 	RenderBackend();
@@ -30,6 +32,7 @@ public:
 	void Shutdown();
 
 	void DrawView( const viewDef_t *viewDef );
+	void DrawLightgem( const viewDef_t *viewDef, byte *lightgemData );
 
 	void EndFrame();
 
@@ -40,6 +43,10 @@ private:
 	DepthStage depthStage;
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;
+
+	FrameBuffer *lightgemFbo = nullptr;
+	GLuint lightgemPbos[3] = { 0 };
+	int currentLightgemPbo = 0;
 
 	void DrawInteractionsWithShadowMapping( viewLight_t *vLight );
 	void DrawInteractionsWithStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight );

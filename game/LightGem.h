@@ -44,11 +44,6 @@ static const float  DARKMOD_LG_TRIRATIO			= 1.0f / (DARKMOD_LG_RENDER_WIDTH*DARK
 // Class Declarations.
 //----------------------------------
 struct emptyCommand_t;
-struct lightGemDrawCmds_t {
-	byte *			 imageBuffer;
-	emptyCommand_t * cmdHead;
-	emptyCommand_t * cmdTail;
-};
 
 class LightGem
 {

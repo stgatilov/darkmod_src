@@ -557,6 +557,7 @@ TR_CMDS
 typedef enum {
 	RC_NOP,
 	RC_DRAW_VIEW,
+	RC_DRAW_LIGHTGEM,
 	RC_SET_BUFFER,
 	RC_COPY_RENDER,
 	RC_BLOOM,
@@ -583,6 +584,10 @@ struct setBufferCommand_t : emptyCommand_t {
 
 struct drawSurfsCommand_t : emptyCommand_t {
 	viewDef_t	*viewDef;
+};
+
+struct drawLightgemCommand_t : drawSurfsCommand_t {
+	byte *dataBuffer;
 };
 
 struct copyRenderCommand_t : emptyCommand_t {

@@ -833,15 +833,13 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_DRAW_VIEW: {
 			backEnd.viewDef = ( ( const drawSurfsCommand_t * )cmds )->viewDef;
 			isv3d = ( backEnd.viewDef->viewEntitys != nullptr );	// view is 2d or 3d
-			if ( !backEnd.viewDef->IsLightGem() ) {					// duzenko #4425: create/switch to framebuffer object
-				if ( !fboOff ) {									// don't switch to FBO if bloom or some 2d has happened
-					if ( isv3d ) {
-						frameBuffers->EnterPrimary();
-					} else {
-						frameBuffers->LeavePrimary();	// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
-						FB_DebugShowContents();
-						fboOff = true;
-					}
+			if ( !fboOff ) {									// don't switch to FBO if bloom or some 2d has happened
+				if ( isv3d ) {
+					frameBuffers->EnterPrimary();
+				} else {
+					frameBuffers->LeavePrimary();	// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
+					FB_DebugShowContents();
+					fboOff = true;
 				}
 			}
 			if( r_useNewBackend.GetBool() ) {
@@ -860,6 +858,10 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			}
 			break;
 		}
+		case RC_DRAW_LIGHTGEM:
+			backEnd.viewDef = ( ( const drawLightgemCommand_t * )cmds )->viewDef;
+			renderBackend->DrawLightgem( backEnd.viewDef, ( ( const drawLightgemCommand_t * )cmds )->dataBuffer );
+			break;			
 		case RC_SET_BUFFER:
 			RB_SetBuffer( cmds );
 			c_setBuffers++;

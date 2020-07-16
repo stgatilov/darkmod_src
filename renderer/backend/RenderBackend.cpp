@@ -22,12 +22,21 @@
 #include "../Profiling.h"
 #include "../GLSLProgram.h"
 #include "../FrameBufferManager.h"
+#include "../FrameBuffer.h"
 
 RenderBackend renderBackendImpl;
 RenderBackend *renderBackend = &renderBackendImpl;
 
 idCVar r_useNewBackend( "r_useNewBackend", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental new backend" );
 idCVar r_useBindlessTextures("r_useBindlessTextures", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental bindless texturing to reduce drawcall overhead (if supported by hardware)");
+
+namespace {
+	void CreateLightgemFbo( FrameBuffer *fbo ) {
+		fbo->Init( DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH );
+		fbo->AddColorRenderBuffer( 0, GL_RGB8 );
+		fbo->AddDepthStencilRenderBuffer( GL_DEPTH24_STENCIL8 );
+	}
+}
 
 RenderBackend::RenderBackend() 
 	: depthStage( &drawBatchExecutor ),
@@ -40,9 +49,18 @@ void RenderBackend::Init() {
 	depthStage.Init();
 	interactionStage.Init();
 	stencilShadowStage.Init();
+
+	lightgemFbo = frameBuffers->CreateFromGenerator( "lightgem", CreateLightgemFbo );
+	qglGenBuffers( 3, lightgemPbos );
+	for ( int i = 0; i < 3; ++i ) {
+		qglBindBuffer( GL_PIXEL_PACK_BUFFER, lightgemPbos[i] );
+		qglBufferData( GL_PIXEL_PACK_BUFFER, DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * 3, nullptr, GL_STREAM_READ );
+	}
 }
 
 void RenderBackend::Shutdown() {
+	qglDeleteBuffers( 3, lightgemPbos );
+	
 	stencilShadowStage.Shutdown();
 	interactionStage.Shutdown();
 	depthStage.Shutdown();
@@ -121,6 +139,26 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 		GLimp_ActivateContext();
 		RB_SetDefaultGLState();
 	}
+}
+
+void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData ) {
+	FrameBuffer *currentFbo = frameBuffers->activeFbo;
+	lightgemFbo->Bind();
+	
+	DrawView( viewDef );
+
+	// asynchronously copy contents of the lightgem framebuffer to a pixel buffer
+	qglBindBuffer( GL_PIXEL_PACK_BUFFER, lightgemPbos[currentLightgemPbo] );
+	qglReadPixels( 0, 0, DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH, GL_RGB, GL_UNSIGNED_BYTE, nullptr );
+
+	// advance PBO index and actually copy the data stored in that PBO to local memory
+	// this PBO is from a previous frame, and data transfer should thus be reasonably fast
+	currentLightgemPbo = ( currentLightgemPbo + 1 ) % 3;
+	qglBindBuffer( GL_PIXEL_PACK_BUFFER, lightgemPbos[currentLightgemPbo] );
+	qglGetBufferSubData( GL_PIXEL_PACK_BUFFER, 0, DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * 3, lightgemData );
+
+	qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+	currentFbo->Bind();
 }
 
 void RenderBackend::EndFrame() {

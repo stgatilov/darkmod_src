@@ -584,7 +584,6 @@ bool R_Lightgem_Render() {
 		0.0f, 1.0f, 0.0f,
 		-1.0f, 0.0f, 0.0f
 	); 
-	renderSystem->CropRenderSize( DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH, true, true );
 
 	// Give the rv the current ambient light values - Not all of the other values, avoiding fancy effects.
 	lightgemRv.shaderParms[2] = gameLocal.globalShaderParms[2]; // Ambient R
@@ -644,6 +643,14 @@ bool R_Lightgem_Render() {
 
 	// generate render commands for it
 	R_RenderView( parms );
+	// hack: we replace the drawview command with our own lightgem draw command
+	drawSurfsCommand_t *cmd = (drawSurfsCommand_t *)frameData->cmdTail;
+	cmd->commandId = RC_NOP;
+	drawLightgemCommand_t *newCmd = (drawLightgemCommand_t *)R_GetCommandBuffer( sizeof(drawLightgemCommand_t) );
+	newCmd->commandId = RC_DRAW_LIGHTGEM;
+	newCmd->viewDef = cmd->viewDef;
+	// the frontend buffer has already been analyzed this frame and will become the backend buffer in the next frame
+	newCmd->dataBuffer = gameLocal.m_lightGem.m_LightgemImgBufferFrontend;
 
 	// and switch back our normal render definition - player model and head are returned
 	prent->suppressSurfaceInViewID = playerid;
@@ -664,22 +671,6 @@ bool R_Lightgem_Render() {
 		}
 	}
 
-	int width, height;
-	renderSystem->GetCurrentRenderCropSize( width, height );
-	width = (width + 3) & ~3; //opengl wants width padded to 4x
-
-	copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer( sizeof( cmd ) );
-	cmd.commandId = RC_COPY_RENDER;
-	// the frontend buffer has already been analyzed this frame and will become the backend buffer in the next frame
-	cmd.buffer = gameLocal.m_lightGem.m_LightgemImgBufferFrontend;
-	cmd.usePBO = true;
-	cmd.image = NULL;
-	cmd.x = 0;
-	cmd.y = 0;
-	cmd.imageWidth = width;
-	cmd.imageHeight = height;
-
-	tr.UnCrop();
 	return true;
 }
 
