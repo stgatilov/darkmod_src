@@ -1677,7 +1677,7 @@ void idEntity::Spawn( void )
 	previousBodyShader = NULL;	// shader for the most recent body sound request
 	previousBodyIndex = 0;		// index of most recent body sound requested (1->N, where there are N sounds)
 
-	m_LastRestPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3992
+	m_LastRestPos = idVec3(sqrt(idMath::INFINITY)); // grayman #3992
 
 	m_pushedBy = NULL;		// grayman #4603
 	m_splashtime = 0;		// grayman #4600
