@@ -13099,6 +13099,9 @@ void VPCALL idSIMD_SSE::DeriveTriPlanes( idPlane *planes, const idDrawVert *vert
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+	//stgatilov: the code below produces infinities, so
+	//make sure exceptions are always masked in this function
+	idIgnoreFpExceptions guardFpExceptions;
 
 	__asm {
 		mov			eax, numIndexes
@@ -15071,6 +15074,10 @@ void VPCALL idSIMD_SSE::NormalizeTangents( idDrawVert *verts, const int numVerts
 
 	assert( verts != NULL );
 	assert( numVerts >= 0 );
+
+	//stgatilov: the code below produces infinities, so
+	//make sure exceptions are always masked in this function
+	idIgnoreFpExceptions guardFpExceptions;
 
 	__asm {
 		mov			eax, numVerts

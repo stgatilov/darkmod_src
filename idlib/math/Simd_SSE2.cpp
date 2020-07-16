@@ -887,6 +887,10 @@ void idSIMD_SSE2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
 		NormalizeTangentsLess( verts, numVerts );
 		return;
 	}
+	//in all vector normalizations, W component is can be zero (division by zero)
+	//we have to mask any exceptions here
+	idIgnoreFpExceptions guardFpExceptions;
+
 	for (int i = 0; i < numVerts; i++) {
 		idDrawVert &vertex = verts[i];
 		__m128 normal = _mm_loadu_ps(&vertex.normal.x);
@@ -962,6 +966,10 @@ void idSIMD_SSE2::TransformVerts( idDrawVert *verts, const int numVerts, const i
 
 
 template<class Lambda> static ID_INLINE void VertexMinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count, Lambda Index ) {
+	//idMD5Mesh::CalcBounds calls this with uninitialized texcoords
+	//we have to mask any exceptions here
+	idIgnoreFpExceptions guardFpExceptions;
+
 	__m128 rmin = _mm_set1_ps( 1e30f);
 	__m128 rmax = _mm_set1_ps(-1e30f);
 	int i = 0;

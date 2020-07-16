@@ -347,6 +347,10 @@ void VPCALL idSIMD_AVX2::DeriveTangents( idPlane *planes, idDrawVert *verts, con
 }
 
 void VPCALL idSIMD_AVX2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
+	//in all vector normalizations, W component is can be zero (division by zero)
+	//we have to mask any exceptions here
+	idIgnoreFpExceptions guardFpExceptions;
+
 	size_t i, n = numVerts;
 	for (i = 0; i + 8 <= n; i += 8) {
 		#define LOAD(k) \
