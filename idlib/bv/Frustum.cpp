@@ -2147,6 +2147,18 @@ bool idFrustum::ProjectionBounds( const idBox &box, idBounds &projectionBounds )
 		}
 	}
 
+	//stgatilov: in rare cases no point is added to projectionBounds
+	//then returning empty box is bad idea, better return full box
+	if ( projectionBounds.IsBackwards() ) {
+		float boxMin, boxMax, base;
+		base = origin * axis[0];
+		box.AxisProjection( axis[0], boxMin, boxMax );
+		projectionBounds[0].x = boxMin - base;
+		projectionBounds[1].x = boxMax - base;
+		projectionBounds[0].y = projectionBounds[0].z = -1.0f;
+		projectionBounds[1].y = projectionBounds[1].z = 1.0f;
+	}
+
 	return true;
 }
 
