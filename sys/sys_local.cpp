@@ -60,6 +60,10 @@ void idSysLocal::FPU_SetDAZ( bool enable ) {
 	Sys_FPU_SetDAZ( enable );
 }
 
+void idSysLocal::FPU_SetExceptions(bool enable) {
+	Sys_FPU_SetExceptions(enable);
+}
+
 bool idSysLocal::LockMemory( void *ptr, int bytes ) {
 	return Sys_LockMemory( ptr, bytes );
 }

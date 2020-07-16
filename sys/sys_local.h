@@ -35,6 +35,7 @@ public:
 	virtual const char *	GetProcessorString( void );
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
+	virtual void FPU_SetExceptions(bool enable);
 
 	virtual bool			LockMemory( void *ptr, int bytes );
 	virtual bool			UnlockMemory( void *ptr, int bytes );

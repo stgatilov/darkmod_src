@@ -305,6 +305,9 @@ void			Sys_FPU_SetFTZ( bool enable );
 // sets Denormals-Are-Zero mode (only available when CPUID_DAZ is set)
 void			Sys_FPU_SetDAZ( bool enable );
 
+// enable/disable floating point exceptions when operations produce NaN or Inf
+void Sys_FPU_SetExceptions(bool enable);
+
 // returns amount of drive space in path
 int				Sys_GetDriveFreeSpace( const char *path );
 
@@ -533,6 +536,7 @@ public:
 	virtual const char *	GetProcessorString( void ) = 0;
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
+	virtual void FPU_SetExceptions(bool enable) = 0;
 
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;

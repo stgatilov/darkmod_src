@@ -989,3 +989,9 @@ void Sys_FPU_SetPrecision() {
 	_controlfp( _PC_64, _MCW_PC );
 #endif
 }
+
+
+void Sys_FPU_SetExceptions(bool enable) {
+	static const DWORD bits = _EM_OVERFLOW | _EM_ZERODIVIDE | _EM_INVALID;
+	_controlfp(enable ? ~bits : ~0, _MCW_EM);
+}

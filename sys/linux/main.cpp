@@ -359,6 +359,10 @@ void Sys_FPU_SetFTZ( bool enable ) {
 	*/
 }
 
+void Sys_FPU_SetExceptions( bool enable ) {
+	//note: com_fpexceptions won't work without implementation here...
+}
+
 /*
 ================
 stgatilov: stacktrace
