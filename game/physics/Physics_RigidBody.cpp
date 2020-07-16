@@ -1650,6 +1650,10 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	// greebo: For now, we aren't blocked
 	isBlocked = false;
 
+	// stgatilov: avoid doing zero steps (useless and causes division by zero)
+	if (timeStepMSec <= 0)
+		return false;
+
 	timeStep = MS2SEC( timeStepMSec );
 	current.lastTimeStep = timeStep;
 
