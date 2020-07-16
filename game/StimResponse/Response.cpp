@@ -119,7 +119,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 		using std::min;
 		// greebo: Be sure to use GetRadius() to consider time-dependent radii
 		float radius = stim->GetRadius();
-		float base = 1 - min(radius, distance) / radius;
+		float base = 1 - min(radius, distance) / idMath::Fmax(radius, 1e-3f);
 		
 		// Calculate the falloff value (the magnitude is between [0, magnitude] for positive falloff exponents)
 		magnitude *= pow(base, stim->m_FallOffExponent);
