@@ -173,6 +173,8 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 		idLib::sys->FPU_SetDAZ( true );
 		idLib::common->Printf( "enabled Denormals-Are-Zero mode\n" );
 	}
+
+	idLib::sys->FPU_SetExceptions(false);
 }
 
 /*

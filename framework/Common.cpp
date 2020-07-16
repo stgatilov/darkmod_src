@@ -97,6 +97,7 @@ idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_SYSTEM | CVAR_NOC
 	"Value 1 or Generic forces slow platform-independent implementation. "
 	"Other options include: SSE, SSE2, SSE3, AVX, AVX2"
 );
+idCVar com_fpexceptions( "com_fpexceptions", "0", CVAR_BOOL | CVAR_SYSTEM, "enable FP exceptions: throw exception when NaN or Inf value is produced" );
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "developer mode" );
 idCVar com_allowConsole( "com_allowConsole", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "allow toggling console with the tilde key" );
 idCVar com_speeds( "com_speeds", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show engine timings" );
@@ -2508,6 +2509,11 @@ void idCommonLocal::Frame( void ) {
 		// change SIMD implementation if required
 		if ( com_forceGenericSIMD.IsModified() ) {
 			InitSIMD();
+		}
+
+		if ( com_fpexceptions.IsModified()) {
+			sys->FPU_SetExceptions(com_fpexceptions.GetBool());
+			com_fpexceptions.ClearModified();
 		}
 
 		eventLoop->RunEventLoop();

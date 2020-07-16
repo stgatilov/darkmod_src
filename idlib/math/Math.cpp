@@ -121,3 +121,17 @@ float idMath::BitsToFloat( int i, int exponentBits, int mantissaBits ) {
 	value = sign << IEEE_FLT_SIGN_BIT | ( exponent + IEEE_FLT_EXPONENT_BIAS ) << IEEE_FLT_MANTISSA_BITS | mantissa;
 	return *reinterpret_cast<float *>(&value);
 }
+
+
+extern idCVar com_fpexceptions;
+static thread_local int IgnoreFpExceptionsCount = 0;
+idIgnoreFpExceptions::idIgnoreFpExceptions() {
+	if (IgnoreFpExceptionsCount == 0 && com_fpexceptions.GetBool())
+		sys->FPU_SetExceptions(false);
+	IgnoreFpExceptionsCount++;
+}
+idIgnoreFpExceptions::~idIgnoreFpExceptions() {
+	IgnoreFpExceptionsCount--;
+	if (IgnoreFpExceptionsCount == 0 && com_fpexceptions.GetBool())
+		sys->FPU_SetExceptions(true);
+}

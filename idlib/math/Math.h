@@ -251,6 +251,13 @@ private:
 	static bool					initialized;
 };
 
+//used as scoped guard which temporarily masks all FP exceptions
+//note: FP exceptions are only enabled for debugging purposes using com_fpexceptions CVar
+struct idIgnoreFpExceptions {
+	idIgnoreFpExceptions();
+	~idIgnoreFpExceptions();
+};
+
 
 #ifdef __SSE__
 //makes sure the value is not less than FLT_SMALLEST_NON_DENORMAL

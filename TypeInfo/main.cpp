@@ -88,6 +88,7 @@ public:
 };
 
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM, "developer mode" );
+idCVar com_fpexceptions;
 
 idCommonLocal		commonLocal;
 idCommon *			common = &commonLocal;
