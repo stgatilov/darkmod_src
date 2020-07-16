@@ -318,21 +318,23 @@ void idSoundSystemLocal::Init() {
 
 	common->Printf("Setup OpenAL device and context\n");
 
-	const char *device = s_device.GetString();
-	if (strlen(device) < 1)
-		device = NULL;
-	else if (!idStr::Icmp(device, "default"))
-		device = NULL;
+	const char *queriedDeviceName = s_device.GetString();
+	if (strlen(queriedDeviceName) < 1)
+		queriedDeviceName = NULL;
+	else if (!idStr::Icmp(queriedDeviceName, "default"))
+		queriedDeviceName = NULL;
 
 	if (alcIsExtensionPresent(NULL, "ALC_ENUMERATE_ALL_EXT")) {
+		if (!queriedDeviceName)
+			queriedDeviceName = alcGetString(NULL, ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
+
 		const char *devs = alcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
 		bool found = false;
-
 		while (devs && *devs) {
 			common->Printf("OpenAL: found device '%s'", devs);
 
-			if (device && !idStr::Icmp(devs, device)) {
-				common->Printf(" (ACTIVE)\n");
+			if (queriedDeviceName && !idStr::Icmp(devs, queriedDeviceName)) {
+				common->Printf(" [ACTIVE]\n");
 				found = true;
 			}
 			else {
@@ -342,20 +344,20 @@ void idSoundSystemLocal::Init() {
 			devs += strlen(devs) + 1;
 		}
 
-		if (device && !found) {
-			common->Printf("OpenAL: device %s not found, using default\n", device);
-			device = NULL;
+		if (queriedDeviceName && !found) {
+			common->Printf("OpenAL: device '%s' not found, using default\n", queriedDeviceName);
+			queriedDeviceName = NULL;
 		}
 	}
 
-	openalDevice = alcOpenDevice(device);
-	if (!openalDevice && device) {
-		common->Printf("OpenAL: failed to open device '%s' (0x%x), using default\n", device, alGetError());
+	openalDevice = alcOpenDevice(queriedDeviceName);
+	if (!openalDevice && queriedDeviceName) {
+		common->Printf("OpenAL: failed to open device '%s' (0x%x), using default\n", queriedDeviceName, alGetError());
 		openalDevice = alcOpenDevice(NULL);
 	}
 	
 	if (openalDevice)
-		common->Printf("OpenAL: using '%s'\n", alcGetString(openalDevice, ALC_DEVICE_SPECIFIER));
+		common->Printf("OpenAL: device '%s' opened successfully\n", (queriedDeviceName ? queriedDeviceName : "[NULL]"));
 	else {
 		common->Printf("OpenAL: no device found, sound disabled\n");
 		s_noSound.SetBool(true);
