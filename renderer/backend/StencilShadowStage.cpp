@@ -18,6 +18,7 @@
 #include "StencilShadowStage.h"
 #include "../Profiling.h"
 #include "DrawBatchExecutor.h"
+#include "../FrameBuffer.h"
 #include "../GLSLProgram.h"
 #include "../GLSLProgramManager.h"
 
@@ -109,20 +110,32 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 	DrawBatch<ShaderParams> drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
 	uint paramsIdx = 0;
 
+	if ( r_useScissor.GetBool() ) {
+		backEnd.currentScissor = backEnd.vLight->scissorRect;
+		FB_ApplyScissor();
+	}
+
 	for (size_t i = 0; i < count; ++i) {
 		const drawSurf_t *surf = surfs[i];
+
+		if (paramsIdx == drawBatch.maxBatchSize
+				|| (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect))) {
+			drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
+			drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
+			paramsIdx = 0;
+		}
+
+		if (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect)) {
+			backEnd.currentScissor = surf->scissorRect;
+			FB_ApplyScissor();
+		}
+
 		ShaderParams &params = drawBatch.shaderParams[paramsIdx];
 		memcpy( params.modelViewMatrix.ToFloatPtr(), surf->space->modelViewMatrix, sizeof(idMat4) );
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, params.localLightOrigin.ToVec3() );
 		params.localLightOrigin.w = 0.0f;
 		drawBatch.surfs[paramsIdx] = surf;
 		++paramsIdx;
-
-		if (paramsIdx == drawBatch.maxBatchSize) {
-			drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
-			drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
-			paramsIdx = 0;
-		}
 	}
 
 	drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );

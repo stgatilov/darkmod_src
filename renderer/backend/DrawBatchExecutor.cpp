@@ -152,6 +152,10 @@ void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribB
 	assert( numDrawSurfs <= maxBatchSize );
 	maxBatchSize = 0;
 
+	if ( numDrawSurfs == 0 ) {
+		return;
+	}
+
 	byte *shaderParamsContents = shaderParamsBuffer.CurrentWriteLocation();
 	uint shaderParamsCommitSize = numDrawSurfs * shaderParamsSize;
 	shaderParamsBuffer.Commit( shaderParamsCommitSize );
