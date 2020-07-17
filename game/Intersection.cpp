@@ -33,6 +33,10 @@ EIntersection IntersectLinesegmentLightEllipsoid(const idVec3 Segment[LSG_COUNT]
     float afT[2] = { 0.0, 0.0 }; // OrbWeaver: "may be used uninitialised" warning
 	float riQuantity;
 
+	//stgatilov: don't intersect with singular ellipsoid (creates Inf/Nan)
+	if (Ellipsoid[ELA_AXIS].x == 0 || Ellipsoid[ELA_AXIS].y == 0 || Ellipsoid[ELA_AXIS].z == 0)
+		return INTERSECT_OUTSIDE;
+
     // set up quadratic Q(t) = a*t^2 + 2*b*t + c
 	idMat3 A(1/(Ellipsoid[ELA_AXIS].x*Ellipsoid[ELA_AXIS].x), 0, 0,
 		0, 1/(Ellipsoid[ELA_AXIS].y*Ellipsoid[ELA_AXIS].y), 0,
