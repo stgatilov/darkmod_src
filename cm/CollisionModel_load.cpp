@@ -3073,10 +3073,15 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 		}
 
 		for ( j = 0; j < surf->geometry->numIndexes; j += 3 ) {
+			idVec3 v2 = surf->geometry->verts[ surf->geometry->indexes[ j + 2 ] ].xyz;
+			idVec3 v1 = surf->geometry->verts[ surf->geometry->indexes[ j + 1 ] ].xyz;
+			idVec3 v0 = surf->geometry->verts[ surf->geometry->indexes[ j + 0 ] ].xyz;
+			if (idWinding::TriangleAreaDbl(v2, v0, v1) == 0.0)
+				continue;	//avoid singular triangles with NaN plane
 			w.Clear();
-			w += surf->geometry->verts[ surf->geometry->indexes[ j + 2 ] ].xyz;
-			w += surf->geometry->verts[ surf->geometry->indexes[ j + 1 ] ].xyz;
-			w += surf->geometry->verts[ surf->geometry->indexes[ j + 0 ] ].xyz;
+			w += v2;
+			w += v1;
+			w += v0;
 			w.GetPlane( plane );
 			plane = -plane;
 			PolygonFromWinding( model, &w, plane, shader, 1 );
