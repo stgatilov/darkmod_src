@@ -1197,7 +1197,7 @@ float PathLength( idVec2 optimizedPath[MAX_OBSTACLE_PATH], int numPathPoints, co
 	}
 
 	// add penalty if this path does not go in the current direction
-	if ( curDir * ( optimizedPath[1] - optimizedPath[0] ) < 0.0f ) {
+	if ( numPathPoints >= 2 && curDir * ( optimizedPath[1] - optimizedPath[0] ) < 0.0f ) {
 		pathLength += 100.0f;
 	}
 	return pathLength;
