@@ -1537,16 +1537,22 @@ float CBinaryFrobMover::GetFractionalPosition()
 	// check for non-zero rotation first
 	// grayman #3042 - normalize to 180, not 360
 	float maxRotAngle = (m_OpenAngles - m_ClosedAngles).Normalize180().ToRotation().GetAngle();
+	float maxSlideDistance = (m_OpenOrigin - m_ClosedOrigin).Length();
 	if ( maxRotAngle != 0 )
 	{
 		idRotation curRot = (localAngles - m_ClosedAngles).Normalize180().ToRotation();
 		returnval = curRot.GetAngle() / maxRotAngle;
 	}
-	else
+	else if ( maxSlideDistance != 0 )
 	{
 		// if door doesn't have rotation, check translation
-		float maxTrans = (m_OpenOrigin - m_ClosedOrigin).Length();
-		returnval = (localOrg - m_ClosedOrigin).Length() / maxTrans;
+		returnval = (localOrg - m_ClosedOrigin).Length() / maxSlideDistance;
+	}
+	else {
+		//this should not happen during gameplay
+		//however, it happens on map start for double doors
+		//when door A is post-spawned, it calls this on door B before that is post-spawned
+		returnval = 0.5;
 	}
 
 	return returnval;
