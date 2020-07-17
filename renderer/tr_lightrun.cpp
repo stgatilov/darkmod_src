@@ -335,9 +335,9 @@ static float R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRe
 	// A point light uses a box projection.
 	// This projects into the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range.
 	localProject.Zero();
-	localProject[0][0] = 0.5f / light->parms.lightRadius[0];
-	localProject[1][1] = 0.5f / light->parms.lightRadius[1];
-	localProject[2][2] = 0.5f / light->parms.lightRadius[2];
+	localProject[0][0] = 0.5f / idMath::Fmax(light->parms.lightRadius[0], 1e-10f);
+	localProject[1][1] = 0.5f / idMath::Fmax(light->parms.lightRadius[1], 1e-10f);
+	localProject[2][2] = 0.5f / idMath::Fmax(light->parms.lightRadius[2], 1e-10f);
 	localProject[0][3] = 0.5f;
 	localProject[1][3] = 0.5f;
 	localProject[2][3] = 0.5f;
@@ -427,9 +427,9 @@ static float R_ComputeParallelLightProjectionMatrix(idRenderLightLocal* light, i
 	// A parallel light uses a box projection.
 	// This projects into the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range.
 	localProject.Zero();
-	localProject[0][0] = 0.5f / light->parms.lightRadius[0];
-	localProject[1][1] = 0.5f / light->parms.lightRadius[1];
-	localProject[2][2] = 0.5f / light->parms.lightRadius[2];
+	localProject[0][0] = 0.5f / idMath::Fmax(light->parms.lightRadius[0], 1e-10f);
+	localProject[1][1] = 0.5f / idMath::Fmax(light->parms.lightRadius[1], 1e-10f);
+	localProject[2][2] = 0.5f / idMath::Fmax(light->parms.lightRadius[2], 1e-10f);
 	localProject[0][3] = 0.5f;
 	localProject[1][3] = 0.5f;
 	localProject[2][3] = 0.5f;
