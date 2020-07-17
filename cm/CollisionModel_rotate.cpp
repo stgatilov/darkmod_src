@@ -42,6 +42,44 @@ Collision detection for rotational motion
 #define ROTATION_AXIS_EPSILON		(CM_CLIP_EPSILON*0.25f)
 
 
+static bool SolveQuadraticEquation(double a, double b, double c, double &frac1, double &frac2) {
+	if ( a == 0.0 ) {
+		if ( b == 0.0 ) {
+			return false;
+		}
+		frac1 = -c / ( 2.0 * b );
+		frac2 = 1e10;	// = tan( idMath::HALF_PI )
+	}
+	else {
+		double d = b * b - c * a;
+		if ( d <= 0.0 ) {
+			return false;
+		}
+		double sqrtd = sqrt( d );
+#if 0
+		//stgatilov: that's the original code
+		//it produces frac2 = NaN when frac1 = 0
+		double q;
+		if ( b > 0.0 ) {
+			q = - b + sqrtd;
+		}
+		else {
+			q = - b - sqrtd;
+		}
+		frac1 = q / a;
+		frac2 = c / q;
+#else
+		//stgatilov: standard formula is stable except when a ~= 0
+		frac1 = (- b + sqrtd) / a;
+		frac2 = (- b - sqrtd) / a;
+		//same order of fractions as in old code
+		if (!(b > 0.0))
+			idSwap(frac1, frac2);
+#endif
+	}
+	return true;
+}
+
 /*
 ================
 CM_RotatePoint
@@ -178,7 +216,7 @@ idCollisionModelManagerLocal::RotateEdgeThroughEdge
 int idCollisionModelManagerLocal::RotateEdgeThroughEdge( cm_traceWork_t *tw, const idPluecker &pl1,
 												const idVec3 &vc, const idVec3 &vd,
 												const float minTan, float &tanHalfAngle ) {
-	double v0, v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
+	double v0, v1, v2, a, b, c, frac1, frac2;
 	idVec3 ct, dt;
 	idPluecker pl2;
 
@@ -293,28 +331,8 @@ int idCollisionModelManagerLocal::RotateEdgeThroughEdge( cm_traceWork_t *tw, con
 	a = v0 - v2;
 	b = v1;
 	c = v0 + v2;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
-			return false;
-		}
-		frac1 = -c / ( 2.0f * b );
-		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
-		d = b * b - c * a;
-		if ( d <= 0.0f ) {
-			return false;
-		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
-			q = - b + sqrtd;
-		}
-		else {
-			q = - b - sqrtd;
-		}
-		frac1 = q / a;
-		frac2 = c / q;
-	}
+	if (!SolveQuadraticEquation(a, b, c, frac1, frac2))
+		return false;
 
 	if ( tw->angle < 0.0f ) {
 		frac1 = -frac1;
@@ -348,7 +366,7 @@ idCollisionModelManagerLocal::EdgeFurthestFromEdge
 int idCollisionModelManagerLocal::EdgeFurthestFromEdge( cm_traceWork_t *tw, const idPluecker &pl1,
 												const idVec3 &vc, const idVec3 &vd,
 												float &tanHalfAngle, float &dir ) {
-	double v0, v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
+	double v0, v1, v2, a, b, c, frac1, frac2;
 	idVec3 ct, dt;
 	idPluecker pl2;
 
@@ -413,28 +431,8 @@ int idCollisionModelManagerLocal::EdgeFurthestFromEdge( cm_traceWork_t *tw, cons
 	a = -v1;
 	b = -v2;
 	c = v1;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
-			return false;
-		}
-		frac1 = -c / ( 2.0f * b );
-		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
-		d = b * b - c * a;
-		if ( d <= 0.0f ) {
-			return false;
-		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
-			q = - b + sqrtd;
-		}
-		else {
-			q = - b - sqrtd;
-		}
-		frac1 = q / a;
-		frac2 = c / q;
-	}
+	if (!SolveQuadraticEquation(a, b, c, frac1, frac2))
+		return false;
 
 	if ( tw->angle < 0.0f ) {
 		frac1 = -frac1;
@@ -613,7 +611,7 @@ idCollisionModelManagerLocal::RotatePointThroughPlane
 */
 int idCollisionModelManagerLocal::RotatePointThroughPlane( const cm_traceWork_t *tw, const idVec3 &point, const idPlane &plane,
 													const float angle, const float minTan, float &tanHalfAngle ) {
-	double v0, v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
+	double v0, v1, v2, a, b, c, d, frac1, frac2;
 	idVec3 p, normal;
 
 	/*
@@ -664,28 +662,8 @@ int idCollisionModelManagerLocal::RotatePointThroughPlane( const cm_traceWork_t 
 	a = v0 - v2;
 	b = v1;
 	c = v0 + v2;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
-			return false;
-		}
-		frac1 = -c / ( 2.0f * b );
-		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
-		d = b * b - c * a;
-		if ( d <= 0.0f ) {
-			return false;
-		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
-			q = - b + sqrtd;
-		}
-		else {
-			q = - b - sqrtd;
-		}
-		frac1 = q / a;
-		frac2 = c / q;
-	}
+	if (!SolveQuadraticEquation(a, b, c, frac1, frac2))
+		return false;
 
 	if ( angle < 0.0f ) {
 		frac1 = -frac1;
@@ -719,7 +697,7 @@ idCollisionModelManagerLocal::PointFurthestFromPlane
 int idCollisionModelManagerLocal::PointFurthestFromPlane( const cm_traceWork_t *tw, const idVec3 &point, const idPlane &plane,
 													const float angle, float &tanHalfAngle, float &dir ) {
 
-	double v1, v2, a, b, c, d, sqrtd, q, frac1, frac2;
+	double v1, v2, a, b, c, frac1, frac2;
 	idVec3 p, normal;
 
 	/*
@@ -769,28 +747,8 @@ int idCollisionModelManagerLocal::PointFurthestFromPlane( const cm_traceWork_t *
 	a = -v1;
 	b = -v2;
 	c = v1;
-	if ( a == 0.0f ) {
-		if ( b == 0.0f ) {
-			return false;
-		}
-		frac1 = -c / ( 2.0f * b );
-		frac2 = 1e10;	// = tan( idMath::HALF_PI )
-	}
-	else {
-		d = b * b - c * a;
-		if ( d <= 0.0f ) {
-			return false;
-		}
-		sqrtd = sqrt( d );
-		if ( b > 0.0f ) {
-			q = - b + sqrtd;
-		}
-		else {
-			q = - b - sqrtd;
-		}
-		frac1 = q / a;
-		frac2 = c / q;
-	}
+	if (!SolveQuadraticEquation(a, b, c, frac1, frac2))
+		return false;
 
 	if ( angle < 0.0f ) {
 		frac1 = -frac1;
