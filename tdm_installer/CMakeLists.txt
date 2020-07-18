@@ -45,8 +45,8 @@ set(sources
     State.cpp
     InstallerConfig.h
     InstallerConfig.cpp
-    ScanState.h
-    ScanState.cpp
+    StoredState.h
+    StoredState.cpp
 
     Constants.h
     OsUtils.cpp

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "InstallerConfig.h"
+#include "StoredState.h"
 #include <map>
 #include "Manifest.h"
 
@@ -13,8 +14,10 @@ struct State {
 	InstallerConfig _config;
 	//describes local state of the installation dir
 	ZipSync::Manifest _localManifest;
-	//this is read from TDM_INSTALLER_LASTSCAN_PATH (for display only)
-	std::string _lastInstalledVersion;
+	//this is read from TDM_INSTALLER_LASTINSTALL_PATH, includes:
+	//  version --- for display only
+	//  owned set of files --- to be removed during update
+	InstallState _lastInstall;
 	//set of versions for which manifest has already been loaded
 	std::map<std::string, ZipSync::Manifest> _loadedManifests;
 	//which version was last evaluated with "refresh" button
