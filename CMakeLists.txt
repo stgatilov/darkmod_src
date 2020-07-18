@@ -33,6 +33,7 @@ if (UNIX)
 	# configure sensible warnings
 	add_compile_options(
 			-Wall
+			-fno-omit-frame-pointer         # crashdumps!
 			-Wno-unknown-pragmas            # MSVC specific pragmas
 			-Wno-unused-variable            # too many
 			-Wno-unused-but-set-variable
