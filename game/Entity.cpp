@@ -11894,7 +11894,8 @@ void idEntity::Event_SetCurInvCategory(const char* categoryName)
 
 	OnInventorySelectionChanged(prev);
 
-	idThread::ReturnInt( InventoryCursor()->GetCurrentCategory()->GetName() == categoryName );
+	CInventoryCategoryPtr category = InventoryCursor()->GetCurrentCategory();
+	idThread::ReturnInt( category && category->GetName() == categoryName );
 }
 
 void idEntity::Event_SetCurInvItem(const char* itemName)
@@ -11905,32 +11906,38 @@ void idEntity::Event_SetCurInvItem(const char* itemName)
 
 	OnInventorySelectionChanged(prev);
 
-	idThread::ReturnInt( InventoryCursor()->GetCurrentItem()->GetName() == itemName );
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+	idThread::ReturnInt( item && item->GetName() == itemName );
 }
 
 void idEntity::Event_GetCurInvCategory()
 {
-	idThread::ReturnString( InventoryCursor()->GetCurrentCategory()->GetName() );
+	CInventoryCategoryPtr category = InventoryCursor()->GetCurrentCategory();
+	idThread::ReturnString( category ? category->GetName() : "" );
 }
 
 void idEntity::Event_GetCurInvItemEntity()
 {
-	idThread::ReturnEntity( InventoryCursor()->GetCurrentItem()->GetItemEntity() );
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+	idThread::ReturnEntity( item ? item->GetItemEntity() : NULL );
 }
 
 void idEntity::Event_GetCurInvItemName()
 {
-	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetName() );
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+	idThread::ReturnString( item ? item->GetName() : "" );
 }
 
 void idEntity::Event_GetCurInvItemId()
 {
-	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetItemId() );
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+	idThread::ReturnString( item ? item->GetItemId() : "" );
 }
 
 void idEntity::Event_GetCurInvIcon()
 {
-	idThread::ReturnString( InventoryCursor()->GetCurrentItem()->GetIcon() );
+	CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
+	idThread::ReturnString( item ? item->GetIcon() : "" );
 }
 
 void idEntity::Event_InitInventory(int callCount)
@@ -12226,7 +12233,10 @@ void idEntity::CycleInventoryGroup(const idStr& groupName)
 	
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
 
-	assert(cursor->GetCurrentCategory() != NULL);
+	if ( !cursor->GetCurrentCategory() ) {
+		gameLocal.Warning("idEntity::CycleInventoryGroup: no category in current cursor");
+		return;
+	}
 
 	CInventoryItemPtr prev = cursor->GetCurrentItem();
 
@@ -12235,7 +12245,8 @@ void idEntity::CycleInventoryGroup(const idStr& groupName)
 		// We are already in the specified group
 		CInventoryItemPtr next = cursor->GetNextItem();
 
-		if (next->Category()->GetName() != groupName)
+		assert(next);
+		if (next && next->Category()->GetName() != groupName)
 		{
 			// We've changed groups, this means that the cursor has wrapAround set to false
 			// Set the cursor back to the first item
@@ -12266,14 +12277,14 @@ void idEntity::ChangeInventoryItemCount(const char* invName, const char* invCate
 	const CInventoryPtr& inventory = Inventory();
 
 	CInventoryCategoryPtr category = inventory->GetCategory(invCategory);
-	if (category == NULL) 
+	if (category == NULL)
 	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, inventory category %s not found\r", invCategory);
 		return;
 	}
 
 	CInventoryItemPtr item = category->GetItem(invName);
-	if (item == NULL) 
+	if (item == NULL)
 	{
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not change item count, item name %s not found\r", invName);
 		return;

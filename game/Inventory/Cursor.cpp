@@ -74,7 +74,11 @@ void CInventoryCursor::Restore(idRestoreGame *savefile)
 CInventoryItemPtr CInventoryCursor::GetCurrentItem()
 {
 	// Return an item if the inventory has items
-	return (m_Inventory->GetNumCategories() > 0) ? m_Inventory->GetCategory(m_CurrentCategory)->GetItem(m_CurrentItem) : CInventoryItemPtr();
+	CInventoryCategoryPtr currentCategory = m_Inventory->GetCategory(m_CurrentCategory);
+	if (currentCategory) {
+		return currentCategory->GetItem(m_CurrentItem);
+	}
+	return CInventoryItemPtr();
 }
 
 void CInventoryCursor::ClearItem()

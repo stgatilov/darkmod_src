@@ -431,8 +431,11 @@ CInventoryCategoryPtr CInventory::GetCategory(const idStr& categoryName, int* in
 
 CInventoryCategoryPtr CInventory::GetCategory(int index) const
 {
+	if (index >= 0 && index < m_Category.Num()) {
+		return m_Category[index];
+	}
 	// return NULL for invalid indices
-	return (index >= 0 && index < m_Category.Num()) ? m_Category[index] : CInventoryCategoryPtr();
+	return CInventoryCategoryPtr();
 }
 
 int CInventory::GetCategoryIndex(const idStr& categoryName)
@@ -744,6 +747,11 @@ void CInventory::PutItem(const CInventoryItemPtr& item, const idStr& categoryNam
 		{
 			category = CreateCategory(categoryName);
 		}
+	}
+
+	if (!category) {
+		gameLocal.Warning("CInventory::PutItem failed: called with empty name but no categories exist");
+		return;
 	}
 
 	// Pack the item into the category

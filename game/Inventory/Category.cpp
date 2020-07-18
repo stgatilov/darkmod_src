@@ -149,7 +149,10 @@ bool CInventoryCategory::SwapItemPosition(const CInventoryItemPtr& item1, const 
 
 CInventoryItemPtr CInventoryCategory::GetItem(int index)
 {
-	return (index >= 0 && index < m_Item.Num()) ? m_Item[index] : CInventoryItemPtr();
+	if (index >= 0 && index < m_Item.Num()) {
+		return m_Item[index];
+	}
+	return CInventoryItemPtr();
 }
 
 CInventoryItemPtr CInventoryCategory::GetItem(const idStr& itemName)
