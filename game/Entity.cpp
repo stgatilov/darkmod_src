@@ -12257,6 +12257,13 @@ void idEntity::CycleInventoryGroup(const idStr& groupName)
 	{
 		// Not in the desired group yet, set the cursor to the first item in that group
 		cursor->SetCurrentCategory(groupName);
+
+		// If the category was empty, then there is no current item now
+		// If we leave it like this, GUI will show the item, which is no longer current
+		// Better switch to dummy item (blank)
+		if (!cursor->GetCurrentItem()) {
+			cursor->SetCurrentItem(TDM_DUMMY_ITEM);
+		}
 	}
 
 	OnInventorySelectionChanged(prev);
