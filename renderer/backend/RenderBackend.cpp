@@ -143,6 +143,8 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 
 void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData ) {
 	FrameBuffer *currentFbo = frameBuffers->activeFbo;
+	FrameBuffer *renderFbo = frameBuffers->currentRenderFbo;
+	frameBuffers->currentRenderFbo = lightgemFbo;
 	lightgemFbo->Bind();
 	
 	DrawView( viewDef );
@@ -159,6 +161,7 @@ void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData )
 
 	qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
 	currentFbo->Bind();
+	frameBuffers->currentRenderFbo = renderFbo;
 }
 
 void RenderBackend::EndFrame() {
