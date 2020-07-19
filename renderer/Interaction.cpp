@@ -479,6 +479,7 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	}
 	idRenderWorldLocal *renderWorld = edef->world;
 	idInteraction *interaction = renderWorld->interactionAllocator.Alloc();
+	interaction->flagMakeEmpty = false;
 
 	// link and initialize
 	interaction->dynamicModelFrameCount = 0;
@@ -652,6 +653,8 @@ void idInteraction::MakeEmpty( void ) {
 	} else {
 		this->lightDef->firstInteraction = this;
 	}
+
+	flagMakeEmpty = false;
 }
 
 /*
