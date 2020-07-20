@@ -34,7 +34,7 @@ void cb_RaiseInterruptFlag(Fl_Widget *self) {
 
 //============================================================
 
-void GuiInitAll() {
+static void GuiToInitialState() {
 	{
 		static char buff[256];
 		sprintf(buff, "TheDarkMod installer v%s (built on %s)", TDM_INSTALLER_VERSION, __DATE__);
@@ -84,8 +84,9 @@ void GuiInitAll() {
 	g_Install_ProgressFinalize->hide();
 
 	g_Wizard->value(g_PageSettings);
+}
 
-	//----- callbacks -----
+static void GuiInstallCallbacks() {
 	g_Settings_InputInstallDirectory->when(FL_WHEN_CHANGED);
 	g_Settings_InputInstallDirectory->callback(cb_Settings_InputInstallDirectory);
 	g_Settings_ButtonBrowseInstallDirectory->callback(cb_Settings_ButtonBrowseInstallDirectory);
@@ -107,6 +108,39 @@ void GuiInitAll() {
 
 	g_Install_ButtonCancel->callback(cb_RaiseInterruptFlag);
 	g_Install_ButtonClose->callback(cb_Install_ButtonClose);
+}
+
+static void SetStyleRecursive(Fl_Widget *widget) {
+	static const Fl_Color ProgressFillColor = fl_rgb_color(0, 255, 0);
+	static const Fl_Color ButtonNormalColor = fl_rgb_color(225);
+	static const Fl_Color ButtonDownColor = fl_rgb_color(204, 228, 247);
+
+	if (Fl_Group *w = dynamic_cast<Fl_Group*>(widget)) {
+		int k = w->children();
+		for (int i = 0; i < k; i++)
+			SetStyleRecursive(w->child(i));
+	}
+	else if (Fl_Progress *w = dynamic_cast<Fl_Progress*>(widget)) {
+		w->selection_color(ProgressFillColor);
+	}
+	else if (Fl_Check_Button *w = dynamic_cast<Fl_Check_Button*>(widget)) {
+	}
+	else if (Fl_Button *w = dynamic_cast<Fl_Button*>(widget)) {
+		w->box(FL_BORDER_BOX);
+		w->down_box(FL_BORDER_BOX);
+		w->color(ButtonNormalColor);
+		w->down_color(ButtonDownColor);
+	}
+}
+static void GuiSetStyles() {
+	Fl::set_color(FL_BACKGROUND_COLOR, fl_rgb_color(240));
+	SetStyleRecursive(g_Window);
+}
+
+void GuiInitAll() {
+	GuiToInitialState();
+	GuiInstallCallbacks();
+	GuiSetStyles();
 }
 
 void GuiLoaded(void*) {
