@@ -76,8 +76,7 @@ GuiDeactivateGuard::GuiDeactivateGuard(Fl_Widget *blockedPage, std::initializer_
 		Fl_Widget *widget = group->child(i);
 		if (std::find(exceptThese.begin(), exceptThese.end(), widget) != exceptThese.end())
 			continue;
-		if (dynamic_cast<Fl_Output*>(widget) ||
-			dynamic_cast<Fl_Text_Display*>(widget) ||
+		if (dynamic_cast<Fl_Text_Display*>(widget) ||
 			dynamic_cast<Fl_Box*>(widget) ||
 			dynamic_cast<Fl_Progress*>(widget) ||
 		0) {

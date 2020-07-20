@@ -131,6 +131,10 @@ static void SetStyleRecursive(Fl_Widget *widget) {
 		w->color(ButtonNormalColor);
 		w->down_color(ButtonDownColor);
 	}
+	else if (Fl_Output *w = dynamic_cast<Fl_Output*>(widget)) {
+		w->box(FL_BORDER_BOX);
+		w->color(FL_BACKGROUND_COLOR);
+	}
 }
 static void GuiSetStyles() {
 	Fl::set_color(FL_BACKGROUND_COLOR, fl_rgb_color(240));
