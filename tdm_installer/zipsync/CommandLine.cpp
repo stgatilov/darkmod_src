@@ -294,8 +294,6 @@ Manifest DoAnalyze(std::string root, std::vector<std::string> zipPaths, bool aut
         if (progress) progress->Update(1.0, "Analysing done");
     }
 
-    g_logger->infof("Analysis finished successfully");
-
     Manifest manifest;
     for (const auto &tm : zipManis)
         manifest.AppendManifest(tm);

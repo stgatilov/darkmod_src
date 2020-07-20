@@ -108,6 +108,7 @@ void CommandAnalyze(args::Subparser &parser) {
         ProgressIndicatorConsole progress;
         manifest = DoAnalyze(root, zipPaths, argNormalize, threadsNum, &progress);
     }
+    g_logger->infof("Saving manifest to %s", maniPath.c_str());
     WriteIniFile(maniPath.c_str(), manifest.WriteToIni());
 }
 
