@@ -11,7 +11,7 @@ class FltkConan(ConanFile):
     author = "stgatilov <stgatilov@gmail.com>"
     url = "https://github.com/stgatilov/conan-fltk"
     exports = ["LICENSE"]
-    exports_sources = ["CMakeLists.txt", "d4859abe669db503303685dbcd30782d826c8f8b.diff"]
+    exports_sources = ["CMakeLists.txt"]
     generators = "cmake"
     settings = "os", "arch", "compiler", "build_type"
 
@@ -43,8 +43,6 @@ class FltkConan(ConanFile):
         tools.get(source_url, md5=md5)
         extracted_dir = "fltk-{0}".format(self.version)
         os.rename(extracted_dir, self._source_subfolder)
-        # fix D&D changing Fl_Output value (https://github.com/fltk/fltk/issues/113)
-        tools.patch(base_path = self._source_subfolder, patch_file = "d4859abe669db503303685dbcd30782d826c8f8b.diff")
 
     def config_options(self):
         if self.settings.os == "Windows":
