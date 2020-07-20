@@ -76,12 +76,18 @@ static void GuiToInitialState() {
 		"Installation finished successfully! \n"
 		"Click Close to exit. \n"
 	);
+	static Fl_Text_Buffer g_Install_StringAdditional;
+	g_Install_StringAdditional.text(
+		"Additional actions:\n"
+	);
 	g_Install_TextFinishedInstall->buffer(g_Install_StringFinishedInstall);
 	g_Install_TextFinishedInstall->hide();
 	g_Install_ProgressDownload->hide();
 	g_Install_OutputRemainDownload->hide();
 	g_Install_ProgressRepack->hide();
 	g_Install_ProgressFinalize->hide();
+	g_Install_TextAdditional->buffer(g_Install_StringAdditional);
+	g_Install_TextAdditional->hide();
 
 	g_Wizard->value(g_PageSettings);
 }
@@ -106,6 +112,8 @@ static void GuiInstallCallbacks() {
 	g_Confirm_ButtonBack->callback(cb_Confirm_ButtonBack);
 	g_Confirm_ButtonStart->callback(cb_Confirm_ButtonStart);
 
+	g_Install_ButtonDeleteCfg->callback(cb_Install_ButtonDeleteCfg);
+	g_Install_ButtonCreateShortcut->callback(cb_Install_ButtonCreateShortcut);
 	g_Install_ButtonCancel->callback(cb_RaiseInterruptFlag);
 	g_Install_ButtonClose->callback(cb_Install_ButtonClose);
 }

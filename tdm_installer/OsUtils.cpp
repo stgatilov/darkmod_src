@@ -10,6 +10,10 @@ std::string OsUtils::_argv0;
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <atlbase.h>	//CComPtr
+#include <shobjidl.h>	//shortcuts
+#include <shlguid.h>	//shortcuts
+#include <shlobj.h>		//getting desktop path
 static void ThrowWinApiError() {
 	LPVOID lpMsgBuf;
 	FormatMessage(
@@ -25,6 +29,16 @@ static void ThrowWinApiError() {
 	LocalFree(lpMsgBuf);
 	g_logger->errorf("(WinAPI error) %s", message.c_str());
 }
+static void EnsureComInitialized() {
+	auto res = CoInitialize(NULL);
+	ZipSyncAssertF(res == S_OK || res == S_FALSE, "Failed to initialize COM");
+}
+#define CHECK_HRESULT(what) do { \
+		HRESULT rc = what; \
+		if (FAILED(rc)) \
+			g_logger->errorf("WinAPI error %d", int(rc)); \
+	} while (0)
+
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -190,4 +204,105 @@ bool OsUtils::HasElevatedPrivilegesWindows() {
 	}
 #endif
 	return underAdmin;
+}
+
+#ifdef _WIN32
+static CComBSTR ComposeShortcutPath(const std::string &name) {
+	g_logger->infof("Composing path to shortcut file");
+	CComHeapPtr<WCHAR> desktopPath;
+	CHECK_HRESULT(SHGetKnownFolderPath(FOLDERID_Desktop, KF_FLAG_DEFAULT, NULL, &desktopPath));
+	char appended[256];
+	sprintf(appended, "\\%s.lnk", name.c_str());
+	CComBSTR shortcutPath = desktopPath;
+	shortcutPath += appended;
+	return shortcutPath;
+}
+static void OpenShortcutComInterfaces(CComPtr<IShellLink> &pShellLink, CComPtr<IPersistFile> &pPersistFile) {
+	g_logger->infof("Opening COM interfaces");
+	EnsureComInitialized();
+	CHECK_HRESULT(CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&pShellLink));
+	CHECK_HRESULT(pShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&pPersistFile));
+}
+#else
+static std::string ComposeShortcutPath(const std::string &name) {
+	g_logger->infof("Composing path to shortcut file");
+	const char *envHome = getenv("HOME");
+	ZipSyncAssertF(envHome, "Environment variable HOME not defined");
+	std::string shortcutPath = (stdext::path(envHome) / "Desktop" / (name + ".desktop")).string();
+	return shortcutPath;
+}
+#endif
+bool OsUtils::IfShortcutExists(const std::string &name) {
+#ifdef _WIN32
+	CComBSTR shortcutPath = ComposeShortcutPath(name);
+
+	CComPtr<IShellLink> pShellLink;
+	CComPtr<IPersistFile> pPersistFile;
+	OpenShortcutComInterfaces(pShellLink, pPersistFile);
+
+	HRESULT res = pPersistFile->Load(shortcutPath, STGM_READ);
+	return (res == S_OK);
+#else	//_WIN32
+	std::string shortcutPath = ComposeShortcutPath(name);
+	return (stdext::is_regular_file(shortcutPath));
+#endif
+}
+void OsUtils::CreateShortcut(ShortcutInfo info) {
+	g_logger->infof("Shortcut to %s is going to be created", info.executablePath.c_str());
+	//rewrite paths as absolute
+	std::string cwd = GetCwd();
+	if (!stdext::path(info.workingDirPath).is_absolute())
+		info.workingDirPath = (stdext::path(cwd) / info.workingDirPath).string();
+	if (!stdext::path(info.executablePath).is_absolute())
+		info.executablePath = (stdext::path(info.workingDirPath) / info.executablePath).string();
+	if (!stdext::path(info.iconPath).is_absolute())
+		info.iconPath = (stdext::path(info.workingDirPath) / info.iconPath).string();
+
+#ifdef _WIN32
+	//make paths native
+	info.workingDirPath = stdext::replace_all_copy(info.workingDirPath, "/", "\\");
+	info.executablePath = stdext::replace_all_copy(info.executablePath, "/", "\\");
+	info.iconPath = stdext::replace_all_copy(info.iconPath, "/", "\\");
+
+	CComPtr<IShellLink> pShellLink;
+	CComPtr<IPersistFile> pPersistFile;
+	OpenShortcutComInterfaces(pShellLink, pPersistFile);
+
+	CComBSTR shortcutPath = ComposeShortcutPath(info.name);
+
+	g_logger->infof("Setting shortcut properties");
+	//set all properties
+	CHECK_HRESULT(pShellLink->SetWorkingDirectory(info.workingDirPath.c_str()));
+	CHECK_HRESULT(pShellLink->SetPath(info.executablePath.c_str()));
+	if (info.arguments.size())
+		CHECK_HRESULT(pShellLink->SetArguments(info.arguments.c_str()));
+	if (info.iconPath.size())
+		CHECK_HRESULT(pShellLink->SetIconLocation(info.iconPath.c_str(), 0));
+	if (info.comment.size())
+		CHECK_HRESULT(pShellLink->SetDescription(info.comment.c_str()));
+
+	g_logger->infof("Saving shortcut to %ls", shortcutPath.m_str);
+	CHECK_HRESULT(pPersistFile->Save(shortcutPath, FALSE));
+#else	//_WIN32
+
+	std::string shortcutPath = ComposeShortcutPath(info.name);
+	{
+		g_logger->infof("Saving shortcut to %s", shortcutPath.c_str());
+		ZipSync::StdioFileHolder f(shortcutPath.c_str(), "wt");
+		fprintf(f, "[Desktop Entry]\n");
+		fprintf(f, "Version=1.1\n");
+		fprintf(f, "Type=Application\n");
+		fprintf(f, "Name=%s\n", info.name.c_str());
+		fprintf(f, "Comment=%s\n", info.comment.c_str());
+		fprintf(f, "TryExec=%s\n", info.executablePath.c_str());
+		fprintf(f, "Exec=%s\n", info.executablePath.c_str());
+		fprintf(f, "Path=%s\n", info.workingDirPath.c_str());
+		fprintf(f, "Icon=%s\n", info.iconPath.c_str());
+		fprintf(f, "Categories=Game;ActionGame\n");
+		fprintf(f, "Terminal=false\n");
+		fprintf(f, "PrefersNonDefaultGPU=true\n");
+	}
+	MarkAsExecutable(shortcutPath);
+
+#endif
 }

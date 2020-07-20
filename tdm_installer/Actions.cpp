@@ -677,3 +677,41 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 	progress->Update(1.0, "Finalization complete");
 	g_logger->infof("");
 }
+
+bool Actions::CanDeleteConfig() {
+	return stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME);
+}
+void Actions::DoDeleteConfig() {
+	g_logger->infof("Removing %s...", TDM_DARKMOD_CFG_FILENAME);
+	if (stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME))
+		stdext::remove(TDM_DARKMOD_CFG_FILENAME);
+	g_logger->infof("Finished.");
+	g_logger->infof("");
+}
+
+bool Actions::IfShortcutExists() {
+	bool res = OsUtils::IfShortcutExists(TDM_DARKMOD_SHORTCUT_NAME);
+	g_logger->infof("");
+	return res;
+}
+void Actions::CreateShortcut() {
+	//choose best executable which exists
+	static const char *CANDIDATES[] = TDM_DARKMOD_SHORTCUT_EXECUTABLES;
+	static const int k = sizeof(CANDIDATES) / sizeof(CANDIDATES[0]);
+	std::string exePath;
+	for (int i = 0; i < k; i++)
+		if (stdext::is_regular_file(CANDIDATES[i])) {
+			exePath = CANDIDATES[i];
+			break;
+		}
+	ZipSyncAssertF(!exePath.empty(), "Cannot find any TDM executable");
+
+	OsUtils::ShortcutInfo info;
+	info.name = TDM_DARKMOD_SHORTCUT_NAME;
+	info.executablePath = exePath;
+	info.workingDirPath = OsUtils::GetCwd();
+	info.iconPath = TDM_DARKMOD_SHORTCUT_ICON;
+	info.comment = TDM_DARKMOD_SHORTCUT_COMMENT;
+	OsUtils::CreateShortcut(info);
+	g_logger->infof("");
+}

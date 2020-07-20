@@ -46,4 +46,17 @@ public:
 	//is current process run "under admin"?
 	//returns false on Non-Windows platforms
 	static bool HasElevatedPrivilegesWindows();
+
+	//return true if TDM shortcut already exists on Desktop
+	static bool IfShortcutExists(const std::string &name);
+	struct ShortcutInfo {
+		std::string workingDirPath;		//relative to GetCwd()
+		std::string executablePath;		//relative to workingDirPath
+		std::string arguments;			//cmd args (all in one string)
+		std::string name;				//name as seen on desktop
+		std::string iconPath;			//relative to workingDirPath
+		std::string comment;
+	};
+	//creates (possibly overwrites) TDM shortcut on Desktop
+	static void CreateShortcut(ShortcutInfo info);
 };
