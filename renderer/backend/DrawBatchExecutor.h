@@ -58,11 +58,13 @@ public:
 
 	template< typename ShaderParams >
 	uint MaxShaderParamsArraySize() const {
-		return maxUniformBlockSize / sizeof( ShaderParams );
+	    // limit max supported value, since AMD cards support insanely large UBOs (in theory)
+		return Min( (uint)(maxUniformBlockSize / sizeof( ShaderParams )), MAX_PARAMS_ARRAY_SIZE );
 	}
 
 private:
 	static const uint MAX_SHADER_PARAMS_SIZE = 512;
+	static const uint MAX_PARAMS_ARRAY_SIZE = 256;
 	
 	GpuBuffer shaderParamsBuffer;
 	GpuBuffer drawCommandBuffer;
