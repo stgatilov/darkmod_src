@@ -1451,6 +1451,51 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	return h;
 }
 
+static void ResolveRotationHack(idDict &spawnArgs) {
+	const char *rotationStr = spawnArgs.GetString("rotation");
+	idDict modelChanges;
+
+	const idKeyValue *kv = spawnArgs.MatchPrefix( "model" );
+	while( kv ) {
+		const char *argName = kv->GetKey();
+		idStr modelName = kv->GetValue();
+
+		if ( !modelName.IsEmpty() ) {
+			modelName.ToLower();
+
+			idStr hashedStr = modelName + '#' + rotationStr;
+			//quality of hash is rather important, since collision will put wrong model on entity
+			uint64 hash = idStr::HashPoly64(hashedStr.c_str());
+			char hex[20];
+			sprintf(hex, "%016llx", hash);
+
+			idStr baseName, extName;
+			modelName.ExtractFileBase(baseName);
+			modelName.ExtractFileExtension(extName);
+			idStr proxyName = "models/_roth_gen/" + baseName + '_' + hex + ".proxy";
+
+			modelChanges.Set(argName, proxyName);
+
+			idStr intendedContents;
+			intendedContents += "model \"" + modelName + "\"\n";
+			intendedContents += "rotation \"" + idStr(rotationStr) + "\"\n";
+
+			void *buffer = NULL;
+			int len = fileSystem->ReadFile(proxyName, &buffer);
+			bool alreadyGood = (len == intendedContents.Length() && memcmp(intendedContents.c_str(), buffer, len) == 0);
+			if (len >= 0 && buffer)
+				fileSystem->FreeFile(buffer);
+			if (!alreadyGood)
+				fileSystem->WriteFile(proxyName, intendedContents.c_str(), intendedContents.Length());
+		}
+
+		kv = spawnArgs.MatchPrefix( "model", kv );
+	}
+
+	spawnArgs.Delete("rotation");
+	spawnArgs.Copy(modelChanges);
+}
+
 /*
 ================
 idEntity::Spawn
@@ -1479,6 +1524,12 @@ void idEntity::Spawn( void )
 	DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("this: %08lX   Name: [%s]\r", this, temp);
 
 	FixupLocalizedStrings();
+
+	idMat3 rotation = spawnArgs.GetMatrix("rotation");
+	if (!rotation.IsOrthogonal(1e-3f)) {
+		//stgatilov #4970: embed bad rotation into models
+		ResolveRotationHack(spawnArgs);
+	}
 
 	// parse static models the same way the editor display does
 	gameEdit->ParseSpawnArgsToRenderEntity( &spawnArgs, &renderEntity );
