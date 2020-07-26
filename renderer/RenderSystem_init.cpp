@@ -58,6 +58,13 @@ idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER 
 idCVar r_softShadowsQuality( "r_softShadowsQuality", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Number of samples in soft shadows blur. 0 = hard shadows, 6 = low-quality, 24 = good, 96 = perfect" );
 idCVar r_softShadowsRadius( "r_softShadowsRadius", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Radius of light source for soft shadows. Decreasing it makes soft shadows less blurry." );
 
+//stgatilov #4825: see also
+//  http://forums.thedarkmod.com/topic/19139-nonsmooth-graphics-due-to-bumpmapping/
+idCVar r_useBumpmapLightTogglingFix(
+	"r_useBumpmapLightTogglingFix", "1", CVAR_RENDERER | CVAR_BOOL,
+	"Reduce light toggling due to difference between bumpmapped normal and interpolated normal in \"enhanced\" interaction.\n"
+);
+
 /* ~ss
 idCVar r_softShadows( "r_softShadows", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Soft shadows. 0 = hard shadows, >0 = light radius" );
 idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shadows debug. 1 = Show penumbra lines, 2 = show penumbra sampling regions, "

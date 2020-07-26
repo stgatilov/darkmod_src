@@ -57,7 +57,7 @@ uniform samplerCube	u_lightProjectionCubemap;
 
 uniform int	    u_advanced;
 uniform int 	u_cubic;
-uniform int		u_testBumpmapLightTogglingFix;  //stgatilov #4825: for testing only
+uniform int		u_useBumpmapLightTogglingFix;  //stgatilov #4825
 
 uniform bool	u_shadows;
 uniform int		u_softShadowsQuality;
@@ -165,7 +165,7 @@ vec3 advancedInteraction() {
 	float R2f = clamp(localL.z * 4.0, 0.0, 1.0);
 
 	float NdotL_adjusted = NdotL;
-	if (u_testBumpmapLightTogglingFix != 0) {
+	if (u_useBumpmapLightTogglingFix != 0) {
 		//stgatilov: hacky coefficient to make lighting smooth when L is almost in surface tangent plane
 		vec3 meshNormal = normalize(var_TangentBitangentNormalMatrix[2]);
 		float MNdotL = max(dot(meshNormal, L), 0);

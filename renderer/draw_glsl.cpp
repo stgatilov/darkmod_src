@@ -836,14 +836,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		lightOrigin.Set( din->localLightOrigin.ToVec3() );
 		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
 	}
-
-	//stgatilov #4825: see also
-	//  http://forums.thedarkmod.com/topic/19139-nonsmooth-graphics-due-to-bumpmapping/
-	static idCVar r_testBumpmapLightTogglingFix(
-		"r_testBumpmapLightTogglingFix", "0", CVAR_RENDERER | CVAR_BOOL,
-		"Reduce light toggling due to difference between bumpmapped normal and interpolated normal in \"enhanced\" interaction.\n"
-	);
-	testBumpmapLightTogglingFix.Set(r_testBumpmapLightTogglingFix.GetBool());
+	useBumpmapLightTogglingFix.Set(r_useBumpmapLightTogglingFix.GetBool());
 
 	GL_CheckErrors();
 }

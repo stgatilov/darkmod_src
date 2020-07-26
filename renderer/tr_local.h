@@ -1081,6 +1081,7 @@ extern idCVar r_dedicatedAmbient;
 
 extern idCVar r_softShadowsQuality;
 extern idCVar r_softShadowsRadius;
+extern idCVar r_useBumpmapLightTogglingFix;
 
 extern idCVar r_useAnonreclaimer;
 extern idCVarBool r_shadowMapSinglePass;
