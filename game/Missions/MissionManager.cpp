@@ -29,6 +29,101 @@
 #include "../Http/HttpRequest.h"
 #include "StdString.h"
 
+
+idStr MissionScreenshot::GetLocalFilename() const
+{
+	idStr temp;
+	serverRelativeUrl.ExtractFileName(temp);
+
+	idStr ext;
+	temp.ExtractFileExtension(ext);
+
+	temp.StripTrailingOnce(ext);
+	temp.StripTrailingOnce(".");
+
+	//stgatilov #4488: image manager can't load image with dots/hyphens in it
+	//because it starts parsing it as image program
+	for (int i = 0; i < temp.Length(); i++) {
+		if (!isalnum(temp[i]) && !strchr("/\\_", temp[i]))
+			temp[i] = '_';
+	}
+
+	// Locally We save screenshots as JPG
+	return temp + ".jpg";
+}
+
+idStr MissionScreenshot::GetRemoteFilename() const
+{
+	idStr temp;
+	serverRelativeUrl.ExtractFileName(temp);
+
+	return temp;
+}
+
+idStr MissionScreenshot::GetRemoteFileExtension() const
+{
+	idStr temp;
+	serverRelativeUrl.ExtractFileExtension(temp);
+	temp.ToLower();
+
+	return temp;
+}
+
+DownloadableMod::~DownloadableMod() {}
+
+DownloadableMod::DownloadableMod() :
+		id(-1), // invalid ID
+		type(Single),
+		version(1),
+		isUpdate(false),
+		needsL10NpackDownload(false),	// gnartsch
+		detailsLoaded(false)
+{}
+
+// Static sort compare functor, sorting by mod title
+typedef DownloadableMod* DownloadableModPtr;
+
+int DownloadableMod::SortCompareTitle(const DownloadableModPtr* a, const DownloadableModPtr* b)
+{
+	//alexdiru 4499
+	idStr aName = common->Translate((*a)->title);
+	idStr prefix = "";
+	idStr suffix = "";
+	common->GetI18N()->MoveArticlesToBack(aName, prefix, suffix);
+	if (!suffix.IsEmpty())
+	{
+		// found, remove prefix and append suffix
+		aName.StripLeadingOnce(prefix.c_str());
+		aName += suffix;
+	}
+
+	idStr bName = common->Translate((*b)->title);
+	prefix = "";
+	suffix = "";
+	common->GetI18N()->MoveArticlesToBack(bName, prefix, suffix);
+	if (!suffix.IsEmpty())
+	{
+		// found, remove prefix and append suffix
+		bName.StripLeadingOnce(prefix.c_str());
+		bName += suffix;
+	}
+
+	return aName.Icmp(bName);
+}
+
+idStr DownloadableMod::GetLocalScreenshotPath(int screenshotNum) const
+{
+	assert(screenshotNum >= 0 && screenshotNum < screenshots.Num());
+
+	return (
+		cv_tdm_fm_path.GetString() + 
+		idStr(TMP_MISSION_SCREENSHOT_FOLDER) + "/" + 
+		TMP_MISSION_SCREENSHOT_PREFIX +
+		screenshots[screenshotNum]->GetLocalFilename()
+	);
+}
+
+
 namespace
 {
 	const char* const TMP_MISSION_LIST_FILENAME = "__missionlist.xml.temp";
