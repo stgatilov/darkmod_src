@@ -150,7 +150,6 @@ namespace Uniforms {
 		DEFINE_UNIFORM( int, frameCount )
 		DEFINE_UNIFORM( vec3, lightSamples )
 		DEFINE_UNIFORM( int, testBumpmapLightTogglingFix )
-		DEFINE_UNIFORM( int, testStencilSelfShadowFix )
 
 
 		bool ambient = false;
