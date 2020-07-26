@@ -198,7 +198,7 @@ void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVer
 	for (int i = 0; i < numDrawSurfs; ++i) {
 		const drawSurf_t *surf = drawSurfs[i];
 		qglVertexAttribI1i(Attributes::Default::DrawId, i);
-		const void *indexOffset = reinterpret_cast< const void* >( surf->indexCache.offset );
+		const void *indexOffset = (void*)(uintptr_t)surf->indexCache.offset;
 		uint baseVertex = baseVertexFn( surf );
 		qglDrawElementsBaseVertex(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, baseVertex);
 	}

@@ -73,7 +73,7 @@ private:
 
 	int maxUniformBlockSize = 0;
 
-	uint maxBatchSize = 0;
+	int maxBatchSize = 0;
 	uint shaderParamsSize = 0;
 
 	idList<const drawSurf_t *> drawSurfs;
