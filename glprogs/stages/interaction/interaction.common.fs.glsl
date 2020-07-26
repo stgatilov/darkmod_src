@@ -168,7 +168,7 @@ vec3 advancedInteraction() {
 	if (u_testBumpmapLightTogglingFix != 0) {
 		//stgatilov: hacky coefficient to make lighting smooth when L is almost in surface tangent plane
 		vec3 meshNormal = normalize(var_TangentBitangentNormalMatrix[2]);
-		float MNdotL = dot(meshNormal, L);
+		float MNdotL = max(dot(meshNormal, L), 0);
 		if (MNdotL < min(0.25, NdotL))
 			NdotL_adjusted = mix(MNdotL, NdotL, MNdotL / 0.25);
 	}
