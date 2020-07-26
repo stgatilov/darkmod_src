@@ -63,7 +63,6 @@ namespace {
 		DEFINE_UNIFORM( vec3, globalLightOrigin )
 
 		DEFINE_UNIFORM( int, advanced )
-		DEFINE_UNIFORM( int, testSpecularFix )
 		DEFINE_UNIFORM( int, testBumpmapLightTogglingFix )
 		DEFINE_UNIFORM( int, cubic )
 		DEFINE_UNIFORM( float, gamma )
@@ -73,7 +72,6 @@ namespace {
 		DEFINE_UNIFORM( int, shadows )
 		DEFINE_UNIFORM( int, softShadowsQuality )
 		DEFINE_UNIFORM( float, softShadowsRadius )
-		DEFINE_UNIFORM( int, testStencilSelfShadowFix )
 		DEFINE_UNIFORM( vec4, shadowRect )
 		DEFINE_UNIFORM( int, shadowMapCullFront )
 		DEFINE_UNIFORM( sampler, stencilTexture )
