@@ -52,6 +52,12 @@ struct MissionScreenshot
 		temp.StripTrailingOnce(ext);
 		temp.StripTrailingOnce(".");
 
+		//stgatilov #4488: image manager can't load image with dots/hyphens in it
+		//because it starts parsing it as image program
+		for (int i = 0; i < temp.Length(); i++)
+			if (!isalnum(temp[i]) && !strchr("/\\_", temp[i]))
+				temp[i] = '_';
+
 		// Locally We save screenshots as JPG
 		return temp + ".jpg";
 	}
