@@ -27,7 +27,6 @@ uniform vec3 	u_lightOrigin;
 uniform vec4 	u_viewOrigin;
 uniform vec4 	u_diffuseColor;
 uniform vec4 	u_specularColor;
-uniform int		u_testSpecularFix;	//stgatilov #5044: for testing only!
 uniform int		u_testBumpmapLightTogglingFix;  //stgatilov #4825: for testing only
 
 
@@ -140,12 +139,7 @@ vec3 advancedInteraction() {
 	}
 	float light = rimLight * R2f + NdotL_adjusted;
 
-	vec3 totalColor;
-	if (u_testSpecularFix != 0)
-		totalColor = (specularColor * u_specularColor.rgb * R2f + diffuse * u_diffuseColor.rgb) * light * lightColor() * var_Color.rgb;
-	else
-		totalColor = (specularColor * R2f + diffuse) * light * u_diffuseColor.rgb * lightColor() * var_Color.rgb;
-
+	vec3 totalColor = (specularColor * u_specularColor.rgb * R2f + diffuse * u_diffuseColor.rgb) * light * lightColor() * var_Color.rgb;
 	return totalColor;
 }
 
