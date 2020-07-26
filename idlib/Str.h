@@ -256,6 +256,9 @@ public:
 	static int			Hash( const char *string, int length );
 	static int			IHash( const char *string );					// case insensitive
 	static int			IHash( const char *string, int length );		// case insensitive
+	// stgatilov: polynomial hash djb2 / DJBX33A extended to 64 bits
+	// maybe it is a slower than idStr::Hash, but it is a much better hash function
+	static uint64		HashPoly64( const char *string, int length = -1 );
 
 	// character methods
 	static char			ToLower( char c );
@@ -966,6 +969,13 @@ ID_INLINE int idStr::IHash( const char *string, int length ) {
 		hash += ToLower( *string++ ) * ( i + 119 );
 	}
 	return hash;
+}
+
+ID_INLINE uint64 idStr::HashPoly64( const char *string, int length ) {
+	uint64 value = 5381;
+	for ( int i = 0; (length < 0 ? string[i] : i < length); i++)
+		value = ((value << 5) + value) + string[i];
+	return value;
 }
 
 ID_INLINE bool idStr::IsColor( const char *s ) {
