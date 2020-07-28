@@ -687,7 +687,7 @@ uint64_t UpdateProcess::DownloadRemoteFiles(
     });
     downloader.DownloadAll();
 
-    double totalBytesToPostprocess = DBL_EPSILON;
+    double totalBytesToPostprocess = 1e-20;
     for (const auto &pKV : urlStates)
         totalBytesToPostprocess += GetFileSize(pKV.second.path.abs);
     double bytesPostprocessed = 0.0;
