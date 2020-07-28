@@ -8,7 +8,7 @@
 #include "GuiPageConfirm.h"
 #include "GuiPageInstall.h"
 #include "ProgressIndicatorGui.h"
-#include <FL/fl_ask.H>
+#include "GuiUtils.h"
 
 
 void cb_Settings_ButtonReset(Fl_Widget *self) {
@@ -118,49 +118,19 @@ static void GuiInstallCallbacks() {
 	g_Install_ButtonClose->callback(cb_Install_ButtonClose);
 }
 
-static void SetStyleRecursive(Fl_Widget *widget) {
-	static const Fl_Color ProgressFillColor = fl_rgb_color(0, 255, 0);
-	static const Fl_Color ButtonNormalColor = fl_rgb_color(225);
-	static const Fl_Color ButtonDownColor = fl_rgb_color(204, 228, 247);
-
-	if (Fl_Group *w = dynamic_cast<Fl_Group*>(widget)) {
-		int k = w->children();
-		for (int i = 0; i < k; i++)
-			SetStyleRecursive(w->child(i));
-	}
-	else if (Fl_Progress *w = dynamic_cast<Fl_Progress*>(widget)) {
-		w->selection_color(ProgressFillColor);
-	}
-	else if (Fl_Check_Button *w = dynamic_cast<Fl_Check_Button*>(widget)) {
-	}
-	else if (Fl_Button *w = dynamic_cast<Fl_Button*>(widget)) {
-		w->box(FL_BORDER_BOX);
-		w->down_box(FL_BORDER_BOX);
-		w->color(ButtonNormalColor);
-		w->down_color(ButtonDownColor);
-	}
-	else if (Fl_Output *w = dynamic_cast<Fl_Output*>(widget)) {
-		w->box(FL_BORDER_BOX);
-		w->color(FL_BACKGROUND_COLOR);
-	}
-}
-static void GuiSetStyles() {
-	Fl::set_color(FL_BACKGROUND_COLOR, fl_rgb_color(240));
-	SetStyleRecursive(g_Window);
-}
 
 void GuiInitAll() {
 	GuiToInitialState();
 	GuiInstallCallbacks();
-	GuiSetStyles();
+	GuiSetStyles(g_Window);
 }
 
 void GuiLoaded(void*) {
 	if (OsUtils::HasElevatedPrivilegesWindows()) {
-		int idx = fl_choice("%s",
-			"I know what I'm doing", "Exit", nullptr,
+		int idx = GuiMessageBox(mbfWarningMajor,
 			"The installer was run \"as admin\". This is strongly discouraged!\n"
-			"If you continue, admin rights will most likely be necessary to play the game."
+			"If you continue, admin rights will most likely be necessary to play the game.",
+			"I know what I'm doing", "Exit"
 		);
 		if (idx == 1)
 			exit(0);

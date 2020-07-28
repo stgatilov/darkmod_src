@@ -1,10 +1,10 @@
 #include "GuiPageInstall.h"
 #include "GuiFluidAutoGen.h"
 #include "LogUtils.h"
-#include "FL/fl_ask.H"
 #include "Actions.h"
 #include "OsUtils.h"
 #include "ProgressIndicatorGui.h"
+#include "GuiUtils.h"
 
 
 static void Install_UpdateAdditional() {
@@ -42,7 +42,7 @@ void Install_MetaPerformInstall() {
 		Actions::PerformInstallDownload(&progress);
 	}
 	catch(std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		ZipSync::DoClean(OsUtils::GetCwd());
 		g_Wizard->value(g_PageConfirm);
 		return;
@@ -56,7 +56,7 @@ void Install_MetaPerformInstall() {
 		Actions::PerformInstallRepack(&progress);
 	}
 	catch(std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		ZipSync::DoClean(OsUtils::GetCwd());
 		g_Wizard->value(g_PageConfirm);
 		return;
@@ -70,7 +70,7 @@ void Install_MetaPerformInstall() {
 		Actions::PerformInstallFinalize(&progress);
 	}
 	catch(std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		ZipSync::DoClean(OsUtils::GetCwd());
 		g_Wizard->value(g_PageConfirm);
 		return;
@@ -97,7 +97,7 @@ void cb_Install_ButtonDeleteCfg(Fl_Widget *self) {
 		Actions::DoDeleteConfig();
 	}
 	catch(std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 	}
 	Install_UpdateAdditional();
 }
@@ -108,7 +108,7 @@ void cb_Install_ButtonCreateShortcut(Fl_Widget *self) {
 		g_Install_ButtonCreateShortcut->deactivate();
 	}
 	catch(std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 	}
 	Install_UpdateAdditional();
 }

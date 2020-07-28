@@ -7,6 +7,7 @@
 #include "Actions.h"
 #include "State.h"
 #include "ProgressIndicatorGui.h"
+#include "GuiUtils.h"
 
 
 void cb_Settings_InputInstallDirectory(Fl_Widget *self) {
@@ -66,7 +67,7 @@ void cb_Settings_InputInstallDirectory(Fl_Widget *self) {
 
 void cb_Settings_ButtonBrowseInstallDirectory(Fl_Widget *self) {
 	//note: modal
-	const char *chosenPath = fl_dir_chooser("Choose where to install TheDarkMod", NULL);
+	const char *chosenPath = GuiChooseDirectory("Choose where to install TheDarkMod");
 	if (chosenPath) {
 		g_Settings_InputInstallDirectory->value(chosenPath);
 		g_Settings_InputInstallDirectory->do_callback();
@@ -79,13 +80,13 @@ void cb_Settings_ButtonRestartNewDir(Fl_Widget *self) {
 	try {
 		auto warnings = Actions::CheckSpaceAndPermissions(installDir);
 		for (const std::string &message : warnings) {
-			int idx = fl_choice("%s", "I know what I'm doing", "Stop", nullptr, message.c_str());
+			int idx = GuiMessageBox(mbfWarningMajor, message.c_str(), "I know what I'm doing", "Stop");
 			if (idx == 1)
 				return;
 		}
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		return;
 	}
 
@@ -93,7 +94,7 @@ void cb_Settings_ButtonRestartNewDir(Fl_Widget *self) {
 		Actions::RestartWithInstallDir(installDir);
 		//note: this line is never executed
 	} catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 	}
 }
 
@@ -120,13 +121,13 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
 		auto warnings = Actions::CheckSpaceAndPermissions(OsUtils::GetCwd());
 		for (const std::string &message : warnings) {
-			int idx = fl_choice("%s", "I know what I'm doing", "Stop", nullptr, message.c_str());
+			int idx = GuiMessageBox(mbfWarningMajor, message.c_str(), "I know what I'm doing", "Stop");
 			if (idx == 1)
 				return;
 		}
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		return;
 	}
 
@@ -134,7 +135,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 		Actions::StartLogFile();
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		return;
 	}
 
@@ -145,14 +146,14 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
 		if (!skipUpdate) {
 			if (Actions::NeedsSelfUpdate(&progress)) {
-				fl_alert("New version of installer has been downloaded. Installer will be restarted to finish update.");
+				GuiMessageBox(mbfMessage, "New version of installer has been downloaded. Installer will be restarted to finish update.");
 				Actions::DoSelfUpdate();
 			}
 		}
 		g_Settings_ProgressScanning->hide();
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		g_Settings_ProgressScanning->hide();
 		return;
 	}
@@ -166,7 +167,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 		g_Settings_ProgressScanning->hide();
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		g_Settings_ProgressScanning->hide();
 		return;
 	}
@@ -179,7 +180,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 		g_Settings_ProgressScanning->hide();
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		g_Settings_ProgressScanning->hide();
 		return;
 	}

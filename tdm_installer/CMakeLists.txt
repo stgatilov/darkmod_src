@@ -53,6 +53,8 @@ set(sources
     OsUtils.h
     LogUtils.cpp
     LogUtils.h
+    GuiUtils.cpp
+    GuiUtils.h
 )
 
 if(MSVC)

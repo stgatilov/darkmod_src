@@ -3,8 +3,8 @@
 #include "Actions.h"
 #include "State.h"
 #include "LogUtils.h"
-#include "FL/fl_ask.H"
 #include "ProgressIndicatorGui.h"
+#include "GuiUtils.h"
 
 
 static void Version_UpdateGui() {
@@ -79,12 +79,12 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 
 	std::string customUrl = g_Version_InputCustomManifestUrl->value();
 	if (!customUrl.empty() && !g_state->_config.IsUrlTrusted(customUrl)) {
-		int idx = fl_choice("%s", 
-			"Stop", "Continue", nullptr,
+		int idx = GuiMessageBox(mbfWarningMinor, 
 			"The custom URL you entered does NOT belong to TheDarkMod main server.\n"
-			"Make sure you got this URL from a trusted source!"
+			"Make sure you got this URL from a trusted source!",
+			"Continue", "Stop"
 		);
-		if (idx == 0)
+		if (idx == 1)
 			return;
 	}
 
@@ -98,7 +98,7 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 		g_Version_ProgressDownloadManifests->hide();
 	}
 	catch(const std::exception &e) {
-		fl_alert("Error: %s", e.what());
+		GuiMessageBox(mbfError, e.what());
 		g_Version_ProgressDownloadManifests->hide();
 		return;
 	}
@@ -142,11 +142,12 @@ void cb_Version_ButtonNext(Fl_Widget *self) {
 	}
 
 	if (!g_state->_updater) {
-		fl_alert(
+		std::string text = ZipSync::formatMessage(
 			"Custom manifest URL cannot be used with base version %s.\n"
 			"Make sure you select correct base version.",
 			g_Version_TreeVersions->first_selected_item()->label()
 		);
+		GuiMessageBox(mbfError, text.c_str());
 		return;
 	}
 

@@ -1,10 +1,10 @@
 #include "ProgressIndicatorGui.h"
-#include "FL/Fl.H"
-#include "FL/Fl_Progress.H"
-#include "FL/Fl_Group.H"
-#include "FL/Fl_Output.H"
-#include "FL/Fl_Box.H"
-#include "FL/Fl_Text_Display.H"
+#include <FL/Fl.H>
+#include <FL/Fl_Progress.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Output.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Text_Display.H>
 #include "LogUtils.h"
 #include "time.h"
 
