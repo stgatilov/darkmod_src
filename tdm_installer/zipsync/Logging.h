@@ -68,7 +68,7 @@ extern Logger *g_logger;
 std::string formatMessage(const char *format, ...);
 std::string assertFailedMessage(const char *code, const char *file, int line);
 
-#define ZipSyncAssert(cond) if (!(cond)) g_logger->errorf(lcAssertFailed, assertFailedMessage(#cond, __FILE__, __LINE__).c_str());
-#define ZipSyncAssertF(cond, ...) if (!(cond)) g_logger->errorf(lcAssertFailed, __VA_ARGS__);
+#define ZipSyncAssert(cond) if (!(cond)) g_logger->errorf(lcAssertFailed, assertFailedMessage(#cond, __FILE__, __LINE__).c_str()); else ((void)0)
+#define ZipSyncAssertF(cond, ...) if (!(cond)) g_logger->errorf(lcAssertFailed, __VA_ARGS__); else ((void)0);
 
 }
