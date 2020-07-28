@@ -4736,9 +4736,9 @@ void idGameLocal::RunDebugInfo( void ) {
 						clip.DrawClipModel(mdl, eye, 0.0f);
 					idBox box(results.c.point, idVec3(1.0f), matr);
 					gameRenderWorld->DebugBox(idVec4(0, 1, 1, 1), box);
-					static int lastDump = 0;
-					int nowTime = clock();
-					if (nowTime >= lastDump + CLOCKS_PER_SEC) {
+					static int64 lastDump = 0;
+					int64 nowTime = Sys_GetTimeMicroseconds();
+					if (nowTime >= lastDump + 1000000) {
 						float dist = (results.endpos - eye).Length();
 						Printf("Clipped along view direction: \"%s\" at distance %0.1f\n", ent->GetName(), dist);
 						lastDump = nowTime;
