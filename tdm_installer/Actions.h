@@ -47,7 +47,7 @@ public:
 	static VersionInfo RefreshVersionInfo(const std::string &version, const std::string &customManifestUrl, bool bitwiseExact, ZipSync::ProgressIndicator *progress);
 
 	//perform prepared update: download all data
-	static void PerformInstallDownload(ZipSync::ProgressIndicator *progress);
+	static void PerformInstallDownload(ZipSync::ProgressIndicator *progressDownload, ZipSync::ProgressIndicator *progressVerify);
 
 	//perform prepared update: repack installation
 	static void PerformInstallRepack(ZipSync::ProgressIndicator *progress);

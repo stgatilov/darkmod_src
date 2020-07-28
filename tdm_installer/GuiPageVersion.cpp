@@ -93,6 +93,7 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 	try {
 		GuiDeactivateGuard deactivator(g_PageVersion, {});
 		g_Version_ProgressDownloadManifests->show();
+		Fl::flush();
 		ProgressIndicatorGui progress(g_Version_ProgressDownloadManifests);
 		info = Actions::RefreshVersionInfo(version, customUrl, g_Settings_CheckBitwiseExact->value(), &progress);
 		g_Version_ProgressDownloadManifests->hide();

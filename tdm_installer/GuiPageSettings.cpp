@@ -142,7 +142,6 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
 		bool skipUpdate = g_Settings_CheckSkipSelfUpdate->value();
 		GuiDeactivateGuard deactivator(g_PageSettings, {});
-		g_Settings_ProgressScanning->show();
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
 		if (!skipUpdate) {
 			if (Actions::NeedsSelfUpdate(&progress)) {
@@ -161,7 +160,6 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
 		bool skipUpdate = g_Settings_CheckSkipConfigDownload->value();
 		GuiDeactivateGuard deactivator(g_PageSettings, {});
-		g_Settings_ProgressScanning->show();
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
 		Actions::ReadConfigFile(!skipUpdate, &progress);
 		g_Settings_ProgressScanning->hide();
@@ -174,7 +172,6 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 
 	try {
 		GuiDeactivateGuard deactivator(g_PageSettings, {});
-		g_Settings_ProgressScanning->show();
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
 		Actions::ScanInstallDirectoryIfNecessary(g_Settings_CheckForceScan->value(), &progress);
 		g_Settings_ProgressScanning->hide();

@@ -118,6 +118,8 @@ Fl_Progress *g_Install_ProgressDownload=(Fl_Progress *)0;
 
 Fl_Box *g_Install_OutputRemainDownload=(Fl_Box *)0;
 
+Fl_Progress *g_Install_ProgressVerify=(Fl_Progress *)0;
+
 Fl_Progress *g_Install_ProgressRepack=(Fl_Progress *)0;
 
 Fl_Progress *g_Install_ProgressFinalize=(Fl_Progress *)0;
@@ -1833,15 +1835,17 @@ data, but it will be downloaded sooner or later anyway.");
           g_Install_TextInstalling->color(FL_BACKGROUND_COLOR);
           g_Install_TextInstalling->align(Fl_Align(FL_ALIGN_LEFT));
         } // Fl_Text_Display* g_Install_TextInstalling
-        { g_Install_ProgressDownload = new Fl_Progress(335, 115, 680, 20, "Downloading...");
+        { g_Install_ProgressDownload = new Fl_Progress(335, 105, 680, 20, "Downloading...");
         } // Fl_Progress* g_Install_ProgressDownload
-        { g_Install_OutputRemainDownload = new Fl_Box(465, 134, 405, 16, "Remaining ~ ?:?\?:?\?");
+        { g_Install_OutputRemainDownload = new Fl_Box(465, 124, 405, 16, "Remaining ~ ?:?\?:?\?");
         } // Fl_Box* g_Install_OutputRemainDownload
-        { g_Install_ProgressRepack = new Fl_Progress(335, 170, 680, 20, "Repacking...");
+        { g_Install_ProgressVerify = new Fl_Progress(335, 155, 680, 20, "Verifying...");
+        } // Fl_Progress* g_Install_ProgressVerify
+        { g_Install_ProgressRepack = new Fl_Progress(335, 205, 680, 20, "Repacking...");
         } // Fl_Progress* g_Install_ProgressRepack
-        { g_Install_ProgressFinalize = new Fl_Progress(335, 225, 680, 20, "Finalizing...");
+        { g_Install_ProgressFinalize = new Fl_Progress(335, 255, 680, 20, "Finalizing...");
         } // Fl_Progress* g_Install_ProgressFinalize
-        { g_Install_TextFinishedInstall = new Fl_Text_Display(340, 270, 660, 55);
+        { g_Install_TextFinishedInstall = new Fl_Text_Display(340, 310, 660, 55);
           g_Install_TextFinishedInstall->box(FL_NO_BOX);
           g_Install_TextFinishedInstall->color(FL_BACKGROUND_COLOR);
           g_Install_TextFinishedInstall->align(Fl_Align(FL_ALIGN_LEFT));

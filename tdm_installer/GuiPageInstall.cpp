@@ -20,6 +20,7 @@ static void Install_UpdateAdditional() {
 
 void Install_MetaPerformInstall() {
 	g_Install_ProgressDownload->hide();
+	g_Install_ProgressVerify->hide();
 	g_Install_OutputRemainDownload->hide();
 	g_Install_ProgressRepack->hide();
 	g_Install_ProgressFinalize->hide();
@@ -37,9 +38,10 @@ void Install_MetaPerformInstall() {
 		GuiDeactivateGuard deactivator(g_PageInstall, {g_Install_ButtonCancel});
 		g_Install_ProgressDownload->show();
 		Fl::flush();
-		ProgressIndicatorGui progress(g_Install_ProgressDownload);
-		progress.AttachRemainsLabel(g_Install_OutputRemainDownload);
-		Actions::PerformInstallDownload(&progress);
+		ProgressIndicatorGui progress1(g_Install_ProgressDownload);
+		ProgressIndicatorGui progress2(g_Install_ProgressVerify);
+		progress1.AttachRemainsLabel(g_Install_OutputRemainDownload);
+		Actions::PerformInstallDownload(&progress1, &progress2);
 	}
 	catch(std::exception &e) {
 		GuiMessageBox(mbfError, e.what());
@@ -50,8 +52,6 @@ void Install_MetaPerformInstall() {
 
 	try {
 		GuiDeactivateGuard deactivator(g_PageInstall, {});
-		g_Install_ProgressRepack->show();
-		Fl::flush();
 		ProgressIndicatorGui progress(g_Install_ProgressRepack);
 		Actions::PerformInstallRepack(&progress);
 	}
@@ -64,8 +64,6 @@ void Install_MetaPerformInstall() {
 
 	try {
 		GuiDeactivateGuard deactivator(g_PageInstall, {});
-		g_Install_ProgressFinalize->show();
-		Fl::flush();
 		ProgressIndicatorGui progress(g_Install_ProgressFinalize);
 		Actions::PerformInstallFinalize(&progress);
 	}

@@ -22,6 +22,7 @@ void ProgressIndicatorGui::AttachRemainsLabel(Fl_Widget *label) {
 }
 
 int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, double localRatio, std::string localComment) {
+	_progressWidget->show();
 	_progressWidget->value(100.0 * globalRatio);
 
 	if (_lastProgressText != globalComment) {
