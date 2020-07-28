@@ -32,5 +32,6 @@ public:
 };
 
 std::vector<uint8_t> ReadWholeFile(const std::string &filename);
+int GetFileSize(const std::string &filename);
 
 }

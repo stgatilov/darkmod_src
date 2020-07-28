@@ -28,4 +28,11 @@ std::vector<uint8_t> ReadWholeFile(const std::string &filename) {
     return res;
 }
 
+int GetFileSize(const std::string &filename) {
+    StdioFileHolder f(filename.c_str(), "rb");
+    fseek(f.get(), 0, SEEK_END);
+    int size = ftell(f.get());
+    return size;
+}
+
 }

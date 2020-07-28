@@ -63,7 +63,10 @@ public:
 
     //download all remote files which are necessary for update
     //returns total number of bytes downloaded
-    uint64_t DownloadRemoteFiles(const GlobalProgressCallback &progressCallback = GlobalProgressCallback());
+    uint64_t DownloadRemoteFiles(
+        const GlobalProgressCallback &progressDownloadCallback = GlobalProgressCallback(),
+        const GlobalProgressCallback &progressPostprocessCallback = GlobalProgressCallback()
+    );
 
     //having all matches available locally, perform the update
     void RepackZips(const GlobalProgressCallback &progressCallback = GlobalProgressCallback());

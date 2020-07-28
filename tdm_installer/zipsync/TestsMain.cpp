@@ -111,11 +111,17 @@ TEST_CASE("FileUtils") {
     stdext::create_directories(dir);
 
     CHECK(IfFileExists((dir / "non_existing_file.txt").string()) == false);
+    CHECK_THROWS(GetFileSize((dir / "non_existing_file.txt").string()));
     {
         StdioFileHolder f(fopen((dir / "existing_file.txt").string().c_str(), "wt"));
         fprintf(f, "Test message!\n");
     }
     CHECK(IfFileExists((dir / "existing_file.txt").string()) == true);
+    {
+        StdioFileHolder f(fopen((dir / "existing_file.bin").string().c_str(), "wb"));
+        fprintf(f, "Binary file\n");
+    }
+    CHECK(GetFileSize((dir / "existing_file.bin").string()) == 12);
 
     RenameFile((dir / "existing_file.txt").string(), (dir / "renamed_file.txt").string());
     CHECK(IfFileExists((dir / "existing_file.txt").string()) == false);

@@ -616,7 +616,11 @@ void UpdateProcess::RepackZips(const GlobalProgressCallback &progressCallback) {
     impl.DoAll();
 }
 
-uint64_t UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progressCallback) {
+
+uint64_t UpdateProcess::DownloadRemoteFiles(
+    const GlobalProgressCallback &progressDownloadCallback,
+    const GlobalProgressCallback &progressPostprocessCallback
+) {
     struct UrlData {
         PathAR path;
         StdioFileHolder file;
@@ -624,11 +628,11 @@ uint64_t UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progre
         std::map<uint32_t, int> baseToProvIdx;
         UrlData() : file(nullptr) {}
     };
-
     std::map<std::string, UrlData> urlStates;
     Downloader downloader;
-    std::set<std::string> downloadedFilenames;
     std::map<int, std::vector<int>> provIdxToMatchIds;
+
+    std::set<std::string> downloadedFilenames;
     for (int midx = 0; midx < _matches.size(); midx++) {
         const Match &m = _matches[midx];
         if (m.provided->location != FileLocation::RemoteHttp)
@@ -676,16 +680,30 @@ uint64_t UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progre
         });
     }
 
-    downloader.SetProgressCallback([this,&progressCallback](double ratio, const char *message) -> int {
-        if (progressCallback)
-            return progressCallback(ratio, message);
+    downloader.SetProgressCallback([this,&progressDownloadCallback](double ratio, const char *message) -> int {
+        if (progressDownloadCallback)
+            return progressDownloadCallback(ratio, message);
         return 0;
     });
     downloader.DownloadAll();
 
+    double totalBytesToPostprocess = DBL_EPSILON;
+    for (const auto &pKV : urlStates)
+        totalBytesToPostprocess += GetFileSize(pKV.second.path.abs);
+    double bytesPostprocessed = 0.0;
+    if (progressPostprocessCallback)
+        progressPostprocessCallback(0.0, "Verifying started");
+
     for (const auto &pKV : urlStates) {
         const std::string &url = pKV.first;
         const UrlData &state = pKV.second;
+        double rawZipSize = GetFileSize(state.path.abs);
+
+        if (progressPostprocessCallback) {
+            int code = progressPostprocessCallback(bytesPostprocessed / totalBytesToPostprocess, formatMessage("Verifying \"%s\"...", state.path.rel.c_str()).c_str());
+            if (code != 0)
+                g_logger->errorf(lcUserInterrupt, "Interrupted by user");
+        }
 
         std::vector<FileAttribInfo> fileAttribs;
         for (const auto &pOI : state.baseToProvIdx) {
@@ -744,7 +762,12 @@ uint64_t UpdateProcess::DownloadRemoteFiles(const GlobalProgressCallback &progre
         //note that we have to ensure that zip file is perfectly good in its current state!
         //otherwise user will get bad zip, and no repacking would happen to fix it...
         AddManagedZip(state.path.abs);
+
+        bytesPostprocessed += rawZipSize;
     }
+
+    if (progressPostprocessCallback)
+        progressPostprocessCallback(1.0, "Verifying finished");
 
     return downloader.TotalBytesDownloaded();
 }
