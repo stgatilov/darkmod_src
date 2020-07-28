@@ -32,13 +32,13 @@ int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, 
 	}
 
 	if (_labelWidget) {
-		double nowTime = clock();
+		double nowTime = 0.0 + time(0);
 		if (_startTime == DBL_MAX)
 			_startTime = _lastUpdateTime = nowTime;
-		if (nowTime - _lastUpdateTime > 3.0 * CLOCKS_PER_SEC) {	//refresh once in 3 seconds
+		if (nowTime - _lastUpdateTime >= 3.0) {	//refresh once in 3 seconds
 			_lastUpdateTime = nowTime;
-			double elapsedSeconds = (nowTime - _startTime) / CLOCKS_PER_SEC;
-			if (globalRatio > 1e-3 && elapsedSeconds > 10.0) {
+			double elapsedSeconds = nowTime - _startTime;
+			if (globalRatio > 1e-3 && elapsedSeconds >= 10.0) {
 				_labelWidget->show();
 				unsigned remainSeconds = unsigned((1.0 - globalRatio) / globalRatio * elapsedSeconds);
 				char buff[256];

@@ -34,10 +34,13 @@ const char *GuiChooseDirectory(const char *message) {
 
 	//customize look of file chooser
 	GuiSetStyles(fc->window);
+	fc->preview(0);
 	fc->favoritesButton->hide();
 	fc->newButton->hide();
 	fc->previewButton->hide();
 	fc->showChoice->hide();
+	fc->previewBox->hide();
+	fc->showHiddenButton->hide();
 	Fl_Widget *ch = fc->fileList;
 	Fl_Group *par = fc->fileList->parent();
 	par->resize(par->x(), par->y() - 30, par->w(), par->h() + 30);
