@@ -105,7 +105,10 @@ public:
 	operator bool() const { return data; }
 
 	virtual void Set(const char *val) { 
-		data = ( atoi( val ) != 0 );
+		int parsedVal = 0;
+		if (!(idStr::IsNumeric(val) && sscanf(val, "%d", &parsedVal) == 1))
+			common->Warning("Wrong idWinBool: \"%s\"", val);
+		data = ( parsedVal != 0 );
 		if (guiDict) {
 			guiDict->SetBool(GetName(), data);
 		}
@@ -265,7 +268,10 @@ public:
 		return data;
 	}
 	virtual void Set(const char *val) {
-		data = atoi(val);;
+		int parsedVal = 0;
+		if (!(idStr::IsNumeric(val) && sscanf(val, "%d", &parsedVal) == 1))
+			common->Warning("Wrong idWinInt: \"%s\"", val);
+		data = parsedVal;
 		if (guiDict) {
 			guiDict->SetInt(GetName(), data);
 		}
@@ -324,7 +330,10 @@ public:
 		return data;
 	}
 	virtual void Set(const char *val) {
-		data = atof(val);
+		float parsedVal = 0;
+		if (!(idStr::IsNumeric(val) && sscanf(val, "%f", &parsedVal) == 1))
+			common->Warning("Wrong idWinFloat: \"%s\"", val);
+		data = parsedVal;
 		if (guiDict) {
 			guiDict->SetFloat(GetName(), data);
 		}
@@ -422,11 +431,16 @@ public:
 		return ret;
 	}
 	virtual void Set(const char *val) {
+		int ret;
+		idRectangle v;
 		if ( strchr ( val, ',' ) ) {
-			sscanf( val, "%f,%f,%f,%f", &data.x, &data.y, &data.w, &data.h );
+			ret = sscanf( val, "%f,%f,%f,%f", &v.x, &v.y, &v.w, &v.h );
 		} else {
-			sscanf( val, "%f %f %f %f", &data.x, &data.y, &data.w, &data.h );
+			ret = sscanf( val, "%f %f %f %f", &v.x, &v.y, &v.w, &v.h );
 		}
+		if (ret != 4)
+			common->Warning("Wrong idWinRectangle: \"%s\"", val);
+		data = v;
 		if (guiDict) {
 			idVec4 v = data.ToVec4();
 			guiDict->SetVec4(GetName(), v);
@@ -493,11 +507,16 @@ public:
 		return data.y;
 	}
 	virtual void Set(const char *val) {
+		int ret;
+		idVec2 v(0.0f, 0.0f);
 		if ( strchr ( val, ',' ) ) {
-			sscanf( val, "%f,%f", &data.x, &data.y );
+			ret = sscanf( val, "%f,%f", &v.x, &v.y );
 		} else {
-		sscanf( val, "%f %f", &data.x, &data.y);
+			ret = sscanf( val, "%f %f", &v.x, &v.y);
 		}
+		if (ret != 2)
+			common->Warning("Wrong idWinVec2: \"%s\"", val);
+		data = v;
 		if (guiDict) {
 			guiDict->SetVec2(GetName(), data);
 		}
@@ -576,11 +595,17 @@ public:
 		return data.w;
 	}
 	virtual void Set(const char *val) {
+		int ret;
+		idVec4 v(0.0f, 0.0f, 0.0f, 0.0f);
 		if ( strchr ( val, ',' ) ) {
-			sscanf( val, "%f,%f,%f,%f", &data.x, &data.y, &data.z, &data.w );
+			ret = sscanf( val, "%f,%f,%f,%f", &v.x, &v.y, &v.z, &v.w );
 		} else {
-			sscanf( val, "%f %f %f %f", &data.x, &data.y, &data.z, &data.w);
+			ret = sscanf( val, "%f %f %f %f", &v.x, &v.y, &v.z, &v.w);
 		}
+		//stgatilov: "transition" expects vec4, but it often receives scalar for e.g. "rotation" property
+		if (ret != 4 && ret != 1)
+			common->Warning("Wrong idWinVec4: \"%s\"", val);
+		data = v;
 		if ( guiDict ) {
 			guiDict->SetVec4( GetName(), data );
 		}
@@ -661,7 +686,16 @@ public:
 	}
 
 	virtual void Set(const char *val) {
-		sscanf( val, "%f %f %f", &data.x, &data.y, &data.z);
+		int ret;
+		idVec3 v(0.0f, 0.0f, 0.0f);
+		if ( strchr ( val, ',' ) ) {
+			ret = sscanf( val, "%f,%f,%f", &v.x, &v.y, &v.z );
+		} else {
+			ret = sscanf( val, "%f %f %f", &v.x, &v.y, &v.z );
+		}
+		if (ret != 3)
+			common->Warning("Wrong idWinVec3: \"%s\"", val);
+		data = v;
 		if (guiDict) {
 			guiDict->SetVector(GetName(), data);
 		}
@@ -864,7 +898,10 @@ public:
 		return data;
 	}
 	virtual void Set(const char *val) {
-		data = atoi(val);
+		size_t parsedVal = 0;
+		if (!(idStr::IsNumeric(val) && sscanf(val, "%zu", &parsedVal) == 1))
+			common->Warning("Wrong idWinUIntPtr: \"%s\"", val);
+		data = parsedVal;
 		assert(!guiDict);
 	}
 
