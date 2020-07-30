@@ -385,6 +385,13 @@
     </Expand>
   </Type>
 
+  <Type Name="idWindow">
+    <DisplayString>guiwin: {name}</DisplayString>
+  </Type>
+  <Type Name="idGuiScript">
+    <DisplayString>guiscr: {handler} {parms}</DisplayString>
+  </Type>
+
   <!-- dmap data structures -->
   <Type Name="mapTri_s">
     <DisplayString>{v[0].xyz} {v[1].xyz} {v[2].xyz}</DisplayString>
