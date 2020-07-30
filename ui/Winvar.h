@@ -133,7 +133,7 @@ public:
 	virtual float x( void ) const { return data ? 1.0f : 0.0f; };
 
 protected:
-	bool data;
+	bool data = false;
 };
 
 class idWinStr : public idWinVar {
@@ -295,7 +295,7 @@ public:
 	virtual float x( void ) const { assert( false ); return 0.0f; };
 
 protected:
-	int data;
+	int data = 0;
 };
 
 class idWinFloat : public idWinVar {
@@ -350,7 +350,7 @@ public:
 
 	virtual float x( void ) const { return data; };
 protected:
-	float data;
+	float data = 0.0f;
 };
 
 class idWinRectangle : public idWinVar {
@@ -528,7 +528,7 @@ public:
 	}
 
 protected:
-	idVec2 data;
+	idVec2 data = idVec2(0.0f, 0.0f);
 };
 
 class idWinVec4 : public idWinVar {
@@ -616,7 +616,7 @@ public:
 	}
 
 protected:
-	idVec4 data;
+	idVec4 data = idVec4(0.0f, 0.0f, 0.0f, 0.0f);
 };
 
 class idWinVec3 : public idWinVar {
@@ -693,7 +693,7 @@ public:
 	}
 
 protected:
-	idVec3 data;
+	idVec3 data = idVec3(0.0f, 0.0f, 0.0f);
 };
 
 class idWinBackground : public idWinStr {
@@ -888,7 +888,7 @@ public:
 	virtual float x(void) const { assert(false); return 0.0f; };
 
 protected:
-	size_t data;
+	size_t data = 0;
 };
 
 
