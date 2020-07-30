@@ -48,7 +48,11 @@ void idWinVar::Init(const char *_name, idWindow *win) {
 		SetGuiInfo( win->GetGui()->GetStateDict(), key );
 		win->AddUpdateVar(this);
 	} else {
-		Set(_name);
+		//stgatilov: this is needed because
+		//string literals and variables look same during parsing
+		//whether it is a variable becomes known later
+		if (dynamic_cast<idWinStr*>(this))
+			Set(_name);
 	}
 }
 
