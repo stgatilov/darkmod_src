@@ -3413,6 +3413,9 @@ bool idGameEdit::AF_SpawnEntity( const char *fileName ) {
 	}
 	args.Set( "articulatedFigure", fileName );
 	args.Set( "nodrop", "1" );
+	//stgatilov: make it frobable in TDM world
+	args.Set( "frobable", "1" );
+	args.Set( "grabable", "1" );
 	ent = static_cast<idAFEntity_Generic *>(gameLocal.SpawnEntityType( idAFEntity_Generic::Type, &args));
 
 	// always update this entity
