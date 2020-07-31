@@ -199,7 +199,7 @@ public:
 	bool					NeedsReload();
 							// reload a map, returning information about changed entities
 							// used for hot reload (note: can return "fail")
-	idMapReloadInfo 		Reload();
+	idMapReloadInfo 		TryReload();
 
 	int						AddEntity( idMapEntity *mapentity );
 	idMapEntity *			FindEntity( const char *name );
@@ -229,8 +229,8 @@ struct idMapReloadInfo {
 		static int Cmp(const NameAndIdx *a, const NameAndIdx *b);
 	};
 
-	bool cannotReload = true;
 	bool mapInvalid = false;
+	bool cannotReload = true;
 	idList<NameAndIdx> modifiedEntities;
 	idList<NameAndIdx> addedEntities;
 	idList<NameAndIdx> removedEntities;

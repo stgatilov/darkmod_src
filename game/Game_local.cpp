@@ -1612,12 +1612,10 @@ void idGameLocal::HotReloadMap() {
 	}
 
 	//reload .map file
-	idMapReloadInfo info = mapFile->Reload();
+	idMapReloadInfo info = mapFile->TryReload();
 
-	if (info.cannotReload) {
-		common->Warning("HotReload: failed to reload, doing nothing");
+	if (info.cannotReload || info.mapInvalid)
 		return;
-	}
 
 	//spawn added entities
 	for (int i = 0; i < info.addedEntities.Num(); i++) {

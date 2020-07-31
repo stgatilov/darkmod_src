@@ -728,7 +728,7 @@ int idMapReloadInfo::NameAndIdx::Cmp(const NameAndIdx *a, const NameAndIdx *b) {
 	return idStr::Cmp(a->name, b->name);
 }
 
-idMapReloadInfo idMapFile::Reload() {
+idMapReloadInfo idMapFile::TryReload() {
 	idStr filename = fileName;
 	bool ignoreRegion = true;
 	if (filename.CheckExtension(".reg"))
@@ -739,8 +739,27 @@ idMapReloadInfo idMapFile::Reload() {
 	//move data from *this to res.oldMap
 	res.oldMap.reset(new idMapFile(*this));
 	this->entities.Clear();
+
+	auto RestoreOldMap = [&]() {
+		*this = *res.oldMap;
+		this->entities = res.oldMap->entities;
+		res.oldMap->entities.Clear();
+		res.oldMap.reset();
+		res = idMapReloadInfo();
+	};
+
 	//load new map
-	Parse(fileName.c_str(), ignoreRegion);
+	common->SetErrorIndirection(true);
+	try {
+		Parse(fileName.c_str(), ignoreRegion);
+	}
+	catch(std::shared_ptr<ErrorReportedException> err) {
+		common->Warning("Map not loaded: %s", err->ErrorMessage().c_str());
+		RestoreOldMap();
+		res.mapInvalid = true;
+		return res;
+	}
+	common->SetErrorIndirection(false);
 
 	typedef idMapReloadInfo::NameAndIdx NameAndIdx;
 	//write out entities, sort and check them
@@ -770,10 +789,12 @@ idMapReloadInfo idMapFile::Reload() {
 		return true;
 	};
 	idList<NameAndIdx> oldEntities, newEntities;
-	if (!PrepareListOfEntityNameAndIds(this->entities, newEntities))
-		return idMapReloadInfo();
-	if (!PrepareListOfEntityNameAndIds(res.oldMap->entities, oldEntities))
-		return idMapReloadInfo();
+	bool ok = PrepareListOfEntityNameAndIds(this->entities, newEntities);
+	ok &= PrepareListOfEntityNameAndIds(res.oldMap->entities, oldEntities);
+	if (!ok) {
+		RestoreOldMap();
+		return res;
+	}
 
 	//go over entities (merge-like) and compute difference
 	int i = 0, j = 0;
