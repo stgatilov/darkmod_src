@@ -3703,6 +3703,11 @@ void Cmd_ResetTimers_f(const idCmdArgs& args)
 }
 #endif // TIMING_BUILD 
 
+void Cmd_ReloadMap_f(const idCmdArgs& args)
+{
+	gameLocal.HotReloadMap();
+}
+
 /*
 =================
 idGameLocal::InitConsoleCommands
@@ -3837,6 +3842,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	// greebo: Added commands to alter the clipmask/contents of entities.
 	cmdSystem->AddCommand( "setClipMask",			Cmd_SetClipMask,			CMD_FL_GAME,				"Set the clipmask of the target entity, usage: 'setClipMask crate01 1313'", idGameLocal::ArgCompletion_EntityName);
 	cmdSystem->AddCommand( "setClipContents",		Cmd_SetClipContents,		CMD_FL_GAME,				"Set the contents flags of the target entity, usage: 'setClipContents crate01 1313'", idGameLocal::ArgCompletion_EntityName);
+
+	// stgatilov: hot-reload feature
+	cmdSystem->AddCommand( "reloadMap",				Cmd_ReloadMap_f,			CMD_FL_GAME,				"Reload .map file and try to update running game accordingly" );
 
 	// localization help commands
 	cmdSystem->AddCommand( "nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui" );

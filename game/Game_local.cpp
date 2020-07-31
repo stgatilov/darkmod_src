@@ -1601,6 +1601,91 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	m_searchManager->Clear(); // grayman #3857
 }
 
+void idGameLocal::HotReloadMap() {
+	if (!mapFile) {
+		common->Warning("HotReload: idGameLocal has no mapFile stored");
+		return;
+	}
+	if (!mapFile->NeedsReload()) {
+		common->DPrintf("HotReload: mapFile does not need reload");
+		return;
+	}
+
+	//reload .map file
+	idMapReloadInfo info = mapFile->Reload();
+
+	if (info.cannotReload) {
+		common->Warning("HotReload: failed to reload, doing nothing");
+		return;
+	}
+
+	//spawn added entities
+	for (int i = 0; i < info.addedEntities.Num(); i++) {
+		const char *name = info.addedEntities[i].name;
+		idMapEntity *mapEnt = mapFile->GetEntity(info.addedEntities[i].idx);
+		idDict args = mapEnt->epairs;
+		if (idEntity *exEnt = gameEdit->FindEntity(name)) {
+			//note: this should not happen actually...
+			common->Warning("HotReload: multiple entities with name %s: rename the new one!");
+			continue;
+		}
+		gameEdit->SpawnEntityDef(args, NULL, idGameEdit::sedRespectInhibit);
+	}
+
+	//kill removed entities
+	for (int i = 0; i < info.removedEntities.Num(); i++) {
+		const char *name = info.removedEntities[i].name;
+		if (idStr::Cmp(name, DARKMOD_LG_ENTITY_NAME) == 0)
+			continue;	//lightgem is added dynamically, so it is always "removed"
+		idEntity *ent = gameEdit->FindEntity(name);
+		if (!ent)
+			continue;
+		gameEdit->EntityDelete(ent, true);
+	}
+
+	//update modified entities
+	for (int i = 0; i < info.modifiedEntities.Num(); i++) {
+		const char *name = info.modifiedEntities[i].name;
+		if (idStr::Cmp(name, "worldspawn") == 0)
+			continue;	//world not updateable yet
+		idMapEntity *newMapEnt = mapFile->FindEntity(name);
+		idMapEntity *oldMapEnt = info.oldMap->FindEntity(name);
+		assert(newMapEnt && oldMapEnt);
+
+		idDict newArgs = newMapEnt->epairs;
+		idDict oldArgs = oldMapEnt->epairs;
+		idEntity *ent = FindEntity(name);
+		if (!ent) {
+			gameEdit->SpawnEntityDef(newArgs, NULL, idGameEdit::sedRespectInhibit);
+			continue;
+		}
+
+		const char *oldValue = nullptr, *newValue = nullptr;
+		auto HasChanged = [&](const char *key) -> bool {
+			oldValue = oldArgs.GetString(key);
+			newValue = newArgs.GetString(key);
+			return idStr::Cmp(oldValue, newValue) != 0;
+		};
+
+		gameEdit->EntityChangeSpawnArgs( ent, &newArgs );
+		gameEdit->EntityUpdateChangeableSpawnArgs( ent, NULL );
+		if (HasChanged("model")) {
+			idStr newModel = newArgs.GetString("model");
+			gameEdit->EntitySetModel(ent, newModel);
+		}
+		if (HasChanged("origin")) {
+			idVec3 newOrigin = newArgs.GetVector("origin");
+			gameEdit->EntitySetOrigin(ent, newOrigin);
+		}
+		if (HasChanged("rotation")) {
+			idMat3 newAxis = newArgs.GetMatrix("rotation");
+			gameEdit->EntitySetAxis(ent, newAxis);
+		}
+
+		gameEdit->EntityUpdateVisuals( ent );
+	}
+}
+
 /*
 ===================
 idGameLocal::LocalMapRestart
