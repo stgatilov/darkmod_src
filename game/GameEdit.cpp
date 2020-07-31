@@ -734,7 +734,11 @@ const idDict *idGameEdit::FindEntityDefDict( const char *name, bool makeDefault 
 idGameEdit::SpawnEntityDef
 ================
 */
-void idGameEdit::SpawnEntityDef( const idDict &args, idEntity **ent ) {
+void idGameEdit::SpawnEntityDef( const idDict &args, idEntity **ent, int flags ) {
+	if ((flags & sedRespectInhibit) && gameLocal.InhibitEntitySpawn(args))
+		return;	//inhibited
+	if (flags & sedCacheMedia)
+		gameLocal.CacheDictionaryMedia(&args);
 	gameLocal.SpawnEntityDef( args, ent );
 }
 
@@ -918,8 +922,11 @@ void idGameEdit::EntityStopSound( idEntity *ent ) {
 idGameEdit::EntityDelete
 ================
 */
-void idGameEdit::EntityDelete( idEntity *ent ) {
-	delete ent;
+void idGameEdit::EntityDelete( idEntity *ent, bool safe ) {
+	if (safe)
+		ent->PostEventMS(&EV_Remove, 0);
+	else
+		delete ent;
 }
 
 /*

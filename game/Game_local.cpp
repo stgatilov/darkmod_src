@@ -5186,7 +5186,7 @@ const idDict *idGameLocal::FindEntityDefDict( const char *name, bool makeDefault
 idGameLocal::InhibitEntitySpawn
 ================
 */
-bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
+bool idGameLocal::InhibitEntitySpawn( const idDict &spawnArgs ) {
 	bool inhibit_spawn = false;
 
 	// #3933 prevent inlined FS from spawning

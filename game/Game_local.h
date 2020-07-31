@@ -788,6 +788,9 @@ public:
 	idEntity *				SpawnEntityType( const idTypeInfo &classdef, const idDict *args = NULL, bool bIsClientReadSnapshot = false );
 	bool					SpawnEntityDef( const idDict &args, idEntity **ent = NULL, bool setDefaults = true );
 	int						GetSpawnId( const idEntity *ent ) const;
+							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
+	bool					InhibitEntitySpawn( const idDict &spawnArgs );
+
 
 	const idDeclEntityDef *	FindEntityDef( const char *name, bool makeDefault = true ) const;
 	const idDict *			FindEntityDefDict( const char *name, bool makeDefault = true ) const;
@@ -1069,8 +1072,6 @@ private:
 	int							m_GUICommandArgs;
 
 	void					Clear( void );
-							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
-	bool					InhibitEntitySpawn( idDict &spawnArgs );
 
 							// spawn entities from the map file
 	void					SpawnMapEntities( void );

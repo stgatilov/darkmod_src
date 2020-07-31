@@ -242,9 +242,14 @@ public:
 	// Selection methods
 	virtual void				TriggerSelected();
 
+	//flags passed to SpawnEntityDef function
+	enum SpawnEntityDef_Flags {
+		sedRespectInhibit = 0x1,
+		sedCacheMedia = 0x2,
+	};
 	// Entity defs and spawning.
 	virtual const idDict *		FindEntityDefDict( const char *name, bool makeDefault = true ) const;
-	virtual void				SpawnEntityDef( const idDict &args, idEntity **ent );
+	virtual void				SpawnEntityDef( const idDict &args, idEntity **ent, int flags = 0 );
 	virtual idEntity *			FindEntity( const char *name ) const;
 	virtual const char *		GetUniqueEntityName( const char *classname ) const;
 
@@ -260,7 +265,7 @@ public:
 	virtual void				EntityUpdateVisuals( idEntity *ent );
 	virtual void				EntitySetModel( idEntity *ent, const char *val );
 	virtual void				EntityStopSound( idEntity *ent );
-	virtual void				EntityDelete( idEntity *ent );
+	virtual void				EntityDelete( idEntity *ent, bool safe = false );
 	virtual void				EntitySetColor( idEntity *ent, const idVec3 color );
 
 	// Player methods.
