@@ -696,6 +696,21 @@ unsigned int idMapEntity::GetGeometryCRC( void ) const {
 	return crc;
 }
 
+bool idMapEntity::NeedsReload(const idMapEntity *oldEntity) const {
+	const idDict &a = epairs, &b = oldEntity->epairs;
+	int m = a.GetNumKeyVals();
+	int n = b.GetNumKeyVals();
+	if (m != n)
+		return true;
+	for (int i = 0; i < n; i++) {
+		if (a.GetKeyVal(i) == b.GetKeyVal(i))
+			continue;
+		return true;
+	}
+	if (GetGeometryCRC() != oldEntity->GetGeometryCRC())
+		return true;
+	return false;
+}
 
 idMapFile::idMapFile( void ) {
 	version = CURRENT_MAP_VERSION;
@@ -707,6 +722,88 @@ idMapFile::idMapFile( void ) {
 
 idMapFile::~idMapFile( void ) {
 	entities.DeleteContents( true );
+}
+
+int idMapReloadInfo::NameAndIdx::Cmp(const NameAndIdx *a, const NameAndIdx *b) {
+	return idStr::Cmp(a->name, b->name);
+}
+
+idMapReloadInfo idMapFile::Reload() {
+	idStr filename = fileName;
+	bool ignoreRegion = true;
+	if (filename.CheckExtension(".reg"))
+		ignoreRegion = false;
+	filename.StripFileExtension();
+
+	idMapReloadInfo res;
+	//move data from *this to res.oldMap
+	res.oldMap.reset(new idMapFile(*this));
+	this->entities.Clear();
+	//load new map
+	Parse(fileName.c_str(), ignoreRegion);
+
+	typedef idMapReloadInfo::NameAndIdx NameAndIdx;
+	//write out entities, sort and check them
+	auto PrepareListOfEntityNameAndIds = [](const idList<idMapEntity*> &entities, idList<NameAndIdx> &result) -> bool {
+		for (int i = 0; i < entities.Num(); i++) {
+			idMapEntity *ent = entities[i];
+			if (const idKeyValue *kv = ent->epairs.FindKey("name") )
+				result.AddGrow({kv->GetValue().c_str(), i});
+			else {
+				if (idStr::Cmp(ent->epairs.GetString("classname", ""), "worldspawn") == 0)
+					result.AddGrow({"worldspawn", i});
+				else {
+					common->Warning("idMapFile::Reload: no difference because of unnamed entity %d", i);
+					return false;	//unnamed entity: can't detect anything
+				}
+			}
+		}
+		result.Sort(NameAndIdx::Cmp);
+		for (int i = 1; i < result.Num(); i++)
+			if (NameAndIdx::Cmp(&result[i-1], &result[i]) == 0) {
+				common->Warning(
+					"idMapFile::Reload: no difference because name %s is used twice: %d and %d",
+					result[i].name, result[i-1].idx, result[i].idx
+				);
+				return false;
+			}
+		return true;
+	};
+	idList<NameAndIdx> oldEntities, newEntities;
+	if (!PrepareListOfEntityNameAndIds(this->entities, newEntities))
+		return idMapReloadInfo();
+	if (!PrepareListOfEntityNameAndIds(res.oldMap->entities, oldEntities))
+		return idMapReloadInfo();
+
+	//go over entities (merge-like) and compute difference
+	int i = 0, j = 0;
+	while (i < newEntities.Num() || j < oldEntities.Num()) {
+		int cmp;
+		if (i == newEntities.Num())
+			cmp = 1;
+		else if (j == oldEntities.Num())
+			cmp = -1;
+		else
+			cmp = NameAndIdx::Cmp(&newEntities[i], &oldEntities[j]);
+
+		if (cmp == 0) {	//two entities with equal name
+			const idMapEntity *newEnt = this->GetEntity(newEntities[i].idx);
+			const idMapEntity *oldEnt = res.oldMap->GetEntity(oldEntities[j].idx);
+			if (newEnt->NeedsReload(oldEnt))
+				res.modifiedEntities.AddGrow(newEntities[i]);
+			i++;  j++;
+		}
+		else {
+			if (cmp < 0)
+				res.addedEntities.AddGrow(newEntities[i++]);
+			else
+				res.removedEntities.AddGrow(oldEntities[j++]);
+		}
+	}
+
+	//now we are certain we computed diff properly
+	res.cannotReload = false;
+	return res;
 }
 
 /*

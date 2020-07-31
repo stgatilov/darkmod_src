@@ -162,11 +162,14 @@ public:
 	void					AddPrimitive( idMapPrimitive *p ) { primitives.Append( p ); }
 	unsigned int			GetGeometryCRC( void ) const;
 	void					RemovePrimitiveData();
+	bool					NeedsReload(const idMapEntity *oldEntity) const;
 
 protected:
 	idList<idMapPrimitive*>	primitives;
 };
 
+
+struct idMapReloadInfo;
 
 class idMapFile {
 public:
@@ -194,6 +197,9 @@ public:
 	unsigned int			GetGeometryCRC( void ) const { return geometryCRC; }
 							// returns true if the file on disk changed
 	bool					NeedsReload();
+							// reload a map, returning information about changed entities
+							// used for hot reload (note: can return "fail")
+	idMapReloadInfo 		Reload();
 
 	int						AddEntity( idMapEntity *mapentity );
 	idMapEntity *			FindEntity( const char *name );
@@ -213,6 +219,22 @@ protected:
 
 private:
 	void					SetGeometryCRC( void );
+};
+
+//stgatilov: used to detect which entities changed during idMapFile::Reload
+struct idMapReloadInfo {
+	struct NameAndIdx {
+		const char *name;
+		int idx;
+		static int Cmp(const NameAndIdx *a, const NameAndIdx *b);
+	};
+
+	bool cannotReload = true;
+	bool mapInvalid = false;
+	idList<NameAndIdx> modifiedEntities;
+	idList<NameAndIdx> addedEntities;
+	idList<NameAndIdx> removedEntities;
+	std::unique_ptr<idMapFile> oldMap;
 };
 
 #endif /* !__MAPFILE_H__ */
