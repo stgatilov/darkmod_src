@@ -548,6 +548,8 @@ void CBinaryFrobMover::TellRegisteredUsers()
 	for (int i = 0 ; i < numUsers ; i++)
 	{
 		idAI* ai = m_registeredAI[i].GetEntity();
+		if (!ai)	//stgatilov #5318: AI already died
+			continue;
 		idAAS* aas = ai->GetAAS();
 		if (aas != NULL)
 		{
