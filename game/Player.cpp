@@ -6569,6 +6569,12 @@ void idPlayer::AdjustSpeed( void )
 		float walkSpeed = pm_walkspeed.GetFloat();
 
 		speed = walkSpeed * cv_pm_runmod.GetFloat();
+		// apply creep modifier; creep is on button_5
+		const bool bCreeping = (usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool();
+		if (bCreeping)
+		{
+			speed *= (cv_pm_running_creepmod.GetFloat());
+		}
 
 		// greebo: Only adjust bob fraction if actually running
 		if (physicsObj.HasRunningVelocity())
