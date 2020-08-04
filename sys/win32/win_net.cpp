@@ -1142,7 +1142,7 @@ bool idTCP::Listen(short port) {
 	struct addrinfo* res = 0;
 	int err = getaddrinfo(hostname, portname, &hints, &res);
 	if (err != 0) {
-	    common->Printf("ERROR: idTCP::Listen: getaddrinfo: %s", NET_ErrorString());
+		common->Printf("ERROR: idTCP::Listen: getaddrinfo: %s", NET_ErrorString());
 		goto cleanup;
 	}
 
@@ -1199,6 +1199,8 @@ idTCP* idTCP::Accept() {
 		common->Printf( "ERROR: idTCP::Listen: accept: %s\n", NET_ErrorString());
 		return nullptr;
 	}
+	//note: blocking mode IS inherited on Windows:
+	//  https://stackoverflow.com/a/58500188/556899
 
 	idTCP *res = new idTCP();
 	res->fd = client_fd;

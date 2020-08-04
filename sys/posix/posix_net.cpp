@@ -769,10 +769,103 @@ int	idTCP::Write(const void *data, int size) {
 }
 
 bool idTCP::Listen(short port) {
-	//TODO: implement (copy from win_net.cpp)
+	if ( fd )
+		common->Warning( "idTCP::Listen: already initialized?" );
+
+	const char* hostname = 0; /* wildcard */
+	char portname[16];
+	sprintf(portname, "%d", int(port));
+
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_family = AF_INET;			//IPv4
+	hints.ai_socktype = SOCK_STREAM;	//TCP
+	hints.ai_protocol = IPPROTO_TCP;
+
+	struct addrinfo* res = 0;
+	int err = getaddrinfo(hostname, portname, &hints, &res);
+	if (err != 0) {
+		common->Printf("ERROR: idTCP::Listen: getaddrinfo: %d\n", err);
+		goto cleanup;
+	}
+
+	if ((fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
+		fd = 0;
+		common->Printf( "ERROR: idTCP::Listen: socket: %d\n", errno);
+		goto cleanup;
+	}
+
+	int status;
+	if ((status = fcntl(fd, F_GETFL, 0)) != -1) {
+		status |= O_NONBLOCK;
+		status = fcntl(fd, F_SETFL, status);
+	}
+	if (status == -1) {
+		common->Printf( "ERROR: idTCP::Listen: fcntl O_NONBLOCK: %d\n", errno );
+		goto cleanup;
+	}
+
+	if (bind(fd, res->ai_addr, (int)res->ai_addrlen) == -1) {
+		common->Printf( "ERROR: idTCP::Listen: bind: %d\n", errno);
+		goto cleanup;
+	}
+
+	if (listen(fd, 5) == -1) {
+		common->Printf( "ERROR: idTCP::Listen: listen: %d\n", errno);
+		goto cleanup;
+	}
+
+	freeaddrinfo(res);
+	return true;
+
+cleanup:
+	if (fd > 0)
+		close(fd);
+	fd = 0;
+	if (res)
+		freeaddrinfo(res);
 	return false;
 }
+
 idTCP* idTCP::Accept() {
-	//TODO: implement (copy from win_net.cpp)
-	return nullptr;
+	if ( !fd )
+		common->Warning( "idTCP::Accept: socket not created yet" );
+
+	int value = 0;
+	socklen_t size = sizeof(value);
+	if (getsockopt(fd, SOL_SOCKET, SO_ACCEPTCONN, (char*)&value, &size) == -1 || value == 0) {
+		common->Printf( "ERROR: idTCP::Accept: socket not listening\n");
+		return nullptr;
+	}
+
+	sockaddr_in client_addr;
+	socklen_t addr_len = sizeof(client_addr);
+	int client_fd = accept(fd, (sockaddr*)&client_addr, &addr_len);
+	if (client_fd == -1) {
+		if (errno == EWOULDBLOCK || errno == EAGAIN)
+			return nullptr;	//no incoming clients yet
+		common->Printf( "ERROR: idTCP::Listen: accept: %d\n", errno);
+		return nullptr;
+	}
+
+	//note: blocking mode is NOT inherited on POSIX:
+	//  https://stackoverflow.com/a/58500188/556899
+	int status;
+	if ((status = fcntl(client_fd, F_GETFL, 0)) != -1) {
+		status |= O_NONBLOCK;
+		status = fcntl(client_fd, F_SETFL, status);
+	}
+	if (status == -1) {
+		common->Printf( "ERROR: idTCP::Accept: fcntl O_NONBLOCK: %d\n", errno );
+		close(client_fd);
+		return nullptr;
+	}
+
+	idTCP *res = new idTCP();
+	res->fd = client_fd;
+	res->address.type = NA_IP;
+	res->address.port = client_addr.sin_port;
+	memcpy(res->address.ip, &client_addr.sin_addr, 4);
+	return res;
 }
