@@ -47,7 +47,7 @@ bool idDeclSkin::Parse( const char *text, const int textLength ) {
 	idToken	token, token2;
 
 	src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
-	src.SetFlags( DECL_LEXER_FLAGS );
+	src.SetFlags( DECL_LEXER_FLAGS | LEXFL_ONLYSTRINGS );
 	src.SkipUntilString( "{" );
 
 	associatedModels.Clear();
