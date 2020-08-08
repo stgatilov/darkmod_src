@@ -209,7 +209,7 @@ namespace {
 	}
 
 	void InitShadowMapShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs", program->GetName() + ".gs" );
+		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs"/*, program->GetName() + ".gs"*/ );
 		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 		depthUniforms->instances = 6;
 		depthUniforms->acceptsTranslucent = true; //duzenko: wait, what?
