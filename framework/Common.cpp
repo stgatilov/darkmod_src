@@ -520,7 +520,7 @@ idStr idCommonLocal::GetConsoleContents(int begin, int end) {
 	idStr res;
 	res.Fill(' ', len);
 	f->Read((char*)res.c_str(), len);
-	fileSystem->FreeFile(f);
+	delete f;
 	return res;
 }
 
