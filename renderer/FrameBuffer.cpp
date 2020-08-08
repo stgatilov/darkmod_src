@@ -324,10 +324,8 @@ Utility function,
 if you absolutly must check for anything out of the ordinary, then do it here.
 ====================
 */
-void GL_ViewportAbsolute( int x, int y, int w, int h )
-{
-	if ( (w <= 0) || (h <= 0) )
-	{
+void GL_ViewportAbsolute( int x, int y, int w, int h ) {
+	if (w <= 0 || h <= 0) {
 		return;
 	}
 	qglViewport(x, y, w, h);
