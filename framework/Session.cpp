@@ -1379,7 +1379,7 @@ void idSessionLocal::LoadLoadingGui( const char *mapName ) {
 		}
 	}
 
-	guiLoading->SetStateFloat( "map_loading", 0.0f );
+	guiLoading->SetStateFloat( "1 map_loading", 0.0f );
 }
 
 /*
