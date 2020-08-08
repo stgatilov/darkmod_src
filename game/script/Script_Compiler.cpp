@@ -2666,7 +2666,8 @@ void idCompiler::CompileFile( const char *text, const char *filename, bool toCon
 	parser.FreeSource();
 
 	compile_time.Stop();
-	if ( !toConsole ) {
+	//stgatilov: the idProgram::filename memory is often invalidated in idCompiler::NextToken -> idProgram::GetFilenum
+	/*if ( !toConsole ) {
 		gameLocal.Printf( "Compiled '%s': %.1f ms\n", filename, compile_time.Milliseconds() );
-	}
+	}*/
 }
