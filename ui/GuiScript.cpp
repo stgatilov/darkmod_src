@@ -479,7 +479,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 			} else if ( precacheSounds ) {
 				// Search for "play <...>"
 				idToken token;
-				idParser parser( LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
+				idParser parser( LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWPATHNAMES );
 				parser.LoadMemory(str->c_str(), str->Length(), "command");
 
 				while ( parser.ReadToken(&token) ) {
