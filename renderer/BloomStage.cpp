@@ -24,7 +24,6 @@
 #include "GLSLProgram.h"
 #include "Profiling.h"
 #include "GLSLUniforms.h"
-#include "glsl.h"
 #include "FrameBufferManager.h"
 #include "FrameBuffer.h"
 
@@ -162,6 +161,7 @@ void BloomStage::ComputeBloomFromRenderImage() {
 
 	qglClearColor(0, 0, 0, 0);
 
+	qglDisable(GL_SCISSOR_TEST);
 	// To get a soft, wide blur for the Bloom effect cheaply, we use the following approach:
 	// 1. do a bright pass on the original render image and downsample it in several steps
 	// 2. apply a Gaussian blur filter multiple times on the downsampled image
@@ -174,6 +174,7 @@ void BloomStage::ComputeBloomFromRenderImage() {
 
 	frameBuffers->currentRenderFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
+	qglEnable(GL_SCISSOR_TEST);
 }
 
 void BloomStage::BindBloomTexture() {
