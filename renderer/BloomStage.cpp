@@ -162,6 +162,7 @@ void BloomStage::ComputeBloomFromRenderImage() {
 	qglClearColor(0, 0, 0, 0);
 
 	qglDisable(GL_SCISSOR_TEST);
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_ALWAYS );
 	// To get a soft, wide blur for the Bloom effect cheaply, we use the following approach:
 	// 1. do a bright pass on the original render image and downsample it in several steps
 	// 2. apply a Gaussian blur filter multiple times on the downsampled image
