@@ -289,7 +289,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
 	uniforms->advanced.Set( r_interactionProgram.GetInteger() );
-	uniforms->gamma.Set( r_ambientGamma.GetFloat() );
+	uniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	uniforms->minLevel.Set( r_ambientMinLevel.GetFloat() );
 	uniforms->useBumpmapLightTogglingFix.Set( r_useBumpmapLightTogglingFix.GetBool() );
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
