@@ -86,6 +86,7 @@ private:
 	bool						interactive;
 	bool						uniqued;
 
+	idDict						defines;
 	idDict						state;
 	idWindow *					desktop;
 	idWindow *					bindHandler;
