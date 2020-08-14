@@ -193,6 +193,32 @@ define_t *idParser::FindDefine( define_t *defines, const char *name ) {
 	return NULL;
 }
 
+
+idStrList idParser::GetAllDefineNames(bool sorted) {
+	idStrList ret;
+	for (int i = 0; i < DEFINEHASHSIZE; i++) {
+		for (define_t *def = definehash[i]; def; def = def->hashnext ) {
+			ret.Append(def->name);
+		}
+	}
+	if (sorted) {
+		auto comparator = [](const idStr *a, const idStr *b) -> int {
+			return (*a == *b ? 0 : (*a < *b ? -1 : 1));
+		};
+		ret.Sort(comparator);
+	}
+	return ret;
+}
+
+idStr idParser::GetDefineValueString(const char *name) {
+	define_t *def = FindHashedDefine(definehash, name);
+	idStr ret;
+	for (idToken *token = def->tokens; token; token = token->next) {
+		ret += *token;
+	}
+	return ret;
+}
+
 /*
 ================
 idParser::FindDefineParm

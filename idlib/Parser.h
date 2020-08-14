@@ -165,6 +165,12 @@ public:
 					// set the base folder to load files from
 	static void		SetBaseFolder( const char *path );
 
+					// stgatilov: returns a set of names of all defines
+	idList<idStr>	GetAllDefineNames(bool sorted = true);
+					// stgatilov: returns string representation of macro value
+					// it is just concatenation of all replacement tokens (useful for constants)
+	idStr			GetDefineValueString(const char *name);
+
 private:
 	int				loaded;						// set when a source file is loaded from file or memory
 	idStr			filename;					// file name of the script
