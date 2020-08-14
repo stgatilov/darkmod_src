@@ -877,9 +877,6 @@ void CShop::DisplayShop(idUserInterface *gui)
 
 	idStr filename = va("maps/%s", curStartingMap.c_str());
 
-	// Let the GUI know which map to load
-	gui->SetStateString("mapStartCmd", va("exec 'map %s'", curStartingMap.c_str()));
-
 	// Load the map from the missiondata class (provides cached loading)
 	idMapFile* mapFile = gameLocal.m_MissionData->LoadMap(filename);
 

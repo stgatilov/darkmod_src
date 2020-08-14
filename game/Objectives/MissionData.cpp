@@ -2429,9 +2429,6 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	{
 		gui->HandleNamedEvent("GetObjectivesInfo");
 
-		// Let the GUI know which map to load
-		gui->SetStateString("mapStartCmd", va("exec 'map %s'", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str()));
-
 		if (!gui->GetStateBool("ingame") && gameLocal.m_MissionResult != MISSION_COMPLETE )
 		{
 			// We're coming from the start screen

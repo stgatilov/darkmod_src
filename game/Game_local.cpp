@@ -4481,6 +4481,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		m_MissionManager->SetCurrentMissionIndex(0);
 		gui->SetStateInt("CurrentMission", 1);
 
+		// Let the GUI know which map to load
+		idStr mapToStart = m_MissionManager->GetCurrentStartingMap();
+		gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapToStart.c_str()));
+
 		ClearPersistentInfo();
 	}
 	else if (cmd == "setlang")
