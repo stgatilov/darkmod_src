@@ -101,6 +101,9 @@ public:
 
 	//stgatilov: allows clicking GUI buttons in automation
 	virtual const char*			RunGuiScript(const char *windowName, int scriptNum) = 0;
+
+	//stgatilov: has same effect as "resetTime" command in GUI script.
+	virtual bool				ResetWindowTime(const char *windowName, int startTime = 0) = 0;
 };
 
 

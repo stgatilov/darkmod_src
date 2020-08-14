@@ -665,3 +665,15 @@ const char *idUserInterfaceLocal::RunGuiScript(const char *windowName, int scrip
 		return NULL;
 	return dw->win->cmd.c_str();
 }
+
+bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime) {
+	idWindow *rootWin = GetDesktop();
+	if (!rootWin)
+		return false;
+	drawWin_t *dw = rootWin->FindChildByName(windowName);
+	if (!dw || !dw->win)
+		return false;
+	dw->win->ResetTime(startTime);
+	dw->win->EvalRegs(-1, true);
+	return true;
+}

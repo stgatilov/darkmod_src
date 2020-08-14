@@ -57,6 +57,7 @@ public:
 	virtual float				CursorX() { return cursorX; }
 	virtual float				CursorY() { return cursorY; }
 	virtual const char*			RunGuiScript(const char *windowName, int scriptNum);
+	virtual bool				ResetWindowTime(const char *windowName, int startTime = 0);
 
 	size_t						Size();
 
