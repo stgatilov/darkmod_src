@@ -1077,8 +1077,13 @@ void idWindow::Time() {
 			}
 		}
 	}
-	if ( gui->Active() ) {
-		gui->GetPendingCmd() += cmd;
+	if ( gui->Active() && cmd.Length() > 0) {
+		if (gui->GetPendingCmd().Length() > 0) {
+			gui->GetPendingCmd() += " ; ";
+			gui->GetPendingCmd() += cmd;
+		}
+		else
+			gui->GetPendingCmd() = cmd;
 	}
 }
 

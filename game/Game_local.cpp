@@ -3780,6 +3780,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		
 		In the following examples, there is usually another call to this routine with ";"
 		as the "menuCommand" param. But sometimes it does not appear, depending on whoknows.
+		(stgatilov 2.09: outer code breaks full cmd string into tokens and passes every token here)
 
 		The following will cause this routine called twice (!), once with "mainmenu_heartbeat"
 		and once with ";" as command (if you add ";" before the last double quote, it will
@@ -3807,8 +3808,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		To work around this issue, we call ExecuteCommandBuffer( void ) whenever we see an
 		initChoice command, in the hopes that the buffer won't overflow until the next one.
 
+		(stgatilov 2.09: the sporadic words contatentation was caused by a bug in cmd merging code.
+		Among several places which merge command strings, most put a semicolon and spaces in-between.
+		But one piece of code did not have it --- end of idWindow::Time)
+
 		The old code simply watched for certain words, and then issued the command. It was not
 		able to distinguish between commands and arguments.
+		(stgatilov 2.09: unfortunately, the outer code still does it now for builtin keywords)
 
 		This routine now watches for the first command, ignoring any stray ";". If it sees
 		a command, it deduces the number of following arguments, and then collects them until
