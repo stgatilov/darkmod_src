@@ -441,10 +441,10 @@ void CFrobDoor::ClearDoorTravelFlag()
 			valid_aas = true;
 		}
 	}
-	if (!valid_aas)
+	/*if (!valid_aas)
 	{
 		gameLocal.Warning("Door %s is not within a valid AAS area", name.c_str());
-	}
+	}*/
 }
 
 void CFrobDoor::Lock(bool bMaster)
