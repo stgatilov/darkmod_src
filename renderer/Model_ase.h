@@ -53,7 +53,8 @@ typedef struct {
 } aseMesh_t;
 
 typedef struct {
-	char					name[128];
+	char					name[127];
+	bool					referenced;				// stgatilov: true if this material is referenced
 	float					uOffset, vOffset;		// max lets you offset by material without changing texCoords
 	float					uTiling, vTiling;		// multiply tex coords by this
 	float					angle;					// in clockwise radians

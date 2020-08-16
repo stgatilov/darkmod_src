@@ -161,7 +161,6 @@ static void ASE_KeyMAP_DIFFUSE( const char *token )
 
 	if ( !strcmp( token, "*BITMAP" ) )
 	{
-		idStr	qpath;
 		idStr	matname;
 
 		ASE_GetToken( false );
@@ -175,8 +174,8 @@ static void ASE_KeyMAP_DIFFUSE( const char *token )
 
 		// convert the 3DSMax material pathname to a qpath
 		matname.BackSlashesToSlashes();
-		qpath = fileSystem->OSPathToRelativePath( matname );
-		idStr::Copynz( ase.currentMaterial->name, qpath, sizeof( ase.currentMaterial->name ) );
+		// stgatilov: path will be converted later, when/if this material is referenced
+		idStr::Copynz( ase.currentMaterial->name, matname, sizeof( ase.currentMaterial->name ) );
 	}
 	else if ( !strcmp( token, "*UVW_U_OFFSET" ) )
 	{
@@ -809,6 +808,23 @@ aseModel_t *ASE_Parse( const char *buffer, bool verbose ) {
 		} else if ( ase.token[0] ) {
 			common->Printf( "Unknown token '%s'\n", ase.token );
 		}
+	}
+
+	//stgatilov: normalize all referenced paths
+	for (int i = 0; i < ase.model->objects.Num(); i++) {
+		int ref = ase.model->objects[i]->materialRef;
+		if (ref < 0 || ref >= ase.model->materials.Num()) {
+			assert(false);	//I think it never happens
+			continue;
+		}
+		ase.model->materials[ref]->referenced = true;
+	}
+	for (int i = 0; i < ase.model->materials.Num(); i++) {
+		aseMaterial_t *mat = ase.model->materials[i];
+		if (!mat->referenced)
+			continue;	//typical for DefaultMaterial with empty BITMAP
+		idStr qpath = fileSystem->OSPathToRelativePath(mat->name);
+		idStr::Copynz(mat->name, qpath, sizeof(mat->name));
 	}
 
 	return ase.model;
