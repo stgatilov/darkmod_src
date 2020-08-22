@@ -4003,39 +4003,54 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "mainmenumodeselect")
 	{
 		struct MainMenuStateInfo {
-			//properties:
 			idStr name;				//e.g. BRIEFING   (MM_STATE_ is prepended)
 			idStr constructor;		//e.g. BriefingStateInit
 			idStr destructor;		//e.g. BriefingStateEnd
-			//transitions:
-			idStr forwardState;		//e.g. DIFF_SELECT
-			idStr backwardState;	//e.g. MOD_SELECT
-			idStr escapeState;		//e.g. MAINMENU
+		};
+		struct MainMenuTransition {
+			idStr from;				//e.g. BRIEFING
+			idStr action;			//e.g. FORWARD
+			idStr to;				//e.g. DIFF_SELECT
 		};
 		static const MainMenuStateInfo STATES[] = {
-			{"NONE", NULL, NULL, NULL, NULL, NULL},
-			{"MAINMENU", NULL, NULL, NULL, NULL, NULL},
-			{"START_GAME", NULL, NULL, NULL, NULL, NULL},
-			{"END_GAME", NULL, NULL, NULL, NULL, NULL},
-			{"MAINMENU_INGAME", "MainMenuInGameStateInit", "MainMenuInGameStateEnd", NULL, NULL, NULL},
-			{"MAINMENU_NOTINGAME", "MainMenuStateInit", "MainMenuStateEnd", NULL, NULL, NULL},
-			{"QUITGAME", "QuitGameStateInit", "QuitGameStateEnd", NULL, NULL, NULL},
-			{"CREDITS", "CreditsMenuStateInit", "CreditsMenuStateEnd", NULL, NULL, NULL},
-			{"LOAD_SAVE_GAME", "LoadSaveGameMenuStateInit", "LoadSaveGameMenuStateEnd", NULL, NULL, NULL},
-			{"SUCCESS", "SuccessScreenStateInit", "SuccessScreenStateEnd", NULL, NULL, NULL},
-			{"BRIEFING", "BriefingStateInit", "BriefingStateEnd", NULL, NULL, NULL},
-			{"BRIEFING_VIDEO", "BriefingVidStateInit", "BriefingVidStateEnd", NULL, NULL, NULL},
-			{"OBJECTIVES", "ObjectivesStateInit", "ObjectivesStateEnd", NULL, NULL, NULL},
-			{"SHOP", "ShopMenuStateInit", "ShopMenuStateEnd", NULL, NULL, NULL},
-			{"SETTINGS", "SettingsMenuStateInit", "SettingsMenuStateEnd", NULL, NULL, NULL},
-			{"SELECT_LANGUAGE", "SelectLanguageStateInit", "SelectLanguageStateEnd", NULL, NULL, NULL},
-			{"DOWNLOAD", "DownloadMissionsMenuStateInit", "DownloadMissionsMenuStateEnd", NULL, NULL, NULL},
-			{"DEBRIEFING_VIDEO", "DebriefingVideoStateInit", "DebriefingVideoStateEnd", NULL, NULL, NULL},
-			{"GUISIZE", "SettingsGuiSizeInit", "GuiSizeMenuStateEnd", NULL, NULL, NULL},
-			{"MOD_SELECT", "NewGameMenuStateInit", "NewGameMenuStateEnd", NULL, NULL, NULL},
-			{"DIFF_SELECT", "ObjectivesStateInit", "ObjectivesStateEnd", NULL, NULL, NULL},
+			{"NONE", NULL, NULL},
+			{"MAINMENU", NULL, NULL},
+			{"START_GAME", NULL, NULL},
+			{"END_GAME", NULL, NULL},
+			{"FORWARD", NULL, NULL},
+			{"BACKWARD", NULL, NULL},
+			{"MAINMENU_INGAME", "MainMenuInGameStateInit", "MainMenuInGameStateEnd"},
+			{"MAINMENU_NOTINGAME", "MainMenuStateInit", "MainMenuStateEnd"},
+			{"QUITGAME", "QuitGameStateInit", "QuitGameStateEnd"},
+			{"CREDITS", "CreditsMenuStateInit", "CreditsMenuStateEnd"},
+			{"LOAD_SAVE_GAME", "LoadSaveGameMenuStateInit", "LoadSaveGameMenuStateEnd"},
+			{"SUCCESS", "SuccessScreenStateInit", "SuccessScreenStateEnd"},
+			{"BRIEFING", "BriefingStateInit", "BriefingStateEnd"},
+			{"BRIEFING_VIDEO", "BriefingVidStateInit", "BriefingVidStateEnd"},
+			{"OBJECTIVES", "ObjectivesStateInit", "ObjectivesStateEnd"},
+			{"SHOP", "ShopMenuStateInit", "ShopMenuStateEnd"},
+			{"SETTINGS", "SettingsMenuStateInit", "SettingsMenuStateEnd"},
+			{"SELECT_LANGUAGE", "SelectLanguageStateInit", "SelectLanguageStateEnd"},
+			{"DOWNLOAD", "DownloadMissionsMenuStateInit", "DownloadMissionsMenuStateEnd"},
+			{"DEBRIEFING_VIDEO", "DebriefingVideoStateInit", "DebriefingVideoStateEnd"},
+			{"GUISIZE", "SettingsGuiSizeInit", "GuiSizeMenuStateEnd"},
+			{"MOD_SELECT", "NewGameMenuStateInit", "NewGameMenuStateEnd"},
+			{"DIFF_SELECT", "ObjectivesStateInit", "ObjectivesStateEnd"},
 		};
+		static const MainMenuTransition TRANSITIONS[] = {
+			//standard FM-customized sequence: starting new game
+			{"MOD_SELECT", "FORWARD", "BRIEFING_VIDEO"},	{"BRIEFING_VIDEO", "BACKWARD", "MOD_SELECT"},
+			{"BRIEFING_VIDEO", "FORWARD", "BRIEFING"},		{"BRIEFING", "BACKWARD", "MOD_SELECT"},
+			{"BRIEFING", "FORWARD", "DIFF_SELECT"},			{"DIFF_SELECT", "BACKWARD", "BRIEFING"},
+			{"DIFF_SELECT", "FORWARD", "SHOP"},				{"SHOP", "BACKWARD", "DIFF_SELECT"},
+			{"SHOP", "FORWARD", "START_GAME"},
+			//standard FM-customized sequence: game finished successfully
+			{"DEBRIEFING_VIDEO", "FORWARD", "SUCCESS"},		{"SUCCESS", "BACKWARD", "DEBRIEFING_VIDEO"},
+			{"SUCCESS", "FORWARD", "MAINMENU"},
+		};
+
 		static const int STATENUM = sizeof(STATES) / sizeof(STATES[0]);
+		static const int TRANSITIONNUM = sizeof(TRANSITIONS) / sizeof(TRANSITIONS[0]);
 		auto FindStateByValue = [gui](int value) -> const MainMenuStateInfo* {
 			for (int i = 0; i < STATENUM; i++) {
 				idStr name = "#MM_STATE_" + STATES[i].name;
@@ -4048,6 +4063,22 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			for (int i = 0; i < STATENUM; i++) {
 				if (STATES[i].name == name)
 					return &STATES[i];
+			}
+			return nullptr;
+		};
+		auto ShouldSkipState = [gui](const char *name) -> bool {
+			idStr defName = idStr("#ENABLE_MAINMENU_") + name;
+			int value = gui->GetStateInt(defName, "-1");
+			if (value == 0)
+				return true;		//#define ENABLE_MAINMENU_SHOP 0  (set by mapper)
+			if (idStr::Icmp(name, "SHOP") == 0 && gui->GetStateInt("SkipShop") != 0)
+				return true;		//gui::SkipShop = 1    (set by C++ code)
+			return false;
+		};
+		auto FindTransition = [&](const char *from, const char *action) -> const char* {
+			for (int i = 0; i < TRANSITIONNUM; i++) {
+				if (TRANSITIONS[i].from == from && TRANSITIONS[i].action == action)
+					return TRANSITIONS[i].to.c_str();
 			}
 			return nullptr;
 		};
@@ -4065,12 +4096,32 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			targetState = &STATES[0];
 		}
 
+		if (const char *dest = FindTransition(modeState->name, targetState->name)) {
+			//this is "action" of transition, i.e. not a "target" state, but more like a "direction" of movement
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Detected transition %s from %s", targetState->name.c_str(), modeState->name.c_str());
+			while (dest && ShouldSkipState(dest)) {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Skipped disabled state %s", dest);
+				dest = FindTransition(dest, targetState->name);
+			}
+			if (dest) {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Transition ends at %s", dest);
+			} else {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("All states in transition chain are disabled, redirect to MAINMENU");
+				dest = "MAINMENU";
+			}
+			targetState = FindStateByName(dest);
+		}
+
 		auto Redirect = [&](const char *newTargetState) {
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target state %s, redirecting to %s", targetState->name.c_str(), newTargetState);
 			targetState = FindStateByName(newTargetState);
 			assert(targetState);
 		};
 
+		if (ShouldSkipState(targetState->name)) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target state %s is disabled, redirecting to MAINMENU", targetState->name.c_str());
+			targetState = FindStateByName("MAINMENU");
+		}
 		if (targetState->name == "NONE")
 			Redirect("MAINMENU");
 		if (targetState->name == "MAINMENU") {
