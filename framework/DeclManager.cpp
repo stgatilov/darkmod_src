@@ -15,6 +15,7 @@
 
 #include "precompiled.h"
 #pragma hdrstop
+#include "LoadStack.h"
 
 
 
@@ -171,6 +172,13 @@ public:
 	virtual void				Reload( bool force );
 	virtual void				BeginLevelLoad();
 	virtual void				EndLevelLoad();
+	virtual void				BeginEntityLoad(idMapEntity *entity) override;
+	virtual void				EndEntityLoad(idMapEntity *entity) override;
+	virtual void				BeginModelLoad(idRenderModel *model) override;
+	virtual void				EndModelLoad(idRenderModel *model) override;
+	virtual void				BeginWindowLoad(idWindow *model) override;
+	virtual void				EndWindowLoad(idWindow *model) override;
+	virtual const LoadStack &	GetLoadStack() const override;
 	virtual void				RegisterDeclType( const char *typeName, declType_t type, idDecl *(*allocator)( void ) );
 	virtual void				RegisterDeclFolder( const char *folder, const char *extension, declType_t defaultType );
 	virtual int					GetChecksum( void ) const;
@@ -224,6 +232,7 @@ private:
 	int							checksum;		// checksum of all loaded decl text
 	int							indent;			// for MediaPrint
 	bool						insideLevelLoad;
+	LoadStack					loadStack;
 
 	static idCVar				decl_show;
 
@@ -933,6 +942,27 @@ void idDeclManagerLocal::EndLevelLoad() {
 	// and sound sample manager will need to free media that was not referenced
 }
 
+void idDeclManagerLocal::BeginEntityLoad(idMapEntity *entity) {
+	loadStack.Append(LoadStack::LevelOf(entity));
+}
+void idDeclManagerLocal::BeginModelLoad(idRenderModel *model) {
+	loadStack.Append(LoadStack::LevelOf(model));
+}
+void idDeclManagerLocal::BeginWindowLoad(idWindow *window) {
+	loadStack.Append(LoadStack::LevelOf(window));
+}
+void idDeclManagerLocal::EndEntityLoad(idMapEntity *entity) {
+	loadStack.Rollback(entity);
+}
+void idDeclManagerLocal::EndModelLoad(idRenderModel *model) {
+	loadStack.Rollback(model);
+}
+void idDeclManagerLocal::EndWindowLoad(idWindow *window) {
+	loadStack.Rollback(window);
+}
+const LoadStack &idDeclManagerLocal::GetLoadStack() const {
+	return loadStack;
+}
 /*
 ===================
 idDeclManagerLocal::RegisterDeclType
@@ -2155,6 +2185,7 @@ void idDeclLocal::ParseLocal( void ) {
 	self->FreeData();
 
 	declManagerLocal.MediaPrint( "parsing %s %s\n", declManagerLocal.declTypes[type]->typeName.c_str(), name.c_str() );
+	declManagerLocal.loadStack.Append(LoadStack::LevelOf(self));
 
 	// if no text source try to generate default text
 	if ( textSource == NULL ) {
@@ -2168,6 +2199,7 @@ void idDeclLocal::ParseLocal( void ) {
 	if ( textSource == NULL ) {
 		MakeDefault();
 		declManagerLocal.indent--;
+		declManagerLocal.loadStack.Rollback(self);
 		return;
 	}
 
@@ -2186,6 +2218,7 @@ void idDeclLocal::ParseLocal( void ) {
 	}
 
 	declManagerLocal.indent--;
+	declManagerLocal.loadStack.Rollback(self);
 }
 
 /*

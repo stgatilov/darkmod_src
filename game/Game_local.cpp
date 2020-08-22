@@ -2002,11 +2002,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		const char *entName = mapEnt->epairs.GetString("name");
 
 		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
+			declManager->BeginEntityLoad(mapEnt);
 			CacheDictionaryMedia( &mapEnt->epairs );
 			const char *classname = mapEnt->epairs.GetString( "classname" );
 			if ( classname != NULL ) {
 				FindEntityDef( classname, false );
 			}
+			declManager->EndEntityLoad(mapEnt);
 		}
 	}
 
@@ -5418,10 +5420,11 @@ void idGameLocal::SpawnMapEntities( void )
 
 		if (!InhibitEntitySpawn(args))
 		{
+			declManager->BeginEntityLoad(mapEnt);
 			// precache any media specified in the map entity
 			CacheDictionaryMedia(&args);
-
 			SpawnEntityDef(args);
+			declManager->EndEntityLoad(mapEnt);
 			num++;
 		}
 		else

@@ -20,8 +20,10 @@
 #include "FrameBuffer.h"
 #include <thread>
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
+#include <stack>
 #include <condition_variable>
 #include "Profiling.h"
+#include "LoadStack.h"
 
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
@@ -1235,6 +1237,8 @@ void R_UploadImageData( idImage& image ) {
 	auto& load = image.cpuData;
 	if ( load.pic == NULL ) {
 		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
+		if (image.loadStack)
+			image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
 		image.MakeDefault();
 		return;
 	}
@@ -1379,6 +1383,9 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 		backEnd.glState.tmu[i].current2DMap = -1;
 		backEnd.glState.tmu[i].currentCubeMap = -1;
 	}
+
+	delete loadStack;
+	loadStack = nullptr;
 }
 
 /*

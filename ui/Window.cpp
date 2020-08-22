@@ -2158,6 +2158,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 		CleanUp();
 	}
 
+	declManager->BeginWindowLoad(this);
 	drawWin_t dwt;
 
 	timeLineEvents.Clear();
@@ -2534,6 +2535,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	}
 #endif
 
+	declManager->EndWindowLoad(this);
 	return ret;
 }
 

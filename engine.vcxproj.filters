@@ -1288,6 +1288,9 @@
     <ClInclude Include="renderer\backend\GpuBuffer.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="framework\LoadStack.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3021,6 +3024,9 @@
     </ClCompile>
     <ClCompile Include="renderer\backend\GpuBuffer.cpp">
       <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\LoadStack.cpp">
+      <Filter>Framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
