@@ -438,6 +438,16 @@ void Automation::ParseAction(ParseIn &parseIn) {
 
 		return;
 	}
+
+	if (token == "reloadmap-diff") {
+		//on-the-fly HotReload from DarkRadiant
+		int begMarker = common->GetConsoleMarker();
+		gameLocal.HotReloadMap(rest);
+		int endMarker = common->GetConsoleMarker();
+		idStr consoleUpdates = common->GetConsoleContents(begMarker, endMarker);
+		WriteResponse(parseIn.seqno, consoleUpdates.c_str());
+		return;
+	}
 }
 
 void Automation::WriteGameControlResponse(const char *message) {

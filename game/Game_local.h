@@ -751,7 +751,8 @@ public:
 							// Initializes all map variables common to both save games and spawned games
 	void					LoadMap( const char *mapName, int randseed );
 							// stgatilov: reload map and update already running game
-	void					HotReloadMap();
+							// if mapDiff is not NULL, then it is treated as patch and applied in-memory
+	void					HotReloadMap(const char *mapDiff = NULL, bool skipTimestampCheck = false);
 
 	void					LocalMapRestart( void );
 	void					MapRestart( void );

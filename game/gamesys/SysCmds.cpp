@@ -3729,7 +3729,10 @@ void Cmd_ResetTimers_f(const idCmdArgs& args)
 
 void Cmd_ReloadMap_f(const idCmdArgs& args)
 {
-	gameLocal.HotReloadMap();
+	bool skipTimestampCheck = false;
+	if (args.Argc() >= 2 && idStr::Icmp(args.Argv(1), "nocheck") == 0)
+		skipTimestampCheck = true;
+	gameLocal.HotReloadMap(NULL, skipTimestampCheck);
 }
 
 /*

@@ -1601,18 +1601,54 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	m_searchManager->Clear(); // grayman #3857
 }
 
-void idGameLocal::HotReloadMap() {
+static idDict ComputeSpawnargsDifference(const idDict &newArgs, const idDict &oldArgs) {
+	idDict res;
+	//find added or modified args
+	for (int i = 0; i < newArgs.GetNumKeyVals(); i++) {
+		const idKeyValue *newKv = newArgs.GetKeyVal(i);
+		if (const idKeyValue *oldKv = oldArgs.FindKey(newKv->GetKey())) {
+			if (oldKv->GetValue() == newKv->GetValue())
+				continue;
+		}
+		res.Set(newKv->GetKey(), newKv->GetValue());
+	}
+	//find removed args
+	const char *classname = newArgs.GetString("classname");
+	const idDeclEntityDef *def = gameLocal.FindEntityDef(classname, false);
+	for (int i = 0; i < oldArgs.GetNumKeyVals(); i++) {
+		const idKeyValue *oldKv = oldArgs.GetKeyVal(i);
+		const char *key = oldKv->GetKey();
+		if (!newArgs.FindKey(key)) {
+			//removal detected
+			const char *newVal = "";
+			if (def) {
+				//lookup entitydef: use its value if present
+				newVal = def->dict.GetString(key);
+			}
+			res.Set(oldKv->GetKey(), newVal);
+		}
+	}
+	return res;
+}
+void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 	if (!mapFile) {
 		common->Warning("HotReload: idGameLocal has no mapFile stored");
 		return;
 	}
-	if (!mapFile->NeedsReload()) {
-		common->DPrintf("HotReload: mapFile does not need reload");
-		return;
-	}
 
-	//reload .map file
-	idMapReloadInfo info = mapFile->TryReload();
+	idMapReloadInfo info;
+	if (mapDiff) {
+		info = mapFile->ApplyDiff(mapDiff);
+	}
+	else {
+		if (!skipTimestampCheck && !mapFile->NeedsReload()) {
+			common->DPrintf("HotReload: mapFile does not need reload");
+			return;
+		}
+
+		//reload .map file
+		info = mapFile->TryReload();
+	}
 
 	if (info.cannotReload || info.mapInvalid)
 		return;
@@ -1642,8 +1678,11 @@ void idGameLocal::HotReloadMap() {
 	}
 
 	//update modified entities
-	for (int i = 0; i < info.modifiedEntities.Num(); i++) {
-		const char *name = info.modifiedEntities[i].name;
+	int modNum = info.modifiedEntities.Num();
+	int respNum = info.respawnEntities.Num();
+	for (int i = 0; i < modNum + respNum; i++) {
+		const char *name = (i < modNum ? info.modifiedEntities[i].name : info.respawnEntities[i - modNum].name);
+		bool respawn = (i >= modNum);
 		if (idStr::Cmp(name, "worldspawn") == 0)
 			continue;	//world not updateable yet
 		idMapEntity *newMapEnt = mapFile->FindEntity(name);
@@ -1652,36 +1691,59 @@ void idGameLocal::HotReloadMap() {
 
 		idDict newArgs = newMapEnt->epairs;
 		idDict oldArgs = oldMapEnt->epairs;
+		idDict diffArgs = ComputeSpawnargsDifference(newArgs, oldArgs);
+
 		idEntity *ent = FindEntity(name);
 		if (!ent) {
 			gameEdit->SpawnEntityDef(newArgs, NULL, idGameEdit::sedRespectInhibit);
 			continue;
 		}
 
-		const char *oldValue = nullptr, *newValue = nullptr;
-		auto HasChanged = [&](const char *key) -> bool {
-			oldValue = oldArgs.GetString(key);
-			newValue = newArgs.GetString(key);
-			return idStr::Cmp(oldValue, newValue) != 0;
-		};
+		for (int i = 0; i < diffArgs.GetNumKeyVals(); i++) {
+			const idKeyValue *kv = diffArgs.GetKeyVal(i);
+			if (
+				kv->GetKey().Icmp("spawnclass") == 0 || 
+				kv->GetKey().Icmp("classname") == 0 || 
+				kv->GetKey().IcmpPrefix("def_attach") == 0 || 
+				kv->GetKey().IcmpPrefix("pos_attach") == 0 || 
+				kv->GetKey().IcmpPrefix("name_attach") == 0 || 
+				kv->GetKey().IcmpPrefix("set ") == 0 ||
+				kv->GetKey().IcmpPrefix("add_link") == 0 ||
+			0) {
+				respawn = true;
+			}
+		}
+		if (respawn) {
+			gameEdit->SpawnEntityDef(newArgs, &ent, idGameEdit::sedRespectInhibit | idGameEdit::sedRespawn);
+			continue;
+		}
 
-		gameEdit->EntityChangeSpawnArgs( ent, &newArgs );
+		gameEdit->EntityChangeSpawnArgs( ent, &diffArgs );
+		//this method has broken conventions about what spawnargs should be passed
+		//the only correct way is to pass NULL, meaning that all existing spawnargs were modified
+		//all the other approaches break something, e.g. inherited spawnargs
 		gameEdit->EntityUpdateChangeableSpawnArgs( ent, NULL );
-		if (HasChanged("model")) {
+		if (diffArgs.FindKey("model")) {
 			idStr newModel = newArgs.GetString("model");
 			gameEdit->EntitySetModel(ent, newModel);
 		}
-		if (HasChanged("origin")) {
+		if (diffArgs.FindKey("skin")) {
+			idStr newSkin = diffArgs.GetString("skin");
+			ent->PostEventMS(&EV_SetSkin, 0, newSkin);
+		}
+		if (diffArgs.FindKey("origin")) {
 			idVec3 newOrigin = newArgs.GetVector("origin");
 			gameEdit->EntitySetOrigin(ent, newOrigin);
 		}
-		if (HasChanged("rotation")) {
+		if (diffArgs.FindKey("rotation")) {
 			idMat3 newAxis = newArgs.GetMatrix("rotation");
 			gameEdit->EntitySetAxis(ent, newAxis);
 		}
 
 		gameEdit->EntityUpdateVisuals( ent );
 	}
+
+	common->Printf("HotReload: SUCCESS\n");
 }
 
 /*
