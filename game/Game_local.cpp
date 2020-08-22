@@ -4000,6 +4000,111 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			cv_tdm_menu_music.ClearModified();
 		}
 	}
+	else if (cmd == "mainmenumodeselect")
+	{
+		struct MainMenuStateInfo {
+			//properties:
+			idStr name;				//e.g. BRIEFING   (MM_STATE_ is prepended)
+			idStr constructor;		//e.g. BriefingStateInit
+			idStr destructor;		//e.g. BriefingStateEnd
+			//transitions:
+			idStr forwardState;		//e.g. DIFF_SELECT
+			idStr backwardState;	//e.g. MOD_SELECT
+			idStr escapeState;		//e.g. MAINMENU
+		};
+		static const MainMenuStateInfo STATES[] = {
+			{"NONE", NULL, NULL, NULL, NULL, NULL},
+			{"MAINMENU", NULL, NULL, NULL, NULL, NULL},
+			{"START_GAME", NULL, NULL, NULL, NULL, NULL},
+			{"END_GAME", NULL, NULL, NULL, NULL, NULL},
+			{"MAINMENU_INGAME", "MainMenuInGameStateInit", "MainMenuInGameStateEnd", NULL, NULL, NULL},
+			{"MAINMENU_NOTINGAME", "MainMenuStateInit", "MainMenuStateEnd", NULL, NULL, NULL},
+			{"QUITGAME", "QuitGameStateInit", "QuitGameStateEnd", NULL, NULL, NULL},
+			{"CREDITS", "CreditsMenuStateInit", "CreditsMenuStateEnd", NULL, NULL, NULL},
+			{"LOAD_SAVE_GAME", "LoadSaveGameMenuStateInit", "LoadSaveGameMenuStateEnd", NULL, NULL, NULL},
+			{"SUCCESS", "SuccessScreenStateInit", "SuccessScreenStateEnd", NULL, NULL, NULL},
+			{"BRIEFING", "BriefingStateInit", "BriefingStateEnd", NULL, NULL, NULL},
+			{"BRIEFING_VIDEO", "BriefingVidStateInit", "BriefingVidStateEnd", NULL, NULL, NULL},
+			{"OBJECTIVES", "ObjectivesStateInit", "ObjectivesStateEnd", NULL, NULL, NULL},
+			{"SHOP", "ShopMenuStateInit", "ShopMenuStateEnd", NULL, NULL, NULL},
+			{"SETTINGS", "SettingsMenuStateInit", "SettingsMenuStateEnd", NULL, NULL, NULL},
+			{"SELECT_LANGUAGE", "SelectLanguageStateInit", "SelectLanguageStateEnd", NULL, NULL, NULL},
+			{"DOWNLOAD", "DownloadMissionsMenuStateInit", "DownloadMissionsMenuStateEnd", NULL, NULL, NULL},
+			{"DEBRIEFING_VIDEO", "DebriefingVideoStateInit", "DebriefingVideoStateEnd", NULL, NULL, NULL},
+			{"GUISIZE", "SettingsGuiSizeInit", "GuiSizeMenuStateEnd", NULL, NULL, NULL},
+			{"MOD_SELECT", "NewGameMenuStateInit", "NewGameMenuStateEnd", NULL, NULL, NULL},
+			{"DIFF_SELECT", "ObjectivesStateInit", "ObjectivesStateEnd", NULL, NULL, NULL},
+		};
+		static const int STATENUM = sizeof(STATES) / sizeof(STATES[0]);
+		auto FindStateByValue = [gui](int value) -> const MainMenuStateInfo* {
+			for (int i = 0; i < STATENUM; i++) {
+				idStr name = "#MM_STATE_" + STATES[i].name;
+				if (value == gui->GetStateInt(name))
+					return &STATES[i];
+			}
+			return nullptr;
+		};
+		auto FindStateByName = [gui](const char *name) -> const MainMenuStateInfo* {
+			for (int i = 0; i < STATENUM; i++) {
+				if (STATES[i].name == name)
+					return &STATES[i];
+			}
+			return nullptr;
+		};
+
+		int modeValue = gui->GetStateInt("mode");
+		int targetValue = gui->GetStateInt("targetmode");
+		auto modeState = FindStateByValue(modeValue);
+		auto targetState = FindStateByValue(targetValue);
+		if (!modeState) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Unknown current state %d, setting NONE", modeValue);
+			modeState = &STATES[0];
+		}
+		if (!targetState) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Unknown target state %d, setting NONE", modeValue);
+			targetState = &STATES[0];
+		}
+
+		auto Redirect = [&](const char *newTargetState) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target state %s, redirecting to %s", targetState->name.c_str(), newTargetState);
+			targetState = FindStateByName(newTargetState);
+			assert(targetState);
+		};
+
+		if (targetState->name == "NONE")
+			Redirect("MAINMENU");
+		if (targetState->name == "MAINMENU") {
+			if (gui->GetStateInt("inGame"))
+				Redirect("MAINMENU_INGAME");
+			else
+				Redirect("MAINMENU_NOTINGAME");
+		}
+
+		if (targetState != modeState) {
+			if (targetState->name == "START_GAME") {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting game");
+				idStr mapname = m_MissionManager->GetCurrentStartingMap();
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va("map %s\n", mapname.c_str()) );
+				//note: it seems that target state does not matter
+				//map start resets "mode" to NONE anyway (not sure about exact mechanism)
+			}
+			if (targetState->name == "END_GAME") {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending game");
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va("disconnect\n") );
+				Redirect("MAINMENU_NOTINGAME");
+			}
+
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending state %s", modeState->name.c_str() );
+			if (modeState->destructor)
+				gui->ResetWindowTime(modeState->destructor, 0);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting state %s", targetState->name.c_str() );
+			if (targetState->constructor)
+				gui->ResetWindowTime(targetState->constructor, 0);
+
+			targetValue = gui->GetStateInt("#MM_STATE_" + targetState->name);
+			gui->SetStateInt("mode", targetValue);
+		}
+	}
 	else if (cmd == "setvideoreswidescreen")
 	{
 		// Called when "screen size" is changed (i.e. cv_tdm_widescreenmode)
