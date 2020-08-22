@@ -703,7 +703,7 @@ bool idMapEntity::NeedsReload(const idMapEntity *oldEntity) const {
 	if (m != n)
 		return true;
 	for (int i = 0; i < n; i++) {
-		if (a.GetKeyVal(i) == b.GetKeyVal(i))
+		if (*a.GetKeyVal(i) == *b.GetKeyVal(i))
 			continue;
 		return true;
 	}
