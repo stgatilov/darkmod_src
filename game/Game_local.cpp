@@ -5653,6 +5653,20 @@ void idGameLocal::ArgCompletion_EntityName( const idCmdArgs &args, void(*callbac
 	}
 }
 
+//stgatilov: this searches over entity names in the .map file
+//it excludes dynamically spawned entities (e.g. arrows), but includes dead entities already removed from game
+void idGameLocal::ArgCompletion_MapEntityName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
+	if (idMapFile *mf = gameLocal.mapFile) {
+		for (int i = 0; i < mf->GetNumEntities(); i++) {
+			if (idMapEntity *me = mf->GetEntity(i)) {
+				if (const idKeyValue *kv = me->epairs.FindKey("name")) {
+					callback( va( "%s %s", args.Argv( 0 ), kv->GetValue().c_str() ) );
+				}
+			}
+		}
+	}
+}
+
 /*
 =============
 idGameLocal::FindEntity

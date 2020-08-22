@@ -1171,6 +1171,30 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 	gameLocal.SpawnEntityDef( dict );
 }
 
+void Cmd_ReSpawn_f(const idCmdArgs& args) {
+	if ( args.Argc() != 2 ) {	// must always have an even number of arguments
+		gameLocal.Printf( "usage: respawn entityname\n" );
+		return;
+	}
+
+	const char *name = args.Argv(1);
+	const idDict *spawnargs = gameEdit->MapGetEntityDict(name);
+	if (!spawnargs) {
+		gameLocal.Printf( "entity %s not found\n", name );
+		return;
+	}
+
+	idEntity *ent = gameEdit->FindEntity(name);
+	int flags = idGameEdit::sedRespectInhibit;
+	if (ent)
+		flags |= idGameEdit::sedRespawn;
+	gameEdit->SpawnEntityDef(*spawnargs, &ent, flags);
+	if (!ent) {
+		gameLocal.Printf( "failed to respawn entity %s\n", name );
+		return;
+	}
+}
+
 /*
 ==================
 Cmd_Damage_f
@@ -3743,6 +3767,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "teleport",				Cmd_Teleport_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleports the player to an entity location", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "trigger",				Cmd_Trigger_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"triggers an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "spawn",					Cmd_Spawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"spawns a game entity", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> );
+	cmdSystem->AddCommand( "respawn",				Cmd_ReSpawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"respawns game entity with given name", idGameLocal::ArgCompletion_MapEntityName );
 	cmdSystem->AddCommand( "damage",				Cmd_Damage_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"apply damage to an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "remove",				Cmd_Remove_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"removes an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "killMonsters",			Cmd_KillMonsters_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"removes all monsters" );

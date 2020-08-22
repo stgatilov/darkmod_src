@@ -246,6 +246,7 @@ public:
 	enum SpawnEntityDef_Flags {
 		sedRespectInhibit = 0x1,
 		sedCacheMedia = 0x2,
+		sedRespawn = 0x4
 	};
 	// Entity defs and spawning.
 	virtual const idDict *		FindEntityDefDict( const char *name, bool makeDefault = true ) const;
