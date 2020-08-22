@@ -13,25 +13,25 @@ void LoadStack::Clear() {
 	memset(this, 0, sizeof(*this));
 }
 
-template<> static LoadStack::Level LoadStack::LevelOf(idDecl *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idDecl *ptr) {
 	return Level{tDecl, ptr};
 }
-template<> static LoadStack::Level LoadStack::LevelOf(idImage *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idImage *ptr) {
 	return Level{tImage, ptr};
 }
-template<> static LoadStack::Level LoadStack::LevelOf(idSoundSample *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idSoundSample *ptr) {
 	return Level{tSoundSample, ptr};
 }
-template<> static LoadStack::Level LoadStack::LevelOf(idRenderModel *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idRenderModel *ptr) {
 	return Level{tModel, ptr};
 }
-template<> static LoadStack::Level LoadStack::LevelOf(idEntity *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idEntity *ptr) {
 	return Level{tEntity, ptr};
 }
-template<> static LoadStack::Level LoadStack::LevelOf(idMapEntity *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idMapEntity *ptr) {
 	return Level{tMapEntity, ptr};
 }
-template<> static LoadStack::Level LoadStack::LevelOf(idWindow *ptr) {
+template<> LoadStack::Level LoadStack::LevelOf(idWindow *ptr) {
 	return Level{tWindow, ptr};
 }
 
