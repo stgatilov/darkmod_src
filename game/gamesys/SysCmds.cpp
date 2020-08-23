@@ -3735,6 +3735,20 @@ void Cmd_ReloadMap_f(const idCmdArgs& args)
 	gameLocal.HotReloadMap(NULL, skipTimestampCheck);
 }
 
+void Cmd_GetGameTime_f(const idCmdArgs& args) {
+	common->Printf("%d\n", gameLocal.time);
+}
+
+void Cmd_SetGameTime_f(const idCmdArgs& args) {
+	if (args.Argc() != 2 || !idStr::IsNumeric(args.Argv(1))) {
+		common->Printf("One integer argument must be specified: desired game time in milliseconds\n");
+		return;
+	}
+	int newValue = atoi(args.Argv(1));
+	gameLocal.time = newValue;
+	common->Printf("Game time reset to %d\n", newValue);
+}
+
 /*
 =================
 idGameLocal::InitConsoleCommands
@@ -3881,6 +3895,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "writeTimerCSV",			Cmd_WriteTimerCSV_f,		CMD_FL_GAME,				"Writes the timer data to a csv file (usage: writeTimerCSV <separator> <commaChar>). The default separator is ';', the default comma is '.'");
 	cmdSystem->AddCommand( "resetTimers",			Cmd_ResetTimers_f,			CMD_FL_GAME,				"Resets the timer data so far.");
 #endif
+
+	cmdSystem->AddCommand( "getGameTime",			Cmd_GetGameTime_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints current game time (gameLocal.time) in milliseconds" );
+	cmdSystem->AddCommand( "setGameTime",			Cmd_SetGameTime_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"assigns specified value in milliseconds to game time (gameLocal.time)\nnote: this is unsafe!" );
 }
 
 /*
