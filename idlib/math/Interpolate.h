@@ -30,17 +30,17 @@ public:
 						idInterpolate();
 
 	// Start a transition, this automatically sets the idInterpolate to "enabled"
-	void				Init( const float startTime, const float duration, const type &startValue, const type &endValue );
-	void				SetStartTime( float time ) { this->startTime = time; }
+	void				Init( const double startTime, const float duration, const type &startValue, const type &endValue );
+	void				SetStartTime( double time ) { this->startTime = time; }
 	void				SetDuration( float duration ) { this->duration = duration; }
 	void				SetStartValue( const type &startValue ) { this->startValue = startValue; }
 	void				SetEndValue( const type &endValue ) { this->endValue = endValue; }
 
-	type				GetCurrentValue( float time ) const;
-	bool				IsDone( float time ) const { return ( time >= startTime + duration ); }
+	type				GetCurrentValue( double time ) const;
+	bool				IsDone( double time ) const { return ( time >= startTime + duration ); }
 
-	float				GetStartTime( void ) const { return startTime; }
-	float				GetEndTime( void ) const { return startTime + duration; }
+	double				GetStartTime( void ) const { return startTime; }
+	double				GetEndTime( void ) const { return startTime + duration; }
 	float				GetDuration( void ) const { return duration; }
 	const type &		GetStartValue( void ) const { return startValue; }
 	const type &		GetEndValue( void ) const { return endValue; }
@@ -51,11 +51,11 @@ public:
 
 private:
 	bool				enabled;
-	float				startTime;
+	double				startTime;
 	float				duration;
 	type				startValue;
 	type				endValue;
-	mutable float		currentTime;
+	mutable double		currentTime;
 	mutable type		currentValue;
 };
 
@@ -79,7 +79,7 @@ idInterpolate::Init
 ====================
 */
 template< class type >
-ID_INLINE void idInterpolate<type>::Init( const float startTime, const float duration, const type &startValue, const type &endValue ) {
+ID_INLINE void idInterpolate<type>::Init( const double startTime, const float duration, const type &startValue, const type &endValue ) {
 	this->startTime = startTime;
 	this->duration = duration;
 	this->startValue = startValue;
@@ -95,7 +95,7 @@ idInterpolate::GetCurrentValue
 ====================
 */
 template< class type >
-ID_INLINE type idInterpolate<type>::GetCurrentValue( float time ) const {
+ID_INLINE type idInterpolate<type>::GetCurrentValue( double time ) const {
 	float deltaTime;
 
 	deltaTime = time - startTime;
@@ -126,17 +126,17 @@ class idInterpolateAccelDecelLinear  {
 public:
 						idInterpolateAccelDecelLinear();
 
-	void				Init( const float startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue );
-	void				SetStartTime( float time ) { startTime = time; Invalidate(); }
+	void				Init( const double startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue );
+	void				SetStartTime( double time ) { startTime = time; Invalidate(); }
 	void				SetStartValue( const type &startValue ) { this->startValue = startValue; Invalidate(); }
 	void				SetEndValue( const type &endValue ) { this->endValue = endValue; Invalidate(); }
 
-	type				GetCurrentValue( float time ) const;
-	type				GetCurrentSpeed( float time ) const;
-	bool				IsDone( float time ) const { return ( time >= startTime + accelTime + linearTime + decelTime ); }
+	type				GetCurrentValue( double time ) const;
+	type				GetCurrentSpeed( double time ) const;
+	bool				IsDone( double time ) const { return ( time >= startTime + accelTime + linearTime + decelTime ); }
 
-	float				GetStartTime( void ) const { return startTime; }
-	float				GetEndTime( void ) const { return startTime + accelTime + linearTime + decelTime; }
+	double				GetStartTime( void ) const { return startTime; }
+	double				GetEndTime( void ) const { return startTime + accelTime + linearTime + decelTime; }
 	float				GetDuration( void ) const { return accelTime + linearTime + decelTime; }
 	float				GetAcceleration( void ) const { return accelTime; }
 	float				GetDeceleration( void ) const { return decelTime; }
@@ -144,7 +144,7 @@ public:
 	const type &		GetEndValue( void ) const { return endValue; }
 
 private:
-	float				startTime;
+	double				startTime;
 	float				accelTime;
 	float				linearTime;
 	float				decelTime;
@@ -153,7 +153,7 @@ private:
 	mutable idExtrapolate<type> extrapolate;
 
 	void				Invalidate( void );
-	void				SetPhase( float time ) const;
+	void				SetPhase( double time ) const;
 };
 
 /*
@@ -174,7 +174,7 @@ idInterpolateAccelDecelLinear::Init
 ====================
 */
 template< class type >
-ID_INLINE void idInterpolateAccelDecelLinear<type>::Init( const float startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue ) {
+ID_INLINE void idInterpolateAccelDecelLinear<type>::Init( const double startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue ) {
 	type speed;
 
 	this->startTime = startTime;
@@ -219,7 +219,7 @@ idInterpolateAccelDecelLinear::SetPhase
 ====================
 */
 template< class type >
-ID_INLINE void idInterpolateAccelDecelLinear<type>::SetPhase( float time ) const {
+ID_INLINE void idInterpolateAccelDecelLinear<type>::SetPhase( double time ) const {
 	float deltaTime;
 
 	deltaTime = time - startTime;
@@ -244,7 +244,7 @@ idInterpolateAccelDecelLinear::GetCurrentValue
 ====================
 */
 template< class type >
-ID_INLINE type idInterpolateAccelDecelLinear<type>::GetCurrentValue( float time ) const {
+ID_INLINE type idInterpolateAccelDecelLinear<type>::GetCurrentValue( double time ) const {
 	SetPhase( time );
 	return extrapolate.GetCurrentValue( time );
 }
@@ -255,7 +255,7 @@ idInterpolateAccelDecelLinear::GetCurrentSpeed
 ====================
 */
 template< class type >
-ID_INLINE type idInterpolateAccelDecelLinear<type>::GetCurrentSpeed( float time ) const {
+ID_INLINE type idInterpolateAccelDecelLinear<type>::GetCurrentSpeed( double time ) const {
 	SetPhase( time );
 	return extrapolate.GetCurrentSpeed( time );
 }
@@ -275,17 +275,17 @@ class idInterpolateAccelDecelSine  {
 public:
 						idInterpolateAccelDecelSine();
 
-	void				Init( const float startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue );
-	void				SetStartTime( float time ) { startTime = time; Invalidate(); }
+	void				Init( const double startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue );
+	void				SetStartTime( double time ) { startTime = time; Invalidate(); }
 	void				SetStartValue( const type &startValue ) { this->startValue = startValue; Invalidate(); }
 	void				SetEndValue( const type &endValue ) { this->endValue = endValue; Invalidate(); }
 
-	type				GetCurrentValue( float time ) const;
-	type				GetCurrentSpeed( float time ) const;
-	bool				IsDone( float time ) const { return ( time >= startTime + accelTime + linearTime + decelTime ); }
+	type				GetCurrentValue( double time ) const;
+	type				GetCurrentSpeed( double time ) const;
+	bool				IsDone( double time ) const { return ( time >= startTime + accelTime + linearTime + decelTime ); }
 
-	float				GetStartTime( void ) const { return startTime; }
-	float				GetEndTime( void ) const { return startTime + accelTime + linearTime + decelTime; }
+	double				GetStartTime( void ) const { return startTime; }
+	double				GetEndTime( void ) const { return startTime + accelTime + linearTime + decelTime; }
 	float				GetDuration( void ) const { return accelTime + linearTime + decelTime; }
 	float				GetAcceleration( void ) const { return accelTime; }
 	float				GetDeceleration( void ) const { return decelTime; }
@@ -293,7 +293,7 @@ public:
 	const type &		GetEndValue( void ) const { return endValue; }
 
 private:
-	float				startTime;
+	double				startTime;
 	float				accelTime;
 	float				linearTime;
 	float				decelTime;
@@ -302,7 +302,7 @@ private:
 	mutable idExtrapolate<type> extrapolate;
 
 	void				Invalidate( void );
-	void				SetPhase( float time ) const;
+	void				SetPhase( double time ) const;
 };
 
 /*
@@ -323,7 +323,7 @@ idInterpolateAccelDecelSine::Init
 ====================
 */
 template< class type >
-ID_INLINE void idInterpolateAccelDecelSine<type>::Init( const float startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue ) {
+ID_INLINE void idInterpolateAccelDecelSine<type>::Init( const double startTime, const float accelTime, const float decelTime, const float duration, const type &startValue, const type &endValue ) {
 	type speed;
 
 	this->startTime = startTime;
@@ -368,7 +368,7 @@ idInterpolateAccelDecelSine::SetPhase
 ====================
 */
 template< class type >
-ID_INLINE void idInterpolateAccelDecelSine<type>::SetPhase( float time ) const {
+ID_INLINE void idInterpolateAccelDecelSine<type>::SetPhase( double time ) const {
 	float deltaTime;
 
 	deltaTime = time - startTime;
@@ -393,7 +393,7 @@ idInterpolateAccelDecelSine::GetCurrentValue
 ====================
 */
 template< class type >
-ID_INLINE type idInterpolateAccelDecelSine<type>::GetCurrentValue( float time ) const {
+ID_INLINE type idInterpolateAccelDecelSine<type>::GetCurrentValue( double time ) const {
 	SetPhase( time );
 	return extrapolate.GetCurrentValue( time );
 }
@@ -404,7 +404,7 @@ idInterpolateAccelDecelSine::GetCurrentSpeed
 ====================
 */
 template< class type >
-ID_INLINE type idInterpolateAccelDecelSine<type>::GetCurrentSpeed( float time ) const {
+ID_INLINE type idInterpolateAccelDecelSine<type>::GetCurrentSpeed( double time ) const {
 	SetPhase( time );
 	return extrapolate.GetCurrentSpeed( time );
 }
