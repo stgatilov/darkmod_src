@@ -958,7 +958,7 @@ bool CBinaryFrobMover::IsAtOpenPosition()
 	const idAngles& localAngles = physicsObj.GetLocalAngles();
 	
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return (localAngles - m_OpenAngles).Normalize360().Compare(ang_zero, VECTOR_EPSILON) && 
+	return (localAngles - m_OpenAngles).Normalize180().Compare(ang_zero, VECTOR_EPSILON) && 
 		   localOrg.Compare(m_OpenOrigin, VECTOR_EPSILON);
 }
 
@@ -969,7 +969,7 @@ bool CBinaryFrobMover::IsAtClosedPosition()
 	const idAngles& localAngles = physicsObj.GetLocalAngles();
 
 	// greebo: Let the check be slightly inaccurate (use the standard epsilon).
-	return (localAngles - m_ClosedAngles).Normalize360().Compare(ang_zero, VECTOR_EPSILON) && 
+	return (localAngles - m_ClosedAngles).Normalize180().Compare(ang_zero, VECTOR_EPSILON) && 
 		   localOrg.Compare(m_ClosedOrigin, VECTOR_EPSILON);
 }
 
