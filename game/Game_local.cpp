@@ -4265,6 +4265,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
 			gui->SetStateInt("CurrentMission", missionNum);
 
+			// Let the GUI know which map to load (it has changed)
+			idStr mapToStart = m_MissionManager->GetCurrentStartingMap();
+			gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapToStart.c_str()));
+
 			// Go to the next briefing / video
 			gui->HandleNamedEvent("SuccessProceedToNextMission");
 		}
