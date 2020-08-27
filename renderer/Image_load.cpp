@@ -1330,7 +1330,7 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 	if ( allowBackground )
 		allowBackground = !globalImages->image_preload.GetBool();
 
-	if ( session->IsFrontend() ) {
+	if ( session->IsFrontend() && !(residency & IR_CPU) ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
 		return;
 	}
