@@ -209,7 +209,8 @@ Create a 2D table that calculates ( reflection dot , specularity )
 }*/
 
 void imageBlock_s::Purge() {
-	R_StaticFree(pic);
+	for (int s = 0; s < sides; s++)
+		R_StaticFree(pic[s]);
 	memset(this, 0, sizeof(imageBlock_s));
 }
 
@@ -1870,7 +1871,7 @@ void idImageManager::PrintMemInfo( MemInfo_t *mi ) {
 
 		f->Printf( "%s %3i %s\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
 		if (im->cpuData.IsValid()) {
-			size = im->cpuData.GetSizeInBytes();
+			size = im->cpuData.GetTotalSizeInBytes();
 			f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
 		}
 	}
