@@ -168,6 +168,8 @@ void idSecurityCamera::Spawn( void )
 	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );
 	stationary	= false;
 	nextAlertTime = 0;
+	sweeping = false;
+	sweepStartTime = sweepEndTime = 0;
 	nextSparkTime = 0;
 	removeSparkTime = 0;
 	state		  = STATE_SWEEPING;
