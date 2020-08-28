@@ -20,8 +20,10 @@
 #include "FrameBuffer.h"
 #include <thread>
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
+#include <stack>
 #include <condition_variable>
 #include "Profiling.h"
+#include "LoadStack.h"
 
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
@@ -425,7 +427,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	int			scaled_width=width, scaled_height=height;
 	byte		*shrunk;
 
-	bool loadingFromItself = (pic == cpuData.pic);
+	bool loadingFromItself = (pic == cpuData.pic[0]);
 	PurgeImage( !loadingFromItself );
 
 	filter = filterParm;
@@ -439,8 +441,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			cpuData.compressedSize = 0;
 			cpuData.width = width;
 			cpuData.height = height;
-			cpuData.pic = ( byte* ) R_StaticAlloc( cpuData.GetSizeInBytes() );
-			memcpy(cpuData.pic, pic, cpuData.GetSizeInBytes() );
+			cpuData.sides = 1;
+			cpuData.pic[0] = ( byte* ) R_StaticAlloc( cpuData.GetSizeInBytes() );
+			memcpy(cpuData.pic[0], pic, cpuData.GetSizeInBytes() );
 		}
 		assert( cpuData.width == width && cpuData.height == height && cpuData.compressedSize == 0 );
 	}
@@ -624,7 +627,8 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	int			width, height;
 	int			i;
 
-	PurgeImage();
+	bool loadingFromItself = (pic[0] == cpuData.pic[0]);
+	PurgeImage( !loadingFromItself );
 
 	filter = filterParm;
 	allowDownSize = allowDownSizeParm;
@@ -1061,8 +1065,9 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	}
 
 	cpuData.Purge();
-	cpuData.pic = data;
+	cpuData.pic[0] = data;
 	cpuData.compressedSize = len;
+	cpuData.sides = 1;
 	//TODO: set proper width/height here?
 
 	// upload all the levels
@@ -1215,47 +1220,76 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 }
 
 void R_LoadImageData( idImage& image ) {
-	// see if we have a pre-generated image file that is
-	// already image processed and compressed
-	if ( globalImages->image_usePrecompressedTextures.GetBool() ) {
-		/*if ( backEnd.pc.textureLoadTime > 9 )
-			return;*/
-		if ( image.CheckPrecompressedImage( true ) ) {
-			// we got the precompressed image
+	imageBlock_t& cpuData = image.cpuData;
+
+	if ( image.cubeFiles != CF_2D ) {
+		cpuData.Purge();
+		cpuData.sides = 6;
+
+		// we don't check for pre-compressed cube images currently
+		R_LoadCubeImages( image.imgName, image.cubeFiles, cpuData.pic, &cpuData.width, &image.timestamp );
+		cpuData.height = cpuData.width;
+
+		if ( cpuData.pic[0] == NULL ) {
+			//note: warning will be printed in R_UploadImageData due to cpuData.pic[0] == NULL
 			return;
 		}
-		// fall through to load the normal image
+		image.precompressedFile = false;
 	}
-	imageBlock_t& data = image.cpuData;
-	data.Purge();
-	R_LoadImageProgram( image.imgName, &data.pic, &data.width, &data.height, &image.timestamp, &image.depth );
+	else {
+		// see if we have a pre-generated image file that is
+		// already image processed and compressed
+		if ( globalImages->image_usePrecompressedTextures.GetBool() ) {
+			/*if ( backEnd.pc.textureLoadTime > 9 )
+				return;*/
+			if ( image.CheckPrecompressedImage( true ) ) {
+				// we got the precompressed image
+				return;
+			}
+			// fall through to load the normal image
+		}
+		cpuData.Purge();
+		R_LoadImageProgram( image.imgName, &cpuData.pic[0], &cpuData.width, &cpuData.height, &image.timestamp, &image.depth );
+		cpuData.sides = 1;
+	}
 }
 
 void R_UploadImageData( idImage& image ) {
-	auto& load = image.cpuData;
-	if ( load.pic == NULL ) {
-		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
-		image.MakeDefault();
-		return;
-	}
-	if (image.residency & IR_GRAPHICS) {
-		if ( load.compressedSize ) {
-			// upload all the levels
-			image.UploadPrecompressedImage( load.pic, load.compressedSize );
-		} else {
-			// build a hash for checking duplicate image files
-			// NOTE: takes about 10% of image load times (SD)
-			// may not be strictly necessary, but some code uses it, so let's leave it in
-			if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
-				image.imageHash = MD4_BlockChecksum( load.pic, load.width * load.height * 4 );
-			image.GenerateImage( load.pic, load.width, load.height, image.filter, image.allowDownSize, image.repeat, image.depth, image.residency );
-			image.precompressedFile = false;
-			// write out the precompressed version of this file if needed
-			image.WritePrecompressedImage();
+	auto& cpuData = image.cpuData;
+	for (int s = 0; s < cpuData.sides; s++) {
+		if ( cpuData.pic[s] == NULL ) {
+			common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
+			if (image.loadStack)
+				image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
+			image.MakeDefault();
+			return;
 		}
 	}
+
+	if (image.residency & IR_GRAPHICS) {
+		if (image.cubeFiles != CF_2D) {
+			image.GenerateCubeImage( ( const byte ** )cpuData.pic, cpuData.width,image.filter, image.allowDownSize, image.depth );
+		}
+		else {
+			if ( cpuData.compressedSize ) {
+				// upload all the levels
+				image.UploadPrecompressedImage( cpuData.pic[0], cpuData.compressedSize );
+			} else {
+				// build a hash for checking duplicate image files
+				// NOTE: takes about 10% of image load times (SD)
+				// may not be strictly necessary, but some code uses it, so let's leave it in
+				if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
+					image.imageHash = MD4_BlockChecksum( cpuData.pic, cpuData.width * cpuData.height * 4 );
+				image.GenerateImage( cpuData.pic[0], cpuData.width, cpuData.height, image.filter, image.allowDownSize, image.repeat, image.depth, image.residency );
+				image.precompressedFile = false;
+				// write out the precompressed version of this file if needed
+				image.WritePrecompressedImage();
+			}
+		}
+	}
+
 	if (!(image.residency & IR_CPU))
-		load.Purge();
+		cpuData.Purge();
 }
 
 std::stack<idImage*> backgroundLoads;
@@ -1295,9 +1329,8 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 	//Routine test( &loading );
 	if ( allowBackground )
 		allowBackground = !globalImages->image_preload.GetBool();
-	imageBlock_t& load = cpuData;
 
-	if ( session->IsFrontend() ) {
+	if ( session->IsFrontend() && !(residency & IR_CPU) ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
 		return;
 	}
@@ -1312,45 +1345,24 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 	//
 	// load the image from disk
 	//
-	if ( cubeFiles != CF_2D ) {
-		byte	*pics[6];
-
-		// we don't check for pre-compressed cube images currently
-		R_LoadCubeImages( imgName, cubeFiles, pics, &load.width, &timestamp );
-
-		if ( pics[0] == NULL ) {
-			common->Warning( "Couldn't load cube image: %s", imgName.c_str() );
-			MakeDefault();
+	if ( allowBackground ) {
+		if ( backgroundLoadState == IS_NONE ) {
+			backgroundLoadState = IS_SCHEDULED;
+			std::unique_lock<std::mutex> lock( signalMutex );
+			backgroundLoads.push( this );
+			imageThreadSignal.notify_all();
 			return;
 		}
-		GenerateCubeImage( ( const byte ** )pics, load.width, filter, allowDownSize, depth );
-		precompressedFile = false;
-
-		for ( int i = 0 ; i < 6 ; i++ ) {
-			if ( pics[i] ) {
-				R_StaticFree( pics[i] );
-			}
+		if ( backgroundLoadState == IS_SCHEDULED ) {
+			return;
 		}
-	} else {
-		if ( allowBackground ) {
-			if ( backgroundLoadState == IS_NONE ) {
-				backgroundLoadState = IS_SCHEDULED;
-				std::unique_lock<std::mutex> lock( signalMutex );
-				backgroundLoads.push( this );
-				imageThreadSignal.notify_all();
-				return;
-			}
-			if ( backgroundLoadState == IS_SCHEDULED ) {
-				return;
-			}
-			if ( backgroundLoadState == IS_LOADED ) {
-				backgroundLoadState = IS_NONE; // hopefully allow reload to happen
-				R_UploadImageData( *this );
-			}
-		} else {
-			R_LoadImageData( *this );
+		if ( backgroundLoadState == IS_LOADED ) {
+			backgroundLoadState = IS_NONE; // hopefully allow reload to happen
 			R_UploadImageData( *this );
 		}
+	} else {
+		R_LoadImageData( *this );
+		R_UploadImageData( *this );
 	}
 }
 
@@ -1379,6 +1391,9 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 		backEnd.glState.tmu[i].current2DMap = -1;
 		backEnd.glState.tmu[i].currentCubeMap = -1;
 	}
+
+	delete loadStack;
+	loadStack = nullptr;
 }
 
 /*

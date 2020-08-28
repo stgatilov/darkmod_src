@@ -16,8 +16,6 @@
 #ifndef __R_IMAGE_H__
 #define __R_IMAGE_H__
 
-#include <stack>
-
 /*
 ====================================================================
 
@@ -148,17 +146,22 @@ typedef enum {
 
 // stgatilov: represents image data on CPU side
 typedef struct imageBlock_s {
-	byte *pic;
+	byte *pic[6];
 	int width;
 	int height;
+	int sides;			//six for cubemaps, one for the others
 	int compressedSize;	//if zero, then data is 8-bit RGBA
 
-	bool IsValid() const { return pic != nullptr; }
+	byte *GetPic(int side = 0) const { return pic[side]; }
+	bool IsValid() const { return pic[0] != nullptr; }
 	bool IsCompressed() const { return compressedSize != 0; }
+	bool IsCubemap() const { return sides == 6; }
 	int GetSizeInBytes() const { return (compressedSize == 0 ? width * height * 4 : compressedSize); }
+	int GetTotalSizeInBytes() const { return sides * GetSizeInBytes(); }
 	void Purge();
 } imageBlock_t;
 
+class LoadStack;
 
 class idImage {
 public:
@@ -259,6 +262,9 @@ public:
 	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
 	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
 	imageLoadState_t	backgroundLoadState;	// state of background loading (usually disabled)
+
+	//stgatilov: information about why and how this image was loaded (may be missing)
+	LoadStack *			loadStack;
 
 	// START bindless texture support
 private:

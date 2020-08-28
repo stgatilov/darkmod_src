@@ -271,37 +271,35 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 	}
 
 	// see if we can load it
-
-	// determine which subclass of idRenderModel to initialize
-
-	idRenderModel	*model;
-
 	canonical.ExtractFileExtension( extension );
 
+	// determine which subclass of idRenderModel to initialize
+	idRenderModel *model = nullptr;
 	if ( ( extension.Icmp( "ase" ) == 0 ) || ( extension.Icmp( "lwo" ) == 0 ) || ( extension.Icmp( "flt" ) == 0 ) ) {
 		model = new idRenderModelStatic;
-		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( "ma" ) == 0 ) {
 		model = new idRenderModelStatic;
-		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( "proxy" ) == 0 ) {
 		//stgatilov #4970: proxy models substitute rotation hack
 		model = new idRenderModelStatic;
-		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( MD5_MESH_EXT ) == 0 ) {
 		model = new idRenderModelMD5;
-		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( "md3" ) == 0 ) {
 		model = new idRenderModelMD3;
-		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( "prt" ) == 0  ) {
 		model = new idRenderModelPrt;
-		model->InitFromFile( modelName );
 	} else if ( extension.Icmp( "liquid" ) == 0  ) {
 		model = new idRenderModelLiquid;
-		model->InitFromFile( modelName );
-	} else {
+	}
 
+	if (model) {
+		//do actual load
+		declManager->BeginModelLoad(model);
+		model->InitFromFile( modelName );
+		declManager->EndModelLoad(model);
+	}
+	else {
+		//can't load: make default
 		if ( extension.Length() ) {
 			common->Warning( "unknown model type '%s'", canonical.c_str() );
 		}

@@ -955,7 +955,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					}
 					else {
 						const imageBlock_t &data = cutoffMap->cpuData;
-						if ( data.GetSizeInBytes() == 4 && data.pic[0] == 255 && data.pic[1] == 255 && data.pic[2] == 255 )
+						const byte *pic = data.GetPic(0);
+						if ( data.GetSizeInBytes() == 4 && pic[0] == 255 && pic[1] == 255 && pic[2] == 255 )
 							cutoffMap = nullptr;	//collisionStatic was disabled for this emitter
 					}
 
@@ -1109,7 +1110,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					texCoord.MulCW( idVec2(cutoffWidth, cutoffHeight) );
 					int x = int(texCoord.x), y = int(texCoord.y);			// GL_NEAREST
 					assert(x >= cutoffBegX && y >= cutoffBegY && x < cutoffBegX + w && y < cutoffBegY + h);
-					byte *texel = &cutoffMap->cpuData.pic[4 * ((y - cutoffBegY) * w + (x - cutoffBegX))];
+					const byte *pic = cutoffMap->cpuData.GetPic(0);
+					const byte *texel = &pic[4 * ((y - cutoffBegY) * w + (x - cutoffBegX))];
 					static const float TWO_POWER_MINUS_24 = 1.0f / (1<<24);
 					// convert from 8-bit RGB into 24-bit time ratio
 					// note: 8-bit grayscale image turns into ratio = (val/255)

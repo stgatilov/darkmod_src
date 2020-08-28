@@ -39,13 +39,13 @@ class idExtrapolate {
 public:
 						idExtrapolate();
 
-	void				Init( const float startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType );
-	type				GetCurrentValue( float time ) const;
-	type				GetCurrentSpeed( float time ) const;
-	bool				IsDone( float time ) const { return ( !( extrapolationType & EXTRAPOLATION_NOSTOP ) && time >= startTime + duration ); }
-	void				SetStartTime( float time ) { startTime = time; currentTime = -1; }
-	float				GetStartTime( void ) const { return startTime; }
-	float				GetEndTime( void ) const { return ( !( extrapolationType & EXTRAPOLATION_NOSTOP ) && duration > 0 ) ? startTime + duration : 0; }
+	void				Init( const double startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType );
+	type				GetCurrentValue( double time ) const;
+	type				GetCurrentSpeed( double time ) const;
+	bool				IsDone( double time ) const { return ( !( extrapolationType & EXTRAPOLATION_NOSTOP ) && time >= startTime + duration ); }
+	void				SetStartTime( double time ) { startTime = time; currentTime = -1; }
+	double				GetStartTime( void ) const { return startTime; }
+	double				GetEndTime( void ) const { return ( !( extrapolationType & EXTRAPOLATION_NOSTOP ) && duration > 0 ) ? startTime + duration : 0; }
 	float				GetDuration( void ) const { return duration; }
 	void				SetStartValue( const type &value ) { startValue = value; currentTime = -1; }
 	const type &		GetStartValue( void ) const { return startValue; }
@@ -55,12 +55,12 @@ public:
 
 private:
 	extrapolation_t		extrapolationType;
-	float				startTime;
+	double				startTime;
 	float				duration;
 	type				startValue;
 	type				baseSpeed;
 	type				speed;
-	mutable float		currentTime;
+	mutable double		currentTime;
 	mutable type		currentValue;
 };
 
@@ -86,7 +86,7 @@ idExtrapolate::Init
 ====================
 */
 template< class type >
-ID_INLINE void idExtrapolate<type>::Init( const float startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType ) {
+ID_INLINE void idExtrapolate<type>::Init( const double startTime, const float duration, const type &startValue, const type &baseSpeed, const type &speed, const extrapolation_t extrapolationType ) {
 	this->extrapolationType = extrapolationType;
 	this->startTime = startTime;
 	this->duration = duration;
@@ -103,7 +103,7 @@ idExtrapolate::GetCurrentValue
 ====================
 */
 template< class type >
-ID_INLINE type idExtrapolate<type>::GetCurrentValue( float time ) const {
+ID_INLINE type idExtrapolate<type>::GetCurrentValue( double time ) const {
 	float deltaTime, s;
 
 	if ( time == currentTime ) {
@@ -181,7 +181,7 @@ idExtrapolate::GetCurrentSpeed
 ====================
 */
 template< class type >
-ID_INLINE type idExtrapolate<type>::GetCurrentSpeed( float time ) const {
+ID_INLINE type idExtrapolate<type>::GetCurrentSpeed( double time ) const {
 	float deltaTime, s;
 
 	if ( time < startTime || !duration ) {

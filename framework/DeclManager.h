@@ -232,6 +232,9 @@ ID_INLINE idDecl *idDeclAllocator( void ) {
 class idMaterial;
 class idDeclSkin;
 class idSoundShader;
+class idRenderModel;
+class idWindow;
+class LoadStack;
 
 class idDeclManager {
 public:
@@ -243,6 +246,15 @@ public:
 
 	virtual void			BeginLevelLoad() = 0;
 	virtual void			EndLevelLoad() = 0;
+
+	//stgatilov: for LoadStack --- tracking how assets load each other
+	virtual void			BeginEntityLoad(idMapEntity *entity) = 0;
+	virtual void			EndEntityLoad(idMapEntity *entity) = 0;
+	virtual void			BeginModelLoad(idRenderModel *model) = 0;
+	virtual void			EndModelLoad(idRenderModel *model) = 0;
+	virtual void			BeginWindowLoad(idWindow *model) = 0;
+	virtual void			EndWindowLoad(idWindow *model) = 0;
+	virtual const LoadStack &GetLoadStack() const = 0;
 
 							// Registers a new decl type.
 	virtual void			RegisterDeclType( const char *typeName, declType_t type, idDecl *(*allocator)( void ) ) = 0;

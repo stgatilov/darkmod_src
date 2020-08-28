@@ -198,8 +198,11 @@ public:
 							// returns true if the file on disk changed
 	bool					NeedsReload();
 							// reload a map, returning information about changed entities
-							// used for hot reload (note: can return "fail")
+							// used for hot reload from .map file (note: can return "fail")
 	idMapReloadInfo 		TryReload();
+							// apply specified diff to this map, and return information about changes
+							// used for incremental hot reload from DarkRadiant
+	idMapReloadInfo			ApplyDiff(const char *text);
 
 	int						AddEntity( idMapEntity *mapentity );
 	idMapEntity *			FindEntity( const char *name );
@@ -232,8 +235,10 @@ struct idMapReloadInfo {
 	bool mapInvalid = false;
 	bool cannotReload = true;
 	idList<NameAndIdx> modifiedEntities;
+	idList<NameAndIdx> respawnEntities;		//modified entities which are forced to respawn
 	idList<NameAndIdx> addedEntities;
 	idList<NameAndIdx> removedEntities;
+	//note: this map may miss nonmodified entities
 	std::unique_ptr<idMapFile> oldMap;
 };
 

@@ -84,6 +84,7 @@ public:
 						explicit idStr( const int i );
 						explicit idStr( const unsigned u );
 						explicit idStr( const float f );
+						explicit idStr( const double f );
 						~idStr( void );
 
 	size_t				Size( void ) const;
@@ -448,6 +449,19 @@ ID_INLINE idStr::idStr( const float f ) {
 
 	Init();
 	l = idStr::snPrintf( text, sizeof( text ), "%f", f );
+	while( l > 0 && text[l-1] == '0' ) text[--l] = '\0';
+	while( l > 0 && text[l-1] == '.' ) text[--l] = '\0';
+	EnsureAlloced( l + 1 );
+	strcpy( data, text );
+	len = l;
+}
+
+ID_INLINE idStr::idStr( const double f ) {
+	char text[ 64 ];
+	int l;
+
+	Init();
+	l = idStr::snPrintf( text, sizeof( text ), "%lf", f );
 	while( l > 0 && text[l-1] == '0' ) text[--l] = '\0';
 	while( l > 0 && text[l-1] == '.' ) text[--l] = '\0';
 	EnsureAlloced( l + 1 );

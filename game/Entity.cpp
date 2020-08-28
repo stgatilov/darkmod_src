@@ -10699,7 +10699,7 @@ void idEntity::OnRemoveFromLocationEntity(CObjectiveLocation* locationEnt)
 	locationEntPtr = locationEnt;
 
 	// Ensure that only registered location ents are removed
-	assert(m_objLocations.FindIndex(locationEntPtr) != -1);
+	assert(m_objLocations.FindIndex(locationEntPtr) != -1 || gameLocal.GameState() == GAMESTATE_SHUTDOWN);
 
 	m_objLocations.Remove(locationEntPtr);
 }

@@ -735,6 +735,10 @@ idGameEdit::SpawnEntityDef
 ================
 */
 void idGameEdit::SpawnEntityDef( const idDict &args, idEntity **ent, int flags ) {
+	if (flags & sedRespawn) {
+		assert(ent && *ent);
+		EntityDelete(*ent, false);
+	}
 	if ((flags & sedRespectInhibit) && gameLocal.InhibitEntitySpawn(args))
 		return;	//inhibited
 	if (flags & sedCacheMedia)
@@ -926,7 +930,7 @@ void idGameEdit::EntityDelete( idEntity *ent, bool safe ) {
 	if (safe)
 		ent->PostEventMS(&EV_Remove, 0);
 	else
-		delete ent;
+		ent->Event_Remove();
 }
 
 /*

@@ -751,7 +751,8 @@ public:
 							// Initializes all map variables common to both save games and spawned games
 	void					LoadMap( const char *mapName, int randseed );
 							// stgatilov: reload map and update already running game
-	void					HotReloadMap();
+							// if mapDiff is not NULL, then it is treated as patch and applied in-memory
+	void					HotReloadMap(const char *mapDiff = NULL, bool skipTimestampCheck = false);
 
 	void					LocalMapRestart( void );
 	void					MapRestart( void );
@@ -822,6 +823,7 @@ public:
 	idEntity *				GetTraceEntity( const trace_t &trace ) const;
 
 	static void				ArgCompletion_EntityName( const idCmdArgs &args, void(*callback)( const char *s ) );
+	static void				ArgCompletion_MapEntityName( const idCmdArgs &args, void(*callback)( const char *s ) );
 	idEntity *				FindTraceEntity( idVec3 start, idVec3 end, const idTypeInfo &c, const idEntity *skip ) const;
 	idEntity *				FindEntity( const char *name ) const;
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;

@@ -214,6 +214,15 @@ void idUserInterfaceManagerLocal::FreeListGUI( idListGUI *listgui ) {
 	delete listgui;
 }
 
+bool idUserInterfaceManagerLocal::IsWindowAlive( idWindow *window ) const {
+	for ( int i = 0; i < guis.Num(); i++ )
+		if ( guis[i]->IsWindowAlive(window) )
+			return true;
+	for ( int i = 0; i < demoGuis.Num(); i++ )
+		if ( demoGuis[i]->IsWindowAlive(window) )
+			return true;
+	return false;
+}
 /*
 ===============================================================================
 
@@ -692,4 +701,19 @@ bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime
 	dw->win->ResetTime(startTime);
 	dw->win->EvalRegs(-1, true);
 	return true;
+}
+
+static bool IsWindowAliveRec(idWindow *tested, idWindow *treenode) {
+	if (!treenode)
+		return false;
+	if (treenode == tested)
+		return true;
+	int n = treenode->GetChildCount();
+	for (int i = 0; i < n; i++)
+		if (IsWindowAliveRec(tested, treenode->GetChild(i)))
+			return true;
+	return false;
+}
+bool idUserInterfaceLocal::IsWindowAlive(idWindow *window) const {
+	return IsWindowAliveRec(window, GetDesktop());
 }
