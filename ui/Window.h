@@ -285,7 +285,7 @@ public:
 
 	bool ParseScript(idParser *src, idGuiScriptList &list, int *timeParm = NULL, bool allowIf = false);
 	bool RunScript(int n);
-	bool RunScriptList(idGuiScriptList *src);
+	bool RunScriptList(idGuiScriptList *src, const char *name = "[unknown]");
 	void SetRegs(const char *key, const char *val);
     intptr_t ParseExpression(idParser *src, idWinVar *var = NULL, intptr_t component = 0);
 	int ExpressionConstant(float f);

@@ -636,7 +636,7 @@ void idWindow::RunNamedEvent ( const char* eventName )
 			EvalRegs(-1, true);
 		}
 		
-		RunScriptList( namedEvents[i]->mEvent );
+		RunScriptList( namedEvents[i]->mEvent, namedEvents[i]->mName.c_str() );
 		
 		break;
 	}
@@ -1073,7 +1073,9 @@ void idWindow::Time() {
 		for (int i = 0; i < c; i++) {
 			if ( timeLineEvents[i]->pending && gui->GetTime() - timeLine >= timeLineEvents[i]->time ) {
 				timeLineEvents[i]->pending = false;
-				RunScriptList( timeLineEvents[i]->event );
+				char label[256];
+				idStr::snPrintf(label, sizeof(label), "onTime[%d]", timeLineEvents[i]->time);
+				RunScriptList( timeLineEvents[i]->event, label );
 			}
 		}
 	}
@@ -2669,15 +2671,75 @@ void idWindow::ResetTime(int t) {
 
 }
 
+//stgatilov: for debugging
+static void ReportGuiScriptExecution(idWindow *window, const char *name) {
+	static const int NAME_LEN = 56;
+	char newFullName[NAME_LEN];
+	snprintf(newFullName, sizeof(newFullName), "%s::%s", window->GetName(), name);
+	int globalTime = com_frameTime;
+
+	struct CacheEntry {
+		char fullName[NAME_LEN];
+		int lastTime;	//GuiTime when happened last
+		int repCount;	//how many times in a row repeated faster than 
+	};
+	static const int CACHE_SIZE = 8;
+	static const int SUPPRESS_SIZE = 8;
+	static const int MAX_REPEAT_INTERVAL = 500;		//min time in MS between legal repetitions
+	static const int MAX_REPEAT_COUNT = 100;		//this many illegal repetitions -> suppress
+	//first CACHE_SIZE entries are cache of recent messages
+	//last SUPPRESS_SIZE entries are a list of already suppressed messages
+	static CacheEntry cache[CACHE_SIZE + SUPPRESS_SIZE] = {0};
+	static int suppressedCount = 0;
+
+	int i;
+	bool newSuppress = false;
+	for (i = CACHE_SIZE + SUPPRESS_SIZE - 1; i >= 0; i--)
+		if (idStr::Cmp(cache[i].fullName, newFullName) == 0) {
+			if (i >= CACHE_SIZE)
+				return;	//already suppressed;
+
+			if (globalTime - cache[i].lastTime > MAX_REPEAT_INTERVAL)
+				cache[i].repCount = 0;
+			else {
+				int k = ++cache[i].repCount;
+				if (k >= MAX_REPEAT_COUNT && suppressedCount < SUPPRESS_SIZE) {
+					//this is spam: add to suppress list
+					suppressedCount++;
+					strcpy(cache[CACHE_SIZE + SUPPRESS_SIZE - suppressedCount].fullName, newFullName);
+					newSuppress = true;
+				}
+			}
+			cache[i].lastTime = globalTime;
+			break;
+		}
+	if (i < 0) {
+		//find LRU cache entry to evict
+		int lruIndex = 0;
+		for (int i = 1; i < CACHE_SIZE; i++){
+			if (cache[i].lastTime < cache[lruIndex].lastTime)
+				lruIndex = i;
+		}
+		//overwrite evicted entry with new message
+		strcpy(cache[lruIndex].fullName, newFullName);
+		cache[lruIndex].lastTime = globalTime;
+		cache[lruIndex].repCount = 1;
+	}
+
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("T=%d | Run script %s%s", window->GetGui()->GetTime(), newFullName, (newSuppress ? " !SUPPRESSED!" : ""));
+}
 
 /*
 ================
 idWindow::RunScriptList
 ================
 */
-bool idWindow::RunScriptList(idGuiScriptList *src) {
+bool idWindow::RunScriptList(idGuiScriptList *src, const char *name) {
 	if (src == NULL) {
 		return false;
+	}
+	if (name) {	//only log window event calls, don't log if/else block starts
+		ReportGuiScriptExecution(this, name);
 	}
 	src->Execute(this);
 	return true;
@@ -2690,7 +2752,7 @@ idWindow::RunScript
 */
 bool idWindow::RunScript(int n) {
 	if (n >= ON_MOUSEENTER && n < SCRIPT_COUNT) {
-		return RunScriptList(scripts[n]);
+		return RunScriptList(scripts[n], ScriptNames[n]);
 	}
 	return false;
 }

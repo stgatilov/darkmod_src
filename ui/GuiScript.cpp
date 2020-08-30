@@ -417,10 +417,10 @@ void idGuiScriptList::Execute(idWindow *win) {
 				float f = win->EvalRegs(gs->conditionReg);
 				if (f) {
 					if (gs->ifList) {
-						win->RunScriptList(gs->ifList);
+						win->RunScriptList(gs->ifList, NULL);
 					}
 				} else if (gs->elseList) {
-					win->RunScriptList(gs->elseList);
+					win->RunScriptList(gs->elseList, NULL);
 				}
 			}
 		}
