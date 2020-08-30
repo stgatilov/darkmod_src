@@ -67,6 +67,24 @@ void idSessionLocal::StartMenu( bool playIntro ) {
 
 /*
 =================
+idSessionLocal::GetGUI
+=================
+*/
+idUserInterface *idSessionLocal::GetGui(GuiType type) const {
+	if (type == gtActive)
+		return guiActive;
+	if (type == gtMainMenu)
+		return guiMainMenu;
+	if (type == gtRestart)
+		return guiRestartMenu;
+	if (type == gtLoading)
+		return guiLoading;
+	//TODO: do we ever need other cases?
+	return NULL;
+}
+
+/*
+=================
 idSessionLocal::SetGUI
 =================
 */

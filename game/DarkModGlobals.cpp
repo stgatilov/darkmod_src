@@ -32,6 +32,7 @@
 #include "ModMenu.h"
 #include "ai/AI.h"
 #include "IniFile.h"
+#include "Debug.h"
 
 #ifdef MACOS_X
 #include <mach-o/dyld.h>
@@ -322,7 +323,8 @@ void CGlobal::LogString(const char *fmt, ...)
 	va_list arg;
 	va_start(arg, fmt);
 
-	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4u] ", m_Filename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
+	const char *cleanFilename = CleanupSourceCodeFileName(m_Filename);
+	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4u] ", cleanFilename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
 	vfprintf(m_LogFile, fmt, arg);
 	fprintf(m_LogFile, "\n");
 	fflush(m_LogFile);
