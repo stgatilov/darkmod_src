@@ -37,6 +37,10 @@ public:
 	idGuiScript();
 	~idGuiScript();
 
+	void SetSourceLocation(const char *filename, int linenum) {
+		srcFilename = filename;	//pointer must live as long as owner window lives!
+		srcLineNum = linenum;
+	}
 	bool Parse(idParser *src);
 	void Execute(idWindow *win) {
 		if (handler) {
@@ -61,7 +65,9 @@ protected:
 	idGuiScriptList *elseList;
 	idList<idGSWinVar> parms;
 	void (*handler) (idWindow *window, idList<idGSWinVar> *src);
-
+	//stgatilov: error reporting and debuggability
+	const char *srcFilename;	//points into owner's idWindow::sourceFilenamePool
+	int srcLineNum;
 };
 
 

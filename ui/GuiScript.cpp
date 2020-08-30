@@ -24,6 +24,14 @@
 #include "UserInterfaceLocal.h"
 
 
+//stgatilov: additional debug output
+static void ReportGuiCmd(idWindow *window, const char *fullCmd) {
+	if (idStr::Cmp(fullCmd, "mainmenu_heartbeat;") == 0)
+		return;	//stgatilov: suppress typical meaningless spam
+	idStr location = window->GetCurrentSourceLocation();
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("CMD: %-30s (%s)", fullCmd, location.c_str());
+}
+
 /*
 =========================
 Script_Set
@@ -45,8 +53,10 @@ void Script_Set(idWindow *window, idList<idGSWinVar> *src) {
 					val += "\"";
 					i++;
 				}
+				ReportGuiCmd(window, val.c_str());
 				window->AddCommand(val);
 			} else {
+				ReportGuiCmd(window, dest->c_str());
 				window->AddCommand(*dest);
 			}
 			return;
@@ -259,6 +269,8 @@ idGuiScript::idGuiScript() {
 	conditionReg = -1;
 	handler = NULL;
 	parms.SetGranularity( 2 );
+	srcFilename = nullptr;
+	srcLineNum = 0;
 }
 
 /*
@@ -412,6 +424,7 @@ void idGuiScriptList::Execute(idWindow *win) {
 				}
 			}
 		}
+		win->BeforeExecute(gs);
 		gs->Execute(win);
 	}
 }

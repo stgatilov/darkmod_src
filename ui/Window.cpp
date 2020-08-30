@@ -1632,14 +1632,22 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 			}
 		}
 
+		//stgatilov: add filename string to window pool if not there yet
+		const char *srcFilename = src->GetFileName();
+		if (!sourceFilenamePool.FindKey(srcFilename))
+			sourceFilenamePool.Set(srcFilename, "");
+		srcFilename = sourceFilenamePool.FindKey(srcFilename)->GetKey();
+
 		idGuiScript *gs = new idGuiScript();
 		if (token.Icmp("if") == 0) {
 			gs->conditionReg = ParseExpression(src);
 			gs->ifList = new idGuiScriptList();
+			gs->SetSourceLocation(srcFilename, src->GetLineNum());
 			ParseScript(src, *gs->ifList, NULL);
 			if (src->ReadToken(&token)) {
 				if (token == "else") {
 					gs->elseList = new idGuiScriptList();
+					gs->SetSourceLocation(srcFilename, src->GetLineNum());
 					// pass true to indicate we are parsing an else condition
 					ParseScript(src, *gs->elseList, NULL, true );
 				} else {
@@ -1666,6 +1674,7 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 			 return false;
 		}
 
+		gs->SetSourceLocation(srcFilename, src->GetLineNum());
 		gs->Parse(src);
 		list.Append(gs);
 	}
@@ -4220,4 +4229,29 @@ bool idWindow::UpdateFromDictionary ( idDict& dict ) {
 	PostParse();
 	
 	return true;
+}
+
+/*
+================
+idWindow::BeforeExecute
+
+Hack to make idGuiScript additional info available in Script_XXX functions.
+================
+*/
+void idWindow::BeforeExecute(idGuiScript *script) {
+	sourceFilenameCurrent = script->srcFilename;
+	sourceLineNumCurrent = script->srcLineNum;
+}
+
+/*
+================
+idWindow::GetCurrentSourceLocation
+
+Hack to make idGuiScript additional info available in Script_XXX functions.
+================
+*/
+idStr idWindow::GetCurrentSourceLocation() const {
+	if (!sourceFilenameCurrent)
+		return "[unknown]";
+	return idStr(sourceFilenameCurrent) + ':' + idStr(sourceLineNumCurrent);
 }
