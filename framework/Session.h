@@ -86,6 +86,17 @@ public:
 
 	virtual void	SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) = 0;
 
+	enum GuiType {
+		gtActive,
+		gtMainMenu,
+		gtRestart,
+		gtLoading,
+		//gtInGame,
+		//gtMsg,
+		//gtTest,
+	};
+	virtual idUserInterface* GetGui(GuiType type) const = 0;
+
 	// stgatilov: for clicking GUI buttons in automation
 	// windowName --- the name of GUI window (see idWindows::name)
 	// scriptNum --- index of script (see idWindow::ON_ACTION = 2 and similar)
