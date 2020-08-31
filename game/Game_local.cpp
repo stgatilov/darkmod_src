@@ -1459,6 +1459,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
 
+	ClearMainMenuMode();
+
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
 	// clear the sound system
@@ -3831,6 +3833,15 @@ void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 	*/
 }
 
+void idGameLocal::ClearMainMenuMode() {
+	if (idUserInterface *gui = session->GetGui(idSession::gtMainMenu)) {
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("idGameLocal::ClearMainMenuMode called");
+		gui->SetStateInt("mode", 0);
+		gui->SetStateString("MusicLastState", "");
+	}
+}
+
+
 /*
 ================
 idGameLocal::HandleMainMenuCommands
@@ -4202,7 +4213,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				idStr mapname = m_MissionManager->GetCurrentStartingMap();
 				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va("map %s\n", mapname.c_str()) );
 				//note: it seems that target state does not matter
-				//map start resets "mode" to NONE anyway (not sure about exact mechanism)
+				//map start resets "mode" to NONE anyway (see ClearMainMenuMode)
 			}
 			if (targetState->name == "END_GAME") {
 				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending game");
@@ -4751,6 +4762,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		Printf("GUI: Language changed to %s.\n", newLang.c_str() );
 		// set the new language and store it, will also reload the GUI
 		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
+		ClearMainMenuMode();
 		if (common->GetI18N()->SetLanguage( newLang.c_str() ))
 		{
 			// Tels: #3193: Cycle through all active entities and call "onLanguageChanged" on them
