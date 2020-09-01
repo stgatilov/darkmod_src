@@ -539,6 +539,9 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 		if ( !sound ) {
 			continue;
 		}
+		const char *shaderName = "";
+		if (auto shader = sound->channels[0].soundShader)
+			shaderName = shader->GetName();
 		// if no channels are active, do nothing
 		if ( !sound->playing ) {
 			continue;
@@ -1911,11 +1914,11 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 
 	// get the actual shader
 	const idSoundShader *shader = chan->soundShader;
-
 	// this might happen if the foreground thread just deleted the sound emitter
 	if ( !shader ) {
 		return;
 	}
+	const char *shaderName = shader->GetName();
 
 	float maxd = parms->maxDistance;
 	float mind = parms->minDistance;

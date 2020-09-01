@@ -437,6 +437,7 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			if ( !shader ) {
 				continue;
 			}
+			const char *shaderName = shader->GetName();
 
 			// see if this channel has completed
 			if ( !( chan->parms.soundShaderFlags & SSF_LOOPING ) ) {

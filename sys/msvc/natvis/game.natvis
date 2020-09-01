@@ -392,6 +392,15 @@
     <DisplayString>guiscr: {handler} {parms}</DisplayString>
   </Type>
 
+  <Type Name="idSoundChannel">
+    <DisplayString>sndChan: {soundShader,na}</DisplayString>
+  </Type>
+  <Type Name="idSoundEmitterLocal">
+    <DisplayString Condition="removeStatus == 0 || removeStatus == 1">sndEmit: {channels[0].soundShader,na}</DisplayString>
+    <DisplayString Condition="removeStatus == 2">sndEmit: [finished]</DisplayString>
+    <DisplayString>sndEmit: {channels[0].soundShader,na}</DisplayString>
+  </Type>
+
   <!-- dmap data structures -->
   <Type Name="mapTri_s">
     <DisplayString>{v[0].xyz} {v[1].xyz} {v[2].xyz}</DisplayString>

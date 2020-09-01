@@ -234,7 +234,7 @@ idSoundEmitterLocal
 typedef enum {
 	REMOVE_STATUS_INVALID				= -1,
 	REMOVE_STATUS_ALIVE					=  0,
-	REMOVE_STATUS_WAITSAMPLEFINISHED	=  1,
+	REMOVE_STATUS_WAITSAMPLEFINISHED	=  1,	//stgatilov: plays now, but will be stopped & freed when it ends
 	REMOVE_STATUS_SAMPLEFINISHED		=  2
 } removeStatus_t;
 
@@ -359,7 +359,7 @@ public:
 	void				GatherChannelSamples( int sampleOffset44k, int sampleCount44k, float *dest ) const;
 	void				ALStop( void );			// free OpenAL resources if any
 
-	bool				triggerState;
+	bool				triggerState;			// stgatilov: is it enabled according to Start/Stop methods?
 	int					trigger44kHzTime;		// hardware time sample the channel started
 	int					triggerGame44kHzTime;	// game time sample time the channel started
 	soundShaderParms_t	parms;					// combines the shader parms and the per-channel overrides
@@ -371,7 +371,7 @@ public:
 	float				lastVolume;				// last calculated volume based on distance
 	float				lastV[6];				// last calculated volume for each speaker, so we can smoothly fade
 	idSoundFade			channelFade;
-	bool				triggered;
+	bool				triggered;				// stgatilov: true means all OpenAL buffers should be recreated
 	ALuint				openalSource;
 	ALuint				openalStreamingOffset;
 	ALuint				openalStreamingBuffer[3];
@@ -450,7 +450,7 @@ public:
 	float				minDistance;				// smallest of all playing channel min distances // grayman #3042
 	float				volumeLoss;					// grayman #3042 - accumulated volume loss while traversing portals
 	int					lastValidPortalArea;		// so an emitter that slides out of the world continues playing
-	bool				playing;					// if false, no channel is active
+	bool				playing;					// true if any channel is active according to our timings (OpenAL status does not matter)
 	bool				hasShakes;
 	idVec3				spatializedOrigin;			// the virtual sound origin, either the real sound origin,
 													// or a point through a portal chain
