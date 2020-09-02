@@ -20,12 +20,10 @@
 #include <ctime>
 
 /**
- * greebo: This class keeps track of the total gameplay time. Just call Update()
- * in regular intervals and the class checks the time difference since the last update call.
+ * greebo: This class keeps track of the total astronomical time player spent in action.
+ * Just call Update() in regular intervals and the class checks the time difference since the last update call.
  *
  * For saving and loading, this class provides separate routines.
- *
- * duzenko #4409: added a high-preciosion timer to drive game time under com_fixedTic
  */
 class GamePlayTimer
 {
@@ -33,26 +31,15 @@ private:
 	std::time_t _lastTime;
 	std::time_t _curTime;
 
-	// msec timer stuff
-	uint64_t _lastMsec;
-	uint64_t _curMsec;
-	int _lastTick;
-
 	// The passed time in seconds
 	uint32_t _timePassed;
-	uint32_t _msecPassed;
 
 	// TRUE if the timer updates the passed time
 	bool _enabled;
 
-	void msec(uint64_t *msec) {
-		*msec = Sys_GetTimeMicroseconds() / 1000;
-	}
-
 public:
 	GamePlayTimer() :
-		_timePassed(0),
-		_msecPassed(0)
+		_timePassed(0)
 	{}
 
 	// Defines the starting point
@@ -60,7 +47,6 @@ public:
 	{
 		// Remember this time as starting point
 		std::time(&_lastTime);
-		msec(&_curMsec);
 
 		SetEnabled(true);
 	}
@@ -83,10 +69,8 @@ public:
 	void Clear()
 	{
 		_timePassed = 0;
-		_msecPassed = 0;
 
 		std::time(&_lastTime);
-		msec(&_curMsec);
 	}
 
 	void Update()
@@ -104,11 +88,6 @@ public:
 
 		// Remember this last check time
 		_lastTime = _curTime;
-
-		_lastMsec = _curMsec;
-		msec(&_curMsec);
-		assert(_curMsec >= _lastMsec);
-		_msecPassed += _lastTick = uint32_t(_curMsec - _lastMsec);
 	}
 
 	idStr GetTime() const {
@@ -123,22 +102,13 @@ public:
 
 	void Save(idSaveGame *savefile) const
 	{
-#if 1
-		savefile->WriteUnsignedInt(_msecPassed);
-#else
 		savefile->WriteUnsignedInt(_timePassed);
-#endif
 		savefile->WriteBool(_enabled);
 	}
 
 	void Restore(idRestoreGame *savefile)
 	{
-#if 1
-		savefile->ReadUnsignedInt(_msecPassed);
-		_timePassed = _msecPassed / 1000;
-#else
 		savefile->ReadUnsignedInt(_timePassed);
-#endif
 		savefile->ReadBool(_enabled);
 	}
 

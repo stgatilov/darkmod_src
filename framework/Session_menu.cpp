@@ -1163,7 +1163,8 @@ const char* idSessionLocal::MessageBox( msgBoxType_t type, const char *message, 
 	msgFireBack[ 1 ] = fire_no ? fire_no : "";
 	guiMsgRestore = guiActive;
 	// 4725: Hide the cursor behind the prompt (Obsttorte)
-	guiMsgRestore->SetCursor(325,290);
+	if (guiMsgRestore)
+		guiMsgRestore->SetCursor(325,290);
 
 	guiActive = guiMsg;
 	guiMsg->SetCursor( 325, 290 );

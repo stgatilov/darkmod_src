@@ -1188,6 +1188,9 @@ void idSessionLocal::WriteCmdDemo( const char *demoName, bool save ) {
 		common->Printf( "idSessionLocal::WriteCmdDemo: no name specified\n" );
 		return;
 	}
+	if (com_fixedTic.GetInteger()) {
+		common->Error( "Cmd demo is not compatible with uncapped FPS" );
+	}
 
 	idStr statsName;
 	if (save) {
@@ -1236,6 +1239,9 @@ idSessionLocal::StartPlayingCmdDemo
 ===============
 */
 void idSessionLocal::StartPlayingCmdDemo(const char *demoName) {
+	if (com_fixedTic.GetInteger()) {
+		common->Error( "Cmd demo is not compatible with uncapped FPS" );
+	}
 	// exit any current game
 	Stop();
 

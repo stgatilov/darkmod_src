@@ -3197,6 +3197,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 	const renderView_t *view;
 	int curframe = framenum;
 
+	memset(&ret, 0, sizeof(ret));
 	ret.sessionCommand[0] = 0; // grayman #3139 - must be cleared here, to handle the "player waiting" time
 	g_Global.m_Frame = curframe;
 	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
@@ -3205,7 +3206,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 	if (!player) {
 		//stgatilov #4670: if player is absent, the game is most likely being shutdown
 		//so we should not compute anything in Game to avoid crashes
-		memset(&ret, 0, sizeof(ret));
 		return ret;
 	}
 
