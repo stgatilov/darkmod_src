@@ -24,6 +24,7 @@
 #include "AmbientOcclusionStage.h"
 #include "BloomStage.h"
 #include "FrameBufferManager.h"
+#include "../sys/sys_padinput.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -338,6 +339,7 @@ void R_InitOpenGL( void ) {
 
 	// input and sound systems need to be tied to the new window
 	Sys_InitInput();
+	Sys_InitPadInput();
 	soundSystem->InitHW();
 
 	if ( glConfig.srgb = r_fboSRGB )

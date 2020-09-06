@@ -225,7 +225,8 @@ typedef enum {
 	SE_KEY,					// evValue is a key code, evValue2 is the down flag
 	SE_CHAR,				// evValue is an ascii char
 	SE_MOUSE,				// evValue and evValue2 are reletive signed x / y moves
-	SE_JOYSTICK_AXIS,		// evValue is an axis number and evValue2 is the current state (-127 to 127)
+	SE_PAD_BUTTON,			// evValue is a button code, evValue2 is the down flag
+	SE_PAD_AXIS,			// evValue is an axis number and evValue2 is the current state (-127 to 127)
 	SE_CONSOLE				// evPtr is a char*, from typing something at a non-game console
 } sysEventType_t;
 
@@ -327,6 +328,7 @@ void			Sys_DLL_Unload(uintptr_t dllHandle);
 void			Sys_GenerateEvents( void );
 sysEvent_t		Sys_GetEvent( void );
 void			Sys_ClearEvents( void );
+void			Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 
 // input is tied to windows, so it needs to be started up and shut down whenever
 // the main window is recreated

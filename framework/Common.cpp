@@ -23,6 +23,8 @@
 #include "Session_local.h"
 #include "Debug.h"
 #include <iostream>
+
+#include "GamepadInput.h"
 #include "../renderer/backend/RenderBackend.h"
 
 #define MAX_WARNING_LIST	256
@@ -2839,6 +2841,7 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 
 		// initialize key input/binding, done early so bind command exists
 		idKeyInput::Init();
+		idGamepadInput::Init();
 
 		// init the console so we can take prints
 		console->Init();
@@ -2924,6 +2927,7 @@ void idCommonLocal::Shutdown( void ) {
 
 	// shut down the key system
 	idKeyInput::Shutdown();
+	idGamepadInput::Shutdown();
 
 	// shut down the cvar system
 	cvarSystem->Shutdown();
@@ -3020,6 +3024,9 @@ void idCommonLocal::InitGame( void )
 		}
 		if (fileSystem->FindFile(KEYBINDS_FILE) != FIND_NO) { // STiFU #4797
 			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " KEYBINDS_FILE "\n");		// DarkmodKeybinds.cfg
+		}
+		if (fileSystem->FindFile(PADBINDS_FILE) != FIND_NO) {
+			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " PADBINDS_FILE "\n");
 		}
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );

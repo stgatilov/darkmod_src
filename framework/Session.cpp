@@ -1793,6 +1793,15 @@ void Session_Hitch_f( const idCmdArgs &args ) {
 }
 
 /*
+====================
+SimulateEscape_f
+====================
+*/
+void SimulateEscape_f( const idCmdArgs & ) {
+	Sys_QueEvent( 0, SE_KEY, K_ESCAPE, 1, 0, nullptr );
+}
+
+/*
 ===============
 idSessionLocal::ScrubSaveGameFileName
 
@@ -3351,6 +3360,8 @@ void idSessionLocal::Init() {
 	cmdSystem->AddCommand( "rescanSI", Session_RescanSI_f, CMD_FL_SYSTEM, "internal - rescan serverinfo cvars and tell game" );
 
 	cmdSystem->AddCommand( "hitch", Session_Hitch_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "hitches the game" );
+
+	cmdSystem->AddCommand( "escape", SimulateEscape_f, CMD_FL_GAME, "simulate a press of the ESC key" );
 
 	// the same idRenderWorld will be used for all games
 	// and demos, insuring that level specific models

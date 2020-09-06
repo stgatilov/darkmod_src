@@ -152,6 +152,9 @@ public:
 
 								// Dirty hack for LoadStack to know if saved idWindow pointer is dead
 	virtual bool				IsWindowAlive( idWindow *window ) const = 0;
+
+								// hack: needed for gamepad support
+	virtual bool				IsBindHandlerActive() const = 0;
 };
 
 extern idUserInterfaceManager *	uiManager;

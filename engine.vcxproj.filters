@@ -1291,6 +1291,12 @@
     <ClInclude Include="framework\LoadStack.h">
       <Filter>Framework</Filter>
     </ClInclude>
+    <ClInclude Include="framework\GamepadInput.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\sys_padinput.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3027,6 +3033,12 @@
     </ClCompile>
     <ClCompile Include="framework\LoadStack.cpp">
       <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\GamepadInput.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\sys_padinput.cpp">
+      <Filter>Sys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

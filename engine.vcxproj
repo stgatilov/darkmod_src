@@ -197,6 +197,7 @@
     <ClInclude Include="framework\EventLoop.h" />
     <ClInclude Include="framework\File.h" />
     <ClInclude Include="framework\FileSystem.h" />
+    <ClInclude Include="framework\GamepadInput.h" />
     <ClInclude Include="framework\I18N.h" />
     <ClInclude Include="framework\KeyInput.h" />
     <ClInclude Include="framework\Licensee.h" />
@@ -507,6 +508,7 @@
     <ClInclude Include="sound\snd_efxpresets.h" />
     <ClInclude Include="sound\snd_local.h" />
     <ClInclude Include="sound\sound.h" />
+    <ClInclude Include="sys\sys_padinput.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
     <ClInclude Include="sys\win32\win_local.h" />
@@ -736,6 +738,7 @@
     <ClCompile Include="framework\EventLoop.cpp" />
     <ClCompile Include="framework\File.cpp" />
     <ClCompile Include="framework\FileSystem.cpp" />
+    <ClCompile Include="framework\GamepadInput.cpp" />
     <ClCompile Include="framework\I18N.cpp" />
     <ClCompile Include="framework\KeyInput.cpp" />
     <ClCompile Include="framework\LoadStack.cpp" />
@@ -1106,6 +1109,7 @@
     <ClCompile Include="sound\snd_system.cpp" />
     <ClCompile Include="sound\snd_wavefile.cpp" />
     <ClCompile Include="sound\snd_world.cpp" />
+    <ClCompile Include="sys\sys_padinput.cpp" />
     <ClCompile Include="sys\sys_local.cpp" />
     <ClCompile Include="sys\win32\win_cpu.cpp" />
     <ClCompile Include="sys\win32\win_glimp.cpp" />

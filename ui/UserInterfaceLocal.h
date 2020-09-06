@@ -129,6 +129,7 @@ public:
 	virtual	idListGUI *			AllocListGUI( void ) const;
 	virtual void				FreeListGUI( idListGUI *listgui );
 	virtual bool				IsWindowAlive( idWindow *window ) const;
+	virtual bool				IsBindHandlerActive() const override;
 
 private:
 	idRectangle					screenRect;

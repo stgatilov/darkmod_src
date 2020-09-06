@@ -840,13 +840,13 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		// Disable player view change while rotating
 		player->SetImmobilization( "Grabber", player->GetImmobilization("Grabber") | EIM_VIEW_ANGLE );
 		
-		if( !this->DeadMouse() ) 
+		if( !this->DeadMouse() || player->usercmd.jx != 0 || player->usercmd.jy != 0 ) 
 		{
 			float xMag, yMag;
 			idVec3 xAxis, yAxis;
 
-			xMag = player->usercmd.mx - m_mousePosition.x;
-			yMag = player->usercmd.my - m_mousePosition.y;
+			xMag = player->usercmd.mx - m_mousePosition.x + player->usercmd.jx / 64.f;
+			yMag = player->usercmd.my - m_mousePosition.y + player->usercmd.jy / 64.f;
 
 			yAxis.Set( 0.0f, 1.0f, 0.0f ); // y is always pitch
 

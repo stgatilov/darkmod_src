@@ -41,6 +41,7 @@
 // filenames
 #define CONFIG_FILE					"Darkmod.cfg"
 #define KEYBINDS_FILE				"DarkmodKeybinds.cfg"
+#define PADBINDS_FILE				"DarkmodPadbinds.cfg"
 
 // base folder where the source code lives
 #define SOURCE_CODE_BASE_FOLDER				"darkmod_src"

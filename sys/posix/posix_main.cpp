@@ -299,6 +299,11 @@ void Posix_QueEvent( sysEventType_t type, int value, int value2,
 #endif
 }
 
+void Sys_QueEvent( int, sysEventType_t type, int value, int value2,
+				  int ptrLength, void *ptr ) {
+	Posix_QueEvent( type, value, value2, ptrLength, ptr );
+}
+
 /*
 ================
 Sys_GetEvent

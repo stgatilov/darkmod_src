@@ -35,6 +35,8 @@ class TdmDepends(ConanFile):
         "zlib:minizip": True,
         # enable SSE2 in hash library
         "BLAKE2:SSE": "SSE2",
+        # disable fPIC for glfw
+        "glfw:fPIC": False,
     }
 
     # these deps are header-only, hence they don't need per-configuration builds
@@ -55,6 +57,7 @@ class TdmDepends(ConanFile):
         "vorbis/1.3.6@bincrafters/stable",
         "fltk/1.3.5@thedarkmod/local",
         "BLAKE2/master@thedarkmod/local",
+        "glfw/3.3.2@",
     )
     # these deps must be built separately for each configuration (both debug and release)
     # this is required for C++ libs because iterator debugging and runtime differences are not allowed by MSVC

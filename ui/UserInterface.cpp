@@ -223,6 +223,16 @@ bool idUserInterfaceManagerLocal::IsWindowAlive( idWindow *window ) const {
 			return true;
 	return false;
 }
+
+bool idUserInterfaceManagerLocal::IsBindHandlerActive() const {
+	for ( idUserInterfaceLocal *gui : guis ) {
+		if ( gui->bindHandler != nullptr ) {
+			return true;
+		}
+	}
+	return false;
+}
+
 /*
 ===============================================================================
 

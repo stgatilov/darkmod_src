@@ -23,8 +23,6 @@
 
 #define	WINDOW_STYLE	(WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE | WS_THICKFRAME)
 
-void	Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
-
 void	Sys_CreateConsole( void );
 void	Sys_DestroyConsole( void );
 

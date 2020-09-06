@@ -915,7 +915,7 @@ void idPhysics_Player::PlaySwimBurstSound()
 		return;
 
 	// speed mod
-	if ((pPlayer->usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool())
+	if ((pPlayer->usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool())
 	{
 		sSound += "_creep";
 	} else if (pPlayer->usercmd.buttons & BUTTON_RUN)

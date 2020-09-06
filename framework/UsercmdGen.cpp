@@ -17,8 +17,9 @@
 #pragma hdrstop
 
 
-
+#include "GamepadInput.h"
 #include "Session_local.h"
+#include "../sys/sys_padinput.h"
 
 /*
 ================
@@ -48,7 +49,9 @@ bool usercmd_t::operator==( const usercmd_t &rhs ) const {
 			impulse == rhs.impulse &&
 			flags == rhs.flags &&
 			mx == rhs.mx &&
-			my == rhs.my );
+			my == rhs.my &&
+			jx == rhs.jx &&
+			jy == rhs.jy );
 }
 
 
@@ -158,6 +161,45 @@ typedef struct {
 } userCmdString_t;
 
 userCmdString_t	userCmdStrings[] = {
+	// self-explanatory names
+	{ "_jump",			UB_UP },
+	{ "_parry",			UB_PARRY_MANIPULATE },
+	{ "_creep",			UB_CREEP },
+
+	{ "_weapon0",		UB_WEAPON0 },
+	{ "_weapon1",		UB_WEAPON1 },
+	{ "_weapon2",		UB_WEAPON2 },
+	{ "_weapon3",		UB_WEAPON3 },
+	{ "_weapon4",		UB_WEAPON4 },
+	{ "_weapon5",		UB_WEAPON5 },
+	{ "_weapon6",		UB_WEAPON6 },
+	{ "_weapon7",		UB_WEAPON7 },
+	{ "_weapon8",		UB_WEAPON8 },
+	{ "_weapon9",		UB_WEAPON9 },
+	{ "_weapon10",		UB_WEAPON10 },
+	{ "_weapon11",		UB_WEAPON11 },
+	{ "_weapon12",		UB_WEAPON12 },
+	{ "_reload",			UB_RELOAD },
+	{ "_weapon_next",	UB_WEAPON_NEXT },
+	{ "_weapon_prev",	UB_WEAPON_PREV },
+	{ "_ready",			UB_READY },
+	{ "_center_view",	UB_CENTER_VIEW },
+	{ "_objectives",		UB_OBJECTIVES },
+	{ "_crouch",			UB_CROUCH },
+	{ "_mantle",			UB_MANTLE },
+	{ "_inventory_grid",	UB_INVENTORY_GRID },
+	{ "_frob",			UB_FROB },
+	{ "_lean_forward",	UB_LEAN_FORWARD },
+	{ "_lean_left",		UB_LEAN_LEFT },
+	{ "_lean_right",		UB_LEAN_RIGHT },
+	{ "_inventory_prev",	UB_INVENTORY_PREV },
+	{ "_inventory_next",	UB_INVENTORY_NEXT },
+	{ "_inventory_group_prev", UB_INVENTORY_GROUP_PREV },
+	{ "_inventory_group_next", UB_INVENTORY_GROUP_NEXT },
+	{ "_inventory_use",	UB_INVENTORY_USE },
+	{ "_inventory_drop",	UB_INVENTORY_DROP },
+
+	// legacy names
 	{ "_moveUp",		UB_UP },
 	{ "_moveDown",		UB_DOWN },
 	{ "_left",			UB_LEFT },
@@ -172,7 +214,7 @@ userCmdString_t	userCmdStrings[] = {
 
 	{ "_attack",		UB_ATTACK },
 	{ "_speed",			UB_SPEED },
-	{ "_zoom",			UB_ZOOM },
+	{ "_zoom",			UB_PARRY_MANIPULATE },
 	{ "_showScores",	UB_SHOWSCORES },
 	{ "_mlook",			UB_MLOOK },
 
@@ -181,41 +223,41 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_button2",		UB_BUTTON2 },
 	{ "_button3",		UB_BUTTON3 },
 	{ "_button4",		UB_BUTTON4 },
-	{ "_button5",		UB_BUTTON5 },
+	{ "_button5",		UB_CREEP },
 	{ "_button6",		UB_BUTTON6 },
 	{ "_button7",		UB_BUTTON7 },
 
-	{ "_impulse0",		UB_IMPULSE0 },
-	{ "_impulse1",		UB_IMPULSE1 },
-	{ "_impulse2",		UB_IMPULSE2 },
-	{ "_impulse3",		UB_IMPULSE3 },
-	{ "_impulse4",		UB_IMPULSE4 },
-	{ "_impulse5",		UB_IMPULSE5 },
-	{ "_impulse6",		UB_IMPULSE6 },
-	{ "_impulse7",		UB_IMPULSE7 },
-	{ "_impulse8",		UB_IMPULSE8 },
-	{ "_impulse9",		UB_IMPULSE9 },
-	{ "_impulse10",		UB_IMPULSE10 },
-	{ "_impulse11",		UB_IMPULSE11 },
-	{ "_impulse12",		UB_IMPULSE12 },
-	{ "_impulse13",		UB_IMPULSE13 },
-	{ "_impulse14",		UB_IMPULSE14 },
-	{ "_impulse15",		UB_IMPULSE15 },
+	{ "_impulse0",		UB_WEAPON0 },
+	{ "_impulse1",		UB_WEAPON1 },
+	{ "_impulse2",		UB_WEAPON2 },
+	{ "_impulse3",		UB_WEAPON3 },
+	{ "_impulse4",		UB_WEAPON4 },
+	{ "_impulse5",		UB_WEAPON5 },
+	{ "_impulse6",		UB_WEAPON6 },
+	{ "_impulse7",		UB_WEAPON7 },
+	{ "_impulse8",		UB_WEAPON8 },
+	{ "_impulse9",		UB_WEAPON9 },
+	{ "_impulse10",		UB_WEAPON10 },
+	{ "_impulse11",		UB_WEAPON11 },
+	{ "_impulse12",		UB_WEAPON12 },
+	{ "_impulse13",		UB_RELOAD },
+	{ "_impulse14",		UB_WEAPON_NEXT },
+	{ "_impulse15",		UB_WEAPON_PREV },
 	{ "_impulse16",		UB_IMPULSE16 },
-	{ "_impulse17",		UB_IMPULSE17 },
-	{ "_impulse18",		UB_IMPULSE18 },
-	{ "_impulse19",		UB_IMPULSE19 },
+	{ "_impulse17",		UB_READY },
+	{ "_impulse18",		UB_CENTER_VIEW },
+	{ "_impulse19",		UB_OBJECTIVES },
 	{ "_impulse20",		UB_IMPULSE20 },
 	{ "_impulse21",		UB_IMPULSE21 },
 	{ "_impulse22",		UB_IMPULSE22 },
-	{ "_impulse23",		UB_IMPULSE23 },
-	{ "_impulse24",		UB_IMPULSE24 },
+	{ "_impulse23",		UB_CROUCH },
+	{ "_impulse24",		UB_MANTLE },
 	{ "_impulse25",		UB_IMPULSE25 },
 	{ "_impulse26",		UB_IMPULSE26 },
 	{ "_impulse27",		UB_IMPULSE27 },
 	{ "_impulse28",		UB_IMPULSE28 },
 	{ "_impulse29",		UB_IMPULSE29 },
-	{ "_impulse30",		UB_IMPULSE30 },
+	{ "_impulse30",		UB_INVENTORY_GRID },
 	{ "_impulse31",		UB_IMPULSE31 },
 	{ "_impulse32",		UB_IMPULSE32 },
 	{ "_impulse33",		UB_IMPULSE33 },
@@ -226,18 +268,18 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_impulse38",		UB_IMPULSE38 },
 	{ "_impulse39",		UB_IMPULSE39 },
 	{ "_impulse40",		UB_IMPULSE40 },
-	{ "_impulse41",		UB_IMPULSE41 },
+	{ "_impulse41",		UB_FROB },
 	{ "_impulse42",		UB_IMPULSE42 },
 	{ "_impulse43",		UB_IMPULSE43 },
-	{ "_impulse44",		UB_IMPULSE44 },
-	{ "_impulse45",		UB_IMPULSE45 },
-	{ "_impulse46",		UB_IMPULSE46 },
-	{ "_impulse47",		UB_IMPULSE47 },
-	{ "_impulse48",		UB_IMPULSE48 },
-	{ "_impulse49",		UB_IMPULSE49 },
-	{ "_impulse50",		UB_IMPULSE50 },
-	{ "_impulse51",		UB_IMPULSE51 },
-	{ "_impulse52",		UB_IMPULSE52 },
+	{ "_impulse44",		UB_LEAN_FORWARD },
+	{ "_impulse45",		UB_LEAN_LEFT },
+	{ "_impulse46",		UB_LEAN_RIGHT },
+	{ "_impulse47",		UB_INVENTORY_PREV },
+	{ "_impulse48",		UB_INVENTORY_NEXT },
+	{ "_impulse49",		UB_INVENTORY_GROUP_PREV },
+	{ "_impulse50",		UB_INVENTORY_GROUP_NEXT },
+	{ "_impulse51",		UB_INVENTORY_USE },
+	{ "_impulse52",		UB_INVENTORY_DROP },
 	{ "_impulse53",		UB_IMPULSE53 },
 	{ "_impulse54",		UB_IMPULSE54 },
 	{ "_impulse55",		UB_IMPULSE55 },
@@ -667,6 +709,8 @@ void idUsercmdGenLocal::MouseMove( void ) {
 idUsercmdGenLocal::JoystickMove
 =================
 */
+idCVar in_padInvertYawAxis( "in_padInvertYawAxis", "0", CVAR_GAME|CVAR_BOOL|CVAR_ARCHIVE, "Invert gamepad yaw axis" );
+idCVar in_padInvertPitchAxis( "in_padInvertPitchAxis", "0", CVAR_GAME|CVAR_BOOL|CVAR_ARCHIVE, "Invert gamepad pitch axis" );
 void idUsercmdGenLocal::JoystickMove( void ) {
 	float	anglespeed;
 
@@ -676,15 +720,12 @@ void idUsercmdGenLocal::JoystickMove( void ) {
 		anglespeed = idMath::M_MS2SEC * USERCMD_MSEC;
 	}
 
-	if ( !ButtonState( UB_STRAFE ) ) {
-		viewangles[YAW] += anglespeed * in_yawSpeed.GetFloat() * joystickAxis[AXIS_SIDE];
-		viewangles[PITCH] += anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[AXIS_FORWARD];
-	} else {
-		cmd.rightmove = idMath::ClampChar( cmd.rightmove + joystickAxis[AXIS_SIDE] );
-		cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + joystickAxis[AXIS_FORWARD] );
-	}
-
-	cmd.upmove = idMath::ClampChar( cmd.upmove + joystickAxis[AXIS_UP] );
+	float yawAngleSpeed = anglespeed * ( in_padInvertYawAxis.GetBool() ? 1 : -1 );
+	float pitchAngleSpeed = anglespeed * ( in_padInvertPitchAxis.GetBool() ? 1 : -1 );
+	viewangles[YAW] += yawAngleSpeed * in_yawSpeed.GetFloat() * joystickAxis[AXIS_YAW] / 127.f;
+	viewangles[PITCH] += pitchAngleSpeed * in_pitchSpeed.GetFloat() * joystickAxis[AXIS_PITCH] / 127.f;
+	cmd.rightmove = idMath::ClampChar( cmd.rightmove + joystickAxis[AXIS_SIDE] );
+	cmd.forwardmove = idMath::ClampChar( cmd.forwardmove + joystickAxis[AXIS_FORWARD] );
 }
 
 /*
@@ -720,7 +761,7 @@ void idUsercmdGenLocal::CmdButtons( void ) {
 	}
 
 	// check the scoreboard button
-	if ( ButtonState( UB_SHOWSCORES ) || ButtonState( UB_IMPULSE19 ) ) {
+	if ( ButtonState( UB_SHOWSCORES ) || ButtonState( UB_OBJECTIVES ) ) {
 		// the button is toggled in SP mode as well but without effect
 		cmd.buttons |= BUTTON_SCORES;
 	}
@@ -763,7 +804,7 @@ void idUsercmdGenLocal::MakeCurrent( void ) {
 		// update toggled key states
 		toggled_crouch.SetKeyState( ButtonState( UB_DOWN ), in_toggleCrouch.GetBool() );
 		toggled_run.SetKeyState( ButtonState( UB_SPEED ), in_toggleRun.GetBool() );
-		toggled_zoom.SetKeyState( ButtonState( UB_ZOOM ), in_toggleZoom.GetBool() );
+		toggled_zoom.SetKeyState( ButtonState( UB_PARRY_MANIPULATE ), in_toggleZoom.GetBool() );
 
 		// keyboard angle adjustment
 		AdjustAngles();
@@ -797,6 +838,9 @@ void idUsercmdGenLocal::MakeCurrent( void ) {
 
 	cmd.mx = continuousMouseX;
 	cmd.my = continuousMouseY;
+
+	cmd.jx = joystickAxis[AXIS_SIDE] + joystickAxis[AXIS_YAW];
+	cmd.jy = joystickAxis[AXIS_FORWARD] + joystickAxis[AXIS_PITCH];
 
 	flags = cmd.flags;
 	impulse = cmd.impulse;
@@ -934,8 +978,8 @@ void idUsercmdGenLocal::Key( int keyNum, bool down ) {
 		buttonState[ action ]++;
 
 		if ( !Inhibited()  ) {
-			if ( action >= UB_IMPULSE0 && action <= UB_IMPULSE61 ) {
-				cmd.impulse = action - UB_IMPULSE0;
+			if ( action >= UB_WEAPON0 && action <= UB_IMPULSE61 ) {
+				cmd.impulse = action - UB_WEAPON0;
 				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
 			}
 		}
@@ -1030,6 +1074,52 @@ idUsercmdGenLocal::Joystick
 */
 void idUsercmdGenLocal::Joystick( void ) {
 	memset( joystickAxis, 0, sizeof( joystickAxis ) );
+
+	int numEvents = Sys_PollGamepadInputEvents();
+	if ( numEvents ) {
+		int type;
+		int id;
+		int value;
+
+		for ( int i = 0; i < numEvents; ++i ) {
+			if ( Sys_ReturnGamepadInputEvent( i, type, id, value ) ) {
+				if ( type == SE_PAD_BUTTON ) {
+					idGamepadInput::SetButtonState( id, value );
+				} else if ( type == SE_PAD_AXIS ) {
+					idGamepadInput::SetAxisState( id, value );					
+				}
+			}
+		}
+	}
+
+	idGamepadInput::UpdateAxisState( joystickAxis );
+	idList<padActionChange_t> stateChanges = idGamepadInput::GetActionStateChange();
+	for ( auto change : stateChanges ) {
+		if ( change.active ) {
+
+			buttonState[ change.action ]++;
+
+			if ( !Inhibited()  ) {
+				if ( change.action >= UB_WEAPON0 && change.action <= UB_IMPULSE61 ) {
+					cmd.impulse = change.action - UB_WEAPON0;
+					cmd.flags ^= UCF_IMPULSE_SEQUENCE;
+				}
+			}
+
+			if ( change.action == UB_NONE && change.binding.Length() > 0 ) {
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, change.binding.c_str() );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "\n" );
+			}
+		} else {
+			buttonState[ change.action ]--;
+			// we might have one held down across an app active transition
+			if ( buttonState[ change.action ] < 0 ) {
+				buttonState[ change.action ] = 0;
+			}
+		}
+	}
+	
+	Sys_EndGamepadInputEvents();
 }
 
 /*
