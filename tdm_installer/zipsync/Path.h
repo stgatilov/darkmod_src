@@ -22,6 +22,9 @@ struct PathAR {
 
 //append filename with prefix (e.g. "C:/__download__models.pk4" from "C:/models.pk4").
 std::string PrefixFile(std::string absPath, std::string prefix);
+//remove prefix from filename  (e.g. "C:/models.pk4" from "C:/__download__models.pk4").
+std::string UnPrefixFile(std::string absPath, std::string prefix);
+
 //given a path to file, returns path to the directory it belongs to
 std::string GetDirPath(std::string somePath);
 //given a path to file, returns the filename

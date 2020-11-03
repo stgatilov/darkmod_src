@@ -75,6 +75,15 @@ std::string PrefixFile(std::string absPath, std::string prefix) {
     return absPath;
 }
 
+std::string UnPrefixFile(std::string absPath, std::string prefix) {
+    size_t pos = absPath.rfind('/' + prefix);
+    if (pos != std::string::npos)
+        absPath.erase(pos + 1, prefix.size());
+    else if (stdext::starts_with(absPath, prefix))
+        absPath.erase(0, prefix.size());
+    return absPath;
+}
+
 std::string GetDirPath(std::string somePath) {
     size_t pos = somePath.find_last_of('/');
     ZipSyncAssert(pos != std::string::npos);

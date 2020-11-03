@@ -195,7 +195,7 @@ int TotalCount(const ZipSync::Manifest &mani, bool providedOnly) {
 
 void DoClean(std::string root) {
     static std::string DELETE_PREFIXES[] = {"__reduced__", "__download", "__repacked__"};
-    static std::string RESTORE_PREFIXES[] = {"__repacked__"};
+    static std::string RESTORE_PREFIX = "__repacked__";
 
     std::vector<std::string> allFiles = EnumerateFilesInDirectory(root);
     for (std::string filename : allFiles) {
@@ -208,12 +208,8 @@ void DoClean(std::string root) {
         if (!shouldDelete)
             continue;
 
-        std::string shouldRestore;
-        for (const std::string &p : RESTORE_PREFIXES)
-            if (StartsWith(fn, p))
-                shouldRestore = fn.substr(p.size());
-        if (!shouldRestore.empty()) {
-            shouldRestore = GetDirPath(filename) + '/' + shouldRestore;
+        if (StartsWith(fn, RESTORE_PREFIX)) {
+            std::string shouldRestore = UnPrefixFile(filename, RESTORE_PREFIX);
             std::string fullOldPath = root + '/' + filename;
             std::string fullNewPath = root + '/' + shouldRestore;
             if (!ZipSync::IfFileExists(fullNewPath)) {
