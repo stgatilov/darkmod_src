@@ -11,6 +11,13 @@
 
 int ProgressIndicatorGui::InterruptFlag = 0;
 
+ProgressIndicatorGui::~ProgressIndicatorGui() {
+	//reset labels to constant strings to avoid dangling pointers
+	_progressWidget->label("");
+	if (_labelWidget)
+		_labelWidget->label("");
+}
+
 ProgressIndicatorGui::ProgressIndicatorGui(Fl_Progress *widget) : _progressWidget(widget) {
 	_progressWidget->value(0.0);
 	_progressWidget->label("starting...");

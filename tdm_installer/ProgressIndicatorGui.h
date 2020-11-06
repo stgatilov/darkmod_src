@@ -22,7 +22,9 @@ class ProgressIndicatorGui : public ZipSync::ProgressIndicator {
 	static int InterruptFlag;
 
 public:
+	~ProgressIndicatorGui();
 	ProgressIndicatorGui(Fl_Progress *widget);
+
 	void AttachRemainsLabel(Fl_Widget *label);
 	int Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") override;
 
