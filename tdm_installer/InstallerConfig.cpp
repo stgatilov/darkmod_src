@@ -30,17 +30,27 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 
 		if (secClass == "MirrorSet") {
 			ZipSyncAssertF(_mirrorSets.count(secName) == 0, "MirrorSet %s: described in INI twice", secName.c_str());
-			MirrorSet mirset;
-			mirset._name = secName;
-			mirset._ini = secData;
+			std::map<std::string, WeightedUrl> nameToMirror;
 			for (const auto &pKV : secData) {
 				const std::string &key = pKV.first;
 				const std::string &value = pKV.second;
-				if (key == "url" || stdext::starts_with(key, "url_"))
-					mirset._urls.push_back(value);
+				if (stdext::starts_with(key, "url_"))
+					nameToMirror[key.substr(4)]._url = value;
+				else if (stdext::starts_with(key, "weight_"))
+					nameToMirror[key.substr(7)]._weight = stod(value);
 				else {
-					ZipSyncAssertF(false, "MirrorSet %s: unexpected key \"%s\"", mirset._name.c_str(), key.c_str());
+					ZipSyncAssertF(false, "MirrorSet %s: unexpected key \"%s\"", secName.c_str(), key.c_str());
 				}
+			}
+			MirrorSet mirset;
+			mirset._name = secName;
+			mirset._ini = secData;
+			for (const auto &pNM : nameToMirror) {
+				const std::string &key = pNM.first;
+				const WeightedUrl &mirror = pNM.second;
+				ZipSyncAssertF(!mirror._url.empty(), "MirrorSet %s: url_%s not set or empty", secName.c_str(), key.c_str());
+				ZipSyncAssertF(mirror._weight > 1e-3, "MirrorSet %s: weight_%s <= 0 or not set", secName.c_str(), key.c_str());
+				mirset._urls.push_back(mirror);
 			}
 			_mirrorSets[mirset._name] = std::move(mirset);
 		}
@@ -61,7 +71,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 					_defaultVersion = ver._name;
 				}
 				else if (key == "manifestUrl" || stdext::starts_with(key, "manifestUrl_")) {
-					ver._manifestUrls.push_back(value);
+					ver._manifestUrls.push_back(WeightedUrl{value, 1.0});
 				}
 				else if (key == "depends" || stdext::starts_with(key, "depends_")) {
 					ver._depends.push_back(value);
@@ -85,8 +95,9 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 		Version &ver = pNV.second;
 
 		//process mirror sets, replace them with mirror URLs
-		std::vector<std::string> newUrls;
-		for (const std::string &url : ver._manifestUrls) {
+		std::vector<WeightedUrl> newUrls;
+		for (const WeightedUrl &wurl : ver._manifestUrls) {
+			const std::string &url = wurl._url;
 			//syntax: ${MS:MIRROR_SET_NAME}  --- allowed only at beginning
 			if (stdext::starts_with(url, "${MS:")) {
 				int pos = (int)url.find('}');
@@ -95,21 +106,21 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 				std::string tail = url.substr(pos + 1);
 				ZipSyncAssertF(_mirrorSets.count(mirsetName), "Version %s: unknown MirrorSet %s", ver._name.c_str(), mirsetName.c_str());
 				const auto &replacements = _mirrorSets.at(mirsetName)._urls;
-				for (const std::string &repl : replacements)
-					newUrls.push_back(repl + tail);
+				for (const WeightedUrl &repl : replacements)
+					newUrls.push_back(WeightedUrl{repl._url + tail, repl._weight * wurl._weight});
 			}
 			else {
-				newUrls.push_back(url);
+				newUrls.push_back(wurl);
 			}
 		}
-		for (const std::string &url : newUrls) {
-			ZipSyncAssertF(ZipSync::PathAR::IsHttp(url), "Version %s: manifest URL is not recognized as HTTP", ver._name.c_str());
+		for (const WeightedUrl &wurl : newUrls) {
+			ZipSyncAssertF(ZipSync::PathAR::IsHttp(wurl._url), "Version %s: manifest URL is not recognized as HTTP", ver._name.c_str());
 		}
 		ver._manifestUrls = std::move(newUrls);
 
 		int trustedCnt = 0;
-		for (const std::string &url : ver._manifestUrls) {
-			if (IsUrlTrusted(url))
+		for (const WeightedUrl &wurl : ver._manifestUrls) {
+			if (IsUrlTrusted(wurl._url))
 				trustedCnt++;
 		}
 		ZipSyncAssertF(trustedCnt > 0, "Version %s: has no manifest URL at trusted location", ver._name.c_str());
@@ -174,19 +185,32 @@ std::string InstallerConfig::ChooseManifestUrl(const std::string &version, bool 
 		return version;	//this is custom manifest, not a version
 
 	const Version &ver = _versions.at(version);
-	std::vector<std::string> candidates = ver._manifestUrls;
+	std::vector<WeightedUrl> candidates;
 	if (trusted) {
-		candidates.clear();
-		for (const std::string &url : ver._manifestUrls)
-			if (IsUrlTrusted(url))
-				candidates.push_back(url);
+		for (const WeightedUrl &wurl : ver._manifestUrls)
+			if (IsUrlTrusted(wurl._url))
+				candidates.push_back(wurl);
+	}
+	else {
+		candidates = ver._manifestUrls;
 	}
 
-	int k = (int)candidates.size();
-	int idx = MirrorChoosingRandom() % k;
-	const std::string& url = candidates[idx];
+	double sum = 0.0;
+	for (const WeightedUrl &wurl : candidates)
+		sum += wurl._weight;
+	ZipSyncAssertF(candidates.size(), "No candidates to choose url from (version %s)", version.c_str());
+	ZipSyncAssertF(sum > 1e-6, "Zero total weight when choosing url (version %s)", version.c_str());
 
-	return url;
+	double param = (MirrorChoosingRandom() % 1000000) * 1e-6 * sum;
+	const WeightedUrl *chosen = &candidates[0];
+	for (const WeightedUrl &wurl : candidates) {
+		param -= wurl._weight;
+		if (param < 0.0) {
+			chosen = &wurl;
+			break;
+		}
+	}
+	return chosen->_url;
 }
 
 std::vector<std::string> InstallerConfig::GetProvidedVersions(const std::string &version) const {
