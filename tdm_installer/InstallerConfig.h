@@ -56,4 +56,7 @@ public:
 	//returns a set of versions whose manifest must be provided for update to specified version
 	//pass them ChooseManifestUrl to get set of provided manifests
 	std::vector<std::string> GetProvidedVersions(const std::string &version) const;
+
+	//specified url was unavailable, remove it from the list of available urls
+	void RemoveFailingUrl(const std::string &url);
 };

@@ -217,3 +217,25 @@ std::vector<std::string> InstallerConfig::GetProvidedVersions(const std::string 
 	const Version &ver = _versions.at(version);
 	return ver._providedVersions;
 }
+
+void InstallerConfig::RemoveFailingUrl(const std::string &badUrl) {
+	int cntRemoved = 0;
+
+	for (auto &pNV : _versions) {
+		const std::string &ver = pNV.first;
+		Version &version = pNV.second;
+
+		std::vector<WeightedUrl> remainUrls;
+		for (WeightedUrl maniUrl : version._manifestUrls) {
+			if (maniUrl._url == badUrl) {
+				g_logger->warningf("Removed manifest URL %s from version %s", maniUrl._url.c_str(), ver.c_str());
+				cntRemoved++;
+			}
+			else
+				remainUrls.push_back(maniUrl);
+		}
+		version._manifestUrls = std::move(remainUrls);
+	}
+
+	ZipSyncAssertF(cntRemoved > 0, "Cannot handle nonworking URL %s", badUrl.c_str());
+}
