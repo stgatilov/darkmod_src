@@ -36,6 +36,7 @@ typedef std::function<int(double, const char*)> GlobalProgressCallback;
  * Utilizes multipart byteranges requests to download many chunks quickly.
  */
 class Downloader {
+    bool _silentErrors = false;
     struct Download {
         DownloadSource src;
         DownloadFinishedCallback finishedCallback;
@@ -72,6 +73,9 @@ public:
 
     void EnqueueDownload(const DownloadSource &source, const DownloadFinishedCallback &finishedCallback);
     void SetProgressCallback(const GlobalProgressCallback &progressCallback);
+    //silent == false: throw exception on any error up to the caller, stopping the whole run
+    //silent == true: just don't call callback function for failed requests (grouped by url), no stopping, no exception
+    void SetErrorMode(bool silent);
     void DownloadAll();
 
     int64_t TotalBytesDownloaded() const { return _totalBytesDownloaded; }

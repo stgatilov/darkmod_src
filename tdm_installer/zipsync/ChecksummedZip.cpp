@@ -88,6 +88,8 @@ std::vector<HashDigest> GetHashesOfRemoteChecksummedZips(Downloader &downloader,
     //find hash of remote files
     std::vector<HashDigest> remoteHashes(n);
     for (int i = 0; i < n; i++) {
+        if (startData[i].empty())
+            continue;   //failed to download (possible with "silent" error mode)
         std::string bytes(startData[i].begin(), startData[i].end());
         int pos = (int)bytes.find(CHECKSUMMED_HASH_PREFIX);
         if (pos < 0 || pos + HASH_PREFIX_LEN + HASH_SIZE >= bytes.size())
@@ -98,7 +100,7 @@ std::vector<HashDigest> GetHashesOfRemoteChecksummedZips(Downloader &downloader,
             if (!(isdigit(c) || c >= 'a' && c <= 'f'))
                 bad = true;
         if (bad)
-            continue;
+            continue;   //failed to find checksum
         remoteHashes[i].Parse(hex.c_str());
     }
 

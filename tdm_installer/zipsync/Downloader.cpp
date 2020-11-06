@@ -40,6 +40,9 @@ void Downloader::EnqueueDownload(const DownloadSource &source, const DownloadFin
 void Downloader::SetProgressCallback(const GlobalProgressCallback &progressCallback) {
     _progressCallback = progressCallback;
 }
+void Downloader::SetErrorMode(bool silent) {
+    _silentErrors = silent;
+}
 
 void Downloader::DownloadAll() {
     if (_progressCallback)
@@ -59,7 +62,15 @@ void Downloader::DownloadAll() {
 
     for (const auto &pKV : _urlStates) {
         std::string url = pKV.first;
-        DownloadAllForUrl(url);
+        try {
+            DownloadAllForUrl(url);
+        }
+        catch(const ErrorException &e) {
+            if (!_silentErrors)
+                throw e;    //rethrow further to caller
+            else
+                {}          //supress exception, continue with other urls
+        }
     }
 
     ZipSyncAssert(_curlHandle.get_deleter() == curl_easy_cleanup);
