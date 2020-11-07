@@ -1888,3 +1888,18 @@ void WizardGoNext() {
 void WizardGoPrev() {
   g_Wizard->prev();
 }
+
+Fl_Double_Window *g_HelpWindow=(Fl_Double_Window *)0;
+
+Fl_Text_Display *g_Help_TextParameters=(Fl_Text_Display *)0;
+
+Fl_Double_Window* FluidGuiHelp() {
+  { g_HelpWindow = new Fl_Double_Window(450, 320, "TheDarkMod installer: help");
+    { g_Help_TextParameters = new Fl_Text_Display(20, 20, 410, 280);
+      g_Help_TextParameters->box(FL_NO_BOX);
+      g_Help_TextParameters->color(FL_BACKGROUND_COLOR);
+    } // Fl_Text_Display* g_Help_TextParameters
+    g_HelpWindow->end();
+  } // Fl_Double_Window* g_HelpWindow
+  return g_HelpWindow;
+}

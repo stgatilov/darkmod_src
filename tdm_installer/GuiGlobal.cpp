@@ -9,6 +9,7 @@
 #include "GuiPageInstall.h"
 #include "ProgressIndicatorGui.h"
 #include "GuiUtils.h"
+#include "LogUtils.h"
 
 
 void cb_Settings_ButtonReset(Fl_Widget *self) {
@@ -135,4 +136,81 @@ void GuiLoaded(void*) {
 		if (idx == 1)
 			exit(0);
 	}
+}
+
+void GuiInitHelp() {
+	GuiSetStyles(g_HelpWindow);
+
+	static Fl_Text_Buffer g_Help_StringParameters;
+	g_Help_StringParameters.text(
+		"List of command line parameters:\n"
+		"\n"
+		"--help\n"
+		"    Display this list of parameters.\n"
+		"\n"
+		"--unattended\n"
+		"    Install game without any human intervention.\n"
+		"    The most recent stable version is installed by default\n"
+		"    into the directory where this installer is located.\n"
+		"    BEWARE: it won't ask for any confirmation!\n"
+		"    Make sure to look into tdm_installer.log after it finishes.\n"
+		"    Return code should be nonzero if an error happens.\n"
+		"\n"
+		"--version {ver}\n"
+		"    Install the version {ver} instead of the default one.\n"
+		"    Only has effect when combined with --unattended.\n"
+	);
+	g_Help_TextParameters->buffer(g_Help_StringParameters);
+}
+
+void GuiUnattended(int argc, char **argv) {
+	UnattendedMode = true;
+
+	bool skipConfigDownload = false;
+	std::string version;
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--skip-config-download") == 0)
+			skipConfigDownload = true;
+		if (strcmp(argv[i], "--version") == 0 && i+1 < argc)
+			version = argv[i+1];
+	}
+
+	Fl::flush();
+	GuiLoaded(nullptr);
+
+	Fl::flush();
+	g_Settings_CheckCustomVersion->value(true);
+	g_Settings_CheckAdvancedSettings->value(true);
+	g_Settings_CheckSkipSelfUpdate->value(true);
+	if (skipConfigDownload)
+		g_Settings_CheckSkipConfigDownload->value(true);
+	Fl::flush();
+	g_Settings_ButtonNext->do_callback();
+
+	Fl::flush();
+	g_logger->infof("Running in unattended mode");
+	if (!version.empty()) {
+		int cnt = 0;
+		g_Version_TreeVersions->deselect_all();
+		for (Fl_Tree_Item *item = g_Version_TreeVersions->first(); item; item = g_Version_TreeVersions->next(item)) {
+			const char *label = item->label();
+			if (version == label) {
+				g_Version_TreeVersions->select(item);
+				cnt++;
+			}
+		}
+		if (cnt != 1) {
+			std::string message = "Specified version " + version + " not found";
+			GuiMessageBox(mbfError, message.c_str());
+		}
+	}
+	g_Version_ButtonNext->do_callback();
+
+	Fl::flush();
+	g_Confirm_ButtonStart->do_callback();
+
+	Fl::flush();
+	g_Install_ButtonClose->do_callback();
+
+	exit(0);	//never reached
 }

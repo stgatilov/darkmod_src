@@ -2,6 +2,10 @@
 
 class Fl_Widget;
 
+//true if "--unattended" argument was passed (i.e. no human interaction intended)
+extern bool UnattendedMode;
+
+
 const char *GuiChooseDirectory(const char *message);
 
 enum GuiMessageBoxFlags {

@@ -11,6 +11,8 @@
 #include "LogUtils.h"
 
 
+bool UnattendedMode = false;
+
 //taken from fl_file_dir.cxx (popup)
 static void PopupDialogModal(Fl_File_Chooser *fc) {
 	fc->show();
@@ -57,6 +59,8 @@ int GuiMessageBox(GuiMessageBoxFlags flags, const char *message, const char *but
 		case mbfButtonsOk: {
 			if (type == mbfTypeError) {
 				g_logger->warningf("Showing error message: %s", message);
+				if (UnattendedMode)
+					exit(3);
 				fl_alert("ERROR: %s", message);
 			}
 			else if (type == mbfTypeMessage)
@@ -69,6 +73,8 @@ int GuiMessageBox(GuiMessageBoxFlags flags, const char *message, const char *but
 			int idx = -1;
 			if (type == mbfTypeWarning) {
 				g_logger->warningf("Showing warning message: %s", message);
+				if (UnattendedMode && (flags & mbfDefaultCancel))
+					exit(2);
 				if (flags & mbfDefaultCancel)
 					idx = fl_choice("%s", buttonOk, buttonCancel, nullptr, message);
 				else
