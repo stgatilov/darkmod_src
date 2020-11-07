@@ -71,7 +71,10 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 					_defaultVersion = ver._name;
 				}
 				else if (key == "manifestUrl" || stdext::starts_with(key, "manifestUrl_")) {
-					ver._manifestUrls.push_back(WeightedUrl{value, 1.0});
+					WeightedUrl addWurl;
+					addWurl._url = value;
+					addWurl._weight = 1.0;
+					ver._manifestUrls.push_back(addWurl);
 				}
 				else if (key == "depends" || stdext::starts_with(key, "depends_")) {
 					ver._depends.push_back(value);
@@ -106,8 +109,12 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 				std::string tail = url.substr(pos + 1);
 				ZipSyncAssertF(_mirrorSets.count(mirsetName), "Version %s: unknown MirrorSet %s", ver._name.c_str(), mirsetName.c_str());
 				const auto &replacements = _mirrorSets.at(mirsetName)._urls;
-				for (const WeightedUrl &repl : replacements)
-					newUrls.push_back(WeightedUrl{repl._url + tail, repl._weight * wurl._weight});
+				for (const WeightedUrl &repl : replacements) {
+					WeightedUrl addWurl;
+					addWurl._url = repl._url + tail;
+					addWurl._weight = repl._weight * wurl._weight;
+					newUrls.push_back(addWurl);
+				}
 			}
 			else {
 				newUrls.push_back(wurl);
