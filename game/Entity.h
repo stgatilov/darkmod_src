@@ -669,7 +669,7 @@ public:
 	virtual void			PostBind( void );
 	virtual void			PreUnbind( void );
 	virtual void			PostUnbind( void );
-	void					JoinTeam( idEntity *teammember );
+	void					JoinTeam( idEntity *teammember );	//#5409: deprecated
 	
 	/** 
 	 * greebo: Returns the first team entity matching the given type. If the second
@@ -1604,9 +1604,13 @@ private:
 
 	// entity binding
 	bool					InitBind( idEntity *master );	// initialize an entity binding
-	void					FinishBind( const char *jointnum ); // finish an entity binding - grayman #3074
+	void					FinishBind( idEntity *master, const char *jointnum ); // finish an entity binding - grayman #3074
 	void					RemoveBinds( void );			// deletes any entities bound to this object
-	void					QuitTeam( void );				// leave the current team
+	void					QuitTeam( void );				// leave the current team (#5409: deprecated)
+	// stgatilov #5409: bindMaster/teamMaster/teamChain structure updates
+	void					BreakBindToMaster( void );							//assign bindMaster = NULL and recompute teams
+	void					EstablishBindToMaster( idEntity *newMaster );		//assign new bindMaster and recompute teams
+	bool					ValidateBindTeam( void );							//check validity of the whole team this entity belongs to
 
 	void					UpdatePVSAreas( void );
 

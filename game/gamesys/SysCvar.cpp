@@ -786,6 +786,8 @@ idCVar net_serverDlBaseURL(			"net_serverDlBaseURL",		"",				CVAR_GAME | CVAR_AR
 
 idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIVE, "pak names for which download is provided, seperated by ;" );
 
+idCVar g_entityBindNew(				"g_entityBindNew",			"1",			CVAR_GAME, "If set to 1, then new code for entity binding is used (#5409)");
+
 //----------------------------------
 
 #ifndef __linux__

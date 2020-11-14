@@ -649,6 +649,7 @@ extern idCVar	net_clientPredictGUI;
 extern idCVar	g_voteFlags;
 extern idCVar	g_mapCycle;
 extern idCVar	g_balanceTDM;
+extern idCVar	g_entityBindNew;
 
 extern idCVar	si_timeLimit;
 extern idCVar	si_fragLimit;

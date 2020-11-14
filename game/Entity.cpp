@@ -2015,7 +2015,8 @@ idEntity::~idEntity( void )
 
 	// unbind from master
 	Unbind();
-	QuitTeam();
+	if (!g_entityBindNew.GetBool())
+		QuitTeam();
 
 	gameLocal.RemoveEntityFromHash( name.c_str(), this );
 
@@ -5147,17 +5148,32 @@ void idEntity::SetCinematicOnTeam(idEntity* ent)
 idEntity::FinishBind
 ================
 */
-void idEntity::FinishBind( const char *jointName ) // grayman #3074
+void idEntity::FinishBind( idEntity *newMaster, const char *jointName ) // grayman #3074
 {
+	if (g_entityBindNew.GetBool()) {
+		// unbind from the previous master (without any pre/post/notify stuff)
+		if (bindMaster)
+			BreakBindToMaster();
+
+		// bind to the new master (pre/post/notify stuff already done outside)
+		EstablishBindToMaster(newMaster);
+		// reorder the active entity list 
+		gameLocal.sortTeamMasters = true;
+	}
+	else
+		bindMaster = newMaster;
+
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
 
-	// We are now separated from our previous team and are either
-	// an individual, or have a team of our own.  Now we can join
-	// the new bindMaster's team.  Bindmaster must be set before
-	// joining the team, or we will be placed in the wrong position
-	// on the team.
-	JoinTeam( bindMaster );
+	if (!g_entityBindNew.GetBool()) {
+		// We are now separated from our previous team and are either
+		// an individual, or have a team of our own.  Now we can join
+		// the new bindMaster's team.  Bindmaster must be set before
+		// joining the team, or we will be placed in the wrong position
+		// on the team.
+		JoinTeam( bindMaster );
+	}
 
 	// if our bindMaster is enabled during a cinematic, we must be, too
 	cinematic = bindMaster->cinematic;
@@ -5204,10 +5220,9 @@ void idEntity::Bind( idEntity *master, bool orientated )
 
 	bindJoint = INVALID_JOINT;
 	bindBody = -1;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind(NULL); // grayman #3074
+	FinishBind(master, NULL); // grayman #3074
 
 	PostBind( );
 }
@@ -5263,10 +5278,9 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 
 	bindJoint = jointnum;
 	bindBody = -1;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind(jointname); // grayman #3074
+	FinishBind(master, jointname); // grayman #3074
 
 	PostBind();
 }
@@ -5307,12 +5321,11 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 
 	bindJoint = jointnum;
 	bindBody = -1;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
 	idAnimator *masterAnimator = master->GetAnimator();
 	const char *jointName = masterAnimator->GetJointName( jointnum );
-	FinishBind(jointName); // grayman #3074
+	FinishBind(master, jointName); // grayman #3074
 
 	PostBind();
 }
@@ -5355,54 +5368,109 @@ void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated )
 
 	bindJoint = INVALID_JOINT;
 	bindBody = bodyId;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind(NULL); // grayman #3074
+	FinishBind(master, NULL); // grayman #3074
 
 	PostBind();
 }
 
-/*
-================
-idEntity::Unbind
-================
-*/
-void idEntity::Unbind( void ) {
+
+static void ValidateBindTeam_Rec(idEntity* &pos) {
+	//first comes the node
+	idEntity *ent = pos;
+	pos = pos->GetNextTeamEntity();
+	//then come the subtrees of its bind sons
+	while (pos != NULL && pos->GetBindMaster() == ent)
+		ValidateBindTeam_Rec(pos);
+}
+bool idEntity::ValidateBindTeam( void ) {
+	assert(this);
+	if (teamMaster == NULL) {
+		//no team: isolated entity
+		assert(teamChain == NULL);
+		assert(bindMaster == NULL);
+		return true;
+	}
+	//check that everyone in team knows their master
+	for (idEntity *ent = teamMaster; ent; ent = ent->teamChain) {
+		assert(ent->teamMaster == teamMaster);
+	}
+	//check that team chain is pre-order traversal of the bind tree
+	idEntity *pos = teamMaster;
+	ValidateBindTeam_Rec(pos);
+	assert(pos == NULL);
+	return true;
+}
+
+void idEntity::EstablishBindToMaster( idEntity *newMaster ) {
+	assert(ValidateBindTeam());
+
+	assert(this && !bindMaster && newMaster);
+	if (newMaster == this) {
+		gameLocal.Warning("Binding entity %s to itself ignored", name.c_str());
+		return;
+	}
+	if (newMaster->IsBoundTo(this)) {
+		for (idEntity *ent = newMaster; ent != this; ent = ent->bindMaster)
+			gameLocal.Printf("  entity %s\n", ent->name.c_str());
+		gameLocal.Warning("Binding entity %s to entity %s ignored to avoid creating a loop", name.c_str(), newMaster->name.c_str());
+		return;
+	}
+
+	bindMaster = newMaster;
+
+	// check if our new team mate is already on a team
+	idEntity *master = newMaster->teamMaster;
+	if ( !master ) {
+		// he's not on a team, so he's the new teamMaster
+		master = newMaster;
+		newMaster->teamMaster = newMaster;
+		newMaster->teamChain = this;
+
+		// make anyone who's bound to me part of the new team
+		for( idEntity *ent = this; ent != NULL; ent = ent->teamChain ) {
+			ent->teamMaster = master;
+		}
+	} else {
+		// skip past the chain members bound to the entity we're teaming up with
+		idEntity *prev = newMaster;
+		idEntity *next = newMaster->teamChain;
+		// join after all entities bound to the new master entity
+		while( next && next->IsBoundTo( newMaster ) ) {
+			prev = next;
+			next = next->teamChain;
+		}
+
+		// make anyone who's bound to me part of the new team and
+		// also find the last member of my team
+		idEntity *ent;
+		for( ent = this; ent->teamChain != NULL; ent = ent->teamChain ) {
+			ent->teamChain->teamMaster = master;
+		}
+
+		prev->teamChain = this;
+		ent->teamChain = next;
+		teamMaster = master;
+	}
+
+	assert(ValidateBindTeam());
+}
+
+void idEntity::BreakBindToMaster( void ) {
+	assert(ValidateBindTeam());
+	assert(this && bindMaster);
+
 	idEntity *	prev;
 	idEntity *	next;
 	idEntity *	last;
 	idEntity *	ent;
 
-	// remove any bind constraints from an articulated figure
-	if ( IsType( idAFEntity_Base::Type ) ) {
-		static_cast<idAFEntity_Base *>(this)->RemoveBindConstraints();
-	}
-
-	if ( !bindMaster ) {
-		return;
-	}
-
-	// TDM: Notify bindmaster of unbinding
-	bindMaster->UnbindNotify( this );
-
-	if ( !teamMaster ) {
-		// Teammaster already has been freed
-		bindMaster = NULL;
-		return;
-	}
-
-	PreUnbind();
-
-	if ( physics ) {
-		physics->SetMaster( NULL, fl.bindOrientated );
-	}
-
 	// We're still part of a team, so that means I have to extricate myself
 	// and any entities that are bound to me from the old team.
 	// Find the node previous to me in the team
 	prev = teamMaster;
-	for( ent = teamMaster->teamChain; ent && ( ent != this ); ent = ent->teamChain ) {
+	for( ent = teamMaster->teamChain; ent != NULL && ent != this ; ent = ent->teamChain ) {
 		prev = ent;
 	}
 
@@ -5426,18 +5494,10 @@ void idEntity::Unbind( void ) {
 
 	// connect up the previous member of the old team to the node that
 	// follow the last node bound to me (if one exists).
-	if ( teamMaster != this ) {
-		prev->teamChain = next;
-		if ( !next && ( teamMaster == prev ) ) {
-			prev->teamMaster = NULL;
-		}
-	} else if ( next ) {
-		// If we were the teamMaster, then the nodes that were not bound to me are now
-		// a disconnected chain.  Make them into their own team.
-		for( ent = next; ent->teamChain != NULL; ent = ent->teamChain ) {
-			ent->teamMaster = next;
-		}
-		next->teamMaster = next;
+	assert(teamMaster != this);
+	prev->teamChain = next;
+	if ( !next && ( teamMaster == prev ) ) {
+		prev->teamMaster = NULL;
 	}
 
 	// If we don't have anyone on our team, then clear the team variables.
@@ -5449,9 +5509,111 @@ void idEntity::Unbind( void ) {
 		teamMaster = NULL;
 	}
 
+	idEntity *oldBindMaster = bindMaster;
 	bindJoint = INVALID_JOINT;
 	bindBody = -1;
 	bindMaster = NULL;
+
+	assert(ValidateBindTeam());
+	assert(oldBindMaster->ValidateBindTeam());
+}
+
+/*
+================
+idEntity::Unbind
+================
+*/
+void idEntity::Unbind( void ) {
+	// remove any bind constraints from an articulated figure
+	if ( IsType( idAFEntity_Base::Type ) ) {
+		static_cast<idAFEntity_Base *>(this)->RemoveBindConstraints();
+	}
+
+	if ( !bindMaster ) {
+		return;
+	}
+
+	// TDM: Notify bindmaster of unbinding
+	bindMaster->UnbindNotify( this );
+
+	if ( !teamMaster ) {
+		if (g_entityBindNew.GetBool())
+			assert(false);	// must never happen!
+		// Teammaster already has been freed
+		bindMaster = NULL;
+		return;
+	}
+
+	PreUnbind();
+
+	if ( physics ) {
+		physics->SetMaster( NULL, fl.bindOrientated );
+	}
+
+	if (g_entityBindNew.GetBool()) {
+		BreakBindToMaster();
+	}
+	else {
+		idEntity *	prev;
+		idEntity *	next;
+		idEntity *	last;
+		idEntity *	ent;
+
+		// We're still part of a team, so that means I have to extricate myself
+		// and any entities that are bound to me from the old team.
+		// Find the node previous to me in the team
+		prev = teamMaster;
+		for( ent = teamMaster->teamChain; ent && ( ent != this ); ent = ent->teamChain ) {
+			prev = ent;
+		}
+
+		assert( ent == this ); // If ent is not pointing to this, then something is very wrong.
+
+		// Find the last node in my team that is bound to me.
+		// Also find the first node not bound to me, if one exists.
+		last = this;
+		for( next = teamChain; next != NULL; next = next->teamChain ) {
+			if ( !next->IsBoundTo( this ) ) {
+				break;
+			}
+
+			// Tell them I'm now the teamMaster
+			next->teamMaster = this;
+			last = next;
+		}
+
+		// disconnect the last member of our team from the old team
+		last->teamChain = NULL;
+
+		// connect up the previous member of the old team to the node that
+		// follow the last node bound to me (if one exists).
+		if ( teamMaster != this ) {
+			prev->teamChain = next;
+			if ( !next && ( teamMaster == prev ) ) {
+				prev->teamMaster = NULL;
+			}
+		} else if ( next ) {
+			// If we were the teamMaster, then the nodes that were not bound to me are now
+			// a disconnected chain.  Make them into their own team.
+			for( ent = next; ent->teamChain != NULL; ent = ent->teamChain ) {
+				ent->teamMaster = next;
+			}
+			next->teamMaster = next;
+		}
+
+		// If we don't have anyone on our team, then clear the team variables.
+		if ( teamChain ) {
+			// make myself my own team
+			teamMaster = this;
+		} else {
+			// no longer a team
+			teamMaster = NULL;
+		}
+
+		bindJoint = INVALID_JOINT;
+		bindBody = -1;
+		bindMaster = NULL;
+	}
 
 	PostUnbind();
 }
@@ -5462,19 +5624,48 @@ idEntity::RemoveBinds
 ================
 */
 void idEntity::RemoveBinds( void ) {
-	idEntity *ent;
-	idEntity *next;
+	if (g_entityBindNew.GetBool()) {
+		//count all entities bound to us
+		int k = 0;
+		for( idEntity *ent = teamChain; ent != NULL; ent = ent->teamChain )
+			if ( ent->bindMaster == this )
+				k++;
+		if (k == 0)
+			return;
 
-	for( ent = teamChain; ent != NULL; ent = next ) {
-		next = ent->teamChain;
-		// bound to us?
-		if ( ent->bindMaster == this ) {
+		//save all entities bounds to us
+		idEntity* *arr = (idEntity**)alloca(k * sizeof(idEntity*));
+		k = 0;
+		for( idEntity *ent = teamChain; ent != NULL; ent = ent->teamChain )
+			if ( ent->bindMaster == this )
+				arr[k++] = ent;
+
+		//unbind all saved entities from us
+		for (int i = 0; i < k; i++) {
+			idEntity *ent = arr[i];
 			ent->Unbind();
 
 			if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
+				//also remove the unbound entity on next frame
 				ent->PostEventMS( &EV_Remove, 0 );
 			}
-			next = teamChain;
+		}
+	}
+	else {
+		idEntity *ent;
+		idEntity *next;
+
+		for( ent = teamChain; ent != NULL; ent = next ) {
+			next = ent->teamChain;
+			// bound to us?
+			if ( ent->bindMaster == this ) {
+				ent->Unbind();
+
+				if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
+					ent->PostEventMS( &EV_Remove, 0 );
+				}
+				next = teamChain;
+			}
 		}
 	}
 }
@@ -5800,6 +5991,7 @@ idEntity::JoinTeam
 ================
 */
 void idEntity::JoinTeam( idEntity *teammember ) {
+	assert(!g_entityBindNew.GetBool());
 	idEntity *ent;
 	idEntity *master;
 	idEntity *prev;
