@@ -451,6 +451,13 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	// compute width and height
 	if ( parms.fullScreen ) {
+		//always adjust game resolution to desktop resolution in fullscreen mode
+		//TODO: move it to R_InitOpenGL?
+		parms.width = glConfig.vidWidth = win32.desktopWidth;
+		parms.height = glConfig.vidHeight = win32.desktopHeight;
+		r_customWidth.SetInteger( win32.desktopWidth );
+		r_customHeight.SetInteger( win32.desktopHeight );
+
 		if ( r_fullscreen.GetInteger() == 1 || r_fullscreen.GetInteger() == 2 )
 		{
 			exstyle = 0;
@@ -468,15 +475,8 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 				parms.height += 2;
 			}
 		}
-		if ( parms.height != win32.desktopHeight ) {
-			glConfig.vidWidth = w = win32.desktopWidth;
-			glConfig.vidHeight = h = win32.desktopHeight;
-			r_customWidth.SetInteger( w );
-			r_customHeight.SetInteger( h );
-		} else {
-			w = parms.width;
-			h = parms.height;
-		}
+		w = parms.width;
+		h = parms.height;
 	} else {
 		RECT	r;
 
