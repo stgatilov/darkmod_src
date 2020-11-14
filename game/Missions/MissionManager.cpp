@@ -1479,8 +1479,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 	const char* fs_currentfm = cvarSystem->GetCVarString("fs_currentfm");
 
 	// Tels: #3419 - After game start the sequence is always the same, so set a random seed
-	time_t seconds = time(NULL);
-	gameLocal.random.SetSeed( static_cast<int>(seconds) );
+	idRandom random(time(NULL));
 
 	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
 	{
@@ -1558,42 +1557,79 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			}
 		}
 
+		struct WeightedUrl {
+			idStr name;
+			float weight;
+		};
+		idList<WeightedUrl> missionUrls, localUrls;
+
 		// gnartsch : Process mission download locations only if the mission itself is not 
-        //            present or not up to date, otherwise skip to the localization pack
+		//            present or not up to date, otherwise skip to the localization pack
 		if (!missionExists || mission.isUpdate) 
 		{
-            // Mission download links
-		    pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
+			// Mission download links
+			pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
-		    for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
-		    {
-			    pugi::xml_node locNode = loc->node();
+			for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
+			{
+				pugi::xml_node locNode = loc->node();
 
-			    // Only accept English downloadlinks
-			    if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
-
-			    // Tels: #3419: Randomize the order of download URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
-			    mission.missionUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.missionUrls.Num() + 2 ) );
-		    }
-        }
+				// Only accept English downloadlinks
+				if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
+				
+				WeightedUrl wurl = {locNode.attribute("url").value(), locNode.attribute("weight").as_float(1.0f)};
+				missionUrls.Append(wurl);
+			}
+		}
 
 		// Localisation packs
-        // gnartsch: Process only if mission is either present locally or at least a download link for the mission is available.
-        if (missionExists || mission.missionUrls.Num() > 0)
+		// gnartsch: Process only if mission is either present locally or at least a download link for the mission is available.
+		if (missionExists || mission.missionUrls.Num() > 0)
 		{
-		    pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
+			pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
 
-		    for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
-		    {
-			    pugi::xml_node locNode = loc->node();
+			for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
+			{
+				pugi::xml_node locNode = loc->node();
 
-			    // Tels: #3419: Randomize the order of l10n URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
-			    mission.l10nPackUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.l10nPackUrls.Num() + 2 ) );
+				WeightedUrl wurl = {locNode.attribute("url").value(), locNode.attribute("weight").as_float(1.0f)};
+				localUrls.Append(wurl);
 
-                // gnartsch: Found a localization pack url for download
+				// gnartsch: Found a localization pack url for download
 				mission.needsL10NpackDownload = true;
-		    }
-        }
+			}
+		}
+
+		//stgatilov #5349: shuffle the URL lists according to weights
+		for (int t = 0; t < 2; t++) {
+			auto &arr = (t == 0 ? missionUrls : localUrls);
+			auto &urlList = (t == 0 ? mission.missionUrls : mission.l10nPackUrls);
+			int n = arr.Num();
+
+			for (int i = 0; i < n; i++) {
+				//get W - total weight of remaining [i..n) urls
+				float sum = 0.0f;
+				for (int j = i; j < n; j++)
+					sum += arr[j].weight;
+				//generate random value in [0..W)
+				float value = random.RandomFloat() * sum;
+				//find which url the random hits
+				int choice = i;
+				for (int j = i; j < n; j++) {
+					value -= arr[j].weight;
+					if (value < 0.0f) {
+						choice = j;
+						break;
+					}
+				}
+				//put this url on to first yet-unused place
+				idSwap(arr[choice], arr[i]);
+			}
+
+			urlList.SetNum(0);
+			for (int i = 0; i < n; i++)
+				urlList.Append(arr[i].name);
+		}
 
 		// Only add missions with valid locations
 		// gnartsch: add the mission in case localization pack needs to be downloaded
