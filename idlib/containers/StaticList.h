@@ -418,7 +418,7 @@ ID_INLINE type *idStaticList<type,size>::Find( type const & obj ) const {
 
 	i = FindIndex( obj );
 	if ( i >= 0 ) {
-		return &list[ i ];
+		return (type*)&list[ i ];
 	}
 
 	return NULL;
