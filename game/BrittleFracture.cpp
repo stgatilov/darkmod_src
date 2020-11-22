@@ -1311,7 +1311,7 @@ void idBrittleFracture::Event_Touch( idEntity *other, trace_t *trace ) {
 		return;
 	}
 
-	if ( trace->c.id < 0 || trace->c.id >= shards.Num() ) {
+	if ( trace == nullptr || trace->c.id < 0 || trace->c.id >= shards.Num() ) {
 		return;
 	}
 
