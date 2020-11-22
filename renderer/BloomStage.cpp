@@ -66,6 +66,14 @@ namespace {
 		DEFINE_UNIFORM(vec2, axis)
 	};
 
+	struct BloomApplyUniforms : GLSLUniformGroup {
+		UNIFORM_GROUP_DEF( BloomApplyUniforms )
+
+		DEFINE_UNIFORM(sampler, texture)
+		DEFINE_UNIFORM(sampler, bloomTex)
+		DEFINE_UNIFORM(float, bloomWeight)
+	};
+
 	void LoadBloomDownsampleShader(GLSLProgram *downsampleShader) {
 		downsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl" );
 		BloomDownsampleUniforms *uniforms = downsampleShader->GetUniformGroup<BloomDownsampleUniforms>();
@@ -91,6 +99,13 @@ namespace {
 		BloomUpsampleUniforms *uniforms = upsampleShader->GetUniformGroup<BloomUpsampleUniforms>();
 		uniforms->blurredTexture.Set(0);
 		uniforms->detailTexture.Set(1);
+	}
+
+	void LoadBloomApplyShader(GLSLProgram *applyShader) {
+		applyShader->InitFromFiles( "bloom.vert.glsl", "bloom_apply.frag.glsl" );
+		BloomApplyUniforms *uniforms = applyShader->GetUniformGroup<BloomApplyUniforms>();
+		uniforms->texture.Set(0);
+		uniforms->bloomTex.Set(1);
 	}
 
 	int CalculateNumDownsamplingSteps(int imageHeight) {
@@ -124,6 +139,7 @@ void BloomStage::Init() {
 	downsampleWithBrightPassShader = programManager->LoadFromGenerator("bloom_downsample_brightpass", LoadBloomDownsampleWithBrightPassShader);
 	blurShader = programManager->LoadFromGenerator("bloom_blur", LoadBloomBlurShader);
 	upsampleShader = programManager->LoadFromGenerator("bloom_upsample", LoadBloomUpsampleShader);
+	applyShader = programManager->LoadFromGenerator("bloom_apply", LoadBloomApplyShader);
 }
 
 void BloomStage::Shutdown() {
@@ -146,9 +162,6 @@ void BloomStage::Shutdown() {
 		}
 	}
 }
-
-extern GLuint fboPrimary;
-extern bool primaryOn;
 
 void BloomStage::ComputeBloomFromRenderImage() {
 	GL_PROFILE("BloomStage");
@@ -180,6 +193,24 @@ void BloomStage::ComputeBloomFromRenderImage() {
 
 void BloomStage::BindBloomTexture() {
 	bloomUpSamplers[0]->Bind();
+}
+
+void BloomStage::ApplyBloom() {
+	GL_State( GLS_DEPTHMASK );
+	qglDisable( GL_DEPTH_TEST );
+
+	applyShader->Activate();
+	BloomApplyUniforms *uniforms = applyShader->GetUniformGroup<BloomApplyUniforms>();
+
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	BindBloomTexture();
+	uniforms->bloomWeight.Set( r_bloom_weight.GetFloat() );
+
+	RB_DrawFullScreenQuad();
+
+	qglEnable( GL_DEPTH_TEST );
 }
 
 void BloomStage::Downsample() {

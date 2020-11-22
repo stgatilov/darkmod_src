@@ -114,7 +114,6 @@ void idWindow::CommonInit() {
 	textAlign = 0;
 	textAlignx = 0;
 	textAligny = 0;
-	tonemap = false;
 	noEvents = false;
 	rotate = 0;
 	shear.Zero();
@@ -1262,9 +1261,6 @@ void idWindow::Redraw(float x, float y) {
 	dc->GetTransformInfo( oldOrg, oldTrans );
 
 	SetupTransforms(x, y);
-	if ( tonemap ) {
-		tr.guiModel->SetTonemapRect( drawRect );
-	}
 	DrawBackground(drawRect);
 	DrawBorderAndCaption(drawRect);
 
@@ -1996,10 +1992,6 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 	}
 	if (idStr::Icmp(_name, "textaligny") == 0) {
 		textAligny = src->ParseFloat();
-		return true;
-	}
-	if ( idStr::Icmp( _name, "tonemap" ) == 0 ) {
-		tonemap = true;
 		return true;
 	}
 	if (idStr::Icmp(_name, "shear") == 0) {
@@ -4230,7 +4222,6 @@ void idWindow::SetDefaults ( void ) {
 	textAlign = 0;
 	textAlignx = 0;
 	textAligny = 0;
-	tonemap = false;
 	noEvents = false;
 	rotate = 0;
 	shear.Zero();

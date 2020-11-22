@@ -65,6 +65,7 @@ private:
 	void UpdateResolutionAndFormats();
 	void CreatePrimary(FrameBuffer *primary);
 	void CreateResolve(FrameBuffer *resolve);
+	void CreateGui(FrameBuffer *gui);
 
 	void CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight );
 	void CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO );
@@ -86,6 +87,7 @@ public:
 	FrameBuffer *defaultFbo = nullptr;
 	FrameBuffer *primaryFbo = nullptr;
 	FrameBuffer *resolveFbo = nullptr;
+	FrameBuffer *guiFbo = nullptr;
 	FrameBuffer *shadowStencilFbo = nullptr;
 	FrameBuffer *shadowMapFbo = nullptr;
 

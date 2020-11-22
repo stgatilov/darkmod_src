@@ -43,7 +43,6 @@ void idGuiModel::Clear() {
 	surfaces.SetNum( 0, false );
 	indexes.SetNum( 0, false );
 	verts.SetNum( 0, false );
-	tonemapRect.Empty();
 	AdvanceSurf();
 }
 
@@ -290,14 +289,6 @@ void idGuiModel::EmitFullScreen( void ) {
 
 	// add the command to draw this view
 	R_AddDrawViewCmd( *viewDef );
-	if ( tonemapRect.w ) {
-		bloomCommand_t* cmd = (bloomCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
-		cmd->commandId = RC_BLOOM;
-		cmd->screenRect.x1 = tonemapRect.x * glConfig.vidWidth / SCREEN_WIDTH;
-		cmd->screenRect.y1 = ( SCREEN_HEIGHT - tonemapRect.y - tonemapRect.h ) * glConfig.vidHeight / SCREEN_HEIGHT;
-		cmd->screenRect.x2 = tonemapRect.w * glConfig.vidWidth / SCREEN_WIDTH + cmd->screenRect.x1;
-		cmd->screenRect.y2 = tonemapRect.h * glConfig.vidHeight / SCREEN_HEIGHT + cmd->screenRect.y1;
-	}
 }
 
 /*
@@ -328,10 +319,6 @@ void idGuiModel::AdvanceSurf() {
 
 	surfaces.Append( s );
 	surf = &surfaces[ surfaces.Num() - 1 ];
-}
-
-void idGuiModel::SetTonemapRect( const idRectangle& rect ) {
-	tonemapRect = rect;
 }
 
 /*

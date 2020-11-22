@@ -655,34 +655,34 @@ struct TonemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM(float, bloomWeight)
 };
 
-void RB_Tonemap( bloomCommand_t *cmd ) {
-	GL_PROFILE("Tonemap");
-	frameBuffers->UpdateCurrentRenderCopy();
-
-	if (r_bloom.GetBool()) {
-		bloom->ComputeBloomFromRenderImage();
+void RB_Bloom( bloomCommand_t *cmd ) {
+	if ( !r_bloom.GetBool() ) {
+		return;
 	}
-
-	int w = globalImages->currentRenderImage->uploadWidth;
-	int h = globalImages->currentRenderImage->uploadHeight;
-	if ( RB_CheckTools( w, h ) ) {
+	if ( RB_CheckTools( globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight ) ) {
 		return;
 	}
 
-	GL_SetProjection( mat4_identity.ToFloatPtr() );
+	GL_PROFILE("Postprocess")
+	frameBuffers->UpdateCurrentRenderCopy();
+	bloom->ComputeBloomFromRenderImage();
+	frameBuffers->LeavePrimary( false );
+	bloom->ApplyBloom();
+}
 
+void RB_Tonemap() {
+	if ( !r_tonemap ) {
+		return;
+	}
+	GL_PROFILE("Tonemap")
+
+	frameBuffers->defaultFbo->Bind();
+	GL_ViewportRelative( 0, 0, 1, 1 );
+	GL_ScissorRelative( 0, 0, 1, 1 );
 	GL_State( GLS_DEPTHMASK );
 	qglDisable( GL_DEPTH_TEST );
-
 	GL_SelectTexture( 0 );
-	globalImages->currentRenderImage->Bind();
-
-	frameBuffers->defaultFbo->BindDraw();
-	GL_ViewportVidSize( 0, 0, w, h );
-
-	if ( cmd->screenRect.IsEmpty() ) {
-		frameBuffers->LeavePrimary(false);
-	}
+	globalImages->guiRenderImage->Bind();
 
 	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
 	tonemap->Activate();
@@ -695,25 +695,7 @@ void RB_Tonemap( bloomCommand_t *cmd ) {
 	uniforms->colorCorrection.Set(r_postprocess_colorCorrection.GetFloat() );
 	uniforms->colorCorrectBias.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_colorCorrectBias.GetFloat() ) );
 
-	if( r_bloom.GetBool() ) {
-		GL_SelectTexture( 1 );
-		bloom->BindBloomTexture();
-		uniforms->bloomWeight.Set( r_bloom_weight.GetFloat() );
-		uniforms->bloomTex.Set( 1 );
-	} else {
-		uniforms->bloomWeight.Set( 0 );
-	}
-
-	if ( !cmd->screenRect.IsEmpty() ) {
-		auto& r = cmd->screenRect;
-		GL_ScissorVidSize( r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1 );
-	}
 	RB_DrawFullScreenQuad();
-	GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-
-	GL_SelectTexture( 0 );
-	tonemap->Deactivate();
-	qglEnable( GL_DEPTH_TEST );
 }
 
 /*
@@ -837,7 +819,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 				if ( isv3d ) {
 					frameBuffers->EnterPrimary();
 				} else {
-					frameBuffers->LeavePrimary();	// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
+					frameBuffers->LeavePrimary();	// switch to GUI or default FBO to render UI elements at native resolution
 					FB_DebugShowContents();
 					fboOff = true;
 				}
@@ -867,7 +849,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			c_setBuffers++;
 			break;
 		case RC_BLOOM:
-			RB_Tonemap( (bloomCommand_t*)cmds );
+			RB_Bloom( (bloomCommand_t*)cmds );
 			FB_DebugShowContents();
 			c_drawBloom++;
 			fboOff = true;
@@ -879,6 +861,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content
 			frameBuffers->LeavePrimary();
+			RB_Tonemap();
 			RB_SwapBuffers( cmds );
 			c_swapBuffers++;
 			break;

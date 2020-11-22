@@ -1638,6 +1638,7 @@ void idImageManager::Init() {
 	accumImage = ImageFromFunction( "_accum", R_RGBA8Image );
 	scratchCubeMapImage = ImageFromFunction( "_scratchCubeMap", makeNormalizeVectorCubeMap );
 	currentRenderImage = ImageFromFunction( "_currentRender", R_RGBA8Image );
+	guiRenderImage = ImageFromFunction( "_guiRender", R_RGBA8Image );
 	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthTexture ); // #3877. Allow shaders to access scene depth
 	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_DepthTexture );
 	shadowAtlas = ImageFromFunction( "_shadowAtlas", R_DepthTexture );

@@ -375,7 +375,6 @@ protected:
 	float borderSize;
 	float textAlignx;
 	float textAligny;
-	bool tonemap;
 	idStr	name;
 	idStr	comment;
 	idVec2	shear;

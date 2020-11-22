@@ -87,6 +87,7 @@ extern idCVarBool r_fboSRGB;
 extern idCVar r_fboDepthBits;
 extern idCVarInt r_shadowMapSize;
 extern idCVar r_fboResolution;
+extern idCVarBool r_tonemap;
 
 extern renderCrop_t ShadowAtlasPages[42];
 

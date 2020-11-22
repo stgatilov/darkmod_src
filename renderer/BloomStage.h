@@ -28,6 +28,7 @@ public:
 
 	void ComputeBloomFromRenderImage();
 	void BindBloomTexture();
+	void ApplyBloom();
 
 	static const int MAX_DOWNSAMPLING_STEPS = 16;
 private:
@@ -39,6 +40,7 @@ private:
 	GLSLProgram *downsampleWithBrightPassShader = nullptr;
 	GLSLProgram *blurShader = nullptr;
 	GLSLProgram *upsampleShader = nullptr;
+	GLSLProgram *applyShader = nullptr;
 	int numDownsamplingSteps = 0;
 
 	void Downsample();

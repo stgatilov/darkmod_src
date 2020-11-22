@@ -574,7 +574,6 @@ struct emptyCommand_t : baseCommand_t {
 };
 
 struct bloomCommand_t : emptyCommand_t {
-	idScreenRect screenRect;
 };
 
 struct setBufferCommand_t : emptyCommand_t {

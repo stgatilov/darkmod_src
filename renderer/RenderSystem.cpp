@@ -864,10 +864,8 @@ PostProcess
 ================
 */
 void idRenderSystemLocal::PostProcess() {
-	if ( !r_tonemap ) return;
 	bloomCommand_t* cmd = (bloomCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_BLOOM;
-	cmd->screenRect.Clear();
 }
 
 /*
