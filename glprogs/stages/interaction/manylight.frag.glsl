@@ -32,7 +32,29 @@ vec4 textureSpecular(vec2 uv) {
 	sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
 	return texture(specularTexture, uv);
 }
+
+vec4 lightFalloff2D(int light, vec2 uv) {
+    sampler2D falloffTexture = sampler2D(lights[light].falloffTexture);
+    return texture(falloffTexture, uv);
+}
+
+vec4 lightProjection2D(int light, vec3 proj) {
+    sampler2D projectionTexture = sampler2D(lights[light].projectionTexture);
+    return textureProj(projectionTexture, proj);
+}
+
+vec4 lightFalloffCube(int light, vec3 uv) {
+    samplerCube falloffTexture = samplerCube(lights[light].falloffTexture);
+    return texture(falloffTexture, uv, 2);
+}
+
+vec4 lightProjectionCube(int light, vec3 proj) {
+    samplerCube projectionTexture = samplerCube(lights[light].projectionTexture);
+    return texture(projectionTexture, proj);
+}
+
 #else
+
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_diffuseTexture;
 uniform sampler2D u_specularTexture;
@@ -48,12 +70,30 @@ vec4 textureDiffuse(vec2 uv) {
 vec4 textureSpecular(vec2 uv) {
 	return texture(u_specularTexture, uv);
 }
-#endif
 
 uniform sampler2D u_lightFalloffTexture[MAX_LIGHTS];
 uniform samplerCube	u_lightFalloffCubemap[MAX_LIGHTS];
 uniform sampler2D u_lightProjectionTexture[MAX_LIGHTS];
 uniform samplerCube	u_lightProjectionCubemap[MAX_LIGHTS];
+
+vec4 lightFalloff2D(int light, vec2 uv) {
+    return texture(u_lightFalloffTexture[light], uv);
+}
+
+vec4 lightProjection2D(int light, vec3 proj) {
+    return textureProj(u_lightProjectionTexture[light], proj);
+}
+
+vec4 lightFalloffCube(int light, vec3 uv) {
+    return texture(u_lightFalloffCubemap[light], uv, 2);
+}
+
+vec4 lightProjectionCube(int light, vec3 proj) {
+    return texture(u_lightProjectionCubemap[light], proj);
+}
+
+#endif
+
 
 uniform int		u_useBumpmapLightTogglingFix;  //stgatilov #4825
 
@@ -115,13 +155,13 @@ vec3 ambientLight(int lightNum) {
 
 		vec3 cubeTC = texLight.xyz * 2.0 - 1.0;
 		// diffuse
-		vec3 light1 = texture(u_lightProjectionCubemap[lightNum], N).rgb * diffuse;
+		vec3 light1 = lightProjectionCube(lightNum, N).rgb * diffuse;
 		// specualr
-		light1.rgb += texture( u_lightFalloffCubemap[lightNum], reflectDir, 2 ).rgb * specular;
+		light1.rgb += lightFalloffCube(lightNum, reflectDir).rgb * specular;
 		light.rgb *= color.rgb * light1.rgb;
 	} else {
-		vec3 lightProjection = textureProj( u_lightProjectionTexture[lightNum], texLight.xyw ).rgb; 
-		vec3 lightFalloff = texture( u_lightFalloffTexture[lightNum], vec2( texLight.z, 0.5 ) ).rgb;
+		vec3 lightProjection = lightProjection2D( lightNum, texLight.xyw ).rgb; 
+		vec3 lightFalloff = lightFalloff2D( lightNum, vec2( texLight.z, 0.5 ) ).rgb;
 		light = vec4(lightProjection * lightFalloff, 1);
 		vec3 light1 = vec3(.5); // directionless half
 		light1 += max(dot(N, up) * (1. - specular) * .5, 0);
@@ -160,13 +200,13 @@ vec3 lightColor(int lightNum) {
     vec3 lightColor;
     if (lights[lightNum].cubic == 1) {
         vec3 cubeTC = texLight.xyz * 2.0 - 1.0;
-        lightColor = texture(u_lightProjectionCubemap[lightNum], cubeTC).rgb;
+        lightColor = lightProjectionCube(lightNum, cubeTC).rgb;
         float att = clamp(1.0 - length(cubeTC), 0.0, 1.0);
         lightColor *= att * att;
     }
     else {
-        vec3 lightProjection = textureProj(u_lightProjectionTexture[lightNum], texLight.xyw).rgb;
-        vec3 lightFalloff = texture(u_lightFalloffTexture[lightNum], vec2(texLight.z, 0.5)).rgb;
+        vec3 lightProjection = lightProjection2D(lightNum, texLight.xyw).rgb;
+        vec3 lightFalloff = lightFalloff2D(lightNum, vec2(texLight.z, 0.5)).rgb;
         lightColor = lightProjection * lightFalloff;
     }
     return lightColor * lights[lightNum].color.rgb;

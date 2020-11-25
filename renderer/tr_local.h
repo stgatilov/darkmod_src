@@ -398,7 +398,7 @@ typedef struct viewLight_s {
 	/*const */struct drawSurf_s	*globalInteractions;		// get shadows from everything
 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
 
-	int						lightMask;
+	uint32_t				lightMask;
 } viewLight_t;
 
 struct preparedSurf_t {

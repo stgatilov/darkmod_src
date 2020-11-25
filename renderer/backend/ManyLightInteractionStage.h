@@ -28,7 +28,12 @@ public:
 	void DrawInteractions( const viewDef_t *viewDef );
 
 private:
-	static const int MAX_LIGHTS = 21; // limited by available texture units
+	// in non-bindless mode, we are limited by texture units: max 32 units in fragment shader
+	// 5 are bound by global / per-model textures, and we need 4 per light
+	// (technically 2, but we need separate 2D/cube samplers for all light types)
+	static const int MAX_LIGHTS = 6;
+	// in bindless mode, max lights is the number of bits available in our mask
+	static const int MAX_BINDLESS_LIGHTS = 32;
 	
 	struct ShaderParams;
 	struct LightParams;

@@ -57,6 +57,9 @@ struct ManyLightInteractionStage::LightParams {
 	int cubic;
 	int ambient;
 	int padding;
+	// bindless texture handles, if supported
+	uint64_t fallOffTexture;
+	uint64_t projectionTexture;
 };
 
 struct ManyLightInteractionStage::DrawInteraction {
@@ -118,7 +121,7 @@ namespace {
 void ManyLightInteractionStage::LoadInteractionShader( GLSLProgram *shader, bool bindless ) {
 	idDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
-	defines.Set( "MAX_LIGHTS", idStr::Fmt( "%d", MAX_LIGHTS ) );
+	defines.Set( "MAX_LIGHTS", idStr::Fmt( "%d", bindless ? MAX_BINDLESS_LIGHTS : MAX_LIGHTS ) );
 	if (bindless) {
 		defines.Set( "BINDLESS_TEXTURES", "1" );
 	}
@@ -143,7 +146,7 @@ ManyLightInteractionStage::ManyLightInteractionStage( DrawBatchExecutor *drawBat
 {}
 
 void ManyLightInteractionStage::Init() {
-	lightParams = new LightParams[MAX_LIGHTS];
+	lightParams = new LightParams[MAX_BINDLESS_LIGHTS];
 	maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
 	
 	shadowMapInteractionShader = programManager->LoadFromGenerator( "manylight", 
@@ -209,6 +212,7 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 
 		const idMaterial *lightShader = vLight->lightShader;
 		const float	*lightRegs = vLight->shaderRegisters;
+		int maxSupportedLights = renderBackend->ShouldUseBindlessTextures() ? MAX_BINDLESS_LIGHTS : MAX_LIGHTS;
 		for ( int lightStageNum = 0; lightStageNum < lightShader->GetNumStages(); lightStageNum++ ) {
 			const shaderStage_t	*lightStage = lightShader->GetStage( lightStageNum );
 
@@ -217,23 +221,31 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 				continue;
 			}
 
-			vLight->lightMask |= (1 << curLight );
-			GL_SelectTexture( 2 * curLight );
-			vLight->falloffImage->Bind();
-			if ( vLight->falloffImage->type == TT_CUBIC ) {
-				falloffCubeTextureUnits[curLight] = 2 * curLight;
+			LightParams &params = lightParams[curLight];
+
+			vLight->lightMask |= (1u << curLight );
+			if ( renderBackend->ShouldUseBindlessTextures() ) {
+				vLight->falloffImage->MakeResident();
+				params.fallOffTexture = vLight->falloffImage->BindlessHandle();
+				lightStage->texture.image->MakeResident();
+				params.projectionTexture = lightStage->texture.image->BindlessHandle();
 			} else {
-				falloffTextureUnits[curLight] = 2 * curLight;
-			}
-			GL_SelectTexture( 2 * curLight + 1 );
-			lightStage->texture.image->Bind();
-			if ( lightStage->texture.image->type == TT_CUBIC) {
-				projectionCubeTextureUnits[curLight] = 2 * curLight + 1;
-			} else {
-				projectionTextureUnits[curLight] = 2 * curLight + 1;
+				GL_SelectTexture( 2 * curLight );
+				vLight->falloffImage->Bind();
+				if ( vLight->falloffImage->type == TT_CUBIC ) {
+					falloffCubeTextureUnits[curLight] = 2 * curLight;
+				} else {
+					falloffTextureUnits[curLight] = 2 * curLight;
+				}
+				GL_SelectTexture( 2 * curLight + 1 );
+				lightStage->texture.image->Bind();
+				if ( lightStage->texture.image->type == TT_CUBIC) {
+					projectionCubeTextureUnits[curLight] = 2 * curLight + 1;
+				} else {
+					projectionTextureUnits[curLight] = 2 * curLight + 1;
+				}
 			}
 
-			LightParams &params = lightParams[curLight];
 			params.ambient = lightShader->IsAmbientLight();
 			params.cubic = lightShader->IsCubicLight();
 			// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
@@ -273,7 +285,7 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			}
 
 			++curLight;
-			if ( curLight == MAX_LIGHTS ) {
+			if ( curLight == maxSupportedLights ) {
 				DrawAllSurfaces( drawSurfs );
 				ResetLightParams( viewDef );
 				curLight = 0;
@@ -303,10 +315,12 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 	static_assert( sizeof(LightParams) % 16 == 0, "Light params size must be a multiple of 16" );
 
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
-	uniforms->lightFalloffTexture.SetArray( MAX_LIGHTS, falloffTextureUnits );
-	uniforms->lightFalloffCubemap.SetArray( MAX_LIGHTS, falloffCubeTextureUnits );
-	uniforms->lightProjectionTexture.SetArray( MAX_LIGHTS, projectionTextureUnits );
-	uniforms->lightProjectionCubemap.SetArray( MAX_LIGHTS, projectionCubeTextureUnits );
+	if ( !renderBackend->ShouldUseBindlessTextures() ) {
+		uniforms->lightFalloffTexture.SetArray( MAX_LIGHTS, falloffTextureUnits );
+		uniforms->lightFalloffCubemap.SetArray( MAX_LIGHTS, falloffCubeTextureUnits );
+		uniforms->lightProjectionTexture.SetArray( MAX_LIGHTS, projectionTextureUnits );
+		uniforms->lightProjectionCubemap.SetArray( MAX_LIGHTS, projectionCubeTextureUnits );
+	}
 	uniforms->numLights.Set( curLight );
 
 	drawBatchExecutor->UploadExtraUboData( lightParams, sizeof(LightParams) * curLight, 3 );
