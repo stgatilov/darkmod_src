@@ -234,7 +234,9 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			LightParams &params = lightParams[curLight];
 			params.ambient = lightShader->IsAmbientLight();
 			params.cubic = lightShader->IsCubicLight();
-			params.shadows = vLight->shadows;
+			// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
+			bool doShadows = !vLight->noShadows && lightShader->LightCastsShadows() && vLight->globalInteractions != nullptr;
+			params.shadows = doShadows;
 			params.globalLightOrigin = idVec4(vLight->globalLightOrigin.x, vLight->globalLightOrigin.y, vLight->globalLightOrigin.z, 1);
 			params.color.x = backEnd.lightScale * lightRegs[lightStage->color.registers[0]];
 			params.color.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
@@ -296,12 +298,6 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 	uniforms->lightProjectionTexture.SetArray( MAX_LIGHTS, projectionTextureUnits );
 	uniforms->lightProjectionCubemap.SetArray( MAX_LIGHTS, projectionCubeTextureUnits );
 	uniforms->numLights.Set( curLight );
-	//for ( int i = 0; i < MAX_LIGHTS; ++i ) {
-	//	qglUniform1i( interactionShader->GetUniformLocation( idStr::Fmt("u_lightFalloffTexture[%d]", i) ), falloffTextureUnits[i] );
-	//	qglUniform1i( interactionShader->GetUniformLocation( idStr::Fmt("u_lightFalloffCubemap[%d]", i) ), falloffCubeTextureUnits[i] );
-	//	qglUniform1i( interactionShader->GetUniformLocation( idStr::Fmt("u_lightProjectionTexture[%d]", i) ), projectionTextureUnits[i] );
-	//	qglUniform1i( interactionShader->GetUniformLocation( idStr::Fmt("u_lightProjectionCubemap[%d]", i) ), projectionCubeTextureUnits[i] );
-	//}
 
 	drawBatchExecutor->UploadExtraUboData( lightParams, sizeof(LightParams) * curLight, 3 );
 
@@ -553,9 +549,17 @@ void ManyLightInteractionStage::PreparePoissonSamples() {
 	int sampleK = r_softShadowsQuality.GetInteger();
 	if ( sampleK > 0 && poissonSamples.Num() != sampleK ) {
 		GeneratePoissonDiskSampling( poissonSamples, sampleK );
-		size_t size = poissonSamples.Num() * sizeof(idVec2);
+		// note: due to std140 buffer requirements, array members must be aligned with vec4 size
+		// so we have to copy our samples to a vec4 array for upload :-/
+		idList<idVec4> uploadSamples;
+		uploadSamples.SetNum( poissonSamples.Num() );
+		for ( int i = 0; i < poissonSamples.Num(); ++i ) {
+			uploadSamples[i].x = poissonSamples[i].x;
+			uploadSamples[i].y = poissonSamples[i].y;
+		}
+		size_t size = uploadSamples.Num() * sizeof(idVec4);
 		qglBindBuffer( GL_UNIFORM_BUFFER, poissonSamplesUbo );
-		qglBufferData( GL_UNIFORM_BUFFER, size, poissonSamples.Ptr(), GL_STATIC_DRAW );
+		qglBufferData( GL_UNIFORM_BUFFER, size, uploadSamples.Ptr(), GL_STATIC_DRAW );
 	}
 	qglBindBufferBase( GL_UNIFORM_BUFFER, 2, poissonSamplesUbo );
 }

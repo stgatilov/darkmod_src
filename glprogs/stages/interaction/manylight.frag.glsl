@@ -1,4 +1,4 @@
-#version 450 core
+#version 400 core
 #extension GL_ARB_texture_gather: enable
 
 #pragma tdm_define "BINDLESS_TEXTURES"
@@ -57,8 +57,6 @@ uniform samplerCube	u_lightProjectionCubemap[MAX_LIGHTS];
 
 uniform int		u_useBumpmapLightTogglingFix;  //stgatilov #4825
 
-uniform int		u_softShadowsQuality;
-uniform float	u_softShadowsRadius;
 
 uniform vec3 u_globalViewOrigin;
 
@@ -174,6 +172,8 @@ vec3 lightColor(int lightNum) {
     return lightColor * lights[lightNum].color.rgb;
 }
 
+#pragma tdm_include "stages/interaction/manylight.shadowmap.glsl"
+
 vec4 fresnelParms = vec4(1.0, .23, .5, 1.0);
 vec4 fresnelParms2 = vec4(.2, .023, 120.0, 4.0);
 vec4 lightParms = vec4(.7, 1.8, 10.0, 30.0);
@@ -203,6 +203,11 @@ vec3 directLight(int i) {
             NdotL_adjusted = mix(MNdotL, NdotL, MNdotL / 0.25);
     }
     float light = rimLight * R2f + NdotL_adjusted;
+    
+    if (lights[i].shadows != 0) {
+        light *= UseShadowMap(i);
+    }
+    
     return (specularColor * params[var_DrawId].specularColor.rgb * R2f + diffuse * params[var_DrawId].diffuseColor.rgb) * light * lightColor(i) * var_Color.rgb;
 }
 
