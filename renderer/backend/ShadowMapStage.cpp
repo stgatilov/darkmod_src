@@ -295,6 +295,7 @@ void ShadowMapStage::FallbackPathForIntel( const viewDef_t *viewDef ) {
 	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
 
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
+		backEnd.vLight = vLight;
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalInteractions, true );
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->localInteractions, false );
 	}

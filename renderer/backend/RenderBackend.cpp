@@ -186,7 +186,7 @@ void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
 
 	GL_PROFILE( "DrawLight_ShadowMap" );
 
-	if ( vLight->lightShader->LightCastsShadows() ) {
+	if ( vLight->lightShader->LightCastsShadows() && !r_shadowMapSinglePass ) {
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalInteractions, true );
 		interactionStage.DrawInteractions( vLight, vLight->localInteractions );
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->localInteractions, false );
@@ -264,7 +264,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 		}
 	}
 
-	if ( r_shadows.GetInteger() != 1 && r_interactionProgram.GetInteger() == 2 ) {
+	if ( r_shadows.GetInteger() != 1 && r_shadowMapSinglePass.GetInteger() == 2 ) {
 		manyLightStage.DrawInteractions( viewDef );
 	}
 
@@ -274,7 +274,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 			continue;
 		}
 
-		if ( r_shadows.GetInteger() != 1 && r_interactionProgram.GetInteger() == 2 && (vLight->shadows == LS_MAPS || vLight->shadows == LS_NONE || vLight->noShadows || vLight->lightShader->IsAmbientLight() ) ) {
+		if ( r_shadows.GetInteger() != 1 && r_shadowMapSinglePass.GetInteger() == 2 && (vLight->shadows == LS_MAPS || vLight->shadows == LS_NONE || vLight->noShadows || vLight->lightShader->IsAmbientLight() ) ) {
 			// already handled in the many light stage
 			continue;
 		}
