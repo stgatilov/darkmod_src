@@ -24,6 +24,7 @@
 #include "../FrameBuffer.h"
 #include "../AmbientOcclusionStage.h"
 #include "DrawBatchExecutor.h"
+#include "../FrameBufferManager.h"
 
 // NOTE: must match struct in shader, beware of std140 layout requirements and alignment!
 struct ManyLightInteractionStage::ShaderParams {
@@ -47,6 +48,7 @@ struct ManyLightInteractionStage::ShaderParams {
 };
 
 struct ManyLightInteractionStage::LightParams {
+	idVec4 scissor;
 	idVec4 globalLightOrigin;
 	idVec4 shadowRect;
 	idVec4 color;
@@ -242,6 +244,14 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			params.color.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
 			params.color.z = backEnd.lightScale * lightRegs[lightStage->color.registers[2]];
 			params.color.w = lightRegs[lightStage->color.registers[3]];
+
+			if (r_useScissor.GetBool()) {
+				float xScale = static_cast<float>(frameBuffers->activeFbo->Width()) / glConfig.vidWidth;
+				float yScale = static_cast<float>(frameBuffers->activeFbo->Height()) / glConfig.vidHeight;
+				params.scissor = idVec4( vLight->scissorRect.x1 * xScale, vLight->scissorRect.y1 * yScale, vLight->scissorRect.x2 * xScale, vLight->scissorRect.y2 * yScale );
+			} else {
+				params.scissor = idVec4(0, 0, frameBuffers->activeFbo->Width(), frameBuffers->activeFbo->Height());
+			}
 
 			memcpy( params.projection.ToFloatPtr(), vLight->lightProject, sizeof( idMat4 ) );
 			if ( lightStage->texture.hasMatrix ) {

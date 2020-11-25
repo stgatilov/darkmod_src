@@ -26,6 +26,7 @@ struct PerDrawCallParams {
 };
 
 struct PerLightParams {
+    vec4 scissor;
     vec4 origin;
     vec4 shadowRect;
     vec4 color;

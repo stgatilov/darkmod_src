@@ -223,6 +223,10 @@ vec3 computeInteractions() {
         if ((params[var_DrawId].lightMask & (1 << i)) == 0) {
             continue;
         }
+        vec4 scissor = lights[i].scissor;
+        if (gl_FragCoord.x < scissor.x || gl_FragCoord.y < scissor.y || gl_FragCoord.x > scissor.z || gl_FragCoord.y > scissor.w) {
+            continue;
+        }
         if (lights[i].ambient == 1) {
             totalColor += ambientLight(i);
         } else {
