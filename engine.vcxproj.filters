@@ -1300,6 +1300,9 @@
     <ClInclude Include="renderer\backend\ShadowMapStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3044,6 +3047,9 @@
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\ShadowMapStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
   </ItemGroup>

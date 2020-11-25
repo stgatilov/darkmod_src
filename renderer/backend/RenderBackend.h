@@ -16,6 +16,7 @@
 #include "DrawBatchExecutor.h"
 #include "DepthStage.h"
 #include "InteractionStage.h"
+#include "ManyLightInteractionStage.h"
 #include "ShadowMapStage.h"
 #include "StencilShadowStage.h"
 #include "../tr_local.h"
@@ -43,6 +44,7 @@ private:
 	DrawBatchExecutor drawBatchExecutor;
 	DepthStage depthStage;
 	InteractionStage interactionStage;
+	ManyLightInteractionStage manyLightStage;
 	StencilShadowStage stencilShadowStage;
 	ShadowMapStage shadowMapStage;
 

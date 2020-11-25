@@ -46,6 +46,10 @@ struct GLSLUniform_int : GLSLUniformBase {
 	void Set(int value) {
 		qglUniform1i(paramLocation, value);
 	}
+
+	void SetArray( int count, const int *value ) {
+		qglUniform1iv(paramLocation, count, value);
+	}
 };
 
 typedef GLSLUniform_int GLSLUniform_sampler;

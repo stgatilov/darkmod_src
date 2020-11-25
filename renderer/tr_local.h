@@ -397,6 +397,8 @@ typedef struct viewLight_s {
 	/*const */struct drawSurf_s	*localShadows;				// don't shadow local Surfaces
 	/*const */struct drawSurf_s	*globalInteractions;		// get shadows from everything
 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
+
+	int						lightMask;
 } viewLight_t;
 
 struct preparedSurf_t {

@@ -54,6 +54,12 @@ public:
 	void ExecuteDrawVertBatch( int numDrawSurfs, int numInstances = 1, GLuint uboIndex = DEFAULT_UBO_INDEX );
 	void ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
 
+	/**
+	 * Use this to upload and bind an additional UBO besides the default per draw call buffer.
+	 * You need to call this before starting draw batches, as otherwise you'll corrupt the underlying memory.
+	 */
+	void UploadExtraUboData( void *data, size_t size, GLuint uboIndex );
+
 	void EndFrame();
 
 	template< typename ShaderParams >

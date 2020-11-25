@@ -41,6 +41,7 @@ namespace {
 RenderBackend::RenderBackend() 
 	: depthStage( &drawBatchExecutor ),
 	  interactionStage( &drawBatchExecutor ),
+	  manyLightStage( &drawBatchExecutor ),
 	  stencilShadowStage( &drawBatchExecutor ),
 	  shadowMapStage( &drawBatchExecutor )
 {}
@@ -49,6 +50,7 @@ void RenderBackend::Init() {
 	drawBatchExecutor.Init();
 	depthStage.Init();
 	interactionStage.Init();
+	manyLightStage.Init();
 	stencilShadowStage.Init();
 	shadowMapStage.Init();
 
@@ -63,7 +65,9 @@ void RenderBackend::Init() {
 void RenderBackend::Shutdown() {
 	qglDeleteBuffers( 3, lightgemPbos );
 	
+	shadowMapStage.Shutdown();
 	stencilShadowStage.Shutdown();
+	manyLightStage.Shutdown();
 	interactionStage.Shutdown();
 	depthStage.Shutdown();
 	drawBatchExecutor.Destroy();
@@ -263,14 +267,17 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 	}
 
 	if ( r_shadows.GetInteger() != 1 && r_interactionProgram.GetInteger() == 2 ) {
-		extern void RB_GLSL_DrawInteractions_MultiLight();
-		RB_GLSL_DrawInteractions_MultiLight();
-		return;
+		manyLightStage.DrawInteractions( viewDef );
 	}
 
 	// for each light, perform adding and shadowing
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
 		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() ) {
+			continue;
+		}
+
+		if ( r_shadows.GetInteger() != 1 && r_interactionProgram.GetInteger() == 2 && (vLight->shadows == LS_MAPS || vLight->shadows == LS_NONE || vLight->noShadows || vLight->lightShader->IsAmbientLight() ) ) {
+			// already handled in the many light stage
 			continue;
 		}
 

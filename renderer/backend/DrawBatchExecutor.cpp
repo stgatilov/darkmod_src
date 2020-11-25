@@ -98,6 +98,17 @@ void DrawBatchExecutor::ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboInde
 	}
 }
 
+void DrawBatchExecutor::UploadExtraUboData( void *data, size_t size, GLuint uboIndex ) {
+	assert( size % 16 == 0 && "UBO data must be 16 byte aligned" );
+	if ( shaderParamsBuffer.BytesRemaining() < size ) {
+		shaderParamsBuffer.SwitchFrame();
+	}
+	byte *writeLocation = shaderParamsBuffer.CurrentWriteLocation();
+	memcpy( writeLocation, data, size );
+	shaderParamsBuffer.Commit( size );
+	shaderParamsBuffer.BindRangeToIndexTarget( uboIndex, writeLocation, size );
+}
+
 void DrawBatchExecutor::EndFrame() {
 	shaderParamsBuffer.SwitchFrame();
 	if ( ShouldUseMultiDraw() ) {
