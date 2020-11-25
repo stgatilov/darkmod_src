@@ -41,7 +41,8 @@ namespace {
 RenderBackend::RenderBackend() 
 	: depthStage( &drawBatchExecutor ),
 	  interactionStage( &drawBatchExecutor ),
-	  stencilShadowStage( &drawBatchExecutor )
+	  stencilShadowStage( &drawBatchExecutor ),
+	  shadowMapStage( &drawBatchExecutor )
 {}
 
 void RenderBackend::Init() {
@@ -49,6 +50,7 @@ void RenderBackend::Init() {
 	depthStage.Init();
 	interactionStage.Init();
 	stencilShadowStage.Init();
+	shadowMapStage.Init();
 
 	lightgemFbo = frameBuffers->CreateFromGenerator( "lightgem", CreateLightgemFbo );
 	qglGenBuffers( 3, lightgemPbos );
@@ -254,8 +256,9 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		if ( r_shadowMapSinglePass.GetBool() ) {
-			extern void RB_ShadowMap_RenderAllLights();
-			RB_ShadowMap_RenderAllLights();
+			//extern void RB_ShadowMap_RenderAllLights();
+			//RB_ShadowMap_RenderAllLights();
+			shadowMapStage.DrawShadowMap( viewDef );
 		}
 	}
 

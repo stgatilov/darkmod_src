@@ -51,7 +51,7 @@ public:
 	template< typename ShaderParams >
 	DrawBatch<ShaderParams> BeginBatch();
 
-	void ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
+	void ExecuteDrawVertBatch( int numDrawSurfs, int numInstances = 1, GLuint uboIndex = DEFAULT_UBO_INDEX );
 	void ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
 
 	void EndFrame();
@@ -70,6 +70,7 @@ private:
 	GpuBuffer drawCommandBuffer;
 	GLuint drawIdBuffer = 0;
 	bool drawIdVertexEnabled = false;
+	int drawIdVertexDivisor = 1;
 
 	int maxUniformBlockSize = 0;
 
@@ -84,9 +85,9 @@ private:
 	uint EnsureAvailableStorageInBuffers( uint shaderParamsSize );
 
 	typedef uint (*BaseVertexFn)(const drawSurf_t *);
-	void ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn );
-	void BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVertexFn );
-	void BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVertexFn );
+	void ExecuteBatch( int numDrawSurfs, int numInstances, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn );
+	void BatchMultiDraw( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn );
+	void BatchSingleDraws( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn );
 };
 
 template<typename ShaderParams>

@@ -33,6 +33,7 @@ public:
 	GLSLProgram *Load( const idStr &name, const idDict &defines = idDict() );
 
 	// Load program from individually specified source files. Default attributes will be bound.
+	GLSLProgram *LoadFromFiles( const idStr &name, const idStr &vertexSource, const idDict &defines = idDict() );
 	GLSLProgram *LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idDict &defines = idDict() );
 	GLSLProgram *LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idStr &geometrySource, const idDict &defines = idDict() );
 

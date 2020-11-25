@@ -22,7 +22,7 @@ GLSLProgramManager programManagerInstance;
 GLSLProgramManager *programManager = &programManagerInstance;
 
 namespace {
-	void DefaultProgramInit( GLSLProgram *program, idDict defines, const char *vertexSource, const char *fragmentSource, const char *geometrySource = nullptr ) {
+	void DefaultProgramInit( GLSLProgram *program, idDict defines, const char *vertexSource, const char *fragmentSource = nullptr, const char *geometrySource = nullptr ) {
 		if( r_uniformTransforms.GetBool() ) {
 			defines.Set( "UNIFORM_TRANSFORMS", "1" );
 		}
@@ -88,6 +88,13 @@ GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines
 		}
 	};
 	return LoadFromGenerator( name, generator );	
+}
+
+GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idDict &defines ) {
+	Generator generator = [=]( GLSLProgram *program ) {
+		DefaultProgramInit( program, defines, vertexSource );
+	};
+	return LoadFromGenerator( name, generator );
 }
 
 GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idDict &defines ) {

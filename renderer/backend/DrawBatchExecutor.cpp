@@ -67,8 +67,8 @@ void DrawBatchExecutor::Destroy() {
 	drawCommandBuffer.Destroy();
 }
 
-void DrawBatchExecutor::ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex ) {
-	ExecuteBatch( numDrawSurfs, uboIndex, ATTRIB_REGULAR, &BaseVertexDrawVert );
+void DrawBatchExecutor::ExecuteDrawVertBatch( int numDrawSurfs, int numInstances, GLuint uboIndex ) {
+	ExecuteBatch( numDrawSurfs, numInstances, uboIndex, ATTRIB_REGULAR, &BaseVertexDrawVert );
 
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -84,7 +84,7 @@ void DrawBatchExecutor::ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex 
 }
 
 void DrawBatchExecutor::ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboIndex ) {
-	ExecuteBatch( numDrawSurfs, uboIndex, ATTRIB_SHADOW, &BaseVertexShadowVert );
+	ExecuteBatch( numDrawSurfs, 1, uboIndex, ATTRIB_SHADOW, &BaseVertexShadowVert );
 
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -122,7 +122,7 @@ void DrawBatchExecutor::InitDrawIdBuffer() {
 	qglVertexAttribIFormat( Attributes::Default::DrawId, 1, GL_UNSIGNED_INT, 0 );
 	qglBindVertexBuffer( Attributes::Default::DrawId, drawIdBuffer, 0, sizeof(uint32_t) );
 	qglVertexAttribBinding( Attributes::Default::DrawId, Attributes::Default::DrawId );
-	qglVertexBindingDivisor( Attributes::Default::DrawId, 1 );
+	qglVertexBindingDivisor( Attributes::Default::DrawId, drawIdVertexDivisor );
 	qglEnableVertexAttribArray( Attributes::Default::DrawId );
 	drawIdVertexEnabled = true;
 }
@@ -148,7 +148,7 @@ uint DrawBatchExecutor::EnsureAvailableStorageInBuffers(uint shaderParamsSize) {
 	return maxBatchSize;
 }
 
-void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn ) {
+void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, int numInstances, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn ) {
 	assert( numDrawSurfs <= maxBatchSize );
 	maxBatchSize = 0;
 
@@ -164,19 +164,19 @@ void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribB
 	vertexCache.BindVertex( attribBind );
 	vertexCache.BindIndex();
 	if ( ShouldUseMultiDraw() ) {
-		BatchMultiDraw( numDrawSurfs, baseVertexFn );
+		BatchMultiDraw( numDrawSurfs, numInstances, baseVertexFn );
 	} else {
-		BatchSingleDraws( numDrawSurfs, baseVertexFn );
+		BatchSingleDraws( numDrawSurfs, numInstances, baseVertexFn );
 	}
 }
 
-void DrawBatchExecutor::BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVertexFn ) {
+void DrawBatchExecutor::BatchMultiDraw( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn ) {
 	DrawElementsIndirectCommand * drawCommands = reinterpret_cast<DrawElementsIndirectCommand *>( drawCommandBuffer.CurrentWriteLocation() );	
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
 		DrawElementsIndirectCommand &cmd = drawCommands[i];
 		const drawSurf_t *surf = drawSurfs[i];
 		cmd.count = surf->numIndexes;
-		cmd.instanceCount = 1;
+		cmd.instanceCount = numInstances;
 		cmd.firstIndex = surf->indexCache.offset / sizeof(glIndex_t);
 		cmd.baseVertex = baseVertexFn( surf );
 		cmd.baseInstance = i;
@@ -187,10 +187,14 @@ void DrawBatchExecutor::BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVerte
 		drawIdVertexEnabled = true;
 		qglEnableVertexAttribArray( Attributes::Default::DrawId );
 	}
+	if (drawIdVertexDivisor != numInstances) {
+	    drawIdVertexDivisor = numInstances;
+        qglVertexBindingDivisor( Attributes::Default::DrawId, drawIdVertexDivisor );
+	}
 	qglMultiDrawElementsIndirect(GL_TRIANGLES, GL_INDEX_TYPE, drawCommandBuffer.BufferOffset(drawCommands), numDrawSurfs, 0);
 }
 
-void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVertexFn ) {
+void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn ) {
 	if (drawIdVertexEnabled) {
 		drawIdVertexEnabled = false;
 		qglDisableVertexAttribArray( Attributes::Default::DrawId );
@@ -200,6 +204,10 @@ void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVer
 		qglVertexAttribI1i(Attributes::Default::DrawId, i);
 		const void *indexOffset = (void*)(uintptr_t)surf->indexCache.offset;
 		uint baseVertex = baseVertexFn( surf );
-		qglDrawElementsBaseVertex(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, baseVertex);
+		if ( numInstances == 1 ) {
+			qglDrawElementsBaseVertex(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, baseVertex);
+		} else {
+			qglDrawElementsInstancedBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, numInstances, baseVertex );
+		}
 	}
 }

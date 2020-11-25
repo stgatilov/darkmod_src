@@ -16,6 +16,7 @@
 #include "DrawBatchExecutor.h"
 #include "DepthStage.h"
 #include "InteractionStage.h"
+#include "ShadowMapStage.h"
 #include "StencilShadowStage.h"
 #include "../tr_local.h"
 
@@ -43,6 +44,7 @@ private:
 	DepthStage depthStage;
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;
+	ShadowMapStage shadowMapStage;
 
 	FrameBuffer *lightgemFbo = nullptr;
 	GLuint lightgemPbos[3] = { 0 };
