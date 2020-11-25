@@ -41,6 +41,8 @@ private:
 	void CreateDrawCommands( const drawSurf_t *surf );
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );
 
+	void FallbackPathForIntel( const viewDef_t *viewDef );
+
 	void BeginDrawBatch();
 	void ExecuteDrawCalls();
 };

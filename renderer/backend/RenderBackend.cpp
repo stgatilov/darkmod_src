@@ -260,8 +260,6 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		if ( r_shadowMapSinglePass.GetBool() ) {
-			//extern void RB_ShadowMap_RenderAllLights();
-			//RB_ShadowMap_RenderAllLights();
 			shadowMapStage.DrawShadowMap( viewDef );
 		}
 	}

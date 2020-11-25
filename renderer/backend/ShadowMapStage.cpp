@@ -15,9 +15,6 @@
 
 #include "precompiled.h"
 #include "ShadowMapStage.h"
-
-
-
 #include "RenderBackend.h"
 #include "../FrameBuffer.h"
 #include "../FrameBufferManager.h"
@@ -51,6 +48,13 @@ void ShadowMapStage::Shutdown() {}
 
 void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 	GL_PROFILE( "RenderShadowMap" );
+
+	if ( glConfig.vendor == glvIntel ) {
+		// for some reason, Intel has massive performance problems with this path, cause as of yet is unknown
+		// we'll just use the existing shadow mapping code, but applied consecutively
+		FallbackPathForIntel( viewDef );
+		return;
+	}
 
 	GL_CheckErrors();
 	frameBuffers->EnterShadowMap();
@@ -285,4 +289,13 @@ void ShadowMapStage::ExecuteDrawCalls() {
 
 	drawBatchExecutor->ExecuteDrawVertBatch(currentIndex, 6);
 	BeginDrawBatch();
+}
+
+void ShadowMapStage::FallbackPathForIntel( const viewDef_t *viewDef ) {
+	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
+
+	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
+		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalInteractions, true );
+		RB_GLSL_DrawInteractions_ShadowMap( vLight->localInteractions, false );
+	}
 }
