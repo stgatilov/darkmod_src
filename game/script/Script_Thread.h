@@ -163,6 +163,9 @@ private:
 	// Emits the string to the session command variable in gameLocal.
 	void						Event_SessionCommand(const char* cmd);
 
+	// stgatilov #5369: Save condump to FM-local file (triggered by script).
+	void						Event_SaveConDump(const char *filename);
+
 	/**
 	* Tels: #3193 - translate a string template into the current language.
 	*/
