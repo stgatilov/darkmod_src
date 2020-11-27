@@ -40,8 +40,10 @@ void main() {
 	color.g = mapColorComponent(color.g);
 	color.b = mapColorComponent(color.b);
 
-	float luma = clamp(dot(vec3(0.2125, 0.7154, 0.0721), color.rgb), 0.0, 1.0);
-	color.rgb = mix(color.rgb, vec3(luma), u_desaturation);
+	if (u_desaturation != 0.0) {
+		float luma = clamp(dot(vec3(0.2125, 0.7154, 0.0721), color.rgb), 0.0, 1.0);
+		color.rgb = mix(color.rgb, vec3(luma), u_desaturation);
+	}
 
 	draw_Color = color;
 }

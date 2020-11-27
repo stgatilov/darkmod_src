@@ -3677,11 +3677,6 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 }
 
 
-void Cmd_updateCookedMathData_f( const idCmdArgs& args )
-{
-	cvarSystem->Find("r_postprocess_colorCurveBias")->SetModified();
-}
-
 void Cmd_LODBiasChanged_f( const idCmdArgs& args )
 {
 	// gameLocal.Printf("LOD Bias (Object Detail) changed, checking %i entities.\n", gameLocal.num_entities);
@@ -3816,7 +3811,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "testBlend",				idTestModel::TestBlend_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"tests animation blending" );
 	cmdSystem->AddCommand( "reloadScript",			Cmd_ReloadScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"reloads scripts" );
 
-	cmdSystem->AddCommand( "tdm_updateCookedMathData",	Cmd_updateCookedMathData_f,		CMD_FL_GAME,	"Updates lookup textures" );
 	cmdSystem->AddCommand( "tdm_lod_bias_changed",		Cmd_LODBiasChanged_f,			CMD_FL_GAME,	"Updates entity visibility according to tdm_lod_bias." );
 
 	cmdSystem->AddCommand( "script",				Cmd_Script_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"executes a line of script" );
