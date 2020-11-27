@@ -1495,6 +1495,12 @@
     <ClInclude Include="sys\sys_padinput.h">
       <Filter>Sys</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\ShadowMapStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2934,6 +2940,12 @@
     </ClCompile>
     <ClCompile Include="sys\sys_padinput.cpp">
       <Filter>Sys</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ShadowMapStage.cpp">
+      <Filter>Renderer\Backend</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

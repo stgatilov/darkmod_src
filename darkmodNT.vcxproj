@@ -706,7 +706,9 @@
     <ClInclude Include="renderer\backend\DrawBatchExecutor.h" />
     <ClInclude Include="renderer\backend\GpuBuffer.h" />
     <ClInclude Include="renderer\backend\InteractionStage.h" />
+    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h" />
     <ClInclude Include="renderer\backend\RenderBackend.h" />
+    <ClInclude Include="renderer\backend\ShadowMapStage.h" />
     <ClInclude Include="renderer\backend\StencilShadowStage.h" />
     <ClInclude Include="renderer\BloomStage.h" />
     <ClInclude Include="renderer\BufferObject.h" />
@@ -1162,7 +1164,9 @@
     <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp" />
     <ClCompile Include="renderer\backend\GpuBuffer.cpp" />
     <ClCompile Include="renderer\backend\InteractionStage.cpp" />
+    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp" />
     <ClCompile Include="renderer\backend\RenderBackend.cpp" />
+    <ClCompile Include="renderer\backend\ShadowMapStage.cpp" />
     <ClCompile Include="renderer\backend\StencilShadowStage.cpp" />
     <ClCompile Include="renderer\BloomStage.cpp" />
     <ClCompile Include="renderer\BufferObject.cpp" />
