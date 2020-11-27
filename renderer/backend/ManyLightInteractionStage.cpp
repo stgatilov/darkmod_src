@@ -109,12 +109,13 @@ namespace {
 	};
 
 	enum TextureUnits {
-		TU_DISABLED = 42,
-		TU_NORMAL = 43,
-		TU_DIFFUSE = 44,
-		TU_SPECULAR = 45,
-		TU_SSAO = 46,
-		TU_SHADOW_MAP = 47,
+		TU_NORMAL = 0,
+		TU_DIFFUSE = 1,
+		TU_SPECULAR = 2,
+		TU_SSAO = 3,
+		TU_SHADOW_MAP = 4,
+		TU_DISABLED = 5,
+		TU_FIRST_LIGHT = 6,
 	};
 }
 
@@ -177,9 +178,9 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 	backEnd.currentSpace = NULL;
 
 	BindShadowTexture();
-	if( ambientOcclusion->ShouldEnableForCurrentView() ) {
-		ambientOcclusion->BindSSAOTexture( TU_SSAO );
-	}
+	ambientOcclusion->BindSSAOTexture( TU_SSAO );
+	GL_SelectTexture( TU_DISABLED );
+	globalImages->whiteImage->Bind();
 
 	vertexCache.BindVertex();
 	vertexCache.BindIndex();
@@ -230,19 +231,19 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 				lightStage->texture.image->MakeResident();
 				params.projectionTexture = lightStage->texture.image->BindlessHandle();
 			} else {
-				GL_SelectTexture( 2 * curLight );
+				GL_SelectTexture( TU_FIRST_LIGHT + 2 * curLight );
 				vLight->falloffImage->Bind();
 				if ( vLight->falloffImage->type == TT_CUBIC ) {
-					falloffCubeTextureUnits[curLight] = 2 * curLight;
+					falloffCubeTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight;
 				} else {
-					falloffTextureUnits[curLight] = 2 * curLight;
+					falloffTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight;
 				}
-				GL_SelectTexture( 2 * curLight + 1 );
+				GL_SelectTexture( TU_FIRST_LIGHT + 2 * curLight + 1 );
 				lightStage->texture.image->Bind();
 				if ( lightStage->texture.image->type == TT_CUBIC) {
-					projectionCubeTextureUnits[curLight] = 2 * curLight + 1;
+					projectionCubeTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight + 1;
 				} else {
-					projectionTextureUnits[curLight] = 2 * curLight + 1;
+					projectionTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight + 1;
 				}
 			}
 
@@ -282,6 +283,7 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 				params.shadowRect = v;
 			} else {
 				params.shadowRect = idVec4(0, 0, 0, 0);
+				params.shadows = 0;
 			}
 
 			++curLight;
@@ -346,6 +348,7 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 			ExecuteDrawCalls();
 			// need to ensure the right depth func is set, as translucent surfaces require LEQUAL.
 			SetGlState( requiredDepthFunc );
+			uniforms->softShadowsQuality.Set( surf->material->Coverage() == MC_TRANSLUCENT ? 0 : r_softShadowsQuality.GetInteger() );
 		}
 
 		ProcessSingleSurface( surf );
@@ -374,7 +377,6 @@ void ManyLightInteractionStage::PrepareInteractionProgram() {
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
 	uniforms->shadowMapCullFront.Set( r_shadowMapCullFront );
 	if ( !backEnd.viewDef->IsLightGem() ) {
-		// TODO: disable for translucent surfaces?
 		uniforms->softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );
 	} else {
 		uniforms->softShadowsQuality.Set( 0 );
