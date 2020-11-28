@@ -54,9 +54,9 @@ public:
 	void *				MapBuffer( int mapOffset, int size );
 	void				UnmapBuffer( int length );
 
-	bool				IsMapped() const { return ( size & MAPPED_FLAG ) != 0; }
-	int					GetSize() const { return ( size & ~MAPPED_FLAG ); }
-	int					GetAllocedSize() const { return ( ( size & ~MAPPED_FLAG ) + 15 ) & ~15;	}
+	bool				IsMapped() const { return mapped; }
+	int					GetSize() const { return size; }
+	int					GetAllocedSize() const { return ( size + 15 ) & ~15;	}
 
 	GLuint				GetAPIObject() const { return bufferObject; }
 	GLenum				GetBufferType() const { return bufferType; }
@@ -71,13 +71,10 @@ private:
 	void *				mapBuff;
 	int					mappedSize;
 	int					lastMapOffset;
-	GLuint				tempBuff;
+	bool				mapped;
 
-	// sizeof() confuses typeinfo...
-	static const int	MAPPED_FLAG = 1 << ( 4 /* sizeof( int ) */ * 8 - 1 );
-
-	void				SetMapped() { size |= MAPPED_FLAG; }
-	void				SetUnmapped() { size &= ~MAPPED_FLAG; }
+	void				SetMapped() { mapped = true; }
+	void				SetUnmapped() { mapped = false; }
 
 	BufferObject( const BufferObject& ) = delete;
 	void operator=( const BufferObject& ) = delete;
