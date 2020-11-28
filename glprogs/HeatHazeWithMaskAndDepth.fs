@@ -62,6 +62,7 @@ void main() {
 	origCoord = (u_scalePotToWindow) * (u_scaleWindowToUnit);                                           //MUL		origCoord, program.env[0], program.env[1];		
 	origCoord = (origCoord) * (gl_FragCoord.xyxy);                                                      //MUL		origCoord, origCoord, fragment.position.xyxy;	
 	altCoord.xy = (R0.xy) - (origCoord.xy);                                                             //SUB	  	altCoord.xy, R0, origCoord; 	
+	altCoord.zw = vec2(0.0);    //stgatilov: avoid uninitialized warning
 	altCoord = (origCoord) + (-altCoord);                                                               //ADD   	altCoord, origCoord, -altCoord;	
 	altColor = texture(u_texture0, altCoord.xy);                                                        //TEX   	altColor, altCoord, texture[0], 2D;
 	

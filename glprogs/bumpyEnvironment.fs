@@ -43,6 +43,7 @@ void main() {
 	globalNormal.x = dot(localNormal.xyz, var_tc2.xyz);                                                 //DP3		globalNormal.x, localNormal, fragment.texcoord[2];
 	globalNormal.y = dot(localNormal.xyz, var_tc3.xyz);                                                 //DP3		globalNormal.y, localNormal, fragment.texcoord[3];
 	globalNormal.z = dot(localNormal.xyz, var_tc4.xyz);                                                 //DP3		globalNormal.z, localNormal, fragment.texcoord[4];
+	globalNormal.w = 0.0;   //stgatilov: avoid uninitialized warning
 	
 	// normalize vector to eye
 	R0 = vec4(dot(var_tc1.xyz, var_tc1.xyz));                                                           //DP3		R0, fragment.texcoord[1], fragment.texcoord[1];
