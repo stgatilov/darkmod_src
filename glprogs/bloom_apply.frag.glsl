@@ -1,6 +1,6 @@
 #version 140
 
-in vec4 var_TexCoord;
+in vec2 var_TexCoord;
 out vec4 draw_Color;
 
 uniform sampler2D u_texture;
