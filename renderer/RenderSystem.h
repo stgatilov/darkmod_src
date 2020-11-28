@@ -35,37 +35,34 @@ enum glVendor_t {
 // Contains variables specific to the OpenGL configuration being run right now.
 // These are constant once the OpenGL subsystem is initialized.
 typedef struct glconfig_s {
+	bool				isInitialized;
+
 	const char			*renderer_string;
 	const char			*vendor_string;
 	const char			*version_string;
 	const char			*wgl_extensions_string;
 	glVendor_t			vendor;
 
-	int					maxTextureSize;			// queried from GL
-	int					maxTextures;
-	int					maxTextureUnits;
-	float				maxTextureAnisotropy;
-	int					maxSamples;
+	// OpenGL initialization settings
+	int					vidWidth, vidHeight;	// passed to R_BeginFrame
+	int					displayFrequency;
+	bool				isFullscreen;
+	bool				srgb;
 
-	bool				textureCompressionAvailable = true;
-	bool				mapBufferRangeAvailable = true;
-	bool				framebufferObjectAvailable = true;
-	bool				framebufferBlitAvailable = true;
-	bool				framebufferMultisampleAvailable = true;
-	bool				framebufferPackedDepthStencilAvailable = true;
-
+	//GL extensions which can potentially be used in-game
 	bool				arbAssemblyShadersAvailable;
 	bool				anisotropicAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				geometryShaderAvailable;
 	bool				bufferStorageAvailable; // persistent mapping
 	bool				stencilTexturing;		// stencil SS
-	int					vidWidth, vidHeight;	// passed to R_BeginFrame
-	int					displayFrequency;
-	bool				isFullscreen;
-	bool				srgb;
 
-	bool				isInitialized;
+	// values of various GL limits
+	int					maxTextureSize;
+	int					maxTextures;
+	int					maxTextureUnits;
+	float				maxTextureAnisotropy;
+	int					maxSamples;
 } glconfig_t;
 
 #define SMALLCHAR_WIDTH		8

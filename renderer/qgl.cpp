@@ -61,22 +61,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 
 	common->Printf( "Checking optional OpenGL extensions...\n" );
 
-	qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &glConfig.maxTextureUnits );
-	common->Printf( "Max texture units: %d\n", glConfig.maxTextureUnits );
-	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );
-	common->Printf( "Max active textures: %d\n", glConfig.maxTextures );
-	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS ) {
-		common->Error( "   Too few!\n" );
-	}
-
-	int n;
-	qglGetIntegerv( GL_MAX_GEOMETRY_OUTPUT_VERTICES_ARB, &n );
-	common->Printf( "Max geometry output vertices: %d\n", n );
-	qglGetIntegerv( GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS_ARB, &n );
-	common->Printf( "Max geometry output components: %d\n", n );
-	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
-	common->Printf( "Max vertex attribs: %d\n", n );
-
 	glConfig.anisotropicAvailable = CHECK_FEATURE(GL_EXT_texture_filter_anisotropic);
 	if ( glConfig.anisotropicAvailable ) {
 		qglGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glConfig.maxTextureAnisotropy );
@@ -89,9 +73,33 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.stencilTexturing = CHECK_FEATURE( GL_ARB_stencil_texturing );
 	glConfig.depthBoundsTestAvailable = CHECK_FEATURE(GL_EXT_depth_bounds_test);
 	glConfig.bufferStorageAvailable = CHECK_FEATURE( GL_ARB_buffer_storage );
+
+	//it seems that these extensions are used via GLAD_GL_xxx variables
+	CHECK_FEATURE(GL_ARB_multi_draw_indirect);
+	CHECK_FEATURE(GL_ARB_vertex_attrib_binding);
+	CHECK_FEATURE(GL_ARB_bindless_texture);
+	CHECK_FEATURE(GL_ARB_compatibility);
+	CHECK_FEATURE(GL_KHR_debug);
+
 #ifdef _WIN32
 	CHECK_FEATURE(WGL_EXT_swap_control);
 #endif
+
+	qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &glConfig.maxTextureUnits );
+	common->Printf( "Max active texture units in fragment shader: %d\n", glConfig.maxTextureUnits );
+	qglGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &glConfig.maxTextures );
+	common->Printf( "Max combined texture units: %d\n", glConfig.maxTextures );
+	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS ) {
+		common->Error( "   Too few!\n" );
+	}
+
+	int n;
+	qglGetIntegerv( GL_MAX_GEOMETRY_OUTPUT_VERTICES_ARB, &n );
+	common->Printf( "Max geometry output vertices: %d\n", n );
+	qglGetIntegerv( GL_MAX_GEOMETRY_TOTAL_OUTPUT_COMPONENTS_ARB, &n );
+	common->Printf( "Max geometry output components: %d\n", n );
+	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
+	common->Printf( "Max vertex attribs: %d\n", n );
 }
 
 
