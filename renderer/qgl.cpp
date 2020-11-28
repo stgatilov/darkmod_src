@@ -9,7 +9,27 @@
 #endif
 
 
+static idCVar r_glBlacklistExtensions("r_glBlacklistExtensions", "", CVAR_ARCHIVE | CVAR_RENDERER, "Set space-separated list of OpenGL extension to force-disable on game start");
+static void GLimp_LoadExtensionsBlacklist() {
+	static idStr text;
+	static idList<const char*> ptrs;
+	//parse extensions blacklist
+	text = r_glBlacklistExtensions.GetString();
+	ptrs.Clear();
+	for (int i = 0; i < text.Length(); i++)
+		if (text[i] == ' ')
+			text[i] = 0;
+	for (int i = 0; i < text.Length(); i++) if (text[i]) {
+		ptrs.Append(&text[i]);
+		i += idStr::Length(&text[i]);
+	}
+	ptrs.Append(nullptr);
+	//set pointer to our arrays
+	GLAD_GL_blacklisted_extensions = ptrs.Ptr();
+}
+
 void GLimp_LoadFunctions(bool inContext) {
+	GLimp_LoadExtensionsBlacklist();
 	bool GLok = gladLoadGL();
 	if (inContext && !GLok) {
 		common->Error("Failed to initialize OpenGL functions (glad)");
@@ -74,7 +94,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.depthBoundsTestAvailable = CHECK_FEATURE(GL_EXT_depth_bounds_test);
 	glConfig.bufferStorageAvailable = CHECK_FEATURE( GL_ARB_buffer_storage );
 
-	//it seems that these extensions are used via GLAD_GL_xxx variables
+	//it seems that these extensions are checked via GLAD_GL_xxx variables
 	CHECK_FEATURE(GL_ARB_multi_draw_indirect);
 	CHECK_FEATURE(GL_ARB_vertex_attrib_binding);
 	CHECK_FEATURE(GL_ARB_bindless_texture);
