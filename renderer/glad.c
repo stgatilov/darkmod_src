@@ -625,9 +625,6 @@
 #define GLAD_COMPILE_LOADER
 #include "glad.h"
 
-//stgatilov: query extensions using new interface
-#define GL_VERSION_3_0
-
 static void* get_proc(const char *namez);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -759,9 +756,9 @@ int gladLoadGL(void) {
 
 struct gladGLversionStruct GLVersion = { 0, 0 };
 
-#if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0)
+//#if defined(GL_ES_VERSION_3_0) || defined(GL_VERSION_3_0)
 #define _GLAD_IS_SOME_NEW_VERSION 1
-#endif
+//#endif
 
 static int max_loaded_major;
 static int max_loaded_minor;
@@ -815,7 +812,13 @@ static void free_exts(void) {
     }
 }
 
+char const* const* GLAD_GL_blacklisted_extensions = 0;
 static int has_ext(const char *ext) {
+    if (GLAD_GL_blacklisted_extensions)
+        for (int i = 0; GLAD_GL_blacklisted_extensions[i]; i++)
+            if (strcmp(ext, GLAD_GL_blacklisted_extensions[i]) == 0)
+                return 0;
+
 #ifdef _GLAD_IS_SOME_NEW_VERSION
     if(max_loaded_major < 3) {
 #endif
