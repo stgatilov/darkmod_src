@@ -52,7 +52,7 @@ void DrawBatchExecutor::Init() {
 	uint shaderParamsBufferSize = MAX_DRAWS_PER_FRAME * MAX_SHADER_PARAMS_SIZE;
 	shaderParamsBuffer.Init( GL_UNIFORM_BUFFER, shaderParamsBufferSize, uboAlignment );
 
-	if (GLAD_GL_ARB_multi_draw_indirect) {
+	if (GLAD_GL_ARB_multi_draw_indirect && GLAD_GL_ARB_vertex_attrib_binding) {
 		InitDrawIdBuffer();	
 		uint drawCommandBufferSize = MAX_DRAWS_PER_FRAME * sizeof(DrawElementsIndirectCommand);
 		drawCommandBuffer.Init( GL_DRAW_INDIRECT_BUFFER, drawCommandBufferSize, 16 );
@@ -117,7 +117,7 @@ void DrawBatchExecutor::EndFrame() {
 }
 
 bool DrawBatchExecutor::ShouldUseMultiDraw() const {
-	return GLAD_GL_ARB_multi_draw_indirect && r_useMultiDrawIndirect;
+	return GLAD_GL_ARB_multi_draw_indirect && GLAD_GL_ARB_vertex_attrib_binding && r_useMultiDrawIndirect;
 }
 
 void DrawBatchExecutor::InitDrawIdBuffer() {

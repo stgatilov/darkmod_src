@@ -264,7 +264,10 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 		}
 	}
 
-	if ( r_shadows.GetInteger() != 1 && r_shadowMapSinglePass.GetInteger() == 2 ) {
+	bool useManyLightStage = r_shadowMapSinglePass.GetInteger() == 2 && r_shadows.GetInteger() != 1 && 
+		(ShouldUseBindlessTextures() || glConfig.maxTextureUnits >= 32);
+
+	if ( useManyLightStage ) {
 		manyLightStage.DrawInteractions( viewDef );
 	}
 
@@ -274,7 +277,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 			continue;
 		}
 
-		if ( r_shadows.GetInteger() != 1 && r_shadowMapSinglePass.GetInteger() == 2 && (vLight->shadows == LS_MAPS || vLight->shadows == LS_NONE || vLight->noShadows || vLight->lightShader->IsAmbientLight() ) ) {
+		if ( useManyLightStage && (vLight->shadows == LS_MAPS || vLight->shadows == LS_NONE || vLight->noShadows || vLight->lightShader->IsAmbientLight() ) ) {
 			// already handled in the many light stage
 			continue;
 		}
