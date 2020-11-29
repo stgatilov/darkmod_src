@@ -653,6 +653,8 @@ struct TonemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM(float, colorCorrection)
 	DEFINE_UNIFORM(float, colorCorrectBias)
 	DEFINE_UNIFORM(float, bloomWeight)
+	DEFINE_UNIFORM(int, sharpen)
+	DEFINE_UNIFORM(float, sharpness)
 };
 
 void RB_Bloom( bloomCommand_t *cmd ) {
@@ -669,6 +671,9 @@ void RB_Bloom( bloomCommand_t *cmd ) {
 	frameBuffers->LeavePrimary( false );
 	bloom->ApplyBloom();
 }
+
+idCVar r_postprocess_sharpen( "r_postprocess_sharpen", "0", CVAR_RENDERER|CVAR_BOOL|CVAR_ARCHIVE, "Use contrast-adaptive sharpening in tonemapping" );
+idCVar r_postprocess_sharpness( "r_postprocess_sharpness", "0.5", CVAR_RENDERER|CVAR_FLOAT|CVAR_ARCHIVE, "Sharpening amount" );
 
 void RB_Tonemap() {
 	if ( !r_tonemap ) {
@@ -690,10 +695,12 @@ void RB_Tonemap() {
 	uniforms->texture.Set( 0 );
 	uniforms->gamma.Set( idMath::ClampFloat( 1e-3f, 1e+3f, r_postprocess_gamma.GetFloat() ) );
 	uniforms->brightness.Set( r_postprocess_brightness.GetFloat() );
-	uniforms->desaturation.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
+	uniforms->desaturation.Set(idMath::ClampFloat( -1.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
 	uniforms->colorCurveBias.Set(r_postprocess_colorCurveBias.GetFloat() );
 	uniforms->colorCorrection.Set(r_postprocess_colorCorrection.GetFloat() );
 	uniforms->colorCorrectBias.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_colorCorrectBias.GetFloat() ) );
+	uniforms->sharpen.Set( r_postprocess_sharpen.GetBool() );
+	uniforms->sharpness.Set( idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_sharpness.GetFloat() ) );
 
 	RB_DrawFullScreenQuad();
 }
