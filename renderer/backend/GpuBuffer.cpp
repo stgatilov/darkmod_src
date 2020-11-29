@@ -16,6 +16,12 @@
 #include "GpuBuffer.h"
 
 extern idCVarBool r_usePersistentMapping;
+idCVar r_gpuBufferNonpersistentUpdateMode(
+	"r_gpuBufferNonpersistentUpdateMode", "0", CVAR_ARCHIVE | CVAR_RENDERER,
+	"When r_usePersistentMapping is off or unsupported, this cvar defines how to update GpuBuffer:\n"
+	"   0 --- glBufferSubData\n"
+	"   1 --- glMapBufferRange + memcpy + glUnmapBuffer"
+);
 
 const int GpuBuffer::NUM_FRAMES;
 
@@ -94,16 +100,23 @@ void GpuBuffer::Commit( GLuint numBytes ) {
 	if( !usesPersistentMapping ) {
 		GLuint currentOffset = CurrentOffset();
 		qglBindBuffer( type, bufferObject );
-		qglBufferSubData( type, currentOffset, alignedSize, bufferContents + currentOffset );
+		if (r_gpuBufferNonpersistentUpdateMode.GetInteger() == 0)
+			qglBufferSubData( type, currentOffset, alignedSize, bufferContents + currentOffset );
+		else {
+			void *dst = qglMapBufferRange( type, currentOffset, alignedSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+			memcpy(dst, bufferContents + currentOffset, alignedSize);
+			qglUnmapBuffer( type );
+		}
 	}
 
 	bytesCommittedInCurrentFrame += alignedSize;
 }
 
 void GpuBuffer::BindRangeToIndexTarget( GLuint index, byte *offset, GLuint size ) {
+	GLuint alignedSize = ALIGN( size, alignment );
 	GLintptr mapOffset = offset - bufferContents;
-	assert(mapOffset >= 0 && mapOffset < totalSize);
-	qglBindBufferRange( type, index, bufferObject, mapOffset, size );
+	assert(mapOffset >= 0 && mapOffset + alignedSize <= totalSize);
+	qglBindBufferRange( type, index, bufferObject, mapOffset, alignedSize );
 }
 
 void GpuBuffer::Bind() {
