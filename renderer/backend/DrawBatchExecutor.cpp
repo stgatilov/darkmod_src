@@ -172,6 +172,36 @@ void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, int numInstances, GLuint
 	shaderParamsBuffer.Commit( shaderParamsCommitSize );
 	shaderParamsBuffer.BindRangeToIndexTarget( uboIndex, shaderParamsContents, shaderParamsCommitSize );
 
+	if (r_glDebugOutput.GetInteger()) {
+		//check DrawParams for layout inconsistencies (e.g. from driver bugs)
+		int progname = -1;
+		qglGetIntegerv(GL_CURRENT_PROGRAM, &progname);
+		int blocksCnt = -1;
+		qglGetProgramiv(progname, GL_ACTIVE_UNIFORM_BLOCKS, &blocksCnt);
+		int glSize = -1;
+		for (int i = 0; i < blocksCnt; i++) {
+			int bind = -1;
+			qglGetActiveUniformBlockiv(progname, i, GL_UNIFORM_BLOCK_BINDING, &bind);
+			if (bind != uboIndex)
+				continue;
+			qglGetActiveUniformBlockiv(progname, i, GL_UNIFORM_BLOCK_DATA_SIZE, &glSize);
+		}
+		int arrNum = MaxShaderParamsArraySize(shaderParamsSize);
+		int expSize = arrNum * shaderParamsSize;
+		if (glSize != expSize) {
+			static int lastFrameDisplayed = 0;
+			if (backEnd.frameCount - lastFrameDisplayed > 20) {
+				if (glSize % arrNum)
+					common->Warning("Draw parameters size mismatch: OpenGL has %d bytes, not divisible by %d", glSize, arrNum);
+				else if (expSize % arrNum)
+					common->Warning("Draw parameters size mismatch: host has %d bytes, not divisible by %d", expSize, arrNum);
+				else
+					common->Warning("Draw parameters size mismatch: OpenGL has %d bytes, while host has %d", glSize/arrNum, expSize/arrNum);
+				backEnd.frameCount = lastFrameDisplayed;
+			}
+		}
+	}
+
 	vertexCache.BindVertex( attribBind );
 	vertexCache.BindIndex();
 	if ( ShouldUseMultiDraw() ) {
