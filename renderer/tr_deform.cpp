@@ -875,6 +875,13 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 	const srfTriangles_t *srcTri = surf->frontendGeo;
 	int srcTriNum = srcTri->numIndexes / 3;
 
+	idRenderModel *renderModel = renderEntity->hModel;
+	int surfNum = renderModel->NumSurfaces();
+	int surfIdx;
+	for ( surfIdx = surfNum-1; surfIdx >= 0; surfIdx-- )
+		if ( renderModel->Surface(surfIdx)->geometry == srcTri )
+			break;
+
 	float *triAreas = NULL;
 	float totalArea = 0.0f;
 	if ( useArea ) {
@@ -884,27 +891,14 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		idParticle_PrepareDistributionOnSurface(srcTri, triAreas, &totalArea);
 	}
 
-	// Generate a random number seed from the surface world position. Original code used SHADERPARM_DIVERSITY (shaderParm5) for this
-	// purpose, which mirrors func_emitters, but weather patches tend to be worldspawn so all share the same shaderparm, and produce
-	// identical particles when side-by-side. The seed needs to be the same every frame for a given emitter to ensure continuity of 
-	// particles from frame to frame, so using the centre of the emitting surface is a good way of randomizing them. -- SteveL #4132
-	float randomizer = renderEntity->shaderParms[SHADERPARM_DIVERSITY];
-
-	if ( randomizer == 0.0f && renderEntity->entityNum == 0 )
-	{
-		const idVec3 centre = srcTri->bounds.GetCenter();
-		randomizer = idMath::Abs( centre.x + centre.y + centre.z ) / 1000.0f;
-		randomizer = randomizer - idMath::Floor(randomizer); 
-	}
-
 	idPartSysData psys;
 	const renderView_t *renderView = &viewDef->renderView;
 	psys.entityAxis = renderEntity->axis;
 	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
 	psys.viewAxis = renderView->viewaxis;
 
-	for ( int stageNum = 0 ; stageNum < particleSystem->stages.Num() ; stageNum++ ) {
-		idParticleStage *stage = particleSystem->stages[stageNum];
+	for ( int stageIdx = 0 ; stageIdx < particleSystem->stages.Num() ; stageIdx++ ) {
+		idParticleStage *stage = particleSystem->stages[stageIdx];
 
 		if ( !stage->material )
 			continue;
@@ -919,16 +913,21 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		int totalParticles = totalParticlesPerCycle * (useArea ? 1 : srcTriNum);
 		psys.totalParticles = totalParticlesPerCycle;		// #5130: needed if useArea = true
 
+		idPartSysSurfaceEmitterSignature sign;
+		sign.renderModelName = renderModel->Name();
+		sign.surfaceIndex = surfIdx;
+		sign.particleStageIndex = stageIdx;
+
 		idPartSysEmit psEmit;
 		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
 		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
-		psEmit.randomizer = randomizer;
+		psEmit.randomizer = idParticle_ComputeSurfaceRandomizer(sign, renderEntity->shaderParms[SHADERPARM_DIVERSITY]);
 		psEmit.totalParticles = totalParticlesPerCycle;
 		psEmit.viewTimeMs = renderView->time;
 
 		idPartSysCutoffTextureInfo cutoffInfo;
 		idImage *cutoffImage;
-		idParticle_PrepareCutoffTexture(renderEntity, surf, stage, cutoffImage, cutoffInfo);
+		idParticle_PrepareCutoffTexture(stage, srcTri, sign, cutoffImage, cutoffInfo);
 
 		// allocate a srfTriangles in temp memory that can hold all the particles
 		int	outVertexCount = totalParticles * stage->NumQuadsPerParticle();

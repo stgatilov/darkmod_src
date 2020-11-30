@@ -22,6 +22,7 @@ typedef struct drawSurf_s drawSurf_t;
 typedef struct renderEntity_s renderEntity_t;
 class idParticleStage;
 
+//---------------------------------------------------------------------------
 
 //compute bounding box of particles in "standard" coordinate system --- transformation and world gravity not applied yet
 //it is computed by sampling many particles with idParticle_ParticleOriginStdSys function
@@ -59,6 +60,19 @@ void idParticle_EmitLocationOnSurface(
 	float *areas = NULL
 );
 
+//identifies surface emitter (particle deform only)
+//used for:
+// 1) find generated cutoff map (collisionStatic)
+// 2) randomize rand seed of surface emitters (e.g. in worldspawn)
+struct idPartSysSurfaceEmitterSignature {
+	idStr renderModelName;
+	int surfaceIndex;
+	int particleStageIndex;
+};
+//computes "randomizer" for particle deform particle system
+//it affects random seed of each particle, so that same particledecl-s applied to nearby surfaces look different
+float idParticle_ComputeSurfaceRandomizer(const idPartSysSurfaceEmitterSignature &sign, float diversity);
+
 //---------------------------------------------------------------------------
 
 //finds correspondence between physical image and virtual texture in cutoff map
@@ -71,7 +85,7 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 //"image" is set to valid texture if cutoff should be done, and to NULL if not
 //"texinfo" is generated using idParticle_FindCutoffTextureSubregion
 void idParticle_PrepareCutoffTexture(
-	const renderEntity_t *renderEntity, const drawSurf_t *surf, const idParticleStage *stage, 
+	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &signature,
 	idImage *&image, idPartSysCutoffTextureInfo &texinfo
 );
 

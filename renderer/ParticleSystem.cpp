@@ -246,6 +246,15 @@ void idParticle_EmitLocationOnSurface(const idPartStageData &stg, const srfTrian
 	texCoord = v1->st * f1 + v2->st * f2 + v3->st * f3;
 }
 
+float idParticle_ComputeSurfaceRandomizer(const idPartSysSurfaceEmitterSignature &sign, float diversity) {
+	uint64 hash = idStr::HashPoly64(sign.renderModelName) * 77777;
+	hash ^= sign.surfaceIndex * 1920767767;
+	hash ^= sign.particleStageIndex * 1367130551;
+	int reduced = hash % 999983;
+	//note: divider equals the multiplier in idParticle_EmitParticle (for best results)
+	return reduced * (1.0f / 46341.0f) + diversity;
+}
+
 bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srfTriangles_s *tri, idPartSysCutoffTextureInfo &region) {
 	if (!stg.useCutoffTimeMap)
 		return false;	//subregion not used
@@ -298,30 +307,17 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 }
 
 void idParticle_PrepareCutoffTexture(
-	const renderEntity_s *renderEntity, const drawSurf_t *surf, const idParticleStage *stage, 
+	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &sign,
 	idImage *&image, idPartSysCutoffTextureInfo &texinfo
 ) {
 	image = nullptr;
 	if (!stage->useCutoffTimeMap)
 		return;	//nothing to prepare
 
-	const srfTriangles_t *tri = surf->frontendGeo;
-
 	if ( stage->collisionStatic ) {
-		//collisionStatic: find surface index and particle stage index
-		//the individual texture is used for every combination of those
-		idRenderModel *rm = renderEntity->hModel;
-		int surfNum = rm->NumSurfaces();
-		int surfIdx;
-		for ( surfIdx = 0; surfIdx < surfNum; surfIdx++ )
-			if ( rm->Surface(surfIdx)->geometry == surf->frontendGeo )
-				break;
-		const idDeclParticle *particleSystem = (idDeclParticle *)surf->material->GetDeformDecl();
-		int stagesNum = particleSystem->stages.Num();
-		int stageIdx = particleSystem->stages.FindIndex((idParticleStage*)stage);
-
-		if ( surfIdx < surfNum && stageIdx >= 0 ) {
-			idStr imagePath = idParticleStage::GetCollisionStaticImagePath( rm->Name(), surfIdx, stageIdx );
+		//collisionStatic: individual texture is used for every combination of surface index and particle stage index
+		if ( sign.surfaceIndex >= 0 && sign.particleStageIndex >= 0 ) {
+			idStr imagePath = idParticleStage::GetCollisionStaticImagePath( sign.renderModelName, sign.surfaceIndex, sign.particleStageIndex );
 			image = idParticleStage::LoadCutoffTimeMap( imagePath );
 			if ( image->defaulted )
 				image = nullptr;	//image not found
