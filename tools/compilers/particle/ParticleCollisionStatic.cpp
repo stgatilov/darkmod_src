@@ -28,7 +28,7 @@ public:
 private:
 	void ProcessMap();
 	void ProcessModel(const char *modelName, const idVec3 &origin, const idMat3 &axis, bool disabled);
-	bool ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec3 &origin, const idMat3 &axis, const idParticleStage *prtStage, const char *ident, const char *prtName, int stageIdx);
+	bool ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec3 &origin, const idMat3 &axis, const idParticleStage *prtStage, const char *outputFilename, const char *prtName, idPartSysSurfaceEmitterSignature signature);
 	idRenderWorld *RenderWorld();
 
 	// path to .map file
@@ -56,8 +56,9 @@ PrtCollision::~PrtCollision() {
 		renderSystem->FreeRenderWorld(renderWorld);
 }
 
-bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec3 &origin, const idMat3 &axis, const idParticleStage *prtStage, const char *outputFilename, const char *prtName, int stageIdx) {
+bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec3 &origin, const idMat3 &axis, const idParticleStage *prtStage, const char *outputFilename, const char *prtName, idPartSysSurfaceEmitterSignature signature) {
 	assert(prtStage->collisionStatic);
+	int stageIdx = signature.particleStageIndex;
 
 	bool supportedWithTextureLayout = (
 		((idVec3*)prtStage->distributionParms)->LengthSqr() == 0.0f &&
@@ -82,41 +83,18 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 		common->Error("Particle %s stage %d: generic collision detection not implemented yet", prtName, stageIdx);
 	}
 
-	//evaluate bounding box for texture coords
-	idBounds texBounds;
-	texBounds.Clear();
-	for (int i = 0; i < geom->numIndexes; i++) {
-		idVec2 tc = geom->verts[geom->indexes[i]].st;
-		texBounds.AddPoint(idVec3(tc.x, tc.y, 0.0));
-	}
-	texBounds.IntersectsBounds(bounds_zeroOneCube);
-	if (texBounds.IsBackwards()) {
+	idPartSysCutoffTextureInfo texinfo;
+	if (!idParticle_FindCutoffTextureSubregion(*prtStage, geom, texinfo)) {
 		common->Warning("Particle %s collisionStatic %s: texture coordinates out of [0..1] x [0..1] domain", prtName, outputFilename);
-		texBounds.Zero();
 	}
 
-	//find minimal subrectangle to be computed and saved
-	int w = prtStage->mapLayoutSizes[0], h = prtStage->mapLayoutSizes[1];
-	int xBeg = (int)idMath::Floor(texBounds[0].x * w);
-	int xEnd = (int)idMath::Ceil (texBounds[1].x * w);
-	int yBeg = (int)idMath::Floor(texBounds[0].y * h);
-	int yEnd = (int)idMath::Ceil (texBounds[1].y * h);
-	if (xEnd == xBeg)
-		(xEnd < w ? xEnd++ : xBeg--);
-	if (yEnd == yBeg)
-		(yEnd < h ? yEnd++ : yBeg--);
-	assert(xBeg >= 0 && xBeg < xEnd && xEnd <= w);
-	assert(yBeg >= 0 && yBeg < yEnd && yEnd <= h);
-	int xSz = xEnd - xBeg;
-	int ySz = yEnd - yBeg;
-
-	int bytes = xSz * ySz * 4;
+	int bytes = texinfo.sizeX * texinfo.sizeY * 4;
 	uint32 *texels = (uint32*)Mem_Alloc(bytes);
 	memset(texels, 0, bytes);
 	int hitsCount = 0;
-	for (int y = yBeg; y < yEnd; y++)
-		for (int x = xBeg; x < xEnd; x++) {
-			idVec2 texCoord((x + 0.5) / w, (y + 0.5) / h);
+	for (int y = texinfo.baseY; y < texinfo.baseY + texinfo.sizeY; y++)
+		for (int x = texinfo.baseX; x < texinfo.baseX + texinfo.sizeX; x++) {
+			idVec2 texCoord((x + 0.5) / texinfo.resX, (y + 0.5) / texinfo.resY);
 
 			int usedTriNum = 0;
 			int insideTriNum = 0;
@@ -160,7 +138,6 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 				part.axis[1] = bary0 * v0.tangents[1] + bary1 * v1.tangents[1] + bary2 * v2.tangents[1];
 				part.axis[2] = bary0 * v0.normal      + bary1 * v1.normal      + bary2 * v2.normal     ;
 				part.frac = 0.0f;
-				assert(!prtStage->worldAxis);	//TODO: pass matrix instead of whole render entity
 
 				//compute travel path (must be a line segment)
 				int random = 0;
@@ -208,7 +185,7 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 					digits[d] = idMath::ClampInt(0, 255, int(rem));
 					rem -= digits[d];
 				}
-				texels[(y - yBeg) * xSz + (x - xBeg)] = digits[0] + (digits[1] << 8) + (digits[2] << 16) + (digits[3] << 24);
+				texels[(y - texinfo.baseY) * texinfo.sizeX + (x - texinfo.baseX)] = digits[0] + (digits[1] << 8) + (digits[2] << 16) + (digits[3] << 24);
 			}
 
 			if (insideTriNum > 1) {
@@ -217,7 +194,7 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 			}
 		}
 
-	R_WriteTGA(outputFilename, (byte*)texels, xSz, ySz);
+	R_WriteTGA(outputFilename, (byte*)texels, texinfo.sizeX, texinfo.sizeY);
 	Mem_Free(texels);
 
 	return true;
@@ -242,11 +219,17 @@ void PrtCollision::ProcessModel(const char *modelName, const idVec3 &origin, con
 			// look for particle stages with "collisionStatic"
 			for (int g = 0; g < prtStages.Num(); g++) {
 				const idParticleStage *stage = prtStages[g];
+
 				if (stage->collisionStatic) {
+					idPartSysSurfaceEmitterSignature sign;
+					sign.renderModelName = modelName;
+					sign.surfaceIndex = s;
+					sign.particleStageIndex = g;
 					idStr imageName = idParticleStage::GetCollisionStaticImagePath(modelName, s, g);
+
 					numSurfsProcessed++;
 					if (!disabled)
-						ProcessSurfaceEmitter(surf->geometry, origin, axis, stage, imageName.c_str(), particleDecl->GetName(), g);
+						ProcessSurfaceEmitter(surf->geometry, origin, axis, stage, imageName.c_str(), particleDecl->GetName(), sign);
 					else {
 						numSurfsDisabled++;
 						byte white[4] = {255, 255, 255, 0};
