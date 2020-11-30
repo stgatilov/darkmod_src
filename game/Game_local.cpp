@@ -4503,11 +4503,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		gui->SetStateBool("MsgBoxVisible", false);
 	}
-	else if (cmd == "updatecookedmathdata")		// Adding a way to update cooked data from menu - J.C.Denton
-	{
-		// Add the command to buffer, but no need to issue it immediately. 
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData\n" );
-	}
 	else if (cmd == "lod_bias_changed")		// Adding a way to update cooked data from menu - J.C.Denton
 	{
 		// Add the command to buffer, but no need to issue it immediately. 
