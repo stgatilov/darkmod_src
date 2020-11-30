@@ -71,7 +71,7 @@ struct idPartStageData {
 	float timeOffset;				// time offset from system start for the first particle to spawn
 	float deadTime;					// time after particleLife before respawning
 
-	//------------------------------	// standard path parms
+	//------ standard path parms
 
 	prtDistribution_t distributionType;
 	float distributionParms[4];
@@ -86,36 +86,36 @@ struct idPartStageData {
 	bool randomDistribution;		// randomly orient the quad on emission ( defaults to true ) 
 	bool entityColor;				// force color from render entity ( fadeColor is still valid )
 
-	//--------------------------------	// custom path will completely replace the standard path calculations
+	//------ custom path will completely replace the standard path calculations
 
 	prtCustomPth_t customPathType;	// use custom C code routines for determining the origin
 	float customPathParms[8];
 
-	//--------------------------------
+	//------
 
 	idVec3 offset;					// offset from origin to spawn all particles, also applies to customPath
 
-	int						animationFrames;	// if > 1, subdivide the texture S axis into frames and crossfade
-	float					animationRate;		// frames per second
+	int animationFrames;			// if > 1, subdivide the texture S axis into frames and crossfade
+	float animationRate;			// frames per second
 
-	float					initialAngle;		// in degrees, random angle is used if zero ( default ) 
-	idParticleParm			rotationSpeed;		// half the particles will have negative rotation speeds
+	float initialAngle;				// in degrees, random angle is used if zero ( default ) 
+	idParticleParm rotationSpeed;	// half the particles will have negative rotation speeds
 
-	prtOrientation_t		orientation;	// view, aimed, or axis fixed
-	float					orientationParms[4];
+	prtOrientation_t orientation;	// view, aimed, or axis fixed
+	float orientationParms[4];
 
-	idParticleParm			size;
-	idParticleParm			aspect;				// greater than 1 makes the T axis longer
+	idParticleParm size;
+	idParticleParm aspect;			// greater than 1 makes the T axis longer
 
-	idVec4					color;
-	idVec4					fadeColor;			// either 0 0 0 0 for additive, or 1 1 1 0 for blended materials
-	float					fadeInFraction;		// in 0.0 to 1.0 range
-	float					fadeOutFraction;	// in 0.0 to 1.0 range
-	float					fadeIndexFraction;	// in 0.0 to 1.0 range, causes later index smokes to be more faded 
+	idVec4 color;
+	idVec4 fadeColor;				// either 0 0 0 0 for additive, or 1 1 1 0 for blended materials
+	float fadeInFraction;			// in 0.0 to 1.0 range
+	float fadeOutFraction;			// in 0.0 to 1.0 range
+	float fadeIndexFraction;		// in 0.0 to 1.0 range, causes later index smokes to be more faded 
 
-	float					boundsExpansion;	// user tweak to fix poorly calculated bounds
+	float boundsExpansion;			// user tweak to fix poorly calculated bounds
 
-	//--------------------------------
+	//------
 
 	bool useCutoffTimeMap;
 	//stgatilov: if set to true, then cutoffTimeMap is auto-generated when map is compiled

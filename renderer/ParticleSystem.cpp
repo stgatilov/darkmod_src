@@ -337,6 +337,7 @@ void idParticle_PrepareCutoffTexture(
 			if ( image->defaulted )
 				image = nullptr;	//image not found
 			else if ( !image->cpuData.pic ) {
+				assert(false);
 				image = nullptr;	//some SMP weirdness: do not crash at least
 			}
 			else {
@@ -348,7 +349,7 @@ void idParticle_PrepareCutoffTexture(
 		}
 		else {
 			//something failed really bad, ignore cutoffTimeMap
-			assert(image);
+			assert(false);
 		}
 	}
 	else {
@@ -359,6 +360,11 @@ void idParticle_PrepareCutoffTexture(
 	if (image) {
 		//set up the subregion (especially important for collisionStatic)
 		idParticle_FindCutoffTextureSubregion(*stage, tri, texinfo);
+
+		if ( image->cpuData.width != texinfo.sizeX || image->cpuData.height != texinfo.sizeY ) {
+			//dimensions mismatch: drop the image
+			image = nullptr;
+		}
 	}
 }
 
