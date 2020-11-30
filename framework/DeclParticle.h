@@ -75,13 +75,6 @@ public:
 	// If this is less than "1" at tex coords where particle emits, then its death moment happens earlier
 	// Note: fade-out time moment is not changed, since this is collision (TODO: do we need to support both cases?)
 	idImage *				cutoffTimeMap;
-
-	//stgatilov: if set to true, then cutoffTimeMap is auto-generated when map is compiled
-	bool collisionStatic;
-	bool collisionStaticWorldOnly;
-	//stgatilov: configuration of cutoff texture (and possibly other textures added in future)
-	prtMapLayout_t mapLayoutType;
-	int mapLayoutSizes[2];
 };
 
 

@@ -277,9 +277,7 @@ idVec4 idParticle_ParticleColors(
 	// individual gun smoke particles get more and more faded as the
 	// cycle goes on (note that totalParticles won't be correct for a surface-particle deform)
 	if ( stg.fadeIndexFraction ) {
-		int totalParticles = stg.totalParticles;
-		if ( psys.totalParticlesOverride )	//stgatilov #5130
-			totalParticles = psys.totalParticlesOverride;
+		int totalParticles = psys.totalParticles;
 		float indexFrac = ( totalParticles - part.index ) / float(totalParticles);
 		if ( indexFrac < stg.fadeIndexFraction ) {
 			fadeFraction *= indexFrac / stg.fadeIndexFraction;
@@ -531,4 +529,60 @@ void idParticle_CreateParticle(
 	idParticle_EmitQuadAnimated(v0, v1, v2, v3, stg, animationFrameFrac, emitter);
 
 	return;
+}
+
+bool idParticle_EmitParticle(
+	PIN(idPartStageData) stg, PIN(idPartSysEmit) psys, PIN(int) index,
+	POUT(idParticleData) res
+) {
+	int stageAge = psys.viewTimeMs + psys.entityParmsTimeOffset * 1000 - stg.timeOffset * 1000;
+	int	stageCycle = stageAge / stg.cycleMsec;
+
+	res.index = index;
+	res.origin = idVec3(0.0f, 0.0f, 0.0f);
+	res.axis[0] = idVec3(1.0f, 0.0f, 0.0f);
+	res.axis[1] = idVec3(0.0f, 1.0f, 0.0f);
+	res.axis[2] = idVec3(0.0f, 0.0f, 1.0f);
+
+	// calculate local age for this index 
+	int	bunchOffset = stg.particleLife * 1000 * stg.spawnBunching * index / psys.totalParticles;
+	int particleAge = stageAge - bunchOffset;
+	int	particleCycle = particleAge / stg.cycleMsec;
+
+	if ( particleCycle < 0 ) {
+		// before the particleSystem spawned
+		res.frac = -1000000;
+		return false;
+	}
+	if ( stg.cycles && particleCycle >= stg.cycles ) {
+		// cycled systems will only run cycle times
+		res.frac = -1000000;
+		return false;
+	}
+
+	int	inCycleTime = particleAge - particleCycle * stg.cycleMsec;
+	if ( psys.entityParmsStopTime && psys.viewTimeMs - inCycleTime >= psys.entityParmsStopTime*1000 ) {
+		// don't fire any more particles
+		res.frac = -1000000;
+		return false;
+	}
+
+	// supress particles before or after the age clamp
+	res.frac = (float)inCycleTime / ( stg.particleLife * 1000 );
+
+	if ( res.frac < 0.0 || res.frac > 1.0 ) {
+		// yet to be spawned or in the deadTime band
+		return false;
+	}
+
+	//stgatilov: compute random seed as hash of:
+	//  1) external randomizer
+	//  2) cycle number
+	//  3) particle index
+	//Note: linear dependency on "index" results in obvious visual regularities/patterns
+	//probably related: https://en.wikipedia.org/wiki/Linear_congruential_generator#Advantages_and_disadvantages
+	//"One flaw specific to LCGs is that, if used to choose points in an n-dimensional space, the points will lie on, at most, pow(n!*m, 1/n) hyperplanes"
+	res.randomSeed = particleCycle * 1580030168 + index * index * 2654435769 + int(psys.randomizer * 46341);
+
+	return true;
 }

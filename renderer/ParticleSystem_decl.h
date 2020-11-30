@@ -1,5 +1,7 @@
 //no include guard: include ParticleSystem.h instead
 
+//---------------------------------------------------------------------
+
 float idRandom_RandomFloat(PINOUT(int) seed);
 float idRandom_CRandomFloat(PINOUT(int) seed);
 
@@ -13,6 +15,7 @@ void idParticleParm_Clear(POUT(idParticleParm) self);
 float idParticleParm_Eval(PIN(idParticleParm) self, float frac);
 float idParticleParm_Integrate(PIN(idParticleParm) self, float frac);
 
+//---------------------------------------------------------------------
 
 //TODO: turn enums into integer constants for GLSL?
 
@@ -50,6 +53,7 @@ typedef enum {
 	PML_TEXTURE
 } prtMapLayout_t;
 
+//---------------------------------------------------------------------
 
 //particle system: per-declstage data
 //this data is embedded into idParticleStage class
@@ -110,24 +114,34 @@ struct idPartStageData {
 	float					fadeIndexFraction;	// in 0.0 to 1.0 range, causes later index smokes to be more faded 
 
 	float					boundsExpansion;	// user tweak to fix poorly calculated bounds
+
+	//--------------------------------
+
+	bool useCutoffTimeMap;
+	//stgatilov: if set to true, then cutoffTimeMap is auto-generated when map is compiled
+	bool collisionStatic;
+	bool collisionStaticWorldOnly;
+	//stgatilov: configuration of cutoff texture (and possibly other textures added in future)
+	prtMapLayout_t mapLayoutType;
+	int mapLayoutSizes[2];
 };
 
-//particle system: per-system data
+//particle system: per-system modeling data
 //if many entities use same particle declaration, each has its own data
 struct idPartSysData {
 	idMat3 entityAxis;				// (renderEnt->axis) entity model space -> world space
 	idMat3 viewAxis;				// (renderView->viewaxis) view space -> world space (see R_SetViewMatrix)
 	idVec4 entityParmsColor;		// (renderEnt->shaderParms[0-3]) specify entity color
-	int totalParticlesOverride;		//stgatilov #5130: used if positive, fixes R_ParticleDeform with useArea = true and fadeIndex
+	int totalParticles;				//stgatilov #5130: fixes R_ParticleDeform with useArea = true and fadeIndex
 };
 
-//particle system: per-particle individual data
+//particle system: per-particle individual modeling data
 struct idParticleData {
 	int index;				// particle number in the system
 	float frac;				// 0.0 to 1.0
 	int randomSeed;			// initial seed for idRandom
 	idVec3 origin;			// dynamic smoke particles can have individual origins and axis
-	idMat3 axis;			// particle emitter space -> entity model space (used for particle deform)
+	idMat3 axis;			// particle emitter space -> entity model space (identity for particle models)
 };
 
 
@@ -143,3 +157,34 @@ idVec3 idParticle_ParticleOrigin(PIN(idPartStageData) stg, PIN(idPartSysData) ps
 //  0 1
 //  2 3
 void idParticle_CreateParticle(PIN(idPartStageData) stg, PIN(idPartSysData) psys, PIN(idParticleData) part, EMITTER emitter);
+
+//---------------------------------------------------------------------
+
+//particle system: per-system emit/generation info
+//if many entities use same particle declaration, each has its own data
+struct idPartSysEmit {
+	int viewTimeMs;
+	float entityParmsTimeOffset;
+	float entityParmsStopTime;
+	int totalParticles;
+	float randomizer;
+};
+
+//emits one particle with specified index and default emit location
+//custom "origin" and "axis" should be assigned immediately afterwards if needed
+//the result can be passed into idParticle_CreateParticle to compute characteristics and produce geometry
+bool idParticle_EmitParticle(PIN(idPartStageData) stg, PIN(idPartSysEmit) psys, PIN(int) index, POUT(idParticleData) res);
+
+//---------------------------------------------------------------------
+
+//precomputed auxilliary information about cutoff map with "texture" layout
+//defines which subregion in texcoord space is saved in the image
+struct idPartSysCutoffTextureInfo {
+	//resolution of virtual texture
+	//texcoords [0..1) x [0..1) map to virtual texel grid [0..resX) x [0..resY)
+	int resX, resY;
+	//(baseX + x, baseY + y) texel in virtual texture is stored in texel (x, y) of physical image
+	int baseX, baseY;
+	//physical image has dimensions sizeX x sizeY
+	int sizeX, sizeY;
+};

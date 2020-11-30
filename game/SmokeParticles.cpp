@@ -297,8 +297,6 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 	psys.viewAxis = renderView->viewaxis;
 
 	for ( int activeStageNum = 0; activeStageNum < activeStages.Num(); activeStageNum++ ) {
-		singleSmoke_t *smoke, *next, *last;
-
 		activeSmokeStage_t *active = &activeStages[activeStageNum];
 		const idParticleStage *stage = active->stage;
 
@@ -306,9 +304,11 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 			continue;
 		}
 
+		psys.totalParticles = stage->totalParticles;
+
 		// allocate a srfTriangles that can hold all the particles
 		int count = 0;
-		for ( smoke = active->smokes; smoke; smoke = smoke->next ) {
+		for ( singleSmoke_t *smoke = active->smokes; smoke; smoke = smoke->next ) {
 			count++;
 		}
 		int	quads = count * stage->NumQuadsPerParticle();
@@ -325,7 +325,7 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 		tri->bounds[1][2] = 99999;
 
 		tri->numVerts = 0;
-		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
+		for ( singleSmoke_t *last = NULL, *smoke = active->smokes, *next; smoke; smoke = next ) {
 			next = smoke->next;
 
 			idParticleData part;

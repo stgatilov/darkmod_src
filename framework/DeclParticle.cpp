@@ -334,6 +334,7 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 		if ( !token.Icmp( "cutoffTimeMap" ) ) {
 			src.ReadToken( &token );
 			stage->cutoffTimeMap = idParticleStage::LoadCutoffTimeMap( token.c_str() );
+			stage->useCutoffTimeMap = true;
 			continue;
 		}
 		if ( !token.Icmp( "mapLayout" ) ) {
@@ -355,6 +356,7 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 		}
 		if ( !token.Icmp( "collisionStatic" ) ) {
 			stage->collisionStatic = true;
+			stage->useCutoffTimeMap = true;
 			continue;
 		}
 		if ( !token.Icmp( "collisionStaticWorldOnly" ) ) {
@@ -375,12 +377,12 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 		}
 		if ( stage->mapLayoutType != PML_TEXTURE ) {
 			src.Warning( "'cutoffTimeMap' ignored: 'mapLayout' must be 'texture'" );
-			stage->cutoffTimeMap = nullptr;
+			stage->useCutoffTimeMap = false;
 		}
 		//stgatilov: image does not get loaded immediately =(
 		/*else if ( stage->cutoffTimeMap->cpuData.width != stage->mapLayoutSizes[0] || stage->cutoffTimeMap->cpuData.height != stage->mapLayoutSizes[1] ) {
 			src.Warning( "'cutoffTimeMap' ignored: dimensions must match specified in 'mapLayout'" );
-			stage->cutoffTimeMap = nullptr;
+			stage->useCutoffTimeMap = false;
 		}*/
 	}
 
@@ -761,6 +763,7 @@ void idParticleStage::Default() {
 	entityColor = false;
 	cycleMsec = ( particleLife + deadTime ) * 1000;
 	softeningRadius = -2.0f; // -2 means "auto"
+	useCutoffTimeMap = false;
 	cutoffTimeMap = nullptr;
 	collisionStatic = false;
 	collisionStaticWorldOnly = false;

@@ -1,5 +1,6 @@
 #include "precompiled.h"
 #include "ParticleSystem.h"
+#include "tr_local.h"
 
 
 #define PIN(type) const type &
@@ -130,7 +131,7 @@ idBounds idParticle_GetStageBoundsModel(const idPartStageData &stg, const idBoun
 	return bounds;
 }
 
-void idParticle_AnalyzeSurfaceEmitter(srfTriangles_t *tri, idBounds csysBounds[4]) {
+void idParticle_AnalyzeSurfaceEmitter(const srfTriangles_t *tri, idBounds csysBounds[4]) {
 	//get bounds for every axis of particle's coordinate system
 	//note that each particle gets some interpolation of normal/tangents and xyz as its coordinate system
 	for (int l = 0; l < 4; l++)
@@ -186,4 +187,191 @@ idBounds idParticle_GetStageBoundsDeform(const idPartStageData &stg, const idBou
 	}
 
 	return bounds;
+}
+
+int idParticle_PrepareDistributionOnSurface(const srfTriangles_s *tri, float *areas, float *totalArea) {
+	int triNum = tri->numIndexes / 3;
+	if (areas) {
+		float sumArea = 0.0f;
+		for (int i = 0; i < triNum; i++) {
+			int a = tri->indexes[3 * i + 0];
+			int b = tri->indexes[3 * i + 1];
+			int c = tri->indexes[3 * i + 2];
+			float area = idWinding::TriangleArea( tri->verts[a].xyz, tri->verts[b].xyz,  tri->verts[c].xyz );
+			areas[i] = sumArea;
+			sumArea += area;
+		}
+		areas[triNum] = sumArea;
+		if (totalArea)
+			*totalArea = sumArea;
+	}
+	return triNum + 1;
+}
+
+void idParticle_EmitLocationOnSurface(const idPartStageData &stg, const srfTriangles_s *tri, idParticleData &part, idVec2 &texCoord, float *areas) {
+	//---------------
+	// locate the particle origin and axis somewhere on the surface
+	//---------------
+
+	int triIdx;
+	if (areas) {
+		int triNum = tri->numIndexes / 3;
+		// select a triangle based on an even area distribution
+		triIdx = idBinSearch_LessEqual<float>( areas, triNum, idRandom_RandomFloat(part.randomSeed) * areas[triNum] );
+	}
+	else {
+		// each triangle gets same "particleCount" number of particles 
+		triIdx = part.index / stg.totalParticles;
+	}
+
+	// now pick a random point inside pointTri
+	const idDrawVert *v1 = &tri->verts[ tri->indexes[ triIdx * 3 + 0 ] ];
+	const idDrawVert *v2 = &tri->verts[ tri->indexes[ triIdx * 3 + 1 ] ];
+	const idDrawVert *v3 = &tri->verts[ tri->indexes[ triIdx * 3 + 2 ] ];
+
+	// create random barycentric coordinates
+	float f1 = idRandom_RandomFloat(part.randomSeed);
+	float f2 = idRandom_RandomFloat(part.randomSeed);
+	float f3 = idRandom_RandomFloat(part.randomSeed);
+	float ft = 1.0f / ( f1 + f2 + f3 + 0.0001f );
+	f1 *= ft;
+	f2 *= ft;
+	f3 = 1.0f - f1 - f2;
+
+	// interpolate all attributes across triangle
+	part.origin = v1->xyz * f1 + v2->xyz * f2 + v3->xyz * f3;
+	part.axis[0] = v1->tangents[0] * f1 + v2->tangents[0] * f2 + v3->tangents[0] * f3;
+	part.axis[1] = v1->tangents[1] * f1 + v2->tangents[1] * f2 + v3->tangents[1] * f3;
+	part.axis[2] = v1->normal * f1 + v2->normal * f2 + v3->normal * f3;
+	texCoord = v1->st * f1 + v2->st * f2 + v3->st * f3;
+}
+
+bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srfTriangles_s *tri, idPartSysCutoffTextureInfo &region) {
+	if (!stg.useCutoffTimeMap)
+		return false;	//subregion not used
+
+	int w = stg.mapLayoutSizes[0], h = stg.mapLayoutSizes[1];
+	if (stg.collisionStatic) {
+		//evaluate bounding box for texture coords
+		idBounds texBounds;
+		texBounds.Clear();
+		for (int i = 0; i < tri->numIndexes; i++) {
+			idVec2 tc = tri->verts[tri->indexes[i]].st;
+			texBounds.AddPoint(idVec3(tc.x, tc.y, 0.0));
+		}
+		texBounds.IntersectsBounds(bounds_zeroOneCube);
+		bool empty = false;
+		if (texBounds.IsBackwards()) {
+			empty = true;
+			texBounds.Zero();
+		}
+
+		//find minimal subrectangle to be computed and saved
+		int xBeg = (int)idMath::Floor(texBounds[0].x * w);
+		int xEnd = (int)idMath::Ceil (texBounds[1].x * w);
+		int yBeg = (int)idMath::Floor(texBounds[0].y * h);
+		int yEnd = (int)idMath::Ceil (texBounds[1].y * h);
+		//ensure at least one texel in the region
+		if (xEnd == xBeg)
+			(xEnd < w ? xEnd++ : xBeg--);
+		if (yEnd == yBeg)
+			(yEnd < h ? yEnd++ : yBeg--);
+
+		region.baseX = xBeg;
+		region.baseY = yBeg;
+		region.resX = w;
+		region.resY = h;
+		region.sizeX = xEnd - xBeg;
+		region.sizeY = yEnd - yBeg;
+		return !empty;
+	}
+	else {
+		//cutoff map set explicitly: subregion is full
+		region.baseX = 0;
+		region.baseY = 0;
+		region.resX = w;
+		region.resY = h;
+		region.sizeX = w;
+		region.sizeY = h;
+		return true;
+	}
+}
+
+void idParticle_PrepareCutoffTexture(
+	const renderEntity_s *renderEntity, const drawSurf_t *surf, const idParticleStage *stage, 
+	idImage *&image, idPartSysCutoffTextureInfo &texinfo
+) {
+	image = nullptr;
+	if (!stage->useCutoffTimeMap)
+		return;	//nothing to prepare
+
+	const srfTriangles_t *tri = surf->frontendGeo;
+
+	if ( stage->collisionStatic ) {
+		//collisionStatic: find surface index and particle stage index
+		//the individual texture is used for every combination of those
+		idRenderModel *rm = renderEntity->hModel;
+		int surfNum = rm->NumSurfaces();
+		int surfIdx;
+		for ( surfIdx = 0; surfIdx < surfNum; surfIdx++ )
+			if ( rm->Surface(surfIdx)->geometry == surf->frontendGeo )
+				break;
+		const idDeclParticle *particleSystem = (idDeclParticle *)surf->material->GetDeformDecl();
+		int stagesNum = particleSystem->stages.Num();
+		int stageIdx = particleSystem->stages.FindIndex((idParticleStage*)stage);
+
+		if ( surfIdx < surfNum && stageIdx >= 0 ) {
+			idStr imagePath = idParticleStage::GetCollisionStaticImagePath( rm->Name(), surfIdx, stageIdx );
+			image = idParticleStage::LoadCutoffTimeMap( imagePath );
+			if ( image->defaulted )
+				image = nullptr;	//image not found
+			else if ( !image->cpuData.pic ) {
+				image = nullptr;	//some SMP weirdness: do not crash at least
+			}
+			else {
+				const imageBlock_t &data = image->cpuData;
+				const byte *pic = data.GetPic(0);
+				if ( data.GetSizeInBytes() == 4 && pic[0] == 255 && pic[1] == 255 && pic[2] == 255 )
+					image = nullptr;	//collisionStatic was disabled for this emitter
+			}
+		}
+		else {
+			//something failed really bad, ignore cutoffTimeMap
+			assert(image);
+		}
+	}
+	else {
+		//cutoffTimeMap set explicitly
+		image = stage->cutoffTimeMap;
+	}
+
+	if (image) {
+		//set up the subregion (especially important for collisionStatic)
+		idParticle_FindCutoffTextureSubregion(*stage, tri, texinfo);
+	}
+}
+
+float idParticle_FetchCutoffTimeMap(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord) {
+	if (!image)
+		return 1000000;
+
+	//take the image
+	const byte *pic = image->cpuData.GetPic(0);
+	int w = image->cpuData.width, h = image->cpuData.height;
+
+	//clamp texcoords (GL_CLAMP_TO_EDGE)
+	texcoord.Clamp( idVec2(0.0f, 0.0f), idVec2(1.0f - FLT_EPSILON, 1.0f - FLT_EPSILON) );
+	//multiply by virtual texture resolution
+	texcoord.MulCW( idVec2(texinfo.resX, texinfo.resY) );
+	//determine texel in virtual grid (GL_NEAREST)
+	int x = int(texcoord.x), y = int(texcoord.y);
+	assert(x >= texinfo.baseX && y >= texinfo.baseY && x < texinfo.baseX + w && y < texinfo.baseY + h);
+
+	//find texel in actual image
+	const byte *texel = &pic[4 * ((y - texinfo.baseY) * w + (x - texinfo.baseX))];
+	//convert from 8-bit RGB into 24-bit time ratio
+	//note: 8-bit grayscale image turns into ratio = (val/255)
+	static const float TWO_POWER_MINUS_24 = 1.0f / (1<<24);
+	float ratio = ((texel[0] * 256 + texel[1]) * 256 + texel[2]) * TWO_POWER_MINUS_24;
+	return ratio;
 }

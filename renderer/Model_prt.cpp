@@ -105,22 +105,27 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 	for ( int stageNum = 0; stageNum < particleSystem->stages.Num(); stageNum++ ) {
 		idParticleStage *stage = particleSystem->stages[stageNum];
 
-		if ( !stage->material || !stage->cycleMsec ) {
+		if ( !stage->material )
 			continue;
-		}
+		if ( !stage->cycleMsec )
+			continue;
 		else if ( stage->hidden ) {		// just for gui particle editor use
 			staticModel->DeleteSurfaceWithId( stageNum );
 			continue;
 		}
 
-		const int stageAge = renderView->time + (renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] - stage->timeOffset) * 1000;
-		const int stageCycle = stageAge / stage->cycleMsec;
+		psys.totalParticles = stage->totalParticles;
 
-		const int	count = stage->totalParticles * stage->NumQuadsPerParticle();
+		idPartSysEmit psEmit;
+		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
+		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
+		psEmit.randomizer = renderEntity->shaderParms[SHADERPARM_DIVERSITY];
+		psEmit.totalParticles = stage->totalParticles;
+		psEmit.viewTimeMs = renderView->time;
 
+		const int count = stage->totalParticles * stage->NumQuadsPerParticle();
 		int surfaceNum = 0;
 		modelSurface_t *surf;
-
 		if ( staticModel->FindSurfaceWithId( stageNum, surfaceNum ) ) {
 			surf = &staticModel->surfaces[surfaceNum];
 			R_FreeStaticTriSurfVertexCaches( surf->geometry );
@@ -139,48 +144,8 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 
 		for ( int index = 0; index < stage->totalParticles; index++ ) {
 			idParticleData part;
-			part.origin.Zero();
-			part.axis.Identity();
-			part.index = index;
-
-			// calculate local age for this index 
-			//const int bunchOffset = (index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles;
-			//const int particleAge = stageAge - bunchOffset
-			const int particleAge = stageAge - ((index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles);
-			const int particleCycle = particleAge / stage->cycleMsec;
-			
-			// before the particleSystem has spawned or
-			// cycled systems will only run cycle times
-			if ( particleCycle < 0 || ( stage->cycles && particleCycle >= stage->cycles ) ) {
+			if (!idParticle_EmitParticle(*stage, psEmit, index, part))
 				continue;
-			}
-			
-			const int inCycleTime = particleAge - particleCycle * stage->cycleMsec;
-			
-			if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
-				renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] * 1000 ) {
-				// don't fire any more particles
-				continue;
-			}
-
-			// supress particles before or after the age clamp
-			part.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
-			if ( part.frac < 0.0f || part.frac > 1.0f) {
-				// < 0.0f ; yet to be spawned
-				// > 1.0f ; particle is in the deadTime band
-				continue;
-			}
-
-			// #3161: "Bouncing" smoke. Move the random number seeding here from the "stage" section above, and use the particle's quad index 
-			// in the seed, and use particleCycle number instead of stageCycle number, so that each particle quad gets its own sequence. 
-			// This means (1) we don't need two separate sequences to handle particle quads from two different cycles any more, and 
-			// (2) particle quads won't inherit the random numbers of their dead predecessors any more, which is what caused the "bouncing" illusion.
-			idRandom steppingRandom;
-			const int quadSeed = ( ( ( ( index + particleCycle ) << 5 ) + index ) << 5 ) & idRandom::MAX_RAND;
-			steppingRandom.SetSeed( quadSeed  ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
-			// bump the random
-			steppingRandom.RandomInt();
-			part.randomSeed = steppingRandom.GetSeed();
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
 			idDrawVert *ptr = verts + numVerts;

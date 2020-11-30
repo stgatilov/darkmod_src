@@ -872,23 +872,16 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 	}
 #endif
 
-	//
-	// calculate the area of all the triangles
-	//
-	float	totalArea = 0;
-	float	*sourceTriAreas = NULL;
-	const srfTriangles_t	*srcTri = surf->frontendGeo;
-	int		numSourceTris = srcTri->numIndexes / 3;
+	const srfTriangles_t *srcTri = surf->frontendGeo;
+	int srcTriNum = srcTri->numIndexes / 3;
 
+	float *triAreas = NULL;
+	float totalArea = 0.0f;
 	if ( useArea ) {
-		sourceTriAreas = (float *)_alloca( sizeof( *sourceTriAreas ) * numSourceTris );
-		int	triNum = 0;
-		for ( int i = 0 ; i < srcTri->numIndexes ; i += 3, triNum++ ) {
-			float	area;
-			area = idWinding::TriangleArea( srcTri->verts[srcTri->indexes[i]].xyz, srcTri->verts[srcTri->indexes[i+1]].xyz,  srcTri->verts[srcTri->indexes[i+2]].xyz );
-			sourceTriAreas[triNum] = totalArea;
-			totalArea += area;
-		}
+		// calculate the area of all the triangles
+		int size = idParticle_PrepareDistributionOnSurface(srcTri);
+		triAreas = (float *)alloca( sizeof(triAreas[0]) * size );
+		idParticle_PrepareDistributionOnSurface(srcTri, triAreas, &totalArea);
 	}
 
 	// Generate a random number seed from the surface world position. Original code used SHADERPARM_DIVERSITY (shaderParm5) for this
@@ -904,249 +897,93 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		randomizer = randomizer - idMath::Floor(randomizer); 
 	}
 
-	//
-	// create the particles almost exactly the way idRenderModelPrt does
-	//
 	idPartSysData psys;
 	const renderView_t *renderView = &viewDef->renderView;
 	psys.entityAxis = renderEntity->axis;
 	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
 	psys.viewAxis = renderView->viewaxis;
 
-	for ( int currentTri = 0; currentTri < ( ( useArea ) ? 1 : numSourceTris ); currentTri++ ) {
+	for ( int stageNum = 0 ; stageNum < particleSystem->stages.Num() ; stageNum++ ) {
+		idParticleStage *stage = particleSystem->stages[stageNum];
 
-		for ( int stageNum = 0 ; stageNum < particleSystem->stages.Num() ; stageNum++ ) {
-			idParticleStage *stage = particleSystem->stages[stageNum];
+		if ( !stage->material )
+			continue;
+		if ( !stage->cycleMsec )
+			continue;
+		if ( stage->hidden )		// just for gui particle editor use
+			continue;
 
-			if ( !stage->material ) {
+		// we interpret stage->totalParticles as "particles per map square area"
+		// so the systems look the same on different size surfaces
+		int totalParticlesPerCycle = ( useArea ? stage->totalParticles * totalArea / 4096.0 : stage->totalParticles );
+		int totalParticles = totalParticlesPerCycle * (useArea ? 1 : srcTriNum);
+		psys.totalParticles = totalParticlesPerCycle;		// #5130: needed if useArea = true
+
+		idPartSysEmit psEmit;
+		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
+		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
+		psEmit.randomizer = randomizer;
+		psEmit.totalParticles = totalParticlesPerCycle;
+		psEmit.viewTimeMs = renderView->time;
+
+		idPartSysCutoffTextureInfo cutoffInfo;
+		idImage *cutoffImage;
+		idParticle_PrepareCutoffTexture(renderEntity, surf, stage, cutoffImage, cutoffInfo);
+
+		// allocate a srfTriangles in temp memory that can hold all the particles
+		int	outVertexCount = totalParticles * stage->NumQuadsPerParticle();
+		srfTriangles_t	*tri;
+		tri = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *tri ) );
+		tri->numVerts = 4 * outVertexCount;
+		tri->numIndexes = 6 * outVertexCount;
+		tri->verts = (idDrawVert *)R_FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
+		tri->indexes = (glIndex_t *)R_FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
+		tri->bounds = surf->frontendGeo->bounds;	// TODO: it seems this value has absolutely no effect
+		tri->numVerts = 0;
+
+		for ( int index = 0 ; index < totalParticles ; index++ ) {
+			idParticleData part;
+			if (!idParticle_EmitParticle(*stage, psEmit, index, part))
 				continue;
-			}
 
-			if ( !stage->cycleMsec ) {
+			// locate the particle origin and axis somewhere on the surface
+			idVec2 texcoord;
+			idParticle_EmitLocationOnSurface(*stage, srcTri, part, texcoord, triAreas);
+
+			float cutoff = idParticle_FetchCutoffTimeMap(cutoffImage, cutoffInfo, texcoord);
+			if ( part.frac > cutoff )
 				continue;
+
+			// if the particle doesn't get drawn because it is faded out or beyond a kill region,
+			// don't increment the verts
+			idDrawVert *ptr = tri->verts + tri->numVerts;
+			idParticle_CreateParticle(*stage, psys, part, ptr);
+			tri->numVerts = ptr - tri->verts;
+		}
+
+		if ( tri->numVerts > 0 ) {
+			// build the index list
+			int	indexes = 0;
+
+			for ( int i = 0 ; i < tri->numVerts ; i += 4 ) {
+				tri->indexes[indexes+0] = i;
+				tri->indexes[indexes+1] = i+2;
+				tri->indexes[indexes+2] = i+3;
+				tri->indexes[indexes+3] = i;
+				tri->indexes[indexes+4] = i+3;
+				tri->indexes[indexes+5] = i+1;
+				indexes += 6;
 			}
+			tri->numIndexes = indexes;
+			tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
 
-			if ( stage->hidden ) {		// just for gui particle editor use
-				continue;
-			}
-
-			idImage *cutoffMap = stage->cutoffTimeMap;
-			int cutoffBegX, cutoffBegY, cutoffWidth, cutoffHeight;
-			if (cutoffMap) {
-				cutoffBegX = cutoffBegY = 0;
-				cutoffWidth = cutoffMap->cpuData.width;
-				cutoffHeight = cutoffMap->cpuData.height;
-			}
-			if ( stage->collisionStatic ) {
-				idRenderModel *rm = renderEntity->hModel;
-				int surfNum = rm->NumSurfaces();
-				int surfIdx;
-				for ( surfIdx = 0; surfIdx < surfNum; surfIdx++ )
-					if ( rm->Surface(surfIdx)->geometry == surf->frontendGeo )
-						break;
-				if ( surfIdx < surfNum ) {
-					idStr imagePath = idParticleStage::GetCollisionStaticImagePath( rm->Name(), surfIdx, stageNum );
-					cutoffMap = idParticleStage::LoadCutoffTimeMap( imagePath );
-					if ( cutoffMap->defaulted )
-						cutoffMap = nullptr;	//image not found
-					else if ( !cutoffMap->cpuData.pic ) {
-						cutoffMap = nullptr;	//some SMP weirdness: do not crash at least
-					}
-					else {
-						const imageBlock_t &data = cutoffMap->cpuData;
-						const byte *pic = data.GetPic(0);
-						if ( data.GetSizeInBytes() == 4 && pic[0] == 255 && pic[1] == 255 && pic[2] == 255 )
-							cutoffMap = nullptr;	//collisionStatic was disabled for this emitter
-					}
-
-					//this is the same code as in ParticleCollisionStatic.cpp
-					//TODO: factor it out into single place
-					idBounds texBounds;
-					texBounds.Clear();
-					for (int i = 0; i < srcTri->numIndexes; i++) {
-						idVec2 tc = srcTri->verts[srcTri->indexes[i]].st;
-						texBounds.AddPoint(idVec3(tc.x, tc.y, 0.0));
-					}
-					texBounds.IntersectsBounds(bounds_zeroOneCube);
-					if (texBounds.IsBackwards())
-						texBounds.Zero();
-
-					//find minimal subrectangle to be computed and saved
-					int w = stage->mapLayoutSizes[0], h = stage->mapLayoutSizes[1];
-					int xBeg = (int)idMath::Floor(texBounds[0].x * w);
-					int xEnd = (int)idMath::Ceil (texBounds[1].x * w);
-					int yBeg = (int)idMath::Floor(texBounds[0].y * h);
-					int yEnd = (int)idMath::Ceil (texBounds[1].y * h);
-					if (xEnd == xBeg)
-						(xEnd < w ? xEnd++ : xBeg--);
-					if (yEnd == yBeg)
-						(yEnd < h ? yEnd++ : yBeg--);
-					cutoffBegX = xBeg;
-					cutoffBegY = yBeg;
-					cutoffWidth = w;
-					cutoffHeight = h;
-				}
-			}
-
-			// we interpret stage->totalParticles as "particles per map square area"
-			// so the systems look the same on different size surfaces
-			int totalParticles = ( useArea ) ? stage->totalParticles * totalArea / 4096.0 : ( stage->totalParticles );
-			psys.totalParticlesOverride = totalParticles;		// #5130: needed if useArea = true
-
-			int	count = totalParticles * stage->NumQuadsPerParticle();
-
-			// allocate a srfTriangles in temp memory that can hold all the particles
-			srfTriangles_t	*tri;
-
-			tri = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *tri ) );
-			tri->numVerts = 4 * count;
-			tri->numIndexes = 6 * count;
-			tri->verts = (idDrawVert *)R_FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
-			tri->indexes = (glIndex_t *)R_FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
-
-			// TODO: it seems this value has absolutely no effect
-			tri->bounds = surf->frontendGeo->bounds;
-
-			tri->numVerts = 0;
-
-			idRandom	steppingRandom, steppingRandom2;
-
-			int stageAge = renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
-			int	stageCycle = stageAge / stage->cycleMsec;
-
-			// some particles will be in this cycle, some will be in the previous cycle
-			steppingRandom.SetSeed( (( stageCycle << 10 ) & idRandom::MAX_RAND) ^ (int)( randomizer * idRandom::MAX_RAND )  );
-			steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( randomizer * idRandom::MAX_RAND )  );
-
-			for ( int index = 0 ; index < totalParticles ; index++ ) {
-				idParticleData part;
-				part.origin.Zero();
-				part.axis = mat3_identity;
-				part.index = index;
-
-				// bump the random
-				steppingRandom.RandomInt();
-				steppingRandom2.RandomInt();
-
-				// calculate local age for this index 
-				int	bunchOffset = stage->particleLife * 1000 * stage->spawnBunching * index / totalParticles;
-				int particleAge = stageAge - bunchOffset;
-				int	particleCycle = particleAge / stage->cycleMsec;
-
-				if ( particleCycle < 0 ) {
-					// before the particleSystem spawned
-					continue;
-				}
-				if ( stage->cycles && particleCycle >= stage->cycles ) {
-					// cycled systems will only run cycle times
-					continue;
-				}
-
-				if ( particleCycle == stageCycle ) {
-					part.randomSeed = steppingRandom.GetSeed();
-				} else {
-					part.randomSeed = steppingRandom2.GetSeed();
-				}
-				int	inCycleTime = particleAge - particleCycle * stage->cycleMsec;
-
-				if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
-					renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME]*1000 ) {
-					// don't fire any more particles
-					continue;
-				}
-
-				// supress particles before or after the age clamp
-				part.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
-
-				if ( part.frac < 0 ) {
-					// yet to be spawned
-					continue;
-				}
-
-				if ( part.frac > 1.0 ) {
-					// this particle is in the deadTime band
-					continue;
-				}
-
-				//---------------
-				// locate the particle origin and axis somewhere on the surface
-				//---------------
-				int pointTri = currentTri;
-
-				if ( useArea ) {
-					// select a triangle based on an even area distribution
-					pointTri = idBinSearch_LessEqual<float>( sourceTriAreas, numSourceTris, idRandom_RandomFloat(part.randomSeed) * totalArea );
-				}
-
-				// now pick a random point inside pointTri
-				const idDrawVert *v1 = &srcTri->verts[ srcTri->indexes[ pointTri * 3 + 0 ] ];
-				const idDrawVert *v2 = &srcTri->verts[ srcTri->indexes[ pointTri * 3 + 1 ] ];
-				const idDrawVert *v3 = &srcTri->verts[ srcTri->indexes[ pointTri * 3 + 2 ] ];
-
-				float	f1 = idRandom_RandomFloat(part.randomSeed);
-				float	f2 = idRandom_RandomFloat(part.randomSeed);
-				float	f3 = idRandom_RandomFloat(part.randomSeed);
-
-				float	ft = 1.0f / ( f1 + f2 + f3 + 0.0001f );
-
-				f1 *= ft;
-				f2 *= ft;
-				f3 = 1.0f - f1 - f2;
-
-				part.origin = v1->xyz * f1 + v2->xyz * f2 + v3->xyz * f3;
-				part.axis[0] = v1->tangents[0] * f1 + v2->tangents[0] * f2 + v3->tangents[0] * f3;
-				part.axis[1] = v1->tangents[1] * f1 + v2->tangents[1] * f2 + v3->tangents[1] * f3;
-				part.axis[2] = v1->normal * f1 + v2->normal * f2 + v3->normal * f3;
-
-				//-----------------------
-
-				if ( cutoffMap ) {
-					int w = cutoffMap->cpuData.width, h = cutoffMap->cpuData.height;
-					idVec2 texCoord = v1->st * f1 + v2->st * f2 + v3->st * f3;
-					texCoord.Clamp( idVec2(0.0f, 0.0f), idVec2(1.0f - FLT_EPSILON, 1.0f - FLT_EPSILON) );		// GL_CLAMP_TO_EDGE
-					texCoord.MulCW( idVec2(cutoffWidth, cutoffHeight) );
-					int x = int(texCoord.x), y = int(texCoord.y);			// GL_NEAREST
-					assert(x >= cutoffBegX && y >= cutoffBegY && x < cutoffBegX + w && y < cutoffBegY + h);
-					const byte *pic = cutoffMap->cpuData.GetPic(0);
-					const byte *texel = &pic[4 * ((y - cutoffBegY) * w + (x - cutoffBegX))];
-					static const float TWO_POWER_MINUS_24 = 1.0f / (1<<24);
-					// convert from 8-bit RGB into 24-bit time ratio
-					// note: 8-bit grayscale image turns into ratio = (val/255)
-					float ratio = ((texel[0] * 256 + texel[1]) * 256 + texel[2]) * TWO_POWER_MINUS_24;
-					if ( part.frac > ratio )
-						continue;
-				}
-
-				// if the particle doesn't get drawn because it is faded out or beyond a kill region,
-				// don't increment the verts
-				idDrawVert *ptr = tri->verts + tri->numVerts;
-				idParticle_CreateParticle(*stage, psys, part, ptr);
-				tri->numVerts = ptr - tri->verts;
-			}
-	
-			if ( tri->numVerts > 0 ) {
-				// build the index list
-				int	indexes = 0;
-
-				for ( int i = 0 ; i < tri->numVerts ; i += 4 ) {
-					tri->indexes[indexes+0] = i;
-					tri->indexes[indexes+1] = i+2;
-					tri->indexes[indexes+2] = i+3;
-					tri->indexes[indexes+3] = i;
-					tri->indexes[indexes+4] = i+3;
-					tri->indexes[indexes+5] = i+1;
-					indexes += 6;
-				}
-				tri->numIndexes = indexes;
-				tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
-
-				if ( tri->ambientCache.IsValid() ) {
-					// add the drawsurf
-					R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect, true );
-				}
+			if ( tri->ambientCache.IsValid() ) {
+				// add the drawsurf
+				R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect, true );
 			}
 		}
 	}
+
 }
 
 //========================================================================================
