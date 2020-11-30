@@ -1004,8 +1004,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 			tri->verts = (idDrawVert *)R_FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
 			tri->indexes = (glIndex_t *)R_FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
 
-			// just always draw the particles
-			tri->bounds = stage->bounds;
+			// TODO: it seems this value has absolutely no effect
+			tri->bounds = surf->frontendGeo->bounds;
 
 			tri->numVerts = 0;
 

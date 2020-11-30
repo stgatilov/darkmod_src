@@ -64,84 +64,6 @@ size_t idDeclParticle::Size( void ) const {
 }
 
 /*
-=====================
-idDeclParticle::GetStageBounds
-=====================
-*/
-void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
-
-	stage->bounds.Clear();
-
-	// this isn't absolutely guaranteed, but it should be close
-
-	particleGen_t g;
-
-	renderEntity_t	renderEntity;
-	memset( &renderEntity, 0, sizeof( renderEntity ) );
-	renderEntity.axis = mat3_identity;
-
-	renderView_t	renderView;
-	memset( &renderView, 0, sizeof( renderView ) );
-	renderView.viewaxis = mat3_identity;
-
-	g.entityAxis = renderEntity.axis;
-	memcpy(&g.entityParmsColor, renderEntity.shaderParms, sizeof(g.entityParmsColor));
-	g.viewAxis = renderView.viewaxis;
-	g.origin.Zero();
-	g.axis = mat3_identity;
-
-	idRandom	steppingRandom;
-	steppingRandom.SetSeed( 0 );
-
-	// just step through a lot of possible particles as a representative sampling
-	for ( int i = 0 ; i < 1000 ; i++ ) {
-		g.random = g.originalRandom = steppingRandom.GetSeed();
-
-		int	maxMsec = stage->particleLife * 1000;
-
-		// SteveL #4218: Speed up load time for long-lived particles.
-		// Limit the sampling to 250 spread across the particle's lifetime.
-		const int step_milliseconds = idMath::Imax(maxMsec / 250, 16); // 16 was the original value, meaning test every frame
-
-		for ( int inCycleTime = 0 ; inCycleTime < maxMsec ; inCycleTime += step_milliseconds )
-		{
-			// make sure we get the very last tic, which may make up an extreme edge
-			if ( inCycleTime + step_milliseconds > maxMsec ) {
-				inCycleTime = maxMsec - 1;
-			}
-
-			g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
-			g.age = inCycleTime * 0.001f;
-
-			// if the particle doesn't get drawn because it is faded out or beyond a kill region,
-			// don't increment the verts
-
-			idVec3	origin;
-			stage->ParticleOrigin( &g, origin );			
-			stage->bounds.AddPoint( origin );
-		}
-	}
-
-	// find the max size
-	float	maxSize = 0;
-
-	for ( float f = 0; f <= 1.0f; f += 1.0f / 64 ) {
-		float size = idParticleParm_Eval( stage->size, f );
-		float aspect = idParticleParm_Eval( stage->aspect, f );
-		if ( aspect > 1 ) {
-			size *= aspect;
-		}
-		if ( size > maxSize ) {
-			maxSize = size;
-		}
-	}
-
-	maxSize += 8;	// just for good measure
-	// users can specify a per-stage bounds expansion to handle odd cases
-	stage->bounds.ExpandSelf( maxSize + stage->boundsExpansion );
-}
-
-/*
 ================
 idDeclParticle::ParseParms
 
@@ -511,19 +433,26 @@ bool idDeclParticle::Parse( const char *text, const int textLength ) {
 	}
 
 	//
-	// calculate the bounds
+	// precompute the "std" bounds of every stage
 	//
-	bounds.Clear();
 	for( int i = 0; i < stages.Num(); i++ ) {
-		GetStageBounds( stages[i] );
-		bounds.AddBounds( stages[i]->bounds );
+		stages[i]->stdBounds = idParticle_EstimateBoundsStdSys(*stages[i]);
 	}
-
-	if ( bounds.GetVolume() <= 0.1f ) {
-		bounds = idBounds( vec3_origin ).Expand( 8.0f );
-	}
-
 	return true;
+}
+
+idBounds idDeclParticle::GetStageBounds( const struct renderEntity_s *ent, idParticleStage *stage ) {
+	return idParticle_GetStageBoundsModel(*stage, stage->stdBounds, ent->axis);
+}
+
+idBounds idDeclParticle::GetFullBounds( const struct renderEntity_s *ent ) const {
+	idBounds res;
+	res.Clear();
+	for (int i = 0; i < stages.Num(); i++) {
+		idBounds bounds = GetStageBounds(ent, stages[i]);
+		res.AddBounds(bounds);
+	}
+	return res;
 }
 
 /*
@@ -756,7 +685,6 @@ idParticleStage::idParticleStage( void ) {
 	fadeIndexFraction = 0.0f;
 	hidden = false;
 	boundsExpansion = 0.0f;
-	bounds.Clear();
 	softeningRadius = -2.0f;	// -2 means "auto"
 }
 

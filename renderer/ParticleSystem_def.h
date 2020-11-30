@@ -36,7 +36,7 @@ float idParticleParm_Integrate(PIN(idParticleParm) self, float frac) {
 
 
 idVec3 idParticle_ParticleOriginStdSys(
-	PIN(idPartStageData) stg, PIN(idPartSysData) psys, PIN(idParticleData) part,
+	PIN(idPartStageData) stg, PIN(idParticleData) part,
 	PINOUT(int) random
 ) {
 	idVec3 origin = idVec3(0.0f, 0.0f, 0.0f);
@@ -233,9 +233,12 @@ idVec3 idParticle_ParticleOrigin(
 	PIN(idPartStageData) stg, PIN(idPartSysData) psys, PIN(idParticleData) part,
 	PINOUT(int) random
 ) {
-	idVec3 origin = idParticle_ParticleOriginStdSys(stg, psys, part, random);
+	idVec3 origin = idParticle_ParticleOriginStdSys(stg, part, random);
 
-	float age = part.frac * stg.particleLife;
+	//stgatilov: be extremely cautious when changing the following code!
+	//if you change its behavior, make sure to also change bounding box calculation in:
+	//  1) idParticle_GetStageBoundsModel
+	//  2) idParticle_GetStageBoundsDeform
 
 	if ( stg.worldAxis ) { // SteveL #3950 -- allow particles to use world axis for their offset and travel direction
 		origin *= transpose(psys.entityAxis);
@@ -243,6 +246,8 @@ idVec3 idParticle_ParticleOrigin(
 		origin *= part.axis; // adjust for any per-particle offset
 	}
 	origin += part.origin;   // adjust for any per-particle offset
+
+	float age = part.frac * stg.particleLife;
 
 	// add gravity after adjusting for axis
 	if ( stg.worldGravity ) {

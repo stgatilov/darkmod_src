@@ -83,11 +83,11 @@ public:
 	const idMaterial *		material;
 
 	bool					hidden;				// for editor use
+
 	//-----------------------------------
 
-	float					boundsExpansion;	// user tweak to fix poorly calculated bounds
-
-	idBounds				bounds;				// derived
+	//bounding box of particles in "standard" coordinate system --- transformation and world gravity not applied yet
+	idBounds				stdBounds;			// derived
 
 	/* Soft particles -- SteveL #3878
 	-2.0 is the value at initialization, meaning no user specification: "auto".
@@ -125,15 +125,19 @@ public:
 	virtual bool			Parse( const char *text, const int textLength );
 	virtual void			FreeData( void );
 
+	//note: bounds are returned in entity space
+	//they are correct when particle origin/axis are trivial
+	//do NOT apply them in particle deform case!
+	static idBounds			GetStageBounds( const struct renderEntity_s *ent, idParticleStage *stage );
+	idBounds				GetFullBounds( const struct renderEntity_s *ent ) const;
+
 	bool					Save( const char *fileName = NULL );
 
 	idList<idParticleStage *>stages;
-	idBounds				bounds;
 	float					depthHack;
 
 private:
 	bool					RebuildTextSource( void );
-	void					GetStageBounds( idParticleStage *stage );
 	idParticleStage *		ParseParticleStage( idLexer &src );
 	void					ParseParms( idLexer &src, float *parms, int maxParms );
 	void					ParseParametric( idLexer &src, idParticleParm *parm );

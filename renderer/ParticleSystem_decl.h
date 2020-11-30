@@ -91,8 +91,6 @@ struct idPartStageData {
 
 	idVec3 offset;					// offset from origin to spawn all particles, also applies to customPath
 
-	//--------------------------------
-
 	int						animationFrames;	// if > 1, subdivide the texture S axis into frames and crossfade
 	float					animationRate;		// frames per second
 
@@ -110,6 +108,8 @@ struct idPartStageData {
 	float					fadeInFraction;		// in 0.0 to 1.0 range
 	float					fadeOutFraction;	// in 0.0 to 1.0 range
 	float					fadeIndexFraction;	// in 0.0 to 1.0 range, causes later index smokes to be more faded 
+
+	float					boundsExpansion;	// user tweak to fix poorly calculated bounds
 };
 
 //particle system: per-system data
@@ -133,7 +133,7 @@ struct idParticleData {
 
 //computes particle origin in "standard" coordinate system --- specified transformation and world gravity not applied yet
 //this function is needed to compute bounding box of particle-deform effect
-idVec3 idParticle_ParticleOriginStdSys(PIN(idPartStageData) stg, PIN(idPartSysData) psys, PIN(idParticleData) part, PINOUT(int) random);
+idVec3 idParticle_ParticleOriginStdSys(PIN(idPartStageData) stg, PIN(idParticleData) part, PINOUT(int) random);
 //computes particle origin in entity model space --- all transformations applied
 //fo get final world-space position, just multiply on entityAxis
 idVec3 idParticle_ParticleOrigin(PIN(idPartStageData) stg, PIN(idPartSysData) psys, PIN(idParticleData) part, PINOUT(int) random);

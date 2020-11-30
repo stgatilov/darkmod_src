@@ -208,7 +208,7 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		surf->geometry->facePlanesCalculated = false;
 		surf->geometry->numVerts = numVerts;
 		surf->geometry->numIndexes = numIndexes;
-		surf->geometry->bounds = stage->bounds;		// just always draw the particles
+		surf->geometry->bounds = particleSystem->GetStageBounds(renderEntity, stage);
 	}
 
 	return staticModel;
@@ -229,7 +229,7 @@ idRenderModelPrt::Bounds
 ====================
 */
 idBounds idRenderModelPrt::Bounds( const struct renderEntity_s *ent ) const {
-	return particleSystem->bounds;
+	return particleSystem->GetFullBounds(ent);
 }
 
 /*
