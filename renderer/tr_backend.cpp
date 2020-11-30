@@ -672,7 +672,7 @@ void RB_Bloom( bloomCommand_t *cmd ) {
 	bloom->ApplyBloom();
 }
 
-idCVar r_postprocess_sharpen( "r_postprocess_sharpen", "0", CVAR_RENDERER|CVAR_BOOL|CVAR_ARCHIVE, "Use contrast-adaptive sharpening in tonemapping" );
+idCVar r_postprocess_sharpen( "r_postprocess_sharpen", "1", CVAR_RENDERER|CVAR_BOOL|CVAR_ARCHIVE, "Use contrast-adaptive sharpening in tonemapping" );
 idCVar r_postprocess_sharpness( "r_postprocess_sharpness", "0.5", CVAR_RENDERER|CVAR_FLOAT|CVAR_ARCHIVE, "Sharpening amount" );
 
 void RB_Tonemap() {
