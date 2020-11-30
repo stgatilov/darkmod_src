@@ -164,6 +164,16 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 			stage->cycles = src.ParseFloat();
 			continue;
 		}
+		if ( !token.Icmp( "diversityPeriod" ) ) {
+			int num = src.ParseInt();
+			if (num > 1000)
+				src.Warning("diversityPeriod %d is ignored (too large)", num);
+			else if (num < 0)
+				src.Warning("diversityPeriod %d is ignored (negative)", num);
+			else
+				stage->diversityPeriod = num;
+			continue;
+		}
 		if ( !token.Icmp( "timeOffset" ) ) {
 			stage->timeOffset = src.ParseFloat();
 			continue;
@@ -653,6 +663,7 @@ idParticleStage::idParticleStage( void ) {
 	material = NULL;
 	totalParticles = 0;
 	cycles = 0.0f;
+	diversityPeriod = 0;
 	cycleMsec = 0;
 	spawnBunching = 0.0f;
 	particleLife = 0.0f;

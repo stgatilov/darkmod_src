@@ -61,8 +61,10 @@ typedef enum {
 struct idPartStageData {
 
 	int totalParticles;				// total number of particles, although some may be invisible at a given time
-	float cycles;					// allows things to oneShot ( 1 cycle ) or run for a set number of cycles
-									// on a per stage basis
+	float cycles;					// allows things to oneShot ( 1 cycle ) or run for a set number of cycles (on per stage basis)
+	int diversityPeriod;			// stgatilov: affects how random seed depends on cycle number:
+									//    if K > 0, the every i-th cycle looks exactly the same as (i+K)-th cycle
+									//    if K <= 0 (infinite), then every cycle looks unique
 
 	int cycleMsec;					// ( particleLife + deadTime ) in msec
 

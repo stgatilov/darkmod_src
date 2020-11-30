@@ -577,12 +577,16 @@ bool idParticle_EmitParticle(
 
 	//stgatilov: compute random seed as hash of:
 	//  1) external randomizer
-	//  2) cycle number
+	//  2) cycle number (modulo cyclesDiversity if set)
 	//  3) particle index
+	int cycleSeed = particleCycle;
+	if (stg.diversityPeriod > 0)
+		cycleSeed %= stg.diversityPeriod;
+
 	//Note: linear dependency on "index" results in obvious visual regularities/patterns
 	//probably related: https://en.wikipedia.org/wiki/Linear_congruential_generator#Advantages_and_disadvantages
 	//"One flaw specific to LCGs is that, if used to choose points in an n-dimensional space, the points will lie on, at most, pow(n!*m, 1/n) hyperplanes"
-	res.randomSeed = particleCycle * 1580030168 + index * index * 2654435769 + int(psys.randomizer * 46341);
+	res.randomSeed = cycleSeed * 1580030168 + index * index * 2654435769 + int(psys.randomizer * 46341);
 
 	return true;
 }
