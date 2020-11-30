@@ -115,7 +115,6 @@ public:
 	const char *			GetCustomPathDesc();
 	int						NumCustomPathParms();
 	void					SetCustomPathType( const char *p );
-	void					operator=( const idParticleStage &src );
 
 	//stgatilov #4957: single place which finds and loads collisionStatic images
 	static const char *		GetCollisionStaticDirectory();
