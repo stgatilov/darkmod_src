@@ -84,8 +84,9 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 	memset( &renderView, 0, sizeof( renderView ) );
 	renderView.viewaxis = mat3_identity;
 
-	g.renderEnt = &renderEntity;
-	g.renderView = &renderView;
+	g.entityAxis = renderEntity.axis;
+	memcpy(&g.entityParmsColor, renderEntity.shaderParms, sizeof(g.entityParmsColor));
+	g.viewAxis = renderView.viewaxis;
 	g.origin.Zero();
 	g.axis = mat3_identity;
 
@@ -94,7 +95,7 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 
 	// just step through a lot of possible particles as a representative sampling
 	for ( int i = 0 ; i < 1000 ; i++ ) {
-		g.random = g.originalRandom = steppingRandom;
+		g.random = g.originalRandom = steppingRandom.GetSeed();
 
 		int	maxMsec = stage->particleLife * 1000;
 
@@ -125,8 +126,8 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 	float	maxSize = 0;
 
 	for ( float f = 0; f <= 1.0f; f += 1.0f / 64 ) {
-		float size = stage->size.Eval( f, steppingRandom );
-		float aspect = stage->aspect.Eval( f, steppingRandom );
+		float size = idParticleParm_Eval( stage->size, f );
+		float aspect = idParticleParm_Eval( stage->aspect, f );
 		if ( aspect > 1 ) {
 			size *= aspect;
 		}
@@ -707,29 +708,6 @@ bool idDeclParticle::Save( const char *fileName ) {
 /*
 ====================================================================================
 
-idParticleParm
-
-====================================================================================
-*/
-
-float idParticleParm::Eval( float frac, idRandom &rand ) const {
-	if ( table ) {
-		return table->TableLookup( frac );
-	}
-	return from + frac * ( to - from );
-}
-
-float idParticleParm::Integrate( float frac, idRandom &rand ) const {
-	if ( table ) {
-		common->Printf( "idParticleParm::Integrate: can't integrate tables\n" );
-		return 0;
-	}
-	return ( from + frac * ( to - from ) * 0.5f ) * frac;
-}
-
-/*
-====================================================================================
-
 idParticleStage
 
 ====================================================================================
@@ -901,16 +879,16 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 
 		switch( distributionType ) {
 			case PDIST_RECT: {	// ( sizeX sizeY sizeZ )
-				origin[0] = ( ( randomDistribution ) ? g->random.CRandomFloat() : 1.0f ) * distributionParms[0];
-				origin[1] = ( ( randomDistribution ) ? g->random.CRandomFloat() : 1.0f ) * distributionParms[1];
-				origin[2] = ( ( randomDistribution ) ? g->random.CRandomFloat() : 1.0f ) * distributionParms[2];
+				origin[0] = ( ( randomDistribution ) ? idRandom_CRandomFloat(g->random) : 1.0f ) * distributionParms[0];
+				origin[1] = ( ( randomDistribution ) ? idRandom_CRandomFloat(g->random) : 1.0f ) * distributionParms[1];
+				origin[2] = ( ( randomDistribution ) ? idRandom_CRandomFloat(g->random) : 1.0f ) * distributionParms[2];
 				break;
 			}
 			case PDIST_CYLINDER: {	// ( sizeX sizeY sizeZ ringFraction )
-				angle1 = ( ( randomDistribution ) ? g->random.CRandomFloat() : 1.0f ) * idMath::TWO_PI;
+				angle1 = ( ( randomDistribution ) ? idRandom_CRandomFloat(g->random) : 1.0f ) * idMath::TWO_PI;
 
 				idMath::SinCos16( angle1, origin[0], origin[1] );
-				origin[2] = ( ( randomDistribution ) ? g->random.CRandomFloat() : 1.0f );
+				origin[2] = ( ( randomDistribution ) ? idRandom_CRandomFloat(g->random) : 1.0f );
 
 				// reproject points that are inside the ringFraction to the outer band
 				if ( distributionParms[3] > 0.0f ) {
@@ -935,9 +913,9 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 				// iterating with rejection is the only way to get an even distribution over a sphere
 				if ( randomDistribution ) {
 					do {
-						origin[0] = g->random.CRandomFloat();
-						origin[1] = g->random.CRandomFloat();
-						origin[2] = g->random.CRandomFloat();
+						origin[0] = idRandom_CRandomFloat(g->random);
+						origin[1] = idRandom_CRandomFloat(g->random);
+						origin[2] = idRandom_CRandomFloat(g->random);
 						radiusSqr = origin[0] * origin[0] + origin[1] * origin[1] + origin[2] * origin[2];
 					} while( radiusSqr > 1.0f );
 				} else {
@@ -980,8 +958,8 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 			case PDIR_CONE: {
 				if (directionParms[0] != 0.0) {
 					// angle is the full angle, so 360 degrees is any spherical direction
-					angle1 = g->random.CRandomFloat() * directionParms[0] * idMath::M_DEG2RAD;
-					angle2 = g->random.CRandomFloat() * idMath::PI;
+					angle1 = idRandom_CRandomFloat(g->random) * directionParms[0] * idMath::M_DEG2RAD;
+					angle2 = idRandom_CRandomFloat(g->random) * idMath::PI;
 		
 					float s1, c1, s2, c2;
 					idMath::SinCos16( angle1, s1, c1 );
@@ -1009,7 +987,7 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 		}
 
 		// add speed
-		float iSpeed = speed.Integrate( g->frac, g->random );
+		float iSpeed = idParticleParm_Integrate( speed, g->frac );
 		origin += dir * iSpeed * particleLife;	
 
 	} else {
@@ -1020,23 +998,23 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 		float angle1, angle2, speed1, speed2;
 		switch( customPathType ) {
 			case PPATH_HELIX: {		// ( sizeX sizeY sizeZ radialSpeed axialSpeed )
-				speed1 = g->random.CRandomFloat();
-				speed2 = g->random.CRandomFloat();
-				angle1 = g->random.RandomFloat() * idMath::TWO_PI + customPathParms[3] * speed1 * g->age;
+				speed1 = idRandom_CRandomFloat(g->random);
+				speed2 = idRandom_CRandomFloat(g->random);
+				angle1 = idRandom_RandomFloat(g->random) * idMath::TWO_PI + customPathParms[3] * speed1 * g->age;
 
 				float s1, c1;
 				idMath::SinCos16( angle1, s1, c1 );
 
 				origin[0] = c1 * customPathParms[0];
 				origin[1] = s1 * customPathParms[1];
-				origin[2] = g->random.RandomFloat() * customPathParms[2] + customPathParms[4] * speed2 * g->age;
+				origin[2] = idRandom_RandomFloat(g->random) * customPathParms[2] + customPathParms[4] * speed2 * g->age;
 				break;
 			}
 			case PPATH_FLIES: {		// ( radialSpeed axialSpeed size )
-				speed1 = idMath::ClampFloat( 0.4f, 1.0f, g->random.CRandomFloat() );
-				speed2 = idMath::ClampFloat( 0.4f, 1.0f, g->random.CRandomFloat() );
-				angle1 = g->random.RandomFloat() * idMath::PI * 2 + customPathParms[0] * speed1 * g->age;
-				angle2 = g->random.RandomFloat() * idMath::PI * 2 + customPathParms[1] * speed1 * g->age;
+				speed1 = idMath::ClampFloat( 0.4f, 1.0f, idRandom_CRandomFloat(g->random) );
+				speed2 = idMath::ClampFloat( 0.4f, 1.0f, idRandom_CRandomFloat(g->random) );
+				angle1 = idRandom_RandomFloat(g->random) * idMath::PI * 2 + customPathParms[0] * speed1 * g->age;
+				angle2 = idRandom_RandomFloat(g->random) * idMath::PI * 2 + customPathParms[1] * speed1 * g->age;
 
 				float s1, c1, s2, c2;
 				idMath::SinCos16( angle1, s1, c1 );
@@ -1049,7 +1027,7 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 				break;
 			}
 			case PPATH_ORBIT: {		// ( radius speed axis )
-				angle1 = g->random.RandomFloat() * idMath::TWO_PI + customPathParms[1] * g->age;
+				angle1 = idRandom_RandomFloat(g->random) * idMath::TWO_PI + customPathParms[1] * g->age;
 
 				float s1, c1;
 				idMath::SinCos16( angle1, s1, c1 );
@@ -1075,7 +1053,7 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 
 	if ( worldAxis ) // SteveL #3950 -- allow particles to use world axis for their offset and travel direction
 	{
-		origin *= g->renderEnt->axis.Transpose();
+		origin *= g->entityAxis.Transpose();
 	}
 	else
 	{
@@ -1087,7 +1065,7 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 	if ( worldGravity )
 	{
 		idVec3 gra( 0, 0, -gravity );
-		gra *= g->renderEnt->axis.Transpose();
+		gra *= g->entityAxis.Transpose();
 		origin += gra * g->age * g->age;
 	} else {
 		origin[2] -= gravity * g->age * g->age;
@@ -1100,8 +1078,8 @@ idParticleStage::ParticleVerts
 ==================
 */
 int	idParticleStage::ParticleVerts( particleGen_t *g, idVec3 origin, idDrawVert *verts ) const {
-	float	psize = size.Eval( g->frac, g->random );
-	float	paspect = aspect.Eval( g->frac, g->random );
+	float	psize = idParticleParm_Eval( size, g->frac );
+	float	paspect = idParticleParm_Eval( aspect, g->frac );
 
 	float	width = psize;
 	float	height = psize * paspect;
@@ -1110,7 +1088,7 @@ int	idParticleStage::ParticleVerts( particleGen_t *g, idVec3 origin, idDrawVert 
 
 	if ( orientation == POR_AIMED ) {
 		// reset the values to an earlier time to get a previous origin
-		idRandom	currentRandom = g->random;
+		int			currentRandom = g->random;
 		float		currentAge = g->age;
 		float		currentFrac = g->frac;
 		idDrawVert *verts_p = verts;
@@ -1139,7 +1117,7 @@ int	idParticleStage::ParticleVerts( particleGen_t *g, idVec3 origin, idDrawVert 
 			up = stepOrigin - oldOrigin;	// along the direction of travel
 
 			idVec3	forwardDir;
-			g->renderEnt->axis.ProjectVector( g->renderView->viewaxis[0], forwardDir );
+			g->entityAxis.ProjectVector( g->viewAxis[0], forwardDir );
 
 			up -= ( up * forwardDir ) * forwardDir;
 
@@ -1197,9 +1175,9 @@ int	idParticleStage::ParticleVerts( particleGen_t *g, idVec3 origin, idDrawVert 
 	//
 	float	angle;
 
-	angle = ( initialAngle ) ? initialAngle : 360 * g->random.RandomFloat();
+	angle = ( initialAngle ) ? initialAngle : 360 * idRandom_RandomFloat(g->random);
 
-	float	angleMove = rotationSpeed.Integrate( g->frac, g->random ) * particleLife;
+	float	angleMove = idParticleParm_Integrate( rotationSpeed, g->frac ) * particleLife;
 	// have hald the particles rotate each way
 	if ( g->index & 1 ) {
 		angle += angleMove;
@@ -1239,8 +1217,8 @@ int	idParticleStage::ParticleVerts( particleGen_t *g, idVec3 origin, idDrawVert 
 		// oriented in viewer space
 		idVec3	entityLeft, entityUp;
 
-		g->renderEnt->axis.ProjectVector( g->renderView->viewaxis[1], entityLeft );
-		g->renderEnt->axis.ProjectVector( g->renderView->viewaxis[2], entityUp );
+		g->entityAxis.ProjectVector( g->viewAxis[1], entityLeft );
+		g->entityAxis.ProjectVector( g->viewAxis[2], entityUp );
 
 		left = entityLeft * c + entityUp * s;
 		up = entityUp * c - entityLeft * s;
@@ -1329,7 +1307,7 @@ void idParticleStage::ParticleColors( particleGen_t *g, idDrawVert *verts ) cons
 	}
 
 	for ( int i = 0 ; i < 4 ; i++ ) {
-		float	fcolor = ( ( entityColor ) ? g->renderEnt->shaderParms[i] : color[i] ) * fadeFraction + fadeColor[i] * ( 1.0f - fadeFraction );
+		float	fcolor = ( ( entityColor ) ? g->entityParmsColor[i] : color[i] ) * fadeFraction + fadeColor[i] * ( 1.0f - fadeFraction );
 		int		icolor = idMath::FtoiFast( fcolor * 255.0f );
 		if ( icolor < 0 ) {
 			icolor = 0;

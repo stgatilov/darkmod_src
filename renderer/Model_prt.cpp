@@ -96,12 +96,11 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		staticModel->InitEmpty( parametricParticle_SnapshotName );
 	}
 
-	particleGen_t g;
-
-	g.renderEnt = renderEntity;
-	g.renderView = &viewDef->renderView;
-	g.origin.Zero();
-	g.axis.Identity();
+	idPartSysData psys;
+	const renderView_t *renderView = &viewDef->renderView;
+	psys.entityAxis = renderEntity->axis;
+	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
+	psys.viewAxis = renderView->viewaxis;
 
 	for ( int stageNum = 0; stageNum < particleSystem->stages.Num(); stageNum++ ) {
 		idParticleStage *stage = particleSystem->stages[stageNum];
@@ -114,7 +113,7 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 			continue;
 		}
 
-		const int stageAge = g.renderView->time + (renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] - stage->timeOffset) * 1000;
+		const int stageAge = renderView->time + (renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] - stage->timeOffset) * 1000;
 		const int stageCycle = stageAge / stage->cycleMsec;
 
 		const int	count = stage->totalParticles * stage->NumQuadsPerParticle();
@@ -139,7 +138,10 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		idDrawVert *verts = surf->geometry->verts;
 
 		for ( int index = 0; index < stage->totalParticles; index++ ) {
-			g.index = index;
+			idParticleData part;
+			part.origin.Zero();
+			part.axis.Identity();
+			part.index = index;
 
 			// calculate local age for this index 
 			//const int bunchOffset = (index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles;
@@ -156,19 +158,17 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 			const int inCycleTime = particleAge - particleCycle * stage->cycleMsec;
 			
 			if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
-				g.renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] * 1000 ) {
+				renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] * 1000 ) {
 				// don't fire any more particles
 				continue;
 			}
 
 			// supress particles before or after the age clamp
-			g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
-			if ( g.frac < 0.0f || g.frac > 1.0f) {
+			part.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
+			if ( part.frac < 0.0f || part.frac > 1.0f) {
 				// < 0.0f ; yet to be spawned
 				// > 1.0f ; particle is in the deadTime band
 				continue;
-			} else {
-				g.age = g.frac * stage->particleLife;
 			}
 
 			// #3161: "Bouncing" smoke. Move the random number seeding here from the "stage" section above, and use the particle's quad index 
@@ -180,13 +180,12 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 			steppingRandom.SetSeed( quadSeed  ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
 			// bump the random
 			steppingRandom.RandomInt();
-			g.random = steppingRandom;
-
-			// this is needed so aimed particles can calculate origins at different times
-			g.originalRandom = g.random;
+			part.randomSeed = steppingRandom.GetSeed();
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
-			numVerts += stage->CreateParticle( &g, verts + numVerts );
+			idDrawVert *ptr = verts + numVerts;
+			idParticle_CreateParticle(*stage, psys, part, ptr);
+			numVerts = ptr - verts;
 		}
 
 		// numVerts must be a multiple of 4

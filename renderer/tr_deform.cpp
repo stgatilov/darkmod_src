@@ -907,12 +907,11 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 	//
 	// create the particles almost exactly the way idRenderModelPrt does
 	//
-	particleGen_t g;
-
-	g.renderEnt = renderEntity;
-	g.renderView = &viewDef->renderView;
-	g.origin.Zero();
-	g.axis = mat3_identity;
+	idPartSysData psys;
+	const renderView_t *renderView = &viewDef->renderView;
+	psys.entityAxis = renderEntity->axis;
+	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
+	psys.viewAxis = renderView->viewaxis;
 
 	for ( int currentTri = 0; currentTri < ( ( useArea ) ? 1 : numSourceTris ); currentTri++ ) {
 
@@ -991,8 +990,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 			// we interpret stage->totalParticles as "particles per map square area"
 			// so the systems look the same on different size surfaces
-			int		totalParticles = ( useArea ) ? stage->totalParticles * totalArea / 4096.0 : ( stage->totalParticles );
-			g.totalParticlesOverride = totalParticles;		// #5130: needed if useArea = true
+			int totalParticles = ( useArea ) ? stage->totalParticles * totalArea / 4096.0 : ( stage->totalParticles );
+			psys.totalParticlesOverride = totalParticles;		// #5130: needed if useArea = true
 
 			int	count = totalParticles * stage->NumQuadsPerParticle();
 
@@ -1012,7 +1011,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 			idRandom	steppingRandom, steppingRandom2;
 
-			int stageAge = g.renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
+			int stageAge = renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
 			int	stageCycle = stageAge / stage->cycleMsec;
 
 			// some particles will be in this cycle, some will be in the previous cycle
@@ -1020,7 +1019,10 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 			steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( randomizer * idRandom::MAX_RAND )  );
 
 			for ( int index = 0 ; index < totalParticles ; index++ ) {
-				g.index = index;
+				idParticleData part;
+				part.origin.Zero();
+				part.axis = mat3_identity;
+				part.index = index;
 
 				// bump the random
 				steppingRandom.RandomInt();
@@ -1041,27 +1043,27 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 				}
 
 				if ( particleCycle == stageCycle ) {
-					g.random = steppingRandom;
+					part.randomSeed = steppingRandom.GetSeed();
 				} else {
-					g.random = steppingRandom2;
+					part.randomSeed = steppingRandom2.GetSeed();
 				}
 				int	inCycleTime = particleAge - particleCycle * stage->cycleMsec;
 
 				if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
-					g.renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME]*1000 ) {
+					renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME]*1000 ) {
 					// don't fire any more particles
 					continue;
 				}
 
 				// supress particles before or after the age clamp
-				g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
+				part.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
 
-				if ( g.frac < 0 ) {
+				if ( part.frac < 0 ) {
 					// yet to be spawned
 					continue;
 				}
 
-				if ( g.frac > 1.0 ) {
+				if ( part.frac > 1.0 ) {
 					// this particle is in the deadTime band
 					continue;
 				}
@@ -1073,7 +1075,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 				if ( useArea ) {
 					// select a triangle based on an even area distribution
-					pointTri = idBinSearch_LessEqual<float>( sourceTriAreas, numSourceTris, g.random.RandomFloat() * totalArea );
+					pointTri = idBinSearch_LessEqual<float>( sourceTriAreas, numSourceTris, idRandom_RandomFloat(part.randomSeed) * totalArea );
 				}
 
 				// now pick a random point inside pointTri
@@ -1081,9 +1083,9 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 				const idDrawVert *v2 = &srcTri->verts[ srcTri->indexes[ pointTri * 3 + 1 ] ];
 				const idDrawVert *v3 = &srcTri->verts[ srcTri->indexes[ pointTri * 3 + 2 ] ];
 
-				float	f1 = g.random.RandomFloat();
-				float	f2 = g.random.RandomFloat();
-				float	f3 = g.random.RandomFloat();
+				float	f1 = idRandom_RandomFloat(part.randomSeed);
+				float	f2 = idRandom_RandomFloat(part.randomSeed);
+				float	f3 = idRandom_RandomFloat(part.randomSeed);
 
 				float	ft = 1.0f / ( f1 + f2 + f3 + 0.0001f );
 
@@ -1091,17 +1093,12 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 				f2 *= ft;
 				f3 = 1.0f - f1 - f2;
 
-				g.origin = v1->xyz * f1 + v2->xyz * f2 + v3->xyz * f3;
-				g.axis[0] = v1->tangents[0] * f1 + v2->tangents[0] * f2 + v3->tangents[0] * f3;
-				g.axis[1] = v1->tangents[1] * f1 + v2->tangents[1] * f2 + v3->tangents[1] * f3;
-				g.axis[2] = v1->normal * f1 + v2->normal * f2 + v3->normal * f3;
+				part.origin = v1->xyz * f1 + v2->xyz * f2 + v3->xyz * f3;
+				part.axis[0] = v1->tangents[0] * f1 + v2->tangents[0] * f2 + v3->tangents[0] * f3;
+				part.axis[1] = v1->tangents[1] * f1 + v2->tangents[1] * f2 + v3->tangents[1] * f3;
+				part.axis[2] = v1->normal * f1 + v2->normal * f2 + v3->normal * f3;
 
 				//-----------------------
-
-				// this is needed so aimed particles can calculate origins at different times
-				g.originalRandom = g.random;
-
-				g.age = g.frac * stage->particleLife;
 
 				if ( cutoffMap ) {
 					int w = cutoffMap->cpuData.width, h = cutoffMap->cpuData.height;
@@ -1116,13 +1113,15 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					// convert from 8-bit RGB into 24-bit time ratio
 					// note: 8-bit grayscale image turns into ratio = (val/255)
 					float ratio = ((texel[0] * 256 + texel[1]) * 256 + texel[2]) * TWO_POWER_MINUS_24;
-					if ( g.frac > ratio )
+					if ( part.frac > ratio )
 						continue;
 				}
 
 				// if the particle doesn't get drawn because it is faded out or beyond a kill region,
 				// don't increment the verts
-				tri->numVerts += stage->CreateParticle( &g, tri->verts + tri->numVerts );
+				idDrawVert *ptr = tri->verts + tri->numVerts;
+				idParticle_CreateParticle(*stage, psys, part, ptr);
+				tri->numVerts = ptr - tri->verts;
 			}
 	
 			if ( tri->numVerts > 0 ) {

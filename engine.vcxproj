@@ -498,6 +498,9 @@
     <ClInclude Include="renderer\ModelDecal.h" />
     <ClInclude Include="renderer\ModelManager.h" />
     <ClInclude Include="renderer\ModelOverlay.h" />
+    <ClInclude Include="renderer\ParticleSystem.h" />
+    <ClInclude Include="renderer\ParticleSystem_decl.h" />
+    <ClInclude Include="renderer\ParticleSystem_def.h" />
     <ClInclude Include="renderer\Profiling.h" />
     <ClInclude Include="renderer\qgl.h" />
     <ClInclude Include="renderer\RenderSystem.h" />
@@ -1077,6 +1080,7 @@
     <ClCompile Include="renderer\ModelDecal.cpp" />
     <ClCompile Include="renderer\ModelManager.cpp" />
     <ClCompile Include="renderer\ModelOverlay.cpp" />
+    <ClCompile Include="renderer\ParticleSystem.cpp" />
     <ClCompile Include="renderer\Profiling.cpp" />
     <ClCompile Include="renderer\qgl.cpp" />
     <ClCompile Include="renderer\RenderEntity.cpp" />

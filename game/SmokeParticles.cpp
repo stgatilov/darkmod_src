@@ -291,10 +291,10 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 	}
 	currentParticleTime = renderView->time;
 
-	particleGen_t g;
-
-	g.renderEnt = renderEntity;
-	g.renderView = renderView;
+	idPartSysData psys;
+	psys.entityAxis = renderEntity->axis;
+	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
+	psys.viewAxis = renderView->viewaxis;
 
 	for ( int activeStageNum = 0; activeStageNum < activeStages.Num(); activeStageNum++ ) {
 		singleSmoke_t *smoke, *next, *last;
@@ -328,8 +328,9 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
 			next = smoke->next;
 
-			g.frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
-			if ( g.frac >= 1.0f ) {
+			idParticleData part;
+			part.frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
+			if ( part.frac >= 1.0f ) {
 				// remove the particle from the stage list
 				if ( last != NULL ) {
 					last->next = smoke->next;
@@ -343,16 +344,15 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 				continue;
 			}
 
-			g.index = smoke->index;
-			g.random = smoke->random;
+			part.index = smoke->index;
+			part.randomSeed = smoke->random.GetSeed();
 
-			g.origin = smoke->origin;
-			g.axis = smoke->axis;
+			part.origin = smoke->origin;
+			part.axis = smoke->axis;
 
-			g.originalRandom = g.random;
-			g.age = g.frac * stage->particleLife;
-
-			tri->numVerts += stage->CreateParticle( &g, tri->verts + tri->numVerts );
+			idDrawVert *ptr = tri->verts + tri->numVerts;
+			idParticle_CreateParticle(*stage, psys, part, ptr);
+			tri->numVerts = ptr - tri->verts;
 
 			last = smoke;
 		}

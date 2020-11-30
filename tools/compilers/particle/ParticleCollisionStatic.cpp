@@ -151,21 +151,22 @@ bool PrtCollision::ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec
 					insideTriNum++;
 
 				//compute position and axis (exactly as in R_ParticleDeform)
-				particleGen_t g;
-				memset(&g, 0, sizeof(g));
-				g.origin  = bary0 * v0.xyz         + bary1 * v1.xyz         + bary2 * v2.xyz        ;
-				g.axis[0] = bary0 * v0.tangents[0] + bary1 * v1.tangents[0] + bary2 * v2.tangents[0];
-				g.axis[1] = bary0 * v0.tangents[1] + bary1 * v1.tangents[1] + bary2 * v2.tangents[1];
-				g.axis[2] = bary0 * v0.normal      + bary1 * v1.normal      + bary2 * v2.normal     ;
-				g.age = g.frac = 0.0f;
+				idParticleData part;
+				idPartSysData psys;
+				memset(&psys, 0, sizeof(psys));
+				memset(&part, 0, sizeof(part));
+				part.origin  = bary0 * v0.xyz         + bary1 * v1.xyz         + bary2 * v2.xyz        ;
+				part.axis[0] = bary0 * v0.tangents[0] + bary1 * v1.tangents[0] + bary2 * v2.tangents[0];
+				part.axis[1] = bary0 * v0.tangents[1] + bary1 * v1.tangents[1] + bary2 * v2.tangents[1];
+				part.axis[2] = bary0 * v0.normal      + bary1 * v1.normal      + bary2 * v2.normal     ;
+				part.frac = 0.0f;
 				assert(!prtStage->worldAxis);	//TODO: pass matrix instead of whole render entity
 
 				//compute travel path (must be a line segment)
-				idVec3 start, end;
-				prtStage->ParticleOrigin(&g, start);
-				g.frac = 1.0f;
-				g.age = prtStage->particleLife;
-				prtStage->ParticleOrigin(&g, end);
+				int random = 0;
+				idVec3 start = idParticle_ParticleOrigin(*prtStage, psys, part, random);
+				part.frac = 1.0f;
+				idVec3 end = idParticle_ParticleOrigin(*prtStage, psys, part, random);
 				//convert to world coordinates
 				start = start * axis + origin;
 				end = end * axis + origin;
