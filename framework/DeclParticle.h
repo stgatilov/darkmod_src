@@ -28,28 +28,6 @@ class idImage;
 
 #include "../renderer/ParticleSystem.h"
 
-
-typedef struct renderEntity_s renderEntity_t;
-typedef struct renderView_s renderView_t;
-
-typedef struct {
-	idMat3					entityAxis;			// (renderEnt->axis) entity model space -> world space
-	idMat3					viewAxis;			// (renderView->viewaxis) view space -> world space (see R_SetViewMatrix)
-	idVec4					entityParmsColor;	// (renderEnt->shaderParms[0-3]) specify entity color
-	int						index;				// particle number in the system
-	float					frac;				// 0.0 to 1.0
-	int						random;				// seed for idRandom
-	idVec3					origin;				// dynamic smoke particles can have individual origins and axis
-	idMat3					axis;				// particle emitter space -> entity model space (used for particle deform)
-
-
-	float					age;				// in seconds, calculated as fraction * stage->particleLife
-	int						originalRandom;		// needed so aimed particles can reset the random for another origin calculation
-	float					animationFrameFrac;	// set by ParticleTexCoords, used to make the cross faded version
-	int						totalParticlesOverride = 0;		//stgatilov #5130: used if positive, fixes R_ParticleDeform with useArea = true and fadeIndex
-} particleGen_t;
-
-
 //
 // single particle stage
 //
@@ -60,13 +38,6 @@ public:
 
 	void					Default();
 	virtual int				NumQuadsPerParticle() const;	// includes trails and cross faded animations
-	// returns the number of verts created, which will range from 0 to 4*NumQuadsPerParticle()
-	virtual int				CreateParticle( particleGen_t *g, idDrawVert *verts ) const;
-
-	void					ParticleOrigin( particleGen_t *g, idVec3 &origin ) const;
-	int						ParticleVerts( particleGen_t *g, const idVec3 origin, idDrawVert *verts ) const;
-	void					ParticleTexCoords( particleGen_t *g, idDrawVert *verts ) const;
-	void					ParticleColors( particleGen_t *g, idDrawVert *verts ) const;
 
 	const char *			GetCustomPathName();
 	const char *			GetCustomPathDesc();
