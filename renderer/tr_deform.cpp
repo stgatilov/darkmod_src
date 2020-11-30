@@ -873,8 +873,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 #endif
 
 	const srfTriangles_t *srcTri = surf->frontendGeo;
-	int srcTriNum = srcTri->numIndexes / 3;
 
+	//find index of the surface in the model
 	idRenderModel *renderModel = renderEntity->hModel;
 	int surfNum = renderModel->NumSurfaces();
 	int surfIdx;
@@ -883,7 +883,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 			break;
 
 	float *triAreas = NULL;
-	float totalArea = 0.0f;
+	float totalArea = -1.0f;
 	if ( useArea ) {
 		// calculate the area of all the triangles
 		int size = idParticle_PrepareDistributionOnSurface(srcTri);
@@ -907,11 +907,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		if ( stage->hidden )		// just for gui particle editor use
 			continue;
 
-		// we interpret stage->totalParticles as "particles per map square area"
-		// so the systems look the same on different size surfaces
-		int totalParticlesPerCycle = ( useArea ? stage->totalParticles * totalArea / 4096.0 : stage->totalParticles );
-		int totalParticles = totalParticlesPerCycle * (useArea ? 1 : srcTriNum);
-		psys.totalParticles = totalParticlesPerCycle;		// #5130: needed if useArea = true
+		int totalParticles = idParticle_GetParticleCountOnSurface(*stage, srcTri, totalArea, psys.totalParticles);
 
 		idPartSysSurfaceEmitterSignature sign;
 		sign.renderModelName = renderModel->Name();
@@ -922,7 +918,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
 		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
 		psEmit.randomizer = idParticle_ComputeSurfaceRandomizer(sign, renderEntity->shaderParms[SHADERPARM_DIVERSITY]);
-		psEmit.totalParticles = totalParticlesPerCycle;
+		psEmit.totalParticles = psys.totalParticles;
 		psEmit.viewTimeMs = renderView->time;
 
 		idPartSysCutoffTextureInfo cutoffInfo;

@@ -208,6 +208,21 @@ int idParticle_PrepareDistributionOnSurface(const srfTriangles_s *tri, float *ar
 	return triNum + 1;
 }
 
+int idParticle_GetParticleCountOnSurface(const idPartStageData &stg, const srfTriangles_t *tri, float totalArea, int &particleCountPerCycle) {
+	if (totalArea < 0) {
+		//every triangle should work as independent emitter with fixed number of particles
+		int triCount = (tri->numIndexes / 3);
+		particleCountPerCycle = stg.totalParticles;
+		return particleCountPerCycle * triCount;
+	}
+	else {
+		//we interpret stage->totalParticles as "particles per map square area"
+		//so the systems look the same on different size surfaces
+		particleCountPerCycle = stg.totalParticles * totalArea / 4096.0f;
+		return particleCountPerCycle;
+	}
+}
+
 void idParticle_EmitLocationOnSurface(const idPartStageData &stg, const srfTriangles_s *tri, idParticleData &part, idVec2 &texCoord, float *areas) {
 	//---------------
 	// locate the particle origin and axis somewhere on the surface

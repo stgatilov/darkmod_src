@@ -50,6 +50,11 @@ idBounds idParticle_GetStageBoundsDeform(const idPartStageData &stg, const idBou
 //to learn the size of "areas" buffer, call the function with areas = NULL first
 int idParticle_PrepareDistributionOnSurface(const srfTriangles_t *tri, float *areas = NULL, float *totalArea = NULL);
 
+//see how many particles the surface emitter generates
+//set "totalArea" to -1 if every triangle should behave as separate emitter with same number of particles (particle2 deform)
+//the value "particleCountPerCycle" must be put into idPartSysEmit::totalParticles
+int idParticle_GetParticleCountOnSurface(const idPartStageData &stg, const srfTriangles_t *tri, float totalArea, int &particleCountPerCycle);
+
 //computes emit location of particle on surface for particle deform systems
 //"part" is usually a result of idParticle_EmitParticle function, and must contain: "index" and "randomSeed"
 //the function fills "part.origin", "part.axis", and "texCoord", and also changes randomSeed as side effect
