@@ -282,6 +282,8 @@ Projects the z component onto a sphere.
 =============
 */
 void idVec3::ProjectSelfOntoSphere( const float radius ) {
+	//stgatilov: WTF is it?
+	//even measurement units don't match...
 	float rsqr = radius * radius;
 	float len = Length();
 	if ( len  < rsqr * 0.5f ) {
