@@ -144,7 +144,8 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 
 		for ( int index = 0; index < stage->totalParticles; index++ ) {
 			idParticleData part;
-			if (!idParticle_EmitParticle(*stage, psEmit, index, part))
+			int cycIdx;
+			if (!idParticle_EmitParticle(*stage, psEmit, index, part, cycIdx))
 				continue;
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts

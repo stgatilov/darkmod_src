@@ -531,18 +531,26 @@ void idParticle_CreateParticle(
 	return;
 }
 
+int idParticle_GetRandomSeed(PIN(int) index, PIN(int) cycleNumber, PIN(float) randomizer) {
+	//stgatilov: compute random seed as hash of:
+	//  1) external randomizer
+	//  2) cycle number (modulo cyclesDiversity if set)
+	//  3) particle index
+
+	//Note: linear dependency on "index" results in obvious visual regularities/patterns
+	//probably related: https://en.wikipedia.org/wiki/Linear_congruential_generator#Advantages_and_disadvantages
+	//"One flaw specific to LCGs is that, if used to choose points in an n-dimensional space, the points will lie on, at most, pow(n!*m, 1/n) hyperplanes"
+	return cycleNumber * 1580030168 + index * index * 2654435769 + int(randomizer * 46341);
+}
+
 bool idParticle_EmitParticle(
 	PIN(idPartStageData) stg, PIN(idPartSysEmit) psys, PIN(int) index,
-	POUT(idParticleData) res
+	POUT(idParticleData) res, POUT(int) cycleNumber
 ) {
 	int stageAge = psys.viewTimeMs + psys.entityParmsTimeOffset * 1000 - stg.timeOffset * 1000;
 	int	stageCycle = stageAge / stg.cycleMsec;
 
 	res.index = index;
-	res.origin = idVec3(0.0f, 0.0f, 0.0f);
-	res.axis[0] = idVec3(1.0f, 0.0f, 0.0f);
-	res.axis[1] = idVec3(0.0f, 1.0f, 0.0f);
-	res.axis[2] = idVec3(0.0f, 0.0f, 1.0f);
 
 	// calculate local age for this index 
 	int	bunchOffset = stg.particleLife * 1000 * stg.spawnBunching * index / psys.totalParticles;
@@ -575,18 +583,17 @@ bool idParticle_EmitParticle(
 		return false;
 	}
 
-	//stgatilov: compute random seed as hash of:
-	//  1) external randomizer
-	//  2) cycle number (modulo cyclesDiversity if set)
-	//  3) particle index
 	int cycleSeed = particleCycle;
 	if (stg.diversityPeriod > 0)
 		cycleSeed %= stg.diversityPeriod;
+	cycleNumber = cycleSeed;
 
-	//Note: linear dependency on "index" results in obvious visual regularities/patterns
-	//probably related: https://en.wikipedia.org/wiki/Linear_congruential_generator#Advantages_and_disadvantages
-	//"One flaw specific to LCGs is that, if used to choose points in an n-dimensional space, the points will lie on, at most, pow(n!*m, 1/n) hyperplanes"
-	res.randomSeed = cycleSeed * 1580030168 + index * index * 2654435769 + int(psys.randomizer * 46341);
+	res.randomSeed = idParticle_GetRandomSeed(index, cycleSeed, psys.randomizer);
+
+	res.origin = idVec3(0.0f, 0.0f, 0.0f);
+	res.axis[0] = idVec3(1.0f, 0.0f, 0.0f);
+	res.axis[1] = idVec3(0.0f, 1.0f, 0.0f);
+	res.axis[2] = idVec3(0.0f, 0.0f, 1.0f);
 
 	return true;
 }

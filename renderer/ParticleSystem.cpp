@@ -321,8 +321,8 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 	}
 }
 
-void idParticle_PrepareCutoffTexture(
-	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &sign,
+void idParticle_PrepareCutoffMap(
+	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &sign, int totalParticles,
 	idImage *&image, idPartSysCutoffTextureInfo &texinfo
 ) {
 	image = nullptr;
@@ -358,20 +358,30 @@ void idParticle_PrepareCutoffTexture(
 	}
 
 	if (image) {
-		//set up the subregion (especially important for collisionStatic)
-		idParticle_FindCutoffTextureSubregion(*stage, tri, texinfo);
+		int w = image->cpuData.width, h = image->cpuData.height;
+		if ( stage->mapLayoutType == PML_TEXTURE ) {
+			//set up the subregion (especially important for collisionStatic)
+			idParticle_FindCutoffTextureSubregion(*stage, tri, texinfo);
 
-		if ( image->cpuData.width != texinfo.sizeX || image->cpuData.height != texinfo.sizeY ) {
-			//dimensions mismatch: drop the image
-			image = nullptr;
+			if ( w != texinfo.sizeX || h != texinfo.sizeY ) {
+				//dimensions mismatch: drop the image
+				image = nullptr;
+			}
+		}
+		else if ( stage->mapLayoutType == PML_LINEAR ) {
+			int casesCnt = stage->diversityPeriod * totalParticles;
+			//number of texels can be slightly more than number of cases
+			//but at most by one row
+			if ( stage->diversityPeriod <= 0 || casesCnt > w * h ) {
+				//total size mismatch: drop the image
+				image = nullptr;
+			}
 		}
 	}
 }
 
-float idParticle_FetchCutoffTimeMap(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord) {
-	if (!image)
-		return 1000000;
-
+float idParticle_FetchCutoffTimeTexture(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord) {
+	assert(image);
 	//take the image
 	const byte *pic = image->cpuData.GetPic(0);
 	int w = image->cpuData.width, h = image->cpuData.height;
@@ -386,6 +396,20 @@ float idParticle_FetchCutoffTimeMap(const idImage *image, const idPartSysCutoffT
 
 	//find texel in actual image
 	const byte *texel = &pic[4 * ((y - texinfo.baseY) * w + (x - texinfo.baseX))];
+	//convert from 8-bit RGB into 24-bit time ratio
+	//note: 8-bit grayscale image turns into ratio = (val/255)
+	static const float TWO_POWER_MINUS_24 = 1.0f / (1<<24);
+	float ratio = ((texel[0] * 256 + texel[1]) * 256 + texel[2]) * TWO_POWER_MINUS_24;
+	return ratio;
+}
+
+float idParticle_FetchCutoffTimeLinear(const idImage *image, int totalParticles, int index, int cycIdx) {
+	assert(image);
+	const byte *pic = image->cpuData.GetPic(0);
+
+	//find texel in actual image
+	int texelIdx = cycIdx * totalParticles + index;
+	const byte *texel = &pic[4 * texelIdx];
 	//convert from 8-bit RGB into 24-bit time ratio
 	//note: 8-bit grayscale image turns into ratio = (val/255)
 	static const float TWO_POWER_MINUS_24 = 1.0f / (1<<24);

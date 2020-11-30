@@ -351,7 +351,7 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 			src.ReadToken( &token );
 			if ( !token.Icmp("linear") ) {
 				stage->mapLayoutType = PML_LINEAR;
-				stage->mapLayoutSizes[0] = src.ParseInt();
+				stage->mapLayoutSizes[0] = -1;
 				stage->mapLayoutSizes[1] = -1;
 			}
 			else if ( !token.Icmp("texture") ) {
@@ -371,6 +371,14 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 		}
 		if ( !token.Icmp( "collisionStaticWorldOnly" ) ) {
 			stage->collisionStaticWorldOnly = true;
+			continue;
+		}
+		if ( !token.Icmp( "collisionStaticTimeSteps" ) ) {
+			int x = src.ParseInt();
+			if (x <= 0 || x > 1000000) {
+				src.Error("collisionStaticTimeSteps is negative (or too high)");
+			}
+			stage->collisionStaticTimeSteps = x;
 			continue;
 		}
 
@@ -779,8 +787,9 @@ void idParticleStage::Default() {
 	collisionStatic = false;
 	collisionStaticWorldOnly = false;
 	mapLayoutType = PML_LINEAR;
-	mapLayoutSizes[0] = 1;
+	mapLayoutSizes[0] = -1;
 	mapLayoutSizes[1] = -1;
+	collisionStaticTimeSteps = 0;
 }
 
 /*

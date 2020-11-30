@@ -88,11 +88,14 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 
 //finds image and auxilliary data for cutoffTimeMap feature
 //"image" is set to valid texture if cutoff should be done, and to NULL if not
-//"texinfo" is generated using idParticle_FindCutoffTextureSubregion
-void idParticle_PrepareCutoffTexture(
-	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &signature,
+//"texinfo" is generated using idParticle_FindCutoffTextureSubregion (makes sense only for mapLayout "texture")
+//"totalParticles" must be the number of particles the whole system has, i.e. return value of idParticle_GetParticleCountOnSurface
+void idParticle_PrepareCutoffMap(
+	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &signature, int totalParticles,
 	idImage *&image, idPartSysCutoffTextureInfo &texinfo
 );
 
-//fetches cutoffTime from the image (with "texture layout") using texcoords of emit location
-float idParticle_FetchCutoffTimeMap(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord);
+//fetches cutoffTime from the image (with "mapLayout texture") using texcoords of emit location
+float idParticle_FetchCutoffTimeTexture(const idImage *image, const idPartSysCutoffTextureInfo &texinfo, idVec2 texcoord);
+//fetches cutoffTime from the image (with "mapLayout linear") using index of particle and its current cycle
+float idParticle_FetchCutoffTimeLinear(const idImage *image, int totalParticles, int index, int cycIdx);

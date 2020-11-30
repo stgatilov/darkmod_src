@@ -126,6 +126,7 @@ struct idPartStageData {
 	//stgatilov: configuration of cutoff texture (and possibly other textures added in future)
 	prtMapLayout_t mapLayoutType;
 	int mapLayoutSizes[2];
+	int collisionStaticTimeSteps;
 };
 
 //particle system: per-system modeling data
@@ -175,7 +176,16 @@ struct idPartSysEmit {
 //emits one particle with specified index and default emit location
 //custom "origin" and "axis" should be assigned immediately afterwards if needed
 //the result can be passed into idParticle_CreateParticle to compute characteristics and produce geometry
-bool idParticle_EmitParticle(PIN(idPartStageData) stg, PIN(idPartSysEmit) psys, PIN(int) index, POUT(idParticleData) res);
+//"cycleNumber" is the number of cycle particle belongs to (modulo diversityPeriod if set)
+bool idParticle_EmitParticle(
+	PIN(idPartStageData) stg, PIN(idPartSysEmit) psys, PIN(int) index,
+	POUT(idParticleData) res, POUT(int) cycleNumber
+);
+
+//get random seed of a particle
+//note: better use idParticle_EmitParticle instead
+//this function is exposed for runRarticle preprocessing tool (collisions with mapLayout linear)
+int idParticle_GetRandomSeed(PIN(int) index, PIN(int) cycleNumber, PIN(float) randomizer);
 
 //---------------------------------------------------------------------
 

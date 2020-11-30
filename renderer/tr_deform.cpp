@@ -923,7 +923,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 		idPartSysCutoffTextureInfo cutoffInfo;
 		idImage *cutoffImage;
-		idParticle_PrepareCutoffTexture(stage, srcTri, sign, cutoffImage, cutoffInfo);
+		idParticle_PrepareCutoffMap(stage, srcTri, sign, totalParticles, cutoffImage, cutoffInfo);
 
 		// allocate a srfTriangles in temp memory that can hold all the particles
 		int	outVertexCount = totalParticles * stage->NumQuadsPerParticle();
@@ -938,16 +938,24 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 		for ( int index = 0 ; index < totalParticles ; index++ ) {
 			idParticleData part;
-			if (!idParticle_EmitParticle(*stage, psEmit, index, part))
+			int cycIdx;
+			if (!idParticle_EmitParticle(*stage, psEmit, index, part, cycIdx))
 				continue;
 
 			// locate the particle origin and axis somewhere on the surface
 			idVec2 texcoord;
 			idParticle_EmitLocationOnSurface(*stage, srcTri, part, texcoord, triAreas);
 
-			float cutoff = idParticle_FetchCutoffTimeMap(cutoffImage, cutoffInfo, texcoord);
-			if ( part.frac > cutoff )
-				continue;
+			if (cutoffImage) {
+				float cutoff;
+				if (stage->mapLayoutType == PML_TEXTURE) {
+					cutoff = idParticle_FetchCutoffTimeTexture(cutoffImage, cutoffInfo, texcoord);
+				} else {
+					cutoff = idParticle_FetchCutoffTimeLinear(cutoffImage, totalParticles, index, cycIdx);
+				}
+				if ( part.frac > cutoff )
+					continue;
+			}
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region,
 			// don't increment the verts
