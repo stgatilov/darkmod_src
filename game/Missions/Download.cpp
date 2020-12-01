@@ -23,15 +23,6 @@
 #include "../ZipLoader/ZipLoader.h"
 #include "MissionManager.h"
 
-CDownload::CDownload(const idStr& url, const idStr& destFilename, bool enablePK4check) :
-	_curUrl(0),
-	_destFilename(destFilename),
-	_status(NOT_STARTED_YET),
-	_pk4CheckEnabled(enablePK4check),
-	_relatedDownload(-1)
-{
-	_urls.Append(url);
-}
 
 CDownload::CDownload(const idStringList& urls, const idStr& destFilename, bool enablePK4check) :
 	_urls(urls),
@@ -45,6 +36,11 @@ CDownload::CDownload(const idStringList& urls, const idStr& destFilename, bool e
 CDownload::~CDownload()
 {
 	Stop(false);
+}
+
+void CDownload::VerifySha256Checksum(const idStr &sha256)
+{
+	_expectedSha256 = sha256;
 }
 
 CDownload::DownloadStatus CDownload::GetStatus()
@@ -134,13 +130,29 @@ void CDownload::Perform()
 
 		// Create a new request
 		_request = gameLocal.m_HttpConnection->CreateRequest(url.c_str(), _tempFilename.c_str());
+		// stgatilov: if we have checksum to verify, enable its computation on-the-fly
+		if (_expectedSha256.Length())
+			_request->EnableSha256();
 	
 		// Start the download, blocks until finished or aborted
 		_request->Perform();
 
 		if (_request->GetStatus() == CHttpRequest::OK)
 		{
-			// Check the downloaded file
+			// stgatilov: Verify checksum if specified
+			if (_expectedSha256.Length())
+			{
+				idStr computedSha256 = _request->GetSha256();
+				if (computedSha256 != _expectedSha256)
+				{
+					DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Wrong checksum at '%s': %s instead of %s", url.c_str(), computedSha256.c_str(), _expectedSha256.c_str());
+					CMissionManager::DoRemoveFile(_tempFilename.c_str());
+					_status = MALFORMED;
+					break;
+				}
+			}
+
+			// Check that downloaded file is a zip indeed
 			if (_pk4CheckEnabled)
 			{
 				bool valid = CheckValidPK4(_tempFilename);

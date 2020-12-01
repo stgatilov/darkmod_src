@@ -26,6 +26,8 @@ typedef void CURL;
 // Shared_ptr typedef
 typedef std::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
+typedef struct SHA256_CTX SHA256_CTX;
+
 /**
  * greebo: An object representing a single HttpRequest, holding 
  * the result (string) and status information.
@@ -69,10 +71,17 @@ private:
 
 	double _progress;
 
+	bool _computeSha256 = false;
+	std::unique_ptr<SHA256_CTX> _sha256state;
+
 public:
 	CHttpRequest(CHttpConnection& conn, const std::string& url);
 
 	CHttpRequest(CHttpConnection& conn, const std::string& url, const std::string& destFilename);
+
+	~CHttpRequest();
+
+	void EnableSha256();
 
 	// Callbacks for CURL
 	static size_t WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self);
@@ -96,6 +105,7 @@ public:
 	// Returns the result as XML document
 	XmlDocumentPtr GetResultXml();
 
+	idStr GetSha256() const;
 private:
 	void InitRequest();
 

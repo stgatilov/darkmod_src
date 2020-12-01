@@ -75,6 +75,9 @@
     <ClCompile Include="idlib\hashing\MD5.cpp">
       <Filter>Hashing</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\hashing\sha256.c">
+      <Filter>Hashing</Filter>
+    </ClCompile>
     <ClCompile Include="idlib\math\Angles.cpp">
       <Filter>Math</Filter>
     </ClCompile>
@@ -267,6 +270,9 @@
       <Filter>Hashing</Filter>
     </ClInclude>
     <ClInclude Include="idlib\hashing\MD5.h">
+      <Filter>Hashing</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\hashing\sha256.h">
       <Filter>Hashing</Filter>
     </ClInclude>
     <ClInclude Include="idlib\math\Angles.h">

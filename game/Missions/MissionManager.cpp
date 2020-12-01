@@ -1160,7 +1160,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 	RequestStatus status = GetRequestStatusForDownloadId(_refreshModListDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == FAILED || status == SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= TMP_MISSION_LIST_FILENAME;
@@ -1173,7 +1173,8 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 			
 			if (result)
 			{
-				LoadModListFromXml(doc);
+				if (!LoadModListFromXml(doc))
+					status = MALFORMED;
 			}
 			else
 			{
@@ -1207,7 +1208,7 @@ int CMissionManager::StartDownloadingModDetails(int modNum)
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_DETAILS_FILENAME;
 
-	CDownloadPtr download(new CDownload(url, tempFilename.string().c_str()));
+	CDownloadPtr download(new CDownload({url}, tempFilename.string().c_str()));
 
 	// Store the mod number in the download class
 	download->GetUserData().id = modNum;
@@ -1232,7 +1233,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadModDetailsRequest()
 	RequestStatus status = GetRequestStatusForDownloadId(_modDetailsDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == FAILED || status == SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= TMP_MISSION_DETAILS_FILENAME;
@@ -1298,7 +1299,7 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 	tempFilename /= cv_tdm_fm_path.GetString();
 	tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
 
-	CDownloadPtr download(new CDownload(url, tempFilename.string().c_str()));
+	CDownloadPtr download(new CDownload({url}, tempFilename.string().c_str()));
 
 	// Store the mission and screenshot number in the download class
 	download->GetUserData().id = missionIndex;
@@ -1319,7 +1320,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 	RequestStatus status = GetRequestStatusForDownloadId(_modScreenshotDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == FAILED || status == SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= cv_tdm_fm_path.GetString();
@@ -1382,6 +1383,9 @@ CMissionManager::RequestStatus CMissionManager::GetRequestStatusForDownloadId(in
 
 	case CDownload::SUCCESS:
 		return SUCCESSFUL;
+
+	case CDownload::MALFORMED:
+		return MALFORMED;
 
 	default: 
 		gameLocal.Printf("Unknown download status encountered in GetRequestStatusForDownloadId()\n");
@@ -1461,7 +1465,7 @@ idStr CMissionManager::ReplaceXmlEntities(const idStr& input)
 	return output;
 }
 
-void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
+bool CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 {
 	assert(doc != NULL);
 
@@ -1562,6 +1566,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			float weight;
 		};
 		idList<WeightedUrl> missionUrls, localUrls;
+		idList<idStr> missionSha256, localSha256;
 
 		// gnartsch : Process mission download locations only if the mission itself is not 
 		//            present or not up to date, otherwise skip to the localization pack
@@ -1579,6 +1584,9 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 				
 				WeightedUrl wurl = {locNode.attribute("url").value(), locNode.attribute("weight").as_float(1.0f)};
 				missionUrls.Append(wurl);
+
+				if (auto attr = locNode.attribute("sha256"))
+					missionSha256.Append(attr.as_string());
 			}
 		}
 
@@ -1597,7 +1605,39 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 
 				// gnartsch: Found a localization pack url for download
 				mission.needsL10NpackDownload = true;
+
+				if (auto attr = locNode.attribute("sha256"))
+					localSha256.Append(attr.as_string());
 			}
+		}
+
+		//stgatilov: inspect checksums (they must be valid and all equal)
+		for (int t = 0; t < 2; t++) {
+			auto &arr = (t == 0 ? missionSha256 : localSha256);
+			auto &dest = (t == 0 ? mission.missionSha256 : mission.l10nPackSha256);
+			int n = arr.Num();
+			if (n == 0)
+				continue;
+
+			for (int i = 0; i < n; i++) {
+				bool ok = (arr[i].Length() == 64);
+				for (int j = 0; j < arr[i].Length(); j++) {
+					char ch = arr[i][j];
+					if (!(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f'))
+						ok = false;
+				}
+				if (!ok) {
+					common->Warning("Checksum for mission %s is malformed", mission.modName.c_str());
+					return false;
+				}
+				if (arr[0] != arr[i]) {
+					common->Warning("Checksums different for download locations of mission %s", mission.modName.c_str());
+					return false;
+				}
+			}
+
+			//assign sha256 into DownloadableMod
+			dest = arr[0];
 		}
 
 		//stgatilov #5349: shuffle the URL lists according to weights
@@ -1641,6 +1681,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 	}
 
 	SortDownloadableMods();
+	return true;
 }
 
 void CMissionManager::SortDownloadableMods()

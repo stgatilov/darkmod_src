@@ -31,6 +31,8 @@
 
 #include "curl/curl.h"
 #define ExtLibs
+#include "hashing/sha256.h"
+
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_conn(&conn),
@@ -50,6 +52,28 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const 
 	_cancelFlag(false),
 	_progress(0)
 {}
+
+CHttpRequest::~CHttpRequest() {}
+
+void CHttpRequest::EnableSha256()
+{
+	_computeSha256 = true;
+}
+
+idStr CHttpRequest::GetSha256() const 
+{
+	if (!_sha256state)
+		return "";
+	uint8_t digest[32];
+	sha256_final(_sha256state.get(), digest);
+	idStr res;
+	for (int i = 0; i < 32; i++) {
+		char tmp[8];
+		idStr::snPrintf(tmp, sizeof(tmp), "%02x", digest[i]);
+		res += tmp;
+	}
+	return res;
+}
 
 // Agent Jones #3766
 int CHttpRequest::TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
@@ -152,6 +176,12 @@ void CHttpRequest::Perform()
 	if (!_destFilename.empty())
 	{
 		_destStream.open(_destFilename.c_str(), std::ofstream::out|std::ofstream::binary);
+	}
+
+	if (_computeSha256)
+	{
+		_sha256state.reset(new SHA256_CTX());
+		sha256_init(_sha256state.get());
 	}
 
 	CURLcode result = ExtLibs::curl_easy_perform( _handle );
@@ -271,6 +301,11 @@ size_t CHttpRequest::WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, C
 
 	self->UpdateProgress();
 
+	if (self->_computeSha256)
+	{
+		sha256_update(self->_sha256state.get(), (uint8_t*)ptr, bytesToCopy);
+	}
+
 	return static_cast<size_t>(bytesToCopy);
 }
 
@@ -287,6 +322,11 @@ size_t CHttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHt
 	self->_destStream.write(static_cast<const char*>(ptr), bytesToCopy);
 
 	self->UpdateProgress();
+
+	if (self->_computeSha256)
+	{
+		sha256_update(self->_sha256state.get(), (uint8_t*)ptr, bytesToCopy);
+	}
 
 	return static_cast<size_t>(bytesToCopy);
 }

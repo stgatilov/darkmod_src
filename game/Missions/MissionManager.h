@@ -75,9 +75,11 @@ struct DownloadableMod
 
 	// The list of mission download URLs
 	idStringList missionUrls;
+	idStr missionSha256;
 
 	// The list of Localisation pack download URLs
 	idStringList l10nPackUrls;
+	idStr l10nPackSha256;
 
 	// Begin Initially empty variables, need to be filled per request by the mission manager
 
@@ -194,6 +196,7 @@ public:
 		IN_PROGRESS,
 		FAILED,
 		SUCCESSFUL,
+		MALFORMED,	//stgatilov: invalid data or checksum
 	};
 
 public:
@@ -354,7 +357,7 @@ private:
 	static int ModSortCompare(const int* a, const int* b);
 
 	// Loads the mod list from the given XML
-	void LoadModListFromXml(const XmlDocumentPtr& doc);
+	bool LoadModListFromXml(const XmlDocumentPtr& doc);
 
 	// Loads mod details from the given XML, storing the data in the mod with the given number
 	void LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNum);

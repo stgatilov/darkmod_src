@@ -189,6 +189,14 @@
     <ClCompile Include="idlib\geometry\Winding2D.cpp" />
     <ClCompile Include="idlib\hashing\MD4.cpp" />
     <ClCompile Include="idlib\hashing\MD5.cpp" />
+    <ClCompile Include="idlib\hashing\sha256.c" >
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
     <ClCompile Include="idlib\Image.cpp" />
     <ClCompile Include="idlib\math\Angles.cpp" />
@@ -274,6 +282,7 @@
     <ClInclude Include="idlib\geometry\Winding2D.h" />
     <ClInclude Include="idlib\hashing\MD4.h" />
     <ClInclude Include="idlib\hashing\MD5.h" />
+    <ClInclude Include="idlib\hashing\sha256.h" />
     <ClInclude Include="idlib\Heap_Embedded.h" />
     <ClInclude Include="idlib\Image.h" />
     <ClInclude Include="idlib\math\Angles.h" />
