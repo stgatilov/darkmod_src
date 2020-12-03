@@ -25,7 +25,6 @@ const int32 MAX_VERTCACHE_SIZE = INT_MAX;
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
 idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
-idCVarBool idVertexCache::r_useBaseVertex( "r_useBaseVertex", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use glDrawElementsBaseVertex extension" );
 idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Use GPU sync" );
 
 idVertexCache		vertexCache;
@@ -172,24 +171,19 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		++vertexUseCount;
 		vbo = dynamicData.vertexBuffer.GetAPIObject();
 	}
-	bool useBasePointer = r_useBaseVertex;
 	if ( vbo != currentVertexBuffer ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
-		if ( useBasePointer )
+		BindAttributes( 0, attrib );
+	} else {
+		// still need to switch to shadow attrib bindings when remain in the same VBO
+		if ( currentAttribBinding != attrib )
 			BindAttributes( 0, attrib );
-	} else // still need to switch to shadow attrib bindings when remain in the same VBO
-		if ( useBasePointer && currentAttribBinding != attrib )
-			BindAttributes( 0, attrib );
-	if ( useBasePointer )
-		if ( attrib == attribBind_t::ATTRIB_REGULAR ) 
-			basePointer = handle.offset / sizeof( idDrawVert );
-		else
-			basePointer = handle.offset / sizeof( shadowCache_t );
-	else {
-		basePointer = -1;
-		BindAttributes( handle.offset, attrib );
 	}
+	if ( attrib == attribBind_t::ATTRIB_REGULAR ) 
+		basePointer = handle.offset / sizeof( idDrawVert );
+	else
+		basePointer = handle.offset / sizeof( shadowCache_t );
 }
 
 /*

@@ -118,7 +118,6 @@ public:
 	static idCVar	r_staticIndexMemory;
 	static idCVar	r_frameVertexMemory;
 	static idCVar	r_frameIndexMemory;
-	static idCVarBool r_useBaseVertex;
 
 	drawSurf_t		screenRectSurf;
 
