@@ -1520,21 +1520,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 		else if ( !token.Icmp( "vertexProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-#if 0
-				if (r_forceGlslPrograms.GetBool()) {
-					newStage.GLSL = true;
-					token.StripFileExtension();
-					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-					newStage.vertexProgram = INT_MAX;
-					//newStage.vertexProgram = R_FindGLSLProgram( token );
-				}
-				else {
-					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
-				}
-#else // debug: allow switch on the fly
 				token.StripFileExtension();
 				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-#endif	
 			}
 			continue;
 		}

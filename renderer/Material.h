@@ -183,7 +183,6 @@ typedef struct {
 
 	//idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 
-	//stgatilov: trying to use new shader framework
 	GLSLProgram			*glslProgram;
 } newShaderStage_t;
 
