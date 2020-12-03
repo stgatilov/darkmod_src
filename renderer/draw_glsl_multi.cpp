@@ -359,11 +359,10 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 			break;
 
 		if ( surf->space != backEnd.currentSpace ) {
-			if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+			if ( GLSLProgram::GetCurrentProgram() != nullptr ) {
 				Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 				transformUniforms->Set( surf->space );
-			} else
-				qglLoadMatrixf( surf->space->modelViewMatrix );
+			}
 		}
 
 		vertexCache.VertexPosition( surf->ambientCache );

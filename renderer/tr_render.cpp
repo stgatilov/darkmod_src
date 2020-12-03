@@ -194,11 +194,10 @@ void RB_Multi_DrawElements( int instances ) {
 	auto DrawSpaceSurfaces = [&]() {
 		if ( !spaceSurfaces.Num() )
 			return;
-		if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+		if ( GLSLProgram::GetCurrentProgram() != nullptr ) {
 			Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 			transformUniforms->Set( spaceSurfaces[0]->space );
-		} else
-			qglLoadMatrixf( spaceSurfaces[0]->space->modelViewMatrix );
+		}
 		if ( spaceSurfaces.Num() == 1 ) {
 			if ( !( r_skipMultiDraw & 1 ) ) {
 				vertexCache.VertexPosition( spaceSurfaces[0]->ambientCache );
@@ -327,17 +326,11 @@ void RB_EnterWeaponDepthHack() {
 
 	matrix[14] *= 0.25f;
 
-	if ( r_uniformTransforms.GetBool() ) {
-		// FIXME: this part is broken since storing projection matrix in uniform block
-		auto prog = GLSLProgram::GetCurrentProgram();
-		if ( prog ) {
-			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
-			//transformUniforms->projectionMatrix.Set( matrix );
-		}
-	} else {
-		qglMatrixMode( GL_PROJECTION );
-		qglLoadMatrixf( matrix );
-		qglMatrixMode( GL_MODELVIEW );
+	// FIXME: this part is broken since storing projection matrix in uniform block
+	auto prog = GLSLProgram::GetCurrentProgram();
+	if ( prog ) {
+		Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+		//transformUniforms->projectionMatrix.Set( matrix );
 	}
 }
 
@@ -357,16 +350,10 @@ void RB_EnterModelDepthHack( float depth ) {
 
 	matrix[14] -= depth;
 
-	if ( r_uniformTransforms.GetBool() ) {
-		auto prog = GLSLProgram::GetCurrentProgram();
-		if ( prog ) {
-			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
-			//transformUniforms->projectionMatrix.Set( matrix );
-		}
-	} else {
-		qglMatrixMode( GL_PROJECTION );
-		qglLoadMatrixf( matrix );
-		qglMatrixMode( GL_MODELVIEW );
+	auto prog = GLSLProgram::GetCurrentProgram();
+	if ( prog ) {
+		Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+		//transformUniforms->projectionMatrix.Set( matrix );
 	}
 }
 
@@ -378,15 +365,9 @@ RB_LeaveDepthHack
 void RB_LeaveDepthHack() {
 	qglDepthRange( 0.0f, 1.0f );
 
-	if ( r_uniformTransforms.GetBool()) {
-		if ( auto prog = GLSLProgram::GetCurrentProgram() ) {
-			Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
-			//transformUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
-		}
-	} else {
-		qglMatrixMode( GL_PROJECTION );
-		qglLoadMatrixf( backEnd.viewDef->projectionMatrix );
-		qglMatrixMode( GL_MODELVIEW );
+	if ( auto prog = GLSLProgram::GetCurrentProgram() ) {
+		Uniforms::Global* transformUniforms = prog->GetUniformGroup<Uniforms::Global>();
+		//transformUniforms->projectionMatrix.Set( backEnd.viewDef->projectionMatrix );
 	}
 }
 
@@ -410,11 +391,10 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		const drawSurf_t *drawSurf = drawSurfs[i];
 
 		if ( drawSurf->space != backEnd.currentSpace ) {
-			if( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+			if( GLSLProgram::GetCurrentProgram() != nullptr ) {
 				Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 				transformUniforms->Set( drawSurf->space );
-			} else
-				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			}
 			GL_CheckErrors();
 		}
 
@@ -474,11 +454,10 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 	for ( const drawSurf_t *drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
 		if ( drawSurf->space != backEnd.currentSpace ) {
 			//common->Printf( "Yay i just loaded the matrix again, because (drawSurf->space does not equal backEnd.currentSpace) because it is NULL\n" );
-			if ( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+			if ( GLSLProgram::GetCurrentProgram() != nullptr ) {
 				Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 				transformUniforms->Set( drawSurf->space );
-			} else
-				qglLoadMatrixf( drawSurf->space->modelViewMatrix );
+			}
 		}
 
 		if ( drawSurf->space->weaponDepthHack ) {
@@ -616,10 +595,6 @@ to actually render the visible surfaces for this view
 */
 void RB_BeginDrawingView( void ) {
 	// set the modelview matrix for the viewer
-	if ( r_uniformTransforms.IsModified() ) {
-		programManager->ReloadAllPrograms();
-		r_uniformTransforms.ClearModified();
-	}
 	GL_SetProjection( (float *)backEnd.viewDef->projectionMatrix );
 
 	// set the window clipping
@@ -821,11 +796,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		backEnd.currentSpace = surf->space;
 
 		GL_CheckErrors();
-		if( r_uniformTransforms.GetBool() && GLSLProgram::GetCurrentProgram() != nullptr ) {
+		if( GLSLProgram::GetCurrentProgram() != nullptr ) {
 			Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
 			transformUniforms->Set( surf->space );
-		} else
-			qglLoadMatrixf( surf->space->modelViewMatrix );
+		}
 		GL_CheckErrors();
 
 		// turn off the light depth bounds test if this model is rendered with a depth hack

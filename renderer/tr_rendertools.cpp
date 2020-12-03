@@ -116,11 +116,8 @@ RB_SimpleSpaceSetup
 void RB_SimpleSpaceSetup( const viewEntity_t *space ) {
 	// change the matrix if needed
 	if ( space != backEnd.currentSpace ) {
-		if ( r_uniformTransforms.GetBool() ) {
-			Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
-			globalUniforms->Set( space );
-		} else
-			qglLoadMatrixf( space->modelViewMatrix );
+		Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+		globalUniforms->Set( space );
 		backEnd.currentSpace = space;
 	}
 }
@@ -152,12 +149,9 @@ RB_SimpleScreenSetup
 void RB_SimpleScreenSetup( void ) {
 	GL_CheckErrors();
 	backEnd.currentSpace = nullptr;
-	if ( r_uniformTransforms.GetBool() ) {
-		Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
-		globalUniforms->modelMatrix.Set( mat4_identity.ToFloatPtr() );			//not used, actually
-		globalUniforms->modelViewMatrix.Set( mat4_identity.ToFloatPtr() );
-	} else
-		qglLoadIdentity();
+	Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+	globalUniforms->modelMatrix.Set( mat4_identity.ToFloatPtr() );			//not used, actually
+	globalUniforms->modelViewMatrix.Set( mat4_identity.ToFloatPtr() );
 	//specify coordinates in [0..1] x [0..1] instead of [-1..1] x [-1..1]
 	idMat4 proj = mat4_identity;
 	proj[0][0] = proj[1][1] = 2.0;
@@ -174,11 +168,8 @@ RB_SimpleWorldSetup
 void RB_SimpleWorldSetup( void ) {
 	GL_CheckErrors();
 	backEnd.currentSpace = &backEnd.viewDef->worldSpace;
-	if ( r_uniformTransforms.GetBool() ) {
-		Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
-		globalUniforms->Set( backEnd.currentSpace );
-	} else
-		qglLoadMatrixf( backEnd.viewDef->worldSpace.modelViewMatrix );
+	Uniforms::Global* globalUniforms = programManager->oldStageShader->GetUniformGroup<Uniforms::Global>();
+	globalUniforms->Set( backEnd.currentSpace );
 
 	backEnd.currentScissor = backEnd.viewDef->scissor;
 	GL_CheckErrors();

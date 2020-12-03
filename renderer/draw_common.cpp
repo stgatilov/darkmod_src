@@ -594,12 +594,6 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	}
 	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );
 
-	// change the matrix if needed
-	if ( !r_uniformTransforms.GetBool() && surf->space != backEnd.currentSpace ) {
-		qglLoadMatrixf( surf->space->modelViewMatrix );
-		backEnd.currentSpace = surf->space;
-		//RB_SetProgramEnvironmentSpace();
-	}
 	GL_CheckErrors();
 
 	// change the scissor if needed

@@ -23,10 +23,6 @@ GLSLProgramManager *programManager = &programManagerInstance;
 
 namespace {
 	void DefaultProgramInit( GLSLProgram *program, idDict defines, const char *vertexSource, const char *fragmentSource = nullptr, const char *geometrySource = nullptr ) {
-		if( r_uniformTransforms.GetBool() ) {
-			defines.Set( "UNIFORM_TRANSFORMS", "1" );
-		}
-
 		program->Init();
 		if( vertexSource != nullptr ) {
 			program->AttachVertexShader( vertexSource, defines );

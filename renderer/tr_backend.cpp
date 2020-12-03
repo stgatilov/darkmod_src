@@ -458,14 +458,8 @@ void GL_ByteColor( byte r, byte g, byte b, byte a ) {
 }
 
 void GL_SetProjection( float* matrix ) {
-	if ( !r_uniformTransforms.GetBool() ) {
-		qglMatrixMode( GL_PROJECTION );
-		qglLoadMatrixf( matrix );
-		qglMatrixMode( GL_MODELVIEW );
-	} else {
-		qglBindBuffer( GL_UNIFORM_BUFFER, programManager->uboHandle );
-		qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), matrix, GL_DYNAMIC_DRAW );
-	}
+	qglBindBuffer( GL_UNIFORM_BUFFER, programManager->uboHandle );
+	qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), matrix, GL_DYNAMIC_DRAW );
 }
 
 /*

@@ -225,7 +225,6 @@ idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL,
 // 2016-2018 additions by duzenko
 idCVar r_useAnonreclaimer( "r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer patch" );
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
-idCVar r_uniformTransforms( "r_uniformTransforms", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use uniform variables in shaders for vertex transformations instead of the deprecated ftransform" );
 idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 	"Which profile of OpenGL to use:\n"
 	"  0: compatibility profile\n"
@@ -376,10 +375,6 @@ void R_InitOpenGL( void ) {
 	common->Printf( "OpenGL vendor: %s\n", glConfig.vendor_string );
 	common->Printf( "OpenGL renderer: %s\n", glConfig.renderer_string );
 	common->Printf( "OpenGL version: %s %s\n", glConfig.version_string, GLAD_GL_ARB_compatibility ? "compatibility" : "core" );
-	if ( !r_uniformTransforms.GetBool() && !GLAD_GL_ARB_compatibility ) {
-		common->Printf( "Uniform transforms mandatory on core contexts\n" );
-		r_uniformTransforms.SetBool( true );
-	}
 
 	// recheck all the extensions
 	GLimp_CheckRequiredFeatures();
