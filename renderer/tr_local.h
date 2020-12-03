@@ -1442,7 +1442,6 @@ void RB_DrawTriangles( const srfTriangles_t& tri );
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
-void RB_SetProgramEnvironment( void ); // Defined in the shader passes section next, now re-used for depth capture in #3877
 void RB_STD_DrawView( void );
 
 // multi draw
@@ -1454,83 +1453,13 @@ void RB_DrawFullScreenQuad( float e = 1 );
 
 /*
 ============================================================
-
 DRAW_*
-
 ============================================================
 */
-
-void	R_ReloadARBPrograms_f( const idCmdArgs &args );
-int		R_FindARBProgram( GLenum target, const char *program );
 
 void    RB_GLSL_DrawInteraction( const drawInteraction_t *din );
 void    RB_GLSL_DrawInteractions( void );
 void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
-
-typedef enum {
-	PROG_INVALID,
-	VPROG_ENVIRONMENT,
-	FPROG_ENVIRONMENT,
-	VPROG_BUMPY_ENVIRONMENT,
-	FPROG_BUMPY_ENVIRONMENT,
-	// SteveL #3878: soft particles
-	VPROG_SOFT_PARTICLE,
-	FPROG_SOFT_PARTICLE,
-	// revelator : user supplied additions
-	PROG_USER
-} program_t;
-
-void R_UseProgramARB( int vProg = PROG_INVALID );
-
-/*
-
-  All vertex programs use the same constant register layout:
-
-c[4]	localLightOrigin
-c[5]	localViewOrigin
-c[6]	lightProjection S
-c[7]	lightProjection T
-c[8]	lightProjection Q
-c[9]	lightFalloff	S
-c[10]	bumpMatrix S
-c[11]	bumpMatrix T
-c[12]	diffuseMatrix S
-c[13]	diffuseMatrix T
-c[14]	specularMatrix S
-c[15]	specularMatrix T
-
-
-c[20]	light falloff tq constant
-
-// texture 0 was cube map
-// texture 1 will be the per-surface bump map
-// texture 2 will be the light falloff texture
-// texture 3 will be the light projection texture
-// texture 4 is the per-surface diffuse map
-// texture 5 is the per-surface specular map
-// texture 6 is the specular half angle cube map
-
-*/
-
-typedef enum {
-	PP_LIGHT_ORIGIN = 4,
-	PP_VIEW_ORIGIN,
-	PP_LIGHT_PROJECT_S,
-	PP_LIGHT_PROJECT_T,
-	PP_LIGHT_PROJECT_Q,
-	PP_LIGHT_FALLOFF_S,
-	PP_BUMP_MATRIX_S,
-	PP_BUMP_MATRIX_T,
-	PP_DIFFUSE_MATRIX_S,
-	PP_DIFFUSE_MATRIX_T,
-	PP_SPECULAR_MATRIX_S,
-	PP_SPECULAR_MATRIX_T,
-	PP_COLOR_MODULATE,
-	PP_COLOR_ADD,
-
-	PP_MISC_0 = 21 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
-} programParameter_t;
-
 
 /*
 ============================================================

@@ -50,7 +50,6 @@ typedef struct glconfig_s {
 	bool				srgb;
 
 	//GL extensions which can potentially be used in-game
-	bool				arbAssemblyShadersAvailable;
 	bool				anisotropicAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				geometryShaderAvailable;

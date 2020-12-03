@@ -18,7 +18,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "qgl.h"
 #include "tr_local.h"
 
-extern idCVarBool r_useGLSL;
 extern idCVarBool r_newFrob;
 extern idCVarBool r_legacyTangents;
 extern idCVarBool r_shadowMapCullFront;

@@ -86,21 +86,15 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
 
-		if ( r_useGLSL ) {
-			programManager->bumpyEnvironment->Activate();
-			programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
-			BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
-			uniforms->colorAdd.Set(0, 0, 0, 0);
-			uniforms->colorModulate.Set(0, 0, 0, 0);
-		} else // Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
-			R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
+		programManager->bumpyEnvironment->Activate();
+		programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
+		BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
+		uniforms->colorAdd.Set(0, 0, 0, 0);
+		uniforms->colorModulate.Set(0, 0, 0, 0);
 	} else {
-		if ( r_useGLSL ) {
-			GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
-			environmentShader->Activate();
-			environmentShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
-		}  else
-			R_UseProgramARB( VPROG_ENVIRONMENT );
+		GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
+		environmentShader->Activate();
+		environmentShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 	}
 }
 
@@ -154,9 +148,6 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			//	programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
 		}
 		GLSLProgram::Deactivate();
-
-		if (!r_useGLSL)
-			R_UseProgramARB();
 
 		break;
 	}
@@ -310,7 +301,6 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
 		frameBuffers->UpdateCurrentDepthCopy();
-		RB_SetProgramEnvironment();
 	}
 	GLSLProgram::Deactivate();
 	GL_CheckErrors();
@@ -323,118 +313,6 @@ SHADER PASSES
 
 =============================================================================================
 */
-
-/*
-==================
-RB_SetProgramEnvironment
-
-Sets variables that can be used by all vertex programs
-
-[SteveL #3877] Note on the use of fragment program environmental variables.
-Parameters 0 and 1 are set here to allow conversion of screen coordinates to
-texture coordinates, for use when sampling _currentRender.
-Those same parameters 0 and 1, plus 2 and 3, are given entirely different
-meanings in draw_arb2.cpp while light interactions are being drawn.
-This function is called again before currentRender size is needed by post processing
-effects are done, so there's no clash.
-Only parameters 0..3 were in use before #3877. Now I've used a new parameter 4 for the
-size of _currentDepth. It's needed throughout, including by light interactions, and its
-size might in theory differ from _currentRender.
-Parameters 5 and 6 are used by soft particles #3878. Note these can be freely reused by different draw calls.
-==================
-*/
-void RB_SetProgramEnvironment( void ) {
-	if (r_useGLSL)
-		return;
-
-	float	parm[4];
-	int		pot;
-
-	// screen power of two correction factor, assuming the copy to _currentRender
-	// also copied an extra row and column for the bilerp
-	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
-	pot = globalImages->currentRenderImage->uploadWidth;
-	parm[0] = ( float )w / pot;
-
-	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
-	pot = globalImages->currentRenderImage->uploadHeight;
-	parm[1] = ( float )h / pot;
-
-	parm[2] = 0;
-	parm[3] = 1;
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, parm );
-
-	// window coord to 0.0 to 1.0 conversion
-	parm[0] = 1.0 / w;
-	parm[1] = 1.0 / h;
-	parm[2] = 0;
-	parm[3] = 1;
-	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 1, parm );
-
-	// #3877: Allow shaders to access depth buffer.
-	// Two useful ratios are packed into this parm: [0] and [1] hold the x,y multipliers you need to map a screen
-	// coordinate (fragment position) to the depth image: those are simply the reciprocal of the depth
-	// image size, which has been rounded up to a power of two. Slots [3] and [4] hold the ratio of the depth image
-	// size to the current render image size. These sizes can differ if the game crops the render viewport temporarily
-	// during post-processing effects. The depth render is smaller during the effect too, but the depth image doesn't
-	// need to be downsized, whereas the current render image does get downsized when it's captured by the game after
-	// the skybox render pass. The ratio is needed to map between the two render images.
-	parm[0] = 1.0f / globalImages->currentDepthImage->uploadWidth;
-	parm[1] = 1.0f / globalImages->currentDepthImage->uploadHeight;
-	parm[2] = static_cast<float>( globalImages->currentRenderImage->uploadWidth ) / globalImages->currentDepthImage->uploadWidth;
-	parm[3] = static_cast<float>( globalImages->currentRenderImage->uploadHeight ) / globalImages->currentDepthImage->uploadHeight;
-	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 4, parm );
-
-	//
-	// set eye position in global space
-	//
-	parm[0] = backEnd.viewDef->renderView.vieworg[0];
-	parm[1] = backEnd.viewDef->renderView.vieworg[1];
-	parm[2] = backEnd.viewDef->renderView.vieworg[2];
-	parm[3] = 1.0;
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 1, parm );
-
-
-}
-
-/*
-==================
-RB_SetProgramEnvironmentSpace
-
-Sets variables related to the current space that can be used by all vertex programs
-==================
-*/
-void RB_SetProgramEnvironmentSpace( void ) {
-	if (r_useGLSL)
-		return;
-
-	const struct viewEntity_s *space = backEnd.currentSpace;
-	float	parm[4];
-
-	// set eye position in local space
-	R_GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, *( idVec3 * )parm );
-	parm[3] = 1.0;
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 5, parm );
-
-	// we need the model matrix without it being combined with the view matrix
-	// so we can transform local vectors to global coordinates
-	parm[0] = space->modelMatrix[0];
-	parm[1] = space->modelMatrix[4];
-	parm[2] = space->modelMatrix[8];
-	parm[3] = space->modelMatrix[12];
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 6, parm );
-	parm[0] = space->modelMatrix[1];
-	parm[1] = space->modelMatrix[5];
-	parm[2] = space->modelMatrix[9];
-	parm[3] = space->modelMatrix[13];
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 7, parm );
-	parm[0] = space->modelMatrix[2];
-	parm[1] = space->modelMatrix[6];
-	parm[2] = space->modelMatrix[10];
-	parm[3] = space->modelMatrix[14];
-	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 8, parm );
-}
 
 /*
 ==================
@@ -546,53 +424,6 @@ RB_STD_T_RenderShaderPasses_New
 Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
 ==================
 */
-void RB_STD_T_RenderShaderPasses_ARB( const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	if ( r_skipNewAmbient & 1 ) {
-		return;
-	}
-
-	GL_State( pStage->drawStateBits );
-
-	newShaderStage_t *newStage = pStage->newStage;
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
-	qglEnable( GL_VERTEX_PROGRAM_ARB );
-
-	// megaTextures bind a lot of images and set a lot of parameters
-	/*if ( newStage->megaTexture ) {
-		newStage->megaTexture->SetMappingForSurface( surf->frontendGeo ); // FIXME
-		idVec3	localViewer;
-		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewer );
-		newStage->megaTexture->BindForViewOrigin( localViewer );
-	}*/
-
-	const float	*regs = surf->shaderRegisters;
-	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
-		float	parm[4];
-		parm[0] = regs[newStage->vertexParms[i][0]];
-		parm[1] = regs[newStage->vertexParms[i][1]];
-		parm[2] = regs[newStage->vertexParms[i][2]];
-		parm[3] = regs[newStage->vertexParms[i][3]];
-		qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
-	}
-
-	for ( int i = 0; i < newStage->numFragmentProgramImages; i++ ) {
-		if ( newStage->fragmentProgramImages[i] ) {
-			GL_SelectTexture( i );
-			newStage->fragmentProgramImages[i]->Bind();
-		}
-	}
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
-	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
-
-	// draw it
-	RB_DrawElementsWithCounters( surf );
-
-	GL_SelectTexture( 0 );
-
-	qglDisable( GL_VERTEX_PROGRAM_ARB );
-	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-}
-
 void RB_STD_T_RenderShaderPasses_GLSL( const shaderStage_t *pStage, const drawSurf_t *surf ) {
 	if ( r_skipNewAmbient & 1 ) 
 		return;
@@ -648,11 +479,8 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 	// Disable depth clipping. The fragment program will handle it to allow overdraw.
 	GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS );
 
-	if ( r_useGLSL ) {
-		programManager->softParticleShader->Activate();
-		programManager->softParticleShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
-	} else
-		R_UseProgramARB( VPROG_SOFT_PARTICLE );
+	programManager->softParticleShader->Activate();
+	programManager->softParticleShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 
 	// Bind image and _currentDepth
 	GL_SelectTexture( 0 );
@@ -694,26 +522,16 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 		blend[0] = blend[1] = blend[2] = 0.0f; // Fade the rgb channels but
 		blend[3] = 1.0f;						// leave the alpha channel at full strength
 	}
-	if ( r_useGLSL ) {
-		auto group = programManager->softParticleShader->GetUniformGroup<Uniforms::SoftParticle>();
-		group->softParticleParams.Set(params);
-		group->softParticleBlend.Set(blend);
-		//note: we need only u_scaleDepthCoords, but this is the easiest way to reuse code
-		programManager->softParticleShader->GetUniformGroup<Uniforms::MaterialStage>()->Set(pStage, surf);
-	}
-	else {
-		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, params );
-		qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 6, blend );
-	}
+	auto group = programManager->softParticleShader->GetUniformGroup<Uniforms::SoftParticle>();
+	group->softParticleParams.Set(params);
+	group->softParticleBlend.Set(blend);
+	//note: we need only u_scaleDepthCoords, but this is the easiest way to reuse code
+	programManager->softParticleShader->GetUniformGroup<Uniforms::MaterialStage>()->Set(pStage, surf);
 
 	// draw it
 	RB_DrawElementsWithCounters( surf );
 
 	GL_SelectTexture( 0 );
-
-	if ( !r_useGLSL ) {
-		R_UseProgramARB();
-	}
 }
 
 /*
@@ -780,7 +598,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( !r_uniformTransforms.GetBool() && surf->space != backEnd.currentSpace ) {
 		qglLoadMatrixf( surf->space->modelViewMatrix );
 		backEnd.currentSpace = surf->space;
-		RB_SetProgramEnvironmentSpace();
+		//RB_SetProgramEnvironmentSpace();
 	}
 	GL_CheckErrors();
 
@@ -855,11 +673,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		newShaderStage_t *newStage = pStage->newStage;
 
 		if ( newStage ) {
-			//if ( newStage->GLSL || newStage->glslProgram )
-			if ( r_useGLSL )
-				RB_STD_T_RenderShaderPasses_GLSL( pStage, surf );
-			else
-				RB_STD_T_RenderShaderPasses_ARB( pStage, surf );
+			RB_STD_T_RenderShaderPasses_GLSL( pStage, surf );
 			continue;
 		}
 
@@ -917,7 +731,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	GL_SelectTexture( 0 );
 
-	RB_SetProgramEnvironment();
 	GL_CheckErrors();
 
 	// we don't use RB_RenderDrawSurfListWithFunction()

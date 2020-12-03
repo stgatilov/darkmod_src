@@ -441,7 +441,6 @@ void RB_GLSL_DrawInteractions() {
 ==================
 R_ReloadGLSLPrograms
 
-If the 'required' shaders fail to compile the r_useGLSL will toggle to 0 so as to fall back to ARB2 shaders
 filenames hardcoded here since they're not used elsewhere
 FIXME split the stencil and shadowmap interactions in separate shaders as the latter might not compile on DX10 and older hardware
 ==================
@@ -466,8 +465,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 
 	const char *programName = args.Argc() > 1 ? args.Argv( 1 ) : nullptr;
 	if ( !R_ReloadGLSLPrograms( programName ) ) {
-		r_useGLSL = false;
-		common->Printf( "GLSL shaders failed to init.\n" );
+		common->Error( "GLSL shaders failed to init.\n" );
 		return;
 	}
 	common->Printf( "---------------------------------\n" );

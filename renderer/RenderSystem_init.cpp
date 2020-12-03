@@ -224,7 +224,6 @@ idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL,
 
 // 2016-2018 additions by duzenko
 idCVar r_useAnonreclaimer( "r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer patch" );
-idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB2" );
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
 idCVar r_uniformTransforms( "r_uniformTransforms", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use uniform variables in shaders for vertex transformations instead of the deprecated ftransform" );
 idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
@@ -401,9 +400,7 @@ void R_InitOpenGL( void ) {
 	}
 
 	cmdSystem->AddCommand( "reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs" );
-	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
 
-	R_ReloadARBPrograms_f( idCmdArgs() );
 	R_ReloadGLSLPrograms_f( idCmdArgs() );
 
 	// allocate the vertex array range or vertex objects

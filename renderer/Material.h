@@ -175,17 +175,14 @@ static const int	MAX_FRAGMENT_IMAGES = 8;
 static const int	MAX_VERTEX_PARMS = 4;
 
 typedef struct {
-	int					vertexProgram;
 	int					numVertexParms;
 	int					vertexParms[MAX_VERTEX_PARMS][4];	// evaluated register indexes
 
-	int					fragmentProgram;
 	int					numFragmentProgramImages;
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 
 	//idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 
-	bool				GLSL;
 	//stgatilov: trying to use new shader framework
 	GLSLProgram			*glslProgram;
 } newShaderStage_t;

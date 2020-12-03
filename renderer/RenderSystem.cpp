@@ -267,12 +267,6 @@ See if some cvars that we watch have changed
 static void R_CheckCvars( void ) {
 	globalImages->CheckCvars();
 
-	// if ARB shaders are not available, then GLSL must be used
-	if ( !glConfig.arbAssemblyShadersAvailable && !r_useGLSL.GetBool() ) {
-		common->Printf("ARB assembly shaders not supported. Forcing r_useGLSL on.\n");
-		r_useGLSL.SetBool(true);
-	}
-
 	// GL debug messages
 	if( r_glDebugOutput.IsModified() && GLAD_GL_KHR_debug ) {
 		r_glDebugOutput.ClearModified();
