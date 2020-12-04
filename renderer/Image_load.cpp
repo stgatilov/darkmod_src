@@ -1216,6 +1216,15 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 			uh = 1;
 		}
 	}
+
+	// ensure mip levels are properly set or generated if missing
+	int actualMips = numMipmaps - skipMip;
+	if ( actualMips > 1 ) {
+		qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, actualMips - 1 );
+	} else {
+		qglGenerateMipmap( GL_TEXTURE_2D );
+	}
+
 	SetImageFilterAndRepeat();
 }
 
