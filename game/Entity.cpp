@@ -13082,8 +13082,11 @@ void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from 
 
 				if (PosSpace == -1)
 				{
-					gameLocal.Warning( "%s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
-						GetName(), kv_set->GetKey().c_str(), kv_set->GetValue().c_str() );
+					gameLocal.Warning(
+						"%s of class %s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
+						from->GetString("name", "[unknown]"), from->GetString("classname", "[unknown]"),
+						kv_set->GetKey().c_str(), kv_set->GetValue().c_str()
+					);
 					//kv_set = from->MatchPrefix( "set ", kv_set );
 					//continue;		
 					// pretend "set _color" "0.1 0.2 0.3" means "set _color on BAR" where BAR is the

@@ -862,7 +862,7 @@ public:
 	/**
 	* Parses spawnarg list of attachments and puts them into the list.
 	**/
-	void ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from );
+	static void ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from );
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
