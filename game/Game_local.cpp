@@ -5484,7 +5484,10 @@ void idGameLocal::SpawnMapEntities( void )
 			declManager->BeginEntityLoad(mapEnt);
 			// precache any media specified in the map entity
 			CacheDictionaryMedia(&args);
-			SpawnEntityDef(args);
+			idEntity *ent;
+			SpawnEntityDef(args, &ent);
+			if (ent)
+				ent->fromMapFile = true;
 			declManager->EndEntityLoad(mapEnt);
 			num++;
 		}

@@ -967,6 +967,7 @@ idEntity::idEntity()
 	thinkFlags		= 0;
 	dormantStart	= 0;
 	cinematic		= false;
+	fromMapFile		= false;
 	renderView		= NULL;
 	cameraTarget	= NULL;
 	health			= 0;
@@ -2085,6 +2086,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( thinkFlags );
 	savefile->WriteInt( dormantStart );
 	savefile->WriteBool( cinematic );
+	savefile->WriteBool( fromMapFile );
 
 	savefile->WriteObject( cameraTarget );
 
@@ -2352,6 +2354,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( thinkFlags );
 	savefile->ReadInt( dormantStart );
 	savefile->ReadBool( cinematic );
+	savefile->ReadBool( fromMapFile );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) ); 
 
