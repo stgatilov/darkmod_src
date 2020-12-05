@@ -116,8 +116,13 @@ idRenderModel *idRenderWorldLocal::ParseModel( idLexer *src ) {
 				const idDeclParticle *particleDecl = (idDeclParticle *)surf.material->GetDeformDecl();
 				const auto &prtStages = particleDecl->stages;
 				for (int g = 0; g < prtStages.Num(); g++)
-					if (prtStages[g]->collisionStatic)
-						idParticleStage::LoadCutoffTimeMap(idParticleStage::GetCollisionStaticImagePath(model->Name(), i, g));
+					if (prtStages[g]->collisionStatic) {
+						idPartSysEmitterSignature sign;
+						sign.mainName = model->Name();
+						sign.surfaceIndex = i;
+						sign.particleStageIndex = g;
+						idParticleStage::LoadCutoffTimeMap(idParticleStage::GetCollisionStaticImagePath(sign));
+					}
 			}
 		}
 

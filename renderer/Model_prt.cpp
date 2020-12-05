@@ -96,6 +96,10 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		staticModel->InitEmpty( parametricParticle_SnapshotName );
 	}
 
+	//stgatilov #5437: this is filled lazingly to avoid slowdown for non-colliding particle systems
+	idEntity *owner = nullptr;
+	idPartSysEmitterSignature sign;
+
 	idPartSysData psys;
 	const renderView_t *renderView = &viewDef->renderView;
 	psys.entityAxis = renderEntity->axis;
@@ -116,10 +120,39 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 
 		psys.totalParticles = stage->totalParticles;
 
+		sign.particleStageIndex = stageNum;
+		if (stage->collisionStatic && !owner) {
+			//stgatilov #5437: this is some very stupid and slow code to find signature
+			//normally, every particle system should be registered in a manager class (like renderEntities in renderWorld)
+			//then the signature can be stored alongside them, instead of computing it every frame =(
+			owner = gameLocal.entities[renderEntity->entityNum];
+			if (stage->mapLayoutType != PML_LINEAR)
+				common->Error("Particle model on entity %s uses collisionStatic without mapLayout linear", (owner ? owner->name.c_str() : "[unknown]"));
+			if (owner && owner->fromMapFile) {
+				sign.mainName = owner->name;
+				int k = 0;
+				for (const idKeyValue *kv = owner->spawnArgs.MatchPrefix("model"); kv; kv = owner->spawnArgs.MatchPrefix("model", kv)) {
+					idStr name = kv->GetValue();
+					name.StripFileExtension();
+					if (name.Icmp(particleSystem->GetName()) == 0) {
+						sign.modelSuffix = kv->GetKey().c_str() + 5;
+						k++;
+					}
+				}
+				if (k > 1)
+					common->Error("Particle model on entity %s: two models with same .prt", owner->name.c_str());
+				if (k == 0)
+					owner = nullptr;
+			}
+		}
+		idImage *cutoffImage = nullptr;
+		if (stage->collisionStatic && owner)
+			idParticle_PrepareCutoffMap(stage, nullptr, sign, psys.totalParticles, cutoffImage, nullptr);
+
 		idPartSysEmit psEmit;
 		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
 		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
-		psEmit.randomizer = renderEntity->shaderParms[SHADERPARM_DIVERSITY];
+		psEmit.randomizer = idParticle_ComputeRandomizer(sign, renderEntity->shaderParms[SHADERPARM_DIVERSITY]);
 		psEmit.totalParticles = stage->totalParticles;
 		psEmit.viewTimeMs = renderView->time;
 
@@ -147,6 +180,12 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 			int cycIdx;
 			if (!idParticle_EmitParticle(*stage, psEmit, index, part, cycIdx))
 				continue;
+
+			if (cutoffImage) {
+				float cutoff = idParticle_FetchCutoffTimeLinear(cutoffImage, psys.totalParticles, index, cycIdx);
+				if (part.frac > cutoff)
+					continue;
+			}
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
 			idDrawVert *ptr = verts + numVerts;

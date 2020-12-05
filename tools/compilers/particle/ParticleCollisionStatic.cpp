@@ -27,8 +27,10 @@ public:
 
 private:
 	void ProcessMap();
-	void ProcessModel(const char *modelName, const idVec3 &origin, const idMat3 &axis, bool disabled, float diversity);
+	void ProcessParticleDeform(const char *modelName, const idVec3 &origin, const idMat3 &axis, bool disabled, float diversity);
+	void ProcessParticleModel(const char *modelName, const idKeyValue &kvModel, const idVec3 &origin, const idMat3 &axis, bool disabled, float diversity);
 	bool ProcessSurfaceEmitter(const srfTriangles_t *geom, const idVec3 &origin, const idMat3 &axis, float entDiversity, const char *outputFilename);
+	bool ProcessPointEmitter(const idVec3 &origin, const idMat3 &axis, float entDiversity, const char *outputFilename);
 	void ModelParticleMovement(const idVec3 &entOrigin, const idMat3 &entAxis, const idPartStageData &stg, const idPartSysData &psys, idParticleData part, uint32 &texel);
 	float FindSegmentCollision(idVec3 start, idVec3 end, bool collideWorldOnly);
 	idRenderWorld *RenderWorld();
@@ -54,7 +56,7 @@ private:
 	//temporary data to avoid passing all the trash around everywhere
 	const char *prtName = nullptr;
 	const idParticleStage *prtStage = nullptr;
-	idPartSysSurfaceEmitterSignature signature = {"", -1, -1};
+	idPartSysEmitterSignature signature;
 };
 
 PrtCollision::~PrtCollision() {
@@ -286,7 +288,7 @@ bool PrtCollision::ProcessSurfaceEmitter(
 		idPartSysEmit psEmit;
 		memset(&psEmit, -1, sizeof(psEmit));
 		psEmit.totalParticles = psys.totalParticles;
-		psEmit.randomizer = idParticle_ComputeSurfaceRandomizer(signature, entDiversity);
+		psEmit.randomizer = idParticle_ComputeRandomizer(signature, entDiversity);
 
 		for (int cycIdx = 0; cycIdx < period; cycIdx++) {
 			for (int index = 0; index < totalParticles; index++) {
@@ -309,7 +311,7 @@ bool PrtCollision::ProcessSurfaceEmitter(
 	return true;
 }
 
-void PrtCollision::ProcessModel(const char *modelName, const idVec3 &origin, const idMat3 &axis, bool disabled, float diversity) {
+void PrtCollision::ProcessParticleDeform(const char *modelName, const idVec3 &origin, const idMat3 &axis, bool disabled, float diversity) {
 	idRenderModel *model = renderModelManager->CheckModel(modelName);
 	if (!model)
 		return;
@@ -331,10 +333,11 @@ void PrtCollision::ProcessModel(const char *modelName, const idVec3 &origin, con
 				prtName = particleDecl->GetName();
 
 				if (prtStage->collisionStatic) {
-					signature.renderModelName = modelName;
+					signature.mainName = modelName;
+					signature.modelSuffix = "";
 					signature.surfaceIndex = s;
 					signature.particleStageIndex = g;
-					idStr imageName = idParticleStage::GetCollisionStaticImagePath(modelName, s, g);
+					idStr imageName = idParticleStage::GetCollisionStaticImagePath(signature);
 
 					numSurfsProcessed++;
 					if (!disabled)
@@ -350,6 +353,104 @@ void PrtCollision::ProcessModel(const char *modelName, const idVec3 &origin, con
 				prtName = nullptr;
 			}
 		}
+	}
+}
+
+bool PrtCollision::ProcessPointEmitter(
+	const idVec3 &entOrigin, const idMat3 &entAxis, float entDiversity,
+	const char *outputFilename
+) {
+	assert(prtStage->collisionStatic);
+
+	if (prtStage->mapLayoutType == PML_TEXTURE) {
+		common->Error("Particle %s on emitter %s: texture mapLayout not allowed on models", prtName, outputFilename);
+	}
+	assert(prtStage->mapLayoutType == PML_LINEAR);
+
+	if (prtStage->diversityPeriod <= 0) {
+		common->Error("Particle %s on emitter %s: mapLayout linear requires diversityPeriod set", prtName, outputFilename);
+	}
+
+	idPartSysData psys;
+	memset(&psys, -1, sizeof(psys));
+	int totalParticles = prtStage->totalParticles;
+	psys.entityAxis = entAxis;
+
+	int period = prtStage->diversityPeriod;
+	int totalTexels = period * totalParticles;
+	static const int MAXDIM = 4<<10;
+	if (totalTexels > MAXDIM * MAXDIM) {
+		common->Error(
+			"Particle %s on emitter %s: number of texels is too large: %d = %d x %d",
+			prtName, outputFilename, totalTexels, period, totalParticles
+		);
+	}
+
+	int w, h;
+	if (totalParticles <= MAXDIM && period <= MAXDIM) {
+		w = totalParticles;
+		h = period;
+	}
+	else {
+		w = MAXDIM;
+		h = (totalTexels + MAXDIM-1) / MAXDIM;
+	}
+	int bytes = w * h * 4;
+	uint32 *texels = (uint32*)Mem_Alloc(bytes);
+	memset(texels, 0, bytes);
+
+	idPartSysEmit psEmit;
+	memset(&psEmit, -1, sizeof(psEmit));
+	psEmit.totalParticles = psys.totalParticles;
+	psEmit.randomizer = idParticle_ComputeRandomizer(signature, entDiversity);
+
+	for (int cycIdx = 0; cycIdx < period; cycIdx++) {
+		for (int index = 0; index < totalParticles; index++) {
+			idParticleData part;
+			part.index = index;
+			part.randomSeed = idParticle_GetRandomSeed(index, cycIdx, psEmit.randomizer);
+			part.axis.Identity();
+			part.origin.Zero();
+
+			uint32 *pTexel = &texels[cycIdx * totalParticles + index];
+			ModelParticleMovement(entOrigin, entAxis, *prtStage, psys, part, *pTexel);
+		}
+	}
+
+	R_WriteTGA(outputFilename, (byte*)texels, w, h);
+	Mem_Free(texels);
+
+	return true;
+}
+
+void PrtCollision::ProcessParticleModel(const char *modelName, const idKeyValue &kvModel, const idVec3 &origin, const idMat3 &axis, bool disabled, float diversity) {
+	const idDeclParticle *particleDecl = (idDeclParticle*)declManager->FindType(DECL_PARTICLE, kvModel.GetValue());
+	const auto &prtStages = particleDecl->stages;
+
+	// look for particle stages with "collisionStatic"
+	for (int g = 0; g < prtStages.Num(); g++) {
+		prtStage = prtStages[g];
+		prtName = particleDecl->GetName();
+
+		if (prtStage->collisionStatic) {
+			signature.mainName = modelName;
+			signature.modelSuffix = kvModel.GetKey().c_str() + 5;
+			signature.surfaceIndex = 0;
+			signature.particleStageIndex = g;
+			idStr imageName = idParticleStage::GetCollisionStaticImagePath(signature);
+
+			numSurfsProcessed++;
+			if (!disabled)
+				ProcessPointEmitter(origin, axis, diversity, imageName.c_str());
+			else {
+				numSurfsDisabled++;
+				byte white[4] = {255, 255, 255, 0};
+				R_WriteTGA(imageName, white, 1, 1);
+			}
+		}
+
+		prtStage = nullptr;
+		prtName = nullptr;
 	}
 }
 
@@ -384,22 +485,25 @@ void PrtCollision::ProcessMap() {
 			for (int a = 0; a < areasNum; a++) {
 				idStr modelName;
 				sprintf(modelName, "_area%d", a);
-				ProcessModel(modelName.c_str(), idVec3(), mat3_identity, false, 0.0f);
+				ProcessParticleDeform(modelName.c_str(), idVec3(), mat3_identity, false, 0.0f);
 			}
 		}
 		else {
 			if (!name)
 				continue;	// not an entity?...
-			int numPrims = ent->GetNumPrimitives();
-			if (!numPrims)
-				continue;	// empty entity or only model
-			// use model from .proc file, i.e. surfaces compiled from brushes/patches
-			// idRenderWorld::InitFromMap has already loaded them with entity name = model name
 			int isEmitter = spawnArgs.GetInt("particle_collision_static_emitter", "-1");
 			idVec3 origin = spawnArgs.GetVector("origin");
 			idMat3 axis = spawnArgs.GetMatrix("rotation");
 			float diversity = spawnArgs.GetFloat("shaderParm5");
-			ProcessModel(name, origin, axis, isEmitter == 0, diversity);
+			//TODO: search attachments recursively too
+			for (const idKeyValue *kv = spawnArgs.MatchPrefix("model"); kv; kv = spawnArgs.MatchPrefix("model", kv))
+				if (idStr::CheckExtension(kv->GetValue(), ".prt"))
+					ProcessParticleModel(name, *kv, origin, axis, isEmitter == 0, diversity);
+			if (ent->GetNumPrimitives() > 0) {
+				// use model from .proc file, i.e. surfaces compiled from brushes/patches
+				// idRenderWorld::InitFromMap has already loaded them with entity name = model name
+				ProcessParticleDeform(name, origin, axis, isEmitter == 0, diversity);
+			}
 		}
 	}
 }

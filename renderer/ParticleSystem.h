@@ -65,18 +65,27 @@ void idParticle_EmitLocationOnSurface(
 	float *areas = NULL
 );
 
-//identifies surface emitter (particle deform only)
-//used for:
+//identifies particle system (particle deform and particle model)
+//used to:
 // 1) find generated cutoff map (collisionStatic)
-// 2) randomize rand seed of surface emitters (e.g. in worldspawn)
-struct idPartSysSurfaceEmitterSignature {
-	idStr renderModelName;
-	int surfaceIndex;
-	int particleStageIndex;
+// 2) randomize rand seed of emitters
+struct idPartSysEmitterSignature {
+	//for surface emitter: name of renderModel (e.g. "_area9" or "func_static_173")
+	//for model emitter: entity name as in .map file (e.g. "atdm_moveable_candle1_4")
+	idStr mainName;
+	//model emitter only: suffix in model spawnarg (e.g. "_lit" or "_extinguished")
+	idStr modelSuffix;
+	//model emitter only: def_attach path (e.g. "_flame2" or "_candle_flame")
+	//TODO: idStr attachSuffix;
+	//surface emitter only: index of surface in model
+	int surfaceIndex = 0;
+	//index of particle stage in particle system
+	int particleStageIndex = 0;
+
 };
 //computes "randomizer" for particle deform particle system
 //it affects random seed of each particle, so that same particledecl-s applied to nearby surfaces look different
-float idParticle_ComputeSurfaceRandomizer(const idPartSysSurfaceEmitterSignature &sign, float diversity);
+float idParticle_ComputeRandomizer(const idPartSysEmitterSignature &sign, float diversity);
 
 //---------------------------------------------------------------------------
 
@@ -91,8 +100,8 @@ bool idParticle_FindCutoffTextureSubregion(const idPartStageData &stg, const srf
 //"texinfo" is generated using idParticle_FindCutoffTextureSubregion (makes sense only for mapLayout "texture")
 //"totalParticles" must be the number of particles the whole system has, i.e. return value of idParticle_GetParticleCountOnSurface
 void idParticle_PrepareCutoffMap(
-	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysSurfaceEmitterSignature &signature, int totalParticles,
-	idImage *&image, idPartSysCutoffTextureInfo &texinfo
+	const idParticleStage *stage, const srfTriangles_t *tri, const idPartSysEmitterSignature &signature, int totalParticles,
+	idImage *&image, idPartSysCutoffTextureInfo *texinfo
 );
 
 //fetches cutoffTime from the image (with "mapLayout texture") using texcoords of emit location

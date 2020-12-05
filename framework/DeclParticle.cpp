@@ -864,12 +864,15 @@ void idParticleStage::SetCustomPathType( const char *p ) {
 const char *idParticleStage::GetCollisionStaticDirectory() {
 	return "textures/_prt_gen";
 }
-idStr idParticleStage::GetCollisionStaticImagePath(const char *modelName, int surfIdx, int stageIdx) {
+idStr idParticleStage::GetCollisionStaticImagePath(const idPartSysEmitterSignature &signature) {
 	idStr imageName;
-	//  modelName --- as "model" is named in .proc file
-	//  surfIdx --- in order of "surface" appearance inside "model"
-	//  stageIdx --- in order of appearance in .prt file
-	sprintf(imageName, "%s/cstm__%s__%d_%d.tga", GetCollisionStaticDirectory(), modelName, surfIdx, stageIdx);
+	sprintf(imageName, "%s/cstm__%s%s__%d_%d.tga",
+		GetCollisionStaticDirectory(),
+		signature.mainName.c_str(),
+		signature.modelSuffix.c_str(),
+		signature.surfaceIndex,
+		signature.particleStageIndex
+	);
 	return imageName;
 }
 idImage *idParticleStage::LoadCutoffTimeMap(const char *imagePath) {

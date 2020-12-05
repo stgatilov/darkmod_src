@@ -909,21 +909,21 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 		int totalParticles = idParticle_GetParticleCountOnSurface(*stage, srcTri, totalArea, psys.totalParticles);
 
-		idPartSysSurfaceEmitterSignature sign;
-		sign.renderModelName = renderModel->Name();
+		idPartSysEmitterSignature sign;
+		sign.mainName = renderModel->Name();
 		sign.surfaceIndex = surfIdx;
 		sign.particleStageIndex = stageIdx;
 
 		idPartSysEmit psEmit;
 		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
 		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
-		psEmit.randomizer = idParticle_ComputeSurfaceRandomizer(sign, renderEntity->shaderParms[SHADERPARM_DIVERSITY]);
+		psEmit.randomizer = idParticle_ComputeRandomizer(sign, renderEntity->shaderParms[SHADERPARM_DIVERSITY]);
 		psEmit.totalParticles = psys.totalParticles;
 		psEmit.viewTimeMs = renderView->time;
 
 		idPartSysCutoffTextureInfo cutoffInfo;
 		idImage *cutoffImage;
-		idParticle_PrepareCutoffMap(stage, srcTri, sign, totalParticles, cutoffImage, cutoffInfo);
+		idParticle_PrepareCutoffMap(stage, srcTri, sign, totalParticles, cutoffImage, &cutoffInfo);
 
 		// allocate a srfTriangles in temp memory that can hold all the particles
 		int	outVertexCount = totalParticles * stage->NumQuadsPerParticle();
