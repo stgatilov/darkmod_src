@@ -5513,8 +5513,8 @@ void idEntity::BreakBindToMaster( void ) {
 	}
 
 	idEntity *oldBindMaster = bindMaster;
-	bindJoint = INVALID_JOINT;
-	bindBody = -1;
+	//note: bindJoint and bindBody should be saved
+	//they are already new if we are rebinding to other entity
 	bindMaster = NULL;
 
 	assert(ValidateBindTeam());
@@ -5554,6 +5554,8 @@ void idEntity::Unbind( void ) {
 	}
 
 	if (g_entityBindNew.GetBool()) {
+		bindJoint = INVALID_JOINT;
+		bindBody = -1;
 		BreakBindToMaster();
 	}
 	else {
