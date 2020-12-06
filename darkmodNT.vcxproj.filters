@@ -46,9 +46,6 @@
     <Filter Include="Game\GameSys">
       <UniqueIdentifier>{979bed74-b0ad-4b91-92a5-51f703280c0c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\Http">
-      <UniqueIdentifier>{ab1f887d-fe95-4de4-9fa9-94e250aa3e51}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Game\Inventory">
       <UniqueIdentifier>{9187785c-a030-476a-86e0-852991ff64e3}</UniqueIdentifier>
     </Filter>
@@ -129,6 +126,9 @@
     </Filter>
     <Filter Include="Renderer\Backend">
       <UniqueIdentifier>{16a792a5-ae3f-4d05-b7cc-1c497c34aa43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Network">
+      <UniqueIdentifier>{ab1f887d-fe95-4de4-9fa9-94e250aa3e51}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -673,10 +673,7 @@
       <Filter>Game\GameSys</Filter>
     </ClInclude>
     <ClInclude Include="game\Http\HttpConnection.h">
-      <Filter>Game\Http</Filter>
-    </ClInclude>
-    <ClInclude Include="game\Http\HttpRequest.h">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClInclude>
     <ClInclude Include="game\Inventory\Category.h">
       <Filter>Game\Inventory</Filter>
@@ -1391,7 +1388,7 @@
       <Filter>Game\GameSys</Filter>
     </ClInclude>
     <ClInclude Include="game\Http\MessageTcp.h">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClInclude>
     <ClInclude Include="sound\snd_efxpresets.h">
       <Filter>Sound</Filter>
@@ -1501,6 +1498,21 @@
     <ClInclude Include="renderer\backend\ShadowMapStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\ParticleSystem.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\ParticleSystem_decl.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\ParticleSystem_def.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Http\HttpRequest.h">
+      <Filter>Game\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\hashing\sha256.h">
+      <Filter>idLib\Hashing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1591,9 +1603,6 @@
       <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="renderer\Cinematic.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_arb2.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_common.cpp">
@@ -2152,10 +2161,7 @@
       <Filter>Game\GameSys</Filter>
     </ClCompile>
     <ClCompile Include="game\Http\HttpConnection.cpp">
-      <Filter>Game\Http</Filter>
-    </ClCompile>
-    <ClCompile Include="game\Http\HttpRequest.cpp">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClCompile>
     <ClCompile Include="game\Inventory\Category.cpp">
       <Filter>Game\Inventory</Filter>
@@ -2843,7 +2849,7 @@
       <Filter>Game\GameSys</Filter>
     </ClCompile>
     <ClCompile Include="game\Http\MessageTcp.cpp">
-      <Filter>Game\Http</Filter>
+      <Filter>Game\Network</Filter>
     </ClCompile>
     <ClCompile Include="sound\snd_efxpresets.cpp">
       <Filter>Sound</Filter>
@@ -2946,6 +2952,15 @@
     </ClCompile>
     <ClCompile Include="renderer\backend\ShadowMapStage.cpp">
       <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\ParticleSystem.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Http\HttpRequest.cpp">
+      <Filter>Game\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\hashing\sha256.c">
+      <Filter>idLib\Hashing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
