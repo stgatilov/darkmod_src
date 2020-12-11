@@ -43,6 +43,12 @@ void Downloader::SetProgressCallback(const GlobalProgressCallback &progressCallb
 void Downloader::SetErrorMode(bool silent) {
     _silentErrors = silent;
 }
+void Downloader::SetUserAgent(const char *useragent) {
+    if (useragent)
+        _useragent.reset(new std::string(useragent));
+    else
+        _useragent.reset();
+}
 
 void Downloader::DownloadAll() {
     if (_progressCallback)
@@ -174,6 +180,8 @@ void Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     _currResponse->url = url;
     _currResponse->progressWeight = double(thisEstimate) / totalEstimate;
     CURL *curl = _curlHandle.get();
+    if (_useragent)
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, _useragent->c_str());
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_RANGE, byterangeStr.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (curl_write_callback)write_callback);

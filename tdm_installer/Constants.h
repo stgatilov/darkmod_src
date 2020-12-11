@@ -27,3 +27,5 @@
 #else
 #define TDM_DARKMOD_SHORTCUT_EXECUTABLES {"thedarkmod.x64", "thedarkmod.x86"}
 #endif
+
+#define TDM_INSTALLER_USERAGENT "tdm_installer/" TDM_INSTALLER_VERSION

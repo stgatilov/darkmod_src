@@ -12,6 +12,16 @@
 #include "StoredState.h"
 #include "State.h"
 
+
+//small wrapper to share common initialization
+struct Downloader : public ZipSync::Downloader {
+	Downloader(ZipSync::ProgressIndicator *progress = nullptr) {
+		SetUserAgent(TDM_INSTALLER_USERAGENT);
+		if (progress)
+			SetProgressCallback(progress->GetDownloaderCallback());
+	}
+};
+
 //=======================================================================================
 
 static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir) {
@@ -205,9 +215,7 @@ bool Actions::NeedsSelfUpdate(ZipSync::ProgressIndicator *progress) {
 
 	//fast pass: download hash of updater
 	g_logger->infof("Checking installer executable at %s...", exeUrl.c_str());
-	ZipSync::Downloader downloaderPreliminary;
-	if (progress)
-		downloaderPreliminary.SetProgressCallback(progress->GetDownloaderCallback());
+	Downloader downloaderPreliminary(progress);
 	ZipSync::HashDigest desiredHash = ZipSync::GetHashesOfRemoteChecksummedZips(downloaderPreliminary, {exeUrl})[0];
 	g_logger->infof("Downloaded bytes: %lld", downloaderPreliminary.TotalBytesDownloaded());
 	g_logger->infof("Hash of installer on server is %s", desiredHash.Hex().c_str());
@@ -219,9 +227,7 @@ bool Actions::NeedsSelfUpdate(ZipSync::ProgressIndicator *progress) {
 	else {
 		//second pass: download full manifests when necessary
 		g_logger->infof("Downloading installer executable from %s...", exeUrl.c_str());
-		ZipSync::Downloader downloaderFull;
-		if (progress)
-			downloaderFull.SetProgressCallback(progress->GetDownloaderCallback());
+		Downloader downloaderFull(progress);
 		std::vector<std::string> outPaths = {exeZipPath};
 		ZipSync::DownloadChecksummedZips(downloaderFull, {exeUrl}, {desiredHash}, {}, outPaths);
 		g_logger->infof("Downloaded bytes: %lld", downloaderFull.TotalBytesDownloaded());
@@ -254,15 +260,13 @@ void Actions::ReadConfigFile(bool download, ZipSync::ProgressIndicator *progress
 
 	if (download) {
 		g_logger->infof("Downloading config file from %s...", TDM_INSTALLER_CONFIG_URL);
-		ZipSync::Downloader downloader;
+		Downloader downloader(progress);
 		auto DataCallback = [](const void *data, int len) {
 			ZipSync::StdioFileHolder f(TDM_INSTALLER_CONFIG_FILENAME, "wb");
 			int res = fwrite(data, 1, len, f);
 			ZipSyncAssert(res == len);
 		};
 		downloader.EnqueueDownload(ZipSync::DownloadSource(TDM_INSTALLER_CONFIG_URL), DataCallback);
-		if (progress)
-			downloader.SetProgressCallback(progress->GetDownloaderCallback());
 		downloader.DownloadAll();
 		g_logger->infof("Downloaded bytes: %lld", downloader.TotalBytesDownloaded());
 	}
@@ -446,10 +450,8 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 
 		//fast pass: download hashes of all manifests
 		g_logger->infof("Downloading hashes of remote manifests");
-		ZipSync::Downloader downloaderPreliminary;
+		Downloader downloaderPreliminary(progress);
 		downloaderPreliminary.SetErrorMode(true);	//skip url on download error!
-		if (progress)
-			downloaderPreliminary.SetProgressCallback(progress->GetDownloaderCallback());
 		std::vector<ZipSync::HashDigest> allHashes = ZipSync::GetHashesOfRemoteChecksummedZips(downloaderPreliminary, downloadUrls);
 		g_logger->infof("Downloaded bytes: %lld", downloaderPreliminary.TotalBytesDownloaded());
 
@@ -484,9 +486,7 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		}
 
 		//second pass: download full manifests when necessary
-		ZipSync::Downloader downloaderFull;
-		if (progress)
-			downloaderFull.SetProgressCallback(progress->GetDownloaderCallback());
+		Downloader downloaderFull(progress);
 		newManiNames.resize(downloadUrls.size());
 		std::vector<int> matching = ZipSync::DownloadChecksummedZips(downloaderFull, downloadUrls, allHashes, cachedManiNames, newManiNames);
 		g_logger->infof("Downloaded bytes: %lld", downloaderFull.TotalBytesDownloaded());

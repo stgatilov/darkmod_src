@@ -37,6 +37,7 @@ typedef std::function<int(double, const char*)> GlobalProgressCallback;
  */
 class Downloader {
     bool _silentErrors = false;
+    std::unique_ptr<std::string> _useragent;
     struct Download {
         DownloadSource src;
         DownloadFinishedCallback finishedCallback;
@@ -76,6 +77,7 @@ public:
     //silent == false: throw exception on any error up to the caller, stopping the whole run
     //silent == true: just don't call callback function for failed requests (grouped by url), no stopping, no exception
     void SetErrorMode(bool silent);
+    void SetUserAgent(const char *useragent = nullptr);
     void DownloadAll();
 
     int64_t TotalBytesDownloaded() const { return _totalBytesDownloaded; }
