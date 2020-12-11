@@ -24,7 +24,7 @@
 #define CHECK_BOUNDS_EPSILON			1.0f
 
 idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
-idCVar r_useParallelAddModels( "r_useParallelAddModels", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "add all models in parallel with jobs" );
+idCVar r_useParallelAddModels( "r_useParallelAddModels", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "parallelize R_AddModelSurfaces in frontend using jobs" );
 idCVarBool r_useClipPlaneCulling( "r_useClipPlaneCulling", "1", CVAR_RENDERER, "cull surfaces behind mirrors" );
 
 /*
