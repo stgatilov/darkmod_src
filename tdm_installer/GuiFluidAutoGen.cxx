@@ -138,7 +138,7 @@ static void cb_g_Install_ButtonCancel(Fl_Button*, void*) {
   WizardGoPrev();
 }
 
-Fl_Button *g_Install_ButtonDeleteCfg=(Fl_Button *)0;
+Fl_Button *g_Install_ButtonRestoreCfg=(Fl_Button *)0;
 
 Fl_Text_Display *g_Install_TextAdditional=(Fl_Text_Display *)0;
 
@@ -1857,17 +1857,18 @@ data, but it will be downloaded sooner or later anyway.");
           g_Install_ButtonCancel->tooltip("WARNING: This will stop the installation! All progress will be lost.");
           g_Install_ButtonCancel->callback((Fl_Callback*)cb_g_Install_ButtonCancel);
         } // Fl_Button* g_Install_ButtonCancel
-        { g_Install_ButtonDeleteCfg = new Fl_Button(420, 390, 150, 30, "Delete darkmod.cfg");
-          g_Install_ButtonDeleteCfg->tooltip("File darkmod.cfg contains most of user settings, like antialiasing level, sof\
-t shadows, play music in menu, etc. It is recommended to reset it when changin\
-g TDM version.");
-        } // Fl_Button* g_Install_ButtonDeleteCfg
+        { g_Install_ButtonRestoreCfg = new Fl_Button(380, 390, 190, 30, "Restore old darkmod.cfg");
+          g_Install_ButtonRestoreCfg->tooltip("NOT RECOMMENDED! File darkmod.cfg contains most of user settings, like antial\
+iasing level, play music in menu, etc. Installer has deleted this config file \
+because it can conflict with the new version of the game. Click this button to\
+ restore deleted config file.");
+        } // Fl_Button* g_Install_ButtonRestoreCfg
         { g_Install_TextAdditional = new Fl_Text_Display(340, 345, 660, 35);
           g_Install_TextAdditional->box(FL_NO_BOX);
           g_Install_TextAdditional->color(FL_BACKGROUND_COLOR);
           g_Install_TextAdditional->align(Fl_Align(FL_ALIGN_LEFT));
         } // Fl_Text_Display* g_Install_TextAdditional
-        { g_Install_ButtonCreateShortcut = new Fl_Button(605, 390, 150, 30, "Create shortcut");
+        { g_Install_ButtonCreateShortcut = new Fl_Button(790, 390, 145, 30, "Create shortcut");
           g_Install_ButtonCreateShortcut->tooltip("Creates desktop shortcut for TDM executable (for the current user).");
         } // Fl_Button* g_Install_ButtonCreateShortcut
         g_PageInstall->end();

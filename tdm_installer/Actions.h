@@ -55,10 +55,10 @@ public:
 	//finalize update (cleanup, manifest, unpacking, etc.)
 	static void PerformInstallFinalize(ZipSync::ProgressIndicator *progress);
 
-	//check if TDM config file is present
-	static bool CanDeleteConfig();
-	//delete TDM config file
-	static void DoDeleteConfig();
+	//did we rename darkmod.cfg to some file?
+	static bool CanRestoreOldConfig();
+	//restores old version of darkmod.cfg which was renamed automatically
+	static void DoRestoreOldConfig();
 
 	//return true if TDM shortcut is already present on Desktop
 	static bool IfShortcutExists();

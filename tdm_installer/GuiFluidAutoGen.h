@@ -66,7 +66,7 @@ extern Fl_Progress *g_Install_ProgressFinalize;
 extern Fl_Text_Display *g_Install_TextFinishedInstall;
 extern Fl_Button *g_Install_ButtonClose;
 extern Fl_Button *g_Install_ButtonCancel;
-extern Fl_Button *g_Install_ButtonDeleteCfg;
+extern Fl_Button *g_Install_ButtonRestoreCfg;
 extern Fl_Text_Display *g_Install_TextAdditional;
 extern Fl_Button *g_Install_ButtonCreateShortcut;
 void FluidAllGui();

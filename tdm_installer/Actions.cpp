@@ -711,19 +711,43 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 	for (const std::string &fn : execFiles)
 		OsUtils::MarkAsExecutable(fn);
 	if (progress)
-		progress->Update(1.0, "Executables marked");
+		progress->Update(0.95, "Executables marked");
+
+	if (progress)
+		progress->Update(0.95, "Renaming config file...");
+	if (stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME)) {
+		time_t timeval = time(0);
+		//note: use UTC time to avoid any timezone troubles
+		auto *tm = gmtime(&timeval);
+		char filename[1024] = {0};
+		int len = strftime(filename, sizeof(filename), TDM_DARKMOD_CFG_OLD_FORMAT, tm);
+		ZipSyncAssertF(len > 0 && len < sizeof(filename)-1, "Failed to format TDM config filename with datetime (%d)", len);
+		g_logger->infof("Renaming %s to %s...", TDM_DARKMOD_CFG_FILENAME, filename);
+		if (stdext::is_regular_file(filename))
+			g_logger->infof("Failed to rename: destination file already exists.");
+		else
+			stdext::rename(TDM_DARKMOD_CFG_FILENAME, filename);
+		g_state->_oldConfigFilename = filename;
+	}
+	if (progress)
+		progress->Update(1.0, "Renamed config file");
 
 	progress->Update(1.0, "Finalization complete");
 	g_logger->infof("");
 }
 
-bool Actions::CanDeleteConfig() {
-	return stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME);
+bool Actions::CanRestoreOldConfig() {
+	return g_state->_oldConfigFilename.size() > 0;
 }
-void Actions::DoDeleteConfig() {
-	g_logger->infof("Removing %s...", TDM_DARKMOD_CFG_FILENAME);
-	if (stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME))
+void Actions::DoRestoreOldConfig() {
+	ZipSyncAssert(CanRestoreOldConfig());
+	g_logger->infof("Restoring %s...", g_state->_oldConfigFilename.c_str());
+	if (stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME)) {
 		stdext::remove(TDM_DARKMOD_CFG_FILENAME);
+		g_logger->infof("Removed %s", TDM_DARKMOD_CFG_FILENAME);
+	}
+	stdext::rename(g_state->_oldConfigFilename.c_str(), TDM_DARKMOD_CFG_FILENAME);
+	g_state->_oldConfigFilename.clear();
 	g_logger->infof("Finished.");
 	g_logger->infof("");
 }

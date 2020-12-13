@@ -8,10 +8,10 @@
 
 
 static void Install_UpdateAdditional() {
-	if (Actions::CanDeleteConfig())
-		g_Install_ButtonDeleteCfg->activate();
+	if (Actions::CanRestoreOldConfig())
+		g_Install_ButtonRestoreCfg->activate();
 	else
-		g_Install_ButtonDeleteCfg->deactivate();
+		g_Install_ButtonRestoreCfg->deactivate();
 	if (Actions::IfShortcutExists())
 		g_Install_ButtonCreateShortcut->label("Recreate shortcut");
 	else
@@ -27,7 +27,7 @@ void Install_MetaPerformInstall() {
 
 	g_Install_TextFinishedInstall->hide();
 	g_Install_TextAdditional->hide();
-	g_Install_ButtonDeleteCfg->hide();
+	g_Install_ButtonRestoreCfg->hide();
 	g_Install_ButtonCreateShortcut->hide();
 
 	g_Wizard->next();
@@ -76,7 +76,7 @@ void Install_MetaPerformInstall() {
 
 	g_Install_TextFinishedInstall->show();
 	g_Install_TextAdditional->show();
-	g_Install_ButtonDeleteCfg->show();
+	g_Install_ButtonRestoreCfg->show();
 	g_Install_ButtonCreateShortcut->show();
 
 	g_Install_ButtonClose->activate();
@@ -90,9 +90,9 @@ void cb_Install_ButtonClose(Fl_Widget *self) {
 	exit(0);
 }
 
-void cb_Install_ButtonDeleteCfg(Fl_Widget *self) {
+void cb_Install_ButtonRestoreCfg(Fl_Widget *self) {
 	try {
-		Actions::DoDeleteConfig();
+		Actions::DoRestoreOldConfig();
 	}
 	catch(std::exception &e) {
 		GuiMessageBox(mbfError, e.what());

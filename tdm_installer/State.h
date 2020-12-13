@@ -27,6 +27,9 @@ struct State {
 	//if present, then it is prepared to update to _versionRefreshed
 	//action RefreshVersionInfo stores it here if plan is successfully developed
 	std::unique_ptr<ZipSync::UpdateProcess> _updater;
+	//name of the renamed darkmod.cfg file
+	//useful if user decides to restore it
+	std::string _oldConfigFilename;
 
 	void Reset();
 	~State();

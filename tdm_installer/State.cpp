@@ -11,4 +11,5 @@ void State::Reset() {
 	_loadedManifests.clear();
 	_versionRefreshed.clear();
 	_updater.reset();
+	_oldConfigFilename.clear();
 }
