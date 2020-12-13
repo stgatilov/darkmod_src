@@ -982,7 +982,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 			if ( tri->ambientCache.IsValid() ) {
 				// add the drawsurf
-				R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect, true );
+				R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect, -1.0f, true );
 			}
 		}
 	}
