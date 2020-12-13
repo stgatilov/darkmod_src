@@ -1264,6 +1264,9 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		}
 	}
 
+	int totalPolysCount = 0;
+	int nontriPolysCount = 0;
+
 	// build the surfaces
 	for ( lwoSurf = lwo->surf, i = 0; lwoSurf; lwoSurf = lwoSurf->next, i++ ) {
 		im1 = declManager->FindMaterial( lwoSurf->name );
@@ -1306,8 +1309,9 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 				continue;
 			}
 
+			totalPolysCount++;
 			if ( poly->nverts != 3 ) {
-				common->Warning( "ConvertLWOToModelSurfaces: model \'%s\' has too many verts for a poly! Make sure you triplet it down", name.c_str() );
+				nontriPolysCount++;
 				continue;
 			}
 
@@ -1431,6 +1435,13 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		}
 	}
 
+	if (nontriPolysCount > 0) {
+		common->Warning(
+			"ConvertLWOToModelSurfaces: model \'%s\' has %d/%d nontriangular polygons. Make sure you triplet it down",
+			name.c_str(), nontriPolysCount, totalPolysCount
+		);
+	}
+
 	R_StaticFree( tvRemap );
 	R_StaticFree( vRemap );
 	R_StaticFree( tvList );
@@ -1458,6 +1469,9 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 	ase->objects.Resize( obj->nlayers, obj->nlayers );
 
 	int materialRef = 0;
+
+	int totalPolysCount = 0;
+	int nontriPolysCount = 0;
 
 	for ( lwSurface *surf = obj->surf; surf; surf = surf->next ) {
 
@@ -1535,8 +1549,9 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 				continue;
 			}
 
+			totalPolysCount++;
 			if ( poly->nverts != 3 ) {
-				common->Warning( "ConvertLWOToASE: model \'%s\' has too many verts for a poly! Make sure you triplet it down", fileName );
+				nontriPolysCount++;
 				continue;
 			}
 	
@@ -1601,6 +1616,13 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 		memcpy( newFaces, mesh->faces, sizeof( mesh->faces[0] ) * mesh->numFaces );
 		Mem_Free( mesh->faces );
 		mesh->faces = newFaces;
+	}
+
+	if (nontriPolysCount > 0) {
+		common->Warning(
+			"ConvertLWOToASE: model \'%s\' has %d/%d nontriangular polygons. Make sure you triplet it down",
+			name.c_str(), nontriPolysCount, totalPolysCount
+		);
 	}
 
 	return ase;
