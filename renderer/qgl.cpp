@@ -111,6 +111,8 @@ void GLimp_CheckRequiredFeatures( void ) {
 	if ( glConfig.maxTextures < MAX_MULTITEXTURE_UNITS ) {
 		common->Error( "   Too few!\n" );
 	}
+	qglGetIntegerv( GL_MAX_SAMPLES, &glConfig.maxSamples );
+	common->Printf( "Max anti-aliasing samples: %d\n", glConfig.maxSamples );
 
 	int n;
 	qglGetIntegerv( GL_MAX_GEOMETRY_OUTPUT_VERTICES_ARB, &n );
