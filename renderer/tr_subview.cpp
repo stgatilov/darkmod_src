@@ -585,10 +585,10 @@ bool R_Lightgem_Render() {
 		-1.0f, 0.0f, 0.0f
 	); 
 
-	// Give the rv the current ambient light values - Not all of the other values, avoiding fancy effects.
-	lightgemRv.shaderParms[2] = gameLocal.globalShaderParms[2]; // Ambient R
-	lightgemRv.shaderParms[3] = gameLocal.globalShaderParms[3]; // Ambient G
-	lightgemRv.shaderParms[4] = gameLocal.globalShaderParms[4]; // Ambient B
+	// Give the rv the current ambient light values (obsolete #5449)
+	lightgemRv.shaderParms[2] = 0.0f;
+	lightgemRv.shaderParms[3] = 0.0f;
+	lightgemRv.shaderParms[4] = 0.0f;
 
 	// angua: render view needs current time, otherwise it will be unable to see time-dependent changes in light shaders such as flickering torches
 	lightgemRv.time = gameLocal.GetTime();
