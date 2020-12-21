@@ -2870,8 +2870,7 @@ void Cmd_ShowKeys_f( const idCmdArgs& args )
 
 		//if ( strcmp( common->GetI18N()->Translate( value ), "Keys" ) ) continue; // no key
 		if ( strcmp( value, "#str_02392" ) ) continue; // no key
-		if ( !(ent->thinkFlags & TH_UPDATEVISUALS) )
-			continue;
+		//if ( !(ent->thinkFlags & TH_UPDATEVISUALS) ) continue;
 
 		value = ent->spawnArgs.GetString( "inv_name" );
 		auto invItem = gameLocal.GetLocalPlayer()->InventoryCursor()->Inventory()->GetItem( value );
