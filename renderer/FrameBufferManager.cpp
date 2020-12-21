@@ -273,6 +273,8 @@ void FrameBufferManager::CreateGui( FrameBuffer *gui ) {
 }
 
 void FrameBufferManager::CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight ) {
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) // 5257
+		image->MakeDefault();
 	image->Bind();
 	if ( activeFbo == primaryFbo ) {
 		x *= r_fboResolution.GetFloat();
