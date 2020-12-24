@@ -18,8 +18,8 @@
 #define TDM_INSTALLER_FREESPACE_MINIMUM 100				//100 MB --- hardly enough even for differential update
 #define TDM_INSTALLER_FREESPACE_RECOMMENDED (5<<10)		//5 GB --- enough for any update, since it is larger than size of TDM
 
-#define TDM_DARKMOD_CFG_FILENAME "darkmod.cfg"
-#define TDM_DARKMOD_CFG_OLD_FORMAT "darkmod_%y%m%d_%H%M%S.cfg"
+#define TDM_DARKMOD_CFG_FILENAME "Darkmod.cfg"
+#define TDM_DARKMOD_CFG_OLD_FORMAT "Darkmod_%y%m%d_%H%M%S.cfg"
 #define TDM_DARKMOD_SHORTCUT_NAME "TheDarkMod"
 #define TDM_DARKMOD_SHORTCUT_ICON "TDM_icon.ico"
 #define TDM_DARKMOD_SHORTCUT_COMMENT "TheDarkMod: Stealth Gaming in a Gothic Steampunk World"
