@@ -1433,7 +1433,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			if ( r_useClipPlaneCulling && tr.viewDef->clipPlane ) { // 4946 - try to cull transparent objects behind mirrors, that are ignored by clip plane during depth pass
 				idPlane inversePlane( -tr.viewDef->clipPlane->Normal(), -tr.viewDef->clipPlane->Dist() ); // for some reason, the clipPlane normal points to the wrong side
 				if ( R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 1, &inversePlane ) ) { // can't just inverse R_CullLocalBox result, or else intersecting objects will disappear
-					return; // maybe save a couple draw calls for solid objecets, too
+					continue; // maybe save a couple draw calls for solid objecets, too
 				}
 			}
 
