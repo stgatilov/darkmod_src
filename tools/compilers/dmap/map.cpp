@@ -123,6 +123,21 @@ static void SetBrushContents( uBrush_t *b ) {
 	b->contents = contents;
 }
 
+static void CheckBrushMirrorSides( uBrush_t *b ) {
+	idList<const idMaterial *> mirrorMaterials;
+
+	for (int i = 0 ; i < buildBrush->numsides ; i++) {
+		const idMaterial *mat = buildBrush->sides[i].material;
+		if (!mat->HasMirrorLikeStage())
+			continue;
+
+		if (mirrorMaterials.Find(mat)) {
+			common->Warning("Brush %d (entity %d) has several sides with same mirror-like material %s", buildBrush->brushnum, buildBrush->entitynum, mat->GetName());
+			return;
+		}
+		mirrorMaterials.Append(mat);
+	}
+}
 
 //============================================================================
 
@@ -317,6 +332,10 @@ static void ParseBrush( const idMapBrush *mapBrush, int primitiveNum ) {
 	if ( !RemoveDuplicateBrushPlanes( buildBrush ) ) {
 		return;
 	}
+
+	//stgatilov #4707: warn when brush has several sides with same "mirror" texture
+	//since the engine only chooses one of them to determine mirror plane
+	CheckBrushMirrorSides(buildBrush);
 
 	// get the content for the entire brush
 	SetBrushContents( buildBrush );
