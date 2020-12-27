@@ -1399,6 +1399,25 @@ bool CFrobDoor::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis)
 
 	axis.Identity();
 
+	if (areaPortal) {
+		//stgatilov #5462: ensure origin and player are on the same side of the door portal
+		idPlane portalPlane = gameRenderWorld->GetPortalPlane(areaPortal);
+		assert(fabs(portalPlane.Normal().Length() - 1.0f) <= 1e-3f);
+
+		float eyeDist = portalPlane.Distance(eyePos);
+		float originDist = portalPlane.Distance(origin);
+		if (eyeDist * originDist < 0.0f) {	//different sides
+			//move origin to the portal plane plus one unit
+			float shift = fabs(originDist) + 1.0f;
+			//don't move by more than 30% of door diameter
+			float cap = 0.3f * bounds.GetSize().Length();
+			if (shift > cap)
+				shift = cap;
+			idVec3 displacement = (originDist < 0.0f ? 1.0f : -1.0f) * shift * portalPlane.Normal();
+			origin += displacement;
+		}
+	}
+
 	// The caller expects the origin in local space
 	origin -= GetPhysics()->GetOrigin();
 

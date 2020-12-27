@@ -363,6 +363,10 @@ public:
 	virtual	void			SetPortalState( qhandle_t portal, int blockingBits ) = 0;
 	virtual int				GetPortalState( qhandle_t portal ) = 0;
 
+	// stgatilov #5462: returns the plane of the portal, oriented arbitrarily
+	// used to ensure that the origin of door sound is on the right side 
+	virtual idPlane			GetPortalPlane( qhandle_t portal ) = 0;
+
 	// grayman #3042 - set portal sound loss (in dB)
 	virtual void			SetPortalPlayerLoss( qhandle_t portal, float loss ) = 0;
 

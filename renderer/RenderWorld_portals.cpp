@@ -1121,6 +1121,17 @@ int		idRenderWorldLocal::GetPortalState( qhandle_t portal ) {
 	return doublePortals[portal - 1].blockingBits;
 }
 
+idPlane idRenderWorldLocal::GetPortalPlane( qhandle_t portal ) {
+	if ( portal == 0 ) {
+		return plane_origin;
+	}
+
+	if ( portal < 1 || portal > doublePortals.Num() ) {
+		common->Error( "GetPortalState: bad portal number %i", portal );
+	}
+	return doublePortals[portal - 1].portals[0].plane;
+}
+
 /*
 =====================
 idRenderWorldLocal::ShowPortals
