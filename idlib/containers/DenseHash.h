@@ -18,8 +18,8 @@
 
 
 // This hash table works similarly to google dense map.
-// Only POD elements work well within it.
 // Should be used for large tables.
+// Note: just like idList, always keeps all values constructed.
 
 template<class Key, class Value, class HashFunction>
 class idDenseHash {
@@ -38,7 +38,7 @@ public:
 		maxLoadPercent = loadfactor;
 		empty = _empty;
 		size1 = 3;
-		delete table;
+		delete[] table;
 		table = new Elem[size1 + 1];
 		for (int i = 0; i <= size1; i++)
 			table[i].key = empty;

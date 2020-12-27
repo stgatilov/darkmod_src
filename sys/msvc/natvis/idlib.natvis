@@ -123,6 +123,24 @@
     </Expand>
   </Type>
 
+  <Type Name="idFlexList&lt;*,*&gt;">
+    <DisplayString Condition="num == 0">[{num}]</DisplayString>
+    <DisplayString Condition="num == 1">[{num}] {{ {list[0]} }}</DisplayString>
+    <DisplayString Condition="num == 2">[{num}] {{ {list[0]}, {list[1]} }}</DisplayString>
+    <DisplayString Condition="num == 3">[{num}] {{ {list[0]}, {list[1]}, {list[2]} }}</DisplayString>
+    <DisplayString Condition="num == 4">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]} }}</DisplayString>
+    <DisplayString Condition="num == 5">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]} }}</DisplayString>
+    <DisplayString Condition="num == 6">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]} }}</DisplayString>
+    <DisplayString Condition="num == 7">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]}, {list[6]} }}</DisplayString>
+    <DisplayString Condition="num &gt;= 8">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]}, {list[6]}, ... }}</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>num</Size>
+        <ValuePointer>list</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
   <Type Name="idDict">
     <DisplayString>{args}</DisplayString>
     <Expand>
