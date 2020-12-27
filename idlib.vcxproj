@@ -189,7 +189,7 @@
     <ClCompile Include="idlib\geometry\Winding2D.cpp" />
     <ClCompile Include="idlib\hashing\MD4.cpp" />
     <ClCompile Include="idlib\hashing\MD5.cpp" />
-    <ClCompile Include="idlib\hashing\sha256.c" >
+    <ClCompile Include="idlib\hashing\sha256.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
@@ -256,6 +256,7 @@
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
     <ClInclude Include="idlib\containers\DenseHash.h" />
+    <ClInclude Include="idlib\containers\FlexList.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
     <ClInclude Include="idlib\containers\HashTable.h" />
     <ClInclude Include="idlib\containers\Hierarchy.h" />

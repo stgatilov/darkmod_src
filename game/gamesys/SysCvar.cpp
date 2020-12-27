@@ -466,10 +466,6 @@ idCVar cv_door_auto_open_on_unlock("tdm_door_auto_open_on_unlock",	"1",	CVAR_GAM
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
 /**
- * Ambient light method variable
- */
-idCVar cv_ambient_method("tdm_ambient_method", "0",    CVAR_GAME | CVAR_INTEGER, "Method used for ambient light rendering.\n\n0 = Enhanced, ambient light method (uses the ambient light for the ambient brightness)\n1 = Texture Brightness method (uses texture brightness instead of light. This is faster but looks worse)", 0, 1 );
-/**
  * Volume of speakers with s_music set
  */
 idCVar cv_music_volume("tdm_music_volume",		     "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for speakers with s_music set. Goes from -40 to 0.", -40, 0 );

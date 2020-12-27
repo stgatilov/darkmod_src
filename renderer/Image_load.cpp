@@ -441,9 +441,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			cpuData.compressedSize = 0;
 			cpuData.width = width;
 			cpuData.height = height;
-			cpuData.sides = 1;
 			cpuData.pic[0] = ( byte* ) R_StaticAlloc( cpuData.GetSizeInBytes() );
 			memcpy(cpuData.pic[0], pic, cpuData.GetSizeInBytes() );
+			cpuData.sides = 1;
 		}
 		assert( cpuData.width == width && cpuData.height == height && cpuData.compressedSize == 0 );
 	}

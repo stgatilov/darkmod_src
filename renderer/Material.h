@@ -385,6 +385,9 @@ public:
 						// a mirror or dynamic rendered image
 	bool				HasSubview( void ) const { return hasSubview; }
 
+						// stgatilov: true if some texture stage works like mirror surface
+	bool				HasMirrorLikeStage() const;
+
 						// returns true if the material will generate shadows, not making a
 						// distinction between global and no-self shadows
 	bool				SurfaceCastsShadow( void ) const { return TestMaterialFlag( MF_FORCESHADOWS ) || !TestMaterialFlag( MF_NOSHADOWS ); }

@@ -193,7 +193,6 @@ static void GLW_GetWGLExtensionsWithFakeWindow( void ) {
 		win32.hDC = hDC;
 		GLimp_LoadFunctions();
 		win32.hDC = NULL;
-		qglGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
 		qwglDeleteContext( gRC );
 		ReleaseDC( hWnd, hDC );
 
@@ -717,12 +716,6 @@ bool GLimp_Init( glimpParms_t parms ) {
 	// getting the wgl extensions involves creating a fake window to get a context,
 	// which is pretty disgusting, and seems to mess with the AGP VAR allocation
 	GLW_GetWGLExtensionsWithFakeWindow();
-
-	if ( parms.multiSamples > glConfig.maxSamples ) {
-		common->Warning( "GLimp_Init: Tried to set multiSamples above the maximum supported by hardware" );
-		parms.multiSamples = glConfig.maxSamples;
-		r_multiSamples.SetInteger( glConfig.maxSamples );
-	}
 
 	// try to change to fullscreen
 	if ( parms.fullScreen ) {

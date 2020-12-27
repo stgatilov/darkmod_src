@@ -407,5 +407,8 @@
     <ClInclude Include="idlib\sys\sys_includes.h">
       <Filter>Sys</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\containers\FlexList.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

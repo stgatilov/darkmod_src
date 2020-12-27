@@ -67,10 +67,6 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	*/
 
 	ClearEffects();
-
-	// JC: Just set the flag so that we know that the update is needed.
-	cv_ambient_method.SetModified();
-	// cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
 }
 
 /*
@@ -999,50 +995,6 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 	}
 
 	player->DrawHUD(hud);
-
-
-	// TDM Ambient Method checking. By Dram
-	// Modified by JC Denton
-	if ( cv_ambient_method.IsModified() ) // If the ambient method option has changed
-	{
-		UpdateAmbientLight();
-	}
-}
-
-void idPlayerView::UpdateAmbientLight()
-{
-	// Finds a light with name set as ambient_world, or turns the ambient light with greatest radius into main ambient.
-	idLight* pAmbientLight = gameLocal.FindMainAmbientLight(true);
-
-	if (pAmbientLight != NULL) // If the light exists
-	{
-		if ( 0 == cv_ambient_method.GetInteger() ) // If the Ambient Light method is used
-		{
-			gameLocal.globalShaderParms[5] = 0;				// Make sure we set this flag to 0 so that materials know which pass is to be enabled.
-			gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
-			gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
-			gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
-
-			pAmbientLight->On(); // Turn on ambient light
-		}
-		else // If the Texture Brightness method is used
-		{
-
-			gameLocal.globalShaderParms[5] = 1;				// enable the extra shader branch
-			idVec3 ambient_color = pAmbientLight->spawnArgs.GetVector( "_color" );				 // Get the ambient color from the spawn arguments
-			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
-			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
-			gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
-
-			pAmbientLight->Off(); // Turn off ambient light
-
-		}
-	}
-	else // The ambient light does not exist
-	{
-		gameLocal.Printf( "Note: The main ambient light could not be determined\n"); // Show in console of light not existing in map
-	}
-	cv_ambient_method.ClearModified();
 }
 
 void idPlayerView::OnReloadImages()

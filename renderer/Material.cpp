@@ -2829,3 +2829,14 @@ void idMaterial::ReloadImages( bool force ) const {
 		}
 	}
 }
+
+bool idMaterial::HasMirrorLikeStage() const {
+	if (!HasSubview())
+		return false;
+	for (int i = 0; i < numStages; i++) {
+		dynamicidImage_t dyn = stages[i].texture.dynamic;
+		if (dyn == DI_MIRROR_RENDER || dyn == DI_XRAY_RENDER || dyn == DI_REMOTE_RENDER)
+			return true;
+	}
+	return false;
+}
