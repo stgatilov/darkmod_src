@@ -1154,7 +1154,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 {
 	drawSurf_t		*drawSurf;
 	const float		*shaderParms;
-	static float	refRegs[MAX_EXPRESSION_REGISTERS];	// don't put on stack, or VC++ will do a page touch
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
@@ -1202,6 +1201,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			// evaluate the reference shader to find our shader parms
 			const shaderStage_t *pStage;
 
+			float *refRegs = (float *)R_FrameAlloc( renderEntity->referenceShader->GetNumRegisters() * sizeof( float ) );
 			renderEntity->referenceShader->EvaluateRegisters( refRegs, renderEntity->shaderParms, tr.viewDef, renderEntity->referenceSound );
 			pStage = renderEntity->referenceShader->GetStage(0);
 
