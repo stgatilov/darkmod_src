@@ -426,14 +426,25 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 		//inspect local cache of manifests
 		std::string cacheDir = TDM_INSTALLER_ZIPSYNC_DIR "/" TDM_INSTALLER_MANICACHE_SUBDIR;
 		stdext::create_directories(cacheDir);
+
 		//detect existing manifests and names for new ones
 		g_logger->infof("Looking into manifests cache");
 		std::vector<std::string> cachedManiNames, newManiNames;
 		for (int id = 0; id < 1000 || newManiNames.size() < downloadCnt; id++) {
 			std::string filename = cacheDir + "/" + std::to_string(id) + ".iniz";
-			if (stdext::is_regular_file(filename))
-				cachedManiNames.push_back(filename);
-			else if (newManiNames.size() < downloadCnt)
+			bool valid = false;
+			if (stdext::is_regular_file(filename)) {
+				try {
+					//open file to check if it is valid
+					ZipSync::UnzFileHolder zf(filename.c_str());
+					valid = true;
+					cachedManiNames.push_back(filename);
+				} catch(ZipSync::ErrorException &e) {
+					g_logger->infof("Removing %s from manifest cache since it is not a valid zip", filename.c_str());
+					stdext::remove(filename);
+				}
+			}
+			if (!valid)
 				newManiNames.push_back(filename);
 		}
 		g_logger->infof("Detected %d manifests in cache", (int)cachedManiNames.size());
