@@ -330,4 +330,7 @@ public:
 
 extern idSoundSystem	*soundSystem;
 
+
+extern idCVar			s_drawSounds;
+
 #endif /* !__SOUND__ */

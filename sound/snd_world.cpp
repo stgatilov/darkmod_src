@@ -1280,8 +1280,8 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 //		def->Spatialize( listenerPos, listenerArea, rw ); // grayman #4882
 
 		// per-sound debug options
-		if ( idSoundSystemLocal::s_drawSounds.GetInteger() && rw ) {
-			if ( def->distance < def->maxDistance || idSoundSystemLocal::s_drawSounds.GetInteger() > 1 ) {
+		if ( s_drawSounds.GetInteger() && rw ) {
+			if ( def->distance < def->maxDistance || s_drawSounds.GetInteger() > 1 ) {
 				idBounds ref;
 				ref.Clear();
 				ref.AddPoint( idVec3( -10, -10, -10 ) );
