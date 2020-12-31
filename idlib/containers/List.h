@@ -121,6 +121,7 @@ public:
 	bool			RemoveIndex( const int index );						// remove the element at the given index and keep items sorted
 	bool			RemoveIndex( const int index, bool keepSorted );	// Tels: remove the element at the given index, keep sorted only if wanted
 	bool			Remove( const type & obj );							// remove the element
+	type			Pop();												// stgatilov: remove and return last element
 	void			Sort( cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
 	void			SortSubSection( int startIndex, int endIndex, cmp_t *compare = ( cmp_t * )&idListSortCompare<type> );
 	void			Reverse();											// stgatilov: reverse order of elements
@@ -995,6 +996,19 @@ ID_INLINE bool idList<type>::Remove( type const & obj ) {
 	}
 	
 	return false;
+}
+
+/*
+================
+idList<type>::Pop
+
+Returns the last element of the list (by value), removing it at the same time.
+================
+*/
+template< class type >
+ID_INLINE type idList<type>::Pop( ) {
+	assert(num >= 0);
+	return list[--num];
 }
 
 /*
