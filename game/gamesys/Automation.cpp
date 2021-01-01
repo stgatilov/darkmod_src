@@ -334,6 +334,11 @@ void Automation::ParseAction(ParseIn &parseIn) {
 				if (ok)
 					cmdSystem->SetupReloadEngine(idCmdArgs());
 			}
+			else if (idStr::Cmp(name, "0") == 0) {
+				gameLocal.m_MissionManager->UninstallMod();
+				ok = true;
+				cmdSystem->SetupReloadEngine(idCmdArgs());
+			}
 			WriteResponse(parseIn.seqno, (ok ? "done" : "error"));
 		}
 	}
@@ -499,6 +504,35 @@ void Automation::ParseQuery(ParseIn &parseIn) {
 		}
 		else 
 			WriteResponse(parseIn.seqno, "");
+	}
+
+	if (token == "status") {
+		CModInfoPtr mod = gameLocal.m_MissionManager->GetCurrentModInfo();
+		const char *modName = (mod ? mod->modName.c_str() : "0");
+		const char *mapName = gameLocal.GetMapName();
+		if (idStr::Cmpn(mapName, "maps/", 5) == 0)
+			mapName = mapName + 5;
+		const char *guiActiveName = "";
+		if (idUserInterface *guiActive = session->GetGui(idSession::gtActive)) {
+			if (guiActive == session->GetGui(idSession::gtMainMenu))
+				guiActiveName = "mainmenu";
+			else if (guiActive == session->GetGui(idSession::gtLoading))
+				guiActiveName = "loading";
+			else if (guiActive == session->GetGui(idSession::gtRestart))
+				guiActiveName = "restart";
+			else
+				guiActiveName = "?unknown?";
+		}
+
+		idStr text;
+		char buff[256];
+		sprintf(buff, "currentfm %s\n", modName);
+		text += buff;
+		sprintf(buff, "mapname %s\n", mapName);
+		text += buff;
+		sprintf(buff, "guiactive %s\n", guiActiveName);
+		text += buff;
+		WriteResponse(parseIn.seqno, text.c_str());
 	}
 }
 
