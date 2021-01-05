@@ -1403,6 +1403,7 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 
 	delete loadStack;
 	loadStack = nullptr;
+	isImmutable = false;
 }
 
 /*
