@@ -664,20 +664,7 @@ idDict::ListKeys_f
 ================
 */
 void idDict::ListKeys_f( const idCmdArgs &args ) {
-	int i;
-	idList<const idPoolStr *> keyStrings;
-
-	for ( i = 0; i < globalKeys.Num(); i++ ) {
-		keyStrings.Append( globalKeys[i] );
-	}
-
-	keyStrings.Sort();
-
-	for ( i = 0; i < keyStrings.Num(); i++ ) {
-		idLib::common->Printf( "%s\n", keyStrings[i]->c_str() );
-	}
-
-	idLib::common->Printf( "%5d keys\n", keyStrings.Num() );
+	globalKeys.PrintAll("keys");
 }
 
 /*
@@ -686,18 +673,5 @@ idDict::ListValues_f
 ================
 */
 void idDict::ListValues_f( const idCmdArgs &args ) {
-	int i;
-	idList<const idPoolStr *> valueStrings;
-
-	for ( i = 0; i < globalValues.Num(); i++ ) {
-		valueStrings.Append( globalValues[i] );
-	}
-
-	valueStrings.Sort();
-
-	for ( i = 0; i < valueStrings.Num(); i++ ) {
-		idLib::common->Printf( "%s\n", valueStrings[i]->c_str() );
-	}
-
-	idLib::common->Printf( "%5d values\n", valueStrings.Num() );
+	globalValues.PrintAll("values");
 }

@@ -183,6 +183,9 @@
     </ClCompile>
     <ClCompile Include="idlib\ParallelJobList.cpp" />
     <ClCompile Include="idlib\Thread.cpp" />
+    <ClCompile Include="idlib\containers\StrPool.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
