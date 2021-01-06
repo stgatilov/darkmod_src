@@ -157,6 +157,13 @@ bool ProcessModels( void ) {
 					common->Warning("Entity \"%s\" has bad rotation matrix", name);
 			}
 		}
+
+		/*
+		 * stgatilov #5186: Starting with 2.09, this warning is no longer necessary.
+		 * Because all hack-rotated entities are fixed during map load (with proxy models).
+		 * Moreover, mocking mappers with this warning is undesirable, because stock prefabs have such entities too.
+		 */
+#if 0
 		//complain about func_static-s with bad rotation only once
 		if (int k = badRotationFuncStatics.Num()) {
 			idStr list;
@@ -169,6 +176,7 @@ bool ProcessModels( void ) {
 				list += ", ...";
 			common->Warning("Detected %d func_static-s with bad rotation: [%s]", k, list.c_str());
 		}
+#endif
 	}
 
 	oldVerbose = dmapGlobals.verbose;
