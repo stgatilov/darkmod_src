@@ -27,7 +27,6 @@
 
 class idFile;
 class idDemoFile;
-class idWindow;
 
 
 class idUserInterface {
@@ -149,9 +148,6 @@ public:
 
 								// De-allocates a list gui
 	virtual void				FreeListGUI( idListGUI *listgui ) = 0;
-
-								// Dirty hack for LoadStack to know if saved idWindow pointer is dead
-	virtual bool				IsWindowAlive( idWindow *window ) const = 0;
 
 								// hack: needed for gamepad support
 	virtual bool				IsBindHandlerActive() const = 0;

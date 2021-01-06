@@ -89,12 +89,8 @@ void LoadStack::Level::Print(int indent) const {
 		common->Printf("%s[map entity: %s]\n", spaces, mapEntity->epairs.GetString("name"));
 	else if (type == tEntity)
 		common->Printf("%s[game entity: %s]\n", spaces, entity->GetName());
-	else if (type == tWindow) {
-		const char *name = "%DEAD%";
-		if (uiManager->IsWindowAlive(window))
-			name = window->GetName();
-		common->Printf("%s[window: %s]\n", spaces, name);
-	}
+	else if (type == tWindow)
+		common->Printf("%s[window: %s]\n", spaces, window->GetName());
 	else
 		common->Printf("%s[corrupted: %d]\n", spaces, type);
 }
