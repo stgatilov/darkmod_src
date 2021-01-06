@@ -26,6 +26,7 @@
 
 #include "GamepadInput.h"
 #include "../renderer/backend/RenderBackend.h"
+#include "LoadStack.h"
 
 #define MAX_WARNING_LIST	256
 
@@ -2430,6 +2431,8 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "showDictMemory", idDict::ShowMemoryUsage_f, CMD_FL_SYSTEM, "shows memory used by dictionaries" );
 	cmdSystem->AddCommand( "listDictKeys", idDict::ListKeys_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all keys used by dictionaries" );
 	cmdSystem->AddCommand( "listDictValues", idDict::ListValues_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all values used by dictionaries" );
+	cmdSystem->AddCommand( "showLoadStackMemory", LoadStack::ShowMemoryUsage_f, CMD_FL_SYSTEM, "shows memory used by load stack strings (see decl_stack)" );
+	cmdSystem->AddCommand( "listLoadStackStrings", LoadStack::ListStrings_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all strings stored in load stacks (see decl_stack)" );
 	cmdSystem->AddCommand( "testSIMD", idSIMD::Test_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "test SIMD code" );
 
 	// localization

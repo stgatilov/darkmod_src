@@ -870,6 +870,8 @@ void idDeclManagerLocal::Shutdown( void ) {
 	int			i, j;
 	idDeclLocal *decl;
 
+	loadStack.Clear();
+
 	// free decls
 	for ( i = 0; i < DECL_MAX_TYPES; i++ ) {
 		for ( j = 0; j < linearLists[i].Num(); j++ ) {

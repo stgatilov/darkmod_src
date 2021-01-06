@@ -2161,7 +2161,6 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 		CleanUp();
 	}
 
-	declManager->BeginWindowLoad(this);
 	drawWin_t dwt;
 
 	timeLineEvents.Clear();
@@ -2172,6 +2171,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	src->ExpectTokenType( TT_NAME, 0, &token );
 
 	SetInitialState(token);
+	declManager->BeginWindowLoad(this);
 
 	src->ExpectTokenString( "{" );
 	src->ExpectAnyToken( &token );

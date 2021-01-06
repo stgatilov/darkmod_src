@@ -294,6 +294,7 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 
 	if (model) {
 		//do actual load
+		model->InitEmpty(modelName);	//make sure name is set during BeginModelLoad!
 		declManager->BeginModelLoad(model);
 		model->InitFromFile( modelName );
 		declManager->EndModelLoad(model);
