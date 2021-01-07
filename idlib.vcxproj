@@ -174,6 +174,7 @@
     <ClCompile Include="idlib\bv\Box.cpp" />
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
+    <ClCompile Include="idlib\containers\DisjointSets.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
     <ClCompile Include="idlib\containers\StrPool.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
     <ClInclude Include="idlib\containers\DenseHash.h" />
+    <ClInclude Include="idlib\containers\DisjointSets.h" />
     <ClInclude Include="idlib\containers\FlexList.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
     <ClInclude Include="idlib\containers\HashTable.h" />

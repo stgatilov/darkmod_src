@@ -183,6 +183,9 @@
     </ClCompile>
     <ClCompile Include="idlib\ParallelJobList.cpp" />
     <ClCompile Include="idlib\Thread.cpp" />
+    <ClCompile Include="idlib\containers\DisjointSets.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
     <ClCompile Include="idlib\containers\StrPool.cpp">
       <Filter>Containers</Filter>
     </ClCompile>
@@ -411,6 +414,9 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="idlib\containers\FlexList.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\DisjointSets.h">
       <Filter>Containers</Filter>
     </ClInclude>
   </ItemGroup>
