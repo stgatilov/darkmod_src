@@ -213,14 +213,14 @@ void idLight::UpdateChangeableSpawnArgs( const idDict *source ) {
 
 	idEntity::UpdateChangeableSpawnArgs( source );
 
-	if ( source ) {
+	/*if ( source ) {
 		source->Print();
 	}
 	FreeSoundEmitter( true );
 	gameEdit->ParseSpawnArgsToRefSound( source ? source : &spawnArgs, &refSound );
 	if ( refSound.shader && !refSound.waitfortrigger ) {
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
-	}
+	}*/
 
 	gameEdit->ParseSpawnArgsToRenderLight( source ? source : &spawnArgs, &renderLight );
 

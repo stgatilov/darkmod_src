@@ -927,6 +927,11 @@ idGameEdit::EntityDelete
 ================
 */
 void idGameEdit::EntityDelete( idEntity *ent, bool safe ) {
+	//stgatilov: entity destructor marks sound emitter for removal, but does not remove it immediately
+	//when we are deleting entity during map edit, we definitely want its sound to stop
+	//otherwise doing reloadMap after removing looping "speaker"-s has no effect (sound continues playing)
+	EntityStopSound(ent);
+
 	if (safe)
 		ent->PostEventMS(&EV_Remove, 0);
 	else
