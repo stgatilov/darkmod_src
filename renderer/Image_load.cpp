@@ -599,6 +599,7 @@ void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum f
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		qglGenTextures( 1, &texnum );
 	}
+	type = TT_2D;
 	this->Bind();
 	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
