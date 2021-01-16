@@ -1487,7 +1487,7 @@ static void ResolveRotationHack(idDict &spawnArgs) {
 			if (len >= 0 && buffer)
 				fileSystem->FreeFile(buffer);
 			if (!alreadyGood)
-				fileSystem->WriteFile(proxyName, intendedContents.c_str(), intendedContents.Length());
+				fileSystem->WriteFile(proxyName, intendedContents.c_str(), intendedContents.Length(), "fs_basepath", "");
 		}
 
 		kv = spawnArgs.MatchPrefix( "model", kv );

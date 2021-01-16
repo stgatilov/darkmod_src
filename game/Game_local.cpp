@@ -1709,6 +1709,7 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 				kv->GetKey().IcmpPrefix("name_attach") == 0 || 
 				kv->GetKey().IcmpPrefix("set ") == 0 ||
 				kv->GetKey().IcmpPrefix("add_link") == 0 ||
+				kv->GetKey().IcmpPrefix("s_") == 0 ||		//should we try to update sound properties?...
 			0) {
 				respawn = true;
 			}

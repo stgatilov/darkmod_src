@@ -762,7 +762,6 @@ public:
 	static idCVar			s_diffractionMax; // grayman #4219
 	static idCVar			s_device;
 	static idCVar			s_quadraticFalloff;
-	static idCVar			s_drawSounds;
 	static idCVar			s_minVolume6;
 	static idCVar			s_dotbias6;
 	static idCVar			s_minVolume2;

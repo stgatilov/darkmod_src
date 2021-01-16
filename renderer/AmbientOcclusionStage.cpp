@@ -97,6 +97,7 @@ namespace {
 
 	void CreateViewspaceDepthFBO(FrameBuffer *fbo, idImage *image, int mipLevel) {
 		// create texture, if necessary
+		image->type = TT_2D;
 		if (image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != frameBuffers->renderWidth || image->uploadHeight != frameBuffers->renderHeight ) {
 			image->PurgeImage();
 			qglGenTextures(1, &image->texnum);

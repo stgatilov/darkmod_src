@@ -1101,6 +1101,7 @@
     <ClCompile Include="idlib\CmdArgs.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
+    <ClCompile Include="idlib\containers\StrPool.cpp" />
     <ClCompile Include="idlib\Debug.cpp" />
     <ClCompile Include="idlib\Dict.cpp" />
     <ClCompile Include="idlib\geometry\DrawVert.cpp" />

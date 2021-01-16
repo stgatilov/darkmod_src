@@ -79,7 +79,7 @@
   </Type>
 
   <Type Name="idPoolStr">
-    <DisplayString>{*(idStr*)this}</DisplayString>
+    <DisplayString>[x{numUsers}] {*(idStr*)this}</DisplayString>
     <StringView>*(idStr*)this</StringView>
   </Type>
 

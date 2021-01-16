@@ -2962,6 +2962,9 @@
     <ClCompile Include="idlib\hashing\sha256.c">
       <Filter>idLib\Hashing</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\containers\StrPool.cpp">
+      <Filter>idLib\Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">
