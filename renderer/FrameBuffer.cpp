@@ -244,7 +244,6 @@ void FB_DebugShowContents() {
 	if ( r_multiSamples.GetInteger() > 1 ) {
 		frameBuffers->ResolvePrimary( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	}
-	frameBuffers->defaultFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
 	GL_ScissorRelative( 0, 0, 1, 1 );
 
