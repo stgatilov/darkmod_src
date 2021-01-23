@@ -58,7 +58,10 @@ public:
 
 	static int StringToButton( const idStr &str );
 	static int StringToType( const idStr &str );
+	static idStr ButtonToString( int button );
+	static idStr TypeToString( int type );
 
+	static void UnbindAll();
 	static void SetBinding( int button, int type, const idStr &binding );
 
 	static void SetButtonState( int button, bool pressed );
@@ -66,4 +69,6 @@ public:
 	static void UpdateAxisState( int gameAxis[MAX_JOYSTICK_AXIS] );
 
 	static idList<padActionChange_t> GetActionStateChange();
+
+	static void WriteBindings( idFile *f );
 };
