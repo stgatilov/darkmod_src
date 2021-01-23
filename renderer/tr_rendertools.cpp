@@ -33,10 +33,6 @@ typedef struct debugLine_s {
 	int			lifeTime;
 } debugLine_t;
 
-debugLine_t		rb_debugLines[ MAX_DEBUG_LINES ];
-int				rb_numDebugLines = 0;
-int				rb_debugLineTime = 0;
-
 #define MAX_DEBUG_TEXT			512
 
 typedef struct debugText_s {
@@ -50,10 +46,6 @@ typedef struct debugText_s {
 	bool		depthTest;
 } debugText_t;
 
-debugText_t		rb_debugText[ MAX_DEBUG_TEXT ];
-int				rb_numDebugText = 0;
-int				rb_debugTextTime = 0;
-
 #define MAX_DEBUG_POLYGONS		8192
 
 typedef struct debugPolygon_s {
@@ -63,11 +55,40 @@ typedef struct debugPolygon_s {
 	int			lifeTime;
 } debugPolygon_t;
 
-debugPolygon_t	rb_debugPolygons[ MAX_DEBUG_POLYGONS ];
-int				rb_numDebugPolygons = 0;
-int				rb_debugPolygonTime = 0;
+typedef struct debugPrimitives_s {
+	debugLine_t		lines[ MAX_DEBUG_LINES ];
+	int				numLines = 0;
+	int				lineTime = 0;
+
+	debugText_t		text[ MAX_DEBUG_TEXT ];
+	int				numText = 0;
+	int				textTime = 0;
+
+	debugPolygon_t	polygons[ MAX_DEBUG_POLYGONS ];
+	int				numPolygons = 0;
+	int				polygonTime = 0;
+} debugPrimitives_t;
+
+debugPrimitives_t r_debug, rb_debug;
 
 static void RB_DrawText( ImmediateRendering &ir, const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align );
+
+/*
+================
+RB_CopyDebugPrimitivesToBackend
+================
+*/
+void RB_CopyDebugPrimitivesToBackend( void ) {
+	rb_debug.lineTime = r_debug.lineTime;
+	rb_debug.numLines = r_debug.numLines;
+	memcpy( rb_debug.lines, r_debug.lines, r_debug.numLines * sizeof(debugLine_t) );
+	rb_debug.polygonTime = r_debug.polygonTime;
+	rb_debug.numPolygons = r_debug.numPolygons;
+	memcpy( rb_debug.polygons, r_debug.polygons, r_debug.numPolygons * sizeof(debugPolygon_t) );
+	rb_debug.textTime = r_debug.textTime;
+	rb_debug.numText = r_debug.numText;
+	memcpy( rb_debug.text, r_debug.text, r_debug.numText * sizeof(debugText_t) );
+}
 
 /*
 ================
@@ -279,14 +300,14 @@ void RB_CountStencilBuffer( void ) {
 
 /*
 ===================
-R_ColorByStencilBuffer
+RB_ColorByStencilBuffer
 
 Sets the screen colors based on the contents of the
 stencil buffer.  Stencil of 0 = black, 1 = red, 2 = green,
 3 = blue, ..., 7+ = white
 ===================
 */
-static void R_ColorByStencilBuffer( void ) {
+static void RB_ColorByStencilBuffer( void ) {
 	static float colors[8][3] = {
 		{0,0,0},
 		{1,0,0},
@@ -529,7 +550,7 @@ void RB_ShowLightCount( void ) {
 	}
 
 	// display the results
-	R_ColorByStencilBuffer();
+	RB_ColorByStencilBuffer();
 
 	if ( r_showLightCount.GetInteger() > 2 ) {
 		RB_CountStencilBuffer();
@@ -673,7 +694,7 @@ static void RB_ShowShadowCount( void ) {
 	}
 
 	// display the results
-	R_ColorByStencilBuffer();
+	RB_ColorByStencilBuffer();
 
 	if ( r_showShadowCount.GetInteger() == 2 ) {
 		common->Printf( "all shadows " );
@@ -1663,69 +1684,69 @@ void RB_ShowPortals( void ) {
 
 /*
 ================
-RB_ClearDebugText
+R_ClearDebugText
 ================
 */
-void RB_ClearDebugText( int time ) {
+void R_ClearDebugText( int time ) {
 	int			i;
 	int			num;
 	debugText_t	*text;
 
-	rb_debugTextTime = time;
+	r_debug.textTime = time;
 
 	if ( !time ) {
 		// free up our strings
-		text = rb_debugText;
+		text = r_debug.text;
 		for ( i = 0 ; i < MAX_DEBUG_TEXT; i++, text++ ) {
 			text->text.Clear();
 		}
-		rb_numDebugText = 0;
+		r_debug.numText = 0;
 		return;
 	}
 
 	// copy any text that still needs to be drawn
 	num	= 0;
-	text = rb_debugText;
-	for ( i = 0 ; i < rb_numDebugText; i++, text++ ) {
+	text = r_debug.text;
+	for ( i = 0 ; i < r_debug.numText; i++, text++ ) {
 		if ( text->lifeTime > time ) {
 			if ( num != i ) {
-				rb_debugText[ num ] = *text;
+				r_debug.text[ num ] = *text;
 			}
 			num++;
 		}
 	}
-	rb_numDebugText = num;
+	r_debug.numText = num;
 }
 
 /*
 ================
-RB_AddDebugText
+R_AddDebugText
 ================
 */
-void RB_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest ) {
+void R_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest ) {
 	debugText_t *debugText;
 
-	if ( rb_numDebugText < MAX_DEBUG_TEXT ) {
-		debugText = &rb_debugText[ rb_numDebugText++ ];
+	if ( r_debug.numText < MAX_DEBUG_TEXT ) {
+		debugText = &r_debug.text[ r_debug.numText++ ];
 		debugText->text			= text;
 		debugText->origin		= origin;
 		debugText->scale		= scale;
 		debugText->color		= color;
 		debugText->viewAxis		= viewAxis;
 		debugText->align		= align;
-		debugText->lifeTime		= rb_debugTextTime + lifetime;
+		debugText->lifeTime		= r_debug.textTime + lifetime;
 		debugText->depthTest	= depthTest;
 	}
 }
 
 /*
 ================
-RB_DrawTextLength
+R_DrawTextLength
 
   returns the length of the given text
 ================
 */
-float RB_DrawTextLength( const char *text, float scale, int len ) {
+float R_DrawTextLength( const char *text, float scale, int len ) {
 	int i, num, index, charIndex;
 	float spacing, textLen = 0.0f;
 
@@ -1790,7 +1811,7 @@ static void RB_DrawText( ImmediateRendering &ir, const char *text, const idVec3 
 				if ( align != 0 ) {
 					for ( j = 1; i+j <= len; j++ ) {
 						if ( i+j == len || text[i+j] == '\n' ) {
-							textLen = RB_DrawTextLength( text+i, scale, j );
+							textLen = R_DrawTextLength( text+i, scale, j );
 							break;
 						}
 					}
@@ -1845,7 +1866,7 @@ void RB_ShowDebugText( void ) {
 	int			width;
 	debugText_t	*text;
 
-	if ( !rb_numDebugText ) {
+	if ( !rb_debug.numText ) {
 		return;
 	}
 
@@ -1866,10 +1887,10 @@ void RB_ShowDebugText( void ) {
 	if ( !r_debugLineDepthTest.GetBool() ) {
 		qglDisable( GL_DEPTH_TEST );
 	}
-	text = rb_debugText;
+	text = rb_debug.text;
 
 	ImmediateRendering ir;
-	for ( i = 0 ; i < rb_numDebugText; i++, text++ ) {
+	for ( i = 0 ; i < rb_debug.numText; i++, text++ ) {
 		if ( !text->depthTest ) {
 			RB_DrawText( ir, text->text, text->origin, text->scale, text->color, text->viewAxis, text->align );
 		}
@@ -1879,9 +1900,9 @@ void RB_ShowDebugText( void ) {
 	if ( !r_debugLineDepthTest.GetBool() ) {
 		qglEnable( GL_DEPTH_TEST );
 	}
-	text = rb_debugText;
+	text = rb_debug.text;
 
-	for ( i = 0 ; i < rb_numDebugText; i++, text++ ) {
+	for ( i = 0 ; i < rb_debug.numText; i++, text++ ) {
 		if ( text->depthTest ) {
 			RB_DrawText( ir, text->text, text->origin, text->scale, text->color, text->viewAxis, text->align );
 		}
@@ -1894,51 +1915,51 @@ void RB_ShowDebugText( void ) {
 
 /*
 ================
-RB_ClearDebugLines
+R_ClearDebugLines
 ================
 */
-void RB_ClearDebugLines( int time ) {
+void R_ClearDebugLines( int time ) {
 	int			i;
 	int			num;
 	debugLine_t	*line;
 
-	rb_debugLineTime = time;
+	r_debug.lineTime = time;
 
 	if ( !time ) {
-		rb_numDebugLines = 0;
+		r_debug.numLines = 0;
 		return;
 	}
 
 	// copy any lines that still need to be drawn
 	num	= 0;
-	line = rb_debugLines;
+	line = r_debug.lines;
 
-	for ( i = 0 ; i < rb_numDebugLines; i++, line++ ) {
+	for ( i = 0 ; i < r_debug.numLines; i++, line++ ) {
 		if ( line->lifeTime > time ) {
 			if ( num != i ) {
-				rb_debugLines[ num ] = *line;
+				r_debug.lines[ num ] = *line;
 			}
 			num++;
 		}
 	}
-	rb_numDebugLines = num;
+	r_debug.numLines = num;
 }
 
 /*
 ================
-RB_AddDebugLine
+R_AddDebugLine
 ================
 */
-void RB_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest ) {
+void R_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest ) {
 	debugLine_t *line;
 
-	if ( rb_numDebugLines < MAX_DEBUG_LINES ) {
-		line = &rb_debugLines[ rb_numDebugLines++ ];
+	if ( r_debug.numLines < MAX_DEBUG_LINES ) {
+		line = &r_debug.lines[ r_debug.numLines++ ];
 		line->rgb		= color;
 		line->start		= start;
 		line->end		= end;
 		line->depthTest = depthTest;
-		line->lifeTime	= rb_debugLineTime + lifeTime;
+		line->lifeTime	= r_debug.lineTime + lifeTime;
 	}
 }
 
@@ -1952,7 +1973,7 @@ void RB_ShowDebugLines( void ) {
 	int			width;
 	debugLine_t	*line;
 
-	if ( !rb_numDebugLines ) {
+	if ( !rb_debug.numLines ) {
 		return;
 	}
 
@@ -1977,8 +1998,8 @@ void RB_ShowDebugLines( void ) {
 
 	ImmediateRendering ir;
 	ir.glBegin( GL_LINES );
-	line = rb_debugLines;
-	for ( i = 0 ; i < rb_numDebugLines; i++, line++ ) {
+	line = rb_debug.lines;
+	for ( i = 0 ; i < rb_debug.numLines; i++, line++ ) {
 		if ( !line->depthTest ) {
 			ir.glColor4fv( line->rgb.ToFloatPtr() );
 			ir.glVertex3fv( line->start.ToFloatPtr() );
@@ -1993,8 +2014,8 @@ void RB_ShowDebugLines( void ) {
 	}
 
 	ir.glBegin( GL_LINES );
-	line = rb_debugLines;
-	for ( i = 0 ; i < rb_numDebugLines; i++, line++ ) {
+	line = rb_debug.lines;
+	for ( i = 0 ; i < rb_debug.numLines; i++, line++ ) {
 		if ( line->depthTest ) {
 			ir.glColor4fv( line->rgb.ToFloatPtr() );
 			ir.glVertex3fv( line->start.ToFloatPtr() );
@@ -2010,51 +2031,51 @@ void RB_ShowDebugLines( void ) {
 
 /*
 ================
-RB_ClearDebugPolygons
+R_ClearDebugPolygons
 ================
 */
-void RB_ClearDebugPolygons( int time ) {
+void R_ClearDebugPolygons( int time ) {
 	int				i;
 	int				num;
 	debugPolygon_t	*poly;
 
-	rb_debugPolygonTime = time;
+	r_debug.polygonTime = time;
 
 	if ( !time ) {
-		rb_numDebugPolygons = 0;
+		r_debug.numPolygons = 0;
 		return;
 	}
 
 	// copy any polygons that still need to be drawn
 	num	= 0;
 
-	poly = rb_debugPolygons;
+	poly = r_debug.polygons;
 
-	for ( i = 0 ; i < rb_numDebugPolygons; i++, poly++ ) {
+	for ( i = 0 ; i < r_debug.numPolygons; i++, poly++ ) {
 		if ( poly->lifeTime > time ) {
 			if ( num != i ) {
-				rb_debugPolygons[ num ] = *poly;
+				r_debug.polygons[ num ] = *poly;
 			}
 			num++;
 		}
 	}
-	rb_numDebugPolygons = num;
+	r_debug.numPolygons = num;
 }
 
 /*
 ================
-RB_AddDebugPolygon
+R_AddDebugPolygon
 ================
 */
-void RB_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest ) {
+void R_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest ) {
 	debugPolygon_t *poly;
 
-	if ( rb_numDebugPolygons < MAX_DEBUG_POLYGONS ) {
-		poly = &rb_debugPolygons[ rb_numDebugPolygons++ ];
+	if ( r_debug.numPolygons < MAX_DEBUG_POLYGONS ) {
+		poly = &r_debug.polygons[ r_debug.numPolygons++ ];
 		poly->rgb		= color;
 		poly->winding	= winding;
 		poly->depthTest = depthTest;
-		poly->lifeTime	= rb_debugPolygonTime + lifeTime;
+		poly->lifeTime	= r_debug.polygonTime + lifeTime;
 	}
 }
 
@@ -2067,7 +2088,7 @@ void RB_ShowDebugPolygons( void ) {
 	int				i, j;
 	debugPolygon_t	*poly;
 
-	if ( !rb_numDebugPolygons ) {
+	if ( !rb_debug.numPolygons ) {
 		return;
 	}
 
@@ -2088,10 +2109,10 @@ void RB_ShowDebugPolygons( void ) {
 		qglPolygonOffset( -1, -2 );
 		qglEnable( GL_POLYGON_OFFSET_LINE );
 	}
-	poly = rb_debugPolygons;
+	poly = rb_debug.polygons;
 
 	ImmediateRendering ir;
-	for ( i = 0 ; i < rb_numDebugPolygons; i++, poly++ ) {
+	for ( i = 0 ; i < rb_debug.numPolygons; i++, poly++ ) {
 		ir.glColor4fv( poly->rgb.ToFloatPtr() );
 
 		ir.glBegin( GL_POLYGON );
@@ -2547,7 +2568,8 @@ RB_ShutdownDebugTools
 */
 void RB_ShutdownDebugTools( void ) {
 	for ( int i = 0; i < MAX_DEBUG_POLYGONS; i++ ) {
-		rb_debugPolygons[i].winding.Clear();
+		rb_debug.polygons[i].winding.Clear();
+		r_debug.polygons[i].winding.Clear();
 	}
 }
 
