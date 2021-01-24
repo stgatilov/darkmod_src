@@ -81,13 +81,19 @@ RB_CopyDebugPrimitivesToBackend
 void RB_CopyDebugPrimitivesToBackend( void ) {
 	rb_debug.lineTime = r_debug.lineTime;
 	rb_debug.numLines = r_debug.numLines;
-	memcpy( rb_debug.lines, r_debug.lines, r_debug.numLines * sizeof(debugLine_t) );
+	for ( int i = 0; i < r_debug.numLines; ++i ) {
+		rb_debug.lines[i] = r_debug.lines[i];
+	}
 	rb_debug.polygonTime = r_debug.polygonTime;
 	rb_debug.numPolygons = r_debug.numPolygons;
-	memcpy( rb_debug.polygons, r_debug.polygons, r_debug.numPolygons * sizeof(debugPolygon_t) );
+	for ( int i = 0; i < r_debug.numPolygons; ++i ) {
+		rb_debug.polygons[i] = r_debug.polygons[i];
+	}
 	rb_debug.textTime = r_debug.textTime;
 	rb_debug.numText = r_debug.numText;
-	memcpy( rb_debug.text, r_debug.text, r_debug.numText * sizeof(debugText_t) );
+	for ( int i = 0; i < r_debug.numText; ++i ) {
+		rb_debug.text[i] = r_debug.text[i];
+	}
 }
 
 /*
