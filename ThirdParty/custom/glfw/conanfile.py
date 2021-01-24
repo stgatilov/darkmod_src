@@ -17,8 +17,18 @@ class GlfwConan(ConanFile):
     homepage = "https://github.com/glfw/glfw"
     topics = ("conan", "gflw", "opengl", "vulkan", "opengl-es")
     generators = "cmake"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
+    options = {
+        "shared": [True, False],
+        "fPIC": [True, False],
+        "no_opengl": [True, False],
+        "no_xorg": [True, False],
+    }
+    default_options = {
+        "shared": False,
+        "fPIC": True,
+        "no_opengl": False,
+        "no_xorg": False,
+    }
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
     _cmake = None
@@ -36,9 +46,14 @@ class GlfwConan(ConanFile):
         return self._cmake
 
     def requirements(self):
-        self.requires("opengl/system")
+        # stgatilov: Unfortunately, conan is not very good at deciding
+        # which system packages to install in every version of every distro.
+        # Since TDM links both packages directly, we can just skip system packages here
+        if not self.options.no_opengl:
+            self.requires("opengl/system")
         if self.settings.os == "Linux":
-            self.requires("xorg/system")
+            if not self.options.no_xorg:
+                self.requires("xorg/system")
 
     def config_options(self):
         if self.settings.os == "Windows":

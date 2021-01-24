@@ -35,6 +35,9 @@ class TdmDepends(ConanFile):
         "zlib:minizip": True,
         # enable SSE2 in hash library
         "BLAKE2:SSE": "SSE2",
+        # avoid fragile selection of system packages in glfw
+        "glfw:no_opengl": True,
+        "glfw:no_xorg": True,
     }
 
     # these deps are header-only, hence they don't need per-configuration builds
