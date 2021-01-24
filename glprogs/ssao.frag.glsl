@@ -166,7 +166,7 @@ void main() {
 
 	vec3 normal = deriveViewSpaceNormal(position);
 	// "random" rotation factor from a hash function proposed by the AlchemyAO HPG12 paper
-	float randomPatternRotationAngle = 0.0058734 * (3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y);
+	float randomPatternRotationAngle = mod(3 * screenPos.x ^ screenPos.y + screenPos.x * screenPos.y, 3.14159);
 	// calculate screen-space sample radius from view space radius
 	// note: factor 0.5625 is just an adjustment to keep radius values consistent after a math change
 	float screenDiskRadius = -0.5625 * projectionScale * radiusInMetres / position.z;
