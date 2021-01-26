@@ -147,6 +147,10 @@ void ArgCompletion_PadButtonName( const idCmdArgs &args, void(*callback)( const 
 	}
 }
 
+void Gamepad_Unbind_f( const idCmdArgs &args ) {
+	idGamepadInput::UnbindAll();
+}
+
 void idGamepadInput::Init() {
 	memset(axisState, 0, sizeof(axisState));
 	modifierButton = -1;
@@ -155,6 +159,7 @@ void idGamepadInput::Init() {
 	forwardLeanActive = false;
 
 	cmdSystem->AddCommand( "bindPadButton", Gamepad_BindButton_f, CMD_FL_SYSTEM, "binds a command to a gamepad button", ArgCompletion_PadButtonName );
+	cmdSystem->AddCommand( "unbindPad", Gamepad_Unbind_f, CMD_FL_SYSTEM, "unbinds all gamepad buttons" );
 }
 
 void idGamepadInput::Shutdown() {}
@@ -169,6 +174,16 @@ int idGamepadInput::StringToButton( const idStr &str ) {
 	return -1;
 }
 
+idStr idGamepadInput::ButtonToString( int button ) {
+	for ( nameMapping_t *n = buttonNames; n->name; n++ ) {
+		if ( n->value == button ) {
+			return n->name;
+		}
+	}
+
+	return "";
+}
+
 int idGamepadInput::StringToType( const idStr &str ) {
 	for ( nameMapping_t *n = typeNames; n->name; n++ ) {
 		if ( !idStr::Icmp( str, n->name ) ) {
@@ -177,6 +192,36 @@ int idGamepadInput::StringToType( const idStr &str ) {
 	}
 
 	return -1;
+}
+
+idStr idGamepadInput::TypeToString( int type ) {
+	for ( nameMapping_t *n = typeNames; n->name; n++ ) {
+		if ( n->value == type ) {
+			return n->name;
+		}
+	}
+
+	return "";
+}
+
+void idGamepadInput::UnbindAll() {
+	usercmdGen->Clear();
+	for ( int i = 0; i < PAD_NUM_BUTTONS; ++i ) {
+		buttonState[i].status = STATUS_NONE;
+		buttonState[i].lastPressed = 0;
+		buttonState[i].lastReleased = 0;
+		buttonState[i].activeBinding = -1;
+
+		for ( int j = 0; j < BIND_NUM; ++j ) {
+			buttonState[i].bindings[j].action = -1;
+			buttonState[i].bindings[j].cmd = "";
+		}
+	}
+	modifierButton = -1;
+
+	// consider this like modifying an archived cvar, so the
+	// file write will be triggered at the next oportunity
+	cvarSystem->SetModifiedFlags( CVAR_ARCHIVE );
 }
 
 void idGamepadInput::SetBinding( int button, int type, const idStr &binding ) {
@@ -197,7 +242,7 @@ void idGamepadInput::SetBinding( int button, int type, const idStr &binding ) {
 	if ( type == BIND_MODIFIER ) {
 		// setting the modifier key unbinds all other actions for that button
 		for ( int i = 0; i < BIND_NUM; ++i ) {
-			buttonState[button].bindings[type].action = -1;
+			buttonState[button].bindings[i].action = -1;
 		}
 		modifierButton = button;
 		common->Printf("Gamepad modifier button assigned to %d\n", button);
@@ -333,4 +378,20 @@ idList<padActionChange_t> idGamepadInput::GetActionStateChange() {
 	}
 
 	return actionChanges;
+}
+
+void idGamepadInput::WriteBindings( idFile *f ) {
+	f->Printf( "unbindPad\n" );
+
+	if ( modifierButton != -1 ) {
+		f->Printf( "bindPadButton MODIFIER %s\n", ButtonToString( modifierButton ).c_str() );
+	}
+
+	for ( int btn = 0; btn < PAD_NUM_BUTTONS; btn++ ) {
+		for ( int type = 0; type < BIND_NUM; ++type ) {
+			if ( buttonState[btn].bindings[type].action != -1 ) {
+				f->Printf( "bindPadButton %s %s \"%s\"\n", TypeToString( type ).c_str(), ButtonToString( btn ).c_str(), buttonState[btn].bindings[type].cmd.c_str() );
+			}
+		}
+	}
 }

@@ -171,6 +171,7 @@ public:
 	{
 		eConfigExport_cvars,
 		eConfigExport_keybinds,
+		eConfigExport_padbinds,
 		eConfigExport_all,
 	};
 

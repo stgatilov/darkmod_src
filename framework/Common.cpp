@@ -1352,6 +1352,8 @@ void idCommonLocal::WriteConfigToFile(
 
 	if (configexport == eConfigExport_all || configexport == eConfigExport_keybinds)
 		idKeyInput::WriteBindings( f );
+	if (configexport == eConfigExport_all || configexport == eConfigExport_padbinds)
+		idGamepadInput::WriteBindings( f );
 	if (configexport == eConfigExport_all || configexport == eConfigExport_cvars)
 		cvarSystem->WriteFlaggedVariables( CVAR_ARCHIVE, "seta", f );
 
@@ -1385,6 +1387,7 @@ void idCommonLocal::WriteConfiguration( void ) {
 	// STiFU #4797: Separate config files for cvars and keybinds
 	WriteConfigToFile( CONFIG_FILE,	  "fs_savepath", idCommon::eConfigExport_cvars    );
 	WriteConfigToFile( KEYBINDS_FILE, "fs_savepath", idCommon::eConfigExport_keybinds );
+	WriteConfigToFile( PADBINDS_FILE, "fs_savepath", idCommon::eConfigExport_padbinds );
 
 	// restore the developer cvar
 	com_developer.SetBool( developer );

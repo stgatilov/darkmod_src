@@ -1656,13 +1656,13 @@ RENDERER DEBUG TOOLS
 =============================================================
 */
 
-float RB_DrawTextLength( const char *text, float scale, int len );
-void RB_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest );
-void RB_ClearDebugText( int time );
-void RB_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest );
-void RB_ClearDebugLines( int time );
-void RB_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest );
-void RB_ClearDebugPolygons( int time );
+float R_DrawTextLength( const char *text, float scale, int len );
+void R_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest );
+void R_ClearDebugText( int time );
+void R_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest );
+void R_ClearDebugLines( int time );
+void R_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest );
+void R_ClearDebugPolygons( int time );
 void RB_ShowLights( void );
 void RB_ShowLightCount( void );
 void RB_ScanStencilBuffer( void );
@@ -1671,6 +1671,7 @@ void RB_ShowOverdraw( void );
 void R_Tools();
 void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_ShutdownDebugTools( void );
+void RB_CopyDebugPrimitivesToBackend( void );
 
 /*
 =============================================================

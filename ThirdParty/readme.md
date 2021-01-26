@@ -95,11 +95,12 @@ If it is not present there, then decide on a codename and add it to the followin
 For instance, for Elbrus-8C I added `e2kv4` as architecture codename.
 Same applies to your OS and compiler: if conan does not know it out of the box, then you have to add it to `settings.yml` somehow.
 
+Before build, you need to import custom recipes via `1_export_custom.py`, as described above.
 In order to build dependencies, run `conan install` with additional arguments:
 
     conan install . --build -s arch=e2kv4 -o platform_name=myelbrus
 
-The additional **s**etting `arch=e2kv4` says: build for e2kv4 architecture.
+The additional **s**etting `arch=e2kv4` says: build for e2kv4 architecture (not necessary if conan supports your architecture out-of-the-box).
 The additional **o**ption `platform_name=myelbrus` says: put resulting binaries into `artefacts/{packagename}/lib/myelbrus` subdirectories.
 
 When building TDM, you have to pass the chosen value of platform_name as `THIRDPARTY_PLATFORM_OVERRIDE` option to CMake generate step:
