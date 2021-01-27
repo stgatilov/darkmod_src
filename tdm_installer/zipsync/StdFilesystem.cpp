@@ -184,6 +184,12 @@ namespace stdext {
         catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
         return path(res);
     }
+    bool equivalent(const path &pathA, const path &pathB) {
+        bool res;
+        try { res = stdfsys::equivalent(get(pathA), get(pathB)); }
+        catch(stdfsys::filesystem_error &e) { throw filesystem_error(e.what(), e.code()); }
+        return res;
+    }
 
     space_info space(const path& p) {
         stdfsys::space_info stdres;
