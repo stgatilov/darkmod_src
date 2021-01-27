@@ -140,10 +140,14 @@ void Actions::RestartWithInstallDir(const std::string &installDir) {
 
 	std::string oldExePath = OsUtils::GetExecutablePath();
 	std::string newExePath = (stdext::path(installDir) / OsUtils::GetExecutableName()).string();
-	g_logger->debugf("Copying updater to new install directory: \"%s\" -> \"%s\"", oldExePath.c_str(), newExePath.c_str());
-	if (stdext::is_regular_file(newExePath))
-		stdext::remove(newExePath);
-	stdext::copy_file(oldExePath, newExePath);
+	if (stdext::equivalent(oldExePath, newExePath))
+		g_logger->debugf("Old and new paths are equivalent: \"%s\" === \"%s\"", oldExePath.c_str(), newExePath.c_str());
+	else {
+		g_logger->debugf("Copying updater to new install directory: \"%s\" -> \"%s\"", oldExePath.c_str(), newExePath.c_str());
+		if (stdext::is_regular_file(newExePath))
+			stdext::remove(newExePath);
+		stdext::copy_file(oldExePath, newExePath);
+	}
 
 	OsUtils::ReplaceAndRestartExecutable(newExePath, "");
 }
