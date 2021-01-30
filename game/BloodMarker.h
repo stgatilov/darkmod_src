@@ -35,7 +35,7 @@ protected:
 	// True if this bloodsplat is in the process of disappearing
 	bool					_isFading;
 
-	idAI*					_spilledBy; // grayman #3075
+	idEntityPtr<idAI>		_spilledBy; // grayman #3075
 
 public:
 	void					Init(const idStr& splat, const idStr& splatFading, float size, idAI* bleeder); // grayman #3075 - note who bled
