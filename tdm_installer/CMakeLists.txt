@@ -5,7 +5,9 @@ project(tdm_installer)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(TDM_INSTALLER_FAST_DEBUG "faster debug build: optimized libzipsync, disabled runtime checks" OFF)
+
+set(THIRDPARTY_PLATFORM_OVERRIDE "" CACHE STRING "If you build conan dependencies yourself with custom platform_name, pass platform_name string here")
+option(TDM_INSTALLER_FAST_DEBUG "Faster debug build: optimized libzipsync, disabled runtime checks" OFF)
 
 # TDM: use prebuilt artefacts for third-party libraries
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../ThirdParty/cmake_find_package")
@@ -68,12 +70,20 @@ find_package(libjpeg REQUIRED)
 add_executable(tdm_installer WIN32 ${sources})
 target_include_directories(tdm_installer PRIVATE zipsync ${fltk_INCLUDE_DIRS} ${libjpeg_INCLUDE_DIRS})
 target_link_libraries(tdm_installer PRIVATE libzipsync libzipsyncextra ${fltk_LIBRARIES} ${libjpeg_LIBRARIES})
-set_property(TARGET tdm_installer PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-if(MSVC)
+if(UNIX)
+    target_link_libraries(tdm_installer PRIVATE m dl X11 Xext pthread)  # fltk -> *
+elseif(MSVC)
+    set_property(TARGET tdm_installer PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     target_compile_definitions(tdm_installer PRIVATE _CRT_SECURE_NO_DEPRECATE)
     target_link_libraries(libzipsync INTERFACE ws2_32)                  # libzipsync -> libcurl -> ?
-else()
-    target_link_libraries(tdm_installer PRIVATE m dl X11 Xext pthread)  # fltk -> *
+endif()
+if(THIRDPARTY_PLATFORM_OVERRIDE)
+    if(UNIX)
+        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.custom")
+    elseif(MSVC)
+        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer_custom.exe")
+    endif()
+elseif(UNIX)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.linux64")
     else()
