@@ -33,6 +33,7 @@
 #include "../FrobDoorHandle.h"
 #include "../FrobLockHandle.h"
 #include "../FrobLever.h"
+#include "../Grabber.h"
 
 #include "TypeInfo.h"
 
@@ -1242,6 +1243,13 @@ void Cmd_Remove_f( const idCmdArgs &args ) {
 		gameLocal.Printf( "entity not found\n" );
 		return;
 	}
+    // nbohr1more #1084 ensure grabber forgets held entities on removal
+    CGrabber* grabber = gameLocal.m_Grabber;
+    if (ent == grabber->GetSelected())
+    {
+      
+            grabber->Forget( ent );
+    } 
 
 	delete ent;
 }
