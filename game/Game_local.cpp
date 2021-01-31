@@ -249,8 +249,6 @@ idGameLocal::Clear
 */
 void idGameLocal::Clear( void )
 {
-	int i;
-
 	m_HighestSRId = 0;
 	m_StimTimer.Clear();
 	m_Timer.Clear();
@@ -325,11 +323,9 @@ void idGameLocal::Clear( void )
 	
 	serverInfo.Clear();
 	numClients = 0;
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		userInfo[i].Clear();
-		persistentPlayerInfo[i].Clear();
-	}
-	memset( usercmds, 0, sizeof( usercmds ) );
+		userInfo.Clear();
+		persistentPlayerInfo.Clear();
+	memset( &usercmds, 0, sizeof( usercmds ) );
 	memset( entities, 0, sizeof( entities ) );
 	memset( spawnIds, -1, sizeof( spawnIds ) );
 	firstFreeIndex = 0;
@@ -393,9 +389,7 @@ void idGameLocal::Clear( void )
 	lastGUIEnt = NULL;
 	lastGUI = 0;
 
-	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
 	memset( clientPVS, 0, sizeof( clientPVS ) );
-	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
 
 	memset( lagometer, 0, sizeof( lagometer ) );
 
@@ -888,11 +882,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteDict( &serverInfo );
 
 	savegame.WriteInt( numClients );
-	for( i = 0; i < numClients; i++ ) {
-		savegame.WriteDict( &userInfo[ i ] );
-		savegame.WriteUsercmd( usercmds[ i ] );
-		savegame.WriteDict( &persistentPlayerInfo[ i ] );
-	}
+		savegame.WriteDict( &userInfo );
+		savegame.WriteUsercmd( usercmds );
+		savegame.WriteDict( &persistentPlayerInfo );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
 		savegame.WriteObject( entities[ i ] );
@@ -1133,13 +1125,13 @@ idGameLocal::GetPersistentPlayerInfo
 const idDict &idGameLocal::GetPersistentPlayerInfo( int clientNum ) {
 	idEntity	*ent;
 
-	persistentPlayerInfo[ clientNum ].Clear();
+	persistentPlayerInfo.Clear();
 	ent = entities[ clientNum ];
 	if ( ent && ent->IsType( idPlayer::Type ) ) {
 		static_cast<idPlayer *>(ent)->SavePersistantInfo();
 	}
 
-	return persistentPlayerInfo[ clientNum ];
+	return persistentPlayerInfo;
 }
 
 /*
@@ -1148,7 +1140,7 @@ idGameLocal::SetPersistentPlayerInfo
 ============
 */
 void idGameLocal::SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) {
-	persistentPlayerInfo[ clientNum ] = playerInfo;
+	persistentPlayerInfo = playerInfo;
 }
 
 /*
@@ -1363,15 +1355,15 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	int i;
 	bool modifiedInfo = false;
 
-	if ( clientNum >= 0 && clientNum < MAX_CLIENTS ) {
-		idGameLocal::userInfo[ clientNum ] = userInfo;
+	if ( clientNum >= 0 && clientNum < 1 ) {
+		idGameLocal::userInfo = userInfo;
 
 		// server sanity
 		if ( canModify  ) {
 
 			// don't let numeric nicknames, it can be exploited to go around kick and ban commands from the server
-			if ( idStr::IsNumeric( this->userInfo[ clientNum ].GetString( "ui_name" ) ) ) {
-				idGameLocal::userInfo[ clientNum ].Set( "ui_name", va( "%s_", idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ) ) );
+			if ( idStr::IsNumeric( this->userInfo.GetString( "ui_name" ) ) ) {
+				idGameLocal::userInfo.Set( "ui_name", va( "%s_", idGameLocal::userInfo.GetString( "ui_name" ) ) );
 				modifiedInfo = true;
 			}
 		
@@ -1381,8 +1373,8 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 					continue;
 				}
 				if ( entities[ i ] && entities[ i ]->IsType( idPlayer::Type ) ) {
-					if ( !idStr::Icmp( idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ), idGameLocal::userInfo[ i ].GetString( "ui_name" ) ) ) {
-						idGameLocal::userInfo[ clientNum ].Set( "ui_name", va( "%s_", idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ) ) );
+					if ( !idStr::Icmp( idGameLocal::userInfo.GetString( "ui_name" ), idGameLocal::userInfo.GetString( "ui_name" ) ) ) {
+						idGameLocal::userInfo.Set( "ui_name", va( "%s_", idGameLocal::userInfo.GetString( "ui_name" ) ) );
 						modifiedInfo = true;
 						i = -1;	// rescan
 						continue;
@@ -1399,7 +1391,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	if ( modifiedInfo ) {
 		assert( canModify );
 
-		newInfo = idGameLocal::userInfo[ clientNum ];
+		newInfo = idGameLocal::userInfo;
 		return &newInfo;
 	}
 	return NULL;
@@ -1412,7 +1404,7 @@ idGameLocal::GetUserInfo
 */
 const idDict* idGameLocal::GetUserInfo( int clientNum ) {
 	if ( entities[ clientNum ] && entities[ clientNum ]->IsType( idPlayer::Type ) ) {
-		return &userInfo[ clientNum ];
+		return &userInfo;
 	}
 	return NULL;
 }
@@ -1491,7 +1483,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	// initialize all entities for this game
 	memset( entities, 0, sizeof( entities ) );
-	memset( usercmds, 0, sizeof( usercmds ) );
+	memset( &usercmds, 0, sizeof( usercmds ) );
 	memset( spawnIds, -1, sizeof( spawnIds ) );
 	spawnCount = INITIAL_SPAWN_COUNT;
 	
@@ -1511,8 +1503,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// always leave room for the max number of clients,
 	// even if they aren't all used, so numbers inside that
 	// range are NEVER anything but clients
-	num_entities	= MAX_CLIENTS;
-	firstFreeIndex	= MAX_CLIENTS;
+	num_entities	= 1;
+	firstFreeIndex	= 1;
 
 	// reset the random number generator.
 	// Tels: use a random seed for single-player, too, otherwise map content can't be random
@@ -1753,17 +1745,15 @@ idGameLocal::LocalMapRestart
 ===================
 */
 void idGameLocal::LocalMapRestart( ) {
-	int i, latchSpawnCount;
+	int latchSpawnCount;
 
 	Printf( "----------- Game Map Restart ------------\n" );
 
 	gamestate = GAMESTATE_SHUTDOWN;
 
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		if ( entities[ i ] && entities[ i ]->IsType( idPlayer::Type ) ) {
-			static_cast< idPlayer * >( entities[ i ] )->PrepareForRestart();
+		if ( entities[ 0 ] && entities[ 0 ]->IsType( idPlayer::Type ) ) {
+			static_cast< idPlayer * >( entities[ 0 ] )->PrepareForRestart();
 		}
-	}
 
 	MapClear( false );
 
@@ -1798,11 +1788,9 @@ void idGameLocal::LocalMapRestart( ) {
 	spawnCount = latchSpawnCount;
 
 	// setup the client entities again
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		if ( entities[ i ] && entities[ i ]->IsType( idPlayer::Type ) ) {
-			static_cast< idPlayer * >( entities[ i ] )->Restart();
+		if ( entities[ 0 ] && entities[ 0 ]->IsType( idPlayer::Type ) ) {
+			static_cast< idPlayer * >( entities[ 0 ] )->Restart();
 		}
-	}
 
 	gamestate = GAMESTATE_ACTIVE;
 	m_MissionResult = MISSION_INPROGRESS;
@@ -1858,7 +1846,7 @@ void idGameLocal::MapPopulate( void ) {
 
 	// spawnCount - 1 is the number of entities spawned into the map, their indexes started at MAX_CLIENTS (included)
 	// mapSpawnCount is used as the max index of map entities, it's the first index of non-map entities
-	mapSpawnCount = MAX_CLIENTS + spawnCount - 1;
+	mapSpawnCount = 1 + spawnCount - 1;
 
 	// read in the soundprop data for various locations
 	m_sndPropLoader->FillLocationData();
@@ -2079,11 +2067,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	SetServerInfo( si );
 
 	savegame.ReadInt( numClients );
-	for( i = 0; i < numClients; i++ ) {
-		savegame.ReadDict( &userInfo[ i ] );
-		savegame.ReadUsercmd( usercmds[ i ] );
-		savegame.ReadDict( &persistentPlayerInfo[ i ] );
-	}
+		savegame.ReadDict( &userInfo );
+		savegame.ReadUsercmd( usercmds );
+		savegame.ReadDict( &persistentPlayerInfo );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
 		savegame.ReadObject( reinterpret_cast<idClass *&>( entities[ i ] ) );
@@ -2390,7 +2376,7 @@ idGameLocal::MapClear
 void idGameLocal::MapClear( bool clearClients ) {
 	int i;
 
-	for( i = ( clearClients ? 0 : MAX_CLIENTS ); i < MAX_GENTITIES; i++ ) {
+	for( i = ( clearClients ? 0 : 1 ); i < MAX_GENTITIES; i++ ) {
 		delete entities[ i ];
 		// ~idEntity is in charge of setting the pointer to NULL
 		// it will also clear pending events for this entity
@@ -2402,7 +2388,7 @@ void idGameLocal::MapClear( bool clearClients ) {
 
 	if ( !clearClients ) {
 		// add back the hashes of the clients
-		for ( i = 0; i < MAX_CLIENTS; i++ ) {
+		for ( i = 0; i < 1; i++ ) {
 			if ( !entities[ i ] ) {
 				continue;
 			}
@@ -2889,7 +2875,7 @@ idPlayer *idGameLocal::GetClientByName( const char *name ) const {
 	for ( i = 0 ; i < numClients ; i++ ) {
 		ent = entities[ i ];
 		if ( ent && ent->IsType( idPlayer::Type ) ) {
-			if ( idStr::IcmpNoColor( name, userInfo[ i ].GetString( "ui_name" ) ) == 0 ) {
+			if ( idStr::IcmpNoColor( name, userInfo.GetString( "ui_name" ) ) == 0 ) {
 				return static_cast<idPlayer *>( ent );
 			}
 		}
@@ -3222,7 +3208,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 		}
 
 		// set the user commands for this frame
-		memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[0]));
+		memcpy(&usercmds, clientCmds, sizeof(usercmds));
 
 		if ( m_time2Start && player->WaitUntilReady() ) // grayman #3763
 		{
@@ -3240,7 +3226,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			gameRenderWorld->DebugClearLines( time + 1 );
 
 			// set the user commands for this frame
-			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+			memcpy( &usercmds, clientCmds, sizeof( usercmds ) );
 
 			if ( player ) {
 				player->Think();
@@ -3280,7 +3266,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			gameRenderWorld->DebugClearPolygons( time );
 
 			// set the user commands for this frame
-			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+			memcpy( &usercmds, clientCmds, sizeof( usercmds ) );
 
 			// free old smoke particles
 			smokeParticles->FreeSmokes();
@@ -5188,7 +5174,7 @@ void idGameLocal::UnregisterEntity( idEntity *ent ) {
 		ent->spawnNode.Remove();
 		entities[ ent->entityNumber ] = NULL;
 		spawnIds[ ent->entityNumber ] = -1;
-		if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex ) {
+		if ( ent->entityNumber >= 1 && ent->entityNumber < firstFreeIndex ) {
 			firstFreeIndex = ent->entityNumber;
 		}
 		ent->entityNumber = ENTITYNUM_NONE;
@@ -6547,10 +6533,9 @@ upon map restart, initial spawns are used (randomized ordered list of spawns fla
 ============
 */
 idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
-	int				i, j, which;
+	int				i, which;
 	spawnSpot_t		spot;
 	idVec3			pos;
-	float			dist;
 	bool			alone;
 
 	{
@@ -6586,12 +6571,6 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	} else {
 		// check if we are alone in map
 		alone = true;
-		for ( j = 0; j < MAX_CLIENTS; j++ ) {
-			if ( entities[ j ] && entities[ j ] != player ) {
-				alone = false;
-				break;
-			}
-		}
 		if ( alone ) {
 			// don't do distance-based
 			return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
@@ -6601,18 +6580,6 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 		for( i = 0; i < spawnSpots.Num(); i++ ) {
 			pos = spawnSpots[ i ].ent->GetPhysics()->GetOrigin();
 			spawnSpots[ i ].dist = 0x7fffffff;
-			for( j = 0; j < MAX_CLIENTS; j++ ) {
-				if ( !entities[ j ] || !entities[ j ]->IsType( idPlayer::Type )
-					|| entities[ j ] == player
-					|| static_cast< idPlayer * >( entities[ j ] )->spectating ) {
-					continue;
-				}
-				
-				dist = ( pos - entities[ j ]->GetPhysics()->GetOrigin() ).LengthSqr();
-				if ( dist < spawnSpots[ i ].dist ) {
-					spawnSpots[ i ].dist = int(dist);
-				}
-			}
 		}
 
 		// sort the list

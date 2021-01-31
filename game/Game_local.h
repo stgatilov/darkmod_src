@@ -83,7 +83,6 @@ class idThread;
 class idEditEntities;
 class idLocationEntity;
 
-#define	MAX_CLIENTS				32
 // Tels: If you change this value, make sure that LUDICROUS_INDEX 
 // in renderer/RenderWorld_local.h is higher than MAX_GENTITIES
 // stgatilov: also, update definition of idEntityPtr type in game.natvis
@@ -433,9 +432,9 @@ class idGameLocal : public idGame {
 public:
 	idDict					serverInfo;				// all the tunable parameters, like numclients, etc
 	int						numClients;				// pulled from serverInfo and verified
-	idDict					userInfo[MAX_CLIENTS];	// client specific settings
-	usercmd_t				usercmds[MAX_CLIENTS];	// client input commands
-	idDict					persistentPlayerInfo[MAX_CLIENTS];
+	idDict					userInfo;	// client specific settings
+	usercmd_t				usercmds;	// client input commands
+	idDict					persistentPlayerInfo;
 	idEntity *				entities[MAX_GENTITIES];// index to entities
 	int						spawnIds[MAX_GENTITIES];// for use in idEntityPtr
 
@@ -1031,13 +1030,8 @@ private:
 	bool					influenceActive;		// true when a phantasm is happening
 	int						nextGibTime;
 
-	idList<int>				clientDeclRemap[MAX_CLIENTS][DECL_MAX_TYPES];
-
-	entityState_t *			clientEntityStates[MAX_CLIENTS][MAX_GENTITIES];
-	int						clientPVS[MAX_CLIENTS][ENTITY_PVS_SIZE];
-	snapshot_t *			clientSnapshots[MAX_CLIENTS];
+	int						clientPVS[ENTITY_PVS_SIZE];
 	idBlockAlloc<entityState_t,256>entityStateAllocator;
-	idBlockAlloc<snapshot_t,64>snapshotAllocator;
 
 	idStaticList<spawnSpot_t, MAX_GENTITIES> spawnSpots;
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
