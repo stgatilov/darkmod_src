@@ -1994,6 +1994,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		image.SaveImageToFile(previewPath.c_str(), previewFormat);
 
 		renderSystem->UnCrop();
+		R_ClearCommandChain( frameData );
 		qglFinish();
 	}
 
