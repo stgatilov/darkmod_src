@@ -1975,23 +1975,21 @@ idEntity::~idEntity( void )
 	//stgatilov: in case of save loading error, grabber may not exist yet
 	if (gameLocal.m_Grabber )
 	{
-		
-        if ( gameLocal.m_Grabber->GetEquipped() == this ) 
-        {
-
-            if ( spawnArgs.GetBool("shoulderable") )
-		    {
-		    	gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
-		    	gameLocal.m_Grabber->UnShoulderBody(this);
-		    }
-		gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
-		gameLocal.m_Grabber->Forget(this);
-
-       }
-       else if ( gameLocal.m_Grabber->GetSelected() == this )
-       {
-        gameLocal.m_Grabber->Forget(this);
-       }
+		if ( gameLocal.m_Grabber->GetEquipped() == this ) 
+		{
+			if ( spawnArgs.GetBool("shoulderable") )
+			{
+				gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
+				gameLocal.m_Grabber->UnShoulderBody(this);
+			}
+			gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
+			gameLocal.m_Grabber->Forget(this);
+		}
+		else if ( gameLocal.m_Grabber->GetSelected() == this )
+		{
+			//nbohr1more #1084: ensure grabber forgets held entities on removal
+			gameLocal.m_Grabber->Forget(this);
+		}
 	}
 
 	// Let each objective entity we're currently in know about our destruction

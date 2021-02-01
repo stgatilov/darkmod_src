@@ -1066,18 +1066,6 @@ void idClass::Event_Remove( void )
 		}
 	}
 	
-	/* CGrabber* grabber = gameLocal.m_Grabber;
-	if (grabber)
-	{
-		// tels: If we remove a currently grabbed entity,
-		// force the grabber to forget it
-		idEntity *ent = grabber->GetSelected();
-		if (ent == this)
-		{
-			grabber->Forget( ent );
-		}
-	} */
-
 	// grayman #4603 - If we are currently being pushed, tell the
 	// player we don't exist any more. As far as I can tell, 
 	// m_pushedBy.GetEntity() is always the player. But we have
