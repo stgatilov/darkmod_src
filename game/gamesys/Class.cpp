@@ -1066,7 +1066,7 @@ void idClass::Event_Remove( void )
 		}
 	}
 	
-	CGrabber* grabber = gameLocal.m_Grabber;
+	/* CGrabber* grabber = gameLocal.m_Grabber;
 	if (grabber)
 	{
 		// tels: If we remove a currently grabbed entity,
@@ -1076,7 +1076,7 @@ void idClass::Event_Remove( void )
 		{
 			grabber->Forget( ent );
 		}
-	}
+	} */
 
 	// grayman #4603 - If we are currently being pushed, tell the
 	// player we don't exist any more. As far as I can tell, 

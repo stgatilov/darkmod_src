@@ -1973,15 +1973,25 @@ idEntity::~idEntity( void )
 
 	// Tels: #2430 - If this entity is shouldered by the player, dequip it forcefully
 	//stgatilov: in case of save loading error, grabber may not exist yet
-	if (gameLocal.m_Grabber && gameLocal.m_Grabber->GetEquipped() == this)
+	if (gameLocal.m_Grabber )
 	{
-		if ( spawnArgs.GetBool("shoulderable") )
-		{
-			gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
-			gameLocal.m_Grabber->UnShoulderBody(this);
-		}
+		
+        if ( gameLocal.m_Grabber->GetEquipped() == this ) 
+        {
+
+            if ( spawnArgs.GetBool("shoulderable") )
+		    {
+		    	gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
+		    	gameLocal.m_Grabber->UnShoulderBody(this);
+		    }
 		gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
 		gameLocal.m_Grabber->Forget(this);
+
+       }
+       else if ( gameLocal.m_Grabber->GetSelected() == this )
+       {
+        gameLocal.m_Grabber->Forget(this);
+       }
 	}
 
 	// Let each objective entity we're currently in know about our destruction

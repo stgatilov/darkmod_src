@@ -1244,12 +1244,12 @@ void Cmd_Remove_f( const idCmdArgs &args ) {
 		return;
 	}
     // nbohr1more #1084 ensure grabber forgets held entities on removal
-    CGrabber* grabber = gameLocal.m_Grabber;
+    /* CGrabber* grabber = gameLocal.m_Grabber;
     if (ent == grabber->GetSelected())
     {
       
             grabber->Forget( ent );
-    } 
+    }  */
 
 	delete ent;
 }
