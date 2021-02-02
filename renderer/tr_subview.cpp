@@ -799,7 +799,7 @@ bool R_GenerateSubViews( void ) {
 	}
 
 	static bool dontReenter = false;
-	if ( !dontReenter && gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() 
+	if ( !dontReenter && gameLocal.portalSkyEnt.GetEntity() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) && g_enablePortalSky.GetBool() 
 		&& !tr.viewDef->renderWorld->mapName.IsEmpty()  // FIXME a better way to check for RenderWindow views? (compass, etc)
 	) {
 		dontReenter = true;

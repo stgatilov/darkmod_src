@@ -57,9 +57,9 @@ void CBloodMarker::Event_GenerateBloodSplat()
 		// grayman #3075 - notify the AI who spilled the blood that
 		// we're going away.
 
-		if ( _spilledBy != NULL )
+		if ( _spilledBy.IsValid() )
 		{
-			_spilledBy->SetBlood(NULL);
+			_spilledBy.GetEntity()->SetBlood(NULL);
 			_spilledBy = NULL;
 		}
 
@@ -107,7 +107,7 @@ void CBloodMarker::OnStim(const CStimPtr& stim, idEntity* stimSource)
 
 idAI* CBloodMarker::GetSpilledBy(void)
 {
-	return _spilledBy;
+	return _spilledBy.GetEntity();
 }
 
 //-----------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ void CBloodMarker::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(_angle);
 	savefile->WriteFloat(_size);
 	savefile->WriteBool(_isFading);
-	savefile->WriteObject(_spilledBy); // grayman #3075
+	_spilledBy.Save(savefile); // grayman #3075
 }
 
 //-----------------------------------------------------------------------------------
@@ -131,5 +131,5 @@ void CBloodMarker::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(_angle);
 	savefile->ReadFloat(_size);
 	savefile->ReadBool(_isFading);
-	savefile->ReadObject(reinterpret_cast<idClass *&>(_spilledBy)); // grayman #3075
+	_spilledBy.Restore(savefile); // grayman #3075
 }

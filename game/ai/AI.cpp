@@ -857,7 +857,7 @@ void idAI::Save(idSaveGame *savefile) const {
 	savefile->WriteFloat(headFocusRate);
 	savefile->WriteInt(focusAlignTime);
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
-	savefile->WriteObject(m_bloodMarker);		// grayman #3075
+	m_bloodMarker.Save(savefile);				// grayman #3075
 	m_lastKilled.Save(savefile);				// grayman #2816
 	savefile->WriteBool(m_justKilledSomeone);	// grayman #2816
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
@@ -1323,7 +1323,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( headFocusRate );
 	savefile->ReadInt( focusAlignTime );
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
-	savefile->ReadObject(reinterpret_cast<idClass*&>(m_bloodMarker));	// grayman #3075
+	m_bloodMarker.Restore(savefile);	// grayman #3075
 	m_lastKilled.Restore(savefile); // grayman #2816
 	savefile->ReadBool(m_justKilledSomeone); // grayman #2816
 	savefile->ReadBool(m_canResolveBlock);	 // grayman #2345
@@ -13282,7 +13282,7 @@ void idAI::SetBlood(idEntity *marker)
 
 idEntity* idAI::GetBlood(void) const
 {
-	return m_bloodMarker;
+	return m_bloodMarker.GetEntity();
 }
 
 // grayman #2816 - remember who you killed, for barking and tactile alert events

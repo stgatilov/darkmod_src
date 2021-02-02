@@ -316,7 +316,7 @@ void idParticle_ParticleTexCoords(
 			floatFrame = part.frac * stg.animationFrames;
 		}
 		int	intFrame = int(floatFrame);
-		animationFrameFrac = clamp(floatFrame - intFrame, 0.0f, 1.0);
+		animationFrameFrac = clamp(floatFrame - intFrame, 0.0f, 1.0f);
 		s = width * intFrame;
 	} else {
 		s = 0.0f;
@@ -353,7 +353,7 @@ void idParticle_EmitQuadAnimated(
 		float frac = animationFrameFrac;
 		float iFrac = 1.0f - frac;
 
-		idParticleDrawVert vm0 = v0, vm1 = v1, vm2 = v2, vm3 = v2;
+		idParticleDrawVert vm0 = v0, vm1 = v1, vm2 = v2, vm3 = v3;
 		vm0.color = v0.color * iFrac;
 		vm1.color = v1.color * iFrac;
 		vm2.color = v2.color * iFrac;

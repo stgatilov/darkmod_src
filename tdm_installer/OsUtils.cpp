@@ -120,14 +120,16 @@ void OsUtils::ReplaceAndRestartExecutable(const std::string &targetPath, const s
 		g_logger->infof("Creating updating batch/shell file \"%s\"", batchFilePath.c_str());
 		ZipSync::StdioFileHolder batchFile(batchFilePath.c_str(), "wt");
 #ifdef _WIN32
-		fprintf(batchFile, "@ping 127.0.0.1 -n 6 -w 1000 > nul\n"); // # hack equivalent to Wait 5
+		fprintf(batchFile, "@ping 127.0.0.1 -n 6 -w 1000 > nul\n"); //hack equivalent to Wait 5
 		if (!temporaryPath.empty()) {
-			fprintf(batchFile, "@copy %s %s >nul\n", winTemporaryPath.c_str(), winTargetPath.c_str());
-			fprintf(batchFile, "@del %s\n", winTemporaryPath.c_str());
+			fprintf(batchFile, "@copy \"%s\" \"%s\" >nul\n", winTemporaryPath.c_str(), winTargetPath.c_str());
+			fprintf(batchFile, "@del \"%s\"\n", winTemporaryPath.c_str());
 			fprintf(batchFile, "@echo Executable has been replaced.\n");
 		}
 		fprintf(batchFile, "@echo Re-launching executable.\n\n");
-		fprintf(batchFile, "@start %s %s\n", winTargetPath.c_str(), allArgs.c_str());
+		//when quoting argument for @start, we have to add one more ""
+		//  https://superuser.com/a/239572
+		fprintf(batchFile, "@start \"\" \"%s\" %s\n", winTargetPath.c_str(), allArgs.c_str());
 #else //POSIX
 		fprintf(batchFile, "#!/bin/bash\n");
 		fprintf(batchFile, "sleep 5s\n");

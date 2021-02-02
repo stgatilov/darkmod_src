@@ -33,6 +33,7 @@
 #include "../FrobDoorHandle.h"
 #include "../FrobLockHandle.h"
 #include "../FrobLever.h"
+#include "../Grabber.h"
 
 #include "TypeInfo.h"
 

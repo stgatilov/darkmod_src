@@ -464,7 +464,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 												 // It should keep going even when not active.
 	}
 
-	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+	if ( gameLocal.portalSkyEnt.GetEntity() && g_enablePortalSky.GetInteger() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) ) {
 		
 		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
 			PSOrigin = gameLocal.portalSkyOrigin;
