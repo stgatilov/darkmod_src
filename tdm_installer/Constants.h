@@ -1,6 +1,6 @@
 #pragma once
 
-#define TDM_INSTALLER_VERSION "1.00"
+#define TDM_INSTALLER_VERSION "1.01"
 
 #define TDM_INSTALLER_LOG_FILENAME "tdm_installer.log"
 #define TDM_INSTALLER_CONFIG_FILENAME "tdm_installer.ini"

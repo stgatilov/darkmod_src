@@ -20,15 +20,21 @@ std::function<int(double, const char*)> ProgressIndicator::GetDownloaderCallback
 }
 
 
-std::vector<std::string> EnumerateFilesInDirectory(const std::string &root) {
+std::vector<std::string> EnumerateFilesInDirectory(const std::string &root, bool skipErrors) {
     using ZipSync::PathAR;
     std::vector<std::string> res;
     std::vector<stdext::path> allPaths = stdext::recursive_directory_enumerate(stdext::path(root));
     for (auto& entry : allPaths) {
-        if (stdext::is_regular_file(entry)) {
-            std::string absPath = entry.string();   //.generic_string()
-            std::string relPath = PathAR::FromAbs(absPath, root).rel;
-            res.push_back(relPath);
+        try {
+            if (stdext::is_regular_file(entry)) {
+                std::string absPath = entry.string();   //.generic_string()
+                std::string relPath = PathAR::FromAbs(absPath, root).rel;
+                res.push_back(relPath);
+            }
+        } catch(...) {
+            //exception example: name of user's file contains bad characters
+            if (!skipErrors)
+                throw;
         }
     }
     return res;
