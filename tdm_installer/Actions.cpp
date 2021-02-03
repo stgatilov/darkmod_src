@@ -173,21 +173,33 @@ std::vector<std::string> Actions::CheckSpaceAndPermissions(const std::string &in
 	fclose(f);
 	stdext::remove(checkPath);
 
-	g_logger->infof("Checking for free space at %s", lastExistingDir.c_str());
-	uint64_t freeSpace = OsUtils::GetAvailableDiskSpace(lastExistingDir) >> 20;
-	ZipSyncAssertF(freeSpace >= TDM_INSTALLER_FREESPACE_MINIMUM, 
-		"Only %0.0lf MB of free space is available in installation directory.\n"
-		"Installer surely won't work without at least %0.0lf MB of free space!",
-		freeSpace / 1.0, TDM_INSTALLER_FREESPACE_MINIMUM / 1.0
-	);
-	if (freeSpace < TDM_INSTALLER_FREESPACE_RECOMMENDED) {
-		warnings.push_back(ZipSync::formatMessage(
-			"Only %0.2lf GB of free space is available in installation directory.\n"
-			"Installation or update can fail due to lack of space.\n"
-			"Better free at least %0.2lf GB and restart updater.\n",
-			freeSpace / 1024.0, TDM_INSTALLER_FREESPACE_RECOMMENDED / 1024.0
-		));
+	//filesystem::space returns free space module 2^32 bytes on 32-bit Linux
+	//so we have to disable free space check for it
+	//see also: https://forums.thedarkmod.com/index.php?/topic/20460-new-tdm_installer-and-dev-builds/&do=findComment&comment=456147
+	bool isLinux32 = false;
+#ifndef _WIN32
+	if (sizeof(void*) == 4)
+		isLinux32 = true;
+#endif
+
+	if (!isLinux32) {
+		g_logger->infof("Checking for free space at %s", lastExistingDir.c_str());
+		uint64_t freeSpace = OsUtils::GetAvailableDiskSpace(lastExistingDir) >> 20;
+		ZipSyncAssertF(freeSpace >= TDM_INSTALLER_FREESPACE_MINIMUM, 
+			"Only %0.0lf MB of free space is available in installation directory.\n"
+			"Installer surely won't work without at least %0.0lf MB of free space!",
+			freeSpace / 1.0, TDM_INSTALLER_FREESPACE_MINIMUM / 1.0
+		);
+		if (freeSpace < TDM_INSTALLER_FREESPACE_RECOMMENDED) {
+			warnings.push_back(ZipSync::formatMessage(
+				"Only %0.2lf GB of free space is available in installation directory.\n"
+				"Installation or update can fail due to lack of space.\n"
+				"Better free at least %0.2lf GB and restart updater.\n",
+				freeSpace / 1024.0, TDM_INSTALLER_FREESPACE_RECOMMENDED / 1024.0
+			));
+		}
 	}
+
 	return warnings;
 }
 
