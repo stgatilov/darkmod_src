@@ -28,58 +28,54 @@ static std::vector<std::string> CollectTdmZipPaths(const std::string &installDir
 	std::vector<std::string> lastInstallZips = g_state->_lastInstall.GetOwnedZips();
 
 	std::vector<std::string> res;
-	auto allPaths = stdext::recursive_directory_enumerate(installDir);
+	std::vector<std::string> allPaths = ZipSync::EnumerateFilesInDirectory(installDir);
 	for (const auto &entry : allPaths) {
-		if (stdext::is_regular_file(entry)) {
-			std::string absPath = entry.string();
-			std::string relPath = ZipSync::PathAR::FromAbs(absPath, installDir).rel;
-			bool managed = false;
+		std::string relPath = entry;
+		std::string absPath = (stdext::path(installDir) / entry).string();
+		bool managed = false;
 
-			//common categories:
-			if (stdext::istarts_with(relPath, "tdm_") && stdext::iends_with(relPath, ".pk4"))
-				managed = true;		//e.g. tdm_ai_base01.pk4
-			if (stdext::istarts_with(relPath, "tdm_") && stdext::iends_with(relPath, ".zip"))
-				managed = true;		//e.g. tdm_shared_stuff.zip
-			if (stdext::istarts_with(relPath, "fms/tdm_") && stdext::iends_with(relPath, ".pk4"))
-				managed = true;		//e.g. fms/tdm_training_mission/tdm_training_mission.pk4
+		//common categories:
+		if (stdext::istarts_with(relPath, "tdm_") && stdext::iends_with(relPath, ".pk4"))
+			managed = true;		//e.g. tdm_ai_base01.pk4
+		if (stdext::istarts_with(relPath, "tdm_") && stdext::iends_with(relPath, ".zip"))
+			managed = true;		//e.g. tdm_shared_stuff.zip
+		if (stdext::istarts_with(relPath, "fms/tdm_") && stdext::iends_with(relPath, ".pk4"))
+			managed = true;		//e.g. fms/tdm_training_mission/tdm_training_mission.pk4
 
-			//hardcoded prepackaged FMs:
-			if (stdext::istarts_with(relPath, "fms/newjob/") && stdext::iends_with(relPath, ".pk4"))
-				managed = true;		//e.g. fms/newjob/newjob.pk4
-			if (stdext::istarts_with(relPath, "fms/stlucia/") && stdext::iends_with(relPath, ".pk4"))
-				managed = true;		//e.g. fms/stlucia/stlucia.pk4
-			if (stdext::istarts_with(relPath, "fms/saintlucia/") && stdext::iends_with(relPath, ".pk4"))
-				managed = true;		//e.g. fms/saintlucia/saintlucia.pk4
-			if (stdext::istarts_with(relPath, "fms/training_mission/") && stdext::iends_with(relPath, ".pk4"))
-				managed = true;		//e.g. fms/training_mission/training_mission.pk4
+		//hardcoded prepackaged FMs:
+		if (stdext::istarts_with(relPath, "fms/newjob/") && stdext::iends_with(relPath, ".pk4"))
+			managed = true;		//e.g. fms/newjob/newjob.pk4
+		if (stdext::istarts_with(relPath, "fms/stlucia/") && stdext::iends_with(relPath, ".pk4"))
+			managed = true;		//e.g. fms/stlucia/stlucia.pk4
+		if (stdext::istarts_with(relPath, "fms/saintlucia/") && stdext::iends_with(relPath, ".pk4"))
+			managed = true;		//e.g. fms/saintlucia/saintlucia.pk4
+		if (stdext::istarts_with(relPath, "fms/training_mission/") && stdext::iends_with(relPath, ".pk4"))
+			managed = true;		//e.g. fms/training_mission/training_mission.pk4
 
-			for (const auto &s : lastInstallZips)
-				if (relPath == s)
-					managed = true;	//managed by last install
+		for (const auto &s : lastInstallZips)
+			if (relPath == s)
+				managed = true;	//managed by last install
 
-			if (managed)
-				res.push_back(absPath);
-		}
+		if (managed)
+			res.push_back(absPath);
 	}
 	return res;
 }
 
 static std::vector<std::string> CollectFilesInList(const std::string &installDir, const std::vector<std::string> &filenames) {
 	std::vector<std::string> res;
-	auto allPaths = stdext::recursive_directory_enumerate(installDir);
+	std::vector<std::string> allPaths = ZipSync::EnumerateFilesInDirectory(installDir);
 	for (const auto &entry : allPaths) {
-		if (stdext::is_regular_file(entry)) {
-			std::string absPath = entry.string();
-			std::string relPath = ZipSync::PathAR::FromAbs(absPath, installDir).rel;
+		std::string relPath = entry;
+		std::string absPath = (stdext::path(installDir) / entry).string();
 
-			bool matches = false;
-			for (const auto &fn : filenames)
-				if (relPath == fn)
-					matches = true;
+		bool matches = false;
+		for (const auto &fn : filenames)
+			if (relPath == fn)
+				matches = true;
 
-			if (matches)
-				res.push_back(absPath);
-		}
+		if (matches)
+			res.push_back(absPath);
 	}
 	return res;
 }

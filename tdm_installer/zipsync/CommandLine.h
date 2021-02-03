@@ -16,7 +16,7 @@ public:
     std::function<int(double, const char*)> GetDownloaderCallback();
 };
 
-std::vector<std::string> EnumerateFilesInDirectory(const std::string &root);
+std::vector<std::string> EnumerateFilesInDirectory(const std::string &root, bool skipErrors = true);
 std::string GetCwd();
 size_t SizeOfFile(const std::string &path);
 void CreateDirectories(const std::string &path);
