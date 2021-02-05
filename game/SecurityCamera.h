@@ -118,6 +118,8 @@ private:
 	void					Event_Sweep_Toggle( void );
 	// Obsttorte
 	void					Event_GetSpotLight(void);
+	// Dragofer
+	void					Event_GetSecurityCameraState( void );
 
 	void					PostSpawn( void );
 	void					AddSparks(void);

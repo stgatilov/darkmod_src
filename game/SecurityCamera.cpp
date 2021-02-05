@@ -44,12 +44,16 @@ const idEventDef EV_Peek_AddDisplay("<addDisplay>", EventArgs(), EV_RETURNS_VOID
 
 // Obsttorte
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
+//Dragofer
+const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
+
 CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_AddLight,			idSecurityCamera::Event_AddLight )
-	EVENT( EV_SecurityCam_SpotLightToggle,	idSecurityCamera::Event_SpotLight_Toggle )
+	EVENT( EV_SecurityCam_SpotLightToggle,		idSecurityCamera::Event_SpotLight_Toggle )
 	EVENT( EV_SecurityCam_SweepToggle,		idSecurityCamera::Event_Sweep_Toggle)
-	EVENT( EV_PostSpawn,					idSecurityCamera::PostSpawn )
+	EVENT( EV_PostSpawn,				idSecurityCamera::PostSpawn )
 	EVENT( EV_SecurityCam_GetSpotLight,		idSecurityCamera::Event_GetSpotLight)	
+	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState)	
 	END_CLASS
 
 #define ALERT_INTERVAL 5000 // time between alert sounds (ms)
@@ -387,6 +391,52 @@ void idSecurityCamera::Event_GetSpotLight()
 	{
 		idThread::ReturnEntity(light);
 	}
+}
+
+/*
+================
+idSecurityCamera::Event_GetSecurityCameraState
+================
+*/
+void idSecurityCamera::Event_GetSecurityCameraState()
+{
+	int retFloat;
+
+	/*
+	3 states are almost instantly converted to STATE_SWEEPING. 
+	They will therefore almost never be detected and for the mapper are functionally identical to STATE_SWEEPING.
+	For ease of use, this event should only return a float from a continuous series, 1-5, rather than from 1-3 and 7-8.
+	*/
+
+	switch (state)
+	{
+	case STATE_SWEEPING:
+		retFloat = 1;
+		break;
+	case STATE_PLAYERSIGHTED:
+		retFloat = 2;
+		break;
+	case STATE_ALERTED:
+		retFloat = 3;
+		break;
+	case STATE_LOSTINTEREST:
+		retFloat = 1;
+		break;
+	case STATE_POWERRETURNS_SWEEPING:
+		retFloat = 1;
+		break;
+	case STATE_POWERRETURNS_PAUSED:
+		retFloat = 1;
+		break;
+	case STATE_PAUSED:
+		retFloat = 4;
+		break;
+	case STATE_DEAD:
+		retFloat = 5;
+		break;
+	}
+
+	idThread::ReturnFloat( retFloat );
 }
 
 /*
