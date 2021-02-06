@@ -103,6 +103,9 @@ private:
 	idEntityPtr<idEntity>	cameraDisplay;
 	bool					powerOn;
 	bool					spotlightPowerOn;
+	const char				*skinOn;
+	const char				*skinOff;
+	const char				*skinOnSpotlightOff;
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );

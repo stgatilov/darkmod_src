@@ -170,6 +170,9 @@ void idSecurityCamera::Spawn( void )
 	scanFov		= spawnArgs.GetFloat( "scanFov", "90" );
 	scanDist	= spawnArgs.GetFloat( "scanDist", "200" );
 	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );
+	skinOn		= spawnArgs.GetString("skin");
+	skinOff		= spawnArgs.GetString("skin_off");
+	skinOnSpotlightOff = spawnArgs.GetString("skin_on_spotlight_off");
 	stationary	= false;
 	nextAlertTime = 0;
 	sweeping = false;
@@ -252,6 +255,16 @@ void idSecurityCamera::Spawn( void )
 
 	powerOn = spawnArgs.GetBool("start_on", "1");
 	spotlightPowerOn = spawnArgs.GetBool("spotlight", "1");
+
+	if (powerOn)
+	{
+		Event_SetSkin(skinOn);
+	}
+
+	else
+	{
+		Event_SetSkin(skinOff);
+	}
 
 	// Schedule a post-spawn event to setup other spawnargs
 	PostEventMS( &EV_PostSpawn, 1 );
@@ -365,12 +378,12 @@ void idSecurityCamera::Event_SpotLight_Toggle(void)
 		if ( spotlightPowerOn )
 		{
 			light->On();
-			Event_SetSkin("security_camera_on");
+			Event_SetSkin(skinOn);
 		}
 		else
 		{
 			light->Off();
-			Event_SetSkin("security_camera_on_spotlight_off");
+			Event_SetSkin(skinOnSpotlightOff);
 		}
 	}
 }
@@ -1099,16 +1112,16 @@ void idSecurityCamera::Activate(idEntity* activator)
 	{
 		if ( light && spotlightPowerOn )
 		{
-			Event_SetSkin("security_camera_on"); // change skin
+			Event_SetSkin(skinOn); // change skin
 		}
 		else
 		{
-			Event_SetSkin("security_camera_on_spotlight_off"); // change skin
+			Event_SetSkin(skinOnSpotlightOff); // change skin
 		}
 	}
 	else
 	{
-		Event_SetSkin("security_camera_off"); // change skin
+		Event_SetSkin(skinOff); // change skin
 	}
 
 	// Toggle display screen
