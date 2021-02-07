@@ -323,9 +323,22 @@ void idSecurityCamera::Event_AddLight( void )
 	idLight	*light;
 	idVec3  cameraOrigin = GetPhysics()->GetOrigin();
 	idVec3	lightColor;
-	
+	idStr	spotlightTexture;
+	float	spotlightRange;
+	float	spotlightRadius;
+	idVec3	target;
+	idVec3	right;
+	idVec3	up;
+
 	spawnArgs.GetVector( "lightOffset", "0 0 0", lightOffset );
 	spawnArgs.GetVector("_color", "1 1 1", lightColor);
+	spawnArgs.GetString("spotlight_texture", "lights/biground1", spotlightTexture);
+	spawnArgs.GetFloat("spotlight_range", "0", spotlightRange);
+	spawnArgs.GetFloat("spotlight_radius", "0", spotlightRadius);
+
+	//use scanDist in case the entity does not have spotlight spawnargs
+	if (spotlightRange == 0)	spotlightRange = scanDist;
+	if (spotlightRadius == 0)	spotlightRadius = scanDist / 2.0f;
 
 	// rotate the light origin offset around the z axis
 
@@ -337,17 +350,16 @@ void idSecurityCamera::Event_AddLight( void )
 
 	// set target, right, up for the spotlight,
 	// as if the light were pointing along the +x axis
-
-	idVec3 target = idVec3(scanDist, 0, 0);
-	idVec3 right = idVec3(0, -scanDist / 2.0f, 0);
-	idVec3 up = idVec3(0, 0, scanDist / 2.0f);
+	target	= idVec3(spotlightRange, 0, 0);
+	right	= idVec3(0, -spotlightRadius, 0);
+	up		= idVec3(0, 0, spotlightRadius);
 
 	args.Set( "origin", ( cameraOrigin + lightOffset ).ToString() );
 	args.Set( "light_target", target.ToString() );
 	args.Set( "light_right", right.ToString() );
 	args.Set( "light_up", up.ToString() );
 	args.SetFloat( "angle", angle );
-	args.Set("texture", "lights/biground1");
+	args.Set("texture", spotlightTexture);
 	args.Set("_color", lightColor.ToString());
 
 	light = static_cast<idLight *>( gameLocal.SpawnEntityType( idLight::Type, &args ) );
