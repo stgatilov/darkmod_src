@@ -214,16 +214,22 @@ void idSecurityCamera::Spawn( void )
 
 	percentSwept = 0.0f;
 
-	if ( rotate )
-	{
-		StartSweep();
+	powerOn = spawnArgs.GetBool("start_on", "1");
+	spotlightPowerOn = spawnArgs.GetBool("spotlight", "1");
+
+	if ( powerOn ) {
+		if ( rotate )
+		{
+			StartSweep();
+		}
+		else
+		{
+			StartSound("snd_stationary", SND_CHANNEL_BODY, 0, false, NULL);
+		}
+
+		SetAlertMode( MODE_SCANNING );
+		BecomeActive( TH_THINK | TH_UPDATEVISUALS );
 	}
-	else
-	{
-		StartSound( "snd_stationary", SND_CHANNEL_BODY, 0, false, NULL );
-	}
-	SetAlertMode( MODE_SCANNING );
-	BecomeActive( TH_THINK | TH_UPDATEVISUALS );
 
 	if ( health ) {
 		fl.takedamage = true;
@@ -256,19 +262,6 @@ void idSecurityCamera::Spawn( void )
 	GetPhysics()->SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	// setup the physics
 	UpdateChangeableSpawnArgs( NULL );
-
-	powerOn = spawnArgs.GetBool("start_on", "1");
-	spotlightPowerOn = spawnArgs.GetBool("spotlight", "1");
-
-	if (powerOn)
-	{
-		Event_SetSkin(skinOn);
-	}
-
-	else
-	{
-		Event_SetSkin(skinOff);
-	}
 
 	// Schedule a post-spawn event to setup other spawnargs
 	PostEventMS( &EV_PostSpawn, 1 );
@@ -314,8 +307,11 @@ void idSecurityCamera::PostSpawn()
 		}
 	}
 
-	//Set initial colors of self & spotlight after spotlight may have spawned
-	UpdateColors();
+	//If no power, toggle self, spotlight and camera display off
+	if (!powerOn) {
+		powerOn = true;		//make sure powerOn is false again after Activate() toggles it
+		Activate(NULL);
+	}
 }
 
 /*
@@ -342,6 +338,10 @@ void idSecurityCamera::Event_AddLight( void )
 	spawnArgs.GetString("spotlight_texture", "lights/biground1", spotlightTexture);
 	spawnArgs.GetFloat("spotlight_range", "0", spotlightRange);
 	spawnArgs.GetFloat("spotlight_diameter", "0", spotlightDiameter);
+
+	if (useColors) {
+		lightColor = colorSweeping;
+	}
 
 	//use scanDist in case the entity does not have spotlight spawnargs
 	if (spotlightRange == 0)	spotlightRange = scanDist;
