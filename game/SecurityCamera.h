@@ -106,6 +106,10 @@ private:
 	const char				*skinOn;
 	const char				*skinOff;
 	const char				*skinOnSpotlightOff;
+	bool					useColors;
+	idVec3					colorSweeping;
+	idVec3					colorSighted;
+	idVec3					colorAlerted;
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );
@@ -125,7 +129,8 @@ private:
 	void					Event_GetSecurityCameraState( void );
 
 	void					PostSpawn( void );
-	void					AddSparks(void);
+	void					AddSparks( void );
+	void					UpdateColors( void );
 
 	void					Activate( idEntity* activator );
 	float					GetCalibratedLightgemValue(idPlayer* player);

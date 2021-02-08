@@ -173,6 +173,10 @@ void idSecurityCamera::Spawn( void )
 	skinOn		= spawnArgs.GetString("skin");
 	skinOff		= spawnArgs.GetString("skin_off");
 	skinOnSpotlightOff = spawnArgs.GetString("skin_on_spotlight_off");
+	useColors	= spawnArgs.GetBool("useColors");
+	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
+	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
+	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
 	stationary	= false;
 	nextAlertTime = 0;
 	sweeping = false;
@@ -309,6 +313,9 @@ void idSecurityCamera::PostSpawn()
 			}
 		}
 	}
+
+	//Set initial colors of self & spotlight after spotlight may have spawned
+	UpdateColors();
 }
 
 /*
@@ -366,6 +373,40 @@ void idSecurityCamera::Event_AddLight( void )
 	light->Bind( this, true );
 	spotLight = light;
 	light->UpdateVisuals();
+}
+
+/*
+================
+idSecurityCamera::UpdateColors
+================
+*/
+void idSecurityCamera::UpdateColors()
+{
+	if ( !useColors ) {
+		return;
+	}
+
+	idVec3	colorNew;
+	idLight* light = spotLight.GetEntity();
+
+	switch (state)
+	{
+	case STATE_PLAYERSIGHTED:
+		colorNew = colorSighted;
+		break;
+	case STATE_ALERTED:
+		colorNew = colorAlerted;
+		break;
+	default:
+		colorNew = colorSweeping;
+		break;
+	}
+
+	Event_SetColor(colorNew[0], colorNew[1], colorNew[2]);
+
+	if ( light ) {
+		light->Event_SetColor(colorNew[0], colorNew[1], colorNew[2]);
+	}
 }
 
 /*
@@ -754,6 +795,7 @@ void idSecurityCamera::Think( void )
 				sweeping = false;
 				state = STATE_PLAYERSIGHTED;
 				SetAlertMode(MODE_SIGHTED);
+				UpdateColors();
 			}
 			else if ( rotate && !stationary )
 			{
@@ -785,6 +827,7 @@ void idSecurityCamera::Think( void )
 					SetAlertMode(MODE_ALERT);
 					ActivateTargets(this);
 					state = STATE_ALERTED;
+					UpdateColors();
 				}
 				else
 				{
@@ -810,6 +853,7 @@ void idSecurityCamera::Think( void )
 					stationary = true;
 					state = STATE_SWEEPING;
 				}
+				UpdateColors();
 			}
 			break;
 		case STATE_ALERTED:
@@ -839,6 +883,7 @@ void idSecurityCamera::Think( void )
 					stationary = true;
 					state = STATE_SWEEPING;
 				}
+				UpdateColors();
 			}
 			break;
 		case STATE_POWERRETURNS_SWEEPING:
@@ -851,6 +896,7 @@ void idSecurityCamera::Think( void )
 				StartSound( "snd_stationary", SND_CHANNEL_BODY, 0, false, NULL );
 				state = STATE_SWEEPING;
 			}
+			UpdateColors();
 			break;
 		case STATE_POWERRETURNS_PAUSED:
 			if ( rotate )
@@ -862,6 +908,7 @@ void idSecurityCamera::Think( void )
 				StartSound( "snd_stationary", SND_CHANNEL_BODY, 0, false, NULL );
 				state = STATE_SWEEPING;
 			}
+			UpdateColors();
 			break;
 		case STATE_PAUSED:
 			if ( gameLocal.time >= pauseEndTime )
@@ -869,6 +916,7 @@ void idSecurityCamera::Think( void )
 				if ( rotate && !stationary )
 				{
 					ReverseSweep(); // changes state to STATE_SWEEPING
+					UpdateColors();
 				}
 			}
 			break;
