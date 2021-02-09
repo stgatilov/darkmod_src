@@ -227,9 +227,11 @@ void idSecurityCamera::Spawn( void )
 			StartSound("snd_stationary", SND_CHANNEL_BODY, 0, false, NULL);
 		}
 
-		SetAlertMode( MODE_SCANNING );
 		BecomeActive( TH_THINK | TH_UPDATEVISUALS );
 	}
+
+	//sets initial shaderParms
+	SetAlertMode(MODE_SCANNING);
 
 	if ( health ) {
 		fl.takedamage = true;
@@ -468,10 +470,18 @@ void idSecurityCamera::Event_GetSecurityCameraState()
 {
 	int retFloat;
 
+	if (!powerOn && state != STATE_DEAD)
+	{
+		//camera is switched off and not destroyed
+		retFloat = 4;
+		idThread::ReturnFloat(retFloat);
+		return;
+	}
+
 	/*
-	3 states are almost instantly converted to STATE_SWEEPING. 
-	They will therefore almost never be detected and for the mapper are functionally identical to STATE_SWEEPING.
-	For ease of use, this event should only return a float from a continuous series, 1-5, rather than from 1-3 and 7-8.
+	4 states are quickly converted to STATE_SWEEPING. 
+	They will therefore only rarely be detected and
+	are functionally identical to STATE_SWEEPING (camera is unalerted and active).
 	*/
 
 	switch (state)
@@ -495,7 +505,7 @@ void idSecurityCamera::Event_GetSecurityCameraState()
 		retFloat = 1;
 		break;
 	case STATE_PAUSED:
-		retFloat = 4;
+		retFloat = 1;
 		break;
 	case STATE_DEAD:
 		retFloat = 5;
