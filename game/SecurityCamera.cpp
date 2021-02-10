@@ -56,7 +56,6 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState)	
 	END_CLASS
 
-#define ALERT_INTERVAL 5000 // time between alert sounds (ms)
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
 #define SPARK_DELAY_BASE 3000  // base delay to next death spark
 #define SPARK_DELAY_VARIANCE 2000 // randomize spark delay
@@ -832,7 +831,7 @@ void idSecurityCamera::Think( void )
 				{
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
-					nextAlertTime = gameLocal.time + ALERT_INTERVAL;
+					nextAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("alarm_interval", "5"));
 					endAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("wait", "20"));
 					SetAlertMode(MODE_ALERT);
 					ActivateTargets(this);
@@ -873,7 +872,7 @@ void idSecurityCamera::Think( void )
 
 				if ( gameLocal.time >= nextAlertTime )
 				{
-					nextAlertTime = gameLocal.time + ALERT_INTERVAL;
+					nextAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("alarm_interval", "5"));
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 				}
@@ -1043,6 +1042,9 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
+
+	idStr skinBroken = spawnArgs.GetString("skin_broken", "security_camera_broken");
+	Event_SetSkin(skinBroken);
 
 	// Remove a spotlight, if there is one.
 
