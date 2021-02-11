@@ -75,7 +75,6 @@ private:
 	int						sweepStartTime;
 	int						sweepEndTime;
 	int						nextSparkTime;
-	int						removeSparkTime;
 	bool					negativeSweep;
 	bool					sweeping;
 	int						alertMode;
@@ -130,6 +129,7 @@ private:
 
 	void					PostSpawn( void );
 	void					AddSparks( void );
+	void					TriggerSparks( void );
 	void					UpdateColors( void );
 
 	void					Activate( idEntity* activator );

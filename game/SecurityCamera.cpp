@@ -59,8 +59,6 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
 #define SPARK_DELAY_BASE 3000  // base delay to next death spark
 #define SPARK_DELAY_VARIANCE 2000 // randomize spark delay
-#define SPARK_REMOVE_DELAY_FUTURE 20000 // temp assignment for when next to spawn sparks
-#define SPARK_REMOVE_DELAY 1000 // sparks are visible for this duration
 
 /*
 ================
@@ -78,7 +76,6 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( sweepStartTime );
 	savefile->WriteInt( sweepEndTime );
 	savefile->WriteInt( nextSparkTime );
-	savefile->WriteInt( removeSparkTime );
 	savefile->WriteBool( negativeSweep );
 	savefile->WriteBool( sweeping );
 	savefile->WriteInt( alertMode );
@@ -124,7 +121,6 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( sweepStartTime );
 	savefile->ReadInt( sweepEndTime );
 	savefile->ReadInt( nextSparkTime );
-	savefile->ReadInt( removeSparkTime );
 	savefile->ReadBool( negativeSweep );
 	savefile->ReadBool( sweeping );
 	savefile->ReadInt( alertMode );
@@ -181,7 +177,6 @@ void idSecurityCamera::Spawn( void )
 	sweeping = false;
 	sweepStartTime = sweepEndTime = 0;
 	nextSparkTime = 0;
-	removeSparkTime = 0;
 	state		  = STATE_SWEEPING;
 	emitPauseSound = true;
 	startAlertTime = 0;
@@ -718,29 +713,39 @@ void idSecurityCamera::SetAlertMode( int alert ) {
 idSecurityCamera::AddSparks
 ================
 */
-void idSecurityCamera::AddSparks( void )
+void idSecurityCamera::TriggerSparks( void )
 {
-	if ( !powerOn )
+	//do nothing if power is not on or it is not yet time to spark
+	if ((!powerOn) || (gameLocal.time < nextSparkTime))
 	{
-		sparks = NULL; // no sparks if there's no power
 		return;
 	}
 
-	// Create sparks
+	idEntity *sparkEntity = sparks.GetEntity();
 
-	idEntity *sparkEntity;
-	idDict args;
+	//Create a func_emitter if none exists yet
+	if (sparkEntity == NULL)
+	{
+		idDict args;
 
-	args.Set("classname","func_emitter");
-	args.Set("origin", GetPhysics()->GetOrigin().ToString());
-	args.Set("model","sparks_wires.prt");
-	args.Set("cycleTrigger", "1");
-	gameLocal.SpawnEntityDef( args, &sparkEntity );
-	sparks = sparkEntity;
-	sparkEntity->Show();
+		args.Set("classname", "func_emitter");
+		args.Set("origin", GetPhysics()->GetOrigin().ToString());
+		args.Set("model", "sparks_wires_oneshot.prt");
+		args.Set("cycleTrigger", "1");
+		gameLocal.SpawnEntityDef(args, &sparkEntity);
+		sparks = sparkEntity;
+	}
+
+	//Otherwise use the existing func_emitter
+	else
+	{
+		sparkEntity->Activate(NULL);
+	}
+
+	StopSound(SND_CHANNEL_ANY, false);
+	StartSound("snd_sparks", SND_CHANNEL_BODY, 0, false, NULL);
 
 	nextSparkTime = gameLocal.time + SPARK_DELAY_BASE + gameLocal.random.RandomInt(SPARK_DELAY_VARIANCE);
-	removeSparkTime = gameLocal.time + SPARK_REMOVE_DELAY;
 }
 
 /*
@@ -771,23 +776,7 @@ void idSecurityCamera::Think( void )
 
 	if ( state == STATE_DEAD )
 	{
-		// check if it's time to remove the sparks
-
-		if (sparks.GetEntity() && ( gameLocal.time >= removeSparkTime ))
-		{
-			sparks.GetEntity()->PostEventMS( &EV_SafeRemove, 0 );
-			sparks = NULL;
-			removeSparkTime = gameLocal.time + SPARK_REMOVE_DELAY_FUTURE; // far in the future
-		}
-
-		// handle electric sparking sound
-
-		if (powerOn && ( gameLocal.time >= nextSparkTime ))
-		{
-			StopSound(SND_CHANNEL_ANY, false);
-			StartSound("snd_sparks", SND_CHANNEL_BODY, 0, false, NULL);
-			AddSparks(); // Create sparks
-		}
+		TriggerSparks(); // Trigger spark effect
 	}
 
 	if ( thinkFlags & TH_THINK )
@@ -1061,7 +1050,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		cameraDisplay.GetEntity()->Hide();
 	}
 
-	AddSparks(); // Create sparks
+	nextSparkTime = gameLocal.time + SPARK_DELAY_BASE + gameLocal.random.RandomInt(SPARK_DELAY_VARIANCE);
 	state = STATE_DEAD;
 	BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
 }
@@ -1126,7 +1115,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 	{
 		if (powerOn && ( sparks.GetEntity() == NULL ))
 		{
-			AddSparks();
+			TriggerSparks();
 		}
 		return;
 	}
