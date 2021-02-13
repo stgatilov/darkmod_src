@@ -1020,6 +1020,11 @@ idSecurityCamera::Killed
 ============
 */
 void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+	if ( state == STATE_DEAD )
+	{
+		return;
+	}
+
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
 	StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
