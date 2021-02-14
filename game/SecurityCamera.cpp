@@ -166,6 +166,7 @@ idSecurityCamera::Spawn
 void idSecurityCamera::Spawn( void )
 {
 	idStr	str;
+	idDict	args;
 
 	rotate		= spawnArgs.GetBool("rotate", "1");
 	sweepAngle	= spawnArgs.GetFloat( "sweepAngle", "90" );
@@ -999,7 +1000,21 @@ idSecurityCamera::SweepTime
 ================
 */
 float idSecurityCamera::SweepTime( void ) const {
-	return spawnArgs.GetFloat( "sweepSpeed", "5" );
+	//backwards compatibility: "sweepSpeed" was originally used as time. Convert into "sweepTime"
+	float sweepTime;
+
+	//if this is a new entity that has only a "sweepTime" spawnarg, use "sweepTime"
+	if (spawnArgs.GetFloat("sweepSpeed", "0") == 0)
+	{
+		sweepTime = spawnArgs.GetFloat("sweepTime", "5");
+	}
+	//otherwise, if this is an old entity, use "sweepSpeed" how it was originally used (incorrectly)
+	else
+	{
+		sweepTime = spawnArgs.GetFloat("sweepSpeed", "5");
+	}
+
+	return sweepTime;
 }
 
 /*
