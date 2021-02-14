@@ -109,6 +109,11 @@ private:
 	idVec3					colorSweeping;
 	idVec3					colorSighted;
 	idVec3					colorAlerted;
+	bool					sparksPowerDependent;
+	bool					sparksPeriodic;
+	float					sparksInterval;
+	float					sparksIntervalRand;
+	bool					sparksOn;
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );
@@ -128,7 +133,6 @@ private:
 	void					Event_GetSecurityCameraState( void );
 
 	void					PostSpawn( void );
-	void					AddSparks( void );
 	void					TriggerSparks( void );
 	void					UpdateColors( void );
 

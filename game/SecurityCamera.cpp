@@ -57,8 +57,6 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	END_CLASS
 
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
-#define SPARK_DELAY_BASE 3000  // base delay to next death spark
-#define SPARK_DELAY_VARIANCE 2000 // randomize spark delay
 
 /*
 ================
@@ -103,6 +101,11 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	cameraDisplay.Save(savefile);
 	savefile->WriteBool(powerOn);
 	savefile->WriteBool(spotlightPowerOn);
+	savefile->WriteBool(sparksPowerDependent);
+	savefile->WriteBool(sparksPeriodic);
+	savefile->WriteFloat(sparksInterval);
+	savefile->WriteFloat(sparksIntervalRand);
+	savefile->WriteBool(sparksOn);
 }
 
 /*
@@ -148,6 +151,11 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	cameraDisplay.Restore(savefile);
 	savefile->ReadBool(powerOn);
 	savefile->ReadBool(spotlightPowerOn);
+	savefile->ReadBool(sparksPowerDependent);
+	savefile->ReadBool(sparksPeriodic);
+	savefile->ReadFloat(sparksInterval);
+	savefile->ReadFloat(sparksIntervalRand);
+	savefile->ReadBool(sparksOn);
 }
 
 /*
@@ -168,10 +176,15 @@ void idSecurityCamera::Spawn( void )
 	skinOn		= spawnArgs.GetString("skin");
 	skinOff		= spawnArgs.GetString("skin_off");
 	skinOnSpotlightOff = spawnArgs.GetString("skin_on_spotlight_off");
-	useColors	= spawnArgs.GetBool("useColors");
+	useColors		= spawnArgs.GetBool("useColors");
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
 	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
+	sparksPowerDependent	= spawnArgs.GetBool("sparks_power_dependent", "1");
+	sparksPeriodic			= spawnArgs.GetBool("sparks_periodic", "1");
+	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
+	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
+	sparksOn = false;
 	stationary	= false;
 	nextAlertTime = 0;
 	sweeping = false;
@@ -224,8 +237,12 @@ void idSecurityCamera::Spawn( void )
 		BecomeActive( TH_THINK | TH_UPDATEVISUALS );
 	}
 
-	//sets initial shaderParms
+	//sets initial shaderParms and color
 	SetAlertMode(MODE_SCANNING);
+	if ( useColors )
+	{
+		Event_SetColor(colorSweeping[0], colorSweeping[1], colorSweeping[2]);
+	}
 
 	if ( health ) {
 		fl.takedamage = true;
@@ -710,15 +727,33 @@ void idSecurityCamera::SetAlertMode( int alert ) {
 
 /*
 ================
-idSecurityCamera::AddSparks
+idSecurityCamera::TriggerSparks
 ================
 */
 void idSecurityCamera::TriggerSparks( void )
 {
-	//do nothing if power is not on or it is not yet time to spark
-	if ((!powerOn) || (gameLocal.time < nextSparkTime))
+	//do nothing if it is not yet time to spark
+	if ( gameLocal.time < nextSparkTime )
 	{
 		return;
+	}
+
+	if ( !sparksPeriodic )
+	{
+		BecomeInactive(TH_UPDATEPARTICLES);
+
+		if ( sparksPowerDependent )
+		{
+			if ( sparksOn == powerOn )
+			{
+				return;
+			}
+
+			else
+			{
+				sparksOn = powerOn;
+			}
+		}
 	}
 
 	idEntity *sparkEntity = sparks.GetEntity();
@@ -727,16 +762,25 @@ void idSecurityCamera::TriggerSparks( void )
 	if (sparkEntity == NULL)
 	{
 		idDict args;
+		const char *model;
+		const char *cycleTrigger;
+
+		spawnArgs.GetString("sparks_particle", "sparks_wires_oneshot.prt", &model);
+		spawnArgs.GetString("sparks_periodic", "1", &cycleTrigger);
 
 		args.Set("classname", "func_emitter");
 		args.Set("origin", GetPhysics()->GetOrigin().ToString());
-		args.Set("model", "sparks_wires_oneshot.prt");
-		args.Set("cycleTrigger", "1");
+		args.Set("model", model);
+		args.Set("cycleTrigger", cycleTrigger);
 		gameLocal.SpawnEntityDef(args, &sparkEntity);
 		sparks = sparkEntity;
+		sparksOn = true;
+		if ( sparksPeriodic )
+		{
+			sparkEntity->Activate(NULL);
+		}
 	}
 
-	//Otherwise use the existing func_emitter
 	else
 	{
 		sparkEntity->Activate(NULL);
@@ -744,8 +788,7 @@ void idSecurityCamera::TriggerSparks( void )
 
 	StopSound(SND_CHANNEL_ANY, false);
 	StartSound("snd_sparks", SND_CHANNEL_BODY, 0, false, NULL);
-
-	nextSparkTime = gameLocal.time + SPARK_DELAY_BASE + gameLocal.random.RandomInt(SPARK_DELAY_VARIANCE);
+	nextSparkTime = gameLocal.time + SEC2MS(sparksInterval) + SEC2MS(gameLocal.random.RandomInt(sparksIntervalRand));
 }
 
 /*
@@ -774,7 +817,7 @@ void idSecurityCamera::Think( void )
 	// run physics
 	RunPhysics();
 
-	if ( state == STATE_DEAD )
+	if ( state == STATE_DEAD && ( thinkFlags & TH_UPDATEPARTICLES ) )
 	{
 		TriggerSparks(); // Trigger spark effect
 	}
@@ -1055,9 +1098,18 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		cameraDisplay.GetEntity()->Hide();
 	}
 
-	nextSparkTime = gameLocal.time + SPARK_DELAY_BASE + gameLocal.random.RandomInt(SPARK_DELAY_VARIANCE);
 	state = STATE_DEAD;
-	BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
+
+	if (spawnArgs.GetBool("sparks", "1"))
+	{
+		if ( !powerOn && sparksPowerDependent )
+		{
+			return;
+		}
+
+		nextSparkTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("sparks_delay", "2"));
+		BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
+	}
 }
 
 
@@ -1118,9 +1170,26 @@ void idSecurityCamera::Activate(idEntity* activator)
 	
 	if ( state == STATE_DEAD )
 	{
-		if (powerOn && ( sparks.GetEntity() == NULL ))
+		if (spawnArgs.GetBool("sparks", "1") && sparksPowerDependent )
 		{
-			TriggerSparks();
+			if (powerOn)
+			{
+				nextSparkTime = gameLocal.time;
+				BecomeActive(TH_UPDATEPARTICLES);
+			}
+			else if (!powerOn)
+			{
+				BecomeInactive(TH_UPDATEPARTICLES);
+
+				if ( sparksOn && !sparksPeriodic )
+				{
+					idEntity *sparksEntity = sparks.GetEntity();
+
+					sparksEntity->Activate(NULL);	// for non-periodic particles
+					StopSound(SND_CHANNEL_ANY, false);
+					sparksOn = false;
+				}
+			}
 		}
 		return;
 	}
