@@ -106,6 +106,10 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(sparksInterval);
 	savefile->WriteFloat(sparksIntervalRand);
 	savefile->WriteBool(sparksOn);
+	savefile->WriteBool(useColors);
+	savefile->WriteVec3(colorSweeping);
+	savefile->WriteVec3(colorSighted);
+	savefile->WriteVec3(colorAlerted);
 }
 
 /*
@@ -156,6 +160,11 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(sparksInterval);
 	savefile->ReadFloat(sparksIntervalRand);
 	savefile->ReadBool(sparksOn);
+	savefile->ReadBool(useColors);
+	savefile->ReadVec3(colorSweeping);
+	savefile->ReadVec3(colorSighted);
+	savefile->ReadVec3(colorAlerted);
+
 }
 
 /*
@@ -166,7 +175,6 @@ idSecurityCamera::Spawn
 void idSecurityCamera::Spawn( void )
 {
 	idStr	str;
-	idDict	args;
 
 	rotate		= spawnArgs.GetBool("rotate", "1");
 	sweepAngle	= spawnArgs.GetFloat( "sweepAngle", "90" );
@@ -174,9 +182,6 @@ void idSecurityCamera::Spawn( void )
 	scanFov		= spawnArgs.GetFloat( "scanFov", "90" );
 	scanDist	= spawnArgs.GetFloat( "scanDist", "200" );
 	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );
-	skinOn		= spawnArgs.GetString("skin");
-	skinOff		= spawnArgs.GetString("skin_off");
-	skinOnSpotlightOff = spawnArgs.GetString("skin_on_spotlight_off");
 	useColors		= spawnArgs.GetBool("useColors");
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
@@ -445,12 +450,12 @@ void idSecurityCamera::Event_SpotLight_Toggle(void)
 		if ( spotlightPowerOn )
 		{
 			light->On();
-			Event_SetSkin(skinOn);
+			Event_SetSkin(spawnArgs.GetString("skin"));
 		}
 		else
 		{
 			light->Off();
-			Event_SetSkin(skinOnSpotlightOff);
+			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off"));
 		}
 	}
 }
@@ -1095,8 +1100,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
 
-	idStr skinBroken = spawnArgs.GetString("skin_broken", "security_camera_broken");
-	Event_SetSkin(skinBroken);
+	Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_broken"));
 
 	// Remove a spotlight, if there is one.
 
@@ -1262,16 +1266,16 @@ void idSecurityCamera::Activate(idEntity* activator)
 	{
 		if ( light && spotlightPowerOn )
 		{
-			Event_SetSkin(skinOn); // change skin
+			Event_SetSkin(spawnArgs.GetString("skin"));
 		}
 		else
 		{
-			Event_SetSkin(skinOnSpotlightOff); // change skin
+			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off"));
 		}
 	}
 	else
 	{
-		Event_SetSkin(skinOff); // change skin
+		Event_SetSkin(spawnArgs.GetString("skin_off"));
 	}
 
 	// Toggle display screen
@@ -1324,4 +1328,3 @@ void idSecurityCamera::Event_Sweep_Toggle( void )
 		break;
 	}
 }
-

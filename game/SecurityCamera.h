@@ -102,9 +102,6 @@ private:
 	idEntityPtr<idEntity>	cameraDisplay;
 	bool					powerOn;
 	bool					spotlightPowerOn;
-	const char				*skinOn;
-	const char				*skinOff;
-	const char				*skinOnSpotlightOff;
 	bool					useColors;
 	idVec3					colorSweeping;
 	idVec3					colorSighted;
