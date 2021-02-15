@@ -450,7 +450,7 @@ void idSecurityCamera::Event_SpotLight_Toggle(void)
 		if ( spotlightPowerOn )
 		{
 			light->On();
-			Event_SetSkin(spawnArgs.GetString("skin"));
+			Event_SetSkin(spawnArgs.GetString("skin_on"));
 		}
 		else
 		{
@@ -1266,7 +1266,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 	{
 		if ( light && spotlightPowerOn )
 		{
-			Event_SetSkin(spawnArgs.GetString("skin"));
+			Event_SetSkin(spawnArgs.GetString("skin_on"));
 		}
 		else
 		{
