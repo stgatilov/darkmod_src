@@ -494,6 +494,13 @@ public:
 	**/
 	bool					m_listening; // grayman #4620
 
+	/**
+	* Camera field of view for remote renders
+	**/
+	int						cameraFovX;
+	int						cameraFovY;
+
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 

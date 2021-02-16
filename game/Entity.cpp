@@ -970,6 +970,9 @@ idEntity::idEntity()
 	fromMapFile		= false;
 	renderView		= NULL;
 	cameraTarget	= NULL;
+	cameraFovX		= 0;
+	cameraFovY		= 0;
+
 	health			= 0;
 	maxHealth		= 0;
 
@@ -1564,6 +1567,9 @@ void idEntity::Spawn( void )
 
 	cameraTarget = NULL;
 	temp = spawnArgs.GetString( "cameraTarget" );
+	cameraFovX = spawnArgs.GetInt("cameraFovX", "120");
+	cameraFovY = spawnArgs.GetInt("cameraFovY", "120");
+
 	if ( temp && temp[0] ) {
 		// update the camera target
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
@@ -2097,7 +2103,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( fromMapFile );
 
 	savefile->WriteObject( cameraTarget );
-
+	savefile->WriteInt( cameraFovX );
+	savefile->WriteInt( cameraFovY );
+	
 	savefile->WriteInt( health );
 	savefile->WriteInt( maxHealth );
 
@@ -2371,6 +2379,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 		// // grayman #4615 - update the camera target (will handle a NULL "cameraTarget")
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
 	}
+
+	savefile->ReadInt( cameraFovX );
+	savefile->ReadInt( cameraFovY );
 
 	savefile->ReadInt( health );
 	savefile->ReadInt( maxHealth );
@@ -4506,8 +4517,8 @@ renderView_t *idEntity::GetRenderView( void ) {
 	memset( renderView, 0, sizeof( *renderView ) );
 
 	renderView->vieworg = GetPhysics()->GetOrigin();
-	renderView->fov_x = 120;
-	renderView->fov_y = 120;
+	renderView->fov_x = cameraFovX;
+	renderView->fov_y = cameraFovY;
 	renderView->viewaxis = GetPhysics()->GetAxis();
 
 	// copy global shader parms

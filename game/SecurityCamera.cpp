@@ -218,6 +218,16 @@ void idSecurityCamera::Spawn( void )
 		PostEventMS( &EV_SecurityCam_AddLight, 0 );
 	}
 
+	//Use scanFov if cameraFovX and cameraFovY are not set
+	if ( !spawnArgs.GetInt("cameraFovX", "0") )
+	{
+		cameraFovX = scanFov;
+	}
+	if ( !spawnArgs.GetInt("cameraFovY", "0") )
+	{
+		cameraFovY = scanFov;
+	}
+
 	negativeSweep = ( sweepAngle < 0 ) ? true : false;
 	sweepAngle = fabs( sweepAngle );
 
@@ -321,6 +331,8 @@ void idSecurityCamera::PostSpawn()
 			if ( cameraTarget == ect )
 			{
 				cameraDisplay = ent;
+				ect->cameraFovX = cameraFovX;
+				ect->cameraFovY = cameraFovY;
 				break;
 			}
 		}
@@ -584,8 +596,8 @@ idSecurityCamera::GetRenderView
 */
 renderView_t *idSecurityCamera::GetRenderView() {
 	renderView_t *rv = idEntity::GetRenderView();
-	rv->fov_x = scanFov;
-	rv->fov_y = scanFov;
+	rv->fov_x = cameraFovX;
+	rv->fov_y = cameraFovY;
 	rv->viewaxis = GetAxis().ToAngles().ToMat3();
 	idVec3 forward = GetAxis().ToAngles().ToForward(); // vector along forward sightline
 	rv->vieworg = GetPhysics()->GetOrigin() + viewOffset.LengthFast()*forward;
