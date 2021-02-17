@@ -215,7 +215,7 @@ void idSecurityCamera::Spawn( void )
 	spawnArgs.GetVector( "viewOffset", "0 0 0", viewOffset );
 
 	if ( spawnArgs.GetBool( "spotLight", "0" ) ) {
-		PostEventMS( &EV_SecurityCam_AddLight, 0 );
+			PostEventMS(&EV_SecurityCam_AddLight, 0);
 	}
 
 	//Use scanFov if cameraFovX and cameraFovY are not set
@@ -237,8 +237,8 @@ void idSecurityCamera::Spawn( void )
 
 	percentSwept = 0.0f;
 
-	powerOn = spawnArgs.GetBool("start_on", "1");
-	spotlightPowerOn = spawnArgs.GetBool("spotlight", "1");
+	powerOn = !spawnArgs.GetBool("start_off", "0");
+	spotlightPowerOn = true;
 
 	if ( powerOn ) {
 		if ( rotate )
@@ -255,8 +255,7 @@ void idSecurityCamera::Spawn( void )
 
 	//sets initial shaderParms and color
 	SetAlertMode(MODE_SCANNING);
-	if ( useColors )
-	{
+	if ( useColors ) {
 		Event_SetColor(colorSweeping[0], colorSweeping[1], colorSweeping[2]);
 	}
 
@@ -352,58 +351,74 @@ idSecurityCamera::Event_AddLight
 */
 void idSecurityCamera::Event_AddLight( void )
 {
-	idDict	args;
-	idVec3	lightOffset;
+	//Check whether the mapper has specified a valid custom spotlight
 	idLight	*light;
-	idVec3  cameraOrigin = GetPhysics()->GetOrigin();
-	idVec3	lightColor;
-	idStr	spotlightTexture;
-	float	spotlightRange;
-	float	spotlightDiameter;
-	idVec3	target;
-	idVec3	right;
-	idVec3	up;
+	idStr str;
+	
+	str = spawnArgs.GetString("spotlight_custom", "");
+	light = static_cast<idLight *>( gameLocal.FindEntity(str) );
 
-	spawnArgs.GetVector( "lightOffset", "0 0 0", lightOffset );
-	spawnArgs.GetVector("_color", "1 1 1", lightColor);
-	spawnArgs.GetString("spotlight_texture", "lights/biground1", spotlightTexture);
-	spawnArgs.GetFloat("spotlight_range", "0", spotlightRange);
-	spawnArgs.GetFloat("spotlight_diameter", "0", spotlightDiameter);
-
-	if (useColors) {
-		lightColor = colorSweeping;
+	if ( light && light->IsType(idLight::Type) ) {
+		spotLight = light;
+		if (powerOn)	light->On();
+		else			light->Off();
 	}
 
-	//use scanDist in case the entity does not have spotlight spawnargs
-	if (spotlightRange == 0)	spotlightRange = scanDist;
-	if (spotlightDiameter == 0)	spotlightDiameter = scanDist / 2.0f;
+	//Otherwise spawn a spotlight
+	else {
+		idDict	args;
+		idVec3	lightOffset;
+		idVec3	lightColor;
+		idVec3  cameraOrigin = GetPhysics()->GetOrigin();
+		idStr	spotlightTexture;
+		float	spotlightRange;
+		float	spotlightDiameter;
+		idVec3	target;
+		idVec3	right;
+		idVec3	up;
 
-	// rotate the light origin offset around the z axis
+		spawnArgs.GetVector("lightOffset", "0 0 0", lightOffset);
+		spawnArgs.GetVector("_color", "1 1 1", lightColor);
+		spawnArgs.GetString("spotlight_texture", "lights/biground1", spotlightTexture);
+		spawnArgs.GetFloat("spotlight_range", "0", spotlightRange);
+		spawnArgs.GetFloat("spotlight_diameter", "0", spotlightDiameter);
 
-	float angle_radians = angle*(idMath::PI / 180.0f);
-	
-	float a = lightOffset.x*idMath::Cos(angle_radians) - lightOffset.y*idMath::Sin(angle_radians);
-	float b = lightOffset.x*idMath::Sin(angle_radians) + lightOffset.y*idMath::Cos(angle_radians);
-	lightOffset = idVec3(a, b, lightOffset.z);
+		//use scanDist in case the entity does not have spotlight spawnargs
+		if (spotlightRange == 0)	spotlightRange = scanDist;
+		if (spotlightDiameter == 0)	spotlightDiameter = scanDist / 2.0f;
 
-	// set target, right, up for the spotlight,
-	// as if the light were pointing along the +x axis
-	target	= idVec3(spotlightRange, 0, 0);
-	right	= idVec3(0, -spotlightDiameter, 0);
-	up		= idVec3(0, 0, spotlightDiameter);
+		// rotate the light origin offset around the z axis
 
-	args.Set( "origin", ( cameraOrigin + lightOffset ).ToString() );
-	args.Set( "light_target", target.ToString() );
-	args.Set( "light_right", right.ToString() );
-	args.Set( "light_up", up.ToString() );
-	args.SetFloat( "angle", angle );
-	args.Set("texture", spotlightTexture);
-	args.Set("_color", lightColor.ToString());
+		float angle_radians = angle * (idMath::PI / 180.0f);
 
-	light = static_cast<idLight *>( gameLocal.SpawnEntityType( idLight::Type, &args ) );
-	light->Bind( this, true );
-	spotLight = light;
-	light->UpdateVisuals();
+		float a = lightOffset.x*idMath::Cos(angle_radians) - lightOffset.y*idMath::Sin(angle_radians);
+		float b = lightOffset.x*idMath::Sin(angle_radians) + lightOffset.y*idMath::Cos(angle_radians);
+		lightOffset = idVec3(a, b, lightOffset.z);
+
+		// set target, right, up for the spotlight,
+		// as if the light were pointing along the +x axis
+		target = idVec3(spotlightRange, 0, 0);
+		right = idVec3(0, -spotlightDiameter, 0);
+		up = idVec3(0, 0, spotlightDiameter);
+
+		args.Set("origin", (cameraOrigin + lightOffset).ToString());
+		args.Set("light_target", target.ToString());
+		args.Set("light_right", right.ToString());
+		args.Set("light_up", up.ToString());
+		args.SetFloat("angle", angle);
+		args.Set("texture", spotlightTexture);
+		args.Set("_color", lightColor.ToString());
+
+		light = static_cast<idLight *>(gameLocal.SpawnEntityType(idLight::Type, &args));
+		light->Bind(this, true);
+		light->SetAngles( idAngles(0, 0, 0) );
+		spotLight = light;
+		light->UpdateVisuals();
+	}
+
+	if ( useColors ) {
+		light->Event_SetColor(colorSweeping[0], colorSweeping[1], colorSweeping[2]);
+	}
 }
 
 /*
