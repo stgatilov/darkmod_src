@@ -261,8 +261,11 @@ void idSecurityCamera::Spawn( void )
 		Event_SetColor(colorSweeping[0], colorSweeping[1], colorSweeping[2]);
 	}
 
-	if ( health ) {
+	if ( health > 0 ) {
 		fl.takedamage = true;
+	}
+	else {
+		fl.takedamage = false;
 	}
 
 	pvsArea = gameLocal.pvs.GetPVSArea( GetPhysics()->GetOrigin() );
@@ -858,7 +861,7 @@ void idSecurityCamera::Think( void )
 			DrawFov();
 		}
 
-		if (health <= 0)
+		if ( health <= 0 && fl.takedamage )
 		{
 			BecomeInactive( TH_THINK );
 			return;
@@ -1135,11 +1138,20 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
-	StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
-	const char *fx = spawnArgs.GetString( "fx_destroyed" );
-	if ( fx[0] != '\0' )
-	{
-		idEntityFx::StartFx( fx, NULL, NULL, this, true );
+
+	idStr fx;
+
+	if ( powerOn ) {
+		StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
+		fx = spawnArgs.GetString("fx_destroyed");
+	}
+	else if ( !powerOn ) {
+		StartSound("snd_death_nopower", SND_CHANNEL_BODY, 0, false, NULL);
+		fx = spawnArgs.GetString("fx_destroyed_nopower");
+	}
+
+	if ( fx.Length() ) {
+			idEntityFx::StartFx(fx, NULL, NULL, this, true);
 	}
 
 	// call base class method to switch to broken model
@@ -1183,10 +1195,19 @@ idSecurityCamera::Pain
 ============
 */
 bool idSecurityCamera::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	const char *fx = spawnArgs.GetString( "fx_damage" );
-	if ( fx[0] != '\0' ) {
-		idEntityFx::StartFx( fx, NULL, NULL, this, true );
+	idStr fx;
+
+	if ( powerOn ) {
+		fx = spawnArgs.GetString("fx_damage");
 	}
+	else if ( !powerOn ) {
+		fx = spawnArgs.GetString("fx_damage_nopower");
+	}
+
+	if ( fx.Length() ) {
+		idEntityFx::StartFx(fx, NULL, NULL, this, true);
+	}
+
 	return true;
 }
 
