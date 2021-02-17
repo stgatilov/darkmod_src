@@ -383,9 +383,25 @@ void idSecurityCamera::Event_AddLight( void )
 		spawnArgs.GetFloat("spotlight_range", "0", spotlightRange);
 		spawnArgs.GetFloat("spotlight_diameter", "0", spotlightDiameter);
 
-		//use scanDist in case the entity does not have spotlight spawnargs
-		if (spotlightRange == 0)	spotlightRange = scanDist;
-		if (spotlightDiameter == 0)	spotlightDiameter = scanDist / 2.0f;
+		//if neither range nor diameter were set (old entity), use scanDist for both
+		if ( spotlightRange == 0 && spotlightDiameter == 0 )
+		{
+			spotlightRange = scanDist;
+			spotlightDiameter = scanDist / 2.0f;
+		}
+
+		//if only one was not set, find which one
+		else
+		{
+			if (spotlightRange == 0) {
+				spotlightRange = scanDist;
+			}
+			//automatically calculate diameter to match range & scanFov
+			if ( spotlightDiameter == 0 ) {
+				if ( scanFov > 90 ) spotlightDiameter = 1.5f * spotlightRange;
+				else				spotlightDiameter = 1.5f * spotlightRange * idMath::Tan( DEG2RAD(scanFov / 2) );
+			}
+		}
 
 		// rotate the light origin offset around the z axis
 
