@@ -111,6 +111,7 @@ private:
 	float					sparksInterval;
 	float					sparksIntervalRand;
 	bool					sparksOn;
+	float					sightThreshold;
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );

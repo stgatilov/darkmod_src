@@ -110,6 +110,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(colorSweeping);
 	savefile->WriteVec3(colorSighted);
 	savefile->WriteVec3(colorAlerted);
+	savefile->WriteFloat(sightThreshold);
 }
 
 /*
@@ -164,7 +165,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3(colorSweeping);
 	savefile->ReadVec3(colorSighted);
 	savefile->ReadVec3(colorAlerted);
-
+	savefile->ReadFloat(sightThreshold);
 }
 
 /*
@@ -190,6 +191,7 @@ void idSecurityCamera::Spawn( void )
 	sparksPeriodic			= spawnArgs.GetBool("sparks_periodic", "1");
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
+	sightThreshold			= spawnArgs.GetFloat("sight_threshold", "0.1");
 	sparksOn = false;
 	stationary	= false;
 	nextAlertTime = 0;
@@ -719,7 +721,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 		}
 
 		// take lighting into account
-		if (IsEntityHiddenByDarkness(ent, 0.1f))
+		if ( IsEntityHiddenByDarkness(ent, sightThreshold) )
 		{
 			continue;
 		}
