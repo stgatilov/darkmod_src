@@ -13,7 +13,7 @@ int ProgressIndicatorGui::InterruptFlag = 0;
 
 ProgressIndicatorGui::~ProgressIndicatorGui() {
 	//reset labels to constant strings to avoid dangling pointers
-	_progressWidget->label("");
+	_progressWidget->label("done");
 	if (_labelWidget)
 		_labelWidget->label("");
 }

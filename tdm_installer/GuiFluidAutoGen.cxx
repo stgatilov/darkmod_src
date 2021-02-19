@@ -1845,7 +1845,7 @@ data, but it will be downloaded sooner or later anyway.");
         } // Fl_Progress* g_Install_ProgressRepack
         { g_Install_ProgressFinalize = new Fl_Progress(335, 255, 680, 20, "Finalizing...");
         } // Fl_Progress* g_Install_ProgressFinalize
-        { g_Install_TextFinishedInstall = new Fl_Text_Display(340, 310, 660, 55);
+        { g_Install_TextFinishedInstall = new Fl_Text_Display(340, 35, 660, 55);
           g_Install_TextFinishedInstall->box(FL_NO_BOX);
           g_Install_TextFinishedInstall->color(FL_BACKGROUND_COLOR);
           g_Install_TextFinishedInstall->align(Fl_Align(FL_ALIGN_LEFT));

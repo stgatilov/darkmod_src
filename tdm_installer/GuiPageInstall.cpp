@@ -74,6 +74,7 @@ void Install_MetaPerformInstall() {
 		return;
 	}
 
+	g_Install_TextInstalling->hide();
 	g_Install_TextFinishedInstall->show();
 	g_Install_TextAdditional->show();
 	g_Install_ButtonRestoreCfg->show();
