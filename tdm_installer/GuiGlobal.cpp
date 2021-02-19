@@ -120,7 +120,14 @@ static void GuiInstallCallbacks() {
 }
 
 
+static void GuiSetIcon(Fl_Window *window) {
+#ifdef _WIN32
+	window->icon((char*)LoadIcon(fl_display, MAKEINTRESOURCE(101)));
+#endif
+}
+
 void GuiInitAll() {
+	GuiSetIcon(g_Window);
 	GuiToInitialState();
 	GuiInstallCallbacks();
 	GuiSetStyles(g_Window);
@@ -139,6 +146,7 @@ void GuiLoaded(void*) {
 }
 
 void GuiInitHelp() {
+	GuiSetIcon(g_HelpWindow);
 	GuiSetStyles(g_HelpWindow);
 
 	static Fl_Text_Buffer g_Help_StringParameters;
