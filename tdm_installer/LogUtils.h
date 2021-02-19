@@ -17,5 +17,8 @@ using ZipSync::ErrorException;
 class LoggerTdm : public ZipSync::Logger {
 public:
 	LoggerTdm();
-    virtual void Message(LogCode code, Severity severity, const char *message) override;
+	void Init();
+	virtual void Message(LogCode code, Severity severity, const char *message) override;
 };
+
+std::string FormatFilenameWithDatetime(const char *format, const char *label);

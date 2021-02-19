@@ -206,7 +206,9 @@ std::vector<std::string> Actions::CheckSpaceAndPermissions(const std::string &in
 void Actions::StartLogFile() {
 	//from now on, write logs to a logfile in CWD
 	delete g_logger;
-	g_logger = new LoggerTdm();
+	auto myLogger = new LoggerTdm();
+	g_logger = myLogger;
+	myLogger->Init();
 	g_logger->infof("Install directory: %s", OsUtils::GetCwd().c_str());
 }
 
@@ -739,13 +741,8 @@ void Actions::PerformInstallFinalize(ZipSync::ProgressIndicator *progress) {
 	if (progress)
 		progress->Update(0.95, "Renaming config file...");
 	if (stdext::is_regular_file(TDM_DARKMOD_CFG_FILENAME)) {
-		time_t timeval = time(0);
-		//note: use UTC time to avoid any timezone troubles
-		auto *tm = gmtime(&timeval);
-		char filename[1024] = {0};
-		int len = strftime(filename, sizeof(filename), TDM_DARKMOD_CFG_OLD_FORMAT, tm);
-		ZipSyncAssertF(len > 0 && len < sizeof(filename)-1, "Failed to format TDM config filename with datetime (%d)", len);
-		g_logger->infof("Renaming %s to %s...", TDM_DARKMOD_CFG_FILENAME, filename);
+		std::string filename = FormatFilenameWithDatetime(TDM_DARKMOD_CFG_OLD_FORMAT, "TDM config");
+		g_logger->infof("Renaming %s to %s...", TDM_DARKMOD_CFG_FILENAME, filename.c_str());
 		if (stdext::is_regular_file(filename))
 			g_logger->infof("Failed to rename: destination file already exists.");
 		else
