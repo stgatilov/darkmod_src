@@ -71,8 +71,8 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( scanDist );
 	savefile->WriteFloat( scanFov );
 							
-	savefile->WriteInt( sweepStartTime );
-	savefile->WriteInt( sweepEndTime );
+	savefile->WriteFloat( sweepStartTime );
+	savefile->WriteFloat( sweepEndTime );
 	savefile->WriteInt( nextSparkTime );
 	savefile->WriteBool( negativeSweep );
 	savefile->WriteBool( sweeping );
@@ -126,8 +126,8 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( scanDist );
 	savefile->ReadFloat( scanFov );
 							
-	savefile->ReadInt( sweepStartTime );
-	savefile->ReadInt( sweepEndTime );
+	savefile->ReadFloat( sweepStartTime );
+	savefile->ReadFloat( sweepEndTime );
 	savefile->ReadInt( nextSparkTime );
 	savefile->ReadBool( negativeSweep );
 	savefile->ReadBool( sweeping );
@@ -178,6 +178,8 @@ void idSecurityCamera::Spawn( void )
 	idStr	str;
 
 	rotate		= spawnArgs.GetBool("rotate", "1");
+	follow		= spawnArgs.GetBool("follow", "0");
+	followTolerance = spawnArgs.GetFloat("follow_tolerance", "1");
 	sweepAngle	= spawnArgs.GetFloat( "sweepAngle", "90" );
 	health		= spawnArgs.GetInt( "health", "100" );
 	scanFov		= spawnArgs.GetFloat( "scanFov", "90" );
@@ -192,10 +194,12 @@ void idSecurityCamera::Spawn( void )
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
 	sightThreshold			= spawnArgs.GetFloat("sight_threshold", "0.1");
+	sweepTime				= spawnArgs.GetFloat("sweepTime", "5");
+	sweeping = false;
+	following = false;
 	sparksOn = false;
 	stationary	= false;
 	nextAlertTime = 0;
-	sweeping = false;
 	sweepStartTime = sweepEndTime = 0;
 	nextSparkTime = 0;
 	state		  = STATE_SWEEPING;
@@ -221,21 +225,27 @@ void idSecurityCamera::Spawn( void )
 	}
 
 	//Use scanFov if cameraFovX and cameraFovY are not set
-	if ( !spawnArgs.GetInt("cameraFovX", "0") )
-	{
+	if ( !spawnArgs.GetInt("cameraFovX", "0") )	{
 		cameraFovX = scanFov;
 	}
-	if ( !spawnArgs.GetInt("cameraFovY", "0") )
-	{
+	if ( !spawnArgs.GetInt("cameraFovY", "0") )	{
 		cameraFovY = scanFov;
 	}
 
-	negativeSweep = ( sweepAngle < 0 ) ? true : false;
-	sweepAngle = fabs( sweepAngle );
+	//check if this is an old entity that still uses sweepSpeed as if it was sweepTime
+	if (spawnArgs.GetFloat("sweepSpeed", "0") > 0) {
+		sweepTime = spawnArgs.GetFloat("sweepSpeed", "5");
+	}
 
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
-	angle = GetPhysics()->GetAxis().ToAngles().yaw;
+	angle		= anglePos1 = GetPhysics()->GetAxis().ToAngles().yaw;
+	angleTarget	= anglePos2 = idMath::AngleNormalize180(angle - sweepAngle);
+	angleToPlayer = 0;
+
+	negativeSweep = (sweepAngle < 0) ? true : false;
+	sweepAngle = fabs(sweepAngle);
+	sweepSpeed = sweepAngle / sweepTime;
 
 	percentSwept = 0.0f;
 
@@ -246,10 +256,12 @@ void idSecurityCamera::Spawn( void )
 		if ( rotate )
 		{
 			StartSweep();
+			Event_SetSkin(spawnArgs.GetString("skin_on"));
 		}
 		else
 		{
 			StartSound("snd_stationary", SND_CHANNEL_BODY, 0, false, NULL);
+			Event_SetSkin(spawnArgs.GetString("skin_off"));
 		}
 
 		BecomeActive( TH_THINK | TH_UPDATEVISUALS );
@@ -261,13 +273,8 @@ void idSecurityCamera::Spawn( void )
 		Event_SetColor(colorSweeping[0], colorSweeping[1], colorSweeping[2]);
 	}
 
-	if ( health > 0 ) {
-		fl.takedamage = true;
-	}
-	else {
-		fl.takedamage = false;
-	}
-
+	fl.takedamage = ( health > 0 ) ? true : false;
+	
 	pvsArea = gameLocal.pvs.GetPVSArea( GetPhysics()->GetOrigin() );
 	// if no target specified use ourself
 	str = spawnArgs.GetString( "cameraTarget" );
@@ -702,6 +709,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 	idPlayer *ent;
 	trace_t tr;
 	idVec3 dir;
+	idVec3 origin = GetPhysics()->GetOrigin();
 	pvsHandle_t handle;
 
 	handle = gameLocal.pvs.SetupCurrentPVS( pvsArea );
@@ -734,26 +742,33 @@ bool idSecurityCamera::CanSeePlayer( void )
 		// check for eyes
 		idVec3 eye = ent->EyeOffset();
 		idVec3 start;
-		dir = (ent->GetPhysics()->GetOrigin() + eye) - GetPhysics()->GetOrigin();
+		idVec3 originPlayer = ent->GetPhysics()->GetOrigin();
+
+		dir = (originPlayer + eye) - origin;
 		dist = dir.Normalize();
-		start = 0.95f*GetPhysics()->GetOrigin() + 0.05f*(ent->GetPhysics()->GetOrigin() + eye);
+		start = 0.95f* + 0.05f*(originPlayer + eye);
 		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
-			gameLocal.clip.TracePoint(tr, start, ent->GetPhysics()->GetOrigin() + eye, MASK_OPAQUE, this);
+			gameLocal.clip.TracePoint(tr, start, originPlayer + eye, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
 				gameLocal.pvs.FreeCurrentPVS(handle);
+				if ( follow ) {
+					angleToPlayer = RAD2DEG( idMath::ATan(originPlayer.y - origin.y, originPlayer.x - origin.x) );
+				}
 				return true;
 			}
 		}
 
-		dir = ent->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-		dist = dir.Normalize();
-		start = 0.95f*GetPhysics()->GetOrigin() + 0.05f*ent->GetPhysics()->GetOrigin();
-
 		// check for origin
+		dir = originPlayer - origin;
+		dist = dir.Normalize();
+		start = 0.95f*origin + 0.05f*originPlayer;
 		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
-			gameLocal.clip.TracePoint(tr, GetPhysics()->GetOrigin(), ent->GetPhysics()->GetOrigin(), MASK_OPAQUE, this);
+			gameLocal.clip.TracePoint(tr, origin, originPlayer, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
 				gameLocal.pvs.FreeCurrentPVS(handle);
+				if ( follow ) {
+					angleToPlayer = RAD2DEG( idMath::ATan(originPlayer.y - origin.y, originPlayer.x - origin.x) );
+				}
 				return true;
 			}
 		}
@@ -891,6 +906,12 @@ void idSecurityCamera::Think( void )
 				state = STATE_PLAYERSIGHTED;
 				SetAlertMode(MODE_SIGHTED);
 				UpdateColors();
+				if (follow)
+				{
+					following = true;
+					angleTarget = angleToPlayer;
+					TurnToTarget();
+				}
 			}
 			else if ( rotate && !stationary )
 			{
@@ -955,7 +976,6 @@ void idSecurityCamera::Think( void )
 			if ( gameLocal.time < endAlertTime )
 			{
 				// is it time to sound the alert again?
-
 				if ( gameLocal.time >= nextAlertTime )
 				{
 					nextAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("alarm_interval", "5"));
@@ -963,7 +983,7 @@ void idSecurityCamera::Think( void )
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 				}
 			}
-			else
+			else if ( gameLocal.time >= endAlertTime)
 			{
 				if ( rotate && !stationary )
 				{
@@ -1019,21 +1039,30 @@ void idSecurityCamera::Think( void )
 			break;
 		}
 
-		if ( rotate && sweeping )
+		if ( rotate )
 		{
-			idAngles a = GetPhysics()->GetAxis().ToAngles();
+			if ( (sweeping || following) && (gameLocal.time <= sweepEndTime) )
+			{
+				idAngles a = GetPhysics()->GetAxis().ToAngles();
 
-			percentSwept = (float)(gameLocal.time - sweepStartTime) / (float)(sweepEndTime - sweepStartTime);
-			travel = percentSwept * sweepAngle;
-			if ( negativeSweep ) {
-				a.yaw = angle + travel;
-			}
-			else {
-				a.yaw = angle - travel;
+				percentSwept = (gameLocal.time - sweepStartTime) / (sweepEndTime - sweepStartTime);
+				travel = percentSwept * sweepAngle;
+				a.yaw = (negativeSweep) ? angle + travel : angle - travel;
+
+				SetAngles(a);
 			}
 
-			SetAngles(a);
+			if ( following && CanSeePlayer() )
+			{
+				//check whether the player has moved to another position in the camera's view
+				if ( fabs(idMath::AngleDelta(angleToPlayer, angleTarget)) > followTolerance )
+				{
+					angleTarget = angleToPlayer;
+					TurnToTarget();
+				}
+			}
 		}
+
 	}
 	Present();
 }
@@ -1049,41 +1078,16 @@ const idVec3 idSecurityCamera::GetAxis( void ) const {
 
 /*
 ================
-idSecurityCamera::SweepTime
-================
-*/
-float idSecurityCamera::SweepTime( void ) const {
-	//backwards compatibility: "sweepSpeed" was originally used as time. Convert into "sweepTime"
-	float sweepTime;
-
-	//if this is a new entity that has only a "sweepTime" spawnarg, use "sweepTime"
-	if (spawnArgs.GetFloat("sweepSpeed", "0") == 0)
-	{
-		sweepTime = spawnArgs.GetFloat("sweepTime", "5");
-	}
-	//otherwise, if this is an old entity, use "sweepSpeed" how it was originally used (incorrectly)
-	else
-	{
-		sweepTime = spawnArgs.GetFloat("sweepSpeed", "5");
-	}
-
-	return sweepTime;
-}
-
-/*
-================
 idSecurityCamera::StartSweep
 ================
 */
 void idSecurityCamera::StartSweep( void ) {
-	int sweepTime;
-
 	sweeping = true;
 	sweepStartTime = gameLocal.time;
-	sweepTime = SEC2MS( SweepTime() );
-	sweepEndTime = sweepStartTime + sweepTime;
+	sweepEndTime = sweepStartTime + SEC2MS(sweepTime);
 	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
+	emitPauseSound = true;
 	emitPauseSound = true;
 	state = STATE_SWEEPING;
 }
@@ -1101,10 +1105,24 @@ void idSecurityCamera::ContinueSweep( void )
 		return;
 	}
 
-	int sweepTime = static_cast<int>(SEC2MS( SweepTime() ));
-	int timeRemaining = static_cast<int>((1.0f - percentSwept)*sweepTime);
-	sweepEndTime = gameLocal.time + timeRemaining;
-	sweepStartTime = sweepEndTime - sweepTime; // represents start time if the sweep hadn't been interrupted
+	angle = GetPhysics()->GetAxis().ToAngles().yaw;
+
+	if ( following )
+	{
+		following = false;
+		float dist1 = fabs( idMath::AngleDelta(anglePos1, angle) );
+		float dist2 = fabs( idMath::AngleDelta(anglePos2, angle) );
+		angleTarget = (dist1 < dist2) ? anglePos1 : anglePos2;
+		TurnToTarget();
+	}
+
+	else if ( !following )
+	{
+		float timeRemaining = (1.0f - percentSwept)*sweepTime;
+		sweepStartTime = gameLocal.time;
+		sweepEndTime = gameLocal.time + SEC2MS(timeRemaining);
+	}
+
 	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
 	StopSound( SND_CHANNEL_ANY, false );
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
@@ -1120,9 +1138,36 @@ idSecurityCamera::ReverseSweep
 ================
 */
 void idSecurityCamera::ReverseSweep( void ) {
-	angle = GetPhysics()->GetAxis().ToAngles().yaw;
-	negativeSweep = !negativeSweep;
+	angle			= GetPhysics()->GetAxis().ToAngles().yaw;
+	angleTarget		= (angleTarget == anglePos1) ? anglePos2 : anglePos1;
+
+	sweepAngle		= idMath::AngleDelta(angle, angleTarget);
+	negativeSweep	= (sweepAngle < 0) ? true : false;
+	sweepAngle		= fabs(sweepAngle);
+
 	StartSweep();
+}
+
+/*
+================
+idSecurityCamera::TurnToTarget
+================
+*/
+void idSecurityCamera::TurnToTarget( void )
+{
+	angle			= GetPhysics()->GetAxis().ToAngles().yaw;
+	sweepAngle		= idMath::AngleDelta(angle, angleTarget);
+
+	if ( sweepAngle == 0 ) {
+		sweepEndTime = gameLocal.time;
+		return;
+	}
+
+	negativeSweep	= (sweepAngle < 0) ? true : false;
+	sweepAngle		= fabs(sweepAngle);
+
+	sweepStartTime	= gameLocal.time;
+	sweepEndTime	= gameLocal.time + SEC2MS(sweepAngle / sweepSpeed);
 }
 
 /*
@@ -1157,7 +1202,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
 
-	Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_broken"));
+	Event_SetSkin(spawnArgs.GetString("skin_broken"));
 
 	// Remove a spotlight, if there is one.
 

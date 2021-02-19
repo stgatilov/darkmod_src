@@ -66,20 +66,28 @@ private:
 	};
 
 	float					angle;
+	float					angleTarget;
+	float					anglePos1;
+	float					anglePos2;
+	float					angleToPlayer;
 	float					sweepAngle;
+	float					sweepTime;
+	float					sweepSpeed;
+	float					sweepStartTime;
+	float					sweepEndTime;
+	float					percentSwept;
+	bool					negativeSweep;
+	bool					sweeping;
+	bool					follow;
+	bool					following;
+	float					followTolerance;
+
 	int						modelAxis;
 	bool					flipAxis;
 	float					scanDist;
 	float					scanFov;
-							
-	int						sweepStartTime;
-	int						sweepEndTime;
-	int						nextSparkTime;
-	bool					negativeSweep;
-	bool					sweeping;
-	int						alertMode;
 	float					scanFovCos;
-
+	int						alertMode;
 	idVec3					viewOffset;
 							
 	int						pvsArea;
@@ -96,7 +104,6 @@ private:
 	int						pauseEndTime;
 	int						endAlertTime;
 	int						lostInterestEndTime;
-	float					percentSwept;
 	idEntityPtr<idLight>	spotLight;
 	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
@@ -106,11 +113,12 @@ private:
 	idVec3					colorSweeping;
 	idVec3					colorSighted;
 	idVec3					colorAlerted;
+	int						nextSparkTime;
+	bool					sparksOn;
 	bool					sparksPowerDependent;
 	bool					sparksPeriodic;
 	float					sparksInterval;
 	float					sparksIntervalRand;
-	bool					sparksOn;
 	float					sightThreshold;
 
 	void					StartSweep( void );
@@ -122,6 +130,7 @@ private:
 
 	void					ReverseSweep( void );
 	void					ContinueSweep( void );
+	void					TurnToTarget( void );
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );
 	void					Event_Sweep_Toggle( void );
