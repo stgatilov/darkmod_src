@@ -46,6 +46,9 @@ public:
 	//is current process run "under admin"?
 	//returns false on Non-Windows platforms
 	static bool HasElevatedPrivilegesWindows();
+	//checks if the specified set of files can be modified (i.e. not locked by running process)
+	//returns error message on fail, or empty string if all files are modifiable
+	static std::string CanModifyFiles(const std::vector<std::string> &filePaths, bool skipMissing);
 
 	//return true if TDM shortcut already exists on Desktop
 	static bool IfShortcutExists(const std::string &name);

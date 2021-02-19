@@ -208,6 +208,38 @@ bool OsUtils::HasElevatedPrivilegesWindows() {
 	return underAdmin;
 }
 
+std::string OsUtils::CanModifyFiles(const std::vector<std::string> &filePaths, bool skipMissing) {
+	char message[1024] = {0};
+
+	for (int i = 0; i < filePaths.size(); i++) {
+		std::string path = filePaths[i];
+
+		if (FILE *f = fopen(path.c_str(), "rb"))
+			fclose(f);
+		else {
+			if (skipMissing)
+				continue;
+			sprintf(message, "File %s does not exist", path.c_str());
+			return message;
+		}
+
+#ifdef _WIN32
+		//note: in my tests, this does not change "modification datetime"
+		if (FILE *f = _fsopen(path.c_str(), "ab", _SH_DENYRW))
+#else
+		//TODO: is there better way?
+		if (FILE *f = fopen(path.c_str(), "ab"))
+#endif
+			fclose(f);
+		else {
+			sprintf(message, "File %s cannot be modified", path.c_str());
+			return message;
+		}
+	}
+
+	return message;
+}
+
 #ifdef _WIN32
 static CComBSTR ComposeShortcutPath(const std::string &name) {
 	g_logger->infof("Composing path to shortcut file");

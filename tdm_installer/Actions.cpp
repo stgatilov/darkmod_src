@@ -369,30 +369,33 @@ void Actions::ScanInstallDirectoryIfNecessary(bool force, ZipSync::ProgressIndic
 		g_logger->infof("Local manifest read successfully");
 
 		g_logger->infof("");
-		return;
+	}
+	else {
+		g_logger->infof("Installation currently contains of %d TDM-owned zips", managedZips.size());
+		uint64_t totalSize = 0;
+		for (const std::string &mzip : managedZips) {
+			g_logger->infof("  %s", mzip.c_str());
+			totalSize += ZipSync::SizeOfFile(mzip);
+		}
+		g_logger->infof("Total size of managed zips: %0.0lf MB", totalSize * 1e-6);
+
+		g_logger->infof("Analysing the archives");
+		ZipSync::Manifest manifest = ZipSync::DoAnalyze(root, managedZips, true, 1, progress);
+		g_logger->infof("Saving results of analysis to manifest file");
+		ZipSync::WriteIniFile((root + "/manifest.iniz").c_str(), manifest.WriteToIni());
+		g_state->_localManifest = std::move(manifest);
+
+		g_logger->infof("Saving current scan at %s", TDM_INSTALLER_LASTSCAN_PATH);
+		ScanState nowScan = ScanState::ScanZipSet(managedZipsAndMani, root);
+		ZipSync::IniData ini = nowScan.WriteToIni();
+		stdext::create_directories(stdext::path(TDM_INSTALLER_LASTSCAN_PATH).parent_path());
+		ZipSync::WriteIniFile(TDM_INSTALLER_LASTSCAN_PATH, ini);
+
+		g_logger->infof("");
 	}
 
-	g_logger->infof("Installation currently contains of %d TDM-owned zips", managedZips.size());
-	uint64_t totalSize = 0;
-	for (const std::string &mzip : managedZips) {
-		g_logger->infof("  %s", mzip.c_str());
-		totalSize += ZipSync::SizeOfFile(mzip);
-	}
-	g_logger->infof("Total size of managed zips: %0.0lf MB", totalSize * 1e-6);
-
-	g_logger->infof("Analysing the archives");
-	ZipSync::Manifest manifest = ZipSync::DoAnalyze(root, managedZips, true, 1, progress);
-	g_logger->infof("Saving results of analysis to manifest file");
-	ZipSync::WriteIniFile((root + "/manifest.iniz").c_str(), manifest.WriteToIni());
-	g_state->_localManifest = std::move(manifest);
-
-	g_logger->infof("Saving current scan at %s", TDM_INSTALLER_LASTSCAN_PATH);
-	ScanState nowScan = ScanState::ScanZipSet(managedZipsAndMani, root);
-	ZipSync::IniData ini = nowScan.WriteToIni();
-	stdext::create_directories(stdext::path(TDM_INSTALLER_LASTSCAN_PATH).parent_path());
-	ZipSync::WriteIniFile(TDM_INSTALLER_LASTSCAN_PATH, ini);
-
-	g_logger->infof("");
+	std::string message = OsUtils::CanModifyFiles(managedZipsAndMani, false);
+	ZipSyncAssertF(message == "", "%s.\nPlease make sure no TheDarkMod-related programs are running and try again.", message.c_str());
 }
 
 Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersion, const std::string &customManifestUrl, bool bitwiseExact, ZipSync::ProgressIndicator *progress) {
