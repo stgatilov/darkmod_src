@@ -38,7 +38,7 @@ void LoggerTdm::Init() {
 	if (!logFile) {
 		time_t timestamp = time(0);
 		char filename[1024];
-		sprintf(filename, TDM_INSTALLER_LOG_FORMAT, int64_t(timestamp));
+		sprintf(filename, TDM_INSTALLER_LOG_FORMAT, (long long)timestamp);
 		logFile = fopen(filename, "wt");
 		if (!logFile)
 			throw ErrorException("cannot open log file", lcCantOpenFile);
@@ -52,10 +52,10 @@ void LoggerTdm::Init() {
 		std::string root = OsUtils::GetCwd();
 		std::vector<std::string> allPaths = ZipSync::EnumerateFilesInDirectory(root);
 		for (const auto &entry : allPaths) {
-			int64_t oldTimestamp = -1;
+			long long oldTimestamp = -1;
 			if (sscanf(entry.c_str(), TDM_INSTALLER_LOG_FORMAT, &oldTimestamp) != 1 || oldTimestamp < 0)
 				continue;
-			int64_t difference = timestamp - oldTimestamp;
+			long long difference = (long long)timestamp - oldTimestamp;
 			if (difference <= 30 * 24*60*60)	//one month
 				continue;
 			infof("Removing old logfile: %s", entry.c_str());
