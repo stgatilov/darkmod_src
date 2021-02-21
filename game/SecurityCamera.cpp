@@ -41,10 +41,7 @@ const idEventDef EV_SecurityCam_AddLight( "<addLight>", EventArgs(), EV_RETURNS_
 const idEventDef EV_SecurityCam_SpotLightToggle( "toggle_light", EventArgs(), EV_RETURNS_VOID, "Toggles the spotlight on/off." );
 const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RETURNS_VOID, "Toggles the camera sweep." );
 const idEventDef EV_Peek_AddDisplay("<addDisplay>", EventArgs(), EV_RETURNS_VOID, "internal"); // grayman #4882
-
-// Obsttorte
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
-//Dragofer
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 
 CLASS_DECLARATION( idEntity, idSecurityCamera )
@@ -64,53 +61,83 @@ idSecurityCamera::Save
 ================
 */
 void idSecurityCamera::Save( idSaveGame *savefile ) const {
-	savefile->WriteFloat( angle );
-	savefile->WriteFloat( sweepAngle );
-	savefile->WriteInt( modelAxis );
-	savefile->WriteBool( flipAxis );
-	savefile->WriteFloat( scanDist );
-	savefile->WriteFloat( scanFov );
-							
-	savefile->WriteFloat( sweepStartTime );
-	savefile->WriteFloat( sweepEndTime );
-	savefile->WriteInt( nextSparkTime );
-	savefile->WriteBool( negativeSweep );
-	savefile->WriteBool( sweeping );
-	savefile->WriteInt( alertMode );
-	savefile->WriteFloat( scanFovCos );
-
-	savefile->WriteVec3( viewOffset );
-							
-	savefile->WriteInt( pvsArea );
-	savefile->WriteStaticObject( physicsObj );
-	savefile->WriteTraceModel( trm );
-
 	savefile->WriteBool(rotate);
 	savefile->WriteBool(stationary);
-	savefile->WriteInt(nextAlertTime);
-	savefile->WriteInt(state);
-	savefile->WriteInt(startAlertTime);
-	savefile->WriteBool(emitPauseSound);
-	savefile->WriteInt(emitPauseSoundTime);
-	savefile->WriteInt(pauseEndTime);
-	savefile->WriteInt(endAlertTime);
-	savefile->WriteInt(lostInterestEndTime);
+	savefile->WriteBool(sweeping);
+
+	savefile->WriteBool(follow);
+	savefile->WriteFloat(followSpeedMult);
+	savefile->WriteFloat(followTolerance);
+	savefile->WriteBool(followIncline);
+	savefile->WriteFloat(followInclineTolerance);
+
+	savefile->WriteFloat(sweepAngle);
+	savefile->WriteFloat(sweepTime);
+	savefile->WriteFloat(sweepSpeed);
+	savefile->WriteFloat(sweepStartTime);
+	savefile->WriteFloat(sweepEndTime);
 	savefile->WriteFloat(percentSwept);
+	savefile->WriteBool(negativeSweep);
+
+	savefile->WriteFloat(angle);
+	savefile->WriteFloat(angleTarget);
+	savefile->WriteFloat(anglePos1);
+	savefile->WriteFloat(anglePos2);
+	savefile->WriteFloat(angleToPlayer);
+
+	savefile->WriteFloat(inclineAngle);
+	savefile->WriteFloat(inclineSpeed);
+	savefile->WriteFloat(inclineStartTime);
+	savefile->WriteFloat(inclineEndTime);
+	savefile->WriteFloat(percentInclined);
+	savefile->WriteBool(negativeIncline);
+
+	savefile->WriteFloat(incline);
+	savefile->WriteFloat(inclineTarget);
+	savefile->WriteFloat(inclinePos1);
+	savefile->WriteFloat(inclineToPlayer);
+
+	savefile->WriteFloat(scanDist);
+	savefile->WriteFloat(scanFov);
+	savefile->WriteFloat(scanFovCos);
+	savefile->WriteFloat(sightThreshold);
+
+	savefile->WriteInt(modelAxis);
+	savefile->WriteBool(flipAxis);
+	savefile->WriteVec3(viewOffset);
+
+	savefile->WriteInt(pvsArea);
+	savefile->WriteStaticObject(physicsObj);
+	savefile->WriteTraceModel(trm);
+
 	spotLight.Save(savefile);
 	sparks.Save(savefile);
 	cameraDisplay.Save(savefile);
+
+	savefile->WriteInt(state);
+	savefile->WriteInt(alertMode);
 	savefile->WriteBool(powerOn);
 	savefile->WriteBool(spotlightPowerOn);
+
+	savefile->WriteFloat(lostInterestEndTime);
+	savefile->WriteFloat(nextAlertTime);
+	savefile->WriteFloat(startAlertTime);
+	savefile->WriteFloat(endAlertTime);
+	savefile->WriteBool(emitPauseSound);
+	savefile->WriteFloat(emitPauseSoundTime);
+	savefile->WriteFloat(pauseEndTime);
+	savefile->WriteFloat(nextSparkTime);
+
+	savefile->WriteBool(sparksOn);
 	savefile->WriteBool(sparksPowerDependent);
 	savefile->WriteBool(sparksPeriodic);
 	savefile->WriteFloat(sparksInterval);
 	savefile->WriteFloat(sparksIntervalRand);
-	savefile->WriteBool(sparksOn);
+
 	savefile->WriteBool(useColors);
 	savefile->WriteVec3(colorSweeping);
 	savefile->WriteVec3(colorSighted);
 	savefile->WriteVec3(colorAlerted);
-	savefile->WriteFloat(sightThreshold);
 }
 
 /*
@@ -119,53 +146,83 @@ idSecurityCamera::Restore
 ================
 */
 void idSecurityCamera::Restore( idRestoreGame *savefile ) {
-	savefile->ReadFloat( angle );
-	savefile->ReadFloat( sweepAngle );
-	savefile->ReadInt( modelAxis );
-	savefile->ReadBool( flipAxis );
-	savefile->ReadFloat( scanDist );
-	savefile->ReadFloat( scanFov );
-							
-	savefile->ReadFloat( sweepStartTime );
-	savefile->ReadFloat( sweepEndTime );
-	savefile->ReadInt( nextSparkTime );
-	savefile->ReadBool( negativeSweep );
-	savefile->ReadBool( sweeping );
-	savefile->ReadInt( alertMode );
-	savefile->ReadFloat( scanFovCos );
-
-	savefile->ReadVec3( viewOffset );
-							
-	savefile->ReadInt( pvsArea );
-	savefile->ReadStaticObject( physicsObj );
-	savefile->ReadTraceModel( trm );
-
 	savefile->ReadBool(rotate);
 	savefile->ReadBool(stationary);
-	savefile->ReadInt(nextAlertTime);
-	savefile->ReadInt(state);
-	savefile->ReadInt(startAlertTime);
-	savefile->ReadBool(emitPauseSound);
-	savefile->ReadInt(emitPauseSoundTime);
-	savefile->ReadInt(pauseEndTime);
-	savefile->ReadInt(endAlertTime);
-	savefile->ReadInt(lostInterestEndTime);
+	savefile->ReadBool(sweeping);
+
+	savefile->ReadBool(follow);
+	savefile->ReadFloat(followSpeedMult);
+	savefile->ReadFloat(followTolerance);
+	savefile->ReadBool(followIncline);
+	savefile->ReadFloat(followInclineTolerance);
+	   
+	savefile->ReadFloat(sweepAngle);
+	savefile->ReadFloat(sweepTime);
+	savefile->ReadFloat(sweepSpeed);
+	savefile->ReadFloat(sweepStartTime);
+	savefile->ReadFloat(sweepEndTime);
 	savefile->ReadFloat(percentSwept);
+	savefile->ReadBool(negativeSweep);
+
+	savefile->ReadFloat(angle);
+	savefile->ReadFloat(angleTarget);
+	savefile->ReadFloat(anglePos1);
+	savefile->ReadFloat(anglePos2);
+	savefile->ReadFloat(angleToPlayer);
+
+	savefile->ReadFloat(inclineAngle);
+	savefile->ReadFloat(inclineSpeed);
+	savefile->ReadFloat(inclineStartTime);
+	savefile->ReadFloat(inclineEndTime);
+	savefile->ReadFloat(percentInclined);
+	savefile->ReadBool(negativeIncline);
+
+	savefile->ReadFloat(incline);
+	savefile->ReadFloat(inclineTarget);
+	savefile->ReadFloat(inclinePos1);
+	savefile->ReadFloat(inclineToPlayer);
+
+	savefile->ReadFloat(scanDist);
+	savefile->ReadFloat(scanFov);
+	savefile->ReadFloat(scanFovCos);
+	savefile->ReadFloat(sightThreshold);
+
+	savefile->ReadInt(modelAxis);
+	savefile->ReadBool(flipAxis);
+	savefile->ReadVec3(viewOffset);
+
+	savefile->ReadInt(pvsArea);
+	savefile->ReadStaticObject(physicsObj);
+	savefile->ReadTraceModel(trm);
+
 	spotLight.Restore(savefile);
 	sparks.Restore(savefile);
 	cameraDisplay.Restore(savefile);
+
+	savefile->ReadInt(state);
+	savefile->ReadInt(alertMode);
 	savefile->ReadBool(powerOn);
 	savefile->ReadBool(spotlightPowerOn);
+
+	savefile->ReadFloat(lostInterestEndTime);
+	savefile->ReadFloat(nextAlertTime);
+	savefile->ReadFloat(startAlertTime);
+	savefile->ReadFloat(endAlertTime);
+	savefile->ReadBool(emitPauseSound);
+	savefile->ReadFloat(emitPauseSoundTime);
+	savefile->ReadFloat(pauseEndTime);
+	savefile->ReadFloat(nextSparkTime);
+
+	savefile->ReadBool(sparksOn);
 	savefile->ReadBool(sparksPowerDependent);
 	savefile->ReadBool(sparksPeriodic);
 	savefile->ReadFloat(sparksInterval);
 	savefile->ReadFloat(sparksIntervalRand);
-	savefile->ReadBool(sparksOn);
+
 	savefile->ReadBool(useColors);
 	savefile->ReadVec3(colorSweeping);
 	savefile->ReadVec3(colorSighted);
 	savefile->ReadVec3(colorAlerted);
-	savefile->ReadFloat(sightThreshold);
 }
 
 /*
@@ -177,14 +234,13 @@ void idSecurityCamera::Spawn( void )
 {
 	idStr	str;
 
-	rotate		= spawnArgs.GetBool("rotate", "1");
-	follow		= spawnArgs.GetBool("follow", "0");
-	followTolerance = spawnArgs.GetFloat("follow_tolerance", "1");
-	sweepAngle	= spawnArgs.GetFloat( "sweepAngle", "90" );
-	health		= spawnArgs.GetInt( "health", "100" );
-	scanFov		= spawnArgs.GetFloat( "scanFov", "90" );
-	scanDist	= spawnArgs.GetFloat( "scanDist", "200" );
-	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );
+	rotate			= spawnArgs.GetBool("rotate", "1");
+	sweepAngle		= spawnArgs.GetFloat( "sweepAngle", "90" );
+	sweepTime		= spawnArgs.GetFloat( "sweepTime", "5" );
+	health			= spawnArgs.GetInt( "health", "100" );
+	scanFov			= spawnArgs.GetFloat( "scanFov", "90" );
+	scanDist		= spawnArgs.GetFloat( "scanDist", "200" );
+	flipAxis		= spawnArgs.GetBool( "flipAxis", "0" );
 	useColors		= spawnArgs.GetBool("useColors");
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
@@ -194,15 +250,20 @@ void idSecurityCamera::Spawn( void )
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
 	sightThreshold			= spawnArgs.GetFloat("sight_threshold", "0.1");
-	sweepTime				= spawnArgs.GetFloat("sweepTime", "5");
+	follow					= spawnArgs.GetBool("follow", "0");
+	followIncline			= spawnArgs.GetBool("follow_incline", "0");
+	followTolerance			= spawnArgs.GetFloat("follow_tolerance", "15");
+	followInclineTolerance	= spawnArgs.GetFloat("follow_incline_tolerance", "10");
+	followSpeedMult = 0;
+	state	= STATE_SWEEPING;
 	sweeping = false;
 	following = false;
 	sparksOn = false;
 	stationary	= false;
 	nextAlertTime = 0;
 	sweepStartTime = sweepEndTime = 0;
+	inclineStartTime = inclineEndTime = 0;
 	nextSparkTime = 0;
-	state		  = STATE_SWEEPING;
 	emitPauseSound = true;
 	startAlertTime = 0;
 	emitPauseSoundTime = 0;
@@ -239,6 +300,7 @@ void idSecurityCamera::Spawn( void )
 
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
+	//yaw angle
 	angle		= anglePos1 = GetPhysics()->GetAxis().ToAngles().yaw;
 	angleTarget	= anglePos2 = idMath::AngleNormalize180(angle - sweepAngle);
 	angleToPlayer = 0;
@@ -246,8 +308,16 @@ void idSecurityCamera::Spawn( void )
 	negativeSweep = (sweepAngle < 0) ? true : false;
 	sweepAngle = fabs(sweepAngle);
 	sweepSpeed = sweepAngle / sweepTime;
-
 	percentSwept = 0.0f;
+
+	//pitch angle
+	incline	= inclinePos1 = GetPhysics()->GetAxis().ToAngles().pitch;
+	inclineTarget	= inclineToPlayer = 0;
+
+	negativeIncline = false;
+	inclineAngle = 0;
+	inclineSpeed = spawnArgs.GetFloat("follow_incline_speed", "30");
+	percentInclined = 0.0f;
 
 	powerOn = !spawnArgs.GetBool("start_off", "0");
 	spotlightPowerOn = true;
@@ -256,12 +326,12 @@ void idSecurityCamera::Spawn( void )
 		if ( rotate )
 		{
 			StartSweep();
-			Event_SetSkin(spawnArgs.GetString("skin_on"));
+			Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
 		}
 		else
 		{
 			StartSound("snd_stationary", SND_CHANNEL_BODY, 0, false, NULL);
-			Event_SetSkin(spawnArgs.GetString("skin_off"));
+			Event_SetSkin(spawnArgs.GetString("skin_off", "security_camera_off"));
 		}
 
 		BecomeActive( TH_THINK | TH_UPDATEVISUALS );
@@ -505,12 +575,12 @@ void idSecurityCamera::Event_SpotLight_Toggle(void)
 		if ( spotlightPowerOn )
 		{
 			light->On();
-			Event_SetSkin(spawnArgs.GetString("skin_on"));
+			Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
 		}
 		else
 		{
 			light->Off();
-			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off"));
+			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off", "security_camera_on_spotlight_off"));
 		}
 	}
 }
@@ -737,13 +807,13 @@ bool idSecurityCamera::CanSeePlayer( void )
 			continue;
 		}
 
-		
 
-		// check for eyes
+
 		idVec3 eye = ent->EyeOffset();
 		idVec3 start;
 		idVec3 originPlayer = ent->GetPhysics()->GetOrigin();
 
+		// check for eyes
 		dir = (originPlayer + eye) - origin;
 		dist = dir.Normalize();
 		start = 0.95f* + 0.05f*(originPlayer + eye);
@@ -752,7 +822,10 @@ bool idSecurityCamera::CanSeePlayer( void )
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
 				gameLocal.pvs.FreeCurrentPVS(handle);
 				if ( follow ) {
-					angleToPlayer = RAD2DEG( idMath::ATan(originPlayer.y - origin.y, originPlayer.x - origin.x) );
+					dir = (originPlayer + eye/2) - origin;	//focus on the torso
+					idAngles a = dir.ToAngles();
+					angleToPlayer	= a.yaw;
+					inclineToPlayer	= a.pitch;
 				}
 				return true;
 			}
@@ -767,7 +840,10 @@ bool idSecurityCamera::CanSeePlayer( void )
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
 				gameLocal.pvs.FreeCurrentPVS(handle);
 				if ( follow ) {
-					angleToPlayer = RAD2DEG( idMath::ATan(originPlayer.y - origin.y, originPlayer.x - origin.x) );
+					dir = (originPlayer + eye / 2) - origin;	//focus on the torso
+					idAngles a = dir.ToAngles();
+					angleToPlayer = a.yaw;
+					inclineToPlayer = a.pitch;
 				}
 				return true;
 			}
@@ -910,6 +986,8 @@ void idSecurityCamera::Think( void )
 				{
 					following = true;
 					angleTarget = angleToPlayer;
+					inclineTarget = inclineToPlayer;
+					followSpeedMult = spawnArgs.GetFloat("follow_speed_mult", "1.2");
 					TurnToTarget();
 				}
 			}
@@ -1026,7 +1104,11 @@ void idSecurityCamera::Think( void )
 			UpdateColors();
 			break;
 		case STATE_PAUSED:
-			if ( gameLocal.time >= pauseEndTime )
+			if ( followIncline && (gameLocal.time < inclineEndTime) )
+			{
+				break;
+			}
+			else if ( ( gameLocal.time >= pauseEndTime ) )
 			{
 				if ( rotate && !stationary )
 				{
@@ -1052,12 +1134,25 @@ void idSecurityCamera::Think( void )
 				SetAngles(a);
 			}
 
+			if ( followIncline && (gameLocal.time <= inclineEndTime) )
+			{
+				idAngles i = GetPhysics()->GetAxis().ToAngles();
+
+				percentInclined = (gameLocal.time - inclineStartTime) / (inclineEndTime - inclineStartTime);
+				travel = percentInclined * inclineAngle;
+				i.pitch = (negativeIncline) ? incline + travel : incline - travel;
+
+				SetAngles(i);
+			}
+
+			//check whether the player has moved to another position in the camera's view
 			if ( following && CanSeePlayer() )
 			{
-				//check whether the player has moved to another position in the camera's view
-				if ( fabs(idMath::AngleDelta(angleToPlayer, angleTarget)) > followTolerance )
+				if ( ( fabs(idMath::AngleDelta(angleToPlayer, angleTarget)) > followTolerance )
+				|| ( followIncline && ( fabs(idMath::AngleDelta(inclineToPlayer, inclineTarget)) > followInclineTolerance ) ) )
 				{
 					angleTarget = angleToPlayer;
+					inclineTarget = inclineToPlayer;
 					TurnToTarget();
 				}
 			}
@@ -1110,10 +1205,20 @@ void idSecurityCamera::ContinueSweep( void )
 	if ( following )
 	{
 		following = false;
+		followSpeedMult = 1;
+
 		float dist1 = fabs( idMath::AngleDelta(anglePos1, angle) );
 		float dist2 = fabs( idMath::AngleDelta(anglePos2, angle) );
-		angleTarget = (dist1 < dist2) ? anglePos1 : anglePos2;
+
+		angleTarget		= (dist1 < dist2) ? anglePos1 : anglePos2;
+		inclineTarget	= inclinePos1;
+
 		TurnToTarget();
+
+		//if the sweep is relatively short, slow it down to finish simultaneously with the incline
+		if ( followIncline && (sweepEndTime < inclineEndTime) ) {
+			sweepEndTime = inclineEndTime;
+		}
 	}
 
 	else if ( !following )
@@ -1159,15 +1264,34 @@ void idSecurityCamera::TurnToTarget( void )
 	sweepAngle		= idMath::AngleDelta(angle, angleTarget);
 
 	if ( sweepAngle == 0 ) {
-		sweepEndTime = gameLocal.time;
-		return;
+		sweepEndTime = gameLocal.time - 1;
 	}
 
-	negativeSweep	= (sweepAngle < 0) ? true : false;
-	sweepAngle		= fabs(sweepAngle);
+	else {
+		negativeSweep = (sweepAngle < 0) ? true : false;
+		sweepAngle = fabs(sweepAngle);
 
-	sweepStartTime	= gameLocal.time;
-	sweepEndTime	= gameLocal.time + SEC2MS(sweepAngle / sweepSpeed);
+		sweepStartTime = gameLocal.time;
+		sweepEndTime = gameLocal.time + SEC2MS(sweepAngle / ( sweepSpeed * followSpeedMult ) );
+	}
+
+	//also calculate incline parameters, if enabled
+	if ( followIncline ) {
+		incline			= GetPhysics()->GetAxis().ToAngles().pitch;
+		inclineAngle	= idMath::AngleDelta(incline, inclineTarget);
+
+		if (inclineAngle == 0) {
+			inclineEndTime = gameLocal.time - 1;
+		}
+
+		else {
+			negativeIncline = (inclineAngle < 0) ? true : false;
+			inclineAngle = fabs(inclineAngle);
+
+			inclineStartTime = gameLocal.time;
+			inclineEndTime = gameLocal.time + SEC2MS(inclineAngle / inclineSpeed);
+		}
+	}
 }
 
 /*
@@ -1202,7 +1326,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
 
-	Event_SetSkin(spawnArgs.GetString("skin_broken"));
+	Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_off"));
 
 	// Remove a spotlight, if there is one.
 
@@ -1377,16 +1501,16 @@ void idSecurityCamera::Activate(idEntity* activator)
 	{
 		if ( light && spotlightPowerOn )
 		{
-			Event_SetSkin(spawnArgs.GetString("skin_on"));
+			Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
 		}
 		else
 		{
-			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off"));
+			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off", "security_camera_off"));
 		}
 	}
 	else
 	{
-		Event_SetSkin(spawnArgs.GetString("skin_off"));
+		Event_SetSkin(spawnArgs.GetString("skin_off", "security_camera_off"));
 	}
 
 	// Toggle display screen

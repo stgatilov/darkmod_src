@@ -65,68 +65,91 @@ private:
 		STATE_DEAD
 	};
 
-	float					angle;
-	float					angleTarget;
-	float					anglePos1;
-	float					anglePos2;
-	float					angleToPlayer;
+	bool					rotate;
+	bool					stationary;
+	bool					sweeping;
+
+	bool					negativeSweep;
 	float					sweepAngle;
 	float					sweepTime;
 	float					sweepSpeed;
 	float					sweepStartTime;
 	float					sweepEndTime;
 	float					percentSwept;
-	bool					negativeSweep;
-	bool					sweeping;
+
+	bool					negativeIncline;
+	float					inclineAngle;
+	float					inclineSpeed;
+	float					inclineStartTime;
+	float					inclineEndTime;
+	float					percentInclined;
+
+	float					angle;
+	float					angleTarget;
+	float					anglePos1;
+	float					anglePos2;
+	float					angleToPlayer;
+
+	float					incline;
+	float					inclineTarget;
+	float					inclinePos1;
+	float					inclineToPlayer;
+
 	bool					follow;
 	bool					following;
+	float					followSpeedMult;
+	bool					followIncline;
 	float					followTolerance;
+	float					followInclineTolerance;
 
-	int						modelAxis;
-	bool					flipAxis;
 	float					scanDist;
 	float					scanFov;
 	float					scanFovCos;
-	int						alertMode;
+	float					sightThreshold;
+
+	int						modelAxis;
+	bool					flipAxis;
 	idVec3					viewOffset;
-							
+
 	int						pvsArea;
 	idPhysics_RigidBody		physicsObj;
 	idTraceModel			trm;
 
-	bool					rotate;
-	bool					stationary;
-	int						nextAlertTime;
-	int						state;
-	int						startAlertTime;
-	bool					emitPauseSound;
-	int						emitPauseSoundTime;
-	int						pauseEndTime;
-	int						endAlertTime;
-	int						lostInterestEndTime;
 	idEntityPtr<idLight>	spotLight;
 	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
+
+	int						state;
+	int						alertMode;
 	bool					powerOn;
 	bool					spotlightPowerOn;
-	bool					useColors;
-	idVec3					colorSweeping;
-	idVec3					colorSighted;
-	idVec3					colorAlerted;
-	int						nextSparkTime;
+
+	float					lostInterestEndTime;
+	float					nextAlertTime;
+	float					startAlertTime;
+	float					endAlertTime;
+	bool					emitPauseSound;
+	float					emitPauseSoundTime;
+	float					pauseEndTime;
+	float					nextSparkTime;
+
 	bool					sparksOn;
 	bool					sparksPowerDependent;
 	bool					sparksPeriodic;
 	float					sparksInterval;
 	float					sparksIntervalRand;
-	float					sightThreshold;
+
+	bool					useColors;
+	idVec3					colorSweeping;
+	idVec3					colorSighted;
+	idVec3					colorAlerted;
+
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
 	const idVec3			GetAxis( void ) const;
-	float					SweepTime( void ) const;
 
 	void					ReverseSweep( void );
 	void					ContinueSweep( void );
