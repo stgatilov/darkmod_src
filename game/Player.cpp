@@ -11201,7 +11201,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
-		if ( (item != NULL) && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item, true))
+		if ( item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedBy(item, true))
 		{
 			// Try to use the item
 			bool couldBeUsed = UseInventoryItem( impulseState, item, USERCMD_MSEC, true ); // true => is frob action
