@@ -124,6 +124,9 @@ private:
 	bool					powerOn;
 	bool					spotlightPowerOn;
 
+	float					timeLastSeen;
+	float					alarm_duration;
+
 	float					lostInterestEndTime;
 	float					nextAlertTime;
 	float					startAlertTime;

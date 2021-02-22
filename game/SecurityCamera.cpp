@@ -97,6 +97,9 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(inclinePos1);
 	savefile->WriteFloat(inclineToPlayer);
 
+	savefile->WriteFloat(timeLastSeen);
+	savefile->WriteFloat(alarm_duration);
+
 	savefile->WriteFloat(scanDist);
 	savefile->WriteFloat(scanFov);
 	savefile->WriteFloat(scanFovCos);
@@ -181,6 +184,9 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(inclineTarget);
 	savefile->ReadFloat(inclinePos1);
 	savefile->ReadFloat(inclineToPlayer);
+
+	savefile->ReadFloat(timeLastSeen);
+	savefile->ReadFloat(alarm_duration);
 
 	savefile->ReadFloat(scanDist);
 	savefile->ReadFloat(scanFov);
@@ -270,6 +276,7 @@ void idSecurityCamera::Spawn( void )
 	pauseEndTime = 0;
 	endAlertTime = 0;
 	lostInterestEndTime = 0;
+	timeLastSeen = 0;
 	spotLight	= NULL;
 	sparks = NULL;
 	cameraDisplay = NULL;
@@ -296,6 +303,12 @@ void idSecurityCamera::Spawn( void )
 	//check if this is an old entity that still uses sweepSpeed as if it was sweepTime
 	if (spawnArgs.GetFloat("sweepSpeed", "0") > 0) {
 		sweepTime = spawnArgs.GetFloat("sweepSpeed", "5");
+	}
+
+	//if "alarm_duration" is not set, use "wait" instead
+	alarm_duration = spawnArgs.GetFloat("alarm_duration", "0");
+	if (alarm_duration == 0) {
+		alarm_duration = spawnArgs.GetFloat("wait", "20");
 	}
 
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
@@ -821,9 +834,10 @@ bool idSecurityCamera::CanSeePlayer( void )
 			gameLocal.clip.TracePoint(tr, start, originPlayer + eye, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
 				gameLocal.pvs.FreeCurrentPVS(handle);
+				timeLastSeen = gameLocal.time;
 				if ( follow ) {
 					dir = (originPlayer + eye/2) - origin;	//focus on the torso
-					idAngles a = dir.ToAngles();
+					idAngles a		= dir.ToAngles();
 					angleToPlayer	= a.yaw;
 					inclineToPlayer	= a.pitch;
 				}
@@ -839,10 +853,11 @@ bool idSecurityCamera::CanSeePlayer( void )
 			gameLocal.clip.TracePoint(tr, origin, originPlayer, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
 				gameLocal.pvs.FreeCurrentPVS(handle);
+				timeLastSeen = gameLocal.time;
 				if ( follow ) {
 					dir = (originPlayer + eye / 2) - origin;	//focus on the torso
-					idAngles a = dir.ToAngles();
-					angleToPlayer = a.yaw;
+					idAngles a		= dir.ToAngles();
+					angleToPlayer	= a.yaw;
 					inclineToPlayer = a.pitch;
 				}
 				return true;
@@ -1017,7 +1032,7 @@ void idSecurityCamera::Think( void )
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 					nextAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("alarm_interval", "5"));
-					endAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("wait", "20"));
+					endAlertTime = gameLocal.time + SEC2MS(alarm_duration);
 					SetAlertMode(MODE_ALERT);
 					ActivateTargets(this);
 					state = STATE_ALERTED;
@@ -1060,8 +1075,14 @@ void idSecurityCamera::Think( void )
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 				}
+
+				//extend the alert state if the camera has recently seen the player
+				if ( endAlertTime - timeLastSeen < SEC2MS(alarm_duration / 2) )
+				{
+					endAlertTime = gameLocal.time + SEC2MS(alarm_duration / 2);
+				}
 			}
-			else if ( gameLocal.time >= endAlertTime)
+			else
 			{
 				if ( rotate && !stationary )
 				{
@@ -1123,33 +1144,35 @@ void idSecurityCamera::Think( void )
 
 		if ( rotate )
 		{
-			if ( (sweeping || following) && (gameLocal.time <= sweepEndTime) )
+			if ( sweeping || following )
 			{
 				idAngles a = GetPhysics()->GetAxis().ToAngles();
 
-				percentSwept = (gameLocal.time - sweepStartTime) / (sweepEndTime - sweepStartTime);
-				travel = percentSwept * sweepAngle;
-				a.yaw = (negativeSweep) ? angle + travel : angle - travel;
+				if ( gameLocal.time <= sweepEndTime )
+				{
+					percentSwept = (gameLocal.time - sweepStartTime) / (sweepEndTime - sweepStartTime);
+					travel = percentSwept * sweepAngle;
+					a.yaw = (negativeSweep) ? angle + travel : angle - travel;
+				}
+
+				if ( followIncline && (gameLocal.time <= inclineEndTime) )
+				{
+					percentInclined = (gameLocal.time - inclineStartTime) / (inclineEndTime - inclineStartTime);
+					travel = percentInclined * inclineAngle;
+					a.pitch = (negativeIncline) ? incline + travel : incline - travel;
+
+				}
 
 				SetAngles(a);
-			}
-
-			if ( followIncline && (gameLocal.time <= inclineEndTime) )
-			{
-				idAngles i = GetPhysics()->GetAxis().ToAngles();
-
-				percentInclined = (gameLocal.time - inclineStartTime) / (inclineEndTime - inclineStartTime);
-				travel = percentInclined * inclineAngle;
-				i.pitch = (negativeIncline) ? incline + travel : incline - travel;
-
-				SetAngles(i);
 			}
 
 			//check whether the player has moved to another position in the camera's view
 			if ( following && CanSeePlayer() )
 			{
-				if ( ( fabs(idMath::AngleDelta(angleToPlayer, angleTarget)) > followTolerance )
-				|| ( followIncline && ( fabs(idMath::AngleDelta(inclineToPlayer, inclineTarget)) > followInclineTolerance ) ) )
+				float sweepDist		= fabs(idMath::AngleDelta(angleToPlayer, angleTarget));
+				float inclineDist	= fabs(idMath::AngleDelta(inclineToPlayer, inclineTarget));
+
+				if ( ( sweepDist > followTolerance ) || ( followIncline && ( inclineDist > followInclineTolerance ) ) )
 				{
 					angleTarget = angleToPlayer;
 					inclineTarget = inclineToPlayer;
