@@ -202,6 +202,11 @@ public:
 	void SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents = true);
 
 	/**
+	* Get objective visibility.  Uses "internal" index (starts at 0)
+	**/
+	bool GetObjectiveVisibility( int ObjIndex );
+
+	/**
 	* Set whether an objective is mandatory or not.
 	* The objective index is 0-based.
 	**/

@@ -1311,6 +1311,18 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 	m_Objectives[ObjIndex].m_Components[CompIndex].m_bLatched = false;
 }
 
+bool CMissionData::GetObjectiveVisibility( int ObjIndex )
+{
+	if (ObjIndex >= m_Objectives.Num() || ObjIndex < 0)
+	{
+		DM_LOG(LC_OBJECTIVES, LT_WARNING)LOGSTRING("GetCompletionState: Bad objective index: %d \r", ObjIndex);
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to get visibility of invalid objective index: %d \n", ObjIndex);
+		return false;
+	}
+
+	return m_Objectives[ObjIndex].m_bVisible;
+}
+
 void CMissionData::SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents)
 {
 	if (objIndex >= m_Objectives.Num() || objIndex < 0)

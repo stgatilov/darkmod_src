@@ -1358,6 +1358,7 @@ private:
 	void					Event_ObjectiveUnlatch( int ObjIndex );
 	void					Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex );
 	void					Event_SetObjectiveVisible( int ObjIndex, bool bVal );
+	void					Event_GetObjectiveVisible( int ObjIndex );
 	void					Event_SetObjectiveOptional( int ObjIndex, bool bVal );
 	void					Event_SetObjectiveOngoing( int ObjIndex, bool bVal );
 	void					Event_SetObjectiveEnabling( int ObjIndex, const char *strIn );

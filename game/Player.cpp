@@ -208,6 +208,8 @@ const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", EventAr
 		"Unlatch an irreversible objective component that has latched into a state");
 
 const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective visibility.");
+const idEventDef EV_Player_GetObjectiveVisible("getObjectiveVisible", EventArgs('d', "ObjNum", "Starts counting at 1"), 'd', "Returns the current visibility of the objective with the number ObjNum.");
+
 const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective mandatory." );
 const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective ongoing." );
 
@@ -410,6 +412,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_ObjectiveUnlatch,		idPlayer::Event_ObjectiveUnlatch )
 	EVENT( EV_Player_ObjectiveCompUnlatch,	idPlayer::Event_ObjectiveComponentUnlatch )
 	EVENT( EV_Player_SetObjectiveVisible,	idPlayer::Event_SetObjectiveVisible )
+	EVENT( EV_Player_GetObjectiveVisible,	idPlayer::Event_GetObjectiveVisible )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
@@ -10458,6 +10461,12 @@ void idPlayer::Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex )
 void idPlayer::Event_SetObjectiveVisible( int ObjIndex, bool bVal )
 {
 	gameLocal.m_MissionData->SetObjectiveVisibility(ObjIndex - 1, bVal);
+}
+
+void idPlayer::Event_GetObjectiveVisible( int ObjIndex )
+{
+	bool bVisible = gameLocal.m_MissionData->GetObjectiveVisibility( ObjIndex - 1 );
+	idThread::ReturnInt( (int) bVisible );
 }
 
 void idPlayer::Event_SetObjectiveOptional( int ObjIndex, bool bVal )
