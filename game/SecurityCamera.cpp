@@ -1238,9 +1238,15 @@ void idSecurityCamera::ContinueSweep( void )
 
 		TurnToTarget();
 
-		//if the sweep is relatively short, slow it down to finish simultaneously with the incline
-		if ( followIncline && (sweepEndTime < inclineEndTime) ) {
-			sweepEndTime = inclineEndTime;
+		//synchronise sweep and incline, use the longer time
+		if ( followIncline )
+		{
+			if (sweepEndTime < inclineEndTime) {
+				sweepEndTime = inclineEndTime;
+			}
+			if (inclineEndTime < sweepEndTime) {
+				inclineEndTime = sweepEndTime;
+			}
 		}
 	}
 
