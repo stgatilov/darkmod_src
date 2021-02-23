@@ -1040,9 +1040,12 @@ void idSecurityCamera::Think( void )
 					nextAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("alarm_interval", "5"));
 					endAlertTime = gameLocal.time + SEC2MS(alarm_duration);
 					SetAlertMode(MODE_ALERT);
-					ActivateTargets(this);
 					state = STATE_ALERTED;
 					UpdateColors();
+					if ( spawnArgs.GetBool("trigger_alarm_start", "1") )
+					{
+						ActivateTargets(this);
+					}
 				}
 				else
 				{
@@ -1104,6 +1107,10 @@ void idSecurityCamera::Think( void )
 					state = STATE_SWEEPING;
 				}
 				UpdateColors();
+				if ( spawnArgs.GetBool("trigger_alarm_end", "0") )
+				{
+					ActivateTargets(this);
+				}
 			}
 			break;
 		case STATE_POWERRETURNS_SWEEPING:
@@ -1340,19 +1347,19 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
 
-	idStr fx;
+	idStr str;
 
 	if ( powerOn ) {
 		StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
-		fx = spawnArgs.GetString("fx_destroyed");
+		str = spawnArgs.GetString("fx_destroyed");
 	}
 	else if ( !powerOn ) {
 		StartSound("snd_death_nopower", SND_CHANNEL_BODY, 0, false, NULL);
-		fx = spawnArgs.GetString("fx_destroyed_nopower");
+		str = spawnArgs.GetString("fx_destroyed_nopower");
 	}
 
-	if ( fx.Length() ) {
-			idEntityFx::StartFx(fx, NULL, NULL, this, true);
+	if ( str.Length() ) {
+			idEntityFx::StartFx(str, NULL, NULL, this, true);
 	}
 
 	// call base class method to switch to broken model
@@ -1373,6 +1380,15 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	if ( cameraDisplay.GetEntity() )
 	{
 		cameraDisplay.GetEntity()->Hide();
+	}
+
+	// Active a designated entity if destroyed 
+
+	spawnArgs.GetString("break_up_target", "", str);
+	idEntity *ent = gameLocal.FindEntity(str);
+	if ( ent )
+	{
+		ent->Activate(this);
 	}
 
 	state = STATE_DEAD;
