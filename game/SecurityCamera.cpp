@@ -95,6 +95,8 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(incline);
 	savefile->WriteFloat(inclineTarget);
 	savefile->WriteFloat(inclinePos1);
+	savefile->WriteFloat(inclineMaxUp);
+	savefile->WriteFloat(inclineMaxDown);
 	savefile->WriteFloat(inclineToPlayer);
 
 	savefile->WriteFloat(timeLastSeen);
@@ -183,6 +185,8 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(incline);
 	savefile->ReadFloat(inclineTarget);
 	savefile->ReadFloat(inclinePos1);
+	savefile->ReadFloat(inclineMaxUp);
+	savefile->ReadFloat(inclineMaxDown);
 	savefile->ReadFloat(inclineToPlayer);
 
 	savefile->ReadFloat(timeLastSeen);
@@ -326,6 +330,8 @@ void idSecurityCamera::Spawn( void )
 	//pitch angle
 	incline	= inclinePos1 = GetPhysics()->GetAxis().ToAngles().pitch;
 	inclineTarget	= inclineToPlayer = 0;
+	inclineMaxUp	= idMath::AngleNormalize180( inclinePos1 - spawnArgs.GetFloat("follow_incline_max_up", "20") );
+	inclineMaxDown	= idMath::AngleNormalize180( inclinePos1 + fabs(spawnArgs.GetFloat("follow_incline_max_down", "30")) );
 
 	negativeIncline = false;
 	inclineAngle = 0;
@@ -1160,7 +1166,6 @@ void idSecurityCamera::Think( void )
 					percentInclined = (gameLocal.time - inclineStartTime) / (inclineEndTime - inclineStartTime);
 					travel = percentInclined * inclineAngle;
 					a.pitch = (negativeIncline) ? incline + travel : incline - travel;
-
 				}
 
 				SetAngles(a);
@@ -1241,12 +1246,7 @@ void idSecurityCamera::ContinueSweep( void )
 		//synchronise sweep and incline, use the longer time
 		if ( followIncline )
 		{
-			if (sweepEndTime < inclineEndTime) {
-				sweepEndTime = inclineEndTime;
-			}
-			if (inclineEndTime < sweepEndTime) {
-				inclineEndTime = sweepEndTime;
-			}
+			sweepEndTime = inclineEndTime = ( sweepEndTime > inclineEndTime ) ? sweepEndTime : inclineEndTime;
 		}
 	}
 
@@ -1306,6 +1306,9 @@ void idSecurityCamera::TurnToTarget( void )
 
 	//also calculate incline parameters, if enabled
 	if ( followIncline ) {
+		if ( idMath::AngleDelta(inclineMaxDown, inclineTarget) < 0 )	inclineTarget = inclineMaxDown;
+		if ( idMath::AngleDelta(inclineMaxUp, inclineTarget) > 0)		inclineTarget = inclineMaxUp;
+
 		incline			= GetPhysics()->GetAxis().ToAngles().pitch;
 		inclineAngle	= idMath::AngleDelta(incline, inclineTarget);
 

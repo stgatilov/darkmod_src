@@ -93,6 +93,8 @@ private:
 	float					incline;
 	float					inclineTarget;
 	float					inclinePos1;
+	float					inclineMaxUp;
+	float					inclineMaxDown;
 	float					inclineToPlayer;
 
 	bool					follow;
