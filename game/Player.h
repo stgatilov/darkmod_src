@@ -839,9 +839,14 @@ public:
 	 * @impulseState: the button state of the frob key. Pass EPressed if you
 	 * want to simulate a one-time frob event.
 	 *
+	 * @allowUseCurrentInvItem (#5542): if true, then also try to use currently selected inventory item
+	 * if "Use-by-frobbing" (tdm_inv_use_on_frob) player setting is on.
+	 * This happens e.g. when frobbing door while having lockpick/key selected.
+	 * When run from game script, it must always be false!
+	 *
 	 * Hold time: The amount of time the button has been held, if applicable (0 by default)
 	 */
-	void					PerformFrob(EImpulseState impulseState, idEntity* frobbed);
+	void					PerformFrob(EImpulseState impulseState, idEntity* frobbed, bool allowUseCurrentInvItem);
 
 	// Gets called when the player hits the frob button.
 	void					PerformFrob();

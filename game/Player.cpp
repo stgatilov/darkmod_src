@@ -11176,7 +11176,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 	return returnValue;
 }
 
-void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
+void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool allowUseCurrentInvItem)
 {
 	// greebo: Don't perform frobs on hidden or NULL entities
 	if (target == NULL || target->IsHidden())
@@ -11204,7 +11204,8 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 	}
 
 	// Do we allow use on frob?
-	if (cv_tdm_inv_use_on_frob.GetBool()) 
+	// stgatilov #5542: block use-on-frob when frob called from game script
+	if (allowUseCurrentInvItem && cv_tdm_inv_use_on_frob.GetBool())
 	{
 		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
@@ -11304,7 +11305,7 @@ void idPlayer::PerformFrob()
 	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// Relay the function to the specialised method
-	PerformFrob(EPressed, frob);
+	PerformFrob(EPressed, frob, true);
 }
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
@@ -11325,7 +11326,7 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(ERepeat, frob);
+	PerformFrob(ERepeat, frob, true);
 }
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
@@ -11346,7 +11347,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(EReleased, frob);
+	PerformFrob(EReleased, frob, true);
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)
