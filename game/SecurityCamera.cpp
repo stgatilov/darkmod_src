@@ -38,19 +38,27 @@
 // grayman #4615 - Refactored for 2.06
 
 const idEventDef EV_SecurityCam_AddLight( "<addLight>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Peek_AddDisplay("<addDisplay>", EventArgs(), EV_RETURNS_VOID, "internal"); // grayman #4882
 const idEventDef EV_SecurityCam_SpotLightToggle( "toggle_light", EventArgs(), EV_RETURNS_VOID, "Toggles the spotlight on/off." );
 const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RETURNS_VOID, "Toggles the camera sweep." );
-const idEventDef EV_Peek_AddDisplay("<addDisplay>", EventArgs(), EV_RETURNS_VOID, "internal"); // grayman #4882
+const idEventDef EV_SecurityCam_SeePlayerToggle("toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player.");
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
+const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
+const idEventDef EV_SecurityCam_SetHealth("setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Set the health of the security camera. Setting to 0 or lower will destroy it.");
+const idEventDef EV_SecurityCam_SetSightThreshold("setSightThreshold", EventArgs('f', "sightThreshold", ""), EV_RETURNS_VOID, "Set the sight threshold of the security camera: how lit up the player's lightgem needs to be in order to be seen. 0.0 to 1.0");
 
 CLASS_DECLARATION( idEntity, idSecurityCamera )
-	EVENT( EV_SecurityCam_AddLight,			idSecurityCamera::Event_AddLight )
-	EVENT( EV_SecurityCam_SpotLightToggle,		idSecurityCamera::Event_SpotLight_Toggle )
-	EVENT( EV_SecurityCam_SweepToggle,		idSecurityCamera::Event_Sweep_Toggle)
-	EVENT( EV_PostSpawn,				idSecurityCamera::PostSpawn )
-	EVENT( EV_SecurityCam_GetSpotLight,		idSecurityCamera::Event_GetSpotLight)	
-	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState)	
+	EVENT( EV_PostSpawn,							idSecurityCamera::PostSpawn )
+	EVENT( EV_SecurityCam_AddLight,					idSecurityCamera::Event_AddLight )
+	EVENT( EV_SecurityCam_SpotLightToggle,			idSecurityCamera::Event_SpotLight_Toggle )
+	EVENT( EV_SecurityCam_SweepToggle,				idSecurityCamera::Event_Sweep_Toggle )
+	EVENT( EV_SecurityCam_SeePlayerToggle,			idSecurityCamera::Event_SeePlayer_Toggle )
+	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
+	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState )	
+	EVENT( EV_SecurityCam_GetHealth,				idSecurityCamera::Event_GetHealth )
+	EVENT( EV_SecurityCam_SetHealth,				idSecurityCamera::Event_SetHealth )
+	EVENT( EV_SecurityCam_SetSightThreshold,		idSecurityCamera::Event_SetSightThreshold )
 	END_CLASS
 
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
@@ -100,7 +108,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(inclineToPlayer);
 
 	savefile->WriteFloat(timeLastSeen);
-	savefile->WriteFloat(alarm_duration);
+	savefile->WriteFloat(alertDuration);
 
 	savefile->WriteFloat(scanDist);
 	savefile->WriteFloat(scanFov);
@@ -190,7 +198,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(inclineToPlayer);
 
 	savefile->ReadFloat(timeLastSeen);
-	savefile->ReadFloat(alarm_duration);
+	savefile->ReadFloat(alertDuration);
 
 	savefile->ReadFloat(scanDist);
 	savefile->ReadFloat(scanFov);
@@ -245,12 +253,12 @@ void idSecurityCamera::Spawn( void )
 	idStr	str;
 
 	rotate			= spawnArgs.GetBool("rotate", "1");
-	sweepAngle		= spawnArgs.GetFloat( "sweepAngle", "90" );
-	sweepTime		= spawnArgs.GetFloat( "sweepTime", "5" );
-	health			= spawnArgs.GetInt( "health", "100" );
-	scanFov			= spawnArgs.GetFloat( "scanFov", "90" );
-	scanDist		= spawnArgs.GetFloat( "scanDist", "200" );
-	flipAxis		= spawnArgs.GetBool( "flipAxis", "0" );
+	sweepAngle		= spawnArgs.GetFloat("sweepAngle", "90");
+	sweepTime		= spawnArgs.GetFloat("sweepTime", "5");
+	health			= spawnArgs.GetInt("health", "100");
+	scanFov			= spawnArgs.GetFloat("scanFov", "90");
+	scanDist		= spawnArgs.GetFloat("scanDist", "200");
+	flipAxis		= spawnArgs.GetBool("flipAxis", "0");
 	useColors		= spawnArgs.GetBool("useColors");
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
@@ -310,9 +318,9 @@ void idSecurityCamera::Spawn( void )
 	}
 
 	//if "alarm_duration" is not set, use "wait" instead
-	alarm_duration = spawnArgs.GetFloat("alarm_duration", "0");
-	if (alarm_duration == 0) {
-		alarm_duration = spawnArgs.GetFloat("wait", "20");
+	alertDuration = spawnArgs.GetFloat("alarm_duration", "0");
+	if (alertDuration == 0) {
+		alertDuration = spawnArgs.GetFloat("wait", "20");
 	}
 
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
@@ -678,6 +686,41 @@ void idSecurityCamera::Event_GetSecurityCameraState()
 
 /*
 ================
+idSecurityCamera::Event_GetHealth
+================
+*/
+void idSecurityCamera::Event_GetHealth()
+{
+	idThread::ReturnInt(health);
+}
+
+/*
+================
+idSecurityCamera::Event_SetHealth
+================
+*/
+void idSecurityCamera::Event_SetHealth( float newHealth )
+{
+	health = static_cast<int>(newHealth);
+	fl.takedamage = true;
+
+	if ( ( health <= 0 ) && ( state != STATE_DEAD ) ) {
+		Killed( NULL, NULL, 0, idVec3(0, 0, 0), 0 );
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_SetSightThreshold
+================
+*/
+void idSecurityCamera::Event_SetSightThreshold( float newThreshold )
+{
+	sightThreshold = newThreshold;
+}
+
+/*
+================
 idSecurityCamera::DrawFov
 ================
 */
@@ -1038,7 +1081,7 @@ void idSecurityCamera::Think( void )
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 					nextAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("alarm_interval", "5"));
-					endAlertTime = gameLocal.time + SEC2MS(alarm_duration);
+					endAlertTime = gameLocal.time + SEC2MS(alertDuration);
 					SetAlertMode(MODE_ALERT);
 					state = STATE_ALERTED;
 					UpdateColors();
@@ -1086,9 +1129,9 @@ void idSecurityCamera::Think( void )
 				}
 
 				//extend the alert state if the camera has recently seen the player
-				if ( endAlertTime - timeLastSeen < SEC2MS(alarm_duration / 2) )
+				if ( endAlertTime - timeLastSeen < SEC2MS(alertDuration / 2) )
 				{
-					endAlertTime = gameLocal.time + SEC2MS(alarm_duration / 2);
+					endAlertTime = gameLocal.time + SEC2MS(alertDuration / 2);
 				}
 			}
 			else
@@ -1155,7 +1198,7 @@ void idSecurityCamera::Think( void )
 			break;
 		}
 
-		if ( rotate )
+		if ( rotate && !stationary )
 		{
 			if ( sweeping || following )
 			{
@@ -1168,7 +1211,7 @@ void idSecurityCamera::Think( void )
 					a.yaw = (negativeSweep) ? angle + travel : angle - travel;
 				}
 
-				if ( followIncline && (gameLocal.time <= inclineEndTime) )
+				if ( followIncline && ( gameLocal.time <= inclineEndTime ) )
 				{
 					percentInclined = (gameLocal.time - inclineStartTime) / (inclineEndTime - inclineStartTime);
 					travel = percentInclined * inclineAngle;
@@ -1181,8 +1224,8 @@ void idSecurityCamera::Think( void )
 			//check whether the player has moved to another position in the camera's view
 			if ( following && CanSeePlayer() )
 			{
-				float sweepDist		= fabs(idMath::AngleDelta(angleToPlayer, angleTarget));
-				float inclineDist	= fabs(idMath::AngleDelta(inclineToPlayer, inclineTarget));
+				float sweepDist		= fabs( idMath::AngleDelta(angleToPlayer, angleTarget) );
+				float inclineDist	= fabs( idMath::AngleDelta(inclineToPlayer, inclineTarget) );
 
 				if ( ( sweepDist > followTolerance ) || ( followIncline && ( inclineDist > followInclineTolerance ) ) )
 				{
@@ -1259,9 +1302,9 @@ void idSecurityCamera::ContinueSweep( void )
 
 	else if ( !following )
 	{
-		float timeRemaining = (1.0f - percentSwept)*sweepTime;
-		sweepStartTime = gameLocal.time;
-		sweepEndTime = gameLocal.time + SEC2MS(timeRemaining);
+		sweepAngle		= fabs( idMath::AngleDelta(angle, angleTarget) );
+		sweepStartTime	= gameLocal.time;
+		sweepEndTime	= gameLocal.time + SEC2MS( sweepAngle / sweepSpeed );
 	}
 
 	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
@@ -1593,7 +1636,7 @@ void idSecurityCamera::Event_Sweep_Toggle( void )
 			StopSound(SND_CHANNEL_ANY, false);
 			StartSound("snd_end", SND_CHANNEL_BODY, 0, false, NULL);
 		}
-		else
+		else if ( !stationary )
 		{
 			ContinueSweep(); // changes state to STATE_SWEEPING
 		}
@@ -1610,4 +1653,17 @@ void idSecurityCamera::Event_Sweep_Toggle( void )
 		}
 		break;
 	}
+
+}
+
+/*
+================
+idSecurityCamera::Event_SeePlayer_Toggle
+================
+*/
+void idSecurityCamera::Event_SeePlayer_Toggle(void)
+{
+	//Use a spawnarg-based approach for backwards compatibility
+	idStr str = ( spawnArgs.GetBool("seePlayer", "0") ) ? "0" : "1";
+	spawnArgs.Set( "seePlayer", str );
 }

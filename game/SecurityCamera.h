@@ -127,12 +127,11 @@ private:
 	bool					spotlightPowerOn;
 
 	float					timeLastSeen;
-	float					alarm_duration;
-
 	float					lostInterestEndTime;
 	float					nextAlertTime;
 	float					startAlertTime;
 	float					endAlertTime;
+	float					alertDuration;
 	bool					emitPauseSound;
 	float					emitPauseSoundTime;
 	float					pauseEndTime;
@@ -162,10 +161,12 @@ private:
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );
 	void					Event_Sweep_Toggle( void );
-	// Obsttorte
+	void					Event_SeePlayer_Toggle(void);
 	void					Event_GetSpotLight(void);
-	// Dragofer
 	void					Event_GetSecurityCameraState( void );
+	void					Event_GetHealth( void );
+	void					Event_SetHealth( float newHealth );
+	void					Event_SetSightThreshold(float newThreshold);
 
 	void					PostSpawn( void );
 	void					TriggerSparks( void );
