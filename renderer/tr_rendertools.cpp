@@ -23,55 +23,103 @@
 #include "GLSLProgramManager.h"
 #include "ImmediateRendering.h"
 
-#define MAX_DEBUG_LINES			16384
-
-typedef struct debugLine_s {
+typedef struct debugBase_s {
 	idVec4		rgb;
+	int			lifeTime;
+	bool		depthTest;
+	void Clear() {}
+} debugBase_t;
+
+template<class DebugObject, int MaxN> struct DebugObjectSet {
+	DebugObject arr[MaxN];
+	int num;
+	int time;
+
+	int Num() const { return num; }
+	bool GetDepthTest(int idx) const { return arr[idx].depthTest; }
+	DebugObject *Draw(int idx) { return &arr[idx]; }
+	DebugObject *Append(int lifeTime, idVec4 rgb, bool depthTest);
+	void Clear(int time);
+	void CopyFrom(const DebugObjectSet<DebugObject, MaxN> &src);
+};
+
+
+#define MAX_DEBUG_LINES			16384
+#define MAX_DEBUG_TEXT			512
+#define MAX_DEBUG_POLYGONS		8192
+
+typedef struct debugLine_s : debugBase_t {
 	idVec3		start;
 	idVec3		end;
-	bool		depthTest;
-	int			lifeTime;
 } debugLine_t;
 
-#define MAX_DEBUG_TEXT			512
-
-typedef struct debugText_s {
+typedef struct debugText_s : debugBase_t {
 	idStr		text;
 	idVec3		origin;
 	float		scale;
-	idVec4		color;
 	idMat3		viewAxis;
 	int			align;
-	int			lifeTime;
-	bool		depthTest;
+	void Clear() { text.Clear(); }
 } debugText_t;
 
-#define MAX_DEBUG_POLYGONS		8192
-
-typedef struct debugPolygon_s {
-	idVec4		rgb;
+typedef struct debugPolygon_s : debugBase_t {
 	idWinding	winding;
-	bool		depthTest;
-	int			lifeTime;
+	void Clear() { winding.Clear(); }
 } debugPolygon_t;
 
 typedef struct debugPrimitives_s {
-	debugLine_t		lines[ MAX_DEBUG_LINES ];
-	int				numLines = 0;
-	int				lineTime = 0;
-
-	debugText_t		text[ MAX_DEBUG_TEXT ];
-	int				numText = 0;
-	int				textTime = 0;
-
-	debugPolygon_t	polygons[ MAX_DEBUG_POLYGONS ];
-	int				numPolygons = 0;
-	int				polygonTime = 0;
+	DebugObjectSet<debugLine_s, MAX_DEBUG_LINES> lines;
+	DebugObjectSet<debugText_s, MAX_DEBUG_TEXT> text;
+	DebugObjectSet<debugPolygon_s, MAX_DEBUG_POLYGONS> polygons;
 } debugPrimitives_t;
 
 debugPrimitives_t r_debug, rb_debug;
 
 static void RB_DrawText( ImmediateRendering &ir, const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align );
+
+
+template<class DebugObject, int MaxN> DebugObject *DebugObjectSet<DebugObject, MaxN>::Append(int lifeTime, idVec4 rgb, bool depthTest) {
+	if (num < MaxN) {
+		DebugObject &obj = arr[num++];
+		obj.lifeTime = time + lifeTime;
+		obj.rgb = rgb;
+		obj.depthTest = depthTest;
+		return &obj;
+	}
+	return nullptr;
+}
+
+template<class DebugObject, int MaxN> void DebugObjectSet<DebugObject, MaxN>::Clear(int newTime) {
+	time = newTime;
+
+	if ( !time ) {
+		// free resources
+		for ( int i = 0 ; i < MaxN; i++ ) {
+			arr[i].Clear();
+		}
+		num = 0;
+		return;
+	}
+
+	// copy any objects that still needs to be drawn
+	int rem = 0;
+	for ( int i = 0 ; i < num; i++ ) {
+		if ( arr[i].lifeTime > time ) {
+			if ( rem != i ) {
+				arr[rem] = arr[i];
+			}
+			rem++;
+		}
+	}
+	num = rem;
+}
+
+template<class DebugObject, int MaxN> void DebugObjectSet<DebugObject, MaxN>::CopyFrom(const DebugObjectSet<DebugObject, MaxN> &src) {
+	time = src.time;
+	num = src.num;
+	for ( int i = 0; i < num; ++i )
+		arr[i] = src.arr[i];
+}
 
 /*
 ================
@@ -79,21 +127,9 @@ RB_CopyDebugPrimitivesToBackend
 ================
 */
 void RB_CopyDebugPrimitivesToBackend( void ) {
-	rb_debug.lineTime = r_debug.lineTime;
-	rb_debug.numLines = r_debug.numLines;
-	for ( int i = 0; i < r_debug.numLines; ++i ) {
-		rb_debug.lines[i] = r_debug.lines[i];
-	}
-	rb_debug.polygonTime = r_debug.polygonTime;
-	rb_debug.numPolygons = r_debug.numPolygons;
-	for ( int i = 0; i < r_debug.numPolygons; ++i ) {
-		rb_debug.polygons[i] = r_debug.polygons[i];
-	}
-	rb_debug.textTime = r_debug.textTime;
-	rb_debug.numText = r_debug.numText;
-	for ( int i = 0; i < r_debug.numText; ++i ) {
-		rb_debug.text[i] = r_debug.text[i];
-	}
+	rb_debug.lines.CopyFrom(r_debug.lines);
+	rb_debug.polygons.CopyFrom(r_debug.polygons);
+	rb_debug.text.CopyFrom(r_debug.text);
 }
 
 /*
@@ -1694,34 +1730,7 @@ R_ClearDebugText
 ================
 */
 void R_ClearDebugText( int time ) {
-	int			i;
-	int			num;
-	debugText_t	*text;
-
-	r_debug.textTime = time;
-
-	if ( !time ) {
-		// free up our strings
-		text = r_debug.text;
-		for ( i = 0 ; i < MAX_DEBUG_TEXT; i++, text++ ) {
-			text->text.Clear();
-		}
-		r_debug.numText = 0;
-		return;
-	}
-
-	// copy any text that still needs to be drawn
-	num	= 0;
-	text = r_debug.text;
-	for ( i = 0 ; i < r_debug.numText; i++, text++ ) {
-		if ( text->lifeTime > time ) {
-			if ( num != i ) {
-				r_debug.text[ num ] = *text;
-			}
-			num++;
-		}
-	}
-	r_debug.numText = num;
+	r_debug.text.Clear(time);
 }
 
 /*
@@ -1730,18 +1739,12 @@ R_AddDebugText
 ================
 */
 void R_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest ) {
-	debugText_t *debugText;
-
-	if ( r_debug.numText < MAX_DEBUG_TEXT ) {
-		debugText = &r_debug.text[ r_debug.numText++ ];
+	if (debugText_t *debugText = r_debug.text.Append(lifetime, color, depthTest)) {
 		debugText->text			= text;
 		debugText->origin		= origin;
 		debugText->scale		= scale;
-		debugText->color		= color;
 		debugText->viewAxis		= viewAxis;
 		debugText->align		= align;
-		debugText->lifeTime		= r_debug.textTime + lifetime;
-		debugText->depthTest	= depthTest;
 	}
 }
 
@@ -1868,18 +1871,14 @@ RB_ShowDebugText
 ================
 */
 void RB_ShowDebugText( void ) {
-	int			i;
-	int			width;
-	debugText_t	*text;
-
-	if ( !rb_debug.numText ) {
+	if ( rb_debug.text.Num() == 0 ) {
 		return;
 	}
 
 	// all lines are expressed in world coordinates
 	RB_SimpleWorldSetup();
 
-	width = r_debugLineWidth.GetInteger();
+	int width = r_debugLineWidth.GetInteger();
 	if ( width < 1 ) {
 		width = 1;
 	} else if ( width > 10 ) {
@@ -1893,12 +1892,12 @@ void RB_ShowDebugText( void ) {
 	if ( !r_debugLineDepthTest.GetBool() ) {
 		qglDisable( GL_DEPTH_TEST );
 	}
-	text = rb_debug.text;
 
 	ImmediateRendering ir;
-	for ( i = 0 ; i < rb_debug.numText; i++, text++ ) {
-		if ( !text->depthTest ) {
-			RB_DrawText( ir, text->text, text->origin, text->scale, text->color, text->viewAxis, text->align );
+	for ( int i = 0 ; i < rb_debug.text.Num(); i++ ) {
+		if ( !rb_debug.text.GetDepthTest(i) ) {
+			debugText_t *text = rb_debug.text.Draw(i);
+			RB_DrawText( ir, text->text, text->origin, text->scale, text->rgb, text->viewAxis, text->align );
 		}
 	}
 	ir.Flush();
@@ -1906,11 +1905,11 @@ void RB_ShowDebugText( void ) {
 	if ( !r_debugLineDepthTest.GetBool() ) {
 		qglEnable( GL_DEPTH_TEST );
 	}
-	text = rb_debug.text;
 
-	for ( i = 0 ; i < rb_debug.numText; i++, text++ ) {
-		if ( text->depthTest ) {
-			RB_DrawText( ir, text->text, text->origin, text->scale, text->color, text->viewAxis, text->align );
+	for ( int i = 0 ; i < rb_debug.text.Num(); i++ ) {
+		if ( rb_debug.text.GetDepthTest(i) ) {
+			debugText_t *text = rb_debug.text.Draw(i);
+			RB_DrawText( ir, text->text, text->origin, text->scale, text->rgb, text->viewAxis, text->align );
 		}
 	}
 	ir.Flush();
@@ -1925,30 +1924,7 @@ R_ClearDebugLines
 ================
 */
 void R_ClearDebugLines( int time ) {
-	int			i;
-	int			num;
-	debugLine_t	*line;
-
-	r_debug.lineTime = time;
-
-	if ( !time ) {
-		r_debug.numLines = 0;
-		return;
-	}
-
-	// copy any lines that still need to be drawn
-	num	= 0;
-	line = r_debug.lines;
-
-	for ( i = 0 ; i < r_debug.numLines; i++, line++ ) {
-		if ( line->lifeTime > time ) {
-			if ( num != i ) {
-				r_debug.lines[ num ] = *line;
-			}
-			num++;
-		}
-	}
-	r_debug.numLines = num;
+	r_debug.lines.Clear(time);
 }
 
 /*
@@ -1957,15 +1933,9 @@ R_AddDebugLine
 ================
 */
 void R_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest ) {
-	debugLine_t *line;
-
-	if ( r_debug.numLines < MAX_DEBUG_LINES ) {
-		line = &r_debug.lines[ r_debug.numLines++ ];
-		line->rgb		= color;
+	if ( debugLine_t *line = r_debug.lines.Append(lifeTime, color, depthTest) ) {
 		line->start		= start;
 		line->end		= end;
-		line->depthTest = depthTest;
-		line->lifeTime	= r_debug.lineTime + lifeTime;
 	}
 }
 
@@ -1975,18 +1945,14 @@ RB_ShowDebugLines
 ================
 */
 void RB_ShowDebugLines( void ) {
-	int			i;
-	int			width;
-	debugLine_t	*line;
-
-	if ( !rb_debug.numLines ) {
+	if ( rb_debug.lines.Num() == 0 ) {
 		return;
 	}
 
 	// all lines are expressed in world coordinates
 	RB_SimpleWorldSetup();
 
-	width = r_debugLineWidth.GetInteger();
+	int width = r_debugLineWidth.GetInteger();
 
 	if ( width < 1 ) {
 		width = 1;
@@ -2004,9 +1970,9 @@ void RB_ShowDebugLines( void ) {
 
 	ImmediateRendering ir;
 	ir.glBegin( GL_LINES );
-	line = rb_debug.lines;
-	for ( i = 0 ; i < rb_debug.numLines; i++, line++ ) {
-		if ( !line->depthTest ) {
+	for ( int i = 0 ; i < rb_debug.lines.Num(); i++ ) {
+		if ( !rb_debug.lines.GetDepthTest(i) ) {
+			debugLine_t *line = rb_debug.lines.Draw(i);
 			ir.glColor4fv( line->rgb.ToFloatPtr() );
 			ir.glVertex3fv( line->start.ToFloatPtr() );
 			ir.glVertex3fv( line->end.ToFloatPtr() );
@@ -2020,9 +1986,9 @@ void RB_ShowDebugLines( void ) {
 	}
 
 	ir.glBegin( GL_LINES );
-	line = rb_debug.lines;
-	for ( i = 0 ; i < rb_debug.numLines; i++, line++ ) {
-		if ( line->depthTest ) {
+	for ( int i = 0 ; i < rb_debug.lines.Num(); i++ ) {
+		if ( rb_debug.lines.GetDepthTest(i) ) {
+			debugLine_t *line = rb_debug.lines.Draw(i);
 			ir.glColor4fv( line->rgb.ToFloatPtr() );
 			ir.glVertex3fv( line->start.ToFloatPtr() );
 			ir.glVertex3fv( line->end.ToFloatPtr() );
@@ -2041,31 +2007,7 @@ R_ClearDebugPolygons
 ================
 */
 void R_ClearDebugPolygons( int time ) {
-	int				i;
-	int				num;
-	debugPolygon_t	*poly;
-
-	r_debug.polygonTime = time;
-
-	if ( !time ) {
-		r_debug.numPolygons = 0;
-		return;
-	}
-
-	// copy any polygons that still need to be drawn
-	num	= 0;
-
-	poly = r_debug.polygons;
-
-	for ( i = 0 ; i < r_debug.numPolygons; i++, poly++ ) {
-		if ( poly->lifeTime > time ) {
-			if ( num != i ) {
-				r_debug.polygons[ num ] = *poly;
-			}
-			num++;
-		}
-	}
-	r_debug.numPolygons = num;
+	r_debug.polygons.Clear(time);
 }
 
 /*
@@ -2074,14 +2016,8 @@ R_AddDebugPolygon
 ================
 */
 void R_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest ) {
-	debugPolygon_t *poly;
-
-	if ( r_debug.numPolygons < MAX_DEBUG_POLYGONS ) {
-		poly = &r_debug.polygons[ r_debug.numPolygons++ ];
-		poly->rgb		= color;
+	if ( debugPolygon_t *poly = r_debug.polygons.Append(lifeTime, color, depthTest) ) {
 		poly->winding	= winding;
-		poly->depthTest = depthTest;
-		poly->lifeTime	= r_debug.polygonTime + lifeTime;
 	}
 }
 
@@ -2091,10 +2027,7 @@ RB_ShowDebugPolygons
 ================
 */
 void RB_ShowDebugPolygons( void ) {
-	int				i, j;
-	debugPolygon_t	*poly;
-
-	if ( !rb_debug.numPolygons ) {
+	if ( !rb_debug.polygons.Num() == 0 ) {
 		return;
 	}
 
@@ -2115,14 +2048,14 @@ void RB_ShowDebugPolygons( void ) {
 		qglPolygonOffset( -1, -2 );
 		qglEnable( GL_POLYGON_OFFSET_LINE );
 	}
-	poly = rb_debug.polygons;
-
+	
 	ImmediateRendering ir;
-	for ( i = 0 ; i < rb_debug.numPolygons; i++, poly++ ) {
+	for ( int i = 0 ; i < rb_debug.polygons.Num(); i++ ) {
+		debugPolygon_t *poly = rb_debug.polygons.Draw(i);
 		ir.glColor4fv( poly->rgb.ToFloatPtr() );
 
 		ir.glBegin( GL_POLYGON );
-		for ( j = 0; j < poly->winding.GetNumPoints(); j++) {
+		for ( int j = 0; j < poly->winding.GetNumPoints(); j++) {
 			ir.glVertex3fv( poly->winding[j].ToFloatPtr() );
 		}
 		ir.glEnd();
@@ -2573,10 +2506,12 @@ RB_ShutdownDebugTools
 =================
 */
 void RB_ShutdownDebugTools( void ) {
-	for ( int i = 0; i < MAX_DEBUG_POLYGONS; i++ ) {
-		rb_debug.polygons[i].winding.Clear();
-		r_debug.polygons[i].winding.Clear();
-	}
+	r_debug.text.Clear(0);
+	r_debug.lines.Clear(0);
+	r_debug.polygons.Clear(0);
+	rb_debug.text.Clear(0);
+	rb_debug.lines.Clear(0);
+	rb_debug.polygons.Clear(0);
 }
 
 void R_Tools() {
