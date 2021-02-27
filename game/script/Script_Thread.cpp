@@ -275,6 +275,9 @@ const idEventDef EV_EmitParticle( "emitParticle",
 	"effect, or on demand with sys.getTime() as the startTime for finer grained control, 1 quad at a time. Returns True (1) if there are "
 	"more particles to be emitted from the stage, False (0) if the stage has released all its quads.");
 
+const idEventDef EV_SetSecretsFound("setSecretsFound", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets the player has found. Use getMissionStatistic() for getting the current value.");
+const idEventDef EV_SetSecretsTotal("setSecretsTotal", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets exist in the map in total. Use getMissionStatistic() for getting the current value.");
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -401,6 +404,10 @@ CLASS_DECLARATION( idClass, idThread )
 
 	EVENT( EV_GetNextEntity,				idThread::Event_GetNextEntity )	// SteveL #3802
 	EVENT( EV_EmitParticle,  				idThread::Event_EmitParticle )  // SteveL #3962
+
+	EVENT( EV_SetSecretsFound,				idThread::Event_SetSecretsFound )
+	EVENT( EV_SetSecretsTotal,				idThread::Event_SetSecretsTotal )
+
 	END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -2578,6 +2585,18 @@ void idThread::Event_GetMissionStatistic( const char* statisticName )
 		idThread::ReturnFloat(totalSaves);
 		return;
 	}
+	if (idStr::Icmp("secretsFound", statisticName) == 0)
+	{
+		int foundSecrets = gameLocal.m_MissionData->GetSecretsFound();
+		idThread::ReturnFloat(foundSecrets);
+		return;
+	}
+	if (idStr::Icmp("secretsTotal", statisticName) == 0)
+	{
+		int totalSecrets = gameLocal.m_MissionData->GetSecretsTotal();
+		idThread::ReturnFloat(totalSecrets);
+		return;
+	}
 	gameLocal.Warning("Invalid statistic name passed to getMissionStatistic(): %s", statisticName);
 	idThread::ReturnFloat(0.0f);
 }
@@ -2634,4 +2653,15 @@ void idThread::Event_EmitParticle( const char* particle, float startTime, float 
 	const idDeclParticle* ptcl = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particle ) );
 	const bool emitted = gameLocal.smokeParticles->EmitSmoke( ptcl, startTime*1000, diversity, origin, axis );
 	idThread::ReturnFloat( emitted? 1.0f : 0.0f );
+}
+
+//Script events for the secrets system
+void idThread::Event_SetSecretsFound( float secrets )
+{
+	gameLocal.m_MissionData->SetSecretsFound( secrets );
+}
+
+void idThread::Event_SetSecretsTotal( float secrets )
+{
+	gameLocal.m_MissionData->SetSecretsTotal( secrets );
 }

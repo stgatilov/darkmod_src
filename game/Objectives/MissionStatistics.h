@@ -83,6 +83,11 @@ public:
 
 	int totalSaveCount;
 
+	// Dragofer - for tracking secrets
+
+	int secretsFound;
+	int secretsTotal;
+
 	// grayman #3292 - since the map-defined difficulty names get wiped at map
 	// shutdown, and that happens before the statistics screen is displayed,
 	// the difficulty names need to be stored where the statistics screen can

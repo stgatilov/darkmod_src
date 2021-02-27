@@ -1842,6 +1842,16 @@ int CMissionData::GetMissionLoot()
 	return m_Stats.GetTotalLootInMission();
 }
 
+int CMissionData::GetSecretsFound()
+{
+	return m_Stats.secretsFound;
+}
+
+int CMissionData::GetSecretsTotal()
+{
+	return m_Stats.secretsTotal;
+}
+
 int CMissionData::GetTotalTimePlayerSeen()
 {
 	return m_Stats.totalTimePlayerSeen;
@@ -2612,6 +2622,13 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(GetStatOverall(COMP_AI_FIND_BODY));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
+	// only show secrets statistic if the mission uses the system introduced in 2.10
+	if ( m_Stats.secretsTotal ) {
+		key = common->Translate("#str_02320");	// Secrets found
+		value = idStr(GetSecretsFound()) + common->Translate("#str_02214") + GetSecretsTotal();
+		gui->SetStateString(prefix + idStr(index++), key + divider + value);
+	}
+
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
 	gui->SetStateString(prefix + idStr(index++), common->Translate( "#str_02218" ) ); 	// Alerts:
@@ -2813,4 +2830,16 @@ void CMissionData::incrementSavegameCounter()
 int CMissionData::getTotalSaves()
 {
 	return m_Stats.totalSaveCount;
+}
+
+// Dragofer
+
+void CMissionData::SetSecretsFound( float secrets )
+{
+	m_Stats.secretsFound = (int)secrets;
+}
+
+void CMissionData::SetSecretsTotal( float secrets )
+{
+	m_Stats.secretsTotal = (int)secrets;
 }

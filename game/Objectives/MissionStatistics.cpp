@@ -56,6 +56,9 @@ void MissionStatistics::Clear()
 	HealthReceived = 0;
 	PocketsPicked = 0;
 
+	secretsFound = 0;
+	secretsTotal = 0;
+
 	for (int i = 0; i < LOOT_COUNT; ++i)
 	{
 		FoundLoot[i] = 0;
@@ -120,6 +123,9 @@ void MissionStatistics::Save(idSaveGame* savefile) const
 	savefile->WriteInt(DamageDealt);
 	savefile->WriteInt(DamageReceived);
 	savefile->WriteInt(PocketsPicked);
+
+	savefile->WriteInt(secretsFound);
+	savefile->WriteInt(secretsTotal);
 
 	for (int i = 0; i < LOOT_COUNT; ++i)
 	{
@@ -188,6 +194,9 @@ void MissionStatistics::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(DamageDealt);
 	savefile->ReadInt(DamageReceived);
 	savefile->ReadInt(PocketsPicked);
+
+	savefile->ReadInt(secretsFound);
+	savefile->ReadInt(secretsTotal);
 
 	for (int i = 0; i < LOOT_COUNT; ++i)
 	{

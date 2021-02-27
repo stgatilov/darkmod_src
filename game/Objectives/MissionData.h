@@ -260,6 +260,8 @@ public:
 	int GetNumberTimesAISearched();
 	float GetSightingScore();
 	float GetStealthScore();
+	int GetSecretsFound();
+	int GetSecretsTotal();
 
 	idStr GetDifficultyName(int level); // grayman #3292
 
@@ -473,6 +475,10 @@ public:
 	// Obsttorte: Increment save game counter for end mission screen
 	void incrementSavegameCounter();
 	int getTotalSaves();
+
+	// Dragofer: set stats for secrets
+	void SetSecretsFound( float secrets );
+	void SetSecretsTotal( float secrets );
 
 protected:
 	/**
