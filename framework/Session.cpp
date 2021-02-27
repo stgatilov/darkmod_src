@@ -2786,28 +2786,11 @@ void idSessionLocal::Frame() {
 	
 	//nbohr1more: disable SMP for debug render tools
 	if (r_showSurfaceInfo.GetBool() ||
-    g_showEntityInfo.GetBool() ||
-    g_showPVS.GetBool() ||
-    g_showTargets.GetBool() ||
-    g_showTriggers.GetBool() ||
-    g_showCollisionWorld.GetBool() ||
-    g_showCollisionModels.GetBool() ||
-    g_showCollisionTraces.GetBool() ||
-    g_showCollisionAlongView.GetBool() ||	
-	r_showSilhouette.GetBool() || 
-	r_showViewEntitys.GetBool() || 
-	r_showEdges.GetBool() || 
-	r_showViewEntitys.GetBool() ||
-	r_showShadowCount.GetBool() ||
-	r_showLightCount.GetBool() ||
-	r_showDepth.GetBool() ||
-	r_showTris.GetInteger() > 0 ||
-	s_drawSounds.GetInteger() > 0
-	//||r_showLights.GetInteger() > 0 
+		r_showDepth.GetBool()
 	) {
-	no_smp = true;
+		no_smp = true;
 	} else {
-	no_smp = false;
+		no_smp = false;
 	}
    
 	// save the screenshot and audio from the last draw if needed
