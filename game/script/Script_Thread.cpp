@@ -248,7 +248,9 @@ const idEventDef EV_GetMissionStatistic("getMissionStatistic", EventArgs('s', "s
 	"\tkilledByPlayer: number of enemies killed by player\n"
 	"\tknockedOutByPlayer: number of enemies knocked out by player\n"
 	"\tbodiesFound: number of times enemies have spotted a body\n"
-	), 'f', "Returns current mission statistic.");
+	"\tsecretsFound: number of secrets found by the player\n"
+	"\tsecretsTotal: total number of secrets in the mission\n"
+), 'f', "Returns current mission statistic.");
 
 // SteveL #3802 -- Allow scripts to discover entties in the map
 const idEventDef EV_GetNextEntity( "getNextEntity",
