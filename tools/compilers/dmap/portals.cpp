@@ -990,6 +990,8 @@ static void FindInterAreaPortals_r( node_t *node ) {
 			continue;	// already emited
 		}
 
+		if (numInterAreaPortals == MAX_INTER_AREA_PORTALS)
+			common->Error("Exceeded limit on number of visportals (%d)", numInterAreaPortals);
 		interAreaPortals[numInterAreaPortals++] = iap;
 	}
 }

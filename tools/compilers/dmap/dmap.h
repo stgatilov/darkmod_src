@@ -335,7 +335,7 @@ void GLS_EndScene( void );
 
 // portals.cpp
 
-#define	MAX_INTER_AREA_PORTALS	1024
+#define	MAX_INTER_AREA_PORTALS	(10<<10)
 
 typedef struct interAreaPortal_s {
 	int		area0, area1;
