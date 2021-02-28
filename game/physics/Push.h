@@ -53,24 +53,25 @@ public:
 					// move all pushed entities back to their previous position
 	void			RestorePushedEntityPositions( void );
 					// returns the number of pushed entities
-	int				GetNumPushedEntities( void ) const { return numPushed; }
+	int				GetNumPushedEntities( void ) const { return pushed.Num(); }
 					// get the ith pushed entity
-	idEntity *		GetPushedEntity( int i ) const { assert( i >= 0 && i < numPushed ); return pushed[i].ent; }
+	idEntity *		GetPushedEntity( int i ) const { assert( i >= 0 && i < pushed.Num() ); return pushed[i].ent; }
 
 private:
+	static const int PUSHED_AUTOSIZE = 128;
 	struct pushed_s {
 		idEntity *	ent;					// pushed entity
 		idAngles	deltaViewAngles;		// actor delta view angles
-	}				pushed[MAX_GENTITIES];	// pushed entities
-	int				numPushed;				// number of pushed entities
+	};
+	idFlexList<pushed_s, PUSHED_AUTOSIZE> pushed;	// pushed entities
 
 	struct pushedGroup_s {
 		idEntity *	ent;
 		float		fraction;
 		bool		groundContact;
 		bool		test;
-	}				pushedGroup[MAX_GENTITIES];
-	int				pushedGroupSize;
+	};
+	idFlexList<pushedGroup_s, PUSHED_AUTOSIZE> pushedGroup;
 
 private:
 	void			SaveEntityPosition( idEntity *ent );
