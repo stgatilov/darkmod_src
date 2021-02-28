@@ -389,7 +389,9 @@ void idGameLocal::Clear( void )
 	lastGUIEnt = NULL;
 	lastGUI = 0;
 
+	/*memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
 	memset( clientPVS, 0, sizeof( clientPVS ) );
+	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );*/
 
 	memset( lagometer, 0, sizeof( lagometer ) );
 
@@ -4871,7 +4873,7 @@ void idGameLocal::RunDebugInfo( void ) {
 		idVec3 end = eye + dir * CM_MAX_TRACE_DIST * 0.9f;
 		if (clip.Translation(results, eye, end, 0, idMat3(), contentsMask, player)) {
 			int idx = results.c.entityNum;
-			if (idx >= 0 && idx < MAX_GENTITIES) {
+			if (idx >= 0) {
 				idEntity *ent = entities[idx];
 				if (ent) {
 					auto mdl = ent->GetPhysics()->GetClipModel();

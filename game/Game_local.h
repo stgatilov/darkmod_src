@@ -1,4 +1,5 @@
 /*****************************************************************************
+/*****************************************************************************
                     The Dark Mod GPL Source Code
  
  This file is part of the The Dark Mod Source Code, originally based 
@@ -183,12 +184,12 @@ class CSearchManager; // grayman #3857
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
-const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
+//const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
 const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
 
 const float SMALL_AI_MASS		= 5.0f; // grayman #3756
 
-typedef struct entityState_s {
+/*typedef struct entityState_s {
 	int						entityNumber;
 	idBitMsg				state;
 	byte					stateBuf[MAX_ENTITY_STATE_SIZE];
@@ -200,7 +201,7 @@ typedef struct snapshot_s {
 	entityState_t *			firstEntityState;
 	int						pvs[ENTITY_PVS_SIZE];
 	struct snapshot_s *		next;
-} snapshot_t;
+} snapshot_t;*/
 
 const int MAX_EVENT_PARAM_SIZE		= 128;
 
@@ -1027,8 +1028,8 @@ private:
 	bool					influenceActive;		// true when a phantasm is happening
 	int						nextGibTime;
 
-	int						clientPVS[ENTITY_PVS_SIZE];
-	idBlockAlloc<entityState_t,256>entityStateAllocator;
+	//int						clientPVS[ENTITY_PVS_SIZE];
+
 
 	idStaticList<spawnSpot_t, MAX_GENTITIES> spawnSpots;
 	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
