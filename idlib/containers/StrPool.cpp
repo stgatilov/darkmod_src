@@ -31,7 +31,17 @@ const idPoolStr *idStrPool::AllocString( const char *string ) {
 	*static_cast<idStr *>(poolStr) = string;
 	poolStr->pool = this;
 	poolStr->numUsers = 1;
-	poolHash.Add( hash, pool.Append( poolStr ) );
+
+	int index;
+	if (freeList.Num() == 0)
+		index = pool.AddGrow( poolStr );
+	else {
+		//stgatilov: reuse previously freed indices
+		index = freeList.Pop();
+		pool[index] = poolStr;
+	}
+
+	poolHash.Add( hash, index );
 	return poolStr;
 }
 
@@ -65,8 +75,16 @@ void idStrPool::FreeString( const idPoolStr *poolStr ) {
 		assert( i != -1 );
 		assert( pool[i] == poolStr );
 		delete pool[i];
-		pool.RemoveIndex( i );
+#if 0
+		//original O(N) code
 		poolHash.RemoveIndex( hash, i );
+		pool.RemoveIndex( i );
+#else
+		//stgatilov: add freed slot to freelist
+		poolHash.Remove( hash, i );
+		pool[i] = nullptr;
+		freeList.AddGrow(i);
+#endif
 	}
 }
 
@@ -97,11 +115,34 @@ idStrPool::Clear
 void idStrPool::Clear( void ) {
 	int i;
 
-	for ( i = 0; i < pool.Num(); i++ ) {
+	for ( i = 0; i < pool.Num(); i++ ) if ( pool[i] )  {
 		pool[i]->numUsers = 0;
+		delete pool[i];
 	}
-	pool.DeleteContents( true );
+	freeList.Clear();
+	pool.Clear();
 	poolHash.Free();
+}
+
+/*
+================
+idStrPool::Compress
+================
+*/
+void idStrPool::Compress( void ) {
+	if (freeList.Num() == 0)
+		return;	//no zombie slots
+
+	poolHash.Clear();
+	int k = 0;
+	for (int i = 0; i < pool.Num(); i++) if ( pool[i] ) {
+		int newIdx = k++;
+		pool[newIdx] = pool[i];
+		int hash = poolHash.GenerateKey( pool[newIdx]->c_str(), caseSensitive );
+		poolHash.Add(hash, newIdx);
+	}
+	pool.SetNum(k);
+	freeList.SetNum(0);
 }
 
 /*
@@ -113,8 +154,8 @@ size_t idStrPool::Allocated( void ) const {
 	int i;
 	size_t size;
 
-	size = pool.Allocated() + poolHash.Allocated();
-	for ( i = 0; i < pool.Num(); i++ ) {
+	size = pool.Allocated() + poolHash.Allocated() + freeList.Allocated();
+	for ( i = 0; i < pool.Num(); i++ ) if ( pool[i] ) {
 		size += pool[i]->Allocated();
 	}
 	return size;
@@ -129,8 +170,8 @@ size_t idStrPool::Size( void ) const {
 	int i;
 	size_t size;
 
-	size = pool.Size() + poolHash.Size();
-	for ( i = 0; i < pool.Num(); i++ ) {
+	size = pool.Size() + poolHash.Size() + freeList.Size();
+	for ( i = 0; i < pool.Num(); i++ ) if ( pool[i] ) {
 		size += pool[i]->Size();
 	}
 	return size;
@@ -147,7 +188,7 @@ void idStrPool::PrintAll( const char *label ) {
 
 	for ( i = 0; i < pool.Num(); i++ ) {
 		if ( pool[i] ) 
-			valueStrings.Append( pool[i] );
+			valueStrings.AddGrow( pool[i] );
 	}
 
 	valueStrings.Sort([](const idPoolStr* const* a, const idPoolStr* const* b) -> int {

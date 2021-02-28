@@ -51,22 +51,25 @@ public:
 
 	void				SetCaseSensitive( bool caseSensitive );
 
-	int					Num( void ) const { return pool.Num(); }
 	size_t				Allocated( void ) const;
 	size_t				Size( void ) const;
 
+	//stgatilov: be sure to call Compress before using these methods!
+	int					Num( void ) const { return pool.Num(); }
 	const idPoolStr *	operator[]( int index ) const { return pool[index]; }
 
 	const idPoolStr *	AllocString( const char *string );
 	void				FreeString( const idPoolStr *poolStr );
 	const idPoolStr *	CopyString( const idPoolStr *poolStr );
 	void				Clear( void );
+	void				Compress( void );
 
 	void				PrintAll( const char *label );
 
 private:
 	bool				caseSensitive;
-	idList<idPoolStr *>	pool;
+	idList<int>			freeList;	//stgatilov: list of free slot indices
+	idList<idPoolStr *>	pool;		//may contain NULLs
 	idHashIndex			poolHash;
 };
 
