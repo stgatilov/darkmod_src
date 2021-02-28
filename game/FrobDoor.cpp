@@ -853,9 +853,8 @@ void CFrobDoor::FindDoubleDoor()
 	   which doesn't rely on clipmodels.
 	*/
 
-	for ( int i = 0; i < MAX_GENTITIES; ++i )
+	for( idEntity *ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		idEntity* ent = gameLocal.entities[i];
 		if ( !ent )
 		{
 			continue;	// skip nulls

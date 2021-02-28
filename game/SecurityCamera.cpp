@@ -414,9 +414,8 @@ void idSecurityCamera::PostSpawn()
 	// Search entities for those who have a "cameraTarget" pointing to this camera.
 	// One should be found, and set 'cameraDisplay' to that entity.
 
-	for ( int i = 0; i < MAX_GENTITIES; ++i )
+	for( idEntity *ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		idEntity* ent = gameLocal.entities[i];
 		if ( !ent )
 		{
 			continue;	// skip past nulls in the index
