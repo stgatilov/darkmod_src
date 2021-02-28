@@ -438,9 +438,6 @@ public:
 	idEntity *				entities[MAX_GENTITIES];// index to entities
 	int						spawnIds[MAX_GENTITIES];// for use in idEntityPtr
 
-	// greebo: For use in Stim/Response system (gets invalidated each frame)
-	idEntity*				srEntities[MAX_GENTITIES]; 
-
 	int						firstFreeIndex;			// first free index in the entities array
 	int						num_entities;			// current number <= MAX_GENTITIES
 	idHashIndex				entityHash;				// hash table to quickly find entities by name
@@ -934,7 +931,7 @@ public:
 	* @return The number of responses triggered
 	*
 	*/
-	int						DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin);
+	int						DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin);
 
 	/**
 	 * Trace a LOS path from gas origin to a point.

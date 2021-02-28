@@ -7177,8 +7177,9 @@ int idGameLocal::TraceGasPath( idVec3 from, idVec3 to, idEntity* ignore, idVec3&
 }
 
 
-int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
+int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin)
 {
+	int numEntities = srEntities.Num();
 	int numResponses = 0;
 	for ( int i = 0 ; i < numEntities ; i++ )
 	{
@@ -7436,6 +7437,8 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 	int n;
 	idBounds bounds;
 
+	idClip_EntityList srEntities;
+
 	// Now check the rest of the stims.
 	for (int i = 0; i < m_StimEntity.Num(); i++)
 	{
@@ -7547,6 +7550,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				{
 					n = stim->m_CollisionEnts.Num();
 
+					srEntities.SetNum(n);
 					for (int n2 = 0; n2 < n; n2++)
 					{
 						srEntities[n2] = stim->m_CollisionEnts[n2];
@@ -7559,10 +7563,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				else 
 				{
 					// Radius based stims
-					idClip_EntityList entityList;
-					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, entityList);
-					for (int i = 0; i < n; i++)
-						srEntities[i] = entityList[i];
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities);
 					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
 				}
 				
@@ -7578,7 +7579,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 					}
 
 					// Do responses for entities within the radius of the stim
-					numResponses = DoResponseAction(stim, n, entity, origin);
+					numResponses = DoResponseAction(stim, srEntities, entity, origin);
 				}
 
 				// The stim has fired, let it do any post-firing activity it may have
