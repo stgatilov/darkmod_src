@@ -374,9 +374,13 @@ void idBounds::FromPointRotation( const idVec3 &point, const idRotation &rotatio
 
 		radius = ( point - rotation.GetOrigin() ).Length();
 
-		// FIXME: these bounds are usually way larger
 		b[0].Set( -radius, -radius, -radius );
 		b[1].Set( radius, radius, radius );
+
+		//stgatilov: according to BoundsForPointRotation code
+		//the resulting bounds should be in global coordinate system
+		//(without this addition the result would be incorrect)
+		TranslateSelf(rotation.GetOrigin());
 	}
 }
 
@@ -402,15 +406,47 @@ void idBounds::FromBoundsRotation( const idBounds &bounds, const idVec3 &origin,
 			point[2] = bounds[(i>>2)&1][2];
 			(*this) += BoundsForPointRotation( point * axis + origin, rotation );
 		}
+
 	}
 	else {
 
+		/*//stgatilov: the original code here is trash!
 		point = (bounds[1] - bounds[0]) * 0.5f;
 		radius = (bounds[1] - point).Length() + (point - rotation.GetOrigin()).Length();
 
 		// FIXME: these bounds are usually way larger
 		b[0].Set( -radius, -radius, -radius );
+		b[1].Set( radius, radius, radius );*/
+
+		//radius of bounds in local csys (before applying origin/axis)
+		float boundsRadius = bounds.GetSize().Length() * 0.5f;
+		//position of box center in global csys, with rotation center subtracted
+		point = bounds.GetCenter() * axis + (origin - rotation.GetOrigin());
+		//radius of bounding sphere (rotation center is center of sphere)
+		radius = point.Length() + boundsRadius;
+
+		b[0].Set( -radius, -radius, -radius );
 		b[1].Set( radius, radius, radius );
+
+		//stgatilov: according to BoundsForPointRotation code
+		//the resulting bounds should be in global coordinate system
+		TranslateSelf(rotation.GetOrigin());
+
+#if 0
+		//test code (slow)
+		idBounds test;
+		test.FromPointRotation( bounds[0] * axis + origin, rotation );
+		for ( i = 1; i < 8; i++ ) {
+			point[0] = bounds[(i^(i>>1))&1][0];
+			point[1] = bounds[(i>>1)&1][1];
+			point[2] = bounds[(i>>2)&1][2];
+			idBounds qq;
+			qq.FromPointRotation( point * axis + origin, rotation );
+			test += qq;
+		}
+		assert((b[0] - test.b[0]).Max() <= 0.1f);
+		assert((test.b[1] - b[1]).Max() <= 0.1f);
+#endif
 	}
 }
 
