@@ -5406,9 +5406,9 @@ void idPhysics_Player::UpdateLeanAngle (float deltaLeanTiltDegrees, float deltaL
 				}
 				else
 				{
-					idEntity* entityList[MAX_GENTITIES];
+					idClip_EntityList entityList;
 					int num;
-					num = gameLocal.EntitiesWithinRadius(player->GetEyePosition(), PEEK_MAX_DIST, entityList, MAX_GENTITIES);
+					num = gameLocal.EntitiesWithinRadius(player->GetEyePosition(), PEEK_MAX_DIST, entityList);
 					for ( int i = 0 ; i < num ; i++ )
 					{
 						idEntity *candidate = entityList[i];

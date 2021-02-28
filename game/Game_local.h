@@ -823,7 +823,7 @@ public:
 	idEntity *				FindTraceEntity( idVec3 start, idVec3 end, const idTypeInfo &c, const idEntity *skip ) const;
 	idEntity *				FindEntity( const char *name ) const;
 	idEntity *				FindEntityUsingDef( idEntity *from, const char *match ) const;
-	int						EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const;
+	int						EntitiesWithinRadius( const idVec3 org, float radius, idClip_EntityList &entityList ) const;
 
 	/**
 	* Get the entity that the player is looking at

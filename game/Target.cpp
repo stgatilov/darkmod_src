@@ -855,7 +855,6 @@ idTarget_SetInfluence::Event_GatherEntities
 */
 void idTarget_SetInfluence::Event_GatherEntities() {
 	int i, listedEntities;
-	idEntity *entityList[ MAX_GENTITIES ];
 
 //	bool demonicOnly = spawnArgs.GetBool( "effect_demonic" );
 	bool lights = spawnArgs.GetBool( "effect_lights" );
@@ -873,14 +872,16 @@ void idTarget_SetInfluence::Event_GatherEntities() {
 		lights = sounds = guis = models = vision = true;
 	}
 
+	idClip_EntityList entityList;
 	if ( targetsOnly ) {
 		listedEntities = targets.Num();
+		entityList.SetNum( listedEntities );
 		for ( i = 0; i < listedEntities; i++ ) {
 			entityList[i] = targets[i].GetEntity();
 		}
 	} else {
 		float radius = spawnArgs.GetFloat( "radius" );
-		listedEntities = gameLocal.EntitiesWithinRadius( GetPhysics()->GetOrigin(), radius, entityList, MAX_GENTITIES );
+		listedEntities = gameLocal.EntitiesWithinRadius( GetPhysics()->GetOrigin(), radius, entityList );
 	}
 
 	for( i = 0; i < listedEntities; i++ ) {

@@ -5804,19 +5804,19 @@ idEntity *idGameLocal::FindTraceEntity( idVec3 start, idVec3 end, const idTypeIn
 idGameLocal::EntitiesWithinRadius
 ================
 */
-int idGameLocal::EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const {
+int idGameLocal::EntitiesWithinRadius( const idVec3 org, float radius, idClip_EntityList &entityList ) const {
 	idEntity *ent;
 	idBounds bo( org );
-	int entCount = 0;
+	entityList.SetNum( 0 );
 
 	bo.ExpandSelf( radius );
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 		if ( ent->GetPhysics()->GetAbsBounds().IntersectsBounds( bo ) ) {
-			entityList[entCount++] = ent;
+			entityList.AddGrow(ent);
 		}
 	}
 
-	return entCount;
+	return entityList.Num();
 }
 
 /*
