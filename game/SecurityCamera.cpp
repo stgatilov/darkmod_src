@@ -103,9 +103,12 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(incline);
 	savefile->WriteFloat(inclineTarget);
 	savefile->WriteFloat(inclinePos1);
-	savefile->WriteFloat(inclineMaxUp);
-	savefile->WriteFloat(inclineMaxDown);
 	savefile->WriteFloat(inclineToPlayer);
+
+	savefile->WriteFloat(constrainPositive);
+	savefile->WriteFloat(constrainNegative);
+	savefile->WriteFloat(constrainUp);
+	savefile->WriteFloat(constrainDown);
 
 	savefile->WriteFloat(timeLastSeen);
 	savefile->WriteFloat(alertDuration);
@@ -193,9 +196,12 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(incline);
 	savefile->ReadFloat(inclineTarget);
 	savefile->ReadFloat(inclinePos1);
-	savefile->ReadFloat(inclineMaxUp);
-	savefile->ReadFloat(inclineMaxDown);
 	savefile->ReadFloat(inclineToPlayer);
+
+	savefile->ReadFloat(constrainPositive);
+	savefile->ReadFloat(constrainNegative);
+	savefile->ReadFloat(constrainUp);
+	savefile->ReadFloat(constrainDown);
 
 	savefile->ReadFloat(timeLastSeen);
 	savefile->ReadFloat(alertDuration);
@@ -326,26 +332,35 @@ void idSecurityCamera::Spawn( void )
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
 	//yaw angle
-	angle		= anglePos1 = GetPhysics()->GetAxis().ToAngles().yaw;
-	angleTarget	= anglePos2 = idMath::AngleNormalize180(angle - sweepAngle);
-	angleToPlayer = 0;
+	angle			= GetPhysics()->GetAxis().ToAngles().yaw;
+	angleTarget		= idMath::AngleNormalize180(angle - sweepAngle);
+	angleToPlayer	= 0;
 
-	negativeSweep = (sweepAngle < 0) ? true : false;
-	sweepAngle = fabs(sweepAngle);
-	sweepSpeed = sweepAngle / sweepTime;
-	percentSwept = 0.0f;
+	//make sure pos1 is more positive than pos2
+	anglePos1		= ( idMath::AngleNormalize180( angle - angleTarget ) > 0 ) ? angle : angleTarget;
+	anglePos2		= ( idMath::AngleNormalize180( angle - angleTarget ) > 0 ) ? angleTarget : angle;
+
+	negativeSweep	= (sweepAngle < 0) ? true : false;
+	sweepAngle		= fabs(sweepAngle);
+	sweepSpeed		= sweepAngle / sweepTime;
+	percentSwept	= 0.0f;
 
 	//pitch angle
-	incline	= inclinePos1 = GetPhysics()->GetAxis().ToAngles().pitch;
+	incline			= inclinePos1 = GetPhysics()->GetAxis().ToAngles().pitch;
 	inclineTarget	= inclineToPlayer = 0;
-	inclineMaxUp	= idMath::AngleNormalize180( inclinePos1 - spawnArgs.GetFloat("follow_incline_max_up", "20") );
-	inclineMaxDown	= idMath::AngleNormalize180( inclinePos1 + fabs(spawnArgs.GetFloat("follow_incline_max_down", "30")) );
 
 	negativeIncline = false;
-	inclineAngle = 0;
-	inclineSpeed = spawnArgs.GetFloat("follow_incline_speed", "30");
+	inclineAngle	= 0;
+	inclineSpeed	= spawnArgs.GetFloat("follow_incline_speed", "30");
 	percentInclined = 0.0f;
 
+	//constrain how far the security camera is able to rotate when following the player
+	constrainPositive	= idMath::AngleNormalize180( anglePos1 - fabs(spawnArgs.GetFloat("follow_constrain_ccw", "45")) );
+	constrainNegative	= idMath::AngleNormalize180( anglePos2 + fabs(spawnArgs.GetFloat("follow_constrain_cw", "45")) );
+	constrainUp			= idMath::AngleNormalize180( inclinePos1 - fabs(spawnArgs.GetFloat("follow_constrain_up", "25")) );
+	constrainDown		= idMath::AngleNormalize180( inclinePos1 + fabs(spawnArgs.GetFloat("follow_constrain_down", "25")) );
+	
+	//start on or off
 	powerOn = !spawnArgs.GetBool("start_off", "0");
 	spotlightPowerOn = true;
 
@@ -1355,8 +1370,8 @@ void idSecurityCamera::TurnToTarget( void )
 
 	//also calculate incline parameters, if enabled
 	if ( followIncline ) {
-		if ( idMath::AngleDelta(inclineMaxDown, inclineTarget) < 0 )	inclineTarget = inclineMaxDown;
-		if ( idMath::AngleDelta(inclineMaxUp, inclineTarget) > 0)		inclineTarget = inclineMaxUp;
+		if ( idMath::AngleDelta(constrainDown, inclineTarget) < 0 )	inclineTarget = constrainDown;
+		if ( idMath::AngleDelta(constrainUp, inclineTarget) > 0)		inclineTarget = constrainUp;
 
 		incline			= GetPhysics()->GetAxis().ToAngles().pitch;
 		inclineAngle	= idMath::AngleDelta(incline, inclineTarget);

@@ -93,8 +93,6 @@ private:
 	float					incline;
 	float					inclineTarget;
 	float					inclinePos1;
-	float					inclineMaxUp;
-	float					inclineMaxDown;
 	float					inclineToPlayer;
 
 	bool					follow;
@@ -103,6 +101,11 @@ private:
 	bool					followIncline;
 	float					followTolerance;
 	float					followInclineTolerance;
+
+	float					constrainUp;
+	float					constrainDown;
+	float					constrainPositive;
+	float					constrainNegative;
 
 	float					scanDist;
 	float					scanFov;
