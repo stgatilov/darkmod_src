@@ -2243,8 +2243,8 @@ void idPortalEntity::Event_PostSpawn( void )
 	if ( !m_EntityLocationDone )
 	{
 		idBounds b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
-		idClipModel* clipModelList[MAX_GENTITIES];
-		int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
+		idClip_ClipModelList clipModelList;
+		int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, CONTENTS_SOLID, clipModelList );
 
 		for ( int i = 0 ; i < numListedClipModels ; i++ ) 
 		{

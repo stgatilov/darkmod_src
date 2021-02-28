@@ -1219,8 +1219,8 @@ bool State::Check4NearbyBodies(idEntity* stimSource, idAI* owner)
 
 	idBounds box = idBounds(idVec3(-128.0f, -128.0f, -40.0f), idVec3(128.0f, 128.0f, 88.0f));
 	box.TranslateSelf(weapon->GetPhysics()->GetOrigin());
-	idEntity* ents[MAX_GENTITIES];
-	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents, MAX_GENTITIES);
+	idClip_EntityList ents;
+	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents);
 
 	for ( int i = 0; i < num; i++ )
 	{
@@ -4168,13 +4168,13 @@ bool State::SomeoneNearDoor(idAI* owner, CFrobDoor* door)
 {
 	int num;
 	idEntity* candidate;
-	idClipModel* clipModels[ MAX_GENTITIES ];
 
 	idVec3 doorCenter = door->GetClosedBox().GetCenter();
 	idBounds doorBounds(idVec3(doorCenter.x - PERSON_NEAR_DOOR, doorCenter.y - PERSON_NEAR_DOOR, doorCenter.z - 50),
 						idVec3(doorCenter.x + PERSON_NEAR_DOOR, doorCenter.y + PERSON_NEAR_DOOR, doorCenter.z + 50));
 	
-	num = gameLocal.clip.ClipModelsTouchingBounds( doorBounds, MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	num = gameLocal.clip.ClipModelsTouchingBounds( doorBounds, MASK_MONSTERSOLID, clipModels );
 	for ( int i = 0 ; i < num ; i++ )
 	{
 		candidate = clipModels[i]->GetEntity();

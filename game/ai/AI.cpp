@@ -2425,8 +2425,8 @@ void idAI::Think( void )
 		bounds[0].y -= 16;
 		bounds[0].x += 16;
 		bounds[0].y += 16;
-		idEntity* ents[MAX_GENTITIES];
-		int num = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_SOLID, ents, MAX_GENTITIES );
+		idClip_EntityList ents;
+		int num = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_SOLID, ents );
 		if (num > 0)
 		{
 			for ( int i = 0; i < num; i++ )
@@ -3011,7 +3011,6 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 	idBounds clipBounds;
 	idEntity *obEnt;
 	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
 	int clipmask;
 	idVec3 org;
 	idVec3 forceVec;
@@ -3027,7 +3026,8 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 	clipBounds.ExpandSelf( 8.0f );
 	clipBounds.AddPoint( org );
 	clipmask = physicsObj.GetClipMask();
-	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList );
 	for ( i = 0; i < numListedClipModels; i++ ) {
 		clipModel = clipModelList[i];
 		obEnt = clipModel->GetEntity();
@@ -3460,9 +3460,9 @@ void idAI::StopMove( moveStatus_t status )
 		{
 			idEntity	*hit;
 			idClipModel *cm;
-			idClipModel *clipModels[MAX_GENTITIES];
 
-			int num = gameLocal.clip.ClipModelsTouchingBounds(physicsObj.GetAbsBounds(), physicsObj.GetClipMask(), clipModels, MAX_GENTITIES);
+			idClip_ClipModelList clipModels;
+			int num = gameLocal.clip.ClipModelsTouchingBounds(physicsObj.GetAbsBounds(), physicsObj.GetClipMask(), clipModels);
 			for ( int i = 0; i < num; i++ )
 			{
 				cm = clipModels[i];
@@ -8925,16 +8925,14 @@ idAI::PushWithAF
 */
 void idAI::PushWithAF( void ) {
 	int i, j;
-	afTouch_t touchList[ MAX_GENTITIES ];
-	idEntity *pushed_ents[ MAX_GENTITIES ];
 	idEntity *ent;
 	idVec3 vel( vec3_origin ), vGravNorm( vec3_origin );
-	int num_pushed;
 
-	num_pushed = 0;
 	af.ChangePose( this, gameLocal.time );
+	idClip_afTouchList touchList;
 	int num = af.EntitiesTouchingAF( touchList );
 
+	idClip_EntityList pushed_ents;
 	for( i = 0; i < num; i++ ) {
 		if ( touchList[ i ].touchedEnt->IsType( idProjectile::Type ) ) {
 			// skip projectiles
@@ -8942,15 +8940,15 @@ void idAI::PushWithAF( void ) {
 		}
 
 		// make sure we haven't pushed this entity already.  this avoids causing double damage
-		for( j = 0; j < num_pushed; j++ ) {
+		for( j = 0; j < pushed_ents.Num(); j++ ) {
 			if ( pushed_ents[ j ] == touchList[ i ].touchedEnt ) {
 				break;
 			}
 		}
-		if ( j >= num_pushed )
+		if ( j >= pushed_ents.Num() )
 		{
 			ent = touchList[ i ].touchedEnt;
-			pushed_ents[num_pushed++] = ent;
+			pushed_ents.AddGrow(ent);
 			vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
 
 			if ( ent->IsType(idPlayer::Type) && static_cast<idPlayer *>(ent)->noclip )
@@ -9142,9 +9140,9 @@ idAI::CanBecomeSolid
 ================
 */
 bool idAI::CanBecomeSolid( void ) {
-	idClipModel* clipModels[ MAX_GENTITIES ];
 
-	int num = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	int num = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), MASK_MONSTERSOLID, clipModels );
 	for ( int i = 0; i < num; i++ ) {
 		idClipModel* cm = clipModels[ i ];
 
@@ -13766,8 +13764,8 @@ bool idAI::PointObstructed(idVec3 p)
 	// if an AI is already there, and it's not you, ignore this spot
 
 	idBounds b = idBounds(idVec3(p.x-16.0f, p.y-16.0f, p.z), idVec3(p.x+16.0f, p.y+16.0f, p.z+60.0f));
-	idClipModel *clipModelList[MAX_GENTITIES];
-	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, MASK_MONSTERSOLID, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, MASK_MONSTERSOLID, clipModelList );
 	bool obstructed = false;
 	for ( int i = 0 ; i < numListedClipModels ; i++ )
 	{

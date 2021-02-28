@@ -7615,7 +7615,6 @@ idEntity::TouchTriggers
 bool idEntity::TouchTriggers( void ) const {
 	int				i, numClipModels, numEntities;
 	idClipModel *	cm;
-	idClipModel *	clipModels[ MAX_GENTITIES ];
 	idEntity *		ent;
 	trace_t			trace;
 
@@ -7623,7 +7622,8 @@ bool idEntity::TouchTriggers( void ) const {
 	trace.endpos = GetPhysics()->GetOrigin();
 	trace.endAxis = GetPhysics()->GetAxis();
 
-	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( GetPhysics()->GetAbsBounds(), CONTENTS_TRIGGER, clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( GetPhysics()->GetAbsBounds(), CONTENTS_TRIGGER, clipModels );
 	numEntities = 0;
 
 	for ( i = 0; i < numClipModels; i++ ) {

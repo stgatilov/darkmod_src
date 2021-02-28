@@ -1173,7 +1173,7 @@ idTrigger_Touch::TouchEntities
 void idTrigger_Touch::TouchEntities( void ) {
 	int numClipModels, i;
 	idBounds bounds;
-	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+	idClipModel *cm;
 	// Tels #3823: default is to call function(entity)
 	bool pass_self = false;
 	bool pass_activator = true;
@@ -1204,7 +1204,8 @@ void idTrigger_Touch::TouchEntities( void ) {
 	}
 
 	bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
-	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList );
 
 	for ( i = 0; i < numClipModels; i++ ) {
 		cm = clipModelList[ i ];

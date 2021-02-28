@@ -327,19 +327,18 @@ void idAF::ChangePose( idEntity *ent, int time ) {
 idAF::EntitiesTouchingAF
 ================
 */
-int idAF::EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const {
+int idAF::EntitiesTouchingAF( idClip_afTouchList &touchList ) const {
 	int i, j, numClipModels;
 	idAFBody *body;
 	idClipModel *cm;
-	idClipModel *clipModels[ MAX_GENTITIES ];
-	int numTouching;
 
 	if ( !IsLoaded() ) {
 		return 0;
 	}
 
-	numTouching = 0;
-	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), -1, clipModels, MAX_GENTITIES );
+	touchList.Clear();
+	idClip_ClipModelList clipModels;
+	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), -1, clipModels );
 
 	for ( i = 0; i < jointMods.Num(); i++ ) {
 		body = physicsObj.GetBody( jointMods[i].bodyId );
@@ -365,16 +364,17 @@ int idAF::EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const {
 
 			// ishtvan: Apply the body clipmask
 			if ( gameLocal.clip.ContentsModel( body->GetWorldOrigin(), body->GetClipModel(), body->GetWorldAxis(), body->GetClipMask(), cm->Handle(), cm->GetOrigin(), cm->GetAxis() ) ) {
-				touchList[ numTouching ].touchedByBody = body;
-				touchList[ numTouching ].touchedClipModel = cm;
-				touchList[ numTouching ].touchedEnt  = cm->GetEntity();
-				numTouching++;
+				afTouch_s t;
+				t.touchedByBody = body;
+				t.touchedClipModel = cm;
+				t.touchedEnt  = cm->GetEntity();
+				touchList.AddGrow(t);
 				clipModels[j] = NULL;
 			}
 		}
 	}
 
-	return numTouching;
+	return touchList.Num();
 }
 
 /*

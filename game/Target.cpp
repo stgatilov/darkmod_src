@@ -1967,7 +1967,6 @@ void CTarget_SetFrobable::Spawn( void )
 
 void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 {
-	idEntity *Ents[MAX_GENTITIES];
 	bool bOnList(false);
 
 	// Contents mask:
@@ -1975,7 +1974,8 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 
 	// bounding box test to get entities inside
 	GetPhysics()->EnableClip();
-	int numEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents, MAX_GENTITIES);
+	idClip_EntityList Ents;
+	int numEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents);
 	GetPhysics()->DisableClip();
 
 	// toggle frobability

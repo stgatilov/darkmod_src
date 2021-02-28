@@ -43,6 +43,7 @@ typedef struct afTouch_s {
 	idClipModel *			touchedClipModel;
 	idAFBody *				touchedByBody;
 } afTouch_t;
+typedef idFlexList<afTouch_s, CLIPARRAY_AUTOSIZE> idClip_afTouchList;
 
 class idAF {
 public:
@@ -58,7 +59,7 @@ public:
 	const char *			GetName( void ) const { return name.c_str(); }
 	void					SetupPose( idEntity *ent, int time );
 	void					ChangePose( idEntity *ent, int time );
-	int						EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const;
+	int						EntitiesTouchingAF( idClip_afTouchList &touchList ) const;
 	void					Start( void );
 	void					StartFromCurrentPose( int inheritVelocityTime );
 	void					Stop( void );

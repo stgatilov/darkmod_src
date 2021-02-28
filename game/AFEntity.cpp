@@ -1010,11 +1010,11 @@ void idAFEntity_Base::Think( void )
 		af.ChangePose( this, gameLocal.time );
 
 		// copied from idAI::PushWithAF
-		afTouch_t touchList[ MAX_GENTITIES ];
-		idEntity *pushed_ents[ MAX_GENTITIES ];
+		idClip_afTouchList touchList;
+		idClip_EntityList pushed_ents;
 		idEntity *ent;
 		idVec3 vel( vec3_origin );
-		int num_pushed(0), i, j;
+		int i, j;
 
 		int num = af.EntitiesTouchingAF( touchList );
 		for( i = 0; i < num; i++ ) 
@@ -1024,15 +1024,15 @@ void idAFEntity_Base::Think( void )
 				continue;
 
 			// make sure we havent pushed this entity already.  this avoids causing double damage
-			for( j = 0; j < num_pushed; j++ ) 
+			for( j = 0; j < pushed_ents.Num(); j++ ) 
 			{
 				if ( pushed_ents[ j ] == touchList[ i ].touchedEnt )
 					break;
 			}
-			if ( j >= num_pushed ) 
+			if ( j >= pushed_ents.Num() ) 
 			{
 				ent = touchList[ i ].touchedEnt;
-				pushed_ents[num_pushed++] = ent;
+				pushed_ents.AddGrow(ent);
 				vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
 				vel.Normalize();
 				ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );

@@ -1087,7 +1087,7 @@ void CGrabber::Event_CheckClipList( void )
 
 	// Check for any entity touching the players bounds
 	// If the entity is not in our list, remove it.
-	// num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
+	// num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent );
 	for( i = 0; i < m_clipList.Num(); i++ ) 
 	{
 		// Check clipEntites against entities touching player

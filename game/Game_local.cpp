@@ -5833,7 +5833,6 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 	int			num;
 	idEntity *	hit;
 	idClipModel *cm;
-	idClipModel *clipModels[ MAX_GENTITIES ];
 	idPhysics	*phys;
 
 	phys = ent->GetPhysics();
@@ -5841,7 +5840,8 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 		return;
 	}
 
-	num = clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	num = clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels );
 	for ( i = 0; i < num; i++ ) {
 		cm = clipModels[ i ];
 
@@ -5905,7 +5905,6 @@ idGameLocal::RadiusDamage
 void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower ) {
 	float		dist, damageScale, attackerDamageScale, attackerPushScale;
 	idEntity *	ent;
-	idEntity *	entityList[ MAX_GENTITIES ];
 	int			numListedEntities;
 	idBounds	bounds;
 	idVec3 		v, damagePoint, dir;
@@ -5929,7 +5928,8 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 
 	bounds = idBounds( origin ).Expand( radius );
 	// get all entities touching the bounds
-	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList );
 
 	if ( inflictor && inflictor->IsType( idAFAttachment::Type ) ) {
 		inflictor = static_cast<idAFAttachment*>(inflictor)->GetBody();
@@ -6007,7 +6007,6 @@ idGameLocal::RadiusPush
 void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake ) {
 	int i, numListedClipModels;
 	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
 	idVec3 dir;
 	idBounds bounds;
 	modelTrace_t result;
@@ -6019,7 +6018,8 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 	bounds = idBounds( origin ).Expand( radius );
 
 	// get all clip models touching the bounds
-	numListedClipModels = clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	numListedClipModels = clip.ClipModelsTouchingBounds( bounds, -1, clipModelList );
 
 	// apply impact to all the clip models through their associated physics objects
 	for ( i = 0; i < numListedClipModels; i++ ) {
@@ -6072,13 +6072,13 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius, const bool checkSpawnarg )
 {
 	idEntity *ent;
-	idEntity *entityList[MAX_GENTITIES];
 	int		  numListedEntities;
 
 	idBounds bounds = idBounds(origin).Expand(radius);
 
 	// get all entities touching the bounds
-	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList );
 
 	// douse all flames that have a LOS from them to the origin
 	for ( int i = 0 ; i < numListedEntities ; i++ )
@@ -7559,7 +7559,10 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				else 
 				{
 					// Radius based stims
-					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities, MAX_GENTITIES);
+					idClip_EntityList entityList;
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, entityList);
+					for (int i = 0; i < n; i++)
+						srEntities[i] = entityList[i];
 					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
 				}
 				

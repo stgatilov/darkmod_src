@@ -94,7 +94,7 @@ private:
 												const idVec3 &newOrigin, const idVec3 &move );
 	int				TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel *clipModel, const int flags,
 												const idMat3 &newAxis, const idRotation &rotation );
-	int				DiscardEntities( idEntity *entityList[], int numEntities, int flags, idEntity *pusher );
+	int				DiscardEntities( idClip_EntityList &entityList, int flags, idEntity *pusher );
 #endif
 };
 

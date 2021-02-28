@@ -600,14 +600,13 @@ void idProjectile::Think( void ) {
 		{
 			// Any AI around? For AI who manage to avoid a collision with the mine, catch them here if they're close enough and moving/rotating.
 
-			idEntity* entityList[ MAX_GENTITIES ];
 			idVec3 org = GetPhysics()->GetOrigin();
 			idBounds bounds = GetPhysics()->GetAbsBounds();
 			float closeEnough = Square(23);
 
 			// get all entities touching the bounds
-
-			int numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+			idClip_EntityList entityList;
+			int numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, -1, entityList );
 
 			for ( int i = 0 ; i < numListedEntities ; i++ )
 			{

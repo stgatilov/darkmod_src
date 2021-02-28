@@ -1459,9 +1459,8 @@ void CMeleeWeapon::CheckAICMSwaps( )
 	b.ExpandSelf(50.0f);
 	b.TranslateSelf( GetPhysics()->GetOrigin() + m_ClipOffset );
 
-	idEntity *ents[MAX_GENTITIES];
-	int numEnts;
-	numEnts = gameLocal.clip.EntitiesTouchingBounds( b, CONTENTS_BODY, ents, MAX_GENTITIES );
+	idClip_EntityList ents;
+	int numEnts = gameLocal.clip.EntitiesTouchingBounds( b, CONTENTS_BODY, ents );
 
 	for( int i = 0; i < numEnts; i++ )
 	{

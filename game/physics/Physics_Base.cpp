@@ -899,15 +899,15 @@ idPhysics_Base::SetWaterLevelf
 */
 float idPhysics_Base::SetWaterLevelf() {
 	if( this->water == NULL ) {
-		idEntity *e[2];
 		trace_t result;
 		idBounds bounds = this->GetBounds();
 
 		bounds += this->GetOrigin();
 
+		idClip_EntityList e;
 		// trace for a water contact
 		// Tels: TODO This additional trace might be expensive because it is done every frame
-		if( gameLocal.clip.EntitiesTouchingBounds(bounds,MASK_WATER,e,2) ) {
+		if( gameLocal.clip.EntitiesTouchingBounds(bounds,MASK_WATER,e) > 0 ) {
 			if( e[0]->GetPhysics()->IsType(idPhysics_Liquid::Type) ) {
 				SetWater( static_cast<idPhysics_Liquid *>(e[0]->GetPhysics()), e[0]->spawnArgs.GetFloat("murkiness", "0") );
 				return 1.0f;

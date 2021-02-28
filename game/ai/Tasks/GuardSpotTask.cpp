@@ -460,8 +460,8 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 	clipBounds[1].z = newPos.z + 128;
 	int clipmask = owner->GetPhysics()->GetClipMask();
 	idClipModel *clipModel;
-	idClipModel *clipModelList[MAX_GENTITIES];
-	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList );
 	for ( int i = 0 ; i < numListedClipModels ; i++ )
 	{
 		clipModel = clipModelList[i];

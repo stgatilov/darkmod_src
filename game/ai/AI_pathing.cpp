@@ -451,8 +451,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	}
 
 	// find all obstacles touching the clip bounds
-	static idClipModel* clipModelList[ MAX_GENTITIES ];
-	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipMask, clipModelList );
 
 	int numObstacles = 0; // no obstacles so far
 

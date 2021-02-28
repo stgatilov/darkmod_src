@@ -764,9 +764,7 @@ idClip::ClipModelsTouchingBounds_r
 typedef struct listParms_s {
 	idBounds		bounds;
 	int				contentMask;
-	idClipModel	**	list;
-	int				count;
-	int				maxCount;
+	idClip_ClipModelList *list;
 } listParms_t;
 
 void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listParms_t &parms ) const {
@@ -805,14 +803,8 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 			continue;
 		}
 
-		if ( parms.count >= parms.maxCount ) {
-			gameLocal.Warning( "idClip::ClipModelsTouchingBounds_r: max count (%i) reached", parms.maxCount );
-			return;
-		}
-
 		check->touchCount = touchCount;
-		parms.list[parms.count] = check;
-		parms.count++;
+		parms.list->AddGrow(check);
 	}
 }
 
@@ -828,7 +820,7 @@ struct listParmsMoving : public listParms_t {
 	//thickess of the moving bounds
 	idVec3 extent;
 	//for each output clipmodel: lower bound on fraction of an intersection point
-	float *fractionLowers;
+	idClip_FloatList *fractionLowers;
 
 	ID_INLINE bool IntersectsBounds(const idBounds &objBounds, float range[2]) const {
 		range[0] = 0.0f, range[1] = 1.0f;
@@ -888,14 +880,8 @@ void idClip::ClipModelsTouchingMovingBounds_r( const clipSector_s *node, idBound
 		}
 
 		check->touchCount = touchCount;
-		parms.list[parms.count] = check;
-		parms.fractionLowers[parms.count] = tempRange[0];
-		parms.count++;
-
-		if ( parms.count >= parms.maxCount ) {
-			gameLocal.Warning( "idClip::ClipModelsTouchingMovingBounds_r: max count (%i) reached", parms.maxCount );
-			return;
-		}
+		parms.list->AddGrow(check);
+		parms.fractionLowers->AddGrow(tempRange[0]);
 	}
 }
 
@@ -904,7 +890,7 @@ void idClip::ClipModelsTouchingMovingBounds_r( const clipSector_s *node, idBound
 idClip::ClipModelsTouchingBounds
 ================
 */
-int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClipModel **clipModelList, int maxCount ) const {
+int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClip_ClipModelList &clipModelList ) const {
 	listParms_t parms;
 
 	if (	bounds.IsBackwards() ) {
@@ -916,14 +902,13 @@ int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, i
 	parms.bounds[0] = bounds[0] - vec3_boxEpsilon;
 	parms.bounds[1] = bounds[1] + vec3_boxEpsilon;
 	parms.contentMask = contentMask;
-	parms.list = clipModelList;
-	parms.count = 0;
-	parms.maxCount = maxCount;
+	parms.list = &clipModelList;
+	clipModelList.Clear();
 
 	touchCount++;
 	ClipModelsTouchingBounds_r( clipSectors, parms );
 
-	return parms.count;
+	return clipModelList.Num();
 }
 
 /*
@@ -934,7 +919,7 @@ idClip::ClipModelsTouchingMovingBounds
 int idClip::ClipModelsTouchingMovingBounds(
 			const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
 			int contentMask,
-			idClipModel **clipModelList, float *fractionLowers, int maxCount ) const
+			idClip_ClipModelList &clipModelList, idClip_FloatList &fractionLowers ) const
 {
 	listParmsMoving parms;
 
@@ -947,11 +932,11 @@ int idClip::ClipModelsTouchingMovingBounds(
 	parms.bounds[0] = absBounds[0] - vec3_boxEpsilon;
 	parms.bounds[1] = absBounds[1] + vec3_boxEpsilon;
 	parms.contentMask = contentMask;
-	parms.list = clipModelList;
-	parms.count = 0;
-	parms.maxCount = maxCount;
+	parms.list = &clipModelList;
+	clipModelList.Clear();
 
-	parms.fractionLowers = fractionLowers;
+	parms.fractionLowers = &fractionLowers;
+	fractionLowers.Clear();
 	parms.start = start + stillBounds.GetCenter();
 	parms.extent = stillBounds.GetSize() * 0.5f + vec3_boxEpsilon;
 	parms.invDir = GetInverseMovementVelocity(start, end);
@@ -961,14 +946,16 @@ int idClip::ClipModelsTouchingMovingBounds(
 	ClipModelsTouchingMovingBounds_r( clipSectors, nodeBounds, parms );
 
 	// sort clip models by lower bound on intersection time
-	for (int i = 0; i < parms.count; i++)
-		for (int j = i+1; j < parms.count; j++)
+	int n = clipModelList.Num();
+	assert(n == fractionLowers.Num());
+	for (int i = 0; i < n; i++)
+		for (int j = i+1; j < n; j++)
 			if (fractionLowers[i] > fractionLowers[j]) {
 				idSwap(fractionLowers[i], fractionLowers[j]);
 				idSwap(clipModelList[i], clipModelList[j]);
 			}
 
-	return parms.count;
+	return n;
 }
 
 /*
@@ -976,34 +963,27 @@ int idClip::ClipModelsTouchingMovingBounds(
 idClip::EntitiesTouchingBounds
 ================
 */
-int idClip::EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idEntity **entityList, int maxCount ) const {
-	idClipModel *clipModelList[MAX_GENTITIES];
-	int count = idClip::ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
-	int entCount = FilterEntities( entityList, maxCount, clipModelList, count );
-	return entCount;
+int idClip::EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idClip_EntityList &entityList ) const {
+	idClip_ClipModelList clipModelList;
+	idClip::ClipModelsTouchingBounds( bounds, contentMask, clipModelList );
+	FilterEntities( entityList, clipModelList );
+	return entityList.Num();
 }
 //stgatilov: filtering part of EntitiesTouchingBounds refactored into this internal method
-int idClip::FilterEntities( idEntity **entityList, int maxCount, idClipModel **clipModelList, int count ) const {
-	int entCount = 0;
-	for ( int i = 0; i < count; i++ ) {
+void idClip::FilterEntities( idClip_EntityList &entityList, idClip_ClipModelList &clipModelList ) const {
+	entityList.Clear();
+	for ( int i = 0; i < clipModelList.Num(); i++ ) {
 		// entity could already be in the list because an entity can use multiple clip models
 		int j;
-		for ( j = 0; j < entCount; j++ ) {
+		for ( j = 0; j < entityList.Num(); j++ ) {
 			if ( entityList[j] == clipModelList[i]->entity ) {
 				break;
 			}
 		}
-		if ( j >= entCount ) {
-			if ( entCount >= maxCount ) {
-				gameLocal.Warning( "idClip::EntitiesTouchingBounds: max count (%i) reached.", maxCount );
-				return entCount;
-			}
-			entityList[entCount] = clipModelList[i]->entity;
-			entCount++;
+		if ( j >= entityList.Num() ) {
+			entityList.AddGrow(clipModelList[i]->entity);
 		}
 	}
-
-	return entCount;
 }
 
 /*
@@ -1017,20 +997,20 @@ idClip::GetTraceClipModels
   cm->owner == passOwner ( don't interact with other missiles from same owner )
 ====================
 */
-int idClip::GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClipModel **clipModelList ) const {
-	int num = ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
-	FilterClipModels(passEntity, clipModelList, num);
-	return num;
+int idClip::GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClip_ClipModelList &clipModelList ) const {
+	ClipModelsTouchingBounds( bounds, contentMask, clipModelList );
+	FilterClipModels(passEntity, clipModelList);
+	return clipModelList.Num();
 }
 int idClip::GetTraceClipModels( const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
-	int contentMask, const idEntity *passEntity, idClipModel **clipModelList, float *fractionLowers ) const 
+	int contentMask, const idEntity *passEntity, idClip_ClipModelList &clipModelList, idClip_FloatList &fractionLowers ) const 
 {
-	int num = ClipModelsTouchingMovingBounds( absBounds, stillBounds, start, end, contentMask, clipModelList, fractionLowers, MAX_GENTITIES );
-	FilterClipModels(passEntity, clipModelList, num);
-	return num;
+	ClipModelsTouchingMovingBounds( absBounds, stillBounds, start, end, contentMask, clipModelList, fractionLowers );
+	FilterClipModels(passEntity, clipModelList);
+	return clipModelList.Num();
 }
 //stgatilov: filtering part of GetTraceClipModels refactored into this internal method
-void idClip::FilterClipModels(const idEntity *passEntity, idClipModel **clipModelList, int num ) const {
+void idClip::FilterClipModels(const idEntity *passEntity, idClip_ClipModelList &clipModelList ) const {
 	if ( !passEntity ) {
 		return;
 	}
@@ -1042,7 +1022,7 @@ void idClip::FilterClipModels(const idEntity *passEntity, idClipModel **clipMode
 		passOwner = NULL;
 	}
 
-	for ( int i = 0; i < num; i++ ) {
+	for ( int i = 0; i < clipModelList.Num(); i++ ) {
 		idClipModel	*cm = clipModelList[i];
 
 		// check if we should ignore this entity
@@ -1158,8 +1138,7 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 						const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity,
 						bool ignoreWorld ) {
 	int i, num;
-	idClipModel *touch, *clipModelList[MAX_GENTITIES];
-	float fractionLowers[MAX_GENTITIES];
+	idClipModel *touch;
 	idBounds traceBounds;
 	float radius;
 	trace_t trace;
@@ -1201,6 +1180,9 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 	}
 	//then obtain bounds in global coordinates during the whole movement
 	traceBounds.FromBoundsTranslation(localBounds, start, results.endpos - start);
+
+	idClip_ClipModelList clipModelList;
+	idClip_FloatList fractionLowers;
 
 	idVec3 globalSize = traceBounds.GetSize(), localSizeCap = localBounds.GetSize() * 2.0;
 	float totalMovement = (results.endpos - start).Length();
@@ -1261,7 +1243,7 @@ idClip::Rotation
 bool idClip::Rotation( trace_t &results, const idVec3 &start, const idRotation &rotation,
 					const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
 	int i, num;
-	idClipModel *touch, *clipModelList[MAX_GENTITIES];
+	idClipModel *touch;
 	idBounds traceBounds;
 	trace_t trace;
 	const idTraceModel *trm;
@@ -1289,6 +1271,7 @@ bool idClip::Rotation( trace_t &results, const idVec3 &start, const idRotation &
 		traceBounds.FromBoundsRotation( trm->bounds, start, trmAxis, rotation );
 	}
 
+	idClip_ClipModelList clipModelList;
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 
 	for ( i = 0; i < num; i++ ) {
@@ -1328,7 +1311,7 @@ idClip::Motion
 bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, const idRotation &rotation,
 					const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
 	int i, num;
-	idClipModel *touch, *clipModelList[MAX_GENTITIES];
+	idClipModel *touch;
 	idVec3 dir, endPosition;
 	idBounds traceBounds;
 	float radius;
@@ -1374,6 +1357,8 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 		translationalTrace.endpos = end;
 		translationalTrace.endAxis = trmAxis;
 	}
+
+	idClip_ClipModelList clipModelList;
 
 	if ( translationalTrace.fraction != 0.0f ) {
 
@@ -1489,7 +1474,7 @@ idClip::Contacts
 int idClip::Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec6 &dir, const float depth,
 					 const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
 	int i, j, num, n, numContacts;
-	idClipModel *touch, *clipModelList[MAX_GENTITIES];
+	idClipModel *touch;
 	idBounds traceBounds;
 	const idTraceModel *trm;
 
@@ -1519,6 +1504,7 @@ int idClip::Contacts( contactInfo_t *contacts, const int maxContacts, const idVe
 		traceBounds.ExpandSelf( depth );
 	}
 
+	idClip_ClipModelList clipModelList;
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 
 	for ( i = 0; i < num; i++ ) {
@@ -1559,7 +1545,7 @@ idClip::Contents
 */
 int idClip::Contents( const idVec3 &start, const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
 	int i, num, contents;
-	idClipModel *touch, *clipModelList[MAX_GENTITIES];
+	idClipModel *touch;
 	idBounds traceBounds;
 	const idTraceModel *trm;
 
@@ -1583,6 +1569,7 @@ int idClip::Contents( const idVec3 &start, const idClipModel *mdl, const idMat3 
 		traceBounds[1] = trm->bounds[1] + start;
 	}
 
+	idClip_ClipModelList clipModelList;
 	num = GetTraceClipModels( traceBounds, -1, passEntity, clipModelList );
 
 	for ( i = 0; i < num; i++ ) {
@@ -1762,12 +1749,12 @@ idClip::DrawClipModels
 void idClip::DrawClipModels( const idVec3 &eye, const float radius, const idEntity *passEntity ) {
 	int				i, num;
 	idBounds		bounds;
-	idClipModel		*clipModelList[MAX_GENTITIES];
 	idClipModel		*clipModel;
 
 	bounds = idBounds( eye ).Expand( radius );
 
-	num = idClip::ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	num = idClip::ClipModelsTouchingBounds( bounds, -1, clipModelList );
 
 	for ( i = 0; i < num; i++ ) {
 		clipModel = clipModelList[i];

@@ -506,9 +506,9 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			// If there is, remain non-solid and let them pass by before you return to solid.
 			// (This might not matter, but let's be safe.)
 
-			idClipModel *clipModels[ MAX_GENTITIES ];
+			idClip_ClipModelList clipModels;
 			idPhysics *phys = owner->GetPhysics();
-			int num = gameLocal.clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels, MAX_GENTITIES );
+			int num = gameLocal.clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels );
 			bool foundNeighbor = false;
 			for ( int i = 0 ; i < num ; i++ )
 			{

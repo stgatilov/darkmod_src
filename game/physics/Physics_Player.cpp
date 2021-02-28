@@ -5874,11 +5874,11 @@ void idPhysics_Player::UpdateLean( void ) // grayman #4882 - expanded to handle 
 			/** More precise test (Not currently used)
 
 			int numEnts = 0;
-			idEntity *ents[MAX_GENTITIES];
 			idEntity *ent = NULL;
 			bool bMatchedDoor(false);
 
-			numEnts = gameLocal.clip.EntitiesTouchingBounds( TestBounds, CONTENTS_SOLID, ents, MAX_GENTITIES);
+			idClip_EntityList ents;
+			numEnts = gameLocal.clip.EntitiesTouchingBounds( TestBounds, CONTENTS_SOLID, ents );
 			for( int i=0; i < numEnts; i++ )
 			{
 			if( ents[i] == (idEntity *) door )

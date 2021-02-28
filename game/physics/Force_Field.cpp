@@ -149,12 +149,13 @@ void idForce_Field::Evaluate( int time ) {
 	int numClipModels, i;
 	idBounds bounds;
 	idVec3 force, torque, angularVelocity;
-	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+	idClipModel *cm;
 
 	assert( clipModel );
 
 	bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
-	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList );
 
 	for ( i = 0; i < numClipModels; i++ ) {
 		cm = clipModelList[ i ];

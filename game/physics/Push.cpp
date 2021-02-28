@@ -1037,12 +1037,12 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 idPush::DiscardEntities
 ============
 */
-int idPush::DiscardEntities( idEntity *entityList[], int numEntities, int flags, idEntity *pusher ) {
+int idPush::DiscardEntities( idClip_EntityList &entityList, int flags, idEntity *pusher ) {
 	int i, num;
 	idEntity *check;
 
 	// remove all entities we cannot or should not push from the list
-	for ( num = i = 0; i < numEntities; i++ ) {
+	for ( num = i = 0; i < entityList.Num(); i++ ) {
 		check = entityList[ i ];
 
 		// if the physics object is not pushable
@@ -1082,6 +1082,7 @@ int idPush::DiscardEntities( idEntity *entityList[], int numEntities, int flags,
 		entityList[ num++ ] = entityList[i];
 	}
 
+	entityList.SetNum(num);
 	return num;
 }
 
@@ -1097,7 +1098,7 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 										float ImpulseMod ) 
 {
 	int			i, listedEntities, res;
-	idEntity	*check, *entityList[ MAX_GENTITIES ];
+	idEntity	*check;
 	idBounds	bounds, pushBounds;
 	idVec3		clipMove, clipOrigin, oldOrigin, dir, impulse;
 	trace_t		pushResults;
@@ -1137,10 +1138,11 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	// make sure we don't get the pushing clip model in the list
 	clipModel->Disable();
 
-	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList );
 
 	// discard entities we cannot or should not push
-	listedEntities = DiscardEntities( entityList, listedEntities, flags, pusher );
+	listedEntities = DiscardEntities( entityList, flags, pusher );
 
 	if ( flags & PUSHFL_CLIP ) 
 	{
@@ -1303,7 +1305,6 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 									const idMat3 &newAxis, const idRotation &rotation ) {
 	int			i, listedEntities, res;
 	idEntity	*check;
-	static idEntity* entityList[ MAX_GENTITIES ];
 	idBounds	bounds, pushBounds;
 	idRotation	clipRotation;
 	idMat3		clipAxis, oldAxis;
@@ -1337,10 +1338,11 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 	// make sure we don't get the pushing clip model in the list
 	clipModel->Disable();
 
-	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList );
 
 	// discard entities we cannot or should not push
-	listedEntities = DiscardEntities( entityList, listedEntities, flags, pusher );
+	listedEntities = DiscardEntities( entityList, flags, pusher );
 
 	if ( flags & PUSHFL_CLIP ) {
 

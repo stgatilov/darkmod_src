@@ -20,6 +20,8 @@
 #include "cm/CollisionModel.h"
 #endif
 
+#include "containers/FlexList.h"
+
 /*
 ===============================================================================
 
@@ -35,6 +37,12 @@ class idClip;
 class idClipModel;
 class idEntity;
 struct listParmsMoving;
+
+//stgatilov: size of automatic storage in returned arrays of entities
+#define CLIPARRAY_AUTOSIZE 128
+typedef idFlexList<idEntity*, CLIPARRAY_AUTOSIZE> idClip_EntityList;
+typedef idFlexList<idClipModel*, CLIPARRAY_AUTOSIZE> idClip_ClipModelList;
+typedef idFlexList<float, CLIPARRAY_AUTOSIZE> idClip_FloatList;
 
 
 //===============================================================
@@ -307,8 +315,8 @@ public:
 	bool					GetModelContactFeature( const contactInfo_t &contact, const idClipModel *clipModel, idFixedWinding &winding ) const;
 
 	// get entities/clip models within or touching the given bounds
-	int						EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idEntity **entityList, int maxCount ) const;
-	int						ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClipModel **clipModelList, int maxCount ) const;
+	int						EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idClip_EntityList &entityList ) const;
+	int						ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClip_ClipModelList &clipModelList ) const;
 
 	const idBounds &		GetWorldBounds( void ) const;
 	idClipModel *			DefaultClipModel( void );
@@ -338,17 +346,17 @@ private:
 	struct clipSector_s *	CreateClipSectors_r( const int depth, const idBounds &bounds, idVec3 &maxSector );
 	void					ClipModelsTouchingBounds_r( const struct clipSector_s *node, struct listParms_s &parms ) const;
 	const idTraceModel *	TraceModelForClipModel( const idClipModel *mdl ) const;
-	int						GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClipModel **clipModelList ) const;
+	int						GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClip_ClipModelList &clipModelList ) const;
 	void					TraceRenderModel( trace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, const idMat3 &axis, idClipModel *touch ) const;
 
-	void					FilterClipModels(const idEntity *passEntity, idClipModel **clipModelList, int num ) const;
-	int						FilterEntities( idEntity **entityList, int maxCount, idClipModel **clipModelList, int count ) const;
+	void					FilterClipModels(const idEntity *passEntity, idClip_ClipModelList &clipModelList ) const;
+	void					FilterEntities( idClip_EntityList &entityList, idClip_ClipModelList &clipModelList ) const;
 
 	void					ClipModelsTouchingMovingBounds_r( const clipSector_s *node, idBounds &nodeBounds, listParmsMoving &parms ) const;
 	int						ClipModelsTouchingMovingBounds( const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
-								int contentMask, idClipModel **clipModelList, float *fractionLowers, int maxCount ) const;
+								int contentMask, idClip_ClipModelList &clipModelList, idClip_FloatList &fractionLowers ) const;
 	int						GetTraceClipModels( const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
-								int contentMask, const idEntity *passEntity, idClipModel **clipModelList, float *fractionLowers ) const;
+								int contentMask, const idEntity *passEntity, idClip_ClipModelList &clipModelList, idClip_FloatList &fractionLowers ) const;
 };
 
 

@@ -170,11 +170,11 @@ bool CRelations::CheckForHostileAI(idVec3 point, int team) // grayman #3548
 
 	bool hostile = false;
 
-	idClipModel *clipModels[ MAX_GENTITIES ];
 	idBounds neighborhood(idVec3(point.x-256,point.y-256,point.z),
 						  idVec3(point.x+256,point.y+256,point.z+128));
 
-	int num = gameLocal.clip.ClipModelsTouchingBounds( neighborhood, MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	int num = gameLocal.clip.ClipModelsTouchingBounds( neighborhood, MASK_MONSTERSOLID, clipModels );
 	for ( int i = 0 ; i < num ; i++ )
 	{
 		idClipModel *cm = clipModels[i];

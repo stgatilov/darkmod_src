@@ -10670,9 +10670,8 @@ void idPlayer::PerformFrobCheck()
 		gameRenderWorld->DebugBounds( colorBlue, frobBounds );
 	}
 
-	static idEntity* frobRangeEnts[MAX_GENTITIES];
-
-	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds(frobBounds, -1, frobRangeEnts, MAX_GENTITIES);
+	idClip_EntityList frobRangeEnts;
+	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds(frobBounds, -1, frobRangeEnts);
 
 	idVec3 vecForward = viewAngles.ToForward();
 	float bestDot = 0;

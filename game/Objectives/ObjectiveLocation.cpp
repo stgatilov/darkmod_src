@@ -125,11 +125,12 @@ void CObjectiveLocation::Think()
 	{
 		// angua: This is adapted from trigger_touch to allow more precise detection
 		idBounds bounds;
-		idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+		idClipModel *cm;
 
 		bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
 
-		int numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+		idClip_ClipModelList clipModelList;
+		int numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList );
 		for (int k = 0; k < numClipModels; k++ ) 
 		{
 			cm = clipModelList[ k ];
@@ -162,10 +163,8 @@ void CObjectiveLocation::Think()
 	else
 	{
 		// bounding box test
-		int NumEnts(0);
-		idEntity *Ents[MAX_GENTITIES];
-
-		NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
+		idClip_EntityList Ents;
+		int NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents);
 		for( int i = 0; i < NumEnts; i++ )
 		{
 			if( Ents[i] && Ents[i]->m_bIsObjective )

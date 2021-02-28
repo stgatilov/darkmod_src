@@ -259,8 +259,8 @@ void HitByMoveableState::Think(idAI* owner)
 				idVec3 ownerOrg = owner->GetPhysics()->GetOrigin();
 				idBounds bounds( ownerOrg - idVec3( HIT_FIND_THROWER_HORZ, HIT_FIND_THROWER_HORZ, HIT_FIND_THROWER_VERT ), ownerOrg + idVec3( HIT_FIND_THROWER_HORZ, HIT_FIND_THROWER_HORZ, HIT_FIND_THROWER_VERT ) );
 
-				idEntity* ents[MAX_GENTITIES];
-				int num = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_BODY, ents, MAX_GENTITIES );
+				idClip_EntityList ents;
+				int num = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_BODY, ents );
 
 				for ( int i = 0 ; i < num ; i++ )
 				{
