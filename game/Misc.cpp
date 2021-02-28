@@ -363,9 +363,8 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 		return NULL;
 	}
 
-	idPathCorner *path[ MAX_GENTITIES ];
+	idFlexList<idPathCorner*, 128> path;
 
-	int num(0);
 	float rand(gameLocal.random.RandomFloat());
 	float accumulatedChance(0);
 	float maxChance(0);
@@ -414,10 +413,7 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 			{
 				// path doesn't have chance spawn arg set
 				// add to list
-				path[ num++ ] = static_cast<idPathCorner *>( ent );
-				if ( num >= MAX_GENTITIES ) {
-					break;
-				}
+				path.AddGrow( static_cast<idPathCorner *>( ent ) );
 			}
 		}
 	}
@@ -425,7 +421,7 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 	// probability comparison didn't return a path
 
 	// no path without chance spawn arg (chance sum is < 1)
-	if ( !num )
+	if ( path.Num() == 0 )
 	{
 		if (candidate)
 		{
@@ -436,7 +432,7 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 	}
 
 	// choose one from the list
-	int which = gameLocal.random.RandomInt( num );
+	int which = gameLocal.random.RandomInt( path.Num() );
 	return path[ which ];
 }
 
