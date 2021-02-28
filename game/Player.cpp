@@ -9059,7 +9059,8 @@ void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteDir( lastDamageDir, 9 );
 	msg.WriteShort( lastDamageLocation );
 	msg.WriteBits( idealWeapon, idMath::BitsForInteger( 256 ) );
-	msg.WriteBits( weapon.GetSpawnId(), 32 );
+	msg.WriteBits( weapon.GetEntityNum(), 32 );
+	msg.WriteBits( weapon.GetSpawnNum(), 32 );
 	msg.WriteBits( lastHitToggle, 1 );
 	msg.WriteBits( weaponGone, 1 );
 	msg.WriteBits( isLagged, 1 );
@@ -9072,7 +9073,7 @@ idPlayer::ReadFromSnapshot
 ================
 */
 void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int		oldHealth, newIdealWeapon, weaponSpawnId;
+	int		oldHealth, newIdealWeapon;
 	bool	newHitToggle, stateHitch;
 
 	if ( snapshotSequence - lastSnapshotSequence > 1 ) {
@@ -9093,7 +9094,8 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	lastDamageDir = msg.ReadDir( 9 );
 	lastDamageLocation = msg.ReadShort();
 	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( 256 ) );
-	weaponSpawnId = msg.ReadBits( 32 );
+	int weaponEntityId = msg.ReadBits( 32 );
+	int weaponSpawnId = msg.ReadBits( 32 );
 	newHitToggle = msg.ReadBits( 1 ) != 0;
 	weaponGone = msg.ReadBits( 1 ) != 0;
 	isLagged = msg.ReadBits( 1 ) != 0;
@@ -9101,7 +9103,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 	// no msg reading below this
 
-	if ( weapon.SetSpawnId( weaponSpawnId ) ) {
+	if ( weapon.Set( weaponEntityId, weaponSpawnId ) ) {
 		if ( weapon.GetEntity() ) {
 			// maintain ownership locally
 			weapon.GetEntity()->SetOwner( this );

@@ -15,16 +15,15 @@
     </Expand>
   </Type>
 
-  <!-- Note: if GENTITYNUM_BITS changes, you have to update numbers/masks here too -->
   <Type Name="idEntityPtr&lt;*&gt;">
     <DisplayString Condition="spawnId == 0">Eptr (empty)</DisplayString>
-    <DisplayString Condition="spawnId != 0">Eptr (num = {spawnId &amp; 0x1FFF}, spId = {spawnId &gt;&gt; 13})</DisplayString>
+    <DisplayString Condition="spawnId != 0">Eptr (num = {spawnId}, spId = {spawnId})</DisplayString>
     <Expand>
-      <Synthetic Name="[WRONG]" Condition="spawnId != 0 &amp;&amp; gameLocal.spawnIds[spawnId &amp; 0x1FFF] != spawnId &gt;&gt; 13">
-        <DisplayString>set = {spawnId &gt;&gt; 13} != {gameLocal.spawnIds[spawnId &amp; 0x1FFF]} = stored</DisplayString>
+      <Synthetic Name="[WRONG]" Condition="spawnId != 0 &amp;&amp; gameLocal.spawnIds[entityId] != spawnId">
+        <DisplayString>set = {spawnId} != {gameLocal.spawnIds[entityId]} = stored</DisplayString>
       </Synthetic>
       <Item Name="[entity]" Condition="spawnId != 0">
-        gameLocal.entities[spawnId &amp; 0x1FFF]
+        gameLocal.entities[entityId]
       </Item>
     </Expand>
   </Type>

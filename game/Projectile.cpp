@@ -1588,7 +1588,8 @@ idProjectile::WriteToSnapshot
 ================
 */
 void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
-	msg.WriteBits( owner.GetSpawnId(), 32 );
+	msg.WriteBits( owner.GetEntityNum(), 32 );
+	msg.WriteBits( owner.GetSpawnNum(), 32 );
 
 	msg.WriteBits( state, 3 );
 
@@ -1625,7 +1626,10 @@ idProjectile::ReadFromSnapshot
 void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	projectileState_t newState;
 
-	owner.SetSpawnId( msg.ReadBits( 32 ) );
+	int entId = msg.ReadBits( 32 );
+	int spnId = msg.ReadBits( 32 );
+	owner.Set( entId, spnId );
+
 	newState = (projectileState_t) msg.ReadBits( 3 );
 	if ( msg.ReadBits( 1 ) ) {
 		Hide();

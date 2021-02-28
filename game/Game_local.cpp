@@ -5133,7 +5133,7 @@ idGameLocal::RegisterEntity
 void idGameLocal::RegisterEntity( idEntity *ent ) {
 	int spawn_entnum;
 
-	if ( spawnCount >= ( 1 << ( 32 - GENTITYNUM_BITS ) ) ) {
+	if ( spawnCount >= ( 1 << 30 ) ) {
 		Error( "idGameLocal::RegisterEntity: spawn count overflow" );
 	}
 

@@ -86,7 +86,6 @@ class idLocationEntity;
 
 // Tels: If you change this value, make sure that LUDICROUS_INDEX 
 // in renderer/RenderWorld_local.h is higher than MAX_GENTITIES
-// stgatilov: also, update definition of idEntityPtr type in game.natvis
 #define	GENTITYNUM_BITS			13
 #define	MAX_GENTITIES			(1<<GENTITYNUM_BITS)
 #define	ENTITYNUM_NONE			(MAX_GENTITIES-1)
@@ -368,15 +367,15 @@ public:
 	bool					operator==(const idEntityPtr<type>& other) const;
 
 	// synchronize entity pointers over the network
-	int						GetSpawnId( void ) const { return spawnId; }
-	bool					SetSpawnId( int id );
-	bool					UpdateSpawnId( void );
+	int						GetSpawnNum( void ) const;
+	bool					Set( int entityId, int spawnId );
 
 	bool					IsValid( void ) const;
 	type *					GetEntity( void ) const;
 	int						GetEntityNum( void ) const;
 
 private:
+	int						entityId;
 	int						spawnId;
 };
 
@@ -1135,25 +1134,29 @@ extern idAnimManager		animationLib;
 
 template< class type >
 ID_INLINE idEntityPtr<type>::idEntityPtr() {
+	entityId = 0;
 	spawnId = 0;
 }
 
 template< class type >
 ID_INLINE void idEntityPtr<type>::Save( idSaveGame *savefile ) const {
+	savefile->WriteInt( entityId );
 	savefile->WriteInt( spawnId );
 }
 
 template< class type >
 ID_INLINE void idEntityPtr<type>::Restore( idRestoreGame *savefile ) {
+	savefile->ReadInt( entityId );
 	savefile->ReadInt( spawnId );
 }
 
 template< class type >
 ID_INLINE idEntityPtr<type> &idEntityPtr<type>::operator=( type *ent ) {
 	if ( ent == NULL ) {
-		spawnId = 0;
+		entityId = spawnId = 0;
 	} else {
-		spawnId = ( gameLocal.spawnIds[ent->entityNumber] << GENTITYNUM_BITS ) | ent->entityNumber;
+		entityId = ent->entityNumber;
+		spawnId = gameLocal.spawnIds[ent->entityNumber];
 	}
 	return *this;
 }
@@ -1165,14 +1168,15 @@ ID_INLINE bool idEntityPtr<type>::operator==(const idEntityPtr<type>& other) con
 }
 
 template< class type >
-ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
+ID_INLINE bool idEntityPtr<type>::Set( int _entityId, int _spawnId ) {
 	// the reason for this first check is unclear:
 	// the function returning false may mean the spawnId is already set right, or the entity is missing
-	if ( id == spawnId ) {
+	if ( _spawnId == spawnId && entityId == _entityId ) {
 		return false;
 	}
-	if ( ( id >> GENTITYNUM_BITS ) == gameLocal.spawnIds[ id & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] ) {
-		spawnId = id;
+	if ( _spawnId == gameLocal.spawnIds[ _entityId ] ) {
+		entityId = _entityId;
+		spawnId = _spawnId;
 		return true;
 	}
 	return false;
@@ -1180,21 +1184,24 @@ ID_INLINE bool idEntityPtr<type>::SetSpawnId( int id ) {
 
 template< class type >
 ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
-	return ( gameLocal.spawnIds[ spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) ] == ( spawnId >> GENTITYNUM_BITS ) );
+	return ( gameLocal.spawnIds[ entityId ] == spawnId );
 }
 
 template< class type >
 ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
-	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
-	if ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) {
-		return static_cast<type *>( gameLocal.entities[ entityNum ] );
+	if ( gameLocal.spawnIds[ entityId ] == spawnId ) {
+		return static_cast<type *>( gameLocal.entities[ entityId ] );
 	}
 	return NULL;
 }
 
 template< class type >
+ID_INLINE int idEntityPtr<type>::GetSpawnNum( void ) const {
+	return spawnId;
+}
+template< class type >
 ID_INLINE int idEntityPtr<type>::GetEntityNum( void ) const {
-	return ( spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 ) );
+	return entityId;
 }
 
 //============================================================================
