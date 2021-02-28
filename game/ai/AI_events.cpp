@@ -2592,28 +2592,23 @@ idAI::Event_GetRandomTarget
 */
 void idAI::Event_GetRandomTarget( const char *type ) {
 	int	i;
-	int	num;
 	int which;
 	idEntity *ent;
-	idEntity *ents[ MAX_GENTITIES ];
 
-	num = 0;
+	idClip_EntityList ents;
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
 		if ( ent && idStr::Cmp( ent->GetEntityDefName(), type ) == 0 ) {
-			ents[ num++ ] = ent;
-			if ( num >= MAX_GENTITIES ) {
-				break;
-			}
+			ents.AddGrow( ent );
 		}
 	}
 
-	if ( !num ) {
+	if ( ents.Num() == 0 ) {
 		idThread::ReturnEntity( NULL );
 		return;
 	}
 
-	which = gameLocal.random.RandomInt( num );
+	which = gameLocal.random.RandomInt( ents.Num() );
 	idThread::ReturnEntity( ents[ which ] );
 }
 
