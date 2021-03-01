@@ -1485,6 +1485,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	state = STATE_DEAD;
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
+	SetStimEnabled(ST_VISUAL, true); // let AIs see the camera is destroyed
 
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
