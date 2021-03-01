@@ -1337,8 +1337,10 @@ idSecurityCamera::ReverseSweep
 void idSecurityCamera::ReverseSweep( void ) {
 	angle			= GetPhysics()->GetAxis().ToAngles().yaw;
 	angleTarget		= ( angleTarget == anglePos2 ) ? anglePos1 : anglePos2;
-	negativeSweep	= ( angleTarget == anglePos2 ) ? true : false;
 	sweepAngle		= fabs( spawnArgs.GetFloat("sweepAngle", "90") );
+
+	if ( anglePos1 == anglePos2 )	negativeSweep = !negativeSweep;
+	else							negativeSweep = (angleTarget == anglePos2) ? true : false; 
 
 	StartSweep();
 }
