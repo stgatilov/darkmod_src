@@ -134,6 +134,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(alertMode);
 	savefile->WriteBool(powerOn);
 	savefile->WriteBool(spotlightPowerOn);
+	savefile->WriteBool(dislodged);
 
 	savefile->WriteFloat(lostInterestEndTime);
 	savefile->WriteFloat(nextAlertTime);
@@ -227,6 +228,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(alertMode);
 	savefile->ReadBool(powerOn);
 	savefile->ReadBool(spotlightPowerOn);
+	savefile->ReadBool(dislodged);
 
 	savefile->ReadFloat(lostInterestEndTime);
 	savefile->ReadFloat(nextAlertTime);
@@ -283,7 +285,8 @@ void idSecurityCamera::Spawn( void )
 	sweeping = false;
 	following = false;
 	sparksOn = false;
-	stationary	= false;
+	stationary = false;
+	dislodged = false;
 	nextAlertTime = 0;
 	sweepStartTime = sweepEndTime = 0;
 	inclineStartTime = inclineEndTime = 0;
@@ -717,7 +720,7 @@ void idSecurityCamera::Event_SetHealth( float newHealth )
 	health = static_cast<int>(newHealth);
 	fl.takedamage = true;
 
-	if ( ( health <= 0 ) && ( state != STATE_DEAD ) ) {
+	if ( health <= 0 ) {
 		Killed( NULL, NULL, 0, idVec3(0, 0, 0), 0 );
 	}
 }
@@ -1039,7 +1042,7 @@ void idSecurityCamera::Think( void )
 	// run physics
 	RunPhysics();
 
-	if ( state == STATE_DEAD && ( thinkFlags & TH_UPDATEPARTICLES ) )
+	if ( ( state == STATE_DEAD ) && ( thinkFlags & TH_UPDATEPARTICLES ) )
 	{
 		TriggerSparks(); // Trigger spark effect
 	}
@@ -1392,31 +1395,96 @@ void idSecurityCamera::TurnToTarget( void )
 /*
 ============
 idSecurityCamera::Killed
+
+Called whenever the camera is destroyed or damaged after destruction
 ============
 */
 void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
+
+	// Play damage fx
+	idStr str;
+
+	if ( state != STATE_DEAD )
+	{
+		if ( powerOn ) {
+			StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
+			str = spawnArgs.GetString("fx_destroyed");
+		}
+		else if ( !powerOn ) {
+			StartSound("snd_death_nopower", SND_CHANNEL_BODY, 0, false, NULL);
+			str = spawnArgs.GetString("fx_destroyed_nopower");
+		}
+	}
+
+	else if ( state == STATE_DEAD )
+	{
+		if ( powerOn ) {
+			str = spawnArgs.GetString("fx_damage_nopower");
+		}
+		else if ( !powerOn ) {
+			str = spawnArgs.GetString("fx_damage_nopower");
+		}
+	}
+
+	if (str.Length()) {
+		idEntityFx::StartFx(str, NULL, NULL, this, true);
+	}
+
+	// Become a moveable if enough damage was dealt
+	if ( !dislodged && spawnArgs.GetBool("dislodge", "0") )
+	{
+		if ( health <= -fabs(spawnArgs.GetFloat("dislodge_health", "-100")) )
+		{
+			float friction, mass, bouncyness;
+			spawnArgs.GetFloat("dislodge_friction", "0.6", friction);
+			spawnArgs.GetFloat("dislodge_mass", "20", mass);
+			spawnArgs.GetFloat("dislodge_bouncyness", "0.1", bouncyness);
+			bouncyness = idMath::ClampFloat(0.0f, 1.0f, bouncyness);
+
+			dislodged = true;
+			physicsObj.SetSelf(this);
+			physicsObj.SetClipModel(new idClipModel(trm), 0.02f);
+			physicsObj.SetOrigin(GetPhysics()->GetOrigin());
+			physicsObj.SetAxis(GetPhysics()->GetAxis());
+			physicsObj.SetMass(mass);
+			physicsObj.SetBouncyness(bouncyness);
+			physicsObj.SetFriction(friction, friction, friction);
+			physicsObj.SetGravity(gameLocal.GetGravity());
+			physicsObj.SetContents(CONTENTS_SOLID | CONTENTS_OPAQUE);
+			physicsObj.SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
+			SetPhysics(&physicsObj);
+			physicsObj.Activate();
+
+			//disable sparks when dislodging, if desired
+			if ( spawnArgs.GetBool("dislodge_sparks", "0" ) == false )
+			{
+				BecomeInactive(TH_UPDATEPARTICLES);
+
+				if (sparksOn && !sparksPeriodic)
+				{
+					idEntity *sparksEntity = sparks.GetEntity();
+
+					sparksEntity->Activate(NULL);
+					StopSound(SND_CHANNEL_ANY, false);
+					sparksOn = false;
+				}
+			}
+		}
+
+		else if ( spawnArgs.GetBool("dislodge_oneshot", "1") )
+		{
+			health = 0;	// reset health if the player has to get under dislodge_health with a single hit and wasn't damaging enough
+		}
+	}
+
 	if ( state == STATE_DEAD )
 	{
 		return;
 	}
 
+	state = STATE_DEAD;
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
-
-	idStr str;
-
-	if ( powerOn ) {
-		StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
-		str = spawnArgs.GetString("fx_destroyed");
-	}
-	else if ( !powerOn ) {
-		StartSound("snd_death_nopower", SND_CHANNEL_BODY, 0, false, NULL);
-		str = spawnArgs.GetString("fx_destroyed_nopower");
-	}
-
-	if ( str.Length() ) {
-			idEntityFx::StartFx(str, NULL, NULL, this, true);
-	}
 
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
@@ -1447,11 +1515,14 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		ent->Activate(this);
 	}
 
-	state = STATE_DEAD;
-
-	if (spawnArgs.GetBool("sparks", "1"))
+	if ( spawnArgs.GetBool("sparks", "1") )
 	{
-		if ( !powerOn && sparksPowerDependent )
+		if ( sparksPowerDependent && !powerOn )
+		{
+			return;
+		}
+
+		if ( dislodged && !spawnArgs.GetBool("dislodge_sparks") )
 		{
 			return;
 		}
@@ -1459,6 +1530,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		nextSparkTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("sparks_delay", "2"));
 		BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
 	}
+
 }
 
 
@@ -1526,16 +1598,22 @@ void idSecurityCamera::Activate(idEntity* activator)
 {
 	powerOn = !powerOn;
 	
+	// handle death sparks
 	if ( state == STATE_DEAD )
 	{
-		if (spawnArgs.GetBool("sparks", "1") && sparksPowerDependent )
+		if ( dislodged && spawnArgs.GetBool("dislodge_sparks") == false )
 		{
-			if (powerOn)
+			return;
+		}
+
+		if ( spawnArgs.GetBool("sparks", "1") && sparksPowerDependent )
+		{
+			if ( powerOn )
 			{
 				nextSparkTime = gameLocal.time;
 				BecomeActive(TH_UPDATEPARTICLES);
 			}
-			else if (!powerOn)
+			else if ( !powerOn )
 			{
 				BecomeInactive(TH_UPDATEPARTICLES);
 
@@ -1552,6 +1630,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 		return;
 	}
 
+	// handle spotlight
 	idLight* light = spotLight.GetEntity();
 
 	if ( light )
@@ -1599,8 +1678,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 		BecomeInactive(TH_THINK);
 	}
 
-	// set skin
-
+	// handle skin
 	if ( powerOn )
 	{
 		if ( light && spotlightPowerOn )

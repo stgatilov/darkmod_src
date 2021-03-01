@@ -128,6 +128,7 @@ private:
 	int						alertMode;
 	bool					powerOn;
 	bool					spotlightPowerOn;
+	bool					dislodged;
 
 	float					timeLastSeen;
 	float					lostInterestEndTime;
