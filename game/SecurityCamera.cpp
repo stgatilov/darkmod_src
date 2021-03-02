@@ -1452,44 +1452,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		// damage is sufficient to dislodge
 		if ( health <= -fabs(spawnArgs.GetFloat("dislodge_health", "-100")) )
 		{
-			float friction, mass, bouncyness;
-			spawnArgs.GetFloat("dislodge_friction", "0.6", friction);
-			spawnArgs.GetFloat("dislodge_mass", "20", mass);
-			spawnArgs.GetFloat("dislodge_bouncyness", "0.1", bouncyness);
-			bouncyness = idMath::ClampFloat(0.0f, 1.0f, bouncyness);
-
-			dislodged = true;
-			physicsObj.SetSelf(this);
-			physicsObj.SetClipModel(new idClipModel(trm), 0.02f);
-			physicsObj.SetOrigin(GetPhysics()->GetOrigin());
-			physicsObj.SetAxis(GetPhysics()->GetAxis());
-			physicsObj.SetMass(mass);
-			physicsObj.SetBouncyness(bouncyness);
-			physicsObj.SetFriction(friction, friction, friction);
-			physicsObj.SetGravity(gameLocal.GetGravity());
-			physicsObj.SetContents(CONTENTS_SOLID | CONTENTS_OPAQUE);
-			physicsObj.SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
-			SetPhysics(&physicsObj);
-
-			//update frobability
-			int frobable = spawnArgs.GetInt("dislodge_frobable", "0");
-			if ( frobable == 0 ) SetFrobable(false);
-			if ( frobable == 1 ) SetFrobable(true);
-
-			//disable sparks, if desired
-			if ( spawnArgs.GetBool("dislodge_sparks", "0" ) == false )
-			{
-				BecomeInactive(TH_UPDATEPARTICLES);
-
-				if (sparksOn && !sparksPeriodic)
-				{
-					idEntity *sparksEntity = sparks.GetEntity();
-
-					sparksEntity->Activate(NULL);
-					StopSound(SND_CHANNEL_ANY, false);
-					sparksOn = false;
-				}
-			}
+			Dislodge();
 		}
 
 		// damage is insufficient
@@ -1556,6 +1519,81 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 
 }
 
+/*
+============
+idSecurityCamera::Dislodge
+
+Converts the security camera into a moveable when sufficiently damaged. Called by idSecurityCamera::Killed
+============
+*/
+void idSecurityCamera::Dislodge( void ) {
+
+		float friction, mass, bouncyness;
+		int contents = CONTENTS_SOLID | CONTENTS_OPAQUE;
+		spawnArgs.GetFloat("dislodge_friction", "0.6", friction);
+		spawnArgs.GetFloat("dislodge_mass", "20", mass);
+		spawnArgs.GetFloat("dislodge_bouncyness", "0.1", bouncyness);
+		bouncyness = idMath::ClampFloat(0.0f, 1.0f, bouncyness);
+
+		dislodged = true;
+		physicsObj.SetSelf(this);
+		physicsObj.SetClipModel(new idClipModel(trm), 0.02f);
+		physicsObj.GetClipModel()->SetMaterial( GetRenderModelMaterial() );
+		physicsObj.SetOrigin(GetPhysics()->GetOrigin());
+		physicsObj.SetAxis(GetPhysics()->GetAxis());
+		physicsObj.SetMass(mass);
+		physicsObj.SetBouncyness(bouncyness);
+		physicsObj.SetFriction(friction, friction, friction);
+		physicsObj.SetGravity(gameLocal.GetGravity());
+
+		//update frobability
+		int frobable = spawnArgs.GetInt("dislodge_frobable", "0");
+		if ( frobable == 0 )
+		{
+			SetFrobable(false);
+		}
+		else if ( frobable == 1 || m_bFrobable )
+		{
+			SetFrobable(true);
+			contents |= CONTENTS_FROBABLE;
+		}
+		if ( m_StimResponseColl->HasResponse() )
+		{
+			contents |= CONTENTS_RESPONSE;
+		}
+
+		physicsObj.SetContents(contents);
+		physicsObj.SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
+		SetPhysics(&physicsObj);
+
+		//disable sparks, if desired
+		if ( spawnArgs.GetBool("dislodge_sparks", "0") == false )
+		{
+			BecomeInactive(TH_UPDATEPARTICLES);
+
+			if ( sparksOn && !sparksPeriodic && sparks.GetEntity() )
+			{
+				sparks.GetEntity()->Activate(NULL);
+				StopSound(SND_CHANNEL_ANY, false);
+				sparksOn = false;
+			}
+		}
+}
+
+/*
+================
+idSecurityCamera::GetRenderModelMaterial
+================
+*/
+const idMaterial *idSecurityCamera::GetRenderModelMaterial(void) const {
+	if (renderEntity.customShader) {
+		return renderEntity.customShader;
+	}
+	if (renderEntity.hModel && renderEntity.hModel->NumSurfaces()) {
+		return renderEntity.hModel->Surface(0)->material;
+	}
+	return NULL;
+}
 
 /*
 ============
