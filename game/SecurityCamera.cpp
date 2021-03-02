@@ -411,7 +411,7 @@ void idSecurityCamera::Spawn( void )
 	GetPhysics()->SetContents( CONTENTS_SOLID );
 	// SR CONTENTS_RESPONSE FIX
 	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
+		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
 	GetPhysics()->SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	// setup the physics
