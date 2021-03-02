@@ -1296,6 +1296,7 @@ void idSecurityCamera::ContinueSweep( void )
 
 	angle = GetPhysics()->GetAxis().ToAngles().yaw;
 
+	// camera was chasing the player; return to the closest position
 	if ( following )
 	{
 		following = false;
@@ -1316,11 +1317,26 @@ void idSecurityCamera::ContinueSweep( void )
 		}
 	}
 
-	else if ( !following )
+	// security camera was switched off or saw the player but didn't turn towards him
+	else
 	{
-		sweepAngle		= fabs( idMath::AngleNormalize180(angle - angleTarget) );
-		sweepStartTime	= gameLocal.time;
-		sweepEndTime	= gameLocal.time + SEC2MS( sweepAngle / sweepSpeed );
+		sweepAngle = idMath::AngleNormalize180(angle - angleTarget);
+
+		if ( sweepAngle == 0 ) {
+			sweepEndTime = gameLocal.time -1;
+		}
+		else
+		{
+			if ( sweepAngle > 0 && negativeSweep ) {
+				sweepAngle -= 360;
+			}
+			if ( sweepAngle < 0 && !negativeSweep )	{
+				sweepAngle += 360;
+			}
+			sweepAngle = fabs(sweepAngle);
+			sweepStartTime = gameLocal.time;
+			sweepEndTime = gameLocal.time + SEC2MS(sweepAngle / sweepSpeed);
+		}
 	}
 
 	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
