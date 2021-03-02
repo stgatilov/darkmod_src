@@ -1469,7 +1469,6 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 			physicsObj.SetContents(CONTENTS_SOLID | CONTENTS_OPAQUE);
 			physicsObj.SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
 			SetPhysics(&physicsObj);
-			physicsObj.Activate();
 
 			//disable sparks when dislodging, if desired
 			if ( spawnArgs.GetBool("dislodge_sparks", "0" ) == false )
@@ -1614,6 +1613,16 @@ idSecurityCamera::Activate - turn camera power on/off
 void idSecurityCamera::Activate(idEntity* activator)
 {
 	powerOn = !powerOn;
+
+	// handle trigger Responses and Signals
+	TriggerResponse(activator, ST_TRIGGER);
+
+	if ( RespondsTo(EV_Activate) || HasSignal(SIG_TRIGGER) )
+	{
+		Signal(SIG_TRIGGER);
+		ProcessEvent(&EV_Activate, activator);
+		TriggerGuis();
+	}
 	
 	// handle death sparks
 	if ( state == STATE_DEAD )
