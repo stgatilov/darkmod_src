@@ -1449,6 +1449,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	// Become a moveable if enough damage was dealt
 	if ( !dislodged && spawnArgs.GetBool("dislodge", "0") )
 	{
+		// damage is sufficient to dislodge
 		if ( health <= -fabs(spawnArgs.GetFloat("dislodge_health", "-100")) )
 		{
 			float friction, mass, bouncyness;
@@ -1470,7 +1471,12 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 			physicsObj.SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
 			SetPhysics(&physicsObj);
 
-			//disable sparks when dislodging, if desired
+			//update frobability
+			int frobable = spawnArgs.GetInt("dislodge_frobable", "0");
+			if ( frobable == 0 ) SetFrobable(false);
+			if ( frobable == 1 ) SetFrobable(true);
+
+			//disable sparks, if desired
 			if ( spawnArgs.GetBool("dislodge_sparks", "0" ) == false )
 			{
 				BecomeInactive(TH_UPDATEPARTICLES);
@@ -1486,9 +1492,10 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 			}
 		}
 
+		// damage is insufficient
 		else if ( spawnArgs.GetBool("dislodge_oneshot", "1") )
 		{
-			health = 0;	// reset health if the player has to get under dislodge_health with a single hit and wasn't damaging enough
+			health = 0;	// reset health if the player has to do at least 'dislodge_health' damage with a single hit
 		}
 	}
 
@@ -1582,6 +1589,12 @@ Present is called to allow entities to generate refEntities, lights, etc for the
 
 void idSecurityCamera::Present( void ) 
 {
+	if ( m_bFrobable )
+	{
+		UpdateFrobState();
+		UpdateFrobDisplay();
+	}
+
 	// don't present to the renderer if the entity hasn't changed
 	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
 		return;
