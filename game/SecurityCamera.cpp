@@ -63,9 +63,6 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	END_CLASS
 
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
-const float MIN_DAMAGE_VELOCITY = 200;
-const float MAX_DAMAGE_VELOCITY = 600;
-
 
 /*
 ================
@@ -159,15 +156,6 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3(colorSweeping);
 	savefile->WriteVec3(colorSighted);
 	savefile->WriteVec3(colorAlerted);
-
-	savefile->WriteString(damage);
-	savefile->WriteBool(canDamage);
-	savefile->WriteFloat(minDamageVelocity);
-	savefile->WriteFloat(maxDamageVelocity);
-	savefile->WriteInt(nextDamageTime);
-	savefile->WriteInt(nextSoundTime);
-	savefile->WriteString(fxCollide);
-	savefile->WriteInt(nextCollideFxTime);
 }
 
 /*
@@ -262,15 +250,6 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3(colorSweeping);
 	savefile->ReadVec3(colorSighted);
 	savefile->ReadVec3(colorAlerted);
-
-	savefile->ReadString(damage);
-	savefile->ReadBool(canDamage);
-	savefile->ReadFloat(minDamageVelocity);
-	savefile->ReadFloat(maxDamageVelocity);
-	savefile->ReadInt(nextDamageTime);
-	savefile->ReadInt(nextSoundTime);
-	savefile->ReadString(fxCollide);
-	savefile->ReadInt(nextCollideFxTime);
 }
 
 /*
@@ -302,9 +281,6 @@ void idSecurityCamera::Spawn( void )
 	followIncline			= spawnArgs.GetBool("follow_incline", "0");
 	followTolerance			= spawnArgs.GetFloat("follow_tolerance", "15");
 	followInclineTolerance	= spawnArgs.GetFloat("follow_incline_tolerance", "10");
-	damage					= spawnArgs.GetString("def_damage", "atdm:damage_moveable");
-	canDamage				= spawnArgs.GetBool("canDamage", "1");
-	fxCollide				= spawnArgs.GetString("fx_collide", "");
 	state	= STATE_SWEEPING;
 	sweeping = false;
 	following = false;
@@ -323,9 +299,6 @@ void idSecurityCamera::Spawn( void )
 	endAlertTime = 0;
 	lostInterestEndTime = 0;
 	timeLastSeen = 0;
-	nextDamageTime = 0;
-	nextCollideFxTime = 0;
-	nextSoundTime = 0;
 	spotLight	= NULL;
 	sparks = NULL;
 	cameraDisplay = NULL;
@@ -436,7 +409,6 @@ void idSecurityCamera::Spawn( void )
 		return;
 	}
 
-
 	// setup the physics
 	GetPhysics()->SetContents( CONTENTS_SOLID );
 
@@ -445,17 +417,6 @@ void idSecurityCamera::Spawn( void )
 		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
 
 	GetPhysics()->SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
-
-	minDamageVelocity = spawnArgs.GetFloat("minDamageVelocity", "-1");
-	if (minDamageVelocity == -1) // grayman #2816
-	{
-		minDamageVelocity = MIN_DAMAGE_VELOCITY;
-	}
-	maxDamageVelocity = spawnArgs.GetFloat("maxDamageVelocity", "-1");
-	if (maxDamageVelocity == -1) // grayman #2816
-	{
-		maxDamageVelocity = MAX_DAMAGE_VELOCITY;
-	}
 
 	UpdateChangeableSpawnArgs( NULL );
 
@@ -1550,11 +1511,6 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 			return;
 		}
 
-		if ( dislodged && !spawnArgs.GetBool("dislodge_sparks") )
-		{
-			return;
-		}
-
 		nextSparkTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("sparks_delay", "2"));
 		BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
 	}
@@ -1565,76 +1521,11 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 ============
 idSecurityCamera::Dislodge
 
-Converts the security camera into a moveable when sufficiently damaged. Called by idSecurityCamera::Killed
+Replaces the security camera with a moveable when sufficiently damaged. Called by idSecurityCamera::Killed
 ============
 */
-void idSecurityCamera::Dislodge( void ) {
-
-		float friction, mass, bouncyness;
-		int contents = CONTENTS_SOLID | CONTENTS_OPAQUE;
-		spawnArgs.GetFloat("friction", "0.6", friction);
-		spawnArgs.GetFloat("mass", "25", mass);
-		spawnArgs.GetFloat("bouncyness", "0.1", bouncyness);
-		bouncyness = idMath::ClampFloat(0.0f, 1.0f, bouncyness);
-
-		dislodged = true;
-		physicsObj.SetSelf(this);
-		physicsObj.SetClipModel(new idClipModel(trm), 0.02f);
-		physicsObj.GetClipModel()->SetMaterial( GetRenderModelMaterial() );
-		physicsObj.SetOrigin(GetPhysics()->GetOrigin());
-		physicsObj.SetAxis(GetPhysics()->GetAxis());
-		physicsObj.SetMass(mass);
-		physicsObj.SetBouncyness(bouncyness);
-		physicsObj.SetFriction(friction, friction, friction);
-		physicsObj.SetGravity(gameLocal.GetGravity());
-
-		//update frobability
-		int frobable = spawnArgs.GetInt("dislodge_frobable", "0");
-		if ( frobable == 0 )
-		{
-			SetFrobable(false);
-		}
-		else if ( frobable == 1 || m_bFrobable )
-		{
-			SetFrobable(true);
-			contents |= CONTENTS_FROBABLE;
-		}
-		if ( m_StimResponseColl->HasResponse() )
-		{
-			contents |= CONTENTS_RESPONSE;
-		}
-
-		physicsObj.SetContents(contents);
-		physicsObj.SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
-		SetPhysics(&physicsObj);
-
-		//disable sparks, if desired
-		if ( spawnArgs.GetBool("dislodge_sparks", "0") == false )
-		{
-			BecomeInactive(TH_UPDATEPARTICLES);
-
-			if ( sparksOn && !sparksPeriodic && sparks.GetEntity() )
-			{
-				sparks.GetEntity()->Activate(NULL);
-				StopSound(SND_CHANNEL_ANY, false);
-				sparksOn = false;
-			}
-		}
-}
-
-/*
-================
-idSecurityCamera::GetRenderModelMaterial
-================
-*/
-const idMaterial *idSecurityCamera::GetRenderModelMaterial(void) const {
-	if (renderEntity.customShader) {
-		return renderEntity.customShader;
-	}
-	if (renderEntity.hModel && renderEntity.hModel->NumSurfaces()) {
-		return renderEntity.hModel->Surface(0)->material;
-	}
-	return NULL;
+void idSecurityCamera::Dislodge(void) {
+	dislodged = true;
 }
 
 /*
@@ -1717,33 +1608,25 @@ void idSecurityCamera::Activate(idEntity* activator)
 		TriggerGuis();
 	}
 	
-	// handle death sparks
-	if ( state == STATE_DEAD )
+	// handle post-destruction sparks
+	if ( state == STATE_DEAD && spawnArgs.GetBool("sparks", "1") && sparksPowerDependent )
 	{
-		if ( dislodged && spawnArgs.GetBool("dislodge_sparks") == false )
+		if ( powerOn )
 		{
-			return;
+			nextSparkTime = gameLocal.time;
+			BecomeActive(TH_UPDATEPARTICLES);
 		}
-
-		if ( spawnArgs.GetBool("sparks", "1") && sparksPowerDependent )
+		else if ( !powerOn )
 		{
-			if ( powerOn )
-			{
-				nextSparkTime = gameLocal.time;
-				BecomeActive(TH_UPDATEPARTICLES);
-			}
-			else if ( !powerOn )
-			{
-				BecomeInactive(TH_UPDATEPARTICLES);
+			BecomeInactive(TH_UPDATEPARTICLES);
 
-				if ( sparksOn && !sparksPeriodic )
-				{
-					idEntity *sparksEntity = sparks.GetEntity();
+			if ( sparksOn && !sparksPeriodic )
+			{
+				idEntity *sparksEntity = sparks.GetEntity();
 
-					sparksEntity->Activate(NULL);	// for non-periodic particles
-					StopSound(SND_CHANNEL_ANY, false);
-					sparksOn = false;
-				}
+				sparksEntity->Activate(NULL);	// for non-periodic particles
+				StopSound(SND_CHANNEL_ANY, false);
+				sparksOn = false;
 			}
 		}
 		return;
@@ -1876,211 +1759,4 @@ void idSecurityCamera::Event_SeePlayer_Toggle(void)
 	//Use a spawnarg-based approach for backwards compatibility
 	idStr str = ( spawnArgs.GetBool("seePlayer", "0") ) ? "0" : "1";
 	spawnArgs.Set( "seePlayer", str );
-}
-
-/*
-=================
-idSecurityCamera::Collide
-
-Lifted from idMoveable and slightly shortened, for when the security camera is dislodged
-=================
-*/
-
-bool idSecurityCamera::Collide(const trace_t &collision, const idVec3 &velocity)
-{
-	// greebo: Check whether we are colliding with the nearly exact same point again
-	bool sameCollisionAgain = ( lastCollision.fraction != -1 && lastCollision.c.point.Compare(collision.c.point, 0.05f) );
-
-	// greebo: Save the collision info for the next call
-	lastCollision = collision;
-
-	float v = -( velocity * collision.c.normal );
-
-	if ( !sameCollisionAgain )
-	{
-		float bounceSoundMinVelocity = cv_bounce_sound_min_vel.GetFloat();
-		float bounceSoundMaxVelocity = cv_bounce_sound_max_vel.GetFloat();
-
-		if ( (v > bounceSoundMinVelocity) && (gameLocal.time > nextSoundTime) )
-		{
-			const idMaterial *material = collision.c.material;
-
-			idStr sndNameLocal;
-			idStr surfaceName; // "tile", "glass", etc.
-
-			if (material != NULL)
-			{
-				surfaceName = g_Global.GetSurfName(material);
-
-				// Prepend the snd_bounce_ prefix to check for a surface-specific sound
-				idStr sndNameWithSurface = "snd_bounce_" + surfaceName;
-
-				if (spawnArgs.FindKey(sndNameWithSurface) != NULL)
-				{
-					sndNameLocal = sndNameWithSurface;
-				}
-				else
-				{
-					sndNameLocal = "snd_bounce";
-				}
-			}
-
-			const char* sound = spawnArgs.GetString(sndNameLocal);
-			const idSoundShader* sndShader = declManager->FindSound(sound);
-
-			// angua: modify the volume set in the def instead of setting a fixed value. 
-			// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
-			float f = ( v > bounceSoundMaxVelocity ) ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "-20") * (idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt(bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1);
-
-			float volume = sndShader->GetParms()->volume + f;
-
-			if (cv_moveable_collision.GetBool())
-			{
-				gameRenderWorld->DrawText(va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC);
-				gameRenderWorld->DrawText(va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC);
-				gameRenderWorld->DebugArrow(colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
-			}
-
-			SetSoundVolume(volume);
-
-			// greebo: We don't use StartSound() here, we want to do the sound propagation call manually
-			StartSoundShader(sndShader, SND_CHANNEL_ANY, 0, false, NULL);
-
-			idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
-			PropSoundS(NULL, sndPropName, f, 0); // grayman #3355
-
-			SetSoundVolume(0.0f);
-
-			nextSoundTime = gameLocal.time + 500;
-		}
-	}
-
-	idEntity* ent = gameLocal.entities[collision.c.entityNum];
-	trace_t newCollision = collision; // grayman #2816 - in case we need to modify collision
-
-	// grayman #2816 - if we hit the world, skip all the damage work
-
-	if ( ent && (ent != gameLocal.world) )
-	{
-		idActor* entActor = NULL;
-
-		if ( ent->IsType(idActor::Type) )
-		{
-			entActor = static_cast<idActor*>(ent); // the object hit an actor directly
-		}
-		else if ( ent->IsType(idAFAttachment::Type) )
-		{
-			newCollision.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID(static_cast<idAFAttachment*>(ent)->GetAttachJoint());
-		}
-
-		// go up the bindMaster chain to see if an Actor is lurking
-
-		if (entActor == NULL) // no actor yet, so ent is an attachment or an attached moveable
-		{
-			idEntity* bindMaster = ent->GetBindMaster();
-			while (bindMaster != NULL)
-			{
-				if (bindMaster->IsType(idActor::Type))
-				{
-					entActor = static_cast<idActor*>(bindMaster); // the object hit something attached to an actor
-
-					// If ent is an idAFAttachment, we can leave ent alone
-					// and pass the damage to it. It will, in turn, pass the
-					// damage to the actor it's attached to. (helmets)
-
-					// If ent is NOT an attachment, we have to change it to
-					// be the actor we just found. Inventor goggles are an
-					// example of when we have to do this, because they're
-					// an idMoveable, and they DON'T transfer their damage
-					// to the actor they're attached to.
-
-					if (!ent->IsType(idAFAttachment::Type))
-					{
-						ent = bindMaster;
-					}
-
-					break;
-				}
-				bindMaster = bindMaster->GetBindMaster(); // go up the chain
-			}
-		}
-
-		// grayman #2816 - in order to allow knockouts from dropped objects,
-		// we have to allow collisions where the velocity is < minDamageVelocity,
-		// because dropped objects can have low velocity, while at the same time
-		// carrying enough damage to warrant a KO possibility.
-
-		if ( canDamage && damage.Length() && ( gameLocal.time > nextDamageTime ) )
-		{
-			if ( !entActor || !entActor->AI_DEAD )
-			{
-				float f;
-
-				if ( v < minDamageVelocity )
-				{
-					f = 0.0f;
-				}
-				else if ( v < maxDamageVelocity )
-				{
-					f = idMath::Sqrt(( v - minDamageVelocity ) / ( maxDamageVelocity - minDamageVelocity ));
-				}
-				else
-				{
-					f = 1.0f; // capped when v >= maxDamageVelocity
-				}
-
-				// scale the damage by the surface type multiplier, if any
-
-				idStr SurfTypeName;
-				g_Global.GetSurfName( newCollision.c.material, SurfTypeName );
-				SurfTypeName = "damage_mult_" + SurfTypeName;
-				f *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" );
-
-				idVec3 dir = velocity;
-				dir.NormalizeFast();
-
-				// Use a technique similar to what's used for a melee collision
-				// to find a better joint (location), because when the head is
-				// hit, the joint isn't identified correctly w/o it.
-
-				int location = JOINT_HANDLE_TO_CLIPMODEL_ID( newCollision.c.id );
-
-				// If this moveable is attached to an AI, identify that AI.
-				// Otherwise, assume it was put in motion by someone.
-
-				idEntity* attacker = GetPhysics()->GetClipModel()->GetOwner();
-				if ( attacker == NULL )
-				{
-					attacker = m_SetInMotionByActor.GetEntity();
-				}
-
-				// grayman #3370 - if the entity being hit is the attacker, don't do damage
-				if ( attacker != ent )
-				{
-					int preHealth = ent->health;
-					ent->Damage( this, attacker, dir, damage, f, location, const_cast<trace_t *>(&newCollision) );
-					if ( ent->health < preHealth ) // only set the timer if there was damage
-					{
-						nextDamageTime = gameLocal.time + 1000;
-					}
-				}
-			}
-		}
-
-		// Darkmod: Collision stims and a tactile alert if it collides with an AI
-		ProcCollisionStims(ent, newCollision.c.id); // grayman #2816 - use new collision
-
-		if ( entActor && entActor->IsType(idAI::Type) )
-		{
-			static_cast<idAI *>(entActor)->TactileAlert(this);
-		}
-	}
-
-	if ( fxCollide.Length() && ( gameLocal.time > nextCollideFxTime ) )
-	{
-		idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
-		nextCollideFxTime = gameLocal.time + 3500;
-	}
-
-	return false;
 }

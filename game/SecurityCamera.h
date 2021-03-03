@@ -40,22 +40,7 @@ public:
 	virtual renderView_t *	GetRenderView();
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
-	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual void			Present( void );
-
-	bool					dislodged;
-
-protected:
-	idStr					damage;					// if > 0 apply damage to hit entities
-	bool					canDamage;				// only apply damage when this is set
-	float					minDamageVelocity;		// minimum velocity before moveable applies damage
-	float					maxDamageVelocity;		// velocity at which the maximum damage is applied
-	int						nextDamageTime;			// next time the movable can hurt the player
-	int						nextSoundTime;			// next time the moveable can make a sound
-	idStr					fxCollide;				// fx system to start when collides with something
-	int						nextCollideFxTime;		// next time it is ok to spawn collision fx
-
-	trace_t					lastCollision;
 
 private:
 
@@ -142,6 +127,7 @@ private:
 	int						alertMode;
 	bool					powerOn;
 	bool					spotlightPowerOn;
+	bool					dislodged;
 
 	float					timeLastSeen;
 	float					lostInterestEndTime;
@@ -175,7 +161,6 @@ private:
 	void					ContinueSweep( void );
 	void					TurnToTarget( void );
 	void					Dislodge( void );
-	const idMaterial		*GetRenderModelMaterial( void ) const;
 
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );

@@ -11263,8 +11263,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 
 		// Grab it if it's a grabable class
 		if (target->IsType(idMoveable::Type) || target->IsType(idAFEntity_Base::Type) || 
-			target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type) ||
-			target->IsType(idSecurityCamera::Type))
+			target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type))
 		{
 			// allow override of default grabbing behavior
 			if ( !target->spawnArgs.GetBool("grabable","1") )
@@ -11277,16 +11276,6 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 			{
 				idAI *AItarget = static_cast<idAI *>(target);
 				if ( (AItarget->health > 0) && !AItarget->IsKnockedOut() )
-				{
-					return;
-				}
-			}
-
-			// Only pick up a security camera if it's dislodged
-			if ( target->IsType( idSecurityCamera::Type ) )
-			{
-				idSecurityCamera *Camtarget = static_cast<idSecurityCamera *>(target);
-				if ( Camtarget->dislodged == false )
 				{
 					return;
 				}
