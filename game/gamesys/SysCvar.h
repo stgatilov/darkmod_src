@@ -86,6 +86,7 @@ extern idCVar cv_tdm_widescreenmode;
 extern idCVar cv_tdm_menu_music;
 
 extern idCVar cv_tdm_show_trainer_messages;
+extern idCVar cv_tdm_show_menu_tooltips; // Obsttorte #2626
 
 extern idCVar cv_tdm_default_relations_def;
 extern idCVar cv_tdm_fm_path;
