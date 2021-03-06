@@ -1027,6 +1027,7 @@ idEntity::idEntity()
 	m_bIsClimbableRope = false;
 	m_bIsMantleable = false;
 	m_bIsBroken = false;
+	m_bFlinderize = true;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
 	// about the pointer being available all the time. The memory footprint of that 
@@ -3330,7 +3331,7 @@ idEntity::BecomeBroken
 */
 void idEntity::BecomeBroken( idEntity *activator )
 {
-	if (m_bIsBroken)
+	if ( m_bIsBroken )
 	{
 		// we are already broken, so do nothing
 		return;
@@ -3338,8 +3339,15 @@ void idEntity::BecomeBroken( idEntity *activator )
 
 	m_bIsBroken = true;
 
+	if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Hiding broken entity %s\r", name.c_str() ); 
+		SetModel( "" );
+		GetPhysics()->SetContents( 0 );
+	}
+
 	// switch to the brokenModel if it was defined
-	if ( brokenModel.Length() )
+	else if ( brokenModel.Length() )
 	{
 		SetModel( brokenModel );
 
@@ -3356,12 +3364,6 @@ void idEntity::BecomeBroken( idEntity *activator )
 			}
 		}
 	} 
-	else if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
-	{
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Hiding broken entity %s\r", name.c_str() ); 
-		SetModel( "" );
-		GetPhysics()->SetContents( 0 );
-	}
 
 	// tels: if a break_up_script is defined, run it:
 	idStr str;
@@ -3377,7 +3379,11 @@ void idEntity::BecomeBroken( idEntity *activator )
 	}
 
 	// tels: if we have flinders to spawn on break, do so now
-	Flinderize( activator );
+	// Dragofer: make this optional for entities that shouldn't always flinderize when breaking
+	if ( m_bFlinderize )
+	{
+		Flinderize(activator);
+	}
 }
 
 /*

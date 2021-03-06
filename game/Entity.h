@@ -1516,6 +1516,11 @@ protected:
 	**/
 	bool						m_bIsBroken;
 
+	/**
+	* Allow to break without flinderizing, default true
+	**/
+	bool						m_bFlinderize;
+
 	/** Used to implement waitForRender()...
 	 *	This merely contains a bounding box and a callback.
 	 */

@@ -40,7 +40,9 @@ public:
 	virtual renderView_t *	GetRenderView();
 	virtual void			Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
 	virtual bool			Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
-	virtual void			Present( void );
+	virtual	void			Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName,
+														const float damageScale, const int location, trace_t *tr = NULL);
+	virtual void			Present(void);
 
 private:
 
@@ -127,7 +129,7 @@ private:
 	int						alertMode;
 	bool					powerOn;
 	bool					spotlightPowerOn;
-	bool					dislodged;
+	bool					flinderized;
 
 	float					timeLastSeen;
 	float					lostInterestEndTime;
@@ -160,7 +162,6 @@ private:
 	void					ReverseSweep( void );
 	void					ContinueSweep( void );
 	void					TurnToTarget( void );
-	void					Dislodge( void );
 
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );

@@ -135,7 +135,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(alertMode);
 	savefile->WriteBool(powerOn);
 	savefile->WriteBool(spotlightPowerOn);
-	savefile->WriteBool(dislodged);
+	savefile->WriteBool(flinderized);
 
 	savefile->WriteFloat(lostInterestEndTime);
 	savefile->WriteFloat(nextAlertTime);
@@ -229,7 +229,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(alertMode);
 	savefile->ReadBool(powerOn);
 	savefile->ReadBool(spotlightPowerOn);
-	savefile->ReadBool(dislodged);
+	savefile->ReadBool(flinderized);
 
 	savefile->ReadFloat(lostInterestEndTime);
 	savefile->ReadFloat(nextAlertTime);
@@ -286,7 +286,8 @@ void idSecurityCamera::Spawn( void )
 	following = false;
 	sparksOn = false;
 	stationary = false;
-	dislodged = false;
+	m_bFlinderize = false;
+	flinderized = false;
 	followSpeedMult = 0;
 	nextAlertTime = 0;
 	sweepStartTime = sweepEndTime = 0;
@@ -1412,6 +1413,110 @@ void idSecurityCamera::TurnToTarget( void )
 }
 
 /*
+================
+idSecurityCamera::Damage
+
+Modified version of idEntity::Damage that makes use of damage multipliers depending on the inflictor
+================
+*/
+void idSecurityCamera::Damage(idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
+	const char *damageDefName, const float damageScale,	const int location, trace_t *tr)
+{
+	if ( !fl.takedamage ) {
+		return;
+	}
+	if ( !inflictor ) {
+		inflictor = gameLocal.world;
+	}
+	if ( !attacker ) {
+		attacker = gameLocal.world;
+	}
+
+	const idDict *damageDef = gameLocal.FindEntityDefDict(damageDefName, true); // grayman #3391 - don't create a default 'damageDef'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
+	if ( !damageDef )
+	{
+		gameLocal.Error("Unknown damageDef '%s'\n", damageDefName);
+	}
+
+
+	// check what is damaging the security camera and adjust damage according to spawnargs
+
+	idStr def = static_cast<idStr>(damageDefName);
+	int damage = damageDef->GetInt("damage");
+	float dmg_mult;
+
+	if ( def == "atdm:damage_firearrowDirect" ) {
+		dmg_mult = spawnArgs.GetFloat("damage_mult_firearrow_direct", "1.0");
+	}
+	else if ( def == "atdm:damage_firearrowSplash" ) {
+		dmg_mult = spawnArgs.GetFloat("damage_mult_firearrow_splash", "1.0") * damageScale;
+	}
+	else if ( def == "atdm:damage_arrow" ) {
+		dmg_mult = spawnArgs.GetFloat("damage_mult_broadhead", "0.0");
+	}
+	else if ( def == "atdm:damage_moveable" ) {
+		dmg_mult = spawnArgs.GetFloat("damage_mult_moveable", "0.0") * damageScale;
+		if ( inflictor->IsType(idMoveable::Type) )
+		{
+			float mass = inflictor->GetPhysics()->GetMass();
+			damage *= static_cast<int>(mass / 5.0f);
+		}
+		gameLocal.Printf("I'm a moveable \n");
+	}
+	else if ( static_cast<idStr>(inflictor->GetEntityDefName()) == "atdm:attachment_melee_shortsword" ) {
+		dmg_mult = spawnArgs.GetFloat("damage_mult_sword", "0.0");
+	}
+	else if ( static_cast<idStr>(inflictor->GetEntityDefName()) == "atdm:attachment_meleetest_blackjack" ) {
+		dmg_mult = 1.0f;
+		damage = spawnArgs.GetInt("damage_blackjack", "0.0");
+	}
+	else
+	{
+		const char *key				= "damage_mult_" + def;
+		const char *default_mult	= spawnArgs.GetString("damage_mult_other", "1.0");
+
+		dmg_mult = spawnArgs.GetFloat(key, default_mult);
+	}
+
+	damage *= dmg_mult;
+
+	// inform the attacker that they hit someone
+	attacker->DamageFeedback(this, inflictor, damage);
+	if ( damage )
+	{
+		// do the damage
+		health -= damage;
+		if ( health <= 0 )
+		{
+			if ( health < -999 )
+			{
+				health = -999;
+			}
+
+			// decide wether to flinderize
+			int flinderize_threshold = spawnArgs.GetInt("damage_flinderize", "100");
+			if ( !flinderized && ( flinderize_threshold > 0 ) && ( damage >= flinderize_threshold ) )
+			{
+				m_bFlinderize = true;
+			}
+			else
+			{
+				m_bFlinderize = false;
+			}
+
+			Killed(inflictor, attacker, damage, dir, location);
+		}
+		else
+		{
+			Pain(inflictor, attacker, damage, dir, location);
+		}
+	}
+}
+
+/*
 ============
 idSecurityCamera::Killed
 
@@ -1419,11 +1524,41 @@ Called whenever the camera is destroyed or damaged after destruction
 ============
 */
 void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-
-	// Play damage fx
 	idStr str;
 
-	if ( state != STATE_DEAD )
+	// Become broken, possibly also flinderize
+	if ( !m_bIsBroken )
+	{
+		idEntity::BecomeBroken(inflictor);
+		Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_off"));
+	}
+
+	// If flinderizing, override model & skin
+	if ( m_bFlinderize )
+	{
+		// if Flinderize didn't already get called during BecomeBroken, call it now
+		if ( m_bIsBroken )
+		{
+			idEntity::Flinderize(inflictor);
+		}
+
+		m_bFlinderize = false;	// don't flinderize again
+		flinderized = true;		// has been flinderized, don't check anymore whether to flinderize again
+
+		spawnArgs.GetString("broken_flinderized", "-", str);
+		if (str.Length() > 1) {
+			SetModel(str);
+		}
+		spawnArgs.GetString("skin_flinderized", "-", str);
+		if (str.Length() > 1) {
+			Event_SetSkin(str);
+		}
+	}
+
+
+	// Handle destruction / post-destruction fx
+	// security camera is being broken right now
+	if ( !m_bIsBroken )
 	{
 		if ( powerOn ) {
 			StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
@@ -1435,7 +1570,8 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		}
 	}
 
-	else if ( state == STATE_DEAD )
+	// security camera was already broken
+	else
 	{
 		if ( powerOn ) {
 			str = spawnArgs.GetString("fx_damage_nopower");
@@ -1445,40 +1581,21 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		}
 	}
 
-	if (str.Length()) {
+	if ( str.Length() ) {
 		idEntityFx::StartFx(str, NULL, NULL, this, true);
 	}
 
-	// Become a moveable if enough damage was dealt
-	if ( !dislodged && spawnArgs.GetBool("dislodge", "0") )
-	{
-		// damage is sufficient to dislodge
-		if ( health <= -fabs(spawnArgs.GetFloat("dislodge_health", "-100")) )
-		{
-			Dislodge();
-		}
-
-		// damage is insufficient
-		else if ( spawnArgs.GetBool("dislodge_oneshot", "1") )
-		{
-			health = 0;	// reset health if the player has to do at least 'dislodge_health' damage with a single hit
-		}
-	}
-
-	if ( state == STATE_DEAD )
-	{
+	if ( state == STATE_DEAD ) {
 		return;
 	}
 
 	state = STATE_DEAD;
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
-	SetStimEnabled(ST_VISUAL, true); // let AIs see the camera is destroyed
 
-	// call base class method to switch to broken model
-	idEntity::BecomeBroken( inflictor );
-
-	Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_off"));
+	if ( spawnArgs.GetBool("notice_destroyed", "1") ) {
+		SetStimEnabled(ST_VISUAL, true); // let AIs see that the camera is destroyed
+	}
 
 	// Remove a spotlight, if there is one.
 
@@ -1495,37 +1612,22 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		cameraDisplay.GetEntity()->Hide();
 	}
 
-	// Active a designated entity if destroyed 
+	if ( spawnArgs.GetBool("sparks", "1") )
+	{
+		if ( !(sparksPowerDependent && !powerOn) )
+		{
+			nextSparkTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("sparks_delay", "2"));
+			BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
+		}
+	}
 
+	// Active a designated entity if destroyed 
 	spawnArgs.GetString("break_up_target", "", str);
 	idEntity *ent = gameLocal.FindEntity(str);
 	if ( ent )
 	{
 		ent->Activate(this);
 	}
-
-	if ( spawnArgs.GetBool("sparks", "1") )
-	{
-		if ( sparksPowerDependent && !powerOn )
-		{
-			return;
-		}
-
-		nextSparkTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("sparks_delay", "2"));
-		BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
-	}
-
-}
-
-/*
-============
-idSecurityCamera::Dislodge
-
-Replaces the security camera with a moveable when sufficiently damaged. Called by idSecurityCamera::Killed
-============
-*/
-void idSecurityCamera::Dislodge(void) {
-	dislodged = true;
 }
 
 /*
