@@ -1443,45 +1443,51 @@ void idSecurityCamera::Damage(idEntity *inflictor, idEntity *attacker, const idV
 
 
 	// check what is damaging the security camera and adjust damage according to spawnargs
+	int damage = damageDef->GetInt( "damage" );
+	float damage_mult = 1.0;
 
-	idStr def = static_cast<idStr>(damageDefName);
-	int damage = damageDef->GetInt("damage");
-	float dmg_mult;
+	// has the mapper specified a spawnarg for a specific damageDef or entityDef? Should take priority
+	const char *key_customDef = "damage_mult_" + (idStr)damageDefName;
+	const char *key_customEnt = "damage_mult_" + (idStr)inflictor->GetEntityDefName();
 
-	if ( def == "atdm:damage_firearrowDirect" ) {
-		dmg_mult = spawnArgs.GetFloat("damage_mult_firearrow_direct", "1.0");
+	if ( spawnArgs.GetString(key_customDef, "") != "" ) {
+		damage_mult = spawnArgs.GetFloat(key_customDef, "1.0");
 	}
-	else if ( def == "atdm:damage_firearrowSplash" ) {
-		dmg_mult = spawnArgs.GetFloat("damage_mult_firearrow_splash", "1.0") * damageScale;
+	else if ( spawnArgs.GetString(key_customEnt, "") != "" ) {
+		damage_mult = spawnArgs.GetFloat(key_customEnt, "1.0");
 	}
-	else if ( def == "atdm:damage_arrow" ) {
-		dmg_mult = spawnArgs.GetFloat("damage_mult_broadhead", "0.0");
-	}
-	else if ( def == "atdm:damage_moveable" ) {
-		dmg_mult = spawnArgs.GetFloat("damage_mult_moveable", "0.0") * damageScale;
-		if ( inflictor->IsType(idMoveable::Type) )
+
+	// otherwise check the standard spawnargs
+	else {
+		if ( (idStr)damageDefName == "atdm:damage_firearrowDirect" ) {
+			damage_mult = spawnArgs.GetFloat("damage_mult_firearrow_direct", "1.0");
+		}
+		else if ( (idStr)damageDefName == "atdm:damage_firearrowSplash" ) {
+			damage_mult = spawnArgs.GetFloat("damage_mult_firearrow_splash", "3.5");
+			damage_mult *= damageScale; //splash damage should attenuate faster
+		}
+		else if ( (idStr)damageDefName == "atdm:damage_arrow" ) {
+			damage_mult = spawnArgs.GetFloat("damage_mult_arrow", "0.0");
+		}
+		else if ( (idStr)inflictor->GetEntityDefName() == "atdm:attachment_melee_shortsword" ) {
+			damage_mult = spawnArgs.GetFloat("damage_mult_sword", "0.0");
+		}
+		else if ( (idStr)inflictor->GetEntityDefName() == "atdm:attachment_meleetest_blackjack" ) {
+			damage_mult = 1.0f;
+			damage = spawnArgs.GetInt("damage_blackjack", "0");
+		}
+		else if ( inflictor->IsType(idMoveable::Type) )
 		{
 			float mass = inflictor->GetPhysics()->GetMass();
-			damage *= static_cast<int>(mass / 5.0f);
+			damage = (int)( damage * (mass / 5.0f) * spawnArgs.GetFloat("damage_mult_moveable", "1.0") );
 		}
-		gameLocal.Printf("I'm a moveable \n");
-	}
-	else if ( static_cast<idStr>(inflictor->GetEntityDefName()) == "atdm:attachment_melee_shortsword" ) {
-		dmg_mult = spawnArgs.GetFloat("damage_mult_sword", "0.0");
-	}
-	else if ( static_cast<idStr>(inflictor->GetEntityDefName()) == "atdm:attachment_meleetest_blackjack" ) {
-		dmg_mult = 1.0f;
-		damage = spawnArgs.GetInt("damage_blackjack", "0.0");
-	}
-	else
-	{
-		const char *key				= "damage_mult_" + def;
-		const char *default_mult	= spawnArgs.GetString("damage_mult_other", "1.0");
-
-		dmg_mult = spawnArgs.GetFloat(key, default_mult);
+		else {
+			damage_mult = spawnArgs.GetFloat("damage_mult_other", "1.0");
+		}
 	}
 
-	damage *= dmg_mult;
+	damage *= damage_mult * damageScale;
+
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback(this, inflictor, damage);
