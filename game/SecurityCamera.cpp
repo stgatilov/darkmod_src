@@ -39,6 +39,7 @@
 // dragofer #5528 - Developed for 2.10
 
 const idEventDef EV_SecurityCam_AddLight( "<addLight>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_SecurityCam_AddSparks( "<addSparks>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_Peek_AddDisplay("<addDisplay>", EventArgs(), EV_RETURNS_VOID, "internal"); // grayman #4882
 const idEventDef EV_SecurityCam_SpotLightToggle( "toggle_light", EventArgs(), EV_RETURNS_VOID, "Toggles the spotlight on/off." );
 const idEventDef EV_SecurityCam_SpotLightState( "state_light", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Switches the spotlight on or off. Respects the security camera's power state." );
@@ -57,6 +58,7 @@ const idEventDef EV_SecurityCam_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Switc
 CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_PostSpawn,							idSecurityCamera::PostSpawn )
 	EVENT( EV_SecurityCam_AddLight,					idSecurityCamera::Event_AddLight )
+	EVENT( EV_SecurityCam_AddSparks,				idSecurityCamera::Event_AddSparks )
 	EVENT( EV_SecurityCam_SpotLightToggle,			idSecurityCamera::Event_SpotLight_Toggle )
 	EVENT( EV_SecurityCam_SpotLightState,			idSecurityCamera::Event_SpotLight_State )
 	EVENT( EV_SecurityCam_SweepToggle,				idSecurityCamera::Event_Sweep_Toggle )
@@ -283,7 +285,6 @@ void idSecurityCamera::Spawn( void )
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
 	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
 	sparksPowerDependent	= spawnArgs.GetBool("sparks_power_dependent", "1");
-	sparksPeriodic			= spawnArgs.GetBool("sparks_periodic", "1");
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
 	sightThreshold			= spawnArgs.GetFloat("sight_threshold", "0.1");
@@ -298,6 +299,7 @@ void idSecurityCamera::Spawn( void )
 	stationary = false;
 	m_bFlinderize = false;
 	flinderized = false;
+	sparksPeriodic = true;
 	followSpeedMult = 0;
 	nextAlertTime = 0;
 	sweepStartTime = sweepEndTime = 0;
@@ -420,12 +422,32 @@ void idSecurityCamera::Spawn( void )
 		return;
 	}
 
+	// find out whether the mapper has selected a looping particle. This changes how the code will control it
+	const char *particle;
+	spawnArgs.GetString("sparks_particle", "sparks_wires_oneshot.prt", &particle);
+
+	const idDeclParticle *particleDecl;
+	particleDecl = static_cast<const idDeclParticle *>( declManager->FindType(DECL_PARTICLE, particle) );
+
+	if ( particleDecl )
+	{
+		for ( int stageNum = 0; stageNum < particleDecl->stages.Num(); stageNum++ )
+		{
+			idParticleStage *stage = particleDecl->stages[stageNum];
+			if (stage->cycles == 0)
+			{
+				sparksPeriodic = false;
+			}
+		}
+	}
+
 	// setup the physics
 	GetPhysics()->SetContents( CONTENTS_SOLID );
 
 	// SR CONTENTS_RESPONSE FIX
-	if( m_StimResponseColl->HasResponse() )
-		GetPhysics()->SetContents( GetPhysics()->GetContents() | CONTENTS_RESPONSE );
+	if( m_StimResponseColl->HasResponse() ) {
+		GetPhysics()->SetContents(GetPhysics()->GetContents() | CONTENTS_RESPONSE);
+	}
 
 	GetPhysics()->SetClipMask(MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP);
 
@@ -934,6 +956,32 @@ void idSecurityCamera::SetAlertMode( int alert ) {
 
 /*
 ================
+idSecurityCamera::Event_AddSparks
+================
+*/
+void idSecurityCamera::Event_AddSparks(void)
+{
+		idEntity *sparkEntity;
+		idDict args;
+		const char *particle, *cycleTrigger;
+		spawnArgs.GetString("sparks_particle", "sparks_wires_oneshot.prt", &particle);
+		cycleTrigger = ( sparksPeriodic ) ? "1" : "0";
+
+		args.Set( "classname", "func_emitter" );
+		args.Set( "origin", GetPhysics()->GetOrigin().ToString() );
+		args.Set( "model", particle );
+		args.Set( "cycleTrigger", cycleTrigger );
+		gameLocal.SpawnEntityDef( args, &sparkEntity );
+		sparks = sparkEntity;
+		sparksOn = true;
+		if ( sparksPeriodic )
+		{
+			sparkEntity->Activate(NULL);
+		}
+}
+
+/*
+================
 idSecurityCamera::TriggerSparks
 ================
 */
@@ -945,6 +993,7 @@ void idSecurityCamera::TriggerSparks( void )
 		return;
 	}
 
+	//check whether a looping particle emitter needs to be toggled
 	if ( !sparksPeriodic )
 	{
 		BecomeInactive(TH_UPDATEPARTICLES);
@@ -955,7 +1004,6 @@ void idSecurityCamera::TriggerSparks( void )
 			{
 				return;
 			}
-
 			else
 			{
 				sparksOn = powerOn;
@@ -963,34 +1011,15 @@ void idSecurityCamera::TriggerSparks( void )
 		}
 	}
 
-	idEntity *sparkEntity = sparks.GetEntity();
-
 	//Create a func_emitter if none exists yet
-	if (sparkEntity == NULL)
+	if ( sparks.GetEntity() == NULL)
 	{
-		idDict args;
-		const char *model;
-		const char *cycleTrigger;
-
-		spawnArgs.GetString("sparks_particle", "sparks_wires_oneshot.prt", &model);
-		spawnArgs.GetString("sparks_periodic", "1", &cycleTrigger);
-
-		args.Set("classname", "func_emitter");
-		args.Set("origin", GetPhysics()->GetOrigin().ToString());
-		args.Set("model", model);
-		args.Set("cycleTrigger", cycleTrigger);
-		gameLocal.SpawnEntityDef(args, &sparkEntity);
-		sparks = sparkEntity;
-		sparksOn = true;
-		if ( sparksPeriodic )
-		{
-			sparkEntity->Activate(NULL);
-		}
+		Event_AddSparks();
 	}
-
+	//Otherwise use the existing one
 	else
 	{
-		sparkEntity->Activate(NULL);
+		sparks.GetEntity()->Activate(NULL);
 	}
 
 	StopSound(SND_CHANNEL_ANY, false);
@@ -1596,11 +1625,12 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		cameraDisplay.GetEntity()->Hide();
 	}
 
+	// Activate sparks
 	if ( spawnArgs.GetBool("sparks", "1") )
 	{
-		if ( !(sparksPowerDependent && !powerOn) )
+		if ( powerOn || !sparksPowerDependent )
 		{
-			nextSparkTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("sparks_delay", "2"));
+			nextSparkTime = gameLocal.time + SEC2MS( spawnArgs.GetFloat("sparks_delay", "2") );
 			BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
 		}
 	}
@@ -1610,7 +1640,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	idEntity *ent = gameLocal.FindEntity(str);
 	if ( ent )
 	{
-		ent->Activate(this);
+		ent->Activate( ent );
 	}
 }
 
@@ -1694,7 +1724,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 		TriggerGuis();
 	}
 	
-	// handle post-destruction sparks
+	// handle sparks (post-destruction)
 	if ( state == STATE_DEAD && spawnArgs.GetBool("sparks", "1") && sparksPowerDependent )
 	{
 		if ( powerOn )
@@ -1702,15 +1732,16 @@ void idSecurityCamera::Activate(idEntity* activator)
 			nextSparkTime = gameLocal.time;
 			BecomeActive(TH_UPDATEPARTICLES);
 		}
-		else if ( !powerOn )
+		else
 		{
 			BecomeInactive(TH_UPDATEPARTICLES);
 
+			// toggle off looping particles
 			if ( sparksOn && !sparksPeriodic )
 			{
 				idEntity *sparksEntity = sparks.GetEntity();
 
-				sparksEntity->Activate(NULL);	// for non-periodic particles
+				sparksEntity->Activate(NULL);
 				StopSound(SND_CHANNEL_ANY, false);
 				sparksOn = false;
 			}

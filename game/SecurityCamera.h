@@ -164,6 +164,7 @@ private:
 	void					TurnToTarget( void );
 
 	void					Event_AddLight( void );
+	void					Event_AddSparks( void );
 	void					Event_SpotLight_Toggle( void );
 	void					Event_SpotLight_State( bool set );
 	void					Event_Sweep_Toggle( void );
