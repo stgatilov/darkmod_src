@@ -1447,39 +1447,38 @@ void idSecurityCamera::Damage(idEntity *inflictor, idEntity *attacker, const idV
 	{
 		gameLocal.Error("Unknown damageDef '%s'\n", damageDefName);
 	}
-
+	
 
 	// check what is damaging the security camera and adjust damage according to spawnargs
+	idStr def = damageDefName;
+	idStr inf = inflictor->GetEntityDefName();
 	int damage = damageDef->GetInt( "damage" );
-	float damage_mult = 1.0;
+	float damage_mult = 1.0f;
+	float exponential = spawnArgs.GetFloat("damage_splash_falloff", "2.0");
 
 	// has the mapper specified a spawnarg for a specific damageDef or entityDef? Should take priority
-	const char *key_customDef = "damage_mult_" + (idStr)damageDefName;
-	const char *key_customEnt = "damage_mult_" + (idStr)inflictor->GetEntityDefName();
-
-	if ( spawnArgs.GetString(key_customDef, "") != "" ) {
-		damage_mult = spawnArgs.GetFloat(key_customDef, "1.0");
+	if ( spawnArgs.GetString("damage_mult_" + def, "") != "" ) {
+		damage_mult = spawnArgs.GetFloat("damage_mult_" + def, "1.0");
 	}
-	else if ( spawnArgs.GetString(key_customEnt, "") != "" ) {
-		damage_mult = spawnArgs.GetFloat(key_customEnt, "1.0");
+	else if ( spawnArgs.GetString("damage_mult_" + inf, "") != "" ) {
+		damage_mult = spawnArgs.GetFloat("damage_mult_" + inf, "1.0");
 	}
 
 	// otherwise check the standard spawnargs
 	else {
-		if ( (idStr)damageDefName == "atdm:damage_firearrowDirect" ) {
+		if ( def == "atdm:damage_firearrowDirect" ) {
 			damage_mult = spawnArgs.GetFloat("damage_mult_firearrow_direct", "1.0");
 		}
-		else if ( (idStr)damageDefName == "atdm:damage_firearrowSplash" ) {
+		else if ( def == "atdm:damage_firearrowSplash" ) {
 			damage_mult = spawnArgs.GetFloat("damage_mult_firearrow_splash", "3.5");
-			damage_mult *= damageScale; //splash damage should attenuate faster
 		}
-		else if ( (idStr)damageDefName == "atdm:damage_arrow" ) {
+		else if ( def == "atdm:damage_arrow" ) {
 			damage_mult = spawnArgs.GetFloat("damage_mult_arrow", "0.0");
 		}
-		else if ( (idStr)inflictor->GetEntityDefName() == "atdm:attachment_melee_shortsword" ) {
+		else if ( inf == "atdm:attachment_melee_shortsword" ) {
 			damage_mult = spawnArgs.GetFloat("damage_mult_sword", "0.0");
 		}
-		else if ( (idStr)inflictor->GetEntityDefName() == "atdm:attachment_meleetest_blackjack" ) {
+		else if ( inf == "atdm:attachment_meleetest_blackjack" ) {
 			damage_mult = 1.0f;
 			damage = spawnArgs.GetInt("damage_blackjack", "0");
 		}
@@ -1493,8 +1492,7 @@ void idSecurityCamera::Damage(idEntity *inflictor, idEntity *attacker, const idV
 		}
 	}
 
-	damage *= damage_mult * damageScale;
-
+	damage *= damage_mult * pow( fabs(damageScale), exponential );
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback(this, inflictor, damage);
@@ -1640,7 +1638,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	idEntity *ent = gameLocal.FindEntity(str);
 	if ( ent )
 	{
-		ent->Activate( ent );
+		ent->Activate( this );
 	}
 }
 
