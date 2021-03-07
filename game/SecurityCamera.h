@@ -165,13 +165,18 @@ private:
 
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );
+	void					Event_SpotLight_State( bool set );
 	void					Event_Sweep_Toggle( void );
-	void					Event_SeePlayer_Toggle(void);
+	void					Event_Sweep_State( bool set );
+	void					Event_SeePlayer_Toggle( void );
+	void					Event_SeePlayer_State( bool set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetSecurityCameraState( void );
 	void					Event_GetHealth( void );
 	void					Event_SetHealth( float newHealth );
 	void					Event_SetSightThreshold(float newThreshold);
+	void					Event_On( void );
+	void					Event_Off( void );
 
 	void					PostSpawn( void );
 	void					TriggerSparks( void );

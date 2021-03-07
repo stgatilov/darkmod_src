@@ -41,25 +41,35 @@
 const idEventDef EV_SecurityCam_AddLight( "<addLight>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_Peek_AddDisplay("<addDisplay>", EventArgs(), EV_RETURNS_VOID, "internal"); // grayman #4882
 const idEventDef EV_SecurityCam_SpotLightToggle( "toggle_light", EventArgs(), EV_RETURNS_VOID, "Toggles the spotlight on/off." );
+const idEventDef EV_SecurityCam_SpotLightState( "state_light", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Switches the spotlight on or off. Respects the security camera's power state." );
 const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RETURNS_VOID, "Toggles the camera sweep." );
-const idEventDef EV_SecurityCam_SeePlayerToggle("toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player.");
+const idEventDef EV_SecurityCam_SweepState( "state_sweep", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Enables or disables the camera's sweeping." );
+const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player." );
+const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
 const idEventDef EV_SecurityCam_SetHealth("setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Set the health of the security camera. Setting to 0 or lower will destroy it.");
 const idEventDef EV_SecurityCam_SetSightThreshold("setSightThreshold", EventArgs('f', "sightThreshold", ""), EV_RETURNS_VOID, "Set the sight threshold of the security camera: how lit up the player's lightgem needs to be in order to be seen. 0.0 to 1.0");
+const idEventDef EV_SecurityCam_On( "On", EventArgs(), EV_RETURNS_VOID, "Switches the security camera on." );
+const idEventDef EV_SecurityCam_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Switches the security camera off." );
 
 CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_PostSpawn,							idSecurityCamera::PostSpawn )
 	EVENT( EV_SecurityCam_AddLight,					idSecurityCamera::Event_AddLight )
 	EVENT( EV_SecurityCam_SpotLightToggle,			idSecurityCamera::Event_SpotLight_Toggle )
+	EVENT( EV_SecurityCam_SpotLightState,			idSecurityCamera::Event_SpotLight_State )
 	EVENT( EV_SecurityCam_SweepToggle,				idSecurityCamera::Event_Sweep_Toggle )
+	EVENT( EV_SecurityCam_SweepState,				idSecurityCamera::Event_Sweep_State )
 	EVENT( EV_SecurityCam_SeePlayerToggle,			idSecurityCamera::Event_SeePlayer_Toggle )
+	EVENT( EV_SecurityCam_SeePlayerState,			idSecurityCamera::Event_SeePlayer_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
 	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState )	
 	EVENT( EV_SecurityCam_GetHealth,				idSecurityCamera::Event_GetHealth )
 	EVENT( EV_SecurityCam_SetHealth,				idSecurityCamera::Event_SetHealth )
 	EVENT( EV_SecurityCam_SetSightThreshold,		idSecurityCamera::Event_SetSightThreshold )
+	EVENT( EV_SecurityCam_On,						idSecurityCamera::Event_On )
+	EVENT( EV_SecurityCam_Off,						idSecurityCamera::Event_Off )
 	END_CLASS
 
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
@@ -597,38 +607,6 @@ void idSecurityCamera::UpdateColors()
 
 	if ( light ) {
 		light->Event_SetColor(colorNew[0], colorNew[1], colorNew[2]);
-	}
-}
-
-/*
-================
-idSecurityCamera::Event_SpotLight_Toggle
-================
-*/
-void idSecurityCamera::Event_SpotLight_Toggle(void)
-{
-	idLight* light = spotLight.GetEntity();
-	if ( light == NULL )
-	{
-		return; // no spotlight was defined; nothing to do
-	}
-
-	// toggle the spotlight
-
-	spotlightPowerOn = !spotlightPowerOn;
-
-	if ( powerOn )
-	{
-		if ( spotlightPowerOn )
-		{
-			light->On();
-			Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
-		}
-		else
-		{
-			light->Off();
-			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off", "security_camera_on_spotlight_off"));
-		}
 	}
 }
 
@@ -1822,39 +1800,96 @@ void idSecurityCamera::Activate(idEntity* activator)
 
 /*
 ================
+idSecurityCamera::Event_SpotLight_Toggle
+================
+*/
+void idSecurityCamera::Event_SpotLight_Toggle( void )
+{
+	Event_SpotLight_State( !spotlightPowerOn );
+}
+
+/*
+================
+idSecurityCamera::Event_SpotLight_State
+================
+*/
+void idSecurityCamera::Event_SpotLight_State( bool set )
+{
+	idLight* light = spotLight.GetEntity();
+	if ( light == NULL )
+	{
+		return; // no spotlight was defined; nothing to do
+	}
+
+	spotlightPowerOn = set;
+
+	if ( powerOn )
+	{
+		if ( spotlightPowerOn )
+		{
+			light->On();
+			Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
+		}
+		else
+		{
+			light->Off();
+			Event_SetSkin(spawnArgs.GetString("skin_on_spotlight_off", "security_camera_on_spotlight_off"));
+		}
+	}
+}
+
+/*
+================
 idSecurityCamera::Event_Sweep_Toggle
 ================
 */
 void idSecurityCamera::Event_Sweep_Toggle( void )
 {
-	stationary = !stationary;
-	switch(state)
-	{
-	case STATE_SWEEPING:
-		if ( stationary )
-		{
-			sweeping = false;
-			StopSound(SND_CHANNEL_ANY, false);
-			StartSound("snd_end", SND_CHANNEL_BODY, 0, false, NULL);
-		}
-		else if ( !stationary )
-		{
-			ContinueSweep(); // changes state to STATE_SWEEPING
-		}
-		break;
-	case STATE_PLAYERSIGHTED:
-	case STATE_LOSTINTEREST:
-	case STATE_ALERTED:
-	case STATE_DEAD:
-		break;
-	case STATE_PAUSED:
-		if ( !stationary )
-		{
-			ReverseSweep(); // changes state to STATE_SWEEPING
-		}
-		break;
-	}
+	Event_Sweep_State( stationary );	//will invert 'stationary'
+}
 
+/*
+================
+idSecurityCamera::Event_Sweep_State
+================
+*/
+void idSecurityCamera::Event_Sweep_State( bool set )
+{
+	if ( stationary == !set )
+	{
+		return;	//do nothing if the security camera is already in the desired sweep status
+	}
+	else
+	{
+		stationary = !set;
+
+		switch( state )
+		{
+		case STATE_SWEEPING:
+			if ( stationary )
+			{
+				sweeping = false;
+				StopSound(SND_CHANNEL_ANY, false);
+				StartSound("snd_end", SND_CHANNEL_BODY, 0, false, NULL);
+			}
+			else if ( !stationary )
+			{
+				ContinueSweep(); // changes state to STATE_SWEEPING
+			}
+			break;
+		case STATE_PLAYERSIGHTED:
+		case STATE_LOSTINTEREST:
+		case STATE_ALERTED:
+		case STATE_DEAD:
+			break;
+		case STATE_PAUSED:
+			if ( !stationary )
+			{
+				ReverseSweep(); // changes state to STATE_SWEEPING
+			}
+			break;
+		}
+	}
 }
 
 /*
@@ -1862,9 +1897,44 @@ void idSecurityCamera::Event_Sweep_Toggle( void )
 idSecurityCamera::Event_SeePlayer_Toggle
 ================
 */
-void idSecurityCamera::Event_SeePlayer_Toggle(void)
+void idSecurityCamera::Event_SeePlayer_Toggle( void )
 {
 	//Use a spawnarg-based approach for backwards compatibility
-	idStr str = ( spawnArgs.GetBool("seePlayer", "0") ) ? "0" : "1";
-	spawnArgs.Set( "seePlayer", str );
+	const char *kv = ( spawnArgs.GetBool("seePlayer", "0") ) ? "0" : "1";
+	spawnArgs.Set( "seePlayer", kv );
+}
+
+/*
+================
+idSecurityCamera::Event_SeePlayer_State
+================
+*/
+void idSecurityCamera::Event_SeePlayer_State( bool set )
+{
+	const char *kv = ( set ) ? "1" : "0";
+	spawnArgs.Set( "seePlayer", kv );
+}
+
+/*
+================
+idSecurityCamera::Event_On
+================
+*/
+void idSecurityCamera::Event_On( void )
+{
+	if ( !powerOn ) {
+		Activate(NULL);
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_Off
+================
+*/
+void idSecurityCamera::Event_Off( void )
+{
+	if ( powerOn ) {
+		Activate(NULL);
+	}
 }
