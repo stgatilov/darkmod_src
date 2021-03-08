@@ -558,7 +558,7 @@ void idStr::StripLeadingWhitespace( void ) {
 	// Tels: first count how many chars to remove, then move the data only once
 	int remove = 0;
 	// cast to unsigned char to prevent stripping off high-ASCII characters
-	while( (unsigned char)data[ remove ] <= ' ' ) {
+	while( data[remove] && (unsigned char)data[ remove ] <= ' ' ) {
 		remove ++;
 	}
 	len -= remove;
