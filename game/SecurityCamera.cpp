@@ -93,7 +93,6 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(followInclineTolerance);
 
 	savefile->WriteFloat(sweepAngle);
-	savefile->WriteFloat(sweepTime);
 	savefile->WriteFloat(sweepSpeed);
 	savefile->WriteFloat(sweepStartTime);
 	savefile->WriteFloat(sweepEndTime);
@@ -187,7 +186,6 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(followInclineTolerance);
 	   
 	savefile->ReadFloat(sweepAngle);
-	savefile->ReadFloat(sweepTime);
 	savefile->ReadFloat(sweepSpeed);
 	savefile->ReadFloat(sweepStartTime);
 	savefile->ReadFloat(sweepEndTime);
@@ -275,7 +273,7 @@ void idSecurityCamera::Spawn( void )
 
 	rotate			= spawnArgs.GetBool("rotate", "1");
 	sweepAngle		= spawnArgs.GetFloat("sweepAngle", "90");
-	sweepTime		= spawnArgs.GetFloat("sweepTime", "5");
+	sweepSpeed		= spawnArgs.GetFloat("sweepSpeed", "15");
 	health			= spawnArgs.GetInt("health", "100");
 	scanFov			= spawnArgs.GetFloat("scanFov", "90");
 	scanDist		= spawnArgs.GetFloat("scanDist", "200");
@@ -316,6 +314,17 @@ void idSecurityCamera::Spawn( void )
 	sparks = NULL;
 	cameraDisplay = NULL;
 
+	//check if this is an old version of the entity
+	if ( spawnArgs.GetBool("legacy", "0") ) {
+
+		//sweepSpeed acts as sweepTime
+		int sweepTime = spawnArgs.GetFloat("sweepSpeed", "5");
+		sweepSpeed = fabs(sweepAngle) / sweepTime;
+
+		//wait acts as alertDuration
+		alertDuration = spawnArgs.GetFloat("wait", "20");
+	}
+
 	modelAxis	= spawnArgs.GetInt( "modelAxis", "0" );
 	if ( modelAxis < 0 || modelAxis > 2 ) {
 		modelAxis = 0;
@@ -335,17 +344,6 @@ void idSecurityCamera::Spawn( void )
 		cameraFovY = scanFov;
 	}
 
-	//check if this is an old entity that still uses sweepSpeed as if it was sweepTime
-	if (spawnArgs.GetFloat("sweepSpeed", "0") > 0) {
-		sweepTime = spawnArgs.GetFloat("sweepSpeed", "5");
-	}
-
-	//if "alarm_duration" is not set, use "wait" instead
-	alertDuration = spawnArgs.GetFloat("alarm_duration", "0");
-	if (alertDuration == 0) {
-		alertDuration = spawnArgs.GetFloat("wait", "20");
-	}
-
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
 	//yaw angle
@@ -358,7 +356,6 @@ void idSecurityCamera::Spawn( void )
 	anglePos2		= ( negativeSweep ) ? angleTarget : angle;
 
 	sweepAngle		= fabs(sweepAngle);
-	sweepSpeed		= sweepAngle / sweepTime;
 	percentSwept	= 0.0f;
 
 	//pitch angle
@@ -1284,7 +1281,7 @@ idSecurityCamera::StartSweep
 void idSecurityCamera::StartSweep( void ) {
 	sweeping = true;
 	sweepStartTime = gameLocal.time;
-	sweepEndTime = sweepStartTime + SEC2MS(sweepTime);
+	sweepEndTime = sweepStartTime + SEC2MS(sweepAngle / sweepSpeed);
 	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	emitPauseSound = true;

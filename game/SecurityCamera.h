@@ -72,7 +72,6 @@ private:
 
 	bool					negativeSweep;
 	float					sweepAngle;
-	float					sweepTime;
 	float					sweepSpeed;
 	float					sweepStartTime;
 	float					sweepEndTime;
