@@ -25,6 +25,7 @@
 //#include <GL/gl.h>
 //#include <GL/glu.h>
 //#include <GL/glaux.h>
+#include "../renderer/GLSLProgram.h"
 
 #define	WIN_SIZE	1024
 
@@ -40,6 +41,9 @@ void Draw_ClearWindow( void ) {
 
 	qglClearColor( 0.5, 0.5, 0.5, 0 );
 	qglClear( GL_COLOR_BUFFER_BIT );
+	
+	//return back to fixed function pipeline
+	GLSLProgram::Deactivate();
 
 #if 0
 	int		w, h, g;

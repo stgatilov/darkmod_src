@@ -534,5 +534,44 @@
       </Synthetic>
     </Expand>
   </Type>
+  <Type Name="optIsland_t">
+    <DisplayString>OptIsland {group}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All verts]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>verts</HeadPointer>
+            <NextPointer>islandLink</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All edges]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>edges</HeadPointer>
+            <NextPointer>islandLink</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All tris]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>tris</HeadPointer>
+            <NextPointer>next</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="optVertex_s">
+    <DisplayString>(x={pv.x} y={pv.y})</DisplayString>
+  </Type>
+  <Type Name="optEdge_s">
+    <DisplayString>{*v1} -> {*v2}</DisplayString>
+  </Type>
 
 </AutoVisualizer>

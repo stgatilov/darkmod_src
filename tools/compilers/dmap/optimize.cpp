@@ -299,6 +299,7 @@ static	void DrawEdges( optIsland_t *island ) {
 	}
 	qglEnd();
 	qglFlush();
+	qglFinish();
 
 //	GLimp_SwapBuffers();
 }
@@ -1944,8 +1945,10 @@ void	OptimizeGroupList( optimizeGroup_t *groupList ) {
 
 	// optimize and remove colinear edges, which will
 	// re-introduce some t junctions
+	int idx = 0;
 	for ( group = groupList ; group ; group = group->nextGroup ) {
 		OptimizeOptList( group );
+		idx++;
 	}
 	c_edge = CountGroupListTris( groupList );
 

@@ -319,8 +319,12 @@ void Dmap( const idCmdArgs &args ) {
 			common->Printf( "verbose = very\n" );
 			dmapGlobals.verbose = VL_VERBOSE;
 		} else if ( !idStr::Icmp( s, "draw" ) ) {
-			common->Printf( "drawflag = true\n" );
-			dmapGlobals.drawflag = true;
+			if (r_glCoreProfile.GetInteger() > 0)
+				common->Warning("set r_glCoreProfile 0 for draw flag!");
+			else {
+				common->Printf( "drawflag = true\n" );
+				dmapGlobals.drawflag = true;
+			}
 		} else if ( !idStr::Icmp( s, "noFlood" ) ) {
 			common->Printf( "noFlood = true\n" );
 			dmapGlobals.noFlood = true;
