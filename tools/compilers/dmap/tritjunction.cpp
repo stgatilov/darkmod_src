@@ -19,6 +19,8 @@
 
 
 #include "dmap.h"
+#include "containers/DisjointSets.h"
+#include "containers/FlexList.h"
 
 /*
 
@@ -80,6 +82,7 @@ typedef struct hashVert_s {
 	struct hashVert_s	*next;
 	idVec3				v;
 	int					iv[3];
+	int					idx;
 } hashVert_t;
 
 static idBounds	hashBounds;
@@ -88,6 +91,28 @@ static hashVert_t	*hashVerts[HASH_BINS][HASH_BINS][HASH_BINS];
 static int		numHashVerts, numTotalVerts;
 static int		hashIntMins[3], hashIntScale[3];
 
+//stgatilov: equivalence clusters (only used when dmap_fixVertexSnappingTjunc = 2)
+struct HashVertexRef {
+	hashVert_t *hv;
+	const hashVert_t* *ref;
+	idVec3 *v;
+};
+static idList<HashVertexRef> allVertRefs;
+static idList<int> allVertDsu;
+
+static idCVar dmap_fixVertexSnappingTjunc(
+	"dmap_fixVertexSnappingTjunc", "2", CVAR_INTEGER | CVAR_SYSTEM,
+	"Controls how vertex snapping in T-junctions removal works (see #5486):\n"
+	"  0 - can create very close output vertices\n"
+	"      (default in TDM 2.07 and before)\n"
+	"  1 - distance between output vertices is no less than 1/32\n"
+	"  2 - cluster merge: input vertices closer than 1/32\n"
+	"      are surely snapped to the same output vertex\n"
+	"      (default in TDM 2.10 and after)",
+	0, 2
+);
+
+
 /*
 ===============
 GetHashVert
@@ -95,43 +120,82 @@ GetHashVert
 Also modifies the original vert to the snapped value
 ===============
 */
-struct hashVert_s	*GetHashVert( idVec3 &v ) {
-	int		iv[3];
-	int		block[3];
+void GetHashVert( idVec3 &v, const hashVert_s* &ref ) {
 	int		i;
+	int		iv[3];
+	int		blocks[2][3];
+	int		block[3];
 	hashVert_t	*hv;
 
 	numTotalVerts++;
 
-	// snap the vert to integral values
 	for ( i = 0 ; i < 3 ; i++ ) {
+		// snap the vert to integral values
 		iv[i] = floor( ( v[i] + 0.5/SNAP_FRACTIONS ) * SNAP_FRACTIONS );
-		block[i] = ( iv[i] - hashIntMins[i] ) / hashIntScale[i];
-		if ( block[i] < 0 ) {
-			block[i] = 0;
-		} else if ( block[i] >= HASH_BINS ) {
-			block[i] = HASH_BINS - 1;
+
+		// find main hash cell: the one which contains this snap-cell
+		int x = ( iv[i] - hashIntMins[i] ) / hashIntScale[i];
+		block[i] = idMath::ClampInt(0, HASH_BINS - 1, x);
+
+		if (dmap_fixVertexSnappingTjunc.GetInteger() >= 1) {
+			// check all hash cells which can contain snappable vertices
+			// i.e. the ones which differ by at most 1 snap-cell
+			// note: in most cases, only one hash cell needs to be checked
+			int l = ( iv[i] - 1 - hashIntMins[i] ) / hashIntScale[i];
+			int r = ( iv[i] + 1 - hashIntMins[i] ) / hashIntScale[i];
+			blocks[0][i] = idMath::ClampInt(0, HASH_BINS - 1, l);
+			blocks[1][i] = idMath::ClampInt(0, HASH_BINS - 1, r);
+		}
+		else {
+			// only check the hash cell containing this snap-area
+			// this could still fail to find a near neighbor right at the hash block boundary
+			blocks[0][i] = blocks[1][i] = block[i];
 		}
 	}
 
+	int idx = -1;
+	if (dmap_fixVertexSnappingTjunc.GetInteger() == 2) {
+		//register new vertex and external pointers
+		idx = allVertRefs.AddGrow({nullptr, &ref, &v});
+		int q = allVertDsu.AddGrow(idx);
+		assert(q == idx);
+		assert(numHashVerts == idx);
+	}
+
 	// see if a vertex near enough already exists
-	// this could still fail to find a near neighbor right at the hash block boundary
-	for ( hv = hashVerts[block[0]][block[1]][block[2]] ; hv ; hv = hv->next ) {
-		for ( i = 0 ; i < 3 ; i++ ) {
-			int	d;
-			d = hv->iv[i] - iv[i];
-			if ( d < -1 || d > 1 ) {
-				break;
+	for ( int a = blocks[0][0] ; a <= blocks[1][0] ; a++ ) {
+		for ( int b = blocks[0][1] ; b <= blocks[1][1] ; b++ ) {
+			for ( int c = blocks[0][2] ; c <= blocks[1][2] ; c++ ) {
+				for ( hv = hashVerts[a][b][c] ; hv ; hv = hv->next ) {
+					for ( i = 0 ; i < 3 ; i++ ) {
+						int	d;
+						d = hv->iv[i] - iv[i];
+						if ( d < -1 || d > 1 ) {
+							break;
+						}
+					}
+					if ( i == 3 ) {
+						if (dmap_fixVertexSnappingTjunc.GetInteger() == 2) {
+							//mark these vertices as equivalent, and continue
+							idDisjointSets::Merge(allVertDsu, idx, hv->idx);
+						}
+						else {
+							VectorCopy( hv->v, v );
+							ref = hv;
+							return;
+						}
+					}
+				}
 			}
-		}
-		if ( i == 3 ) {
-			VectorCopy( hv->v, v );
-			return hv;
 		}
 	}
 
 	// create a new one 
 	hv = (hashVert_t *)Mem_Alloc( sizeof( *hv ) );
+
+	hv->idx = idx;
+	if (idx >= 0)
+		allVertRefs[idx].hv = hv;
 
 	hv->next = hashVerts[block[0]][block[1]][block[2]];
 	hashVerts[block[0]][block[1]][block[2]] = hv;
@@ -148,7 +212,103 @@ struct hashVert_s	*GetHashVert( idVec3 &v ) {
 
 	numHashVerts++;
 
-	return hv;
+	ref = hv;
+}
+
+/*
+==================
+HashVertsFinalize
+
+Merge clusters of indistinguishable hash vertices.
+Must be called after all GetHashVert and HashVertsFinalize calls are finished.
+==================
+*/
+static void HashVertsFinalize() {
+	if (dmap_fixVertexSnappingTjunc.GetInteger() != 2)
+		return;
+
+	//all close vertices are marked as equivalent
+	//so we can obtain equivalence clusters now
+	idDisjointSets::CompressAll(allVertDsu);
+
+	//build vertex lists (by counting sort)
+	int n = allVertDsu.Num();
+	idFlexList<int, 1024> cnt;
+	cnt.SetNum(n);
+	memset(cnt.Ptr(), 0, n * sizeof(cnt[0]));
+	for (int i = 0; i < n; i++)
+		cnt[allVertDsu[i]]++;		//histogram
+	int sum = 0;
+	for (int i = 0; i < n; i++) {
+		int nsum = sum + cnt[i];	//prefix sums
+		cnt[i] = sum;
+		sum = nsum;
+	}
+	idFlexList<HashVertexRef*, 1024> lists;
+	lists.SetNum(n);
+	for (int i = 0; i < n; i++)
+		lists[cnt[allVertDsu[i]]++] = &allVertRefs[i];	//scatter
+
+	//merge clusters
+	hashVert_t *mergedList = nullptr;
+	int k = 0;
+	int beg = 0;
+	for (int i = 0; i < n; i++) {
+		int end = cnt[i];
+		if (end - beg == 0)
+			continue;	//no cluster here
+		k++;
+
+		hashVert_t *hv;
+		if (end - beg == 1) {
+			//single-vertex cluster: already processed
+			hv = lists[beg]->hv;
+		}
+		else {
+			//compute center of cluster's bounding box
+			idBounds bbox;
+			bbox.Clear();
+			for (int j = beg; j < end; j++)
+				bbox.AddPoint(*lists[j]->v);
+			idVec3 ctr = bbox.GetCenter();
+			//create new merged vertex at center's span location
+			hv = (hashVert_t *)Mem_Alloc(sizeof(*hv));
+			hv->idx = -1;
+			for (int d = 0; d < 3; d++) {
+				hv->iv[d] = floor( ( ctr[d] + 0.5/SNAP_FRACTIONS ) * SNAP_FRACTIONS );
+				hv->v[d] = (float)hv->iv[d] / SNAP_FRACTIONS;
+			}
+			//replace all references to cluster vertices
+			for (int j = beg; j < end; j++) {
+				Mem_Free(lists[j]->hv);
+				lists[j]->hv = hv;
+				*lists[j]->v = hv->v;
+				*lists[j]->ref = hv;
+			}
+		}
+
+		//add cluster vertex to new list
+		hv->next = mergedList;
+		mergedList = hv;
+
+		beg = end;
+	}
+
+	//spread resulting hash vertices back into hash cells
+	//so that FixTriangleAgainstHash works properly
+	memset(hashVerts, 0, sizeof(hashVerts));
+	for (hashVert_t *hv = mergedList, *hvnext; hv; hv = hvnext) {
+		hvnext = hv->next;
+		//find hash cell which contains this vertex
+		int block[3];
+		for (int i = 0; i < 3; i++) {
+			int x = ( hv->iv[i] - hashIntMins[i] ) / hashIntScale[i];
+			block[i] = idMath::ClampInt(0, HASH_BINS - 1, x);
+		}
+		//add hash vertex to this cell
+		hv->next = hashVerts[block[0]][block[1]][block[2]];
+		hashVerts[block[0]][block[1]][block[2]] = hv;
+	}
 }
 
 
@@ -172,18 +332,9 @@ static void HashBlocksForTri( const mapTri_t *tri, int blocks[2][3] ) {
 	// add a 1.0 slop margin on each side
 	for ( i = 0 ; i < 3 ; i++ ) {
 		blocks[0][i] = ( bounds[0][i] - 1.0 - hashBounds[0][i] ) / hashScale[i];
-		if ( blocks[0][i] < 0 ) {
-			blocks[0][i] = 0;
-		} else if ( blocks[0][i] >= HASH_BINS ) {
-			blocks[0][i] = HASH_BINS - 1;
-		}
-
+		blocks[0][i] = idMath::ClampInt( 0, HASH_BINS - 1, blocks[0][i] );
 		blocks[1][i] = ( bounds[1][i] + 1.0 - hashBounds[0][i] ) / hashScale[i];
-		if ( blocks[1][i] < 0 ) {
-			blocks[1][i] = 0;
-		} else if ( blocks[1][i] >= HASH_BINS ) {
-			blocks[1][i] = HASH_BINS - 1;
-		}
+		blocks[1][i] = idMath::ClampInt( 0, HASH_BINS - 1, blocks[1][i] );
 	}
 }
 
@@ -238,7 +389,7 @@ static void HashTriangles( optimizeGroup_t *groupList ) {
 		}
 		for ( a = group->triList ; a ; a = a->next ) {
 			for ( vert = 0 ; vert < 3 ; vert++ ) {
-				a->hashVert[vert] = GetHashVert( a->v[vert].xyz );
+				GetHashVert( a->v[vert].xyz, a->hashVert[vert] );
 			}
 		}
 	}
@@ -267,6 +418,9 @@ void FreeTJunctionHash( void ) {
 		}
 	}
 	memset( hashVerts, 0, sizeof( hashVerts ) );
+
+	allVertRefs.Clear();
+	allVertDsu.Clear();
 }
 
 
@@ -465,6 +619,7 @@ void	FixAreaGroupsTjunctions( optimizeGroup_t *groupList ) {
 	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i triangles in\n", startCount );
 
 	HashTriangles( groupList );
+	HashVertsFinalize();
 
 	for ( group = groupList ; group ; group = group->nextGroup ) {
 		// don't touch discrete surfaces
@@ -562,7 +717,7 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 
 			for ( a = group->triList ; a ; a = a->next ) {
 				for ( vert = 0 ; vert < 3 ; vert++ ) {
-					a->hashVert[vert] = GetHashVert( a->v[vert].xyz );
+					GetHashVert( a->v[vert].xyz, a->hashVert[vert] );
 				}
 			}
 		}
@@ -570,7 +725,7 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 
 	// add all the func_static model vertexes to the hash buckets
 	// optionally inline some of the func_static models
-	if ( dmapGlobals.entityNum == 0 && !dmap_dontSplitWithFuncStaticVertices.GetBool() ) {
+	if ( dmapGlobals.entityNum == 0 && !dmap_dontSplitWithFuncStaticVertices.GetBool() && dmap_fixVertexSnappingTjunc.GetInteger() < 2 ) {
 
 		for ( int eNum = 1 ; eNum < dmapGlobals.num_entities ; eNum++ ) {
 			uEntity_t *entity = &dmapGlobals.uEntities[eNum];
@@ -616,12 +771,14 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 				}
 				for ( int j = 0 ; j < tri->numVerts ; j += 3 ) {
 					idVec3 v = tri->verts[j].xyz * axis + origin;
-					GetHashVert( v );
+					const hashVert_t *hv;
+					GetHashVert( v, hv );
 				}
 			}
 		}
 	}
 
+	HashVertsFinalize();
 
 
 	// now fix each area
