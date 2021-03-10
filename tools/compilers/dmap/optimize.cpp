@@ -541,6 +541,16 @@ static	int LengthSort( const void *a, const void *b ) {
 	return 0;
 }
 
+static idCVar dmap_optimizeTriangulation(
+	"dmap_optimizeTriangulation", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Controls which algorithm is used to optimize triangulations (see #5488):\n"
+	"  0 - slow greedy algorithm: insert edges by length increasing\n"
+	"      (default in TDM 2.09 and before)\n"
+	"  1 - fast algorithm based on planar graph and ear cutting triangulation\n"
+	"      (default in TDM 2.10 and after)\n"
+);
+
+static void AddTriangulationEdges( optIsland_t *island );
 /*
 ==================
 AddInteriorEdges
@@ -549,6 +559,11 @@ Add all possible edges between the verts
 ==================
 */
 static	void AddInteriorEdges( optIsland_t *island ) {
+	if (dmap_optimizeTriangulation.GetBool()) {
+		AddTriangulationEdges( island );
+		return;
+	}
+
 	int		c_addedEdges;
 	optVertex_t	*vert, *vert2;
 	int		c_verts;
@@ -1705,6 +1720,54 @@ static void CullUnusedVerts( optIsland_t *island ) {
 }
 
 
+
+
+#include "planargraph.h"
+/*
+==================
+AddTriangulationEdges
+
+Add all edges inside every outermost loop
+(faster version of AddInteriorEdges)
+==================
+*/
+static void AddTriangulationEdges( optIsland_t *island ) {
+	//actual storage
+	static PlanarGraph planarGraph;
+	static idList<PlanarGraph::Triangle> pgAddedTris;
+	static idList<PlanarGraph::AddedEdge> pgAddedEdges;
+	static idList<optVertex_t*> pgActiveVerts;
+
+	planarGraph.Reset();
+
+	//add vertices
+	pgActiveVerts.SetNum(0, false);
+	for (optVertex_t *v = island->verts; v; v = v->islandLink) {
+		if (!v->edges) {
+			//omit isolated vertices: they are not considered in T-junctions removal
+			//as the result, they can easily lie on other edges
+			continue;
+		}
+		pgActiveVerts.AddGrow(v);
+		v->idx = planarGraph.AddVertex(v->pv.ToVec2());
+	}
+	//add edges
+	for (optEdge_t *e = island->edges; e; e = e->islandLink)
+		planarGraph.AddEdge(e->v1->idx, e->v2->idx);
+	//finalize graph
+	planarGraph.Finish();
+
+	planarGraph.BuildFaces();
+
+	pgAddedTris.SetNum(0, false);
+	pgAddedEdges.SetNum(0, false);
+	planarGraph.TriangulateFaces(pgAddedTris, pgAddedEdges);
+
+	for (int i = 0; i < pgAddedEdges.Num(); i++) {
+		const int *ids = pgAddedEdges[i].ids;
+		TryAddNewEdge(pgActiveVerts[ids[0]], pgActiveVerts[ids[1]], island);
+	}
+}
 
 /*
 ====================

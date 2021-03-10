@@ -1312,6 +1312,12 @@
     <ClInclude Include="renderer\backend\ManyLightInteractionStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="tools\compilers\dmap\earcut.h">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\compilers\dmap\planargraph.h">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3060,6 +3066,12 @@
     </ClCompile>
     <ClCompile Include="renderer\ParticleSystem.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\dmap\earcut.cpp">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\dmap\planargraph.cpp">
+      <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

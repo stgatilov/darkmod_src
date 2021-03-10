@@ -416,6 +416,7 @@ typedef struct optVertex_s {
 	struct optVertex_s	*islandLink;
 	bool	addedToIsland;
 	bool	emited;			// when regenerating triangles
+	int idx;
 } optVertex_t;
 
 typedef struct optEdge_s {

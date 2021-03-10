@@ -574,4 +574,35 @@
     <DisplayString>{*v1} -> {*v2}</DisplayString>
   </Type>
 
+  <Type Name="PlanarGraph">
+    <Expand HideRawView="true">
+      <ExpandedItem>*this,!</ExpandedItem>
+      <Synthetic Name="[outgoing]">
+        <Expand>
+          <IndexListItems>
+            <Size>outgoing.num</Size>
+            <ValueNode>coedges[outgoing[$i]]</ValueNode>
+          </IndexListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[facetCoedges]">
+        <Expand>
+          <IndexListItems>
+            <Size>facetCoedges.num</Size>
+            <ValueNode>coedges[facetCoedges[$i]]</ValueNode>
+          </IndexListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="PlanarGraph::Vertex">
+    <DisplayString>{pos} CC{inComp} #O{outEnd-outBeg}: [{outBeg}..{outEnd})</DisplayString>
+  </Type>
+  <Type Name="PlanarGraph::Coedge">
+    <DisplayString>V{v[0]}->V{v[1]} i{outIdx}  F{inFacet}  {vec}</DisplayString>
+  </Type>
+  <Type Name="PlanarGraph::Facet">
+    <DisplayString>ori{clockwise?-1:1} RM{rightmost} #CE{fcEnd-fcBeg} [{bounds[0].x}..{bounds[1].x}] x [{bounds[0].y}..{bounds[1].y}] ({area})  CC{inComp} H{holeEnd-holeBeg} par{parent} </DisplayString>
+  </Type>
+
 </AutoVisualizer>

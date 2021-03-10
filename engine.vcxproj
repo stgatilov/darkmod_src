@@ -532,6 +532,8 @@
     <ClInclude Include="tests\testing.h" />
     <ClInclude Include="tests\TestRun.h" />
     <ClInclude Include="tools\compilers\compiler_common.h" />
+    <ClInclude Include="tools\compilers\dmap\earcut.h" />
+    <ClInclude Include="tools\compilers\dmap\planargraph.h" />
     <ClInclude Include="tools\edit_public.h" />
     <ClInclude Include="tools\af\DialogAF.h" />
     <ClInclude Include="tools\af\DialogAFBody.h" />
@@ -1184,6 +1186,7 @@
     <ClCompile Include="tools\compilers\aas\BrushBSP.cpp" />
     <ClCompile Include="tools\compilers\compiler_common.cpp" />
     <ClCompile Include="tools\compilers\dmap\dmap.cpp" />
+    <ClCompile Include="tools\compilers\dmap\earcut.cpp" />
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />
     <ClCompile Include="tools\compilers\dmap\glfile.cpp" />
@@ -1192,6 +1195,7 @@
     <ClCompile Include="tools\compilers\dmap\optimize.cpp" />
     <ClCompile Include="tools\compilers\dmap\optimize_gcc.cpp" />
     <ClCompile Include="tools\compilers\dmap\output.cpp" />
+    <ClCompile Include="tools\compilers\dmap\planargraph.cpp" />
     <ClCompile Include="tools\compilers\dmap\portals.cpp" />
     <ClCompile Include="tools\compilers\dmap\shadowopt3.cpp" />
     <ClCompile Include="tools\compilers\dmap\tritjunction.cpp" />
