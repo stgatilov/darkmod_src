@@ -120,6 +120,13 @@ public:
 	void					ExpandForAxialBox( const idBounds &bounds );
 							// next brush in list
 	idBrush *				Next( void ) const { return next; }
+							// stgatilov: is point inside, outside or on boundary of brush?
+	int						SideOfPoint( const idVec3 &point, float epsilon ) const;
+							// stgatilov: checks if given segment intersects this brush inflated by epsilon (TODO: return interval?)
+	bool					IntersectSegment( const idVec3 &start, const idVec3 &end, float epsilon ) const;
+							// stgatilov: this is very specific method for optimizing idBrushList::Chop
+	bool					CanSubtractionYieldLessThreeBrushes( const idBrush *subtracted, float epsilon ) const;
+
 
 private:
 	mutable idBrush *		next;				// next brush in list

@@ -1017,6 +1017,125 @@ idBrush *idBrush::Copy( void ) const {
 	return b;
 }
 
+/*
+============
+idBrush::IsPointInside
+============
+*/
+int idBrush::SideOfPoint( const idVec3 &point, float epsilon ) const {
+	bool hasOn = false;
+	for (int p = 0; p < sides.Num(); p++) {
+		int side = sides[p]->GetPlane().Side(point, epsilon);
+		if (side == SIDE_FRONT)
+			return SIDE_FRONT;	//outside
+		if (side == SIDE_ON)
+			hasOn = true;
+	}
+	return (hasOn ? SIDE_ON : SIDE_BACK);
+}
+
+/*
+============
+idBrush::IntersectSegment
+============
+*/
+bool idBrush::IntersectSegment( const idVec3 &start, const idVec3 &end, float epsilon ) const {
+	float paramMin = 0.0f, paramMax = 1.0f;
+
+	for (int p = 0; p < sides.Num(); p++) {
+		const idPlane &plane = sides[p]->GetPlane();
+		float distMin = plane.Distance(start);
+		float distMax = plane.Distance(end);
+
+		if (distMin >= epsilon && distMax >= epsilon)
+			return false;	//outside
+		if (distMin <= epsilon && distMax <= epsilon)
+			continue;		//inside
+
+		assert(distMax != distMin);
+		assert(epsilon >= idMath::Fmin(distMin, distMax) && epsilon <= idMath::Fmax(distMin, distMax));
+		float intersParam = (epsilon - distMin) / (distMax - distMin);
+		assert(intersParam >= 0.0f && intersParam <= 1.0f);
+
+		if (distMax > distMin)
+			paramMax = idMath::Fmin(paramMax, intersParam);
+		else
+			paramMin = idMath::Fmax(paramMin, intersParam);
+
+		if (paramMax < paramMin)
+			return false;	//inverted interval -> no point inside
+	}
+
+	//the segment has at least one point inside
+	assert(paramMax >= paramMin);
+	return true;
+}
+
+/*
+============
+idBrush::CanSubtractionYieldLessThreeBrushes
+============
+*/
+bool idBrush::CanSubtractionYieldLessThreeBrushes( const idBrush *subtracted, float epsilon ) const {
+	//the number of brushes after subtraction is no less than
+	//the number of faces of subtracted brush lying at least partially inside main brush
+	//(because no two such faces can belong to same brush after subtraction due to convexity)
+
+	//if a vertex of subtracted brush lies strictly main brush
+	//then at least three resulting brushes are inevitable
+	//because the vertex has at least three incident faces, and they all are inside main brush
+	for (int u = 0; u < subtracted->sides.Num(); u++) {
+		idBrushSide *s = subtracted->sides[u];
+		const idWinding *w = s->GetWinding();
+		if (!w)
+			continue;
+
+		for (int v = 0; v < w->GetNumPoints(); v++) {
+			idVec3 vertex = (*w)[v].ToVec3();
+			if (SideOfPoint(vertex, epsilon) == SIDE_BACK)
+				return false;
+		}
+	}
+
+	//if there are two different edges of subtracted brush, which are at least partly inside main brush,
+	//then at least three resulting bvrushes are inevitable
+	//because they have at least three incident faces in total, which are partly inside main brush
+	bool hasEdgeInside = false;
+	idVec3 edgeInsideMid;
+	for (int u = 0; u < subtracted->sides.Num(); u++) {
+		idBrushSide *s = subtracted->sides[u];
+		const idWinding *w = s->GetWinding();
+		if (!w)
+			continue;
+
+		for (int v = 0; v < w->GetNumPoints(); v++) {
+			int nv = v + 1;
+			if (nv == w->GetNumPoints())
+				nv = 0;
+			idVec3 start = (*w)[v].ToVec3();
+			idVec3 end = (*w)[nv].ToVec3();
+			if (IntersectSegment(start, end, -epsilon)) {
+				if (hasEdgeInside) {
+					//check if new edge is same (windings share edges)
+					float param = (edgeInsideMid - start) * (end - start) / (end - start).LengthSqr();
+					if (param >= 0.0f && param <= 1.0f) {
+						idVec3 pnt = start + (end - start) * param;
+						float dist2 = (pnt - edgeInsideMid).LengthSqr();
+						if (dist2 < epsilon * epsilon)
+							((void)0);		//same edge
+						else
+							return false;	//second edge inside
+					}
+				}
+				//first inside edge: remember
+				hasEdgeInside = true;
+				edgeInsideMid = (start + end) * 0.5f;
+			}
+		}
+	}
+
+	return true;
+}
 
 //===============================================================
 //
@@ -1301,6 +1420,14 @@ void idBrushList::SplitImpl( const idPlane &plane, int planeNum, idBrushList &fr
 		Clear();
 }
 
+
+static idCVar dmap_aasPruneBrushesChopping(
+	"dmap_pruneAasBrushesChopping", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Enables some heuristics to avoid useless subtractions in idBrushList::Chop. "
+	"Theoretically, these heuristics are conservative, i.e. output must not depend on this cvar. "
+	"New optimization in TDM 2.10."
+);
+
 /*
 ============
 idBrushList::Chop
@@ -1360,35 +1487,39 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 
 			// if b2 may chop up b1
 			if ( !ChopAllowed || ChopAllowed( b2,  b1 ) ) {
-				if ( !b1->Subtract( b2, sub1 ) ) {
-					// didn't really intersect
-					continue;
+				if ( !dmap_aasPruneBrushesChopping.GetBool() || b1->CanSubtractionYieldLessThreeBrushes( b2, BRUSH_EPSILON ) ) {
+					if ( !b1->Subtract( b2, sub1 ) ) {
+						// didn't really intersect
+						continue;
+					}
+					if ( sub1.IsEmpty() ) {
+						// b1 is swallowed by b2
+						this->Delete( b1 );
+						break;
+					}
+					c1 = sub1.Num();
 				}
-				if ( sub1.IsEmpty() ) {
-					// b1 is swallowed by b2
-					this->Delete( b1 );
-					break;
-				}
-				c1 = sub1.Num();
 			}
 
 			// if b1 may chop up b2
 			if ( !ChopAllowed || ChopAllowed( b1,  b2 ) ) {
-				if ( !b2->Subtract( b1, sub2 ) ) {
-					// didn't really intersect
-					sub1.Free();
-					continue;
+				if ( !dmap_aasPruneBrushesChopping.GetBool() || b2->CanSubtractionYieldLessThreeBrushes( b1, BRUSH_EPSILON ) ) {
+					if ( !b2->Subtract( b1, sub2 ) ) {
+						// didn't really intersect
+						sub1.Free();
+						continue;
+					}
+					if ( sub2.IsEmpty() ) {
+						// b2 is swallowed by b1
+						sub1.Free();
+						this->Delete( b2 );
+						continue;
+					}
+					c2 = sub2.Num();
 				}
-				if ( sub2.IsEmpty() ) {
-					// b2 is swallowed by b1
-					sub1.Free();
-					this->Delete( b2 );
-					continue;
-				}
-				c2 = sub2.Num();
 			}
 
-			if ( sub1.IsEmpty() && sub2.IsEmpty() ) {
+			if ( c1 == 0 && c2 == 0 ) {
 				continue;
 			}
 
