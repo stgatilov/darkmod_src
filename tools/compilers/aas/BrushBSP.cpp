@@ -25,7 +25,6 @@
 #define BSP_GRID_SIZE					512.0f
 #define SPLITTER_EPSILON				0.1f
 #define VERTEX_MELT_EPSILON				0.1f
-#define VERTEX_MELT_HASH_SIZE			32
 
 #define PORTAL_PLANE_NORMAL_EPSILON		0.00001f
 #define PORTAL_PLANE_DIST_EPSILON		0.01f
@@ -2049,6 +2048,12 @@ void idBrushBSP::MeltFlood_r( idBrushBSPNode *node, int skipContents, idBounds &
 	}
 }
 
+static idCVar dmap_fasterAasMeltPortals(
+	"dmap_fasterAasMeltPortals", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Use hash table of small size in idBrushBSP::MeltLeafNodePortals during AAS compilation. "
+	"This is performance improvement in TDM 2.10."
+);
+
 /*
 ============
 idBrushBSP::MeltLeafNodePortals
@@ -2073,8 +2078,15 @@ void idBrushBSP::MeltLeafNodePortals( idBrushBSPNode *node, int skipContents, id
 			continue;
 		}
 
+		//note: number of hash cells is 4*4*4 = 64 !
+		int VERTEX_MELT_HASH_SIZE = 4;
+		if (!dmap_fasterAasMeltPortals.GetBool())
+			VERTEX_MELT_HASH_SIZE = 32;	//32 x 32 x 32 = 65536 cells (256 KB to clear per portal!)
+
 		p1->winding->GetBounds( bounds );
 		bounds.ExpandSelf( 2 * VERTEX_MELT_HASH_SIZE * VERTEX_MELT_EPSILON );
+		//stgatilov: only the first Init allocates memory
+		//all the rest should reuse old memory buffers, only clearing their contents
 		vertexList.Init( bounds[0], bounds[1], VERTEX_MELT_HASH_SIZE, 128 );
 
 		// get all vertices to be considered
