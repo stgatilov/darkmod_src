@@ -177,6 +177,7 @@
     <ClCompile Include="idlib\containers\DisjointSets.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
+    <ClCompile Include="idlib\containers\PlaneSet.cpp" />
     <ClCompile Include="idlib\containers\StrPool.cpp" />
     <ClCompile Include="idlib\Debug.cpp" />
     <ClCompile Include="idlib\geometry\DrawVert.cpp" />
