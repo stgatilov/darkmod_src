@@ -544,7 +544,9 @@ bool LoadDMapFile( const char *filename ) {
 		return false;
 	}
 
-	dmapGlobals.mapPlanes.Clear();
+	int primitivesNum = dmapGlobals.dmapFile->GetTotalPrimitivesNum();
+	int capacity = idMath::Imax(1024, idMath::CeilPowerOfTwo(primitivesNum));
+	dmapGlobals.mapPlanes.Init( capacity, capacity );
 	dmapGlobals.mapPlanes.SetGranularity( 1024 );
 
 	// process the canonical form into utility form

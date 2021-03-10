@@ -1220,3 +1220,16 @@ bool idMapFile::NeedsReload() {
 	}
 	return true;
 }
+
+
+/*
+===============
+idMapFile::GetTotalPrimitivesNum
+===============
+*/
+int idMapFile::GetTotalPrimitivesNum() const {
+	int res = 0;
+	for (int i = 0; i < entities.Num(); i++)
+		res += entities[i]->GetNumPrimitives();
+	return res;
+}

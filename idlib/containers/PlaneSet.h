@@ -27,7 +27,8 @@
 class idPlaneSet : public idList<idPlane> {
 public:
 
-	void					Clear( void ) { idList<idPlane>::Clear(); hash.Free(); }
+	void					Clear( void );
+	void					Init( int newHashSize, int newIndexSize );
 
 	int						FindPlane( const idPlane &plane, const float normalEps, const float distEps );
 

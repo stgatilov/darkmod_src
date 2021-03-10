@@ -211,6 +211,7 @@ public:
 	void					RemoveAllEntities();
 	void					RemovePrimitiveData();
 	bool					HasPrimitiveData() { return hasPrimitiveData; }
+	int						GetTotalPrimitivesNum() const;
 
 protected:
 	float					version;
