@@ -460,17 +460,16 @@ idBrush::Subtract
 bool idBrush::Subtract( const idBrush *b, idBrushList &list ) const {
 	int i;
 	idBrush *front, *back;
-	const idBrush *in;
 
 	list.Clear();
-	in = this;
+	idBrush *in = const_cast<idBrush*>(this);
 	for ( i = 0; i < b->sides.Num() && in; i++ ) {
 
-		in->Split( b->sides[i]->plane, b->sides[i]->planeNum, &front, &back );
+		if ( in != this )
+			in->SplitDestroy( b->sides[i]->plane, b->sides[i]->planeNum, front, back );
+		else
+			in->Split( b->sides[i]->plane, b->sides[i]->planeNum, &front, &back );
 
-		if ( in != this ) {
-			delete in;
-		}
 		if ( front ) {
 			list.AddToTail( front );
 		}
@@ -482,7 +481,8 @@ bool idBrush::Subtract( const idBrush *b, idBrushList &list ) const {
 		return false;
 	}
 
-	delete in;
+	if (in != this)
+		delete in;
 	return true;
 }
 
@@ -599,12 +599,26 @@ bool idBrush::TryMerge( const idBrush *brush, const idPlaneSet &planeList ) {
 	return true;
 }
 
+
 /*
 ============
 idBrush::Split
 ============
 */
 int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush **back ) const {
+	return const_cast<idBrush*>(this)->SplitImpl(plane, planeNum, front, back, false);
+}
+/*
+============
+idBrush::SplitDestroy
+============
+*/
+int idBrush::SplitDestroy( const idPlane &plane, int planeNum, idBrush* &front, idBrush* &back ) {
+	int res = SplitImpl(plane, planeNum, &front, &back, true);
+	return res;
+}
+
+int idBrush::SplitImpl( const idPlane &plane, int planeNum, idBrush **front, idBrush **back, bool killThis ) {
 	int res, i, j;
 	idBrushSide *side, *frontSide, *backSide;
 	float dist, maxBack, maxFront, *maxBackWinding, *maxFrontWinding;
@@ -622,13 +636,13 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 	res = bounds.PlaneSide( plane, -BRUSH_EPSILON );
 	if ( res == PLANESIDE_FRONT ) {
 		if ( front ) {
-			*front = Copy();
+			*front = killThis ? this : Copy();
 		}
 		return res;
 	}
 	if ( res == PLANESIDE_BACK ) {
 		if ( back ) {
-			*back = Copy();
+			*back = killThis ? this : Copy();
 		}
 		return res;
 	}
@@ -670,14 +684,14 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 
 	if ( maxFront < BRUSH_EPSILON ) {
 		if ( back ) {
-			*back = Copy();
+			*back = killThis ? this : Copy();
 		}
 		return PLANESIDE_BACK;
 	}
 
 	if ( maxBack > -BRUSH_EPSILON ) {
 		if ( front ) {
-			*front = Copy();
+			*front = killThis ? this : Copy();
 		}
 		return PLANESIDE_FRONT;
 	}
@@ -707,23 +721,24 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 	if ( !mid ) {
 		if ( maxFront > - maxBack ) {
 			if ( front ) {
-				*front = Copy();
+				*front = killThis ? this : Copy();
 			}
 			return PLANESIDE_FRONT;
 		}
 		else {
 			if ( back ) {
-				*back = Copy();
+				*back = killThis ? this : Copy();
 			}
 			return PLANESIDE_BACK;
 		}
 	}
 
 	if ( !front && !back ) {
+		assert(!killThis);
 		delete mid;
 		return PLANESIDE_CROSS;
 	}
-
+	
 	*front = new idBrush();
 	(*front)->SetContents( contents );
 	(*front)->SetEntityNum( entityNum );
@@ -742,11 +757,11 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 
 		// if completely at the front
 		if ( maxBackWinding[i] >= BRUSH_EPSILON ) {
-			(*front)->sides.Append( side->Copy() );
+			(*front)->sides.Append( killThis ? side : side->Copy() );
 		}
 		// if completely at the back
 		else if ( maxFrontWinding[i] <= -BRUSH_EPSILON ) {
-			(*back)->sides.Append( side->Copy() );
+			(*back)->sides.Append( killThis ? side : side->Copy() );
 		}
 		else {
 			// split the side
@@ -787,6 +802,13 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 	(*back)->sides.Append( side );
 	(*back)->windingsValid = true;
 	(*back)->BoundBrush( this );
+
+	if (killThis) {
+		for ( i = 0; i < sides.Num(); i++ )
+			if ( (*front)->sides.Find(sides[i]) || (*back)->sides.Find(sides[i]) )
+				sides[i] = nullptr;
+		delete this;
+	}
 
 	return PLANESIDE_CROSS;
 }
@@ -1211,15 +1233,33 @@ void idBrushList::Free( void ) {
 idBrushList::Split
 ============
 */
-void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide ) {
-	idBrush *b, *front, *back;
+void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide ) const {
+	const_cast<idBrushList*>(this)->SplitImpl(plane, planeNum, frontList, backList, useBrushSavedPlaneSide, false);
+}
+/*
+============
+idBrushList::SplitFree
+============
+*/
+void idBrushList::SplitFree( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide ) {
+	SplitImpl(plane, planeNum, frontList, backList, useBrushSavedPlaneSide, true);
+}
+
+void idBrushList::SplitImpl( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide, bool clearThis ) {
+	idBrush *b, *bnext, *front, *back;
 
 	frontList.Clear();
 	backList.Clear();
 
 	if ( !useBrushSavedPlaneSide ) {
-		for ( b = head; b; b = b->next ) {
-			b->Split( plane, planeNum, &front, &back );
+		for ( b = head; b; b = bnext ) {
+			bnext = b->next;
+
+			if (clearThis)
+				b->SplitDestroy( plane, planeNum, front, back );
+			else
+				b->Split( plane, planeNum, &front, &back );
+
 			if ( front ) {
 				frontList.AddToTail( front );
 			}
@@ -1227,12 +1267,21 @@ void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontL
 				backList.AddToTail( back );
 			}
 		}
+
+		if (clearThis)
+			Clear();
 		return;
 	}
 
-	for ( b = head; b; b = b->next ) {
+	for ( b = head; b; b = bnext ) {
+		bnext = b->next;
+
 		if ( b->savedPlaneSide & BRUSH_PLANESIDE_BOTH ) {
-			b->Split( plane, planeNum, &front, &back );
+			if (clearThis)
+				b->SplitDestroy( plane, planeNum, front, back );
+			else
+				b->Split( plane, planeNum, &front, &back );
+
 			if ( front ) {
 				frontList.AddToTail( front );
 			}
@@ -1241,12 +1290,15 @@ void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontL
 			}
 		}
 		else if ( b->savedPlaneSide & BRUSH_PLANESIDE_FRONT ) {
-			frontList.AddToTail( b->Copy() );
+			frontList.AddToTail( clearThis ? b : b->Copy() );
 		}
 		else {
-			backList.AddToTail( b->Copy() );
+			backList.AddToTail( clearThis ? b : b->Copy() );
 		}
 	}
+
+	if (clearThis)
+		Clear();
 }
 
 /*

@@ -114,6 +114,8 @@ public:
 	bool					Subtract( const idBrush *b, idBrushList &list ) const;
 							// split the brush into a front and back brush
 	int						Split( const idPlane &plane, int planeNum, idBrush **front, idBrush **back ) const;
+							// stgatilov: same as Split, but also deletes this brush (sometimes stealing its content for better performance)
+	int						SplitDestroy( const idPlane &plane, int planeNum, idBrush* &front, idBrush* &back );
 							// expand the brush for an axial bounding box
 	void					ExpandForAxialBox( const idBounds &bounds );
 							// next brush in list
@@ -136,6 +138,7 @@ private:
 	void					BoundBrush( const idBrush *original = NULL );
 	void					AddBevelsForAxialBox( void );
 	bool					RemoveSidesWithoutWinding( void );
+	int						SplitImpl( const idPlane &plane, int planeNum, idBrush **front, idBrush **back, bool killThis );
 };
 
 
@@ -174,7 +177,9 @@ public:
 							// delete all brushes in the list
 	void					Free( void );
 							// split the brushes in the list into two lists
-	void					Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide = false );
+	void					Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide = false ) const;
+							// stgatilov: same as Split, but also does Free on this list (sometimes stealing its content for better performance)
+	void					SplitFree( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide = false );
 							// chop away all brush overlap
 	void					Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) );
 							// merge brushes
@@ -195,6 +200,8 @@ private:
 	idBrush *				tail;
 	int						numBrushes;
 	int						numBrushSides;
+
+	void					SplitImpl( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide, bool clearThis );
 };
 
 

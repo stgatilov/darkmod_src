@@ -812,14 +812,10 @@ idBrushBSPNode *idBrushBSP::BuildBrushBSP_r( idBrushBSPNode *node, const idPlane
 	node->children[1] = new idBrushBSPNode();
 
 	// split node volume and brush list for children
-	node->volume->Split( node->plane, -1, &node->children[0]->volume, &node->children[1]->volume );
-	node->brushList.Split( node->plane, -1, node->children[0]->brushList, node->children[1]->brushList, true );
-	node->children[0]->parent = node->children[1]->parent = node;
-
-	// free node memory
-	node->brushList.Free();
-	delete node->volume;
+	node->volume->SplitDestroy( node->plane, -1, node->children[0]->volume, node->children[1]->volume );
 	node->volume = NULL;
+	node->brushList.SplitFree( node->plane, -1, node->children[0]->brushList, node->children[1]->brushList, true );
+	node->children[0]->parent = node->children[1]->parent = node;
 
 	// process children
 	node->children[0] = BuildBrushBSP_r( node->children[0], planeList, testedPlanes, skipContents );
@@ -928,16 +924,12 @@ void idBrushBSP::BuildGrid_r( idList<idBrushBSPNode *> &gridCells, idBrushBSPNod
 	node->children[1] = new idBrushBSPNode();
 
 	// split volume and brush list for children
-	node->volume->Split( node->plane, -1, &node->children[0]->volume, &node->children[1]->volume );
-	node->brushList.Split( node->plane, -1, node->children[0]->brushList, node->children[1]->brushList );
+	node->volume->SplitDestroy( node->plane, -1, node->children[0]->volume, node->children[1]->volume );
+	node->volume = NULL;
+	node->brushList.SplitFree( node->plane, -1, node->children[0]->brushList, node->children[1]->brushList );
 	node->children[0]->brushList.SetFlagOnFacingBrushSides( node->plane, SFL_USED_SPLITTER );
 	node->children[1]->brushList.SetFlagOnFacingBrushSides( node->plane, SFL_USED_SPLITTER );
 	node->children[0]->parent = node->children[1]->parent = node;
-
-	// free node memory
-	node->brushList.Free();
-	delete node->volume;
-	node->volume = NULL;
 
 	// process children
 	BuildGrid_r( gridCells, node->children[0] );
