@@ -487,9 +487,10 @@ bool idAASCluster::Build( idAASFileLocal *file ) {
 	common->Printf( "\r%6d portals\n", file->portals.Num() );
 	common->Printf( "%6d clusters\n", file->clusters.Num() );
 
-	for ( int i = 0; i < file->clusters.Num(); i++ ) {
+	//stgatilov: not useful enough, but takes time
+	/*for ( int i = 0; i < file->clusters.Num(); i++ ) {
 		common->Printf( "%6d reachable areas in cluster %d\n", file->clusters[i].numReachableAreas, i );
-	}
+	}*/
 
 	file->ReportRoutingEfficiency();
 
