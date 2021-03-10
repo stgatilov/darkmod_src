@@ -1421,7 +1421,7 @@ void idBrushList::SplitImpl( const idPlane &plane, int planeNum, idBrushList &fr
 }
 
 
-static idCVar dmap_aasPruneBrushesChopping(
+idCVar dmap_pruneAasBrushesChopping(
 	"dmap_pruneAasBrushesChopping", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Enables some heuristics to avoid useless subtractions in idBrushList::Chop. "
 	"Theoretically, these heuristics are conservative, i.e. output must not depend on this cvar. "
@@ -1487,7 +1487,7 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 
 			// if b2 may chop up b1
 			if ( !ChopAllowed || ChopAllowed( b2,  b1 ) ) {
-				if ( !dmap_aasPruneBrushesChopping.GetBool() || b1->CanSubtractionYieldLessThreeBrushes( b2, BRUSH_EPSILON ) ) {
+				if ( !dmap_pruneAasBrushesChopping.GetBool() || b1->CanSubtractionYieldLessThreeBrushes( b2, BRUSH_EPSILON ) ) {
 					if ( !b1->Subtract( b2, sub1 ) ) {
 						// didn't really intersect
 						continue;
@@ -1503,7 +1503,7 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 
 			// if b1 may chop up b2
 			if ( !ChopAllowed || ChopAllowed( b1,  b2 ) ) {
-				if ( !dmap_aasPruneBrushesChopping.GetBool() || b2->CanSubtractionYieldLessThreeBrushes( b1, BRUSH_EPSILON ) ) {
+				if ( !dmap_pruneAasBrushesChopping.GetBool() || b2->CanSubtractionYieldLessThreeBrushes( b1, BRUSH_EPSILON ) ) {
 					if ( !b2->Subtract( b1, sub2 ) ) {
 						// didn't really intersect
 						sub1.Free();
@@ -1563,7 +1563,7 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 
 
 
-static idCVar dmap_fasterAasBrushListMerge(
+idCVar dmap_fasterAasBrushListMerge(
 	"dmap_fasterAasBrushListMerge", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Use faster data structures for idBrushList::Merge in AAS compilation. "
 	"This is performance improvement in TDM 2.10."

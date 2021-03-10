@@ -268,6 +268,20 @@ void ResetDmapGlobals( void ) {
 	dmapGlobals.totalShadowVerts = 0;
 }
 
+
+idCVar dmap_compatibility(
+	"dmap_compatibility", "0", CVAR_INTEGER | CVAR_SYSTEM,
+	"This meta-cvar can be used to dmap old FMs.\n"
+	"Without it, you'll probably have to heavily modify such a map.\n"
+	"\n"
+	"If you set this cvar to some TDM version, then\n"
+	"  dmap will work approximately like it worked in that version of TDM.\n"
+	"Version must be specified as integer without dot, e.g.: 207 or 209\n"
+	"\n"
+	"Implementation-wise, setting this cvar forces\n"
+	"  all dmap_XXX cvars to appropriate values.\n"
+);
+
 /*
 ============
 Dmap
@@ -283,6 +297,25 @@ void Dmap( const idCmdArgs &args ) {
 	bool		noAAS = false;
 
 	ResetDmapGlobals();
+
+	if (int version = dmap_compatibility.GetInteger()) {
+		//new in 2.08
+		dmap_fixBrushOpacityFirstSide.SetBool(version >= 208);
+		dmap_bspAllSidesOfVisportal.SetBool(version >= 208);
+		dmap_fixVisportalOutOfBoundaryEffects.SetBool(version >= 208);
+		//new in 2.10
+		dmap_planeHashing.SetBool(version >= 210);
+	    dmap_fasterPutPrimitives.SetBool(version >= 210);
+	    dmap_dontSplitWithFuncStaticVertices.SetBool(version >= 210);
+	    dmap_fixVertexSnappingTjunc.SetInteger(version >= 210 ? 2 : 0);
+	    dmap_fasterShareMapTriVerts.SetBool(version >= 210);
+	    dmap_optimizeTriangulation.SetBool(version >= 210);
+	    dmap_optimizeExactTjuncIntersection.SetBool(version >= 210);
+	    dmap_fasterAasMeltPortals.SetBool(version >= 210);
+	    dmap_fasterAasBrushListMerge.SetBool(version >= 210);
+	    dmap_pruneAasBrushesChopping.SetBool(version >= 210);
+	    dmap_fasterAasWaterJumpReachability.SetBool(version >= 210);
+	}
 
 	if ( args.Argc() < 2 ) {
 		DmapHelp();

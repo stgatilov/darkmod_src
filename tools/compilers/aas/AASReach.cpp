@@ -853,7 +853,7 @@ void idAASReach::FlagReachableAreas( idAASFileLocal *file ) {
 }
 
 
-static idCVar dmap_fasterAasWaterJumpReachability(
+idCVar dmap_fasterAasWaterJumpReachability(
 	"dmap_fasterAasWaterJumpReachability", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Use faster algorithm for finding 'water-jump' reachabilities in idAASReach::Build during AAS compilation. "
 	"This is performance improvement in TDM 2.10."

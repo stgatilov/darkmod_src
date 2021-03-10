@@ -15,9 +15,24 @@
 
 #include "../../../renderer/tr_local.h"
 
+//meta-cvar
+extern idCVar dmap_compatibility;
+//TDM 2.08:
 extern idCVar dmap_fixBrushOpacityFirstSide;
 extern idCVar dmap_bspAllSidesOfVisportal;
 extern idCVar dmap_fixVisportalOutOfBoundaryEffects;
+//TDM 2.10:
+extern idCVar dmap_planeHashing;
+extern idCVar dmap_fasterPutPrimitives;
+extern idCVar dmap_dontSplitWithFuncStaticVertices;
+extern idCVar dmap_fixVertexSnappingTjunc;
+extern idCVar dmap_fasterShareMapTriVerts;
+extern idCVar dmap_optimizeTriangulation;
+extern idCVar dmap_optimizeExactTjuncIntersection;
+extern idCVar dmap_fasterAasMeltPortals;
+extern idCVar dmap_fasterAasBrushListMerge;
+extern idCVar dmap_pruneAasBrushesChopping;
+extern idCVar dmap_fasterAasWaterJumpReachability;
 
 
 typedef struct primitive_s {

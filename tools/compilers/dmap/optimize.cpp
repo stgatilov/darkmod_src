@@ -325,7 +325,7 @@ static bool VertexBetween( const optVertex_t *p1, const optVertex_t *v1, const o
 }
 
 
-static idCVar dmap_optimizeExactTjuncIntersection(
+idCVar dmap_optimizeExactTjuncIntersection(
 	"dmap_optimizeExactTjuncIntersection", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Ensure that exact T-junctions are computed exactly in "
 	"EdgeIntersection function of optimize triangulation algorithm "
@@ -541,7 +541,7 @@ static	int LengthSort( const void *a, const void *b ) {
 	return 0;
 }
 
-static idCVar dmap_optimizeTriangulation(
+idCVar dmap_optimizeTriangulation(
 	"dmap_optimizeTriangulation", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Controls which algorithm is used to optimize triangulations (see #5488):\n"
 	"  0 - slow greedy algorithm: insert edges by length increasing\n"

@@ -2,7 +2,7 @@
 #include "PlaneSet.h"
 
 
-static idCVar dmap_planeHashing(
+idCVar dmap_planeHashing(
 	"dmap_planeHashing", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Use faster algorithm for hashing planes in idPlaneSet.\n"
 	"May affect dmap behavior if very close planes are present.\n"

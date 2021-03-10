@@ -100,7 +100,7 @@ struct HashVertexRef {
 static idList<HashVertexRef> allVertRefs;
 static idList<int> allVertDsu;
 
-static idCVar dmap_fixVertexSnappingTjunc(
+idCVar dmap_fixVertexSnappingTjunc(
 	"dmap_fixVertexSnappingTjunc", "2", CVAR_INTEGER | CVAR_SYSTEM,
 	"Controls how vertex snapping in T-junctions removal works (see #5486):\n"
 	"  0 - can create very close output vertices\n"

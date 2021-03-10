@@ -2040,7 +2040,7 @@ void idBrushBSP::MeltFlood_r( idBrushBSPNode *node, int skipContents, idBounds &
 	}
 }
 
-static idCVar dmap_fasterAasMeltPortals(
+idCVar dmap_fasterAasMeltPortals(
 	"dmap_fasterAasMeltPortals", "1", CVAR_BOOL | CVAR_SYSTEM,
 	"Use hash table of small size in idBrushBSP::MeltLeafNodePortals during AAS compilation. "
 	"This is performance improvement in TDM 2.10."
