@@ -31,7 +31,10 @@ typedef struct primitive_s {
 
 typedef struct {
 	struct optimizeGroup_s	*groups;
-	// we might want to add other fields later
+	
+	//stgatilov: this data exists temporarily while PutPrimitivesInAreas runs
+	//it provides faster groups search (by planeNum), but is dropped when function ends
+	struct groupsPerPlane_s *groupsPerPlane;
 } uArea_t;
 
 typedef struct {

@@ -24,6 +24,16 @@
 #define	 TEXTURE_OFFSET_EQUAL_EPSILON	0.005
 #define	 TEXTURE_VECTOR_EQUAL_EPSILON	0.001
 
+idCVar dmap_fasterPutPrimitives(
+	"dmap_fasterPutPrimitives", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"If set to 1, then use faster data structures for groups search in PutPrimitivesInAreas. "
+	"This is performance improvement in TDM 2.10."
+);
+struct groupsPerPlane_s {
+	idHashIndex hash;
+	idList<struct optimizeGroup_s *> lists;
+};
+
 /*
 ===============
 AddTriListToArea
@@ -41,9 +51,28 @@ static void AddTriListToArea( uEntity_t *e, mapTri_t *triList, int planeNum, int
 	if ( !triList ) {
 		return;
 	}
-
 	area = &e->areas[areaNum];
-	for ( group = area->groups ; group ; group = group->nextGroup ) {
+
+	optimizeGroup_t* *groupsList = &area->groups;
+	if (dmap_fasterPutPrimitives.GetBool()) {
+		groupsPerPlane_s &gpp = *area->groupsPerPlane;
+		//stgatilov: try to find list for this planeNum in hash table
+		groupsList = nullptr;
+		for (int i = gpp.hash.First(planeNum); i >= 0; i = gpp.hash.Next(i)) {
+			if (gpp.lists[i]->planeNum == planeNum) {
+				groupsList = &gpp.lists[i];
+				break;
+			}
+		}
+		if (!groupsList) {
+			//not found: create a new list
+			gpp.lists.AddGrow(nullptr);
+			gpp.hash.Add(planeNum, gpp.lists.Num() - 1);
+			groupsList = &gpp.lists[gpp.lists.Num() - 1];
+		}
+	}
+
+	for ( group = *groupsList ; group ; group = group->nextGroup ) {
 		if ( group->material == triList->material
 			&& group->planeNum == planeNum
 			&& group->mergeGroup == triList->mergeGroup ) {
@@ -76,9 +105,9 @@ static void AddTriListToArea( uEntity_t *e, mapTri_t *triList, int planeNum, int
 		group->planeNum = planeNum;
 		group->mergeGroup = triList->mergeGroup;
 		group->material = triList->material;
-		group->nextGroup = area->groups;
+		group->nextGroup = *groupsList;
 		group->texVec = *texVec;
-		area->groups = group;
+		*groupsList = group;
 	}
 
 	group->triList = MergeTriLists( group->triList, triList );
@@ -588,6 +617,19 @@ void PutPrimitivesInAreas( uEntity_t *e ) {
 	e->areas = (uArea_t *)Mem_Alloc( e->numAreas * sizeof( e->areas[0] ) );
 	memset( e->areas, 0, e->numAreas * sizeof( e->areas[0] ) );
 
+	if (dmap_fasterPutPrimitives.GetBool()) {
+		//stgatilov: prepare auxilliary search structures for optimize groups
+		int avgPrimCount = e->mapEntity->GetNumPrimitives() / e->numAreas;
+		int capacity = idMath::Imax(16, idMath::CeilPowerOfTwo(avgPrimCount));
+		for (int i = 0; i < e->numAreas; i++) {
+			e->areas[i].groupsPerPlane = new groupsPerPlane_s();
+			groupsPerPlane_s &gpp = *e->areas[i].groupsPerPlane;
+			gpp.hash.Clear(capacity, capacity);
+			gpp.lists.AssureSize(capacity);
+			gpp.lists.SetNum(0, false);
+		}
+	}
+
 	// for each primitive, clip it to the non-solid leafs
 	// and divide it into different areas
 	for ( prim = e->primitives ; prim ; prim = prim->next ) {
@@ -669,6 +711,29 @@ void PutPrimitivesInAreas( uEntity_t *e ) {
 					AddMapTriToAreas( &mapTri, e );
 				}
 			}
+		}
+	}
+
+	if (dmap_fasterPutPrimitives.GetBool()) {
+		//stgatilov: merge lists of optimize groups back and shutdown auxilliary data structures
+		for (int i = 0; i < e->numAreas; i++) {
+			uArea_t *area = &e->areas[i];
+			groupsPerPlane_s &gpp = *area->groupsPerPlane;
+			//merge per-plane lists into one long list
+			optimizeGroup_t* &mergedList = area->groups;
+			assert(mergedList == nullptr);
+			for (int j = 0; j < gpp.lists.Num(); j++) {
+				optimizeGroup_t *group = gpp.lists[j];
+				assert(group);
+				optimizeGroup_t *end = group;
+				while (end->nextGroup)
+					end = end->nextGroup;
+				end->nextGroup = mergedList;
+				mergedList = group;
+			}
+			//delete auxilliary data structures
+			delete area->groupsPerPlane;
+			area->groupsPerPlane = nullptr;
 		}
 	}
 }
