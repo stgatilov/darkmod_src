@@ -1590,11 +1590,11 @@ common->Printf( "lines %i (%i to %i) and %i (%i to %i) intersect at old point %i
 		// by another point
 		for ( j = 0 ; j < numCross ; j++ ) {
 			for ( k = j+1 ; k < numCross ; k++ ) {
+				if ( sorted[j] == sorted[k] ) {
+					continue;
+				}
 				for ( l = 0 ; l < numCross ; l++ ) {
 					if ( sorted[l] == sorted[j] || sorted[l] == sorted[k] ) {
-						continue;
-					}
-					if ( sorted[j] == sorted[k] ) {
 						continue;
 					}
 					if ( VertexBetween( sorted[l], sorted[j], sorted[k] ) ) {
