@@ -170,6 +170,13 @@ static bool MatchVert( const idDrawVert *a, const idDrawVert *b ) {
 	return true;
 }
 
+
+idCVar dmap_fasterShareMapTriVerts(
+	"dmap_fasterShareMapTriVerts", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"If set to 1, then use faster data structures for sharing vertices in ShareMapTriVerts. "
+	"This is performance improvement in TDM 2.10."
+);
+
 /*
 ====================
 ShareMapTriVerts
@@ -195,27 +202,55 @@ srfTriangles_t	*ShareMapTriVerts( const mapTri_t *tris ) {
 	numVerts = 0;
 	numIndexes = 0;
 
+	idVectorSet<idVec3, 3> vertexSet;
+	if (dmap_fasterShareMapTriVerts.GetBool()) {
+		//stgatilov: put unique vertices into cellular hash
+		//this allows to quickly find filter matches by XYZ
+		int resolution = idMath::Imax( 1, idMath::Pow(count, 0.333f) );
+		idBounds bbox;
+		BoundTriList(tris, bbox);
+		bbox.ExpandSelf( idMath::Fmax(1.0f, resolution * XYZ_EPSILON * 2.0f) );
+		vertexSet.Init( bbox[0], bbox[1], resolution, count );
+	}
+
 	for ( step = tris ; step ; step = step->next ) {
 		for ( i = 0 ; i < 3 ; i++ ) {
 			const idDrawVert	*dv;
 
 			dv = &step->v[i];
 
-			// search for a match
-			for ( j = 0 ; j < numVerts ; j++ ) {
-				if ( MatchVert( &uTri->verts[j], dv ) ) {
-					break;
+			int match = -1;
+			auto Callback = [&](int idx, const idVec3 &) -> bool {
+				if ( MatchVert( &uTri->verts[idx], dv ) ) {
+					match = idx;
+					return true;
 				}
+				return false;
+			};
+
+			// search for a match
+			if (dmap_fasterShareMapTriVerts.GetBool()) {
+				vertexSet.ForeachMatch(dv->xyz, float(XYZ_EPSILON), Callback);
 			}
-			if ( j == numVerts ) {
-				numVerts++;
-				uTri->verts[j].xyz = dv->xyz;
-				uTri->verts[j].normal = dv->normal;
-				uTri->verts[j].st[0] = dv->st[0];
-				uTri->verts[j].st[1] = dv->st[1];
+			else {
+				for ( j = 0 ; j < numVerts ; j++ )
+					if (Callback(j, vec3_zero))
+						break;
 			}
 
-			uTri->indexes[numIndexes++] = j;
+			if ( match < 0 ) {
+				match = numVerts++;
+				uTri->verts[match].xyz = dv->xyz;
+				uTri->verts[match].normal = dv->normal;
+				uTri->verts[match].st[0] = dv->st[0];
+				uTri->verts[match].st[1] = dv->st[1];
+				if (dmap_fasterShareMapTriVerts.GetBool()) {
+					int idx = vertexSet.AddVector(dv->xyz);
+					assert(idx == match);
+				}
+			}
+
+			uTri->indexes[numIndexes++] = match;
 		}
 	}
 
