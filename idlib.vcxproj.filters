@@ -419,5 +419,8 @@
     <ClInclude Include="idlib\containers\DisjointSets.h">
       <Filter>Containers</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\containers\BinHeap.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

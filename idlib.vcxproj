@@ -255,6 +255,7 @@
     <ClInclude Include="idlib\bv\Box.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />
     <ClInclude Include="idlib\bv\Sphere.h" />
+    <ClInclude Include="idlib\containers\BinHeap.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
     <ClInclude Include="idlib\containers\DenseHash.h" />
