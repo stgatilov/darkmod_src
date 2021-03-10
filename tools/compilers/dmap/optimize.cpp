@@ -325,6 +325,13 @@ static bool VertexBetween( const optVertex_t *p1, const optVertex_t *v1, const o
 }
 
 
+static idCVar dmap_optimizeExactTjuncIntersection(
+	"dmap_optimizeExactTjuncIntersection", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Ensure that exact T-junctions are computed exactly in "
+	"EdgeIntersection function of optimize triangulation algorithm "
+	"(small improvement in TDM 2.10 and later)"
+);
+
 /*
 ====================
 EdgeIntersection
@@ -348,6 +355,24 @@ static	optVertex_t *EdgeIntersection( const optVertex_t *p1, const optVertex_t *
 	dir1 = idVec3d(p2->pv) - idVec3d(l1->pv);
 	dir2 = idVec3d(p2->pv) - idVec3d(l2->pv);
 	cross2 = dir1.Cross( dir2 );
+
+	if (dmap_optimizeExactTjuncIntersection.GetBool() && cross1.z != 0.0 && cross2.z != 0.0) {
+		//stgatilov: check if l1 or l2 is T-junction
+		dir1 = idVec3d(l1->pv) - idVec3d(p1->pv);
+		dir2 = idVec3d(l1->pv) - idVec3d(p2->pv);
+		idVec3d cross1x = dir1.Cross( dir2 );
+		dir1 = idVec3d(l2->pv) - idVec3d(p1->pv);
+		dir2 = idVec3d(l2->pv) - idVec3d(p2->pv);
+		idVec3d cross2x = dir1.Cross( dir2 );
+		if (cross1x.z == 0.0 || cross2x.z == 0.0) {
+			//intersect lines in opposite direction
+			//so that T-junction is found exactly
+			idSwap(l1, p1);
+			idSwap(l2, p2);
+			cross1 = cross1x;
+			cross2 = cross2x;
+		}
+	}
 
 	if ( float(cross1[2] - cross2[2]) == 0 ) {
 		return NULL;
