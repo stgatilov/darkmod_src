@@ -369,7 +369,6 @@ WriteOutputSurfaces
 ====================
 */
 static void WriteOutputSurfaces( int entityNum, int areaNum ) {
-	mapTri_t	*ambient, *copy;
 	int			surfaceNum;
 	int			numSurfaces;
 	idMapEntity	*entity;
@@ -419,7 +418,8 @@ typedef struct interactionTris_s {
 		// surface, even though they couldn't be merged together to save
 		// vertexes because they had different planes, texture coordinates, or lights.
 		// Different mergeGroups will stay in separate surfaces.
-		ambient = NULL;
+		mapTri_t *ambient = nullptr;
+		mapTri_t **ambientEnd = &ambient;
 
 		// each light that illuminates any of the groups in the surface will
 		// get its own list of indexes out of the original surface
@@ -434,8 +434,15 @@ typedef struct interactionTris_s {
 			}
 
 			// copy it out to the ambient list
-			copy = CopyTriList( groupStep->triList );
-			ambient = MergeTriLists( ambient, copy );
+			mapTri_t *copy = CopyTriList( groupStep->triList );
+			#if 0
+				ambient = MergeTriLists( ambient, copy );
+			#else
+				//stgatilov: we often merge 20K lists with one tri each, better do it in linear time
+				*ambientEnd = copy;
+				while (*ambientEnd)
+					ambientEnd = &(*ambientEnd)->next;
+			#endif
 			groupStep->surfaceEmited = true;
 
 			// duplicate it into an interaction for each groupLight
