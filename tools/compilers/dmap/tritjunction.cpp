@@ -509,6 +509,13 @@ void	FixEntityTjunctions( uEntity_t *e ) {
 	}
 }
 
+
+idCVar dmap_dontSplitWithFuncStaticVertices(
+	"dmap_dontSplitWithFuncStaticVertices", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"If set to 0, then dmap uses all vertices of all func_static-s as splitting points for edges of world surfaces. "
+	"As number of func_static-s grows up, this step becomes slower and slower. "
+	"This behavior was changed in TDM 2.10. "
+);
 /*
 ==================
 FixGlobalTjunctions
@@ -572,7 +579,8 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 
 	// add all the func_static model vertexes to the hash buckets
 	// optionally inline some of the func_static models
-	if ( dmapGlobals.entityNum == 0 ) {
+	if ( dmapGlobals.entityNum == 0 && !dmap_dontSplitWithFuncStaticVertices.GetBool() ) {
+
 		for ( int eNum = 1 ; eNum < dmapGlobals.num_entities ; eNum++ ) {
 			uEntity_t *entity = &dmapGlobals.uEntities[eNum];
 			const char *className = entity->mapEntity->epairs.GetString( "classname" );
