@@ -39,9 +39,16 @@ public:
 
 	void					Init( const type &mins, const type &maxs, const int boxHashSize, const int initialSize );
 	void					ResizeIndex( const int newSize );
-	void					Clear( void );
+	void					Clear( bool deleteBuffers = false );
 
+							// finds arbitrary match for the specified vector
+							// if there is no match, then the specified vector is appended
 	int						FindVector( const type &v, const float epsilon );
+
+							// stgatilov: calls given callback for all matches for the specified vector
+	template<class Lambda> void ForeachMatch( const type &v, const float epsilon, const Lambda &callback ) const;
+							// stgatilov: appends specified vector (without search for matches)
+	int						AddVector( const type &v );
 
 private:
 	idHashIndex				hash;
@@ -54,8 +61,8 @@ private:
 
 template< class type, int dimension >
 ID_INLINE idVectorSet<type,dimension>::idVectorSet( void ) {
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
 	boxHashSize = 16;
+	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
 	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
 	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
 }
@@ -73,7 +80,13 @@ ID_INLINE void idVectorSet<type,dimension>::Init( const type &mins, const type &
 	idList<type>::AssureSize( initialSize );
 	idList<type>::SetNum( 0, false );
 
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), initialSize );
+	int hashSize = idMath::CeilPowerOfTwo( idMath::IPow( boxHashSize, dimension ) );
+	if (hashSize != hash.GetHashSize())
+		hash.Clear( hashSize, initialSize );
+	else {
+		hash.Clear();
+		hash.ResizeIndex(initialSize);
+	}
 
 	this->mins = mins;
 	this->maxs = maxs;
@@ -93,13 +106,19 @@ ID_INLINE void idVectorSet<type,dimension>::ResizeIndex( const int newSize ) {
 }
 
 template< class type, int dimension >
-ID_INLINE void idVectorSet<type,dimension>::Clear( void ) {
-	idList<type>::Clear();
-	hash.Clear();
+ID_INLINE void idVectorSet<type,dimension>::Clear( bool deleteBuffers ) {
+	if (deleteBuffers) {
+		idList<type>::Clear();
+		hash.Free();
+	}
+	else {
+		idList<type>::SetNum(0, false);
+		hash.Clear();
+	}
 }
 
-template< class type, int dimension >
-ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const float epsilon ) {
+template< class type, int dimension > template< class Lambda >
+ID_INLINE void idVectorSet<type,dimension>::ForeachMatch( const type &v, const float epsilon, const Lambda &callback ) const {
 	int i, j, k, hashKey, partialHashKey[dimension];
 
 	for ( i = 0; i < dimension; i++ ) {
@@ -123,10 +142,16 @@ ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const floa
 				}
 			}
 			if ( k >= dimension ) {
-				return j;
+				if (callback(j, lv))
+					return;
 			}
 		}
 	}
+}
+
+template< class type, int dimension >
+ID_INLINE int idVectorSet<type,dimension>::AddVector( const type &v ) {
+	int i, hashKey;
 
 	hashKey = 0;
 	for ( i = 0; i < dimension; i++ ) {
@@ -135,8 +160,20 @@ ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const floa
 	}
 
 	hash.Add( hashKey, idList<type>::Num() );
-	this->Append( v );
+	this->AddGrow( v );
 	return idList<type>::Num()-1;
+}
+
+template< class type, int dimension >
+ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const float epsilon ) {
+	int match = -1;
+	ForeachMatch(v, epsilon, [&](int idx, const type &vec){
+		match = idx;
+		return true;
+	});
+	if (match >= 0)
+		return match;
+	return AddVector(v);
 }
 
 
@@ -162,7 +199,7 @@ public:
 	size_t					Size( void ) const { return sizeof( *this ) + Allocated(); }
 
 	void					Init( const type &mins, const type &maxs, const int boxHashSize, const int initialSize );
-	void					Clear( void );
+	void					Clear( bool deleteBuffers = false );
 
 							// returns either vectorNum or an index to a previously found vector
 	int						FindVector( const type *vectorList, const int vectorNum, const float epsilon );
@@ -178,8 +215,8 @@ private:
 
 template< class type, int dimension >
 ID_INLINE idVectorSubset<type,dimension>::idVectorSubset( void ) {
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
 	boxHashSize = 16;
+	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
 	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
 	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
 }
@@ -194,7 +231,13 @@ ID_INLINE void idVectorSubset<type,dimension>::Init( const type &mins, const typ
 	int i;
 	float boxSize;
 
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), initialSize );
+	int hashSize = idMath::CeilPowerOfTwo( idMath::IPow( boxHashSize, dimension ) );
+	if (hashSize != hash.GetHashSize())
+		hash.Clear( hashSize, initialSize );
+	else {
+		hash.Clear();
+		hash.ResizeIndex(initialSize);
+	}
 
 	this->mins = mins;
 	this->maxs = maxs;
@@ -208,9 +251,15 @@ ID_INLINE void idVectorSubset<type,dimension>::Init( const type &mins, const typ
 }
 
 template< class type, int dimension >
-ID_INLINE void idVectorSubset<type,dimension>::Clear( void ) {
-	idList<type>::Clear();
-	hash.Clear();
+ID_INLINE void idVectorSubset<type,dimension>::Clear( bool deleteBuffers ) {
+	if (deleteBuffers) {
+		idList<type>::Clear();
+		hash.Free();
+	}
+	else {
+		idList<type>::SetNum(0, false);
+		hash.Clear();
+	}
 }
 
 template< class type, int dimension >
