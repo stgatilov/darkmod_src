@@ -395,8 +395,6 @@ void	Prelight( uEntity_t *e );
 
 // tritjunction.cpp
 
-struct hashVert_s	*GetHashVert( idVec3 &v );
-void	HashTriangles( optimizeGroup_t *groupList );
 void	FreeTJunctionHash( void );
 int		CountGroupListTris( const optimizeGroup_t *groupList );
 void	FixEntityTjunctions( uEntity_t *e );

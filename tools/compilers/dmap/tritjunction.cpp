@@ -117,12 +117,6 @@ struct hashVert_s	*GetHashVert( idVec3 &v ) {
 	// see if a vertex near enough already exists
 	// this could still fail to find a near neighbor right at the hash block boundary
 	for ( hv = hashVerts[block[0]][block[1]][block[2]] ; hv ; hv = hv->next ) {
-#if 0
-		if ( hv->iv[0] == iv[0] && hv->iv[1] == iv[1] && hv->iv[2] == iv[2] ) {
-			VectorCopy( hv->v, v );
-			return hv;
-		}
-#else
 		for ( i = 0 ; i < 3 ; i++ ) {
 			int	d;
 			d = hv->iv[i] - iv[i];
@@ -134,7 +128,6 @@ struct hashVert_s	*GetHashVert( idVec3 &v ) {
 			VectorCopy( hv->v, v );
 			return hv;
 		}
-#endif
 	}
 
 	// create a new one 
@@ -202,7 +195,7 @@ HashTriangles
 Removes triangles that are degenerated or flipped backwards
 =================
 */
-void HashTriangles( optimizeGroup_t *groupList ) {
+static void HashTriangles( optimizeGroup_t *groupList ) {
 	mapTri_t	*a;
 	int			vert;
 	int			i;
