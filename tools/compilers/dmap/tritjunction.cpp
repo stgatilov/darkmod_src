@@ -105,9 +105,7 @@ struct hashVert_s	*GetHashVert( idVec3 &v ) {
 
 	// snap the vert to integral values
 	for ( i = 0 ; i < 3 ; i++ ) {
-		//stgatilov: subtract epsilon to ensure that values near snap-middle are always rounded down
-		double eps = 0.009656781074217107;
-		iv[i] = floor( ( v[i] + (0.5-eps)/SNAP_FRACTIONS ) * SNAP_FRACTIONS );
+		iv[i] = floor( ( v[i] + 0.5/SNAP_FRACTIONS ) * SNAP_FRACTIONS );
 		block[i] = ( iv[i] - hashIntMins[i] ) / hashIntScale[i];
 		if ( block[i] < 0 ) {
 			block[i] = 0;
