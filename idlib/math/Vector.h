@@ -2182,4 +2182,171 @@ ID_FORCE_INLINE double *idVec3d::ToDoublePtr( void ) {
 }
 
 
+class idVec2d {
+public:	
+	double			x;
+	double			y;
+
+					idVec2d( void );
+	explicit		idVec2d(const double xy);
+	explicit		idVec2d(const double x, const double y);
+	//stgatilov: conversions between idVec2 and idVec2d are explicit for a reason!
+	// I want the code to show very clearly where double precision is used.
+	explicit		idVec2d( idVec2 v );
+	explicit		operator idVec2() const;
+
+	double			operator[]( const int index ) const;
+	double &		operator[]( const int index );
+	idVec2d			operator-() const;
+	idVec2d			operator*( const double a ) const;
+	idVec2d			operator/( const double a ) const;
+	idVec2d			operator+( const idVec2d &a ) const;
+	idVec2d			operator-( const idVec2d &a ) const;
+	friend idVec2d	operator*( const double a, const idVec2d &b );
+	idVec2d &		operator+=( const idVec2d &a );
+	idVec2d &		operator-=( const idVec2d &a );
+	idVec2d &		operator/=( const double a );
+	idVec2d &		operator*=( const double a );
+
+	double			Cross( const idVec2d &a ) const;
+	double			Dot( const idVec2d &a ) const;
+	double			Length( void ) const;
+	double			LengthSqr( void ) const;
+	double			Normalize( void );
+
+	int				GetDimension( void ) const;
+
+	const double *	ToDoublePtr( void ) const;
+	double *		ToDoublePtr( void );
+
+	//stgatilov: for !exact! polar sort of idVec2-s
+	int				Quarter( void ) const;
+	static int		PolarAngleCompare(const idVec2d &a, const idVec2d &b);
+};
+
+ID_FORCE_INLINE idVec2d::idVec2d( void ) : x(0.0), y(0.0) {}
+ID_FORCE_INLINE	idVec2d::idVec2d(const double xy) : x(xy), y(xy) {}
+ID_FORCE_INLINE	idVec2d::idVec2d(const double x, const double y) : x(x), y(y) {}
+ID_FORCE_INLINE	idVec2d::idVec2d( idVec2 v ) : x(double(v.x)), y(double(v.y)) {}
+ID_FORCE_INLINE	idVec2d::operator idVec2() const { return idVec2(float(x), float(y)); }
+
+ID_FORCE_INLINE double idVec2d::operator[]( const int index ) const {
+	return ( &x )[ index ];
+}
+
+ID_FORCE_INLINE double &idVec2d::operator[]( const int index ) {
+	return ( &x )[ index ];
+}
+
+ID_FORCE_INLINE idVec2d idVec2d::operator-() const {
+	return idVec2d( -x, -y );
+}
+
+ID_FORCE_INLINE idVec2d idVec2d::operator*( const double a ) const {
+	return idVec2d( x * a, y * a );
+}
+
+ID_FORCE_INLINE idVec2d idVec2d::operator/( const double a ) const {
+	double inva = 1.0 / a;
+	return idVec2d( x * inva, y * inva );
+}
+
+ID_FORCE_INLINE idVec2d operator*( const double a, const idVec2d b ) {
+	return idVec2d( b.x * a, b.y * a );
+}
+
+ID_FORCE_INLINE idVec2d idVec2d::operator+( const idVec2d &a ) const {
+	return idVec2d( x + a.x, y + a.y );
+}
+
+ID_FORCE_INLINE idVec2d idVec2d::operator-( const idVec2d &a ) const {
+	return idVec2d( x - a.x, y - a.y );
+}
+
+ID_FORCE_INLINE idVec2d &idVec2d::operator+=( const idVec2d &a ) {
+	x += a.x;
+	y += a.y;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec2d &idVec2d::operator-=( const idVec2d &a ) {
+	x -= a.x;
+	y -= a.y;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec2d &idVec2d::operator/=( const double a ) {
+	double inva = 1.0 / a;
+	x *= inva;
+	y *= inva;
+
+	return *this;
+}
+
+ID_FORCE_INLINE idVec2d &idVec2d::operator*=( const double a ) {
+	x *= a;
+	y *= a;
+
+	return *this;
+}
+
+ID_FORCE_INLINE double idVec2d::Dot( const idVec2d &a ) const {
+	return x * a.x + y * a.y;
+}
+
+ID_FORCE_INLINE double idVec2d::Cross( const idVec2d &a ) const {
+	return x * a.y - y * a.x;
+}
+
+ID_INLINE double idVec2d::Length( void ) const {
+	return sqrt( x * x + y * y );
+}
+
+ID_FORCE_INLINE double idVec2d::LengthSqr( void ) const {
+	return ( x * x + y * y );
+}
+
+ID_INLINE double idVec2d::Normalize( void ) {
+	double len = Length();
+	operator/=(len);
+	return len;
+}
+
+ID_INLINE int idVec2d::GetDimension( void ) const { return 2; }
+
+ID_FORCE_INLINE const double *idVec2d::ToDoublePtr( void ) const {
+	return &x;
+}
+
+ID_FORCE_INLINE double *idVec2d::ToDoublePtr( void ) {
+	return &x;
+}
+
+ID_INLINE int idVec2d::Quarter( void ) const {
+	if (x > 0.0 && y >= 0.0)
+		return 0;
+	if (x <= 0.0 && y > 0.0)
+		return 1;
+	if (x < 0.0 && y <= 0.0)
+		return 2;
+	if (x >= 0.0 && y < 0.0)
+		return 3;
+	assert(x == 0.0 && y == 0.0);
+	return -1;
+}
+
+ID_INLINE int idVec2d::PolarAngleCompare(const idVec2d &a, const idVec2d &b) {
+	int aq = a.Quarter();
+	int bq = b.Quarter();
+	if (aq != bq)
+		return (aq < bq ? -1 : 1);
+	double cross = a.Cross(b);
+	if (cross != 0.0)
+		return (cross > 0.0 ? -1 : 1);
+	return 0;
+}
+
+
 #endif /* !__MATH_VECTOR_H__ */
