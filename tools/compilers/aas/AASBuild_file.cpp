@@ -361,7 +361,7 @@ int idAASBuild::StoreTree_r( idBrushBSPNode *node ) {
 	file->nodes[nodeNum].children[1] = child1;
 
 	if ( !child0 && !child1 ) {
-		file->nodes.SetNum( file->nodes.Num()-1 );
+		file->nodes.Pop();
 		return 0;
 	}
 
