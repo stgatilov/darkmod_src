@@ -1480,6 +1480,32 @@ void idBrushList::WriteBrushMap( const idStr &fileName, const idStr &ext ) const
 	delete map;
 }
 
+/*
+============
+idBrushList::ToList
+============
+*/
+void idBrushList::ToList( idList<idBrush*> &list ) const {
+	list.SetNum(0, false);
+	list.AssureSize(numBrushes);
+	list.SetNum(0, false);
+	for (idBrush *brush = head; brush; brush = brush->next)
+		list.AddGrow(brush);
+}
+
+/*
+============
+idBrushList::FromList
+============
+*/
+void idBrushList::FromList( const idList<idBrush*> &list ) {
+	numBrushes = 0;
+	numBrushSides = 0;
+	head = tail = nullptr;
+	for (int i = 0; i < list.Num(); i++)
+		if (list[i])
+			AddToTail(list[i]);
+}
 
 //===============================================================
 //

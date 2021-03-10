@@ -61,7 +61,7 @@ public:
 	void					RemoveFlag( int flag ) { flags &= ~flag; }
 	const idPlane &			GetPlane( void ) const { return plane; }
 	void					SetPlaneNum( int num ) { planeNum = num; }
-	int						GetPlaneNum( void ) { return planeNum; }
+	int						GetPlaneNum( void ) const { return planeNum; }
 	const idWinding *		GetWinding( void ) const { return winding; }
 	idBrushSide *			Copy( void ) const;
 	int						Split( const idPlane &splitPlane, idBrushSide **front, idBrushSide **back ) const;
@@ -154,7 +154,7 @@ public:
 	int						NumSides( void ) const { return numBrushSides; }
 	idBrush *				Head( void ) const { return head; }
 	idBrush *				Tail( void ) const { return tail; }
-	void					Clear( void ) { head = tail = NULL; numBrushes = 0; }
+	void					Clear( void ) { head = tail = NULL; numBrushes = numBrushSides = 0; }
 	bool					IsEmpty( void ) const { return (numBrushes == 0); }
 	idBounds				GetBounds( void ) const;
 							// add brush to the tail of the list
@@ -185,6 +185,10 @@ public:
 	void					CreatePlaneList( idPlaneSet &planeList ) const;
 							// write a brush map with the brushes in the list
 	void					WriteBrushMap( const idStr &fileName, const idStr &ext ) const;
+							// stgatilov: fill given array with brush pointers
+	void					ToList( idList<idBrush*> &list ) const;
+							// stgatilov: refill this brushlist from given array (NULLs skipped)
+	void					FromList( const idList<idBrush*> &list );
 
 private:
 	idBrush *				head;
