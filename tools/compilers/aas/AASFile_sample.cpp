@@ -595,3 +595,49 @@ int idAASFileLocal::MaxTreeDepth( void ) const {
 	MaxTreeDepth_r( 1, depth, maxDepth );
 	return maxDepth;
 }
+
+/*
+============
+idAASFileLocal::FindAreasInBounds_r
+============
+*/
+void idAASFileLocal::FindAreasInBounds_r(const idBounds &bounds, idList<int> &areaNums, int nodeNum) const {
+	while( nodeNum ) {
+		if ( nodeNum < 0 ) {
+			areaNums.AddGrow( -nodeNum );
+			break;
+		}
+		const aasNode_t *node = &nodes[nodeNum];
+		int res = bounds.PlaneSide( planeList[node->planeNum] );
+		if ( res == PLANESIDE_BACK ) {
+			nodeNum = node->children[1];
+		}
+		else if ( res == PLANESIDE_FRONT ) {
+			nodeNum = node->children[0];
+		}
+		else {
+			FindAreasInBounds_r( bounds, areaNums, node->children[0] );
+			nodeNum = node->children[1];
+		}
+	}
+}
+
+/*
+============
+idAASFileLocal::FindAreasInBounds
+============
+*/
+int idAASFileLocal::FindAreasInBounds(const idBounds &bounds, idList<int> &areaNums) const {
+	areaNums.SetNum( 0, false );
+	FindAreasInBounds_r( bounds, areaNums, 1 );
+
+	//sort and remove duplicates
+	areaNums.Sort();
+	int k = 1;
+	for ( int i = 1; i < areaNums.Num(); i++ )
+		if ( areaNums[i] != areaNums[i-1] )
+			areaNums[k++] = areaNums[i];
+	areaNums.SetNum( k, false );
+
+	return areaNums.Num();
+}

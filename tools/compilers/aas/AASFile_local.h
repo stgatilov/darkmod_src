@@ -81,6 +81,8 @@ private:
 	int							AreaContentsTravelFlags( int areaNum ) const;
 	idVec3						AreaReachableGoal( int areaNum ) const;
 	int							NumReachabilities( void ) const;
+	void						FindAreasInBounds_r(const idBounds &bounds, idList<int> &areaNums, int nodeNum) const;
+	int							FindAreasInBounds(const idBounds &bounds, idList<int> &areaNums) const;
 };
 
 #endif /* !__AASFILELOCAL_H__ */
