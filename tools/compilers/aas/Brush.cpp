@@ -1324,6 +1324,7 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 			if ( !ChopAllowed || ChopAllowed( b1,  b2 ) ) {
 				if ( !b2->Subtract( b1, sub2 ) ) {
 					// didn't really intersect
+					sub1.Free();
 					continue;
 				}
 				if ( sub2.IsEmpty() ) {
