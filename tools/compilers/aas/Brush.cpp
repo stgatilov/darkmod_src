@@ -1379,6 +1379,13 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 }
 
 
+
+static idCVar dmap_fasterAasBrushListMerge(
+	"dmap_fasterAasBrushListMerge", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Use faster data structures for idBrushList::Merge in AAS compilation. "
+	"This is performance improvement in TDM 2.10."
+);
+
 /*
 ============
 idBrushList::Merge
@@ -1386,7 +1393,6 @@ idBrushList::Merge
 */
 void idBrushList::Merge( bool (*MergeAllowed)( idBrush *b1, idBrush *b2 ) ) {
 	idPlaneSet planeList;
-	idBrush *b1, *b2, *nextb2;
 	int numMerges;
 
 	common->Printf( "[Brush Merge]\n");
@@ -1395,25 +1401,101 @@ void idBrushList::Merge( bool (*MergeAllowed)( idBrush *b1, idBrush *b2 ) ) {
 	CreatePlaneList( planeList );
 
 	numMerges = 0;
-	for ( b1 = Head(); b1; b1 = b1->next ) {
 
-		for ( b2 = Head(); b2; b2 = nextb2 ) {
-			nextb2 = b2->Next();
+	if (!dmap_fasterAasBrushListMerge.GetBool()) {
 
-			if ( b2 == b1 ) {
-				continue;
-			}
+		//stgatilov: old code with quadratic traversal over all brush pairs
+		idBrush *b1, *b2, *nextb2;
+		for ( b1 = Head(); b1; b1 = b1->next ) {
 
-			if ( MergeAllowed && !MergeAllowed( b1, b2 ) ) {
-				continue;
-			}
+			for ( b2 = Head(); b2; b2 = nextb2 ) {
+				nextb2 = b2->Next();
 
-			if ( b1->TryMerge( b2, planeList ) ) {
-				Delete( b2 );
-				DisplayRealTimeString( "\r%6d", ++numMerges );
-				nextb2 = Head();
+				if ( b2 == b1 ) {
+					continue;
+				}
+
+				if ( MergeAllowed && !MergeAllowed( b1, b2 ) ) {
+					continue;
+				}
+
+				if ( b1->TryMerge( b2, planeList ) ) {
+					Delete( b2 );
+					DisplayRealTimeString( "\r%6d", ++numMerges );
+					nextb2 = Head();
+				}
 			}
 		}
+
+	}
+	else {
+
+		//stgatilov: new faster code with maintaining per-plane list of brushes (with such side)
+		idList<idBrush *> brushArr;
+		ToList(brushArr);
+		idList<idList<int>> brushIdsPerPlaneNum;	//TODO: better allocation policy?
+		brushIdsPerPlaneNum.SetNum(planeList.Num());
+
+		//fill per-plane lists initially
+		for (int i = 0; i < brushArr.Num(); i++) {
+			idBrush *brush = brushArr[i];
+			for (int j = 0; j < brush->GetNumSides(); j++) {
+				idBrushSide *s = brush->GetSide(j);
+				int plnum = s->GetPlaneNum();
+				brushIdsPerPlaneNum[plnum].SetGranularity(4);
+				brushIdsPerPlaneNum[plnum].Append(i);
+			}
+		}
+
+		for (int i = 0; i < brushArr.Num(); i++) {
+			idBrush *brush = brushArr[i];
+			if (!brush)
+				continue;
+
+			bool merged = false;
+			for (int u = 0; u < brush->GetNumSides(); u++) {
+				idBrushSide *s = brush->GetSide(u);
+				int plnum = s->GetPlaneNum();
+
+				//the other brush must have opposite plane on one of its sides (see TryMerge)
+				const idList<int> &candidates = brushIdsPerPlaneNum[plnum ^ 1];
+				for (int q = 0; q < candidates.Num(); q++) {
+					int j = candidates[q];
+					idBrush *otherBrush = brushArr[j];
+					if (!otherBrush)
+						continue;
+
+					if ( MergeAllowed && !MergeAllowed( brush, otherBrush ) )
+						continue;
+					if ( !brush->TryMerge( otherBrush, planeList ) )
+						continue;
+
+					//brushes merged
+					delete otherBrush;
+					numMerges++;
+
+					//old brush indices are not removed from per-plane list
+					//so we nullify the corresponding elements to skip such entries
+					brushArr[i] = brushArr[j] = nullptr;
+
+					//merged brush takes new place at the end of brush array
+					//so it will be merged again in future
+					int idx = brushArr.AddGrow(brush);
+					for (int v = 0; v < brush->GetNumSides(); v++) {
+						idBrushSide *s = brush->GetSide(v);
+						int plnum = s->GetPlaneNum();
+						brushIdsPerPlaneNum[plnum].Append(idx);
+					}
+
+					merged = true;
+					break;
+				}
+				if (merged)
+					break;
+			}
+		}
+
+		FromList(brushArr);
 	}
 
 	common->Printf( "\r%6d brushes merged\n", numMerges );
