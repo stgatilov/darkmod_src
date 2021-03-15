@@ -54,7 +54,6 @@ class TdmDepends(ConanFile):
         "libjpeg/9c@thedarkmod/local",
         "libpng/1.6.34@bincrafters/stable",
         "ffmpeg/4.0.2@thedarkmod/local",
-        "openal/1.19.1@thedarkmod/local",
         "vorbis/1.3.6@bincrafters/stable",
         "fltk/1.3.5@thedarkmod/local",
         "BLAKE2/master@thedarkmod/local",
@@ -63,6 +62,7 @@ class TdmDepends(ConanFile):
     # these deps must be built separately for each configuration (both debug and release)
     # this is required for C++ libs because iterator debugging and runtime differences are not allowed by MSVC
     requires_perbuild = (
+        "openal/1.21.1@thedarkmod/local",
         "pugixml/1.9@bincrafters/stable",
     )
 
