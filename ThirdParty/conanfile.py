@@ -86,6 +86,7 @@ class TdmDepends(ConanFile):
             print(os.path.abspath("artefacts/%s/lib/%s" % (name, platform)))
             # note: we assume recipes are sane, and the set of headers does not depend on compiler/arch
             self.copy("*.h"  , root_package=name, src="include" , dst="artefacts/%s/include" % name)
+            self.copy("*.H"  , root_package=name, src="include" , dst="artefacts/%s/include" % name)    # FLTK =(
             self.copy("*.hpp", root_package=name, src="include" , dst="artefacts/%s/include" % name)
             self.copy("*"    , root_package=name, src="licenses", dst="artefacts/%s/licenses" % name)
             # compiled binaries are put under subdirectory named by build settings
