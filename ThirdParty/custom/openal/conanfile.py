@@ -1,77 +1,149 @@
-from conans import CMake, ConanFile, tools
 import os
+from conans import CMake, ConanFile, tools
+from conans.errors import ConanInvalidConfiguration
 
 
 class OpenALConan(ConanFile):
     name = "openal"
-    version = "1.19.1"  # stgatilov: taken from recipe for 1.19.0
+    version = "1.21.1"  # stgatilov: without it, 1_export_custom.py does not know the version
     description = "OpenAL Soft is a software implementation of the OpenAL 3D audio API."
     topics = ("conan", "openal", "audio", "api")
-    url = "http://github.com/bincrafters/conan-openal"
+    url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://www.openal.org"
-    author = "Bincrafters <bincrafters@gmail.com>"
     license = "MIT"
-    exports = ["LICENSE.md"]
-    exports_sources = ["CMakeLists.txt", "mxcsr.patch"]
+    exports_sources = ["CMakeLists.txt", "patches/*"]
     generators = "cmake"
 
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {'shared': False, 'fPIC': True}
+    default_options = {"shared": False, "fPIC": True}
 
-    _source_subfolder = "source_subfolder"
-    _build_subfolder = "build_subfolder"
+    _cmake = None
+
+    @property
+    def _source_subfolder(self):
+        return "source_subfolder"
+
+    @property
+    def _build_subfolder(self):
+        return "build_subfolder"
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
+    @property
+    def _supports_cxx14(self):
+        if self.settings.compiler == "clang" and self.settings.compiler.libcxx in ("libstdc++", "libstdc++11"):
+            if tools.Version(self.settings.compiler.version) < "9":
+                return False, "openal on clang {} cannot be built with stdlibc++(11) c++ runtime".format(self.settings.compiler.version)
+        min_version = {
+            "Visual Studio": "15",
+            "gcc": "5",
+            "clang": "5",
+        }.get(str(self.settings.compiler))
+        if min_version:
+            if tools.Version(self.settings.compiler.version) < min_version:
+                return False, "This compiler version does not support c++14"
+            else:
+                return True, "Unknown compiler. Assuming your compiler supports c++14"
+        return True, None
+
+    @property
+    def _supports_cxx11(self):
+        if self.settings.compiler == "clang" and self.settings.compiler.libcxx in ("libstdc++", "libstdc++11"):
+            if tools.Version(self.settings.compiler.version) < "9":
+                return False, "openal on clang {} cannot be built with stdlibc++(11) c++ runtime".format(self.settings.compiler.version)
+        min_version = {
+            "Visual Studio": "13",
+            "gcc": "5",
+            "clang": "5",
+        }.get(str(self.settings.compiler))
+        if min_version:
+            if tools.Version(self.settings.compiler.version) < min_version:
+                return False, "This compiler version does not support c++11"
+            else:
+                return True, "Unknown compiler. Assuming your compiler supports c++11"
+        return True, None
+
+    @property
+    def _openal_cxx_backend(self):
+        return tools.Version(self.version) >= "1.20"
 
     def configure(self):
-        if self.settings.os == 'Windows':
+        if self.options.shared:
             del self.options.fPIC
-        del self.settings.compiler.libcxx
+        # OpenAL's API is pure C, thus the c++ standard does not matter
+        # Because the backend is C++, the C++ STL matters
+        del self.settings.compiler.cppstd
+        if not self._openal_cxx_backend:
+            del self.settings.compiler.libcxx
+
+        if tools.Version(self.version) >= "1.21":
+            ok, msg = self._supports_cxx14
+            if not ok:
+                raise ConanInvalidConfiguration(msg)
+            if msg:
+                self.output.warn(msg)
+        elif tools.Version(self.version) >= "1.20":
+            ok, msg = self._supports_cxx11
+            if not ok:
+                raise ConanInvalidConfiguration(msg)
+            if msg:
+                self.output.warn(msg)
 
     def requirements(self):
         if self.settings.os == "Linux":
-            self.requires("libalsa/1.1.5@conan/stable")
+            self.requires("libalsa/1.2.4")
 
     def source(self):
-        source_url = "https://github.com/kcat/openal-soft"
-        sha256 = "9f3536ab2bb7781dbafabc6a61e0b34b17edd16bd6c2eaf2ae71bc63078f98c7"
-        tools.get("{0}/archive/openal-soft-{1}.tar.gz".format(source_url, self.version), sha256=sha256)
-        extracted_dir = "openal-soft-openal-soft-" + self.version
+        tools.get(**self.conan_data["sources"][self.version])
+        if tools.Version(self.version) >= "1.21":
+            extracted_dir = "openal-soft-" + self.version
+        else:
+            extracted_dir = "openal-soft-openal-soft-" + self.version
         os.rename(extracted_dir, self._source_subfolder)
-        tools.patch(patch_file = "mxcsr.patch", base_path = self._source_subfolder)
 
     def _configure_cmake(self):
-        cmake = CMake(self)
-        cmake.definitions['LIBTYPE'] = 'SHARED' if self.options.shared else 'STATIC'
-        cmake.definitions['ALSOFT_UTILS'] = False
-        cmake.definitions['ALSOFT_EXAMPLES'] = False
-        cmake.definitions['ALSOFT_TESTS'] = False
-        cmake.definitions['CMAKE_DISABLE_FIND_PACKAGE_SoundIO'] = True
-        cmake.configure(build_folder=self._build_subfolder)
-        return cmake
+        if self._cmake:
+            return self._cmake
+        # set_cmake_flags is needed to have proper CMAKE_SIZEOF_VOID_P on cross-compiling from 64-bit to 32-bit
+        self._cmake = CMake(self, set_cmake_flags = True)
+        self._cmake.definitions["LIBTYPE"] = "SHARED" if self.options.shared else "STATIC"
+        self._cmake.definitions["ALSOFT_UTILS"] = False
+        self._cmake.definitions["ALSOFT_EXAMPLES"] = False
+        self._cmake.definitions["ALSOFT_TESTS"] = False
+        self._cmake.definitions["CMAKE_DISABLE_FIND_PACKAGE_SoundIO"] = True
+        self._cmake.configure(build_folder=self._build_subfolder)
+        return self._cmake
 
     def build(self):
+        for patch in self.conan_data.get("patches", {}).get(self.version, []):
+            tools.patch(**patch)
         cmake = self._configure_cmake()
         cmake.build()
 
     def package(self):
-        self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
         cmake = self._configure_cmake()
         cmake.install()
-        self.copy("*COPYING", dst="licenses", keep_path=False, ignore_case=True)
+        self.copy("COPYING", dst="licenses", src=self._source_subfolder)
+        tools.rmdir(os.path.join(self.package_folder, "share"))
+        tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
+        tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
 
     def package_info(self):
-        if self.settings.os == "Windows":
-            self.cpp_info.libs = ["OpenAL32", 'winmm']
-        else:
-            self.cpp_info.libs = ["openal"]
-        if self.settings.os == 'Linux':
-            self.cpp_info.libs.extend(['dl', 'm'])
-        elif self.settings.os == 'Macos':
-            frameworks = ['AudioToolbox', 'CoreAudio']
-            for framework in frameworks:
-                self.cpp_info.exelinkflags.append("-framework %s" % framework)
-            self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
-        self.cpp_info.includedirs = ["include", "include/AL"]
+        self.cpp_info.names["cmake_find_package"] = "OpenAL"
+        self.cpp_info.names["cmake_find_package_multi"] = "OpenAL"
+        self.cpp_info.libs = tools.collect_libs(self)
+        self.cpp_info.includedirs.append(os.path.join("include", "AL"))
+        if self.settings.os == "Linux":
+            self.cpp_info.system_libs.extend(["dl", "m"])
+        elif self.settings.os == "Macos":
+            self.cpp_info.frameworks.extend(["AudioToolbox", "CoreAudio", "CoreFoundation"])
+        elif self.settings.os == "Windows":
+            self.cpp_info.system_libs.extend(["winmm", "ole32", "shell32", "User32"])
+        if self._openal_cxx_backend:
+            libcxx = tools.stdcpp_library(self)
+            if libcxx:
+                self.cpp_info.system_libs.append(libcxx)
         if not self.options.shared:
-            self.cpp_info.defines.append('AL_LIBTYPE_STATIC')
-
+            self.cpp_info.defines.append("AL_LIBTYPE_STATIC")
