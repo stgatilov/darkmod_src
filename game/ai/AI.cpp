@@ -11814,6 +11814,11 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	const char* locationName = GetDamageGroup( location );
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, locationName);
+	if (cv_melee_debug.GetBool()) {
+		char buff[256];
+		idStr::snPrintf(buff, sizeof(buff), "AIHit:%s", locationName);
+		gameRenderWorld->DrawTextA(buff, tr->c.point, 0.1f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 1000);
+	}
 
 	// check if we're hitting the right zone (usually the head)
 	if ( idStr::Cmp(locationName, m_KoZone) != 0 )
@@ -11949,6 +11954,10 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	}
 
 	// Rule #6 - blow wasn't in the right place
+
+	if (cv_melee_debug.GetBool()) {
+		gameRenderWorld->DebugSphere( colorRed, idSphere(tr->c.point, 7.3f), 1000, false);
+	}
 
 	// Signal the failed KO to the current state
 	GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
