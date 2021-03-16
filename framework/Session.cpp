@@ -2553,7 +2553,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			break;
 		case LOAD_KEY_SPAWN_ENTITIES_START: // Player spawned, start spawning entities
 			pct = LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS;
-			pct_delta = (LOAD_KEY_ROUTING_START_PROGRESS - LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS)/(float)count;
+			pct_delta = (LOAD_KEY_ROUTING_START_PROGRESS - LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS) / idMath::Fmax(count, 1.0f);
 			break;
 		case LOAD_KEY_SPAWN_ENTITIES_INTERIM: // spawning entities (finer granularity)
 			pct += pct_delta;
@@ -2564,7 +2564,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			break;
 		case LOAD_KEY_ROUTING_START: // entities spawned, start compiling routing data
 			pct = LOAD_KEY_ROUTING_START_PROGRESS;
-			pct_delta = (LOAD_KEY_ROUTING_DONE_PROGRESS - LOAD_KEY_ROUTING_START_PROGRESS)/(float)count;
+			pct_delta = (LOAD_KEY_ROUTING_DONE_PROGRESS - LOAD_KEY_ROUTING_START_PROGRESS) / idMath::Fmax(count, 1.0f);
 			break;
 		case LOAD_KEY_ROUTING_INTERIM: // compiling routing data (finer granularity)
 			pct += pct_delta;
@@ -2582,7 +2582,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			// the -35 below guarantees there will be
 			// some time between the loading bar
 			// hitting 100% and the "Mission Loaded / Press Attack" screen
-			pct_delta = (LOAD_KEY_DONE_PROGRESS - LOAD_KEY_IMAGES_START_PROGRESS)/(float)(count-35);
+			pct_delta = (LOAD_KEY_DONE_PROGRESS - LOAD_KEY_IMAGES_START_PROGRESS) / idMath::Fmax(idMath::Fmax(count - 35, count/2.0f), 1.0f);
 			break;
 		case LOAD_KEY_IMAGES_INTERIM: // loading textures (finer granularity)
 			pct += pct_delta;
