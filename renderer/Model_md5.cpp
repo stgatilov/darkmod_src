@@ -700,7 +700,7 @@ void idRenderModelMD5::DrawJoints( const renderEntity_t *ent, const struct viewD
 		num = ent->numJoints;
 		for( i = 0; i < num; i++, joint++ ) {
 			pos = ent->origin + joint->ToVec3() * ent->axis;
-			session->rw->DrawText( joints[ i ].name, pos + offset, scale, colorWhite, view->renderView.viewaxis, 1 );
+			session->rw->DebugText( joints[ i ].name, pos + offset, scale, colorWhite, view->renderView.viewaxis, 1 );
 		}
 	}
 }

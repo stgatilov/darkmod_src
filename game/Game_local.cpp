@@ -4719,9 +4719,9 @@ void idGameLocal::ShowTargets( void ) {
 		gameRenderWorld->DebugBounds( ( ent->IsHidden() ? colorLtGrey : colorOrange ) * frac, ent->GetPhysics()->GetAbsBounds() );
 		if ( viewTextBounds.IntersectsBounds( ent->GetPhysics()->GetAbsBounds() ) ) {
 			idVec3 center = ent->GetPhysics()->GetAbsBounds().GetCenter();
-			gameRenderWorld->DrawText( ent->name.c_str(), center - up, 0.1f, colorWhite * frac, axis, 1 );
-			gameRenderWorld->DrawText( ent->GetEntityDefName(), center, 0.1f, colorWhite * frac, axis, 1 );
-			gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), center + up, 0.1f, colorWhite * frac, axis, 1 );
+			gameRenderWorld->DebugText( ent->name.c_str(), center - up, 0.1f, colorWhite * frac, axis, 1 );
+			gameRenderWorld->DebugText( ent->GetEntityDefName(), center, 0.1f, colorWhite * frac, axis, 1 );
+			gameRenderWorld->DebugText( va( "#%d", ent->entityNumber ), center + up, 0.1f, colorWhite * frac, axis, 1 );
 		}
 
 		for( i = 0; i < ent->targets.Num(); i++ ) {
@@ -4785,9 +4785,9 @@ void idGameLocal::RunDebugInfo( void ) {
 				}
 			}
 			if ( viewTextBounds.IntersectsBounds( entBounds ) ) {
-				gameRenderWorld->DrawText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
-				gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
-				gameRenderWorld->DrawText( 
+				gameRenderWorld->DebugText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
+				gameRenderWorld->DebugText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
+				gameRenderWorld->DebugText( 
 					va( "%d / %d", ent->GetPhysics()->GetContents(), ent->GetPhysics()->GetClipMask() ), 
 					entBounds.GetCenter() - up, 0.1f, 
 					colorWhite, 
@@ -4836,7 +4836,7 @@ void idGameLocal::RunDebugInfo( void ) {
 				continue;
 			}
 			
-			gameRenderWorld->DrawText(va("Health: %d", ent->health), ent->GetPhysics()->GetOrigin(), 0.2f, colorGreen, axis);
+			gameRenderWorld->DebugText(va("Health: %d", ent->health), ent->GetPhysics()->GetOrigin(), 0.2f, colorGreen, axis);
 		}
 	}
 

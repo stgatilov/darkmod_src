@@ -1793,7 +1793,7 @@ bool idClip::DrawModelContactFeature( const contactInfo_t &contact, const idClip
 
 	axis[0] = -axis[0];
 	axis[2] = -axis[2];
-	gameRenderWorld->DrawText( contact.material->GetName(), winding.GetCenter() - 4.0f * axis[2], 0.1f, colorWhite, axis, 1, 5000 );
+	gameRenderWorld->DebugText( contact.material->GetName(), winding.GetCenter() - 4.0f * axis[2], 0.1f, colorWhite, axis, 1, 5000 );
 
 	return true;
 }

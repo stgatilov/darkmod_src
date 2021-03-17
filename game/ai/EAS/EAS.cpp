@@ -448,13 +448,13 @@ void tdmEAS::SetupReachableElevatorStations()
 			/*idBounds areaBounds = _aas->GetAreaBounds(areaNum);
 			idVec3 areaCenter = _aas->AreaCenter(areaNum);
 
-			gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
+			gameRenderWorld->DebugText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
 			gameRenderWorld->DebugBox(colorRed, idBox(areaBounds), 50000);
 
 			areaBounds = _aas->GetAreaBounds(_elevatorStations[e]->areaNum);
 			idVec3 areaCenter2 = _aas->AreaCenter(_elevatorStations[e]->areaNum);
 
-			gameRenderWorld->DrawText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
+			gameRenderWorld->DebugText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
 			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);*/
 
 			idReachability* reach;

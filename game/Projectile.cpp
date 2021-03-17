@@ -638,7 +638,7 @@ void idProjectile::Think( void ) {
 	case INACTIVE: stateStr = "INACTIVE"; break;
 	};
 
-	gameRenderWorld->DrawText(stateStr, physicsObj.GetOrigin(), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAxis);*/
+	gameRenderWorld->DebugText(stateStr, physicsObj.GetOrigin(), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAxis);*/
 
 	// run physics
 	RunPhysics();

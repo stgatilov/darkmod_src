@@ -1026,7 +1026,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			break;
 	}
 
-	gameRenderWorld->DrawText(str.c_str(), 
+	gameRenderWorld->DebugText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colour, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3 * USERCMD_MSEC);
 	}

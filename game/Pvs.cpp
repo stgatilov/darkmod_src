@@ -1095,7 +1095,7 @@ pvsHandle_t idPVS::AllocCurrentPVS( unsigned int h ) const {
 			idVec3 viewPos = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() + idVec3(0,0,50+6*i)
 				+ gameLocal.GetLocalPlayer()->viewAngles.ToForward() * 30;
 			idStr maxPVS(i);
-			gameRenderWorld->DrawText(maxPVS.c_str(), viewPos, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1,  USERCMD_MSEC);
+			gameRenderWorld->DebugText(maxPVS.c_str(), viewPos, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1,  USERCMD_MSEC);
 */
 			return currentPVS[i].handle;
 		}

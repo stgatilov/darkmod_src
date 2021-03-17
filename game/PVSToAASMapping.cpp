@@ -283,7 +283,7 @@ void PVSToAASMapping::DebugShowMappings(int lifetime)
 			// angua: only draw areas near the player, no need to see them at the other end of the map
 			if ((areaCenter - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast() < 1000)
 			{
-				gameRenderWorld->DrawText(va("%d", aasArea), areaCenter, 0.2f, color, playerViewMatrix, 1, lifetime);
+				gameRenderWorld->DebugText(va("%d", aasArea), areaCenter, 0.2f, color, playerViewMatrix, 1, lifetime);
 				gameRenderWorld->DebugBox(color, idBox(areaBounds), lifetime);
 			}
 

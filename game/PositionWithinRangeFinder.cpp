@@ -58,7 +58,7 @@ bool PositionWithinRangeFinder::TestArea( const idAAS *aas, int areaNum )
 
 	idVec3 fromPos = areaCenter + _eyeOffset * axis;
 
-	// gameRenderWorld->DrawTextA(va("%d", areaNum), areaCenter, 0.5f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 20000);
+	// gameRenderWorld->DebugText(va("%d", areaNum), areaCenter, 0.5f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 20000);
 
 	float distance = (fromPos - _targetPos).LengthFast();
 	if (distance > _maxDistance)

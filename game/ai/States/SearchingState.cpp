@@ -597,7 +597,7 @@ void SearchingState::Think(idAI* owner)
 					color = colorBlue;
 				}
 				gameRenderWorld->DebugBox(color, idBox(assignment->_limits), 2000);
-				gameRenderWorld->DrawText(va("%s", owner->GetName()), assignment->_limits.GetCenter(), 0.25f, color,
+				gameRenderWorld->DebugText(va("%s", owner->GetName()), assignment->_limits.GetCenter(), 0.25f, color,
 					gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 2000);
 				*/
 			}

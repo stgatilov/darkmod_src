@@ -6396,8 +6396,8 @@ void idPlayer::AdjustSpeed( void )
 
 	physicsObj.SetSpeed(speed, crouchspeed);
 
-	//gameRenderWorld->DrawText(va("bobFrac: %f\n", bobFrac), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
-	//gameRenderWorld->DrawText(va("speed: %f\n", physicsObj.GetLinearVelocity().Length()), GetEyePosition() + idVec3(0,0,-20) + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	//gameRenderWorld->DebugText(va("bobFrac: %f\n", bobFrac), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	//gameRenderWorld->DebugText(va("speed: %f\n", physicsObj.GetLinearVelocity().Length()), GetEyePosition() + idVec3(0,0,-20) + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
 	//gameLocal.Printf("bobFrac: %f\n", bobFrac);
 }
 
@@ -7450,7 +7450,7 @@ void idPlayer::Think( void )
 			case WATERLEVEL_HEAD: waterStr = "WATERLEVEL: HEAD"; break;
 			default: waterStr = "WATERLEVEL: ???"; break;
 		};
-		gameRenderWorld->DrawText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+		gameRenderWorld->DebugText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
 	}
 
 	if ( displayAASAreas ) // grayman #3032
@@ -9648,7 +9648,7 @@ float idPlayer::GetMovementVolMod( void )
 	{
 		returnval = (isCrouched) ? m_stepvol_crouch_walk : m_stepvol_walk;
 	}
-	//gameRenderWorld->DrawText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
+	//gameRenderWorld->DebugText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
 
 	return returnval;
 }

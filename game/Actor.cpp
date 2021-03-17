@@ -5715,14 +5715,14 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	delta = delta*delta*delta;
 	int damage = static_cast<int>(1.4E-16 * delta - 3);
 
-	// gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
+	// gameRenderWorld->DebugText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 
 	// Check if the damage is above our threshold, ignore otherwise
 	if (damage >= m_damage_thresh_min)
 	{
-		//gameRenderWorld->DrawText(idStr(deltaVert), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 50000);
+		//gameRenderWorld->DebugText(idStr(deltaVert), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 50000);
 
-		//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
+		//gameRenderWorld->DebugText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
 
 		// grayman - print data re: being damaged
 		gameLocal.Printf("'%s' dealt %d landing damage at [%s]\n", GetName(),damage,GetPhysics()->GetOrigin().ToString());

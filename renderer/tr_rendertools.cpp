@@ -832,9 +832,9 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	idStr modelText;
 	sprintf( modelText, "%s : %d", mt.entity->hModel->Name(), mt.surfIdx );
 
-	tr.primaryWorld->DrawText( modelText, mt.point + tr.primaryView->renderView.viewaxis[2] * 16,
+	tr.primaryWorld->DebugText( modelText, mt.point + tr.primaryView->renderView.viewaxis[2] * 16,
 		0.35f, colorRed, tr.primaryView->renderView.viewaxis );
-	tr.primaryWorld->DrawText( mt.material->GetName(), mt.point, 
+	tr.primaryWorld->DebugText( mt.material->GetName(), mt.point, 
 		0.35f, colorBlue, tr.primaryView->renderView.viewaxis );
 	if ( r_showSurfaceInfo.GetInteger() == 2 ) {
 #if 1
@@ -849,7 +849,7 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		auto rel = backEnd.viewDef->renderWorld->entityDefs[mh];
 		idStr index( rel->index );
 #endif
-		tr.primaryWorld->DrawText( index.c_str(), mt.point + tr.primaryView->renderView.viewaxis[2] * 32,
+		tr.primaryWorld->DebugText( index.c_str(), mt.point + tr.primaryView->renderView.viewaxis[2] * 32,
 			0.35f, colorBlue, tr.primaryView->renderView.viewaxis );
 	}
 

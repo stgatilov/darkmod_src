@@ -880,7 +880,7 @@ void HandleElevatorTask::DebugDraw(idAI* owner, CMultiStateMoverPosition* pos, C
 	}
 	str += s;
 	
-	gameRenderWorld->DrawText(str.c_str(), 
+	gameRenderWorld->DebugText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*10.0f), 
 		0.25f, colorYellow, viewMatrix, 1, 4 * USERCMD_MSEC);
 }

@@ -1299,7 +1299,7 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 				// draw the index
 				idVec3	textPos = def->origin;
 				textPos[2] -= 8;
-				rw->DrawText( va("%i (%.1f)", def->index, def->volumeLoss), textPos, 0.1f, idVec4(1,0,0,1), listenerAxis );
+				rw->DebugText( va("%i (%.1f)", def->index, def->volumeLoss), textPos, 0.1f, idVec4(1,0,0,1), listenerAxis );
 				textPos[2] += 8;
 
 				// run through all the channels
@@ -1317,7 +1317,7 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 					const char	*defaulted = chan->leadinSample->defaultSound ? "(DEFAULTED)" : "";
 					sprintf( text, "%s (%.1f/%.1f %.0f/%.0f)%s", chan->soundShader->GetName(), def->distance,
 						def->realDistance, min, max, defaulted );
-					rw->DrawText( text, textPos, 0.1f, idVec4(1,0,0,1), listenerAxis );
+					rw->DebugText( text, textPos, 0.1f, idVec4(1,0,0,1), listenerAxis );
 					textPos[2] += 8;
 				}
 			}
