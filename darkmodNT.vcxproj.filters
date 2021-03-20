@@ -1513,6 +1513,15 @@
     <ClInclude Include="idlib\hashing\sha256.h">
       <Filter>idLib\Hashing</Filter>
     </ClInclude>
+    <ClInclude Include="tools\compilers\dmap\planargraph.h">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\compilers\dmap\earcut.h">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\DisjointSets.h">
+      <Filter>idLib\Containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2963,6 +2972,18 @@
       <Filter>idLib\Hashing</Filter>
     </ClCompile>
     <ClCompile Include="idlib\containers\StrPool.cpp">
+      <Filter>idLib\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\containers\PlaneSet.cpp">
+      <Filter>idLib\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\dmap\planargraph.cpp">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\dmap\earcut.cpp">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\containers\DisjointSets.cpp">
       <Filter>idLib\Containers</Filter>
     </ClCompile>
   </ItemGroup>

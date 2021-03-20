@@ -626,6 +626,7 @@
     <ClInclude Include="idlib\CmdArgs.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
+    <ClInclude Include="idlib\containers\DisjointSets.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
     <ClInclude Include="idlib\containers\HashTable.h" />
     <ClInclude Include="idlib\containers\Hierarchy.h" />
@@ -773,6 +774,8 @@
     <ClInclude Include="tools\compilers\compiler_common.h" />
     <ClInclude Include="tools\compilers\compiler_public.h" />
     <ClInclude Include="tools\compilers\dmap\dmap.h" />
+    <ClInclude Include="tools\compilers\dmap\earcut.h" />
+    <ClInclude Include="tools\compilers\dmap\planargraph.h" />
     <ClInclude Include="tools\compilers\roqvq\codec.h" />
     <ClInclude Include="tools\compilers\roqvq\gdefs.h" />
     <ClInclude Include="tools\compilers\roqvq\quaddefs.h" />
@@ -1099,8 +1102,10 @@
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />
+    <ClCompile Include="idlib\containers\DisjointSets.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
+    <ClCompile Include="idlib\containers\PlaneSet.cpp" />
     <ClCompile Include="idlib\containers\StrPool.cpp" />
     <ClCompile Include="idlib\Debug.cpp" />
     <ClCompile Include="idlib\Dict.cpp" />
@@ -1302,6 +1307,7 @@
     <ClCompile Include="tools\compilers\aas\BrushBSP.cpp" />
     <ClCompile Include="tools\compilers\compiler_common.cpp" />
     <ClCompile Include="tools\compilers\dmap\dmap.cpp" />
+    <ClCompile Include="tools\compilers\dmap\earcut.cpp" />
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />
     <ClCompile Include="tools\compilers\dmap\glfile.cpp" />
@@ -1309,6 +1315,7 @@
     <ClCompile Include="tools\compilers\dmap\map.cpp" />
     <ClCompile Include="tools\compilers\dmap\optimize.cpp" />
     <ClCompile Include="tools\compilers\dmap\output.cpp" />
+    <ClCompile Include="tools\compilers\dmap\planargraph.cpp" />
     <ClCompile Include="tools\compilers\dmap\portals.cpp" />
     <ClCompile Include="tools\compilers\dmap\shadowopt3.cpp" />
     <ClCompile Include="tools\compilers\dmap\tritjunction.cpp" />
