@@ -2131,16 +2131,12 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 		}
 	}
 
-	// check if this is a prototype or declaration
-	if ( !CheckToken( "{" ) ) {
-		// it's just a prototype, so get the ; and move on
-		ExpectToken( ";" );
-		return;
-	}
-
 	// calculate stack space used by parms
+	// stgatilov #4713: we must do it as early as we see prototype
+	// because parmTotal must be correct when method calls are compiled
 	numParms = type->NumParameters();
 	func->parmSize.SetNum( numParms );
+	func->parmTotal = 0;
 	for( i = 0; i < numParms; i++ ) {
 		parmType = type->GetParmType( i );
 		if ( parmType->Inherits( &type_object ) ) {
@@ -2149,6 +2145,13 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 			func->parmSize[ i ] = parmType->Size();
 		}
 		func->parmTotal += func->parmSize[ i ];
+	}
+
+	// check if this is a prototype or declaration
+	if ( !CheckToken( "{" ) ) {
+		// it's just a prototype, so get the ; and move on
+		ExpectToken( ";" );
+		return;
 	}
 
 	// define the parms

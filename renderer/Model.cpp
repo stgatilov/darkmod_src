@@ -655,6 +655,7 @@ void idRenderModelStatic::FinishSurfaces() {
 	}
 
 	// clean the surfaces
+	const char *modelname = this->name.c_str();
 	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
 		const modelSurface_t	*surf = &surfaces[i];
 
