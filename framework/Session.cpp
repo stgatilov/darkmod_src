@@ -2786,7 +2786,8 @@ void idSessionLocal::Frame() {
 	
 	//nbohr1more: disable SMP for debug render tools
 	if (r_showSurfaceInfo.GetBool() ||
-		r_showDepth.GetBool()
+		r_showDepth.GetBool() ||
+        r_materialOverride.GetString()[0] != '\0'
 	) {
 		no_smp = true;
 	} else {
