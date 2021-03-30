@@ -1,8 +1,98 @@
-All maps, textures, models, def files, audio assets, and all other
-non-software components of The Dark Mod are licensed under the
-Creative Commons Attribution-Noncommercial-Share Alike 3.0 Unported license,
-as specified at http://creativecommons.org/licenses/by-nc-sa/3.0/legalcode
+Unless explicitly stated otherwise, all maps, textures, models, def files, audio
+assets, and all other non-software components that are distributed with The Dark Mod
+are licensed under the Creative Commons Attribution-Noncommercial-Share Alike 3.0
+Unported license, as specified at
+http://creativecommons.org/licenses/by-nc-sa/3.0/legalcode
 and described at http://creativecommons.org/licenses/by-nc-sa/3.0/
+
+Any missions downloaded through the ingame downloader, the TDM website or external
+sources are the property of their respective authors, and different licensing may apply.
+Without explicit permission from the mission authors, you may not redistribute, modify
+or reuse (parts of) these missions or the assets contained within them.
+
+The following textures are licensed from cgtextures.com. These images may not be
+redistributed by default, please visit www.cgtextures.com for more information:
+
+textures/darkmod/metal/machine/machinewall_rusted_greenmachine
+textures/darkmod/stone/brick/blocks_flat_ochre_smoky
+textures/darkmod/stone/brick/blocks_ochre_smooth
+textures/darkmod/stone/brick/low_brick_wall_old
+textures/darkmod/stone/brick/old_worn_blocks
+textures/darkmod/window/ornate/stained_azure_long_selflit
+textures/darkmod/window/smallpanels_industrial_mesh_dimlit
+textures/darkmod/stone/natural/rock_large_holey_001
+textures/darkmod/stone/natural/rock_large_holey_001_wet
+textures/darkmod/stone/natural/rock_large_grey_001
+textures/darkmod/stone/natural/rock_large_grey_001_wet
+textures/darkmod/nature/grass/ivy_large_bright_green_001
+textures/darkmod/stone/cobblestones/ground_large_uneven_darkgrey_001_wet
+textures/darkmod/stone/cobblestones/ground_large_uneven_darkgrey_001_littlewet
+textures/darkmod/stone/cobblestones/ground_large_uneven_darkgrey_001
+textures/darkmod/stone/brick/tiling_1d/poolwall_large_dirty_greengrey_001_wet
+textures/darkmod/stone/brick/tiling_1d/poolwall_large_dirty_greengrey_001
+textures/darkmod/metal/flat/threadplate_small_001
+textures/darkmod/metal/flat/threadplate_large_dirty_001
+textures/darkmod/nature/dirt/seaground_stonesmud_large_001
+textures/darkmod/roof/rooftiles_slate_large_greyblue_001_wet
+textures/darkmod/roof/rooftiles_slate_large_greyblue_001
+textures/darkmod/roof/rooftiles_ceramic_large_dirty_001_wet
+textures/darkmod/roof/rooftiles_ceramic_large_dirty_001
+textures/darkmod/stone/brick/wall_brick_small_old_001_wet
+textures/darkmod/stone/brick/wall_brick_small_old_001
+textures/darkmod/nature/skybox/darksky_city_sundown_sides
+textures/darkmod/nature/skybox/darksky_city_sundown_top
+textures/darkmod/stone/sculpted/tiling_1d/trim_large_bright_001_wet
+textures/darkmod/stone/sculpted/tiling_1d/trim_large_bright_001
+textures/darkmod/stone/sculpted/tiling_1d/trim_large_darkbluered_001_wet
+textures/darkmod/stone/sculpted/tiling_1d/trim_large_darkbluered_001
+textures/darkmod/stone/sculpted/tiling_1d/trim_small_001_wet
+textures/darkmod/stone/sculpted/tiling_1d/trim_small_001
+textures/darkmod/stone/flat/tiles_ceramic_large_old_blue_001
+textures/darkmod/stone/flat/tiles_stone_large_dirty_001_wet
+textures/darkmod/stone/flat/tiles_stone_large_dirty_001
+textures/darkmod/stone/flat/tiles_ceramic_large_clean_001
+textures/darkmod/wood/panels/wood_large_precious_red_001
+textures/darkmod/wood/boards/beam_verylarge_old_brown_001_wet
+textures/darkmod/wood/boards/beam_verylarge_old_brown_001
+textures/darkmod/wood/panels/ceiling_ornament_large_precious_red_001_wet
+textures/darkmod/wood/panels/ceiling_ornament_large_precious_red_001
+textures/darkmod/wood/panels/tiling_1d/trim_small_precious_001_wet
+textures/darkmod/wood/panels/tiling_1d/trim_small_precious_001
+textures/darkmod/wood/boards/planks_large_bright_001_wet
+textures/darkmod/wood/boards/planks_large_bright_001
+textures/darkmod/wood/boards/planks_large_dark_001_wet
+textures/darkmod/wood/boards/planks_large_dark_001
+textures/darkmod/window/ornate/window_bright_glowing_yellow_001
+textures/darkmod/window/ornate/window_dark_blue_001
+textures/darkmod/door/wood/Door_wood_brown_001
+textures/darkmod/stone/flat/marble_flower_mosaic_cracked
+textures/darkmod/nature/bones/skull_panels_dirty
+textures/darkmod/nature/bones/plastered_bones01
+textures/darkmod/nature/bones/bone_wall
+textures/darkmod/nature/bones/tiling_1d/trim_bones
+textures/darkmod/roof/shingles_red
+textures/darkmod/roof/shingles_blue
+textures/darkmod/roof/skull_panels_dirty
+textures/darkmod/stone/brick/poolwall_large_dirty_weathered_greengrey_tiling_1d
+textures/darkmod/stone/natural/rock_large_cracked_holey_grey
+textures/darkmod/stone/natural/rock_large_rough_grey
+textures/darkmod/wood/boards/roof_framework_boards_large_old
+textures/darkmod/wood/boards/rough_wood_large_brown
+textures/darkmod/roof/slate_cracked_large_greyblue
+textures/darkmod/metal/detailed/threadplate_large_dirty
+textures/darkmod/stone/flat/tiles_ceramic_large_clean
+textures/darkmod/stone/flat/tiles_ceramic_large_ornate_old_blue
+textures/darkmod/stone/flat/tiles_large_dirty_cracked
+textures/darkmod/nature/trim_bones
+textures/darkmod/stone/sculpted/trim_large_ornate_old_tiling_1d
+textures/darkmod/stone/sculpted/trim_small_ornate_old_tiling_1d
+textures/darkmod/nature/bones/bone_wall
+textures/darkmod/stone/cobblestones/cobblestones_large_uneven_darkgrey 
+
+If you believe any asset has been wrongfully included in The Dark Mod, please contact
+the team.
+
+===========================================================================
 
 The Dark Mod Source Code consists of two parts:
 1. Some portions are based on Doom 3 GPL Source Code © 1999-2011 Id Software;
