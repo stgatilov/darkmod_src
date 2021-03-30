@@ -826,8 +826,13 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 		if ( r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light->index ) {
 			continue;
 		}
-		if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
+        
+        // nbohr1more: disable the player in void light optimization when light area culling is disabled
+        if ( r_useLightAreaCulling.GetInteger() ) {
+		    if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
 			continue;
+        } 
+          
 
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
