@@ -202,7 +202,6 @@ public:
 
 	float				pct;					// grayman #3763 - used by PacifierUpdate()
 	float				pct_delta;				// grayman #3763 - used by PacifierUpdate()
-	int					loadDoneTime;			// grayman #3763 - used by PacifierUpdate()
 
 	// we don't want to redraw the loading screen for every single
 	// console print that happens

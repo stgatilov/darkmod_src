@@ -98,9 +98,6 @@ public:
 	// The session calls this right before a new level is loaded.
 	virtual void				SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) = 0;
 
-	// The session calls this to allow painting of the "Mission Loaded / Press Attack" gui
-	virtual void				SetTime2Start() = 0; // grayman #3763
-
 	// Obsttorte
 	virtual idStr				triggeredSave() = 0; 
 	virtual void				incrementSaveCount() = 0; 

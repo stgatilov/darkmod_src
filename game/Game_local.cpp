@@ -276,8 +276,6 @@ void idGameLocal::Clear( void )
 
 	m_StartPosition = ""; // grayman #2933
 
-	m_time2Start = false; // grayman #3763
-
 	m_GUICommandStack.Clear();
 	m_GUICommandArgs = 0;
 
@@ -1143,16 +1141,6 @@ idGameLocal::SetPersistentPlayerInfo
 */
 void idGameLocal::SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) {
 	persistentPlayerInfo = playerInfo;
-}
-
-/*
-===========
-idGameLocal::SetTime2Start
-============
-*/
-void idGameLocal::SetTime2Start() // grayman #3763
-{
-	m_time2Start = true;
 }
 
 /*
@@ -3212,7 +3200,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 		// set the user commands for this frame
 		memcpy(&usercmds, clientCmds, sizeof(usercmds));
 
-		if ( m_time2Start && player->WaitUntilReady() ) // grayman #3763
+		if ( player->WaitUntilReady() ) // grayman #3763
 		{
 			// Player got ready this frame, start timer
 			m_GamePlayTimer.Start();

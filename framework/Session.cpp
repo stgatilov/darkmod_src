@@ -2543,7 +2543,6 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 		{
 		case LOAD_KEY_START: // Start loading map
 			pct = LOAD_KEY_START_PROGRESS;
-			loadDoneTime = 0;
 			break;
 		case LOAD_KEY_COLLISION_START: // Start loading collision data
 			pct = LOAD_KEY_COLLISION_START_PROGRESS;
@@ -2586,11 +2585,6 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			break;
 		case LOAD_KEY_IMAGES_INTERIM: // loading textures (finer granularity)
 			pct += pct_delta;
-			if ( (pct >= 1.00f) && (loadDoneTime == 0))
-			{
-				// 5s delay between load bar at 100% and Mission Start gui display
-				loadDoneTime = Sys_Milliseconds() + 5000;
-			}
 			if ( time - lastPacifierTime < 500 )
 			{
 				return;
@@ -3026,13 +3020,6 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 		bool automationRules = Auto_GetUsercmd(cmd);
 	}
 
-	// grayman #3763 - allow "Mission Start" gui if the mission uses it
-	if ( ( loadDoneTime > 0 ) && ( Sys_Milliseconds() > loadDoneTime ) )
-	{
-		game->SetTime2Start();
-		loadDoneTime = 0;
-	}
-	
 	// Obsttorte - check if we should save the game
 
 	idStr saveGameName = game->triggeredSave();

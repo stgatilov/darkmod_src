@@ -681,10 +681,6 @@ public:
 	// grayman #2933 - store the start position selected during the mission briefing, if any
 	const char *			m_StartPosition;
 
-	// grayman #3763 - true when the Mission Start gui can be displayed, or the mission started,
-	// based on when the Loading Bar reaches 100%
-	bool					m_time2Start;
-
 	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
 	int						m_peekOverlay; // grayman #4882 - no need to save/restore
@@ -703,7 +699,6 @@ public:
 
 	virtual const idDict &	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
-	virtual void			SetTime2Start(); // grayman #3763
 	// Obsttorte
 	virtual idStr			triggeredSave();
 	virtual void			incrementSaveCount();
