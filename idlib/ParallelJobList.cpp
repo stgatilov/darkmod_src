@@ -1293,7 +1293,7 @@ void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int
 	}
 
 	// determine the number of threads to use
-	int numThreads = maxThreads;
+	int numThreads = Min( parallelism, maxThreads );
 	if ( parallelism == JOBLIST_PARALLELISM_MAX_CORES ) {
 		numThreads = idMath::ClampInt(0, maxThreads, numLogicalCpuCores);
 	}
