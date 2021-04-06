@@ -419,6 +419,8 @@ There is no way to specify explicit mip map levels
 
 ================
 */
+idCVar image_useTexStorage( "image_useTexStorage", "1", CVAR_BOOL|CVAR_ARCHIVE, "Use glTexStorage to create image storage. Only disable if you run into issues." );
+
 void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
                              textureRepeat_t repeatParm, textureDepth_t depthParm, imageResidency_t residencyParm
@@ -554,8 +556,8 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	//Routine test( &uploading );
 	auto start = Sys_Milliseconds();
-	if ( GLAD_GL_ARB_texture_storage && !generatorFunction ) {
-		int levels = 1 + idMath::Floor( idMath::ILog2( Max( scaled_width, scaled_height ) ) );
+	if ( GLAD_GL_ARB_texture_storage && !generatorFunction && image_useTexStorage.GetBool() ) {
+		int levels = 1 + idMath::ILog2( Max( scaled_width, scaled_height ) );
 		qglTexStorage2D( GL_TEXTURE_2D, levels, internalFormat, scaled_width, scaled_height);
 		qglTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, scaled_width, scaled_height, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 	} else {
