@@ -112,8 +112,8 @@ class idFile_Memory : public idFile {
 public:
 							idFile_Memory( void );	// file for writing without name
 							idFile_Memory( const char *name );	// file for writing
-							idFile_Memory( const char *name, char *data, int length );	// file for writing
-							idFile_Memory( const char *name, const char *data, int length );	// file for reading
+							idFile_Memory( const char *name, char *data, int length, bool owned = false );	// file for writing
+							idFile_Memory( const char *name, const char *data, int length, bool owned = false );	// file for reading
 	virtual					~idFile_Memory( void );
 
 	virtual const char *	GetName( void ) { return name.c_str(); }
@@ -146,6 +146,7 @@ private:
 	int						allocated;		// allocated size
 	int						granularity;	// file granularity
 	char *					filePtr;		// buffer holding the file data
+	bool					owned;			// if the filePtr is owned and should be deleted
 	char *					curPtr;			// current read/write pointer
 };
 

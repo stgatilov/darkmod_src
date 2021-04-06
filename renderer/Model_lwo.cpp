@@ -1439,7 +1439,7 @@ lwObject *lwGetObject( const char *filename, unsigned int *failID, int *failpos 
    int id, formsize, type, cksize;
    int i, rlen;
 
-   fp = fileSystem->OpenFileRead( filename );
+   fp = fileSystem->OpenFileReadPrefetch( filename );
    if ( !fp ) {
 	   return NULL;
    }

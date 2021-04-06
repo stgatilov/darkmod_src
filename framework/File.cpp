@@ -653,6 +653,7 @@ idFile_Memory::idFile_Memory( void ) {
 	fileSize = 0;
 	allocated = 0;
 	granularity = 16384;
+	owned = true;
 
 	mode = ( 1 << FS_WRITE );
 	filePtr = NULL;
@@ -670,6 +671,7 @@ idFile_Memory::idFile_Memory( const char *name ) {
 	fileSize = 0;
 	allocated = 0;
 	granularity = 16384;
+	owned = true;
 
 	mode = ( 1 << FS_WRITE );
 	filePtr = NULL;
@@ -681,12 +683,13 @@ idFile_Memory::idFile_Memory( const char *name ) {
 idFile_Memory::idFile_Memory
 =================
 */
-idFile_Memory::idFile_Memory( const char *name, char *data, int length ) {
+idFile_Memory::idFile_Memory( const char *name, char *data, int length, bool owned ) {
 	this->name = name;
 	maxSize = length;
 	fileSize = 0;
 	allocated = length;
 	granularity = 16384;
+	this->owned = owned;
 
 	mode = ( 1 << FS_WRITE );
 	filePtr = data;
@@ -698,12 +701,13 @@ idFile_Memory::idFile_Memory( const char *name, char *data, int length ) {
 idFile_Memory::idFile_Memory
 =================
 */
-idFile_Memory::idFile_Memory( const char *name, const char *data, int length ) {
+idFile_Memory::idFile_Memory( const char *name, const char *data, int length, bool owned ) {
 	this->name = name;
 	maxSize = 0;
 	fileSize = length;
 	allocated = 0;
 	granularity = 16384;
+	this->owned = owned;
 
 	mode = ( 1 << FS_READ );
 	filePtr = const_cast<char *>(data);
@@ -716,7 +720,7 @@ idFile_Memory::~idFile_Memory
 =================
 */
 idFile_Memory::~idFile_Memory( void ) {
-	if ( filePtr && allocated > 0 && maxSize == 0 ) {
+	if ( filePtr && owned ) {
 		Mem_Free( filePtr );
 	}
 }

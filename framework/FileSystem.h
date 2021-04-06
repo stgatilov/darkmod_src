@@ -184,6 +184,8 @@ public:
 	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL ) = 0;
 							// Opens a file for reading.
     virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL ) = 0;
+							// Prefetches the entire file to memory and returns an in-memory file object
+	virtual idFile *		OpenFileReadPrefetch( const char *relativePath, const char *gamedir = NULL ) = 0;
 							// Opens a file for writing, will create any needed subdirectories.
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) = 0;
 							// Opens a file for writing at the end.
