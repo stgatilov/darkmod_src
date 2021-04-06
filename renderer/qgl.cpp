@@ -94,6 +94,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 	glConfig.bufferStorageAvailable = CHECK_FEATURE( GL_ARB_buffer_storage );
 
 	//it seems that these extensions are checked via GLAD_GL_xxx variables
+	CHECK_FEATURE(GL_ARB_texture_storage);
 	CHECK_FEATURE(GL_ARB_multi_draw_indirect);
 	CHECK_FEATURE(GL_ARB_vertex_attrib_binding);
 	CHECK_FEATURE(GL_ARB_bindless_texture);
