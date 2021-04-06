@@ -534,7 +534,7 @@ int idSampleDecoderLocal::DecodeOGG( idSoundSample *sample, int sampleOffset44k,
 			failed = true;
 			return 0;
 		}
-		file.SetData( (const char *)sample->nonCacheData, sample->objectMemSize );
+		file = idFile_Memory( "ogg_sample", (const char *)sample->nonCacheData, sample->objectMemSize );
 		if ( ov_openFile( &file, &ogg ) < 0 ) {
 			failed = true;
 			return 0;

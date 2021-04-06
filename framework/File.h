@@ -112,7 +112,6 @@ class idFile_Memory : public idFile {
 public:
 							idFile_Memory( void );	// file for writing without name
 							idFile_Memory( const char *name );	// file for writing
-							idFile_Memory( const char *name, char *data, int length, bool owned = false );	// file for writing
 							idFile_Memory( const char *name, const char *data, int length, bool owned = false );	// file for reading
 	virtual					~idFile_Memory( void );
 
@@ -127,12 +126,6 @@ public:
 	virtual void			Flush( void );
 	virtual int				Seek( long offset, fsOrigin_t origin );
 
-							// changes memory file to read only
-	virtual void			MakeReadOnly( void );
-							// clear the file
-	virtual void			Clear( bool freeMemory = true );
-							// set data for reading
-	void					SetData( const char *data, int length );
 							// returns const pointer to the memory buffer
 	const char *			GetDataPtr( void ) const { return filePtr; }
 							// set the file granularity
@@ -141,7 +134,6 @@ public:
 private:
 	idStr					name;			// name of the file
 	int						mode;			// open mode
-	int						maxSize;		// maximum size of file
 	int						fileSize;		// size of the file
 	int						allocated;		// allocated size
 	int						granularity;	// file granularity
