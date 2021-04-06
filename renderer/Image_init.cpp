@@ -1701,6 +1701,17 @@ blocking load on demand
 preload low mip levels, background load remainder on demand
 ====================
 */
+
+void R_LoadSingleImage( idImage *image ) {
+	if ( !image->generatorFunction ) {
+		R_LoadImageData( *image );
+		image->backgroundLoadState = IS_LOADED;
+	}
+}
+REGISTER_PARALLEL_JOB( R_LoadSingleImage, "R_LoadSingleImage" );
+
+idCVar image_levelLoadParallel( "image_levelLoadParallel", "1", CVAR_BOOL|CVAR_ARCHIVE, "Parallelize texture creation during level load by fetching images from disk in the background" );
+
 void idImageManager::EndLevelLoad() {
 	const int start = Sys_Milliseconds();
 	insideLevelLoad = false;
@@ -1728,6 +1739,7 @@ void idImageManager::EndLevelLoad() {
 	common->PacifierUpdate( LOAD_KEY_IMAGES_START, images.Num() / LOAD_KEY_IMAGE_GRANULARITY ); // grayman #3763
 
 	// load the ones we do need, if we are preloading
+	idList<idImage*> imagesToLoad;
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
 		idImage	*image = images[ i ];
 		if ( image->generatorFunction ) {
@@ -1735,16 +1747,42 @@ void idImageManager::EndLevelLoad() {
 		}
 
 		if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
-			//common->Printf( "Loading image %d: %s\n",i,image->imgName.c_str() );
 			loadCount++;
-			image->ActuallyLoadImage();
-		}
-
-		// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
-		if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
-			common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, i );
+			imagesToLoad.AddGrow( image );
 		}
 	}
+
+	// Process images in batches. If parallel load is enabled, we give the upcoming batch to the job queue so that the image
+	// data is loaded and prepared in the background while we simultaneously upload the current batch to GPU memory.
+	// Background loading is restricted to 2 threads. On SSDs and during hot loads, this has a considerable advantage over just
+	// a single background thread, since decompression and calculation of image functions do take some of the time. SSDs do see
+	// slight improvements with additional threads, but the difference is small. On HDDs, the additional thread does not offer
+	// any advantages, but it should also not overload the disk, so that 2 threads is an acceptable compromise for all disk types.
+	const int BATCH_SIZE = 16;
+	for ( int curBatch = 0; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
+		if ( image_levelLoadParallel.GetBool() ) {
+			for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2*BATCH_SIZE; ++i ) {
+				idImage *image = imagesToLoad[i];
+				tr.frontEndJobList->AddJob((jobRun_t)R_LoadSingleImage, image);
+			}
+			tr.frontEndJobList->Submit( nullptr, 2 );
+		}
+
+		for ( int i = curBatch; i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
+			idImage *image = imagesToLoad[i];
+			image->ActuallyLoadImage();
+
+			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
+			if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
+				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, i );
+			}
+		}
+
+		if ( image_levelLoadParallel.GetBool() ) {
+			tr.frontEndJobList->Wait();
+		}
+	}
+
 	const int end = Sys_Milliseconds();
 	common->Printf( "%5i purged from previous\n", purgeCount );
 	common->Printf( "%5i kept from previous\n", keepCount );

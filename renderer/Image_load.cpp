@@ -552,11 +552,18 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	GL_CheckErrors();
 	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
-		//Routine test( &uploading );
-		auto start = Sys_Milliseconds();
+	//Routine test( &uploading );
+	auto start = Sys_Milliseconds();
+	if ( GLAD_GL_ARB_texture_storage && !generatorFunction ) {
+		int levels = 1 + idMath::Floor( idMath::ILog2( Max( scaled_width, scaled_height ) ) );
+		qglTexStorage2D( GL_TEXTURE_2D, levels, internalFormat, scaled_width, scaled_height);
+		qglTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, scaled_width, scaled_height, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	} else {
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-			qglGenerateMipmap( GL_TEXTURE_2D );
-		backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
+	}
+	qglGenerateMipmap( GL_TEXTURE_2D );
+	GL_CheckErrors();
+	backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
 
 	if ( scaledBuffer != 0 && pic != scaledBuffer ) { // duzenko #4401
 		R_StaticFree( scaledBuffer );
@@ -1371,7 +1378,10 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 			R_UploadImageData( *this );
 		}
 	} else {
-		R_LoadImageData( *this );
+		if ( backgroundLoadState != IS_LOADED ) {
+			R_LoadImageData( *this );
+		}
+		backgroundLoadState = IS_NONE;
 		R_UploadImageData( *this );
 	}
 }

@@ -5404,6 +5404,8 @@ void idGameLocal::SpawnMapEntities( void )
 		return;
 	}
 
+	int start = Sys_Milliseconds();
+
 	// Add the lightgem to the map before anything else happened
 	// so it will be included as if it were a regular map entity.
 	m_lightGem.SpawnLightGemEntity( mapFile );
@@ -5482,7 +5484,7 @@ void idGameLocal::SpawnMapEntities( void )
 
 	m_lightGem.InitializeLightGemEntity();
 
-	Printf( "... %i entities spawned, %i inhibited\n\n", num, inhibit );
+	Printf( "... %i entities spawned, %i inhibited in %5.1f seconds\n\n", num, inhibit, (Sys_Milliseconds() - start) * 0.001f );
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 
