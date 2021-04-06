@@ -1759,13 +1759,18 @@ void idImageManager::EndLevelLoad() {
 	// slight improvements with additional threads, but the difference is small. On HDDs, the additional thread does not offer
 	// any advantages, but it should also not overload the disk, so that 2 threads is an acceptable compromise for all disk types.
 	const int BATCH_SIZE = 16;
+	idParallelJobList *imageLoadJobs = nullptr;
+	if ( image_levelLoadParallel.GetBool() ) {
+		imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, BATCH_SIZE, 0, nullptr );
+	}
+
 	for ( int curBatch = 0; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
 		if ( image_levelLoadParallel.GetBool() ) {
 			for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2*BATCH_SIZE; ++i ) {
 				idImage *image = imagesToLoad[i];
-				tr.frontEndJobList->AddJob((jobRun_t)R_LoadSingleImage, image);
+				imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
 			}
-			tr.frontEndJobList->Submit( nullptr, 2 );
+			imageLoadJobs->Submit( nullptr, 2 );
 		}
 
 		for ( int i = curBatch; i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
@@ -1779,8 +1784,12 @@ void idImageManager::EndLevelLoad() {
 		}
 
 		if ( image_levelLoadParallel.GetBool() ) {
-			tr.frontEndJobList->Wait();
+			imageLoadJobs->Wait();
 		}
+	}
+
+	if ( image_levelLoadParallel.GetBool() ) {
+		parallelJobManager->FreeJobList( imageLoadJobs );
 	}
 
 	const int end = Sys_Milliseconds();

@@ -126,7 +126,7 @@ idParallelJobList_Threads
 ================================================================================================
 */
 
-static idCVar jobs_longJobMicroSec( "jobs_longJobMicroSec", "500000", CVAR_INTEGER, "print a warning for jobs that take more than this number of microseconds" );
+static idCVar jobs_longJobMicroSec( "jobs_longJobMicroSec", "10000", CVAR_INTEGER, "print a warning for jobs that take more than this number of microseconds" );
 
 
 const static int		MAX_THREADS	= 32;
