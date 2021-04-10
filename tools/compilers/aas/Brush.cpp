@@ -207,6 +207,8 @@ bool idBrush::CreateWindings( void ) {
 	int i, j;
 	idBrushSide *side;
 
+	idList<idPlane> cuttingPlanes;
+
 	bounds.Clear();
 	for ( i = 0; i < sides.Num(); i++ ) {
 		side = sides[i];
@@ -215,15 +217,16 @@ bool idBrush::CreateWindings( void ) {
 			delete side->winding;
 		}
 
-		side->winding = new idWinding( side->plane.Normal(), side->plane.Dist() );
-
-		for ( j = 0; j < sides.Num() && side->winding; j++ ) {
+		cuttingPlanes.SetNum(0, false);
+		for ( j = 0; j < sides.Num(); j++ ) {
 			if ( i == j ) {
 				continue;
 			}
-			// keep the winding if on the clip plane
-			side->winding = side->winding->Clip( -sides[j]->plane, BRUSH_EPSILON, true );
+			cuttingPlanes.AddGrow( -sides[j]->plane );
 		}
+		// stgatilov: don't delete winding if clipping plane has opposite normal
+		// that corresponds to case when side planes are equal (note that trim plane is negated)
+		side->winding = idWinding::CreateTrimmedPlane( side->plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), BRUSH_EPSILON, INCIDENT_PLANE_RETAIN_OPPOSITE );
 
 		if ( side->winding ) {
 			for ( j = 0; j < side->winding->GetNumPoints(); j++ ) {
