@@ -16,6 +16,15 @@
 #ifndef __WINDING_H__
 #define __WINDING_H__
 
+//for idWinding::CreateTrimmedPlane
+enum IncidentPlaneMode {
+	INCIDENT_PLANE_DELETE = 0x0,
+	INCIDENT_PLANE_RETAIN_CODIRECT = 0x1,
+	INCIDENT_PLANE_RETAIN_OPPOSITE = 0x2,
+	INCIDENT_PLANE_RETAIN = 0x3,
+};
+
+
 /*
 ===============================================================================
 
@@ -53,6 +62,9 @@ public:
 					// huge winding for plane, the points go counter clockwise when facing the front of the plane
 	void			BaseForPlane( const idVec3 &normal, const float dist );
 	void			BaseForPlane( const idPlane &plane );
+
+					// stgatilov: creates new winding on mainPlane, trimmed with a set of oriented planes curPlanes[0..numCuts)
+	static idWinding *CreateTrimmedPlane( const idPlane &mainPlane, int numCuts, const idPlane *cutPlanes, float epsilon = ON_EPSILON, IncidentPlaneMode incidentPlaneMode = INCIDENT_PLANE_DELETE );
 
 					// splits the winding into a front and back winding, the winding itself stays unchanged
 					// returns a SIDE_?

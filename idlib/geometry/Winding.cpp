@@ -73,6 +73,80 @@ void idWinding::BaseForPlane( const idVec3 &normal, const float dist ) {
 
 /*
 =============
+idWinding::SetTrimmedPlane
+=============
+*/
+idWinding *idWinding::CreateTrimmedPlane( const idPlane &mainPlane, int numCuts, const idPlane *cutPlanes, float epsilon, IncidentPlaneMode incidentPlaneMode ) {
+	//establish local coordinate system
+	idVec3 origin, normal, axisU, axisV;
+	normal = mainPlane.Normal();
+	origin = mainPlane.Dist() * normal;
+	normal.NormalVectors(axisV, axisU);
+
+	idList<bool> retainOn;
+	retainOn.SetNum(numCuts);
+	for (int i = 0; i < numCuts; i++) {
+		float dot = cutPlanes[i].Normal() * normal;
+		//angle <~ 1e-2  =>  planes are incident
+		if (dot >= 1.0f - 1e-4f)
+			retainOn[i] = !!(incidentPlaneMode & INCIDENT_PLANE_RETAIN_CODIRECT);
+		else if (dot <= -(1.0f - 1e-4f))
+			retainOn[i] = !!(incidentPlaneMode & INCIDENT_PLANE_RETAIN_OPPOSITE);
+		else
+			retainOn[i] = false;
+	}
+
+	auto ComputeBoundingUvBox = [origin, axisU, axisV](const idWinding &w) -> idBounds {
+		idBounds box;
+		box.Clear();
+		for (int j = 0; j < w.numPoints; j++) {
+			const idVec3 &xyz = w[j].ToVec3();
+			box.AddPoint(idVec3((xyz - origin) * axisU, (xyz - origin) * axisV, 0.0f));
+		}
+		return box;
+	};
+
+	//start with huge UV-box winding
+	idWinding *w = new idWinding(mainPlane);
+	w->EnsureAlloced(numCuts + 4, true);
+	//clip the winding with all trimming planes
+	idBounds uvbox = ComputeBoundingUvBox(*w);
+	for (int i = 0; i < numCuts; i++) {
+		w = w->Clip(cutPlanes[i], 0.0f, retainOn[i]);
+		if (!w)
+			break;
+		uvbox = ComputeBoundingUvBox(*w);
+	}
+	//note: if result is empty, then we take last non-empty winding as estimate
+	//this may be important if true winding is very small but has disappeared due to floating point errors
+
+	//this expansion should be larger than possible round-off errors
+	uvbox.ExpandSelf(1.0f);
+
+	//regenerate initial winding from estimated UV-box
+	if (!w)
+		w = new idWinding(numCuts + 4);
+	w->numPoints = 4;
+	w->p[0].ToVec3() = origin + uvbox[0].x * axisU + uvbox[1].y * axisV;
+	w->p[1].ToVec3() = origin + uvbox[1].x * axisU + uvbox[1].y * axisV;
+	w->p[2].ToVec3() = origin + uvbox[1].x * axisU + uvbox[0].y * axisV;
+	w->p[3].ToVec3() = origin + uvbox[0].x * axisU + uvbox[0].y * axisV;
+	for (int v = 0; v < 4; v++)
+		w->p[v].s = w->p[v].t = 0.0f;
+
+	//clip the winding with all trimming planes
+	//since initial UV-box is not huge this time, we expect to get much more precise vertices
+	for (int i = 0; i < numCuts; i++) {
+		w = w->Clip(cutPlanes[i], epsilon, retainOn[i]);
+		if (!w)
+			break;
+	}
+
+	return w;
+}
+
+/*
+=============
 idWinding::Split
 =============
 */
