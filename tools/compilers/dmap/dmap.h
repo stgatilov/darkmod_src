@@ -33,6 +33,7 @@ extern idCVar dmap_fasterAasMeltPortals;
 extern idCVar dmap_fasterAasBrushListMerge;
 extern idCVar dmap_pruneAasBrushesChopping;
 extern idCVar dmap_fasterAasWaterJumpReachability;
+extern idCVar dmap_disableCellSnappingTjunc;
 
 
 typedef struct primitive_s {

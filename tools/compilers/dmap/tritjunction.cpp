@@ -111,6 +111,12 @@ idCVar dmap_fixVertexSnappingTjunc(
 	"      (default in TDM 2.10 and after)",
 	0, 2
 );
+idCVar dmap_disableCellSnappingTjunc(
+	"dmap_disableCellSnappingTjunc", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Disables unconditional snapping of all coordinates to [integer/64].\n"
+	"The vertices still snap to each other if they are close.\n"
+	"This is behavior change in TDM 2.10"
+);
 
 
 /*
@@ -204,11 +210,14 @@ void GetHashVert( idVec3 &v, const hashVert_s* &ref ) {
 	hv->iv[1] = iv[1];
 	hv->iv[2] = iv[2];
 
-	hv->v[0] = (float)iv[0] / SNAP_FRACTIONS;
-	hv->v[1] = (float)iv[1] / SNAP_FRACTIONS;
-	hv->v[2] = (float)iv[2] / SNAP_FRACTIONS;
-
-	VectorCopy( hv->v, v );
+	if (dmap_disableCellSnappingTjunc.GetBool())
+		hv->v = v;
+	else {
+		hv->v[0] = (float)iv[0] / SNAP_FRACTIONS;
+		hv->v[1] = (float)iv[1] / SNAP_FRACTIONS;
+		hv->v[2] = (float)iv[2] / SNAP_FRACTIONS;
+		VectorCopy( hv->v, v );
+	}
 
 	numHashVerts++;
 
@@ -274,9 +283,11 @@ static void HashVertsFinalize() {
 			//create new merged vertex at center's span location
 			hv = (hashVert_t *)Mem_Alloc(sizeof(*hv));
 			hv->idx = -1;
+			hv->v = ctr;
 			for (int d = 0; d < 3; d++) {
 				hv->iv[d] = floor( ( ctr[d] + 0.5/SNAP_FRACTIONS ) * SNAP_FRACTIONS );
-				hv->v[d] = (float)hv->iv[d] / SNAP_FRACTIONS;
+				if (!dmap_disableCellSnappingTjunc.GetBool())
+					hv->v[d] = (float)hv->iv[d] / SNAP_FRACTIONS;
 			}
 			//replace all references to cluster vertices
 			for (int j = beg; j < end; j++) {
