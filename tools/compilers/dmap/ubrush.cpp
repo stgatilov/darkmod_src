@@ -224,25 +224,27 @@ returns false if the brush doesn't enclose a valid volume
 ==================
 */
 bool CreateBrushWindings (uBrush_t *brush) {
-	int			i, j;
-	idWinding	*w;
-	idPlane		*plane;
-	side_t		*side;
+	idList<idPlane> cuttingPlanes;
 
-	for ( i = 0; i < brush->numsides; i++ ) {
-		side = &brush->sides[i];
-		plane = &dmapGlobals.mapPlanes[side->planenum];
-		w = new idWinding( *plane );
-		for ( j = 0; j < brush->numsides && w; j++ ) {
+	for ( int i = 0; i < brush->numsides; i++ ) {
+		side_t *side = &brush->sides[i];
+		const idPlane &plane = dmapGlobals.mapPlanes[side->planenum];
+
+		cuttingPlanes.SetNum(0, false);
+		for ( int j = 0; j < brush->numsides; j++ ) {
 			if ( i == j ) {
 				continue;
 			}
 			if ( brush->sides[j].planenum == ( brush->sides[i].planenum ^ 1 ) ) {
 				continue;		// back side clipaway
 			}
-			plane = &dmapGlobals.mapPlanes[brush->sides[j].planenum^1];
-			w = w->Clip( *plane, 0 );//CLIP_EPSILON);
+			const idPlane &cutpl = dmapGlobals.mapPlanes[brush->sides[j].planenum ^ 1];
+			cuttingPlanes.AddGrow(cutpl);
 		}
+		// stgatilov: don't delete winding if clipping plane has opposite normal
+		// that corresponds to case when side planes are equal (note that trim plane is negated)
+		idWinding *w = idWinding::CreateTrimmedPlane(plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), 0.0f, INCIDENT_PLANE_RETAIN_OPPOSITE);
+
 		if ( side->winding ) {
 			delete side->winding;
 		}
