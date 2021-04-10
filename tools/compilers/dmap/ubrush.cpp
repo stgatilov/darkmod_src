@@ -570,12 +570,10 @@ void SplitBrush (uBrush_t *brush, int planenum, uBrush_t **front, uBrush_t **bac
 	}
 
 	// create a new winding from the split plane
-
-	w = new idWinding( plane );
-	for ( i = 0; i < brush->numsides && w; i++ ) {
-		idPlane &plane2 = dmapGlobals.mapPlanes[brush->sides[i].planenum ^ 1];
-		w = w->Clip( plane2, 0 ); // PLANESIDE_EPSILON);
-	}
+	idList<idPlane> cuttingPlanes;
+	for ( i = 0; i < brush->numsides; i++ )
+		cuttingPlanes.AddGrow(dmapGlobals.mapPlanes[brush->sides[i].planenum ^ 1]);
+	w = idWinding::CreateTrimmedPlane(plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), 0.0f);
 
 	if ( !w || w->IsTiny() ) {
 		// the brush isn't really split
