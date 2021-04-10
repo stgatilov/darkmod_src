@@ -317,21 +317,20 @@ idBrushBSPNode::Split
 */
 bool idBrushBSPNode::Split( const idPlane &splitPlane, int splitPlaneNum ) {
 	int s, i;
-	idWinding *mid;
 	idBrushBSPPortal *p, *midPortal, *newPortals[2];
 	idBrushBSPNode *newNodes[2];
 
-	mid = new idWinding( splitPlane.Normal(), splitPlane.Dist() );
-
-	for ( p = portals; p && mid; p = p->next[s] ) {
+	idList<idPlane> cuttingPlanes;
+	for ( p = portals; p ; p = p->next[s] ) {
 		s = (p->nodes[1] == this);
 		if ( s ) {
-			mid = mid->Clip( -p->plane, 0.1f, false );
+			cuttingPlanes.AddGrow( -p->plane );
 		}
 		else {
-			mid = mid->Clip( p->plane, 0.1f, false );
+			cuttingPlanes.AddGrow( p->plane );
 		}
 	}
+	idWinding *mid = idWinding::CreateTrimmedPlane( splitPlane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), 0.1f );
 
 	if ( !mid ) {
 		return false;
