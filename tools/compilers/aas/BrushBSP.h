@@ -200,7 +200,6 @@ private:
 	void					BuildGrid_r( idList<idBrushBSPNode *> &gridCells, idBrushBSPNode *node );
 	void					PruneTree_r( idBrushBSPNode *node, int contents );
 	void					MakeOutsidePortals( void );
-	idWinding *				BaseWindingForNode( idBrushBSPNode *node );
 	void					MakeNodePortal( idBrushBSPNode *node );
 	void					SplitNodePortals( idBrushBSPNode *node );
 	void					MakeTreePortals_r( idBrushBSPNode *node );
