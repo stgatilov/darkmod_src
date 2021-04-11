@@ -366,26 +366,6 @@ static bool IsAMD( void ) {
 
 /*
 ================
-HasMMX
-================
-*/
-/*
-static bool HasMMX( void ) {
-	unsigned regs[4];
-
-	// get CPU feature bits
-	CPUID( 1, regs );
-
-	// bit 23 of EDX denotes MMX existence
-	if ( regs[_REG_EDX] & ( 1 << 23 ) ) {
-		return true;
-	}
-	return false;
-}
-*/
-
-/*
-================
 HasSSE
 ================
 */
@@ -777,11 +757,6 @@ cpuid_t Sys_GetCPUId( void ) {
 	} else {
 		flags = CPUID_INTEL;
 	}
-
-	// check for Multi Media Extensions
-	/*if ( HasMMX() ) {
-		flags |= CPUID_MMX;
-	}*/
 
 	// check for Streaming SIMD Extensions
 	if ( HasSSE() ) {

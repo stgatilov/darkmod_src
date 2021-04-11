@@ -21,7 +21,6 @@
 #endif
 
 #include "Simd_Generic.h"
-//#include "Simd_MMX.h"
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
 #include "Simd_SSE3.h"
@@ -128,7 +127,6 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 	                       //			cores,
 	                       //		   	cores > 1 ? "cores" : "core",
 	                       // Flags
-	                       //cpuid & CPUID_MMX ? " MMX" : "",
 	                       cpuid & CPUID_SSE ? " SSE" : "",
 	                       cpuid & CPUID_SSE2 ? " SSE2" : "",
 	                       cpuid & CPUID_SSE3 ? " SSE3" : "",
@@ -3997,13 +3995,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 
 		argString.Remove( ' ' );
 
-		/*if ( idStr::Icmp( argString, "MMX" ) == 0 ) {
-			if ( !( cpuid & CPUID_MMX ) ) {
-				common->Printf( "CPU does not support MMX\n" );
-				return;
-			}
-			p_simd = new idSIMD_MMX;
-		} else */if ( idStr::Icmp( argString, "SSE" ) == 0 ) {
+		if ( idStr::Icmp( argString, "SSE" ) == 0 ) {
 			if ( !( cpuid & CPUID_SSE ) ) {
 				common->Printf( "CPU does not support SSE\n" );
 				return;
