@@ -354,7 +354,9 @@ Sys_Init
 Posix_EarlyInit/Posix_LateInit is better
 =================
 */
-void Sys_Init( void ) { }
+void Sys_Init( void ) {
+	Sys_InitCPUID();
+}
 
 /*
 =================

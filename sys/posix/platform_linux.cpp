@@ -81,26 +81,6 @@ const char* Sys_EXEPath()
 
 /*
 ===============
-Sys_GetProcessorId
-===============
-*/
-cpuid_t Sys_GetProcessorId()
-{
-	return CPUID_GENERIC;
-}
-
-/*
-===============
-Sys_GetProcessorString
-===============
-*/
-const char* Sys_GetProcessorString()
-{
-	return "generic";
-}
-
-/*
-===============
 Sys_ClockTicksPerSecond
 ===============
 */

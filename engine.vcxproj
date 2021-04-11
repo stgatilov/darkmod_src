@@ -1118,6 +1118,7 @@
     <ClCompile Include="sound\snd_system.cpp" />
     <ClCompile Include="sound\snd_wavefile.cpp" />
     <ClCompile Include="sound\snd_world.cpp" />
+    <ClCompile Include="sys\sys_cpu.cpp" />
     <ClCompile Include="sys\sys_padinput.cpp" />
     <ClCompile Include="sys\sys_local.cpp" />
     <ClCompile Include="sys\win32\win_cpu.cpp" />

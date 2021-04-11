@@ -46,7 +46,6 @@
 #include <iostream>
 
 idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
-idCVar Win32Vars_t::sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
 idCVar Win32Vars_t::win_username( "win_username", "", CVAR_SYSTEM | CVAR_INIT, "windows user name" );
 idCVar Win32Vars_t::win_xpos( "win_xpos", "3", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "horizontal position of window" );
@@ -1062,92 +1061,7 @@ void Sys_Init( void ) {
 	//
 	// CPU type
 	//
-	if ( !idStr::Icmp( win32.sys_cpustring.GetString(), "detect" ) ) {
-		idStr string;
-
-		common->Printf( "%1.0f MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
-
-		win32.cpuid = Sys_GetCPUId();
-
-		string.Clear();
-
-		if ( win32.cpuid & CPUID_AMD ) {
-			string += "AMD CPU";
-		} else if ( win32.cpuid & CPUID_INTEL ) {
-			string += "Intel CPU";
-		} else if ( win32.cpuid & CPUID_UNSUPPORTED ) {
-			string += "unsupported CPU";
-		} else {
-			string += "generic CPU";
-		}
-		string += " with ";
-
-		if ( win32.cpuid & CPUID_SSE ) {
-			string += "SSE & ";
-		}
-		if ( win32.cpuid & CPUID_SSE2 ) {
-			string += "SSE2 & ";
-		}
-		if ( win32.cpuid & CPUID_SSE3 ) {
-			string += "SSE3 & ";
-		}
-		if ( win32.cpuid & CPUID_SSSE3 ) {
-			string += "SSSE3 & ";
-		}
-		if ( win32.cpuid & CPUID_SSE41 ) {
-			string += "SSE41 & ";
-		}
-		if ( win32.cpuid & CPUID_AVX ) {
-			string += "AVX & ";
-		}
-		if ( win32.cpuid & CPUID_AVX2 ) {
-			string += "AVX2 & ";
-		}
-		if ( win32.cpuid & CPUID_FMA3 ) {
-			string += "FMA3 & ";
-		}
-		string.StripTrailing( " & " );
-		string.StripTrailing( " with " );
-		win32.sys_cpustring.SetString( string );
-	} else {
-		common->Printf( "forcing CPU type to " );
-		idLexer src( win32.sys_cpustring.GetString(), idStr::Length( win32.sys_cpustring.GetString() ), "sys_cpustring" );
-		idToken token;
-
-		int id = CPUID_NONE;
-		while ( src.ReadToken( &token ) ) {
-			if ( token.Icmp( "generic" ) == 0 ) {
-				id |= CPUID_GENERIC;
-			} else if ( token.Icmp( "intel" ) == 0 ) {
-				id |= CPUID_INTEL;
-			} else if ( token.Icmp( "amd" ) == 0 ) {
-				id |= CPUID_AMD;
-			} else if ( token.Icmp( "sse" ) == 0 ) {
-				id |= CPUID_SSE;
-			} else if ( token.Icmp( "sse2" ) == 0 ) {
-				id |= CPUID_SSE2;
-			} else if ( token.Icmp( "sse3" ) == 0 ) {
-				id |= CPUID_SSE3;
-			} else if ( token.Icmp( "ssse3" ) == 0 ) {
-				id |= CPUID_SSSE3;
-			} else if ( token.Icmp( "sse41" ) == 0 ) {
-				id |= CPUID_SSE41;
-			} else if ( token.Icmp( "avx" ) == 0 ) {
-				id |= CPUID_AVX;
-			} else if ( token.Icmp( "avx2" ) == 0 ) {
-				id |= CPUID_AVX2;
-			} else if ( token.Icmp( "fma3" ) == 0 ) {
-				id |= CPUID_FMA3;
-			}
-		}
-		if ( id == CPUID_NONE ) {
-			common->Printf( "WARNING: unknown sys_cpustring '%s'\n", win32.sys_cpustring.GetString() );
-			id = CPUID_GENERIC;
-		}
-		win32.cpuid = ( cpuid_t ) id;
-	}
-
-	common->Printf( "%s\n", win32.sys_cpustring.GetString() );
+	Sys_InitCPUID();
 }
 
 /*
@@ -1157,24 +1071,6 @@ Sys_Shutdown
 */
 void Sys_Shutdown( void ) {
 	CoUninitialize();
-}
-
-/*
-================
-Sys_GetProcessorId
-================
-*/
-cpuid_t Sys_GetProcessorId( void ) {
-	return win32.cpuid;
-}
-
-/*
-================
-Sys_GetProcessorString
-================
-*/
-const char *Sys_GetProcessorString( void ) {
-	return win32.sys_cpustring.GetString();
 }
 
 //=======================================================================

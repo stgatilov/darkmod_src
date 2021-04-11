@@ -31,8 +31,6 @@ char	*Sys_GetCurrentUser( void );
 
 void	Win_SetErrorText( const char *text );
 
-cpuid_t	Sys_GetCPUId( void );
-
 int		MapKey (int key);
 
 
@@ -67,8 +65,6 @@ typedef struct {
 
 	OSVERSIONINFOEX	osversion;
 
-	cpuid_t			cpuid;
-
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event (not really needed now that we use async direct input)
 	int				sysMsgTime;
@@ -93,7 +89,6 @@ typedef struct {
 	// desktop gamma is saved here for restoration at exit
 
 	static idCVar	sys_arch;
-	static idCVar	sys_cpustring;
 	static idCVar	in_mouse;
 	static idCVar	win_username;
 	static idCVar	win_xpos;			// archived X coordinate of window position

@@ -3073,6 +3073,9 @@
     <ClCompile Include="tools\compilers\dmap\planargraph.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
+    <ClCompile Include="sys\sys_cpu.cpp">
+      <Filter>Sys</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">

@@ -293,6 +293,9 @@ double			Sys_ClockTicksPerSecond( void );
 uint64_t Sys_GetTimeMicroseconds( void );
 #define Sys_Microseconds Sys_GetTimeMicroseconds
 
+// stgatilov: called once on initialization to initialize CPUID info and sys_cpustring
+void Sys_InitCPUID();
+
 // returns a selection of the CPUID_* flags
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );

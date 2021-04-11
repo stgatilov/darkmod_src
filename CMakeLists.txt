@@ -105,7 +105,14 @@ ucm_add_dirs(
 		"tools/compilers"
 		TO TDM_SOURCE_FILES RECURSIVE
 )
-ucm_add_files("sys/sys_local.cpp" "sys/sys_local.h" "sys/sys_public.h" "sys/sys_padinput.cpp" "sys/sys_padinput.h" TO TDM_SOURCE_FILES)
+ucm_add_files(
+	"sys/sys_local.cpp"
+	"sys/sys_local.h"
+	"sys/sys_public.h"
+	"sys/sys_padinput.cpp"
+	"sys/sys_padinput.h"
+	"sys/sys_cpu.cpp"
+TO TDM_SOURCE_FILES)
 
 if (WITH_TOOLS)
 	ucm_add_dirs("tools" TO TDM_SOURCE_FILES RECURSIVE)
