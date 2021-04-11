@@ -29,6 +29,15 @@
 idCVar sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
 static cpuid_t cpuid;
 
+
+/*
+==============================================================
+
+	CPU
+
+==============================================================
+*/
+
 /*
 ================
 HasCPUID
@@ -429,7 +438,6 @@ static cpuid_t Sys_GetCPUId( void ) {
 }
 
 
-
 //===================================================================================
 
 /*
@@ -542,4 +550,170 @@ Sys_GetProcessorString
 */
 const char *Sys_GetProcessorString( void ) {
 	return sys_cpustring.GetString();
+}
+
+/*
+===============================================================================
+
+	FPU
+
+===============================================================================
+*/
+
+typedef struct bitFlag_s {
+	const char 		*name;
+	int			bit;
+} bitFlag_t;
+
+static byte fpuState[128], *statePtr = fpuState;
+static char fpuString[2048];
+static bitFlag_t controlWordFlags[] = {
+	{ "Invalid operation", 0 },
+	{ "Denormalized operand", 1 },
+	{ "Divide-by-zero", 2 },
+	{ "Numeric overflow", 3 },
+	{ "Numeric underflow", 4 },
+	{ "Inexact result (precision)", 5 },
+	{ "Infinity control", 12 },
+	{ "", 0 }
+};
+static const char *precisionControlField[] = {
+	"Single Precision (24-bits)",
+	"Reserved",
+	"Double Precision (53-bits)",
+	"Double Extended Precision (64-bits)"
+};
+static const char *roundingControlField[] = {
+	"Round to nearest",
+	"Round down",
+	"Round up",
+	"Round toward zero"
+};
+static bitFlag_t statusWordFlags[] = {
+	{ "Invalid operation", 0 },
+	{ "Denormalized operand", 1 },
+	{ "Divide-by-zero", 2 },
+	{ "Numeric overflow", 3 },
+	{ "Numeric underflow", 4 },
+	{ "Inexact result (precision)", 5 },
+	{ "Stack fault", 6 },
+	{ "Error summary status", 7 },
+	{ "FPU busy", 15 },
+	{ "", 0 }
+};
+
+/*
+===============
+Sys_FPU_PrintStateFlags
+===============
+*/
+int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse ) {
+	int i, length = 0;
+
+	length += sprintf( ptr + length,	"CTRL = %08x\n"
+	                   "STAT = %08x\n"
+	                   "TAGS = %08x\n"
+	                   "INOF = %08x\n"
+	                   "INSE = %08x\n"
+	                   "OPOF = %08x\n"
+	                   "OPSE = %08x\n"
+	                   "\n",
+	                   ctrl, stat, tags, inof, inse, opof, opse );
+
+	length += sprintf( ptr + length, "Control Word:\n" );
+	for ( i = 0; controlWordFlags[i].name[0]; i++ ) {
+		length += sprintf( ptr + length, "  %-30s = %s\n", controlWordFlags[i].name, ( ctrl & ( 1 << controlWordFlags[i].bit ) ) ? "true" : "false" );
+	}
+	length += sprintf( ptr + length, "  %-30s = %s\n", "Precision control", precisionControlField[( ctrl >> 8 ) & 3] );
+	length += sprintf( ptr + length, "  %-30s = %s\n", "Rounding control", roundingControlField[( ctrl >> 10 ) & 3] );
+
+	length += sprintf( ptr + length, "Status Word:\n" );
+	for ( i = 0; statusWordFlags[i].name[0]; i++ ) {
+		ptr += sprintf( ptr + length, "  %-30s = %s\n", statusWordFlags[i].name, ( stat & ( 1 << statusWordFlags[i].bit ) ) ? "true" : "false" );
+	}
+	length += sprintf( ptr + length, "  %-30s = %d%d%d%d\n", "Condition code", ( stat >> 8 ) & 1, ( stat >> 9 ) & 1, ( stat >> 10 ) & 1, ( stat >> 14 ) & 1 );
+	length += sprintf( ptr + length, "  %-30s = %d\n", "Top of stack pointer", ( stat >> 11 ) & 7 );
+
+	return length;
+}
+
+// Only do this in 32 bit builds
+#if defined(_MSC_VER) && !defined(_WIN64)
+
+#define MXCSR_DAZ	(1 << 6)
+#define MXCSR_FTZ	(1 << 15)
+
+#define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
+#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
+
+static void EnableMXCSRFlag( int flag, bool enable, const char *name ) {
+	int sse_mode;
+
+	STREFLOP_STMXCSR( sse_mode );
+
+	if ( enable && ( sse_mode & flag ) == flag ) {
+		common->Printf( "%s mode is already enabled\n", name );
+		return;
+	}
+
+	if ( !enable && ( sse_mode & flag ) == 0 ) {
+		common->Printf( "%s mode is already disabled\n", name );
+		return;
+	}
+
+	if ( enable ) {
+		common->Printf( "enabling %s mode\n", name );
+		sse_mode |= flag;
+	} else {
+		common->Printf( "disabling %s mode\n", name );
+		sse_mode &= ~flag;
+	}
+	STREFLOP_LDMXCSR( sse_mode );
+}
+#endif
+
+/*
+================
+Sys_FPU_SetDAZ
+================
+*/
+void Sys_FPU_SetDAZ( bool enable ) {
+#if defined(_MSC_VER) && !defined(_WIN64)
+	if ( !HasDAZ() ) {
+		common->Printf( "this CPU doesn't support Denormals-Are-Zero\n" );
+		return;
+	}
+
+	EnableMXCSRFlag( MXCSR_DAZ, enable, "Denormals-Are-Zero" );
+#endif
+}
+
+/*
+================
+Sys_FPU_SetFTZ
+================
+*/
+void Sys_FPU_SetFTZ( bool enable ) {
+#if defined(_MSC_VER) && !defined(_WIN64)
+	EnableMXCSRFlag( MXCSR_FTZ, enable, "Flush-To-Zero" );
+#endif
+}
+
+/*
+===============
+Sys_FPU_SetPrecision
+===============
+*/
+void Sys_FPU_SetPrecision() {
+#if defined(_MSC_VER) && defined(_M_IX86)
+	_controlfp( _PC_64, _MCW_PC );
+#endif
+}
+
+
+void Sys_FPU_SetExceptions(bool enable) {
+	static const DWORD bits = _EM_OVERFLOW | _EM_ZERODIVIDE | _EM_INVALID;
+	_controlfp(enable ? ~bits : ~0, _MCW_EM);
 }

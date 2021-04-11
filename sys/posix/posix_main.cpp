@@ -461,9 +461,6 @@ void Sys_FlushCacheMemory(void *base, int bytes)
 void Sys_FPU_ClearStack( void ) {
 }
 
-void Sys_FPU_SetPrecision() {
-}
-
 /*
 ================
 Sys_LockMemory
