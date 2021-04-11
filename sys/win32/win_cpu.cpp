@@ -256,39 +256,8 @@ HasCPUID
 ================
 */
 static bool HasCPUID( void ) {
-#if defined(_MSC_VER) && defined(_WIN64)
 	// Yes, we just have it, we're not compiling on 486-compatible hardware
 	return true;
-#else
-	__asm {
-		pushfd						// save eflags
-		pop		eax
-		test	eax, 0x00200000		// check ID bit
-		jz		set21				// bit 21 is not set, so jump to set_21
-		and		eax, 0xffdfffff		// clear bit 21
-		push	eax					// save new value in register
-		popfd						// store new value in flags
-		pushfd
-		pop		eax
-		test	eax, 0x00200000		// check ID bit
-		jz		good
-		jmp		err					// cpuid not supported
-		set21:
-		or		eax, 0x00200000		// set ID bit
-		push	eax					// store new value
-		popfd						// store new value in EFLAGS
-		pushfd
-		pop		eax
-		test	eax, 0x00200000		// if bit 21 is on
-		jnz		good
-		jmp		err
-	}
-
-err:
-	return false;
-good:
-	return true;
-#endif
 }
 
 #define _REG_EAX		0
@@ -573,6 +542,10 @@ static bool HasDAZ( void ) {
 
 	memset( FXArea, 0, sizeof( FXSaveArea ) );
 
+	//stgatilov: mxcsr was released with SSE, and did include only FTZ flag
+	//when P4 with SSE2 came out, DAZ flag was added, but its support had to be checked via mxcsr_mask
+	//so the fxsave instruction here extracts mxcsr_mask in order to check for DAZ support
+	//most likely this check is unnecessary today...
 #if defined(_MSC_VER) && defined(_WIN64)
 	_fxsave( FXArea );
 #else

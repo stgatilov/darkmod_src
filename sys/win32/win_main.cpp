@@ -1012,6 +1012,8 @@ void Sys_Init( void ) {
 		Sys_Error( GAME_NAME " doesn't run on Win32s" );
 	}
 
+	//stgatilov: Starting from Windows 8.1, true version is not returned anyway:
+	//see https://stackoverflow.com/a/17409126/556899
 	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT ) {
 		if ( win32.osversion.dwMajorVersion <= 4 ) {
 			win32.sys_arch.SetString( "WinNT (NT)" );
@@ -1019,10 +1021,16 @@ void Sys_Init( void ) {
 			win32.sys_arch.SetString( "Win2K (NT)" );
 		} else if ( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1 ) {
 			win32.sys_arch.SetString( "WinXP (NT)" );
-		} else if ( win32.osversion.dwMajorVersion == 6 ) {
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 0 ) {
 			win32.sys_arch.SetString( "Vista" );
 		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 1 ) {
 			win32.sys_arch.SetString( "Windows 7" );
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 2 ) {
+			win32.sys_arch.SetString( "Windows 8" );
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 3 ) {
+			win32.sys_arch.SetString( "Windows 8.1" );
+		} else if ( win32.osversion.dwMajorVersion == 10 && win32.osversion.dwMinorVersion == 0 ) {
+			win32.sys_arch.SetString( "Windows 10" );
 		} else {
 			win32.sys_arch.SetString( "Unknown NT variant" );
 		}
