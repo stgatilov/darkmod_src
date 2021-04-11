@@ -16,10 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
-#include <cpuid.h>
-#endif
-
 #include "Simd_Generic.h"
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
@@ -57,60 +53,14 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 
 	int cpuid = idLib::sys->GetProcessorId();
 
-	/*
-	* Tels: Bug #2413: Under Linux, cpuid_t is 0, so use inline assembly to get
-	*       the correct flags:
-	*/
-#if defined(__linux__) && (defined(__i386__) || defined(__x86_64__))
-	int cores = 0;
-	unsigned int a, b, c, d, result;
-
-	// greebo: Use the cpuid function as provided by gcc
-	__get_cpuid( 0, &a, &b, &c, &d );
-
-	//idLib::common->Printf( "cpuid result is a=%x, c=%x, d=%x\n", a,c,d );
-
-	result = CPUID_GENERIC;
-	// "AuthenticAMD"
-	if ( ( 0x68747541l == a ) && ( 0x444d4163l == c ) && ( 0x69746e65l == d ) ) {
-		result = CPUID_AMD;
-	} else {
-		// "GenuineIntel"
-		if ( ( 0x756e6547l == a ) && ( 0x6c65746el == c ) && ( 0x49656e69l == d ) ) {
-			result = CPUID_INTEL;
-		}
-	}
-	__get_cpuid( 1, &a, &b, &c, &d );
-
-	// The calculation how many physical/logical CPUs the machine has is rather
-	// convuluted and differes between AMD and Intel, so we don't attempt it, we
-	// only check bits 16..23 of EBX to see if it is > 1:
-	cores = ( a >> 16 ) & 0xFF;
-
-	// These tests are the same for AMD and Intel
-/*	if ( ( d >> 23 ) & 0x1 ) {
-		result |= CPUID_MMX;
-	}*/
-	if ( ( d >> 25 ) & 0x1 ) {
-		result |= CPUID_SSE;
-	}
-	if ( ( d >> 26 ) & 0x1 ) {
-		result |= CPUID_SSE2;
-	}
-	if ( c & 0x1 ) {
-		result |= CPUID_SSE3;
-	}
-
-	//idLib::common->Printf( "cpuid result is %i (c = %i d = %i)\n", result, c, d);
-	cpuid = result;
-#else
+	//stgatilov: force cpuid bits for SIMD choice if compiler macros are set
+	//this is used for Elbrus compiler, which can cross-compile SSE intrinsics but has no CPUID instruction
 	#ifdef __SSE__
 		cpuid |= CPUID_SSE;
 	#endif
 	#ifdef __SSE2__
 		cpuid |= CPUID_SSE2;
 	#endif
-#endif
 
 	// Print what we found to console
 	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
