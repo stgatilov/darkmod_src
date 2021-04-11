@@ -18,6 +18,7 @@
 
 #include "sys_public.h"
 
+#include <xmmintrin.h>
 #if defined(_MSC_VER)
 	#include <intrin.h>
 #elif defined(__GNUC__) && (defined(__i386__) || defined (__x86_64__))
@@ -637,42 +638,45 @@ int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, 
 	return length;
 }
 
-// Only do this in 32 bit builds
-#if defined(_MSC_VER) && !defined(_WIN64)
-
 #define MXCSR_DAZ	(1 << 6)
 #define MXCSR_FTZ	(1 << 15)
 
-#define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
-#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
-
+/*
+================
+EnableMXCSRFlag
+================
+*/
 static void EnableMXCSRFlag( int flag, bool enable, const char *name ) {
-	int sse_mode;
-
-	STREFLOP_STMXCSR( sse_mode );
+#if defined(_MSC_VER) || defined(__i386__) || defined (__x86_64__)
+	int sse_mode = _mm_getcsr();
 
 	if ( enable && ( sse_mode & flag ) == flag ) {
-		common->Printf( "%s mode is already enabled\n", name );
+		if ( name )
+			common->Printf( "%s mode is already enabled\n", name );
 		return;
 	}
 
 	if ( !enable && ( sse_mode & flag ) == 0 ) {
-		common->Printf( "%s mode is already disabled\n", name );
+		if ( name )
+			common->Printf( "%s mode is already disabled\n", name );
 		return;
 	}
 
 	if ( enable ) {
-		common->Printf( "enabling %s mode\n", name );
+		if ( name )
+			common->Printf( "enabling %s mode\n", name );
 		sse_mode |= flag;
 	} else {
-		common->Printf( "disabling %s mode\n", name );
+		if ( name )
+			common->Printf( "disabling %s mode\n", name );
 		sse_mode &= ~flag;
 	}
-	STREFLOP_LDMXCSR( sse_mode );
-}
+
+	// stgatilov: note that MXCSR affects only SSE+ arithmetic
+	// old x87 FPU has its own control register, but we don't care about it =)
+	_mm_setcsr( sse_mode );
 #endif
+}
 
 /*
 ================
@@ -680,14 +684,10 @@ Sys_FPU_SetDAZ
 ================
 */
 void Sys_FPU_SetDAZ( bool enable ) {
-#if defined(_MSC_VER) && !defined(_WIN64)
-	if ( !HasDAZ() ) {
-		common->Printf( "this CPU doesn't support Denormals-Are-Zero\n" );
+	if ( (cpuid & CPUID_DAZ) == 0 ) 
 		return;
-	}
 
 	EnableMXCSRFlag( MXCSR_DAZ, enable, "Denormals-Are-Zero" );
-#endif
 }
 
 /*
@@ -696,9 +696,10 @@ Sys_FPU_SetFTZ
 ================
 */
 void Sys_FPU_SetFTZ( bool enable ) {
-#if defined(_MSC_VER) && !defined(_WIN64)
+	if ( (cpuid & CPUID_SSE) == 0 ) 
+		return;
+
 	EnableMXCSRFlag( MXCSR_FTZ, enable, "Flush-To-Zero" );
-#endif
 }
 
 /*
@@ -707,6 +708,7 @@ Sys_FPU_SetPrecision
 ===============
 */
 void Sys_FPU_SetPrecision() {
+	// stgatilov: as far as I understand, it only affects x87 FPU
 #if defined(_MSC_VER) && defined(_M_IX86)
 	_controlfp( _PC_64, _MCW_PC );
 #endif
@@ -714,6 +716,12 @@ void Sys_FPU_SetPrecision() {
 
 
 void Sys_FPU_SetExceptions(bool enable) {
+#ifdef _MSC_VER
 	static const DWORD bits = _EM_OVERFLOW | _EM_ZERODIVIDE | _EM_INVALID;
 	_controlfp(enable ? ~bits : ~0, _MCW_EM);
+#else
+	EnableMXCSRFlag( 0x0400, !enable, NULL );	// Overflow mask
+	EnableMXCSRFlag( 0x0200, !enable, NULL );	// Divide-by-zero mask
+	EnableMXCSRFlag( 0x0080, !enable, NULL );	// Invalid operation mask
+#endif
 }
