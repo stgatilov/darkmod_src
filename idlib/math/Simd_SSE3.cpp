@@ -236,7 +236,7 @@ float SSE3_Dot( const idVec4 &v1, const idVec4 &v2 ) {
 idSIMD_SSE3::TransformVerts
 ============
 */
-void VPCALL idSIMD_SSE3::TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) {
+void idSIMD_SSE3::TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) {
 #if 1
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );

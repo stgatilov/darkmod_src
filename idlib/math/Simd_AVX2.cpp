@@ -38,7 +38,7 @@ DEBUG_OPTIMIZE_ON
 idSIMD_AVX2::CullByFrustum
 ============
 */
-void VPCALL idSIMD_AVX2::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) {
+void idSIMD_AVX2::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) {
 	const __m256 fA = _mm256_set_ps( 0, 0, frustum[5][0], frustum[4][0], frustum[3][0], frustum[2][0], frustum[1][0], frustum[0][0] );
 	const __m256 fB = _mm256_set_ps( 0, 0, frustum[5][1], frustum[4][1], frustum[3][1], frustum[2][1], frustum[1][1], frustum[0][1] );
 	const __m256 fC = _mm256_set_ps( 0, 0, frustum[5][2], frustum[4][2], frustum[3][2], frustum[2][2], frustum[1][2], frustum[0][2] );
@@ -65,7 +65,7 @@ void VPCALL idSIMD_AVX2::CullByFrustum( idDrawVert *verts, const int numVerts, c
 idSIMD_AVX2::CullByFrustum2
 ============
 */
-void VPCALL idSIMD_AVX2::CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) {
+void idSIMD_AVX2::CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) {
 	const __m256 fA = _mm256_set_ps( 0, 0, frustum[5][0], frustum[4][0], frustum[3][0], frustum[2][0], frustum[1][0], frustum[0][0] );
 	const __m256 fB = _mm256_set_ps( 0, 0, frustum[5][1], frustum[4][1], frustum[3][1], frustum[2][1], frustum[1][1], frustum[0][1] );
 	const __m256 fC = _mm256_set_ps( 0, 0, frustum[5][2], frustum[4][2], frustum[3][2], frustum[2][2], frustum[1][2], frustum[0][2] );
@@ -106,7 +106,7 @@ void VPCALL idSIMD_AVX2::CullByFrustum2( idDrawVert *verts, const int numVerts, 
 	Res##_y = _mm256_mul_ps(A##_y, S); \
 	Res##_z = _mm256_mul_ps(A##_z, S); \
 
-void VPCALL idSIMD_AVX2::DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
+void idSIMD_AVX2::DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 	for (int i = 0; i < numVerts; i++) {
 		float *ptr = &verts[i].normal.x;
 		_mm256_storeu_ps(ptr, _mm256_setzero_ps());
@@ -346,7 +346,7 @@ void VPCALL idSIMD_AVX2::DeriveTangents( idPlane *planes, idDrawVert *verts, con
 	}
 }
 
-void VPCALL idSIMD_AVX2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
+void idSIMD_AVX2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
 	//in all vector normalizations, W component is can be zero (division by zero)
 	//we have to mask any exceptions here
 	idIgnoreFpExceptions guardFpExceptions;

@@ -44,12 +44,6 @@ public:
 ===============================================================================
 */
 
-#ifdef _WIN32
-#define VPCALL __fastcall
-#else
-#define VPCALL
-#endif
-
 //stgatilov: when SIMD_USE_ASM = 1, original inline assembly from ID is used
 #if defined(_MSC_VER) && defined(_M_IX86)
 #define SIMD_USE_ASM 1
@@ -93,104 +87,104 @@ public:
 
 	cpuid_t							cpuid;
 
-	virtual const char * VPCALL		GetName( void ) const = 0;
+	virtual const char * GetName( void ) const = 0;
 
-	virtual void VPCALL Add( float *dst,			const float constant,	const float *src,		const int count ) = 0;
-	virtual void VPCALL Add( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
-	virtual void VPCALL Sub( float *dst,			const float constant,	const float *src,		const int count ) = 0;
-	virtual void VPCALL Sub( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
-	virtual void VPCALL Mul( float *dst,			const float constant,	const float *src,		const int count ) = 0;
-	virtual void VPCALL Mul( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
-	virtual void VPCALL Div( float *dst,			const float constant,	const float *src,		const int count ) = 0;
-	virtual void VPCALL Div( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
-	virtual void VPCALL MulAdd( float *dst,			const float constant,	const float *src,		const int count ) = 0;
-	virtual void VPCALL MulAdd( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
-	virtual void VPCALL MulSub( float *dst,			const float constant,	const float *src,		const int count ) = 0;
-	virtual void VPCALL MulSub( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
+	virtual void Add( float *dst,			const float constant,	const float *src,		const int count ) = 0;
+	virtual void Add( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
+	virtual void Sub( float *dst,			const float constant,	const float *src,		const int count ) = 0;
+	virtual void Sub( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
+	virtual void Mul( float *dst,			const float constant,	const float *src,		const int count ) = 0;
+	virtual void Mul( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
+	virtual void Div( float *dst,			const float constant,	const float *src,		const int count ) = 0;
+	virtual void Div( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
+	virtual void MulAdd( float *dst,			const float constant,	const float *src,		const int count ) = 0;
+	virtual void MulAdd( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
+	virtual void MulSub( float *dst,			const float constant,	const float *src,		const int count ) = 0;
+	virtual void MulSub( float *dst,			const float *src0,		const float *src1,		const int count ) = 0;
 
-	virtual	void VPCALL Dot( float *dst,			const idVec3 &constant,	const idVec3 *src,		const int count ) = 0;
-	virtual	void VPCALL Dot( float *dst,			const idVec3 &constant,	const idPlane *src,		const int count ) = 0;
-	virtual void VPCALL Dot( float *dst,			const idVec3 &constant,	const idDrawVert *src,	const int count ) = 0;
-	virtual	void VPCALL Dot( float *dst,			const idPlane &constant,const idVec3 *src,		const int count ) = 0;
-	virtual	void VPCALL Dot( float *dst,			const idPlane &constant,const idPlane *src,		const int count ) = 0;
-	virtual void VPCALL Dot( float *dst,			const idPlane &constant,const idDrawVert *src,	const int count ) = 0;
-	virtual	void VPCALL Dot( float *dst,			const idVec3 *src0,		const idVec3 *src1,		const int count ) = 0;
-	virtual void VPCALL Dot( float &dot,			const float *src1,		const float *src2,		const int count ) = 0;
+	virtual	void Dot( float *dst,			const idVec3 &constant,	const idVec3 *src,		const int count ) = 0;
+	virtual	void Dot( float *dst,			const idVec3 &constant,	const idPlane *src,		const int count ) = 0;
+	virtual void Dot( float *dst,			const idVec3 &constant,	const idDrawVert *src,	const int count ) = 0;
+	virtual	void Dot( float *dst,			const idPlane &constant,const idVec3 *src,		const int count ) = 0;
+	virtual	void Dot( float *dst,			const idPlane &constant,const idPlane *src,		const int count ) = 0;
+	virtual void Dot( float *dst,			const idPlane &constant,const idDrawVert *src,	const int count ) = 0;
+	virtual	void Dot( float *dst,			const idVec3 *src0,		const idVec3 *src1,		const int count ) = 0;
+	virtual void Dot( float &dot,			const float *src1,		const float *src2,		const int count ) = 0;
 
-	virtual	void VPCALL CmpGT( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpGT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpGE( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpGE( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpLT( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpLT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpLE( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
-	virtual	void VPCALL CmpLE( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpGT( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpGT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpGE( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpGE( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpLT( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpLT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpLE( byte *dst,			const float *src0,		const float constant,	const int count ) = 0;
+	virtual	void CmpLE( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count ) = 0;
 
-	virtual	void VPCALL MinMax( float &min,			float &max,				const float *src,		const int count ) = 0;
-	virtual	void VPCALL MinMax( idVec2 &min,		idVec2 &max,			const idVec2 *src,		const int count ) = 0;
-	virtual	void VPCALL MinMax( idVec3 &min,		idVec3 &max,			const idVec3 *src,		const int count ) = 0;
-	virtual	void VPCALL MinMax( idVec3 &min,		idVec3 &max,			const idDrawVert *src,	const int count ) = 0;
-	virtual	void VPCALL MinMax( idVec3 &min,		idVec3 &max,			const idDrawVert *src,	const int *indexes,		const int count ) = 0;
+	virtual	void MinMax( float &min,			float &max,				const float *src,		const int count ) = 0;
+	virtual	void MinMax( idVec2 &min,		idVec2 &max,			const idVec2 *src,		const int count ) = 0;
+	virtual	void MinMax( idVec3 &min,		idVec3 &max,			const idVec3 *src,		const int count ) = 0;
+	virtual	void MinMax( idVec3 &min,		idVec3 &max,			const idDrawVert *src,	const int count ) = 0;
+	virtual	void MinMax( idVec3 &min,		idVec3 &max,			const idDrawVert *src,	const int *indexes,		const int count ) = 0;
 
-	virtual	void VPCALL Clamp( float *dst,			const float *src,		const float min,		const float max,		const int count ) = 0;
-	virtual	void VPCALL ClampMin( float *dst,		const float *src,		const float min,		const int count ) = 0;
-	virtual	void VPCALL ClampMax( float *dst,		const float *src,		const float max,		const int count ) = 0;
+	virtual	void Clamp( float *dst,			const float *src,		const float min,		const float max,		const int count ) = 0;
+	virtual	void ClampMin( float *dst,		const float *src,		const float min,		const int count ) = 0;
+	virtual	void ClampMax( float *dst,		const float *src,		const float max,		const int count ) = 0;
 
-	virtual void VPCALL Memcpy( void *dst,			const void *src,		const int count ) = 0;
-	virtual void VPCALL Memset( void *dst,			const int val,			const int count ) = 0;
+	virtual void Memcpy( void *dst,			const void *src,		const int count ) = 0;
+	virtual void Memset( void *dst,			const int val,			const int count ) = 0;
 
 	// these assume 16 byte aligned and 16 byte padded memory
-	virtual void VPCALL Zero16( float *dst,			const int count ) = 0;
-	virtual void VPCALL Negate16( float *dst,		const int count ) = 0;
-	virtual void VPCALL Copy16( float *dst,			const float *src,		const int count ) = 0;
-	virtual void VPCALL Add16( float *dst,			const float *src1,		const float *src2,		const int count ) = 0;
-	virtual void VPCALL Sub16( float *dst,			const float *src1,		const float *src2,		const int count ) = 0;
-	virtual void VPCALL Mul16( float *dst,			const float *src1,		const float constant,	const int count ) = 0;
-	virtual void VPCALL AddAssign16( float *dst,	const float *src,		const int count ) = 0;
-	virtual void VPCALL SubAssign16( float *dst,	const float *src,		const int count ) = 0;
-	virtual void VPCALL MulAssign16( float *dst,	const float constant,	const int count ) = 0;
+	virtual void Zero16( float *dst,			const int count ) = 0;
+	virtual void Negate16( float *dst,		const int count ) = 0;
+	virtual void Copy16( float *dst,			const float *src,		const int count ) = 0;
+	virtual void Add16( float *dst,			const float *src1,		const float *src2,		const int count ) = 0;
+	virtual void Sub16( float *dst,			const float *src1,		const float *src2,		const int count ) = 0;
+	virtual void Mul16( float *dst,			const float *src1,		const float constant,	const int count ) = 0;
+	virtual void AddAssign16( float *dst,	const float *src,		const int count ) = 0;
+	virtual void SubAssign16( float *dst,	const float *src,		const int count ) = 0;
+	virtual void MulAssign16( float *dst,	const float constant,	const int count ) = 0;
 
 	// idMatX operations
-	virtual void VPCALL MatX_MultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
-	virtual void VPCALL MatX_MultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
-	virtual void VPCALL MatX_MultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
-	virtual void VPCALL MatX_TransposeMultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
-	virtual void VPCALL MatX_TransposeMultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
-	virtual void VPCALL MatX_TransposeMultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
-	virtual void VPCALL MatX_MultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) = 0;
-	virtual void VPCALL MatX_TransposeMultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) = 0;
-	virtual void VPCALL MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 ) = 0;
-	virtual void VPCALL MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) = 0;
-	virtual bool VPCALL MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) = 0;
+	virtual void MatX_MultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
+	virtual void MatX_MultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
+	virtual void MatX_MultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
+	virtual void MatX_TransposeMultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
+	virtual void MatX_TransposeMultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
+	virtual void MatX_TransposeMultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) = 0;
+	virtual void MatX_MultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) = 0;
+	virtual void MatX_TransposeMultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) = 0;
+	virtual void MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 ) = 0;
+	virtual void MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) = 0;
+	virtual bool MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) = 0;
 
 	// rendering
-	virtual void VPCALL BlendJoints( idJointQuat *joints, const idJointQuat *blendJoints, const float lerp, const int *index, const int numJoints ) = 0;
-	virtual void VPCALL ConvertJointQuatsToJointMats( idJointMat *jointMats, const idJointQuat *jointQuats, const int numJoints ) = 0;
-	virtual void VPCALL ConvertJointMatsToJointQuats( idJointQuat *jointQuats, const idJointMat *jointMats, const int numJoints ) = 0;
-	virtual void VPCALL TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) = 0;
-	virtual void VPCALL UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) = 0;
-	virtual void VPCALL TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) = 0;
-	virtual void VPCALL TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
-	virtual void VPCALL DecalPointCull( byte *cullBits, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
-	virtual void VPCALL OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
-	virtual void VPCALL CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) = 0;
-	virtual void VPCALL DeriveTriPlanes( idPlane *planes, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) = 0;
-	virtual void VPCALL DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) = 0;
-	virtual void VPCALL DeriveUnsmoothedTangents( idDrawVert *verts, const dominantTri_s *dominantTris, const int numVerts ) = 0;
-	virtual void VPCALL NormalizeTangents( idDrawVert *verts, const int numVerts ) = 0;
-	virtual int  VPCALL CreateShadowCache( idVec4 *vertexCache, int *vertRemap, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts ) = 0;
-	virtual int  VPCALL CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts ) = 0;
-	virtual void VPCALL CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) = 0;
-	virtual void VPCALL CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) = 0;
+	virtual void BlendJoints( idJointQuat *joints, const idJointQuat *blendJoints, const float lerp, const int *index, const int numJoints ) = 0;
+	virtual void ConvertJointQuatsToJointMats( idJointMat *jointMats, const idJointQuat *jointQuats, const int numJoints ) = 0;
+	virtual void ConvertJointMatsToJointQuats( idJointQuat *jointQuats, const idJointMat *jointMats, const int numJoints ) = 0;
+	virtual void TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) = 0;
+	virtual void UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) = 0;
+	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) = 0;
+	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
+	virtual void DecalPointCull( byte *cullBits, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
+	virtual void OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
+	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) = 0;
+	virtual void DeriveTriPlanes( idPlane *planes, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) = 0;
+	virtual void DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) = 0;
+	virtual void DeriveUnsmoothedTangents( idDrawVert *verts, const dominantTri_s *dominantTris, const int numVerts ) = 0;
+	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts ) = 0;
+	virtual int  CreateShadowCache( idVec4 *vertexCache, int *vertRemap, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts ) = 0;
+	virtual int  CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts ) = 0;
+	virtual void CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) = 0;
+	virtual void CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) = 0;
 
 	// sound mixing
-	virtual void VPCALL UpSamplePCMTo44kHz( float *dest, const short *pcm, const int numSamples, const int kHz, const int numChannels ) = 0;
-	virtual void VPCALL UpSampleOGGTo44kHz( float *dest, const float * const *ogg, const int numSamples, const int kHz, const int numChannels ) = 0;
-	virtual void VPCALL MixSoundTwoSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) = 0;
-	virtual void VPCALL MixSoundTwoSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) = 0;
-	virtual void VPCALL MixSoundSixSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) = 0;
-	virtual void VPCALL MixSoundSixSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) = 0;
-	virtual void VPCALL MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples ) = 0;
+	virtual void UpSamplePCMTo44kHz( float *dest, const short *pcm, const int numSamples, const int kHz, const int numChannels ) = 0;
+	virtual void UpSampleOGGTo44kHz( float *dest, const float * const *ogg, const int numSamples, const int kHz, const int numChannels ) = 0;
+	virtual void MixSoundTwoSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) = 0;
+	virtual void MixSoundTwoSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) = 0;
+	virtual void MixSoundSixSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) = 0;
+	virtual void MixSoundSixSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) = 0;
+	virtual void MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples ) = 0;
 };
 
 // pointer to SIMD processor

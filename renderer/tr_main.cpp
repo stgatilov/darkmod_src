@@ -449,7 +449,7 @@ void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec
 DEBUG_OPTIMIZE_OFF
 
 DEBUG_OPTIMIZE_ON
-void VPCALL R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
+void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
 	out[0] = DotProduct( in, &modelMatrix[0] );
 	out[1] = DotProduct( in, &modelMatrix[4] );
 	out[2] = DotProduct( in, &modelMatrix[8] );

@@ -61,7 +61,7 @@ idSIMD_SSE::CmpLT
   dst[i] |= ( src0[i] < constant ) << bitNum;
 ============
 */
-void VPCALL idSIMD_SSE2::CmpLT( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE2::CmpLT( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
 	int i, cnt, pre, post;
 	float *aligned;
 	__m128 xmm0, xmm1;
@@ -290,7 +290,7 @@ idSIMD_SSE2::MatX_LowerTriangularSolve
   x == b is allowed
 ============
 */
-void VPCALL idSIMD_SSE2::MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip ) {
+void idSIMD_SSE2::MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip ) {
 	int nc;
 	const float *lptr;
 
@@ -502,7 +502,7 @@ idSIMD_SSE2::MatX_LowerTriangularSolveTranspose
   x == b is allowed
 ============
 */
-void VPCALL idSIMD_SSE2::MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) {
+void idSIMD_SSE2::MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) {
 	int nc;
 	const float *lptr;
 
@@ -820,7 +820,7 @@ void VPCALL idSIMD_SSE2::MatX_LowerTriangularSolveTranspose( const idMatX &L, fl
 idSIMD_SSE2::MixedSoundToSamples
 ============
 */
-void VPCALL idSIMD_SSE2::MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples ) {
+void idSIMD_SSE2::MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples ) {
 
 	assert( ( numSamples % MIXBUFFER_SAMPLES ) == 0 );
 
@@ -1195,7 +1195,7 @@ int idSIMD_SSE2::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDr
 	return numVerts * 2;
 }
 
-void VPCALL idSIMD_SSE2::TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
+void idSIMD_SSE2::TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
 	__m128 pA = _mm_loadu_ps(planes[0].ToFloatPtr());
 	__m128 pB = _mm_loadu_ps(planes[1].ToFloatPtr());
 	__m128 pC = _mm_loadu_ps(planes[2].ToFloatPtr());
@@ -1227,7 +1227,7 @@ void VPCALL idSIMD_SSE2::TracePointCull( byte *cullBits, byte &totalOr, const fl
 
 #endif /* SIMD_USE_ASM */
 
-void VPCALL idSIMD_SSE2::CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) {
+void idSIMD_SSE2::CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing ) {
 	int numTris = numIndexes / 3;
 	__m128 orig = _mm_setr_ps(lightOrigin.x, lightOrigin.y, lightOrigin.z, 0.0f);
 

@@ -49,7 +49,7 @@ idSIMD_SSE::Dot
   dst[i] = constant.Normal() * src[i].xyz + constant[3];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVert *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVert *src, const int count ) {
 	// 0,  1,  2
 	// 3,  4,  5
 	// 6,  7,  8
@@ -230,7 +230,7 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVe
 idSIMD_SSE::MinMax
 ============
 */
-void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
+void idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
     assert( ptrdiff_t(&src->xyz) - ptrdiff_t(src) == DRAWVERT_XYZ_OFFSET );
@@ -429,7 +429,7 @@ idSIMD_SSE::Dot
   dst[i] = constant * src[i].Normal() + src[i][3];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *src, const int count ) {
 	int count_l4;
 	int count_l1;
 	char *constant_p;
@@ -2069,7 +2069,7 @@ idSIMD_SSE::Add
   dst[i] = constant + src[i];
 ============
 */
-void VPCALL idSIMD_SSE::Add( float *dst, const float constant, const float *src, const int count ) {
+void idSIMD_SSE::Add( float *dst, const float constant, const float *src, const int count ) {
 	KFLOAT_CA( add, dst, src, constant, count )
 }
 
@@ -2080,7 +2080,7 @@ idSIMD_SSE::Add
   dst[i] = src0[i] + src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::Add( float *dst, const float *src0, const float *src1, const int count ) {
+void idSIMD_SSE::Add( float *dst, const float *src0, const float *src1, const int count ) {
 	KFLOAT_AA( add, dst, src0, src1, count )
 }
 
@@ -2091,7 +2091,7 @@ idSIMD_SSE::Sub
   dst[i] = constant - src[i];
 ============
 */
-void VPCALL idSIMD_SSE::Sub( float *dst, const float constant, const float *src, const int count ) {
+void idSIMD_SSE::Sub( float *dst, const float constant, const float *src, const int count ) {
 	KFLOAT_CA( sub, dst, src, constant, count )
 }
 
@@ -2102,7 +2102,7 @@ idSIMD_SSE::Sub
   dst[i] = src0[i] - src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::Sub( float *dst, const float *src0, const float *src1, const int count ) {
+void idSIMD_SSE::Sub( float *dst, const float *src0, const float *src1, const int count ) {
 	KFLOAT_AA( sub, dst, src0, src1, count )
 }
 
@@ -2113,7 +2113,7 @@ idSIMD_SSE::Mul
   dst[i] = constant * src[i];
 ============
 */
-void VPCALL idSIMD_SSE::Mul( float *dst, const float constant, const float *src, const int count ) {
+void idSIMD_SSE::Mul( float *dst, const float constant, const float *src, const int count ) {
 	KFLOAT_CA( mul, dst, src, constant, count )
 }
 
@@ -2124,7 +2124,7 @@ idSIMD_SSE::Mul
   dst[i] = src0[i] * src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::Mul( float *dst, const float *src0, const float *src1, const int count ) {
+void idSIMD_SSE::Mul( float *dst, const float *src0, const float *src1, const int count ) {
 	KFLOAT_AA( mul, dst, src0, src1, count )
 }
 
@@ -2135,7 +2135,7 @@ idSIMD_SSE::Div
   dst[i] = constant / src[i];
 ============
 */
-void VPCALL idSIMD_SSE::Div( float *dst, const float constant, const float *src, const int count ) {
+void idSIMD_SSE::Div( float *dst, const float constant, const float *src, const int count ) {
 	int pre, post;
 
 	//	1 / x = 2 * rcpps(x) - (x * rcpps(x) * rcpps(x));
@@ -2206,7 +2206,7 @@ idSIMD_SSE::Div
   dst[i] = src0[i] / src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::Div( float *dst, const float *src0, const float *src1, const int count ) {
+void idSIMD_SSE::Div( float *dst, const float *src0, const float *src1, const int count ) {
 	int		pre,post;
 
 	//	1 / x = 2 * rcpps(x) - (x * rcpps(x) * rcpps(x));
@@ -2434,7 +2434,7 @@ idSIMD_SSE::MulAdd
   dst[i] += constant * src[i];
 ============
 */
-void VPCALL idSIMD_SSE::MulAdd( float *dst, const float constant, const float *src, const int count ) {
+void idSIMD_SSE::MulAdd( float *dst, const float constant, const float *src, const int count ) {
 	float c = constant;
 	MULADD_FEW( += )
 	Simd_MulAdd( dst, constant, src, count );
@@ -2447,7 +2447,7 @@ idSIMD_SSE::MulAdd
   dst[i] += src0[i] * src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::MulAdd( float *dst, const float *src0, const float *src1, const int count ) {
+void idSIMD_SSE::MulAdd( float *dst, const float *src0, const float *src1, const int count ) {
 	for ( int i = 0; i < count; i++ ) {
 		dst[i] += src0[i] + src1[i];
 	}
@@ -2460,7 +2460,7 @@ idSIMD_SSE::MulSub
   dst[i] -= constant * src[i];
 ============
 */
-void VPCALL idSIMD_SSE::MulSub( float *dst, const float constant, const float *src, const int count ) {
+void idSIMD_SSE::MulSub( float *dst, const float constant, const float *src, const int count ) {
 	float c = constant;
 	MULADD_FEW( -= )
 	Simd_MulAdd( dst, -constant, src, count );
@@ -2473,7 +2473,7 @@ idSIMD_SSE::MulSub
   dst[i] -= src0[i] * src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::MulSub( float *dst, const float *src0, const float *src1, const int count ) {
+void idSIMD_SSE::MulSub( float *dst, const float *src0, const float *src1, const int count ) {
 	for ( int i = 0; i < count; i++ ) {
 		dst[i] -= src0[i] + src1[i];
 	}
@@ -2486,7 +2486,7 @@ idSIMD_SSE::Dot
   dst[i] = constant * src[i];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idVec3 *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idVec3 *src, const int count ) {
 	__asm
 	{
 		mov			eax, count
@@ -2561,7 +2561,7 @@ idSIMD_SSE::Dot
   dst[i] = constant * src[i].Normal() + src[i][3];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *src, const int count ) {
 	__asm {
 		mov			eax, count
 		mov			edi, constant
@@ -2644,7 +2644,7 @@ idSIMD_SSE::Dot
   dst[i] = constant * src[i].xyz;
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idDrawVert *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idDrawVert *src, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
@@ -2736,7 +2736,7 @@ idSIMD_SSE::Dot
   dst[i] = constant.Normal() * src[i] + constant[3];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idVec3 *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idVec3 *src, const int count ) {
 	__asm
 	{
 		mov			eax, count
@@ -2818,7 +2818,7 @@ idSIMD_SSE::Dot
   dst[i] = constant.Normal() * src[i].Normal() + constant[3] * src[i][3];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idPlane *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idPlane *src, const int count ) {
 
 #define SINGLE_OP(SRC, DEST)							\
 	__asm	movlps		xmm0,[SRC]						\
@@ -2941,7 +2941,7 @@ idSIMD_SSE::Dot
   dst[i] = constant.Normal() * src[i].xyz + constant[3];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVert *src, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVert *src, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
@@ -3037,7 +3037,7 @@ idSIMD_SSE::Dot
   dst[i] = src0[i] * src1[i];
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 *src0, const idVec3 *src1, const int count ) {
+void idSIMD_SSE::Dot( float *dst, const idVec3 *src0, const idVec3 *src1, const int count ) {
 	__asm
 	{
 		mov			eax, count
@@ -3118,7 +3118,7 @@ idSIMD_SSE::Dot
   dot = src1[0] * src2[0] + src1[1] * src2[1] + src1[2] * src2[2] + ...
 ============
 */
-void VPCALL idSIMD_SSE::Dot( float &dot, const float *src1, const float *src2, const int count ) {
+void idSIMD_SSE::Dot( float &dot, const float *src1, const float *src2, const int count ) {
 	switch( count ) {
 		case 0:
 			dot = 0.0f;
@@ -3433,7 +3433,7 @@ idSIMD_SSE::CmpGT
   dst[i] = src0[i] > constant;
 ============
 */
-void VPCALL idSIMD_SSE::CmpGT( byte *dst, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpGT( byte *dst, const float *src0, const float constant, const int count ) {
 	COMPARECONSTANT( dst, src0, constant, count, >, cmpnleps, NOFLIP )
 }
 
@@ -3444,7 +3444,7 @@ idSIMD_SSE::CmpGT
   dst[i] |= ( src0[i] > constant ) << bitNum;
 ============
 */
-void VPCALL idSIMD_SSE::CmpGT( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpGT( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
 	COMPAREBITCONSTANT( dst, bitNum, src0, constant, count, >, cmpnleps, NOFLIP )
 }
 
@@ -3455,7 +3455,7 @@ idSIMD_SSE::CmpGE
   dst[i] = src0[i] >= constant;
 ============
 */
-void VPCALL idSIMD_SSE::CmpGE( byte *dst, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpGE( byte *dst, const float *src0, const float constant, const int count ) {
 	COMPARECONSTANT( dst, src0, constant, count, >=, cmpnltps, NOFLIP )
 }
 
@@ -3466,7 +3466,7 @@ idSIMD_SSE::CmpGE
   dst[i] |= ( src0[i] >= constant ) << bitNum;
 ============
 */
-void VPCALL idSIMD_SSE::CmpGE( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpGE( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
 	COMPAREBITCONSTANT( dst, bitNum, src0, constant, count, >=, cmpnltps, NOFLIP )
 }
 
@@ -3477,7 +3477,7 @@ idSIMD_SSE::CmpLT
   dst[i] = src0[i] < constant;
 ============
 */
-void VPCALL idSIMD_SSE::CmpLT( byte *dst, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpLT( byte *dst, const float *src0, const float constant, const int count ) {
 	COMPARECONSTANT( dst, src0, constant, count, <, cmpltps, NOFLIP )
 }
 
@@ -3488,7 +3488,7 @@ idSIMD_SSE::CmpLT
   dst[i] |= ( src0[i] < constant ) << bitNum;
 ============
 */
-void VPCALL idSIMD_SSE::CmpLT( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpLT( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
 	COMPAREBITCONSTANT( dst, bitNum, src0, constant, count, <, cmpltps, NOFLIP )
 }
 
@@ -3499,7 +3499,7 @@ idSIMD_SSE::CmpLE
   dst[i] = src0[i] <= constant;
 ============
 */
-void VPCALL idSIMD_SSE::CmpLE( byte *dst, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpLE( byte *dst, const float *src0, const float constant, const int count ) {
 	COMPARECONSTANT( dst, src0, constant, count, <=, cmpnleps, FLIP )
 }
 
@@ -3510,7 +3510,7 @@ idSIMD_SSE::CmpLE
   dst[i] |= ( src0[i] <= constant ) << bitNum;
 ============
 */
-void VPCALL idSIMD_SSE::CmpLE( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
+void idSIMD_SSE::CmpLE( byte *dst, const byte bitNum, const float *src0, const float constant, const int count ) {
 	COMPAREBITCONSTANT( dst, bitNum, src0, constant, count, <=, cmpnleps, FLIP )
 }
 
@@ -3523,7 +3523,7 @@ and we cannot do that according to intel spec end */
 idSIMD_SSE::MinMax
 ============
 */
-void VPCALL idSIMD_SSE::MinMax( float &min, float &max, const float *src, const int count ) {
+void idSIMD_SSE::MinMax( float &min, float &max, const float *src, const int count ) {
 	int i, pre, post;
 
 	min = idMath::INFINITY; max = -idMath::INFINITY;
@@ -3614,7 +3614,7 @@ done:
 idSIMD_SSE::MinMax
 ============
 */
-void VPCALL idSIMD_SSE::MinMax( idVec2 &min, idVec2 &max, const idVec2 *src, const int count ) {
+void idSIMD_SSE::MinMax( idVec2 &min, idVec2 &max, const idVec2 *src, const int count ) {
 	__asm {
 		mov			eax, count
 		test		eax, eax
@@ -3663,7 +3663,7 @@ void VPCALL idSIMD_SSE::MinMax( idVec2 &min, idVec2 &max, const idVec2 *src, con
 idSIMD_SSE::MinMax
 ============
 */
-void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idVec3 *src, const int count ) {
+void idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idVec3 *src, const int count ) {
 	__asm {
 
 		movss		xmm0, idMath::INFINITY
@@ -3743,7 +3743,7 @@ void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idVec3 *src, con
 idSIMD_SSE::MinMax
 ============
 */
-void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count ) {
+void idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
@@ -3827,7 +3827,7 @@ void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src,
 idSIMD_SSE::MinMax
 ============
 */
-void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
+void idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
 	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
@@ -3923,7 +3923,7 @@ void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src,
 idSIMD_SSE::Clamp
 ============
 */
-void VPCALL idSIMD_SSE::Clamp( float *dst, const float *src, const float min, const float max, const int count ) {
+void idSIMD_SSE::Clamp( float *dst, const float *src, const float min, const float max, const int count ) {
 	int	i, pre, post;
 
 	__asm
@@ -3992,7 +3992,7 @@ done:
 idSIMD_SSE::ClampMin
 ============
 */
-void VPCALL idSIMD_SSE::ClampMin( float *dst, const float *src, const float min, const int count ) {
+void idSIMD_SSE::ClampMin( float *dst, const float *src, const float min, const int count ) {
 	int	i, pre, post;
 
 	__asm
@@ -4050,7 +4050,7 @@ done:
 idSIMD_SSE::ClampMax
 ============
 */
-void VPCALL idSIMD_SSE::ClampMax( float *dst, const float *src, const float max, const int count ) {
+void idSIMD_SSE::ClampMax( float *dst, const float *src, const float max, const int count ) {
 	int	i, pre, post;
 
 	__asm
@@ -4109,7 +4109,7 @@ done:
 idSIMD_SSE::Zero16
 ============
 */
-void VPCALL idSIMD_SSE::Zero16( float *dst, const int count ) {
+void idSIMD_SSE::Zero16( float *dst, const int count ) {
 	__asm {
 		mov		edx, dst
 		mov		eax, count
@@ -4133,7 +4133,7 @@ void VPCALL idSIMD_SSE::Zero16( float *dst, const int count ) {
 idSIMD_SSE::Negate16
 ============
 */
-void VPCALL idSIMD_SSE::Negate16( float *dst, const int count ) {
+void idSIMD_SSE::Negate16( float *dst, const int count ) {
 	__asm {
 		mov		edx, dst
 		mov		eax, count
@@ -4160,7 +4160,7 @@ void VPCALL idSIMD_SSE::Negate16( float *dst, const int count ) {
 idSIMD_SSE::Copy16
 ============
 */
-void VPCALL idSIMD_SSE::Copy16( float *dst, const float *src, const int count ) {
+void idSIMD_SSE::Copy16( float *dst, const float *src, const int count ) {
 	__asm {
 		mov		ecx, src
 		mov		edx, dst
@@ -4186,7 +4186,7 @@ void VPCALL idSIMD_SSE::Copy16( float *dst, const float *src, const int count ) 
 idSIMD_SSE::Add16
 ============
 */
-void VPCALL idSIMD_SSE::Add16( float *dst, const float *src1, const float *src2, const int count ) {
+void idSIMD_SSE::Add16( float *dst, const float *src1, const float *src2, const int count ) {
 	__asm {
 		mov		ecx, src1
 		mov		edx, src2
@@ -4215,7 +4215,7 @@ void VPCALL idSIMD_SSE::Add16( float *dst, const float *src1, const float *src2,
 idSIMD_SSE::Sub16
 ============
 */
-void VPCALL idSIMD_SSE::Sub16( float *dst, const float *src1, const float *src2, const int count ) {
+void idSIMD_SSE::Sub16( float *dst, const float *src1, const float *src2, const int count ) {
 	__asm {
 		mov		ecx, src1
 		mov		edx, src2
@@ -4244,7 +4244,7 @@ void VPCALL idSIMD_SSE::Sub16( float *dst, const float *src1, const float *src2,
 idSIMD_SSE::Mul16
 ============
 */
-void VPCALL idSIMD_SSE::Mul16( float *dst, const float *src1, const float constant, const int count ) {
+void idSIMD_SSE::Mul16( float *dst, const float *src1, const float constant, const int count ) {
 	__asm {
 		mov		ecx, dst
 		mov		edx, src1
@@ -4273,7 +4273,7 @@ void VPCALL idSIMD_SSE::Mul16( float *dst, const float *src1, const float consta
 idSIMD_SSE::AddAssign16
 ============
 */
-void VPCALL idSIMD_SSE::AddAssign16( float *dst, const float *src, const int count ) {
+void idSIMD_SSE::AddAssign16( float *dst, const float *src, const int count ) {
 	__asm {
 		mov		ecx, dst
 		mov		edx, src
@@ -4300,7 +4300,7 @@ void VPCALL idSIMD_SSE::AddAssign16( float *dst, const float *src, const int cou
 idSIMD_SSE::SubAssign16
 ============
 */
-void VPCALL idSIMD_SSE::SubAssign16( float *dst, const float *src, const int count ) {
+void idSIMD_SSE::SubAssign16( float *dst, const float *src, const int count ) {
 	__asm {
 		mov		ecx, dst
 		mov		edx, src
@@ -4327,7 +4327,7 @@ void VPCALL idSIMD_SSE::SubAssign16( float *dst, const float *src, const int cou
 idSIMD_SSE::MulAssign16
 ============
 */
-void VPCALL idSIMD_SSE::MulAssign16( float *dst, const float constant, const int count ) {
+void idSIMD_SSE::MulAssign16( float *dst, const float constant, const int count ) {
 	__asm {
 		mov		ecx, dst
 		mov		eax, count
@@ -4362,7 +4362,7 @@ idSIMD_SSE::MatX_MultiplyVecX
 	with N in the range [1-6]
 ============
 */
-void VPCALL idSIMD_SSE::MatX_MultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
+void idSIMD_SSE::MatX_MultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
 #define STORE1( offset, reg1, reg2 )		\
 	__asm movss		[eax+offset], reg1
 #define STORE2LO( offset, reg1, reg2 )		\
@@ -5099,7 +5099,7 @@ idSIMD_SSE::MatX_MultiplyAddVecX
 	with N in the range [1-6]
 ============
 */
-void VPCALL idSIMD_SSE::MatX_MultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
+void idSIMD_SSE::MatX_MultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
 #define STORE1( offset, reg1, reg2 )		\
 	__asm movss		reg2, [eax+offset]		\
 	__asm addss		reg2, reg1				\
@@ -5845,7 +5845,7 @@ idSIMD_SSE::MatX_MultiplySubVecX
 	with N in the range [1-6]
 ============
 */
-void VPCALL idSIMD_SSE::MatX_MultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
+void idSIMD_SSE::MatX_MultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
 #define STORE1( offset, reg1, reg2 )		\
 	__asm movss		reg2, [eax+offset]		\
 	__asm subss		reg2, reg1				\
@@ -6590,7 +6590,7 @@ idSIMD_SSE::MatX_TransposeMultiplyVecX
 	with N in the range [1-6]
 ============
 */
-void VPCALL idSIMD_SSE::MatX_TransposeMultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
+void idSIMD_SSE::MatX_TransposeMultiplyVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
 #define STORE1( offset, reg1, reg2 )		\
 	__asm movss		[eax+offset], reg1
 #define STORE2LO( offset, reg1, reg2 )		\
@@ -7145,7 +7145,7 @@ idSIMD_SSE::MatX_TransposeMultiplyAddVecX
 	with N in the range [1-6]
 ============
 */
-void VPCALL idSIMD_SSE::MatX_TransposeMultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
+void idSIMD_SSE::MatX_TransposeMultiplyAddVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
 #define STORE1( offset, reg1, reg2 )		\
 	__asm movss		reg2, [eax+offset]		\
 	__asm addss		reg2, reg1				\
@@ -7709,7 +7709,7 @@ void idSIMD_SSE::MatX_TransposeMultiplySubVecX
 	with N in the range [1-6]
 ============
 */
-void VPCALL idSIMD_SSE::MatX_TransposeMultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
+void idSIMD_SSE::MatX_TransposeMultiplySubVecX( idVecX &dst, const idMatX &mat, const idVecX &vec ) {
 #define STORE1( offset, reg1, reg2 )		\
 	__asm movss		reg2, [eax+offset]		\
 	__asm subss		reg2, reg1				\
@@ -8279,7 +8279,7 @@ idSIMD_SSE::MatX_MultiplyMatX
 	the results are poor probably due to memory access.
 ============
 */
-void VPCALL idSIMD_SSE::MatX_MultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) {
+void idSIMD_SSE::MatX_MultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) {
 	int i, j, k, l, n;
 	float *dstPtr;
 	const float *m1Ptr, *m2Ptr;
@@ -9574,7 +9574,7 @@ idSIMD_SSE::MatX_TransposeMultiplyMatX
 	with N in the range [1-6].
 ============
 */
-void VPCALL idSIMD_SSE::MatX_TransposeMultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) {
+void idSIMD_SSE::MatX_TransposeMultiplyMatX( idMatX &dst, const idMatX &m1, const idMatX &m2 ) {
 	int i, j, k, l, n;
 	float *dstPtr;
 	const float *m1Ptr, *m2Ptr;
@@ -10111,7 +10111,7 @@ idSIMD_SSE::MatX_LowerTriangularSolve
   x == b is allowed
 ============
 */
-void VPCALL idSIMD_SSE::MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip ) {
+void idSIMD_SSE::MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip ) {
 	int nc;
 	const float *lptr;
 
@@ -10343,7 +10343,7 @@ idSIMD_SSE::MatX_LowerTriangularSolveTranspose
   x == b is allowed
 ============
 */
-void VPCALL idSIMD_SSE::MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) {
+void idSIMD_SSE::MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) {
 	int nc;
 	const float *lptr;
 
@@ -10788,7 +10788,7 @@ idSIMD_SSE::MatX_LDLTFactor
   currently assumes the number of columns of mat is a multiple of 4
 ============
 */
-bool VPCALL idSIMD_SSE::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) {
+bool idSIMD_SSE::MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) {
 #if 1
 
 	int j, nc;
@@ -11251,7 +11251,7 @@ idSIMD_SSE::BlendJoints
 */
 #define REFINE_BLENDJOINTS_RECIPROCAL
 
-void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *blendJoints, const float lerp, const int *index, const int numJoints ) {
+void idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *blendJoints, const float lerp, const int *index, const int numJoints ) {
 	int i;
 
 	if ( lerp <= 0.0f ) {
@@ -11662,7 +11662,7 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *ble
 idSIMD_SSE::ConvertJointQuatsToJointMats
 ============
 */
-void VPCALL idSIMD_SSE::ConvertJointQuatsToJointMats( idJointMat *jointMats, const idJointQuat *jointQuats, const int numJoints ) {
+void idSIMD_SSE::ConvertJointQuatsToJointMats( idJointMat *jointMats, const idJointQuat *jointQuats, const int numJoints ) {
 
 	assert( sizeof( idJointQuat ) == JOINTQUAT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
@@ -11722,7 +11722,7 @@ void VPCALL idSIMD_SSE::ConvertJointQuatsToJointMats( idJointMat *jointMats, con
 idSIMD_SSE::ConvertJointMatsToJointQuats
 ============
 */
-void VPCALL idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat *jointQuats, const idJointMat *jointMats, const int numJoints ) {
+void idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat *jointQuats, const idJointMat *jointMats, const int numJoints ) {
 
 	assert( sizeof( idJointQuat ) == JOINTQUAT_SIZE );
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
@@ -12239,7 +12239,7 @@ void VPCALL idSIMD_SSE::ConvertJointMatsToJointQuats( idJointQuat *jointQuats, c
 idSIMD_SSE::TransformJoints
 ============
 */
-void VPCALL idSIMD_SSE::TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) {
+void idSIMD_SSE::TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) {
 #if 1
 
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
@@ -12347,7 +12347,7 @@ void VPCALL idSIMD_SSE::TransformJoints( idJointMat *jointMats, const int *paren
 idSIMD_SSE::UntransformJoints
 ============
 */
-void VPCALL idSIMD_SSE::UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) {
+void idSIMD_SSE::UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) {
 #if 1
 
 	assert( sizeof( idJointMat ) == JOINTMAT_SIZE );
@@ -12449,7 +12449,7 @@ void VPCALL idSIMD_SSE::UntransformJoints( idJointMat *jointMats, const int *par
 idSIMD_SSE::TransformVerts
 ============
 */
-void VPCALL idSIMD_SSE::TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) {
+void idSIMD_SSE::TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) {
 #if 1
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
@@ -12559,7 +12559,7 @@ void VPCALL idSIMD_SSE::TransformVerts( idDrawVert *verts, const int numVerts, c
 idSIMD_SSE::TracePointCull
 ============
 */
-void VPCALL idSIMD_SSE::TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
+void idSIMD_SSE::TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
@@ -12680,7 +12680,7 @@ void VPCALL idSIMD_SSE::TracePointCull( byte *cullBits, byte &totalOr, const flo
 idSIMD_SSE::DecalPointCull
 ============
 */
-void VPCALL idSIMD_SSE::DecalPointCull( byte *cullBits, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
+void idSIMD_SSE::DecalPointCull( byte *cullBits, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
 	ALIGN16( float p0[4] );
@@ -12926,7 +12926,7 @@ void VPCALL idSIMD_SSE::DecalPointCull( byte *cullBits, const idPlane *planes, c
 idSIMD_SSE::OverlayPointCull
 ============
 */
-void VPCALL idSIMD_SSE::OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
+void idSIMD_SSE::OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
@@ -13094,7 +13094,7 @@ void VPCALL idSIMD_SSE::OverlayPointCull( byte *cullBits, idVec2 *texCoords, con
 idSIMD_SSE::DeriveTriPlanes
 ============
 */
-void VPCALL idSIMD_SSE::DeriveTriPlanes( idPlane *planes, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
+void idSIMD_SSE::DeriveTriPlanes( idPlane *planes, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 #if 1
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
@@ -13613,7 +13613,7 @@ idSIMD_SSE::DeriveTangents
 //#define REFINE_TANGENT_SQUAREROOT
 #define FIX_DEGENERATE_TANGENT
 
-void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
+void idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 	int i;
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
@@ -14546,7 +14546,7 @@ idSIMD_SSE::DeriveUnsmoothedTangents
 */
 #define DERIVE_UNSMOOTHED_BITANGENT
 
-void VPCALL idSIMD_SSE::DeriveUnsmoothedTangents( idDrawVert *verts, const dominantTri_s *dominantTris, const int numVerts ) {
+void idSIMD_SSE::DeriveUnsmoothedTangents( idDrawVert *verts, const dominantTri_s *dominantTris, const int numVerts ) {
 	int i, j;
 
 	for ( i = 0; i <= numVerts - 4; i += 4 ) {
@@ -15064,7 +15064,7 @@ void VPCALL idSIMD_SSE::DeriveUnsmoothedTangents( idDrawVert *verts, const domin
 idSIMD_SSE::NormalizeTangents
 ============
 */
-void VPCALL idSIMD_SSE::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
+void idSIMD_SSE::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
 	ALIGN16( float normal[12] );
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
@@ -15522,7 +15522,7 @@ void VPCALL idSIMD_SSE::NormalizeTangents( idDrawVert *verts, const int numVerts
 idSIMD_SSE::CreateShadowCache
 ============
 */
-int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *shadowVerts, int *vertRemap, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts ) {
+int idSIMD_SSE::CreateShadowCache( idVec4 *shadowVerts, int *vertRemap, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts ) {
 #if 1
 	int outVerts;
 
@@ -15686,7 +15686,7 @@ int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *shadowVerts, int *vertRemap, c
 idSIMD_SSE::CreateVertexProgramShadowCache
 ============
 */
-int VPCALL idSIMD_SSE::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDrawVert *verts, const int numVerts ) {
+int idSIMD_SSE::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
 	__asm {
@@ -16350,7 +16350,7 @@ idSIMD_SSE::UpSampleOGGTo44kHz
 idSIMD_SSE::MixSoundTwoSpeakerMono
 ============
 */
-void VPCALL idSIMD_SSE::MixSoundTwoSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) {
+void idSIMD_SSE::MixSoundTwoSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) {
 #if 1
 
 	ALIGN16( float incs[2] );
@@ -16453,7 +16453,7 @@ void VPCALL idSIMD_SSE::MixSoundTwoSpeakerMono( float *mixBuffer, const float *s
 idSIMD_SSE::MixSoundTwoSpeakerStereo
 ============
 */
-void VPCALL idSIMD_SSE::MixSoundTwoSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) {
+void idSIMD_SSE::MixSoundTwoSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[2], const float currentV[2] ) {
 #if 1
 
 	ALIGN16( float incs[2] );
@@ -16552,7 +16552,7 @@ void VPCALL idSIMD_SSE::MixSoundTwoSpeakerStereo( float *mixBuffer, const float 
 idSIMD_SSE::MixSoundSixSpeakerMono
 ============
 */
-void VPCALL idSIMD_SSE::MixSoundSixSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) {
+void idSIMD_SSE::MixSoundSixSpeakerMono( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) {
 #if 1
 
 	ALIGN16( float incs[6] );
@@ -16722,7 +16722,7 @@ void VPCALL idSIMD_SSE::MixSoundSixSpeakerMono( float *mixBuffer, const float *s
 idSIMD_SSE::MixSoundSixSpeakerStereo
 ============
 */
-void VPCALL idSIMD_SSE::MixSoundSixSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) {
+void idSIMD_SSE::MixSoundSixSpeakerStereo( float *mixBuffer, const float *samples, const int numSamples, const float lastV[6], const float currentV[6] ) {
 #if 1
 
 	ALIGN16( float incs[6] );
@@ -16877,7 +16877,7 @@ void VPCALL idSIMD_SSE::MixSoundSixSpeakerStereo( float *mixBuffer, const float 
 idSIMD_SSE::MixedSoundToSamples
 ============
 */
-void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples ) {
+void idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples ) {
 #if 1
 
 	assert( ( numSamples % MIXBUFFER_SAMPLES ) == 0 );
@@ -16958,7 +16958,7 @@ void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuf
 idSIMD_SSE::CullByFrustum
 ============
 */
-void VPCALL idSIMD_SSE::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) {
+void idSIMD_SSE::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) {
 	__m128 fA14 = _mm_set_ps( frustum[3][0], frustum[2][0], frustum[1][0], frustum[0][0] );
 	__m128 fA56 = _mm_set_ps( 0, 0, frustum[5][0], frustum[4][0] );
 	__m128 fB14 = _mm_set_ps( frustum[3][1], frustum[2][1], frustum[1][1], frustum[0][1] );
@@ -17006,7 +17006,7 @@ void VPCALL idSIMD_SSE::CullByFrustum( idDrawVert *verts, const int numVerts, co
 idSIMD_SSE::CullByFrustum2
 ============
 */
-void VPCALL idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) {
+void idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) {
 	__m128 fA14 = _mm_set_ps( frustum[3][0], frustum[2][0], frustum[1][0], frustum[0][0] );
 	__m128 fA56 = _mm_set_ps( 0, 0, frustum[5][0], frustum[4][0] );
 	__m128 fB14 = _mm_set_ps( frustum[3][1], frustum[2][1], frustum[1][1], frustum[0][1] );
