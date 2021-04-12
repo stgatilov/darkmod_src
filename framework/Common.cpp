@@ -2514,14 +2514,12 @@ void idCommonLocal::Frame( void ) {
 		// write config file if anything changed
 		WriteConfiguration(); 
 
+		// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+		sys->ThreadHeartbeat();
+
 		// change SIMD implementation if required
 		if ( com_forceGenericSIMD.IsModified() ) {
 			InitSIMD();
-		}
-
-		if ( com_fpexceptions.IsModified()) {
-			sys->FPU_SetExceptions(com_fpexceptions.GetBool());
-			com_fpexceptions.ClearModified();
 		}
 
 		eventLoop->RunEventLoop();
@@ -2861,8 +2859,8 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// override cvars from command line
 		StartupVariable( NULL, false );
 
-        // set fpu double extended precision
-        Sys_FPU_SetPrecision();
+		// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+		sys->ThreadStartup();
 
 		// initialize processor specific SIMD implementation
 		InitSIMD();
