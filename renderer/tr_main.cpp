@@ -22,9 +22,6 @@
 #ifdef __ppc__
 #include <vecLib/vecLib.h>
 #endif
-#if defined(MACOS_X) && defined(__i386__)
-#include <xmmintrin.h>
-#endif
 
 //====================================================================
 
@@ -371,7 +368,7 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 DEBUG_OPTIMIZE_ON
 // FIXME: these assume no skewing or scaling transforms
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
-#if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
+#if defined(__SSE__)
 	__m128 row0 = _mm_loadu_ps( &modelMatrix[0] );
 	__m128 row1 = _mm_loadu_ps( &modelMatrix[4] );
 	__m128 row2 = _mm_loadu_ps( &modelMatrix[8] );

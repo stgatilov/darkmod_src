@@ -16,10 +16,6 @@
 #ifndef DARKMODCIMAGE_H
 #define DARKMODCIMAGE_H
 
-#if defined(__linux__) || defined(MACOS_X)
-#include "Lib.h"
-#endif
-
 #include "Str.h"
 
 #include "StdFilesystem.h"

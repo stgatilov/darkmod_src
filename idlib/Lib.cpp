@@ -16,12 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#if defined( MACOS_X )
-#include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 #include "IL/il.h"
 
 /*
