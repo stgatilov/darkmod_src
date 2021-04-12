@@ -28,16 +28,10 @@ class idSIMD_SSE2 : public idSIMD_SSE {
 public:
 	idSIMD_SSE2() { name = "SSE2"; }
 
-#if defined(MACOS_X) && defined(__i386__)
-	virtual void CmpLT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count );		
-
-#elif SIMD_USE_ASM
-
+#if SIMD_USE_ASM
 	//virtual void MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );
 	//virtual void MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n );
-
 	virtual void MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples );
-
 #else
 	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts );
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
@@ -47,6 +41,7 @@ public:
 	virtual int  CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts );
 	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts );
 #endif
+
 	virtual void Memcpy( void* dst, const void* src, const int count );
 	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing );
 };

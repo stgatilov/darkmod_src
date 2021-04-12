@@ -28,9 +28,7 @@
 //
 //===============================================================
 
-#if defined(MACOS_X) && defined(__i386__)
-
-#elif SIMD_USE_ASM
+#if SIMD_USE_ASM
 
 #include <xmmintrin.h>
 

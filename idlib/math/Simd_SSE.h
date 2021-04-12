@@ -28,12 +28,7 @@ class idSIMD_SSE : public idSIMD_Generic {
 public:
 	idSIMD_SSE() { name = "SSE"; }
 
-#if defined(MACOS_X) && defined(__i386__)
-	virtual void Dot( float *dst,			const idPlane &constant,const idDrawVert *src,	const int count );	
-	virtual	void MinMax( idVec3 &min,		idVec3 &max,			const idDrawVert *src,	const int *indexes,		const int count );	
-	virtual void Dot( float *dst,			const idVec3 &constant,	const idPlane *src,		const int count );	
-
-#elif SIMD_USE_ASM
+#if SIMD_USE_ASM
 	virtual void Add( float *dst,			const float constant,	const float *src,		const int count );
 	virtual void Add( float *dst,			const float *src0,		const float *src1,		const int count );
 	virtual void Sub( float *dst,			const float constant,	const float *src,		const int count );
