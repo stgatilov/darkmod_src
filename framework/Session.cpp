@@ -3113,7 +3113,13 @@ Runs game tics and draw call creation in a background thread.
 ===============
 */
 void idSessionLocal::FrontendThreadFunction() {
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
+
 	while( true ) {
+		// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+		sys->ThreadHeartbeat();
+
 		double beginLoop = Sys_GetClockTicks();
 		{ // lock scope
 			std::unique_lock< std::mutex > lock( signalMutex );
@@ -3219,7 +3225,6 @@ void idSessionLocal::WaitForFrontendCompletion() {
 
 void idSessionLocal::StartFrontendThread() {
 	frontendActive = shutdownFrontend = false;
-	//frontendThread = std::thread( &idSessionLocal::FrontendThreadFunction, this );
 	auto func = []( void *x ) -> unsigned int {
 		idSessionLocal* s = (idSessionLocal*)x;
 		s->FrontendThreadFunction();
