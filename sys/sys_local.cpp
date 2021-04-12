@@ -64,6 +64,23 @@ void idSysLocal::FPU_SetExceptions(bool enable) {
 	Sys_FPU_SetExceptions(enable);
 }
 
+extern idCVar com_fpexceptions;
+void idSysLocal::ThreadStartup() {
+	Sys_FPU_SetPrecision();
+	Sys_FPU_SetFTZ(true);
+	Sys_FPU_SetDAZ(true);
+	ThreadHeartbeat();
+}
+
+void idSysLocal::ThreadHeartbeat() {
+	thread_local static int oldValue = -1;
+	int newValue = com_fpexceptions.GetInteger();
+	if (newValue != oldValue) {
+		oldValue = newValue;
+		Sys_FPU_SetExceptions(com_fpexceptions.GetBool());
+	}
+}
+
 bool idSysLocal::LockMemory( void *ptr, int bytes ) {
 	return Sys_LockMemory( ptr, bytes );
 }

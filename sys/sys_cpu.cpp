@@ -646,29 +646,20 @@ int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, 
 EnableMXCSRFlag
 ================
 */
-static void EnableMXCSRFlag( int flag, bool enable, const char *name ) {
+static void EnableMXCSRFlag( int flag, bool enable ) {
 #if defined(_MSC_VER) || defined(__i386__) || defined (__x86_64__)
 	int sse_mode = _mm_getcsr();
 
 	if ( enable && ( sse_mode & flag ) == flag ) {
-		if ( name )
-			common->Printf( "%s mode is already enabled\n", name );
 		return;
 	}
-
 	if ( !enable && ( sse_mode & flag ) == 0 ) {
-		if ( name )
-			common->Printf( "%s mode is already disabled\n", name );
 		return;
 	}
 
 	if ( enable ) {
-		if ( name )
-			common->Printf( "enabling %s mode\n", name );
 		sse_mode |= flag;
 	} else {
-		if ( name )
-			common->Printf( "disabling %s mode\n", name );
 		sse_mode &= ~flag;
 	}
 
@@ -687,7 +678,7 @@ void Sys_FPU_SetDAZ( bool enable ) {
 	if ( (cpuid & CPUID_DAZ) == 0 ) 
 		return;
 
-	EnableMXCSRFlag( MXCSR_DAZ, enable, "Denormals-Are-Zero" );
+	EnableMXCSRFlag( MXCSR_DAZ, enable );
 }
 
 /*
@@ -699,7 +690,7 @@ void Sys_FPU_SetFTZ( bool enable ) {
 	if ( (cpuid & CPUID_SSE) == 0 ) 
 		return;
 
-	EnableMXCSRFlag( MXCSR_FTZ, enable, "Flush-To-Zero" );
+	EnableMXCSRFlag( MXCSR_FTZ, enable );
 }
 
 /*
@@ -720,8 +711,8 @@ void Sys_FPU_SetExceptions(bool enable) {
 	static const DWORD bits = _EM_OVERFLOW | _EM_ZERODIVIDE | _EM_INVALID;
 	_controlfp(enable ? ~bits : ~0, _MCW_EM);
 #else
-	EnableMXCSRFlag( 0x0400, !enable, NULL );	// Overflow mask
-	EnableMXCSRFlag( 0x0200, !enable, NULL );	// Divide-by-zero mask
-	EnableMXCSRFlag( 0x0080, !enable, NULL );	// Invalid operation mask
+	EnableMXCSRFlag( 0x0400, !enable );	// Overflow mask
+	EnableMXCSRFlag( 0x0200, !enable );	// Divide-by-zero mask
+	EnableMXCSRFlag( 0x0080, !enable );	// Invalid operation mask
 #endif
 }

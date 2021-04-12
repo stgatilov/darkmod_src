@@ -232,6 +232,8 @@ const char *	idSysLocal::GetProcessorString( void ) { return ""; }
 void			idSysLocal::FPU_SetFTZ( bool enable ) {}
 void			idSysLocal::FPU_SetDAZ( bool enable ) {}
 void			idSysLocal::FPU_SetExceptions( bool enable ) {}
+void			idSysLocal::ThreadStartup( void ) {}
+void			idSysLocal::ThreadHeartbeat( void ) {}
 
 bool			idSysLocal::LockMemory( void *ptr, int bytes ) { return false; }
 bool			idSysLocal::UnlockMemory( void *ptr, int bytes ) { return false; }

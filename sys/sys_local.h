@@ -33,9 +33,13 @@ public:
 	virtual double			ClockTicksPerSecond( void );
 	virtual cpuid_t			GetProcessorId( void );
 	virtual const char *	GetProcessorString( void );
+
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
 	virtual void			FPU_SetExceptions(bool enable);
+
+	virtual void			ThreadStartup() override;
+	virtual void			ThreadHeartbeat() override;
 
 	virtual bool			LockMemory( void *ptr, int bytes );
 	virtual bool			UnlockMemory( void *ptr, int bytes );
