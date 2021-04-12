@@ -185,6 +185,9 @@ idSysThread::ThreadProc
 ========================
 */
 int idSysThread::ThreadProc( idSysThread * thread ) {
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
+
 	int retVal = 0;
 
 	try {
@@ -205,6 +208,9 @@ int idSysThread::ThreadProc( idSysThread * thread ) {
 				if ( thread->isTerminating ) {
 					break;
 				}
+
+				// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+				sys->ThreadHeartbeat();
 
 				retVal = thread->Run();
 			}
