@@ -897,6 +897,9 @@ static void Sys_AsyncThread( void *parm ) {
 	startTime = Sys_Milliseconds();
 	wakeNumber = 0;
 
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
+
 	while ( 1 ) {
 #ifdef WIN32
 		// this will trigger 60 times a second

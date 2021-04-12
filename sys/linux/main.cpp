@@ -54,6 +54,9 @@ THREAD_RETURN_TYPE Sys_AsyncThread(void*) {
 	int next;
 	int	want_sleep;
 
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
+
 	// multi tick compensate for poor schedulers (Linux 2.4)
 	int ticked, to_ticked;
 	now = Sys_Milliseconds();
