@@ -3764,51 +3764,9 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	p_simd = processor;
 	p_generic = generic;
 
-	if ( idStr::Length( args.Argv( 1 ) ) != 0 ) {
-		cpuid_t cpuid = idLib::sys->GetProcessorId();
-		idStr argString = args.Argv(1);
-
-		argString.Remove( ' ' );
-
-		if ( idStr::Icmp( argString, "SSE" ) == 0 ) {
-			if ( !( cpuid & CPUID_SSE ) ) {
-				common->Printf( "CPU does not support SSE\n" );
-				return;
-			}
-			p_simd = new idSIMD_SSE;
-		} else if ( idStr::Icmp( argString, "SSE2" ) == 0 ) {
-			if ( !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) ) {
-				common->Printf( "CPU does not support SSE & SSE2\n" );
-				return;
-			}
-			p_simd = new idSIMD_SSE2;
-		} else if ( idStr::Icmp( argString, "SSE3" ) == 0 ) {
-			if ( !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) ) {
-				common->Printf( "CPU does not support SSE & SSE2 & SSE3\n" );
-				return;
-			}
-			p_simd = new idSIMD_SSE3();
-		} else if ( idStr::Icmp( argString, "AVX" ) == 0 ) {
-			if ( !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) || !( cpuid & CPUID_SSSE3 ) || !( cpuid & CPUID_SSE41 ) || !( cpuid & CPUID_AVX ) ) {
-				common->Printf( "CPU does not support SSE* & AVX\n" );
-				return;
-			}
-			p_simd = new idSIMD_AVX();
-		} else if ( idStr::Icmp( argString, "AVX2" ) == 0 ) {
-			if ( !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) || !( cpuid & CPUID_SSSE3 ) || !( cpuid & CPUID_SSE41 ) || !( cpuid & CPUID_AVX ) || !( cpuid & CPUID_AVX2 ) || !( cpuid & CPUID_FMA3 ) ) {
-				common->Printf( "CPU does not support SSE* & AVX & AVX2 & FMA3\n" );
-				return;
-			}
-			p_simd = new idSIMD_AVX2();
-		} else {
-			common->Printf( "invalid argument, use: SSE, SSE2, SSE3, AVX, AVX2\n" );
-			return;
-		}
-	}
-	
 	int testBits = -1;
-	if ( idStr::Length( args.Argv( 2 ) ) != 0 ) {
-		idStr argString = args.Argv( 2 );
+	if ( idStr::Length( args.Argv( 1 ) ) != 0 ) {
+		idStr argString = args.Argv( 1 );
 		if ( argString.IsNumeric() )
 			testBits = atoi( argString.c_str() );
 	}
