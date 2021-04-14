@@ -56,17 +56,6 @@ if (UNIX)
 	add_compile_definitions("_GLIBCXX_USE_CXX11_ABI=0")
 	# ensure threading support in X
 	add_compile_definitions(XTHREADS)
-
-	# disable optimizations for certain problematic files
-	set_property(SOURCE
-			"idlib/Token.cpp"
-			"idlib/bv/Frustum_gcc.cpp"
-			PROPERTY COMPILE_OPTIONS -O1
-	)
-	set_property(SOURCE
-			"tools/compilers/dmap/optimize_gcc.cpp"
-			PROPERTY COMPILE_OPTIONS -O0
-	)
 elseif (MSVC)
 	add_compile_definitions("WIN32" _WINDOWS
 			_CRT_SECURE_NO_DEPRECATE
