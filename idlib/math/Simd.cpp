@@ -94,12 +94,14 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 	bool upToSSE41 = upToSSSE3 && ( cpuid & CPUID_SSE41 );
 	bool upToAVX = upToSSE41 && ( cpuid & CPUID_AVX );
 	bool upToAVX2 = upToAVX && ( cpuid & CPUID_AVX2 ) && ( cpuid & CPUID_FMA3 );
-	if ( upToAVX2 && (!forceImpl || idStr::Icmp(forceImpl, "AVX2") == 0) ) {
+
+	if (false) {
+#ifdef ENABLE_SSE_PROCESSORS
+	} else if ( upToAVX2 && (!forceImpl || idStr::Icmp(forceImpl, "AVX2") == 0) ) {
 		processor = new idSIMD_AVX2;
 	} else if ( upToAVX && (!forceImpl || idStr::Icmp(forceImpl, "AVX") == 0) ) {
 		processor = new idSIMD_AVX;
-//stgatilov: this processor is defined only on MSVC 32-bit
-#if defined(_MSC_VER) && defined(_M_IX86)
+#if defined(_MSC_VER) && defined(_M_IX86)	//stgatilov: this processor is defined only on MSVC 32-bit
 	} else if ( upToSSE3 && (forceImpl && idStr::Icmp(forceImpl, "IdAsm") == 0) ) {
 		processor = new idSIMD_IdAsm;
 #endif
@@ -109,6 +111,7 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 		processor = new idSIMD_SSE2;
 	} else if ( upToSSE && (!forceImpl || idStr::Icmp(forceImpl, "SSE") == 0) ) {
 		processor = new idSIMD_SSE;
+#endif
 	} else {
 		processor = generic;
 	}

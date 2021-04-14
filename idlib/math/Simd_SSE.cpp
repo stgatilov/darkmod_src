@@ -18,12 +18,15 @@
 #pragma warning(disable: 4740)
 
 #include "Simd_SSE.h"
-#include <xmmintrin.h>
 
 
 idSIMD_SSE::idSIMD_SSE() {
 	name = "SSE";
 }
+
+#ifdef ENABLE_SSE_PROCESSORS
+
+#include <xmmintrin.h>
 
 /*
 ============
@@ -124,3 +127,5 @@ void idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, const id
 		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
 	}
 }
+
+#endif

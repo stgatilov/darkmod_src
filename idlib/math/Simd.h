@@ -35,6 +35,12 @@ public:
 	static void			Test_f( const class idCmdArgs &args );
 };
 
+//stgatilov: when we should compile SSE/AVX processors at all?
+//  a) when we compile on x86 (32-bit or 64-bit)
+//  b) when compile-time SSE is enabled (e.g. Elbrus compiler cross-compiles SSE intrinsics)
+#if defined(_MSC_VER) || (defined(__i386__) || defined(__x86_64__)) || (defined(__SSE__) || defined (__SSE2__))
+#define ENABLE_SSE_PROCESSORS
+#endif
 
 /*
 ===============================================================================

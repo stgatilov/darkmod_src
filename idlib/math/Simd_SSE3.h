@@ -29,6 +29,9 @@
 class idSIMD_SSE3 : public idSIMD_SSE2 {
 public:
 	idSIMD_SSE3();
+
+#ifdef ENABLE_SSE_PROCESSORS
+#endif
 };
 
 #endif /* !__MATH_SIMD_SSE3_H__ */

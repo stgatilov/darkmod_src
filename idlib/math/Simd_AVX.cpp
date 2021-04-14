@@ -17,6 +17,14 @@
 #pragma hdrstop
 
 #include "Simd_AVX.h"
+
+
+idSIMD_AVX::idSIMD_AVX() {
+	name = "AVX";
+}
+
+#ifdef ENABLE_SSE_PROCESSORS
+
 #include <immintrin.h>
 
 //===============================================================
@@ -27,10 +35,6 @@
 
 //apply optimizations to this file in Debug with Inlines configuration
 DEBUG_OPTIMIZE_ON
-
-idSIMD_AVX::idSIMD_AVX() {
-	name = "AVX";
-}
 
 /*
 ============
@@ -99,3 +103,5 @@ void idSIMD_AVX::CullByFrustum2( idDrawVert *verts, const int numVerts, const id
 	}
 	_mm256_zeroupper();
 }
+
+#endif

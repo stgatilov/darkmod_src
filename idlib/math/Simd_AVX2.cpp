@@ -17,6 +17,14 @@
 #pragma hdrstop
 
 #include "Simd_AVX2.h"
+
+
+idSIMD_AVX2::idSIMD_AVX2() {
+	name = "AVX2";
+}
+
+#ifdef ENABLE_SSE_PROCESSORS
+
 #include <immintrin.h>
 
 //===============================================================
@@ -27,10 +35,6 @@
 
 //apply optimizations to this file in Debug with Inlines configuration
 DEBUG_OPTIMIZE_ON
-
-idSIMD_AVX2::idSIMD_AVX2() {
-	name = "AVX2";
-}
 
 /*
 ============
@@ -489,3 +493,5 @@ void idSIMD_AVX2::NormalizeTangents( idDrawVert *verts, const int numVerts ) {
 		}
 	}
 }
+
+#endif

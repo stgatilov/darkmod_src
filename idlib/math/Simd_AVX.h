@@ -36,6 +36,8 @@ class idSIMD_AVX : public idSIMD_SSE3 {
 public:
 	idSIMD_AVX();
 
+#ifdef ENABLE_SSE_PROCESSORS
 	virtual void CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) ALLOW_AVX;
 	virtual void CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) ALLOW_AVX;
+#endif
 };

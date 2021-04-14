@@ -21,3 +21,6 @@
 idSIMD_SSE3::idSIMD_SSE3() {
 	name = "SSE3";
 }
+
+#ifdef ENABLE_SSE_PROCESSORS
+#endif

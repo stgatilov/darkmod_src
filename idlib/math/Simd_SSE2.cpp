@@ -21,6 +21,12 @@
 
 idCVarBool r_legacyTangents( "r_legacyTangents", "1", CVAR_RENDERER | CVAR_ARCHIVE, "1 = legacy CPU tangent calculation" );
 
+idSIMD_SSE2::idSIMD_SSE2() {
+	name = "SSE2";
+}
+
+#ifdef ENABLE_SSE_PROCESSORS
+
 //in "Debug with Inlines" config, optimize all the remaining functions of this file
 DEBUG_OPTIMIZE_ON
 
@@ -39,10 +45,6 @@ DEBUG_OPTIMIZE_ON
 	dst = _mm_sub_ps(dst, _mm_mul_ps(b, _mm_shuffle_ps(a, a, SHUF(1, 2, 0, 3)))); \
 	dst = _mm_shuffle_ps(dst, dst, SHUF(1, 2, 0, 3));
 
-
-idSIMD_SSE2::idSIMD_SSE2() {
-	name = "SSE2";
-}
 
 //suitable for any compiler, OS and bitness  (intrinsics)
 //generally used on Windows 64-bit and all Linuxes
@@ -477,3 +479,5 @@ void idSIMD_SSE2::Memcpy( void* dst, const void* src, const int count ) {
 	else
 		CopyBufferSSE2( (byte*)dst, (byte*)src, count );
 }
+
+#endif

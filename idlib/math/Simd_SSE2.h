@@ -30,6 +30,7 @@ class idSIMD_SSE2 : public idSIMD_SSE {
 public:
 	idSIMD_SSE2();
 
+#ifdef ENABLE_SSE_PROCESSORS
 	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts );
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
 	virtual	void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count );
@@ -40,6 +41,7 @@ public:
 
 	virtual void Memcpy( void* dst, const void* src, const int count );
 	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing );
+#endif
 };
 
 #endif /* !__MATH_SIMD_SSE2_H__ */

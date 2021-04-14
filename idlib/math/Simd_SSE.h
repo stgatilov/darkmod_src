@@ -30,8 +30,10 @@ class idSIMD_SSE : public idSIMD_Generic {
 public:
 	idSIMD_SSE();
 
+#ifdef ENABLE_SSE_PROCESSORS
 	virtual void CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon );
 	virtual void CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon );
+#endif
 };
 
 #endif /* !__MATH_SIMD_SSE_H__ */
