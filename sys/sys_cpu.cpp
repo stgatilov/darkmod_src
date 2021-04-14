@@ -18,7 +18,6 @@
 
 #include "sys_public.h"
 
-#include <xmmintrin.h>
 #if defined(_MSC_VER)
 	#include <intrin.h>
 #elif defined(__GNUC__) && (defined(__i386__) || defined (__x86_64__))
@@ -65,10 +64,7 @@ CPUID
 ================
 */
 static void CPUID( int func, unsigned regs[4] ) {
-#if !defined (_MSC_VER)
-	// stgatilov: use macro from cpuid.h on GCC (and possibly Clang)
-	__cpuid( func, regs[_REG_EAX], regs[_REG_EBX], regs[_REG_ECX], regs[_REG_EDX] );
-#else
+#if defined(_MSC_VER)
 	// greebo: Use intrinsics on VC++
 	int values[4];
 	__cpuid( values, func );
@@ -76,6 +72,11 @@ static void CPUID( int func, unsigned regs[4] ) {
 	regs[_REG_EBX] = values[1];
 	regs[_REG_ECX] = values[2];
 	regs[_REG_EDX] = values[3];
+#elif defined(__i386__) || defined (__x86_64__)
+	// stgatilov: use macro from cpuid.h on GCC (and possibly Clang)
+	__cpuid( func, regs[_REG_EAX], regs[_REG_EBX], regs[_REG_ECX], regs[_REG_EDX] );
+#else
+	regs[0] = regs[1] = regs[2] = regs[3] = 0;
 #endif
 }
 
