@@ -44,13 +44,6 @@ public:
 ===============================================================================
 */
 
-//stgatilov: when SIMD_USE_ASM = 1, original inline assembly from ID is used
-#if defined(_MSC_VER) && defined(_M_IX86)
-#define SIMD_USE_ASM 1
-#else
-#define SIMD_USE_ASM 0
-#endif
-
 class idVec2;
 class idVec3;
 class idVec4;

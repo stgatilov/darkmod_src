@@ -22,6 +22,7 @@
 #include "Simd_SSE3.h"
 #include "Simd_AVX.h"
 #include "Simd_AVX2.h"
+#include "Simd_IdAsm.h"
 
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
@@ -94,6 +95,11 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 		processor = new idSIMD_AVX2;
 	} else if ( upToAVX && (!forceImpl || idStr::Icmp(forceImpl, "AVX") == 0) ) {
 		processor = new idSIMD_AVX;
+//stgatilov: this processor is defined only on MSVC 32-bit
+#if defined(_MSC_VER) && defined(_M_IX86)
+	} else if ( upToSSE3 && (forceImpl && idStr::Icmp(forceImpl, "IdAsm") == 0) ) {
+		processor = new idSIMD_IdAsm;
+#endif
 	} else if ( upToSSE3 && (!forceImpl || idStr::Icmp(forceImpl, "SSE3") == 0) ) {
 		processor = new idSIMD_SSE3;
 	} else if ( upToSSE2 && (!forceImpl || idStr::Icmp(forceImpl, "SSE2") == 0) ) {

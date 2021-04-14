@@ -16,6 +16,8 @@
 #ifndef __MATH_SIMD_SSE2_H__
 #define __MATH_SIMD_SSE2_H__
 
+#include "Simd_SSE.h"
+
 /*
 ===============================================================================
 
@@ -28,11 +30,6 @@ class idSIMD_SSE2 : public idSIMD_SSE {
 public:
 	idSIMD_SSE2();
 
-#if SIMD_USE_ASM
-	//virtual void MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );
-	//virtual void MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n );
-	virtual void MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples );
-#else
 	virtual void NormalizeTangents( idDrawVert *verts, const int numVerts );
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
 	virtual	void MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count );
@@ -40,7 +37,6 @@ public:
 	virtual void DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes );
 	virtual int  CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts );
 	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts );
-#endif
 
 	virtual void Memcpy( void* dst, const void* src, const int count );
 	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing );

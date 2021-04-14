@@ -192,6 +192,9 @@
     <ClCompile Include="idlib\containers\PlaneSet.cpp">
       <Filter>Containers</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\math\Simd_IdAsm.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -424,6 +427,9 @@
     </ClInclude>
     <ClInclude Include="idlib\containers\BinHeap.h">
       <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\math\Simd_IdAsm.h">
+      <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

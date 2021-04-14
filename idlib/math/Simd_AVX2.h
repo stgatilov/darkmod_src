@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "Simd_AVX.h"
+
 /*
 ===============================================================================
 
@@ -30,10 +32,10 @@
 #endif
 
 
-
 class idSIMD_AVX2 : public idSIMD_AVX {
 public:
 	idSIMD_AVX2();
+
 	virtual void CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) ALLOW_AVX2;
 	virtual void CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) ALLOW_AVX2;
 	virtual void DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) ALLOW_AVX2;

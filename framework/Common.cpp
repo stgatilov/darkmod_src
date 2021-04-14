@@ -98,7 +98,7 @@ idCVar com_asyncSound( "com_asyncSound", "1", CVAR_INTEGER|CVAR_SYSTEM, ASYNCSOU
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_SYSTEM | CVAR_NOCHEAT,
 	"Force specified implementation of SIMD processor (if supported)\n"
 	"Value 1 or Generic forces slow platform-independent implementation. "
-	"Other options include: SSE, SSE2, SSE3, AVX, AVX2"
+	"Other options include: SSE, SSE2, SSE3, AVX, AVX2, [Win32]:IdAsm)"
 );
 idCVar com_fpexceptions( "com_fpexceptions", "0", CVAR_BOOL | CVAR_SYSTEM, "enable FP exceptions: throw exception when NaN or Inf value is produced" );
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "developer mode" );

@@ -16,10 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "Simd_Generic.h"
-#include "Simd_SSE.h"
-#include "Simd_SSE2.h"
-#include "Simd_SSE3.h"
 #include "Simd_AVX.h"
 #include <immintrin.h>
 
