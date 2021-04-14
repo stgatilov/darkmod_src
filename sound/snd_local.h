@@ -600,6 +600,8 @@ public:
 	ALuint					listenerEffect;
 	ALuint					listenerSlot;
 	ALuint					listenerFilter;
+    // nbohr1more: #5587 Reverb volume control
+    float					listenerSlotReverbGain;
 
 	int						gameMsec;
 	int						game44kHz;
@@ -746,6 +748,8 @@ public:
 	LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
 	LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
 	LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
+    // nbohr1more: #5587 Reverb volume control
+    LPALAUXILIARYEFFECTSLOTF		alAuxiliaryEffectSlotf;
 
 	idEFXFile				EFXDatabase;
 	bool					efxloaded;
@@ -787,6 +791,8 @@ public:
 	static idCVar			s_useEAXReverb;
 	static idCVar			s_useHRTF;
 	static idCVar			s_decompressionLimit;
+    // nbohr1more: #5587 Reverb volume control
+    static idCVar			s_alReverbGain;
 
 	static idCVar			s_slowAttenuate;
 

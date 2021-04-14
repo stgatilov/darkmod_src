@@ -37,6 +37,8 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	listenerArea = 0;
 	listenerAreaName = "Undefined";
 	listenerEffect = AL_EFFECTSLOT_NULL;
+    // nbohr1more: #5587 Reverb volume control
+    listenerSlotReverbGain = 1.0f;
 
 	if (idSoundSystemLocal::useEFXReverb) {
 		if (!soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot)) {
@@ -67,6 +69,9 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 				soundSystemLocal.alFilterf(listenerFilter, AL_LOWPASS_GAIN, 0.718208f);
 				// pow(10.0, -1150/2000.0)
 			}
+                // nbohr1more: #5587 Reverb volume control                
+                listenerSlotReverbGain = soundSystemLocal.s_alReverbGain.GetFloat();
+                soundSystemLocal.alAuxiliaryEffectSlotf(listenerSlot, AL_EFFECTSLOT_GAIN, listenerSlotReverbGain);
 		}
 	}
 
@@ -147,6 +152,8 @@ void idSoundWorldLocal::Shutdown() {
 			delete emitters[i];
 			emitters[i] = NULL;
 		}
+    //nbohr1more: #5587 Reverb volume control
+    listenerSlotReverbGain = 1.0f;
 	}
 	localSound = NULL;
 	secondarySound = NULL; // grayman #4882
@@ -492,6 +499,13 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 	if (idSoundSystemLocal::useEFXReverb && soundSystemLocal.efxloaded) {
 		ALuint effect = AL_EFFECTSLOT_NULL;
 		idStr s(listenerArea);
+
+        //nbohr1more: #5587 Reverb volume control
+        float gain = soundSystemLocal.s_alReverbGain.GetFloat();
+        if (listenerSlotReverbGain != gain) {
+                listenerSlotReverbGain = gain;
+                soundSystemLocal.alAuxiliaryEffectSlotf(listenerSlot, AL_EFFECTSLOT_GAIN, gain);
+        }
 
 		bool found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
 		if (!found) {
