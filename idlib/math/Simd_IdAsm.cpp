@@ -24,8 +24,6 @@ idSIMD_IdAsm::idSIMD_IdAsm() {
 }
 
 //stgatilov: only compile these functions on MSVC 32-bit
-//leave symbols undefined on other platforms
-//(idSIMD_IdAsm will never be constructed there)
 #if defined(_MSC_VER) && defined(_M_IX86)
 
 //warning C4740: flow in or out of inline asm code suppresses global optimization

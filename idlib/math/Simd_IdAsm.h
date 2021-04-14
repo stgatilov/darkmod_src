@@ -29,6 +29,9 @@ class idSIMD_IdAsm : public idSIMD_SSE3 {
 public:
 	idSIMD_IdAsm();
 
+//stgatilov: only compile these functions on MSVC 32-bit
+#if defined(_MSC_VER) && defined(_M_IX86)
+
 	//========================= Uses SSE =============================
 
 	virtual void Add( float *dst,			const float constant,	const float *src,		const int count );
@@ -126,4 +129,5 @@ public:
 
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
 
+#endif
 };
