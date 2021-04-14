@@ -76,9 +76,9 @@ typedef enum {
 
 class idSIMDProcessor {
 public:
-									idSIMDProcessor( void ) { cpuid = CPUID_NONE; }
+	virtual							~idSIMDProcessor();
 
-	cpuid_t							cpuid;
+	cpuid_t							cpuid = CPUID_NONE;
 
 	virtual const char * GetName( void ) const = 0;
 

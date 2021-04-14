@@ -28,6 +28,9 @@ idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
 idSIMDProcessor *	SIMDProcessor = NULL;
 
+
+idSIMDProcessor::~idSIMDProcessor() {}
+
 /*
 ================
 idSIMD::Init
