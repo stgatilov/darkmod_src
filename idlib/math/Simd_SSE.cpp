@@ -15444,34 +15444,6 @@ static void SSE_UpSample44kHzMonoPCMTo44kHz( float *dest, const short *src, cons
 
 /*
 ============
-idSIMD_SSE::UpSamplePCMTo44kHz
-
-  Duplicate samples for 44kHz output.
-============
-*/
-//stgatilov #3969: resampling acceleration is buggy and useless
-/*void idSIMD_SSE::UpSamplePCMTo44kHz( float *dest, const short *src, const int numSamples, const int kHz, const int numChannels ) {
-	if ( kHz == 11025 ) {
-		if ( numChannels == 1 ) {
-			SSE_UpSample11kHzMonoPCMTo44kHz( dest, src, numSamples );
-		} else {
-			SSE_UpSample11kHzStereoPCMTo44kHz( dest, src, numSamples );
-		}
-	} else if ( kHz == 22050 ) {
-		if ( numChannels == 1 ) {
-			SSE_UpSample22kHzMonoPCMTo44kHz( dest, src, numSamples );
-		} else {
-			SSE_UpSample22kHzStereoPCMTo44kHz( dest, src, numSamples );
-		}
-	} else if ( kHz == 44100 ) {
-		SSE_UpSample44kHzMonoPCMTo44kHz( dest, src, numSamples );
-	} else {
-		assert( 0 );
-	}
-}*/
-
-/*
-============
 SSE_UpSample11kHzMonoOGGTo44kHz
 ============
 */
@@ -15749,38 +15721,6 @@ static void SSE_UpSample44kHzStereoOGGTo44kHz( float *dest, const float * const 
 	done:
 	}
 }
-
-/*
-============
-idSIMD_SSE::UpSampleOGGTo44kHz
-
-  Duplicate samples for 44kHz output.
-============
-*/
-//stgatilov #3969: resampling acceleration is buggy and useless
-/*void idSIMD_SSE::UpSampleOGGTo44kHz( float *dest, const float * const *ogg, const int numSamples, const int kHz, const int numChannels ) {
-	if ( kHz == 11025 ) {
-		if ( numChannels == 1 ) {
-			SSE_UpSample11kHzMonoOGGTo44kHz( dest, ogg[0], numSamples );
-		} else {
-			SSE_UpSample11kHzStereoOGGTo44kHz( dest, ogg, numSamples );
-		}
-	} else if ( kHz == 22050 ) {
-		if ( numChannels == 1 ) {
-			SSE_UpSample22kHzMonoOGGTo44kHz( dest, ogg[0], numSamples );
-		} else {
-			SSE_UpSample22kHzStereoOGGTo44kHz( dest, ogg, numSamples );
-		}
-	} else if ( kHz == 44100 ) {
-		if ( numChannels == 1 ) {
-			SSE_UpSample44kHzMonoOGGTo44kHz( dest, ogg[0], numSamples );
-		} else {
-			SSE_UpSample44kHzStereoOGGTo44kHz( dest, ogg, numSamples );
-		}
-	} else {
-		assert( 0 );
-	}
-}*/
 
 /*
 ============
