@@ -21,7 +21,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "editorconfig", "editorconfi
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7FB76E95-94C8-4A40-8DD0-C898CE433D74}"
+	ProjectSection(SolutionItems) = preProject
+		Performance1.psess = Performance1.psess
+		Performance2.psess = Performance2.psess
+	EndProjectSection
+EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug with inlines|Win32 = Debug with inlines|Win32
 		Debug with inlines|x64 = Debug with inlines|x64
@@ -79,5 +88,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AC27665C-5C6D-417C-A49F-2C3B36DD0B3E}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

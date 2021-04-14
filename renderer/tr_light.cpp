@@ -16,7 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "../idlib/geometry/sys_intrinsics.h"
 #include "tr_local.h"
 #include "Model_local.h"
 #include "Profiling.h"
@@ -1317,8 +1316,8 @@ void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, c
 {
 	for ( int i = 0; i < 3; i++ )
 	{
-		shadowBounds[0][i] = __fsels( modelBounds[0][i] - lightOrigin[i], modelBounds[0][i], lightBounds[0][i] );
-		shadowBounds[1][i] = __fsels( lightOrigin[i] - modelBounds[1][i], modelBounds[1][i], lightBounds[1][i] );
+		shadowBounds[0][i] = ( modelBounds[0][i] >= lightOrigin[i] ? modelBounds[0][i] : lightBounds[0][i] );
+		shadowBounds[1][i] = ( lightOrigin[i] >= modelBounds[1][i] ? modelBounds[1][i] : lightBounds[1][i] );
 	}
 }
 

@@ -40,14 +40,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "../bv/Bounds.h"
 #include "RenderMatrix.h"
 
-//anon begin -- just comment this out to disable intrinsics
-#ifdef _MSC_VER
-#define USE_INTRINSICS
-#include <intrin.h>
-#include "sys_intrinsics.h"
-#endif // if MicroSoft Compiler
-//anon end
-
 // FIXME:	it would be nice if all render matrices were 16-byte aligned
 //			so there is no need for unaligned loads and stores everywhere
 
