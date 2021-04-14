@@ -195,7 +195,7 @@ int SCR_DrawFPS( int y ) {
 
 	static int prevAvgCnt = 0;
 	if (prevAvgCnt != avgCnt) {
-		//com_showFPSavg was changed --- clear history
+		// com_showFPSavg was changed --- clear history
 		prevAvgCnt = avgCnt;
 		for (int i = 0; i < avgCnt; i++)
 			previousTimes[i] = -1000000;
@@ -208,6 +208,19 @@ int SCR_DrawFPS( int y ) {
 	int fps = (1000 * avgCnt) / idMath::Imax(total, 1);
 	if (total < 0)
 		fps = -1;
+
+	// avoid quick switching between close values when com_showFPSavg is large
+	static int lastFpsDisplayed = -666;
+	static int lastFpsUpdate = -666;
+	if (index - lastFpsUpdate >= avgCnt / 2 || idMath::Fabs(lastFpsDisplayed - fps) >= idMath::Fmax(1.5f, fps * (1.0f / 32.0f))) {
+		lastFpsUpdate = index;
+		lastFpsDisplayed = fps;
+	}
+	else {
+		// revert to previous value for now
+		fps = lastFpsDisplayed;
+	}
+
 	char *s = va("%ifps", fps);
 	showFPS_currentValue = fps;
 
