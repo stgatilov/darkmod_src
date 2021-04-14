@@ -2647,13 +2647,14 @@ idCommonLocal::Async
 */
 void idCommonLocal::Async( void ) {
 	
-	// stgatilov #4550: update FPU props (e.g. NaN exceptions)
-	sys->ThreadHeartbeat();
-
 	if ( com_shuttingDown ) {
 		return;
 	}
-	else if ( !com_preciseTic.GetBool() ) {
+
+	// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+	sys->ThreadHeartbeat();
+
+	if ( !com_preciseTic.GetBool() ) {
 		// just run a single tic, even if the exact msec isn't precise
 		SingleAsyncTic();
 		return;
