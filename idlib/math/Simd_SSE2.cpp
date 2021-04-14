@@ -41,6 +41,10 @@ DEBUG_OPTIMIZE_ON
 	dst = _mm_shuffle_ps(dst, dst, SHUF(1, 2, 0, 3));
 
 
+idSIMD_SSE2::idSIMD_SSE2() {
+	name = "SSE2";
+}
+
 //===============================================================
 //
 //	SSE2 implementation of idSIMDProcessor

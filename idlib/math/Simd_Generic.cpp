@@ -39,11 +39,9 @@
 #endif
 
 
-/*
-============
-idSIMD_Generic::GetName
-============
-*/
+idSIMD_Generic::idSIMD_Generic() {
+	name = "Generic";
+}
 const char * idSIMD_Generic::GetName( void ) const {
 	return name.c_str();
 }

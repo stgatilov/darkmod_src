@@ -22,6 +22,10 @@
 #include "Simd_SSE3.h"
 
 
+idSIMD_SSE3::idSIMD_SSE3() {
+	name = "SSE3";
+}
+
 //===============================================================
 //
 //	SSE3 implementation of idSIMDProcessor

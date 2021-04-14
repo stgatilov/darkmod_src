@@ -26,7 +26,7 @@
 
 class idSIMD_SSE : public idSIMD_Generic {
 public:
-	idSIMD_SSE() { name = "SSE"; }
+	idSIMD_SSE();
 
 #if SIMD_USE_ASM
 	virtual void Add( float *dst,			const float constant,	const float *src,		const int count );

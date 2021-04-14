@@ -26,7 +26,7 @@
 
 class idSIMD_SSE3 : public idSIMD_SSE2 {
 public:
-	idSIMD_SSE3() { name = "SSE3"; }
+	idSIMD_SSE3();
 
 #if SIMD_USE_ASM
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );

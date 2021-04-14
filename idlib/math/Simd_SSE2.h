@@ -26,7 +26,7 @@
 
 class idSIMD_SSE2 : public idSIMD_SSE {
 public:
-	idSIMD_SSE2() { name = "SSE2"; }
+	idSIMD_SSE2();
 
 #if SIMD_USE_ASM
 	//virtual void MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );

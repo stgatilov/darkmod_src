@@ -16330,6 +16330,10 @@ void idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuffer, co
 
 #endif /* SIMD_USE_ASM */
 
+idSIMD_SSE::idSIMD_SSE() {
+	name = "SSE";
+}
+
 /*
 ============
 idSIMD_SSE::CullByFrustum

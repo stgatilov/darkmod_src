@@ -33,6 +33,10 @@
 //apply optimizations to this file in Debug with Inlines configuration
 DEBUG_OPTIMIZE_ON
 
+idSIMD_AVX2::idSIMD_AVX2() {
+	name = "AVX2";
+}
+
 /*
 ============
 idSIMD_AVX2::CullByFrustum
