@@ -1442,6 +1442,25 @@ bool idWinding::PointInsideDst( const idVec3 &normal, const idVec3 &point, const
 
 /*
 =============
+idWinding::PointLiesOn
+=============
+*/
+bool idWinding::PointLiesOn( const idVec3 &point, const float epsilon ) const {
+	idPlane plane;
+	GetPlane(plane);
+
+	int side = plane.Side(point, epsilon);
+	if (side != PLANESIDE_ON)
+		return false;
+
+	if (!PointInsideDst(plane.Normal(), point, epsilon))
+		return false;
+
+	return true;
+}
+
+/*
+=============
 idWinding::LineIntersection
 =============
 */

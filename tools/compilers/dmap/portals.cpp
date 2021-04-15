@@ -984,9 +984,13 @@ static bool FindPortalCycleBFS( uEntity_t *entity, uPortal_t *startPortal ) {
 	idList<node_t*> nodesQueue;
 	idList<int> prevIdx;
 	idList<uPortal_t*> byPortal;
+	bool badSeal;
 
-	// do two attempts: try to find nicer path on the first one
-	for ( int attempt = 0; attempt < 2; attempt++ ) {
+	// perform several searches for a cycle:
+	//   -1. only allow traversing BSP nodes which touch the visportal face (found -> bad seal)
+	//    0. forbid going through side faces of visportal brush (nicer path)
+	//    1. no additional limits
+	for ( int attempt = -1; attempt <= 1; attempt++ ) {
 
 		// occupied is used as visited mark and (1 + shortest distance) at once
 		ClearOccupied_r( entity->tree->headnode );
@@ -1015,6 +1019,34 @@ static bool FindPortalCycleBFS( uEntity_t *entity, uPortal_t *startPortal ) {
 					continue;					// going through visportal
 				if ( otherNode->occupied > 0 )
 					continue;					// already visited that node
+
+				if ( attempt == -1) {
+					// check if this node touches the problematic visportal (either by face or by edge)
+					const idWinding &portalWinding = *info.side->winding;
+					idPlane portalPlane;
+					portalWinding.GetPlane( portalPlane );
+
+					bool incident = false;
+					for ( uPortal_t *p = otherNode->portals, *np; p && !incident; p = np) {
+						int s = (p->nodes[1] == otherNode);
+						np = p->next[s];
+
+						const idWinding &w = *p->winding;
+						if (portalWinding.PointLiesOn(w.GetCenter(), CLIP_EPSILON))
+							incident = true;
+
+						int cnt = w.GetNumPoints();
+						for (int i = 0; i < cnt && !incident; i++) {
+							idVec3 beg = w[i].ToVec3();
+							idVec3 end = w[(i+1) % cnt].ToVec3();
+							if (portalWinding.PointLiesOn((beg + end) * 0.5, CLIP_EPSILON))
+								incident = true;
+						}
+					}
+
+					if (!incident)
+						continue;
+				}
 
 				if ( attempt == 0 ) {
 					// limit transitions on first attempt: forbid going through all sides of
@@ -1050,8 +1082,12 @@ static bool FindPortalCycleBFS( uEntity_t *entity, uPortal_t *startPortal ) {
 			}
 		}
 
-		if ( found )
-			break;
+		if ( attempt == -1 )
+			badSeal = found;
+		else {
+			if ( found )
+				break;
+		}
 	}
 	if ( !found )
 		return false;
@@ -1067,12 +1103,12 @@ static bool FindPortalCycleBFS( uEntity_t *entity, uPortal_t *startPortal ) {
 	path.Append(idVec3(path[0]));
 
 	idStr pos = startPortal->winding->GetCenter().ToString();
-	common->Warning ( "Portal %d at (%s) dropped", brushnum, pos.c_str() );
+	common->Warning ( "Portal %d at (%s) dropped%s", brushnum, pos.c_str(), (badSeal ? " as leaky" : "") );
 	pos.Replace('.', 'd');
 	pos.Replace('-', 'm');
 	pos.Replace(' ', '_');
 	idStr filename;
-	sprintf( filename, "%s_portalL_%s.lin", dmapGlobals.mapFileBase, pos.c_str() );
+	sprintf( filename, "%s_portal%c_%s.lin", dmapGlobals.mapFileBase, (badSeal ? 'L' : 'D'), pos.c_str() );
 
 	idStr ospath = fileSystem->RelativePathToOSPath( filename, "fs_devpath", "" );
 	FILE *linefile = fopen( ospath, "w" );
