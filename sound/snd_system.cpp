@@ -415,8 +415,8 @@ void idSoundSystemLocal::Init() {
 		alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)alGetProcAddress("alDeleteAuxiliaryEffectSlots");
 		alIsAuxiliaryEffectSlot = (LPALISAUXILIARYEFFECTSLOT)alGetProcAddress("alIsAuxiliaryEffectSlot");;
 		alAuxiliaryEffectSloti = (LPALAUXILIARYEFFECTSLOTI)alGetProcAddress("alAuxiliaryEffectSloti");
-        // nbohr1more: #5587 Reverb volume control
-        alAuxiliaryEffectSlotf = (LPALAUXILIARYEFFECTSLOTF)alGetProcAddress("alAuxiliaryEffectSlotf");
+		// nbohr1more: #5587 Reverb volume control
+		alAuxiliaryEffectSlotf = (LPALAUXILIARYEFFECTSLOTF)alGetProcAddress("alAuxiliaryEffectSlotf");
 	}
 	else {
 		common->Printf("OpenAL: EFX extension not found\n");
@@ -438,8 +438,8 @@ void idSoundSystemLocal::Init() {
 		alDeleteAuxiliaryEffectSlots = NULL;
 		alIsAuxiliaryEffectSlot = NULL;
 		alAuxiliaryEffectSloti = NULL;
-        // nbohr1more: #5587 Reverb volume control
-        alAuxiliaryEffectSlotf = NULL;
+		// nbohr1more: #5587 Reverb volume control
+		alAuxiliaryEffectSlotf = NULL;
 	}
 
 	if (HRTFAvailable) {
