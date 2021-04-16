@@ -2428,6 +2428,9 @@ void idFrustum::ClipFrustumToBox( const idBox &box, float clipFractions[4], int 
 
 	minf = ( dNear + 1.0f ) * invFar;
 
+	//stgatilov: cornerVecs[i] can be zero, causing division-by-zero inside loop
+	idIgnoreFpExceptions guard;
+
 	for ( i = 0; i < 4; i++ ) {
 
 		index = FLOATSIGNBITNOTSET( cornerVecs[i].x );

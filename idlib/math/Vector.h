@@ -355,6 +355,7 @@ public:
 	float			Max() const;
 	float			Min() const;
 	float			Normalize( void );				// returns length
+	idVec3			Normalized( void ) const;		// returns unit vector
 	float			NormalizeFast( void );			// returns length
 	idVec3 &		Truncate( float length );		// cap length
 	void			Clamp( const idVec3 &min, const idVec3 &max );
@@ -672,14 +673,18 @@ ID_INLINE float idVec3::Min() const {
 }
 
 ID_INLINE float idVec3::Normalize( void ) {
-	float sqrLength, invLength;
-
-	sqrLength = x * x + y * y + z * z;
-	invLength = idMath::InvSqrt( sqrLength );
+	float sqrLength = x * x + y * y + z * z;
+	float invLength = idMath::InvSqrt( sqrLength );
 	x *= invLength;
 	y *= invLength;
 	z *= invLength;
 	return invLength * sqrLength;
+}
+
+ID_INLINE idVec3 idVec3::Normalized( void ) const {
+	float sqrLength = x * x + y * y + z * z;
+	float invLength = idMath::InvSqrt( sqrLength );
+	return idVec3(x * invLength, y * invLength, z * invLength);
 }
 
 ID_INLINE idVec3 &idVec3::Truncate( float length ) {

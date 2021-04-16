@@ -11,7 +11,7 @@
 #define PI idMath::PI
 #define clamp(v, l, r) idMath::ClampFloat(l, r, v)
 #define length(v) (v).Length()
-#define normalize(v) ((v) / (v).Length())
+#define normalize(v) ((v).Normalized())
 #define cross(a, b) (a).Cross(b)
 #define transpose(m) (m).Transpose()
 

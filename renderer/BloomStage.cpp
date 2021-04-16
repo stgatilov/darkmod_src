@@ -268,6 +268,9 @@ void BloomStage::Blur() {
 void BloomStage::Upsample() {
 	GL_PROFILE( "BloomUpsampling" )
 
+	if (numDownsamplingSteps <= 1)
+		return;
+
 	upsampleShader->Activate();
 	BloomUpsampleUniforms *uniforms = upsampleShader->GetUniformGroup<BloomUpsampleUniforms>();
 	float detailBlendWeight = 1.f - pow(1.f - r_bloom_detailblend.GetFloat(), 1.f/(numDownsamplingSteps - 1));
