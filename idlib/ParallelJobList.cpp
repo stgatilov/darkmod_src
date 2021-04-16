@@ -1183,6 +1183,7 @@ void idParallelJobManagerLocal::Init() {
 	currentActiveThreads = 0;
 	RescaleThreadList();
 	Sys_CPUCount( numPhysicalCpuCores, numLogicalCpuCores, numCpuPackages );
+	assert(numLogicalCpuCores >= 0);
 }
 
 /*
@@ -1293,10 +1294,18 @@ void idParallelJobManagerLocal::Submit( idParallelJobList_Threads * jobList, int
 	}
 
 	// determine the number of threads to use
-	int numThreads = Min( parallelism, maxThreads );
-	if ( parallelism == JOBLIST_PARALLELISM_MAX_CORES ) {
-		numThreads = idMath::ClampInt(0, maxThreads, numLogicalCpuCores);
+	int numThreads;
+	if ( parallelism == JOBLIST_PARALLELISM_DEFAULT ) {
+		numThreads = jobs_numThreads.GetInteger();
+	} else if ( parallelism == JOBLIST_PARALLELISM_MAX_CORES ) {
+		numThreads = numLogicalCpuCores;
+	} else if ( parallelism == JOBLIST_PARALLELISM_MAX_THREADS ) {
+		numThreads = MAX_THREADS;
+	} else {
+		numThreads = parallelism;
 	}
+	numThreads = idMath::Imin(numThreads, maxThreads);
+
 	if ( numThreads <= 0 ) {
 		threadJobListState_t state( jobList->GetVersion() );
 		jobList->RunJobs( 0, state, false );
