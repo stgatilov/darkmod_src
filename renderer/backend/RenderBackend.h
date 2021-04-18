@@ -15,6 +15,7 @@
 #pragma once
 #include "DrawBatchExecutor.h"
 #include "DepthStage.h"
+#include "FrobOutlineStage.h"
 #include "InteractionStage.h"
 #include "ManyLightInteractionStage.h"
 #include "ShadowMapStage.h"
@@ -47,6 +48,7 @@ private:
 	ManyLightInteractionStage manyLightStage;
 	StencilShadowStage stencilShadowStage;
 	ShadowMapStage shadowMapStage;
+	FrobOutlineStage frobOutlineStage;
 
 	FrameBuffer *lightgemFbo = nullptr;
 	GLuint lightgemPbos[3] = { 0 };

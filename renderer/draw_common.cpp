@@ -683,7 +683,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
 
-	if ( surf->shaderRegisters[12] ) // even though FROB_SHADERPARM was defined as 11
+	if ( surf->shaderRegisters[EXP_REG_PARM11] )
 		RB_STD_T_RenderShaderPasses_Frob( pStage, surf );
 
 	if ( surf->space->weaponDepthHack || ( !soft_particle && surf->space->modelDepthHack != 0.0f ) ) {

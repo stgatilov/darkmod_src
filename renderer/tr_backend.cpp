@@ -620,6 +620,11 @@ void RB_DrawFullScreenQuad( float e ) {
 #endif
 }
 
+void RB_DrawFullScreenTri() {
+	GL_Cull( CT_BACK_SIDED );
+	qglDrawArrays( GL_TRIANGLES, 0, 3 );
+}
+
 // postprocess related - J.C.Denton
 idCVar r_postprocess_gamma( "r_postprocess_gamma", "1.2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "Applies inverse power function in postprocessing", 0.1f, 3.0f );
 idCVar r_postprocess_brightness( "r_postprocess_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "Multiplies color by coefficient", 0.5f, 2.0f );

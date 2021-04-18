@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 
 extern idCVarBool r_newFrob;
+extern idCVarBool r_frobOutline;
 extern idCVarBool r_legacyTangents;
 extern idCVarBool r_shadowMapCullFront;
 

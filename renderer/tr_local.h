@@ -1449,6 +1449,7 @@ void RB_Multi_DrawElements( int instances = 0 );
 
 // postprocessing related
 void RB_DrawFullScreenQuad( float e = 1 );
+void RB_DrawFullScreenTri();
 
 /*
 ============================================================
