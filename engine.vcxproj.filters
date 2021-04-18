@@ -1782,9 +1782,6 @@
     <ClCompile Include="tools\compilers\dmap\glfile.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
-    <ClCompile Include="tools\compilers\dmap\leakfile.cpp">
-      <Filter>Tools\Compilers\DMap</Filter>
-    </ClCompile>
     <ClCompile Include="tools\compilers\dmap\map.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>

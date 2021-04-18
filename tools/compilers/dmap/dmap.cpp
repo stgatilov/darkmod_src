@@ -83,16 +83,6 @@ bool ProcessModel( uEntity_t *e, bool floodFill ) {
 			// set the outside leafs to opaque
 			FillOutside( e );
 		} else {
-			// We have a leak.
-			if ( dmapGlobals.verbose < VL_ORIGDEFAULT ) // #4123
-			{
-				// We haven't printed which entity we're working on so do it now
-				PrintEntityHeader( VL_CONCISE, e );
-			}
-			PrintIfVerbosityAtLeast( VL_CONCISE, "**********************\n" );
-			common->Warning( "******* leaked *******" );
-			PrintIfVerbosityAtLeast( VL_CONCISE, "**********************\n" );
-			LeakFile( e->tree );
 			// bail out here.  If someone really wants to
 			// process a map that leaks, they should use
 			// -noFlood

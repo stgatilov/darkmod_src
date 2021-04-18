@@ -474,42 +474,6 @@ void MakeTreePortals (tree_t *tree)
 }
 
 /*
-=========================================================
-
-FLOOD ENTITIES
-
-=========================================================
-*/
-
-int		c_floodedleafs;
-
-/*
-=============
-FloodPortals_r
-=============
-*/
-void FloodPortals_r (node_t *node, int dist) {
-	uPortal_t	*p;
-	int			s;
-
-	if ( node->occupied ) {
-		return;
-	}
-
-	if ( node->opaque ) {
-		return;
-	}
-
-	c_floodedleafs++;
-	node->occupied = dist;
-
-	for (p=node->portals ; p ; p = p->next[s]) {
-		s = (p->nodes[1] == node);
-		FloodPortals_r (p->nodes[!s], dist+1);
-	}
-}
-
-/*
 =============
 FindLeafNodeAtPoint
 =============
@@ -527,115 +491,6 @@ node_t *FindLeafNodeAtPoint( node_t *headnode, idVec3 origin ) {
 		}
 	}
 	return node;
-}
-
-/*
-=============
-PlaceOccupant
-=============
-*/
-bool PlaceOccupant( node_t *headnode, idVec3 origin, uEntity_t *occupant ) {
-	node_t *node = FindLeafNodeAtPoint( headnode, origin );
-
-	if ( node->opaque ) {
-		return false;
-	}
-	node->occupant = occupant;
-
-	FloodPortals_r (node, 1);
-
-	return true;
-}
-
-/*
-=============
-FloodEntities
-
-Marks all nodes that can be reached by entites
-=============
-*/
-bool FloodEntities( tree_t *tree ) {
-	int		i;
-	idVec3	origin;
-	const char	*cl;
-	bool	inside;
-	node_t *headnode;
-
-	headnode = tree->headnode;
-	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FloodEntities ---\n");
-	inside = false;
-	tree->outside_node.occupied = 0;
-
-	c_floodedleafs = 0;
-	bool errorShown = false;
-	for (i=1 ; i<dmapGlobals.num_entities ; i++) {
-		idMapEntity	*mapEnt;
-
-		mapEnt = dmapGlobals.uEntities[i].mapEntity;
-		if ( !mapEnt->epairs.GetVector( "origin", "", origin) ) {
-			continue;
-		}
-
-		// any entity can have "noFlood" set to skip it
-		if ( mapEnt->epairs.GetString( "noFlood", "", &cl ) ) {
-			continue;
-		}
-
-		mapEnt->epairs.GetString( "classname", "", &cl );
-
-		if ( !strcmp( cl, "light" ) ) {
-			const char	*v;
-
-			// don't place lights that have a light_start field, because they can still
-			// be valid if their origin is outside the world
-			mapEnt->epairs.GetString( "light_start", "", &v);
-			if ( v[0] ) {
-				continue;
-			}
-
-			// don't place fog lights, because they often
-			// have origins outside the light
-			mapEnt->epairs.GetString( "texture", "", &v);
-			if ( v[0] ) {
-				const idMaterial *mat = declManager->FindMaterial( v );
-				if ( mat->IsFogLight() ) {
-					continue;
-				}
-			}
-		}
-
-		if (PlaceOccupant (headnode, origin, &dmapGlobals.uEntities[i])) {
-			inside = true;
-		}
-
-		if (tree->outside_node.occupied && !errorShown) {
-			errorShown = true;
-			PrintIfVerbosityAtLeast( VL_CONCISE, "Leak on entity # %d\n", i);
-			const char *p;
-
-			mapEnt->epairs.GetString( "classname", "", &p);
-			PrintIfVerbosityAtLeast( VL_CONCISE, "Entity classname was: %s\n", p);
-			mapEnt->epairs.GetString( "name", "", &p);
-			PrintIfVerbosityAtLeast( VL_CONCISE, "Entity name was: %s\n", p);
-			idVec3 origin;
-			if ( mapEnt->epairs.GetVector( "origin", "", origin)) {
-				PrintIfVerbosityAtLeast( VL_CONCISE, "Entity origin is: %f %f %f\n\n\n", origin.x, origin.y, origin.z);
-			}
-		}
-	}
-
-	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i flooded leafs\n", c_floodedleafs );
-
-	if (!inside)
-	{
-		PrintIfVerbosityAtLeast( VL_CONCISE, "no entities in open -- no filling\n");
-	}
-	else if (tree->outside_node.occupied)
-	{
-		PrintIfVerbosityAtLeast( VL_CONCISE, "entity reached from outside -- no filling\n");
-	}
-
-	return (bool)(inside && !tree->outside_node.occupied);
 }
 
 /*
@@ -1565,6 +1420,143 @@ void FloodAreas( uEntity_t *e ) {
 		// stgatilov #5354: check info_location-s
 		CheckInfoLocations(e);
 	}
+}
+
+/*
+=========================================================
+
+FLOOD ENTITIES
+
+=========================================================
+*/
+
+/*
+=============
+FloodEntities
+
+Marks all nodes that can be reached by entites
+stgatilov #5592: also report leak if it exists
+=============
+*/
+bool FloodEntities( tree_t *tree ) {
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FloodEntities ---\n");
+
+	// stgatilov: list of nodes where entities are put
+	idList<node_t*> entNodes;
+	idList<int> entIds;
+
+	// collect all entities to flood from
+	for (int i = 1; i < dmapGlobals.num_entities; i++) {
+		idMapEntity	*mapEnt = dmapGlobals.uEntities[i].mapEntity;
+
+		idVec3 origin;
+		if ( !mapEnt->epairs.GetVector( "origin", "", origin) ) {
+			continue;
+		}
+
+		// any entity can have "noFlood" set to skip it
+		const char *cl;
+		if ( mapEnt->epairs.GetString( "noFlood", "", &cl ) ) {
+			continue;
+		}
+
+		mapEnt->epairs.GetString( "classname", "", &cl );
+
+		if ( !strcmp( cl, "light" ) ) {
+			const char	*v;
+
+			// don't place lights that have a light_start field, because they can still
+			// be valid if their origin is outside the world
+			mapEnt->epairs.GetString( "light_start", "", &v);
+			if ( v[0] ) {
+				continue;
+			}
+
+			// don't place fog lights, because they often
+			// have origins outside the light
+			mapEnt->epairs.GetString( "texture", "", &v);
+			if ( v[0] ) {
+				const idMaterial *mat = declManager->FindMaterial( v );
+				if ( mat->IsFogLight() ) {
+					continue;
+				}
+			}
+		}
+
+		node_t *node = FindLeafNodeAtPoint( tree->headnode, origin );
+		if ( node->opaque ) {
+			continue;
+		}
+
+		entNodes.AddGrow(node);
+		entIds.AddGrow(i);
+	}
+
+	ClearOccupied_r( tree->headnode );
+	tree->outside_node.occupied = 0;
+	auto CanPass_NonOpaque = [tree](node_t *from, uPortal_t *through, node_t *to) -> bool {
+		if ( Portal_Passable(through) )
+			return true;
+		if ( to == &tree->outside_node )
+			return true;
+		return false;
+	};
+	// run flood algorithm from all nodes containing entities simultaneously
+	idList<node_t*> pathNodes;
+	idList<uPortal_t*> pathPortals;
+	bool found = FindShortestPathThroughBspNodes(
+		NULL, entNodes, &tree->outside_node,
+		LambdaToFuncPtr(CanPass_NonOpaque), &CanPass_NonOpaque,
+		&pathNodes, &pathPortals, NULL
+	);
+
+	if ( found ) {
+		// find any entity in the node path starts from
+		node_t *startNode = pathNodes[0];
+		int q = entNodes.FindIndex(startNode);
+		assert(q >= 0);
+
+		int i = entIds[q];
+		idMapEntity	*mapEnt = dmapGlobals.uEntities[i].mapEntity;
+
+		PrintIfVerbosityAtLeast( VL_CONCISE, "Leak on entity # %d\n", i );
+		const char *classname = mapEnt->epairs.GetString( "classname", "" );
+		PrintIfVerbosityAtLeast( VL_CONCISE, "Entity classname was: %s\n", classname );
+		const char *name = mapEnt->epairs.GetString( "name", "" );
+		PrintIfVerbosityAtLeast( VL_CONCISE, "Entity name was: %s\n", name );
+		idVec3 origin = mapEnt->epairs.GetVector( "origin" );
+		PrintIfVerbosityAtLeast( VL_CONCISE, "Entity origin is: %f %f %f\n", origin.x, origin.y, origin.z);
+
+		idList<idVec3> pathPoints;
+		pathPoints.AddGrow(origin);
+		for (int j = 0; j < pathPortals.Num(); j++)
+			pathPoints.AddGrow(pathPortals[j]->winding->GetCenter());
+		pathPoints.Reverse();
+
+		common->Warning ( "Leak detected to entity %s", name );
+		idStr filename;
+		sprintf( filename, "%s.lin", dmapGlobals.mapFileBase );
+
+		idStr ospath = fileSystem->RelativePathToOSPath( filename, "fs_devpath", "" );
+		FILE *linefile = fopen( ospath, "w" );
+		if ( !linefile )
+			common->Error( "Couldn't open %s\n", ospath.c_str() );
+		for ( idVec3 p : pathPoints )
+			fprintf( linefile, "%f %f %f\n", p.x, p.y, p.z );
+		fclose( linefile );
+
+		common->Printf( "saved %s (%i points)\n", filename.c_str(), pathPoints.Num() );
+	}
+
+	if ( entNodes.Num() == 0 ) {
+		PrintIfVerbosityAtLeast( VL_CONCISE, "no entities in open -- no filling\n");
+		return false;
+	}
+	else if ( tree->outside_node.occupied ) {
+		PrintIfVerbosityAtLeast( VL_CONCISE, "entity reached from outside -- no filling\n");
+		return false;
+	}
+	return true;
 }
 
 /*

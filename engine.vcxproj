@@ -1191,7 +1191,6 @@
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />
     <ClCompile Include="tools\compilers\dmap\glfile.cpp" />
-    <ClCompile Include="tools\compilers\dmap\leakfile.cpp" />
     <ClCompile Include="tools\compilers\dmap\map.cpp" />
     <ClCompile Include="tools\compilers\dmap\optimize.cpp" />
     <ClCompile Include="tools\compilers\dmap\output.cpp" />
