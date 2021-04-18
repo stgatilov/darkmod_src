@@ -84,7 +84,7 @@ namespace {
 	}
 
 	void LoadSSAOBlurShader(GLSLProgram *blurShader) {
-		blurShader->InitFromFiles( "ssao.vert.glsl", "ssao_blur.frag.glsl" );
+		blurShader->InitFromFiles( "fullscreen_tri.vert.glsl", "ssao_blur.frag.glsl" );
 		BlurUniforms *uniforms = blurShader->GetUniformGroup<BlurUniforms>();
 		uniforms->source.Set(0);
 	}
@@ -135,9 +135,9 @@ void AmbientOcclusionStage::Init() {
 
 	ssaoShader = programManager->LoadFromGenerator("ssao", LoadSSAOShader);
 	ssaoBlurShader = programManager->LoadFromGenerator("ssao_blur", LoadSSAOBlurShader);
-	depthShader = programManager->LoadFromFiles("ssao_depth", "ssao.vert.glsl", "ssao_depth.frag.glsl");
-	depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "ssao.vert.glsl", "ssao_depthmip.frag.glsl");
-	showSSAOShader = programManager->LoadFromFiles("ssao_show", "ssao.vert.glsl", "ssao_show.frag.glsl");
+	depthShader = programManager->LoadFromFiles("ssao_depth", "fullscreen_tri.vert.glsl", "ssao_depth.frag.glsl");
+	depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "fullscreen_tri.vert.glsl", "ssao_depthmip.frag.glsl");
+	showSSAOShader = programManager->LoadFromFiles("ssao_show", "fullscreen_tri.vert.glsl", "ssao_show.frag.glsl");
 }
 
 void AmbientOcclusionStage::Shutdown() {
@@ -179,6 +179,7 @@ void AmbientOcclusionStage::ComputeSSAOFromDepth() {
 		Init();
 	}
 
+	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK );
 	PrepareDepthPass();
 	SSAOPass();
 	BlurPass();
@@ -197,7 +198,7 @@ void AmbientOcclusionStage::SSAOPass() {
 
 	ssaoShader->Activate();
 	SetQualityLevelUniforms();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void AmbientOcclusionStage::BlurPass() {
@@ -215,14 +216,14 @@ void AmbientOcclusionStage::BlurPass() {
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
 	ssaoResult->Bind();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 
 	// second vertical pass
 	uniforms->axis.Set(0, 1);
 	ssaoFBO->Bind();
 	qglClear(GL_COLOR_BUFFER_BIT);
 	ssaoBlurred->Bind();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void AmbientOcclusionStage::BindSSAOTexture(int index) {
@@ -249,7 +250,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 	globalImages->currentDepthImage->Bind();
 
 	depthShader->Activate();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 
 	if (r_ssao.GetInteger() > 1) {
 		GL_PROFILE("DepthMips");
@@ -262,7 +263,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 			depthMipFBOs[i]->Bind();
 			qglClear(GL_COLOR_BUFFER_BIT);
 			uniforms->previousMipLevel.Set(i - 1);
-			RB_DrawFullScreenQuad();
+			RB_DrawFullScreenTri();
 		}
 	}
 }
@@ -270,7 +271,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 void AmbientOcclusionStage::ShowSSAO() {
 	showSSAOShader->Activate();
 	BindSSAOTexture(0);
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void AmbientOcclusionStage::SetQualityLevelUniforms() {
