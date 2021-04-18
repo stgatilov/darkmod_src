@@ -1352,6 +1352,178 @@ void ReportUnreferencedAreaPortals( uEntity_t *entity ) {
 	}
 }
 
+/*
+=============
+CheckInfoLocations
+
+Verify that info_location entities are in different map areas.
+Report any issues as warnings and pointfiles.
+=============
+*/
+static void CheckInfoLocations(uEntity_t *e) {
+	// is there location separator at each inter-area portal?
+	idList<const char *> separatorPerVisportal;
+	separatorPerVisportal.SetNum(numInterAreaPortals);
+	memset(separatorPerVisportal.Ptr(), NULL, separatorPerVisportal.Allocated());
+
+	// read location separators and fill separatorPerVisportal
+	for (int entnum = 1; entnum < dmapGlobals.num_entities; entnum++) {
+		const idDict &spawnargs = dmapGlobals.uEntities[entnum].mapEntity->epairs;
+
+		const char *classname = spawnargs.GetString("classname", "");
+		if ( idStr::Icmp(classname, "info_locationseparator") != 0)
+			continue;
+		const char *name = spawnargs.GetString("name", "???");
+		idVec3 origin = spawnargs.GetVector("origin");
+
+		idBounds box = idPortalEntity::GetBounds(origin);
+		int cnt = 0, prevJ = -1;
+		for (int j = 0; j < numInterAreaPortals; j++) {
+			const idWinding &w = *interAreaPortals[j].side->winding;
+			int brushnum = interAreaPortals[j].brush->brushnum;
+			if (!idRenderWorldLocal::DoesVisportalContactBox(w, box))
+				continue;
+
+			const char* &refSep = separatorPerVisportal[j];
+			if (refSep) {
+				common->Warning(
+					"Separators %s and %s cover same portal %d at %s",
+					refSep, name, brushnum, w.GetCenter().ToString()
+				);
+			}
+			else
+				refSep = name;
+
+			if (prevJ >= 0) {
+				const idWinding &prevW = *interAreaPortals[prevJ].side->winding;
+				int prevNum = interAreaPortals[prevJ].brush->brushnum;
+				common->Warning(
+					"Separator %s covers both portal %d at %s and portal %d at %s",
+					name, prevNum, prevW.GetCenter().ToString(), brushnum, w.GetCenter().ToString()
+				);
+			}
+			cnt++;
+			prevJ = j;
+		}
+
+		if (cnt == 0) {
+			common->Warning("Separator %s does not cover any portal", name);
+		}
+	}
+
+	auto CanPass_Locations = [&separatorPerVisportal](node_t *from, uPortal_t *through, node_t *to) -> bool {
+		if ( !Portal_Passable( through ) )
+			return false;					// going into solid
+
+		visportalInfo_t info;
+		if ( !FindVisportalsAtPortal( through, &info, 1 ) )
+			return true;					// can go
+		interAreaPortal_t iap = {0};
+		iap.side = info.side;
+		iap.area0 = through->nodes[0]->area;
+		iap.area1 = through->nodes[1]->area;
+
+		// find visportal we are going through
+		for (int i = 0; i < numInterAreaPortals; i++) {
+			if (IsPortalSame(&iap, &interAreaPortals[i])) {
+				// check if it is covered by location separator
+				if (separatorPerVisportal[i])
+					return false;
+			}
+		}
+
+		return true;
+	};
+
+	struct ILTag {
+		const char *name = NULL;
+		idVec3 origin;
+		node_t *node = NULL;
+	};
+	// which info_location occupies each area
+	idList<ILTag> ilInArea;
+	ilInArea.SetNum(e->numAreas);
+
+	// clear occupied marks now
+	// we will run many searches without clearing marks in-between
+	ClearOccupied_r( e->tree->headnode );
+
+	// read location entities and flood BSP tree from each one
+	for (int entnum = 1; entnum < dmapGlobals.num_entities; entnum++) {
+		const idDict &spawnargs = dmapGlobals.uEntities[entnum].mapEntity->epairs;
+
+		const char *classname = spawnargs.GetString("classname", "");
+		if ( idStr::Icmp(classname, "info_location") != 0)
+			continue;
+		const char *name = spawnargs.GetString("name", "???");
+		idVec3 origin = spawnargs.GetVector("origin");
+
+		node_t *node = FindLeafNodeAtPoint( e->tree->headnode, origin );
+		if (node->opaque) {
+			common->Warning("Location %s is inside opaque geometry", name);
+			continue;
+		}
+
+		int area = node->area;
+		if (!ilInArea[area].node) {
+			// there is no info_location in this area yet
+			// mark all reachable areas as occupied by this info_location
+			idList<node_t*> visited;
+			FindShortestPathThroughBspNodes(
+				NULL, {node}, NULL,
+				LambdaToFuncPtr(CanPass_Locations), &CanPass_Locations,
+				NULL, NULL, &visited
+			);
+			for (int i = 0; i < visited.Num(); i++) {
+				int visArea = visited[i]->area;
+				ilInArea[visArea].name = name;
+				ilInArea[visArea].node = node;
+				ilInArea[visArea].origin = origin;
+			}
+		}
+		else {
+			// this area already occupied by another location entity
+			// find path between them and report it
+			const ILTag &tag = ilInArea[area];
+
+			// we have to clear marks now, since we search path in already visited area
+			ClearOccupied_r( e->tree->headnode );
+
+			idList<node_t*> pathNodes;
+			idList<uPortal_t*> pathPortals;
+			bool found = FindShortestPathThroughBspNodes(
+				NULL, {node}, tag.node,
+				LambdaToFuncPtr(CanPass_Locations), &CanPass_Locations,
+				&pathNodes, &pathPortals, NULL
+			);
+			if (!found) {
+				common->Warning("Failed to find path between overlapping info_locations");
+				return;
+			}
+
+			idList<idVec3> pathPoints;
+			pathPoints.AddGrow(origin);
+			for (int j = 0; j < pathPortals.Num(); j++)
+				pathPoints.AddGrow(pathPortals[j]->winding->GetCenter());
+			pathPoints.AddGrow(tag.origin);
+
+			common->Warning ( "Locations %s and %s overlap", name, tag.name );
+			idStr filename;
+			sprintf( filename, "%s_locationO_%s_%s.lin", dmapGlobals.mapFileBase, name, tag.name );
+
+			idStr ospath = fileSystem->RelativePathToOSPath( filename, "fs_devpath", "" );
+			FILE *linefile = fopen( ospath, "w" );
+			if ( !linefile )
+				common->Error( "Couldn't open %s\n", ospath.c_str() );
+			for ( idVec3 p : pathPoints )
+				fprintf( linefile, "%f %f %f\n", p.x, p.y, p.z );
+			fclose( linefile );
+
+			common->Printf( "saved %s (%i points)\n", filename.c_str(), pathPoints.Num() );
+		}
+	}
+}
+
 
 /*
 =============
@@ -1389,6 +1561,9 @@ void FloodAreas( uEntity_t *e ) {
 		// stgatilov #5129: detecting other issues
 		// for instance, portals fully inside opaque or on opaque surface
 		ReportUnreferencedAreaPortals(e);
+
+		// stgatilov #5354: check info_location-s
+		CheckInfoLocations(e);
 	}
 }
 
