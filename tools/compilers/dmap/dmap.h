@@ -359,6 +359,7 @@ void GLS_EndScene( void );
 typedef struct interAreaPortal_s {
 	int		area0, area1;
 	side_t	*side;
+	uBrush_t *brush;
 } interAreaPortal_t;
 
 extern	interAreaPortal_t interAreaPortals[MAX_INTER_AREA_PORTALS];

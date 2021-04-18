@@ -511,25 +511,31 @@ void FloodPortals_r (node_t *node, int dist) {
 
 /*
 =============
-PlaceOccupant
+FindLeafNodeAtPoint
 =============
 */
-bool PlaceOccupant( node_t *headnode, idVec3 origin, uEntity_t *occupant ) {
-	node_t	*node;
-	float	d;
-	idPlane	*plane;
-
+node_t *FindLeafNodeAtPoint( node_t *headnode, idVec3 origin ) {
 	// find the leaf to start in
-	node = headnode;
+	node_t *node = headnode;
 	while ( node->planenum != PLANENUM_LEAF ) {
-		plane = &dmapGlobals.mapPlanes[node->planenum];
-		d = plane->Distance( origin );
+		const idPlane &plane = dmapGlobals.mapPlanes[node->planenum];
+		float d = plane.Distance( origin );
 		if ( d >= 0.0f ) {
 			node = node->children[0];
 		} else {
 			node = node->children[1];
 		}
 	}
+	return node;
+}
+
+/*
+=============
+PlaceOccupant
+=============
+*/
+bool PlaceOccupant( node_t *headnode, idVec3 origin, uEntity_t *occupant ) {
+	node_t *node = FindLeafNodeAtPoint( headnode, origin );
 
 	if ( node->opaque ) {
 		return false;
@@ -959,6 +965,7 @@ static void FindInterAreaPortals_r( node_t *node ) {
 			iap.area1 = p->nodes[0]->area;
 		}
 		iap.side = side;
+		iap.brush = info[0].brush;
 
 		if ( dmap_bspAllSidesOfVisportal.GetBool() && num > 1 ) {
 			// stgatilov #5129: given that all sides were inserted
@@ -973,6 +980,7 @@ static void FindInterAreaPortals_r( node_t *node ) {
 				for ( i = 0; i < num; i++ ) {
 					interAreaPortal_t temp = iap;
 					temp.side = info[i].side;
+					temp.brush = info[i].brush;
 					overlappingAreaPortals[numOverlappingAreaPortals++] = temp;
 				}
 			}
@@ -1002,9 +1010,9 @@ Tries to find shortest path from start to end node.
 =============
 */
 static bool FindShortestPathThroughBspNodes(
-	uEntity_t *entity, node_t *startNode, node_t *endNode,
-	bool (*canPass)(node_t *from, uPortal_t *through, node_t *to),
-	idList<node_t*> *resNodes, idList<uPortal_t*> *resPortals
+	uEntity_t *entity, const idList<node_t*> &startNodes, node_t *endNode,
+	bool (*canPass)(void *ctx, node_t *from, uPortal_t *through, node_t *to), void *ctx,
+	idList<node_t*> *resNodes, idList<uPortal_t*> *resPortals, idList<node_t*> *resAllVisited
 ) {
 	if (resNodes)
 		resNodes->Clear();
@@ -1015,16 +1023,25 @@ static bool FindShortestPathThroughBspNodes(
 	idList<int> prevIdx;
 	idList<uPortal_t*> byPortal;
 
-	// occupied is used as visited mark and (1 + shortest distance) at once
-	ClearOccupied_r( entity->tree->headnode );
+	if ( entity ) {
+		// occupied is used as visited mark and (1 + shortest distance) at once
+		ClearOccupied_r( entity->tree->headnode );
+	}
 
-	nodesQueue.Append( startNode );
-	nodesQueue[0]->occupied = 1;
-	prevIdx.Append( -1 );
-	byPortal.Append( NULL );
+	bool found = false;
+	for ( int i = 0; i < startNodes.Num(); i++ ) {
+		node_t *node = startNodes[i];
+		if ( node->occupied )
+			continue;
+		nodesQueue.Append( node );
+		node->occupied = 1;
+		prevIdx.Append( -1 );
+		byPortal.Append( NULL );
+		if ( node == endNode )
+			found = true;
+	}
 
 	// pretty standard Breadth-First-Search over leaf-nodes follows:
-	bool found = false;
 	for ( int done = 0; done < nodesQueue.Num() && !found; done++ ) {
 		node_t *node = nodesQueue[done];
 
@@ -1035,7 +1052,7 @@ static bool FindShortestPathThroughBspNodes(
 
 			if ( otherNode->occupied > 0 )
 				continue;					// already visited that node
-			if ( !canPass( node, p, otherNode ) )
+			if ( !canPass( ctx, node, p, otherNode ) )
 				continue;					// forbidden to go through this portal
 
 			otherNode->occupied = node->occupied + 1;
@@ -1050,6 +1067,9 @@ static bool FindShortestPathThroughBspNodes(
 			}
 		}
 	}
+
+	if ( resAllVisited )
+		*resAllVisited = nodesQueue;
 
 	if ( !found )
 		return false;
@@ -1073,111 +1093,114 @@ static bool FindShortestPathThroughBspNodes(
 	return true;
 }
 
-static bool CanPass_Generic( node_t *from, uPortal_t *through, node_t *to ) {
-	if ( !Portal_Passable( through ) )
-		return false;					// going into solid
-	if ( FindSideForPortal( through ) )
-		return false;					// going through visportal
-	return true;
-}
-
-//only used to pass context into CanPass functions below
-static visportalInfo_t canPassContext;
-
-static bool CanPass_BlockSidesOfVisportalBrush( node_t *from, uPortal_t *through, node_t *to ) {
-	if ( !CanPass_Generic( from, through, to ) )
-		return false;
-
-	uBrush_t *visportalBrush = canPassContext.brush;
-	const idPlane &visportalPlane = dmapGlobals.mapPlanes[canPassContext.side->planenum];
-
-	// check all sides of the visportal brush
-	for ( int u = 0; u < visportalBrush->numsides; u++ ) {
-		side_t *uside = &visportalBrush->sides[u];
-		const idPlane &usidePlane = dmapGlobals.mapPlanes[uside->planenum];
-
-		if ( (through->onnode->planenum & ~1) != (uside->planenum & ~1) )
-			continue;	// not on side (wrong plane)
-
-		idPlane windingPlane;
-		uside->winding->GetPlane( windingPlane );
-		if ( !uside->winding->PointInsideDst( windingPlane.Normal(), through->winding->GetCenter(), CLIP_EPSILON ) )
-			continue;	// not on side (out of polygon)
-
-		if ( usidePlane.Normal().Cross( visportalPlane.Normal() ).LengthSqr() <= VECTOR_EPSILON * VECTOR_EPSILON )
-			continue;	// side parallel to visportalled one: can pass
-
-		// cannot pass through nonparallel side of visportal brush
-		return false;
-	}
-
-	return true;
-}
-
-static bool CanPass_GoAlongVisportal( node_t *from, uPortal_t *through, node_t *to ) {
-	if ( !CanPass_Generic( from, through, to ) )
-		return false;
-
-	const idWinding &portalWinding = *canPassContext.side->winding;
-
-	for ( uPortal_t *p = to->portals, *np; p; p = np) {
-		int s = (p->nodes[1] == to);
-		np = p->next[s];
-
-		const idWinding &w = *p->winding;
-		if (portalWinding.PointLiesOn(w.GetCenter(), CLIP_EPSILON))
-			return true;		// dest node touches visportal by face
-
-		int cnt = w.GetNumPoints();
-		for (int i = 0; i < cnt; i++) {
-			idVec3 beg = w[i].ToVec3();
-			idVec3 end = w[(i+1) % cnt].ToVec3();
-			if (portalWinding.PointLiesOn((beg + end) * 0.5, CLIP_EPSILON))
-				return true;	// dest node touches visportal by edge
-		}
-	}
-
-	return false;
-}
-
 /*
 =============
-FindPortalCycleBFS
+ReportDroppedPortal
 
 given a BSP portal having same area on both of its sides with visportal on it,
 finds and reports a path from one side to the other one
 =============
 */
-static bool FindPortalCycleBFS( uEntity_t *entity, uPortal_t *startPortal ) {
+static bool ReportDroppedPortal( uEntity_t *entity, uPortal_t *startPortal ) {
 	int brushnum = -1;
 	visportalInfo_t info;
 	if ( FindVisportalsAtPortal( startPortal, &info, 1 ) )
 		brushnum = info.brush->brushnum;
 
-	canPassContext = info;
+	auto CanPass_Generic = [](node_t *from, uPortal_t *through, node_t *to ) -> bool {
+		if ( !Portal_Passable( through ) )
+			return false;					// going into solid
+		if ( FindSideForPortal( through ) )
+			return false;					// going through visportal
+		return true;
+	};
+
+	auto CanPass_BlockSidesOfVisportalBrush = [info]( node_t *from, uPortal_t *through, node_t *to ) -> bool {
+		if ( !Portal_Passable( through ) )
+			return false;					// going into solid
+		if ( FindSideForPortal( through ) )
+			return false;					// going through visportal
+
+		uBrush_t *visportalBrush = info.brush;
+		const idPlane &visportalPlane = dmapGlobals.mapPlanes[info.side->planenum];
+
+		// check all sides of the visportal brush
+		for ( int u = 0; u < visportalBrush->numsides; u++ ) {
+			side_t *uside = &visportalBrush->sides[u];
+			const idPlane &usidePlane = dmapGlobals.mapPlanes[uside->planenum];
+
+			if ( (through->onnode->planenum & ~1) != (uside->planenum & ~1) )
+				continue;	// not on side (wrong plane)
+
+			idPlane windingPlane;
+			uside->winding->GetPlane( windingPlane );
+			if ( !uside->winding->PointInsideDst( windingPlane.Normal(), through->winding->GetCenter(), CLIP_EPSILON ) )
+				continue;	// not on side (out of polygon)
+
+			if ( usidePlane.Normal().Cross( visportalPlane.Normal() ).LengthSqr() <= VECTOR_EPSILON * VECTOR_EPSILON )
+				continue;	// side parallel to visportalled one: can pass
+
+			// cannot pass through nonparallel side of visportal brush
+			return false;
+		}
+
+		return true;
+	};
+
+	auto CanPass_GoAlongVisportal = [info]( node_t *from, uPortal_t *through, node_t *to ) {
+		if ( !Portal_Passable( through ) )
+			return false;					// going into solid
+		if ( FindSideForPortal( through ) )
+			return false;					// going through visportal
+
+		const idWinding &portalWinding = *info.side->winding;
+
+		for ( uPortal_t *p = to->portals, *np; p; p = np) {
+			int s = (p->nodes[1] == to);
+			np = p->next[s];
+
+			const idWinding &w = *p->winding;
+			if (portalWinding.PointLiesOn(w.GetCenter(), CLIP_EPSILON))
+				return true;		// dest node touches visportal by face
+
+			int cnt = w.GetNumPoints();
+			for (int i = 0; i < cnt; i++) {
+				idVec3 beg = w[i].ToVec3();
+				idVec3 end = w[(i+1) % cnt].ToVec3();
+				if (portalWinding.PointLiesOn((beg + end) * 0.5, CLIP_EPSILON))
+					return true;	// dest node touches visportal by edge
+			}
+		}
+
+		return false;
+	};
+
 	idList<node_t*> pathNodes;
 	idList<uPortal_t*> pathPortals;
 
 	// check if we can find cycle over BSP nodes which touch visportal
 	// if yes, then some part of visportal boundary does not contact opaque geometry (or other visportal)
 	bool leakyBoundary = FindShortestPathThroughBspNodes(
-		entity, startPortal->nodes[0], startPortal->nodes[1],
-		CanPass_GoAlongVisportal, NULL, NULL
+		entity, {startPortal->nodes[0]}, startPortal->nodes[1],
+		LambdaToFuncPtr(CanPass_GoAlongVisportal), &CanPass_GoAlongVisportal,
+		NULL, NULL, NULL
 	);
 
 	// try to find nice-looking cycle with additional constraint:
 	// it does NOT go through side faces of visportal brush
 	bool foundNicePath = FindShortestPathThroughBspNodes(
-		entity, startPortal->nodes[0], startPortal->nodes[1],
-		CanPass_BlockSidesOfVisportalBrush, &pathNodes, &pathPortals
+		entity, {startPortal->nodes[0]}, startPortal->nodes[1],
+		LambdaToFuncPtr(CanPass_BlockSidesOfVisportalBrush), &CanPass_BlockSidesOfVisportalBrush,
+		&pathNodes, &pathPortals, NULL
 	);
 
 	bool found = foundNicePath;
 	if (!found) {
 		// try to find find arbitrary cycle
 		found = FindShortestPathThroughBspNodes(
-			entity, startPortal->nodes[0], startPortal->nodes[1],
-			CanPass_Generic, &pathNodes, &pathPortals
+			entity, {startPortal->nodes[0]}, startPortal->nodes[1],
+			LambdaToFuncPtr(CanPass_Generic), &CanPass_Generic,
+			&pathNodes, &pathPortals, NULL
 		);
 	}
 
@@ -1236,7 +1259,10 @@ static void DetectUnusedAreaPortals_r( uEntity_t *entity, node_t *node ) {
 		if ( other->opaque )
 			continue;
 
-		side_t *side = FindSideForPortal( p );
+		visportalInfo_s info;
+		if ( !FindVisportalsAtPortal(p, &info, 1) )
+			continue;
+		side_t *side = info.side;
 		if ( !side )
 			continue;
 
@@ -1253,6 +1279,7 @@ static void DetectUnusedAreaPortals_r( uEntity_t *entity, node_t *node ) {
 			iap.area1 = p->nodes[0]->area;
 		}
 		iap.side = side;
+		iap.brush = info.brush;
 
 		// see if we have created visportal here
 		int i;
@@ -1280,7 +1307,7 @@ static void DetectUnusedAreaPortals_r( uEntity_t *entity, node_t *node ) {
 
 		// stop wasting time if there are too many dropped portals already
 		if (numDroppedAreaPortals < 100) {
-			FindPortalCycleBFS(entity, p);
+			ReportDroppedPortal(entity, p);
 		}
 		droppedAreaPortals[numDroppedAreaPortals++] = iap;
 	}
@@ -1356,11 +1383,11 @@ void FloodAreas( uEntity_t *e ) {
 		numOverlappingAreaPortals = 0;
 		FindInterAreaPortals_r( e->tree->headnode );
 
-		//stgatilov #5129: detecting dropped portals
+		// stgatilov #5129: detecting dropped portals
 		numDroppedAreaPortals = 0;
 		DetectUnusedAreaPortals_r(e, e->tree->headnode);
-		//stgatilov #5129: detecting other issues
-		//for instance, portals fully inside opaque or on opaque surface
+		// stgatilov #5129: detecting other issues
+		// for instance, portals fully inside opaque or on opaque surface
 		ReportUnreferencedAreaPortals(e);
 	}
 }
