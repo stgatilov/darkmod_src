@@ -298,10 +298,15 @@ idLangDict::GetHashKey
 ============
 */
 int idLangDict::GetHashKey( const char *str ) const {
-	int hashKey = 0;
+/*	int hashKey = 0;
 	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
 		assert( str[0] >= '0' && str[0] <= '9' );
 		hashKey = hashKey * 10 + str[0] - '0';
+	}*/
+	//stgatilov #5261: generic string hashing algorithm (djb2), no assert
+	int hashKey = 5381;
+	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
+		hashKey = (hashKey << 5) + hashKey + str[0];
 	}
 	return hashKey;
 }
