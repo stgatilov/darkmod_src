@@ -88,12 +88,6 @@ namespace {
 		uniforms->sourceTexture.Set(0);
 	}
 
-	void LoadBloomBlurShader(GLSLProgram *blurShader) {
-		blurShader->InitFromFiles( "bloom.vert.glsl", "bloom_blur.frag.glsl" );
-		BloomBlurUniforms *uniforms = blurShader->GetUniformGroup<BloomBlurUniforms>();
-		uniforms->source.Set(0);
-	}
-
 	void LoadBloomUpsampleShader(GLSLProgram *upsampleShader) {
 		upsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_upsample.frag.glsl" );
 		BloomUpsampleUniforms *uniforms = upsampleShader->GetUniformGroup<BloomUpsampleUniforms>();
@@ -137,7 +131,6 @@ void BloomStage::Init() {
 
 	downsampleShader = programManager->LoadFromGenerator("bloom_downsample", LoadBloomDownsampleShader);
 	downsampleWithBrightPassShader = programManager->LoadFromGenerator("bloom_downsample_brightpass", LoadBloomDownsampleWithBrightPassShader);
-	blurShader = programManager->LoadFromGenerator("bloom_blur", LoadBloomBlurShader);
 	upsampleShader = programManager->LoadFromGenerator("bloom_upsample", LoadBloomUpsampleShader);
 	applyShader = programManager->LoadFromGenerator("bloom_apply", LoadBloomApplyShader);
 }
@@ -245,8 +238,8 @@ void BloomStage::Blur() {
 	GL_PROFILE("BloomBlur")
 
 	int step = numDownsamplingSteps - 1;
-	blurShader->Activate();
-	BloomBlurUniforms *uniforms = blurShader->GetUniformGroup<BloomBlurUniforms>();
+	programManager->gaussianBlurShader->Activate();
+	BloomBlurUniforms *uniforms = programManager->gaussianBlurShader->GetUniformGroup<BloomBlurUniforms>();
 
 	// first horizontal Gaussian blur goes from downsampler[lowestMip] to upsampler[lowestMip]
 	GL_SelectTexture( 0 );
@@ -255,14 +248,14 @@ void BloomStage::Blur() {
 	upsampleFBOs[step]->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
 	qglClear(GL_COLOR_BUFFER_BIT);
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 
 	// second vertical Gaussian blur goes from upsampler[lowestMip] to downsampler[lowestMip]
 	uniforms->axis.Set( 0, 1 );
 	downsampleFBOs[step]->Bind();
 	bloomUpSamplers[step]->Bind();
 	qglClear(GL_COLOR_BUFFER_BIT);
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void BloomStage::Upsample() {

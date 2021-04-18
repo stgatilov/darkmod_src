@@ -25,7 +25,6 @@ public:
 private:
 	GLSLProgram *silhouetteShader = nullptr;
 	GLSLProgram *extrudeShader = nullptr;
-	GLSLProgram *blurShader = nullptr;
 	GLSLProgram *applyShader = nullptr;
 
 	idImage *colorTex[2] = { nullptr };

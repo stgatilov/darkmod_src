@@ -59,7 +59,6 @@ namespace {
 void FrobOutlineStage::Init() {
 	silhouetteShader = programManager->LoadFromFiles( "frob_silhouette", "stages/frob/frob.vert.glsl", "stages/frob/frob_silhouette.frag.glsl" );
 	extrudeShader = programManager->LoadFromFiles( "frob_extrude", "stages/frob/frob.vert.glsl", "stages/frob/frob_silhouette.frag.glsl", "stages/frob/frob_extrude.geom.glsl" );
-	blurShader = programManager->LoadFromFiles( "frob_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
 	applyShader = programManager->LoadFromFiles( "frob_apply", "fullscreen_tri.vert.glsl", "stages/frob/frob_apply.frag.glsl" );
 	colorTex[0] = globalImages->ImageFromFunction( "frob_color_0", FB_RenderTexture );
 	colorTex[1] = globalImages->ImageFromFunction( "frob_color_1", FB_RenderTexture );
@@ -193,8 +192,8 @@ void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *s
 }
 
 void FrobOutlineStage::ApplyBlur() {
-	blurShader->Activate();
-	BlurUniforms *uniforms = blurShader->GetUniformGroup<BlurUniforms>();
+	programManager->gaussianBlurShader->Activate();
+	BlurUniforms *uniforms = programManager->gaussianBlurShader->GetUniformGroup<BlurUniforms>();
 	uniforms->source.Set( 0 );
 
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO );

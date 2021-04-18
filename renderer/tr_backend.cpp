@@ -621,7 +621,7 @@ void RB_DrawFullScreenQuad( float e ) {
 }
 
 void RB_DrawFullScreenTri() {
-	GL_Cull( CT_BACK_SIDED );
+	GL_Cull( CT_TWO_SIDED );
 	qglDrawArrays( GL_TRIANGLES, 0, 3 );
 }
 

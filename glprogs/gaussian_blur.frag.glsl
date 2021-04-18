@@ -1,4 +1,4 @@
-#version 140
+#version 330
 
 /**
  * This is a 9-tap Gaussian blur accelerated by making use of the GPU filtering hardware

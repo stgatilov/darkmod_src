@@ -63,6 +63,7 @@ public:
 	GLSLProgram *stencilInteractionShader;
 	GLSLProgram *shadowMapInteractionShader;
 	GLSLProgram *multiLightInteractionShader;
+	GLSLProgram *gaussianBlurShader;
 
 	GLuint uboHandle;
 

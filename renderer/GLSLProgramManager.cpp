@@ -291,6 +291,7 @@ void GLSLProgramManager::Init() {
 	frobShader = Load( "frob" );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	toneMapShader = Load( "tonemap" );
+	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
 	// FIXME duzenko: is it the right way to do this?
 	/*legacyTangentsCvarCallback = r_legacyTangents.AddOnModifiedCallback( [this] () {
 		shadowMapInteractionShader = LoadInteractionShader( "shadowMapInteraction", "interactionA", false );

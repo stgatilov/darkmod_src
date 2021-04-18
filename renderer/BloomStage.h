@@ -38,7 +38,6 @@ private:
 	idImage *bloomUpSamplers[MAX_DOWNSAMPLING_STEPS] = { nullptr };
 	GLSLProgram *downsampleShader = nullptr;
 	GLSLProgram *downsampleWithBrightPassShader = nullptr;
-	GLSLProgram *blurShader = nullptr;
 	GLSLProgram *upsampleShader = nullptr;
 	GLSLProgram *applyShader = nullptr;
 	int numDownsamplingSteps = 0;
