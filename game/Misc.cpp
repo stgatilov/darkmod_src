@@ -2133,7 +2133,7 @@ idVacuumSeparatorEntity::Spawn
 void idVacuumSeparatorEntity::Spawn() {
 	idBounds b;
 
-	b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
+	b = idPortalEntity::GetBounds( spawnArgs.GetVector( "origin" ) );
 	portal = gameRenderWorld->FindPortal( b );
 	if ( !portal ) {
 		gameLocal.Warning( "VacuumSeparator '%s' didn't contact a portal", spawnArgs.GetString( "name" ) );
@@ -2183,12 +2183,21 @@ idPortalEntity::~idPortalEntity() {}
 
 /*
 ================
+idPortalEntity::GetBounds
+================
+*/
+idBounds idPortalEntity::GetBounds( const idVec3 &origin ) {
+	return idBounds( origin ).Expand( 16 );
+}
+
+/*
+================
 idPortalEntity::Spawn
 ================
 */
 void idPortalEntity::Spawn()
 {
-	idBounds b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
+	idBounds b = GetBounds( spawnArgs.GetVector( "origin" ) );
 	m_Portal = gameRenderWorld->FindPortal( b );
 
 	if ( !m_Portal ) 
@@ -2238,7 +2247,7 @@ void idPortalEntity::Event_PostSpawn( void )
 
 	if ( !m_EntityLocationDone )
 	{
-		idBounds b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
+		idBounds b = GetBounds( spawnArgs.GetVector( "origin" ) );
 		idClip_ClipModelList clipModelList;
 		int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, CONTENTS_SOLID, clipModelList );
 

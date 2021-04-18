@@ -997,6 +997,26 @@ int idRenderWorldLocal::NumPortals( void ) const {
 
 /*
 ==============
+DoesVisportalContactBox
+
+stgatilov #5354: checks whether idPortalEntity with given box applies to visportal with given winding.
+This function is called from:
+  idRenderWorldLocal::FindPortal --- assignment of portal entities to portals during game
+  CheckInfoLocations --- static validation of info_locations with info_locationseparator-s
+==============
+*/
+bool idRenderWorldLocal::DoesVisportalContactBox( const idWinding &visportalWinding, const idBounds &box ) {
+	idBounds visportalBox;
+	visportalBox.Clear();
+	for ( int j = 0 ; j < visportalWinding.GetNumPoints() ; j++ ) {
+		visportalBox.AddPoint( visportalWinding[j].ToVec3() );
+	}
+
+	return visportalBox.IntersectsBounds( box );
+}
+
+/*
+==============
 FindPortal
 
 Game code uses this to identify which portals are inside doors.
@@ -1004,22 +1024,12 @@ Returns 0 if no portal contacts the bounds
 ==============
 */
 qhandle_t idRenderWorldLocal::FindPortal( const idBounds &b ) const {
-	int				i, j;
-	idBounds		wb;
-	//doublePortal_t	*portal;
-	//idWinding		*w;
+	for ( int i = 0; i < doublePortals.Num(); i++ ) {
+		const doublePortal_t &portal = doublePortals[i];
+		const idWinding &w = portal.portals[0].w;
 
-	for ( i = 0; i < doublePortals.Num(); i++ ) {
-		auto &portal = doublePortals[i];
-		auto &w = portal.portals[0].w;
-		wb.Clear();
-		for ( j = 0 ; j < w.GetNumPoints() ; j++ ) {
-			wb.AddPoint( w[j].ToVec3() );
-		}
-
-		if ( wb.IntersectsBounds( b ) ) {
+		if ( DoesVisportalContactBox( w, b ) )
 			return i + 1;
-		}
 	}
 	return 0;
 }

@@ -256,6 +256,7 @@ public:
 
 	int						NumPortals( void ) const;
 	qhandle_t				FindPortal( const idBounds &b ) const;
+	static bool				DoesVisportalContactBox( const idWinding &visportalWinding, const idBounds &box );	//stgatilov #5354
 	void					SetPortalState( qhandle_t portal, int blockingBits );
 	int						GetPortalState( qhandle_t portal );
 	idPlane					GetPortalPlane( qhandle_t portal );	//stgatilov #5462

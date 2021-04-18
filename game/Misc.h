@@ -473,6 +473,8 @@ public:
 	idPortalEntity();
 	~idPortalEntity();
 
+	static idBounds		GetBounds( const idVec3 &origin );
+
 	void				Spawn( void );
 
 	void				Save( idSaveGame *savefile ) const;
