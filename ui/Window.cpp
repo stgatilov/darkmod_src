@@ -237,7 +237,7 @@ void idWindow::CleanUp() {
 	// Cleanup the named events
 	namedEvents.DeleteContents(true);
 
-	drawWindows.Clear();
+	drawWindows.ClearFree();
 	children.DeleteContents(true);
 	definedVars.DeleteContents(true);
 	timeLineEvents.DeleteContents(true);

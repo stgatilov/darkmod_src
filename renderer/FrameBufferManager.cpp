@@ -55,7 +55,7 @@ void FrameBufferManager::Shutdown() {
 	for (auto fbo : fbos) {
 		delete fbo;
 	}
-	fbos.Clear();
+	fbos.ClearFree();
 
 	if (pbo != 0) {
 		qglDeleteBuffers(1, &pbo);

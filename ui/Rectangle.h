@@ -171,7 +171,7 @@ class idRegion {
 public:
 	idRegion() { };
 
-	void Empty() {
+	void Clear() {
 		rects.Clear();
 	}
 

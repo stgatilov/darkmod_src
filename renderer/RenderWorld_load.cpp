@@ -41,8 +41,8 @@ void idRenderWorldLocal::FreeWorld() {
 		}
 	}
 
-	portalAreas.Clear();
-	doublePortals.Clear();
+	portalAreas.ClearFree();
+	doublePortals.ClearFree();
 
 	if ( areaNodes ) {
 		R_StaticFree( areaNodes );
@@ -54,7 +54,7 @@ void idRenderWorldLocal::FreeWorld() {
 		renderModelManager->RemoveModel( localModels[i] );
 		delete localModels[i];
 	}
-	localModels.Clear();
+	localModels.ClearFree();
 
 	areaReferenceAllocator.Shutdown();
 	interactionAllocator.Shutdown();

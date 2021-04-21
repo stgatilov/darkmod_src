@@ -1958,7 +1958,7 @@ void idProgram::FreeData( void ) {
 	}
 
 	filename.Clear();
-	fileList.Clear();
+	fileList.ClearFree();
 	statements.Clear();
 	functions.Clear();
 

@@ -66,7 +66,7 @@ struct SBoolParseNode
 		PrevRow = -1;
 
 		bNotted = false;
-		Cols.Clear();
+		Cols.ClearFree();
 		PrevNode = NULL;
 	}
 

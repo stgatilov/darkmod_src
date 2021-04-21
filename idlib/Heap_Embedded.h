@@ -35,8 +35,8 @@ public:
 	void Clear() {
 		bufferPtr = 0;
 		bufferSize = -1;
-		freePos.Clear();
-		freeSize.Clear();
+		freePos.ClearFree();
+		freeSize.ClearFree();
 	}
 	//size of memory required to always fit "count" alive allocations of size <= "size"
 	//note: this property is critical to make sure that idScriptObject addressing works in 64-bit mode!

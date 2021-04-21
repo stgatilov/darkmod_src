@@ -60,7 +60,7 @@ CEscapePointManager::~CEscapePointManager()
 
 void CEscapePointManager::Clear()
 {
-	_escapeEntities->Clear();
+	_escapeEntities->ClearFree();
 }
 
 void CEscapePointManager::Save(idSaveGame *savefile) const

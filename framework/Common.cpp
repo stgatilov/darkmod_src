@@ -680,7 +680,7 @@ idCommonLocal::ClearWarnings
 */
 void idCommonLocal::ClearWarnings( const char *reason ) {
 	warningCaption = reason;
-	warningList.Clear();
+	warningList.ClearFree();
 }
 
 /*
@@ -2950,7 +2950,7 @@ void idCommonLocal::Shutdown( void ) {
 	// free any buffered warning messages
 	ClearWarnings( GAME_NAME " shutdown" );
 	warningCaption.Clear();
-	errorList.Clear();
+	errorList.ClearFree();
 
 	// enable leak test
 	Mem_EnableLeakTest( "tdm_main" );

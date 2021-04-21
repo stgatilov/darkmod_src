@@ -172,7 +172,7 @@ void MaterialDefManager::DestroyMaterialDefLists() {
 		for(int j = 0; j < materialDefs[i].Num(); j++) {
 			delete materialDefs[i][j];
 		}
-		materialDefs[i].Clear();
+		materialDefs[i].ClearFree();
 	}
 }
 

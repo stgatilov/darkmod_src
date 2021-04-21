@@ -172,7 +172,7 @@ public:
 	* Destroys all nodes and clears the tree memory
 	* usage.
 	*/
-	void clear();
+	void Clear();
 
 	void Save( idSaveGame *savefile ) const;
 	void Restore( idRestoreGame *savefile );

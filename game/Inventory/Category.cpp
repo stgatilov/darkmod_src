@@ -35,7 +35,7 @@ CInventoryCategory::CInventoryCategory(CInventory* inventory, const idStr& name)
 // Destructor
 CInventoryCategory::~CInventoryCategory() 
 {
-	m_Item.Clear();
+	m_Item.ClearFree();
 }
 
 bool CInventoryCategory::IsEmpty() const

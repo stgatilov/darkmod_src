@@ -117,8 +117,8 @@ void idDeviceContext::Init() {
 
 void idDeviceContext::Shutdown() {
 	fontName.Clear();
-	clipRects.Clear();
-	fonts.Clear();
+	clipRects.ClearFree();
+	fonts.ClearFree();
 	Clear();
 }
 

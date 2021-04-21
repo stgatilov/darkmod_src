@@ -918,9 +918,9 @@ which can regenerate the data with LoadModel()
 */
 void idRenderModelMD5::PurgeModel() {
 	purged = true;
-	joints.Clear();
-	defaultPose.Clear();
-	meshes.Clear();
+	joints.ClearFree();
+	defaultPose.ClearFree();
+	meshes.ClearFree();
 }
 
 /*

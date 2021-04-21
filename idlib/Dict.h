@@ -73,8 +73,10 @@ public:
 	void				SetDefaults( const idDict *dict );
 						// Tels: like SetDefaults(), but skip all keys starting with "skip"
 	void				SetDefaults( const idDict *dict, const idStr &skip );
-						// clear dict freeing up memory
+						// clear dict retaining memory
 	void				Clear( void );
+						// clear dict freeing up memory
+	void				ClearFree( void );
 						// print the dict
 	void				Print() const;
 

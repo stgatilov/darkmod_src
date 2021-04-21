@@ -15,7 +15,7 @@ static void GLimp_LoadExtensionsBlacklist() {
 	static idList<const char*> ptrs;
 	//parse extensions blacklist
 	text = r_glBlacklistExtensions.GetString();
-	ptrs.Clear();
+	ptrs.ClearFree();
 	for (int i = 0; i < text.Length(); i++)
 		if (text[i] == ' ')
 			text[i] = 0;

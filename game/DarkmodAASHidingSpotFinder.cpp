@@ -1037,7 +1037,7 @@ void CDarkmodAASHidingSpotFinder::CombineRedundantHidingSpots
 void CDarkmodAASHidingSpotFinder::debugClearHidingSpotDrawList()
 {
 	// Clear the list
-	CDarkmodAASHidingSpotFinder::DebugDrawList.Clear();
+	CDarkmodAASHidingSpotFinder::DebugDrawList.ClearFree();
 }
 
 //----------------------------------------------------------------------------

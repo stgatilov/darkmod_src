@@ -723,10 +723,10 @@ void idGameLocal::Shutdown( void ) {
 
 	// Clear http connection
 	m_HttpConnection.reset();
-	m_GuiMessages.Clear();
+	m_GuiMessages.ClearFree();
 
 	aasList.DeleteContents( true );
-	aasNames.Clear();
+	aasNames.ClearFree();
 
 	idAI::FreeObstacleAvoidanceNodes();
 

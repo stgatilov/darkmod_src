@@ -171,18 +171,18 @@ CGlobal::~CGlobal()
 }
 
 void CGlobal::Shutdown() {
-	m_SurfaceHardness.Clear();
-	m_SurfaceHardnessHash.Clear();
+	m_SurfaceHardness.ClearFree();
+	m_SurfaceHardnessHash.Free();
 	if (m_LogFile != NULL)
 	{
 		fclose(m_LogFile);
 		m_LogFile = 0;
 	}
-	m_LightMaterial.Clear();
-	m_Image.Clear();
+	m_LightMaterial.ClearFree();
+	m_Image.ClearFree();
 	m_RenderImage.Unload();
-	m_AcuityNames.Clear();
-	m_AcuityHash.Clear();
+	m_AcuityNames.ClearFree();
+	m_AcuityHash.Free();
 }
 
 void CGlobal::Init()

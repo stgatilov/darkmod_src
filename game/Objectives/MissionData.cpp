@@ -96,8 +96,8 @@ CMissionData::~CMissionData( void )
 void CMissionData::Clear( void )
 {
 	m_bObjsNeedUpdate = false;
-	m_Objectives.Clear();
-	m_ClockedComponents.Clear();
+	m_Objectives.ClearFree();
+	m_ClockedComponents.ClearFree();
 
 	// Clear all the stats 
 	m_Stats.Clear();
@@ -1443,7 +1443,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	// go thru all the objective-related spawnargs
 	while( dict.MatchPrefix( va("obj%d_", Counter) ) != NULL )
 	{
-		ObjTemp.m_Components.Clear();
+		ObjTemp.m_Components.ClearFree();
 		ObjTemp.m_ObjNum = Counter - 1;
 
 		StrTemp = va("obj%d_", Counter);
@@ -2543,7 +2543,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		gui->SetStateInt("ObjStartIdx", 0);
 
 		// reload and redisplay objectives
-		m_Objectives.Clear();
+		m_Objectives.ClearFree();
 
 		idStr startingMapfilename = va("maps/%s", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str());
 

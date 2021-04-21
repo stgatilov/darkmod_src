@@ -721,16 +721,9 @@ void idPhysics_RigidBody::ContactFriction( float deltaTime )
 	// momentums across all points that have the same normal.
 
 	idList<idVec3> normals; // list of different contact point normals
-	normals.Clear();
-
 	idList<idVec3> lm; // list of summed linear momentum for each set of normals
-	lm.Clear();
-
 	idList<idVec3> am; // list of summed angular momentum for each set of normals
-	am.Clear();
-
 	idList<int> normalCount; // list of the number of contributing points for each normal set
-	normalCount.Clear();
 
 	for ( int i = 0 ; i < contacts.Num() ; i++ )
 	{

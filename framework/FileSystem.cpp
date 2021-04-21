@@ -2649,11 +2649,11 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	searchpath_t *sp, *next, *loop;
 
 	gameFolder.Clear();
-	serverPaks.Clear();
+	serverPaks.ClearFree();
 
 	if ( !reloading ) {
-		restartChecksums.Clear();
-		addonChecksums.Clear();
+		restartChecksums.ClearFree();
+		addonChecksums.ClearFree();
 	}
 
 	loadedFileFromDir = false;

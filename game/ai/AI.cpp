@@ -1377,7 +1377,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_AlertGraceCountLimit );
 
 	savefile->ReadInt(num);
-	m_Messages.Clear();
+	m_Messages.ClearFree();
 	for (int i = 0; i < num; i++)
 	{
 		ai::CommMessagePtr message(new ai::CommMessage);
@@ -12243,7 +12243,7 @@ void idAI::ClearMessages(int msgTag)
 {
 	if ( msgTag == 0)
 	{
-		m_Messages.Clear();
+		m_Messages.ClearFree();
 		return;
 	}
 
@@ -12256,6 +12256,7 @@ void idAI::ClearMessages(int msgTag)
 			m_Messages.RemoveIndex(i--);
 		}
 	}
+	m_Messages.Condense();
 }
 
 // grayman #3424 - Do I have an outgoing message of a certain type

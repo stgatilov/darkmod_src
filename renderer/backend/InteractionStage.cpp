@@ -151,7 +151,7 @@ void InteractionStage::Init() {
 void InteractionStage::Shutdown() {
 	qglDeleteBuffers( 1, &poissonSamplesUbo );
 	poissonSamplesUbo = 0;
-	poissonSamples.Clear();
+	poissonSamples.ClearFree();
 }
 
 void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *interactionSurfs ) {

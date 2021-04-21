@@ -138,8 +138,8 @@ void idAnim::SetAnim( const idDeclModelDef *modelDef, const char *sourcename, co
 		delete frameCommands[ i ].string;
 	}
 
-	frameLookup.Clear();
-	frameCommands.Clear();
+	frameLookup.ClearFree();
+	frameCommands.ClearFree();
 }
 
 /*
@@ -3089,13 +3089,13 @@ idDeclModelDef::FreeData
 */
 void idDeclModelDef::FreeData( void ) {
 	anims.DeleteContents( true );
-	joints.Clear();
-	jointParents.Clear();
+	joints.ClearFree();
+	jointParents.ClearFree();
 	modelHandle	= NULL;
 	skin = NULL;
 	offset.Zero();
 	for ( int i = 0; i < ANIM_NumAnimChannels; i++ ) {
-		channelJoints[i].Clear();
+		channelJoints[i].ClearFree();
 	}
 }
 

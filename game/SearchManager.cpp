@@ -56,7 +56,7 @@ void CSearchManager::Clear()
 		_searches[i] = NULL;
 	}
 
-	_searches.Clear();
+	_searches.ClearFree();
 	_uniqueSearchID = 1;
 	_nextThinkTime = 0; // grayman #4220
 }
@@ -94,9 +94,9 @@ Search* CSearchManager::StartNewSearch(idAI* ai)
 	search->_exclusion_limits = searchExclusionBounds; // exclusion boundary of the search
 	search->_outerRadius = 0.0f; // outer radius of search boundary
 	search->_referenceAlertLevel = ai->AI_AlertLevel; // used when allocating alert levels to AI responding to help requests
-	search->_hidingSpots.clear(); // The hiding spots for this search
+	search->_hidingSpots.Clear(); // The hiding spots for this search
 	search->_hidingSpotsReady = false; // whether the hiding spot list is complete or still being built
-	search->_guardSpots.Clear(); // spots to send guards to
+	search->_guardSpots.ClearFree(); // spots to send guards to
 	search->_guardSpotsReady = false; // whether the list of guard spots is ready for use or not
 	search->_searcherCount = 0; // number of searchers
 
@@ -757,7 +757,7 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 				refCount
 			);
 
-		search->_hidingSpots.clear();
+		search->_hidingSpots.Clear();
 
 		p_hidingSpotFinder->hidingSpotList.copy(&search->_hidingSpots);
 		//p_hidingSpotFinder->hidingSpotList.getOneNth(refCount,search->_hidingSpots); // grayman #3857 - don't do this any more
@@ -1715,7 +1715,6 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 
 	// Find all guard entities nearby (less than SEARCH_MAX_GUARD_SPOT_DISTANCE away)
 	idList<tdmPathGuard*> guardEntities;
-	guardEntities.Clear();
 	for ( idEntity* ent = gameLocal.spawnedEntities.Next() ; ent != NULL ; ent = ent->spawnNode.Next() )
 	{
 		if ( !ent || !ent->IsType( tdmPathGuard::Type ) )
@@ -1978,7 +1977,7 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 	}
 
 	// No hiding spots
-	search->_hidingSpots.clear();
+	search->_hidingSpots.Clear();
 }
 
 // grayman #4220 - for each active searcher, see if there's an opportunity
@@ -2204,7 +2203,7 @@ void CSearchManager::ProcessSearches()
 		if (searcherCount == 0)
 		{
 			destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
-			search->_assignments.Clear();
+			search->_assignments.ClearFree();
 			search->_searchID = -1; // mark it for recycling
 			continue;
 		}

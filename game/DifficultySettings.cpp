@@ -514,7 +514,7 @@ void CVARSetting::ParseFromDict(const idDict& dict, int level, int index)
 
 void CVARDifficultySettings::Clear()
 {
-	_settings.Clear();
+	_settings.ClearFree();
 	_level = -1;
 }
 

@@ -205,7 +205,7 @@ void CModelGenerator::Clear( void ) {
 			m_LODList[i].LODPtr = NULL;
 		}
 	}
-	m_LODList.Clear();
+	m_LODList.ClearFree();
 #ifdef M_DEBUG
 	gameLocal.Printf("ModelGenerator::Clear() done.\n");
 #endif

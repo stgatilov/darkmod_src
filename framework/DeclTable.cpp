@@ -81,7 +81,7 @@ idDeclTable::FreeData
 void idDeclTable::FreeData( void ) {
 	snap = false;
 	clamp = false;
-	values.Clear();
+	values.ClearFree();
 }
 
 /*

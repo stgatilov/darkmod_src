@@ -33,10 +33,10 @@ void CShop::Init()
 
 void CShop::Clear()
 {
-	_itemsForSale.Clear();
-	_itemsPurchased.Clear();
-	_startingItems.Clear();
-	_itemDefs.Clear();
+	_itemsForSale.ClearFree();
+	_itemsPurchased.ClearFree();
+	_startingItems.ClearFree();
+	_itemDefs.ClearFree();
 	_forSaleTop = 0;
 	_purchasedTop = 0;
 	_startingTop = 0;

@@ -104,8 +104,8 @@ int idPlaneSet::FindPlane( const idPlane &plane, const float normalEps, const fl
 	}
 }
 
-void idPlaneSet::Clear( void ) {
-	idList<idPlane>::Clear();
+void idPlaneSet::ClearFree( void ) {
+	idList<idPlane>::ClearFree();
 	hash.Free();
 }
 

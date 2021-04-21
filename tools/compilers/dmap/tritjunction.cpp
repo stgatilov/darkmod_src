@@ -430,8 +430,8 @@ void FreeTJunctionHash( void ) {
 	}
 	memset( hashVerts, 0, sizeof( hashVerts ) );
 
-	allVertRefs.Clear();
-	allVertDsu.Clear();
+	allVertRefs.ClearFree();
+	allVertDsu.ClearFree();
 }
 
 

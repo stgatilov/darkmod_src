@@ -160,7 +160,7 @@ void idAASBuild::MergeLeafNodes( idBrushBSP &bsp ) {
 		//I checked this to be OK because zombies are fully zeroed
 		delete zombieNodes[i];	
 	}
-	zombieNodes.Clear();
+	zombieNodes.ClearFree();
 
 	common->Printf( "\r%6d leaf nodes merged\n", numMergedLeafNodes );
 }

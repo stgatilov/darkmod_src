@@ -109,18 +109,18 @@ const idPoolStr *idStrPool::CopyString( const idPoolStr *poolStr ) {
 
 /*
 ================
-idStrPool::Clear
+idStrPool::ClearFree
 ================
 */
-void idStrPool::Clear( void ) {
+void idStrPool::ClearFree( void ) {
 	int i;
 
 	for ( i = 0; i < pool.Num(); i++ ) if ( pool[i] )  {
 		pool[i]->numUsers = 0;
 		delete pool[i];
 	}
-	freeList.Clear();
-	pool.Clear();
+	freeList.ClearFree();
+	pool.ClearFree();
 	poolHash.Free();
 }
 

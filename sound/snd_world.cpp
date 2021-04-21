@@ -860,7 +860,6 @@ bool idSoundWorldLocal::ResolveOrigin( bool primary, const int stackDepth, const
 	int numPortals = rw->NumPortalsInArea( soundArea );
 
 	idList<SoundChainResults *> chainResults;
-	chainResults.Clear();
 	
 	for ( int p = 0 ; p < numPortals ; p++ )
 	{
@@ -1039,7 +1038,6 @@ bool idSoundWorldLocal::ResolveOrigin( bool primary, const int stackDepth, const
 			float maxd = def->maxDistance * METERS_TO_DOOM;
 			bool quadratic = idSoundSystemLocal::s_quadraticFalloff.GetBool();
 			idList<float> volList; // list of effective chain volumes
-			volList.Clear();
 	
 			for ( int i = 0 ; i < numChains ; i++ )
 			{

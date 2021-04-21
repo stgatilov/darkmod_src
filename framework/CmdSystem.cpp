@@ -340,8 +340,8 @@ void idCmdSystemLocal::Shutdown( void ) {
 	}
 
 	completionString.Clear();
-	completionParms.Clear();
-	tokenizedCmds.Clear();
+	completionParms.ClearFree();
+	tokenizedCmds.ClearFree();
 	postReload.Clear();
 }
 

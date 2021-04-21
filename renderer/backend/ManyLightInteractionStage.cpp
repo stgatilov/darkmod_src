@@ -165,7 +165,7 @@ void ManyLightInteractionStage::Init() {
 void ManyLightInteractionStage::Shutdown() {
 	qglDeleteBuffers( 1, &poissonSamplesUbo );
 	poissonSamplesUbo = 0;
-	poissonSamples.Clear();
+	poissonSamples.ClearFree();
 	delete[] lightParams;
 	lightParams = nullptr;
 }

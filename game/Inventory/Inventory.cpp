@@ -56,8 +56,8 @@ CInventory::~CInventory()
 void CInventory::Clear()
 {
 	m_Owner = NULL;
-	m_Category.Clear();
-	m_Cursor.Clear();
+	m_Category.ClearFree();
+	m_Cursor.ClearFree();
 }
 
 int	CInventory::GetNumCategories() const

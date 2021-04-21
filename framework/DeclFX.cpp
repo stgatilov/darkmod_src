@@ -458,5 +458,5 @@ idDeclFX::FreeData
 ===================
 */
 void idDeclFX::FreeData( void ) {
-	events.Clear();
+	events.ClearFree();
 }

@@ -729,9 +729,9 @@ void idWeapon::Clear( void ) {
 			ent->Event_Remove();
 	}
 
-	m_Attachments.Clear();
+	m_Attachments.ClearFree();
 
-	m_animRates.Clear();
+	m_animRates.ClearFree();
 
 	// clear attack flags on the player
 	if( owner )

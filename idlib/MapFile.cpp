@@ -1070,7 +1070,7 @@ bool idMapFile::Parse( const char *filename, bool ignoreRegion, bool osPath ) {
 						entities[0]->primitives.Append(pr);
 					}
 					// End of #4300
-					mapEnt->primitives.Clear();
+					mapEnt->primitives.ClearFree();
 				}
 			}
 		}

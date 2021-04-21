@@ -233,11 +233,11 @@ ResetDmapGlobals
 void ResetDmapGlobals( void ) {
 	dmapGlobals.mapFileBase[0] = '\0';
 	dmapGlobals.dmapFile = NULL;
-	dmapGlobals.mapPlanes.Clear();
+	dmapGlobals.mapPlanes.ClearFree();
 	dmapGlobals.num_entities = 0;
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
-	dmapGlobals.mapLights.Clear();
+	dmapGlobals.mapLights.ClearFree();
 	dmapGlobals.verbose = VL_CONCISE;
 	dmapGlobals.glview = false;
 	dmapGlobals.noOptimize = false;
@@ -496,7 +496,7 @@ void Dmap( const idCmdArgs &args ) {
 	delete dmapGlobals.dmapFile;
 
 	// clear the map plane list
-	dmapGlobals.mapPlanes.Clear();
+	dmapGlobals.mapPlanes.ClearFree();
 
 #ifdef _WIN32
 	if ( com_outputMsg && com_hwndMsg != NULL ) {

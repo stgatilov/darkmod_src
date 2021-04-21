@@ -57,7 +57,7 @@ void GLSLProgramManager::Shutdown() {
 	for( auto it : programs ) {
 		delete it.program;
 	}
-	programs.Clear();
+	programs.ClearFree();
 
 	frobShader = nullptr;
 	cubeMapShader = nullptr;

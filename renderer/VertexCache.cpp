@@ -461,7 +461,7 @@ void idVertexCache::PrepareStaticCacheForUpload() {
 		}
 		buffer.UnmapBuffer( offset );
 #endif
-		staticList.Clear();
+		staticList.ClearFree();
 	};
 	for ( int i = 0; i < VERTCACHE_NUM_FRAMES; i++ )
 		EndFrame();

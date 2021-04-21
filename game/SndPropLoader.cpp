@@ -565,7 +565,6 @@ void CsndPropLoader::FillAPGfromAP ( int numAreas )
 	int i, j, area(0);
 
 	m_AreaPropsG.Clear();
-
 	m_AreaPropsG.SetNum( numAreas );
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Allocated m_AreaPropsG for %d areas\r", numAreas );
@@ -956,10 +955,10 @@ void CsndPropLoader::Shutdown( void )
 	DestroyAreasData();
 
 	// clear the area properties
-	m_AreaProps.Clear();
+	m_AreaProps.ClearFree();
 
 	m_bDefaultSpherical = false;
 	m_bLoadSuccess = false;
 
-	m_AreaPropsG.Clear();
+	m_AreaPropsG.ClearFree();
 }

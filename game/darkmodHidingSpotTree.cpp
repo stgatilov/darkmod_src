@@ -48,21 +48,17 @@ CDarkmodHidingSpotTree::CDarkmodHidingSpotTree() :
 */
 CDarkmodHidingSpotTree::~CDarkmodHidingSpotTree()
 {
-	clear();
+	Clear();
 }
 
 //--------------------------------------------------------------------------
 
-void CDarkmodHidingSpotTree::clear()
+void CDarkmodHidingSpotTree::Clear()
 {
 	TDarkmodHidingSpotAreaNode* p_node = p_firstArea;
 	while (p_node != NULL)
 	{
-		for (int i = 0; i < p_node->spots.Num(); i++)
-		{
-			delete p_node->spots[i];
-		}
-		p_node->spots.Clear();
+		p_node->spots.DeleteContents( true );
 
 		TDarkmodHidingSpotAreaNode* p_temp2 = p_node->p_nextSibling;
 		delete p_node;
@@ -676,7 +672,7 @@ bool CDarkmodHidingSpotTree::subDivideArea
 	}
 
 	// Remove all node pointers from the original list
-	in_p_areaNode->spots.Clear();
+	in_p_areaNode->spots.ClearFree();
 
 	// Make nodes for any subArea that isn't empty
 	bool b_originalUsed = false;
@@ -1018,7 +1014,7 @@ bool CDarkmodHidingSpotTree::copy(CDarkmodHidingSpotTree* p_out_otherTree)
 		return false;
 	}
 
-	p_out_otherTree->clear();
+	p_out_otherTree->Clear();
 
 	TDarkmodHidingSpotAreaNode* p_areaCursor = p_firstArea;
 	while (p_areaCursor != NULL)

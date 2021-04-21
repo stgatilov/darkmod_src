@@ -2250,7 +2250,7 @@ void idRenderModelStatic::PurgeModel() {
 			R_FreeStaticTriSurf( surf->geometry );
 		}
 	}
-	surfaces.Clear();
+	surfaces.ClearFree();
 
 	purged = true;
 }

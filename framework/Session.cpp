@@ -1659,8 +1659,6 @@ const idStr GetNextQuicksaveFilename()
 	// Get the list of existing save games
 	idStrList fileList;
 	idList<fileTIME_T> fileTimes;
-	fileList.Clear();
-	fileTimes.Clear();
 	sessLocal.GetSaveGameList( fileList, fileTimes ); // fileTimes is sorted, most recent first
 
 	// Count the number of quicksaves and remember the oldest one we saw
@@ -1702,8 +1700,6 @@ const idStr GetMostRecentQuicksaveFilename()
 	// Get the list of existing save games
 	idStrList fileList;
 	idList<fileTIME_T> fileTimes;
-	fileList.Clear();
-	fileTimes.Clear();
 	sessLocal.GetSaveGameList( fileList, fileTimes ); 
 
 	// fileTimes is sorted, most recent first. Find the first quick save

@@ -118,7 +118,7 @@ void idDict::TransferKeyValues( idDict &other ) {
 	}
 	argHash = other.argHash;
 
-	other.args.Clear();
+	other.args.ClearFree();
 	other.argHash.Free();
 }
 
@@ -220,6 +220,22 @@ void idDict::Clear( void ) {
 	}
 
 	args.Clear();
+	argHash.Clear();
+}
+
+/*
+================
+idDict::ClearFree
+================
+*/
+void idDict::ClearFree( void ) {
+
+	for( int i = 0; i < args.Num(); i++ ) {
+		globalKeys.FreeString( args[i].key );
+		globalValues.FreeString( args[i].value );
+	}
+
+	args.ClearFree();
 	argHash.Free();
 }
 
@@ -623,8 +639,8 @@ idDict::Shutdown
 ================
 */
 void idDict::Shutdown( void ) {
-	globalKeys.Clear();
-	globalValues.Clear();
+	globalKeys.ClearFree();
+	globalValues.ClearFree();
 }
 
 /*

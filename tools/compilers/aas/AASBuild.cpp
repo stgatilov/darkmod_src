@@ -68,7 +68,7 @@ void idAASBuild::Shutdown( void ) {
 	numGravitationalSubdivisions = 0;
 	numMergedLeafNodes = 0;
 	numLedgeSubdivisions = 0;
-	ledgeList.Clear();
+	ledgeList.ClearFree();
 	if ( ledgeMap ) {
 		delete ledgeMap;
 		ledgeMap = NULL;

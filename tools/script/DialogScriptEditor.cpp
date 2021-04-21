@@ -409,7 +409,7 @@ ScriptEditorShutdown
 void ScriptEditorShutdown( void ) {
 	delete g_ScriptDialog;
 	g_ScriptDialog = NULL;
-	scriptEvents.Clear();
+	scriptEvents.ClearFree();
 }
 
 

@@ -27,9 +27,9 @@ namespace ai {
 
 void ConversationSystem::Clear()
 {
-	_conversations.Clear();
-	_activeConversations.Clear();
-	_dyingConversations.Clear();
+	_conversations.ClearFree();
+	_activeConversations.ClearFree();
+	_dyingConversations.ClearFree();
 }
 
 void ConversationSystem::Init(idMapFile* mapFile)
@@ -196,7 +196,7 @@ void ConversationSystem::Save(idSaveGame* savefile) const
 
 void ConversationSystem::Restore(idRestoreGame* savefile)
 {
-	_conversations.Clear();
+	_conversations.ClearFree();
 
 	int num;
 	savefile->ReadInt(num);

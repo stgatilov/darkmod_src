@@ -66,9 +66,9 @@ void idMD5Anim::Free( void ) {
 
 	totaldelta.Zero();
 
-	jointInfo.Clear();
-	bounds.Clear();
-	componentFrames.Clear();
+	jointInfo.ClearFree();
+	bounds.ClearFree();
+	componentFrames.ClearFree();
 }
 
 /*
@@ -947,7 +947,7 @@ idAnimManager::Shutdown
 */
 void idAnimManager::Shutdown( void ) {
 	animations.DeleteContents();
-	jointnames.Clear();
+	jointnames.ClearFree();
 	jointnamesHash.Free();
 }
 

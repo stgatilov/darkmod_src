@@ -27,7 +27,7 @@
 class idPlaneSet : public idList<idPlane> {
 public:
 
-	void					Clear( void );
+	void					ClearFree( void );
 	void					Init( int newHashSize, int newIndexSize );
 
 	int						FindPlane( const idPlane &plane, const float normalEps, const float distEps );

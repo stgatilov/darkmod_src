@@ -434,8 +434,8 @@ void idClass::Shutdown( void ) {
 	for( c = typelist; c != NULL; c = c->next ) {
 		c->Shutdown();
 	}
-	types.Clear();
-	typenums.Clear();
+	types.ClearFree();
+	typenums.ClearFree();
 
 	initialized = false;
 }

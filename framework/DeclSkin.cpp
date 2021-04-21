@@ -34,7 +34,7 @@ idDeclSkin::FreeData
 ================
 */
 void idDeclSkin::FreeData( void ) {
-	mappings.Clear();
+	mappings.ClearFree();
 }
 
 /*

@@ -445,7 +445,7 @@ void Seed::ClearClasses( void )
 			m_Classes[i].spawnArgs = NULL;
 		}
 	}
-	m_Classes.Clear();
+	m_Classes.ClearFree();
 	m_iNumStaticMulties = 0;
 }
 
@@ -1934,7 +1934,7 @@ void Seed::Prepare( void )
 	seed_entity_t		SeedEntity;
 
 	// Gather all targets and make a note of them
-	m_Classes.Clear();
+	m_Classes.ClearFree();
 	m_Inhibitors.Clear();
 	m_Watched.Clear();
 
@@ -2057,7 +2057,6 @@ void Seed::Prepare( void )
 
 	// to relay these spawnargs
 	idList< idStr > sa;
-	sa.Clear();
 	sa.Append("_bunching");
 	sa.Append("_color_min");
 	sa.Append("_color_max");

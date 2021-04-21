@@ -61,7 +61,7 @@ public:
 	const idPoolStr *	AllocString( const char *string );
 	void				FreeString( const idPoolStr *poolStr );
 	const idPoolStr *	CopyString( const idPoolStr *poolStr );
-	void				Clear( void );
+	void				ClearFree( void );
 	void				Compress( void );
 
 	void				PrintAll( const char *label );

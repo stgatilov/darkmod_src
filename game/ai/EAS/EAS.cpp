@@ -33,9 +33,9 @@ tdmEAS::tdmEAS(idAASLocal* aas) :
 
 void tdmEAS::Clear()
 {
-	_elevators.Clear();
-	_clusterInfo.clear();
-	_elevatorStations.clear();
+	_elevators.ClearFree();
+	_clusterInfo.swap(ClusterInfoVector());
+	_elevatorStations.swap(ElevatorStationVector());
 }
 
 void tdmEAS::AddElevator(CMultiStateMover* mover)
