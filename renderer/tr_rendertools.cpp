@@ -2520,10 +2520,22 @@ void R_Tools() {
 	static idCVarInt r_maxTri( "r_maxTri", "0", CVAR_RENDERER, "Limit max tri per draw call" );
 	if ( r_maxTri ) {
 		auto limitTris = []( drawSurf_t* surf ) {
-			surf->numIndexes = Min<int>( r_maxTri, surf->numIndexes );
+			surf->numIndexes = Min<int>( r_maxTri*3, surf->numIndexes );
 		};
 		for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ )
 			limitTris( tr.viewDef->drawSurfs[i] );
+		for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next ) {
+			for ( drawSurf_t* surf = vLight->globalInteractions; surf; surf = surf->nextOnLight )
+				limitTris( surf );
+			for ( drawSurf_t* surf = vLight->localInteractions; surf; surf = surf->nextOnLight )
+				limitTris( surf );
+			for ( drawSurf_t* surf = vLight->globalShadows; surf; surf = surf->nextOnLight )
+				limitTris( surf );
+			for ( drawSurf_t* surf = vLight->localShadows; surf; surf = surf->nextOnLight )
+				limitTris( surf );
+			for ( drawSurf_t* surf = vLight->translucentInteractions; surf; surf = surf->nextOnLight )
+				limitTris( surf );
+		}
 	}
 	if ( r_showEntityDraws )
 		for ( auto ent = tr.viewDef->viewEntitys; ent; ent = ent->next ) {
