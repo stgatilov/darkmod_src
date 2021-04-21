@@ -1522,6 +1522,9 @@
     <ClInclude Include="idlib\containers\DisjointSets.h">
       <Filter>idLib\Containers</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\FrobOutlineStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2782,9 +2785,6 @@
     <ClCompile Include="tools\compilers\dmap\glfile.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
-    <ClCompile Include="tools\compilers\dmap\leakfile.cpp">
-      <Filter>Tools\Compilers\DMap</Filter>
-    </ClCompile>
     <ClCompile Include="tools\compilers\dmap\map.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
@@ -2985,6 +2985,12 @@
     </ClCompile>
     <ClCompile Include="idlib\containers\DisjointSets.cpp">
       <Filter>idLib\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\FrobOutlineStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\sys_cpu.cpp">
+      <Filter>Sys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

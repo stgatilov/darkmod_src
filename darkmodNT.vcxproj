@@ -706,6 +706,7 @@
     <ClInclude Include="renderer\AmbientOcclusionStage.h" />
     <ClInclude Include="renderer\backend\DepthStage.h" />
     <ClInclude Include="renderer\backend\DrawBatchExecutor.h" />
+    <ClInclude Include="renderer\backend\FrobOutlineStage.h" />
     <ClInclude Include="renderer\backend\GpuBuffer.h" />
     <ClInclude Include="renderer\backend\InteractionStage.h" />
     <ClInclude Include="renderer\backend\ManyLightInteractionStage.h" />
@@ -1182,6 +1183,7 @@
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp" />
     <ClCompile Include="renderer\backend\DepthStage.cpp" />
     <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp" />
+    <ClCompile Include="renderer\backend\FrobOutlineStage.cpp" />
     <ClCompile Include="renderer\backend\GpuBuffer.cpp" />
     <ClCompile Include="renderer\backend\InteractionStage.cpp" />
     <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp" />
@@ -1281,6 +1283,7 @@
     <ClCompile Include="sound\snd_system.cpp" />
     <ClCompile Include="sound\snd_wavefile.cpp" />
     <ClCompile Include="sound\snd_world.cpp" />
+    <ClCompile Include="sys\sys_cpu.cpp" />
     <ClCompile Include="sys\sys_local.cpp" />
     <ClCompile Include="sys\sys_padinput.cpp" />
     <ClCompile Include="sys\win32\win_cpu.cpp" />
@@ -1311,7 +1314,6 @@
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />
     <ClCompile Include="tools\compilers\dmap\glfile.cpp" />
-    <ClCompile Include="tools\compilers\dmap\leakfile.cpp" />
     <ClCompile Include="tools\compilers\dmap\map.cpp" />
     <ClCompile Include="tools\compilers\dmap\optimize.cpp" />
     <ClCompile Include="tools\compilers\dmap\output.cpp" />
