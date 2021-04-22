@@ -231,7 +231,7 @@ idRenderModelManagerLocal::Shutdown
 */
 void idRenderModelManagerLocal::Shutdown() {
 	models.DeleteContents( true );
-	hash.Free();
+	hash.ClearFree();
 }
 
 /*

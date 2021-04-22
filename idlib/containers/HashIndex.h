@@ -55,9 +55,9 @@ public:
 					// clear the hash
 	void			Clear( void );
 					// clear and resize
-	void			Clear( const int newHashSize, const int newIndexSize );
+	void			ClearFree( const int newHashSize, const int newIndexSize );
 					// free allocated memory
-	void			Free( void );
+	void			ClearFree( void );
 					// get size of hash table
 	int				GetHashSize( void ) const;
 					// get size of the index
@@ -114,7 +114,7 @@ idHashIndex::~idHashIndex
 ================
 */
 ID_INLINE idHashIndex::~idHashIndex( void ) {
-	Free();
+	ClearFree();
 }
 
 /*
@@ -148,7 +148,7 @@ ID_INLINE idHashIndex &idHashIndex::operator=( const idHashIndex &other ) {
 	if ( other.lookupMask == 0 ) {
 		hashSize = other.hashSize;
 		indexSize = other.indexSize;
-		Free();
+		ClearFree();
 	}
 	else {
 		if ( other.hashSize != hashSize || hash == INVALID_INDEX ) {
@@ -321,11 +321,11 @@ ID_INLINE void idHashIndex::Clear( void ) {
 
 /*
 ================
-idHashIndex::Clear
+idHashIndex::ClearFree
 ================
 */
-ID_INLINE void idHashIndex::Clear( const int newHashSize, const int newIndexSize ) {
-	Free();
+ID_INLINE void idHashIndex::ClearFree( const int newHashSize, const int newIndexSize ) {
+	ClearFree();
 	hashSize = newHashSize;
 	indexSize = newIndexSize;
 }

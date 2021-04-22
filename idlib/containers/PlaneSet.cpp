@@ -106,11 +106,11 @@ int idPlaneSet::FindPlane( const idPlane &plane, const float normalEps, const fl
 
 void idPlaneSet::ClearFree( void ) {
 	idList<idPlane>::ClearFree();
-	hash.Free();
+	hash.ClearFree();
 }
 
 void idPlaneSet::Init( int newHashSize, int newIndexSize ) {
 	idList<idPlane>::AssureSize( newIndexSize );
 	idList<idPlane>::SetNum( 0, false );
-	hash.Clear(newHashSize, newIndexSize);
+	hash.ClearFree(newHashSize, newIndexSize);
 }

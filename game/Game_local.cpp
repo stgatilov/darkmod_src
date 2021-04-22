@@ -351,7 +351,7 @@ void idGameLocal::Clear( void )
 	locationEntities = NULL;
 	smokeParticles = NULL;
 	editEntities = NULL;
-	entityHash.Clear( 1024, MAX_GENTITIES );
+	entityHash.ClearFree( 1024, MAX_GENTITIES );
 	inCinematic = false;
 	cinematicSkipTime = 0;
 	cinematicStopTime = 0;
@@ -2374,7 +2374,7 @@ void idGameLocal::MapClear( bool clearClients ) {
 		spawnIds[ i ] = -1;
 	}
 
-	entityHash.Clear( 1024, MAX_GENTITIES );
+	entityHash.ClearFree( 1024, MAX_GENTITIES );
 
 	if ( !clearClients ) {
 		// add back the hashes of the clients

@@ -887,7 +887,7 @@ void idDeclManagerLocal::Shutdown( void ) {
 			delete decl;
 		}
 		linearLists[i].ClearFree();
-		hashTables[i].Free();
+		hashTables[i].ClearFree();
 	}
 
 	// free decl files

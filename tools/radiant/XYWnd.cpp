@@ -4070,7 +4070,7 @@ void CleanCopyEntities() {
 	entity_t	*pe = g_enClipboard.next;
 	while (pe != NULL && pe != &g_enClipboard) {
 		entity_t	*next = pe->next;
-		pe->epairs.Clear();
+		pe->epairs.ClearFree();
 
 		Entity_Free(pe);
 		pe = next;

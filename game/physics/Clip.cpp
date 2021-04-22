@@ -70,7 +70,7 @@ idClipModel::ClearTraceModelCache
 */
 void idClipModel::ClearTraceModelCache( void ) {
 	traceModelCache.DeleteContents( true );
-	traceModelHash.Free();
+	traceModelHash.ClearFree();
 }
 
 /*

@@ -948,7 +948,7 @@ idAnimManager::Shutdown
 void idAnimManager::Shutdown( void ) {
 	animations.DeleteContents();
 	jointnames.ClearFree();
-	jointnamesHash.Free();
+	jointnamesHash.ClearFree();
 }
 
 /*

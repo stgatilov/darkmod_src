@@ -121,7 +121,7 @@ void idStrPool::ClearFree( void ) {
 	}
 	freeList.ClearFree();
 	pool.ClearFree();
-	poolHash.Free();
+	poolHash.ClearFree();
 }
 
 /*

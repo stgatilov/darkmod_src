@@ -89,7 +89,7 @@ private:
 ID_INLINE idRegisterList::idRegisterList() {
 	regs.SetGranularity( 4 );
 	regHash.SetGranularity( 4 );
-	regHash.Clear( 32, 4 );
+	regHash.ClearFree( 32, 4 );
 }
 
 ID_INLINE idRegisterList::~idRegisterList() {

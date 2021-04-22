@@ -45,7 +45,7 @@ idHashIndex::Allocate
 void idHashIndex::Allocate( const int newHashSize, const int newIndexSize ) {
 	assert( idMath::IsPowerOfTwo( newHashSize ) );
 
-	Free();
+	ClearFree();
 	hashSize = newHashSize;
 	hash = new int[hashSize];
 	memset( hash, 0xff, hashSize * sizeof( hash[0] ) );
@@ -58,10 +58,10 @@ void idHashIndex::Allocate( const int newHashSize, const int newIndexSize ) {
 
 /*
 ================
-idHashIndex::Free
+idHashIndex::ClearFree
 ================
 */
-void idHashIndex::Free( void ) {
+void idHashIndex::ClearFree( void ) {
 	if ( hash != INVALID_INDEX ) {
 		delete[] hash;
 		hash = INVALID_INDEX;

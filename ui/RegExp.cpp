@@ -326,7 +326,7 @@ idRegisterList::Reset
 */
 void idRegisterList::Reset() {
 	regs.DeleteContents( true );
-	regHash.Clear();
+	regHash.ClearFree();
 }
 
 /*

@@ -62,7 +62,7 @@ private:
 template< class type, int dimension >
 ID_INLINE idVectorSet<type,dimension>::idVectorSet( void ) {
 	boxHashSize = 16;
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
+	hash.ClearFree( idMath::IPow( boxHashSize, dimension ), 128 );
 	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
 	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
 }
@@ -82,7 +82,7 @@ ID_INLINE void idVectorSet<type,dimension>::Init( const type &mins, const type &
 
 	int hashSize = idMath::CeilPowerOfTwo( idMath::IPow( boxHashSize, dimension ) );
 	if (hashSize != hash.GetHashSize())
-		hash.Clear( hashSize, initialSize );
+		hash.ClearFree( hashSize, initialSize );
 	else {
 		hash.Clear();
 		hash.ResizeIndex(initialSize);
@@ -109,7 +109,7 @@ template< class type, int dimension >
 ID_INLINE void idVectorSet<type,dimension>::Clear( bool deleteBuffers ) {
 	if (deleteBuffers) {
 		idList<type>::Clear();
-		hash.Free();
+		hash.ClearFree();
 	}
 	else {
 		idList<type>::SetNum(0, false);
@@ -216,7 +216,7 @@ private:
 template< class type, int dimension >
 ID_INLINE idVectorSubset<type,dimension>::idVectorSubset( void ) {
 	boxHashSize = 16;
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
+	hash.ClearFree( idMath::IPow( boxHashSize, dimension ), 128 );
 	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
 	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
 }
@@ -233,7 +233,7 @@ ID_INLINE void idVectorSubset<type,dimension>::Init( const type &mins, const typ
 
 	int hashSize = idMath::CeilPowerOfTwo( idMath::IPow( boxHashSize, dimension ) );
 	if (hashSize != hash.GetHashSize())
-		hash.Clear( hashSize, initialSize );
+		hash.ClearFree( hashSize, initialSize );
 	else {
 		hash.Clear();
 		hash.ResizeIndex(initialSize);
@@ -254,7 +254,7 @@ template< class type, int dimension >
 ID_INLINE void idVectorSubset<type,dimension>::Clear( bool deleteBuffers ) {
 	if (deleteBuffers) {
 		idList<type>::Clear();
-		hash.Free();
+		hash.ClearFree();
 	}
 	else {
 		idList<type>::SetNum(0, false);

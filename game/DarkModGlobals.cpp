@@ -172,7 +172,7 @@ CGlobal::~CGlobal()
 
 void CGlobal::Shutdown() {
 	m_SurfaceHardness.ClearFree();
-	m_SurfaceHardnessHash.Free();
+	m_SurfaceHardnessHash.ClearFree();
 	if (m_LogFile != NULL)
 	{
 		fclose(m_LogFile);
@@ -182,7 +182,7 @@ void CGlobal::Shutdown() {
 	m_Image.ClearFree();
 	m_RenderImage.Unload();
 	m_AcuityNames.ClearFree();
-	m_AcuityHash.Free();
+	m_AcuityHash.ClearFree();
 }
 
 void CGlobal::Init()

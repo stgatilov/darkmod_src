@@ -301,7 +301,7 @@ void CSyntaxRichEditCtrl::SetKeyWords( const keyWord_t kws[] ) {
 		keyWordLengths[i] = idStr::Length( keyWords[i].keyWord );
 	}
 
-	keyWordHash.Clear( 1024, 1024 );
+	keyWordHash.ClearFree( 1024, 1024 );
 	for ( i = 0; i < numKeyWords; i++ ) {
 		if ( caseSensitive ) {
 			hash = idStr::Hash( keyWords[i].keyWord, keyWordLengths[i] );

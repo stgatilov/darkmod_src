@@ -119,7 +119,7 @@ void idDict::TransferKeyValues( idDict &other ) {
 	argHash = other.argHash;
 
 	other.args.ClearFree();
-	other.argHash.Free();
+	other.argHash.ClearFree();
 }
 
 /*
@@ -236,7 +236,7 @@ void idDict::ClearFree( void ) {
 	}
 
 	args.ClearFree();
-	argHash.Free();
+	argHash.ClearFree();
 }
 
 /*

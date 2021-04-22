@@ -176,7 +176,7 @@ R_ShutdownTriSurfData
 */
 void R_ShutdownTriSurfData( void ) {
 	R_StaticFree( silEdges );
-	silEdgeHash.Free();
+	silEdgeHash.ClearFree();
 #if LEGACY_ALLOCATOR
 	srfTrianglesAllocator.Shutdown();
 #endif
