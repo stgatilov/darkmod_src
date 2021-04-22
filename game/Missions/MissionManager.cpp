@@ -809,7 +809,7 @@ bool CMissionManager::DoMoveFile(const fs::path& fromPath, const fs::path& toPat
 
 void CMissionManager::InitStartingMap()
 {
-	_curStartingMap.Empty();
+	_curStartingMap.Clear();
 
 	idStr curModName = GetCurrentModName();
 

@@ -147,9 +147,9 @@ public:
 
 	int					Length( void ) const;
 	int					Allocated( void ) const;
-	void				Empty( void );
 	bool				IsEmpty( void ) const;
 	void				Clear( void );
+	void				ClearFree( void );
 	void				Append( const char a );
 	void				Append( const idStr &text );
 	void				Append( const char *text );
@@ -277,9 +277,6 @@ public:
 	friend int			sprintf( idStr &dest, const char *fmt, ... );
 	friend int			vsprintf( idStr &dest, const char *fmt, va_list ap );
 
-	void				ReAllocate( int amount, bool keepold );				// reallocate string data buffer
-	void				FreeData( void );									// free allocated string memory
-
 						// format value in the given measurement with the best unit, returns the best unit
 	int					BestUnit( const char *format, float value, Measure_t measure );
 						// format value in the requested unit and measurement
@@ -292,6 +289,10 @@ public:
 
 	int					DynamicMemoryUsed() const;
 	static idStr		FormatNumber( int number );
+
+	//stgatilov: these methods are private! do not ever used them!
+	void				ReAllocate( int amount, bool keepold );				// reallocate string data buffer
+	void				FreeData( void );									// free allocated string memory
 
 protected:
 	int					len;
@@ -708,7 +709,7 @@ ID_INLINE int idStr::Allocated( void ) const {
 	}
 }
 
-ID_INLINE void idStr::Empty( void ) {
+ID_INLINE void idStr::Clear( void ) {
 	EnsureAlloced( 1 );
 	data[ 0 ] = '\0';
 	len = 0;
@@ -718,7 +719,7 @@ ID_FORCE_INLINE bool idStr::IsEmpty( void ) const {
 	return len == 0;
 }
 
-ID_INLINE void idStr::Clear( void ) {
+ID_INLINE void idStr::ClearFree( void ) {
 	FreeData();
 	Init();
 }

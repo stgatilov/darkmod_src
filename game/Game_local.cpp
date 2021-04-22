@@ -4002,7 +4002,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("OnGameError");
 
 			// Clear the string again
-			m_guiError.Empty();
+			m_guiError.Clear();
 		}
 
 		// Check messages

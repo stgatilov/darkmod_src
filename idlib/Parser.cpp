@@ -2684,7 +2684,7 @@ const char *idParser::ParseBracedSection( idStr &out, int tabs ) {
 		doTabs = true;
 	}
 
-	out.Empty();
+	out.Clear();
 	if ( !idParser::ExpectTokenString( "{" ) ) {
 		return out.c_str();
 	}
@@ -2747,7 +2747,7 @@ idParser::ParseRestOfLine
 const char *idParser::ParseRestOfLine( idStr &out ) {
 	idToken token;
 
-	out.Empty();
+	out.Clear();
 	while(idParser::ReadToken( &token )) {
 		if ( token.linesCrossed ) {
 			idParser::UnreadSourceToken( &token );

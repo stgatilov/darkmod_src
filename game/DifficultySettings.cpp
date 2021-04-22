@@ -101,7 +101,7 @@ void Setting::ParseFromDict(const idDict& dict, int level, int index)
 		if (argument == APPTYPE_IGNORE)
 		{
 			appType = EIgnore;
-			argument.Empty(); // clear the argument
+			argument.Clear(); // clear the argument
 		}
 		else if (argument.Find(' ') != -1)
 		{

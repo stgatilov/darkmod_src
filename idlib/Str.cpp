@@ -321,7 +321,7 @@ bool idStr::Filter( const char *filter, const char *name, bool casesensitive ) {
 	while(*filter) {
 		if (*filter == '*') {
 			filter++;
-			buf.Empty();
+			buf.Clear();
 			for (i = 0; *filter; i++) {
 				if ( *filter == '*' || *filter == '?' || (*filter == '[' && *(filter+1) != '[') ) {
 					break;
@@ -427,7 +427,7 @@ idStr::StripMediaName
 void idStr::StripMediaName( const char *name, idStr &mediaName ) {
 	char c;
 
-	mediaName.Empty();
+	mediaName.Clear();
 
 	for ( c = *name; c; c = *(++name) ) {
 		// truncate at an extension
@@ -813,7 +813,7 @@ idStr::Mid
 const char *idStr::Mid( const int start, const int len, idStr &result ) const {
 	int i;
 
-	result.Empty();
+	result.Clear();
 
 	i = Length();
 	if ( i == 0 || len <= 0 || start >= i ) {
@@ -1234,7 +1234,7 @@ void idStr::ExtractFileExtension( idStr &dest ) const {
 
 	if ( !pos ) {
 		// no extension
-		dest.Empty();
+		dest.Clear();
 	} else {
 		Right( Length() - pos, dest );
 	}

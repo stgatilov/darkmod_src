@@ -213,7 +213,7 @@ void CPreviewDlg::AddStrList( const char *root, const idStrList &list, int id ) 
 			continue;
 		}
 		else {
-			last.Empty();
+			last.Clear();
 		}
 
 		index = 0;

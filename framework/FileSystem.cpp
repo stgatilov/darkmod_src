@@ -2648,7 +2648,7 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 
 	searchpath_t *sp, *next, *loop;
 
-	gameFolder.Clear();
+	gameFolder.ClearFree();
 	serverPaks.ClearFree();
 
 	if ( !reloading ) {

@@ -29,7 +29,7 @@
 PVSToAASMapping::PVSToAASMapping(void)
 {
 	// No allocated mapping
-	aasName.Empty();
+	aasName.Clear();
 	numPVSAreas = 0;
 	m_p_AASAreaIndicesPerPVSArea = NULL;
 }
@@ -83,7 +83,7 @@ void PVSToAASMapping::clear()
 	}
 
 	numPVSAreas = 0;
-	aasName.Empty();
+	aasName.Clear();
 }
 
 //----------------------------------------------------------------------------

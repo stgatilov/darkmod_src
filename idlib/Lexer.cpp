@@ -1410,7 +1410,7 @@ const char *idLexer::ParseBracedSectionExact( idStr &out, int tabs ) {
 	bool	doTabs;
 	bool	skipWhite;
 
-	out.Empty();
+	out.Clear();
 
 	if ( !idLexer::ExpectTokenString( "{" ) ) {
 		return out.c_str( );
@@ -1480,7 +1480,7 @@ const char *idLexer::ParseBracedSection( idStr &out ) {
 	idToken token;
 	int i, depth;
 
-	out.Empty();
+	out.Clear();
 	if ( !idLexer::ExpectTokenString( "{" ) ) {
 		return out.c_str();
 	}
@@ -1528,7 +1528,7 @@ idLexer::ParseRestOfLine
 const char *idLexer::ParseRestOfLine( idStr &out ) {
 	idToken token;
 
-	out.Empty();
+	out.Clear();
 	while(idLexer::ReadToken( &token )) {
 		if ( token.linesCrossed ) {
 			idLexer::script_p = lastScript_p;

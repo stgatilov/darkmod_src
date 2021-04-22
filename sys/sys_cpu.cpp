@@ -455,8 +455,6 @@ void Sys_InitCPUID() {
 
 		cpuid = Sys_GetCPUId();
 
-		string.Clear();
-
 		if ( cpuid & CPUID_AMD ) {
 			string += "AMD CPU";
 		} else if ( cpuid & CPUID_INTEL ) {

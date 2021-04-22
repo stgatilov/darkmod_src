@@ -168,6 +168,6 @@ idListGUILocal::Shutdown
 */
 void idListGUILocal::Shutdown( void ) {
 	m_pGUI = NULL;
-	m_name.Clear();
+	m_name.ClearFree();
 	Clear();
 }

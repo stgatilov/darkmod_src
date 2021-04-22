@@ -2967,7 +2967,7 @@ typedef std::multimap< eVertexBlendType, ImageInfo_s > ImageInfoMap;
 bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureName )
 {
 	int iOffset, nBrackets;
-	a_strStageTextureName.Empty();
+	a_strStageTextureName.Clear();
 
 	std::vector< idStr > arrStrInvalidTokens;
 	

@@ -62,7 +62,7 @@ void idModelExport::Shutdown( void ) {
 	importDLL = 0;
 	Maya_Shutdown = NULL;
 	Maya_ConvertModel = NULL;
-	Maya_Error.Clear();
+	Maya_Error.ClearFree();
 	initialized = false;
 }
 

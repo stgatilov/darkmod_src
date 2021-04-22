@@ -1812,7 +1812,6 @@ idCommonLocal::LocalizeGui
 void idCommonLocal::LocalizeGui( const char *fileName, idLangDict &langDict ) {
 	idStr out, ws, work;
 	const char *buffer = NULL;
-	out.Empty();
 	int k;
 	char ch;
 	char slash = '\\';
@@ -2949,7 +2948,7 @@ void idCommonLocal::Shutdown( void ) {
 
 	// free any buffered warning messages
 	ClearWarnings( GAME_NAME " shutdown" );
-	warningCaption.Clear();
+	warningCaption.ClearFree();
 	errorList.ClearFree();
 
 	// enable leak test

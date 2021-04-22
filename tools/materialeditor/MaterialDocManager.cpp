@@ -423,7 +423,7 @@ void MaterialDocManager::CopyMaterial(MaterialDoc* materialDoc, bool cut) {
 * Clears the copy buffer for a material.
 */
 void MaterialDocManager::ClearCopy() {
-	copyMaterial.Empty();
+	copyMaterial.Clear();
 }
 
 /**
@@ -497,7 +497,7 @@ void MaterialDocManager::CopyStage(MaterialDoc* materialDoc, int stageNum) {
 * Clears the copy buffer for copied stages.
 */
 void MaterialDocManager::ClearCopyStage() {
-	copyStageMaterial.Empty();
+	copyStageMaterial.Clear();
 	copyStage.stageData.Clear();
 }
 

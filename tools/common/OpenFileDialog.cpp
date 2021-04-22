@@ -121,7 +121,7 @@ void rvOpenFileDialog::UpdateLookIn ( void )
 		else
 		{
 			file = path;
-			path.Empty ( );
+			path.Clear ( );
 		}
 
 		// Add the sub folder				
@@ -386,7 +386,7 @@ void rvOpenFileDialog::SetFilter ( const char* s )
 		else
 		{
 			filter = filters;
-			filters.Empty ( );
+			filters.Clear ( );
 		}
 		
 		mFilters.Append ( filter.c_str() + (filter[0] == '*' ? 1 : 0) );

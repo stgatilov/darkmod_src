@@ -1600,7 +1600,7 @@ void MaterialTreeView::AddStrList(const char *root, idStrList *list, bool includ
 			continue;
 		}
 		else {
-			last.Empty();
+			last.Clear();
 		}
 
 		index = 0;

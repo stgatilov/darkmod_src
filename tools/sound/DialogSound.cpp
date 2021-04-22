@@ -412,7 +412,7 @@ HTREEITEM CDialogSound::AddStrList(const char *root, const idStrList &list, int 
 			continue;
 		}
 		else {
-			last.Empty();
+			last.Clear();
 		}
 
 		index = 0;

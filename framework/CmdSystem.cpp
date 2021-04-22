@@ -339,7 +339,7 @@ void idCmdSystemLocal::Shutdown( void ) {
 		delete cmd;
 	}
 
-	completionString.Clear();
+	completionString.ClearFree();
 	completionParms.ClearFree();
 	tokenizedCmds.ClearFree();
 	postReload.Clear();

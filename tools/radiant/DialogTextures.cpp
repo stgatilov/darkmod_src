@@ -496,7 +496,7 @@ void CDialogTextures::OnSelchangedTreeTextures(NMHDR *pNMHDR, LRESULT *pResult) 
 	editMaterial = NULL;
 	editGui = "";
 	mediaName = "";
-	currentFile.Empty();
+	currentFile.Clear();
 	m_wndPreview.setDrawable(&m_testDrawable);
 	HTREEITEM	item = m_treeTextures.GetSelectedItem();
 	if (item) {
@@ -759,7 +759,7 @@ void CDialogTextures::addStrList( const char *root, const idStrList &list, int i
 			continue;
 		}
 		else {
-			last.Empty();
+			last.Clear();
 		}
 
 		index = 0;

@@ -203,7 +203,7 @@ bool idInterpreter::GetRegisterValue( const char *name, idStr &out, int scopeDep
 	const idScriptObject *obj;
 	const function_t *func;
 
-	out.Empty();
+	out.Clear();
 	
 	if ( scopeDepth == -1 ) {
 		scopeDepth = callStackDepth;
