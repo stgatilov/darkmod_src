@@ -63,7 +63,7 @@ const int C_COLOR_BLACK				= '9';
 
 // make idStr a multiple of 32 bytes long
 // don't make too large to keep memory requirements to a minimum
-const int STR_ALLOC_BASE			= 20;
+const int STR_ALLOC_BASE			= 32 - 8 - sizeof(char*);
 const int STR_ALLOC_GRAN			= 32;
 
 typedef enum {
@@ -295,8 +295,8 @@ public:
 
 protected:
 	int					len;
-	char *				data;
 	int					alloced;
+	char *				data;
 	char				baseBuffer[ STR_ALLOC_BASE ];
 
 	void				Init( void );										// initialize string using base buffer
