@@ -448,7 +448,6 @@ void idEntityFx::Run( int time ) {
 			case FX_SHAKE: {
 				if ( !useAction->shakeStarted ) {
 					idDict args;
-					args.Clear();
 					args.SetFloat( "kick_time", fxaction.shakeTime );
 					args.SetFloat( "kick_amplitude", fxaction.shakeAmplitude );
 					for ( j = 0; j < gameLocal.numClients; j++ ) {

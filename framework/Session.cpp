@@ -390,11 +390,11 @@ void idSessionLocal::Shutdown() {
 		menuSoundWorld = NULL;
 	}
 		
-	mapSpawnData.serverInfo.Clear();
-	mapSpawnData.syncedCVars.Clear();
+	mapSpawnData.serverInfo.ClearFree();
+	mapSpawnData.syncedCVars.ClearFree();
 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		mapSpawnData.userInfo[i].Clear();
-		mapSpawnData.persistentPlayerInfo[i].Clear();
+		mapSpawnData.userInfo[i].ClearFree();
+		mapSpawnData.persistentPlayerInfo[i].ClearFree();
 	}
 
 	if ( guiMainMenu_MapList != NULL ) {

@@ -34,7 +34,7 @@ idDeclEntityDef::FreeData
 ================
 */
 void idDeclEntityDef::FreeData( void ) {
-	dict.Clear();
+	dict.ClearFree();
 }
 
 /*

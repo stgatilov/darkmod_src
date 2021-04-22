@@ -41,7 +41,7 @@ const char *tdmDeclXData::DefaultDefinition() const
 
 void tdmDeclXData::FreeData()
 {
-	m_data.Clear();
+	m_data.ClearFree();
 }
 
 // Note Our coding standards require using gotos in this sort of code.

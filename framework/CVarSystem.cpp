@@ -598,7 +598,7 @@ idCVarSystemLocal::Shutdown
 void idCVarSystemLocal::Shutdown( void ) {
 	cvars.DeleteContents( true );
 	cvarHash.ClearFree();
-	moveCVarsToDict.Clear();
+	moveCVarsToDict.ClearFree();
 	initialized = false;
 }
 

@@ -236,8 +236,8 @@ void I18NLocal::Shutdown()
 	common->Printf( "I18NLocal: Shutdown.\n" );
 	m_lang = "";
 	m_fontPath = "";
-	m_ReverseDict.Clear();
-	m_ArticlesDict.Clear();
+	m_ReverseDict.ClearFree();
+	m_ArticlesDict.ClearFree();
 	m_Dict.Clear();
 }
 

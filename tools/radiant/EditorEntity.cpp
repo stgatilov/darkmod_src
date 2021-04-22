@@ -283,7 +283,7 @@ bool GetMatrixForKey(entity_t *ent, const char *key, idMat3 &mat) {
  =======================================================================================================================
  */
 void Entity_FreeEpairs(entity_t *e) {
-	e->epairs.Clear();
+	e->epairs.ClearFree();
 }
 
 /*

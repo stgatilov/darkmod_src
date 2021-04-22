@@ -2692,7 +2692,7 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	cmdSystem->RemoveCommand( "dirtree" );
 	cmdSystem->RemoveCommand( "touchFile" );
 
-	mapDict.Clear();
+	mapDict.ClearFree();
 }
 
 /*
