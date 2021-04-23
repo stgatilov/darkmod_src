@@ -58,9 +58,9 @@ public:
 	ID_FORCE_INLINE idBinHeap(const Cmp &cmp = Cmp()) : comp(cmp) {}
 
 	//clear heap without losing memory buffers
-	void Reset(const Cmp &cmp = Cmp()) {
-		heap.SetNum(0, false);
-		idToHeap.SetNum(0, false);
+	void Clear(const Cmp &cmp = Cmp()) {
+		heap.Clear();
+		idToHeap.Clear();
 		comp = cmp;
 	}
 	

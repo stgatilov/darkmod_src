@@ -39,7 +39,8 @@ public:
 
 	void					Init( const type &mins, const type &maxs, const int boxHashSize, const int initialSize );
 	void					ResizeIndex( const int newSize );
-	void					Clear( bool deleteBuffers = false );
+	void					Clear( void );
+	void					ClearFree( void );
 
 							// finds arbitrary match for the specified vector
 							// if there is no match, then the specified vector is appended
@@ -106,15 +107,15 @@ ID_INLINE void idVectorSet<type,dimension>::ResizeIndex( const int newSize ) {
 }
 
 template< class type, int dimension >
-ID_INLINE void idVectorSet<type,dimension>::Clear( bool deleteBuffers ) {
-	if (deleteBuffers) {
-		idList<type>::Clear();
-		hash.ClearFree();
-	}
-	else {
-		idList<type>::SetNum(0, false);
-		hash.Clear();
-	}
+ID_INLINE void idVectorSet<type,dimension>::Clear( void ) {
+	idList<type>::Clear();
+	hash.Clear();
+}
+
+template< class type, int dimension >
+ID_INLINE void idVectorSet<type,dimension>::ClearFree( void ) {
+	idList<type>::ClearFree();
+	hash.ClearFree();
 }
 
 template< class type, int dimension > template< class Lambda >
@@ -199,7 +200,8 @@ public:
 	size_t					Size( void ) const { return sizeof( *this ) + Allocated(); }
 
 	void					Init( const type &mins, const type &maxs, const int boxHashSize, const int initialSize );
-	void					Clear( bool deleteBuffers = false );
+	void					Clear( void );
+	void					ClearFree( void );
 
 							// returns either vectorNum or an index to a previously found vector
 	int						FindVector( const type *vectorList, const int vectorNum, const float epsilon );
@@ -251,15 +253,15 @@ ID_INLINE void idVectorSubset<type,dimension>::Init( const type &mins, const typ
 }
 
 template< class type, int dimension >
-ID_INLINE void idVectorSubset<type,dimension>::Clear( bool deleteBuffers ) {
-	if (deleteBuffers) {
-		idList<type>::Clear();
-		hash.ClearFree();
-	}
-	else {
-		idList<type>::SetNum(0, false);
-		hash.Clear();
-	}
+ID_INLINE void idVectorSubset<type,dimension>::Clear( void ) {
+	idList<type>::Clear();
+	hash.Clear();
+}
+
+template< class type, int dimension >
+ID_INLINE void idVectorSubset<type,dimension>::ClearFree( void ) {
+	idList<type>::ClearFree();
+	hash.ClearFree();
 }
 
 template< class type, int dimension >

@@ -522,7 +522,7 @@ void EarCutter::Reset() {
 	verts.SetNum(0, false);
 	first = -1;
 	reflexIds.SetNum(0, false);
-	earIds.Reset();
+	earIds.Clear();
 	tris.SetNum(0, false);
 	seams.SetNum(0, false);
 }

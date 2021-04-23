@@ -45,6 +45,9 @@ public:
 		size = N;
 	}
 	void Clear() {
+		num = 0;
+	}
+	void ClearFree() {
 		if (list != autoStore)
 			delete[] list;
 		list = autoStore;
