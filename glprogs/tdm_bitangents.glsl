@@ -1,8 +1,4 @@
-#pragma tdm_define "LEGACY_BITANGENTS"
-
 #ifdef VERTEX_SHADER
-
-#ifdef LEGACY_BITANGENTS
 
 out mat3 var_TangentBitangentNormalMatrix; 
 out vec3 var_LightDirLocal;  
@@ -16,18 +12,6 @@ void sendTBN() {
 }
 
 #else
-
-out vec3 var_Normal;  
-
-void sendTBN() {
-    var_Normal = attr_Normal;
-}
-
-#endif
-
-#else
-
-#ifdef LEGACY_BITANGENTS
 
 in mat3 var_TangentBitangentNormalMatrix; 
 in vec3 var_LightDirLocal;  
@@ -52,56 +36,5 @@ void calcNormals() {
 		N = var_TangentBitangentNormalMatrix[2];
 	}
 }
-
-#else
-
-in vec3 var_Normal;  
-vec3 var_LightDirLocal;  
-vec3 var_ViewDirLocal;  
-mat3 var_TangentBitangentNormalMatrix;
-
-mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv ) {
-	/* get edge vectors of the pixel triangle */
-	vec3 dp1 = dFdx( p );
-	vec3 dp2 = dFdy( p );
-	vec2 duv1 = dFdx( uv );
-	vec2 duv2 = dFdy( uv );
-
-	/* solve the linear system */
-	vec3 dp2perp = cross( dp2, N );
-	vec3 dp1perp = cross( N, dp1 );
-	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-	/* construct a scale-invariant frame */
-	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
-	return mat3( T * invmax, B * invmax, N );
-}
-
-vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord ) {
-	/* assume N, the interpolated vertex normal and V, the view vector (vertex to eye) */
-	RawN = texture( u_normalTexture, texcoord ).wyz;
-	// WITH_NORMALMAP_UNSIGNED
-	RawN = RawN * 2 - 1;
-	// WITH_NORMALMAP_2CHANNEL
-	// map.z = sqrt( 1. - dot( map.xy, map.xy ) );
-	// WITH_NORMALMAP_GREEN_UP
-	// map.y = -map.y;
-	mat3 TBN = cotangent_frame( N, -V, texcoord );
-	if (u_advanced == 1.0) {
-		var_LightDirLocal = (u_lightOrigin.xyz - var_Position).xyz * TBN;
-		var_ViewDirLocal = (u_viewOrigin.xyz - var_Position).xyz * TBN;	
-	}
-	return normalize( TBN * RawN );
-}
-
-void calcNormals() {
-	if (u_hasTextureDNS[1] != 0) 
-		N = perturb_normal( normalize( var_Normal ), V, var_TexNormal.st );
-	else
-		N = var_TangentBitangentNormalMatrix[2] = var_Normal;
-}
-
-#endif
 
 #endif
