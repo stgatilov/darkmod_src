@@ -27,7 +27,7 @@ typedef struct debugBase_s {
 	idVec4		rgb;
 	int			lifeTime;
 	bool		depthTest;
-	void Clear() {}
+	void ClearFree() {}
 } debugBase_t;
 
 template<class DebugObject, int MaxN> struct DebugObjectSet {
@@ -59,12 +59,12 @@ typedef struct debugText_s : debugBase_t {
 	float		scale;
 	idMat3		viewAxis;
 	int			align;
-	void Clear() { text.Clear(); }
+	void ClearFree() { text.ClearFree(); }
 } debugText_t;
 
 typedef struct debugPolygon_s : debugBase_t {
 	idWinding	winding;
-	void Clear() { winding.Clear(); }
+	void ClearFree() { winding.ClearFree(); }
 } debugPolygon_t;
 
 typedef struct debugPrimitives_s {
@@ -95,7 +95,7 @@ template<class DebugObject, int MaxN> void DebugObjectSet<DebugObject, MaxN>::Cl
 	if ( !time ) {
 		// free resources
 		for ( int i = 0 ; i < MaxN; i++ ) {
-			arr[i].Clear();
+			arr[i].ClearFree();
 		}
 		num = 0;
 		return;

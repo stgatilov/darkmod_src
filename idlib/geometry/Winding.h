@@ -57,7 +57,8 @@ public:
 					// number of points on winding
 	int				GetNumPoints( void ) const;
 	void			SetNumPoints( int n );
-	virtual void	Clear( void );
+	void			Clear( void );
+	virtual void	ClearFree( void );
 
 					// huge winding for plane, the points go counter clockwise when facing the front of the plane
 	void			BaseForPlane( const idVec3 &normal, const float dist );
@@ -124,8 +125,8 @@ public:
 
 protected:
 	int				numPoints;				// number of points
-	idVec5 *		p;						// pointer to point data
 	int				allocedSize;
+	idVec5 *		p;						// pointer to point data
 
 	bool			EnsureAlloced( int n, bool keep = false );
 	virtual bool	ReAllocate( int n, bool keep = false );
@@ -250,6 +251,10 @@ ID_INLINE void idWinding::SetNumPoints( int n ) {
 
 ID_INLINE void idWinding::Clear( void ) {
 	numPoints = 0;
+}
+
+ID_INLINE void idWinding::ClearFree( void ) {
+	numPoints = 0;
 	delete[] p;
 	p = NULL;
 }
@@ -294,7 +299,7 @@ public:
 
 	idFixedWinding &operator=( const idWinding &winding );
 
-	virtual void	Clear( void );
+	virtual void	ClearFree( void ) override;
 
 					// splits the winding in a back and front part, 'this' becomes the front part
 					// returns a SIDE_?
@@ -397,7 +402,7 @@ ID_INLINE idFixedWinding &idFixedWinding::operator=( const idWinding &winding ) 
 	return *this;
 }
 
-ID_INLINE void idFixedWinding::Clear( void ) {
+ID_INLINE void idFixedWinding::ClearFree( void ) {
 	numPoints = 0;
 }
 #endif	/* !__WINDING_H__ */
