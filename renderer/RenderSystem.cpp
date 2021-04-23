@@ -191,6 +191,9 @@ static void R_ViewStatistics( viewDef_t &parms ) {
 	common->Printf( "view:%i surfs:%i (%i)\n", tr.pc.c_numViews, parms.numDrawSurfs, tr.pc.c_noshadowSurfs );
 }
 
+viewDef_t lockSurfView;
+int lockFrameReserve;
+
 /*
 =============
 R_AddDrawViewCmd
@@ -209,7 +212,8 @@ void	R_AddDrawViewCmd( viewDef_t &parms ) {
 
 	if ( parms.viewEntitys ) {
 		// save the command for r_lockSurfaces debugging
-		tr.lockSurfacesCmd = *cmd;
+		lockSurfView = *cmd->viewDef;
+		lockFrameReserve = frameData->frameMemoryAllocated;
 	}
 	tr.pc.c_numViews++;
 
@@ -240,21 +244,23 @@ void R_LockSurfaceScene( viewDef_t &parms ) {
 	drawSurfsCommand_t	*cmd;
 	viewEntity_t			*vModel;
 
+	// add the stored off surface commands again
+	cmd = (drawSurfsCommand_t*) R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd->commandId = RC_DRAW_VIEW;
+	cmd->viewDef = &lockSurfView;
+	frameData->frameMemoryAllocated = lockFrameReserve;
+
 	// set the matrix for world space to eye space
 	R_SetViewMatrix( parms );
-	tr.lockSurfacesCmd.viewDef->worldSpace = parms.worldSpace;
+	cmd->viewDef->worldSpace = parms.worldSpace;
 
 	// update the view origin and axis, and all
 	// the entity matricies
-	for ( vModel = tr.lockSurfacesCmd.viewDef->viewEntitys ; vModel ; vModel = vModel->next ) {
+	for ( vModel = cmd->viewDef->viewEntitys ; vModel ; vModel = vModel->next ) {
 		myGlMultMatrix( vModel->modelMatrix,
-		                tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix,
-		                vModel->modelViewMatrix );
+			cmd->viewDef->worldSpace.modelViewMatrix,
+		    vModel->modelViewMatrix );
 	}
-
-	// add the stored off surface commands again
-	cmd = ( drawSurfsCommand_t * )R_GetCommandBuffer( sizeof( *cmd ) );
-	*cmd = tr.lockSurfacesCmd;
 }
 
 /*
