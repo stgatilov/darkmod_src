@@ -1772,7 +1772,6 @@ idRenderSystemLocal::Clear
 ===============
 */
 void idRenderSystemLocal::Clear( void ) {
-	registered = false;
 	frameCount = 0;
 	viewCount = 0;
 	staticAllocCount = 0;

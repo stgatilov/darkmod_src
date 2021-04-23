@@ -841,8 +841,6 @@ public:
 
 public:
 	// renderer globals
-	bool					registered;			// cleared at shutdown, set at InitOpenGL
-
 	bool					takingScreenshot;
 
 	int						frameCount;			// incremented every frame
