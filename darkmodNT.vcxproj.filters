@@ -2992,6 +2992,9 @@
     <ClCompile Include="sys\sys_cpu.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\math\Simd_IdAsm.cpp">
+      <Filter>idLib\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">

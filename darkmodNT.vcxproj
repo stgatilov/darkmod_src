@@ -1155,6 +1155,7 @@
     <ClCompile Include="idlib\math\Simd_AVX.cpp" />
     <ClCompile Include="idlib\math\Simd_AVX2.cpp" />
     <ClCompile Include="idlib\math\Simd_Generic.cpp" />
+    <ClCompile Include="idlib\math\Simd_IdAsm.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE2.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE3.cpp" />
