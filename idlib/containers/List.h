@@ -106,6 +106,7 @@ public:
 	void			AssureSize( int newSize);							// assure list has given number of elements, but leave them uninitialized
 	void			AssureSize( int newSize, const type &initValue );	// assure list has given number of elements and initialize any new elements
 	void			AssureSizeAlloc( int newSize, new_t *allocator );	// assure the pointer list has the given number of elements and allocate any new elements
+	void			Reserve( int newSize );								// resize list to newSize if it is smaller, don't change Num
 
 	type *			Ptr( void );										// returns a pointer to the list
 	const type *	Ptr( void ) const;									// returns a pointer to the list
@@ -550,6 +551,22 @@ ID_INLINE void idList<type>::AssureSizeAlloc( int newSize, new_t *allocator ) {
 	}
 
 	num = newNum;
+}
+
+/*
+================
+idList<type>::Reserve
+
+Makes sure the list capacity can hold at least the given number of elements.
+================
+*/
+template< class type >
+ID_INLINE void idList<type>::Reserve( int newSize ) {
+	if (newSize > size) {
+		int tnum = num;
+		AssureSize( newSize );
+		num = tnum;
+	}
 }
 
 /*

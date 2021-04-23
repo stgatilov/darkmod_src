@@ -1750,9 +1750,8 @@ idBrushList::ToList
 ============
 */
 void idBrushList::ToList( idList<idBrush*> &list ) const {
-	list.SetNum(0, false);
-	list.AssureSize(numBrushes);
-	list.SetNum(0, false);
+	list.Clear();
+	list.Reserve(numBrushes);
 	for (idBrush *brush = head; brush; brush = brush->next)
 		list.AddGrow(brush);
 }
