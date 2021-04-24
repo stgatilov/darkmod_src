@@ -1,5 +1,5 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+					The Dark Mod GPL Source Code
  
  This file is part of the The Dark Mod Source Code, originally based 
  on the Doom 3 GPL Source Code as published in 2011.
@@ -17,175 +17,196 @@
 #include "local.h"
 #include "framework/KeyInput.h"
 
-#include <pthread.h>
+#include <GLFW/glfw3.h>
 
-idCVar in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "" );
-idCVar in_dgamouse( "in_dgamouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "" );
-idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "" );
-idCVar in_nowarp( "in_nowarp", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "" );
-idCVar in_grabkeyboard( "in_grabkeyboard", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "When set, the keyboard is grabbed, so input goes exclusively to this game. When cleared the window manager is allowed to handle input from the keyboard." );
-idCVar in_grabmouse( "in_grabmouse", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "When set, the mouse is grabbed, so input goes exclusively to this game." );
+idCVar in_rawmouse( "in_rawmouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "Use raw mouse input if available" );
+idCVar in_grabmouse( "in_grabmouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT, "When set, the mouse is grabbed, so input goes exclusively to this game." );
 
-// have a working xkb extension
-static bool have_xkb = false;
+extern GLFWwindow *window;
 
-// toggled by grab calls - decides if we ignore MotionNotify events
-static bool mouse_active = false;
+static double mouse_scroll = 0;
+static double mouse_scroll_prev = 0;
 
-// flags if the keyboard has already been grabbed.
-static bool keyboard_grabbed = false;
-// flags if the mouse has already been grabbed.
-static bool mouse_grabbed = false;
-
-// non-DGA pointer-warping mouse input
-static int mwx, mwy;
-static int mx = 0, my = 0;
-
-// time mouse was last reset, we ignore the first 50ms of the mouse to allow settling of events
-static int mouse_reset_time = 0;
-#define MOUSE_RESET_DELAY 50
-
-// backup original values for pointer grab/ungrab
-static int mouse_accel_numerator;
-static int mouse_accel_denominator;
-static int mouse_threshold;
-
-static byte s_scantokey[128] = {
-/*  0 */ 0, 0, 0, 0, 0, 0, 0, 0,
-/*  8 */ 0, 27, '1', '2', '3', '4', '5', '6', // 27 - ESC
-/* 10 */ '7', '8', '9', '0', '-', '=', K_BACKSPACE, 9, // 9 - TAB
-/* 18 */ 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-/* 20 */ 'o', 'p', '[', ']', K_ENTER, K_CTRL, 'a', 's',
-/* 28 */ 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-/* 30 */ '\'', '`', K_SHIFT, '\\', 'z', 'x', 'c', 'v',
-/* 38 */ 'b', 'n', 'm', ',', '.', '/', K_SHIFT, K_KP_STAR,
-/* 40 */ K_ALT, ' ', K_CAPSLOCK, K_F1, K_F2, K_F3, K_F4, K_F5,
-/* 48 */ K_F6, K_F7, K_F8, K_F9, K_F10, K_PAUSE, 0, K_HOME,
-/* 50 */ K_UPARROW, K_PGUP, K_KP_MINUS, K_LEFTARROW, K_KP_5, K_RIGHTARROW, K_KP_PLUS, K_END,
-/* 58 */ K_DOWNARROW, K_PGDN, K_INS, K_DEL, 0, 0, '\\', K_F11,
-/* 60 */ K_F12, K_HOME, K_UPARROW, K_PGUP, K_LEFTARROW, 0, K_RIGHTARROW, K_END,
-/* 68 */ K_DOWNARROW, K_PGDN, K_INS, K_DEL, K_ENTER, K_CTRL, K_PAUSE, 0,
-/* 70 */ '/', K_ALT, 0, 0, 0, 0, 0, 0,
-/* 78 */ 0, 0, 0, 0, 0, 0, 0, 0
-};
-
-static byte MapKeySym(XKeyEvent *event) {
-	KeySym keysym = XLookupKeysym(event, 0);
-	switch (keysym) {
-		case XK_Tab:
+static byte MapKeySym(int key) {
+	switch (key) {
+		case GLFW_KEY_TAB:
 			return K_TAB;
-		case XK_Return:
+		case GLFW_KEY_ENTER:
 			return K_ENTER;
-		case XK_Escape:
+		case GLFW_KEY_ESCAPE:
 			return K_ESCAPE;
-		case XK_space:
+		case GLFW_KEY_SPACE:
 			return K_SPACE;
-		case XK_BackSpace:
+		case GLFW_KEY_BACKSPACE:
 			return K_BACKSPACE;
-		case XK_Caps_Lock:
+		case GLFW_KEY_CAPS_LOCK:
 			return K_CAPSLOCK;
-		case XK_Scroll_Lock:
+		case GLFW_KEY_SCROLL_LOCK:
 			return K_SCROLL;
-		case XK_Pause:
+		case GLFW_KEY_PAUSE:
 			return K_PAUSE;
-		case XK_Up:
+		case GLFW_KEY_UP:
 			return K_UPARROW;
-		case XK_Down:
+		case GLFW_KEY_DOWN:
 			return K_DOWNARROW;
-		case XK_Left:
+		case GLFW_KEY_LEFT:
 			return K_LEFTARROW;
-		case XK_Right:
+		case GLFW_KEY_RIGHT:
 			return K_RIGHTARROW;
-		case XK_Meta_L:
+		case GLFW_KEY_LEFT_SUPER:
 			return K_LWIN;
-		case XK_Meta_R:
+		case GLFW_KEY_RIGHT_SUPER:
 			return K_RWIN;
-		case XK_Menu:
+		case GLFW_KEY_MENU:
 			return K_MENU;
-		case XK_Alt_L:
+		case GLFW_KEY_LEFT_ALT:
 			return K_ALT;
-		case XK_Control_L: case XK_Control_R:
+		case GLFW_KEY_LEFT_CONTROL: case GLFW_KEY_RIGHT_CONTROL:
 			return K_CTRL;
-		case XK_Shift_L: case XK_Shift_R:
+		case GLFW_KEY_LEFT_SHIFT: case GLFW_KEY_RIGHT_SHIFT:
 			return K_SHIFT;
-		case XK_Insert:
+		case GLFW_KEY_INSERT:
 			return K_INS;
-		case XK_Delete:
+		case GLFW_KEY_DELETE:
 			return K_DEL;
-		case XK_Page_Down:
+		case GLFW_KEY_PAGE_DOWN:
 			return K_PGDN;
-		case XK_Page_Up:
+		case GLFW_KEY_PAGE_UP:
 			return K_PGUP;
-		case XK_Home:
+		case GLFW_KEY_HOME:
 			return K_HOME;
-		case XK_End:
+		case GLFW_KEY_END:
 			return K_END;
-		case XK_F1:
+		case GLFW_KEY_F1:
 			return K_F1;
-		case XK_F2:
+		case GLFW_KEY_F2:
 			return K_F2;
-		case XK_F3:
+		case GLFW_KEY_F3:
 			return K_F3;
-		case XK_F4:
+		case GLFW_KEY_F4:
 			return K_F4;
-		case XK_F5:
+		case GLFW_KEY_F5:
 			return K_F5;
-		case XK_F6:
+		case GLFW_KEY_F6:
 			return K_F6;
-		case XK_F7:
+		case GLFW_KEY_F7:
 			return K_F7;
-		case XK_F8:
+		case GLFW_KEY_F8:
 			return K_F8;
-		case XK_F9:
+		case GLFW_KEY_F9:
 			return K_F9;
-		case XK_F10:
+		case GLFW_KEY_F10:
 			return K_F10;
-		case XK_F11:
+		case GLFW_KEY_F11:
 			return K_F11;
-		case XK_F12:
+		case GLFW_KEY_F12:
 			return K_F12;
-		case XK_KP_Home:
+		case GLFW_KEY_KP_7:
 			return K_KP_HOME;
-		case XK_KP_Up:
+		case GLFW_KEY_KP_8:
 			return K_KP_UPARROW;
-		case XK_KP_Page_Up:
+		case GLFW_KEY_KP_9:
 			return K_KP_PGUP;
-		case XK_KP_Left:
+		case GLFW_KEY_KP_4:
 			return K_KP_LEFTARROW;
-		case XK_KP_5:
+		case GLFW_KEY_KP_5:
 			return K_KP_5;
-		case XK_KP_Right:
+		case GLFW_KEY_KP_6:
 			return K_KP_RIGHTARROW;
-		case XK_KP_End:
+		case GLFW_KEY_KP_1:
 			return K_KP_END;
-		case XK_KP_Down:
+		case GLFW_KEY_KP_2:
 			return K_KP_DOWNARROW;
-		case XK_KP_Page_Down:
+		case GLFW_KEY_KP_3:
 			return K_KP_PGDN;
-		case XK_KP_Enter:
+		case GLFW_KEY_KP_ENTER:
 			return K_KP_ENTER;
-		case XK_KP_Insert:
+		case GLFW_KEY_KP_0:
 			return K_KP_INS;
-		case XK_KP_Delete:
+		case GLFW_KEY_KP_DECIMAL:
 			return K_KP_DEL;
-		case XK_KP_Divide:
+		case GLFW_KEY_KP_DIVIDE:
 			return K_KP_SLASH;
-		case XK_KP_Subtract:
+		case GLFW_KEY_KP_SUBTRACT:
 			return K_KP_MINUS;
-		case XK_KP_Add:
+		case GLFW_KEY_KP_ADD:
 			return K_KP_PLUS;
-		case XK_KP_Multiply:
+		case GLFW_KEY_KP_MULTIPLY:
 			return K_KP_STAR;
-		case XK_KP_Equal:
+		case GLFW_KEY_KP_EQUAL:
 			return K_KP_EQUALS;
-		case XK_Print:
+		case GLFW_KEY_PRINT_SCREEN:
 			return K_PRINT_SCR;
-		case XK_Alt_R: case XK_ISO_Level3_Shift:
+		case GLFW_KEY_RIGHT_ALT:
 			return K_RIGHT_ALT;
 		default:
-			// use the legacy Doom3 keycode mapping to remain as backwards-compatible as possible
-			return s_scantokey[event->keycode & 0x7F];
+			// we should be left primarily with printable keys, which can be passed directly as ASCII code to TDM.
+			// But beware for letter keys: GLFW uses the uppercase letter ASCII code to represent them, whereas
+			// TDH expects the lowercase code!
+			if ( key >= 'A' && key <= 'Z' )
+				return key - 'A' + 'a';
+			if ( key < 256 )
+				return key;
+			return 0;
 	}
+}
+
+void key_callback( GLFWwindow *, int key, int scancode, int action, int mods ) {
+	if ( !Posix_CanAddKeyboardPollEvent() )
+		return;
+
+	bool pressed = action != GLFW_RELEASE;
+	byte mappedKey = MapKeySym( key );
+	Posix_QueEvent(SE_KEY, mappedKey, pressed, 0, NULL);
+	if ( action != GLFW_REPEAT ) {
+		Posix_AddKeyboardPollEvent(mappedKey, pressed);
+	}
+
+	if ( mappedKey == K_BACKSPACE && action != GLFW_RELEASE ) {
+		// hack: the console also needs a char event for this to work properly, which is not generated by GLFW
+		Posix_QueEvent( SE_CHAR, mappedKey, 0, 0, nullptr );
+	}
+}
+
+void character_callback( GLFWwindow *, unsigned int codepoint ) {
+	// note: GLFW sends a unicode 32 character, but the engine will ultimately truncate this to a an 8 bit char
+	// and treat it as an extended Western European ASCII code point. Since Unicode is essentially an expansion
+	// of ISO-8859-1, this should probably be fine and similar to what the Windows version does. At least as long
+	// as there is no true Unicode support in the engine...
+	Posix_QueEvent( SE_CHAR, codepoint, 0, 0, nullptr );
+}
+
+void mouse_position_callback( GLFWwindow *, double xpos, double ypos ) {
+	if ( !Posix_CanAddMousePollEvent() )
+		return;
+
+	static double prevX = glConfig.vidWidth / 2;
+	static double prevY = glConfig.vidHeight / 2;
+
+	int dx = (int)( xpos - prevX );
+	int dy = (int)( ypos - prevY );
+	prevX = xpos;
+	prevY = ypos;
+
+	Posix_QueEvent( SE_MOUSE, dx, dy, 0, NULL);
+	Posix_AddMousePollEvent( M_DELTAX, dx );
+	Posix_AddMousePollEvent( M_DELTAY, dy );
+}
+
+void mouse_button_callback( GLFWwindow *, int button, int action, int mods ) {
+	if ( !Posix_CanAddMousePollEvent() )
+		return;
+
+	if ( button >= GLFW_MOUSE_BUTTON_1 && button <= GLFW_MOUSE_BUTTON_8 ) {
+		int b = button - GLFW_MOUSE_BUTTON_1;
+		bool pressed = action == GLFW_PRESS;
+		Posix_QueEvent( SE_KEY, K_MOUSE1 + b, pressed, 0, NULL);
+		Posix_AddMousePollEvent( M_ACTION1 + b, pressed );
+	}
+}
+
+void mouse_scroll_callback( GLFWwindow *, double xoffset, double yoffset ) {
+	mouse_scroll = yoffset;
 }
 
 /*
@@ -203,146 +224,18 @@ Sys_InitInput
 =================
 */
 void Sys_InitInput(void) {
-	int major_in_out, minor_in_out, opcode_rtrn, event_rtrn, error_rtrn;
-	bool ret;
-
 	common->Printf( "\n------- Input Initialization -------\n" );
-	assert( dpy );
+	assert( window );
 	cmdSystem->AddCommand( "in_clear", IN_Clear_f, CMD_FL_SYSTEM, "reset the input keys" );
-	major_in_out = XkbMajorVersion;
-	minor_in_out = XkbMinorVersion;
-	ret = XkbLibraryVersion( &major_in_out, &minor_in_out );
-	common->Printf( "XKB extension: compile time 0x%x:0x%x, runtime 0x%x:0x%x: %s\n", XkbMajorVersion, XkbMinorVersion, major_in_out, minor_in_out, ret ? "OK" : "Not compatible" );
-	if ( ret ) {
-		ret = XkbQueryExtension( dpy, &opcode_rtrn, &event_rtrn, &error_rtrn, &major_in_out, &minor_in_out );
-		if ( ret ) {
-			common->Printf( "XKB extension present on server ( 0x%x:0x%x )\n", major_in_out, minor_in_out );
-			have_xkb = true;
-		} else {
-			common->Printf( "XKB extension not present on server\n" );
-			have_xkb = false;
-		}
-	} else {
-		have_xkb = false;
+	glfwSetKeyCallback( window, key_callback );
+	glfwSetCharCallback( window, character_callback );
+	glfwSetCursorPosCallback( window, mouse_position_callback );
+	glfwSetMouseButtonCallback( window, mouse_button_callback );
+	glfwSetScrollCallback( window, mouse_scroll_callback );
+	if ( glfwRawMouseMotionSupported() ) {
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, in_rawmouse.GetBool() ? GLFW_TRUE : GLFW_FALSE);
 	}
 	common->Printf( "------------------------------------\n" );
-}
-
-//#define XEVT_DBG
-//#define XEVT_DBG2
-
-static Cursor Sys_XCreateNullCursor( Display *display, Window root ) {
-	Pixmap cursormask; 
-	XGCValues xgc;
-	GC gc;
-	XColor dummycolour;
-	Cursor cursor;
-
-	cursormask = XCreatePixmap(display, root, 1, 1, 1/*depth*/);
-	xgc.function = GXclear;
-	gc =  XCreateGC(display, cursormask, GCFunction, &xgc);
-	XFillRectangle(display, cursormask, gc, 0, 0, 1, 1);
-	dummycolour.pixel = 0;
-	dummycolour.red = 0;
-	dummycolour.flags = 04;
-	cursor = XCreatePixmapCursor(display, cursormask, cursormask,
-								 &dummycolour,&dummycolour, 0,0);
-	XFreePixmap(display,cursormask);
-	XFreeGC(display,gc);
-	return cursor;
-}
-
-static void Sys_XInstallGrabs( void ) {
-	assert( dpy );
-
-	XWarpPointer( dpy, None, win,
-				 0, 0, 0, 0,
-				 glConfig.vidWidth / 2, glConfig.vidHeight / 2 );
-
-	XSync( dpy, False );
-
-	XDefineCursor( dpy, win, Sys_XCreateNullCursor( dpy, win ) );
-
-	
-	if((vidmode_nowmfullscreen || in_grabmouse.GetBool()) && !mouse_grabbed) {
-		mouse_grabbed = true;
-		XGrabPointer( dpy, win,
-			      False,
-			      MOUSE_MASK,
-			      GrabModeAsync, GrabModeAsync,
-			      win,
-			      None,
-			      CurrentTime );
-	}
-		
-	XGetPointerControl( dpy, &mouse_accel_numerator, &mouse_accel_denominator,
-					   &mouse_threshold );
-	
-	XChangePointerControl( dpy, True, True, 1, 1, 0 );
-	
-	XSync( dpy, False );
-	
-	mouse_reset_time = Sys_Milliseconds ();
-	
-	if ( in_dgamouse.GetBool() && !dga_found ) {
-		common->Printf("XF86DGA not available, forcing DGA mouse off\n");
-		in_dgamouse.SetBool( false );
-	}
-	
-	if ( in_dgamouse.GetBool() ) {
-#if defined( ID_ENABLE_DGA )
-		XF86DGADirectVideo( dpy, DefaultScreen( dpy ), XF86DGADirectMouse );
-		XWarpPointer( dpy, None, win, 0, 0, 0, 0, 0, 0 );
-#endif
-	} else {
-		mwx = glConfig.vidWidth / 2;
-		mwy = glConfig.vidHeight / 2;
-		mx = my = 0;
-	}
-
-	/*Grab the keyboard if we're configured to grab it, or if we're doing full screen without the window manager.*/
-	if((vidmode_nowmfullscreen || in_grabkeyboard.GetBool()) && !keyboard_grabbed) {
-		keyboard_grabbed = true;
-		XGrabKeyboard( dpy, win,
-			       False,
-			       GrabModeAsync, GrabModeAsync,
-			       CurrentTime );
-	}
-	
-	XSync( dpy, False );
-
-	mouse_active = true;
-}
-
-void Sys_XUninstallGrabs(void) {
-	assert( dpy );
-
-#if defined( ID_ENABLE_DGA )
-	if ( in_dgamouse.GetBool() ) {
-		common->DPrintf( "DGA Mouse - Disabling DGA DirectVideo\n" );
-		XF86DGADirectVideo( dpy, DefaultScreen( dpy ), 0 );
-	}
-#endif
-	
-	XChangePointerControl( dpy, true, true, mouse_accel_numerator, 
-						  mouse_accel_denominator, mouse_threshold );
-	
-	if(mouse_grabbed) {
-		XUngrabPointer( dpy, CurrentTime );
-		mouse_grabbed = false;
-	}
-	if(keyboard_grabbed) {
-		XUngrabKeyboard( dpy, CurrentTime );
-		keyboard_grabbed = false;
-	}
-	
-	XWarpPointer( dpy, None, win,
-				 0, 0, 0, 0,
-				 glConfig.vidWidth / 2, glConfig.vidHeight / 2);
-	
-	XUndefineCursor( dpy, win );
-
-	mouse_active = false;
 }
 
 void Sys_GrabMouseCursor( bool grabIt ) {
@@ -351,155 +244,31 @@ void Sys_GrabMouseCursor( bool grabIt ) {
 	return;
 #endif
 
-	if ( !dpy ) {
-		#ifdef XEVT_DBG
-			common->DPrintf("Sys_GrabMouseCursor: !dpy\n");
-		#endif
+	if ( !window ) {
 		return;
-	}
-
-	//stgatilov: disable warping mouse pointer to window center
-	//warping does not work properly with virtual machine mouse integration
-	if ( in_nowarp.GetBool() && !in_nograb.GetBool() ) {
-		common->Printf("in_nowarp 1, forcing nograb\n");
-		in_nograb.SetBool( true );
 	}
 
 	if ( glConfig.isFullscreen ) {
 		if ( !grabIt ) {
 			return; // never ungrab while fullscreen
 		}
-		if ( in_nograb.GetBool() ) {
-			common->DPrintf("forcing in_nograb 0 while running fullscreen\n");
-			in_nograb.SetBool( false );
-		}
-	}
-	/*Check if the keyboard should be grabbed or ungrabbed.*/
-	if(!vidmode_nowmfullscreen && keyboard_grabbed && (!grabIt || !in_grabkeyboard.GetBool())) {
-		XUngrabKeyboard( dpy, CurrentTime );
-		keyboard_grabbed = false;
-	} else if((vidmode_nowmfullscreen || (grabIt && in_grabkeyboard.GetBool())) && !keyboard_grabbed) {
-		/*Grab the keyboard if we're configured to grab it and set to grab, or if we're doing full screen without the window manager.*/
-		keyboard_grabbed = true;
-		XGrabKeyboard( dpy, win,
-			       False,
-			       GrabModeAsync, GrabModeAsync,
-			       CurrentTime );
 	}
 
 	/*Check if the mouse should be grabbed or ungrabbed.*/
-	if(!vidmode_nowmfullscreen && mouse_grabbed && (!grabIt || !in_grabmouse.GetBool())) {
-		XUngrabPointer( dpy, CurrentTime );
-		mouse_grabbed = false;
-	} else if((vidmode_nowmfullscreen || (grabIt && in_grabmouse.GetBool())) && !mouse_grabbed) {
-		mouse_grabbed = true;
-		XGrabPointer( dpy, win,
-			      False,
-			      MOUSE_MASK,
-			      GrabModeAsync, GrabModeAsync,
-			      win,
-			      None,
-			      CurrentTime );
-	}
-	
-	if ( in_nograb.GetBool() ) {
-		if ( in_dgamouse.GetBool() ) {
-			common->DPrintf("in_nograb 1, forcing forcing DGA mouse off\n");
-			in_dgamouse.SetBool( false );
-		}
-		if (grabIt) {
-			mouse_active = true;
-		} else {
-			mouse_active = false;
-		}
-		return;
-	}
-
-	if ( grabIt && !mouse_active ) {
-		Sys_XInstallGrabs();
-	} else if ( !grabIt && mouse_active ) {
-		Sys_XUninstallGrabs();
+	if((!grabIt || !in_grabmouse.GetBool())) {
+		glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
+	} else if(grabIt && in_grabmouse.GetBool()) {
+		glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
 	}
 }
 
 void Sys_AdjustMouseMovement(float &dx, float &dy) {
-    //TODO: apply desktop acceleration settings
-    //supposedly, base them on:
-    //  mouse_accel_numerator;
-    //  mouse_accel_denominator;
-    //  mouse_threshold;
-    //just make sure they are available...
-}
-
-/**
- * XPending() actually performs a blocking read 
- *  if no events available. From Fakk2, by way of
- *  Heretic2, by way of SDL, original idea GGI project.
- * The benefit of this approach over the quite
- *  badly behaved XAutoRepeatOn/Off is that you get
- *  focus handling for free, which is a major win
- *  with debug and windowed mode. It rests on the
- *  assumption that the X server will use the
- *  same timestamp on press/release event pairs 
- *  for key repeats. 
- */
-static bool Sys_XPendingInput( void ) {
-	// Flush the display connection
-	//  and look to see if events are queued
-	XFlush( dpy );
-	if ( XEventsQueued( dpy, QueuedAlready) ) {
-		return true;
-	}
-
-	// More drastic measures are required -- see if X is ready to talk
-	static struct timeval zero_time;
-	int x11_fd;
-	fd_set fdset;
-
-    x11_fd = ConnectionNumber( dpy );
-    FD_ZERO( &fdset );
-    FD_SET( x11_fd, &fdset );
-    if ( select( x11_fd+1, &fdset, NULL, NULL, &zero_time ) == 1 ) {
-		return XPending( dpy );
-    }
-
-	// Oh well, nothing is ready ..
-	return false;
-}
-
-/**
- * Intercept a KeyRelease-KeyPress sequence and ignore
- */
-static bool Sys_XRepeatPress( XEvent *event ) {
-	XEvent	peekevent;
-	bool	repeated = false;
-	int		lookupRet;
-	char	buf[5];
-	KeySym	keysym;
-
-	if ( Sys_XPendingInput() ) {
-		XPeekEvent( dpy, &peekevent );
-
-		if ((peekevent.type == KeyPress) &&
-			(peekevent.xkey.keycode == event->xkey.keycode) &&
-			(peekevent.xkey.time == event->xkey.time)) {
-			repeated = true;
-			XNextEvent( dpy, &peekevent );
-			// emit an SE_CHAR for the repeat
-			lookupRet = XLookupString( (XKeyEvent*)&peekevent, buf, sizeof(buf), &keysym, NULL );
-			if (lookupRet > 0) {
-				Posix_QueEvent( SE_CHAR, buf[ 0 ], 0, 0, NULL);
-			} else {
-				// shouldn't we be doing a release/press in this order rather?
-				// ( doesn't work .. but that's what I would have expected to do though )
-				byte mappedKey = MapKeySym((XKeyEvent*)&peekevent);
-				Posix_QueEvent( SE_KEY, mappedKey, true, 0, NULL);
-				Posix_QueEvent( SE_KEY, mappedKey, false, 0, NULL);
-			}
-		}
-  	}
-
-	return repeated;
+	//TODO: apply desktop acceleration settings
+	//supposedly, base them on:
+	//  mouse_accel_numerator;
+	//  mouse_accel_denominator;
+	//  mouse_threshold;
+	//just make sure they are available...
 }
 
 /*
@@ -508,171 +277,27 @@ Posix_PollInput
 ==========================
 */
 void Posix_PollInput() {
-	static char buf[16];
-	static XEvent event;
-	static XKeyEvent *key_event = (XKeyEvent*)&event;
-  	int lookupRet;
-	int b, dx, dy;
-	KeySym keysym;
-	byte mappedKey;
-	
-	if ( !dpy ) {
+	if ( !window ) {
 		return;
 	}
-	
-	// NOTE: Sys_GetEvent only calls when there are no events left
-	// but here we pump all X events that have accumulated
-	// pump one by one? or use threaded input?
-	while ( XPending( dpy ) ) {
-		XNextEvent( dpy, &event );
-		switch (event.type) {
-			case KeyPress:
-				mappedKey = MapKeySym(key_event);
-				Posix_QueEvent( SE_KEY, mappedKey, true, 0, NULL);
-				lookupRet = XLookupString(key_event, buf, sizeof(buf), &keysym, NULL);
-				if (lookupRet > 0) {
-					char s = buf[0];
-					#ifdef XEVT_DBG
-						if (buf[1]!=0)
-							common->DPrintf("WARNING: got XLookupString buffer '%s' (%d)\n", buf, strlen(buf));
-					#endif
-					#ifdef XEVT_DBG2
-						printf("SE_CHAR %s\n", buf);
-					#endif
-					Posix_QueEvent( SE_CHAR, s, 0, 0, NULL);
-				}
-				if (!Posix_AddKeyboardPollEvent( mappedKey, true ))
-					return;
-			break;			
-				
-			case KeyRelease:
-				if (Sys_XRepeatPress(&event)) {
-					#ifdef XEVT_DBG2
-						printf("RepeatPress\n");
-					#endif
-					continue;
-				}
-				mappedKey = MapKeySym(key_event);
-				Posix_QueEvent( SE_KEY, mappedKey, false, 0, NULL);
-				if (!Posix_AddKeyboardPollEvent( mappedKey, false ))
-					return;
-			break;
-				
-			case ButtonPress:
-				if (event.xbutton.button == 4) {
-					Posix_QueEvent( SE_KEY, K_MWHEELUP, true, 0, NULL);
-					if (!Posix_AddMousePollEvent( M_DELTAZ, 1 ))
-						return;
-				} else if (event.xbutton.button == 5) {
-					Posix_QueEvent( SE_KEY, K_MWHEELDOWN, true, 0, NULL);
-					if (!Posix_AddMousePollEvent( M_DELTAZ, -1 ))
-						return;
-				} else {
-					b = -1;
-					if (event.xbutton.button == 1) {
-						b = 0;		// K_MOUSE1
-					} else if (event.xbutton.button == 2) {
-						b = 2;		// K_MOUSE3
-					} else if (event.xbutton.button == 3) {
-						b = 1;		// K_MOUSE2
-					} else if (event.xbutton.button == 6) {
-						b = 3;		// K_MOUSE4
-					} else if (event.xbutton.button == 7) {
-						b = 4;		// K_MOUSE5
-					}
-					if (b == -1 || b > 4) {
-						common->DPrintf("X ButtonPress %d not supported\n", event.xbutton.button);
-					} else {
-						Posix_QueEvent( SE_KEY, K_MOUSE1 + b, true, 0, NULL);
-						if (!Posix_AddMousePollEvent( M_ACTION1 + b, true ))
-							return;
-					}
-				}
-			break;
 
-			case ButtonRelease:
-				if (event.xbutton.button == 4) {
-					Posix_QueEvent( SE_KEY, K_MWHEELUP, false, 0, NULL);
-				} else if (event.xbutton.button == 5) {
-					Posix_QueEvent( SE_KEY, K_MWHEELDOWN, false, 0, NULL);
-				} else {
-					b = -1;
-					if (event.xbutton.button == 1) {
-						b = 0;
-					} else if (event.xbutton.button == 2) {
-						b = 2;
-					} else if (event.xbutton.button == 3) {
-						b = 1;
-					} else if (event.xbutton.button == 6) {
-						b = 3;		// K_MOUSE4
-					} else if (event.xbutton.button == 7) {
-						b = 4;		// K_MOUSE5
-					}
-					if (b == -1 || b > 4) {
-						common->DPrintf("X ButtonRelease %d not supported\n", event.xbutton.button);
-					} else {
-						Posix_QueEvent( SE_KEY, K_MOUSE1 + b, false, 0, NULL);
-						if (!Posix_AddMousePollEvent( M_ACTION1 + b, false ))
-							return;
-					}
-				}
-			break;
-			
-			case MotionNotify:
-				if (!mouse_active)
-					break;
-				if (in_dgamouse.GetBool()) {
-					dx = event.xmotion.x_root;
-					dy = event.xmotion.y_root;
+	mouse_scroll = 0;
+	glfwPollEvents();
 
-					Posix_QueEvent( SE_MOUSE, dx, dy, 0, NULL);
+	if ( !Posix_CanAddMousePollEvent() )
+		return;
 
-					// if we overflow here, we'll get a warning, but the delta will be completely processed anyway
-					Posix_AddMousePollEvent( M_DELTAX, dx );
-					if (!Posix_AddMousePollEvent( M_DELTAY, dy ))
-						return;
-				} else if (in_nowarp.GetBool()) {
-					// stgatilov: in nowarp mode queue mouse displacement events immediately
-					static int prevX = glConfig.vidWidth / 2;
-					static int prevY = glConfig.vidHeight / 2;
-					dx = ((int) event.xmotion.x - prevX);
-					dy = ((int) event.xmotion.y - prevY);
-					prevX = event.xmotion.x;
-					prevY = event.xmotion.y;
-
-					Posix_QueEvent( SE_MOUSE, dx, dy, 0, NULL);
-					Posix_AddMousePollEvent( M_DELTAX, dx );
-					if (!Posix_AddMousePollEvent( M_DELTAY, dy ))
-						return;
-				} else {
-					// if it's a center motion, we've just returned from our warp
-					// FIXME: we generate mouse delta on wrap return, but that lags us quite a bit from the initial event..
-					if (event.xmotion.x == glConfig.vidWidth / 2 &&
-						event.xmotion.y == glConfig.vidHeight / 2) {
-						mwx = glConfig.vidWidth / 2;
-						mwy = glConfig.vidHeight / 2;
-
-						Posix_QueEvent( SE_MOUSE, mx, my, 0, NULL);
-
-						Posix_AddMousePollEvent( M_DELTAX, mx );
-						if (!Posix_AddMousePollEvent( M_DELTAY, my ))
-							return;
-						mx = my = 0;
-						break;
-					}
-
-					dx = ((int) event.xmotion.x - mwx);
-					dy = ((int) event.xmotion.y - mwy);
-					mx += dx;
-					my += dy;
-
-					mwx = event.xmotion.x;
-					mwy = event.xmotion.y;
-					XWarpPointer(dpy,None,win,0,0,0,0, (glConfig.vidWidth/2),(glConfig.vidHeight/2));
-				}
-			break;
-		}
+	if ( mouse_scroll < 0 ) {
+		Posix_QueEvent( SE_KEY, K_MWHEELDOWN, true, 0, nullptr );
+		Posix_AddMousePollEvent( M_DELTAZ, mouse_scroll );
+	} else if ( mouse_scroll > 0 ) {
+		Posix_QueEvent( SE_KEY, K_MWHEELUP, true, 0, nullptr );
+		Posix_AddMousePollEvent( M_DELTAZ, mouse_scroll );
 	}
+	else if ( mouse_scroll_prev != 0 ) {
+		Posix_QueEvent( SE_KEY, mouse_scroll_prev < 0 ? K_MWHEELDOWN : K_MWHEELUP, false, 0, nullptr );
+	}
+	mouse_scroll_prev = mouse_scroll;
 }
 
 /*
@@ -688,48 +313,5 @@ Sys_MapCharForKey
 ===============
 */
 unsigned char Sys_MapCharForKey( int _key ) {
-	int			key;	// scan key ( != doom key )
-	XkbStateRec kbd_state;
-	XEvent		event;
-	KeySym		keysym;
-	int			lookupRet;
-	char		buf[5];
-
-	if ( !have_xkb || !dpy ) {
-		return (unsigned char)_key;
-	}
-
-	// query the current keyboard group, must be passed as bit 13-14 in the constructed XEvent
-	// see X Keyboard Extension library specifications 
-	XkbGetState( dpy, XkbUseCoreKbd, &kbd_state );
-
-	// lookup scancode from doom key code. unique hits
-	for ( key = 0; key < 128; key++ ) {
-		if ( _key == s_scantokey[ key ] ) {
-			break;
-		}
-	}
-	if ( key == 128 ) {
-		// it happens. these, we can't convert
-		common->DPrintf( "Sys_MapCharForKey: doom key %d -> keycode failed\n", _key );
-		return (unsigned char)_key;
-	}
-
-	memset( &event, 0, sizeof( XEvent ) );
-	event.xkey.type = KeyPress;
-	event.xkey.display = dpy;
-	event.xkey.time = CurrentTime;
-	event.xkey.keycode = key;
-	event.xkey.state = kbd_state.group << 13;
-
-	lookupRet = XLookupString( (XKeyEvent *)&event, buf, sizeof( buf ), &keysym, NULL );
-	if ( lookupRet <= 0 ) {
-		Sys_Printf( "Sys_MapCharForKey: XLookupString key 0x%x failed\n", key );
-		return (unsigned char)_key;
-	}
-	if ( lookupRet > 1 ) {
-		// only ever expecting 1 char..
-		Sys_Printf( "Sys_MapCharForKey: XLookupString returned '%s'\n", buf );
-	}
-	return buf[ 0 ];
+	return (unsigned char)_key;
 }

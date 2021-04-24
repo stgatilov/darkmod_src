@@ -39,11 +39,6 @@ void GLimp_LoadFunctions(bool inContext) {
 	if (inContext && !WGLok) {
 		common->Error("Failed to initialize WGL functions (glad)");
 	}
-#elif defined(__linux__)
-	bool GLXok = gladLoadGLX(dpy, scrnum);
-	if (inContext && !GLXok) {
-		common->Error("Failed to initialize GLX functions (glad)");
-	}
 #endif
 }
 
@@ -70,7 +65,7 @@ void GLimp_CheckRequiredFeatures( void ) {
 	//reqs = reqs && CHECK_FEATURE(WGL_ARB_create_context_profile);
 	reqs = reqs && CHECK_FEATURE(WGL_ARB_pixel_format);
 #elif defined(__linux__)
-	reqs = reqs && CHECK_FEATURE(GLX_VERSION_1_4);
+	//reqs = reqs && CHECK_FEATURE(GLX_VERSION_1_4);
 	//reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context);
 	//reqs = reqs && CHECK_FEATURE(GLX_ARB_create_context_profile);
 #endif

@@ -1,5 +1,5 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+					The Dark Mod GPL Source Code
  
  This file is part of the The Dark Mod Source Code, originally based 
  on the Doom 3 GPL Source Code as published in 2011.
@@ -40,8 +40,9 @@ Posix_AddKeyboardPollEvent
 ==========
 */
 bool Posix_AddKeyboardPollEvent(int key, bool state) {
-	if (poll_keyboard_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM)
-		common->FatalError( "poll_keyboard_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	if (poll_keyboard_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM) {
+		common->FatalError("poll_keyboard_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	}
 	poll_events_keyboard[poll_keyboard_event_count].key = key;
 	poll_events_keyboard[poll_keyboard_event_count++].state = state;
 	if (poll_keyboard_event_count >= MAX_POLL_EVENTS) {
@@ -51,14 +52,19 @@ bool Posix_AddKeyboardPollEvent(int key, bool state) {
 	return true;
 }
 
+bool Posix_CanAddKeyboardPollEvent() {
+	return poll_keyboard_event_count < MAX_POLL_EVENTS;
+}
+
 /*
 ==========
 Posix_AddMousePollEvent
 ==========
 */
 bool Posix_AddMousePollEvent(int action, int value) {
-	if (poll_mouse_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM)
-		common->FatalError( "poll_mouse_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	if (poll_mouse_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM) {
+		common->FatalError("poll_mouse_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	}
 	poll_events_mouse[poll_mouse_event_count].action = action;
 	poll_events_mouse[poll_mouse_event_count++].value = value;
 	if (poll_mouse_event_count >= MAX_POLL_EVENTS) {
@@ -66,6 +72,10 @@ bool Posix_AddMousePollEvent(int action, int value) {
 		return false;
 	}
 	return true;
+}
+
+bool Posix_CanAddMousePollEvent() {
+	return poll_mouse_event_count < MAX_POLL_EVENTS;
 }
 
 /*
