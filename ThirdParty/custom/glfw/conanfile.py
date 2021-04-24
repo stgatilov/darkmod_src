@@ -7,7 +7,7 @@ from conans.errors import ConanException
 
 class GlfwConan(ConanFile):
     name = "glfw"
-    version = "3.3.2"
+    version = "3.3.4"
     description = "GLFW is a free, Open Source, multi-platform library for OpenGL, OpenGL ES and Vulkan" \
                   "application development. It provides a simple, platform-independent API for creating" \
                   "windows, contexts and surfaces, reading input, handling events, etc."

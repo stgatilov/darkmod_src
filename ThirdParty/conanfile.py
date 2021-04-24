@@ -57,7 +57,7 @@ class TdmDepends(ConanFile):
         "vorbis/1.3.6@bincrafters/stable",
         "fltk/1.3.5@thedarkmod/local",
         "BLAKE2/master@thedarkmod/local",
-        "glfw/3.3.2@thedarkmod/local",
+        "glfw/3.3.4@thedarkmod/local",
     )
     # these deps must be built separately for each configuration (both debug and release)
     # this is required for C++ libs because iterator debugging and runtime differences are not allowed by MSVC
