@@ -146,6 +146,13 @@ int GLX_Init(glimpParms_t a) {
 		return false;
 	}
 
+	GLFWimage icons[2];
+	R_LoadImage( "darkmod_icon_small.tga", &icons[0].pixels, &icons[0].width, &icons[0].height, nullptr, false );
+	R_LoadImage( "darkmod_icon.tga", &icons[1].pixels, &icons[1].width, &icons[1].height, nullptr, false );
+	glfwSetWindowIcon( window, 2, icons );
+	R_StaticFree( icons[0].pixels );
+	R_StaticFree( icons[1].pixels );
+
 	glfwSetFramebufferSizeCallback( window, resize_callback );
 	glfwSetWindowCloseCallback( window, close_callback );
 	glfwSetWindowSizeLimits( window, 200, 200, GLFW_DONT_CARE, GLFW_DONT_CARE );
