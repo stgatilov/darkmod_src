@@ -479,7 +479,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 }
 
 static const int INTERACTION_TABLE_MAX_LIGHTS = 4096;
-static const int INTERACTION_TABLE_MAX_ENTITYS = MAX_GENTITIES;
+static const int INTERACTION_TABLE_MAX_ENTITYS = 8192/*MAX_GENTITIES*/;	//stgatilov: cannot allocate 2GB table =(
 idInteractionTable::idInteractionTable() {
 	SM_matrix = nullptr;
 }
