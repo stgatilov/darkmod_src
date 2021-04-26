@@ -158,6 +158,34 @@
     </Expand>
   </Type>
 
+  <Type Name="idHashMap&lt;*,*,*,*&gt;">
+    <DisplayString>HashMap: size = {count}/{size}</DisplayString>
+    <Expand>
+      <CustomListItems Optional="true">
+        <Variable Name="i" InitialValue="0"/>
+        <Loop Condition="i &lt; size">
+          <!-- Unfortunately, we cannot use equality comparator here -->
+          <Item Condition="!(table[i].key == empty)" Name="{table[i].key}">table[i].value</Item>
+          <Exec>i++</Exec>
+        </Loop>
+      </CustomListItems>
+      <Synthetic Name="[cells]">
+        <DisplayString>{table,[size]na}</DisplayString>
+        <Expand>
+          <ArrayItems>
+            <Size>size</Size>
+            <ValuePointer>table</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[props]">
+        <DisplayString>maxLoad={maxLoad/256.0f} empty={empty}</DisplayString>
+      </Synthetic>
+      <Item Condition="sizeof(hashFunc) &gt; 1" Name="[hashFunc]">hashFunc</Item>
+      <Item Condition="sizeof(equalFunc) &gt; 1" Name="[equalFunc]">equalFunc</Item>
+    </Expand>
+  </Type>
+
   <Type Name="idDenseHash&lt;*,*,*&gt;">
     <DisplayString>DenseHash: size = {count}/{size1 + 1}</DisplayString>
     <Expand>

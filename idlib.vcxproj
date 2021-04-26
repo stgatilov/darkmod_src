@@ -176,6 +176,7 @@
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\containers\DisjointSets.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
+    <ClCompile Include="idlib\containers\HashMap.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
     <ClCompile Include="idlib\containers\PlaneSet.cpp" />
     <ClCompile Include="idlib\containers\StrPool.cpp" />
@@ -264,6 +265,7 @@
     <ClInclude Include="idlib\containers\DisjointSets.h" />
     <ClInclude Include="idlib\containers\FlexList.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
+    <ClInclude Include="idlib\containers\HashMap.h" />
     <ClInclude Include="idlib\containers\HashTable.h" />
     <ClInclude Include="idlib\containers\Hierarchy.h" />
     <ClInclude Include="idlib\containers\LinkList.h" />

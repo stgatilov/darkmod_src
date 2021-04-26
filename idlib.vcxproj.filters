@@ -195,6 +195,9 @@
     <ClCompile Include="idlib\math\Simd_IdAsm.cpp">
       <Filter>Math</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\containers\HashMap.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -430,6 +433,9 @@
     </ClInclude>
     <ClInclude Include="idlib\math\Simd_IdAsm.h">
       <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\HashMap.h">
+      <Filter>Containers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
