@@ -123,7 +123,8 @@ template<class Key> struct idHashDefaultEmpty<Key, std::enable_if_t<
  * This hash table is rather sensitive to bad hash functions.
  * As of now, the following types of key are explicitly supported:
  *   + integers and pointers
- *   + idStr (case-sensitive)
+ *   + idStr case-sensitive
+ *   + idStr case-INsensitive --- see idHashMapIStr
  * In other cases, you might need to implement your own hash function and equality operator.
  * If you do so, please check that collision ratio (stat_Collision / stat_FindCell) does not exceed 3-5.
  *
