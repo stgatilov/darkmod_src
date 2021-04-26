@@ -260,6 +260,7 @@ public:
 	// stgatilov: polynomial hash djb2 / DJBX33A extended to 64 bits
 	// maybe it is a slower than idStr::Hash, but it is a much better hash function
 	static uint64		HashPoly64( const char *string, int length = -1 );
+	static uint64		IHashPoly64( const char *string, int length = -1 );
 
 	// character methods
 	static char			ToLower( char c );
@@ -990,6 +991,13 @@ ID_INLINE uint64 idStr::HashPoly64( const char *string, int length ) {
 	uint64 value = 5381;
 	for ( int i = 0; (length < 0 ? string[i] : i < length); i++)
 		value = ((value << 5) + value) + string[i];
+	return value;
+}
+
+ID_INLINE uint64 idStr::IHashPoly64( const char *string, int length ) {
+	uint64 value = 5381;
+	for ( int i = 0; (length < 0 ? string[i] : i < length); i++)
+		value = ((value << 5) + value) + ToLower(string[i]);
 	return value;
 }
 
