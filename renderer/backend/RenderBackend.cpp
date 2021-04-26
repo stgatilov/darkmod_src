@@ -48,6 +48,8 @@ RenderBackend::RenderBackend()
 {}
 
 void RenderBackend::Init() {
+	initialized = true;
+
 	drawBatchExecutor.Init();
 	depthStage.Init();
 	interactionStage.Init();
@@ -65,6 +67,8 @@ void RenderBackend::Init() {
 }
 
 void RenderBackend::Shutdown() {
+	if (!initialized)
+		return;
 	qglDeleteBuffers( 3, lightgemPbos );
 	
 	frobOutlineStage.Shutdown();

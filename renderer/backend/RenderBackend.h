@@ -53,6 +53,7 @@ private:
 	FrameBuffer *lightgemFbo = nullptr;
 	GLuint lightgemPbos[3] = { 0 };
 	int currentLightgemPbo = 0;
+	bool initialized = false;
 
 	void DrawInteractionsWithShadowMapping( viewLight_t *vLight );
 	void DrawInteractionsWithStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight );
