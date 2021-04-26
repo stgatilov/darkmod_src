@@ -17,6 +17,7 @@
 #define __RENDERWORLDLOCAL_H__
 
 #include "containers/DenseHash.h"
+#include "containers/HashMap.h"
 
 // assume any lightDef or entityDef index above this is an internal error
 #define LUDICROUS_INDEX	65537		// (2 ** 16) + 1;
@@ -105,17 +106,20 @@ public:
 	idInteractionTable();
 	~idInteractionTable();
 	void Init();
+	void Shutdown();
 	idInteraction *Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const;
 	bool Add(idInteraction *interaction);
 	bool Remove(idInteraction *interaction);
 	idStr Stats() const;
-private:
-	void FreeMemory();
 
+private:
+	int useInteractionTable = -1;
 	//r_useInteractionTable = 1: Single Matrix  (light x entity)
 	idInteraction** SM_matrix;
-	//r_useInteractionTable = 2: Single Hash Table
+	//r_useInteractionTable = 2: Single Hash Table (old code)
 	idDenseHash<int, idInteraction*, InterTableHashFunction> SHT_table;
+	//r_useInteractionTable = 3: Single Hdsh Table (new code)
+	idHashMap<int, idInteraction*> SHT_tableNew;
 };
 
 class idRenderWorldLocal : public idRenderWorld {
@@ -296,6 +300,7 @@ public:
 
 	float					DrawTextLength( const char *text, float scale, int len = 0 );
 
+	void					PutAllInteractionsIntoTable();
 	void					FreeInteractions();
 
 	void					PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3 (*points), int nodeNum );

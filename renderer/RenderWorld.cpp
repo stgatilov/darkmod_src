@@ -713,6 +713,14 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 		return;
 	}
 
+	// stgatilov: allow switching interaction table implementations on-the-fly
+	if ( r_useInteractionTable.IsModified() ) {
+		interactionTable.Shutdown();
+		interactionTable.Init();
+		PutAllInteractionsIntoTable();
+		r_useInteractionTable.ClearModified();
+	}
+
 	// save this world for use by some console commands
 	tr.primaryWorld = this;
 	tr.primaryRenderView = renderView;
@@ -1543,6 +1551,18 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 #endif
 
 	// build the interaction table
+	PutAllInteractionsIntoTable();
+
+	// entities flagged as noDynamicInteractions will no longer make any
+	generateAllInteractionsCalled = true;
+}
+
+/*
+===================
+idRenderWorldLocal::PutAllInteractionsIntoTable
+===================
+*/
+void idRenderWorldLocal::PutAllInteractionsIntoTable() {
 	for( int i = 0; i < this->lightDefs.Num(); i++ ) {
 		idRenderLightLocal *ldef = this->lightDefs[i];
 		if( !ldef ) {
@@ -1556,9 +1576,6 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 	idStr stats = interactionTable.Stats();
 	common->Printf( "Interaction table generated: %s\n", stats.c_str() );
 	common->Printf( "Initial counts:  %d entities  %d lightDefs  %d entityDefs\n", gameLocal.num_entities, lightDefs.Num(), entityDefs.Num() );
-
-	// entities flagged as noDynamicInteractions will no longer make any
-	generateAllInteractionsCalled = true;
 }
 
 /*
