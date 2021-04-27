@@ -361,7 +361,7 @@ void idSIMD_SSE2::CalcTriFacing( const idDrawVert *verts, const int numVerts, co
 void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 	typedef unsigned int uint32;
 	int i = 0;
-	for ( ; (size_t)( src + i ) & 15; i++ )
+	for ( ; i < numBytes && (size_t(src + i) & 15); i++ )
 		dst[i] = src[i];
 	for ( ; i + 128 <= numBytes; i += 128 ) {
 		__m128i d0 = _mm_load_si128( ( __m128i* ) & src[i + 0 * 16] );
@@ -392,6 +392,7 @@ void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 		dst[i] = src[i];
 	}
 	_mm_sfence();
+	assert(i == numBytes);
 }
 
 void idSIMD_SSE2::Memcpy( void* dst, const void* src, const int count ) {
