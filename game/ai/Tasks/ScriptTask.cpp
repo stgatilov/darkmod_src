@@ -25,6 +25,11 @@
 namespace ai
 {
 
+ScriptTask::~ScriptTask() {
+	if (_thread)
+		delete _thread;
+}
+
 ScriptTask::ScriptTask() :
 	_thread(NULL)
 {}
@@ -58,6 +63,7 @@ void ScriptTask::Init(idAI* owner, Subsystem& subsystem)
 		_thread = new idThread(scriptFunction);
 		_thread->CallFunctionArgs(scriptFunction, true, "e", owner);
 		_thread->DelayedStart(0);
+		_thread->ManualDelete();
 	}
 	else
 	{
@@ -76,7 +82,6 @@ bool ScriptTask::Perform(Subsystem& subsystem)
 	if (_thread->IsDying())
 	{
 		// thread is done, return TRUE to terminate this task
-		_thread = NULL;
 		return true;
 	}
 
@@ -88,7 +93,7 @@ void ScriptTask::OnFinish(idAI* owner)
 	if (_thread != NULL)
 	{
 		// We've got a non-NULL thread, this means it's still alive, end it now
-		_thread->End();
+		_thread->EndThread();
 	}
 }
 

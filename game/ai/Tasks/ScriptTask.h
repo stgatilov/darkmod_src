@@ -54,6 +54,8 @@ private:
 	ScriptTask();
 
 public:
+	~ScriptTask();
+
 	// Optional constructor taking the function name
 	ScriptTask(const idStr& functionName);
 
