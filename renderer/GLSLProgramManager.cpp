@@ -22,7 +22,7 @@ GLSLProgramManager programManagerInstance;
 GLSLProgramManager *programManager = &programManagerInstance;
 
 namespace {
-	void DefaultProgramInit( GLSLProgram *program, idDict defines, const char *vertexSource, const char *fragmentSource = nullptr, const char *geometrySource = nullptr ) {
+	void DefaultProgramInit( GLSLProgram *program, idHashMapDict defines, const char *vertexSource, const char *fragmentSource = nullptr, const char *geometrySource = nullptr ) {
 		program->Init();
 		if( vertexSource != nullptr ) {
 			program->AttachVertexShader( vertexSource, defines );
@@ -74,7 +74,7 @@ void GLSLProgramManager::Shutdown() {
 	multiLightInteractionShader = nullptr;
 }
 
-GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idHashMapDict &defines ) {
 	Generator generator = [=]( GLSLProgram *program ) {
 		if( fileSystem->FindFile( idStr("glprogs/") + name + ".gs" ) != FIND_NO ) {
 			DefaultProgramInit( program, defines, name + ".vs", name + ".fs", name + ".gs" );
@@ -85,21 +85,21 @@ GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idDict &defines
 	return LoadFromGenerator( name, generator );	
 }
 
-GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idHashMapDict &defines ) {
 	Generator generator = [=]( GLSLProgram *program ) {
 		DefaultProgramInit( program, defines, vertexSource );
 	};
 	return LoadFromGenerator( name, generator );
 }
 
-GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idHashMapDict &defines ) {
 	Generator generator = [=]( GLSLProgram *program ) {
 		DefaultProgramInit( program, defines, vertexSource, fragmentSource );
 	};
 	return LoadFromGenerator( name, generator );
 }
 
-GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idStr &geometrySource, const idDict &defines ) {
+GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr &vertexSource, const idStr &fragmentSource, const idStr &geometrySource, const idHashMapDict &defines ) {
 	Generator generator = [=]( GLSLProgram *program ) {
 		DefaultProgramInit( program, defines, vertexSource, fragmentSource, geometrySource );
 	};
@@ -169,7 +169,7 @@ void GLSLProgramManager::Reload( programWithGenerator_t *entry ) {
 
 namespace {
 	void InitInteractionShader( GLSLProgram *program ) {
-		idDict defines;
+		idHashMapDict defines;
 		// TODO: set some defines based on cvars
 		defines.Set( "SOFT", "1" );
 		DefaultProgramInit( program, defines, "interaction.vs", "interaction.fs" );
@@ -177,7 +177,7 @@ namespace {
 	}
 
 	void InitDepthShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), "depthAlpha.vs", "depthAlpha.fs" );
+		DefaultProgramInit( program, {}, "depthAlpha.vs", "depthAlpha.fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
 		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
@@ -185,7 +185,7 @@ namespace {
 	}
 
 	void InitFogShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), "fog.vs", "fog.fs" );
+		DefaultProgramInit( program, {}, "fog.vs", "fog.fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
@@ -194,7 +194,7 @@ namespace {
 	}
 
 	void InitOldStageShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), "oldStage.vs", "oldStage.fs" );
+		DefaultProgramInit( program, {}, "oldStage.vs", "oldStage.fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
 		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
@@ -202,7 +202,7 @@ namespace {
 	}
 
 	void InitBlendShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), "blend.vs", "blend.fs" );
+		DefaultProgramInit( program, {}, "blend.vs", "blend.fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
@@ -211,7 +211,7 @@ namespace {
 	}
 
 	void InitShadowMapShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs"/*, program->GetName() + ".gs"*/ );
+		DefaultProgramInit( program, {}, program->GetName() + ".vs", program->GetName() + ".fs"/*, program->GetName() + ".gs"*/ );
 		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 		depthUniforms->instances = 6;
 		depthUniforms->acceptsTranslucent = true; //duzenko: wait, what?
@@ -219,7 +219,7 @@ namespace {
 	}
 
 	void InitSoftParticleShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, idDict(), program->GetName() + ".vs", program->GetName() + ".fs" );
+		DefaultProgramInit( program, {}, program->GetName() + ".vs", program->GetName() + ".fs" );
 		program->Activate();
 		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
@@ -235,9 +235,9 @@ namespace {
 		return programManager->LoadFromGenerator( baseName, [=]( GLSLProgram *program ) {
 			idStr geometrySource = baseName + ".gs";
 			if( fileSystem->FindFile( idStr( "glprogs/" ) + baseName + ".gs" ) != FIND_NO ) {
-				DefaultProgramInit( program, idDict(), baseName + ".vs", baseName + ".fs", baseName + ".gs" );
+				DefaultProgramInit( program, {}, baseName + ".vs", baseName + ".fs", baseName + ".gs" );
 			} else {
-				DefaultProgramInit( program, idDict(), baseName + ".vs", baseName + ".fs", nullptr );
+				DefaultProgramInit( program, {}, baseName + ".vs", baseName + ".fs", nullptr );
 			}
 			program->Activate();
 			customizer( program );
@@ -247,7 +247,7 @@ namespace {
 
 	GLSLProgram *LoadInteractionShader( const idStr &name, const idStr &baseName, bool ambient ) {
 		return programManager->LoadFromGenerator( name, [=]( GLSLProgram *program ) {
-			idDict defines;
+			idHashMapDict defines;
 			DefaultProgramInit( program, defines, baseName + ".vs", baseName + ".fs" );
 			program->Activate();
 			Uniforms::Interaction *interactionUniforms = program->GetUniformGroup<Uniforms::Interaction>();

@@ -120,7 +120,7 @@ namespace {
 }
 
 void ManyLightInteractionStage::LoadInteractionShader( GLSLProgram *shader, bool bindless ) {
-	idDict defines;
+	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
 	defines.Set( "MAX_LIGHTS", idStr::Fmt( "%d", bindless ? MAX_BINDLESS_LIGHTS : MAX_LIGHTS ) );
 	if (bindless) {

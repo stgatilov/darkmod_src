@@ -81,7 +81,7 @@ namespace {
 	}
 
 	void LoadBloomDownsampleWithBrightPassShader(GLSLProgram *downsampleShader) {
-		idDict defines;
+		idHashMapDict defines;
 		defines.Set( "BLOOM_BRIGHTPASS", "1" );
 		downsampleShader->InitFromFiles( "fullscreen_tri.vert.glsl", "bloom_downsample.frag.glsl", defines );
 		BloomDownsampleUniforms *uniforms = downsampleShader->GetUniformGroup<BloomDownsampleUniforms>();

@@ -224,6 +224,7 @@ public:
 #include "containers/BinSearch.h"
 #include "containers/HashIndex.h"
 #include "containers/HashTable.h"
+#include "containers/HashMap.h"
 #include "containers/StaticList.h"
 #include "containers/LinkList.h"
 #include "containers/Hierarchy.h"

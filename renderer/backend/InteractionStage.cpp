@@ -95,7 +95,7 @@ namespace {
 }
 
 void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName, bool bindless ) {
-	idDict defines;
+	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
 	if (bindless) {
 		defines.Set( "BINDLESS_TEXTURES", "1" );

@@ -39,7 +39,7 @@ ShadowMapStage::ShadowMapStage( DrawBatchExecutor *drawBatchExecutor ) : drawBat
 
 void ShadowMapStage::Init() {
 	const uint maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
-	idDict defines;
+	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
 	shadowMapShader = programManager->LoadFromFiles( "shadow_map", "stages/shadow_map/shadow_map.vert.glsl", defines );
 }

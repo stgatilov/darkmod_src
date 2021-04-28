@@ -34,7 +34,7 @@ namespace {
 	};
 
 	void LoadShader( GLSLProgram *shader, int maxSupportedDrawsPerBatch, bool bindless ) {
-		idDict defines;
+		idHashMapDict defines;
 		defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxSupportedDrawsPerBatch ) );
 		if (bindless) {
 			defines.Set( "BINDLESS_TEXTURES", "1" );

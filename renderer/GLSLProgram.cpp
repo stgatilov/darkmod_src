@@ -55,15 +55,15 @@ void GLSLProgram::Destroy() {
 	}
 }
 
-void GLSLProgram::AttachVertexShader( const char *sourceFile, const idDict &defines ) {
+void GLSLProgram::AttachVertexShader( const char *sourceFile, const idHashMapDict &defines ) {
 	LoadAndAttachShader( GL_VERTEX_SHADER, sourceFile, defines );
 }
 
-void GLSLProgram::AttachGeometryShader( const char *sourceFile, const idDict &defines ) {
+void GLSLProgram::AttachGeometryShader( const char *sourceFile, const idHashMapDict &defines ) {
 	LoadAndAttachShader( GL_GEOMETRY_SHADER_ARB, sourceFile, defines );
 }
 
-void GLSLProgram::AttachFragmentShader( const char *sourceFile, const idDict &defines ) {
+void GLSLProgram::AttachFragmentShader( const char *sourceFile, const idHashMapDict &defines ) {
 	LoadAndAttachShader( GL_FRAGMENT_SHADER, sourceFile, defines );
 }
 
@@ -142,7 +142,7 @@ bool GLSLProgram::Validate() {
 	return result;
 }
 
-void GLSLProgram::InitFromFiles( const char *vertexFile, const char *fragmentFile, const idDict &defines ) {
+void GLSLProgram::InitFromFiles( const char *vertexFile, const char *fragmentFile, const idHashMapDict &defines ) {
 	Init();
 	AttachVertexShader( vertexFile, defines );
 	AttachFragmentShader( fragmentFile, defines );
@@ -150,7 +150,7 @@ void GLSLProgram::InitFromFiles( const char *vertexFile, const char *fragmentFil
 	Link();
 }
 
-void GLSLProgram::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
+void GLSLProgram::LoadAndAttachShader( GLint shaderType, const char *sourceFile, const idHashMapDict &defines ) {
 	if( program == 0 ) {
 		common->Error( "Tried to attach shader to an uninitialized program %s", name.c_str() );
 	}
@@ -281,7 +281,7 @@ namespace {
 	 * 
 	 * Otherwise, it will be commented out.
 	 */
-	void ResolveDefines( std::string &source, const idDict &defines ) {
+	void ResolveDefines( std::string &source, const idHashMapDict &defines ) {
 		size_t pos = 0;
 		while (1) {
 			auto pragma = FindNextPragmaInText( source, pos );
@@ -296,9 +296,9 @@ namespace {
 			define = define.substr( 1, define.size() - 2 );
 
 			std::string replacement;
-			auto defIt = defines.FindKey( define.c_str() );
+			auto defIt = defines.Find( define.c_str() );
 			if( defIt != nullptr ) {
-				replacement = "#define " + define + " " + defIt->GetValue().c_str() + "\n";
+				replacement = "#define " + define + " " + defIt->value.c_str() + "\n";
 			} else {
 				replacement = "// #undef " + define + "\n";
 			}
@@ -309,7 +309,7 @@ namespace {
 	}
 }
 
-GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, const idDict &defines ) {
+GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, const idHashMapDict &defines ) {
 	std::string source = ReadFile( sourceFile );
 	if( source.empty() ) {
 		return 0;
@@ -317,7 +317,7 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 
 	std::vector<std::string> sourceFiles { sourceFile };
 	ResolveIncludes( source, sourceFiles );
-	idDict definesPlus( defines );
+	idHashMapDict definesPlus( defines );
 	if ( shaderType == GL_VERTEX_SHADER )
 		definesPlus.Set("VERTEX_SHADER", "1");
 	ResolveDefines( source, definesPlus );
@@ -492,7 +492,7 @@ namespace {
 			"}\n" ;
 
 		std::string source = shaderWithDynamicDefines;
-		idDict defines;
+		idHashMapDict defines;
 		defines.Set( "FIRST_DEFINE", "1" );
 		ResolveDefines( source, defines );
 		REQUIRE( source == expectedResult );
