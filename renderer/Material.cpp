@@ -2509,7 +2509,7 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 	registers[EXP_REG_PARM8] = shaderParms[8];
 	registers[EXP_REG_PARM9] = shaderParms[9];
 	registers[EXP_REG_PARM10] = shaderParms[10];
-	registers[EXP_REG_PARM11] = r_newFrob ? 0 : shaderParms[11]; // duzenko: temporary frob override
+	registers[EXP_REG_PARM11] = r_newFrob.GetInteger() ? 0 : shaderParms[11]; // duzenko: temporary frob override
 	registers[EXP_REG_GLOBAL0] = view->renderView.shaderParms[0];
 	registers[EXP_REG_GLOBAL1] = view->renderView.shaderParms[1];
 	registers[EXP_REG_GLOBAL2] = view->renderView.shaderParms[2];

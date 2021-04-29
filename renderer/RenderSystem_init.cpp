@@ -232,7 +232,13 @@ idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 	"  2: forward-compatible core profile\n"
 	"Note: restarting TDM is required after change!"
 );
-idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
+idCVar r_newFrob( "r_newFrob", "2", CVAR_RENDERER | CVAR_ARCHIVE,
+	"Controls how objects are frob-highlighted:\n"
+	"  0 = use material stages by parm11\n"
+	"  1 = use the frob shader\n"
+	"  2 = use nothing (no highlight)\n"
+	"Note: outline is controlled by r_frobOutline"
+);
 
 // FBO
 idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-5 individual fbo attachments" );

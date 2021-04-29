@@ -542,7 +542,7 @@ Frob shader stub
 ==================
 */
 ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	if ( !r_newFrob )
+	if ( r_newFrob.GetInteger() != 1 )
 		return;
 	if ( surf->sort >= SS_DECAL ) // otherwise fills black
 		return;
