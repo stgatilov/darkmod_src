@@ -252,9 +252,9 @@ class FFMpegConan(ConanFile):
             args.append('--disable-all')
             args.append('--disable-autodetect')
             args.extend('--enable-avformat --enable-avcodec --enable-swresample --enable-swscale'.split())
-            args.append('--enable-demuxer=roq,mov,m4v,avi')
-            args.append('--enable-parser=h264,mpeg4video,aac,mpegaudio')
-            args.append('--enable-decoder=roq,h264,mpeg4,aac,mp3')
+            args.append('--enable-demuxer=roq,mov')
+            args.append('--enable-parser=h264,aac')
+            args.append('--enable-decoder=roq,h264,aac')
 
             args.append('--enable-postproc' if self.options.postproc else '--disable-postproc')
             args.append('--enable-pic' if self.options.fPIC else '--disable-pic')
