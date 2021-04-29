@@ -450,30 +450,27 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	// compute width and height
 	if ( parms.fullScreen ) {
-		//always adjust game resolution to desktop resolution in fullscreen mode
-		//TODO: move it to R_InitOpenGL?
-		parms.width = glConfig.vidWidth = win32.desktopWidth;
-		parms.height = glConfig.vidHeight = win32.desktopHeight;
-		r_customWidth.SetInteger( win32.desktopWidth );
-		r_customHeight.SetInteger( win32.desktopHeight );
+		exstyle = 0;
+		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 
-		if ( r_fullscreen.GetInteger() == 1 || r_fullscreen.GetInteger() == 2 )
-		{
-			exstyle = 0;
-			stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
+		if (win32.win_topmost)
+			 exstyle |= WS_EX_TOPMOST;
 
-			if (win32.win_topmost)
-				 exstyle |= WS_EX_TOPMOST;
+		x = 0;
+		y = 0;
 
-			x = 0;
-			y = 0;
-			if ( r_fullscreen.GetInteger() == 2 ) {
-				//adding excessive lines above and below screen, so that OS does NOT put us into exclusive mode
-				//this hack was found here: https://stackoverflow.com/q/22259067/556899
-				y = -1;
-				parms.height += 2;
-			}
+		if ( r_fullscreen.GetInteger() == 2 ) {
+			//always adjust game resolution to desktop resolution in borderless mode
+			parms.width = glConfig.vidWidth = win32.desktopWidth;
+			parms.height = glConfig.vidHeight = win32.desktopHeight;
+			r_customWidth.SetInteger( win32.desktopWidth );
+			r_customHeight.SetInteger( win32.desktopHeight );
+			//adding excessive lines above and below screen, so that OS does NOT put us into exclusive mode
+			//this hack was found here: https://stackoverflow.com/q/22259067/556899
+			y = -1;
+			parms.height += 2;
 		}
+
 		w = parms.width;
 		h = parms.height;
 	} else {
@@ -585,7 +582,8 @@ GLW_SetFullScreen
 */
 static bool GLW_SetFullScreen( glimpParms_t parms ) {
 	win32.cdsFullscreen = true;
-	return true;
+	if ( r_fullscreen.GetInteger() == 2 )
+		return true;
 
 	DEVMODE		dm;
 	int			cdsRet;
