@@ -1512,13 +1512,21 @@ If this isn't called, they will all be dynamically generated
 
 This really isn't all that helpful anymore, because the calculation of shadows
 and light interactions is deferred from idRenderWorldLocal::CreateLightDefInteractions(), but we
-use it as an oportunity to size the interactionTable
+use it as an opportunity to size the interactionTable
+
+stgatilov: This is even harmful now!
+Interaction table is hash table, which grows automatically.
+generate everything => larger table => more cache pollution
 ===================
 */
 void idRenderWorldLocal::GenerateAllInteractions() {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
+
+	//stgatilov: never force-generate all interactions
+	return PutAllInteractionsIntoTable( true );
+	//(dead code follows)
 
 #ifdef _DEBUG
 	int start = Sys_Milliseconds();
