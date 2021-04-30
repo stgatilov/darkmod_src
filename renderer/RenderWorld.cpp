@@ -715,9 +715,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 
 	// stgatilov: allow switching interaction table implementations on-the-fly
 	if ( r_useInteractionTable.IsModified() ) {
-		interactionTable.Shutdown();
-		interactionTable.Init();
-		PutAllInteractionsIntoTable();
+		PutAllInteractionsIntoTable(true);
 		r_useInteractionTable.ClearModified();
 	}
 
@@ -1551,7 +1549,7 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 #endif
 
 	// build the interaction table
-	PutAllInteractionsIntoTable();
+	PutAllInteractionsIntoTable( false );
 
 	// entities flagged as noDynamicInteractions will no longer make any
 	generateAllInteractionsCalled = true;
@@ -1562,7 +1560,11 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 idRenderWorldLocal::PutAllInteractionsIntoTable
 ===================
 */
-void idRenderWorldLocal::PutAllInteractionsIntoTable() {
+void idRenderWorldLocal::PutAllInteractionsIntoTable( bool resetTable ) {
+	if ( resetTable ) {
+		interactionTable.Shutdown();
+		interactionTable.Init();
+	}
 	for( int i = 0; i < this->lightDefs.Num(); i++ ) {
 		idRenderLightLocal *ldef = this->lightDefs[i];
 		if( !ldef ) {

@@ -518,6 +518,8 @@ void idInteractionTable::Shutdown() {
 }
 DEBUG_OPTIMIZE_ON
 idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const {
+	if (useInteractionTable < 0)
+		common->Error("Interaction table not initialized");
 	if (useInteractionTable == 1) {
 		int idx = ldef->index * INTERACTION_TABLE_MAX_ENTITYS + edef->index;
 		return SM_matrix[idx];
@@ -544,6 +546,8 @@ idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntity
 }
 DEBUG_OPTIMIZE_OFF
 bool idInteractionTable::Add(idInteraction *interaction) {
+	if (useInteractionTable < 0)
+		common->Error("Interaction table not initialized");
 	if (useInteractionTable == 1) {
 		assert(interaction->lightDef->index < INTERACTION_TABLE_MAX_LIGHTS);
 		assert(interaction->entityDef->index < INTERACTION_TABLE_MAX_ENTITYS);
@@ -574,6 +578,8 @@ bool idInteractionTable::Add(idInteraction *interaction) {
 	return true;	//don't care
 }
 bool idInteractionTable::Remove(idInteraction *interaction) {
+	if (useInteractionTable < 0)
+		common->Error("Interaction table not initialized");
 	if (useInteractionTable == 1) {
 		int idx = interaction->lightDef->index * INTERACTION_TABLE_MAX_ENTITYS + interaction->entityDef->index;
 		idInteraction *&cell = SM_matrix[idx];

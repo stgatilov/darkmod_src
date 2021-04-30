@@ -300,7 +300,7 @@ public:
 
 	float					DrawTextLength( const char *text, float scale, int len = 0 );
 
-	void					PutAllInteractionsIntoTable();
+	void					PutAllInteractionsIntoTable( bool resetTable );
 	void					FreeInteractions();
 
 	void					PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3 (*points), int nodeNum );
