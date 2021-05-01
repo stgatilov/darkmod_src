@@ -272,7 +272,7 @@ void CForce_Grab::Evaluate( int time )
 	if( m_bLimitForce )
 	{
 		// max force our arms can exert
-		float MaxArmAccel = grabber->m_MaxForce / m_physics->GetMass();
+		float MaxArmAccel = grabber->m_MaxForce / ( m_physics->GetMass() + cv_drag_arm_mass.GetFloat() );
 		// if player moves object down, gravity will help
 		if( dir1 * m_physics->GetGravityNormal() > 0 )
 		{
@@ -299,6 +299,16 @@ void CForce_Grab::Evaluate( int time )
 			Accel = idMath::ClampFloat(0.0f, MaxArmAccel, Accel );
 			velocity = prevVel * m_damping + dir1 * Accel * dT;
 		}
+
+		// stgatilov #5599: avoid huge speeds causing noise and havoc nearby
+		float vellimit = cv_drag_vellimit_normal.GetFloat();
+		if( m_RefEnt.GetEntity() && m_RefEnt.GetEntity()->IsType( idPlayer::Type ) ) {
+			const usercmd_t &usercmd = ((idPlayer*)m_RefEnt.GetEntity())->usercmd;
+			if (usercmd.buttons & BUTTON_RUN)
+				vellimit = cv_drag_vellimit_run.GetFloat();
+		}
+		if (velocity.Length() > vellimit)
+			velocity = velocity.Normalized() * vellimit;
 	}
 	else
 	{
