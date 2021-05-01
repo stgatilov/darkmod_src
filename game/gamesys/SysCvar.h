@@ -292,10 +292,11 @@ extern idCVar cv_melee_forbid_auto_parry;
 extern idCVar cv_melee_max_particles;
 extern idCVar cv_phys_show_momentum;
 
-extern idCVar cv_throw_min;
-extern idCVar cv_throw_max;
+extern idCVar cv_throw_impulse_min;
+extern idCVar cv_throw_impulse_max;
+extern idCVar cv_throw_vellimit_min;
+extern idCVar cv_throw_vellimit_max;
 extern idCVar cv_throw_time;
-extern idCVar cv_throw_max_vel;
 
 extern idCVar cv_bounce_sound_max_vel;
 extern idCVar cv_bounce_sound_min_vel;

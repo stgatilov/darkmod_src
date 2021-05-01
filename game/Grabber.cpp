@@ -1201,14 +1201,13 @@ CGrabber::Throw
 */
 void CGrabber::Throw( int HeldTime )
 {
-	float ThrowImpulse(0), FracPower(0);
 	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1), ThrowPoint(vec3_zero), TumbleVec(vec3_zero);
 
 	idEntity *ent = m_dragEnt.GetEntity();
 	ImpulseVec = m_player.GetEntity()->firstPersonViewAxis[0];
 	ImpulseVec.Normalize();
 
-	FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
+	float FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
 
 	if( FracPower > 1.0 )
 		FracPower = 1.0;
@@ -1216,10 +1215,12 @@ void CGrabber::Throw( int HeldTime )
 	float mass = m_dragEnt.GetEntity()->GetPhysics()->GetMass();
 
 	// Try out a linear scaling between max and min
-	ThrowImpulse = cv_throw_min.GetFloat() + (cv_throw_max.GetFloat() - cv_throw_min.GetFloat()) * FracPower;
+	float ThrowImpulse = cv_throw_impulse_min.GetFloat() * (1.0f - FracPower) + cv_throw_impulse_max.GetFloat() * FracPower;
+	float VelocityLimit = cv_throw_vellimit_min.GetFloat() * (1.0f - FracPower) + cv_throw_vellimit_max.GetFloat() * FracPower;
 	// Clamp to max velocity
-	ThrowImpulse = idMath::ClampFloat( 0.0f, cv_throw_max_vel.GetFloat() * mass, ThrowImpulse );
-	ImpulseVec *= ThrowImpulse;  
+	float ThrowVel = ThrowImpulse / (mass + 1e-10f);
+	ThrowVel = idMath::ClampFloat( 0.0f, VelocityLimit, ThrowVel );
+	ImpulseVec *= ThrowVel * mass;
 
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
