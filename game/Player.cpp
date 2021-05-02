@@ -45,6 +45,8 @@
 ===============================================================================
 */
 
+idCVar grid_currentCategory( "grid_currentCategory", "-1", CVAR_GUI|CVAR_INTEGER, "Current inventory category shown in the grid" );
+
 #define	FPS_FRAMES	5 // number of frames used to average the FPS display
 
 // amount of health per dose from the health station
@@ -1529,6 +1531,45 @@ void idPlayer::UpdateObjectivesGUI()
 	gameLocal.m_MissionData->UpdateGUIState(objGUI);
 }
 
+void idPlayer::CollectItemsAndCategoriesForInventoryGrid( idList< CInventoryItemPtr > &items, idStr &categoryNames, idStr &categoryValues ) {
+	categoryNames = common->Translate( "#str_inventory_all" );
+	categoryValues = "-1";
+
+	// Generate a list of all relevant inventory items.
+	int selectedCategory = grid_currentCategory.GetInteger();
+	for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
+	{
+		CInventoryCategoryPtr category = Inventory()->GetCategory(i);
+		bool categoryEmpty = true;
+
+		for (int j = 0; j != category->GetNumItems(); ++j)
+		{
+			// Reverse order. New items at the end.
+			CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
+			// Except for the weapons, where reverse order is unintuitive...
+			if ( item->GetType() == CInventoryItem::IT_WEAPON )
+				item = category->GetItem( j );
+
+			// check if we should add this item to the grid
+			if (item->GetType() == CInventoryItem::IT_WEAPON) {
+				CInventoryWeaponItem *weapon = (CInventoryWeaponItem*)item.get();
+				if ( !weapon->IsEnabled() || ( weapon->NeedsAmmo() && weapon->GetAmmo() == 0 ) )
+					continue;
+			} else if ( item->GetType() != CInventoryItem::IT_ITEM ) {
+				continue;
+			}
+			categoryEmpty = false;
+			if ( selectedCategory == -1 || selectedCategory == i )
+				items.Append(item);
+		}
+
+		if ( !categoryEmpty || selectedCategory == i ) {
+			categoryNames = categoryNames + ";" + common->Translate( category->GetName() );
+			categoryValues = categoryValues + ";" + idStr::Fmt( "%d", i );
+		}
+	}
+}
+
 void idPlayer::CreateInventoryGridGUI()
 {
 	if ((inventoryGridOverlay != -1) || (GetImmobilization() & EIM_ITEM_SELECT)) // grayman #4354
@@ -1536,6 +1577,7 @@ void idPlayer::CreateInventoryGridGUI()
 		return;
 	}
 	
+	grid_currentCategory.SetInteger( -1 );
 	inventoryGridOverlay = CreateOverlay(cv_tdm_invgrid_gui_file.GetString(), LAYER_INVGRID);
 
 	idUserInterface* invgridGUI = GetOverlay(inventoryGridOverlay);
@@ -1579,17 +1621,8 @@ void idPlayer::DestroyInventoryGridGUI()
 	{
 		// Generate a list of all relevant inventory items.
 		idList<CInventoryItemPtr> items;
-		for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
-		{
-			CInventoryCategoryPtr category = Inventory()->GetCategory(i);
-			for (int j = 0; j != category->GetNumItems(); ++j)
-			{
-				// Reverse order. New items at the end.
-				CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
-				if (item->GetType() == CInventoryItem::IT_ITEM)
-				items.Append(item);
-			}
-		}
+		idStr categoryNames, categoryValues;
+		CollectItemsAndCategoriesForInventoryGrid( items, categoryNames, categoryValues );
 	
 		// Get inventory grid gui vars.
 		const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
@@ -1602,10 +1635,16 @@ void idPlayer::DestroyInventoryGridGUI()
 			const int selectedItem = (pageSize * currentPage) + userChoice;
 			if (selectedItem < items.Num())
 			{
-				CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
-				InventoryCursor()->SetCurrentItem(items[selectedItem]);
-				// Trigger an update, passing the previous item along
-				OnInventorySelectionChanged(prev);
+				CInventoryItemPtr selected = items[selectedItem];
+				if ( selected->GetType() == CInventoryItem::IT_WEAPON ) {
+					CInventoryWeaponItem *weapon = (CInventoryWeaponItem *)selected.get();
+					SelectWeapon( weapon->GetWeaponIndex(), false );
+				} else {
+					CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+					InventoryCursor()->SetCurrentItem(selected);
+					// Trigger an update, passing the previous item along
+					OnInventorySelectionChanged(prev);
+				}
 			}
 		}
 	}
@@ -1656,22 +1695,17 @@ void idPlayer::UpdateInventoryGridGUI()
 		return;
 	}
 
+
 	// Generate a list of all relevant inventory items.
 	idList<CInventoryItemPtr> items;
-	for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
-	{
-		CInventoryCategoryPtr category = Inventory()->GetCategory(i);
-		for (int j = 0; j != category->GetNumItems(); ++j)
-		{
-			// Reverse order. New items at the end.
-			CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
-			if (item->GetType() == CInventoryItem::IT_ITEM)
-			{
-				items.Append(item);
-			}
-		}
-	}
+	idStr categoryNames;
+	idStr categoryValues;
+	CollectItemsAndCategoriesForInventoryGrid( items, categoryNames, categoryValues );
 	
+	// Update available categories
+	SetGuiString( inventoryGridOverlay, "CategoryNames", categoryNames );
+	SetGuiString( inventoryGridOverlay, "CategoryValues", categoryValues );
+
 	// Get inventory grid gui vars.
 	const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
 	int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
@@ -1751,10 +1785,16 @@ void idPlayer::UpdateInventoryGridGUI()
  		  SetGuiString(inventoryGridOverlay, ItemName2, "");
 		}
 
-		SetGuiFloat(inventoryGridOverlay, ItemStackable, item->IsStackable() ? 1 : 0);
  		SetGuiString(inventoryGridOverlay, ItemGroup, common->Translate( item->Category()->GetName() ) );
- 		SetGuiInt(inventoryGridOverlay, ItemCount, item->GetCount());
  		SetGuiString(inventoryGridOverlay, ItemIcon, item->GetIcon().c_str());
+		if ( item->GetType() == CInventoryItem::IT_WEAPON ) {
+			CInventoryWeaponItem *weapon = (CInventoryWeaponItem *)item.get();
+			SetGuiFloat(inventoryGridOverlay, ItemStackable, weapon->NeedsAmmo() ? 1 : 0);
+			SetGuiInt(inventoryGridOverlay, ItemCount, weapon->GetAmmo());
+		} else {
+			SetGuiFloat(inventoryGridOverlay, ItemStackable, item->IsStackable() ? 1 : 0);
+			SetGuiInt(inventoryGridOverlay, ItemCount, item->GetCount());
+		}
 	}
 
 	// Loot counts.

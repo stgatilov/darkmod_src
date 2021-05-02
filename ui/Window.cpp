@@ -64,6 +64,7 @@ const idRegEntry idWindow::RegisterVars[] = {
 	{ "varbackground", idRegister::STRING },
 	{ "cvar", idRegister::STRING },
 	{ "choices", idRegister::STRING },
+	{ "values", idRegister::STRING },
 	{ "choiceVar", idRegister::STRING },
 	{ "bind", idRegister::STRING },
 	{ "modelRotate", idRegister::VEC4 },
