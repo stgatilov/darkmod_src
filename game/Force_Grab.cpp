@@ -300,12 +300,33 @@ void CForce_Grab::Evaluate( int time )
 			velocity = prevVel * m_damping + dir1 * Accel * dT;
 		}
 
-		// stgatilov #5599: avoid huge speeds causing noise and havoc nearby
+		// stgatilov #5599: avoid huge speeds causing mayhem nearby
 		float vellimit = cv_drag_vellimit_normal.GetFloat();
 		if( m_RefEnt.GetEntity() && m_RefEnt.GetEntity()->IsType( idPlayer::Type ) ) {
-			const usercmd_t &usercmd = ((idPlayer*)m_RefEnt.GetEntity())->usercmd;
+			idPlayer *player = ((idPlayer*)m_RefEnt.GetEntity());
+			// increase limit if run button is pressed
+			const usercmd_t &usercmd = player->usercmd;
 			if (usercmd.buttons & BUTTON_RUN)
 				vellimit = cv_drag_vellimit_run.GetFloat();
+			// increase limit if object is far from screen center (don't allow it going off screen)
+			idVec3 eyePos;
+			idMat3 eyeMat;
+			player->GetViewPos(eyePos, eyeMat);
+			idVec3 localVec;
+			eyeMat.ProjectVector(dragOrigin - eyePos, localVec);
+			if (localVec.x < 1e-3f)
+				vellimit = 1e+9f;	// object behind us
+			else {
+				float tgX, tgY;
+				gameLocal.CalcFov(g_fov.GetFloat(), tgX, tgY);
+				tgX = tan(DEG2RAD(tgX * 0.5f));
+				tgY = tan(DEG2RAD(tgY * 0.5f));
+				float scrX = localVec.y / localVec.x / tgX;	// [-1..1] if object is within screen
+				float scrY = localVec.z / localVec.x / tgY;	// 
+				float maxScr = idMath::Fmax(idMath::Fabs(scrX), idMath::Fabs(scrY));
+				if (maxScr > 0.5f) 
+					vellimit *= 0.5f / idMath::Fmax(1.0f - maxScr, 1e-9f);
+			}
 		}
 		if (velocity.Length() > vellimit)
 			velocity = velocity.Normalized() * vellimit;
