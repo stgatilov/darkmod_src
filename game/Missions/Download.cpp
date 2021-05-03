@@ -127,6 +127,7 @@ void CDownload::Perform()
 		CMissionManager::DoRemoveFile(_tempFilename.c_str());
 
 		const idStr& url = _urls[_curUrl];
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Performing download from '%s'", url.c_str());
 
 		// Create a new request
 		_request = gameLocal.m_HttpConnection->CreateRequest(url.c_str(), _tempFilename.c_str());
@@ -145,7 +146,7 @@ void CDownload::Perform()
 				idStr computedSha256 = _request->GetSha256();
 				if (computedSha256 != _expectedSha256)
 				{
-					DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Wrong checksum at '%s': %s instead of %s", url.c_str(), computedSha256.c_str(), _expectedSha256.c_str());
+					DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Wrong checksum at '%s': %s instead of %s", url.c_str(), computedSha256.c_str(), _expectedSha256.c_str());
 					CMissionManager::DoRemoveFile(_tempFilename.c_str());
 					_status = MALFORMED;
 					break;
@@ -189,11 +190,11 @@ void CDownload::Perform()
 			// Download error
 			if (_request->GetStatus() == CHttpRequest::ABORTED)
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from '%s' aborted.", url.c_str());
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Download from '%s' aborted.", url.c_str());
 			}
 			else
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Connection Error (status = %i) for URL '%s'.", _request->GetStatus(), url.c_str());
+				DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Connection Error (status = %i) for URL '%s'.", _request->GetStatus(), url.c_str());
 			}
 
 			// Proceed to the next URL
