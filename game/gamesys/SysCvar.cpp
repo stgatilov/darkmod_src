@@ -302,9 +302,6 @@ idCVar cv_collision_damage_scale_vert(	"tdm_collision_damage_scale_vert", "1",	C
 idCVar cv_collision_damage_scale_horiz(	"tdm_collision_damage_scale_horiz", "0.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from horizontal collisions/decelerations. This multiplies delta-velocity squared." );
 idCVar cv_drag_limit_force(				"tdm_drag_limit_force", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Cheat: Set to 0 to disable finite acceleration while grabbing objects." );
 idCVar cv_drag_force_max(				"tdm_drag_force_max", "100000", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum force the player can apply to a dragged object [kg * doom units / second^2]" );
-idCVar cv_drag_arm_mass(				"tdm_drag_arm_mass", "5", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Weight of arm in kg: it is added to the mass of dragged object when force is applied" );
-idCVar cv_drag_vellimit_normal(			"tdm_drag_vellimit_normal", "80", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum allowed speed of dragged object in quiet conditions" );
-idCVar cv_drag_vellimit_run(			"tdm_drag_vellimit_run", "250", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum allowed speed of dragged object when run button is enabled" );
 idCVar cv_drag_stuck_dist(				"tdm_drag_stuck_dist", "38.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Distance from the grab point at which object is determined to be 'stuck' and possibly auto-dropped." );
 idCVar cv_drag_damping(					"tdm_drag_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
 idCVar cv_drag_damping_AF(				"tdm_drag_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
