@@ -2341,9 +2341,9 @@ bool idPhysics_RigidBody::EvaluateContacts( void ) {
 	dir.SubVec3(0).Normalize();
 	dir.SubVec3(1).Normalize();
 	int num;
-	idRaw<contactInfo_t> carr[32];	//avoid zeroing large array
+	idRaw<contactInfo_t> carr[CONTACTS_MAX_NUMBER];	//avoid zeroing large array
 	num = gameLocal.clip.Contacts(
-		carr[0].Ptr(), 32, clipModel->GetOrigin(),
+		carr[0].Ptr(), CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
 		dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self
 	);
 	contacts.SetNum( num, false );

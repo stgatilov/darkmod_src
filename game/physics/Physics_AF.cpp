@@ -5842,7 +5842,7 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 	idAFBody *body;
 	idEntity *passEntity;
 	idVecX dir( 6, VECX_ALLOCA( 6 ) );
-	idRaw<contactInfo_t> contactInfo[32];	//avoid zeroing
+	idRaw<contactInfo_t> contactInfo[CONTACTS_MAX_NUMBER];	//avoid zeroing
 
 	// evaluate bodies
 	EvaluateBodies( current.lastTimeStep );
@@ -5872,7 +5872,7 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 		dir.SubVec3(1).Normalize();
 
 		numContacts = gameLocal.clip.Contacts(
-			contactInfo[0].Ptr(), 32, body->current->worldOrigin, dir.SubVec6(0), 2.0f, //CONTACT_EPSILON,
+			contactInfo[0].Ptr(), CONTACTS_MAX_NUMBER, body->current->worldOrigin, dir.SubVec6(0), 2.0f, //CONTACT_EPSILON,
 			body->clipModel, body->current->worldAxis, body->clipMask, passEntity
 		);
 

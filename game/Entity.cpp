@@ -6776,7 +6776,7 @@ void idEntity::ActivateContacts()
 {
 	// nbohr1more: #3871 - increase contact limit to 128 watch for future issues with this limit
 	// stgatilov: lowered back to 32 --- the same number is now used in physics classes
-	idRaw<contactInfo_t> contacts[32];		//avoid zero-filling
+	idRaw<contactInfo_t> contacts[CONTACTS_MAX_NUMBER];		//avoid zero-filling
 
 	idVec6 dir;
 	int num;
@@ -6787,7 +6787,7 @@ void idEntity::ActivateContacts()
 
 	if ( clipModel->IsTraceModel() )
 	{
-		num = gameLocal.clip.Contacts( contacts[0].Ptr(), 32, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( contacts[0].Ptr(), CONTACTS_MAX_NUMBER, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
 	}
 	else
 	{
@@ -6796,7 +6796,7 @@ void idEntity::ActivateContacts()
 	
 		idTraceModel trm(GetPhysics()->GetBounds());
 		idClipModel clip(trm);
-		num = gameLocal.clip.Contacts( contacts[0].Ptr(), 32, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( contacts[0].Ptr(), CONTACTS_MAX_NUMBER, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
 	}
 
 	for ( int i = 0 ; i < num ; i++ )

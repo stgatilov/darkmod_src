@@ -716,9 +716,9 @@ void idPhysics_Base::AddGroundContacts( const idClipModel *clipModel ) {
 	dir.SubVec3(0) = gravityNormal;
 	dir.SubVec3(1) = vec3_origin;
 	int num, index = contacts.Num();
-	idRaw<contactInfo_t> carr[32];	//avoid zeroing large array
+	idRaw<contactInfo_t> carr[CONTACTS_MAX_NUMBER];	//avoid zeroing large array
 	num = gameLocal.clip.Contacts(
-		carr[0].Ptr(), 32, clipModel->GetOrigin(),
+		carr[0].Ptr(), CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
 		dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self
 	);
 	contacts.SetNum( index + num, false );

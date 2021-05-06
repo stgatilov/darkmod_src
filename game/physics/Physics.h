@@ -50,6 +50,8 @@
 
 #define CONTACT_EPSILON			0.25f				// maximum contact seperation distance
 
+#define CONTACTS_MAX_NUMBER		32					// stgatilov: maximum number of contacts which can be found in single query
+
 class idEntity;
 #ifdef MOD_WATERPHYSICS
 
