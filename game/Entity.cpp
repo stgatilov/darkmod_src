@@ -6774,11 +6774,9 @@ idEntity::ActivateContacts
 */
 void idEntity::ActivateContacts()
 {
-
-// nbohr1more: #3871 - increase contact limit to 128 watch for future issues with this limit
-
-	idList<contactInfo_t> contacts;
-	contacts.SetNum( 128, false );
+	// nbohr1more: #3871 - increase contact limit to 128 watch for future issues with this limit
+	// stgatilov: lowered back to 32 --- the same number is now used in physics classes
+	idRaw<contactInfo_t> contacts[32];		//avoid zero-filling
 
 	idVec6 dir;
 	int num;
@@ -6789,7 +6787,7 @@ void idEntity::ActivateContacts()
 
 	if ( clipModel->IsTraceModel() )
 	{
-		num = gameLocal.clip.Contacts( &contacts[0], 128, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( contacts[0].Ptr(), 32, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
 	}
 	else
 	{
@@ -6798,14 +6796,12 @@ void idEntity::ActivateContacts()
 	
 		idTraceModel trm(GetPhysics()->GetBounds());
 		idClipModel clip(trm);
-		num = gameLocal.clip.Contacts( &contacts[0], 128, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( contacts[0].Ptr(), 32, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
 	}
-	
-	contacts.SetNum( num, false );
 
 	for ( int i = 0 ; i < num ; i++ )
 	{
-		idEntity* found = gameLocal.entities[contacts[i].entityNum];
+		idEntity* found = gameLocal.entities[contacts[i].Get().entityNum];
 		if ( found != gameLocal.world )
 		{
 			if ( found && found->IsType(idMoveable::Type) )
