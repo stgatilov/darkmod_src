@@ -2333,20 +2333,21 @@ idPhysics_RigidBody::EvaluateContacts
 ================
 */
 bool idPhysics_RigidBody::EvaluateContacts( void ) {
-	idVec6 dir;
-	int num;
-
 	ClearContacts();
 
-	contacts.SetNum( 10, false );
-
+	idVec6 dir;
 	dir.SubVec3(0) = current.i.linearMomentum + current.lastTimeStep * gravityVector * mass;
 	dir.SubVec3(1) = current.i.angularMomentum;
 	dir.SubVec3(0).Normalize();
 	dir.SubVec3(1).Normalize();
-	num = gameLocal.clip.Contacts( &contacts[0], 10, clipModel->GetOrigin(),
-					dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self );
+	int num;
+	idRaw<contactInfo_t> carr[32];	//avoid zeroing large array
+	num = gameLocal.clip.Contacts(
+		carr[0].Ptr(), 32, clipModel->GetOrigin(),
+		dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self
+	);
 	contacts.SetNum( num, false );
+	memcpy( contacts.Ptr(), carr, num * sizeof(carr[0]) );
 
 	AddContactEntitiesForContacts();
 

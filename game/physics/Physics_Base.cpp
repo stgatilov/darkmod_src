@@ -713,16 +713,16 @@ idPhysics_Base::AddGroundContacts
 */
 void idPhysics_Base::AddGroundContacts( const idClipModel *clipModel ) {
 	idVec6 dir;
-	int index, num;
-
-	index = contacts.Num();
-	contacts.SetNum( index + 10, false );
-
 	dir.SubVec3(0) = gravityNormal;
 	dir.SubVec3(1) = vec3_origin;
-	num = gameLocal.clip.Contacts( &contacts[index], 10, clipModel->GetOrigin(),
-					dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self );
+	int num, index = contacts.Num();
+	idRaw<contactInfo_t> carr[32];	//avoid zeroing large array
+	num = gameLocal.clip.Contacts(
+		carr[0].Ptr(), 32, clipModel->GetOrigin(),
+		dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self
+	);
 	contacts.SetNum( index + num, false );
+	memcpy( contacts.Ptr() + index, carr, num * sizeof(carr[0]) );
 }
 
 /*
