@@ -157,6 +157,27 @@ public:
 	idException( const char *text = "" ) { strcpy( error, text ); }
 };
 
+//stgatilov: hack which can be used to avoid costly initialization, e.g. for large arrays of idVec3
+//use with extreme caution! (do not apply to nontrivial objects)
+template<class T> struct idRaw {
+	alignas(T) char bytes[sizeof(T)];
+
+	ID_FORCE_INLINE T &Get() { return *(T*)bytes; }
+	ID_FORCE_INLINE const T &Get() const { return *(const T*)bytes; }
+	ID_FORCE_INLINE T *Ptr() { return (T*)bytes; }
+	ID_FORCE_INLINE const T *Ptr() const { return (const T*)bytes; }
+
+	void destructor() {
+		((T*)bytes)->~T();
+	}
+	void constructor() {
+		new(bytes) T();
+	}
+	template<class... Args> void constructor(Args&&... args) {
+		new(bytes) T(static_cast<Args&&>(args)...);
+	}
+};
+
 /*
 ===============================================================================
 

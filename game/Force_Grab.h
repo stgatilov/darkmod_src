@@ -108,11 +108,6 @@ class CForce_Grab : public idForce
 		* Rotate toward this orientation
 		**/
 		idMat3				m_dragAxis;
-		
-		/**
-		* Origin of the dragged entity in the previous frame
-		**/
-		idVec3				m_prevOrigin;
 };
 
 #endif /* !__FORCE_GRAB_H__ */

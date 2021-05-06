@@ -73,6 +73,13 @@
     </Expand>
   </Type>
 
+  <Type Name="idRaw&lt;*&gt;">
+    <DisplayString>{*($T1*)bytes}</DisplayString>
+    <Expand HideRawView="1">
+      <ExpandedItem>*($T1*)bytes</ExpandedItem>
+    </Expand>
+  </Type>
+
   <Type Name="idStr">
     <DisplayString>{data,s}</DisplayString>
     <StringView>data,s</StringView>
