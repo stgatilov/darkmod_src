@@ -1224,6 +1224,7 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 
 	idCollisionModelManagerLocal::checkCount++;
 
+	memset(&tw.trace, 0, sizeof(tw.trace));
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
 	tw.trace.c.type = CONTACT_NONE;
