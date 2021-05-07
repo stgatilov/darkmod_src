@@ -176,6 +176,8 @@ public:
 		**/
 		void					Forget( idEntity* ent );
 
+		bool					IsInSilentMode( void ) const;
+
 		/**
 		* Used to switch between dropping a body face up and face down on each drop
 		* (Toggled by idPlayer)
@@ -405,6 +407,13 @@ protected:
 		**/
 		int						m_EquippedEntContents;
 		int						m_EquippedEntClipMask;
+
+		/**
+		* stgatilov #5599: If silent mode is enabled, then we do not push other entities and do not make noise collision sounds.
+		* The mode is enabled in new grabber (cv_drag_new) depending on cv_drag_rigid_silentmode cvar.
+		**/
+		bool					m_silentMode;
+
 };
 
 

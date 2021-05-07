@@ -6692,6 +6692,10 @@ void idEntity::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const i
 		}
 	}
 
+	//stgatilov #5599: skip impulses in silent mode of grabber
+	if (gameLocal.m_Grabber->GetSelected() == ent && gameLocal.m_Grabber->IsInSilentMode())
+		allowImpulse = false;
+
 	if (allowImpulse)
 	{
 		GetPhysics()->ApplyImpulse( id, point, impulse );

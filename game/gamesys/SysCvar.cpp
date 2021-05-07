@@ -300,19 +300,60 @@ idCVar cv_weapon_next_on_empty(		"tdm_weapon_next_on_empty",	"0",	CVAR_GAME | CV
 **/
 idCVar cv_collision_damage_scale_vert(	"tdm_collision_damage_scale_vert", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from vertical collisions/decelerations. This multiplies delta-velocity squared." );
 idCVar cv_collision_damage_scale_horiz(	"tdm_collision_damage_scale_horiz", "0.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from horizontal collisions/decelerations. This multiplies delta-velocity squared." );
-idCVar cv_drag_limit_force(				"tdm_drag_limit_force", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Cheat: Set to 0 to disable finite acceleration while grabbing objects." );
-idCVar cv_drag_force_max(				"tdm_drag_force_max", "100000", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum force the player can apply to a dragged object [kg * doom units / second^2]" );
-idCVar cv_drag_stuck_dist(				"tdm_drag_stuck_dist", "38.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Distance from the grab point at which object is determined to be 'stuck' and possibly auto-dropped." );
-idCVar cv_drag_damping(					"tdm_drag_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
-idCVar cv_drag_damping_AF(				"tdm_drag_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
-idCVar cv_drag_AF_ground_timer(			"tdm_drag_af_ground_timer", "800", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time in milliseconds that it takes to ramp up to full vertical velocity after a ground-restricted body has come back to ground contact." );
-idCVar cv_drag_AF_free(					"tdm_drag_af_free", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "This is a cheat that allows lifting all AI bodies completely off the ground when dragging them.  Useful for mappers who want to set up ragdolls ingame." );
+idCVar cv_dragged_item_highlight(		"tdm_dragged_item_highlight", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) if the grabbed item should always be highlighted." );
 idCVar cv_drag_jump_masslimit(			"tdm_drag_jump_masslimit", "20", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "When the player is holding something above this mass, jumping becomes impossible." );
 idCVar cv_drag_encumber_minmass(		"tdm_drag_encumber_minmass", "10", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum carried mass that starts to effect movement speed." );
 idCVar cv_drag_encumber_maxmass(		"tdm_drag_encumber_maxmass", "55", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Carried mass at which movement speed clamps to the lowest value." );
 idCVar cv_drag_encumber_max(			"tdm_drag_encumber_max", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum encumbrance when carrying heavy things (expressed as a fraction of maximum unencumbered movement speed)." );
-idCVar cv_dragged_item_highlight(		"tdm_dragged_item_highlight", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) if the grabbed item should always be highlighted." );
-idCVar cv_drag_debug(					"tdm_drag_debug", "0", CVAR_GAME | CVAR_BOOL, "Shows debug arrows for desired velocity and contact plane normals when moving objects with the grabber." );
+idCVar cv_drag_stuck_dist(				"tdm_drag_stuck_dist", "38.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Distance from the grab point at which object is determined to be 'stuck' and possibly auto-dropped." );
+idCVar cv_drag_force_max(				"tdm_drag_force_max", "100000", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum force the player can apply to a dragged object [kg * doom units / second^2]." );
+idCVar cv_drag_new(						"tdm_drag_new", "1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, then the new grabber code is used (starting from TDM 2.10).");
+//stgatilov #5599: cvars in this section only affect the old grabber:
+idCVar cv_drag_limit_force(				"tdm_drag1_limit_force", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Cheat: Set to 0 to disable finite acceleration while grabbing objects." );
+idCVar cv_drag_damping(					"tdm_drag1_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
+idCVar cv_drag_damping_AF(				"tdm_drag1_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
+idCVar cv_drag_AF_ground_timer(			"tdm_drag1_af_ground_timer", "800", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time in milliseconds that it takes to ramp up to full vertical velocity after a ground-restricted body has come back to ground contact." );
+idCVar cv_drag_AF_free(					"tdm_drag1_af_free", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "This is a cheat that allows lifting all AI bodies completely off the ground when dragging them.  Useful for mappers who want to set up ragdolls ingame." );
+idCVar cv_drag_debug(					"tdm_drag1_debug", "0", CVAR_GAME | CVAR_BOOL, "Shows debug arrows for desired velocity and contact plane normals when moving objects with the grabber." );
+//stgatilov #5599: cvars in this section only affect the new grabber:
+idCVar cv_drag_targetpos_averaging_time(
+	"tdm_drag2_targetpos_averaging_time", "0.1", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"The effective drag target position is averaged over last T seconds for smoother movements. ",
+	0.0f, 10.0f
+);
+idCVar cv_drag_rigid_silentmode(
+	"tdm_drag2_rigid_silentmode", "1", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,
+	"When to use 'silent mode' for rigid objects manipulation (no sounds/impulses):\n"
+	"  0 --- never\n"
+	"  1 --- when creep button is pressed\n"
+	"  2 --- when run button is NOT pressed\n"
+	"  3 --- always",
+	0, 3
+);
+idCVar cv_drag_rigid_distance_halfing_time(
+	"tdm_drag2_rigid_distance_halfing_time", "0.1", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"It normally takes T seconds for dragged rigid object to reduce its distance to target in 2.71 times. ",
+	0.01f, 10.0f
+);
+idCVar cv_drag_rigid_acceleration_radius(
+	"tdm_drag2_rigid_acceleration_radius", "1.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"When distance from dragged rigid object to target is smaller than R, the dragging is significantly accelerated. "
+	"Set to 0 to disable acceleration completely. ",
+	0.0f, 100.0f
+);
+idCVar cv_drag_af_weight_ratio(
+	"tdm_drag2_af_weight_ratio", "0.8", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"Force applied when dragging articulated figure is K * total weight of AF. "
+	"Note that value 1.0 or greater will allow holding bodies completely in-air, "
+	"while value lower than 0.5 will not allow to drag body due to friction. ",
+	0.0f, 10.0f
+);
+idCVar cv_drag_af_reduceforce_radius(
+	"tdm_drag2_af_reduceforce_radius", "10.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"When distance from dragged articulated figure to target is lower than R, the applied force is reduced. "
+	"It helps to avoid oscillatory movements when you e.g. pull ragdoll's arm. ",
+	0.0f, 100.0f
+);
 
 idCVar cv_melee_debug(					"tdm_melee_debug", "0", CVAR_GAME | CVAR_BOOL, "Enable to show debug melee combat graphics." );
 idCVar cv_melee_state_debug(			"tdm_melee_debug_state", "0", CVAR_GAME | CVAR_BOOL, "Enable to display debug text representing AI melee status." );

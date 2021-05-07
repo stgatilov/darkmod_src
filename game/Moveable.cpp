@@ -21,6 +21,7 @@
 #include "Game_local.h"
 #include "Objectives/MissionData.h"
 #include "StimResponse/StimResponseCollection.h"
+#include "Grabber.h"
 
 /*
 ===============================================================================
@@ -383,6 +384,10 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 	// greebo: Save the collision info for the next call
 	lastCollision = collision;
+
+	// stgatilov #5599: mute all sounds from collisions with dragged object in "silent" mode
+	if (gameLocal.m_Grabber->GetSelected() == this && gameLocal.m_Grabber->IsInSilentMode())
+		return false;
 
 	float v = -( velocity * collision.c.normal );
 

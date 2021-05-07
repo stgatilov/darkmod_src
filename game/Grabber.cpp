@@ -134,6 +134,7 @@ void CGrabber::Clear( void )
 		this->RemoveFromClipList( 0 );
 
 	m_clipList.Clear();
+	m_silentMode = false;
 }
 
 void CGrabber::Save( idSaveGame *savefile ) const
@@ -197,6 +198,7 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_EquippedEntClipMask);
 
 	savefile->WriteBool(m_bDropBodyFaceUp);
+	savefile->WriteBool(m_silentMode);
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
@@ -266,6 +268,7 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_EquippedEntClipMask);
 
 	savefile->ReadBool(m_bDropBodyFaceUp);
+	savefile->ReadBool(m_silentMode);
 }
 
 /*
@@ -367,6 +370,23 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 	idEntity *drag;
 	idPhysics_Player *playerPhys;
 	
+	m_silentMode = false;
+	if (cv_drag_new.GetBool()) {
+		//stgatilov #5599: new grabber, detect if we should set silent mode
+		switch (cv_drag_rigid_silentmode.GetInteger()) {
+			case 1:
+				if (player->usercmd.buttons & BUTTON_CREEP)
+					m_silentMode = true;
+				break;
+			case 2:
+				if ( !(player->usercmd.buttons & BUTTON_RUN) )
+					m_silentMode = true;
+				break;
+			case 3:
+				m_silentMode = true;
+		}
+	}
+
 	m_player = player;
 
 	// if there is an entity selected, we let it go and exit
@@ -490,6 +510,10 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 	draggedPosition = viewPoint + targetPosition * viewAxis;
 
 // ====================== AF Grounding Testing ===============================
+
+//stgatilov #5599: this hack is only used for old grabber with AFs
+if (!cv_drag_new.GetBool()) {
+
 	// If dragging a body with a certain spawnarg set, you should only be able to pick
 	// it up so far off the ground
 	if( drag->IsType(idAFEntity_Base::Type) && (cv_drag_AF_free.GetBool() == false) )
@@ -552,6 +576,9 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 			
 		}
 	}
+
+}
+
 // ===================== End AF Grounding Test ====================
 
 	m_drag.SetDragPosition( draggedPosition );
@@ -1893,4 +1920,7 @@ idEntity* CGrabber::GetShouldered( void ) const
 	return (ent && ent->spawnArgs.GetBool("shoulderable") && ent->IsType(idAFEntity_Base::Type)) ? ent : NULL;
 }
 	
-
+bool CGrabber::IsInSilentMode( void ) const
+{
+	return m_silentMode;
+}
