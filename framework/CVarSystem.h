@@ -16,8 +16,6 @@
 #ifndef __CVARSYSTEM_H__
 #define __CVARSYSTEM_H__
 
-#include <functional>
-
 /*
 ===============================================================================
 
@@ -141,15 +139,6 @@ public:
 
 	static void				RegisterStaticVars( void );
 
-	// Function signature for modification signals, e.g. void OnCVarModified()
-	typedef std::function<void ()> OnModifiedFunc;
-
-	// greebo: Registers a function to get notified on modifications. Is called on all subsequent CVAR modifications. 
-	// Callbacks are called in the order they've been registered. A non-negative integer is returned which can be used
-	// to de-register callbacks again
-	int						AddOnModifiedCallback(const OnModifiedFunc& callback) { return internalVar->InternalAddOnModifiedCallback(callback); }
-	void					RemoveOnModifiedCallback(int handle) { internalVar->InternalRemoveOnModifiedCallback(handle); }
-
 protected:
 	const char *			name;					// name
 	const char *			value;					// value
@@ -172,8 +161,6 @@ private:
 	virtual void			InternalSetBool( const bool newValue ) {}
 	virtual void			InternalSetInteger( const int newValue ) {}
 	virtual void			InternalSetFloat( const float newValue ) {}
-	virtual int				InternalAddOnModifiedCallback(const OnModifiedFunc& callback) { return -1; }
-	virtual void			InternalRemoveOnModifiedCallback(int handle) {}
 
 	static idCVar *			staticVars;
 };

@@ -49,19 +49,11 @@ private:
 	idStr					valueString;			// value
 	idStr					descriptionString;		// description
 
-	idList<OnModifiedFunc>	modifiedCallbacks;		// functions to call when this CVAR is modified
-
 	virtual void			InternalSetString( const char *newValue );
 	virtual void			InternalServerSetString( const char *newValue );
 	virtual void			InternalSetBool( const bool newValue );
 	virtual void			InternalSetInteger( const int newValue );
 	virtual void			InternalSetFloat( const float newValue );
-
-	virtual int				InternalAddOnModifiedCallback(const OnModifiedFunc& callback);
-	virtual void			InternalRemoveOnModifiedCallback(int handle);
-
-	// Invokes all the callbacks
-	void					NotifyModifiedCallbacks();
 };
 
 /*
@@ -326,8 +318,6 @@ void idInternalCVar::Set( const char *newValue, bool force, bool fromServer ) {
 
 	SetModified();
 	cvarSystem->SetModifiedFlags( flags );
-
-	NotifyModifiedCallbacks();
 }
 
 /*
@@ -384,27 +374,6 @@ idInternalCVar::InternalSetFloat
 */
 void idInternalCVar::InternalSetFloat( const float newValue ) {
 	Set( idStr( newValue ), true, false );
-}
-
-int idInternalCVar::InternalAddOnModifiedCallback(const idCVar::OnModifiedFunc& callback)
-{
-	return modifiedCallbacks.Append(callback);
-}
-
-void idInternalCVar::InternalRemoveOnModifiedCallback(int handle)
-{
-	modifiedCallbacks[handle] = OnModifiedFunc();
-}
-
-void idInternalCVar::NotifyModifiedCallbacks()
-{
-	for (int i = 0; i < modifiedCallbacks.Num(); ++i)
-	{
-		if (modifiedCallbacks[i])
-		{
-			modifiedCallbacks[i]();
-		}
-	}
 }
 
 /*

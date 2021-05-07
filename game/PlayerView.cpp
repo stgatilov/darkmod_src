@@ -1013,38 +1013,16 @@ idPlayerView::dnPostProcessManager Class Definitions - JC Denton
 ===================
 */
 
-idPlayerView::dnPostProcessManager::dnPostProcessManager():
-
-m_ImageAnisotropyHandle	(-1)
+idPlayerView::dnPostProcessManager::dnPostProcessManager()
+	: m_ImageAnisotropyHandle (-1)
 {
 	/*m_iScreenHeight = m_iScreenWidth = 0;
 	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
 	m_nFramesToUpdateCookedData = 0;8*/
-
-	// Get notified on image anisotropy changes
-	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
-
-	if (imageAnistropy != NULL)
-	{
-		m_ImageAnisotropyHandle = imageAnistropy->AddOnModifiedCallback(
-            [&]() { OnImageAnisotropyChanged(); });
-	}
 }
 
 idPlayerView::dnPostProcessManager::~dnPostProcessManager()
 {
-	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
-
-	if (imageAnistropy != NULL && m_ImageAnisotropyHandle != -1)
-	{
-		imageAnistropy->RemoveOnModifiedCallback(m_ImageAnisotropyHandle);
-	}
-
-}
-
-void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
-{
-//	ScheduleCookedDataUpdate();
 }
 
 void idPlayerView::dnPostProcessManager::Update( void )

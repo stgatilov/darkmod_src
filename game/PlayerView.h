@@ -161,8 +161,6 @@ private:
 		void UpdateCookedData			();
 		void UpdateInteractionShader	(); 	// Chooses between the various VFP files according to the CVAR settings. Only call this if settings got changed.
 		void Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText );	// Source Hook for idCmdSystem::BufferCommandText - JC.
-
-		void OnImageAnisotropyChanged	();	// gets called when the image_Anisotropy CVAR changes
 	};
 
 	dnPostProcessManager m_postProcessManager;
