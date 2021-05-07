@@ -293,6 +293,67 @@ void idVec3::ProjectSelfOntoSphere( const float radius ) {
 	}
 }
 
+/*
+=============
+ProjectToConvexCone
+
+stgatilov #5599: Consider a point at which "n" planar obstacles met, each having unit outer normal "normals[i]".
+Find projection of given velocity "*this" into the admissible cone.
+It may be (in order from more desirable to less desirable):
+  a) just this velocity
+  b) projection onto some obstacle plane
+  c) projection onto an intersection edge of two planes
+  d) zero
+This function can be used for sliding one object along collision contacts with other objects.
+=============
+*/
+idVec3 idVec3::ProjectToConvexCone( const idVec3 *normals, int n, float epsilon ) const {
+	const idVec3 &vec = *this;
+
+	// detect set of obstacles we are moving into
+	idFlexList<int, 16> badIds;
+	for (int i = 0; i < n; i++) {
+		assert(idMath::Fabs(normals[i].Length() - 1.0f) <= 1e-3f);
+		if (normals[i] * vec < -epsilon)
+			badIds.AddGrow(i);
+	}
+
+	if (badIds.Num() == 0)
+		return vec;	// already within cone 
+
+	idVec3 bestVec(0.0f);
+	float minDiffSqr = FLT_MAX;
+	// checks if given vector is admissible and updates best known projection
+	auto CheckVec = [&](idVec3 checkVec) -> void {
+		for (int u = 0; u < n; u++)
+			if (normals[u] * checkVec < -epsilon)
+				return;	// goes into u-th obstacle
+
+		float diffSqr = (checkVec - vec).LengthSqr();
+		if (minDiffSqr > diffSqr) {
+			minDiffSqr = diffSqr;
+			bestVec = checkVec;
+		}
+	};
+
+	// try projections onto individual planes
+	for (int i = 0; i < badIds.Num(); i++) {
+		idVec3 tmpVec = vec;
+		tmpVec.ProjectOntoPlane(normals[badIds[i]]);
+		CheckVec(tmpVec);
+	}
+	// try projections onto intersection edges
+	for (int i = 0; i < badIds.Num(); i++)
+		for (int j = i+1; j < badIds.Num(); j++) {
+			idVec3 cross = normals[i].Cross(normals[j]);
+			if (cross.Normalize() <= 1e-3f)
+				continue;
+			idVec3 tmpVec = (vec * cross) * cross;
+			CheckVec(tmpVec);
+		}
+
+	return bestVec;
+}
 
 
 //===============================================================

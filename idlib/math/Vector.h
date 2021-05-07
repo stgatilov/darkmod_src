@@ -382,6 +382,9 @@ public:
 	bool			ProjectAlongPlane( const idVec3 &normal, const float epsilon, const float overBounce = 1.0f );
 	void			ProjectSelfOntoSphere( const float radius );
 
+	//stgatilov #5599: given desired velocity and n plane obstacles, find closest admissible velocity
+	idVec3			ProjectToConvexCone( const idVec3 *normals, int n, float epsilon ) const;
+
 	void			Lerp( const idVec3 &v1, const idVec3 &v2, const float l );
 	void			SLerp( const idVec3 &v1, const idVec3 &v2, const float l );
 };
