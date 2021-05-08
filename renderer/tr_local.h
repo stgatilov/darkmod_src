@@ -694,7 +694,7 @@ typedef struct {
 	int		currentCubeMap;
 } tmu_t;
 
-const int MAX_MULTITEXTURE_UNITS =	48;
+const int MAX_MULTITEXTURE_UNITS = 32;
 typedef struct {
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
 	int			currenttmu;
