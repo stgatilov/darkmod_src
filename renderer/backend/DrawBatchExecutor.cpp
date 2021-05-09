@@ -202,8 +202,8 @@ void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, int numInstances, GLuint
 		}
 	}
 
-	vertexCache.BindVertex( attribBind );
-	vertexCache.BindIndex();
+	vertexCache.VertexPosition( attribBind == ATTRIB_REGULAR ? drawSurfs[0]->ambientCache : drawSurfs[0]->shadowCache, attribBind );
+	vertexCache.IndexPosition( drawSurfs[0]->indexCache );
 	if ( ShouldUseMultiDraw() ) {
 		BatchMultiDraw( numDrawSurfs, numInstances, baseVertexFn );
 	} else {

@@ -86,6 +86,10 @@ void DepthStage::Init() {
 void DepthStage::Shutdown() {}
 
 void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, int numDrawSurfs ) {
+	if ( numDrawSurfs == 0 ) {
+		return;
+	}
+
 	GL_PROFILE( "DepthStage" );
 
 	GLSLProgram *shader = renderBackend->ShouldUseBindlessTextures() ? depthShaderBindless : depthShader;
@@ -119,11 +123,10 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	vertexCache.BindVertex();
-
 	BeginDrawBatch();
 
 	bool subViewEnabled = false;
+	const drawSurf_t *curBatchCaches = drawSurfs[0];
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
 		const drawSurf_t *drawSurf = drawSurfs[i];
 		if ( !ShouldDrawSurf( drawSurf ) ) {
@@ -131,7 +134,9 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 		}
 
 		bool isSubView = drawSurf->material->GetSort() == SS_SUBVIEW;
-		if( isSubView != subViewEnabled ) {
+		if( isSubView != subViewEnabled
+				|| drawSurf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic
+				|| drawSurf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
 			ExecuteDrawCalls();
 			if( isSubView ) {
 				GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
@@ -141,6 +146,7 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 			subViewEnabled = isSubView;
 		}
 
+		curBatchCaches = drawSurf;
 		DrawSurf( drawSurf );
 	}
 

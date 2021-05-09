@@ -129,6 +129,8 @@ private:
 	int				basePointer;
 
 	geoBufferSet_t	dynamicData;
+	GLuint			staticVertexBuffer;
+	GLuint			staticIndexBuffer;
 
 	GLuint			currentVertexBuffer;
 	GLuint			currentIndexBuffer;

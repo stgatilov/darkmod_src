@@ -37,6 +37,7 @@ private:
 
 	float GetEffectiveLightRadius( viewLight_t *vLight );
 	bool ShouldDrawSurf( const drawSurf_t *surf ) const;
+	void DrawLightInteractions( const drawSurf_t *surfs );
 	void DrawSurf( const drawSurf_t * drawSurf );
 	void CreateDrawCommands( const drawSurf_t *surf );
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );

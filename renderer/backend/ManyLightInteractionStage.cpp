@@ -182,8 +182,6 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 	GL_SelectTexture( TU_DISABLED );
 	globalImages->whiteImage->Bind();
 
-	vertexCache.BindVertex();
-	vertexCache.BindIndex();
 	PrepareInteractionProgram();
 
 	idList<const drawSurf_t *> drawSurfs;
@@ -192,6 +190,11 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 		drawSurfs.AddGrow( surf );
 	}
 	std::sort( drawSurfs.begin(), drawSurfs.end(), [](const drawSurf_t *a, const drawSurf_t *b) {
+		if ( a->ambientCache.isStatic != b->ambientCache.isStatic )
+			return a->ambientCache.isStatic;
+		if ( a->indexCache.isStatic != b->indexCache.isStatic )
+			return a->indexCache.isStatic;
+
 		return a->material < b->material;
 	} );
 
@@ -316,6 +319,10 @@ void ManyLightInteractionStage::SetGlState(int depthFunc) {
 void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &drawSurfs ) {
 	static_assert( sizeof(LightParams) % 16 == 0, "Light params size must be a multiple of 16" );
 
+	if ( drawSurfs.Num() == 0 ) {
+		return;
+	}
+
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
 	if ( !renderBackend->ShouldUseBindlessTextures() ) {
 		uniforms->lightFalloffTexture.SetArray( MAX_LIGHTS, falloffTextureUnits );
@@ -328,6 +335,7 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 	drawBatchExecutor->UploadExtraUboData( lightParams, sizeof(LightParams) * curLight, 3 );
 
 	BeginDrawBatch();
+	const drawSurf_t *curBatchCaches = drawSurfs[0];
 	for ( const drawSurf_t *surf : drawSurfs ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 			continue;
@@ -335,6 +343,10 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 		if ( !surf->ambientCache.IsValid() ) {
 			common->Warning( "Found invalid ambientCache!" );
 			continue;
+		}
+
+		if ( curBatchCaches->ambientCache.isStatic != surf->ambientCache.isStatic || curBatchCaches->indexCache.isStatic != surf->indexCache.isStatic ) {
+			ExecuteDrawCalls();
 		}
 
 		if ( surf->space->weaponDepthHack ) {
@@ -351,6 +363,7 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 			uniforms->softShadowsQuality.Set( surf->material->Coverage() == MC_TRANSLUCENT ? 0 : r_softShadowsQuality.GetInteger() );
 		}
 
+		curBatchCaches = surf;
 		ProcessSingleSurface( surf );
 
 		if ( surf->space->weaponDepthHack ) {

@@ -112,11 +112,6 @@ void BufferObject::Resize( int allocSize, void* data ) {
 	}
 
 	if ( oldBuffObj ) {
-		if ( !data ) {
-			qglBindBuffer( GL_COPY_READ_BUFFER, oldBuffObj );
-			qglBindBuffer( GL_COPY_WRITE_BUFFER, bufferObject );
-			qglCopyBufferSubData( GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, Min( oldSize, numBytes ) );
-		}
 		qglDeleteBuffers( 1, &oldBuffObj );
 	}
 	if ( persistentMap ) {

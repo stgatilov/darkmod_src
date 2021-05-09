@@ -199,6 +199,11 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		drawSurfs.AddGrow( surf );
 	}
 	std::sort( drawSurfs.begin(), drawSurfs.end(), [](const drawSurf_t *a, const drawSurf_t *b) {
+		if ( a->ambientCache.isStatic != b->ambientCache.isStatic )
+			return a->ambientCache.isStatic;
+		if ( a->indexCache.isStatic != b->indexCache.isStatic )
+			return a->indexCache.isStatic;
+
 		return a->material < b->material;
 	} );
 
@@ -228,9 +233,8 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		// slot, so reset this to something that is safe to override in bindless mode!
 		GL_SelectTexture(TU_NORMAL);
 
-		vertexCache.BindVertex();
-
 		BeginDrawBatch();
+		const drawSurf_t *curBatchCaches = drawSurfs[0];
 		for ( const drawSurf_t *surf : drawSurfs ) {
 			if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 				continue;
@@ -240,12 +244,17 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 				continue;
 			}
 
+			if ( surf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic || surf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
+				ExecuteDrawCalls();
+			}
+
 			if ( surf->space->weaponDepthHack ) {
 				// GL state change, need to execute previous draw calls
 				ExecuteDrawCalls();
 				RB_EnterWeaponDepthHack();
 			}
 
+			curBatchCaches = surf;
 			ProcessSingleSurface( vLight, lightStage, surf );
 
 			if ( surf->space->weaponDepthHack ) {
