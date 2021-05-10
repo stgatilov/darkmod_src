@@ -1204,9 +1204,6 @@
     <ClInclude Include="renderer\FrameBuffer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\BufferObject.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="game\gamesys\Automation.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
@@ -2963,9 +2960,6 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_stencil.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\BufferObject.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="game\gamesys\Automation.cpp">

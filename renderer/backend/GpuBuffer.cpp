@@ -26,8 +26,6 @@ idCVar r_gpuBufferNonpersistentUpdateMode(
 const int GpuBuffer::NUM_FRAMES;
 
 void GpuBuffer::Init( GLenum type, GLuint size, GLuint alignment, byte *staticData, GLuint numStaticBytes ) {
-	assert( idMath::IsPowerOfTwo( alignment ) && "Alignment must be a power of 2" );
-	
 	if( bufferObject ) {
 		Destroy();
 	}

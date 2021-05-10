@@ -51,6 +51,8 @@ public:
 
 	void SwitchFrame();
 
+	GLuint GetAPIObject() const { return bufferObject; }
+
 	static const int NUM_FRAMES = 3;
 
 private:

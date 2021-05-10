@@ -16,13 +16,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __VERTEXCACHE_H__
 #define __VERTEXCACHE_H__
 
-#include "BufferObject.h"
-#include <atomic>
+#include "backend/GpuBuffer.h"
 
 // vertex cache calls should only be made by the front end
 
 const int VERTCACHE_NUM_FRAMES = 3;
 
+static const uint32 drawVertSize = sizeof(idDrawVert);
+static const uint32 shadowCacheSize = sizeof(shadowCache_t);
 static const uint32 VERTCACHE_FRAME_MASK = ( 1 << VERTCACHE_FRAMENUM_BITS ) - 1;
 
 // 240 is the least common multiple between 16-byte alignment and the size of idDrawVert and shadowCache_t.
@@ -39,15 +40,13 @@ enum cacheType_t {
 };
 
 struct geoBufferSet_t {
-	BufferObject		indexBuffer;
-	BufferObject		vertexBuffer;
+	GpuBuffer			indexBuffer;
+	GpuBuffer			vertexBuffer;
 	byte *				mappedVertexBase;
 	byte *				mappedIndexBase;
-	std::atomic<int>	indexMemUsed;
-	std::atomic<int>	vertexMemUsed;
+	idSysInterlockedInteger	indexMemUsed;
+	idSysInterlockedInteger	vertexMemUsed;
 	int					allocations;	// number of index and vertex allocations combined
-	int					vertexMapOffset;
-	int					indexMapOffset;
 
 	geoBufferSet_t();
 };
@@ -72,9 +71,7 @@ public:
 	void			VertexPosition( vertCacheHandle_t handle, attribBind_t attrib = attribBind_t::ATTRIB_REGULAR );
 	void *			IndexPosition( vertCacheHandle_t handle );
 
-	void			BindVertex( attribBind_t attrib = ATTRIB_REGULAR );
-	void			BindIndex();
-	// if you need to draw something without an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB
+	// if you need to draw something without an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER
 	void			UnbindIndex();
 
 	// updates the counter for determining which temp space to use
@@ -124,8 +121,6 @@ public:
 private:
 
 	int				currentFrame;			// for purgable block tracking
-	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
-	int				backendListNum;
 	int				basePointer;
 
 	geoBufferSet_t	dynamicData;
