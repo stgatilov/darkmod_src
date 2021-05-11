@@ -281,7 +281,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 	if ( type == CACHE_INDEX ) {
 		base = &vcs.mappedIndexBase;
 		endPos = vcs.indexMemUsed.Add( alignedBytes );
-		mapOffset = (int)vcs.indexBuffer.BufferOffset( vcs.mappedIndexBase );
+		mapOffset = (intptr_t)vcs.indexBuffer.BufferOffset( vcs.mappedIndexBase );
 		if ( endPos > currentIndexCacheSize ) {
 			// out of index cache, will be resized next frame
 			return NO_CACHE;
@@ -290,7 +290,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 	} else if ( type == CACHE_VERTEX ) {
 		base = &vcs.mappedVertexBase;
 		endPos = vcs.vertexMemUsed.Add( alignedBytes );
-		mapOffset = (int)vcs.vertexBuffer.BufferOffset( vcs.mappedVertexBase );
+		mapOffset = (intptr_t)vcs.vertexBuffer.BufferOffset( vcs.mappedVertexBase );
 		if ( endPos > currentVertexCacheSize ) {
 			// out of vertex cache, will be resized next frame
 			return NO_CACHE;
