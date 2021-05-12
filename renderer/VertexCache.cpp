@@ -59,8 +59,8 @@ static void SwitchFrameGeoBufferSet( geoBufferSet_t &gbs ) {
 }
 
 static void AllocGeoBufferSet( geoBufferSet_t &gbs, const int vertexBytes, const int indexBytes ) {
-	gbs.vertexBuffer.Init( GL_ARRAY_BUFFER, vertexBytes, VERTEX_CACHE_ALIGN );
-	gbs.indexBuffer.Init( GL_ELEMENT_ARRAY_BUFFER, indexBytes, INDEX_CACHE_ALIGN );
+	gbs.vertexBuffer.InitWriteFrameAhead( GL_ARRAY_BUFFER, vertexBytes, VERTEX_CACHE_ALIGN );
+	gbs.indexBuffer.InitWriteFrameAhead( GL_ELEMENT_ARRAY_BUFFER, indexBytes, INDEX_CACHE_ALIGN );
 	GL_SetDebugLabel( GL_BUFFER, gbs.vertexBuffer.GetAPIObject(), "DynamicVertexCache" );
 	GL_SetDebugLabel( GL_BUFFER, gbs.indexBuffer.GetAPIObject(), "DynamicIndexCache" );
 	ClearGeoBufferSet( gbs );

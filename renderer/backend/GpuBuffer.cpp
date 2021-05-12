@@ -25,12 +25,11 @@ idCVar r_gpuBufferNonpersistentUpdateMode(
 
 const int GpuBuffer::NUM_FRAMES;
 
-void GpuBuffer::Init( GLenum type, GLuint size, GLuint alignment, byte *staticData, GLuint numStaticBytes ) {
+void GpuBuffer::Init( GLenum type, GLuint size, GLuint alignment ) {
 	if( bufferObject ) {
 		Destroy();
 	}
 
-	staticDataSize = ALIGN( numStaticBytes, alignment );
 	frameSize = ALIGN( size, alignment );
 	this->alignment = alignment;
 	this->type = type;
@@ -40,7 +39,7 @@ void GpuBuffer::Init( GLenum type, GLuint size, GLuint alignment, byte *staticDa
 
 	usesPersistentMapping = r_usePersistentMapping && GLAD_GL_ARB_buffer_storage;
 
-	totalSize = staticDataSize + NUM_FRAMES * frameSize;
+	totalSize = NUM_FRAMES * frameSize;
 	if ( usesPersistentMapping ) {
 		qglBufferStorage( type, totalSize, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
 		bufferContents = ( byte* )qglMapBufferRange( type, 0, totalSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
@@ -49,14 +48,16 @@ void GpuBuffer::Init( GLenum type, GLuint size, GLuint alignment, byte *staticDa
 		bufferContents = ( byte* )Mem_Alloc16( totalSize );
 	}
 
-	memcpy( bufferContents, staticData, numStaticBytes );
-	if ( !usesPersistentMapping ) {
-		qglBufferSubData( type, 0, numStaticBytes, staticData );
-	}
-	
-	currentFrame = 0;
+	currentWritingFrame = 0;
+	currentDrawingFrame = 0;
 	bytesCommittedInCurrentFrame = 0;
 }
+
+void GpuBuffer::InitWriteFrameAhead( GLenum type, GLuint size, GLuint alignment ) {
+	Init( type, size, alignment );
+	currentWritingFrame = 1;
+}
+
 
 void GpuBuffer::Destroy() {
 	if ( bufferObject == 0 ) {
@@ -129,27 +130,28 @@ const void * GpuBuffer::BufferOffset( const void *pointer ) {
 
 void GpuBuffer::SwitchFrame() {
 	// lock current frame contents in buffer
-	assert( frameFences[currentFrame] == nullptr );
-	frameFences[currentFrame] = qglFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
+	assert( frameFences[currentDrawingFrame] == nullptr );
+	frameFences[currentDrawingFrame] = qglFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
 
-	currentFrame = ( currentFrame + 1 ) % NUM_FRAMES;
+	currentDrawingFrame = ( currentDrawingFrame + 1 ) % NUM_FRAMES;
+	currentWritingFrame = ( currentWritingFrame + 1 ) % NUM_FRAMES;
 	bytesCommittedInCurrentFrame = 0;
 
-	if ( frameFences[currentFrame] != nullptr ) {
+	if ( frameFences[currentWritingFrame] != nullptr ) {
 		// await lock for next frame region to ensure that data is not used by the GPU anymore
-		GLenum result = qglClientWaitSync( frameFences[currentFrame], 0, 0 );
+		GLenum result = qglClientWaitSync( frameFences[currentWritingFrame], 0, 0 );
 		while( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) {
-			result = qglClientWaitSync( frameFences[currentFrame], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000 );
+			result = qglClientWaitSync( frameFences[currentWritingFrame], GL_SYNC_FLUSH_COMMANDS_BIT, 1000000 );
 			if( result == GL_WAIT_FAILED ) {
 				assert( !"glClientWaitSync failed" );
 				break;
 			}
 		}
-		qglDeleteSync( frameFences[currentFrame] );
-		frameFences[currentFrame] = nullptr;
+		qglDeleteSync( frameFences[currentWritingFrame] );
+		frameFences[currentWritingFrame] = nullptr;
 	}
 }
 
 GLuint GpuBuffer::CurrentOffset() const {
-	return staticDataSize + currentFrame * frameSize + bytesCommittedInCurrentFrame;
+	return currentWritingFrame * frameSize + bytesCommittedInCurrentFrame;
 }
