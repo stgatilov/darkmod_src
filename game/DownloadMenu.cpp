@@ -759,6 +759,11 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 		};
 	}
 
+	// stgatilov: save missions.tdminfo right now!
+	// otherwise the information about downloaded version will be lost
+	// if the game crashes before proper exit/restart
+	gameLocal.m_MissionManager->SaveDatabase();
+
 	gameLocal.Printf("Successful downloads: %d\nFailed downloads: %d\n", successfulDownloads, failedDownloads);
 		// Display the popup box
 		GuiMessage msg;

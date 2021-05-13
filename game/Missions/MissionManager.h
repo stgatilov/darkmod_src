@@ -211,6 +211,10 @@ public:
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 
+	// Save missionDB to hard drive right now!
+	// Note: it is done automatically in destructor.
+	void SaveDatabase() const;
+
 	// Returns the number of available mods
 	int GetNumMods();
 
@@ -329,9 +333,6 @@ public:
 	static bool DoMoveFile(const fs::path& fromPath, const fs::path& toPath);
 
 private:
-	// Called by destructor (when the game is shutting down)
-	void Shutdown();
-
 	// Finds out which map is the starting map (must be called after InitCurrentMod)
 	void InitStartingMap();
 

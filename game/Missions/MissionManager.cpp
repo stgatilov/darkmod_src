@@ -144,7 +144,7 @@ CMissionManager::~CMissionManager()
 	// Clear contents and the list elements themselves
 	_downloadableMods.DeleteContents(true);
 
-	Shutdown();
+	SaveDatabase();
 }
 
 void CMissionManager::Init()
@@ -170,7 +170,7 @@ void CMissionManager::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_curMissionIndex);
 }
 
-void CMissionManager::Shutdown()
+void CMissionManager::SaveDatabase() const
 {
 	_missionDB->Save();
 }
