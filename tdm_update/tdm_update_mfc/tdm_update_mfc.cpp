@@ -52,6 +52,20 @@ using namespace tdm;
 // UpdaterApplication initialization
 BOOL UpdaterApplication::InitInstance()
 {
+	// stgatilov #5495: use tdm_installer
+	while (1) {
+		int result = AfxMessageBox(
+			L"TDM Updater has reached end-of-life.\n"
+			L"It cannot install the latest version of TheDarkMod!\n"
+			L"Please visit website www.thedarkmod.com and download tdm_installer instead.\n",
+			MB_ABORTRETRYIGNORE | MB_ICONSTOP
+		);
+		if (IDABORT == result)
+			return EXIT_FAILURE;
+		if (IDIGNORE == result)
+			break;
+	}
+
 	// Start logging
 	try
     {

@@ -33,6 +33,19 @@ using namespace updater;
 
 int main(int argc, char* argv[])
 {
+	// stgatilov #5495: use tdm_installer
+	(std::cerr
+		<< "TDM Updater has reached end-of-life.\n"
+		<< "It cannot install the latest version of TheDarkMod!\n"
+		<< "Please visit website www.thedarkmod.com and download tdm_installer instead.\n"
+		<< "\n"
+		<< "Enter \"ignore\" if you want to continue anyway: "
+	);
+	std::string enteredStr;
+	std::cin >> enteredStr;
+	if (enteredStr != "ignore")
+		return EXIT_FAILURE;
+
 	// Start logging
 	try {
 		RegisterLogWriters();
