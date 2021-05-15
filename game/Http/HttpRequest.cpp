@@ -108,6 +108,9 @@ void CHttpRequest::InitRequest()
 	// We pass ourselves as user data pointer to the callback function
 	ExtLibs::curl_easy_setopt( _handle, CURLOPT_WRITEDATA, this );
 
+	// stgatilov: return CURLE_HTTP_RETURNED_ERROR if file is missing on server (any HTTP code >= 400)
+	curl_easy_setopt(_handle, CURLOPT_FAILONERROR, 1);
+
 	// Set agent
 	idStr agent = "The Dark Mod Agent/";
 	agent += va("%d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
