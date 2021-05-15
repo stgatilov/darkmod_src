@@ -64,6 +64,8 @@ if(MSVC)
     add_compile_options("/W2")
     add_compile_options("$<$<CONFIG:RelWithDebInfo>:/Ob2>")
     string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /INCREMENTAL:NO /OPT:REF")
+elseif(UNIX)
+    string(APPEND CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 endif()
 
 find_package(fltk REQUIRED)
