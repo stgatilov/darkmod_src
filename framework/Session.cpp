@@ -3062,7 +3062,7 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 		}
 		else
 		{
-			SaveGame(saveGameName.c_str(), false, true);
+			SaveGame(saveGameName.c_str(), true, true);
 		}
 	}
 
