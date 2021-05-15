@@ -70,9 +70,10 @@ int RevisionTracker::GetSavegameRevision() const
 {
 	// stgatilov: If you are doing hotfix release,
 	// then override revision with hardcoded number here:
-	//return 9108;
 
-	return GetHighestRevision();
+	return 9108;	//override: TDM 2.09
+
+	//return GetHighestRevision();
 }
 
 // Accessor to the singleton
