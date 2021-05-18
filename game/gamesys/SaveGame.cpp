@@ -555,7 +555,8 @@ void idSaveGame::WriteSoundCommands( void ) {
 
 void idSaveGame::WriteHeader()
 {
-	file->WriteInt(RevisionTracker::Instance().GetHighestRevision());
+	int revision = RevisionTracker::Instance().GetSavegameRevision();
+	file->WriteInt(revision);
 	isCompressed = cv_savegame_compress.GetBool();
 	file->WriteBool(isCompressed);
 }

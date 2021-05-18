@@ -2230,7 +2230,7 @@ idSessionLocal::SavegameValidity idSessionLocal::IsSavegameValid(const char *sav
 
 		RevisionTracker& RevTracker = RevisionTracker::Instance();
 
-		if (savegameVersion != SAVEGAME_VERSION || savegame.GetCodeRevision() != RevTracker.GetHighestRevision())
+		if (savegameVersion != SAVEGAME_VERSION || savegame.GetCodeRevision() != RevTracker.GetSavegameRevision())
 		{
 			common->Warning("Savegame Version mismatch!");
 			retVal = savegame_versionMismatch;

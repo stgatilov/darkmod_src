@@ -43,8 +43,16 @@ public:
 	int GetHighestRevision() const;
 	int GetLowestRevision() const;
 
-	/// returns string representation of current revision
+	/**
+	 * Returns string representation of the current revision.
+	 */
 	const char *GetRevisionString() const;
+
+	/**
+	 * stgatilov: Returns revision of this executable for savegame checks.
+	 * Note: it is overriden with hardcoded number for hotfix releases!
+	 */
+	int GetSavegameRevision() const;
 
 	// Accessor to the singleton
 	static RevisionTracker& Instance();
