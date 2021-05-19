@@ -608,6 +608,7 @@ void idGameLocal::AddInterMissionTrigger(int missionNum, const idStr& activatorN
 	trigger.targetName = targetName;
 }
 
+#if 0
 void idGameLocal::CheckTDMVersion()
 {
 	GuiMessage msg;
@@ -679,6 +680,7 @@ void idGameLocal::CheckTDMVersion()
 
 	AddMainMenuMessage(msg);
 }
+#endif
 
 void idGameLocal::AddMainMenuMessage(const GuiMessage& message)
 {
@@ -4472,10 +4474,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->SetStateString("LSMissionTitleText",common->Translate(missionTitle.c_str())); // grayman #3733
 		}
 	}
-	else if (cmd == "check_tdm_version")
+/*	else if (cmd == "check_tdm_version")
 	{
 		CheckTDMVersion();
-	}
+	}*/
 	else if (cmd == "close_msg_box")
 	{
 		gui->SetStateBool("MsgBoxVisible", false);
