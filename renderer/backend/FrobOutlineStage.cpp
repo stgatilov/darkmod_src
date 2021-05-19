@@ -30,6 +30,12 @@ idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_F
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
 idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
+idCVar r_frobHighlightColorMulR( "r_frobHighlightColorMulR", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - red component" );
+idCVar r_frobHighlightColorMulG( "r_frobHighlightColorMulG", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - green component" );
+idCVar r_frobHighlightColorMulB( "r_frobHighlightColorMulB", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - blue component" );
+idCVar r_frobHighlightColorAddR( "r_frobHighlightColorAddR", "0.02", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Added color of the frob highlight - red component" );
+idCVar r_frobHighlightColorAddG( "r_frobHighlightColorAddG", "0.02", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Added color of the frob highlight - green component" );
+idCVar r_frobHighlightColorAddB( "r_frobHighlightColorAddB", "0.02", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Added color of the frob highlight - blue component" );
 idCVar r_frobOutlineBlurPasses( "r_frobOutlineBlurPasses", "2", CVAR_RENDERER|CVAR_FLOAT|CVAR_ARCHIVE, "Thickness of the new frob outline" );
 
 namespace {
@@ -39,6 +45,9 @@ namespace {
 		DEFINE_UNIFORM( float, extrusion )
 		DEFINE_UNIFORM( float, depth )
 		DEFINE_UNIFORM( vec4, color )
+		DEFINE_UNIFORM( vec4, colorAdd )
+		DEFINE_UNIFORM( vec4, texMatrix )
+		DEFINE_UNIFORM( sampler, diffuse )
 	};
 
 	struct BlurUniforms : GLSLUniformGroup {
@@ -58,6 +67,7 @@ namespace {
 
 void FrobOutlineStage::Init() {
 	silhouetteShader = programManager->LoadFromFiles( "frob_silhouette", "stages/frob/frob.vert.glsl", "stages/frob/frob_silhouette.frag.glsl" );
+	highlightShader = programManager->LoadFromFiles( "frob_highlight", "stages/frob/frob.vert.glsl", "stages/frob/frob_highlight.frag.glsl" );
 	extrudeShader = programManager->LoadFromFiles( "frob_extrude", "stages/frob/frob.vert.glsl", "stages/frob/frob_silhouette.frag.glsl", "stages/frob/frob_extrude.geom.glsl" );
 	applyShader = programManager->LoadFromFiles( "frob_apply", "fullscreen_tri.vert.glsl", "stages/frob/frob_apply.frag.glsl" );
 	colorTex[0] = globalImages->ImageFromFunction( "frob_color_0", FB_RenderTexture );
@@ -95,7 +105,9 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 	if ( !r_frobIgnoreDepth.GetBool() ) {
 		MaskOutlines( outlineSurfs );
 	}
-	DrawSoftOutline( outlineSurfs );
+	if ( r_frobOutline ) {
+		DrawSoftOutline( outlineSurfs );
+	}
 
 	GL_State( GLS_DEPTHFUNC_EQUAL );
 	qglStencilFunc( GL_ALWAYS, 255, 255 );
@@ -122,13 +134,22 @@ void FrobOutlineStage::MaskObjects( idList<drawSurf_t *> &surfs ) {
 	qglClear( GL_STENCIL_BUFFER_BIT );
 	qglStencilFunc( GL_ALWAYS, 255, 255 );
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_COLORMASK );
-	silhouetteShader->Activate();
-	FrobOutlineUniforms *frobUniforms = silhouetteShader->GetUniformGroup<FrobOutlineUniforms>();
+	GLSLProgram *shader;
+	if ( r_newFrob.GetInteger() == 1 ) {
+		shader = highlightShader;
+		GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
+	} else {
+		shader = silhouetteShader;
+		GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_COLORMASK );
+	}
+	shader->Activate();
+	FrobOutlineUniforms *frobUniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
 	frobUniforms->extrusion.Set( 0.f );
 	frobUniforms->depth.Set( 0.f );
+	frobUniforms->color.Set( r_frobHighlightColorMulR.GetFloat(), r_frobHighlightColorMulG.GetFloat(), r_frobHighlightColorMulB.GetFloat(), 1 );
+	frobUniforms->colorAdd.Set( r_frobHighlightColorAddR.GetFloat(), r_frobHighlightColorAddG.GetFloat(), r_frobHighlightColorAddB.GetFloat(), 1 );
 
-	DrawObjects( surfs, silhouetteShader );
+	DrawObjects( surfs, shader, r_newFrob.GetInteger() == 1 );
 }
 
 void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
@@ -141,7 +162,7 @@ void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
 	uniforms->extrusion.Set( r_frobOutlineBlurPasses.GetFloat() * 20 );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 
-	DrawObjects( surfs, extrudeShader );
+	DrawObjects( surfs, extrudeShader, false );
 }
 
 void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
@@ -157,7 +178,7 @@ void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
 	qglClearColor( 0, 0, 0, 0 );
 	qglClear( GL_COLOR_BUFFER_BIT );
 
-	DrawObjects( surfs, silhouetteShader );
+	DrawObjects( surfs, silhouetteShader, false );
 
 	// resolve color buffer
 	drawFbo->BlitTo( fbo[0], GL_COLOR_BUFFER_BIT );
@@ -182,11 +203,35 @@ void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
 	RB_DrawFullScreenTri();
 }
 
-void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *shader ) {
+extern void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs,
+                           idImage **image, idVec4 matrix[2], float color[4] );
+
+void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *shader, bool bindDiffuseTexture ) {
+	if ( bindDiffuseTexture ) {
+		GL_SelectTexture( 1 );
+		shader->GetUniformGroup<FrobOutlineUniforms>()->diffuse.Set( 1 );
+	}
+
 	for ( drawSurf_t *surf : surfs ) {
 		GL_Cull( surf->material->GetCullType() );
 		shader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 		vertexCache.VertexPosition( surf->ambientCache );
+
+		if ( bindDiffuseTexture ) {
+			idImage *diffuse = globalImages->whiteImage;
+			const idMaterial *material = surf->material;
+			for ( int i = 0; i < material->GetNumStages(); ++i ) {
+				const shaderStage_t *stage = material->GetStage( i );
+				if ( stage->lighting == SL_DIFFUSE && stage->texture.image ) {
+					idVec4 textureMatrix[2];
+					R_SetDrawInteraction( stage, surf->shaderRegisters, &diffuse, textureMatrix, nullptr );
+					shader->GetUniformGroup<FrobOutlineUniforms>()->texMatrix.SetArray( 2, textureMatrix[0].ToFloatPtr() );
+					break;
+				}
+			}
+			diffuse->Bind();
+		}
+
 		RB_DrawElementsWithCounters( surf );
 	}
 }

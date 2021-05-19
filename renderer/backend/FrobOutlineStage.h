@@ -24,6 +24,7 @@ public:
 
 private:
 	GLSLProgram *silhouetteShader = nullptr;
+	GLSLProgram *highlightShader = nullptr;
 	GLSLProgram *extrudeShader = nullptr;
 	GLSLProgram *applyShader = nullptr;
 
@@ -38,6 +39,6 @@ private:
 	void MaskObjects( idList<drawSurf_t*> &surfs );
 	void MaskOutlines( idList<drawSurf_t*> &surfs );
 	void DrawSoftOutline( idList<drawSurf_t*> &surfs );
-	void DrawObjects( idList<drawSurf_t*> &surfs, GLSLProgram *shader );
+	void DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram *shader, bool bindDiffuseTexture );
 	void ApplyBlur();
 };

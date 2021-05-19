@@ -131,7 +131,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
-	if ( r_frobOutline.GetBool() ) {
+	if ( r_frobOutline.GetBool() || r_newFrob.GetInteger() == 1 ) {
 		frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
 	}
 
