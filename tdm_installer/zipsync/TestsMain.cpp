@@ -898,6 +898,100 @@ TEST_CASE("Downloader") {
     }
 }
 
+TEST_CASE("DownloaderTimeout"
+    * doctest::skip()   //takes hours due to repeated pauses
+) {
+    stdext::create_directories(GetTempDir());
+    {
+        StdioFileHolder identity((GetTempDir() / "identity_large.bin").string().c_str(), "wb");
+        for (uint64_t i = 0; i < 1000000; i++)
+            fwrite(&i, 8, 1, identity);
+        StdioFileHolder numbers((GetTempDir() / "squares_large.txt").string().c_str(), "wb");
+        for (int i = 0; i < 1000000; i++)
+            fprintf(numbers, "%d-th square is %d\n", i, i*i);
+    }
+    std::string DataIdentityBin = ReadWholeFileAsStr((GetTempDir() / "identity_large.bin").string());
+    std::string DataSquaresTxt = ReadWholeFileAsStr((GetTempDir() / "squares_large.txt").string());
+    auto CreateDownloadCallback = [](std::string &buffer) -> DownloadFinishedCallback {
+        return [&buffer](const void *ptr, uint32_t bytes) -> void {
+            buffer.assign((char*)ptr, (char*)ptr + bytes);
+        };
+    };
+
+    for (int mode = 0; mode < 4; mode++) {
+        HttpServer server;
+        server.SetBlockSize(3 * 1024);
+        server.SetRootDir(GetTempDir().string());
+
+        //note: this tests depends a lot on SPEED_PROFILES in Downloader.cpp
+        //the wait time and byte intervals should be kept in sync with them
+        if (mode == 0) {
+            //pause for 1 second every 1 MB
+            //download should not be stopped (timeout = 10 seconds)
+            server.SetPauseModel(HttpServer::PauseModel{1<<20, 1});
+        }
+        if (mode == 1) {
+            //pause for 20 seconds every 2 MB
+            //download should be retried with second profile a few times
+            server.SetPauseModel(HttpServer::PauseModel{2<<20, 20});
+        }
+        if (mode == 2) {
+            //pause for 20 seconds every 200 KB
+            //download will only proceed with the last profile (having timeout = 60 seconds)
+            server.SetPauseModel(HttpServer::PauseModel{200<<10, 20});
+        }
+        if (mode == 3) {
+            //pause for 100 seconds every 10 KB
+            //download should be stopped, no profile supports it
+            server.SetPauseModel(HttpServer::PauseModel{10<<10, 100});
+        }
+
+        server.Start();
+
+        { //retry due to hanging connection
+            Downloader down;
+            static const int CHUNK_SIZE = 8024;
+            std::vector<std::string> resId, resSq;
+            resId.reserve(100000);
+            resSq.reserve(100000);
+            for (int req = 0; (req + 1) * CHUNK_SIZE <= DataIdentityBin.size(); req++) {
+                resId.push_back({});
+                down.EnqueueDownload(DownloadSource(
+                    server.GetRootUrl() + "identity_large.bin",
+                    CHUNK_SIZE * req, CHUNK_SIZE * (req + 1)),
+                    CreateDownloadCallback(resId.back())
+                );
+            }
+            for (int req = 0; (req + 1) * CHUNK_SIZE <= DataSquaresTxt.size(); req++) {
+                resSq.push_back({});
+                down.EnqueueDownload(DownloadSource(
+                    server.GetRootUrl() + "squares_large.txt",
+                    CHUNK_SIZE * req, CHUNK_SIZE * (req + 1)),
+                    CreateDownloadCallback(resSq.back())
+                );
+            }
+
+            g_testLogger->clear();
+            if (mode < 3)
+                down.DownloadAll();
+            else {
+                CHECK_THROWS(down.DownloadAll());
+                continue;
+            }
+            int tooSlowCount = g_testLogger->counts[lcDownloadTooSlow];
+            if (mode < 1)
+                CHECK(tooSlowCount == 0);
+            else
+                CHECK(tooSlowCount > 0);
+
+            for (int req = 0; req < resId.size(); req++)
+                CHECK(resId[req] == DataIdentityBin.substr(CHUNK_SIZE * req, CHUNK_SIZE));
+            for (int req = 0; req < resSq.size(); req++)
+                CHECK(resSq[req] == DataSquaresTxt.substr(CHUNK_SIZE * req, CHUNK_SIZE));
+        }
+    }
+}
+
 TEST_CASE("CleanInstall") {
     //ensure no unnecessary zip repacks on clean install of something
     //even if some files are present in several provided locations / are duplicates

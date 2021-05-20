@@ -47,6 +47,7 @@ class Downloader {
     struct UrlState {
         int doneCnt = 0;
         std::vector<int> downloadsIds;      //sorted by starting offset
+        int speedProfile = 0;               //index in SPEED_PROFILES
     };
     std::map<std::string, UrlState> _urlStates;
 
@@ -84,7 +85,7 @@ public:
 
 private:
     void DownloadAllForUrl(const std::string &url);
-    void DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds);
+    bool DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime = 0);
     void BreakMultipartResponse(const CurlResponse &response, std::vector<CurlResponse> &parts);
     int UpdateProgress();
     size_t BytesToTransfer(const Download &download);

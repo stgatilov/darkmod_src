@@ -24,6 +24,7 @@ enum LogCode {
     lcCantOpenFile,             //unexpected fail when opening file
     lcMinizipError,             //unexpected error from minizip function
     lcUserInterrupt,            //generated because progress callback asked to interrupt
+    lcDownloadTooSlow,          //curl download stopped as too slow
 
     //the remaining log codes are intercepted during testing
     lcRenameZipWithoutRepack,

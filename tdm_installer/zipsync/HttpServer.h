@@ -14,15 +14,26 @@ struct MHD_Connection;
 
 namespace ZipSync {
 
+
 /**
  * Simple embedded HTTP server.
  * Used only for tests.
  */
 class HttpServer {
+public:
+    struct PauseModel {
+        //make pause every B bytes
+        uint64_t bytesBetweenPauses = UINT64_MAX;
+        //pause lasts for T seconds
+        int pauseSeconds = 0;
+    };
+
+private:
     std::string _rootDir;
     MHD_Daemon *_daemon = nullptr;
     int _port = -1;
     int _blockSize = -1;
+    PauseModel _pauseModel;
 
 public:
     static const int PORT_DEFAULT = 8090;
@@ -36,6 +47,7 @@ public:
     void SetRootDir(const std::string &root);
     void SetPortNumber(int port = PORT_DEFAULT);
     void SetBlockSize(int blockSize = 128*1024);
+    void SetPauseModel(const PauseModel &model = PauseModel());
     std::string GetRootUrl() const;
 
     void Start();
