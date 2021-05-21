@@ -8,7 +8,7 @@ uniform vec4 u_color;
 uniform vec4 u_colorAdd;
 
 void main() {
-	vec3 diffuse = texture(u_diffuse, var_TexCoord).rgb;
-	draw_Color.rgb = u_color.rgb * diffuse + u_colorAdd.rgb;
-	draw_Color.a = 1;
+	vec4 diffuse = texture(u_diffuse, var_TexCoord);
+	draw_Color.rgb = u_color.rgb * diffuse.rgb + u_colorAdd.rgb;
+	draw_Color.a = diffuse.a;
 }

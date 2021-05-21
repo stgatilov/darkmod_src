@@ -137,7 +137,7 @@ void FrobOutlineStage::MaskObjects( idList<drawSurf_t *> &surfs ) {
 	GLSLProgram *shader;
 	if ( r_newFrob.GetInteger() == 1 ) {
 		shader = highlightShader;
-		GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
+		GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE );
 	} else {
 		shader = silhouetteShader;
 		GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_COLORMASK );
