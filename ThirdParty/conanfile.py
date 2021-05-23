@@ -44,6 +44,7 @@ class TdmDepends(ConanFile):
     requires_headeronly = (
         "tinyformat/2.1.0@thedarkmod/local",
         "doctest/2.2.3@thedarkmod/local",
+        "tracy/0.7.8@thedarkmod/local",
     )
     # these deps can be built only once in release mode, and then used both in release and debug builds
     # this is possible only for pure C libraries built with /MT, and needs /nodefaultlib:LIBCMT.lib flag in debug build
@@ -89,6 +90,9 @@ class TdmDepends(ConanFile):
             self.copy("*.H"  , root_package=name, src="include" , dst="artefacts/%s/include" % name)    # FLTK =(
             self.copy("*.hpp", root_package=name, src="include" , dst="artefacts/%s/include" % name)
             self.copy("*"    , root_package=name, src="licenses", dst="artefacts/%s/licenses" % name)
+            # source code files to be embedded into build (used by Tracy)
+            self.copy("*.cpp", root_package=name, src="src" , dst="artefacts/%s/src" % name)
+            self.copy("*.c"  , root_package=name, src="src" , dst="artefacts/%s/src" % name)
             # compiled binaries are put under subdirectory named by build settings
             self.copy("*.lib", root_package=name, src="lib"     , dst="artefacts/%s/lib/%s" % (name, platform))
             self.copy("*.a"  , root_package=name, src="lib"     , dst="artefacts/%s/lib/%s" % (name, platform))
