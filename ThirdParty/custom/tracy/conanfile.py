@@ -9,6 +9,7 @@ class TracyConan(ConanFile):
     author = "Stepan Gatilov stgatilov@gmail.com"
     description = "A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications."
     topics = ("profiler", "trace")
+    exports_sources = ["patches/*"]
 
     def source(self):
         # Download and extract tag tarball from github
@@ -16,6 +17,13 @@ class TracyConan(ConanFile):
         tools.get("{0}/archive/refs/tags/v{1}.tar.gz".format(source_url, self.version))
         extracted_dir = "tracy-" + self.version
         os.rename(extracted_dir, "fullsource")
+
+    def build(self):
+        # add RecreateQueries method
+        tools.patch(base_path = "fullsource", patch_file = "patches/RecreateQueries.patch")
+        # replace glXXX with qglXXX
+        for prefix in ['glGet', 'glGen', 'glQuery']:
+            tools.replace_in_file("fullsource/TracyOpenGL.hpp", prefix, 'q' + prefix)
 
     def package(self):
         for dirname in ['client', 'common']:
