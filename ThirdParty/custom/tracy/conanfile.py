@@ -26,7 +26,7 @@ class TracyConan(ConanFile):
             tools.replace_in_file("fullsource/TracyOpenGL.hpp", prefix, 'q' + prefix)
 
     def package(self):
-        for dirname in ['client', 'common']:
+        for dirname in ['client', 'common', 'libbacktrace']:
             self.copy("{0}/*.h".format(dirname), dst="include", src="fullsource")
             self.copy("{0}/*.hpp".format(dirname), dst="include", src="fullsource")
             self.copy("{0}/*.cpp".format(dirname), dst="src", src="fullsource")
@@ -34,4 +34,5 @@ class TracyConan(ConanFile):
             self.copy(filename, dst="include", src="fullsource")
         for filename in ['TracyClient.cpp']:
             self.copy(filename, dst="src", src="fullsource")
-        self.copy("*LICENSE", dst="licenses", keep_path=False)
+        self.copy("LICENSE", dst="licenses", src="fullsource")
+        self.copy("libbacktrace/LICENSE", dst="licenses", src="fullsource")
