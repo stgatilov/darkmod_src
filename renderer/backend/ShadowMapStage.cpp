@@ -20,7 +20,6 @@
 #include "../FrameBufferManager.h"
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
-#include "../Profiling.h"
 
 namespace {
 	struct ShadowMapUniforms : GLSLUniformGroup {
@@ -47,7 +46,7 @@ void ShadowMapStage::Init() {
 void ShadowMapStage::Shutdown() {}
 
 void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
-	GL_PROFILE( "RenderShadowMap" );
+	TRACE_GL_SCOPE( "RenderShadowMap" );
 
 	if ( glConfig.vendor == glvIntel ) {
 		// for some reason, Intel has massive performance problems with this path, cause as of yet is unknown

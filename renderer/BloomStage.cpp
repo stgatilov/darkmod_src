@@ -22,7 +22,6 @@
 #include "tr_local.h"
 #include "GLSLProgramManager.h"
 #include "GLSLProgram.h"
-#include "Profiling.h"
 #include "GLSLUniforms.h"
 #include "FrameBufferManager.h"
 #include "FrameBuffer.h"
@@ -157,7 +156,7 @@ void BloomStage::Shutdown() {
 }
 
 void BloomStage::ComputeBloomFromRenderImage() {
-	GL_PROFILE("BloomStage");
+	TRACE_GL_SCOPE("BloomStage");
 
 	if (downsampleFBOs[0] == nullptr) {
 		Init();
@@ -207,7 +206,7 @@ void BloomStage::ApplyBloom() {
 }
 
 void BloomStage::Downsample() {
-	GL_PROFILE( "BloomDownsampling" )
+	TRACE_GL_SCOPE( "BloomDownsampling" )
 
 	// execute initial downsampling and bright pass on render image
 	downsampleWithBrightPassShader->Activate();
@@ -235,7 +234,7 @@ void BloomStage::Downsample() {
 }
 
 void BloomStage::Blur() {
-	GL_PROFILE("BloomBlur")
+	TRACE_GL_SCOPE("BloomBlur")
 
 	int step = numDownsamplingSteps - 1;
 	programManager->gaussianBlurShader->Activate();
@@ -259,7 +258,7 @@ void BloomStage::Blur() {
 }
 
 void BloomStage::Upsample() {
-	GL_PROFILE( "BloomUpsampling" )
+	TRACE_GL_SCOPE( "BloomUpsampling" )
 
 	if (numDownsamplingSteps <= 1)
 		return;

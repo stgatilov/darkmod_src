@@ -18,7 +18,6 @@
 #include "tr_local.h"
 #include "FrameBuffer.h"
 #include "glsl.h"
-#include "Profiling.h"
 #include "backend/RenderBackend.h"
 #include "FrameBufferManager.h"
 
@@ -121,6 +120,9 @@ Called by R_EndFrame each frame
 ====================
 */
 void R_IssueRenderCommands( frameData_t *frameData ) {
+	TRACE_CPU_SCOPE( "R_IssueRenderCommands" )
+	TRACE_GL_SCOPE( "RenderFrame" )
+
 	emptyCommand_t *cmds = frameData->cmdHead;
 	if ( cmds->commandId == RC_NOP
 	        && !cmds->next ) {
@@ -631,7 +633,6 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 
 	try {
 		RB_CopyDebugPrimitivesToBackend();
-		ProfilingBeginFrame();
 		common->SetErrorIndirection( true );
 		double startLoop = Sys_GetClockTicks();
 		session->ActivateFrontend();
@@ -644,7 +645,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		session->WaitForFrontendCompletion();
 		double endWait = Sys_GetClockTicks();
 		common->SetErrorIndirection( false );
-		ProfilingEndFrame();
+		TracingEndFrame();
 
 		if ( r_logSmpTimings.GetBool() ) {
 			if ( !smpTimingsLogFile ) {

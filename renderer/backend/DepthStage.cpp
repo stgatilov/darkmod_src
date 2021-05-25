@@ -18,7 +18,6 @@
 #include "DepthStage.h"
 #include "RenderBackend.h"
 #include "../FrameBuffer.h"
-#include "../Profiling.h"
 #include "../glsl.h"
 #include "../FrameBufferManager.h"
 #include "../GLSLProgramManager.h"
@@ -90,7 +89,7 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 		return;
 	}
 
-	GL_PROFILE( "DepthStage" );
+	TRACE_GL_SCOPE( "DepthStage" );
 
 	GLSLProgram *shader = renderBackend->ShouldUseBindlessTextures() ? depthShaderBindless : depthShader;
 	shader->Activate();

@@ -16,7 +16,6 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "Profiling.h"
 #include "tr_local.h"
 
 idCVar r_useLightAreaCulling( "r_useLightAreaCulling", "1", CVAR_RENDERER | CVAR_BOOL, "0 = off, 1 = on" );
@@ -935,7 +934,7 @@ they were considered, but not actually visible.
 =============
 */
 void idRenderWorldLocal::FindViewLightsAndEntities( void ) {
-	FRONTEND_PROFILE( "FindViewLightsAndEntities" )
+	TRACE_CPU_SCOPE( "FindViewLightsAndEntities" )
 
 	// clear the visible lightDef and entityDef lists
 	tr.viewDef->viewLights = nullptr;

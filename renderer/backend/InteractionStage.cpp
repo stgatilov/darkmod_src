@@ -18,7 +18,6 @@
 #include "InteractionStage.h"
 
 #include "RenderBackend.h"
-#include "../Profiling.h"
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 #include "../FrameBuffer.h"
@@ -165,7 +164,7 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		return;
 	}
 
-	GL_PROFILE( "DrawInteractions" );
+	TRACE_GL_SCOPE( "DrawInteractions" );
 
 	PreparePoissonSamples();
 

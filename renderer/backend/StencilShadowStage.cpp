@@ -16,7 +16,6 @@
 #include "precompiled.h"
 
 #include "StencilShadowStage.h"
-#include "../Profiling.h"
 #include "DrawBatchExecutor.h"
 #include "../FrameBuffer.h"
 #include "../GLSLProgram.h"
@@ -46,7 +45,7 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 	if ( !shadowSurfs || !r_shadows.GetInteger() ) {
 		return;
 	}
-	GL_PROFILE( "StencilShadowPass" );
+	TRACE_GL_SCOPE( "StencilShadowPass" );
 
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglPolygonOffset( r_shadowPolygonFactor.GetFloat(), -r_shadowPolygonOffset.GetFloat() );

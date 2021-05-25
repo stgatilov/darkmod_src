@@ -198,6 +198,7 @@
     <ClCompile Include="idlib\containers\HashMap.cpp">
       <Filter>Containers</Filter>
     </ClCompile>
+    <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">

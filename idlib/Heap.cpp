@@ -1084,6 +1084,7 @@ void Mem_Free( void *ptr ) {
 	if ( !ptr ) {
 		return;
 	}
+
 	if ( !mem_heap ) {
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((int*)0x0) = 1;

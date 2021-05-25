@@ -19,10 +19,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "FrameBuffer.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
-#include "Profiling.h"
 #include "AmbientOcclusionStage.h"
 #include "BloomStage.h"
-#include "Profiling.h"
 #include "FrameBufferManager.h"
 
 FrameBuffer::FrameBuffer( const idStr &name, const Generator &generator ) {

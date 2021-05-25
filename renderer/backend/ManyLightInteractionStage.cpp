@@ -18,7 +18,6 @@
 #include "ManyLightInteractionStage.h"
 
 #include "RenderBackend.h"
-#include "../Profiling.h"
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 #include "../FrameBuffer.h"
@@ -171,7 +170,7 @@ void ManyLightInteractionStage::Shutdown() {
 }
 
 void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
-	GL_PROFILE( "DrawInteractionsMultiLight" );
+	TRACE_GL_SCOPE( "DrawInteractionsMultiLight" );
 
 	PreparePoissonSamples();
 	SetGlState(GLS_DEPTHFUNC_EQUAL);

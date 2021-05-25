@@ -20,7 +20,6 @@
 #include "glsl.h"
 #include "GLSLProgramManager.h"
 #include "backend/RenderBackend.h"
-#include "Profiling.h"
 #include "BloomStage.h"
 #include "FrameBufferManager.h"
 
@@ -664,7 +663,7 @@ void RB_Bloom( bloomCommand_t *cmd ) {
 		return;
 	}
 
-	GL_PROFILE("Postprocess")
+	TRACE_GL_SCOPE("Postprocess")
 	frameBuffers->UpdateCurrentRenderCopy();
 	bloom->ComputeBloomFromRenderImage();
 	frameBuffers->LeavePrimary( false );
@@ -678,7 +677,7 @@ void RB_Tonemap() {
 	if ( !r_tonemap ) {
 		return;
 	}
-	GL_PROFILE("Tonemap")
+	TRACE_GL_SCOPE("Tonemap")
 
 	frameBuffers->defaultFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
@@ -754,6 +753,8 @@ RB_SwapBuffers
 =============
 */
 const void	RB_SwapBuffers( const void *data ) {
+	TRACE_GL_SCOPE( "SwapBuffers" )
+
 	// texture swapping test
 	if ( r_showImages.GetInteger() != 0 ) {
 		RB_ShowImages();

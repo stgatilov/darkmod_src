@@ -18,7 +18,6 @@
 
 #include "tr_local.h"
 #include "Model_local.h"
-#include "Profiling.h"
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
@@ -846,7 +845,7 @@ and the viewEntitys due to game movement
 =================
 */
 void R_AddLightSurfaces( void ) {
-	FRONTEND_PROFILE( "R_AddLightSurfaces" );
+	TRACE_CPU_SCOPE( "R_AddLightSurfaces" );
 	
 	viewLight_t			*vLight;
 	idRenderLightLocal	*light;
@@ -1549,6 +1548,8 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 	idInteraction* inter, * next;
 	idRenderModel* model;
 
+	TRACE_CPU_SCOPE( "R_AddSingleModel" )
+
 	idRenderEntityLocal& def = *vEntity->entityDef;
 	if ( ( r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0 ) && ( def.dynamicModel || def.cachedDynamicModel ) ) { // debug filters
 		return;
@@ -1660,7 +1661,7 @@ two or more lights.
 ===================
 */
 void R_AddModelSurfaces( void ) {
-	FRONTEND_PROFILE( "R_AddModelSurfaces ")
+	TRACE_CPU_SCOPE( "R_AddModelSurfaces ")
 	
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
@@ -1691,7 +1692,7 @@ R_RemoveUnecessaryViewLights
 =====================
 */
 void R_RemoveUnecessaryViewLights( void ) {
-	FRONTEND_PROFILE( "R_RemoveUnnecessaryViewLights" )
+	TRACE_CPU_SCOPE( "R_RemoveUnnecessaryViewLights" )
 
 	viewLight_t		*vLight;
 

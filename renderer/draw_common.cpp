@@ -18,7 +18,6 @@
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
-#include "Profiling.h"
 #include "GLSLProgram.h"
 #include "GLSLUniforms.h"
 #include "GLSLProgramManager.h"
@@ -262,7 +261,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( r_skipDepthPass )
 		return;
 	
-	GL_PROFILE( "STD_FillDepthBuffer" );
+	TRACE_GL_SCOPE( "STD_FillDepthBuffer" );
 
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
@@ -706,7 +705,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !numDrawSurfs ) {
 		return numDrawSurfs;
 	}
-	GL_PROFILE( "STD_DrawShaderPasses" );
+	TRACE_GL_SCOPE( "STD_DrawShaderPasses" );
 
 	RB_LogComment( "---------- RB_STD_DrawShaderPasses ----------\n" );
 
@@ -1025,7 +1024,7 @@ void RB_STD_FogAllLights( bool translucent ) {
 		r_showOverDraw.GetInteger() != 0 ) {
 		return;
 	}
-	GL_PROFILE( "STD_FogAllLights" );
+	TRACE_GL_SCOPE( "STD_FogAllLights" );
 
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
@@ -1053,7 +1052,7 @@ RB_STD_DrawView
 =============
 */
 void RB_STD_DrawView( void ) {
-	GL_PROFILE( "STD_DrawView" );
+	TRACE_GL_SCOPE( "STD_DrawView" );
 
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs, processed;

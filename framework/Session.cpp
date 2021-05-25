@@ -22,7 +22,6 @@
 #include "../renderer/FrameBuffer.h"
 #include "../game/gamesys/SysCvar.h"
 #include "../game/Missions/MissionManager.h"
-#include "../renderer/Profiling.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -2980,6 +2979,8 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 	logCmd_t	logCmd;
 	usercmd_t	cmd;
 
+	TRACE_CPU_SCOPE( "RunGameTic" )
+
 	// if we are doing a command demo, read or write from the file
 	if ( cmdDemoFile ) {
 		if ( !cmdDemoFile->Read( &logCmd, sizeof( logCmd ) ) ) {
@@ -3118,6 +3119,7 @@ void idSessionLocal::FrontendThreadFunction() {
 
 		double beginLoop = Sys_GetClockTicks();
 		{ // lock scope
+			TRACE_CPU_SCOPE_COLOR( "Frontend::Wait", TRACE_COLOR_IDLE )
 			std::unique_lock< std::mutex > lock( signalMutex );
 			// wait for render thread
 			while( !frontendActive && !shutdownFrontend ) {
@@ -3203,7 +3205,7 @@ Waits for the frontend to finish preparing the next frame.
 */
 void idSessionLocal::WaitForFrontendCompletion() {
 	if( com_smp.GetBool() ) {
-		GL_PROFILE( "WaitForFrontend" );
+		TRACE_CPU_SCOPE_COLOR( "WaitForFrontend", TRACE_COLOR_IDLE );
 		std::unique_lock<std::mutex> lock( signalMutex );
 		if( r_showSmp.GetBool() )
 			backEnd.pc.waitedFor = frontendActive ? 'F' : '.';
@@ -3223,6 +3225,7 @@ void idSessionLocal::StartFrontendThread() {
 	frontendActive = shutdownFrontend = false;
 	auto func = []( void *x ) -> unsigned int {
 		idSessionLocal* s = (idSessionLocal*)x;
+		TRACE_THREAD_NAME( "Frontend" )
 		s->FrontendThreadFunction();
 		return 0; 
 	};

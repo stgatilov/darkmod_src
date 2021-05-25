@@ -32,7 +32,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
-#include "Profiling.h"
 #include "GLSLProgram.h"
 #include "GLSLProgramManager.h"
 #include "AmbientOcclusionStage.h"
@@ -143,7 +142,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf ) {
 		return;
 	}
-	GL_PROFILE( "GLSL_CreateDrawInteractions" );
+	TRACE_GL_SCOPE( "GLSL_CreateDrawInteractions" );
 
 	// if using float buffers, alpha values are not clamped and can stack up quite high, since most interactions add 1 to its value
 	// this in turn causes issues with some shader stage materials that use DST_ALPHA blending.
@@ -193,7 +192,7 @@ RB_GLSL_DrawLight_Stencil
 ==================
 */
 void RB_GLSL_DrawLight_Stencil() {
-	GL_PROFILE( "GLSL_DrawLight_Stencil" );
+	TRACE_GL_SCOPE( "GLSL_DrawLight_Stencil" );
 
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
 
@@ -275,7 +274,7 @@ RB_GLSL_CreateDrawInteractions
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
 	if ( backEnd.vLight->shadowMapIndex > 42 )
 		return;
-	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
+	TRACE_GL_SCOPE( "GLSL_DrawInteractions_ShadowMap" );
 
 	GL_CheckErrors();
 	frameBuffers->EnterShadowMap();
@@ -358,7 +357,7 @@ RB_GLSL_DrawLight_ShadowMap
 ==================
 */
 void RB_GLSL_DrawLight_ShadowMap() {
-	GL_PROFILE( "GLSL_DrawLight_ShadowMap" );
+	TRACE_GL_SCOPE( "GLSL_DrawLight_ShadowMap" );
 
 	GL_CheckErrors();
 
@@ -415,7 +414,7 @@ RB_GLSL_DrawInteractions
 void RB_ShadowMap_RenderAllLights();
 
 void RB_GLSL_DrawInteractions() {
-	GL_PROFILE( "GLSL_DrawInteractions" );
+	TRACE_GL_SCOPE( "GLSL_DrawInteractions" );
 	GL_SelectTexture( 0 );
 
 	if ( r_shadows.GetInteger() == 2 ) 

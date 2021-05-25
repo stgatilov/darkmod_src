@@ -18,7 +18,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 
 #include "tr_local.h"
-#include "Profiling.h"
 
 const int32 MAX_VERTCACHE_SIZE = INT_MAX;
 

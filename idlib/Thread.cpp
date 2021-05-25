@@ -188,6 +188,8 @@ int idSysThread::ThreadProc( idSysThread * thread ) {
 	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
 	sys->ThreadStartup();
 
+	TRACE_THREAD_NAME( thread->GetName() )
+
 	int retVal = 0;
 
 	try {
@@ -201,6 +203,7 @@ int idSysThread::ThreadProc( idSysThread * thread ) {
 				} else {
 					thread->signalWorkerDone.Raise();
 					thread->signalMutex.Unlock();
+					TRACE_CPU_SCOPE_COLOR( "ThreadProc::Idle", TRACE_COLOR_IDLE )
 					thread->signalMoreWorkToDo.Wait( idSysSignal::WAIT_INFINITE );
 					continue;
 				}

@@ -22,7 +22,6 @@
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
 #include <stack>
 #include <condition_variable>
-#include "Profiling.h"
 #include "LoadStack.h"
 
 /*

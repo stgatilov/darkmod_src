@@ -18,7 +18,6 @@
 
 #include "tr_local.h"
 #include "simplex.h"	// line font definition
-#include "Profiling.h"
 #include "glsl.h"
 #include "GLSLProgramManager.h"
 #include "ImmediateRendering.h"
@@ -2441,7 +2440,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( !backEnd.viewDef->viewEntitys ) {
 		return;
 	}
-	GL_PROFILE( "RenderDebugTools" );
+	TRACE_GL_SCOPE( "RenderDebugTools" );
 
 	RB_LogComment( "---------- RB_RenderDebugTools ----------\n" );
 

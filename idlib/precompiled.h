@@ -16,6 +16,8 @@
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
 
+#include "Tracy.hpp"
+
 #include "sys/sys_defines.h"
 #include "sys/sys_includes.h"
 #include "sys/sys_assert.h"
@@ -60,6 +62,7 @@
 #include "../framework/DeclFX.h"
 #include "../framework/DeclParticle.h"
 #include "../framework/DeclAF.h"
+#include "../framework/Tracing.h"
 
 // We have expression parsing and evaluation code in multiple places:
 // materials, sound shaders, and guis. We should unify them.

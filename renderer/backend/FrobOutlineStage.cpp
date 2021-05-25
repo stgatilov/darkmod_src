@@ -18,7 +18,6 @@
 #include "../glsl.h"
 #include "../GLSLProgram.h"
 #include "../GLSLProgramManager.h"
-#include "../Profiling.h"
 #include "../tr_local.h"
 #include "../FrameBuffer.h"
 #include "../FrameBufferManager.h"
@@ -97,7 +96,7 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 	if ( outlineSurfs.Num() == 0 )
 		return;
 
-	GL_PROFILE( "DrawFrobOutline" )
+	TRACE_GL_SCOPE( "DrawFrobOutline" )
 
 	GL_ScissorRelative( 0, 0, 1, 1 );
 

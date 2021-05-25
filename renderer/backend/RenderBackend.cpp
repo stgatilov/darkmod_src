@@ -19,7 +19,6 @@
 #include "RenderBackend.h"
 
 #include "../AmbientOcclusionStage.h"
-#include "../Profiling.h"
 #include "../GLSLProgram.h"
 #include "../FrameBufferManager.h"
 #include "../FrameBuffer.h"
@@ -85,7 +84,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	backEnd.currentRenderCopied = false;
 	backEnd.afterFogRendered = false;
 
-	GL_PROFILE( "DrawView" );
+	TRACE_GL_SCOPE( "DrawView" );
 
 	// skip render bypasses everything that has models, assuming
 	// them to be 3D views, but leaves 2D rendering visible
@@ -195,7 +194,7 @@ bool RenderBackend::ShouldUseBindlessTextures() const {
 void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
 	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
 
-	GL_PROFILE( "DrawLight_ShadowMap" );
+	TRACE_GL_SCOPE( "DrawLight_ShadowMap" );
 
 	if ( vLight->lightShader->LightCastsShadows() && !r_shadowMapSinglePass ) {
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalInteractions, true );
@@ -210,7 +209,7 @@ void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
 }
 
 void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight ) {
-	GL_PROFILE( "DrawLight_Stencil" );
+	TRACE_GL_SCOPE( "DrawLight_Stencil" );
 
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
 
@@ -267,7 +266,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 }
 
 void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
-	GL_PROFILE( "LightInteractions" );
+	TRACE_GL_SCOPE( "LightInteractions" );
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		if ( r_shadowMapSinglePass.GetBool() ) {

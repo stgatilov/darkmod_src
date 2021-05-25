@@ -30,7 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
-#include "Profiling.h"
 #include "GLSLProgramManager.h"
 #include "FrameBufferManager.h"
 
@@ -247,7 +246,7 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 }
 
 void RB_ShadowMap_RenderAllLights() {
-	GL_PROFILE( "ShadowMap_RenderAllLights" );
+	TRACE_GL_SCOPE( "ShadowMap_RenderAllLights" );
 
 	frameBuffers->EnterShadowMap();
 
@@ -326,7 +325,7 @@ void RB_GLSL_DrawInteractions_MultiLight() {
 	if ( !backEnd.viewDef->viewLights )
 		return;
 	GL_CheckErrors();
-	GL_PROFILE( "GLSL_MultiLightInteractions" );
+	TRACE_GL_SCOPE( "GLSL_MultiLightInteractions" );
 
 	extern void RB_GLSL_GenerateShadowMaps();
 	RB_GLSL_GenerateShadowMaps();

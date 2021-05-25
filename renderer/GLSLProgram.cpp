@@ -20,7 +20,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "glsl.h"
 #include "StdString.h"
-#include "Profiling.h"
 
 idCVar r_debugGLSL("r_debugGLSL", "0", CVAR_BOOL|CVAR_ARCHIVE, "If enabled, checks and warns about additional potential sources of GLSL shader errors.");
 

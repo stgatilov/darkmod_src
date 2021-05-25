@@ -2833,6 +2833,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// init CVar system
 		cvarSystem->Init();
 
+		// potentially start trace profiler if requested
+		InitTracing();
+
 		// start file logging right away, before early console or whatever
 		StartupVariable( "win_outputDebugString", false );
 

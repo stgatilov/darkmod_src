@@ -14,7 +14,7 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_ALLOW_KEYWORD_MACROS;NO_WARN_MBCS_MFC_DEPRECATION;ExtLibs=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level4</WarningLevel>
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ThirdPartyDir)glfw\include;$(ThirdPartyDir)doctest\include;$(ThirdPartyDir)ffmpeg\include;$(ThirdPartyDir)devil\include;$(ThirdPartyDir)libcurl\include;$(ThirdPartyDir)libjpeg\include;$(ThirdPartyDir)libpng\include;$(ThirdPartyDir)mbedtls\include;$(ThirdPartyDir)openal\include;$(ThirdPartyDir)ogg\include;$(ThirdPartyDir)vorbis\include;$(ThirdPartyDir)pugixml\include;$(ThirdPartyDir)zlib\include;$(SolutionDir)\idlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ThirdPartyDir)tracy\include;$(ThirdPartyDir)tracy\include\common;$(ThirdPartyDir)tracy\include\client;$(ThirdPartyDir)glfw\include;$(ThirdPartyDir)doctest\include;$(ThirdPartyDir)ffmpeg\include;$(ThirdPartyDir)devil\include;$(ThirdPartyDir)libcurl\include;$(ThirdPartyDir)libjpeg\include;$(ThirdPartyDir)libpng\include;$(ThirdPartyDir)mbedtls\include;$(ThirdPartyDir)openal\include;$(ThirdPartyDir)ogg\include;$(ThirdPartyDir)vorbis\include;$(ThirdPartyDir)pugixml\include;$(ThirdPartyDir)zlib\include;$(SolutionDir)\idlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
       <DisableSpecificWarnings>4127;4458;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
