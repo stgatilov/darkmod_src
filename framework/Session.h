@@ -126,7 +126,6 @@ public:
 	virtual void    RunGameTic(int timestepMs = USERCMD_MSEC) = 0;
 	virtual void	ActivateFrontend() = 0;
 	virtual void	WaitForFrontendCompletion() = 0;
-	virtual void	LogFrontendTimings( idFile& file ) const = 0;
 	virtual void    ExecuteFrameCommand(const char *command, bool delayed) = 0;
 	virtual void    ExecuteDelayedFrameCommands() = 0;
 

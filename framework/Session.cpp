@@ -3117,7 +3117,6 @@ void idSessionLocal::FrontendThreadFunction() {
 		// stgatilov #4550: update FPU props (e.g. NaN exceptions)
 		sys->ThreadHeartbeat();
 
-		double beginLoop = Sys_GetClockTicks();
 		{ // lock scope
 			TRACE_CPU_SCOPE_COLOR( "Frontend::Wait", TRACE_COLOR_IDLE )
 			std::unique_lock< std::mutex > lock( signalMutex );
@@ -3129,14 +3128,9 @@ void idSessionLocal::FrontendThreadFunction() {
 				return;
 			}
 		}
-		double endWaitForRenderThread = Sys_GetClockTicks();
-		double endGameTics = 0, endDraw = 0;
 		try {
 			RunGameTics();
-			endGameTics = Sys_GetClockTicks();
-
 			DrawFrame();
-			endDraw = Sys_GetClockTicks();
 		} catch( std::shared_ptr< ErrorReportedException > e ) {
 			frontendException = e;
 		} 
@@ -3145,15 +3139,6 @@ void idSessionLocal::FrontendThreadFunction() {
 			std::unique_lock< std::mutex > lock( signalMutex );
 			frontendActive = false;
 			signalMainThread.notify_one();
-		}
-		double endSignalRenderThread = Sys_GetClockTicks();
-
-		if( r_logSmpTimings.GetBool() ) {
-			const double TO_MICROS = 1000000 / Sys_ClockTicksPerSecond();
-			frontendTimeWaiting = (endWaitForRenderThread - beginLoop) * TO_MICROS;
-			frontendTimeGameTics = (endGameTics - endWaitForRenderThread) * TO_MICROS;
-			frontendTimeDrawing = (endDraw - endGameTics) * TO_MICROS;
-			frontendTimeSignal = (endSignalRenderThread - endDraw) * TO_MICROS;
 		}
 	}
 }
@@ -3168,11 +3153,6 @@ bool idSessionLocal::IsFrontend() const {
 	return Sys_GetCurrentThreadID() == frontendThread;
 #endif
 #endif
-}
-
-void idSessionLocal::LogFrontendTimings( idFile &logFile ) const {
-	logFile.Printf( "  Frontend: wait for signal %.2f us - gametics %.2f us - drawing %.2f us - signal backend %.2f us\n", 
-		frontendTimeWaiting, frontendTimeGameTics, frontendTimeDrawing, frontendTimeSignal );
 }
 
 /*
