@@ -216,6 +216,7 @@ void DmapHelp( void ) {
 		
 	"Usage: dmap [options] mapfile\n"
 	"Options:\n"
+	"noFlood           = ignore BSP leaks\n"
 	"noCurves          = don't process curves\n"
 	"noCM              = don't create collision map\n"
 	"noAAS             = don't create AAS files\n"
