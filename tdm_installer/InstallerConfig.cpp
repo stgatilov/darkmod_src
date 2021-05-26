@@ -49,7 +49,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 				const std::string &key = pNM.first;
 				const WeightedUrl &mirror = pNM.second;
 				ZipSyncAssertF(!mirror._url.empty(), "MirrorSet %s: url_%s not set or empty", secName.c_str(), key.c_str());
-				ZipSyncAssertF(mirror._weight > 1e-3, "MirrorSet %s: weight_%s <= 0 or not set", secName.c_str(), key.c_str());
+				ZipSyncAssertF(mirror._weight >= 0.0, "MirrorSet %s: weight_%s < 0 or not set", secName.c_str(), key.c_str());
 				mirset._urls.push_back(mirror);
 			}
 			_mirrorSets[mirset._name] = std::move(mirset);
@@ -205,8 +205,8 @@ std::string InstallerConfig::ChooseManifestUrl(const std::string &version, bool 
 	double sum = 0.0;
 	for (const WeightedUrl &wurl : candidates)
 		sum += wurl._weight;
+	sum = std::max(sum, 1e-6);
 	ZipSyncAssertF(candidates.size(), "No candidates to choose url from (version %s)", version.c_str());
-	ZipSyncAssertF(sum > 1e-6, "Zero total weight when choosing url (version %s)", version.c_str());
 
 	double param = (MirrorChoosingRandom() % 1000000) * 1e-6 * sum;
 	const WeightedUrl *chosen = &candidates[0];
