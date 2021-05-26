@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 
 if (UNIX)
 	# we want debug symbols even with Release builds
@@ -196,9 +196,6 @@ if (THIRDPARTY_PLATFORM_OVERRIDE)
 	endif ()
 elseif (UNIX)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-		# ffmpeg dep was compiled without -fPIC, so need to disable on 64bit builds
-		set_target_properties(TheDarkMod PROPERTIES POSITION_INDEPENDENT_CODE OFF)
-		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.x64")
 	else ()
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "thedarkmod.x86")
@@ -210,6 +207,8 @@ elseif (MSVC)
 		set_target_properties(TheDarkMod PROPERTIES OUTPUT_NAME "TheDarkMod")
 	endif ()
 endif ()
+# ffmpeg dep was compiled without -fPIC, so need to disable PIE on 64bit builds
+set_target_properties(TheDarkMod PROPERTIES POSITION_INDEPENDENT_CODE OFF)	# see also CMP0083
 ucm_set_runtime(STATIC)
 
 find_package(zlib REQUIRED)
