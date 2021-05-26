@@ -71,8 +71,11 @@ int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, 
 }
 
 
+int GuiDeactivateGuard::DeactivatedCount = 0;
+
 GuiDeactivateGuard::~GuiDeactivateGuard() {
 	Rollback();
+	DeactivatedCount--;
 }
 GuiDeactivateGuard::GuiDeactivateGuard(Fl_Widget *blockedPage, std::initializer_list<Fl_Widget*> exceptThese) {
 	Fl_Group *group = blockedPage->as_group();
@@ -98,6 +101,8 @@ GuiDeactivateGuard::GuiDeactivateGuard(Fl_Widget *blockedPage, std::initializer_
 		_widgetToOldActive[widget] = widget->active();
 		widget->deactivate();
 	}
+
+	DeactivatedCount++;
 }
 void GuiDeactivateGuard::Rollback() {
 	for (const auto &pWA : _widgetToOldActive) {

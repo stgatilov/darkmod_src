@@ -34,10 +34,16 @@ public:
 
 class GuiDeactivateGuard {
 	std::map<Fl_Widget*, bool> _widgetToOldActive;
+
+	//number of guards active right now: we forbid closing window if it is positive
+	static int DeactivatedCount;
+
 public:
 	~GuiDeactivateGuard();
 	GuiDeactivateGuard(Fl_Widget *blockedPage, std::initializer_list<Fl_Widget*> exceptThese);
 	void Rollback();
+
+	static bool IsAnyActive() { return DeactivatedCount > 0; }
 
 	GuiDeactivateGuard(const GuiDeactivateGuard&) = delete;
 	GuiDeactivateGuard& operator= (const GuiDeactivateGuard&) = delete;

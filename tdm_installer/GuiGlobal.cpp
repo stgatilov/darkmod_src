@@ -33,6 +33,13 @@ void cb_RaiseInterruptFlag(Fl_Widget *self) {
 	ProgressIndicatorGui::Interrupt();
 }
 
+void cb_TryToExit(Fl_Widget *self) {
+	if (!GuiDeactivateGuard::IsAnyActive()) {
+		//no action in progress: close window and stop program
+		g_Window->hide();
+	}
+}
+
 //============================================================
 
 static void GuiToInitialState() {
@@ -94,6 +101,8 @@ static void GuiToInitialState() {
 }
 
 static void GuiInstallCallbacks() {
+	g_Window->callback(cb_TryToExit);
+
 	g_Settings_InputInstallDirectory->when(FL_WHEN_CHANGED);
 	g_Settings_InputInstallDirectory->callback(cb_Settings_InputInstallDirectory);
 	g_Settings_ButtonBrowseInstallDirectory->callback(cb_Settings_ButtonBrowseInstallDirectory);
