@@ -7,8 +7,10 @@ def get_platform_name(settings, shared=False):
     bitness = {'x86': '32', 'x86_64': '64'}[str(settings.arch)]
     dynamic = 'd' if shared else 's'
     compiler = {'Visual Studio': 'vc', 'gcc': 'gcc'}[str(settings.compiler)]
-    if compiler in ['vc', 'gcc']:
-        compiler += str(settings.compiler.version)
+    # GCC 5-10 are binary compatible, MSVC 2015-2019 are compatible too
+    # see also: https://forums.thedarkmod.com/index.php?/topic/20940-unable-to-link-openal-during-compilation/
+    ### if compiler in ['vc', 'gcc']:
+    ###     compiler += str(settings.compiler.version)
     buildtype = {'Release': 'rel', 'Debug': 'dbg', 'RelWithDebInfo': 'rwd'}[str(settings.build_type)]
     stdlib = '?'
     if compiler.startswith('vc'):
