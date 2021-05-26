@@ -918,6 +918,19 @@ TEST_CASE("DownloaderTimeout"
         };
     };
 
+    {   //connection timeout
+        HttpServer server;
+        server.SetRootDir(GetTempDir().string());
+        server.StartButIgnoreConnections();
+        Downloader down;
+        std::string res;
+        down.EnqueueDownload(
+            DownloadSource(server.GetRootUrl() + "identity_large.bin", 0, 1000),
+            CreateDownloadCallback(res)
+        );
+        CHECK_THROWS(down.DownloadAll());
+    }
+
     for (int mode = 0; mode < 4; mode++) {
         HttpServer server;
         server.SetBlockSize(3 * 1024);

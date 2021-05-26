@@ -42,11 +42,25 @@ void HttpServer::SetPauseModel(const PauseModel &model) {
     _pauseModel = model;
 }
 
+void HttpServer::CloseSuspendedSocket() {
+    if (_suspendedSocket) {
+        MHD_socket socket = *(MHD_socket*)_suspendedSocket;
+#ifdef _WIN32
+        closesocket(socket);
+#else
+        close(socket);
+#endif
+        free(_suspendedSocket);
+        _suspendedSocket = nullptr;
+    }
+}
+
 void HttpServer::Stop() {
     if (!_daemon)
         return;
     MHD_stop_daemon(_daemon);
     _daemon = nullptr;
+    CloseSuspendedSocket();
 }
 
 void HttpServer::Start() {
@@ -62,6 +76,14 @@ void HttpServer::Start() {
         MHD_OPTION_END
     );
     ZipSyncAssertF(_daemon, "Failed to start microhttpd on port %d", _port);
+}
+
+void HttpServer::StartButIgnoreConnections() {
+    Start();
+    MHD_socket socket = MHD_quiesce_daemon(_daemon);
+    ZipSyncAssertF(socket != (~0), "Failed to stop daemon listening");
+    CloseSuspendedSocket();
+    _suspendedSocket = new MHD_socket(socket);
 }
 
 struct ThreadState {

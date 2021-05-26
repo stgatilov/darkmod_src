@@ -31,6 +31,7 @@ public:
 private:
     std::string _rootDir;
     MHD_Daemon *_daemon = nullptr;
+    void *_suspendedSocket = nullptr;       //only for StartButIgnoreConnections
     int _port = -1;
     int _blockSize = -1;
     PauseModel _pauseModel;
@@ -52,6 +53,7 @@ public:
 
     void Start();
     void Stop();
+    void StartButIgnoreConnections();   //for testing connection timeout
 
 private:
     class FileDownload;
@@ -73,6 +75,8 @@ private:
         const char *method,
         const char *version
     ) const;
+
+    void CloseSuspendedSocket();
 };
 
 }

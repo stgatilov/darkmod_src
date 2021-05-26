@@ -85,7 +85,7 @@ public:
 
 private:
     void DownloadAllForUrl(const std::string &url);
-    bool DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime = 0);
+    bool DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime, int connectTimeout);
     void BreakMultipartResponse(const CurlResponse &response, std::vector<CurlResponse> &parts);
     int UpdateProgress();
     size_t BytesToTransfer(const Download &download);

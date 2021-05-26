@@ -14,14 +14,16 @@ struct SpeedProfile {
     int maxPartsPerRequest;
     //drop request after X seconds of very slow download (CURLOPT_LOW_SPEED_TIME)
     int lowSpeedTime;
+    //stop trying to connect after X seconds (CURLOPT_CONNECTTIMEOUT)
+    int connectTimeout;
 };
 
 //if request fails due to timeout, we retry it with progressively softer limits
 static const SpeedProfile SPEED_PROFILES[] = {
-    {10<<20, 20, 10},
-    {1<<20, 5, 10},
-    {1<<20, 1, 10},
-    {256<<10, 1, 60}
+    {10<<20, 20, 10, 10},
+    {1<<20, 5, 10, 10},
+    {1<<20, 1, 10, 30},
+    {256<<10, 1, 60, 60}
 };
 static const int SPEED_PROFILES_NUM = sizeof(SPEED_PROFILES) / sizeof(SPEED_PROFILES[0]);
 
@@ -133,7 +135,7 @@ void Downloader::DownloadAllForUrl(const std::string &url) {
             rangesCnt = newRangesCnt;
         }
 
-        bool ok = DownloadOneRequest(url, ids, profile.lowSpeedTime);
+        bool ok = DownloadOneRequest(url, ids, profile.lowSpeedTime, profile.connectTimeout);
 
         if (ok) {
             state.doneCnt = end;
@@ -146,7 +148,7 @@ void Downloader::DownloadAllForUrl(const std::string &url) {
     }
 }
 
-bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime) {
+bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime, int connectTimeout) {
     if (downloadIds.empty())
         return true;
 
@@ -228,6 +230,7 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, lowSpeedTime);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connectTimeout);
     UpdateProgress();
     CURLcode ret = curl_easy_perform(curl);
     long httpRes = 0;
@@ -235,7 +238,7 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
         g_logger->errorf(lcUserInterrupt, "Interrupted by user");
     if (ret == CURLE_OPERATION_TIMEDOUT) {
         g_logger->warningf(lcDownloadTooSlow,
-            "Speed timeout for request with %d segments of total size %lld on URL %s",
+            "Timeout for request with %d segments of total size %lld on URL %s",
             int(downloadIds.size()), thisEstimate, url.c_str()
         );
         return false;   //soft fail: retry is welcome
