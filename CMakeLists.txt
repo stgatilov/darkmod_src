@@ -19,6 +19,9 @@ include(PrecompiledHeader)
 include(SvnVersion)
 include(CheckCXXCompilerFlag)
 
+include(CheckPIESupported)
+check_pie_supported()
+
 project(TheDarkMod)
 
 set(CMAKE_CXX_STANDARD 14)
