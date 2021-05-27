@@ -18,6 +18,7 @@ class InstallerConfig {
 		std::string _url;
 		double _weight = -1.0;
 		ZipSync::IniSect _ini;
+		bool _hidden = false;
 	};
 	struct Version {
 		std::vector<ProcessedUrl> _manifestUrls;
@@ -43,6 +44,7 @@ public:
 	std::vector<std::string> GetAllVersions() const;
 
 	//returns sequence of all known mirrors
+	//note: "hidden" mirrors are omitted in this list
 	std::vector<std::string> GetAllMirrors() const;
 
 	//returns GUI tree pathname for specified version

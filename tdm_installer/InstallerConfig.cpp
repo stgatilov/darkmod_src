@@ -43,6 +43,8 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 					mirror._url = value;
 				else if (key == "weight")
 					mirror._weight = stod(value);
+				else if (key == "hidden")
+					mirror._hidden = true;
 				else {
 					ZipSyncAssertF(false, "Mirror %s: unexpected key \"%s\"", secName.c_str(), key.c_str());
 				}
@@ -167,8 +169,11 @@ std::vector<std::string> InstallerConfig::GetAllVersions() const {
 
 std::vector<std::string> InstallerConfig::GetAllMirrors() const {
 	std::vector<std::string> res;
-	for (const auto &pNV : _mirrors)
+	for (const auto &pNV : _mirrors) {
+		if (pNV.second._hidden)
+			continue;	//omit mirrors marked as "hidden" in config file
 		res.push_back(pNV.first);
+	}
 	return res;
 }
 
