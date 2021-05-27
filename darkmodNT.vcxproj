@@ -373,6 +373,7 @@
     <ClInclude Include="framework\minizip\minizip_extra.h" />
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
+    <ClInclude Include="framework\Tracing.h" />
     <ClInclude Include="framework\UsercmdGen.h" />
     <ClInclude Include="game\AbsenceMarker.h" />
     <ClInclude Include="game\Actor.h" />
@@ -750,7 +751,6 @@
     <ClInclude Include="renderer\ParticleSystem.h" />
     <ClInclude Include="renderer\ParticleSystem_decl.h" />
     <ClInclude Include="renderer\ParticleSystem_def.h" />
-    <ClInclude Include="renderer\Profiling.h" />
     <ClInclude Include="renderer\qgl.h" />
     <ClInclude Include="renderer\qgl_linked.h" />
     <ClInclude Include="renderer\RenderSystem.h" />
@@ -851,6 +851,7 @@
     </ClCompile>
     <ClCompile Include="framework\Session.cpp" />
     <ClCompile Include="framework\Session_menu.cpp" />
+    <ClCompile Include="framework\Tracing.cpp" />
     <ClCompile Include="framework\UsercmdGen.cpp" />
     <ClCompile Include="game\AbsenceMarker.cpp" />
     <ClCompile Include="game\Actor.cpp" />
@@ -1254,7 +1255,6 @@
     <ClCompile Include="renderer\ModelManager.cpp" />
     <ClCompile Include="renderer\ModelOverlay.cpp" />
     <ClCompile Include="renderer\ParticleSystem.cpp" />
-    <ClCompile Include="renderer\Profiling.cpp" />
     <ClCompile Include="renderer\qgl.cpp" />
     <ClCompile Include="renderer\RenderEntity.cpp" />
     <ClCompile Include="renderer\RenderSystem.cpp" />
@@ -1302,6 +1302,16 @@
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
     <ClCompile Include="tests\TestRun.cpp" />
+    <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="tools\compilers\aas\AASBuild.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild_file.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild_gravity.cpp" />
