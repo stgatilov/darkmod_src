@@ -8,26 +8,30 @@
 
 //describes information read from file TDM_INSTALLER_CONFIG_FILENAME
 class InstallerConfig {
-	struct WeightedUrl {
+	struct ProcessedUrl {
 		std::string _url;
 		double _weight = -1.0;
+		std::string _mirrorName;
 	};
-	struct MirrorSet {
-		std::vector<WeightedUrl> _urls;
+	struct Mirror {
 		std::string _name;
+		std::string _url;
+		double _weight = -1.0;
 		ZipSync::IniSect _ini;
 	};
 	struct Version {
-		std::vector<WeightedUrl> _manifestUrls;
+		std::vector<ProcessedUrl> _manifestUrls;
 		std::vector<std::string> _depends;
 		std::vector<std::string> _folderPath;
 		std::vector<std::string> _providedVersions;		//transitive closure by _depends (itself included first)
 		std::string _name;
 		ZipSync::IniSect _ini;
 	};
-	std::map<std::string, MirrorSet> _mirrorSets;
+	std::map<std::string, Mirror> _mirrors;
 	std::map<std::string, Version> _versions;
 	std::string _defaultVersion;
+
+	double GetUrlWeight(const ProcessedUrl &url) const;
 
 public:
 	void Clear();
