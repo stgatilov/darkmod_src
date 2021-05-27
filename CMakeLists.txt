@@ -18,11 +18,11 @@ include(ucm)
 include(PrecompiledHeader)
 include(SvnVersion)
 include(CheckCXXCompilerFlag)
-
 include(CheckPIESupported)
-check_pie_supported()
 
 project(TheDarkMod)
+# note: must be after project: https://gitlab.kitware.com/cmake/cmake/-/issues/14983
+check_pie_supported()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
