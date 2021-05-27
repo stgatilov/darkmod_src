@@ -78,6 +78,8 @@ static void cb_g_Version_ButtonBack(Fl_Button*, void*) {
   WizardGoPrev();
 }
 
+Fl_Choice *g_Version_ChoiceMirror=(Fl_Choice *)0;
+
 Fl_Group *g_PageConfirm=(Fl_Group *)0;
 
 Fl_Text_Display *g_Confirm_TextReadyToInstall=(Fl_Text_Display *)0;
@@ -1747,7 +1749,6 @@ wnload.");
         g_PageSettings->end();
       } // Fl_Group* g_PageSettings
       { g_PageVersion = new Fl_Group(325, 0, 700, 550, "Page 2: Choose Version");
-        g_PageVersion->hide();
         { g_Version_OutputLastInstalledVersion = new Fl_Output(575, 10, 425, 20, "Version installed during last update: ");
           g_Version_OutputLastInstalledVersion->tooltip("This version was installed in this directory the last time. It does not affec\
 t the installation procedure in any way, and is displayed only for information\
@@ -1790,6 +1791,13 @@ data, but it will be downloaded sooner or later anyway.");
         { g_Version_ButtonBack = new Fl_Button(335, 510, 80, 30, "Back");
           g_Version_ButtonBack->callback((Fl_Callback*)cb_g_Version_ButtonBack);
         } // Fl_Button* g_Version_ButtonBack
+        { g_Version_ChoiceMirror = new Fl_Choice(920, 380, 80, 20, "Prefer Mirror:");
+          g_Version_ChoiceMirror->tooltip("If you select a mirror here, then it will be used for all downloads. If you d\
+on\'t, then mirrors will be chosen randomly for better distribution of traffic\
+ among mirror hosters.");
+          g_Version_ChoiceMirror->down_box(FL_BORDER_BOX);
+          g_Version_ChoiceMirror->align(Fl_Align(FL_ALIGN_TOP));
+        } // Fl_Choice* g_Version_ChoiceMirror
         g_PageVersion->end();
       } // Fl_Group* g_PageVersion
       { g_PageConfirm = new Fl_Group(325, 0, 700, 550, "Page 3: Confirmation");
@@ -1830,6 +1838,7 @@ data, but it will be downloaded sooner or later anyway.");
         g_PageConfirm->end();
       } // Fl_Group* g_PageConfirm
       { g_PageInstall = new Fl_Group(325, 0, 700, 550, "Page 4: Installing");
+        g_PageInstall->hide();
         { g_Install_TextInstalling = new Fl_Text_Display(340, 35, 660, 60);
           g_Install_TextInstalling->box(FL_NO_BOX);
           g_Install_TextInstalling->color(FL_BACKGROUND_COLOR);

@@ -12,4 +12,5 @@ void State::Reset() {
 	_versionRefreshed.clear();
 	_updater.reset();
 	_oldConfigFilename.clear();
+	_preferredMirror.clear();
 }

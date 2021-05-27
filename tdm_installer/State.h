@@ -30,6 +30,8 @@ struct State {
 	//name of the renamed darkmod.cfg file
 	//useful if user decides to restore it
 	std::string _oldConfigFilename;
+	//name of preferred mirror (or empty if auto)
+	std::string _preferredMirror;
 
 	void Reset();
 	~State();

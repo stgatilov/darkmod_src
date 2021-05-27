@@ -7,6 +7,7 @@
 #include "StdString.h"
 #include "Path.h"
 #include "Constants.h"
+#include "State.h"
 
 void InstallerConfig::Clear() {
 	_mirrors.clear();
@@ -164,6 +165,13 @@ std::vector<std::string> InstallerConfig::GetAllVersions() const {
 	return res;
 }
 
+std::vector<std::string> InstallerConfig::GetAllMirrors() const {
+	std::vector<std::string> res;
+	for (const auto &pNV : _mirrors)
+		res.push_back(pNV.first);
+	return res;
+}
+
 std::vector<std::string> InstallerConfig::GetFolderPath(const std::string &version) const {
 	return _versions.at(version)._folderPath;
 }
@@ -183,6 +191,9 @@ double InstallerConfig::GetUrlWeight(const ProcessedUrl &url) const {
 		const Mirror &mirror = _mirrors.at(url._mirrorName);
 		weight *= mirror._weight;
 	}
+	//check if this mirror is selected as "preferred"
+	if (g_state->_preferredMirror == url._mirrorName)
+		weight *= 1e+9;	//take this one whenever possible!
 	return weight;
 }
 

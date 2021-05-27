@@ -198,6 +198,12 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	}
 	g_Version_OutputLastInstalledVersion->value(g_state->_lastInstall.GetVersion().c_str());
 
+	g_Version_ChoiceMirror->clear();
+	g_Version_ChoiceMirror->add("[auto]");
+	for (const std::string &mirror : g_state->_config.GetAllMirrors())
+		g_Version_ChoiceMirror->add(mirror.c_str());
+	g_Version_ChoiceMirror->value(0);
+
 	bool customVersion = g_Settings_CheckCustomVersion->value();
 	g_state->_versionRefreshed.clear();
 	g_Version_TreeVersions->do_callback();

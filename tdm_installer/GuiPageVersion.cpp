@@ -174,3 +174,13 @@ void cb_Version_ButtonPrev(Fl_Widget *self) {
 		g_Wizard->value(g_PageSettings);
 	}
 }
+
+void cb_Version_ChoiceMirror(Fl_Widget *self) {
+	int idx = g_Version_ChoiceMirror->value();
+	std::string caption = g_Version_ChoiceMirror->text();
+	if (idx == 0)	//[auto]
+		g_state->_preferredMirror.clear();
+	else {
+		g_state->_preferredMirror = caption;
+	}
+}

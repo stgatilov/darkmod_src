@@ -403,6 +403,8 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	g_logger->infof("Evaluating version %s", targetVersion.c_str());
 	if (!customManifestUrl.empty())
 		g_logger->infof("With custom manifest URL: %s", customManifestUrl.c_str());
+	if (!g_state->_preferredMirror.empty())
+		g_logger->infof("Preferred mirror: %s", g_state->_preferredMirror.c_str());
 
 	//these arrays are same-indexed
 	//0-th manifest is "target" one, all the others are "provided"

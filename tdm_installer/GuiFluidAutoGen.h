@@ -44,6 +44,8 @@ extern Fl_Button *g_Version_ButtonRefreshInfo;
 extern Fl_Progress *g_Version_ProgressDownloadManifests;
 extern Fl_Button *g_Version_ButtonNext;
 extern Fl_Button *g_Version_ButtonBack;
+#include <FL/Fl_Choice.H>
+extern Fl_Choice *g_Version_ChoiceMirror;
 extern Fl_Group *g_PageConfirm;
 extern Fl_Text_Display *g_Confirm_TextReadyToInstall;
 extern Fl_Output *g_Confirm_OutputInstallDirectory;

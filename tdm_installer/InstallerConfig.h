@@ -42,6 +42,9 @@ public:
 	//returns sequence of all known versions
 	std::vector<std::string> GetAllVersions() const;
 
+	//returns sequence of all known mirrors
+	std::vector<std::string> GetAllMirrors() const;
+
 	//returns GUI tree pathname for specified version
 	//consists of sequence of path elements, excluding the version element at the end
 	std::vector<std::string> GetFolderPath(const std::string &version) const;

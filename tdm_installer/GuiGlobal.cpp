@@ -118,6 +118,7 @@ static void GuiInstallCallbacks() {
 	g_Version_InputCustomManifestUrl->callback(cb_Version_InputCustomManifestUrl);
 	g_Version_ButtonRefreshInfo->callback(cb_Version_ButtonRefreshInfo);
 	g_Version_ButtonNext->callback(cb_Version_ButtonNext);
+	g_Version_ChoiceMirror->callback(cb_Version_ChoiceMirror);
 
 	g_Confirm_ButtonBack->callback(cb_Confirm_ButtonBack);
 	g_Confirm_ButtonStart->callback(cb_Confirm_ButtonStart);
