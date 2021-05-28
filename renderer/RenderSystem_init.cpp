@@ -231,7 +231,7 @@ idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 	"  2: forward-compatible core profile\n"
 	"Note: restarting TDM is required after change!"
 );
-idCVar r_newFrob( "r_newFrob", "2", CVAR_RENDERER | CVAR_ARCHIVE,
+idCVar r_newFrob( "r_newFrob", "1", CVAR_RENDERER | CVAR_ARCHIVE,
 	"Controls how objects are frob-highlighted:\n"
 	"  0 = use material stages by parm11\n"
 	"  1 = use the frob shader\n"
