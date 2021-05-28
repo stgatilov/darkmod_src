@@ -1,4 +1,4 @@
-﻿/*****************************************************************************
+/*****************************************************************************
                     The Dark Mod GPL Source Code
  
  This file is part of the The Dark Mod Source Code, originally based 

@@ -9,7 +9,7 @@
  published by the Free Software Foundation, either version 3 of the License, 
  or (at your option) any later version. For details, see LICENSE.TXT.
  
- Project: The Dark Mod Updater (http://www.thedarkmod.com/)
+ Project: The Dark Mod (http://www.thedarkmod.com/)
  
 ******************************************************************************/
 
