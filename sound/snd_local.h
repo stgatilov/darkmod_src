@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __SND_LOCAL_H__
@@ -234,7 +234,7 @@ idSoundEmitterLocal
 typedef enum {
 	REMOVE_STATUS_INVALID				= -1,
 	REMOVE_STATUS_ALIVE					=  0,
-	REMOVE_STATUS_WAITSAMPLEFINISHED	=  1,
+	REMOVE_STATUS_WAITSAMPLEFINISHED	=  1,	//stgatilov: plays now, but will be stopped & freed when it ends
 	REMOVE_STATUS_SAMPLEFINISHED		=  2
 } removeStatus_t;
 
@@ -359,7 +359,7 @@ public:
 	void				GatherChannelSamples( int sampleOffset44k, int sampleCount44k, float *dest ) const;
 	void				ALStop( void );			// free OpenAL resources if any
 
-	bool				triggerState;
+	bool				triggerState;			// stgatilov: is it enabled according to Start/Stop methods?
 	int					trigger44kHzTime;		// hardware time sample the channel started
 	int					triggerGame44kHzTime;	// game time sample time the channel started
 	soundShaderParms_t	parms;					// combines the shader parms and the per-channel overrides
@@ -371,7 +371,7 @@ public:
 	float				lastVolume;				// last calculated volume based on distance
 	float				lastV[6];				// last calculated volume for each speaker, so we can smoothly fade
 	idSoundFade			channelFade;
-	bool				triggered;
+	bool				triggered;				// stgatilov: true means all OpenAL buffers should be recreated
 	ALuint				openalSource;
 	ALuint				openalStreamingOffset;
 	ALuint				openalStreamingBuffer[3];
@@ -450,7 +450,7 @@ public:
 	float				minDistance;				// smallest of all playing channel min distances // grayman #3042
 	float				volumeLoss;					// grayman #3042 - accumulated volume loss while traversing portals
 	int					lastValidPortalArea;		// so an emitter that slides out of the world continues playing
-	bool				playing;					// if false, no channel is active
+	bool				playing;					// true if any channel is active according to our timings (OpenAL status does not matter)
 	bool				hasShakes;
 	idVec3				spatializedOrigin;			// the virtual sound origin, either the real sound origin,
 													// or a point through a portal chain
@@ -600,6 +600,8 @@ public:
 	ALuint					listenerEffect;
 	ALuint					listenerSlot;
 	ALuint					listenerFilter;
+	// nbohr1more: #5587 Reverb volume control
+	float					listenerSlotReverbGain;
 
 	int						gameMsec;
 	int						game44kHz;
@@ -746,6 +748,8 @@ public:
 	LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
 	LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
 	LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
+	// nbohr1more: #5587 Reverb volume control
+	LPALAUXILIARYEFFECTSLOTF		alAuxiliaryEffectSlotf;
 
 	idEFXFile				EFXDatabase;
 	bool					efxloaded;
@@ -762,7 +766,6 @@ public:
 	static idCVar			s_diffractionMax; // grayman #4219
 	static idCVar			s_device;
 	static idCVar			s_quadraticFalloff;
-	static idCVar			s_drawSounds;
 	static idCVar			s_minVolume6;
 	static idCVar			s_dotbias6;
 	static idCVar			s_minVolume2;
@@ -788,6 +791,8 @@ public:
 	static idCVar			s_useEAXReverb;
 	static idCVar			s_useHRTF;
 	static idCVar			s_decompressionLimit;
+	// nbohr1more: #5587 Reverb volume control
+	static idCVar			s_alReverbGain;
 
 	static idCVar			s_slowAttenuate;
 

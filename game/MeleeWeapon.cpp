@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1459,9 +1459,8 @@ void CMeleeWeapon::CheckAICMSwaps( )
 	b.ExpandSelf(50.0f);
 	b.TranslateSelf( GetPhysics()->GetOrigin() + m_ClipOffset );
 
-	idEntity *ents[MAX_GENTITIES];
-	int numEnts;
-	numEnts = gameLocal.clip.EntitiesTouchingBounds( b, CONTENTS_BODY, ents, MAX_GENTITIES );
+	idClip_EntityList ents;
+	int numEnts = gameLocal.clip.EntitiesTouchingBounds( b, CONTENTS_BODY, ents );
 
 	for( int i = 0; i < numEnts; i++ )
 	{

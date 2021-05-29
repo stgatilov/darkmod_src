@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // Copyright (C) 2004 Gerhard W. Gruber <sparhawk@gmx.at>
@@ -853,9 +853,8 @@ void CFrobDoor::FindDoubleDoor()
 	   which doesn't rely on clipmodels.
 	*/
 
-	for ( int i = 0; i < MAX_GENTITIES; ++i )
+	for( idEntity *ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		idEntity* ent = gameLocal.entities[i];
 		if ( !ent )
 		{
 			continue;	// skip nulls
@@ -886,12 +885,12 @@ void CFrobDoor::FindDoubleDoor()
 	}
 	// end of new code
 #else // old code
-	idClipModel* clipModelList[MAX_GENTITIES];
+	idClip_ClipModelList clipModelList;
 
 	idBounds clipBounds = physicsObj.GetAbsBounds();
 	clipBounds.ExpandSelf( 10.0f );
 
-	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_SOLID, clipModelList );
 
 	for ( int i = 0 ; i < numListedClipModels ; i++ )
 	{
@@ -1398,6 +1397,25 @@ bool CFrobDoor::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis)
 	origin.z = (smallerBounds[0].z + smallerBounds[1].z) * 0.5f;
 
 	axis.Identity();
+
+	if (areaPortal) {
+		//stgatilov #5462: ensure origin and player are on the same side of the door portal
+		idPlane portalPlane = gameRenderWorld->GetPortalPlane(areaPortal);
+		assert(fabs(portalPlane.Normal().Length() - 1.0f) <= 1e-3f);
+
+		float eyeDist = portalPlane.Distance(eyePos);
+		float originDist = portalPlane.Distance(origin);
+		if (eyeDist * originDist < 0.0f) {	//different sides
+			//move origin to the portal plane plus one unit
+			float shift = fabs(originDist) + 1.0f;
+			//don't move by more than 30% of door diameter
+			float cap = 0.3f * bounds.GetSize().Length();
+			if (shift > cap)
+				shift = cap;
+			idVec3 displacement = (originDist < 0.0f ? 1.0f : -1.0f) * shift * portalPlane.Normal();
+			origin += displacement;
+		}
+	}
 
 	// The caller expects the origin in local space
 	origin -= GetPhysics()->GetOrigin();

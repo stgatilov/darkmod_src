@@ -73,13 +73,20 @@
     </Expand>
   </Type>
 
+  <Type Name="idRaw&lt;*&gt;">
+    <DisplayString>{*($T1*)bytes}</DisplayString>
+    <Expand HideRawView="1">
+      <ExpandedItem>*($T1*)bytes</ExpandedItem>
+    </Expand>
+  </Type>
+
   <Type Name="idStr">
     <DisplayString>{data,s}</DisplayString>
     <StringView>data,s</StringView>
   </Type>
 
   <Type Name="idPoolStr">
-    <DisplayString>{*(idStr*)this}</DisplayString>
+    <DisplayString>[x{numUsers}] {*(idStr*)this}</DisplayString>
     <StringView>*(idStr*)this</StringView>
   </Type>
 
@@ -88,15 +95,7 @@
   </Type>
 
   <Type Name="idList&lt;*&gt;">
-    <DisplayString Condition="num == 0">[{num}]</DisplayString>
-    <DisplayString Condition="num == 1">[{num}] {{ {list[0]} }}</DisplayString>
-    <DisplayString Condition="num == 2">[{num}] {{ {list[0]}, {list[1]} }}</DisplayString>
-    <DisplayString Condition="num == 3">[{num}] {{ {list[0]}, {list[1]}, {list[2]} }}</DisplayString>
-    <DisplayString Condition="num == 4">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]} }}</DisplayString>
-    <DisplayString Condition="num == 5">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]} }}</DisplayString>
-    <DisplayString Condition="num == 6">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]} }}</DisplayString>
-    <DisplayString Condition="num == 7">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]}, {list[6]} }}</DisplayString>
-    <DisplayString Condition="num &gt;= 8">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]}, {list[6]}, ... }}</DisplayString>
+    <DisplayString>[{num}] {list,[num]na}</DisplayString>
     <Expand>
       <ArrayItems>
         <Size>num</Size>
@@ -106,15 +105,17 @@
   </Type>
 
   <Type Name="idStaticList&lt;*,*&gt;">
-    <DisplayString Condition="num == 0">[{num}]</DisplayString>
-    <DisplayString Condition="num == 1">[{num}] {{ {list[0]} }}</DisplayString>
-    <DisplayString Condition="num == 2">[{num}] {{ {list[0]}, {list[1]} }}</DisplayString>
-    <DisplayString Condition="num == 3">[{num}] {{ {list[0]}, {list[1]}, {list[2]} }}</DisplayString>
-    <DisplayString Condition="num == 4">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]} }}</DisplayString>
-    <DisplayString Condition="num == 5">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]} }}</DisplayString>
-    <DisplayString Condition="num == 6">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]} }}</DisplayString>
-    <DisplayString Condition="num == 7">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]}, {list[6]} }}</DisplayString>
-    <DisplayString Condition="num &gt;= 8">[{num}] {{ {list[0]}, {list[1]}, {list[2]}, {list[3]}, {list[4]}, {list[5]}, {list[6]}, ... }}</DisplayString>
+    <DisplayString>[{num}] {list,[num]na}</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>num</Size>
+        <ValuePointer>list</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="idFlexList&lt;*,*&gt;">
+    <DisplayString>[{num}] {list,[num]na}</DisplayString>
     <Expand>
       <ArrayItems>
         <Size>num</Size>
@@ -161,6 +162,34 @@
         ????
       </Synthetic>
       -->
+    </Expand>
+  </Type>
+
+  <Type Name="idHashMap&lt;*,*,*,*&gt;">
+    <DisplayString>HashMap: size = {count}/{size}</DisplayString>
+    <Expand>
+      <CustomListItems Optional="true">
+        <Variable Name="i" InitialValue="0"/>
+        <Loop Condition="i &lt; size">
+          <!-- Unfortunately, we cannot use equality comparator here -->
+          <Item Condition="!(table[i].key == empty)" Name="{table[i].key}">table[i].value</Item>
+          <Exec>i++</Exec>
+        </Loop>
+      </CustomListItems>
+      <Synthetic Name="[cells]">
+        <DisplayString>{table,[size]na}</DisplayString>
+        <Expand>
+          <ArrayItems>
+            <Size>size</Size>
+            <ValuePointer>table</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[props]">
+        <DisplayString>maxLoad={maxLoad/256.0f} empty={empty}</DisplayString>
+      </Synthetic>
+      <Item Condition="sizeof(hashFunc) &gt; 1" Name="[hashFunc]">hashFunc</Item>
+      <Item Condition="sizeof(equalFunc) &gt; 1" Name="[equalFunc]">equalFunc</Item>
     </Expand>
   </Type>
 

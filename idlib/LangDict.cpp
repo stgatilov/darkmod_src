@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -26,7 +26,7 @@ idLangDict::idLangDict
 idLangDict::idLangDict( void ) {
 	args.SetGranularity( 256 );
 	hash.SetGranularity( 256 );
-	hash.Clear( 4096, 8192 );
+	hash.ClearFree( 4096, 8192 );
 	baseID = 0;
 }
 
@@ -298,10 +298,15 @@ idLangDict::GetHashKey
 ============
 */
 int idLangDict::GetHashKey( const char *str ) const {
-	int hashKey = 0;
+/*	int hashKey = 0;
 	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
 		assert( str[0] >= '0' && str[0] <= '9' );
 		hashKey = hashKey * 10 + str[0] - '0';
+	}*/
+	//stgatilov #5261: generic string hashing algorithm (djb2), no assert
+	int hashKey = 5381;
+	for ( str += STRTABLE_ID_LENGTH; str[0] != '\0'; str++ ) {
+		hashKey = (hashKey << 5) + hashKey + str[0];
 	}
 	return hashKey;
 }

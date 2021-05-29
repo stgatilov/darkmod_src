@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -207,6 +207,8 @@ bool idBrush::CreateWindings( void ) {
 	int i, j;
 	idBrushSide *side;
 
+	idList<idPlane> cuttingPlanes;
+
 	bounds.Clear();
 	for ( i = 0; i < sides.Num(); i++ ) {
 		side = sides[i];
@@ -215,15 +217,16 @@ bool idBrush::CreateWindings( void ) {
 			delete side->winding;
 		}
 
-		side->winding = new idWinding( side->plane.Normal(), side->plane.Dist() );
-
-		for ( j = 0; j < sides.Num() && side->winding; j++ ) {
+		cuttingPlanes.SetNum(0, false);
+		for ( j = 0; j < sides.Num(); j++ ) {
 			if ( i == j ) {
 				continue;
 			}
-			// keep the winding if on the clip plane
-			side->winding = side->winding->Clip( -sides[j]->plane, BRUSH_EPSILON, true );
+			cuttingPlanes.AddGrow( -sides[j]->plane );
 		}
+		// stgatilov: don't delete winding if clipping plane has opposite normal
+		// that corresponds to case when side planes are equal (note that trim plane is negated)
+		side->winding = idWinding::CreateTrimmedPlane( side->plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), BRUSH_EPSILON, INCIDENT_PLANE_RETAIN_OPPOSITE );
 
 		if ( side->winding ) {
 			for ( j = 0; j < side->winding->GetNumPoints(); j++ ) {
@@ -460,17 +463,16 @@ idBrush::Subtract
 bool idBrush::Subtract( const idBrush *b, idBrushList &list ) const {
 	int i;
 	idBrush *front, *back;
-	const idBrush *in;
 
 	list.Clear();
-	in = this;
+	idBrush *in = const_cast<idBrush*>(this);
 	for ( i = 0; i < b->sides.Num() && in; i++ ) {
 
-		in->Split( b->sides[i]->plane, b->sides[i]->planeNum, &front, &back );
+		if ( in != this )
+			in->SplitDestroy( b->sides[i]->plane, b->sides[i]->planeNum, front, back );
+		else
+			in->Split( b->sides[i]->plane, b->sides[i]->planeNum, &front, &back );
 
-		if ( in != this ) {
-			delete in;
-		}
 		if ( front ) {
 			list.AddToTail( front );
 		}
@@ -482,7 +484,8 @@ bool idBrush::Subtract( const idBrush *b, idBrushList &list ) const {
 		return false;
 	}
 
-	delete in;
+	if (in != this)
+		delete in;
 	return true;
 }
 
@@ -599,17 +602,26 @@ bool idBrush::TryMerge( const idBrush *brush, const idPlaneSet &planeList ) {
 	return true;
 }
 
+
 /*
 ============
 idBrush::Split
 ============
 */
 int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush **back ) const {
-	int res, i, j;
-	idBrushSide *side, *frontSide, *backSide;
-	float dist, maxBack, maxFront, *maxBackWinding, *maxFrontWinding;
-	idWinding *w, *mid;
+	return const_cast<idBrush*>(this)->SplitImpl(plane, planeNum, front, back, false);
+}
+/*
+============
+idBrush::SplitDestroy
+============
+*/
+int idBrush::SplitDestroy( const idPlane &plane, int planeNum, idBrush* &front, idBrush* &back ) {
+	int res = SplitImpl(plane, planeNum, &front, &back, true);
+	return res;
+}
 
+int idBrush::SplitImpl( const idPlane &plane, int planeNum, idBrush **front, idBrush **back, bool killThis ) {
 	assert( windingsValid );
 
 	if ( front ) {
@@ -619,28 +631,28 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 		*back = NULL;
 	}
 
-	res = bounds.PlaneSide( plane, -BRUSH_EPSILON );
+	int res = bounds.PlaneSide( plane, -BRUSH_EPSILON );
 	if ( res == PLANESIDE_FRONT ) {
 		if ( front ) {
-			*front = Copy();
+			*front = killThis ? this : Copy();
 		}
 		return res;
 	}
 	if ( res == PLANESIDE_BACK ) {
 		if ( back ) {
-			*back = Copy();
+			*back = killThis ? this : Copy();
 		}
 		return res;
 	}
 
-	maxBackWinding = (float *) _alloca16( sides.Num() * sizeof(float) );
-	maxFrontWinding = (float *) _alloca16( sides.Num() * sizeof(float) );
+	float *maxBackWinding = (float *) _alloca16( sides.Num() * sizeof(float) );
+	float *maxFrontWinding = (float *) _alloca16( sides.Num() * sizeof(float) );
 
-	maxFront = maxBack = 0.0f;
-	for ( i = 0; i < sides.Num(); i++ ) {
-		side = sides[i];
+	float maxFront = 0.0f, maxBack = 0.0f;
+	for ( int i = 0; i < sides.Num(); i++ ) {
+		idBrushSide *side = sides[i];
 
-		w = side->winding;
+		idWinding *w = side->winding;
 
 		if ( !w ) {
 			continue;
@@ -649,9 +661,9 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 		maxBackWinding[i] = 10.0f;
 		maxFrontWinding[i] = -10.0f;
 
-		for ( j = 0; j < w->GetNumPoints(); j++ ) {
+		for ( int j = 0; j < w->GetNumPoints(); j++ ) {
 
-			dist = plane.Distance( (*w)[j].ToVec3() );
+			float dist = plane.Distance( (*w)[j].ToVec3() );
 			if ( dist > maxFrontWinding[i] ) {
 				maxFrontWinding[i] = dist;
 			}
@@ -670,23 +682,23 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 
 	if ( maxFront < BRUSH_EPSILON ) {
 		if ( back ) {
-			*back = Copy();
+			*back = killThis ? this : Copy();
 		}
 		return PLANESIDE_BACK;
 	}
 
 	if ( maxBack > -BRUSH_EPSILON ) {
 		if ( front ) {
-			*front = Copy();
+			*front = killThis ? this : Copy();
 		}
 		return PLANESIDE_FRONT;
 	}
 
-	mid = new idWinding( plane.Normal(), plane.Dist() );
-
-	for ( i = 0; i < sides.Num() && mid; i++ ) {
-		mid = mid->Clip( -sides[i]->plane, BRUSH_EPSILON, false );
+	idList<idPlane> cuttingPlanes;
+	for ( int i = 0; i < sides.Num(); i++ ) {
+		cuttingPlanes.AddGrow( -sides[i]->plane );
 	}
+	idWinding *mid = idWinding::CreateTrimmedPlane(plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), BRUSH_EPSILON);
 
 	if ( mid ) {
 		if ( mid->IsTiny() ) {
@@ -707,23 +719,24 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 	if ( !mid ) {
 		if ( maxFront > - maxBack ) {
 			if ( front ) {
-				*front = Copy();
+				*front = killThis ? this : Copy();
 			}
 			return PLANESIDE_FRONT;
 		}
 		else {
 			if ( back ) {
-				*back = Copy();
+				*back = killThis ? this : Copy();
 			}
 			return PLANESIDE_BACK;
 		}
 	}
 
 	if ( !front && !back ) {
+		assert(!killThis);
 		delete mid;
 		return PLANESIDE_CROSS;
 	}
-
+	
 	*front = new idBrush();
 	(*front)->SetContents( contents );
 	(*front)->SetEntityNum( entityNum );
@@ -733,8 +746,8 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 	(*back)->SetEntityNum( entityNum );
 	(*back)->SetPrimitiveNum( primitiveNum );
 
-	for ( i = 0; i < sides.Num(); i++ ) {
-		side = sides[i];
+	for ( int i = 0; i < sides.Num(); i++ ) {
+		idBrushSide *side = sides[i];
 
 		if ( !side->winding ) {
 			continue;
@@ -742,13 +755,14 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 
 		// if completely at the front
 		if ( maxBackWinding[i] >= BRUSH_EPSILON ) {
-			(*front)->sides.Append( side->Copy() );
+			(*front)->sides.Append( killThis ? side : side->Copy() );
 		}
 		// if completely at the back
 		else if ( maxFrontWinding[i] <= -BRUSH_EPSILON ) {
-			(*back)->sides.Append( side->Copy() );
+			(*back)->sides.Append( killThis ? side : side->Copy() );
 		}
 		else {
+			idBrushSide *frontSide, *backSide;
 			// split the side
 			side->Split( plane, &frontSide, &backSide );
 			if ( frontSide ) {
@@ -774,7 +788,7 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 		}
 	}
 
-	side = new idBrushSide( -plane, planeNum^1 );
+	idBrushSide *side = new idBrushSide( -plane, planeNum^1 );
 	side->winding = mid->Reverse();
 	side->flags |= SFL_SPLIT;
 	(*front)->sides.Append( side );
@@ -787,6 +801,13 @@ int idBrush::Split( const idPlane &plane, int planeNum, idBrush **front, idBrush
 	(*back)->sides.Append( side );
 	(*back)->windingsValid = true;
 	(*back)->BoundBrush( this );
+
+	if (killThis) {
+		for ( int i = 0; i < sides.Num(); i++ )
+			if ( (*front)->sides.Find(sides[i]) || (*back)->sides.Find(sides[i]) )
+				sides[i] = nullptr;
+		delete this;
+	}
 
 	return PLANESIDE_CROSS;
 }
@@ -995,6 +1016,125 @@ idBrush *idBrush::Copy( void ) const {
 	return b;
 }
 
+/*
+============
+idBrush::IsPointInside
+============
+*/
+int idBrush::SideOfPoint( const idVec3 &point, float epsilon ) const {
+	bool hasOn = false;
+	for (int p = 0; p < sides.Num(); p++) {
+		int side = sides[p]->GetPlane().Side(point, epsilon);
+		if (side == SIDE_FRONT)
+			return SIDE_FRONT;	//outside
+		if (side == SIDE_ON)
+			hasOn = true;
+	}
+	return (hasOn ? SIDE_ON : SIDE_BACK);
+}
+
+/*
+============
+idBrush::IntersectSegment
+============
+*/
+bool idBrush::IntersectSegment( const idVec3 &start, const idVec3 &end, float epsilon ) const {
+	float paramMin = 0.0f, paramMax = 1.0f;
+
+	for (int p = 0; p < sides.Num(); p++) {
+		const idPlane &plane = sides[p]->GetPlane();
+		float distMin = plane.Distance(start);
+		float distMax = plane.Distance(end);
+
+		if (distMin >= epsilon && distMax >= epsilon)
+			return false;	//outside
+		if (distMin <= epsilon && distMax <= epsilon)
+			continue;		//inside
+
+		assert(distMax != distMin);
+		assert(epsilon >= idMath::Fmin(distMin, distMax) && epsilon <= idMath::Fmax(distMin, distMax));
+		float intersParam = (epsilon - distMin) / (distMax - distMin);
+		assert(intersParam >= 0.0f && intersParam <= 1.0f);
+
+		if (distMax > distMin)
+			paramMax = idMath::Fmin(paramMax, intersParam);
+		else
+			paramMin = idMath::Fmax(paramMin, intersParam);
+
+		if (paramMax < paramMin)
+			return false;	//inverted interval -> no point inside
+	}
+
+	//the segment has at least one point inside
+	assert(paramMax >= paramMin);
+	return true;
+}
+
+/*
+============
+idBrush::CanSubtractionYieldLessThreeBrushes
+============
+*/
+bool idBrush::CanSubtractionYieldLessThreeBrushes( const idBrush *subtracted, float epsilon ) const {
+	//the number of brushes after subtraction is no less than
+	//the number of faces of subtracted brush lying at least partially inside main brush
+	//(because no two such faces can belong to same brush after subtraction due to convexity)
+
+	//if a vertex of subtracted brush lies strictly main brush
+	//then at least three resulting brushes are inevitable
+	//because the vertex has at least three incident faces, and they all are inside main brush
+	for (int u = 0; u < subtracted->sides.Num(); u++) {
+		idBrushSide *s = subtracted->sides[u];
+		const idWinding *w = s->GetWinding();
+		if (!w)
+			continue;
+
+		for (int v = 0; v < w->GetNumPoints(); v++) {
+			idVec3 vertex = (*w)[v].ToVec3();
+			if (SideOfPoint(vertex, epsilon) == SIDE_BACK)
+				return false;
+		}
+	}
+
+	//if there are two different edges of subtracted brush, which are at least partly inside main brush,
+	//then at least three resulting bvrushes are inevitable
+	//because they have at least three incident faces in total, which are partly inside main brush
+	bool hasEdgeInside = false;
+	idVec3 edgeInsideMid;
+	for (int u = 0; u < subtracted->sides.Num(); u++) {
+		idBrushSide *s = subtracted->sides[u];
+		const idWinding *w = s->GetWinding();
+		if (!w)
+			continue;
+
+		for (int v = 0; v < w->GetNumPoints(); v++) {
+			int nv = v + 1;
+			if (nv == w->GetNumPoints())
+				nv = 0;
+			idVec3 start = (*w)[v].ToVec3();
+			idVec3 end = (*w)[nv].ToVec3();
+			if (IntersectSegment(start, end, -epsilon)) {
+				if (hasEdgeInside) {
+					//check if new edge is same (windings share edges)
+					float param = (edgeInsideMid - start) * (end - start) / (end - start).LengthSqr();
+					if (param >= 0.0f && param <= 1.0f) {
+						idVec3 pnt = start + (end - start) * param;
+						float dist2 = (pnt - edgeInsideMid).LengthSqr();
+						if (dist2 < epsilon * epsilon)
+							((void)0);		//same edge
+						else
+							return false;	//second edge inside
+					}
+				}
+				//first inside edge: remember
+				hasEdgeInside = true;
+				edgeInsideMid = (start + end) * 0.5f;
+			}
+		}
+	}
+
+	return true;
+}
 
 //===============================================================
 //
@@ -1211,15 +1351,33 @@ void idBrushList::Free( void ) {
 idBrushList::Split
 ============
 */
-void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide ) {
-	idBrush *b, *front, *back;
+void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide ) const {
+	const_cast<idBrushList*>(this)->SplitImpl(plane, planeNum, frontList, backList, useBrushSavedPlaneSide, false);
+}
+/*
+============
+idBrushList::SplitFree
+============
+*/
+void idBrushList::SplitFree( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide ) {
+	SplitImpl(plane, planeNum, frontList, backList, useBrushSavedPlaneSide, true);
+}
+
+void idBrushList::SplitImpl( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide, bool clearThis ) {
+	idBrush *b, *bnext, *front, *back;
 
 	frontList.Clear();
 	backList.Clear();
 
 	if ( !useBrushSavedPlaneSide ) {
-		for ( b = head; b; b = b->next ) {
-			b->Split( plane, planeNum, &front, &back );
+		for ( b = head; b; b = bnext ) {
+			bnext = b->next;
+
+			if (clearThis)
+				b->SplitDestroy( plane, planeNum, front, back );
+			else
+				b->Split( plane, planeNum, &front, &back );
+
 			if ( front ) {
 				frontList.AddToTail( front );
 			}
@@ -1227,12 +1385,21 @@ void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontL
 				backList.AddToTail( back );
 			}
 		}
+
+		if (clearThis)
+			Clear();
 		return;
 	}
 
-	for ( b = head; b; b = b->next ) {
+	for ( b = head; b; b = bnext ) {
+		bnext = b->next;
+
 		if ( b->savedPlaneSide & BRUSH_PLANESIDE_BOTH ) {
-			b->Split( plane, planeNum, &front, &back );
+			if (clearThis)
+				b->SplitDestroy( plane, planeNum, front, back );
+			else
+				b->Split( plane, planeNum, &front, &back );
+
 			if ( front ) {
 				frontList.AddToTail( front );
 			}
@@ -1241,13 +1408,24 @@ void idBrushList::Split( const idPlane &plane, int planeNum, idBrushList &frontL
 			}
 		}
 		else if ( b->savedPlaneSide & BRUSH_PLANESIDE_FRONT ) {
-			frontList.AddToTail( b->Copy() );
+			frontList.AddToTail( clearThis ? b : b->Copy() );
 		}
 		else {
-			backList.AddToTail( b->Copy() );
+			backList.AddToTail( clearThis ? b : b->Copy() );
 		}
 	}
+
+	if (clearThis)
+		Clear();
 }
+
+
+idCVar dmap_pruneAasBrushesChopping(
+	"dmap_pruneAasBrushesChopping", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Enables some heuristics to avoid useless subtractions in idBrushList::Chop. "
+	"Theoretically, these heuristics are conservative, i.e. output must not depend on this cvar. "
+	"New optimization in TDM 2.10."
+);
 
 /*
 ============
@@ -1308,34 +1486,39 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 
 			// if b2 may chop up b1
 			if ( !ChopAllowed || ChopAllowed( b2,  b1 ) ) {
-				if ( !b1->Subtract( b2, sub1 ) ) {
-					// didn't really intersect
-					continue;
+				if ( !dmap_pruneAasBrushesChopping.GetBool() || b1->CanSubtractionYieldLessThreeBrushes( b2, BRUSH_EPSILON ) ) {
+					if ( !b1->Subtract( b2, sub1 ) ) {
+						// didn't really intersect
+						continue;
+					}
+					if ( sub1.IsEmpty() ) {
+						// b1 is swallowed by b2
+						this->Delete( b1 );
+						break;
+					}
+					c1 = sub1.Num();
 				}
-				if ( sub1.IsEmpty() ) {
-					// b1 is swallowed by b2
-					this->Delete( b1 );
-					break;
-				}
-				c1 = sub1.Num();
 			}
 
 			// if b1 may chop up b2
 			if ( !ChopAllowed || ChopAllowed( b1,  b2 ) ) {
-				if ( !b2->Subtract( b1, sub2 ) ) {
-					// didn't really intersect
-					continue;
+				if ( !dmap_pruneAasBrushesChopping.GetBool() || b2->CanSubtractionYieldLessThreeBrushes( b1, BRUSH_EPSILON ) ) {
+					if ( !b2->Subtract( b1, sub2 ) ) {
+						// didn't really intersect
+						sub1.Free();
+						continue;
+					}
+					if ( sub2.IsEmpty() ) {
+						// b2 is swallowed by b1
+						sub1.Free();
+						this->Delete( b2 );
+						continue;
+					}
+					c2 = sub2.Num();
 				}
-				if ( sub2.IsEmpty() ) {
-					// b2 is swallowed by b1
-					sub1.Free();
-					this->Delete( b2 );
-					continue;
-				}
-				c2 = sub2.Num();
 			}
 
-			if ( sub1.IsEmpty() && sub2.IsEmpty() ) {
+			if ( c1 == 0 && c2 == 0 ) {
 				continue;
 			}
 
@@ -1378,6 +1561,13 @@ void idBrushList::Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) ) {
 }
 
 
+
+idCVar dmap_fasterAasBrushListMerge(
+	"dmap_fasterAasBrushListMerge", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Use faster data structures for idBrushList::Merge in AAS compilation. "
+	"This is performance improvement in TDM 2.10."
+);
+
 /*
 ============
 idBrushList::Merge
@@ -1385,7 +1575,6 @@ idBrushList::Merge
 */
 void idBrushList::Merge( bool (*MergeAllowed)( idBrush *b1, idBrush *b2 ) ) {
 	idPlaneSet planeList;
-	idBrush *b1, *b2, *nextb2;
 	int numMerges;
 
 	common->Printf( "[Brush Merge]\n");
@@ -1394,25 +1583,101 @@ void idBrushList::Merge( bool (*MergeAllowed)( idBrush *b1, idBrush *b2 ) ) {
 	CreatePlaneList( planeList );
 
 	numMerges = 0;
-	for ( b1 = Head(); b1; b1 = b1->next ) {
 
-		for ( b2 = Head(); b2; b2 = nextb2 ) {
-			nextb2 = b2->Next();
+	if (!dmap_fasterAasBrushListMerge.GetBool()) {
 
-			if ( b2 == b1 ) {
-				continue;
-			}
+		//stgatilov: old code with quadratic traversal over all brush pairs
+		idBrush *b1, *b2, *nextb2;
+		for ( b1 = Head(); b1; b1 = b1->next ) {
 
-			if ( MergeAllowed && !MergeAllowed( b1, b2 ) ) {
-				continue;
-			}
+			for ( b2 = Head(); b2; b2 = nextb2 ) {
+				nextb2 = b2->Next();
 
-			if ( b1->TryMerge( b2, planeList ) ) {
-				Delete( b2 );
-				DisplayRealTimeString( "\r%6d", ++numMerges );
-				nextb2 = Head();
+				if ( b2 == b1 ) {
+					continue;
+				}
+
+				if ( MergeAllowed && !MergeAllowed( b1, b2 ) ) {
+					continue;
+				}
+
+				if ( b1->TryMerge( b2, planeList ) ) {
+					Delete( b2 );
+					DisplayRealTimeString( "\r%6d", ++numMerges );
+					nextb2 = Head();
+				}
 			}
 		}
+
+	}
+	else {
+
+		//stgatilov: new faster code with maintaining per-plane list of brushes (with such side)
+		idList<idBrush *> brushArr;
+		ToList(brushArr);
+		idList<idList<int>> brushIdsPerPlaneNum;	//TODO: better allocation policy?
+		brushIdsPerPlaneNum.SetNum(planeList.Num());
+
+		//fill per-plane lists initially
+		for (int i = 0; i < brushArr.Num(); i++) {
+			idBrush *brush = brushArr[i];
+			for (int j = 0; j < brush->GetNumSides(); j++) {
+				idBrushSide *s = brush->GetSide(j);
+				int plnum = s->GetPlaneNum();
+				brushIdsPerPlaneNum[plnum].SetGranularity(4);
+				brushIdsPerPlaneNum[plnum].Append(i);
+			}
+		}
+
+		for (int i = 0; i < brushArr.Num(); i++) {
+			idBrush *brush = brushArr[i];
+			if (!brush)
+				continue;
+
+			bool merged = false;
+			for (int u = 0; u < brush->GetNumSides(); u++) {
+				idBrushSide *s = brush->GetSide(u);
+				int plnum = s->GetPlaneNum();
+
+				//the other brush must have opposite plane on one of its sides (see TryMerge)
+				const idList<int> &candidates = brushIdsPerPlaneNum[plnum ^ 1];
+				for (int q = 0; q < candidates.Num(); q++) {
+					int j = candidates[q];
+					idBrush *otherBrush = brushArr[j];
+					if (!otherBrush)
+						continue;
+
+					if ( MergeAllowed && !MergeAllowed( brush, otherBrush ) )
+						continue;
+					if ( !brush->TryMerge( otherBrush, planeList ) )
+						continue;
+
+					//brushes merged
+					delete otherBrush;
+					numMerges++;
+
+					//old brush indices are not removed from per-plane list
+					//so we nullify the corresponding elements to skip such entries
+					brushArr[i] = brushArr[j] = nullptr;
+
+					//merged brush takes new place at the end of brush array
+					//so it will be merged again in future
+					int idx = brushArr.AddGrow(brush);
+					for (int v = 0; v < brush->GetNumSides(); v++) {
+						idBrushSide *s = brush->GetSide(v);
+						int plnum = s->GetPlaneNum();
+						brushIdsPerPlaneNum[plnum].Append(idx);
+					}
+
+					merged = true;
+					break;
+				}
+				if (merged)
+					break;
+			}
+		}
+
+		FromList(brushArr);
 	}
 
 	common->Printf( "\r%6d brushes merged\n", numMerges );
@@ -1479,6 +1744,31 @@ void idBrushList::WriteBrushMap( const idStr &fileName, const idStr &ext ) const
 	delete map;
 }
 
+/*
+============
+idBrushList::ToList
+============
+*/
+void idBrushList::ToList( idList<idBrush*> &list ) const {
+	list.Clear();
+	list.Reserve(numBrushes);
+	for (idBrush *brush = head; brush; brush = brush->next)
+		list.AddGrow(brush);
+}
+
+/*
+============
+idBrushList::FromList
+============
+*/
+void idBrushList::FromList( const idList<idBrush*> &list ) {
+	numBrushes = 0;
+	numBrushSides = 0;
+	head = tail = nullptr;
+	for (int i = 0; i < list.Num(); i++)
+		if (list[i])
+			AddToTail(list[i]);
+}
 
 //===============================================================
 //

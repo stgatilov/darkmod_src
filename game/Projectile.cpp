@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
@@ -600,14 +600,13 @@ void idProjectile::Think( void ) {
 		{
 			// Any AI around? For AI who manage to avoid a collision with the mine, catch them here if they're close enough and moving/rotating.
 
-			idEntity* entityList[ MAX_GENTITIES ];
 			idVec3 org = GetPhysics()->GetOrigin();
 			idBounds bounds = GetPhysics()->GetAbsBounds();
 			float closeEnough = Square(23);
 
 			// get all entities touching the bounds
-
-			int numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+			idClip_EntityList entityList;
+			int numListedEntities = gameLocal.clip.EntitiesTouchingBounds( bounds, -1, entityList );
 
 			for ( int i = 0 ; i < numListedEntities ; i++ )
 			{
@@ -639,7 +638,7 @@ void idProjectile::Think( void ) {
 	case INACTIVE: stateStr = "INACTIVE"; break;
 	};
 
-	gameRenderWorld->DrawText(stateStr, physicsObj.GetOrigin(), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAxis);*/
+	gameRenderWorld->DebugText(stateStr, physicsObj.GetOrigin(), 0.2f, colorRed, gameLocal.GetLocalPlayer()->viewAxis);*/
 
 	// run physics
 	RunPhysics();
@@ -1589,7 +1588,8 @@ idProjectile::WriteToSnapshot
 ================
 */
 void idProjectile::WriteToSnapshot( idBitMsgDelta &msg ) const {
-	msg.WriteBits( owner.GetSpawnId(), 32 );
+	msg.WriteBits( owner.GetEntityNum(), 32 );
+	msg.WriteBits( owner.GetSpawnNum(), 32 );
 
 	msg.WriteBits( state, 3 );
 
@@ -1626,7 +1626,10 @@ idProjectile::ReadFromSnapshot
 void idProjectile::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	projectileState_t newState;
 
-	owner.SetSpawnId( msg.ReadBits( 32 ) );
+	int entId = msg.ReadBits( 32 );
+	int spnId = msg.ReadBits( 32 );
+	owner.Set( entId, spnId );
+
 	newState = (projectileState_t) msg.ReadBits( 3 );
 	if ( msg.ReadBits( 1 ) ) {
 		Hide();

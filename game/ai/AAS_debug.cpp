@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -65,7 +65,7 @@ void idAASLocal::DrawReachability( const idReachability *reach ) const
 	gameRenderWorld->DebugArrow( colorLtGrey, AreaCenter(reach->fromAreaNum), AreaCenter(reach->toAreaNum), 1, 10000);
 
 	if ( gameLocal.GetLocalPlayer() ) {
-		gameRenderWorld->DrawText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 10000 );
+		gameRenderWorld->DebugText( va( "%d", reach->edgeNum ), ( reach->start + reach->end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 10000 );
 	}
 }
 
@@ -91,7 +91,7 @@ void idAASLocal::DrawEdge( int edgeNum, bool arrow ) const {
 	}
 
 	if ( gameLocal.GetLocalPlayer() ) {
-		gameRenderWorld->DrawText( va( "%d", edgeNum ), ( file->GetVertex( edge->vertexNum[0] ) + file->GetVertex( edge->vertexNum[1] ) ) * 0.5f + idVec3(0,0,4), 0.1f, colorRed, gameLocal.GetLocalPlayer()->viewAxis );
+		gameRenderWorld->DebugText( va( "%d", edgeNum ), ( file->GetVertex( edge->vertexNum[0] ) + file->GetVertex( edge->vertexNum[1] ) ) * 0.5f + idVec3(0,0,4), 0.1f, colorRed, gameLocal.GetLocalPlayer()->viewAxis );
 	}
 }
 
@@ -342,7 +342,7 @@ void idAASLocal::ShowWallEdges( const idVec3 &origin ) const {
 	for ( i = 0; i < numEdges; i++ ) {
 		GetEdge( edges[i], start, end );
 		gameRenderWorld->DebugLine( colorRed, start, end );
-		gameRenderWorld->DrawText( va( "%d", edges[i] ), ( start + end ) * 0.5f, 0.1f, colorWhite, player->viewAxis );
+		gameRenderWorld->DebugText( va( "%d", edges[i] ), ( start + end ) * 0.5f, 0.1f, colorWhite, player->viewAxis );
 	}
 }
 
@@ -558,7 +558,7 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 			clusterNums.AddUnique(clusterNum);
 			idVec4 color = (clusterNum <= 0) ? colorWhite : aasColors[clusterNum];
 
-			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, color, playerViewMatrix, 1, 16);
+			gameRenderWorld->DebugText(va("%d", i), areaCenter, 0.2f, color, playerViewMatrix, 1, 16);
 			gameRenderWorld->DebugBox(color, idBox(areaBounds), 16);
 		}
 	}
@@ -576,7 +576,7 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 		idVec3 origin = file->GetArea(area).center;
 		if ( (origin - playerOrigin).LengthFast() < 300 )
 		{
-			gameRenderWorld->DrawText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 16);
+			gameRenderWorld->DebugText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 16);
 		}
 	}
 }

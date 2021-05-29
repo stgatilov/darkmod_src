@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -43,7 +43,6 @@ void idGuiModel::Clear() {
 	surfaces.SetNum( 0, false );
 	indexes.SetNum( 0, false );
 	verts.SetNum( 0, false );
-	tonemapRect.Empty();
 	AdvanceSurf();
 }
 
@@ -290,14 +289,6 @@ void idGuiModel::EmitFullScreen( void ) {
 
 	// add the command to draw this view
 	R_AddDrawViewCmd( *viewDef );
-	if ( tonemapRect.w ) {
-		bloomCommand_t* cmd = (bloomCommand_t*)R_GetCommandBuffer( sizeof( *cmd ) );
-		cmd->commandId = RC_BLOOM;
-		cmd->screenRect.x1 = tonemapRect.x * glConfig.vidWidth / SCREEN_WIDTH;
-		cmd->screenRect.y1 = ( SCREEN_HEIGHT - tonemapRect.y - tonemapRect.h ) * glConfig.vidHeight / SCREEN_HEIGHT;
-		cmd->screenRect.x2 = tonemapRect.w * glConfig.vidWidth / SCREEN_WIDTH + cmd->screenRect.x1;
-		cmd->screenRect.y2 = tonemapRect.h * glConfig.vidHeight / SCREEN_HEIGHT + cmd->screenRect.y1;
-	}
 }
 
 /*
@@ -328,10 +319,6 @@ void idGuiModel::AdvanceSurf() {
 
 	surfaces.Append( s );
 	surf = &surfaces[ surfaces.Num() - 1 ];
-}
-
-void idGuiModel::SetTonemapRect( const idRectangle& rect ) {
-	tonemapRect = rect;
 }
 
 /*

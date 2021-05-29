@@ -44,6 +44,8 @@ extern Fl_Button *g_Version_ButtonRefreshInfo;
 extern Fl_Progress *g_Version_ProgressDownloadManifests;
 extern Fl_Button *g_Version_ButtonNext;
 extern Fl_Button *g_Version_ButtonBack;
+#include <FL/Fl_Choice.H>
+extern Fl_Choice *g_Version_ChoiceMirror;
 extern Fl_Group *g_PageConfirm;
 extern Fl_Text_Display *g_Confirm_TextReadyToInstall;
 extern Fl_Output *g_Confirm_OutputInstallDirectory;
@@ -66,10 +68,13 @@ extern Fl_Progress *g_Install_ProgressFinalize;
 extern Fl_Text_Display *g_Install_TextFinishedInstall;
 extern Fl_Button *g_Install_ButtonClose;
 extern Fl_Button *g_Install_ButtonCancel;
-extern Fl_Button *g_Install_ButtonDeleteCfg;
+extern Fl_Button *g_Install_ButtonRestoreCfg;
 extern Fl_Text_Display *g_Install_TextAdditional;
 extern Fl_Button *g_Install_ButtonCreateShortcut;
 void FluidAllGui();
 void WizardGoNext();
 void WizardGoPrev();
+extern Fl_Double_Window *g_HelpWindow;
+extern Fl_Text_Display *g_Help_TextParameters;
+Fl_Double_Window* FluidGuiHelp();
 #endif

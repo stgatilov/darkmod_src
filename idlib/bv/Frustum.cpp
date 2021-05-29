@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -2035,8 +2035,6 @@ bool idFrustum::ProjectionBounds( const idBounds &bounds, idBounds &projectionBo
 	return ProjectionBounds( idBox( bounds, vec3_origin, mat3_identity ), projectionBounds );
 }
 
-#if !defined(__linux__) && !defined(MACOS_X)
-
 /*
 ============
 idFrustum::ProjectionBounds
@@ -2161,8 +2159,6 @@ bool idFrustum::ProjectionBounds( const idBox &box, idBounds &projectionBounds )
 
 	return true;
 }
-
-#endif
 
 /*
 ============
@@ -2431,6 +2427,9 @@ void idFrustum::ClipFrustumToBox( const idBox &box, float clipFractions[4], int 
 	bounds[1] = box.GetExtents();
 
 	minf = ( dNear + 1.0f ) * invFar;
+
+	//stgatilov: cornerVecs[i] can be zero, causing division-by-zero inside loop
+	idIgnoreFpExceptions guard;
 
 	for ( i = 0; i < 4; i++ ) {
 

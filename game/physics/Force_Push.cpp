@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -166,7 +166,7 @@ void CForcePush::Evaluate( int time )
 		{
 			idVec3 pushImpulse = pushDirection * scale;
 
-			//gameRenderWorld->DrawText( idStr(pushImpulse.LengthFast()), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC*10 );
+			//gameRenderWorld->DebugText( idStr(pushImpulse.LengthFast()), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC*10 );
 			//gameRenderWorld->DebugArrow( colorWhite, physics->GetAbsBounds().GetCenter(), physics->GetAbsBounds().GetCenter() - contactInfo.c.normal*100, 1, USERCMD_MSEC*10 );
 
 			DM_LOG(LC_MOVEMENT, LT_INFO)LOGSTRING("Kicking impulse = %f,%f,%f, scale was %f\r", pushImpulse.x, pushImpulse.y, pushImpulse.z, scale);
@@ -188,7 +188,7 @@ void CForcePush::Evaluate( int time )
 	else if (pushEnt == lastPushEnt.GetEntity())
 	{
 		int pushTime = gameLocal.time - startPushTime;
-		//gameRenderWorld->DrawText( idStr(pushTime), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+		//gameRenderWorld->DebugText( idStr(pushTime), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 
 		int pushStartDelay = cv_pm_push_start_delay.GetInteger();
 
@@ -214,7 +214,7 @@ void CForcePush::Evaluate( int time )
 			// Finally, apply a maximum cap, based on the player's normal walkspeed
 			float velocity = idMath::ClampFloat(0, pm_walkspeed.GetFloat()*0.8f, pushVelocity.NormalizeFast());
 
-			//gameRenderWorld->DrawText( idStr(velocity * accelScale * massScale), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			//gameRenderWorld->DebugText( idStr(velocity * accelScale * massScale), physics->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 
 			// Apply the mass scale and the acceleration scale to the capped velocity
 			physics->SetLinearVelocity(pushVelocity * velocity * accelScale * massScale * entityScale);

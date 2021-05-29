@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __BRUSH_H__
@@ -61,7 +61,7 @@ public:
 	void					RemoveFlag( int flag ) { flags &= ~flag; }
 	const idPlane &			GetPlane( void ) const { return plane; }
 	void					SetPlaneNum( int num ) { planeNum = num; }
-	int						GetPlaneNum( void ) { return planeNum; }
+	int						GetPlaneNum( void ) const { return planeNum; }
 	const idWinding *		GetWinding( void ) const { return winding; }
 	idBrushSide *			Copy( void ) const;
 	int						Split( const idPlane &splitPlane, idBrushSide **front, idBrushSide **back ) const;
@@ -114,10 +114,19 @@ public:
 	bool					Subtract( const idBrush *b, idBrushList &list ) const;
 							// split the brush into a front and back brush
 	int						Split( const idPlane &plane, int planeNum, idBrush **front, idBrush **back ) const;
+							// stgatilov: same as Split, but also deletes this brush (sometimes stealing its content for better performance)
+	int						SplitDestroy( const idPlane &plane, int planeNum, idBrush* &front, idBrush* &back );
 							// expand the brush for an axial bounding box
 	void					ExpandForAxialBox( const idBounds &bounds );
 							// next brush in list
 	idBrush *				Next( void ) const { return next; }
+							// stgatilov: is point inside, outside or on boundary of brush?
+	int						SideOfPoint( const idVec3 &point, float epsilon ) const;
+							// stgatilov: checks if given segment intersects this brush inflated by epsilon (TODO: return interval?)
+	bool					IntersectSegment( const idVec3 &start, const idVec3 &end, float epsilon ) const;
+							// stgatilov: this is very specific method for optimizing idBrushList::Chop
+	bool					CanSubtractionYieldLessThreeBrushes( const idBrush *subtracted, float epsilon ) const;
+
 
 private:
 	mutable idBrush *		next;				// next brush in list
@@ -136,6 +145,7 @@ private:
 	void					BoundBrush( const idBrush *original = NULL );
 	void					AddBevelsForAxialBox( void );
 	bool					RemoveSidesWithoutWinding( void );
+	int						SplitImpl( const idPlane &plane, int planeNum, idBrush **front, idBrush **back, bool killThis );
 };
 
 
@@ -154,7 +164,7 @@ public:
 	int						NumSides( void ) const { return numBrushSides; }
 	idBrush *				Head( void ) const { return head; }
 	idBrush *				Tail( void ) const { return tail; }
-	void					Clear( void ) { head = tail = NULL; numBrushes = 0; }
+	void					Clear( void ) { head = tail = NULL; numBrushes = numBrushSides = 0; }
 	bool					IsEmpty( void ) const { return (numBrushes == 0); }
 	idBounds				GetBounds( void ) const;
 							// add brush to the tail of the list
@@ -174,7 +184,9 @@ public:
 							// delete all brushes in the list
 	void					Free( void );
 							// split the brushes in the list into two lists
-	void					Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide = false );
+	void					Split( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide = false ) const;
+							// stgatilov: same as Split, but also does Free on this list (sometimes stealing its content for better performance)
+	void					SplitFree( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide = false );
 							// chop away all brush overlap
 	void					Chop( bool (*ChopAllowed)( idBrush *b1, idBrush *b2 ) );
 							// merge brushes
@@ -185,12 +197,18 @@ public:
 	void					CreatePlaneList( idPlaneSet &planeList ) const;
 							// write a brush map with the brushes in the list
 	void					WriteBrushMap( const idStr &fileName, const idStr &ext ) const;
+							// stgatilov: fill given array with brush pointers
+	void					ToList( idList<idBrush*> &list ) const;
+							// stgatilov: refill this brushlist from given array (NULLs skipped)
+	void					FromList( const idList<idBrush*> &list );
 
 private:
 	idBrush *				head;
 	idBrush *				tail;
 	int						numBrushes;
 	int						numBrushSides;
+
+	void					SplitImpl( const idPlane &plane, int planeNum, idBrushList &frontList, idBrushList &backList, bool useBrushSavedPlaneSide, bool clearThis );
 };
 
 

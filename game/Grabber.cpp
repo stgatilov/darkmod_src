@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // TODO: Make sure drag to point is not within a solid
@@ -134,6 +134,7 @@ void CGrabber::Clear( void )
 		this->RemoveFromClipList( 0 );
 
 	m_clipList.Clear();
+	m_silentMode = false;
 }
 
 void CGrabber::Save( idSaveGame *savefile ) const
@@ -197,6 +198,7 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_EquippedEntClipMask);
 
 	savefile->WriteBool(m_bDropBodyFaceUp);
+	savefile->WriteBool(m_silentMode);
 }
 
 void CGrabber::Restore( idRestoreGame *savefile )
@@ -266,6 +268,7 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_EquippedEntClipMask);
 
 	savefile->ReadBool(m_bDropBodyFaceUp);
+	savefile->ReadBool(m_silentMode);
 }
 
 /*
@@ -367,6 +370,23 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 	idEntity *drag;
 	idPhysics_Player *playerPhys;
 	
+	m_silentMode = false;
+	if (cv_drag_new.GetBool()) {
+		//stgatilov #5599: new grabber, detect if we should set silent mode
+		switch (cv_drag_rigid_silentmode.GetInteger()) {
+			case 1:
+				if (player->usercmd.buttons & BUTTON_CREEP)
+					m_silentMode = true;
+				break;
+			case 2:
+				if ( !(player->usercmd.buttons & BUTTON_RUN) )
+					m_silentMode = true;
+				break;
+			case 3:
+				m_silentMode = true;
+		}
+	}
+
 	m_player = player;
 
 	// if there is an entity selected, we let it go and exit
@@ -490,6 +510,10 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 	draggedPosition = viewPoint + targetPosition * viewAxis;
 
 // ====================== AF Grounding Testing ===============================
+
+//stgatilov #5599: this hack is only used for old grabber with AFs
+if (!cv_drag_new.GetBool()) {
+
 	// If dragging a body with a certain spawnarg set, you should only be able to pick
 	// it up so far off the ground
 	if( drag->IsType(idAFEntity_Base::Type) && (cv_drag_AF_free.GetBool() == false) )
@@ -552,6 +576,9 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 			
 		}
 	}
+
+}
+
 // ===================== End AF Grounding Test ====================
 
 	m_drag.SetDragPosition( draggedPosition );
@@ -840,13 +867,13 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 		// Disable player view change while rotating
 		player->SetImmobilization( "Grabber", player->GetImmobilization("Grabber") | EIM_VIEW_ANGLE );
 		
-		if( !this->DeadMouse() ) 
+		if( !this->DeadMouse() || player->usercmd.jx != 0 || player->usercmd.jy != 0 ) 
 		{
 			float xMag, yMag;
 			idVec3 xAxis, yAxis;
 
-			xMag = player->usercmd.mx - m_mousePosition.x;
-			yMag = player->usercmd.my - m_mousePosition.y;
+			xMag = player->usercmd.mx - m_mousePosition.x + player->usercmd.jx / 64.f;
+			yMag = player->usercmd.my - m_mousePosition.y + player->usercmd.jy / 64.f;
 
 			yAxis.Set( 0.0f, 1.0f, 0.0f ); // y is always pitch
 
@@ -1087,7 +1114,7 @@ void CGrabber::Event_CheckClipList( void )
 
 	// Check for any entity touching the players bounds
 	// If the entity is not in our list, remove it.
-	// num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent, MAX_GENTITIES );
+	// num = gameLocal.clip.EntitiesTouchingBounds( m_player.GetEntity()->GetPhysics()->GetAbsBounds(), CONTENTS_SOLID, ent );
 	for( i = 0; i < m_clipList.Num(); i++ ) 
 	{
 		// Check clipEntites against entities touching player
@@ -1201,14 +1228,13 @@ CGrabber::Throw
 */
 void CGrabber::Throw( int HeldTime )
 {
-	float ThrowImpulse(0), FracPower(0);
 	idVec3 ImpulseVec(vec3_zero), IdentVec( 1, 0, 1), ThrowPoint(vec3_zero), TumbleVec(vec3_zero);
 
 	idEntity *ent = m_dragEnt.GetEntity();
 	ImpulseVec = m_player.GetEntity()->firstPersonViewAxis[0];
 	ImpulseVec.Normalize();
 
-	FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
+	float FracPower = (float) HeldTime / (float) cv_throw_time.GetInteger();
 
 	if( FracPower > 1.0 )
 		FracPower = 1.0;
@@ -1216,10 +1242,12 @@ void CGrabber::Throw( int HeldTime )
 	float mass = m_dragEnt.GetEntity()->GetPhysics()->GetMass();
 
 	// Try out a linear scaling between max and min
-	ThrowImpulse = cv_throw_min.GetFloat() + (cv_throw_max.GetFloat() - cv_throw_min.GetFloat()) * FracPower;
+	float ThrowImpulse = cv_throw_impulse_min.GetFloat() * (1.0f - FracPower) + cv_throw_impulse_max.GetFloat() * FracPower;
+	float VelocityLimit = cv_throw_vellimit_min.GetFloat() * (1.0f - FracPower) + cv_throw_vellimit_max.GetFloat() * FracPower;
 	// Clamp to max velocity
-	ThrowImpulse = idMath::ClampFloat( 0.0f, cv_throw_max_vel.GetFloat() * mass, ThrowImpulse );
-	ImpulseVec *= ThrowImpulse;  
+	float ThrowVel = ThrowImpulse / (mass + 1e-10f);
+	ThrowVel = idMath::ClampFloat( 0.0f, VelocityLimit, ThrowVel );
+	ImpulseVec *= ThrowVel * mass;
 
 	ClampVelocity( MAX_RELEASE_LINVEL, MAX_RELEASE_ANGVEL, m_id );
 
@@ -1892,4 +1920,7 @@ idEntity* CGrabber::GetShouldered( void ) const
 	return (ent && ent->spawnArgs.GetBool("shoulderable") && ent->IsType(idAFEntity_Base::Type)) ? ent : NULL;
 }
 	
-
+bool CGrabber::IsInSilentMode( void ) const
+{
+	return m_silentMode;
+}

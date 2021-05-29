@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #include "precompiled.h"
@@ -20,7 +20,6 @@
 #include "glsl.h"
 #include "GLSLProgramManager.h"
 #include "backend/RenderBackend.h"
-#include "Profiling.h"
 #include "BloomStage.h"
 #include "FrameBufferManager.h"
 
@@ -458,14 +457,8 @@ void GL_ByteColor( byte r, byte g, byte b, byte a ) {
 }
 
 void GL_SetProjection( float* matrix ) {
-	if ( !r_uniformTransforms.GetBool() ) {
-		qglMatrixMode( GL_PROJECTION );
-		qglLoadMatrixf( matrix );
-		qglMatrixMode( GL_MODELVIEW );
-	} else {
-		qglBindBuffer( GL_UNIFORM_BUFFER, programManager->uboHandle );
-		qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), matrix, GL_DYNAMIC_DRAW );
-	}
+	qglBindBuffer( GL_UNIFORM_BUFFER, programManager->uboHandle );
+	qglBufferData( GL_UNIFORM_BUFFER, sizeof( backEnd.viewDef->projectionMatrix ), matrix, GL_DYNAMIC_DRAW );
 }
 
 /*
@@ -626,13 +619,18 @@ void RB_DrawFullScreenQuad( float e ) {
 #endif
 }
 
+void RB_DrawFullScreenTri() {
+	GL_Cull( CT_TWO_SIDED );
+	qglDrawArrays( GL_TRIANGLES, 0, 3 );
+}
+
 // postprocess related - J.C.Denton
 idCVar r_postprocess_gamma( "r_postprocess_gamma", "1.2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "Applies inverse power function in postprocessing", 0.1f, 3.0f );
 idCVar r_postprocess_brightness( "r_postprocess_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "Multiplies color by coefficient", 0.5f, 2.0f );
-idCVar r_postprocess_colorCurveBias( "r_postprocess_colorCurveBias", "0.8", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve" );
+idCVar r_postprocess_colorCurveBias( "r_postprocess_colorCurveBias", "0.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve" );
 idCVar r_postprocess_colorCorrection( "r_postprocess_colorCorrection", "5", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Applies an exponential color correction function to final scene " );
-idCVar r_postprocess_colorCorrectBias( "r_postprocess_colorCorrectBias", "0.1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Applies an exponential color correction function to final scene with this bias. \n E.g. value ranges between 0-1. A blend is performed between scene render and color corrected image based on this value " );
-idCVar r_postprocess_desaturation( "r_postprocess_desaturation", "0.05", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Desaturates the scene " );
+idCVar r_postprocess_colorCorrectBias( "r_postprocess_colorCorrectBias", "0.0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Applies an exponential color correction function to final scene with this bias. \n E.g. value ranges between 0-1. A blend is performed between scene render and color corrected image based on this value " );
+idCVar r_postprocess_desaturation( "r_postprocess_desaturation", "0.00", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, " Desaturates the scene " );
 
 
 /*
@@ -653,36 +651,41 @@ struct TonemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM(float, colorCorrection)
 	DEFINE_UNIFORM(float, colorCorrectBias)
 	DEFINE_UNIFORM(float, bloomWeight)
+	DEFINE_UNIFORM(int, sharpen)
+	DEFINE_UNIFORM(float, sharpness)
 };
 
-void RB_Tonemap( bloomCommand_t *cmd ) {
-	GL_PROFILE("Tonemap");
-	frameBuffers->UpdateCurrentRenderCopy();
-
-	if (r_bloom.GetBool()) {
-		bloom->ComputeBloomFromRenderImage();
+void RB_Bloom( bloomCommand_t *cmd ) {
+	if ( !r_bloom.GetBool() ) {
+		return;
 	}
-
-	int w = globalImages->currentRenderImage->uploadWidth;
-	int h = globalImages->currentRenderImage->uploadHeight;
-	if ( RB_CheckTools( w, h ) ) {
+	if ( RB_CheckTools( globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight ) ) {
 		return;
 	}
 
-	GL_SetProjection( mat4_identity.ToFloatPtr() );
+	TRACE_GL_SCOPE("Postprocess")
+	frameBuffers->UpdateCurrentRenderCopy();
+	bloom->ComputeBloomFromRenderImage();
+	frameBuffers->LeavePrimary( false );
+	bloom->ApplyBloom();
+}
 
+idCVar r_postprocess_sharpen( "r_postprocess_sharpen", "1", CVAR_RENDERER|CVAR_BOOL|CVAR_ARCHIVE, "Use contrast-adaptive sharpening in tonemapping" );
+idCVar r_postprocess_sharpness( "r_postprocess_sharpness", "0.5", CVAR_RENDERER|CVAR_FLOAT|CVAR_ARCHIVE, "Sharpening amount" );
+
+void RB_Tonemap() {
+	if ( !r_tonemap ) {
+		return;
+	}
+	TRACE_GL_SCOPE("Tonemap")
+
+	frameBuffers->defaultFbo->Bind();
+	GL_ViewportRelative( 0, 0, 1, 1 );
+	GL_ScissorRelative( 0, 0, 1, 1 );
 	GL_State( GLS_DEPTHMASK );
 	qglDisable( GL_DEPTH_TEST );
-
 	GL_SelectTexture( 0 );
-	globalImages->currentRenderImage->Bind();
-
-	frameBuffers->defaultFbo->BindDraw();
-	GL_ViewportVidSize( 0, 0, w, h );
-
-	if ( cmd->screenRect.IsEmpty() ) {
-		frameBuffers->LeavePrimary(false);
-	}
+	globalImages->guiRenderImage->Bind();
 
 	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
 	tonemap->Activate();
@@ -690,30 +693,14 @@ void RB_Tonemap( bloomCommand_t *cmd ) {
 	uniforms->texture.Set( 0 );
 	uniforms->gamma.Set( idMath::ClampFloat( 1e-3f, 1e+3f, r_postprocess_gamma.GetFloat() ) );
 	uniforms->brightness.Set( r_postprocess_brightness.GetFloat() );
-	uniforms->desaturation.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
+	uniforms->desaturation.Set(idMath::ClampFloat( -1.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
 	uniforms->colorCurveBias.Set(r_postprocess_colorCurveBias.GetFloat() );
 	uniforms->colorCorrection.Set(r_postprocess_colorCorrection.GetFloat() );
 	uniforms->colorCorrectBias.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_colorCorrectBias.GetFloat() ) );
+	uniforms->sharpen.Set( r_postprocess_sharpen.GetBool() );
+	uniforms->sharpness.Set( idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_sharpness.GetFloat() ) );
 
-	if( r_bloom.GetBool() ) {
-		GL_SelectTexture( 1 );
-		bloom->BindBloomTexture();
-		uniforms->bloomWeight.Set( r_bloom_weight.GetFloat() );
-		uniforms->bloomTex.Set( 1 );
-	} else {
-		uniforms->bloomWeight.Set( 0 );
-	}
-
-	if ( !cmd->screenRect.IsEmpty() ) {
-		auto& r = cmd->screenRect;
-		GL_ScissorVidSize( r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1 );
-	}
 	RB_DrawFullScreenQuad();
-	GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-
-	GL_SelectTexture( 0 );
-	tonemap->Deactivate();
-	qglEnable( GL_DEPTH_TEST );
 }
 
 /*
@@ -766,6 +753,8 @@ RB_SwapBuffers
 =============
 */
 const void	RB_SwapBuffers( const void *data ) {
+	TRACE_GL_SCOPE( "SwapBuffers" )
+
 	// texture swapping test
 	if ( r_showImages.GetInteger() != 0 ) {
 		RB_ShowImages();
@@ -837,7 +826,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 				if ( isv3d ) {
 					frameBuffers->EnterPrimary();
 				} else {
-					frameBuffers->LeavePrimary();	// duzenko: render 2d in default framebuffer, as well as all 3d until frame end
+					frameBuffers->LeavePrimary();	// switch to GUI or default FBO to render UI elements at native resolution
 					FB_DebugShowContents();
 					fboOff = true;
 				}
@@ -867,7 +856,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			c_setBuffers++;
 			break;
 		case RC_BLOOM:
-			RB_Tonemap( (bloomCommand_t*)cmds );
+			RB_Bloom( (bloomCommand_t*)cmds );
 			FB_DebugShowContents();
 			c_drawBloom++;
 			fboOff = true;
@@ -879,6 +868,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content
 			frameBuffers->LeavePrimary();
+			RB_Tonemap();
 			RB_SwapBuffers( cmds );
 			c_swapBuffers++;
 			break;

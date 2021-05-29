@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -33,7 +33,7 @@ tdmEAS::tdmEAS(idAASLocal* aas) :
 
 void tdmEAS::Clear()
 {
-	_elevators.Clear();
+	_elevators.ClearFree();
 	_clusterInfo.clear();
 	_elevatorStations.clear();
 }
@@ -448,13 +448,13 @@ void tdmEAS::SetupReachableElevatorStations()
 			/*idBounds areaBounds = _aas->GetAreaBounds(areaNum);
 			idVec3 areaCenter = _aas->AreaCenter(areaNum);
 
-			gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
+			gameRenderWorld->DebugText(va("%d", areaNum), areaCenter, 0.2f, colorRed, idAngles(0,0,0).ToMat3(), 1, 50000);
 			gameRenderWorld->DebugBox(colorRed, idBox(areaBounds), 50000);
 
 			areaBounds = _aas->GetAreaBounds(_elevatorStations[e]->areaNum);
 			idVec3 areaCenter2 = _aas->AreaCenter(_elevatorStations[e]->areaNum);
 
-			gameRenderWorld->DrawText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
+			gameRenderWorld->DebugText(va("%d", _elevatorStations[e]->areaNum), areaCenter2, 0.2f, colorBlue, idAngles(0,0,0).ToMat3(), 1, 50000);
 			gameRenderWorld->DebugBox(colorBlue, idBox(areaBounds), 50000);*/
 
 			idReachability* reach;

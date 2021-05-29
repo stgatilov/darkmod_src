@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -29,6 +29,7 @@
 #define INSIDEUNITS_FLYEND					0.5f
 #define INSIDEUNITS_WATERJUMP				15.0f
 
+#define WATERJUMP_BBOX_EXPAND				2.0f
 
 /*
 ================
@@ -310,10 +311,10 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge( int area1num,
 
 	// if the areas are not near anough in the x-y direction
 	for ( i = 0; i < 2; i++ ) {
-		if ( area1->bounds[0][i] > area2->bounds[1][i] + 2.0f ) {
+		if ( area1->bounds[0][i] > area2->bounds[1][i] + WATERJUMP_BBOX_EXPAND ) {
 			return false;
 		}
-		if ( area1->bounds[1][i] < area2->bounds[0][i] - 2.0f ) {
+		if ( area1->bounds[1][i] < area2->bounds[0][i] - WATERJUMP_BBOX_EXPAND ) {
 			return false;
 		}
 	}
@@ -851,6 +852,13 @@ void idAASReach::FlagReachableAreas( idAASFileLocal *file ) {
 	common->Printf( "%6d reachable areas\n", numReachableAreas );
 }
 
+
+idCVar dmap_fasterAasWaterJumpReachability(
+	"dmap_fasterAasWaterJumpReachability", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Use faster algorithm for finding 'water-jump' reachabilities in idAASReach::Build during AAS compilation. "
+	"This is performance improvement in TDM 2.10."
+);
+
 /*
 ================
 idAASReach::Build
@@ -880,6 +888,14 @@ bool idAASReach::Build( const idMapFile *mapFile, idAASFileLocal *file ) {
 		Reachability_EqualFloorHeight( i );
 	}
 
+	idList<int> candidateAreas;
+	if (!dmap_fasterAasWaterJumpReachability.GetBool()) {
+		//stgatilov: when optimization is disabled, iterate over all area numbers sequentally
+		candidateAreas.SetNum(file->areas.Num());
+		for (int i = 0; i < candidateAreas.Num(); i++)
+			candidateAreas[i] = i;
+	}
+
 	lastPercent = -1;
 	for ( i = 1; i < file->areas.Num(); i++ ) {
 
@@ -887,7 +903,19 @@ bool idAASReach::Build( const idMapFile *mapFile, idAASFileLocal *file ) {
 			continue;
 		}
 
-		for ( j = 0; j < file->areas.Num(); j++ ) {
+		if (dmap_fasterAasWaterJumpReachability.GetBool()) {
+			//when optimization is enabled, iterate over all areas within expanded XY-bbox
+			idBounds waterJumpBounds = file->AreaBounds(i);
+			waterJumpBounds.Expand( WATERJUMP_BBOX_EXPAND );
+			waterJumpBounds[0].z = -999999;
+			waterJumpBounds[1].z = 999999;
+			file->FindAreasInBounds( waterJumpBounds, candidateAreas );
+			assert( std::is_sorted( candidateAreas.begin(), candidateAreas.end() ) );
+		}
+
+		for ( int u = 0; u < candidateAreas.Num(); u++ ) {
+			j = candidateAreas[u];
+
 			if ( i == j ) {
 				continue;
 			}

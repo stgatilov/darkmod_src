@@ -1,38 +1,23 @@
-/*
-===========================================================================
+/*****************************************************************************
+The Dark Mod GPL Source Code
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
+******************************************************************************/
 #include "precompiled.h"
 #pragma hdrstop
 
 #include "tr_local.h"
 #include "glsl.h"
 #include "FrameBuffer.h"
-#include "Profiling.h"
 #include "GLSLProgram.h"
 #include "GLSLProgramManager.h"
 #include "AmbientOcclusionStage.h"
@@ -56,7 +41,7 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 
 GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
-idCVarBool r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "render shadow maps for all lights in a single pass" );
+idCVarInt r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "1 - render shadow maps for all lights in a single pass; 2 - also render all light interactions in a single pass" );
 
 static void ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
@@ -143,7 +128,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( !surf ) {
 		return;
 	}
-	GL_PROFILE( "GLSL_CreateDrawInteractions" );
+	TRACE_GL_SCOPE( "GLSL_CreateDrawInteractions" );
 
 	// if using float buffers, alpha values are not clamped and can stack up quite high, since most interactions add 1 to its value
 	// this in turn causes issues with some shader stage materials that use DST_ALPHA blending.
@@ -193,7 +178,7 @@ RB_GLSL_DrawLight_Stencil
 ==================
 */
 void RB_GLSL_DrawLight_Stencil() {
-	GL_PROFILE( "GLSL_DrawLight_Stencil" );
+	TRACE_GL_SCOPE( "GLSL_DrawLight_Stencil" );
 
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
 
@@ -273,11 +258,9 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
-	if ( r_shadowMapSinglePass.GetBool() /*|| r_skipInteractions.GetBool()*/ ) // duzenko: let shadow maps render for benchmarking
-		return;
 	if ( backEnd.vLight->shadowMapIndex > 42 )
 		return;
-	GL_PROFILE( "GLSL_DrawInteractions_ShadowMap" );
+	TRACE_GL_SCOPE( "GLSL_DrawInteractions_ShadowMap" );
 
 	GL_CheckErrors();
 	frameBuffers->EnterShadowMap();
@@ -360,11 +343,11 @@ RB_GLSL_DrawLight_ShadowMap
 ==================
 */
 void RB_GLSL_DrawLight_ShadowMap() {
-	GL_PROFILE( "GLSL_DrawLight_ShadowMap" );
+	TRACE_GL_SCOPE( "GLSL_DrawLight_ShadowMap" );
 
 	GL_CheckErrors();
 
-	if ( backEnd.vLight->lightShader->LightCastsShadows() ) {
+	if ( backEnd.vLight->lightShader->LightCastsShadows() && !r_shadowMapSinglePass ) {
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
@@ -417,7 +400,7 @@ RB_GLSL_DrawInteractions
 void RB_ShadowMap_RenderAllLights();
 
 void RB_GLSL_DrawInteractions() {
-	GL_PROFILE( "GLSL_DrawInteractions" );
+	TRACE_GL_SCOPE( "GLSL_DrawInteractions" );
 	GL_SelectTexture( 0 );
 
 	if ( r_shadows.GetInteger() == 2 ) 
@@ -443,7 +426,6 @@ void RB_GLSL_DrawInteractions() {
 ==================
 R_ReloadGLSLPrograms
 
-If the 'required' shaders fail to compile the r_useGLSL will toggle to 0 so as to fall back to ARB2 shaders
 filenames hardcoded here since they're not used elsewhere
 FIXME split the stencil and shadowmap interactions in separate shaders as the latter might not compile on DX10 and older hardware
 ==================
@@ -468,8 +450,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 
 	const char *programName = args.Argc() > 1 ? args.Argv( 1 ) : nullptr;
 	if ( !R_ReloadGLSLPrograms( programName ) ) {
-		r_useGLSL = false;
-		common->Printf( "GLSL shaders failed to init.\n" );
+		common->Error( "GLSL shaders failed to init.\n" );
 		return;
 	}
 	common->Printf( "---------------------------------\n" );

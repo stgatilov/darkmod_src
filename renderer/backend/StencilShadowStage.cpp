@@ -1,22 +1,21 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
 #include "precompiled.h"
 
 #include "StencilShadowStage.h"
-#include "../Profiling.h"
 #include "DrawBatchExecutor.h"
 #include "../FrameBuffer.h"
 #include "../GLSLProgram.h"
@@ -32,7 +31,7 @@ StencilShadowStage::StencilShadowStage( DrawBatchExecutor *drawBatchExecutor ) {
 }
 
 void StencilShadowStage::Init() {
-	idDict defines;
+	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt("%d", drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>()) );
 	stencilShadowShader = programManager->LoadFromFiles( "stencil_shadow", 
 		"stages/stencil/stencil_shadow.vert.glsl",
@@ -46,7 +45,7 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 	if ( !shadowSurfs || !r_shadows.GetInteger() ) {
 		return;
 	}
-	GL_PROFILE( "StencilShadowPass" );
+	TRACE_GL_SCOPE( "StencilShadowPass" );
 
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglPolygonOffset( r_shadowPolygonFactor.GetFloat(), -r_shadowPolygonOffset.GetFloat() );
@@ -105,8 +104,6 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 		return;
 	}
 
-	vertexCache.BindVertex( ATTRIB_SHADOW );
-
 	DrawBatch<ShaderParams> drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
 	uint paramsIdx = 0;
 
@@ -115,11 +112,14 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 		FB_ApplyScissor();
 	}
 
+	const drawSurf_t *curBatchCaches = surfs[0];
 	for (size_t i = 0; i < count; ++i) {
 		const drawSurf_t *surf = surfs[i];
 
 		if (paramsIdx == drawBatch.maxBatchSize
-				|| (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect))) {
+				|| (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect))
+				|| surf->shadowCache.isStatic != curBatchCaches->shadowCache.isStatic
+				|| surf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
 			drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
 			drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
 			paramsIdx = 0;
@@ -136,6 +136,7 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 		params.localLightOrigin.w = 0.0f;
 		drawBatch.surfs[paramsIdx] = surf;
 		++paramsIdx;
+		curBatchCaches = surf;
 	}
 
 	drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );

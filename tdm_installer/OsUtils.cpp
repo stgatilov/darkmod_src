@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #include "OsUtils.h"
 #include "StdFilesystem.h"
 #include "Utils.h"
@@ -120,14 +134,16 @@ void OsUtils::ReplaceAndRestartExecutable(const std::string &targetPath, const s
 		g_logger->infof("Creating updating batch/shell file \"%s\"", batchFilePath.c_str());
 		ZipSync::StdioFileHolder batchFile(batchFilePath.c_str(), "wt");
 #ifdef _WIN32
-		fprintf(batchFile, "@ping 127.0.0.1 -n 6 -w 1000 > nul\n"); // # hack equivalent to Wait 5
+		fprintf(batchFile, "@ping 127.0.0.1 -n 6 -w 1000 > nul\n"); //hack equivalent to Wait 5
 		if (!temporaryPath.empty()) {
-			fprintf(batchFile, "@copy %s %s >nul\n", winTemporaryPath.c_str(), winTargetPath.c_str());
-			fprintf(batchFile, "@del %s\n", winTemporaryPath.c_str());
+			fprintf(batchFile, "@copy \"%s\" \"%s\" >nul\n", winTemporaryPath.c_str(), winTargetPath.c_str());
+			fprintf(batchFile, "@del \"%s\"\n", winTemporaryPath.c_str());
 			fprintf(batchFile, "@echo Executable has been replaced.\n");
 		}
 		fprintf(batchFile, "@echo Re-launching executable.\n\n");
-		fprintf(batchFile, "@start %s %s\n", winTargetPath.c_str(), allArgs.c_str());
+		//when quoting argument for @start, we have to add one more ""
+		//  https://superuser.com/a/239572
+		fprintf(batchFile, "@start \"\" \"%s\" %s\n", winTargetPath.c_str(), allArgs.c_str());
 #else //POSIX
 		fprintf(batchFile, "#!/bin/bash\n");
 		fprintf(batchFile, "sleep 5s\n");
@@ -204,6 +220,38 @@ bool OsUtils::HasElevatedPrivilegesWindows() {
 	}
 #endif
 	return underAdmin;
+}
+
+std::string OsUtils::CanModifyFiles(const std::vector<std::string> &filePaths, bool skipMissing) {
+	char message[1024] = {0};
+
+	for (int i = 0; i < filePaths.size(); i++) {
+		std::string path = filePaths[i];
+
+		if (FILE *f = fopen(path.c_str(), "rb"))
+			fclose(f);
+		else {
+			if (skipMissing)
+				continue;
+			sprintf(message, "File %s does not exist", path.c_str());
+			return message;
+		}
+
+#ifdef _WIN32
+		//note: in my tests, this does not change "modification datetime"
+		if (FILE *f = _fsopen(path.c_str(), "ab", _SH_DENYRW))
+#else
+		//TODO: is there better way?
+		if (FILE *f = fopen(path.c_str(), "ab"))
+#endif
+			fclose(f);
+		else {
+			sprintf(message, "File %s cannot be modified", path.c_str());
+			return message;
+		}
+	}
+
+	return message;
 }
 
 #ifdef _WIN32

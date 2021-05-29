@@ -1,22 +1,21 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "Profiling.h"
 #include "tr_local.h"
 
 idCVar r_useLightAreaCulling( "r_useLightAreaCulling", "1", CVAR_RENDERER | CVAR_BOOL, "0 = off, 1 = on" );
@@ -826,8 +825,13 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 		if ( r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light->index ) {
 			continue;
 		}
-		if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
+        
+        // nbohr1more: disable the player in void light optimization when light area culling is disabled
+        if ( r_useLightAreaCulling.GetInteger() ) {
+		    if ( tr.viewDef->areaNum < 0 && !light->lightShader->IsAmbientLight() )
 			continue;
+        } 
+          
 
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
@@ -930,7 +934,7 @@ they were considered, but not actually visible.
 =============
 */
 void idRenderWorldLocal::FindViewLightsAndEntities( void ) {
-	FRONTEND_PROFILE( "FindViewLightsAndEntities" )
+	TRACE_CPU_SCOPE( "FindViewLightsAndEntities" )
 
 	// clear the visible lightDef and entityDef lists
 	tr.viewDef->viewLights = nullptr;
@@ -992,6 +996,26 @@ int idRenderWorldLocal::NumPortals( void ) const {
 
 /*
 ==============
+DoesVisportalContactBox
+
+stgatilov #5354: checks whether idPortalEntity with given box applies to visportal with given winding.
+This function is called from:
+  idRenderWorldLocal::FindPortal --- assignment of portal entities to portals during game
+  CheckInfoLocations --- static validation of info_locations with info_locationseparator-s
+==============
+*/
+bool idRenderWorldLocal::DoesVisportalContactBox( const idWinding &visportalWinding, const idBounds &box ) {
+	idBounds visportalBox;
+	visportalBox.Clear();
+	for ( int j = 0 ; j < visportalWinding.GetNumPoints() ; j++ ) {
+		visportalBox.AddPoint( visportalWinding[j].ToVec3() );
+	}
+
+	return visportalBox.IntersectsBounds( box );
+}
+
+/*
+==============
 FindPortal
 
 Game code uses this to identify which portals are inside doors.
@@ -999,22 +1023,12 @@ Returns 0 if no portal contacts the bounds
 ==============
 */
 qhandle_t idRenderWorldLocal::FindPortal( const idBounds &b ) const {
-	int				i, j;
-	idBounds		wb;
-	//doublePortal_t	*portal;
-	//idWinding		*w;
+	for ( int i = 0; i < doublePortals.Num(); i++ ) {
+		const doublePortal_t &portal = doublePortals[i];
+		const idWinding &w = portal.portals[0].w;
 
-	for ( i = 0; i < doublePortals.Num(); i++ ) {
-		auto &portal = doublePortals[i];
-		auto &w = portal.portals[0].w;
-		wb.Clear();
-		for ( j = 0 ; j < w.GetNumPoints() ; j++ ) {
-			wb.AddPoint( w[j].ToVec3() );
-		}
-
-		if ( wb.IntersectsBounds( b ) ) {
+		if ( DoesVisportalContactBox( w, b ) )
 			return i + 1;
-		}
 	}
 	return 0;
 }
@@ -1119,6 +1133,17 @@ int		idRenderWorldLocal::GetPortalState( qhandle_t portal ) {
 		common->Error( "GetPortalState: bad portal number %i", portal );
 	}
 	return doublePortals[portal - 1].blockingBits;
+}
+
+idPlane idRenderWorldLocal::GetPortalPlane( qhandle_t portal ) {
+	if ( portal == 0 ) {
+		return plane_origin;
+	}
+
+	if ( portal < 1 || portal > doublePortals.Num() ) {
+		common->Error( "GetPortalState: bad portal number %i", portal );
+	}
+	return doublePortals[portal - 1].portals[0].plane;
 }
 
 /*

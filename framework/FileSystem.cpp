@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -225,6 +225,7 @@ public:
 	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL) override;
     idFile *				OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, const char* gamedir = NULL );	//Note: thread-unsafe!
     virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL ) override;
+    virtual idFile *		OpenFileReadPrefetch( const char *relativePath, const char* gamedir = NULL ) override;
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) override;
 	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) override;
 	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode ) override;
@@ -2647,12 +2648,12 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 
 	searchpath_t *sp, *next, *loop;
 
-	gameFolder.Clear();
-	serverPaks.Clear();
+	gameFolder.ClearFree();
+	serverPaks.ClearFree();
 
 	if ( !reloading ) {
-		restartChecksums.Clear();
-		addonChecksums.Clear();
+		restartChecksums.ClearFree();
+		addonChecksums.ClearFree();
 	}
 
 	loadedFileFromDir = false;
@@ -2691,7 +2692,7 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	cmdSystem->RemoveCommand( "dirtree" );
 	cmdSystem->RemoveCommand( "touchFile" );
 
-	mapDict.Clear();
+	mapDict.ClearFree();
 }
 
 /*
@@ -2968,6 +2969,18 @@ idFileSystemLocal::OpenFileRead
 idFile *idFileSystemLocal::OpenFileRead( const char *relativePath, const char* gamedir ) {
 	idScopedCriticalSection lock(globalMutex);
     return OpenFileReadFlags( relativePath, FSFLAG_SEARCH_DIRS | FSFLAG_SEARCH_PAKS, NULL, gamedir );
+}
+
+idFile * idFileSystemLocal::OpenFileReadPrefetch( const char *relativePath, const char *gamedir ) {
+	idFile *f = OpenFileRead( relativePath, gamedir );
+	if ( f == nullptr ) {
+		return f;
+	}
+	int len = f->Length();
+	void *buffer = Mem_Alloc( len );
+	f->Read( buffer, len );
+	CloseFile( f );
+	return new idFile_Memory( relativePath, (const char *)buffer, len, true );
 }
 
 /*

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1070,7 +1070,7 @@ bool idMapFile::Parse( const char *filename, bool ignoreRegion, bool osPath ) {
 						entities[0]->primitives.Append(pr);
 					}
 					// End of #4300
-					mapEnt->primitives.Clear();
+					mapEnt->primitives.ClearFree();
 				}
 			}
 		}
@@ -1219,4 +1219,17 @@ bool idMapFile::NeedsReload() {
 		}
 	}
 	return true;
+}
+
+
+/*
+===============
+idMapFile::GetTotalPrimitivesNum
+===============
+*/
+int idMapFile::GetTotalPrimitivesNum() const {
+	int res = 0;
+	for (int i = 0; i < entities.Num(); i++)
+		res += entities[i]->GetNumPrimitives();
+	return res;
 }

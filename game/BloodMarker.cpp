@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -57,9 +57,9 @@ void CBloodMarker::Event_GenerateBloodSplat()
 		// grayman #3075 - notify the AI who spilled the blood that
 		// we're going away.
 
-		if ( _spilledBy != NULL )
+		if ( _spilledBy.IsValid() )
 		{
-			_spilledBy->SetBlood(NULL);
+			_spilledBy.GetEntity()->SetBlood(NULL);
 			_spilledBy = NULL;
 		}
 
@@ -107,7 +107,7 @@ void CBloodMarker::OnStim(const CStimPtr& stim, idEntity* stimSource)
 
 idAI* CBloodMarker::GetSpilledBy(void)
 {
-	return _spilledBy;
+	return _spilledBy.GetEntity();
 }
 
 //-----------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ void CBloodMarker::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat(_angle);
 	savefile->WriteFloat(_size);
 	savefile->WriteBool(_isFading);
-	savefile->WriteObject(_spilledBy); // grayman #3075
+	_spilledBy.Save(savefile); // grayman #3075
 }
 
 //-----------------------------------------------------------------------------------
@@ -131,5 +131,5 @@ void CBloodMarker::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(_angle);
 	savefile->ReadFloat(_size);
 	savefile->ReadBool(_isFading);
-	savefile->ReadObject(reinterpret_cast<idClass *&>(_spilledBy)); // grayman #3075
+	_spilledBy.Restore(savefile); // grayman #3075
 }

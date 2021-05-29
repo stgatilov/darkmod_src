@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 /*
@@ -855,7 +855,6 @@ idTarget_SetInfluence::Event_GatherEntities
 */
 void idTarget_SetInfluence::Event_GatherEntities() {
 	int i, listedEntities;
-	idEntity *entityList[ MAX_GENTITIES ];
 
 //	bool demonicOnly = spawnArgs.GetBool( "effect_demonic" );
 	bool lights = spawnArgs.GetBool( "effect_lights" );
@@ -873,14 +872,16 @@ void idTarget_SetInfluence::Event_GatherEntities() {
 		lights = sounds = guis = models = vision = true;
 	}
 
+	idClip_EntityList entityList;
 	if ( targetsOnly ) {
 		listedEntities = targets.Num();
+		entityList.SetNum( listedEntities );
 		for ( i = 0; i < listedEntities; i++ ) {
 			entityList[i] = targets[i].GetEntity();
 		}
 	} else {
 		float radius = spawnArgs.GetFloat( "radius" );
-		listedEntities = gameLocal.EntitiesWithinRadius( GetPhysics()->GetOrigin(), radius, entityList, MAX_GENTITIES );
+		listedEntities = gameLocal.EntitiesWithinRadius( GetPhysics()->GetOrigin(), radius, entityList );
 	}
 
 	for( i = 0; i < listedEntities; i++ ) {
@@ -1967,7 +1968,6 @@ void CTarget_SetFrobable::Spawn( void )
 
 void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 {
-	idEntity *Ents[MAX_GENTITIES];
 	bool bOnList(false);
 
 	// Contents mask:
@@ -1975,7 +1975,8 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 
 	// bounding box test to get entities inside
 	GetPhysics()->EnableClip();
-	int numEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents, MAX_GENTITIES);
+	idClip_EntityList Ents;
+	int numEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents);
 	GetPhysics()->DisableClip();
 
 	// toggle frobability

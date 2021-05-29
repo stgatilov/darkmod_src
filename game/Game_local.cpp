@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -249,8 +249,6 @@ idGameLocal::Clear
 */
 void idGameLocal::Clear( void )
 {
-	int i;
-
 	m_HighestSRId = 0;
 	m_StimTimer.Clear();
 	m_Timer.Clear();
@@ -277,8 +275,6 @@ void idGameLocal::Clear( void )
 	m_TriggerFinalSave = false;
 
 	m_StartPosition = ""; // grayman #2933
-
-	m_time2Start = false; // grayman #3763
 
 	m_GUICommandStack.Clear();
 	m_GUICommandArgs = 0;
@@ -325,11 +321,9 @@ void idGameLocal::Clear( void )
 	
 	serverInfo.Clear();
 	numClients = 0;
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		userInfo[i].Clear();
-		persistentPlayerInfo[i].Clear();
-	}
-	memset( usercmds, 0, sizeof( usercmds ) );
+		userInfo.Clear();
+		persistentPlayerInfo.Clear();
+	memset( &usercmds, 0, sizeof( usercmds ) );
 	memset( entities, 0, sizeof( entities ) );
 	memset( spawnIds, -1, sizeof( spawnIds ) );
 	firstFreeIndex = 0;
@@ -357,7 +351,7 @@ void idGameLocal::Clear( void )
 	locationEntities = NULL;
 	smokeParticles = NULL;
 	editEntities = NULL;
-	entityHash.Clear( 1024, MAX_GENTITIES );
+	entityHash.ClearFree( 1024, MAX_GENTITIES );
 	inCinematic = false;
 	cinematicSkipTime = 0;
 	cinematicStopTime = 0;
@@ -393,9 +387,9 @@ void idGameLocal::Clear( void )
 	lastGUIEnt = NULL;
 	lastGUI = 0;
 
-	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
+	/*memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
 	memset( clientPVS, 0, sizeof( clientPVS ) );
-	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
+	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );*/
 
 	memset( lagometer, 0, sizeof( lagometer ) );
 
@@ -614,6 +608,7 @@ void idGameLocal::AddInterMissionTrigger(int missionNum, const idStr& activatorN
 	trigger.targetName = targetName;
 }
 
+#if 0
 void idGameLocal::CheckTDMVersion()
 {
 	GuiMessage msg;
@@ -685,6 +680,7 @@ void idGameLocal::CheckTDMVersion()
 
 	AddMainMenuMessage(msg);
 }
+#endif
 
 void idGameLocal::AddMainMenuMessage(const GuiMessage& message)
 {
@@ -729,10 +725,10 @@ void idGameLocal::Shutdown( void ) {
 
 	// Clear http connection
 	m_HttpConnection.reset();
-	m_GuiMessages.Clear();
+	m_GuiMessages.ClearFree();
 
 	aasList.DeleteContents( true );
-	aasNames.Clear();
+	aasNames.ClearFree();
 
 	idAI::FreeObstacleAvoidanceNodes();
 
@@ -888,11 +884,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteDict( &serverInfo );
 
 	savegame.WriteInt( numClients );
-	for( i = 0; i < numClients; i++ ) {
-		savegame.WriteDict( &userInfo[ i ] );
-		savegame.WriteUsercmd( usercmds[ i ] );
-		savegame.WriteDict( &persistentPlayerInfo[ i ] );
-	}
+		savegame.WriteDict( &userInfo );
+		savegame.WriteUsercmd( usercmds );
+		savegame.WriteDict( &persistentPlayerInfo );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
 		savegame.WriteObject( entities[ i ] );
@@ -1133,13 +1127,13 @@ idGameLocal::GetPersistentPlayerInfo
 const idDict &idGameLocal::GetPersistentPlayerInfo( int clientNum ) {
 	idEntity	*ent;
 
-	persistentPlayerInfo[ clientNum ].Clear();
+	persistentPlayerInfo.Clear();
 	ent = entities[ clientNum ];
 	if ( ent && ent->IsType( idPlayer::Type ) ) {
 		static_cast<idPlayer *>(ent)->SavePersistantInfo();
 	}
 
-	return persistentPlayerInfo[ clientNum ];
+	return persistentPlayerInfo;
 }
 
 /*
@@ -1148,17 +1142,7 @@ idGameLocal::SetPersistentPlayerInfo
 ============
 */
 void idGameLocal::SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) {
-	persistentPlayerInfo[ clientNum ] = playerInfo;
-}
-
-/*
-===========
-idGameLocal::SetTime2Start
-============
-*/
-void idGameLocal::SetTime2Start() // grayman #3763
-{
-	m_time2Start = true;
+	persistentPlayerInfo = playerInfo;
 }
 
 /*
@@ -1363,15 +1347,15 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	int i;
 	bool modifiedInfo = false;
 
-	if ( clientNum >= 0 && clientNum < MAX_CLIENTS ) {
-		idGameLocal::userInfo[ clientNum ] = userInfo;
+	if ( clientNum >= 0 && clientNum < 1 ) {
+		idGameLocal::userInfo = userInfo;
 
 		// server sanity
 		if ( canModify  ) {
 
 			// don't let numeric nicknames, it can be exploited to go around kick and ban commands from the server
-			if ( idStr::IsNumeric( this->userInfo[ clientNum ].GetString( "ui_name" ) ) ) {
-				idGameLocal::userInfo[ clientNum ].Set( "ui_name", va( "%s_", idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ) ) );
+			if ( idStr::IsNumeric( this->userInfo.GetString( "ui_name" ) ) ) {
+				idGameLocal::userInfo.Set( "ui_name", va( "%s_", idGameLocal::userInfo.GetString( "ui_name" ) ) );
 				modifiedInfo = true;
 			}
 		
@@ -1381,8 +1365,8 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 					continue;
 				}
 				if ( entities[ i ] && entities[ i ]->IsType( idPlayer::Type ) ) {
-					if ( !idStr::Icmp( idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ), idGameLocal::userInfo[ i ].GetString( "ui_name" ) ) ) {
-						idGameLocal::userInfo[ clientNum ].Set( "ui_name", va( "%s_", idGameLocal::userInfo[ clientNum ].GetString( "ui_name" ) ) );
+					if ( !idStr::Icmp( idGameLocal::userInfo.GetString( "ui_name" ), idGameLocal::userInfo.GetString( "ui_name" ) ) ) {
+						idGameLocal::userInfo.Set( "ui_name", va( "%s_", idGameLocal::userInfo.GetString( "ui_name" ) ) );
 						modifiedInfo = true;
 						i = -1;	// rescan
 						continue;
@@ -1399,7 +1383,7 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 	if ( modifiedInfo ) {
 		assert( canModify );
 
-		newInfo = idGameLocal::userInfo[ clientNum ];
+		newInfo = idGameLocal::userInfo;
 		return &newInfo;
 	}
 	return NULL;
@@ -1412,7 +1396,7 @@ idGameLocal::GetUserInfo
 */
 const idDict* idGameLocal::GetUserInfo( int clientNum ) {
 	if ( entities[ clientNum ] && entities[ clientNum ]->IsType( idPlayer::Type ) ) {
-		return &userInfo[ clientNum ];
+		return &userInfo;
 	}
 	return NULL;
 }
@@ -1493,7 +1477,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	// initialize all entities for this game
 	memset( entities, 0, sizeof( entities ) );
-	memset( usercmds, 0, sizeof( usercmds ) );
+	memset( &usercmds, 0, sizeof( usercmds ) );
 	memset( spawnIds, -1, sizeof( spawnIds ) );
 	spawnCount = INITIAL_SPAWN_COUNT;
 	
@@ -1513,8 +1497,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// always leave room for the max number of clients,
 	// even if they aren't all used, so numbers inside that
 	// range are NEVER anything but clients
-	num_entities	= MAX_CLIENTS;
-	firstFreeIndex	= MAX_CLIENTS;
+	num_entities	= 1;
+	firstFreeIndex	= 1;
 
 	// reset the random number generator.
 	// Tels: use a random seed for single-player, too, otherwise map content can't be random
@@ -1711,6 +1695,7 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 				kv->GetKey().IcmpPrefix("name_attach") == 0 || 
 				kv->GetKey().IcmpPrefix("set ") == 0 ||
 				kv->GetKey().IcmpPrefix("add_link") == 0 ||
+				kv->GetKey().IcmpPrefix("s_") == 0 ||		//should we try to update sound properties?...
 			0) {
 				respawn = true;
 			}
@@ -1754,17 +1739,15 @@ idGameLocal::LocalMapRestart
 ===================
 */
 void idGameLocal::LocalMapRestart( ) {
-	int i, latchSpawnCount;
+	int latchSpawnCount;
 
 	Printf( "----------- Game Map Restart ------------\n" );
 
 	gamestate = GAMESTATE_SHUTDOWN;
 
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		if ( entities[ i ] && entities[ i ]->IsType( idPlayer::Type ) ) {
-			static_cast< idPlayer * >( entities[ i ] )->PrepareForRestart();
+		if ( entities[ 0 ] && entities[ 0 ]->IsType( idPlayer::Type ) ) {
+			static_cast< idPlayer * >( entities[ 0 ] )->PrepareForRestart();
 		}
-	}
 
 	MapClear( false );
 
@@ -1799,11 +1782,9 @@ void idGameLocal::LocalMapRestart( ) {
 	spawnCount = latchSpawnCount;
 
 	// setup the client entities again
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		if ( entities[ i ] && entities[ i ]->IsType( idPlayer::Type ) ) {
-			static_cast< idPlayer * >( entities[ i ] )->Restart();
+		if ( entities[ 0 ] && entities[ 0 ]->IsType( idPlayer::Type ) ) {
+			static_cast< idPlayer * >( entities[ 0 ] )->Restart();
 		}
-	}
 
 	gamestate = GAMESTATE_ACTIVE;
 	m_MissionResult = MISSION_INPROGRESS;
@@ -1859,7 +1840,7 @@ void idGameLocal::MapPopulate( void ) {
 
 	// spawnCount - 1 is the number of entities spawned into the map, their indexes started at MAX_CLIENTS (included)
 	// mapSpawnCount is used as the max index of map entities, it's the first index of non-map entities
-	mapSpawnCount = MAX_CLIENTS + spawnCount - 1;
+	mapSpawnCount = 1 + spawnCount - 1;
 
 	// read in the soundprop data for various locations
 	m_sndPropLoader->FillLocationData();
@@ -2080,11 +2061,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	SetServerInfo( si );
 
 	savegame.ReadInt( numClients );
-	for( i = 0; i < numClients; i++ ) {
-		savegame.ReadDict( &userInfo[ i ] );
-		savegame.ReadUsercmd( usercmds[ i ] );
-		savegame.ReadDict( &persistentPlayerInfo[ i ] );
-	}
+		savegame.ReadDict( &userInfo );
+		savegame.ReadUsercmd( usercmds );
+		savegame.ReadDict( &persistentPlayerInfo );
 
 	for( i = 0; i < MAX_GENTITIES; i++ ) {
 		savegame.ReadObject( reinterpret_cast<idClass *&>( entities[ i ] ) );
@@ -2391,7 +2370,7 @@ idGameLocal::MapClear
 void idGameLocal::MapClear( bool clearClients ) {
 	int i;
 
-	for( i = ( clearClients ? 0 : MAX_CLIENTS ); i < MAX_GENTITIES; i++ ) {
+	for( i = ( clearClients ? 0 : 1 ); i < MAX_GENTITIES; i++ ) {
 		delete entities[ i ];
 		// ~idEntity is in charge of setting the pointer to NULL
 		// it will also clear pending events for this entity
@@ -2399,11 +2378,11 @@ void idGameLocal::MapClear( bool clearClients ) {
 		spawnIds[ i ] = -1;
 	}
 
-	entityHash.Clear( 1024, MAX_GENTITIES );
+	entityHash.ClearFree( 1024, MAX_GENTITIES );
 
 	if ( !clearClients ) {
 		// add back the hashes of the clients
-		for ( i = 0; i < MAX_CLIENTS; i++ ) {
+		for ( i = 0; i < 1; i++ ) {
 			if ( !entities[ i ] ) {
 				continue;
 			}
@@ -2890,7 +2869,7 @@ idPlayer *idGameLocal::GetClientByName( const char *name ) const {
 	for ( i = 0 ; i < numClients ; i++ ) {
 		ent = entities[ i ];
 		if ( ent && ent->IsType( idPlayer::Type ) ) {
-			if ( idStr::IcmpNoColor( name, userInfo[ i ].GetString( "ui_name" ) ) == 0 ) {
+			if ( idStr::IcmpNoColor( name, userInfo.GetString( "ui_name" ) ) == 0 ) {
 				return static_cast<idPlayer *>( ent );
 			}
 		}
@@ -3199,6 +3178,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 	const renderView_t *view;
 	int curframe = framenum;
 
+	memset(&ret, 0, sizeof(ret));
 	ret.sessionCommand[0] = 0; // grayman #3139 - must be cleared here, to handle the "player waiting" time
 	g_Global.m_Frame = curframe;
 	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
@@ -3207,7 +3187,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 	if (!player) {
 		//stgatilov #4670: if player is absent, the game is most likely being shutdown
 		//so we should not compute anything in Game to avoid crashes
-		memset(&ret, 0, sizeof(ret));
 		return ret;
 	}
 
@@ -3223,9 +3202,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 		}
 
 		// set the user commands for this frame
-		memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[0]));
+		memcpy(&usercmds, clientCmds, sizeof(usercmds));
 
-		if ( m_time2Start && player->WaitUntilReady() ) // grayman #3763
+		if ( player->WaitUntilReady() ) // grayman #3763
 		{
 			// Player got ready this frame, start timer
 			m_GamePlayTimer.Start();
@@ -3241,7 +3220,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			gameRenderWorld->DebugClearLines( time + 1 );
 
 			// set the user commands for this frame
-			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+			memcpy( &usercmds, clientCmds, sizeof( usercmds ) );
 
 			if ( player ) {
 				player->Think();
@@ -3281,7 +3260,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			gameRenderWorld->DebugClearPolygons( time );
 
 			// set the user commands for this frame
-			memcpy( usercmds, clientCmds, numClients * sizeof( usercmds[ 0 ] ) );
+			memcpy( &usercmds, clientCmds, sizeof( usercmds ) );
 
 			// free old smoke particles
 			smokeParticles->FreeSmokes();
@@ -4036,7 +4015,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("OnGameError");
 
 			// Clear the string again
-			m_guiError.Empty();
+			m_guiError.Clear();
 		}
 
 		// Check messages
@@ -4685,18 +4664,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->SetStateString("LSMissionTitleText",common->Translate(missionTitle.c_str())); // grayman #3733
 		}
 	}
-	else if (cmd == "check_tdm_version")
+/*	else if (cmd == "check_tdm_version")
 	{
 		CheckTDMVersion();
-	}
+	}*/
 	else if (cmd == "close_msg_box")
 	{
 		gui->SetStateBool("MsgBoxVisible", false);
-	}
-	else if (cmd == "updatecookedmathdata")		// Adding a way to update cooked data from menu - J.C.Denton
-	{
-		// Add the command to buffer, but no need to issue it immediately. 
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData\n" );
 	}
 	else if (cmd == "lod_bias_changed")		// Adding a way to update cooked data from menu - J.C.Denton
 	{
@@ -4926,9 +4900,9 @@ void idGameLocal::ShowTargets( void ) {
 		gameRenderWorld->DebugBounds( ( ent->IsHidden() ? colorLtGrey : colorOrange ) * frac, ent->GetPhysics()->GetAbsBounds() );
 		if ( viewTextBounds.IntersectsBounds( ent->GetPhysics()->GetAbsBounds() ) ) {
 			idVec3 center = ent->GetPhysics()->GetAbsBounds().GetCenter();
-			gameRenderWorld->DrawText( ent->name.c_str(), center - up, 0.1f, colorWhite * frac, axis, 1 );
-			gameRenderWorld->DrawText( ent->GetEntityDefName(), center, 0.1f, colorWhite * frac, axis, 1 );
-			gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), center + up, 0.1f, colorWhite * frac, axis, 1 );
+			gameRenderWorld->DebugText( ent->name.c_str(), center - up, 0.1f, colorWhite * frac, axis, 1 );
+			gameRenderWorld->DebugText( ent->GetEntityDefName(), center, 0.1f, colorWhite * frac, axis, 1 );
+			gameRenderWorld->DebugText( va( "#%d", ent->entityNumber ), center + up, 0.1f, colorWhite * frac, axis, 1 );
 		}
 
 		for( i = 0; i < ent->targets.Num(); i++ ) {
@@ -4992,9 +4966,9 @@ void idGameLocal::RunDebugInfo( void ) {
 				}
 			}
 			if ( viewTextBounds.IntersectsBounds( entBounds ) ) {
-				gameRenderWorld->DrawText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
-				gameRenderWorld->DrawText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
-				gameRenderWorld->DrawText( 
+				gameRenderWorld->DebugText( ent->name.c_str(), entBounds.GetCenter(), 0.1f, colorWhite, axis, 1 );
+				gameRenderWorld->DebugText( va( "#%d", ent->entityNumber ), entBounds.GetCenter() + up, 0.1f, colorWhite, axis, 1 );
+				gameRenderWorld->DebugText( 
 					va( "%d / %d", ent->GetPhysics()->GetContents(), ent->GetPhysics()->GetClipMask() ), 
 					entBounds.GetCenter() - up, 0.1f, 
 					colorWhite, 
@@ -5043,7 +5017,7 @@ void idGameLocal::RunDebugInfo( void ) {
 				continue;
 			}
 			
-			gameRenderWorld->DrawText(va("Health: %d", ent->health), ent->GetPhysics()->GetOrigin(), 0.2f, colorGreen, axis);
+			gameRenderWorld->DebugText(va("Health: %d", ent->health), ent->GetPhysics()->GetOrigin(), 0.2f, colorGreen, axis);
 		}
 	}
 
@@ -5080,7 +5054,7 @@ void idGameLocal::RunDebugInfo( void ) {
 		idVec3 end = eye + dir * CM_MAX_TRACE_DIST * 0.9f;
 		if (clip.Translation(results, eye, end, 0, idMat3(), contentsMask, player)) {
 			int idx = results.c.entityNum;
-			if (idx >= 0 && idx < MAX_GENTITIES) {
+			if (idx >= 0) {
 				idEntity *ent = entities[idx];
 				if (ent) {
 					auto mdl = ent->GetPhysics()->GetClipModel();
@@ -5340,7 +5314,7 @@ idGameLocal::RegisterEntity
 void idGameLocal::RegisterEntity( idEntity *ent ) {
 	int spawn_entnum;
 
-	if ( spawnCount >= ( 1 << ( 32 - GENTITYNUM_BITS ) ) ) {
+	if ( spawnCount >= ( 1 << 30 ) ) {
 		Error( "idGameLocal::RegisterEntity: spawn count overflow" );
 	}
 
@@ -5383,7 +5357,7 @@ void idGameLocal::UnregisterEntity( idEntity *ent ) {
 		ent->spawnNode.Remove();
 		entities[ ent->entityNumber ] = NULL;
 		spawnIds[ ent->entityNumber ] = -1;
-		if ( ent->entityNumber >= MAX_CLIENTS && ent->entityNumber < firstFreeIndex ) {
+		if ( ent->entityNumber >= 1 && ent->entityNumber < firstFreeIndex ) {
 			firstFreeIndex = ent->entityNumber;
 		}
 		ent->entityNumber = ENTITYNUM_NONE;
@@ -5623,6 +5597,8 @@ void idGameLocal::SpawnMapEntities( void )
 		return;
 	}
 
+	int start = Sys_Milliseconds();
+
 	// Add the lightgem to the map before anything else happened
 	// so it will be included as if it were a regular map entity.
 	m_lightGem.SpawnLightGemEntity( mapFile );
@@ -5680,7 +5656,10 @@ void idGameLocal::SpawnMapEntities( void )
 			declManager->BeginEntityLoad(mapEnt);
 			// precache any media specified in the map entity
 			CacheDictionaryMedia(&args);
-			SpawnEntityDef(args);
+			idEntity *ent;
+			SpawnEntityDef(args, &ent);
+			if (ent)
+				ent->fromMapFile = true;
 			declManager->EndEntityLoad(mapEnt);
 			num++;
 		}
@@ -5698,7 +5677,7 @@ void idGameLocal::SpawnMapEntities( void )
 
 	m_lightGem.InitializeLightGemEntity();
 
-	Printf( "... %i entities spawned, %i inhibited\n\n", num, inhibit );
+	Printf( "... %i entities spawned, %i inhibited in %5.1f seconds\n\n", num, inhibit, (Sys_Milliseconds() - start) * 0.001f );
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 
@@ -6010,19 +5989,19 @@ idEntity *idGameLocal::FindTraceEntity( idVec3 start, idVec3 end, const idTypeIn
 idGameLocal::EntitiesWithinRadius
 ================
 */
-int idGameLocal::EntitiesWithinRadius( const idVec3 org, float radius, idEntity **entityList, int maxCount ) const {
+int idGameLocal::EntitiesWithinRadius( const idVec3 org, float radius, idClip_EntityList &entityList ) const {
 	idEntity *ent;
 	idBounds bo( org );
-	int entCount = 0;
+	entityList.SetNum( 0 );
 
 	bo.ExpandSelf( radius );
 	for( ent = spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() ) {
 		if ( ent->GetPhysics()->GetAbsBounds().IntersectsBounds( bo ) ) {
-			entityList[entCount++] = ent;
+			entityList.AddGrow(ent);
 		}
 	}
 
-	return entCount;
+	return entityList.Num();
 }
 
 /*
@@ -6039,7 +6018,6 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 	int			num;
 	idEntity *	hit;
 	idClipModel *cm;
-	idClipModel *clipModels[ MAX_GENTITIES ];
 	idPhysics	*phys;
 
 	phys = ent->GetPhysics();
@@ -6047,7 +6025,8 @@ void idGameLocal::KillBox( idEntity *ent, bool catch_teleport ) {
 		return;
 	}
 
-	num = clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	num = clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels );
 	for ( i = 0; i < num; i++ ) {
 		cm = clipModels[ i ];
 
@@ -6111,7 +6090,6 @@ idGameLocal::RadiusDamage
 void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower ) {
 	float		dist, damageScale, attackerDamageScale, attackerPushScale;
 	idEntity *	ent;
-	idEntity *	entityList[ MAX_GENTITIES ];
 	int			numListedEntities;
 	idBounds	bounds;
 	idVec3 		v, damagePoint, dir;
@@ -6135,7 +6113,8 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 
 	bounds = idBounds( origin ).Expand( radius );
 	// get all entities touching the bounds
-	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList );
 
 	if ( inflictor && inflictor->IsType( idAFAttachment::Type ) ) {
 		inflictor = static_cast<idAFAttachment*>(inflictor)->GetBody();
@@ -6213,7 +6192,6 @@ idGameLocal::RadiusPush
 void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake ) {
 	int i, numListedClipModels;
 	idClipModel *clipModel;
-	idClipModel *clipModelList[ MAX_GENTITIES ];
 	idVec3 dir;
 	idBounds bounds;
 	modelTrace_t result;
@@ -6225,7 +6203,8 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 	bounds = idBounds( origin ).Expand( radius );
 
 	// get all clip models touching the bounds
-	numListedClipModels = clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+	idClip_ClipModelList clipModelList;
+	numListedClipModels = clip.ClipModelsTouchingBounds( bounds, -1, clipModelList );
 
 	// apply impact to all the clip models through their associated physics objects
 	for ( i = 0; i < numListedClipModels; i++ ) {
@@ -6278,13 +6257,13 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius, const bool checkSpawnarg )
 {
 	idEntity *ent;
-	idEntity *entityList[MAX_GENTITIES];
 	int		  numListedEntities;
 
 	idBounds bounds = idBounds(origin).Expand(radius);
 
 	// get all entities touching the bounds
-	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList );
 
 	// douse all flames that have a LOS from them to the origin
 	for ( int i = 0 ; i < numListedEntities ; i++ )
@@ -6739,10 +6718,9 @@ upon map restart, initial spawns are used (randomized ordered list of spawns fla
 ============
 */
 idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
-	int				i, j, which;
+	int				i, which;
 	spawnSpot_t		spot;
 	idVec3			pos;
-	float			dist;
 	bool			alone;
 
 	{
@@ -6778,12 +6756,6 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	} else {
 		// check if we are alone in map
 		alone = true;
-		for ( j = 0; j < MAX_CLIENTS; j++ ) {
-			if ( entities[ j ] && entities[ j ] != player ) {
-				alone = false;
-				break;
-			}
-		}
 		if ( alone ) {
 			// don't do distance-based
 			return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
@@ -6793,18 +6765,6 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 		for( i = 0; i < spawnSpots.Num(); i++ ) {
 			pos = spawnSpots[ i ].ent->GetPhysics()->GetOrigin();
 			spawnSpots[ i ].dist = 0x7fffffff;
-			for( j = 0; j < MAX_CLIENTS; j++ ) {
-				if ( !entities[ j ] || !entities[ j ]->IsType( idPlayer::Type )
-					|| entities[ j ] == player
-					|| static_cast< idPlayer * >( entities[ j ] )->spectating ) {
-					continue;
-				}
-				
-				dist = ( pos - entities[ j ]->GetPhysics()->GetOrigin() ).LengthSqr();
-				if ( dist < spawnSpots[ i ].dist ) {
-					spawnSpots[ i ].dist = int(dist);
-				}
-			}
 		}
 
 		// sort the list
@@ -7402,8 +7362,9 @@ int idGameLocal::TraceGasPath( idVec3 from, idVec3 to, idEntity* ignore, idVec3&
 }
 
 
-int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
+int idGameLocal::DoResponseAction(const CStimPtr& stim, const idClip_EntityList &srEntities, idEntity* originator, const idVec3& stimOrigin)
 {
+	int numEntities = srEntities.Num();
 	int numResponses = 0;
 	for ( int i = 0 ; i < numEntities ; i++ )
 	{
@@ -7661,6 +7622,8 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 	int n;
 	idBounds bounds;
 
+	idClip_EntityList srEntities;
+
 	// Now check the rest of the stims.
 	for (int i = 0; i < m_StimEntity.Num(); i++)
 	{
@@ -7772,6 +7735,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				{
 					n = stim->m_CollisionEnts.Num();
 
+					srEntities.SetNum(n);
 					for (int n2 = 0; n2 < n; n2++)
 					{
 						srEntities[n2] = stim->m_CollisionEnts[n2];
@@ -7784,7 +7748,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				else 
 				{
 					// Radius based stims
-					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities, MAX_GENTITIES);
+					n = clip.EntitiesTouchingBounds(bounds, CONTENTS_RESPONSE, srEntities);
 					//DM_LOG(LC_STIM_RESPONSE, LT_INFO)LOGSTRING("Entities touching bounds: %d\r", n);
 				}
 				
@@ -7800,7 +7764,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 					}
 
 					// Do responses for entities within the radius of the stim
-					numResponses = DoResponseAction(stim, n, entity, origin);
+					numResponses = DoResponseAction(stim, srEntities, entity, origin);
 				}
 
 				// The stim has fired, let it do any post-firing activity it may have

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -2131,16 +2131,12 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 		}
 	}
 
-	// check if this is a prototype or declaration
-	if ( !CheckToken( "{" ) ) {
-		// it's just a prototype, so get the ; and move on
-		ExpectToken( ";" );
-		return;
-	}
-
 	// calculate stack space used by parms
+	// stgatilov #4713: we must do it as early as we see prototype
+	// because parmTotal must be correct when method calls are compiled
 	numParms = type->NumParameters();
 	func->parmSize.SetNum( numParms );
+	func->parmTotal = 0;
 	for( i = 0; i < numParms; i++ ) {
 		parmType = type->GetParmType( i );
 		if ( parmType->Inherits( &type_object ) ) {
@@ -2149,6 +2145,13 @@ void idCompiler::ParseFunctionDef( idTypeDef *returnType, const char *name ) {
 			func->parmSize[ i ] = parmType->Size();
 		}
 		func->parmTotal += func->parmSize[ i ];
+	}
+
+	// check if this is a prototype or declaration
+	if ( !CheckToken( "{" ) ) {
+		// it's just a prototype, so get the ; and move on
+		ExpectToken( ";" );
+		return;
 	}
 
 	// define the parms

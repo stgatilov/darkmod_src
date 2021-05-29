@@ -688,6 +688,7 @@ typedef void* (* GLADloadproc)(const char *name);
 
 GLAPI struct gladGLversionStruct GLVersion;
 
+extern char const* const* GLAD_GL_blacklisted_extensions;
 GLAPI int gladLoadGL(void);
 
 GLAPI int gladLoadGLLoader(GLADloadproc);
@@ -1307,7 +1308,7 @@ typedef void (APIENTRY *GLVULKANPROCNV)(void);
 #define GL_ALPHA8 0x803C
 #define GL_ALPHA12 0x803D
 #define GL_ALPHA16 0x803E
-/*#define GL_LUMINANCE4 0x803F
+#define GL_LUMINANCE4 0x803F
 #define GL_LUMINANCE8 0x8040
 #define GL_LUMINANCE12 0x8041
 #define GL_LUMINANCE16 0x8042
@@ -1316,12 +1317,12 @@ typedef void (APIENTRY *GLVULKANPROCNV)(void);
 #define GL_LUMINANCE8_ALPHA8 0x8045
 #define GL_LUMINANCE12_ALPHA4 0x8046
 #define GL_LUMINANCE12_ALPHA12 0x8047
-#define GL_LUMINANCE16_ALPHA16 0x8048*/
-/*#define GL_INTENSITY 0x8049
+#define GL_LUMINANCE16_ALPHA16 0x8048
+#define GL_INTENSITY 0x8049
 #define GL_INTENSITY4 0x804A
 #define GL_INTENSITY8 0x804B
 #define GL_INTENSITY12 0x804C
-#define GL_INTENSITY16 0x804D*/
+#define GL_INTENSITY16 0x804D
 #define GL_V2F 0x2A20
 #define GL_V3F 0x2A21
 #define GL_C4UB_V2F 0x2A22

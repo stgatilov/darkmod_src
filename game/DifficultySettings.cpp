@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -101,7 +101,7 @@ void Setting::ParseFromDict(const idDict& dict, int level, int index)
 		if (argument == APPTYPE_IGNORE)
 		{
 			appType = EIgnore;
-			argument.Empty(); // clear the argument
+			argument.Clear(); // clear the argument
 		}
 		else if (argument.Find(' ') != -1)
 		{
@@ -514,7 +514,7 @@ void CVARSetting::ParseFromDict(const idDict& dict, int level, int index)
 
 void CVARDifficultySettings::Clear()
 {
-	_settings.Clear();
+	_settings.ClearFree();
 	_level = -1;
 }
 

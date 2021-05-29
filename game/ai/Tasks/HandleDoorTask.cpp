@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -2773,17 +2773,17 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 	}
 
 	gameRenderWorld->DebugArrow(colorCyan, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
-	gameRenderWorld->DrawText("front", 
+	gameRenderWorld->DebugText("front", 
 		(_frontPos + idVec3(0, 0, 30)), 
 		0.2f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 	gameRenderWorld->DebugArrow(colorYellow, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
-	gameRenderWorld->DrawText("back", 
+	gameRenderWorld->DebugText("back", 
 		(_backPos + idVec3(0, 0, 30)), 
 		0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 	gameRenderWorld->DebugArrow(colorPink, _midPos, _midPos + idVec3(0, 0, 20), 2, 1000);
-	gameRenderWorld->DrawText("mid", 
+	gameRenderWorld->DebugText("mid", 
 		(_midPos + idVec3(0, 0, 30)), 
 		0.2f, colorPink, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
@@ -2897,7 +2897,7 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 	}
 	str += position;
 
-	gameRenderWorld->DrawText(str.c_str(), 
+	gameRenderWorld->DebugText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
@@ -2909,13 +2909,13 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 
 		if (owner == masterUser)
 		{
-			gameRenderWorld->DrawText("Master", 
+			gameRenderWorld->DebugText("Master", 
 				(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
 				0.25f, colorOrange, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 		}
 		else
 		{
-			gameRenderWorld->DrawText("Slave", 
+			gameRenderWorld->DebugText("Slave", 
 				(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
 				0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 

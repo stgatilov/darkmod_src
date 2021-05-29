@@ -1,15 +1,15 @@
 /*****************************************************************************
-					The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -22,7 +22,6 @@
 #include "tr_local.h"
 #include "GLSLProgramManager.h"
 #include "GLSLProgram.h"
-#include "Profiling.h"
 #include "GLSLUniforms.h"
 #include "glsl.h"
 #include "FrameBufferManager.h"
@@ -84,7 +83,7 @@ namespace {
 	}
 
 	void LoadSSAOBlurShader(GLSLProgram *blurShader) {
-		blurShader->InitFromFiles( "ssao.vert.glsl", "ssao_blur.frag.glsl" );
+		blurShader->InitFromFiles( "fullscreen_tri.vert.glsl", "ssao_blur.frag.glsl" );
 		BlurUniforms *uniforms = blurShader->GetUniformGroup<BlurUniforms>();
 		uniforms->source.Set(0);
 	}
@@ -97,6 +96,7 @@ namespace {
 
 	void CreateViewspaceDepthFBO(FrameBuffer *fbo, idImage *image, int mipLevel) {
 		// create texture, if necessary
+		image->type = TT_2D;
 		if (image->texnum == idImage::TEXTURE_NOT_LOADED || image->uploadWidth != frameBuffers->renderWidth || image->uploadHeight != frameBuffers->renderHeight ) {
 			image->PurgeImage();
 			qglGenTextures(1, &image->texnum);
@@ -134,9 +134,9 @@ void AmbientOcclusionStage::Init() {
 
 	ssaoShader = programManager->LoadFromGenerator("ssao", LoadSSAOShader);
 	ssaoBlurShader = programManager->LoadFromGenerator("ssao_blur", LoadSSAOBlurShader);
-	depthShader = programManager->LoadFromFiles("ssao_depth", "ssao.vert.glsl", "ssao_depth.frag.glsl");
-	depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "ssao.vert.glsl", "ssao_depthmip.frag.glsl");
-	showSSAOShader = programManager->LoadFromFiles("ssao_show", "ssao.vert.glsl", "ssao_show.frag.glsl");
+	depthShader = programManager->LoadFromFiles("ssao_depth", "fullscreen_tri.vert.glsl", "ssao_depth.frag.glsl");
+	depthMipShader = programManager->LoadFromFiles("ssao_depth_mip", "fullscreen_tri.vert.glsl", "ssao_depthmip.frag.glsl");
+	showSSAOShader = programManager->LoadFromFiles("ssao_show", "fullscreen_tri.vert.glsl", "ssao_show.frag.glsl");
 }
 
 void AmbientOcclusionStage::Shutdown() {
@@ -172,12 +172,13 @@ extern GLuint fboPrimary;
 extern bool primaryOn;
 
 void AmbientOcclusionStage::ComputeSSAOFromDepth() {
-	GL_PROFILE("AmbientOcclusionStage");
+	TRACE_GL_SCOPE("AmbientOcclusionStage");
 
 	if (ssaoFBO == nullptr) {
 		Init();
 	}
 
+	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK );
 	PrepareDepthPass();
 	SSAOPass();
 	BlurPass();
@@ -186,7 +187,7 @@ void AmbientOcclusionStage::ComputeSSAOFromDepth() {
 }
 
 void AmbientOcclusionStage::SSAOPass() {
-	GL_PROFILE("SSAOPass");
+	TRACE_GL_SCOPE("SSAOPass");
 
 	ssaoFBO->Bind();
 	qglClearColor(1, 1, 1, 1);
@@ -196,11 +197,11 @@ void AmbientOcclusionStage::SSAOPass() {
 
 	ssaoShader->Activate();
 	SetQualityLevelUniforms();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void AmbientOcclusionStage::BlurPass() {
-	GL_PROFILE("BlurPass");
+	TRACE_GL_SCOPE("BlurPass");
 
 	ssaoBlurShader->Activate();
 	BlurUniforms *uniforms = ssaoBlurShader->GetUniformGroup<BlurUniforms>();
@@ -214,14 +215,14 @@ void AmbientOcclusionStage::BlurPass() {
 	qglClear(GL_COLOR_BUFFER_BIT);
 	GL_SelectTexture(0);
 	ssaoResult->Bind();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 
 	// second vertical pass
 	uniforms->axis.Set(0, 1);
 	ssaoFBO->Bind();
 	qglClear(GL_COLOR_BUFFER_BIT);
 	ssaoBlurred->Bind();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void AmbientOcclusionStage::BindSSAOTexture(int index) {
@@ -239,7 +240,7 @@ bool AmbientOcclusionStage::ShouldEnableForCurrentView() const {
 }
 
 void AmbientOcclusionStage::PrepareDepthPass() {
-	GL_PROFILE("PrepareDepthPass");
+	TRACE_GL_SCOPE("PrepareDepthPass");
 
 	depthMipFBOs[0]->Bind();
 	GL_ScissorRelative( 0, 0, 1, 1 );
@@ -248,10 +249,10 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 	globalImages->currentDepthImage->Bind();
 
 	depthShader->Activate();
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 
 	if (r_ssao.GetInteger() > 1) {
-		GL_PROFILE("DepthMips");
+		TRACE_GL_SCOPE("DepthMips");
 		// generate mip levels - used by the AO shader for distant samples to ensure we hit the texture cache as much as possible
 		depthMipShader->Activate();
 		DepthMipUniforms *uniforms = depthMipShader->GetUniformGroup<DepthMipUniforms>();
@@ -261,7 +262,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 			depthMipFBOs[i]->Bind();
 			qglClear(GL_COLOR_BUFFER_BIT);
 			uniforms->previousMipLevel.Set(i - 1);
-			RB_DrawFullScreenQuad();
+			RB_DrawFullScreenTri();
 		}
 	}
 }
@@ -269,7 +270,7 @@ void AmbientOcclusionStage::PrepareDepthPass() {
 void AmbientOcclusionStage::ShowSSAO() {
 	showSSAOShader->Activate();
 	BindSSAOTexture(0);
-	RB_DrawFullScreenQuad();
+	RB_DrawFullScreenTri();
 }
 
 void AmbientOcclusionStage::SetQualityLevelUniforms() {

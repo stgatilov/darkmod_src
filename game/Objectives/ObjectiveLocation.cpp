@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -125,11 +125,12 @@ void CObjectiveLocation::Think()
 	{
 		// angua: This is adapted from trigger_touch to allow more precise detection
 		idBounds bounds;
-		idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+		idClipModel *cm;
 
 		bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
 
-		int numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
+		idClip_ClipModelList clipModelList;
+		int numClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList );
 		for (int k = 0; k < numClipModels; k++ ) 
 		{
 			cm = clipModelList[ k ];
@@ -162,10 +163,8 @@ void CObjectiveLocation::Think()
 	else
 	{
 		// bounding box test
-		int NumEnts(0);
-		idEntity *Ents[MAX_GENTITIES];
-
-		NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents, MAX_GENTITIES);
+		idClip_EntityList Ents;
+		int NumEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), -1, Ents);
 		for( int i = 0; i < NumEnts; i++ )
 		{
 			if( Ents[i] && Ents[i]->m_bIsObjective )

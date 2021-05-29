@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #include "precompiled.h"
 #pragma hdrstop
@@ -34,6 +34,8 @@
 #include "Shop/Shop.h"
 #include <numeric>
 
+#include "../sys/sys_padinput.h"
+
 /*
 ===============================================================================
 
@@ -42,6 +44,8 @@
 
 ===============================================================================
 */
+
+idCVar grid_currentCategory( "grid_currentCategory", "-1", CVAR_GUI|CVAR_INTEGER, "Current inventory category shown in the grid" );
 
 #define	FPS_FRAMES	5 // number of frames used to average the FPS display
 
@@ -206,6 +210,8 @@ const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", EventAr
 		"Unlatch an irreversible objective component that has latched into a state");
 
 const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective visibility.");
+const idEventDef EV_Player_GetObjectiveVisible("getObjectiveVisible", EventArgs('d', "ObjNum", "Starts counting at 1"), 'd', "Returns the current visibility of the objective with the number ObjNum.");
+
 const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective mandatory." );
 const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective ongoing." );
 
@@ -408,6 +414,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_ObjectiveUnlatch,		idPlayer::Event_ObjectiveUnlatch )
 	EVENT( EV_Player_ObjectiveCompUnlatch,	idPlayer::Event_ObjectiveComponentUnlatch )
 	EVENT( EV_Player_SetObjectiveVisible,	idPlayer::Event_SetObjectiveVisible )
+	EVENT( EV_Player_GetObjectiveVisible,	idPlayer::Event_GetObjectiveVisible )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
@@ -665,22 +672,13 @@ idPlayer::idPlayer() :
 	ready					= false;
 	leader					= false;
 	lastSpectateChange		= 0;
-	lastTeleFX				= -9999;
 	weaponCatchup			= false;
 	lastSnapshotSequence	= 0;
-
-	MPAim					= -1;
-	lastMPAim				= -1;
-	lastMPAimTime			= 0;
-	MPAimFadeTime			= 0;
-	MPAimHighlight			= false;
 
 	spawnedTime				= 0;
 	lastManOver				= false;
 	lastManPlayAgain		= false;
 	lastManPresent			= false;
-
-	isTelefragged			= false;
 
 	isLagged				= false;
 	isChatting				= false;
@@ -1000,7 +998,6 @@ void idPlayer::Init( void ) {
 	privateCameraView	= NULL;
 
 	lastSpectateChange	= 0;
-	lastTeleFX			= -9999;
 
 	hiddenWeapon		= false;
 	tipUp				= false;
@@ -1011,12 +1008,6 @@ void idPlayer::Init( void ) {
 	SetPrivateCameraView( NULL );
 
 	lastSnapshotSequence	= 0;
-
-	MPAim				= -1;
-	lastMPAim			= -1;
-	lastMPAimTime		= 0;
-	MPAimFadeTime		= 0;
-	MPAimHighlight		= false;
 
 	if ( hud ) {
 		hud->HandleNamedEvent( "aim_clear" );
@@ -1045,8 +1036,8 @@ void idPlayer::Spawn( void )
 	idStr		temp;
 	idBounds	bounds;
 
-	if ( entityNumber >= MAX_CLIENTS ) {
-		gameLocal.Error( "entityNum > MAX_CLIENTS for player.  Player may only be spawned with a client." );
+	if ( entityNumber >= 1) {
+		gameLocal.Error( "entityNum > 1 for player.  Player may only be spawned with a client." );
 	}
 
 	// allow thinking during cinematics
@@ -1418,7 +1409,7 @@ bool idPlayer::WaitUntilReady()
 	oldButtons = usercmd.buttons;
 
 	// grab out usercmd
-	usercmd = gameLocal.usercmds[ entityNumber ];
+	usercmd = gameLocal.usercmds;
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
 
@@ -1540,6 +1531,45 @@ void idPlayer::UpdateObjectivesGUI()
 	gameLocal.m_MissionData->UpdateGUIState(objGUI);
 }
 
+void idPlayer::CollectItemsAndCategoriesForInventoryGrid( idList< CInventoryItemPtr > &items, idStr &categoryNames, idStr &categoryValues ) {
+	categoryNames = common->Translate( "#str_inventory_all" );
+	categoryValues = "-1";
+
+	// Generate a list of all relevant inventory items.
+	int selectedCategory = grid_currentCategory.GetInteger();
+	for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
+	{
+		CInventoryCategoryPtr category = Inventory()->GetCategory(i);
+		bool categoryEmpty = true;
+
+		for (int j = 0; j != category->GetNumItems(); ++j)
+		{
+			// Reverse order. New items at the end.
+			CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
+			// Except for the weapons, where reverse order is unintuitive...
+			if ( item->GetType() == CInventoryItem::IT_WEAPON )
+				item = category->GetItem( j );
+
+			// check if we should add this item to the grid
+			if (item->GetType() == CInventoryItem::IT_WEAPON) {
+				CInventoryWeaponItem *weapon = (CInventoryWeaponItem*)item.get();
+				if ( !weapon->IsEnabled() || ( weapon->NeedsAmmo() && weapon->GetAmmo() == 0 ) )
+					continue;
+			} else if ( item->GetType() != CInventoryItem::IT_ITEM ) {
+				continue;
+			}
+			categoryEmpty = false;
+			if ( selectedCategory == -1 || selectedCategory == i )
+				items.Append(item);
+		}
+
+		if ( !categoryEmpty || selectedCategory == i ) {
+			categoryNames = categoryNames + ";" + common->Translate( category->GetName() );
+			categoryValues = categoryValues + ";" + idStr::Fmt( "%d", i );
+		}
+	}
+}
+
 void idPlayer::CreateInventoryGridGUI()
 {
 	if ((inventoryGridOverlay != -1) || (GetImmobilization() & EIM_ITEM_SELECT)) // grayman #4354
@@ -1547,6 +1577,7 @@ void idPlayer::CreateInventoryGridGUI()
 		return;
 	}
 	
+	grid_currentCategory.SetInteger( -1 );
 	inventoryGridOverlay = CreateOverlay(cv_tdm_invgrid_gui_file.GetString(), LAYER_INVGRID);
 
 	idUserInterface* invgridGUI = GetOverlay(inventoryGridOverlay);
@@ -1590,17 +1621,8 @@ void idPlayer::DestroyInventoryGridGUI()
 	{
 		// Generate a list of all relevant inventory items.
 		idList<CInventoryItemPtr> items;
-		for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
-		{
-			CInventoryCategoryPtr category = Inventory()->GetCategory(i);
-			for (int j = 0; j != category->GetNumItems(); ++j)
-			{
-				// Reverse order. New items at the end.
-				CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
-				if (item->GetType() == CInventoryItem::IT_ITEM)
-				items.Append(item);
-			}
-		}
+		idStr categoryNames, categoryValues;
+		CollectItemsAndCategoriesForInventoryGrid( items, categoryNames, categoryValues );
 	
 		// Get inventory grid gui vars.
 		const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
@@ -1613,10 +1635,16 @@ void idPlayer::DestroyInventoryGridGUI()
 			const int selectedItem = (pageSize * currentPage) + userChoice;
 			if (selectedItem < items.Num())
 			{
-				CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
-				InventoryCursor()->SetCurrentItem(items[selectedItem]);
-				// Trigger an update, passing the previous item along
-				OnInventorySelectionChanged(prev);
+				CInventoryItemPtr selected = items[selectedItem];
+				if ( selected->GetType() == CInventoryItem::IT_WEAPON ) {
+					CInventoryWeaponItem *weapon = (CInventoryWeaponItem *)selected.get();
+					SelectWeapon( weapon->GetWeaponIndex(), false );
+				} else {
+					CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+					InventoryCursor()->SetCurrentItem(selected);
+					// Trigger an update, passing the previous item along
+					OnInventorySelectionChanged(prev);
+				}
 			}
 		}
 	}
@@ -1667,22 +1695,17 @@ void idPlayer::UpdateInventoryGridGUI()
 		return;
 	}
 
+
 	// Generate a list of all relevant inventory items.
 	idList<CInventoryItemPtr> items;
-	for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
-	{
-		CInventoryCategoryPtr category = Inventory()->GetCategory(i);
-		for (int j = 0; j != category->GetNumItems(); ++j)
-		{
-			// Reverse order. New items at the end.
-			CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
-			if (item->GetType() == CInventoryItem::IT_ITEM)
-			{
-				items.Append(item);
-			}
-		}
-	}
+	idStr categoryNames;
+	idStr categoryValues;
+	CollectItemsAndCategoriesForInventoryGrid( items, categoryNames, categoryValues );
 	
+	// Update available categories
+	SetGuiString( inventoryGridOverlay, "CategoryNames", categoryNames );
+	SetGuiString( inventoryGridOverlay, "CategoryValues", categoryValues );
+
 	// Get inventory grid gui vars.
 	const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
 	int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
@@ -1762,10 +1785,16 @@ void idPlayer::UpdateInventoryGridGUI()
  		  SetGuiString(inventoryGridOverlay, ItemName2, "");
 		}
 
-		SetGuiFloat(inventoryGridOverlay, ItemStackable, item->IsStackable() ? 1 : 0);
  		SetGuiString(inventoryGridOverlay, ItemGroup, common->Translate( item->Category()->GetName() ) );
- 		SetGuiInt(inventoryGridOverlay, ItemCount, item->GetCount());
  		SetGuiString(inventoryGridOverlay, ItemIcon, item->GetIcon().c_str());
+		if ( item->GetType() == CInventoryItem::IT_WEAPON ) {
+			CInventoryWeaponItem *weapon = (CInventoryWeaponItem *)item.get();
+			SetGuiFloat(inventoryGridOverlay, ItemStackable, weapon->NeedsAmmo() ? 1 : 0);
+			SetGuiInt(inventoryGridOverlay, ItemCount, weapon->GetAmmo());
+		} else {
+			SetGuiFloat(inventoryGridOverlay, ItemStackable, item->IsStackable() ? 1 : 0);
+			SetGuiInt(inventoryGridOverlay, ItemCount, item->GetCount());
+		}
 	}
 
 	// Loot counts.
@@ -2235,7 +2264,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( respawning );
 	savefile->WriteBool( leader );
 	savefile->WriteInt( lastSpectateChange );
-	savefile->WriteInt( lastTeleFX );
 
 	// Commented out by Dram. TDM does not use stamina
 	//savefile->WriteFloat( pm_stamina.GetFloat() );
@@ -2568,7 +2596,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( respawning );
 	savefile->ReadBool( leader );
 	savefile->ReadInt( lastSpectateChange );
-	savefile->ReadInt( lastTeleFX );
 
 	// set the pm_ cvars
 	const idKeyValue	*kv;
@@ -2850,7 +2877,6 @@ void idPlayer::SpawnToPoint( const idVec3 &spawn_origin, const idAngles &spawn_a
 	respawning			= false;
 	lastManOver			= false;
 	lastManPlayAgain	= false;
-	isTelefragged		= false;
 }
 
 /*
@@ -2861,7 +2887,7 @@ Saves any inventory and player stats when changing levels.
 ===============
 */
 void idPlayer::SavePersistantInfo( void ) {
-	idDict &playerInfo = gameLocal.persistentPlayerInfo[entityNumber];
+	idDict &playerInfo = gameLocal.persistentPlayerInfo;
 
 	playerInfo.Clear();
 
@@ -2899,7 +2925,7 @@ idPlayer::GetUserInfo
 ================
 */
 idDict *idPlayer::GetUserInfo( void ) {
-	return &gameLocal.userInfo[ entityNumber ];
+	return &gameLocal.userInfo;
 }
 
 /*
@@ -3339,10 +3365,12 @@ void idPlayer::UpdateConditions( void )
 	
 	// DarkMod: Catch the creep modifier
 	if (cv_tdm_creep_toggle.GetBool()){
-	AI_CREEP = true;
+		AI_CREEP = true;
 	}
 	else {
-	AI_CREEP		= ( usercmd.buttons & BUTTON_5 ) && true;
+		int creepLimit = cv_pm_creepmod.GetFloat() * 127;
+		AI_CREEP = (usercmd.buttons & BUTTON_CREEP) ||
+			(idMath::Abs(usercmd.forwardmove) <= creepLimit && idMath::Abs(usercmd.rightmove <= creepLimit));
 	}
 }
 
@@ -4138,26 +4166,6 @@ void idPlayer::Weapon_Combat( void ) {
 
 /*
 ===============
-idPlayer::Weapon_NPC
-===============
-*/
-#if 0
-void idPlayer::Weapon_NPC( void ) {
-	if ( idealWeapon != currentWeapon ) {
-		Weapon_Combat();
-	}
-	StopFiring();
-	weapon.GetEntity()->LowerWeapon();
-
-	if ( ( usercmd.buttons & BUTTON_ATTACK ) && !( oldButtons & BUTTON_ATTACK ) ) {
-		buttonMask |= BUTTON_ATTACK;
-		focusCharacter->TalkTo( this );
-	}
-}
-#endif
-
-/*
-===============
 idPlayer::LowerWeapon
 ===============
 */
@@ -4561,7 +4569,7 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 	}
 
 	if ( token.Icmp( "ready" ) == 0 ) {
-		PerformImpulse( IMPULSE_17 );
+		PerformImpulse( IMPULSE_READY );
 		return true;
 	}
 
@@ -4668,232 +4676,6 @@ void idPlayer::ClearPushEntity() // grayman #4603 - clear the entity the player 
 		static_cast<idPhysics_Player*>(GetPhysics())->ClearPushEntity();
 	}
 }
-
-/*
-================
-idPlayer::ClearFocus
-
-Clears the focus cursor
-================
-*/
-#if 0
-void idPlayer::ClearFocus( void ) {
-	focusCharacter	= NULL;
-	focusGUIent		= NULL;
-	focusUI			= NULL;
-	focusVehicle	= NULL;
-	talkCursor		= 0;
-}
-#endif
-
-/*
-================
-idPlayer::UpdateFocus
-
-Searches nearby entities for interactive guis, possibly making one of them
-the focus and sending it a mouse move event
-================
-*/
-#if 0
-void idPlayer::UpdateFocus( void ) {
-	idClipModel *clipModelList[ MAX_GENTITIES ];
-	idClipModel *clip;
-	int			listedClipModels;
-	idEntity	*oldFocus;
-	idEntity	*ent;
-	idUserInterface *oldUI;
-	idAI		*oldChar;
-	int			oldTalkCursor;
-	idAFEntity_Vehicle *oldVehicle;
-	int			i;
-	idVec3		start, end;
-	bool		allowFocus;
-	const char *command;
-	trace_t		trace;
-	guiPoint_t	pt;
-	sysEvent_t	ev;
-	idUserInterface *ui;
-
-	if ( gameLocal.inCinematic ) {
-		return;
-	}
-
-	// only update the focus character when attack button isn't pressed so players
-	// can still chainsaw NPC's
-	if ( gameLocal.isMultiplayer || ( !focusCharacter && ( usercmd.buttons & BUTTON_ATTACK ) ) ) {
-		allowFocus = false;
-	} else {
-		allowFocus = true;
-	}
-
-	oldFocus		= focusGUIent;
-	oldUI			= focusUI;
-	oldChar			= focusCharacter;
-	oldTalkCursor	= talkCursor;
-	oldVehicle		= focusVehicle;
-
-	if ( focusTime <= gameLocal.time ) {
-		ClearFocus();
-	}
-
-	// don't let spectators interact with GUIs
-	if ( spectating ) {
-		return;
-	}
-
-	start = GetEyePosition();
-	end = start + viewAngles.ToForward() * 80.0f;
-
-	// player identification -> names to the hud
-	if ( gameLocal.isMultiplayer && entityNumber == gameLocal.localClientNum ) {
-		idVec3 end = start + viewAngles.ToForward() * 768.0f;
-		gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_BOUNDINGBOX, this );
-		int iclient = -1;
-		if ( ( trace.fraction < 1.0f ) && ( trace.c.entityNum < MAX_CLIENTS ) ) {
-			iclient = trace.c.entityNum;
-		}
-		if ( MPAim != iclient ) {
-			lastMPAim = MPAim;
-			MPAim = iclient;
-			lastMPAimTime = gameLocal.realClientTime;
-		}
-	}
-
-	idBounds bounds( start );
-	bounds.AddPoint( end );
-
-	listedClipModels = gameLocal.clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
-
-	// no pretense at sorting here, just assume that there will only be one active
-	// gui within range along the trace
-	for ( i = 0; i < listedClipModels; i++ ) {
-		clip = clipModelList[ i ];
-		ent = clip->GetEntity();
-
-		if ( ent->IsHidden() ) {
-			continue;
-		}
-
-		if ( allowFocus ) {
-			if ( ent->IsType( idAFAttachment::Type ) ) {
-				idEntity *body = static_cast<idAFAttachment *>( ent )->GetBody();
-				if ( body && body->IsType( idAI::Type ) && ( static_cast<idAI *>( body )->GetTalkState() >= TALK_OK ) ) {
-					gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-					if ( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) ) {
-						ClearFocus();
-						focusCharacter = static_cast<idAI *>( body );
-						talkCursor = 1;
-						focusTime = gameLocal.time + FOCUS_TIME;
-						break;
-					}
-				}
-				continue;
-			}
-
-			if ( ent->IsType( idAI::Type ) ) {
-				if ( static_cast<idAI *>( ent )->GetTalkState() >= TALK_OK ) {
-					gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-					if ( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) ) {
-						ClearFocus();
-						focusCharacter = static_cast<idAI *>( ent );
-						talkCursor = 1;
-						focusTime = gameLocal.time + FOCUS_TIME;
-						break;
-					}
-				}
-				continue;
-			}
-
-			if ( ent->IsType( idAFEntity_Vehicle::Type ) ) {
-				gameLocal.clip.TracePoint( trace, start, end, MASK_SHOT_RENDERMODEL, this );
-				if ( ( trace.fraction < 1.0f ) && ( trace.c.entityNum == ent->entityNumber ) ) {
-					ClearFocus();
-					focusVehicle = static_cast<idAFEntity_Vehicle *>( ent );
-					focusTime = gameLocal.time + FOCUS_TIME;
-					break;
-				}
-				continue;
-			}
-		}
-
-		if ( !ent->GetRenderEntity() || !ent->GetRenderEntity()->gui[ 0 ] || !ent->GetRenderEntity()->gui[ 0 ]->IsInteractive() ) {
-			continue;
-		}
-
-		if ( ent->spawnArgs.GetBool( "inv_item" ) ) {
-			// don't allow guis on pickup items focus
-			continue;
-		}
-
-		pt = gameRenderWorld->GuiTrace( ent->GetModelDefHandle(), start, end );
-		if ( pt.x != -1 ) {
-			// we have a hit
-			renderEntity_t *focusGUIrenderEntity = ent->GetRenderEntity();
-			if ( !focusGUIrenderEntity ) {
-				continue;
-			}
-
-			if ( pt.guiId == 1 ) {
-				ui = focusGUIrenderEntity->gui[ 0 ];
-			} else if ( pt.guiId == 2 ) {
-				ui = focusGUIrenderEntity->gui[ 1 ];
-			} else {
-				ui = focusGUIrenderEntity->gui[ 2 ];
-			}
-			
-			if ( ui == NULL ) {
-				continue;
-			}
-
-			ClearFocus();
-			focusGUIent = ent;
-			focusUI = ui;
-
-			// clamp the mouse to the corner
-			ev = sys->GenerateMouseMoveEvent( -2000, -2000 );
-			command = focusUI->HandleEvent( &ev, gameLocal.time );
- 			HandleGuiCommands( focusGUIent, command );
-
-			// move to an absolute position
-			ev = sys->GenerateMouseMoveEvent( static_cast<int>(pt.x) * SCREEN_WIDTH, static_cast<int>(pt.y) * SCREEN_HEIGHT );
-			command = focusUI->HandleEvent( &ev, gameLocal.time );
-			HandleGuiCommands( focusGUIent, command );
-			focusTime = gameLocal.time + FOCUS_GUI_TIME;
-			break;
-		}
-	}
-
-	if ( focusGUIent && focusUI ) {
-		if ( !oldFocus || oldFocus != focusGUIent ) {
-			command = focusUI->Activate( true, gameLocal.time );
-			HandleGuiCommands( focusGUIent, command );
-			StartSound( "snd_guienter", SND_CHANNEL_ANY, 0, false, NULL );
-			// HideTip();
-			// HideObjective();
-		}
-	} else if ( oldFocus && oldUI ) {
-		command = oldUI->Activate( false, gameLocal.time );
-		HandleGuiCommands( oldFocus, command );
-		StartSound( "snd_guiexit", SND_CHANNEL_ANY, 0, false, NULL );
-	}
-
-	if ( cursor && ( oldTalkCursor != talkCursor ) ) {
-		cursor->SetStateInt( "talkcursor", talkCursor );
-	}
-
-	if ( oldChar != focusCharacter && hud ) {
-		if ( focusCharacter ) {
-			hud->SetStateString( "npc", focusCharacter->spawnArgs.GetString( "npc_name", "Joe" ) );
-			hud->HandleNamedEvent( "showNPC" );
-			// HideTip();
-			// HideObjective();
-		} else {
-			hud->SetStateString( "npc", "" );
-			hud->HandleNamedEvent( "hideNPC" );
-		}
-	}
-}
-#endif
 
 /*
 =================
@@ -5025,7 +4807,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		}
 
 		// greebo: is the player creeping? (Only kicks in when not running, run key cancels out creep key)
-		if ( (cv_tdm_creep_toggle.GetBool() || (usercmd.buttons & BUTTON_5)) && !(usercmd.buttons & BUTTON_RUN)) 
+		if ( (cv_tdm_creep_toggle.GetBool() || (usercmd.buttons & BUTTON_CREEP)) && !(usercmd.buttons & BUTTON_RUN)) 
 		{
 			bobmove *= 0.5f * (1 - bobFrac);
 		}
@@ -5627,7 +5409,6 @@ void idPlayer::Spectate( bool spectate ) {
 		Event_DisableWeapon();
 		if ( hud ) {
 			hud->HandleNamedEvent( "aim_clear" );
-			MPAimFadeTime = 0;
 		}
 	} else {
 		// put everything back together again
@@ -5700,7 +5481,7 @@ idPlayer::PerformImpulse
 */
 void idPlayer::PerformImpulse( int impulse ) {
 
-	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) 
+	if ( impulse >= IMPULSE_WEAPON0 && impulse <= IMPULSE_WEAPON12 ) 
 	{
 		// Prevent the player from choosing to switch weapons.
 		if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
@@ -5714,13 +5495,13 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 	switch( impulse )
 	{
-		case IMPULSE_13:
+		case IMPULSE_RELOAD:
 		{
 			Reload();
 			break;
 		}
 
-		case IMPULSE_14:		// Next weapon
+		case IMPULSE_WEAPON_NEXT:		// Next weapon
 		{
 			// If the grabber is active, next weapon modifies the distance based on the CVAR setting
 			if (m_bGrabberActive)
@@ -5746,7 +5527,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			NextWeapon();
 			break;
 		}
-		case IMPULSE_15:		// Previous Weapon
+		case IMPULSE_WEAPON_PREV:		// Previous Weapon
 		{
 			// If the grabber is active, previous weapon  modifies the distance based on the CVAR setting
 			if (m_bGrabberActive)
@@ -5773,18 +5554,18 @@ void idPlayer::PerformImpulse( int impulse ) {
 			break;
 		}
 
-		case IMPULSE_18:
+		case IMPULSE_CENTER_VIEW:
 		{
 			centerView.Init(gameLocal.time, 200, viewAngles.pitch, 0);
 			break;
 		}
-		case IMPULSE_19: // Toggle Objectives GUI (was previously assigned to the PDA)
+		case IMPULSE_OBJECTIVES: // Toggle Objectives GUI (was previously assigned to the PDA)
 		{
 			ToggleObjectivesGUI();
 			break;
 		}
 
-		case IMPULSE_23:		// Crouch
+		case IMPULSE_CROUCH:		// Crouch
 		{
 			if (!cv_tdm_crouch_toggle.GetBool())
 			{
@@ -5795,7 +5576,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_24:
+		case IMPULSE_MANTLE:
 		{
 			if ( entityNumber == gameLocal.localClientNum )
 			{
@@ -5866,7 +5647,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 
-		case IMPULSE_30:		// Toggle Inventory Grid GUI #4286
+		case IMPULSE_INVENTORY_GRID:		// Toggle Inventory Grid GUI #4286
 		{
 			ToggleInventoryGridGUI();
 			break;
@@ -5887,7 +5668,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_41:		// TDM Use/Frob
+		case IMPULSE_FROB:		// TDM Use/Frob
 		{
 			// grayman #3746 - If a readable gui is currently displayed
 			// we need to ask for it to be closed.
@@ -5909,7 +5690,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		/*!
 		* Lean forward is impulse 44
 		*/
-		case IMPULSE_44:		// Lean forward
+		case IMPULSE_LEAN_FORWARD:		// Lean forward
 		{
 			m_ButtonStateTracker.StartTracking(impulse);
 			if ( entityNumber == gameLocal.localClientNum )
@@ -5920,7 +5701,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		/*!
 		* Lean left is impulse 45
 		*/
-		case IMPULSE_45:		// Lean left
+		case IMPULSE_LEAN_LEFT:		// Lean left
 		{
 			m_ButtonStateTracker.StartTracking(impulse);
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Left lean impulse pressed\r");
@@ -5936,7 +5717,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		/*!
 		* Lean right is impulse 46
 		*/
-		case IMPULSE_46:		// Lean right
+		case IMPULSE_LEAN_RIGHT:		// Lean right
 		{
 			m_ButtonStateTracker.StartTracking(impulse);
 			DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Right lean impulse pressed\r");
@@ -5945,7 +5726,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_47:	// Inventory previous item
+		case IMPULSE_INVENTORY_PREV:	// Inventory previous item
 		{
 			// If the grabber is active, prev item modifies the distance based on the CVAR setting
 			if (m_bGrabberActive)
@@ -5969,7 +5750,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_48:	// Inventory next item
+		case IMPULSE_INVENTORY_NEXT:	// Inventory next item
 		{
 			// If the grabber is active, next item modifies the distance based on the CVAR setting
 			if (m_bGrabberActive)
@@ -5993,7 +5774,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_49:	// Inventory previous group
+		case IMPULSE_INVENTORY_GROUP_PREV:	// Inventory previous group
 		{
 			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
@@ -6015,7 +5796,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_50:	// Inventory next group
+		case IMPULSE_INVENTORY_GROUP_NEXT:	// Inventory next group
 		{
 			// Check for a held grabber entity, which should be put back into the inventory
 			if (AddGrabberEntityToInventory())
@@ -6037,7 +5818,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_51:	// Inventory use item
+		case IMPULSE_INVENTORY_USE:	// Inventory use item
 		{
 			// Use key has "hold down" functions
 			m_ButtonStateTracker.StartTracking(impulse);
@@ -6046,7 +5827,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
-		case IMPULSE_52:	// Inventory drop item
+		case IMPULSE_INVENTORY_DROP:	// Inventory drop item
 		{
 			// Pass the "inventoryDropItem" event to the GUIs
 			m_overlays.broadcastNamedEvent("inventoryDropItem");
@@ -6066,7 +5847,7 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 {
 	switch (impulse)
 	{
-		case IMPULSE_23:		// TDM Crouch
+		case IMPULSE_CROUCH:		// TDM Crouch
 		{
 			if (holdTime > cv_tdm_crouch_toggle_hold_time.GetFloat())
 			{
@@ -6085,13 +5866,13 @@ void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 		}
 		break;
 
-		case IMPULSE_41:		// TDM Use/Frob
+		case IMPULSE_FROB:		// TDM Use/Frob
 		{
 			PerformFrobKeyRepeat(holdTime);
 		}
 		break;
 
-		case IMPULSE_51:		// Inventory Use Item
+		case IMPULSE_INVENTORY_USE:		// Inventory Use Item
 		{
 			const CInventoryCursorPtr& crsr = InventoryCursor();
 			CInventoryItemPtr it = crsr->GetCurrentItem();
@@ -6112,7 +5893,7 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 	switch (impulse)
 	{
-		case IMPULSE_23:		// TDM crouch
+		case IMPULSE_CROUCH:		// TDM crouch
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
 				if ( entityNumber == gameLocal.localClientNum )
@@ -6130,7 +5911,7 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 		break;
 
-		case IMPULSE_41:		// TDM Use/Frob
+		case IMPULSE_FROB:		// TDM Use/Frob
 		{
 			PerformFrobKeyRelease(holdTime);
 		}
@@ -6138,28 +5919,28 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 
 
 
-		case IMPULSE_44:
+		case IMPULSE_LEAN_FORWARD:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(90.0);
 			}
 		break;
 
-		case IMPULSE_45:
+		case IMPULSE_LEAN_LEFT:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(180.0);
 			}
 		break;
 
-		case IMPULSE_46:
+		case IMPULSE_LEAN_RIGHT:
 			if ( !cv_pm_lean_toggle.GetBool() && physicsObj.IsLeaning() )
 			{
 				physicsObj.ToggleLean(0.0);
 			}
 		break;
 
-		case IMPULSE_51:		// Inventory Use item
+		case IMPULSE_INVENTORY_USE:		// Inventory Use item
 		{
 			InventoryUseKeyRelease(holdTime);
 		}
@@ -6355,8 +6136,8 @@ void idPlayer::UpdateMouseGesture( void )
 	float mag(0.0f);
 	EMouseDir CurrentDir;
 
-	m_MouseGesture.motion.x += usercmd.mx - m_MouseGesture.StartPos.x;
-	m_MouseGesture.motion.y += usercmd.my - m_MouseGesture.StartPos.y;
+	m_MouseGesture.motion.x += usercmd.mx - m_MouseGesture.StartPos.x + usercmd.jx;
+	m_MouseGesture.motion.y += usercmd.my - m_MouseGesture.StartPos.y + usercmd.jy;
 	if( m_MouseGesture.bInverted )
 		m_MouseGesture.motion = -m_MouseGesture.motion;
 
@@ -6549,7 +6330,7 @@ void idPlayer::AdjustSpeed( void )
 			speed = pm_noclipspeed.GetFloat() * cv_pm_runmod.GetFloat();
 			bobFrac = 0.0f;
 		} 
-		else if ((usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool())
+		else if ((usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool())
 		{
 			// slow "creep" noclip
 			speed = pm_noclipspeed.GetFloat() * cv_pm_creepmod.GetFloat();
@@ -6570,7 +6351,7 @@ void idPlayer::AdjustSpeed( void )
 
 		speed = walkSpeed * cv_pm_runmod.GetFloat();
 		// apply creep modifier; creep is on button_5
-		const bool bCreeping = (usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool();
+		const bool bCreeping = (usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool();
 		if (bCreeping)
 		{
 			speed *= (cv_pm_running_creepmod.GetFloat());
@@ -6610,7 +6391,7 @@ void idPlayer::AdjustSpeed( void )
 		bobFrac = 0.0f;
 
 		// apply creep modifier; creep is on button_5
-		const bool bCreeping = (usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool();
+		const bool bCreeping = (usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool();
 		if(bCreeping)
 		{
 			speed *= cv_pm_creepmod.GetFloat();
@@ -6655,8 +6436,8 @@ void idPlayer::AdjustSpeed( void )
 
 	physicsObj.SetSpeed(speed, crouchspeed);
 
-	//gameRenderWorld->DrawText(va("bobFrac: %f\n", bobFrac), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
-	//gameRenderWorld->DrawText(va("speed: %f\n", physicsObj.GetLinearVelocity().Length()), GetEyePosition() + idVec3(0,0,-20) + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	//gameRenderWorld->DebugText(va("bobFrac: %f\n", bobFrac), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	//gameRenderWorld->DebugText(va("speed: %f\n", physicsObj.GetLinearVelocity().Length()), GetEyePosition() + idVec3(0,0,-20) + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
 	//gameLocal.Printf("bobFrac: %f\n", bobFrac);
 }
 
@@ -7436,7 +7217,7 @@ void idPlayer::Think( void )
 
 	// grab out usercmd
 	usercmd_t oldCmd = usercmd;
-	usercmd = gameLocal.usercmds[ entityNumber ];
+	usercmd = gameLocal.usercmds;
 	buttonMask &= usercmd.buttons;
 	usercmd.buttons &= ~buttonMask;
 
@@ -7709,7 +7490,7 @@ void idPlayer::Think( void )
 			case WATERLEVEL_HEAD: waterStr = "WATERLEVEL: HEAD"; break;
 			default: waterStr = "WATERLEVEL: ???"; break;
 		};
-		gameRenderWorld->DrawText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+		gameRenderWorld->DebugText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
 	}
 
 	if ( displayAASAreas ) // grayman #3032
@@ -7751,6 +7532,15 @@ void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 		command = gui->HandleEvent( &ev, gameLocal.time );
 		oldMouseX = usercmd.mx;
 		oldMouseY = usercmd.my;
+	}
+	if ( usercmd.jx != 0 || usercmd.jy != 0 ) {
+		extern idCVar in_padMouseSpeed;
+		float speed = in_padMouseSpeed.GetFloat() / 640.f * renderSystem->GetScreenWidth();
+		// hack: we want the original axis deflection, without inversed axes if enabled
+		int x, y;
+		Sys_GetCombinedAxisDeflection( x, y );
+		ev = sys->GenerateMouseMoveEvent( speed * x / 64.f, -speed * y / 64.f );
+		command = gui->HandleEvent( &ev, gameLocal.time );
 	}
 }
 
@@ -8136,8 +7926,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			{
 				health = -999;
 			}
-
-			isTelefragged = damageDef->dict.GetBool( "telefrag" );
 
 			lastDmgTime = gameLocal.time;
 			Killed( inflictor, attacker, damage, dir, location );
@@ -8811,36 +8599,6 @@ void idPlayer::SetLastHitTime( int time ) {
 	if ( cursor ) {
 		cursor->HandleNamedEvent( "hitTime" );
 	}
-	if ( hud ) {
-		if ( MPAim != -1 ) {
-			if ( gameLocal.entities[ MPAim ] && gameLocal.entities[ MPAim ]->IsType( idPlayer::Type ) ) {
-				aimed = static_cast< idPlayer * >( gameLocal.entities[ MPAim ] );
-			}
-			assert( aimed );
-			// full highlight, no fade till loosing aim
-			hud->SetStateString( "aim_text", gameLocal.userInfo[ MPAim ].GetString( "ui_name" ) );
-			if ( aimed ) {
-				hud->SetStateFloat( "aim_color", aimed->colorBarIndex );
-			}
-			hud->HandleNamedEvent( "aim_flash" );
-			MPAimHighlight = true;
-			MPAimFadeTime = 0;
-		} else if ( lastMPAim != -1 ) {
-			if ( gameLocal.entities[ lastMPAim ] && gameLocal.entities[ lastMPAim ]->IsType( idPlayer::Type ) ) {
-				aimed = static_cast< idPlayer * >( gameLocal.entities[ lastMPAim ] );
-			}
-			assert( aimed );
-			// start fading right away
-			hud->SetStateString( "aim_text", gameLocal.userInfo[ lastMPAim ].GetString( "ui_name" ) );
-			if ( aimed ) {
-				hud->SetStateFloat( "aim_color", aimed->colorBarIndex );
-			}
-			hud->HandleNamedEvent( "aim_flash" );
-			hud->HandleNamedEvent( "aim_fade" );
-			MPAimHighlight = false;
-			MPAimFadeTime = gameLocal.realClientTime;
-		}
-	}
 }
 
 /*
@@ -9141,7 +8899,7 @@ void idPlayer::ClientPredictionThink( void ) {
 	oldFlags = usercmd.flags;
 	oldButtons = usercmd.buttons;
 
-	usercmd = gameLocal.usercmds[ entityNumber ];
+	usercmd = gameLocal.usercmds;
 
 	if ( entityNumber != gameLocal.localClientNum ) 
 	{
@@ -9193,11 +8951,6 @@ void idPlayer::ClientPredictionThink( void ) {
 		// don't allow client to move when lagged
 		Move();
 	} 
-
-#if 0
-	// update GUIs, Items, and character interactions
-	UpdateFocus();
-#endif
 
 	// service animations
 	if ( !spectating && !af.IsActive() ) {
@@ -9346,8 +9099,8 @@ void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteDir( lastDamageDir, 9 );
 	msg.WriteShort( lastDamageLocation );
 	msg.WriteBits( idealWeapon, idMath::BitsForInteger( 256 ) );
-	msg.WriteBits( weapon.GetSpawnId(), 32 );
-	msg.WriteBits( spectator, idMath::BitsForInteger( MAX_CLIENTS ) );
+	msg.WriteBits( weapon.GetEntityNum(), 32 );
+	msg.WriteBits( weapon.GetSpawnNum(), 32 );
 	msg.WriteBits( lastHitToggle, 1 );
 	msg.WriteBits( weaponGone, 1 );
 	msg.WriteBits( isLagged, 1 );
@@ -9360,7 +9113,7 @@ idPlayer::ReadFromSnapshot
 ================
 */
 void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int		oldHealth, newIdealWeapon, weaponSpawnId;
+	int		oldHealth, newIdealWeapon;
 	bool	newHitToggle, stateHitch;
 
 	if ( snapshotSequence - lastSnapshotSequence > 1 ) {
@@ -9381,8 +9134,8 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	lastDamageDir = msg.ReadDir( 9 );
 	lastDamageLocation = msg.ReadShort();
 	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( 256 ) );
-	weaponSpawnId = msg.ReadBits( 32 );
-	spectator = msg.ReadBits( idMath::BitsForInteger( MAX_CLIENTS ) );
+	int weaponEntityId = msg.ReadBits( 32 );
+	int weaponSpawnId = msg.ReadBits( 32 );
 	newHitToggle = msg.ReadBits( 1 ) != 0;
 	weaponGone = msg.ReadBits( 1 ) != 0;
 	isLagged = msg.ReadBits( 1 ) != 0;
@@ -9390,7 +9143,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 	// no msg reading below this
 
-	if ( weapon.SetSpawnId( weaponSpawnId ) ) {
+	if ( weapon.Set( weaponEntityId, weaponSpawnId ) ) {
 		if ( weapon.GetEntity() ) {
 			// maintain ownership locally
 			weapon.GetEntity()->SetOwner( this );
@@ -9935,7 +9688,7 @@ float idPlayer::GetMovementVolMod( void )
 	{
 		returnval = (isCrouched) ? m_stepvol_crouch_walk : m_stepvol_walk;
 	}
-	//gameRenderWorld->DrawText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
+	//gameRenderWorld->DebugText(idStr(returnval), GetEyePosition() + viewAngles.ToForward()*20, 0.15f, colorWhite, viewAngles.ToMat3(), 1, 500);
 
 	return returnval;
 }
@@ -10752,6 +10505,12 @@ void idPlayer::Event_SetObjectiveVisible( int ObjIndex, bool bVal )
 	gameLocal.m_MissionData->SetObjectiveVisibility(ObjIndex - 1, bVal);
 }
 
+void idPlayer::Event_GetObjectiveVisible( int ObjIndex )
+{
+	bool bVisible = gameLocal.m_MissionData->GetObjectiveVisibility( ObjIndex - 1 );
+	idThread::ReturnInt( (int) bVisible );
+}
+
 void idPlayer::Event_SetObjectiveOptional( int ObjIndex, bool bVal )
 {
 	gameLocal.m_MissionData->SetObjectiveMandatory(ObjIndex - 1, !bVal); // negate the incoming bool
@@ -10953,9 +10712,8 @@ void idPlayer::PerformFrobCheck()
 		gameRenderWorld->DebugBounds( colorBlue, frobBounds );
 	}
 
-	static idEntity* frobRangeEnts[MAX_GENTITIES];
-
-	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds(frobBounds, -1, frobRangeEnts, MAX_GENTITIES);
+	idClip_EntityList frobRangeEnts;
+	int numFrobEnt = gameLocal.clip.EntitiesTouchingBounds(frobBounds, -1, frobRangeEnts);
 
 	idVec3 vecForward = viewAngles.ToForward();
 	float bestDot = 0;
@@ -11459,7 +11217,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 	return returnValue;
 }
 
-void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
+void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool allowUseCurrentInvItem)
 {
 	// greebo: Don't perform frobs on hidden or NULL entities
 	if (target == NULL || target->IsHidden())
@@ -11487,13 +11245,14 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 	}
 
 	// Do we allow use on frob?
-	if (cv_tdm_inv_use_on_frob.GetBool()) 
+	// stgatilov #5542: block use-on-frob when frob called from game script
+	if (allowUseCurrentInvItem && cv_tdm_inv_use_on_frob.GetBool())
 	{
 		// Check if we have a "use" relationship with the currently selected inventory item (key => door)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
-		if ( (item != NULL) && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item, true))
+		if ( item && item->UseOnFrob() && highlightedEntity && highlightedEntity->CanBeUsedBy(item, true))
 		{
 			// Try to use the item
 			bool couldBeUsed = UseInventoryItem( impulseState, item, USERCMD_MSEC, true ); // true => is frob action
@@ -11587,7 +11346,7 @@ void idPlayer::PerformFrob()
 	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// Relay the function to the specialised method
-	PerformFrob(EPressed, frob);
+	PerformFrob(EPressed, frob, true);
 }
 
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
@@ -11608,7 +11367,7 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(ERepeat, frob);
+	PerformFrob(ERepeat, frob, true);
 }
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
@@ -11629,7 +11388,7 @@ void idPlayer::PerformFrobKeyRelease(int holdTime)
 	}
 
 	// Relay the function to the specialised method
-	PerformFrob(EReleased, frob);
+	PerformFrob(EReleased, frob, true);
 }
 
 void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)

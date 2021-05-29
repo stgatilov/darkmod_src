@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 /******************************************************************************/
 /*                                                                            */
@@ -468,7 +468,7 @@ void CsndProp::Propagate
 
 	if ( cv_moveable_collision.GetBool() && maker->IsType(idMoveable::Type) )
 	{
-		gameRenderWorld->DrawText( va("PropVol: %f", vol0), maker->GetPhysics()->GetOrigin(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
+		gameRenderWorld->DebugText( va("PropVol: %f", vol0), maker->GetPhysics()->GetOrigin(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
 	}
 
 	SSprParms propParms;
@@ -1345,7 +1345,7 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 
 	if ( cv_spr_show.GetBool() )
 	{
-		gameRenderWorld->DrawText( va("Volume: %.2f", propParms->propVol), 
+		gameRenderWorld->DebugText( va("Volume: %.2f", propParms->propVol), 
 			(ai->GetEyePosition() - ai->GetPhysics()->GetGravityNormal() * 65.0f), 0.25f, 
 			colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 1000);
 	}

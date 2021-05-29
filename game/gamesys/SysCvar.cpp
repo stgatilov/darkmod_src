@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -123,6 +123,7 @@ idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTE
 idCVar cv_tdm_menu_music("tdm_menu_music",	"1", CVAR_ARCHIVE | CVAR_BOOL, "Whether to play background music in the main menu (for internal use)." );
 
 idCVar cv_tdm_show_trainer_messages("tdm_show_trainer_messages", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether TDM trainer maps should display pop-ups with helpful gameplay information." );
+idCVar cv_tdm_show_menu_tooltips("tdm_show_menu_tooltips", "1", CVAR_BOOL | CVAR_ARCHIVE, "Whether mouse-over tooltips should be displayed in the menu."); // Obsttorte #2626
 
 idCVar cv_tdm_default_relations_def( "tdm_default_relations_def", "atdm:team_relations_default", CVAR_GAME | CVAR_ARCHIVE, "The name of the entityDef holding the TDM default team relationships." );
 
@@ -299,19 +300,60 @@ idCVar cv_weapon_next_on_empty(		"tdm_weapon_next_on_empty",	"0",	CVAR_GAME | CV
 **/
 idCVar cv_collision_damage_scale_vert(	"tdm_collision_damage_scale_vert", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from vertical collisions/decelerations. This multiplies delta-velocity squared." );
 idCVar cv_collision_damage_scale_horiz(	"tdm_collision_damage_scale_horiz", "0.5",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This globally scales the damage AI take from horizontal collisions/decelerations. This multiplies delta-velocity squared." );
-idCVar cv_drag_limit_force(				"tdm_drag_limit_force", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Cheat: Set to 0 to disable finite acceleration while grabbing objects." );
-idCVar cv_drag_force_max(				"tdm_drag_force_max", "100000", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum force the player can apply to a dragged object [kg * doom units / second^2]" );
-idCVar cv_drag_stuck_dist(				"tdm_drag_stuck_dist", "38.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Distance from the grab point at which object is determined to be 'stuck' and possibly auto-dropped." );
-idCVar cv_drag_damping(					"tdm_drag_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
-idCVar cv_drag_damping_AF(				"tdm_drag_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
-idCVar cv_drag_AF_ground_timer(			"tdm_drag_af_ground_timer", "800", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time in milliseconds that it takes to ramp up to full vertical velocity after a ground-restricted body has come back to ground contact." );
-idCVar cv_drag_AF_free(					"tdm_drag_af_free", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "This is a cheat that allows lifting all AI bodies completely off the ground when dragging them.  Useful for mappers who want to set up ragdolls ingame." );
+idCVar cv_dragged_item_highlight(		"tdm_dragged_item_highlight", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) if the grabbed item should always be highlighted." );
 idCVar cv_drag_jump_masslimit(			"tdm_drag_jump_masslimit", "20", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "When the player is holding something above this mass, jumping becomes impossible." );
 idCVar cv_drag_encumber_minmass(		"tdm_drag_encumber_minmass", "10", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum carried mass that starts to effect movement speed." );
 idCVar cv_drag_encumber_maxmass(		"tdm_drag_encumber_maxmass", "55", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Carried mass at which movement speed clamps to the lowest value." );
 idCVar cv_drag_encumber_max(			"tdm_drag_encumber_max", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum encumbrance when carrying heavy things (expressed as a fraction of maximum unencumbered movement speed)." );
-idCVar cv_dragged_item_highlight(		"tdm_dragged_item_highlight", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) if the grabbed item should always be highlighted." );
-idCVar cv_drag_debug(					"tdm_drag_debug", "0", CVAR_GAME | CVAR_BOOL, "Shows debug arrows for desired velocity and contact plane normals when moving objects with the grabber." );
+idCVar cv_drag_stuck_dist(				"tdm_drag_stuck_dist", "38.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Distance from the grab point at which object is determined to be 'stuck' and possibly auto-dropped." );
+idCVar cv_drag_force_max(				"tdm_drag_force_max", "100000", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum force the player can apply to a dragged object [kg * doom units / second^2]." );
+idCVar cv_drag_new(						"tdm_drag_new", "1", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, then the new grabber code is used (starting from TDM 2.10).");
+//stgatilov #5599: cvars in this section only affect the old grabber:
+idCVar cv_drag_limit_force(				"tdm_drag1_limit_force", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Cheat: Set to 0 to disable finite acceleration while grabbing objects." );
+idCVar cv_drag_damping(					"tdm_drag1_damping", "0.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to objects being grabbed by the player" );
+idCVar cv_drag_damping_AF(				"tdm_drag1_damping_af", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Damping applied to ragdolls being grabbed by the player" );
+idCVar cv_drag_AF_ground_timer(			"tdm_drag1_af_ground_timer", "800", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time in milliseconds that it takes to ramp up to full vertical velocity after a ground-restricted body has come back to ground contact." );
+idCVar cv_drag_AF_free(					"tdm_drag1_af_free", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "This is a cheat that allows lifting all AI bodies completely off the ground when dragging them.  Useful for mappers who want to set up ragdolls ingame." );
+idCVar cv_drag_debug(					"tdm_drag1_debug", "0", CVAR_GAME | CVAR_BOOL, "Shows debug arrows for desired velocity and contact plane normals when moving objects with the grabber." );
+//stgatilov #5599: cvars in this section only affect the new grabber:
+idCVar cv_drag_targetpos_averaging_time(
+	"tdm_drag2_targetpos_averaging_time", "0.1", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"The effective drag target position is averaged over last T seconds for smoother movements. ",
+	0.0f, 10.0f
+);
+idCVar cv_drag_rigid_silentmode(
+	"tdm_drag2_rigid_silentmode", "1", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,
+	"When to use 'silent mode' for rigid objects manipulation (no sounds/impulses):\n"
+	"  0 --- never\n"
+	"  1 --- when creep button is pressed\n"
+	"  2 --- when run button is NOT pressed\n"
+	"  3 --- always",
+	0, 3
+);
+idCVar cv_drag_rigid_distance_halfing_time(
+	"tdm_drag2_rigid_distance_halfing_time", "0.1", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"It normally takes T seconds for dragged rigid object to reduce its distance to target in 2.71 times. ",
+	0.01f, 10.0f
+);
+idCVar cv_drag_rigid_acceleration_radius(
+	"tdm_drag2_rigid_acceleration_radius", "1.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"When distance from dragged rigid object to target is smaller than R, the dragging is significantly accelerated. "
+	"Set to 0 to disable acceleration completely. ",
+	0.0f, 100.0f
+);
+idCVar cv_drag_af_weight_ratio(
+	"tdm_drag2_af_weight_ratio", "0.8", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"Force applied when dragging articulated figure is K * total weight of AF. "
+	"Note that value 1.0 or greater will allow holding bodies completely in-air, "
+	"while value lower than 0.5 will not allow to drag body due to friction. ",
+	0.0f, 10.0f
+);
+idCVar cv_drag_af_reduceforce_radius(
+	"tdm_drag2_af_reduceforce_radius", "10.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"When distance from dragged articulated figure to target is lower than R, the applied force is reduced. "
+	"It helps to avoid oscillatory movements when you e.g. pull ragdoll's arm. ",
+	0.0f, 100.0f
+);
 
 idCVar cv_melee_debug(					"tdm_melee_debug", "0", CVAR_GAME | CVAR_BOOL, "Enable to show debug melee combat graphics." );
 idCVar cv_melee_state_debug(			"tdm_melee_debug_state", "0", CVAR_GAME | CVAR_BOOL, "Enable to display debug text representing AI melee status." );
@@ -352,10 +394,11 @@ idCVar cv_phys_show_momentum(			"tdm_phys_show_momentum", "0", CVAR_GAME | CVAR_
 * DarkMod Item Manipulation
 * Throw_min and throw_max are the min and max impulses applied to items thrown
 **/
-idCVar cv_throw_min(				"tdm_throw_min",			"600",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Minimum impulse applied to a thrown object." );
-idCVar cv_throw_max(				"tdm_throw_max",			"3500",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum impulse applied to a thrown object." );
+idCVar cv_throw_impulse_min(		"tdm_throw_impulse_min",	"1200",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Impulse applied to a thrown object without holding throw button." );
+idCVar cv_throw_impulse_max(		"tdm_throw_impulse_max",	"3500",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Impulse applied to a thrown object after throw button held for full time." );
+idCVar cv_throw_vellimit_min(		"tdm_throw_vellimit_min",	"300",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Velocity upper limit for thrown object without holding throw button." );
+idCVar cv_throw_vellimit_max(		"tdm_throw_vellimit_max",	"900",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Velocity upper limit for thrown object after throw button held for full time." );
 idCVar cv_throw_time(				"tdm_throw_time",			"1200",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "When throwing an object, time it takes to charge up to the max throw force in milliseconds." );
-idCVar cv_throw_max_vel(			"tdm_throw_max_vel",		"900",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Velocity of thrown objects is clamped to this value (in doomunits / second).  Needed to balance throwing of very light objects." );
 
 idCVar cv_bounce_sound_max_vel(		"tdm_bounce_sound_max_vel",	"400",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "At this velocity moveable collision sounds reach their maximum volume." );
 idCVar cv_bounce_sound_min_vel(		"tdm_bounce_sound_min_vel",	"80",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the minimum velocity at which moveable collision sounds can be heard at all." );
@@ -465,10 +508,6 @@ idCVar cv_door_auto_open_on_unlock("tdm_door_auto_open_on_unlock",	"1",	CVAR_GAM
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
-/**
- * Ambient light method variable
- */
-idCVar cv_ambient_method("tdm_ambient_method", "0",    CVAR_GAME | CVAR_INTEGER, "Method used for ambient light rendering.\n\n0 = Enhanced, ambient light method (uses the ambient light for the ambient brightness)\n1 = Texture Brightness method (uses texture brightness instead of light. This is faster but looks worse)", 0, 1 );
 /**
  * Volume of speakers with s_music set
  */
@@ -785,6 +824,8 @@ idCVar net_serverDownload(			"net_serverDownload",		"0",			CVAR_GAME | CVAR_INTE
 idCVar net_serverDlBaseURL(			"net_serverDlBaseURL",		"",				CVAR_GAME | CVAR_ARCHIVE, "base URL for the download redirection" );
 
 idCVar net_serverDlTable(			"net_serverDlTable",		"",				CVAR_GAME | CVAR_ARCHIVE, "pak names for which download is provided, seperated by ;" );
+
+idCVar g_entityBindNew(				"g_entityBindNew",			"1",			CVAR_GAME, "If set to 1, then new code for entity binding is used (#5409)");
 
 //----------------------------------
 

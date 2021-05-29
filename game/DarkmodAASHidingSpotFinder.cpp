@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1037,7 +1037,7 @@ void CDarkmodAASHidingSpotFinder::CombineRedundantHidingSpots
 void CDarkmodAASHidingSpotFinder::debugClearHidingSpotDrawList()
 {
 	// Clear the list
-	CDarkmodAASHidingSpotFinder::DebugDrawList.Clear();
+	CDarkmodAASHidingSpotFinder::DebugDrawList.ClearFree();
 }
 
 //----------------------------------------------------------------------------
@@ -1115,7 +1115,7 @@ void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 		);
 
 		// grayman #3857 - print the spotIndex above the arrow
-		gameRenderWorld->DrawText(va("%d",spotIndex),DebugDrawList[spotIndex].goal.origin + markerArrowLength + idVec3(0,0,10),0.125f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 120000);
+		gameRenderWorld->DebugText(va("%d",spotIndex),DebugDrawList[spotIndex].goal.origin + markerArrowLength + idVec3(0,0,10),0.125f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 120000);
 	}
 }
 

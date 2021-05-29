@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -69,6 +69,80 @@ void idWinding::BaseForPlane( const idVec3 &normal, const float dist ) {
 	p[2].s = p[2].t = 0.0f;
 	p[3].ToVec3() = org - vright - vup;
 	p[3].s = p[3].t = 0.0f;
+}
+
+/*
+=============
+idWinding::SetTrimmedPlane
+=============
+*/
+idWinding *idWinding::CreateTrimmedPlane( const idPlane &mainPlane, int numCuts, const idPlane *cutPlanes, float epsilon, IncidentPlaneMode incidentPlaneMode ) {
+	//establish local coordinate system
+	idVec3 origin, normal, axisU, axisV;
+	normal = mainPlane.Normal();
+	origin = mainPlane.Dist() * normal;
+	normal.NormalVectors(axisV, axisU);
+
+	idList<bool> retainOn;
+	retainOn.SetNum(numCuts);
+	for (int i = 0; i < numCuts; i++) {
+		float dot = cutPlanes[i].Normal() * normal;
+		//angle <~ 1e-2  =>  planes are incident
+		if (dot >= 1.0f - 1e-4f)
+			retainOn[i] = !!(incidentPlaneMode & INCIDENT_PLANE_RETAIN_CODIRECT);
+		else if (dot <= -(1.0f - 1e-4f))
+			retainOn[i] = !!(incidentPlaneMode & INCIDENT_PLANE_RETAIN_OPPOSITE);
+		else
+			retainOn[i] = false;
+	}
+
+	auto ComputeBoundingUvBox = [origin, axisU, axisV](const idWinding &w) -> idBounds {
+		idBounds box;
+		box.Clear();
+		for (int j = 0; j < w.numPoints; j++) {
+			const idVec3 &xyz = w[j].ToVec3();
+			box.AddPoint(idVec3((xyz - origin) * axisU, (xyz - origin) * axisV, 0.0f));
+		}
+		return box;
+	};
+
+	//start with huge UV-box winding
+	idWinding *w = new idWinding(mainPlane);
+	w->EnsureAlloced(numCuts + 4, true);
+	//clip the winding with all trimming planes
+	idBounds uvbox = ComputeBoundingUvBox(*w);
+	for (int i = 0; i < numCuts; i++) {
+		w = w->Clip(cutPlanes[i], 0.0f, retainOn[i]);
+		if (!w)
+			break;
+		uvbox = ComputeBoundingUvBox(*w);
+	}
+	//note: if result is empty, then we take last non-empty winding as estimate
+	//this may be important if true winding is very small but has disappeared due to floating point errors
+
+	//this expansion should be larger than possible round-off errors
+	uvbox.ExpandSelf(1.0f);
+
+	//regenerate initial winding from estimated UV-box
+	if (!w)
+		w = new idWinding(numCuts + 4);
+	w->numPoints = 4;
+	w->p[0].ToVec3() = origin + uvbox[0].x * axisU + uvbox[1].y * axisV;
+	w->p[1].ToVec3() = origin + uvbox[1].x * axisU + uvbox[1].y * axisV;
+	w->p[2].ToVec3() = origin + uvbox[1].x * axisU + uvbox[0].y * axisV;
+	w->p[3].ToVec3() = origin + uvbox[0].x * axisU + uvbox[0].y * axisV;
+	for (int v = 0; v < 4; v++)
+		w->p[v].s = w->p[v].t = 0.0f;
+
+	//clip the winding with all trimming planes
+	//since initial UV-box is not huge this time, we expect to get much more precise vertices
+	for (int i = 0; i < numCuts; i++) {
+		w = w->Clip(cutPlanes[i], epsilon, retainOn[i]);
+		if (!w)
+			break;
+	}
+
+	return w;
 }
 
 /*
@@ -1363,6 +1437,25 @@ bool idWinding::PointInsideDst( const idVec3 &normal, const idVec3 &point, const
 			return false;
 		}
 	}
+	return true;
+}
+
+/*
+=============
+idWinding::PointLiesOn
+=============
+*/
+bool idWinding::PointLiesOn( const idVec3 &point, const float epsilon ) const {
+	idPlane plane;
+	GetPlane(plane);
+
+	int side = plane.Side(point, epsilon);
+	if (side != PLANESIDE_ON)
+		return false;
+
+	if (!PointInsideDst(plane.Normal(), point, epsilon))
+		return false;
+
 	return true;
 }
 

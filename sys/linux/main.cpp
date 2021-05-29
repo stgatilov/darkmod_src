@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #include "../../idlib/precompiled.h"
 #include "../posix/posix_public.h"
@@ -53,6 +53,9 @@ THREAD_RETURN_TYPE Sys_AsyncThread(void*) {
 	int now;
 	int next;
 	int	want_sleep;
+
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
 
 	// multi tick compensate for poor schedulers (Linux 2.4)
 	int ticked, to_ticked;
@@ -311,56 +314,6 @@ void idSysLocal::OpenURL( const char *url, bool quit ) {
 	// StartProcess is going to execute a system() call with that - hence the &
 	idStr::snPrintf( cmdline, 1024, "%s '%s' &",  script_path, url );
 	sys->StartProcess( cmdline, quit );
-}
-
-/*
-================
-Sys_FPU_SetDAZ
-================
-*/
-void Sys_FPU_SetDAZ( bool enable ) {
-	/*
-	DWORD dwData;
-
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 6
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<6)	// clear DAX bit
-		or		eax, ecx		// set the DAZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
-	*/
-}
-
-/*
-================
-Sys_FPU_SetFTZ
-================
-*/
-void Sys_FPU_SetFTZ( bool enable ) {
-	/*
-	DWORD dwData;
-
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 15
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<15)	// clear FTZ bit
-		or		eax, ecx		// set the FTZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
-	*/
-}
-
-void Sys_FPU_SetExceptions( bool enable ) {
-	//note: com_fpexceptions won't work without implementation here...
 }
 
 /*

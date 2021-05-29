@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -1638,6 +1638,7 @@ void idImageManager::Init() {
 	accumImage = ImageFromFunction( "_accum", R_RGBA8Image );
 	scratchCubeMapImage = ImageFromFunction( "_scratchCubeMap", makeNormalizeVectorCubeMap );
 	currentRenderImage = ImageFromFunction( "_currentRender", R_RGBA8Image );
+	guiRenderImage = ImageFromFunction( "_guiRender", R_RGBA8Image );
 	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthTexture ); // #3877. Allow shaders to access scene depth
 	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_DepthTexture );
 	shadowAtlas = ImageFromFunction( "_shadowAtlas", R_DepthTexture );
@@ -1700,6 +1701,17 @@ blocking load on demand
 preload low mip levels, background load remainder on demand
 ====================
 */
+
+void R_LoadSingleImage( idImage *image ) {
+	if ( !image->generatorFunction ) {
+		R_LoadImageData( *image );
+		image->backgroundLoadState = IS_LOADED;
+	}
+}
+REGISTER_PARALLEL_JOB( R_LoadSingleImage, "R_LoadSingleImage" );
+
+idCVar image_levelLoadParallel( "image_levelLoadParallel", "1", CVAR_BOOL|CVAR_ARCHIVE, "Parallelize texture creation during level load by fetching images from disk in the background" );
+
 void idImageManager::EndLevelLoad() {
 	const int start = Sys_Milliseconds();
 	insideLevelLoad = false;
@@ -1727,6 +1739,7 @@ void idImageManager::EndLevelLoad() {
 	common->PacifierUpdate( LOAD_KEY_IMAGES_START, images.Num() / LOAD_KEY_IMAGE_GRANULARITY ); // grayman #3763
 
 	// load the ones we do need, if we are preloading
+	idList<idImage*> imagesToLoad;
 	for ( int i = 0 ; i < images.Num() ; i++ ) {
 		idImage	*image = images[ i ];
 		if ( image->generatorFunction ) {
@@ -1734,16 +1747,51 @@ void idImageManager::EndLevelLoad() {
 		}
 
 		if ( image->levelLoadReferenced && ( image->texnum == idImage::TEXTURE_NOT_LOADED ) && image_preload.GetBool() ) {
-			//common->Printf( "Loading image %d: %s\n",i,image->imgName.c_str() );
 			loadCount++;
-			image->ActuallyLoadImage();
-		}
-
-		// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
-		if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
-			common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, i );
+			imagesToLoad.AddGrow( image );
 		}
 	}
+
+	// Process images in batches. If parallel load is enabled, we give the upcoming batch to the job queue so that the image
+	// data is loaded and prepared in the background while we simultaneously upload the current batch to GPU memory.
+	// Background loading is restricted to 2 threads. On SSDs and during hot loads, this has a considerable advantage over just
+	// a single background thread, since decompression and calculation of image functions do take some of the time. SSDs do see
+	// slight improvements with additional threads, but the difference is small. On HDDs, the additional thread does not offer
+	// any advantages, but it should also not overload the disk, so that 2 threads is an acceptable compromise for all disk types.
+	const int BATCH_SIZE = 16;
+	idParallelJobList *imageLoadJobs = nullptr;
+	if ( image_levelLoadParallel.GetBool() ) {
+		imageLoadJobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, BATCH_SIZE, 0, nullptr );
+	}
+
+	for ( int curBatch = 0; curBatch < imagesToLoad.Num(); curBatch += BATCH_SIZE ) {
+		if ( image_levelLoadParallel.GetBool() ) {
+			for ( int i = curBatch + BATCH_SIZE; i < imagesToLoad.Num() && i < curBatch + 2*BATCH_SIZE; ++i ) {
+				idImage *image = imagesToLoad[i];
+				imageLoadJobs->AddJob((jobRun_t)R_LoadSingleImage, image);
+			}
+			imageLoadJobs->Submit( nullptr, 2 );
+		}
+
+		for ( int i = curBatch; i < imagesToLoad.Num() && i < curBatch + BATCH_SIZE; ++i ) {
+			idImage *image = imagesToLoad[i];
+			image->ActuallyLoadImage();
+
+			// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
+			if ( ( i % LOAD_KEY_IMAGE_GRANULARITY ) == 0 ) {
+				common->PacifierUpdate( LOAD_KEY_IMAGES_INTERIM, i );
+			}
+		}
+
+		if ( image_levelLoadParallel.GetBool() ) {
+			imageLoadJobs->Wait();
+		}
+	}
+
+	if ( image_levelLoadParallel.GetBool() ) {
+		parallelJobManager->FreeJobList( imageLoadJobs );
+	}
+
 	const int end = Sys_Milliseconds();
 	common->Printf( "%5i purged from previous\n", purgeCount );
 	common->Printf( "%5i kept from previous\n", keepCount );
@@ -1759,8 +1807,8 @@ idImageManager::StartBuild
 ===============
 */
 void idImageManager::StartBuild() {
-	ddsList.Clear();
-	ddsHash.Free();
+	ddsList.ClearFree();
+	ddsHash.ClearFree();
 }
 
 /*
@@ -1802,8 +1850,8 @@ void idImageManager::FinishBuild( bool removeDups ) {
 		}
 		fileSystem->CloseFile( batchFile );
 	}
-	ddsList.Clear();
-	ddsHash.Free();
+	ddsList.ClearFree();
+	ddsHash.ClearFree();
 }
 
 /*

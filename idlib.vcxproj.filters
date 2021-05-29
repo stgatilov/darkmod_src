@@ -75,6 +75,9 @@
     <ClCompile Include="idlib\hashing\MD5.cpp">
       <Filter>Hashing</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\hashing\sha256.c">
+      <Filter>Hashing</Filter>
+    </ClCompile>
     <ClCompile Include="idlib\math\Angles.cpp">
       <Filter>Math</Filter>
     </ClCompile>
@@ -180,6 +183,22 @@
     </ClCompile>
     <ClCompile Include="idlib\ParallelJobList.cpp" />
     <ClCompile Include="idlib\Thread.cpp" />
+    <ClCompile Include="idlib\containers\DisjointSets.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\containers\StrPool.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\containers\PlaneSet.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\math\Simd_IdAsm.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\containers\HashMap.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -267,6 +286,9 @@
       <Filter>Hashing</Filter>
     </ClInclude>
     <ClInclude Include="idlib\hashing\MD5.h">
+      <Filter>Hashing</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\hashing\sha256.h">
       <Filter>Hashing</Filter>
     </ClInclude>
     <ClInclude Include="idlib\math\Angles.h">
@@ -400,6 +422,21 @@
     <ClInclude Include="idlib\Thread.h" />
     <ClInclude Include="idlib\sys\sys_includes.h">
       <Filter>Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\FlexList.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\DisjointSets.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\BinHeap.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\math\Simd_IdAsm.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\containers\HashMap.h">
+      <Filter>Containers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

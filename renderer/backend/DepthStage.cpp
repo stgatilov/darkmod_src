@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #include "precompiled.h"
@@ -18,7 +18,6 @@
 #include "DepthStage.h"
 #include "RenderBackend.h"
 #include "../FrameBuffer.h"
-#include "../Profiling.h"
 #include "../glsl.h"
 #include "../FrameBufferManager.h"
 #include "../GLSLProgramManager.h"
@@ -34,7 +33,7 @@ namespace {
 	};
 
 	void LoadShader( GLSLProgram *shader, int maxSupportedDrawsPerBatch, bool bindless ) {
-		idDict defines;
+		idHashMapDict defines;
 		defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxSupportedDrawsPerBatch ) );
 		if (bindless) {
 			defines.Set( "BINDLESS_TEXTURES", "1" );
@@ -86,7 +85,11 @@ void DepthStage::Init() {
 void DepthStage::Shutdown() {}
 
 void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	GL_PROFILE( "DepthStage" );
+	if ( numDrawSurfs == 0 ) {
+		return;
+	}
+
+	TRACE_GL_SCOPE( "DepthStage" );
 
 	GLSLProgram *shader = renderBackend->ShouldUseBindlessTextures() ? depthShaderBindless : depthShader;
 	shader->Activate();
@@ -119,11 +122,10 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	vertexCache.BindVertex();
-
 	BeginDrawBatch();
 
 	bool subViewEnabled = false;
+	const drawSurf_t *curBatchCaches = drawSurfs[0];
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
 		const drawSurf_t *drawSurf = drawSurfs[i];
 		if ( !ShouldDrawSurf( drawSurf ) ) {
@@ -131,7 +133,9 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 		}
 
 		bool isSubView = drawSurf->material->GetSort() == SS_SUBVIEW;
-		if( isSubView != subViewEnabled ) {
+		if( isSubView != subViewEnabled
+				|| drawSurf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic
+				|| drawSurf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
 			ExecuteDrawCalls();
 			if( isSubView ) {
 				GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
@@ -141,6 +145,7 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 			subViewEnabled = isSubView;
 		}
 
+		curBatchCaches = drawSurf;
 		DrawSurf( drawSurf );
 	}
 

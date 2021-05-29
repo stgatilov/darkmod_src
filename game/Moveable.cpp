@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -21,6 +21,7 @@
 #include "Game_local.h"
 #include "Objectives/MissionData.h"
 #include "StimResponse/StimResponseCollection.h"
+#include "Grabber.h"
 
 /*
 ===============================================================================
@@ -384,6 +385,10 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 	// greebo: Save the collision info for the next call
 	lastCollision = collision;
 
+	// stgatilov #5599: mute all sounds from collisions with dragged object in "silent" mode
+	if (gameLocal.m_Grabber->GetSelected() == this && gameLocal.m_Grabber->IsInSilentMode())
+		return false;
+
 	float v = -( velocity * collision.c.normal );
 
 	if ( !sameCollisionAgain )
@@ -432,8 +437,8 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 				if (cv_moveable_collision.GetBool())
 				{
-					gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
-					gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
+					gameRenderWorld->DebugText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
+					gameRenderWorld->DebugText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
 					gameRenderWorld->DebugArrow( colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
 				}
 
@@ -840,7 +845,7 @@ void idMoveable::UpdateSlidingSounds()
 		// Only consider the xyspeed if the velocity is in pointing in the same direction as we're being pushed
 		float xySpeed = (idMath::Fabs(xyVelocity * pushDirection) > 0.2f) ? xyVelocity.NormalizeFast() : 0;
 
-		//gameRenderWorld->DrawText( idStr(xySpeed), GetPhysics()->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+		//gameRenderWorld->DebugText( idStr(xySpeed), GetPhysics()->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		//gameRenderWorld->DebugArrow(colorWhite, GetPhysics()->GetAbsBounds().GetCenter(), GetPhysics()->GetAbsBounds().GetCenter() + xyVelocity, 1, USERCMD_MSEC );
 
 		if (wasPushedLastFrame && xySpeed <= SLIDING_VELOCITY_THRESHOLD)

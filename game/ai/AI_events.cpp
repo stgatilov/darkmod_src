@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -2592,28 +2592,23 @@ idAI::Event_GetRandomTarget
 */
 void idAI::Event_GetRandomTarget( const char *type ) {
 	int	i;
-	int	num;
 	int which;
 	idEntity *ent;
-	idEntity *ents[ MAX_GENTITIES ];
 
-	num = 0;
+	idClip_EntityList ents;
 	for( i = 0; i < targets.Num(); i++ ) {
 		ent = targets[ i ].GetEntity();
 		if ( ent && idStr::Cmp( ent->GetEntityDefName(), type ) == 0 ) {
-			ents[ num++ ] = ent;
-			if ( num >= MAX_GENTITIES ) {
-				break;
-			}
+			ents.AddGrow( ent );
 		}
 	}
 
-	if ( !num ) {
+	if ( ents.Num() == 0 ) {
 		idThread::ReturnEntity( NULL );
 		return;
 	}
 
-	which = gameLocal.random.RandomInt( num );
+	which = gameLocal.random.RandomInt( ents.Num() );
 	idThread::ReturnEntity( ents[ which ] );
 }
 
@@ -3010,11 +3005,11 @@ idAI::Event_FindActorsInBounds
 */
 void idAI::Event_FindActorsInBounds( const idVec3 &mins, const idVec3 &maxs ) {
 	idEntity *	ent;
-	idEntity *	entityList[ MAX_GENTITIES ];
 	int			numListedEntities;
 	int			i;
 
-	numListedEntities = gameLocal.clip.EntitiesTouchingBounds( idBounds( mins, maxs ), CONTENTS_BODY, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	numListedEntities = gameLocal.clip.EntitiesTouchingBounds( idBounds( mins, maxs ), CONTENTS_BODY, entityList );
 	for( i = 0; i < numListedEntities; i++ ) {
 		ent = entityList[ i ];
 		if ( ent != this && !ent->IsHidden() && ( ent->health > 0 ) && ent->IsType( idActor::Type ) ) {

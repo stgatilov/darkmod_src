@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -224,25 +224,27 @@ returns false if the brush doesn't enclose a valid volume
 ==================
 */
 bool CreateBrushWindings (uBrush_t *brush) {
-	int			i, j;
-	idWinding	*w;
-	idPlane		*plane;
-	side_t		*side;
+	idList<idPlane> cuttingPlanes;
 
-	for ( i = 0; i < brush->numsides; i++ ) {
-		side = &brush->sides[i];
-		plane = &dmapGlobals.mapPlanes[side->planenum];
-		w = new idWinding( *plane );
-		for ( j = 0; j < brush->numsides && w; j++ ) {
+	for ( int i = 0; i < brush->numsides; i++ ) {
+		side_t *side = &brush->sides[i];
+		const idPlane &plane = dmapGlobals.mapPlanes[side->planenum];
+
+		cuttingPlanes.SetNum(0, false);
+		for ( int j = 0; j < brush->numsides; j++ ) {
 			if ( i == j ) {
 				continue;
 			}
 			if ( brush->sides[j].planenum == ( brush->sides[i].planenum ^ 1 ) ) {
 				continue;		// back side clipaway
 			}
-			plane = &dmapGlobals.mapPlanes[brush->sides[j].planenum^1];
-			w = w->Clip( *plane, 0 );//CLIP_EPSILON);
+			const idPlane &cutpl = dmapGlobals.mapPlanes[brush->sides[j].planenum ^ 1];
+			cuttingPlanes.AddGrow(cutpl);
 		}
+		// stgatilov: don't delete winding if clipping plane has opposite normal
+		// that corresponds to case when side planes are equal (note that trim plane is negated)
+		idWinding *w = idWinding::CreateTrimmedPlane(plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), 0.0f, INCIDENT_PLANE_RETAIN_OPPOSITE);
+
 		if ( side->winding ) {
 			delete side->winding;
 		}
@@ -568,12 +570,10 @@ void SplitBrush (uBrush_t *brush, int planenum, uBrush_t **front, uBrush_t **bac
 	}
 
 	// create a new winding from the split plane
-
-	w = new idWinding( plane );
-	for ( i = 0; i < brush->numsides && w; i++ ) {
-		idPlane &plane2 = dmapGlobals.mapPlanes[brush->sides[i].planenum ^ 1];
-		w = w->Clip( plane2, 0 ); // PLANESIDE_EPSILON);
-	}
+	idList<idPlane> cuttingPlanes;
+	for ( i = 0; i < brush->numsides; i++ )
+		cuttingPlanes.AddGrow(dmapGlobals.mapPlanes[brush->sides[i].planenum ^ 1]);
+	w = idWinding::CreateTrimmedPlane(plane, cuttingPlanes.Num(), cuttingPlanes.Ptr(), 0.0f);
 
 	if ( !w || w->IsTiny() ) {
 		// the brush isn't really split

@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 /*
@@ -193,7 +193,6 @@ static void GLW_GetWGLExtensionsWithFakeWindow( void ) {
 		win32.hDC = hDC;
 		GLimp_LoadFunctions();
 		win32.hDC = NULL;
-		qglGetIntegerv( GL_MAX_SAMPLES, ( GLint * )&glConfig.maxSamples );
 		qwglDeleteContext( gRC );
 		ReleaseDC( hWnd, hDC );
 
@@ -451,32 +450,29 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	// compute width and height
 	if ( parms.fullScreen ) {
-		if ( r_fullscreen.GetInteger() == 1 || r_fullscreen.GetInteger() == 2 )
-		{
-			exstyle = 0;
-			stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
+		exstyle = 0;
+		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 
-			if (win32.win_topmost)
-				 exstyle |= WS_EX_TOPMOST;
+		if (win32.win_topmost)
+			 exstyle |= WS_EX_TOPMOST;
 
-			x = 0;
-			y = 0;
-			if ( r_fullscreen.GetInteger() == 2 ) {
-				//adding excessive lines above and below screen, so that OS does NOT put us into exclusive mode
-				//this hack was found here: https://stackoverflow.com/q/22259067/556899
-				y = -1;
-				parms.height += 2;
-			}
+		x = 0;
+		y = 0;
+
+		if ( r_fullscreen.GetInteger() == 2 ) {
+			//always adjust game resolution to desktop resolution in borderless mode
+			parms.width = glConfig.vidWidth = win32.desktopWidth;
+			parms.height = glConfig.vidHeight = win32.desktopHeight;
+			r_customWidth.SetInteger( win32.desktopWidth );
+			r_customHeight.SetInteger( win32.desktopHeight );
+			//adding excessive lines above and below screen, so that OS does NOT put us into exclusive mode
+			//this hack was found here: https://stackoverflow.com/q/22259067/556899
+			y = -1;
+			parms.height += 2;
 		}
-		if ( parms.height != win32.desktopHeight ) {
-			glConfig.vidWidth = w = win32.desktopWidth;
-			glConfig.vidHeight = h = win32.desktopHeight;
-			r_customWidth.SetInteger( w );
-			r_customHeight.SetInteger( h );
-		} else {
-			w = parms.width;
-			h = parms.height;
-		}
+
+		w = parms.width;
+		h = parms.height;
 	} else {
 		RECT	r;
 
@@ -586,7 +582,8 @@ GLW_SetFullScreen
 */
 static bool GLW_SetFullScreen( glimpParms_t parms ) {
 	win32.cdsFullscreen = true;
-	return true;
+	if ( r_fullscreen.GetInteger() == 2 )
+		return true;
 
 	DEVMODE		dm;
 	int			cdsRet;
@@ -717,12 +714,6 @@ bool GLimp_Init( glimpParms_t parms ) {
 	// getting the wgl extensions involves creating a fake window to get a context,
 	// which is pretty disgusting, and seems to mess with the AGP VAR allocation
 	GLW_GetWGLExtensionsWithFakeWindow();
-
-	if ( parms.multiSamples > glConfig.maxSamples ) {
-		common->Warning( "GLimp_Init: Tried to set multiSamples above the maximum supported by hardware" );
-		parms.multiSamples = glConfig.maxSamples;
-		r_multiSamples.SetInteger( glConfig.maxSamples );
-	}
 
 	// try to change to fullscreen
 	if ( parms.fullScreen ) {

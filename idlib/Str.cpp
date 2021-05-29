@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -321,7 +321,7 @@ bool idStr::Filter( const char *filter, const char *name, bool casesensitive ) {
 	while(*filter) {
 		if (*filter == '*') {
 			filter++;
-			buf.Empty();
+			buf.Clear();
 			for (i = 0; *filter; i++) {
 				if ( *filter == '*' || *filter == '?' || (*filter == '[' && *(filter+1) != '[') ) {
 					break;
@@ -427,7 +427,7 @@ idStr::StripMediaName
 void idStr::StripMediaName( const char *name, idStr &mediaName ) {
 	char c;
 
-	mediaName.Empty();
+	mediaName.Clear();
 
 	for ( c = *name; c; c = *(++name) ) {
 		// truncate at an extension
@@ -558,7 +558,7 @@ void idStr::StripLeadingWhitespace( void ) {
 	// Tels: first count how many chars to remove, then move the data only once
 	int remove = 0;
 	// cast to unsigned char to prevent stripping off high-ASCII characters
-	while( (unsigned char)data[ remove ] <= ' ' ) {
+	while( data[remove] && (unsigned char)data[ remove ] <= ' ' ) {
 		remove ++;
 	}
 	len -= remove;
@@ -813,7 +813,7 @@ idStr::Mid
 const char *idStr::Mid( const int start, const int len, idStr &result ) const {
 	int i;
 
-	result.Empty();
+	result.Clear();
 
 	i = Length();
 	if ( i == 0 || len <= 0 || start >= i ) {
@@ -1234,7 +1234,7 @@ void idStr::ExtractFileExtension( idStr &dest ) const {
 
 	if ( !pos ) {
 		// no extension
-		dest.Empty();
+		dest.Clear();
 	} else {
 		Right( Length() - pos, dest );
 	}

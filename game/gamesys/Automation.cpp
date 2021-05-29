@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -334,6 +334,11 @@ void Automation::ParseAction(ParseIn &parseIn) {
 				if (ok)
 					cmdSystem->SetupReloadEngine(idCmdArgs());
 			}
+			else if (idStr::Cmp(name, "0") == 0) {
+				gameLocal.m_MissionManager->UninstallMod();
+				ok = true;
+				cmdSystem->SetupReloadEngine(idCmdArgs());
+			}
 			WriteResponse(parseIn.seqno, (ok ? "done" : "error"));
 		}
 	}
@@ -499,6 +504,35 @@ void Automation::ParseQuery(ParseIn &parseIn) {
 		}
 		else 
 			WriteResponse(parseIn.seqno, "");
+	}
+
+	if (token == "status") {
+		CModInfoPtr mod = gameLocal.m_MissionManager->GetCurrentModInfo();
+		const char *modName = (mod ? mod->modName.c_str() : "0");
+		const char *mapName = gameLocal.GetMapName();
+		if (idStr::Cmpn(mapName, "maps/", 5) == 0)
+			mapName = mapName + 5;
+		const char *guiActiveName = "";
+		if (idUserInterface *guiActive = session->GetGui(idSession::gtActive)) {
+			if (guiActive == session->GetGui(idSession::gtMainMenu))
+				guiActiveName = "mainmenu";
+			else if (guiActive == session->GetGui(idSession::gtLoading))
+				guiActiveName = "loading";
+			else if (guiActive == session->GetGui(idSession::gtRestart))
+				guiActiveName = "restart";
+			else
+				guiActiveName = "?unknown?";
+		}
+
+		idStr text;
+		char buff[256];
+		sprintf(buff, "currentfm %s\n", modName);
+		text += buff;
+		sprintf(buff, "mapname %s\n", mapName);
+		text += buff;
+		sprintf(buff, "guiactive %s\n", guiActiveName);
+		text += buff;
+		WriteResponse(parseIn.seqno, text.c_str());
 	}
 }
 

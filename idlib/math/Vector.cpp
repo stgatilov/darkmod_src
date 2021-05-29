@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -282,6 +282,8 @@ Projects the z component onto a sphere.
 =============
 */
 void idVec3::ProjectSelfOntoSphere( const float radius ) {
+	//stgatilov: WTF is it?
+	//even measurement units don't match...
 	float rsqr = radius * radius;
 	float len = Length();
 	if ( len  < rsqr * 0.5f ) {
@@ -291,6 +293,67 @@ void idVec3::ProjectSelfOntoSphere( const float radius ) {
 	}
 }
 
+/*
+=============
+ProjectToConvexCone
+
+stgatilov #5599: Consider a point at which "n" planar obstacles met, each having unit outer normal "normals[i]".
+Find projection of given velocity "*this" into the admissible cone.
+It may be (in order from more desirable to less desirable):
+  a) just this velocity
+  b) projection onto some obstacle plane
+  c) projection onto an intersection edge of two planes
+  d) zero
+This function can be used for sliding one object along collision contacts with other objects.
+=============
+*/
+idVec3 idVec3::ProjectToConvexCone( const idVec3 *normals, int n, float epsilon ) const {
+	const idVec3 &vec = *this;
+
+	// detect set of obstacles we are moving into
+	idFlexList<int, 16> badIds;
+	for (int i = 0; i < n; i++) {
+		assert(idMath::Fabs(normals[i].Length() - 1.0f) <= 1e-3f);
+		if (normals[i] * vec < -epsilon)
+			badIds.AddGrow(i);
+	}
+
+	if (badIds.Num() == 0)
+		return vec;	// already within cone 
+
+	idVec3 bestVec(0.0f);
+	float minDiffSqr = FLT_MAX;
+	// checks if given vector is admissible and updates best known projection
+	auto CheckVec = [&](idVec3 checkVec) -> void {
+		for (int u = 0; u < n; u++)
+			if (normals[u] * checkVec < -epsilon)
+				return;	// goes into u-th obstacle
+
+		float diffSqr = (checkVec - vec).LengthSqr();
+		if (minDiffSqr > diffSqr) {
+			minDiffSqr = diffSqr;
+			bestVec = checkVec;
+		}
+	};
+
+	// try projections onto individual planes
+	for (int i = 0; i < badIds.Num(); i++) {
+		idVec3 tmpVec = vec;
+		tmpVec.ProjectOntoPlane(normals[badIds[i]]);
+		CheckVec(tmpVec);
+	}
+	// try projections onto intersection edges
+	for (int i = 0; i < badIds.Num(); i++)
+		for (int j = i+1; j < badIds.Num(); j++) {
+			idVec3 cross = normals[i].Cross(normals[j]);
+			if (cross.Normalize() <= 1e-3f)
+				continue;
+			idVec3 tmpVec = (vec * cross) * cross;
+			CheckVec(tmpVec);
+		}
+
+	return bestVec;
+}
 
 
 //===============================================================

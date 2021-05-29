@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __WIN_LOCAL_H__
@@ -23,8 +23,6 @@
 
 #define	WINDOW_STYLE	(WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE | WS_THICKFRAME)
 
-void	Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
-
 void	Sys_CreateConsole( void );
 void	Sys_DestroyConsole( void );
 
@@ -32,8 +30,6 @@ char	*Sys_ConsoleInput (void);
 char	*Sys_GetCurrentUser( void );
 
 void	Win_SetErrorText( const char *text );
-
-cpuid_t	Sys_GetCPUId( void );
 
 int		MapKey (int key);
 
@@ -69,8 +65,6 @@ typedef struct {
 
 	OSVERSIONINFOEX	osversion;
 
-	cpuid_t			cpuid;
-
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event (not really needed now that we use async direct input)
 	int				sysMsgTime;
@@ -95,7 +89,6 @@ typedef struct {
 	// desktop gamma is saved here for restoration at exit
 
 	static idCVar	sys_arch;
-	static idCVar	sys_cpustring;
 	static idCVar	in_mouse;
 	static idCVar	win_username;
 	static idCVar	win_xpos;			// archived X coordinate of window position

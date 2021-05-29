@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -29,7 +29,7 @@ idPush::InitSavingPushedEntityPositions
 ============
 */
 void idPush::InitSavingPushedEntityPositions( void ) {
-	numPushed = 0;
+	pushed.SetNum(0);
 }
 
 /*
@@ -41,30 +41,25 @@ void idPush::SaveEntityPosition( idEntity *ent ) {
 	int i;
 
 	// if already saved the physics state for this entity
-	for ( i = 0; i < numPushed; i++ ) {
+	for ( i = 0; i < pushed.Num(); i++ ) {
 		if ( pushed[i].ent == ent ) {
 			return;
 		}
 	}
 
-	// don't overflow
-	if ( numPushed >= MAX_GENTITIES ) {
-		gameLocal.Error( "more than MAX_GENTITIES pushed entities" );
-		return;
-	}
-
-	pushed[numPushed].ent = ent;
+	pushed_s add;
+	add.ent = ent;
 
 	// if the entity is an actor
 	if ( ent->IsType( idActor::Type ) ) {
 		// save the delta view angles
-		pushed[numPushed].deltaViewAngles = static_cast<idActor *>(ent)->GetDeltaViewAngles();
+		add.deltaViewAngles = static_cast<idActor *>(ent)->GetDeltaViewAngles();
 	}
 
 	// save the physics state
 	ent->GetPhysics()->SaveState();
 
-	numPushed++;
+	pushed.AddGrow( add );
 }
 
 /*
@@ -75,7 +70,7 @@ idPush::RestorePushedEntityPositions
 void idPush::RestorePushedEntityPositions( void ) {
 	int i;
 
-	for ( i = 0; i < numPushed; i++ ) {
+	for ( i = 0; i < pushed.Num(); i++ ) {
 
 		// if the entity is an actor
 		if ( pushed[i].ent->IsType( idActor::Type ) ) {
@@ -138,6 +133,7 @@ bool idPush::RotateEntityToAxial( idEntity *ent, idVec3 rotationPoint ) {
 }
 
 #ifdef NEW_PUSH
+//stgatilov TODO: rework with pushGroup being FlexList
 
 /*
 ============
@@ -278,7 +274,7 @@ int idPush::GetPushableEntitiesForTranslation( idEntity *pusher, idEntity *initi
 	pushBounds.ExpandSelf( 2.0f );
 
 	// get all entities within the push bounds
-	n = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList, MAX_GENTITIES );
+	n = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList );
 
 	for ( l = i = 0; i < n; i++ ) {
 		if ( entityList[i] == pusher || entityList[i] == initialPusher ) {
@@ -304,7 +300,7 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 										float ImpulseMod ) 
 {
 	int i, j, numListedEntities;
-	idEntity *curPusher, *ent, *entityList[ MAX_GENTITIES ];
+	idEntity *curPusher, *ent;
 	float fraction;
 	bool groundContact, blocked = false;
 	float totalMass;
@@ -325,7 +321,7 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	// clip against all non-pushable physics objects
 	if ( flags & PUSHFL_CLIP ) {
 
-		numListedEntities = GetPushableEntitiesForTranslation( pusher, pusher, flags, translation, entityList, MAX_GENTITIES );
+		numListedEntities = GetPushableEntitiesForTranslation( pusher, pusher, flags, translation, entityList );
 		// disable pushable entities for collision detection
 		for ( i = 0; i < numListedEntities; i++ ) {
 			entityList[i]->GetPhysics()->DisableClip();
@@ -364,7 +360,7 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 		groundContact = pushedGroup[i].groundContact;
 		i = 0;
 
-		numListedEntities = GetPushableEntitiesForTranslation( curPusher, pusher, flags, realTranslation, entityList, MAX_GENTITIES );
+		numListedEntities = GetPushableEntitiesForTranslation( curPusher, pusher, flags, realTranslation, entityList );
 
 		for ( j = 0; j < numListedEntities; j++ ) {
 			ent = entityList[ j ];
@@ -476,7 +472,7 @@ int idPush::GetPushableEntitiesForRotation( idEntity *pusher, idEntity *initialP
 	pushBounds.ExpandSelf( 2.0f );
 
 	// get all entities within the push bounds
-	n = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList, MAX_GENTITIES );
+	n = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList );
 
 	for ( l = i = 0; i < n; i++ ) {
 		if ( entityList[i] == pusher || entityList[i] == initialPusher ) {
@@ -500,7 +496,7 @@ idPush::ClipRotationalPush
 float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int flags,
 									const idMat3 &newAxis, const idRotation &rotation ) {
 	int i, j, numListedEntities;
-	idEntity *curPusher, *ent, *entityList[ MAX_GENTITIES ];
+	idEntity *curPusher, *ent;
 	float fraction;
 	bool groundContact, blocked = false;
 	float totalMass;
@@ -522,7 +518,7 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 	// clip against all non-pushable physics objects
 	if ( flags & PUSHFL_CLIP ) {
 
-		numListedEntities = GetPushableEntitiesForRotation( pusher, pusher, flags, rotation, entityList, MAX_GENTITIES );
+		numListedEntities = GetPushableEntitiesForRotation( pusher, pusher, flags, rotation, entityList );
 		// disable pushable entities for collision detection
 		for ( i = 0; i < numListedEntities; i++ ) {
 			entityList[i]->GetPhysics()->DisableClip();
@@ -561,7 +557,7 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 		groundContact = pushedGroup[i].groundContact;
 		i = 0;
 
-		numListedEntities = GetPushableEntitiesForRotation( curPusher, pusher, flags, realRotation, entityList, MAX_GENTITIES );
+		numListedEntities = GetPushableEntitiesForRotation( curPusher, pusher, flags, realRotation, entityList );
 
 		for ( j = 0; j < numListedEntities; j++ ) {
 			ent = entityList[ j ];
@@ -1037,12 +1033,12 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 idPush::DiscardEntities
 ============
 */
-int idPush::DiscardEntities( idEntity *entityList[], int numEntities, int flags, idEntity *pusher ) {
+int idPush::DiscardEntities( idClip_EntityList &entityList, int flags, idEntity *pusher ) {
 	int i, num;
 	idEntity *check;
 
 	// remove all entities we cannot or should not push from the list
-	for ( num = i = 0; i < numEntities; i++ ) {
+	for ( num = i = 0; i < entityList.Num(); i++ ) {
 		check = entityList[ i ];
 
 		// if the physics object is not pushable
@@ -1082,6 +1078,7 @@ int idPush::DiscardEntities( idEntity *entityList[], int numEntities, int flags,
 		entityList[ num++ ] = entityList[i];
 	}
 
+	entityList.SetNum(num);
 	return num;
 }
 
@@ -1097,7 +1094,7 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 										float ImpulseMod ) 
 {
 	int			i, listedEntities, res;
-	idEntity	*check, *entityList[ MAX_GENTITIES ];
+	idEntity	*check;
 	idBounds	bounds, pushBounds;
 	idVec3		clipMove, clipOrigin, oldOrigin, dir, impulse;
 	trace_t		pushResults;
@@ -1137,10 +1134,11 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	// make sure we don't get the pushing clip model in the list
 	clipModel->Disable();
 
-	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList );
 
 	// discard entities we cannot or should not push
-	listedEntities = DiscardEntities( entityList, listedEntities, flags, pusher );
+	listedEntities = DiscardEntities( entityList, flags, pusher );
 
 	if ( flags & PUSHFL_CLIP ) 
 	{
@@ -1303,7 +1301,6 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 									const idMat3 &newAxis, const idRotation &rotation ) {
 	int			i, listedEntities, res;
 	idEntity	*check;
-	static idEntity* entityList[ MAX_GENTITIES ];
 	idBounds	bounds, pushBounds;
 	idRotation	clipRotation;
 	idMat3		clipAxis, oldAxis;
@@ -1337,10 +1334,11 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 	// make sure we don't get the pushing clip model in the list
 	clipModel->Disable();
 
-	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList, MAX_GENTITIES );
+	idClip_EntityList entityList;
+	listedEntities = gameLocal.clip.EntitiesTouchingBounds( pushBounds, -1, entityList );
 
 	// discard entities we cannot or should not push
-	listedEntities = DiscardEntities( entityList, listedEntities, flags, pusher );
+	listedEntities = DiscardEntities( entityList, flags, pusher );
 
 	if ( flags & PUSHFL_CLIP ) {
 

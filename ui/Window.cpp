@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -64,6 +64,7 @@ const idRegEntry idWindow::RegisterVars[] = {
 	{ "varbackground", idRegister::STRING },
 	{ "cvar", idRegister::STRING },
 	{ "choices", idRegister::STRING },
+	{ "values", idRegister::STRING },
 	{ "choiceVar", idRegister::STRING },
 	{ "bind", idRegister::STRING },
 	{ "modelRotate", idRegister::VEC4 },
@@ -114,7 +115,6 @@ void idWindow::CommonInit() {
 	textAlign = 0;
 	textAlignx = 0;
 	textAligny = 0;
-	tonemap = false;
 	noEvents = false;
 	rotate = 0;
 	shear.Zero();
@@ -238,7 +238,7 @@ void idWindow::CleanUp() {
 	// Cleanup the named events
 	namedEvents.DeleteContents(true);
 
-	drawWindows.Clear();
+	drawWindows.ClearFree();
 	children.DeleteContents(true);
 	definedVars.DeleteContents(true);
 	timeLineEvents.DeleteContents(true);
@@ -1262,9 +1262,6 @@ void idWindow::Redraw(float x, float y) {
 	dc->GetTransformInfo( oldOrg, oldTrans );
 
 	SetupTransforms(x, y);
-	if ( tonemap ) {
-		tr.guiModel->SetTonemapRect( drawRect );
-	}
 	DrawBackground(drawRect);
 	DrawBorderAndCaption(drawRect);
 
@@ -1998,10 +1995,6 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 		textAligny = src->ParseFloat();
 		return true;
 	}
-	if ( idStr::Icmp( _name, "tonemap" ) == 0 ) {
-		tonemap = true;
-		return true;
-	}
 	if (idStr::Icmp(_name, "shear") == 0) {
 		shear.x = src->ParseFloat();
 		idToken tok;
@@ -2169,7 +2162,6 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 		CleanUp();
 	}
 
-	declManager->BeginWindowLoad(this);
 	drawWin_t dwt;
 
 	timeLineEvents.Clear();
@@ -2180,6 +2172,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	src->ExpectTokenType( TT_NAME, 0, &token );
 
 	SetInitialState(token);
+	declManager->BeginWindowLoad(this);
 
 	src->ExpectTokenString( "{" );
 	src->ExpectAnyToken( &token );
@@ -4230,7 +4223,6 @@ void idWindow::SetDefaults ( void ) {
 	textAlign = 0;
 	textAlignx = 0;
 	textAligny = 0;
-	tonemap = false;
 	noEvents = false;
 	rotate = 0;
 	shear.Zero();

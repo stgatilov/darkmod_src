@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #version 140
 // !!ARBfp1.0 
 
@@ -43,6 +57,7 @@ void main() {
 	globalNormal.x = dot(localNormal.xyz, var_tc2.xyz);                                                 //DP3		globalNormal.x, localNormal, fragment.texcoord[2];
 	globalNormal.y = dot(localNormal.xyz, var_tc3.xyz);                                                 //DP3		globalNormal.y, localNormal, fragment.texcoord[3];
 	globalNormal.z = dot(localNormal.xyz, var_tc4.xyz);                                                 //DP3		globalNormal.z, localNormal, fragment.texcoord[4];
+	globalNormal.w = 0.0;   //stgatilov: avoid uninitialized warning
 	
 	// normalize vector to eye
 	R0 = vec4(dot(var_tc1.xyz, var_tc1.xyz));                                                           //DP3		R0, fragment.texcoord[1], fragment.texcoord[1];

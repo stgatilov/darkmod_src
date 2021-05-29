@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __SYS_PUBLIC__
@@ -225,7 +225,8 @@ typedef enum {
 	SE_KEY,					// evValue is a key code, evValue2 is the down flag
 	SE_CHAR,				// evValue is an ascii char
 	SE_MOUSE,				// evValue and evValue2 are reletive signed x / y moves
-	SE_JOYSTICK_AXIS,		// evValue is an axis number and evValue2 is the current state (-127 to 127)
+	SE_PAD_BUTTON,			// evValue is a button code, evValue2 is the down flag
+	SE_PAD_AXIS,			// evValue is an axis number and evValue2 is the current state (-127 to 127)
 	SE_CONSOLE				// evPtr is a char*, from typing something at a non-game console
 } sysEventType_t;
 
@@ -292,6 +293,9 @@ double			Sys_ClockTicksPerSecond( void );
 uint64_t Sys_GetTimeMicroseconds( void );
 #define Sys_Microseconds Sys_GetTimeMicroseconds
 
+// stgatilov: called once on initialization to initialize CPUID info and sys_cpustring
+void Sys_InitCPUID();
+
 // returns a selection of the CPUID_* flags
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );
@@ -327,6 +331,7 @@ void			Sys_DLL_Unload(uintptr_t dllHandle);
 void			Sys_GenerateEvents( void );
 sysEvent_t		Sys_GetEvent( void );
 void			Sys_ClearEvents( void );
+void			Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 
 // input is tied to windows, so it needs to be started up and shut down whenever
 // the main window is recreated
@@ -536,7 +541,12 @@ public:
 	virtual const char *	GetProcessorString( void ) = 0;
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
-	virtual void FPU_SetExceptions(bool enable) = 0;
+	virtual void			FPU_SetExceptions(bool enable) = 0;
+
+	// stgatilov #4550: should be called when new thread starts: sets FPU properties
+	virtual void			ThreadStartup() = 0;
+	// stgatilov #4550: should be called regularly in every thread: updates FPU properties after cvar changes
+	virtual void			ThreadHeartbeat() = 0;
 
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;

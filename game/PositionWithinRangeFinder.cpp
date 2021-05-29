@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #include "precompiled.h"
 #pragma hdrstop
@@ -58,7 +58,7 @@ bool PositionWithinRangeFinder::TestArea( const idAAS *aas, int areaNum )
 
 	idVec3 fromPos = areaCenter + _eyeOffset * axis;
 
-	// gameRenderWorld->DrawTextA(va("%d", areaNum), areaCenter, 0.5f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 20000);
+	// gameRenderWorld->DebugText(va("%d", areaNum), areaCenter, 0.5f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 20000);
 
 	float distance = (fromPos - _targetPos).LengthFast();
 	if (distance > _maxDistance)

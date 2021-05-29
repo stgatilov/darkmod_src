@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma once
@@ -51,15 +51,24 @@ public:
 	template< typename ShaderParams >
 	DrawBatch<ShaderParams> BeginBatch();
 
-	void ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
+	void ExecuteDrawVertBatch( int numDrawSurfs, int numInstances = 1, GLuint uboIndex = DEFAULT_UBO_INDEX );
 	void ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboIndex = DEFAULT_UBO_INDEX );
+
+	/**
+	 * Use this to upload and bind an additional UBO besides the default per draw call buffer.
+	 * You need to call this before starting draw batches, as otherwise you'll corrupt the underlying memory.
+	 */
+	void UploadExtraUboData( void *data, size_t size, GLuint uboIndex );
 
 	void EndFrame();
 
 	template< typename ShaderParams >
 	uint MaxShaderParamsArraySize() const {
+		return MaxShaderParamsArraySize( sizeof(ShaderParams) );
+	}
+	uint MaxShaderParamsArraySize( uint paramsSize ) const {
 	    // limit max supported value, since AMD cards support insanely large UBOs (in theory)
-		return Min( (uint)(maxUniformBlockSize / sizeof( ShaderParams )), MAX_PARAMS_ARRAY_SIZE );
+		return Min( (uint)(maxUniformBlockSize / paramsSize), MAX_PARAMS_ARRAY_SIZE );
 	}
 
 private:
@@ -70,6 +79,7 @@ private:
 	GpuBuffer drawCommandBuffer;
 	GLuint drawIdBuffer = 0;
 	bool drawIdVertexEnabled = false;
+	int drawIdVertexDivisor = 1;
 
 	int maxUniformBlockSize = 0;
 
@@ -84,9 +94,9 @@ private:
 	uint EnsureAvailableStorageInBuffers( uint shaderParamsSize );
 
 	typedef uint (*BaseVertexFn)(const drawSurf_t *);
-	void ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn );
-	void BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVertexFn );
-	void BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVertexFn );
+	void ExecuteBatch( int numDrawSurfs, int numInstances, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn );
+	void BatchMultiDraw( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn );
+	void BatchSingleDraws( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn );
 };
 
 template<typename ShaderParams>

@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #pragma once
 
 #include <string>
@@ -46,6 +60,9 @@ public:
 	//is current process run "under admin"?
 	//returns false on Non-Windows platforms
 	static bool HasElevatedPrivilegesWindows();
+	//checks if the specified set of files can be modified (i.e. not locked by running process)
+	//returns error message on fail, or empty string if all files are modifiable
+	static std::string CanModifyFiles(const std::vector<std::string> &filePaths, bool skipMissing);
 
 	//return true if TDM shortcut already exists on Desktop
 	static bool IfShortcutExists(const std::string &name);

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __VECTORSET_H__
@@ -40,8 +40,16 @@ public:
 	void					Init( const type &mins, const type &maxs, const int boxHashSize, const int initialSize );
 	void					ResizeIndex( const int newSize );
 	void					Clear( void );
+	void					ClearFree( void );
 
+							// finds arbitrary match for the specified vector
+							// if there is no match, then the specified vector is appended
 	int						FindVector( const type &v, const float epsilon );
+
+							// stgatilov: calls given callback for all matches for the specified vector
+	template<class Lambda> void ForeachMatch( const type &v, const float epsilon, const Lambda &callback ) const;
+							// stgatilov: appends specified vector (without search for matches)
+	int						AddVector( const type &v );
 
 private:
 	idHashIndex				hash;
@@ -54,8 +62,8 @@ private:
 
 template< class type, int dimension >
 ID_INLINE idVectorSet<type,dimension>::idVectorSet( void ) {
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
 	boxHashSize = 16;
+	hash.ClearFree( idMath::IPow( boxHashSize, dimension ), 128 );
 	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
 	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
 }
@@ -73,7 +81,13 @@ ID_INLINE void idVectorSet<type,dimension>::Init( const type &mins, const type &
 	idList<type>::AssureSize( initialSize );
 	idList<type>::SetNum( 0, false );
 
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), initialSize );
+	int hashSize = idMath::CeilPowerOfTwo( idMath::IPow( boxHashSize, dimension ) );
+	if (hashSize != hash.GetHashSize())
+		hash.ClearFree( hashSize, initialSize );
+	else {
+		hash.Clear();
+		hash.ResizeIndex(initialSize);
+	}
 
 	this->mins = mins;
 	this->maxs = maxs;
@@ -99,7 +113,13 @@ ID_INLINE void idVectorSet<type,dimension>::Clear( void ) {
 }
 
 template< class type, int dimension >
-ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const float epsilon ) {
+ID_INLINE void idVectorSet<type,dimension>::ClearFree( void ) {
+	idList<type>::ClearFree();
+	hash.ClearFree();
+}
+
+template< class type, int dimension > template< class Lambda >
+ID_INLINE void idVectorSet<type,dimension>::ForeachMatch( const type &v, const float epsilon, const Lambda &callback ) const {
 	int i, j, k, hashKey, partialHashKey[dimension];
 
 	for ( i = 0; i < dimension; i++ ) {
@@ -123,10 +143,16 @@ ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const floa
 				}
 			}
 			if ( k >= dimension ) {
-				return j;
+				if (callback(j, lv))
+					return;
 			}
 		}
 	}
+}
+
+template< class type, int dimension >
+ID_INLINE int idVectorSet<type,dimension>::AddVector( const type &v ) {
+	int i, hashKey;
 
 	hashKey = 0;
 	for ( i = 0; i < dimension; i++ ) {
@@ -135,8 +161,20 @@ ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const floa
 	}
 
 	hash.Add( hashKey, idList<type>::Num() );
-	this->Append( v );
+	this->AddGrow( v );
 	return idList<type>::Num()-1;
+}
+
+template< class type, int dimension >
+ID_INLINE int idVectorSet<type,dimension>::FindVector( const type &v, const float epsilon ) {
+	int match = -1;
+	ForeachMatch(v, epsilon, [&](int idx, const type &vec){
+		match = idx;
+		return true;
+	});
+	if (match >= 0)
+		return match;
+	return AddVector(v);
 }
 
 
@@ -163,6 +201,7 @@ public:
 
 	void					Init( const type &mins, const type &maxs, const int boxHashSize, const int initialSize );
 	void					Clear( void );
+	void					ClearFree( void );
 
 							// returns either vectorNum or an index to a previously found vector
 	int						FindVector( const type *vectorList, const int vectorNum, const float epsilon );
@@ -178,8 +217,8 @@ private:
 
 template< class type, int dimension >
 ID_INLINE idVectorSubset<type,dimension>::idVectorSubset( void ) {
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), 128 );
 	boxHashSize = 16;
+	hash.ClearFree( idMath::IPow( boxHashSize, dimension ), 128 );
 	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
 	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
 }
@@ -194,7 +233,13 @@ ID_INLINE void idVectorSubset<type,dimension>::Init( const type &mins, const typ
 	int i;
 	float boxSize;
 
-	hash.Clear( idMath::IPow( boxHashSize, dimension ), initialSize );
+	int hashSize = idMath::CeilPowerOfTwo( idMath::IPow( boxHashSize, dimension ) );
+	if (hashSize != hash.GetHashSize())
+		hash.ClearFree( hashSize, initialSize );
+	else {
+		hash.Clear();
+		hash.ResizeIndex(initialSize);
+	}
 
 	this->mins = mins;
 	this->maxs = maxs;
@@ -211,6 +256,12 @@ template< class type, int dimension >
 ID_INLINE void idVectorSubset<type,dimension>::Clear( void ) {
 	idList<type>::Clear();
 	hash.Clear();
+}
+
+template< class type, int dimension >
+ID_INLINE void idVectorSubset<type,dimension>::ClearFree( void ) {
+	idList<type>::ClearFree();
+	hash.ClearFree();
 }
 
 template< class type, int dimension >

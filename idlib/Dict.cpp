@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -118,8 +118,8 @@ void idDict::TransferKeyValues( idDict &other ) {
 	}
 	argHash = other.argHash;
 
-	other.args.Clear();
-	other.argHash.Free();
+	other.args.ClearFree();
+	other.argHash.ClearFree();
 }
 
 /*
@@ -220,7 +220,23 @@ void idDict::Clear( void ) {
 	}
 
 	args.Clear();
-	argHash.Free();
+	argHash.Clear();
+}
+
+/*
+================
+idDict::ClearFree
+================
+*/
+void idDict::ClearFree( void ) {
+
+	for( int i = 0; i < args.Num(); i++ ) {
+		globalKeys.FreeString( args[i].key );
+		globalValues.FreeString( args[i].value );
+	}
+
+	args.ClearFree();
+	argHash.ClearFree();
 }
 
 /*
@@ -623,8 +639,8 @@ idDict::Shutdown
 ================
 */
 void idDict::Shutdown( void ) {
-	globalKeys.Clear();
-	globalValues.Clear();
+	globalKeys.ClearFree();
+	globalValues.ClearFree();
 }
 
 /*
@@ -664,20 +680,7 @@ idDict::ListKeys_f
 ================
 */
 void idDict::ListKeys_f( const idCmdArgs &args ) {
-	int i;
-	idList<const idPoolStr *> keyStrings;
-
-	for ( i = 0; i < globalKeys.Num(); i++ ) {
-		keyStrings.Append( globalKeys[i] );
-	}
-
-	keyStrings.Sort();
-
-	for ( i = 0; i < keyStrings.Num(); i++ ) {
-		idLib::common->Printf( "%s\n", keyStrings[i]->c_str() );
-	}
-
-	idLib::common->Printf( "%5d keys\n", keyStrings.Num() );
+	globalKeys.PrintAll("keys");
 }
 
 /*
@@ -686,18 +689,5 @@ idDict::ListValues_f
 ================
 */
 void idDict::ListValues_f( const idCmdArgs &args ) {
-	int i;
-	idList<const idPoolStr *> valueStrings;
-
-	for ( i = 0; i < globalValues.Num(); i++ ) {
-		valueStrings.Append( globalValues[i] );
-	}
-
-	valueStrings.Sort();
-
-	for ( i = 0; i < valueStrings.Num(); i++ ) {
-		idLib::common->Printf( "%s\n", valueStrings[i]->c_str() );
-	}
-
-	idLib::common->Printf( "%5d values\n", valueStrings.Num() );
+	globalValues.PrintAll("values");
 }

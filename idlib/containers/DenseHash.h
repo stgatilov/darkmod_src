@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __DENSEHASH_H__
@@ -18,8 +18,8 @@
 
 
 // This hash table works similarly to google dense map.
-// Only POD elements work well within it.
 // Should be used for large tables.
+// Note: just like idList, always keeps all values constructed.
 
 template<class Key, class Value, class HashFunction>
 class idDenseHash {
@@ -38,7 +38,7 @@ public:
 		maxLoadPercent = loadfactor;
 		empty = _empty;
 		size1 = 3;
-		delete table;
+		delete[] table;
 		table = new Elem[size1 + 1];
 		for (int i = 0; i <= size1; i++)
 			table[i].key = empty;

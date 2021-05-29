@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -45,7 +45,7 @@ idHashIndex::Allocate
 void idHashIndex::Allocate( const int newHashSize, const int newIndexSize ) {
 	assert( idMath::IsPowerOfTwo( newHashSize ) );
 
-	Free();
+	ClearFree();
 	hashSize = newHashSize;
 	hash = new int[hashSize];
 	memset( hash, 0xff, hashSize * sizeof( hash[0] ) );
@@ -58,10 +58,10 @@ void idHashIndex::Allocate( const int newHashSize, const int newIndexSize ) {
 
 /*
 ================
-idHashIndex::Free
+idHashIndex::ClearFree
 ================
 */
-void idHashIndex::Free( void ) {
+void idHashIndex::ClearFree( void ) {
 	if ( hash != INVALID_INDEX ) {
 		delete[] hash;
 		hash = INVALID_INDEX;

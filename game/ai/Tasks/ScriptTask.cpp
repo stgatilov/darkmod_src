@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -24,6 +24,11 @@
 
 namespace ai
 {
+
+ScriptTask::~ScriptTask() {
+	if (_thread)
+		delete _thread;
+}
 
 ScriptTask::ScriptTask() :
 	_thread(NULL)
@@ -58,6 +63,7 @@ void ScriptTask::Init(idAI* owner, Subsystem& subsystem)
 		_thread = new idThread(scriptFunction);
 		_thread->CallFunctionArgs(scriptFunction, true, "e", owner);
 		_thread->DelayedStart(0);
+		_thread->ManualDelete();
 	}
 	else
 	{
@@ -76,7 +82,6 @@ bool ScriptTask::Perform(Subsystem& subsystem)
 	if (_thread->IsDying())
 	{
 		// thread is done, return TRUE to terminate this task
-		_thread = NULL;
 		return true;
 	}
 
@@ -88,7 +93,7 @@ void ScriptTask::OnFinish(idAI* owner)
 	if (_thread != NULL)
 	{
 		// We've got a non-NULL thread, this means it's still alive, end it now
-		_thread->End();
+		_thread->EndThread();
 	}
 }
 

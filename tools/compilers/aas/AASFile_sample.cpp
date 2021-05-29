@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -594,4 +594,50 @@ int idAASFileLocal::MaxTreeDepth( void ) const {
 	depth = maxDepth = 0;
 	MaxTreeDepth_r( 1, depth, maxDepth );
 	return maxDepth;
+}
+
+/*
+============
+idAASFileLocal::FindAreasInBounds_r
+============
+*/
+void idAASFileLocal::FindAreasInBounds_r(const idBounds &bounds, idList<int> &areaNums, int nodeNum) const {
+	while( nodeNum ) {
+		if ( nodeNum < 0 ) {
+			areaNums.AddGrow( -nodeNum );
+			break;
+		}
+		const aasNode_t *node = &nodes[nodeNum];
+		int res = bounds.PlaneSide( planeList[node->planeNum] );
+		if ( res == PLANESIDE_BACK ) {
+			nodeNum = node->children[1];
+		}
+		else if ( res == PLANESIDE_FRONT ) {
+			nodeNum = node->children[0];
+		}
+		else {
+			FindAreasInBounds_r( bounds, areaNums, node->children[0] );
+			nodeNum = node->children[1];
+		}
+	}
+}
+
+/*
+============
+idAASFileLocal::FindAreasInBounds
+============
+*/
+int idAASFileLocal::FindAreasInBounds(const idBounds &bounds, idList<int> &areaNums) const {
+	areaNums.SetNum( 0, false );
+	FindAreasInBounds_r( bounds, areaNums, 1 );
+
+	//sort and remove duplicates
+	areaNums.Sort();
+	int k = 1;
+	for ( int i = 1; i < areaNums.Num(); i++ )
+		if ( areaNums[i] != areaNums[i-1] )
+			areaNums[k++] = areaNums[i];
+	areaNums.SetNum( k, false );
+
+	return areaNums.Num();
 }

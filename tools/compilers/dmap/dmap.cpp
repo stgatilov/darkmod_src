@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -83,16 +83,6 @@ bool ProcessModel( uEntity_t *e, bool floodFill ) {
 			// set the outside leafs to opaque
 			FillOutside( e );
 		} else {
-			// We have a leak.
-			if ( dmapGlobals.verbose < VL_ORIGDEFAULT ) // #4123
-			{
-				// We haven't printed which entity we're working on so do it now
-				PrintEntityHeader( VL_CONCISE, e );
-			}
-			PrintIfVerbosityAtLeast( VL_CONCISE, "**********************\n" );
-			common->Warning( "******* leaked *******" );
-			PrintIfVerbosityAtLeast( VL_CONCISE, "**********************\n" );
-			LeakFile( e->tree );
 			// bail out here.  If someone really wants to
 			// process a map that leaks, they should use
 			// -noFlood
@@ -157,6 +147,13 @@ bool ProcessModels( void ) {
 					common->Warning("Entity \"%s\" has bad rotation matrix", name);
 			}
 		}
+
+		/*
+		 * stgatilov #5186: Starting with 2.09, this warning is no longer necessary.
+		 * Because all hack-rotated entities are fixed during map load (with proxy models).
+		 * Moreover, mocking mappers with this warning is undesirable, because stock prefabs have such entities too.
+		 */
+#if 0
 		//complain about func_static-s with bad rotation only once
 		if (int k = badRotationFuncStatics.Num()) {
 			idStr list;
@@ -169,6 +166,7 @@ bool ProcessModels( void ) {
 				list += ", ...";
 			common->Warning("Detected %d func_static-s with bad rotation: [%s]", k, list.c_str());
 		}
+#endif
 	}
 
 	oldVerbose = dmapGlobals.verbose;
@@ -218,6 +216,7 @@ void DmapHelp( void ) {
 		
 	"Usage: dmap [options] mapfile\n"
 	"Options:\n"
+	"noFlood           = ignore BSP leaks\n"
 	"noCurves          = don't process curves\n"
 	"noCM              = don't create collision map\n"
 	"noAAS             = don't create AAS files\n"
@@ -235,11 +234,11 @@ ResetDmapGlobals
 void ResetDmapGlobals( void ) {
 	dmapGlobals.mapFileBase[0] = '\0';
 	dmapGlobals.dmapFile = NULL;
-	dmapGlobals.mapPlanes.Clear();
+	dmapGlobals.mapPlanes.ClearFree();
 	dmapGlobals.num_entities = 0;
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
-	dmapGlobals.mapLights.Clear();
+	dmapGlobals.mapLights.ClearFree();
 	dmapGlobals.verbose = VL_CONCISE;
 	dmapGlobals.glview = false;
 	dmapGlobals.noOptimize = false;
@@ -260,6 +259,20 @@ void ResetDmapGlobals( void ) {
 	dmapGlobals.totalShadowVerts = 0;
 }
 
+
+idCVar dmap_compatibility(
+	"dmap_compatibility", "0", CVAR_INTEGER | CVAR_SYSTEM,
+	"This meta-cvar can be used to dmap old FMs.\n"
+	"Without it, you'll probably have to heavily modify such a map.\n"
+	"\n"
+	"If you set this cvar to some TDM version, then\n"
+	"  dmap will work approximately like it worked in that version of TDM.\n"
+	"Version must be specified as integer without dot, e.g.: 207 or 209\n"
+	"\n"
+	"Implementation-wise, setting this cvar forces\n"
+	"  all dmap_XXX cvars to appropriate values.\n"
+);
+
 /*
 ============
 Dmap
@@ -275,6 +288,26 @@ void Dmap( const idCmdArgs &args ) {
 	bool		noAAS = false;
 
 	ResetDmapGlobals();
+
+	if (int version = dmap_compatibility.GetInteger()) {
+		//new in 2.08
+		dmap_fixBrushOpacityFirstSide.SetBool(version >= 208);
+		dmap_bspAllSidesOfVisportal.SetBool(version >= 208);
+		dmap_fixVisportalOutOfBoundaryEffects.SetBool(version >= 208);
+		//new in 2.10
+		dmap_planeHashing.SetBool(version >= 210);
+		dmap_fasterPutPrimitives.SetBool(version >= 210);
+		dmap_dontSplitWithFuncStaticVertices.SetBool(version >= 210);
+		dmap_fixVertexSnappingTjunc.SetInteger(version >= 210 ? 2 : 0);
+		dmap_fasterShareMapTriVerts.SetBool(version >= 210);
+		dmap_optimizeTriangulation.SetBool(version >= 210);
+		dmap_optimizeExactTjuncIntersection.SetBool(version >= 210);
+		dmap_fasterAasMeltPortals.SetBool(version >= 210);
+		dmap_fasterAasBrushListMerge.SetBool(version >= 210);
+		dmap_pruneAasBrushesChopping.SetBool(version >= 210);
+		dmap_fasterAasWaterJumpReachability.SetBool(version >= 210);
+		dmap_disableCellSnappingTjunc.SetBool(version >= 210);
+	}
 
 	if ( args.Argc() < 2 ) {
 		DmapHelp();
@@ -311,8 +344,12 @@ void Dmap( const idCmdArgs &args ) {
 			common->Printf( "verbose = very\n" );
 			dmapGlobals.verbose = VL_VERBOSE;
 		} else if ( !idStr::Icmp( s, "draw" ) ) {
-			common->Printf( "drawflag = true\n" );
-			dmapGlobals.drawflag = true;
+			if (r_glCoreProfile.GetInteger() > 0)
+				common->Warning("set r_glCoreProfile 0 for draw flag!");
+			else {
+				common->Printf( "drawflag = true\n" );
+				dmapGlobals.drawflag = true;
+			}
 		} else if ( !idStr::Icmp( s, "noFlood" ) ) {
 			common->Printf( "noFlood = true\n" );
 			dmapGlobals.noFlood = true;
@@ -460,7 +497,7 @@ void Dmap( const idCmdArgs &args ) {
 	delete dmapGlobals.dmapFile;
 
 	// clear the map plane list
-	dmapGlobals.mapPlanes.Clear();
+	dmapGlobals.mapPlanes.ClearFree();
 
 #ifdef _WIN32
 	if ( com_outputMsg && com_hwndMsg != NULL ) {

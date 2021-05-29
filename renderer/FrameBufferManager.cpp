@@ -43,6 +43,7 @@ void FrameBufferManager::Init() {
 	defaultFbo = CreateFromGenerator( "default", FrameBuffer::CreateDefaultFrameBuffer );
 	primaryFbo = CreateFromGenerator( "primary", [this](FrameBuffer *fbo) { CreatePrimary( fbo ); } );
 	resolveFbo = CreateFromGenerator( "resolve", [this](FrameBuffer *fbo) { CreateResolve( fbo ); } );
+	guiFbo = CreateFromGenerator( "gui", [this](FrameBuffer *fbo) { CreateGui( fbo ); } );
 	shadowStencilFbo = CreateFromGenerator( "shadowStencil", [this](FrameBuffer *fbo) { CreateStencilShadow( fbo ); } );
 	shadowMapFbo = CreateFromGenerator( "shadowMap", [this](FrameBuffer *fbo) { CreateMapsShadow( fbo ); } );
 
@@ -54,7 +55,7 @@ void FrameBufferManager::Shutdown() {
 	for (auto fbo : fbos) {
 		delete fbo;
 	}
-	fbos.Clear();
+	fbos.ClearFree();
 
 	if (pbo != 0) {
 		qglDeleteBuffers(1, &pbo);
@@ -130,24 +131,27 @@ void FrameBufferManager::EnterPrimary() {
 }
 
 void FrameBufferManager::LeavePrimary(bool copyToDefault) {
-	if (currentRenderFbo != primaryFbo) return;
+	// if we want to do tonemapping later, we need to continue to render to a texture,
+	// otherwise we can render the remaining UI views straight to the back buffer
+	FrameBuffer *targetFbo = r_tonemap ? guiFbo : defaultFbo;
+	if (currentRenderFbo == targetFbo) return;
 
-	currentRenderFbo = defaultFbo;
+	currentRenderFbo = targetFbo;
 
 	if (copyToDefault) {
 		if ( r_multiSamples.GetInteger() > 1 ) {
 			ResolvePrimary();
-			resolveFbo->BlitTo( defaultFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+			resolveFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 		} else {
-			primaryFbo->BlitTo( defaultFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+			primaryFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 		}
 
-		if ( r_frontBuffer.GetBool() ) {
+		if ( r_frontBuffer.GetBool() && !r_tonemap ) {
 			qglFinish();
 		}
 	}
 
-	defaultFbo->Bind();
+	targetFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
 	GL_ScissorRelative( 0, 0, 1, 1 );
 }
@@ -262,9 +266,17 @@ void FrameBufferManager::CreateResolve( FrameBuffer *resolve ) {
 	resolve->AddDepthRenderTexture( globalImages->currentDepthImage );
 }
 
+void FrameBufferManager::CreateGui( FrameBuffer *gui ) {
+	gui->Init( glConfig.vidWidth, glConfig.vidHeight );
+	globalImages->guiRenderImage->GenerateAttachment( glConfig.vidWidth, glConfig.vidHeight, colorFormat, GL_NEAREST );
+	gui->AddColorRenderTexture( 0, globalImages->guiRenderImage );
+}
+
 void FrameBufferManager::CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight ) {
+	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) // 5257
+		image->MakeDefault();
 	image->Bind();
-	if ( activeFbo == primaryFbo ) {
+	if ( activeFbo == primaryFbo || activeFbo == resolveFbo ) {
 		x *= r_fboResolution.GetFloat();
 		y *= r_fboResolution.GetFloat();
 		imageWidth *= r_fboResolution.GetFloat();

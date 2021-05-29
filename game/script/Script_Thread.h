@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __SCRIPT_THREAD_H__
@@ -163,6 +163,10 @@ private:
 	// Emits the string to the session command variable in gameLocal.
 	void						Event_SessionCommand(const char* cmd);
 
+	// stgatilov #5369: Save condump to FM-local file (triggered by script).
+	// if "startline" is not empty, and it is present in console output, then everything before the last its occurence is removed from the file
+	void						Event_SaveConDump(const char *filename, const char *startline);
+
 	/**
 	* Tels: #3193 - translate a string template into the current language.
 	*/
@@ -206,6 +210,9 @@ private:
 
 	void						Event_GetNextEntity( const char* key, const char* value, const idEntity* lastMatch );	// SteveL #3802
 	void						Event_EmitParticle( const char* particle, float startTime, float diversity, const idVec3& origin, const idVec3& angle ); // SteveL #3962
+
+	void						Event_SetSecretsFound( float secrets);
+	void						Event_SetSecretsTotal( float secrets);
 
 public:							
 								CLASS_PROTOTYPE( idThread );

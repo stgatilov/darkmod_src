@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -67,10 +67,6 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	*/
 
 	ClearEffects();
-
-	// JC: Just set the flag so that we know that the update is needed.
-	cv_ambient_method.SetModified();
-	// cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
 }
 
 /*
@@ -468,7 +464,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 												 // It should keep going even when not active.
 	}
 
-	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+	if ( gameLocal.portalSkyEnt.GetEntity() && g_enablePortalSky.GetInteger() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) ) {
 		
 		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
 			PSOrigin = gameLocal.portalSkyOrigin;
@@ -999,50 +995,6 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 	}
 
 	player->DrawHUD(hud);
-
-
-	// TDM Ambient Method checking. By Dram
-	// Modified by JC Denton
-	if ( cv_ambient_method.IsModified() ) // If the ambient method option has changed
-	{
-		UpdateAmbientLight();
-	}
-}
-
-void idPlayerView::UpdateAmbientLight()
-{
-	// Finds a light with name set as ambient_world, or turns the ambient light with greatest radius into main ambient.
-	idLight* pAmbientLight = gameLocal.FindMainAmbientLight(true);
-
-	if (pAmbientLight != NULL) // If the light exists
-	{
-		if ( 0 == cv_ambient_method.GetInteger() ) // If the Ambient Light method is used
-		{
-			gameLocal.globalShaderParms[5] = 0;				// Make sure we set this flag to 0 so that materials know which pass is to be enabled.
-			gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
-			gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
-			gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
-
-			pAmbientLight->On(); // Turn on ambient light
-		}
-		else // If the Texture Brightness method is used
-		{
-
-			gameLocal.globalShaderParms[5] = 1;				// enable the extra shader branch
-			idVec3 ambient_color = pAmbientLight->spawnArgs.GetVector( "_color" );				 // Get the ambient color from the spawn arguments
-			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
-			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
-			gameLocal.globalShaderParms[4] = ambient_color.z * 1.5f; // Set global shader parm 4 to Blue value of ambient light
-
-			pAmbientLight->Off(); // Turn off ambient light
-
-		}
-	}
-	else // The ambient light does not exist
-	{
-		gameLocal.Printf( "Note: The main ambient light could not be determined\n"); // Show in console of light not existing in map
-	}
-	cv_ambient_method.ClearModified();
 }
 
 void idPlayerView::OnReloadImages()
@@ -1061,38 +1013,16 @@ idPlayerView::dnPostProcessManager Class Definitions - JC Denton
 ===================
 */
 
-idPlayerView::dnPostProcessManager::dnPostProcessManager():
-
-m_ImageAnisotropyHandle	(-1)
+idPlayerView::dnPostProcessManager::dnPostProcessManager()
+	: m_ImageAnisotropyHandle (-1)
 {
 	/*m_iScreenHeight = m_iScreenWidth = 0;
 	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
 	m_nFramesToUpdateCookedData = 0;8*/
-
-	// Get notified on image anisotropy changes
-	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
-
-	if (imageAnistropy != NULL)
-	{
-		m_ImageAnisotropyHandle = imageAnistropy->AddOnModifiedCallback(
-            [&]() { OnImageAnisotropyChanged(); });
-	}
 }
 
 idPlayerView::dnPostProcessManager::~dnPostProcessManager()
 {
-	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
-
-	if (imageAnistropy != NULL && m_ImageAnisotropyHandle != -1)
-	{
-		imageAnistropy->RemoveOnModifiedCallback(m_ImageAnisotropyHandle);
-	}
-
-}
-
-void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
-{
-//	ScheduleCookedDataUpdate();
 }
 
 void idPlayerView::dnPostProcessManager::Update( void )

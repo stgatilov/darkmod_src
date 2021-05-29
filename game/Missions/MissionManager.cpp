@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -144,7 +144,7 @@ CMissionManager::~CMissionManager()
 	// Clear contents and the list elements themselves
 	_downloadableMods.DeleteContents(true);
 
-	Shutdown();
+	SaveDatabase();
 }
 
 void CMissionManager::Init()
@@ -170,7 +170,7 @@ void CMissionManager::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_curMissionIndex);
 }
 
-void CMissionManager::Shutdown()
+void CMissionManager::SaveDatabase() const
 {
 	_missionDB->Save();
 }
@@ -809,7 +809,7 @@ bool CMissionManager::DoMoveFile(const fs::path& fromPath, const fs::path& toPat
 
 void CMissionManager::InitStartingMap()
 {
-	_curStartingMap.Empty();
+	_curStartingMap.Clear();
 
 	idStr curModName = GetCurrentModName();
 
@@ -1160,7 +1160,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 	RequestStatus status = GetRequestStatusForDownloadId(_refreshModListDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == FAILED || status == SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= TMP_MISSION_LIST_FILENAME;
@@ -1173,7 +1173,8 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 			
 			if (result)
 			{
-				LoadModListFromXml(doc);
+				if (!LoadModListFromXml(doc))
+					status = MALFORMED;
 			}
 			else
 			{
@@ -1207,7 +1208,7 @@ int CMissionManager::StartDownloadingModDetails(int modNum)
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_DETAILS_FILENAME;
 
-	CDownloadPtr download(new CDownload(url, tempFilename.string().c_str()));
+	CDownloadPtr download(new CDownload({url}, tempFilename.string().c_str()));
 
 	// Store the mod number in the download class
 	download->GetUserData().id = modNum;
@@ -1232,7 +1233,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadModDetailsRequest()
 	RequestStatus status = GetRequestStatusForDownloadId(_modDetailsDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == FAILED || status == SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= TMP_MISSION_DETAILS_FILENAME;
@@ -1298,7 +1299,7 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 	tempFilename /= cv_tdm_fm_path.GetString();
 	tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
 
-	CDownloadPtr download(new CDownload(url, tempFilename.string().c_str()));
+	CDownloadPtr download(new CDownload({url}, tempFilename.string().c_str()));
 
 	// Store the mission and screenshot number in the download class
 	download->GetUserData().id = missionIndex;
@@ -1319,7 +1320,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 	RequestStatus status = GetRequestStatusForDownloadId(_modScreenshotDownloadId);
 
 	// Clean up the result if the request is complete
-	if (status == FAILED || status == SUCCESSFUL)
+	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
 		fs::path tempFilename = g_Global.GetDarkmodPath();
 		tempFilename /= cv_tdm_fm_path.GetString();
@@ -1382,6 +1383,9 @@ CMissionManager::RequestStatus CMissionManager::GetRequestStatusForDownloadId(in
 
 	case CDownload::SUCCESS:
 		return SUCCESSFUL;
+
+	case CDownload::MALFORMED:
+		return MALFORMED;
 
 	default: 
 		gameLocal.Printf("Unknown download status encountered in GetRequestStatusForDownloadId()\n");
@@ -1461,7 +1465,7 @@ idStr CMissionManager::ReplaceXmlEntities(const idStr& input)
 	return output;
 }
 
-void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
+bool CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 {
 	assert(doc != NULL);
 
@@ -1479,8 +1483,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 	const char* fs_currentfm = cvarSystem->GetCVarString("fs_currentfm");
 
 	// Tels: #3419 - After game start the sequence is always the same, so set a random seed
-	time_t seconds = time(NULL);
-	gameLocal.random.SetSeed( static_cast<int>(seconds) );
+	idRandom random(time(NULL));
 
 	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
 	{
@@ -1558,42 +1561,115 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			}
 		}
 
+		struct WeightedUrl {
+			idStr name;
+			float weight;
+		};
+		idList<WeightedUrl> missionUrls, localUrls;
+		idList<idStr> missionSha256, localSha256;
+
 		// gnartsch : Process mission download locations only if the mission itself is not 
-        //            present or not up to date, otherwise skip to the localization pack
+		//            present or not up to date, otherwise skip to the localization pack
 		if (!missionExists || mission.isUpdate) 
 		{
-            // Mission download links
-		    pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
+			// Mission download links
+			pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
-		    for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
-		    {
-			    pugi::xml_node locNode = loc->node();
+			for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
+			{
+				pugi::xml_node locNode = loc->node();
 
-			    // Only accept English downloadlinks
-			    if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
+				// Only accept English downloadlinks
+				if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
+				
+				WeightedUrl wurl = {locNode.attribute("url").value(), locNode.attribute("weight").as_float(1.0f)};
+				missionUrls.Append(wurl);
 
-			    // Tels: #3419: Randomize the order of download URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
-			    mission.missionUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.missionUrls.Num() + 2 ) );
-		    }
-        }
+				if (auto attr = locNode.attribute("sha256"))
+					missionSha256.Append(attr.as_string());
+			}
+		}
 
 		// Localisation packs
-        // gnartsch: Process only if mission is either present locally or at least a download link for the mission is available.
-        if (missionExists || mission.missionUrls.Num() > 0)
+		// gnartsch: Process only if mission is either present locally or at least a download link for the mission is available.
+		if (missionExists || mission.missionUrls.Num() > 0)
 		{
-		    pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
+			pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
 
-		    for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
-		    {
-			    pugi::xml_node locNode = loc->node();
+			for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
+			{
+				pugi::xml_node locNode = loc->node();
 
-			    // Tels: #3419: Randomize the order of l10n URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
-			    mission.l10nPackUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.l10nPackUrls.Num() + 2 ) );
+				WeightedUrl wurl = {locNode.attribute("url").value(), locNode.attribute("weight").as_float(1.0f)};
+				localUrls.Append(wurl);
 
-                // gnartsch: Found a localization pack url for download
+				// gnartsch: Found a localization pack url for download
 				mission.needsL10NpackDownload = true;
-		    }
-        }
+
+				if (auto attr = locNode.attribute("sha256"))
+					localSha256.Append(attr.as_string());
+			}
+		}
+
+		//stgatilov: inspect checksums (they must be valid and all equal)
+		for (int t = 0; t < 2; t++) {
+			auto &arr = (t == 0 ? missionSha256 : localSha256);
+			auto &dest = (t == 0 ? mission.missionSha256 : mission.l10nPackSha256);
+			int n = arr.Num();
+			if (n == 0)
+				continue;
+
+			for (int i = 0; i < n; i++) {
+				bool ok = (arr[i].Length() == 64);
+				for (int j = 0; j < arr[i].Length(); j++) {
+					char ch = arr[i][j];
+					if (!(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f'))
+						ok = false;
+				}
+				if (!ok) {
+					common->Warning("Checksum for mission %s is malformed", mission.modName.c_str());
+					return false;
+				}
+				if (arr[0] != arr[i]) {
+					common->Warning("Checksums different for download locations of mission %s", mission.modName.c_str());
+					return false;
+				}
+			}
+
+			//assign sha256 into DownloadableMod
+			dest = arr[0];
+		}
+
+		//stgatilov #5349: shuffle the URL lists according to weights
+		for (int t = 0; t < 2; t++) {
+			auto &arr = (t == 0 ? missionUrls : localUrls);
+			auto &urlList = (t == 0 ? mission.missionUrls : mission.l10nPackUrls);
+			int n = arr.Num();
+
+			for (int i = 0; i < n; i++) {
+				//get W - total weight of remaining [i..n) urls
+				float sum = 0.0f;
+				for (int j = i; j < n; j++)
+					sum += arr[j].weight;
+				//generate random value in [0..W)
+				float value = random.RandomFloat() * sum;
+				//find which url the random hits
+				int choice = i;
+				for (int j = i; j < n; j++) {
+					value -= arr[j].weight;
+					if (value < 0.0f) {
+						choice = j;
+						break;
+					}
+				}
+				//put this url on to first yet-unused place
+				idSwap(arr[choice], arr[i]);
+			}
+
+			urlList.SetNum(0);
+			for (int i = 0; i < n; i++)
+				urlList.Append(arr[i].name);
+		}
 
 		// Only add missions with valid locations
 		// gnartsch: add the mission in case localization pack needs to be downloaded
@@ -1605,6 +1681,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 	}
 
 	SortDownloadableMods();
+	return true;
 }
 
 void CMissionManager::SortDownloadableMods()

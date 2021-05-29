@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -211,6 +211,8 @@ const idEventDef EV_LogString("logString", EventArgs('d', "logClass", "", 'd', "
 // Propagates the string to the sessioncommand variable in gameLocal
 const idEventDef EV_SessionCommand("sessionCommand", EventArgs('s', "cmd", ""), EV_RETURNS_VOID, "Sends the sessioncommand to the game");
 
+const idEventDef EV_SaveConDump("saveConDump", EventArgs('s', "cmd", "", 's', "cmd", ""), EV_RETURNS_VOID, "Saves condump into FM directory; first argument is appended to dump filename, everything before last occurence of second argument is removed");
+
 const idEventDef EV_HandleMissionEvent("handleMissionEvent", 
 	EventArgs('e', "objEnt", "the entity that triggered this event (e.g. a readable)", 
 			  'd', "eventType", "a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event", 
@@ -246,7 +248,9 @@ const idEventDef EV_GetMissionStatistic("getMissionStatistic", EventArgs('s', "s
 	"\tkilledByPlayer: number of enemies killed by player\n"
 	"\tknockedOutByPlayer: number of enemies knocked out by player\n"
 	"\tbodiesFound: number of times enemies have spotted a body\n"
-	), 'f', "Returns current mission statistic.");
+	"\tsecretsFound: number of secrets found by the player\n"
+	"\tsecretsTotal: total number of secrets in the mission\n"
+), 'f', "Returns current mission statistic.");
 
 // SteveL #3802 -- Allow scripts to discover entties in the map
 const idEventDef EV_GetNextEntity( "getNextEntity",
@@ -272,6 +276,9 @@ const idEventDef EV_EmitParticle( "emitParticle",
 	"sys.getTime() as the start time. Designed to be called once per frame with the same startTime each call to achieve a normal particle "
 	"effect, or on demand with sys.getTime() as the startTime for finer grained control, 1 quad at a time. Returns True (1) if there are "
 	"more particles to be emitted from the stage, False (0) if the stage has released all its quads.");
+
+const idEventDef EV_SetSecretsFound("setSecretsFound", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets the player has found. Use getMissionStatistic() for getting the current value.");
+const idEventDef EV_SetSecretsTotal("setSecretsTotal", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets exist in the map in total. Use getMissionStatistic() for getting the current value.");
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -385,6 +392,7 @@ CLASS_DECLARATION( idClass, idThread )
 	
 	EVENT( EV_LogString,					idThread::Event_LogString )
 	EVENT( EV_SessionCommand,				idThread::Event_SessionCommand )
+	EVENT( EV_SaveConDump,					idThread::Event_SaveConDump )
 
 	EVENT( EV_HandleMissionEvent,			idThread::Event_HandleMissionEvent )
 
@@ -398,6 +406,10 @@ CLASS_DECLARATION( idClass, idThread )
 
 	EVENT( EV_GetNextEntity,				idThread::Event_GetNextEntity )	// SteveL #3802
 	EVENT( EV_EmitParticle,  				idThread::Event_EmitParticle )  // SteveL #3962
+
+	EVENT( EV_SetSecretsFound,				idThread::Event_SetSecretsFound )
+	EVENT( EV_SetSecretsTotal,				idThread::Event_SetSecretsTotal )
+
 	END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -2181,7 +2193,7 @@ idThread::Event_DrawText
 ================
 */
 void idThread::Event_DrawText( const char *text, const idVec3 &origin, float scale, const idVec3 &color, const int align, const float lifetime ) {
-	gameRenderWorld->DrawText( text, origin, scale, idVec4( color.x, color.y, color.z, 0.0f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), align, SEC2MS( lifetime ) );
+	gameRenderWorld->DebugText( text, origin, scale, idVec4( color.x, color.y, color.z, 0.0f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), align, SEC2MS( lifetime ) );
 }
 
 /*
@@ -2301,6 +2313,76 @@ void idThread::Event_Translate( const char* input ) {
 void idThread::Event_SessionCommand(const char* cmd)
 {
 	gameLocal.sessionCommand = cmd;
+}
+
+void idThread::Event_SaveConDump(const char *filename, const char *startline)
+{
+	static int numberOfTimesSaved = 0;
+	if (++numberOfTimesSaved > 100) {
+		gameLocal.Warning("Event_SaveConDump called %d time: suppressed", numberOfTimesSaved);
+		return;
+	}
+
+	idStr fn = filename;
+	//avoid too lengthy filenames
+	fn.CapLength(20);
+	//replace all chars except for letters, digits, and underscores
+	for (int i = 0; i < fn.Length(); i++) {
+		char ch = fn[i];
+		if (ch >= 0 && (isalnum(ch) || ch == '_'))
+			continue;
+		if (ch == '.') {
+			//if extension is set, drop it
+			fn.CapLength(i);
+			break;
+		}
+		fn[i] = '_';
+	}
+	//avoid empty name
+	if (fn.Length() == 0)
+		fn = "default";
+	fn = "condump_" + fn + ".txt";
+
+	//execute console command (right now)
+	idStr command = idStr::Fmt("condump %s unwrap modsavepath\n", fn.c_str());
+	cmdSystem->BufferCommandText(CMD_EXEC_NOW, command.c_str());
+
+	if (strlen(startline) > 0) {
+		//search for special "start line" and remove everything before it
+		//this allows mapper to print exact text into the file
+		idFile *f = fileSystem->OpenFileRead(fn);
+		if (f) {
+			//prepare string to search for
+			idStr needle = startline;
+			#ifdef _WIN32
+			//let's hope EOL style is detected correctly on out platforms...
+			needle += '\r';
+			#endif
+			needle += '\n';
+			//read file
+			idList<char> text;
+			text.SetNum(f->Length() + 1);
+			f->Read(text.Ptr(), f->Length());
+			text[f->Length()] = 0;
+			fileSystem->CloseFile(f);
+			//search for last occurence of string
+			const char *last = nullptr;
+			int pos = 0;
+			while (1) {
+				int newpos = idStr::FindText(text.Ptr(), needle, true, pos);
+				if (newpos < 0)
+					break;
+				pos = newpos + needle.Length();
+				last = text.Ptr() + pos;
+			}
+			if (last) {
+				//resave without starting text
+				idFile *f = fileSystem->OpenFileWrite(fn);
+				f->Write(last, strlen(last));
+				fileSystem->CloseFile(f);
+			}
+		}
+	}
 }
 
 void idThread::Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument)
@@ -2505,6 +2587,18 @@ void idThread::Event_GetMissionStatistic( const char* statisticName )
 		idThread::ReturnFloat(totalSaves);
 		return;
 	}
+	if (idStr::Icmp("secretsFound", statisticName) == 0)
+	{
+		int foundSecrets = gameLocal.m_MissionData->GetSecretsFound();
+		idThread::ReturnFloat(foundSecrets);
+		return;
+	}
+	if (idStr::Icmp("secretsTotal", statisticName) == 0)
+	{
+		int totalSecrets = gameLocal.m_MissionData->GetSecretsTotal();
+		idThread::ReturnFloat(totalSecrets);
+		return;
+	}
 	gameLocal.Warning("Invalid statistic name passed to getMissionStatistic(): %s", statisticName);
 	idThread::ReturnFloat(0.0f);
 }
@@ -2561,4 +2655,15 @@ void idThread::Event_EmitParticle( const char* particle, float startTime, float 
 	const idDeclParticle* ptcl = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particle ) );
 	const bool emitted = gameLocal.smokeParticles->EmitSmoke( ptcl, startTime*1000, diversity, origin, axis );
 	idThread::ReturnFloat( emitted? 1.0f : 0.0f );
+}
+
+//Script events for the secrets system
+void idThread::Event_SetSecretsFound( float secrets )
+{
+	gameLocal.m_MissionData->SetSecretsFound( secrets );
+}
+
+void idThread::Event_SetSecretsTotal( float secrets )
+{
+	gameLocal.m_MissionData->SetSecretsTotal( secrets );
 }

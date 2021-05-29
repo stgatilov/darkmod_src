@@ -197,6 +197,7 @@
     <ClInclude Include="framework\EventLoop.h" />
     <ClInclude Include="framework\File.h" />
     <ClInclude Include="framework\FileSystem.h" />
+    <ClInclude Include="framework\GamepadInput.h" />
     <ClInclude Include="framework\I18N.h" />
     <ClInclude Include="framework\KeyInput.h" />
     <ClInclude Include="framework\Licensee.h" />
@@ -205,6 +206,7 @@
     <ClInclude Include="framework\minizip\minizip_private.h" />
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
+    <ClInclude Include="framework\Tracing.h" />
     <ClInclude Include="framework\UsercmdGen.h" />
     <ClInclude Include="game\AbsenceMarker.h" />
     <ClInclude Include="game\Actor.h" />
@@ -461,14 +463,16 @@
     <ClInclude Include="game\ZipLoader\ZipLoader.h" />
     <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="renderer\AmbientOcclusionStage.h" />
+    <ClInclude Include="renderer\backend\FrobOutlineStage.h" />
     <ClInclude Include="renderer\backend\GpuBuffer.h" />
+    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h" />
+    <ClInclude Include="renderer\backend\ShadowMapStage.h" />
     <ClInclude Include="renderer\BloomStage.h" />
     <ClInclude Include="renderer\backend\DrawBatchExecutor.h" />
     <ClInclude Include="renderer\backend\StencilShadowStage.h" />
     <ClInclude Include="renderer\backend\InteractionStage.h" />
     <ClInclude Include="renderer\backend\DepthStage.h" />
     <ClInclude Include="renderer\backend\RenderBackend.h" />
-    <ClInclude Include="renderer\BufferObject.h" />
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
@@ -495,7 +499,9 @@
     <ClInclude Include="renderer\ModelDecal.h" />
     <ClInclude Include="renderer\ModelManager.h" />
     <ClInclude Include="renderer\ModelOverlay.h" />
-    <ClInclude Include="renderer\Profiling.h" />
+    <ClInclude Include="renderer\ParticleSystem.h" />
+    <ClInclude Include="renderer\ParticleSystem_decl.h" />
+    <ClInclude Include="renderer\ParticleSystem_def.h" />
     <ClInclude Include="renderer\qgl.h" />
     <ClInclude Include="renderer\RenderSystem.h" />
     <ClInclude Include="renderer\RenderWorld.h" />
@@ -507,6 +513,7 @@
     <ClInclude Include="sound\snd_efxpresets.h" />
     <ClInclude Include="sound\snd_local.h" />
     <ClInclude Include="sound\sound.h" />
+    <ClInclude Include="sys\sys_padinput.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
     <ClInclude Include="sys\win32\win_local.h" />
@@ -525,6 +532,8 @@
     <ClInclude Include="tests\testing.h" />
     <ClInclude Include="tests\TestRun.h" />
     <ClInclude Include="tools\compilers\compiler_common.h" />
+    <ClInclude Include="tools\compilers\dmap\earcut.h" />
+    <ClInclude Include="tools\compilers\dmap\planargraph.h" />
     <ClInclude Include="tools\edit_public.h" />
     <ClInclude Include="tools\af\DialogAF.h" />
     <ClInclude Include="tools\af\DialogAFBody.h" />
@@ -736,6 +745,7 @@
     <ClCompile Include="framework\EventLoop.cpp" />
     <ClCompile Include="framework\File.cpp" />
     <ClCompile Include="framework\FileSystem.cpp" />
+    <ClCompile Include="framework\GamepadInput.cpp" />
     <ClCompile Include="framework\I18N.cpp" />
     <ClCompile Include="framework\KeyInput.cpp" />
     <ClCompile Include="framework\LoadStack.cpp" />
@@ -749,6 +759,7 @@
     </ClCompile>
     <ClCompile Include="framework\Session.cpp" />
     <ClCompile Include="framework\Session_menu.cpp" />
+    <ClCompile Include="framework\Tracing.cpp" />
     <ClCompile Include="framework\UsercmdGen.cpp" />
     <ClCompile Include="game\AbsenceMarker.cpp" />
     <ClCompile Include="game\Actor.cpp" />
@@ -1011,18 +1022,19 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp" />
+    <ClCompile Include="renderer\backend\FrobOutlineStage.cpp" />
     <ClCompile Include="renderer\backend\GpuBuffer.cpp" />
+    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp" />
+    <ClCompile Include="renderer\backend\ShadowMapStage.cpp" />
     <ClCompile Include="renderer\BloomStage.cpp" />
     <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp" />
     <ClCompile Include="renderer\backend\StencilShadowStage.cpp" />
     <ClCompile Include="renderer\backend\InteractionStage.cpp" />
     <ClCompile Include="renderer\backend\DepthStage.cpp" />
     <ClCompile Include="renderer\backend\RenderBackend.cpp" />
-    <ClCompile Include="renderer\BufferObject.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\CinematicFFMpeg.cpp" />
     <ClCompile Include="renderer\CinematicID.cpp" />
-    <ClCompile Include="renderer\draw_arb2.cpp" />
     <ClCompile Include="renderer\draw_common.cpp" />
     <ClCompile Include="renderer\draw_glsl.cpp" />
     <ClCompile Include="renderer\draw_glsl_multi.cpp" />
@@ -1070,7 +1082,7 @@
     <ClCompile Include="renderer\ModelDecal.cpp" />
     <ClCompile Include="renderer\ModelManager.cpp" />
     <ClCompile Include="renderer\ModelOverlay.cpp" />
-    <ClCompile Include="renderer\Profiling.cpp" />
+    <ClCompile Include="renderer\ParticleSystem.cpp" />
     <ClCompile Include="renderer\qgl.cpp" />
     <ClCompile Include="renderer\RenderEntity.cpp" />
     <ClCompile Include="renderer\RenderSystem.cpp" />
@@ -1106,6 +1118,8 @@
     <ClCompile Include="sound\snd_system.cpp" />
     <ClCompile Include="sound\snd_wavefile.cpp" />
     <ClCompile Include="sound\snd_world.cpp" />
+    <ClCompile Include="sys\sys_cpu.cpp" />
+    <ClCompile Include="sys\sys_padinput.cpp" />
     <ClCompile Include="sys\sys_local.cpp" />
     <ClCompile Include="sys\win32\win_cpu.cpp" />
     <ClCompile Include="sys\win32\win_glimp.cpp" />
@@ -1173,14 +1187,14 @@
     <ClCompile Include="tools\compilers\aas\BrushBSP.cpp" />
     <ClCompile Include="tools\compilers\compiler_common.cpp" />
     <ClCompile Include="tools\compilers\dmap\dmap.cpp" />
+    <ClCompile Include="tools\compilers\dmap\earcut.cpp" />
     <ClCompile Include="tools\compilers\dmap\facebsp.cpp" />
     <ClCompile Include="tools\compilers\dmap\gldraw.cpp" />
     <ClCompile Include="tools\compilers\dmap\glfile.cpp" />
-    <ClCompile Include="tools\compilers\dmap\leakfile.cpp" />
     <ClCompile Include="tools\compilers\dmap\map.cpp" />
     <ClCompile Include="tools\compilers\dmap\optimize.cpp" />
-    <ClCompile Include="tools\compilers\dmap\optimize_gcc.cpp" />
     <ClCompile Include="tools\compilers\dmap\output.cpp" />
+    <ClCompile Include="tools\compilers\dmap\planargraph.cpp" />
     <ClCompile Include="tools\compilers\dmap\portals.cpp" />
     <ClCompile Include="tools\compilers\dmap\shadowopt3.cpp" />
     <ClCompile Include="tools\compilers\dmap\tritjunction.cpp" />

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 /*
@@ -25,14 +25,14 @@
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR	2
-#define TDM_VERSION_MINOR	9
+#define TDM_VERSION_MINOR	10
 // tels: This value compiled into both .exe and .dll (.x86 and .so on linux), and after loading
 //	 the dll, the dll compares its value with this value. If both mismatch, the dll outputs
 //	 an error and exits out. This ensures that the .exe does not load "outdated" dlls.
 //	 Unfortunately, the check is done in the dll and the messsage comes from there, too.
 //	 Game_local.cpp around line 150 is where it is done.
-#define GAME_API_VERSION	TDM_VERSION_MAJOR * 100 + TDM_VERSION_MINOR	// e.g. 209
-#define ENGINE_VERSION		"TDM 2.09"	// printed in console
+#define GAME_API_VERSION	TDM_VERSION_MAJOR * 100 + TDM_VERSION_MINOR	// e.g. 210
+#define ENGINE_VERSION		"TDM 2.10"	// printed in console
 
 // paths
 #define	BASE_GAMEDIR					"base"
@@ -41,6 +41,7 @@
 // filenames
 #define CONFIG_FILE					"Darkmod.cfg"
 #define KEYBINDS_FILE				"DarkmodKeybinds.cfg"
+#define PADBINDS_FILE				"DarkmodPadbinds.cfg"
 
 // base folder where the source code lives
 #define SOURCE_CODE_BASE_FOLDER				"darkmod_src"

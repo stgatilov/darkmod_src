@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __STR_H__
@@ -63,7 +63,7 @@ const int C_COLOR_BLACK				= '9';
 
 // make idStr a multiple of 32 bytes long
 // don't make too large to keep memory requirements to a minimum
-const int STR_ALLOC_BASE			= 20;
+const int STR_ALLOC_BASE			= 32 - 8 - sizeof(char*);
 const int STR_ALLOC_GRAN			= 32;
 
 typedef enum {
@@ -147,9 +147,9 @@ public:
 
 	int					Length( void ) const;
 	int					Allocated( void ) const;
-	void				Empty( void );
 	bool				IsEmpty( void ) const;
 	void				Clear( void );
+	void				ClearFree( void );
 	void				Append( const char a );
 	void				Append( const idStr &text );
 	void				Append( const char *text );
@@ -260,6 +260,7 @@ public:
 	// stgatilov: polynomial hash djb2 / DJBX33A extended to 64 bits
 	// maybe it is a slower than idStr::Hash, but it is a much better hash function
 	static uint64		HashPoly64( const char *string, int length = -1 );
+	static uint64		IHashPoly64( const char *string, int length = -1 );
 
 	// character methods
 	static char			ToLower( char c );
@@ -277,9 +278,6 @@ public:
 	friend int			sprintf( idStr &dest, const char *fmt, ... );
 	friend int			vsprintf( idStr &dest, const char *fmt, va_list ap );
 
-	void				ReAllocate( int amount, bool keepold );				// reallocate string data buffer
-	void				FreeData( void );									// free allocated string memory
-
 						// format value in the given measurement with the best unit, returns the best unit
 	int					BestUnit( const char *format, float value, Measure_t measure );
 						// format value in the requested unit and measurement
@@ -293,10 +291,14 @@ public:
 	int					DynamicMemoryUsed() const;
 	static idStr		FormatNumber( int number );
 
+	//stgatilov: these methods are private! do not ever used them!
+	void				ReAllocate( int amount, bool keepold );				// reallocate string data buffer
+	void				FreeData( void );									// free allocated string memory
+
 protected:
 	int					len;
-	char *				data;
 	int					alloced;
+	char *				data;
 	char				baseBuffer[ STR_ALLOC_BASE ];
 
 	void				Init( void );										// initialize string using base buffer
@@ -708,7 +710,7 @@ ID_INLINE int idStr::Allocated( void ) const {
 	}
 }
 
-ID_INLINE void idStr::Empty( void ) {
+ID_INLINE void idStr::Clear( void ) {
 	EnsureAlloced( 1 );
 	data[ 0 ] = '\0';
 	len = 0;
@@ -718,7 +720,7 @@ ID_FORCE_INLINE bool idStr::IsEmpty( void ) const {
 	return len == 0;
 }
 
-ID_INLINE void idStr::Clear( void ) {
+ID_INLINE void idStr::ClearFree( void ) {
 	FreeData();
 	Init();
 }
@@ -989,6 +991,13 @@ ID_INLINE uint64 idStr::HashPoly64( const char *string, int length ) {
 	uint64 value = 5381;
 	for ( int i = 0; (length < 0 ? string[i] : i < length); i++)
 		value = ((value << 5) + value) + string[i];
+	return value;
+}
+
+ID_INLINE uint64 idStr::IHashPoly64( const char *string, int length ) {
+	uint64 value = 5381;
+	for ( int i = 0; (length < 0 ? string[i] : i < length); i++)
+		value = ((value << 5) + value) + ToLower(string[i]);
 	return value;
 }
 

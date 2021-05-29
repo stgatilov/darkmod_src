@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -96,32 +96,69 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		staticModel->InitEmpty( parametricParticle_SnapshotName );
 	}
 
-	particleGen_t g;
+	//stgatilov #5437: this is filled lazingly to avoid slowdown for non-colliding particle systems
+	idEntity *owner = nullptr;
+	idPartSysEmitterSignature sign;
 
-	g.renderEnt = renderEntity;
-	g.renderView = &viewDef->renderView;
-	g.origin.Zero();
-	g.axis.Identity();
+	idPartSysData psys;
+	const renderView_t *renderView = &viewDef->renderView;
+	psys.entityAxis = renderEntity->axis;
+	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
+	psys.viewAxis = renderView->viewaxis;
 
 	for ( int stageNum = 0; stageNum < particleSystem->stages.Num(); stageNum++ ) {
 		idParticleStage *stage = particleSystem->stages[stageNum];
 
-		if ( !stage->material || !stage->cycleMsec ) {
+		if ( !stage->material )
 			continue;
-		}
+		if ( !stage->cycleMsec )
+			continue;
 		else if ( stage->hidden ) {		// just for gui particle editor use
 			staticModel->DeleteSurfaceWithId( stageNum );
 			continue;
 		}
 
-		const int stageAge = g.renderView->time + (renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] - stage->timeOffset) * 1000;
-		const int stageCycle = stageAge / stage->cycleMsec;
+		psys.totalParticles = stage->totalParticles;
 
-		const int	count = stage->totalParticles * stage->NumQuadsPerParticle();
+		sign.particleStageIndex = stageNum;
+		if (stage->collisionStatic && !owner) {
+			//stgatilov #5437: this is some very stupid and slow code to find signature
+			//normally, every particle system should be registered in a manager class (like renderEntities in renderWorld)
+			//then the signature can be stored alongside them, instead of computing it every frame =(
+			owner = gameLocal.entities[renderEntity->entityNum];
+			if (stage->mapLayoutType != PML_LINEAR)
+				common->Error("Particle model on entity %s uses collisionStatic without mapLayout linear", (owner ? owner->name.c_str() : "[unknown]"));
+			if (owner && owner->fromMapFile) {
+				sign.mainName = owner->name;
+				int k = 0;
+				for (const idKeyValue *kv = owner->spawnArgs.MatchPrefix("model"); kv; kv = owner->spawnArgs.MatchPrefix("model", kv)) {
+					idStr name = kv->GetValue();
+					name.StripFileExtension();
+					if (name.Icmp(particleSystem->GetName()) == 0) {
+						sign.modelSuffix = kv->GetKey().c_str() + 5;
+						k++;
+					}
+				}
+				if (k > 1)
+					common->Error("Particle model on entity %s: two models with same .prt", owner->name.c_str());
+				if (k == 0)
+					owner = nullptr;
+			}
+		}
+		idImage *cutoffImage = nullptr;
+		if (stage->collisionStatic && owner)
+			idParticle_PrepareCutoffMap(stage, nullptr, sign, psys.totalParticles, cutoffImage, nullptr);
 
+		idPartSysEmit psEmit;
+		psEmit.entityParmsStopTime = renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME];
+		psEmit.entityParmsTimeOffset = renderEntity->shaderParms[SHADERPARM_TIMEOFFSET];
+		psEmit.randomizer = idParticle_ComputeRandomizer(sign, renderEntity->shaderParms[SHADERPARM_DIVERSITY]);
+		psEmit.totalParticles = stage->totalParticles;
+		psEmit.viewTimeMs = renderView->time;
+
+		const int count = stage->totalParticles * stage->NumQuadsPerParticle();
 		int surfaceNum = 0;
 		modelSurface_t *surf;
-
 		if ( staticModel->FindSurfaceWithId( stageNum, surfaceNum ) ) {
 			surf = &staticModel->surfaces[surfaceNum];
 			R_FreeStaticTriSurfVertexCaches( surf->geometry );
@@ -139,54 +176,21 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		idDrawVert *verts = surf->geometry->verts;
 
 		for ( int index = 0; index < stage->totalParticles; index++ ) {
-			g.index = index;
-
-			// calculate local age for this index 
-			//const int bunchOffset = (index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles;
-			//const int particleAge = stageAge - bunchOffset
-			const int particleAge = stageAge - ((index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles);
-			const int particleCycle = particleAge / stage->cycleMsec;
-			
-			// before the particleSystem has spawned or
-			// cycled systems will only run cycle times
-			if ( particleCycle < 0 || ( stage->cycles && particleCycle >= stage->cycles ) ) {
+			idParticleData part;
+			int cycIdx;
+			if (!idParticle_EmitParticle(*stage, psEmit, index, part, cycIdx))
 				continue;
-			}
-			
-			const int inCycleTime = particleAge - particleCycle * stage->cycleMsec;
-			
-			if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
-				g.renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] * 1000 ) {
-				// don't fire any more particles
-				continue;
-			}
 
-			// supress particles before or after the age clamp
-			g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
-			if ( g.frac < 0.0f || g.frac > 1.0f) {
-				// < 0.0f ; yet to be spawned
-				// > 1.0f ; particle is in the deadTime band
-				continue;
-			} else {
-				g.age = g.frac * stage->particleLife;
+			if (cutoffImage) {
+				float cutoff = idParticle_FetchCutoffTimeLinear(cutoffImage, psys.totalParticles, index, cycIdx);
+				if (part.frac > cutoff)
+					continue;
 			}
-
-			// #3161: "Bouncing" smoke. Move the random number seeding here from the "stage" section above, and use the particle's quad index 
-			// in the seed, and use particleCycle number instead of stageCycle number, so that each particle quad gets its own sequence. 
-			// This means (1) we don't need two separate sequences to handle particle quads from two different cycles any more, and 
-			// (2) particle quads won't inherit the random numbers of their dead predecessors any more, which is what caused the "bouncing" illusion.
-			idRandom steppingRandom;
-			const int quadSeed = ( ( ( ( index + particleCycle ) << 5 ) + index ) << 5 ) & idRandom::MAX_RAND;
-			steppingRandom.SetSeed( quadSeed  ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
-			// bump the random
-			steppingRandom.RandomInt();
-			g.random = steppingRandom;
-
-			// this is needed so aimed particles can calculate origins at different times
-			g.originalRandom = g.random;
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
-			numVerts += stage->CreateParticle( &g, verts + numVerts );
+			idDrawVert *ptr = verts + numVerts;
+			idParticle_CreateParticle(*stage, psys, part, ptr);
+			numVerts = ptr - verts;
 		}
 
 		// numVerts must be a multiple of 4
@@ -209,7 +213,7 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		surf->geometry->facePlanesCalculated = false;
 		surf->geometry->numVerts = numVerts;
 		surf->geometry->numIndexes = numIndexes;
-		surf->geometry->bounds = stage->bounds;		// just always draw the particles
+		surf->geometry->bounds = particleSystem->GetStageBounds(renderEntity, stage);
 	}
 
 	return staticModel;
@@ -230,7 +234,7 @@ idRenderModelPrt::Bounds
 ====================
 */
 idBounds idRenderModelPrt::Bounds( const struct renderEntity_s *ent ) const {
-	return particleSystem->bounds;
+	return particleSystem->GetFullBounds(ent);
 }
 
 /*

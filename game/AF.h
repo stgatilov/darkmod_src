@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __GAME_AF_H__
@@ -43,6 +43,7 @@ typedef struct afTouch_s {
 	idClipModel *			touchedClipModel;
 	idAFBody *				touchedByBody;
 } afTouch_t;
+typedef idFlexList<afTouch_s, CLIPARRAY_AUTOSIZE> idClip_afTouchList;
 
 class idAF {
 public:
@@ -58,7 +59,7 @@ public:
 	const char *			GetName( void ) const { return name.c_str(); }
 	void					SetupPose( idEntity *ent, int time );
 	void					ChangePose( idEntity *ent, int time );
-	int						EntitiesTouchingAF( afTouch_t touchList[ MAX_GENTITIES ] ) const;
+	int						EntitiesTouchingAF( idClip_afTouchList &touchList ) const;
 	void					Start( void );
 	void					StartFromCurrentPose( int inheritVelocityTime );
 	void					Stop( void );

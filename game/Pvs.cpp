@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1095,7 +1095,7 @@ pvsHandle_t idPVS::AllocCurrentPVS( unsigned int h ) const {
 			idVec3 viewPos = gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() + idVec3(0,0,50+6*i)
 				+ gameLocal.GetLocalPlayer()->viewAngles.ToForward() * 30;
 			idStr maxPVS(i);
-			gameRenderWorld->DrawText(maxPVS.c_str(), viewPos, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1,  USERCMD_MSEC);
+			gameRenderWorld->DebugText(maxPVS.c_str(), viewPos, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1,  USERCMD_MSEC);
 */
 			return currentPVS[i].handle;
 		}

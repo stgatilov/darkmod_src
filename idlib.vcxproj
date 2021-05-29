@@ -174,8 +174,12 @@
     <ClCompile Include="idlib\bv\Box.cpp" />
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
+    <ClCompile Include="idlib\containers\DisjointSets.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
+    <ClCompile Include="idlib\containers\HashMap.cpp" />
     <ClCompile Include="idlib\containers\LinkList.cpp" />
+    <ClCompile Include="idlib\containers\PlaneSet.cpp" />
+    <ClCompile Include="idlib\containers\StrPool.cpp" />
     <ClCompile Include="idlib\Debug.cpp" />
     <ClCompile Include="idlib\geometry\DrawVert.cpp" />
     <ClCompile Include="idlib\geometry\JointTransform.cpp" />
@@ -189,6 +193,14 @@
     <ClCompile Include="idlib\geometry\Winding2D.cpp" />
     <ClCompile Include="idlib\hashing\MD4.cpp" />
     <ClCompile Include="idlib\hashing\MD5.cpp" />
+    <ClCompile Include="idlib\hashing\sha256.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
     <ClCompile Include="idlib\Image.cpp" />
     <ClCompile Include="idlib\math\Angles.cpp" />
@@ -207,6 +219,7 @@
     <ClCompile Include="idlib\math\Simd_AVX.cpp" />
     <ClCompile Include="idlib\math\Simd_AVX2.cpp" />
     <ClCompile Include="idlib\math\Simd_Generic.cpp" />
+    <ClCompile Include="idlib\math\Simd_IdAsm.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE2.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE3.cpp" />
@@ -238,6 +251,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="idlib\Timer.cpp" />
+    <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\Allocators.h" />
@@ -245,10 +261,14 @@
     <ClInclude Include="idlib\bv\Box.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />
     <ClInclude Include="idlib\bv\Sphere.h" />
+    <ClInclude Include="idlib\containers\BinHeap.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
     <ClInclude Include="idlib\containers\DenseHash.h" />
+    <ClInclude Include="idlib\containers\DisjointSets.h" />
+    <ClInclude Include="idlib\containers\FlexList.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
+    <ClInclude Include="idlib\containers\HashMap.h" />
     <ClInclude Include="idlib\containers\HashTable.h" />
     <ClInclude Include="idlib\containers\Hierarchy.h" />
     <ClInclude Include="idlib\containers\LinkList.h" />
@@ -274,6 +294,7 @@
     <ClInclude Include="idlib\geometry\Winding2D.h" />
     <ClInclude Include="idlib\hashing\MD4.h" />
     <ClInclude Include="idlib\hashing\MD5.h" />
+    <ClInclude Include="idlib\hashing\sha256.h" />
     <ClInclude Include="idlib\Heap_Embedded.h" />
     <ClInclude Include="idlib\Image.h" />
     <ClInclude Include="idlib\math\Angles.h" />
@@ -296,6 +317,7 @@
     <ClInclude Include="idlib\math\Simd_AVX.h" />
     <ClInclude Include="idlib\math\Simd_AVX2.h" />
     <ClInclude Include="idlib\math\Simd_Generic.h" />
+    <ClInclude Include="idlib\math\Simd_IdAsm.h" />
     <ClInclude Include="idlib\math\Simd_SSE.h" />
     <ClInclude Include="idlib\math\Simd_SSE2.h" />
     <ClInclude Include="idlib\math\Simd_SSE3.h" />

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #ifndef __GAME_ENTITY_H__
 #define __GAME_ENTITY_H__
@@ -262,6 +262,7 @@ public:
 	int						thinkFlags;				// TH_? flags
 	int						dormantStart;			// time that the entity was first closed off from player
 	bool					cinematic;				// during cinematics, entity will only think if cinematic is set
+	bool					fromMapFile;			// true iff this entity was spawned from description in .map file
 
 	renderView_t *			renderView;				// for camera views from this entity
 	idEntity *				cameraTarget;			// any remoteRenderMap shaders will use this
@@ -493,6 +494,13 @@ public:
 	**/
 	bool					m_listening; // grayman #4620
 
+	/**
+	* Camera field of view for remote renders
+	**/
+	int						cameraFovX;
+	int						cameraFovY;
+
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -669,7 +677,7 @@ public:
 	virtual void			PostBind( void );
 	virtual void			PreUnbind( void );
 	virtual void			PostUnbind( void );
-	void					JoinTeam( idEntity *teammember );
+	void					JoinTeam( idEntity *teammember );	//#5409: deprecated
 	
 	/** 
 	 * greebo: Returns the first team entity matching the given type. If the second
@@ -862,7 +870,7 @@ public:
 	/**
 	* Parses spawnarg list of attachments and puts them into the list.
 	**/
-	void ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from );
+	static void ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from );
 
 	/**
 	 * Frobaction will determine what a particular item should do when an entity is highlighted.
@@ -1508,6 +1516,11 @@ protected:
 	**/
 	bool						m_bIsBroken;
 
+	/**
+	* Allow to break without flinderizing, default true
+	**/
+	bool						m_bFlinderize;
+
 	/** Used to implement waitForRender()...
 	 *	This merely contains a bounding box and a callback.
 	 */
@@ -1604,9 +1617,13 @@ private:
 
 	// entity binding
 	bool					InitBind( idEntity *master );	// initialize an entity binding
-	void					FinishBind( const char *jointnum ); // finish an entity binding - grayman #3074
+	void					FinishBind( idEntity *master, const char *jointnum ); // finish an entity binding - grayman #3074
 	void					RemoveBinds( void );			// deletes any entities bound to this object
-	void					QuitTeam( void );				// leave the current team
+	void					QuitTeam( void );				// leave the current team (#5409: deprecated)
+	// stgatilov #5409: bindMaster/teamMaster/teamChain structure updates
+	void					BreakBindToMaster( void );							//assign bindMaster = NULL and recompute teams
+	void					EstablishBindToMaster( idEntity *newMaster );		//assign new bindMaster and recompute teams
+	bool					ValidateBindTeam( void );							//check validity of the whole team this entity belongs to
 
 	void					UpdatePVSAreas( void );
 

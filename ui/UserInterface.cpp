@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -214,15 +214,16 @@ void idUserInterfaceManagerLocal::FreeListGUI( idListGUI *listgui ) {
 	delete listgui;
 }
 
-bool idUserInterfaceManagerLocal::IsWindowAlive( idWindow *window ) const {
-	for ( int i = 0; i < guis.Num(); i++ )
-		if ( guis[i]->IsWindowAlive(window) )
+
+bool idUserInterfaceManagerLocal::IsBindHandlerActive() const {
+	for ( idUserInterfaceLocal *gui : guis ) {
+		if ( gui->bindHandler != nullptr ) {
 			return true;
-	for ( int i = 0; i < demoGuis.Num(); i++ )
-		if ( demoGuis[i]->IsWindowAlive(window) )
-			return true;
+		}
+	}
 	return false;
 }
+
 /*
 ===============================================================================
 
@@ -701,19 +702,4 @@ bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime
 	dw->win->ResetTime(startTime);
 	dw->win->EvalRegs(-1, true);
 	return true;
-}
-
-static bool IsWindowAliveRec(idWindow *tested, idWindow *treenode) {
-	if (!treenode)
-		return false;
-	if (treenode == tested)
-		return true;
-	int n = treenode->GetChildCount();
-	for (int i = 0; i < n; i++)
-		if (IsWindowAliveRec(tested, treenode->GetChild(i)))
-			return true;
-	return false;
-}
-bool idUserInterfaceLocal::IsWindowAlive(idWindow *window) const {
-	return IsWindowAliveRec(window, GetDesktop());
 }

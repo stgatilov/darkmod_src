@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -5840,9 +5840,9 @@ idPhysics_AF::EvaluateContacts
 bool idPhysics_AF::EvaluateContacts( void ) {
 	int i, j, k, numContacts, numBodyContacts;
 	idAFBody *body;
-	contactInfo_t contactInfo[10];
 	idEntity *passEntity;
 	idVecX dir( 6, VECX_ALLOCA( 6 ) );
+	idRaw<contactInfo_t> contactInfo[CONTACTS_MAX_NUMBER];	//avoid zeroing
 
 	// evaluate bodies
 	EvaluateBodies( current.lastTimeStep );
@@ -5871,8 +5871,10 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 		dir.SubVec3(0).Normalize();
 		dir.SubVec3(1).Normalize();
 
-		numContacts = gameLocal.clip.Contacts( contactInfo, 10, body->current->worldOrigin, dir.SubVec6(0), 2.0f, //CONTACT_EPSILON,
-						body->clipModel, body->current->worldAxis, body->clipMask, passEntity );
+		numContacts = gameLocal.clip.Contacts(
+			contactInfo[0].Ptr(), CONTACTS_MAX_NUMBER, body->current->worldOrigin, dir.SubVec6(0), 2.0f, //CONTACT_EPSILON,
+			body->clipModel, body->current->worldAxis, body->clipMask, passEntity
+		);
 
 #if 1
 		// merge nearby contacts between the same bodies
@@ -5881,14 +5883,14 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 
 			numBodyContacts = 0;
 			for ( k = 0; k < contacts.Num(); k++ ) {
-				if ( contacts[k].entityNum == contactInfo[j].entityNum ) {
-					if ( ( contacts[k].id == i && contactInfo[j].id == contactBodies[k] ) ||
-							( contactBodies[k] == i && contacts[k].id == contactInfo[j].id ) ) {
+				if ( contacts[k].entityNum == contactInfo[j].Get().entityNum ) {
+					if ( ( contacts[k].id == i && contactInfo[j].Get().id == contactBodies[k] ) ||
+							( contactBodies[k] == i && contacts[k].id == contactInfo[j].Get().id ) ) {
 
-						if ( ( contacts[k].point - contactInfo[j].point ).LengthSqr() < Square( 2.0f ) ) {
+						if ( ( contacts[k].point - contactInfo[j].Get().point ).LengthSqr() < Square( 2.0f ) ) {
 							break;
 						}
-						if ( idMath::Fabs( contacts[k].normal * contactInfo[j].normal ) > 0.9f ) {
+						if ( idMath::Fabs( contacts[k].normal * contactInfo[j].Get().normal ) > 0.9f ) {
 							numBodyContacts++;
 						}
 					}
@@ -5896,7 +5898,7 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 			}
 
 			if ( k >= contacts.Num() && numBodyContacts < 3 ) {
-				contacts.Append( contactInfo[j] );
+				contacts.Append( contactInfo[j].Get() );
 				contactBodies.Append( i );
 			}
 		}
@@ -6897,7 +6899,7 @@ void idPhysics_AF::DebugDraw( void ) {
 	if ( af_showBodyNames.GetBool() ) {
 		for ( i = 0; i < bodies.Num(); i++ ) {
 			body = bodies[i];
-			gameRenderWorld->DrawText( body->GetName().c_str(), body->GetWorldOrigin(), 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+			gameRenderWorld->DebugText( body->GetName().c_str(), body->GetWorldOrigin(), 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 		}
 	}
 
@@ -6906,19 +6908,19 @@ void idPhysics_AF::DebugDraw( void ) {
 			body = bodies[i];
 #ifdef MOD_WATERPHYSICS
 			if( body->GetWaterLevel() > 0.0f )
-				gameRenderWorld->DrawText( va( "\n%1.2f", body->liquidMass ), body->GetWorldOrigin(), 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+				gameRenderWorld->DebugText( va( "\n%1.2f", body->liquidMass ), body->GetWorldOrigin(), 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 			else
 #endif
-			gameRenderWorld->DrawText( va( "\n%1.2f", 1.0f / body->GetInverseMass() ), body->GetWorldOrigin(), 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+			gameRenderWorld->DebugText( va( "\n%1.2f", 1.0f / body->GetInverseMass() ), body->GetWorldOrigin(), 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 		}
 	}
 
 	if ( af_showTotalMass.GetBool() ) {
 		axis = gameLocal.GetLocalPlayer()->viewAngles.ToMat3();
 #ifdef MOD_WATERPHYSICS
-		gameRenderWorld->DrawText( va( "\n%1.2f", this->GetMass() ), bodies[0]->GetWorldOrigin() + axis[2] * 8.0f, 0.15f, colorCyan, axis, 1 );
+		gameRenderWorld->DebugText( va( "\n%1.2f", this->GetMass() ), bodies[0]->GetWorldOrigin() + axis[2] * 8.0f, 0.15f, colorCyan, axis, 1 );
 #else
-		gameRenderWorld->DrawText( va( "\n%1.2f", totalMass ), bodies[0]->GetWorldOrigin() + axis[2] * 8.0f, 0.15f, colorCyan, axis, 1 );
+		gameRenderWorld->DebugText( va( "\n%1.2f", totalMass ), bodies[0]->GetWorldOrigin() + axis[2] * 8.0f, 0.15f, colorCyan, axis, 1 );
 #endif
 	}
 
@@ -6926,7 +6928,7 @@ void idPhysics_AF::DebugDraw( void ) {
 		for ( i = 0; i < bodies.Num(); i++ ) {
 			body = bodies[i];
 			idMat3 &I = body->inertiaTensor;
-			gameRenderWorld->DrawText( va( "\n\n\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )",
+			gameRenderWorld->DebugText( va( "\n\n\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )",
 										I[0].x, I[0].y, I[0].z,
 										I[1].x, I[1].y, I[1].z,
 										I[2].x, I[2].y, I[2].z ),
@@ -6957,13 +6959,13 @@ void idPhysics_AF::DebugDraw( void ) {
 		for ( i = 0; i < primaryConstraints.Num(); i++ ) {
 			constraint = primaryConstraints[i];
 			constraint->GetCenter( center );
-			gameRenderWorld->DrawText( constraint->GetName().c_str(), center, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+			gameRenderWorld->DebugText( constraint->GetName().c_str(), center, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 		}
 		if ( !af_showPrimaryOnly.GetBool() ) {
 			for ( i = 0; i < auxiliaryConstraints.Num(); i++ ) {
 				constraint = auxiliaryConstraints[i];
 				constraint->GetCenter( center );
-				gameRenderWorld->DrawText( constraint->GetName().c_str(), center, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+				gameRenderWorld->DebugText( constraint->GetName().c_str(), center, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 			}
 		}
 	}

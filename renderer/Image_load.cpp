@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -22,7 +22,6 @@
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
 #include <stack>
 #include <condition_variable>
-#include "Profiling.h"
 #include "LoadStack.h"
 
 /*
@@ -133,7 +132,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	const byte	*scan;
 	int			rgbOr, aOr, aAnd;
 	int			rgbDiffer, rgbaDiffer;
-	const bool allowCompress = globalImages->image_useCompression.GetBool() && glConfig.textureCompressionAvailable;//&& globalImages->image_preload.GetBool();
+	const bool allowCompress = globalImages->image_useCompression.GetBool();//&& globalImages->image_preload.GetBool();
 
 	// determine if the rgb channels are all the same
 	// and if either all rgb or all alpha are 255
@@ -419,6 +418,8 @@ There is no way to specify explicit mip map levels
 
 ================
 */
+idCVar image_useTexStorage( "image_useTexStorage", "1", CVAR_BOOL|CVAR_ARCHIVE, "Use glTexStorage to create image storage. Only disable if you run into issues." );
+
 void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
                              textureRepeat_t repeatParm, textureDepth_t depthParm, imageResidency_t residencyParm
@@ -441,9 +442,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			cpuData.compressedSize = 0;
 			cpuData.width = width;
 			cpuData.height = height;
-			cpuData.sides = 1;
 			cpuData.pic[0] = ( byte* ) R_StaticAlloc( cpuData.GetSizeInBytes() );
 			memcpy(cpuData.pic[0], pic, cpuData.GetSizeInBytes() );
+			cpuData.sides = 1;
 		}
 		assert( cpuData.width == width && cpuData.height == height && cpuData.compressedSize == 0 );
 	}
@@ -552,11 +553,18 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	GL_CheckErrors();
 	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
-		//Routine test( &uploading );
-		auto start = Sys_Milliseconds();
+	//Routine test( &uploading );
+	auto start = Sys_Milliseconds();
+	if ( GLAD_GL_ARB_texture_storage && !generatorFunction && image_useTexStorage.GetBool() ) {
+		int levels = 1 + idMath::ILog2( Max( scaled_width, scaled_height ) );
+		qglTexStorage2D( GL_TEXTURE_2D, levels, internalFormat, scaled_width, scaled_height);
+		qglTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, scaled_width, scaled_height, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	} else {
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-			qglGenerateMipmap( GL_TEXTURE_2D );
-		backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
+	}
+	qglGenerateMipmap( GL_TEXTURE_2D );
+	GL_CheckErrors();
+	backEnd.pc.textureUploadTime += (Sys_Milliseconds() - start);
 
 	if ( scaledBuffer != 0 && pic != scaledBuffer ) { // duzenko #4401
 		R_StaticFree( scaledBuffer );
@@ -599,6 +607,7 @@ void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum f
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		qglGenTextures( 1, &texnum );
 	}
+	type = TT_2D;
 	this->Bind();
 	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
@@ -1006,7 +1015,7 @@ If fullLoad is false, only the small mip levels of the image will be loaded
 ================
 */
 bool idImage::CheckPrecompressedImage( bool fullLoad ) {
-	if ( !glConfig.isInitialized || !glConfig.textureCompressionAvailable ) {
+	if ( !glConfig.isInitialized ) {
 		return false;
 	}
 
@@ -1216,6 +1225,15 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 			uh = 1;
 		}
 	}
+
+	// ensure mip levels are properly set or generated if missing
+	int actualMips = numMipmaps - skipMip;
+	if ( actualMips > 1 ) {
+		qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, actualMips - 1 );
+	} else {
+		qglGenerateMipmap( GL_TEXTURE_2D );
+	}
+
 	SetImageFilterAndRepeat();
 }
 
@@ -1328,7 +1346,7 @@ On exit, the idImage will have a valid OpenGL texture number that can be bound
 void idImage::ActuallyLoadImage( bool allowBackground ) {
 	//Routine test( &loading );
 	if ( allowBackground )
-		allowBackground = !globalImages->image_preload.GetBool();
+		allowBackground = !globalImages->image_preload.GetBool() && backEnd.viewDef->viewEntitys;
 
 	if ( session->IsFrontend() && !(residency & IR_CPU) ) {
 		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
@@ -1361,7 +1379,10 @@ void idImage::ActuallyLoadImage( bool allowBackground ) {
 			R_UploadImageData( *this );
 		}
 	} else {
-		R_LoadImageData( *this );
+		if ( backgroundLoadState != IS_LOADED ) {
+			R_LoadImageData( *this );
+		}
+		backgroundLoadState = IS_NONE;
 		R_UploadImageData( *this );
 	}
 }
@@ -1394,6 +1415,7 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 
 	delete loadStack;
 	loadStack = nullptr;
+	isImmutable = false;
 }
 
 /*

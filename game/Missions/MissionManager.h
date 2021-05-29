@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef _MISSION_MANAGER_H_
@@ -75,9 +75,11 @@ struct DownloadableMod
 
 	// The list of mission download URLs
 	idStringList missionUrls;
+	idStr missionSha256;
 
 	// The list of Localisation pack download URLs
 	idStringList l10nPackUrls;
+	idStr l10nPackSha256;
 
 	// Begin Initially empty variables, need to be filled per request by the mission manager
 
@@ -194,6 +196,7 @@ public:
 		IN_PROGRESS,
 		FAILED,
 		SUCCESSFUL,
+		MALFORMED,	//stgatilov: invalid data or checksum
 	};
 
 public:
@@ -207,6 +210,10 @@ public:
 	// Save/Restore data
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
+
+	// Save missionDB to hard drive right now!
+	// Note: it is done automatically in destructor.
+	void SaveDatabase() const;
 
 	// Returns the number of available mods
 	int GetNumMods();
@@ -326,9 +333,6 @@ public:
 	static bool DoMoveFile(const fs::path& fromPath, const fs::path& toPath);
 
 private:
-	// Called by destructor (when the game is shutting down)
-	void Shutdown();
-
 	// Finds out which map is the starting map (must be called after InitCurrentMod)
 	void InitStartingMap();
 
@@ -354,7 +358,7 @@ private:
 	static int ModSortCompare(const int* a, const int* b);
 
 	// Loads the mod list from the given XML
-	void LoadModListFromXml(const XmlDocumentPtr& doc);
+	bool LoadModListFromXml(const XmlDocumentPtr& doc);
 
 	// Loads mod details from the given XML, storing the data in the mod with the given number
 	void LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNum);

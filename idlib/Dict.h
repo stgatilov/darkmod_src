@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __DICT_H__
@@ -73,8 +73,10 @@ public:
 	void				SetDefaults( const idDict *dict );
 						// Tels: like SetDefaults(), but skip all keys starting with "skip"
 	void				SetDefaults( const idDict *dict, const idStr &skip );
-						// clear dict freeing up memory
+						// clear dict retaining memory
 	void				Clear( void );
+						// clear dict freeing up memory
+	void				ClearFree( void );
 						// print the dict
 	void				Print() const;
 
@@ -152,7 +154,7 @@ private:
 ID_INLINE idDict::idDict( void ) {
 	args.SetGranularity( 16 );
 	argHash.SetGranularity( 16 );
-	argHash.Clear( 128, 16 );
+	argHash.ClearFree( 128, 16 );
 }
 
 ID_INLINE idDict::idDict( const idDict &other ) {
@@ -170,7 +172,7 @@ ID_INLINE void idDict::SetGranularity( int granularity ) {
 
 ID_INLINE void idDict::SetHashSize( int hashSize ) {
 	if ( args.Num() == 0 ) {
-		argHash.Clear( hashSize, 16 );
+		argHash.ClearFree( hashSize, 16 );
 	}
 }
 

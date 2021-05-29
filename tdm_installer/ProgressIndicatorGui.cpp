@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #include "ProgressIndicatorGui.h"
 #include <FL/Fl.H>
 #include <FL/Fl_Progress.H>
@@ -10,6 +24,13 @@
 
 
 int ProgressIndicatorGui::InterruptFlag = 0;
+
+ProgressIndicatorGui::~ProgressIndicatorGui() {
+	//reset labels to constant strings to avoid dangling pointers
+	_progressWidget->label("done");
+	if (_labelWidget)
+		_labelWidget->label("");
+}
 
 ProgressIndicatorGui::ProgressIndicatorGui(Fl_Progress *widget) : _progressWidget(widget) {
 	_progressWidget->value(0.0);
@@ -64,8 +85,11 @@ int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, 
 }
 
 
+int GuiDeactivateGuard::DeactivatedCount = 0;
+
 GuiDeactivateGuard::~GuiDeactivateGuard() {
 	Rollback();
+	DeactivatedCount--;
 }
 GuiDeactivateGuard::GuiDeactivateGuard(Fl_Widget *blockedPage, std::initializer_list<Fl_Widget*> exceptThese) {
 	Fl_Group *group = blockedPage->as_group();
@@ -91,6 +115,8 @@ GuiDeactivateGuard::GuiDeactivateGuard(Fl_Widget *blockedPage, std::initializer_
 		_widgetToOldActive[widget] = widget->active();
 		widget->deactivate();
 	}
+
+	DeactivatedCount++;
 }
 void GuiDeactivateGuard::Rollback() {
 	for (const auto &pWA : _widgetToOldActive) {

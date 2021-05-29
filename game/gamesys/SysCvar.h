@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __SYS_CVAR_H__
@@ -86,6 +86,7 @@ extern idCVar cv_tdm_widescreenmode;
 extern idCVar cv_tdm_menu_music;
 
 extern idCVar cv_tdm_show_trainer_messages;
+extern idCVar cv_tdm_show_menu_tooltips; // Obsttorte #2626
 
 extern idCVar cv_tdm_default_relations_def;
 extern idCVar cv_tdm_fm_path;
@@ -264,20 +265,27 @@ extern idCVar cv_weapon_next_on_empty;
 // physics
 extern idCVar cv_collision_damage_scale_vert;
 extern idCVar cv_collision_damage_scale_horiz;
-extern idCVar cv_drag_limit_force;
-extern idCVar cv_drag_force_max;
+extern idCVar cv_dragged_item_highlight;
+extern idCVar cv_drag_jump_masslimit;
+extern idCVar cv_drag_encumber_minmass;
+extern idCVar cv_drag_encumber_maxmass;
+extern idCVar cv_drag_encumber_max;
 extern idCVar cv_drag_stuck_dist;
+extern idCVar cv_drag_force_max;
+extern idCVar cv_drag_new;
+extern idCVar cv_drag_limit_force;
 extern idCVar cv_drag_damping;
 extern idCVar cv_drag_damping_AF;
 extern idCVar cv_drag_AF_ground_timer;
 extern idCVar cv_drag_AF_free;
-extern idCVar cv_drag_jump_masslimit;
-extern idCVar cv_drag_encumber_minmass;
-extern idCVar cv_drag_encumber_minmass;
-extern idCVar cv_drag_encumber_maxmass;
-extern idCVar cv_drag_encumber_max;
-extern idCVar cv_dragged_item_highlight;
 extern idCVar cv_drag_debug;
+extern idCVar cv_drag_targetpos_averaging_time;
+extern idCVar cv_drag_rigid_silentmode;
+extern idCVar cv_drag_rigid_distance_halfing_time;
+extern idCVar cv_drag_rigid_acceleration_radius;
+extern idCVar cv_drag_af_weight_ratio;
+extern idCVar cv_drag_af_reduceforce_radius;
+
 extern idCVar cv_melee_debug;
 extern idCVar cv_melee_state_debug;
 extern idCVar cv_melee_mouse_thresh;
@@ -291,10 +299,11 @@ extern idCVar cv_melee_forbid_auto_parry;
 extern idCVar cv_melee_max_particles;
 extern idCVar cv_phys_show_momentum;
 
-extern idCVar cv_throw_min;
-extern idCVar cv_throw_max;
+extern idCVar cv_throw_impulse_min;
+extern idCVar cv_throw_impulse_max;
+extern idCVar cv_throw_vellimit_min;
+extern idCVar cv_throw_vellimit_max;
 extern idCVar cv_throw_time;
-extern idCVar cv_throw_max_vel;
 
 extern idCVar cv_bounce_sound_max_vel;
 extern idCVar cv_bounce_sound_min_vel;
@@ -396,9 +405,6 @@ extern idCVar cv_ai_hearing_hardcore;
 extern idCVar cv_door_auto_open_on_unlock;
 
 extern idCVar cv_dm_distance;
-
-// Ambient light method CVar
-extern idCVar cv_ambient_method;
 
 // Volume of music speakers
 extern idCVar cv_music_volume;
@@ -649,6 +655,7 @@ extern idCVar	net_clientPredictGUI;
 extern idCVar	g_voteFlags;
 extern idCVar	g_mapCycle;
 extern idCVar	g_balanceTDM;
+extern idCVar	g_entityBindNew;
 
 extern idCVar	si_timeLimit;
 extern idCVar	si_fragLimit;

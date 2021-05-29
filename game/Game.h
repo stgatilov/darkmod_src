@@ -1,25 +1,20 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __GAME_H__
 #define __GAME_H__
-
-#if defined(__linux__) || defined(MACOS_X)
-#include "../idlib/Lib.h"
-#include "../sound/sound.h"
-#endif
 
 #include "../framework/Licensee.h"
 
@@ -97,9 +92,6 @@ public:
 
 	// The session calls this right before a new level is loaded.
 	virtual void				SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) = 0;
-
-	// The session calls this to allow painting of the "Mission Loaded / Press Attack" gui
-	virtual void				SetTime2Start() = 0; // grayman #3763
 
 	// Obsttorte
 	virtual idStr				triggeredSave() = 0; 

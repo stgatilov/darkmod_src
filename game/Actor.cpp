@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -5715,14 +5715,14 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	delta = delta*delta*delta;
 	int damage = static_cast<int>(1.4E-16 * delta - 3);
 
-	// gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
+	// gameRenderWorld->DebugText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 
 	// Check if the damage is above our threshold, ignore otherwise
 	if (damage >= m_damage_thresh_min)
 	{
-		//gameRenderWorld->DrawText(idStr(deltaVert), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 50000);
+		//gameRenderWorld->DebugText(idStr(deltaVert), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 50000);
 
-		//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
+		//gameRenderWorld->DebugText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
 
 		// grayman - print data re: being damaged
 		gameLocal.Printf("'%s' dealt %d landing damage at [%s]\n", GetName(),damage,GetPhysics()->GetOrigin().ToString());

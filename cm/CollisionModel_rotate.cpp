@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 /*
@@ -1210,7 +1210,8 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	cm_trmPolygon_t *poly;
 	cm_trmEdge_t *edge;
 	cm_trmVertex_t *vert;
-	ALIGN16( static cm_traceWork_t tw );
+	idRaw<cm_traceWork_t> twRaw;
+	cm_traceWork_t &tw = twRaw.Get();
 
 	if ( model < 0 || model > MAX_SUBMODELS || model > idCollisionModelManagerLocal::maxModels ) {
 		common->Printf("idCollisionModelManagerLocal::Rotation180: invalid model handle\n");
@@ -1223,6 +1224,7 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 
 	idCollisionModelManagerLocal::checkCount++;
 
+	memset(&tw.trace, 0, sizeof(tw.trace));
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
 	tw.trace.c.type = CONTACT_NONE;

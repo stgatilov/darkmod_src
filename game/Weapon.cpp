@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -729,9 +729,9 @@ void idWeapon::Clear( void ) {
 			ent->Event_Remove();
 	}
 
-	m_Attachments.Clear();
+	m_Attachments.ClearFree();
 
-	m_animRates.Clear();
+	m_animRates.ClearFree();
 
 	// clear attack flags on the player
 	if( owner )
@@ -2508,7 +2508,8 @@ idWeapon::WriteToSnapshot
 */
 void idWeapon::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteBits( ammoClip, ASYNC_PLAYER_INV_CLIP_BITS );
-	msg.WriteBits( worldModel.GetSpawnId(), 32 );
+	msg.WriteBits( worldModel.GetEntityNum(), 32 );
+	msg.WriteBits( worldModel.GetSpawnNum(), 32 );
 	msg.WriteBits( lightOn, 1 );
 	msg.WriteBits( isFiring ? 1 : 0, 1 );
 }
@@ -2520,7 +2521,9 @@ idWeapon::ReadFromSnapshot
 */
 void idWeapon::ReadFromSnapshot( const idBitMsgDelta &msg ) {	
 	ammoClip = msg.ReadBits( ASYNC_PLAYER_INV_CLIP_BITS );
-	worldModel.SetSpawnId( msg.ReadBits( 32 ) );
+	int entId = msg.ReadBits( 32 );
+	int spnId = msg.ReadBits( 32 );
+	worldModel.Set( entId, spnId );
 	bool snapLight = msg.ReadBits( 1 ) != 0;
 	isFiring = msg.ReadBits( 1 ) != 0;
 

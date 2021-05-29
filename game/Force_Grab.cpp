@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -70,6 +70,7 @@ void CForce_Grab::Init( float damping ) {
 	{
 		m_damping = 0;
 	}
+	m_dragPositionFrames.Clear();
 }
 
 void CForce_Grab::Save( idSaveGame *savefile ) const
@@ -87,6 +88,10 @@ void CForce_Grab::Save( idSaveGame *savefile ) const
 	savefile->WriteMat3(m_dragAxis);
 	savefile->WriteBool(m_bApplyDamping);
 	savefile->WriteBool(m_bLimitForce);
+
+	savefile->WriteInt(m_dragPositionFrames.Num());
+	for (int i = 0; i < m_dragPositionFrames.Num(); i++)
+		savefile->WriteVec4(m_dragPositionFrames[i]);
 }
 
 void CForce_Grab::Restore( idRestoreGame *savefile )
@@ -104,6 +109,12 @@ void CForce_Grab::Restore( idRestoreGame *savefile )
 	savefile->ReadMat3(m_dragAxis);
 	savefile->ReadBool(m_bApplyDamping);
 	savefile->ReadBool(m_bLimitForce);
+
+	int n;
+	savefile->ReadInt(n);
+	m_dragPositionFrames.SetNum(n, false);
+	for (int i = 0; i < m_dragPositionFrames.Num(); i++)
+		savefile->ReadVec4(m_dragPositionFrames[i]);
 }
 
 /*
@@ -181,9 +192,49 @@ idMat3 CForce_Grab::GetDragAxis( void )
 CForce_Grab::GetDraggedPosition
 ================
 */
-const idVec3 CForce_Grab::GetDraggedPosition( void ) const 
+idVec3 CForce_Grab::GetDraggedPosition( void ) const 
 {
 	return ( m_physics->GetOrigin( m_id ) + m_p * m_physics->GetAxis( m_id ) );
+}
+
+/*
+================
+CForce_Grab::UpdateAverageDragPosition
+================
+*/
+void CForce_Grab::UpdateAverageDragPosition( float dT ) {
+	float fulltime = cv_drag_targetpos_averaging_time.GetFloat();
+	// update ages of frames
+	float aging = 0.0f;
+	if (fulltime > 0.0)
+		aging = idMath::Exp(-dT / fulltime);
+	for (int i = 0; i < m_dragPositionFrames.Num(); i++)
+		m_dragPositionFrames[i].w *= aging;
+	// add a new frame
+	m_dragPositionFrames.Append(idVec4(m_dragPosition.x, m_dragPosition.y, m_dragPosition.z, 1.0f));
+	// remove obsolete frames
+	while (m_dragPositionFrames[0].w < 0.1f) {
+		m_dragPositionFrames.RemoveIndex(0);
+		assert(m_dragPositionFrames.Num() > 0);	//current frame must never be removed
+	}
+}
+
+/*
+================
+CForce_Grab::ComputeAverageDragPosition
+================
+*/
+idVec3 CForce_Grab::ComputeAverageDragPosition() const {
+	assert(m_dragPositionFrames.Num() > 0);
+	// compute current average
+	idVec3 sumDragPos(0.0f);
+	float sumWeight = FLT_MIN;
+	for (int i = 0; i < m_dragPositionFrames.Num(); i++) {
+		sumDragPos += m_dragPositionFrames[i].ToVec3() * m_dragPositionFrames[i].w;
+		sumWeight += m_dragPositionFrames[i].w;
+	}
+	sumDragPos /= sumWeight;
+	return sumDragPos;
 }
 
 /*
@@ -193,118 +244,207 @@ CForce_Grab::Evaluate
 */
 void CForce_Grab::Evaluate( int time ) 
 {
-	float l1, Accel, dT;
-	idVec3 dragOrigin, dir1, dir2, velocity, COM, prevVel;
-	idRotation rotation;
-
 	if ( !m_physics ) 
-	{
 		return;
-	}
 
 	CGrabber *grabber = gameLocal.m_Grabber;
+	float dT = MS2SEC(gameLocal.getMsec());
 
-// ======================== LINEAR =========================
 
-	COM = this->GetCenterOfMass();
-	dragOrigin = COM;
+	idVec3 velocity;
 
-	dir1 = m_dragPosition - dragOrigin;
-	l1 = dir1.Normalize();
-	dT = MS2SEC(gameLocal.getMsec()); // duzenko 4409: fixed tic + USERCMD_MSEC -> flickering
-	if (dT < MS2SEC( USERCMD_MSEC )) // BluePill : Fix grab speed for higher framerates
-		dT = MS2SEC( USERCMD_MSEC ); // time elapsed is time between user mouse commands
+	if (cv_drag_new.GetBool()) {
+		// ========================== NEW grabber ===========================
 
-	if( !m_bApplyDamping )
-		m_damping = 0.0f;
+		// update and compute smoothened drag position
+		UpdateAverageDragPosition(dT);
+		idVec3 avgTargetDragPosition = ComputeAverageDragPosition();
 
-	if( grabber->m_bIsColliding )
-	{
-		// Zero out previous velocity when we start out colliding
-		prevVel = vec3_zero;
+		idVec3 draggedPosition = GetDraggedPosition();
+		idVec3 dragShift = avgTargetDragPosition - draggedPosition;
+		idVec3 COM = GetCenterOfMass();
 
-		idVec3 newDir = dir1;
+		// AF dragging is a special story
+		if ( m_physics->IsType( idPhysics_AF::Type ) ) {
+			idPhysics_AF *phys = (idPhysics_AF*)m_physics;
 
-		for( int i=0; i < grabber->m_CollNorms.Num(); i++ )
+			// compute total weight
+			float totalMass = 0.0f;
+			for (int i = 0; i < phys->GetNumBodies(); i++)
+				totalMass += phys->GetMass(i);
+			float totalWeight = gameLocal.GetGravity().Length() * totalMass;
+
+			// compute force / weight factor
+			float maxFactor = cv_drag_af_weight_ratio.GetFloat();
+			maxFactor = idMath::Fmin(maxFactor, grabber->m_MaxForce / totalWeight);
+			// compute weakening coefficient if distance to target is small
+			idVec3 dir = dragShift;
+			float len = dir.Normalize();
+			float weakenRadius = cv_drag_af_reduceforce_radius.GetFloat();
+			float weakenCoeff = idMath::Fmin(len / (weakenRadius + 1e-3f), 1.0f);
+
+			// apply force
+			idVec3 force = weakenCoeff * maxFactor * totalWeight * dir;
+			m_physics->AddForce(m_id, COM, force);
+
+			// don't do anything else
+			return;
+		}
+
+		// compute collision contacts of dragged item
+		idVec6 dir;
+		dir.Zero();
+		// note: it is very important to specify the direction we are going to move to
+		dir.SubVec3(0) = dragShift.Normalized();
+		idClipModel *clipModel = m_physics->GetClipModel(m_id);
+		idRaw<contactInfo_t> contacts[CONTACTS_MAX_NUMBER];
+		int num = gameLocal.clip.Contacts(
+			contacts[0].Ptr(), CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
+			dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(),
+			m_physics->GetClipMask(m_id), m_physics->GetSelf()
+		);
+
+		// filter contacts with what we consider to be obstacles
+		idList<idVec3> normals;
+		for (int i = 0; i < num; i++) {
+			const contactInfo_t &contact = contacts[i].Get();
+
+			idEntity *contEnt = gameLocal.entities[contact.entityNum];
+			if (!contEnt->GetPhysics())
+				continue;
+
+			// e.g. to fix candle and its holder
+			if (contEnt->IsBoundTo(m_physics->GetSelf()) || m_physics->GetSelf()->IsBoundTo(contEnt))
+				continue;	// same bind-team
+
+			if (contEnt->GetPhysics()->IsType(idPhysics_Base::Type) && !grabber->IsInSilentMode())
+				continue;	// we can push this thing
+
+			// non-moveable obstacle: we have to slide along it
+			normals.Append(contact.normal);
+		}
+
+		// project drag vector onto admissible cone allowed by obstacles
+		dragShift = dragShift.ProjectToConvexCone(normals.Ptr(), normals.Num(), 0.01f);
+
+		// compute velocity from drag vector
+		float halfingTime = cv_drag_rigid_distance_halfing_time.GetFloat();
+		float accelRadius = cv_drag_rigid_acceleration_radius.GetFloat();
+		float period = halfingTime - idMath::Fmin(accelRadius / (1e-3f + dragShift.Length()), 1.0f) * (halfingTime - dT);
+		// if accelRadius == 0, then item should travel to target along straight line,
+		// with distance decreasing as D(t) = exp(t / T), where T = halfingTime
+		velocity = dragShift / period;
+
+		// ==================================================================
+	}
+	else {
+
+		// ========================== OLD grabber ===========================
+
+		idVec3 COM = this->GetCenterOfMass();
+		idVec3 dragOrigin = COM;
+
+		idVec3 dir1 = m_dragPosition - dragOrigin;
+		double l1 = dir1.Normalize();
+		dT = MS2SEC(gameLocal.getMsec()); // duzenko 4409: fixed tic + USERCMD_MSEC -> flickering
+		if (dT < MS2SEC( USERCMD_MSEC )) // BluePill : Fix grab speed for higher framerates
+			dT = MS2SEC( USERCMD_MSEC ); // time elapsed is time between user mouse commands
+
+		if( !m_bApplyDamping )
+			m_damping = 0.0f;
+
+		idVec3 prevVel;
+		if( grabber->m_bIsColliding )
 		{
-			// subtract out component of desired dir going in to surface
-			if( newDir * grabber->m_CollNorms[i] < 0.0f )
+			// Zero out previous velocity when we start out colliding
+			prevVel = vec3_zero;
+
+			idVec3 newDir = dir1;
+
+			for( int i=0; i < grabber->m_CollNorms.Num(); i++ )
 			{
-				newDir -= (newDir * grabber->m_CollNorms[i]) * grabber->m_CollNorms[i];
+				// subtract out component of desired dir going in to surface
+				if( newDir * grabber->m_CollNorms[i] < 0.0f )
+				{
+					newDir -= (newDir * grabber->m_CollNorms[i]) * grabber->m_CollNorms[i];
+				}
+
+				if( cv_drag_debug.GetBool() )
+					gameRenderWorld->DebugArrow( colorBlue, COM, (COM + 30 * grabber->m_CollNorms[i]), 4.0f, 1);
+			}
+
+			// Clear m_CollNorms so it can be filled next time there's a collision
+			grabber->m_CollNorms.Clear();
+		
+			newDir.Normalize();
+
+			float newl1 = l1 * (dir1 * newDir);
+
+			// avoid jittering due to floating point error
+			if( newl1 > 0.1f )
+			{
+				l1 = newl1; // project the magnitude in the new direction
+				dir1 = newDir;
+			}
+			else
+			{
+				dir1 = vec3_zero;
+				l1 = 0.0f;
 			}
 
 			if( cv_drag_debug.GetBool() )
-				gameRenderWorld->DebugArrow( colorBlue, COM, (COM + 30 * grabber->m_CollNorms[i]), 4.0f, 1);
+				gameRenderWorld->DebugArrow( colorRed, COM, (COM + l1 * dir1), 4.0f, 1);
+		}
+		else 
+		{
+			prevVel = m_physics->GetLinearVelocity( m_id );
+			if( cv_drag_debug.GetBool() )
+				gameRenderWorld->DebugArrow( colorGreen, COM, (COM + l1 * dir1), 4.0f, 1);
 		}
 
-		// Clear m_CollNorms so it can be filled next time there's a collision
-		grabber->m_CollNorms.Clear();
-		
-		newDir.Normalize();
+		// "Realistic" finite acceleration
+		float Accel = ( 1.0f - m_damping ) * l1 / (dT * dT);
 
-		float newl1 = l1 * (dir1 * newDir);
-
-		// avoid jittering due to floating point error
-		if( newl1 > 0.1f )
+		if( m_bLimitForce )
 		{
-			l1 = newl1; // project the magnitude in the new direction
-			dir1 = newDir;
-		}
-		else
-		{
-			dir1 = vec3_zero;
-			l1 = 0.0f;
-		}
+			// max force our arms can exert
+			float MaxArmAccel = grabber->m_MaxForce / m_physics->GetMass();
+			// if player moves object down, gravity will help
+			if( dir1 * m_physics->GetGravityNormal() > 0 )
+			{
+				idVec3 gravNormal = m_physics->GetGravity();
+				float gravMag = gravNormal.Normalize();
+				float MaxAccelDown = MaxArmAccel + gravMag;
 
-		if( cv_drag_debug.GetBool() )
-			gameRenderWorld->DebugArrow( colorRed, COM, (COM + l1 * dir1), 4.0f, 1);
-	}
-	else 
-	{
-		prevVel = m_physics->GetLinearVelocity( m_id );
-		if( cv_drag_debug.GetBool() )
-			gameRenderWorld->DebugArrow( colorGreen, COM, (COM + l1 * dir1), 4.0f, 1);
-	}
+				// break up desired motion into with gravity and the rest
+				float DownAccel = Accel * (dir1 * gravNormal);
+				idVec3 vDownAccel = DownAccel * gravNormal;
+				idVec3 vOthAccel = Accel * dir1 - vDownAccel;
+				float OthAccel = vOthAccel.NormalizeFast();
 
-	// "Realistic" finite acceleration
-	Accel = ( 1.0f - m_damping ) * l1 / (dT * dT);
-
-	if( m_bLimitForce )
-	{
-		// max force our arms can exert
-		float MaxArmAccel = grabber->m_MaxForce / m_physics->GetMass();
-		// if player moves object down, gravity will help
-		if( dir1 * m_physics->GetGravityNormal() > 0 )
-		{
-			idVec3 gravNormal = m_physics->GetGravity();
-			float gravMag = gravNormal.Normalize();
-			float MaxAccelDown = MaxArmAccel + gravMag;
-
-			// break up desired motion into with gravity and the rest
-			float DownAccel = Accel * (dir1 * gravNormal);
-			idVec3 vDownAccel = DownAccel * gravNormal;
-			idVec3 vOthAccel = Accel * dir1 - vDownAccel;
-			float OthAccel = vOthAccel.NormalizeFast();
-
-			OthAccel = idMath::ClampFloat(0.0f, MaxArmAccel, OthAccel );
-			DownAccel = idMath::ClampFloat(0.0f, MaxAccelDown, DownAccel );
-			// recalculate the vectors now that magnitude is clamped
-			vDownAccel = DownAccel * gravNormal;
-			vOthAccel = OthAccel * vOthAccel;
-			velocity = prevVel * m_damping + (vDownAccel + vOthAccel) * dT;
+				OthAccel = idMath::ClampFloat(0.0f, MaxArmAccel, OthAccel );
+				DownAccel = idMath::ClampFloat(0.0f, MaxAccelDown, DownAccel );
+				// recalculate the vectors now that magnitude is clamped
+				vDownAccel = DownAccel * gravNormal;
+				vOthAccel = OthAccel * vOthAccel;
+				velocity = prevVel * m_damping + (vDownAccel + vOthAccel) * dT;
+			}
+			else
+			{
+				// we're nice and don't make the player's arms fight gravity
+				Accel = idMath::ClampFloat(0.0f, MaxArmAccel, Accel );
+				velocity = prevVel * m_damping + dir1 * Accel * dT;
+			}
 		}
 		else
 		{
-			// we're nice and don't make the player's arms fight gravity
-			Accel = idMath::ClampFloat(0.0f, MaxArmAccel, Accel );
+			// unlimited force
 			velocity = prevVel * m_damping + dir1 * Accel * dT;
 		}
+
+		// ==================================================================
 	}
-	else
-	{
-		// unlimited force
-		velocity = prevVel * m_damping + dir1 * Accel * dT;
-	}
+
 
 	if( m_RefEnt.GetEntity() )
 	{

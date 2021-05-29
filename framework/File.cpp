@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -647,17 +647,7 @@ idFile_Memory
 idFile_Memory::idFile_Memory
 =================
 */
-idFile_Memory::idFile_Memory( void ) {
-	name = "*unknown*";
-	maxSize = 0;
-	fileSize = 0;
-	allocated = 0;
-	granularity = 16384;
-
-	mode = ( 1 << FS_WRITE );
-	filePtr = NULL;
-	curPtr = NULL;
-}
+idFile_Memory::idFile_Memory( void ) : idFile_Memory( "*unknown*" ) {}
 
 /*
 =================
@@ -666,10 +656,10 @@ idFile_Memory::idFile_Memory
 */
 idFile_Memory::idFile_Memory( const char *name ) {
 	this->name = name;
-	maxSize = 0;
 	fileSize = 0;
 	allocated = 0;
 	granularity = 16384;
+	owned = true;
 
 	mode = ( 1 << FS_WRITE );
 	filePtr = NULL;
@@ -681,29 +671,12 @@ idFile_Memory::idFile_Memory( const char *name ) {
 idFile_Memory::idFile_Memory
 =================
 */
-idFile_Memory::idFile_Memory( const char *name, char *data, int length ) {
+idFile_Memory::idFile_Memory( const char *name, const char *data, int length, bool owned ) {
 	this->name = name;
-	maxSize = length;
-	fileSize = 0;
-	allocated = length;
-	granularity = 16384;
-
-	mode = ( 1 << FS_WRITE );
-	filePtr = data;
-	curPtr = data;
-}
-
-/*
-=================
-idFile_Memory::idFile_Memory
-=================
-*/
-idFile_Memory::idFile_Memory( const char *name, const char *data, int length ) {
-	this->name = name;
-	maxSize = 0;
 	fileSize = length;
 	allocated = 0;
 	granularity = 16384;
+	this->owned = owned;
 
 	mode = ( 1 << FS_READ );
 	filePtr = const_cast<char *>(data);
@@ -716,7 +689,7 @@ idFile_Memory::~idFile_Memory
 =================
 */
 idFile_Memory::~idFile_Memory( void ) {
-	if ( filePtr && allocated > 0 && maxSize == 0 ) {
+	if ( filePtr && owned ) {
 		Mem_Free( filePtr );
 	}
 }
@@ -757,11 +730,6 @@ int idFile_Memory::Write( const void *buffer, int len ) {
 
 	const int alloc = curPtr + len + 1 - filePtr - allocated; // need room for len+1
 	if ( alloc > 0 ) {
-		if ( maxSize != 0 ) {
-			common->Error( "idFile_Memory::Write: exceeded maximum size %d", maxSize );
-			return 0;
-		}
-
 		const int extra = granularity * ( 1 + alloc / granularity );
 		char *newPtr = (char *) Mem_Alloc( allocated + extra );
 		if ( allocated ) {
@@ -865,50 +833,6 @@ int idFile_Memory::Seek( long offset, fsOrigin_t origin ) {
 		return -1;
 	}
 	return 0;
-}
-
-/*
-=================
-idFile_Memory::MakeReadOnly
-=================
-*/
-void idFile_Memory::MakeReadOnly( void ) {
-	mode = ( 1 << FS_READ );
-	Rewind();
-}
-
-/*
-=================
-idFile_Memory::Clear
-=================
-*/
-void idFile_Memory::Clear( bool freeMemory ) {
-	fileSize = 0;
-	granularity = 16384;
-	if ( freeMemory ) {
-		allocated = 0;
-		Mem_Free( filePtr );
-		filePtr = NULL;
-		curPtr = NULL;
-	} else {
-		curPtr = filePtr;
-	}
-}
-
-/*
-=================
-idFile_Memory::SetData
-=================
-*/
-void idFile_Memory::SetData( const char *data, int length ) {
-	maxSize = 0;
-	fileSize = length;
-	allocated = 0;
-	granularity = 16384;
-
-	mode = ( 1 << FS_READ );
-	filePtr = const_cast<char *>(data);
-	curPtr = const_cast<char *>(data);
 }
 
 

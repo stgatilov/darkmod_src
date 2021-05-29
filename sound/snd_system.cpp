@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -28,7 +28,7 @@ idCVar idSoundSystemLocal::s_noSound( "s_noSound", "0", CVAR_SOUND | CVAR_BOOL |
 idCVar idSoundSystemLocal::s_diffractionMax( "s_diffractionMax", "10", CVAR_SOUND | CVAR_FLOAT | CVAR_ARCHIVE, "max vol loss (dB) at 180 degrees diffraction" ); // grayman #4219
 idCVar idSoundSystemLocal::s_device("s_device", "default", CVAR_SOUND | CVAR_NOCHEAT | CVAR_ARCHIVE, "the audio device to use ('default' for the default audio device)");
 idCVar idSoundSystemLocal::s_quadraticFalloff( "s_quadraticFalloff", "1", CVAR_SOUND | CVAR_BOOL, "" );
-idCVar idSoundSystemLocal::s_drawSounds( "s_drawSounds", "0", CVAR_SOUND | CVAR_INTEGER, "1 = draw audible sounds (within max distance), 2 = draw all", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar                     s_drawSounds( "s_drawSounds", "0", CVAR_SOUND | CVAR_INTEGER, "1 = draw audible sounds (within max distance), 2 = draw all", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar idSoundSystemLocal::s_showStartSound( "s_showStartSound", "0", CVAR_SOUND | CVAR_BOOL, "" );
 idCVar idSoundSystemLocal::s_useOcclusion( "s_useOcclusion", "1", CVAR_SOUND | CVAR_BOOL, "" );
 idCVar idSoundSystemLocal::s_maxSoundsPerShader( "s_maxSoundsPerShader", "0", CVAR_SOUND | CVAR_ARCHIVE, "", 0, 10, idCmdSystem::ArgCompletion_Integer<0,10> );
@@ -64,6 +64,8 @@ idCVar idSoundSystemLocal::s_skipHelltimeFX( "s_skipHelltimeFX", "0", CVAR_SOUND
 idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EFX reverb effects (also formerly known as EAX)" );
 idCVar idSoundSystemLocal::s_useHRTF( "s_useHRTF", "1", CVAR_SOUND | CVAR_ARCHIVE, "use HRTF for better positional sound on headphones.\nvalue -1 means automatic choice." );
 idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ARCHIVE, "specifies maximum uncompressed sample length in seconds" );
+// nbohr1more: #5587 Reverb volume control
+idCVar idSoundSystemLocal::s_alReverbGain( "s_alReverbGain", "1.0", CVAR_SOUND | CVAR_FLOAT | CVAR_ARCHIVE, "reduce reverb strength (0.0 to 1.0)", 0.0f, 1.0f );
 #else
 idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "EAX not available in this build" );
 idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ROM, "specifies maximum uncompressed sample length in seconds" );
@@ -413,6 +415,8 @@ void idSoundSystemLocal::Init() {
 		alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)alGetProcAddress("alDeleteAuxiliaryEffectSlots");
 		alIsAuxiliaryEffectSlot = (LPALISAUXILIARYEFFECTSLOT)alGetProcAddress("alIsAuxiliaryEffectSlot");;
 		alAuxiliaryEffectSloti = (LPALAUXILIARYEFFECTSLOTI)alGetProcAddress("alAuxiliaryEffectSloti");
+		// nbohr1more: #5587 Reverb volume control
+		alAuxiliaryEffectSlotf = (LPALAUXILIARYEFFECTSLOTF)alGetProcAddress("alAuxiliaryEffectSlotf");
 	}
 	else {
 		common->Printf("OpenAL: EFX extension not found\n");
@@ -434,6 +438,8 @@ void idSoundSystemLocal::Init() {
 		alDeleteAuxiliaryEffectSlots = NULL;
 		alIsAuxiliaryEffectSlot = NULL;
 		alAuxiliaryEffectSloti = NULL;
+		// nbohr1more: #5587 Reverb volume control
+		alAuxiliaryEffectSlotf = NULL;
 	}
 
 	if (HRTFAvailable) {

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -144,9 +144,9 @@ idRenderWorldLocal::~idRenderWorldLocal() {
 	FreeWorld();
 
 	// free up the debug lines, polys, and text
-	RB_ClearDebugPolygons( 0 );
-	RB_ClearDebugLines( 0 );
-	RB_ClearDebugText( 0 );
+	R_ClearDebugPolygons( 0 );
+	R_ClearDebugLines( 0 );
+	R_ClearDebugText( 0 );
 }
 
 /*
@@ -711,6 +711,12 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 	if ( r_lockSurfaces.GetBool() ) {
 		R_LockSurfaceScene( *parms );
 		return;
+	}
+
+	// stgatilov: allow switching interaction table implementations on-the-fly
+	if ( r_useInteractionTable.IsModified() ) {
+		PutAllInteractionsIntoTable(true);
+		r_useInteractionTable.ClearModified();
 	}
 
 	// save this world for use by some console commands
@@ -1506,13 +1512,21 @@ If this isn't called, they will all be dynamically generated
 
 This really isn't all that helpful anymore, because the calculation of shadows
 and light interactions is deferred from idRenderWorldLocal::CreateLightDefInteractions(), but we
-use it as an oportunity to size the interactionTable
+use it as an opportunity to size the interactionTable
+
+stgatilov: This is even harmful now!
+Interaction table is hash table, which grows automatically.
+generate everything => larger table => more cache pollution
 ===================
 */
 void idRenderWorldLocal::GenerateAllInteractions() {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
+
+	//stgatilov: never force-generate all interactions
+	return PutAllInteractionsIntoTable( true );
+	//(dead code follows)
 
 #ifdef _DEBUG
 	int start = Sys_Milliseconds();
@@ -1543,6 +1557,22 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 #endif
 
 	// build the interaction table
+	PutAllInteractionsIntoTable( false );
+
+	// entities flagged as noDynamicInteractions will no longer make any
+	generateAllInteractionsCalled = true;
+}
+
+/*
+===================
+idRenderWorldLocal::PutAllInteractionsIntoTable
+===================
+*/
+void idRenderWorldLocal::PutAllInteractionsIntoTable( bool resetTable ) {
+	if ( resetTable ) {
+		interactionTable.Shutdown();
+		interactionTable.Init();
+	}
 	for( int i = 0; i < this->lightDefs.Num(); i++ ) {
 		idRenderLightLocal *ldef = this->lightDefs[i];
 		if( !ldef ) {
@@ -1556,9 +1586,6 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 	idStr stats = interactionTable.Stats();
 	common->Printf( "Interaction table generated: %s\n", stats.c_str() );
 	common->Printf( "Initial counts:  %d entities  %d lightDefs  %d entityDefs\n", gameLocal.num_entities, lightDefs.Num(), entityDefs.Num() );
-
-	// entities flagged as noDynamicInteractions will no longer make any
-	generateAllInteractionsCalled = true;
 }
 
 /*
@@ -1688,8 +1715,8 @@ idRenderWorldLocal::DebugClearLines
 ====================
 */
 void idRenderWorldLocal::DebugClearLines( int time ) {
-	RB_ClearDebugLines( time );
-	RB_ClearDebugText( time );
+	R_ClearDebugLines( time );
+	R_ClearDebugText( time );
 }
 
 /*
@@ -1698,7 +1725,7 @@ idRenderWorldLocal::DebugLine
 ====================
 */
 void idRenderWorldLocal::DebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime, const bool depthTest ) {
-	RB_AddDebugLine( color, start, end, lifetime, depthTest );
+	R_AddDebugLine( color, start, end, lifetime, depthTest );
 }
 
 /*
@@ -1972,7 +1999,7 @@ idRenderWorldLocal::DebugClearPolygons
 ====================
 */
 void idRenderWorldLocal::DebugClearPolygons( int time ) {
-	RB_ClearDebugPolygons( time );
+	R_ClearDebugPolygons( time );
 }
 
 /*
@@ -1981,7 +2008,7 @@ idRenderWorldLocal::DebugPolygon
 ====================
 */
 void idRenderWorldLocal::DebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest ) {
-	RB_AddDebugPolygon( color, winding, lifeTime, depthTest );
+	R_AddDebugPolygon( color, winding, lifeTime, depthTest );
 }
 
 /*
@@ -2027,7 +2054,7 @@ idRenderWorldLocal::DrawTextLength
 ================
 */
 float idRenderWorldLocal::DrawTextLength( const char *text, float scale, int len ) {
-	return RB_DrawTextLength( text, scale, len );
+	return R_DrawTextLength( text, scale, len );
 }
 
 /*
@@ -2038,8 +2065,8 @@ idRenderWorldLocal::DrawText
   align can be 0-left, 1-center (default), 2-right
 ================
 */
-void idRenderWorldLocal::DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest ) {
-	RB_AddDebugText( text, origin, scale, color, viewAxis, align, lifetime, depthTest );
+void idRenderWorldLocal::DebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest ) {
+	R_AddDebugText( text, origin, scale, color, viewAxis, align, lifetime, depthTest );
 }
 
 /*

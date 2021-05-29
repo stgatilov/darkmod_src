@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 /*
@@ -462,7 +462,8 @@ int idCollisionModelManagerLocal::ContentsTrm( trace_t *results, const idVec3 &s
 	bool model_rotated, trm_rotated;
 	idMat3 invModelAxis, tmpAxis;
 	idVec3 dir;
-	ALIGN16( cm_traceWork_t tw );
+	idRaw<cm_traceWork_t> twRaw;
+	cm_traceWork_t &tw = twRaw.Get();
 
 	// fast point case
 	if ( !trm || ( trm->bounds[1][0] - trm->bounds[0][0] <= 0.0f &&
@@ -479,11 +480,10 @@ int idCollisionModelManagerLocal::ContentsTrm( trace_t *results, const idVec3 &s
 
 	idCollisionModelManagerLocal::checkCount++;
 
+	memset(&tw.trace, 0, sizeof(tw.trace));
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
 	tw.trace.c.type = CONTACT_NONE;
-	tw.trace.c.material = NULL; // TDM: Don't leave things uninitialised
-	tw.trace.c.id = 0;			// TDM: Don't leave things uninitialised
 	tw.contents = contentMask;
 	tw.isConvex = true;
 	tw.rotation = false;

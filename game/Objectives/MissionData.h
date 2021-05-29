@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // Copyright (C) 2006 Chris Sarantos <csarantos@gmail.com>
@@ -202,6 +202,11 @@ public:
 	void SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents = true);
 
 	/**
+	* Get objective visibility.  Uses "internal" index (starts at 0)
+	**/
+	bool GetObjectiveVisibility( int ObjIndex );
+
+	/**
 	* Set whether an objective is mandatory or not.
 	* The objective index is 0-based.
 	**/
@@ -255,6 +260,8 @@ public:
 	int GetNumberTimesAISearched();
 	float GetSightingScore();
 	float GetStealthScore();
+	int GetSecretsFound();
+	int GetSecretsTotal();
 
 	idStr GetDifficultyName(int level); // grayman #3292
 
@@ -468,6 +475,10 @@ public:
 	// Obsttorte: Increment save game counter for end mission screen
 	void incrementSavegameCounter();
 	int getTotalSaves();
+
+	// Dragofer: set stats for secrets
+	void SetSecretsFound( float secrets );
+	void SetSecretsTotal( float secrets );
 
 protected:
 	/**

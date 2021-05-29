@@ -1,20 +1,19 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
-#include "../renderer/Profiling.h"
 #pragma hdrstop
 
 
@@ -54,7 +53,7 @@ public:
 	// the succeeding line without a line break. It's not possible to recover where the original line 
 	// breaks were from the console text, but this optional keyword will fix the problem of file paths 
 	// being broken up in the output.  
-	void				Dump( const char *toFile, const bool unwrap );
+	void				Dump( const char *toFile, bool unwrap, bool modsavepath );
 	void				Clear();
 
 	//============================
@@ -195,7 +194,7 @@ int SCR_DrawFPS( int y ) {
 
 	static int prevAvgCnt = 0;
 	if (prevAvgCnt != avgCnt) {
-		//com_showFPSavg was changed --- clear history
+		// com_showFPSavg was changed --- clear history
 		prevAvgCnt = avgCnt;
 		for (int i = 0; i < avgCnt; i++)
 			previousTimes[i] = -1000000;
@@ -208,6 +207,19 @@ int SCR_DrawFPS( int y ) {
 	int fps = (1000 * avgCnt) / idMath::Imax(total, 1);
 	if (total < 0)
 		fps = -1;
+
+	// avoid quick switching between close values when com_showFPSavg is large
+	static int lastFpsDisplayed = -666;
+	static int lastFpsUpdate = -666;
+	if (index - lastFpsUpdate >= avgCnt / 2 || idMath::Fabs(lastFpsDisplayed - fps) >= idMath::Fmax(1.5f, fps * (1.0f / 32.0f))) {
+		lastFpsUpdate = index;
+		lastFpsDisplayed = fps;
+	}
+	else {
+		// revert to previous value for now
+		fps = lastFpsDisplayed;
+	}
+
 	char *s = va("%ifps", fps);
 	showFPS_currentValue = fps;
 
@@ -286,19 +298,26 @@ Con_Dump_f
 */
 static void Con_Dump_f( const idCmdArgs &args ) {
 	// #3947: added the "unwrap" logic. See declaration of idConsoleLocal::Dump. 
-	bool badargs = false, unwrap = false;
-	const int argc = args.Argc();
-	if ( argc < 2 || argc > 3 ) {
-		badargs = true;
-	}
+	// #5369: added "modsavepath" flag: save file in FM directory
 
-	if ( !badargs && argc == 3) {
-		if ( idStr::Icmp( args.Argv( 1 ), "unwrap" ) == 0 ) {
+	bool badargs = false, unwrap = false, modsavepath = false;
+	const char *filename = 0;
+
+	const int argc = args.Argc();
+	for (int i = 1; i < argc; i++) {
+		const char *arg = args.Argv( i );
+		if ( idStr::Icmp( arg, "unwrap" ) == 0 ) {
 			unwrap = true;
+		} else if ( idStr::Icmp( arg, "modsavepath" ) == 0 ) {
+			modsavepath = true;
+		} else if (!filename) {
+			filename = arg;
 		} else {
 			badargs = true;
 		}
 	}
+	if (!filename)
+		badargs = true;
 
 	if ( badargs ) 
 	{
@@ -307,12 +326,12 @@ static void Con_Dump_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	idStr fileName = args.Argv( argc - 1 );
+	idStr fileName = filename;
 	fileName.DefaultFileExtension(".txt");
 
 	common->Printf( "Dumped console text to %s.\n", fileName.c_str() );
 
-	localConsole.Dump( fileName.c_str(), unwrap );
+	localConsole.Dump( fileName.c_str(), unwrap, modsavepath );
 }
 
 /*
@@ -424,13 +443,17 @@ idConsoleLocal::Dump
 Save the console contents out to a file
 ================
 */
-void idConsoleLocal::Dump( const char *fileName, const bool unwrap ) {
+void idConsoleLocal::Dump( const char *fileName, bool unwrap, bool modsavepath ) {
 	int		l, x, i;
 	short	*line;
 	idFile	*f;
 	char	buffer[LINE_WIDTH + 3];
 
-	f = fileSystem->OpenFileWrite( fileName, "fs_devpath", "" );
+	if (modsavepath) {
+		f = fileSystem->OpenFileWrite( fileName, "fs_modSavePath" );
+	} else {
+		f = fileSystem->OpenFileWrite( fileName, "fs_devpath", "" );
+	}
 	if ( !f ) {
 		common->Warning( "Couldn't open %s", fileName );
 		return;
@@ -1139,9 +1162,6 @@ void idConsoleLocal::Draw( bool forceFullScreen ) {
 		return;
 	}
 #endif
-	if ( r_glProfiling.GetBool() || r_frontendProfiling.GetBool() ) {
-		ProfilingDrawCurrentTimings();
-	}
 	
 	int y = 0; // Padding from the top of the screen for FPS display etc.
 

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef _DOWNLOAD_H_
@@ -61,6 +61,7 @@ public:
 		FAILED,
 		SUCCESS,
 		CANCELED,//Agent Jones
+		MALFORMED,	//stgatilov: checksum invalid
 	};
 
 	// Some additional data which can be set by clients
@@ -87,6 +88,7 @@ private:
 	ThreadPtr _thread;
 
 	bool _pk4CheckEnabled;
+	idStr _expectedSha256;	//empty if check is ignored
 
 	UserData _userData;
 
@@ -94,12 +96,6 @@ private:
 	int	_relatedDownload;
 
 public:
-	/** 
-	 * greebo: Construct a new Download using the given URL.
-	 * The download data will be saved to the given destFilename;
-	 */
-	CDownload(const idStr& url, const idStr& destFilename, bool enablePK4check = false);
-
 	/**
 	 * greebo: Construct a new Download using the given list of 
 	 * alternative URLs. If downloading from the first URL fails
@@ -109,6 +105,11 @@ public:
 	CDownload(const idStringList& urls, const idStr& destFilename, bool enablePK4check = false);
 
 	~CDownload();
+
+	// stgatilov: sha256 must be valid 64-digit hex number or empty string.
+	// If empty, then sha256 check is disabled (default).
+	// If not empty, then sha256 checksum of downloaded file will be computed and verified after download.
+	void VerifySha256Checksum(const idStr &sha256);
 
 	// Start the download. This will spawn a new thread and execution
 	// will return to the calling code.

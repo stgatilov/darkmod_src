@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __MATH_RANDOM_H__
@@ -55,8 +55,18 @@ ID_INLINE int idRandom::GetSeed( void ) const {
 }
 
 ID_INLINE int idRandom::RandomInt( void ) {
+#if 0
+	//stgatilov: OMG this is SOOO bad!
+	//the high bits are NEVER used, so this is basically LCG with modulus 2^15
+	//read also: https://en.wikipedia.org/wiki/Linear_congruential_generator#Advantages_and_disadvantages
+	//"The low-order bits of LCGs when m is a power of 2 should never be relied on for any degree of randomness whatsoever."
 	seed = 69069 * seed + 1;
 	return ( seed & idRandom::MAX_RAND );
+#else
+	//stgatilov: recommended by C standard as "rand" implementation
+	seed = seed * 1103515245 + 12345;
+	return (unsigned(seed) >> 16) & idRandom::MAX_RAND;
+#endif
 }
 
 ID_INLINE int idRandom::RandomInt( int max ) {

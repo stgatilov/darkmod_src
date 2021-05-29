@@ -1,22 +1,21 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "Profiling.h"
 #include "tr_local.h"
 #include "../game/Grabber.h"
 
@@ -585,10 +584,10 @@ bool R_Lightgem_Render() {
 		-1.0f, 0.0f, 0.0f
 	); 
 
-	// Give the rv the current ambient light values - Not all of the other values, avoiding fancy effects.
-	lightgemRv.shaderParms[2] = gameLocal.globalShaderParms[2]; // Ambient R
-	lightgemRv.shaderParms[3] = gameLocal.globalShaderParms[3]; // Ambient G
-	lightgemRv.shaderParms[4] = gameLocal.globalShaderParms[4]; // Ambient B
+	// Give the rv the current ambient light values (obsolete #5449)
+	lightgemRv.shaderParms[2] = 0.0f;
+	lightgemRv.shaderParms[3] = 0.0f;
+	lightgemRv.shaderParms[4] = 0.0f;
 
 	// angua: render view needs current time, otherwise it will be unable to see time-dependent changes in light shaders such as flickering torches
 	lightgemRv.time = gameLocal.GetTime();
@@ -758,7 +757,7 @@ would change tr.viewCount.
 ================
 */
 bool R_GenerateSubViews( void ) {
-	FRONTEND_PROFILE( "R_GenerateSubViews" )
+	TRACE_CPU_SCOPE( "R_GenerateSubViews" )
 
 	drawSurf_t *drawSurf, *skySurf = NULL;
 	int				i;
@@ -799,7 +798,7 @@ bool R_GenerateSubViews( void ) {
 	}
 
 	static bool dontReenter = false;
-	if ( !dontReenter && gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() 
+	if ( !dontReenter && gameLocal.portalSkyEnt.GetEntity() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) && g_enablePortalSky.GetBool() 
 		&& !tr.viewDef->renderWorld->mapName.IsEmpty()  // FIXME a better way to check for RenderWindow views? (compass, etc)
 	) {
 		dontReenter = true;

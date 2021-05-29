@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -18,7 +18,6 @@
 #include "InteractionStage.h"
 
 #include "RenderBackend.h"
-#include "../Profiling.h"
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 #include "../FrameBuffer.h"
@@ -95,7 +94,7 @@ namespace {
 }
 
 void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName, bool bindless ) {
-	idDict defines;
+	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
 	if (bindless) {
 		defines.Set( "BINDLESS_TEXTURES", "1" );
@@ -151,7 +150,7 @@ void InteractionStage::Init() {
 void InteractionStage::Shutdown() {
 	qglDeleteBuffers( 1, &poissonSamplesUbo );
 	poissonSamplesUbo = 0;
-	poissonSamples.Clear();
+	poissonSamples.ClearFree();
 }
 
 void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *interactionSurfs ) {
@@ -165,7 +164,7 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		return;
 	}
 
-	GL_PROFILE( "DrawInteractions" );
+	TRACE_GL_SCOPE( "DrawInteractions" );
 
 	PreparePoissonSamples();
 
@@ -199,6 +198,11 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		drawSurfs.AddGrow( surf );
 	}
 	std::sort( drawSurfs.begin(), drawSurfs.end(), [](const drawSurf_t *a, const drawSurf_t *b) {
+		if ( a->ambientCache.isStatic != b->ambientCache.isStatic )
+			return a->ambientCache.isStatic;
+		if ( a->indexCache.isStatic != b->indexCache.isStatic )
+			return a->indexCache.isStatic;
+
 		return a->material < b->material;
 	} );
 
@@ -228,9 +232,8 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		// slot, so reset this to something that is safe to override in bindless mode!
 		GL_SelectTexture(TU_NORMAL);
 
-		vertexCache.BindVertex();
-
 		BeginDrawBatch();
+		const drawSurf_t *curBatchCaches = drawSurfs[0];
 		for ( const drawSurf_t *surf : drawSurfs ) {
 			if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 				continue;
@@ -240,12 +243,17 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 				continue;
 			}
 
+			if ( surf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic || surf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
+				ExecuteDrawCalls();
+			}
+
 			if ( surf->space->weaponDepthHack ) {
 				// GL state change, need to execute previous draw calls
 				ExecuteDrawCalls();
 				RB_EnterWeaponDepthHack();
 			}
 
+			curBatchCaches = surf;
 			ProcessSingleSurface( vLight, lightStage, surf );
 
 			if ( surf->space->weaponDepthHack ) {
@@ -549,9 +557,17 @@ void InteractionStage::PreparePoissonSamples() {
 	int sampleK = r_softShadowsQuality.GetInteger();
 	if ( sampleK > 0 && poissonSamples.Num() != sampleK ) {
 		GeneratePoissonDiskSampling( poissonSamples, sampleK );
-		size_t size = poissonSamples.Num() * sizeof(idVec2);
+		// note: due to std140 buffer requirements, array members must be aligned with vec4 size
+		// so we have to copy our samples to a vec4 array for upload :-/
+		idList<idVec4> uploadSamples;
+		uploadSamples.SetNum( poissonSamples.Num() );
+		for ( int i = 0; i < poissonSamples.Num(); ++i ) {
+			uploadSamples[i].x = poissonSamples[i].x;
+			uploadSamples[i].y = poissonSamples[i].y;
+		}
+		size_t size = uploadSamples.Num() * sizeof(idVec4);
 		qglBindBuffer( GL_UNIFORM_BUFFER, poissonSamplesUbo );
-		qglBufferData( GL_UNIFORM_BUFFER, size, poissonSamples.Ptr(), GL_STATIC_DRAW );
+		qglBufferData( GL_UNIFORM_BUFFER, size, uploadSamples.Ptr(), GL_STATIC_DRAW );
 	}
 	qglBindBufferBase( GL_UNIFORM_BUFFER, 2, poissonSamplesUbo );
 }

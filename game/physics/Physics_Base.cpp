@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -713,16 +713,16 @@ idPhysics_Base::AddGroundContacts
 */
 void idPhysics_Base::AddGroundContacts( const idClipModel *clipModel ) {
 	idVec6 dir;
-	int index, num;
-
-	index = contacts.Num();
-	contacts.SetNum( index + 10, false );
-
 	dir.SubVec3(0) = gravityNormal;
 	dir.SubVec3(1) = vec3_origin;
-	num = gameLocal.clip.Contacts( &contacts[index], 10, clipModel->GetOrigin(),
-					dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self );
+	int num, index = contacts.Num();
+	idRaw<contactInfo_t> carr[CONTACTS_MAX_NUMBER];	//avoid zeroing large array
+	num = gameLocal.clip.Contacts(
+		carr[0].Ptr(), CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
+		dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self
+	);
 	contacts.SetNum( index + num, false );
+	memcpy( contacts.Ptr() + index, carr, num * sizeof(carr[0]) );
 }
 
 /*
@@ -899,15 +899,15 @@ idPhysics_Base::SetWaterLevelf
 */
 float idPhysics_Base::SetWaterLevelf() {
 	if( this->water == NULL ) {
-		idEntity *e[2];
 		trace_t result;
 		idBounds bounds = this->GetBounds();
 
 		bounds += this->GetOrigin();
 
+		idClip_EntityList e;
 		// trace for a water contact
 		// Tels: TODO This additional trace might be expensive because it is done every frame
-		if( gameLocal.clip.EntitiesTouchingBounds(bounds,MASK_WATER,e,2) ) {
+		if( gameLocal.clip.EntitiesTouchingBounds(bounds,MASK_WATER,e) > 0 ) {
 			if( e[0]->GetPhysics()->IsType(idPhysics_Liquid::Type) ) {
 				SetWater( static_cast<idPhysics_Liquid *>(e[0]->GetPhysics()), e[0]->spawnArgs.GetFloat("murkiness", "0") );
 				return 1.0f;

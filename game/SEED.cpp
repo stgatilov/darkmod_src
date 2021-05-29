@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
@@ -445,7 +445,7 @@ void Seed::ClearClasses( void )
 			m_Classes[i].spawnArgs = NULL;
 		}
 	}
-	m_Classes.Clear();
+	m_Classes.ClearFree();
 	m_iNumStaticMulties = 0;
 }
 
@@ -1934,7 +1934,7 @@ void Seed::Prepare( void )
 	seed_entity_t		SeedEntity;
 
 	// Gather all targets and make a note of them
-	m_Classes.Clear();
+	m_Classes.ClearFree();
 	m_Inhibitors.Clear();
 	m_Watched.Clear();
 
@@ -2057,7 +2057,6 @@ void Seed::Prepare( void )
 
 	// to relay these spawnargs
 	idList< idStr > sa;
-	sa.Clear();
 	sa.Append("_bunching");
 	sa.Append("_color_min");
 	sa.Append("_color_max");

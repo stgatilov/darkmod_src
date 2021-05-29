@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -96,8 +96,8 @@ CMissionData::~CMissionData( void )
 void CMissionData::Clear( void )
 {
 	m_bObjsNeedUpdate = false;
-	m_Objectives.Clear();
-	m_ClockedComponents.Clear();
+	m_Objectives.ClearFree();
+	m_ClockedComponents.ClearFree();
 
 	// Clear all the stats 
 	m_Stats.Clear();
@@ -1311,6 +1311,18 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 	m_Objectives[ObjIndex].m_Components[CompIndex].m_bLatched = false;
 }
 
+bool CMissionData::GetObjectiveVisibility( int ObjIndex )
+{
+	if (ObjIndex >= m_Objectives.Num() || ObjIndex < 0)
+	{
+		DM_LOG(LC_OBJECTIVES, LT_WARNING)LOGSTRING("GetCompletionState: Bad objective index: %d \r", ObjIndex);
+		gameLocal.Printf("WARNING: Objective system: Attempt was made to get visibility of invalid objective index: %d \n", ObjIndex);
+		return false;
+	}
+
+	return m_Objectives[ObjIndex].m_bVisible;
+}
+
 void CMissionData::SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents)
 {
 	if (objIndex >= m_Objectives.Num() || objIndex < 0)
@@ -1431,7 +1443,7 @@ int CMissionData::AddObjsFromDict(const idDict& dict)
 	// go thru all the objective-related spawnargs
 	while( dict.MatchPrefix( va("obj%d_", Counter) ) != NULL )
 	{
-		ObjTemp.m_Components.Clear();
+		ObjTemp.m_Components.ClearFree();
 		ObjTemp.m_ObjNum = Counter - 1;
 
 		StrTemp = va("obj%d_", Counter);
@@ -1828,6 +1840,16 @@ int CMissionData::GetFoundLoot()
 int CMissionData::GetMissionLoot()
 {
 	return m_Stats.GetTotalLootInMission();
+}
+
+int CMissionData::GetSecretsFound()
+{
+	return m_Stats.secretsFound;
+}
+
+int CMissionData::GetSecretsTotal()
+{
+	return m_Stats.secretsTotal;
 }
 
 int CMissionData::GetTotalTimePlayerSeen()
@@ -2521,7 +2543,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 		gui->SetStateInt("ObjStartIdx", 0);
 
 		// reload and redisplay objectives
-		m_Objectives.Clear();
+		m_Objectives.ClearFree();
 
 		idStr startingMapfilename = va("maps/%s", gameLocal.m_MissionManager->GetCurrentStartingMap().c_str());
 
@@ -2599,6 +2621,13 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = common->Translate( "#str_02217" );	// Bodies found by AI
 	value = idStr(GetStatOverall(COMP_AI_FIND_BODY));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
+
+	// only show secrets statistic if the mission uses the system introduced in 2.10
+	if ( m_Stats.secretsTotal ) {
+		key = common->Translate("#str_02320");	// Secrets found
+		value = idStr(GetSecretsFound()) + common->Translate("#str_02214") + GetSecretsTotal();
+		gui->SetStateString(prefix + idStr(index++), key + divider + value);
+	}
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
@@ -2801,4 +2830,16 @@ void CMissionData::incrementSavegameCounter()
 int CMissionData::getTotalSaves()
 {
 	return m_Stats.totalSaveCount;
+}
+
+// Dragofer
+
+void CMissionData::SetSecretsFound( float secrets )
+{
+	m_Stats.secretsFound = (int)secrets;
+}
+
+void CMissionData::SetSecretsTotal( float secrets )
+{
+	m_Stats.secretsTotal = (int)secrets;
 }

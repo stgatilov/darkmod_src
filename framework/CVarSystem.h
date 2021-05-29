@@ -1,22 +1,20 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __CVARSYSTEM_H__
 #define __CVARSYSTEM_H__
-
-#include <functional>
 
 /*
 ===============================================================================
@@ -141,15 +139,6 @@ public:
 
 	static void				RegisterStaticVars( void );
 
-	// Function signature for modification signals, e.g. void OnCVarModified()
-	typedef std::function<void ()> OnModifiedFunc;
-
-	// greebo: Registers a function to get notified on modifications. Is called on all subsequent CVAR modifications. 
-	// Callbacks are called in the order they've been registered. A non-negative integer is returned which can be used
-	// to de-register callbacks again
-	int						AddOnModifiedCallback(const OnModifiedFunc& callback) { return internalVar->InternalAddOnModifiedCallback(callback); }
-	void					RemoveOnModifiedCallback(int handle) { internalVar->InternalRemoveOnModifiedCallback(handle); }
-
 protected:
 	const char *			name;					// name
 	const char *			value;					// value
@@ -172,8 +161,6 @@ private:
 	virtual void			InternalSetBool( const bool newValue ) {}
 	virtual void			InternalSetInteger( const int newValue ) {}
 	virtual void			InternalSetFloat( const float newValue ) {}
-	virtual int				InternalAddOnModifiedCallback(const OnModifiedFunc& callback) { return -1; }
-	virtual void			InternalRemoveOnModifiedCallback(int handle) {}
 
 	static idCVar *			staticVars;
 };

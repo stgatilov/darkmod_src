@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -745,10 +745,10 @@ void ConversationState::DrawDebugOutput(idAI* owner)
 		default:break;
 	};
 
-	gameRenderWorld->DrawText(str, owner->GetEyePosition() - idVec3(0,0,20), 0.25f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
+	gameRenderWorld->DebugText(str, owner->GetEyePosition() - idVec3(0,0,20), 0.25f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
 
 	str = (_commandType < ConversationCommand::ENumCommands) ? ConversationCommand::TypeNames[_commandType] : "";
-	gameRenderWorld->DrawText(str, owner->GetEyePosition() - idVec3(0,0,10), 0.3f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
+	gameRenderWorld->DebugText(str, owner->GetEyePosition() - idVec3(0,0,10), 0.3f, colorCyan, gameLocal.GetLocalPlayer()->viewAxis, 1, 48);
 }
 
 // angua: override visual stim to avoid greetings during conversation

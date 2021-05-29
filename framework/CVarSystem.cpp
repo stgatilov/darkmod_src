@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -49,19 +49,11 @@ private:
 	idStr					valueString;			// value
 	idStr					descriptionString;		// description
 
-	idList<OnModifiedFunc>	modifiedCallbacks;		// functions to call when this CVAR is modified
-
 	virtual void			InternalSetString( const char *newValue );
 	virtual void			InternalServerSetString( const char *newValue );
 	virtual void			InternalSetBool( const bool newValue );
 	virtual void			InternalSetInteger( const int newValue );
 	virtual void			InternalSetFloat( const float newValue );
-
-	virtual int				InternalAddOnModifiedCallback(const OnModifiedFunc& callback);
-	virtual void			InternalRemoveOnModifiedCallback(int handle);
-
-	// Invokes all the callbacks
-	void					NotifyModifiedCallbacks();
 };
 
 /*
@@ -326,8 +318,6 @@ void idInternalCVar::Set( const char *newValue, bool force, bool fromServer ) {
 
 	SetModified();
 	cvarSystem->SetModifiedFlags( flags );
-
-	NotifyModifiedCallbacks();
 }
 
 /*
@@ -384,27 +374,6 @@ idInternalCVar::InternalSetFloat
 */
 void idInternalCVar::InternalSetFloat( const float newValue ) {
 	Set( idStr( newValue ), true, false );
-}
-
-int idInternalCVar::InternalAddOnModifiedCallback(const idCVar::OnModifiedFunc& callback)
-{
-	return modifiedCallbacks.Append(callback);
-}
-
-void idInternalCVar::InternalRemoveOnModifiedCallback(int handle)
-{
-	modifiedCallbacks[handle] = OnModifiedFunc();
-}
-
-void idInternalCVar::NotifyModifiedCallbacks()
-{
-	for (int i = 0; i < modifiedCallbacks.Num(); ++i)
-	{
-		if (modifiedCallbacks[i])
-		{
-			modifiedCallbacks[i]();
-		}
-	}
 }
 
 /*
@@ -597,8 +566,8 @@ idCVarSystemLocal::Shutdown
 */
 void idCVarSystemLocal::Shutdown( void ) {
 	cvars.DeleteContents( true );
-	cvarHash.Free();
-	moveCVarsToDict.Clear();
+	cvarHash.ClearFree();
+	moveCVarsToDict.ClearFree();
 	initialized = false;
 }
 

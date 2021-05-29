@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __AI_H__
@@ -1323,7 +1323,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_canResolveBlock;		// grayman #2345 - whether we can resolve a block if asked
 	bool m_leftQueue;			// grayman #2345 - if we timed out waiting in a door queue
 	bool m_performRelight;		// grayman #2603 - set to TRUE by a script function when it's time to relight a light
-	idEntity* m_bloodMarker;	// grayman #3075
+	idEntityPtr<idEntity> m_bloodMarker;	// grayman #3075
 	bool m_ReactingToHit;		// grayman #2816 - reaction after being hit by something
 	idEntityPtr<idActor> m_lastKilled; // grayman #2816 - the last enemy we killed
 	bool m_justKilledSomeone;	// grayman #2816 - remember just killing someone so correct bark is emitted when alert level comes down

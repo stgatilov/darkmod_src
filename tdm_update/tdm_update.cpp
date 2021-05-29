@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod Updater (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include <cstdlib>
@@ -33,6 +33,19 @@ using namespace updater;
 
 int main(int argc, char* argv[])
 {
+	// stgatilov #5495: use tdm_installer
+	(std::cerr
+		<< "TDM Updater has reached end-of-life.\n"
+		<< "It cannot install the latest version of TheDarkMod!\n"
+		<< "Please visit website www.thedarkmod.com and download tdm_installer instead.\n"
+		<< "\n"
+		<< "Enter \"ignore\" if you want to continue anyway: "
+	);
+	std::string enteredStr;
+	std::cin >> enteredStr;
+	if (enteredStr != "ignore")
+		return EXIT_FAILURE;
+
 	// Start logging
 	try {
 		RegisterLogWriters();

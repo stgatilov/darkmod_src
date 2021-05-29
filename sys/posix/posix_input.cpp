@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #include "../../idlib/precompiled.h"
 #include "posix_public.h"
@@ -40,8 +40,9 @@ Posix_AddKeyboardPollEvent
 ==========
 */
 bool Posix_AddKeyboardPollEvent(int key, bool state) {
-	if (poll_keyboard_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM)
-		common->FatalError( "poll_keyboard_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	if (poll_keyboard_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM) {
+		common->FatalError("poll_keyboard_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	}
 	poll_events_keyboard[poll_keyboard_event_count].key = key;
 	poll_events_keyboard[poll_keyboard_event_count++].state = state;
 	if (poll_keyboard_event_count >= MAX_POLL_EVENTS) {
@@ -51,14 +52,19 @@ bool Posix_AddKeyboardPollEvent(int key, bool state) {
 	return true;
 }
 
+bool Posix_CanAddKeyboardPollEvent() {
+	return poll_keyboard_event_count < MAX_POLL_EVENTS;
+}
+
 /*
 ==========
 Posix_AddMousePollEvent
 ==========
 */
 bool Posix_AddMousePollEvent(int action, int value) {
-	if (poll_mouse_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM)
-		common->FatalError( "poll_mouse_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	if (poll_mouse_event_count >= MAX_POLL_EVENTS + POLL_EVENTS_HEADROOM) {
+		common->FatalError("poll_mouse_event_count exceeded MAX_POLL_EVENT + POLL_EVENTS_HEADROOM\n");
+	}
 	poll_events_mouse[poll_mouse_event_count].action = action;
 	poll_events_mouse[poll_mouse_event_count++].value = value;
 	if (poll_mouse_event_count >= MAX_POLL_EVENTS) {
@@ -66,6 +72,10 @@ bool Posix_AddMousePollEvent(int action, int value) {
 		return false;
 	}
 	return true;
+}
+
+bool Posix_CanAddMousePollEvent() {
+	return poll_mouse_event_count < MAX_POLL_EVENTS;
 }
 
 /*

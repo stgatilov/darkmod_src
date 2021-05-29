@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -18,12 +18,8 @@
 
 #include "tr_local.h"
 #include "math.h"
-#include "Profiling.h"
 #ifdef __ppc__
 #include <vecLib/vecLib.h>
-#endif
-#if defined(MACOS_X) && defined(__i386__)
-#include <xmmintrin.h>
 #endif
 
 //====================================================================
@@ -371,7 +367,7 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 DEBUG_OPTIMIZE_ON
 // FIXME: these assume no skewing or scaling transforms
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
-#if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
+#if defined(__SSE__)
 	__m128 row0 = _mm_loadu_ps( &modelMatrix[0] );
 	__m128 row1 = _mm_loadu_ps( &modelMatrix[4] );
 	__m128 row2 = _mm_loadu_ps( &modelMatrix[8] );
@@ -449,7 +445,7 @@ void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec
 DEBUG_OPTIMIZE_OFF
 
 DEBUG_OPTIMIZE_ON
-void VPCALL R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
+void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
 	out[0] = DotProduct( in, &modelMatrix[0] );
 	out[1] = DotProduct( in, &modelMatrix[4] );
 	out[2] = DotProduct( in, &modelMatrix[8] );
@@ -1041,7 +1037,7 @@ R_SortDrawSurfs
 =================
 */
 static void R_SortDrawSurfs( void ) {
-	FRONTEND_PROFILE( "R_SortDrawSurfs" )
+	TRACE_CPU_SCOPE( "R_SortDrawSurfs" )
 
 	if ( !tr.viewDef->numDrawSurfs ) // otherwise an assert fails in debug builds
 		return;
@@ -1076,7 +1072,7 @@ Parms will typically be allocated with R_FrameAlloc
 ================
 */
 void R_RenderView( viewDef_t &parms ) {
-	FRONTEND_PROFILE( "R_RenderView" )
+	TRACE_CPU_SCOPE( "R_RenderView" )
 	
 	viewDef_t		*oldView;
 

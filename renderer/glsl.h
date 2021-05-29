@@ -18,9 +18,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "qgl.h"
 #include "tr_local.h"
 
-extern idCVarBool r_useGLSL;
-extern idCVarBool r_newFrob;
-extern idCVarBool r_legacyTangents;
+extern idCVar r_newFrob;
+extern idCVarBool r_frobOutline;
 extern idCVarBool r_shadowMapCullFront;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );

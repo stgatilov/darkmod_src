@@ -78,6 +78,8 @@ static void cb_g_Version_ButtonBack(Fl_Button*, void*) {
   WizardGoPrev();
 }
 
+Fl_Choice *g_Version_ChoiceMirror=(Fl_Choice *)0;
+
 Fl_Group *g_PageConfirm=(Fl_Group *)0;
 
 Fl_Text_Display *g_Confirm_TextReadyToInstall=(Fl_Text_Display *)0;
@@ -138,7 +140,7 @@ static void cb_g_Install_ButtonCancel(Fl_Button*, void*) {
   WizardGoPrev();
 }
 
-Fl_Button *g_Install_ButtonDeleteCfg=(Fl_Button *)0;
+Fl_Button *g_Install_ButtonRestoreCfg=(Fl_Button *)0;
 
 Fl_Text_Display *g_Install_TextAdditional=(Fl_Text_Display *)0;
 
@@ -1747,7 +1749,6 @@ wnload.");
         g_PageSettings->end();
       } // Fl_Group* g_PageSettings
       { g_PageVersion = new Fl_Group(325, 0, 700, 550, "Page 2: Choose Version");
-        g_PageVersion->hide();
         { g_Version_OutputLastInstalledVersion = new Fl_Output(575, 10, 425, 20, "Version installed during last update: ");
           g_Version_OutputLastInstalledVersion->tooltip("This version was installed in this directory the last time. It does not affec\
 t the installation procedure in any way, and is displayed only for information\
@@ -1790,6 +1791,13 @@ data, but it will be downloaded sooner or later anyway.");
         { g_Version_ButtonBack = new Fl_Button(335, 510, 80, 30, "Back");
           g_Version_ButtonBack->callback((Fl_Callback*)cb_g_Version_ButtonBack);
         } // Fl_Button* g_Version_ButtonBack
+        { g_Version_ChoiceMirror = new Fl_Choice(920, 380, 80, 20, "Prefer Mirror:");
+          g_Version_ChoiceMirror->tooltip("If you select a mirror here, then it will be used for all downloads. If you d\
+on\'t, then mirrors will be chosen randomly for better distribution of traffic\
+ among mirror hosters.");
+          g_Version_ChoiceMirror->down_box(FL_BORDER_BOX);
+          g_Version_ChoiceMirror->align(Fl_Align(FL_ALIGN_TOP));
+        } // Fl_Choice* g_Version_ChoiceMirror
         g_PageVersion->end();
       } // Fl_Group* g_PageVersion
       { g_PageConfirm = new Fl_Group(325, 0, 700, 550, "Page 3: Confirmation");
@@ -1830,6 +1838,7 @@ data, but it will be downloaded sooner or later anyway.");
         g_PageConfirm->end();
       } // Fl_Group* g_PageConfirm
       { g_PageInstall = new Fl_Group(325, 0, 700, 550, "Page 4: Installing");
+        g_PageInstall->hide();
         { g_Install_TextInstalling = new Fl_Text_Display(340, 35, 660, 60);
           g_Install_TextInstalling->box(FL_NO_BOX);
           g_Install_TextInstalling->color(FL_BACKGROUND_COLOR);
@@ -1845,7 +1854,7 @@ data, but it will be downloaded sooner or later anyway.");
         } // Fl_Progress* g_Install_ProgressRepack
         { g_Install_ProgressFinalize = new Fl_Progress(335, 255, 680, 20, "Finalizing...");
         } // Fl_Progress* g_Install_ProgressFinalize
-        { g_Install_TextFinishedInstall = new Fl_Text_Display(340, 310, 660, 55);
+        { g_Install_TextFinishedInstall = new Fl_Text_Display(340, 35, 660, 55);
           g_Install_TextFinishedInstall->box(FL_NO_BOX);
           g_Install_TextFinishedInstall->color(FL_BACKGROUND_COLOR);
           g_Install_TextFinishedInstall->align(Fl_Align(FL_ALIGN_LEFT));
@@ -1857,17 +1866,18 @@ data, but it will be downloaded sooner or later anyway.");
           g_Install_ButtonCancel->tooltip("WARNING: This will stop the installation! All progress will be lost.");
           g_Install_ButtonCancel->callback((Fl_Callback*)cb_g_Install_ButtonCancel);
         } // Fl_Button* g_Install_ButtonCancel
-        { g_Install_ButtonDeleteCfg = new Fl_Button(420, 390, 150, 30, "Delete darkmod.cfg");
-          g_Install_ButtonDeleteCfg->tooltip("File darkmod.cfg contains most of user settings, like antialiasing level, sof\
-t shadows, play music in menu, etc. It is recommended to reset it when changin\
-g TDM version.");
-        } // Fl_Button* g_Install_ButtonDeleteCfg
+        { g_Install_ButtonRestoreCfg = new Fl_Button(380, 390, 190, 30, "Restore old darkmod.cfg");
+          g_Install_ButtonRestoreCfg->tooltip("NOT RECOMMENDED! File darkmod.cfg contains most of user settings, like antial\
+iasing level, play music in menu, etc. Installer has deleted this config file \
+because it can conflict with the new version of the game. Click this button to\
+ restore deleted config file.");
+        } // Fl_Button* g_Install_ButtonRestoreCfg
         { g_Install_TextAdditional = new Fl_Text_Display(340, 345, 660, 35);
           g_Install_TextAdditional->box(FL_NO_BOX);
           g_Install_TextAdditional->color(FL_BACKGROUND_COLOR);
           g_Install_TextAdditional->align(Fl_Align(FL_ALIGN_LEFT));
         } // Fl_Text_Display* g_Install_TextAdditional
-        { g_Install_ButtonCreateShortcut = new Fl_Button(605, 390, 150, 30, "Create shortcut");
+        { g_Install_ButtonCreateShortcut = new Fl_Button(790, 390, 145, 30, "Create shortcut");
           g_Install_ButtonCreateShortcut->tooltip("Creates desktop shortcut for TDM executable (for the current user).");
         } // Fl_Button* g_Install_ButtonCreateShortcut
         g_PageInstall->end();
@@ -1887,4 +1897,19 @@ void WizardGoNext() {
 
 void WizardGoPrev() {
   g_Wizard->prev();
+}
+
+Fl_Double_Window *g_HelpWindow=(Fl_Double_Window *)0;
+
+Fl_Text_Display *g_Help_TextParameters=(Fl_Text_Display *)0;
+
+Fl_Double_Window* FluidGuiHelp() {
+  { g_HelpWindow = new Fl_Double_Window(450, 320, "TheDarkMod installer: help");
+    { g_Help_TextParameters = new Fl_Text_Display(20, 20, 410, 280);
+      g_Help_TextParameters->box(FL_NO_BOX);
+      g_Help_TextParameters->color(FL_BACKGROUND_COLOR);
+    } // Fl_Text_Display* g_Help_TextParameters
+    g_HelpWindow->end();
+  } // Fl_Double_Window* g_HelpWindow
+  return g_HelpWindow;
 }

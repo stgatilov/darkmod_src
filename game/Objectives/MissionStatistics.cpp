@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -55,6 +55,9 @@ void MissionStatistics::Clear()
 	DamageReceived = 0;
 	HealthReceived = 0;
 	PocketsPicked = 0;
+
+	secretsFound = 0;
+	secretsTotal = 0;
 
 	for (int i = 0; i < LOOT_COUNT; ++i)
 	{
@@ -120,6 +123,9 @@ void MissionStatistics::Save(idSaveGame* savefile) const
 	savefile->WriteInt(DamageDealt);
 	savefile->WriteInt(DamageReceived);
 	savefile->WriteInt(PocketsPicked);
+
+	savefile->WriteInt(secretsFound);
+	savefile->WriteInt(secretsTotal);
 
 	for (int i = 0; i < LOOT_COUNT; ++i)
 	{
@@ -188,6 +194,9 @@ void MissionStatistics::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(DamageDealt);
 	savefile->ReadInt(DamageReceived);
 	savefile->ReadInt(PocketsPicked);
+
+	savefile->ReadInt(secretsFound);
+	savefile->ReadInt(secretsTotal);
 
 	for (int i = 0; i < LOOT_COUNT; ++i)
 	{

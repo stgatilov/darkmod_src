@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -537,7 +537,7 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	gameRenderWorld->DebugArrow(colorGreen, idVec3(1,0,0) + origin + velocityA*10, origin + velocityA*10 + impulseA*10, 1, 15);
 
 	gameRenderWorld->DebugArrow(colorMdGrey, collision.c.point, collision.c.point + collision.c.normal*10, 1, 15);
-	//gameRenderWorld->DrawTextA(ent->name.c_str(), collision.c.point, 1, colorMdGrey, current.i.orientation, 1, 500);
+	//gameRenderWorld->DebugText(ent->name.c_str(), collision.c.point, 1, colorMdGrey, current.i.orientation, 1, 500);
 
 #endif
 
@@ -721,16 +721,9 @@ void idPhysics_RigidBody::ContactFriction( float deltaTime )
 	// momentums across all points that have the same normal.
 
 	idList<idVec3> normals; // list of different contact point normals
-	normals.Clear();
-
 	idList<idVec3> lm; // list of summed linear momentum for each set of normals
-	lm.Clear();
-
 	idList<idVec3> am; // list of summed angular momentum for each set of normals
-	am.Clear();
-
 	idList<int> normalCount; // list of the number of contributing points for each normal set
-	normalCount.Clear();
 
 	for ( int i = 0 ; i < contacts.Num() ; i++ )
 	{
@@ -1089,16 +1082,16 @@ void idPhysics_RigidBody::DebugDraw( void ) {
 
             liquidMass = this->mass - ( this->volume * this->water->GetDensity() * percent );
 
-            gameRenderWorld->DrawText( va( "\n%1.2f", liquidMass), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+            gameRenderWorld->DebugText( va( "\n%1.2f", liquidMass), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
         }
         else
 #endif
-            gameRenderWorld->DrawText( va( "\n%1.2f", mass ), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
+            gameRenderWorld->DebugText( va( "\n%1.2f", mass ), current.i.position, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1 );
 	}
 
 	if ( rb_showInertia.GetBool() ) {
 		idMat3 &I = inertiaTensor;
-		gameRenderWorld->DrawText( va( "\n\n\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )",
+		gameRenderWorld->DebugText( va( "\n\n\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )",
 									I[0].x, I[0].y, I[0].z,
 									I[1].x, I[1].y, I[1].z,
 									I[2].x, I[2].y, I[2].z ),
@@ -1119,7 +1112,7 @@ void idPhysics_RigidBody::DebugDraw( void ) {
         this->GetBuoyancy(pos,this->current.i.orientation.Transpose(),bCenter,percent);
 
         gameRenderWorld->DebugArrow(colorGreen,pos,bCenter,1);
-        gameRenderWorld->DrawText( va( "%1.2f",percent), pos, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
+        gameRenderWorld->DebugText( va( "%1.2f",percent), pos, 0.08f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
     }
 #endif
 }
@@ -1910,7 +1903,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	if (cv_phys_show_momentum.GetBool()) 
 	{
-		gameRenderWorld->DrawText( idStr(current.i.linearMomentum.LengthFast()), GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+		gameRenderWorld->DebugText( idStr(current.i.linearMomentum.LengthFast()), GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 	}
 
 	return true; // grayman #2478
@@ -2340,20 +2333,21 @@ idPhysics_RigidBody::EvaluateContacts
 ================
 */
 bool idPhysics_RigidBody::EvaluateContacts( void ) {
-	idVec6 dir;
-	int num;
-
 	ClearContacts();
 
-	contacts.SetNum( 10, false );
-
+	idVec6 dir;
 	dir.SubVec3(0) = current.i.linearMomentum + current.lastTimeStep * gravityVector * mass;
 	dir.SubVec3(1) = current.i.angularMomentum;
 	dir.SubVec3(0).Normalize();
 	dir.SubVec3(1).Normalize();
-	num = gameLocal.clip.Contacts( &contacts[0], 10, clipModel->GetOrigin(),
-					dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self );
+	int num;
+	idRaw<contactInfo_t> carr[CONTACTS_MAX_NUMBER];	//avoid zeroing large array
+	num = gameLocal.clip.Contacts(
+		carr[0].Ptr(), CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
+		dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(), clipMask, self
+	);
 	contacts.SetNum( num, false );
+	memcpy( contacts.Ptr(), carr, num * sizeof(carr[0]) );
 
 	AddContactEntitiesForContacts();
 

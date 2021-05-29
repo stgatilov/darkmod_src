@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __GAME_PLAYERVIEW_H__
@@ -78,9 +78,6 @@ private:
 	void				BerserkVision( idUserInterface *hud, const renderView_t *view );
 	void				InfluenceVision( idUserInterface *hud, const renderView_t *view );
 	void				ScreenFade();
-
-	// Updates the ambient light settings
-	void				UpdateAmbientLight();
 
 	screenBlob_t *		GetScreenBlob();
 
@@ -164,8 +161,6 @@ private:
 		void UpdateCookedData			();
 		void UpdateInteractionShader	(); 	// Chooses between the various VFP files according to the CVAR settings. Only call this if settings got changed.
 		void Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText );	// Source Hook for idCmdSystem::BufferCommandText - JC.
-
-		void OnImageAnisotropyChanged	();	// gets called when the image_Anisotropy CVAR changes
 	};
 
 	dnPostProcessManager m_postProcessManager;

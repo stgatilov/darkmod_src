@@ -1,15 +1,15 @@
 /*****************************************************************************
-					The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -397,6 +397,8 @@ typedef struct viewLight_s {
 	/*const */struct drawSurf_s	*localShadows;				// don't shadow local Surfaces
 	/*const */struct drawSurf_s	*globalInteractions;		// get shadows from everything
 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
+
+	uint32_t				lightMask;
 } viewLight_t;
 
 struct preparedSurf_t {
@@ -574,7 +576,6 @@ struct emptyCommand_t : baseCommand_t {
 };
 
 struct bloomCommand_t : emptyCommand_t {
-	idScreenRect screenRect;
 };
 
 struct setBufferCommand_t : emptyCommand_t {
@@ -693,7 +694,7 @@ typedef struct {
 	int		currentCubeMap;
 } tmu_t;
 
-const int MAX_MULTITEXTURE_UNITS =	48;
+const int MAX_MULTITEXTURE_UNITS = 32;
 typedef struct {
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
 	int			currenttmu;
@@ -840,8 +841,6 @@ public:
 
 public:
 	// renderer globals
-	bool					registered;			// cleared at shutdown, set at InitOpenGL
-
 	bool					takingScreenshot;
 
 	int						frameCount;			// incremented every frame
@@ -880,8 +879,6 @@ public:
 
 	performanceCounters_t	pc;					// performance counters
 
-	drawSurfsCommand_t		lockSurfacesCmd;	// use this when r_lockSurfaces = 1
-
 	viewEntity_t			identitySpace;		// can use if we don't know viewDef->worldSpace is valid
 	FILE 					*logFile;			// for logging GL calls and frame breaks
 
@@ -913,6 +910,7 @@ extern idCVar r_glDebugContext;
 extern idCVar r_displayRefresh;			// optional display refresh rate option for vid mode
 extern idCVar r_fullscreen;				// 0 = windowed, 1 = full screen
 extern idCVar r_multiSamples;			// number of antialiasing samples
+extern idCVarBool r_fboSRGB;
 
 extern idCVar r_ignore;					// used for random debugging without defining new vars
 extern idCVar r_ignore2;				// used for random debugging without defining new vars
@@ -1013,7 +1011,6 @@ extern idCVar r_showIntensity;			// draw the screen colors based on intensity, r
 extern idCVar r_showDefs;				// report the number of modeDefs and lightDefs in view
 extern idCVar r_showTrace;				// show the intersection of an eye trace with the world
 extern idCVar r_showSmp;				// show which end (front or back) is blocking
-extern idCVar r_logSmpTimings;			// log timings for frontend and backend rendering
 extern idCVar com_smp;					// enable SMP
 extern idCVar r_showDepth;				// display the contents of the depth buffer and the depth range
 extern idCVar r_showImages;				// draw all images to screen instead of rendering
@@ -1084,13 +1081,12 @@ extern idCVar r_softShadowsRadius;
 extern idCVar r_useBumpmapLightTogglingFix;
 
 extern idCVar r_useAnonreclaimer;
-extern idCVarBool r_shadowMapSinglePass;
+extern idCVarInt r_shadowMapSinglePass;
 
 // stgatilov ROQ
 extern idCVar r_cinematic_legacyRoq;
 
 //stgatilov: temporary cvars, to be removed when ARB->GLSL migration is complete and settled
-extern idCVar r_uniformTransforms;
 extern idCVar r_glCoreProfile;
 
 /*
@@ -1305,7 +1301,7 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 // note that many of these assume a normalized matrix, and will not work with scaled axis
 void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void VPCALL R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
+void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
 void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out );
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
@@ -1441,7 +1437,6 @@ void RB_DrawTriangles( const srfTriangles_t& tri );
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
-void RB_SetProgramEnvironment( void ); // Defined in the shader passes section next, now re-used for depth capture in #3877
 void RB_STD_DrawView( void );
 
 // multi draw
@@ -1450,86 +1445,17 @@ void RB_Multi_DrawElements( int instances = 0 );
 
 // postprocessing related
 void RB_DrawFullScreenQuad( float e = 1 );
+void RB_DrawFullScreenTri();
 
 /*
 ============================================================
-
 DRAW_*
-
 ============================================================
 */
-
-void	R_ReloadARBPrograms_f( const idCmdArgs &args );
-int		R_FindARBProgram( GLenum target, const char *program );
 
 void    RB_GLSL_DrawInteraction( const drawInteraction_t *din );
 void    RB_GLSL_DrawInteractions( void );
 void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
-
-typedef enum {
-	PROG_INVALID,
-	VPROG_ENVIRONMENT,
-	FPROG_ENVIRONMENT,
-	VPROG_BUMPY_ENVIRONMENT,
-	FPROG_BUMPY_ENVIRONMENT,
-	// SteveL #3878: soft particles
-	VPROG_SOFT_PARTICLE,
-	FPROG_SOFT_PARTICLE,
-	// revelator : user supplied additions
-	PROG_USER
-} program_t;
-
-void R_UseProgramARB( int vProg = PROG_INVALID );
-
-/*
-
-  All vertex programs use the same constant register layout:
-
-c[4]	localLightOrigin
-c[5]	localViewOrigin
-c[6]	lightProjection S
-c[7]	lightProjection T
-c[8]	lightProjection Q
-c[9]	lightFalloff	S
-c[10]	bumpMatrix S
-c[11]	bumpMatrix T
-c[12]	diffuseMatrix S
-c[13]	diffuseMatrix T
-c[14]	specularMatrix S
-c[15]	specularMatrix T
-
-
-c[20]	light falloff tq constant
-
-// texture 0 was cube map
-// texture 1 will be the per-surface bump map
-// texture 2 will be the light falloff texture
-// texture 3 will be the light projection texture
-// texture 4 is the per-surface diffuse map
-// texture 5 is the per-surface specular map
-// texture 6 is the specular half angle cube map
-
-*/
-
-typedef enum {
-	PP_LIGHT_ORIGIN = 4,
-	PP_VIEW_ORIGIN,
-	PP_LIGHT_PROJECT_S,
-	PP_LIGHT_PROJECT_T,
-	PP_LIGHT_PROJECT_Q,
-	PP_LIGHT_FALLOFF_S,
-	PP_BUMP_MATRIX_S,
-	PP_BUMP_MATRIX_T,
-	PP_DIFFUSE_MATRIX_S,
-	PP_DIFFUSE_MATRIX_T,
-	PP_SPECULAR_MATRIX_S,
-	PP_SPECULAR_MATRIX_T,
-	PP_COLOR_MODULATE,
-	PP_COLOR_ADD,
-
-	PP_MISC_0 = 21 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
-} programParameter_t;
-
 
 /*
 ============================================================
@@ -1727,13 +1653,13 @@ RENDERER DEBUG TOOLS
 =============================================================
 */
 
-float RB_DrawTextLength( const char *text, float scale, int len );
-void RB_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest );
-void RB_ClearDebugText( int time );
-void RB_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest );
-void RB_ClearDebugLines( int time );
-void RB_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest );
-void RB_ClearDebugPolygons( int time );
+float R_DrawTextLength( const char *text, float scale, int len );
+void R_AddDebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align, const int lifetime, const bool depthTest );
+void R_ClearDebugText( int time );
+void R_AddDebugLine( const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifeTime, const bool depthTest );
+void R_ClearDebugLines( int time );
+void R_AddDebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime, const bool depthTest );
+void R_ClearDebugPolygons( int time );
 void RB_ShowLights( void );
 void RB_ShowLightCount( void );
 void RB_ScanStencilBuffer( void );
@@ -1742,6 +1668,7 @@ void RB_ShowOverdraw( void );
 void R_Tools();
 void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_ShutdownDebugTools( void );
+void RB_CopyDebugPrimitivesToBackend( void );
 
 /*
 =============================================================

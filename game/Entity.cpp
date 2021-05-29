@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #include "precompiled.h"
 #pragma hdrstop
@@ -967,8 +967,12 @@ idEntity::idEntity()
 	thinkFlags		= 0;
 	dormantStart	= 0;
 	cinematic		= false;
+	fromMapFile		= false;
 	renderView		= NULL;
 	cameraTarget	= NULL;
+	cameraFovX		= 0;
+	cameraFovY		= 0;
+
 	health			= 0;
 	maxHealth		= 0;
 
@@ -1023,6 +1027,7 @@ idEntity::idEntity()
 	m_bIsClimbableRope = false;
 	m_bIsMantleable = false;
 	m_bIsBroken = false;
+	m_bFlinderize = true;
 
 	// We give all the entities a Stim/Response collection so that we wont have to worry
 	// about the pointer being available all the time. The memory footprint of that 
@@ -1486,7 +1491,7 @@ static void ResolveRotationHack(idDict &spawnArgs) {
 			if (len >= 0 && buffer)
 				fileSystem->FreeFile(buffer);
 			if (!alreadyGood)
-				fileSystem->WriteFile(proxyName, intendedContents.c_str(), intendedContents.Length());
+				fileSystem->WriteFile(proxyName, intendedContents.c_str(), intendedContents.Length(), "fs_basepath", "");
 		}
 
 		kv = spawnArgs.MatchPrefix( "model", kv );
@@ -1563,6 +1568,9 @@ void idEntity::Spawn( void )
 
 	cameraTarget = NULL;
 	temp = spawnArgs.GetString( "cameraTarget" );
+	cameraFovX = spawnArgs.GetInt("cameraFovX", "120");
+	cameraFovY = spawnArgs.GetInt("cameraFovY", "120");
+
 	if ( temp && temp[0] ) {
 		// update the camera target
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
@@ -1972,15 +1980,23 @@ idEntity::~idEntity( void )
 
 	// Tels: #2430 - If this entity is shouldered by the player, dequip it forcefully
 	//stgatilov: in case of save loading error, grabber may not exist yet
-	if (gameLocal.m_Grabber && gameLocal.m_Grabber->GetEquipped() == this)
+	if (gameLocal.m_Grabber )
 	{
-		if ( spawnArgs.GetBool("shoulderable") )
+		if ( gameLocal.m_Grabber->GetEquipped() == this ) 
 		{
-			gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
-			gameLocal.m_Grabber->UnShoulderBody(this);
+			if ( spawnArgs.GetBool("shoulderable") )
+			{
+				gameLocal.Printf("Grabber: Forcefully unshouldering %s because it will be removed.\n", GetName() );
+				gameLocal.m_Grabber->UnShoulderBody(this);
+			}
+			gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
+			gameLocal.m_Grabber->Forget(this);
 		}
-		gameLocal.Printf("Grabber: Forcefully dequipping %s because it will be removed.\n", GetName() );
-		gameLocal.m_Grabber->Forget(this);
+		else if ( gameLocal.m_Grabber->GetSelected() == this )
+		{
+			//nbohr1more #1084: ensure grabber forgets held entities on removal
+			gameLocal.m_Grabber->Forget(this);
+		}
 	}
 
 	// Let each objective entity we're currently in know about our destruction
@@ -2015,7 +2031,8 @@ idEntity::~idEntity( void )
 
 	// unbind from master
 	Unbind();
-	QuitTeam();
+	if (!g_entityBindNew.GetBool())
+		QuitTeam();
 
 	gameLocal.RemoveEntityFromHash( name.c_str(), this );
 
@@ -2084,9 +2101,12 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt( thinkFlags );
 	savefile->WriteInt( dormantStart );
 	savefile->WriteBool( cinematic );
+	savefile->WriteBool( fromMapFile );
 
 	savefile->WriteObject( cameraTarget );
-
+	savefile->WriteInt( cameraFovX );
+	savefile->WriteInt( cameraFovY );
+	
 	savefile->WriteInt( health );
 	savefile->WriteInt( maxHealth );
 
@@ -2351,6 +2371,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( thinkFlags );
 	savefile->ReadInt( dormantStart );
 	savefile->ReadBool( cinematic );
+	savefile->ReadBool( fromMapFile );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) ); 
 
@@ -2359,6 +2380,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 		// // grayman #4615 - update the camera target (will handle a NULL "cameraTarget")
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
 	}
+
+	savefile->ReadInt( cameraFovX );
+	savefile->ReadInt( cameraFovY );
 
 	savefile->ReadInt( health );
 	savefile->ReadInt( maxHealth );
@@ -3307,7 +3331,7 @@ idEntity::BecomeBroken
 */
 void idEntity::BecomeBroken( idEntity *activator )
 {
-	if (m_bIsBroken)
+	if ( m_bIsBroken )
 	{
 		// we are already broken, so do nothing
 		return;
@@ -3315,8 +3339,15 @@ void idEntity::BecomeBroken( idEntity *activator )
 
 	m_bIsBroken = true;
 
+	if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
+	{
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Hiding broken entity %s\r", name.c_str() ); 
+		SetModel( "" );
+		GetPhysics()->SetContents( 0 );
+	}
+
 	// switch to the brokenModel if it was defined
-	if ( brokenModel.Length() )
+	else if ( brokenModel.Length() )
 	{
 		SetModel( brokenModel );
 
@@ -3333,12 +3364,6 @@ void idEntity::BecomeBroken( idEntity *activator )
 			}
 		}
 	} 
-	else if ( spawnArgs.GetBool( "hideModelOnBreak" ) )
-	{
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Hiding broken entity %s\r", name.c_str() ); 
-		SetModel( "" );
-		GetPhysics()->SetContents( 0 );
-	}
 
 	// tels: if a break_up_script is defined, run it:
 	idStr str;
@@ -3354,7 +3379,11 @@ void idEntity::BecomeBroken( idEntity *activator )
 	}
 
 	// tels: if we have flinders to spawn on break, do so now
-	Flinderize( activator );
+	// Dragofer: make this optional for entities that shouldn't always flinderize when breaking
+	if ( m_bFlinderize )
+	{
+		Flinderize(activator);
+	}
 }
 
 /*
@@ -4494,8 +4523,8 @@ renderView_t *idEntity::GetRenderView( void ) {
 	memset( renderView, 0, sizeof( *renderView ) );
 
 	renderView->vieworg = GetPhysics()->GetOrigin();
-	renderView->fov_x = 120;
-	renderView->fov_y = 120;
+	renderView->fov_x = cameraFovX;
+	renderView->fov_y = cameraFovY;
 	renderView->viewaxis = GetPhysics()->GetAxis();
 
 	// copy global shader parms
@@ -5147,17 +5176,32 @@ void idEntity::SetCinematicOnTeam(idEntity* ent)
 idEntity::FinishBind
 ================
 */
-void idEntity::FinishBind( const char *jointName ) // grayman #3074
+void idEntity::FinishBind( idEntity *newMaster, const char *jointName ) // grayman #3074
 {
+	if (g_entityBindNew.GetBool()) {
+		// unbind from the previous master (without any pre/post/notify stuff)
+		if (bindMaster)
+			BreakBindToMaster();
+
+		// bind to the new master (pre/post/notify stuff already done outside)
+		EstablishBindToMaster(newMaster);
+		// reorder the active entity list 
+		gameLocal.sortTeamMasters = true;
+	}
+	else
+		bindMaster = newMaster;
+
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
 
-	// We are now separated from our previous team and are either
-	// an individual, or have a team of our own.  Now we can join
-	// the new bindMaster's team.  Bindmaster must be set before
-	// joining the team, or we will be placed in the wrong position
-	// on the team.
-	JoinTeam( bindMaster );
+	if (!g_entityBindNew.GetBool()) {
+		// We are now separated from our previous team and are either
+		// an individual, or have a team of our own.  Now we can join
+		// the new bindMaster's team.  Bindmaster must be set before
+		// joining the team, or we will be placed in the wrong position
+		// on the team.
+		JoinTeam( bindMaster );
+	}
 
 	// if our bindMaster is enabled during a cinematic, we must be, too
 	cinematic = bindMaster->cinematic;
@@ -5204,10 +5248,9 @@ void idEntity::Bind( idEntity *master, bool orientated )
 
 	bindJoint = INVALID_JOINT;
 	bindBody = -1;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind(NULL); // grayman #3074
+	FinishBind(master, NULL); // grayman #3074
 
 	PostBind( );
 }
@@ -5263,10 +5306,9 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 
 	bindJoint = jointnum;
 	bindBody = -1;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind(jointname); // grayman #3074
+	FinishBind(master, jointname); // grayman #3074
 
 	PostBind();
 }
@@ -5307,12 +5349,11 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 
 	bindJoint = jointnum;
 	bindBody = -1;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
 	idAnimator *masterAnimator = master->GetAnimator();
 	const char *jointName = masterAnimator->GetJointName( jointnum );
-	FinishBind(jointName); // grayman #3074
+	FinishBind(master, jointName); // grayman #3074
 
 	PostBind();
 }
@@ -5355,54 +5396,109 @@ void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated )
 
 	bindJoint = INVALID_JOINT;
 	bindBody = bodyId;
-	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind(NULL); // grayman #3074
+	FinishBind(master, NULL); // grayman #3074
 
 	PostBind();
 }
 
-/*
-================
-idEntity::Unbind
-================
-*/
-void idEntity::Unbind( void ) {
+
+static void ValidateBindTeam_Rec(idEntity* &pos) {
+	//first comes the node
+	idEntity *ent = pos;
+	pos = pos->GetNextTeamEntity();
+	//then come the subtrees of its bind sons
+	while (pos != NULL && pos->GetBindMaster() == ent)
+		ValidateBindTeam_Rec(pos);
+}
+bool idEntity::ValidateBindTeam( void ) {
+	assert(this);
+	if (teamMaster == NULL) {
+		//no team: isolated entity
+		assert(teamChain == NULL);
+		assert(bindMaster == NULL);
+		return true;
+	}
+	//check that everyone in team knows their master
+	for (idEntity *ent = teamMaster; ent; ent = ent->teamChain) {
+		assert(ent->teamMaster == teamMaster);
+	}
+	//check that team chain is pre-order traversal of the bind tree
+	idEntity *pos = teamMaster;
+	ValidateBindTeam_Rec(pos);
+	assert(pos == NULL);
+	return true;
+}
+
+void idEntity::EstablishBindToMaster( idEntity *newMaster ) {
+	assert(ValidateBindTeam());
+
+	assert(this && !bindMaster && newMaster);
+	if (newMaster == this) {
+		gameLocal.Warning("Binding entity %s to itself ignored", name.c_str());
+		return;
+	}
+	if (newMaster->IsBoundTo(this)) {
+		for (idEntity *ent = newMaster; ent != this; ent = ent->bindMaster)
+			gameLocal.Printf("  entity %s\n", ent->name.c_str());
+		gameLocal.Warning("Binding entity %s to entity %s ignored to avoid creating a loop", name.c_str(), newMaster->name.c_str());
+		return;
+	}
+
+	bindMaster = newMaster;
+
+	// check if our new team mate is already on a team
+	idEntity *master = newMaster->teamMaster;
+	if ( !master ) {
+		// he's not on a team, so he's the new teamMaster
+		master = newMaster;
+		newMaster->teamMaster = newMaster;
+		newMaster->teamChain = this;
+
+		// make anyone who's bound to me part of the new team
+		for( idEntity *ent = this; ent != NULL; ent = ent->teamChain ) {
+			ent->teamMaster = master;
+		}
+	} else {
+		// skip past the chain members bound to the entity we're teaming up with
+		idEntity *prev = newMaster;
+		idEntity *next = newMaster->teamChain;
+		// join after all entities bound to the new master entity
+		while( next && next->IsBoundTo( newMaster ) ) {
+			prev = next;
+			next = next->teamChain;
+		}
+
+		// make anyone who's bound to me part of the new team and
+		// also find the last member of my team
+		idEntity *ent;
+		for( ent = this; ent->teamChain != NULL; ent = ent->teamChain ) {
+			ent->teamChain->teamMaster = master;
+		}
+
+		prev->teamChain = this;
+		ent->teamChain = next;
+		teamMaster = master;
+	}
+
+	assert(ValidateBindTeam());
+}
+
+void idEntity::BreakBindToMaster( void ) {
+	assert(ValidateBindTeam());
+	assert(this && bindMaster);
+
 	idEntity *	prev;
 	idEntity *	next;
 	idEntity *	last;
 	idEntity *	ent;
 
-	// remove any bind constraints from an articulated figure
-	if ( IsType( idAFEntity_Base::Type ) ) {
-		static_cast<idAFEntity_Base *>(this)->RemoveBindConstraints();
-	}
-
-	if ( !bindMaster ) {
-		return;
-	}
-
-	// TDM: Notify bindmaster of unbinding
-	bindMaster->UnbindNotify( this );
-
-	if ( !teamMaster ) {
-		// Teammaster already has been freed
-		bindMaster = NULL;
-		return;
-	}
-
-	PreUnbind();
-
-	if ( physics ) {
-		physics->SetMaster( NULL, fl.bindOrientated );
-	}
-
 	// We're still part of a team, so that means I have to extricate myself
 	// and any entities that are bound to me from the old team.
 	// Find the node previous to me in the team
 	prev = teamMaster;
-	for( ent = teamMaster->teamChain; ent && ( ent != this ); ent = ent->teamChain ) {
+	for( ent = teamMaster->teamChain; ent != NULL && ent != this ; ent = ent->teamChain ) {
 		prev = ent;
 	}
 
@@ -5426,18 +5522,10 @@ void idEntity::Unbind( void ) {
 
 	// connect up the previous member of the old team to the node that
 	// follow the last node bound to me (if one exists).
-	if ( teamMaster != this ) {
-		prev->teamChain = next;
-		if ( !next && ( teamMaster == prev ) ) {
-			prev->teamMaster = NULL;
-		}
-	} else if ( next ) {
-		// If we were the teamMaster, then the nodes that were not bound to me are now
-		// a disconnected chain.  Make them into their own team.
-		for( ent = next; ent->teamChain != NULL; ent = ent->teamChain ) {
-			ent->teamMaster = next;
-		}
-		next->teamMaster = next;
+	assert(teamMaster != this);
+	prev->teamChain = next;
+	if ( !next && ( teamMaster == prev ) ) {
+		prev->teamMaster = NULL;
 	}
 
 	// If we don't have anyone on our team, then clear the team variables.
@@ -5449,9 +5537,113 @@ void idEntity::Unbind( void ) {
 		teamMaster = NULL;
 	}
 
-	bindJoint = INVALID_JOINT;
-	bindBody = -1;
+	idEntity *oldBindMaster = bindMaster;
+	//note: bindJoint and bindBody should be saved
+	//they are already new if we are rebinding to other entity
 	bindMaster = NULL;
+
+	assert(ValidateBindTeam());
+	assert(oldBindMaster->ValidateBindTeam());
+}
+
+/*
+================
+idEntity::Unbind
+================
+*/
+void idEntity::Unbind( void ) {
+	// remove any bind constraints from an articulated figure
+	if ( IsType( idAFEntity_Base::Type ) ) {
+		static_cast<idAFEntity_Base *>(this)->RemoveBindConstraints();
+	}
+
+	if ( !bindMaster ) {
+		return;
+	}
+
+	// TDM: Notify bindmaster of unbinding
+	bindMaster->UnbindNotify( this );
+
+	if ( !teamMaster ) {
+		if (g_entityBindNew.GetBool())
+			assert(false);	// must never happen!
+		// Teammaster already has been freed
+		bindMaster = NULL;
+		return;
+	}
+
+	PreUnbind();
+
+	if ( physics ) {
+		physics->SetMaster( NULL, fl.bindOrientated );
+	}
+
+	if (g_entityBindNew.GetBool()) {
+		bindJoint = INVALID_JOINT;
+		bindBody = -1;
+		BreakBindToMaster();
+	}
+	else {
+		idEntity *	prev;
+		idEntity *	next;
+		idEntity *	last;
+		idEntity *	ent;
+
+		// We're still part of a team, so that means I have to extricate myself
+		// and any entities that are bound to me from the old team.
+		// Find the node previous to me in the team
+		prev = teamMaster;
+		for( ent = teamMaster->teamChain; ent && ( ent != this ); ent = ent->teamChain ) {
+			prev = ent;
+		}
+
+		assert( ent == this ); // If ent is not pointing to this, then something is very wrong.
+
+		// Find the last node in my team that is bound to me.
+		// Also find the first node not bound to me, if one exists.
+		last = this;
+		for( next = teamChain; next != NULL; next = next->teamChain ) {
+			if ( !next->IsBoundTo( this ) ) {
+				break;
+			}
+
+			// Tell them I'm now the teamMaster
+			next->teamMaster = this;
+			last = next;
+		}
+
+		// disconnect the last member of our team from the old team
+		last->teamChain = NULL;
+
+		// connect up the previous member of the old team to the node that
+		// follow the last node bound to me (if one exists).
+		if ( teamMaster != this ) {
+			prev->teamChain = next;
+			if ( !next && ( teamMaster == prev ) ) {
+				prev->teamMaster = NULL;
+			}
+		} else if ( next ) {
+			// If we were the teamMaster, then the nodes that were not bound to me are now
+			// a disconnected chain.  Make them into their own team.
+			for( ent = next; ent->teamChain != NULL; ent = ent->teamChain ) {
+				ent->teamMaster = next;
+			}
+			next->teamMaster = next;
+		}
+
+		// If we don't have anyone on our team, then clear the team variables.
+		if ( teamChain ) {
+			// make myself my own team
+			teamMaster = this;
+		} else {
+			// no longer a team
+			teamMaster = NULL;
+		}
+
+		bindJoint = INVALID_JOINT;
+		bindBody = -1;
+		bindMaster = NULL;
+	}
 
 	PostUnbind();
 }
@@ -5462,19 +5654,48 @@ idEntity::RemoveBinds
 ================
 */
 void idEntity::RemoveBinds( void ) {
-	idEntity *ent;
-	idEntity *next;
+	if (g_entityBindNew.GetBool()) {
+		//count all entities bound to us
+		int k = 0;
+		for( idEntity *ent = teamChain; ent != NULL; ent = ent->teamChain )
+			if ( ent->bindMaster == this )
+				k++;
+		if (k == 0)
+			return;
 
-	for( ent = teamChain; ent != NULL; ent = next ) {
-		next = ent->teamChain;
-		// bound to us?
-		if ( ent->bindMaster == this ) {
+		//save all entities bounds to us
+		idEntity* *arr = (idEntity**)alloca(k * sizeof(idEntity*));
+		k = 0;
+		for( idEntity *ent = teamChain; ent != NULL; ent = ent->teamChain )
+			if ( ent->bindMaster == this )
+				arr[k++] = ent;
+
+		//unbind all saved entities from us
+		for (int i = 0; i < k; i++) {
+			idEntity *ent = arr[i];
 			ent->Unbind();
 
 			if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
+				//also remove the unbound entity on next frame
 				ent->PostEventMS( &EV_Remove, 0 );
 			}
-			next = teamChain;
+		}
+	}
+	else {
+		idEntity *ent;
+		idEntity *next;
+
+		for( ent = teamChain; ent != NULL; ent = next ) {
+			next = ent->teamChain;
+			// bound to us?
+			if ( ent->bindMaster == this ) {
+				ent->Unbind();
+
+				if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
+					ent->PostEventMS( &EV_Remove, 0 );
+				}
+				next = teamChain;
+			}
 		}
 	}
 }
@@ -5800,6 +6021,7 @@ idEntity::JoinTeam
 ================
 */
 void idEntity::JoinTeam( idEntity *teammember ) {
+	assert(!g_entityBindNew.GetBool());
 	idEntity *ent;
 	idEntity *master;
 	idEntity *prev;
@@ -6470,6 +6692,10 @@ void idEntity::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const i
 		}
 	}
 
+	//stgatilov #5599: skip impulses in silent mode of grabber
+	if (gameLocal.m_Grabber->GetSelected() == ent && gameLocal.m_Grabber->IsInSilentMode())
+		allowImpulse = false;
+
 	if (allowImpulse)
 	{
 		GetPhysics()->ApplyImpulse( id, point, impulse );
@@ -6552,11 +6778,9 @@ idEntity::ActivateContacts
 */
 void idEntity::ActivateContacts()
 {
-
-// nbohr1more: #3871 - increase contact limit to 128 watch for future issues with this limit
-
-	idList<contactInfo_t> contacts;
-	contacts.SetNum( 128, false );
+	// nbohr1more: #3871 - increase contact limit to 128 watch for future issues with this limit
+	// stgatilov: lowered back to 32 --- the same number is now used in physics classes
+	idRaw<contactInfo_t> contacts[CONTACTS_MAX_NUMBER];		//avoid zero-filling
 
 	idVec6 dir;
 	int num;
@@ -6567,7 +6791,7 @@ void idEntity::ActivateContacts()
 
 	if ( clipModel->IsTraceModel() )
 	{
-		num = gameLocal.clip.Contacts( &contacts[0], 128, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( contacts[0].Ptr(), CONTACTS_MAX_NUMBER, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
 	}
 	else
 	{
@@ -6576,14 +6800,12 @@ void idEntity::ActivateContacts()
 	
 		idTraceModel trm(GetPhysics()->GetBounds());
 		idClipModel clip(trm);
-		num = gameLocal.clip.Contacts( &contacts[0], 128, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( contacts[0].Ptr(), CONTACTS_MAX_NUMBER, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
 	}
-	
-	contacts.SetNum( num, false );
 
 	for ( int i = 0 ; i < num ; i++ )
 	{
-		idEntity* found = gameLocal.entities[contacts[i].entityNum];
+		idEntity* found = gameLocal.entities[contacts[i].Get().entityNum];
 		if ( found != gameLocal.world )
 		{
 			if ( found && found->IsType(idMoveable::Type) )
@@ -7399,7 +7621,6 @@ idEntity::TouchTriggers
 bool idEntity::TouchTriggers( void ) const {
 	int				i, numClipModels, numEntities;
 	idClipModel *	cm;
-	idClipModel *	clipModels[ MAX_GENTITIES ];
 	idEntity *		ent;
 	trace_t			trace;
 
@@ -7407,7 +7628,8 @@ bool idEntity::TouchTriggers( void ) const {
 	trace.endpos = GetPhysics()->GetOrigin();
 	trace.endAxis = GetPhysics()->GetAxis();
 
-	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( GetPhysics()->GetAbsBounds(), CONTENTS_TRIGGER, clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( GetPhysics()->GetAbsBounds(), CONTENTS_TRIGGER, clipModels );
 	numEntities = 0;
 
 	for ( i = 0; i < numClipModels; i++ ) {
@@ -11698,7 +11920,7 @@ void idEntity::Event_Frob()
 	if (player != NULL)
 	{
 		// Let the player frob this entity.
-		player->PerformFrob(EPressed, this);
+		player->PerformFrob(EPressed, this, false);
 	}
 }
 
@@ -12890,8 +13112,11 @@ void idEntity::ParseAttachmentSpawnargs( idList<idDict> *argsList, idDict *from 
 
 				if (PosSpace == -1)
 				{
-					gameLocal.Warning( "%s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
-						GetName(), kv_set->GetKey().c_str(), kv_set->GetValue().c_str() );
+					gameLocal.Warning(
+						"%s of class %s: Spawnarg '%s' (value '%s') w/o attachment name. Applying to to all attachments.",
+						from->GetString("name", "[unknown]"), from->GetString("classname", "[unknown]"),
+						kv_set->GetKey().c_str(), kv_set->GetValue().c_str()
+					);
 					//kv_set = from->MatchPrefix( "set ", kv_set );
 					//continue;		
 					// pretend "set _color" "0.1 0.2 0.3" means "set _color on BAR" where BAR is the

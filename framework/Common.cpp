@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -23,7 +23,10 @@
 #include "Session_local.h"
 #include "Debug.h"
 #include <iostream>
+
+#include "GamepadInput.h"
 #include "../renderer/backend/RenderBackend.h"
+#include "LoadStack.h"
 
 #define MAX_WARNING_LIST	256
 
@@ -95,7 +98,7 @@ idCVar com_asyncSound( "com_asyncSound", "1", CVAR_INTEGER|CVAR_SYSTEM, ASYNCSOU
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_SYSTEM | CVAR_NOCHEAT,
 	"Force specified implementation of SIMD processor (if supported)\n"
 	"Value 1 or Generic forces slow platform-independent implementation. "
-	"Other options include: SSE, SSE2, SSE3, AVX, AVX2"
+	"Other options include: SSE, SSE2, SSE3, AVX, AVX2, [Win32]:IdAsm)"
 );
 idCVar com_fpexceptions( "com_fpexceptions", "0", CVAR_BOOL | CVAR_SYSTEM, "enable FP exceptions: throw exception when NaN or Inf value is produced" );
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "developer mode" );
@@ -677,7 +680,7 @@ idCommonLocal::ClearWarnings
 */
 void idCommonLocal::ClearWarnings( const char *reason ) {
 	warningCaption = reason;
-	warningList.Clear();
+	warningList.ClearFree();
 }
 
 /*
@@ -1349,6 +1352,8 @@ void idCommonLocal::WriteConfigToFile(
 
 	if (configexport == eConfigExport_all || configexport == eConfigExport_keybinds)
 		idKeyInput::WriteBindings( f );
+	if (configexport == eConfigExport_all || configexport == eConfigExport_padbinds)
+		idGamepadInput::WriteBindings( f );
 	if (configexport == eConfigExport_all || configexport == eConfigExport_cvars)
 		cvarSystem->WriteFlaggedVariables( CVAR_ARCHIVE, "seta", f );
 
@@ -1382,6 +1387,7 @@ void idCommonLocal::WriteConfiguration( void ) {
 	// STiFU #4797: Separate config files for cvars and keybinds
 	WriteConfigToFile( CONFIG_FILE,	  "fs_savepath", idCommon::eConfigExport_cvars    );
 	WriteConfigToFile( KEYBINDS_FILE, "fs_savepath", idCommon::eConfigExport_keybinds );
+	WriteConfigToFile( PADBINDS_FILE, "fs_savepath", idCommon::eConfigExport_padbinds );
 
 	// restore the developer cvar
 	com_developer.SetBool( developer );
@@ -1806,7 +1812,6 @@ idCommonLocal::LocalizeGui
 void idCommonLocal::LocalizeGui( const char *fileName, idLangDict &langDict ) {
 	idStr out, ws, work;
 	const char *buffer = NULL;
-	out.Empty();
 	int k;
 	char ch;
 	char slash = '\\';
@@ -2428,6 +2433,8 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "showDictMemory", idDict::ShowMemoryUsage_f, CMD_FL_SYSTEM, "shows memory used by dictionaries" );
 	cmdSystem->AddCommand( "listDictKeys", idDict::ListKeys_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all keys used by dictionaries" );
 	cmdSystem->AddCommand( "listDictValues", idDict::ListValues_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all values used by dictionaries" );
+	cmdSystem->AddCommand( "showLoadStackMemory", LoadStack::ShowMemoryUsage_f, CMD_FL_SYSTEM, "shows memory used by load stack strings (see decl_stack)" );
+	cmdSystem->AddCommand( "listLoadStackStrings", LoadStack::ListStrings_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all strings stored in load stacks (see decl_stack)" );
 	cmdSystem->AddCommand( "testSIMD", idSIMD::Test_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "test SIMD code" );
 
 	// localization
@@ -2506,14 +2513,12 @@ void idCommonLocal::Frame( void ) {
 		// write config file if anything changed
 		WriteConfiguration(); 
 
+		// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+		sys->ThreadHeartbeat();
+
 		// change SIMD implementation if required
 		if ( com_forceGenericSIMD.IsModified() ) {
 			InitSIMD();
-		}
-
-		if ( com_fpexceptions.IsModified()) {
-			sys->FPU_SetExceptions(com_fpexceptions.GetBool());
-			com_fpexceptions.ClearModified();
 		}
 
 		eventLoop->RunEventLoop();
@@ -2645,7 +2650,10 @@ void idCommonLocal::Async( void ) {
 		return;
 	}
 
-	else if ( !com_preciseTic.GetBool() ) {
+	// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+	sys->ThreadHeartbeat();
+
+	if ( !com_preciseTic.GetBool() ) {
 		// just run a single tic, even if the exact msec isn't precise
 		SingleAsyncTic();
 		return;
@@ -2825,6 +2833,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// init CVar system
 		cvarSystem->Init();
 
+		// potentially start trace profiler if requested
+		InitTracing();
+
 		// start file logging right away, before early console or whatever
 		StartupVariable( "win_outputDebugString", false );
 
@@ -2839,6 +2850,7 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 
 		// initialize key input/binding, done early so bind command exists
 		idKeyInput::Init();
+		idGamepadInput::Init();
 
 		// init the console so we can take prints
 		console->Init();
@@ -2852,8 +2864,8 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// override cvars from command line
 		StartupVariable( NULL, false );
 
-        // set fpu double extended precision
-        Sys_FPU_SetPrecision();
+		// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+		sys->ThreadStartup();
 
 		// initialize processor specific SIMD implementation
 		InitSIMD();
@@ -2924,6 +2936,7 @@ void idCommonLocal::Shutdown( void ) {
 
 	// shut down the key system
 	idKeyInput::Shutdown();
+	idGamepadInput::Shutdown();
 
 	// shut down the cvar system
 	cvarSystem->Shutdown();
@@ -2938,8 +2951,8 @@ void idCommonLocal::Shutdown( void ) {
 
 	// free any buffered warning messages
 	ClearWarnings( GAME_NAME " shutdown" );
-	warningCaption.Clear();
-	errorList.Clear();
+	warningCaption.ClearFree();
+	errorList.ClearFree();
 
 	// enable leak test
 	Mem_EnableLeakTest( "tdm_main" );
@@ -3020,6 +3033,9 @@ void idCommonLocal::InitGame( void )
 		}
 		if (fileSystem->FindFile(KEYBINDS_FILE) != FIND_NO) { // STiFU #4797
 			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " KEYBINDS_FILE "\n");		// DarkmodKeybinds.cfg
+		}
+		if (fileSystem->FindFile(PADBINDS_FILE) != FIND_NO) {
+			cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "exec " PADBINDS_FILE "\n");
 		}
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );

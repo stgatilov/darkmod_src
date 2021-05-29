@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma once
@@ -22,8 +22,6 @@
  * The buffer is divided into three frames - one frame for the GPU to draw with,
  * one for the CPU to write to and one "in-transit" for the GL driver, so that
  * we avoid synchronization between CPU and GPU in all but the rarest of cases.
- * An optional static section at the beginning of the buffer can be filled on
- * initialization.
  *
  * To make use of the buffer, get its current write address with `CurrentWriteLocation`
  * and the `BytesRemaining` in the current frame region and copy your data to it.
@@ -37,7 +35,13 @@
  */
 class GpuBuffer {
 public:
-	void Init( GLenum type, GLuint size, GLuint alignment, byte *staticData = nullptr, GLuint numStaticBytes = 0 );
+	void Init( GLenum type, GLuint size, GLuint alignment );
+
+	/// Use this variant when the CPU prepares data one frame ahead (e.g. VertexCache)
+	/// Otherwise, it is assumed that GPU draw calls are issued from the same region
+	/// that was written to in this frame. That's the default for buffers filled and used
+	/// in the backend.
+	void InitWriteFrameAhead( GLenum type, GLuint size, GLuint alignment );
 	void Destroy();
 
 	byte *CurrentWriteLocation() const;
@@ -51,19 +55,21 @@ public:
 
 	void SwitchFrame();
 
+	GLuint GetAPIObject() const { return bufferObject; }
+
 	static const int NUM_FRAMES = 3;
 
 private:
 	GLsync frameFences[NUM_FRAMES] = { nullptr };
 	GLenum type = GL_INVALID_ENUM;
-	GLuint staticDataSize = 0;
 	GLuint frameSize = 0;
 	GLuint totalSize = 0;
 	GLuint alignment = 0;
 	bool usesPersistentMapping = false;
 	GLuint bufferObject = 0;
 	byte *bufferContents = nullptr;
-	int currentFrame = 0;
+	int currentDrawingFrame = 0;
+	int currentWritingFrame = 0;
 	GLuint bytesCommittedInCurrentFrame = 0;
 
 	GLuint CurrentOffset() const;

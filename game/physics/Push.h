@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __PUSH_H__
@@ -53,24 +53,25 @@ public:
 					// move all pushed entities back to their previous position
 	void			RestorePushedEntityPositions( void );
 					// returns the number of pushed entities
-	int				GetNumPushedEntities( void ) const { return numPushed; }
+	int				GetNumPushedEntities( void ) const { return pushed.Num(); }
 					// get the ith pushed entity
-	idEntity *		GetPushedEntity( int i ) const { assert( i >= 0 && i < numPushed ); return pushed[i].ent; }
+	idEntity *		GetPushedEntity( int i ) const { assert( i >= 0 && i < pushed.Num() ); return pushed[i].ent; }
 
 private:
+	static const int PUSHED_AUTOSIZE = 128;
 	struct pushed_s {
 		idEntity *	ent;					// pushed entity
 		idAngles	deltaViewAngles;		// actor delta view angles
-	}				pushed[MAX_GENTITIES];	// pushed entities
-	int				numPushed;				// number of pushed entities
+	};
+	idFlexList<pushed_s, PUSHED_AUTOSIZE> pushed;	// pushed entities
 
 	struct pushedGroup_s {
 		idEntity *	ent;
 		float		fraction;
 		bool		groundContact;
 		bool		test;
-	}				pushedGroup[MAX_GENTITIES];
-	int				pushedGroupSize;
+	};
+	idFlexList<pushedGroup_s, PUSHED_AUTOSIZE> pushedGroup;
 
 private:
 	void			SaveEntityPosition( idEntity *ent );
@@ -94,7 +95,7 @@ private:
 												const idVec3 &newOrigin, const idVec3 &move );
 	int				TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel *clipModel, const int flags,
 												const idMat3 &newAxis, const idRotation &rotation );
-	int				DiscardEntities( idEntity *entityList[], int numEntities, int flags, idEntity *pusher );
+	int				DiscardEntities( idClip_EntityList &entityList, int flags, idEntity *pusher );
 #endif
 };
 

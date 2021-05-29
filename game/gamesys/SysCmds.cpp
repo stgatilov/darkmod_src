@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -33,6 +33,7 @@
 #include "../FrobDoorHandle.h"
 #include "../FrobLockHandle.h"
 #include "../FrobLever.h"
+#include "../Grabber.h"
 
 #include "TypeInfo.h"
 
@@ -2870,8 +2871,7 @@ void Cmd_ShowKeys_f( const idCmdArgs& args )
 
 		//if ( strcmp( common->GetI18N()->Translate( value ), "Keys" ) ) continue; // no key
 		if ( strcmp( value, "#str_02392" ) ) continue; // no key
-		if ( !(ent->thinkFlags & TH_UPDATEVISUALS) )
-			continue;
+		//if ( !(ent->thinkFlags & TH_UPDATEVISUALS) ) continue;
 
 		value = ent->spawnArgs.GetString( "inv_name" );
 		auto invItem = gameLocal.GetLocalPlayer()->InventoryCursor()->Inventory()->GetItem( value );
@@ -2967,7 +2967,7 @@ typedef std::multimap< eVertexBlendType, ImageInfo_s > ImageInfoMap;
 bool GetValidStageExpression( idLexer &a_lexSource, idStr & a_strStageTextureName )
 {
 	int iOffset, nBrackets;
-	a_strStageTextureName.Empty();
+	a_strStageTextureName.Clear();
 
 	std::vector< idStr > arrStrInvalidTokens;
 	
@@ -3232,190 +3232,6 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 	return false;
 }
 
-void CreateNewAmbientBlock( const ImageInfoMap& a_arrDiffusemapInfo, const ImageInfoMap& a_arrBumpmapInfo, const ImageInfoMap& a_arrSpecularmapInfo, std::vector<char>& a_arrCharNewAmbientBlock )
-{
-	static const char newAmbientBlock[] = {	
-		"\n	{							\n"
-		"		if (global5 == 1)		\n"
-		"		blend add				\n"
-		"		map				%s		\n"
-		"		scale			%s		\n"
-		"		red				global2	\n"
-		"		green			global3	\n"
-		"		blue			global4	\n"
-		"	}							\n"
-		"	{							\n"
-		"		if (global5 == 2)		\n"
-		"		blend add				\n"
-		"		program	ambientEnvironment.vfp	\n"
-		"		vertexParm		0		%s, %s		// UV Scales for Diffuse and Bump	\n"
-		"		vertexParm		1		%s, 1, 1	// (X,Y) UV Scale for specular		\n"
-		"		vertexParm		2		global2, global3, global4, 1	\n"
-		"																\n"
-		"		fragmentMap		0		cubeMap env/gen1				\n"
-		"		fragmentMap		1		%s			// Bump				\n"
-		"		fragmentMap		2		%s			// Diffuse			\n"
-		"		fragmentMap		3		%s			// Specular			\n"
-		"	}"
-	};
-
-	static const char newAmbientBlockVertColorBlended[] = {	
-		"\n	{							\n"
-		"		if (global5 == 1)		\n"
-		"		blend add				\n"
-		"		map				%s		\n"
-		"		scale			%s		\n"
-		"		red				global2	\n"
-		"		green			global3	\n"
-		"		blue			global4	\n"
-		"		vertexColor				\n"
-		"	}							\n"
-		"	{							\n"
-		"		if (global5 == 1)		\n"
-		"		blend add				\n"
-		"		map				%s		\n"
-		"		scale			%s		\n"
-		"		red				global2	\n"
-		"		green			global3	\n"
-		"		blue			global4	\n"
-		"		inverseVertexColor		\n"
-		"	}							\n"
-		"	{							\n"
-		"		if (global5 == 2)		\n"
-		"		blend add				\n"
-		"		program	ambientEnvVertexBlend.vfp	\n"
-		"		vertexParm		0		%s, %s		// UV Scales for Diffuse1 and Bump1	resp.	\n"
-		"		vertexParm		1		%s, %s		// UV Scale for specular1 and Diffuse2 resp.\n"
-		"		vertexParm		2		%s, %s		// UV Scale for Bump2 and specular2 resp.	\n"
-		"		vertexParm		3		global2, global3, global4, 1	\n"
-		"		//----------- VertexColored -------------------			\n"
-		"		fragmentMap		0		cubeMap env/gen1				\n"
-		"		fragmentMap		1		%s			// Bump1			\n"
-		"		fragmentMap		2		%s			// Diffuse1			\n"
-		"		fragmentMap		3		%s			// Specular1		\n"
-		"		//----------- InverseVertexColored ------------			\n"
-		"		fragmentMap		4		%s			// Bump2			\n"
-		"		fragmentMap		5		%s			// Diffuse2			\n"
-		"		fragmentMap		6		%s			// Specular2		\n"
-		"	}"
-	};
-
-
-
-	ImageInfoMap::const_iterator itrDiffusemapInfoVertexColored		= a_arrDiffusemapInfo.find( eVertexBlendType_VertexColored );
-	ImageInfoMap::const_iterator itrBumpmapInfoVertexColored		= a_arrBumpmapInfo.find( eVertexBlendType_VertexColored );
-	ImageInfoMap::const_iterator itrSpecularmapInfoVertexColored	= a_arrSpecularmapInfo.find( eVertexBlendType_VertexColored );
-
-	ImageInfoMap::const_iterator itrDiffusemapInfoInvVertexColored	= a_arrDiffusemapInfo.find( eVertexBlendType_InvVertexColored );
-	ImageInfoMap::const_iterator itrBumpmapInfoInvVertexColored		= a_arrBumpmapInfo.find( eVertexBlendType_InvVertexColored );
-	ImageInfoMap::const_iterator itrSpecularmapInfoInvVertexColored	= a_arrSpecularmapInfo.find( eVertexBlendType_InvVertexColored );
-
-	bool bIsVertexColorBlended = ( ( a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored || a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored || 
-		a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored )	&&
-		(a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored || a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored || 
-		a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored ) );
-
-	ImageInfoMap::const_iterator itrDiffusemapInfo	= a_arrDiffusemapInfo.find( eVertexBlendType_None );
-	ImageInfoMap::const_iterator itrBumpmapInfo		= a_arrBumpmapInfo.find( eVertexBlendType_None );
-	ImageInfoMap::const_iterator itrSpecularmapInfo	= a_arrSpecularmapInfo.find( eVertexBlendType_None );
-
-
-	if ( bIsVertexColorBlended )
-	{
-		gameLocal.Printf("This material is vertex-color blended. \n");
-	
-		// Find out normal maps for vertex blending.
-
-		// Handle cases where vertexColor is not used for bumpmaps
-		if ( a_arrBumpmapInfo.end() == itrBumpmapInfoVertexColored )
-			itrBumpmapInfoVertexColored = itrBumpmapInfo;
-
-		if ( a_arrBumpmapInfo.end() == itrBumpmapInfoInvVertexColored )
-		{
-			ImageInfoMap::const_iterator itrBumpmapInfo2 = itrBumpmapInfo;
-			if( a_arrBumpmapInfo.end() != itrBumpmapInfo2 )
-			{
-				// Try and see if there's a second bumpmap with no vertex-color blend.
-				++itrBumpmapInfo2;
-				itrBumpmapInfoInvVertexColored =  a_arrBumpmapInfo.end() != itrBumpmapInfo2 ? ( eVertexBlendType_None == (*itrBumpmapInfo2).first ? itrBumpmapInfo2 : itrBumpmapInfo ) : itrBumpmapInfo;  
-			}
-		}
-		unsigned int uiBlockSize =	idStr::Length( newAmbientBlockVertColorBlended ) + 1 + 
-			//------------------ For vertexColor ----------------
-			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored	? (*itrDiffusemapInfoVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	) * 2	+
-			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored	? (*itrDiffusemapInfoVertexColored).second.m_strUVScale.Length()	: idStr::Length("1, 1")		) * 2	+ 
-			(	a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored		? (*itrBumpmapInfoVertexColored).second.m_strImageName.Length()		: idStr::Length("_flat")	) 		+ 
-			(	a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored		? (*itrBumpmapInfoVertexColored).second.m_strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
-			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored	? (*itrSpecularmapInfoVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	)		+ 
-			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored	? (*itrSpecularmapInfoVertexColored).second.m_strUVScale.Length()	: idStr::Length("1, 1")		)		+ 
-			//------------------ For inverseVertexColor ---------
-			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored		? (*itrDiffusemapInfoInvVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	) * 2	+
-			(a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored		? (*itrDiffusemapInfoInvVertexColored).second.m_strUVScale.Length()		: idStr::Length("1, 1")		) * 2	+ 
-			(	a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored		? (*itrBumpmapInfoInvVertexColored).second.m_strImageName.Length()		: idStr::Length("_flat")	) 		+ 
-			(	a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored		? (*itrBumpmapInfoInvVertexColored).second.m_strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
-			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored	? (*itrSpecularmapInfoInvVertexColored).second.m_strImageName.Length()	: idStr::Length("_black")	)		+ 
-			(a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored	? (*itrSpecularmapInfoInvVertexColored).second.m_strUVScale.Length()	: idStr::Length("1, 1")		);
-
-
-		a_arrCharNewAmbientBlock.resize( uiBlockSize, 0 );
-
-		idStr::snPrintf( &a_arrCharNewAmbientBlock[0], uiBlockSize, newAmbientBlockVertColorBlended, 
-			//------------------ For vertexColor ----------------
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strImageName.c_str()				: "_black", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strUVScale.c_str()				: "1, 1", 
-			//------------------ For inverseVertexColor ---------
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strImageName.c_str()		: "_black", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strUVScale.c_str()		: "1, 1", 
-			//---------------------------------------------------
-
-			//------------------ For vertexColor ----------------
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strUVScale.c_str()			: "1, 1", 
-			a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored ?			(*itrBumpmapInfoVertexColored).second.m_strUVScale.c_str()				: "1, 1", 
-			a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored ?	(*itrSpecularmapInfoVertexColored).second.m_strUVScale.c_str()			: "1, 1", 
-			//------------------ For inverseVertexColor ---------
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strUVScale.c_str()	: "1, 1", 
-			a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored ?			(*itrBumpmapInfoInvVertexColored).second.m_strUVScale.c_str()		: "1, 1", 
-			a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored ?	(*itrSpecularmapInfoInvVertexColored).second.m_strUVScale.c_str()	: "1, 1", 
-			//---------------------------------------------------
-
-			//------------------ For vertexColor ----------------
-			a_arrBumpmapInfo.end() != itrBumpmapInfoVertexColored ?			(*itrBumpmapInfoVertexColored).second.m_strImageName.c_str()			: "_flat", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoVertexColored ?	(*itrDiffusemapInfoVertexColored).second.m_strImageName.c_str()			: "_black", 
-			a_arrSpecularmapInfo.end() != itrSpecularmapInfoVertexColored ?	(*itrSpecularmapInfoVertexColored).second.m_strImageName.c_str()		: "_black",
-			//------------------ For inverseVertexColor ---------
-			a_arrBumpmapInfo.end() != itrBumpmapInfoInvVertexColored ?			(*itrBumpmapInfoInvVertexColored).second.m_strImageName.c_str()			: "_flat", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfoInvVertexColored ?	(*itrDiffusemapInfoInvVertexColored).second.m_strImageName.c_str()		: "_black", 
-			a_arrSpecularmapInfo.end() != itrSpecularmapInfoInvVertexColored ?	(*itrSpecularmapInfoInvVertexColored).second.m_strImageName.c_str()		: "_black"
-			//---------------------------------------------------
-			);
-	}
-	else
-	{
-		gameLocal.Printf("This material is vertex-color blended. \n");
-		unsigned int uiBlockSize =	idStr::Length( newAmbientBlock ) + 1 + 
-			(a_arrDiffusemapInfo.end() != itrDiffusemapInfo		? (*itrDiffusemapInfo).second.m_strImageName.Length()	: idStr::Length("_black")	) * 2	+
-			(a_arrDiffusemapInfo.end() != itrDiffusemapInfo		? (*itrDiffusemapInfo).second.m_strUVScale.Length()		: idStr::Length("1, 1")		) * 2	+ 
-			(	a_arrBumpmapInfo.end() != itrBumpmapInfo		? (*itrBumpmapInfo).second.m_strImageName.Length()		: idStr::Length("_flat")	)		+ 
-			(	a_arrBumpmapInfo.end() != itrBumpmapInfo		? (*itrBumpmapInfo).second.m_strUVScale.Length()		: idStr::Length("1, 1")		)		+ 
-			(a_arrSpecularmapInfo.end() != itrSpecularmapInfo	? (*itrSpecularmapInfo).second.m_strImageName.Length()	: idStr::Length("_black")	)		+ 
-			(a_arrSpecularmapInfo.end() != itrSpecularmapInfo	? (*itrSpecularmapInfo).second.m_strUVScale.Length()	: idStr::Length("1, 1")		); 
-
-		a_arrCharNewAmbientBlock.resize( uiBlockSize, 0 );
-
-		idStr::snPrintf( &a_arrCharNewAmbientBlock[0], uiBlockSize, newAmbientBlock, 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strImageName.c_str()		: "_black", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strUVScale.c_str()		: "1, 1", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strUVScale.c_str()		: "1, 1", 
-			a_arrBumpmapInfo.end() != itrBumpmapInfo ?			(*itrBumpmapInfo).second.m_strUVScale.c_str()			: "1, 1", 
-			a_arrSpecularmapInfo.end() != itrSpecularmapInfo ?	(*itrSpecularmapInfo).second.m_strUVScale.c_str()		: "1, 1", 
-			a_arrBumpmapInfo.end() != itrBumpmapInfo ?			(*itrBumpmapInfo).second.m_strImageName.c_str()			: "_flat", 
-			a_arrDiffusemapInfo.end() != itrDiffusemapInfo ?	(*itrDiffusemapInfo).second.m_strImageName.c_str()		: "_black", 
-			a_arrSpecularmapInfo.end() != itrSpecularmapInfo ?	(*itrSpecularmapInfo).second.m_strImageName.c_str()		: "_black"
-			);
-	}
-
-}
-
 void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 {
 
@@ -3655,7 +3471,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 		std::vector<char> arrCharNewAmbientBlock;
 
-		CreateNewAmbientBlock( arrDiffusemapInfo, arrBumpMapInfo, arrSpecularmapInfo, arrCharNewAmbientBlock );
+		//CreateNewAmbientBlock( arrDiffusemapInfo, arrBumpMapInfo, arrSpecularmapInfo, arrCharNewAmbientBlock );
 
 		strMatTextWithNewBlock.Insert( &arrCharNewAmbientBlock[0], uiOffset );
 
@@ -3676,11 +3492,6 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 	gameLocal.Printf(" %lu Materials processed and changed in total.\n", ulMaterialsProcessed );
 }
 
-
-void Cmd_updateCookedMathData_f( const idCmdArgs& args )
-{
-	cvarSystem->Find("r_postprocess_colorCurveBias")->SetModified();
-}
 
 void Cmd_LODBiasChanged_f( const idCmdArgs& args )
 {
@@ -3816,7 +3627,6 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "testBlend",				idTestModel::TestBlend_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"tests animation blending" );
 	cmdSystem->AddCommand( "reloadScript",			Cmd_ReloadScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"reloads scripts" );
 
-	cmdSystem->AddCommand( "tdm_updateCookedMathData",	Cmd_updateCookedMathData_f,		CMD_FL_GAME,	"Updates lookup textures" );
 	cmdSystem->AddCommand( "tdm_lod_bias_changed",		Cmd_LODBiasChanged_f,			CMD_FL_GAME,	"Updates entity visibility according to tdm_lod_bias." );
 
 	cmdSystem->AddCommand( "script",				Cmd_Script_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"executes a line of script" );

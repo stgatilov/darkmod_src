@@ -1,30 +1,28 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "../idlib/geometry/sys_intrinsics.h"
 #include "tr_local.h"
 #include "Model_local.h"
-#include "Profiling.h"
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
 idCVar r_maxShadowMapLight( "r_maxShadowMapLight", "1000", CVAR_ARCHIVE | CVAR_RENDERER, "lights bigger than this will be force-sent to stencil" );
-idCVar r_useParallelAddModels( "r_useParallelAddModels", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "add all models in parallel with jobs" );
+idCVar r_useParallelAddModels( "r_useParallelAddModels", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "parallelize R_AddModelSurfaces in frontend using jobs" );
 idCVarBool r_useClipPlaneCulling( "r_useClipPlaneCulling", "1", CVAR_RENDERER, "cull surfaces behind mirrors" );
 
 /*
@@ -480,41 +478,52 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 }
 
 static const int INTERACTION_TABLE_MAX_LIGHTS = 4096;
-static const int INTERACTION_TABLE_MAX_ENTITYS = MAX_GENTITIES;
+static const int INTERACTION_TABLE_MAX_ENTITYS = 8192/*MAX_GENTITIES*/;	//stgatilov: cannot allocate 2GB table =(
 idInteractionTable::idInteractionTable() {
 	SM_matrix = nullptr;
 }
 idInteractionTable::~idInteractionTable() {
-	FreeMemory();
+	Shutdown();
 }
 void idInteractionTable::Init() {
-	if (r_useInteractionTable.GetInteger() == 1) {
+	useInteractionTable = r_useInteractionTable.GetInteger();
+	if (useInteractionTable == 1) {
 		delete[] SM_matrix;
 		SM_matrix = (idInteraction**)R_ClearedStaticAlloc(INTERACTION_TABLE_MAX_LIGHTS * INTERACTION_TABLE_MAX_ENTITYS * sizeof(SM_matrix[0]));
 		if (!SM_matrix) {
 			common->Error("Failed to allocate interaction table");
 		}
 	}
-	if (r_useInteractionTable.GetInteger() == 2) {
+	if (useInteractionTable == 2) {
 		static const int MAX_INTERACTION_TABLE_LOAD_FACTOR = 75;
 		SHT_table.Init(-1, MAX_INTERACTION_TABLE_LOAD_FACTOR);
 	}
-}
-void idInteractionTable::FreeMemory() {
-	if (r_useInteractionTable.GetInteger() == 1) {
-		delete[] SM_matrix;
+	if (useInteractionTable == 3) {
+		SHT_tableNew.Reserve(256, true);
 	}
-	if (r_useInteractionTable.GetInteger() == 2) {
+}
+void idInteractionTable::Shutdown() {
+	if (useInteractionTable == 1) {
+		delete[] SM_matrix;
+		SM_matrix = nullptr;
+	}
+	if (useInteractionTable == 2) {
 		SHT_table.Reset();
 	}
+	if (useInteractionTable == 3) {
+		SHT_tableNew.ClearFree();
+	}
+	useInteractionTable = -1;
 }
 DEBUG_OPTIMIZE_ON
 idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const {
-	if (r_useInteractionTable.GetInteger() == 1) {
+	if (useInteractionTable < 0)
+		common->Error("Interaction table not initialized");
+	if (useInteractionTable == 1) {
 		int idx = ldef->index * INTERACTION_TABLE_MAX_ENTITYS + edef->index;
 		return SM_matrix[idx];
 	}
-	if (r_useInteractionTable.GetInteger() == 2) {
+	if (useInteractionTable == 2) {
 		int key = (ldef->index << 16) + edef->index;
 		const auto &cell = const_cast<idInteractionTable*>(this)->SHT_table.Find( key );
 		idInteraction *inter = nullptr;
@@ -522,6 +531,10 @@ idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntity
 			inter = cell.value;
 		}
 		return inter;
+	}
+	if (useInteractionTable == 3) {
+		int key = (ldef->index << 16) + edef->index;
+		return SHT_tableNew.Get(key, nullptr);
 	}
 	for ( idInteraction *inter = edef->lastInteraction; inter; inter = inter->entityPrev ) {
 		if ( inter->lightDef == ldef ) {
@@ -532,7 +545,9 @@ idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntity
 }
 DEBUG_OPTIMIZE_OFF
 bool idInteractionTable::Add(idInteraction *interaction) {
-	if (r_useInteractionTable.GetInteger() == 1) {
+	if (useInteractionTable < 0)
+		common->Error("Interaction table not initialized");
+	if (useInteractionTable == 1) {
 		assert(interaction->lightDef->index < INTERACTION_TABLE_MAX_LIGHTS);
 		assert(interaction->entityDef->index < INTERACTION_TABLE_MAX_ENTITYS);
 		int idx = interaction->lightDef->index * INTERACTION_TABLE_MAX_ENTITYS + interaction->entityDef->index;
@@ -543,7 +558,7 @@ bool idInteractionTable::Add(idInteraction *interaction) {
 		cell = interaction;
 		return true;
 	}
-	if (r_useInteractionTable.GetInteger() == 2) {
+	if (useInteractionTable == 2) {
 		int key = ( interaction->lightDef->index << 16 ) + interaction->entityDef->index;
 		auto &cell = SHT_table.Find( key );
 		if ( !SHT_table.IsEmpty( cell ) ) {
@@ -554,10 +569,17 @@ bool idInteractionTable::Add(idInteraction *interaction) {
 		SHT_table.Added( cell );
 		return true;	//added new interaction
 	}
+	if (useInteractionTable == 3) {
+		int key = (interaction->lightDef->index << 16 ) + interaction->entityDef->index;
+		return SHT_tableNew.AddIfNew(key, interaction);
+	}
+
 	return true;	//don't care
 }
 bool idInteractionTable::Remove(idInteraction *interaction) {
-	if (r_useInteractionTable.GetInteger() == 1) {
+	if (useInteractionTable < 0)
+		common->Error("Interaction table not initialized");
+	if (useInteractionTable == 1) {
 		int idx = interaction->lightDef->index * INTERACTION_TABLE_MAX_ENTITYS + interaction->entityDef->index;
 		idInteraction *&cell = SM_matrix[idx];
 		if (cell) {
@@ -567,7 +589,7 @@ bool idInteractionTable::Remove(idInteraction *interaction) {
 		}
 		return false;
 	}
-	if (r_useInteractionTable.GetInteger() == 2) {
+	if (useInteractionTable == 2) {
 		int key = ( interaction->lightDef->index << 16 ) + interaction->entityDef->index;
 		auto &cell = SHT_table.Find( key );
 		if ( cell.key == key ) {
@@ -577,18 +599,25 @@ bool idInteractionTable::Remove(idInteraction *interaction) {
 		}
 		return false;		//such interaction not present
 	}
+	if (useInteractionTable == 3) {
+		int key = (interaction->lightDef->index << 16 ) + interaction->entityDef->index;
+		return SHT_tableNew.Remove(key);
+	}
 	return true;	//don't care
 }
 idStr idInteractionTable::Stats() const {
 	char buff[256];
-	if (r_useInteractionTable.GetInteger() == 1) {
+	if (useInteractionTable == 1) {
 		idStr::snPrintf(buff, sizeof(buff), "size = L%d x E%d x %dB = %d MB",
 			INTERACTION_TABLE_MAX_LIGHTS, INTERACTION_TABLE_MAX_ENTITYS, sizeof(SM_matrix[0]),
 			INTERACTION_TABLE_MAX_LIGHTS * INTERACTION_TABLE_MAX_ENTITYS * sizeof(SM_matrix[0])
 		);
 	}
-	if (r_useInteractionTable.GetInteger() == 2) {
+	if (useInteractionTable == 2) {
 		idStr::snPrintf(buff, sizeof(buff), "size = %d/%d", SHT_table.Count(), SHT_table.Size());
+	}
+	if (useInteractionTable == 3) {
+		idStr::snPrintf(buff, sizeof(buff), "size = %d/%d", SHT_tableNew.Num(), SHT_tableNew.CellsNum());
 	}
 	return buff;
 }
@@ -816,7 +845,7 @@ and the viewEntitys due to game movement
 =================
 */
 void R_AddLightSurfaces( void ) {
-	FRONTEND_PROFILE( "R_AddLightSurfaces" );
+	TRACE_CPU_SCOPE( "R_AddLightSurfaces" );
 	
 	viewLight_t			*vLight;
 	idRenderLightLocal	*light;
@@ -1154,7 +1183,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 {
 	drawSurf_t		*drawSurf;
 	const float		*shaderParms;
-	static float	refRegs[MAX_EXPRESSION_REGISTERS];	// don't put on stack, or VC++ will do a page touch
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
@@ -1202,6 +1230,7 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			// evaluate the reference shader to find our shader parms
 			const shaderStage_t *pStage;
 
+			float *refRegs = (float *)R_FrameAlloc( renderEntity->referenceShader->GetNumRegisters() * sizeof( float ) );
 			renderEntity->referenceShader->EvaluateRegisters( refRegs, renderEntity->shaderParms, tr.viewDef, renderEntity->referenceSound );
 			pStage = renderEntity->referenceShader->GetStage(0);
 
@@ -1317,8 +1346,8 @@ void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, c
 {
 	for ( int i = 0; i < 3; i++ )
 	{
-		shadowBounds[0][i] = __fsels( modelBounds[0][i] - lightOrigin[i], modelBounds[0][i], lightBounds[0][i] );
-		shadowBounds[1][i] = __fsels( lightOrigin[i] - modelBounds[1][i], modelBounds[1][i], lightBounds[1][i] );
+		shadowBounds[0][i] = ( modelBounds[0][i] >= lightOrigin[i] ? modelBounds[0][i] : lightBounds[0][i] );
+		shadowBounds[1][i] = ( lightOrigin[i] >= modelBounds[1][i] ? modelBounds[1][i] : lightBounds[1][i] );
 	}
 }
 
@@ -1433,7 +1462,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			if ( r_useClipPlaneCulling && tr.viewDef->clipPlane ) { // 4946 - try to cull transparent objects behind mirrors, that are ignored by clip plane during depth pass
 				idPlane inversePlane( -tr.viewDef->clipPlane->Normal(), -tr.viewDef->clipPlane->Dist() ); // for some reason, the clipPlane normal points to the wrong side
 				if ( R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 1, &inversePlane ) ) { // can't just inverse R_CullLocalBox result, or else intersecting objects will disappear
-					return; // maybe save a couple draw calls for solid objecets, too
+					continue; // maybe save a couple draw calls for solid objecets, too
 				}
 			}
 
@@ -1518,6 +1547,8 @@ bool R_CullXray( idRenderEntityLocal& def ) {
 void R_AddSingleModel( viewEntity_t *vEntity ) {
 	idInteraction* inter, * next;
 	idRenderModel* model;
+
+	TRACE_CPU_SCOPE( "R_AddSingleModel" )
 
 	idRenderEntityLocal& def = *vEntity->entityDef;
 	if ( ( r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0 ) && ( def.dynamicModel || def.cachedDynamicModel ) ) { // debug filters
@@ -1630,13 +1661,13 @@ two or more lights.
 ===================
 */
 void R_AddModelSurfaces( void ) {
-	FRONTEND_PROFILE( "R_AddModelSurfaces ")
+	TRACE_CPU_SCOPE( "R_AddModelSurfaces ")
 	
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
 
-	if ( r_useParallelAddModels.GetBool() ) {
+	if ( r_useParallelAddModels.GetBool() && r_materialOverride.GetString()[0] == '\0' ) {
 		for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
 			tr.frontEndJobList->AddJob( (jobRun_t)R_AddSingleModel, vEntity );
 		}
@@ -1661,7 +1692,7 @@ R_RemoveUnecessaryViewLights
 =====================
 */
 void R_RemoveUnecessaryViewLights( void ) {
-	FRONTEND_PROFILE( "R_RemoveUnnecessaryViewLights" )
+	TRACE_CPU_SCOPE( "R_RemoveUnnecessaryViewLights" )
 
 	viewLight_t		*vLight;
 

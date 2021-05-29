@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 #include "../../idlib/precompiled.h"
 #include "../sys_local.h"
@@ -299,6 +299,11 @@ void Posix_QueEvent( sysEventType_t type, int value, int value2,
 #endif
 }
 
+void Sys_QueEvent( int, sysEventType_t type, int value, int value2,
+				  int ptrLength, void *ptr ) {
+	Posix_QueEvent( type, value, value2, ptrLength, ptr );
+}
+
 /*
 ================
 Sys_GetEvent
@@ -349,7 +354,9 @@ Sys_Init
 Posix_EarlyInit/Posix_LateInit is better
 =================
 */
-void Sys_Init( void ) { }
+void Sys_Init( void ) {
+	Sys_InitCPUID();
+}
 
 /*
 =================
@@ -452,9 +459,6 @@ void Sys_FlushCacheMemory(void *base, int bytes)
 }
 
 void Sys_FPU_ClearStack( void ) {
-}
-
-void Sys_FPU_SetPrecision() {
 }
 
 /*
@@ -998,8 +1002,4 @@ void Sys_Error(const char *error, ...) {
 	Sys_Printf( "\n" );
 
 	Posix_Exit( EXIT_FAILURE );
-}
-
-bool Sys_GetCurrentMonitorResolution( int &width, int &height ) {
-	return false;   //TODO: implement?
 }

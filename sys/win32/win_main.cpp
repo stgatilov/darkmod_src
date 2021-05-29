@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -46,7 +46,6 @@
 #include <iostream>
 
 idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
-idCVar Win32Vars_t::sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
 idCVar Win32Vars_t::win_username( "win_username", "", CVAR_SYSTEM | CVAR_INIT, "windows user name" );
 idCVar Win32Vars_t::win_xpos( "win_xpos", "3", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "horizontal position of window" );
@@ -898,6 +897,9 @@ static void Sys_AsyncThread( void *parm ) {
 	startTime = Sys_Milliseconds();
 	wakeNumber = 0;
 
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
+
 	while ( 1 ) {
 #ifdef WIN32
 		// this will trigger 60 times a second
@@ -1012,6 +1014,8 @@ void Sys_Init( void ) {
 		Sys_Error( GAME_NAME " doesn't run on Win32s" );
 	}
 
+	//stgatilov: Starting from Windows 8.1, true version is not returned anyway:
+	//see https://stackoverflow.com/a/17409126/556899
 	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT ) {
 		if ( win32.osversion.dwMajorVersion <= 4 ) {
 			win32.sys_arch.SetString( "WinNT (NT)" );
@@ -1019,10 +1023,16 @@ void Sys_Init( void ) {
 			win32.sys_arch.SetString( "Win2K (NT)" );
 		} else if ( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1 ) {
 			win32.sys_arch.SetString( "WinXP (NT)" );
-		} else if ( win32.osversion.dwMajorVersion == 6 ) {
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 0 ) {
 			win32.sys_arch.SetString( "Vista" );
 		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 1 ) {
 			win32.sys_arch.SetString( "Windows 7" );
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 2 ) {
+			win32.sys_arch.SetString( "Windows 8" );
+		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 3 ) {
+			win32.sys_arch.SetString( "Windows 8.1" );
+		} else if ( win32.osversion.dwMajorVersion == 10 && win32.osversion.dwMinorVersion == 0 ) {
+			win32.sys_arch.SetString( "Windows 10" );
 		} else {
 			win32.sys_arch.SetString( "Unknown NT variant" );
 		}
@@ -1054,97 +1064,7 @@ void Sys_Init( void ) {
 	//
 	// CPU type
 	//
-	if ( !idStr::Icmp( win32.sys_cpustring.GetString(), "detect" ) ) {
-		idStr string;
-
-		common->Printf( "%1.0f MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
-
-		win32.cpuid = Sys_GetCPUId();
-
-		string.Clear();
-
-		if ( win32.cpuid & CPUID_AMD ) {
-			string += "AMD CPU";
-		} else if ( win32.cpuid & CPUID_INTEL ) {
-			string += "Intel CPU";
-		} else if ( win32.cpuid & CPUID_UNSUPPORTED ) {
-			string += "unsupported CPU";
-		} else {
-			string += "generic CPU";
-		}
-		string += " with ";
-
-		/*if ( win32.cpuid & CPUID_MMX ) {
-			string += "MMX & ";
-		}*/
-		if ( win32.cpuid & CPUID_SSE ) {
-			string += "SSE & ";
-		}
-		if ( win32.cpuid & CPUID_SSE2 ) {
-			string += "SSE2 & ";
-		}
-		if ( win32.cpuid & CPUID_SSE3 ) {
-			string += "SSE3 & ";
-		}
-		if ( win32.cpuid & CPUID_SSSE3 ) {
-			string += "SSSE3 & ";
-		}
-		if ( win32.cpuid & CPUID_SSE41 ) {
-			string += "SSE41 & ";
-		}
-		if ( win32.cpuid & CPUID_AVX ) {
-			string += "AVX & ";
-		}
-		if ( win32.cpuid & CPUID_AVX2 ) {
-			string += "AVX2 & ";
-		}
-		if ( win32.cpuid & CPUID_FMA3 ) {
-			string += "FMA3 & ";
-		}
-		string.StripTrailing( " & " );
-		string.StripTrailing( " with " );
-		win32.sys_cpustring.SetString( string );
-	} else {
-		common->Printf( "forcing CPU type to " );
-		idLexer src( win32.sys_cpustring.GetString(), idStr::Length( win32.sys_cpustring.GetString() ), "sys_cpustring" );
-		idToken token;
-
-		int id = CPUID_NONE;
-		while ( src.ReadToken( &token ) ) {
-			if ( token.Icmp( "generic" ) == 0 ) {
-				id |= CPUID_GENERIC;
-			} else if ( token.Icmp( "intel" ) == 0 ) {
-				id |= CPUID_INTEL;
-			} else if ( token.Icmp( "amd" ) == 0 ) {
-				id |= CPUID_AMD;
-			/*} else if ( token.Icmp( "mmx" ) == 0 ) {
-				id |= CPUID_MMX;*/
-			} else if ( token.Icmp( "sse" ) == 0 ) {
-				id |= CPUID_SSE;
-			} else if ( token.Icmp( "sse2" ) == 0 ) {
-				id |= CPUID_SSE2;
-			} else if ( token.Icmp( "sse3" ) == 0 ) {
-				id |= CPUID_SSE3;
-			} else if ( token.Icmp( "ssse3" ) == 0 ) {
-				id |= CPUID_SSSE3;
-			} else if ( token.Icmp( "sse41" ) == 0 ) {
-				id |= CPUID_SSE41;
-			} else if ( token.Icmp( "avx" ) == 0 ) {
-				id |= CPUID_AVX;
-			} else if ( token.Icmp( "avx2" ) == 0 ) {
-				id |= CPUID_AVX2;
-			} else if ( token.Icmp( "fma3" ) == 0 ) {
-				id |= CPUID_FMA3;
-			}
-		}
-		if ( id == CPUID_NONE ) {
-			common->Printf( "WARNING: unknown sys_cpustring '%s'\n", win32.sys_cpustring.GetString() );
-			id = CPUID_GENERIC;
-		}
-		win32.cpuid = ( cpuid_t ) id;
-	}
-
-	common->Printf( "%s\n", win32.sys_cpustring.GetString() );
+	Sys_InitCPUID();
 }
 
 /*
@@ -1154,24 +1074,6 @@ Sys_Shutdown
 */
 void Sys_Shutdown( void ) {
 	CoUninitialize();
-}
-
-/*
-================
-Sys_GetProcessorId
-================
-*/
-cpuid_t Sys_GetProcessorId( void ) {
-	return win32.cpuid;
-}
-
-/*
-================
-Sys_GetProcessorString
-================
-*/
-const char *Sys_GetProcessorString( void ) {
-	return win32.sys_cpustring.GetString();
 }
 
 //=======================================================================
@@ -1193,8 +1095,6 @@ void Win_Frame( void ) {
 		win32.win_viewlog.ClearModified();
 	}
 }
-
-int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse );
 
 /*
 ==================

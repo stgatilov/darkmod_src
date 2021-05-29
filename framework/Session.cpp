@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -22,7 +22,6 @@
 #include "../renderer/FrameBuffer.h"
 #include "../game/gamesys/SysCvar.h"
 #include "../game/Missions/MissionManager.h"
-#include "../renderer/Profiling.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -390,11 +389,11 @@ void idSessionLocal::Shutdown() {
 		menuSoundWorld = NULL;
 	}
 		
-	mapSpawnData.serverInfo.Clear();
-	mapSpawnData.syncedCVars.Clear();
+	mapSpawnData.serverInfo.ClearFree();
+	mapSpawnData.syncedCVars.ClearFree();
 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		mapSpawnData.userInfo[i].Clear();
-		mapSpawnData.persistentPlayerInfo[i].Clear();
+		mapSpawnData.userInfo[i].ClearFree();
+		mapSpawnData.persistentPlayerInfo[i].ClearFree();
 	}
 
 	if ( guiMainMenu_MapList != NULL ) {
@@ -1188,6 +1187,9 @@ void idSessionLocal::WriteCmdDemo( const char *demoName, bool save ) {
 		common->Printf( "idSessionLocal::WriteCmdDemo: no name specified\n" );
 		return;
 	}
+	if (com_fixedTic.GetInteger()) {
+		common->Error( "Cmd demo is not compatible with uncapped FPS" );
+	}
 
 	idStr statsName;
 	if (save) {
@@ -1236,6 +1238,9 @@ idSessionLocal::StartPlayingCmdDemo
 ===============
 */
 void idSessionLocal::StartPlayingCmdDemo(const char *demoName) {
+	if (com_fixedTic.GetInteger()) {
+		common->Error( "Cmd demo is not compatible with uncapped FPS" );
+	}
 	// exit any current game
 	Stop();
 
@@ -1653,8 +1658,6 @@ const idStr GetNextQuicksaveFilename()
 	// Get the list of existing save games
 	idStrList fileList;
 	idList<fileTIME_T> fileTimes;
-	fileList.Clear();
-	fileTimes.Clear();
 	sessLocal.GetSaveGameList( fileList, fileTimes ); // fileTimes is sorted, most recent first
 
 	// Count the number of quicksaves and remember the oldest one we saw
@@ -1696,8 +1699,6 @@ const idStr GetMostRecentQuicksaveFilename()
 	// Get the list of existing save games
 	idStrList fileList;
 	idList<fileTIME_T> fileTimes;
-	fileList.Clear();
-	fileTimes.Clear();
 	sessLocal.GetSaveGameList( fileList, fileTimes ); 
 
 	// fileTimes is sorted, most recent first. Find the first quick save
@@ -1784,6 +1785,15 @@ void Session_Hitch_f( const idCmdArgs &args ) {
 		sw->UnPause();
 		soundSystem->SetMute(false);
 	}
+}
+
+/*
+====================
+SimulateEscape_f
+====================
+*/
+void SimulateEscape_f( const idCmdArgs & ) {
+	Sys_QueEvent( 0, SE_KEY, K_ESCAPE, 1, 0, nullptr );
 }
 
 /*
@@ -1979,6 +1989,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		image.SaveImageToFile(previewPath.c_str(), previewFormat);
 
 		renderSystem->UnCrop();
+		R_ClearCommandChain( frameData );
 		qglFinish();
 	}
 
@@ -2218,7 +2229,7 @@ idSessionLocal::SavegameValidity idSessionLocal::IsSavegameValid(const char *sav
 
 		RevisionTracker& RevTracker = RevisionTracker::Instance();
 
-		if (savegameVersion != SAVEGAME_VERSION || savegame.GetCodeRevision() != RevTracker.GetHighestRevision())
+		if (savegameVersion != SAVEGAME_VERSION || savegame.GetCodeRevision() != RevTracker.GetSavegameRevision())
 		{
 			common->Warning("Savegame Version mismatch!");
 			retVal = savegame_versionMismatch;
@@ -2527,7 +2538,6 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 		{
 		case LOAD_KEY_START: // Start loading map
 			pct = LOAD_KEY_START_PROGRESS;
-			loadDoneTime = 0;
 			break;
 		case LOAD_KEY_COLLISION_START: // Start loading collision data
 			pct = LOAD_KEY_COLLISION_START_PROGRESS;
@@ -2537,7 +2547,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			break;
 		case LOAD_KEY_SPAWN_ENTITIES_START: // Player spawned, start spawning entities
 			pct = LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS;
-			pct_delta = (LOAD_KEY_ROUTING_START_PROGRESS - LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS)/(float)count;
+			pct_delta = (LOAD_KEY_ROUTING_START_PROGRESS - LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS) / idMath::Fmax(count, 1.0f);
 			break;
 		case LOAD_KEY_SPAWN_ENTITIES_INTERIM: // spawning entities (finer granularity)
 			pct += pct_delta;
@@ -2548,7 +2558,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			break;
 		case LOAD_KEY_ROUTING_START: // entities spawned, start compiling routing data
 			pct = LOAD_KEY_ROUTING_START_PROGRESS;
-			pct_delta = (LOAD_KEY_ROUTING_DONE_PROGRESS - LOAD_KEY_ROUTING_START_PROGRESS)/(float)count;
+			pct_delta = (LOAD_KEY_ROUTING_DONE_PROGRESS - LOAD_KEY_ROUTING_START_PROGRESS) / idMath::Fmax(count, 1.0f);
 			break;
 		case LOAD_KEY_ROUTING_INTERIM: // compiling routing data (finer granularity)
 			pct += pct_delta;
@@ -2566,15 +2576,10 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			// the -35 below guarantees there will be
 			// some time between the loading bar
 			// hitting 100% and the "Mission Loaded / Press Attack" screen
-			pct_delta = (LOAD_KEY_DONE_PROGRESS - LOAD_KEY_IMAGES_START_PROGRESS)/(float)(count-35);
+			pct_delta = (LOAD_KEY_DONE_PROGRESS - LOAD_KEY_IMAGES_START_PROGRESS) / idMath::Fmax(idMath::Fmax(count - 35, count/2.0f), 1.0f);
 			break;
 		case LOAD_KEY_IMAGES_INTERIM: // loading textures (finer granularity)
 			pct += pct_delta;
-			if ( (pct >= 1.00f) && (loadDoneTime == 0))
-			{
-				// 5s delay between load bar at 100% and Mission Start gui display
-				loadDoneTime = Sys_Milliseconds() + 5000;
-			}
 			if ( time - lastPacifierTime < 500 )
 			{
 				return;
@@ -2770,27 +2775,12 @@ void idSessionLocal::Frame() {
 	
 	//nbohr1more: disable SMP for debug render tools
 	if (r_showSurfaceInfo.GetBool() ||
-    g_showEntityInfo.GetBool() ||
-    g_showPVS.GetBool() ||
-    g_showTargets.GetBool() ||
-    g_showTriggers.GetBool() ||
-    g_showCollisionWorld.GetBool() ||
-    g_showCollisionModels.GetBool() ||
-    g_showCollisionTraces.GetBool() ||
-    g_showCollisionAlongView.GetBool() ||	
-	r_showSilhouette.GetBool() || 
-	r_showViewEntitys.GetBool() || 
-	r_showEdges.GetBool() || 
-	r_showViewEntitys.GetBool() ||
-	r_showShadowCount.GetBool() ||
-	r_showLightCount.GetBool() ||
-	r_showDepth.GetBool() ||
-	r_showTris.GetInteger() > 0
-	//||r_showLights.GetInteger() > 0 
+		r_showDepth.GetBool() ||
+        r_materialOverride.GetString()[0] != '\0'
 	) {
-	no_smp = true;
+		no_smp = true;
 	} else {
-	no_smp = false;
+		no_smp = false;
 	}
    
 	// save the screenshot and audio from the last draw if needed
@@ -2989,6 +2979,8 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 	logCmd_t	logCmd;
 	usercmd_t	cmd;
 
+	TRACE_CPU_SCOPE( "RunGameTic" )
+
 	// if we are doing a command demo, read or write from the file
 	if ( cmdDemoFile ) {
 		if ( !cmdDemoFile->Read( &logCmd, sizeof( logCmd ) ) ) {
@@ -3025,13 +3017,6 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 		bool automationRules = Auto_GetUsercmd(cmd);
 	}
 
-	// grayman #3763 - allow "Mission Start" gui if the mission uses it
-	if ( ( loadDoneTime > 0 ) && ( Sys_Milliseconds() > loadDoneTime ) )
-	{
-		game->SetTime2Start();
-		loadDoneTime = 0;
-	}
-	
 	// Obsttorte - check if we should save the game
 
 	idStr saveGameName = game->triggeredSave();
@@ -3045,7 +3030,7 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 		}
 		else
 		{
-			SaveGame(saveGameName.c_str(), false, true);
+			SaveGame(saveGameName.c_str(), true, true);
 		}
 	}
 
@@ -3125,9 +3110,15 @@ Runs game tics and draw call creation in a background thread.
 ===============
 */
 void idSessionLocal::FrontendThreadFunction() {
+	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
+	sys->ThreadStartup();
+
 	while( true ) {
-		double beginLoop = Sys_GetClockTicks();
+		// stgatilov #4550: update FPU props (e.g. NaN exceptions)
+		sys->ThreadHeartbeat();
+
 		{ // lock scope
+			TRACE_CPU_SCOPE_COLOR( "Frontend::Wait", TRACE_COLOR_IDLE )
 			std::unique_lock< std::mutex > lock( signalMutex );
 			// wait for render thread
 			while( !frontendActive && !shutdownFrontend ) {
@@ -3137,14 +3128,9 @@ void idSessionLocal::FrontendThreadFunction() {
 				return;
 			}
 		}
-		double endWaitForRenderThread = Sys_GetClockTicks();
-		double endGameTics = 0, endDraw = 0;
 		try {
 			RunGameTics();
-			endGameTics = Sys_GetClockTicks();
-
 			DrawFrame();
-			endDraw = Sys_GetClockTicks();
 		} catch( std::shared_ptr< ErrorReportedException > e ) {
 			frontendException = e;
 		} 
@@ -3153,15 +3139,6 @@ void idSessionLocal::FrontendThreadFunction() {
 			std::unique_lock< std::mutex > lock( signalMutex );
 			frontendActive = false;
 			signalMainThread.notify_one();
-		}
-		double endSignalRenderThread = Sys_GetClockTicks();
-
-		if( r_logSmpTimings.GetBool() ) {
-			const double TO_MICROS = 1000000 / Sys_ClockTicksPerSecond();
-			frontendTimeWaiting = (endWaitForRenderThread - beginLoop) * TO_MICROS;
-			frontendTimeGameTics = (endGameTics - endWaitForRenderThread) * TO_MICROS;
-			frontendTimeDrawing = (endDraw - endGameTics) * TO_MICROS;
-			frontendTimeSignal = (endSignalRenderThread - endDraw) * TO_MICROS;
 		}
 	}
 }
@@ -3176,11 +3153,6 @@ bool idSessionLocal::IsFrontend() const {
 	return Sys_GetCurrentThreadID() == frontendThread;
 #endif
 #endif
-}
-
-void idSessionLocal::LogFrontendTimings( idFile &logFile ) const {
-	logFile.Printf( "  Frontend: wait for signal %.2f us - gametics %.2f us - drawing %.2f us - signal backend %.2f us\n", 
-		frontendTimeWaiting, frontendTimeGameTics, frontendTimeDrawing, frontendTimeSignal );
 }
 
 /*
@@ -3213,7 +3185,7 @@ Waits for the frontend to finish preparing the next frame.
 */
 void idSessionLocal::WaitForFrontendCompletion() {
 	if( com_smp.GetBool() ) {
-		GL_PROFILE( "WaitForFrontend" );
+		TRACE_CPU_SCOPE_COLOR( "WaitForFrontend", TRACE_COLOR_IDLE );
 		std::unique_lock<std::mutex> lock( signalMutex );
 		if( r_showSmp.GetBool() )
 			backEnd.pc.waitedFor = frontendActive ? 'F' : '.';
@@ -3231,9 +3203,9 @@ void idSessionLocal::WaitForFrontendCompletion() {
 
 void idSessionLocal::StartFrontendThread() {
 	frontendActive = shutdownFrontend = false;
-	//frontendThread = std::thread( &idSessionLocal::FrontendThreadFunction, this );
 	auto func = []( void *x ) -> unsigned int {
 		idSessionLocal* s = (idSessionLocal*)x;
+		TRACE_THREAD_NAME( "Frontend" )
 		s->FrontendThreadFunction();
 		return 0; 
 	};
@@ -3345,6 +3317,8 @@ void idSessionLocal::Init() {
 	cmdSystem->AddCommand( "rescanSI", Session_RescanSI_f, CMD_FL_SYSTEM, "internal - rescan serverinfo cvars and tell game" );
 
 	cmdSystem->AddCommand( "hitch", Session_Hitch_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "hitches the game" );
+
+	cmdSystem->AddCommand( "escape", SimulateEscape_f, CMD_FL_GAME, "simulate a press of the ESC key" );
 
 	// the same idRenderWorld will be used for all games
 	// and demos, insuring that level specific models

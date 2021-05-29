@@ -62,6 +62,7 @@ namespace stdext {
     path current_path();
     void current_path(const path& to);
     path canonical(const path& path);
+    bool equivalent(const path &pathA, const path &pathB);
 
     struct space_info {
         std::uintmax_t capacity;

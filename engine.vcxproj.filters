@@ -1204,9 +1204,6 @@
     <ClInclude Include="renderer\FrameBuffer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\BufferObject.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="game\gamesys\Automation.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
@@ -1218,9 +1215,6 @@
     </ClInclude>
     <ClInclude Include="sound\snd_efxpresets.h">
       <Filter>Sound</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Profiling.h">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="game\FrobHelper.h">
       <Filter>Game</Filter>
@@ -1289,6 +1283,39 @@
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
     <ClInclude Include="framework\LoadStack.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\GamepadInput.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\sys_padinput.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\ParticleSystem_decl.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\ParticleSystem_def.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\ParticleSystem.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\ShadowMapStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\compilers\dmap\earcut.h">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClInclude>
+    <ClInclude Include="tools\compilers\dmap\planargraph.h">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\FrobOutlineStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\Tracing.h">
       <Filter>Framework</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1381,9 +1408,6 @@
       <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="renderer\Cinematic.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_arb2.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_common.cpp">
@@ -1758,16 +1782,10 @@
     <ClCompile Include="tools\compilers\dmap\glfile.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
-    <ClCompile Include="tools\compilers\dmap\leakfile.cpp">
-      <Filter>Tools\Compilers\DMap</Filter>
-    </ClCompile>
     <ClCompile Include="tools\compilers\dmap\map.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
     <ClCompile Include="tools\compilers\dmap\optimize.cpp">
-      <Filter>Tools\Compilers\DMap</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\compilers\dmap\optimize_gcc.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
     <ClCompile Include="tools\compilers\dmap\output.cpp">
@@ -2944,9 +2962,6 @@
     <ClCompile Include="renderer\draw_stencil.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\BufferObject.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="game\gamesys\Automation.cpp">
       <Filter>Game\GameSys</Filter>
     </ClCompile>
@@ -2955,9 +2970,6 @@
     </ClCompile>
     <ClCompile Include="sound\snd_efxpresets.cpp">
       <Filter>Sound</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Profiling.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="game\FrobHelper.cpp">
       <Filter>Game</Filter>
@@ -3026,6 +3038,36 @@
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="framework\LoadStack.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\GamepadInput.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\sys_padinput.cpp">
+      <Filter>Sys</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ShadowMapStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\ParticleSystem.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\dmap\earcut.cpp">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClCompile>
+    <ClCompile Include="tools\compilers\dmap\planargraph.cpp">
+      <Filter>Tools\Compilers\DMap</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\sys_cpu.cpp">
+      <Filter>Sys</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\FrobOutlineStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\Tracing.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
   </ItemGroup>

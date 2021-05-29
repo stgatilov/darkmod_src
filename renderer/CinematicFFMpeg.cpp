@@ -179,7 +179,10 @@ public:
 	{
 		VFSIOContext* self = static_cast<VFSIOContext*>(opaque);
 
-		return self->_file->Read(buf, buf_size);
+		int bytes = self->_file->Read(buf, buf_size);
+		if (bytes == 0 && buf_size > 0)
+			return AVERROR_EOF;
+		return bytes;
 	}
 
 	static int64_t seek(void *opaque, int64_t offset, int whence)

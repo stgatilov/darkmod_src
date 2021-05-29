@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1506,66 +1506,22 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				idStr fileExt;
 				token.ExtractFileExtension( fileExt );
-				newStage.GLSL = fileExt.Icmp( "vfp" ) != 0;// || r_forceGlslPrograms.GetBool();
-#if 0
-				if ( newStage.GLSL ) {
-					token.StripFileExtension();
-					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-					newStage.vertexProgram = newStage.fragmentProgram = INT_MAX;
-					//newStage.vertexProgram = newStage.fragmentProgram =	R_FindGLSLProgram( token );
-				}
-				else {
-					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
-					newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
-				}
-#else // debug: allow switch on the fly
-				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
-				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
 				token.StripFileExtension();
 				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-#endif
 			}
 			continue;
 		}
 		else if ( !token.Icmp( "fragmentProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-#if 0
-				if (r_forceGlslPrograms.GetBool()) {
-					newStage.GLSL = true;
-					token.StripFileExtension();
-					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-					newStage.fragmentProgram = INT_MAX;
-					//newStage.fragmentProgram = R_FindGLSLProgram( token );
-				}
-				else {
-					newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
-				}
-#else // debug: allow switch on the fly
-				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
 				token.StripFileExtension();
 				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-#endif
 			}
 			continue;
 		}
 		else if ( !token.Icmp( "vertexProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
-#if 0
-				if (r_forceGlslPrograms.GetBool()) {
-					newStage.GLSL = true;
-					token.StripFileExtension();
-					newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-					newStage.vertexProgram = INT_MAX;
-					//newStage.vertexProgram = R_FindGLSLProgram( token );
-				}
-				else {
-					newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
-				}
-#else // debug: allow switch on the fly
-				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
 				token.StripFileExtension();
 				newStage.glslProgram = GLSL_LoadMaterialStageProgram( token );
-#endif	
 			}
 			continue;
 		}
@@ -1599,7 +1555,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 	}
 
 	// if we are using newStage, allocate a copy of it
-	if ( newStage.fragmentProgram || newStage.vertexProgram || newStage.glslProgram ) {
+	if ( newStage.glslProgram ) {
 		ss->newStage = (newShaderStage_t *)Mem_Alloc( sizeof( newStage ) );
 		*(ss->newStage) = newStage;
 	}
@@ -2553,7 +2509,7 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 	registers[EXP_REG_PARM8] = shaderParms[8];
 	registers[EXP_REG_PARM9] = shaderParms[9];
 	registers[EXP_REG_PARM10] = shaderParms[10];
-	registers[EXP_REG_PARM11] = r_newFrob ? 0 : shaderParms[11]; // duzenko: temporary frob override
+	registers[EXP_REG_PARM11] = r_newFrob.GetInteger() ? 0 : shaderParms[11]; // duzenko: temporary frob override
 	registers[EXP_REG_GLOBAL0] = view->renderView.shaderParms[0];
 	registers[EXP_REG_GLOBAL1] = view->renderView.shaderParms[1];
 	registers[EXP_REG_GLOBAL2] = view->renderView.shaderParms[2];
@@ -2872,4 +2828,15 @@ void idMaterial::ReloadImages( bool force ) const {
 			stages[i].texture.image->Reload( false, force );
 		}
 	}
+}
+
+bool idMaterial::HasMirrorLikeStage() const {
+	if (!HasSubview())
+		return false;
+	for (int i = 0; i < numStages; i++) {
+		dynamicidImage_t dyn = stages[i].texture.dynamic;
+		if (dyn == DI_MIRROR_RENDER || dyn == DI_XRAY_RENDER || dyn == DI_REMOTE_RENDER)
+			return true;
+	}
+	return false;
 }

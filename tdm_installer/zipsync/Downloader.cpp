@@ -7,11 +7,29 @@
 #undef min
 #undef max
 
+struct SpeedProfile {
+    //try to avoid CURL requests of total size less than this
+    int maxRequestSize;
+    //forbid multipart requests with more that this number of chunks
+    int maxPartsPerRequest;
+    //drop request after X seconds of very slow download (CURLOPT_LOW_SPEED_TIME)
+    int lowSpeedTime;
+    //stop trying to connect after X seconds (CURLOPT_CONNECTTIMEOUT)
+    int connectTimeout;
+};
 
-//try to avoid CURL requests of total size less than this
-static const int DESIRED_REQUEST_SIZE = 10<<20;
-//forbid multipart requests with more that this number of chunks
-static const int MAX_PARTS_PER_REQUEST = 20;
+//if request fails due to timeout, we retry it with progressively softer limits
+static const SpeedProfile SPEED_PROFILES[] = {
+    {10<<20, 20, 10, 10},
+    {1<<20, 5, 10, 10},
+    {1<<20, 1, 10, 30},
+    {256<<10, 1, 60, 60}
+};
+static const int SPEED_PROFILES_NUM = sizeof(SPEED_PROFILES) / sizeof(SPEED_PROFILES[0]);
+
+//download is slower than X bytes per second => halt as too slow (CURLOPT_LOW_SPEED_LIMIT)
+static const int LOW_SPEED_LIMIT = 1000;
+
 //overhead per download in bytes --- for progress callback only
 static const int ESTIMATED_DOWNLOAD_OVERHEAD = 100;
 
@@ -40,6 +58,15 @@ void Downloader::EnqueueDownload(const DownloadSource &source, const DownloadFin
 void Downloader::SetProgressCallback(const GlobalProgressCallback &progressCallback) {
     _progressCallback = progressCallback;
 }
+void Downloader::SetErrorMode(bool silent) {
+    _silentErrors = silent;
+}
+void Downloader::SetUserAgent(const char *useragent) {
+    if (useragent)
+        _useragent.reset(new std::string(useragent));
+    else
+        _useragent.reset();
+}
 
 void Downloader::DownloadAll() {
     if (_progressCallback)
@@ -59,7 +86,15 @@ void Downloader::DownloadAll() {
 
     for (const auto &pKV : _urlStates) {
         std::string url = pKV.first;
-        DownloadAllForUrl(url);
+        try {
+            DownloadAllForUrl(url);
+        }
+        catch(const ErrorException &e) {
+            if (!_silentErrors)
+                throw e;    //rethrow further to caller
+            else
+                {}          //supress exception, continue with other urls
+        }
     }
 
     ZipSyncAssert(_curlHandle.get_deleter() == curl_easy_cleanup);
@@ -74,29 +109,48 @@ void Downloader::DownloadAllForUrl(const std::string &url) {
     int n = state.downloadsIds.size();
 
     while (state.doneCnt < n) {
+        ZipSyncAssertF(state.speedProfile < SPEED_PROFILES_NUM, "Repeated timeout on URL %s", url.c_str());
+        const SpeedProfile &profile = SPEED_PROFILES[state.speedProfile];
+
         uint64_t totalSize = 0;
         int rangesCnt = 0;
         int end = state.doneCnt;
         uint32_t last = UINT32_MAX;
         std::vector<int> ids;
-        do {
-            int idx = state.downloadsIds[end++];
+        while (end < n) {
+            int idx = state.downloadsIds[end];
             const Download &down = _downloads[idx];
+            //estimate quantities if we add this download
+            uint64_t newTotalSize = totalSize + (down.src.byterange[1] - down.src.byterange[0]);
+            int newRangesCnt = rangesCnt + (last != down.src.byterange[0]);
+            //stop before this download if some limit will be exceeded
+            //but only if we have added at least once download already
+            if (ids.size() > 0 && (newRangesCnt > profile.maxPartsPerRequest || newTotalSize > profile.maxRequestSize))
+                break;
+            //add this download to request
+            end++;
             ids.push_back(idx);
-            totalSize += down.src.byterange[1] - down.src.byterange[0];
-            rangesCnt += (last != down.src.byterange[0]);
             last = down.src.byterange[1];
-        } while (end < n && rangesCnt < MAX_PARTS_PER_REQUEST && totalSize < DESIRED_REQUEST_SIZE);
+            totalSize = newTotalSize;
+            rangesCnt = newRangesCnt;
+        }
 
-        DownloadOneRequest(url, ids);
+        bool ok = DownloadOneRequest(url, ids, profile.lowSpeedTime, profile.connectTimeout);
 
-        state.doneCnt = end;
+        if (ok) {
+            state.doneCnt = end;
+            state.speedProfile = 0;
+        }
+        else {
+            //soft fail: retry with less strict limits
+            state.speedProfile++;
+        }
     }
 }
 
-void Downloader::DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds) {
+bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime, int connectTimeout) {
     if (downloadIds.empty())
-        return;
+        return true;
 
     std::vector<std::pair<uint32_t, uint32_t>> coaslescedRanges;
     for (int idx : downloadIds) {
@@ -163,6 +217,8 @@ void Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     _currResponse->url = url;
     _currResponse->progressWeight = double(thisEstimate) / totalEstimate;
     CURL *curl = _curlHandle.get();
+    if (_useragent)
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, _useragent->c_str());
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_RANGE, byterangeStr.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (curl_write_callback)write_callback);
@@ -172,13 +228,23 @@ void Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, (curl_xferinfo_callback)xferinfo_callback);
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, lowSpeedTime);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connectTimeout);
     UpdateProgress();
     CURLcode ret = curl_easy_perform(curl);
     long httpRes = 0;
     if (ret == CURLE_ABORTED_BY_CALLBACK)
         g_logger->errorf(lcUserInterrupt, "Interrupted by user");
+    if (ret == CURLE_OPERATION_TIMEDOUT) {
+        g_logger->warningf(lcDownloadTooSlow,
+            "Timeout for request with %d segments of total size %lld on URL %s",
+            int(downloadIds.size()), thisEstimate, url.c_str()
+        );
+        return false;   //soft fail: retry is welcome
+    }
     curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &httpRes);
-    ZipSyncAssertF(httpRes != 404, "not found result for URL %s", url.c_str());
+    ZipSyncAssertF(httpRes != 404, "Not found result for URL %s", url.c_str());
     ZipSyncAssertF(ret != CURLE_WRITE_ERROR, "Response without byteranges for URL %s", url.c_str());
     ZipSyncAssertF(ret == CURLE_OK, "Unexpected CURL error %d on URL %s", ret, url.c_str());
     ZipSyncAssertF(httpRes == 200 || httpRes == 206, "Unexpected HTTP return code %d for URL %s", httpRes, url.c_str());
@@ -223,6 +289,8 @@ void Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
         }
         _downloads[idx].finishedCallback(answer.data(), answer.size());
     }
+
+    return true;
 }
 
 void Downloader::BreakMultipartResponse(const CurlResponse &response, std::vector<CurlResponse> &parts) {

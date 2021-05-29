@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -123,6 +123,21 @@ static void SetBrushContents( uBrush_t *b ) {
 	b->contents = contents;
 }
 
+static void CheckBrushMirrorSides( uBrush_t *b ) {
+	idList<const idMaterial *> mirrorMaterials;
+
+	for (int i = 0 ; i < buildBrush->numsides ; i++) {
+		const idMaterial *mat = buildBrush->sides[i].material;
+		if (!mat->HasMirrorLikeStage())
+			continue;
+
+		if (mirrorMaterials.Find(mat)) {
+			common->Warning("Brush %d (entity %d) has several sides with same mirror-like material %s", buildBrush->brushnum, buildBrush->entitynum, mat->GetName());
+			return;
+		}
+		mirrorMaterials.Append(mat);
+	}
+}
 
 //============================================================================
 
@@ -317,6 +332,10 @@ static void ParseBrush( const idMapBrush *mapBrush, int primitiveNum ) {
 	if ( !RemoveDuplicateBrushPlanes( buildBrush ) ) {
 		return;
 	}
+
+	//stgatilov #4707: warn when brush has several sides with same "mirror" texture
+	//since the engine only chooses one of them to determine mirror plane
+	CheckBrushMirrorSides(buildBrush);
 
 	// get the content for the entire brush
 	SetBrushContents( buildBrush );
@@ -525,7 +544,9 @@ bool LoadDMapFile( const char *filename ) {
 		return false;
 	}
 
-	dmapGlobals.mapPlanes.Clear();
+	int primitivesNum = dmapGlobals.dmapFile->GetTotalPrimitivesNum();
+	int capacity = idMath::Imax(1024, idMath::CeilPowerOfTwo(primitivesNum));
+	dmapGlobals.mapPlanes.Init( capacity, capacity );
 	dmapGlobals.mapPlanes.SetGranularity( 1024 );
 
 	// process the canonical form into utility form

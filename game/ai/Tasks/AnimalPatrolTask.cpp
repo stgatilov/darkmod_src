@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -82,28 +82,28 @@ bool AnimalPatrolTask::Perform(Subsystem& subsystem)
 	switch (_state) 
 	{
 		case stateNone: 
-			// gameRenderWorld->DrawText("Choosing", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugText("Choosing", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			chooseNewState(owner);
 			break;
 		case stateMovingToNextSpot:
-			// gameRenderWorld->DrawText("MovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugText("MovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			// gameRenderWorld->DebugArrow(colorYellow, owner->GetPhysics()->GetOrigin(), owner->GetMoveDest(), 0, 64);
 			movingToNextSpot(owner);
 			break;
 		case stateMovingToNextPathCorner: 
-			// gameRenderWorld->DrawText("MovingToNextCorner", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugText("MovingToNextCorner", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			movingToNextPathCorner(owner);
 			break;
 		case stateDoingSomething: 
-			// gameRenderWorld->DrawText("DoingSomething", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugText("DoingSomething", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			switchToState(stateWaiting, owner);
 			break;
 		case stateWaiting:
-			// gameRenderWorld->DrawText("Waiting", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugText("Waiting", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			waiting(owner);
 			break;
 		case statePreMovingToNextSpot: // grayman #2356 - don't spend so much time waiting; go somewhere
-			// gameRenderWorld->DrawText("PreMovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
+			// gameRenderWorld->DebugText("PreMovingToNextSpot", owner->GetPhysics()->GetOrigin(), 0.6f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 32);
 			switchToState(stateMovingToNextSpot,owner);
 			break;
 		default:

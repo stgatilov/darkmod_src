@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #pragma once
 
 #include <string>
@@ -55,10 +69,10 @@ public:
 	//finalize update (cleanup, manifest, unpacking, etc.)
 	static void PerformInstallFinalize(ZipSync::ProgressIndicator *progress);
 
-	//check if TDM config file is present
-	static bool CanDeleteConfig();
-	//delete TDM config file
-	static void DoDeleteConfig();
+	//did we rename darkmod.cfg to some file?
+	static bool CanRestoreOldConfig();
+	//restores old version of darkmod.cfg which was renamed automatically
+	static void DoRestoreOldConfig();
 
 	//return true if TDM shortcut is already present on Desktop
 	static bool IfShortcutExists();

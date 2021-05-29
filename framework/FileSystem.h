@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __FILESYSTEM_H__
@@ -184,6 +184,8 @@ public:
 	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL ) = 0;
 							// Opens a file for reading.
     virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL ) = 0;
+							// Prefetches the entire file to memory and returns an in-memory file object
+	virtual idFile *		OpenFileReadPrefetch( const char *relativePath, const char *gamedir = NULL ) = 0;
 							// Opens a file for writing, will create any needed subdirectories.
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) = 0;
 							// Opens a file for writing at the end.

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // Copyright (C) 2004 Id Software, Inc.
@@ -434,8 +434,8 @@ void idClass::Shutdown( void ) {
 	for( c = typelist; c != NULL; c = c->next ) {
 		c->Shutdown();
 	}
-	types.Clear();
-	typenums.Clear();
+	types.ClearFree();
+	typenums.ClearFree();
 
 	initialized = false;
 }
@@ -1066,18 +1066,6 @@ void idClass::Event_Remove( void )
 		}
 	}
 	
-	CGrabber* grabber = gameLocal.m_Grabber;
-	if (grabber)
-	{
-		// tels: If we remove a currently grabbed entity,
-		// force the grabber to forget it
-		idEntity *ent = grabber->GetSelected();
-		if (ent == this)
-		{
-			grabber->Forget( ent );
-		}
-	}
-
 	// grayman #4603 - If we are currently being pushed, tell the
 	// player we don't exist any more. As far as I can tell, 
 	// m_pushedBy.GetEntity() is always the player. But we have

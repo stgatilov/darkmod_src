@@ -36,7 +36,8 @@ if 'windows' in sysname:
     is64bit = (check_msvc_env()[1] == 'x64')
     arch = ('x86_64' if is64bit else 'x86')
     build_arch('Visual Studio', arch, runtime='MT') #, buildtype='RelWithDebInfo')
-    build_arch('Visual Studio', arch, runtime='MTd', buildtype='Debug', options={'with_headeronly':False,'with_releaseonly':False})
+    # build release with debug CRT (optimized non-debuggable but compatible with debug builds)
+    build_arch('Visual Studio', arch, runtime='MTd', options={'with_headeronly':False,'with_releaseonly':False})
 else:
     build_arch('gcc', 'x86_64', libcxx='libstdc++')
     build_arch('gcc', 'x86', libcxx='libstdc++')

@@ -1,31 +1,17 @@
-/*
-===========================================================================
+/*****************************************************************************
+The Dark Mod GPL Source Code
 
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2012 Robert Beckebans
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
+******************************************************************************/
 #include "../../idlib/precompiled.h"
 #include "../posix/posix_public.h"
 #include "../sys_local.h"
@@ -77,26 +63,6 @@ const char* Sys_EXEPath()
 		// RB end
 	}
 	return buf;
-}
-
-/*
-===============
-Sys_GetProcessorId
-===============
-*/
-cpuid_t Sys_GetProcessorId()
-{
-	return CPUID_GENERIC;
-}
-
-/*
-===============
-Sys_GetProcessorString
-===============
-*/
-const char* Sys_GetProcessorString()
-{
-	return "generic";
 }
 
 /*
@@ -369,56 +335,6 @@ void Sys_DoStartProcess( const char* exeName, bool dofork )
  ==================
  */
 void Sys_DoPreferences() { }
-
-#if 0
-/*
-================
-Sys_FPU_SetDAZ
-================
-*/
-void Sys_FPU_SetDAZ( bool enable )
-{
-	/*
-	DWORD dwData;
-	
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 6
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<6)	// clear DAX bit
-		or		eax, ecx		// set the DAZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
-	*/
-}
-
-/*
-================
-Sys_FPU_SetFTZ
-================
-*/
-void Sys_FPU_SetFTZ( bool enable )
-{
-	/*
-	DWORD dwData;
-	
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 15
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<15)	// clear FTZ bit
-		or		eax, ecx		// set the FTZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
-	*/
-}
-#endif
 
 /*
 ===============

@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #version 140
 // !!ARBfp1.0 
 
@@ -51,6 +65,7 @@ void main() {
 	origCoord = (u_scalePotToWindow) * (u_scaleWindowToUnit);                                           //MUL		origCoord, program.env[0], program.env[1];		
 	origCoord = (origCoord) * (gl_FragCoord.xyxy);                                                      //MUL		origCoord, origCoord, fragment.position.xyxy;	
 	altCoord.xy = (R0.xy) - (origCoord.xy);                                                             //SUB	  	altCoord.xy, R0, origCoord; 	
+	altCoord.zw = vec2(0.0);    //stgatilov: avoid uninitialized warning
 	altCoord = (origCoord) + (-altCoord);                                                               //ADD   	altCoord, origCoord, -altCoord;	
 	altColor = texture(u_texture0, altCoord.xy);                                                        //TEX   	altColor, altCoord, texture[0], 2D;
 	

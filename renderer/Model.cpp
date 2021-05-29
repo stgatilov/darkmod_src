@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -558,13 +558,6 @@ int idRenderModelStatic::NearestJoint( int surfaceNum, int a, int b, int c ) con
 //=====================================================================
 
 
-idCVar r_tempFixBoundsOfParticleDeformedSurfs(
-	"r_tempFixBoundsOfParticleDeformedSurfs", "0", CVAR_BOOL | CVAR_RENDERER,
-	"Bounding box for particle-emitting surfaces is wrong. "
-	"This cvar makes it wrong in different way =)"
-	"Note: only for temporary testing, should be removed soon!"
-);
-
 /*
 ================
 idRenderModelStatic::FinishSurfaces
@@ -662,6 +655,7 @@ void idRenderModelStatic::FinishSurfaces() {
 	}
 
 	// clean the surfaces
+	const char *modelname = this->name.c_str();
 	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
 		const modelSurface_t	*surf = &surfaces[i];
 
@@ -705,42 +699,25 @@ void idRenderModelStatic::FinishSurfaces() {
 			case DFRM_PARTICLE:
 			case DFRM_PARTICLE2:
 			{
-				// expand surface bounds to include any emitted particles
-				// Note that this is an approximation. True bounds could be
-				// calculated by simulating R_ParticleDeform().
+				// stgatilov: this is some interval math which computes provably correct bounds
 				srfTriangles_t *tri = surf->geometry;
 				const idDeclParticle *particleSystem = (idDeclParticle *)surf->material->GetDeformDecl();
-				if ( r_tempFixBoundsOfParticleDeformedSurfs.GetBool() == 0 )
-					// duzenko & stgatilov 2.08: seems generally broken.
-					tri->bounds.AddBounds(particleSystem->bounds);
-				else {
-					// stgatilov: this is a bit of straightforward interval math
-					// does not work properly when there is gravity or worldAxis
-					idBounds csysBounds[4];
-					for (int l = 0; l < 4; l++)
-						csysBounds[l].Clear();
-					for (int v = 0; v < tri->numVerts; v++) {
-						csysBounds[0].AddPoint(tri->verts[v].tangents[0]);
-						csysBounds[1].AddPoint(tri->verts[v].tangents[1]);
-						csysBounds[2].AddPoint(tri->verts[v].normal);
-						csysBounds[3].AddPoint(tri->verts[v].xyz);
-					}
-					idBounds sum = csysBounds[3];
-					for (int l = 0; l < 3; l++) {
-						float minCoeff = particleSystem->bounds[0][l];
-						float maxCoeff = particleSystem->bounds[1][l];
-						idBounds scaled;
-						scaled.Clear();
-						scaled.AddPoint(minCoeff * csysBounds[l][0]);
-						scaled.AddPoint(maxCoeff * csysBounds[l][0]);
-						scaled.AddPoint(minCoeff * csysBounds[l][1]);
-						scaled.AddPoint(maxCoeff * csysBounds[l][1]);
-						sum[0] += scaled[0];
-						sum[1] += scaled[1];
-					}
-					assert( sum.ContainsPoint(tri->bounds[0]) && sum.ContainsPoint(tri->bounds[1]) );
-					tri->bounds = sum;
+
+				idBounds csysBounds[4];
+				idParticle_AnalyzeSurfaceEmitter(tri, csysBounds);
+
+				idBounds fullBounds;
+				fullBounds.Clear();
+				//the rest is done on per-stage basis
+				for (int i = 0; i < particleSystem->stages.Num(); i++) {
+					idParticleStage &stg = *particleSystem->stages[i];
+					idBounds bounds = idParticle_GetStageBoundsDeform(stg, stg.stdBounds, csysBounds);
+					assert(bounds.ContainsPoint(tri->bounds[0]) && bounds.ContainsPoint(tri->bounds[1]));
+					//unify bounding boxes of all stages
+					fullBounds.AddBounds(bounds);
 				}
+
+				tri->bounds = fullBounds;
 				break;
 			}
 			default:
@@ -1288,6 +1265,9 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		}
 	}
 
+	int totalPolysCount = 0;
+	int nontriPolysCount = 0;
+
 	// build the surfaces
 	for ( lwoSurf = lwo->surf, i = 0; lwoSurf; lwoSurf = lwoSurf->next, i++ ) {
 		im1 = declManager->FindMaterial( lwoSurf->name );
@@ -1330,8 +1310,9 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 				continue;
 			}
 
+			totalPolysCount++;
 			if ( poly->nverts != 3 ) {
-				common->Warning( "ConvertLWOToModelSurfaces: model \'%s\' has too many verts for a poly! Make sure you triplet it down", name.c_str() );
+				nontriPolysCount++;
 				continue;
 			}
 
@@ -1455,6 +1436,13 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		}
 	}
 
+	if (nontriPolysCount > 0) {
+		common->Warning(
+			"ConvertLWOToModelSurfaces: model \'%s\' has %d/%d nontriangular polygons. Make sure you triplet it down",
+			name.c_str(), nontriPolysCount, totalPolysCount
+		);
+	}
+
 	R_StaticFree( tvRemap );
 	R_StaticFree( vRemap );
 	R_StaticFree( tvList );
@@ -1482,6 +1470,9 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 	ase->objects.Resize( obj->nlayers, obj->nlayers );
 
 	int materialRef = 0;
+
+	int totalPolysCount = 0;
+	int nontriPolysCount = 0;
 
 	for ( lwSurface *surf = obj->surf; surf; surf = surf->next ) {
 
@@ -1559,8 +1550,9 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 				continue;
 			}
 
+			totalPolysCount++;
 			if ( poly->nverts != 3 ) {
-				common->Warning( "ConvertLWOToASE: model \'%s\' has too many verts for a poly! Make sure you triplet it down", fileName );
+				nontriPolysCount++;
 				continue;
 			}
 	
@@ -1625,6 +1617,13 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 		memcpy( newFaces, mesh->faces, sizeof( mesh->faces[0] ) * mesh->numFaces );
 		Mem_Free( mesh->faces );
 		mesh->faces = newFaces;
+	}
+
+	if (nontriPolysCount > 0) {
+		common->Warning(
+			"ConvertLWOToASE: model \'%s\' has %d/%d nontriangular polygons. Make sure you triplet it down",
+			name.c_str(), nontriPolysCount, totalPolysCount
+		);
 	}
 
 	return ase;
@@ -2251,7 +2250,7 @@ void idRenderModelStatic::PurgeModel() {
 			R_FreeStaticTriSurf( surf->geometry );
 		}
 	}
-	surfaces.Clear();
+	surfaces.ClearFree();
 
 	purged = true;
 }

@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __MATERIAL_H__
@@ -175,18 +175,14 @@ static const int	MAX_FRAGMENT_IMAGES = 8;
 static const int	MAX_VERTEX_PARMS = 4;
 
 typedef struct {
-	int					vertexProgram;
 	int					numVertexParms;
 	int					vertexParms[MAX_VERTEX_PARMS][4];	// evaluated register indexes
 
-	int					fragmentProgram;
 	int					numFragmentProgramImages;
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 
 	//idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 
-	bool				GLSL;
-	//stgatilov: trying to use new shader framework
 	GLSLProgram			*glslProgram;
 } newShaderStage_t;
 
@@ -388,6 +384,9 @@ public:
 						// returns true if the material will generate another view, either as
 						// a mirror or dynamic rendered image
 	bool				HasSubview( void ) const { return hasSubview; }
+
+						// stgatilov: true if some texture stage works like mirror surface
+	bool				HasMirrorLikeStage() const;
 
 						// returns true if the material will generate shadows, not making a
 						// distinction between global and no-self shadows

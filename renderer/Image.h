@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -381,6 +381,7 @@ public:
 	idImage *			scratchImage2;
 	idImage *			accumImage;
 	idImage *			currentRenderImage;			// for SS_POST_PROCESS shaders
+	idImage *			guiRenderImage;
 	idImage *			scratchCubeMapImage;
 	//idImage *			specularTableImage;			// 1D intensity texture with our specular function
 	//idImage *			specular2DTableImage;		// 2D intensity texture with our specular function with variable specularity
@@ -455,6 +456,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME
 // pic is in top to bottom raster format
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
 void R_MakeAmbientMap( MakeAmbientMapParam param );
+void R_LoadImageData( idImage &image );
 
 /*
 ====================================================================

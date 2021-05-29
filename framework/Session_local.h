@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __SESSIONLOCAL_H__
@@ -202,7 +202,6 @@ public:
 
 	float				pct;					// grayman #3763 - used by PacifierUpdate()
 	float				pct_delta;				// grayman #3763 - used by PacifierUpdate()
-	int					loadDoneTime;			// grayman #3763 - used by PacifierUpdate()
 
 	// we don't want to redraw the loading screen for every single
 	// console print that happens
@@ -290,14 +289,9 @@ public:
 	volatile bool		frontendActive;
 	volatile bool		shutdownFrontend;
 	std::shared_ptr<ErrorReportedException> frontendException;
-	double				frontendTimeWaiting;
-	double				frontendTimeGameTics;
-	double				frontendTimeDrawing;
-	double				frontendTimeSignal;
 
 	void				FrontendThreadFunction();
 	bool				IsFrontend() const;
-	void				LogFrontendTimings( idFile& logFile ) const;
 
 	//=====================================
 	void				Clear();

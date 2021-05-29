@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __RENDERWORLD_H__
@@ -363,6 +363,10 @@ public:
 	virtual	void			SetPortalState( qhandle_t portal, int blockingBits ) = 0;
 	virtual int				GetPortalState( qhandle_t portal ) = 0;
 
+	// stgatilov #5462: returns the plane of the portal, oriented arbitrarily
+	// used to ensure that the origin of door sound is on the right side 
+	virtual idPlane			GetPortalPlane( qhandle_t portal ) = 0;
+
 	// grayman #3042 - set portal sound loss (in dB)
 	virtual void			SetPortalPlayerLoss( qhandle_t portal, float loss ) = 0;
 
@@ -464,7 +468,7 @@ public:
 	virtual void			DebugPolygon( const idVec4 &color, const idWinding &winding, const int lifeTime = 0, const bool depthTest = false ) = 0;
 
 	// Text drawing for debug visualization.
-	virtual void			DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false ) = 0;
+	virtual void			DebugText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false ) = 0;
 };
 
 #endif /* !__RENDERWORLD_H__ */

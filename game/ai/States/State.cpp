@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1219,8 +1219,8 @@ bool State::Check4NearbyBodies(idEntity* stimSource, idAI* owner)
 
 	idBounds box = idBounds(idVec3(-128.0f, -128.0f, -40.0f), idVec3(128.0f, 128.0f, 88.0f));
 	box.TranslateSelf(weapon->GetPhysics()->GetOrigin());
-	idEntity* ents[MAX_GENTITIES];
-	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents, MAX_GENTITIES);
+	idClip_EntityList ents;
+	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents);
 
 	for ( int i = 0; i < num; i++ )
 	{
@@ -4168,13 +4168,13 @@ bool State::SomeoneNearDoor(idAI* owner, CFrobDoor* door)
 {
 	int num;
 	idEntity* candidate;
-	idClipModel* clipModels[ MAX_GENTITIES ];
 
 	idVec3 doorCenter = door->GetClosedBox().GetCenter();
 	idBounds doorBounds(idVec3(doorCenter.x - PERSON_NEAR_DOOR, doorCenter.y - PERSON_NEAR_DOOR, doorCenter.z - 50),
 						idVec3(doorCenter.x + PERSON_NEAR_DOOR, doorCenter.y + PERSON_NEAR_DOOR, doorCenter.z + 50));
 	
-	num = gameLocal.clip.ClipModelsTouchingBounds( doorBounds, MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	idClip_ClipModelList clipModels;
+	num = gameLocal.clip.ClipModelsTouchingBounds( doorBounds, MASK_MONSTERSOLID, clipModels );
 	for ( int i = 0 ; i < num ; i++ )
 	{
 		candidate = clipModels[i]->GetEntity();

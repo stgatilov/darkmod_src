@@ -36,6 +36,8 @@ typedef std::function<int(double, const char*)> GlobalProgressCallback;
  * Utilizes multipart byteranges requests to download many chunks quickly.
  */
 class Downloader {
+    bool _silentErrors = false;
+    std::unique_ptr<std::string> _useragent;
     struct Download {
         DownloadSource src;
         DownloadFinishedCallback finishedCallback;
@@ -45,6 +47,7 @@ class Downloader {
     struct UrlState {
         int doneCnt = 0;
         std::vector<int> downloadsIds;      //sorted by starting offset
+        int speedProfile = 0;               //index in SPEED_PROFILES
     };
     std::map<std::string, UrlState> _urlStates;
 
@@ -72,13 +75,17 @@ public:
 
     void EnqueueDownload(const DownloadSource &source, const DownloadFinishedCallback &finishedCallback);
     void SetProgressCallback(const GlobalProgressCallback &progressCallback);
+    //silent == false: throw exception on any error up to the caller, stopping the whole run
+    //silent == true: just don't call callback function for failed requests (grouped by url), no stopping, no exception
+    void SetErrorMode(bool silent);
+    void SetUserAgent(const char *useragent = nullptr);
     void DownloadAll();
 
     int64_t TotalBytesDownloaded() const { return _totalBytesDownloaded; }
 
 private:
     void DownloadAllForUrl(const std::string &url);
-    void DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds);
+    bool DownloadOneRequest(const std::string &url, const std::vector<int> &downloadIds, int lowSpeedTime, int connectTimeout);
     void BreakMultipartResponse(const CurlResponse &response, std::vector<CurlResponse> &parts);
     int UpdateProgress();
     size_t BytesToTransfer(const Download &download);

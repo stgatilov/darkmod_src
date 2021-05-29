@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -1010,11 +1010,11 @@ void idAFEntity_Base::Think( void )
 		af.ChangePose( this, gameLocal.time );
 
 		// copied from idAI::PushWithAF
-		afTouch_t touchList[ MAX_GENTITIES ];
-		idEntity *pushed_ents[ MAX_GENTITIES ];
+		idClip_afTouchList touchList;
+		idClip_EntityList pushed_ents;
 		idEntity *ent;
 		idVec3 vel( vec3_origin );
-		int num_pushed(0), i, j;
+		int i, j;
 
 		int num = af.EntitiesTouchingAF( touchList );
 		for( i = 0; i < num; i++ ) 
@@ -1024,15 +1024,15 @@ void idAFEntity_Base::Think( void )
 				continue;
 
 			// make sure we havent pushed this entity already.  this avoids causing double damage
-			for( j = 0; j < num_pushed; j++ ) 
+			for( j = 0; j < pushed_ents.Num(); j++ ) 
 			{
 				if ( pushed_ents[ j ] == touchList[ i ].touchedEnt )
 					break;
 			}
-			if ( j >= num_pushed ) 
+			if ( j >= pushed_ents.Num() ) 
 			{
 				ent = touchList[ i ].touchedEnt;
-				pushed_ents[num_pushed++] = ent;
+				pushed_ents.AddGrow(ent);
 				vel = ent->GetPhysics()->GetAbsBounds().GetCenter() - touchList[ i ].touchedByBody->GetWorldOrigin();
 				vel.Normalize();
 				ent->ApplyImpulse( this, touchList[i].touchedClipModel->GetId(), ent->GetPhysics()->GetOrigin(), cv_ai_bumpobject_impulse.GetFloat() * vel );

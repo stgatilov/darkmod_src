@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -107,7 +107,7 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 	if( cv_melee_state_debug.GetBool() )
 	{
 		idStr debugText = "MeleeAction: Ready";
-		gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+		gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 	}
 
 	// TODO: Cache these rather than calc. every frame?
@@ -201,7 +201,7 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Attack, Phase: Preparing";
-			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		}
 		// don't do anything, animation will update melee status to holding when it reaches the hold point
 		// FIX: Some animations don't have a hold point and just go straight through
@@ -221,7 +221,7 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Attack, Phase: Holding";
-			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		}
 		
 		// wait some finite time before releasing (for difficulty tweaking)
@@ -237,7 +237,7 @@ void MeleeCombatTask::PerformAttack(idAI* owner)
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Attack, Phase: Executing/Recovering";
-			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		}
 
 		// check if animation is finished (script will set this when it is)
@@ -284,7 +284,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Parry, Phase: Preparing";
-			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		}
 
 		// wait until done with initial delay, then start the animation
@@ -310,7 +310,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Parry, Phase: Holding";
-			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		}
 
 		// Decide whether to keep holding the parry or to release
@@ -338,7 +338,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 			if( cv_melee_state_debug.GetBool() )
 			{
 				idStr debugText = va("Parry Waiting for: %d [ms]", (gameLocal.time - enemyStatus.m_PhaseChangeTime) );
-				gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-40), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+				gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-40), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 			}
 			// otherwise, keep holding the parry
 			bRelease = false;
@@ -384,7 +384,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		if( cv_melee_state_debug.GetBool() )
 		{
 			idStr debugText = "MeleeAction: Parry, Phase: Recovering";
-			gameRenderWorld->DrawText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+			gameRenderWorld->DebugText( debugText, (owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 		}
 	}
 }

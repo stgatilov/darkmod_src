@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
@@ -24,6 +24,7 @@
 #include "AmbientOcclusionStage.h"
 #include "BloomStage.h"
 #include "FrameBufferManager.h"
+#include "../sys/sys_padinput.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -40,7 +41,7 @@ idCVar r_glDebugContext( "r_glDebugContext", "0", CVAR_RENDERER | CVAR_BOOL | CV
 idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
 idCVar r_multiSamples( "r_multiSamples", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "number of antialiasing samples" );
 idCVar r_displayRefresh( "r_displayRefresh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 200.0f );
-idCVar r_fullscreen( "r_fullscreen", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = windowed, 1 = full screen, 2 = fullscreen windowed" );
+idCVar r_fullscreen( "r_fullscreen", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = windowed, 1 = full screen, 2 = fullscreen windowed" );
 idCVar r_singleTriangle( "r_singleTriangle", "0", CVAR_RENDERER | CVAR_BOOL, "only draw a single triangle per primitive" );
 idCVar r_checkBounds( "r_checkBounds", "0", CVAR_RENDERER | CVAR_BOOL, "compare all surface bounds with precalculated ones" );
 
@@ -49,7 +50,7 @@ idCVar r_useSilRemap( "r_useSilRemap", "1", CVAR_RENDERER | CVAR_BOOL, "consider
 idCVar r_useNodeCommonChildren( "r_useNodeCommonChildren", "1", CVAR_RENDERER | CVAR_BOOL, "stop pushing reference bounds early when possible" );
 idCVar r_useShadowProjectedCull( "r_useShadowProjectedCull", "1", CVAR_RENDERER | CVAR_BOOL, "discard triangles outside light volume before shadowing" );
 idCVar r_useShadowSurfaceScissor( "r_useShadowSurfaceScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor shadows by the scissor rect of the interaction surfaces" );
-idCVar r_useInteractionTable( "r_useInteractionTable", "2", CVAR_RENDERER | CVAR_INTEGER, "which implementation to use for table of existing interactions: 0 = none, 1 = single full matrix, 2 = single hash table" );
+idCVar r_useInteractionTable( "r_useInteractionTable", "3", CVAR_RENDERER | CVAR_INTEGER, "which implementation to use for table of existing interactions: 0 = none, 1 = single full matrix, 2 = single hash table" );
 idCVar r_useTurboShadow( "r_useTurboShadow", "1", CVAR_RENDERER | CVAR_BOOL, "use the infinite projection with W technique for dynamic shadows" );
 idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR_BOOL, "defer tangents calculations after deform" );
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
@@ -130,7 +131,7 @@ idCVarBool r_skipSubviews( "r_skipSubviews", "0", CVAR_RENDERER, "1 = don't rend
 idCVar r_skipGuiShaders( "r_skipGuiShaders", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all gui elements on surfaces, 2 = skip drawing but still handle events, 3 = draw but skip events", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0, 1> );
 idCVar r_subviewOnly( "r_subviewOnly", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged" );
-idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_INTEGER  | CVAR_ARCHIVE, "1 = stencil shadows, 2 = shadow maps (requires r_useGLSL 1)" );
+idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_INTEGER  | CVAR_ARCHIVE, "1 = stencil shadows, 2 = shadow maps" );
 idCVar r_interactionProgram( "r_interactionProgram", "1", CVAR_RENDERER, "which interaction shader to use: 0 = default / 1 = enhanced" );
 idCVar r_testGamma( "r_testGamma", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels", 0, 195 );
 idCVar r_testGammaBias( "r_testGammaBias", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels" );
@@ -168,9 +169,8 @@ idCVar r_showDefs( "r_showDefs", "0", CVAR_RENDERER | CVAR_BOOL, "report the num
 idCVar r_showTrace( "r_showTrace", "0", CVAR_RENDERER | CVAR_INTEGER, "show the intersection of an eye trace with the world", idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_showIntensity( "r_showIntensity", "0", CVAR_RENDERER | CVAR_BOOL, "draw the screen colors based on intensity, red = 0, green = 128, blue = 255" );
 idCVar r_showImages( "r_showImages", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show all images instead of rendering, 2 = show in proportional size", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
-idCVar com_smp( "com_smp", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "enable SMP" );
+idCVar com_smp( "com_smp", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "run game modeling and renderer frontend in second thread, parallel to renderer backend" );
 idCVar r_showSmp( "r_showSmp", "0", CVAR_RENDERER | CVAR_BOOL, "show which end (front or back) is blocking" );
-idCVar r_logSmpTimings( "r_logSmpTimings", "0", CVAR_RENDERER | CVAR_BOOL, "log timings for frontend and backend rendering" );
 idCVarInt r_showLights( "r_showLights", "0", CVAR_RENDERER, "1 = just print volumes numbers, highlighting ones covering the view, 2 = also draw planes of each volume, 3 = also draw edges of each volume"/*, 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> */);
 idCVar r_showShadows( "r_showShadows", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = visualize the stencil shadow volumes, 2 = draw filled in, 3 = lines with depth test", -1, 3, idCmdSystem::ArgCompletion_Integer < -1, 3 > );
 idCVar r_showShadowCount( "r_showShadowCount", "0", CVAR_RENDERER | CVAR_INTEGER, "colors screen based on shadow volume depth complexity, >= 2 = print overdraw count based on stencil index values, 3 = only show turboshadows, 4 = only show static shadows", 0, 4, idCmdSystem::ArgCompletion_Integer<0, 4> );
@@ -223,9 +223,7 @@ idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL,
 
 // 2016-2018 additions by duzenko
 idCVar r_useAnonreclaimer( "r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer patch" );
-idCVarBool r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB2" );
 //stgatilov: temporary cvar, to be removed when ARB->GLSL migration is complete and settled
-idCVar r_uniformTransforms( "r_uniformTransforms", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use uniform variables in shaders for vertex transformations instead of the deprecated ftransform" );
 idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 	"Which profile of OpenGL to use:\n"
 	"  0: compatibility profile\n"
@@ -233,7 +231,13 @@ idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 	"  2: forward-compatible core profile\n"
 	"Note: restarting TDM is required after change!"
 );
-idCVarBool r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE, "1 = use the frob shader instead of material stages" );
+idCVar r_newFrob( "r_newFrob", "1", CVAR_RENDERER | CVAR_ARCHIVE,
+	"Controls how objects are frob-highlighted:\n"
+	"  0 = use material stages by parm11\n"
+	"  1 = use the frob shader\n"
+	"  2 = use nothing (no highlight)\n"
+	"Note: outline is controlled by r_frobOutline"
+);
 
 // FBO
 idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-5 individual fbo attachments" );
@@ -323,6 +327,7 @@ void R_InitOpenGL( void ) {
 
 		if ( GLimp_Init( parms ) ) {
 			// it worked
+			InitOpenGLTracing();
 			break;
 		}
 
@@ -338,6 +343,7 @@ void R_InitOpenGL( void ) {
 
 	// input and sound systems need to be tied to the new window
 	Sys_InitInput();
+	Sys_InitPadInput();
 	soundSystem->InitHW();
 
 	if ( glConfig.srgb = r_fboSRGB )
@@ -375,10 +381,6 @@ void R_InitOpenGL( void ) {
 	common->Printf( "OpenGL vendor: %s\n", glConfig.vendor_string );
 	common->Printf( "OpenGL renderer: %s\n", glConfig.renderer_string );
 	common->Printf( "OpenGL version: %s %s\n", glConfig.version_string, GLAD_GL_ARB_compatibility ? "compatibility" : "core" );
-	if ( !r_uniformTransforms.GetBool() && !GLAD_GL_ARB_compatibility ) {
-		common->Printf( "Uniform transforms mandatory on core contexts\n" );
-		r_uniformTransforms.SetBool( true );
-	}
 
 	// recheck all the extensions
 	GLimp_CheckRequiredFeatures();
@@ -399,9 +401,7 @@ void R_InitOpenGL( void ) {
 	}
 
 	cmdSystem->AddCommand( "reloadGLSLprograms", R_ReloadGLSLPrograms_f, CMD_FL_RENDERER, "reloads GLSL programs" );
-	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
 
-	R_ReloadARBPrograms_f( idCmdArgs() );
 	R_ReloadGLSLPrograms_f( idCmdArgs() );
 
 	// allocate the vertex array range or vertex objects
@@ -1778,7 +1778,6 @@ idRenderSystemLocal::Clear
 ===============
 */
 void idRenderSystemLocal::Clear( void ) {
-	registered = false;
 	frameCount = 0;
 	viewCount = 0;
 	staticAllocCount = 0;
@@ -1798,7 +1797,6 @@ void idRenderSystemLocal::Clear( void ) {
 	ambientCubeImage = NULL;
 	viewDef = NULL;
 	memset( &pc, 0, sizeof( pc ) );
-	memset( &lockSurfacesCmd, 0, sizeof( lockSurfacesCmd ) );
 	memset( &identitySpace, 0, sizeof( identitySpace ) );
 	logFile = NULL;
 	memset( renderCrops, 0, sizeof( renderCrops ) );

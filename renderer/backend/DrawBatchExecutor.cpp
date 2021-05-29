@@ -1,15 +1,15 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
+The Dark Mod GPL Source Code
 
- This file is part of the The Dark Mod Source Code, originally based
- on the Doom 3 GPL Source Code as published in 2011.
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
 
- The Dark Mod Source Code is free software: you can redistribute it
- and/or modify it under the terms of the GNU General Public License as
- published by the Free Software Foundation, either version 3 of the License,
- or (at your option) any later version. For details, see LICENSE.TXT.
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
 
- Project: The Dark Mod (http://www.thedarkmod.com/)
+Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #include "precompiled.h"
@@ -52,7 +52,7 @@ void DrawBatchExecutor::Init() {
 	uint shaderParamsBufferSize = MAX_DRAWS_PER_FRAME * MAX_SHADER_PARAMS_SIZE;
 	shaderParamsBuffer.Init( GL_UNIFORM_BUFFER, shaderParamsBufferSize, uboAlignment );
 
-	if (GLAD_GL_ARB_multi_draw_indirect) {
+	if (GLAD_GL_ARB_multi_draw_indirect && GLAD_GL_ARB_vertex_attrib_binding) {
 		InitDrawIdBuffer();	
 		uint drawCommandBufferSize = MAX_DRAWS_PER_FRAME * sizeof(DrawElementsIndirectCommand);
 		drawCommandBuffer.Init( GL_DRAW_INDIRECT_BUFFER, drawCommandBufferSize, 16 );
@@ -67,8 +67,8 @@ void DrawBatchExecutor::Destroy() {
 	drawCommandBuffer.Destroy();
 }
 
-void DrawBatchExecutor::ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex ) {
-	ExecuteBatch( numDrawSurfs, uboIndex, ATTRIB_REGULAR, &BaseVertexDrawVert );
+void DrawBatchExecutor::ExecuteDrawVertBatch( int numDrawSurfs, int numInstances, GLuint uboIndex ) {
+	ExecuteBatch( numDrawSurfs, numInstances, uboIndex, ATTRIB_REGULAR, &BaseVertexDrawVert );
 
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -84,7 +84,7 @@ void DrawBatchExecutor::ExecuteDrawVertBatch( int numDrawSurfs, GLuint uboIndex 
 }
 
 void DrawBatchExecutor::ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboIndex ) {
-	ExecuteBatch( numDrawSurfs, uboIndex, ATTRIB_SHADOW, &BaseVertexShadowVert );
+	ExecuteBatch( numDrawSurfs, 1, uboIndex, ATTRIB_SHADOW, &BaseVertexShadowVert );
 
 	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
 		for ( int i = 0; i < numDrawSurfs; ++i ) {
@@ -98,6 +98,17 @@ void DrawBatchExecutor::ExecuteShadowVertBatch( int numDrawSurfs, GLuint uboInde
 	}
 }
 
+void DrawBatchExecutor::UploadExtraUboData( void *data, size_t size, GLuint uboIndex ) {
+	assert( size % 16 == 0 && "UBO data must be 16 byte aligned" );
+	if ( shaderParamsBuffer.BytesRemaining() < size ) {
+		shaderParamsBuffer.SwitchFrame();
+	}
+	byte *writeLocation = shaderParamsBuffer.CurrentWriteLocation();
+	memcpy( writeLocation, data, size );
+	shaderParamsBuffer.Commit( size );
+	shaderParamsBuffer.BindRangeToIndexTarget( uboIndex, writeLocation, size );
+}
+
 void DrawBatchExecutor::EndFrame() {
 	shaderParamsBuffer.SwitchFrame();
 	if ( ShouldUseMultiDraw() ) {
@@ -106,7 +117,7 @@ void DrawBatchExecutor::EndFrame() {
 }
 
 bool DrawBatchExecutor::ShouldUseMultiDraw() const {
-	return GLAD_GL_ARB_multi_draw_indirect && r_useMultiDrawIndirect;
+	return GLAD_GL_ARB_multi_draw_indirect && GLAD_GL_ARB_vertex_attrib_binding && r_useMultiDrawIndirect;
 }
 
 void DrawBatchExecutor::InitDrawIdBuffer() {
@@ -122,7 +133,7 @@ void DrawBatchExecutor::InitDrawIdBuffer() {
 	qglVertexAttribIFormat( Attributes::Default::DrawId, 1, GL_UNSIGNED_INT, 0 );
 	qglBindVertexBuffer( Attributes::Default::DrawId, drawIdBuffer, 0, sizeof(uint32_t) );
 	qglVertexAttribBinding( Attributes::Default::DrawId, Attributes::Default::DrawId );
-	qglVertexBindingDivisor( Attributes::Default::DrawId, 1 );
+	qglVertexBindingDivisor( Attributes::Default::DrawId, drawIdVertexDivisor );
 	qglEnableVertexAttribArray( Attributes::Default::DrawId );
 	drawIdVertexEnabled = true;
 }
@@ -148,7 +159,7 @@ uint DrawBatchExecutor::EnsureAvailableStorageInBuffers(uint shaderParamsSize) {
 	return maxBatchSize;
 }
 
-void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn ) {
+void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, int numInstances, GLuint uboIndex, attribBind_t attribBind, BaseVertexFn baseVertexFn ) {
 	assert( numDrawSurfs <= maxBatchSize );
 	maxBatchSize = 0;
 
@@ -161,22 +172,52 @@ void DrawBatchExecutor::ExecuteBatch( int numDrawSurfs, GLuint uboIndex, attribB
 	shaderParamsBuffer.Commit( shaderParamsCommitSize );
 	shaderParamsBuffer.BindRangeToIndexTarget( uboIndex, shaderParamsContents, shaderParamsCommitSize );
 
-	vertexCache.BindVertex( attribBind );
-	vertexCache.BindIndex();
+	if (r_glDebugOutput.GetInteger()) {
+		//check DrawParams for layout inconsistencies (e.g. from driver bugs)
+		int progname = -1;
+		qglGetIntegerv(GL_CURRENT_PROGRAM, &progname);
+		int blocksCnt = -1;
+		qglGetProgramiv(progname, GL_ACTIVE_UNIFORM_BLOCKS, &blocksCnt);
+		int glSize = -1;
+		for (int i = 0; i < blocksCnt; i++) {
+			int bind = -1;
+			qglGetActiveUniformBlockiv(progname, i, GL_UNIFORM_BLOCK_BINDING, &bind);
+			if (bind != uboIndex)
+				continue;
+			qglGetActiveUniformBlockiv(progname, i, GL_UNIFORM_BLOCK_DATA_SIZE, &glSize);
+		}
+		int arrNum = MaxShaderParamsArraySize(shaderParamsSize);
+		int expSize = arrNum * shaderParamsSize;
+		if (glSize != expSize) {
+			static int lastFrameDisplayed = 0;
+			if (backEnd.frameCount - lastFrameDisplayed > 20) {
+				if (glSize % arrNum)
+					common->Warning("Draw parameters size mismatch: OpenGL has %d bytes, not divisible by %d", glSize, arrNum);
+				else if (expSize % arrNum)
+					common->Warning("Draw parameters size mismatch: host has %d bytes, not divisible by %d", expSize, arrNum);
+				else
+					common->Warning("Draw parameters size mismatch: OpenGL has %d bytes, while host has %d", glSize/arrNum, expSize/arrNum);
+				backEnd.frameCount = lastFrameDisplayed;
+			}
+		}
+	}
+
+	vertexCache.VertexPosition( attribBind == ATTRIB_REGULAR ? drawSurfs[0]->ambientCache : drawSurfs[0]->shadowCache, attribBind );
+	vertexCache.IndexPosition( drawSurfs[0]->indexCache );
 	if ( ShouldUseMultiDraw() ) {
-		BatchMultiDraw( numDrawSurfs, baseVertexFn );
+		BatchMultiDraw( numDrawSurfs, numInstances, baseVertexFn );
 	} else {
-		BatchSingleDraws( numDrawSurfs, baseVertexFn );
+		BatchSingleDraws( numDrawSurfs, numInstances, baseVertexFn );
 	}
 }
 
-void DrawBatchExecutor::BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVertexFn ) {
+void DrawBatchExecutor::BatchMultiDraw( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn ) {
 	DrawElementsIndirectCommand * drawCommands = reinterpret_cast<DrawElementsIndirectCommand *>( drawCommandBuffer.CurrentWriteLocation() );	
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
 		DrawElementsIndirectCommand &cmd = drawCommands[i];
 		const drawSurf_t *surf = drawSurfs[i];
 		cmd.count = surf->numIndexes;
-		cmd.instanceCount = 1;
+		cmd.instanceCount = numInstances;
 		cmd.firstIndex = surf->indexCache.offset / sizeof(glIndex_t);
 		cmd.baseVertex = baseVertexFn( surf );
 		cmd.baseInstance = i;
@@ -187,10 +228,14 @@ void DrawBatchExecutor::BatchMultiDraw( int numDrawSurfs, BaseVertexFn baseVerte
 		drawIdVertexEnabled = true;
 		qglEnableVertexAttribArray( Attributes::Default::DrawId );
 	}
+	if (drawIdVertexDivisor != numInstances) {
+	    drawIdVertexDivisor = numInstances;
+        qglVertexBindingDivisor( Attributes::Default::DrawId, drawIdVertexDivisor );
+	}
 	qglMultiDrawElementsIndirect(GL_TRIANGLES, GL_INDEX_TYPE, drawCommandBuffer.BufferOffset(drawCommands), numDrawSurfs, 0);
 }
 
-void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVertexFn ) {
+void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, int numInstances, BaseVertexFn baseVertexFn ) {
 	if (drawIdVertexEnabled) {
 		drawIdVertexEnabled = false;
 		qglDisableVertexAttribArray( Attributes::Default::DrawId );
@@ -200,6 +245,10 @@ void DrawBatchExecutor::BatchSingleDraws( int numDrawSurfs, BaseVertexFn baseVer
 		qglVertexAttribI1i(Attributes::Default::DrawId, i);
 		const void *indexOffset = (void*)(uintptr_t)surf->indexCache.offset;
 		uint baseVertex = baseVertexFn( surf );
-		qglDrawElementsBaseVertex(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, baseVertex);
+		if ( numInstances == 1 ) {
+			qglDrawElementsBaseVertex(GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, baseVertex);
+		} else {
+			qglDrawElementsInstancedBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexOffset, numInstances, baseVertex );
+		}
 	}
 }

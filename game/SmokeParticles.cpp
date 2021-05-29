@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -291,14 +291,12 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 	}
 	currentParticleTime = renderView->time;
 
-	particleGen_t g;
-
-	g.renderEnt = renderEntity;
-	g.renderView = renderView;
+	idPartSysData psys;
+	psys.entityAxis = renderEntity->axis;
+	memcpy(&psys.entityParmsColor, renderEntity->shaderParms, sizeof(psys.entityParmsColor));
+	psys.viewAxis = renderView->viewaxis;
 
 	for ( int activeStageNum = 0; activeStageNum < activeStages.Num(); activeStageNum++ ) {
-		singleSmoke_t *smoke, *next, *last;
-
 		activeSmokeStage_t *active = &activeStages[activeStageNum];
 		const idParticleStage *stage = active->stage;
 
@@ -306,9 +304,11 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 			continue;
 		}
 
+		psys.totalParticles = stage->totalParticles;
+
 		// allocate a srfTriangles that can hold all the particles
 		int count = 0;
-		for ( smoke = active->smokes; smoke; smoke = smoke->next ) {
+		for ( singleSmoke_t *smoke = active->smokes; smoke; smoke = smoke->next ) {
 			count++;
 		}
 		int	quads = count * stage->NumQuadsPerParticle();
@@ -325,11 +325,12 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 		tri->bounds[1][2] = 99999;
 
 		tri->numVerts = 0;
-		for ( last = NULL, smoke = active->smokes; smoke; smoke = next ) {
+		for ( singleSmoke_t *last = NULL, *smoke = active->smokes, *next; smoke; smoke = next ) {
 			next = smoke->next;
 
-			g.frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
-			if ( g.frac >= 1.0f ) {
+			idParticleData part;
+			part.frac = (float)( gameLocal.time - smoke->privateStartTime ) / ( stage->particleLife * 1000 );
+			if ( part.frac >= 1.0f ) {
 				// remove the particle from the stage list
 				if ( last != NULL ) {
 					last->next = smoke->next;
@@ -343,16 +344,15 @@ bool idSmokeParticles::UpdateRenderEntity( renderEntity_s *renderEntity, const r
 				continue;
 			}
 
-			g.index = smoke->index;
-			g.random = smoke->random;
+			part.index = smoke->index;
+			part.randomSeed = smoke->random.GetSeed();
 
-			g.origin = smoke->origin;
-			g.axis = smoke->axis;
+			part.origin = smoke->origin;
+			part.axis = smoke->axis;
 
-			g.originalRandom = g.random;
-			g.age = g.frac * stage->particleLife;
-
-			tri->numVerts += stage->CreateParticle( &g, tri->verts + tri->numVerts );
+			idDrawVert *ptr = tri->verts + tri->numVerts;
+			idParticle_CreateParticle(*stage, psys, part, ptr);
+			tri->numVerts = ptr - tri->verts;
 
 			last = smoke;
 		}

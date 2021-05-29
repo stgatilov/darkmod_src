@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #ifndef __FORCE_GRAB_H__
@@ -48,7 +48,7 @@ class CForce_Grab : public idForce
 		void				SetDragAxis( const idMat3 &Axis );
 		idMat3				GetDragAxis( void );
 
-		const idVec3		GetDraggedPosition( void ) const;
+		idVec3				GetDraggedPosition( void ) const;
 							// Gets the center of mass of the grabbed object
 		idVec3				GetCenterOfMass( void ) const;
 							// rotates p about the center of mass of the grabbed object
@@ -77,15 +77,16 @@ class CForce_Grab : public idForce
 		virtual void		RemovePhysics( const idPhysics *phys );
 
 	protected:
+		// stgatilov #5599: apply aging to frames, throw away obsolete ones, add one new frame
+		void				UpdateAverageDragPosition( float dT );
+		// stgatilov #5599: compute weighted moving average of drag position
+		idVec3				ComputeAverageDragPosition() const;
 
-		/**
-		* Entity to which this drag force is referenced, if any
-		**/
+
+		// entity to which this drag force is referenced, if any
 		idEntityPtr<idEntity>	m_RefEnt;
 
-		/**
-		* If true, limit force or apply damping
-		**/
+		// if true, limit force or apply damping
 		bool				m_bLimitForce;
 		bool				m_bApplyDamping;
 
@@ -100,19 +101,13 @@ class CForce_Grab : public idForce
 		idPhysics *			m_physics;		// physics object
 		idVec3				m_p;				// position on clip model
 		int					m_id;				// clip model id of physics object
-		/**
-		*  drag towards this position
-		**/
+		// drag towards this position
 		idVec3				m_dragPosition;
-		/**
-		* Rotate toward this orientation
-		**/
+		// rotate toward this orientation
 		idMat3				m_dragAxis;
-		
-		/**
-		* Origin of the dragged entity in the previous frame
-		**/
-		idVec3				m_prevOrigin;
+
+		// stgatilov #5599: sorted array of (dragPosition; weight) tuples over time window
+		idList<idVec4>		m_dragPositionFrames;
 };
 
 #endif /* !__FORCE_GRAB_H__ */

@@ -1,3 +1,17 @@
+/*****************************************************************************
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+******************************************************************************/
 #include "GuiPageVersion.h"
 #include "GuiFluidAutoGen.h"
 #include "Actions.h"
@@ -172,5 +186,15 @@ void cb_Version_ButtonPrev(Fl_Widget *self) {
 	}
 	else {
 		g_Wizard->value(g_PageSettings);
+	}
+}
+
+void cb_Version_ChoiceMirror(Fl_Widget *self) {
+	int idx = g_Version_ChoiceMirror->value();
+	std::string caption = g_Version_ChoiceMirror->text();
+	if (idx == 0)	//[auto]
+		g_state->_preferredMirror.clear();
+	else {
+		g_state->_preferredMirror = caption;
 	}
 }

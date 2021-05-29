@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 // Copyright (C) 2004 Gerhard W. Gruber <sparhawk@gmx.at>
@@ -1272,7 +1272,7 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 //	idStr areatext(areaNum);
 //	gameRenderWorld->DebugLine(colorGreen,center,center + idVec3(0,0,20),10000000);
 //	gameRenderWorld->DebugLine(colorOrange,GetPhysics()->GetOrigin(),GetPhysics()->GetOrigin() + m_ClosedPos,10000000);
-//	gameRenderWorld->DrawText(areatext.c_str(), center + idVec3(0,0,1), 0.2f, colorGreen, mat3_identity, 1, 10000000);
+//	gameRenderWorld->DebugText(areatext.c_str(), center + idVec3(0,0,1), 0.2f, colorGreen, mat3_identity, 1, 10000000);
 
 	return areaNum;
 }

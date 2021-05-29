@@ -1,16 +1,16 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
 ******************************************************************************/
 
 #include "precompiled.h"
@@ -700,7 +700,7 @@ void idRenderModelMD5::DrawJoints( const renderEntity_t *ent, const struct viewD
 		num = ent->numJoints;
 		for( i = 0; i < num; i++, joint++ ) {
 			pos = ent->origin + joint->ToVec3() * ent->axis;
-			session->rw->DrawText( joints[ i ].name, pos + offset, scale, colorWhite, view->renderView.viewaxis, 1 );
+			session->rw->DebugText( joints[ i ].name, pos + offset, scale, colorWhite, view->renderView.viewaxis, 1 );
 		}
 	}
 }
@@ -918,9 +918,9 @@ which can regenerate the data with LoadModel()
 */
 void idRenderModelMD5::PurgeModel() {
 	purged = true;
-	joints.Clear();
-	defaultPose.Clear();
-	meshes.Clear();
+	joints.ClearFree();
+	defaultPose.ClearFree();
+	meshes.ClearFree();
 }
 
 /*
