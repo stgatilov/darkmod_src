@@ -903,6 +903,56 @@ idStr& idStr::StripQuotes ( void )
 }
 
 /*
+============
+idStr::Split
+
+stgatilov: Finds all characters matching "delimiters" list, returns array of substrings
+between them (including substrings before the first delimeter and after the last one).
+If "delimiters" is NULL, then whitespace characters are treated as delimiters.
+If "skipEmpty" is true, then empty substrings are dropped from result.
+============
+*/
+idList<idStr> idStr::Split( const char *delimiters, bool skipEmpty = false ) const
+{
+	if (!delimiters)
+		delimiters = " \n\r\t\f\v";
+	idList<idStr> tokens;
+
+	int start = 0;
+	for (int i = 0; i <= len; i++) {
+		if (i == len || idStr::FindChar(delimiters, data[i]) >= 0) {
+			int len = i - start;
+			if (len > 0 || !skipEmpty)
+				tokens.Append(idStr::Mid(start, len));
+			start = i+1;
+		}
+	}
+	assert(start == len+1);
+
+	return tokens;
+}
+
+/*
+============
+idStr::Join
+
+stgatilov: concatenates the given array of strings, putting "separator" between them.
+============
+*/
+idStr idStr::Join( const idList<idStr> &tokens, const char *separator )
+{
+	if (tokens.Num() == 0)
+		return "";
+
+	idStr res = tokens[0];
+	for (size_t i = 1; i < tokens.Num(); i++) {
+		res += separator;
+		res += tokens[i];
+	}
+	return res;
+}
+
+/*
 =====================================================================
 
   filename methods
