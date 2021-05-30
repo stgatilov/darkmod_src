@@ -4058,8 +4058,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		struct MainMenuStateInfo {
 			idStr name;				//e.g. BRIEFING   (MM_STATE_ is prepended)
-			idStr constructor;		//e.g. BriefingStateInit
-			idStr destructor;		//e.g. BriefingStateEnd
+			idStr stateToggle;		//e.g. BriefingState -> BriefingStateInit + BriefingStateEnd
 			idStr music;			//e.g. MusicIngame   (MainMenu is prepended)
 		};
 		struct MainMenuTransition {
@@ -4068,29 +4067,29 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			idStr to;				//e.g. DIFF_SELECT
 		};
 		static const MainMenuStateInfo STATES[] = {
-			{"NONE", NULL, NULL, NULL},
-			{"MAINMENU", NULL, NULL, NULL},
-			{"START_GAME", NULL, NULL, NULL},
-			{"END_GAME", NULL, NULL, NULL},
-			{"FORWARD", NULL, NULL, NULL},
-			{"BACKWARD", NULL, NULL, NULL},
-			{"MAINMENU_INGAME", "MainMenuInGameStateInit", "MainMenuInGameStateEnd", "MusicIngame"},
-			{"MAINMENU_NOTINGAME", "MainMenuStateInit", "MainMenuStateEnd", "Music"},
-			{"QUITGAME", "QuitGameStateInit", "QuitGameStateEnd", "Music%INGAME%"},
-			{"CREDITS", "CreditsMenuStateInit", "CreditsMenuStateEnd", "MusicCredits"},
-			{"LOAD_SAVE_GAME", "LoadSaveGameMenuStateInit", "LoadSaveGameMenuStateEnd", "Music%INGAME%"},
-			{"SUCCESS", "SuccessScreenStateInit", "SuccessScreenStateEnd", "MusicMissionSuccess"},
-			{"BRIEFING", "BriefingStateInit", "BriefingStateEnd", "MusicBriefing"},
-			{"BRIEFING_VIDEO", "BriefingVidStateInit", "BriefingVidStateEnd", "MusicBriefingVideo"},
-			{"OBJECTIVES", "ObjectivesStateInit", "ObjectivesStateEnd", "Music%INGAME%"},
-			{"SHOP", "ShopMenuStateInit", "ShopMenuStateEnd", "MusicBriefing"},
-			{"SETTINGS", "SettingsMenuStateInit", "SettingsMenuStateEnd", "Music%INGAME%"},
-			{"SELECT_LANGUAGE", "SelectLanguageStateInit", "SelectLanguageStateEnd", "Music%INGAME%"},
-			{"DOWNLOAD", "DownloadMissionsMenuStateInit", "DownloadMissionsMenuStateEnd", "Music%INGAME%"},
-			{"DEBRIEFING_VIDEO", "DebriefingVideoStateInit", "DebriefingVideoStateEnd", "MusicDebriefingVideo"},
-			{"GUISIZE", "SettingsGuiSizeInit", "GuiSizeMenuStateEnd", "Music%INGAME%"},
-			{"MOD_SELECT", "NewGameMenuStateInit", "NewGameMenuStateEnd", "Music%INGAME%"},
-			{"DIFF_SELECT", "ObjectivesStateInit", "ObjectivesStateEnd", "MusicBriefing"},
+			{"NONE", NULL, NULL},
+			{"MAINMENU", NULL, NULL},
+			{"START_GAME", NULL, NULL},
+			{"END_GAME", NULL, NULL},
+			{"FORWARD", NULL, NULL},
+			{"BACKWARD", NULL, NULL},
+			{"MAINMENU_INGAME", "MainMenuInGameState", "MusicIngame"},
+			{"MAINMENU_NOTINGAME", "MainMenuState", "Music"},
+			{"QUITGAME", "QuitGameState", "Music%INGAME%"},
+			{"CREDITS", "CreditsMenuState", "MusicCredits"},
+			{"LOAD_SAVE_GAME", "LoadSaveGameMenuState", "Music%INGAME%"},
+			{"SUCCESS", "SuccessScreenState", "MusicMissionSuccess"},
+			{"BRIEFING", "BriefingState", "MusicBriefing"},
+			{"BRIEFING_VIDEO", "BriefingVidState", "MusicBriefingVideo"},
+			{"OBJECTIVES", "ObjectivesState", "Music%INGAME%"},
+			{"SHOP", "ShopMenuState", "MusicBriefing"},
+			{"SETTINGS", "SettingsMenuState", "Music%INGAME%"},
+			{"SELECT_LANGUAGE", "SelectLanguageState", "Music%INGAME%"},
+			{"DOWNLOAD", "DownloadMissionsMenuState", "Music%INGAME%"},
+			{"DEBRIEFING_VIDEO", "DebriefingVideoState", "MusicDebriefingVideo"},
+			{"GUISIZE", "SettingsGuiSizeState", "Music%INGAME%"},
+			{"MOD_SELECT", "NewGameMenuState", "Music%INGAME%"},
+			{"DIFF_SELECT", "ObjectivesState", "MusicBriefing"},
 		};
 		static const MainMenuTransition TRANSITIONS[] = {
 			//standard FM-customized sequence: starting new game
@@ -4223,11 +4222,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending state %s", modeState->name.c_str() );
-			if (modeState->destructor)
-				gui->ResetWindowTime(modeState->destructor, 0);
+			if (modeState->stateToggle)
+				gui->ResetWindowTime(modeState->stateToggle + "End", 0);
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting state %s", targetState->name.c_str() );
-			if (targetState->constructor)
-				gui->ResetWindowTime(targetState->constructor, 0);
+			if (targetState->stateToggle)
+				gui->ResetWindowTime(targetState->stateToggle + "Init", 0);
 
 			targetValue = gui->GetStateInt("#MM_STATE_" + targetState->name);
 			gui->SetStateInt("mode", targetValue);
