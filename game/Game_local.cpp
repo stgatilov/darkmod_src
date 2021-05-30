@@ -4095,7 +4095,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		static const MainMenuTransition TRANSITIONS[] = {
 			//standard FM-customized sequence: starting new game
 			{"MAINMENU_NOTINGAME", "FORWARD", "BRIEFING_VIDEO"},	{"BRIEFING_VIDEO", "BACKWARD", "MAINMENU"},
-			{"BRIEFING_VIDEO", "FORWARD", "BRIEFING"},				{"BRIEFING", "BACKWARD", "MOD_SELECT"},
+			{"BRIEFING_VIDEO", "FORWARD", "BRIEFING"},				{"BRIEFING", "BACKWARD", "MAINMENU"},
 			{"BRIEFING", "FORWARD", "DIFF_SELECT"},					{"DIFF_SELECT", "BACKWARD", "BRIEFING"},
 			{"DIFF_SELECT", "FORWARD", "SHOP"},						{"SHOP", "BACKWARD", "DIFF_SELECT"},
 			{"SHOP", "FORWARD", "START_GAME"},
