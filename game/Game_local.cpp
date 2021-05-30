@@ -4059,6 +4059,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		struct MainMenuStateInfo {
 			idStr name;				//e.g. BRIEFING   (MM_STATE_ is prepended)
 			idStr stateToggle;		//e.g. BriefingState -> BriefingStateInit + BriefingStateEnd
+			idStr backgrounds;		//e.g. MAINMENI_NOTINGAME -> MM_BACKGROUNDS_MAINMENU_NOTINGAME
 			idStr music;			//e.g. MusicIngame   (MainMenu is prepended)
 		};
 		struct MainMenuTransition {
@@ -4067,29 +4068,29 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			idStr to;				//e.g. DIFF_SELECT
 		};
 		static const MainMenuStateInfo STATES[] = {
-			{"NONE", NULL, NULL},
-			{"MAINMENU", NULL, NULL},
-			{"START_GAME", NULL, NULL},
-			{"END_GAME", NULL, NULL},
-			{"FORWARD", NULL, NULL},
-			{"BACKWARD", NULL, NULL},
-			{"MAINMENU_INGAME", "MainMenuInGameState", "MusicIngame"},
-			{"MAINMENU_NOTINGAME", "MainMenuState", "Music"},
-			{"QUITGAME", "QuitGameState", "Music%INGAME%"},
-			{"CREDITS", "CreditsMenuState", "MusicCredits"},
-			{"LOAD_SAVE_GAME", "LoadSaveGameMenuState", "Music%INGAME%"},
-			{"SUCCESS", "SuccessScreenState", "MusicMissionSuccess"},
-			{"BRIEFING", "BriefingState", "MusicBriefing"},
-			{"BRIEFING_VIDEO", "BriefingVidState", "MusicBriefingVideo"},
-			{"OBJECTIVES", "ObjectivesState", "Music%INGAME%"},
-			{"SHOP", "ShopMenuState", "MusicBriefing"},
-			{"SETTINGS", "SettingsMenuState", "Music%INGAME%"},
-			{"SELECT_LANGUAGE", "SelectLanguageState", "Music%INGAME%"},
-			{"DOWNLOAD", "DownloadMissionsMenuState", "Music%INGAME%"},
-			{"DEBRIEFING_VIDEO", "DebriefingVideoState", "MusicDebriefingVideo"},
-			{"GUISIZE", "SettingsGuiSizeState", "Music%INGAME%"},
-			{"MOD_SELECT", "NewGameMenuState", "Music%INGAME%"},
-			{"DIFF_SELECT", "ObjectivesState", "MusicBriefing"},
+			{"NONE", NULL, NULL, NULL},
+			{"MAINMENU", NULL, NULL, NULL},
+			{"START_GAME", NULL, NULL, NULL},
+			{"END_GAME", NULL, NULL, NULL},
+			{"FORWARD", NULL, NULL, NULL},
+			{"BACKWARD", NULL, NULL, NULL},
+			{"MAINMENU_INGAME", "MainMenuInGameState", "MAINMENU_INGAME", "MusicIngame"},
+			{"MAINMENU_NOTINGAME", "MainMenuState", "MAINMENU_NOTINGAME", "Music"},
+			{"QUITGAME", "QuitGameState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"CREDITS", "CreditsMenuState", "CREDITS", "MusicCredits"},
+			{"LOAD_SAVE_GAME", "LoadSaveGameMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"SUCCESS", "SuccessScreenState", "SUCCESS", "MusicMissionSuccess"},
+			{"BRIEFING", "BriefingState", "BRIEFING", "MusicBriefing"},
+			{"BRIEFING_VIDEO", "BriefingVidState", "", "MusicBriefingVideo"},
+			{"OBJECTIVES", "ObjectivesState", "OBJECTIVES", "Music%INGAME%"},
+			{"SHOP", "ShopMenuState", "SHOP", "MusicBriefing"},
+			{"SETTINGS", "SettingsMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"SELECT_LANGUAGE", "SelectLanguageState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"DOWNLOAD", "DownloadMissionsMenuState", "DOWNLOAD", "Music%INGAME%"},
+			{"DEBRIEFING_VIDEO", "DebriefingVideoState", "", "MusicDebriefingVideo"},
+			{"GUISIZE", "SettingsGuiSizeState", "", "Music%INGAME%"},
+			{"MOD_SELECT", "NewGameMenuState", "NEWGAME", "Music%INGAME%"},
+			{"DIFF_SELECT", "ObjectivesState", "DIFFSELECT", "MusicBriefing"},
 		};
 		static const MainMenuTransition TRANSITIONS[] = {
 			//standard FM-customized sequence: starting new game
@@ -4219,6 +4220,36 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 			else {
 				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("No music change: state %s", targetMusicState.c_str() );
+			}
+
+			idStr targetBackgroundsMacro = targetState->backgrounds;
+			if (targetBackgroundsMacro == "MAINMENU_%INGAME%") {
+				//special syntax to enable MENU/MENU_INGAME
+				if (gui->GetStateInt("inGame"))
+					targetBackgroundsMacro = FindStateByName("MAINMENU_INGAME")->backgrounds;
+				else
+					targetBackgroundsMacro = FindStateByName("MAINMENU_NOTINGAME")->backgrounds;
+			}
+			idStr backgroundsLayersStr = gui->GetStateString("backgrounds");
+			idStr targetBackgroundsLayersStr = gui->GetStateString("#MM_BACKGROUNDS_" + targetBackgroundsMacro, "");
+			if (backgroundsLayersStr != targetBackgroundsLayersStr) {
+				idStrList backgroundsLayers = backgroundsLayersStr.Split(",", true);
+				idStrList targetBackgroundsLayers = targetBackgroundsLayersStr.Split(",", true);
+				for (int i = 0; i < backgroundsLayers.Num(); i++) {
+					if (!targetBackgroundsLayers.Find(backgroundsLayers[i])) {
+						DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending background layer %s", backgroundsLayers[i].c_str() );
+						gui->ResetWindowTime(backgroundsLayers[i] + "End", 0);
+					}
+					else
+						DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("No change: background layer %s", backgroundsLayers[i].c_str() );
+				}
+				for (int i = 0; i < targetBackgroundsLayers.Num(); i++) {
+					if (!backgroundsLayers.Find(targetBackgroundsLayers[i])) {
+						DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting background layer %s", targetBackgroundsLayers[i].c_str() );
+						gui->ResetWindowTime(targetBackgroundsLayers[i] + "Init", 0);
+					}
+				}
+				gui->SetStateString("backgrounds", targetBackgroundsLayersStr);
 			}
 
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending state %s", modeState->name.c_str() );
