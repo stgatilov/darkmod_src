@@ -38,6 +38,10 @@ Script_Set
 =========================
 */
 void Script_Set(idWindow *window, idList<idGSWinVar> *src) {
+	if (src->Num() < 2) {
+		idStr location = window->GetCurrentSourceLocation();
+		common->Error("Set command lacks parameters at %s", location.c_str());
+	}
 	idStr key, val;
 	idWinStr *dest = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (dest) {
