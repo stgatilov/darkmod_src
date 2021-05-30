@@ -176,7 +176,9 @@ bool DepthStage::ShouldDrawSurf(const drawSurf_t *surf) const {
     }
 
     if ( !surf->ambientCache.IsValid() || !surf->indexCache.IsValid() ) {
+#ifdef _DEBUG
         common->Printf( "DepthStage: missing vertex or index cache\n" );
+#endif
         return false;
     }
 

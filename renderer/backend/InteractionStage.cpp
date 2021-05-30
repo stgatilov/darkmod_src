@@ -238,8 +238,10 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 			if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
 				continue;
 			}
-			if ( !surf->ambientCache.IsValid() ) {
-				common->Warning( "Found invalid ambientCache!" );
+			if ( !surf->ambientCache.IsValid() || !surf->indexCache.IsValid() ) {
+#ifdef _DEBUG
+				common->Printf( "InteractionStage: missing vertex or index cache\n" );
+#endif
 				continue;
 			}
 

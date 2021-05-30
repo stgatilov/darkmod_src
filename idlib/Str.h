@@ -201,6 +201,8 @@ public:
 	void				Remove( const char *old );						// Tels: Faster than Replace("..","");
 	void				Remove( const char rem );						// Tels: Faster version of Remove(" ");
 	void				Remap( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
+	idList<idStr>		Split( const char *delimiters, bool skipEmpty ) const;
+	static idStr		Join( const idList<idStr> &tokens, const char *separator );
 
 	// file name methods
 	int					FileNameHash( void ) const;						// hash key for the filename (skips extension)
