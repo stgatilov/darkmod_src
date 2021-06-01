@@ -129,7 +129,9 @@ bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {
     }
 
     if ( !surf->ambientCache.IsValid() || !surf->indexCache.IsValid() ) {
+        #ifdef _DEBUG
         common->Printf( "ShadowMapStage: missing vertex or index cache\n" );
+        #endif
         return false;
     }
 
