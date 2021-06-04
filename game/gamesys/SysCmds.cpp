@@ -76,15 +76,15 @@ void Cmd_PrintAIRelations_f( const idCmdArgs &args )
 }
 
 /**
- * greebo: This is a helper command, used by the restart.gui
+ * greebo: This is a helper command, used in mainmenu_failure.gui
  */
 void Cmd_RestartGuiCmd_UpdateObjectives_f(const idCmdArgs &args) 
 {
-	idUserInterface* gui = uiManager->FindGui("guis/restart.gui", false, true, true);
+	idUserInterface* gui = session->GetGui(idSession::gtMainMenu);
 
 	if (gui == NULL) 
 	{
-		gameLocal.Warning("Could not find restart.gui");
+		gameLocal.Warning("Main menu missing");
 		return;
 	}
 	

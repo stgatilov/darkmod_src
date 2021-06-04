@@ -263,6 +263,7 @@ void idSessionLocal::Clear() {
 
 	syncNextGameFrame = false;
 	mapSpawned = false;
+	mainMenuStartState = MMSS_MAINMENU;
 	guiActive = NULL;
 	aviCaptureMode = false;
 	timeDemo = TD_NO;
@@ -294,7 +295,7 @@ idSessionLocal::idSessionLocal
 ===============
 */
 idSessionLocal::idSessionLocal() {
-	guiInGame = guiMainMenu = guiRestartMenu = guiLoading = guiActive = guiTest = guiMsg = guiMsgRestore = NULL;	
+	guiInGame = guiMainMenu = guiLoading = guiActive = guiTest = guiMsg = guiMsgRestore = NULL;	
 
 	menuSoundWorld = NULL;
 	
@@ -3244,12 +3245,14 @@ void idSessionLocal::ExecuteFrameCommand(const char *command, bool delayed) {
 		syncNextGameFrame = true;
 	} else if ( !idStr::Icmp( args.Argv(0), "died" ) ) {
 		// restart on the same map
+		mainMenuStartState = MMSS_FAILURE;
 		UnloadMap();
-		SetGUI(guiRestartMenu, NULL);
+		StartMenu();
 
 		// do not process any additional game tics this frame
 		syncNextGameFrame = true;
 	} else if ( !idStr::Icmp( args.Argv(0), "disconnect" ) ) {
+		mainMenuStartState = MMSS_SUCCESS;
 		cmdSystem->BufferCommandText( CMD_EXEC_INSERT, "stoprecording ; disconnect" );
 		// Check for final save trigger - the player PVS is freed at this point, so we can go ahead and save the game
 		if( gameLocal.m_TriggerFinalSave ) {
@@ -3329,10 +3332,9 @@ void idSessionLocal::Init() {
 	menuSoundWorld = soundSystem->AllocSoundWorld( rw );
 
 	// we have a single instance of the main menu
-	guiMainMenu = uiManager->FindGui( "guis/mainmenu.gui", true, false, true );
+	ResetMainMenu();
 	guiMainMenu_MapList = uiManager->AllocListGUI();
 	guiMainMenu_MapList->Config( guiMainMenu, "mapList" );
-	guiRestartMenu = uiManager->FindGui( "guis/restart.gui", true, false, true );
 	guiMsg = uiManager->FindGui( "guis/msg.gui", true, false, true );
 
 	whiteMaterial = declManager->FindMaterial( "_white" );

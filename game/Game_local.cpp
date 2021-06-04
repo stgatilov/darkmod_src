@@ -1443,7 +1443,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
 
-	ClearMainMenuMode();
+	session->ResetMainMenu();
 
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
@@ -2435,6 +2435,8 @@ void idGameLocal::MapShutdown( void ) {
 	}
 	
 	MapClear( true );
+
+	session->ResetMainMenu();
 
 	// reset the script to the state it was before the map was started
 	program.Restart();
@@ -3812,15 +3814,6 @@ void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 	*/
 }
 
-void idGameLocal::ClearMainMenuMode() {
-	if (idUserInterface *gui = session->GetGui(idSession::gtMainMenu)) {
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("idGameLocal::ClearMainMenuMode called");
-		gui->SetStateInt("mode", 0);
-		gui->SetStateString("MusicLastState", "");
-	}
-}
-
-
 /*
 ================
 idGameLocal::HandleMainMenuCommands
@@ -4079,17 +4072,18 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{"QUITGAME", "QuitGameState", "MAINMENU_%INGAME%", "Music%INGAME%"},
 			{"CREDITS", "CreditsMenuState", "CREDITS", "MusicCredits"},
 			{"LOAD_SAVE_GAME", "LoadSaveGameMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"FAILURE", "FailureMenuState", "FAILURE", "MusicMissionFailure"},
 			{"SUCCESS", "SuccessScreenState", "SUCCESS", "MusicMissionSuccess"},
 			{"BRIEFING", "BriefingState", "BRIEFING", "MusicBriefing"},
 			{"BRIEFING_VIDEO", "BriefingVidState", "", "MusicBriefingVideo"},
-			{"OBJECTIVES", "ObjectivesState", "OBJECTIVES", "Music%INGAME%"},
+			{"OBJECTIVES", "ObjectivesState", "EXTRAMENU_INGAME", "Music%INGAME%"},
 			{"SHOP", "ShopMenuState", "SHOP", "MusicBriefing"},
 			{"SETTINGS", "SettingsMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
 			{"SELECT_LANGUAGE", "SelectLanguageState", "MAINMENU_%INGAME%", "Music%INGAME%"},
-			{"DOWNLOAD", "DownloadMissionsMenuState", "DOWNLOAD", "Music%INGAME%"},
+			{"DOWNLOAD", "DownloadMissionsMenuState", "EXTRAMENU_NOTINGAME", "Music%INGAME%"},
 			{"DEBRIEFING_VIDEO", "DebriefingVideoState", "", "MusicDebriefingVideo"},
 			{"GUISIZE", "SettingsGuiSizeState", "", "Music%INGAME%"},
-			{"MOD_SELECT", "NewGameMenuState", "NEWGAME", "Music%INGAME%"},
+			{"MOD_SELECT", "NewGameMenuState", "EXTRAMENU_NOTINGAME", "Music%INGAME%"},
 			{"DIFF_SELECT", "ObjectivesState", "DIFFSELECT", "MusicBriefing"},
 		};
 		static const MainMenuTransition TRANSITIONS[] = {
@@ -4460,16 +4454,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 			m_MissionManager->ProceedToNextMission();
 
-			// Store the new mission number into the GUI state
-			int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
-			gui->SetStateInt("CurrentMission", missionNum);
-
-			// Let the GUI know which map to load (it has changed)
-			idStr mapToStart = m_MissionManager->GetCurrentStartingMap();
-			gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapToStart.c_str()));
-
-			// Go to the next briefing / video
-			gui->HandleNamedEvent("SuccessProceedToNextMission");
+			// Recreate main menu GUI
+			session->ResetMainMenu();
+			session->SetMainMenuStartAtBriefing();
+			session->StartMenu();
 		}
 		else
 		{
@@ -4766,7 +4754,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		Printf("GUI: Language changed to %s.\n", newLang.c_str() );
 		// set the new language and store it, will also reload the GUI
 		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
-		ClearMainMenuMode();
 		if (common->GetI18N()->SetLanguage( newLang.c_str() ))
 		{
 			// Tels: #3193: Cycle through all active entities and call "onLanguageChanged" on them

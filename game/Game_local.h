@@ -726,11 +726,6 @@ public:
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
 
-	//stgatilov: sets "mode" and similar variables of main menu GUI to "none" state
-	//this should be done when main menu is closed, so that the next time it brings up
-	//the exact mechanic is: "heartbeat" detects "mode" == NONE and issues state switch (MainMenuModeSelect)
-	void					ClearMainMenuMode();
-
 	/**
 	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
     */
