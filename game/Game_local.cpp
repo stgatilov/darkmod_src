@@ -3966,6 +3966,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		if (GetMissionResult() == MISSION_COMPLETE)
 		{
+			/*
 			// Check if we should show the success screen (also check the member variable
 			// to catch cases where the player reloaded the map via the console)
 			if (!gui->GetStateBool("PostMissionScreenActive") || !postMissionScreenActive)
@@ -3992,7 +3993,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				// Avoid duplicate triggering
 				gui->SetStateBool("PostMissionScreenActive", true);
 				postMissionScreenActive = true;
-			}
+			}*/
 			
 			// tels: We handled this command, so clear the command stack
 			m_GUICommandStack.Clear();
@@ -4081,7 +4082,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{"SETTINGS", "SettingsMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
 			{"SELECT_LANGUAGE", "SelectLanguageState", "MAINMENU_%INGAME%", "Music%INGAME%"},
 			{"DOWNLOAD", "DownloadMissionsMenuState", "EXTRAMENU_NOTINGAME", "Music%INGAME%"},
-			{"DEBRIEFING_VIDEO", "DebriefingVideoState", "", "MusicDebriefingVideo"},
+			{"DEBRIEFING_VIDEO", "DebriefingVidState", "", "MusicDebriefingVideo"},
 			{"GUISIZE", "SettingsGuiSizeState", "", "Music%INGAME%"},
 			{"MOD_SELECT", "NewGameMenuState", "EXTRAMENU_NOTINGAME", "Music%INGAME%"},
 			{"DIFF_SELECT", "ObjectivesState", "DIFFSELECT", "MusicBriefing"},
