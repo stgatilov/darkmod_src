@@ -4204,7 +4204,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				else
 					targetMusicState = FindStateByName("MAINMENU_NOTINGAME")->music;
 			}
-			if (targetMusicState == FindStateByName("MAINMENU_NOTINGAME")->music && gui->GetStateInt("menu_bg_music") == 0)
+			if (gui->GetStateInt("menu_bg_music") == 0 && (targetMusicState == FindStateByName("MAINMENU_NOTINGAME")->music || targetMusicState == FindStateByName("MAINMENU_INGAME")->music))
 				targetMusicState = "";				//disable music
 			if (targetMusicState == "")
 				targetMusicState = "MusicNone";		//no music requested
