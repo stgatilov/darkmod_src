@@ -4066,6 +4066,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{"MAINMENU", NULL, NULL, NULL},
 			{"START_GAME", NULL, NULL, NULL},
 			{"END_GAME", NULL, NULL, NULL},
+			{"FINISHED", NULL, NULL, NULL},
 			{"FORWARD", NULL, NULL, NULL},
 			{"BACKWARD", NULL, NULL, NULL},
 			{"MAINMENU_INGAME", "MainMenuInGameState", "MAINMENU_INGAME", "MusicIngame"},
@@ -4095,6 +4096,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			{"DIFF_SELECT", "FORWARD", "SHOP"},						{"SHOP", "BACKWARD", "DIFF_SELECT"},
 			{"SHOP", "FORWARD", "START_GAME"},
 			//standard FM-customized sequence: game finished successfully
+			{"FINISHED", "FORWARD", "DEBRIEFING_VIDEO"},
 			{"DEBRIEFING_VIDEO", "FORWARD", "SUCCESS"},		{"SUCCESS", "BACKWARD", "DEBRIEFING_VIDEO"},
 			{"SUCCESS", "FORWARD", "MAINMENU"},
 		};

@@ -83,10 +83,13 @@ void idSessionLocal::CreateMainMenu() {
 	guiMainMenu->SetStateInt( "inGame", presetDefines.GetInt("MM_INGAME") );
 	guiMainMenu->SetStateInt("CurrentMission", presetDefines.GetInt("MM_CURRENTMISSION") );
 	// switch to initial state
+	guiMainMenu->SetStateInt("mode", guiMainMenu->GetStateInt("#MM_STATE_NONE"));
 	if ( mainMenuStartState == MMSS_MAINMENU ) {
 		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_MAINMENU"));
 	} else if ( mainMenuStartState == MMSS_SUCCESS ) {
-		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_DEBRIEFING_VIDEO"));
+		// simulate switch forward into DEBRIEFING_VIDEO, so that state skipping works properly
+		guiMainMenu->SetStateInt("mode", guiMainMenu->GetStateInt("#MM_STATE_FINISHED"));
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FORWARD"));
 	} else if ( mainMenuStartState == MMSS_FAILURE ) {
 		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FAILURE"));
 	} else if ( mainMenuStartState == MMSS_BRIEFING ) {
