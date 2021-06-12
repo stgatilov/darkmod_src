@@ -93,7 +93,7 @@ void idSessionLocal::CreateMainMenu() {
 	} else if ( mainMenuStartState == MMSS_FAILURE ) {
 		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FAILURE"));
 	} else if ( mainMenuStartState == MMSS_BRIEFING ) {
-		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_BRIEFING"));
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_BRIEFING_VIDEO"));
 	} else {
 		assert(false);
 	}
