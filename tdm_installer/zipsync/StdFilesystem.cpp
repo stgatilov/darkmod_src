@@ -8,8 +8,14 @@
 #else
     //it should be here for both GCC and Clang
     //MSVC2017 is also OK with it
-    #include <experimental/filesystem>
-    namespace stdfsys = std::experimental::filesystem::v1;
+    #if _HAS_CXX17
+        #include <filesystem>
+        namespace stdfsys = std::filesystem;
+    #else
+        #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+        #include <experimental/filesystem>
+        namespace stdfsys = std::experimental::filesystem;
+    #endif
 #endif
 
 namespace stdext {
