@@ -76,4 +76,5 @@ public:
 	};
 	//creates (possibly overwrites) TDM shortcut on Desktop
 	static void CreateShortcut(ShortcutInfo info);
+	static void ShowSystemProgress(int percent);
 };

@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <FL/Fl_Text_Display.H>
 #include "LogUtils.h"
 #include "time.h"
+#include "OsUtils.h"
 
 
 int ProgressIndicatorGui::InterruptFlag = 0;
@@ -72,6 +73,7 @@ int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, 
 				_lastLabelText = buff;
 				_labelWidget->label(_lastLabelText.c_str());
 			}
+			OsUtils::ShowSystemProgress( (int) ( globalRatio * 100 ) );
 		}
 		if (globalRatio == 1.0)
 			_labelWidget->hide();

@@ -18,6 +18,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "StdString.h"
 #include "LogUtils.h"
 #include <string.h>
+#include "GuiFluidAutoGen.h"
+#include <FL/x.h>
 
 std::string OsUtils::_argv0;
 
@@ -28,6 +30,10 @@ std::string OsUtils::_argv0;
 #include <shobjidl.h>	//shortcuts
 #include <shlguid.h>	//shortcuts
 #include <shlobj.h>		//getting desktop path
+#include <Shobjidl.h>
+
+CComPtr<ITaskbarList3> m_spTaskbarList;
+
 static void ThrowWinApiError() {
 	LPVOID lpMsgBuf;
 	FormatMessage(
@@ -80,6 +86,28 @@ std::string OsUtils::GetExecutableName() {
 	return exeFn.string();
 }
 
+void OsUtils::ShowSystemProgress( int percent ) {
+#ifdef _WIN32
+	if ( !m_spTaskbarList ) {
+		EnsureComInitialized();
+		HRESULT hr = ::CoCreateInstance( CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER,
+			__uuidof( ITaskbarList3 ), reinterpret_cast<void**>( &m_spTaskbarList ) );
+
+		if ( SUCCEEDED( hr ) ) {
+			hr = m_spTaskbarList->HrInit();
+		}
+	}
+	if ( !m_spTaskbarList )
+		return;
+	auto h = fl_xid( g_Window );
+	if ( !h ) return;
+	if ( percent < 100 ) {
+		m_spTaskbarList.p->SetProgressState( h, TBPF_NORMAL );
+		m_spTaskbarList.p->SetProgressValue( h, percent, 100 );
+	} else
+		m_spTaskbarList.p->SetProgressState( h, TBPF_NOPROGRESS );
+#endif
+}
 
 std::string OsUtils::GetCwd() {
 	return stdext::current_path().string();
