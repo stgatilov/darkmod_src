@@ -339,7 +339,6 @@ public:
 	void				PrintMemInfo( MemInfo_t *mi );
 
 	// cvars
-	static idCVar		image_roundDown;			// round bad sizes down to nearest power of two
 	static idCVar		image_colorMipLevels;		// development aid to see texture mip usage
 	static idCVar		image_downSize;				// controls texture downsampling
 	static idCVar		image_useCompression;		// 0 = force everything to high quality
