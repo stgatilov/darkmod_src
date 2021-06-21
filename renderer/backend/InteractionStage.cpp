@@ -42,9 +42,9 @@ struct InteractionStage::ShaderParams {
 	idVec4 ambientRimColor;
 	// bindless texture handles, if supported
 	uint64_t normalTexture;
+	uint64_t padding;
 	uint64_t diffuseTexture;
 	uint64_t specularTexture;
-	uint64_t padding;
 };
 
 namespace {
