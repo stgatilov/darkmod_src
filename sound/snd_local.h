@@ -22,6 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <AL/alext.h>
 
 #include "../framework/UsercmdGen.h"
+#include "SubtitleParser/SubtitleItem.h"
 #include "sound.h"
 #include "efxlib.h"
 
@@ -378,7 +379,7 @@ public:
 	ALuint				lastopenalStreamingBuffer[3];
 
 	bool				disallowSlow;
-
+	std::vector<SubtitleItem*> subtitles;
 };
 
 class SoundChainResults // grayman #3042
