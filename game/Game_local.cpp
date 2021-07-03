@@ -4227,8 +4227,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				else
 					targetBackgroundsMacro = FindStateByName("MAINMENU_NOTINGAME")->backgrounds;
 			}
-			idStr backgroundsLayersStr = gui->GetStateString("backgrounds");
 			idStr targetBackgroundsLayersStr = gui->GetStateString("#MM_BACKGROUNDS_" + targetBackgroundsMacro, "");
+			while (targetBackgroundsLayersStr.CmpPrefix("MM_BACKGROUNDS_") == 0) {
+				//usually we only read plain values of macros, but this limitation is a problem for backgrounds meta states
+				//so we allow setting name of another backgrounds macro as value
+				targetBackgroundsLayersStr = gui->GetStateString("#" + targetBackgroundsLayersStr, "");
+			}
+			idStr backgroundsLayersStr = gui->GetStateString("backgrounds");
 			if (backgroundsLayersStr != targetBackgroundsLayersStr) {
 				idStrList backgroundsLayers = backgroundsLayersStr.Split(",", true);
 				idStrList targetBackgroundsLayers = targetBackgroundsLayersStr.Split(",", true);
