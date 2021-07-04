@@ -109,6 +109,7 @@ void cb_Version_ButtonRefreshInfo(Fl_Widget *self) {
 		g_Version_ProgressDownloadManifests->show();
 		Fl::flush();
 		ProgressIndicatorGui progress(g_Version_ProgressDownloadManifests);
+		progress.AttachMainWindow(g_Window);
 		info = Actions::RefreshVersionInfo(version, customUrl, g_Settings_CheckBitwiseExact->value(), &progress);
 		g_Version_ProgressDownloadManifests->hide();
 	}

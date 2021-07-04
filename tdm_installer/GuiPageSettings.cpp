@@ -187,6 +187,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
 		GuiDeactivateGuard deactivator(g_PageSettings, {});
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
+		progress.AttachMainWindow(g_Window);
 		Actions::ScanInstallDirectoryIfNecessary(g_Settings_CheckForceScan->value(), &progress);
 		g_Settings_ProgressScanning->hide();
 	}
