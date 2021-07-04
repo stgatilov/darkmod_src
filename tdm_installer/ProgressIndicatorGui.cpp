@@ -22,6 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "LogUtils.h"
 #include "time.h"
 #include "OsUtils.h"
+#include "GuiFluidAutoGen.h"
 
 
 int ProgressIndicatorGui::InterruptFlag = 0;
@@ -41,6 +42,10 @@ ProgressIndicatorGui::ProgressIndicatorGui(Fl_Progress *widget) : _progressWidge
 
 void ProgressIndicatorGui::AttachRemainsLabel(Fl_Widget *label) {
 	_labelWidget = label;
+}
+
+void ProgressIndicatorGui::AttachMainWindow(Fl_Window *window) {
+	_mainWindow = window;
 }
 
 int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, double localRatio, std::string localComment) {
@@ -73,15 +78,23 @@ int ProgressIndicatorGui::Update(double globalRatio, std::string globalComment, 
 				_lastLabelText = buff;
 				_labelWidget->label(_lastLabelText.c_str());
 			}
-			OsUtils::ShowSystemProgress( (int) ( globalRatio * 100 ) );
 		}
 		if (globalRatio == 1.0)
 			_labelWidget->hide();
 	}
 
+	if (_mainWindow) {
+		//show and update progress on taskbar
+		OsUtils::ShowSystemProgress(g_Window, globalRatio);
+	}
+
 	Fl::check();
-	if (InterruptFlag)
-		return InterruptFlag;	//interrupted by some GUI callback
+	if (InterruptFlag) {
+		//interrupted by some GUI callback
+		if (_mainWindow)
+			OsUtils::ShowSystemProgress(g_Window, -1.0);	//hide progress on taskbar
+		return InterruptFlag;
+	}
 
 	return 0;
 }

@@ -18,8 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "StdString.h"
 #include "LogUtils.h"
 #include <string.h>
-#include "GuiFluidAutoGen.h"
-#include <FL/x.h>
+#include <FL/platform.h>
 
 std::string OsUtils::_argv0;
 
@@ -86,7 +85,7 @@ std::string OsUtils::GetExecutableName() {
 	return exeFn.string();
 }
 
-void OsUtils::ShowSystemProgress( int percent ) {
+void OsUtils::ShowSystemProgress(const Fl_Window* window, double ratio) {
 #ifdef _WIN32
 	if ( !m_spTaskbarList ) {
 		EnsureComInitialized();
@@ -99,13 +98,16 @@ void OsUtils::ShowSystemProgress( int percent ) {
 	}
 	if ( !m_spTaskbarList )
 		return;
-	auto h = fl_xid( g_Window );
-	if ( !h ) return;
-	if ( percent < 100 ) {
+	HWND h = fl_xid( window );
+	if ( !h )
+		return;
+	if ( ratio >= 0.0 && ratio < 1.0 ) {
 		m_spTaskbarList.p->SetProgressState( h, TBPF_NORMAL );
-		m_spTaskbarList.p->SetProgressValue( h, percent, 100 );
-	} else
+		m_spTaskbarList.p->SetProgressValue( h, int(ratio * 100.0), 100 );
+	}
+	else {
 		m_spTaskbarList.p->SetProgressState( h, TBPF_NOPROGRESS );
+	}
 #endif
 }
 

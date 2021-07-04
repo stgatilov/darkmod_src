@@ -1690,7 +1690,6 @@ static Fl_Image *image_LeftPanelImage() {
 void FluidAllGui() {
   { g_Window = new Fl_Double_Window(1025, 550, "TheDarkMod installer v?.?\?");
     g_Window->align(Fl_Align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE));
-    g_Window->position( ( Fl::w() - g_Window->w() ) / 2, ( Fl::h() - g_Window->h() ) / 2 );
     { g_Wizard = new Fl_Wizard(325, 0, 720, 550);
       { g_PageSettings = new Fl_Group(325, 0, 720, 550, "Page 1: Settings");
         g_PageSettings->hide();

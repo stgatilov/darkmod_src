@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <string>
 #include <vector>
 
+class Fl_Window;
+
 class OsUtils {
 	static std::string _argv0;
 public:
@@ -76,5 +78,8 @@ public:
 	};
 	//creates (possibly overwrites) TDM shortcut on Desktop
 	static void CreateShortcut(ShortcutInfo info);
-	static void ShowSystemProgress(int percent);
+
+	//updates given progress ratio on taskbar icon of the specified window
+	//note: passing exactly 1.0 or -1.0 hides progress indicator
+	static void ShowSystemProgress(const Fl_Window* window, double ratio);
 };

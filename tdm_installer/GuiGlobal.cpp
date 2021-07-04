@@ -62,6 +62,7 @@ static void GuiToInitialState() {
 		sprintf(buff, "TheDarkMod installer v%s (built on %s)", TDM_INSTALLER_VERSION, __DATE__);
 		g_Window->label(buff);
 	}
+	g_Window->position( ( Fl::w() - g_Window->w() ) / 2, ( Fl::h() - g_Window->h() ) / 2 );
 
 	//----- "settings" page -----
 	static Fl_Text_Buffer g_Settings_StringGreetings;

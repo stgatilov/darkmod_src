@@ -55,6 +55,7 @@ void Install_MetaPerformInstall() {
 		ProgressIndicatorGui progress1(g_Install_ProgressDownload);
 		ProgressIndicatorGui progress2(g_Install_ProgressVerify);
 		progress1.AttachRemainsLabel(g_Install_OutputRemainDownload);
+		progress1.AttachMainWindow(g_Window);
 		Actions::PerformInstallDownload(&progress1, &progress2);
 	}
 	catch(std::exception &e) {

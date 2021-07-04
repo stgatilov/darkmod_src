@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class Fl_Progress;
 class Fl_Widget;
+class Fl_Window;
 
 
 class ProgressIndicatorGui : public ZipSync::ProgressIndicator {
@@ -28,6 +29,7 @@ class ProgressIndicatorGui : public ZipSync::ProgressIndicator {
 	std::string _lastProgressText;
 
 	Fl_Widget *_labelWidget = nullptr;
+	Fl_Window *_mainWindow = nullptr;
 	std::string _lastLabelText;
 	double _startTime = DBL_MAX;
 	double _lastUpdateTime = DBL_MAX;
@@ -40,6 +42,7 @@ public:
 	ProgressIndicatorGui(Fl_Progress *widget);
 
 	void AttachRemainsLabel(Fl_Widget *label);
+	void AttachMainWindow(Fl_Window *window);
 	int Update(double globalRatio, std::string globalComment, double localRatio = -1.0, std::string localComment = "") override;
 
 	static void Interrupt(int code = 1) { InterruptFlag = code; }
