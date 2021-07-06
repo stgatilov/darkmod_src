@@ -68,6 +68,7 @@ class Downloader {
 
     //reuse CURL handle for requests in order to exploit connection pool
     std::unique_ptr<CURL, void (*)(CURL*)> _curlHandle;
+    int _curlRequestIdx = 0;
 
 public:
     ~Downloader();

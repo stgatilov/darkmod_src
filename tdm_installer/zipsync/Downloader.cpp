@@ -217,10 +217,11 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     _currResponse->url = url;
     _currResponse->progressWeight = double(thisEstimate) / totalEstimate;
     CURL *curl = _curlHandle.get();
-    if (_useragent)
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, _useragent->c_str());
+    std::string reprocmd = "curl";
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    reprocmd += formatMessage(" %s", url.c_str());
     curl_easy_setopt(curl, CURLOPT_RANGE, byterangeStr.c_str());
+    reprocmd += formatMessage(" -r %s", byterangeStr.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, (curl_write_callback)write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, (curl_write_callback)header_callback);
@@ -229,11 +230,24 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
     curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, LOW_SPEED_LIMIT);
+    reprocmd += formatMessage(" -Y %d", LOW_SPEED_LIMIT);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, lowSpeedTime);
+    reprocmd += formatMessage(" -y %d", lowSpeedTime);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connectTimeout);
+    reprocmd += formatMessage(" --connect-timeout %d", connectTimeout);
+    if (_useragent) {
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, _useragent->c_str());
+        reprocmd += formatMessage(" -A \"%s\"", _useragent->c_str());
+    }
+    int reqIdx = _curlRequestIdx++;
+    reprocmd += formatMessage(" -o out%d.bin", reqIdx);
+    g_logger->debugf("[curl-cmd] %s", reprocmd.c_str());
     UpdateProgress();
     CURLcode ret = curl_easy_perform(curl);
     long httpRes = 0;
+    curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &httpRes);
+    if (ret != 0 || (httpRes != 200 && httpRes != 206))
+        g_logger->debugf("[curl-res] ret:%d http:%d", ret, httpRes);
     if (ret == CURLE_ABORTED_BY_CALLBACK)
         g_logger->errorf(lcUserInterrupt, "Interrupted by user");
     if (ret == CURLE_OPERATION_TIMEDOUT) {
@@ -243,7 +257,6 @@ bool Downloader::DownloadOneRequest(const std::string &url, const std::vector<in
         );
         return false;   //soft fail: retry is welcome
     }
-    curl_easy_getinfo(curl, CURLINFO_HTTP_CODE, &httpRes);
     ZipSyncAssertF(httpRes != 404, "Not found result for URL %s", url.c_str());
     ZipSyncAssertF(ret != CURLE_WRITE_ERROR, "Response without byteranges for URL %s", url.c_str());
     ZipSyncAssertF(ret == CURLE_OK, "Unexpected CURL error %d on URL %s", ret, url.c_str());
