@@ -68,6 +68,10 @@ void Downloader::SetUserAgent(const char *useragent) {
         _useragent.reset();
 }
 
+void Downloader::setMultipartBlocked(bool blocked) {
+    _blockMultipart = blocked;
+}
+
 void Downloader::DownloadAll() {
     if (_progressCallback)
         _progressCallback(0.0, "Downloading started");
@@ -110,7 +114,9 @@ void Downloader::DownloadAllForUrl(const std::string &url) {
 
     while (state.doneCnt < n) {
         ZipSyncAssertF(state.speedProfile < SPEED_PROFILES_NUM, "Repeated timeout on URL %s", url.c_str());
-        const SpeedProfile &profile = SPEED_PROFILES[state.speedProfile];
+        SpeedProfile profile = SPEED_PROFILES[state.speedProfile];
+        if (_blockMultipart)
+            profile.maxPartsPerRequest = 1;
 
         uint64_t totalSize = 0;
         int rangesCnt = 0;
