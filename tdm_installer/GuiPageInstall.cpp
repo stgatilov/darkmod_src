@@ -57,7 +57,7 @@ void Install_MetaPerformInstall() {
 		progress1.AttachRemainsLabel(g_Install_OutputRemainDownload);
 		progress1.AttachMainWindow(g_Window);
 		progress2.AttachMainWindow(g_Window);
-		Actions::PerformInstallDownload(&progress1, &progress2);
+		Actions::PerformInstallDownload(&progress1, &progress2, g_Settings_CheckNoMultipartByteranges->value());
 	}
 	catch(std::exception &e) {
 		GuiMessageBox(mbfError, e.what());

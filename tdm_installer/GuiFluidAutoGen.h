@@ -23,6 +23,7 @@ extern Fl_Check_Button *g_Settings_CheckSkipSelfUpdate;
 extern Fl_Check_Button *g_Settings_CheckSkipConfigDownload;
 extern Fl_Check_Button *g_Settings_CheckForceScan;
 extern Fl_Check_Button *g_Settings_CheckBitwiseExact;
+extern Fl_Check_Button *g_Settings_CheckNoMultipartByteranges;
 #include <FL/Fl_Progress.H>
 extern Fl_Progress *g_Settings_ProgressScanning;
 extern Fl_Button *g_Settings_ButtonNext;
