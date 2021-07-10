@@ -985,18 +985,14 @@ If ref == NULL, session->updateScreen will be used
 ==================
 */
 void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fileName, int blends, renderView_t *ref, bool envshot ) {
-	byte *buffer;
-	int	i, j, c, temp;
-
+	
 	takingScreenshot = true;
 
 	int	pix = width * height;
-
-	buffer = ( byte * )R_StaticAlloc( pix * 3 + 18 );
-	memset( buffer, 0, 18 );
+	byte *buffer = ( byte * )R_StaticAlloc( pix * 3 );
 
 	if ( blends <= 1 ) {
-		R_ReadTiledPixels( width, height, buffer + 18, ref );
+		R_ReadTiledPixels( width, height, buffer, ref );
 	} else {
 		unsigned short *shortBuffer = ( unsigned short * )R_StaticAlloc( pix * 2 * 3 );
 		memset( shortBuffer, 0, pix * 2 * 3 );
@@ -1004,80 +1000,40 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		// enable anti-aliasing jitter
 		r_jitter.SetBool( true );
 
-		for ( i = 0 ; i < blends ; i++ ) {
-			R_ReadTiledPixels( width, height, buffer + 18, ref );
+		for ( int i = 0 ; i < blends ; i++ ) {
+			R_ReadTiledPixels( width, height, buffer, ref );
 
-			for ( j = 0 ; j < pix * 3 ; j++ ) {
-				shortBuffer[j] += buffer[18 + j];
+			for ( int j = 0 ; j < pix * 3 ; j++ ) {
+				shortBuffer[j] += buffer[j];
 			}
 		}
 
 		// divide back to bytes
-		for ( i = 0 ; i < pix * 3 ; i++ ) {
-			buffer[18 + i] = shortBuffer[i] / blends;
+		for ( int i = 0 ; i < pix * 3 ; i++ ) {
+			buffer[i] = shortBuffer[i] / blends;
 		}
 		R_StaticFree( shortBuffer );
 		r_jitter.SetBool( false );
 	}
 
-	// fill in the header (this is vertically flipped, which qglReadPixels emits)
-	buffer[2] = 2;		// uncompressed type
-	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
-	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
-	buffer[16] = 24;	// pixel size
-
-	// swap rgb to bgr
-	c = 18 + width * height * 3;
-	for ( i = 18 ; i < c ; i += 3 ) {
-		temp = buffer[i];
-		buffer[i] = buffer[i + 2];
-		buffer[i + 2] = temp;
-	}
-
-	// greebo: Check if we should save a screen shot format other than TGA
-	if ( !envshot && ( idStr::Icmp( r_screenshot_format.GetString(), "tga" ) != 0 ) ) {
-		// load screenshot file buffer into image
-		Image image;
-		image.LoadImageFromMemory( ( const unsigned char * )buffer, ( unsigned int )c, "TDM_screenshot" );
-
-		// find the preferred image format
-		idStr extension = r_screenshot_format.GetString( );
-
-		Image::Format format = Image::GetFormatFromString( extension.c_str() );
-
-		if ( format == Image::AUTO_DETECT ) {
-			common->Warning( "Unknown screenshot extension %s, falling back to default.", extension.c_str() );
-
-			format = Image::TGA;
-			extension = "tga";
-		}
-
-		// change extension and index of screenshot file
-		idStr changedPath( fileName );
-		Screenshot_ChangeFilename( changedPath, extension.c_str() );
-
-		// try to save image in other format
-		if ( !image.SaveImageToVfs( changedPath, format ) ) {
-			common->Warning( "Could not save screenshot: %s", changedPath.c_str() );
-		} else {
-			common->Printf( "Wrote %s\n", changedPath.c_str() );
-		}
+	idStr changedPath = fileName;
+	idStr extension;
+	if ( envshot ) {
+		extension = "tga";
 	} else {
+		// find the preferred image format
+		extension = r_screenshot_format.GetString();
 		// change extension and index of screenshot file
-		idStr changedPath( fileName );
-
-		// if envshot is being used, don't name the image using the map + date convention
-		if ( !envshot ) {
-			Screenshot_ChangeFilename( changedPath, "tga" );
-		}
-
-		// Format is TGA, just save the buffer
-		fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_savepath", "" );
-
-		common->Printf( "Wrote %s\n", changedPath.c_str() );
+		Screenshot_ChangeFilename( changedPath, extension );
 	}
+
+	idFile *f = fileSystem->OpenFileWrite( changedPath.c_str(), "fs_savepath", "" );
+	idImageWriter writer;
+	writer.Source( buffer, width, height, 3 ).Dest( f );
+	writer.Flip();
+	writer.ToExtension( extension.c_str() );
+	common->Printf( "Wrote %s\n", changedPath.c_str() );
+
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;

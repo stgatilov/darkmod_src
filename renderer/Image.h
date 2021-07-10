@@ -279,9 +279,6 @@ public:
 };
 
 
-// data is RGBA
-void	R_WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical = false );
-
 class idImageManager {
 public:
 	void				Init();
@@ -467,5 +464,49 @@ IMAGEPROGRAM
 
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL );
 const char *R_ParsePastImageProgram( idLexer &src );
+
+/*
+====================================================================
+
+IMAGEWRITER
+
+====================================================================
+*/
+
+// data is RGBA
+void R_WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical = false );
+
+class idImageWriter {
+public:
+	//setting common settings
+	inline idImageWriter &Source(const byte *data, int width, int height, int bpp = 4) {
+		srcData = data;
+		srcWidth = width;
+		srcHeight = height;
+		srcBpp = bpp;
+		return *this;
+	}
+	inline idImageWriter &Dest(idFile *file, bool close = true) {
+		dstFile = file;
+		dstClose = close;
+		return *this;
+	}
+	inline idImageWriter &Flip(bool doFlip = true) {
+		flip = doFlip;
+		return *this;
+	}
+	//perform save (final call)
+	void ToTGA();
+	void ToJPG(int quality = 85);
+	void ToPNG(int level = -1);
+	void ToExtension(const char *extension);
+
+private:
+	const byte *srcData = nullptr;
+	int srcWidth = -1, srcHeight = -1, srcBpp = -1;
+	idFile *dstFile = nullptr;
+	bool dstClose = true;
+	bool flip = false;
+};
 
 #endif /* !__R_IMAGE_H__ */
