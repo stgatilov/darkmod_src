@@ -22,440 +22,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "jpeglib.h"
 #include "png.h"
 
-/*
-================
-R_WriteTGA
-================
-*/
-void R_WriteTGA( const char *filename, const byte *data, int width, int height, bool flipVertical ) {
-	idImageWriter wr;
-	wr.Source(data, width, height);
-	wr.Flip(flipVertical);
-	idFile *f = fileSystem->OpenFileWrite(filename);
-	wr.Dest(f);
-	wr.ToTGA();
-}
 
 /*
-================
-idImageWriter::ToTGA
-================
-*/
-void idImageWriter::ToTGA() {
-	if (!srcData || !dstFile)
-		common->Error("Error writing image");
+=========================================================
 
-	// save alpha channel iff it is given to us
-	int dstBpp = srcBpp;
+TARGA FORMAT
 
-	static const int TGA_HEADER_SIZE = 18;
-	int dataSize = srcWidth * srcHeight * dstBpp;
-
-	byte *buffer = ( byte * )Mem_Alloc( dataSize + TGA_HEADER_SIZE );
-	memset( buffer, 0, TGA_HEADER_SIZE );
-	buffer[2] = 2;		// uncompressed type
-	buffer[12] = srcWidth & 255;
-	buffer[13] = srcWidth >> 8;
-	buffer[14] = srcHeight & 255;
-	buffer[15] = srcHeight >> 8;
-	buffer[16] = 8 * dstBpp;	// pixel size
-
-	if ( !flip ) {
-		buffer[17] = ( 1 << 5 );	// flip bit, for normal top to bottom raster order
-	}
-
-	// swap rgba to bgra
-	for ( int i = 0, j = 0 ; i < dataSize ; i += srcBpp, j += dstBpp ) {
-		buffer[TGA_HEADER_SIZE + j + 0] = srcData[i + 2];		// blue
-		buffer[TGA_HEADER_SIZE + j + 1] = srcData[i + 1];		// green
-		buffer[TGA_HEADER_SIZE + j + 2] = srcData[i + 0];		// red
-		if (dstBpp >= 4) {
-			buffer[TGA_HEADER_SIZE + j + 3] = (srcBpp >= 4 ? srcData[i + 3] : 255);		// alpha
-		}
-	}
-
-	dstFile->Write( buffer, dataSize + TGA_HEADER_SIZE );
-	Mem_Free( buffer );
-
-	if (dstClose) {
-		fileSystem->CloseFile( dstFile );
-		dstFile = nullptr;
-	}
-}
-
-struct jpeg_error_mgr_tdm {
-	/* "public" fields */
-	struct jpeg_error_mgr base;
-	/* for return to caller */
-	jmp_buf setjmp_buffer;
-	/* how many warnings happened */
-	int warning_count;
-};
-static void jpg_output_message(j_common_ptr cinfo) {
-	char buffer[JMSG_LENGTH_MAX];
-	/* Create the message */
-	(*cinfo->err->format_message) (cinfo, buffer);
-	// print message to TDM console
-	common->Warning("LibJPEG: %s", buffer);
-}
-static void jpg_emit_message(j_common_ptr cinfo, int msg_level) {
-	/* cinfo->err actually points to a jpeg_error_mgr_tdm struct */
-	jpeg_error_mgr_tdm* myerr = (jpeg_error_mgr_tdm*) cinfo->err;
-	/* It's a trace message. */
-	if (msg_level >= 0)
-		return;
-	/* Always print error message. */
-	if (msg_level == INT_MIN) {
-		(*myerr->base.output_message) (cinfo);
-	} else {
-		/* It's a warning message.  Since corrupt files may generate many warnings,
-		* the policy implemented here is to show only the first warning. */
-		if (myerr->warning_count == 0)
-			(*myerr->base.output_message) (cinfo);
-		/* Always count warnings. */
-		myerr->warning_count++;
-	}
-}
-static void jpg_error_exit(j_common_ptr cinfo) {
-	/* cinfo->err actually points to a jpeg_error_mgr_tdm struct */
-	jpeg_error_mgr_tdm* myerr = (jpeg_error_mgr_tdm*) cinfo->err;
-	/* Print error message */
-	jpg_emit_message(cinfo, INT_MIN);
-	/* Jump to the setjmp point */
-	longjmp(myerr->setjmp_buffer, 1);
-}
-
-/*
-================
-idImageWriter::ToJPG
-================
-*/
-void idImageWriter::ToJPG(int quality) {
-	if (!srcData || !dstFile)
-		common->Error("Error writing image");
-
-	byte *rgbScanline = NULL;
-	byte *outputBuffer = NULL;
-
-	/* This struct contains the JPEG compression parameters and pointers to
-	 * working space (which is allocated as needed by the JPEG library).
-	 * It is possible to have several such structures, representing multiple
-	 * compression/decompression processes, in existence at once.  We refer
-	 * to any one struct (and its associated working data) as a "JPEG object".
-	 */
-	struct jpeg_compress_struct cinfo;
-	/* This struct represents a JPEG error handler.  It is declared separately
-	 * because applications often want to supply a specialized error handler
-	 * (see the second half of this file for an example).  But here we just
-	 * take the easy way out and use the standard error handler, which will
-	 * print a message on stderr and call exit() if compression fails.
-	 * Note that this struct must live as long as the main JPEG parameter
-	 * struct, to avoid dangling-pointer problems.
-	 */
-	struct jpeg_error_mgr_tdm jerr;
-
-	/* Step 1: allocate and initialize JPEG compression object */
-
-	/* We have to set up the error handler first, in case the initialization
-	 * step fails.  (Unlikely, but it could happen if you are out of memory.)
-	 * This routine fills in the contents of struct jerr, and returns jerr's
-	 * address which we place into the link field in cinfo.
-	 */
-	cinfo.err = jpeg_std_error(&jerr.base);
-	jerr.base.error_exit = jpg_error_exit;
-	jerr.base.emit_message = jpg_emit_message;
-	jerr.base.output_message = jpg_output_message;
-	jerr.warning_count = 0;
-
-	/* Now we can initialize the JPEG compression object. */
-	jpeg_create_compress(&cinfo);
-
-	if (setjmp(jerr.setjmp_buffer)) {
-		/* If we get here, the JPEG code has exited due to error. */
-		goto onerror;
-	}
-
-	/* Step 2: specify data destination (eg, a file) */
-	/* Note: steps 2 and 3 can be done in either order. */
-
-	/* Here we use the library-supplied code to send compressed data to a
-	 * stdio stream.  You can also write your own code to do something else.
-	 * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
-	 * requires it in order to write binary files.
-	 */
-	unsigned long outputSize;
-	jpeg_mem_dest(&cinfo, &outputBuffer, &outputSize);
-
-	/* Step 3: set parameters for compression */
-
-	/* First we supply a description of the input image.
-	 * Four fields of the cinfo struct must be filled in:
-	 */
-	cinfo.image_width = srcWidth; 	/* image width and height, in pixels */
-	cinfo.image_height = srcHeight;
-	cinfo.input_components = 3;		/* # of color components per pixel */
-	cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
-	/* Now use the library's routine to set default compression parameters.
-	 * (You must set at least cinfo.in_color_space before calling this,
-	 * since the defaults depend on the source color space.)
-	 */
-	jpeg_set_defaults(&cinfo);
-	/* Now you can set any non-default parameters you wish to.
-	 * Here we just illustrate the use of quality (quantization table) scaling:
-	 */
-	jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
-
-	/* Step 4: Start compressor */
-
-	/* TRUE ensures that we will write a complete interchange-JPEG file.
-	 * Pass TRUE unless you are very sure of what you're doing.
-	 */
-	jpeg_start_compress(&cinfo, TRUE);
-
-	/* Step 5: while (scan lines remain to be written) */
-	/*           jpeg_write_scanlines(...); */
-
-	int row_stride;		/* physical row width in image buffer */
-	JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
-
-	/* Here we use the library's state variable cinfo.next_scanline as the
-	 * loop counter, so that we don't have to keep track ourselves.
-	 * To keep things simple, we pass one scanline per call; you can pass
-	 * more if you wish, though.
-	 */
-	row_stride = srcWidth * srcBpp;	/* bytes per row in input buffer */
-	if (srcBpp != 3)
-		rgbScanline = (byte*)Mem_Alloc(row_stride);
-
-	while (cinfo.next_scanline < cinfo.image_height) {
-		//copy row to output, converting it from RGBA to RGB
-		int srcRow = cinfo.next_scanline;
-		if (flip)
-			srcRow = srcHeight - 1 - srcRow;
-		const byte *source = &srcData[srcRow * row_stride];
-		if (srcBpp != 3) {
-			for (int i = 0; i < srcWidth; i++) {
-				rgbScanline[3 * i + 0] = source[srcBpp * i + 0];
-				rgbScanline[3 * i + 1] = source[srcBpp * i + 1];
-				rgbScanline[3 * i + 2] = source[srcBpp * i + 2];
-			}
-			row_pointer[0] = rgbScanline;
-		}
-		else
-			row_pointer[0] = (byte*) source;
-		/* jpeg_write_scanlines expects an array of pointers to scanlines.
-		 * Here the array is only one element long, but you could pass
-		 * more than one scanline at a time if that's more convenient.
-		 */
-		(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
-	}
-
-	/* Step 6: Finish compression */
-	jpeg_finish_compress(&cinfo);
-
-	/* After finish_compress, write buffer to file. */
-	dstFile->Write( outputBuffer, outputSize );
-
-onerror:
-	/* Step 7: release JPEG compression object */
-	/* This is an important step since it will release a good deal of memory. */
-	jpeg_destroy_compress(&cinfo);
-
-	free(outputBuffer);
-	Mem_Free(rgbScanline);
-
-	if (dstClose) {
-		fileSystem->CloseFile( dstFile );
-		dstFile = nullptr;
-	}
-
-	/* And we're done! */
-}
-
-static void png_error_handler(png_structp png_ptr, png_const_charp message) {
-	common->Warning("LibPNG error: %s", message);
-	//note: libpng will longjmp back to our code after that
-}
-static void png_warning_handler(png_structp png_ptr, png_const_charp message) {
-	common->Warning("LibPNG warning: %s", message);
-}
-static png_voidp png_malloc_fn(png_structp png_ptr, png_size_t size) {
-	return Mem_Alloc(size);
-}
-static void png_free_fn(png_structp png_ptr, png_voidp ptr) {
-	return Mem_Free(ptr);
-}
-static void png_read_data_fn(png_structp png_ptr, png_bytep buffer, png_size_t size) {
-	idFile *f = (idFile*)png_get_io_ptr(png_ptr);
-	f->Read(buffer, size);
-}	
-static void png_write_data_fn(png_structp png_ptr, png_bytep buffer, png_size_t size) {
-	idFile *f = (idFile*)png_get_io_ptr(png_ptr);
-	f->Write(buffer, size);
-}	
-static void png_output_flush_fn(png_structp png_ptr) {
-	idFile *f = (idFile*)png_get_io_ptr(png_ptr);
-	f->Flush();
-}
-
-/*
-================
-idImageWriter::ToPNG
-================
-*/
-void idImageWriter::ToPNG(int level) {
-	if (!srcData || !dstFile)
-		common->Error("Error writing image");
-
-	png_structp png_ptr;
-	png_infop info_ptr;
-	png_bytep *row_pointers = nullptr;
-
-	//for now, let's store alpha iff we are given alpha
-	int dstBpp = srcBpp;
-
-	/* Create and initialize the png_struct with the desired error handler
-	 * functions.  If you want to use the default stderr and longjump method,
-	 * you can supply NULL for the last three parameters.  We also check that
-	 * the library version is compatible with the one used at compile time,
-	 * in case we are using dynamically linked libraries.  REQUIRED.
-	 */
-	png_ptr = png_create_write_struct(
-		PNG_LIBPNG_VER_STRING,
-		NULL, png_error_handler, png_warning_handler
-	);
-	if (png_ptr == NULL)
-		common->Error("Failed to initialize LibPNG structure");
-
-	/* Allocate/initialize the image information data.  REQUIRED. */
-	info_ptr = png_create_info_struct(png_ptr);
-	if (info_ptr == NULL) {
-		png_destroy_write_struct(&png_ptr, NULL);
-		common->Error("Failed to initialize LibPNG structure");
-	} 
-
-	/* Set up error handling.  REQUIRED if you aren't supplying your own
-	 * error handling functions in the png_create_write_struct() call.
-	 */
-	if (setjmp(png_jmpbuf(png_ptr))) {
-		/* If we get here, we had a problem writing the file. */
-		goto onerror;
-	}
-
-	/* I/O initialization method 2 */
-	/* If you are using replacement write functions, instead of calling
-	 * png_init_io(), you would call:
-	 */
-	png_set_write_fn(png_ptr, dstFile, png_write_data_fn, png_output_flush_fn);
-	/* where user_io_ptr is a structure you want available to the callbacks. */
-
-	//use our memory allocation routines
-	png_set_mem_fn(png_ptr, NULL, png_malloc_fn, png_free_fn);
-
-	//set compression level for DEFLATE
-	png_set_compression_level(png_ptr, level);
-
-	/* Set the image information here.  Width and height are up to 2^31,
-	 * bit_depth is one of 1, 2, 4, 8 or 16, but valid values also depend on
-	 * the color_type selected.  color_type is one of PNG_COLOR_TYPE_GRAY,
-	 * PNG_COLOR_TYPE_GRAY_ALPHA, PNG_COLOR_TYPE_PALETTE, PNG_COLOR_TYPE_RGB,
-	 * or PNG_COLOR_TYPE_RGB_ALPHA.  interlace is either PNG_INTERLACE_NONE or
-	 * PNG_INTERLACE_ADAM7, and the compression_type and filter_type MUST
-	 * currently be PNG_COMPRESSION_TYPE_BASE and PNG_FILTER_TYPE_BASE.
-	 * REQUIRED.
-	 */
-	png_set_IHDR(
-		png_ptr, info_ptr, srcWidth, srcHeight, 8,
-		dstBpp == 3 ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_RGB_ALPHA,
-		PNG_INTERLACE_NONE,
-		PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE
-	);
-
-	/* Write the file header information.  REQUIRED. */
-	png_write_info(png_ptr, info_ptr);
-
-	row_pointers = (png_bytep*)Mem_Alloc(srcHeight * sizeof(png_bytep));
-	/* Set up pointers into your "image" byte array. */
-	for (int k = 0; k < srcHeight; k++) {
-		int srcRow = k;
-		if (flip)
-			srcRow = srcHeight - 1 - srcRow;
-		row_pointers[k] = (png_bytep)(srcData + srcRow * srcWidth * srcBpp);
-	}
-
-	/* Write out the entire image data in one call */
-	png_write_image(png_ptr, row_pointers);
-
-	/* It is REQUIRED to call this to finish writing the rest of the file. */
-	png_write_end(png_ptr, info_ptr);
-
-onerror:
-	/* Clean up after the write, and free any allocated memory. */
-	png_destroy_write_struct(&png_ptr, &info_ptr);
-
-	Mem_Free(row_pointers);
-
-	if (dstClose) {
-		fileSystem->CloseFile( dstFile );
-		dstFile = nullptr;
-	}
-}
-
-/*
-================
-idImageWriter::ToExtension
-================
-*/
-void idImageWriter::ToExtension(const char *extension) {
-	if (idStr::Icmp(extension, "tga") == 0) {
-		return ToTGA();
-	} else if (idStr::Icmp(extension, "jpg") == 0) {
-		return ToJPG();
-	} else if (idStr::Icmp(extension, "png") == 0) {
-		return ToPNG();
-	} else {
-		common->Warning("Unknown image extension [%s], using TGA format", extension);
-		return ToTGA();
-	}
-}
-
-
-static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
-static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
-static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
-static void LoadPNG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
-
-/*
-========================================================================
-
-PCX files are used for 8 bit images
-
-========================================================================
-*/
-
-typedef struct {
-	char	manufacturer;
-	char	version;
-	char	encoding;
-	char	bits_per_pixel;
-	unsigned short	xmin, ymin, xmax, ymax;
-	unsigned short	hres, vres;
-	unsigned char	palette[48];
-	char	reserved;
-	char	color_planes;
-	unsigned short	bytes_per_line;
-	unsigned short	palette_type;
-	char	filler[58];
-	unsigned char	data;			// unbounded
-} pcx_t;
-
-
-/*
-========================================================================
-
-TGA files are used for 24/32 bit images
-
-========================================================================
+=========================================================
 */
 
 /* more recent tga2 code, dont need no stinking hacks for flipped images, and also supports more formats */
@@ -488,339 +61,6 @@ typedef struct _TargaHeader {
 	unsigned short	colormap_index, colormap_length;
 	unsigned short	x_origin, y_origin, width, height;
 } TargaHeader;
-
-/*
-=========================================================
-
-BMP LOADING
-
-=========================================================
-*/
-
-typedef struct {
-	char id[2];
-	unsigned int fileSize;
-	unsigned int reserved0;
-	unsigned int bitmapDataOffset;
-	unsigned int bitmapHeaderSize;
-	unsigned int width;
-	unsigned int height;
-	unsigned short planes;
-	unsigned short bitsPerPixel;
-	unsigned int compression;
-	unsigned int bitmapDataSize;
-	unsigned int hRes;
-	unsigned int vRes;
-	unsigned int colors;
-	unsigned int importantColors;
-	unsigned char palette[256][4];
-} BMPHeader_t;
-
-/*
-==============
-LoadBMP
-==============
-*/
-static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	int			columns, rows, numPixels;
-	byte		*pixbuf;
-	int			row, column;
-	byte		*buf_p;
-	byte		*buffer;
-	int			length;
-	BMPHeader_t bmpHeader;
-	byte		*bmpRGBA;
-
-	if ( !pic ) {
-		fileSystem->ReadFile( name, nullptr, timestamp );
-		return;	// just getting timestamp
-	}
-	*pic = nullptr;
-
-	//
-	// load the file
-	//
-	length = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
-
-	if ( !buffer ) {
-		return;
-	}
-	buf_p = buffer;
-
-	bmpHeader.id[0] = *buf_p++;
-	bmpHeader.id[1] = *buf_p++;
-	bmpHeader.fileSize = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.reserved0 = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.bitmapDataOffset = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.bitmapHeaderSize = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.width = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.height = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.planes = LittleShort( * ( short * ) buf_p );
-	buf_p += 2;
-	bmpHeader.bitsPerPixel = LittleShort( * ( short * ) buf_p );
-	buf_p += 2;
-	bmpHeader.compression = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.bitmapDataSize = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.hRes = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.vRes = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.colors = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-	bmpHeader.importantColors = LittleInt( * ( int * ) buf_p );
-	buf_p += 4;
-
-	memcpy( bmpHeader.palette, buf_p, sizeof( bmpHeader.palette ) );
-
-	if ( bmpHeader.bitsPerPixel == 8 ) {
-		buf_p += 1024;
-	}
-
-	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' ) {
-		common->Error( "LoadBMP: only Windows-style BMP files supported (%s)\n", name );
-	}
-
-	if ( bmpHeader.fileSize != length ) {
-		common->Error( "LoadBMP: header size does not match file size (%lu vs. %d) (%s)\n", bmpHeader.fileSize, length, name );
-	}
-
-	if ( bmpHeader.compression != 0 ) {
-		common->Error( "LoadBMP: only uncompressed BMP files supported (%s)\n", name );
-	}
-
-	if ( bmpHeader.bitsPerPixel < 8 ) {
-		common->Error( "LoadBMP: monochrome and 4-bit BMP files not supported (%s)\n", name );
-	}
-	columns = bmpHeader.width;
-	rows = bmpHeader.height;
-
-	if ( rows < 0 ) {
-		rows = -rows;
-	}
-	numPixels = columns * rows;
-
-	if ( width ) {
-		*width = columns;
-	}
-
-	if ( height ) {
-		*height = rows;
-	}
-	bmpRGBA = ( byte * )R_StaticAlloc( numPixels * 4 );
-	*pic = bmpRGBA;
-
-
-	for ( row = rows - 1; row >= 0; row-- ) {
-		pixbuf = bmpRGBA + row * columns * 4;
-
-		for ( column = 0; column < columns; column++ ) {
-			unsigned char red, green, blue, alpha;
-			int palIndex;
-			unsigned short shortPixel;
-
-			switch ( bmpHeader.bitsPerPixel ) {
-			case 8:
-				palIndex = *buf_p++;
-				*pixbuf++ = bmpHeader.palette[palIndex][2];
-				*pixbuf++ = bmpHeader.palette[palIndex][1];
-				*pixbuf++ = bmpHeader.palette[palIndex][0];
-				*pixbuf++ = 0xff;
-				break;
-			case 16:
-				shortPixel = * ( unsigned short * ) pixbuf;
-				pixbuf += 2;
-				*pixbuf++ = ( shortPixel & ( 31 << 10 ) ) >> 7;
-				*pixbuf++ = ( shortPixel & ( 31 << 5 ) ) >> 2;
-				*pixbuf++ = ( shortPixel & ( 31 ) ) << 3;
-				*pixbuf++ = 0xff;
-				break;
-
-			case 24:
-				blue = *buf_p++;
-				green = *buf_p++;
-				red = *buf_p++;
-				*pixbuf++ = red;
-				*pixbuf++ = green;
-				*pixbuf++ = blue;
-				*pixbuf++ = 255;
-				break;
-			case 32:
-				blue = *buf_p++;
-				green = *buf_p++;
-				red = *buf_p++;
-				alpha = *buf_p++;
-				*pixbuf++ = red;
-				*pixbuf++ = green;
-				*pixbuf++ = blue;
-				*pixbuf++ = alpha;
-				break;
-			default:
-				common->Error( "LoadBMP: illegal pixel_size '%d' in file '%s'\n", bmpHeader.bitsPerPixel, name );
-				break;
-			}
-		}
-	}
-	fileSystem->FreeFile( buffer );
-
-}
-
-
-/*
-=================================================================
-
-PCX LOADING
-
-=================================================================
-*/
-
-
-/*
-==============
-LoadPCX
-==============
-*/
-static void LoadPCX( const char *filename, byte **pic, byte **palette, int *width, int *height,
-                     ID_TIME_T *timestamp ) {
-	byte	*raw;
-	pcx_t	*pcx;
-	int		x, y;
-	int		len;
-	int		dataByte, runLength;
-	byte	*out, *pix;
-	int		xmax, ymax;
-
-	if ( !pic ) {
-		fileSystem->ReadFile( filename, NULL, timestamp );
-		return;	// just getting timestamp
-	}
-	*pic = nullptr;
-	*palette = nullptr;
-
-	//
-	// load the file
-	//
-	len = fileSystem->ReadFile( filename, ( void ** )&raw, timestamp );
-
-	if ( !raw ) {
-		return;
-	}
-
-	//
-	// parse the PCX file
-	//
-	pcx = ( pcx_t * )raw;
-	raw = &pcx->data;
-
-	xmax = LittleShort( pcx->xmax );
-	ymax = LittleShort( pcx->ymax );
-
-	if ( pcx->manufacturer != 0x0a
-	        || pcx->version != 5
-	        || pcx->encoding != 1
-	        || pcx->bits_per_pixel != 8
-	        || xmax >= 1024
-	        || ymax >= 1024 ) {
-		common->Printf( "Bad pcx file %s (%i x %i) (%i x %i)\n", filename, xmax + 1, ymax + 1, pcx->xmax, pcx->ymax );
-		return;
-	}
-	out = ( byte * )R_StaticAlloc( ( ymax + 1 ) * ( xmax + 1 ) );
-
-	*pic = out;
-
-	pix = out;
-
-	if ( palette ) {
-		*palette = ( byte * )R_StaticAlloc( 768 );
-		memcpy( *palette, ( byte * )pcx + len - 768, 768 );
-	}
-
-	if ( width ) {
-		*width = xmax + 1;
-	}
-
-	if ( height ) {
-		*height = ymax + 1;
-	}
-
-	// FIXME: use bytes_per_line here?
-	for ( y = 0 ; y <= ymax ; y++, pix += xmax + 1 ) {
-		for ( x = 0 ; x <= xmax ; ) {
-			dataByte = *raw++;
-
-			if ( ( dataByte & 0xC0 ) == 0xC0 ) {
-				runLength = dataByte & 0x3F;
-				dataByte = *raw++;
-			} else {
-				runLength = 1;
-			}
-
-			while ( runLength-- > 0 ) {
-				pix[x++] = dataByte;
-			}
-		}
-	}
-
-	if ( raw - ( byte * )pcx > len ) {
-		common->Printf( "PCX file %s was malformed", filename );
-		R_StaticFree( *pic );
-		*pic = nullptr;
-	}
-	fileSystem->FreeFile( pcx );
-}
-
-
-/*
-==============
-LoadPCX32
-==============
-*/
-static void LoadPCX32( const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	byte	*palette;
-	byte	*pic8;
-	int		i, c, p;
-	byte	*pic32;
-
-	if ( !pic ) {
-		fileSystem->ReadFile( filename, nullptr, timestamp );
-		return;	// just getting timestamp
-	}
-	LoadPCX( filename, &pic8, &palette, width, height, timestamp );
-
-	if ( !pic8 ) {
-		*pic = nullptr;
-		return;
-	}
-	c = ( *width ) * ( *height );
-
-	pic32 = *pic = ( byte * )R_StaticAlloc( 4 * c );
-
-	for ( i = 0 ; i < c ; i++ ) {
-		p = pic8[i];
-		pic32[0] = palette[p * 3];
-		pic32[1] = palette[p * 3 + 1];
-		pic32[2] = palette[p * 3 + 2];
-		pic32[3] = 255;
-		pic32 += 4;
-	}
-	R_StaticFree( pic8 );
-	R_StaticFree( palette );
-}
-
-/*
-=========================================================
-
-TARGA LOADING
-
-=========================================================
-*/
 
 /*
 =============
@@ -1115,15 +355,121 @@ PixEncode:
 	fileSystem->FreeFile( buffer );
 }
 
+/*
+================
+R_WriteTGA
+================
+*/
+void R_WriteTGA( const char *filename, const byte *data, int width, int height, bool flipVertical ) {
+	idImageWriter wr;
+	wr.Source(data, width, height);
+	wr.Flip(flipVertical);
+	idFile *f = fileSystem->OpenFileWrite(filename);
+	wr.Dest(f);
+	wr.ToTGA();
+}
+
+/*
+================
+idImageWriter::ToTGA
+================
+*/
+void idImageWriter::ToTGA() {
+	if (!srcData || !dstFile)
+		common->Error("Error writing image");
+
+	// save alpha channel iff it is given to us
+	int dstBpp = srcBpp;
+
+	static const int TGA_HEADER_SIZE = 18;
+	int dataSize = srcWidth * srcHeight * dstBpp;
+
+	byte *buffer = ( byte * )Mem_Alloc( dataSize + TGA_HEADER_SIZE );
+	memset( buffer, 0, TGA_HEADER_SIZE );
+	buffer[2] = 2;		// uncompressed type
+	buffer[12] = srcWidth & 255;
+	buffer[13] = srcWidth >> 8;
+	buffer[14] = srcHeight & 255;
+	buffer[15] = srcHeight >> 8;
+	buffer[16] = 8 * dstBpp;	// pixel size
+
+	if ( !flip ) {
+		buffer[17] = ( 1 << 5 );	// flip bit, for normal top to bottom raster order
+	}
+
+	// swap rgba to bgra
+	for ( int i = 0, j = 0 ; i < dataSize ; i += srcBpp, j += dstBpp ) {
+		buffer[TGA_HEADER_SIZE + j + 0] = srcData[i + 2];		// blue
+		buffer[TGA_HEADER_SIZE + j + 1] = srcData[i + 1];		// green
+		buffer[TGA_HEADER_SIZE + j + 2] = srcData[i + 0];		// red
+		if (dstBpp >= 4) {
+			buffer[TGA_HEADER_SIZE + j + 3] = (srcBpp >= 4 ? srcData[i + 3] : 255);		// alpha
+		}
+	}
+
+	dstFile->Write( buffer, dataSize + TGA_HEADER_SIZE );
+	Mem_Free( buffer );
+
+	if (dstClose) {
+		fileSystem->CloseFile( dstFile );
+		dstFile = nullptr;
+	}
+}
+
 
 /*
 =========================================================
 
-JPG LOADING
+JPG FORMAT
 
 Interfaces with the huge libjpeg
 =========================================================
 */
+
+struct jpeg_error_mgr_tdm {
+	/* "public" fields */
+	struct jpeg_error_mgr base;
+	/* for return to caller */
+	jmp_buf setjmp_buffer;
+	/* how many warnings happened */
+	int warning_count;
+};
+
+static void jpg_output_message(j_common_ptr cinfo) {
+	char buffer[JMSG_LENGTH_MAX];
+	/* Create the message */
+	(*cinfo->err->format_message) (cinfo, buffer);
+	// print message to TDM console
+	common->Warning("LibJPEG: %s", buffer);
+}
+
+static void jpg_emit_message(j_common_ptr cinfo, int msg_level) {
+	/* cinfo->err actually points to a jpeg_error_mgr_tdm struct */
+	jpeg_error_mgr_tdm* myerr = (jpeg_error_mgr_tdm*) cinfo->err;
+	/* It's a trace message. */
+	if (msg_level >= 0)
+		return;
+	/* Always print error message. */
+	if (msg_level == INT_MIN) {
+		(*myerr->base.output_message) (cinfo);
+	} else {
+		/* It's a warning message.  Since corrupt files may generate many warnings,
+		* the policy implemented here is to show only the first warning. */
+		if (myerr->warning_count == 0)
+			(*myerr->base.output_message) (cinfo);
+		/* Always count warnings. */
+		myerr->warning_count++;
+	}
+}
+
+static void jpg_error_exit(j_common_ptr cinfo) {
+	/* cinfo->err actually points to a jpeg_error_mgr_tdm struct */
+	jpeg_error_mgr_tdm* myerr = (jpeg_error_mgr_tdm*) cinfo->err;
+	/* Print error message */
+	jpg_emit_message(cinfo, INT_MIN);
+	/* Jump to the setjmp point */
+	longjmp(myerr->setjmp_buffer, 1);
+}
 
 /*
 =============
@@ -1276,13 +622,193 @@ onerror:
 }
 
 /*
+================
+idImageWriter::ToJPG
+================
+*/
+void idImageWriter::ToJPG(int quality) {
+	if (!srcData || !dstFile)
+		common->Error("Error writing image");
+
+	byte *rgbScanline = NULL;
+	byte *outputBuffer = NULL;
+
+	/* This struct contains the JPEG compression parameters and pointers to
+	 * working space (which is allocated as needed by the JPEG library).
+	 * It is possible to have several such structures, representing multiple
+	 * compression/decompression processes, in existence at once.  We refer
+	 * to any one struct (and its associated working data) as a "JPEG object".
+	 */
+	struct jpeg_compress_struct cinfo;
+	/* This struct represents a JPEG error handler.  It is declared separately
+	 * because applications often want to supply a specialized error handler
+	 * (see the second half of this file for an example).  But here we just
+	 * take the easy way out and use the standard error handler, which will
+	 * print a message on stderr and call exit() if compression fails.
+	 * Note that this struct must live as long as the main JPEG parameter
+	 * struct, to avoid dangling-pointer problems.
+	 */
+	struct jpeg_error_mgr_tdm jerr;
+
+	/* Step 1: allocate and initialize JPEG compression object */
+
+	/* We have to set up the error handler first, in case the initialization
+	 * step fails.  (Unlikely, but it could happen if you are out of memory.)
+	 * This routine fills in the contents of struct jerr, and returns jerr's
+	 * address which we place into the link field in cinfo.
+	 */
+	cinfo.err = jpeg_std_error(&jerr.base);
+	jerr.base.error_exit = jpg_error_exit;
+	jerr.base.emit_message = jpg_emit_message;
+	jerr.base.output_message = jpg_output_message;
+	jerr.warning_count = 0;
+
+	/* Now we can initialize the JPEG compression object. */
+	jpeg_create_compress(&cinfo);
+
+	if (setjmp(jerr.setjmp_buffer)) {
+		/* If we get here, the JPEG code has exited due to error. */
+		goto onerror;
+	}
+
+	/* Step 2: specify data destination (eg, a file) */
+	/* Note: steps 2 and 3 can be done in either order. */
+
+	/* Here we use the library-supplied code to send compressed data to a
+	 * stdio stream.  You can also write your own code to do something else.
+	 * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
+	 * requires it in order to write binary files.
+	 */
+	unsigned long outputSize;
+	jpeg_mem_dest(&cinfo, &outputBuffer, &outputSize);
+
+	/* Step 3: set parameters for compression */
+
+	/* First we supply a description of the input image.
+	 * Four fields of the cinfo struct must be filled in:
+	 */
+	cinfo.image_width = srcWidth; 	/* image width and height, in pixels */
+	cinfo.image_height = srcHeight;
+	cinfo.input_components = 3;		/* # of color components per pixel */
+	cinfo.in_color_space = JCS_RGB; 	/* colorspace of input image */
+	/* Now use the library's routine to set default compression parameters.
+	 * (You must set at least cinfo.in_color_space before calling this,
+	 * since the defaults depend on the source color space.)
+	 */
+	jpeg_set_defaults(&cinfo);
+	/* Now you can set any non-default parameters you wish to.
+	 * Here we just illustrate the use of quality (quantization table) scaling:
+	 */
+	jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
+
+	/* Step 4: Start compressor */
+
+	/* TRUE ensures that we will write a complete interchange-JPEG file.
+	 * Pass TRUE unless you are very sure of what you're doing.
+	 */
+	jpeg_start_compress(&cinfo, TRUE);
+
+	/* Step 5: while (scan lines remain to be written) */
+	/*           jpeg_write_scanlines(...); */
+
+	int row_stride;		/* physical row width in image buffer */
+	JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
+
+	/* Here we use the library's state variable cinfo.next_scanline as the
+	 * loop counter, so that we don't have to keep track ourselves.
+	 * To keep things simple, we pass one scanline per call; you can pass
+	 * more if you wish, though.
+	 */
+	row_stride = srcWidth * srcBpp;	/* bytes per row in input buffer */
+	if (srcBpp != 3)
+		rgbScanline = (byte*)Mem_Alloc(row_stride);
+
+	while (cinfo.next_scanline < cinfo.image_height) {
+		//copy row to output, converting it from RGBA to RGB
+		int srcRow = cinfo.next_scanline;
+		if (flip)
+			srcRow = srcHeight - 1 - srcRow;
+		const byte *source = &srcData[srcRow * row_stride];
+		if (srcBpp != 3) {
+			for (int i = 0; i < srcWidth; i++) {
+				rgbScanline[3 * i + 0] = source[srcBpp * i + 0];
+				rgbScanline[3 * i + 1] = source[srcBpp * i + 1];
+				rgbScanline[3 * i + 2] = source[srcBpp * i + 2];
+			}
+			row_pointer[0] = rgbScanline;
+		}
+		else
+			row_pointer[0] = (byte*) source;
+		/* jpeg_write_scanlines expects an array of pointers to scanlines.
+		 * Here the array is only one element long, but you could pass
+		 * more than one scanline at a time if that's more convenient.
+		 */
+		(void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+	}
+
+	/* Step 6: Finish compression */
+	jpeg_finish_compress(&cinfo);
+
+	/* After finish_compress, write buffer to file. */
+	dstFile->Write( outputBuffer, outputSize );
+
+onerror:
+	/* Step 7: release JPEG compression object */
+	/* This is an important step since it will release a good deal of memory. */
+	jpeg_destroy_compress(&cinfo);
+
+	free(outputBuffer);
+	Mem_Free(rgbScanline);
+
+	if (dstClose) {
+		fileSystem->CloseFile( dstFile );
+		dstFile = nullptr;
+	}
+
+	/* And we're done! */
+}
+
+
+/*
 =========================================================
 
-PNG LOADING
+PNG FORMAT
 
 Interfaces with the huge libpng
 =========================================================
 */
+
+static void png_error_handler(png_structp png_ptr, png_const_charp message) {
+	common->Warning("LibPNG error: %s", message);
+	//note: libpng will longjmp back to our code after that
+}
+
+static void png_warning_handler(png_structp png_ptr, png_const_charp message) {
+	common->Warning("LibPNG warning: %s", message);
+}
+
+static png_voidp png_malloc_fn(png_structp png_ptr, png_size_t size) {
+	return Mem_Alloc(size);
+}
+
+static void png_free_fn(png_structp png_ptr, png_voidp ptr) {
+	return Mem_Free(ptr);
+}
+
+static void png_read_data_fn(png_structp png_ptr, png_bytep buffer, png_size_t size) {
+	idFile *f = (idFile*)png_get_io_ptr(png_ptr);
+	f->Read(buffer, size);
+}	
+
+static void png_write_data_fn(png_structp png_ptr, png_bytep buffer, png_size_t size) {
+	idFile *f = (idFile*)png_get_io_ptr(png_ptr);
+	f->Write(buffer, size);
+}	
+
+static void png_output_flush_fn(png_structp png_ptr) {
+	idFile *f = (idFile*)png_get_io_ptr(png_ptr);
+	f->Flush();
+}
 
 /*
 =============
@@ -1434,13 +960,463 @@ onerror:
 	/* That's it! */
 }
 
-//===================================================================
+/*
+================
+idImageWriter::ToPNG
+================
+*/
+void idImageWriter::ToPNG(int level) {
+	if (!srcData || !dstFile)
+		common->Error("Error writing image");
+
+	png_structp png_ptr;
+	png_infop info_ptr;
+	png_bytep *row_pointers = nullptr;
+
+	//for now, let's store alpha iff we are given alpha
+	int dstBpp = srcBpp;
+
+	/* Create and initialize the png_struct with the desired error handler
+	 * functions.  If you want to use the default stderr and longjump method,
+	 * you can supply NULL for the last three parameters.  We also check that
+	 * the library version is compatible with the one used at compile time,
+	 * in case we are using dynamically linked libraries.  REQUIRED.
+	 */
+	png_ptr = png_create_write_struct(
+		PNG_LIBPNG_VER_STRING,
+		NULL, png_error_handler, png_warning_handler
+	);
+	if (png_ptr == NULL)
+		common->Error("Failed to initialize LibPNG structure");
+
+	/* Allocate/initialize the image information data.  REQUIRED. */
+	info_ptr = png_create_info_struct(png_ptr);
+	if (info_ptr == NULL) {
+		png_destroy_write_struct(&png_ptr, NULL);
+		common->Error("Failed to initialize LibPNG structure");
+	} 
+
+	/* Set up error handling.  REQUIRED if you aren't supplying your own
+	 * error handling functions in the png_create_write_struct() call.
+	 */
+	if (setjmp(png_jmpbuf(png_ptr))) {
+		/* If we get here, we had a problem writing the file. */
+		goto onerror;
+	}
+
+	/* I/O initialization method 2 */
+	/* If you are using replacement write functions, instead of calling
+	 * png_init_io(), you would call:
+	 */
+	png_set_write_fn(png_ptr, dstFile, png_write_data_fn, png_output_flush_fn);
+	/* where user_io_ptr is a structure you want available to the callbacks. */
+
+	//use our memory allocation routines
+	png_set_mem_fn(png_ptr, NULL, png_malloc_fn, png_free_fn);
+
+	//set compression level for DEFLATE
+	png_set_compression_level(png_ptr, level);
+
+	/* Set the image information here.  Width and height are up to 2^31,
+	 * bit_depth is one of 1, 2, 4, 8 or 16, but valid values also depend on
+	 * the color_type selected.  color_type is one of PNG_COLOR_TYPE_GRAY,
+	 * PNG_COLOR_TYPE_GRAY_ALPHA, PNG_COLOR_TYPE_PALETTE, PNG_COLOR_TYPE_RGB,
+	 * or PNG_COLOR_TYPE_RGB_ALPHA.  interlace is either PNG_INTERLACE_NONE or
+	 * PNG_INTERLACE_ADAM7, and the compression_type and filter_type MUST
+	 * currently be PNG_COMPRESSION_TYPE_BASE and PNG_FILTER_TYPE_BASE.
+	 * REQUIRED.
+	 */
+	png_set_IHDR(
+		png_ptr, info_ptr, srcWidth, srcHeight, 8,
+		dstBpp == 3 ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_RGB_ALPHA,
+		PNG_INTERLACE_NONE,
+		PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE
+	);
+
+	/* Write the file header information.  REQUIRED. */
+	png_write_info(png_ptr, info_ptr);
+
+	row_pointers = (png_bytep*)Mem_Alloc(srcHeight * sizeof(png_bytep));
+	/* Set up pointers into your "image" byte array. */
+	for (int k = 0; k < srcHeight; k++) {
+		int srcRow = k;
+		if (flip)
+			srcRow = srcHeight - 1 - srcRow;
+		row_pointers[k] = (png_bytep)(srcData + srcRow * srcWidth * srcBpp);
+	}
+
+	/* Write out the entire image data in one call */
+	png_write_image(png_ptr, row_pointers);
+
+	/* It is REQUIRED to call this to finish writing the rest of the file. */
+	png_write_end(png_ptr, info_ptr);
+
+onerror:
+	/* Clean up after the write, and free any allocated memory. */
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+
+	Mem_Free(row_pointers);
+
+	if (dstClose) {
+		fileSystem->CloseFile( dstFile );
+		dstFile = nullptr;
+	}
+}
+
+
+/*
+=================================================================
+
+PCX FORMAT
+
+=================================================================
+*/
+
+typedef struct {
+	char	manufacturer;
+	char	version;
+	char	encoding;
+	char	bits_per_pixel;
+	unsigned short	xmin, ymin, xmax, ymax;
+	unsigned short	hres, vres;
+	unsigned char	palette[48];
+	char	reserved;
+	char	color_planes;
+	unsigned short	bytes_per_line;
+	unsigned short	palette_type;
+	char	filler[58];
+	unsigned char	data;			// unbounded
+} pcx_t;
+
+/*
+==============
+LoadPCX
+==============
+*/
+static void LoadPCX( const char *filename, byte **pic, byte **palette, int *width, int *height,
+                     ID_TIME_T *timestamp ) {
+	byte	*raw;
+	pcx_t	*pcx;
+	int		x, y;
+	int		len;
+	int		dataByte, runLength;
+	byte	*out, *pix;
+	int		xmax, ymax;
+
+	if ( !pic ) {
+		fileSystem->ReadFile( filename, NULL, timestamp );
+		return;	// just getting timestamp
+	}
+	*pic = nullptr;
+	*palette = nullptr;
+
+	//
+	// load the file
+	//
+	len = fileSystem->ReadFile( filename, ( void ** )&raw, timestamp );
+
+	if ( !raw ) {
+		return;
+	}
+
+	//
+	// parse the PCX file
+	//
+	pcx = ( pcx_t * )raw;
+	raw = &pcx->data;
+
+	xmax = LittleShort( pcx->xmax );
+	ymax = LittleShort( pcx->ymax );
+
+	if ( pcx->manufacturer != 0x0a
+	        || pcx->version != 5
+	        || pcx->encoding != 1
+	        || pcx->bits_per_pixel != 8
+	        || xmax >= 1024
+	        || ymax >= 1024 ) {
+		common->Printf( "Bad pcx file %s (%i x %i) (%i x %i)\n", filename, xmax + 1, ymax + 1, pcx->xmax, pcx->ymax );
+		return;
+	}
+	out = ( byte * )R_StaticAlloc( ( ymax + 1 ) * ( xmax + 1 ) );
+
+	*pic = out;
+
+	pix = out;
+
+	if ( palette ) {
+		*palette = ( byte * )R_StaticAlloc( 768 );
+		memcpy( *palette, ( byte * )pcx + len - 768, 768 );
+	}
+
+	if ( width ) {
+		*width = xmax + 1;
+	}
+
+	if ( height ) {
+		*height = ymax + 1;
+	}
+
+	// FIXME: use bytes_per_line here?
+	for ( y = 0 ; y <= ymax ; y++, pix += xmax + 1 ) {
+		for ( x = 0 ; x <= xmax ; ) {
+			dataByte = *raw++;
+
+			if ( ( dataByte & 0xC0 ) == 0xC0 ) {
+				runLength = dataByte & 0x3F;
+				dataByte = *raw++;
+			} else {
+				runLength = 1;
+			}
+
+			while ( runLength-- > 0 ) {
+				pix[x++] = dataByte;
+			}
+		}
+	}
+
+	if ( raw - ( byte * )pcx > len ) {
+		common->Printf( "PCX file %s was malformed", filename );
+		R_StaticFree( *pic );
+		*pic = nullptr;
+	}
+	fileSystem->FreeFile( pcx );
+}
+
+/*
+==============
+LoadPCX32
+==============
+*/
+static void LoadPCX32( const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
+	byte	*palette;
+	byte	*pic8;
+	int		i, c, p;
+	byte	*pic32;
+
+	if ( !pic ) {
+		fileSystem->ReadFile( filename, nullptr, timestamp );
+		return;	// just getting timestamp
+	}
+	LoadPCX( filename, &pic8, &palette, width, height, timestamp );
+
+	if ( !pic8 ) {
+		*pic = nullptr;
+		return;
+	}
+	c = ( *width ) * ( *height );
+
+	pic32 = *pic = ( byte * )R_StaticAlloc( 4 * c );
+
+	for ( i = 0 ; i < c ; i++ ) {
+		p = pic8[i];
+		pic32[0] = palette[p * 3];
+		pic32[1] = palette[p * 3 + 1];
+		pic32[2] = palette[p * 3 + 2];
+		pic32[3] = 255;
+		pic32 += 4;
+	}
+	R_StaticFree( pic8 );
+	R_StaticFree( palette );
+}
+
+/*
+=========================================================
+
+BMP FORMAT
+
+=========================================================
+*/
+
+typedef struct {
+	char id[2];
+	unsigned int fileSize;
+	unsigned int reserved0;
+	unsigned int bitmapDataOffset;
+	unsigned int bitmapHeaderSize;
+	unsigned int width;
+	unsigned int height;
+	unsigned short planes;
+	unsigned short bitsPerPixel;
+	unsigned int compression;
+	unsigned int bitmapDataSize;
+	unsigned int hRes;
+	unsigned int vRes;
+	unsigned int colors;
+	unsigned int importantColors;
+	unsigned char palette[256][4];
+} BMPHeader_t;
+
+/*
+==============
+LoadBMP
+==============
+*/
+static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
+	int			columns, rows, numPixels;
+	byte		*pixbuf;
+	int			row, column;
+	byte		*buf_p;
+	byte		*buffer;
+	int			length;
+	BMPHeader_t bmpHeader;
+	byte		*bmpRGBA;
+
+	if ( !pic ) {
+		fileSystem->ReadFile( name, nullptr, timestamp );
+		return;	// just getting timestamp
+	}
+	*pic = nullptr;
+
+	//
+	// load the file
+	//
+	length = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
+
+	if ( !buffer ) {
+		return;
+	}
+	buf_p = buffer;
+
+	bmpHeader.id[0] = *buf_p++;
+	bmpHeader.id[1] = *buf_p++;
+	bmpHeader.fileSize = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.reserved0 = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.bitmapDataOffset = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.bitmapHeaderSize = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.width = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.height = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.planes = LittleShort( * ( short * ) buf_p );
+	buf_p += 2;
+	bmpHeader.bitsPerPixel = LittleShort( * ( short * ) buf_p );
+	buf_p += 2;
+	bmpHeader.compression = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.bitmapDataSize = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.hRes = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.vRes = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.colors = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+	bmpHeader.importantColors = LittleInt( * ( int * ) buf_p );
+	buf_p += 4;
+
+	memcpy( bmpHeader.palette, buf_p, sizeof( bmpHeader.palette ) );
+
+	if ( bmpHeader.bitsPerPixel == 8 ) {
+		buf_p += 1024;
+	}
+
+	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' ) {
+		common->Error( "LoadBMP: only Windows-style BMP files supported (%s)\n", name );
+	}
+
+	if ( bmpHeader.fileSize != length ) {
+		common->Error( "LoadBMP: header size does not match file size (%lu vs. %d) (%s)\n", bmpHeader.fileSize, length, name );
+	}
+
+	if ( bmpHeader.compression != 0 ) {
+		common->Error( "LoadBMP: only uncompressed BMP files supported (%s)\n", name );
+	}
+
+	if ( bmpHeader.bitsPerPixel < 8 ) {
+		common->Error( "LoadBMP: monochrome and 4-bit BMP files not supported (%s)\n", name );
+	}
+	columns = bmpHeader.width;
+	rows = bmpHeader.height;
+
+	if ( rows < 0 ) {
+		rows = -rows;
+	}
+	numPixels = columns * rows;
+
+	if ( width ) {
+		*width = columns;
+	}
+
+	if ( height ) {
+		*height = rows;
+	}
+	bmpRGBA = ( byte * )R_StaticAlloc( numPixels * 4 );
+	*pic = bmpRGBA;
+
+
+	for ( row = rows - 1; row >= 0; row-- ) {
+		pixbuf = bmpRGBA + row * columns * 4;
+
+		for ( column = 0; column < columns; column++ ) {
+			unsigned char red, green, blue, alpha;
+			int palIndex;
+			unsigned short shortPixel;
+
+			switch ( bmpHeader.bitsPerPixel ) {
+			case 8:
+				palIndex = *buf_p++;
+				*pixbuf++ = bmpHeader.palette[palIndex][2];
+				*pixbuf++ = bmpHeader.palette[palIndex][1];
+				*pixbuf++ = bmpHeader.palette[palIndex][0];
+				*pixbuf++ = 0xff;
+				break;
+			case 16:
+				shortPixel = * ( unsigned short * ) pixbuf;
+				pixbuf += 2;
+				*pixbuf++ = ( shortPixel & ( 31 << 10 ) ) >> 7;
+				*pixbuf++ = ( shortPixel & ( 31 << 5 ) ) >> 2;
+				*pixbuf++ = ( shortPixel & ( 31 ) ) << 3;
+				*pixbuf++ = 0xff;
+				break;
+
+			case 24:
+				blue = *buf_p++;
+				green = *buf_p++;
+				red = *buf_p++;
+				*pixbuf++ = red;
+				*pixbuf++ = green;
+				*pixbuf++ = blue;
+				*pixbuf++ = 255;
+				break;
+			case 32:
+				blue = *buf_p++;
+				green = *buf_p++;
+				red = *buf_p++;
+				alpha = *buf_p++;
+				*pixbuf++ = red;
+				*pixbuf++ = green;
+				*pixbuf++ = blue;
+				*pixbuf++ = alpha;
+				break;
+			default:
+				common->Error( "LoadBMP: illegal pixel_size '%d' in file '%s'\n", bmpHeader.bitsPerPixel, name );
+				break;
+			}
+		}
+	}
+	fileSystem->FreeFile( buffer );
+
+}
+
+
+/*
+===================================================================
+
+AUTOMATIC FORMAT
+
+===================================================================
+*/
+
 
 /*
 =================
 R_LoadImage
 
-Loads any of the supported image types into a cannonical
+Loads any of the supported image types into a canonical
 32 bit format.
 
 Automatically attempts to load .jpg files if .tga files fail to load.
@@ -1511,6 +1487,33 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		}
 	}
 }
+
+/*
+================
+idImageWriter::ToExtension
+================
+*/
+void idImageWriter::ToExtension(const char *extension) {
+	if (idStr::Icmp(extension, "tga") == 0) {
+		return ToTGA();
+	} else if (idStr::Icmp(extension, "jpg") == 0) {
+		return ToJPG();
+	} else if (idStr::Icmp(extension, "png") == 0) {
+		return ToPNG();
+	} else {
+		common->Warning("Unknown image extension [%s], using TGA format", extension);
+		return ToTGA();
+	}
+}
+
+
+/*
+===================================================================
+
+CUBE MAPS
+
+===================================================================
+*/
 
 static idMat3 cubeAxis[6];
 
