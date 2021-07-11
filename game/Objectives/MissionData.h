@@ -473,7 +473,6 @@ public:
 	void Event_MissionEnd();
 
 	// Obsttorte: Increment save game counter for end mission screen
-	void incrementSavegameCounter();
 	int getTotalSaves();
 
 	// Dragofer: set stats for secrets

@@ -1159,17 +1159,6 @@ idStr idGameLocal::triggeredSave()
 }
 
 /*
-=============
-idGameLocal::incrementSaveCount
-=============
-*/
-
-void idGameLocal::incrementSaveCount()
-{
-	m_MissionData->incrementSavegameCounter();
-}
-
-/*
 =========
 idGameLocal::saveGamesDisallowed
 =========

@@ -95,7 +95,6 @@ public:
 
 	// Obsttorte
 	virtual idStr				triggeredSave() = 0; 
-	virtual void				incrementSaveCount() = 0; 
 	virtual bool				savegamesDisallowed() = 0;
 	virtual bool				quicksavesDisallowed() = 0;
 	// <-- end

@@ -82,6 +82,7 @@ public:
 	// Obsttorte - Total save count
 
 	int totalSaveCount;
+	int totalLoadCount;
 
 	// Dragofer - for tracking secrets
 

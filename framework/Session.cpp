@@ -1927,10 +1927,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		return false;
 	}
 
-	// Obsttorte increment the savegame counter
-	
-	game->incrementSaveCount();
-
 	// Write SaveGame Header: 
 	// Game Name / Version / Map Name / Persistant Player Info
 

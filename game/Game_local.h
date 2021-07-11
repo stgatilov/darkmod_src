@@ -700,7 +700,6 @@ public:
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
 	// Obsttorte
 	virtual idStr			triggeredSave();
-	virtual void			incrementSaveCount();
 	virtual bool			savegamesDisallowed();
 	virtual bool			quicksavesDisallowed();
 	virtual bool			PlayerReady();	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
