@@ -1299,7 +1299,7 @@ bool CBinaryFrobMover::PreOpen()
 		// Play the "I'm locked" sound 
 		FrobMoverStartSound("snd_locked");
 		// and prevent the door from opening (return false)
-		return false;
+		return cv_door_ignore_locks.GetBool(); // 2.10: introduced a new beta tester cvar: cv_door_ignore_locks
 	}
 
 	return true; // default: mover is allowed to open

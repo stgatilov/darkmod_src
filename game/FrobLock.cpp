@@ -324,7 +324,7 @@ bool CFrobLock::IsPickable()
 
 void CFrobLock::Open()
 {
-	if (!IsLocked())
+	if (!IsLocked() || cv_door_ignore_locks.GetBool())
 	{
 		// If we're unlocked, just ToggleOpen the targets
 		ToggleOpenTargets();
@@ -353,7 +353,7 @@ void CFrobLock::Open()
 
 void CFrobLock::ToggleOpenTargets()
 {
-	if (IsLocked())
+	if (IsLocked() && !cv_door_ignore_locks.GetBool())
 	{
 		// We're still locked, play the locked sound and exit
 		FrobLockStartSound("snd_locked");

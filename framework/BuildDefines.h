@@ -73,11 +73,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define ID_NOLANADDRESS 0
 #endif
 
-// build an exe with no CVAR_CHEAT controls
-#ifndef ID_ALLOW_CHEATS
-	#define ID_ALLOW_CHEATS 0
-#endif
-
 #ifndef ID_ENABLE_CURL
 	#define ID_ENABLE_CURL 1
 #endif

@@ -505,6 +505,7 @@ idCVar cv_lp_debug_hud("tdm_lp_debug_hud",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARC
 idCVar cv_bow_aimer("tdm_bow_aimer",	"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "Whether the bow has an aimer. 0 = False, 1 = True." );
 
 idCVar cv_door_auto_open_on_unlock("tdm_door_auto_open_on_unlock",	"1",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1 doors and chests will start to open after being unlocked." );
+idCVar cv_door_ignore_locks("tdm_door_ignore_lock",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1 doors and chests will open as if unlocked." );
 
 idCVar cv_dm_distance("tdm_distance",		"",	CVAR_GAME,	"Shows the distance from the player to the entity" );
 
@@ -552,7 +553,7 @@ idCVar ui_autoSwitch(				"ui_autoSwitch",			"1",			CVAR_GAME | CVAR_USERINFO | C
 idCVar ui_showGun(					"ui_showGun",				"1",			CVAR_GAME | CVAR_USERINFO | CVAR_ARCHIVE | CVAR_BOOL, "show gun" );
 idCVar ui_ready(					"ui_ready",				si_readyArgs[ 0 ],	CVAR_GAME | CVAR_USERINFO, "player is ready to start playing", idCmdSystem::ArgCompletion_String<si_readyArgs> );
 idCVar ui_spectate(					"ui_spectate",		si_spectateArgs[ 0 ],	CVAR_GAME | CVAR_USERINFO, "play or spectate", idCmdSystem::ArgCompletion_String<si_spectateArgs> );
-idCVar ui_chat(						"ui_chat",					"0",			CVAR_GAME | CVAR_USERINFO | CVAR_BOOL | CVAR_ROM | CVAR_CHEAT, "player is chatting" );
+idCVar ui_chat(						"ui_chat",					"0",			CVAR_GAME | CVAR_USERINFO | CVAR_BOOL | CVAR_ROM , "player is chatting" );
 
 // change anytime vars
 idCVar developer(					"developer",				"0",			CVAR_GAME | CVAR_BOOL, "" );

@@ -81,7 +81,6 @@ typedef enum {
 	CVAR_SERVERINFO			= BIT(10),	// sent from servers, available to menu
 	CVAR_NETWORKSYNC		= BIT(11),	// cvar is synced from the server to clients
 	CVAR_STATIC				= BIT(12),	// statically declared, not user created
-	CVAR_CHEAT				= BIT(13),	// variable is considered a cheat
 	CVAR_NOCHEAT			= BIT(14),	// variable is not considered a cheat
 	CVAR_INIT				= BIT(15),	// can only be set from the command-line
 	CVAR_ROM				= BIT(16),	// display only, cannot be set by user at all

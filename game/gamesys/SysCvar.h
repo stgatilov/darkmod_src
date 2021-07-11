@@ -403,6 +403,7 @@ extern idCVar cv_ai_hearing_challenging;
 extern idCVar cv_ai_hearing_hardcore;
 
 extern idCVar cv_door_auto_open_on_unlock;
+extern idCVar cv_door_ignore_locks;
 
 extern idCVar cv_dm_distance;
 
