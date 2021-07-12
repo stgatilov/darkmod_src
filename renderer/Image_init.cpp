@@ -301,12 +301,13 @@ void idImage::MakeDefault() {
 		}
 	}
 	GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT, IR_BOTH );
+	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT, residency );
 
 	defaulted = true;
 }
 
 static void R_DefaultImage( idImage *image ) {
+	image->residency = IR_BOTH;
 	image->MakeDefault();
 }
 
