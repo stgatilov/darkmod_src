@@ -468,7 +468,7 @@ const char *R_ParsePastImageProgram( idLexer &src );
 /*
 ====================================================================
 
-IMAGEWRITER
+IMAGE READER/WRITER
 
 ====================================================================
 */
@@ -496,17 +496,53 @@ public:
 		return *this;
 	}
 	//perform save (final call)
-	void ToTGA();
-	void ToJPG(int quality = 85);
-	void ToPNG(int level = -1);
-	void ToExtension(const char *extension);
+	bool WriteTGA();
+	bool WriteJPG(int quality = 85);
+	bool WritePNG(int level = -1);
+	bool WriteExtension(const char *extension);
 
 private:
+	bool Preamble();
+	void Postamble();
+
 	const byte *srcData = nullptr;
 	int srcWidth = -1, srcHeight = -1, srcBpp = -1;
 	idFile *dstFile = nullptr;
 	bool dstClose = true;
 	bool flip = false;
+};
+
+class idImageReader {
+public:
+	//setting common settings
+	inline idImageReader &Source(idFile *file, bool close = true) {
+		srcFile = file;
+		srcClose = close;
+		return *this;
+	}
+	inline idImageReader &Dest(byte* &data, int &width, int &height) {
+		dstData = &data;
+		dstWidth = &width;
+		dstHeight = &height;
+		return *this;
+	}
+	//perform load (final call)
+	void LoadTGA();
+	void LoadJPG();
+	void LoadPNG();
+	void LoadExtension(const char *extension = nullptr);
+
+private:
+	bool Preamble();
+	void Postamble();
+	void LoadBMP();
+
+	idFile *srcFile = nullptr;
+	bool srcClose = true;
+	byte* *dstData = nullptr;
+	int *dstWidth = nullptr, *dstHeight = nullptr;
+	byte *srcBuffer = nullptr;
+	int srcLength = 0;
 };
 
 #endif /* !__R_IMAGE_H__ */

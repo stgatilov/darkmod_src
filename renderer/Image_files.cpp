@@ -64,33 +64,28 @@ typedef struct _TargaHeader {
 
 /*
 =============
-LoadTGA
+idImageReader::LoadTGA
 =============
 */
-static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	int			w, h, x, y, len, realrow, truerow, baserow, i, temp1, temp2, pixel_size, map_idx;
+void idImageReader::LoadTGA() {
+	if (!Preamble()) {
+		Postamble();
+		return;
+	}
+
+	int			w, h, x, y, realrow, truerow, baserow, i, temp1, temp2, pixel_size, map_idx;
 	int			RLE_count, RLE_flag, size, interleave, origin;
 	bool		mapped, rlencoded;
 	byte		*data, *dst, r, g, b, a, j, k, l, *ColorMap;
 	byte		*buf_p;
-	byte		*buffer;
 	TargaHeader	header;
 
-	if ( !pic ) {
-		fileSystem->ReadFile( name, nullptr, timestamp );
-		return;	// just getting timestamp
-	}
-	*pic = nullptr;
+	//dynamic memory: should be deleted even on error
+	mapped = false;
+	ColorMap = nullptr;
+	data = nullptr;
 
-	//
-	// load the file
-	//
-	len = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
-
-	if ( !buffer || len <= 0 ) {
-		return;
-	}
-	buf_p = buffer;
+	buf_p = srcBuffer;
 	header.id_length = *buf_p++;
 	header.colormap_type = *buf_p++;
 	header.image_type = *buf_p++;
@@ -124,8 +119,8 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 	case TGA_RLEMono:
 		break;
 	default:
-		common->Printf( "%s : Only type 1 (map), 2 (RGB), 3 (mono), 9 (RLEmap), 10 (RLERGB), 11 (RLEmono) TGA images supported\n", name );
-		return;
+		common->Warning( "Only type 1 (map), 2 (RGB), 3 (mono), 9 (RLEmap), 10 (RLERGB), 11 (RLEmono) TGA images supported" );
+		goto onerror;
 	}
 
 	/* validate color depth */
@@ -137,13 +132,12 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 	case 32:
 		break;
 	default:
-		common->Printf( "%s : Only 8, 15, 16, 24 or 32 bit images (with colormaps) supported\n", name );
-		return;
+		common->Warning( "Only 8, 15, 16, 24 or 32 bit images (with colormaps) supported" );
+		goto onerror;
 	}
 	r = g = b = a = l = 0;
 
 	/* if required, read the color map information. */
-	ColorMap = nullptr;
 	mapped = ( header.image_type == TGA_Map || header.image_type == TGA_RLEMap ) && header.colormap_type == 1;
 
 	if ( mapped ) {
@@ -156,14 +150,15 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 		case 24:
 			break;
 		default:
-			common->Printf( "%s : Only 8, 15, 16, 24 or 32 bit colormaps supported\n", name );
-			return;
+			common->Warning( "Only 8, 15, 16, 24 or 32 bit colormaps supported" );
+			goto onerror;
 		}
 		temp1 = header.colormap_index;
 		temp2 = header.colormap_length;
 
 		if ( ( temp1 + temp2 + 1 ) >= TGA_MAXCOLORS ) {
-			return;
+			common->Warning( "Too many colors in colormap" );
+			goto onerror;
 		}
 		ColorMap = ( byte * )R_StaticAlloc( TGA_MAXCOLORS * 4 );
 		map_idx = 0;
@@ -224,15 +219,9 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 	h = header.height;
 	size = w * h * 4;
 
-	if ( width ) {
-		*width = w;
-	}
-
-	if ( height ) {
-		*height = h;
-	}
 	data = ( byte * )R_StaticAlloc( size );
-	*pic = data;
+	*dstWidth = w;
+	*dstHeight = h;
 
 	/* read the Targa file body and convert to portable format. */
 	pixel_size = header.pixel_size;
@@ -314,12 +303,8 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 				l = 0;
 				break;
 			default:
-				common->Printf( "%s : Illegal pixel_size '%d'\n", name, pixel_size );
-				R_StaticFree( data );
-				if ( mapped ) {
-					R_StaticFree( ColorMap );
-				}
-				return;
+				common->Warning( "Illegal pixel_size '%d'", pixel_size );
+				goto onerror;
 			}
 PixEncode:
 			if ( mapped ) {
@@ -336,9 +321,9 @@ PixEncode:
 			}
 		}
 
-		if ( interleave == TGA_IL_Four )	{
+		if ( interleave == TGA_IL_Four ) {
 			truerow += 4;
-		} else if ( interleave == TGA_IL_Two )	{
+		} else if ( interleave == TGA_IL_Two ) {
 			truerow += 2;
 		} else {
 			truerow++;
@@ -349,10 +334,18 @@ PixEncode:
 		}
 	}
 
+	//pass ownership over result to caller
+	*dstData = data;
+	data = nullptr;
+
+onerror:
+	//cleanup
+	R_StaticFree(data);
 	if ( mapped ) {
 		R_StaticFree( ColorMap );
 	}
-	fileSystem->FreeFile( buffer );
+
+	Postamble();
 }
 
 /*
@@ -366,17 +359,19 @@ void R_WriteTGA( const char *filename, const byte *data, int width, int height, 
 	wr.Flip(flipVertical);
 	idFile *f = fileSystem->OpenFileWrite(filename);
 	wr.Dest(f);
-	wr.ToTGA();
+	wr.WriteTGA();
 }
 
 /*
 ================
-idImageWriter::ToTGA
+idImageWriter::WriteTGA
 ================
 */
-void idImageWriter::ToTGA() {
-	if (!srcData || !dstFile)
-		common->Error("Error writing image");
+bool idImageWriter::WriteTGA() {
+	if (!Preamble()) {
+		Postamble();
+		return false;
+	}
 
 	// save alpha channel iff it is given to us
 	int dstBpp = srcBpp;
@@ -410,10 +405,8 @@ void idImageWriter::ToTGA() {
 	dstFile->Write( buffer, dataSize + TGA_HEADER_SIZE );
 	Mem_Free( buffer );
 
-	if (dstClose) {
-		fileSystem->CloseFile( dstFile );
-		dstFile = nullptr;
-	}
+	Postamble();
+	return true;
 }
 
 
@@ -473,20 +466,12 @@ static void jpg_error_exit(j_common_ptr cinfo) {
 
 /*
 =============
-LoadJPG
+idImageReader::LoadJPG
 =============
 */
-static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	if ( !pic ) {
-		fileSystem->ReadFile( name, nullptr, timestamp );
-		return;	// just getting timestamp
-	}
-	*pic = nullptr;
-
-	// load the file
-	byte *fbuffer = nullptr;
-	int len = fileSystem->ReadFile( name, ( void ** )&fbuffer, timestamp );
-	if ( !fbuffer || len <= 0 ) {
+void idImageReader::LoadJPG() {
+	if (!Preamble()) {
+		Postamble();
 		return;
 	}
 
@@ -500,6 +485,7 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 	 */
 	struct jpeg_error_mgr_tdm jerr;
 
+	//dynamic memory: should be freed even on error
 	unsigned char *out = nullptr;
 	byte *scanline = nullptr;
 
@@ -526,7 +512,7 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 
 	/* Step 2: specify data source (eg, a file) */
 
-	ExtLibs::jpeg_mem_src( &cinfo, fbuffer, len );
+	ExtLibs::jpeg_mem_src( &cinfo, srcBuffer, srcLength );
 
 	/* Step 3: read file parameters with jpeg_read_header() */
 
@@ -557,12 +543,10 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 	 * In this example, we need to make an output work buffer of the right size.
 	 */
 
-	if (width)
-		*width = cinfo.output_width;
-	if (height)
-		*height = cinfo.output_height;
+	*dstWidth = cinfo.output_width;
+	*dstHeight = cinfo.output_height;
 	if ( cinfo.output_components != 4 && cinfo.output_components != 3 ) {
-		common->Warning( "JPG %s is unsupported color depth (%d)", name, cinfo.output_components );
+		common->Warning( "JPG has unsupported color depth (%d)", cinfo.output_components );
 		goto onerror;
 	}
 
@@ -604,8 +588,8 @@ static void LoadJPG( const char *name, byte **pic, int *width, int *height, ID_T
 	 * with the stdio data source.
 	 */
 
-	// return resulting image to caller
-	*pic = out;
+	//pass ownership to caller
+	*dstData = out;
 	out = nullptr;
 
 	/* Step 8: Release JPEG decompression object */
@@ -614,24 +598,29 @@ onerror:
 	/* This is an important step since it will release a good deal of memory. */
 	ExtLibs::jpeg_destroy_decompress( &cinfo );
 
+	//free memory
 	R_StaticFree( out);
-	Mem_Free( fbuffer );
 	Mem_Free( scanline );
 
 	/* And we're done! */
+	Postamble();
 }
 
 /*
 ================
-idImageWriter::ToJPG
+idImageWriter::WriteJPG
 ================
 */
-void idImageWriter::ToJPG(int quality) {
-	if (!srcData || !dstFile)
-		common->Error("Error writing image");
+bool idImageWriter::WriteJPG(int quality) {
+	if (!Preamble()) {
+		Postamble();
+		return false;
+	}
 
+	//dynamic memory: should be freed even on error
 	byte *rgbScanline = NULL;
 	byte *outputBuffer = NULL;
+	bool success = false;
 
 	/* This struct contains the JPEG compression parameters and pointers to
 	 * working space (which is allocated as needed by the JPEG library).
@@ -752,20 +741,20 @@ void idImageWriter::ToJPG(int quality) {
 	/* After finish_compress, write buffer to file. */
 	dstFile->Write( outputBuffer, outputSize );
 
+	success = true;
+
 onerror:
 	/* Step 7: release JPEG compression object */
 	/* This is an important step since it will release a good deal of memory. */
 	jpeg_destroy_compress(&cinfo);
 
+	//cleanup
 	free(outputBuffer);
 	Mem_Free(rgbScanline);
 
-	if (dstClose) {
-		fileSystem->CloseFile( dstFile );
-		dstFile = nullptr;
-	}
-
 	/* And we're done! */
+	Postamble();
+	return success;
 }
 
 
@@ -812,27 +801,21 @@ static void png_output_flush_fn(png_structp png_ptr) {
 
 /*
 =============
-LoadPNG
+idImageReader::LoadPNG
 =============
 */
-static void LoadPNG( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	if ( !pic ) {
-		fileSystem->ReadFile( name, nullptr, timestamp );
-		return;	// just getting timestamp
-	}
-	*pic = nullptr;
-
-	// load the file
-	char *buffer = nullptr;
-	int len = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
-	if ( !buffer || len <= 0 ) {
+void idImageReader::LoadPNG() {
+	if (!Preamble()) {
+		Postamble();
 		return;
 	}
-	// wrap data into memory file (pass ownership)
-	idFile_Memory memfile("LoadPNG_memfile", buffer, len, true);
 
-	png_structp png_ptr;
-	png_infop info_ptr;
+	// wrap data into memory file
+	idFile_Memory memfile("LoadPNG_memfile", (char*)srcBuffer, srcLength, false);
+
+	//dynamic memory: should be freed even on error
+	png_structp png_ptr = nullptr;
+	png_infop info_ptr = nullptr;
 	byte *image_buffer = nullptr;
 	png_bytep *row_pointers = nullptr;
 
@@ -847,14 +830,16 @@ static void LoadPNG( const char *name, byte **pic, int *width, int *height, ID_T
 		NULL, png_error_handler, png_warning_handler
 	);
 
-	if (png_ptr == NULL)
-		common->Error("Failed to initialize LibPNG structure");
+	if (png_ptr == NULL) {
+		common->Warning("Failed to initialize LibPNG structure");
+		goto onerror;
+	}
 
 	/* Allocate/initialize the memory for image information.  REQUIRED. */
 	info_ptr = png_create_info_struct(png_ptr);
 	if (info_ptr == NULL) {
-		png_destroy_read_struct(&png_ptr, NULL, NULL);
-		common->Error("Failed to initialize LibPNG structure");
+		common->Warning("Failed to initialize LibPNG structure");
+		goto onerror;
 	} 
 
 	/* Set error handling if you are using the setjmp/longjmp method (this is
@@ -880,10 +865,8 @@ static void LoadPNG( const char *name, byte **pic, int *width, int *height, ID_T
 	png_get_IHDR(png_ptr, info_ptr, &w, &h, &bit_depth, &color_type,
 		&interlace_method, NULL, NULL);
 
-	if (width)
-		*width = w;
-	if (height)
-		*height = h;
+	*dstWidth = w;
+	*dstHeight = h;
 
 	/* Set up the data transformations you want.  Note that these are all
 	 * optional.  Only call them if you want/need them.  Many of the
@@ -947,31 +930,38 @@ static void LoadPNG( const char *name, byte **pic, int *width, int *height, ID_T
 	/* Read rest of file, and get additional chunks in info_ptr.  REQUIRED. */
 	png_read_end(png_ptr, info_ptr);
 
-	*pic = image_buffer;
+	//pass ownership to caller
+	*dstData = image_buffer;
 	image_buffer = nullptr;
 
 onerror:
 	/* Clean up after the read, and free any memory allocated.  REQUIRED. */
 	png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
+	//cleanup
 	R_StaticFree(image_buffer);
 	Mem_Free(row_pointers);
 
 	/* That's it! */
+	Postamble();
 }
 
 /*
 ================
-idImageWriter::ToPNG
+idImageWriter::WritePNG
 ================
 */
-void idImageWriter::ToPNG(int level) {
-	if (!srcData || !dstFile)
-		common->Error("Error writing image");
+bool idImageWriter::WritePNG(int level) {
+	if (!Preamble()) {
+		Postamble();
+		return false;
+	}
 
-	png_structp png_ptr;
-	png_infop info_ptr;
+	//dynamic memory: should be freed even on error
+	png_structp png_ptr = nullptr;
+	png_infop info_ptr = nullptr;
 	png_bytep *row_pointers = nullptr;
+	bool success = false;
 
 	//for now, let's store alpha iff we are given alpha
 	int dstBpp = srcBpp;
@@ -986,14 +976,16 @@ void idImageWriter::ToPNG(int level) {
 		PNG_LIBPNG_VER_STRING,
 		NULL, png_error_handler, png_warning_handler
 	);
-	if (png_ptr == NULL)
-		common->Error("Failed to initialize LibPNG structure");
+	if (png_ptr == NULL) {
+		common->Warning("Failed to initialize LibPNG structure");
+		goto onerror;
+	}
 
 	/* Allocate/initialize the image information data.  REQUIRED. */
 	info_ptr = png_create_info_struct(png_ptr);
 	if (info_ptr == NULL) {
-		png_destroy_write_struct(&png_ptr, NULL);
-		common->Error("Failed to initialize LibPNG structure");
+		common->Warning("Failed to initialize LibPNG structure");
+		goto onerror;
 	} 
 
 	/* Set up error handling.  REQUIRED if you aren't supplying your own
@@ -1051,16 +1043,17 @@ void idImageWriter::ToPNG(int level) {
 	/* It is REQUIRED to call this to finish writing the rest of the file. */
 	png_write_end(png_ptr, info_ptr);
 
+	success = true;
+
 onerror:
 	/* Clean up after the write, and free any allocated memory. */
 	png_destroy_write_struct(&png_ptr, &info_ptr);
 
+	//cleanup
 	Mem_Free(row_pointers);
 
-	if (dstClose) {
-		fileSystem->CloseFile( dstFile );
-		dstFile = nullptr;
-	}
+	Postamble();
+	return success;
 }
 
 /*
@@ -1092,34 +1085,26 @@ typedef struct {
 
 /*
 ==============
-LoadBMP
+idImageReader::LoadBMP
 ==============
 */
-static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
+void idImageReader::LoadBMP() {
+	if (!Preamble()) {
+		Postamble();
+		return;
+	}
+
 	int			columns, rows, numPixels;
 	byte		*pixbuf;
 	int			row, column;
 	byte		*buf_p;
-	byte		*buffer;
-	int			length;
 	BMPHeader_t bmpHeader;
 	byte		*bmpRGBA;
 
-	if ( !pic ) {
-		fileSystem->ReadFile( name, nullptr, timestamp );
-		return;	// just getting timestamp
-	}
-	*pic = nullptr;
+	//dynamic memory: should be freed even on error
+	bmpRGBA = nullptr;
 
-	//
-	// load the file
-	//
-	length = fileSystem->ReadFile( name, ( void ** )&buffer, timestamp );
-
-	if ( !buffer ) {
-		return;
-	}
-	buf_p = buffer;
+	buf_p = srcBuffer;
 
 	bmpHeader.id[0] = *buf_p++;
 	bmpHeader.id[1] = *buf_p++;
@@ -1159,19 +1144,23 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 	}
 
 	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' ) {
-		common->Error( "LoadBMP: only Windows-style BMP files supported (%s)\n", name );
+		common->Warning( "LoadBMP: only Windows-style BMP files supported" );
+		goto onerror;
 	}
 
-	if ( bmpHeader.fileSize != length ) {
-		common->Error( "LoadBMP: header size does not match file size (%lu vs. %d) (%s)\n", bmpHeader.fileSize, length, name );
+	if ( bmpHeader.fileSize != srcLength ) {
+		common->Warning( "LoadBMP: header size does not match file size (%lu vs. %d)", bmpHeader.fileSize, srcLength );
+		goto onerror;
 	}
 
 	if ( bmpHeader.compression != 0 ) {
-		common->Error( "LoadBMP: only uncompressed BMP files supported (%s)\n", name );
+		common->Warning( "LoadBMP: only uncompressed BMP files supported" );
+		goto onerror;
 	}
 
 	if ( bmpHeader.bitsPerPixel < 8 ) {
-		common->Error( "LoadBMP: monochrome and 4-bit BMP files not supported (%s)\n", name );
+		common->Warning( "LoadBMP: monochrome and 4-bit BMP files not supported" );
+		goto onerror;
 	}
 	columns = bmpHeader.width;
 	rows = bmpHeader.height;
@@ -1181,16 +1170,9 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 	}
 	numPixels = columns * rows;
 
-	if ( width ) {
-		*width = columns;
-	}
-
-	if ( height ) {
-		*height = rows;
-	}
+	*dstWidth = columns;
+	*dstHeight = rows;
 	bmpRGBA = ( byte * )R_StaticAlloc( numPixels * 4 );
-	*pic = bmpRGBA;
-
 
 	for ( row = rows - 1; row >= 0; row-- ) {
 		pixbuf = bmpRGBA + row * columns * 4;
@@ -1237,13 +1219,21 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 				*pixbuf++ = alpha;
 				break;
 			default:
-				common->Error( "LoadBMP: illegal pixel_size '%d' in file '%s'\n", bmpHeader.bitsPerPixel, name );
-				break;
+				common->Warning( "LoadBMP: illegal pixel_size '%d'", bmpHeader.bitsPerPixel );
+				goto onerror;
 			}
 		}
 	}
-	fileSystem->FreeFile( buffer );
 
+	//pass ownership to caller
+	*dstData = bmpRGBA;
+	bmpRGBA = nullptr;
+
+onerror:
+	//cleanup
+	R_StaticFree(bmpRGBA);
+
+	Postamble();
 }
 
 
@@ -1274,70 +1264,196 @@ timestamp.
 =================
 */
 void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
-	idStr name = cname;
-
-	if ( pic ) {
+	//clear output variables
+	if ( pic )
 		*pic = nullptr;
-	}
-
-	if ( timestamp ) {
-		*timestamp = -1;  //0xFFFFFFFF  stgatilov: 2^32-1 is not -1 in 64-bit mode!
-	}
-
-	if ( width ) {
+	if ( timestamp )
+		*timestamp = -1;
+	if ( width )
 		*width = 0;
-	}
-
-	if ( height ) {
+	if ( height )
 		*height = 0;
-	}
-	name.DefaultFileExtension( ".tga" );
 
-	if ( name.Length() < 5 ) {
-		return;
-	}
+	//get path and extension
+	idStr name = cname;
+	name.DefaultFileExtension( ".tga" );
 	name.ToLower();
 	idStr ext;
 	name.ExtractFileExtension( ext );
 
-	if ( ext == "tga" ) {
-		LoadTGA( name.c_str(), pic, width, height, timestamp );            // try tga first
-		if ( ( pic && *pic == 0 ) || ( timestamp && *timestamp == -1 ) ) {
-			name.StripFileExtension();
-			name.DefaultFileExtension( ".jpg" );
-			LoadJPG( name.c_str(), pic, width, height, timestamp );
-		}
-	} else if ( ext == "bmp" ) {
-		LoadBMP( name.c_str(), pic, width, height, timestamp );
-	} else if ( ext == "jpg" ) {
-		LoadJPG( name.c_str(), pic, width, height, timestamp );
-	} else if ( ext == "png" ) {
-		LoadPNG( name.c_str(), pic, width, height, timestamp );
+	//open file, handle format fallbacks
+	idFile *file = fileSystem->OpenFileRead( name.c_str() );
+	if (!file && ext == "tga") {
+		//no TGA file, fallback to JPG
+		ext = "jpg";
+		name.StripFileExtension();
+		name.DefaultFileExtension( ".jpg" );
+		file = fileSystem->OpenFileRead( name.c_str() );
 	}
 
-	if ( ( width && *width < 1 ) || ( height && *height < 1 ) ) {
-		if ( pic && *pic ) {
-			R_StaticFree( *pic );
-			*pic = 0;
-		}
+	//handle special cases and read timestamp
+	if ( !file )
+		return;
+	if ( timestamp )
+		*timestamp = file->Timestamp();
+	if ( file->Length() <= 0 ) {
+		fileSystem->CloseFile(file);
+		return;
+	}
+	if ( !pic ) {
+		fileSystem->CloseFile(file);
+		return;			//just getting timestamp
+	}
+
+	//actually load image
+	int w, h;
+	byte *data;
+	idImageReader rd;
+	rd.Source(file);
+	rd.Dest(data, w, h);
+	rd.LoadExtension(ext.c_str());
+
+	//drop image with no pixels
+	if ( (w <= 0 || h <= 0) && data ) {
+		R_StaticFree( data );
+		data = nullptr;
+	}
+
+	//store output info
+	if ( pic )
+		*pic = data;
+	if ( width )
+		*width = w;
+	if ( height )
+		*height = h;
+}
+
+/*
+================
+idImageReader::LoadExtension
+================
+*/
+void idImageReader::LoadExtension(const char *extension) {
+	//determine extension automatically if NULL is passed
+	idStr autoExt;
+	if (!extension) {
+		idStr filename = srcFile->GetName();
+		filename.ExtractFileExtension(autoExt);
+		extension = autoExt.c_str();
+	}
+	//load image from file
+	if ( idStr::Icmp(extension, "tga") == 0 ) {
+		LoadTGA();
+	} else if ( idStr::Icmp(extension, "bmp") == 0 ) {
+		LoadBMP();
+	} else if ( idStr::Icmp(extension, "jpg") == 0 ) {
+		LoadJPG();
+	} else if ( idStr::Icmp(extension, "png") == 0 ) {
+		LoadPNG();
+	} else {
+		common->Warning( "Cannot load image with extension %s", extension );
 	}
 }
 
 /*
 ================
-idImageWriter::ToExtension
+idImageReader::Preamble
 ================
 */
-void idImageWriter::ToExtension(const char *extension) {
+bool idImageReader::Preamble() {
+	if (!dstData) {
+		common->Warning("idImageReader: no output buffer");
+		return false;
+	}
+	assert(dstWidth && dstHeight);
+	*dstData = nullptr;
+	*dstWidth = *dstHeight = 0;
+
+	if (!srcFile) {
+		common->Warning("idImageReader: no source file");
+		return false;
+	}
+	if ( srcFile->Length() <= 0 ) {
+		common->Warning("idImageReader: file is empty");
+		return false;
+	}
+	if ( srcFile->Tell() != 0 ) {
+		//LoadXXX use srcFile->Length() to decide how much to read
+		common->Warning("idImageReader: filepos must be at start");
+		return false;
+	}
+
+	//read whole file
+	srcLength = srcFile->Length();
+	srcBuffer = (byte*)Mem_Alloc(srcLength);
+	srcFile->Read(srcBuffer, srcLength);
+
+	return true;	//continue loading
+}
+
+/*
+================
+idImageReader::Postamble
+================
+*/
+void idImageReader::Postamble() {
+	if (srcClose) {
+		fileSystem->CloseFile(srcFile);
+		srcFile = nullptr;
+	}
+
+	Mem_Free(srcBuffer);
+	srcBuffer = nullptr;
+}
+
+/*
+================
+idImageWriter::WriteExtension
+================
+*/
+bool idImageWriter::WriteExtension(const char *extension) {
 	if (idStr::Icmp(extension, "tga") == 0) {
-		return ToTGA();
+		return WriteTGA();
 	} else if (idStr::Icmp(extension, "jpg") == 0) {
-		return ToJPG();
+		return WriteJPG();
 	} else if (idStr::Icmp(extension, "png") == 0) {
-		return ToPNG();
+		return WritePNG();
 	} else {
 		common->Warning("Unknown image extension [%s], using TGA format", extension);
-		return ToTGA();
+		return WriteTGA();
+	}
+}
+
+/*
+================
+idImageWriter::Preamble
+================
+*/
+bool idImageWriter::Preamble() {
+	if (!dstFile) {
+		common->Warning("ImageWriter: no output file");
+		return false;
+	}
+	if (!srcData) {
+		common->Warning("ImageWriter: no source data");
+		return false;
+	}
+	if (dstFile->Tell() != 0) {
+		common->Warning("ImageWriter: filepos must be at start");
+		return false;
+	}
+	return true;	//continue writing
+}
+
+/*
+================
+idImageWriter::Postamble
+================
+*/
+void idImageWriter::Postamble() {
+	if (dstClose) {
+		fileSystem->CloseFile( dstFile );
+		dstFile = nullptr;
 	}
 }
 

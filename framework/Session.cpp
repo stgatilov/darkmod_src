@@ -1981,7 +1981,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		wr.Source(imgData, width, height, bpp);
 		wr.Dest(fileSystem->OpenFileWrite(previewFile.c_str(), "fs_modSavePath"));
 		wr.Flip();
-		wr.ToExtension(previewExtension.c_str());
+		wr.WriteExtension(previewExtension.c_str());
 		Mem_Free(imgData);
 
 		renderSystem->UnCrop();

@@ -1027,11 +1027,11 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		Screenshot_ChangeFilename( changedPath, extension );
 	}
 
-	idFile *f = fileSystem->OpenFileWrite( changedPath.c_str(), "fs_savepath", "" );
 	idImageWriter writer;
-	writer.Source( buffer, width, height, 3 ).Dest( f );
+	writer.Source( buffer, width, height, 3 );
+	writer.Dest( fileSystem->OpenFileWrite( changedPath.c_str(), "fs_savepath", "" ) );
 	writer.Flip();
-	writer.ToExtension( extension.c_str() );
+	writer.WriteExtension( extension.c_str() );
 	common->Printf( "Wrote %s\n", changedPath.c_str() );
 
 	R_StaticFree( buffer );
