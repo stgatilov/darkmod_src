@@ -1893,16 +1893,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		soundSystem->SetPlayingSoundWorld( NULL );
 	}
 
-	//stgatilov: choose preview image format
-	idStr previewExtension = com_savegame_preview_format.GetString();
-	Image::Format previewFormat = Image::GetFormatFromString( previewExtension.c_str() );
-	//note: only tga and jpg are currently supported
-	if ( previewFormat != Image::JPG && previewFormat != Image::TGA ) {
-		common->Warning( "Unknown preview image extension %s, falling back to default.", previewExtension.c_str() );
-		previewFormat = Image::TGA;
-		previewExtension = "tga";
-	}
-
 	// setup up paths
 	
 	ScrubSaveGameFileName( gameFile );
@@ -1910,6 +1900,11 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	gameFile = "savegames/" + gameFile;
 	gameFile.SetFileExtension( ".save" );
 
+	idStr previewExtension = com_savegame_preview_format.GetString();
+	if ( !(previewExtension == "jpg" || previewExtension == "tga") ) {
+		common->Warning( "Unknown preview image extension %s, falling back to default.", previewExtension.c_str() );
+		previewExtension = "tga";
+	}
 	previewFile = gameFile;
 	previewFile.SetFileExtension( previewExtension.c_str() );
 
@@ -1970,8 +1965,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		// need to make the changes to the vertex cache accessible to the backend
 		vertexCache.EndFrame();
 
-		//stgatilov: render image to buffer and save via devIL
-		Image image;
+		//stgatilov: render image to buffer
 		int width, height, bpp = 3;
 		renderSystem->GetCurrentRenderCropSize(width, height);
 		/*if ( r_useFbo.GetBool() ) { // 4676
@@ -1979,10 +1973,16 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 			height /= r_fboResolution.GetFloat();
 		}*/
 		width = (width + 3) & ~3; //opengl wants width padded to 4x
-		image.Init(width, height, bpp);
-		renderSystem->CaptureRenderToBuffer( image.GetImageData() );
-		idStr previewPath = fileSystem->RelativePathToOSPath(previewFile.c_str(), "fs_modSavePath");
-		image.SaveImageToFile(previewPath.c_str(), previewFormat);
+		byte *imgData = (byte*)Mem_Alloc(height * width * bpp);
+		renderSystem->CaptureRenderToBuffer( imgData );
+
+		//save image to file
+		idImageWriter wr;
+		wr.Source(imgData, width, height, bpp);
+		wr.Dest(fileSystem->OpenFileWrite(previewFile.c_str(), "fs_modSavePath"));
+		wr.Flip();
+		wr.ToExtension(previewExtension.c_str());
+		Mem_Free(imgData);
 
 		renderSystem->UnCrop();
 		R_ClearCommandChain( frameData );
