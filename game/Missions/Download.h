@@ -135,6 +135,9 @@ public:
 	const UserData& GetUserData() const { return _userData; };
 	UserData& GetUserData() { return _userData; };
 
+	// Get path to file where downloaded data is saved
+	const char *GetDestinationFilename() const { return _destFilename.c_str(); }
+
 	// Check method
 	static bool CheckValidPK4(const idStr& path);
 
