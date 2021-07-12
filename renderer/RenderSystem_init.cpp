@@ -1368,7 +1368,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		common->Printf( "loading %s\n", fullname.c_str() );
 		session->UpdateScreen();
-		R_LoadImage( fullname, &param.buffers[i], &param.size, &param.size, NULL, true );
+		R_LoadImage( fullname, &param.buffers[i], &param.size, &param.size, NULL );
 		if ( !param.buffers[i] ) {
 			common->Printf( "failed.\n" );
 			for ( i-- ; i >= 0 ; i-- ) {

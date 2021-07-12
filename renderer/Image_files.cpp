@@ -1423,20 +1423,13 @@ Automatically attempts to load .jpg files if .tga files fail to load.
 
 *pic will be NULL if the load failed.
 
-Anything that is going to make this into a texture would use
-makePowerOf2 = true, but something loading an image as a lookup
-table of some sort would leave it in identity form.
-
-It is important to do this at image load time instead of texture load
-time for bump maps.
-
 Timestamp may be NULL if the value is going to be ignored
 
 If pic is NULL, the image won't actually be loaded, it will just find the
 timestamp.
 =================
 */
-void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIME_T *timestamp, bool makePowerOf2 ) {
+void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIME_T *timestamp ) {
 	idStr name = cname;
 
 	if ( pic ) {

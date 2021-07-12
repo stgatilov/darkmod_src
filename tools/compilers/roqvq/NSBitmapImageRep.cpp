@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "roq.h"
 
-void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, bool makePowerOf2 );
+void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 
 NSBitmapImageRep::NSBitmapImageRep( void ) {
 	bmap = NULL;
@@ -30,7 +30,7 @@ NSBitmapImageRep::NSBitmapImageRep( void ) {
 
 NSBitmapImageRep::NSBitmapImageRep( const char *filename ) {
 
-	R_LoadImage( filename, &bmap, &width, &height, &timestamp, false );
+	R_LoadImage( filename, &bmap, &width, &height, &timestamp );
 	if (!width || !height) {
 		common->FatalError( "roqvq: unable to load image %s\n", filename );
 	}
