@@ -1791,6 +1791,10 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 	const unsigned char *img = NULL;
 	const unsigned char *fot = NULL;
 
+	//stgatilov #5665: this is dead code since earlier than 2.00 
+	//in reality, the pointers were always NULL here
+	//see https://forums.thedarkmod.com/index.php?/topic/21002-devil-and-images-infrastructure/&do=findComment&comment=462706
+#if 0
 	if (m_LightMaterial == NULL)
 	{
 		if ( (m_LightMaterial = g_Global.GetMaterial(m_MaterialName)) != NULL )
@@ -1805,6 +1809,7 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
 		img = m_LightMaterial->GetImage(iw, ih, ibpp);
 	}
+#endif
 
 	// baseColor gives the current color (intensity)
 
