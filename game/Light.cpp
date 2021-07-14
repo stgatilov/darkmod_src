@@ -1868,14 +1868,9 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 
 bool idLight::CastsShadow(void)
 {
-	if(m_LightMaterial == NULL)
-		m_LightMaterial = g_Global.GetMaterial(m_MaterialName);
-
-	if(m_LightMaterial != NULL)
-	{
-		if(m_LightMaterial->m_AmbientLight == true)
-			return false;
-	}
+	//stgatilov #5665: use idMaterial to check for ambient light
+	if (renderLight.shader && renderLight.shader->IsAmbientLight())
+		return false;
 
 	return !renderLight.noShadows; 
 }
