@@ -102,28 +102,6 @@ typedef enum {
 class idCmdArgs;
 class CDarkModPlayer;
 
-class CLightMaterial {
-public:
-	CLightMaterial(idStr const &MaterialName, idStr const &TextureName, idStr const &MapName);
-
-	const unsigned char *GetFallOffTexture(int &Width, int &Height, int &Bpp);
-	const unsigned char *GetImage(int &Width, int &Height, int &Bpp);
-
-   	void Save( idSaveGame *savefile ) const;
-	void Restore( idRestoreGame *savefile );
-
-
-public:
-	idStr		m_MaterialName;
-	bool		m_AmbientLight;		// Set to true if the ambientLight parameter is set.
-
-protected:
-	idStr		m_FallOffTexture;
-	int			m_FallOffIndex;
-	idStr		m_Map;
-	int			m_MapIndex;
-};
-
 class CGlobal {
 public:
 	CGlobal();
@@ -136,26 +114,6 @@ public:
 	void LogVector(idStr const &Name, idVec3 const &Vector);
 	void LogMat3(idStr const &Name, idMat3 const &Matrix);
 	void LogString(const char *Format, ...);
-
-	CLightMaterial *GetMaterial(idStr const &MaterialName);
-
-	/**
-	 * AddImageTexture will add the given image structure to the 
-	 * texture list and returns the index with <Added> = true. If the
-	 * image already exists in the list, based on it's name, the
-	 * stucture will not be returned and the <Added> is set to false. 
-	 * The index is still returned. If the image couldn't be added, -1
-	 * is returned.
-	 */
-	int AddImage(idStr const &Name, bool &Added);
-
-	/**
-	 * Find an image by it's name or the index, if it is known.
-	 * The second version will also return the index.
-	 * NULL is returned if the image couldn't be found.
-	 */
-	Image* GetImage(int Index);
-	Image* GetImage(idStr const &Name, int &Index);
 
 	/**
 	* Lookup the name of a the surface for a given material
@@ -219,11 +177,6 @@ public:
 	const char		*m_Filename;
 	char			m_DriveLetter;		// Remember the last driveletter
 	int				m_Linenumber;
-
-	idList<CLightMaterial *>		m_LightMaterial;
-	idList<Image*>				m_Image;
-
-	Image			m_RenderImage;
 
 public:
 

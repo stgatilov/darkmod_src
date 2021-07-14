@@ -263,8 +263,6 @@ idLight::idLight()
 	fadeEnd				= 0;
 	soundWasPlaying		= false;
 	m_MaxLightRadius	= 0.0f;
-	m_MaterialName = NULL;
-	m_LightMaterial		= NULL;
 	m_BlendlightTexture = NULL; // SteveL #3752
 
 	/*!
@@ -456,12 +454,6 @@ void idLight::Restore( idRestoreGame *savefile ) {
 	lightDefHandle = -1;
 
 	SetLightLevel();
-
-	m_MaterialName = NULL;
-	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
-
-	// Re-acquire light material, now that the material name is known
-	m_LightMaterial = g_Global.GetMaterial(m_MaterialName);
 }
 
 /*
@@ -557,13 +549,6 @@ void idLight::Spawn( void )
 		m_MaxLightRadius = max.Length();
 	}
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s] MaxLightRadius: %f\r", this, name.c_str(), m_MaxLightRadius);
-
-	m_MaterialName = NULL;
-	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
-	if ( m_MaterialName != NULL )
-	{
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has a texture (m_MaterialName): %s\r", m_MaterialName);
-	}
 
 	idImage *pImage;
 	if ( ( renderLight.shader != NULL ) && ( (pImage = renderLight.shader->LightFalloffImage()) != NULL ) )

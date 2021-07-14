@@ -360,7 +360,6 @@
     <ClInclude Include="game\Http\HttpRequest.h" />
     <ClInclude Include="game\Http\MessageTcp.h" />
     <ClInclude Include="game\IK.h" />
-    <ClInclude Include="game\ImageMapManager.h" />
     <ClInclude Include="game\IniFile.h" />
     <ClInclude Include="game\Intersection.h" />
     <ClInclude Include="game\Inventory\Category.h" />
@@ -923,7 +922,6 @@
     <ClCompile Include="game\Http\HttpRequest.cpp" />
     <ClCompile Include="game\Http\MessageTcp.cpp" />
     <ClCompile Include="game\IK.cpp" />
-    <ClCompile Include="game\ImageMapManager.cpp" />
     <ClCompile Include="game\IniFile.cpp" />
     <ClCompile Include="game\Intersection.cpp" />
     <ClCompile Include="game\Inventory\Category.cpp" />

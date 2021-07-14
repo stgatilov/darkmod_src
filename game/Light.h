@@ -337,20 +337,6 @@ private:
 	void			Event_SetStartedOff();
 
 	/**
-	 * Texturename for the falloff image
-	 */
-	const char		*m_MaterialName;
-
-	/**
-	 * Pointer to the material that is used for this light. This pointer
-	 * is only loaded once. If the material needs to change dynamically
-	 * for a light, the m_FalloffImage must be set to the new material name
-	 * and m_LightMaterial must be set to NULL, to force the reload, next
-	 * time the light should use a new material.
-	 */
-	CLightMaterial	*m_LightMaterial;
-
-	/**
 	* SteveL #3752: Allow blend lights to be toggled by remembering the material for
 	* replacement later. Do not re-use m_MaterialName because (1) it might be changed so
 	* that it updates when SetShader() is called, which would break it for this purpose,

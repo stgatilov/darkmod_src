@@ -288,10 +288,6 @@ void idGameLocal::Clear( void )
 	{
 		m_ModelGenerator->Clear();
 	}
-	if (m_ImageMapManager)
-	{
-		m_ImageMapManager->Clear();
-	}
 	if (m_LightController)
 	{
 		m_LightController->Clear();
@@ -533,13 +529,6 @@ void idGameLocal::Init( void ) {
 	Printf( "--------------------------------------\n" );
 	Printf( "Parsing material files\n" );
 
-	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
-
-	// grayman #3584 - load light textures found in other files
-	LoadLightMaterial("materials/tdm_light_textures.mtr",    &g_Global.m_LightMaterial);
-	LoadLightMaterial("materials/tdm_ai_steambots.mtr",      &g_Global.m_LightMaterial);
-	LoadLightMaterial("materials/tdm_lights_d3_leftover.mtr",&g_Global.m_LightMaterial);
-
 	m_MissionData = CMissionDataPtr(new CMissionData);
 	m_CampaignStats = CampaignStatsPtr(new CampaignStats);
 	m_RelationsManager = CRelationsPtr(new CRelations);
@@ -565,10 +554,6 @@ void idGameLocal::Init( void ) {
 	// Initialise the model generator
 	m_ModelGenerator = CModelGeneratorPtr(new CModelGenerator);
 	m_ModelGenerator->Init();
-
-	// Initialise the image map manager
-	m_ImageMapManager = ImageMapManagerPtr(new ImageMapManager);
-	m_ImageMapManager->Init();
 
 	// Initialise the light controller
 	m_LightController = CLightControllerPtr(new CLightController);
@@ -717,9 +702,6 @@ void idGameLocal::Shutdown( void ) {
 	// Destroy the model generator
 	m_ModelGenerator.reset();
 
-	// Destroy the image map manager
-	m_ImageMapManager.reset();
-
 	// Destroy the light controller
 	m_LightController.reset();
 
@@ -851,9 +833,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Save whatever the model generator needs
 	m_ModelGenerator->Save(&savegame);
-
-	// Save whatever the image map manager needs
-	m_ImageMapManager->Save(&savegame);
 
 	// Save whatever the light controller needs
 	m_LightController->Save(&savegame);
@@ -1993,7 +1972,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadObject( reinterpret_cast<idClass*&>(m_Grabber) );
 
 	m_ModelGenerator->Restore(&savegame);
-	m_ImageMapManager->Restore(&savegame);
 	m_LightController->Restore(&savegame);
 
 	m_DifficultyManager.Restore(&savegame);
@@ -2457,10 +2435,6 @@ void idGameLocal::MapShutdown( void ) {
 	{
 		m_ModelGenerator->Print();
 		m_ModelGenerator->Clear();
-	}
-	if (m_ImageMapManager != NULL)
-	{
-		m_ImageMapManager->Clear();
 	}
 	
 	if (m_LightController != NULL)
@@ -6722,134 +6696,6 @@ bool idGameLocal::NeedRestart() {
 
 void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] )
 {
-}
-
-void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
-{
-	idToken token;
-	idLexer src;
-	idStr Material, FallOff, Map, *add;
-	int level;		// Nestinglevel for brackets
-	bool bAmbient;
-	CLightMaterial *mat;
-
-	if(pFN == NULL || ml == NULL)
-		goto Quit;
-
-	src.LoadFile(pFN);
-
-	level = 0;
-	add = NULL;
-	bAmbient = false;
-
-	while(1)
-	{
-		if(!src.ReadToken(&token))
-			goto Quit;
-
-//		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Token: [%s]\r", token.c_str());
-
-		if(token == "table")
-		{
-			src.SkipBracedSection(true);
-			continue;
-		}
-
-		if(token == "lights")
-		{
-			Material = token;
-			while(src.ReadTokenOnLine(&token) == true)
-			{
-				Material += token;
-//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Material: [%s]\r", token.c_str());
-			}
-
-			continue;
-		}
-		else if(level == 1 && token == "ambientLight")
-		{
-			bAmbient = true;
-			continue;
-		}
-		else if(token == "{")
-		{
-			level++;
-			if(level == 1)
-				bAmbient = false;
-
-			continue;
-		}
-		else if(token == "}")
-		{
-			level--;
-			if(level == 0)
-			{
-				if(FallOff.Length()  == 0 && Map.Length() == 0)
-					continue;
-
-				mat = new CLightMaterial(Material, FallOff, Map);
-				mat->m_AmbientLight = bAmbient;
-				ml->Append(mat);
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
-			}
-			continue;
-		}
-		else if(token == "map")
-		{
-			Map = "";
-			while(src.ReadTokenOnLine(&token) == true)
-			{
-				if(token == "makeintensity")
-					continue;
-				else if(token == "(")
-					continue;
-				else if(token == ")")
-					break;
-				else
-					Map += token;
-//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Map: [%s]\r", token.c_str());
-			}
-			continue;
-		}
-		else if(token == "lightFalloffImage")
-		{
-			FallOff = "";
-
-			while(1)
-			{
-				if(!src.ReadToken(&token))
-				{
-					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Invalid material file structure on line %u\r", src.GetLineNum());
-					goto Quit;
-				}
-
-				// Ignore makeintensity tag
-				if(token == "makeintensity")
-					continue;
-				else if(token == "(")
-					continue;
-				else if(token == ")")
-					break;
-				else
-				{
-					do
-					{
-						if(token == ")")
-							break;
-
-						FallOff += token;
-//						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FallOff: [%s]\r", token.c_str());
-					}
-					while(src.ReadTokenOnLine(&token) == true);
-					break;
-				}
-			}
-			continue;
-		}
-	}
-
-Quit:
-	return;
 }
 
 int idGameLocal::CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *e)

@@ -119,7 +119,6 @@ void gameError( const char *fmt, ... );
 #include "ai/AreaManager.h"
 #include "GamePlayTimer.h"
 #include "ModelGenerator.h"
-#include "ImageMapManager.h"
 #include "LightController.h"
 #include "ModMenu.h"
 
@@ -159,8 +158,6 @@ typedef std::shared_ptr<CModMenu> CModMenuPtr;
 
 class CModelGenerator;
 typedef std::shared_ptr<CModelGenerator> CModelGeneratorPtr;
-class ImageMapManager;
-typedef std::shared_ptr<ImageMapManager> ImageMapManagerPtr;
 class CLightController;
 typedef std::shared_ptr<CLightController> CLightControllerPtr;
 
@@ -539,11 +536,6 @@ public:
 	CModelGeneratorPtr		m_ModelGenerator;
 
 	/**
-	 * tels: The image mapmanager instance, for loading/sharing image maps for the SEED system.
-	 */
-	ImageMapManagerPtr		m_ImageMapManager;
-
-	/**
 	 * tels: The light controller instance, used to control local ambient lights.
 	 */
 	CLightControllerPtr		m_LightController;
@@ -873,12 +865,6 @@ public:
 	int						GetGibTime() { return nextGibTime; };
 
 	bool					NeedRestart();
-
-	/**
-	 * LoadLightMaterial loads the falloff textures from the light materials. The appropriate
-	 * textures are only loaded when the light is spawned and requests the texture.
-	 */
-	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
 	/**
 	 * CalcLightgem will analyze the snaphost image in order to determine the lightvalue for the lightgem.
