@@ -858,20 +858,6 @@ If you use this code, drop me an email.  I'd like to know if you find the code
 useful.
 
 
-DevIL
----------------------------------------------------------------------------
-ThirdParty/artefacts/devil/*
-
-ImageLib Sources
-Copyright (C) 2000-2009 by Denton Woods
-
-DevIL is an Open Source image library whose distribution is done under the
-terms of the GNU LGPL license. See the COPYING file for more details.
-DevIL offers you a simple way to implement loading, manipulating, filtering,
-converting, displaying, saving from/to several different image formats in your
-own project.
-
-
 libjpeg
 ---------------------------------------------------------------------------
 ThirdParty/artefacts/libjpeg/*
