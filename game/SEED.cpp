@@ -1344,7 +1344,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 			idImage *img = globalImages->ImageFromFile(imageName.c_str(), TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY, CF_2D, IR_CPU);
 			if (img == NULL)
 			{
-				gameLocal.Warning ("SEED %s: Could not load image map %s: %s", GetName(), mapName.c_str(), gameLocal.m_ImageMapManager->GetLastError() );
+				gameLocal.Warning ("SEED %s: Could not load image map %s", GetName(), mapName.c_str() );
 			}
 			else
 			{
