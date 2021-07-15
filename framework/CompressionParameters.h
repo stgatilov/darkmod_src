@@ -20,7 +20,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 static const char* PK4_UNCOMPRESSED_EXTENSIONS[] = {
 	"ogg",	//4504
 	"roq",	//4507
-	"avi", "mp4", "m4v"	//4519
+	"avi", "mp4", "m4v",	//4519
+	"jpg", "png"	//5665
 };
 static const int PK4_UNCOMPRESSED_EXTENSIONS_COUNT = sizeof(PK4_UNCOMPRESSED_EXTENSIONS) / sizeof(PK4_UNCOMPRESSED_EXTENSIONS[0]);
 
