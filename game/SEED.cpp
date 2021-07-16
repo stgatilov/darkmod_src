@@ -1391,7 +1391,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		if (imgData.GetPic() == NULL)
 		{
 			gameLocal.Error("SEED %s: Can't access image data from %s, maybe the image file is corrupt?\n", 
-					GetName(), SeedClass.imgmap->imgName );
+					GetName(), SeedClass.imgmap->imgName.c_str() );
 		}
 
 		// Compute an average density for the image map, so we can correct the number of entities
