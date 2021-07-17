@@ -682,6 +682,7 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	int failedDownloads = 0;
 	int malformedDownloads = 0;
 	int canceledDownloads = 0; //Agent Jones
+	bool updateCurrentFm = false;
 
 	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
@@ -754,6 +755,12 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 			missionInfo->SetKeyValue("downloaded_version", idStr(mod.version).c_str());
 			// gnartsch: Mark l10n pack as present, so that the mission may disappear from the list of 'Available Downloads'
 			missionInfo->isL10NpackInstalled = l10nPackDownloaded;
+
+			// stgatilov #5661: check if we have downloaded update to the currently installed FM
+			if (mod.modName == gameLocal.m_MissionManager->GetCurrentModName())
+			{
+				updateCurrentFm = true;
+			}
 		}
 		break;
 		};
@@ -765,8 +772,8 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	gameLocal.m_MissionManager->SaveDatabase();
 
 	gameLocal.Printf("Successful downloads: %d\nFailed downloads: %d\n", successfulDownloads, failedDownloads);
-		// Display the popup box
-		GuiMessage msg;
+	// Display the popup box
+	GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
 	msg.okCmd = "close_msg_box;onDownloadCompleteConfirm";
 	msg.title = common->Translate("#str_02142"); // "Mission Download Result"
@@ -787,14 +794,29 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	}
 	if (malformedDownloads > 0)
 	{
-		//"\n%d mission(s) are wrong on mirrors.\nPlease report to maintainers."
+		// "\n%d mission(s) are wrong on mirrors.\nPlease report to maintainers."
 		msg.message += va(common->Translate("#str_02693"), malformedDownloads);
 	}
 
-	if (failedDownloads > 0 || successfulDownloads > 0 || malformedDownloads > 0)//Agent Jones Test
+	if (failedDownloads > 0 || successfulDownloads > 0 || malformedDownloads > 0)
+	{
 		gameLocal.AddMainMenuMessage(msg);
-	else{
-		//AJ test
+
+		if (updateCurrentFm)
+		{
+			GuiMessage msgRestart;
+			// "Current mission was updated.\nGame restart is required!"
+			msgRestart.message = va(common->Translate("#str_menu_updatedcurrentfm"));
+			msgRestart.type = GuiMessage::MSG_CUSTOM;
+			msgRestart.positiveCmd = "close_msg_box;darkmodRestart";
+			msgRestart.negativeCmd = "close_msg_box;onDownloadCompleteConfirm";
+			msgRestart.positiveLabel = common->Translate("#str_menu_restart");			//"Restart";
+			msgRestart.negativeLabel = common->Translate("#str_menu_later");			//"Later"
+			gameLocal.AddMainMenuMessage(msgRestart);
+		}
+	}
+	else
+	{
 		UpdateGUI(gui);
 	}
 

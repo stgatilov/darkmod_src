@@ -27,6 +27,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "GamepadInput.h"
 #include "../renderer/backend/RenderBackend.h"
 #include "LoadStack.h"
+#include "../game/Missions/MissionManager.h"
 
 #define MAX_WARNING_LIST	256
 
@@ -230,7 +231,7 @@ private:
 	//void						PrintLoadingMessage( const char *msg );
 
 	// greebo: used to initialise the fs_currentfm/fs_mod parameters
-	void						InitGameArguments();
+	void						InitGameArguments(idStrList *newModsList);
 
 	bool						com_fullyInitialized;
 	bool						com_refreshOnPrint;		// update the screen every print for dmap
@@ -997,7 +998,7 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 	}
 }
 
-void idCommonLocal::InitGameArguments() {
+void idCommonLocal::InitGameArguments(idStrList *newModsList) {
 	bool fsGameDefined = false;
 	bool fsGameBaseDefined = false;
 	bool fsBasePathDefined = false;
@@ -1103,13 +1104,18 @@ void idCommonLocal::InitGameArguments() {
         common->Warning("Fan missions directory does not exist");
     }
 
-    // at the very least, check if the specified fan mission 
-    // folder exists in <fs_mod>/fms/
+	// stgatilov #5661: look for new pk4 files in fms/ directory
+	// and copy them to fms/{modname}/ subdirectory if found
+	// Note: pk4 of the current FM can only be replaced before fileSystem is initialized!
+	idStrList newMods = CMissionManager::SearchForNewMods(fmPath);
+	if (newModsList)
+		*newModsList = newMods;
+
     if ( fsGameDefined ) {
         idStr curFm = idStr( cvarSystem->GetCVarString("fs_currentfm") );
         Sys_ListFiles( fmPath.c_str(), "/", fmList );
 
-        // check if the currently selected fm folder exists
+        // check if the currently selected fm folder exists in <fs_mod>/fms/
         if ( fmList.FindIndex( curFm ) < 0 ) {
             fsGameDefined = false;
             common->Warning("Fan missions path does not exist for installed fm: %s", curFm.c_str());
@@ -2968,9 +2974,11 @@ idCommonLocal::InitGame
 */
 void idCommonLocal::InitGame( void )
 {
+	idStrList newModsList;
+
 	// greebo: Check if we have fs_currentfm and/or fs_mod defined, if not fall back to default values
 	// Do this before initialising the filesystem
-	InitGameArguments();
+	InitGameArguments(&newModsList);
 
 	// initialize the file system
 	fileSystem->Init();
@@ -3088,6 +3096,8 @@ void idCommonLocal::InitGame( void )
 
 	// load the game dll
 	LoadGameDLL();
+	// stgatilov #5661: notify MissionManager about already accepted new FMs
+	gameLocal.m_MissionManager->AddToNewModList(newModsList);
 	
 	// init the session
 	session->Init();
