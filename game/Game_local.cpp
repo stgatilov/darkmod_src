@@ -3668,7 +3668,11 @@ void idGameLocal::UpdateWidescreenModeFromScreenResolution(idUserInterface* gui)
 
 void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 {
-	if (m_GuiMessages.Num() == 0) return;
+	//stgatilov #5661: don't drop message until previous one is closed
+	if (ui->GetStateBool("MsgBoxVisible"))
+		return;
+	if (m_GuiMessages.Num() == 0)
+		return;
 
 	const GuiMessage& msg = m_GuiMessages[0];
 
