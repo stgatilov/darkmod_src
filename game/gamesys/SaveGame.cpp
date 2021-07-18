@@ -379,6 +379,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	WriteBool( renderLight.noSpecular );
 	WriteBool( renderLight.pointLight );
 	WriteBool( renderLight.parallel );
+	WriteBool( renderLight.parallelSky );
 
 	WriteVec3( renderLight.lightRadius );
 	WriteVec3( renderLight.lightCenter );
@@ -978,6 +979,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	ReadBool( renderLight.noSpecular );
 	ReadBool( renderLight.pointLight );
 	ReadBool( renderLight.parallel );
+	ReadBool( renderLight.parallelSky );
 
 	ReadVec3( renderLight.lightRadius );
 	ReadVec3( renderLight.lightCenter );

@@ -369,13 +369,16 @@ void idRenderWorldLocal::UpdateLightDef( qhandle_t lightHandle, const renderLigh
 	if ( light ) {
 		// if the shape of the light stays the same, we don't need to dump
 		// any of our derived data, because shader parms are calculated every frame
-		if ( rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
-			 rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
-			 rlight->noShadows == light->parms.noShadows && rlight->origin == light->parms.origin &&
-			 rlight->parallel == light->parms.parallel && rlight->pointLight == light->parms.pointLight &&
-			 rlight->right == light->parms.right && rlight->start == light->parms.start &&
-			 rlight->target == light->parms.target && rlight->up == light->parms.up && 
-			 rlight->shader == light->lightShader && rlight->prelightModel == light->parms.prelightModel ) {
+		if (
+			rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
+			rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
+			rlight->noShadows == light->parms.noShadows && rlight->origin == light->parms.origin &&
+			rlight->parallel == light->parms.parallel && rlight->parallelSky == light->parms.parallelSky &&
+			rlight->pointLight == light->parms.pointLight &&
+			rlight->right == light->parms.right && rlight->start == light->parms.start &&
+			rlight->target == light->parms.target && rlight->up == light->parms.up && 
+			rlight->shader == light->lightShader && rlight->prelightModel == light->parms.prelightModel
+		) {
 			justUpdate = true;
 		} else {
 			// if we are updating shadows, the prelight model is no longer valid
