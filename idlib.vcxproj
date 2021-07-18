@@ -263,7 +263,6 @@
     <ClInclude Include="idlib\containers\BinHeap.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
-    <ClInclude Include="idlib\containers\DenseHash.h" />
     <ClInclude Include="idlib\containers\DisjointSets.h" />
     <ClInclude Include="idlib\containers\FlexList.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />

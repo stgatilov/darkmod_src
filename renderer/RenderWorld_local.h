@@ -16,7 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __RENDERWORLDLOCAL_H__
 #define __RENDERWORLDLOCAL_H__
 
-#include "containers/DenseHash.h"
 #include "containers/HashMap.h"
 
 // assume any lightDef or entityDef index above this is an internal error
@@ -116,10 +115,8 @@ private:
 	int useInteractionTable = -1;
 	//r_useInteractionTable = 1: Single Matrix  (light x entity)
 	idInteraction** SM_matrix;
-	//r_useInteractionTable = 2: Single Hash Table (old code)
-	idDenseHash<int, idInteraction*, InterTableHashFunction> SHT_table;
-	//r_useInteractionTable = 3: Single Hdsh Table (new code)
-	idHashMap<int, idInteraction*> SHT_tableNew;
+	//r_useInteractionTable = 2: Single Hash Table
+	idHashMap<int, idInteraction*> SHT_table;
 };
 
 class idRenderWorldLocal : public idRenderWorld {
