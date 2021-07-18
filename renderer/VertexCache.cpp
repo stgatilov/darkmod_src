@@ -242,8 +242,10 @@ void idVertexCache::EndFrame() {
 	indexAllocCount = indexUseCount = vertexAllocCount = vertexUseCount = 0;
 
 	// check if we need to resize current buffer set
-	if ( dynamicData.vertexBuffer.BytesRemaining() < currentVertexCacheSize
-			|| dynamicData.indexBuffer.BytesRemaining() < currentIndexCacheSize ) {
+	if (
+		(int)dynamicData.vertexBuffer.BytesRemaining() < currentVertexCacheSize ||
+		(int)dynamicData.indexBuffer.BytesRemaining() < currentIndexCacheSize
+	) {
 		common->Printf( "Resizing dynamic VertexCache: index %d kb -> %d kb, vertex %d kb -> %d kb\n", dynamicData.indexBuffer.BytesRemaining() / 1024, currentIndexCacheSize / 1024, dynamicData.indexBuffer.BytesRemaining() / 1024, currentVertexCacheSize / 1024 );
 		FreeGeoBufferSet( dynamicData );
 		AllocGeoBufferSet( dynamicData, currentVertexCacheSize, currentIndexCacheSize );
