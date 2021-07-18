@@ -244,10 +244,72 @@
   </Type>
   <Type Name="viewLight_s">
     <DisplayString>viewLight: {lightDef->parms,view(simple)}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All global interactions]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>globalInteractions</HeadPointer>
+            <NextPointer>nextOnLight</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All local interactions]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>localInteractions</HeadPointer>
+            <NextPointer>nextOnLight</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All translucent interactions]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>translucentInteractions</HeadPointer>
+            <NextPointer>nextOnLight</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All global shadows]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>globalShadows</HeadPointer>
+            <NextPointer>nextOnLight</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[All local shadows]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>localShadows</HeadPointer>
+            <NextPointer>nextOnLight</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+  <Type Name="drawSurf_s">
+    <DisplayString>drawSurf: {space->entityDef->parms,view(simple)}</DisplayString>
   </Type>
 
   <Type Name="idInteraction">
     <DisplayString>interaction({numSurfaces}): {*lightDef,view(simple)} &amp; {*entityDef,view(simple)}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[All surfaces]" ExcludeView="raw">
+        <Expand>
+          <ArrayItems>
+            <Size>numSurfaces</Size>
+            <ValuePointer>surfaces</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
   </Type>
   <Type Name="portalArea_s">
     <Expand>
@@ -345,14 +407,6 @@
           <ArrayItems>
             <Size>numDrawSurfs</Size>
             <ValuePointer>drawSurfs</ValuePointer>
-          </ArrayItems>
-        </Expand>
-      </Synthetic>
-      <Synthetic Name="[All clipPlanes]" ExcludeView="raw">
-        <Expand>
-          <ArrayItems>
-            <Size>numClipPlanes</Size>
-            <ValuePointer>clipPlanes</ValuePointer>
           </ArrayItems>
         </Expand>
       </Synthetic>
