@@ -2772,6 +2772,7 @@ void idSessionLocal::Frame() {
 	//nbohr1more: disable SMP for debug render tools
 	if (r_showSurfaceInfo.GetBool() ||
 		r_showDepth.GetBool() ||
+		r_showViewEntitys.GetBool() || // frontend may invalidate viewEntity pointers, e.g. when LOD model changes
         r_materialOverride.GetString()[0] != '\0'
 	) {
 		no_smp = true;
