@@ -1413,7 +1413,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 
 	// load it if we aren't in a level preload
 	// FIXME assume CPU residency as a flag that we need the image data immediately, rather than maybe load in background for GPU uploads
-	if ( image_preload.GetBool() && !insideLevelLoad || ( residency == IR_CPU ) ) { 
+	if ( image_preload.GetBool() && !insideLevelLoad || ( residency & IR_CPU ) ) { 
 		image->referencedOutsideLevelLoad = true;
 		image->ActuallyLoadImage();	// check for precompressed, load is from front end
 		declManager->MediaPrint( "%ix%i %s\n", image->uploadWidth, image->uploadHeight, image->imgName.c_str() );
