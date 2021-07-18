@@ -919,20 +919,20 @@ void Cmd_EventList_f(const idCmdArgs &args) {
 	if (limit >= num/2)
 		limit = -1;
 
-	std::set<int> printIds;
+	idHashMap<int, int> printIds;
 	if (limit > 0) {
 		idRandom rnd = gameLocal.random;
 		//print last events (half of limit)
 		for (int i = 0; i < limit/2; i++)
-			printIds.insert(num - 1 - i);
+			printIds.Set(num - 1 - i, 0);
 		//print random events (another half)
-		while (printIds.size() < limit)
-			printIds.insert(rnd.RandomInt(num));
+		while (printIds.Num() < limit)
+			printIds.Set(rnd.RandomInt(num), 0);
 	}
 
 	int idx = 0;
 	for (idLinkList<idEvent> *node = EventQueue.NextNode(); node; node = node->NextNode()) {
-		if (limit < 0 || printIds.count(idx))
+		if (limit < 0 || printIds.Find(idx))
 			node->Owner()->Print();
 		idx++;
 	}

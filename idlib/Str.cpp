@@ -945,7 +945,7 @@ idStr idStr::Join( const idList<idStr> &tokens, const char *separator )
 		return "";
 
 	idStr res = tokens[0];
-	for (size_t i = 1; i < tokens.Num(); i++) {
+	for (int i = 1; i < tokens.Num(); i++) {
 		res += separator;
 		res += tokens[i];
 	}
