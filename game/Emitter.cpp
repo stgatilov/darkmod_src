@@ -174,6 +174,10 @@ void idFuncEmitter::Present( void )
 	// give each instance of the particle effect a unique seed -- SteveL #3945
 	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
 
+	if ( !renderEntity.hModel || IsHidden() ) { // copy the default behaviour in idEntity::Present - don't re-create render entities when hidden by LOD triggers
+		return;
+	}
+
 	if ( renderEntity.hModel ) {
 		renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
 		// add to refresh list
