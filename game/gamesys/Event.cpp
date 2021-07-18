@@ -118,9 +118,12 @@ void idEventDef::Construct()
 			break;
 
 		case D_EVENT_INTEGER :
+			argsize += sizeof(int);
+			break;
+
 		case D_EVENT_ENTITY :
 		case D_EVENT_ENTITY_NULL :
-			argsize += sizeof(int);
+			argsize += sizeof(idEntityPtr<idEntity>);
 			break;
 
 		case D_EVENT_VECTOR :
@@ -706,7 +709,7 @@ void idEvent::Save( idSaveGame *savefile ) {
 				case D_EVENT_ENTITY :
 				case D_EVENT_ENTITY_NULL :
 					reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Save(savefile);
-					size += sizeof( int );
+					size += sizeof( idEntityPtr<idEntity> );
 					break;
 				case D_EVENT_VECTOR :
 					savefile->WriteVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
@@ -807,7 +810,7 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 					case D_EVENT_ENTITY :
 					case D_EVENT_ENTITY_NULL :
 						reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Restore(savefile);
-						size += sizeof( int );
+						size += sizeof( idEntityPtr<idEntity> );
 						break;
 					case D_EVENT_VECTOR :
 						savefile->ReadVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
