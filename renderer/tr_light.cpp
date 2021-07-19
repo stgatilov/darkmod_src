@@ -1508,9 +1508,9 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 	idInteraction* inter, * next;
 	idRenderModel* model;
 
-	TRACE_CPU_SCOPE( "R_AddSingleModel" )
-
 	idRenderEntityLocal& def = *vEntity->entityDef;
+	TRACE_CPU_SCOPE_TEXT( "R_AddSingleModel", GetTraceLabel(def.parms) )
+		
 	if ( ( r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0 ) && ( def.dynamicModel || def.cachedDynamicModel ) ) { // debug filters
 		return;
 	}

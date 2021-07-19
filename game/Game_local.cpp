@@ -3231,15 +3231,13 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			// create a merged pvs for all players
 			SetupPlayerPVS();
 
-			idTimer lasTimer;
-			lasTimer.Clear();
-			lasTimer.Start();
-			// The Dark Mod
-			// 10/9/2005: SophisticatedZombie
-			// Update the Light Awareness System
-			LAS.updateLASState();
-			lasTimer.Stop();
-			DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
+			{
+				TRACE_CPU_SCOPE( "Update:LAS" )
+				// The Dark Mod
+				// 10/9/2005: SophisticatedZombie
+				// Update the Light Awareness System
+				LAS.updateLASState();
+			}
 
 			unsigned int ticks = static_cast<unsigned int>(sys->GetClockTicks());
 
@@ -3258,39 +3256,45 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			timer_think.Clear();
 			timer_think.Start();
 
-			// let entities think
-			num = 0;
-			bool timeentities = (g_timeentities.GetFloat() > 0.0);
-			for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-				if ( inCinematic && g_cinematic.GetBool() && !ent->cinematic ) {
-					ent->GetPhysics()->UpdateTime( time );
-					// grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
-					if (ent->IsType(idAI::Type)) {
-						static_cast<idAI*>(ent)->m_lastThinkTime = time;
+			{ // let entities think
+				TRACE_CPU_SCOPE( "ThinkAllEntities" )
+				num = 0;
+				bool timeentities = (g_timeentities.GetFloat() > 0.0);
+				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+					if ( inCinematic && g_cinematic.GetBool() && !ent->cinematic ) {
+						ent->GetPhysics()->UpdateTime( time );
+						// grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+						if (ent->IsType(idAI::Type)) {
+							static_cast<idAI*>(ent)->m_lastThinkTime = time;
+						}
+						continue;
 					}
-					continue;
-				}
 
-				if ( timeentities ) {
-					timer_singlethink.Clear();
-					timer_singlethink.Start();
-				}
+					if ( timeentities ) {
+						timer_singlethink.Clear();
+						timer_singlethink.Start();
+					}
 
-				ent->Think();
-				num++;
+					{
+						TRACE_CPU_SCOPE_STR("Entity:Think", ent->name)
+						ent->Think();
+						num++;
+					}
 
-				if ( timeentities ) {
-					timer_singlethink.Stop();
-					float ms = timer_singlethink.Milliseconds();
-					if ( ms >= g_timeentities.GetFloat() ) {
-						Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
-						DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
+					if ( timeentities ) {
+						timer_singlethink.Stop();
+						float ms = timer_singlethink.Milliseconds();
+						if ( ms >= g_timeentities.GetFloat() ) {
+							Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
+							DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
+						}
 					}
 				}
 			}
 
 			// remove any entities that have stopped thinking
 			if ( numEntitiesToDeactivate ) {
+				TRACE_CPU_SCOPE( "DeactivateEntities" )
 				idEntity *next_ent;
 				int c = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
@@ -7220,6 +7224,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 		return; // S/R disabled, skip this
 	}
 
+	TRACE_CPU_SCOPE( "ProcessStimResponse" )
 	idTimer srTimer;
 	srTimer.Clear();
 	srTimer.Start();
@@ -7261,6 +7266,8 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 		idEntity* entity = m_StimEntity[i].GetEntity();
 
 		if (entity == NULL) continue;
+
+		TRACE_CPU_SCOPE_STR( "Process:Stim", entity->name );
 
 		// greebo: Get the S/R collection, this is always non-NULL
 		CStimResponseCollection* srColl = entity->GetStimResponseCollection();

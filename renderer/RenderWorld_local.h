@@ -312,4 +312,19 @@ public:
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );
 };
 
+
+//stgatilov: some informative labels suitable for tracing
+//ideally, it should match natvis definitions...
+
+ID_FORCE_INLINE const char *GetTraceLabel(const renderEntity_t &rEnt) {
+	assert( g_tracingEnabled );
+	if ( rEnt.entityNum != 0 ) {
+		return gameLocal.entities[rEnt.entityNum]->name.c_str();
+	} else if ( rEnt.hModel ) {
+		return rEnt.hModel->Name();
+	} else {
+		return "[unknown]";
+	}
+}
+
 #endif /* !__RENDERWORLDLOCAL_H__ */

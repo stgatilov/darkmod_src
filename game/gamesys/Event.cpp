@@ -509,6 +509,20 @@ void idEvent::ClearEventList( void ) {
 	}
 }
 
+//stgatilov: some informative labels suitable for tracing
+//ideally, it should match natvis definitions...
+idStr GetTraceLabel(const idEvent &evt) {
+	assert( g_tracingEnabled );
+	if ( evt.eventdef == &EV_Thread_Execute ) {
+		return idStr("thread: ") + static_cast<idThread*>(evt.object)->GetThreadName();
+	} else {
+		idStr res = evt.typeinfo->classname + idStr("::") + evt.eventdef->GetName();
+		if ( evt.object->IsType( idEntity::Type ) )
+			res += idStr(": ") + static_cast<idEntity*>(evt.object)->GetName();
+		return res;
+	}
+}
+
 /*
 ================
 idEvent::ServiceEvents
@@ -527,6 +541,8 @@ void idEvent::ServiceEvents( void ) {
 	byte		*data;
 	const char  *materialName;
 
+	TRACE_CPU_SCOPE( "idEvent::ServiceEvents" )
+
 	num = 0;
 	while( !EventQueue.IsListEmpty() ) {
 		event = EventQueue.Next();
@@ -535,6 +551,8 @@ void idEvent::ServiceEvents( void ) {
 		if ( event->time > gameLocal.time ) {
 			break;
 		}
+
+		TRACE_CPU_SCOPE_STR ("Service:Event", GetTraceLabel(*event) )
 
 		// copy the data into the local args array and set up pointers
 		ev = event->eventdef;
