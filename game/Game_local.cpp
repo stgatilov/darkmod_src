@@ -3132,7 +3132,6 @@ idGameLocal::RunFrame
 gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs ) {
 	idEntity *	ent;
 	int			num(-1);
-	float		ms;
 	idTimer		timer_think, timer_events, timer_singlethink;
 	gameReturn_t ret;
 	idPlayer	*player;
@@ -3260,48 +3259,32 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			timer_think.Start();
 
 			// let entities think
-			if ( g_timeentities.GetFloat() ) {
-				num = 0;
-				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
-						ent->GetPhysics()->UpdateTime( time );
-						if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
-						{
-							static_cast<idAI*>(ent)->m_lastThinkTime = time;
-						}
-						continue;
+			num = 0;
+			bool timeentities = (g_timeentities.GetFloat() > 0.0);
+			for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+				if ( inCinematic && g_cinematic.GetBool() && !ent->cinematic ) {
+					ent->GetPhysics()->UpdateTime( time );
+					// grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+					if (ent->IsType(idAI::Type)) {
+						static_cast<idAI*>(ent)->m_lastThinkTime = time;
 					}
+					continue;
+				}
+
+				if ( timeentities ) {
 					timer_singlethink.Clear();
 					timer_singlethink.Start();
-					ent->Think();
+				}
+
+				ent->Think();
+				num++;
+
+				if ( timeentities ) {
 					timer_singlethink.Stop();
-					ms = timer_singlethink.Milliseconds();
+					float ms = timer_singlethink.Milliseconds();
 					if ( ms >= g_timeentities.GetFloat() ) {
 						Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
 						DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
-					}
-					num++;
-				}
-			} else {
-				if ( inCinematic ) {
-					num = 0;
-					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-						if ( g_cinematic.GetBool() && !ent->cinematic ) {
-							ent->GetPhysics()->UpdateTime( time );
-							if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
-							{
-								static_cast<idAI*>(ent)->m_lastThinkTime = time;
-							}
-							continue;
-						}
-						ent->Think();
-						num++;
-					}
-				} else {
-					num = 0;
-					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-						ent->Think();
-						num++;
 					}
 				}
 			}
