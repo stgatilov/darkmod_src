@@ -2012,6 +2012,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		const char *entName = mapEnt->epairs.GetString("name");
 
 		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
+			TRACE_CPU_SCOPE_TEXT("Entity:Spawn", entName)
 			declManager->BeginEntityLoad(mapEnt);
 			CacheDictionaryMedia( &mapEnt->epairs );
 			const char *classname = mapEnt->epairs.GetString( "classname" );
@@ -5182,6 +5183,7 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 	if ( spawnArgs.GetString( "name", "", &name ) ) {
 		sprintf( error, " on '%s'", name);
 	}
+	TRACE_CPU_SCOPE_TEXT("EntDef:Spawn", name);
 
 	spawnArgs.GetString( "classname", NULL, &classname );
 	const idDeclEntityDef *def = FindEntityDef( classname, false );
@@ -5416,6 +5418,7 @@ void idGameLocal::SpawnMapEntities( void )
 
 		if (!InhibitEntitySpawn(args))
 		{
+			TRACE_CPU_SCOPE_TEXT("Entity:Spawn", entName)
 			declManager->BeginEntityLoad(mapEnt);
 			// precache any media specified in the map entity
 			CacheDictionaryMedia(&args);

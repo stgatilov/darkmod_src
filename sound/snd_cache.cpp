@@ -449,6 +449,7 @@ Loads based on name, possibly doing a MakeDefault if necessary
 ===================
 */
 void idSoundSample::Load( void ) {	
+	TRACE_CPU_SCOPE_STR("Load:Sound", name)
 	defaultSound = false;
 	purged = false;
 	hardwareBuffer = false;

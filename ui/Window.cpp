@@ -2172,6 +2172,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	src->ExpectTokenType( TT_NAME, 0, &token );
 
 	SetInitialState(token);
+	TRACE_CPU_SCOPE_STR("Parse:Window", name)
 	declManager->BeginWindowLoad(this);
 
 	src->ExpectTokenString( "{" );

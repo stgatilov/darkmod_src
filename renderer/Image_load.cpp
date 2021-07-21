@@ -1238,6 +1238,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 }
 
 void R_LoadImageData( idImage& image ) {
+	TRACE_CPU_SCOPE_STR("Load:Image", image.imgName)
 	imageBlock_t& cpuData = image.cpuData;
 
 	if ( image.cubeFiles != CF_2D ) {
@@ -1273,6 +1274,7 @@ void R_LoadImageData( idImage& image ) {
 }
 
 void R_UploadImageData( idImage& image ) {
+	TRACE_CPU_SCOPE_STR("Upload:Image", image.imgName)
 	auto& cpuData = image.cpuData;
 	for (int s = 0; s < cpuData.sides; s++) {
 		if ( cpuData.pic[s] == NULL ) {

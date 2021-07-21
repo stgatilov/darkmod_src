@@ -94,6 +94,7 @@ idRenderModel *idRenderWorldLocal::ParseModel( idLexer *src ) {
 
 	model = renderModelManager->AllocModel();
 	model->InitEmpty( token );
+	TRACE_CPU_SCOPE_TEXT("Load:Model", model->Name())
 	declManager->BeginModelLoad(model);
 
 	int numSurfaces = src->ParseInt();
@@ -185,6 +186,7 @@ idRenderModel *idRenderWorldLocal::ParseShadowModel( idLexer *src ) {
 
 	model = renderModelManager->AllocModel();
 	model->InitEmpty( token );
+	TRACE_CPU_SCOPE_TEXT("Load:Model", model->Name())
 	declManager->BeginModelLoad(model);
 
 	surf.material = tr.defaultMaterial;

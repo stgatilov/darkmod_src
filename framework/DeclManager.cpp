@@ -2173,6 +2173,23 @@ void idDeclLocal::AllocateSelf( void ) {
 	}
 }
 
+//stgatilov: for tracing decl loads
+static constexpr const char *GetParseLabelOfDeclType(declType_t type) {
+	if (type == DECL_TABLE) return "Parse:Table";
+	if (type == DECL_MATERIAL) return "Parse:Material";
+	if (type == DECL_SKIN) return "Parse:Skin";
+	if (type == DECL_SOUND) return "Parse:Sound";
+	if (type == DECL_ENTITYDEF) return "Parse:EntityDef";
+	if (type == DECL_MODELDEF) return "Parse:ModelDef";
+	if (type == DECL_FX) return "Parse:FX";
+	if (type == DECL_PARTICLE) return "Parse:Particle";
+	if (type == DECL_AF) return "Parse:AF";
+	if (type == DECL_XDATA) return "Parse:XData";
+	if (type == DECL_TDM_MATINFO) return "Parse:MatInfo";
+	if (type == DECL_TDM_MISSIONINFO) return "Parse:MissionInfo";
+	return "Parse:Decl";
+}
+
 /*
 =================
 idDeclLocal::ParseLocal
@@ -2187,6 +2204,7 @@ void idDeclLocal::ParseLocal( void ) {
 	self->FreeData();
 
 	declManagerLocal.MediaPrint( "parsing %s %s\n", declManagerLocal.declTypes[type]->typeName.c_str(), name.c_str() );
+	TRACE_CPU_DSCOPE_TEXT(GetParseLabelOfDeclType(type), self->GetName())
 	declManagerLocal.loadStack.Append(LoadStack::LevelOf(self));
 
 	// if no text source try to generate default text

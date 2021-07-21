@@ -58,6 +58,13 @@ extern bool g_glTraceInitialized;
 	TRACE_CPU_SCOPE( section ) \
 	TRACE_INTERNAL__STR( text_idstr )
 
+//DSCOPE versions can have name generated at runtime
+#define TRACE_CPU_DSCOPE( section ) ZoneTransientN( __tracy_scoped_zone, section, g_tracingEnabled )
+#define TRACE_CPU_DSCOPE_TEXT( section, text_cstr ) \
+	TRACE_CPU_DSCOPE( section ) \
+	TRACE_INTERNAL__TEXT( text_cstr )
+
+
 class GlDebugGroupScope {
 public:
 	GlDebugGroupScope(const char* section) {
