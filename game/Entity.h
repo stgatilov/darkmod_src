@@ -1473,12 +1473,6 @@ protected:
 	bool						m_bFrobHighlightState;
 
 	/**
-	* Timestamp indicating when the frob highlight last changed
-	* Used for continuous fade in and fade out.
-	**/
-	int							m_FrobChangeTime;
-
-	/**
 	 * FrobActionScript will contain the name of the script that is to be
 	 * exected whenever a frobaction occurs. The default should be set by
 	 * the constructor of the respective derived class but can be overriden

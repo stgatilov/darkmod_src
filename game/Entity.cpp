@@ -1020,7 +1020,6 @@ idEntity::idEntity()
 	m_FrobActionScript = "";
 	m_bFrobbed = false;
 	m_bFrobHighlightState = false;
-	m_FrobChangeTime = 0;
 	m_FrobActionLock = false;
 	m_bAttachedAlertControlsSolidity = false;
 	m_bIsObjective = false;
@@ -2175,7 +2174,6 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteBool(m_bFrobbed);
 	savefile->WriteBool(m_bFrobHighlightState);
-	savefile->WriteInt(m_FrobChangeTime);
 
 	savefile->WriteString(m_FrobActionScript);
 
@@ -2457,7 +2455,6 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadBool(m_bFrobbed);
 	savefile->ReadBool(m_bFrobHighlightState);
-	savefile->ReadInt(m_FrobChangeTime);
 
 	savefile->ReadString(m_FrobActionScript);
 
@@ -4400,7 +4397,7 @@ void idEntity::Present(void)
 		return;
 	}
 
-	if ( !m_bFrobable && !cameraTarget ) // grayman #4615
+	if ( !cameraTarget ) // grayman #4615
 	{
 		BecomeInactive( TH_UPDATEVISUALS );
 	}
@@ -10293,9 +10290,6 @@ void idEntity::UpdateFrobState()
 		return;
 	}
 
-	// The player is looking at this entity, clear m_bFrobbed for the next frame
-	m_bFrobbed = false;
-
 	// Change the highlight state to TRUE
 	SetFrobHighlightState(true);
 }
@@ -10303,9 +10297,6 @@ void idEntity::UpdateFrobState()
 void idEntity::SetFrobHighlightState(const bool newState)
 {
 	if (m_bFrobHighlightState == newState) return; // Avoid unnecessary work
-
-	// The incoming state is differing from our current one, save the timestamp
-	m_FrobChangeTime = gameLocal.time;
 
 	// Update the boolean, the UpdateFrobDisplay() routine will pick it up
 	m_bFrobHighlightState = newState;
@@ -10318,7 +10309,6 @@ void idEntity::UpdateFrobDisplay()
 	// FIX: If we have just been set not frobable, go instantly to un-frobbed hilight state
 	if (!m_bFrobable)
 	{
-		m_FrobChangeTime = gameLocal.time;
 		SetShaderParm(FROB_SHADERPARM, 0.0f);
 		return;
 	}
@@ -10331,21 +10321,7 @@ void idEntity::UpdateFrobDisplay()
 		return;
 	}
 
-	float timePassed = static_cast<float>(gameLocal.time - m_FrobChangeTime);
-	
-	if( m_bFrobHighlightState )
-	{
-		param += timePassed / cv_frob_fadetime.GetFloat();
-	}
-	else
-	{
-		param -= timePassed / cv_frob_fadetime.GetFloat();
-	}
-
-	m_FrobChangeTime = gameLocal.time;
-
-	// clamp between 0 and 1
-	param = idMath::ClampFloat(0.0, 1.0f, param);
+	param = m_bFrobHighlightState;
 
 	SetShaderParm(FROB_SHADERPARM, param);
 }
@@ -10551,6 +10527,8 @@ void idEntity::SetFrobbed( const bool val )
 	if (m_bFrobbed == val) return; // avoid loopbacks and unnecessary work
 
 	m_bFrobbed = val;
+	//stgatilov: trigger visual update for the entity
+	BecomeActive( TH_UPDATEVISUALS );
 
 	// resolve the peer names into entities
 	for (int i = 0; i < m_FrobPeers.Num(); i++)

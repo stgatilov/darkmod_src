@@ -829,6 +829,7 @@ public:
 	* Do the frobbing trace and bounds intersection to mark entities as frobable
 	**/
 	void					PerformFrobCheck();
+	void					PerformFrobCheckInternal();
 
 	/**
 	 * greebo: Performs a frob action on the given entity. The above method

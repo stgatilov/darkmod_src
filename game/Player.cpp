@@ -10567,6 +10567,22 @@ void idPlayer::Event_GetFov()
 
 void idPlayer::PerformFrobCheck()
 {
+	idEntity *oldFrobbed = m_FrobEntity.GetEntity();
+	m_FrobEntity = nullptr;
+
+	PerformFrobCheckInternal();
+
+	idEntity *newFrobbed = m_FrobEntity.GetEntity();
+	if (newFrobbed != oldFrobbed) {
+		if (oldFrobbed)
+			oldFrobbed->SetFrobbed(false);
+		if (newFrobbed)
+			newFrobbed->SetFrobbed(true);
+	}
+}
+
+void idPlayer::PerformFrobCheckInternal()
+{
 	const bool bFrobHelperActive = m_FrobHelper.IsActive();
 
 	// greebo: Don't run this when dead
@@ -10675,9 +10691,6 @@ void idPlayer::PerformFrobCheck()
 			 && !ent->IsHidden() && ( traceDist < ent->m_FrobDistance )
 			 && ( ent != gameLocal.m_Grabber->GetSelected() ) )
 		{
-			// Mark as frobbed for this frame
-			ent->SetFrobbed(true);
-
 			// Store the trace for later reference
 			m_FrobTrace = trace;
 			// Store the frob entity
@@ -10809,8 +10822,6 @@ void idPlayer::PerformFrobCheck()
 	// Activate frobbed state on found entity. We might have alrady
 	if ( ( bestEnt != NULL ) && ( bestEnt != gameLocal.m_Grabber->GetSelected() ) )
 	{
-		// Mark the entity as frobbed this frame
-		bestEnt->SetFrobbed(true);
 		// Store the frob entity
 		m_FrobEntity = bestEnt;
 		// and the trace for reference
