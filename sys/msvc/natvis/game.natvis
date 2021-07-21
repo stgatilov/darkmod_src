@@ -31,6 +31,18 @@
   <Type Name="idEntity">
     <DisplayString IncludeView="simple">Entity[{entityNumber}]={name}</DisplayString>
     <DisplayString>Entity {name}: num={entityNumber} def={entityDefNumber}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[Team]">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>teamMaster</HeadPointer>
+            <NextPointer>teamChain</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
   </Type>
 
   <Type Name="idCVar">
