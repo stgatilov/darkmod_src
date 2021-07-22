@@ -1430,6 +1430,28 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	int		i;
 	bool	reloadingSameMap;
 
+	// extract the map name from serverinfo
+	idStr mapString = mapSpawnData.serverInfo.GetString( "si_map" );
+
+	idStr fullMapName = "maps/";
+	fullMapName += mapString;
+	fullMapName.StripFileExtension();
+
+	// don't do the deferred caching if we are reloading the same map
+	if ( fullMapName == currentMapName ) {
+		reloadingSameMap = true;
+	} else {
+		reloadingSameMap = false;
+		currentMapName = fullMapName;
+	}
+
+	idStr traceText = va("map %s", mapString.c_str());
+	if (savegameFile)
+		traceText += va("\nload %s", savegameFile->GetName());
+	if (reloadingSameMap)
+		traceText += "\n(samemap)";
+	TRACE_CPU_SCOPE_STR("idSessionLocal::ExecuteMapChange", traceText);
+
 	// close console and remove any prints from the notify lines
 	console->Close();
 
@@ -1454,26 +1476,11 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 		CompleteWipe();
 	}
 
-	// extract the map name from serverinfo
-	idStr mapString = mapSpawnData.serverInfo.GetString( "si_map" );
-
-	idStr fullMapName = "maps/";
-	fullMapName += mapString;
-	fullMapName.StripFileExtension();
-
 	// shut down the existing game if it is running
 	UnloadMap();
 
 	R_ToggleSmpFrame(); // duzenko 4848: FIXME find a better place to clear the "next frame" data
 	R_ToggleSmpFrame();	// duzenko 5065: apparently R_ToggleSmpFrame does not like being called once
-
-	// don't do the deferred caching if we are reloading the same map
-	if ( fullMapName == currentMapName ) {
-		reloadingSameMap = true;
-	} else {
-		reloadingSameMap = false;
-		currentMapName = fullMapName;
-	}
 
 	// note which media we are going to need to load
 	if ( !reloadingSameMap ) {
