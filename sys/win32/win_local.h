@@ -27,7 +27,6 @@ void	Sys_CreateConsole( void );
 void	Sys_DestroyConsole( void );
 
 char	*Sys_ConsoleInput (void);
-char	*Sys_GetCurrentUser( void );
 
 void	Win_SetErrorText( const char *text );
 
@@ -36,8 +35,6 @@ int		MapKey (int key);
 
 // Input subsystem
 
-void	IN_Init (void);
-void	IN_Shutdown (void);
 // add additional non keyboard / non mouse movement on top of the keyboard move cmd
 
 void	IN_DeactivateMouseIfWindowed( void );
@@ -90,7 +87,6 @@ typedef struct {
 
 	static idCVar	sys_arch;
 	static idCVar	in_mouse;
-	static idCVar	win_username;
 	static idCVar	win_xpos;			// archived X coordinate of window position
 	static idCVar	win_ypos;			// archived Y coordinate of window position
 	static idCVarBool win_maximized;
