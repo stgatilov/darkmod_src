@@ -947,8 +947,8 @@ static void RB_ShowEntityDraws() {
 		return;
 	}
 
-	const bool group = !r_showEntityDraws & 1;
-	const bool verts = r_showEntityDraws > 2;
+	const bool group = r_showEntityDraws & 2;
+	const bool verts = r_showEntityDraws & 3;
 	idStrList list;
 	struct entityCalls {
 		int index, calls;
