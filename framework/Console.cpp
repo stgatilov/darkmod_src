@@ -129,6 +129,7 @@ idCVar idConsoleLocal::con_noPrint( "con_noPrint", "0", CVAR_BOOL|CVAR_SYSTEM|CV
 #else
 idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "print on the console but not onscreen when console is pulled up" );
 #endif
+idCVarBool con_noWrap( "con_noWrap", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "no wrap; long string to be truncated" );
 
 
 /*
@@ -941,10 +942,17 @@ void idConsoleLocal::Print( const char *txt ) {
 				text[y*LINE_WIDTH+x] = (color << 8) | c;
 				x++;
 				if ( x >= LINE_WIDTH ) {
-					Linefeed();
+					if ( strcmp( txt, "\n" ) ) // don't insert an empty line when txt is exactly LINE_WIDTH long and ends with a LF
+						Linefeed();
 					x = 0;
 				}
 				break;
+		}
+		if ( con_noWrap && ( x == LINE_WIDTH - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) {
+			text[y * LINE_WIDTH + x] = ( C_COLOR_YELLOW << 8 ) | '>';
+			Linefeed();
+			x = 0;
+			break;
 		}
 	}
 
