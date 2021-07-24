@@ -1079,10 +1079,6 @@ idSessionLocal::StartNewGame
 ===============
 */
 void idSessionLocal::StartNewGame( const char *mapName, bool devmap ) {
-#ifdef	ID_DEDICATED
-	common->Printf( "Dedicated servers cannot start singleplayer games.\n" );
-	return;
-#else
 	// clear the userInfo so the player starts out with the defaults
 	mapSpawnData.userInfo[0].Clear();
 	mapSpawnData.persistentPlayerInfo[0].Clear();
@@ -1102,7 +1098,6 @@ void idSessionLocal::StartNewGame( const char *mapName, bool devmap ) {
 	mapSpawnData.syncedCVars = *cvarSystem->MoveCVarsToDict( CVAR_NETWORKSYNC );
 
 	MoveToNewMap( mapName );
-#endif
 }
 
 /*
@@ -1843,10 +1838,6 @@ idSessionLocal::SaveGame
 ===============
 */
 bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipCheck ) {
-#ifdef	ID_DEDICATED
-	common->Printf( "Dedicated servers cannot save games.\n" );
-	return false;
-#else
 	int i;
 	idStr gameFile, previewFile, descriptionFile, mapName;
 
@@ -2041,7 +2032,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 
 
 	return true;
-#endif
 }
 
 
@@ -2151,10 +2141,6 @@ idSessionLocal::DoLoadGame
 ===============
 */
 bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoad) {
-#ifdef	ID_DEDICATED
-	common->Printf( "Dedicated servers cannot load games.\n" );
-	return false;
-#else
 	//Hide the dialog box if it is up.
 	StopBox();
 
@@ -2204,7 +2190,6 @@ bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoa
 	}
 
 	return success;
-#endif
 }
 
 // STiFU #4531: TDM savegame version check
@@ -3287,7 +3272,6 @@ void idSessionLocal::Init() {
 
 	cmdSystem->AddCommand( "writePrecache", Sess_WritePrecache_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "writes precache commands" );
 
-#ifndef	ID_DEDICATED
 	cmdSystem->AddCommand( "map", Session_Map_f, CMD_FL_SYSTEM, "loads a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "devmap", Session_DevMap_f, CMD_FL_SYSTEM, "loads a map in developer mode", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "testmap", Session_TestMap_f, CMD_FL_SYSTEM, "tests a map", idCmdSystem::ArgCompletion_MapName );
@@ -3306,17 +3290,14 @@ void idSessionLocal::Init() {
 	cmdSystem->AddCommand( "timeDemoQuit", Session_TimeDemoQuit_f, CMD_FL_SYSTEM, "times a demo and quits", idCmdSystem::ArgCompletion_DemoName );
 	cmdSystem->AddCommand( "aviDemo", Session_AVIDemo_f, CMD_FL_SYSTEM, "writes AVIs for a demo", idCmdSystem::ArgCompletion_DemoName );
 	cmdSystem->AddCommand( "compressDemo", Session_CompressDemo_f, CMD_FL_SYSTEM, "compresses a demo file", idCmdSystem::ArgCompletion_DemoName );
-#endif
 
 	cmdSystem->AddCommand( "disconnect", Session_Disconnect_f, CMD_FL_SYSTEM, "disconnects from a game" );
 
 	cmdSystem->AddCommand( "demoShot", Session_DemoShot_f, CMD_FL_SYSTEM, "writes a screenshot for a demo" );
 	cmdSystem->AddCommand( "testGUI", Session_TestGUI_f, CMD_FL_SYSTEM, "tests a gui" );
 
-#ifndef	ID_DEDICATED
 	cmdSystem->AddCommand( "saveGame", SaveGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "saves a game" );
 	cmdSystem->AddCommand( "loadGame", LoadGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "loads a game", idCmdSystem::ArgCompletion_SaveGame );
-#endif
 
 	cmdSystem->AddCommand( "rescanSI", Session_RescanSI_f, CMD_FL_SYSTEM, "internal - rescan serverinfo cvars and tell game" );
 

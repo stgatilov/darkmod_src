@@ -26,13 +26,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <io.h>
 #include <conio.h>
 
-#ifndef	ID_DEDICATED
 #include <comdef.h>
 #include <comutil.h>
 #include <Wbemidl.h>
 
 #pragma comment (lib, "wbemuuid.lib")
-#endif
 
 /*
 ================

@@ -83,21 +83,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define ID_CLIENTINFO_TAGS 0
 #endif
 
-// for win32 this is defined in preprocessor settings so that MFC can be
-// compiled out.
-//#define ID_DEDICATED
-
 // don't define ID_ALLOW_TOOLS when we don't want tool code in the executable.
-#if defined( _WIN32 ) && !defined( ID_DEDICATED )
+#if defined( _WIN32 )
 #ifndef NO_MFC
 #define	ID_ALLOW_TOOLS
 #endif
 #endif
 
 #ifndef ID_OPENAL
-#	if !defined( ID_DEDICATED )
-#		define ID_OPENAL 1
-#	else
-#		define ID_OPENAL 0
-#	endif
+#	define ID_OPENAL 1
 #endif

@@ -646,7 +646,6 @@ to handle mirrors,
 ====================
 */
 void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
-#ifndef	ID_DEDICATED
 	//renderView_t	copy;
 
 	if ( !glConfig.isInitialized ) {
@@ -739,27 +738,12 @@ void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 		WriteRenderView( renderView );
 	}
 
-#if 0
-	for ( int i = 0 ; i < entityDefs.Num() ; i++ ) {
-		idRenderEntityLocal	*def = entityDefs[i];
-		if ( !def ) {
-			continue;
-		}
-		if ( def->parms.callback ) {
-			continue;
-		}
-		if ( def->parms.hModel->IsDynamicModel() == DM_CONTINUOUS ) {
-		}
-	}
-#endif
-
 	int endTime = Sys_Milliseconds();
 
 	tr.pc.frontEndMsec += endTime - startTime;
 
 	// prepare for any 2D drawing after this
 	//tr.guiModel->Clear();
-#endif
 }
 
 /*
