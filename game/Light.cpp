@@ -1247,8 +1247,7 @@ void idLight::Think( void ) {
 		}
 	}
 	
-	RunPhysics();
-	Present();
+	idEntity::Think();
 }
 
 /*
