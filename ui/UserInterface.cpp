@@ -141,7 +141,7 @@ void idUserInterfaceManagerLocal::ListGuis() const {
 		common->Printf( "%6.1fk %4i (%s) %s ( %i transitions )\n", sz / 1024.0f, guis[i]->GetRefs(), isUnique ? "unique" : "copy", guis[i]->GetSourceFile(), guis[i]->desktop->NumTransitions() );
 		total += sz;
 	}
-	common->Printf( "===========\n  %i total Guis ( %i copies, %i unique ), %.2f total Mbytes", c, copies, unique, total / ( 1024.0f * 1024.0f ) );
+	common->Printf( "===========\n  %i total Guis ( %i copies, %i unique ), %.2f total Mbytes\n", c, copies, unique, total / ( 1024.0f * 1024.0f ) );
 }
 
 bool idUserInterfaceManagerLocal::CheckGui( const char *qpath ) const {
