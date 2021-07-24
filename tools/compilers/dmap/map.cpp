@@ -428,6 +428,7 @@ static bool	ProcessMapEntity( idMapEntity *mapEnt ) {
 	if (idStr::Length(uEntity->nameEntity) == 0 && dmapGlobals.num_entities == 0)
 		uEntity->nameEntity = "worldspawn";
 	dmapGlobals.num_entities++;
+	TRACE_CPU_SCOPE_TEXT("ProcessMapEntity", uEntity->nameEntity)
 
 	for ( entityPrimitive = 0; entityPrimitive < mapEnt->GetNumPrimitives(); entityPrimitive++ ) {
 		prim = mapEnt->GetPrimitive(entityPrimitive);
@@ -457,19 +458,21 @@ CreateMapLight
 ==============
 */
 static void CreateMapLight( const idMapEntity *mapEnt ) {
-	mapLight_t	*light;
-	bool	dynamic;
+
+	// get the name for naming the shadow surfaces
+	const char *name = mapEnt->epairs.GetString( "name", "" );
+	TRACE_CPU_SCOPE_TEXT( "CreateMapLight", name )
 
 	// designers can add the "noPrelight" flag to signal that
 	// the lights will move around, so we don't want
 	// to bother chopping up the surfaces under it or creating
 	// shadow volumes
-	mapEnt->epairs.GetBool( "noPrelight", "0", dynamic );
+	bool dynamic = mapEnt->epairs.GetBool( "noPrelight", "0" );
 	if ( dynamic ) {
 		return;
 	}
 
-	light = new mapLight_t;
+	mapLight_t *light = new mapLight_t;
 	light->name[0] = '\0';
 	light->shadowTris = NULL;
 
@@ -479,11 +482,6 @@ static void CreateMapLight( const idMapEntity *mapEnt ) {
 	gameEdit->ParseSpawnArgsToRenderLight( &mapEnt->epairs, &light->def.parms );
 
 	R_DeriveLightData( &light->def );
-
-	// get the name for naming the shadow surfaces
-	const char	*name;
-
-	mapEnt->epairs.GetString( "name", "", &name );
 
 	idStr::Copynz( light->name, name, sizeof( light->name ) );
 	if ( !light->name[0] ) {
@@ -511,6 +509,7 @@ static void CreateMapLights( const idMapFile *dmapFile ) {
 	int		i;
 	const idMapEntity *mapEnt;
 	const char	*value;
+	TRACE_CPU_SCOPE("CreateMapLights")
 
 	for ( i = 0 ; i < dmapFile->GetNumEntities() ; i++ ) {
 		mapEnt = dmapFile->GetEntity(i);
@@ -535,6 +534,7 @@ bool LoadDMapFile( const char *filename ) {
 	int			i;
 	int			size;
 
+	TRACE_CPU_SCOPE_TEXT("LoadDMapFile", filename)
 	PrintIfVerbosityAtLeast( VL_CONCISE, "--- LoadDMapFile ---\n" );
 	PrintIfVerbosityAtLeast( VL_CONCISE, "loading %s\n", filename ); 
 

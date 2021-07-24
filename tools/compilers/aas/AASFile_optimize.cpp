@@ -34,6 +34,7 @@ idAASFileLocal::Optimize
 ================
 */
 void idAASFileLocal::Optimize( void ) {
+	TRACE_CPU_SCOPE("OptimizeAAS")
 	int i, j, k, faceNum, edgeNum, areaFirstFace, faceFirstEdge;
 	aasArea_t *area;
 	aasFace_t *face;

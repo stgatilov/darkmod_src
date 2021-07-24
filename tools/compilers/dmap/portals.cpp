@@ -467,6 +467,7 @@ MakeTreePortals
 */
 void MakeTreePortals (tree_t *tree)
 {
+	TRACE_CPU_SCOPE("MakeTreePortals")
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- MakeTreePortals -----\n");
 	MakeHeadnodePortals (tree);
 	MakeTreePortals_r (tree->headnode);
@@ -1388,6 +1389,7 @@ Sets e->areas.numAreas
 =============
 */
 void FloodAreas( uEntity_t *e ) {
+	TRACE_CPU_SCOPE_TEXT("FloodAreas", e->nameEntity)
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FloodAreas ---\n");
 
 	// set all areas to -1
@@ -1439,6 +1441,7 @@ stgatilov #5592: also report leak if it exists
 */
 bool FloodEntities( tree_t *tree ) {
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FloodEntities ---\n");
+	TRACE_CPU_SCOPE("FloodEntities")
 
 	// stgatilov: list of nodes where entities are put
 	idList<node_t*> entNodes;
@@ -1602,6 +1605,7 @@ Fill (set node->opaque = true) all nodes that can't be reached by entities
 =============
 */
 void FillOutside( uEntity_t *e ) {
+	TRACE_CPU_SCOPE("FillOutside")
 	c_outside = 0;
 	c_inside = 0;
 	c_solid = 0;

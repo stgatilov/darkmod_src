@@ -368,6 +368,7 @@ tree_t *FaceBSP( bspface_t *list ) {
 	int			count;
 	int			start, end;
 
+	TRACE_CPU_SCOPE("FaceBSP")
 	start = Sys_Milliseconds();
 
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FaceBSP ---\n" );
@@ -423,6 +424,7 @@ bspface_t	*MakeStructuralBspFaceList( primitive_t *list ) {
 	side_t		*s;
 	idWinding	*w;
 	bspface_t	*f, *flist;
+	TRACE_CPU_SCOPE("MakeStructuralBspFaceList")
 
 	flist = NULL;
 	for ( ; list ; list = list->next ) {

@@ -339,6 +339,7 @@ idAASBuild::GravitationalSubdivision
 void idAASBuild::GravitationalSubdivision( idBrushBSP &bsp ) {
 	numGravitationalSubdivisions = 0;
 
+	TRACE_CPU_SCOPE("GravitationalSubdivision")
 	common->Printf( "[Gravitational Subdivision]\n" );
 
 	SetPortalFlags_r( bsp.GetRootNode() );

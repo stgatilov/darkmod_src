@@ -1577,6 +1577,7 @@ void idBrushList::Merge( bool (*MergeAllowed)( idBrush *b1, idBrush *b2 ) ) {
 	idPlaneSet planeList;
 	int numMerges;
 
+	TRACE_CPU_SCOPE_FORMAT( "Brush:Merge", "%6d original brushes", Num() )
 	common->Printf( "[Brush Merge]\n");
 	common->Printf( "%6d original brushes\n", Num() );
 

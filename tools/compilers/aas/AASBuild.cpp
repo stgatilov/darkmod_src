@@ -114,9 +114,11 @@ bool idAASBuild::LoadProcBSP( const char *name, ID_TIME_T minFileTime ) {
 	idToken token;
 	idLexer *src;
 
-	// load it
 	fileName = name;
 	fileName.SetFileExtension( PROC_FILE_EXT );
+	TRACE_CPU_SCOPE_STR("LoadProcBSP", fileName)
+
+	// load it
 	src = new idLexer( fileName, LEXFL_NOSTRINGCONCAT | LEXFL_NODOLLARPRECOMPILE );
 	if ( !src->IsLoaded() ) {
 		common->Warning("idAASBuild::LoadProcBSP: couldn't load %s", fileName.c_str() );
@@ -258,6 +260,7 @@ void idAASBuild::ClipBrushSidesWithProcBSP( idBrushList &brushList ) {
 	if ( idAASBuild::procNodes == NULL ) {
 		return;
 	}
+	TRACE_CPU_SCOPE("ClipBrushSidesWithProcBSP")
 
 	clippedSides = 0;
 	for ( brush = brushList.Head(); brush; brush = brush->Next() ) {
@@ -536,6 +539,7 @@ idAASBuild::AddBrushesForMapFile
 idBrushList idAASBuild::AddBrushesForMapFile( const idMapFile * mapFile, idBrushList brushList ) {
 	int i;
 
+	TRACE_CPU_SCOPE("AddBrushesForMapFile")
 	common->Printf( "[Brush Load]\n" );
 
 	brushList = AddBrushesForMapEntity( mapFile->GetEntity( 0 ), 0, brushList );
@@ -561,6 +565,7 @@ idAASBuild::CheckForEntities
 bool idAASBuild::CheckForEntities( const idMapFile *mapFile, idStrList &entityClassNames ) const {
 	int		i;
 	idStr	classname;
+	TRACE_CPU_SCOPE("idAASBuild::CheckForEntities")
 
 	com_editors |= EDITOR_AAS;
 
@@ -638,6 +643,7 @@ bool idAASBuild::Build( const idStr &fileName, const idAASSettings *settings ) {
 	idAASCluster cluster;
 	idStrList entityClassNames;
 
+	TRACE_CPU_SCOPE_STR("idAASBuild::Build", settings->fileExtension)
 	startTime = Sys_Milliseconds();
 
 	Shutdown();
@@ -685,18 +691,19 @@ bool idAASBuild::Build( const idStr &fileName, const idAASSettings *settings ) {
 	for ( i = 1; i < aasSettings->numBoundingBoxes; i++ ) {
 		expandedBrushes.Append( brushList.Copy() );
 	}
-
-	// expand brushes for the axial bounding boxes
-	mask = AREACONTENTS_SOLID;
-	for ( i = 0; i < expandedBrushes.Num(); i++ ) {
-		for ( b = expandedBrushes[i]->Head(); b; b = b->Next() ) {
-			b->ExpandForAxialBox( aasSettings->boundingBoxes[i] );
-			bit = 1 << ( i + AREACONTENTS_BBOX_BIT );
-			mask |= bit;
-			b->SetContents( b->GetContents() | bit );
+	{
+		TRACE_CPU_SCOPE_FORMAT("ExpandBrushes", "x%d", aasSettings->numBoundingBoxes);
+		// expand brushes for the axial bounding boxes
+		mask = AREACONTENTS_SOLID;
+		for ( i = 0; i < expandedBrushes.Num(); i++ ) {
+			for ( b = expandedBrushes[i]->Head(); b; b = b->Next() ) {
+				b->ExpandForAxialBox( aasSettings->boundingBoxes[i] );
+				bit = 1 << ( i + AREACONTENTS_BBOX_BIT );
+				mask |= bit;
+				b->SetContents( b->GetContents() | bit );
+			}
 		}
 	}
-
 	// move all brushes back into the original list
 	for ( i = 1; i < aasSettings->numBoundingBoxes; i++ ) {
 		brushList.AddToTail( *expandedBrushes[i] );
@@ -881,6 +888,7 @@ void RunAAS_f( const idCmdArgs &args ) {
 		return;
 	}
 
+	TRACE_CPU_SCOPE_TEXT("RunAAS", args.Args())
 	common->ClearWarnings( "compiling AAS" );
 
 	common->SetRefreshOnPrint( true );

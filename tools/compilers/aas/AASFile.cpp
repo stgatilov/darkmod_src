@@ -618,6 +618,7 @@ bool idAASFileLocal::Write( const idStr &fileName, const unsigned int mapFileCRC
 	idFile *aasFile;
 	idReachability *reach;
 
+	TRACE_CPU_SCOPE("WriteAAS")
 	common->Printf( "[Write AAS]\n" );
 	common->Printf( "writing %s\n", fileName.c_str() );
 

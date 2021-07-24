@@ -346,6 +346,7 @@ void ClipSidesByTree( uEntity_t *e ) {
 	side_t			*side;
 	primitive_t		*prim;
 
+	TRACE_CPU_SCOPE_TEXT("ClipSidesByTree", e->nameEntity)
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- ClipSidesByTree -----\n");
 
 	for ( prim = e->primitives ; prim ; prim = prim->next ) {
@@ -611,6 +612,7 @@ void PutPrimitivesInAreas( uEntity_t *e ) {
 	primitive_t		*prim;
 	mapTri_t		*tri;
 
+	TRACE_CPU_SCOPE_TEXT("PutPrimitivesInAreas", e->nameEntity)
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- PutPrimitivesInAreas -----\n");
 
 	// allocate space for surface chains for each area
@@ -636,12 +638,14 @@ void PutPrimitivesInAreas( uEntity_t *e ) {
 		b = prim->brush;
 
 		if ( !b ) {
+			TRACE_CPU_SCOPE_TEXT("PutPrimitiveInArea", "patch")
 			// add curve triangles
 			for ( tri = prim->tris ; tri ; tri = tri->next ) {
 				AddMapTriToAreas( tri, e );
 			}
 			continue;
 		}
+		TRACE_CPU_SCOPE_FORMAT("PutPrimitiveInArea", "Ent%d Br%d", prim->brush->entitynum, prim->brush->brushnum)
 
 		// clip in brush sides
 		for ( i = 0 ; i < b->numsides ; i++ ) {
@@ -1056,8 +1060,10 @@ void Prelight( uEntity_t *e ) {
 	if ( dmapGlobals.entityNum != 0 ) {
 		return;
 	}
+	TRACE_CPU_SCOPE("Prelight")
 	
 	if ( dmapGlobals.shadowOptLevel > 0 ) {
+		TRACE_CPU_SCOPE("BuildLightShadows")
 		PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- BuildLightShadows -----\n" );
 		start = Sys_Milliseconds();
 
@@ -1081,6 +1087,7 @@ void Prelight( uEntity_t *e ) {
 
 
 	if ( !dmapGlobals.noLightCarve ) {
+		TRACE_CPU_SCOPE("CarveGroupsByLight")
 		PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- CarveGroupsByLight -----\n" );
 		start = Sys_Milliseconds();
 		// now subdivide the optimize groups into additional groups for

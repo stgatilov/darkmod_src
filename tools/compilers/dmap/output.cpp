@@ -670,6 +670,7 @@ void WriteOutputFile( void ) {
 	idStr			qpath;
 
 	// write the file
+	TRACE_CPU_SCOPE("WriteOutputFile")
 	PrintIfVerbosityAtLeast( VL_CONCISE, "----- WriteOutputFile -----\n" );
 
 	sprintf( qpath, "%s." PROC_FILE_EXT, dmapGlobals.mapFileBase );
@@ -691,6 +692,7 @@ void WriteOutputFile( void ) {
 			continue;
 		}
 
+		TRACE_CPU_SCOPE_TEXT( "Write:Entity", entity->nameEntity )
 		WriteOutputEntity( i );
 	}
 
@@ -700,6 +702,7 @@ void WriteOutputFile( void ) {
 		if ( !light->shadowTris ) {
 			continue;
 		}
+		TRACE_CPU_SCOPE_TEXT( "Write:Shadow", light->name )
 
 		procFile->WriteFloatString( "shadowModel { /* name = */ \"_prelight_%s\"\n\n", light->name );
 		WriteShadowTriangles( light->shadowTris );
