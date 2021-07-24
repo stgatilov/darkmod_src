@@ -55,6 +55,7 @@ typedef struct {
 
 typedef struct {
 	idMapEntity *		mapEntity;		// points into mapFile_t data
+	const char *		nameEntity;		//
 
 	idVec3				origin;
 	primitive_t *		primitives;

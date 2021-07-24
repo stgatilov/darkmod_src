@@ -424,6 +424,9 @@ static bool	ProcessMapEntity( idMapEntity *mapEnt ) {
 	uEntity = &dmapGlobals.uEntities[dmapGlobals.num_entities];
 	memset( uEntity, 0, sizeof(*uEntity) );
 	uEntity->mapEntity = mapEnt;
+	uEntity->nameEntity = mapEnt->epairs.GetString("name");
+	if (idStr::Length(uEntity->nameEntity) == 0 && dmapGlobals.num_entities == 0)
+		uEntity->nameEntity = "worldspawn";
 	dmapGlobals.num_entities++;
 
 	for ( entityPrimitive = 0; entityPrimitive < mapEnt->GetNumPrimitives(); entityPrimitive++ ) {
