@@ -80,7 +80,7 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 			backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
 	}
 	if ( r_showEntityDraws && surf->space )
-		if ( r_showEntityDraws > 2 ) {
+		if ( r_showEntityDraws & 4 ) {
 			((viewEntity_t*)surf->space)->drawCalls += surf->frontendGeo->numIndexes / 3;
 		} else
 			((viewEntity_t *)surf->space)->drawCalls++;

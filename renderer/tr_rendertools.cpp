@@ -971,7 +971,7 @@ static void RB_ShowEntityDraws() {
 			entityCalls calls{ vModels->entityDef->index, vModels->drawCalls, name, };
 			stats.Append( calls );
 		} else {
-			if ( verts )
+			if ( verts ) // vModels->drawCalls double serves as vertex count (huge number) in this mode
 				list.Append( idStr::Fmt( "%6i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name.c_str() ) );
 			else
 				list.Append( idStr::Fmt( "%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name.c_str() ) );
