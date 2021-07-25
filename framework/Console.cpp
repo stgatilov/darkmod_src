@@ -948,11 +948,16 @@ void idConsoleLocal::Print( const char *txt ) {
 				}
 				break;
 		}
-		if ( con_noWrap && ( x == LINE_WIDTH - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) {
+		if ( con_noWrap && ( x == LINE_WIDTH - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) { // don't truncate if exactly LINE_WIDTH long
 			text[y * LINE_WIDTH + x] = ( C_COLOR_YELLOW << 8 ) | '>';
 			Linefeed();
 			x = 0;
-			break;
+			while ( *txt && *txt != '\n' ) // only truncate until the next explicit line break
+				txt++;
+			if ( !*txt )
+				break;
+			else
+				txt++;
 		}
 	}
 
