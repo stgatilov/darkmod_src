@@ -65,6 +65,9 @@ public:
 	// returns false if it failed to load
 	virtual bool		InitFromFile( const char *qpath, bool looping, bool withAudio = false );
 
+	// returns path to video file played by this
+	virtual const char *GetFilePath() const;
+
 	// returns the length of the animation in milliseconds
 	virtual int			AnimationLength();
 

@@ -869,6 +869,10 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping, bool withA
 	return res;
 }
 
+const char *idCinematicFFMpeg::GetFilePath() const {
+	return _path.c_str();
+}
+
 int idCinematicFFMpeg::AnimationLength() {
 	return int(_duration * 1000.0);
 }

@@ -44,6 +44,8 @@ public:
 	virtual cinData_t		ImageForTime(int milliseconds);
 	virtual bool SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output);
 	virtual cinStatus_t GetStatus() const;
+	virtual const char *GetFilePath() const;
+
 
 	virtual void			ResetTime(int time);
 	virtual void			Close();

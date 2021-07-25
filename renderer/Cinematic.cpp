@@ -77,6 +77,15 @@ bool idCinematic::InitFromFile( const char *qpath, bool looping, bool withAudio 
 
 /*
 ==============
+idCinematic::InitFromFile
+==============
+*/
+const char *idCinematic::GetFilePath() const {
+	return nullptr;
+}
+
+/*
+==============
 idCinematic::AnimationLength
 ==============
 */
