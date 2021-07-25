@@ -2628,7 +2628,8 @@ void idSessionLocal::Draw() {
 		if ( guiActive == guiMsg && guiMsgRestore ) {
 			guiMsgRestore->Redraw( com_frameTime );
 		}
-		
+
+		guiActive->UpdateSubtitles();	//stgatilov #2454
 		guiActive->Redraw( com_frameTime );
 	} else if ( readDemo ) {
 		rw->RenderScene( currentDemoRenderView );

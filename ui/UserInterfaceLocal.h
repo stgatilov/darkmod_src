@@ -58,6 +58,7 @@ public:
 	virtual float				CursorY() { return cursorY; }
 	virtual const char*			RunGuiScript(const char *windowName, int scriptNum);
 	virtual bool				ResetWindowTime(const char *windowName, int startTime = 0);
+	virtual void				UpdateSubtitles();
 
 	size_t						Size();
 
@@ -103,6 +104,11 @@ private:
 	int							time;
 
 	int							refs;
+
+	//stgatilov #2454: We can show several active subtitles simultaneously.
+	// Each of them gets into one of few "slots".
+	// Here we store information about slots between updates.
+	idList<SubtitleMatch>		subtitleSlots;
 };
 
 class idUserInterfaceManagerLocal : public idUserInterfaceManager {

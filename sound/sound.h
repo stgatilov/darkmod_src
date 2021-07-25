@@ -30,6 +30,7 @@ const float DOOM_TO_METERS = 0.0254f;					// doom to meters
 const float METERS_TO_DOOM = (1.0f/DOOM_TO_METERS);	// meters to doom
 
 class idSoundSample;
+struct SubtitleMatch;
 
 // sound shader flags
 static const int	SSF_PRIVATE_SOUND =		BIT(0);	// only plays for the current listenerId
@@ -243,6 +244,9 @@ public:
 	virtual void			SetSlowmo( bool active ) = 0;
 	virtual void			SetSlowmoSpeed( float speed ) = 0;
 	virtual void			SetEnviroSuit( bool active ) = 0;
+
+	// stgatilov #2454: returns set of currently active subtitles
+	virtual	void			GetSubtitles( idList<SubtitleMatch> &dest ) = 0;
 };
 
 

@@ -992,6 +992,9 @@ public:
 	// Runs the "Click when ready" GUI, returns TRUE if the player is ready
 	bool			WaitUntilReady();
 
+	// stgatilov #2454: enable/disable subtitles overlay and update active text to be displayed
+	void			UpdateSubtitlesGUI();
+
 	/**
 	* greebo: Sets the time between health "pulses" if the healthPool > 0
 	*
@@ -1093,6 +1096,9 @@ private:
 
 	// The GUI handle used by the in-game inventory grid display -- Durandall #4286
 	int						inventoryGridOverlay;
+
+	// The GUI handle used by the in-game subtitles -- stgatilov #2454
+	int						subtitlesOverlay;
 
 	idInterpolate<float>	zoomFov;
 	idInterpolate<float>	centerView;

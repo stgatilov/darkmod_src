@@ -315,6 +315,7 @@ extern idCVar cv_tdm_rope_pull_force_factor;
 extern idCVar cv_tdm_obj_gui_file;
 extern idCVar cv_tdm_waituntilready_gui_file;
 extern idCVar cv_tdm_invgrid_gui_file;	// #4286
+extern idCVar cv_tdm_subtitles_gui_file;
 
 extern idCVar cv_tdm_hud_opacity;
 extern idCVar cv_tdm_hud_hide_lightgem;
@@ -334,6 +335,7 @@ extern idCVar cv_tdm_inv_hud_pickupmessages;
 extern idCVar cv_tdm_inv_loot_sound;
 extern idCVar cv_tdm_inv_use_on_frob;
 extern idCVar cv_tdm_inv_use_visual_feedback;
+extern idCVar cv_tdm_subtitles;
 
 extern idCVar cv_tdm_door_control;
 extern idCVar cv_tdm_door_control_sensitivity;

@@ -413,8 +413,9 @@ idCVar cv_tdm_inv_gui_file(	"tdm_inv_hud_file", "guis/tdm_inv.gui",	CVAR_GAME, "
 idCVar cv_tdm_inv_loot_item_def("tdm_inv_loot_item_def", "atdm:inv_loot_info_item", CVAR_GAME, "The name of the entityDef that defines the player's inventory loot item.");
 
 idCVar cv_tdm_obj_gui_file(	"tdm_obj_hud_file", "guis/tdm_objectives.gui",	CVAR_GAME, "The name of the gui file that defines the in-game objectives.");
-idCVar cv_tdm_waituntilready_gui_file(	"tdm_waituntilready_gui_file", "guis/tdm_waituntilready.gui",	CVAR_GAME, "The name of the gui file that is displayed after loading a map and before starting the gameplay action.");
-idCVar cv_tdm_invgrid_gui_file(  "tdm_invgrid_hud_file", "guis/tdm_invgrid_parchment.gui",  CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that defines the in-game inventory grid.");
+idCVar cv_tdm_waituntilready_gui_file( "tdm_waituntilready_gui_file", "guis/tdm_waituntilready.gui",	CVAR_GAME, "The name of the gui file that is displayed after loading a map and before starting the gameplay action.");
+idCVar cv_tdm_invgrid_gui_file( "tdm_invgrid_hud_file", "guis/tdm_invgrid_parchment.gui",  CVAR_GAME | CVAR_ARCHIVE, "The name of the gui file that defines the in-game inventory grid.");
+idCVar cv_tdm_subtitles_gui_file( "tdm_subtitles_gui_file", "guis/tdm_subtitles.gui",  CVAR_GAME, "The name of the gui file for in-game subtitles overlay");
 
 idCVar cv_tdm_hud_opacity(	"tdm_hud_opacity", "0.7",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"The opacity of the HUD GUIs. [0..1]", 0, 1 );
 idCVar cv_tdm_hud_hide_lightgem(	"tdm_hud_hide_lightgem", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,	"If set to 1, the lightgem will be hidden." );
@@ -424,6 +425,7 @@ idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHI
 idCVar cv_tdm_door_control("tdm_door_control", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Acivates experimental door control.  When active, hold down frob and move mouse to fine-control a door.");
 idCVar cv_tdm_door_control_sensitivity( "tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT, "Sets fine door control mouse sensitivity." );
 idCVar cv_tdm_inv_use_visual_feedback("tdm_inv_use_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' the HUD is giving visual feedback when the currently selected item is used on the highlighted one.");
+idCVar cv_tdm_subtitles( "tdm_subtitles", "1",  CVAR_GAME | CVAR_ARCHIVE, "Display subtitles?");
 
 //Obsttorte: cvars to allow altering the gui size
 

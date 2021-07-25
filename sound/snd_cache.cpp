@@ -532,6 +532,12 @@ void idSoundSample::LoadFromCinematic(idCinematic *cin) {
 
 	//cinematic decides when it ends: set infinite duration here
 	objectSize = INT_MAX / 2;
+
+	if ( const char *filename = cin->GetFilePath() ) {
+		idStr srtFileName = filename;
+		srtFileName.SetFileExtension( ".srt" );
+		LoadSrtFile( srtFileName.c_str(), subtitles );
+	}
 }
 
 /*
@@ -794,4 +800,22 @@ bool idSoundSample::FetchFromCache( int offset, const byte **output, int *positi
 bool idSoundSample::FetchFromCinematic(int sampleOffset, int *sampleSize, float *output) {
 	assert(cinematic);
 	return cinematic->SoundForTimeInterval(sampleOffset, sampleSize, PRIMARYFREQ, output);
+}
+
+int idSoundSample::FetchSubtitles( int offset, idList<SubtitleMatch> &matches ) {
+	//note: if this ever becomes too slow, we can implement "decoder" for subtitles
+	//it can keep track of currently active matches, and position of current offset in the array...
+
+	int cnt = 0;
+	for ( int i = 0; i < subtitles.Num(); i++ ) {
+		if ( offset >= subtitles[i].offsetStart && offset < subtitles[i].offsetEnd ) {
+			SubtitleMatch m;
+			m.subtitle = &subtitles[i];
+			m.channel = nullptr;	// will be set by caller
+			matches.AddGrow( m );
+			cnt++;
+		}
+	}
+
+	return cnt;
 }

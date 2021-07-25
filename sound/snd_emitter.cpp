@@ -247,18 +247,6 @@ void idSoundChannel::GatherChannelSamples( int sampleOffset44k, int sampleCount4
 	float	*dest_p = dest;
 	int		len;
 
-	if ( leadinSample && leadinSample->subtitles.Num() ) {
-		if ( idUserInterface* guiActive = session->GetGui( idSession::gtActive ) ) {
-			guiActive->SetStateString( "subtitle", "" );
-			for ( auto& subtitle : leadinSample->subtitles ) {
-				if ( sampleOffset44k > subtitle.offsetStart && sampleOffset44k < subtitle.offsetEnd ) {
-					guiActive->SetStateString( "subtitle", subtitle.text.c_str() );
-					break;
-				}
-			}
-		}
-	}
-
 	// negative offset times will just zero fill
 	if ( sampleOffset44k < 0 ) {
 		len = -sampleOffset44k;
@@ -325,6 +313,50 @@ void idSoundChannel::GatherChannelSamples( int sampleOffset44k, int sampleCount4
 		sampleCount44k -= len;
 		sampleOffset44k += len;
 	}
+}
+
+/*
+===================
+idSoundChannel::GatherSubtitles
+
+Gets subtitles to show at given moment.
+Handles looping between multiple different samples and leadins.
+Return values are appended to "matches" array, their number is returned.
+
+Note: sampleOffset44k is multiplied by number of channels, like in GatherChannelSamples.
+===================
+*/
+int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> &matches ) const {
+	// grab part of the leadin sample
+	idSoundSample *leadin = leadinSample;
+	if ( !leadin || sampleOffset44k < 0 ) {
+		return 0;
+	}
+
+	int addedNum = 0;
+	// if current moment is in leadin sample
+	if ( sampleOffset44k < leadin->LengthIn44kHzSamples() ) {
+		addedNum = leadin->FetchSubtitles( sampleOffset44k / leadin->objectInfo.nChannels, matches );
+	}
+	else {
+		// is it looping?
+		if ( !soundShader || !( parms.soundShaderFlags & SSF_LOOPING ) ) {
+			return 0;
+		}
+		idSoundSample *loop = soundShader->entries[0];
+		if ( !loop ) {
+			return 0;
+		}
+
+		// if current moment is in looping sample
+		int remainderOffset = ( sampleOffset44k - leadin->LengthIn44kHzSamples() ) % loop->LengthIn44kHzSamples();
+		addedNum = leadin->FetchSubtitles( remainderOffset / leadin->objectInfo.nChannels, matches );
+	}
+
+	// save channel in generated matches
+	for ( int i = matches.Num() - addedNum; i < matches.Num(); i++ )
+		matches[i].channel = this;
+	return addedNum;
 }
 
 
