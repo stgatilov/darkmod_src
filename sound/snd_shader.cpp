@@ -153,20 +153,18 @@ idSoundShader::ParseShader
 ===============
 */
 bool idSoundShader::ParseShader( idLexer &src ) {
-	int			i;
-	idToken		token;
-
 	parms.minDistance = 1;
 	parms.maxDistance = 10;
 	parms.volume = 1;
 	parms.shakes = 0;
 	parms.soundShaderFlags = 0;
 	parms.soundClass = 0;
+	parms.subtitlesLevel = SUBL_MISSING;
 
 	speakerMask = 0;
 	altSound = NULL;
 
-	for( i = 0; i < SOUND_MAX_LIST_WAVS; i++ ) {
+	for( int i = 0; i < SOUND_MAX_LIST_WAVS; i++ ) {
 		leadins[i] = NULL;
 		entries[i] = NULL;
 	}
@@ -178,6 +176,7 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 		maxSamples = SOUND_MAX_LIST_WAVS;
 	}
 
+	idToken token;
 	while ( 1 ) {
 		if ( !src.ExpectAnyToken( &token ) ) {
 			return false;
@@ -327,6 +326,23 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 		else if ( !token.Icmp( "omnidirectional" ) ) {
 			parms.soundShaderFlags |= SSF_OMNIDIRECTIONAL;
 		}
+		// subtitle   (stgatilov #2454)
+		else if ( !token.Icmp( "subtitle" ) || !token.Icmp( "subtitles" ) ) {
+			if ( !src.ReadToken( &token ) ) {
+				src.Warning( "Missing subtitle level" );
+				return false;
+			}
+			if ( !token.Icmp("story") ) {
+				parms.subtitlesLevel = SUBL_STORY;
+			} else if ( !token.Icmp("speech") ) {
+				parms.subtitlesLevel = SUBL_SPEECH;
+			} else if ( !token.Icmp("effect") ) {
+				parms.subtitlesLevel = SUBL_EFFECT;
+			} else {
+				src.Warning( "Subtitle level must be one of: effect, speech, story" );
+				return false;
+			}
+		}
 		// onDemand can't be a parms, because we must track all references and overrides would confuse it
 		else if ( !token.Icmp( "onDemand" ) ) {
 			// no longer loading sounds on demand
@@ -342,6 +358,8 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 			}
 			if ( soundSystemLocal.soundCache && numLeadins < maxSamples ) {
 				leadins[ numLeadins ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
+				if ( parms.subtitlesLevel != SUBL_MISSING)
+					leadins[ numLeadins ]->LoadSubtitles();
 				numLeadins++;
 			}
 		} else if ( !token.Icmp( "fromVideo" ) ) {
@@ -356,6 +374,8 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 			token.BackSlashesToSlashes();
 			if ( soundSystemLocal.soundCache ) {
 				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
+				if ( parms.subtitlesLevel != SUBL_MISSING)
+					entries[ numLeadins ]->LoadSubtitles();
 				numEntries++;
 			}
 		} else if ( token.Find( ".wav", false ) != -1 || token.Find( ".ogg", false ) != -1 ) {
@@ -379,6 +399,8 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 					}
 				} 					
 				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
+				if ( parms.subtitlesLevel != SUBL_MISSING)
+					entries[ numLeadins ]->LoadSubtitles();
 				numEntries++;
 			}
 		} else {

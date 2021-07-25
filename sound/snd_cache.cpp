@@ -37,13 +37,13 @@ LoadSrtFile
 */
 static bool LoadSrtFile( const char *filename, idList<Subtitle> &subtitles ) {
 	subtitles.Clear();
+	TRACE_CPU_SCOPE_TEXT( "LoadSrtFile", filename );
 
 	char *buffer = nullptr;
 	int len = fileSystem->ReadFile( filename, (void**)&buffer );
 	if ( len < 0 ) {
 		return false;
 	}
-	TRACE_CPU_SCOPE_TEXT( "LoadSrtFile", filename );
 	idStr text( buffer, 0, len );
 	fileSystem->FreeFile( buffer );
 
@@ -119,6 +119,30 @@ static bool LoadSrtFile( const char *filename, idList<Subtitle> &subtitles ) {
 	}
 
 	return true;
+}
+
+/*
+===================
+idSoundCache::LoadSubtitles()
+===================
+*/
+void idSoundSample::LoadSubtitles() {
+	idStr srtFileName;
+
+	//get filename of main file
+	if ( cinematic ) {
+		if ( const char *filename = cinematic->GetFilePath() ) {
+			srtFileName = filename;
+		} else {
+			return;
+		}
+	} else {
+		srtFileName = name;
+	}
+
+	//load .srt
+	srtFileName.SetFileExtension( ".srt" );
+	LoadSrtFile( srtFileName.c_str(), subtitles );
 }
 
 /*
@@ -532,12 +556,6 @@ void idSoundSample::LoadFromCinematic(idCinematic *cin) {
 
 	//cinematic decides when it ends: set infinite duration here
 	objectSize = INT_MAX / 2;
-
-	if ( const char *filename = cin->GetFilePath() ) {
-		idStr srtFileName = filename;
-		srtFileName.SetFileExtension( ".srt" );
-		LoadSrtFile( srtFileName.c_str(), subtitles );
-	}
 }
 
 /*
@@ -704,10 +722,6 @@ void idSoundSample::Load( void ) {
 	}
 
 	fh.Close();
-
-	idStr srtFileName = name;
-	srtFileName.SetFileExtension( ".srt" );
-	LoadSrtFile( srtFileName.c_str(), subtitles );
 }
 
 /*

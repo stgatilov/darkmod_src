@@ -369,7 +369,7 @@ public:
 	void				Start( void );
 	void				Stop( void );
 	void				GatherChannelSamples( int sampleOffset44k, int sampleCount44k, float *dest ) const;
-	int					GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> &matches ) const;	//stgatilov #2454
+	int					GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> &matches, int level ) const;	//stgatilov #2454
 	void				ALStop( void );			// free OpenAL resources if any
 
 	bool				triggerState;			// stgatilov: is it enabled according to Start/Stop methods?
@@ -867,6 +867,7 @@ public:
 	void					MakeDefault();				// turns it into a beep
 	void					Load();						// loads the current sound based on name
 	void					Reload( bool force );		// reloads if timestamp has changed, or always if force
+	void					LoadSubtitles();			// load subtitles from .srt file if it is present (stgatilov #2454)
 	void					PurgeSoundSample();			// frees all data
 	void					CheckForDownSample();		// down sample if required
 	bool					FetchFromCache( int offset, const byte **output, int *position, int *size, const bool allowIO );

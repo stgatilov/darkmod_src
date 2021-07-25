@@ -1460,7 +1460,7 @@ bool idPlayer::WaitUntilReady()
 
 void idPlayer::UpdateSubtitlesGUI()
 {
-	bool wantActive = cv_tdm_subtitles.GetBool();
+	bool wantActive = cv_tdm_subtitles.GetInteger() != SUBL_IGNORE;
 	bool haveActive = (subtitlesOverlay != -1);
 
 	// Check if we need create/delete GUI
@@ -1484,7 +1484,7 @@ void idPlayer::UpdateSubtitlesGUI()
 		gameLocal.Warning("Failed setting up subtitles GUI: %s", cv_tdm_subtitles_gui_file.GetString());
 		DestroyOverlay(subtitlesOverlay);
 		subtitlesOverlay = -1;
-		cv_tdm_subtitles.SetBool(false);
+		cv_tdm_subtitles.SetInteger(SUBL_IGNORE);
 		return;
 	}
 

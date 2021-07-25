@@ -326,10 +326,13 @@ Return values are appended to "matches" array, their number is returned.
 Note: sampleOffset44k is multiplied by number of channels, like in GatherChannelSamples.
 ===================
 */
-int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> &matches ) const {
+int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> &matches, int level ) const {
 	// grab part of the leadin sample
 	idSoundSample *leadin = leadinSample;
 	if ( !leadin || sampleOffset44k < 0 ) {
+		return 0;
+	}
+	if ( parms.subtitlesLevel > level ) {
 		return 0;
 	}
 

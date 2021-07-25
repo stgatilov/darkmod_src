@@ -425,7 +425,15 @@ idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHI
 idCVar cv_tdm_door_control("tdm_door_control", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Acivates experimental door control.  When active, hold down frob and move mouse to fine-control a door.");
 idCVar cv_tdm_door_control_sensitivity( "tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT, "Sets fine door control mouse sensitivity." );
 idCVar cv_tdm_inv_use_visual_feedback("tdm_inv_use_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' the HUD is giving visual feedback when the currently selected item is used on the highlighted one.");
-idCVar cv_tdm_subtitles( "tdm_subtitles", "1",  CVAR_GAME | CVAR_ARCHIVE, "Display subtitles?");
+idCVar cv_tdm_subtitles(
+	"tdm_subtitles", "1",  CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
+	"Which subtitles to display?\n"
+	"  0 --- hide all\n"
+	"  1 --- show only story-relevant\n"
+	"  2 --- show all speech\n"
+	"  3 --- show everything",
+	0, 3
+);
 
 //Obsttorte: cvars to allow altering the gui size
 
