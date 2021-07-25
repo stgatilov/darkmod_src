@@ -32,6 +32,97 @@ static idDynamicAlloc<byte, 1<<20, 1<<10>		soundCacheAllocator;
 
 /*
 ===================
+LoadSrtFile
+===================
+*/
+static bool LoadSrtFile( const char *filename, idList<Subtitle> &subtitles ) {
+	subtitles.Clear();
+
+	char *buffer = nullptr;
+	int len = fileSystem->ReadFile( filename, (void**)&buffer );
+	if ( len < 0 ) {
+		return false;
+	}
+	TRACE_CPU_SCOPE_TEXT( "LoadSrtFile", filename );
+	idStr text( buffer, 0, len );
+	fileSystem->FreeFile( buffer );
+
+	auto ParseTimeOffset = []( const char *text, int &offset ) -> bool {
+		static const char FORMAT[13] = "dd:dd:dd,ddd";
+		static const int MULTIPLIER[12] = { 10, 10, 0, 6, 10, 0, 6, 10, 0, 10, 10, 10 };
+		uint64_t millis = 0;
+		for ( int i = 0; i < 12; i++ ) {
+			char ch = text[i], fmt = FORMAT[i];
+			if ( fmt == 'd' ) {
+				if ( ch >= '0' && ch < '0' + MULTIPLIER[i] ) {
+					millis = millis * MULTIPLIER[i] + ( ch - '0' );
+				} else {
+					return false;
+				}
+			} else if ( ch != fmt ) {
+				return false;
+			}
+		}
+		offset = int( millis * PRIMARYFREQ / 1000 );
+		return true;
+	};
+
+	idStrList lines = text.SplitLines();
+	int lineno = 0;
+	while ( lineno + 2 <= lines.Num() ) {
+		const idStr &lineSeqno = lines[lineno++];
+		const idStr &lineTiming = lines[lineno++];
+
+		int seqno = atoi( lineSeqno.c_str() );
+		if ( seqno != subtitles.Num() + 1 ) {
+			common->Warning( "Wrong sequence number %d in %s", seqno, filename );
+			return false;
+		}
+
+		if ( lineTiming.Length() != 29 || idStr::Cmpn(lineTiming.c_str() + 12, " --> ", 5) != 0 ) {
+			common->Warning( "Bad timing at seqno %d in %s", seqno, filename );
+			return false;
+		}
+		Subtitle sub;
+		if ( !ParseTimeOffset(lineTiming.c_str() + 0, sub.offsetStart) || !ParseTimeOffset(lineTiming.c_str() + 17, sub.offsetEnd) ) {
+			common->Warning( "Failed to parse timing at seqno %d in %s", seqno, filename );
+			return false;
+		}
+
+		while ( lineno < lines.Num() && lines[lineno].Length() > 0 ) {
+			if ( sub.text.Length() > 0 )
+				sub.text += '\n';
+			sub.text += lines[lineno++];
+		}
+		lineno++;
+
+		if ( sub.offsetStart >= sub.offsetEnd ) {
+			common->Warning( "Subtitle %d discarded in %s", seqno, filename );
+			continue;
+		}
+		subtitles.Append( sub );
+	}
+
+	bool sorted = true;
+	for ( int i = 1; i < subtitles.Num(); i++ )
+		if ( subtitles[i-1].offsetStart > subtitles[i].offsetStart ) {
+			common->Warning( "Subtitles %d and %d not sorted by start offset", i, i+1 );
+			sorted = false;
+			break;
+		}
+	if ( !sorted ) {
+		auto CmpSub = [](const Subtitle *a, const Subtitle *b) -> int {
+			int diff = a->offsetStart - b->offsetStart;
+			return ( diff < 0 ? -1 : ( diff > 0 ? 1 : 0 ) );
+		};
+		subtitles.Sort( CmpSub );
+	}
+
+	return true;
+}
+
+/*
+===================
 idSoundCache::idSoundCache()
 ===================
 */
@@ -364,6 +455,8 @@ void idSoundSample::MakeDefault( void ) {
 	}
 
 	defaultSound = true;
+
+	subtitles.Clear();
 }
 
 /*
@@ -605,6 +698,10 @@ void idSoundSample::Load( void ) {
 	}
 
 	fh.Close();
+
+	idStr srtFileName = name;
+	srtFileName.SetFileExtension( ".srt" );
+	LoadSrtFile( srtFileName.c_str(), subtitles );
 }
 
 /*

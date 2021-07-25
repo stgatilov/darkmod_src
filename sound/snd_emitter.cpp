@@ -19,8 +19,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "snd_local.h"
-#include "SubtitleParser/SubtitleParserFactory.h"
-#include "SubtitleParser/SubtitleParser.h"
 
 
 /*
@@ -192,17 +190,6 @@ void idSoundChannel::Start( void ) {
 	if ( decoder == NULL ) {
 		decoder = idSampleDecoder::Alloc();
 	}
-	if ( leadinSample ) {
-		idStr srtFileName = leadinSample->name;
-		srtFileName.SetFileExtension( ".srt" );
-		if ( fileSystem->ReadFile( srtFileName.c_str(), nullptr, nullptr ) != -1 ) {
-			auto osPath = fileSystem->RelativePathToOSPath( srtFileName.c_str(), "fs_modSavePath" );
-			auto subParserFactory = new SubtitleParserFactory( osPath );
-			auto parser = subParserFactory->getParser();
-			auto x = parser->getFileData();
-			subtitles = parser->getSubtitles();
-		}
-	}
 }
 
 /*
@@ -260,17 +247,17 @@ void idSoundChannel::GatherChannelSamples( int sampleOffset44k, int sampleCount4
 	float	*dest_p = dest;
 	int		len;
 
-	if ( leadinSample && !subtitles.empty() )
-	if ( idUserInterface* guiActive = session->GetGui( idSession::gtActive ) ) {
-		guiActive->SetStateString( "subtitle", "" );
-		for ( auto& subtitle : subtitles ) {
-			if ( sampleOffset44k / 44.1 > subtitle->getStartTime() && sampleOffset44k / 44.1 < subtitle->getEndTime() ) {
-				guiActive->SetStateString( "subtitle", subtitle->getText().c_str() );
-				break;
+	if ( leadinSample && leadinSample->subtitles.Num() ) {
+		if ( idUserInterface* guiActive = session->GetGui( idSession::gtActive ) ) {
+			guiActive->SetStateString( "subtitle", "" );
+			for ( auto& subtitle : leadinSample->subtitles ) {
+				if ( sampleOffset44k > subtitle.offsetStart && sampleOffset44k < subtitle.offsetEnd ) {
+					guiActive->SetStateString( "subtitle", subtitle.text.c_str() );
+					break;
+				}
 			}
 		}
 	}
-//Sys_DebugPrintf( "msec:%i sample:%i : %i : %i\n", Sys_Milliseconds(), soundSystemLocal.GetCurrent44kHzTime(), sampleOffset44k, sampleCount44k );	//!@#
 
 	// negative offset times will just zero fill
 	if ( sampleOffset44k < 0 ) {

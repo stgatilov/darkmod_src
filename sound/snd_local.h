@@ -22,7 +22,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <AL/alext.h>
 
 #include "../framework/UsercmdGen.h"
-#include "SubtitleParser/SubtitleItem.h"
 #include "sound.h"
 #include "efxlib.h"
 
@@ -58,6 +57,17 @@ class idSoundSample;
 class idSampleDecoder;
 class idSoundWorldLocal;
 
+
+struct Subtitle {
+	int offsetStart;		/* number of samples from start of sound to subtitle start */
+	int offsetEnd;			/* number of samples from start of sound to subtitle end */
+	idStr text;				/* text to be displayed (may contain \n being multiline) */
+};
+struct SubtitleMatch {
+	const Subtitle *subtitle;		/* subtitle to be shown */
+	const idSoundChannel *channel;	/* channel which emitted message */
+	// TODO: return ended subtitles if they did not display for long enough?
+};
 
 /*
 ===================================================================================
@@ -379,7 +389,6 @@ public:
 	ALuint				lastopenalStreamingBuffer[3];
 
 	bool				disallowSlow;
-	std::vector<SubtitleItem*> subtitles;
 };
 
 class SoundChainResults // grayman #3042
@@ -840,6 +849,7 @@ public:
 	bool					onDemand;
 	bool					purged;
 	bool					levelLoadReferenced;		// so we can tell which samples aren't needed any more
+	idList<Subtitle>		subtitles;
 
 	int						LengthIn44kHzSamples() const;
 	ID_TIME_T		 			GetNewTimeStamp( void ) const;

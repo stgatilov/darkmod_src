@@ -142,9 +142,6 @@
     <Filter Include="Renderer\Backend">
       <UniqueIdentifier>{26537bda-7135-4d5d-b420-3003aa3a506b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sound\SubtitleParser">
-      <UniqueIdentifier>{02e407ed-a63e-4943-a7c0-d49689e23c1f}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1317,24 +1314,6 @@
     </ClInclude>
     <ClInclude Include="framework\Tracing.h">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\subparser.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubRipParser.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleItem.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleParser.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleParserFactory.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleWord.h">
-      <Filter>Sound\SubtitleParser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -3084,24 +3063,6 @@
     </ClCompile>
     <ClCompile Include="framework\Tracing.cpp">
       <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\subparser.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubRipParser.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleItem.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleParser.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleParserFactory.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleWord.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
