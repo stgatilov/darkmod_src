@@ -813,10 +813,17 @@ bool idSoundSample::FetchFromCache( int offset, const byte **output, int *positi
 
 bool idSoundSample::FetchFromCinematic(int sampleOffset, int *sampleSize, float *output) {
 	assert(cinematic);
-	return cinematic->SoundForTimeInterval(sampleOffset, sampleSize, PRIMARYFREQ, output);
+	return cinematic->SoundForTimeInterval(sampleOffset, sampleSize, output);
 }
 
 int idSoundSample::FetchSubtitles( int offset, idList<SubtitleMatch> &matches ) {
+	if (cinematic) {
+		//ask cinematic about current video time
+		//otherwise subtitles will get out of sync with sound and video
+		//easy to check by pausing with debugger while video is playing
+		offset = cinematic->GetRealSoundOffset(offset);
+	}
+
 	//note: if this ever becomes too slow, we can implement "decoder" for subtitles
 	//it can keep track of currently active matches, and position of current offset in the array...
 

@@ -637,7 +637,7 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 		//stgatilov #4847: check that audio stream is peekable
 		float buff[4096] = { 0 };
 		int cnt = 1024;
-		bool ok = tr.testVideo->SoundForTimeInterval( 0, &cnt, 44100, buff );
+		bool ok = tr.testVideo->SoundForTimeInterval( 0, &cnt, buff );
 		if ( !ok ) {
 			common->Warning( "Failed to get first few sound samples from video file" );
 			return TestVideoClean();

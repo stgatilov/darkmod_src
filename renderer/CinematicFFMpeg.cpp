@@ -950,15 +950,21 @@ bool idCinematicFFMpeg::IncrementLap(double videoTime) {
 	return ok;
 }
 
-bool idCinematicFFMpeg::SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output) {
-	CALL_START("SoundForTimeInterval(%d + %d)", sampleOffset, *sampleSize);
+int idCinematicFFMpeg::GetRealSoundOffset(int sampleOffset44k) const {
+	int soundTimeOffset44k = 0;
+	if (_soundTimeOffset < DBL_MAX)
+		soundTimeOffset44k = int(FREQ44K * _soundTimeOffset);
+	return sampleOffset44k + soundTimeOffset44k;
+}
+
+bool idCinematicFFMpeg::SoundForTimeInterval(int sampleOffset44k, int *sampleSize, float *output) {
+	CALL_START("SoundForTimeInterval(%d + %d)", sampleOffset44k, *sampleSize);
 	if (!_withAudio)
 		return false;
 	if (!IsDecoderOpened_Locking())
 		return false;
-	assert(frequency == FREQ44K);
 	int count = *sampleSize;
-	double soundTime = sampleOffset / double(FREQ44K);
+	double soundTime = sampleOffset44k / double(FREQ44K);
 
 	/*for (int i = 0; i < count; i++)
 		output[i] = 32767.0f * (float) sin( double(sampleOffset + i) / FREQ44K * M_PI * 2 * 440.0 );*/

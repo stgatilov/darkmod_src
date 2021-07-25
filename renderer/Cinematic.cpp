@@ -112,8 +112,12 @@ cinData_t idCinematic::ImageForTime( int milliseconds ) {
 	return c;
 }
 
-bool idCinematic::SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output) {
+bool idCinematic::SoundForTimeInterval(int sampleOffset44k, int *sampleSize, float *output) {
 	return false;
+}
+
+int idCinematic::GetRealSoundOffset(int sampleOffset) const {
+	return sampleOffset;
 }
 
 cinStatus_t idCinematic::GetStatus() const {
