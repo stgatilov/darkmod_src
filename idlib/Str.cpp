@@ -907,7 +907,7 @@ idStr& idStr::StripQuotes ( void )
 idStr::Split
 
 stgatilov: Finds all characters matching "delimiters" list, returns array of substrings
-between them (including substrings before the first delimeter and after the last one).
+between them (including substrings before the first delimiter and after the last one).
 If "delimiters" is NULL, then whitespace characters are treated as delimiters.
 If "skipEmpty" is true, then empty substrings are dropped from result.
 ============
@@ -950,6 +950,70 @@ idStr idStr::Join( const idList<idStr> &tokens, const char *separator )
 		res += tokens[i];
 	}
 	return res;
+}
+
+/*
+============
+idStr::Split
+
+stgatilov: Finds all substrings matching "delimiters" list, returns array of substrings
+between them (including substrings before the first delimiter and after the last one).
+Note that delimiters matching is done greedily, and if several delimiters start as same position, the first one wins.
+If "skipEmpty" is true, then empty substrings are dropped from result.
+============
+*/
+idList<idStr> idStr::Split( const idList<idStr> &delimiters, bool skipEmpty ) const {
+	idList<idStr> tokens;
+
+	int start = 0;
+	for (int i = 0; i <= len; ) {
+		bool tokenEnds = false;
+		int delimLen = 1;
+		if (i == len)
+			tokenEnds = true;
+		else {
+			for (int j = 0; j < delimiters.Num(); j++)
+				if (Cmpn(data + i, delimiters[j].data, delimiters[j].len) == 0) {
+					tokenEnds = true;
+					delimLen = delimiters[j].len;
+					break;
+				}
+		}
+		if (tokenEnds) {
+			int len = i - start;
+			if (len > 0 || !skipEmpty)
+				tokens.Append(idStr::Mid(start, len));
+			i += delimLen;
+			start = i;
+		}
+		else {
+			i++;
+		}
+	}
+	assert(start == len + 1);
+
+	return tokens;
+}
+
+/*
+============
+idStr::SplitLines
+
+stgatilov: Given contents of text file, returns list of its lines.
+Works properly with Windows/Linux/MacOS style of EOL characters.
+See also splitlines in Python.
+============
+*/
+idList<idStr> idStr::SplitLines( void ) const {
+	static idList<idStr> EOLS = {"\r\n", "\n", "\r"};
+	idList<idStr> lines = Split( EOLS, false );
+
+	//like in Python's splitlines, remove last line if it is empty
+	//that's because text file must end with EOL, which does NOT start a new line
+	if ( lines.Num() > 0 && lines[lines.Num() - 1].Length() == 0 )
+		lines.Pop();
+
+	return lines;
 }
 
 /*
