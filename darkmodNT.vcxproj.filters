@@ -130,9 +130,6 @@
     <Filter Include="Game\Network">
       <UniqueIdentifier>{ab1f887d-fe95-4de4-9fa9-94e250aa3e51}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sound\SubtitleParser">
-      <UniqueIdentifier>{607c0db2-8484-4cdc-a101-4559b010ef46}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -1518,24 +1515,6 @@
     </ClInclude>
     <ClInclude Include="framework\Tracing.h">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleWord.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\subparser.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubRipParser.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleItem.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleParser.h">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\SubtitleParser\SubtitleParserFactory.h">
-      <Filter>Sound\SubtitleParser</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -3000,24 +2979,6 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp">
       <Filter>idLib</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\subparser.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubRipParser.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleItem.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleParser.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleParserFactory.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\SubtitleParser\SubtitleWord.cpp">
-      <Filter>Sound\SubtitleParser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
