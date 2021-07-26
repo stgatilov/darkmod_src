@@ -55,6 +55,7 @@ class idWaveFile;
 class idSoundCache;
 class idSoundSample;
 class idSampleDecoder;
+class idSoundChannel;
 class idSoundWorldLocal;
 
 //stgatilov #2454: atomic piece of subtitle text data
