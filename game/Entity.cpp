@@ -1211,14 +1211,6 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		m_MinLODBias = m_MaxLODBias - 0.1f;
 	}
 
-	if (m_MinLODBias > 0 || m_MaxLODBias < 10)
-	{
-		// if this returns true, the entity is hidden
-		Event_HideByLODBias();
-		m_DistCheckTimeStamp = NOLOD;
-		return 0;
-	}
-
 	int d = int(1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
@@ -2766,6 +2758,13 @@ const char * idEntity::GetName( void ) const {
 ***********************************************************************/
 float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq ) 
 {
+	//nbohr1more: #4372: Allow lod_bias args for func_emitter entities
+	float lodbias = cv_lod_bias.GetFloat();
+
+	if ( ( m_MinLODBias > 0 || m_MaxLODBias < 10 ) && ( lodbias < m_MinLODBias || lodbias > m_MaxLODBias ) ) {
+		return 0;
+	}
+
 	// have no LOD
 	if (NULL == m_LOD)
 	{
