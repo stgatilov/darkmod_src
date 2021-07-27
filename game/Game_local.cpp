@@ -1651,6 +1651,7 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 			continue;
 		}
 
+		bool lodChanged = false;
 		for (int i = 0; i < diffArgs.GetNumKeyVals(); i++) {
 			const idKeyValue *kv = diffArgs.GetKeyVal(i);
 			if (
@@ -1665,6 +1666,13 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 			0) {
 				respawn = true;
 			}
+			if (idStr::FindText(kv->GetKey(), "lod_") >= 0 ||
+				idStr::FindText(kv->GetKey(), "_lod") >= 0 ||
+				kv->GetKey().IcmpPrefix("dist_check") == 0 ||
+				kv->GetKey().Icmp("hide_distance") == 0 ||
+			0) {
+				lodChanged = true;
+			}
 		}
 		if (respawn) {
 			gameEdit->SpawnEntityDef(newArgs, &ent, idGameEdit::sedRespectInhibit | idGameEdit::sedRespawn);
@@ -1676,6 +1684,9 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 		//the only correct way is to pass NULL, meaning that all existing spawnargs were modified
 		//all the other approaches break something, e.g. inherited spawnargs
 		gameEdit->EntityUpdateChangeableSpawnArgs( ent, NULL );
+		if (lodChanged) {
+			gameEdit->EntityUpdateLOD(ent, newArgs);
+		}
 		if (diffArgs.FindKey("model")) {
 			idStr newModel = newArgs.GetString("model");
 			gameEdit->EntitySetModel(ent, newModel);

@@ -1055,6 +1055,7 @@ idEntity::idEntity()
 	m_MaxLODBias = 10.0f;
 
 	m_LODLevel = m_ModelLODCur = m_SkinLODCur = 0xDEAFBEEF;	//to be set
+	m_OffsetLODCur.Zero();
 
 	// grayman #597 - for hiding arrows when nocked to the bow
 	m_HideUntilTime = 0;
@@ -2285,6 +2286,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_LODLevel);
 	savefile->WriteInt(m_ModelLODCur);
 	savefile->WriteInt(m_SkinLODCur);
+	savefile->WriteVec3(m_OffsetLODCur);
 
 	// #3113
 	savefile->WriteFloat(m_MinLODBias);
@@ -2614,6 +2616,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LODLevel);
 	savefile->ReadInt(m_ModelLODCur);
 	savefile->ReadInt(m_SkinLODCur);
+	savefile->ReadVec3(m_OffsetLODCur);
 
 	// #3113
 	savefile->ReadFloat(m_MinLODBias);
@@ -2768,6 +2771,8 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
 	// have no LOD
 	if (NULL == m_LOD)
 	{
+		//switch to main model
+		m_LODLevel = 0;
 		// fully visible
 		return 1.0f;
 	}
@@ -2914,7 +2919,11 @@ bool idEntity::SwitchLOD()
 {
 	// SteveL #3770: Moved the following if block and the derivation of deltaSq from idEntity::Think as it would 
 	// have had to be repeated in many places. Left behind only a check that LOD is enabled before calling SwitchLOD
-	const lod_data_t *m_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+	const lod_data_t *m_LOD = nullptr;
+	if ( m_LODHandle )
+		m_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+	//stgatilov #5683: m_LODHandle = 0 or m_LOD = NULL is only possible during hot-reload
+
 	float deltaSq = -1;
 	if ( m_LOD )
 	{
@@ -2932,21 +2941,17 @@ bool idEntity::SwitchLOD()
 		}
 	}
 
-	if (!m_LOD)
-	{
-		gameLocal.Error("SwitchLOD() with NULL called.\n");
-	}
 	// remember the current level
 	int oldLODLevel = m_LODLevel;
 	float fAlpha = ThinkAboutLOD( m_LOD, deltaSq );
 
-//		 gameLocal.Printf("%s: Got fAlpha %0.2f\n", GetName(), fAlpha);
+//	gameLocal.Printf("%s: Got fAlpha %0.2f\n", GetName(), fAlpha);
 
 	if (fAlpha < 0.0001f)
 	{
 	   	if (!fl.hidden)
 		{
-//					gameLocal.Printf( "%s Hiding\n", GetName() );
+//			gameLocal.Printf( "%s Hiding\n", GetName() );
 			Hide();
 		}
 	}
@@ -2954,7 +2959,7 @@ bool idEntity::SwitchLOD()
 	{
 		if (fl.hidden)
 		{
-//			 gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
+//			gameLocal.Printf("Showing %s again (%0.2f)\n", GetName(), fAlpha);
 			Show();
 			SetAlpha( fAlpha, true );
 		}
@@ -2970,29 +2975,34 @@ bool idEntity::SwitchLOD()
 	{
 		if (m_ModelLODCur != m_LODLevel)
 		{
+			idStr newModelName = m_LOD ? m_LOD->ModelLOD[m_LODLevel] : spawnArgs.GetString( "model" );
 			// func_statics that have map geometry do not have a model, and their LOD data gets ""
 			// as model name so they can all share the same data. However, we must not use "" when
 			// setting a new model:
-			if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
+			if (!newModelName.IsEmpty())
 			{
-				SwapLODModel( m_LOD->ModelLOD[m_LODLevel] );
+				SwapLODModel( newModelName );
 			}
 			m_ModelLODCur = m_LODLevel;
 			// Fix 1.04 blinking bug:
 			// if the old LOD level had an offset, we need to revert this.
 			// and if the new one has an offset, we need to add it:
-			idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
-			// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+			idVec3 offsetLODNew = m_LOD ? m_LOD->OffsetLOD[m_LODLevel] : idVec3( 0 );
+			idVec3 originShift = offsetLODNew - m_OffsetLODCur;
 			if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
 			{
-				SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+				SetOrigin( renderEntity.origin + originShift );
 			}
+			m_OffsetLODCur = offsetLODNew;
 		}
 
 		
 		if (m_SkinLODCur != -1 && m_SkinLODCur != m_LODLevel) // SteveL #3744
 		{
-			const idDeclSkin *skinD = declManager->FindSkin(m_LOD->SkinLOD[m_LODLevel]);
+			// stgatilov #5683: m_LOD can be NULL only during hot-reload.
+			// In such case, we ignore "random_skin" and default skin from modelDef
+			idStr newSkinName = m_LOD ? m_LOD->SkinLOD[m_LODLevel] : spawnArgs.GetString( "skin" );
+			const idDeclSkin *skinD = declManager->FindSkin(newSkinName);
 			if (skinD)
 			{
 				SetSkin(skinD);
@@ -3000,9 +3010,21 @@ bool idEntity::SwitchLOD()
 			m_SkinLODCur = m_LODLevel;
 		}
 
-		if (m_LOD->noshadowsLOD != -1) // SteveL #3744 && #4170
+		bool newNoShadows;
+		if ( m_LOD ) {
+			// SteveL #3744 && #4170
+			if ( m_LOD->noshadowsLOD != -1 )
+				newNoShadows = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) != 0;
+			else
+				newNoShadows = renderEntity.noShadow;
+		}
+		else {
+			//stgatilov #5683: this case only possible during hot-reload
+			newNoShadows = spawnArgs.GetBool( "noshadows" );
+		}
+		if ( newNoShadows != renderEntity.noShadow )
 		{
-			renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
+			renderEntity.noShadow = newNoShadows;
 		}
 		
 

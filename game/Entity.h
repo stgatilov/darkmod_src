@@ -448,6 +448,9 @@ public:
 	*/
 	int						m_ModelLODCur;
 	int						m_SkinLODCur;
+	// stgatilov: store currently applied offset_lod so that we can reverse it
+	// even if m_LODHandle is removed due to hot-reload map editing.
+	idVec3					m_OffsetLODCur;
 
 	/* Each entity is hidden (and stops thinking) when tdm_lod_bias
 	*  is between m_MinLODBias and m_MaxLODBias. Thus entities can

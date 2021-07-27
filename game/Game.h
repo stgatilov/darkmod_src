@@ -259,6 +259,7 @@ public:
 	virtual void				EntityStopSound( idEntity *ent );
 	virtual void				EntityDelete( idEntity *ent, bool safe = false );
 	virtual void				EntitySetColor( idEntity *ent, const idVec3 color );
+	virtual void				EntityUpdateLOD( idEntity *ent, const idDict &newArgs );
 
 	// Player methods.
 	virtual bool				PlayerIsValid() const;
