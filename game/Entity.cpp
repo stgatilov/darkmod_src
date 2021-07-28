@@ -10813,6 +10813,8 @@ void idEntity::Event_SetGui( int handle, const char *guiFile )
 			m_overlays.setGui( handle, renderEntity.gui[ handle - 1 ] );
 			assert( renderEntity.gui[ handle-1 ] );
 		}
+		//stgatilov: make sure renderEntity.gui gets into renderer
+		BecomeActive(TH_UPDATEVISUALS);
 	}
 	else if ( !m_overlays.isExternal( handle ) )
 	{
