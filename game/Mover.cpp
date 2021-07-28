@@ -2000,10 +2000,7 @@ void idMover_Binary::Spawn( void )
 
 	// create a physics team for the binary mover parts
 	if ( ent != this ) {
-		if (g_entityBindNew.GetBool())
-			gameLocal.Error("Mover teams support dropped (entity %s)", ent->name.c_str());
-		else
-			JoinTeam( ent );
+		gameLocal.Error("Mover teams support dropped (entity %s)", ent->name.c_str());
 	}
 
 	physicsObj.SetSelf( this );
