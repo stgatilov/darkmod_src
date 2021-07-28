@@ -1707,8 +1707,10 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 			idVec3 newOrigin = newArgsInherited.GetVector("origin");
 			gameEdit->EntitySetOrigin(ent, newOrigin);
 		}
-		if (diffArgs.FindKey("rotation")) {
+		if (diffArgs.FindKey("rotation") || diffArgs.FindKey("angle")) {
 			idMat3 newAxis = newArgsInherited.GetMatrix("rotation");
+			if (!newArgsInherited.FindKey("rotation"))
+				newAxis = idAngles(0.0f, newArgsInherited.GetFloat("angle"), 0.0f).ToMat3();
 			gameEdit->EntitySetAxis(ent, newAxis);
 		}
 		if (diffArgs.FindKey("_color") || diffArgs.MatchPrefix("shaderParm")) {
