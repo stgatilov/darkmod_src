@@ -2975,7 +2975,7 @@ bool idEntity::SwitchLOD()
 	{
 		if (m_ModelLODCur != m_LODLevel)
 		{
-			idStr newModelName = m_LOD ? m_LOD->ModelLOD[m_LODLevel] : spawnArgs.GetString( "model" );
+			idStr newModelName = m_LOD ? m_LOD->ModelLOD[m_LODLevel].c_str() : spawnArgs.GetString( "model" );
 			// func_statics that have map geometry do not have a model, and their LOD data gets ""
 			// as model name so they can all share the same data. However, we must not use "" when
 			// setting a new model:
@@ -3001,7 +3001,7 @@ bool idEntity::SwitchLOD()
 		{
 			// stgatilov #5683: m_LOD can be NULL only during hot-reload.
 			// In such case, we ignore "random_skin" and default skin from modelDef
-			idStr newSkinName = m_LOD ? m_LOD->SkinLOD[m_LODLevel] : spawnArgs.GetString( "skin" );
+			idStr newSkinName = m_LOD ? m_LOD->SkinLOD[m_LODLevel].c_str() : spawnArgs.GetString( "skin" );
 			const idDeclSkin *skinD = declManager->FindSkin(newSkinName);
 			if (skinD)
 			{
