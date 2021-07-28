@@ -2019,7 +2019,7 @@ idEntity::~idEntity( void )
 	SetPhysics( NULL );
 
 	// remove any entities that are bound to me
-	RemoveBinds();
+	RemoveBinds( false );
 
 	// unbind from master
 	Unbind();
@@ -5592,7 +5592,7 @@ void idEntity::Unbind( void ) {
 idEntity::RemoveBinds
 ================
 */
-void idEntity::RemoveBinds( void ) {
+void idEntity::RemoveBinds( bool immediately ) {
 	//count all entities bound to us
 	int k = 0;
 	for( idEntity *ent = teamChain; ent != NULL; ent = ent->teamChain )
@@ -5614,8 +5614,15 @@ void idEntity::RemoveBinds( void ) {
 		ent->Unbind();
 
 		if( ent->spawnArgs.GetBool( "removeWithMaster", "1" ) ) {
-			//also remove the unbound entity on next frame
-			ent->PostEventMS( &EV_Remove, 0 );
+			//also remove the unbound entity
+			if (immediately) {
+				//immediately!
+				ent->Event_Remove();
+			}
+			else {
+				//on next frame
+				ent->PostEventMS( &EV_Remove, 0 );
+			}
 		}
 	}
 }
@@ -7697,7 +7704,7 @@ idEntity::Event_RemoveBinds
 ================
 */
 void idEntity::Event_RemoveBinds( void ) {
-	RemoveBinds();
+	RemoveBinds( false );
 }
 
 /*

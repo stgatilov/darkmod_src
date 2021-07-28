@@ -1614,7 +1614,9 @@ private:
 	// entity binding
 	bool					InitBind( idEntity *master );	// initialize an entity binding
 	void					FinishBind( idEntity *master, const char *jointnum ); // finish an entity binding - grayman #3074
-	void					RemoveBinds( void );			// deletes any entities bound to this object
+public:
+	void					RemoveBinds( bool immediately );					// deletes any entities bound to this object
+private:
 	// stgatilov #5409: bindMaster/teamMaster/teamChain structure updates
 	void					BreakBindToMaster( void );							//assign bindMaster = NULL and recompute teams
 	void					EstablishBindToMaster( idEntity *newMaster );		//assign new bindMaster and recompute teams

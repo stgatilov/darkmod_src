@@ -934,8 +934,14 @@ void idGameEdit::EntityDelete( idEntity *ent, bool safe ) {
 
 	if (safe)
 		ent->PostEventMS(&EV_Remove, 0);
-	else
+	else {
+		//force-remove bound entities right NOW
+		//otherwise, their removal will be scheduled for next frame...
+		//if this is called in case of respawning, we want to have bound stuff killed before we recreate it
+		ent->RemoveBinds(true);
+
 		ent->Event_Remove();
+	}
 }
 
 /*
