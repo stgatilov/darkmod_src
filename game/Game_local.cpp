@@ -1694,7 +1694,11 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 		}
 		if (diffArgs.FindKey("skin")) {
 			idStr newSkin = newArgsInherited.GetString("skin");
-			ent->PostEventMS(&EV_SetSkin, 0, newSkin);
+			ent->Event_SetSkin(newSkin);
+		}
+		if (diffArgs.FindKey("noshadows")) {
+			bool newNoShadows = newArgsInherited.GetBool("noshadows");
+			ent->Event_noShadows(newNoShadows);
 		}
 		if (lodChanged) {
 			gameEdit->EntityUpdateLOD(ent);
