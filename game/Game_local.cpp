@@ -1719,6 +1719,11 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 		if (ent->IsType(idLight::Type)) {
 			gameEdit->ParseSpawnArgsToRenderLight(&newArgsInherited, ((idLight*)ent)->GetRenderLight());
 		}
+		if (diffArgs.MatchPrefix("target")) {
+			//note: rebuild list of targets on NEXT frame
+			//in case we will spawn some targeted entity in this diff bundle
+			ent->PostEventMS(&EV_FindTargets, 0);
+		}
 
 		gameEdit->EntityUpdateVisuals( ent );
 	}
