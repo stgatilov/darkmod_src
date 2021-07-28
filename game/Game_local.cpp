@@ -1679,29 +1679,39 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 			continue;
 		}
 
+		//update spawnargs dict in entity
 		gameEdit->EntityChangeSpawnArgs( ent, &diffArgs );
-		//this method has broken conventions about what spawnargs should be passed
-		//the only correct way is to pass NULL, meaning that all existing spawnargs were modified
-		//all the other approaches break something, e.g. inherited spawnargs
-		gameEdit->EntityUpdateChangeableSpawnArgs( ent, NULL );
-		if (lodChanged) {
-			gameEdit->EntityUpdateLOD(ent, newArgs);
-		}
+
+		//compute new spawnargs with inherited props
+		const char *newClassname = newArgs.GetString("classname");
+		const idDeclEntityDef *newEntityDef = gameLocal.FindEntityDef(newClassname, false);
+		idDict newArgsInherited = newArgs;
+		newArgsInherited.SetDefaults(&newEntityDef->dict, idStr("editor_"));
+
 		if (diffArgs.FindKey("model")) {
-			idStr newModel = newArgs.GetString("model");
+			idStr newModel = newArgsInherited.GetString("model");
 			gameEdit->EntitySetModel(ent, newModel);
 		}
 		if (diffArgs.FindKey("skin")) {
-			idStr newSkin = diffArgs.GetString("skin");
+			idStr newSkin = newArgsInherited.GetString("skin");
 			ent->PostEventMS(&EV_SetSkin, 0, newSkin);
 		}
+		if (lodChanged) {
+			gameEdit->EntityUpdateLOD(ent);
+		}
 		if (diffArgs.FindKey("origin")) {
-			idVec3 newOrigin = newArgs.GetVector("origin");
+			idVec3 newOrigin = newArgsInherited.GetVector("origin");
 			gameEdit->EntitySetOrigin(ent, newOrigin);
 		}
 		if (diffArgs.FindKey("rotation")) {
-			idMat3 newAxis = newArgs.GetMatrix("rotation");
+			idMat3 newAxis = newArgsInherited.GetMatrix("rotation");
 			gameEdit->EntitySetAxis(ent, newAxis);
+		}
+		if (diffArgs.FindKey("_color") || diffArgs.MatchPrefix("shaderParm")) {
+			gameEdit->EntityUpdateShaderParms(ent);
+		}
+		if (ent->IsType(idLight::Type)) {
+			gameEdit->ParseSpawnArgsToRenderLight(&newArgsInherited, ((idLight*)ent)->GetRenderLight());
 		}
 
 		gameEdit->EntityUpdateVisuals( ent );

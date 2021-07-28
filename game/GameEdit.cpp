@@ -943,14 +943,14 @@ void idGameEdit::EntityDelete( idEntity *ent, bool safe ) {
 idGameEdit::EntityUpdateLOD
 ================
 */
-void idGameEdit::EntityUpdateLOD( idEntity *ent, const idDict &newArgs ) {
+void idGameEdit::EntityUpdateLOD( idEntity *ent ) {
 	//delete old memory for LOD info
 	if ( ent->m_LODHandle )
 		gameLocal.m_ModelGenerator->UnregisterLODData( ent->m_LODHandle );
 
 	//reparse LOD spawnargs again, getting new handle
 	//note: new handle can be zero if user has removed LOD!
-	ent->m_LODHandle = ent->ParseLODSpawnargs( &newArgs, gameLocal.random.RandomFloat() );
+	ent->m_LODHandle = ent->ParseLODSpawnargs( &ent->spawnArgs, gameLocal.random.RandomFloat() );
 
 	//recompute LOD level and reset all settings accordingly
 	//note: we cannot rely on this method being called from idEntity::Think
@@ -959,6 +959,30 @@ void idGameEdit::EntityUpdateLOD( idEntity *ent, const idDict &newArgs ) {
 
 	//probably not necessary
 	ent->BecomeActive( TH_THINK );
+}
+
+/*
+================
+idGameEdit::EntityUpdateShaderParms
+================
+*/
+void idGameEdit::EntityUpdateShaderParms( idEntity *ent ) {
+	//copy/pasted from idGameEdit::ParseSpawnArgsToRenderEntity
+	renderEntity_t *renderEntity = ent->GetRenderEntity();
+	const idDict *args = &ent->spawnArgs;
+	idVec3 color = args->GetVector( "_color", "1 1 1" );
+	renderEntity->shaderParms[ SHADERPARM_RED ]		= color[0];
+	renderEntity->shaderParms[ SHADERPARM_GREEN ]	= color[1];
+	renderEntity->shaderParms[ SHADERPARM_BLUE ]	= color[2];
+	renderEntity->shaderParms[ 3 ]					= args->GetFloat( "shaderParm3", "1" );
+	renderEntity->shaderParms[ 4 ]					= args->GetFloat( "shaderParm4", "0" );
+	renderEntity->shaderParms[ 5 ]					= args->GetFloat( "shaderParm5", "0" );
+	renderEntity->shaderParms[ 6 ]					= args->GetFloat( "shaderParm6", "0" );
+	renderEntity->shaderParms[ 7 ]					= args->GetFloat( "shaderParm7", "0" );
+	renderEntity->shaderParms[ 8 ]					= args->GetFloat( "shaderParm8", "0" );
+	renderEntity->shaderParms[ 9 ]					= args->GetFloat( "shaderParm9", "0" );
+	renderEntity->shaderParms[ 10 ]					= args->GetFloat( "shaderParm10", "0" );
+	renderEntity->shaderParms[ 11 ]					= args->GetFloat( "shaderParm11", "0" );
 }
 
 /*
