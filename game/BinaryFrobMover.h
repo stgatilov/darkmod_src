@@ -288,6 +288,9 @@ public:
 		return m_Lock;
 	};
 
+	//stgatilov #5683: update members after moving this via hot-reload
+	void SetMapOriginAxis(const idVec3 *newOrigin, const idMat3 *newAxis);
+
 protected:
 
 	// ===================== Overridable events ================

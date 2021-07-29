@@ -808,7 +808,11 @@ idGameEdit::EntitySetOrigin
 */
 void idGameEdit::EntitySetOrigin( idEntity *ent, const idVec3 &org ) {
 	if ( ent ) {
-		ent->SetOrigin( org );
+		if ( ent->IsType(CBinaryFrobMover::Type) ) {
+			((CBinaryFrobMover*)ent)->SetMapOriginAxis( &org, NULL );
+		} else {
+			ent->SetOrigin( org );
+		}
 	}
 }
 
@@ -819,7 +823,11 @@ idGameEdit::EntitySetAxis
 */
 void idGameEdit::EntitySetAxis( idEntity *ent, const idMat3 &axis ) {
 	if ( ent ) {
-		ent->SetAxis( axis );
+		if ( ent->IsType(CBinaryFrobMover::Type) ) {
+			((CBinaryFrobMover*)ent)->SetMapOriginAxis( NULL, &axis );
+		} else {
+			ent->SetAxis( axis );
+		}
 	}
 }
 

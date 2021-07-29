@@ -1688,6 +1688,11 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 		idDict newArgsInherited = newArgs;
 		newArgsInherited.SetDefaults(&newEntityDef->dict, idStr("editor_"));
 
+		if (diffArgs.FindKey("rotate") || diffArgs.FindKey("translate"))
+			if (ent->IsType(CBinaryFrobMover::Type)) {
+				((CBinaryFrobMover*)ent)->SetFractionalPosition(0.0, true);
+				((CBinaryFrobMover*)ent)->Event_PostSpawn();
+			}
 		if (diffArgs.FindKey("model")) {
 			idStr newModel = newArgsInherited.GetString("model");
 			gameEdit->EntitySetModel(ent, newModel);

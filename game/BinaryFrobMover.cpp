@@ -359,7 +359,8 @@ void CBinaryFrobMover::PostSpawn()
 
 	m_ClosedAngles = physicsObj.GetLocalAngles();
 	m_ClosedAngles.Normalize180();
-	m_OpenAngles = (m_ClosedAngles + m_Rotate).Normalize180();
+	m_OpenAngles = m_ClosedAngles + m_Rotate;
+	m_OpenAngles.Normalize180();
 
 	if (m_ClosedOrigin.Compare(m_OpenOrigin) && m_ClosedAngles.Compare(m_OpenAngles))
 	{
@@ -1850,5 +1851,32 @@ void CBinaryFrobMover::Event_GetFractionalPosition(void)
 	idThread::ReturnFloat(GetFractionalPosition());
 }
 
+void CBinaryFrobMover::SetMapOriginAxis(const idVec3 *newOrigin, const idMat3 *newAxis) {
+	idVec3 oldOrigin = dest_position;
+	idAngles oldAngles = dest_angles;
+	//see also CBinaryFrobMover::PostSpawn and idMover::Spawn
 
+	//save fraction/ratio of "openness"
+	float frac = GetFractionalPosition();
 
+	if (newOrigin) {
+		dest_position = *newOrigin;
+		m_ClosedOrigin = *newOrigin;
+		m_OpenOrigin = m_ClosedOrigin + m_Translation;
+	}
+
+	if (newAxis) {
+		idAngles newAngles = newAxis->ToAngles();
+		dest_angles = newAngles;
+		m_ClosedAngles = newAngles;
+		m_ClosedAngles.Normalize180();
+		m_OpenAngles = m_ClosedAngles + m_Rotate;
+		m_OpenAngles.Normalize180();
+	}
+
+	//recompute m_ClosedPos, m_OpenPos, etc.
+	ComputeAdditionalMembers();
+
+	//restore fraction of "openness"
+	SetFractionalPosition(frac, true);
+}
