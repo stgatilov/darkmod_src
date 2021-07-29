@@ -1974,7 +1974,7 @@ void idLight::AddSwitch(idEntity* newSwitch)
 {
 	idEntityPtr<idEntity> switchPtr;
 	switchPtr = newSwitch;
-	switchList.Append(switchPtr);
+	switchList.AddUnique(switchPtr);
 }
 
 // grayman #2603 - If there are switches, return the closest one to the calling user
