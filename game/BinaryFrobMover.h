@@ -207,7 +207,7 @@ public:
 	 * @fraction: [0..1] where 0 refers to the original position and 
 	 *            a value of 1 refers to the fully rotated handle.
 	 */
-	void SetFractionalPosition(float fraction);
+	void SetFractionalPosition(float fraction, bool immediately);
 
 	float GetFractionalPosition();
 
@@ -385,6 +385,11 @@ protected:
 	// An event for convenience. Gets called right after spawn time at time 0.
 	// Override this event to do your stuff in the subclass, but be sure to call the baseclass
 	virtual void PostSpawn();
+
+	/**
+	 * stgatilov #5683: Recompute m_ClosedBox, m_ClosedPos, m_OpenPos, m_OpenDir from basic members.
+	 */
+	void ComputeAdditionalMembers();
 
 	/** 
 	 * greebo: Tells the frobmover to start moving. The boolean specifies whether

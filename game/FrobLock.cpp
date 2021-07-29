@@ -529,7 +529,7 @@ void CFrobLock::UpdateHandlePosition()
 
 		if (handle == NULL) continue;
 
-		handle->SetFractionalPosition(fraction);
+		handle->SetFractionalPosition(fraction, false);
 	}
 }
 
