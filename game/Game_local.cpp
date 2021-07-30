@@ -1688,6 +1688,36 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 		idDict newArgsInherited = newArgs;
 		newArgsInherited.SetDefaults(&newEntityDef->dict, idStr("editor_"));
 
+		bool originChanged = diffArgs.FindKey("origin") != NULL;
+		bool axisChanged = diffArgs.FindKey("rotation") || diffArgs.FindKey("angle");
+
+		//check if entity is moved while bound to master
+		idVec3 masterOrigin;	masterOrigin.Zero();
+		idMat3 masterAxis;		masterAxis.Identity();
+		if (originChanged || axisChanged) {
+			//find coordinate system of the bind master according to new spawnargs
+			//if position of bound entity is changed, then we will adjust it relative to that
+			if (idEntity *gameMasterEnt = ent->GetBindMaster()) {
+				const char *gameMasterName = gameMasterEnt->name.c_str();
+				const char *newMasterName = newArgsInherited.GetString("bind");
+				idMapEntity *newMasterMapEnt = mapFile->FindEntity(newMasterName);
+
+				//note: we only support simple binds here, no "bindToJoint" or "bindToBody"
+				bool complexBind = (gameMasterEnt->GetBindBody() >= 0 || gameMasterEnt->GetBindJoint());
+
+				if (idStr::Cmp(gameMasterName, newMasterName) == 0 && newMasterMapEnt && !complexBind) {
+					//still has same bind master as in .map file
+					masterOrigin = newMasterMapEnt->epairs.GetVector("origin");
+					gameEdit->ParseSpawnArgsToAxis(&newMasterMapEnt->epairs, masterAxis);
+				}
+				else {
+					//different master / master missing in .map / unsupported bind type
+					//unbind entity and move in absolute coords
+					ent->Unbind();
+				}
+			}
+		}
+
 		if (diffArgs.FindKey("rotate") || diffArgs.FindKey("translate"))
 			if (ent->IsType(CBinaryFrobMover::Type)) {
 				((CBinaryFrobMover*)ent)->SetFractionalPosition(0.0, true);
@@ -1708,13 +1738,15 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 		if (lodChanged) {
 			gameEdit->EntityUpdateLOD(ent);
 		}
-		if (diffArgs.FindKey("origin")) {
+		if (originChanged) {
 			idVec3 newOrigin = newArgsInherited.GetVector("origin");
+			newOrigin = (newOrigin - masterOrigin) * masterAxis.Inverse();
 			gameEdit->EntitySetOrigin(ent, newOrigin);
 		}
-		if (diffArgs.FindKey("rotation") || diffArgs.FindKey("angle")) {
+		if (axisChanged) {
 			idMat3 newAxis;
 			gameEdit->ParseSpawnArgsToAxis(&newArgsInherited, newAxis);
+			newAxis = newAxis * masterAxis.Inverse();
 			gameEdit->EntitySetAxis(ent, newAxis);
 		}
 		if (diffArgs.FindKey("_color") || diffArgs.MatchPrefix("shaderParm")) {
