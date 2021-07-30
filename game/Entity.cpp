@@ -725,6 +725,25 @@ void AddRenderGui( const char *name, idUserInterface **gui, const idDict *args )
 
 /*
 ================
+idGameEdit::ParseSpawnArgsToAxis
+
+stgatilov: common code to extract initial orientation from either "rotation" or "angle".
+================
+*/
+void idGameEdit::ParseSpawnArgsToAxis( const idDict *args, idMat3 &axis ) {
+	// get the rotation matrix in either full form, or single angle form
+	if ( !args->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) ) {
+		float angle = args->GetFloat( "angle" );
+		if ( angle != 0.0f ) {
+			axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
+		} else {
+			axis.Identity();
+		}
+	}
+}
+
+/*
+================
 idGameEdit::ParseSpawnArgsToRenderEntity
 
 parse the static model parameters
@@ -790,16 +809,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	}
 
 	args->GetVector( "origin", "0 0 0", renderEntity->origin );
-
-	// get the rotation matrix in either full form, or single angle form
-	if ( !args->GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", renderEntity->axis ) ) {
-		angle = args->GetFloat( "angle" );
-		if ( angle != 0.0f ) {
-			renderEntity->axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-		} else {
-			renderEntity->axis.Identity();
-		}
-	}
+	ParseSpawnArgsToAxis( args, renderEntity->axis );
 
 	renderEntity->referenceSound = NULL;
 
@@ -8317,22 +8327,16 @@ idEntity::Event_RestorePosition
 */
 void idEntity::Event_RestorePosition( void ) {
 	idVec3		org;
-	idAngles	angles;
 	idMat3		axis;
 	idEntity *	part;
 
 	spawnArgs.GetVector( "origin", "0 0 0", org );
+	gameEdit->ParseSpawnArgsToAxis( &spawnArgs, axis );
 
-	// get the rotation matrix in either full form, or single angle form
-	if ( spawnArgs.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) ) {
-		angles = axis.ToAngles();
-	} else {
-   		angles[ 0 ] = 0;
-   		angles[ 1 ] = spawnArgs.GetFloat( "angle" );
-   		angles[ 2 ] = 0;
-	}
+	GetPhysics()->SetOrigin( org );
+	GetPhysics()->SetAxis( axis );
 
-	Teleport( org, angles, NULL );
+	UpdateVisuals();
 
 	for ( part = teamChain; part != NULL; part = part->teamChain ) {
 		if ( part->bindMaster != this ) {

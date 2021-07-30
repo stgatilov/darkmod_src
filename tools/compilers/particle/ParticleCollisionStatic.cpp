@@ -493,7 +493,8 @@ void PrtCollision::ProcessMap() {
 				continue;	// not an entity?...
 			int isEmitter = spawnArgs.GetInt("particle_collision_static_emitter", "-1");
 			idVec3 origin = spawnArgs.GetVector("origin");
-			idMat3 axis = spawnArgs.GetMatrix("rotation");
+			idMat3 axis;
+			gameEdit->ParseSpawnArgsToAxis( &spawnArgs, axis );
 			float diversity = spawnArgs.GetFloat("shaderParm5");
 			//TODO: search attachments recursively too
 			for (const idKeyValue *kv = spawnArgs.MatchPrefix("model"); kv; kv = spawnArgs.MatchPrefix("model", kv))

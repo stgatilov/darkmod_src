@@ -351,20 +351,8 @@ bool CsndPropLoader::MapEntBounds( idBounds &bounds, idMapEntity *mapEnt )
 
 		collisionModelManager->GetModelBounds( cmHandle, bounds );
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found bounds with volume %f for entity %s with model %s.\r", bounds.GetVolume(), args.GetString("name"), modelName);
-		// Rotation copied from Entity::ParseSpawnArgsToRenderEntity()
-		// get the rotation matrix in either full form, or single angle form
-		if ( !args.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", rotation ) ) 
-			{
-				angle = args.GetFloat( "angle" );
-				if ( angle != 0.0f ) 
-				{
-					rotation = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-				}
-				else 
-				{
-						rotation.Identity();
-				}
-			}
+		gameEdit->ParseSpawnArgsToAxis( &args, rotation );
+
 		bounds.RotateSelf(rotation);
 		// Translate and rotate the bounds to be in sync with the model
 		bounds.TranslateSelf(origin);

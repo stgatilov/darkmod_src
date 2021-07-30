@@ -503,14 +503,7 @@ idBrushList idAASBuild::AddBrushesForMapEntity( const idMapEntity *mapEnt, int e
 	}
 
 	mapEnt->epairs.GetVector( "origin", "0 0 0", origin );
-	if ( !mapEnt->epairs.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) ) {
-		float angle = mapEnt->epairs.GetFloat( "angle" );
-		if ( angle != 0.0f ) {
-			axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-		} else {
-			axis.Identity();
-		}
-	}
+	gameEdit->ParseSpawnArgsToAxis( &mapEnt->epairs, axis );
 
 	for ( i = 0; i < mapEnt->GetNumPrimitives(); i++ ) {
 		idMapPrimitive	*mapPrim;

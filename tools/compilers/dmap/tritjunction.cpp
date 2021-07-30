@@ -767,16 +767,7 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 //			common->Printf( "adding T junction verts for %s.\n", entity->mapEntity->epairs.GetString( "name" ) );
 
 			idMat3	axis;
-			// get the rotation matrix in either full form, or single angle form
-			if ( !entity->mapEntity->epairs.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) ) {
-				float angle = entity->mapEntity->epairs.GetFloat( "angle" );
-				if ( angle != 0.0f ) {
-					axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-				} else {
-					axis.Identity();
-				}
-			}		
-
+			gameEdit->ParseSpawnArgsToAxis( &entity->mapEntity->epairs, axis );
 			idVec3	origin = entity->mapEntity->epairs.GetVector( "origin" );
 
 			for ( i = 0 ; i < model->NumSurfaces() ; i++ ) {
