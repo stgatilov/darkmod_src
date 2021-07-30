@@ -28,7 +28,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 PROBLEM: compressed textures may break the zero clamp rule!
 */
 static bool FormatIsDXT( int internalFormat ) {
-	if ( internalFormat < GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalFormat > GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT ) {
+	if ( internalFormat < GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalFormat > GL_COMPRESSED_RG_RGTC2 ) {
 		return false;
 	}
 	return true;
@@ -1145,7 +1145,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 			internalFormat = GL_COMPRESSED_LUMINANCE_LATC1_EXT;
 			break;
 		case DDS_MAKEFOURCC( 'A', 'T', 'I', '2' ):
-			internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
+			internalFormat = GL_COMPRESSED_RG_RGTC2;
 			break;
 		default:
 			common->Warning( "Invalid compressed internal format: %s", imgName.c_str() );
@@ -1797,7 +1797,7 @@ GLuint64 idImage::BindlessHandle() {
 		common->Warning( "Acquiring bindless handle for non-resident texture. Diverting to white image" );
 		globalImages->whiteImage->MakeResident();
 		return globalImages->whiteImage->BindlessHandle();
-	}	
+	}
 	if( textureHandle == 0 ) {
 		// acquiring a texture handle failed, so redirect to white image quietly
 		globalImages->whiteImage->MakeResident();
