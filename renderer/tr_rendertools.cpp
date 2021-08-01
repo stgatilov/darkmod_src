@@ -985,7 +985,7 @@ static void RB_ShowEntityDraws() {
 			grp.entities++;
 		}
 		for ( auto& iterator : grouped )
-			list.Append( idStr::Fmt( "%3i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() ) );
+			list.Append( idStr::Fmt( "%5i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() ) );
 	}
 	list.Sort();
 	int runningTotal = 0;

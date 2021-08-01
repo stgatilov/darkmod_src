@@ -40,10 +40,6 @@ This should never happen if the vertex cache is operating properly.
 =================
 */
 void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
-	/*backEnd.pc.c_drawElements++;
-	backEnd.pc.c_drawIndexes += tri->numIndexes;
-	backEnd.pc.c_drawVertexes += tri->numVerts;*/
-
 	if ( tri->ambientSurface ) {
 		if ( tri->indexes == tri->ambientSurface->indexes ) {
 			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
@@ -53,18 +49,33 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 		}
 	}
 
-	/*qglBegin( GL_TRIANGLES );
-
-	for ( int i = 0 ; i < tri->numIndexes ; i++ ) {
-		qglTexCoord2fv( tri->verts[ tri->indexes[i] ].st.ToFloatPtr() );
-		qglVertex3fv( tri->verts[ tri->indexes[i] ].xyz.ToFloatPtr() );
-	}
-	qglEnd();*/
 	vertexCache.UnbindIndex();
 	static vertCacheHandle_t nil;
 	vertexCache.VertexPosition( nil );
 	auto ac = tri->verts;
 	qglDrawElements( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
+}
+
+ID_INLINE void RB_PerfCounters( const drawSurf_t* surf, int instances = 1, bool shadows = false ) {
+	if ( r_showPrimitives.GetBool() && backEnd.viewDef->viewEntitys ) {
+		if ( shadows ) {
+			if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+				backEnd.pc.c_shadowElements++;
+				backEnd.pc.c_shadowIndexes += surf->numIndexes;
+				backEnd.pc.c_shadowVertexes += surf->frontendGeo->numVerts;
+			}
+		} else {
+			backEnd.pc.c_drawElements++;
+			backEnd.pc.c_drawIndexes += surf->numIndexes * instances;
+			if ( surf->frontendGeo )
+				backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
+		}
+	}
+	if ( r_showEntityDraws && surf->space )
+		if ( r_showEntityDraws & 4 ) {
+			( (viewEntity_t*) surf->space )->drawCalls += surf->frontendGeo->numIndexes / 3;
+		} else
+			( (viewEntity_t*) surf->space )->drawCalls++;
 }
 
 /*
@@ -73,18 +84,7 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
-	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
-		backEnd.pc.c_drawElements++;
-		backEnd.pc.c_drawIndexes += surf->numIndexes;
-		if ( surf->frontendGeo )
-			backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
-	}
-	if ( r_showEntityDraws && surf->space )
-		if ( r_showEntityDraws & 4 ) {
-			((viewEntity_t*)surf->space)->drawCalls += surf->frontendGeo->numIndexes / 3;
-		} else
-			((viewEntity_t *)surf->space)->drawCalls++;
-
+	RB_PerfCounters( surf );
 	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
 		indexPtr = vertexCache.IndexPosition( surf->indexCache );
@@ -104,18 +104,6 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 }
 
 void RB_DrawTriangles( const srfTriangles_t &tri) {
-/*	if ( tri.indexCache.IsValid() ) {
-		qglDrawElements( GL_TRIANGLES,
-			tri.numIndexes,
-			GL_INDEX_TYPE,
-			vertexCache.IndexPosition( tri.indexCache ) );
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += tri.numIndexes;
-		}
-	} else {
-		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes ); 
-	}*/
 	void* indexPtr;
 	if ( tri.indexCache.IsValid() ) {
 		indexPtr = vertexCache.IndexPosition( tri.indexCache );
@@ -139,15 +127,7 @@ RB_DrawElementsInstanced
 ================
 */
 void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
-	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
-		backEnd.pc.c_drawElements++;
-		backEnd.pc.c_drawIndexes += surf->numIndexes * instances;
-		backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
-	}
-	if ( r_showEntityDraws > 2 ) {
-		((viewEntity_t*)surf->space)->drawCalls += surf->frontendGeo->numIndexes / 3;
-	} else
-		((viewEntity_t*)surf->space)->drawCalls++;
+	RB_PerfCounters( surf, instances );
 
 	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
@@ -222,10 +202,7 @@ void RB_Multi_DrawElements( int instances ) {
 			if ( baseVertex < 0 )
 				common->Error( "Invalid base vertex in RB_Multi_AddSurf" );
 			multiDrawBaseVertices.Append( baseVertex );
-			if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
-				backEnd.pc.c_drawIndexes += surf->numIndexes * instances;
-				backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
-			}
+			RB_PerfCounters( surf );
 		}
 		vertCacheHandle_t hBufferStart{ 1,0,0 };
 		vertexCache.IndexPosition( hBufferStart );
@@ -265,11 +242,7 @@ May not use all the indexes in the surface if caps are skipped
 ================
 */
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf ) {
-	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-		backEnd.pc.c_shadowElements++;
-		backEnd.pc.c_shadowIndexes += surf->numIndexes;
-		backEnd.pc.c_shadowVertexes += surf->frontendGeo->numVerts;
-	}
+	RB_PerfCounters( surf, 1, true );
 
 	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
