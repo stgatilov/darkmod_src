@@ -774,6 +774,17 @@ void idLight::GetRadius( idVec3 &out ) const {
     out.z = renderLight.lightRadius[2];
 }
 
+void idLight::Hide( void ) {
+	idEntity::Hide();
+	Off();
+}
+
+void idLight::Show( void ) {
+	idEntity::Show();
+	On();
+}
+
+
 /*
 ================
 idLight::On

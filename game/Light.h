@@ -46,6 +46,8 @@ public:
 	virtual void	FreeLightDef( void );
 	virtual bool	GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
 	void			Present( void );
+	virtual void	Hide( void );
+	virtual void	Show( void );
 
 	void			SaveState( idDict *args );
 	virtual void	SetColor( const float red, const float green, const float blue );

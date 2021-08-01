@@ -755,7 +755,6 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	int			i;
 	const char	*temp;
 	idVec3		color;
-	float		angle;
 	const idDeclModelDef *modelDef;
 
 	memset( renderEntity, 0, sizeof( *renderEntity ) );
@@ -3811,11 +3810,6 @@ void idEntity::Hide( void )
 			if (ent->GetBindMaster() == this) 
 			{
 				ent->Hide();
-
-				if (ent->IsType(idLight::Type))
-				{
-					static_cast<idLight*>(ent)->Off();
-				}
 			}
 		}
 	}
@@ -3862,10 +3856,6 @@ void idEntity::Show( void )
 				if ( gameLocal.time >= ent->GetHideUntilTime() ) // grayman #597 - one second needs to pass before showing
 				{
 					ent->Show();
-					if ( ent->IsType( idLight::Type ) )
-					{
-						static_cast<idLight *>(ent)->On();
-					}
 				}
 			}
 		}
