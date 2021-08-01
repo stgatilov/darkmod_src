@@ -25,13 +25,21 @@ idCVar r_debugGLSL("r_debugGLSL", "0", CVAR_BOOL|CVAR_ARCHIVE, "If enabled, chec
 
 GLSLProgram *GLSLProgram::currentProgram = nullptr;
 
-GLSLProgram::GLSLProgram( const char *name ) : name( name ), program( 0 ) {}
+GLSLProgram::GLSLProgram( const char *name, const Generator &generator ) : name( name ), program( 0 ), generator( generator ) {}
 
 GLSLProgram::~GLSLProgram() {
 	Destroy();
 }
 
+void GLSLProgram::Regenerate() {
+	Init();
+	generator( this );
+}
+
 void GLSLProgram::Init() {
+	if ( program != 0 )
+		Destroy();
+
 	program = qglCreateProgram();
 	if( program == 0 ) {
 		common->Error( "Call to glCreateProgram failed for program %s", name.c_str() );
@@ -98,6 +106,10 @@ bool GLSLProgram::Link() {
 }
 
 void GLSLProgram::Activate() {
+	if ( program == 0 ) {
+		Regenerate();
+	}
+
 	if( currentProgram != this ) {
 		qglUseProgram( program );
 		currentProgram = this;
@@ -141,8 +153,7 @@ bool GLSLProgram::Validate() {
 	return result;
 }
 
-void GLSLProgram::InitFromFiles( const char *vertexFile, const char *fragmentFile, const idHashMapDict &defines ) {
-	Init();
+void GLSLProgram::LoadFromFiles( const char *vertexFile, const char *fragmentFile, const idHashMapDict &defines ) {
 	AttachVertexShader( vertexFile, defines );
 	AttachFragmentShader( fragmentFile, defines );
 	Attributes::Default::Bind( this );

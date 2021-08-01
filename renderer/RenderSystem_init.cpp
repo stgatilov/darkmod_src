@@ -1886,6 +1886,7 @@ idRenderSystemLocal::EndLevelLoad
 void idRenderSystemLocal::EndLevelLoad( void ) {
 	renderModelManager->EndLevelLoad();
 	globalImages->EndLevelLoad();
+	programManager->ReloadAllPrograms();
 	if ( r_forceLoadImages.GetBool() ) {
 		RB_ShowImages();
 	}

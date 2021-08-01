@@ -24,8 +24,14 @@ class GLSLUniformGroup;
 
 class GLSLProgram {
 public:
-	explicit GLSLProgram(const char *name);
+	using Generator = std::function<void( GLSLProgram* )>;
+
+	GLSLProgram(const char *name, const Generator &generator);
 	~GLSLProgram();
+
+	void SetGenerator(const Generator &generator) { this->generator = generator; }
+
+	void Regenerate();
 
 	void Init();
 	void Destroy();
@@ -35,13 +41,12 @@ public:
 	void AttachFragmentShader( const char *sourceFile, const idHashMapDict &defines = {} );
 
 	void BindAttribLocation( unsigned int location, const char *attribName );
-	void BindDefaultAttribLocations();
 	void BindUniformBlockLocation( unsigned int location, const char *blockName );
 
 	bool Link();
 	bool Validate();
 
-	void InitFromFiles( const char *vertexFile, const char *fragmentFile, const idHashMapDict &defines = {} );
+	void LoadFromFiles( const char *vertexFile, const char *fragmentFile, const idHashMapDict &defines = {} );
 
 	void Activate();
 	static void Deactivate();
@@ -72,6 +77,7 @@ private:
 
 	idStr name;
 	GLuint program;
+	Generator generator;
 
 	struct ActiveUniformGroup {
 		std::type_index type;

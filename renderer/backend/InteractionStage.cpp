@@ -99,7 +99,7 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
 	if (bindless) {
 		defines.Set( "BINDLESS_TEXTURES", "1" );
 	}
-	shader->InitFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
+	shader->LoadFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->lightProjectionCubemap.Set( TU_LIGHT_PROJECT_CUBE );
 	uniforms->lightProjectionTexture.Set( TU_LIGHT_PROJECT );
