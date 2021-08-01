@@ -3162,6 +3162,9 @@ void idSessionLocal::ActivateFrontend() {
 		// run game tics and frontend drawing serially
 		RunGameTics();
 		DrawFrame();
+		// since the backend runs after us, we can hand over the frame we just calculated immediately.
+		// avoids an unnecessary frame delay
+		R_ToggleSmpFrame();
 	}
 }
 
