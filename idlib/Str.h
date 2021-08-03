@@ -1057,7 +1057,7 @@ ID_INLINE bool idStr::CharIsTab( char c ) {
 }
 
 ID_INLINE int idStr::ColorIndex( int c ) {
-	return ( c & 15 );
+	return ( ( c - C_COLOR_DEFAULT ) & 15 );
 }
 
 ID_INLINE int idStr::DynamicMemoryUsed() const {

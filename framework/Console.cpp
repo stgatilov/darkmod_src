@@ -34,6 +34,7 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 
 idCVarBool con_legacyFont( "con_legacyFont", "0", CVAR_SYSTEM | CVAR_ARCHIVE, "0 - new 2.08 font, 1 - old D3 font" ); // grayman - add archive
 idCVarInt con_fontSize( "con_fontSize", "8", CVAR_SYSTEM | CVAR_ARCHIVE, "font width in screen units (640x480)" );
+idCVar con_fontColor( "con_fontColor", "5", CVAR_SYSTEM | CVAR_ARCHIVE, "console color, 5 = cyan, 7 = white, 'r g b' = custom" );
 
 // the console will query the cvar and command systems for
 // command completion information
@@ -780,8 +781,11 @@ bool idConsoleLocal::ProcessEvent( const sysEvent_t *event, bool forceAccept ) {
 			consoleField.Clear();
 			keyCatching = true;
 			if ( idKeyInput::IsDown( K_SHIFT ) ) {
-				// if the shift key is down, don't open the console as much
-				SetDisplayFraction( 0.2f );
+				if ( idKeyInput::IsDown( K_CTRL ) ) 
+					SetDisplayFraction( 0.8f );
+				else
+					// if the shift key is down, don't open the console as much
+					SetDisplayFraction( 0.2f );
 			} else {
 				SetDisplayFraction( 0.5f );
 			}
@@ -843,7 +847,7 @@ void idConsoleLocal::Linefeed() {
 	}
 
 	x = 0;
-	std::wstring s( LINE_WIDTH, ( idStr::ColorIndex( C_COLOR_CYAN ) << 8 ) | ' ' );
+	std::wstring s( LINE_WIDTH, ' ' );
 	text.Append( s );
 }
 
@@ -870,15 +874,11 @@ void idConsoleLocal::Print( const char *txt ) {
 	if ( current < 0 )
 		Linefeed();
 
-	color = idStr::ColorIndex( C_COLOR_CYAN );
+	color = idStr::ColorIndex( C_COLOR_DEFAULT );
 
 	while ( (c = *(const unsigned char*)txt) != 0 ) {
 		if ( idStr::IsColor( txt ) ) {
-			if ( *(txt+1) == C_COLOR_DEFAULT ) {
-				color = idStr::ColorIndex( C_COLOR_CYAN );
-			} else {
-				color = idStr::ColorIndex( *(txt+1) );
-			}
+			color = idStr::ColorIndex( *(txt+1) );
 			txt += 2;
 			continue;
 		}
@@ -960,6 +960,17 @@ DRAWING
 ==============================================================================
 */
 
+void SetColor(int i) {
+	idVec4 c = idStr::ColorForIndex( i );
+	if ( !i && ( con_fontColor.GetInteger() || idStr::Length( con_fontColor.GetString() ) > 1 ) ) {
+		if ( sscanf( con_fontColor.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) != 3 ) {
+			if ( con_fontColor.GetInteger() ) {
+				c = idStr::ColorForIndex( con_fontColor.GetInteger() );
+			}
+		}
+	}
+	renderSystem->SetColor( c );
+}
 
 /*
 ================
@@ -983,13 +994,12 @@ void idConsoleLocal::DrawInput() {
 		}
 	}
 
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
+	SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 
 	renderSystem->DrawSmallChar( 1 * SMALLCHAR_WIDTH, y, '>', charSetMaterial() );
 
 	consoleField.Draw(2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetMaterial() );
 }
-
 
 /*
 ================
@@ -1008,7 +1018,7 @@ void idConsoleLocal::DrawNotify() {
 	}
 
 	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
-	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
+	SetColor( currentColor );
 
 	int v = 0;
 	for ( int i = current-NUM_CON_TIMES+1; i <= current; i++ ) {
@@ -1031,7 +1041,7 @@ void idConsoleLocal::DrawNotify() {
 			}
 			if ( idStr::ColorIndex(text_p[x]>>8) != currentColor ) {
 				currentColor = idStr::ColorIndex(text_p[x]>>8);
-				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
+				SetColor( currentColor );
 			}
 			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, v, text_p[x] & 0xff, charSetMaterial() );
 		}
@@ -1039,7 +1049,7 @@ void idConsoleLocal::DrawNotify() {
 		v += SMALLCHAR_HEIGHT;
 	}
 
-	renderSystem->SetColor( colorCyan );
+	SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 }
 
 /*
@@ -1074,12 +1084,10 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, y, 0, 1.0f - displayFrac, 1, 1, consoleShader );
 	}
 
-	renderSystem->SetColor( colorCyan );
+	SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 	renderSystem->DrawStretchPic( 0, y, SCREEN_WIDTH, 2, 0, 0, 0, 0, whiteShader );
-	//renderSystem->SetColor( colorWhite );
 
 	// draw the version number
-	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 	{
 		// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
 		const idStr version = va("%s/%u #%d", ENGINE_VERSION, sizeof(void*) * 8, RevisionTracker::Instance().GetHighestRevision());
@@ -1100,7 +1108,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	// draw from the bottom up
 	if ( display != current ) {
 		// draw arrows to show the buffer is backscrolled
-		renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
+		SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 		for ( x = 0; x < LINE_WIDTH; x += 4 ) {
 			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), '^', charSetMaterial() );
 		}
@@ -1111,7 +1119,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	row = (x == 0) ? (display -1) : display;
 
 	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
-	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
+	SetColor( currentColor );
 
 	for ( int i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- ) {
 		if ( row < 0 ) {
@@ -1131,7 +1139,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 
 			if ( idStr::ColorIndex(text_p[x]>>8) != currentColor ) {
 				currentColor = idStr::ColorIndex(text_p[x]>>8);
-				renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
+				SetColor( currentColor );
 			}
 			renderSystem->DrawSmallChar( x*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x] & 0xff, charSetMaterial() );
 		}
@@ -1140,7 +1148,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	// draw the input prompt, user text, and cursor if desired
 	DrawInput();
 
-	renderSystem->SetColor( colorCyan );
+	SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 }
 
 
