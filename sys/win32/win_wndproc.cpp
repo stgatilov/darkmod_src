@@ -390,21 +390,15 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 			WIN_Sizing(wParam, (RECT *)lParam);
 			break;
 
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
 		case WM_RBUTTONDOWN:
 		case WM_RBUTTONUP:
 		case WM_MBUTTONDOWN:
 		case WM_MBUTTONUP:
+		case WM_MOUSEWHEEL: 
 		case WM_MOUSEMOVE: {
-			break;
-		}
-		case WM_MOUSEWHEEL: {
-			int delta = GET_WHEEL_DELTA_WPARAM( wParam ) / WHEEL_DELTA;
-			int key = delta < 0 ? K_MWHEELDOWN : K_MWHEELUP;
-			delta = abs( delta );
-			while( delta-- > 0 ) {
-				Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, true, 0, NULL );
-				Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, false, 0, NULL );
-			}
+			Sys_StdMouseInput( uMsg, wParam, lParam );
 			break;
 		}
 	}

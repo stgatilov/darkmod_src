@@ -331,7 +331,7 @@ void			Sys_DLL_Unload(uintptr_t dllHandle);
 void			Sys_GenerateEvents( void );
 sysEvent_t		Sys_GetEvent( void );
 void			Sys_ClearEvents( void );
-void			Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
+void			Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength = 0, void *ptr = NULL );
 
 // input is tied to windows, so it needs to be started up and shut down whenever
 // the main window is recreated

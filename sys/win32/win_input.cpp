@@ -508,78 +508,6 @@ void IN_InitDirectInput( void ) {
 }
 
 /*
-========================
-IN_InitDIMouse
-========================
-*/
-bool IN_InitDIMouse( void ) {
-    HRESULT		hr;
-
-	if ( win32.g_pdi == NULL) {
-		return false;
-	}
-
-	// obtain an interface to the system mouse device.
-	hr = win32.g_pdi->CreateDevice( GUID_SysMouse, &win32.g_pMouse, NULL);
-
-	if (FAILED(hr)) {
-		common->Printf ("mouse: Couldn't open DI mouse device\n");
-		return false;
-	}
-
-    // Set the data format to "mouse format" - a predefined data format 
-    //
-    // A data format specifies which controls on a device we
-    // are interested in, and how they should be reported.
-    //
-    // This tells DirectInput that we will be passing a
-    // DIMOUSESTATE2 structure to IDirectInputDevice::GetDeviceState.
-    if( FAILED( hr = win32.g_pMouse->SetDataFormat( &c_dfDIMouse2 ) ) ) {
-		common->Printf ("mouse: Couldn't set DI mouse format\n");
-		return false;
-	}
-    
-	// set the cooperativity level.							// duzenko #4403
-	hr = win32.g_pMouse->SetCooperativeLevel( win32.hWnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
-
-	if (FAILED(hr)) {
-		common->Printf ("mouse: Couldn't set DI coop level\n");
-		return false;
-	}
-
-
-    // IMPORTANT STEP TO USE BUFFERED DEVICE DATA!
-    //
-    // DirectInput uses unbuffered I/O (buffer size = 0) by default.
-    // If you want to read buffered data, you need to set a nonzero
-    // buffer size.
-    //
-    // Set the buffer size to SAMPLE_BUFFER_SIZE (defined above) elements.
-    //
-    // The buffer size is a DWORD property associated with the device.
-    DIPROPDWORD dipdw;
-    dipdw.diph.dwSize       = sizeof(DIPROPDWORD);
-    dipdw.diph.dwHeaderSize = sizeof(DIPROPHEADER);
-    dipdw.diph.dwObj        = 0;
-    dipdw.diph.dwHow        = DIPH_DEVICE;
-    dipdw.dwData            = DINPUT_BUFFERSIZE; // Arbitary buffer size
-
-    if( FAILED( hr = win32.g_pMouse->SetProperty( DIPROP_BUFFERSIZE, &dipdw.diph ) ) ) {
-		common->Printf ("mouse: Couldn't set DI buffersize\n");
-		return false;
-	}
-
-	IN_ActivateMouse();
-
-	// clear any pending samples
-	Sys_PollMouseInputEvents();
-
-	common->Printf( "mouse: DirectInput initialized.\n");
-	return true;
-}
-
-
-/*
 ==========================
 IN_ActivateMouse
 ==========================
@@ -588,7 +516,7 @@ void IN_ActivateMouse( void ) {
 	int i;
 	HRESULT hr;
 
-	if ( !win32.in_mouse.GetBool() || win32.mouseGrabbed || !win32.g_pMouse ) {
+	if ( !win32.in_mouse.GetBool() || win32.mouseGrabbed ) {
 		return;
 	}
 
@@ -598,16 +526,6 @@ void IN_ActivateMouse( void ) {
 			break;
 		}
 	}
-
-	// we may fail to reacquire if the window has been recreated
-	hr = win32.g_pMouse->Acquire();
-	if (FAILED(hr)) {
-		common->Printf("win32.g_pMouse->Acquire failed %d\n", hr);
-		return;
-	}
-
-	// set the cooperativity level.							// duzenko #4403
-	hr = win32.g_pMouse->SetCooperativeLevel( win32.hWnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
 }
 
 /*
@@ -618,11 +536,9 @@ IN_DeactivateMouse
 void IN_DeactivateMouse( void ) {
 	int i;
 
-	if (!win32.g_pMouse || !win32.mouseGrabbed ) {
+	if (!win32.mouseGrabbed ) {
 		return;
 	}
-
-	win32.g_pMouse->Unacquire();
 
 	for ( i = 0; i < 10; i++ ) {
 		if ( ::ShowCursor( true ) >= 0 ) {
@@ -665,11 +581,6 @@ void Sys_ShutdownInput( void ) {
 		win32.g_pKeyboard = NULL;
 	}
 
-    if ( win32.g_pMouse ) {
-		win32.g_pMouse->Release();
-		win32.g_pMouse = NULL;
-	}
-
     if ( win32.g_pdi ) {
 		win32.g_pdi->Release();
 		win32.g_pdi = NULL;
@@ -685,7 +596,6 @@ void Sys_InitInput( void ) {
 	common->Printf ("\n------- Input Initialization -------\n");
 	IN_InitDirectInput();
 	if ( win32.in_mouse.GetBool() ) {
-		IN_InitDIMouse();
 		// don't grab the mouse on initialization
 		Sys_GrabMouseCursor( false );
 	} else {
@@ -978,102 +888,75 @@ int Sys_ReturnKeyboardInputEvent( const int n, int &ch, bool &state ) {
 void Sys_EndKeyboardInputEvents( void ) {
 }
 
-void Sys_QueMouseEvents( int dwElements ) {
-	int i, value;
-
-	for( i = 0; i < dwElements; i++ ) {
-		if ( polled_didod[i].dwOfs >= DIMOFS_BUTTON0 && polled_didod[i].dwOfs <= DIMOFS_BUTTON7 ) {
-			value = (polled_didod[i].dwData & 0x80) == 0x80;
-			Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_KEY, K_MOUSE1 + ( polled_didod[i].dwOfs - DIMOFS_BUTTON0 ), value, 0, NULL );
-		} else {
-			switch (polled_didod[i].dwOfs) {
-			case offsetof(DIMOUSESTATE,lX):
-				value = polled_didod[i].dwData;
-				Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_MOUSE, value, 0, 0, NULL );
-				break;
-			case offsetof(DIMOUSESTATE, lY):
-				value = polled_didod[i].dwData;
-				Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_MOUSE, 0, value, 0, NULL );
-				break;
-			case offsetof(DIMOUSESTATE, lZ):
-				value = ( (int) polled_didod[i].dwData ) / WHEEL_DELTA;
-				int key = value < 0 ? K_MWHEELDOWN : K_MWHEELUP;
-				value = abs( value );
-				while( value-- > 0 ) {
-					Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_KEY, key, true, 0, NULL );
-					Sys_QueEvent( polled_didod[i].dwTimeStamp, SE_KEY, key, false, 0, NULL );
-				}
-				break;
-			}
-		}
-	}
-}
-
 //=====================================================================================
+struct MouseInputEvent {
+	int action, value;
+};
+idList<MouseInputEvent> mouseInputEvents;
 
 int Sys_PollMouseInputEvents( void ) {
-	DWORD				dwElements;
-	HRESULT				hr;
-
-	if ( !win32.g_pMouse || !win32.mouseGrabbed ) {
-		return 0;
-	}
-
-    dwElements = DINPUT_BUFFERSIZE;
-    hr = win32.g_pMouse->GetDeviceData( sizeof(DIDEVICEOBJECTDATA), polled_didod, &dwElements, 0 );
-
-    if( hr != DI_OK ) {
-        hr = win32.g_pMouse->Acquire();
-		// clear the garbage
-		if (!FAILED(hr)) {
-			win32.g_pMouse->GetDeviceData( sizeof(DIDEVICEOBJECTDATA), polled_didod, &dwElements, 0 );
-		}
-    }
-
-    if( FAILED(hr) ) {
-        return 0;
-	}
-
-	// duzenko #4403 - prevent cursor from leaving the window
-	SetCursorPos(win32.win_xpos.GetInteger() + glConfig.vidWidth / 2, win32.win_ypos.GetInteger() + glConfig.vidHeight / 2);
-
-	Sys_QueMouseEvents( dwElements );
-
-	return dwElements;
+	return mouseInputEvents.Num();
 }
 
 int Sys_ReturnMouseInputEvent( const int n, int &action, int &value ) {
-	int diaction = polled_didod[n].dwOfs;
-
-	if ( diaction >= DIMOFS_BUTTON0 && diaction <= DIMOFS_BUTTON7 ) {
-		value = (polled_didod[n].dwData & 0x80) == 0x80;
-		action = M_ACTION1 + ( diaction - DIMOFS_BUTTON0 );
-		return 1;
-	}
-
-	switch( diaction ) {
-		case offsetof(DIMOUSESTATE, lX):
-			value = polled_didod[n].dwData;
-			action = M_DELTAX;
-			return 1;
-		case offsetof(DIMOUSESTATE, lY):
-			value = polled_didod[n].dwData;
-			action = M_DELTAY;
-			return 1;
-		case offsetof(DIMOUSESTATE, lZ):
-			// mouse wheel actions are impulses, without a specific up / down
-			value = ( (int) polled_didod[n].dwData ) / WHEEL_DELTA;
-			action = M_DELTAZ;
-			// a value of zero here should never happen
-			if ( value == 0 ) {
-				return 0;
-			}
-			return 1;
-	}
-	return 0;
+	action = mouseInputEvents[n].action;
+	value = mouseInputEvents[n].value;
+	return 1;
 }
 
-void Sys_EndMouseInputEvents( void ) { }
+void Sys_StdMouseInput( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
+	if ( !win32.mouseGrabbed )
+		return;
+	switch ( uMsg ) {
+	case WM_MOUSEWHEEL: {
+		int delta = GET_WHEEL_DELTA_WPARAM( wParam ) / WHEEL_DELTA;
+		mouseInputEvents.Append( { M_DELTAZ, delta } );
+		int key = delta < 0 ? K_MWHEELDOWN : K_MWHEELUP;
+		delta = abs( delta );
+		while ( delta-- > 0 ) {
+			Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, true, 0, NULL );
+			Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, false, 0, NULL );
+		}
+		break;
+	}
+	case WM_MOUSEMOVE: {
+		int centerX = glConfig.vidWidth / 2;
+		int centerY = glConfig.vidHeight / 2;
+		int xPos = GET_X_LPARAM( lParam ) - centerX;
+		int yPos = GET_Y_LPARAM( lParam ) - centerY;
+		Sys_QueEvent( win32.sysMsgTime, SE_MOUSE, xPos, yPos );
+		if ( xPos || yPos ) {
+			POINT p = { centerX, centerY };
+			if ( ClientToScreen( win32.hWnd, &p ) )
+				SetCursorPos( p.x, p.y );
+		}
+		if ( xPos )
+			mouseInputEvents.Append( { M_DELTAX, xPos } );
+		if ( yPos )
+			mouseInputEvents.Append( { M_DELTAY , yPos } );
+		break;
+	}
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE1, WM_LBUTTONUP - uMsg );
+		mouseInputEvents.Append( { M_ACTION1, WM_LBUTTONUP - (int)uMsg } );
+		break;
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE2, WM_RBUTTONUP - uMsg );
+		mouseInputEvents.Append( { M_ACTION2, WM_RBUTTONUP - (int) uMsg } );
+		break;
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE3, WM_MBUTTONUP - uMsg );
+		mouseInputEvents.Append( { M_ACTION3, WM_MBUTTONUP - (int) uMsg } );
+		break;
+	}
+}
+
+void Sys_EndMouseInputEvents( void ) {
+	mouseInputEvents.Clear();
+}
 
 unsigned char Sys_MapCharForKey( int key ) {
 	return (unsigned char)key;
