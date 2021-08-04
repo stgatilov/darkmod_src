@@ -17,7 +17,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define __WIN_LOCAL_H__
 
 #include <windows.h>
-#include <Windowsx.h>
 
 
 #define	MAX_OSPATH		256

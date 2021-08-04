@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 
 
-
+#include <Windowsx.h>
 #include "win_local.h"
 #include "../../renderer/tr_local.h"
 
