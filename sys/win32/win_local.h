@@ -43,9 +43,8 @@ void	IN_ActivateMouse( void );
 
 void	IN_Frame( void );
 
-int		IN_DIMapKey( int key );
 void	Sys_StdMouseInput( UINT uMsg, WPARAM wParam, LPARAM lParam );
-
+void	Sys_StdKeyboardInput( UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 // window procedure
 LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -98,11 +97,6 @@ typedef struct {
 
 	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 	HANDLE			events[MAX_TRIGGER_EVENTS];
-
-	HINSTANCE		hInstDI;			// direct input
-
-	LPDIRECTINPUT8			g_pdi;
-	LPDIRECTINPUTDEVICE8	g_pKeyboard;
 
 	//windows 10 dpi scaling api
 	HMODULE hShcoreDll = NULL;
