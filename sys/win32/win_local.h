@@ -86,7 +86,6 @@ typedef struct {
 	unsigned short	oldHardwareGamma[3][256];
 	// desktop gamma is saved here for restoration at exit
 
-	static idCVar	sys_arch;
 	static idCVar	in_mouse;
 	static idCVar	win_xpos;			// archived X coordinate of window position
 	static idCVar	win_ypos;			// archived Y coordinate of window position

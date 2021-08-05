@@ -45,7 +45,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../../tests/TestRun.h"
 #include <iostream>
 
-idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
 idCVar Win32Vars_t::win_xpos( "win_xpos", "3", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "horizontal position of window" );
 idCVar Win32Vars_t::win_ypos( "win_ypos", "22", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "vertical position of window" );
@@ -1007,54 +1006,6 @@ void Sys_Init( void ) {
 	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32s ) {
 		Sys_Error( GAME_NAME " doesn't run on Win32s" );
 	}
-
-	//stgatilov: Starting from Windows 8.1, true version is not returned anyway:
-	//see https://stackoverflow.com/a/17409126/556899
-	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT ) {
-		if ( win32.osversion.dwMajorVersion <= 4 ) {
-			win32.sys_arch.SetString( "WinNT (NT)" );
-		} else if ( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 0 ) {
-			win32.sys_arch.SetString( "Win2K (NT)" );
-		} else if ( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1 ) {
-			win32.sys_arch.SetString( "WinXP (NT)" );
-		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 0 ) {
-			win32.sys_arch.SetString( "Vista" );
-		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 1 ) {
-			win32.sys_arch.SetString( "Windows 7" );
-		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 2 ) {
-			win32.sys_arch.SetString( "Windows 8" );
-		} else if ( win32.osversion.dwMajorVersion == 6 && win32.osversion.dwMinorVersion == 3 ) {
-			win32.sys_arch.SetString( "Windows 8.1" );
-		} else if ( win32.osversion.dwMajorVersion == 10 && win32.osversion.dwMinorVersion == 0 ) {
-			win32.sys_arch.SetString( "Windows 10" );
-		} else {
-			win32.sys_arch.SetString( "Unknown NT variant" );
-		}
-	} else if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) {
-		if ( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 0 ) {
-			// Win95
-			if ( win32.osversion.szCSDVersion[1] == 'C' ) {
-				win32.sys_arch.SetString( "Win95 OSR2 (95)" );
-			} else {
-				win32.sys_arch.SetString( "Win95 (95)" );
-			}
-		} else if ( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 10 ) {
-			// Win98
-			if ( win32.osversion.szCSDVersion[1] == 'A' ) {
-				win32.sys_arch.SetString( "Win98SE (95)" );
-			} else {
-				win32.sys_arch.SetString( "Win98 (95)" );
-			}
-		} else if ( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 90 ) {
-			// WinMe
-			win32.sys_arch.SetString( "WinMe (95)" );
-		} else {
-			win32.sys_arch.SetString( "Unknown 95 variant" );
-		}
-	} else {
-		win32.sys_arch.SetString( "unknown Windows variant" );
-	}
-
 	//
 	// CPU type
 	//
