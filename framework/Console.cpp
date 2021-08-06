@@ -21,13 +21,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 void SCR_DrawTextLeftAlign ( int &y, const char *text, ... ) id_attribute((format(printf,2,3)));
 void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((format(printf,2,3)));
 
-
-//#define CONSOLE_POOL			(2097152/8) // PoT / sizeof(char) - while sizeof works in most preprocs, we cant assume that
-#define	LINE_WIDTH				(SCREEN_WIDTH / SMALLCHAR_WIDTH ) // if there are more chars than space to display, they will not wrap unless
-#define	TOTAL_LINES				text.Num() // number of lines in the console buffer
-#define	current					(text.Num()-1) // number of lines in the console buffer
-//#define	CON_TEXTSIZE			(TOTAL_LINES * LINE_WIDTH)
-
 #define	NUM_CON_TIMES			4 // used for printing when the console is up (con_noPrint 0)
 #define CONSOLE_FIRSTREPEAT		200 // delay before initial key repeat
 #define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
@@ -35,6 +28,13 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 idCVarBool con_legacyFont( "con_legacyFont", "0", CVAR_SYSTEM | CVAR_ARCHIVE, "0 - new 2.08 font, 1 - old D3 font" ); // grayman - add archive
 idCVarInt con_fontSize( "con_fontSize", "8", CVAR_SYSTEM | CVAR_ARCHIVE, "font width in screen units (640x480)" );
 idCVar con_fontColor( "con_fontColor", "5", CVAR_SYSTEM | CVAR_ARCHIVE, "console color, 5 = cyan, 7 = white, 'r g b' = custom" );
+
+struct idConsoleLine : idList<uint16> {
+	idConsoleLine() {}
+	idConsoleLine( int size ) {
+		AssureSize( size, ' ' );
+	}
+};
 
 // the console will query the cvar and command systems for
 // command completion information
@@ -90,7 +90,7 @@ private:
 
 	bool				keyCatching;
 
-	idList<std::wstring>text;
+	idList<idConsoleLine>text;
 	int					x;				// offset in current line for next print
 	int					display;		// bottom of console displays this line
 	int					lastKeyEvent;	// time of last key event for scroll delay
@@ -349,7 +349,7 @@ void idConsoleLocal::Init( void ) {
 	nextKeyEvent = CONSOLE_FIRSTREPEAT;
 
 	consoleField.Clear();
-	consoleField.SetWidthInChars( LINE_WIDTH );
+	consoleField.SetWidthInChars( SCREEN_WIDTH / SMALLCHAR_WIDTH - 1 );
 
 	cmdSystem->AddCommand( "clear", Con_Clear_f, CMD_FL_SYSTEM, "clears the console" );
 	cmdSystem->AddCommand( "conDump", Con_Dump_f, CMD_FL_SYSTEM, "dumps the console text to a file" );
@@ -445,7 +445,6 @@ Save the console contents out to a file
 */
 void idConsoleLocal::Dump( const char *fileName, bool unwrap, bool modsavepath ) {
 	int		l, x, i;
-	std::wstring line;
 	idFile	*f;
 	char	buffer[640 + 3];
 
@@ -460,19 +459,19 @@ void idConsoleLocal::Dump( const char *fileName, bool unwrap, bool modsavepath )
 	}
 
 	// write the remaining lines
-	for ( l = 0 ; l <= text.Num(); l++ ) {
-		line = text[l];
-		for( i = 0; i < LINE_WIDTH; i++ ) {
+	for ( l = 0 ; l < text.Num(); l++ ) {
+		idConsoleLine &line = text[l];
+		for( i = 0; i < line.Num(); i++ ) {
 			buffer[i] = line[i] & 0xff;
 		}
-		for ( x = LINE_WIDTH-1; x >= 0; x-- ) {
+		for ( x = line.Num()-1; x >= 0; x-- ) {
 			if ( buffer[x] <= ' ' ) {
 				buffer[x] = 0;
 			} else {
 				break;
 			}
 		}
-		if ( unwrap && x == LINE_WIDTH - 1 ) {
+		if ( unwrap && x == line.Num() - 1 ) {
 			// # 3947: We don't add a line break for a full line, but clip off any trailing line break left 
 			// over from previous line writes.
 			buffer[x+1] = 0;
@@ -524,8 +523,8 @@ idConsoleLocal::PageUp
 */
 void idConsoleLocal::PageUp( void ) {
 	display -= 2;
-	if ( current - display >= TOTAL_LINES ) {
-		display = current - TOTAL_LINES + 1;
+	if ( display < 0 ) {
+		display = 0;
 	}
 }
 
@@ -536,8 +535,8 @@ idConsoleLocal::PageDown
 */
 void idConsoleLocal::PageDown( void ) {
 	display += 2;
-	if ( display > current ) {
-		display = current;
+	if ( display > ( text.Num() - 1 ) ) {
+		display = ( text.Num() - 1 );
 	}
 }
 
@@ -556,7 +555,7 @@ idConsoleLocal::Bottom
 ================
 */
 void idConsoleLocal::Bottom( void ) {
-	display = current;
+	display = ( text.Num() - 1 );
 }
 
 
@@ -606,7 +605,7 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		historyLine = historyStrings.Num();
 
 		consoleField.Clear();
-		consoleField.SetWidthInChars( LINE_WIDTH );
+		consoleField.SetWidthInChars( SCREEN_WIDTH / SMALLCHAR_WIDTH - 1 );
 
 		session->UpdateScreen(); // force an update, because the command may take some time
 
@@ -838,16 +837,16 @@ Linefeed
 void idConsoleLocal::Linefeed() {
 
 	// mark time for transparent overlay
-	if ( current > 0 ) {
-		times[current % NUM_CON_TIMES] = com_frameTime;
+	if ( ( text.Num() - 1 ) > 0 ) {
+		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
 	}
 
-	if ( display == current ) {
+	if ( display == ( text.Num() - 1 ) ) {
 		display++;
 	}
 
 	x = 0;
-	std::wstring s( LINE_WIDTH, ' ' );
+	idConsoleLine s( SCREEN_WIDTH / SMALLCHAR_WIDTH - 1 );
 	text.Append( s );
 }
 
@@ -860,7 +859,7 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 void idConsoleLocal::Print( const char *txt ) {
-	int		c, l, y;
+	int		c, l;
 	int		color;
 
 #ifdef ID_ALLOW_TOOLS
@@ -871,7 +870,7 @@ void idConsoleLocal::Print( const char *txt ) {
 	}
 #endif
 
-	if ( current < 0 )
+	if ( ( text.Num() - 1 ) < 0 )
 		Linefeed();
 
 	color = idStr::ColorIndex( C_COLOR_DEFAULT );
@@ -883,22 +882,22 @@ void idConsoleLocal::Print( const char *txt ) {
 			continue;
 		}
 
-		y = current % TOTAL_LINES;
+		idConsoleLine* currentLine = &text[text.Num() - 1];
 
 		// if we are about to print a new word, check to see
 		// if we should wrap to the new line
 		if ( c > ' ' && !con_noWrap ) {
 			// count word length
-			for (l=0 ; l< LINE_WIDTH ; l++) {
+			for (l=0; l<currentLine->Num(); l++) {
 				if ( txt[l] <= ' ') {
 					break;
 				}
 			}
 
 			// word wrap
-			if (l != LINE_WIDTH && (x + l > LINE_WIDTH) ) {
+			if (l != currentLine->Num() && (x + l > currentLine->Num() ) ) {
 				Linefeed();
-				y = current % TOTAL_LINES;
+				currentLine = &text[text.Num() - 1];
 			}
 		}
 
@@ -910,9 +909,9 @@ void idConsoleLocal::Print( const char *txt ) {
 				break;
 			case '\t':
 				do {
-					text[y][x] = (color << 8) | ' ';
+					(*currentLine)[x] = (color << 8) | ' ';
 					x++;
-					if ( x >= LINE_WIDTH ) {
+					if ( x >= currentLine->Num() ) {
 						Linefeed();
 						x = 0;
 					}
@@ -922,17 +921,17 @@ void idConsoleLocal::Print( const char *txt ) {
 				x = 0;
 				break;
 			default:	// display character and advance
-				text[y][x] = (color << 8) | c;
+				(*currentLine)[x] = (color << 8) | c;
 				x++;
-				if ( x >= LINE_WIDTH ) {
+				if ( x >= currentLine->Num() ) {
 					if ( strcmp( txt, "\n" ) ) // don't insert an empty line when txt is exactly LINE_WIDTH long and ends with a LF
 						Linefeed();
 					x = 0;
 				}
 				break;
 		}
-		if ( con_noWrap && ( x == LINE_WIDTH - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) { // don't truncate if exactly LINE_WIDTH long
-			text[y][x] = ( C_COLOR_YELLOW << 8 ) | '>';
+		if ( con_noWrap && ( x == currentLine->Num() - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) { // don't truncate if exactly LINE_WIDTH long
+			(*currentLine)[x] = ( C_COLOR_YELLOW << 8 ) | '>';
 			Linefeed();
 			x = 0;
 			while ( *txt && *txt != '\n' ) // only truncate until the next explicit line break
@@ -946,8 +945,8 @@ void idConsoleLocal::Print( const char *txt ) {
 
 
 	// mark time for transparent overlay
-	if ( current >= 0 ) {
-		times[current % NUM_CON_TIMES] = com_frameTime;
+	if ( ( text.Num() - 1 ) >= 0 ) {
+		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
 	}
 }
 
@@ -996,9 +995,9 @@ void idConsoleLocal::DrawInput() {
 
 	SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 
-	renderSystem->DrawSmallChar( 1 * SMALLCHAR_WIDTH, y, '>', charSetMaterial() );
+	renderSystem->DrawSmallChar( 0.5 * SMALLCHAR_WIDTH, y, '>', charSetMaterial() );
 
-	consoleField.Draw(2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetMaterial() );
+	consoleField.Draw( 1.5 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetMaterial() );
 }
 
 /*
@@ -1009,7 +1008,7 @@ Draws the last few lines of output transparently over the game top
 ================
 */
 void idConsoleLocal::DrawNotify() {
-	std::wstring text_p;
+	idConsoleLine text_p;
 	int		time;
 	int		currentColor;
 
@@ -1021,7 +1020,7 @@ void idConsoleLocal::DrawNotify() {
 	SetColor( currentColor );
 
 	int v = 0;
-	for ( int i = current-NUM_CON_TIMES+1; i <= current; i++ ) {
+	for ( int i = (text.Num()-1)-NUM_CON_TIMES+1; i <= (text.Num()-1); i++ ) {
 		if ( i < 0 ) {
 			continue;
 		}
@@ -1035,7 +1034,7 @@ void idConsoleLocal::DrawNotify() {
 		}
 		text_p = text[i];
 		
-		for ( size_t x = 0; x < text_p.length(); x++ ) {
+		for ( int x = 0; x < text_p.Num(); x++ ) {
 			if ( ( text_p[x] & 0xff ) == ' ' ) {
 				continue;
 			}
@@ -1063,7 +1062,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	int				x;
 	float			y;
 	int				row, rows;
-	std::wstring	text_p;		
+	idConsoleLine	text_p;
 	int				lines;
 	int				currentColor;
 
@@ -1106,10 +1105,10 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	y = lines - (SMALLCHAR_HEIGHT*3);
 
 	// draw from the bottom up
-	if ( display != current ) {
+	if ( display != ( text.Num() - 1 ) ) {
 		// draw arrows to show the buffer is backscrolled
 		SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
-		for ( x = 0; x < LINE_WIDTH; x += 4 ) {
+		for ( x = 0; x < SCREEN_WIDTH / SMALLCHAR_WIDTH; x += 4 ) {
 			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), '^', charSetMaterial() );
 		}
 		y -= SMALLCHAR_HEIGHT;
@@ -1125,14 +1124,10 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 		if ( row < 0 ) {
 			break;
 		}
-		if ( current - row >= TOTAL_LINES ) {
-			// past scrollback wrap point
-			continue;	
-		}
 
 		text_p = text[row];
 
-		for ( x = 0; x < (int)text_p.length(); x++ ) {
+		for ( x = 0; x < text_p.Num(); x++ ) {
 			if ( ( text_p[x] & 0xff ) == ' ' ) {
 				continue;
 			}
@@ -1141,7 +1136,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 				currentColor = idStr::ColorIndex(text_p[x]>>8);
 				SetColor( currentColor );
 			}
-			renderSystem->DrawSmallChar( x*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x] & 0xff, charSetMaterial() );
+			renderSystem->DrawSmallChar( 0.5*SMALLCHAR_WIDTH + x*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x] & 0xff, charSetMaterial() );
 		}
 	}
 

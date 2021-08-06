@@ -66,7 +66,7 @@ typedef struct glconfig_s {
 
 extern idCVarInt con_fontSize;
 #define SMALLCHAR_WIDTH		con_fontSize
-#define SMALLCHAR_HEIGHT	2*con_fontSize
+#define SMALLCHAR_HEIGHT	(2*con_fontSize)
 #define BIGCHAR_WIDTH		16
 #define BIGCHAR_HEIGHT		16
 
