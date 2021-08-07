@@ -26,7 +26,7 @@ void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((forma
 #define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
 
 idCVarBool con_legacyFont( "con_legacyFont", "0", CVAR_SYSTEM | CVAR_ARCHIVE, "0 - new 2.08 font, 1 - old D3 font" ); // grayman - add archive
-idCVarInt con_fontSize( "con_fontSize", "8", CVAR_SYSTEM | CVAR_ARCHIVE, "font width in screen units (640x480)" );
+idCVar con_fontSize( "con_fontSize", "8", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "font width in screen units (640x480)", 3.0f, 30.0f );
 idCVar con_fontColor( "con_fontColor", "5", CVAR_SYSTEM | CVAR_ARCHIVE, "console color, 5 = cyan, 7 = white, 'r g b' = custom" );
 
 struct idConsoleLine : idList<uint16> {
