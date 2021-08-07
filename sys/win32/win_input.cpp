@@ -514,11 +514,6 @@ void Sys_StdKeyboardInput( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 	switch ( uMsg ) {
 	case WM_KEYDOWN:
 		key = MapKey( lParam );
-		if ( key == K_CTRL || key == K_ALT || key == K_RIGHT_ALT ) {
-			// let direct-input handle this because windows sends Alt-Gr
-			// as two events (ctrl then alt)
-			break;
-		}
 		Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, true, 0, NULL );
 		keyboardInputEvents.Append( { key, 1 } );
 		break;
