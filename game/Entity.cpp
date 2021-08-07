@@ -1209,30 +1209,29 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	m_DistCheckTimeStamp = 0;
 
+	bool lod_disabled = dict->GetBool( "no_lod" ); // SteveL #3796: allow mappers to disable LOD explicitly on an entity
+
+	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
+	if ( lod_disabled) // no LOD wanted
+		return 0;
+
+	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
+	if( fHideDistance < 0.1f ) { // 2.10: for mapper convenience do not require explicit dist_check_period
+		if ( !dict->MatchPrefix( "lod_" ) ) {
+			m_DistCheckTimeStamp = NOLOD;
+			return 0;
+		}
+
 	// by default these are always used
 	m_MinLODBias = dict->GetFloat( "min_lod_bias", "0" );
 	m_MaxLODBias = dict->GetFloat( "max_lod_bias", "10" );
 
-	m_HiddenSkin = dict->GetString( "lod_hidden_skin", "");
+	m_HiddenSkin = dict->GetString( "lod_hidden_skin", "" );
 	m_VisibleSkin = "";
 
 	if (m_MinLODBias > m_MaxLODBias)
 	{
 		m_MinLODBias = m_MaxLODBias - 0.1f;
-	}
-
-	int d = int(1000.0f * dict->GetFloat( "dist_check_period", "0" ));
-
-	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
-
-	bool lod_disabled = dict->GetBool( "no_lod" ); // SteveL #3796: allow mappers to disable LOD explicitly on an entity
-
-	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
-	if ( lod_disabled || ( d == 0 && fHideDistance < 0.1f ) )
-	{
-		// no LOD wanted
-		m_DistCheckTimeStamp = NOLOD;
-		return 0;
 	}
 
 	// Disable LOD if the LOD settings came with the entity def but the mapper has overridden the model 
@@ -1264,7 +1263,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	m_LOD = new lod_data_t;
 
 	// if interval not set, use twice per second
-	m_LOD->DistCheckInterval = ((d == 0) ? 500 : d);
+	m_LOD->DistCheckInterval = int( 1000.0f * dict->GetFloat( "dist_check_period", "0.5" ) );
 
 	// SteveL #3744
 	// If there are no LOD skin spawnargs set at all, then prevent LOD changing skins with a special
@@ -1329,6 +1328,8 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 			// for i == LOD_LEVELS - 1, we use "hide_distance"
 			sprintf(temp, "lod_%i_distance", i);
 			m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
+			if ( m_LOD->DistLODSq[i] > 0 && fHideDistance == 0 )
+				fHideDistance = -1;
 		}
 
 		// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
