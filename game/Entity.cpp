@@ -1216,7 +1216,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		return 0;
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
-	if( fHideDistance < 0.1f ) { // 2.10: for mapper convenience do not require explicit dist_check_period
+	if( fHideDistance < 0.1f ) // 2.10: for mapper convenience do not require explicit dist_check_period
 		if ( !dict->MatchPrefix( "lod_" ) ) {
 			m_DistCheckTimeStamp = NOLOD;
 			return 0;
