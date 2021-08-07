@@ -541,7 +541,7 @@ void Sys_StdMouseInput( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 		int centerY = glConfig.vidHeight / 2;
 		int xPos = GET_X_LPARAM( lParam ) - centerX;
 		int yPos = GET_Y_LPARAM( lParam ) - centerY;
-		Sys_QueEvent( win32.sysMsgTime, SE_MOUSE, xPos, yPos );
+		Sys_QueEvent( win32.sysMsgTime, SE_MOUSE, xPos, yPos, 0, NULL );
 		if ( xPos || yPos ) {
 			POINT p = { centerX, centerY };
 			if ( ClientToScreen( win32.hWnd, &p ) )
@@ -555,17 +555,17 @@ void Sys_StdMouseInput( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 	}
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
-		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE1, WM_LBUTTONUP - uMsg );
+		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE1, WM_LBUTTONUP - uMsg, 0, NULL );
 		mouseInputEvents.Append( { M_ACTION1, WM_LBUTTONUP - (int)uMsg } );
 		break;
 	case WM_RBUTTONDOWN:
 	case WM_RBUTTONUP:
-		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE2, WM_RBUTTONUP - uMsg );
+		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE2, WM_RBUTTONUP - uMsg, 0, NULL );
 		mouseInputEvents.Append( { M_ACTION2, WM_RBUTTONUP - (int) uMsg } );
 		break;
 	case WM_MBUTTONDOWN:
 	case WM_MBUTTONUP:
-		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE3, WM_MBUTTONUP - uMsg );
+		Sys_QueEvent( win32.sysMsgTime, SE_KEY, K_MOUSE3, WM_MBUTTONUP - uMsg, 0, NULL );
 		mouseInputEvents.Append( { M_ACTION3, WM_MBUTTONUP - (int) uMsg } );
 		break;
 	}
