@@ -1217,7 +1217,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		return 0;
 	}
 
-	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
+	float fHideDistance = dict->GetFloat( "hide_distance", "-1" );
 	if( fHideDistance < 0.1f ) // 2.10: for mapper convenience do not require explicit dist_check_period
 		if ( !dict->MatchPrefix( "lod_" ) ) {
 			m_DistCheckTimeStamp = NOLOD;
@@ -1330,8 +1330,6 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 			// for i == LOD_LEVELS - 1, we use "hide_distance"
 			sprintf(temp, "lod_%i_distance", i);
 			m_LOD->DistLODSq[i] = dict->GetFloat( temp, "0.0" );
-			if ( m_LOD->DistLODSq[i] > 0 && fHideDistance == 0 )
-				fHideDistance = -1;
 		}
 
 		// Tels: Fix #2635: if the LOD distance here is < fHideDistance, use hide distance-1 so the
