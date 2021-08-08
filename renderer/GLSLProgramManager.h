@@ -68,16 +68,8 @@ public:
 	GLuint uboHandle;
 
 private:
-	struct programWithGenerator_t {
-		GLSLProgram *program;
-		Generator generator;
-	};
-	idList<programWithGenerator_t> programs;
+	idList<GLSLProgram*> programs;
 	int legacyTangentsCvarCallback;
-
-	programWithGenerator_t *FindEntry( const char *name );
-
-	void Reload( programWithGenerator_t *entry );
 };
 
 extern GLSLProgramManager *programManager;

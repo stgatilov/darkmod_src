@@ -16,12 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "containers/List.h"
 
-struct idLess {
-	template<class A, class B> ID_FORCE_INLINE bool operator() (const A &a, const B &b) const {
-		return a < b;
-	}
-};
-
 /**
  * Binary heap: allows to quickly find minimum element in managed set.
  */

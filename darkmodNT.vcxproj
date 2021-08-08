@@ -45,7 +45,7 @@
     <SccProvider>
     </SccProvider>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'" Label="Configuration">
@@ -527,7 +527,6 @@
     <ClInclude Include="game\Http\HttpRequest.h" />
     <ClInclude Include="game\Http\MessageTcp.h" />
     <ClInclude Include="game\IK.h" />
-    <ClInclude Include="game\ImageMapManager.h" />
     <ClInclude Include="game\IniFile.h" />
     <ClInclude Include="game\Intersection.h" />
     <ClInclude Include="game\Inventory\Category.h" />
@@ -666,7 +665,6 @@
     <ClInclude Include="idlib\hashing\sha256.h" />
     <ClInclude Include="idlib\Heap.h" />
     <ClInclude Include="idlib\Heap_Embedded.h" />
-    <ClInclude Include="idlib\Image.h" />
     <ClInclude Include="idlib\LangDict.h" />
     <ClInclude Include="idlib\Lexer.h" />
     <ClInclude Include="idlib\Lib.h" />
@@ -1010,7 +1008,6 @@
     <ClCompile Include="game\Http\HttpRequest.cpp" />
     <ClCompile Include="game\Http\MessageTcp.cpp" />
     <ClCompile Include="game\IK.cpp" />
-    <ClCompile Include="game\ImageMapManager.cpp" />
     <ClCompile Include="game\IniFile.cpp" />
     <ClCompile Include="game\Intersection.cpp" />
     <ClCompile Include="game\Inventory\Category.cpp" />
@@ -1142,7 +1139,6 @@
     </ClCompile>
     <ClCompile Include="idlib\Heap.cpp" />
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
-    <ClCompile Include="idlib\Image.cpp" />
     <ClCompile Include="idlib\LangDict.cpp" />
     <ClCompile Include="idlib\Lexer.cpp" />
     <ClCompile Include="idlib\Lib.cpp" />

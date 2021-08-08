@@ -789,13 +789,11 @@ void IN_Frame( void ) {
 
 
 void	Sys_GrabMouseCursor( bool grabIt ) {
-#ifndef	ID_DEDICATED
 	win32.mouseReleased = !grabIt;
 	if ( !grabIt ) {
 		// release it right now
 		IN_Frame();
 	}
-#endif
 }
 
 void Sys_AdjustMouseMovement(float &dx, float &dy) {

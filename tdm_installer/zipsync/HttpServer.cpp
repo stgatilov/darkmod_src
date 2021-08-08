@@ -21,6 +21,7 @@ HttpServer::HttpServer() {
     SetBlockSize();
     SetPortNumber();
     SetPauseModel();
+    SetDropMultipart();
 }
 
 void HttpServer::SetRootDir(const std::string &root) {
@@ -40,6 +41,10 @@ void HttpServer::SetBlockSize(int blockSize) {
 
 void HttpServer::SetPauseModel(const PauseModel &model) {
     _pauseModel = model;
+}
+
+void HttpServer::SetDropMultipart(bool drop) {
+    _dropMultipart = drop;
 }
 
 void HttpServer::CloseSuspendedSocket() {
@@ -356,7 +361,7 @@ int HttpServer::AcceptCallback(
         sprintf(buff, "bytes %llu-%llu/%llu", uint64(ranges[0].first), uint64(ranges[0].second), uint64(fsize));
         MHD_add_response_header(response, "Content-Range", buff);
     }
-    else {
+    else if (!_dropMultipart) {
         std::unique_ptr<MultipartDownload> down(new MultipartDownload(std::move(file), fsize, ranges, &_pauseModel));
         uint64_t totalContentSize = down->GetTotalSize();
         char buff[64];

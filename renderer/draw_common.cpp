@@ -993,18 +993,24 @@ static void RB_FogPass( bool translucent ) {
 	if ( translucent ) {
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
 		GL_Cull( CT_TWO_SIDED );
-		RB_RenderDrawSurfChainWithFunction( backEnd.vLight->translucentInteractions, RB_T_BasicFog );
+		if ( !( r_skipFogLights & 2 ) ) {
+			RB_RenderDrawSurfChainWithFunction( backEnd.vLight->translucentInteractions, RB_T_BasicFog );
+		}
 	} else {
 		// draw it
-		RB_RenderDrawSurfChainWithFunction( backEnd.vLight->globalInteractions, RB_T_BasicFog );
-		RB_RenderDrawSurfChainWithFunction( backEnd.vLight->localInteractions, RB_T_BasicFog );
+		if ( !( r_skipFogLights & 1 ) ) {
+			RB_RenderDrawSurfChainWithFunction( backEnd.vLight->globalInteractions, RB_T_BasicFog );
+			RB_RenderDrawSurfChainWithFunction( backEnd.vLight->localInteractions, RB_T_BasicFog );
+		}
 
 		if ( !backEnd.vLight->noFogBoundary ) { // Let mappers suppress fogging the bounding box -- SteveL #3664
 			// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
 			// of depthfunc_equal
 			GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
 			GL_Cull( CT_BACK_SIDED );
-			RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
+			if ( !( r_skipFogLights & 4 ) ) {
+				RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
+			}
 		}
 	}
 
@@ -1020,8 +1026,7 @@ RB_STD_FogAllLights
 ==================
 */
 void RB_STD_FogAllLights( bool translucent ) {
-	if ( r_skipFogLights & 1 && !translucent || r_skipFogLights & 2 && translucent ||
-		r_showOverDraw.GetInteger() != 0 ) {
+	if ( r_showOverDraw.GetInteger() != 0 ) {
 		return;
 	}
 	TRACE_GL_SCOPE( "STD_FogAllLights" );

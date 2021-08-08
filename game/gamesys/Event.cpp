@@ -118,9 +118,12 @@ void idEventDef::Construct()
 			break;
 
 		case D_EVENT_INTEGER :
+			argsize += sizeof(int);
+			break;
+
 		case D_EVENT_ENTITY :
 		case D_EVENT_ENTITY_NULL :
-			argsize += sizeof(int);
+			argsize += sizeof(idEntityPtr<idEntity>);
 			break;
 
 		case D_EVENT_VECTOR :
@@ -506,6 +509,20 @@ void idEvent::ClearEventList( void ) {
 	}
 }
 
+//stgatilov: some informative labels suitable for tracing
+//ideally, it should match natvis definitions...
+idStr GetTraceLabel(const idEvent &evt) {
+	assert( g_tracingEnabled );
+	if ( evt.eventdef == &EV_Thread_Execute ) {
+		return idStr("thread: ") + static_cast<idThread*>(evt.object)->GetThreadName();
+	} else {
+		idStr res = evt.typeinfo->classname + idStr("::") + evt.eventdef->GetName();
+		if ( evt.object->IsType( idEntity::Type ) )
+			res += idStr(": ") + static_cast<idEntity*>(evt.object)->GetName();
+		return res;
+	}
+}
+
 /*
 ================
 idEvent::ServiceEvents
@@ -524,6 +541,8 @@ void idEvent::ServiceEvents( void ) {
 	byte		*data;
 	const char  *materialName;
 
+	TRACE_CPU_SCOPE( "idEvent::ServiceEvents" )
+
 	num = 0;
 	while( !EventQueue.IsListEmpty() ) {
 		event = EventQueue.Next();
@@ -532,6 +551,8 @@ void idEvent::ServiceEvents( void ) {
 		if ( event->time > gameLocal.time ) {
 			break;
 		}
+
+		TRACE_CPU_SCOPE_STR ("Service:Event", GetTraceLabel(*event) )
 
 		// copy the data into the local args array and set up pointers
 		ev = event->eventdef;
@@ -706,7 +727,7 @@ void idEvent::Save( idSaveGame *savefile ) {
 				case D_EVENT_ENTITY :
 				case D_EVENT_ENTITY_NULL :
 					reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Save(savefile);
-					size += sizeof( int );
+					size += sizeof( idEntityPtr<idEntity> );
 					break;
 				case D_EVENT_VECTOR :
 					savefile->WriteVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
@@ -807,7 +828,7 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 					case D_EVENT_ENTITY :
 					case D_EVENT_ENTITY_NULL :
 						reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Restore(savefile);
-						size += sizeof( int );
+						size += sizeof( idEntityPtr<idEntity> );
 						break;
 					case D_EVENT_VECTOR :
 						savefile->ReadVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
@@ -916,20 +937,20 @@ void Cmd_EventList_f(const idCmdArgs &args) {
 	if (limit >= num/2)
 		limit = -1;
 
-	std::set<int> printIds;
+	idHashMap<int, int> printIds;
 	if (limit > 0) {
 		idRandom rnd = gameLocal.random;
 		//print last events (half of limit)
 		for (int i = 0; i < limit/2; i++)
-			printIds.insert(num - 1 - i);
+			printIds.Set(num - 1 - i, 0);
 		//print random events (another half)
-		while (printIds.size() < limit)
-			printIds.insert(rnd.RandomInt(num));
+		while (printIds.Num() < limit)
+			printIds.Set(rnd.RandomInt(num), 0);
 	}
 
 	int idx = 0;
 	for (idLinkList<idEvent> *node = EventQueue.NextNode(); node; node = node->NextNode()) {
-		if (limit < 0 || printIds.count(idx))
+		if (limit < 0 || printIds.Find(idx))
 			node->Owner()->Print();
 		idx++;
 	}

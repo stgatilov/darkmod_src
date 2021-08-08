@@ -26,13 +26,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <io.h>
 #include <conio.h>
 
-#ifndef	ID_DEDICATED
 #include <comdef.h>
 #include <comutil.h>
 #include <Wbemidl.h>
 
 #pragma comment (lib, "wbemuuid.lib")
-#endif
 
 /*
 ================
@@ -121,22 +119,3 @@ Sys_UnlockMemory
 bool Sys_UnlockMemory( void *ptr, int bytes ) {
 	return ( VirtualUnlock( ptr, (SIZE_T)bytes ) != FALSE );
 }
-
-/*
-================
-Sys_GetCurrentUser
-================
-*/
-char *Sys_GetCurrentUser( void ) {
-	static char s_userName[1024];
-	unsigned long size = sizeof( s_userName );
-
-	if ( !GetUserName( s_userName, &size ) ) {
-		strcpy( s_userName, "player" );
-	}
-
-	if ( !s_userName[0] ) {
-		strcpy( s_userName, "player" );
-	}
-	return s_userName;
-}	

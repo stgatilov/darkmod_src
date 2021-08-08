@@ -660,6 +660,7 @@ FixEntityTjunctions
 */
 void	FixEntityTjunctions( uEntity_t *e ) {
 	int		i;
+	TRACE_CPU_SCOPE_TEXT("FixEntityTjunctions", e->nameEntity)
 
 	for ( i = 0 ; i < e->numAreas ; i++ ) {
 		FixAreaGroupsTjunctions( e->areas[i].groups );
@@ -686,6 +687,7 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 	optimizeGroup_t	*group;
 	int			areaNum;
 
+	TRACE_CPU_SCOPE_TEXT("FixGlobalTjunctions", e->nameEntity)
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- FixGlobalTjunctions -----\n" );
 
 	// clear the hash tables
@@ -694,33 +696,38 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 	numHashVerts = 0;
 	numTotalVerts = 0;
 
-	// bound all the triangles to determine the bucket size
-	hashBounds.Clear();
-	for ( areaNum = 0 ; areaNum < e->numAreas ; areaNum++ ) {
-		for ( group = e->areas[areaNum].groups ; group ; group = group->nextGroup ) {
-			for ( a = group->triList ; a ; a = a->next ) {
-				hashBounds.AddPoint( a->v[0].xyz );
-				hashBounds.AddPoint( a->v[1].xyz );
-				hashBounds.AddPoint( a->v[2].xyz );
+	{
+		TRACE_CPU_SCOPE( "GTJunc:Bound" )
+
+		// bound all the triangles to determine the bucket size
+		hashBounds.Clear();
+		for ( areaNum = 0 ; areaNum < e->numAreas ; areaNum++ ) {
+			for ( group = e->areas[areaNum].groups ; group ; group = group->nextGroup ) {
+				for ( a = group->triList ; a ; a = a->next ) {
+					hashBounds.AddPoint( a->v[0].xyz );
+					hashBounds.AddPoint( a->v[1].xyz );
+					hashBounds.AddPoint( a->v[2].xyz );
+				}
 			}
 		}
-	}
 
-	// spread the bounds so it will never have a zero size
-	for ( i = 0 ; i < 3 ; i++ ) {
-		hashBounds[0][i] = floor( hashBounds[0][i] - 1 );
-		hashBounds[1][i] = ceil( hashBounds[1][i] + 1 );
-		hashIntMins[i] = hashBounds[0][i] * SNAP_FRACTIONS;
+		// spread the bounds so it will never have a zero size
+		for ( i = 0 ; i < 3 ; i++ ) {
+			hashBounds[0][i] = floor( hashBounds[0][i] - 1 );
+			hashBounds[1][i] = ceil( hashBounds[1][i] + 1 );
+			hashIntMins[i] = hashBounds[0][i] * SNAP_FRACTIONS;
 
-		hashScale[i] = ( hashBounds[1][i] - hashBounds[0][i] ) / HASH_BINS;
-		hashIntScale[i] = hashScale[i] * SNAP_FRACTIONS;
-		if ( hashIntScale[i] < 1 ) {
-			hashIntScale[i] = 1;
+			hashScale[i] = ( hashBounds[1][i] - hashBounds[0][i] ) / HASH_BINS;
+			hashIntScale[i] = hashScale[i] * SNAP_FRACTIONS;
+			if ( hashIntScale[i] < 1 ) {
+				hashIntScale[i] = 1;
+			}
 		}
 	}
 
 	// add all the points to the hash buckets
 	for ( areaNum = 0 ; areaNum < e->numAreas ; areaNum++ ) {
+		TRACE_CPU_SCOPE_FORMAT( "GTJunc:Hash", "area%d", areaNum )
 		for ( group = e->areas[areaNum].groups ; group ; group = group->nextGroup ) {
 			// don't touch discrete surfaces
 			if ( group->material != NULL && group->material->IsDiscrete() ) {
@@ -738,6 +745,7 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 	// add all the func_static model vertexes to the hash buckets
 	// optionally inline some of the func_static models
 	if ( dmapGlobals.entityNum == 0 && !dmap_dontSplitWithFuncStaticVertices.GetBool() && dmap_fixVertexSnappingTjunc.GetInteger() < 2 ) {
+		TRACE_CPU_SCOPE( "GTJunc:AddEntities" )
 
 		for ( int eNum = 1 ; eNum < dmapGlobals.num_entities ; eNum++ ) {
 			uEntity_t *entity = &dmapGlobals.uEntities[eNum];
@@ -752,22 +760,14 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 			if ( !strstr( modelName, ".lwo" ) && !strstr( modelName, ".ase" ) && !strstr( modelName, ".ma" ) ) {
 				continue;
 			}
+			TRACE_CPU_SCOPE_TEXT( "GTJunc:AddEntity", entity->nameEntity );
 
 			idRenderModel	*model = renderModelManager->FindModel( modelName );
 
 //			common->Printf( "adding T junction verts for %s.\n", entity->mapEntity->epairs.GetString( "name" ) );
 
 			idMat3	axis;
-			// get the rotation matrix in either full form, or single angle form
-			if ( !entity->mapEntity->epairs.GetMatrix( "rotation", "1 0 0 0 1 0 0 0 1", axis ) ) {
-				float angle = entity->mapEntity->epairs.GetFloat( "angle" );
-				if ( angle != 0.0f ) {
-					axis = idAngles( 0.0f, angle, 0.0f ).ToMat3();
-				} else {
-					axis.Identity();
-				}
-			}		
-
+			gameEdit->ParseSpawnArgsToAxis( &entity->mapEntity->epairs, axis );
 			idVec3	origin = entity->mapEntity->epairs.GetVector( "origin" );
 
 			for ( i = 0 ; i < model->NumSurfaces() ; i++ ) {
@@ -790,11 +790,14 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 		}
 	}
 
-	HashVertsFinalize();
-
+	{
+		TRACE_CPU_SCOPE( "GTJunc:Finalize" )
+		HashVertsFinalize();
+	}
 
 	// now fix each area
 	for ( areaNum = 0 ; areaNum < e->numAreas ; areaNum++ ) {
+		TRACE_CPU_SCOPE_FORMAT( "GTJunc:Split", "area%d", areaNum )
 		for ( group = e->areas[areaNum].groups ; group ; group = group->nextGroup ) {
 			// don't touch discrete surfaces
 			if ( group->material != NULL && group->material->IsDiscrete() ) {
@@ -812,6 +815,9 @@ void	FixGlobalTjunctions( uEntity_t *e ) {
 	}
 
 
-	// done
-	FreeTJunctionHash();
+	{
+		TRACE_CPU_SCOPE( "GTJunc:Free" )
+		// done
+		FreeTJunctionHash();
+	}
 }

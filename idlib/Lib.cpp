@@ -16,8 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "IL/il.h"
-
 /*
 ===============================================================================
 
@@ -64,9 +62,6 @@ void idLib::Init( void ) {
 
 	// initialize the dictionary string pools
 	idDict::Init();
-
-	// greebo: Initialize the image library, so we can use it later on.
-	ExtLibs::ilInit();
 }
 
 /*
@@ -76,9 +71,6 @@ idLib::ShutDown
 */
 void idLib::ShutDown( void )
 {
-	// greebo: shutdown the IL library
-	ilShutDown();
-
 	// shut down the dictionary string pools
 	idDict::Shutdown();
 

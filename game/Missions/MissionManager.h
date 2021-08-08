@@ -272,6 +272,8 @@ public:
 
 	void ClearNewModList();
 
+	void AddToNewModList(const idStrList& newModsList);
+
 	// Reload darkmod.txt for newly downloaded/found PK4s, to update any outdated mission db entries
 	void RefreshMetaDataForNewFoundMods();
 
@@ -332,6 +334,10 @@ public:
 	// Moves the given file, from <fromPath> to <toPath>
 	static bool DoMoveFile(const fs::path& fromPath, const fs::path& toPath);
 
+	// Sub-routine of SearchForNewMods() investigating the FM folder
+	// It moves incoming pk4/zip files into FM subdirectories
+	static idStrList SearchForNewMods(const idStr& fmsDir);
+
 private:
 	// Finds out which map is the starting map (must be called after InitCurrentMod)
 	void InitStartingMap();
@@ -339,11 +345,9 @@ private:
 	// Attempts to read the map sequence file for the current mod
 	void InitMapSequence();
 
-	void SearchForNewMods();
-
 	// Sub-routine of SearchForNewMods() investigating the FM folder
 	// using the given extension (including dot ".pk4", ".zip")
-	MoveList SearchForNewMods(const idStr& extension);
+	static idStrList SearchForNewMods(const idStr& fmsDir, const idStr& extension, MoveList* appendMoveList);
 
 	// Returns the path to the "darkmod" base
 	fs::path GetDarkmodPath();

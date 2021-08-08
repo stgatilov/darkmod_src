@@ -22,11 +22,15 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "DeviceContext.h"
 #include "Window.h"
 #include "UserInterfaceLocal.h"
+#include "../sound/snd_local.h"
 
 extern idCVar r_skipGuiShaders;		// 1 = don't render any gui elements on surfaces
 
 idUserInterfaceManagerLocal	uiManagerLocal;
 idUserInterfaceManager *	uiManager = &uiManagerLocal;
+
+//maximum number of slots for subtitles (stgatilov #2454)
+static const int SUBTITLE_SLOTS = 4;
 
 /*
 ===============================================================================
@@ -141,7 +145,7 @@ void idUserInterfaceManagerLocal::ListGuis() const {
 		common->Printf( "%6.1fk %4i (%s) %s ( %i transitions )\n", sz / 1024.0f, guis[i]->GetRefs(), isUnique ? "unique" : "copy", guis[i]->GetSourceFile(), guis[i]->desktop->NumTransitions() );
 		total += sz;
 	}
-	common->Printf( "===========\n  %i total Guis ( %i copies, %i unique ), %.2f total Mbytes", c, copies, unique, total / ( 1024.0f * 1024.0f ) );
+	common->Printf( "===========\n  %i total Guis ( %i copies, %i unique ), %.2f total Mbytes\n", c, copies, unique, total / ( 1024.0f * 1024.0f ) );
 }
 
 bool idUserInterfaceManagerLocal::CheckGui( const char *qpath ) const {
@@ -686,6 +690,11 @@ void idUserInterfaceLocal::SetCursor( float x, float y ) {
 }
 
 
+/*
+==============
+idUserInterfaceLocal::RunGuiScript
+==============
+*/
 const char *idUserInterfaceLocal::RunGuiScript(const char *windowName, int scriptNum) {
 	idWindow *rootWin = GetDesktop();
 	if (!rootWin)
@@ -699,6 +708,11 @@ const char *idUserInterfaceLocal::RunGuiScript(const char *windowName, int scrip
 	return dw->win->cmd.c_str();
 }
 
+/*
+==============
+idUserInterfaceLocal::ResetWindowTime
+==============
+*/
 bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime) {
 	idWindow *rootWin = GetDesktop();
 	if (!rootWin)
@@ -709,4 +723,81 @@ bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime
 	dw->win->ResetTime(startTime);
 	dw->win->EvalRegs(-1, true);
 	return true;
+}
+
+/*
+==============
+idUserInterfaceLocal::UpdateSubtitles
+==============
+*/
+void idUserInterfaceLocal::UpdateSubtitles() {
+	//make sure all slots for subtitles are allocated
+	while ( subtitleSlots.Num() < SUBTITLE_SLOTS ) {
+		SubtitleMatch empty = { 0 };
+		subtitleSlots.Append( empty );
+	}
+
+	idList<SubtitleMatch> matches;
+	//fetch active subtitles from sound world
+	if ( cv_tdm_subtitles.GetBool() ) {
+		if ( idSoundWorld *soundWorld = soundSystem->GetPlayingSoundWorld() ) {
+			soundWorld->GetSubtitles( matches );
+		}
+	}
+
+	bool slotUsed[SUBTITLE_SLOTS] = { false };
+	//assign active subtitles to slots
+	for ( int i = 0; i < matches.Num(); i++ ) {
+		int found = -1;
+
+		if ( found < 0 ) {
+			//if same subtitle was active last time, put it to same place
+			for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
+				if ( !slotUsed[j] && subtitleSlots[j].subtitle == matches[i].subtitle ) {
+					found = j;
+					break;
+				}
+		}
+		if ( found < 0 ) {
+			//if same channel was active last time, put its subtitle to same place
+			//TODO: what about rest between phrases of same subtitle?
+			for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
+				if ( !slotUsed[j] && subtitleSlots[j].channel == matches[i].channel ) {
+					found = j;
+					break;
+				}
+		}
+		if ( found < 0 ) {
+			//just take first unused channel
+			for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
+				if ( !slotUsed[j] ) {
+					found = j;
+					break;
+				}
+		}
+
+		if (found < 0) {
+			//overflow: all slots occupied
+			continue;
+		}
+
+		//assign subtitle to slot
+		slotUsed[found] = true;
+		subtitleSlots[found] = matches[i];
+	}
+
+	//clear unused slots
+	for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
+		if ( !slotUsed[j] )
+			subtitleSlots[j] = SubtitleMatch{0};
+
+	//update GUI variables
+	char subtitleVar[] = "subtitle0";
+	for ( int j = 0; j < SUBTITLE_SLOTS; j++, subtitleVar[8]++ ) {
+		const char *subtitleText = "";
+		if ( const Subtitle *sub = subtitleSlots[j].subtitle )
+			subtitleText = sub->text.c_str();
+		if ( idStr::Cmp( GetStateString( subtitleVar ), subtitleText ) )
+			SetStateString( subtitleVar, subtitleText );
+	}
 }

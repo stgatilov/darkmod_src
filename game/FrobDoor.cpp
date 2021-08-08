@@ -844,6 +844,9 @@ void CFrobDoor::UpdateSoundLoss()
 
 void CFrobDoor::FindDoubleDoor()
 {
+	if ( m_DoubleDoor.GetEntity() != NULL )
+		return;
+
 #if 1 // grayman 5109
 	/* grayman 5109 - Rather than rely on dmap's buggy clipmodel setup for sliding
 	   doors whose origins aren't near each other, look through all doors and see if
@@ -1016,7 +1019,7 @@ void CFrobDoor::UpdateHandlePosition()
 
 		if (handle == NULL) continue;
 
-		handle->SetFractionalPosition(fraction);
+		handle->SetFractionalPosition(fraction, false);
 	}
 }
 

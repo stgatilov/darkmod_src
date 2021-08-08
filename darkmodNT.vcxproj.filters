@@ -966,9 +966,6 @@
     <ClInclude Include="game\IK.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="game\ImageMapManager.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="game\IniFile.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -1288,9 +1285,6 @@
       <Filter>idLib</Filter>
     </ClInclude>
     <ClInclude Include="idlib\Heap_Embedded.h">
-      <Filter>idLib</Filter>
-    </ClInclude>
-    <ClInclude Include="idlib\Image.h">
       <Filter>idLib</Filter>
     </ClInclude>
     <ClInclude Include="idlib\LangDict.h">
@@ -2445,9 +2439,6 @@
     <ClCompile Include="game\IK.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="game\ImageMapManager.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="game\IniFile.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -2710,9 +2701,6 @@
       <Filter>idLib</Filter>
     </ClCompile>
     <ClCompile Include="idlib\Heap_Embedded.cpp">
-      <Filter>idLib</Filter>
-    </ClCompile>
-    <ClCompile Include="idlib\Image.cpp">
       <Filter>idLib</Filter>
     </ClCompile>
     <ClCompile Include="idlib\LangDict.cpp">

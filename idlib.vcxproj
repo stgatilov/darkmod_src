@@ -202,7 +202,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
-    <ClCompile Include="idlib\Image.cpp" />
     <ClCompile Include="idlib\math\Angles.cpp" />
     <ClCompile Include="idlib\math\Complex.cpp" />
     <ClCompile Include="idlib\math\Lcp.cpp" />
@@ -264,7 +263,6 @@
     <ClInclude Include="idlib\containers\BinHeap.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
-    <ClInclude Include="idlib\containers\DenseHash.h" />
     <ClInclude Include="idlib\containers\DisjointSets.h" />
     <ClInclude Include="idlib\containers\FlexList.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
@@ -296,7 +294,6 @@
     <ClInclude Include="idlib\hashing\MD5.h" />
     <ClInclude Include="idlib\hashing\sha256.h" />
     <ClInclude Include="idlib\Heap_Embedded.h" />
-    <ClInclude Include="idlib\Image.h" />
     <ClInclude Include="idlib\math\Angles.h" />
     <ClInclude Include="idlib\math\Complex.h" />
     <ClInclude Include="idlib\math\Curve.h" />

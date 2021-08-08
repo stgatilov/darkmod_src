@@ -123,8 +123,8 @@ void GpuBuffer::Bind() {
 }
 
 const void * GpuBuffer::BufferOffset( const void *pointer ) {
-	GLintptr mapOffset = static_cast< const byte* >( pointer ) - bufferContents;
-	assert(mapOffset >= 0 && mapOffset < totalSize);
+	ptrdiff_t mapOffset = static_cast< const byte* >( pointer ) - bufferContents;
+	assert( (size_t)mapOffset < (size_t)totalSize );
 	return reinterpret_cast< const void* >( mapOffset );
 }
 

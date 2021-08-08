@@ -28,6 +28,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../Http/HttpConnection.h"
 #include "../Http/HttpRequest.h"
 #include "StdString.h"
+#include "../renderer/Image.h"
 
 
 idStr MissionScreenshot::GetLocalFilename() const
@@ -366,24 +367,26 @@ void CMissionManager::ClearNewModList()
 	_newFoundMods.Clear();
 }
 
-void CMissionManager::SearchForNewMods()
+void CMissionManager::AddToNewModList(const idStrList& newModsList)
 {
+	_newFoundMods.Append(newModsList);
+}
+
+idStrList CMissionManager::SearchForNewMods(const idStr& fmsDir)
+{
+	MoveList fileMoveList;
+	idStrList newModsList;
+
 	// List all PK4s in the fms/ directory
-	MoveList moveList = SearchForNewMods(".pk4");
-	MoveList zipMoveList = SearchForNewMods(".zip");
+	newModsList.Append(SearchForNewMods(fmsDir, ".pk4", &fileMoveList));
+	newModsList.Append(SearchForNewMods(fmsDir, ".zip", &fileMoveList));
 
-	// Merge the zips into the pk4 list
-	if (!zipMoveList.empty())
-	{
-		moveList.merge(zipMoveList);
-	}
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %d new mission packages.\r", static_cast<int>(moveList.size()));
-	gameLocal.Printf("Found %d new mission packages.\n", static_cast<int>(moveList.size()));
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %d new missions and %d packages.\r", newModsList.Num(), int(fileMoveList.size()));
+	gameLocal.Printf("Found %d new missions and %d packages.\n", newModsList.Num(), int(fileMoveList.size()));
 
 	// greebo: The D3 engine should no longer hold locks on those files
 	// and we can start moving them into their respective locations
-	for (MoveList::const_iterator i = moveList.begin(); i != moveList.end(); ++i)
+	for (MoveList::const_iterator i = fileMoveList.begin(); i != fileMoveList.end(); ++i)
 	{
 		fs::path targetPath = i->second;
 
@@ -401,37 +404,34 @@ void CMissionManager::SearchForNewMods()
 		DoRemoveFile(targetPath / cv_tdm_fm_splashimage_file.GetString());
 		DoRemoveFile(targetPath / cv_tdm_fm_notes_file.GetString());
 	}
+
+	return newModsList;
 }
 
-CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extension)
+idStrList CMissionManager::SearchForNewMods(const idStr& fmsDir, const idStr& extension, MoveList* appendMoveList)
 {
-	MoveList moveList;
-
-	fs::path darkmodPath = GetDarkmodPath();
-
-	fs::path fmPath;
-    fmPath = darkmodPath / cv_tdm_fm_path.GetString();
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmPath.string().c_str());
+	fs::path fmsPath = fmsDir.c_str();
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmsPath.string().c_str());
 
 	// greebo: Use std::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
 	// Iterate over all found PK4s and check if they're valid
-    if (!fs::is_directory(fmPath)) 
+    if (!fs::is_directory(fmsPath)) 
     {
-        DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("FM root folder does not exist: %s\r", fmPath.string().c_str());
-        if (fs::create_directory(fmPath)) 
+        DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("FM root folder does not exist: %s\r", fmsPath.string().c_str());
+        if (fs::create_directory(fmsPath)) 
         {
             gameLocal.Warning("FM root folder does not exist, but one was created.\rYou can download missions using the in-game mission downloader.\r");
         } 
         else 
         {
-            gameLocal.Error("FM root folder does not exist: %s. Unable to create it automatically.\rRun tdm_update in order to restore it.\r", fmPath.string().c_str());
-            return moveList;
+            gameLocal.Error("FM root folder does not exist: %s. Unable to create it automatically", fmsPath.string().c_str());
+			return {};
         }
     }
 
-	auto fmPathFiles = fs::directory_enumerate(fmPath);
-	for (const auto &path : fmPathFiles)
+	idStrList newModsList;
+	std::vector<fs::path> fmPathFiles = fs::directory_enumerate(fmsPath);
+	for (const fs::path &path : fmPathFiles)
 	{
 		if (fs::is_directory(path)) continue;
 
@@ -494,11 +494,11 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		// Remember this for the user to display
 		if (!isL10nPack)
 		{
-			_newFoundMods.Append(modName);
+			newModsList.Append(modName);
 		}
 
 		// Assemble the mod folder, e.g. c:/games/doom3/darkmod/fms/outpost
-		fs::path modFolder = darkmodPath / cv_tdm_fm_path.GetString() / modName.c_str();
+		fs::path modFolder = fmsPath / modName.c_str();
 
 		// Create the fm folder, if necessary
 		if (!fs::exists(modFolder))
@@ -526,11 +526,14 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 			targetPath /= (modName + ".pk4").c_str();
 		}
 
-		// Remember to move this file as soon as we're done here
-		moveList.push_back(MoveList::value_type(pk4path, targetPath));
+		if (appendMoveList)
+		{
+			// Remember to move this file as soon as we're done here
+			appendMoveList->push_back(MoveList::value_type(pk4path, targetPath));
+		}
 	}
 
-	return moveList;
+	return newModsList;
 }
 
 fs::path CMissionManager::GetDarkmodPath()
@@ -540,8 +543,12 @@ fs::path CMissionManager::GetDarkmodPath()
 
 void CMissionManager::ReloadModList()
 {
+	fs::path darkmodPath = GetDarkmodPath();
+	fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString();
+
 	// Search for new mods (PK4s to be moved, etc.)
-	SearchForNewMods();
+	idStrList newMods = SearchForNewMods(fmPath.string().c_str());
+	_newFoundMods.Append(newMods);
 
 	// Build the mission list again
 	GenerateModList();
@@ -1292,14 +1299,19 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 	assert(screenshotNum >= 0 && screenshotNum < mission.screenshots.Num());
 
 	idStr url = va(cv_tdm_mission_screenshot_url.GetString(), mission.screenshots[screenshotNum]->serverRelativeUrl.c_str());
+	idStr ext;
+	url.ExtractFileExtension(ext);
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Downloading screenshot from %s\r", url.c_str());
 
-	fs::path tempFilename = g_Global.GetDarkmodPath();
-	tempFilename /= cv_tdm_fm_path.GetString();
-	tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
+	idStr tempFilename = TMP_MISSION_SCREENSHOT_FILENAME;
+	tempFilename += ".";
+	tempFilename += ext;
+	fs::path tempFilepath = g_Global.GetDarkmodPath();
+	tempFilepath /= cv_tdm_fm_path.GetString();
+	tempFilepath /= tempFilename.c_str();
 
-	CDownloadPtr download(new CDownload({url}, tempFilename.string().c_str()));
+	CDownloadPtr download(new CDownload({url}, tempFilepath.string().c_str()));
 
 	// Store the mission and screenshot number in the download class
 	download->GetUserData().id = missionIndex;
@@ -1322,15 +1334,12 @@ CMissionManager::RequestStatus CMissionManager::ProcessMissionScreenshotRequest(
 	// Clean up the result if the request is complete
 	if (status == FAILED || status == SUCCESSFUL || status == MALFORMED)
 	{
-		fs::path tempFilename = g_Global.GetDarkmodPath();
-		tempFilename /= cv_tdm_fm_path.GetString();
-		tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
+		CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_modScreenshotDownloadId);
+		assert(download != NULL);
+		fs::path tempFilename = download->GetDestinationFilename();
 
 		if (status == SUCCESSFUL)
 		{
-			CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_modScreenshotDownloadId);
-			assert(download != NULL);
-
 			// Mission was stored as userdata in the download object
 			int missionIndex = download->GetUserData().id;
 			int screenshotNum = download->GetUserData().id2;
@@ -1517,12 +1526,6 @@ bool CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 		mission.isUpdate = false;
         mission.needsL10NpackDownload = false; // gnartsch
 
-		if (idStr::Cmp(mission.modName.c_str(), fs_currentfm) == 0)
-		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removing currently installed mission %s from the list of downloadable missions.\r", fs_currentfm);
-			continue;
-		}
-
 		bool missionExists = false;
 
 		// Check if this mission is already downloaded
@@ -1696,9 +1699,15 @@ const DownloadableModList& CMissionManager::GetDownloadableMods() const
 
 bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMod& mod, int screenshotNum)
 {
-	Image image(tempFilename.string().c_str());
+	byte *imageData;
+	int w, h;
 
-	if (!image.LoadImageFromFile(tempFilename))
+	idImageReader rd;
+	rd.Source(fileSystem->OpenExplicitFileRead(tempFilename.string().c_str()));
+	rd.Dest(imageData, w, h);
+	rd.LoadExtension();
+
+	if (!imageData)
 	{
 		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Failed to load image: %s\r", tempFilename.string().c_str());
 		return false;
@@ -1721,16 +1730,16 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 	targetPath = GetDarkmodPath() / mod.GetLocalScreenshotPath(screenshotNum).c_str();
 	
 	// Save the file locally as JPEG
-	if (!image.SaveImageToFile(targetPath, Image::JPG))
-	{
+	idImageWriter wr;
+	wr.Source(imageData, w, h);
+	wr.Dest(fileSystem->OpenExplicitFileWrite(targetPath.string().c_str()));
+	if (!wr.WriteJPG()) {
 		gameLocal.Printf("Could not save image to %s\n", targetPath.string().c_str());
 		return false;
 	}
-	else
-	{
-		// Store the filename into the screenshot object, this indicates it's ready for use
-		screenshot.filename = mod.GetLocalScreenshotPath(screenshotNum);
-	}
+
+	// Store the filename into the screenshot object, this indicates it's ready for use
+	screenshot.filename = mod.GetLocalScreenshotPath(screenshotNum);
 
 	return true;
 }

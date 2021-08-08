@@ -25,6 +25,7 @@ idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
 
 idCVarBool r_tonemap( "r_tonemap", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use the tonemap correction (gamma, brightness, etc)" );
+idCVar r_smallCharSpacing( "r_smallCharSpacing", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Console text symbol spacing", 0.5, 1 );
 
 /*
 =====================
@@ -418,7 +419,7 @@ void idRenderSystemLocal::DrawSmallChar( int x, int y, int ch, const idMaterial 
 		float screenAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
 		float virtualAspect = (float)SCREEN_WIDTH / SCREEN_HEIGHT;
 		float charAspect = fontAspect / screenAspect * virtualAspect;
-		float charWidth = charAspect * SMALLCHAR_HEIGHT, charHeight = SMALLCHAR_HEIGHT;
+		float charHeight = SMALLCHAR_HEIGHT * r_smallCharSpacing.GetFloat(), charWidth = charAspect * charHeight;
 		if ( charWidth > SMALLCHAR_WIDTH ) {
 			charWidth = SMALLCHAR_WIDTH;
 			charHeight = charWidth / charAspect;

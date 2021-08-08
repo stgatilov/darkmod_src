@@ -379,6 +379,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	WriteBool( renderLight.noSpecular );
 	WriteBool( renderLight.pointLight );
 	WriteBool( renderLight.parallel );
+	WriteBool( renderLight.parallelSky );
 
 	WriteVec3( renderLight.lightRadius );
 	WriteVec3( renderLight.lightCenter );
@@ -429,6 +430,7 @@ void idSaveGame::WriteRefSound( const refSound_t &refSound ) {
 	WriteFloat( refSound.parms.shakes );
 	WriteInt( refSound.parms.soundShaderFlags );
 	WriteInt( refSound.parms.soundClass );
+	WriteInt( refSound.parms.subtitlesLevel );
 }
 
 void idSaveGame::WriteRenderView( const renderView_t &view ) {
@@ -978,6 +980,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	ReadBool( renderLight.noSpecular );
 	ReadBool( renderLight.pointLight );
 	ReadBool( renderLight.parallel );
+	ReadBool( renderLight.parallelSky );
 
 	ReadVec3( renderLight.lightRadius );
 	ReadVec3( renderLight.lightCenter );
@@ -1025,6 +1028,7 @@ void idRestoreGame::ReadRefSound( refSound_t &refSound ) {
 	ReadFloat( refSound.parms.shakes );
 	ReadInt( refSound.parms.soundShaderFlags );
 	ReadInt( refSound.parms.soundClass );
+	ReadInt( (int&)refSound.parms.subtitlesLevel );
 }
 
 void idRestoreGame::ReadRenderView( renderView_t &view ) {

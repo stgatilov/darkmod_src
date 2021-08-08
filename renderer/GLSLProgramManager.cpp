@@ -54,8 +54,8 @@ GLSLProgramManager::~GLSLProgramManager() {
 }
 
 void GLSLProgramManager::Shutdown() {
-	for( auto it : programs ) {
-		delete it.program;
+	for( GLSLProgram *program : programs ) {
+		delete program;
 	}
 	programs.ClearFree();
 
@@ -107,33 +107,33 @@ GLSLProgram * GLSLProgramManager::LoadFromFiles( const idStr &name, const idStr 
 }
 
 GLSLProgram * GLSLProgramManager::LoadFromGenerator( const char *name, const Generator &generator ) {
-	programWithGenerator_t *entry = FindEntry( name );
-	if( entry != nullptr ) {
-		entry->generator = generator;
+	GLSLProgram *program = Find( name );
+	if( program != nullptr ) {
+		program->SetGenerator( generator );
 		if( renderSystem->IsOpenGLRunning() ) {
-			Reload( entry );
-		}
-		return entry->program;
-	} else {
-		GLSLProgram *program = new GLSLProgram( name );
-		programs.Append( programWithGenerator_t { program, generator } );
-		if( renderSystem->IsOpenGLRunning() ) {
-			program->Init();
-			generator(program);
+			program->Destroy();
 		}
 		return program;
-	}
+	} 
+
+	program = new GLSLProgram( name, generator );
+	programs.Append( program );
+	return program;
 }
 
 GLSLProgram * GLSLProgramManager::Find( const char *name ) {
-	programWithGenerator_t *entry = FindEntry( name );
-	return entry != nullptr ? entry->program : nullptr;
+	for ( GLSLProgram *program : programs ) {
+		if ( program->GetName() == name ) {
+			return program;
+		}
+	}
+	return nullptr;
 }
 
 void GLSLProgramManager::Reload( const char *name ) {
-	programWithGenerator_t *entry = FindEntry( name );
-	if( entry != nullptr ) {
-		Reload( entry );
+	GLSLProgram *program = Find( name );
+	if( program != nullptr ) {
+		program->Regenerate();
 	}
 }
 
@@ -143,26 +143,10 @@ void GLSLProgramManager::ReloadAllPrograms() {
 	qglGenBuffers( 1, &uboHandle );
 	qglBindBuffer( GL_UNIFORM_BUFFER, uboHandle );
 	qglBindBufferBase( GL_UNIFORM_BUFFER, 0, uboHandle );
-	for( auto &it : programs ) {
-		Reload( &it );
+	for( GLSLProgram *program : programs ) {
+		program->Regenerate();
 	}
 }
-
-GLSLProgramManager::programWithGenerator_t * GLSLProgramManager::FindEntry( const char *name ) {
-	for( auto &it : programs ) {
-		if( it.program->GetName() == name ) {
-			return &it;			
-		}
-	}
-	return nullptr;
-}
-
-void GLSLProgramManager::Reload( programWithGenerator_t *entry ) {
-	entry->program->Destroy();
-	entry->program->Init();
-	entry->generator( entry->program );
-}
-
 
 
 // INITIALIZE BUILTIN PROGRAMS HERE

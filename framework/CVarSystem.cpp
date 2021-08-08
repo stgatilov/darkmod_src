@@ -39,7 +39,6 @@ public:
 	const char **			CopyValueStrings( const char **strings );
 	void					Update( const idCVar *cvar );
 	void					UpdateValue( void );
-	void					UpdateCheat( void );
 	void					Set( const char *newValue, bool force, bool fromServer );
 	void					Reset( void );
 
@@ -83,7 +82,6 @@ idInternalCVar::idInternalCVar( const char *newName, const char *newValue, int n
 	valueStrings = NULL;
 	valueCompletion = 0;
 	UpdateValue();
-	UpdateCheat();
 	internalVar = this;
 }
 
@@ -106,7 +104,6 @@ idInternalCVar::idInternalCVar( const idCVar *cvar ) {
 	valueStrings = CopyValueStrings( cvar->GetValueStrings() );
 	valueCompletion = cvar->GetValueCompletion();
 	UpdateValue();
-	UpdateCheat();
 	internalVar = this;
 }
 
@@ -193,8 +190,6 @@ void idInternalCVar::Update( const idCVar *cvar ) {
 
 	flags |= cvar->GetFlags();
 
-	UpdateCheat();
-
 	// only allow one non-empty reset string without a warning
 	if ( resetString.Length() == 0 ) {
 		resetString = cvar->GetString();
@@ -269,20 +264,6 @@ void idInternalCVar::UpdateValue( void ) {
 			floatValue = 0.0f;
 			integerValue = 0;
 		}
-	}
-}
-
-/*
-============
-idInternalCVar::UpdateCheat
-============
-*/
-void idInternalCVar::UpdateCheat( void ) {
-	// all variables are considered cheats except for a few types
-	if ( flags & ( CVAR_NOCHEAT | CVAR_INIT | CVAR_ROM | CVAR_ARCHIVE | CVAR_USERINFO | CVAR_SERVERINFO | CVAR_NETWORKSYNC ) ) {
-		flags &= ~CVAR_CHEAT;
-	} else {
-		flags |= CVAR_CHEAT;
 	}
 }
 
@@ -516,7 +497,6 @@ void idCVarSystemLocal::SetInternal( const char *name, const char *value, int fl
         if ( !( cvro && cvinit) ) {
 		    internal->InternalSetString( value );
 		    internal->flags |= flags & ~CVAR_STATIC;
-		    internal->UpdateCheat();
         } else {
             common->Warning("Attempt to modify read-only %s CVAR failed.", name);
         }
@@ -1172,7 +1152,6 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 				string += ( cvar->GetFlags() & CVAR_USERINFO ) ?	"UI "	: "   ";
 				string += ( cvar->GetFlags() & CVAR_SERVERINFO ) ?	"SI "	: "   ";
 				string += ( cvar->GetFlags() & CVAR_STATIC ) ?		"ST "	: "   ";
-				string += ( cvar->GetFlags() & CVAR_CHEAT ) ?		"CH "	: "   ";
 				string += ( cvar->GetFlags() & CVAR_INIT ) ?		"IN "	: "   ";
 				string += ( cvar->GetFlags() & CVAR_ROM ) ?			"RO "	: "   ";
 				string += ( cvar->GetFlags() & CVAR_ARCHIVE ) ?		"AR "	: "   ";

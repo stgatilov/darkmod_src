@@ -26,6 +26,8 @@ Fl_Check_Button *g_Settings_CheckForceScan=(Fl_Check_Button *)0;
 
 Fl_Check_Button *g_Settings_CheckBitwiseExact=(Fl_Check_Button *)0;
 
+Fl_Check_Button *g_Settings_CheckNoMultipartByteranges=(Fl_Check_Button *)0;
+
 Fl_Progress *g_Settings_ProgressScanning=(Fl_Progress *)0;
 
 Fl_Button *g_Settings_ButtonNext=(Fl_Button *)0;
@@ -1692,7 +1694,6 @@ void FluidAllGui() {
     g_Window->align(Fl_Align(FL_ALIGN_CLIP|FL_ALIGN_INSIDE));
     { g_Wizard = new Fl_Wizard(325, 0, 720, 550);
       { g_PageSettings = new Fl_Group(325, 0, 720, 550, "Page 1: Settings");
-        g_PageSettings->hide();
         { g_Settings_TextGreetings = new Fl_Text_Display(340, 35, 660, 70);
           g_Settings_TextGreetings->box(FL_NO_BOX);
           g_Settings_TextGreetings->color(FL_BACKGROUND_COLOR);
@@ -1730,11 +1731,16 @@ ller.ini in the install directory instead.");
 oceeding. This can be useful if local version is suspected to be corrupted.");
           g_Settings_CheckForceScan->down_box(FL_DOWN_BOX);
         } // Fl_Check_Button* g_Settings_CheckForceScan
-        { g_Settings_CheckBitwiseExact = new Fl_Check_Button(695, 323, 150, 20, "Bitwise exact zips");
+        { g_Settings_CheckBitwiseExact = new Fl_Check_Button(695, 323, 175, 20, "Bitwise exact zips");
           g_Settings_CheckBitwiseExact->tooltip("Make zip files bitwise the same as on server, possible at the cost of more do\
 wnload.");
           g_Settings_CheckBitwiseExact->down_box(FL_DOWN_BOX);
         } // Fl_Check_Button* g_Settings_CheckBitwiseExact
+        { g_Settings_CheckNoMultipartByteranges = new Fl_Check_Button(695, 348, 175, 20, "No multipart byteranges");
+          g_Settings_CheckNoMultipartByteranges->tooltip("Never use multipart byterange HTTP requests, use only single-range requests. \
+This makes downloads slower, but can help in case of network issues.");
+          g_Settings_CheckNoMultipartByteranges->down_box(FL_DOWN_BOX);
+        } // Fl_Check_Button* g_Settings_CheckNoMultipartByteranges
         { g_Settings_ProgressScanning = new Fl_Progress(335, 480, 680, 20, "scanning...");
         } // Fl_Progress* g_Settings_ProgressScanning
         { g_Settings_ButtonNext = new Fl_Button(935, 510, 80, 30, "Next");
@@ -1749,6 +1755,7 @@ wnload.");
         g_PageSettings->end();
       } // Fl_Group* g_PageSettings
       { g_PageVersion = new Fl_Group(325, 0, 700, 550, "Page 2: Choose Version");
+        g_PageVersion->hide();
         { g_Version_OutputLastInstalledVersion = new Fl_Output(575, 10, 425, 20, "Version installed during last update: ");
           g_Version_OutputLastInstalledVersion->tooltip("This version was installed in this directory the last time. It does not affec\
 t the installation procedure in any way, and is displayed only for information\

@@ -454,6 +454,7 @@ idAASCluster::Build
 */
 bool idAASCluster::Build( idAASFileLocal *file ) {
 
+	TRACE_CPU_SCOPE("Clustering")
 	common->Printf( "[Clustering]\n" );
 
 	this->file = file;

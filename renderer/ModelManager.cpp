@@ -295,6 +295,7 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 	if (model) {
 		//do actual load
 		model->InitEmpty(modelName);	//make sure name is set during BeginModelLoad!
+		TRACE_CPU_SCOPE_TEXT("Load:Model", model->Name())
 		declManager->BeginModelLoad(model);
 		model->InitFromFile( modelName );
 		declManager->EndModelLoad(model);

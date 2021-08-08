@@ -104,6 +104,9 @@ public:
 
 	//stgatilov: has same effect as "resetTime" command in GUI script.
 	virtual bool				ResetWindowTime(const char *windowName, int startTime = 0) = 0;
+
+	//stgatilov #2454: fetch subtitles from sound world and update GUI variables accordingly
+	virtual void				UpdateSubtitles() = 0;
 };
 
 

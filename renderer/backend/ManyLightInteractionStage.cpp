@@ -125,7 +125,7 @@ void ManyLightInteractionStage::LoadInteractionShader( GLSLProgram *shader, bool
 	if (bindless) {
 		defines.Set( "BINDLESS_TEXTURES", "1" );
 	}
-	shader->InitFromFiles( "stages/interaction/manylight.vert.glsl", "stages/interaction/manylight.frag.glsl", defines );
+	shader->LoadFromFiles( "stages/interaction/manylight.vert.glsl", "stages/interaction/manylight.frag.glsl", defines );
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->ssaoTexture.Set( TU_SSAO );
 	uniforms->shadowMap.Set( TU_SHADOW_MAP );

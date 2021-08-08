@@ -495,11 +495,7 @@ void idInteractionTable::Init() {
 		}
 	}
 	if (useInteractionTable == 2) {
-		static const int MAX_INTERACTION_TABLE_LOAD_FACTOR = 75;
-		SHT_table.Init(-1, MAX_INTERACTION_TABLE_LOAD_FACTOR);
-	}
-	if (useInteractionTable == 3) {
-		SHT_tableNew.Reserve(256, true);
+		SHT_table.Reserve(256, true);
 	}
 }
 void idInteractionTable::Shutdown() {
@@ -508,10 +504,7 @@ void idInteractionTable::Shutdown() {
 		SM_matrix = nullptr;
 	}
 	if (useInteractionTable == 2) {
-		SHT_table.Reset();
-	}
-	if (useInteractionTable == 3) {
-		SHT_tableNew.ClearFree();
+		SHT_table.ClearFree();
 	}
 	useInteractionTable = -1;
 }
@@ -525,16 +518,7 @@ idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntity
 	}
 	if (useInteractionTable == 2) {
 		int key = (ldef->index << 16) + edef->index;
-		const auto &cell = const_cast<idInteractionTable*>(this)->SHT_table.Find( key );
-		idInteraction *inter = nullptr;
-		if ( !SHT_table.IsEmpty( cell ) ) {
-			inter = cell.value;
-		}
-		return inter;
-	}
-	if (useInteractionTable == 3) {
-		int key = (ldef->index << 16) + edef->index;
-		return SHT_tableNew.Get(key, nullptr);
+		return SHT_table.Get(key, nullptr);
 	}
 	for ( idInteraction *inter = edef->lastInteraction; inter; inter = inter->entityPrev ) {
 		if ( inter->lightDef == ldef ) {
@@ -559,19 +543,8 @@ bool idInteractionTable::Add(idInteraction *interaction) {
 		return true;
 	}
 	if (useInteractionTable == 2) {
-		int key = ( interaction->lightDef->index << 16 ) + interaction->entityDef->index;
-		auto &cell = SHT_table.Find( key );
-		if ( !SHT_table.IsEmpty( cell ) ) {
-			return false;	//such interaction already exists
-		}
-		cell.key = key;
-		cell.value = interaction;
-		SHT_table.Added( cell );
-		return true;	//added new interaction
-	}
-	if (useInteractionTable == 3) {
 		int key = (interaction->lightDef->index << 16 ) + interaction->entityDef->index;
-		return SHT_tableNew.AddIfNew(key, interaction);
+		return SHT_table.AddIfNew(key, interaction);
 	}
 
 	return true;	//don't care
@@ -590,18 +563,8 @@ bool idInteractionTable::Remove(idInteraction *interaction) {
 		return false;
 	}
 	if (useInteractionTable == 2) {
-		int key = ( interaction->lightDef->index << 16 ) + interaction->entityDef->index;
-		auto &cell = SHT_table.Find( key );
-		if ( cell.key == key ) {
-			assert( cell.value == interaction );
-			SHT_table.Erase( cell );
-			return true;	//removed previously existing interaction
-		}
-		return false;		//such interaction not present
-	}
-	if (useInteractionTable == 3) {
 		int key = (interaction->lightDef->index << 16 ) + interaction->entityDef->index;
-		return SHT_tableNew.Remove(key);
+		return SHT_table.Remove(key);
 	}
 	return true;	//don't care
 }
@@ -614,10 +577,7 @@ idStr idInteractionTable::Stats() const {
 		);
 	}
 	if (useInteractionTable == 2) {
-		idStr::snPrintf(buff, sizeof(buff), "size = %d/%d", SHT_table.Count(), SHT_table.Size());
-	}
-	if (useInteractionTable == 3) {
-		idStr::snPrintf(buff, sizeof(buff), "size = %d/%d", SHT_tableNew.Num(), SHT_tableNew.CellsNum());
+		idStr::snPrintf(buff, sizeof(buff), "size = %d/%d", SHT_table.Num(), SHT_table.CellsNum());
 	}
 	return buff;
 }
@@ -1548,9 +1508,9 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 	idInteraction* inter, * next;
 	idRenderModel* model;
 
-	TRACE_CPU_SCOPE( "R_AddSingleModel" )
-
 	idRenderEntityLocal& def = *vEntity->entityDef;
+	TRACE_CPU_SCOPE_TEXT( "R_AddSingleModel", GetTraceLabel(def.parms) )
+		
 	if ( ( r_skipModels.GetInteger() == 1 || tr.viewDef->areaNum < 0 ) && ( def.dynamicModel || def.cachedDynamicModel ) ) { // debug filters
 		return;
 	}

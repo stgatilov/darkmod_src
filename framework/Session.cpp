@@ -1080,10 +1080,6 @@ idSessionLocal::StartNewGame
 ===============
 */
 void idSessionLocal::StartNewGame( const char *mapName, bool devmap ) {
-#ifdef	ID_DEDICATED
-	common->Printf( "Dedicated servers cannot start singleplayer games.\n" );
-	return;
-#else
 	// clear the userInfo so the player starts out with the defaults
 	mapSpawnData.userInfo[0].Clear();
 	mapSpawnData.persistentPlayerInfo[0].Clear();
@@ -1103,7 +1099,6 @@ void idSessionLocal::StartNewGame( const char *mapName, bool devmap ) {
 	mapSpawnData.syncedCVars = *cvarSystem->MoveCVarsToDict( CVAR_NETWORKSYNC );
 
 	MoveToNewMap( mapName );
-#endif
 }
 
 /*
@@ -1431,6 +1426,28 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 	int		i;
 	bool	reloadingSameMap;
 
+	// extract the map name from serverinfo
+	idStr mapString = mapSpawnData.serverInfo.GetString( "si_map" );
+
+	idStr fullMapName = "maps/";
+	fullMapName += mapString;
+	fullMapName.StripFileExtension();
+
+	// don't do the deferred caching if we are reloading the same map
+	if ( fullMapName == currentMapName ) {
+		reloadingSameMap = true;
+	} else {
+		reloadingSameMap = false;
+		currentMapName = fullMapName;
+	}
+
+	idStr traceText = va("map %s", mapString.c_str());
+	if (savegameFile)
+		traceText += va("\nload %s", savegameFile->GetName());
+	if (reloadingSameMap)
+		traceText += "\n(samemap)";
+	TRACE_CPU_SCOPE_STR("idSessionLocal::ExecuteMapChange", traceText);
+
 	// close console and remove any prints from the notify lines
 	console->Close();
 
@@ -1455,26 +1472,11 @@ bool idSessionLocal::ExecuteMapChange(idFile* savegameFile, bool noFadeWipe ) {
 		CompleteWipe();
 	}
 
-	// extract the map name from serverinfo
-	idStr mapString = mapSpawnData.serverInfo.GetString( "si_map" );
-
-	idStr fullMapName = "maps/";
-	fullMapName += mapString;
-	fullMapName.StripFileExtension();
-
 	// shut down the existing game if it is running
 	UnloadMap();
 
 	R_ToggleSmpFrame(); // duzenko 4848: FIXME find a better place to clear the "next frame" data
 	R_ToggleSmpFrame();	// duzenko 5065: apparently R_ToggleSmpFrame does not like being called once
-
-	// don't do the deferred caching if we are reloading the same map
-	if ( fullMapName == currentMapName ) {
-		reloadingSameMap = true;
-	} else {
-		reloadingSameMap = false;
-		currentMapName = fullMapName;
-	}
 
 	// note which media we are going to need to load
 	if ( !reloadingSameMap ) {
@@ -1837,10 +1839,6 @@ idSessionLocal::SaveGame
 ===============
 */
 bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipCheck ) {
-#ifdef	ID_DEDICATED
-	common->Printf( "Dedicated servers cannot save games.\n" );
-	return false;
-#else
 	int i;
 	idStr gameFile, previewFile, descriptionFile, mapName;
 
@@ -1894,16 +1892,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		soundSystem->SetPlayingSoundWorld( NULL );
 	}
 
-	//stgatilov: choose preview image format
-	idStr previewExtension = com_savegame_preview_format.GetString();
-	Image::Format previewFormat = Image::GetFormatFromString( previewExtension.c_str() );
-	//note: only tga and jpg are currently supported
-	if ( previewFormat != Image::JPG && previewFormat != Image::TGA ) {
-		common->Warning( "Unknown preview image extension %s, falling back to default.", previewExtension.c_str() );
-		previewFormat = Image::TGA;
-		previewExtension = "tga";
-	}
-
 	// setup up paths
 	
 	ScrubSaveGameFileName( gameFile );
@@ -1911,6 +1899,11 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	gameFile = "savegames/" + gameFile;
 	gameFile.SetFileExtension( ".save" );
 
+	idStr previewExtension = com_savegame_preview_format.GetString();
+	if ( !(previewExtension == "jpg" || previewExtension == "tga") ) {
+		common->Warning( "Unknown preview image extension %s, falling back to default.", previewExtension.c_str() );
+		previewExtension = "tga";
+	}
 	previewFile = gameFile;
 	previewFile.SetFileExtension( previewExtension.c_str() );
 
@@ -1927,10 +1920,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		}
 		return false;
 	}
-
-	// Obsttorte increment the savegame counter
-	
-	game->incrementSaveCount();
 
 	// Write SaveGame Header: 
 	// Game Name / Version / Map Name / Persistant Player Info
@@ -1975,8 +1964,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		// need to make the changes to the vertex cache accessible to the backend
 		vertexCache.EndFrame();
 
-		//stgatilov: render image to buffer and save via devIL
-		Image image;
+		//stgatilov: render image to buffer
 		int width, height, bpp = 3;
 		renderSystem->GetCurrentRenderCropSize(width, height);
 		/*if ( r_useFbo.GetBool() ) { // 4676
@@ -1984,10 +1972,16 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 			height /= r_fboResolution.GetFloat();
 		}*/
 		width = (width + 3) & ~3; //opengl wants width padded to 4x
-		image.Init(width, height, bpp);
-		renderSystem->CaptureRenderToBuffer( image.GetImageData() );
-		idStr previewPath = fileSystem->RelativePathToOSPath(previewFile.c_str(), "fs_modSavePath");
-		image.SaveImageToFile(previewPath.c_str(), previewFormat);
+		byte *imgData = (byte*)Mem_Alloc(height * width * bpp);
+		renderSystem->CaptureRenderToBuffer( imgData );
+
+		//save image to file
+		idImageWriter wr;
+		wr.Source(imgData, width, height, bpp);
+		wr.Dest(fileSystem->OpenFileWrite(previewFile.c_str(), "fs_modSavePath"));
+		wr.Flip();
+		wr.WriteExtension(previewExtension.c_str());
+		Mem_Free(imgData);
 
 		renderSystem->UnCrop();
 		R_ClearCommandChain( frameData );
@@ -2039,7 +2033,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 
 
 	return true;
-#endif
 }
 
 
@@ -2149,10 +2142,6 @@ idSessionLocal::DoLoadGame
 ===============
 */
 bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoad) {
-#ifdef	ID_DEDICATED
-	common->Printf( "Dedicated servers cannot load games.\n" );
-	return false;
-#else
 	//Hide the dialog box if it is up.
 	StopBox();
 
@@ -2202,7 +2191,6 @@ bool idSessionLocal::DoLoadGame( const char *saveName, const bool initializedLoa
 	}
 
 	return success;
-#endif
 }
 
 // STiFU #4531: TDM savegame version check
@@ -2641,7 +2629,8 @@ void idSessionLocal::Draw() {
 		if ( guiActive == guiMsg && guiMsgRestore ) {
 			guiMsgRestore->Redraw( com_frameTime );
 		}
-		
+
+		guiActive->UpdateSubtitles();	//stgatilov #2454
 		guiActive->Redraw( com_frameTime );
 	} else if ( readDemo ) {
 		rw->RenderScene( currentDemoRenderView );
@@ -2777,6 +2766,7 @@ void idSessionLocal::Frame() {
 	//nbohr1more: disable SMP for debug render tools
 	if (r_showSurfaceInfo.GetBool() ||
 		r_showDepth.GetBool() ||
+		r_showViewEntitys.GetBool() || // frontend may invalidate viewEntity pointers, e.g. when LOD model changes
         r_materialOverride.GetString()[0] != '\0'
 	) {
 		no_smp = true;
@@ -3286,7 +3276,6 @@ void idSessionLocal::Init() {
 
 	cmdSystem->AddCommand( "writePrecache", Sess_WritePrecache_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "writes precache commands" );
 
-#ifndef	ID_DEDICATED
 	cmdSystem->AddCommand( "map", Session_Map_f, CMD_FL_SYSTEM, "loads a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "devmap", Session_DevMap_f, CMD_FL_SYSTEM, "loads a map in developer mode", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "testmap", Session_TestMap_f, CMD_FL_SYSTEM, "tests a map", idCmdSystem::ArgCompletion_MapName );
@@ -3305,17 +3294,14 @@ void idSessionLocal::Init() {
 	cmdSystem->AddCommand( "timeDemoQuit", Session_TimeDemoQuit_f, CMD_FL_SYSTEM, "times a demo and quits", idCmdSystem::ArgCompletion_DemoName );
 	cmdSystem->AddCommand( "aviDemo", Session_AVIDemo_f, CMD_FL_SYSTEM, "writes AVIs for a demo", idCmdSystem::ArgCompletion_DemoName );
 	cmdSystem->AddCommand( "compressDemo", Session_CompressDemo_f, CMD_FL_SYSTEM, "compresses a demo file", idCmdSystem::ArgCompletion_DemoName );
-#endif
 
 	cmdSystem->AddCommand( "disconnect", Session_Disconnect_f, CMD_FL_SYSTEM, "disconnects from a game" );
 
 	cmdSystem->AddCommand( "demoShot", Session_DemoShot_f, CMD_FL_SYSTEM, "writes a screenshot for a demo" );
 	cmdSystem->AddCommand( "testGUI", Session_TestGUI_f, CMD_FL_SYSTEM, "tests a gui" );
 
-#ifndef	ID_DEDICATED
 	cmdSystem->AddCommand( "saveGame", SaveGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "saves a game" );
 	cmdSystem->AddCommand( "loadGame", LoadGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "loads a game", idCmdSystem::ArgCompletion_SaveGame );
-#endif
 
 	cmdSystem->AddCommand( "rescanSI", Session_RescanSI_f, CMD_FL_SYSTEM, "internal - rescan serverinfo cvars and tell game" );
 

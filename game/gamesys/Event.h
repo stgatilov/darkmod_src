@@ -121,7 +121,7 @@ private:
 
 	static idDynamicBlockAlloc<byte, 16 * 1024, 256> eventDataAllocator;
 
-
+	friend idStr GetTraceLabel(const idEvent &evt);
 public:
 	static bool					initialized;
 

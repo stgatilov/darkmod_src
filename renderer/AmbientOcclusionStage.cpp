@@ -77,13 +77,13 @@ namespace {
 	}
 
 	void LoadSSAOShader(GLSLProgram *ssaoShader) {
-		ssaoShader->InitFromFiles( "ssao.vert.glsl", "ssao.frag.glsl" );
+		ssaoShader->LoadFromFiles( "ssao.vert.glsl", "ssao.frag.glsl" );
 		AOUniforms *uniforms = ssaoShader->GetUniformGroup<AOUniforms>();
 		uniforms->depthTexture.Set(0);
 	}
 
 	void LoadSSAOBlurShader(GLSLProgram *blurShader) {
-		blurShader->InitFromFiles( "fullscreen_tri.vert.glsl", "ssao_blur.frag.glsl" );
+		blurShader->LoadFromFiles( "fullscreen_tri.vert.glsl", "ssao_blur.frag.glsl" );
 		BlurUniforms *uniforms = blurShader->GetUniformGroup<BlurUniforms>();
 		uniforms->source.Set(0);
 	}

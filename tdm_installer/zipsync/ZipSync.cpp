@@ -619,7 +619,9 @@ void UpdateProcess::RepackZips(const GlobalProgressCallback &progressCallback) {
 
 uint64_t UpdateProcess::DownloadRemoteFiles(
     const GlobalProgressCallback &progressDownloadCallback,
-    const GlobalProgressCallback &progressPostprocessCallback
+    const GlobalProgressCallback &progressPostprocessCallback,
+    const char *useragent,
+    bool blockMultipart
 ) {
     struct UrlData {
         PathAR path;
@@ -630,6 +632,8 @@ uint64_t UpdateProcess::DownloadRemoteFiles(
     };
     std::map<std::string, UrlData> urlStates;
     Downloader downloader;
+    downloader.SetUserAgent(useragent);
+    downloader.setMultipartBlocked(blockMultipart);
     std::map<int, std::vector<int>> provIdxToMatchIds;
 
     std::set<std::string> downloadedFilenames;

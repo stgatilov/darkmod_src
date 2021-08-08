@@ -871,6 +871,7 @@ bool idAASReach::Build( const idMapFile *mapFile, idAASFileLocal *file ) {
 	this->file = file;
 	numReachabilities = 0;
 
+	TRACE_CPU_SCOPE("BuildReachability")
 	common->Printf( "[Reachability]\n" );
 
 	// delete all existing reachabilities

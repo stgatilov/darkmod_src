@@ -947,8 +947,8 @@ static void RB_ShowEntityDraws() {
 		return;
 	}
 
-	const bool group = !r_showEntityDraws & 1;
-	const bool verts = r_showEntityDraws > 2;
+	const bool group = r_showEntityDraws & 2;
+	const bool verts = r_showEntityDraws & 4;
 	idStrList list;
 	struct entityCalls {
 		int index, calls;
@@ -971,7 +971,7 @@ static void RB_ShowEntityDraws() {
 			entityCalls calls{ vModels->entityDef->index, vModels->drawCalls, name, };
 			stats.Append( calls );
 		} else {
-			if ( verts )
+			if ( verts ) // vModels->drawCalls double serves as vertex count (huge number) in this mode
 				list.Append( idStr::Fmt( "%6i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name.c_str() ) );
 			else
 				list.Append( idStr::Fmt( "%3i %4i %s\n", vModels->drawCalls, vModels->entityDef->index, name.c_str() ) );
@@ -985,7 +985,7 @@ static void RB_ShowEntityDraws() {
 			grp.entities++;
 		}
 		for ( auto& iterator : grouped )
-			list.Append( idStr::Fmt( "%3i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() ) );
+			list.Append( idStr::Fmt( "%5i %2i %s\n", iterator.second.calls, iterator.second.entities, iterator.first.c_str() ) );
 	}
 	list.Sort();
 	int runningTotal = 0;

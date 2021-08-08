@@ -65,7 +65,9 @@ public:
     //returns total number of bytes downloaded
     uint64_t DownloadRemoteFiles(
         const GlobalProgressCallback &progressDownloadCallback = GlobalProgressCallback(),
-        const GlobalProgressCallback &progressPostprocessCallback = GlobalProgressCallback()
+        const GlobalProgressCallback &progressPostprocessCallback = GlobalProgressCallback(),
+        const char *useragent = nullptr,
+        bool blockMultipart = false
     );
 
     //having all matches available locally, perform the update

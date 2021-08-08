@@ -448,6 +448,9 @@ public:
 	*/
 	int						m_ModelLODCur;
 	int						m_SkinLODCur;
+	// stgatilov: store currently applied offset_lod so that we can reverse it
+	// even if m_LODHandle is removed due to hot-reload map editing.
+	idVec3					m_OffsetLODCur;
 
 	/* Each entity is hidden (and stops thinking) when tdm_lod_bias
 	*  is between m_MinLODBias and m_MaxLODBias. Thus entities can
@@ -677,7 +680,6 @@ public:
 	virtual void			PostBind( void );
 	virtual void			PreUnbind( void );
 	virtual void			PostUnbind( void );
-	void					JoinTeam( idEntity *teammember );	//#5409: deprecated
 	
 	/** 
 	 * greebo: Returns the first team entity matching the given type. If the second
@@ -1473,12 +1475,6 @@ protected:
 	bool						m_bFrobHighlightState;
 
 	/**
-	* Timestamp indicating when the frob highlight last changed
-	* Used for continuous fade in and fade out.
-	**/
-	int							m_FrobChangeTime;
-
-	/**
 	 * FrobActionScript will contain the name of the script that is to be
 	 * exected whenever a frobaction occurs. The default should be set by
 	 * the constructor of the respective derived class but can be overriden
@@ -1618,8 +1614,9 @@ private:
 	// entity binding
 	bool					InitBind( idEntity *master );	// initialize an entity binding
 	void					FinishBind( idEntity *master, const char *jointnum ); // finish an entity binding - grayman #3074
-	void					RemoveBinds( void );			// deletes any entities bound to this object
-	void					QuitTeam( void );				// leave the current team (#5409: deprecated)
+public:
+	void					RemoveBinds( bool immediately );					// deletes any entities bound to this object
+private:
 	// stgatilov #5409: bindMaster/teamMaster/teamChain structure updates
 	void					BreakBindToMaster( void );							//assign bindMaster = NULL and recompute teams
 	void					EstablishBindToMaster( idEntity *newMaster );		//assign new bindMaster and recompute teams

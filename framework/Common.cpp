@@ -27,6 +27,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "GamepadInput.h"
 #include "../renderer/backend/RenderBackend.h"
 #include "LoadStack.h"
+#include "../game/Missions/MissionManager.h"
 
 #define MAX_WARNING_LIST	256
 
@@ -230,7 +231,7 @@ private:
 	//void						PrintLoadingMessage( const char *msg );
 
 	// greebo: used to initialise the fs_currentfm/fs_mod parameters
-	void						InitGameArguments();
+	void						InitGameArguments(idStrList *newModsList);
 
 	bool						com_fullyInitialized;
 	bool						com_refreshOnPrint;		// update the screen every print for dmap
@@ -997,7 +998,7 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 	}
 }
 
-void idCommonLocal::InitGameArguments() {
+void idCommonLocal::InitGameArguments(idStrList *newModsList) {
 	bool fsGameDefined = false;
 	bool fsGameBaseDefined = false;
 	bool fsBasePathDefined = false;
@@ -1103,13 +1104,18 @@ void idCommonLocal::InitGameArguments() {
         common->Warning("Fan missions directory does not exist");
     }
 
-    // at the very least, check if the specified fan mission 
-    // folder exists in <fs_mod>/fms/
+	// stgatilov #5661: look for new pk4 files in fms/ directory
+	// and copy them to fms/{modname}/ subdirectory if found
+	// Note: pk4 of the current FM can only be replaced before fileSystem is initialized!
+	idStrList newMods = CMissionManager::SearchForNewMods(fmPath);
+	if (newModsList)
+		*newModsList = newMods;
+
     if ( fsGameDefined ) {
         idStr curFm = idStr( cvarSystem->GetCVarString("fs_currentfm") );
         Sys_ListFiles( fmPath.c_str(), "/", fmList );
 
-        // check if the currently selected fm folder exists
+        // check if the currently selected fm folder exists in <fs_mod>/fms/
         if ( fmList.FindIndex( curFm ) < 0 ) {
             fsGameDefined = false;
             common->Warning("Fan missions path does not exist for installed fm: %s", curFm.c_str());
@@ -2356,32 +2362,6 @@ void Com_FinishBuild_f( const idCmdArgs &args ) {
 }
 
 /*
-==============
-Com_Help_f
-==============
-*/
-void Com_Help_f( const idCmdArgs &args ) {
-	common->Printf( "\nCommonly used commands:\n" );
-	common->Printf( "  spawnServer      - start the server.\n" );
-	common->Printf( "  disconnect       - shut down the server.\n" );
-	common->Printf( "  listCmds         - list all console commands.\n" );
-	common->Printf( "  listCVars        - list all console variables.\n" );
-	common->Printf( "  kick             - kick a client by number.\n" );
-	common->Printf( "  gameKick         - kick a client by name.\n" );
-	common->Printf( "  serverNextMap    - immediately load next map.\n" );
-	common->Printf( "  serverMapRestart - restart the current map.\n" );
-	common->Printf( "  serverForceReady - force all players to ready status.\n" );
-	common->Printf( "\nCommonly used variables:\n" );
-	common->Printf( "  si_name          - server name (change requires a restart to see)\n" );
-	common->Printf( "  si_gametype      - type of game.\n" );
-	common->Printf( "  si_fragLimit     - max kills to win (or lives in Last Man Standing).\n" );
-	common->Printf( "  si_timeLimit     - maximum time a game will last.\n" );
-	common->Printf( "  si_warmup        - do pre-game warmup.\n" );
-	common->Printf( "  g_mapCycle       - name of .scriptcfg file for cycling maps.\n" );
-	common->Printf( "See mapcycle.scriptcfg for an example of a mapcyle script.\n\n" );
-}
-
-/*
 =================
 idCommonLocal::InitCommands
 =================
@@ -2394,10 +2374,7 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "exit", Com_Quit_f, CMD_FL_SYSTEM, "exits the game" );
 	cmdSystem->AddCommand( "writeConfig", Com_WriteConfig_f, CMD_FL_SYSTEM, "writes a config file" );
 	cmdSystem->AddCommand( "reloadEngine", Com_ReloadEngine_f, CMD_FL_SYSTEM, "reloads the engine down to including the file system" );
-/*	cmdSystem->AddCommand( "setMachineSpec", Com_SetMachineSpec_f, CMD_FL_SYSTEM, "detects system capabilities and sets com_machineSpec to appropriate value" );
-	cmdSystem->AddCommand( "execMachineSpec", Com_ExecMachineSpec_f, CMD_FL_SYSTEM, "execs the appropriate config files and sets cvars based on com_machineSpec" );*/
 
-#if !defined( ID_DEDICATED )
 	// compilers
 	cmdSystem->AddCommand( "dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "renderbump", RenderBump_f, CMD_FL_TOOL, "renders a bump map", idCmdSystem::ArgCompletion_ModelName );
@@ -2407,7 +2384,6 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "runReach", RunReach_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "roq", RoQFileEncode_f, CMD_FL_TOOL, "encodes a roq file" );
 	cmdSystem->AddCommand( "runParticle", RunParticle_f, CMD_FL_TOOL, "calculates static collision for particle systems ('collisionStatic' in .prt files)", idCmdSystem::ArgCompletion_MapName );
-#endif
 
 #ifdef ID_ALLOW_TOOLS
 	// editors
@@ -2449,10 +2425,6 @@ void idCommonLocal::InitCommands( void ) {
 	// build helpers
 	cmdSystem->AddCommand( "startBuild", Com_StartBuild_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "prepares to make a build" );
 	cmdSystem->AddCommand( "finishBuild", Com_FinishBuild_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "finishes the build process" );
-
-#ifdef ID_DEDICATED
-	cmdSystem->AddCommand( "help", Com_Help_f, CMD_FL_SYSTEM, "shows help" );
-#endif
 }
 
 /*
@@ -2891,10 +2863,6 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// print all warnings queued during initialization
 		PrintWarnings();
 
-#ifdef	ID_DEDICATED
-		Printf( "\nType 'help' for dedicated server info.\n\n" );
-#endif
-
 		// remove any prints from the notify lines
 		console->ClearNotifyLines();
 		
@@ -2968,9 +2936,11 @@ idCommonLocal::InitGame
 */
 void idCommonLocal::InitGame( void )
 {
+	idStrList newModsList;
+
 	// greebo: Check if we have fs_currentfm and/or fs_mod defined, if not fall back to default values
 	// Do this before initialising the filesystem
-	InitGameArguments();
+	InitGameArguments(&newModsList);
 
 	// initialize the file system
 	fileSystem->Init();
@@ -2986,22 +2956,6 @@ void idCommonLocal::InitGame( void )
 
 	// force r_fullscreen 0 if running a tool
 	CheckToolMode();
-
-    // greebo: the config.spec file is saved to the mod save path in darkmod/fms/<fs_game>/
-	/*idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath", "" ) );
-	bool sysDetect = ( file == NULL );
-	if ( file ) {
-		fileSystem->CloseFile( file );
-	} else {
-		file = fileSystem->OpenFileWrite( CONFIG_SPEC, "fs_savepath", "" );
-		fileSystem->CloseFile( file );
-	}
-
-	idCmdArgs args;
-	if ( sysDetect ) {
-		SetMachineSpec();
-		Com_ExecMachineSpec_f( args );
-	}*/
 
 	// initialize the renderSystem data structures, but don't start OpenGL yet
 	renderSystem->Init();
@@ -3065,20 +3019,9 @@ void idCommonLocal::InitGame( void )
 
 	//PrintLoadingMessage( Translate( "#str_04347" ) );
 
-#ifdef	ID_DEDICATED
-	// init async network
-	idAsyncNetwork::Init();
-
-	idAsyncNetwork::server.InitPort();
-	cvarSystem->SetCVarBool( "s_noSound", true );
-#else
-
-	{
-		// init OpenGL, which will open a window and connect sound and input hardware
-		//PrintLoadingMessage( Translate( "#str_04348" ) );
-		InitRenderSystem();
-	}
-#endif
+	// init OpenGL, which will open a window and connect sound and input hardware
+	//PrintLoadingMessage( Translate( "#str_04348" ) );
+	InitRenderSystem();
 
 	// initialize the user interfaces
 	uiManager->Init();
@@ -3088,6 +3031,8 @@ void idCommonLocal::InitGame( void )
 
 	// load the game dll
 	LoadGameDLL();
+	// stgatilov #5661: notify MissionManager about already accepted new FMs
+	gameLocal.m_MissionManager->AddToNewModList(newModsList);
 	
 	// init the session
 	session->Init();

@@ -25,7 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 idCVar r_immediateRenderingEmulate(
-	"r_immediateRenderingEmulate", "0", CVAR_BOOL | CVAR_RENDERER,
+	"r_immediateRenderingEmulate", "1", CVAR_BOOL | CVAR_RENDERER,
 	"Enable emulation of deprecated immediate-mode OpenGL rendering? "
 	"It is used mainly in debug tools. "
 	"Note that this cannot be disabled in GL Core profile. "

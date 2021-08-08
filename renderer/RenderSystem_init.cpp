@@ -50,7 +50,7 @@ idCVar r_useSilRemap( "r_useSilRemap", "1", CVAR_RENDERER | CVAR_BOOL, "consider
 idCVar r_useNodeCommonChildren( "r_useNodeCommonChildren", "1", CVAR_RENDERER | CVAR_BOOL, "stop pushing reference bounds early when possible" );
 idCVar r_useShadowProjectedCull( "r_useShadowProjectedCull", "1", CVAR_RENDERER | CVAR_BOOL, "discard triangles outside light volume before shadowing" );
 idCVar r_useShadowSurfaceScissor( "r_useShadowSurfaceScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor shadows by the scissor rect of the interaction surfaces" );
-idCVar r_useInteractionTable( "r_useInteractionTable", "3", CVAR_RENDERER | CVAR_INTEGER, "which implementation to use for table of existing interactions: 0 = none, 1 = single full matrix, 2 = single hash table" );
+idCVar r_useInteractionTable( "r_useInteractionTable", "2", CVAR_RENDERER | CVAR_INTEGER, "which implementation to use for table of existing interactions: 0 = none, 1 = single full matrix, 2 = single hash table" );
 idCVar r_useTurboShadow( "r_useTurboShadow", "1", CVAR_RENDERER | CVAR_BOOL, "use the infinite projection with W technique for dynamic shadows" );
 idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR_BOOL, "defer tangents calculations after deform" );
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
@@ -91,12 +91,12 @@ idCVar r_skipTranslucent( "r_skipTranslucent", "0", CVAR_RENDERER | CVAR_BOOL, "
 idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = bypasses all non-interaction drawing, 2 = skips ambient light interactions, 3 = both" );
 idCVarInt r_skipNewAmbient( "r_skipNewAmbient", "0", CVAR_RENDERER, "bypasses non-standard ambient drawing, 1 - per-material, 2 - soft particles, 3 - both" );
 idCVar r_skipBlendLights( "r_skipBlendLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all blend lights" );
-idCVarInt r_skipFogLights( "r_skipFogLights", "0", CVAR_RENDERER, "skip fog lights: 1 - solid, 2 - translucent, 3 - all" );
+idCVarInt r_skipFogLights( "r_skipFogLights", "0", CVAR_RENDERER, "skip fog lights: bitmask 1 - solid, 2 - translucent, 4 - bounding box" );
 idCVar r_skipDeforms( "r_skipDeforms", "0", CVAR_RENDERER | CVAR_BOOL, "leave all deform materials in their original state" );
 idCVar r_skipFrontEnd( "r_skipFrontEnd", "0", CVAR_RENDERER | CVAR_BOOL, "bypasses all front end work, but 2D gui rendering still draws" );
 idCVar r_skipUpdates( "r_skipUpdates", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't accept any entity or light updates, making everything static" );
 idCVar r_skipOverlays( "r_skipOverlays", "0", CVAR_RENDERER | CVAR_BOOL, "skip overlay surfaces" );
-idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_CHEAT | CVAR_ARCHIVE, "use black for specular1" );
+idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "use black for specular1" );
 idCVar r_skipBump( "r_skipBump", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "uses a flat surface instead of the bump map" );
 idCVar r_skipDiffuse( "r_skipDiffuse", "0", CVAR_RENDERER | CVAR_BOOL, "use black for diffuse" );
 idCVar r_skipROQ( "r_skipROQ", "0", CVAR_RENDERER | CVAR_BOOL, "skip ROQ decoding" );
@@ -180,7 +180,7 @@ idCVar r_showInteractionFrustums( "r_showInteractionFrustums", "0", CVAR_RENDERE
 idCVar r_showInteractionScissors( "r_showInteractionScissors", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show screen rectangle which contains the interaction frustum, 2 = also draw construction lines", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar r_showLightCount( "r_showLightCount", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = colors surfaces based on light count, 2 = also count everything through walls, 3 = also print overdraw", 0, 3, idCmdSystem::ArgCompletion_Integer<0, 3> );
 idCVar r_showViewEntitys( "r_showViewEntitys", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = displays the bounding boxes of all view models, 2 = print index numbers, 3 = index number and render model name" );
-idCVarInt r_showEntityDraws( "r_showEntityDraws", "0", CVAR_RENDERER, "show effective draw calls per model" );
+idCVarInt r_showEntityDraws( "r_showEntityDraws", "0", CVAR_RENDERER, "show effective draw calls per model (bitmask 2=grouped 3=vertex)" );
 idCVar r_showTris( "r_showTris", "0", CVAR_RENDERER | CVAR_INTEGER, "enables wireframe rendering of the world, 1 = only draw visible ones, 2 = draw all front facing, 3 = draw all", 0, 4, idCmdSystem::ArgCompletion_Integer<0, 4> );
 idCVar r_showSurfaceInfo( "r_showSurfaceInfo", "0", CVAR_RENDERER | CVAR_INTEGER, "show surface material name under crosshair" );
 idCVar r_showNormals( "r_showNormals", "0", CVAR_RENDERER | CVAR_FLOAT, "draws wireframe normals" );
@@ -637,7 +637,7 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 		//stgatilov #4847: check that audio stream is peekable
 		float buff[4096] = { 0 };
 		int cnt = 1024;
-		bool ok = tr.testVideo->SoundForTimeInterval( 0, &cnt, 44100, buff );
+		bool ok = tr.testVideo->SoundForTimeInterval( 0, &cnt, buff );
 		if ( !ok ) {
 			common->Warning( "Failed to get first few sound samples from video file" );
 			return TestVideoClean();
@@ -985,18 +985,14 @@ If ref == NULL, session->updateScreen will be used
 ==================
 */
 void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fileName, int blends, renderView_t *ref, bool envshot ) {
-	byte *buffer;
-	int	i, j, c, temp;
-
+	
 	takingScreenshot = true;
 
 	int	pix = width * height;
-
-	buffer = ( byte * )R_StaticAlloc( pix * 3 + 18 );
-	memset( buffer, 0, 18 );
+	byte *buffer = ( byte * )R_StaticAlloc( pix * 3 );
 
 	if ( blends <= 1 ) {
-		R_ReadTiledPixels( width, height, buffer + 18, ref );
+		R_ReadTiledPixels( width, height, buffer, ref );
 	} else {
 		unsigned short *shortBuffer = ( unsigned short * )R_StaticAlloc( pix * 2 * 3 );
 		memset( shortBuffer, 0, pix * 2 * 3 );
@@ -1004,80 +1000,40 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		// enable anti-aliasing jitter
 		r_jitter.SetBool( true );
 
-		for ( i = 0 ; i < blends ; i++ ) {
-			R_ReadTiledPixels( width, height, buffer + 18, ref );
+		for ( int i = 0 ; i < blends ; i++ ) {
+			R_ReadTiledPixels( width, height, buffer, ref );
 
-			for ( j = 0 ; j < pix * 3 ; j++ ) {
-				shortBuffer[j] += buffer[18 + j];
+			for ( int j = 0 ; j < pix * 3 ; j++ ) {
+				shortBuffer[j] += buffer[j];
 			}
 		}
 
 		// divide back to bytes
-		for ( i = 0 ; i < pix * 3 ; i++ ) {
-			buffer[18 + i] = shortBuffer[i] / blends;
+		for ( int i = 0 ; i < pix * 3 ; i++ ) {
+			buffer[i] = shortBuffer[i] / blends;
 		}
 		R_StaticFree( shortBuffer );
 		r_jitter.SetBool( false );
 	}
 
-	// fill in the header (this is vertically flipped, which qglReadPixels emits)
-	buffer[2] = 2;		// uncompressed type
-	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
-	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
-	buffer[16] = 24;	// pixel size
-
-	// swap rgb to bgr
-	c = 18 + width * height * 3;
-	for ( i = 18 ; i < c ; i += 3 ) {
-		temp = buffer[i];
-		buffer[i] = buffer[i + 2];
-		buffer[i + 2] = temp;
-	}
-
-	// greebo: Check if we should save a screen shot format other than TGA
-	if ( !envshot && ( idStr::Icmp( r_screenshot_format.GetString(), "tga" ) != 0 ) ) {
-		// load screenshot file buffer into image
-		Image image;
-		image.LoadImageFromMemory( ( const unsigned char * )buffer, ( unsigned int )c, "TDM_screenshot" );
-
-		// find the preferred image format
-		idStr extension = r_screenshot_format.GetString( );
-
-		Image::Format format = Image::GetFormatFromString( extension.c_str() );
-
-		if ( format == Image::AUTO_DETECT ) {
-			common->Warning( "Unknown screenshot extension %s, falling back to default.", extension.c_str() );
-
-			format = Image::TGA;
-			extension = "tga";
-		}
-
-		// change extension and index of screenshot file
-		idStr changedPath( fileName );
-		Screenshot_ChangeFilename( changedPath, extension.c_str() );
-
-		// try to save image in other format
-		if ( !image.SaveImageToVfs( changedPath, format ) ) {
-			common->Warning( "Could not save screenshot: %s", changedPath.c_str() );
-		} else {
-			common->Printf( "Wrote %s\n", changedPath.c_str() );
-		}
+	idStr changedPath = fileName;
+	idStr extension;
+	if ( envshot ) {
+		extension = "tga";
 	} else {
+		// find the preferred image format
+		extension = r_screenshot_format.GetString();
 		// change extension and index of screenshot file
-		idStr changedPath( fileName );
-
-		// if envshot is being used, don't name the image using the map + date convention
-		if ( !envshot ) {
-			Screenshot_ChangeFilename( changedPath, "tga" );
-		}
-
-		// Format is TGA, just save the buffer
-		fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_savepath", "" );
-
-		common->Printf( "Wrote %s\n", changedPath.c_str() );
+		Screenshot_ChangeFilename( changedPath, extension );
 	}
+
+	idImageWriter writer;
+	writer.Source( buffer, width, height, 3 );
+	writer.Dest( fileSystem->OpenFileWrite( changedPath.c_str(), "fs_savepath", "" ) );
+	writer.Flip();
+	writer.WriteExtension( extension.c_str() );
+	common->Printf( "Wrote %s\n", changedPath.c_str() );
+
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;
@@ -1412,7 +1368,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		common->Printf( "loading %s\n", fullname.c_str() );
 		session->UpdateScreen();
-		R_LoadImage( fullname, &param.buffers[i], &param.size, &param.size, NULL, true );
+		R_LoadImage( fullname, &param.buffers[i], &param.size, &param.size, NULL );
 		if ( !param.buffers[i] ) {
 			common->Printf( "failed.\n" );
 			for ( i-- ; i >= 0 ; i-- ) {
@@ -1930,6 +1886,7 @@ idRenderSystemLocal::EndLevelLoad
 void idRenderSystemLocal::EndLevelLoad( void ) {
 	renderModelManager->EndLevelLoad();
 	globalImages->EndLevelLoad();
+	programManager->ReloadAllPrograms();
 	if ( r_forceLoadImages.GetBool() ) {
 		RB_ShowImages();
 	}

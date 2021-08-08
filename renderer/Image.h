@@ -279,9 +279,6 @@ public:
 };
 
 
-// data is RGBA
-void	R_WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical = false );
-
 class idImageManager {
 public:
 	void				Init();
@@ -339,7 +336,6 @@ public:
 	void				PrintMemInfo( MemInfo_t *mi );
 
 	// cvars
-	static idCVar		image_roundDown;			// round bad sizes down to nearest power of two
 	static idCVar		image_colorMipLevels;		// development aid to see texture mip usage
 	static idCVar		image_downSize;				// controls texture downsampling
 	static idCVar		image_useCompression;		// 0 = force everything to high quality
@@ -452,7 +448,7 @@ IMAGEFILES
 ====================================================================
 */
 
-void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, bool makePowerOf2 );
+void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 // pic is in top to bottom raster format
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
 void R_MakeAmbientMap( MakeAmbientMapParam param );
@@ -468,5 +464,85 @@ IMAGEPROGRAM
 
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL );
 const char *R_ParsePastImageProgram( idLexer &src );
+
+/*
+====================================================================
+
+IMAGE READER/WRITER
+
+====================================================================
+*/
+
+// data is RGBA
+void R_WriteTGA( const char* filename, const byte* data, int width, int height, bool flipVertical = false );
+
+class idImageWriter {
+public:
+	//setting common settings
+	inline idImageWriter &Source(const byte *data, int width, int height, int bpp = 4) {
+		srcData = data;
+		srcWidth = width;
+		srcHeight = height;
+		srcBpp = bpp;
+		return *this;
+	}
+	inline idImageWriter &Dest(idFile *file, bool close = true) {
+		dstFile = file;
+		dstClose = close;
+		return *this;
+	}
+	inline idImageWriter &Flip(bool doFlip = true) {
+		flip = doFlip;
+		return *this;
+	}
+	//perform save (final call)
+	bool WriteTGA();
+	bool WriteJPG(int quality = 85);
+	bool WritePNG(int level = -1);
+	bool WriteExtension(const char *extension);
+
+private:
+	bool Preamble();
+	void Postamble();
+
+	const byte *srcData = nullptr;
+	int srcWidth = -1, srcHeight = -1, srcBpp = -1;
+	idFile *dstFile = nullptr;
+	bool dstClose = true;
+	bool flip = false;
+};
+
+class idImageReader {
+public:
+	//setting common settings
+	inline idImageReader &Source(idFile *file, bool close = true) {
+		srcFile = file;
+		srcClose = close;
+		return *this;
+	}
+	inline idImageReader &Dest(byte* &data, int &width, int &height) {
+		dstData = &data;
+		dstWidth = &width;
+		dstHeight = &height;
+		return *this;
+	}
+	//perform load (final call)
+	void LoadTGA();
+	void LoadJPG();
+	void LoadPNG();
+	void LoadExtension(const char *extension = nullptr);
+
+private:
+	bool Preamble();
+	void Postamble();
+	void LoadBMP();
+
+	idFile *srcFile = nullptr;
+	bool srcClose = true;
+	byte* *dstData = nullptr;
+	int *dstWidth = nullptr, *dstHeight = nullptr;
+	byte *srcBuffer = nullptr;
+	int srcLength = 0;
+};
 
 #endif /* !__R_IMAGE_H__ */

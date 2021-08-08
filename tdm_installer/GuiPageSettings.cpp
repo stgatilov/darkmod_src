@@ -118,16 +118,19 @@ void cb_Settings_CheckAdvancedSettings(Fl_Widget *self) {
 		g_Settings_CheckSkipConfigDownload->activate();
 		g_Settings_CheckForceScan->activate();
 		g_Settings_CheckBitwiseExact->activate();
+		g_Settings_CheckNoMultipartByteranges->activate();
 	}
 	else {
 		g_Settings_CheckSkipSelfUpdate->deactivate();
 		g_Settings_CheckSkipConfigDownload->deactivate();
 		g_Settings_CheckForceScan->deactivate();
 		g_Settings_CheckBitwiseExact->deactivate();
+		g_Settings_CheckNoMultipartByteranges->deactivate();
 		g_Settings_CheckSkipSelfUpdate->value(false);
 		g_Settings_CheckSkipConfigDownload->value(false);
 		g_Settings_CheckForceScan->value(false);
 		g_Settings_CheckBitwiseExact->value(false);
+		g_Settings_CheckNoMultipartByteranges->value(false);
 	}
 }
 
@@ -187,6 +190,7 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 	try {
 		GuiDeactivateGuard deactivator(g_PageSettings, {});
 		ProgressIndicatorGui progress(g_Settings_ProgressScanning);
+		progress.AttachMainWindow(g_Window);
 		Actions::ScanInstallDirectoryIfNecessary(g_Settings_CheckForceScan->value(), &progress);
 		g_Settings_ProgressScanning->hide();
 	}

@@ -30,6 +30,7 @@ enum
  	LAYER_INVGRID = 3,		// #4286
 	LAYER_OBJECTIVES = 12,
 	LAYER_WAITUNTILREADY = 13,
+	LAYER_SUBTITLES = 20,	// stgatilov #2454
 };
 
 struct SOverlay;

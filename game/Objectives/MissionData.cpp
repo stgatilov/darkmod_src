@@ -2697,6 +2697,9 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = common->Translate( "#str_02915" );	// Times saved
 	value = idStr(m_Stats.totalSaveCount-1);	// -1 due to final save
 	gui->SetStateString(prefix+idStr(index++), key+divider+value);
+	key = "Times loaded";// common->Translate( "#str_02915" );	// Times loaded
+	value = idStr( m_Stats.totalLoadCount );
+	gui->SetStateString( prefix + idStr( index++ ), key + divider + value );
 
 	/*key = "Frames";
 	value = idStr(gameLocal.framenum);
@@ -2823,10 +2826,6 @@ idStr CMissionData::GetDifficultyName(int level)
 
 // Obsttorte
 
-void CMissionData::incrementSavegameCounter()
-{
-	m_Stats.totalSaveCount++;
-}
 int CMissionData::getTotalSaves()
 {
 	return m_Stats.totalSaveCount;

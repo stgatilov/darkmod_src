@@ -433,6 +433,7 @@ void FilterBrushesIntoTree( uEntity_t *e ) {
 	int					r;
 	int					c_unique, c_clusters;
 
+	TRACE_CPU_SCOPE_TEXT("FilterBrushesIntoTree", e->nameEntity)
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- FilterBrushesIntoTree -----\n");
 
 	c_unique = 0;
@@ -442,6 +443,7 @@ void FilterBrushesIntoTree( uEntity_t *e ) {
 		if ( !b ) {
 			continue;
 		}
+		TRACE_CPU_SCOPE_FORMAT("FilterBrushIntoTree", "Ent%d Br%d", prim->brush->entitynum, prim->brush->brushnum)
 		c_unique++;
 		newb = CopyBrush( b );
 		r = FilterBrushIntoTree_r( newb, e->tree->headnode );

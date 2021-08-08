@@ -628,14 +628,14 @@ Actions::VersionInfo Actions::RefreshVersionInfo(const std::string &targetVersio
 	return info;
 }
 
-void Actions::PerformInstallDownload(ZipSync::ProgressIndicator *progressDownload, ZipSync::ProgressIndicator *progressVerify) {
+void Actions::PerformInstallDownload(ZipSync::ProgressIndicator *progressDownload, ZipSync::ProgressIndicator *progressVerify, bool blockMultipart) {
 	g_logger->infof("Starting installation: download");
 	ZipSync::UpdateProcess *updater = g_state->_updater.get();
 	ZipSyncAssert(updater);
 
 	auto callback1 = (progressDownload ? progressDownload->GetDownloaderCallback() : ZipSync::GlobalProgressCallback());
 	auto callback2 = (progressVerify ? progressVerify->GetDownloaderCallback() : ZipSync::GlobalProgressCallback());
-	uint64_t totalBytesDownloaded = updater->DownloadRemoteFiles(callback1, callback2);
+	uint64_t totalBytesDownloaded = updater->DownloadRemoteFiles(callback1, callback2, TDM_INSTALLER_USERAGENT, blockMultipart);
 	g_logger->infof("Downloaded bytes: %lld", totalBytesDownloaded);
 
 	g_logger->infof("");

@@ -38,7 +38,7 @@ namespace {
 		if (bindless) {
 			defines.Set( "BINDLESS_TEXTURES", "1" );
 		}
-		shader->InitFromFiles( "stages/depth/depth.vert.glsl", "stages/depth/depth.frag.glsl", defines );
+		shader->LoadFromFiles( "stages/depth/depth.vert.glsl", "stages/depth/depth.frag.glsl", defines );
 		if (!bindless) {
 			DepthUniforms *uniforms = shader->GetUniformGroup<DepthUniforms>();
 			uniforms->texture.Set( 0 );

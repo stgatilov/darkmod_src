@@ -704,6 +704,7 @@ idPlayer::idPlayer() :
 	m_InventoryOverlay		= -1;
 	objectivesOverlay		= -1;
 	inventoryGridOverlay	= -1;
+	subtitlesOverlay		= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
 	m_MapCursorIdx			= -1;
 	m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
@@ -1455,6 +1456,39 @@ bool idPlayer::WaitUntilReady()
 	m_WaitUntilReadyGuiTime += USERCMD_MSEC;
 	
 	return ready;
+}
+
+void idPlayer::UpdateSubtitlesGUI()
+{
+	bool wantActive = cv_tdm_subtitles.GetInteger() != SUBL_IGNORE;
+	bool haveActive = (subtitlesOverlay != -1);
+
+	// Check if we need create/delete GUI
+	if (wantActive != haveActive) {
+		if (wantActive) {
+			subtitlesOverlay = CreateOverlay(cv_tdm_subtitles_gui_file.GetString(), LAYER_SUBTITLES);
+			assert(subtitlesOverlay != -1);
+		}
+		else {
+			DestroyOverlay(subtitlesOverlay);
+			subtitlesOverlay = -1;
+		}
+	}
+
+	if (subtitlesOverlay == -1)
+		return;
+
+	idUserInterface *subtitlesGUI = GetOverlay(subtitlesOverlay);
+	if (subtitlesGUI == nullptr) {
+		// Happens if overlay creation failed (e.g. missing gui file)
+		gameLocal.Warning("Failed setting up subtitles GUI: %s", cv_tdm_subtitles_gui_file.GetString());
+		DestroyOverlay(subtitlesOverlay);
+		subtitlesOverlay = -1;
+		cv_tdm_subtitles.SetInteger(SUBL_IGNORE);
+		return;
+	}
+
+	subtitlesGUI->UpdateSubtitles();
 }
 
 void idPlayer::CreateObjectivesGUI()
@@ -7506,6 +7540,9 @@ void idPlayer::Think( void )
 
 	// determine if portal sky is in pvs
 	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetEyePosition() ); // SteveL #3819. Pass eye pos instead of origin
+
+	// stgatilov #2454
+	UpdateSubtitlesGUI();
 }
 
 /*
@@ -10567,6 +10604,22 @@ void idPlayer::Event_GetFov()
 
 void idPlayer::PerformFrobCheck()
 {
+	idEntity *oldFrobbed = m_FrobEntity.GetEntity();
+	m_FrobEntity = nullptr;
+
+	PerformFrobCheckInternal();
+
+	idEntity *newFrobbed = m_FrobEntity.GetEntity();
+	if (newFrobbed != oldFrobbed) {
+		if (oldFrobbed)
+			oldFrobbed->SetFrobbed(false);
+		if (newFrobbed)
+			newFrobbed->SetFrobbed(true);
+	}
+}
+
+void idPlayer::PerformFrobCheckInternal()
+{
 	const bool bFrobHelperActive = m_FrobHelper.IsActive();
 
 	// greebo: Don't run this when dead
@@ -10675,9 +10728,6 @@ void idPlayer::PerformFrobCheck()
 			 && !ent->IsHidden() && ( traceDist < ent->m_FrobDistance )
 			 && ( ent != gameLocal.m_Grabber->GetSelected() ) )
 		{
-			// Mark as frobbed for this frame
-			ent->SetFrobbed(true);
-
 			// Store the trace for later reference
 			m_FrobTrace = trace;
 			// Store the frob entity
@@ -10809,8 +10859,6 @@ void idPlayer::PerformFrobCheck()
 	// Activate frobbed state on found entity. We might have alrady
 	if ( ( bestEnt != NULL ) && ( bestEnt != gameLocal.m_Grabber->GetSelected() ) )
 	{
-		// Mark the entity as frobbed this frame
-		bestEnt->SetFrobbed(true);
 		// Store the frob entity
 		m_FrobEntity = bestEnt;
 		// and the trace for reference

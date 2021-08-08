@@ -95,7 +95,6 @@ public:
 
 	// Obsttorte
 	virtual idStr				triggeredSave() = 0; 
-	virtual void				incrementSaveCount() = 0; 
 	virtual bool				savegamesDisallowed() = 0;
 	virtual bool				quicksavesDisallowed() = 0;
 	// <-- end
@@ -204,6 +203,7 @@ public:
 	virtual void				ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t *renderLight );
 	virtual void				ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_t *renderEntity );
 	virtual void				ParseSpawnArgsToRefSound( const idDict *args, refSound_t *refSound );
+	virtual void				ParseSpawnArgsToAxis( const idDict *args, idMat3 &axis );
 
 	// Animation system calls for non-game based skeletal rendering.
 	virtual idRenderModel *		ANIM_GetModelFromEntityDef( const char *classname );
@@ -260,6 +260,8 @@ public:
 	virtual void				EntityStopSound( idEntity *ent );
 	virtual void				EntityDelete( idEntity *ent, bool safe = false );
 	virtual void				EntitySetColor( idEntity *ent, const idVec3 color );
+	virtual void				EntityUpdateLOD( idEntity *ent );
+	virtual void				EntityUpdateShaderParms( idEntity *ent );
 
 	// Player methods.
 	virtual bool				PlayerIsValid() const;

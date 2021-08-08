@@ -64,6 +64,7 @@ ProcessModel
 */
 bool ProcessModel( uEntity_t *e, bool floodFill ) {
 	bspface_t	*faces;
+	TRACE_CPU_SCOPE_TEXT("ProcessModel", e->nameEntity)
 
 	// build a bsp tree using all of the sides
 	// of all of the structural brushes
@@ -132,6 +133,7 @@ bool ProcessModels( void ) {
 	verbosityLevel_t	oldVerbose;
 	uEntity_t			*entity;
 	uint				counter = 0;  // 4123
+	TRACE_CPU_SCOPE("ProcessModels")
 
 	{	//stgatilov #4970: check for rotation-hacked entities
 		idList<const char *> badRotationFuncStatics;
@@ -314,6 +316,7 @@ void Dmap( const idCmdArgs &args ) {
 		return;
 	}
 
+	TRACE_CPU_SCOPE_TEXT("Dmap", args.Args());
 	common->Printf("---- dmap ----\n");
 
 	dmapGlobals.fullCarve = true;
@@ -469,6 +472,7 @@ void Dmap( const idCmdArgs &args ) {
 	if ( !leaked ) {
 
 		if ( !noCM ) {
+			TRACE_CPU_SCOPE("CreateCollisionMap")
 
 			// make sure the collision model manager is not used by the game
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );

@@ -288,10 +288,6 @@ void idGameLocal::Clear( void )
 	{
 		m_ModelGenerator->Clear();
 	}
-	if (m_ImageMapManager)
-	{
-		m_ImageMapManager->Clear();
-	}
 	if (m_LightController)
 	{
 		m_LightController->Clear();
@@ -533,13 +529,6 @@ void idGameLocal::Init( void ) {
 	Printf( "--------------------------------------\n" );
 	Printf( "Parsing material files\n" );
 
-	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
-
-	// grayman #3584 - load light textures found in other files
-	LoadLightMaterial("materials/tdm_light_textures.mtr",    &g_Global.m_LightMaterial);
-	LoadLightMaterial("materials/tdm_ai_steambots.mtr",      &g_Global.m_LightMaterial);
-	LoadLightMaterial("materials/tdm_lights_d3_leftover.mtr",&g_Global.m_LightMaterial);
-
 	m_MissionData = CMissionDataPtr(new CMissionData);
 	m_CampaignStats = CampaignStatsPtr(new CampaignStats);
 	m_RelationsManager = CRelationsPtr(new CRelations);
@@ -565,10 +554,6 @@ void idGameLocal::Init( void ) {
 	// Initialise the model generator
 	m_ModelGenerator = CModelGeneratorPtr(new CModelGenerator);
 	m_ModelGenerator->Init();
-
-	// Initialise the image map manager
-	m_ImageMapManager = ImageMapManagerPtr(new ImageMapManager);
-	m_ImageMapManager->Init();
 
 	// Initialise the light controller
 	m_LightController = CLightControllerPtr(new CLightController);
@@ -717,9 +702,6 @@ void idGameLocal::Shutdown( void ) {
 	// Destroy the model generator
 	m_ModelGenerator.reset();
 
-	// Destroy the image map manager
-	m_ImageMapManager.reset();
-
 	// Destroy the light controller
 	m_LightController.reset();
 
@@ -851,9 +833,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Save whatever the model generator needs
 	m_ModelGenerator->Save(&savegame);
-
-	// Save whatever the image map manager needs
-	m_ImageMapManager->Save(&savegame);
 
 	// Save whatever the light controller needs
 	m_LightController->Save(&savegame);
@@ -1156,17 +1135,6 @@ idStr idGameLocal::triggeredSave()
 	idStr sgn = cvarSystem->GetCVarString("saveGameName");
 	cvarSystem->SetCVarString("saveGameName","");
 	return sgn;	
-}
-
-/*
-=============
-idGameLocal::incrementSaveCount
-=============
-*/
-
-void idGameLocal::incrementSaveCount()
-{
-	m_MissionData->incrementSavegameCounter();
 }
 
 /*
@@ -1685,6 +1653,7 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 			continue;
 		}
 
+		bool lodChanged = false;
 		for (int i = 0; i < diffArgs.GetNumKeyVals(); i++) {
 			const idKeyValue *kv = diffArgs.GetKeyVal(i);
 			if (
@@ -1699,32 +1668,99 @@ void idGameLocal::HotReloadMap(const char *mapDiff, bool skipTimestampCheck) {
 			0) {
 				respawn = true;
 			}
+			if (idStr::FindText(kv->GetKey(), "lod_") >= 0 ||
+				idStr::FindText(kv->GetKey(), "_lod") >= 0 ||
+				kv->GetKey().IcmpPrefix("dist_check") == 0 ||
+				kv->GetKey().Icmp("hide_distance") == 0 ||
+			0) {
+				lodChanged = true;
+			}
 		}
 		if (respawn) {
 			gameEdit->SpawnEntityDef(newArgs, &ent, idGameEdit::sedRespectInhibit | idGameEdit::sedRespawn);
 			continue;
 		}
 
+		//update spawnargs dict in entity
 		gameEdit->EntityChangeSpawnArgs( ent, &diffArgs );
-		//this method has broken conventions about what spawnargs should be passed
-		//the only correct way is to pass NULL, meaning that all existing spawnargs were modified
-		//all the other approaches break something, e.g. inherited spawnargs
-		gameEdit->EntityUpdateChangeableSpawnArgs( ent, NULL );
+
+		//compute new spawnargs with inherited props
+		const char *newClassname = newArgs.GetString("classname");
+		const idDeclEntityDef *newEntityDef = gameLocal.FindEntityDef(newClassname, false);
+		idDict newArgsInherited = newArgs;
+		newArgsInherited.SetDefaults(&newEntityDef->dict, idStr("editor_"));
+
+		bool originChanged = diffArgs.FindKey("origin") != NULL;
+		bool axisChanged = diffArgs.FindKey("rotation") || diffArgs.FindKey("angle");
+
+		//check if entity is moved while bound to master
+		idVec3 masterOrigin;	masterOrigin.Zero();
+		idMat3 masterAxis;		masterAxis.Identity();
+		if (originChanged || axisChanged) {
+			//find coordinate system of the bind master according to new spawnargs
+			//if position of bound entity is changed, then we will adjust it relative to that
+			if (idEntity *gameMasterEnt = ent->GetBindMaster()) {
+				const char *gameMasterName = gameMasterEnt->name.c_str();
+				const char *newMasterName = newArgsInherited.GetString("bind");
+				idMapEntity *newMasterMapEnt = mapFile->FindEntity(newMasterName);
+
+				//note: we only support simple binds here, no "bindToJoint" or "bindToBody"
+				bool complexBind = (gameMasterEnt->GetBindBody() >= 0 || gameMasterEnt->GetBindJoint());
+
+				if (idStr::Cmp(gameMasterName, newMasterName) == 0 && newMasterMapEnt && !complexBind) {
+					//still has same bind master as in .map file
+					masterOrigin = newMasterMapEnt->epairs.GetVector("origin");
+					gameEdit->ParseSpawnArgsToAxis(&newMasterMapEnt->epairs, masterAxis);
+				}
+				else {
+					//different master / master missing in .map / unsupported bind type
+					//unbind entity and move in absolute coords
+					ent->Unbind();
+				}
+			}
+		}
+
+		if (diffArgs.FindKey("rotate") || diffArgs.FindKey("translate"))
+			if (ent->IsType(CBinaryFrobMover::Type)) {
+				((CBinaryFrobMover*)ent)->SetFractionalPosition(0.0, true);
+				((CBinaryFrobMover*)ent)->Event_PostSpawn();
+			}
 		if (diffArgs.FindKey("model")) {
-			idStr newModel = newArgs.GetString("model");
+			idStr newModel = newArgsInherited.GetString("model");
 			gameEdit->EntitySetModel(ent, newModel);
 		}
 		if (diffArgs.FindKey("skin")) {
-			idStr newSkin = diffArgs.GetString("skin");
-			ent->PostEventMS(&EV_SetSkin, 0, newSkin);
+			idStr newSkin = newArgsInherited.GetString("skin");
+			ent->Event_SetSkin(newSkin);
 		}
-		if (diffArgs.FindKey("origin")) {
-			idVec3 newOrigin = newArgs.GetVector("origin");
+		if (diffArgs.FindKey("noshadows")) {
+			bool newNoShadows = newArgsInherited.GetBool("noshadows");
+			ent->Event_noShadows(newNoShadows);
+		}
+		if (lodChanged) {
+			gameEdit->EntityUpdateLOD(ent);
+		}
+		if (originChanged) {
+			idVec3 newOrigin = newArgsInherited.GetVector("origin");
+			newOrigin = (newOrigin - masterOrigin) * masterAxis.Inverse();
 			gameEdit->EntitySetOrigin(ent, newOrigin);
 		}
-		if (diffArgs.FindKey("rotation")) {
-			idMat3 newAxis = newArgs.GetMatrix("rotation");
+		if (axisChanged) {
+			idMat3 newAxis;
+			gameEdit->ParseSpawnArgsToAxis(&newArgsInherited, newAxis);
+			newAxis = newAxis * masterAxis.Inverse();
 			gameEdit->EntitySetAxis(ent, newAxis);
+		}
+		if (diffArgs.FindKey("_color") || diffArgs.MatchPrefix("shaderParm")) {
+			gameEdit->EntityUpdateShaderParms(ent);
+		}
+		if (ent->IsType(idLight::Type)) {
+			gameEdit->ParseSpawnArgsToRenderLight(&newArgsInherited, ((idLight*)ent)->GetRenderLight());
+		}
+		if (diffArgs.MatchPrefix("target")) {
+			//note: rebuild list of targets on NEXT frame
+			//in case we will spawn some targeted entity in this diff bundle
+			ent->PostEventMS(&EV_FindTargets, 0);
 		}
 
 		gameEdit->EntityUpdateVisuals( ent );
@@ -2006,7 +2042,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadObject( reinterpret_cast<idClass*&>(m_Grabber) );
 
 	m_ModelGenerator->Restore(&savegame);
-	m_ImageMapManager->Restore(&savegame);
 	m_LightController->Restore(&savegame);
 
 	m_DifficultyManager.Restore(&savegame);
@@ -2047,6 +2082,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		const char *entName = mapEnt->epairs.GetString("name");
 
 		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
+			TRACE_CPU_SCOPE_TEXT("Entity:Spawn", entName)
 			declManager->BeginEntityLoad(mapEnt);
 			CacheDictionaryMedia( &mapEnt->epairs );
 			const char *classname = mapEnt->epairs.GetString( "classname" );
@@ -2472,10 +2508,6 @@ void idGameLocal::MapShutdown( void ) {
 	{
 		m_ModelGenerator->Print();
 		m_ModelGenerator->Clear();
-	}
-	if (m_ImageMapManager != NULL)
-	{
-		m_ImageMapManager->Clear();
 	}
 	
 	if (m_LightController != NULL)
@@ -3173,7 +3205,6 @@ idGameLocal::RunFrame
 gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs ) {
 	idEntity *	ent;
 	int			num(-1);
-	float		ms;
 	idTimer		timer_think, timer_events, timer_singlethink;
 	gameReturn_t ret;
 	idPlayer	*player;
@@ -3273,15 +3304,13 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			// create a merged pvs for all players
 			SetupPlayerPVS();
 
-			idTimer lasTimer;
-			lasTimer.Clear();
-			lasTimer.Start();
-			// The Dark Mod
-			// 10/9/2005: SophisticatedZombie
-			// Update the Light Awareness System
-			LAS.updateLASState();
-			lasTimer.Stop();
-			DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
+			{
+				TRACE_CPU_SCOPE( "Update:LAS" )
+				// The Dark Mod
+				// 10/9/2005: SophisticatedZombie
+				// Update the Light Awareness System
+				LAS.updateLASState();
+			}
 
 			unsigned int ticks = static_cast<unsigned int>(sys->GetClockTicks());
 
@@ -3300,55 +3329,45 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			timer_think.Clear();
 			timer_think.Start();
 
-			// let entities think
-			if ( g_timeentities.GetFloat() ) {
+			{ // let entities think
+				TRACE_CPU_SCOPE( "ThinkAllEntities" )
 				num = 0;
+				bool timeentities = (g_timeentities.GetFloat() > 0.0);
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-					if ( g_cinematic.GetBool() && inCinematic && !ent->cinematic ) {
+					if ( inCinematic && g_cinematic.GetBool() && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
-						if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
-						{
+						// grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
+						if (ent->IsType(idAI::Type)) {
 							static_cast<idAI*>(ent)->m_lastThinkTime = time;
 						}
 						continue;
 					}
-					timer_singlethink.Clear();
-					timer_singlethink.Start();
-					ent->Think();
-					timer_singlethink.Stop();
-					ms = timer_singlethink.Milliseconds();
-					if ( ms >= g_timeentities.GetFloat() ) {
-						Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
-						DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
+
+					if ( timeentities ) {
+						timer_singlethink.Clear();
+						timer_singlethink.Start();
 					}
-					num++;
-				}
-			} else {
-				if ( inCinematic ) {
-					num = 0;
-					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-						if ( g_cinematic.GetBool() && !ent->cinematic ) {
-							ent->GetPhysics()->UpdateTime( time );
-							if (ent->IsType(idAI::Type)) // grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
-							{
-								static_cast<idAI*>(ent)->m_lastThinkTime = time;
-							}
-							continue;
+
+					{
+						TRACE_CPU_SCOPE_STR("Entity:Think", ent->name)
+						ent->Think();
+						num++;
+					}
+
+					if ( timeentities ) {
+						timer_singlethink.Stop();
+						float ms = timer_singlethink.Milliseconds();
+						if ( ms >= g_timeentities.GetFloat() ) {
+							Printf( "%d: entity '%s': %.1f ms\n", time, ent->name.c_str(), ms );
+							DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("%d: entity '%s': %.3f ms\r", time, ent->name.c_str(), ms );
 						}
-						ent->Think();
-						num++;
-					}
-				} else {
-					num = 0;
-					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-						ent->Think();
-						num++;
 					}
 				}
 			}
 
 			// remove any entities that have stopped thinking
 			if ( numEntitiesToDeactivate ) {
+				TRACE_CPU_SCOPE( "DeactivateEntities" )
 				idEntity *next_ent;
 				int c = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
@@ -3709,7 +3728,11 @@ void idGameLocal::UpdateWidescreenModeFromScreenResolution(idUserInterface* gui)
 
 void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 {
-	if (m_GuiMessages.Num() == 0) return;
+	//stgatilov #5661: don't drop message until previous one is closed
+	if (ui->GetStateBool("MsgBoxVisible"))
+		return;
+	if (m_GuiMessages.Num() == 0)
+		return;
 
 	const GuiMessage& msg = m_GuiMessages[0];
 
@@ -5444,6 +5467,7 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 	if ( spawnArgs.GetString( "name", "", &name ) ) {
 		sprintf( error, " on '%s'", name);
 	}
+	TRACE_CPU_SCOPE_TEXT("EntDef:Spawn", name);
 
 	spawnArgs.GetString( "classname", NULL, &classname );
 	const idDeclEntityDef *def = FindEntityDef( classname, false );
@@ -5678,6 +5702,7 @@ void idGameLocal::SpawnMapEntities( void )
 
 		if (!InhibitEntitySpawn(args))
 		{
+			TRACE_CPU_SCOPE_TEXT("Entity:Spawn", entName)
 			declManager->BeginEntityLoad(mapEnt);
 			// precache any media specified in the map entity
 			CacheDictionaryMedia(&args);
@@ -6951,134 +6976,6 @@ void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] )
 {
 }
 
-void idGameLocal::LoadLightMaterial(const char *pFN, idList<CLightMaterial *> *ml)
-{
-	idToken token;
-	idLexer src;
-	idStr Material, FallOff, Map, *add;
-	int level;		// Nestinglevel for brackets
-	bool bAmbient;
-	CLightMaterial *mat;
-
-	if(pFN == NULL || ml == NULL)
-		goto Quit;
-
-	src.LoadFile(pFN);
-
-	level = 0;
-	add = NULL;
-	bAmbient = false;
-
-	while(1)
-	{
-		if(!src.ReadToken(&token))
-			goto Quit;
-
-//		DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Token: [%s]\r", token.c_str());
-
-		if(token == "table")
-		{
-			src.SkipBracedSection(true);
-			continue;
-		}
-
-		if(token == "lights")
-		{
-			Material = token;
-			while(src.ReadTokenOnLine(&token) == true)
-			{
-				Material += token;
-//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Material: [%s]\r", token.c_str());
-			}
-
-			continue;
-		}
-		else if(level == 1 && token == "ambientLight")
-		{
-			bAmbient = true;
-			continue;
-		}
-		else if(token == "{")
-		{
-			level++;
-			if(level == 1)
-				bAmbient = false;
-
-			continue;
-		}
-		else if(token == "}")
-		{
-			level--;
-			if(level == 0)
-			{
-				if(FallOff.Length()  == 0 && Map.Length() == 0)
-					continue;
-
-				mat = new CLightMaterial(Material, FallOff, Map);
-				mat->m_AmbientLight = bAmbient;
-				ml->Append(mat);
-				DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("Texture: [%s] - [%s]/[%s] - Ambient: %u\r", Material.c_str(), FallOff.c_str(), Map.c_str(), bAmbient);
-			}
-			continue;
-		}
-		else if(token == "map")
-		{
-			Map = "";
-			while(src.ReadTokenOnLine(&token) == true)
-			{
-				if(token == "makeintensity")
-					continue;
-				else if(token == "(")
-					continue;
-				else if(token == ")")
-					break;
-				else
-					Map += token;
-//				DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("Map: [%s]\r", token.c_str());
-			}
-			continue;
-		}
-		else if(token == "lightFalloffImage")
-		{
-			FallOff = "";
-
-			while(1)
-			{
-				if(!src.ReadToken(&token))
-				{
-					DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Invalid material file structure on line %u\r", src.GetLineNum());
-					goto Quit;
-				}
-
-				// Ignore makeintensity tag
-				if(token == "makeintensity")
-					continue;
-				else if(token == "(")
-					continue;
-				else if(token == ")")
-					break;
-				else
-				{
-					do
-					{
-						if(token == ")")
-							break;
-
-						FallOff += token;
-//						DM_LOG(LC_SYSTEM, LT_DEBUG)LOGSTRING("FallOff: [%s]\r", token.c_str());
-					}
-					while(src.ReadTokenOnLine(&token) == true);
-					break;
-				}
-			}
-			continue;
-		}
-	}
-
-Quit:
-	return;
-}
-
 int idGameLocal::CheckStimResponse(idList< idEntityPtr<idEntity> > &list, idEntity *e)
 {
 	// Construct an idEntityPtr with the given entity
@@ -7614,6 +7511,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 		return; // S/R disabled, skip this
 	}
 
+	TRACE_CPU_SCOPE( "ProcessStimResponse" )
 	idTimer srTimer;
 	srTimer.Clear();
 	srTimer.Start();
@@ -7655,6 +7553,8 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 		idEntity* entity = m_StimEntity[i].GetEntity();
 
 		if (entity == NULL) continue;
+
+		TRACE_CPU_SCOPE_STR( "Process:Stim", entity->name );
 
 		// greebo: Get the S/R collection, this is always non-NULL
 		CStimResponseCollection* srColl = entity->GetStimResponseCollection();

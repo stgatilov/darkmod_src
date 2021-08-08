@@ -849,8 +849,11 @@ idBrushBSPNode *idBrushBSP::ProcessGridCell( idBrushBSPNode *node, int skipConte
 
 	numGridCellSplits = 0;
 
-	// chop away all brush overlap
-	node->brushList.Chop( BrushChopAllowed );
+	{
+		TRACE_CPU_SCOPE_FORMAT( "BrushList:Chop", "num = %d", node->brushList.Num() )
+		// chop away all brush overlap
+		node->brushList.Chop( BrushChopAllowed );
+	}
 
 	// merge brushes if possible
 	//node->brushList.Merge( BrushMergeAllowed );
@@ -864,7 +867,10 @@ idBrushBSPNode *idBrushBSP::ProcessGridCell( idBrushBSPNode *node, int skipConte
 
 	testedPlanes = new bool[planeList.Num()];
 
-	BuildBrushBSP_r( node, planeList, testedPlanes, skipContents );
+	{
+		TRACE_CPU_SCOPE_FORMAT( "BrushList:BSP", "num = %d", node->brushList.Num() )
+		BuildBrushBSP_r( node, planeList, testedPlanes, skipContents );
+	}
 
 	delete testedPlanes;
 
@@ -947,6 +953,7 @@ void idBrushBSP::Build( idBrushList brushList, int skipContents,
 	int i;
 	idList<idBrushBSPNode *> gridCells;
 
+	TRACE_CPU_SCOPE("BuildBrushBSP")
 	common->Printf( "[Brush BSP]\n" );
 	common->Printf( "%6d brushes\n", brushList.Num() );
 
@@ -961,24 +968,25 @@ void idBrushBSP::Build( idBrushList brushList, int skipContents,
 	root->volume->FromBounds( treeBounds );
 	root->parent = NULL;
 
-	BuildGrid_r( gridCells, root );
-
-	common->Printf( "\r%6d grid cells\n", gridCells.Num() );
-
-#ifdef OUPUT_BSP_STATS_PER_GRID_CELL
-	for ( i = 0; i < gridCells.Num(); i++ ) {
-		ProcessGridCell( gridCells[i], skipContents );
+	{
+		TRACE_CPU_SCOPE("BuildGrid")
+		BuildGrid_r( gridCells, root );
+		common->Printf( "\r%6d grid cells\n", gridCells.Num() );
+		TRACE_ATTACH_FORMAT("%d cells", gridCells.Num())
 	}
-#else
-	common->Printf( "\r%6d %%", 0 );
-	for ( i = 0; i < gridCells.Num(); i++ ) {
-		DisplayRealTimeString( "\r%6d", i * 100 / gridCells.Num() );
-		ProcessGridCell( gridCells[i], skipContents );
-	}
-	common->Printf( "\r%6d %%\n", 100 );
-#endif
 
-	common->Printf( "\r%6d splits\n", numSplits );
+	{
+		TRACE_CPU_SCOPE("ProcessGrid")
+		common->Printf( "\r%6d %%", 0 );
+		for ( i = 0; i < gridCells.Num(); i++ ) {
+			TRACE_CPU_SCOPE_FORMAT( "Process:Cell", gridCells[i]->volume->GetBounds().ToString().c_str() );
+			DisplayRealTimeString( "\r%6d", i * 100 / gridCells.Num() );
+			ProcessGridCell( gridCells[i], skipContents );
+		}
+		common->Printf( "\r%6d %%\n", 100 );
+		common->Printf( "\r%6d splits\n", numSplits );
+	}
+
 
 	if ( brushMap ) {
 		delete brushMap;
@@ -1307,6 +1315,7 @@ idBrushBSP::Portalize
 ============
 */
 void idBrushBSP::Portalize( void ) {
+	TRACE_CPU_SCOPE("PortalizeBSP")
 	common->Printf( "[Portalize BSP]\n" );
 	common->Printf( "%6d nodes\n", (numSplits - numPrunedSplits) * 2 + 1 );
 	numPortals = 0;
@@ -1552,6 +1561,7 @@ idBrushBSP::RemoveOutside
 ============
 */
 bool idBrushBSP::RemoveOutside( const idMapFile *mapFile, int contents, const idStrList &classNames ) {
+	TRACE_CPU_SCOPE("RemoveOutside")
 	common->Printf( "[Remove Outside]\n" );
 
 	solidLeafNodes = outsideLeafNodes = insideLeafNodes = 0;
@@ -1775,6 +1785,7 @@ idBrushBSP::MergePortals
 */
 void idBrushBSP::MergePortals( int skipContents ) {
 	numMergedPortals = 0;
+	TRACE_CPU_SCOPE("MergePortals")
 	common->Printf( "[Merge Portals]\n" );
 	SetPortalPlanes();
 	MergePortals_r( root, skipContents );
@@ -2145,6 +2156,7 @@ idBrushBSP::MeltPortals
 ============
 */
 void idBrushBSP::MeltPortals( int skipContents ) {
+	TRACE_CPU_SCOPE("MeltPortals")
 	idVectorSet<idVec3,3> vertexList;
 
 	numInsertedPoints = 0;

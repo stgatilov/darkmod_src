@@ -550,6 +550,7 @@ void idAASBuild::LedgeSubdivision( idBrushBSP &bsp ) {
 	numLedgeSubdivisions = 0;
 	ledgeList.Clear();
 
+	TRACE_CPU_SCOPE("LedgeSubdivision")
 	common->Printf( "[Ledge Subdivision]\n" );
 
 	bsp.GetRootNode()->RemoveFlagRecurse( NODE_VISITED );

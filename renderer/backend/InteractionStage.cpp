@@ -42,9 +42,9 @@ struct InteractionStage::ShaderParams {
 	idVec4 ambientRimColor;
 	// bindless texture handles, if supported
 	uint64_t normalTexture;
+	uint64_t padding;
 	uint64_t diffuseTexture;
 	uint64_t specularTexture;
-	uint64_t padding;
 };
 
 namespace {
@@ -99,7 +99,7 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
 	if (bindless) {
 		defines.Set( "BINDLESS_TEXTURES", "1" );
 	}
-	shader->InitFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
+	shader->LoadFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->lightProjectionCubemap.Set( TU_LIGHT_PROJECT_CUBE );
 	uniforms->lightProjectionTexture.Set( TU_LIGHT_PROJECT );

@@ -48,7 +48,6 @@ idCVar idImageManager::image_anisotropy( "image_anisotropy", "1", CVAR_RENDERER 
 idCVar idImageManager::image_lodbias( "image_lodbias", "0", CVAR_RENDERER | CVAR_ARCHIVE, "change lod bias on mipmapped images" );
 idCVar idImageManager::image_downSize( "image_downSize", "0", CVAR_RENDERER | CVAR_ARCHIVE, "controls texture downsampling" );
 idCVar idImageManager::image_forceDownSize( "image_forceDownSize", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "" );
-idCVar idImageManager::image_roundDown( "image_roundDown", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "round bad sizes down to nearest power of two" );
 idCVar idImageManager::image_colorMipLevels( "image_colorMipLevels", "0", CVAR_RENDERER | CVAR_BOOL, "development aid to see texture mip usage" );
 idCVar idImageManager::image_preload( "image_preload", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "if 0, dynamically load all images" );
 idCVar idImageManager::image_useCompression( "image_useCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = load compressed (DDS) images, 0 = force everything to high quality. 0 does not work for TDM as all our textures are DDS." );
@@ -302,12 +301,13 @@ void idImage::MakeDefault() {
 		}
 	}
 	GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT, IR_BOTH );
+	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT, residency );
 
 	defaulted = true;
 }
 
 static void R_DefaultImage( idImage *image ) {
+	image->residency = IR_BOTH;
 	image->MakeDefault();
 }
 
@@ -1412,7 +1412,8 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	image->levelLoadReferenced = true;
 
 	// load it if we aren't in a level preload
-	if ( image_preload.GetBool() && !insideLevelLoad ) {
+	// FIXME assume CPU residency as a flag that we need the image data immediately, rather than maybe load in background for GPU uploads
+	if ( image_preload.GetBool() && !insideLevelLoad || ( residency & IR_CPU ) ) { 
 		image->referencedOutsideLevelLoad = true;
 		image->ActuallyLoadImage();	// check for precompressed, load is from front end
 		declManager->MediaPrint( "%ix%i %s\n", image->uploadWidth, image->uploadHeight, image->imgName.c_str() );
@@ -1509,7 +1510,7 @@ void R_CombineCubeImages_f( const idCmdArgs &args ) {
 			sprintf( filename, "%s%i%04i.tga", baseName.c_str(), orderRemap[side], frameNum );
 
 			common->Printf( "reading %s\n", filename );
-			R_LoadImage( filename, &pics[side], &width, &height, NULL, true );
+			R_LoadImage( filename, &pics[side], &width, &height, NULL );
 
 			if ( !pics[side] ) {
 				common->Printf( "not found.\n" );

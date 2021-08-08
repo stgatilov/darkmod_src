@@ -43,7 +43,7 @@ if g_os == 'FreeBSD':
 	])
 elif g_os == 'Linux':
 	# Linux
-	path_template = '#/../ThirdParty/artefacts/{0}/lib/lnx%d_s_gcc5_rel_stdcpp/{1}' % (64 if TARGET_ARCH == 'x64' else 32)
+	path_template = '#/../ThirdParty/artefacts/{0}/lib/lnx%d_s_gcc_rel_stdcpp/{1}' % (64 if TARGET_ARCH == 'x64' else 32)
 	local_env.Append(LIBS = [
 		File(path_template.format('libcurl', 'libcurl.a')),
 		File(path_template.format('mbedtls', 'libmbedtls.a')),

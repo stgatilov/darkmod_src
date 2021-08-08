@@ -947,6 +947,8 @@ idMapFile::Parse
 ===============
 */
 bool idMapFile::Parse( const char *filename, bool ignoreRegion, bool osPath ) {
+	TRACE_CPU_SCOPE_TEXT("idMapFile::Parse", filename)
+
 	// no string concatenation for epairs and allow path names for materials
 	idLexer src( LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 	idToken token;

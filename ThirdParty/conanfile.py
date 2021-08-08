@@ -53,7 +53,6 @@ class TdmDepends(ConanFile):
     requires_releaseonly = (
         "zlib/1.2.11@conan/stable",
         "libcurl/7.61.1@thedarkmod/local",
-        "devil/1.7.8@thedarkmod/local",
         "libjpeg/9c@thedarkmod/local",
         "libpng/1.6.34@bincrafters/stable",
         "ffmpeg/4.0.2@thedarkmod/local",

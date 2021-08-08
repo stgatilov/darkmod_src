@@ -154,7 +154,7 @@ ID_INLINE void idCmdSystem::ArgCompletion_SoundName( const idCmdArgs &args, void
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ImageName( const idCmdArgs &args, void(*callback)( const char *s ) ) {
-	cmdSystem->ArgCompletion_FolderExtension( args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx", NULL );
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx", ".bmp", ".png", NULL );
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_VideoName( const idCmdArgs &args, void(*callback)( const char *s ) ) {

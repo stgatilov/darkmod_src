@@ -202,6 +202,8 @@ public:
 	void				Remove( const char rem );						// Tels: Faster version of Remove(" ");
 	void				Remap( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
 	idList<idStr>		Split( const char *delimiters, bool skipEmpty ) const;
+	idList<idStr>		Split( const idList<idStr> &delimiters, bool skipEmpty ) const;
+	idList<idStr>		SplitLines( void ) const;
 	static idStr		Join( const idList<idStr> &tokens, const char *separator );
 
 	// file name methods
@@ -1055,7 +1057,7 @@ ID_INLINE bool idStr::CharIsTab( char c ) {
 }
 
 ID_INLINE int idStr::ColorIndex( int c ) {
-	return ( c & 15 );
+	return ( ( c - C_COLOR_DEFAULT ) & 15 );
 }
 
 ID_INLINE int idStr::DynamicMemoryUsed() const {

@@ -99,6 +99,8 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	slowmoActive		= false;
 	slowmoSpeed			= 0;
 	enviroSuitActive	= false;
+
+	activeSubtitlesFrame = 0;
 }
 
 /*
@@ -157,6 +159,10 @@ void idSoundWorldLocal::Shutdown() {
 	}
 	localSound = NULL;
 	secondarySound = NULL; // grayman #4882
+
+	activeSubtitles[0].ClearFree();
+	activeSubtitles[1].ClearFree();
+	activeSubtitlesFrame = -1;
 }
 
 /*
@@ -455,7 +461,7 @@ float idSoundWorldLocal::CurrentShakeAmplitudeForPosition( const int time, const
 
 /*
 ===================
-idSoundWorldLocal::MixLoop
+idSoundWorldLocal::MixLoopInternal
 
 Sum all sound contributions into finalMixBuffer, an unclamped float buffer holding
 all output channels.  MIXBUFFER_SAMPLES samples will be created, with each sample consisting
@@ -465,7 +471,7 @@ this is normally called from the sound thread, but also from the main thread
 for AVIdemo writing
 ===================
 */
-void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *finalMixBuffer ) {
+void idSoundWorldLocal::MixLoopInternal( int current44kHz, int numSpeakers, float *finalMixBuffer ) {
 	int i, j;
 	idSoundEmitterLocal *sound;
 
@@ -578,6 +584,32 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 	if (false && enviroSuitActive) {
 		soundSystemLocal.DoEnviroSuit( finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers );
 	}
+}
+
+/*
+===================
+idSoundWorldLocal::MixLoop
+
+stgatilov #2454: Simple wrapper which makes sure activeSubtitles are filled on every call
+===================
+*/
+void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *finalMixBuffer ) {
+	activeSubtitles[!activeSubtitlesFrame].Clear();
+
+	MixLoopInternal( current44kHz, numSpeakers, finalMixBuffer );
+
+	idScopedCriticalSection section(activeSubtitlesMutex);
+	activeSubtitlesFrame ^= 1;
+}
+
+/*
+===================
+idSoundWorldLocal::GetSubtitles
+===================
+*/
+void idSoundWorldLocal::GetSubtitles( idList<SubtitleMatch> &dest ) {
+	idScopedCriticalSection section(activeSubtitlesMutex);
+	dest = activeSubtitles[activeSubtitlesFrame];
 }
 
 //==============================================================================
@@ -2081,6 +2113,13 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	// 
 	if ( sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED )
 	{
+		// stgatilov #2454: add any active subtitles to soundWorld's buffer
+		int subsNum = chan->GatherSubtitles(
+			offset * sample->objectInfo.nChannels,
+			activeSubtitles[!activeSubtitlesFrame],
+			cv_tdm_subtitles.GetInteger()
+		);
+
 		if ( !alIsSource( chan->openalSource ) ) {
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );
 		}

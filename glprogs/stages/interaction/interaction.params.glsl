@@ -35,9 +35,9 @@ struct PerDrawCallParams {
 	vec4 ambientRimColor;
 	// bindless texture handles - if supported
 	uvec2 normalTexture;
+	uvec2 padding;
 	uvec2 diffuseTexture;
 	uvec2 specularTexture;
-	uvec2 padding;
 };
 
 layout (std140) uniform PerDrawCallParamsBlock {

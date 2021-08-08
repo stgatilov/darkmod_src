@@ -2054,8 +2054,10 @@ OptimizeEntity
 void	OptimizeEntity( uEntity_t *e ) {
 	int		i;
 
+	TRACE_CPU_SCOPE_TEXT("OptimizeEntity", e->nameEntity)
 	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- OptimizeEntity -----\n" );
 	for ( i = 0 ; i < e->numAreas ; i++ ) {
+		TRACE_CPU_SCOPE_FORMAT("OptimizeArea", "area%d", i);
 		OptimizeGroupList( e->areas[i].groups );
 	}
 }

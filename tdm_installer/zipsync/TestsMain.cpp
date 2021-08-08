@@ -896,6 +896,34 @@ TEST_CASE("Downloader") {
             CHECK(cntEmpty > 0);
         }
     }
+
+    {   //test Downloader::setMultipartBlocked
+        HttpServer server;
+        server.SetDropMultipart(true);
+        server.SetRootDir(GetTempDir().string());
+        server.Start();
+        for (int nomultipart = 0; nomultipart < 2; nomultipart++) {
+            Downloader down;
+            std::string data1, data2, data3, data4;
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 10000, 10100), CreateDownloadCallback(data1));
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 30000, 30200), CreateDownloadCallback(data2));
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 20000, 20500), CreateDownloadCallback(data3));
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 10100, 10345), CreateDownloadCallback(data4));
+            down.setMultipartBlocked(nomultipart);
+            if (nomultipart) {
+                down.DownloadAll();
+                CHECK(data1 == DataSquaresTxt.substr(10000, 100));
+                CHECK(data2 == DataSquaresTxt.substr(30000, 200));
+                CHECK(data3 == DataSquaresTxt.substr(20000, 500));
+                CHECK(data4 == DataSquaresTxt.substr(10100, 245));
+            }
+            else {
+                CHECK_THROWS(down.DownloadAll());
+            }
+        }
+    }
+
+
 }
 
 TEST_CASE("DownloaderTimeout"

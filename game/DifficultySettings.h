@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <map>
 #include <list>
+#include <string>
 
 namespace difficulty {
 

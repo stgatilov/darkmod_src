@@ -268,7 +268,6 @@ template<class T> struct idRaw {
 #include "MapFile.h"
 #include "Timer.h"
 #include "Thread.h"
-#include "Image.h"
 #include "RevisionTracker.h"
 #include "ParallelJobList.h"
 

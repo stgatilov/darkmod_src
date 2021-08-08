@@ -34,6 +34,7 @@ private:
     void *_suspendedSocket = nullptr;       //only for StartButIgnoreConnections
     int _port = -1;
     int _blockSize = -1;
+    bool _dropMultipart = false;
     PauseModel _pauseModel;
 
 public:
@@ -48,6 +49,7 @@ public:
     void SetRootDir(const std::string &root);
     void SetPortNumber(int port = PORT_DEFAULT);
     void SetBlockSize(int blockSize = 128*1024);
+    void SetDropMultipart(bool drop = false);
     void SetPauseModel(const PauseModel &model = PauseModel());
     std::string GetRootUrl() const;
 

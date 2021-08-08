@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 
 idCVar r_useLightAreaCulling( "r_useLightAreaCulling", "1", CVAR_RENDERER | CVAR_BOOL, "0 = off, 1 = on" );
+idCVar r_singleModelName( "r_singleModelName", "", CVAR_RENDERER, "filter entities by model name, e.g. 'models/darkmod/nature/flowers/flowers_patch_01.ase'" );
 
 /*
 
@@ -699,6 +700,8 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		if ( r_singleEntity.GetInteger() >= 0 && r_singleEntity.GetInteger() != entity->index ) {
 			continue;
 		}
+		if ( r_singleEntity.GetInteger() == -2 && strcmp( r_singleModelName.GetString(), entity->parms.hModel->Name() ) )
+			continue;
 
 		// remove decals that are completely faded away
 		if( entity->decals )

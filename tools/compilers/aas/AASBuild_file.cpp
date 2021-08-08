@@ -447,6 +447,7 @@ bool idAASBuild::StoreFile( const idBrushBSP &bsp ) {
 	aasArea_t area;
 	aasNode_t node;
 
+	TRACE_CPU_SCOPE("StoreAAS")
 	common->Printf( "[Store AAS]\n" );
 
 	SetupHash();

@@ -61,8 +61,8 @@ public:																											\
 //----------------------------------------------------
 LightGem::LightGem()
 {
-	m_LightgemImgBufferFrontend = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
-	m_LightgemImgBufferBackend = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * sizeof( ILuint ) );
+	m_LightgemImgBufferFrontend = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * 4 );
+	m_LightgemImgBufferBackend = (byte*)Mem_Alloc16( DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP * 4 );
 }
 
 LightGem::~LightGem()

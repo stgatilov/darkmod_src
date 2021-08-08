@@ -148,6 +148,7 @@ idAASBuild::MergeLeafNodes
 void idAASBuild::MergeLeafNodes( idBrushBSP &bsp ) {
 	numMergedLeafNodes = 0;
 
+	TRACE_CPU_SCOPE("MergeLeafNodes")
 	common->Printf( "[Merge Leaf Nodes]\n" );
 
 	MergeLeafNodes_r( bsp, bsp.GetRootNode() );

@@ -65,6 +65,9 @@ public:
 	// returns false if it failed to load
 	virtual bool		InitFromFile( const char *qpath, bool looping, bool withAudio = false );
 
+	// returns path to video file played by this
+	virtual const char *GetFilePath() const;
+
 	// returns the length of the animation in milliseconds
 	virtual int			AnimationLength();
 
@@ -72,13 +75,14 @@ public:
 	virtual cinData_t	ImageForTime( int milliseconds );
 
 	//stgatilov #4534: allows to get sound from video file
-	//only frequency 44100 Hz (PRIMARYFREQ) stereo is supported
 	//sampleOffset and sampleSize specify beginning and length of interval (in samples)
 	//each stereo sample consists of left speaker value and right speaker value (speakers are interleaved)
 	//output buffer must be large enough to hold 2 * sampleSize float values
 	//number of samples read is returned in sampleSize
 	//note: this method can be called from multiple threads (e.g. sound thread) !
-	virtual bool SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output);
+	virtual bool SoundForTimeInterval(int sampleOffset44k, int *sampleSize, float *output);
+	//stgatilov #2454: returns actual sample offset synced to video
+	virtual int GetRealSoundOffset(int sampleOffset44k) const;
 
 	//stgatilov #4535: allows anyone to check at any moment if the video has ended
 	//note that ImageForTime is called from backend, so it is hard to save result status from there

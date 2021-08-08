@@ -20,11 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "snd_local.h"
 
-#ifdef ID_DEDICATED
-idCVar idSoundSystemLocal::s_noSound( "s_noSound", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "" );
-#else
 idCVar idSoundSystemLocal::s_noSound( "s_noSound", "0", CVAR_SOUND | CVAR_BOOL | CVAR_NOCHEAT, "" );
-#endif
 idCVar idSoundSystemLocal::s_diffractionMax( "s_diffractionMax", "10", CVAR_SOUND | CVAR_FLOAT | CVAR_ARCHIVE, "max vol loss (dB) at 180 degrees diffraction" ); // grayman #4219
 idCVar idSoundSystemLocal::s_device("s_device", "default", CVAR_SOUND | CVAR_NOCHEAT | CVAR_ARCHIVE, "the audio device to use ('default' for the default audio device)");
 idCVar idSoundSystemLocal::s_quadraticFalloff( "s_quadraticFalloff", "1", CVAR_SOUND | CVAR_BOOL, "" );
