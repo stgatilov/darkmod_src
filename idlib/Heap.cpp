@@ -26,22 +26,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define USE_LIBC_MALLOC		1
 #endif
 
-idCVar com_tracingAllocStacks( "com_tracingAllocStacks", "0", CVAR_SYSTEM|CVAR_BOOL, "Collect call stacks for all memory allocations (wastes time)" );
-#ifdef TRACY_ENABLE
-	//stgatilov: not very good in terms of code size, but hopefully it won't be a problem in one cpp file
-	#define TRACY_MALLOC_REPORT(ptr, len) \
-		if (com_tracingAllocStacks.GetBool()) { \
-			TracySecureAllocS(ptr, len, 10) \
-		} else { \
-			TracySecureAlloc(ptr, len) \
-		}
-	#define TRACY_FREE_ANNOUNCE(ptr) \
-		TracySecureFree(ptr)
-#else
-	#define TRACY_MALLOC_REPORT(ptr, len)
-	#define TRACY_FREE_ANNOUNCE(ptr)
-#endif
-
 #ifndef CRASH_ON_STATIC_ALLOCATION
 //	#define CRASH_ON_STATIC_ALLOCATION
 #endif
@@ -274,9 +258,7 @@ void *idHeap::Allocate( const dword bytes ) {
 	c_heapAllocRunningCount++;
 
 #if USE_LIBC_MALLOC
-	void *ptr = malloc( bytes );
-	TRACY_MALLOC_REPORT( ptr, bytes )
-	return ptr;
+	return malloc( bytes );
 #else
 	if ( !(bytes & ~255) ) {
 		return SmallAllocate( bytes );
@@ -300,7 +282,6 @@ void idHeap::Free( void *p ) {
 	c_heapAllocRunningCount--;
 
 #if USE_LIBC_MALLOC
-	TRACY_FREE_ANNOUNCE( p )
 	free( p );
 #else
 	switch( ((byte *)(p))[-1] ) {
@@ -331,16 +312,14 @@ idHeap::Allocate16
 */
 void *idHeap::Allocate16( const dword bytes ) {
 	byte *ptr, *alignedPtr;
-	dword allocBytes = bytes + 16 + sizeof(intptr_t);
 
-	ptr = (byte *) malloc( allocBytes );
-	TRACY_MALLOC_REPORT( ptr, allocBytes )
+	ptr = (byte *) malloc( bytes + 16 + sizeof(intptr_t) );
 	if ( !ptr ) {
 		if ( defragBlock ) {
 			idLib::common->Printf( "Freeing defragBlock on alloc of %i.\n", bytes );
 			free( defragBlock );
 			defragBlock = NULL;
-			ptr = (byte *) malloc( allocBytes );
+			ptr = (byte *) malloc( bytes + 16 + sizeof(intptr_t) );
 			AllocDefragBlock();
 		}
 		if ( !ptr ) {
@@ -361,9 +340,7 @@ idHeap::Free16
 ================
 */
 void idHeap::Free16( void *p ) {
-	void *ptr = (void *) *((intptr_t *) (( (byte *) p ) - sizeof(intptr_t)));
-	TRACY_FREE_ANNOUNCE( ptr )
-	free( ptr );
+	free( (void *) *((intptr_t *) (( (byte *) p ) - sizeof(intptr_t))) );
 }
 
 /*
@@ -1088,9 +1065,7 @@ void *Mem_Alloc( const int size ) {
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((int*)0x0) = 1;
 #endif
-		void *ptr = malloc( size );
-		TRACY_MALLOC_REPORT( ptr, size )
-		return ptr;
+		return malloc( size );
 	}
 	void *mem = mem_heap->Allocate( size );
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
@@ -1114,7 +1089,6 @@ void Mem_Free( void *ptr ) {
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((int*)0x0) = 1;
 #endif
-		TRACY_FREE_ANNOUNCE( ptr )
 		free( ptr );
 		return;
 	}
@@ -1135,9 +1109,7 @@ void *Mem_Alloc16( const int size ) {
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((int*)0x0) = 1;
 #endif
-		void *ptr = malloc( size );
-		TRACY_MALLOC_REPORT( ptr, size )
-		return ptr;
+		return malloc( size );
 	}
 	void *mem = mem_heap->Allocate16( size );
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
@@ -1161,7 +1133,6 @@ void Mem_Free16( void *ptr ) {
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((int*)0x0) = 1;
 #endif
-		TRACY_FREE_ANNOUNCE( ptr );
 		free( ptr );
 		return;
 	}
