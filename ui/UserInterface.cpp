@@ -174,7 +174,7 @@ void idUserInterfaceManagerLocal::DeAlloc( idUserInterface *gui ) {
 	}
 }
 
-idUserInterface *idUserInterfaceManagerLocal::FindGui( const char *qpath, bool autoLoad, bool needUnique, bool forceNOTUnique ) {
+idUserInterface *idUserInterfaceManagerLocal::FindGui( const char *qpath, bool autoLoad, bool needUnique, bool forceNOTUnique, idDict presetDefines ) {
 	int c = guis.Num();
 
 	for ( int i = 0; i < c; i++ ) {
@@ -190,7 +190,8 @@ idUserInterface *idUserInterfaceManagerLocal::FindGui( const char *qpath, bool a
 
 	if ( autoLoad ) {
 		idUserInterface *gui = Alloc();
-		if ( gui->InitFromFile( qpath ) ) {
+		((idUserInterfaceLocal*)gui)->presetDefines = presetDefines;
+		if ( gui->InitFromFile( qpath, true ) ) {
 			gui->SetUniqued( forceNOTUnique ? false : needUnique );
 			return gui;
 		} else {
@@ -270,7 +271,7 @@ bool idUserInterfaceLocal::IsInteractive() const {
 	return interactive;
 }
 
-bool idUserInterfaceLocal::InitFromFile( const char *qpath, bool rebuild, bool cache ) { 
+bool idUserInterfaceLocal::InitFromFile( const char *qpath, bool rebuild ) { 
 
 	if ( !( qpath && *qpath ) ) { 
 		// FIXME: Memory leak!!
@@ -297,6 +298,12 @@ bool idUserInterfaceLocal::InitFromFile( const char *qpath, bool rebuild, bool c
 	src.LoadFile( qpath );
 
 	if ( src.IsLoaded() ) {
+		for (int i = 0; i < presetDefines.GetNumKeyVals(); i++) {
+			const idKeyValue *kv = presetDefines.GetKeyVal(i);
+			idStr line = kv->GetKey() + " " + kv->GetValue();
+			src.AddDefine(line.c_str());
+		}
+
 		idToken token;
 		while( src.ReadToken( &token ) ) {
 			if ( idStr::Icmp( token, "windowDef" ) == 0 ) {

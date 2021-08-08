@@ -519,8 +519,6 @@ void Automation::ParseQuery(ParseIn &parseIn) {
 				guiActiveName = "mainmenu";
 			else if (guiActive == session->GetGui(idSession::gtLoading))
 				guiActiveName = "loading";
-			else if (guiActive == session->GetGui(idSession::gtRestart))
-				guiActiveName = "restart";
 			else
 				guiActiveName = "?unknown?";
 		}

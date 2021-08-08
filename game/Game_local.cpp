@@ -1411,6 +1411,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
 
+	session->ResetMainMenu();
+
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
 	// clear the sound system
@@ -2469,6 +2471,8 @@ void idGameLocal::MapShutdown( void ) {
 	}
 	
 	MapClear( true );
+
+	session->ResetMainMenu();
 
 	// reset the script to the state it was before the map was started
 	program.Restart();
@@ -3985,6 +3989,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		if (GetMissionResult() == MISSION_COMPLETE)
 		{
+			/*
 			// Check if we should show the success screen (also check the member variable
 			// to catch cases where the player reloaded the map via the console)
 			if (!gui->GetStateBool("PostMissionScreenActive") || !postMissionScreenActive)
@@ -4011,7 +4016,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 				// Avoid duplicate triggering
 				gui->SetStateBool("PostMissionScreenActive", true);
 				postMissionScreenActive = true;
-			}
+			}*/
 			
 			// tels: We handled this command, so clear the command stack
 			m_GUICommandStack.Clear();
@@ -4064,6 +4069,223 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gui->HandleNamedEvent("OnMenuMusicSettingChanged");
 
 			cv_tdm_menu_music.ClearModified();
+		}
+	}
+	else if (cmd == "mainmenumodeselect")
+	{
+		struct MainMenuStateInfo {
+			idStr name;				//e.g. BRIEFING   (MM_STATE_ is prepended)
+			idStr stateToggle;		//e.g. BriefingState -> BriefingStateInit + BriefingStateEnd
+			idStr backgrounds;		//e.g. MAINMENI_NOTINGAME -> MM_BACKGROUNDS_MAINMENU_NOTINGAME
+			idStr music;			//e.g. MusicIngame   (MainMenu is prepended)
+		};
+		struct MainMenuTransition {
+			idStr from;				//e.g. BRIEFING
+			idStr action;			//e.g. FORWARD
+			idStr to;				//e.g. DIFF_SELECT
+		};
+		static const MainMenuStateInfo STATES[] = {
+			{"NONE", NULL, NULL, NULL},
+			{"MAINMENU", NULL, NULL, NULL},
+			{"START_GAME", NULL, NULL, NULL},
+			{"END_GAME", NULL, NULL, NULL},
+			{"FINISHED", NULL, NULL, NULL},
+			{"FORWARD", NULL, NULL, NULL},
+			{"BACKWARD", NULL, NULL, NULL},
+			{"MAINMENU_INGAME", "MainMenuInGameState", "MAINMENU_INGAME", "MusicIngame"},
+			{"MAINMENU_NOTINGAME", "MainMenuState", "MAINMENU_NOTINGAME", "Music"},
+			{"QUITGAME", "QuitGameState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"CREDITS", "CreditsMenuState", "CREDITS", "MusicCredits"},
+			{"LOAD_SAVE_GAME", "LoadSaveGameMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"FAILURE", "FailureMenuState", "FAILURE", "MusicMissionFailure"},
+			{"SUCCESS", "SuccessScreenState", "SUCCESS", "MusicMissionSuccess"},
+			{"BRIEFING", "BriefingState", "BRIEFING", "MusicBriefing"},
+			{"BRIEFING_VIDEO", "BriefingVidState", "", "MusicBriefingVideo"},
+			{"OBJECTIVES", "ObjectivesState", "EXTRAMENU_INGAME", "Music%INGAME%"},
+			{"SHOP", "ShopMenuState", "SHOP", "MusicBriefing"},
+			{"SETTINGS", "SettingsMenuState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"SELECT_LANGUAGE", "SelectLanguageState", "MAINMENU_%INGAME%", "Music%INGAME%"},
+			{"DOWNLOAD", "DownloadMissionsMenuState", "EXTRAMENU_NOTINGAME", "Music%INGAME%"},
+			{"DEBRIEFING_VIDEO", "DebriefingVidState", "", "MusicDebriefingVideo"},
+			{"GUISIZE", "SettingsGuiSizeState", "", "Music%INGAME%"},
+			{"MOD_SELECT", "NewGameMenuState", "EXTRAMENU_NOTINGAME", "Music%INGAME%"},
+			{"DIFF_SELECT", "ObjectivesState", "DIFFSELECT", "MusicBriefing"},
+		};
+		static const MainMenuTransition TRANSITIONS[] = {
+			//standard FM-customized sequence: starting new game
+			{"MAINMENU_NOTINGAME", "FORWARD", "BRIEFING_VIDEO"},	{"BRIEFING_VIDEO", "BACKWARD", "MAINMENU"},
+			{"BRIEFING_VIDEO", "FORWARD", "BRIEFING"},				{"BRIEFING", "BACKWARD", "MAINMENU"},
+			{"BRIEFING", "FORWARD", "DIFF_SELECT"},					{"DIFF_SELECT", "BACKWARD", "BRIEFING"},
+			{"DIFF_SELECT", "FORWARD", "SHOP"},						{"SHOP", "BACKWARD", "DIFF_SELECT"},
+			{"SHOP", "FORWARD", "START_GAME"},
+			//standard FM-customized sequence: game finished successfully
+			{"FINISHED", "FORWARD", "DEBRIEFING_VIDEO"},
+			{"DEBRIEFING_VIDEO", "FORWARD", "SUCCESS"},		{"SUCCESS", "BACKWARD", "DEBRIEFING_VIDEO"},
+			{"SUCCESS", "FORWARD", "MAINMENU"},
+		};
+
+		static const int STATENUM = sizeof(STATES) / sizeof(STATES[0]);
+		static const int TRANSITIONNUM = sizeof(TRANSITIONS) / sizeof(TRANSITIONS[0]);
+		auto FindStateByValue = [gui](int value) -> const MainMenuStateInfo* {
+			for (int i = 0; i < STATENUM; i++) {
+				idStr name = "#MM_STATE_" + STATES[i].name;
+				if (value == gui->GetStateInt(name))
+					return &STATES[i];
+			}
+			return nullptr;
+		};
+		auto FindStateByName = [gui](const char *name) -> const MainMenuStateInfo* {
+			for (int i = 0; i < STATENUM; i++) {
+				if (STATES[i].name == name)
+					return &STATES[i];
+			}
+			return nullptr;
+		};
+		auto ShouldSkipState = [gui](const char *name) -> bool {
+			idStr defName = idStr("#ENABLE_MAINMENU_") + name;
+			int value = gui->GetStateInt(defName, "-1");
+			if (value == 0)
+				return true;		//#define ENABLE_MAINMENU_SHOP 0  (set by mapper)
+			if (idStr::Icmp(name, "SHOP") == 0 && gui->GetStateInt("SkipShop") != 0)
+				return true;		//gui::SkipShop = 1    (set by C++ code)
+			return false;
+		};
+		auto FindTransition = [&](const char *from, const char *action) -> const char* {
+			for (int i = 0; i < TRANSITIONNUM; i++) {
+				if (TRANSITIONS[i].from == from && TRANSITIONS[i].action == action)
+					return TRANSITIONS[i].to.c_str();
+			}
+			return nullptr;
+		};
+
+		int modeValue = gui->GetStateInt("mode");
+		int targetValue = gui->GetStateInt("targetmode");
+		auto modeState = FindStateByValue(modeValue);
+		auto targetState = FindStateByValue(targetValue);
+		if (!modeState) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Unknown current state %d, setting NONE", modeValue);
+			modeState = &STATES[0];
+		}
+		if (!targetState) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Unknown target state %d, setting NONE", modeValue);
+			targetState = &STATES[0];
+		}
+
+		if (const char *dest = FindTransition(modeState->name, targetState->name)) {
+			//this is "action" of transition, i.e. not a "target" state, but more like a "direction" of movement
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Detected transition %s from %s", targetState->name.c_str(), modeState->name.c_str());
+			while (dest && ShouldSkipState(dest)) {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Skipped disabled state %s", dest);
+				dest = FindTransition(dest, targetState->name);
+			}
+			if (dest) {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Transition ends at %s", dest);
+			} else {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("All states in transition chain are disabled, redirect to MAINMENU");
+				dest = "MAINMENU";
+			}
+			targetState = FindStateByName(dest);
+		}
+
+		auto Redirect = [&](const char *newTargetState) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target state %s, redirecting to %s", targetState->name.c_str(), newTargetState);
+			targetState = FindStateByName(newTargetState);
+			assert(targetState);
+		};
+
+		if (ShouldSkipState(targetState->name)) {
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Target state %s is disabled, redirecting to MAINMENU", targetState->name.c_str());
+			targetState = FindStateByName("MAINMENU");
+		}
+		if (targetState->name == "NONE")
+			Redirect("MAINMENU");
+		if (targetState->name == "MAINMENU") {
+			if (gui->GetStateInt("inGame"))
+				Redirect("MAINMENU_INGAME");
+			else
+				Redirect("MAINMENU_NOTINGAME");
+		}
+
+		if (targetState != modeState) {
+			if (targetState->name == "START_GAME") {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting game");
+				idStr mapname = m_MissionManager->GetCurrentStartingMap();
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va("map %s\n", mapname.c_str()) );
+				//note: it seems that target state does not matter
+				//map start resets "mode" to NONE anyway (see ClearMainMenuMode)
+			}
+			if (targetState->name == "END_GAME") {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending game");
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, va("disconnect\n") );
+				Redirect("MAINMENU_NOTINGAME");
+			}
+
+			idStr modeMusicState = gui->GetStateString("MusicLastState");
+			idStr targetMusicState = targetState->music;
+			if (targetMusicState == "Music%INGAME%") {
+				//special syntax to enable MENU/MENU_INGAME
+				if (gui->GetStateInt("inGame"))
+					targetMusicState = FindStateByName("MAINMENU_INGAME")->music;
+				else
+					targetMusicState = FindStateByName("MAINMENU_NOTINGAME")->music;
+			}
+			if (gui->GetStateInt("menu_bg_music") == 0 && (targetMusicState == FindStateByName("MAINMENU_NOTINGAME")->music || targetMusicState == FindStateByName("MAINMENU_INGAME")->music))
+				targetMusicState = "";				//disable music
+			if (targetMusicState == "")
+				targetMusicState = "MusicNone";		//no music requested
+			if (modeMusicState != targetMusicState) {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting music state %s", targetMusicState.c_str() );
+				gui->ResetWindowTime("MainMenu" + targetMusicState);
+				gui->SetStateString("MusicLastState", targetMusicState);
+			}
+			else {
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("No music change: state %s", targetMusicState.c_str() );
+			}
+
+			idStr targetBackgroundsMacro = targetState->backgrounds;
+			if (targetBackgroundsMacro == "MAINMENU_%INGAME%") {
+				//special syntax to enable MENU/MENU_INGAME
+				if (gui->GetStateInt("inGame"))
+					targetBackgroundsMacro = FindStateByName("MAINMENU_INGAME")->backgrounds;
+				else
+					targetBackgroundsMacro = FindStateByName("MAINMENU_NOTINGAME")->backgrounds;
+			}
+			idStr targetBackgroundsLayersStr = gui->GetStateString("#MM_BACKGROUNDS_" + targetBackgroundsMacro, "");
+			while (targetBackgroundsLayersStr.CmpPrefix("MM_BACKGROUNDS_") == 0) {
+				//usually we only read plain values of macros, but this limitation is a problem for backgrounds meta states
+				//so we allow setting name of another backgrounds macro as value
+				targetBackgroundsLayersStr = gui->GetStateString("#" + targetBackgroundsLayersStr, "");
+			}
+			idStr backgroundsLayersStr = gui->GetStateString("backgrounds");
+			if (backgroundsLayersStr != targetBackgroundsLayersStr) {
+				idStrList backgroundsLayers = backgroundsLayersStr.Split(",", true);
+				idStrList targetBackgroundsLayers = targetBackgroundsLayersStr.Split(",", true);
+				for (int i = 0; i < backgroundsLayers.Num(); i++) {
+					if (!targetBackgroundsLayers.Find(backgroundsLayers[i])) {
+						DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending background layer %s", backgroundsLayers[i].c_str() );
+						gui->ResetWindowTime(backgroundsLayers[i] + "End", 0);
+					}
+					else
+						DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("No change: background layer %s", backgroundsLayers[i].c_str() );
+				}
+				for (int i = 0; i < targetBackgroundsLayers.Num(); i++) {
+					if (!backgroundsLayers.Find(targetBackgroundsLayers[i])) {
+						DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting background layer %s", targetBackgroundsLayers[i].c_str() );
+						gui->ResetWindowTime(targetBackgroundsLayers[i] + "Init", 0);
+					}
+				}
+				gui->SetStateString("backgrounds", targetBackgroundsLayersStr);
+			}
+
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Ending state %s", modeState->name.c_str() );
+			if (modeState->stateToggle)
+				gui->ResetWindowTime(modeState->stateToggle + "End", 0);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Starting state %s", targetState->name.c_str() );
+			if (targetState->stateToggle)
+				gui->ResetWindowTime(targetState->stateToggle + "Init", 0);
+
+			targetValue = gui->GetStateInt("#MM_STATE_" + targetState->name);
+			gui->SetStateInt("mode", targetValue);
 		}
 	}
 	else if (cmd == "setvideoreswidescreen")
@@ -4263,16 +4485,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		{
 			m_MissionManager->ProceedToNextMission();
 
-			// Store the new mission number into the GUI state
-			int missionNum = m_MissionManager->GetCurrentMissionIndex() + 1;
-			gui->SetStateInt("CurrentMission", missionNum);
-
-			// Let the GUI know which map to load (it has changed)
-			idStr mapToStart = m_MissionManager->GetCurrentStartingMap();
-			gui->SetStateString("mapStartCmd", va("exec 'map %s'", mapToStart.c_str()));
-
-			// Go to the next briefing / video
-			gui->HandleNamedEvent("SuccessProceedToNextMission");
+			// Recreate main menu GUI
+			session->ResetMainMenu();
+			session->SetMainMenuStartAtBriefing();
+			session->StartMenu();
 		}
 		else
 		{

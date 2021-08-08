@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "Session_local.h"
+#include "../game/Missions/MissionManager.h"
 
 idCVar	idSessionLocal::gui_configServerRate( "gui_configServerRate", "0", CVAR_GUI | CVAR_ARCHIVE | CVAR_ROM | CVAR_INTEGER, "" );
 
@@ -35,11 +36,78 @@ idUserInterface *idSessionLocal::GetActiveMenu( void ) {
 
 /*
 ==============
+idSessionLocal::ResetMainMenu
+==============
+*/
+void idSessionLocal::ResetMainMenu() {
+	if (guiMainMenu) {
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Destroying main menu GUI");
+		if (guiActive == guiMainMenu) {
+			SetGUI(NULL, NULL);
+			assert(guiActive != guiMainMenu);
+		}
+		uiManager->DeAlloc(guiMainMenu);
+		guiMainMenu = NULL;
+	}
+}
+
+/*
+==============
+idSessionLocal::SetMainMenuStartAtBriefing
+==============
+*/
+void idSessionLocal::SetMainMenuStartAtBriefing() {
+	mainMenuStartState = MMSS_BRIEFING;
+}
+
+/*
+==============
+idSessionLocal::CreateMainMenu
+==============
+*/
+void idSessionLocal::CreateMainMenu() {
+	if (guiMainMenu) {
+		//we won't recreate main menu GUI until someone calls ResetMainMenu
+		return;
+	}
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Recreating main menu GUI");
+
+	idDict presetDefines;
+	// flag for in-game menu
+	presetDefines.SetBool("MM_INGAME", mapSpawned);
+	int missionIdx = gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1;
+	presetDefines.SetInt("MM_CURRENTMISSION", missionIdx);
+	guiMainMenu = uiManager->FindGui( "guis/mainmenu.gui", true, false, true, presetDefines );
+
+	guiMainMenu->SetStateInt( "inGame", presetDefines.GetInt("MM_INGAME") );
+	guiMainMenu->SetStateInt("CurrentMission", presetDefines.GetInt("MM_CURRENTMISSION") );
+	// switch to initial state
+	guiMainMenu->SetStateInt("mode", guiMainMenu->GetStateInt("#MM_STATE_NONE"));
+	if ( mainMenuStartState == MMSS_MAINMENU ) {
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_MAINMENU"));
+	} else if ( mainMenuStartState == MMSS_SUCCESS ) {
+		// simulate switch forward into DEBRIEFING_VIDEO, so that state skipping works properly
+		guiMainMenu->SetStateInt("mode", guiMainMenu->GetStateInt("#MM_STATE_FINISHED"));
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FORWARD"));
+	} else if ( mainMenuStartState == MMSS_FAILURE ) {
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_FAILURE"));
+	} else if ( mainMenuStartState == MMSS_BRIEFING ) {
+		guiMainMenu->SetStateInt("targetmode", guiMainMenu->GetStateInt("#MM_STATE_BRIEFING_VIDEO"));
+	} else {
+		assert(false);
+	}
+	// note: MainMenuStartUp takes the state and handles it
+	mainMenuStartState = MMSS_MAINMENU;
+}
+
+/*
+==============
 idSessionLocal::StartMainMenu
 ==============
 */
 void idSessionLocal::StartMenu( bool playIntro ) {
-	if ( guiActive == guiMainMenu ) {
+	if ( guiActive && guiActive == guiMainMenu ) {
 		return;
 	}
 
@@ -56,13 +124,15 @@ void idSessionLocal::StartMenu( bool playIntro ) {
 	// start playing the menu sounds
 	soundSystem->SetPlayingSoundWorld( menuSoundWorld );
 
+	// make sure guiMainMenu is alive
+	CreateMainMenu();
+
 	SetGUI( guiMainMenu, NULL );
 	guiMainMenu->HandleNamedEvent( playIntro ? "playIntro" : "noIntro" );
 
 	guiMainMenu->SetStateString("game_list", common->Translate( "#str_07212" ));
 
 	console->Close();
-
 }
 
 /*
@@ -75,8 +145,6 @@ idUserInterface *idSessionLocal::GetGui(GuiType type) const {
 		return guiActive;
 	if (type == gtMainMenu)
 		return guiMainMenu;
-	if (type == gtRestart)
-		return guiRestartMenu;
 	if (type == gtLoading)
 		return guiLoading;
 	//TODO: do we ever need other cases?
@@ -103,8 +171,6 @@ void idSessionLocal::SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) {
 	if ( guiActive == guiMainMenu ) {
 		SetSaveGameGuiVars();
 		SetMainMenuGuiVars();
-	} else if ( guiActive == guiRestartMenu ) {
-		SetSaveGameGuiVars();
 	}
 
 	sysEvent_t  ev;
@@ -312,13 +378,6 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 
 	// key bind names
 	guiMainMenu->SetKeyBindingNames();
-
-	// flag for in-game menu
-	if ( mapSpawned ) {
-		guiMainMenu->SetStateString( "inGame", "1" );
-	} else {
-		guiMainMenu->SetStateString( "inGame", "0" );
-	}
 
 	guiMainMenu->SetStateString( "browser_levelshot", "guis/assets/splash/pdtempa" );
 
@@ -973,11 +1032,10 @@ void idSessionLocal::DispatchCommand( idUserInterface *gui, const char *menuComm
 
 	if ( gui == guiMainMenu ) {
 		HandleMainMenuCommands( menuCommand );
+		//TODO on restart screen: HandleRestartMenuCommands( menuCommand ); 
 		return;
 	} else if ( gui == guiMsg ) {
 		HandleMsgCommands( menuCommand );
-	} else if ( gui == guiRestartMenu ) {
-		HandleRestartMenuCommands( menuCommand );
 	} else if ( game && guiActive && guiActive->State().GetBool( "gameDraw" ) ) {
 		const char *cmd = game->HandleGuiCommands( menuCommand );
 		if ( !cmd ) {

@@ -716,6 +716,7 @@ public:
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
+
 	/**
 	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
     */

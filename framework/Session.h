@@ -89,7 +89,6 @@ public:
 	enum GuiType {
 		gtActive,
 		gtMainMenu,
-		gtRestart,
 		gtLoading,
 		//gtInGame,
 		//gtMsg,
@@ -101,6 +100,14 @@ public:
 	// windowName --- the name of GUI window (see idWindows::name)
 	// scriptNum --- index of script (see idWindow::ON_ACTION = 2 and similar)
 	virtual bool	RunGuiScript(const char *windowName, int scriptNum = 2) = 0;
+
+	// stgatilov: delete main menu GUI
+	// when menu is brought up next time, it will be created from scratch
+	virtual void	ResetMainMenu() = 0;
+
+	// stgatilov: used when proceeding to next mission in campaign
+	// saves that when menu is created next time, briefing state should be started
+	virtual void	SetMainMenuStartAtBriefing() = 0;
 
 	// Updates gui and dispatched events to it
 	virtual void	GuiFrameEvents() = 0;
