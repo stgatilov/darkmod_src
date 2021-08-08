@@ -235,6 +235,7 @@ main window procedure
 ====================
 */
 LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
+	int key;
 	switch( uMsg ) {
 		case WM_WINDOWPOSCHANGED:
 			if ( glConfig.isInitialized || win32.win_maximized ) {
@@ -344,12 +345,31 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 				return 0;
 			}
 			// fall through for other keys
-
-//		case WM_SYSKEYUP:
 		case WM_KEYDOWN:
-		case WM_KEYUP:
-			Sys_StdKeyboardInput( uMsg, wParam, lParam );
+			key = MapKey( lParam );
+			if ( key == K_CTRL || key == K_ALT || key == K_RIGHT_ALT ) {
+				// let direct-input handle this because windows sends Alt-Gr
+				// as two events (ctrl then alt)
+				break;
+			}
+			Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, true, 0, NULL );
 			break;
+
+		case WM_SYSKEYUP:
+		case WM_KEYUP:
+			key = MapKey( lParam );
+			if ( key == K_PRINT_SCR ) {
+				// don't queue printscreen keys.  Since windows doesn't send us key
+				// down events for this, we handle queueing them with DirectInput
+				break;
+			} else if ( key == K_CTRL || key == K_ALT || key == K_RIGHT_ALT ) {
+				// let direct-input handle this because windows sends Alt-Gr
+				// as two events (ctrl then alt)
+				break;
+			}
+			Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, false, 0, NULL );
+			break;
+
 		case WM_CHAR:
 			Sys_QueEvent( win32.sysMsgTime, SE_CHAR, wParam, 0, 0, NULL );
 			break;
@@ -370,15 +390,21 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 			WIN_Sizing(wParam, (RECT *)lParam);
 			break;
 
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
 		case WM_RBUTTONDOWN:
 		case WM_RBUTTONUP:
 		case WM_MBUTTONDOWN:
 		case WM_MBUTTONUP:
-		case WM_MOUSEWHEEL: 
 		case WM_MOUSEMOVE: {
-			Sys_StdMouseInput( uMsg, wParam, lParam );
+			break;
+		}
+		case WM_MOUSEWHEEL: {
+			int delta = GET_WHEEL_DELTA_WPARAM( wParam ) / WHEEL_DELTA;
+			int key = delta < 0 ? K_MWHEELDOWN : K_MWHEELUP;
+			delta = abs( delta );
+			while( delta-- > 0 ) {
+				Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, true, 0, NULL );
+				Sys_QueEvent( win32.sysMsgTime, SE_KEY, key, false, 0, NULL );
+			}
 			break;
 		}
 	}

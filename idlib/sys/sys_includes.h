@@ -50,6 +50,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <mmreg.h>
 
+#include <InitGuid.h>						//https://social.msdn.microsoft.com/Forums/vstudio/en-US/16fe61c7-0ff0-400a-9f9e-39768edbb6b4/what-is-dxguidlib?forum=vcgeneral
+#define DIRECTINPUT_VERSION  0x0800			// was 0x0700 with the old mssdk
+#include <dinput.h>
+
 #ifndef _MSC_VER
 
 // RB: was missing in MinGW/include/winuser.h

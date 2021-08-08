@@ -265,7 +265,7 @@ target_link_libraries(TheDarkMod
 target_link_libraries(TheDarkMod debug ${pugixml_LIBRARIES_D} optimized ${pugixml_LIBRARIES})
 
 if (WIN32)
-	target_link_libraries(TheDarkMod ws2_32 iphlpapi winmm bcrypt dbghelp)
+	target_link_libraries(TheDarkMod ws2_32 iphlpapi winmm bcrypt dinput8 dbghelp)
 	set_target_properties(TheDarkMod PROPERTIES WIN32_EXECUTABLE TRUE)
 elseif (UNIX)
 	target_link_libraries(TheDarkMod pthread dl stdc++fs X11 Xext Xxf86vm)
