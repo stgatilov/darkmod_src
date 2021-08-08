@@ -555,7 +555,10 @@ idConsoleLocal::Bottom
 ================
 */
 void idConsoleLocal::Bottom( void ) {
-	display = ( text.Num() - 1 );
+	display = text.Num() - 1;
+	if ( display < 0 ) {
+		display = 0;
+	}
 }
 
 
@@ -837,11 +840,11 @@ Linefeed
 void idConsoleLocal::Linefeed() {
 
 	// mark time for transparent overlay
-	if ( ( text.Num() - 1 ) > 0 ) {
+	if ( text.Num() > 0 ) {
 		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
 	}
 
-	if ( display == ( text.Num() - 1 ) ) {
+	if ( display == text.Num() - 1 ) {
 		display++;
 	}
 
@@ -870,7 +873,7 @@ void idConsoleLocal::Print( const char *txt ) {
 	}
 #endif
 
-	if ( ( text.Num() - 1 ) < 0 )
+	if ( text.Num() == 0 )
 		Linefeed();
 
 	color = idStr::ColorIndex( C_COLOR_DEFAULT );
@@ -1020,7 +1023,7 @@ void idConsoleLocal::DrawNotify() {
 	SetColor( currentColor );
 
 	int v = 0;
-	for ( int i = (text.Num()-1)-NUM_CON_TIMES+1; i <= (text.Num()-1); i++ ) {
+	for ( int i = text.Num()-NUM_CON_TIMES; i < text.Num(); i++ ) {
 		if ( i < 0 ) {
 			continue;
 		}
@@ -1101,7 +1104,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 
 	// draw the text
 	vislines = lines;
-	rows = (lines-SMALLCHAR_WIDTH)/SMALLCHAR_WIDTH;		// rows of text to draw
+	rows = (lines - SMALLCHAR_HEIGHT) / SMALLCHAR_HEIGHT;		// rows of text to draw
 	y = lines - (SMALLCHAR_HEIGHT*3);
 
 	// draw from the bottom up
@@ -1121,7 +1124,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	SetColor( currentColor );
 
 	for ( int i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- ) {
-		if ( row < 0 ) {
+		if ( row < 0 || row >= text.Num() ) {
 			break;
 		}
 
