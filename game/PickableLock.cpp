@@ -209,8 +209,13 @@ void PickableLock::OnFrobbedStatusChange(bool val)
 		// Reset the lockpick fail counter when entity is losing frob focus
 		m_FailedLockpickRounds = 0;
 
-		// And cancel any pending events
-		CancelEvents(&EV_TDM_LockpickSoundFinished);
+		if (m_Locked) {
+			// Cancel any pending events
+			CancelEvents(&EV_TDM_LockpickSoundFinished);
+			// Make sure m_SoundTimerStarted is cleared
+			// Also return lock to initial state
+			Event_LockpickSoundFinished(LOCKED);
+		}
 	}
 }
 
