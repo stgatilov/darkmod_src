@@ -29,6 +29,7 @@ void InitOpenGLTracing();
 void TracingEndFrame();
 
 extern bool g_tracingEnabled;
+extern bool g_tracingAllocStacks;
 extern bool g_glTraceInitialized;
 
 #define TRACE_THREAD_NAME( name ) if ( g_tracingEnabled ) tracy::SetThreadName( name );

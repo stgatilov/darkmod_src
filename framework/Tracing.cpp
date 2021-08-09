@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 idCVar r_useDebugGroups( "r_useDebugGroups", "0", CVAR_RENDERER | CVAR_BOOL, "Emit GL debug groups during rendering. Useful for frame debugging and analysis with e.g. nSight, which will group render calls accordingly." );
 idCVar com_enableTracing( "com_enableTracing", "0", CVAR_SYSTEM|CVAR_INTEGER, "Enable the tracy profiler. If set to 2, will stall until the Tracy Profiler app is connected" );
+idCVar com_tracingAllocStacks( "com_tracingAllocStacks", "0", CVAR_SYSTEM|CVAR_BOOL, "Collect call stacks for all memory allocations (wastes time)" );
 
 bool g_tracingEnabled = false;
 bool g_glTraceInitialized = false;
@@ -47,6 +48,7 @@ void InitTracing() {
 			}
 		}
 	}
+	g_tracingAllocStacks = com_tracingAllocStacks.GetBool();
 #endif
 }
 
