@@ -1550,8 +1550,16 @@ void idEntity::Spawn( void )
 	idStr str;
 	if ( spawnArgs.GetString( "skin_xray", "", str ) )
 		xraySkin = declManager->FindSkin( str.c_str() );
-	if ( spawnArgs.GetString( "model_xray", "", str ) )
-		xrayModelHandle = renderModelManager->FindModel( str );
+	if ( spawnArgs.GetString( "model_xray", "", str ) ) {
+		if ( str.Find(".") < 0 ) {
+			auto modelDef = static_cast<const idDeclModelDef*>( declManager->FindType( DECL_MODELDEF, str.c_str(), false ) );
+			if ( modelDef ) {
+				xrayModelHandle = modelDef->ModelHandle();
+			}
+		}
+		if ( !xrayModelHandle )
+			xrayModelHandle = renderModelManager->FindModel( str );
+	}
 	if ( spawnArgs.GetString( "xray", "", str ) )
 		renderEntity.xrayIndex = 3;
 
@@ -2499,12 +2507,14 @@ void idEntity::Restore( idRestoreGame *savefile )
 	m_StimResponseColl->Restore(savefile);
 
 	savefile->ReadRenderEntity( xrayEntity );
+	xrayModelHandle = xrayEntity.hModel;
 	savefile->ReadInt( xrayEntityHandle );
 	if ( xrayEntityHandle != -1 )
 	{
 		xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
 	}
 	savefile->ReadSkin( xraySkin );
+
 	savefile->ReadRenderEntity( renderEntity );
 	savefile->ReadInt( modelDefHandle );
 	savefile->ReadRefSound( refSound );
