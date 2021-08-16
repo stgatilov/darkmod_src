@@ -342,7 +342,6 @@ public:
 	static idCVar		image_filter;				// changes texture filtering on mipmapped images
 	static idCVar		image_anisotropy;			// set the maximum texture anisotropy if available
 	static idCVar		image_lodbias;				// change lod bias on mipmapped images
-	static idCVar		image_useAllFormats;		// allow alpha/intensity/luminance/luminance+alpha
 	static idCVar		image_usePrecompressedTextures;	// use .dds files if present
 	static idCVar		image_writePrecompressedTextures; // write .dds files if necessary
 	static idCVar		image_writeNormalTGA;		// debug tool to write out .tgas of the final normal maps
@@ -375,6 +374,7 @@ public:
 	idImage *			cinematicImage;
 	idImage *			scratchImage;
 	idImage *			scratchImage2;
+	idImage *			xrayImage;
 	idImage *			accumImage;
 	idImage *			currentRenderImage;			// for SS_POST_PROCESS shaders
 	idImage *			guiRenderImage;

@@ -209,16 +209,6 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		}
 	}
 
-	// there will probably be some drivers that don't
-	// correctly handle the intensity/alpha/luminance/luminance+alpha
-	// formats, so provide a fallback that only uses the rgb/rgba formats
-	if ( !globalImages->image_useAllFormats.GetBool() ) {
-		// pretend rgb is varying and inconsistant, which
-		// prevents any of the more compact forms
-		rgbDiffer = 1;
-		rgbaDiffer = 1;
-	}
-
 	// cases without alpha
 	if ( !needAlpha ) {
 		if ( minimumDepth == TD_HIGH_QUALITY ) {

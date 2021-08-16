@@ -521,7 +521,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
-	stage->image = globalImages->scratchImage2;
+	stage->image = globalImages->xrayImage;
 
 	tr.CaptureRenderToImage( *stage->image );
 	//tr.UnCrop();
