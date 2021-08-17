@@ -1115,6 +1115,29 @@ void idActor::SetupHead()
 			args.Set(kv->GetKey(), kv->GetValue());
 		}
 
+		for (const idKeyValue* kv_set = spawnArgs.MatchPrefix("set ", NULL); kv_set != NULL; kv_set = spawnArgs.MatchPrefix("set ", kv_set))
+		{
+			// "set FOO on HEAD"
+			idStr SpawnargName(kv_set->GetKey());
+
+			// check whether this spawnarg should apply to the head
+			if (SpawnargName.Right(4) == "head")
+			{
+				// "set FOO on HEAD" => "FOO on HEAD"
+				SpawnargName = SpawnargName.Right(kv_set->GetKey().Length() - 4);
+
+				// find position of first ' '	
+				int PosSpace = SpawnargName.Find(' ', 0, -1);
+
+				// "FOO on HEAD" => "FOO"
+				SpawnargName = SpawnargName.Left(PosSpace);
+
+				// add the spawnarg to the args list
+				args.Set(SpawnargName, kv_set->GetValue());
+			}
+		}
+
+
 		// Spawn the head entity
 		idEntity* ent = gameLocal.SpawnEntityType(idAFAttachment::Type, &args);
 		idAFAttachment* headEnt = static_cast<idAFAttachment*>(ent);
