@@ -3002,3 +3002,27 @@ void idSIMD_Generic::CullByFrustum2( idDrawVert *verts, const int numVerts, cons
 		pointCull[j] = bits;
 	}
 }
+
+/*
+============
+idSIMD_Generic::GenerateMipMap2x2
+============
+*/
+void idSIMD_Generic::GenerateMipMap2x2( const byte *srcPtr, int srcStride, int halfWidth, int halfHeight, byte *dstPtr, int dstStride ) {
+	for (int i = 0; i < halfHeight; i++) {
+		const byte *inRow0 = &srcPtr[(2*i+0) * srcStride];
+		const byte *inRow1 = &srcPtr[(2*i+1) * srcStride];
+		byte *outRow = &dstPtr[i * dstStride];
+
+		for (int j = 0; j < halfWidth; j++) {
+			unsigned sum0 = (unsigned)inRow0[8*j+0] + inRow0[8*j+4+0] + inRow1[8*j+0] + inRow1[8*j+4+0];
+			unsigned sum1 = (unsigned)inRow0[8*j+1] + inRow0[8*j+4+1] + inRow1[8*j+1] + inRow1[8*j+4+1];
+			unsigned sum2 = (unsigned)inRow0[8*j+2] + inRow0[8*j+4+2] + inRow1[8*j+2] + inRow1[8*j+4+2];
+			unsigned sum3 = (unsigned)inRow0[8*j+3] + inRow0[8*j+4+3] + inRow1[8*j+3] + inRow1[8*j+4+3];
+			outRow[4*j+0] = (sum0 + 2) >> 2;
+			outRow[4*j+1] = (sum1 + 2) >> 2;
+			outRow[4*j+2] = (sum2 + 2) >> 2;
+			outRow[4*j+3] = (sum3 + 2) >> 2;
+		}
+	}
+}

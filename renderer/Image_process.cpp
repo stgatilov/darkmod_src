@@ -165,55 +165,28 @@ void R_SetBorderTexels( byte *inBase, int width, int height, const byte border[4
 R_MipMap
 
 Returns a new copy of the texture, quartered in size and filtered.
-
-If a texture is intended to be used in GL_CLAMP or GL_CLAMP_TO_EDGE mode with
-a completely transparent border, we must prevent any blurring into the outer
-ring of texels by filling it with the border from the previous level.  This
-will result in a slight shrinking of the texture as it mips, but better than
-smeared clamps...
 ================
 */
 byte *R_MipMap( const byte *in, int width, int height ) {
-	int		i, j;
-	const byte	*in_p;
-	byte	*out, *out_p;
-	int		row;
-	byte	border[4];
-	int		newWidth, newHeight;
 
 	if ( width < 1 || height < 1 || ( width + height == 2 ) ) {
 		common->FatalError( "R_MipMap called with size %i,%i", width, height );
 	}
-	border[0] = in[0];
-	border[1] = in[1];
-	border[2] = in[2];
-	border[3] = in[3];
 
-	row = width * 4;
-	newWidth = width >> 1;
-	newHeight = height >> 1;
+	int newWidth = idMath::Imax(width >> 1, 1);
+	int newHeight = idMath::Imax(height >> 1, 1);
+	byte *out = (byte *)R_StaticAlloc( newWidth * newHeight * 4 );
 
-	if ( !newWidth ) {
-		newWidth = 1;
-	}
-
-	if ( !newHeight ) {
-		newHeight = 1;
-	}
-	out = (byte *)R_StaticAlloc( newWidth * newHeight * 4 );
-	out_p = out;
-	in_p = in;
-
-	width >>= 1;
-	height >>= 1;
-
-	for (i=0 ; i<height ; i++, in_p+=row) {
-		for (j=0 ; j<width ; j++, out_p+=4, in_p+=8) {
-			out_p[0] = (in_p[0] + in_p[4] + in_p[row+0] + in_p[row+4])>>2;
-			out_p[1] = (in_p[1] + in_p[5] + in_p[row+1] + in_p[row+5])>>2;
-			out_p[2] = (in_p[2] + in_p[6] + in_p[row+2] + in_p[row+6])>>2;
-			out_p[3] = (in_p[3] + in_p[7] + in_p[row+3] + in_p[row+7])>>2;
+	if (width == 1 || height == 1) {
+		int n = idMath::Imax(width, height);
+		int bn = n >> 1;
+		for (int i = 0; i < bn; i++) {
+			for (int c = 0; c < 4; c++)
+				out[4*i+c] = ((unsigned)in[8*i+c] + in[8*i+4+c] + 1) >> 1;
 		}
+	}
+	else {
+		SIMDProcessor->GenerateMipMap2x2(in, width * 4, newWidth, newHeight, out, newWidth * 4);
 	}
 
 	return out;

@@ -402,4 +402,57 @@ void idSIMD_SSE2::Memcpy( void* dst, const void* src, const int count ) {
 		CopyBufferSSE2( (byte*)dst, (byte*)src, count );
 }
 
+/*
+============
+idSIMD_SSE2::GenerateMipMap2x2
+============
+*/
+void idSIMD_SSE2::GenerateMipMap2x2( const byte *srcPtr, int srcStride, int halfWidth, int halfHeight, byte *dstPtr, int dstStride ) {
+	for (int i = 0; i < halfHeight; i++) {
+		const byte *inRow0 = &srcPtr[(2*i+0) * srcStride];
+		const byte *inRow1 = &srcPtr[(2*i+1) * srcStride];
+		byte *outRow = &dstPtr[i * dstStride];
+
+		int j;
+		for (j = 0; j + 4 <= halfWidth; j += 4) {
+			__m128i A0 = _mm_loadu_si128((__m128i*)(inRow0 + 8*j + 0));
+			__m128i A1 = _mm_loadu_si128((__m128i*)(inRow0 + 8*j + 16));
+			__m128i B0 = _mm_loadu_si128((__m128i*)(inRow1 + 8*j + 0));
+			__m128i B1 = _mm_loadu_si128((__m128i*)(inRow1 + 8*j + 16));
+
+			__m128i A0shuf = _mm_shuffle_epi32(A0, SHUF(0, 2, 1, 3));
+			__m128i A1shuf = _mm_shuffle_epi32(A1, SHUF(0, 2, 1, 3));
+			__m128i B0shuf = _mm_shuffle_epi32(B0, SHUF(0, 2, 1, 3));
+			__m128i B1shuf = _mm_shuffle_epi32(B1, SHUF(0, 2, 1, 3));
+			__m128i A0l = _mm_unpacklo_epi8(A0shuf, _mm_setzero_si128());
+			__m128i A0r = _mm_unpackhi_epi8(A0shuf, _mm_setzero_si128());
+			__m128i A1l = _mm_unpacklo_epi8(A1shuf, _mm_setzero_si128());
+			__m128i A1r = _mm_unpackhi_epi8(A1shuf, _mm_setzero_si128());
+			__m128i B0l = _mm_unpacklo_epi8(B0shuf, _mm_setzero_si128());
+			__m128i B0r = _mm_unpackhi_epi8(B0shuf, _mm_setzero_si128());
+			__m128i B1l = _mm_unpacklo_epi8(B1shuf, _mm_setzero_si128());
+			__m128i B1r = _mm_unpackhi_epi8(B1shuf, _mm_setzero_si128());
+
+			__m128i sum0 = _mm_add_epi16(_mm_add_epi16(A0l, A0r), _mm_add_epi16(B0l, B0r));
+			__m128i sum1 = _mm_add_epi16(_mm_add_epi16(A1l, A1r), _mm_add_epi16(B1l, B1r));
+			__m128i avg0 = _mm_srli_epi16(_mm_add_epi16(sum0, _mm_set1_epi16(2)), 2);
+			__m128i avg1 = _mm_srli_epi16(_mm_add_epi16(sum1, _mm_set1_epi16(2)), 2);
+
+			__m128i res = _mm_packus_epi16(avg0, avg1);
+			_mm_storeu_si128((__m128i*)(outRow + 4*j), res);
+		}
+
+		for (; j < halfWidth; j++) {
+			unsigned sum0 = (unsigned)inRow0[8*j+0] + inRow0[8*j+4+0] + inRow1[8*j+0] + inRow1[8*j+4+0];
+			unsigned sum1 = (unsigned)inRow0[8*j+1] + inRow0[8*j+4+1] + inRow1[8*j+1] + inRow1[8*j+4+1];
+			unsigned sum2 = (unsigned)inRow0[8*j+2] + inRow0[8*j+4+2] + inRow1[8*j+2] + inRow1[8*j+4+2];
+			unsigned sum3 = (unsigned)inRow0[8*j+3] + inRow0[8*j+4+3] + inRow1[8*j+3] + inRow1[8*j+4+3];
+			outRow[4*j+0] = (sum0 + 2) >> 2;
+			outRow[4*j+1] = (sum1 + 2) >> 2;
+			outRow[4*j+2] = (sum2 + 2) >> 2;
+			outRow[4*j+3] = (sum3 + 2) >> 2;
+		}
+	}
+}
+
 #endif

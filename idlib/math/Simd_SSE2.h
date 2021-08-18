@@ -41,6 +41,8 @@ public:
 
 	virtual void Memcpy( void* dst, const void* src, const int count );
 	virtual void CalcTriFacing( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idVec3 &lightOrigin, byte *facing );
+
+	virtual void GenerateMipMap2x2( const byte *srcPtr, int srcStride, int halfWidth, int halfHeight, byte *dstPtr, int dstStride ) override;
 #endif
 };
 
