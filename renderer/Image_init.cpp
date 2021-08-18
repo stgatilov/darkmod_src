@@ -1576,7 +1576,7 @@ void idImageManager::Init() {
 	cinematicImage = ImageFromFunction( "_cinematic", R_RGBA8Image );
 	scratchImage = ImageFromFunction( "_scratch", R_RGBA8Image );
 	scratchImage2 = ImageFromFunction( "_scratch2", R_RGBA8Image );
-	xrayImage = ImageFromFunction( "_xray", R_XRayImage );
+	xrayImage = ImageFromFunction( "_xray", R_RGBA8Image );
 	accumImage = ImageFromFunction( "_accum", R_RGBA8Image );
 	scratchCubeMapImage = ImageFromFunction( "_scratchCubeMap", makeNormalizeVectorCubeMap );
 	currentRenderImage = ImageFromFunction( "_currentRender", R_RGBA8Image );

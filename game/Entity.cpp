@@ -4095,6 +4095,7 @@ void idEntity::UpdateModel( void ) {
 		xrayEntity = renderEntity;
 		xrayEntity.xrayIndex = 2;
 		xrayEntity.hModel = xrayModelHandle;
+		xrayEntity.customSkin = xraySkin;
 
 		if ( xrayEntityHandle == -1 ) {
 			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
