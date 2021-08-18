@@ -28,6 +28,13 @@ idSIMD_SSE2::idSIMD_SSE2() {
 //in "Debug with Inlines" config, optimize all the remaining functions of this file
 DEBUG_OPTIMIZE_ON
 
+#if defined(_MSVC) && defined(_DEBUG) && !defined(_INLINEDEBUG)
+	//assert only checked in "Debug" build of MSVC
+	#define DBG_ASSERT(cond) assert(cond)
+#else
+	#define DBG_ASSERT(cond) ((void)0)
+#endif
+
 #define OFFSETOF(s, m) offsetof(s, m)
 #define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
 
@@ -451,6 +458,147 @@ void idSIMD_SSE2::GenerateMipMap2x2( const byte *srcPtr, int srcStride, int half
 			outRow[4*j+1] = (sum1 + 2) >> 2;
 			outRow[4*j+2] = (sum2 + 2) >> 2;
 			outRow[4*j+3] = (sum3 + 2) >> 2;
+		}
+	}
+}
+
+static void CompressRGTCFromRGBA8_Kernel8x4( const byte *srcPtr, int stride, byte *dstPtr ) {
+	// Load rows and remove blue/alpha channels
+	__m128i rgrg0, rgrg1, rgrg2, rgrg3;
+	#define LOADROW(r) {\
+		__m128i rgbaBlock0 = _mm_loadu_si128((__m128i*)(srcPtr + r * stride + 0)); \
+		__m128i rgbaBlock1 = _mm_loadu_si128((__m128i*)(srcPtr + r * stride + 16)); \
+		rgrg##r = _mm_xor_si128( \
+			_mm_slli_epi32(rgbaBlock1, 16), \
+			_mm_and_si128(rgbaBlock0, _mm_set1_epi32(0xFFFF)) \
+		);\
+	}
+	LOADROW(0)
+	LOADROW(1)
+	LOADROW(2)
+	LOADROW(3)
+	#undef LOADROW
+
+	// Compute min/max values
+	__m128i minBytes = _mm_min_epu8(_mm_min_epu8(rgrg0, rgrg1), _mm_min_epu8(rgrg2, rgrg3));
+	__m128i maxBytes = _mm_max_epu8(_mm_max_epu8(rgrg0, rgrg1), _mm_max_epu8(rgrg2, rgrg3));
+	minBytes = _mm_min_epu8(minBytes, _mm_shuffle_epi32(minBytes, SHUF(2, 3, 0, 1)));
+	maxBytes = _mm_max_epu8(maxBytes, _mm_shuffle_epi32(maxBytes, SHUF(2, 3, 0, 1)));
+	minBytes = _mm_min_epu8(minBytes, _mm_shuffle_epi32(minBytes, SHUF(1, 0, 1, 0)));
+	maxBytes = _mm_max_epu8(maxBytes, _mm_shuffle_epi32(maxBytes, SHUF(1, 0, 1, 0)));
+	// (each 32-bit element contains min/max in RGRG format)
+	for (int i = 0; i < 4; i++)
+		DBG_ASSERT(maxBytes.m128i_u8[i] >= minBytes.m128i_u8[i]);
+
+	// Make sure min != max
+	__m128i deltaBytes = _mm_sub_epi8(maxBytes, minBytes);
+	__m128i maskDeltaZero = _mm_cmpeq_epi8(deltaBytes, _mm_setzero_si128());
+	maxBytes = _mm_sub_epi8(maxBytes, maskDeltaZero);
+	deltaBytes = _mm_sub_epi8(deltaBytes, maskDeltaZero);
+	__m128i maskMaxOverflown = _mm_and_si128(maskDeltaZero, _mm_cmpeq_epi8(maxBytes, _mm_setzero_si128()));
+	minBytes = _mm_add_epi8(minBytes, maskMaxOverflown);
+	maxBytes = _mm_add_epi8(maxBytes, maskMaxOverflown);
+	for (int i = 0; i < 4; i++) {
+		DBG_ASSERT(maxBytes.m128i_u8[i] > minBytes.m128i_u8[i]);
+		DBG_ASSERT(maxBytes.m128i_u8[i] - minBytes.m128i_u8[i] == deltaBytes.m128i_u8[i]);
+	}
+
+	// Prepare multiplier
+	__m128i deltaDwords = _mm_unpacklo_epi8(deltaBytes, _mm_setzero_si128());
+	deltaDwords = _mm_unpacklo_epi16(deltaDwords, _mm_setzero_si128());
+	__m128 deltaFloat = _mm_cvtepi32_ps(deltaDwords);
+	__m128 multFloat = _mm_div_ps(_mm_set1_ps(7 << 12), deltaFloat);
+	__m128i multWords = _mm_cvttps_epi32(_mm_add_ps(multFloat, _mm_set1_ps(0.999f)));
+	multWords = _mm_packs_epi32(multWords, multWords);
+
+	__m128i chunksRow0, chunksRow1, chunksRow2, chunksRow3;
+	#define PROCESS_ROW(r) { \
+		/* Compute ratio, find closest ramp point */ \
+		__m128i numerBytes = _mm_sub_epi8(rgrg##r, minBytes); \
+		__m128i numerWords0 = _mm_unpacklo_epi8(numerBytes, _mm_setzero_si128()); \
+		__m128i numerWords1 = _mm_unpackhi_epi8(numerBytes, _mm_setzero_si128()); \
+		__m128i fixedQuot0 = _mm_mullo_epi16(numerWords0, multWords); \
+		__m128i fixedQuot1 = _mm_mullo_epi16(numerWords1, multWords); \
+		__m128i idsWords0 = _mm_srli_epi16(_mm_add_epi16(fixedQuot0, _mm_set1_epi16(1 << 11)), 12); \
+		__m128i idsWords1 = _mm_srli_epi16(_mm_add_epi16(fixedQuot1, _mm_set1_epi16(1 << 11)), 12); \
+		for (int i = 0; i < 8; i++) \
+			DBG_ASSERT(idsWords0.m128i_u16[i] <= 7 && idsWords1.m128i_u16[i] <= 7); \
+		__m128i idsBytes = _mm_packs_epi16(idsWords0, idsWords1); \
+		/* Convert ramp point index to DXT index */ \
+		__m128i dxtIdsBytes = _mm_sub_epi8(_mm_set1_epi8(8), idsBytes); \
+		dxtIdsBytes = _mm_add_epi8(dxtIdsBytes, _mm_cmpeq_epi8(idsBytes, _mm_set1_epi8(7))); \
+		dxtIdsBytes = _mm_sub_epi8(dxtIdsBytes, _mm_and_si128(_mm_cmpeq_epi8(idsBytes, _mm_setzero_si128()), _mm_set1_epi8(7))); \
+		for (int i = 0; i < 8; i++) \
+			DBG_ASSERT(dxtIdsBytes.m128i_u8[i] <= 7); \
+		/* Compress 3-bit indices into row 12-bit chunks */ \
+		__m128i temp = dxtIdsBytes; \
+		temp = _mm_xor_si128(temp, _mm_srli_epi64(temp, 32 - 3)); \
+		__m128i tempLo = _mm_unpacklo_epi8(temp, _mm_setzero_si128()); \
+		__m128i tempHi = _mm_unpackhi_epi8(temp, _mm_setzero_si128()); \
+		temp = _mm_xor_si128(tempLo, _mm_slli_epi16(tempHi, 6)); \
+		temp = _mm_unpacklo_epi16(temp, _mm_setzero_si128()); \
+		temp = _mm_and_si128(temp, _mm_set1_epi32((1 << 12) - 1)); \
+		for (int i = 0; i < 8; i++) \
+			DBG_ASSERT(temp.m128i_u32[i] < (1 << 12)); \
+		chunksRow##r = temp; \
+	}
+	PROCESS_ROW(0)
+	PROCESS_ROW(1)
+	PROCESS_ROW(2)
+	PROCESS_ROW(3)
+	#undef PROCESS_ROW
+
+	// Compress 12-bit row chunks into (16+32)-bit block chunks
+	__m128i blockLow32 = _mm_xor_si128(_mm_slli_epi32(chunksRow0, 16), _mm_slli_epi32(chunksRow1, 28));
+	__m128i blockHigh32 = _mm_xor_si128(_mm_slli_epi32(chunksRow2, 8), _mm_slli_epi32(chunksRow3, 20));
+	blockHigh32 = _mm_xor_si128(blockHigh32, _mm_srli_epi32(chunksRow1, 4));
+	for (int i = 0; i < 4; i++)
+		DBG_ASSERT(blockLow32.m128i_u16[2*i] == 0);
+	// Add max/min bytes to first 16 bits
+	__m128i maxMinDwords = _mm_unpacklo_epi8(maxBytes, minBytes);
+	maxMinDwords = _mm_unpacklo_epi16(maxMinDwords, _mm_setzero_si128());
+	blockLow32 = _mm_xor_si128(blockLow32, maxMinDwords);
+
+	// Write out two blocks
+	__m128i block0 = _mm_unpacklo_epi32(blockLow32, blockHigh32);
+	__m128i block1 = _mm_unpackhi_epi32(blockLow32, blockHigh32);
+	_mm_storeu_si128((__m128i*)(dstPtr + 0), block0);
+	_mm_storeu_si128((__m128i*)(dstPtr + 16), block1);
+}
+
+void idSIMD_SSE2::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	ALIGNTYPE16 dword inputBlocks[4][8];
+	__m128i outputBlocks[2];
+
+	for (int sr = 0; sr < height; sr += 4) {
+		int fitsNum = (sr + 4 <= height ? width >> 3 : 0);
+
+		int iters;
+		for (iters = 0; iters < fitsNum; iters++) {
+			// Load blocks directly from image memory
+			CompressRGTCFromRGBA8_Kernel8x4(&srcPtr[sr * stride + 32 * iters], stride, dstPtr);
+			dstPtr += 32;
+		}
+
+		for (int sc = 8 * iters; sc < width; sc += 8) {
+			// Copy blocks with clamp-style padding
+			for (int i = 0; i < 4; i++)
+				for (int j = 0; j < 8; j++) {
+					int a = sr + i;
+					int b = sc + j;
+					if (a > height - 1)
+						a = height - 1;
+					if (b > width - 1)
+						b = width - 1;
+					inputBlocks[i][j] = *(dword*)&srcPtr[a * stride + 4 * b];
+				}
+			CompressRGTCFromRGBA8_Kernel8x4((byte*)&inputBlocks[0][0], sizeof(inputBlocks[0]), (byte*)outputBlocks);
+			// Copy one or two blocks to output
+			int numBlocks = idMath::Imin((width - sc + 3) >> 2, 2);
+			for (int b = 0; b < numBlocks; b++) {
+				_mm_storeu_si128((__m128i*)dstPtr, outputBlocks[b]);
+				dstPtr += 16;
+			}
 		}
 	}
 }

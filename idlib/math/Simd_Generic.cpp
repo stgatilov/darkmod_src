@@ -3026,3 +3026,83 @@ void idSIMD_Generic::GenerateMipMap2x2( const byte *srcPtr, int srcStride, int h
 		}
 	}
 }
+
+/*
+============
+idSIMD_Generic::CompressRGTCFromRGBA8
+============
+*/
+void idSIMD_Generic::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	uint64 *dstBlocks = (uint64*)dstPtr;
+	byte block[4][4];
+
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			for (int comp = 0; comp < 2; comp++) {
+
+				// load block
+				for (int r = 0; r < 4; r++)
+					for (int c = 0; c < 4; c++) {
+						int i = brow * 4 + r;
+						int j = bcol * 4 + c;
+						// use "clamp" continuation
+						if (i > height - 1)
+							i = height - 1;
+						if (j > width - 1)
+							j = width - 1;
+						block[r][c] = srcPtr[i * stride + 4 * j + comp];
+					}
+
+				// compute min/max
+				int minv = block[0][0];
+				int maxv = block[0][0];
+				for (int r = 0; r < 4; r++)
+					for (int c = 0; c < 4; c++) {
+						minv = idMath::Imin(minv, block[r][c]);
+						maxv = idMath::Imax(maxv, block[r][c]);
+					}
+				// be sure min < max, so that 7-step case is used
+				if (minv == maxv) {
+					if (maxv < 255)
+						maxv++;
+					else
+						minv--;
+				}
+
+				uint64 blockData = maxv + (minv << 8);
+				int bits = 16;
+				for (int r = 0; r < 4; r++)
+					for (int c = 0; c < 4; c++) {
+						// compute ratio
+						int numer = block[r][c] - minv;
+						int denom = maxv - minv;
+						#if 0
+						// find closest ramp point
+						int idx = (numer * 7 + (denom >> 1)) / denom;
+						#else
+						// this code yields closest ramp point in most cases
+						// among all 32K ratios D/N, there are 258 exceptions with N >= 65
+						// in exceptional cases, ratio is close to middle, and chosen ramp point is almost as close
+						// Note: this code is used here to match CompressRGTCFromRGBA8_Kernel8x4 !
+						int mult = ((7 << 12) + denom-1) / denom;
+						int idx = (mult * numer + (1 << 11)) >> 12;
+						#endif
+						// convert to DXT5 index
+						int val = 8 - idx;
+						if (idx == 7)
+							val = 0;
+						if (idx == 0)
+							val = 1;
+						//append to bit stream
+						blockData += uint64(val) << bits;
+						bits += 3;
+					}
+				assert(bits == 64);
+
+				*dstBlocks++ = blockData;
+			}
+		}
+	}
+}
