@@ -236,6 +236,7 @@ idImage::idImage() {
 	refCount = 0;
 	swizzleMask = NULL;
 	memset( &cpuData, 0, sizeof( cpuData ) );
+	compressedData = nullptr;
 	residency = IR_GRAPHICS;
 	backgroundLoadState = IS_NONE;
 	isBindlessHandleResident = false;
@@ -1860,10 +1861,14 @@ void idImageManager::PrintMemInfo( MemInfo_t *mi ) {
 		total += size;
 
 		f->Printf( "%s %3i %s\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
-		if (im->cpuData.IsValid()) {
-			size = im->cpuData.GetTotalSizeInBytes();
-			f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( size ).c_str(), im->refCount, im->imgName.c_str() );
-		}
+
+		int cpuSize = 0;
+		if (im->cpuData.IsValid())
+			cpuSize += im->cpuData.GetTotalSizeInBytes();
+		if (im->compressedData)
+			cpuSize += im->compressedData->GetTotalSizeInBytes();
+		if (cpuSize)
+			f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( cpuSize ).c_str(), im->refCount, im->imgName.c_str() );
 	}
 	delete[] sortIndex;
 	mi->imageAssetsTotal = total;

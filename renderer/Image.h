@@ -144,22 +144,36 @@ typedef enum {
 	IS_LOADED		// data loaded, waiting for GL thread
 } imageLoadState_t;
 
-// stgatilov: represents image data on CPU side
+// stgatilov: represents uncompressed image data on CPU side in RGBA8 format
 typedef struct imageBlock_s {
 	byte *pic[6];
 	int width;
 	int height;
 	int sides;			//six for cubemaps, one for the others
-	int compressedSize;	//if zero, then data is 8-bit RGBA
 
 	byte *GetPic(int side = 0) const { return pic[side]; }
 	bool IsValid() const { return pic[0] != nullptr; }
-	bool IsCompressed() const { return compressedSize != 0; }
 	bool IsCubemap() const { return sides == 6; }
-	int GetSizeInBytes() const { return (compressedSize == 0 ? width * height * 4 : compressedSize); }
+	int GetSizeInBytes() const { return width * height * 4; }
 	int GetTotalSizeInBytes() const { return sides * GetSizeInBytes(); }
 	void Purge();
 } imageBlock_t;
+
+// stgatilov: represents compressed texture as contents of DDS file
+typedef struct imageCompressedData_s {
+	int fileSize;				//size of tail starting from "magic"
+	int _;						//(padding)
+
+	//----- data below is stored in DDS file -----
+	dword magic;				//always must be "DDS "in little-endian
+	ddsFileHeader_t header;		//DDS file header (124 bytes)
+	byte contents[1];			//the rest of file (variable size)
+
+	static int GetTotalSizeInBytes(int fileSize) { return fileSize + 8; }
+	int GetTotalSizeInBytes() const { return fileSize + 8; }
+	byte *GetFileData() const { return (byte*)&magic; }
+} imageCompressedData_t;
+static_assert(offsetof(imageCompressedData_s, contents) - offsetof(imageCompressedData_s, magic) == 128, "Wrong imageCompressedData_t layout");
 
 class LoadStack;
 
@@ -216,7 +230,7 @@ public:
 	void		SetImageFilterAndRepeat() const;
 	void		WritePrecompressedImage();
 	bool		CheckPrecompressedImage( bool fullLoad );
-	void		UploadPrecompressedImage( byte *data, int len );
+	void		UploadPrecompressedImage( void );
 	void		ActuallyLoadImage( bool allowBackground = false );
 	int			BitsForInternalFormat( int internalFormat ) const;
 	GLenum		SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth ) const;
@@ -261,6 +275,7 @@ public:
 	// stgatilov: storing image data on CPU side
 	imageBlock_t		cpuData;				// CPU-side usable image data (usually absent)
 	imageResidency_t	residency;				// determines whether cpuData and/or texnum should be valid
+	imageCompressedData_t *compressedData;		// CPU-side compressed texture contents (aka DDS file)
 	imageLoadState_t	backgroundLoadState;	// state of background loading (usually disabled)
 
 	//stgatilov: information about why and how this image was loaded (may be missing)

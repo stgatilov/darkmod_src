@@ -424,14 +424,13 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	if ( residency & IR_CPU ) {
 		if ( !loadingFromItself ) {
-			cpuData.compressedSize = 0;
 			cpuData.width = width;
 			cpuData.height = height;
 			cpuData.pic[0] = ( byte* ) R_StaticAlloc( cpuData.GetSizeInBytes() );
 			memcpy(cpuData.pic[0], pic, cpuData.GetSizeInBytes() );
 			cpuData.sides = 1;
 		}
-		assert( cpuData.width == width && cpuData.height == height && cpuData.compressedSize == 0 );
+		assert( cpuData.width == width && cpuData.height == height );
 	}
 	if ( !(residency & IR_GRAPHICS) )
 		return;
@@ -1037,37 +1036,30 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	}
 	int	len = f->Length();
 
-	if ( len < sizeof( ddsFileHeader_t ) ) {
+	if ( len < 4 + sizeof( ddsFileHeader_t ) ) {
 		fileSystem->CloseFile( f );
 		return false;
 	}
 
-	byte *data = ( byte * )R_StaticAlloc( len );
+	imageCompressedData_t *compData = (imageCompressedData_t*) R_StaticAlloc(
+		imageCompressedData_t::GetTotalSizeInBytes( len )
+	);
 
-	f->Read( data, len );
+	compData->fileSize = len;
+	f->Read( compData->GetFileData(), len );
 
 	fileSystem->CloseFile( f );
 
-	unsigned int magic = LittleInt( *( unsigned int * )data );
-	ddsFileHeader_t	*_header = ( ddsFileHeader_t * )( data + 4 );
-	int ddspf_dwFlags = LittleInt( _header->ddspf.dwFlags );
-
-	if ( magic != DDS_MAKEFOURCC( 'D', 'D', 'S', ' ' ) ) {
+	if ( compData->magic != DDS_MAKEFOURCC( 'D', 'D', 'S', ' ' ) ) {
 		common->Printf( "CheckPrecompressedImage( %s ): magic != 'DDS '\n", imgName.c_str() );
-		R_StaticFree( data );
+		R_StaticFree( compData );
 		return false;
 	}
 
 	cpuData.Purge();
-	cpuData.pic[0] = data;
-	cpuData.compressedSize = len;
-	cpuData.sides = 1;
-	//TODO: set proper width/height here?
 
-	// upload all the levels
-	//UploadPrecompressedImage( data, len );
-
-	//R_StaticFree( data );
+	R_StaticFree( compressedData );
+	compressedData = compData;
 
 	return true;
 }
@@ -1076,13 +1068,13 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 ===================
 UploadPrecompressedImage
 
-This can be called by the front end during nromal loading,
+This can be called by the front end during normal loading,
 or by the backend after a background read of the file
 has completed
 ===================
 */
-void idImage::UploadPrecompressedImage( byte *data, int len ) {
-	ddsFileHeader_t	*header = ( ddsFileHeader_t * )( data + 4 );
+void idImage::UploadPrecompressedImage() {
+	ddsFileHeader_t	*header = &compressedData->header;
 
 	// ( not byte swapping dwReserved1 dwReserved2 )
 	header->dwSize = LittleInt( header->dwSize );
@@ -1173,7 +1165,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 	int skipMip = 0;
 	GetDownsize( uploadWidth, uploadHeight );
 
-	byte *imagedata = data + sizeof( ddsFileHeader_t ) + 4;
+	byte *imagedata = compressedData->contents;
 
 	for ( int i = 0 ; i < numMipmaps; i++ ) {
 		int size = 0;
@@ -1243,9 +1235,7 @@ void R_LoadImageData( idImage& image ) {
 	else {
 		// see if we have a pre-generated image file that is
 		// already image processed and compressed
-		if ( globalImages->image_usePrecompressedTextures.GetBool() ) {
-			/*if ( backEnd.pc.textureLoadTime > 9 )
-				return;*/
+		if ( globalImages->image_usePrecompressedTextures.GetBool() && !(image.residency & IR_CPU) ) {
 			if ( image.CheckPrecompressedImage( true ) ) {
 				// we got the precompressed image
 				return;
@@ -1261,31 +1251,44 @@ void R_LoadImageData( idImage& image ) {
 void R_UploadImageData( idImage& image ) {
 	TRACE_CPU_SCOPE_STR("Upload:Image", image.imgName)
 	auto& cpuData = image.cpuData;
-	for (int s = 0; s < cpuData.sides; s++) {
-		if ( cpuData.pic[s] == NULL ) {
-			common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
-			if (image.loadStack)
-				image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
-			image.MakeDefault();
-			return;
-		}
+
+	// check if all sides of uncompressed image are available
+	bool cpuDataValid = false;
+	if (cpuData.sides > 0) {
+		cpuDataValid = true;
+		for (int s = 0; s < cpuData.sides; s++)
+			if ( cpuData.pic[s] == NULL )
+				cpuDataValid = false;
 	}
 
+	int loadedMask = IR_NONE;
+
+	// verify CPU-side availability
+	if (image.residency & IR_CPU) {
+		if (cpuDataValid)
+			loadedMask |= IR_CPU;
+	}
+
+	// upload to GPU side
 	if (image.residency & IR_GRAPHICS) {
-		if (image.cubeFiles != CF_2D) {
-			image.GenerateCubeImage( ( const byte ** )cpuData.pic, cpuData.width,image.filter, image.allowDownSize, image.depth );
+		if (image.cubeFiles != CF_2D && cpuDataValid && cpuData.IsCubemap()) {
+			image.GenerateCubeImage( ( const byte ** )cpuData.pic, cpuData.width, image.filter, image.allowDownSize, image.depth );
+			loadedMask |= IR_GRAPHICS;
 		}
 		else {
-			if ( cpuData.compressedSize ) {
+			if ( image.compressedData ) {
 				// upload all the levels
-				image.UploadPrecompressedImage( cpuData.pic[0], cpuData.compressedSize );
-			} else {
+				image.UploadPrecompressedImage();
+				loadedMask |= IR_GRAPHICS;
+			}
+			else if ( cpuDataValid ) {
 				// build a hash for checking duplicate image files
 				// NOTE: takes about 10% of image load times (SD)
 				// may not be strictly necessary, but some code uses it, so let's leave it in
 				if ( globalImages->image_blockChecksum.GetBool() ) // duzenko #4400
 					image.imageHash = MD4_BlockChecksum( cpuData.pic, cpuData.width * cpuData.height * 4 );
 				image.GenerateImage( cpuData.pic[0], cpuData.width, cpuData.height, image.filter, image.allowDownSize, image.repeat, image.depth, image.residency );
+				loadedMask |= IR_GRAPHICS;
 				image.precompressedFile = false;
 				// write out the precompressed version of this file if needed
 				image.WritePrecompressedImage();
@@ -1293,8 +1296,20 @@ void R_UploadImageData( idImage& image ) {
 		}
 	}
 
+	if (loadedMask != image.residency) {
+		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
+		if (image.loadStack)
+			image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
+		image.MakeDefault();
+		return;
+	}
+
 	if (!(image.residency & IR_CPU))
 		cpuData.Purge();
+	if (image.compressedData) {
+		R_StaticFree(image.compressedData);
+		image.compressedData = nullptr;
+	}
 }
 
 std::stack<idImage*> backgroundLoads;
@@ -1393,6 +1408,10 @@ void idImage::PurgeImage( bool purgeCpuData ) {
 
 	if ( purgeCpuData && cpuData.IsValid() )
 		cpuData.Purge();
+	if ( compressedData ) {
+		R_StaticFree( compressedData );
+		compressedData = nullptr;
+	}
 
 	// clear all the current binding caches, so the next bind will do a real one
 	for ( int i = 0 ; i < MAX_MULTITEXTURE_UNITS ; i++ ) {
