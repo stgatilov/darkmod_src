@@ -175,7 +175,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first
 	if ( minimumDepth == TD_BUMP ) {
-		if ( allowCompress && globalImages->image_useNormalCompression.GetBool() ) {
+		if ( globalImages->image_useNormalCompression.GetBool() ) {
 			return GL_COMPRESSED_RG_RGTC2;
 		}
 		return GL_RG8;
@@ -1218,7 +1218,6 @@ void R_HandleImageCompression( idImage& image ) {
 	bool compressToRgtc = (
 		(image.residency & IR_GRAPHICS) && 
 		image.depth == TD_BUMP &&
-		globalImages->image_useCompression.GetBool() &&
 		globalImages->image_useNormalCompression.GetBool() &&
 		image.cpuData.IsValid() &&
 		!image.compressedData
