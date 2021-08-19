@@ -144,11 +144,7 @@ int idWaveFile::OpenOGG( const char* strFileName, waveformatex_t *pwfx ) {
 	OggVorbis_File *ov;
 
 	memset( pwfx, 0, sizeof( waveformatex_t ) );
-
-	mhmmio = fileSystem->OpenFileRead( strFileName );
-	if ( !mhmmio ) {
-		return -1;
-	}
+	assert(mhmmio && idStr::Icmp(mhmmio->GetName(), strFileName) == 0);
 
 	Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
 
@@ -176,12 +172,10 @@ int idWaveFile::OpenOGG( const char* strFileName, waveformatex_t *pwfx ) {
 	if ( idSoundSystemLocal::s_realTimeDecoding.GetBool() ) {
 
 		ExtLibs::ov_clear( ov );
-		fileSystem->CloseFile( mhmmio );
-		mhmmio = NULL;
 		delete ov;
 
 		mpwfx.Format.wFormatTag = WAVE_FORMAT_TAG_OGG;
-		mhmmio = fileSystem->OpenFileRead( strFileName );
+		mhmmio->Rewind();
 		mMemSize = mhmmio->Length();
 
 	} else {

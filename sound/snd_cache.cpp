@@ -584,24 +584,20 @@ void idSoundSample::Load( void ) {
 		return LoadFromCinematic(cin);
 	}
 
-	timestamp = GetNewTimeStamp();
-
-	if ( timestamp == FILE_NOT_FOUND_TIMESTAMP ) {
-		common->Warning( "Couldn't load sound '%s' using default", name.c_str() );
-		declManager->GetLoadStack().PrintStack(2, LoadStack::LevelOf(this));
-		MakeDefault();
-		return;
-	}
-
 	// load it
 	idWaveFile	fh;
 	waveformatex_t info;
 
 	if ( fh.Open( name, &info ) == -1 ) {
 		common->Warning( "Couldn't load sound '%s' using default", name.c_str() );
+		declManager->GetLoadStack().PrintStack(2, LoadStack::LevelOf(this));
+		timestamp = -1;
 		MakeDefault();
 		return;
 	}
+
+	// save timestamp of opened file
+	timestamp = fh.Timestamp();
 
 	if ( info.nChannels != 1 && info.nChannels != 2 ) {
 		common->Warning( "idSoundSample: %s has %i channels, using default", name.c_str(), info.nChannels );

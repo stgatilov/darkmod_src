@@ -185,6 +185,7 @@ public:
 	int				Seek( int offset );
 	int				Close( void );
 	int				ResetFile( void );
+	ID_TIME_T		Timestamp( void ) const { return mfileTime; }
 
 	int				GetOutputSize( void ) { return mdwSize; }
 	int				GetMemorySize( void ) { return mMemSize; }
@@ -198,7 +199,7 @@ private:
 	dword			mdwSize;		// size in samples
 	dword			mMemSize;		// size of the wave data in memory
 	dword			mseekBase;
-	ID_TIME_T			mfileTime;
+	ID_TIME_T		mfileTime;
 
 	bool			mbIsReadingFromMemory;
 	short *			mpbData;
