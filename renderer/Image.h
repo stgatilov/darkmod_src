@@ -169,9 +169,11 @@ typedef struct imageCompressedData_s {
 	ddsFileHeader_t header;		//DDS file header (124 bytes)
 	byte contents[1];			//the rest of file (variable size)
 
-	static int GetTotalSizeInBytes(int fileSize) { return fileSize + 8; }
-	int GetTotalSizeInBytes() const { return fileSize + 8; }
 	byte *GetFileData() const { return (byte*)&magic; }
+	static int FileSizeFromContentSize(int contentSize) { return contentSize + 4 + sizeof(ddsFileHeader_t); }
+	static int TotalSizeFromFileSize(int fileSize) { return fileSize + 8; }
+	static int TotalSizeFromContentSize(int contentSize) { return TotalSizeFromFileSize(FileSizeFromContentSize(contentSize)); }
+	int GetTotalSize() const { return TotalSizeFromFileSize(fileSize); }
 } imageCompressedData_t;
 static_assert(offsetof(imageCompressedData_s, contents) - offsetof(imageCompressedData_s, magic) == 128, "Wrong imageCompressedData_t layout");
 

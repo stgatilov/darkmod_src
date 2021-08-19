@@ -1042,7 +1042,7 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	}
 
 	imageCompressedData_t *compData = (imageCompressedData_t*) R_StaticAlloc(
-		imageCompressedData_t::GetTotalSizeInBytes( len )
+		imageCompressedData_t::TotalSizeFromFileSize( len )
 	);
 
 	compData->fileSize = len;
@@ -1214,6 +1214,89 @@ void idImage::UploadPrecompressedImage() {
 	SetImageFilterAndRepeat();
 }
 
+void R_HandleImageCompression( idImage& image ) {
+	bool compressToRgtc = (
+		(image.residency & IR_GRAPHICS) && 
+		image.depth == TD_BUMP &&
+		globalImages->image_useCompression.GetBool() &&
+		globalImages->image_useNormalCompression.GetBool() &&
+		image.cpuData.IsValid() &&
+		!image.compressedData
+	);
+
+	if (compressToRgtc) {
+		TRACE_CPU_SCOPE_STR("Compress:Image", image.imgName)
+		int blockSize = 16;
+
+		// Compute size of compressed output
+		int levw = image.cpuData.width;
+		int levh = image.cpuData.height;
+		int totalBytes = 0, mainBytes = 0;
+		int mipLevels = 0;
+		while (1) {
+			int bw = (levw + 3) >> 2;
+			int bh = (levh + 3) >> 2;
+			int currSz = bw * bh * blockSize;
+			if (mainBytes == 0)
+				mainBytes = currSz;
+			mipLevels++;
+			totalBytes += currSz;
+			if (levw == 1 && levh == 1)
+				break;
+			levw = idMath::Imax(levw >> 1, 1);
+			levh = idMath::Imax(levh >> 1, 1);
+		}
+
+		// Allocate DDS data
+		int allocSize = imageCompressedData_t::TotalSizeFromContentSize(totalBytes);
+		imageCompressedData_t *compData = (imageCompressedData_t*)R_StaticAlloc(allocSize);
+		// Fill header
+		compData->fileSize = imageCompressedData_t::FileSizeFromContentSize(totalBytes);
+		compData->magic = DDS_MAKEFOURCC( 'D', 'D', 'S', ' ' );
+		memset(&compData->header, 0, sizeof(compData->header));
+		compData->header.dwSize = sizeof(compData->header);
+		compData->header.dwFlags = DDSF_CAPS | DDSF_PIXELFORMAT | DDSF_WIDTH | DDSF_HEIGHT;
+		compData->header.dwFlags |= DDSF_LINEARSIZE | DDSF_MIPMAPCOUNT;
+		compData->header.dwWidth = image.cpuData.width;
+		compData->header.dwHeight = image.cpuData.height;
+		compData->header.dwPitchOrLinearSize = mainBytes;
+		compData->header.dwMipMapCount = mipLevels;
+		compData->header.ddspf.dwSize = sizeof(compData->header.ddspf);
+		compData->header.ddspf.dwFlags = DDSF_FOURCC;
+		compData->header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'A', 'T', 'I', '2' );
+		compData->header.dwCaps1 = DDSF_TEXTURE | DDSF_MIPMAP | DDSF_COMPLEX;
+
+		// Generate mipmaps and compress them
+		byte *dstData = compData->contents;
+		byte *srcData = image.cpuData.GetPic();
+		levw = image.cpuData.width;
+		levh = image.cpuData.height;
+		while (1) {
+			int bw = (levw + 3) >> 2;
+			int bh = (levh + 3) >> 2;
+			SIMDProcessor->CompressRGTCFromRGBA8(
+				srcData, levw, levh, 4 * levw,
+				dstData
+			);
+			dstData += bw * bh * blockSize;
+			if (levw == 1 && levh == 1)
+				break;
+			byte *newMip = R_MipMap(srcData, levw, levh);
+			levw = idMath::Imax(levw >> 1, 1);
+			levh = idMath::Imax(levh >> 1, 1);
+			if (srcData != image.cpuData.GetPic())
+				R_StaticFree(srcData);
+			srcData = newMip;
+		} 
+		if (srcData != image.cpuData.GetPic())
+			R_StaticFree(srcData);
+
+		// Save compressed DDS in image
+		assert(!image.compressedData);
+		image.compressedData = compData;
+	}
+}
+
 void R_LoadImageData( idImage& image ) {
 	TRACE_CPU_SCOPE_STR("Load:Image", image.imgName)
 	imageBlock_t& cpuData = image.cpuData;
@@ -1246,6 +1329,9 @@ void R_LoadImageData( idImage& image ) {
 		R_LoadImageProgram( image.imgName, &cpuData.pic[0], &cpuData.width, &cpuData.height, &image.timestamp, &image.depth );
 		cpuData.sides = 1;
 	}
+
+	// stgatilov: software compression/decompression of texture if needed
+	R_HandleImageCompression( image );
 }
 
 void R_UploadImageData( idImage& image ) {

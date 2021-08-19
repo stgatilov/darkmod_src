@@ -1866,7 +1866,7 @@ void idImageManager::PrintMemInfo( MemInfo_t *mi ) {
 		if (im->cpuData.IsValid())
 			cpuSize += im->cpuData.GetTotalSizeInBytes();
 		if (im->compressedData)
-			cpuSize += im->compressedData->GetTotalSizeInBytes();
+			cpuSize += im->compressedData->GetTotalSize();
 		if (cpuSize)
 			f->Printf( "%s %3i %s~CPU\n", idStr::FormatNumber( cpuSize ).c_str(), im->refCount, im->imgName.c_str() );
 	}
