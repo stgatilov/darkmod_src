@@ -660,6 +660,7 @@ idFile_Memory::idFile_Memory( const char *name ) {
 	allocated = 0;
 	granularity = 16384;
 	owned = true;
+	timestamp = 0;
 
 	mode = ( 1 << FS_WRITE );
 	filePtr = NULL;
@@ -677,6 +678,7 @@ idFile_Memory::idFile_Memory( const char *name, const char *data, int length, bo
 	allocated = 0;
 	granularity = 16384;
 	this->owned = owned;
+	timestamp = 0;
 
 	mode = ( 1 << FS_READ );
 	filePtr = const_cast<char *>(data);
@@ -769,7 +771,8 @@ idFile_Memory::Timestamp
 =================
 */
 ID_TIME_T idFile_Memory::Timestamp( void ) {
-	return 0;
+	// usually zero, unless set explicitly via SetTimestamp method
+	return timestamp;
 }
 
 /*

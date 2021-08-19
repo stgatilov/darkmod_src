@@ -130,6 +130,7 @@ public:
 	const char *			GetDataPtr( void ) const { return filePtr; }
 							// set the file granularity
 	void					SetGranularity( int g ) { assert( g > 0 ); granularity = g; }
+	void					SetTimestamp( ID_TIME_T t ) { timestamp = t; }
 
 private:
 	idStr					name;			// name of the file
@@ -139,6 +140,7 @@ private:
 	int						granularity;	// file granularity
 	char *					filePtr;		// buffer holding the file data
 	bool					owned;			// if the filePtr is owned and should be deleted
+	int						timestamp;		// custom timestamp (if set)
 	char *					curPtr;			// current read/write pointer
 };
 

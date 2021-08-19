@@ -2976,11 +2976,14 @@ idFile * idFileSystemLocal::OpenFileReadPrefetch( const char *relativePath, cons
 	if ( f == nullptr ) {
 		return f;
 	}
+	ID_TIME_T timestamp = f->Timestamp();
 	int len = f->Length();
 	void *buffer = Mem_Alloc( len );
 	f->Read( buffer, len );
 	CloseFile( f );
-	return new idFile_Memory( relativePath, (const char *)buffer, len, true );
+	idFile_Memory *res = new idFile_Memory( relativePath, (const char *)buffer, len, true );
+	res->SetTimestamp(timestamp);
+	return res;
 }
 
 /*
