@@ -236,6 +236,17 @@ void idImageReader::LoadTGA() {
 			realrow = h - realrow - 1;
 		}
 		dst = data + realrow * w * 4;
+
+		//stgatilov: fast path for plain 8/24/32-bit images
+		if ( !mapped && !rlencoded ) {
+			if ( SIMDProcessor->ConvertTargaRowToRGBA8(buf_p, w, pixel_size, dst) ) {
+				int pixBytes = ((pixel_size + 1) >> 3);
+				buf_p += pixBytes * w;
+				dst += 4 * w;
+				goto RowFinished;
+			}
+		}
+
 		for ( x = 0; x < w; x++ ) {
 			/* check if run length encoded. */
 			if ( rlencoded )	{
@@ -320,6 +331,7 @@ PixEncode:
 				*dst++ = a;
 			}
 		}
+RowFinished:
 
 		if ( interleave == TGA_IL_Four ) {
 			truerow += 4;

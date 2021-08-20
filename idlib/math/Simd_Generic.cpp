@@ -3106,3 +3106,13 @@ void idSIMD_Generic::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int h
 		}
 	}
 }
+
+/*
+============
+idSIMD_Generic::ConvertTargaRowToRGBA8
+============
+*/
+bool idSIMD_Generic::ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, byte *dstPtr ) {
+	// This is called only in LoadTGA, which already handles generic case.
+	return false;
+}

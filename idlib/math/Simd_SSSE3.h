@@ -31,6 +31,7 @@ public:
 	idSIMD_SSSE3();
 
 #ifdef ENABLE_SSE_PROCESSORS
+	virtual bool ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, byte *dstPtr ) override;
 #endif
 };
 
