@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma once
 
-#include "Simd_SSE3.h"
+#include "Simd_SSE2.h"
 
 /*
 ===============================================================================
@@ -25,7 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ===============================================================================
 */
 
-class idSIMD_IdAsm : public idSIMD_SSE3 {
+class idSIMD_IdAsm : public idSIMD_SSE2 {
 public:
 	idSIMD_IdAsm();
 

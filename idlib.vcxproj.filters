@@ -123,7 +123,7 @@
     <ClCompile Include="idlib\math\Simd_SSE2.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="idlib\math\Simd_SSE3.cpp">
+    <ClCompile Include="idlib\math\Simd_SSSE3.cpp">
       <Filter>Math</Filter>
     </ClCompile>
     <ClCompile Include="idlib\math\Vector.cpp">
@@ -347,7 +347,7 @@
     <ClInclude Include="idlib\math\Simd_SSE2.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="idlib\math\Simd_SSE3.h">
+    <ClInclude Include="idlib\math\Simd_SSSE3.h">
       <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="idlib\math\Vector.h">

@@ -221,7 +221,7 @@
     <ClCompile Include="idlib\math\Simd_IdAsm.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE2.cpp" />
-    <ClCompile Include="idlib\math\Simd_SSE3.cpp" />
+    <ClCompile Include="idlib\math\Simd_SSSE3.cpp" />
     <ClCompile Include="idlib\math\Vector.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />
     <ClCompile Include="idlib\Lexer.cpp" />
@@ -317,7 +317,7 @@
     <ClInclude Include="idlib\math\Simd_IdAsm.h" />
     <ClInclude Include="idlib\math\Simd_SSE.h" />
     <ClInclude Include="idlib\math\Simd_SSE2.h" />
-    <ClInclude Include="idlib\math\Simd_SSE3.h" />
+    <ClInclude Include="idlib\math\Simd_SSSE3.h" />
     <ClInclude Include="idlib\math\Vector.h" />
     <ClInclude Include="idlib\CmdArgs.h" />
     <ClInclude Include="idlib\Lexer.h" />

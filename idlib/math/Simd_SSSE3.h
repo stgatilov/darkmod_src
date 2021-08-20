@@ -13,25 +13,25 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
-#ifndef __MATH_SIMD_SSE3_H__
-#define __MATH_SIMD_SSE3_H__
+#ifndef __MATH_SIMD_SSSE3_H__
+#define __MATH_SIMD_SSSE3_H__
 
 #include "Simd_SSE2.h"
 
 /*
 ===============================================================================
 
-	SSE3 implementation of idSIMDProcessor
+	SSSE3 implementation of idSIMDProcessor
 
 ===============================================================================
 */
 
-class idSIMD_SSE3 : public idSIMD_SSE2 {
+class idSIMD_SSSE3 : public idSIMD_SSE2 {
 public:
-	idSIMD_SSE3();
+	idSIMD_SSSE3();
 
 #ifdef ENABLE_SSE_PROCESSORS
 #endif
 };
 
-#endif /* !__MATH_SIMD_SSE3_H__ */
+#endif /* !__MATH_SIMD_SSSE3_H__ */

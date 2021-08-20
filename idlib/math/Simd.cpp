@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Simd_Generic.h"
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
-#include "Simd_SSE3.h"
+#include "Simd_SSSE3.h"
 #include "Simd_AVX.h"
 #include "Simd_AVX2.h"
 #include "Simd_IdAsm.h"
@@ -105,8 +105,8 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 	} else if ( upToSSE3 && (forceImpl && idStr::Icmp(forceImpl, "IdAsm") == 0) ) {
 		processor = new idSIMD_IdAsm;
 #endif
-	} else if ( upToSSE3 && (!forceImpl || idStr::Icmp(forceImpl, "SSE3") == 0) ) {
-		processor = new idSIMD_SSE3;
+	} else if ( upToSSSE3 && (!forceImpl || idStr::Icmp(forceImpl, "SSSE3") == 0) ) {
+		processor = new idSIMD_SSSE3;
 	} else if ( upToSSE2 && (!forceImpl || idStr::Icmp(forceImpl, "SSE2") == 0) ) {
 		processor = new idSIMD_SSE2;
 	} else if ( upToSSE && (!forceImpl || idStr::Icmp(forceImpl, "SSE") == 0) ) {

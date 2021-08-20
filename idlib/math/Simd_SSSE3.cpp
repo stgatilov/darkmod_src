@@ -16,10 +16,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "Simd_SSE3.h"
+#include "Simd_SSSE3.h"
 
-idSIMD_SSE3::idSIMD_SSE3() {
-	name = "SSE3";
+idSIMD_SSSE3::idSIMD_SSSE3() {
+	name = "SSSE3";
 }
 
 #ifdef ENABLE_SSE_PROCESSORS
