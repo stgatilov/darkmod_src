@@ -572,14 +572,16 @@ void idSoundSample::Load( void ) {
 	hardwareBuffer = false;
 
 	//stgatilov #4847: check if this sound was created via testVideo command
-	if (name.CmpPrefix("__testvideo") == 0) {
+	if (name.IcmpPrefix("__testvideo") == 0) {
 		idCinematic *cin = 0;
 		sscanf(name.c_str(), "__testvideo:%p__", &cin);
 		return LoadFromCinematic(cin);
 	}
-	//stgatilov #4534: material name may be specified instead of sound file
-	//in such case this material must have cinematics, and sound is taken from there
-	if (const idMaterial *material = declManager->FindMaterial(name, false)) {
+	if (name.IcmpPrefix("fromVideo ") == 0) {
+		//stgatilov #4534: material name is specified after "fromVideo" prefix
+		//in such case this material must have cinematics, and sound is taken from there
+		const char *materialName = name.c_str() + 10;
+		const idMaterial *material = declManager->FindMaterial(materialName);
 		idCinematic *cin = material->GetCinematic();
 		return LoadFromCinematic(cin);
 	}

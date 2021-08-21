@@ -80,7 +80,7 @@ idSoundShader::SetDefaultText
 bool idSoundShader::SetDefaultText( void ) {
 	idStr wavname = GetName();
 
-	if (wavname.CmpPrefix("__testvideo")) {
+	if (wavname.IcmpPrefix("__testvideo") == 0) {
 		//stgatilov #4847: this case is only used for testVideo command
 		//see R_TestVideo_f in RenderSystem_init.cpp
 		char generated[2048];
@@ -353,7 +353,8 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 			}
 			token.BackSlashesToSlashes();
 			if ( soundSystemLocal.soundCache ) {
-				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
+				idStr soundName = "fromVideo " + token;
+				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( soundName.c_str(), onDemand );
 				numEntries++;
 			}
 		} else if ( token.Find( ".wav", false ) != -1 || token.Find( ".ogg", false ) != -1 ) {
