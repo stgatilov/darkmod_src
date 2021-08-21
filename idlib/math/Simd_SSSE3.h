@@ -26,12 +26,19 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ===============================================================================
 */
 
+#ifdef __linux__
+#define ALLOW_SSSE3 __attribute__ ((__target__ ("ssse3")))
+#else
+#define ALLOW_SSSE3
+#endif
+
+
 class idSIMD_SSSE3 : public idSIMD_SSE2 {
 public:
 	idSIMD_SSSE3();
 
 #ifdef ENABLE_SSE_PROCESSORS
-	virtual bool ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, byte *dstPtr ) override;
+	virtual bool ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, byte *dstPtr ) override ALLOW_SSSE3;
 #endif
 };
 

@@ -24,6 +24,8 @@ idSIMD_SSSE3::idSIMD_SSSE3() {
 
 #ifdef ENABLE_SSE_PROCESSORS
 
+#include "tmmintrin.h"
+
 //in "Debug with Inlines" config, optimize all the remaining functions of this file
 DEBUG_OPTIMIZE_ON
 
