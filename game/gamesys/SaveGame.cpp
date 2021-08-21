@@ -430,7 +430,6 @@ void idSaveGame::WriteRefSound( const refSound_t &refSound ) {
 	WriteFloat( refSound.parms.shakes );
 	WriteInt( refSound.parms.soundShaderFlags );
 	WriteInt( refSound.parms.soundClass );
-	WriteInt( refSound.parms.subtitlesLevel );
 }
 
 void idSaveGame::WriteRenderView( const renderView_t &view ) {
@@ -1028,7 +1027,6 @@ void idRestoreGame::ReadRefSound( refSound_t &refSound ) {
 	ReadFloat( refSound.parms.shakes );
 	ReadInt( refSound.parms.soundShaderFlags );
 	ReadInt( refSound.parms.soundClass );
-	ReadInt( (int&)refSound.parms.subtitlesLevel );
 }
 
 void idRestoreGame::ReadRenderView( renderView_t &view ) {

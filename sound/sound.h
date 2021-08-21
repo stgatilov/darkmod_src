@@ -62,7 +62,6 @@ typedef struct {
 	float					shakes;
 	int						soundShaderFlags;		// SSF_* bit flags
 	int						soundClass;				// for global fading of sounds
-	SubtitleLevel			subtitlesLevel;
 } soundShaderParms_t;
 
 
