@@ -104,6 +104,18 @@ void SoundReloadSounds_f( const idCmdArgs &args ) {
 
 /*
 ===============
+SoundReloadSubtitles
+===============
+*/
+void SoundReloadSubtitles() {
+	if ( !soundSystemLocal.soundCache ) {
+		return;
+	}
+	soundSystemLocal.soundCache->ReloadSubtitles();
+}
+
+/*
+===============
 ListSounds_f
 
 Optional parameter to only list sounds containing that string

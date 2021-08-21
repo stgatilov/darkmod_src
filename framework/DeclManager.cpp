@@ -17,6 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 #include "LoadStack.h"
 
+#include "DeclSubtitles.h"
 
 
 /*
@@ -772,6 +773,7 @@ int idDeclFile::LoadAndParse() {
 
 	Mem_Free( buffer );
 
+	bool subtitlesChanged = false;
 	// any defs that weren't redefinedInReload should now be defaulted
 	for ( idDeclLocal *decl = decls ; decl ; decl = decl->nextInFile ) {
 		if ( decl->redefinedInReload == false ) {
@@ -780,6 +782,16 @@ int idDeclFile::LoadAndParse() {
 			decl->sourceTextLength = 0;
 			decl->sourceLine = decl->sourceFile->numLines;
 		}
+		if ( decl->GetType() == DECL_SUBTITLES )
+			subtitlesChanged = true;
+	}
+
+	if ( subtitlesChanged ) {
+		// stgatilov: some "subtitles" decl was reparsed
+		// they won't take effect until we reload subtitles in sound samples
+		// it is hard to know which samples were affected, so let's just reload all
+		extern void SoundReloadSubtitles();
+		SoundReloadSubtitles();
 	}
 
 	return checksum;
@@ -819,6 +831,7 @@ void idDeclManagerLocal::Init( void ) {
 	RegisterDeclType( "material",			DECL_MATERIAL,		idDeclAllocator<idMaterial> );
 	RegisterDeclType( "skin",				DECL_SKIN,			idDeclAllocator<idDeclSkin> );
 	RegisterDeclType( "sound",				DECL_SOUND,			idDeclAllocator<idSoundShader> );
+	RegisterDeclType( "subtitles",			DECL_SUBTITLES,		idDeclAllocator<idDeclSubtitles> );
 
 	RegisterDeclType( "entityDef",			DECL_ENTITYDEF,		idDeclAllocator<idDeclEntityDef> );
 	RegisterDeclType( "mapDef",				DECL_MAPDEF,		idDeclAllocator<idDeclEntityDef> );
@@ -826,6 +839,7 @@ void idDeclManagerLocal::Init( void ) {
 	RegisterDeclType( "particle",			DECL_PARTICLE,		idDeclAllocator<idDeclParticle> );
 	RegisterDeclType( "articulatedFigure",	DECL_AF,			idDeclAllocator<idDeclAF> );
 
+	RegisterDeclFolder( "subtitles",		".subs",			DECL_SUBTITLES );
 	RegisterDeclFolder( "materials",		".mtr",				DECL_MATERIAL );
 	RegisterDeclFolder( "skins",			".skin",			DECL_SKIN );
 	RegisterDeclFolder( "sound",			".sndshd",			DECL_SOUND );
@@ -2179,6 +2193,7 @@ static constexpr const char *GetParseLabelOfDeclType(declType_t type) {
 	if (type == DECL_MATERIAL) return "Parse:Material";
 	if (type == DECL_SKIN) return "Parse:Skin";
 	if (type == DECL_SOUND) return "Parse:Sound";
+	if (type == DECL_SUBTITLES) return "Parse:Subtitles";
 	if (type == DECL_ENTITYDEF) return "Parse:EntityDef";
 	if (type == DECL_MODELDEF) return "Parse:ModelDef";
 	if (type == DECL_FX) return "Parse:FX";

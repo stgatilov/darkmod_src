@@ -1315,6 +1315,9 @@
     <ClInclude Include="framework\Tracing.h">
       <Filter>Framework</Filter>
     </ClInclude>
+    <ClInclude Include="framework\DeclSubtitles.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3062,6 +3065,9 @@
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="framework\Tracing.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\DeclSubtitles.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
   </ItemGroup>

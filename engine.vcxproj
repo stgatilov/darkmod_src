@@ -191,6 +191,7 @@
     <ClInclude Include="framework\DeclManager.h" />
     <ClInclude Include="framework\DeclParticle.h" />
     <ClInclude Include="framework\DeclSkin.h" />
+    <ClInclude Include="framework\DeclSubtitles.h" />
     <ClInclude Include="framework\DeclTable.h" />
     <ClInclude Include="framework\DemoFile.h" />
     <ClInclude Include="framework\EditField.h" />
@@ -738,6 +739,7 @@
     <ClCompile Include="framework\DeclManager.cpp" />
     <ClCompile Include="framework\DeclParticle.cpp" />
     <ClCompile Include="framework\DeclSkin.cpp" />
+    <ClCompile Include="framework\DeclSubtitles.cpp" />
     <ClCompile Include="framework\DeclTable.cpp" />
     <ClCompile Include="framework\DemoFile.cpp" />
     <ClCompile Include="framework\EditField.cpp" />

@@ -863,6 +863,7 @@ public:
 	bool					purged;
 	bool					levelLoadReferenced;		// so we can tell which samples aren't needed any more
 	idList<Subtitle>		subtitles;
+	SubtitleLevel			subtitlesVerbosity;
 
 	int						LengthIn44kHzSamples() const;
 	ID_TIME_T		 			GetNewTimeStamp( void ) const;
@@ -926,6 +927,7 @@ public:
 	const idSoundSample *	GetObject( const int index ) const;
 
 	void					ReloadSounds( bool force );
+	void					ReloadSubtitles();
 
 	void					BeginLevelLoad();
 	void					EndLevelLoad();

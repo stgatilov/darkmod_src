@@ -61,6 +61,7 @@ typedef enum {
 	DECL_AF,
 	DECL_MODELEXPORT,
 	DECL_MAPDEF,
+	DECL_SUBTITLES,
 
 	// TDM specific DECLs
 	DECL_XDATA, 				// External data, for scripts
