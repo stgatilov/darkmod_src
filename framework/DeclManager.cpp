@@ -160,6 +160,7 @@ public:
 	int							checksum;
 	int							fileSize;
 	int							numLines;
+	bool						hasReloadedSubtitles;
 
 	idDeclLocal *				decls;
 };
@@ -581,6 +582,8 @@ ForceReload will cause it to reload even if the timestamp hasn't changed
 ================
 */
 void idDeclFile::Reload( bool force ) {
+	hasReloadedSubtitles = false;
+
 	// check for an unchanged timestamp
 	if ( !force ) {
 		ID_TIME_T	testTimeStamp;
@@ -773,7 +776,6 @@ int idDeclFile::LoadAndParse() {
 
 	Mem_Free( buffer );
 
-	bool subtitlesChanged = false;
 	// any defs that weren't redefinedInReload should now be defaulted
 	for ( idDeclLocal *decl = decls ; decl ; decl = decl->nextInFile ) {
 		if ( decl->redefinedInReload == false ) {
@@ -783,15 +785,7 @@ int idDeclFile::LoadAndParse() {
 			decl->sourceLine = decl->sourceFile->numLines;
 		}
 		if ( decl->GetType() == DECL_SUBTITLES )
-			subtitlesChanged = true;
-	}
-
-	if ( subtitlesChanged ) {
-		// stgatilov: some "subtitles" decl was reparsed
-		// they won't take effect until we reload subtitles in sound samples
-		// it is hard to know which samples were affected, so let's just reload all
-		extern void SoundReloadSubtitles();
-		SoundReloadSubtitles();
+			hasReloadedSubtitles = true;
 	}
 
 	return checksum;
@@ -922,8 +916,22 @@ idDeclManagerLocal::Reload
 ===================
 */
 void idDeclManagerLocal::Reload( bool force ) {
+
+	bool subtitlesChanged = false;
+
 	for ( int i = 0; i < loadedFiles.Num(); i++ ) {
 		loadedFiles[i]->Reload( force );
+
+		if ( loadedFiles[i]->hasReloadedSubtitles )
+			subtitlesChanged = true;
+	}
+
+	if ( subtitlesChanged ) {
+		// stgatilov: some "subtitles" decl was reparsed
+		// they won't take effect until we reload subtitles in sound samples
+		// it is hard to know which samples were affected, so let's just reload all
+		extern void SoundReloadSubtitles();
+		SoundReloadSubtitles();
 	}
 }
 

@@ -131,7 +131,7 @@ void idSoundSample::LoadSubtitles() {
 	subtitles.Clear();
 	subtitlesVerbosity = SUBL_MISSING;
 
-	const idDeclSubtitles *allSubs = (idDeclSubtitles *) declManager->FindType( DECL_SUBTITLES, "root/english" );
+	const idDeclSubtitles *allSubs = (idDeclSubtitles *) declManager->FindType( DECL_SUBTITLES, "root" );
 	if ( !allSubs )
 		return;
 
