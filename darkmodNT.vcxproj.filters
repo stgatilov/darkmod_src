@@ -1254,9 +1254,6 @@
     <ClInclude Include="idlib\math\Simd_SSE2.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
-    <ClInclude Include="idlib\math\Simd_SSE3.h">
-      <Filter>idLib\Math</Filter>
-    </ClInclude>
     <ClInclude Include="idlib\math\Vector.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
@@ -1514,6 +1511,12 @@
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
     <ClInclude Include="framework\Tracing.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\math\Simd_SSSE3.h">
+      <Filter>idLib\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\DeclSubtitles.h">
       <Filter>Framework</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2670,9 +2673,6 @@
     <ClCompile Include="idlib\math\Simd_SSE2.cpp">
       <Filter>idLib\Math</Filter>
     </ClCompile>
-    <ClCompile Include="idlib\math\Simd_SSE3.cpp">
-      <Filter>idLib\Math</Filter>
-    </ClCompile>
     <ClCompile Include="idlib\math\Vector.cpp">
       <Filter>idLib\Math</Filter>
     </ClCompile>
@@ -2979,6 +2979,12 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp">
       <Filter>idLib</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\math\Simd_SSSE3.cpp">
+      <Filter>idLib\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\DeclSubtitles.cpp">
+      <Filter>Framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
