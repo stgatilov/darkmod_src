@@ -15,11 +15,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma once
 
+class idDeclSubtitles;
+
 typedef struct {
 	idStr soundSampleName;				// must match idSoundSample::name
 	SubtitleLevel verbosityLevel;		// when to show/hide dependong on player settings
 	idStr inlineText;					// single-text subtitle over whole sample, written in decl
 	idStr srtFileName;					// path to .srt file which should be loaded for subtitles
+	idDeclSubtitles *owner;				// which decl contains this mapping struct
 } subtitleMapping_t;
 
 class idDeclSubtitles : public idDecl {

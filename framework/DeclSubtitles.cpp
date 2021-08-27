@@ -62,6 +62,7 @@ bool idDeclSubtitles::Parse( const char *text, const int textLength ) {
 			}
 
 			subtitleMapping_t mapping;
+			mapping.owner = this;
 			mapping.soundSampleName = tokenSound;
 			mapping.verbosityLevel = verbosity;
 			if ( !token.Icmp( "inline" ) ) {

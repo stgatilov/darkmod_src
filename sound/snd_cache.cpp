@@ -131,7 +131,7 @@ void idSoundSample::LoadSubtitles() {
 	subtitles.Clear();
 	subtitlesVerbosity = SUBL_MISSING;
 
-	const idDeclSubtitles *allSubs = (idDeclSubtitles *) declManager->FindType( DECL_SUBTITLES, "root" );
+	const idDeclSubtitles *allSubs = (idDeclSubtitles *) declManager->FindType( DECL_SUBTITLES, "tdm_root" );
 	if ( !allSubs )
 		return;
 
@@ -142,8 +142,16 @@ void idSoundSample::LoadSubtitles() {
 	subtitlesVerbosity = mapping->verbosityLevel;
 
 	if ( mapping->srtFileName.Length() ) {
+		const char *srtname = mapping->srtFileName.c_str();
 		// load .srt file
-		LoadSrtFile( mapping->srtFileName.c_str(), subtitles );
+		if ( !LoadSrtFile( srtname, subtitles ) ) {
+			common->Warning(
+				"Couldn't load SRT file '%s' for sound '%s' according to decl '%s'",
+				srtname, name.c_str(), mapping->owner->GetName()
+			);
+			subtitles.Clear();
+			subtitlesVerbosity = SUBL_MISSING;
+		}
 	}
 	else {
 		// inline subtitle
