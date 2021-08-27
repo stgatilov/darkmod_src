@@ -21,6 +21,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "math/Line.h"
 #include "../Game_local.h"
 
+//stgatilov: record some information into trace events for idClip calls
+//unfortunately, it adds considerable overhead time, so is disabled by default
+#define TRACE_CLIP_INFO 0
+
 #define	MAX_SECTOR_DEPTH				12
 #define MAX_SECTORS						((1<<(MAX_SECTOR_DEPTH+1))-1)
 
@@ -1147,8 +1151,19 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 	if ( TestHugeTranslation( results, mdl, start, end, trmAxis ) ) {
 		return true;
 	}
+	TRACE_CPU_SCOPE("Clip:Translate");
 
 	trm = TraceModelForClipModel( mdl );
+
+#if TRACE_CLIP_INFO
+	TRACE_ATTACH_FORMAT("(%0.2f %0.2f %0.2f) -> (%0.2f %0.2f %0.2f)\nContMask: 0x%x\nTrm: V%d\nIgnore: %s %s\n",
+		start.x, start.y, start.z, end.x, end.y, end.z,
+		contentMask, 
+		(trm ? trm->numVerts: -1),
+		(ignoreWorld ? "ignoreWorld" : ""),
+		(passEntity ? passEntity->name.c_str() : "")
+	)
+#endif
 
 	if ( !ignoreWorld && (!passEntity || passEntity->entityNumber != ENTITYNUM_WORLD) ) {
 		// test world
@@ -1232,6 +1247,15 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 		}
 	}
 
+#if TRACE_CLIP_INFO
+	TRACE_ATTACH_FORMAT("%s#cand: %d\nFrac: %0.3f\nHitEnt: %s\nCont:0x%d",
+		movingClipCheck ? "Moving check\n" : "",
+		num,
+		results.fraction,
+		(results.c.entityNum == ENTITYNUM_NONE || !gameLocal.entities[results.c.entityNum] ? "[none]" : gameLocal.entities[results.c.entityNum]->name.c_str()),
+		results.c.contents
+	)
+#endif
 	return ( results.fraction < 1.0f );
 }
 
@@ -1247,6 +1271,8 @@ bool idClip::Rotation( trace_t &results, const idVec3 &start, const idRotation &
 	idBounds traceBounds;
 	trace_t trace;
 	const idTraceModel *trm;
+
+	TRACE_CPU_SCOPE("Clip:Rotate");
 
 	trm = TraceModelForClipModel( mdl );
 
@@ -1324,6 +1350,8 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 	if ( TestHugeTranslation( results, mdl, start, end, trmAxis ) ) {
 		return true;
 	}
+
+	TRACE_CPU_SCOPE("Clip:Motion");
 
 	if ( mdl != NULL && rotation.GetAngle() != 0.0f && rotation.GetVec() != vec3_origin ) {
 		// if no translation
@@ -1478,7 +1506,18 @@ int idClip::Contacts( contactInfo_t *contacts, const int maxContacts, const idVe
 	idBounds traceBounds;
 	const idTraceModel *trm;
 
+	TRACE_CPU_SCOPE("Clip:Contacts");
+
 	trm = TraceModelForClipModel( mdl );
+
+#if TRACE_CLIP_INFO
+	TRACE_ATTACH_FORMAT("(%0.2f %0.2f %0.2f): (%0.2f %0.2f %0.2f  %0.2f %0.2f %0.2f) D%0.2f\nContMask: 0x%x\nTrm: V%d\nIgnore: %s\n",
+		start.x, start.y, start.z, dir[0], dir[1], dir[2], dir[3], dir[4], dir[5], depth,
+		contentMask, 
+		(trm ? trm->numVerts: -1),
+		(passEntity ? passEntity->name.c_str() : "")
+	)
+#endif
 
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD ) {
 		// test world
@@ -1535,6 +1574,12 @@ int idClip::Contacts( contactInfo_t *contacts, const int maxContacts, const idVe
 		}
 	}
 
+#if TRACE_CLIP_INFO
+	TRACE_ATTACH_FORMAT("#cand: %d\n#contacts: %d\n",
+		num,
+		numContacts
+	)
+#endif
 	return numContacts;
 }
 
@@ -1549,7 +1594,18 @@ int idClip::Contents( const idVec3 &start, const idClipModel *mdl, const idMat3 
 	idBounds traceBounds;
 	const idTraceModel *trm;
 
+	TRACE_CPU_SCOPE("Clip:Contents");
+
 	trm = TraceModelForClipModel( mdl );
+
+#if TRACE_CLIP_INFO
+	TRACE_ATTACH_FORMAT("(%0.2f %0.2f %0.2f)\nContMask: 0x%x\nTrm: V%d\nIgnore: %s\n",
+		start.x, start.y, start.z,
+		contentMask, 
+		(trm ? trm->numVerts: -1),
+		(passEntity ? passEntity->name.c_str() : "")
+	)
+#endif
 
 	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD ) {
 		// test world
@@ -1600,6 +1656,12 @@ int idClip::Contents( const idVec3 &start, const idClipModel *mdl, const idMat3 
 		}
 	}
 
+#if TRACE_CLIP_INFO
+	TRACE_ATTACH_FORMAT("#cand: %d\n#contents: 0x%x\n",
+		num,
+		contents
+	)
+#endif
 	return contents;
 }
 
