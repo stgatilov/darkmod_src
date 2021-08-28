@@ -109,9 +109,9 @@ bool idSIMD_SSSE3::ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bi
 			_mm_storeu_si128((__m128i*)(dstPtr + 4*i + 48), out3);
 		}
 		for (; i < width; i++) {
-			dstPtr[4*i+0] = srcPtr[4*i+2];
-			dstPtr[4*i+1] = srcPtr[4*i+1];
-			dstPtr[4*i+2] = srcPtr[4*i+0];
+			dstPtr[4*i+0] = srcPtr[3*i+2];
+			dstPtr[4*i+1] = srcPtr[3*i+1];
+			dstPtr[4*i+2] = srcPtr[3*i+0];
 			dstPtr[4*i+3] = 255;
 		}
 		return true;
