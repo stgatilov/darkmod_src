@@ -404,7 +404,7 @@ There is no way to specify explicit mip map levels
 ================
 */
 idCVar image_useTexStorage( "image_useTexStorage", "1", CVAR_BOOL|CVAR_ARCHIVE, "Use glTexStorage to create image storage. Only disable if you run into issues." );
-idCVar image_mipmapMode( "image_mipmapMode", "2", CVAR_BOOL|CVAR_ARCHIVE, "0 - generate mipmaps on CPU, 2 - use glGenerateMipmap." );
+idCVar image_mipmapMode( "image_mipmapMode", "2", CVAR_INTEGER|CVAR_ARCHIVE, "0 - generate mipmaps on CPU, 2 - use glGenerateMipmap." );
 
 void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
