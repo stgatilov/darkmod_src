@@ -467,28 +467,16 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	} else {
 		// resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
 		scaledBuffer = R_MipMap( pic, width, height);
-		width >>= 1;
-		height >>= 1;
-		if ( width < 1 ) {
-			width = 1;
-		}
-		if ( height < 1 ) {
-			height = 1;
-		}
+		width = idMath::Imax( width >> 1, 1 );
+		height = idMath::Imax( height >> 1, 1 );
 
 		while ( width > scaled_width || height > scaled_height ) {
 			shrunk = R_MipMap( scaledBuffer, width, height);
 			R_StaticFree( scaledBuffer );
 			scaledBuffer = shrunk;
 
-			width >>= 1;
-			height >>= 1;
-			if ( width < 1 ) {
-				width = 1;
-			}
-			if ( height < 1 ) {
-				height = 1;
-			}
+			width = idMath::Imax( width >> 1, 1 );
+			height = idMath::Imax( height >> 1, 1 );
 		}
 
 		// one might have shrunk down below the target size
@@ -498,23 +486,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	uploadHeight = scaled_height;
 	uploadWidth = scaled_width;
 	type = TT_2D;
-
-	// zero the border if desired, allowing clamped projection textures
-	// even after picmip resampling or careless artists.
-	/*if ( repeat == TR_CLAMP_TO_ZERO ) {
-		byte	rgba[4];
-
-		rgba[0] = rgba[1] = rgba[2] = 0;
-		rgba[3] = 255;
-		R_SetBorderTexels( ( byte * )scaledBuffer, width, height, rgba );
-	}
-	if ( repeat == TR_CLAMP_TO_ZERO_ALPHA ) {
-		byte	rgba[4];
-
-		rgba[0] = rgba[1] = rgba[2] = 255;
-		rgba[3] = 0;
-		R_SetBorderTexels( ( byte * )scaledBuffer, width, height, rgba );
-	}*/
 
 	if ( generatorFunction == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) ) ) {
 		// Optionally write out the texture to a .tga
