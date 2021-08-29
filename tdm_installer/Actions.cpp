@@ -113,6 +113,10 @@ static const char *TDM_DELETE_ON_INSTALL[] = {
 	//game DLLs (2.05 and before)
 	"gamex86.dll",
 	"gamex86.so",
+	//old tdm_update (not supported since 2.09a)
+	"tdm_update.exe",
+	"tdm_update.linux",
+	"tdm_update.linux64",
 	nullptr
 };
 static std::vector<std::string> CollectTdmUnpackedFilesToDelete(const std::string &installDir) {
