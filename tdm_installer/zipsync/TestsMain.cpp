@@ -897,7 +897,7 @@ TEST_CASE("Downloader") {
         }
     }
 
-    {   //test Downloader::setMultipartBlocked
+    {   //test Downloader::SetMultipartBlocked
         HttpServer server;
         server.SetDropMultipart(true);
         server.SetRootDir(GetTempDir().string());
@@ -909,7 +909,7 @@ TEST_CASE("Downloader") {
             down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 30000, 30200), CreateDownloadCallback(data2));
             down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 20000, 20500), CreateDownloadCallback(data3));
             down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subdir/squares.txt", 10100, 10345), CreateDownloadCallback(data4));
-            down.setMultipartBlocked(nomultipart);
+            down.SetMultipartBlocked(nomultipart);
             if (nomultipart) {
                 down.DownloadAll();
                 CHECK(data1 == DataSquaresTxt.substr(10000, 100));
@@ -978,20 +978,20 @@ TEST_CASE("DownloaderTimeout"
         }
         if (mode == 2) {
             //pause for 20 seconds every 200 KB
-            //download will only proceed with the last profile (having timeout = 60 seconds)
+            //download will proceed with the third profile (having timeout = 30 seconds)
             server.SetPauseModel(HttpServer::PauseModel{200<<10, 20});
         }
         if (mode == 3) {
-            //pause for 100 seconds every 10 KB
+            //pause for 100 seconds every 1 KB
             //download should be stopped, no profile supports it
-            server.SetPauseModel(HttpServer::PauseModel{10<<10, 100});
+            server.SetPauseModel(HttpServer::PauseModel{1<<10, 100});
         }
 
         server.Start();
 
         { //retry due to hanging connection
             Downloader down;
-            static const int CHUNK_SIZE = 8024;
+            static const int CHUNK_SIZE = 100<<10;
             std::vector<std::string> resId, resSq;
             resId.reserve(100000);
             resSq.reserve(100000);

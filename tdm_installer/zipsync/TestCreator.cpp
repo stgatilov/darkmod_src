@@ -343,11 +343,8 @@ void TestCreator::AddDuplicateFiles(DirState &target, std::vector<DirState*> pro
             }
         }
         for (int p = 0; p < pMult; p++) {
-            DirState *prov = RandomFrom(provided);
-            if (p == 0 || prov->empty() && RndInt(0, 1))
-                (*prov)[origZfn].push_back(origInzf);
-            else {
-                auto inzf = origInzf;
+            auto inzf = origInzf;
+            if (RndInt(0, 1)) {
                 InZipParams rndParams = GenInZipParams();
                 if (RndInt(0, 99) < 20)
                     inzf.first = GenPaths(1)[0];
@@ -357,8 +354,12 @@ void TestCreator::AddDuplicateFiles(DirState &target, std::vector<DirState*> pro
                     inzf.second.params.method = rndParams.method;
                     inzf.second.params.level = rndParams.level;
                 }
-                RandomFrom(*prov).second.push_back(inzf);
             }
+            DirState *prov = RandomFrom(provided);
+            if (p == 0 || prov->empty())
+                (*prov)[origZfn].push_back(inzf);
+            else
+                RandomFrom(*prov).second.push_back(inzf);
         }
     }
 }

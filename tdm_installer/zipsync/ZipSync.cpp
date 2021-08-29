@@ -633,7 +633,7 @@ uint64_t UpdateProcess::DownloadRemoteFiles(
     std::map<std::string, UrlData> urlStates;
     Downloader downloader;
     downloader.SetUserAgent(useragent);
-    downloader.setMultipartBlocked(blockMultipart);
+    downloader.SetMultipartBlocked(blockMultipart);
     std::map<int, std::vector<int>> provIdxToMatchIds;
 
     std::set<std::string> downloadedFilenames;
