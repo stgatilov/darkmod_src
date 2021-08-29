@@ -537,9 +537,13 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	GL_CheckErrors();
 	GL_SetDebugLabel( GL_TEXTURE, texnum, imgName );
 
+	//stgatilov: OpenGL does not guarantee compressing glTexSubImage to work for sizes not divisible by 4, and AMD driver crashes on it
+	//https://forums.thedarkmod.com/index.php?/topic/21073-a-house-of-locked-secrets-crashes-tdm-on-startup/
+	bool crossesCompressionBlocks = FormatIsDXT(internalFormat) && (scaled_width % 4 || scaled_height % 4);
+
 	//Routine test( &uploading );
 	auto start = Sys_Milliseconds();
-	if ( GLAD_GL_ARB_texture_storage && !generatorFunction && image_useTexStorage.GetBool() ) {
+	if ( GLAD_GL_ARB_texture_storage && !generatorFunction && !crossesCompressionBlocks && image_useTexStorage.GetBool() ) {
 		int levels = 1 + idMath::ILog2( Max( scaled_width, scaled_height ) );
 		qglTexStorage2D( GL_TEXTURE_2D, levels, internalFormat, scaled_width, scaled_height);
 		qglTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, scaled_width, scaled_height, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
