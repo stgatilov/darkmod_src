@@ -404,7 +404,7 @@ There is no way to specify explicit mip map levels
 ================
 */
 idCVar image_useTexStorage( "image_useTexStorage", "1", CVAR_BOOL|CVAR_ARCHIVE, "Use glTexStorage to create image storage. Only disable if you run into issues." );
-idCVar image_mipmapMode( "image_mipmapMode", "2", CVAR_INTEGER|CVAR_ARCHIVE, "0 - generate mipmaps on CPU, 2 - use glGenerateMipmap." );
+idCVar image_mipmapMode( "image_mipmapMode", "0", CVAR_INTEGER|CVAR_ARCHIVE, "0 - generate mipmaps on CPU, 2 - use glGenerateMipmap." );
 
 void idImage::GenerateImage( const byte *pic, int width, int height,
                              textureFilter_t filterParm, bool allowDownSizeParm,
@@ -524,8 +524,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 	}
 
-	if ( image_mipmapMode.GetInteger() == 0 ) {
-		TRACE_CPU_SCOPE ("generatemipmap" );
+	// stgatilov: uploading mipmaps using glTexImage for compressed NPOT textures results in black textures on AMD drivers
+	if ( image_mipmapMode.GetInteger() == 0 && useTexStorage ) {
+		TRACE_CPU_SCOPE ("GenerateMipmap" );
 		qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1 );
 		byte *currentMip = scaledBuffer;
 		int w = scaled_width, h = scaled_height;
@@ -533,10 +534,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			byte *nextMip = R_MipMap( currentMip, w, h );
 			w = idMath::Imax( w >> 1, 1 );
 			h = idMath::Imax( h >> 1, 1 );
-			if ( useTexStorage )
-				qglTexSubImage2D( GL_TEXTURE_2D, lvl, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, nextMip );
-			else
-				qglTexImage2D( GL_TEXTURE_2D, lvl, internalFormat, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nextMip );
+			qglTexSubImage2D( GL_TEXTURE_2D, lvl, 0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, nextMip );
 			if ( currentMip != scaledBuffer )
 				R_StaticFree( currentMip );
 			currentMip = nextMip;
@@ -545,8 +543,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			R_StaticFree( currentMip );
 	}
 	else {
-		TRACE_CPU_SCOPE( "generatemipmap" );
-		TRACE_GL_SCOPE( "generatemipmap" );
+		TRACE_CPU_SCOPE( "GenerateMipmap" );
 		qglGenerateMipmap( GL_TEXTURE_2D );
 	}
 	GL_CheckErrors();
