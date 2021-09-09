@@ -84,9 +84,9 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 	{
 		UpdateSelectedMod(gui);
 	}
-	else if (cmd == "eraseSelectedModFromDisk")
+	/*else if (cmd == "eraseSelectedModFromDisk")
 	{
-    int modIndex = gui->GetStateInt("missionList_sel_0", "-1");
+		int modIndex = gui->GetStateInt("missionList_sel_0", "-1");
 
 		CModInfoPtr info = gameLocal.m_MissionManager->GetModInfo(modIndex);
 
@@ -99,7 +99,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		// Update the selected mission
 		UpdateSelectedMod(gui);
-	}
+	}*/
 	else if (cmd == "update")
 	{
 		gameLocal.Error("Deprecated update method called by main menu.");

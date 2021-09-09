@@ -254,7 +254,9 @@ public:
 	bool ProceedToNextMission();
 
 	// Removes everything except for the mod PK4 and the metadata files from the mod save path
-	void CleanupModFolder(const idStr& name);
+	//stgatilov: this feature is dangerous for mappers and useless for players
+	//see https://forums.thedarkmod.com/index.php?/topic/21085-dark-mod-just-deleted-my-entire-fmsvenice-folder-and-eveything-in-it/
+	//void CleanupModFolder(const idStr& name);
 
 	// Called by MissionData when the player completed a mission
 	void OnMissionComplete();
