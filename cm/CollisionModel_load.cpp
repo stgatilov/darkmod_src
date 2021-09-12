@@ -3536,10 +3536,11 @@ idCollisionModelManagerLocal::LoadModel
 */
 cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const bool precache, const idDeclSkin* skin ) // skin added #4232 SteveL
 {
-	TRACE_CPU_SCOPE_TEXT("Load:CM", modelName)
+	idStr skinnedName = GetSkinnedName( modelName, skin);
+	TRACE_CPU_SCOPE_STR("Load:CM", skinnedName)
 	int handle;
 
-	handle = FindModel( GetSkinnedName( modelName, skin) );
+	handle = FindModel( skinnedName );
 	if ( handle >= 0 )
 	{
 		return handle;
