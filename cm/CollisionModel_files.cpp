@@ -472,16 +472,17 @@ bool idCollisionModelManagerLocal::ParseCollisionModel( idLexer *src ) {
 	cm_model_t *model;
 	idToken token;
 
-	if ( numModels >= MAX_SUBMODELS ) {
-		common->Error( "LoadModel: no free slots" );
+	// read name
+	src->ExpectTokenType( TT_STRING, 0, &token );
+	// create model
+	model = AllocModel();
+	model->name = token;
+	cmHandle_t hdl = AddModel( model );
+	if ( hdl == -1 ) {
 		return false;
 	}
-	model = AllocModel();
-	models[numModels ] = model;
-	numModels++;
+
 	// parse the file
-	src->ExpectTokenType( TT_STRING, 0, &token );
-	model->name = token;
 	src->ExpectTokenString( "{" );
 	while ( !src->CheckTokenString( "}" ) ) {
 

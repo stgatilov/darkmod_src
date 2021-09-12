@@ -452,6 +452,7 @@ private:			// CollisionMap_load.cpp
 	void			OptimizeArrays( cm_model_t *model );
 	void			FinishModel( cm_model_t *model );
 	void			BuildModels( const idMapFile *mapFile );
+	cmHandle_t		AddModel( cm_model_t *model );
 	cmHandle_t		FindModel( const char *name );
 	cm_model_t *	CollisionModelForMapEntity( const idMapEntity *mapEnt );	// brush/patch model from .map
 	cm_model_t *	LoadRenderModel( const char *fileName, const idDeclSkin* skin = NULL );	// ASE/LWO models. skin added #4232 SteveL
@@ -497,6 +498,7 @@ private:			// collision map data
 	int				maxModels;
 	int				numModels;
 	cm_model_t **	models;
+	idHashIndex		modelsHash;
 					// polygons and brush for trm model
 	cm_polygonRef_t*trmPolygons[MAX_TRACEMODEL_POLYS];
 	cm_brushRef_t *	trmBrushes[1];

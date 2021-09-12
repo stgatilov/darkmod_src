@@ -231,7 +231,7 @@ bool idClipModel::LoadModel( const char *name, const idDeclSkin* skin )
 		traceModelIndex = -1;
 	}
 	collisionModelHandle = collisionModelManager->LoadModel( name, false, skin );
-	if ( collisionModelHandle ) {
+	if ( collisionModelHandle >= 0 ) {
 		collisionModelManager->GetModelBounds( collisionModelHandle, bounds );
 		collisionModelManager->GetModelContents( collisionModelHandle, contents );
 		return true;

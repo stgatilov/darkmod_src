@@ -411,6 +411,7 @@ void idCollisionModelManagerLocal::FreeMap( void ) {
 	FreeTrmModelStructure();
 
 	Mem_Free( models );
+	modelsHash.ClearFree();
 
 	Clear();
 
@@ -3201,22 +3202,44 @@ cm_model_t *idCollisionModelManagerLocal::CollisionModelForMapEntity( const idMa
 
 /*
 ================
+idCollisionModelManagerLocal::AddModel
+================
+*/
+cmHandle_t idCollisionModelManagerLocal::AddModel( cm_model_t *model ) {
+	if ( numModels >= MAX_SUBMODELS ) {
+		common->Warning( "AddModel: no free slots" );
+		// since we don't get ownership over model as usual, delete it right now
+		delete model;
+		return -1;
+	}
+	// add both to array of models and to hash table by name
+	int idx = numModels++;
+	models[idx] = model;
+	modelsHash.Add( modelsHash.GenerateKey( model->name, false ), idx );
+	return idx;
+}
+
+/*
+================
 idCollisionModelManagerLocal::FindModel
 ================
 */
 cmHandle_t idCollisionModelManagerLocal::FindModel( const char *name ) {
-	int i;
-
 	// check if this model is already loaded
-	for ( i = 0; i < numModels; i++ ) {
+	int hash = modelsHash.GenerateKey( name, false );
+	for ( int i = modelsHash.First( hash ); i != -1; i = modelsHash.Next( i ) ) {
 		if ( !models[i]->name.Icmp( name ) ) {
-			break;
+			// the model is already loaded
+			return i;
 		}
 	}
-	// if the model is already loaded
-	if ( i < numModels ) {
-		return i;
+
+#if _DEBUG	//make sure hash index is correct
+	for ( int i = 0; i < numModels; i++ ) {
+		assert( models[i]->name.Icmp( name ) != 0);
 	}
+#endif
+
 	return -1;
 }
 
@@ -3334,13 +3357,12 @@ void idCollisionModelManagerLocal::BuildModels( const idMapFile *mapFile ) {
 		for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
 			mapEnt = mapFile->GetEntity(i);
 
-			if ( numModels >= MAX_SUBMODELS ) {
-				common->Error( "idCollisionModelManagerLocal::BuildModels: more than %d collision models", MAX_SUBMODELS );
-				break;
-			}
-			models[numModels] = CollisionModelForMapEntity( mapEnt );
-			if ( models[ numModels] ) {
-				numModels++;
+			cm_model_t *model = CollisionModelForMapEntity( mapEnt );
+			if ( model ) {
+				cmHandle_t hdl = AddModel( model );
+				if ( hdl == -1 ) {
+					common->Error( "idCollisionModelManagerLocal::BuildModels: more than %d collision models", MAX_SUBMODELS );
+				}
 			}
 		}
 
@@ -3397,6 +3419,8 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile *mapFile ) {
 	maxModels = MAX_SUBMODELS;
 	numModels = 0;
 	models = (cm_model_t **) Mem_ClearedAlloc( (maxModels+1) * sizeof(cm_model_t *) );
+	modelsHash.ClearFree(1024, 1024);
+	modelsHash.SetGranularity(1024);
 
 	// setup hash to speed up finding shared vertices and edges
 	SetupHash();
@@ -3546,11 +3570,6 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const
 		return handle;
 	}
 
-	if ( numModels >= MAX_SUBMODELS ) {
-		common->Error( "idCollisionModelManagerLocal::LoadModel: no free slots\n" );
-		return 0;
-	}
-
 	// try to load a .cm file, if the model isn't skinned
 	if ( !skin && LoadCollisionModelFile( modelName, 0 ) ) {
 		handle = FindModel( modelName );
@@ -3563,17 +3582,17 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const
 
 	// if only precaching .cm files do not waste memory converting render models
 	if ( precache ) {
-		return 0;
+		return -1;
 	}
 
 	// try to load a .ASE or .LWO model and convert it to a collision model
-	models[numModels] = LoadRenderModel( modelName, skin );
-	if ( models[numModels] != NULL ) {
-		numModels++;
-		return ( numModels - 1 );
+	cm_model_t *model = LoadRenderModel( modelName, skin );
+	if ( model ) {
+		cmHandle_t hdl = AddModel( model );
+		return hdl;
 	}
 
-	return 0;
+	return -1;
 }
 
 /*
@@ -3722,7 +3741,7 @@ bool idCollisionModelManagerLocal::TrmFromModel( const char *modelName, idTraceM
 	cmHandle_t handle;
 
 	handle = LoadModel( modelName, false );
-	if ( !handle ) {
+	if ( handle == -1 ) {
 		common->Printf( "idCollisionModelManagerLocal::TrmFromModel: model %s not found.\n", modelName );
 		return false;
 	}

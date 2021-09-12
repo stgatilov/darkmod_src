@@ -6008,7 +6008,7 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 
 	// check if a clipmodel key/value pair is set
 	if ( spawnArgs.GetString( "clipmodel", "", &temp ) ) {
-		if ( idClipModel::CheckModel( temp ) ) {
+		if ( idClipModel::CheckModel( temp ) >= 0 ) {
 			clipModel = new idClipModel( temp );
 		}
 	}
@@ -6063,7 +6063,7 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 		if ( !clipModel ) {
 			temp = spawnArgs.GetString( "model" );
 			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
-				if ( idClipModel::CheckModel( temp, renderEntity.customSkin ) ) {
+				if ( idClipModel::CheckModel( temp, renderEntity.customSkin ) >= 0 ) {
 					clipModel = new idClipModel( temp, renderEntity.customSkin );
 				}
 			}

@@ -342,7 +342,7 @@ bool CsndPropLoader::MapEntBounds( idBounds &bounds, idMapEntity *mapEnt )
 		// TRUE, this would force the door model to have a .cm file, otherwise
 		// LoadModel would return 0 in this case. (precache = true, no .cm file)
 		cmHandle = collisionModelManager->LoadModel( modelName, false );
-		if ( cmHandle == 0)
+		if ( cmHandle < 0 )
 		{
 			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Failed to load collision model for entity %s with model %s.  Entity will be ignored.\r", args.GetString("name"), modelName);
 			returnval = false;
