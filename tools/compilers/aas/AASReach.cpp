@@ -937,7 +937,8 @@ bool idAASReach::Build( const idMapFile *mapFile, idAASFileLocal *file ) {
 
 		percent = 100 * i / file->areas.Num();
 		if ( percent > lastPercent ) {
-			common->Printf( "\r%6d%%", percent );
+			//stgatilov: not useful, but takes time
+			//common->Printf( "\r%6d%%", percent );
 			lastPercent = percent;
 		}
 	}
