@@ -937,6 +937,7 @@ public:
 private:
 	bool					insideLevelLoad;
 	idList<idSoundSample*>	listCache;
+	idHashIndex				cacheHash;
 };
 
 #endif /* !__SND_LOCAL_H__ */

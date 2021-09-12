@@ -171,8 +171,9 @@ idSoundCache::idSoundCache()
 idSoundCache::idSoundCache() {
 	soundCacheAllocator.Init();
 	soundCacheAllocator.SetLockMemory( true );
-	listCache.AssureSize( 1024, NULL );
 	listCache.SetGranularity( 256 );
+	cacheHash.ClearFree( 1024, 1024 );
+	cacheHash.SetGranularity( 256 );
 	insideLevelLoad = false;
 }
 
@@ -183,6 +184,7 @@ idSoundCache::~idSoundCache()
 */
 idSoundCache::~idSoundCache() {
 	listCache.DeleteContents( true );
+	cacheHash.ClearFree();
 	soundCacheAllocator.Shutdown();
 }
 
@@ -194,7 +196,7 @@ returns a single cached object pointer
 ===================
 */
 const idSoundSample* idSoundCache::GetObject( const int index ) const {
-	if (index<0 || index>listCache.Num()) {
+	if (index < 0 || index >= listCache.Num()) {
 		return NULL;
 	}
 	return listCache[index]; 
@@ -217,9 +219,11 @@ idSoundSample *idSoundCache::FindSound( const idStr& filename, bool loadOnDemand
 	declManager->MediaPrint( "%s\n", fname.c_str() );
 
 	// check to see if object is already in cache
-	for( int i = 0; i < listCache.Num(); i++ ) {
+	int hash = cacheHash.GenerateKey( fname, true );
+	for ( int i = cacheHash.First( hash ); i != -1; i = cacheHash.Next( i ) ) {
 		idSoundSample *def = listCache[i];
-		if ( def && def->name == fname ) {
+		assert( def );
+		if ( def->name == fname ) {
 			def->levelLoadReferenced = true;
 			if ( def->purged && !loadOnDemandOnly ) {
 				def->Load();
@@ -228,15 +232,20 @@ idSoundSample *idSoundCache::FindSound( const idStr& filename, bool loadOnDemand
 		}
 	}
 
+#if _DEBUG
+	// verify that hash index is correct and we don't miss sound
+	for( int i = 0; i < listCache.Num(); i++ ) {
+		idSoundSample *def = listCache[i];
+		assert( !( def && def->name == fname ) );
+	}
+#endif
+
 	// create a new entry
 	idSoundSample *def = new idSoundSample;
 
-	int shandle = listCache.FindNull();
-	if ( shandle != -1 ) {
-		listCache[shandle] = def;
-	} else {
-		shandle = listCache.Append( def );
-	}
+	assert( listCache.FindNull() == -1 );
+	int shandle = listCache.Append( def );
+	cacheHash.Add( hash, shandle );
 
 	def->name = fname;
 	def->levelLoadReferenced = true;
