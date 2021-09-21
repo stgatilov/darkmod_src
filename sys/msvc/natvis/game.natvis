@@ -182,6 +182,20 @@
     <DisplayString IncludeView="simple">image {imgName.data,na}</DisplayString>
     <DisplayString>image {imgName.data,na} gl:{texnum} {uploadWidth}x{uploadHeight} {depth} {type} {filter}</DisplayString>
   </Type>
+  <Type Name="idMaterial">
+    <DisplayString>{*base}</DisplayString>
+    <Expand>
+      <ExpandedItem>this,!</ExpandedItem>
+      <Synthetic Name="[stages]">
+        <Expand>
+          <ArrayItems>
+            <Size>numStages</Size>
+            <ValuePointer>stages</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
 
   <!-- this is a bit hacky, but allows to inspect game entity of a render entity
        without having to enumerate all fields of idRenderEntityLocal -->
