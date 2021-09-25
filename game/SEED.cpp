@@ -793,8 +793,9 @@ void Seed::Spawn( void ) {
 		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
 		// add the entity number so that different seeds spawned in the same second
 		// don't display the same pattern
-		unsigned int seconds = (unsigned int) time (NULL) + (unsigned int) entityNumber;
-		m_iSeed_2 = (int) (1664525U * seconds + 1013904223U) & 0x7FFFFFFFU;
+		//stgatilov: randseed on game initialization is randomized in 2020
+		unsigned int seed = gameLocal.random.RandomInt() + (unsigned int) entityNumber;
+		m_iSeed_2 = (int) (1664525U * seed + 1013904223U) & 0x7FFFFFFFU;
 	}
 
 	// to restart the same sequence, f.i. when the user changes level of detail in GUI
