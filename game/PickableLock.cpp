@@ -21,7 +21,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Game_local.h"
 #include "DarkModGlobals.h"
 #include "PickableLock.h"
-#include <random>
 
 static const char* StateNames[] =
 {
@@ -825,12 +824,9 @@ idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCo
 	
 	idStr head = va(header + "%%0%uu", strNumLen);
 
-    // We want random integers in the range [0..maxCount]
-    std::uniform_int_distribution<int> randomInts(0, maxCount);
-
 	for (int i = 0; i < clicks; i++)
 	{
-        int r = randomInts(gameLocal.randomMt);
+		int r = gameLocal.random.RandomInt(maxCount + 1);
 
 		idStr click = va(head, r);
 		returnValue.Append(click);
