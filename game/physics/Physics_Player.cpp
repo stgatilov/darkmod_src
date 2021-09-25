@@ -6151,9 +6151,7 @@ void idPhysics_Player::ShoulderingMove()
 			{
 				int iLength_ms = 0;
 				pPlayer->StartSound("snd_shouldering_rustle", SND_CHANNEL_ANY, SSF_GLOBAL, 0, &iLength_ms);
-				static idRandom randGen;
-				m_fShouldering_TimeToNextSound = 
-					static_cast<float>(iLength_ms) * 0.5 * (1 + randGen.RandomFloat());
+				m_fShouldering_TimeToNextSound = static_cast<float>(iLength_ms) * 0.5 * (1 + gameLocal.random.RandomFloat());
 			}
 			else
 				m_fShouldering_TimeToNextSound = FLT_MAX;
