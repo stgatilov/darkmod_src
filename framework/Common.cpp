@@ -130,8 +130,8 @@ int				time_backend;			// renderSystem backend time
 int				time_frontendLast;
 int				time_backendLast;
 
-int				com_frameTime;			// time for the current frame in milliseconds
-int				com_frameMsec;
+int				com_frameTime;			// time moment of the current frame in milliseconds
+int				com_frameDelta;			// time elapsed since previous frame in milliseconds
 int				com_frameNumber;		// variable frame number
 std::atomic<int>	com_ticNumber;			// 60 hz tics
 int				com_editors;			// currently opened editor(s)
@@ -2494,19 +2494,43 @@ void idCommonLocal::Frame( void ) {
 		}
 
 		eventLoop->RunEventLoop();
-			
-			
-		// duzenko #4409 - need frame time msec to pass to game tic
-		static int	lastTime;
-		const int	nowTime = Sys_Milliseconds();
-		com_frameMsec = nowTime - lastTime;
-		lastTime = nowTime;
 
-		if (sessLocal.com_fixedTic.GetBool() )
-			com_frameTime += com_frameMsec;
-		else
-			//com_frameTime = com_ticNumber * USERCMD_MSEC;
-			com_frameTime += USERCMD_MSEC; // Max(USERCMD_MSEC, (1000 / Max(1, com_maxFPS.GetInteger()) ) );
+		static int64_t com_frameTimeMicro = 0;		//same as com_frameTime, but in microseconds
+		static int64_t lastFrameAstroTime = Sys_Microseconds();
+		if (sessLocal.com_fixedTic.GetBool()) {
+			//stgatilov #4865: impose artificial FPS limit
+			int64_t minDeltaTime = 1000000 / sessLocal.com_maxFPS.GetInteger();
+			int64_t currFrameAstroTime;
+			while (1) {
+				currFrameAstroTime = Sys_Microseconds();
+				if (currFrameAstroTime - lastFrameAstroTime > minDeltaTime)
+					break;
+				//note: this is busy-wait loop
+				#ifdef __SSE2__
+					_mm_pause();
+				#else
+					currFrameAstroTime = currFrameAstroTime;	//NOP
+				#endif
+			}
+			//see how much passed in microseconds
+			int deltaTime = currFrameAstroTime - lastFrameAstroTime;
+			lastFrameAstroTime = currFrameAstroTime;
+
+			//update precise time in microseconds, then round it to milliseconds
+			com_frameTimeMicro += deltaTime * com_timescale.GetFloat();
+			int newFrameTime = com_frameTimeMicro / 1000;
+			com_frameDelta = newFrameTime - com_frameTime;
+			com_frameTime = newFrameTime;
+		}
+		else {
+			//synchronize common time to async tic number
+			//(which is synced to astronomical time in idCommonLocal::SingleAsyncTic)
+			com_frameTime = com_ticNumber * USERCMD_MSEC;	//com_frameTime += USERCMD_MSEC;
+			com_frameDelta = USERCMD_MSEC;
+			//these variables are not used now, but they will be needed if we switch to uncapped FPS mode
+			com_frameTimeMicro = com_frameTime * 1000;
+			lastFrameAstroTime = Sys_Microseconds();
+		}
 
 		{
 			session->Frame();
@@ -2517,7 +2541,7 @@ void idCommonLocal::Frame( void ) {
 
 		// report timing information
 		if ( com_speeds.GetBool() ) {
-			Printf("frame:%i all:%3i gfr:%3i fr:%3i(%d) br:%3i(%d)\n", com_frameNumber, com_frameMsec, time_gameFrame, time_frontend, time_frontendLast, time_backend, time_backendLast);
+			Printf("frame:%i all:%3i gfr:%3i fr:%3i(%d) br:%3i(%d)\n", com_frameNumber, com_frameDelta, time_gameFrame, time_frontend, time_frontendLast, time_backend, time_backendLast);
 			time_gameFrame = 0;
 			time_gameDraw = 0;
 		}	

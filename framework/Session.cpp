@@ -24,7 +24,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../game/Missions/MissionManager.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
+idCVar	idSessionLocal::com_minTics( "com_minTics", "0", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER,
 	" 0 -- game tics have fixed duration of 16 ms (stable physics but 60 FPS limit)\n"
@@ -39,6 +39,7 @@ idCVar	idSessionLocal::com_maxTicsPerFrame("com_maxTicsPerFrame", "10", CVAR_SYS
 	"Never do more than this number of game tics per one frame. "
 	"When frames take too much time, allow game time to run slower than astronomical time.",
 1, 1000);
+idCVar	idSessionLocal::com_maxFPS( "com_maxFPS", "166", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "define the maximum FPS cap", 2, 1000 );
 idCVar	idSessionLocal::com_showDemo("com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
@@ -57,7 +58,6 @@ idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | 
 
 // stgatilov: allow choosing format for savegame previews
 idCVar	com_savegame_preview_format( "com_savegame_preview_format", "jpg", CVAR_GAME | CVAR_ARCHIVE, "Image format used to store previews for game saves: tga/jpg." );
-idCVar	com_maxFPS( "com_maxFPS", "166", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "define the maximum FPS cap (uncapped FPS only)", 2, 1000 );
 
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
@@ -269,7 +269,6 @@ void idSessionLocal::Clear() {
 	timeDemo = TD_NO;
 	waitingOnBind = false;
 	lastPacifierTime = 0;
-	lastFrameTimestamp = Sys_GetTimeMicroseconds() / 1000;
 	
 	msgRunning = false;
 	guiMsgRestore = NULL;
@@ -2764,16 +2763,17 @@ void idSessionLocal::Frame() {
 	}
 	
 	//nbohr1more: disable SMP for debug render tools
-	if (r_showSurfaceInfo.GetBool() ||
+	if (
+		r_showSurfaceInfo.GetBool() ||
 		r_showDepth.GetBool() ||
 		r_showViewEntitys.GetBool() || // frontend may invalidate viewEntity pointers, e.g. when LOD model changes
-        r_materialOverride.GetString()[0] != '\0'
+		r_materialOverride.GetString()[0] != '\0'
 	) {
 		no_smp = true;
 	} else {
 		no_smp = false;
 	}
-   
+
 	// save the screenshot and audio from the last draw if needed
 	if ( aviCaptureMode ) {
 		idStr	name;
@@ -2799,66 +2799,50 @@ void idSessionLocal::Frame() {
 		renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL );
 	}
 
-	/*if ( com_smp.GetBool() && com_fixedTic.GetInteger() > 0 ) {
+	// at startup, we may be backwards
+	if (latchedTicNumber > com_ticNumber) {
 		latchedTicNumber = com_ticNumber;
-	} else */{ 
-		// at startup, we may be backwards
-		if (latchedTicNumber > com_ticNumber) {
-			latchedTicNumber = com_ticNumber;
-		}
+	}
 
-		// see how many tics we should have before continuing
-		int	minTic = latchedTicNumber + 1;
-		if (com_minTics.GetInteger() > 1) {
-			minTic = lastGameTic + com_minTics.GetInteger();
-		}
+	// see which async tic should happen before continuing
+	int	minTic;
+	if ( com_fixedTic.GetInteger() ) {
+		// stgatilov: don't wait for async tics, just model & render as fast as we can
+		minTic = latchedTicNumber;
+	}
+	else {
+		// stgatilov: don't do anything until at least one async tic has passed
+		// that's because we tie game ticks to async tics
+		minTic = latchedTicNumber + 1;
+	}
 
-		if (readDemo) {
-			if (!timeDemo && numDemoFrames != 1) {
-				minTic = lastDemoTic + USERCMD_PER_DEMO_FRAME;
-			} else {
-				// timedemos and demoshots will run as fast as they can, other demos
-				// will not run more than 30 hz
-				minTic = latchedTicNumber;
-			}
-		} else if (writeDemo) {
-			minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
-		}
+	if (com_minTics.GetInteger() > 1) {
+		// stgatilov: looks like some rarely used debug setting
+		minTic = lastGameTic + com_minTics.GetInteger();
+	}
 
-		// fixedTic lets us run a forced number of usercmd each frame without timing
-		if ( com_fixedTic.GetInteger() ) {
+	if (readDemo) {
+		if (!timeDemo && numDemoFrames != 1) {
+			minTic = lastDemoTic + USERCMD_PER_DEMO_FRAME;
+		} else {
+			// timedemos and demoshots will run as fast as they can, other demos
+			// will not run more than 30 hz
 			minTic = latchedTicNumber;
-
-			//stgatilov #4865: impose artificial FPS limit
-			static uint64_t prevUsec = 0;
-			uint64_t neededDelta = 1000000 / com_maxFPS.GetInteger();
-			while (Sys_GetTimeMicroseconds() < prevUsec + neededDelta) {
-				//note: this is busy-wait loop
-				#ifdef __SSE2__
-				_mm_pause();
-				#else
-				prevUsec = prevUsec;	//NOP
-				#endif
-			}
-			prevUsec = Sys_GetTimeMicroseconds();
-
-			//stgatilov #4924: compute game timestep from astronomic time passed since last frame
-			int64_t nowTimestampMs = prevUsec / 1000;
-			currentTimestep = nowTimestampMs - lastFrameTimestamp;
-			lastFrameTimestamp = nowTimestampMs;
 		}
+	} else if (writeDemo) {
+		minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
+	}
 
-		// Spin in place if needed when frame cap is active. 
-		// The game should yield the cpu if it is running over 60 hz, 
-		// because there is fundamentally nothing useful for it to do.
-		while (true) {
-			latchedTicNumber = com_ticNumber;
-			if (latchedTicNumber >= minTic) {
-				break;
-			}
-			Sys_WaitForEvent( TRIGGER_EVENT_ONE );
+	// Spin in place if needed when frame cap is active. 
+	// The game should yield the cpu if it is running over 60 hz, 
+	// because there is fundamentally nothing useful for it to do.
+	while (true) {
+		latchedTicNumber = com_ticNumber;
+		if (latchedTicNumber >= minTic) {
+			break;
 		}
-	 }
+		Sys_WaitForEvent( TRIGGER_EVENT_ONE );	//wait for event from async thread
+	}
 
 	// send frame and mouse events to active guis
 	GuiFrameEvents();
@@ -2939,19 +2923,21 @@ void idSessionLocal::Frame() {
 	}
 
 	if (com_fixedTic.GetInteger() > 0) {
+		gameTimestepTotal = com_frameDelta;
 		//stgatilov #4924: if too much time passed since last frame,
 		//then split this game tic into many short tics
 		//long tics easily make physics unstable, so game tic duration should be under control
-		gameTicsToRun = (currentTimestep - 1) / com_maxTicTimestep.GetInteger() + 1;	//divide by 17 ms, rounding up
+		gameTicsToRun = (gameTimestepTotal - 1) / com_maxTicTimestep.GetInteger() + 1;	//divide by 17 ms, rounding up
 		if (gameTicsToRun > com_maxTicsPerFrame.GetInteger()) {
-			//if everything is too bad, slow game down instead of modelling insane amount of ticks per frame
+			//if everything is too bad, slow game down instead of modeling insane number of ticks per frame
 			gameTicsToRun = com_maxTicsPerFrame.GetInteger();
-			currentTimestep = USERCMD_MSEC * gameTicsToRun;
+			gameTimestepTotal = USERCMD_MSEC * gameTicsToRun;
 		}
+		lastGameTic = latchedTicNumber - gameTicsToRun;
 	}
 	else {
 		gameTicsToRun = latchedTicNumber - lastGameTic;
-		currentTimestep = USERCMD_MSEC * gameTicsToRun;
+		gameTimestepTotal = USERCMD_MSEC * gameTicsToRun;
 	}
 
 	// create client commands, which will be sent directly
@@ -3000,8 +2986,8 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 		} else {
 			cmd = usercmdGen->GetDirectUsercmd();
 		}
-		lastGameTic++;
 	}
+	lastGameTic++;
 
 	// stgatilov: allow automation to intercept gameplay controls
 	if (com_automation.GetBool()) {
@@ -3066,7 +3052,7 @@ void idSessionLocal::RunGameTic(int timestepMs) {
 void idSessionLocal::RunGameTics() {
 	// run game tics
 	for (int i = 0; i < gameTicsToRun; ++i) {
-		int deltaMs = currentTimestep * (i+1) / gameTicsToRun - currentTimestep * i / gameTicsToRun;
+		int deltaMs = gameTimestepTotal * (i+1) / gameTicsToRun - gameTimestepTotal * i / gameTicsToRun;
 		if (com_fixedTic.GetInteger() == 0) 
 			assert(deltaMs == USERCMD_MSEC);
 
