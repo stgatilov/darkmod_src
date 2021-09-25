@@ -536,7 +536,11 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 
 		for ( int c = 0 ; c < numClusters ; c++ )
 		{
-			aasColors.Alloc() = idVec4(gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, 1);
+			idVec4 &v = aasColors.Alloc();
+			v.x = gameLocal.random.RandomFloat() + 0.1f;
+			v.y = gameLocal.random.RandomFloat() + 0.1f;
+			v.z = gameLocal.random.RandomFloat() + 0.1f;
+			v.w = 1.0f;
 		}
 	}
 

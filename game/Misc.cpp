@@ -3692,7 +3692,9 @@ void idPhantomObjects::Think( void ) {
 			}
 		} else {
 			// this is not the right way to set the angular velocity, but the effect is nice, so I'm keeping it. :)
-			ang.Set( gameLocal.random.CRandomFloat() * shake_ang.x, gameLocal.random.CRandomFloat() * shake_ang.y, gameLocal.random.CRandomFloat() * shake_ang.z );
+			ang.x = gameLocal.random.CRandomFloat() * shake_ang.x;
+			ang.y = gameLocal.random.CRandomFloat() * shake_ang.y;
+			ang.z = gameLocal.random.CRandomFloat() * shake_ang.z;
 			ang *= ( 1.0f - time / shake_time );
 			entPhys->SetAngularVelocity( ang );
 		}

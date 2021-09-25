@@ -448,7 +448,10 @@ void idCollisionModelManagerLocal::DebugOutput( const idVec3 &origin ) {
 
 	if ( cm_testRotation.GetBool() ) {
 		// rotational collision detection
-		idVec3 vec( random.CRandomFloat(), random.CRandomFloat(), random.RandomFloat() );
+		idVec3 vec;
+		vec.x = random.CRandomFloat();
+		vec.y = random.CRandomFloat();
+		vec.z = random.RandomFloat();
 		vec.Normalize();
 		idRotation rotation( vec3_origin, vec, cm_testAngle.GetFloat() );
 

@@ -1750,7 +1750,11 @@ Quit:*/
 void CsndProp::DrawLines(idList<idVec3>& pointlist)
 {
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("The sound travels through these points:\r");
-	idVec4 color(gameLocal.random.RandomFloat(),gameLocal.random.RandomFloat(),gameLocal.random.RandomFloat(),0.0f);
+	idVec4 color;
+	color.x = gameLocal.random.RandomFloat();
+	color.y = gameLocal.random.RandomFloat();
+	color.z = gameLocal.random.RandomFloat();
+	color.w = 0.0f;
 	for ( int i = 0 ; i < (pointlist.Num() - 1) ; i++ )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("   [%s]\r", pointlist[i].ToString());

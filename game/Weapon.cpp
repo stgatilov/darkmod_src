@@ -1902,7 +1902,9 @@ bool idWeapon::BloodSplat( float size ) {
 	localOrigin[1] += gameLocal.random.RandomFloat() * 1.0f;
 	localOrigin[2] += gameLocal.random.RandomFloat() * -2.0f;
 
-	normal = idVec3( gameLocal.random.CRandomFloat(), -gameLocal.random.RandomFloat(), -1 );
+	normal.x = gameLocal.random.CRandomFloat();
+	normal.y = -gameLocal.random.RandomFloat();
+	normal.z = -1;
 	normal.Normalize();
 
 	idMath::SinCos16( gameLocal.random.RandomFloat() * idMath::TWO_PI, s, c );
@@ -3436,7 +3438,9 @@ void idWeapon::Event_EjectBrass( void ) {
 	debris->Launch();
 
 	linear_velocity = 40 * ( playerViewAxis[0] + playerViewAxis[1] + playerViewAxis[2] );
-	angular_velocity.Set( 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat(), 10 * gameLocal.random.CRandomFloat() );
+	angular_velocity.x = 10 * gameLocal.random.CRandomFloat();
+	angular_velocity.y = 10 * gameLocal.random.CRandomFloat();
+	angular_velocity.z = 10 * gameLocal.random.CRandomFloat();
 
 	debris->GetPhysics()->SetLinearVelocity( linear_velocity );
 	debris->GetPhysics()->SetAngularVelocity( angular_velocity );
