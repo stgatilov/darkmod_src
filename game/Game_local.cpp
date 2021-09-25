@@ -336,7 +336,6 @@ void idGameLocal::Clear( void )
 
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
-	randomMt.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
 	world = NULL;
 	frameCommandThread = NULL;
 	testmodel = NULL;
@@ -1403,7 +1402,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	if (loadingGUI != NULL )
 	{
 		// Use our own randomizer, the gameLocal.random one is not yet initialised
-		loadingGUI->SetStateFloat("random_value", static_cast<float>(randomMt()) / randomMt.max());
+		idRandom simpleRnd(randseed);
+		float random_value = simpleRnd.RandomFloat();
+		loadingGUI->SetStateFloat("random_value", random_value);
 		// #2807: Allow GUI scripts to distinguish between a quickload and a full load, so 
 		// they can choose to show only short messages. 
 		loadingGUI->SetStateBool("quickloading", sameAsPrevMap);
