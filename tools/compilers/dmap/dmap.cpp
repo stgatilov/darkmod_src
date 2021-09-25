@@ -159,7 +159,9 @@ bool ProcessModels( void ) {
 		//complain about func_static-s with bad rotation only once
 		if (int k = badRotationFuncStatics.Num()) {
 			idStr list;
-			std::shuffle(badRotationFuncStatics.begin(), badRotationFuncStatics.end(), std::default_random_engine(std::time(0)));
+			idRandom rnd(std::time(0));
+			for (int i = 0; i < badRotationFuncStatics.Num(); i++)
+				idSwap(badRotationFuncStatics[i], badRotationFuncStatics[rnd.RandomInt(i+1)]);
 			for (int i = 0; i < idMath::Imin(k, 10); i++) {
 				if (i) list += ", ";
 				list += idStr("\"") + badRotationFuncStatics[i] + "\"";
