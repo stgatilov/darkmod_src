@@ -87,7 +87,11 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 
 		if ( !surf->shaderRegisters[EXP_REG_PARM11] )
 			continue;
-		if ( !surf->material->HasAmbient() || !surf->numIndexes || !surf->ambientCache.IsValid() || !surf->space || surf->material->GetSort() >= SS_PORTAL_SKY )
+		if ( !surf->material->HasAmbient() || !surf->numIndexes || !surf->ambientCache.IsValid() || !surf->space
+			//stgatilov: some objects are fully transparent
+			//I want to at least draw outline around them!
+			/* || surf->material->GetSort() >= SS_PORTAL_SKY*/
+		) {
 			continue;
 
 		outlineSurfs.AddGrow( surf );
@@ -217,7 +221,11 @@ void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *s
 		vertexCache.VertexPosition( surf->ambientCache );
 
 		if ( bindDiffuseTexture ) {
-			idImage *diffuse = globalImages->whiteImage;
+			//stgatilov: some transparent objects have no diffuse map
+			//then using white results in very strong surface highlighting
+			//better stay conservative and don't highlight them (almost)
+			idImage *diffuse = globalImages->blackImage;
+
 			const idMaterial *material = surf->material;
 			for ( int i = 0; i < material->GetNumStages(); ++i ) {
 				const shaderStage_t *stage = material->GetStage( i );
