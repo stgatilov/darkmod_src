@@ -65,9 +65,9 @@ namespace {
 }
 
 void FrobOutlineStage::Init() {
-	silhouetteShader = programManager->LoadFromFiles( "frob_silhouette", "stages/frob/frob.vert.glsl", "stages/frob/frob_silhouette.frag.glsl" );
+	silhouetteShader = programManager->LoadFromFiles( "frob_silhouette", "stages/frob/frob.vert.glsl", "stages/frob/frob_flat.frag.glsl" );
 	highlightShader = programManager->LoadFromFiles( "frob_highlight", "stages/frob/frob.vert.glsl", "stages/frob/frob_highlight.frag.glsl" );
-	extrudeShader = programManager->LoadFromFiles( "frob_extrude", "stages/frob/frob.vert.glsl", "stages/frob/frob_silhouette.frag.glsl", "stages/frob/frob_extrude.geom.glsl" );
+	extrudeShader = programManager->LoadFromFiles( "frob_extrude", "stages/frob/frob.vert.glsl", "stages/frob/frob_modalpha.frag.glsl", "stages/frob/frob_extrude.geom.glsl" );
 	applyShader = programManager->LoadFromFiles( "frob_apply", "fullscreen_tri.vert.glsl", "stages/frob/frob_apply.frag.glsl" );
 	colorTex[0] = globalImages->ImageFromFunction( "frob_color_0", FB_RenderTexture );
 	colorTex[1] = globalImages->ImageFromFunction( "frob_color_1", FB_RenderTexture );
