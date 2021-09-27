@@ -131,7 +131,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
 	if (
-		(r_frobOutline.GetBool() || r_newFrob.GetInteger() == 1) && 
+		(r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && 
 		!viewDef->IsLightGem()
 	) {
 		frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );

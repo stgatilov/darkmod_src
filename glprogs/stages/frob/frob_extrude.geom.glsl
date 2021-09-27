@@ -18,7 +18,7 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices = 18) out;
 
 out float var_Intensity;
-uniform float u_extrusion;
+uniform vec2 u_extrusion;
 
 vec2 xyPos(int i) {
     return gl_in[i].gl_Position.xy / gl_in[i].gl_Position.w;
@@ -43,7 +43,7 @@ void emitEdge(int i, int j, int k) {
     vec2 bout = normalize(ab + cb);
     vec2 aout = -normalize(ab + ac);
     
-    float ext = u_extrusion * 0.001;
+    vec2 ext = u_extrusion;
     emit(i, a + ext*aout, 0);
     emit(i, a + ext*nab, 0);
     emit(i, a, 1);

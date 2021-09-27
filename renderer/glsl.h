@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 
 extern idCVar r_newFrob;
-extern idCVarBool r_frobOutline;
+extern idCVar r_frobOutline;
 extern idCVarBool r_shadowMapCullFront;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );

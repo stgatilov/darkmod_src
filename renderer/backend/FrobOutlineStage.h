@@ -38,6 +38,7 @@ private:
 
 	void MaskObjects( idList<drawSurf_t*> &surfs );
 	void MaskOutlines( idList<drawSurf_t*> &surfs );
+	void DrawGeometricOutline( idList<drawSurf_t*> &surfs );
 	void DrawSoftOutline( idList<drawSurf_t*> &surfs );
 	void DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram *shader, bool bindDiffuseTexture );
 	void ApplyBlur();

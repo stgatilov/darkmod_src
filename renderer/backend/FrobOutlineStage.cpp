@@ -24,11 +24,12 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
 idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.004", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
-idCVarBool r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE, "Work-in-progress: 1 = draw outline around highlighted objects" );
+idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
 idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
+idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "10", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels" );
 idCVar r_frobHighlightColorMulR( "r_frobHighlightColorMulR", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - red component" );
 idCVar r_frobHighlightColorMulG( "r_frobHighlightColorMulG", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - green component" );
 idCVar r_frobHighlightColorMulB( "r_frobHighlightColorMulB", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - blue component" );
@@ -41,7 +42,7 @@ namespace {
 	struct FrobOutlineUniforms : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( FrobOutlineUniforms )
 
-		DEFINE_UNIFORM( float, extrusion )
+		DEFINE_UNIFORM( vec2, extrusion )
 		DEFINE_UNIFORM( float, depth )
 		DEFINE_UNIFORM( vec4, color )
 		DEFINE_UNIFORM( vec4, colorAdd )
@@ -93,6 +94,7 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 			/* || surf->material->GetSort() >= SS_PORTAL_SKY*/
 		) {
 			continue;
+		}
 
 		outlineSurfs.AddGrow( surf );
 	}
@@ -105,11 +107,17 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 	GL_ScissorRelative( 0, 0, 1, 1 );
 
 	MaskObjects( outlineSurfs );
-	if ( !r_frobIgnoreDepth.GetBool() ) {
-		MaskOutlines( outlineSurfs );
+	if ( r_frobOutline.GetInteger() == 2 ) {
+		// old new implementation: extruded geometry, no image stuff
+		DrawGeometricOutline( outlineSurfs );
 	}
-	if ( r_frobOutline ) {
-		DrawSoftOutline( outlineSurfs );
+	else {
+		if ( !r_frobIgnoreDepth.GetBool() ) {
+			MaskOutlines( outlineSurfs );
+		}
+		if ( r_frobOutline.GetInteger() == 1 ) {
+			DrawSoftOutline( outlineSurfs );
+		}
 	}
 
 	GL_State( GLS_DEPTHFUNC_EQUAL );
@@ -147,7 +155,7 @@ void FrobOutlineStage::MaskObjects( idList<drawSurf_t *> &surfs ) {
 	}
 	shader->Activate();
 	FrobOutlineUniforms *frobUniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
-	frobUniforms->extrusion.Set( 0.f );
+	frobUniforms->extrusion.Set( 0.f, 0.f );
 	frobUniforms->depth.Set( 0.f );
 	frobUniforms->color.Set( r_frobHighlightColorMulR.GetFloat(), r_frobHighlightColorMulG.GetFloat(), r_frobHighlightColorMulB.GetFloat(), 1 );
 	frobUniforms->colorAdd.Set( r_frobHighlightColorAddR.GetFloat(), r_frobHighlightColorAddG.GetFloat(), r_frobHighlightColorAddB.GetFloat(), 1 );
@@ -162,8 +170,29 @@ void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_KEEP );
 	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_COLORMASK );
 	auto *uniforms = extrudeShader->GetUniformGroup<FrobOutlineUniforms>();
-	uniforms->extrusion.Set( r_frobOutlineBlurPasses.GetFloat() * 20 );
+	float ext = r_frobOutlineBlurPasses.GetFloat() * 0.02;
+	uniforms->extrusion.Set( ext, ext );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
+
+	DrawObjects( surfs, extrudeShader, false );
+}
+
+void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
+	// keep marked object pixels unmodified
+	qglStencilFunc( GL_NOTEQUAL, 255, 255 );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+	// enable geometry shader which produces extruded geometry
+	extrudeShader->Activate();
+	// outline 1) can be occluded by objects in the front, 2) is translucent
+	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
+	auto *uniforms = extrudeShader->GetUniformGroup<FrobOutlineUniforms>();
+	idVec2 extr = idVec2(
+		1.0f / idMath::Fmax( frameBuffers->defaultFbo->Width(), 800.0f ),
+		1.0f / idMath::Fmax( frameBuffers->defaultFbo->Height(), 600.0f )
+	) * r_frobOutlineExtrusion.GetFloat();
+	uniforms->extrusion.Set( extr );
+	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
+	uniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
 
 	DrawObjects( surfs, extrudeShader, false );
 }
