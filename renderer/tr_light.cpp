@@ -915,6 +915,9 @@ void R_AddLightSurfaces( void ) {
 			if ( !vertexCache.CacheIsCurrent(vLight->frustumTris->ambientCache) ) {
 				R_CreateAmbientCache( vLight->frustumTris, false );
 			}
+			if ( !vertexCache.CacheIsCurrent(vLight->frustumTris->indexCache) ) {
+				vLight->frustumTris->indexCache = vertexCache.AllocIndex( vLight->frustumTris->indexes, vLight->frustumTris->numIndexes * sizeof( glIndex_t ) );
+			}
 		}
 
 		// add the prelight shadows for the static world geometry
