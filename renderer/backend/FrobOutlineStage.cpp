@@ -48,6 +48,7 @@ namespace {
 		DEFINE_UNIFORM( vec4, colorAdd )
 		DEFINE_UNIFORM( vec4, texMatrix )
 		DEFINE_UNIFORM( sampler, diffuse )
+		DEFINE_UNIFORM( float, alphaTest )
 	};
 
 	struct BlurUniforms : GLSLUniformGroup {
@@ -194,7 +195,7 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 	uniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
 
-	DrawObjects( surfs, extrudeShader, false );
+	DrawObjects( surfs, extrudeShader, true );
 }
 
 void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
@@ -261,7 +262,9 @@ void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *s
 				if ( stage->lighting == SL_DIFFUSE && stage->texture.image ) {
 					idVec4 textureMatrix[2];
 					R_SetDrawInteraction( stage, surf->shaderRegisters, &diffuse, textureMatrix, nullptr );
-					shader->GetUniformGroup<FrobOutlineUniforms>()->texMatrix.SetArray( 2, textureMatrix[0].ToFloatPtr() );
+					auto *uniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
+					uniforms->texMatrix.SetArray( 2, textureMatrix[0].ToFloatPtr() );
+					uniforms->alphaTest.Set( stage->hasAlphaTest ? surf->shaderRegisters[stage->alphaTestRegister] : -1.0f );
 					break;
 				}
 			}
