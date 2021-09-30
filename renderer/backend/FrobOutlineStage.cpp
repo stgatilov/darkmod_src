@@ -99,29 +99,29 @@ void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs
 		outlineSurfs.AddGrow( surf );
 	}
 
-	if ( outlineSurfs.Num() == 0 )
-		return;
+	if ( outlineSurfs.Num() > 0 ) {
+		TRACE_GL_SCOPE( "DrawFrobOutline" )
 
-	TRACE_GL_SCOPE( "DrawFrobOutline" )
+		GL_ScissorRelative( 0, 0, 1, 1 );
 
-	GL_ScissorRelative( 0, 0, 1, 1 );
-
-	MaskObjects( outlineSurfs );
-	if ( r_frobOutline.GetInteger() == 2 ) {
-		// old new implementation: extruded geometry, no image stuff
-		DrawGeometricOutline( outlineSurfs );
-	}
-	else {
-		if ( !r_frobIgnoreDepth.GetBool() ) {
-			MaskOutlines( outlineSurfs );
+		MaskObjects( outlineSurfs );
+		if ( r_frobOutline.GetInteger() == 2 ) {
+			// old new implementation: extruded geometry, no image stuff
+			DrawGeometricOutline( outlineSurfs );
 		}
-		if ( r_frobOutline.GetInteger() == 1 ) {
-			DrawSoftOutline( outlineSurfs );
+		else {
+			if ( !r_frobIgnoreDepth.GetBool() ) {
+				MaskOutlines( outlineSurfs );
+			}
+			if ( r_frobOutline.GetInteger() == 1 ) {
+				DrawSoftOutline( outlineSurfs );
+			}
 		}
 	}
 
 	GL_State( GLS_DEPTHFUNC_EQUAL );
 	qglStencilFunc( GL_ALWAYS, 255, 255 );
+	GL_SelectTexture( 0 );
 }
 
 void FrobOutlineStage::CreateFbo( int idx ) {
@@ -184,7 +184,7 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	// enable geometry shader which produces extruded geometry
 	extrudeShader->Activate();
 	// outline 1) can be occluded by objects in the front, 2) is translucent
-	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
+	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 	auto *uniforms = extrudeShader->GetUniformGroup<FrobOutlineUniforms>();
 	idVec2 extr = idVec2(
 		1.0f / idMath::Fmax( frameBuffers->defaultFbo->Width(), 800.0f ),
