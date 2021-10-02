@@ -333,12 +333,16 @@ void R_InitOpenGL( void ) {
 
 		if ( i == 1 ) {
 			common->FatalError( "Unable to initialize OpenGL" );
+		} else {
+			common->Printf( "Retrying OpenGL initialization in safe mode\n" );
 		}
 
 		// if we failed, set everything back to "safe mode" and try again
-		r_fullscreen.SetInteger( 1 );
+		r_fullscreen.SetInteger( 0 );
 		r_displayRefresh.SetInteger( 0 );
 		r_multiSamples.SetInteger( 0 );
+		r_customWidth.SetInteger( 800 );
+		r_customHeight.SetInteger( 600 );
 	}
 
 	// input and sound systems need to be tied to the new window
