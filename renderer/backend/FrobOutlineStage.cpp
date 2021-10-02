@@ -161,7 +161,7 @@ void FrobOutlineStage::MaskObjects( idList<drawSurf_t *> &surfs ) {
 	frobUniforms->color.Set( r_frobHighlightColorMulR.GetFloat(), r_frobHighlightColorMulG.GetFloat(), r_frobHighlightColorMulB.GetFloat(), 1 );
 	frobUniforms->colorAdd.Set( r_frobHighlightColorAddR.GetFloat(), r_frobHighlightColorAddG.GetFloat(), r_frobHighlightColorAddB.GetFloat(), 1 );
 
-	DrawObjects( surfs, shader, r_newFrob.GetInteger() == 1 );
+	DrawObjects( surfs, shader, r_newFrob.GetInteger() == 1, r_frobOutline.GetInteger() == 2 );
 }
 
 void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
@@ -175,7 +175,7 @@ void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
 	uniforms->extrusion.Set( ext, ext );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 
-	DrawObjects( surfs, extrudeShader, false );
+	DrawObjects( surfs, extrudeShader, false, false );
 }
 
 void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
@@ -195,7 +195,7 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 	uniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
 
-	DrawObjects( surfs, extrudeShader, true );
+	DrawObjects( surfs, extrudeShader, true, false );
 }
 
 void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
@@ -211,7 +211,7 @@ void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
 	qglClearColor( 0, 0, 0, 0 );
 	qglClear( GL_COLOR_BUFFER_BIT );
 
-	DrawObjects( surfs, silhouetteShader, false );
+	DrawObjects( surfs, silhouetteShader, true, false );
 
 	// resolve color buffer
 	drawFbo->BlitTo( fbo[0], GL_COLOR_BUFFER_BIT );
@@ -239,7 +239,7 @@ void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
 extern void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs,
                            idImage **image, idVec4 matrix[2], float color[4] );
 
-void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *shader, bool bindDiffuseTexture ) {
+void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *shader, bool bindDiffuseTexture, bool disableAlphaTest ) {
 	if ( bindDiffuseTexture ) {
 		GL_SelectTexture( 1 );
 		shader->GetUniformGroup<FrobOutlineUniforms>()->diffuse.Set( 1 );
@@ -264,7 +264,7 @@ void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *s
 					R_SetDrawInteraction( stage, surf->shaderRegisters, &diffuse, textureMatrix, nullptr );
 					auto *uniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
 					uniforms->texMatrix.SetArray( 2, textureMatrix[0].ToFloatPtr() );
-					uniforms->alphaTest.Set( stage->hasAlphaTest ? surf->shaderRegisters[stage->alphaTestRegister] : -1.0f );
+					uniforms->alphaTest.Set( stage->hasAlphaTest && !disableAlphaTest ? surf->shaderRegisters[stage->alphaTestRegister] : -1.0f );
 					break;
 				}
 			}

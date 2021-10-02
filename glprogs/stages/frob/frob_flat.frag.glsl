@@ -18,6 +18,15 @@ out vec4 draw_Color;
 
 uniform vec4 u_color;
 
+uniform sampler2D u_diffuse;
+uniform float u_alphaTest;
+in vec2 var_TexCoord;
+
 void main() {
+    if (u_alphaTest >= 0) {
+        vec4 tex = texture(u_diffuse, var_TexCoord);
+        if (tex.a <= u_alphaTest)
+            discard;
+    }
     draw_Color = u_color;
 }

@@ -21,8 +21,14 @@ uniform sampler2D u_diffuse;
 uniform vec4 u_color;
 uniform vec4 u_colorAdd;
 
+uniform float u_alphaTest;
+
 void main() {
 	vec4 diffuse = texture(u_diffuse, var_TexCoord);
+	if (u_alphaTest >= 0) {
+		if (diffuse.a <= u_alphaTest)
+			discard;
+	}
 	draw_Color.rgb = u_color.rgb * diffuse.rgb + u_colorAdd.rgb;
 	draw_Color.a = diffuse.a;
 }
