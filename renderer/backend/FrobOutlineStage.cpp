@@ -171,8 +171,14 @@ void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_KEEP );
 	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_COLORMASK );
 	auto *uniforms = extrudeShader->GetUniformGroup<FrobOutlineUniforms>();
-	float ext = r_frobOutlineBlurPasses.GetFloat() * 0.02;
-	uniforms->extrusion.Set( ext, ext );
+	//according to ssao_blur.frag.glsl source,
+	//information can travel by SCALE * R = 8 pixels along each direction in one pass
+	static const float BlurRadiusInPixels = 12.0f;	//a bit greater than 8 * sqrt(2)
+	idVec2 extr = idVec2(
+		1.0f / idMath::Fmax( drawFbo->Width(), 4.0f ),
+		1.0f / idMath::Fmax( drawFbo->Height(), 3.0f )
+	) * r_frobOutlineBlurPasses.GetFloat() * BlurRadiusInPixels;
+	uniforms->extrusion.Set( extr );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 
 	DrawObjects( surfs, extrudeShader, false, false );
