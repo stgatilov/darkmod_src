@@ -198,7 +198,7 @@ int GameplayControlPlan::GetTimeNow() const {
 	if (timeMode == tmGamePhysics)
 		return gameLocal.time;
 	assert(0);
-	return -1e+10f;
+	return -1000000000;
 }
 
 
