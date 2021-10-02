@@ -272,5 +272,6 @@ void GLSLProgramManager::Init() {
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	toneMapShader = Load( "tonemap" );
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
+	volumetricLightShader = Load( "volumetric" );
 }
 

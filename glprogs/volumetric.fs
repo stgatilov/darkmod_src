@@ -33,7 +33,7 @@ in vec4 csThis;
 in vec4 lightProject;
 in vec4 worldPosition;
 
-#define SHOW_PRECISION_ISSUE 1
+// #define SHOW_PRECISION_ISSUE 1
 
 #ifdef SHOW_PRECISION_ISSUE
 
@@ -101,7 +101,41 @@ vec3 ViewPosFromDepth(float depth) {
 	return viewSpacePosition.xyz;
 }
 
+float calcCylinder(vec4 startPos, vec4 exitPoint) {
+	vec4 p1 = startPos * u_lightProject;
+	vec4 p2 = exitPoint * u_lightProject;
+	vec4 mid = (p1+p2)/2;
+	float fromCenter = distance(mid.xy, vec2(0.5));
+	float cap = 0.3 - fromCenter;
+	return cap > 0 ? pow(cap * 1e-3, .3) * 3e0 : 0;
+} 
+
+// get N samples from the fragment-view ray inside the frustum
+float calcWithShadows(vec4 startPos, vec4 exitPoint) {
+	float color = 0;
+	for(float i=0; i<u_sampleCount; i++) {
+		vec4 samplePos = mix(startPos, exitPoint, i/u_sampleCount);
+			// shadow test
+			vec4 depthSamples;
+			vec2 sampleWeights;
+			vec3 light2fragment = samplePos.xyz - u_lightOrigin;
+			ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
+			vec3 absL = abs(light2fragment);
+			float maxAbsL = max(absL.x, max(absL.y, absL.z));
+			vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
+			float lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
+                	mix(lit4.x, lit4.y, sampleWeights.x),
+                   	sampleWeights.y);
+			vec4 lightProject = samplePos * u_lightProject;
+			vec4 t0 = texture2DProj(s_projection, lightProject.xyz );
+			vec4 t1 = texture2D(s_falloff, vec2(lightProject.w, 0.5) );
+			color += t0.r * t1.r * lit;
+	}
+	return color / u_sampleCount;
+}
+
 void main() {
+	gl_FragColor = vec4(0);
 	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
 	float depth = texture2D(s_depth, wrCoord ).r;
 	
@@ -127,40 +161,25 @@ void main() {
 
 	// get the nearest solid surface
 	float solidDistance = length(ViewPosFromDepth(depth));
+	// occluder outside of frustum
+	if(distance(exitPoint.xyz, u_viewOrigin) >= solidDistance)
+		return;
 	// start position lies on the light frustum	
 	float fragmentDistance = distance(u_viewOrigin, worldPosition.xyz);
 	vec4 startPos = worldPosition;
 	if(solidDistance < fragmentDistance) // frustum occluded, need to shift
 		startPos = mix(vec4(u_viewOrigin, 1), worldPosition, solidDistance / fragmentDistance);
-	if(distance(exitPoint.xyz, u_viewOrigin) >= solidDistance)
-		return;
 
-	// get N samples from the fragment-view ray inside the frustum
 	float color = 0;
-	for(float i=0; i<u_sampleCount; i++) {
-		vec4 samplePos = mix(startPos, exitPoint, i/u_sampleCount);
-			// shadow test
-			vec4 depthSamples;
-			vec2 sampleWeights;
-			vec3 light2fragment = samplePos.xyz - u_lightOrigin;
-			ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
-			vec3 absL = abs(light2fragment);
-			float maxAbsL = max(absL.x, max(absL.y, absL.z));
-			vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
-			float lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
-                	mix(lit4.x, lit4.y, sampleWeights.x),
-                   	sampleWeights.y);
-			//lit = dot(lit4, vec4(.25));
-			vec4 lightProject = samplePos * u_lightProject;
-			vec4 t0 = texture2DProj(s_projection, lightProject.xyz );
-			vec4 t1 = texture2D(s_falloff, vec2(lightProject.w, 0.5) );
-			color += t0.r * t1.r * lit;
-			//color += dot(sin(startPos),startPos)*1e-0 - lit;
-			//color += distance(samplePos.xyz, u_viewOrigin)*1e-3; 
+	switch (u_sampleCount) {
+	case 1:
+		color = calcCylinder(startPos, exitPoint);
+		break;
+	default:
+		color = calcWithShadows(startPos, exitPoint);
 	}
 
-	gl_FragColor.rgb = u_lightColor.rgb * vec3(color) / u_sampleCount * 3e-1;
-	//gl_FragColor.b = (u_lightColor.rgb * vec3(color) / N * minRayCoord * 3e-3).b;
+	gl_FragColor.rgb = u_lightColor.rgb * vec3(color) * 3e-1;
 }
 
 #endif

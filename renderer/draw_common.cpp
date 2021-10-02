@@ -1020,6 +1020,82 @@ static void RB_FogPass( bool translucent ) {
 	GLSLProgram::Deactivate();
 }
 
+void RB_VolumetricPass() {
+	auto vLight = backEnd.vLight;
+	if ( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex )
+		return;
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
+
+	GL_SelectTexture( 0 );
+	auto image = backEnd.vLight->lightShader->GetStage( 0 )->texture.image;
+	//auto blurred = globalImages->ImageFromFile( "fastBlur(" + image->imgName + ")", TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+	auto blurred = globalImages->ImageFromFile( image->imgName, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+	blurred->Bind();
+	GL_SelectTexture( 1 );
+	backEnd.vLight->falloffImage->Bind();
+	GL_SelectTexture( 2 );
+	globalImages->currentDepthImage->Bind();
+	GL_SelectTexture( 5 );
+	globalImages->shadowAtlas->Bind();
+
+	programManager->volumetricLightShader->Activate();
+
+	// MVP matrix uniform
+	idMat4 MV_P[2];
+	memcpy( MV_P[0].ToFloatPtr(), backEnd.viewDef->worldSpace.modelViewMatrix, sizeof( idMat4 ) );
+	memcpy( MV_P[1].ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( idMat4 ) );
+	qglUniformMatrix4fv( 0, 2, false, (GLfloat*) MV_P );
+
+	// light color uniform
+	const float* lightRegs = vLight->shaderRegisters;
+	const idMaterial* lightShader = vLight->lightShader;
+	const shaderStage_t* lightStage = lightShader->GetStage( 0 );
+	idVec4 lightColor;
+	lightColor.x = backEnd.lightScale * lightRegs[lightStage->color.registers[0]];
+	lightColor.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
+	lightColor.z = backEnd.lightScale * lightRegs[lightStage->color.registers[2]];
+	lightColor.w = lightRegs[lightStage->color.registers[3]];
+
+	qglUniform3fv( 2, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
+	qglUniformMatrix4fv( 3, 1, false, backEnd.vLight->lightProject[0].ToFloatPtr() );
+	qglUniform4fv( 4, 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
+
+	auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
+	idVec4 v( page.x, page.y, 0, page.width );
+	v /= 6 * r_shadowMapSize.GetFloat();
+	qglUniform4fv( 10, 1, v.ToFloatPtr() );
+
+	qglUniform3fv( 11, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+	qglUniform1i( 12, vLight->lightShader->IsVolumetric() );
+	qglUniform1f( 13, GetEffectiveLightRadius() );
+	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
+
+	GL_Cull( CT_BACK_SIDED );
+	
+	drawSurf_t			ds;
+	auto* frustumTris = backEnd.vLight->frustumTris;
+
+	// if we ran out of vertex cache memory, skip it
+	if ( !frustumTris->ambientCache.IsValid() ) {
+		return;
+	}
+	memset( &ds, 0, sizeof( ds ) );
+
+	ds.space = &backEnd.viewDef->worldSpace;
+	ds.frontendGeo = frustumTris; 
+	ds.numIndexes = frustumTris->numIndexes;
+	ds.indexCache = frustumTris->indexCache;
+	ds.ambientCache = frustumTris->ambientCache;
+	ds.scissorRect = backEnd.viewDef->scissor;
+	RB_T_RenderTriangleSurface( &ds );
+	GL_CheckErrors();
+
+	GL_Cull( CT_FRONT_SIDED );
+	GLSLProgram::Deactivate();
+
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
+}
+
 /*
 ==================
 RB_STD_FogAllLights
@@ -1034,6 +1110,9 @@ void RB_STD_FogAllLights( bool translucent ) {
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
+		if ( backEnd.vLight->lightShader->IsVolumetric() && !translucent ) {
+			RB_VolumetricPass();
+		}
 		if ( !backEnd.vLight->lightShader->IsFogLight() && !backEnd.vLight->lightShader->IsBlendLight() ) {
 			continue;
 		}
