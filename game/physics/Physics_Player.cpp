@@ -5096,7 +5096,7 @@ void idPhysics_Player::PerformMantle()
 			// Start with mantle phase dependent on position relative
 			// to the mantle end point
 			const float mantleEndHeight = -(mantleEndPoint * gravityNormal);			
-			float floorHeight = std::numeric_limits<float>::lowest();
+			float floorHeight = -FLT_MAX;
 			{
 				idVec3 floorPos;
 				if (self->GetFloorPos(pm_normalviewheight.GetFloat(), floorPos))

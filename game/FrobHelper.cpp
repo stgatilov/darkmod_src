@@ -88,7 +88,7 @@ const bool CFrobHelper::IsEntityIgnored(idEntity* pEntity)
 	if (!pEntity)
 		return true;
 
-	if (cv_frobhelper_ignore_size.GetFloat() < std::numeric_limits<float>::epsilon())
+	if (cv_frobhelper_ignore_size.GetFloat() < FLT_EPSILON)
 		// Ignore size is disabled
 		return false;
 
