@@ -37,7 +37,6 @@ option(ENABLE_TRACY "Enable tracy profiling support. Needs to be activated ingam
 if (UNIX)
 	# configure sensible warnings
 	add_compile_options(
-			-Wall
 			-Wno-unknown-pragmas            # MSVC specific pragmas
 			-Wno-unused-variable            # too many
 			-Wno-unused-but-set-variable
