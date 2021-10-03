@@ -325,6 +325,10 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link />

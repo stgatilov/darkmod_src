@@ -104,13 +104,15 @@ vec3 ViewPosFromDepth(float depth) {
 }
 
 float calcCylinder(vec4 startPos, vec4 exitPoint) {
-	return .93;
+	// return .93;
 	vec4 p1 = startPos * u_lightProject;
 	vec4 p2 = exitPoint * u_lightProject;
+	p1.xy /= p1.z;
+	p2.xy /= p2.z;
 	vec4 mid = (p1+p2)/2;
 	float fromCenter = distance(mid.xy, vec2(0.5));
 	float cap = 0.3 - fromCenter;
-	return cap > 0 ? pow(cap * 1e-3, .3) * 3e0 : 0;
+	return cap > 0 ? pow(cap * 1e-3, .3) * 3e1 : 0;
 } 
 
 // get N samples from the fragment-view ray inside the frustum
@@ -146,13 +148,21 @@ void main() {
 	
 	// possible error - fix world position to be inside frustum
 	vec3 fixedWorldPos = worldPosition.xyz;
-	float minVF = 1e11;
+	// float minVF = 1e11;
 	for(int i=0; i<6; i++) {
-		float distance = dot(u_lightFrustum[i].xyz, fixedWorldPos);
-		minVF = min(minVF, abs(dot(u_lightFrustum[i], vec4(u_viewOrigin, 1))));
+		float distance = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
+		// minVF = min(minVF, abs(dot(u_lightFrustum[i], vec4(u_viewOrigin, 1))));
 		if(distance > 0) {
-			// fixedWorldPos -= 1.1*distance*u_lightFrustum[i].xyz;
+			fixedWorldPos -= 1.1*distance*u_lightFrustum[i].xyz;
+			// fragColor.rg = (distance)*1e1*vec2(-1,1);
+			// return;
 		} 
+		distance = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
+		if(distance > 0) {
+			fixedWorldPos -= 1.1*distance*u_lightFrustum[i].xyz;
+			fragColor.rg = (distance)*1e1*vec2(-1,1);
+			return;
+		} 		
 	}
 	// gl_FragColor.r = minVF*1e-2;
 	// return;
@@ -174,9 +184,9 @@ void main() {
 			// fragColor.rg = (dotnp)*1e1*vec2(-1,1);
 			// fragColor.rg = (dot(u_lightFrustum[i], vec4(u_viewOrigin, 1)))*1e-2*vec2(-1,1);
 		// }
-		if(rayCoord < 1e-1) { // negative should mean that the intersection is behind the fragment - ignored
-			continue;         // at least one of these must be zero-ish (the plane being rendered now)
-		}
+		// if(rayCoord < 1e-1) { // negative should mean that the intersection is behind the fragment - ignored
+		// 	continue;         // at least one of these must be zero-ish (the plane being rendered now)
+		// }
 		if(rayCoord < 0) continue;
 		if(rayCoord < minRayCoord) {// the intersection closest to the fragment is the exit point
 			minRayCoord = rayCoord;
