@@ -33,6 +33,8 @@ in vec4 csThis;
 in vec4 lightProject;
 in vec4 worldPosition;
 
+out vec4 fragColor;
+
 // #define SHOW_PRECISION_ISSUE 1
 
 #ifdef SHOW_PRECISION_ISSUE
@@ -102,6 +104,7 @@ vec3 ViewPosFromDepth(float depth) {
 }
 
 float calcCylinder(vec4 startPos, vec4 exitPoint) {
+	return .93;
 	vec4 p1 = startPos * u_lightProject;
 	vec4 p2 = exitPoint * u_lightProject;
 	vec4 mid = (p1+p2)/2;
@@ -135,40 +138,72 @@ float calcWithShadows(vec4 startPos, vec4 exitPoint) {
 }
 
 void main() {
-	gl_FragColor = vec4(0);
+	fragColor = vec4(0);
+	// if(int(gl_FragCoord.x / 38) % 7 == 6)
+	// 	fragColor.b = .3;
 	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
 	float depth = texture2D(s_depth, wrCoord ).r;
 	
-	vec3 dirToViewer = normalize(u_viewOrigin - worldPosition.xyz);
+	// possible error - fix world position to be inside frustum
+	vec3 fixedWorldPos = worldPosition.xyz;
+	float minVF = 1e11;
+	for(int i=0; i<6; i++) {
+		float distance = dot(u_lightFrustum[i].xyz, fixedWorldPos);
+		minVF = min(minVF, abs(dot(u_lightFrustum[i], vec4(u_viewOrigin, 1))));
+		if(distance > 0) {
+			// fixedWorldPos -= 1.1*distance*u_lightFrustum[i].xyz;
+		} 
+	}
+	// gl_FragColor.r = minVF*1e-2;
+	// return;
+
+	vec3 dirToViewer = normalize(u_viewOrigin - fixedWorldPos);
 
 	// where does the fragment-viewer ray leave the light frustum?
-	float minRayCoord = length(u_viewOrigin - worldPosition.xyz); 
+	float minRayCoord = length(u_viewOrigin - fixedWorldPos); 
 	for(int i=0; i<6; i++) {  // https://stackoverflow.com/questions/23975555/how-to-do-ray-plane-intersection
-		float top = dot(u_lightFrustum[i], worldPosition);
-		float bottom = dot(u_lightFrustum[i].xyz, -dirToViewer);
-		if(abs(bottom) < 1e-3) { // special case, ray parallel to plane
-			continue; 
-		}
-		float rayCoord = top / bottom;
+		// float this = dot(u_lightFrustum[i], vec4(u_viewOrigin, 1));
+		// if(this < 0)
+		// 	continue;
+		float dotnp = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
+		float dotnv = dot(u_lightFrustum[i].xyz, -dirToViewer);
+		float rayCoord = dotnp/dotnv;
+		// if(int(gl_FragCoord.x / 38) % 7 == i) {
+		// if(3 == i)
+			// fragColor.rg = (rayCoord - minRayCoord)*1e-1*vec2(-1,1);
+			// fragColor.rg = (dotnp)*1e1*vec2(-1,1);
+			// fragColor.rg = (dot(u_lightFrustum[i], vec4(u_viewOrigin, 1)))*1e-2*vec2(-1,1);
+		// }
 		if(rayCoord < 1e-1) { // negative should mean that the intersection is behind the fragment - ignored
 			continue;         // at least one of these must be zero-ish (the plane being rendered now)
 		}
-		if(rayCoord > minRayCoord) // the intersection closest to the fragment is the exit point
-			continue;
-		minRayCoord = rayCoord;
+		if(rayCoord < 0) continue;
+		if(rayCoord < minRayCoord) {// the intersection closest to the fragment is the exit point
+			minRayCoord = rayCoord;
+			// if(int(gl_FragCoord.x / 38) % 7 == i) {
+			// 	fragColor.rg = (minRayCoord)*1e2*vec2(-1,1);
+			// }
+		}
 	}
-	vec4 exitPoint = vec4(minRayCoord * dirToViewer + worldPosition.xyz, 1);
+	// fragColor.r = minRayCoord*1e-1;
+	vec4 exitPoint = vec4(minRayCoord * dirToViewer + fixedWorldPos, 1);
 
 	// get the nearest solid surface
 	float solidDistance = length(ViewPosFromDepth(depth));
+	// if(int(gl_FragCoord.x / 38) % 7 == 0)
+	// 	fragColor.rg = (solidDistance-distance(exitPoint.xyz, u_viewOrigin))*1e-1*vec2(-1,1);
 	// occluder outside of frustum
+	// fragColor.r = distance(exitPoint.xyz, u_viewOrigin)*1e-2;
+	// return;
 	if(distance(exitPoint.xyz, u_viewOrigin) >= solidDistance)
 		return;
+	// gl_FragColor.r = distance(exitPoint.xyz, u_viewOrigin);
+	// return;
 	// start position lies on the light frustum	
-	float fragmentDistance = distance(u_viewOrigin, worldPosition.xyz);
-	vec4 startPos = worldPosition;
+	float fragmentDistance = distance(u_viewOrigin, fixedWorldPos);
+	vec4 startPos = vec4(fixedWorldPos, 1);
 	if(solidDistance < fragmentDistance) // frustum occluded, need to shift
-		startPos = mix(vec4(u_viewOrigin, 1), worldPosition, solidDistance / fragmentDistance);
+		startPos = vec4(mix(u_viewOrigin, fixedWorldPos, solidDistance / fragmentDistance), 1);
 
 	float color = 0;
 	switch (u_sampleCount) {
@@ -179,7 +214,7 @@ void main() {
 		color = calcWithShadows(startPos, exitPoint);
 	}
 
-	gl_FragColor.rgb = u_lightColor.rgb * vec3(color) * 3e-1;
+	fragColor.rgb = u_lightColor.rgb * vec3(color) * 3e-1;
 }
 
 #endif
