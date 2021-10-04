@@ -228,10 +228,7 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 		}
 		// volume
 		else if ( !token.Icmp( "volume" ) ) {
-			parms.volume = src.ParseFloat();
-            if ( parms.volume > 1.5 ) {
-                parms.volume = 1.5;
-            }
+			parms.volume = idMath::Fmin(1.5f, src.ParseFloat());
 		}
 		// leadinVolume is used to allow light breaking leadin sounds to be much louder than the broken loop
 		else if ( !token.Icmp( "leadinVolume" ) ) {
