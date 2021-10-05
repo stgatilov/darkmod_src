@@ -89,7 +89,10 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 		case GL_STENCIL:
 			return 0;
 		default:
+            // nbohr1more: #5223 silence internal format warnings during r_showPrimitives
+            if ( !r_showPrimitives.GetInteger() ) {
 			common->Warning( "\nR_BitsForInternalFormat: bad internalFormat (%i)", internalFormat );
+            }
 	}
 	return 0;
 }
