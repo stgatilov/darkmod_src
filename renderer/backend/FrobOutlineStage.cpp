@@ -81,50 +81,6 @@ void FrobOutlineStage::Init() {
 
 void FrobOutlineStage::Shutdown() {}
 
-void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	// find any surfaces that should be outlined
-	idList<drawSurf_t *> outlineSurfs;
-	for ( int i = 0; i < numDrawSurfs; ++i ) {
-		drawSurf_t *surf = drawSurfs[i];
-
-		if ( !surf->shaderRegisters[EXP_REG_PARM11] )
-			continue;
-		if ( !surf->material->HasAmbient() || !surf->numIndexes || !surf->ambientCache.IsValid() || !surf->space
-			//stgatilov: some objects are fully transparent
-			//I want to at least draw outline around them!
-			/* || surf->material->GetSort() >= SS_PORTAL_SKY*/
-		) {
-			continue;
-		}
-
-		outlineSurfs.AddGrow( surf );
-	}
-
-	if ( outlineSurfs.Num() > 0 ) {
-		TRACE_GL_SCOPE( "DrawFrobOutline" )
-
-		GL_ScissorRelative( 0, 0, 1, 1 );
-
-		MaskObjects( outlineSurfs );
-		if ( r_frobOutline.GetInteger() == 2 ) {
-			// old new implementation: extruded geometry, no image stuff
-			DrawGeometricOutline( outlineSurfs );
-		}
-		else {
-			if ( !r_frobIgnoreDepth.GetBool() ) {
-				MaskOutlines( outlineSurfs );
-			}
-			if ( r_frobOutline.GetInteger() == 1 ) {
-				DrawSoftOutline( outlineSurfs );
-			}
-		}
-	}
-
-	GL_State( GLS_DEPTHFUNC_EQUAL );
-	qglStencilFunc( GL_ALWAYS, 255, 255 );
-	GL_SelectTexture( 0 );
-}
-
 void FrobOutlineStage::CreateFbo( int idx ) {
 	int width = frameBuffers->renderWidth / 4;
 	int height = frameBuffers->renderHeight / 4;
@@ -140,36 +96,128 @@ void FrobOutlineStage::CreateDrawFbo() {
 	drawFbo->AddColorRenderBuffer( 0, GL_R8 );
 }
 
-void FrobOutlineStage::MaskObjects( idList<drawSurf_t *> &surfs ) {
-	// mark surfaces in the stencil buffer
+void FrobOutlineStage::DrawFrobOutline( drawSurf_t **drawSurfs, int numDrawSurfs ) {
+	// find any surfaces that should be frob-highlighted
+	idList<drawSurf_t *> frobSurfs;
+	for ( int i = 0; i < numDrawSurfs; ++i ) {
+		drawSurf_t *surf = drawSurfs[i];
+
+		if ( !surf->shaderRegisters[EXP_REG_PARM11] )
+			continue;
+		if ( !surf->material->HasAmbient() || !surf->numIndexes || !surf->ambientCache.IsValid() || !surf->space
+			//stgatilov: some objects are fully transparent
+			//I want to at least draw outline around them!
+			/* || surf->material->GetSort() >= SS_PORTAL_SKY*/
+		) {
+			continue;
+		}
+
+		frobSurfs.AddGrow( surf );
+	}
+
+	if ( frobSurfs.Num() > 0 ) {
+		TRACE_GL_SCOPE( "DrawFrobOutline" )
+
+		GL_ScissorRelative( 0, 0, 1, 1 );
+
+		if ( r_frobOutline.GetInteger() == 1 ) {
+			if ( r_frobIgnoreDepth.GetBool() ) {
+				DrawFrobImageBasedIgnoreDepth( frobSurfs );
+			}
+			else {
+				DrawFrobImageBased( frobSurfs );
+			}
+		}
+		else if ( r_frobOutline.GetInteger() == 2 ) {
+			DrawFrobGeometric( frobSurfs );
+		}
+		else {
+			DrawSurfaces( frobSurfs, r_newFrob.GetBool(), true );
+		}
+	}
+
+	GL_State( GLS_DEPTHFUNC_EQUAL );
+	qglStencilFunc( GL_ALWAYS, 255, 255 );
+	qglStencilMask( 255 );
+	GL_SelectTexture( 0 );
+}
+
+void FrobOutlineStage::DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs ) {
+	qglClearStencil( 255 );
+	qglClear( GL_STENCIL_BUFFER_BIT );
+
+	// highlight and mark surfaces in stencil buffer
+	qglStencilFunc( GL_ALWAYS, 0, 0 );
+	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
+	DrawSurfaces( surfs, r_newFrob.GetBool(), true );
+
+	// create outline image and blend it where there were no surfaces
+	DrawImageBasedOutline( surfs, 255 );
+}
+
+void FrobOutlineStage::DrawFrobImageBased( idList<drawSurf_t*> &surfs ) {
 	qglClearStencil( 0 );
 	qglClear( GL_STENCIL_BUFFER_BIT );
-	qglStencilFunc( GL_ALWAYS, 255, 255 );
+
+	// highlight and mark surfaces in stencil buffer
+	qglStencilFunc( GL_ALWAYS, 128, 0 );	// 128 - highlighted object
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	GLSLProgram *shader;
-	if ( r_newFrob.GetInteger() == 1 ) {
-		shader = highlightShader;
-		GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE );
-	} else {
-		shader = silhouetteShader;
-		GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_COLORMASK );
-	}
-	shader->Activate();
-	FrobOutlineUniforms *frobUniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
+	DrawSurfaces( surfs, r_newFrob.GetBool(), true );
+
+	// consider pixels in surfaces triangles which failed alpha test
+	// mark depth-passing ones as "we allow rendering outline here"
+	qglStencilFunc( GL_NOTEQUAL, 255, 128 );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_REPLACE );
+	qglStencilMask( 64 );					// 64 - rendering is allowed
+	DrawSurfaces( surfs, false, false );
+
+	// consider pixels around object edges
+	// mark depth-passing ones as "we allow rendering outline here"
+	qglStencilFunc( GL_NOTEQUAL, 255, 128 );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_REPLACE );
+	qglStencilMask( 64 );
+	MarkOutline( surfs );
+
+	// create outline image and blend it where allowed
+	DrawImageBasedOutline( surfs, 64 );
+}
+
+void FrobOutlineStage::DrawFrobGeometric( idList<drawSurf_t*> &surfs ) {
+	qglClearStencil( 255 );
+	qglClear( GL_STENCIL_BUFFER_BIT );
+
+	// highlight and mark surfaces in stencil buffer
+	// note: mark surfaces triangle completely, regardless of alpha test
+	qglStencilFunc( GL_ALWAYS, 0, 0 );
+	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
+	DrawSurfaces( surfs, r_newFrob.GetBool(), false );
+
+	// draw extruded object edges where there were no surfaces
+	qglStencilFunc( GL_EQUAL, 255, 255 );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+	DrawGeometricOutline( surfs );
+}
+
+void FrobOutlineStage::DrawSurfaces( idList<drawSurf_t*> &surfs, bool highlight, bool enableAlphaTest ) {
+	int state = GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE;
+	if ( !highlight )
+		state |= GLS_COLORMASK;
+	GL_State( state );
+
+	highlightShader->Activate();
+	FrobOutlineUniforms *frobUniforms = highlightShader->GetUniformGroup<FrobOutlineUniforms>();
 	frobUniforms->extrusion.Set( 0.f, 0.f );
 	frobUniforms->depth.Set( 0.f );
 	frobUniforms->color.Set( r_frobHighlightColorMulR.GetFloat(), r_frobHighlightColorMulG.GetFloat(), r_frobHighlightColorMulB.GetFloat(), 1 );
 	frobUniforms->colorAdd.Set( r_frobHighlightColorAddR.GetFloat(), r_frobHighlightColorAddG.GetFloat(), r_frobHighlightColorAddB.GetFloat(), 1 );
 
-	DrawObjects( surfs, shader, r_newFrob.GetInteger() == 1, r_frobOutline.GetInteger() == 2 );
+	DrawElements( surfs, highlightShader, enableAlphaTest );
 }
 
-void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
-	extrudeShader->Activate();
-	// mask triangle outlines where depth test fails
-	qglStencilFunc( GL_NOTEQUAL, 255, 255 );
-	qglStencilOp( GL_KEEP, GL_REPLACE, GL_KEEP );
+void FrobOutlineStage::MarkOutline( idList<drawSurf_t *> &surfs ) {
 	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_COLORMASK );
+
+	extrudeShader->Activate();
 	auto *uniforms = extrudeShader->GetUniformGroup<FrobOutlineUniforms>();
 	//according to ssao_blur.frag.glsl source,
 	//information can travel by SCALE * R = 8 pixels along each direction in one pass
@@ -181,17 +229,15 @@ void FrobOutlineStage::MaskOutlines( idList<drawSurf_t *> &surfs ) {
 	uniforms->extrusion.Set( extr );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 
-	DrawObjects( surfs, extrudeShader, false, false );
+	DrawElements( surfs, extrudeShader, false );
 }
 
 void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
-	// keep marked object pixels unmodified
-	qglStencilFunc( GL_NOTEQUAL, 255, 255 );
-	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	// enable geometry shader which produces extruded geometry
-	extrudeShader->Activate();
 	// outline 1) can be occluded by objects in the front, 2) is translucent
 	GL_State( GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
+
+	// enable geometry shader which produces extruded geometry
+	extrudeShader->Activate();
 	auto *uniforms = extrudeShader->GetUniformGroup<FrobOutlineUniforms>();
 	idVec2 extr = idVec2(
 		1.0f / idMath::Fmax( frameBuffers->defaultFbo->Width(), 800.0f ),
@@ -201,81 +247,79 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 	uniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
 
-	DrawObjects( surfs, extrudeShader, true, false );
+	DrawElements( surfs, extrudeShader, true );
 }
 
-void FrobOutlineStage::DrawSoftOutline( idList<drawSurf_t *> &surfs ) {
-	silhouetteShader->Activate();
-	auto *silhouetteUniforms = silhouetteShader->GetUniformGroup<FrobOutlineUniforms>();
-	silhouetteUniforms->color.Set( 1, 1, 1, 1 );
+void FrobOutlineStage::DrawImageBasedOutline( idList<drawSurf_t *> &surfs, int stencilMask ) {
+	GL_State( GLS_DEPTHFUNC_ALWAYS );
 	// draw to small anti-aliased color buffer
 	FrameBuffer *previousFbo = frameBuffers->activeFbo;
 	drawFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
 	GL_ScissorRelative( 0, 0, 1, 1 );
-	GL_State( GLS_DEPTHFUNC_ALWAYS );
 	qglClearColor( 0, 0, 0, 0 );
 	qglClear( GL_COLOR_BUFFER_BIT );
-
-	DrawObjects( surfs, silhouetteShader, true, false );
+	// draw surfaces with flat white color
+	silhouetteShader->Activate();
+	auto *silhouetteUniforms = silhouetteShader->GetUniformGroup<FrobOutlineUniforms>();
+	silhouetteUniforms->color.Set( 1, 1, 1, 1 );
+	DrawElements( surfs, silhouetteShader, true );
 
 	// resolve color buffer
 	drawFbo->BlitTo( fbo[0], GL_COLOR_BUFFER_BIT );
-
 	// apply blur
 	for ( int i = 0; i < r_frobOutlineBlurPasses.GetFloat(); ++i )
 		ApplyBlur();
 
+	// return back to original framebuffer
 	previousFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
 	GL_ScissorRelative( 0, 0, 1, 1 );
-
+	// blend blurred image to pixels where specified stencil bit is set
+	qglStencilFunc( GL_EQUAL, stencilMask, stencilMask );
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
-	qglStencilFunc( GL_NOTEQUAL, 255, 255 );
 	GL_Cull( CT_FRONT_SIDED );
+	// set up shader for blending the image
 	applyShader->Activate();
 	ApplyUniforms *applyUniforms = applyShader->GetUniformGroup<ApplyUniforms>();
 	applyUniforms->source.Set( 0 );
 	GL_SelectTexture( 0 );
 	colorTex[0]->Bind();
 	applyUniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
+	// perform blend
 	RB_DrawFullScreenTri();
 }
 
 extern void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs,
                            idImage **image, idVec4 matrix[2], float color[4] );
 
-void FrobOutlineStage::DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram  *shader, bool bindDiffuseTexture, bool disableAlphaTest ) {
-	if ( bindDiffuseTexture ) {
-		GL_SelectTexture( 1 );
-		shader->GetUniformGroup<FrobOutlineUniforms>()->diffuse.Set( 1 );
-	}
+void FrobOutlineStage::DrawElements( idList<drawSurf_t *> &surfs, GLSLProgram  *shader, bool enableAlphaTest ) {
+	GL_SelectTexture( 1 );
+	shader->GetUniformGroup<FrobOutlineUniforms>()->diffuse.Set( 1 );
 
 	for ( drawSurf_t *surf : surfs ) {
 		GL_Cull( surf->material->GetCullType() );
 		shader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 		vertexCache.VertexPosition( surf->ambientCache );
 
-		if ( bindDiffuseTexture ) {
-			//stgatilov: some transparent objects have no diffuse map
-			//then using white results in very strong surface highlighting
-			//better stay conservative and don't highlight them (almost)
-			idImage *diffuse = globalImages->blackImage;
+		//stgatilov: some transparent objects have no diffuse map
+		//then using white results in very strong surface highlighting
+		//better stay conservative and don't highlight them (almost)
+		idImage *diffuse = globalImages->blackImage;
 
-			const idMaterial *material = surf->material;
-			for ( int i = 0; i < material->GetNumStages(); ++i ) {
-				const shaderStage_t *stage = material->GetStage( i );
-				if ( stage->lighting == SL_DIFFUSE && stage->texture.image ) {
-					idVec4 textureMatrix[2];
-					R_SetDrawInteraction( stage, surf->shaderRegisters, &diffuse, textureMatrix, nullptr );
-					auto *uniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
-					uniforms->texMatrix.SetArray( 2, textureMatrix[0].ToFloatPtr() );
-					uniforms->alphaTest.Set( stage->hasAlphaTest && !disableAlphaTest ? surf->shaderRegisters[stage->alphaTestRegister] : -1.0f );
-					break;
-				}
+		const idMaterial *material = surf->material;
+		for ( int i = 0; i < material->GetNumStages(); ++i ) {
+			const shaderStage_t *stage = material->GetStage( i );
+			if ( stage->lighting == SL_DIFFUSE && stage->texture.image ) {
+				idVec4 textureMatrix[2];
+				R_SetDrawInteraction( stage, surf->shaderRegisters, &diffuse, textureMatrix, nullptr );
+				auto *uniforms = shader->GetUniformGroup<FrobOutlineUniforms>();
+				uniforms->texMatrix.SetArray( 2, textureMatrix[0].ToFloatPtr() );
+				uniforms->alphaTest.Set( stage->hasAlphaTest && enableAlphaTest ? surf->shaderRegisters[stage->alphaTestRegister] : -1.0f );
+				break;
 			}
-			diffuse->Bind();
 		}
+		diffuse->Bind();
 
 		RB_DrawElementsWithCounters( surf );
 	}

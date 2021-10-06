@@ -36,10 +36,15 @@ private:
 	void CreateFbo( int idx );
 	void CreateDrawFbo();
 
-	void MaskObjects( idList<drawSurf_t*> &surfs );
-	void MaskOutlines( idList<drawSurf_t*> &surfs );
+	void DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs );
+	void DrawFrobImageBased( idList<drawSurf_t*> &surfs );
+	void DrawFrobGeometric( idList<drawSurf_t*> &surfs );
+
+	void DrawSurfaces( idList<drawSurf_t*> &surfs, bool highlight, bool enableAlphaTest );
+	void MarkOutline( idList<drawSurf_t*> &surfs );
+	void DrawImageBasedOutline( idList<drawSurf_t*> &surfs, int stencilMask );
 	void DrawGeometricOutline( idList<drawSurf_t*> &surfs );
-	void DrawSoftOutline( idList<drawSurf_t*> &surfs );
-	void DrawObjects( idList<drawSurf_t *> &surfs, GLSLProgram *shader, bool bindDiffuseTexture, bool disableAlphaTest );
+
+	void DrawElements( idList<drawSurf_t *> &surfs, GLSLProgram *shader, bool enableAlphaTest );
 	void ApplyBlur();
 };
