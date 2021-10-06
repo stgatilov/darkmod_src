@@ -13621,19 +13621,24 @@ void idEntity::CheckCollision(idEntity* collidedWith)
 	{
 		// We're interested in the parent of whatever team collidedWith is a part of, if any.
 
-		idEntity *collidedWithParent = collidedWith;
-		idEntity *bindMaster = collidedWithParent->GetBindMaster();
+		idEntity *bindMaster = collidedWith->GetBindMaster();
 		while ( bindMaster != NULL )
 		{
-			collidedWithParent = bindMaster;
-			bindMaster = collidedWithParent->GetBindMaster();
+			collidedWith = bindMaster;
+			bindMaster = collidedWith->GetBindMaster();
 		}
-		hitAI = collidedWithParent->IsType(idAI::Type);
+		hitAI = collidedWith->IsType(idAI::Type);
 	}
 
 	if (!hitAI)
 	{
 		return; // only interested if we hit an AI
+	}
+
+	idAI *collidedAI = (idAI*)collidedWith;
+	if ( collidedAI->AI_DEAD || collidedAI->AI_KNOCKEDOUT )
+	{
+		return;	// stgatilov: allow to move grabbed object over dead bodies
 	}
 
 	// Are we, or someone on our team, being held by the grabber?
