@@ -184,7 +184,18 @@ void idEditField::AutoComplete( void ) {
 	if ( !autoComplete.valid ) {
 		args.TokenizeString( buffer, false );
 		idStr::Copynz( autoComplete.completionString, args.Argv( 0 ), sizeof( autoComplete.completionString ) );
-		idStr::Copynz( completionArgString, args.Args(), sizeof( completionArgString ) );
+		//stgatilov: write parameters string to completionArgString
+		int occurrence = idStr::FindText( buffer, args.Argv( 0 ) );
+		if ( occurrence >= 0 ) {
+			//copy it from source text: do NOT modify it!
+			idStr tail = buffer + occurrence + idStr::Length( args.Argv( 0 ) );
+			tail.StripLeadingWhitespace();
+			idStr::Copynz( completionArgString, tail.c_str(), sizeof( completionArgString ) );
+		}
+		else {
+			//compose it back from tokens: modifies string =(
+			idStr::Copynz( completionArgString, args.Args(), sizeof( completionArgString ) );
+		}
 		autoComplete.matchCount = 0;
 		autoComplete.matchIndex = 0;
 		autoComplete.currentMatch[0] = 0;

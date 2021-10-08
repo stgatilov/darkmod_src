@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "../tests/testing.h"
 
-TEST_CASE("idHashMap<int, int>: simple"
+TEST_CASE("idHashMap<int int>: simple"
 ) {
 	idHashMap<int, int> table;
 	const auto &ctable = table;
@@ -171,7 +171,7 @@ TEST_CASE("idHashMap<int, int>: simple"
 	CHECK(table.FindCell(0).key == INT_MIN);
 }
 
-TEST_CASE("idHashMap<int, int>: lifetime"
+TEST_CASE("idHashMap<int int>: lifetime"
 ) {
 	idHashMap<int, int> a;
 	const auto &aref = a;
@@ -346,7 +346,7 @@ struct HashMod {
 		return res;
 	}
 };
-TEST_CASE("idHashMap<int, int>: custom"
+TEST_CASE("idHashMap<int int>: custom"
 ) {
 	typedef idHashMap<int, int, HashMod, EqualMod> ModMap;
 
@@ -411,7 +411,7 @@ TEST_CASE("idHashMap<int, int>: custom"
 	CHECK(tmod13copy.CellsNum() <= 3 * tmod13copy.Num());
 }
 
-TEST_CASE("idHashMap<idStr, int>: simple"
+TEST_CASE("idHashMap<idStr int>: simple"
 ) {
 	idHashMap<idStr, int> hmap;
 	hmap["hello"] = 7;
@@ -431,7 +431,7 @@ TEST_CASE("idHashMap<idStr, int>: simple"
 	CHECK(hmap.Get(q) == 7);
 }
 
-TEST_CASE("idHashMap<ptr, int>: simple"
+TEST_CASE("idHashMap<ptr int>: simple"
 ) {
 	char buffer[] = "0123456789";
 

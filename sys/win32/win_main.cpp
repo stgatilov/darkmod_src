@@ -42,7 +42,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <string>
 #include <vector>
 #include "StdString.h"
-#include "../../tests/TestRun.h"
 #include <iostream>
 
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
@@ -1074,20 +1073,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 #endif
 
 	common->Init( 0, NULL, lpCmdLine );
-
-	int runTests = com_runTests.GetInteger();
-	if( runTests ) {
-		if( runTests == 2 ) {
-			AllocConsole();
-			freopen( "CONOUT$", "w+", stdout );
-		}
-		int result = RunTests();
-		if( runTests == 2 ) {
-			getch();
-		}
-		common->Shutdown();
-		return result;
-	}
 
 	Sys_StartAsyncThread();
 

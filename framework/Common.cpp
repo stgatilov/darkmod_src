@@ -28,6 +28,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../renderer/backend/RenderBackend.h"
 #include "LoadStack.h"
 #include "../game/Missions/MissionManager.h"
+#include "../tests/TestRun.h"
 
 #define MAX_WARNING_LIST	256
 
@@ -2825,6 +2826,7 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 
 		// init console command system
 		cmdSystem->Init();
+		TestsInit();
 
 		// init CVar system
 		cvarSystem->Init();

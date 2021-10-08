@@ -46,7 +46,7 @@ public:
 
 	void					AppendArg( const char *text );
 	void					Clear( void ) { argc = 0; memset (tokenized, 0, MAX_COMMAND_STRING); }
-	const char **			GetArgs( int *argc );
+	const char **			GetArgs( int *argc ) const;
 
 private:
 	static const int		MAX_COMMAND_ARGS = 64;

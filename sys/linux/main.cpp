@@ -25,7 +25,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <fcntl.h>
 #include <execinfo.h>
 #include <stdio.h>
-#include <tests/TestRun.h>
 
 #ifdef ID_MCHECK
 #include <mcheck.h>

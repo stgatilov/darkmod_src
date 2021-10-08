@@ -178,7 +178,7 @@ void idCmdArgs::AppendArg( const char *text ) {
 idCmdArgs::GetArgs
 ============
 */
-const char **idCmdArgs::GetArgs( int *_argc ) {
+const char **idCmdArgs::GetArgs( int *_argc ) const {
 	*_argc = argc;
 	return (const char **)&argv[0];
 }

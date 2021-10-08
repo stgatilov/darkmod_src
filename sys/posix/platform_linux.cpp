@@ -15,7 +15,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../../idlib/precompiled.h"
 #include "../posix/posix_public.h"
 #include "../sys_local.h"
-#include "../../tests/TestRun.h"
 //#include "local.h"
 
 #include <pthread.h>
@@ -485,12 +484,6 @@ int main( int argc, const char** argv )
 	
 	Posix_LateInit( );
 
-	if( com_runTests.GetInteger()) {
-		int result = RunTests();
-		common->Shutdown();
-		return result;
-	}
-	
 	while( 1 )
 	{
 		common->Frame();
