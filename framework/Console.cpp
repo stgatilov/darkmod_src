@@ -844,13 +844,13 @@ void idConsoleLocal::Linefeed() {
 		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
 	}
 
-	if ( display == text.Num() - 1 ) {
-		display++;
-	}
-
 	x = 0;
 	idConsoleLine s( SCREEN_WIDTH / SMALLCHAR_WIDTH - 1 );
 	text.Append( s );
+
+	if ( display == text.Num() - 2 ) {
+		display++;
+	}
 }
 
 
