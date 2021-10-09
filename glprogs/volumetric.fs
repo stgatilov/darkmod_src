@@ -35,22 +35,6 @@ in vec4 worldPosition;
 
 out vec4 fragColor;
 
-// #define SHOW_PRECISION_ISSUE 1
-
-#ifdef SHOW_PRECISION_ISSUE
-
-void main() {
-	float minDist = 0; 
-	for(int i=0; i<6; i++) {
-		float dist = dot(u_lightFrustum[i], worldPosition);
-		minDist = min(dist, dist);
-	}
-	gl_FragColor.rg = minDist * vec2(1, -1) * 1e-1;
-	gl_FragColor.b = .5;
-}
-
-#else
-
 void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights) {
 	vec3 v1 = abs(v);
 	float maxV = max(v1.x, max(v1.y, v1.z));
@@ -116,8 +100,9 @@ float calcCylinder(vec4 startPos, vec4 exitPoint) {
 } 
 
 // get N samples from the fragment-view ray inside the frustum
-float calcWithShadows(vec4 startPos, vec4 exitPoint) {
-	float color = 0;
+vec3 calcWithShadows(vec4 startPos, vec4 exitPoint) {
+	vec3 color = vec3(0);
+	// for(float i=0; i<1; i++) {
 	for(float i=0; i<u_sampleCount; i++) {
 		vec4 samplePos = mix(startPos, exitPoint, i/u_sampleCount);
 			// shadow test
@@ -133,92 +118,71 @@ float calcWithShadows(vec4 startPos, vec4 exitPoint) {
                    	sampleWeights.y);
 			vec4 lightProject = samplePos * u_lightProject;
 			vec4 t0 = texture2DProj(s_projection, lightProject.xyz );
-			vec4 t1 = texture2D(s_falloff, vec2(lightProject.w, 0.5) );
-			color += t0.r * t1.r * lit;
+			vec4 t1 = texture(s_falloff, vec2(lightProject.w, 0.5) );
+			color += t0.rgb * t1.rgb;// * lit;
 	}
 	return color / u_sampleCount;
 }
 
 void main() {
-	fragColor = vec4(0);
-	// if(int(gl_FragCoord.x / 38) % 7 == 6)
-	// 	fragColor.b = .3;
+	fragColor = vec4(0.3); // detect leaks
 	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
 	float depth = texture2D(s_depth, wrCoord ).r;
 	
 	// possible error - fix world position to be inside frustum
 	vec3 fixedWorldPos = worldPosition.xyz;
-	// float minVF = 1e11;
 	for(int i=0; i<6; i++) {
 		float distance = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
-		// minVF = min(minVF, abs(dot(u_lightFrustum[i], vec4(u_viewOrigin, 1))));
-		if(distance > 0) {
-			fixedWorldPos -= 1.1*distance*u_lightFrustum[i].xyz;
-			// fragColor.rg = (distance)*1e1*vec2(-1,1);
-			// return;
-		} 
+		for(int j=1; j<16; j*=2) {
+			if(distance > 0) {
+				fixedWorldPos -= j*distance*u_lightFrustum[i].xyz;
+			} 
+		}
 		distance = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
 		if(distance > 0) {
-			fixedWorldPos -= 1.1*distance*u_lightFrustum[i].xyz;
-			fragColor.rg = (distance)*1e1*vec2(-1,1);
+			fragColor.rb = vec2(1);
 			return;
 		} 		
 	}
-	// gl_FragColor.r = minVF*1e-2;
-	// return;
 
-	vec3 dirToViewer = normalize(u_viewOrigin - fixedWorldPos);
-
+	vec3 dirToViewer = normalize(u_viewOrigin-fixedWorldPos);
+	int entriesFound = 0;
+	vec4 exitPoint = vec4(u_viewOrigin, 1);
 	// where does the fragment-viewer ray leave the light frustum?
-	float minRayCoord = length(u_viewOrigin - fixedWorldPos); 
 	for(int i=0; i<6; i++) {  // https://stackoverflow.com/questions/23975555/how-to-do-ray-plane-intersection
-		// float this = dot(u_lightFrustum[i], vec4(u_viewOrigin, 1));
-		// if(this < 0)
-		// 	continue;
 		float dotnp = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
-		float dotnv = dot(u_lightFrustum[i].xyz, -dirToViewer);
-		float rayCoord = dotnp/dotnv;
-		// if(int(gl_FragCoord.x / 38) % 7 == i) {
-		// if(3 == i)
-			// fragColor.rg = (rayCoord - minRayCoord)*1e-1*vec2(-1,1);
-			// fragColor.rg = (dotnp)*1e1*vec2(-1,1);
-			// fragColor.rg = (dot(u_lightFrustum[i], vec4(u_viewOrigin, 1)))*1e-2*vec2(-1,1);
-		// }
-		// if(rayCoord < 1e-1) { // negative should mean that the intersection is behind the fragment - ignored
-		// 	continue;         // at least one of these must be zero-ish (the plane being rendered now)
-		// }
-		if(rayCoord < 0) continue;
-		if(rayCoord < minRayCoord) {// the intersection closest to the fragment is the exit point
-			minRayCoord = rayCoord;
-			// if(int(gl_FragCoord.x / 38) % 7 == i) {
-			// 	fragColor.rg = (minRayCoord)*1e2*vec2(-1,1);
-			// }
+		float dotnv = dot(u_lightFrustum[i].xyz, dirToViewer);
+		float rayCoord = -dotnp/dotnv;
+		if(rayCoord<=0) continue;
+		vec3 intersection = rayCoord * dirToViewer + fixedWorldPos;
+		bool insideFrustum = true;
+		for(int j=0; j<6; j++) {  
+			if(i==j) continue;
+			bool insidePlane = dot(u_lightFrustum[j], vec4(intersection, 1)) < 0;
+			insideFrustum = insideFrustum && insidePlane;
+		}
+		if(insideFrustum) {
+			if(distance(intersection, fixedWorldPos) < distance(exitPoint.xyz, fixedWorldPos)) {
+				exitPoint.xyz = intersection;
+			}
+			entriesFound++;
 		}
 	}
-	// fragColor.r = minRayCoord*1e-1;
-	vec4 exitPoint = vec4(minRayCoord * dirToViewer + fixedWorldPos, 1);
-
 	// get the nearest solid surface
 	float solidDistance = length(ViewPosFromDepth(depth));
-	// if(int(gl_FragCoord.x / 38) % 7 == 0)
-	// 	fragColor.rg = (solidDistance-distance(exitPoint.xyz, u_viewOrigin))*1e-1*vec2(-1,1);
-	// occluder outside of frustum
-	// fragColor.r = distance(exitPoint.xyz, u_viewOrigin)*1e-2;
-	// return;
 	if(distance(exitPoint.xyz, u_viewOrigin) >= solidDistance)
-		return;
-	// gl_FragColor.r = distance(exitPoint.xyz, u_viewOrigin);
-	// return;
+		discard;
+	
 	// start position lies on the light frustum	
 	float fragmentDistance = distance(u_viewOrigin, fixedWorldPos);
 	vec4 startPos = vec4(fixedWorldPos, 1);
 	if(solidDistance < fragmentDistance) // frustum occluded, need to shift
 		startPos = vec4(mix(u_viewOrigin, fixedWorldPos, solidDistance / fragmentDistance), 1);
 
-	float color = 0;
+	vec3 color = vec3(0);
 	switch (u_sampleCount) {
 	case 1:
-		color = calcCylinder(startPos, exitPoint);
+		color = vec3(calcCylinder(startPos, exitPoint));
 		break;
 	default:
 		color = calcWithShadows(startPos, exitPoint);
@@ -226,5 +190,3 @@ void main() {
 
 	fragColor.rgb = u_lightColor.rgb * vec3(color) * 3e-1;
 }
-
-#endif

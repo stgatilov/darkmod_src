@@ -1070,10 +1070,20 @@ void RB_VolumetricPass() {
 	qglUniform1f( 13, GetEffectiveLightRadius() );
 	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
 
-	GL_Cull( CT_BACK_SIDED );
+	GL_Cull( CT_FRONT_SIDED );
 	
 	drawSurf_t			ds;
-	auto* frustumTris = backEnd.vLight->frustumTris;
+	auto* frustumTris = &backEnd.vLight->frustumTrisExact;
+
+	auto extract = []( srfTriangles_t& tri, idDrawVert *verts ) {
+		for ( int i = 0; i < tri.numIndexes; i++ ) {
+			verts[i] = tri.verts[tri.indexes[i]];
+		}
+	};
+
+	idDrawVert v1[36], v2[36];
+	extract( *backEnd.vLight->frustumTris, v1 );
+	extract( backEnd.vLight->frustumTrisExact, v2 );
 
 	// if we ran out of vertex cache memory, skip it
 	if ( !frustumTris->ambientCache.IsValid() ) {
