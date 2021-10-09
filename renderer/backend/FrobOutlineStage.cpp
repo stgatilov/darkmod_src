@@ -22,14 +22,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../FrameBuffer.h"
 #include "../FrameBufferManager.h"
 
-idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
-idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.004", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
-idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
+idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
+idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.0005", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
+idCVar r_frobOutline( "r_frobOutline", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
-idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
-idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "10", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels" );
+idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "5.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
+idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "3", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels" );
 idCVar r_frobHighlightColorMulR( "r_frobHighlightColorMulR", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - red component" );
 idCVar r_frobHighlightColorMulG( "r_frobHighlightColorMulG", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - green component" );
 idCVar r_frobHighlightColorMulB( "r_frobHighlightColorMulB", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - blue component" );
@@ -66,6 +66,31 @@ namespace {
 	};
 }
 
+static void FrobOutlinePreset( const idCmdArgs &args ) {
+	int preset = atoi( args.Argv( 1 ) );
+	if ( preset == 1 ) {
+		//geometric hard
+		r_frobOutline.SetInteger( 2 );
+		r_frobOutlineColorA.SetFloat( 5.0f );
+		r_frobOutlineExtrusion.SetFloat( 3.0f );
+	}
+	else if ( preset == 2 ) {
+		//geometric soft
+		r_frobOutline.SetInteger( 2 );
+		r_frobOutlineColorA.SetFloat( 0.5f );
+		r_frobOutlineExtrusion.SetFloat( 10.0f );
+	}
+	else if ( preset == 3 ) {
+		//image-based depth-aware
+		r_frobOutline.SetInteger( 1 );
+		r_frobOutlineColorA.SetFloat( 1.2f );
+		r_frobIgnoreDepth.SetBool( false );
+	}
+	else {
+		common->Printf( "Unknown preset: pass 1, 2, or 3\n" );
+	}
+}
+
 void FrobOutlineStage::Init() {
 	silhouetteShader = programManager->LoadFromFiles( "frob_silhouette", "stages/frob/frob.vert.glsl", "stages/frob/frob_flat.frag.glsl" );
 	highlightShader = programManager->LoadFromFiles( "frob_highlight", "stages/frob/frob.vert.glsl", "stages/frob/frob_highlight.frag.glsl" );
@@ -77,6 +102,12 @@ void FrobOutlineStage::Init() {
 	fbo[0] = frameBuffers->CreateFromGenerator( "frob_0", [this](FrameBuffer *) { this->CreateFbo( 0 ); } );
 	fbo[1] = frameBuffers->CreateFromGenerator( "frob_1", [this](FrameBuffer *) { this->CreateFbo( 1 ); } );
 	drawFbo = frameBuffers->CreateFromGenerator( "frob_draw", [this](FrameBuffer *) { this->CreateDrawFbo(); } );
+
+	cmdSystem->AddCommand(
+		"r_frobOutlinePreset", FrobOutlinePreset,
+		CMD_FL_RENDERER, "Change frob outline cvars according to specified preset",
+		idCmdSystem::ArgCompletion_Integer<1, 3>
+	);
 }
 
 void FrobOutlineStage::Shutdown() {}
