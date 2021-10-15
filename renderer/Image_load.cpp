@@ -1252,7 +1252,7 @@ void R_HandleImageCompression( idImage& image ) {
 }
 
 void R_LoadImageData( idImage& image ) {
-	TRACE_CPU_SCOPE_STR("Load:Image", image.imgName)
+	TRACE_CPU_SCOPE_STR( "Load:Image", image.imgName )
 	imageBlock_t& cpuData = image.cpuData;
 
 	if ( image.cubeFiles != CF_2D ) {
@@ -1262,6 +1262,7 @@ void R_LoadImageData( idImage& image ) {
 		// we don't check for pre-compressed cube images currently
 		R_LoadCubeImages( image.imgName, image.cubeFiles, cpuData.pic, &cpuData.width, &image.timestamp );
 		cpuData.height = cpuData.width;
+		TRACE_ATTACH_FORMAT( "cube %d x [%d x %d]", cpuData.sides, cpuData.width, cpuData.height );
 
 		if ( cpuData.pic[0] == NULL ) {
 			//note: warning will be printed in R_UploadImageData due to cpuData.pic[0] == NULL
@@ -1275,12 +1276,15 @@ void R_LoadImageData( idImage& image ) {
 		if ( globalImages->image_usePrecompressedTextures.GetBool() && !(image.residency & IR_CPU) ) {
 			if ( image.CheckPrecompressedImage( true ) ) {
 				// we got the precompressed image
+				char *fourcc = image.compressedData->header.dwFlags & DDSF_FOURCC ? (char*)&image.compressedData->header.ddspf.dwFourCC : "    ";
+				TRACE_ATTACH_FORMAT( "DDS %d x %d (%c%c%c%c)", image.compressedData->header.dwWidth, image.compressedData->header.dwHeight, fourcc[0], fourcc[1], fourcc[2], fourcc[3] );
 				return;
 			}
 			// fall through to load the normal image
 		}
 		cpuData.Purge();
 		R_LoadImageProgram( image.imgName, &cpuData.pic[0], &cpuData.width, &cpuData.height, &image.timestamp, &image.depth );
+		TRACE_ATTACH_FORMAT( "%d x %d", cpuData.width, cpuData.height );
 		cpuData.sides = 1;
 	}
 

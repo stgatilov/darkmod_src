@@ -1557,6 +1557,8 @@ byte *imageCompressedData_s::ComputeUncompressedData() const {
 	int w = header.dwWidth;
 	int h = header.dwHeight;
 
+	TRACE_CPU_SCOPE( "Decompress:DDS" )
+
 	byte *resData = (byte*) R_StaticAlloc(w * h * 4);
 
 	if ( header.ddspf.dwFlags & DDSF_FOURCC ) {
