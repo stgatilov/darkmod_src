@@ -885,7 +885,7 @@ void idConsoleLocal::Print( const char *txt ) {
 			continue;
 		}
 
-		idConsoleLine* currentLine = &text[text.Num() - 1];
+#define currentLine (&text[text.Num() - 1])
 
 		// if we are about to print a new word, check to see
 		// if we should wrap to the new line
@@ -900,7 +900,6 @@ void idConsoleLocal::Print( const char *txt ) {
 			// word wrap
 			if (l != currentLine->Num() && (x + l > currentLine->Num() ) ) {
 				Linefeed();
-				currentLine = &text[text.Num() - 1];
 			}
 		}
 
@@ -951,6 +950,7 @@ void idConsoleLocal::Print( const char *txt ) {
 	if ( ( text.Num() - 1 ) >= 0 ) {
 		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
 	}
+#undef currentLine
 }
 
 
