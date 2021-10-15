@@ -566,8 +566,31 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		return true;
 	}
 
-	// load it as an image
+	// try to load it as uncompressed image
 	R_LoadImage( token.c_str(), pic, width, height, &timestamp );
+
+	// try to load it as compressed image
+	if ( timestamp == -1 ) {
+		idStr filename = "dds/";
+		filename += token;
+		filename.SetFileExtension(".dds");
+		imageCompressedData_t *compData = nullptr;
+		R_LoadCompressedImage( filename.c_str(), ( pic ? &compData : nullptr ), &timestamp );
+		if ( compData ) {
+			assert( pic );
+			if ( *pic = compData->ComputeUncompressedData() ) {
+				if ( width )
+					*width = compData->header.dwWidth;
+				if ( height )
+					*height = compData->header.dwWidth;
+				R_StaticFree( compData );
+			}
+			else {
+				R_StaticFree( compData );
+				return false;
+			}
+		}
+	}
 
 	if ( timestamp == -1 ) {
 		return false;
