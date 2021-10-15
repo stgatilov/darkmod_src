@@ -582,7 +582,7 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 				if ( width )
 					*width = compData->header.dwWidth;
 				if ( height )
-					*height = compData->header.dwWidth;
+					*height = compData->header.dwHeight;
 				R_StaticFree( compData );
 			}
 			else {
