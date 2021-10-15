@@ -1276,7 +1276,7 @@ void R_LoadImageData( idImage& image ) {
 		if ( globalImages->image_usePrecompressedTextures.GetBool() && !(image.residency & IR_CPU) ) {
 			if ( image.CheckPrecompressedImage( true ) ) {
 				// we got the precompressed image
-				char *fourcc = image.compressedData->header.dwFlags & DDSF_FOURCC ? (char*)&image.compressedData->header.ddspf.dwFourCC : "    ";
+				const char *fourcc = image.compressedData->header.dwFlags & DDSF_FOURCC ? (char*)&image.compressedData->header.ddspf.dwFourCC : "    ";
 				TRACE_ATTACH_FORMAT( "DDS %d x %d (%c%c%c%c)", image.compressedData->header.dwWidth, image.compressedData->header.dwHeight, fourcc[0], fourcc[1], fourcc[2], fourcc[3] );
 				return;
 			}
