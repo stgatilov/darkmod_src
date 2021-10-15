@@ -1017,12 +1017,9 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	// get the file timestamp
 	ID_TIME_T precompTimestamp;
 	fileSystem->ReadFile( filename, NULL, &precompTimestamp );
-
-
 	if ( precompTimestamp == FILE_NOT_FOUND_TIMESTAMP ) {
 		return false;
 	}
-
 	if ( !generatorFunction && timestamp != FILE_NOT_FOUND_TIMESTAMP ) {
 		if ( precompTimestamp < timestamp ) {
 			// The image has changed after being precompressed
@@ -1031,38 +1028,13 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	}
 	timestamp = precompTimestamp;
 
-	// open it and just read the header
-	idFile *f = fileSystem->OpenFileRead( filename );
-
-	if ( !f ) {
+	// load compressed data from file
+	R_StaticFree( compressedData );
+	R_LoadCompressedImage( filename, &compressedData, nullptr );
+	if ( !compressedData )
 		return false;
-	}
-	int	len = f->Length();
-
-	if ( len < 4 + sizeof( ddsFileHeader_t ) ) {
-		fileSystem->CloseFile( f );
-		return false;
-	}
-
-	imageCompressedData_t *compData = (imageCompressedData_t*) R_StaticAlloc(
-		imageCompressedData_t::TotalSizeFromFileSize( len )
-	);
-
-	compData->fileSize = len;
-	f->Read( compData->GetFileData(), len );
-
-	fileSystem->CloseFile( f );
-
-	if ( compData->magic != DDS_MAKEFOURCC( 'D', 'D', 'S', ' ' ) ) {
-		common->Printf( "CheckPrecompressedImage( %s ): magic != 'DDS '\n", imgName.c_str() );
-		R_StaticFree( compData );
-		return false;
-	}
 
 	cpuData.Purge();
-
-	R_StaticFree( compressedData );
-	compressedData = compData;
 
 	return true;
 }
@@ -1078,26 +1050,6 @@ has completed
 */
 void idImage::UploadPrecompressedImage() {
 	ddsFileHeader_t	*header = &compressedData->header;
-
-	// ( not byte swapping dwReserved1 dwReserved2 )
-	header->dwSize = LittleInt( header->dwSize );
-	header->dwFlags = LittleInt( header->dwFlags );
-	header->dwHeight = LittleInt( header->dwHeight );
-	header->dwWidth = LittleInt( header->dwWidth );
-	header->dwPitchOrLinearSize = LittleInt( header->dwPitchOrLinearSize );
-	header->dwDepth = LittleInt( header->dwDepth );
-	header->dwMipMapCount = LittleInt( header->dwMipMapCount );
-	header->dwCaps1 = LittleInt( header->dwCaps1 );
-	header->dwCaps2 = LittleInt( header->dwCaps2 );
-
-	header->ddspf.dwSize = LittleInt( header->ddspf.dwSize );
-	header->ddspf.dwFlags = LittleInt( header->ddspf.dwFlags );
-	header->ddspf.dwFourCC = LittleInt( header->ddspf.dwFourCC );
-	header->ddspf.dwRGBBitCount = LittleInt( header->ddspf.dwRGBBitCount );
-	header->ddspf.dwRBitMask = LittleInt( header->ddspf.dwRBitMask );
-	header->ddspf.dwGBitMask = LittleInt( header->ddspf.dwGBitMask );
-	header->ddspf.dwBBitMask = LittleInt( header->ddspf.dwBBitMask );
-	header->ddspf.dwABitMask = LittleInt( header->ddspf.dwABitMask );
 
 	// generate the texture number
 	qglGenTextures( 1, &texnum );
