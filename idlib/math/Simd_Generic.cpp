@@ -3113,6 +3113,308 @@ idSIMD_Generic::ConvertTargaRowToRGBA8
 ============
 */
 bool idSIMD_Generic::ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, byte *dstPtr ) {
-	// This is called only in LoadTGA, which already handles generic case.
+	if (bitsPerPixel == 8) {
+		for (int i = 0; i < width; i++) {
+			byte val = srcPtr[i];
+			dstPtr[4*i+0] = val;
+			dstPtr[4*i+1] = val;
+			dstPtr[4*i+2] = val;
+			dstPtr[4*i+3] = 255;
+		}
+		return true;
+	}
+
+	if (bitsPerPixel == 32) {
+		for (int i = 0; i < width; i++) {
+			dstPtr[4*i+0] = srcPtr[4*i+2];
+			dstPtr[4*i+1] = srcPtr[4*i+1];
+			dstPtr[4*i+2] = srcPtr[4*i+0];
+			dstPtr[4*i+3] = srcPtr[4*i+3];
+		}
+		return true;
+	}
+
+	if (bitsPerPixel == 24) {
+		for (int i = 0; i < width; i++) {
+			dstPtr[4*i+0] = srcPtr[3*i+2];
+			dstPtr[4*i+1] = srcPtr[3*i+1];
+			dstPtr[4*i+2] = srcPtr[3*i+0];
+			dstPtr[4*i+3] = 255;
+		}
+		return true;
+	}
+
 	return false;
+}
+
+
+ID_FORCE_INLINE static void Color565to888f(word data, float rgb[3]) {
+	//red goes in high bits (like in big-endian)
+	uint r = (data >> 11) & 0x1F;
+	uint g = (data >> 5 ) & 0x3F;
+	uint b = (data >> 0 ) & 0x1F;
+	//k-bit unsigned integer X means float color X / (2^k - 1) in [0..1]
+	//here we return it already scaled to [0..255] interval (prepared for rounding to 8 bits)
+	rgb[0] = r * (255.0f / 31.0f);
+	rgb[1] = g * (255.0f / 63.0f);
+	rgb[2] = b * (255.0f / 31.0f);
+}
+ID_FORCE_INLINE static void Color888fto888(const float src[3], byte dst[3]) {
+	dst[0] = byte( src[0] + (0.5f + 1e-4f) );
+	dst[1] = byte( src[1] + (0.5f + 1e-4f) );
+	dst[2] = byte( src[2] + (0.5f + 1e-4f) );
+}
+
+ID_FORCE_INLINE static void Dxt1Keys3(const float mainKeys[2][3], byte keys[4][4]) {
+	Color888fto888(mainKeys[0], keys[0]);
+	Color888fto888(mainKeys[1], keys[1]);
+	keys[2][0] = byte( (2.0f * mainKeys[0][0] + 1.0f * mainKeys[1][0]) * (1.0f / 3.0f) + (0.5f + 1e-4f) );
+	keys[2][1] = byte( (2.0f * mainKeys[0][1] + 1.0f * mainKeys[1][1]) * (1.0f / 3.0f) + (0.5f + 1e-4f) );
+	keys[2][2] = byte( (2.0f * mainKeys[0][2] + 1.0f * mainKeys[1][2]) * (1.0f / 3.0f) + (0.5f + 1e-4f) );
+	keys[3][0] = byte( (1.0f * mainKeys[0][0] + 2.0f * mainKeys[1][0]) * (1.0f / 3.0f) + (0.5f + 1e-4f) );
+	keys[3][1] = byte( (1.0f * mainKeys[0][1] + 2.0f * mainKeys[1][1]) * (1.0f / 3.0f) + (0.5f + 1e-4f) );
+	keys[3][2] = byte( (1.0f * mainKeys[0][2] + 2.0f * mainKeys[1][2]) * (1.0f / 3.0f) + (0.5f + 1e-4f) );
+}
+ID_FORCE_INLINE static void Dxt1Keys2(const float mainKeys[2][3], byte keys[4][4]) {
+	Color888fto888(mainKeys[0], keys[0]);
+	Color888fto888(mainKeys[1], keys[1]);
+	keys[2][0] = byte( (mainKeys[0][0] + mainKeys[1][0]) * 0.5f + (0.5f + 1e-4f) );
+	keys[2][1] = byte( (mainKeys[0][1] + mainKeys[1][1]) * 0.5f + (0.5f + 1e-4f) );
+	keys[2][2] = byte( (mainKeys[0][2] + mainKeys[1][2]) * 0.5f + (0.5f + 1e-4f) );
+	keys[3][0] = 0;
+	keys[3][1] = 0;
+	keys[3][2] = 0;
+}
+ID_FORCE_INLINE static void Dxt5Keys7(byte keys[8]) {
+	keys[2] = (keys[0] * 6 + keys[1] * 1 + 3) / 7;
+	keys[3] = (keys[0] * 5 + keys[1] * 2 + 3) / 7;
+	keys[4] = (keys[0] * 4 + keys[1] * 3 + 3) / 7;
+	keys[5] = (keys[0] * 3 + keys[1] * 4 + 3) / 7;
+	keys[6] = (keys[0] * 2 + keys[1] * 5 + 3) / 7;
+	keys[7] = (keys[0] * 1 + keys[1] * 6 + 3) / 7;
+}
+ID_FORCE_INLINE static void Dxt5Keys5(byte keys[8]) {
+	keys[2] = (keys[0] * 4 + keys[1] * 1 + 2) / 5;
+	keys[3] = (keys[0] * 3 + keys[1] * 2 + 2) / 5;
+	keys[4] = (keys[0] * 2 + keys[1] * 3 + 2) / 5;
+	keys[5] = (keys[0] * 1 + keys[1] * 4 + 2) / 5;
+	keys[6] = 0;
+	keys[7] = 0xFF;
+}
+
+/*
+============
+idSIMD_Generic::DecompressRGBA8FromDXT1
+============
+*/
+void idSIMD_Generic::DecompressRGBA8FromDXT1( const byte *srcPtr, int width, int height, byte *dstPtr, int stride, bool allowTransparency ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	const uint64 *srcBlocks = (uint64*)srcPtr;
+
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			uint64 blockData = *srcBlocks++;
+
+			word keyColor[2];
+			float keyFloat[2][3];
+			for (int k = 0; k < 2; k++) {
+				keyColor[k] = blockData & 0xFFFF;
+				blockData >>= 16;
+				Color565to888f(keyColor[k], keyFloat[k]);
+			}
+
+			byte keyRgba[4][4];
+			for (int k = 0; k < 4; k++)
+				keyRgba[k][3] = 0xFF;
+
+			if (keyColor[0] > keyColor[1])
+				Dxt1Keys3(keyFloat, keyRgba);
+			else {
+				Dxt1Keys2(keyFloat, keyRgba);
+				if (allowTransparency)
+					keyRgba[3][3] = 0;
+			}
+
+			for (int r = 0; r < 4; r++)
+				for (int c = 0; c < 4; c++) {
+					uint idx = (blockData & 0x3);
+					blockData >>= 2;
+
+					int i = brow * 4 + r;
+					int j = bcol * 4 + c;
+					if (i > height - 1 || j > width - 1)
+						continue;
+
+					byte *outPixel = &dstPtr[i * stride + 4 * j];
+					outPixel[0] = keyRgba[idx][0];
+					outPixel[1] = keyRgba[idx][1];
+					outPixel[2] = keyRgba[idx][2];
+					outPixel[3] = keyRgba[idx][3];
+				}
+		}
+	}
+}
+
+/*
+============
+idSIMD_Generic::DecompressRGBA8FromDXT3
+============
+*/
+void idSIMD_Generic::DecompressRGBA8FromDXT3( const byte *srcPtr, int width, int height, byte *dstPtr, int stride ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	const uint64 *srcBlocks = (uint64*)srcPtr;
+
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			uint64 alphaData = *srcBlocks++;
+			uint64 rgbData = *srcBlocks++;
+
+			float keyFloat[2][3];
+			for (int k = 0; k < 2; k++) {
+				word rgb565 = rgbData & 0xFFFF;
+				rgbData >>= 16;
+				Color565to888f(rgb565, keyFloat[k]);
+			}
+
+			byte keyRgba[4][4];
+			Dxt1Keys3(keyFloat, keyRgba);
+
+			for (int r = 0; r < 4; r++)
+				for (int c = 0; c < 4; c++) {
+					uint rgbIdx = (rgbData & 0x3);
+					rgbData >>= 2;
+					uint alphaBits = (alphaData & 0xF);
+					alphaData >>= 4;
+
+					int i = brow * 4 + r;
+					int j = bcol * 4 + c;
+					if (i > height - 1 || j > width - 1)
+						continue;
+
+					byte *outPixel = &dstPtr[i * stride + 4 * j];
+					outPixel[0] = keyRgba[rgbIdx][0];
+					outPixel[1] = keyRgba[rgbIdx][1];
+					outPixel[2] = keyRgba[rgbIdx][2];
+					outPixel[3] = alphaBits * 17;	//17 = 255 / 15
+				}
+		}
+	}
+}
+
+/*
+============
+idSIMD_Generic::DecompressRGBA8FromDXT5
+============
+*/
+void idSIMD_Generic::DecompressRGBA8FromDXT5( const byte *srcPtr, int width, int height, byte *dstPtr, int stride ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	const uint64 *srcBlocks = (uint64*)srcPtr;
+
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			uint64 alphaData = *srcBlocks++;
+			uint64 rgbData = *srcBlocks++;
+
+			float keyFloat[2][3];
+			for (int k = 0; k < 2; k++) {
+				word rgb565 = rgbData & 0xFFFF;
+				rgbData >>= 16;
+				Color565to888f(rgb565, keyFloat[k]);
+			}
+
+			byte keyAlpha[8];
+			keyAlpha[0] = (alphaData & 0xFF);
+			alphaData >>= 8;
+			keyAlpha[1] = (alphaData & 0xFF);
+			alphaData >>= 8;
+
+			byte keyRgba[4][4];
+			Dxt1Keys3(keyFloat, keyRgba);
+
+			if (keyAlpha[0] > keyAlpha[1])
+				Dxt5Keys7(keyAlpha);
+			else
+				Dxt5Keys5(keyAlpha);
+
+			for (int r = 0; r < 4; r++)
+				for (int c = 0; c < 4; c++) {
+					uint rgbIdx = (rgbData & 0x3);
+					rgbData >>= 2;
+					uint alphaIdx = (alphaData & 0x7);
+					alphaData >>= 3;
+
+					int i = brow * 4 + r;
+					int j = bcol * 4 + c;
+					if (i > height - 1 || j > width - 1)
+						continue;
+
+					byte *outPixel = &dstPtr[i * stride + 4 * j];
+					outPixel[0] = keyRgba[rgbIdx][0];
+					outPixel[1] = keyRgba[rgbIdx][1];
+					outPixel[2] = keyRgba[rgbIdx][2];
+					outPixel[3] = keyAlpha[alphaIdx];
+				}
+		}
+	}
+}
+
+/*
+============
+idSIMD_Generic::DecompressRGBA8FromRGTC
+============
+*/
+void idSIMD_Generic::DecompressRGBA8FromRGTC( const byte *srcPtr, int width, int height, byte *dstPtr, int stride ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	const uint64 *srcBlocks = (uint64*)srcPtr;
+
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			uint64 redData = *srcBlocks++;
+			uint64 greenData = *srcBlocks++;
+
+			byte keyRed[8], keyGreen[8];
+			keyRed[0] = (redData & 0xFF);
+			redData >>= 8;
+			keyRed[1] = (redData & 0xFF);
+			redData >>= 8;
+
+			keyGreen[0] = (greenData & 0xFF);
+			greenData >>= 8;
+			keyGreen[1] = (greenData & 0xFF);
+			greenData >>= 8;
+
+			if (keyRed[0] > keyRed[1])
+				Dxt5Keys7(keyRed);
+			else
+				Dxt5Keys5(keyRed);
+
+			if (keyGreen[0] > keyGreen[1])
+				Dxt5Keys7(keyGreen);
+			else
+				Dxt5Keys5(keyGreen);
+
+			for (int r = 0; r < 4; r++)
+				for (int c = 0; c < 4; c++) {
+					uint redIdx = (redData & 0x7);
+					redData >>= 3;
+					uint greenIdx = (greenData & 0x7);
+					greenData >>= 3;
+
+					int i = brow * 4 + r;
+					int j = bcol * 4 + c;
+					if (i > height - 1 || j > width - 1)
+						continue;
+
+					byte *outPixel = &dstPtr[i * stride + 4 * j];
+					outPixel[0] = keyRed[redIdx];
+					outPixel[1] = keyGreen[greenIdx];
+					outPixel[2] = 0;
+					outPixel[3] = 255;
+				}
+		}
+	}
 }

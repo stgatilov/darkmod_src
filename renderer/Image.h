@@ -234,7 +234,7 @@ public:
 	bool		CheckPrecompressedImage( bool fullLoad );
 	void		UploadPrecompressedImage( void );
 	void		ActuallyLoadImage( bool allowBackground = false );
-	int			BitsForInternalFormat( int internalFormat ) const;
+	static int			BitsForInternalFormat( int internalFormat );
 	GLenum		SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth ) const;
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
 	int			NumLevelsForImageSize( int width, int height ) const;
