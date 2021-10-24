@@ -1039,12 +1039,14 @@ void RB_VolumetricPass() {
 	globalImages->shadowAtlas->Bind();
 
 	programManager->volumetricLightShader->Activate();
+	GL_CheckErrors();
 
 	// MVP matrix uniform
 	idMat4 MV_P[2];
 	memcpy( MV_P[0].ToFloatPtr(), backEnd.viewDef->worldSpace.modelViewMatrix, sizeof( idMat4 ) );
 	memcpy( MV_P[1].ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( idMat4 ) );
 	qglUniformMatrix4fv( 0, 2, false, (GLfloat*) MV_P );
+	GL_CheckErrors();
 
 	// light color uniform
 	const float* lightRegs = vLight->shaderRegisters;
@@ -1059,16 +1061,19 @@ void RB_VolumetricPass() {
 	qglUniform3fv( 2, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
 	qglUniformMatrix4fv( 3, 1, false, backEnd.vLight->lightProject[0].ToFloatPtr() );
 	qglUniform4fv( 4, 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
+	GL_CheckErrors();
 
 	auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
 	idVec4 v( page.x, page.y, 0, page.width );
 	v /= 6 * r_shadowMapSize.GetFloat();
 	qglUniform4fv( 10, 1, v.ToFloatPtr() );
+	GL_CheckErrors();
 
 	qglUniform3fv( 11, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	qglUniform1i( 12, vLight->lightShader->IsVolumetric() );
 	qglUniform1f( 13, GetEffectiveLightRadius() );
 	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
+	GL_CheckErrors();
 
 	GL_Cull( CT_FRONT_SIDED );
 	
@@ -1097,6 +1102,7 @@ void RB_VolumetricPass() {
 	ds.indexCache = frustumTris->indexCache;
 	ds.ambientCache = frustumTris->ambientCache;
 	ds.scissorRect = backEnd.viewDef->scissor;
+	GL_CheckErrors();
 	RB_T_RenderTriangleSurface( &ds );
 	GL_CheckErrors();
 

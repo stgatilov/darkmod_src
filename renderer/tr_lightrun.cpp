@@ -385,7 +385,7 @@ static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRen
 	// This is similar to the Z calculation for depth buffering, which means that the
 	// mapped texture is going to be perspective distorted heavily towards the zero end.
 	const float zNear = Max(light->parms.start * normalizedTarget, SPOT_LIGHT_MIN_Z_NEAR);
-	const float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR);
+	const float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR) - zNear;
 	const float zScale = (zNear + zFar) / zFar;
 
 	localProject[2][0] = normalizedTarget[0] * zScale;
@@ -409,8 +409,7 @@ static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRen
 	localProject[1][2] += ofs1 * localProject[3][2];
 	localProject[1][3] += ofs1 * localProject[3][3];
 
-	//return 1.0f / ( zNear + zFar );
-	return 1.0f / zFar;
+	return 1.0f / ( zNear + zFar );
 }
 
 /*

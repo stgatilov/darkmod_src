@@ -101,6 +101,7 @@ float calcCylinder(vec4 startPos, vec4 exitPoint) {
 
 // get N samples from the fragment-view ray inside the frustum
 vec3 calcWithShadows(vec4 startPos, vec4 exitPoint) {
+	// return vec3(1, 1, .4);
 	vec3 color = vec3(0);
 	// for(float i=0; i<1; i++) {
 	for(float i=0; i<u_sampleCount; i++) {
@@ -119,7 +120,7 @@ vec3 calcWithShadows(vec4 startPos, vec4 exitPoint) {
 			vec4 lightProject = samplePos * u_lightProject;
 			vec4 t0 = texture2DProj(s_projection, lightProject.xyz );
 			vec4 t1 = texture(s_falloff, vec2(lightProject.w, 0.5) );
-			color += t0.rgb * t1.rgb;// * lit;
+			color += t0.rgb * t1.rgb * lit;
 	}
 	return color / u_sampleCount;
 }
@@ -129,32 +130,17 @@ void main() {
 	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
 	float depth = texture2D(s_depth, wrCoord ).r;
 	
-	// possible error - fix world position to be inside frustum
 	vec3 fixedWorldPos = worldPosition.xyz;
-	for(int i=0; i<6; i++) {
-		float distance = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
-		for(int j=1; j<16; j*=2) {
-			if(distance > 0) {
-				fixedWorldPos -= j*distance*u_lightFrustum[i].xyz;
-			} 
-		}
-		distance = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
-		if(distance > 0) {
-			fragColor.rb = vec2(1);
-			return;
-		} 		
-	}
-
-	vec3 dirToViewer = normalize(u_viewOrigin-fixedWorldPos);
+	vec3 dirToViewer = -normalize(u_viewOrigin-fixedWorldPos);
 	int entriesFound = 0;
 	vec4 exitPoint = vec4(u_viewOrigin, 1);
 	// where does the fragment-viewer ray leave the light frustum?
 	for(int i=0; i<6; i++) {  // https://stackoverflow.com/questions/23975555/how-to-do-ray-plane-intersection
-		float dotnp = dot(u_lightFrustum[i], vec4(fixedWorldPos, 1));
+		float dotnp = dot(u_lightFrustum[i], vec4(u_viewOrigin, 1));
 		float dotnv = dot(u_lightFrustum[i].xyz, dirToViewer);
 		float rayCoord = -dotnp/dotnv;
 		if(rayCoord<=0) continue;
-		vec3 intersection = rayCoord * dirToViewer + fixedWorldPos;
+		vec3 intersection = rayCoord * dirToViewer + u_viewOrigin;
 		bool insideFrustum = true;
 		for(int j=0; j<6; j++) {  
 			if(i==j) continue;
@@ -162,7 +148,7 @@ void main() {
 			insideFrustum = insideFrustum && insidePlane;
 		}
 		if(insideFrustum) {
-			if(distance(intersection, fixedWorldPos) < distance(exitPoint.xyz, fixedWorldPos)) {
+			if(distance(intersection, u_viewOrigin) < distance(exitPoint.xyz, u_viewOrigin)) {
 				exitPoint.xyz = intersection;
 			}
 			entriesFound++;

@@ -920,9 +920,7 @@ void R_AddLightSurfaces( void ) {
 			}
 			if ( lightShader->IsVolumetric() ) { // normal frustum tri triangles don't align precisely
 				ALIGNTYPE16 frustumCorners_t corners;
-				idRenderMatrix::GetFrustumCorners( corners,
-					light->inverseBaseLightProject, bounds_zeroOneCube
-				);
+				idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube);
 				ALIGNTYPE16 static glIndex_t cubeIndices[] = { 0,2,1, 1,2,3, 0,1,4, 1,5,4, 1,3,7, 1,7,5, 5,7,6, 6,4,5, 3,6,7, 2,6,3, 6,0,4, 2,0,6 };
 				auto c2v = [&corners]( int i ) { return idVec3( corners.x[i], corners.y[i], corners.z[i] ); };
 				auto& tri = vLight->frustumTrisExact;
