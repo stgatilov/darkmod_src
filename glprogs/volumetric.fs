@@ -28,7 +28,7 @@ layout (location = 11) uniform vec3 u_lightOrigin;
 layout (location = 12) uniform int u_sampleCount;
 layout (location = 13) uniform float u_lightRadius;
 layout (location = 14) uniform vec4 u_lightColor;
-layout (location = 15) uniform int u_shadows;
+layout (location = 15) uniform bool u_shadows;
 
 in vec4 csThis;
 in vec4 lightProject;
