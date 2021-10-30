@@ -126,6 +126,8 @@ vec3 lightColor() {
 		lightColor *= att * att;
 	}
 	else {
+		if(var_TexLight.w<=0)
+			return vec3(0);
 		vec3 lightProjection = textureProj(u_lightProjectionTexture, var_TexLight.xyw).rgb;
 		vec3 lightFalloff = texture(u_lightFalloffTexture, vec2(var_TexLight.z, 0.5)).rgb;
 		lightColor = lightProjection * lightFalloff;
