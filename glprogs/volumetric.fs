@@ -28,6 +28,7 @@ layout (location = 11) uniform vec3 u_lightOrigin;
 layout (location = 12) uniform int u_sampleCount;
 layout (location = 13) uniform float u_lightRadius;
 layout (location = 14) uniform vec4 u_lightColor;
+layout (location = 15) uniform int u_shadows;
 
 in vec4 csThis;
 in vec4 lightProject;
@@ -107,16 +108,19 @@ vec3 calcWithShadows(vec4 startPos, vec4 exitPoint) {
 	for(float i=0; i<u_sampleCount; i++) {
 		vec4 samplePos = mix(startPos, exitPoint, i/u_sampleCount);
 			// shadow test
-			vec4 depthSamples;
-			vec2 sampleWeights;
 			vec3 light2fragment = samplePos.xyz - u_lightOrigin;
-			ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
-			vec3 absL = abs(light2fragment);
-			float maxAbsL = max(absL.x, max(absL.y, absL.z));
-			vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
-			float lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
-                	mix(lit4.x, lit4.y, sampleWeights.x),
-                   	sampleWeights.y);
+			float lit = 1;
+			if(u_shadows) {
+				vec4 depthSamples;
+				vec2 sampleWeights;
+				ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
+				vec3 absL = abs(light2fragment);
+				float maxAbsL = max(absL.x, max(absL.y, absL.z));
+				vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
+				lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
+						mix(lit4.x, lit4.y, sampleWeights.x),
+						sampleWeights.y);
+			}
 			vec4 lightProject = samplePos * u_lightProject;
 			vec4 t0 = texture2DProj(s_projection, lightProject.xyz );
 			vec4 t1 = texture(s_falloff, vec2(lightProject.w, 0.5) );

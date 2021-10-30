@@ -1022,8 +1022,10 @@ static void RB_FogPass( bool translucent ) {
 
 void RB_VolumetricPass() {
 	auto vLight = backEnd.vLight;
-	if ( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex )
+	
+	if ( cv_lod_bias.GetFloat() < 1 )
 		return;
+	bool useShadows = !( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex ) && cv_lod_bias.GetFloat() >= 2;
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
 
 	GL_SelectTexture( 0 );
@@ -1061,19 +1063,19 @@ void RB_VolumetricPass() {
 	qglUniform3fv( 2, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
 	qglUniformMatrix4fv( 3, 1, false, backEnd.vLight->lightProject[0].ToFloatPtr() );
 	qglUniform4fv( 4, 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
-	GL_CheckErrors();
 
-	auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
-	idVec4 v( page.x, page.y, 0, page.width );
-	v /= 6 * r_shadowMapSize.GetFloat();
-	qglUniform4fv( 10, 1, v.ToFloatPtr() );
-	GL_CheckErrors();
+	if ( useShadows ) {
+		auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
+		idVec4 v( page.x, page.y, 0, page.width );
+		v /= 6 * r_shadowMapSize.GetFloat();
+		qglUniform4fv( 10, 1, v.ToFloatPtr() );
+	}
 
 	qglUniform3fv( 11, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	qglUniform1i( 12, vLight->lightShader->IsVolumetric() );
+	qglUniform1i( 12, vLight->lightShader->IsVolumetric() * ( cv_lod_bias.GetFloat() + 3 ) );
 	qglUniform1f( 13, GetEffectiveLightRadius() );
 	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
-	GL_CheckErrors();
+	qglUniform1i( 15, useShadows );
 
 	GL_Cull( CT_FRONT_SIDED );
 	
@@ -1102,9 +1104,7 @@ void RB_VolumetricPass() {
 	ds.indexCache = frustumTris->indexCache;
 	ds.ambientCache = frustumTris->ambientCache;
 	ds.scissorRect = backEnd.viewDef->scissor;
-	GL_CheckErrors();
 	RB_T_RenderTriangleSurface( &ds );
-	GL_CheckErrors();
 
 	GL_Cull( CT_FRONT_SIDED );
 	GLSLProgram::Deactivate();

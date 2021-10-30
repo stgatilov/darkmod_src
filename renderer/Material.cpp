@@ -1979,7 +1979,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		else if ( !token.Icmp( "volumetricLight" ) ) {
 			if ( !src.ReadTokenOnLine( &token ) ) {
-				volumetricLight = 60;
+				volumetricLight = 10;
 				continue;
 			}
 			volumetricLight = token.GetIntValue();
