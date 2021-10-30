@@ -1077,8 +1077,8 @@ void RB_VolumetricPass() {
 	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
 	qglUniform1i( 15, useShadows );
 
-	GL_Cull( CT_FRONT_SIDED );
-	
+	qglDisable( GL_SCISSOR_TEST );
+
 	drawSurf_t			ds;
 	auto* frustumTris = &backEnd.vLight->frustumTrisExact;
 
@@ -1106,7 +1106,7 @@ void RB_VolumetricPass() {
 	ds.scissorRect = backEnd.viewDef->scissor;
 	RB_T_RenderTriangleSurface( &ds );
 
-	GL_Cull( CT_FRONT_SIDED );
+	qglEnable( GL_SCISSOR_TEST );
 	GLSLProgram::Deactivate();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );

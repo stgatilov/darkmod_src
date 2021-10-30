@@ -178,5 +178,5 @@ void main() {
 		color = calcWithShadows(startPos, exitPoint);
 	}
 
-	fragColor.rgb = u_lightColor.rgb * vec3(color) * 3e-1;
+	fragColor.rgb = u_lightColor.rgb * vec3(color) * 5e-1;
 }
