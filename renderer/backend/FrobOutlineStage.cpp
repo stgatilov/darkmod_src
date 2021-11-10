@@ -28,8 +28,8 @@ idCVar r_frobOutline( "r_frobOutline", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
-idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "5.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
-idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "3", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels" );
+idCVar r_frobOutlineColorA( "r_frobOutlineColorA", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - alpha component" );
+idCVar r_frobOutlineExtrusion( "r_frobOutlineExtrusion", "-3.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Thickness of geometric outline in pixels (negative = hard, positive = soft)" );
 idCVar r_frobHighlightColorMulR( "r_frobHighlightColorMulR", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - red component" );
 idCVar r_frobHighlightColorMulG( "r_frobHighlightColorMulG", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - green component" );
 idCVar r_frobHighlightColorMulB( "r_frobHighlightColorMulB", "0.3", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Diffuse color of the frob highlight - blue component" );
@@ -43,6 +43,7 @@ namespace {
 		UNIFORM_GROUP_DEF( FrobOutlineUniforms )
 
 		DEFINE_UNIFORM( vec2, extrusion )
+		DEFINE_UNIFORM( int, hard )
 		DEFINE_UNIFORM( float, depth )
 		DEFINE_UNIFORM( vec4, color )
 		DEFINE_UNIFORM( vec4, colorAdd )
@@ -71,8 +72,8 @@ static void FrobOutlinePreset( const idCmdArgs &args ) {
 	if ( preset == 1 ) {
 		//geometric hard
 		r_frobOutline.SetInteger( 2 );
-		r_frobOutlineColorA.SetFloat( 5.0f );
-		r_frobOutlineExtrusion.SetFloat( 3.0f );
+		r_frobOutlineColorA.SetFloat( 1.0f );
+		r_frobOutlineExtrusion.SetFloat( -3.0f );
 	}
 	else if ( preset == 2 ) {
 		//geometric soft
@@ -258,6 +259,7 @@ void FrobOutlineStage::MarkOutline( idList<drawSurf_t *> &surfs ) {
 		1.0f / idMath::Fmax( drawFbo->Height(), 3.0f )
 	) * r_frobOutlineBlurPasses.GetFloat() * BlurRadiusInPixels;
 	uniforms->extrusion.Set( extr );
+	uniforms->hard.Set( 1 );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 
 	DrawElements( surfs, extrudeShader, false );
@@ -273,8 +275,9 @@ void FrobOutlineStage::DrawGeometricOutline( idList<drawSurf_t*> &surfs ) {
 	idVec2 extr = idVec2(
 		1.0f / idMath::Fmax( frameBuffers->defaultFbo->Width(), 800.0f ),
 		1.0f / idMath::Fmax( frameBuffers->defaultFbo->Height(), 600.0f )
-	) * r_frobOutlineExtrusion.GetFloat();
+	) * idMath::Fabs( r_frobOutlineExtrusion.GetFloat() );
 	uniforms->extrusion.Set( extr );
+	uniforms->hard.Set( r_frobOutlineExtrusion.GetFloat() < 0.0f ? 1 : 0 );
 	uniforms->depth.Set( r_frobDepthOffset.GetFloat() );
 	uniforms->color.Set( r_frobOutlineColorR.GetFloat(), r_frobOutlineColorG.GetFloat(), r_frobOutlineColorB.GetFloat(), r_frobOutlineColorA.GetFloat() );
 

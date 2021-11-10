@@ -19,6 +19,7 @@ layout (triangle_strip, max_vertices = 18) out;
 
 out float var_Intensity;
 uniform vec2 u_extrusion;
+uniform int u_hard;
 
 uniform sampler2D u_diffuse;
 uniform float u_alphaTest;
@@ -55,14 +56,17 @@ void emitEdge(int i, int j, int k) {
         if (tex.a <= u_alphaTest)
             strength = 0.0;
     }
+    float outer = 0.0;
+    if (u_hard != 0)
+        outer = strength;
     
     vec2 ext = u_extrusion;
-    emit(i, a + ext*aout, 0);
-    emit(i, a + ext*nab, 0);
+    emit(i, a + ext*aout, outer);
+    emit(i, a + ext*nab, outer);
     emit(i, a, strength);
-    emit(j, b + ext*nab, 0);
+    emit(j, b + ext*nab, outer);
     emit(j, b, strength);
-    emit(j, b + ext*bout, 0);
+    emit(j, b + ext*bout, outer);
     EndPrimitive();
 }
 
