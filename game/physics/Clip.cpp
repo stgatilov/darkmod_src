@@ -719,9 +719,14 @@ void idClip::Init( void ) {
 	memset( clipSectors, 0, MAX_SECTORS * sizeof( clipSector_t ) );
 	numClipSectors = 0;
 	touchCount = -1;
+
 	// get world map bounds
-	h = collisionModelManager->LoadModel( "worldMap", false );
+	//stgatilov: name of collision model equals "name" spawnarg of worldspawn entity (and "worldMap" if not specified)
+	//however, it is certain that world collision model is always the first one (that's how it worked before rev 9592)
+	h = 0;	//collisionModelManager->LoadModel( "worldMap", false );
+	const char *cmname = collisionModelManager->GetModelName( h );	//should be "worldMap" or whatever worldspawn's name is
 	collisionModelManager->GetModelBounds( h, worldBounds );
+
 	// create world sectors
 	CreateClipSectors_r( 0, worldBounds, maxSector );
 
