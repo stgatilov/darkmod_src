@@ -279,6 +279,7 @@ void idSecurityCamera::Spawn( void )
 	scanDist		= spawnArgs.GetFloat("scanDist", "200");
 	flipAxis		= spawnArgs.GetBool("flipAxis", "0");
 	useColors		= spawnArgs.GetBool("useColors");
+	alertDuration	= spawnArgs.GetFloat("alarm_duration", "20");
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
 	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
