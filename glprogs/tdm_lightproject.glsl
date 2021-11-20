@@ -23,6 +23,15 @@ vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D 
 	vec3 projCoords = texLight.xyw;     //divided by last component
 	float falloffCoord = texLight.z;
 
+	if (
+		projCoords.z <= 0 ||                                            //anything with inversed W
+		projCoords.x < 0 || projCoords.x > projCoords.z ||              //proj U outside [0..1]
+		projCoords.y < 0 || projCoords.y > projCoords.z ||              //proj V outside [0..1]
+		falloffCoord < 0 || falloffCoord > 1.0                          //falloff outside [0..1]
+	) {
+		return vec3(0);
+	}
+
 	vec3 lightProjection = textureProj(lightProjectionTexture, projCoords).rgb;
 	vec3 lightFalloff = texture(lightFalloffTexture, vec2(falloffCoord, 0.5)).rgb;
 	return lightProjection * lightFalloff;
