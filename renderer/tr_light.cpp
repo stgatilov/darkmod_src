@@ -1514,9 +1514,11 @@ bool R_CullXray( idRenderEntityLocal& def ) {
 		return !( entXrayMask & 2 );					// only substitutes show
 	case XR_SUBSTITUTE:
 	{
-		auto viewEnt = tr.viewDef->subviewSurface->space;
-		if ( viewEnt->entityDef->index == def.index )	// this would overlap everything else
-			return true;
+		if ( tr.viewDef->subviewSurface ) {
+			auto viewEnt = tr.viewDef->subviewSurface->space;
+			if ( viewEnt->entityDef->index == def.index )	// this would overlap everything else
+				return true;
+		}
 		return entXrayMask & 4;							// substitutes show instead of their counterparts, everything else as usual
 	}
 	case XR_IGNORE:
