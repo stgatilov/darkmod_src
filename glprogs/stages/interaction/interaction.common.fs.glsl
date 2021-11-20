@@ -17,6 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Excludes: shadows
 
 #pragma tdm_define "BINDLESS_TEXTURES"
+#pragma tdm_include "tdm_lightproject.glsl"
 
 #ifdef BINDLESS_TEXTURES
 #extension GL_ARB_bindless_texture : require
@@ -115,24 +116,12 @@ void fetchDNS() {
 	NdotV = clamp(dot(N, V), 0.0, 1.0);
 }
 
-//fetch color of the light source
+//fetch color of the light source (light projection and falloff)
 vec3 lightColor() {
-	// compute light projection and falloff 
-	vec3 lightColor;
-	if (u_cubic == 1.0) {
-		vec3 cubeTC = var_TexLight.xyz * 2.0 - 1.0;
-		lightColor = texture(u_lightProjectionCubemap, cubeTC).rgb;
-		float att = clamp(1.0 - length(cubeTC), 0.0, 1.0);
-		lightColor *= att * att;
-	}
-	else {
-		if(var_TexLight.w<=0)
-			return vec3(0);
-		vec3 lightProjection = textureProj(u_lightProjectionTexture, var_TexLight.xyw).rgb;
-		vec3 lightFalloff = texture(u_lightFalloffTexture, vec2(var_TexLight.z, 0.5)).rgb;
-		lightColor = lightProjection * lightFalloff;
-	}
-	return lightColor;
+	if (u_cubic == 1.0)
+		return projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
+	else
+		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
 }
 
 //illumination model with "simple interaction" setting

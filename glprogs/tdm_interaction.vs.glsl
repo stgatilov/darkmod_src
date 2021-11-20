@@ -13,6 +13,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma tdm_include "tdm_transform.glsl"
+#pragma tdm_include "tdm_lightproject.glsl"
 
 // Contains common formulas for computing interaction.
 // Includes: illumination model, fetching surface and light properties
@@ -70,7 +71,7 @@ void interactionProcessVertex() {
 	var_TexSpecular.y = dot(attr_TexCoord, u_specularMatrix[1]);
 
 	// light projection texgen
-	var_TexLight = ( attr_Position * u_lightProjectionFalloff ).xywz;
+	var_TexLight = computeLightTex(u_lightProjectionFalloff, attr_Position);
 
 	// construct tangent-bitangent-normal 3x3 matrix
 	sendTBN();

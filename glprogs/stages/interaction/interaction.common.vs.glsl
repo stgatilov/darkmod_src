@@ -16,6 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Includes: illumination model, fetching surface and light properties
 // Excludes: shadows
 
+#pragma tdm_include "tdm_lightproject.glsl"
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
@@ -68,7 +69,7 @@ void interactionProcessVertex() {
 	var_TexSpecular.y = dot(attr_TexCoord, params[attr_DrawId].specularMatrix[1]);
 
 	// light projection texgen
-	var_TexLight = ( attr_Position * params[attr_DrawId].lightProjectionFalloff ).xywz;
+	var_TexLight = computeLightTex(params[attr_DrawId].lightProjectionFalloff, attr_Position);
 
 	// construct tangent-bitangent-normal 3x3 matrix
 	sendTBN();

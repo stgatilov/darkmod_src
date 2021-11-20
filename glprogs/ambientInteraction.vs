@@ -15,6 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #version 140
 
 #pragma tdm_include "tdm_transform.glsl"     
+#pragma tdm_include "tdm_lightproject.glsl"
 
 INATTR_POSITION  //in vec4 attr_Position;
 in vec4          	attr_TexCoord;     
@@ -63,7 +64,7 @@ void main( void ) {
 	var_TexSpecular.y = dot(attr_TexCoord, u_specularMatrix[1]);
  
 	// light projection texgen
-	var_TexLight = (attr_Position * u_lightProjectionFalloff).xywz;
+	var_TexLight = computeLightTex(u_lightProjectionFalloff, attr_Position);
 
 	// construct tangent-binormal-normal 3x3 matrix    
 	var_TangentBinormalNormalMatrix = mat3( attr_Tangent, attr_Bitangent, attr_Normal ); 

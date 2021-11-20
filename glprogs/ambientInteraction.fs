@@ -14,6 +14,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 140
 
+#pragma tdm_include "tdm_lightproject.glsl"
+
 in vec3 var_Position;
 in vec2 var_TexDiffuse;        
 in vec2 var_TexSpecular;
@@ -76,9 +78,8 @@ void main() {
 		float a = .25 - tl.x*tl.x - tl.y*tl.y - tl.z*tl.z;
 		light = vec4(vec3(a*2), 1); // FIXME pass r_lightScale as uniform
 	} else {
-		vec3 lightProjection = textureProj( u_lightProjectionTexture, var_TexLight.xyw ).rgb; 
-		vec3 lightFalloff = texture( u_lightFalloffTexture, vec2( var_TexLight.z, 0.5 ) ).rgb;
-		light = vec4(lightProjection * lightFalloff, 1);
+		light.rgb = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
+		light.a = 1;
 	} 
 
 	if (u_cubic == 1.0) {

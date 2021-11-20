@@ -13,6 +13,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma tdm_include "tdm_transform.glsl"
+#pragma tdm_include "tdm_lightproject.glsl"
 
 // Contains common formulas for computing interaction.
 // Includes: illumination model, fetching surface and light properties
@@ -80,22 +81,12 @@ void fetchDNS() {
 	NdotV = clamp(dot(N, V), 0.0, 1.0);
 }
 
-//fetch color of the light source
+//fetch color of the light source (light projection and falloff)
 vec3 lightColor() {
-	// compute light projection and falloff 
-	vec3 lightColor;
-	if (u_cubic == 1.0) {
-		vec3 cubeTC = var_TexLight.xyz * 2.0 - 1.0;
-		lightColor = texture(u_lightProjectionCubemap, cubeTC).rgb;
-		float att = clamp(1.0 - length(cubeTC), 0.0, 1.0);
-		lightColor *= att * att;
-	}
-	else {
-		vec3 lightProjection = textureProj(u_lightProjectionTexture, var_TexLight.xyw).rgb;
-		vec3 lightFalloff = texture(u_lightFalloffTexture, vec2(var_TexLight.z, 0.5)).rgb;
-		lightColor = lightProjection * lightFalloff;
-	}
-	return lightColor;
+	if (u_cubic == 1.0)
+		return projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
+	else
+		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
 }
 
 //illumination model with "simple interaction" setting
