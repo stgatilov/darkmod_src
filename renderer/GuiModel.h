@@ -26,6 +26,8 @@ typedef struct {
 
 class idGuiModel {
 public:
+	const textureStage_t* hasXrayStage;
+		
 	idGuiModel();
 
 	void	Clear();

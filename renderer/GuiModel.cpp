@@ -27,7 +27,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 idGuiModel::idGuiModel
 ================
 */
-idGuiModel::idGuiModel() {
+idGuiModel::idGuiModel() : hasXrayStage( NULL) {
 	indexes.SetGranularity( 1000 );
 	verts.SetGranularity( 1000 );
 }
@@ -274,19 +274,19 @@ void idGuiModel::EmitFullScreen( void ) {
 	viewDef_t	*oldViewDef = tr.viewDef;
 	tr.viewDef = viewDef;
 
+	hasXrayStage = NULL;
 	// add the surfaces to this view
 	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
-		EmitSurface( &surfaces[i], viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false );
+		auto surface = &surfaces[i];
+		EmitSurface( surface, viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false );
+		for ( int j = 0; j < surface->material->GetNumStages(); j++ ) {
+			auto stage = surface->material->GetStage( j );
+			if ( stage->texture.dynamic == DI_XRAY_RENDER ) {
+				hasXrayStage = &stage->texture;
+			}
+		}
 	}
 	tr.viewDef = oldViewDef;
-
-	// copy drawsurf geo state for backend use
-	/*for ( int i = 0; i < viewDef->numDrawSurfs; ++i ) {
-		drawSurf_t* surf = viewDef->drawSurfs[i];
-		srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
-		memcpy( copiedGeo, surf->frontendGeo, sizeof( srfTriangles_t ) );
-		surf->backendGeo = copiedGeo;
-	}*/
 
 	// add the command to draw this view
 	R_AddDrawViewCmd( *viewDef );

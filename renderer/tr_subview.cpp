@@ -478,7 +478,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 R_XrayRender
 =================
 */
-void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor ) {
+void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect &scissor ) {
 	viewDef_t		*parms;
 
 	// remote views can be reused in a single frame
@@ -798,13 +798,22 @@ bool R_GenerateSubViews( void ) {
 	}
 
 	static bool dontReenter = false;
-	if ( !dontReenter && gameLocal.portalSkyEnt.GetEntity() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) && g_enablePortalSky.GetBool() 
-		&& !tr.viewDef->renderWorld->mapName.IsEmpty()  // FIXME a better way to check for RenderWindow views? (compass, etc)
-	) {
+	if ( !dontReenter ) {
 		dontReenter = true;
 		idScreenRect sc;
-		R_PortalRender( skySurf, NULL, sc ); // even if skySurf null
-		subviews = true;
+
+		if ( tr.guiModel->hasXrayStage ) {
+			R_XrayRender( NULL, (textureStage_t*) tr.guiModel->hasXrayStage, sc );
+			subviews = true;
+		}
+
+		if ( gameLocal.portalSkyEnt.GetEntity() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) && g_enablePortalSky.GetBool()
+			&& !tr.viewDef->renderWorld->mapName.IsEmpty()  // FIXME a better way to check for RenderWindow views? (compass, etc)
+			) {
+			R_PortalRender( skySurf, NULL, sc ); // even if skySurf null
+			subviews = true;
+		}
+
 		dontReenter = false;
 	}
 
