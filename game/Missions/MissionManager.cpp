@@ -197,7 +197,7 @@ CModInfoPtr CMissionManager::GetModInfo(const idStr& name)
 	return _missionDB->GetModInfo(name);
 }
 
-void CMissionManager::CleanupModFolder(const idStr& name)
+/*void CMissionManager::CleanupModFolder(const idStr& name)
 {
 	CModInfoPtr info = GetModInfo(name);
 
@@ -241,7 +241,7 @@ void CMissionManager::CleanupModFolder(const idStr& name)
 	}
 
 	info->ClearModFolderSize();
-}
+}*/
 
 void CMissionManager::OnMissionStart()
 {
