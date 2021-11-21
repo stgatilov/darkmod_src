@@ -1576,9 +1576,9 @@ void RB_ShowLightScissors( void ) {
 RB_ShowLights
 
 Visualize all light volumes used in the current scene
-r_showLights 1	: just print volumes numbers, highlighting ones covering the view
-r_showLights 2	: also draw planes of each volume
-r_showLights 3	: also draw edges of each volume
+r_showLights bit 1	: print volumes numbers, highlighting ones covering the view
+r_showLights bit 2	: draw planes of each volume
+r_showLights bit 3	: draw edges of each volume
 ==============
 */
 void RB_ShowLights( void ) {
@@ -1588,6 +1588,12 @@ void RB_ShowLights( void ) {
 	if ( !r_showLights.GetInteger() ) {
 		return;
 	}
+	programManager->oldStageShader->Activate();
+	OldStageUniforms* oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
+	const float zero[4] = { 0, 0, 0, 0 };
+	static const float one[4] = { 1, 1, 1, 1 };
+	oldStageUniforms->colorMul.Set( one );
+	oldStageUniforms->colorAdd.Set( zero );
 
 	// all volumes are expressed in world coordinates
 	GL_CheckErrors();
@@ -1605,9 +1611,22 @@ void RB_ShowLights( void ) {
 
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
 		GL_CheckErrors();
-		//light = vLight->lightDef;
 		count++;
 		srfTriangles_t& tri = *vLight->frustumTris;
+		
+		auto drawTris = [&tri]() {
+			if ( r_glCoreProfile.GetInteger() ) {
+				RB_DrawTriangles( tri );
+			} else {
+				for ( int i = 0; i < tri.numIndexes; i += 3 ) {
+					qglBegin( GL_TRIANGLES );
+					qglVertex3fv( tri.verts[tri.indexes[i]].xyz.ToFloatPtr() );
+					qglVertex3fv( tri.verts[tri.indexes[i + 1]].xyz.ToFloatPtr() );
+					qglVertex3fv( tri.verts[tri.indexes[i + 2]].xyz.ToFloatPtr() );
+					qglEnd();
+				}
+			}
+		};
 
 		int index = backEnd.viewDef->renderWorld->lightDefs.FindIndex( vLight->lightDef );
 		
@@ -1616,14 +1635,20 @@ void RB_ShowLights( void ) {
 			vertexCache.VertexPosition( tri.ambientCache );
 
 			// depth buffered planes
-			if ( r_showLights.GetInteger() >= 3 ) {
+			if ( r_showLights.GetInteger() & 2 ) {
 				GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHMASK );
-				GL_FloatColor( 0, 0, 1, 0.25 );
+				if( vLight->lightShader->IsAmbientLight())
+					GL_FloatColor( 0, .5, .5, 0.25 );
+				else
+					if ( vLight->lightShader->LightCastsShadows() )
+						GL_FloatColor( 0, 0, 1, 0.25 );
+					else
+						GL_FloatColor( .5, 0, .5, 0.25 );
 				qglEnable( GL_DEPTH_TEST );
-				RB_DrawTriangles( tri );
+				drawTris();
 			}
 
-			if ( r_showLights.GetInteger() == 2 ) {
+			if ( r_showLights.GetInteger() & 4 ) {
 				GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK );
 				qglDisable( GL_DEPTH_TEST );
 				GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA );
@@ -1631,7 +1656,7 @@ void RB_ShowLights( void ) {
 				GL_FloatColor( c & 1, c & 2, c & 4, 0.4f );
 				qglDisable( GL_DEPTH_TEST );
 				GL_CheckErrors();
-				RB_DrawTriangles( tri );
+				drawTris();
 				GL_CheckErrors();
 				GL_FloatColor( c & 1, c & 2, c & 4 );
 				qglEnable( GL_DEPTH_TEST );
@@ -1659,7 +1684,8 @@ void RB_ShowLights( void ) {
 	GL_State( GLS_DEFAULT );
 	GL_Cull( CT_FRONT_SIDED );
 
-	common->Printf( "%s = %i total\n", output.c_str(), count );
+	if ( r_showLights.GetInteger() & 1 )
+		common->Printf( "%s = %i total\n", output.c_str(), count );
 	GL_CheckErrors();
 }
 
