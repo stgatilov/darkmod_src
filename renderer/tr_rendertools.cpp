@@ -1619,7 +1619,7 @@ void RB_ShowLights( void ) {
 			vertexCache.VertexPosition( tri.ambientCache );
 			// depth-tested planes
 			if ( r_showLights.GetInteger() & 2 ) {
-				auto &color = vLight->lightShader->IsAmbientLight() ? idVec4( 0, .5, .5, 0.25 )
+				auto color = vLight->lightShader->IsAmbientLight() ? idVec4( 0, .5, .5, 0.25 )
 					: vLight->lightShader->LightCastsShadows() ? idVec4( 0, .5, .5, 0.25 )
 					: idVec4( .5, 0, .5, 0.25 );
 				GL_FloatColor( color );
