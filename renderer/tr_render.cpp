@@ -137,9 +137,9 @@ void RB_DrawTriangles( const srfTriangles_t &tri) {
 	}
 	int basePointer = vertexCache.GetBaseVertex();
 	if ( basePointer < 0 )
-		qglDrawElements( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes );
+		qglDrawElements( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, indexPtr );
 	else
-		qglDrawElementsBaseVertex( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, tri.indexes, basePointer );
+		qglDrawElementsBaseVertex( GL_TRIANGLES, tri.numIndexes, GL_INDEX_TYPE, indexPtr, basePointer );
 }
 
 /*
