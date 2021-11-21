@@ -60,6 +60,13 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 		qglVertex3fv( tri->verts[ tri->indexes[i] ].xyz.ToFloatPtr() );
 	}
 	qglEnd();*/
+
+	if (r_glCoreProfile.GetInteger() > 0) {
+#ifdef _DEBUG
+		common->Warning("Drawing without index buffer not supported in Core profile!");
+#endif
+		return;
+	}
 	vertexCache.UnbindIndex();
 	static vertCacheHandle_t nil;
 	vertexCache.VertexPosition( nil );
@@ -92,6 +99,14 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}
 	} else {
+		//note: this happens briefly when index cache is being resized
+		if (r_glCoreProfile.GetInteger() > 0) {
+#ifdef _DEBUG
+			common->Warning("Drawing without index buffer not supported in Core profile!");
+#endif
+			return;
+		}
+		//TODO: remove this code?
 		vertexCache.UnbindIndex();
 		if ( !surf->frontendGeo ) return;
 		indexPtr = surf->frontendGeo->indexes; // FIXME
@@ -123,6 +138,13 @@ void RB_DrawTriangles( const srfTriangles_t &tri) {
 			backEnd.pc.c_vboIndexes += tri.numIndexes;
 		}
 	} else {
+		if (r_glCoreProfile.GetInteger() > 0) {
+#ifdef _DEBUG
+			common->Warning("Drawing without index buffer not supported in Core profile!");
+#endif
+			return;
+		}
+		//TODO: remove this code?
 		vertexCache.UnbindIndex();
 		indexPtr = tri.indexes;
 	}
@@ -156,6 +178,13 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
 			backEnd.pc.c_vboIndexes += surf->numIndexes;
 		}
 	} else {
+		if (r_glCoreProfile.GetInteger() > 0) {
+#ifdef _DEBUG
+			common->Warning("Drawing without index buffer not supported in Core profile!");
+#endif
+			return;
+		}
+		//TODO: remove this code?
 		indexPtr = surf->frontendGeo->indexes; // FIXME?
 		vertexCache.UnbindIndex();
 	}
@@ -275,6 +304,13 @@ void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf ) {
 	if ( surf->indexCache.IsValid() ) {
 		indexPtr = vertexCache.IndexPosition( surf->indexCache );
 	} else {
+		if (r_glCoreProfile.GetInteger() > 0) {
+#ifdef _DEBUG
+			common->Warning("Drawing without index buffer not supported in Core profile!");
+#endif
+			return;
+		}
+		//TODO: remove this code?
 		vertexCache.UnbindIndex();
 		indexPtr = surf->frontendGeo->indexes; // FIXME
 	}
