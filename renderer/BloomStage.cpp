@@ -75,7 +75,7 @@ namespace {
 	};
 
 	void LoadBloomDownsampleShader(GLSLProgram *downsampleShader) {
-		downsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl" );
+		downsampleShader->LoadFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl" );
 		BloomDownsampleUniforms *uniforms = downsampleShader->GetUniformGroup<BloomDownsampleUniforms>();
 		uniforms->sourceTexture.Set(0);
 	}
@@ -83,26 +83,26 @@ namespace {
 	void LoadBloomDownsampleWithBrightPassShader(GLSLProgram *downsampleShader) {
 		idDict defines;
 		defines.Set( "BLOOM_BRIGHTPASS", "1" );
-		downsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl", defines );
+		downsampleShader->LoadFromFiles( "bloom.vert.glsl", "bloom_downsample.frag.glsl", defines );
 		BloomDownsampleUniforms *uniforms = downsampleShader->GetUniformGroup<BloomDownsampleUniforms>();
 		uniforms->sourceTexture.Set(0);
 	}
 
 	void LoadBloomBlurShader(GLSLProgram *blurShader) {
-		blurShader->InitFromFiles( "bloom.vert.glsl", "bloom_blur.frag.glsl" );
+		blurShader->LoadFromFiles( "bloom.vert.glsl", "bloom_blur.frag.glsl" );
 		BloomBlurUniforms *uniforms = blurShader->GetUniformGroup<BloomBlurUniforms>();
 		uniforms->source.Set(0);
 	}
 
 	void LoadBloomUpsampleShader(GLSLProgram *upsampleShader) {
-		upsampleShader->InitFromFiles( "bloom.vert.glsl", "bloom_upsample.frag.glsl" );
+		upsampleShader->LoadFromFiles( "bloom.vert.glsl", "bloom_upsample.frag.glsl" );
 		BloomUpsampleUniforms *uniforms = upsampleShader->GetUniformGroup<BloomUpsampleUniforms>();
 		uniforms->blurredTexture.Set(0);
 		uniforms->detailTexture.Set(1);
 	}
 
 	void LoadBloomApplyShader(GLSLProgram *applyShader) {
-		applyShader->InitFromFiles( "bloom.vert.glsl", "bloom_apply.frag.glsl" );
+		applyShader->LoadFromFiles( "bloom.vert.glsl", "bloom_apply.frag.glsl" );
 		BloomApplyUniforms *uniforms = applyShader->GetUniformGroup<BloomApplyUniforms>();
 		uniforms->texture.Set(0);
 		uniforms->bloomTex.Set(1);
