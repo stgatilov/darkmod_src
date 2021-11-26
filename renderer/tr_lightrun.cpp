@@ -320,7 +320,40 @@ void R_FreeLightDefFrustum( idRenderLightLocal *ldef ) {
 	}
 }
 
-//anon end
+/*
+====================
+R_ConvertLightProjectionNewToOld
+
+stgatilov: there are two conventions about how to store projection matrix:
+  old = Doom 3: X and Y are divided by Z, W gives falloff parameter (scaled)
+  new = D3BFG: X and Y are divided by W, Z gives falloff parameter (0..1)
+====================
+*/
+static void R_ConvertLightProjectionNewToOld(const idRenderMatrix &newProject, idPlane oldProject[4], double zScale)
+{
+	// set the old style light projection where Z and W are flipped and
+	// for projected lights lightProject[3] is divided by ( zNear + zFar )
+	oldProject[0][0] = newProject[0][0];
+	oldProject[0][1] = newProject[0][1];
+	oldProject[0][2] = newProject[0][2];
+	oldProject[0][3] = newProject[0][3];
+
+	oldProject[1][0] = newProject[1][0];
+	oldProject[1][1] = newProject[1][1];
+	oldProject[1][2] = newProject[1][2];
+	oldProject[1][3] = newProject[1][3];
+
+	oldProject[2][0] = newProject[3][0];
+	oldProject[2][1] = newProject[3][1];
+	oldProject[2][2] = newProject[3][2];
+	oldProject[2][3] = newProject[3][3];
+
+	oldProject[3][0] = newProject[2][0] * zScale;
+	oldProject[3][1] = newProject[2][1] * zScale;
+	oldProject[3][2] = newProject[2][2] * zScale;
+	oldProject[3][3] = newProject[2][3] * zScale;
+}
+
 /*
 ========================
 R_ComputePointLightProjectionMatrix
@@ -328,7 +361,7 @@ R_ComputePointLightProjectionMatrix
 Computes the light projection matrix for a point light.
 ========================
 */
-static float R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject)
+static void R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject, idPlane oldProject[4])
 {
 	assert(light->parms.pointLight);
 
@@ -343,11 +376,8 @@ static float R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRe
 	localProject[2][3] = 0.5f;
 	localProject[3][3] = 1.0f;	// identity perspective
 
-	return 1.0f;
+	R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f);
 }
-
-static const float SPOT_LIGHT_MIN_Z_NEAR = 8.0f;
-static const float SPOT_LIGHT_MIN_Z_FAR = 16.0f;
 
 /*
 ========================
@@ -356,7 +386,7 @@ R_ComputeSpotLightProjectionMatrix
 Computes the light projection matrix for a spot light.
 ========================
 */
-static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject)
+static void R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject, idPlane oldProject[4])
 {
 	const float targetDistSqr = light->parms.target.LengthSqr();
 	const float invTargetDist = idMath::InvSqrt(targetDistSqr);
@@ -380,6 +410,9 @@ static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRen
 	localProject[3][1] = normalizedTarget[1];
 	localProject[3][2] = normalizedTarget[2];
 	localProject[3][3] = 0.0f;
+
+	static const float SPOT_LIGHT_MIN_Z_NEAR = 8.0f;
+	static const float SPOT_LIGHT_MIN_Z_FAR = 16.0f;
 
 	// Set the falloff vector.
 	// This is similar to the Z calculation for depth buffering, which means that the
@@ -409,7 +442,7 @@ static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRen
 	localProject[1][2] += ofs1 * localProject[3][2];
 	localProject[1][3] += ofs1 * localProject[3][3];
 
-	return 1.0f / ( zNear + zFar );
+	R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f / ( zNear + zFar ));
 }
 
 /*
@@ -419,7 +452,7 @@ R_ComputeParallelLightProjectionMatrix
 Computes the light projection matrix for a parallel light.
 ========================
 */
-static float R_ComputeParallelLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject)
+static void R_ComputeParallelLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject, idPlane oldProject[4])
 {
 	assert(light->parms.parallel);
 
@@ -434,7 +467,7 @@ static float R_ComputeParallelLightProjectionMatrix(idRenderLightLocal* light, i
 	localProject[2][3] = 0.5f;
 	localProject[3][3] = 1.0f;	// identity perspective
 
-	return 1.0f;
+	R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f);
 }
 
 /*
@@ -478,37 +511,14 @@ void R_DeriveLightData( idRenderLightLocal *light ) {
 	// compute the light projection matrix
 	// ------------------------------------
 
-	idRenderMatrix localProject;
-	float zScale = 1.0f;
+	idRenderMatrix localProject;	// new=BFG style projection matrix
 	if ( light->parms.parallel ) {
-		zScale = R_ComputeParallelLightProjectionMatrix( light, localProject );
+		R_ComputeParallelLightProjectionMatrix( light, localProject, light->lightProject );
 	} else if ( light->parms.pointLight ) {
-		zScale = R_ComputePointLightProjectionMatrix( light, localProject );
+		R_ComputePointLightProjectionMatrix( light, localProject, light->lightProject );
 	} else {
-		zScale = R_ComputeSpotLightProjectionMatrix( light, localProject );
+		 R_ComputeSpotLightProjectionMatrix( light, localProject, light->lightProject );
 	}
-
-	// set the old style light projection where Z and W are flipped and
-	// for projected lights lightProject[3] is divided by ( zNear + zFar )
-	light->lightProject[0][0] = localProject[0][0];
-	light->lightProject[0][1] = localProject[0][1];
-	light->lightProject[0][2] = localProject[0][2];
-	light->lightProject[0][3] = localProject[0][3];
-
-	light->lightProject[1][0] = localProject[1][0];
-	light->lightProject[1][1] = localProject[1][1];
-	light->lightProject[1][2] = localProject[1][2];
-	light->lightProject[1][3] = localProject[1][3];
-
-	light->lightProject[2][0] = localProject[3][0];
-	light->lightProject[2][1] = localProject[3][1];
-	light->lightProject[2][2] = localProject[3][2];
-	light->lightProject[2][3] = localProject[3][3];
-
-	light->lightProject[3][0] = localProject[2][0] * zScale;
-	light->lightProject[3][1] = localProject[2][1] * zScale;
-	light->lightProject[3][2] = localProject[2][2] * zScale;
-	light->lightProject[3][3] = localProject[2][3] * zScale;
 
 	// set the frustum planes
 	R_SetLightFrustum( light->lightProject, light->frustum );
