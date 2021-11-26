@@ -379,6 +379,14 @@ static void R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRen
 	R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f);
 }
 
+idCVar r_spotlightBehavior(
+	"r_spotlightBehavior", "-1", CVAR_INTEGER | CVAR_RENDERER,
+	"Defines how to compute light frustum and falloff for projected/spotlights:\n"
+	" -1 --- decide automatically (TODO)\n"
+	"  0  --- use behavior as in Doom 3 and TDM 2.04 and before\n"
+	"  1  --- use behavior as in Doom 3 BFG and in TDM 2.05 and later",
+-1, 1);
+
 /*
 ========================
 R_ComputeSpotLightProjectionMatrix
@@ -388,61 +396,178 @@ Computes the light projection matrix for a spot light.
 */
 static void R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject, idPlane oldProject[4])
 {
-	const float targetDistSqr = light->parms.target.LengthSqr();
-	const float invTargetDist = idMath::InvSqrt(targetDistSqr);
-	const float targetDist = invTargetDist * targetDistSqr;
-
-	const idVec3 normalizedTarget = light->parms.target * invTargetDist;
-	const idVec3 normalizedRight = light->parms.right * (0.5f * targetDist / light->parms.right.LengthSqr());
-	const idVec3 normalizedUp = light->parms.up * (-0.5f * targetDist / light->parms.up.LengthSqr());
-
-	localProject[0][0] = normalizedRight[0];
-	localProject[0][1] = normalizedRight[1];
-	localProject[0][2] = normalizedRight[2];
-	localProject[0][3] = 0.0f;
-
-	localProject[1][0] = normalizedUp[0];
-	localProject[1][1] = normalizedUp[1];
-	localProject[1][2] = normalizedUp[2];
-	localProject[1][3] = 0.0f;
-
-	localProject[3][0] = normalizedTarget[0];
-	localProject[3][1] = normalizedTarget[1];
-	localProject[3][2] = normalizedTarget[2];
-	localProject[3][3] = 0.0f;
-
 	static const float SPOT_LIGHT_MIN_Z_NEAR = 8.0f;
 	static const float SPOT_LIGHT_MIN_Z_FAR = 16.0f;
 
-	// Set the falloff vector.
-	// This is similar to the Z calculation for depth buffering, which means that the
-	// mapped texture is going to be perspective distorted heavily towards the zero end.
-	const float zNear = Max(light->parms.start * normalizedTarget, SPOT_LIGHT_MIN_Z_NEAR);
-	const float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR);
-	const float zScale = (zNear + zFar) / zFar;
+	if (r_spotlightBehavior.GetInteger() == 0) {
+		// stgatilov: that's how R_DeriveLightData calls R_SetLightProject in Doom 3
+		const idVec3 rightVector = light->parms.right;
+		const idVec3 upVector = light->parms.up;
+		const idVec3 target = light->parms.target;
+		const idVec3 origin = vec3_origin;
+		const idVec3 start = light->parms.start;
+		const idVec3 stop = light->parms.end;
+		idPlane *lightProject = oldProject;
 
-	localProject[2][0] = normalizedTarget[0] * zScale;
-	localProject[2][1] = normalizedTarget[1] * zScale;
-	localProject[2][2] = normalizedTarget[2] * zScale;
-	localProject[2][3] = -zNear * zScale;
+		// stgatilov: original function R_SetLightProject from Doom 3
+		float		dist, distSE;
+		float		scale;
+		float		rLen, uLen;
+		idVec3		normal, startToEnd;
+		float		ofs;
+		idVec3		right, up;
+		idVec3		startGlobal;
+		idVec4		targetGlobal;
 
-	// now offset to the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range
-	idVec4 projectedTarget;
-	localProject.TransformPoint(light->parms.target, projectedTarget);
+		right = rightVector;
+		rLen = right.Normalize();
+		up = upVector;
+		uLen = up.Normalize();
+		normal = up.Cross( right );
+		//normal = right.Cross( up );
+		normal.Normalize();
 
-	const float ofs0 = 0.5f - projectedTarget[0] / projectedTarget[3];
-	localProject[0][0] += ofs0 * localProject[3][0];
-	localProject[0][1] += ofs0 * localProject[3][1];
-	localProject[0][2] += ofs0 * localProject[3][2];
-	localProject[0][3] += ofs0 * localProject[3][3];
+		dist = target * normal; //  - ( origin * normal );
+		if ( dist < 0 ) {
+			dist = -dist;
+			normal = -normal;
+		}
 
-	const float ofs1 = 0.5f - projectedTarget[1] / projectedTarget[3];
-	localProject[1][0] += ofs1 * localProject[3][0];
-	localProject[1][1] += ofs1 * localProject[3][1];
-	localProject[1][2] += ofs1 * localProject[3][2];
-	localProject[1][3] += ofs1 * localProject[3][3];
+		scale = ( 0.5f * dist ) / rLen;
+		right *= scale;
+		scale = -( 0.5f * dist ) / uLen;
+		up *= scale;
 
-	R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f / ( zNear + zFar ));
+		lightProject[2] = normal;
+		lightProject[2][3] = -( origin * lightProject[2].Normal() );
+
+		lightProject[0] = right;
+		lightProject[0][3] = -( origin * lightProject[0].Normal() );
+
+		lightProject[1] = up;
+		lightProject[1][3] = -( origin * lightProject[1].Normal() );
+
+		// now offset to center
+		targetGlobal.ToVec3() = target + origin;
+		targetGlobal[3] = 1;
+		ofs = 0.5f - ( targetGlobal * lightProject[0].ToVec4() ) / ( targetGlobal * lightProject[2].ToVec4() );
+		lightProject[0].ToVec4() += ofs * lightProject[2].ToVec4();
+		ofs = 0.5f - ( targetGlobal * lightProject[1].ToVec4() ) / ( targetGlobal * lightProject[2].ToVec4() );
+		lightProject[1].ToVec4() += ofs * lightProject[2].ToVec4();
+
+		// set the falloff vector
+		startToEnd = stop - start;
+		distSE = startToEnd.Normalize();
+		if ( distSE <= 0 ) {
+			distSE = 1;
+		}
+		lightProject[3] = startToEnd * ( 1.0f / distSE );
+		startGlobal = start + origin;
+		lightProject[3][3] = -( startGlobal * lightProject[3].Normal() );
+
+		// stgatilov: build frustum planes and polytope
+		idPlane polytopePlanes[6];
+		R_SetLightFrustum( lightProject, polytopePlanes );
+		idVec3 verts[8];
+		if ( !R_PolytopeSurfaceFrustumLike( polytopePlanes, verts, NULL ) ) {
+			// start/end vectors are bad: they don't bound the frustum!
+			// replace start = 0, end = normal and rebuild
+			lightProject[3] = normal * ( 1.0f / dist );
+			lightProject[3][3] = 0.0f;
+			R_SetLightFrustum( lightProject, polytopePlanes );
+			bool ok = R_PolytopeSurfaceFrustumLike( polytopePlanes, verts, NULL );
+			assert(ok);
+		}
+
+		// stgatilov: find near/far planes bounding the polytope
+		float zNear = idMath::INFINITY;
+		float zFar = -idMath::INFINITY;
+		for (int v = 0; v < 8; v++) {
+			float dot = verts[v] * normal;
+			zNear = idMath::Fmin(zNear, dot);
+			zFar = idMath::Fmax(zFar, dot);
+		}
+		zNear = idMath::Fmax(zNear, SPOT_LIGHT_MIN_Z_NEAR);
+		zFar -= zNear;	//zFar is actually (far - near) distance in BFG code
+		zFar = idMath::Fmax(zFar, SPOT_LIGHT_MIN_Z_FAR);
+
+		// stgatilov: build BFG-style projection matrix defining a bounding frustum
+		// note: the lit polytope may be smaller in general case
+		const float zScale = (zNear + zFar) / zFar;
+		localProject[0][0] = lightProject[0][0];
+		localProject[0][1] = lightProject[0][1];
+		localProject[0][2] = lightProject[0][2];
+		localProject[0][3] = lightProject[0][3];
+
+		localProject[1][0] = lightProject[1][0];
+		localProject[1][1] = lightProject[1][1];
+		localProject[1][2] = lightProject[1][2];
+		localProject[1][3] = lightProject[1][3];
+
+		localProject[3][0] = lightProject[2][0];
+		localProject[3][1] = lightProject[2][1];
+		localProject[3][2] = lightProject[2][2];
+		localProject[3][3] = lightProject[2][3];
+
+		localProject[2][0] = normal[0] * zScale;
+		localProject[2][1] = normal[1] * zScale;
+		localProject[2][2] = normal[2] * zScale;
+		localProject[2][3] = -zNear * zScale;
+	}
+	else {
+		const float targetDistSqr = light->parms.target.LengthSqr();
+		const float invTargetDist = idMath::InvSqrt(targetDistSqr);
+		const float targetDist = invTargetDist * targetDistSqr;
+
+		const idVec3 normalizedTarget = light->parms.target * invTargetDist;
+		const idVec3 normalizedRight = light->parms.right * (0.5f * targetDist / light->parms.right.LengthSqr());
+		const idVec3 normalizedUp = light->parms.up * (-0.5f * targetDist / light->parms.up.LengthSqr());
+
+		localProject[0][0] = normalizedRight[0];
+		localProject[0][1] = normalizedRight[1];
+		localProject[0][2] = normalizedRight[2];
+		localProject[0][3] = 0.0f;
+
+		localProject[1][0] = normalizedUp[0];
+		localProject[1][1] = normalizedUp[1];
+		localProject[1][2] = normalizedUp[2];
+		localProject[1][3] = 0.0f;
+
+		localProject[3][0] = normalizedTarget[0];
+		localProject[3][1] = normalizedTarget[1];
+		localProject[3][2] = normalizedTarget[2];
+		localProject[3][3] = 0.0f;
+
+		// Set the falloff vector.
+		// This is similar to the Z calculation for depth buffering, which means that the
+		// mapped texture is going to be perspective distorted heavily towards the zero end.
+		const float zNear = Max(light->parms.start * normalizedTarget, SPOT_LIGHT_MIN_Z_NEAR);
+		const float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR);
+		const float zScale = (zNear + zFar) / zFar;
+
+		localProject[2][0] = normalizedTarget[0] * zScale;
+		localProject[2][1] = normalizedTarget[1] * zScale;
+		localProject[2][2] = normalizedTarget[2] * zScale;
+		localProject[2][3] = -zNear * zScale;
+
+		// now offset to the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range
+		idVec4 projectedTarget;
+		localProject.TransformPoint(light->parms.target, projectedTarget);
+
+		const float ofs0 = 0.5f - projectedTarget[0] / projectedTarget[3];
+		localProject[0][0] += ofs0 * localProject[3][0];
+		localProject[0][1] += ofs0 * localProject[3][1];
+		localProject[0][2] += ofs0 * localProject[3][2];
+		localProject[0][3] += ofs0 * localProject[3][3];
+
+		const float ofs1 = 0.5f - projectedTarget[1] / projectedTarget[3];
+		localProject[1][0] += ofs1 * localProject[3][0];
+		localProject[1][1] += ofs1 * localProject[3][1];
+		localProject[1][2] += ofs1 * localProject[3][2];
+		localProject[1][3] += ofs1 * localProject[3][3];
+
+		R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f / ( zNear + zFar ));
+	}
 }
 
 /*
