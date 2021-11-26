@@ -97,3 +97,105 @@ srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWindi
 
 	return tri;
 }
+
+/*
+=====================
+R_PolytopeSurfaceFrustumLike
+
+stgatilov: equivalent to R_PolytopeSurface, except that:
+  1) There must be six planes forming a polytope topologically equivalent to frustum.
+    The order of planes must be exactly as in R_SetLightFrustum: s=0, t=0, s=1, t=1, near, far
+  2) The returned windings are always perfectly watertight.
+  3) If specified frustum is unbounded, then false is returned, and contents of outputs is undefined.
+  4) All output parameters are optional.
+=====================
+*/
+bool R_PolytopeSurfaceFrustumLike( const idPlane planes[6], idVec3 vertices[8], idWinding windings[6], srfTriangles_t* *surface ) {
+	// (coord idx = s,t,depth) x (side = min,max)
+	static const int PLANE_IDX[3][2] = {{0, 2}, {1, 3}, {4, 5}};	//yeah, R_SetLightFrustum order is weird
+
+	// compute all vertices as planes intersections
+	idVec3 verts[8];
+	for (int x = 0; x < 2; x++)
+		for (int y = 0; y < 2; y++)
+			for (int z = 0; z < 2; z++) {
+				const idPlane &a = planes[PLANE_IDX[0][x]];
+				const idPlane &b = planes[PLANE_IDX[1][y]];
+				const idPlane &c = planes[PLANE_IDX[2][z]];
+
+				idMat3 matr(a.Normal(), b.Normal(), c.Normal());
+				matr.TransposeSelf();	//now each normal is a row
+				idVec3 right(a.Dist(), b.Dist(), c.Dist());
+				if ( !matr.InverseSelf() )
+					return false;
+
+				int v = x + y*2 + z*4;
+				verts[v] = matr * right;
+
+				for (int p = 0; p < 6; p++) {
+					float dist = planes[p].Distance(verts[v]);
+					if (dist > ON_EPSILON)	//if outside frustum
+						return false;	//unbounded
+				}
+			}
+
+	// create index set (actually, it is compile-time constant)
+	int rectIds[6][4];
+	for (int c = 0; c < 3; c++) {
+		int a = (c + 1) % 3;
+		int b = (c + 2) % 3;
+		for (int s = 0; s < 2; s++) {
+			int *ids = rectIds[PLANE_IDX[c][s]];
+			ids[0] = (s << c);
+			ids[1] = (s << c) + (1 << a);
+			ids[2] = (s << c) + (1 << a) + (1 << b);
+			ids[3] = (s << c) + (1 << b);
+		}
+	}
+
+	if (vertices) {
+		// save vertices
+		memcpy(vertices, verts, sizeof(verts));
+	}
+
+
+	if (windings) {
+		// fill windings
+		for (int p = 0; p < 6; p++) {
+			idWinding &w = windings[p];
+			const int *ids = rectIds[p];
+			w.SetNumPoints(4);
+			for (int i = 0; i < 4; i++)
+				w[i] = verts[ids[i]];
+		}
+	}
+
+	if (surface) {
+		// create surface mesh
+		srfTriangles_t *tri = R_AllocStaticTriSurf();
+		tri->numVerts = 8;
+		tri->numIndexes = 36;
+		R_AllocStaticTriSurfVerts( tri, tri->numVerts );
+		R_AllocStaticTriSurfIndexes( tri, tri->numIndexes );
+
+		for (int v = 0; v < 8; v++) {
+			tri->verts[v].Clear();
+			tri->verts[v].xyz = verts[v];
+		}
+		for (int p = 0; p < 6; p++) {
+			const int *ids = rectIds[p];
+			tri->indexes[6 * p + 0] = ids[0];
+			tri->indexes[6 * p + 1] = ids[1];
+			tri->indexes[6 * p + 2] = ids[2];
+			tri->indexes[6 * p + 3] = ids[0];
+			tri->indexes[6 * p + 4] = ids[2];
+			tri->indexes[6 * p + 5] = ids[3];
+		}
+
+		R_BoundTriSurf( tri );
+
+		*surface = tri;
+	}
+
+	return true;
+}

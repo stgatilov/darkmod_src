@@ -1397,6 +1397,7 @@ POLYTOPE
 */
 
 srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWinding *windings );
+bool R_PolytopeSurfaceFrustumLike( const idPlane planes[6], idVec3 vertices[8], idWinding windings[6], srfTriangles_t* *surface = NULL );
 
 /*
 ============================================================
