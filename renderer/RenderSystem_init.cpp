@@ -171,7 +171,7 @@ idCVar r_showIntensity( "r_showIntensity", "0", CVAR_RENDERER | CVAR_BOOL, "draw
 idCVar r_showImages( "r_showImages", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show all images instead of rendering, 2 = show in proportional size", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2> );
 idCVar com_smp( "com_smp", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "run game modeling and renderer frontend in second thread, parallel to renderer backend" );
 idCVar r_showSmp( "r_showSmp", "0", CVAR_RENDERER | CVAR_BOOL, "show which end (front or back) is blocking" );
-idCVarInt r_showLights( "r_showLights", "0", CVAR_RENDERER, "bitmask: 0 = print volumes numbers, highlighting ones covering the view, 1 = draw planes of each volume, 2 = draw edges of each volume" );
+idCVarInt r_showLights( "r_showLights", "0", CVAR_RENDERER, "bitmask: 1 = print volumes numbers, highlighting ones covering the view, 2 = draw planes of each volume, 4 = draw edges of each volume, 8 = draw edges of BFG frustum" );
 idCVar r_showShadows( "r_showShadows", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = visualize the stencil shadow volumes, 2 = draw filled in, 3 = lines with depth test", -1, 3, idCmdSystem::ArgCompletion_Integer < -1, 3 > );
 idCVar r_showShadowCount( "r_showShadowCount", "0", CVAR_RENDERER | CVAR_INTEGER, "colors screen based on shadow volume depth complexity, >= 2 = print overdraw count based on stencil index values, 3 = only show turboshadows, 4 = only show static shadows", 0, 4, idCmdSystem::ArgCompletion_Integer<0, 4> );
 idCVar r_showLightScissors( "r_showLightScissors", "0", CVAR_RENDERER | CVAR_INTEGER, "show light scissor rectangles" );

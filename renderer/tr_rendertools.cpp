@@ -1643,6 +1643,34 @@ void RB_ShowLights( void ) {
 			GL_CheckErrors();
 		}
 
+		if ( r_showLights.GetInteger() & 8 ) {
+			// stgatilov: BFG-style frustums (may be a bit larger than normal frustums)
+			ALIGNTYPE16 frustumCorners_t corners;
+			idRenderMatrix bfgMatrix = vLight->lightDef->inverseBaseLightProject;
+			idRenderMatrix::GetFrustumCorners( corners, bfgMatrix, bounds_zeroOneCube );
+			ImmediateRendering ir;
+			auto RenderLines = [&corners,&ir]() {
+				ir.glBegin(GL_LINES);
+				for ( int v = 0; v < 8; v++ )
+					for ( int d = 0; d < 3; d++ ) {
+						int u = v ^ (1 << d);
+						if (u < v)
+							continue;
+						ir.glVertex3f(corners.x[v], corners.y[v], corners.z[v]);
+						ir.glVertex3f(corners.x[u], corners.y[u], corners.z[u]);
+					}
+				ir.glEnd();
+				ir.Flush();
+			};
+			GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_ALWAYS );
+			int c = index % 7 + 1;
+			ir.glColor4f( c & 1, c & 2, c & 4, 0.1f );
+			RenderLines();
+			GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
+			ir.glColor4f( c & 1, c & 2, c & 4, 0.3f );
+			RenderLines();
+		}
+
 		output += idStr::Fmt( " %i", index );
 		if ( vLight->viewInsideLight ) // view is in this volume
 			output +=  "i";
