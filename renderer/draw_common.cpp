@@ -1080,18 +1080,7 @@ void RB_VolumetricPass() {
 	qglDisable( GL_SCISSOR_TEST );
 
 	drawSurf_t			ds;
-	auto* frustumTris = &backEnd.vLight->frustumTrisExact;
-
-	auto extract = []( srfTriangles_t& tri, idDrawVert *verts ) {
-		for ( int i = 0; i < tri.numIndexes; i++ ) {
-			verts[i] = tri.verts[tri.indexes[i]];
-		}
-	};
-
-	idDrawVert v1[36], v2[36];
-	extract( *backEnd.vLight->frustumTris, v1 );
-	extract( backEnd.vLight->frustumTrisExact, v2 );
-
+	auto* frustumTris = backEnd.vLight->frustumTris;
 	// if we ran out of vertex cache memory, skip it
 	if ( !frustumTris->ambientCache.IsValid() ) {
 		return;
