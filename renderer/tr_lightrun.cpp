@@ -542,7 +542,10 @@ void R_DeriveLightData( idRenderLightLocal *light ) {
 
 	R_FreeLightDefFrustum( light );
 
-	light->frustumTris = R_PolytopeSurface( 6, light->frustum, light->frustumWindings );
+	//light->frustumTris = R_PolytopeSurface( 6, light->frustum, light->frustumWindings );
+	//stgatilov: specialized implementation gives perfectly precise watertight triangulation
+	bool polytopeValid = R_PolytopeSurfaceFrustumLike( light->frustum, NULL, light->frustumWindings, &light->frustumTris );
+	assert(polytopeValid);
 
 	// a projected light will have one shadowFrustum, a point light will have
 	// six unless the light center is outside the box
