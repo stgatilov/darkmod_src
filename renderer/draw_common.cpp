@@ -1080,7 +1080,8 @@ void RB_VolumetricPass() {
 	qglDisable( GL_SCISSOR_TEST );
 
 	drawSurf_t			ds;
-	auto* frustumTris = backEnd.vLight->frustumTris;
+	srfTriangles_t* frustumTris = backEnd.vLight->frustumTris;
+
 	// if we ran out of vertex cache memory, skip it
 	if ( !frustumTris->ambientCache.IsValid() ) {
 		return;

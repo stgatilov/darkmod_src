@@ -139,7 +139,18 @@ bool R_PolytopeSurfaceFrustumLike( const idPlane planes[6], idVec3 vertices[8], 
 				}
 			}
 
-	// create index set (actually, it is compile-time constant)
+	//check if X/Y/Z planes are oriented right-handedly
+	bool leftHanded = false;
+	{
+		const idPlane &a = planes[PLANE_IDX[0][1]];
+		const idPlane &b = planes[PLANE_IDX[1][1]];
+		const idPlane &c = planes[PLANE_IDX[2][1]];
+		float triple = a.Normal().Cross(b.Normal()) * c.Normal();
+		if (triple < 0.0f)
+			leftHanded = true;
+	}
+
+	// create index set
 	int rectIds[6][4];
 	for (int c = 0; c < 3; c++) {
 		int a = (c + 1) % 3;
@@ -150,6 +161,11 @@ bool R_PolytopeSurfaceFrustumLike( const idPlane planes[6], idVec3 vertices[8], 
 			ids[1] = (s << c) + (1 << a);
 			ids[2] = (s << c) + (1 << a) + (1 << b);
 			ids[3] = (s << c) + (1 << b);
+			// deduced via experimentation on test_5815_spotlights
+			if (s ^ int(leftHanded)) {
+				idSwap(ids[0], ids[3]);
+				idSwap(ids[1], ids[2]);
+			}
 		}
 	}
 
@@ -167,6 +183,16 @@ bool R_PolytopeSurfaceFrustumLike( const idPlane planes[6], idVec3 vertices[8], 
 			w.SetNumPoints(4);
 			for (int i = 0; i < 4; i++)
 				w[i] = verts[ids[i]];
+#if _DEBUG
+			// debug: ensure that windings are oriented CCW when looking from the side with plane normal
+			float area = w.GetArea();
+			if (area > 0.1f) {	// ignore singular windings
+				idPlane ccwPlane;
+				w.GetPlane(ccwPlane);
+				float dot = ccwPlane.Normal() * planes[p].Normal();
+				assert(dot > 0.0);	// should be about +1
+			}
+#endif
 		}
 	}
 
