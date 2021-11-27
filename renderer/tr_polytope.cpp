@@ -217,25 +217,7 @@ bool R_PolytopeSurfaceFrustumLike( const idPlane planes[6], idVec3 vertices[8], 
 			tri->indexes[6 * p + 4] = ids[2];
 			tri->indexes[6 * p + 5] = ids[3];
 		}
-		ALIGNTYPE16 static glIndex_t cubeIndices[] = { 0,2,1, 1,2,3, 0,1,4, 1,5,4, 1,3,7, 1,7,5, 5,7,6, 6,4,5, 3,6,7, 2,6,3, 6,0,4, 2,0,6 };
-		memcpy( tri->indexes, cubeIndices, sizeof( cubeIndices ) );
-#if 0 // debug code to test tri orientation
-		common->Printf( "Testing frustumTri's orientation (<=1 red vertices per tri allowed)...\n" );
-		for ( int testIndex = 0; testIndex < 36; testIndex += 3 ) {
-			int i0 = tri->indexes[testIndex], i1 = tri->indexes[testIndex + 1], i2 = tri->indexes[testIndex + 2];
-			auto& v0 = tri->verts[i0];
-			auto& v1 = tri->verts[i1];
-			auto& v2 = tri->verts[i2];
-			idPlane plane( v0.xyz, v1.xyz, v2.xyz );
-			for ( int i = 0; i < 8; i++ ) {
-				if ( i == i0 || i == i1 || i == i2 )
-					continue;
-				float dist = plane.Distance( tri->verts[i].xyz );
-				common->Printf( "^%d%d^0", dist < 0 ? 1 : 2, i );
-			}
-			common->Printf( " for tri plane#%d%d%d\n", i0, i1, i2 );
-		}
-#endif
+
 		R_BoundTriSurf( tri );
 
 		*surface = tri;
