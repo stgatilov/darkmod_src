@@ -96,6 +96,7 @@ const idEventDef EV_Thread_VecLength( "vecLength", EventArgs('v', "vec", ""), 'f
 const idEventDef EV_Thread_VecDotProduct( "DotProduct", EventArgs('v', "vec1", "", 'v', "vec2", ""), 'f', "Returns the dot product of the two vectors.");
 const idEventDef EV_Thread_VecCrossProduct( "CrossProduct", EventArgs('v', "vec1", "", 'v', "vec2", ""), 'v', "Returns the cross product of the two vectors.");
 const idEventDef EV_Thread_VecToAngles( "VecToAngles", EventArgs('v', "vec", ""), 'v', "Returns Euler angles for the given direction.");
+const idEventDef EV_Thread_VecRotate( "VecRotate", EventArgs('v', "vector", "", 'v', "angles", ""), 'v', "Rotates a vector by the specified angles.");
 const idEventDef EV_Thread_OnSignal( "onSignal", EventArgs('d', "signalNum", "", 'e', "ent", "", 's', "functionName", ""), EV_RETURNS_VOID, "Sets a script callback function for when the given signal is raised on the given entity.");
 const idEventDef EV_Thread_ClearSignal( "clearSignalThread", EventArgs('d', "signalNum", "", 'e', "ent", ""), EV_RETURNS_VOID, "Clears the script callback function set for when the given signal is raised on the given entity.");
 const idEventDef EV_Thread_SetCamera( "setCamera", EventArgs('e', "cameraEnt", ""), EV_RETURNS_VOID, "Turns over view control to the given camera entity.");
@@ -314,7 +315,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetPersistantVector,	idThread::Event_GetPersistantVector )
 
 	EVENT( EV_Thread_GetCurrentMissionNum,	idThread::Event_GetCurrentMissionNum )
-	EVENT( EV_Thread_GetTDMVersion,		idThread::Event_GetTDMVersion )
+	EVENT( EV_Thread_GetTDMVersion,			idThread::Event_GetTDMVersion )
 
 	EVENT( EV_Thread_AngToForward,			idThread::Event_AngToForward )
 	EVENT( EV_Thread_AngToRight,			idThread::Event_AngToRight )
@@ -323,16 +324,17 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_ASine,					idThread::Event_GetASine ) // grayman #4882
 	EVENT( EV_Thread_Cosine,				idThread::Event_GetCosine )
 	EVENT( EV_Thread_ACosine,				idThread::Event_GetACosine ) // grayman #4882
-	EVENT( EV_Thread_Log,				idThread::Event_GetLog )
-	EVENT( EV_Thread_Pow,				idThread::Event_GetPow )
-	EVENT( EV_Thread_Floor,				idThread::Event_GetFloor )
-	EVENT( EV_Thread_Ceil,				idThread::Event_GetCeil )
+	EVENT( EV_Thread_Log,					idThread::Event_GetLog )
+	EVENT( EV_Thread_Pow,					idThread::Event_GetPow )
+	EVENT( EV_Thread_Floor,					idThread::Event_GetFloor )
+	EVENT( EV_Thread_Ceil,					idThread::Event_GetCeil )
 	EVENT( EV_Thread_SquareRoot,			idThread::Event_GetSquareRoot )
 	EVENT( EV_Thread_Normalize,				idThread::Event_VecNormalize )
 	EVENT( EV_Thread_VecLength,				idThread::Event_VecLength )
 	EVENT( EV_Thread_VecDotProduct,			idThread::Event_VecDotProduct )
 	EVENT( EV_Thread_VecCrossProduct,		idThread::Event_VecCrossProduct )
 	EVENT( EV_Thread_VecToAngles,			idThread::Event_VecToAngles )
+	EVENT( EV_Thread_VecRotate,				idThread::Event_VecRotate )
 	EVENT( EV_Thread_OnSignal,				idThread::Event_OnSignal )
 	EVENT( EV_Thread_ClearSignal,			idThread::Event_ClearSignalThread )
 	EVENT( EV_Thread_SetCamera,				idThread::Event_SetCamera )
@@ -1655,6 +1657,19 @@ idThread::Event_VecToAngles
 void idThread::Event_VecToAngles( idVec3 &vec ) {
 	idAngles ang = vec.ToAngles();
 	ReturnVector( idVec3( ang[0], ang[1], ang[2] ) );
+}
+
+/*
+================
+idThread::Event_VecRotate
+================
+*/
+void idThread::Event_VecRotate( idVec3 &vector, idAngles &angles ) {
+
+	idMat3 axis		= angles.ToMat3();
+	idVec3 new_vec	= vector * axis;
+
+	ReturnVector( new_vec );
 }
 
 /*
