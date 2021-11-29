@@ -281,6 +281,8 @@ const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", EventArgs(
 
 const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFromWorldspawn", EventArgs(), EV_RETURNS_VOID, "");
 
+const idEventDef EV_Player_GetCalibratedLightgemValue( "getCalibratedLightgemValue", EventArgs(), 'f', "Returns the calibrated light gem value.");
+
 // greebo: Changes the projectile entityDef name of the given weapon (e.g. "broadhead").
 const idEventDef EV_ChangeWeaponProjectile("changeWeaponProjectile", EventArgs('s', "weaponName", "", 's', "projectileDefName", ""), EV_RETURNS_VOID, 
 		"Changes the projectile entityDef name of the given weapon (e.g. \"broadhead\")\n" \
@@ -423,8 +425,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 	EVENT( EV_Player_WasDamaged,			idPlayer::Event_WasDamaged )
 
-	EVENT( EV_Player_SetLightgemModifier,	idPlayer::Event_SetLightgemModifier )
-	EVENT( EV_ReadLightgemModifierFromWorldspawn, idPlayer::Event_ReadLightgemModifierFromWorldspawn )
+	EVENT( EV_Player_SetLightgemModifier,			idPlayer::Event_SetLightgemModifier )
+	EVENT( EV_ReadLightgemModifierFromWorldspawn,	idPlayer::Event_ReadLightgemModifierFromWorldspawn )
+	EVENT( EV_Player_GetCalibratedLightgemValue,	idPlayer::Event_GetCalibratedLightgemValue )
 
 	EVENT( EV_Player_StartZoom,				idPlayer::Event_StartZoom )
 	EVENT( EV_Player_EndZoom,				idPlayer::Event_EndZoom )
@@ -8760,6 +8763,40 @@ idPlayer::Event_SetViewAngles
 */
 void idPlayer::Event_SetViewAngles( const idVec3* angles ) {
 	SetViewAngles( idAngles( angles->x, angles->y, angles->z ) );
+}
+
+/*
+================
+idPlayer::GetCalibratedLightgemValue
+================
+*/
+void idPlayer::Event_GetCalibratedLightgemValue( void ) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if ( player == NULL )
+	{
+		idThread::ReturnFloat(0.0f);
+	}
+
+	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
+
+	float term0 = -0.03f; // grayman #3063 - Wiki (http://wiki.thedarkmod.com/index.php?title=Visual_scan) says -0.03f, and angua says this is what it's supposed to be
+//	float term0 = -0.003f;
+	float term1 = 0.03f * lgem;
+	float term2 = 0.001f * idMath::Pow16(lgem, 2);
+	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
+	float term4 = -0.000011f * idMath::Pow16(lgem, 4);
+	float term5 = 0.0000001892f * idMath::Pow16(lgem, 5);
+
+	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
+
+	/* grayman #3492 - allow values > 1
+	if (clampVal > 1)
+	{
+		clampVal = 1;
+	}
+	*/
+
+	idThread::ReturnFloat(clampVal);
 }
 
 /*

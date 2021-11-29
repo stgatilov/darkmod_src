@@ -57,6 +57,7 @@ extern const idEventDef EV_TriggerMissionEnd;
 extern const idEventDef EV_Player_GetLocation;
 extern const idEventDef EV_Player_GetFrobbed;
 extern const idEventDef EV_Player_SetFrobOnlyUsedByInv;
+extern const idEventDef EV_Player_GetCalibratedLightgemValue;
 
 // tels: #3282
 extern const idEventDef EV_Player_GetShouldered;
@@ -1303,8 +1304,8 @@ private:
 	void					Event_Gibbed( void );
 	void					Event_GetIdealWeapon( void );
 	void					Event_RopeRemovalCleanup( idEntity *RopeEnt );
-
-
+	void					Event_GetCalibratedLightgemValue( void );
+	
 /**
 * TDM Events
 **/
