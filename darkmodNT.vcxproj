@@ -265,7 +265,9 @@
       <AdditionalOptions />
     </Link>
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
+      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 7 exit 0 else exit %errorlevel%
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
