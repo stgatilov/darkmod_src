@@ -338,7 +338,7 @@ static void R_BlackImage( idImage *image ) {
 	                      TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 }
 
-static void R_RGBA8Image( idImage *image ) {
+void R_RGBA8Image( idImage *image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	memset( data, 0, sizeof( data ) );

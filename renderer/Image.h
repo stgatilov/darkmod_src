@@ -472,6 +472,7 @@ void R_LoadCompressedImage( const char *name, imageCompressedData_t **pic, ID_TI
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
 void R_MakeAmbientMap( MakeAmbientMapParam param );
 void R_LoadImageData( idImage &image );
+void R_RGBA8Image( idImage* image );
 
 /*
 ====================================================================

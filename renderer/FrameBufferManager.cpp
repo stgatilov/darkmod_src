@@ -272,9 +272,9 @@ void FrameBufferManager::CreateGui( FrameBuffer *gui ) {
 	gui->AddColorRenderTexture( 0, globalImages->guiRenderImage );
 }
 
-void FrameBufferManager::CopyRender( idImage *image, int x, int y, int imageWidth, int imageHeight ) {
+void FrameBufferManager::CopyRender( idImage* image, int x, int y, int imageWidth, int imageHeight ) {
 	if ( image->texnum == idImage::TEXTURE_NOT_LOADED ) // 5257
-		image->MakeDefault();
+		R_RGBA8Image( image ); // image->MakeDefault() can produce a compressed image, unsuitable for copying into
 	image->Bind();
 	if ( activeFbo == primaryFbo || activeFbo == resolveFbo ) {
 		x *= r_fboResolution.GetFloat();
@@ -283,15 +283,27 @@ void FrameBufferManager::CopyRender( idImage *image, int x, int y, int imageWidt
 		imageHeight *= r_fboResolution.GetFloat();
 	}
 
+	GL_CheckErrors();
 	if ( image->uploadWidth != imageWidth || image->uploadHeight != imageHeight ) {
 		image->uploadWidth = imageWidth;
 		image->uploadHeight = imageHeight;
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, x, y, imageWidth, imageHeight, 0 );
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RED, x, y, imageWidth, imageHeight, 0 );
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 	}
+	GL_CheckErrors();
+#if _DEBUG
+	if ( 1 ) {
+		int w, h, f;
+		qglGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w );
+		image->uploadWidth = w;
+		qglGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h );
+		image->uploadHeight = h;
+		qglGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &f );
+	}
+#endif
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 

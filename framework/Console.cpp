@@ -353,6 +353,8 @@ void idConsoleLocal::Init( void ) {
 
 	cmdSystem->AddCommand( "clear", Con_Clear_f, CMD_FL_SYSTEM, "clears the console" );
 	cmdSystem->AddCommand( "conDump", Con_Dump_f, CMD_FL_SYSTEM, "dumps the console text to a file" );
+
+	text.SetGranularity( 1024 );
 }
 
 /*
