@@ -380,12 +380,21 @@ static void R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRen
 }
 
 idCVar r_spotlightBehavior(
-	"r_spotlightBehavior", "-1", CVAR_INTEGER | CVAR_RENDERER,
-	"Defines how to compute light frustum and falloff for projected/spotlights:\n"
-	" -1 --- decide automatically (TODO)\n"
-	"  0  --- use behavior as in Doom 3 and TDM 2.04 and before\n"
-	"  1  --- use behavior as in Doom 3 BFG and in TDM 2.05 and later",
--1, 1);
+	"r_spotlightBehavior", "0", CVAR_INTEGER | CVAR_RENDERER,
+	"How to compute light volume & falloff for projected/spot lights (#5815):\n"
+	"  Based on Doom 3 code:\n"
+	"    0 --- as in Doom 3 and TDM from 2.00 to 2.07\n"
+	"  Based on Doom 3 BFG code:\n"
+	"    1 --- as in Doom 3 BFG\n"
+	"      falloff is 0.0 at distance = N\n"
+	"      falloff is 1.0 at distance = F + N\n"
+	"    2 --- (not matching any released version)\n"
+	"      falloff is 0.0 at distance = N\n"
+	"      falloff is 1.0 at distance = F\n"
+	"    3 --- as in TDM 2.08 and 2.09\n"
+	"      falloff is 0.0 at distance = N\n"
+	"      falloff is 1.0 at distance = F + N*N/(F+N)",
+0, 3);
 
 /*
 ========================
@@ -542,7 +551,9 @@ static void R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRend
 		// This is similar to the Z calculation for depth buffering, which means that the
 		// mapped texture is going to be perspective distorted heavily towards the zero end.
 		const float zNear = Max(light->parms.start * normalizedTarget, SPOT_LIGHT_MIN_Z_NEAR);
-		const float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR);
+		/*const*/ float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR);
+		if (r_spotlightBehavior.GetInteger() == 2)
+			zFar = Max(zFar - zNear, SPOT_LIGHT_MIN_Z_FAR);
 		const float zScale = (zNear + zFar) / zFar;
 
 		localProject[2][0] = normalizedTarget[0] * zScale;
@@ -566,7 +577,10 @@ static void R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRend
 		localProject[1][2] += ofs1 * localProject[3][2];
 		localProject[1][3] += ofs1 * localProject[3][3];
 
-		R_ConvertLightProjectionNewToOld(localProject, oldProject, 1.0f / ( zNear + zFar ));
+		float conversionScale = 1.0f / ( zNear + zFar );
+		if (r_spotlightBehavior.GetInteger() == 3)
+			conversionScale = 1.0f / zFar;
+		R_ConvertLightProjectionNewToOld(localProject, oldProject, conversionScale);
 	}
 }
 
