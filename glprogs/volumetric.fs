@@ -75,16 +75,16 @@ void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights)
 
 mat4 projMatrixInv = inverse(u_MVP[1]);
 
-// this is supposed to get the world position from the depth buffer
+// this is supposed to get the view position from the depth buffer
 vec3 ViewPosFromDepth(float depth) {
-    float z = depth * 2.0 - 1.0;
+	float z = depth * 2.0 - 1.0;
 
 	vec2 TexCoord = gl_FragCoord.xy / textureSize(s_depth, 0);
-    vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
-    vec4 viewSpacePosition = projMatrixInv * clipSpacePosition;
+	vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
+	vec4 viewSpacePosition = projMatrixInv * clipSpacePosition;
 
-    // Perspective division
-    viewSpacePosition /= viewSpacePosition.w;
+	// Perspective division
+	viewSpacePosition /= viewSpacePosition.w;
 	return viewSpacePosition.xyz;
 }
 
@@ -130,53 +130,48 @@ vec3 calcWithShadows(vec4 startPos, vec4 exitPoint) {
 }
 
 void main() {
-	fragColor = vec4(0.3); // detect leaks
-	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
-	float depth = texture2D(s_depth, wrCoord ).r;
-	
-	vec3 fixedWorldPos = worldPosition.xyz;
-	vec3 dirToViewer = -normalize(u_viewOrigin-fixedWorldPos);
-	int entriesFound = 0;
-	vec4 exitPoint = vec4(u_viewOrigin, 1);
-	// where does the fragment-viewer ray leave the light frustum?
-	for(int i=0; i<6; i++) {  // https://stackoverflow.com/questions/23975555/how-to-do-ray-plane-intersection
-		float dotnp = dot(u_lightFrustum[i], vec4(u_viewOrigin, 1));
-		float dotnv = dot(u_lightFrustum[i].xyz, dirToViewer);
-		float rayCoord = -dotnp/dotnv;
-		if(rayCoord<=0) continue;
-		vec3 intersection = rayCoord * dirToViewer + u_viewOrigin;
-		bool insideFrustum = true;
-		for(int j=0; j<6; j++) {  
-			if(i==j) continue;
-			bool insidePlane = dot(u_lightFrustum[j], vec4(intersection, 1)) < 0;
-			insideFrustum = insideFrustum && insidePlane;
-		}
-		if(insideFrustum) {
-			if(distance(intersection, u_viewOrigin) < distance(exitPoint.xyz, u_viewOrigin)) {
-				exitPoint.xyz = intersection;
-			}
-			entriesFound++;
-		}
-	}
 	// get the nearest solid surface
+	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
+	float depth = texture2D(s_depth, wrCoord).r;
 	float solidDistance = length(ViewPosFromDepth(depth));
-	if(distance(exitPoint.xyz, u_viewOrigin) >= solidDistance)
-		discard;
-	
-	// start position lies on the light frustum	
-	float fragmentDistance = distance(u_viewOrigin, fixedWorldPos);
-	vec4 startPos = vec4(fixedWorldPos, 1);
-	if(solidDistance < fragmentDistance) // frustum occluded, need to shift
-		startPos = vec4(mix(u_viewOrigin, fixedWorldPos, solidDistance / fragmentDistance), 1);
 
-	vec3 color = vec3(0);
+	//cast segment from viewer eye to the fragment
+	vec3 rayStart = u_viewOrigin;
+	vec3 rayVec = worldPosition.xyz - u_viewOrigin;
+	
+	//intersect the segment with light polytope
+	float minParam = 0.0;
+	float maxParam = 1.0;
+	for (int i = 0; i < 6; i++) {
+		float dotnp = dot(u_lightFrustum[i], vec4(rayStart, 1.0));
+		float dotnv = dot(u_lightFrustum[i].xyz, rayVec);
+		float param = -dotnp / dotnv;
+		if (dotnv > 0)
+			maxParam = min(maxParam, param);
+		else
+			minParam = max(minParam, param);
+	}
+
+	//only consider visible part (not occluded by opaque geometry)
+	float solidParam = solidDistance / length(rayVec);
+	maxParam = min(maxParam, solidParam);
+
+	if (minParam >= maxParam)
+		discard;    //no intersection
+	
+	float litDistance = (maxParam - minParam) * length(rayVec);
+	vec4 startPos = vec4(rayStart + rayVec * minParam, 1.0);
+	vec4 exitPoint = vec4(rayStart + rayVec * maxParam, 1.0);
+
+	vec3 avgColor = vec3(0.0);
 	switch (u_sampleCount) {
 	case 1:
-		color = vec3(calcCylinder(startPos, exitPoint));
+		avgColor = vec3(calcCylinder(startPos, exitPoint));
 		break;
 	default:
-		color = calcWithShadows(startPos, exitPoint);
+		avgColor = calcWithShadows(startPos, exitPoint);
 	}
 
-	fragColor.rgb = u_lightColor.rgb * vec3(color) * 5e-1;
+	float dustCoeff = 1e-3; //TODO: expose it from C++
+	fragColor.rgb = u_lightColor.rgb * avgColor * litDistance * dustCoeff;
 }

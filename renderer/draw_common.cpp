@@ -1027,6 +1027,8 @@ void RB_VolumetricPass() {
 		return;
 	bool useShadows = !( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex ) && cv_lod_bias.GetFloat() >= 2;
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
+	//out of two fragments, render the farther one
+	GL_Cull( CT_BACK_SIDED );
 
 	GL_SelectTexture( 0 );
 	auto image = backEnd.vLight->lightShader->GetStage( 0 )->texture.image;
@@ -1100,6 +1102,7 @@ void RB_VolumetricPass() {
 	GLSLProgram::Deactivate();
 
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
+	GL_Cull( CT_FRONT_SIDED );	//default?
 }
 
 /*
