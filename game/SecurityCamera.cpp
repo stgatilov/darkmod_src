@@ -799,24 +799,6 @@ renderView_t *idSecurityCamera::GetRenderView() {
 
 /*
 ================
-idSecurityCamera::GetCalibratedLightgemValue
-================
-*/
-float idSecurityCamera::GetCalibratedLightgemValue(idPlayer* player)
-{
-	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
-	float term0 = -0.03f;
-	float term1 = 0.03f * lgem;
-	float term2 = 0.001f * idMath::Pow16(lgem, 2);
-	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
-	float term4 = -0.000011f * idMath::Pow16(lgem, 4);
-	float term5 = 0.0000001892f * idMath::Pow16(lgem, 5);
-	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
-	return clampVal;
-}
-
-/*
-================
 idSecurityCamera::IsEntityHiddenByDarkness
 ================
 */
@@ -833,8 +815,8 @@ bool idSecurityCamera::IsEntityHiddenByDarkness(idPlayer* player, const float si
 
 	// Use lightgem
 		
-	// greebo: Check the visibility of the player depending on lgem and distance
-	float visFraction = GetCalibratedLightgemValue(player); // returns values in [0..1]
+	// greebo: Check the visibility of the player depending on lgem
+	float visFraction = player->GetCalibratedLightgemValue(); // returns values in [0..1]
 
 	// Very low threshold for visibility
 	if (visFraction < sightThreshold)

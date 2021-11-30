@@ -183,7 +183,6 @@ private:
 	void					UpdateColors( void );
 
 	void					Activate( idEntity* activator );
-	float					GetCalibratedLightgemValue(idPlayer* player);
 	bool					IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold);
 
 };

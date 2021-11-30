@@ -380,7 +380,7 @@ public:
 	* @returns: a float between [0...1].It is fairly high at 
 	* values above 20, fairly low below 6 and increases linearly in between.
 	**/
-	float GetCalibratedLightgemValue() const;
+	float GetVisFraction() const;
 
 	/**
 	* Checks enemies in the AI's FOV and calls Alert( "vis", amount )

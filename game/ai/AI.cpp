@@ -10779,7 +10779,7 @@ float idAI::GetVisibility( idEntity *ent ) const
 	idPlayer* player = static_cast<idPlayer*>(ent);
 
 	// this depends only on the brightness of the light gem and the AI's visual acuity
-	float clampVal = GetCalibratedLightgemValue();
+	float clampVal = GetVisFraction();
 	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
 	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
 
@@ -10892,7 +10892,7 @@ float idAI::GetVisibility( idEntity *ent ) const
 }
 #endif
 
-float idAI::GetCalibratedLightgemValue() const
+float idAI::GetVisFraction() const
 {
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	if (player == NULL)
@@ -10900,18 +10900,7 @@ float idAI::GetCalibratedLightgemValue() const
 		return 0.0f;
 	}
 
-	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
-
-	float term0 = -0.03f; // grayman #3063 - Wiki (http://wiki.thedarkmod.com/index.php?title=Visual_scan) says -0.03f, and angua says this is what it's supposed to be
-//	float term0 = -0.003f;
-	float term1 = 0.03f * lgem;
-	float term2 = 0.001f * idMath::Pow16(lgem, 2);
-	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
-	float term4 = -0.000011f * idMath::Pow16(lgem, 4);
-	float term5 = 0.0000001892f * idMath::Pow16(lgem, 5);
-
-	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
-
+	float clampVal = player->GetCalibratedLightgemValue();
 	clampVal *= GetAcuity("vis");
 
 	/* grayman #3492 - allow values > 1
@@ -10923,6 +10912,7 @@ float idAI::GetCalibratedLightgemValue() const
 	// Debug output
 	if (cv_ai_visdist_show.GetFloat() > 0) 
 	{
+		float lgem = static_cast<float>(player->GetCurrentLightgemValue());
 		idStr alertText5(lgem);
 		alertText5 = "lgem: "+ alertText5;
 		gameRenderWorld->DebugText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
@@ -11417,8 +11407,8 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 		// greebo: Commented this out, this is not suitable to detect if player is hidden in darkness
 		//float incAlert = GetPlayerVisualStimulusAmount();
 		
-		// greebo: Check the visibility of the player depending on lgem and distance
-		float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
+		// greebo: Check the visibility of the player depending on lgem and visual acuity
+		float visFraction = GetVisFraction(); // returns values in [0..1]
 /*
 		// greebo: Debug output, comment me out
 		gameRenderWorld->DebugText(idStr(visFraction), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);

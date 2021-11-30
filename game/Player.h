@@ -962,6 +962,7 @@ public:
 
 	// Returns the current lightgem value
 	int GetCurrentLightgemValue() { return m_LightgemValue; }
+	float GetCalibratedLightgemValue();
 
 	// Runs the (strong) lightgem calculation, returns the resulting value
 	int		ProcessLightgem(bool processing);
