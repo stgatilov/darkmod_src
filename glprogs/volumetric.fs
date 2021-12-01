@@ -75,20 +75,15 @@ void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights)
 	sampleWeights = fract(shadow2d * texSize + -0.5);
 }
 
-mat4 projMatrixInv = inverse(u_MVP[1]);
-
-// this is supposed to get the view position from the depth buffer
-vec3 ViewPosFromDepth(float depth) {
-	float z = depth * 2.0 - 1.0;
-
-	vec2 TexCoord = gl_FragCoord.xy / textureSize(s_depth, 0);
-	vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
-	vec4 viewSpacePosition = projMatrixInv * clipSpacePosition;
-
-	// Perspective division
-	viewSpacePosition /= viewSpacePosition.w;
-	return viewSpacePosition.xyz;
+//returns eye Z coordinate with reversed sign (monotonically increasing with depth)
+//TODO: move this to common include?...
+float depthToZ(float depth) {
+	float clipZ = 2.0 * depth - 1.0;
+	float A = u_MVP[1][2].z;
+	float B = u_MVP[1][3].z;
+	return B / (A + clipZ);
 }
+
 
 vec3 calcCylinder(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
 	vec3 midSample = rayStart + rayVec * mix(minParam, maxParam, 0.5);
@@ -126,11 +121,6 @@ vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam)
 }
 
 void main() {
-	// get the nearest solid surface
-	vec2 wrCoord = csThis.xy/csThis.w * .5 + .5;
-	float depth = texture2D(s_depth, wrCoord).r;
-	float solidDistance = length(ViewPosFromDepth(depth));
-
 	//cast segment from viewer eye to the fragment
 	vec3 rayStart = u_viewOrigin;
 	vec3 rayVec = worldPosition.xyz - u_viewOrigin;
@@ -149,7 +139,9 @@ void main() {
 	}
 
 	//only consider visible part (not occluded by opaque geometry)
-	float solidParam = solidDistance / length(rayVec);
+	vec2 depthTexCoord = gl_FragCoord.xy / textureSize(s_depth, 0);
+	float depth = texture2D(s_depth, depthTexCoord).r;
+	float solidParam = depthToZ(depth) / depthToZ(gl_FragCoord.z);
 	maxParam = min(maxParam, solidParam);
 
 	if (minParam >= maxParam)
