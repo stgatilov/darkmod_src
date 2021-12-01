@@ -14,6 +14,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 430
 
+#pragma tdm_include "tdm_lightproject.glsl"
+
 layout(binding=0) uniform sampler2D s_projection;
 layout(binding=1) uniform sampler2D s_falloff;
 layout(binding=2) uniform sampler2D s_depth;
@@ -88,43 +90,37 @@ vec3 ViewPosFromDepth(float depth) {
 	return viewSpacePosition.xyz;
 }
 
-float calcCylinder(vec4 startPos, vec4 exitPoint) {
-	// return .93;
-	vec4 p1 = startPos * u_lightProject;
-	vec4 p2 = exitPoint * u_lightProject;
-	p1.xy /= p1.z;
-	p2.xy /= p2.z;
-	vec4 mid = (p1+p2)/2;
-	float fromCenter = distance(mid.xy, vec2(0.5));
+vec3 calcCylinder(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
+	vec3 midSample = rayStart + rayVec * mix(minParam, maxParam, 0.5);
+	vec4 texCoord = computeLightTex(u_lightProject, vec4(midSample, 1));
+	float fromCenter = distance(texCoord.xy / texCoord.w, vec2(0.5));
 	float cap = 0.3 - fromCenter;
-	return cap > 0 ? pow(cap * 1e-3, .3) * 3e1 : 0;
+	return vec3(cap > 0 ? pow(cap * 1e-3, .3) * 3e1 : 0);
 } 
 
 // get N samples from the fragment-view ray inside the frustum
-vec3 calcWithShadows(vec4 startPos, vec4 exitPoint) {
-	// return vec3(1, 1, .4);
-	vec3 color = vec3(0);
-	// for(float i=0; i<1; i++) {
-	for(float i=0; i<u_sampleCount; i++) {
-		vec4 samplePos = mix(startPos, exitPoint, i/u_sampleCount);
-			// shadow test
-			vec3 light2fragment = samplePos.xyz - u_lightOrigin;
-			float lit = 1;
-			if(u_shadows) {
-				vec4 depthSamples;
-				vec2 sampleWeights;
-				ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
-				vec3 absL = abs(light2fragment);
-				float maxAbsL = max(absL.x, max(absL.y, absL.z));
-				vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
-				lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
-						mix(lit4.x, lit4.y, sampleWeights.x),
-						sampleWeights.y);
-			}
-			vec4 lightProject = samplePos * u_lightProject;
-			vec4 t0 = texture2DProj(s_projection, lightProject.xyz );
-			vec4 t1 = texture(s_falloff, vec2(lightProject.w, 0.5) );
-			color += t0.rgb * t1.rgb * lit;
+vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
+	vec3 color = vec3(0.0);
+	for (int i = 0; i < u_sampleCount; i++) { 
+		float ratio = (i + 0.5) / u_sampleCount;
+		vec3 samplePos = rayStart + rayVec * mix(minParam, maxParam, ratio);
+		// shadow test
+		vec3 light2fragment = samplePos - u_lightOrigin;
+		float lit = 1;
+		if (u_shadows) {
+			vec4 depthSamples;
+			vec2 sampleWeights;
+			ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
+			vec3 absL = abs(light2fragment);
+			float maxAbsL = max(absL.x, max(absL.y, absL.z));
+			vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
+			lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
+					mix(lit4.x, lit4.y, sampleWeights.x),
+					sampleWeights.y);
+		}
+		vec4 texCoord = computeLightTex(u_lightProject, vec4(samplePos, 1));
+		vec3 texColor = projFalloffOfNormalLight(s_projection, s_falloff, texCoord);
+		color += lit * texColor;
 	}
 	return color / u_sampleCount;
 }
@@ -159,19 +155,13 @@ void main() {
 	if (minParam >= maxParam)
 		discard;    //no intersection
 	
+	vec3 avgColor;
+	if (u_sampleCount <= 1)
+		avgColor = calcCylinder(rayStart, rayVec, minParam, maxParam);
+	else
+		avgColor = calcWithShadows(rayStart, rayVec, minParam, maxParam);
+
 	float litDistance = (maxParam - minParam) * length(rayVec);
-	vec4 startPos = vec4(rayStart + rayVec * minParam, 1.0);
-	vec4 exitPoint = vec4(rayStart + rayVec * maxParam, 1.0);
-
-	vec3 avgColor = vec3(0.0);
-	switch (u_sampleCount) {
-	case 1:
-		avgColor = vec3(calcCylinder(startPos, exitPoint));
-		break;
-	default:
-		avgColor = calcWithShadows(startPos, exitPoint);
-	}
-
 	float dustCoeff = 1e-3; //TODO: expose it from C++
 	fragColor.rgb = u_lightColor.rgb * avgColor * litDistance * dustCoeff;
 }
