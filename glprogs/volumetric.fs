@@ -84,15 +84,6 @@ float depthToZ(float depth) {
 	return B / (A + clipZ);
 }
 
-
-vec3 calcCylinder(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
-	vec3 midSample = rayStart + rayVec * mix(minParam, maxParam, 0.5);
-	vec4 texCoord = computeLightTex(u_lightProject, vec4(midSample, 1));
-	float fromCenter = distance(texCoord.xy / texCoord.w, vec2(0.5));
-	float cap = 0.3 - fromCenter;
-	return vec3(cap > 0 ? pow(cap * 1e-3, .3) * 3e1 : 0);
-} 
-
 // get N samples from the fragment-view ray inside the frustum
 vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
 	vec3 color = vec3(0.0);
@@ -148,10 +139,10 @@ void main() {
 		discard;    //no intersection
 	
 	vec3 avgColor;
-	if (u_sampleCount <= 1)
-		avgColor = calcCylinder(rayStart, rayVec, minParam, maxParam);
-	else
+	if (u_sampleCount > 0)
 		avgColor = calcWithShadows(rayStart, rayVec, minParam, maxParam);
+	else
+		avgColor = vec3(1.0);	//full-white
 
 	float litDistance = (maxParam - minParam) * length(rayVec);
 	float dustCoeff = 1e-3; //TODO: expose it from C++
