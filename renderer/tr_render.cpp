@@ -602,6 +602,7 @@ to actually render the visible surfaces for this view
 =================
 */
 void RB_BeginDrawingView( void ) {
+	auto& viewDef = backEnd.viewDef;
 	// set the modelview matrix for the viewer
 	GL_SetProjection( (float *)backEnd.viewDef->projectionMatrix );
 
@@ -633,10 +634,10 @@ void RB_BeginDrawingView( void ) {
 		qglDisable( GL_DEPTH_TEST );
 		qglDisable( GL_STENCIL_TEST );
 	}
-	if ( backEnd.viewDef && backEnd.viewDef->xrayEntityMask ) {	// allow alpha blending with background
+	if ( viewDef && ( viewDef->xrayEntityMask || viewDef->superView && viewDef->superView->hasXraySubview ) ) {
 		qglClearColor( 0, 0, 0, 0 );
 		qglClear( GL_COLOR_BUFFER_BIT );
-	}
+	} // else allow alpha blending with background
 	backEnd.glState.faceCulling = -1;		// force face culling to set next time
 
 	GL_Cull( CT_FRONT_SIDED );

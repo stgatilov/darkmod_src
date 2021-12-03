@@ -524,7 +524,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect &scisso
 	stage->image = globalImages->xrayImage;
 
 	tr.CaptureRenderToImage( *stage->image );
-	//tr.UnCrop();
+	tr.viewDef->hasXraySubview = true;
 }
 
 /*

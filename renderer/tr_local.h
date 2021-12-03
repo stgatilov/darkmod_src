@@ -465,6 +465,7 @@ typedef struct viewDef_s {
 	bool				isSubview;				// true if this view is not the main view
 	bool				isMirror;				// the portal is a mirror, invert the face culling
 	xrayEntityMask_t	xrayEntityMask;
+	bool				hasXraySubview;
 
 	bool				isEditor;
 
