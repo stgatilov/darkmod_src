@@ -1023,83 +1023,104 @@ static void RB_FogPass( bool translucent ) {
 void RB_VolumetricPass() {
 	auto vLight = backEnd.vLight;
 	
-	if ( cv_lod_bias.GetFloat() < 1 )
-		return;
-	bool useShadows = !( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex ) && cv_lod_bias.GetFloat() >= 2;
+	struct VolumetricLightUniforms : GLSLUniformGroup {
+		UNIFORM_GROUP_DEF( VolumetricLightUniforms )
+
+		DEFINE_UNIFORM( vec3, viewOrigin );
+		DEFINE_UNIFORM( vec3, lightOrigin );
+		DEFINE_UNIFORM( int, sampleCount );
+		DEFINE_UNIFORM( vec4, lightColor );
+		DEFINE_UNIFORM( sampler, depthTexture );
+
+		//light frustum and projection
+		DEFINE_UNIFORM( sampler, lightProjectionTexture );
+		DEFINE_UNIFORM( sampler, lightFalloffTexture );
+		DEFINE_UNIFORM( mat4, lightProject );
+		DEFINE_UNIFORM( vec4, lightFrustum );
+
+		//shadow mapping
+		DEFINE_UNIFORM( int, shadows );
+		DEFINE_UNIFORM( vec4, shadowRect );
+		DEFINE_UNIFORM( sampler, shadowMap );
+	};
+
+	GLSLProgram *shader = programManager->volumetricLightShader;
+	shader->Activate();
+	GL_CheckErrors();
+
+	bool useShadows = !( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex );
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
+	qglDisable( GL_SCISSOR_TEST );
 	//out of two fragments, render the farther one
 	GL_Cull( CT_BACK_SIDED );
 
-	GL_SelectTexture( 0 );
-	auto image = backEnd.vLight->lightShader->GetStage( 0 )->texture.image;
-	//auto blurred = globalImages->ImageFromFile( "fastBlur(" + image->imgName + ")", TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
-	auto blurred = globalImages->ImageFromFile( image->imgName, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
-	blurred->Bind();
+	//set modelview / projection
+	shader->GetUniformGroup<Uniforms::Global>()->Set( &backEnd.viewDef->worldSpace );
+	VolumetricLightUniforms *uniforms = shader->GetUniformGroup<VolumetricLightUniforms>();
+
+	const idMaterial* lightShader = vLight->lightShader;
+	const shaderStage_t* lightStage = lightShader->GetStage( 0 );
+
+	uniforms->lightProjectionTexture.Set( 2 );
+	GL_SelectTexture( 2 );
+	idImage *projectionImage = lightStage->texture.image;
+	projectionImage->Bind();
+	//auto blurred = globalImages->ImageFromFile( image->imgName, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
+	//blurred->Bind();
+
+	uniforms->lightFalloffTexture.Set( 1 );
 	GL_SelectTexture( 1 );
 	backEnd.vLight->falloffImage->Bind();
-	GL_SelectTexture( 2 );
+	
+	uniforms->depthTexture.Set( 3 );
+	GL_SelectTexture( 3 );
 	globalImages->currentDepthImage->Bind();
-	GL_SelectTexture( 5 );
+
+	uniforms->shadowMap.Set( 4 );
+	GL_SelectTexture( 4 );
 	globalImages->shadowAtlas->Bind();
-
-	programManager->volumetricLightShader->Activate();
-	GL_CheckErrors();
-
-	// MVP matrix uniform
-	idMat4 MV_P[2];
-	memcpy( MV_P[0].ToFloatPtr(), backEnd.viewDef->worldSpace.modelViewMatrix, sizeof( idMat4 ) );
-	memcpy( MV_P[1].ToFloatPtr(), backEnd.viewDef->projectionMatrix, sizeof( idMat4 ) );
-	qglUniformMatrix4fv( 0, 2, false, (GLfloat*) MV_P );
-	GL_CheckErrors();
 
 	// light color uniform
 	const float* lightRegs = vLight->shaderRegisters;
-	const idMaterial* lightShader = vLight->lightShader;
-	const shaderStage_t* lightStage = lightShader->GetStage( 0 );
 	idVec4 lightColor;
 	lightColor.x = backEnd.lightScale * lightRegs[lightStage->color.registers[0]];
 	lightColor.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
 	lightColor.z = backEnd.lightScale * lightRegs[lightStage->color.registers[2]];
 	lightColor.w = lightRegs[lightStage->color.registers[3]];
 
-	qglUniform3fv( 2, 1, backEnd.viewDef->renderView.vieworg.ToFloatPtr() );
-	qglUniformMatrix4fv( 3, 1, false, backEnd.vLight->lightProject[0].ToFloatPtr() );
-	qglUniform4fv( 4, 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
+	uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );
+	uniforms->lightProject.Set( backEnd.vLight->lightProject[0].ToFloatPtr() );
+	uniforms->lightFrustum.SetArray( 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
 
 	if ( useShadows ) {
 		auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
 		idVec4 v( page.x, page.y, 0, page.width );
 		v /= 6 * r_shadowMapSize.GetFloat();
-		qglUniform4fv( 10, 1, v.ToFloatPtr() );
+		uniforms->shadowRect.Set( v );
 	}
 
-	qglUniform3fv( 11, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	qglUniform1i( 12, vLight->lightShader->IsVolumetric() * ( cv_lod_bias.GetFloat() + 3 ) );
-	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
-	qglUniform1i( 15, useShadows );
+	uniforms->lightOrigin.Set( backEnd.vLight->globalLightOrigin );
+	uniforms->sampleCount.Set( vLight->lightShader->IsVolumetric() );
+	uniforms->lightColor.Set( lightColor );
+	uniforms->shadows.Set( useShadows );
 
-	qglDisable( GL_SCISSOR_TEST );
-
-	drawSurf_t			ds;
 	srfTriangles_t* frustumTris = backEnd.vLight->frustumTris;
-
 	// if we ran out of vertex cache memory, skip it
 	if ( !frustumTris->ambientCache.IsValid() ) {
 		return;
 	}
-	memset( &ds, 0, sizeof( ds ) );
 
+	drawSurf_t ds = { 0 };
 	ds.space = &backEnd.viewDef->worldSpace;
-	ds.frontendGeo = frustumTris; 
+	ds.frontendGeo = frustumTris;
 	ds.numIndexes = frustumTris->numIndexes;
 	ds.indexCache = frustumTris->indexCache;
 	ds.ambientCache = frustumTris->ambientCache;
 	ds.scissorRect = backEnd.viewDef->scissor;
 	RB_T_RenderTriangleSurface( &ds );
 
-	qglEnable( GL_SCISSOR_TEST );
 	GLSLProgram::Deactivate();
-
+	qglEnable( GL_SCISSOR_TEST );
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
 	GL_Cull( CT_FRONT_SIDED );	//default?
 }

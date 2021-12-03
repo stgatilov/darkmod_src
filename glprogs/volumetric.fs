@@ -14,25 +14,23 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 430
 
+#pragma tdm_include "tdm_transform.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
 
-layout(binding=0) uniform sampler2D s_projection;
-layout(binding=1) uniform sampler2D s_falloff;
-layout(binding=2) uniform sampler2D s_depth;
-layout(binding=5) uniform sampler2D u_shadowMap;
+uniform sampler2D u_lightProjectionTexture;
+uniform sampler2D u_lightFalloffTexture;
+uniform sampler2D u_depthTexture;
+uniform sampler2D u_shadowMap;
 
-layout (location = 0) uniform mat4[2] u_MVP;
-layout (location = 2) uniform vec3 u_viewOrigin;
-layout (location = 3) uniform mat4 u_lightProject;
-layout (location = 4) uniform vec4 u_lightFrustum[6];
-layout (location = 10) uniform vec4 u_shadowRect;
-layout (location = 11) uniform vec3 u_lightOrigin;
-layout (location = 12) uniform int u_sampleCount;
-layout (location = 14) uniform vec4 u_lightColor;
-layout (location = 15) uniform bool u_shadows;
+uniform vec3 u_viewOrigin;
+uniform mat4 u_lightProject;
+uniform vec4 u_lightFrustum[6];
+uniform vec4 u_shadowRect;
+uniform vec3 u_lightOrigin;
+uniform int u_sampleCount;
+uniform vec4 u_lightColor;
+uniform int u_shadows;
 
-in vec4 csThis;
-in vec4 lightProject;
 in vec4 worldPosition;
 
 out vec4 fragColor;
@@ -78,8 +76,8 @@ void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights)
 //TODO: move this to common include?...
 float depthToZ(float depth) {
 	float clipZ = 2.0 * depth - 1.0;
-	float A = u_MVP[1][2].z;
-	float B = u_MVP[1][3].z;
+	float A = u_projectionMatrix[2].z;
+	float B = u_projectionMatrix[3].z;
 	return B / (A + clipZ);
 }
 
@@ -92,7 +90,7 @@ vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam)
 		// shadow test
 		vec3 light2fragment = samplePos - u_lightOrigin;
 		float lit = 1;
-		if (u_shadows) {
+		if (u_shadows != 0) {
 			vec4 depthSamples;
 			vec2 sampleWeights;
 			ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
@@ -104,7 +102,7 @@ vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam)
 					sampleWeights.y);
 		}
 		vec4 texCoord = computeLightTex(u_lightProject, vec4(samplePos, 1));
-		vec3 texColor = projFalloffOfNormalLight(s_projection, s_falloff, texCoord);
+		vec3 texColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, texCoord);
 		color += lit * texColor;
 	}
 	return color / u_sampleCount;
@@ -129,8 +127,8 @@ void main() {
 	}
 
 	//only consider visible part (not occluded by opaque geometry)
-	vec2 depthTexCoord = gl_FragCoord.xy / textureSize(s_depth, 0);
-	float depth = texture2D(s_depth, depthTexCoord).r;
+	vec2 depthTexCoord = gl_FragCoord.xy / textureSize(u_depthTexture, 0);
+	float depth = texture2D(u_depthTexture, depthTexCoord).r;
 	float solidParam = depthToZ(depth) / depthToZ(gl_FragCoord.z);
 	maxParam = min(maxParam, solidParam);
 
