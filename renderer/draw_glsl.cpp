@@ -34,7 +34,6 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapUniforms )
 
 	DEFINE_UNIFORM( vec4, lightOrigin )
-	DEFINE_UNIFORM( float, lightRadius )
 	DEFINE_UNIFORM( float, alphaTest )
 	DEFINE_UNIFORM( mat4, modelMatrix )
 };
@@ -275,7 +274,6 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	lightOrigin.z = backEnd.vLight->globalLightOrigin.z;
 	lightOrigin.w = 0;
 	shadowMapUniforms->lightOrigin.Set( lightOrigin );
-	shadowMapUniforms->lightRadius.Set( GetEffectiveLightRadius() );
 	shadowMapUniforms->alphaTest.Set( -1 );
 	backEnd.currentSpace = NULL;
 

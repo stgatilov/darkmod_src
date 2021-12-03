@@ -25,7 +25,6 @@ namespace {
 	struct ShadowMapUniforms : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( ShadowMapUniforms )
 		DEFINE_UNIFORM( vec4, lightOrigin )
-		DEFINE_UNIFORM( float, lightRadius )
 	};
 }
 
@@ -79,7 +78,6 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		lightOrigin.z = vLight->globalLightOrigin.z;
 		lightOrigin.w = 0;
 		shadowMapUniforms->lightOrigin.Set( lightOrigin );
-		shadowMapUniforms->lightRadius.Set( GetEffectiveLightRadius( vLight ) );
 
 		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
 		qglViewport( page.x, page.y, 6*page.width, page.width );

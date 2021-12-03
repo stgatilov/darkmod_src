@@ -16,7 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 uniform vec4 u_lightOrigin;
 uniform mat4 u_modelMatrix;
-uniform float u_lightRadius;
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
@@ -70,7 +69,7 @@ void main() {
             vec4 frag_pos = vec4(cubicTransformations[gl_InstanceID] * gl_Position.xyz, 1);
             gl_Position.x = frag_pos.x / 6 + frag_pos.z * 5/6 - frag_pos.z / 3 * gl_InstanceID;
             gl_Position.y = frag_pos.y;
-            gl_Position.z = -frag_pos.z - 2*u_lightRadius;
+            gl_Position.z = -frag_pos.z - 2;
             gl_Position.w = -frag_pos.z;
 			gl_ClipDistance[0] = dot(frag_pos, ClipPlanes[0]);
 			gl_ClipDistance[1] = dot(frag_pos, ClipPlanes[1]);

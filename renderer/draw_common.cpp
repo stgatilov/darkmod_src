@@ -1075,7 +1075,6 @@ void RB_VolumetricPass() {
 
 	qglUniform3fv( 11, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	qglUniform1i( 12, vLight->lightShader->IsVolumetric() * ( cv_lod_bias.GetFloat() + 3 ) );
-	qglUniform1f( 13, GetEffectiveLightRadius() );
 	qglUniform4fv( 14, 1, lightColor.ToFloatPtr() );
 	qglUniform1i( 15, useShadows );
 

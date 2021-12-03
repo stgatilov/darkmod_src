@@ -72,7 +72,7 @@ float ShadowAtlasForVector(vec3 v) {
 	vec2 shadow2d = (v1.xy * .5 + vec2(.5) ) * u_shadowRect.ww + u_shadowRect.xy;
 	shadow2d.x += (u_shadowRect.w + 1./texSize.x) * faceIdx;
 	float d = textureLod(u_shadowMap, shadow2d, 0).r;
-	return u_softShadowsRadius / (1 - d);
+	return 1 / (1 - d);
 }
 #if defined(GL_ARB_texture_gather)
 vec4 ShadowAtlasForVector4(vec3 v, out vec4 sampleWeights) {
@@ -85,7 +85,7 @@ vec4 ShadowAtlasForVector4(vec3 v, out vec4 sampleWeights) {
 	vec2 wgt = fract(shadow2d * texSize - 0.5);
 	vec2 mwgt = vec2(1) - wgt;
 	sampleWeights = vec4(mwgt.x, wgt.x, wgt.x, mwgt.x) * vec4(wgt.y, wgt.y, mwgt.y, mwgt.y);
-	return vec4(u_softShadowsRadius) / (vec4(1) - d);
+	return vec4(1) / (vec4(1) - d);
 }
 #endif
 

@@ -24,7 +24,6 @@ layout (std140) uniform PerDrawCallParamsBlock {
 };
 
 uniform vec4 u_lightOrigin;
-uniform float u_lightRadius;
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
@@ -79,7 +78,7 @@ void main() {
     vec4 fragPos = vec4(cubicTransformations[gl_InstanceID] * lightSpacePos.xyz, 1);
     gl_Position.x = fragPos.x / 6 + fragPos.z * 5/6 - fragPos.z / 3 * gl_InstanceID;
     gl_Position.y = fragPos.y;
-    gl_Position.z = -fragPos.z - 2*u_lightRadius;
+    gl_Position.z = -fragPos.z - 2;
     gl_Position.w = -fragPos.z;
     gl_ClipDistance[0] = dot(fragPos, ClipPlanes[0]);
     gl_ClipDistance[1] = dot(fragPos, ClipPlanes[1]);

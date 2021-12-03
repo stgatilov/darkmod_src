@@ -28,7 +28,6 @@ layout (location = 4) uniform vec4 u_lightFrustum[6];
 layout (location = 10) uniform vec4 u_shadowRect;
 layout (location = 11) uniform vec3 u_lightOrigin;
 layout (location = 12) uniform int u_sampleCount;
-layout (location = 13) uniform float u_lightRadius;
 layout (location = 14) uniform vec4 u_lightColor;
 layout (location = 15) uniform bool u_shadows;
 
@@ -71,7 +70,7 @@ void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights)
 	shadow2d.x += u_shadowRect.w * cubeSide;
 	vec4 d = textureGather(u_shadowMap, shadow2d);
 	vec4 one = vec4(1.000001);
-	depthSamples = u_lightRadius / (one - d);
+	depthSamples = 1.0 / (one - d);
 	sampleWeights = fract(shadow2d * texSize + -0.5);
 }
 

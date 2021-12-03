@@ -20,7 +20,6 @@ uniform mat4 u_modelMatrix;
 
 uniform int u_lightCount;
 uniform float u_shadowTexelStep;
-uniform float u_lightRadius[MAX_LIGHTS];
 uniform vec3 u_lightOrigin[MAX_LIGHTS];
 uniform vec4 u_shadowRect[MAX_LIGHTS];
 
@@ -99,7 +98,7 @@ void main() {
 				clipCount[k] += float(clip[k] < 0);
 			}
 			gl_Position.xy = ShadowAtlasForVector(inCubeFaceSpace.xyz, lightNo, j);
-            gl_Position.z = (-inCubeFaceSpace.z - 2*u_lightRadius[lightNo]);
+            gl_Position.z = (-inCubeFaceSpace.z - 2);
             gl_Position.w = -inCubeFaceSpace.z;
 			// clip the triangle to the atlas page 
 			gl_ClipDistance[0] = clip.x;
