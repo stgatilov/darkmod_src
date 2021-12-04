@@ -4103,6 +4103,13 @@ void idEntity::UpdateModel( void ) {
 			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
 		}
 	}
+	/*if ( renderEntity.xrayIndex > 1 && m_Attachments.Num() ) {
+		for ( auto& attachment : m_Attachments ) {
+			if ( !attachment.ent.IsValid() )
+				continue;
+			attachment.ent.GetEntity()->renderEntity.xrayIndex = 4;
+		}
+	}*/
 }
 
 /*

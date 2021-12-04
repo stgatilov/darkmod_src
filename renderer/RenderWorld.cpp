@@ -2096,14 +2096,17 @@ R_RemapShaderBySkin
 */
 const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSkin *skin, const idMaterial *customShader ) {
 
-	// This is unlikely and fatal
-	/*if ( !shader ) {
-		return NULL;
-	}*/
-		
 	// early exit if we arnt doing anything
+
+	if ( !skin ) {
+		return shader;
+	}
+
 	// never remap surfaces that were originally nodraw, like collision hulls
-	if ( !skin || !shader->IsDrawn()) {
+	auto mapped = skin->RemapShaderBySkin( shader );
+	if ( !shader->IsDrawn() ) {
+		if ( !mapped->IsDrawn() ) // unless we want to remap to another nodraw, like suppress shadows for invisible materials
+			return mapped;
 		return shader;
 	}
 
@@ -2119,7 +2122,7 @@ const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSki
 		return customShader;
 	}
 
-	return skin->RemapShaderBySkin( shader );
+	return mapped;
 }
 
 idVec3 getBarycentricCoordinatesAt( const idVec3 &P, const idVec3 &a, const idVec3 &b, const idVec3 &c ) {

@@ -1595,6 +1595,9 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 }
 
 void R_AddPreparedSurfaces( viewEntity_t *vEntity ) {
+	idRenderEntityLocal& def = *vEntity->entityDef;
+	if ( R_CullXray( def ) )
+		return;
 	for (preparedSurf_t *it = vEntity->preparedSurfs; it; it = it->next) {
 		R_AddSurfaceToView( it->surf );
 
