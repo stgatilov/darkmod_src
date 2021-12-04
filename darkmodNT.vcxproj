@@ -228,9 +228,7 @@
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions />
     </Link>
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">
     <Link>
@@ -246,9 +244,7 @@
       <PreprocessorDefinitions>NO_MFC;ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <Link />
@@ -264,11 +260,7 @@
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions />
     </Link>
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
-if %errorlevel% leq 7 exit 0 else exit %errorlevel%
-</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
     <Link>
@@ -284,9 +276,7 @@ if %errorlevel% leq 7 exit 0 else exit %errorlevel%
       <PreprocessorDefinitions>NO_MFC;_INLINEDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -303,9 +293,7 @@ if %errorlevel% leq 7 exit 0 else exit %errorlevel%
       <PreprocessorDefinitions>NO_MFC;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -322,9 +310,7 @@ if %errorlevel% leq 7 exit 0 else exit %errorlevel%
     </ClCompile>
     <PostBuildEvent />
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
@@ -345,9 +331,7 @@ if %errorlevel% leq 7 exit 0 else exit %errorlevel%
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <PostBuildEvent />
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link />
@@ -365,9 +349,7 @@ if %errorlevel% leq 7 exit 0 else exit %errorlevel%
       <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions />
     </Link>
-    <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h" />

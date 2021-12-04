@@ -1344,6 +1344,7 @@ void R_UploadImageData( idImage& image ) {
 		common->Warning( "Couldn't load image: %s", image.imgName.c_str() );
 		if (image.loadStack)
 			image.loadStack->PrintStack(2, LoadStack::LevelOf(&image));
+		image.generatorFunction = R_RGBA8Image; // otherwise texstorage (when enabled) makes the texture immutable
 		image.MakeDefault();
 		return;
 	}

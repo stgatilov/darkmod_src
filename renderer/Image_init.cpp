@@ -301,7 +301,7 @@ void idImage::MakeDefault() {
 		}
 	}
 	GenerateImage( ( byte * )data, DEFAULT_SIZE, DEFAULT_SIZE,
-	               TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT, residency );
+	               TF_DEFAULT, true, TR_REPEAT, TD_HIGH_QUALITY, residency );
 
 	defaulted = true;
 }
