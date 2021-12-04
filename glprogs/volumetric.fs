@@ -45,7 +45,7 @@ vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam
 		vec3 samplePos = rayStart + rayVec * mix(minParam, maxParam, ratio);
 		// shadow test
 		vec3 light2fragment = samplePos - u_lightOrigin;
-		float lit;
+		float lit = 1;
 		if (u_shadows != 0) {
 			float depth = ShadowAtlasForVector(u_shadowMap, u_shadowRect, light2fragment);
 			vec3 absL = abs(light2fragment);
