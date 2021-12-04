@@ -109,6 +109,7 @@ extern const idEventDef EV_FrobHilight;
 extern const idEventDef EV_InPVS;
 extern const idEventDef EV_CanSeeEntity;
 extern const idEventDef EV_CanBeUsedBy;
+extern const idEventDef EV_SetSolid;
 
 // greebo: Script event definition for dealing damage
 extern const idEventDef EV_Damage;
@@ -621,6 +622,7 @@ public:
 	virtual void			Hide( void );
 	virtual void			Show( void );
 	bool					IsHidden( void ) const;
+	void					SetSolid( bool solidity );
 
 	/**
 	 * Tels: Only set the alpha channel to fade in/out
@@ -1678,6 +1680,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetContents();
 	void					Event_SetClipMask(const int clipMask);
 	void					Event_GetClipMask();
+	void					Event_SetSolid( bool solidity );
 
 	void					Event_SetSize( const idVec3 &mins, const idVec3 &maxs );
 	void					Event_GetSize( void );
