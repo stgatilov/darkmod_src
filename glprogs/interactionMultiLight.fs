@@ -14,6 +14,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 400
 
+#define TDM_allow_ARB_texture_gather 1
+#pragma tdm_include "tdm_shadowmaps.glsl"
+
 // vertex shader output
 in vec4 var_Position;
 in vec4 var_PositionWorld;
@@ -52,52 +55,8 @@ vec3 RawN = bumpTexel.xyz;
 vec3 N = var_TangentBitangentNormalMatrix * RawN;
 //float NdotH = clamp( dot( N, H ), 0.0, 1.0 );
 
-vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
-	vec3 v1 = abs(v);
-	float maxV = max(v1.x, max(v1.y, v1.z));
-	faceIdx = 0;
-	if(maxV == v.x) {
-		v1 = -v.zyx;
-	} 
-	else if(maxV == -v.x) {
-		v1 = v.zyx * vec3(1, -1, 1);
-		faceIdx = 1;
-	}
-	else if(maxV == v.y) {
-		v1 = v.xzy * vec3(1, 1, -1);
-		faceIdx = 2;
-	}
-	else if(maxV == -v.y) {
-		v1 = v.xzy * vec3(1, -1, 1);
-		faceIdx = 3;
-	}
-	else if(maxV == v.z) {
-		v1 = v.xyz * vec3(1, -1, -1);
-		faceIdx = 4;
-	}
-	else { //if(maxV == -v.z) {
-		v1 = v.xyz * vec3(-1, -1, 1);
-		faceIdx = 5;
-	}
-	v1.xy /= -v1.z;
-	return v1;
-}
-
 vec2 ShadowTexSize = textureSize(u_shadowMap, 0);
 vec2 ShadowTexelStep = 1/ShadowTexSize;
-
-vec4 ShadowAtlasForVector4(vec3 v, int i, out vec4 sampleWeights) {
-	int faceIdx;
-	vec3 v1 = CubeMapDirectionToUv(v, faceIdx);
-	vec2 shadow2d = (v1.xy * .5 + .5 ) * u_shadowRect[i].ww + u_shadowRect[i].xy;
-	shadow2d.x += (u_shadowRect[i].w) * faceIdx; // u_shadowRect[i].w is passed as width minus one - need to add one to get the original width value
-	vec4 d = textureGather(u_shadowMap, shadow2d);
-	vec2 wgt = fract(shadow2d * ShadowTexSize - 0.5);
-	vec2 mwgt = vec2(1) - wgt;
-	sampleWeights = vec4(mwgt.x, wgt.x, wgt.x, mwgt.x) * vec4(wgt.y, wgt.y, mwgt.y, mwgt.y);
-	vec4 blocker4 = u_softShadowsRadius[i] / (1 - d);
-	return blocker4;
-}
 
 vec3 Barycentric(vec2 p, int tri) { // https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
 	vec2 t[4] = vec2[4](
@@ -170,7 +129,8 @@ float Unshadowed(vec3 lightDir, int i) { // 0 - fully occluded, 1 - fully lit
 	float centerFragZ = maxAbsL;
 	vec4 sampleWeights;
 
-	vec4 blockerZ = ShadowAtlasForVector4(L, i, sampleWeights);
+	vec4 blockerZ = ShadowAtlasForVector4(u_shadowMap, u_shadowRect[i], L, sampleWeights);
+
 	vec4 lit4 = step(centerFragZ - errorMargin, blockerZ);
 	float lit = dot(sampleWeights, lit4);
 	return lit;

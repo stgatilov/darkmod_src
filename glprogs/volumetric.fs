@@ -12,11 +12,12 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
-#version 430
+#version 330
 
 #pragma tdm_include "tdm_utils.glsl"
 #pragma tdm_include "tdm_transform.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
+#pragma tdm_include "tdm_shadowmaps.glsl"
 
 uniform sampler2D u_lightProjectionTexture;
 uniform sampler2D u_lightFalloffTexture;
@@ -36,43 +37,6 @@ in vec4 worldPosition;
 
 out vec4 fragColor;
 
-void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights) {
-	vec3 v1 = abs(v);
-	float maxV = max(v1.x, max(v1.y, v1.z));
-	int cubeSide = 0;
-	if(maxV == v.x) {
-		v1 = -v.zyx;
-	} 
-	else if(maxV == -v.x) {
-		v1 = v.zyx * vec3(1, -1, 1);
-		cubeSide = 1;
-	}
-	else if(maxV == v.y) {
-		v1 = v.xzy * vec3(1, 1, -1);
-		cubeSide = 2;
-	}
-	else if(maxV == -v.y) {
-		v1 = v.xzy * vec3(1, -1, 1);
-		cubeSide = 3;
-	}
-	else if(maxV == v.z) {
-		v1 = v.xyz * vec3(1, -1, -1);
-		cubeSide = 4;
-	}
-	else { //if(maxV == -v.z) {
-		v1 = v.xyz * vec3(-1, -1, 1);
-		cubeSide = 5;
-	}
-	v1.xy /= -v1.z;
-	vec2 texSize = textureSize(u_shadowMap, 0);
-	vec2 shadow2d = (v1.xy * (.5-.0/texSize.x) + vec2(.5) ) * u_shadowRect.ww + u_shadowRect.xy;
-	shadow2d.x += u_shadowRect.w * cubeSide;
-	vec4 d = textureGather(u_shadowMap, shadow2d);
-	vec4 one = vec4(1.000001);
-	depthSamples = 1.0 / (one - d);
-	sampleWeights = fract(shadow2d * texSize + -0.5);
-}
-
 // get N samples from the fragment-view ray inside the frustum
 vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
 	vec3 color = vec3(0.0);
@@ -81,17 +45,12 @@ vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam)
 		vec3 samplePos = rayStart + rayVec * mix(minParam, maxParam, ratio);
 		// shadow test
 		vec3 light2fragment = samplePos - u_lightOrigin;
-		float lit = 1;
+		float lit;
 		if (u_shadows != 0) {
-			vec4 depthSamples;
-			vec2 sampleWeights;
-			ShadowAtlasForVector(normalize(light2fragment), depthSamples, sampleWeights);
+			float depth = ShadowAtlasForVector(u_shadowMap, u_shadowRect, light2fragment);
 			vec3 absL = abs(light2fragment);
 			float maxAbsL = max(absL.x, max(absL.y, absL.z));
-			vec4 lit4 = vec4(lessThan(vec4(maxAbsL), depthSamples));
-			lit = mix(mix(lit4.w, lit4.z, sampleWeights.x),
-					mix(lit4.x, lit4.y, sampleWeights.x),
-					sampleWeights.y);
+			lit = float(maxAbsL < depth);
 		}
 		vec4 texCoord = computeLightTex(u_lightProject, vec4(samplePos, 1));
 		vec3 texColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, texCoord);

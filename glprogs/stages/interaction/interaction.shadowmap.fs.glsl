@@ -15,10 +15,12 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #version 330 core
 #extension GL_ARB_texture_gather: enable
 
-#pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
-
 #define STGATILOV_OCCLUDER_SEARCH 1
 #define STGATILOV_USEGATHER 1
+
+#pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
+#define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
+#pragma tdm_include "tdm_shadowmaps.glsl"
 
 uniform bool 	u_shadowMapCullFront;
 uniform vec4	u_shadowRect;
@@ -27,60 +29,6 @@ in vec3 var_WorldLightDir;
 
 out vec4 fragColor;
 
-
-vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
-	vec3 v1 = abs(v);
-	float maxV = max(v1.x, max(v1.y, v1.z));
-	faceIdx = 0;
-	if(maxV == v.x) {
-		v1 = -v.zyx;
-	}
-	else if(maxV == -v.x) {
-		v1 = v.zyx * vec3(1, -1, 1);
-		faceIdx = 1;
-	}
-	else if(maxV == v.y) {
-		v1 = v.xzy * vec3(1, 1, -1);
-		faceIdx = 2;
-	}
-	else if(maxV == -v.y) {
-		v1 = v.xzy * vec3(1, -1, 1);
-		faceIdx = 3;
-	}
-	else if(maxV == v.z) {
-		v1 = v.xyz * vec3(1, -1, -1);
-		faceIdx = 4;
-	}
-	else { //if(maxV == -v.z) {
-		v1 = v.xyz * vec3(-1, -1, 1);
-		faceIdx = 5;
-	}
-	v1.xy /= -v1.z;
-	return v1;
-}
-float ShadowAtlasForVector(vec3 v) {
-	int faceIdx;
-	vec3 v1 = CubeMapDirectionToUv(v, faceIdx);
-	vec2 texSize = textureSize(u_shadowMap, 0);
-	vec2 shadow2d = (v1.xy * .5 + vec2(.5) ) * u_shadowRect.ww + u_shadowRect.xy;
-	shadow2d.x += (u_shadowRect.w + 1./texSize.x) * faceIdx;
-	float d = textureLod(u_shadowMap, shadow2d, 0).r;
-	return 1 / (1 - d);
-}
-#if defined(GL_ARB_texture_gather)
-vec4 ShadowAtlasForVector4(vec3 v, out vec4 sampleWeights) {
-	int faceIdx;
-	vec3 v1 = CubeMapDirectionToUv(v, faceIdx);
-	vec2 texSize = textureSize(u_shadowMap, 0);
-	vec2 shadow2d = (v1.xy * .5 + vec2(.5) ) * u_shadowRect.ww + u_shadowRect.xy;
-	shadow2d.x += (u_shadowRect.w + 1./texSize.x) * faceIdx;
-	vec4 d = textureGather(u_shadowMap, shadow2d);
-	vec2 wgt = fract(shadow2d * texSize - 0.5);
-	vec2 mwgt = vec2(1) - wgt;
-	sampleWeights = vec4(mwgt.x, wgt.x, wgt.x, mwgt.x) * vec4(wgt.y, wgt.y, mwgt.y, mwgt.y);
-	return vec4(1) / (vec4(1) - d);
-}
-#endif
 
 void UseShadowMap() {
 	float shadowMapResolution = (textureSize(u_shadowMap, 0).x * u_shadowRect.w);
@@ -108,10 +56,10 @@ void UseShadowMap() {
 	float centerFragZ = maxAbsL;
 #if STGATILOV_USEGATHER && defined(GL_ARB_texture_gather)
 	vec4 wgt;
-	vec4 centerBlockerZ = ShadowAtlasForVector4(L, wgt);
+	vec4 centerBlockerZ = ShadowAtlasForVector4(u_shadowMap, u_shadowRect, L, wgt);
 	float lit = dot(wgt, step(centerFragZ - errorMargin, centerBlockerZ));
 #else
-	float centerBlockerZ = ShadowAtlasForVector(L);
+	float centerBlockerZ = ShadowAtlasForVector(u_shadowMap, u_shadowRect, L);
 	float lit = float(centerBlockerZ >= centerFragZ - errorMargin);
 #endif
 
@@ -137,7 +85,7 @@ void UseShadowMap() {
 	for (int i = 0; i < u_softShadowsQuality; i++) {
 		//note: copy/paste from sampling code below
 		vec3 perturbedLightDir = normalize(L + searchAngle * (u_softShadowsSamples[i].x * orthoAxisX + u_softShadowsSamples[i].y * orthoAxisY));
-		float blockerZ = ShadowAtlasForVector(perturbedLightDir);
+		float blockerZ = ShadowAtlasForVector(u_shadowMap, u_shadowRect, perturbedLightDir);
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));
 		float distCoeff = lightFallAngle / max(-dot(normal, perturbedLightDir), 1e-3) * (dotDpL * secFallAngle);
 		float fragZ = centerFragZ * distCoeff;
@@ -199,7 +147,7 @@ void UseShadowMap() {
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));
 		float distCoeff = lightFallAngle / max(-dot(normal, perturbedLightDir), 1e-3) * (dotDpL * secFallAngle);
 		float fragZ = centerFragZ * distCoeff;
-		float blockerZ = ShadowAtlasForVector(perturbedLightDir);
+		float blockerZ = ShadowAtlasForVector(u_shadowMap, u_shadowRect, perturbedLightDir);
 		lit += float(blockerZ >= fragZ - errorMargin);
 	}
 	lit /= u_softShadowsQuality + 1;

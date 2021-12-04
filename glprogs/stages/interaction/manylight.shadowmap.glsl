@@ -15,64 +15,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define STGATILOV_OCCLUDER_SEARCH 1
 #define STGATILOV_USEGATHER 1
 
+#define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
+#pragma tdm_include "tdm_shadowmaps.glsl"
+
 uniform int		u_softShadowsQuality;
 uniform float	u_softShadowsRadius;
 uniform bool 	u_shadowMapCullFront;
 uniform sampler2D u_shadowMap;
-
-vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
-	vec3 v1 = abs(v);
-	float maxV = max(v1.x, max(v1.y, v1.z));
-	faceIdx = 0;
-	if(maxV == v.x) {
-		v1 = -v.zyx;
-	}
-	else if(maxV == -v.x) {
-		v1 = v.zyx * vec3(1, -1, 1);
-		faceIdx = 1;
-	}
-	else if(maxV == v.y) {
-		v1 = v.xzy * vec3(1, 1, -1);
-		faceIdx = 2;
-	}
-	else if(maxV == -v.y) {
-		v1 = v.xzy * vec3(1, -1, 1);
-		faceIdx = 3;
-	}
-	else if(maxV == v.z) {
-		v1 = v.xyz * vec3(1, -1, -1);
-		faceIdx = 4;
-	}
-	else { //if(maxV == -v.z) {
-		v1 = v.xyz * vec3(-1, -1, 1);
-		faceIdx = 5;
-	}
-	v1.xy /= -v1.z;
-	return v1;
-}
-float ShadowAtlasForVector(int lightNum, vec3 v) {
-	int faceIdx;
-	vec3 v1 = CubeMapDirectionToUv(v, faceIdx);
-	vec2 texSize = textureSize(u_shadowMap, 0);
-    vec4 shadowRect = lights[lightNum].shadowRect;
-	vec2 shadow2d = (v1.xy * .5 + vec2(.5) ) * shadowRect.ww + shadowRect.xy;
-	shadow2d.x += (shadowRect.w + 1./texSize.x) * faceIdx;
-	float d = textureLod(u_shadowMap, shadow2d, 0).r;
-	return u_softShadowsRadius / (1 - d);
-}
-vec4 ShadowAtlasForVector4(int lightNum, vec3 v, out vec4 sampleWeights) {
-	int faceIdx;
-	vec3 v1 = CubeMapDirectionToUv(v, faceIdx);
-	vec2 texSize = textureSize(u_shadowMap, 0);
-    vec4 shadowRect = lights[lightNum].shadowRect;
-	vec2 shadow2d = (v1.xy * .5 + vec2(.5) ) * shadowRect.ww + shadowRect.xy;
-	shadow2d.x += (shadowRect.w + 1./texSize.x) * faceIdx;
-	vec4 d = textureGather(u_shadowMap, shadow2d);
-	vec2 wgt = fract(shadow2d * texSize - 0.5);
-	vec2 mwgt = vec2(1) - wgt;
-	sampleWeights = vec4(mwgt.x, wgt.x, wgt.x, mwgt.x) * vec4(wgt.y, wgt.y, mwgt.y, mwgt.y);
-	return vec4(u_softShadowsRadius) / (vec4(1) - d);
-}
 
 float UseShadowMap(int lightNum) {
 	float shadowMapResolution = (textureSize(u_shadowMap, 0).x * lights[lightNum].shadowRect.w);
@@ -100,10 +49,10 @@ float UseShadowMap(int lightNum) {
 	float centerFragZ = maxAbsL;
 #if STGATILOV_USEGATHER
 	vec4 wgt;
-	vec4 centerBlockerZ = ShadowAtlasForVector4(lightNum, L, wgt);
+	vec4 centerBlockerZ = ShadowAtlasForVector4(u_shadowMap, lights[lightNum].shadowRect, L, wgt);
 	lit *= dot(wgt, step(centerFragZ - errorMargin, centerBlockerZ));
 #else
-	float centerBlockerZ = ShadowAtlasForVector(lightNum, L);
+	float centerBlockerZ = ShadowAtlasForVector(u_shadowMap, lights[lightNum].shadowRect, lightNum, L);
 	lit *= float(centerBlockerZ >= centerFragZ - errorMargin);
 #endif
 
@@ -128,7 +77,7 @@ float UseShadowMap(int lightNum) {
 	for (int i = 0; i < u_softShadowsQuality; i++) {
 		//note: copy/paste from sampling code below
 		vec3 perturbedLightDir = normalize(L + searchAngle * (u_softShadowsSamples[i].x * orthoAxisX + u_softShadowsSamples[i].y * orthoAxisY));
-		float blockerZ = ShadowAtlasForVector(lightNum, perturbedLightDir);
+		float blockerZ = ShadowAtlasForVector(u_shadowMap, lights[lightNum].shadowRect, perturbedLightDir);
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));
 		float distCoeff = lightFallAngle / max(-dot(normal, perturbedLightDir), 1e-3) * (dotDpL * secFallAngle);
 		float fragZ = centerFragZ * distCoeff;
@@ -190,7 +139,7 @@ float UseShadowMap(int lightNum) {
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));
 		float distCoeff = lightFallAngle / max(-dot(normal, perturbedLightDir), 1e-3) * (dotDpL * secFallAngle);
 		float fragZ = centerFragZ * distCoeff;
-		float blockerZ = ShadowAtlasForVector(lightNum, perturbedLightDir);
+		float blockerZ = ShadowAtlasForVector(u_shadowMap, lights[lightNum].shadowRect, perturbedLightDir);
 		lit += float(blockerZ >= fragZ - errorMargin);
 	}
 	lit /= u_softShadowsQuality + 1;
