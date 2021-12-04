@@ -38,7 +38,7 @@ in vec4 worldPosition;
 out vec4 fragColor;
 
 // get N samples from the fragment-view ray inside the frustum
-vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
+vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
 	vec3 color = vec3(0.0);
 	for (int i = 0; i < u_sampleCount; i++) { 
 		float ratio = (i + 0.5) / u_sampleCount;
@@ -57,6 +57,14 @@ vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam)
 		color += lit * texColor;
 	}
 	return color / u_sampleCount;
+}
+
+vec3 calcAverage(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
+	// 1. suppose that nothing is shadowed
+	// 2. take average of both projection and falloff textures
+	vec4 avgProjection = textureLod(u_lightProjectionTexture, vec2(0.5), 10000);
+	vec4 avgFalloff = textureLod(u_lightFalloffTexture, vec2(0.5), 10000);
+	return avgProjection.xyz * avgFalloff.xyz;
 }
 
 void main() {
@@ -88,9 +96,9 @@ void main() {
 	
 	vec3 avgColor;
 	if (u_sampleCount > 0)
-		avgColor = calcWithShadows(rayStart, rayVec, minParam, maxParam);
+		avgColor = calcWithSampling(rayStart, rayVec, minParam, maxParam);
 	else
-		avgColor = vec3(1.0);	//full-white
+		avgColor = calcAverage(rayStart, rayVec, minParam, maxParam);
 
 	float litDistance = (maxParam - minParam) * length(rayVec);
 	float dustCoeff = 1e-3; //TODO: expose it from C++
