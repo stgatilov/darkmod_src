@@ -14,8 +14,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma tdm_define "VERTEX_SHADER"
 
-uniform mat4 u_textureMatrix;
-
 uniform block {
 	uniform mat4 u_projectionMatrix;
 };

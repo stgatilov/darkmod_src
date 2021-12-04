@@ -22,6 +22,7 @@ in vec3 attr_Tangent;
 in vec3 attr_Bitangent;     
 in vec3 attr_Normal;  
 
+uniform mat4 u_textureMatrix;
 uniform vec3 u_viewOrigin; 
 uniform mat4 u_modelMatrix;
 uniform bool u_skybox;

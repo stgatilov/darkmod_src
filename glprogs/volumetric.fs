@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 430
 
+#pragma tdm_include "tdm_utils.glsl"
 #pragma tdm_include "tdm_transform.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
 
@@ -72,15 +73,6 @@ void ShadowAtlasForVector(vec3 v, out vec4 depthSamples, out vec2 sampleWeights)
 	sampleWeights = fract(shadow2d * texSize + -0.5);
 }
 
-//returns eye Z coordinate with reversed sign (monotonically increasing with depth)
-//TODO: move this to common include?...
-float depthToZ(float depth) {
-	float clipZ = 2.0 * depth - 1.0;
-	float A = u_projectionMatrix[2].z;
-	float B = u_projectionMatrix[3].z;
-	return B / (A + clipZ);
-}
-
 // get N samples from the fragment-view ray inside the frustum
 vec3 calcWithShadows(vec3 rayStart, vec3 rayVec, float minParam, float maxParam) {
 	vec3 color = vec3(0.0);
@@ -129,7 +121,7 @@ void main() {
 	//only consider visible part (not occluded by opaque geometry)
 	vec2 depthTexCoord = gl_FragCoord.xy / textureSize(u_depthTexture, 0);
 	float depth = texture2D(u_depthTexture, depthTexCoord).r;
-	float solidParam = depthToZ(depth) / depthToZ(gl_FragCoord.z);
+	float solidParam = depthToZ(u_projectionMatrix, depth) / depthToZ(u_projectionMatrix, gl_FragCoord.z);
 	maxParam = min(maxParam, solidParam);
 
 	if (minParam >= maxParam)

@@ -20,6 +20,7 @@ INATTR_POSITION  //in vec4 attr_Position;
 in vec2 attr_TexCoord;
 in vec4 attr_Color;
 
+uniform mat4 u_textureMatrix;
 uniform vec4 u_colorMul;
 uniform vec4 u_colorAdd;
 uniform float u_screenTex;

@@ -22,6 +22,7 @@ uniform vec4 u_tex0PlaneS;
 uniform vec4 u_tex1PlaneT;
 uniform float u_fogEnter;
 
+uniform mat4 u_textureMatrix;
 uniform mat4 u_modelMatrix;
 
 out vec4 var_TexCoord0;

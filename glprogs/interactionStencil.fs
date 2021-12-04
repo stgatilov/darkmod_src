@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 140
 
+#pragma tdm_include "tdm_utils.glsl"
 #pragma tdm_include "tdm_interaction.fs.glsl"
 
 
@@ -29,14 +30,6 @@ in vec3 var_WorldLightDir;
 
 out vec4 FragColor;
 
-
-//returns eye Z coordinate with reversed sign (monotonically increasing with depth)
-float depthToZ(float depth) {
-	float clipZ = 2.0 * depth - 1.0;
-	float A = u_projectionMatrix[2].z;
-	float B = u_projectionMatrix[3].z;
-	return B / (A + clipZ);
-}
 
 void StencilSoftShadow() {
 	vec2 texSize = u_renderResolution;
@@ -99,7 +92,7 @@ void StencilSoftShadow() {
 	}
 
 	//compute partial derivatives of eye -Z by screen X and Y (normalized)
-	float Z00 = depthToZ(gl_FragCoord.z);
+	float Z00 = depthToZ(u_projectionMatrix, gl_FragCoord.z);
 	vec2 dzdxy = vec2(dFdx(Z00), dFdy(Z00));
 	//rescale to derivatives by texture coordinates (not pixels)
 	dzdxy *= texSize;
@@ -110,7 +103,7 @@ void StencilSoftShadow() {
 	for( int i = 0; i < u_softShadowsQuality; i++ ) {
 		vec2 delta = u_softShadowsSamples[i].x * alongDir + u_softShadowsSamples[i].y * orthoDir;
 		vec2 StTc = baseTC + delta;
-		float Zdiff = depthToZ(texture(u_depthTexture, StTc).r) - Z00;
+		float Zdiff = depthToZ(u_projectionMatrix, texture(u_depthTexture, StTc).r) - Z00;
 		float tangentZdiff = dot(dzdxy, delta);
 		float deg45diff = dot(canonDerivs, abs(delta));
 		float weight = float(abs(Zdiff - tangentZdiff) <= abs(tangentZdiff) * 0.5 + deg45diff * 0.2);

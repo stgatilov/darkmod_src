@@ -12,23 +12,12 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
-#version 140
 
-#pragma tdm_include "tdm_transform.glsl"
-
-INATTR_POSITION  //in vec4 attr_Position;
-
-uniform mat4 u_textureMatrix;
-uniform vec4 u_clipPlane;
-uniform mat4 u_matViewRev;
-
-in vec2 attr_TexCoord;
-
-out float clipPlaneDist; 
-out vec4 var_TexCoord0;
-
-void main() {
-	var_TexCoord0 = u_textureMatrix * vec4(attr_TexCoord, 0, 1);
-	clipPlaneDist = dot(u_matViewRev * u_modelViewMatrix * attr_Position, u_clipPlane);
-	gl_Position = tdm_transform(attr_Position);
+//returns eye Z coordinate with reversed sign (monotonically increasing with depth)
+//in other words, it is eye-fragment distance along view direction
+float depthToZ(mat4 projectionMatrix, float depth) {
+	float clipZ = 2.0 * depth - 1.0;
+	float A = projectionMatrix[2].z;
+	float B = projectionMatrix[3].z;
+	return B / (A + clipZ);
 }
