@@ -9983,6 +9983,9 @@ void idEntity::Flinderize( idEntity *activator )
 			spawnArgs.GetInt   ("flinder_count"       + index,   "1", fs.m_Count);
 			spawnArgs.GetFloat ("flinder_probability" + index, "1.0", fs.m_Probability);
 
+			// Dragofer: consider orientation of the flinderizing entity in the flinder offset
+			fs.m_Offset *= GetPhysics()->GetAxis();
+
 			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Offset is %f,%f,%f:\r", fs.m_Offset.x, fs.m_Offset.y, fs.m_Offset.z );
 			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Count is %i:\r", fs.m_Count );
 			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("  Probability is %f:\r", fs.m_Probability );
