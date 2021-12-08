@@ -1516,26 +1516,31 @@ Called whenever the camera is destroyed or damaged after destruction
 */
 void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
 	idStr str;
+	bool broke = false; //keeps track of whether the camera breaks during this function
+	bool flind = false;	//keeps track of whether the camera flinderizes during this function
 
-	// Become broken, possibly also flinderize
+	// Become broken. Camera may flinderize if m_bFlinderize is true
 	if ( !m_bIsBroken )
 	{
+		broke = true;
+		flind = m_bFlinderize;
+
 		idEntity::BecomeBroken(inflictor);
 		Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_off"));
 	}
 
-	// If flinderizing, override model & skin
-	if ( m_bFlinderize )
+	// Camera was already broken, player is damaging it again. Has it not been flinderized before?
+	else if ( m_bFlinderize && !flinderized )
 	{
-		// if Flinderize didn't already get called during BecomeBroken, call it now
-		if ( m_bIsBroken )
-		{
-			idEntity::Flinderize(inflictor);
-		}
-
-		m_bFlinderize = false;	// don't flinderize again
-		flinderized = true;		// has been flinderized, don't check anymore whether to flinderize again
-
+		idEntity::Flinderize(inflictor);
+		flind = true;
+	}
+	
+	// Camera has just flinderized. Update model and skin
+	if ( flind )
+	{
+		flinderized = true;
+		
 		spawnArgs.GetString("broken_flinderized", "-", str);
 		if (str.Length() > 1) {
 			SetModel(str);
@@ -1546,10 +1551,9 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		}
 	}
 
-
 	// Handle destruction / post-destruction fx
 	// security camera is being broken right now
-	if ( !m_bIsBroken )
+	if ( broke )
 	{
 		if ( powerOn ) {
 			StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
