@@ -81,7 +81,8 @@ class CForce_Grab : public idForce
 		void				UpdateAverageDragPosition( float dT );
 		// stgatilov #5599: compute weighted moving average of drag position
 		idVec3				ComputeAverageDragPosition() const;
-
+		// stgatilov #5599: set or restore friction parameters to dragged object
+		void				SetFrictionOverride(bool enabled, float linear, float angular, float contact);
 
 		// entity to which this drag force is referenced, if any
 		idEntityPtr<idEntity>	m_RefEnt;
@@ -108,6 +109,8 @@ class CForce_Grab : public idForce
 
 		// stgatilov #5599: sorted array of (dragPosition; weight) tuples over time window
 		idList<idVec4>		m_dragPositionFrames;
+		// stgatilov #5599: original friction parameters of dragged object (see SetFrictionOverride)
+		idList<idVec3>		m_originalFriction;
 };
 
 #endif /* !__FORCE_GRAB_H__ */

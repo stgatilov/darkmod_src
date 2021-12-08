@@ -284,7 +284,9 @@ extern idCVar cv_drag_rigid_silentmode;
 extern idCVar cv_drag_rigid_distance_halfing_time;
 extern idCVar cv_drag_rigid_acceleration_radius;
 extern idCVar cv_drag_af_weight_ratio;
+extern idCVar cv_drag_af_weight_ratio_canlift;
 extern idCVar cv_drag_af_reduceforce_radius;
+extern idCVar cv_drag_af_inair_friction;
 
 extern idCVar cv_melee_debug;
 extern idCVar cv_melee_state_debug;

@@ -289,6 +289,9 @@ CGrabber::StopDrag
 */
 void CGrabber::StopDrag( void ) 
 {
+	//stgatilov #5599: allow force class to revert its temporary changes
+	m_drag.SetPhysics( NULL, -1, idVec3() );
+
 	m_bIsColliding = false;
 	m_bPrevFrameCollided = false;
 	m_CollNorms.Clear();

@@ -92,6 +92,9 @@ void CForce_Grab::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_dragPositionFrames.Num());
 	for (int i = 0; i < m_dragPositionFrames.Num(); i++)
 		savefile->WriteVec4(m_dragPositionFrames[i]);
+	savefile->WriteInt(m_originalFriction.Num());
+	for (int i = 0; i < m_originalFriction.Num(); i++)
+		savefile->WriteVec3(m_originalFriction[i]);
 }
 
 void CForce_Grab::Restore( idRestoreGame *savefile )
@@ -115,6 +118,58 @@ void CForce_Grab::Restore( idRestoreGame *savefile )
 	m_dragPositionFrames.SetNum(n, false);
 	for (int i = 0; i < m_dragPositionFrames.Num(); i++)
 		savefile->ReadVec4(m_dragPositionFrames[i]);
+	savefile->ReadInt(n);
+	m_originalFriction.SetNum(n, false);
+	for (int i = 0; i < m_originalFriction.Num(); i++)
+		savefile->ReadVec3(m_originalFriction[i]);
+}
+
+/*
+================
+CForce_Grab::SetFrictionOverride
+================
+*/
+void CForce_Grab::SetFrictionOverride(bool enabled, float linear, float angular, float contact) {
+	if (!m_physics)
+		return;
+
+	if (m_physics->IsType(idPhysics_AF::Type)) {
+		idPhysics_AF* phys = (idPhysics_AF*)m_physics;
+		int n = phys->GetNumBodies();
+		if (enabled) {
+			if (m_originalFriction.Num() != n) {
+				m_originalFriction.SetNum(n, false);
+				for (int i = 0; i < n; i++) {
+					idAFBody* body = phys->GetBody(i);
+					idVec3 friction(body->GetLinearFriction(), body->GetAngularFriction(), body->GetContactFriction());
+					m_originalFriction[i] = friction;
+				}
+			}
+			for (int i = 0; i < n; i++) {
+				idAFBody* body = phys->GetBody(i);
+				idVec3 friction = m_originalFriction[i];
+				if (linear >= 0.0)
+					friction.x = linear;
+				if (angular >= 0.0)
+					friction.y = angular;
+				if (contact >= 0.0)
+					friction.z = contact;
+				body->SetFriction(friction.x, friction.y, friction.z);
+			}
+		}
+		else {
+			for (int i = 0; i < n && i < m_originalFriction.Num(); i++) {
+				idAFBody* body = phys->GetBody(i);
+				idVec3 friction = m_originalFriction[i];
+				body->SetFriction(friction.x, friction.y, friction.z);
+			}
+			m_originalFriction.Clear();
+		}
+	}
+	else {
+		//never used
+		assert(0);
+	}
 }
 
 /*
@@ -126,24 +181,29 @@ void CForce_Grab::SetPhysics( idPhysics *phys, int id, const idVec3 &p ) {
 	float mass, MassOut, density;
 	idClipModel *clipModel;
 
+	// stgatilov #5599: restore normal air friction
+	SetFrictionOverride(false, 0, 0, 0);
+
 	m_physics = phys;
 	m_id = id;
 	m_p = p;
 
-	clipModel = m_physics->GetClipModel( m_id );
-	if ( clipModel != NULL && clipModel->IsTraceModel() ) 
-	{
-		mass = m_physics->GetMass( m_id );
-		// PROBLEM: No way to query physics object for density!
-		// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
-		clipModel->GetMassProperties( 1.0f, MassOut, m_centerOfMass, m_inertiaTensor );
-		density = mass / MassOut;
-		// Now correct the inertia tensor by using actual density
-		clipModel->GetMassProperties( density, mass, m_centerOfMass, m_inertiaTensor );
-	} else 
-	{
-		m_centerOfMass.Zero();
-		m_inertiaTensor = mat3_identity;
+	if (m_physics) {
+		clipModel = m_physics->GetClipModel( m_id );
+		if ( clipModel != NULL && clipModel->IsTraceModel() ) 
+		{
+			mass = m_physics->GetMass( m_id );
+			// PROBLEM: No way to query physics object for density!
+			// Trick: Use a test density of 1.0 here, then divide the actual mass by output mass to get actual density
+			clipModel->GetMassProperties( 1.0f, MassOut, m_centerOfMass, m_inertiaTensor );
+			density = mass / MassOut;
+			// Now correct the inertia tensor by using actual density
+			clipModel->GetMassProperties( density, mass, m_centerOfMass, m_inertiaTensor );
+		} else 
+		{
+			m_centerOfMass.Zero();
+			m_inertiaTensor = mat3_identity;
+		}
 	}
 }
 
@@ -270,23 +330,56 @@ void CForce_Grab::Evaluate( int time )
 
 			// compute total weight
 			float totalMass = 0.0f;
-			for (int i = 0; i < phys->GetNumBodies(); i++)
+			bool inAir = true;
+			for (int i = 0; i < phys->GetNumBodies(); i++) {
 				totalMass += phys->GetMass(i);
-			float totalWeight = gameLocal.GetGravity().Length() * totalMass;
+				if (phys->HasGroundContacts(i))
+					inAir = false;
+			}
+			float gravAccel = gameLocal.GetGravity().Length();
+			float totalWeight = gravAccel * totalMass;
+
+			// check if player can lift the AF or it must be always on ground
+			bool mustGround = false;
+			if (idEntity *entity = m_physics->GetSelf())
+				if (entity->IsType(idAFEntity_Base::Type) && ((idAFEntity_Base*)entity)->m_bGroundWhenDragged)
+					mustGround = true;
+			if (cv_drag_AF_free.GetBool())
+				mustGround = false;
 
 			// compute force / weight factor
-			float maxFactor = cv_drag_af_weight_ratio.GetFloat();
+			float maxFactor = cv_drag_af_weight_ratio_canlift.GetFloat();
+			if (mustGround)
+				maxFactor = cv_drag_af_weight_ratio.GetFloat();
 			maxFactor = idMath::Fmin(maxFactor, grabber->m_MaxForce / totalWeight);
+
 			// compute weakening coefficient if distance to target is small
 			idVec3 dir = dragShift;
 			float len = dir.Normalize();
 			float weakenRadius = cv_drag_af_reduceforce_radius.GetFloat();
 			float weakenCoeff = idMath::Fmin(len / (weakenRadius + 1e-3f), 1.0f);
 
-			// apply force
-			idVec3 force = weakenCoeff * maxFactor * totalWeight * dir;
-			m_physics->AddForce(m_id, COM, force);
+			if (inAir) {
+				// apply force uniformly to all parts
+				// otherwise, small body parts will oscillate wildly
+				for (int i = 0; i < phys->GetNumBodies(); i++) {
+					idVec3 force = weakenCoeff * maxFactor * gravAccel * phys->GetMass(i) * dir;
+					m_physics->AddForce(i, phys->GetOrigin(i), force);
+				}
 
+				// temporarily increase air friction
+				// to avoid whole-body oscillations
+				float friction = cv_drag_af_inair_friction.GetFloat();
+				SetFrictionOverride(true, friction, friction, friction);
+			}
+			else {
+				// apply force to the grabbed part only
+				idVec3 force = weakenCoeff * maxFactor * totalWeight * dir;
+				m_physics->AddForce(m_id, COM, force);
+				// restore normal friction coefficients
+				SetFrictionOverride(false, 0, 0, 0);
+			}
+			
 			// don't do anything else
 			return;
 		}

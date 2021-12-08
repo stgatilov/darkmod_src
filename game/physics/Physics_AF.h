@@ -669,6 +669,8 @@ public:
 	void					SetLinearVelocity( const idVec3 &linear ) const { current->spatialVelocity.SubVec3(0) = linear; }
 	void					SetAngularVelocity( const idVec3 &angular ) const { current->spatialVelocity.SubVec3(1) = angular; }
 	void					SetFriction( float linear, float angular, float contact );
+	float					GetLinearFriction( void ) const { return linearFriction; }
+	float					GetAngularFriction( void ) const { return angularFriction; }
 	float					GetContactFriction( void ) const { return contactFriction; }
 	void					SetBouncyness( float bounce );
 	float					GetBouncyness( void ) const { return bouncyness; }
