@@ -1572,7 +1572,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		}
 	}
 
-	if ( str.Length() ) {
+	if ( str.Length() && str != "-" ) {
 		idEntityFx::StartFx(str, NULL, NULL, this, true);
 	}
 
@@ -1637,7 +1637,7 @@ bool idSecurityCamera::Pain( idEntity *inflictor, idEntity *attacker, int damage
 		fx = spawnArgs.GetString("fx_damage_nopower");
 	}
 
-	if ( fx.Length() ) {
+	if ( fx.Length() && fx != "-") {
 		idEntityFx::StartFx(fx, NULL, NULL, this, true);
 	}
 
