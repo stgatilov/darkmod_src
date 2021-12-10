@@ -32,6 +32,7 @@ uniform vec3 u_lightOrigin;
 uniform int u_sampleCount;
 uniform vec4 u_lightColor;
 uniform int u_shadows;
+uniform float u_dust;
 
 in vec4 worldPosition;
 
@@ -101,6 +102,5 @@ void main() {
 		avgColor = calcAverage(rayStart, rayVec, minParam, maxParam);
 
 	float litDistance = (maxParam - minParam) * length(rayVec);
-	float dustCoeff = 1e-3; //TODO: expose it from C++
-	fragColor.rgb = u_lightColor.rgb * avgColor * litDistance * dustCoeff;
+	fragColor.rgb = u_lightColor.rgb * avgColor * litDistance * u_dust;
 }

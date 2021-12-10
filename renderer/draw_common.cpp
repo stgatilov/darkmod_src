@@ -1022,6 +1022,7 @@ static void RB_FogPass( bool translucent ) {
 
 void RB_VolumetricPass() {
 	auto vLight = backEnd.vLight;
+	TRACE_GL_SCOPE( "RB_VolumetricPass" );
 	
 	struct VolumetricLightUniforms : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( VolumetricLightUniforms )
@@ -1031,6 +1032,7 @@ void RB_VolumetricPass() {
 		DEFINE_UNIFORM( int, sampleCount );
 		DEFINE_UNIFORM( vec4, lightColor );
 		DEFINE_UNIFORM( sampler, depthTexture );
+		DEFINE_UNIFORM( float, dust )
 
 		//light frustum and projection
 		DEFINE_UNIFORM( sampler, lightProjectionTexture );
@@ -1103,6 +1105,7 @@ void RB_VolumetricPass() {
 	uniforms->sampleCount.Set( vLight->lightShader->IsVolumetric() );
 	uniforms->lightColor.Set( lightColor );
 	uniforms->shadows.Set( useShadows );
+	uniforms->dust.Set( vLight->volumetricDust );
 
 	srfTriangles_t* frustumTris = backEnd.vLight->frustumTris;
 	// if we ran out of vertex cache memory, skip it

@@ -214,6 +214,8 @@ typedef struct renderLight_s {
 	int						spectrum;			//nbohr1more: #4956 spectrum entity arg
 	renderEntity_s::areaLock_t areaLock;
 
+	float					volumetricDust;		//stgatilov #5816: strength of volumetric light (in color per meter)
+
 } renderLight_t;
 
 typedef enum {							// #define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID
