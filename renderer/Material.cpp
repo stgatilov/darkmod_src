@@ -1977,12 +1977,9 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			cubicLight = true;
 			continue;
 		}
+		// duzenko #5816: volumetric lights
 		else if ( !token.Icmp( "volumetricLight" ) ) {
-			if ( !src.ReadTokenOnLine( &token ) ) {
-				volumetricLight = 10;
-				continue;
-			}
-			volumetricLight = token.GetIntValue();
+			volumetricLight = true;
 			continue;
 		}
 		// mirror
