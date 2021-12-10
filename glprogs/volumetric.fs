@@ -39,21 +39,13 @@ in vec4 worldPosition;
 
 out vec4 fragColor;
 
-float random(vec2 p, float seed) {
-	vec2 K1 = vec2(
-		23.14069263277926, // e^pi (Gelfond's constant)
-		2.665144142690225  // 2^sqrt(2) (Gelfond-Schneider constant)
-	);
-	return fract( cos( dot(p, K1) + seed ) * 12345.6789 );
-}
-
 // get N samples from the fragment-view ray inside the frustum
-vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam, int samplesNum, vec2 screenPos) {
+vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam, int samplesNum) {
 	vec3 color = vec3(0.0);
 	for (int i = 0; i < samplesNum; i++) { 
 		float frac = 0.5;
 		if (u_randomize != 0)
-			frac = random(screenPos, i * 2.173);
+			frac = fract(dot(vec2(0.618033989, 0.259921049), gl_FragCoord.xy) + 0.367879441 * i);
 		float ratio = (i + frac) / samplesNum;
 		vec3 samplePos = rayStart + rayVec * mix(minParam, maxParam, ratio);
 		// shadow test
@@ -109,7 +101,7 @@ void main() {
 	
 	vec3 avgColor;
 	if (u_sampleCount > 0)
-		avgColor = calcWithSampling(rayStart, rayVec, minParam, maxParam, u_sampleCount, depthTexCoord);
+		avgColor = calcWithSampling(rayStart, rayVec, minParam, maxParam, u_sampleCount);
 	else
 		avgColor = calcAverage(rayStart, rayVec, minParam, maxParam);
 
