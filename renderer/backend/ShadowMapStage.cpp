@@ -101,12 +101,7 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 }
 
 float ShadowMapStage::GetEffectiveLightRadius( viewLight_t *vLight ) {
-	float lightRadius = vLight->radius;
-	if (r_softShadowsRadius.GetFloat() < 0.0)
-		lightRadius = -r_softShadowsRadius.GetFloat();	//override
-	else if (lightRadius < 0.0)
-		lightRadius = r_softShadowsRadius.GetFloat();	//default value
-	return lightRadius;
+	return ::GetEffectiveLightRadius();
 }
 
 bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {

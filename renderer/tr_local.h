@@ -381,8 +381,6 @@ typedef struct viewLight_s {
 	bool					noShadows;
 	bool					noSpecular;
 
-	float					radius;
-
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend
 	idPlane					fogPlane;					// fog plane for backend fog volume rendering

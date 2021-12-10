@@ -243,12 +243,7 @@ void RB_GLSL_DrawLight_Stencil() {
 }
 
 float GetEffectiveLightRadius() {
-	float lightRadius = backEnd.vLight->radius;
-	if (r_softShadowsRadius.GetFloat() < 0.0)
-		lightRadius = -r_softShadowsRadius.GetFloat();	//override
-	else if (lightRadius < 0.0)
-		lightRadius = r_softShadowsRadius.GetFloat();	//default value
-	return lightRadius;
+	return r_softShadowsRadius.GetFloat();	//default value
 }
 
 /*

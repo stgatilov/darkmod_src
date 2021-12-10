@@ -383,7 +383,6 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 
 	WriteVec3( renderLight.lightRadius );
 	WriteVec3( renderLight.lightCenter );
-	WriteFloat( renderLight.radius );
 
 	WriteVec3( renderLight.target );
 	WriteVec3( renderLight.right );
@@ -983,7 +982,6 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 
 	ReadVec3( renderLight.lightRadius );
 	ReadVec3( renderLight.lightCenter );
-	ReadFloat( renderLight.radius );
 
 	ReadVec3( renderLight.target );
 	ReadVec3( renderLight.right );
