@@ -205,9 +205,11 @@ void RB_GLSL_DrawLight_Stencil() {
 	}
 	programManager->stencilShadowShader->Activate();
 
-	RB_StencilShadowPass( backEnd.vLight->globalShadows );
-	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
-		frameBuffers->ResolveShadowStencilAA();
+	if ( backEnd.vLight->globalShadows ) {
+		RB_StencilShadowPass( backEnd.vLight->globalShadows );
+		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			frameBuffers->ResolveShadowStencilAA();
+		}
 	}
 
 	const bool NoSelfShadows = true; // don't delete - debug check for low-poly "round" models casting ugly shadows on themselves
@@ -224,11 +226,12 @@ void RB_GLSL_DrawLight_Stencil() {
 	}
 	programManager->stencilShadowShader->Activate();
 
-	RB_StencilShadowPass( backEnd.vLight->localShadows );
-	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
-		frameBuffers->ResolveShadowStencilAA();
+	if ( backEnd.vLight->localShadows ) {
+		RB_StencilShadowPass( backEnd.vLight->localShadows );
+		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			frameBuffers->ResolveShadowStencilAA();
+		}
 	}
-
 
 	if ( useShadowFbo ) {
 		frameBuffers->LeaveShadowStencil();

@@ -239,9 +239,11 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
 	}
 
-	stencilShadowStage.DrawStencilShadows( vLight, vLight->globalShadows );
-	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
-		frameBuffers->ResolveShadowStencilAA();
+	if ( vLight->globalShadows ) {
+		stencilShadowStage.DrawStencilShadows( vLight, vLight->globalShadows );
+		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			frameBuffers->ResolveShadowStencilAA();
+		}
 	}
 
 	if ( useShadowFbo ) {
@@ -253,11 +255,12 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 		frameBuffers->EnterShadowStencil();
 	}
 
-	stencilShadowStage.DrawStencilShadows( vLight, vLight->localShadows );
-	if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
-		frameBuffers->ResolveShadowStencilAA();
+	if ( vLight->localShadows ) {
+		stencilShadowStage.DrawStencilShadows( vLight, vLight->localShadows );
+		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			frameBuffers->ResolveShadowStencilAA();
+		}
 	}
-
 
 	if ( useShadowFbo ) {
 		frameBuffers->LeaveShadowStencil();
