@@ -229,6 +229,10 @@
       <AdditionalOptions />
     </Link>
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">
     <Link>
@@ -245,6 +249,10 @@
     </ClCompile>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <Link />
@@ -261,6 +269,10 @@
       <AdditionalOptions />
     </Link>
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
     <Link>
@@ -277,6 +289,10 @@
     </ClCompile>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -294,6 +310,10 @@
     </ClCompile>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -311,6 +331,10 @@
     <PostBuildEvent />
     <PostBuildEvent />
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
@@ -332,6 +356,10 @@
     </ClCompile>
     <PostBuildEvent />
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link />
@@ -350,6 +378,10 @@
       <AdditionalOptions />
     </Link>
     <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs
+if %errorlevel% leq 3 exit 0</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h" />
