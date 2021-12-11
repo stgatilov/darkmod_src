@@ -166,10 +166,6 @@ void CForce_Grab::SetFrictionOverride(bool enabled, float linear, float angular,
 			m_originalFriction.Clear();
 		}
 	}
-	else {
-		//never used
-		assert(0);
-	}
 }
 
 /*
