@@ -1370,7 +1370,12 @@ void idWindow::CalcClientRect(float xofs, float yofs) {
 		// in this case treat xofs and yofs as absolute top left coords
 		// and ignore the original positioning
 		if (flags & WIN_HCENTER) {
-			drawRect.x = (parent->rect.w() - rect.w()) / 2;
+			if ( rect.x() == -1 ) { // 2.10 "aspect fit" child windows
+				drawRect.w = parent->rect.h() * rect.w(); // set width as fraction of height
+				drawRect.x = ( parent->rect.w() - drawRect.w ) / 2; // center horizontally
+			} else {
+				drawRect.x = ( parent->rect.w() - rect.w() ) / 2; // original D3 path, seems to have never been used
+			}
 		} else {
 			drawRect.y = (parent->rect.h() - rect.h()) / 2;
 		}
@@ -1437,7 +1442,11 @@ void idWindow::SetupFromState() {
 	if (regList.FindReg("rotate") || regList.FindReg("shear")) {
 		flags |= WIN_TRANSFORM;
 	}
-	
+
+	if ( rect.x() == -1 ) {
+		flags |= WIN_HCENTER;
+	}
+
 	CalcClientRect(0,0);
 	if ( scripts[ ON_ACTION ] ) {
 		cursor = idDeviceContext::CURSOR_HAND;
