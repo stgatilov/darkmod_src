@@ -1342,6 +1342,7 @@ public:
 	void					Event_IsLight();			// grayman #2905
 	void					Event_ActivateContacts();	// grayman #3011
 	void					Event_GetLocation();		// grayman #3013
+	void					Event_GetEntityFlag( const char* flagName );	// dragofer
 
 	int						team;
 

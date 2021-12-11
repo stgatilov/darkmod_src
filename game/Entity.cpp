@@ -294,6 +294,22 @@ const idEventDef EV_ActivateContacts("activateContacts", EventArgs(), EV_RETURNS
 const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', 
 	"Returns the idLocation entity corresponding to the entity's current location.\n" \
 	"This was player-specific before, but is now available to all entities."); // grayman #3013
+const idEventDef EV_GetEntityFlag("getEntityFlag", EventArgs('s', "flagName",
+	"Can be one of (case insensitive):\n"
+	"\tnotarget: if true never attack or target this entity\n"
+	"\tnoknockback: if true no knockback from hits\n"
+	"\ttakedamage: if true this entity can be damaged\n"
+	"\thidden: if true this entity is not visible\n"
+	"\tbindOrientated: if true both the master orientation is used for binding\n"
+	"\tsolidForTeam: if true this entity is considered solid when a physics team mate pushes entities\n"
+	"\tforcePhysicsUpdate: if true always update from the physics whether the object moved or not\n"
+	"\tselected: if true the entity is selected for editing\n"
+	"\tneverDormant: if true the entity never goes dormant\n"
+	"\tisDormant: if true the entity is dormant\n"
+	"\thasAwakened: before a monster has been awakened the first time, use full PVS for dormant instead of area-connected\n"
+	"\tinvisible: if true this entity cannot be seen\n"
+	"\tinaudible: if true this entity cannot be heard\n"
+), 'd', "Returns the value of the specified entity flag.");
 
 //===============================================================
 //                   TDM GUI interface
@@ -690,6 +706,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_IsLight,				idEntity::Event_IsLight )			// grayman #2905
 	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )	// grayman #3011
 	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )		// grayman #3013
+	EVENT( EV_GetEntityFlag,		idEntity::Event_GetEntityFlag)		// dragofer
 	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )		// tels #3113
 	EVENT( EV_PropagateSound,		idEntity::Event_PropSoundDirect )	// grayman #3355
 	
@@ -13629,6 +13646,92 @@ void idEntity::Event_GetLocation()
 idLocationEntity *idEntity::GetLocation( void ) const
 {
 	return gameLocal.LocationForPoint( GetPhysics()->GetOrigin() );
+}
+
+// Dragofer
+
+void idEntity::Event_GetEntityFlag( const char* flagName )
+{
+	if ( idStr::Icmp("notarget", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.notarget);
+		return;
+	}
+
+	if ( idStr::Icmp("noknockback", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.noknockback);
+		return;
+	}
+
+	if ( idStr::Icmp("takedamage", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.takedamage);
+		return;
+	}
+
+	if ( idStr::Icmp("hidden", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.hidden);
+		return;
+	}
+
+	if ( idStr::Icmp("bindOrientated", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.bindOrientated);
+		return;
+	}
+
+	if ( idStr::Icmp("solidForTeam", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.solidForTeam);
+		return;
+	}
+
+	if ( idStr::Icmp("forcePhysicsUpdate", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.forcePhysicsUpdate);
+		return;
+	}
+
+	if ( idStr::Icmp("selected", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.selected);
+		return;
+	}
+
+	if ( idStr::Icmp("neverDormant", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.neverDormant);
+		return;
+	}
+
+	if ( idStr::Icmp("isDormant", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.isDormant);
+		return;
+	}
+
+	if ( idStr::Icmp("hasAwakened", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.hasAwakened);
+		return;
+	}
+
+	if ( idStr::Icmp("invisible", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.invisible);
+		return;
+	}
+
+	if ( idStr::Icmp("inaudible", flagName) == 0 )
+	{
+		idThread::ReturnInt(fl.inaudible);
+		return;
+	}
+
+	gameLocal.Warning("Invalid flag name passed to getEntityFlag(): %s", flagName);
+	idThread::ReturnFloat(0.0f);
 }
 
 // grayman #3047
