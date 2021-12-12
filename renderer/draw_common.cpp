@@ -1027,8 +1027,8 @@ idCVar r_volumetricSamples(
 	"Zero value means using average color of projection/falloff textures and no shadows (very cheap).",
 	0, 128
 );
-idCVar r_volumetricRandomize(
-	"r_volumetricRandomize", "1", CVAR_ARCHIVE | CVAR_BOOL | CVAR_RENDERER,
+idCVar r_volumetricDither(
+	"r_volumetricDither", "1", CVAR_ARCHIVE | CVAR_BOOL | CVAR_RENDERER,
 	"Use randomized sample positions across screen pixels in volumetric lights. "
 	"This greatly improves their quality, but adds high-frequency noise which may look weird."
 );
@@ -1120,7 +1120,7 @@ void RB_VolumetricPass() {
 	uniforms->lightColor.Set( lightColor );
 	uniforms->shadows.Set( useShadows );
 	uniforms->dust.Set( vLight->volumetricDust );
-	uniforms->randomize.Set( r_volumetricRandomize.GetInteger() );
+	uniforms->randomize.Set( r_volumetricDither.GetInteger() );
 
 	srfTriangles_t* frustumTris = backEnd.vLight->frustumTris;
 	// if we ran out of vertex cache memory, skip it
