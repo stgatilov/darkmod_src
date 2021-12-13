@@ -105,7 +105,7 @@ void FrobOutlineStage::Init() {
 	drawFbo = frameBuffers->CreateFromGenerator( "frob_draw", [this](FrameBuffer *) { this->CreateDrawFbo(); } );
 
 	cmdSystem->AddCommand(
-		"r_frobOutlinePreset", FrobOutlinePreset,
+		"frobOutlinePreset", FrobOutlinePreset,
 		CMD_FL_RENDERER, "Change frob outline cvars according to specified preset",
 		idCmdSystem::ArgCompletion_Integer<1, 3>
 	);
