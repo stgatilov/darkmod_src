@@ -455,10 +455,9 @@ Save the console contents out to a file
 ================
 */
 void idConsoleLocal::Dump( const char *fileName, bool unwrap, bool modsavepath ) {
-	int		l, i;
+	int		l;
 	idFile	*f;
-	char	buffer[640 + 3];
-	//
+	
 	if (modsavepath) {
 		f = fileSystem->OpenFileWrite( fileName, "fs_modSavePath" );
 	} else {
