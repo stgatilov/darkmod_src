@@ -242,7 +242,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../game/Http/HttpConnection.h"
 #include "../game/Http/HttpRequest.h"
 #include "../game/IK.h"
-#include "../game/ImageMapManager.h"
 #include "../game/IniFile.h"
 #include "../game/Intersection.h"
 #include "../game/Inventory/Category.h"

@@ -63,7 +63,11 @@ const int C_COLOR_BLACK				= '9';
 
 // make idStr a multiple of 32 bytes long
 // don't make too large to keep memory requirements to a minimum
+#ifdef ID_TYPEINFO
+const int STR_ALLOC_BASE			= 32 - 8 - 4;
+#else
 const int STR_ALLOC_BASE			= 32 - 8 - sizeof(char*);
+#endif
 const int STR_ALLOC_GRAN			= 32;
 
 typedef enum {

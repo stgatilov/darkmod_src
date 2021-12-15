@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class CHttpConnection;
 
-#include "pugixml.hpp"
+#include <pugixml.hpp>
 typedef void CURL;
 
 // Shared_ptr typedef
