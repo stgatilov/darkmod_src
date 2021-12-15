@@ -2060,6 +2060,9 @@ idParser::Directive_error
 ================
 */
 int idParser::Directive_error( void ) {
+#if 1
+	idParser::SkipRestOfLine();
+#else // the code below breaks typeinfo generation
 	idToken token;
 
 	if ( !idParser::ReadLine( &token) || token.type != TT_STRING ) {
@@ -2067,6 +2070,7 @@ int idParser::Directive_error( void ) {
 		return false;
 	}
 	idParser::Error( "#error: %s", token.c_str() );
+#endif
 	return true;
 }
 

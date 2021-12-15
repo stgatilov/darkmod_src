@@ -16,7 +16,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
 
+#ifndef ID_TYPEINFO
 #include "Tracy.hpp"
+#endif
 
 #include "sys/sys_defines.h"
 #include "sys/sys_includes.h"
