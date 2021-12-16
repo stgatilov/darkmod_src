@@ -48,7 +48,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // This makes functions declared in gamesys/TypeInfo.h work properly, and as the result:
 //    1. text representation of game state is dumped to file when game is saved (and compared on load)
 //    2. messages about uninitialized members show member names
-//#define ID_USE_TYPEINFO
+#define ID_USE_TYPEINFO
 
 // P.S. The following features always work:
 //    "com_showMemoryUsage 1" --- display memory usage stats on screen

@@ -2992,4 +2992,8 @@
       <Filter>Game</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="sys\msvc\natvis\game.natvis" />
+    <Natvis Include="sys\msvc\natvis\idlib.natvis" />
+  </ItemGroup>
 </Project>

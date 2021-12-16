@@ -119,6 +119,7 @@ const char *GetTypeVariableName( const char *typeName, int offset ) {
 	}
 
 	const classTypeInfo_t &classInfo = classTypeInfo[i];
+	if ( !classInfo.typeName ) return nullptr;
 
 	for ( i = 0; classInfo.variables[i].name != NULL; i++ ) {
 		if ( offset <= classInfo.variables[i].offset ) {
@@ -128,7 +129,30 @@ const char *GetTypeVariableName( const char *typeName, int offset ) {
 	if ( i == 0 ) {
 		idStr::snPrintf( varName, sizeof( varName ), "%s::<unknown>", classInfo.typeName );
 	} else {
-		idStr::snPrintf( varName, sizeof( varName ), "%s::%s", classInfo.typeName, classInfo.variables[i-1].name );
+		if ( offset >= classInfo.variables[i - 1].offset + classInfo.variables[i - 1].size ) {
+#if 0
+			idStr::snPrintf( varName, sizeof( varName ), "^3no members found at offset %d^3", offset );
+			return varName;
+#else
+			return nullptr;
+#endif
+		}
+		auto s = idStr::Fmt( "'%s %s'", classInfo.variables[i - 1].type, classInfo.variables[i - 1].name );
+#if 1
+		if ( strstr( classInfo.variables[i - 1].type, "<" ) )
+			return nullptr;
+#endif
+		auto nested = idTypeInfoTools::FindClassInfo( classInfo.variables[i - 1].type );
+		offset -= classInfo.variables[i - 1].offset;
+		if ( nested ) {
+			auto x = GetTypeVariableName( classInfo.variables[i - 1].type, offset );
+			if ( !x )
+				return nullptr; // false positive or member without type info (template?)
+			s = idStr::Fmt( "%s\n  >> (offset %d in size %d) %s", s.c_str(), offset, classInfo.variables[i - 1].size, x );
+		} else
+			s = idStr::Fmt( "%s\n  >> (offset %d in size %d)", s.c_str(), offset, classInfo.variables[i - 1].size );
+		memcpy( varName, s.c_str(), s.Length() );
+		varName[s.Length()] = 0;
 	}
 	return varName;
 }

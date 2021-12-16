@@ -282,8 +282,8 @@ idClass::FindUninitializedMemory
 */
 void idClass::FindUninitializedMemory( void ) {
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = ( ( unsigned int * )this ) - 1;
-	int size = *ptr;
+	unsigned int *ptr = ( unsigned int * )this;
+	int size = ptr[-1];
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
 	for ( int i = 0; i < size; i++ ) {
@@ -294,10 +294,12 @@ void idClass::FindUninitializedMemory( void ) {
 		if ( ptr[i] == 0xcdcdcdcd && !skipOnX64 ) {
 #ifdef ID_USE_TYPEINFO
 			const char *varName = GetTypeVariableName( GetClassname(), i << 2 );
+			if ( varName == nullptr )
+				continue;
 #else
 			const char *varName = "[unknown]";
 #endif
-			gameLocal.Warning( "type '%s' has uninitialized variable %s (offset %d)", GetClassname(), varName, i << 2 );
+			gameLocal.Warning( "type '%s' has uninitialized variable at offset %d: %s", GetClassname(), i << 2, varName );
 		}
 	}
 #endif
