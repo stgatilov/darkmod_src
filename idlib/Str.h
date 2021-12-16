@@ -61,13 +61,16 @@ const int C_COLOR_BLACK				= '9';
 #define S_COLOR_GRAY				"^8"
 #define S_COLOR_BLACK				"^9"
 
+#ifdef ID_TYPEINFO
+//only TypeInfo program sees this
+//it cannot process sizeof, but it does not care about sizes anyway
+const int STR_ALLOC_BASE			= 16;
+#else
 // make idStr a multiple of 32 bytes long
 // don't make too large to keep memory requirements to a minimum
-#ifdef ID_TYPEINFO
-const int STR_ALLOC_BASE			= 32 - 8 - 4;
-#else
 const int STR_ALLOC_BASE			= 32 - 8 - sizeof(char*);
 #endif
+
 const int STR_ALLOC_GRAN			= 32;
 
 typedef enum {
