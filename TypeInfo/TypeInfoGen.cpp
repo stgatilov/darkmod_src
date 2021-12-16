@@ -1021,6 +1021,11 @@ void idTypeInfoGen::WriteTypeInfo( const char *fileName ) const {
 		idStr typeInfoName = typeName;
 		CleanName( typeInfoName );
 
+		if ( typeInfoName.Find( "=" ) >= 0 ) {
+			file->WriteFloatString( "// FIXME C++11 %s\n", typeInfoName.c_str() );
+			continue;
+		}
+
 		file->WriteFloatString( "static classVariableInfo_t %s_typeInfo[] = {\n", typeInfoName.c_str() );
 
 		for ( j = 0; j < info->variables.Num(); j++ ) {
@@ -1029,6 +1034,9 @@ void idTypeInfoGen::WriteTypeInfo( const char *fileName ) const {
 
 			if ( info->unnamed || info->isTemplate || info->variables[j].bits != 0 || info->variables[j].reference ) {
 				file->WriteFloatString( "//" );
+			}
+			if ( strstr( varType, "=" ) || !strcmp( varName, "override" ) ) {
+				file->WriteFloatString( "// FIXME C++11 " );
 			}
 			file->WriteFloatString( "\t{ \"%s\", \"%s\", (ptrdiff_t)(&((%s *)0)->%s), sizeof( ((%s *)0)->%s ) },\n",
 									varType, varName, typeName.c_str(), varName, typeName.c_str(), varName );

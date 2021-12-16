@@ -22,7 +22,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "../game/Moveable.h"
 #include "../game/Mover.h"
-#include "../game/MultiplayerGame.h"
 #include "../game/MultiStateMover.h"
 #include "../game/MultiStateMoverButton.h"
 #include "../game/MultiStateMoverPosition.h"
