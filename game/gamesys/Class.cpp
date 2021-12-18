@@ -289,7 +289,7 @@ void idClass::FindUninitializedMemory( void ) {
 	for ( int i = 0; i < size; i++ ) {
 		//stgatilov: avoid false positives due to padding on 64-bit mode
 		//note: such false positives are possible on 32-bit mode too, but they don't happen =)
-		bool skipOnX64 = sizeof(void*) == 8 && (i & 1) == 0;
+		bool skipOnX64 = sizeof(void*) == 8 && (i & 1);
 
 		if ( ptr[i] == 0xcdcdcdcd && !skipOnX64 ) {
 #ifdef ID_USE_TYPEINFO
