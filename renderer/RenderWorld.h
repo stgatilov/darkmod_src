@@ -175,6 +175,9 @@ typedef struct renderLight_s {
 	// which can allow player gun gui lights and such to not effect everyone
 	int						allowLightInViewID;
 
+	// this is different to *InViewID because a subview can still be VID_PLAYER_VIEW
+	int						suppressInSubview; // bitmask: 0 - suppress in subviews, 1 - supress in player views
+
 	// I am sticking the four bools together so there are no unused gaps in
 	// the padded structure, which could confuse the memcmp that checks for redundant
 	// updates

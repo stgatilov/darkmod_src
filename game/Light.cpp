@@ -192,7 +192,8 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	if ( !args->GetBool( "ai_see", "1") ) // SteveL #4128
 	{
 		renderLight->suppressLightInViewID = VID_LIGHTGEM;
-	}
+	} 
+	renderLight->suppressInSubview = args->GetInt( "suppressInSubview" );
 
 	const char* areaLock;
 	if (args->GetString("areaLock", "", &areaLock))
