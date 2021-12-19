@@ -3921,12 +3921,21 @@ void idEntity::SetSolid( bool solidity ) {
 		// SR CONTENTS_RESPONSE FIX:
 		if( m_StimResponseColl->HasResponse() )
 			p->SetContents( CONTENTS_RESPONSE );
+
+		// preserve opacity towards AIs
+		if( m_preHideContents & CONTENTS_OPAQUE )
+		{
+			p->SetContents( p->GetContents() | CONTENTS_OPAQUE);
+		}
 	}
 
 	else if( solidity == true )
 	{
 		p->SetContents( m_preHideContents );
 		p->SetClipMask( m_preHideClipMask );
+
+		if ( m_FrobBox && m_bFrobable )
+			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 	}
 
 }
