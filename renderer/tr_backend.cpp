@@ -620,8 +620,10 @@ void RB_DrawFullScreenQuad( float e ) {
 }
 
 void RB_DrawFullScreenTri() {
+	int oldCulling = backEnd.glState.faceCulling;
 	GL_Cull( CT_TWO_SIDED );
 	qglDrawArrays( GL_TRIANGLES, 0, 3 );
+	GL_Cull( oldCulling );
 }
 
 // postprocess related - J.C.Denton
