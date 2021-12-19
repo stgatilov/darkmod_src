@@ -733,7 +733,8 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 				R_MirrorRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
 				break;
 			case DI_XRAY_RENDER:
-				R_XrayRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
+				if ( !tr.guiModel->hasXrayStage )
+					R_XrayRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
 				break;
 			case DI_PORTAL_RENDER:
 				// R_PortalRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );

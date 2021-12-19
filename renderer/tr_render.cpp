@@ -589,7 +589,10 @@ void RB_BindVariableStageImage( const textureStage_t *texture, const float *shad
 			globalImages->blackImage->Bind();
 		}
 	} else if ( texture->image ) {
-		texture->image->Bind();
+		if ( texture->dynamic == DI_XRAY_RENDER && backEnd.viewDef->xrayEntityMask )
+			globalImages->blackImage->Bind();
+		else
+			texture->image->Bind();
 	}
 }
 
