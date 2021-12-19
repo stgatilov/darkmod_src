@@ -129,6 +129,7 @@ const idEventDef EV_Thread_GetTraceJoint( "getTraceJoint", EventArgs(), 's',
 	"Returns the number of the skeletal joint closest to the location on the entity which was hit\n" \
 	"during the last call to trace or tracePoint" );
 const idEventDef EV_Thread_GetTraceBody( "getTraceBody", EventArgs(), 's', "Returns the number of the body part of the entity which was hit during the last call to trace or tracePoint" );
+const idEventDef EV_Thread_GetTraceSurfType( "getTraceSurfType", EventArgs(), 's', "Returns the type of the surface (i.e. metal, snow) which was hit during the last call to trace or tracePoint" );
 const idEventDef EV_Thread_FadeIn( "fadeIn", EventArgs('v', "color", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades towards the given color over the given time in seconds.");
 const idEventDef EV_Thread_FadeOut( "fadeOut", EventArgs('v', "color", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades from the given color over the given time in seconds.");
 const idEventDef EV_Thread_FadeTo( "fadeTo", EventArgs('v', "color", "", 'f', "alpha", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades to the given color up to the given alpha over the given time in seconds.");
@@ -347,6 +348,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetTraceEntity,		idThread::Event_GetTraceEntity )
 	EVENT( EV_Thread_GetTraceJoint,			idThread::Event_GetTraceJoint )
 	EVENT( EV_Thread_GetTraceBody,			idThread::Event_GetTraceBody )
+	EVENT( EV_Thread_GetTraceSurfType,		idThread::Event_GetTraceSurfType )
 	EVENT( EV_Thread_FadeIn,				idThread::Event_FadeIn )
 	EVENT( EV_Thread_FadeOut,				idThread::Event_FadeOut )
 	EVENT( EV_Thread_FadeTo,				idThread::Event_FadeTo )
@@ -1843,6 +1845,20 @@ void idThread::Event_GetTraceBody( void ) {
 				return;
 			}
 		}
+	}
+	ReturnString( "" );
+}
+
+/*
+================
+idThread::Event_GetTraceSurfType
+================
+*/
+void idThread::Event_GetTraceSurfType( void ) {
+	if ( trace.fraction < 1.0f ) {
+		idStr typeName = g_Global.GetSurfName( trace.c.material );
+		ReturnString( typeName );
+		return;
 	}
 	ReturnString( "" );
 }

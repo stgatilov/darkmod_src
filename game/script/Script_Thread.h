@@ -120,6 +120,7 @@ private:
 	void						Event_GetTraceEntity( void );
 	void						Event_GetTraceJoint( void );
 	void						Event_GetTraceBody( void );
+	void						Event_GetTraceSurfType( void );
 	void						Event_FadeIn( idVec3 &color, float time );
 	void						Event_FadeOut( idVec3 &color, float time );
 	void						Event_FadeTo( idVec3 &color, float alpha, float time );
