@@ -827,7 +827,7 @@ void R_AddLightSurfaces( void ) {
 		if ( !r_skipSuppress.GetBool() ) {
 			bool suppress = light->parms.suppressLightInViewID && light->parms.suppressLightInViewID == tr.viewDef->renderView.viewID;
 			suppress |= light->parms.allowLightInViewID && light->parms.allowLightInViewID != tr.viewDef->renderView.viewID;
-			suppress |= light->parms.suppressInSubview & ( 1 << !tr.viewDef->isSubview );
+			suppress |= (bool) ( light->parms.suppressInSubview & ( 1 << ( tr.viewDef->isSubview ? 0 : 1 ) ) );
 			if ( suppress ) {
 				*ptr = vLight->next;
 				light->viewCount = -1;
