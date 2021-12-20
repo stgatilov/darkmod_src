@@ -148,6 +148,7 @@ private:
 	void 						Event_GetTicsPerSecond( void );
 	void						Event_CacheSoundShader( const char *soundName );
 	void						Event_PointIsInBounds( const idVec3 &point, const idVec3 &mins, const idVec3 &maxs );
+	void						Event_GetLocationPoint( const idVec3 &point );	// get location of a point rather than an entity
 	void						Event_DebugLine( const idVec3 &color, const idVec3 &start, const idVec3 &end, const float lifetime );
 	void						Event_DebugArrow( const idVec3 &color, const idVec3 &start, const idVec3 &end, const int size, const float lifetime );
 	void						Event_DebugCircle( const idVec3 &color, const idVec3 &origin, const idVec3 &dir, const float radius, const int numSteps, const float lifetime );
