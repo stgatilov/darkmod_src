@@ -149,7 +149,7 @@ void Downloader::DownloadAllForUrl(const std::string &url) {
             //what if we add the whole next download? (or what remains of it)
             int idx = state.downloadsIds[end];
             const Download &down = _downloads[idx];
-            uint32_t downStart = down.src.byterange[0] + state.doneBytesNext;
+            uint32_t downStart = down.src.byterange[0] + (subtasks.empty() ? state.doneBytesNext : 0);
             uint32_t downEnd = down.src.byterange[1];
 
             //estimate quantities if we add this download

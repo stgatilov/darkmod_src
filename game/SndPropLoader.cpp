@@ -327,7 +327,7 @@ bool CsndPropLoader::MapEntBounds( idBounds &bounds, idMapEntity *mapEnt )
 	int				numFaces, numPrim;
 	idVec3			norm, *addpoints, debugCenter;
 	idMat3			rotation;
-	float			dist, angle;
+	float			dist;
 	const char      *modelName;
 	cmHandle_t		cmHandle; // collision model handle for getting bounds
 

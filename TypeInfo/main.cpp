@@ -296,6 +296,7 @@ int main( int argc, char** argv ) {
 		}
 	} else {
 		generator->AddDefine( "__cplusplus" );
+		generator->AddDefine( "_WIN32" );
 		generator->AddDefine( "GAME_DLL" );
 		generator->AddDefine( "ID_TYPEINFO" );
 	}

@@ -562,8 +562,14 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 		windowWidth = tiledViewport[0];
 		windowHeight = tiledViewport[1];
 	}
+#if 0
+	// it's either glConfig.vidWidth/height already or is explicitly different
+	// some newer FBO code expects it to always be window size
+	// if for some reason this is enabled back, at least check that envshot works
+	// leaving this code here disabled to serve as WARNING
 	glConfig.vidWidth = windowWidth;
 	glConfig.vidHeight = windowHeight;
+#endif
 
 	renderCrops[0].x = 0;
 	renderCrops[0].y = 0;

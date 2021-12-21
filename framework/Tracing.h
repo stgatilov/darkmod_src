@@ -16,8 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 #include "../renderer/qgl.h"
-#include "TracyOpenGL.hpp"
-#include "common/TracySystem.hpp"
+#include <TracyOpenGL.hpp>
+#include <common/TracySystem.hpp>
 
 extern idCVar r_useDebugGroups;
 

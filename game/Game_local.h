@@ -45,12 +45,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define ASYNC_WRITE_PVS 0
 #endif
 
-#ifdef ID_USE_TYPEINFO
-// This is real evil but allows the code to inspect arbitrary class variables.
-#define private		public
-#define protected	public
-#endif
-
 class idLight;			// J.C.Denton: Required for the declaration of FindMainAmbientLight
 
 class idRenderWorld;

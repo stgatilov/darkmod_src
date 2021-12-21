@@ -16,7 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __PRECOMPILED_H__
 #define __PRECOMPILED_H__
 
-#include "Tracy.hpp"
+#include <Tracy.hpp>
 
 #include "sys/sys_defines.h"
 #include "sys/sys_includes.h"
@@ -62,7 +62,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../framework/DeclFX.h"
 #include "../framework/DeclParticle.h"
 #include "../framework/DeclAF.h"
+#ifndef ID_TYPEINFO
 #include "../framework/Tracing.h"
+#endif
 
 // We have expression parsing and evaluation code in multiple places:
 // materials, sound shaders, and guis. We should unify them.

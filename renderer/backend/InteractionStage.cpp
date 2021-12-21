@@ -281,7 +281,8 @@ void InteractionStage::BindShadowTexture() {
 
 		GL_SelectTexture( TU_SHADOW_STENCIL );
 		globalImages->shadowDepthFbo->Bind();
-		qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
+		if (globalImages->shadowDepthFbo->texnum != idImage::TEXTURE_NOT_LOADED)
+			qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 	}
 }
 

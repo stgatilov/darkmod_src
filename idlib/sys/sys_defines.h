@@ -144,6 +144,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define CALLBACK
 #define __cdecl
 
+#elif defined(ID_TYPEINFO)
+//TypeInfo program is allowed to work, even though it does not know about environment
+
 #else
 #error unknown build enviorment
 #endif

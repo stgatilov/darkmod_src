@@ -129,6 +129,7 @@ const idEventDef EV_Thread_GetTraceJoint( "getTraceJoint", EventArgs(), 's',
 	"Returns the number of the skeletal joint closest to the location on the entity which was hit\n" \
 	"during the last call to trace or tracePoint" );
 const idEventDef EV_Thread_GetTraceBody( "getTraceBody", EventArgs(), 's', "Returns the number of the body part of the entity which was hit during the last call to trace or tracePoint" );
+const idEventDef EV_Thread_GetTraceSurfType( "getTraceSurfType", EventArgs(), 's', "Returns the type of the surface (i.e. metal, snow) which was hit during the last call to trace or tracePoint" );
 const idEventDef EV_Thread_FadeIn( "fadeIn", EventArgs('v', "color", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades towards the given color over the given time in seconds.");
 const idEventDef EV_Thread_FadeOut( "fadeOut", EventArgs('v', "color", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades from the given color over the given time in seconds.");
 const idEventDef EV_Thread_FadeTo( "fadeTo", EventArgs('v', "color", "", 'f', "alpha", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades to the given color up to the given alpha over the given time in seconds.");
@@ -281,6 +282,14 @@ const idEventDef EV_EmitParticle( "emitParticle",
 const idEventDef EV_SetSecretsFound("setSecretsFound", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets the player has found. Use getMissionStatistic() for getting the current value.");
 const idEventDef EV_SetSecretsTotal("setSecretsTotal", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets exist in the map in total. Use getMissionStatistic() for getting the current value.");
 
+const idEventDef EV_PointIsInBounds( "pointIsInBounds", EventArgs(
+														'v', "point", "test whether this point is in the bounds",
+														'v', "mins", "minimal corner of the bounds", 
+														'v', "maxs", "maximal corner of the bounds"),
+	'd', "Returns true if the point is within the bounds specified.");
+const idEventDef EV_GetLocationPoint("getLocationPoint", EventArgs('v', "point", "point whose location to check"), 'e',
+	"Returns the idLocation entity corresponding to the specified point's location.");
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -347,6 +356,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetTraceEntity,		idThread::Event_GetTraceEntity )
 	EVENT( EV_Thread_GetTraceJoint,			idThread::Event_GetTraceJoint )
 	EVENT( EV_Thread_GetTraceBody,			idThread::Event_GetTraceBody )
+	EVENT( EV_Thread_GetTraceSurfType,		idThread::Event_GetTraceSurfType )
 	EVENT( EV_Thread_FadeIn,				idThread::Event_FadeIn )
 	EVENT( EV_Thread_FadeOut,				idThread::Event_FadeOut )
 	EVENT( EV_Thread_FadeTo,				idThread::Event_FadeTo )
@@ -368,6 +378,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetFrameTime,			idThread::Event_GetFrameTime )
 	EVENT( EV_Thread_GetTicsPerSecond,		idThread::Event_GetTicsPerSecond )
 	EVENT( EV_CacheSoundShader,				idThread::Event_CacheSoundShader )
+	EVENT( EV_PointIsInBounds,				idThread::Event_PointIsInBounds )
 	EVENT( EV_Thread_DebugLine,				idThread::Event_DebugLine )
 	EVENT( EV_Thread_DebugArrow,			idThread::Event_DebugArrow )
 	EVENT( EV_Thread_DebugCircle,			idThread::Event_DebugCircle )
@@ -1849,6 +1860,20 @@ void idThread::Event_GetTraceBody( void ) {
 
 /*
 ================
+idThread::Event_GetTraceSurfType
+================
+*/
+void idThread::Event_GetTraceSurfType( void ) {
+	if ( trace.fraction < 1.0f ) {
+		idStr typeName = g_Global.GetSurfName( trace.c.material );
+		ReturnString( typeName );
+		return;
+	}
+	ReturnString( "" );
+}
+
+/*
+================
 idThread::Event_FadeIn
 ================
 */
@@ -2164,6 +2189,51 @@ idThread::Event_CacheSoundShader
 */
 void idThread::Event_CacheSoundShader( const char *soundName ) {
 	declManager->FindSound( soundName );
+}
+
+/*
+================
+idThread::Event_PointIsInBounds
+================
+*/
+void idThread::Event_PointIsInBounds(const idVec3 &point, const idVec3 &mins, const idVec3 &maxs) {
+
+	idVec3 corner1 = mins;
+	idVec3 corner2 = maxs;
+
+	//make sure corner1 is the minimum and corner2 is the maximum
+	if (corner1[0] > corner2[0])
+	{
+		corner1[0] = maxs[0];
+		corner2[0] = mins[0];
+	}
+
+	if (corner1[1] > corner2[1])
+	{
+		corner1[1] = maxs[1];
+		corner2[1] = mins[1];
+	}
+
+	if (corner1[2] > corner2[2])
+	{
+		corner1[2] = maxs[2];
+		corner2[2] = mins[2];
+	}
+
+	idBounds bounds( corner1, corner2 );
+	bool retInt = bounds.ContainsPoint( point );
+
+	idThread::ReturnInt( retInt );
+}
+
+/*
+================
+idThread::Event_GetLocationPoint
+================
+*/
+void idThread::Event_GetLocationPoint( const idVec3 &point )
+{
+	idThread::ReturnEntity( gameLocal.LocationForPoint( point ) );
 }
 
 /*

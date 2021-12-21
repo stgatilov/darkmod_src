@@ -63,6 +63,7 @@ void RenderBackend::Init() {
 		qglBindBuffer( GL_PIXEL_PACK_BUFFER, lightgemPbos[i] );
 		qglBufferData( GL_PIXEL_PACK_BUFFER, DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * 3, nullptr, GL_STREAM_READ );
 	}
+	qglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 ); // reset to default to allow sysmem ReadPixels if LG disabled
 }
 
 void RenderBackend::Shutdown() {

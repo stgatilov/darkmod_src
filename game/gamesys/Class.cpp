@@ -282,22 +282,24 @@ idClass::FindUninitializedMemory
 */
 void idClass::FindUninitializedMemory( void ) {
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = ( ( unsigned int * )this ) - 1;
-	int size = *ptr;
+	unsigned int *ptr = ( unsigned int * )this;
+	int size = ptr[-1];
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
 	for ( int i = 0; i < size; i++ ) {
 		//stgatilov: avoid false positives due to padding on 64-bit mode
 		//note: such false positives are possible on 32-bit mode too, but they don't happen =)
-		bool skipOnX64 = sizeof(void*) == 8 && (i & 1) == 0;
+		bool skipOnX64 = sizeof(void*) == 8 && (i & 1);
 
 		if ( ptr[i] == 0xcdcdcdcd && !skipOnX64 ) {
 #ifdef ID_USE_TYPEINFO
 			const char *varName = GetTypeVariableName( GetClassname(), i << 2 );
+			if ( varName == nullptr )
+				continue;
 #else
 			const char *varName = "[unknown]";
 #endif
-			gameLocal.Warning( "type '%s' has uninitialized variable %s (offset %d)", GetClassname(), varName, i << 2 );
+			gameLocal.Warning( "type '%s' has uninitialized variable at offset %d: %s", GetClassname(), i << 2, varName );
 		}
 	}
 #endif

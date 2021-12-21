@@ -922,8 +922,68 @@ TEST_CASE("Downloader") {
             }
         }
     }
+}
 
+//this bug was noticed after adding subtasks in Downloader
+//i.e. when I made it possible to split single download into smaller chunks
+TEST_CASE("DownloaderSubtasks") {
+    char pattern[256];
+    for (int i = 0; i < 256; i++)
+        pattern[i] = i;
+    static const int FILESIZE = 100<<20;
+    {
+        stdext::create_directories(GetTempDir());
+        StdioFileHolder identity((GetTempDir() / "subtasks.bin").string().c_str(), "wb");
+        for (int i = 0; i < FILESIZE; i += 256)
+            fwrite(pattern, 256, 1, identity);
+    }
 
+    auto CreateDownloadCallback = [](std::string &buffer) -> DownloadFinishedCallback {
+        return [&buffer](const void *ptr, uint32_t bytes) -> void {
+            buffer.assign((char*)ptr, (char*)ptr + bytes);
+        };
+    };
+
+    HttpServer server;
+    server.SetRootDir(GetTempDir().string());
+    server.Start();
+
+    std::vector<std::string> data;
+    data.reserve(1<<20);
+    std::mt19937 rnd;
+
+    for (int downloadSize = 10<<10; downloadSize <= 20<<20; ) {
+        data.clear();
+        Downloader down;
+        for (int pos = 0; pos < FILESIZE; ) {
+            int size = downloadSize;
+            if (rnd() & 1)
+                size += rnd() % (downloadSize * 2);
+            else
+                size -= rnd() % (2 * downloadSize / 3);
+            size = std::min(size, FILESIZE - pos);
+            data.push_back("");
+            down.EnqueueDownload(DownloadSource(server.GetRootUrl() + "subtasks.bin", pos, pos + size), CreateDownloadCallback(data.back()));
+            pos += size;
+        }
+        down.DownloadAll();
+        std::string all;
+        for (int i = 0; i < data.size(); i++)
+            all += data[i];
+        for (int i = 0; i < FILESIZE; i += 256)
+            if (memcmp(pattern, all.data() + i, 256) != 0)
+                CHECK(false);
+
+        if (downloadSize < 5<<20)
+            downloadSize *= 2;
+        else {
+            //the most important thing is to test ~10MB size
+            //since that is the chunk size in the main speed profile of Downloader
+            downloadSize += downloadSize / 3;
+        }
+    }
+    //don't like 100MB files lying around...
+    RemoveFile((GetTempDir() / "subtasks.bin").string());
 }
 
 TEST_CASE("DownloaderTimeout"

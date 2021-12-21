@@ -29,10 +29,19 @@ idCVarBool con_legacyFont( "con_legacyFont", "0", CVAR_SYSTEM | CVAR_ARCHIVE, "0
 idCVar con_fontSize( "con_fontSize", "8", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "font width in screen units (640x480)", 3.0f, 30.0f );
 idCVar con_fontColor( "con_fontColor", "5", CVAR_SYSTEM | CVAR_ARCHIVE, "console color, 5 = cyan, 7 = white, 'r g b' = custom" );
 
-struct idConsoleLine : idList<uint16> {
+struct idConsoleLine : idStr {
+	idStr colorCodes;
+	bool wrapped = false;
+
 	idConsoleLine() {}
 	idConsoleLine( int size ) {
-		AssureSize( size, ' ' );
+		Fill( ' ', size );
+		colorCodes.Fill( 0, size );
+	}
+
+	void Set( int index, char ch, char colorCode ) {
+		data[index] = ch;
+		colorCodes[index] = colorCode;
 	}
 };
 
@@ -446,10 +455,9 @@ Save the console contents out to a file
 ================
 */
 void idConsoleLocal::Dump( const char *fileName, bool unwrap, bool modsavepath ) {
-	int		l, x, i;
+	int		l;
 	idFile	*f;
-	char	buffer[640 + 3];
-
+	
 	if (modsavepath) {
 		f = fileSystem->OpenFileWrite( fileName, "fs_modSavePath" );
 	} else {
@@ -461,28 +469,27 @@ void idConsoleLocal::Dump( const char *fileName, bool unwrap, bool modsavepath )
 	}
 
 	// write the remaining lines
-	for ( l = 0 ; l < text.Num(); l++ ) {
-		idConsoleLine &line = text[l];
-		for( i = 0; i < line.Num(); i++ ) {
-			buffer[i] = line[i] & 0xff;
-		}
-		for ( x = line.Num()-1; x >= 0; x-- ) {
-			if ( buffer[x] <= ' ' ) {
-				buffer[x] = 0;
-			} else {
-				break;
+	idStr prevWrappedLine;
+	for ( l = 0; l < text.Num(); l++ ) {
+		auto& line = text[l];
+		idStr s = line;
+		s.StripTrailingWhitespace();
+		if ( unwrap ) {
+			if ( prevWrappedLine.Length() ) {
+				s.StripLeadingWhitespace();
+				s = prevWrappedLine + ' ' + s;
 			}
-		}
-		if ( unwrap && x == line.Num() - 1 ) {
-			// # 3947: We don't add a line break for a full line, but clip off any trailing line break left 
-			// over from previous line writes.
-			buffer[x+1] = 0;
+			if ( line.wrapped ) {
+				prevWrappedLine = s;
+			} else {
+				f->Write( s.c_str(), s.Length() );
+				f->Write( "\r\n", 2 );
+				prevWrappedLine = "";
+			}
 		} else {
-			buffer[x+1] = '\r';
-			buffer[x+2] = '\n';
-			buffer[x+3] = 0;
+			f->Write( line.c_str(), line.Length() );
+			f->Write( "\r\n", 2 );
 		}
-        f->Write(buffer, static_cast<int>(strlen(buffer)));
 	}
 
 	fileSystem->CloseFile( f );
@@ -893,14 +900,18 @@ void idConsoleLocal::Print( const char *txt ) {
 		// if we should wrap to the new line
 		if ( c > ' ' && !con_noWrap ) {
 			// count word length
-			for (l=0; l<currentLine->Num(); l++) {
+			for (l=0; l<currentLine->Length(); l++) {
 				if ( txt[l] <= ' ') {
 					break;
 				}
 			}
 
 			// word wrap
-			if (l != currentLine->Num() && (x + l > currentLine->Num() ) ) {
+			if (l != currentLine->Length() && (x + l > currentLine->Length() ) ) {
+				currentLine->wrapped = true;
+				for ( ; x < currentLine->Length(); x++ )
+					( *currentLine )[x] = 32;
+
 				Linefeed();
 			}
 		}
@@ -913,9 +924,9 @@ void idConsoleLocal::Print( const char *txt ) {
 				break;
 			case '\t':
 				do {
-					(*currentLine)[x] = (color << 8) | ' ';
+					(*currentLine)[x] = ' ';
 					x++;
-					if ( x >= currentLine->Num() ) {
+					if ( x >= currentLine->Length() ) {
 						Linefeed();
 						x = 0;
 					}
@@ -925,17 +936,19 @@ void idConsoleLocal::Print( const char *txt ) {
 				x = 0;
 				break;
 			default:	// display character and advance
-				(*currentLine)[x] = (color << 8) | c;
+				( *currentLine ).Set( x, c, color );
 				x++;
-				if ( x >= currentLine->Num() ) {
-					if ( strcmp( txt, "\n" ) ) // don't insert an empty line when txt is exactly LINE_WIDTH long and ends with a LF
+				if ( x >= currentLine->Length() ) {
+					if ( strcmp( txt, "\n" ) ) { // don't insert an empty line when txt is exactly LINE_WIDTH long and ends with a LF
+						currentLine->wrapped = true;
 						Linefeed();
+					}
 					x = 0;
 				}
 				break;
 		}
-		if ( con_noWrap && ( x == currentLine->Num() - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) { // don't truncate if exactly LINE_WIDTH long
-			(*currentLine)[x] = ( C_COLOR_YELLOW << 8 ) | '>';
+		if ( con_noWrap && ( x == currentLine->Length() - 1 ) && txt[0] && txt[1] && ( txt[1] != '\n' ) ) { // don't truncate if exactly LINE_WIDTH long
+			currentLine->Set( x, '>', C_COLOR_YELLOW );
 			Linefeed();
 			x = 0;
 			while ( *txt && *txt != '\n' ) // only truncate until the next explicit line break
@@ -1013,7 +1026,6 @@ Draws the last few lines of output transparently over the game top
 ================
 */
 void idConsoleLocal::DrawNotify() {
-	idConsoleLine text_p;
 	int		time;
 	int		currentColor;
 
@@ -1037,17 +1049,17 @@ void idConsoleLocal::DrawNotify() {
 		if ( time > con_notifyTime.GetFloat() * 1000 ) {
 			continue;
 		}
-		text_p = text[i];
+		auto& text_p = text[i];
 		
-		for ( int x = 0; x < text_p.Num(); x++ ) {
-			if ( ( text_p[x] & 0xff ) == ' ' ) {
+		for ( int x = 0; x < text_p.Length(); x++ ) {
+			if ( ( text_p[x] ) == ' ' ) {
 				continue;
 			}
-			if ( idStr::ColorIndex(text_p[x]>>8) != currentColor ) {
-				currentColor = idStr::ColorIndex(text_p[x]>>8);
+			if ( idStr::ColorIndex(text_p.colorCodes[x]) != currentColor ) {
+				currentColor = idStr::ColorIndex(text_p.colorCodes[x]);
 				SetColor( currentColor );
 			}
-			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, v, text_p[x] & 0xff, charSetMaterial() );
+			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, v, text_p[x], charSetMaterial() );
 		}
 
 		v += SMALLCHAR_HEIGHT;
@@ -1067,7 +1079,6 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	int				x;
 	float			y;
 	int				row, rows;
-	idConsoleLine	text_p;
 	int				lines;
 	int				currentColor;
 
@@ -1130,18 +1141,18 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 			break;
 		}
 
-		text_p = text[row];
+		auto &text_p = text[row];
 
-		for ( x = 0; x < text_p.Num(); x++ ) {
-			if ( ( text_p[x] & 0xff ) == ' ' ) {
+		for ( x = 0; x < text_p.Length(); x++ ) {
+			if ( ( text_p[x] ) == ' ' ) {
 				continue;
 			}
 
-			if ( idStr::ColorIndex(text_p[x]>>8) != currentColor ) {
-				currentColor = idStr::ColorIndex(text_p[x]>>8);
+			if ( idStr::ColorIndex(text_p.colorCodes[x]) != currentColor ) {
+				currentColor = idStr::ColorIndex(text_p.colorCodes[x]);
 				SetColor( currentColor );
 			}
-			renderSystem->DrawSmallChar( 0.5*SMALLCHAR_WIDTH + x*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x] & 0xff, charSetMaterial() );
+			renderSystem->DrawSmallChar( 0.5*SMALLCHAR_WIDTH + x*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x], charSetMaterial() );
 		}
 	}
 

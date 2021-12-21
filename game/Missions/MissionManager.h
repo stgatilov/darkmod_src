@@ -22,7 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 namespace fs = stdext;
 
 // Shared_ptr typedef
-#include "pugixml.hpp"
+#include <pugixml.hpp>
 typedef std::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
 class CMissionDB;
