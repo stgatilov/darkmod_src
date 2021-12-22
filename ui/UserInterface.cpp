@@ -792,12 +792,16 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 			subtitleSlots[j] = SubtitleMatch{0};
 
 	//update GUI variables
-	char subtitleVar[] = "subtitle0";
-	for ( int j = 0; j < SUBTITLE_SLOTS; j++, subtitleVar[8]++ ) {
+	char textVar[] = "subtitle0";
+	char enabledVar[] = "subtitle0_nonempty";
+	for ( int j = 0; j < SUBTITLE_SLOTS; j++ ) {
+		textVar[8] = enabledVar[8] = char('0' + j);
 		const char *subtitleText = "";
 		if ( const Subtitle *sub = subtitleSlots[j].subtitle )
 			subtitleText = sub->text.c_str();
-		if ( idStr::Cmp( GetStateString( subtitleVar ), subtitleText ) )
-			SetStateString( subtitleVar, subtitleText );
+		if ( idStr::Cmp( GetStateString( textVar ), subtitleText ) ) {
+			SetStateString( textVar, subtitleText );
+			SetStateString( enabledVar, subtitleText[0] ? "1" : "0" );
+		}
 	}
 }
