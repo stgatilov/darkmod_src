@@ -86,9 +86,17 @@ static void FrobOutlinePreset( const idCmdArgs &args ) {
 		r_frobOutline.SetInteger( 1 );
 		r_frobOutlineColorA.SetFloat( 1.2f );
 		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 2 );
+	}
+	else if ( preset == 4 ) {
+		//image-based depth-aware (tweaked by Kingsal)
+		r_frobOutline.SetInteger( 1 );
+		r_frobOutlineColorA.SetFloat( 0.7f );
+		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 1 );
 	}
 	else {
-		common->Printf( "Unknown preset: pass 1, 2, or 3\n" );
+		common->Printf( "Unknown preset: pass 1, 2, 3, or 4\n" );
 	}
 }
 
