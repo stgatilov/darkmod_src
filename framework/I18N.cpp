@@ -492,7 +492,7 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 
 	idUserInterface *gui = session->GetGui(idSession::gtMainMenu);
 
-	if (gui) {
+	if (gui && !firstTime) {
 		// Recreate main menu GUI
 		session->ResetMainMenu();
 		session->StartMenu();
