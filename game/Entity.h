@@ -1655,6 +1655,8 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_SetShaderParms( float parm0, float parm1, float parm2, float parm3 );
 	void					Event_SetColor( float red, float green, float blue );
 	void					Event_GetColor( void );
+	void					Event_SetHealth( float newHealth );
+	void					Event_GetHealth( void );
 	void					Event_IsHidden( void );
 	void					Event_Hide( void );
 	void					Event_Show( void );

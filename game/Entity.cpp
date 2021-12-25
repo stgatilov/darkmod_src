@@ -157,6 +157,9 @@ const idEventDef EV_SetShaderParms( "setShaderParms", EventArgs('f', "parm0", "r
 const idEventDef EV_SetColor( "setColor", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue"), EV_RETURNS_VOID, 
 	"Sets the RGB color of this entity (shader parms Parm0, Parm1, Parm2)." );
 const idEventDef EV_GetColor( "getColor", EventArgs(), 'v', "Gets the color of this entity (shader parms Parm0, Parm1, Parm2)." );
+const idEventDef EV_SetHealth( "setHealth", EventArgs( 'f', "newHealth", "" ), EV_RETURNS_VOID, 
+	"Sets the health of this entity to the new value. Setting health to 0 or lower via this method will result in the entity switching to its broken state." );
+const idEventDef EV_GetHealth( "getHealth", EventArgs(), 'f', "Gets the health of this entity." );
 
 const idEventDef EV_CacheSoundShader( "cacheSoundShader", EventArgs('s', "shaderName", "the sound shader to cache"), EV_RETURNS_VOID, 
 	"Ensure the specified sound shader is loaded by the system.\nPrevents cache misses when playing sound shaders.");
@@ -545,6 +548,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetShaderParms,		idEntity::Event_SetShaderParms )
 	EVENT( EV_SetColor,				idEntity::Event_SetColor )
 	EVENT( EV_GetColor,				idEntity::Event_GetColor )
+	EVENT( EV_SetHealth,			idEntity::Event_SetHealth )
+	EVENT( EV_GetHealth,			idEntity::Event_GetHealth )
 	EVENT( EV_IsHidden,				idEntity::Event_IsHidden )
 	EVENT( EV_Hide,					idEntity::Event_Hide )
 	EVENT( EV_Show,					idEntity::Event_Show )
@@ -7987,6 +7992,29 @@ void idEntity::Event_GetColor( void ) {
 
 	GetColor( out );
 	idThread::ReturnVector( out );
+}
+
+/*
+================
+idEntity::Event_SetHealth
+================
+*/
+void idEntity::Event_SetHealth( float newHealth ) {
+	health = static_cast<int>(newHealth);
+
+	if( health <= 0 && !m_bIsBroken )
+	{
+		BecomeBroken( NULL );
+	}
+}
+
+/*
+================
+idEntity::Event_GetHealth
+================
+*/
+void idEntity::Event_GetHealth( void ) {
+	idThread::ReturnInt( health );
 }
 
 /*
