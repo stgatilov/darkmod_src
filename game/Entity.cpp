@@ -139,7 +139,7 @@ const idEventDef EV_SetContents( "setContents", EventArgs('f', "contents", ""), 
 const idEventDef EV_GetContents( "getContents", EventArgs(), 'f', "Returns the contents of the physics object." );
 const idEventDef EV_SetClipMask( "setClipMask", EventArgs('d', "clipMask", ""), EV_RETURNS_VOID, "Sets the clipmask of the physics object.");
 const idEventDef EV_GetClipMask( "getClipMask", EventArgs(), 'd', "Returns the clipmask of the physics object." );
-const idEventDef EV_SetSolid( "setSolid", EventArgs('d', "solidity", ""), EV_RETURNS_VOID, "Set the solidity of the entity for other entities." );
+const idEventDef EV_SetSolid( "setSolid", EventArgs('d', "solidity", ""), EV_RETURNS_VOID, "Set the solidity of the entity. If the entity has never been solid before it will be assigned solid and opaque contents/clip masks." );
 
 const idEventDef EV_GetSize( "getSize", EventArgs(), 'v', "Gets the size of this entity's bounding box." );
 const idEventDef EV_SetSize( "setSize", EventArgs('v', "min", "minimum corner coordinates", 'v', "max", "maximum corner coordinates"), EV_RETURNS_VOID, "Sets the size of this entity's bounding box.");
@@ -3912,11 +3912,14 @@ void idEntity::SetSolid( bool solidity ) {
 	idPhysics* p = GetPhysics();
 
 	// If the contents and clipmask are still uninitialised, the entity has not been hidden
-	// or had its solidity altered before. Set this to something valid (i.e. the current clipmask)
-	if ( m_preHideClipMask == -1 )
-		m_preHideClipMask = p->GetClipMask();
-	if ( m_preHideContents == -1 )
+	// or had its solidity altered by this function before.
+	// Set this to something valid: the current clipmask and contents
+	if ( m_preHideContents == -1 ) {
 		m_preHideContents = p->GetContents();
+	}
+	if ( m_preHideClipMask == -1 ) {
+		m_preHideClipMask = p->GetClipMask();
+	}
 
 	if( solidity == false )
 	{
@@ -3936,11 +3939,12 @@ void idEntity::SetSolid( bool solidity ) {
 
 	else if( solidity == true )
 	{
-		p->SetContents( m_preHideContents );
-		p->SetClipMask( m_preHideClipMask );
+		// Set contents. If contents are empty (entity started nonsolid), set some default values.
+		p->SetContents( (m_preHideContents) ? m_preHideContents : CONTENTS_SOLID | CONTENTS_OPAQUE );
+		p->SetClipMask( (m_preHideClipMask) ? m_preHideClipMask : MASK_SOLID | CONTENTS_OPAQUE );
 
 		if ( m_FrobBox && m_bFrobable )
-			m_FrobBox->SetContents( CONTENTS_FROBABLE );
+			m_FrobBox->SetContents( p->GetContents() | CONTENTS_FROBABLE );
 	}
 
 }
