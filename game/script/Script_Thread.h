@@ -214,6 +214,7 @@ private:
 
 	void						Event_GetNextEntity( const char* key, const char* value, const idEntity* lastMatch );	// SteveL #3802
 	void						Event_EmitParticle( const char* particle, float startTime, float diversity, const idVec3& origin, const idVec3& angle ); // SteveL #3962
+	void						Event_ProjectDecal( const idVec3& traceOrigin, const idVec3& traceEnd, idEntity* passEntity, const char* decal, float decalSize, float angle );
 
 	void						Event_SetSecretsFound( float secrets);
 	void						Event_SetSecretsTotal( float secrets);
