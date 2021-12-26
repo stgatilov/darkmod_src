@@ -123,6 +123,7 @@ private:
 	idEntityPtr<idLight>	spotLight;
 	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
+	idEntityPtr<idEntity>	enemy;
 
 	int						state;
 	int						alertMode;
@@ -171,6 +172,7 @@ private:
 	void					Event_SeePlayer_Toggle( void );
 	void					Event_SeePlayer_State( bool set );
 	void					Event_GetSpotLight(void);
+	void					Event_GetEnemy( void );
 	void					Event_GetSecurityCameraState( void );
 	void					Event_GetHealth( void );
 	void					Event_SetHealth( float newHealth );

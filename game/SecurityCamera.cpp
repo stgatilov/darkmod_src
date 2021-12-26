@@ -48,6 +48,7 @@ const idEventDef EV_SecurityCam_SweepState( "state_sweep", EventArgs('d', "set",
 const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player." );
 const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
+const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the enemy currently in sight of the security camera. Currently only player1 is supported." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
 const idEventDef EV_SecurityCam_SetHealth("setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Set the health of the security camera. Setting to 0 or lower will destroy it.");
@@ -66,6 +67,7 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_SeePlayerToggle,			idSecurityCamera::Event_SeePlayer_Toggle )
 	EVENT( EV_SecurityCam_SeePlayerState,			idSecurityCamera::Event_SeePlayer_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
+	EVENT( EV_SecurityCam_GetEnemy,					idSecurityCamera::Event_GetEnemy )	
 	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState )	
 	EVENT( EV_SecurityCam_GetHealth,				idSecurityCamera::Event_GetHealth )
 	EVENT( EV_SecurityCam_SetHealth,				idSecurityCamera::Event_SetHealth )
@@ -141,6 +143,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	spotLight.Save(savefile);
 	sparks.Save(savefile);
 	cameraDisplay.Save(savefile);
+	enemy.Save(savefile);
 
 	savefile->WriteInt(state);
 	savefile->WriteInt(alertMode);
@@ -234,6 +237,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	spotLight.Restore(savefile);
 	sparks.Restore(savefile);
 	cameraDisplay.Restore(savefile);
+	enemy.Restore(savefile);
 
 	savefile->ReadInt(state);
 	savefile->ReadInt(alertMode);
@@ -314,6 +318,7 @@ void idSecurityCamera::Spawn( void )
 	spotLight	= NULL;
 	sparks = NULL;
 	cameraDisplay = NULL;
+	enemy = NULL;
 
 	//check if this is an old version of the entity
 	if ( spawnArgs.GetBool("legacy", "0") ) {
@@ -650,6 +655,25 @@ void idSecurityCamera::Event_GetSpotLight()
 
 /*
 ================
+idSecurityCamera::Event_GetEnemy
+================
+*/
+void idSecurityCamera::Event_GetEnemy()
+{
+	idEntity* ent = enemy.GetEntity();
+
+	if (ent == NULL)
+	{
+		idThread::ReturnEntity(NULL);
+	}
+	else
+	{
+		idThread::ReturnEntity(ent);
+	}
+}
+
+/*
+================
 idSecurityCamera::Event_GetSecurityCameraState
 ================
 */
@@ -843,6 +867,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 	idVec3 dir;
 	idVec3 origin = GetPhysics()->GetOrigin();
 	pvsHandle_t handle;
+	enemy = NULL;
 
 	handle = gameLocal.pvs.SetupCurrentPVS( pvsArea );
 	for ( i = 0; i < gameLocal.numClients; i++ ) {
@@ -890,6 +915,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 					angleToPlayer	= a.yaw;
 					inclineToPlayer	= a.pitch;
 				}
+				enemy = ent;
 				return true;
 			}
 		}
@@ -909,6 +935,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 					angleToPlayer	= a.yaw;
 					inclineToPlayer = a.pitch;
 				}
+				enemy = ent;
 				return true;
 			}
 		}
