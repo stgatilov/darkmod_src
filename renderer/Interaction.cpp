@@ -28,7 +28,13 @@ idInteraction implementation
 */
 
 // FIXME: use private allocator for srfCullInfo_t
-idCVar r_useInteractionTriCulling("r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris");
+idCVar r_useInteractionTriCulling(
+	"r_useInteractionTriCulling", "1",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"  1 = cull interactions tris\n"
+	"  0 = skip some culling of interactions tris\n"
+	" -1 = disable all culling\n"
+, -1, 1);
 idCVarInt r_singleShadowEntity( "r_singleShadowEntity", "-1", CVAR_RENDERER, "suppress all but one shadowing entity" );
 
 void idInteraction::PrepareLightSurf( linkLocation_t link, const srfTriangles_t *tri, const viewEntity_s *space,
@@ -133,7 +139,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		}
 
 		// if the surface is completely inside the light frustum
-		if ( frontBits == ( ( 1 << 6 ) - 1 ) || !r_useInteractionTriCulling.GetBool() ) {
+		if ( frontBits == ( ( 1 << 6 ) - 1 ) || r_useInteractionTriCulling.GetInteger() == 0 ) {
 			cullInfo.cullBits = LIGHT_CULL_ALL_FRONT;
 			return;
 		}
@@ -328,6 +334,16 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	// the light surface references the verts of the ambient surface
 	newTri->numVerts = tri->numVerts;
 	R_ReferenceStaticTriSurfVerts( newTri, tri );
+
+	if ( r_useInteractionTriCulling.GetInteger() == -1 ) {
+		// stgatilov: don't waste CPU time on individual triangles
+		// send them all to GPU and let it do its thing!
+		// TODO: does it brak anything?...
+		newTri->numIndexes = tri->numIndexes;
+		R_ReferenceStaticTriSurfIndexes( newTri, tri );
+		newTri->bounds = tri->bounds;
+		return newTri;
+	}
 
 	// calculate cull information
 	if ( !includeBackFaces ) {
