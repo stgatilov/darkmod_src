@@ -1157,7 +1157,7 @@ void RB_STD_FogAllLights( bool translucent ) {
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->lightShader->IsVolumetric() && !translucent ) {
+		if ( backEnd.vLight->volumetricDust > 0.0f && !translucent ) {
 			RB_VolumetricPass();
 		}
 		if ( !backEnd.vLight->lightShader->IsFogLight() && !backEnd.vLight->lightShader->IsBlendLight() ) {
