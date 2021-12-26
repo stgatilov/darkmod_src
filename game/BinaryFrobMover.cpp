@@ -111,11 +111,6 @@ CBinaryFrobMover::~CBinaryFrobMover()
 	delete m_Lock;
 }
 
-void CBinaryFrobMover::SetClosedBox(idBox box) // grayman #2345
-{
-	m_closedBox = box;
-}
-
 idBox CBinaryFrobMover::GetClosedBox() // grayman #2345
 {
 	return m_closedBox;
