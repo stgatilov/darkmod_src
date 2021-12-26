@@ -298,7 +298,10 @@ it will never clip triangles, but it may cull on a per-triangle basis.
 */
 static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
         const srfTriangles_t *tri, const idRenderLightLocal *light,
-        const idMaterial *shader, srfCullInfo_t &cullInfo ) {
+        const idMaterial *shader, srfCullInfo_t &cullInfo
+) {
+	TRACE_CPU_SCOPE("R_CreateLightTris");
+
 	int			i;
 	int			numIndexes;
 	glIndex_t	*indexes;
@@ -1069,6 +1072,8 @@ idInteraction::IsPotentiallyVisible
 ==================
 */
 bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
+	TRACE_CPU_SCOPE("IsPotentiallyVisible");
+
 	viewLight_t *	vLight;
 	viewEntity_t *	vEntity;
 
@@ -1191,6 +1196,8 @@ instantiate the dynamic model to find out
 ==================
 */
 void idInteraction::AddActiveInteraction( void ) {
+	TRACE_CPU_SCOPE_FORMAT("AddActiveInteraction", "%s on %s", GetTraceLabel(lightDef->parms), GetTraceLabel(entityDef->parms));
+
 	viewLight_t *	vLight;
 	viewEntity_t *	vEntity;
 	idScreenRect	lightScissor;
