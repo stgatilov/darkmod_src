@@ -2427,36 +2427,36 @@ void idAI::Think( void )
 		bounds[0].y += 16;
 		idClip_EntityList ents;
 		int num = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_SOLID, ents );
-		if (num > 0)
+		for ( int i = 0; i < num; i++ )
 		{
-			for ( int i = 0; i < num; i++ )
-			{
-				// check if there's a door
-				idEntity *e = ents[i];
+			// check if there's a door
+			idEntity *e = ents[i];
 
-				if ( e == NULL )
+			if ( e == NULL )
+			{
+				continue;
+			}
+
+			if ( e->IsType(CFrobDoor::Type) )
+			{
+				CFrobDoor* frobDoor = static_cast<CFrobDoor*>(e);
+				bool foundImpassableDoor = false;
+
+				if ( frobDoor->IsOpen() )
 				{
-					continue;
+					if ( !FitsThrough(frobDoor) )
+					{
+						foundImpassableDoor = true; // can't fit through the open door
+					}
+				}
+				else // can't go through the closed door
+				{
+					foundImpassableDoor = true; // can't go through the closed door
 				}
 
-				if ( e->IsType(CFrobDoor::Type) )
+				int areaNum = frobDoor->GetAASArea(aas);
+				if (areaNum > 0)
 				{
-					CFrobDoor* frobDoor = static_cast<CFrobDoor*>(e);
-					bool foundImpassableDoor = false;
-
-					if ( frobDoor->IsOpen() )
-					{
-						if ( !FitsThrough(frobDoor) )
-						{
-							foundImpassableDoor = true; // can't fit through the open door
-						}
-					}
-					else // can't go through the closed door
-					{
-						foundImpassableDoor = true; // can't go through the closed door
-					}
-
-					int areaNum = frobDoor->GetAASArea(aas);
 					if ( foundImpassableDoor )
 					{
 						// add AAS area number of the door to forbidden areas
@@ -2470,8 +2470,8 @@ void idAI::Think( void )
 						// door is passable, so remove its area number from forbidden areas
 						gameLocal.m_AreaManager.RemoveForbiddenArea(areaNum, this);
 					}
-					break;
 				}
+				break;
 			}
 		}
 	}
