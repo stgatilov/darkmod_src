@@ -847,6 +847,8 @@ Linefeed
 ===============
 */
 void idConsoleLocal::Linefeed() {
+	static std::mutex mtx;           // mutex for critical section
+	std::unique_lock<std::mutex> lck( mtx, std::defer_lock );
 
 	// mark time for transparent overlay
 	if ( text.Num() > 0 ) {
@@ -855,7 +857,9 @@ void idConsoleLocal::Linefeed() {
 
 	x = 0;
 	idConsoleLine s( SCREEN_WIDTH / SMALLCHAR_WIDTH - 1 );
+	lck.lock();	// the `text` list is not thread safe
 	text.Append( s );
+	lck.unlock();
 
 	if ( display == text.Num() - 2 ) {
 		display++;
