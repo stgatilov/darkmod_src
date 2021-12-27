@@ -1287,6 +1287,11 @@ void idInteraction::AddActiveInteraction( void ) {
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
 
+					// stgatilov: reuse same cache if same array is referenced
+					if ( lightTris->indexes == tri->indexes && lightTris->numIndexes == tri->numIndexes ) {
+						lightTris->indexCache = tri->indexCache;
+					}
+
 					if ( !vertexCache.CacheIsCurrent( lightTris->indexCache ) ) {
 						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ) );
 					}
