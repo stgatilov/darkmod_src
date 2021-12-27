@@ -48,7 +48,7 @@ const idEventDef EV_SecurityCam_SweepState( "state_sweep", EventArgs('d', "set",
 const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player." );
 const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
-const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the enemy currently in sight of the security camera. Currently only player1 is supported." );
+const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that most recently alerted the security camera." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
 const idEventDef EV_SecurityCam_SetHealth("setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Set the health of the security camera. Setting to 0 or lower will destroy it.");
@@ -867,7 +867,6 @@ bool idSecurityCamera::CanSeePlayer( void )
 	idVec3 dir;
 	idVec3 origin = GetPhysics()->GetOrigin();
 	pvsHandle_t handle;
-	enemy = NULL;
 
 	handle = gameLocal.pvs.SetupCurrentPVS( pvsArea );
 	for ( i = 0; i < gameLocal.numClients; i++ ) {
@@ -1149,6 +1148,7 @@ void idSecurityCamera::Think( void )
 					state = STATE_SWEEPING;
 				}
 				UpdateColors();
+				enemy = NULL;
 			}
 			break;
 		case STATE_ALERTED:
@@ -1184,6 +1184,7 @@ void idSecurityCamera::Think( void )
 					state = STATE_SWEEPING;
 				}
 				UpdateColors();
+				enemy = NULL;
 				if ( spawnArgs.GetBool("trigger_alarm_end", "0") )
 				{
 					ActivateTargets(this);
@@ -1613,6 +1614,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 
 	state = STATE_DEAD;
 	sweeping = false;
+	enemy = NULL;
 	StopSound( SND_CHANNEL_ANY, false );
 
 	if ( spawnArgs.GetBool("notice_destroyed", "1") ) {
@@ -1802,6 +1804,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 	}
 	else
 	{
+		enemy = NULL;
 		StopSound(SND_CHANNEL_ANY, false);
 		BecomeInactive(TH_THINK);
 	}
