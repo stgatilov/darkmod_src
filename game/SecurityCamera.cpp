@@ -49,6 +49,7 @@ const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(
 const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that most recently alerted the security camera." );
+const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity. Currently only player1 is supported." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
 const idEventDef EV_SecurityCam_SetHealth("setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Set the health of the security camera. Setting to 0 or lower will destroy it.");
@@ -68,6 +69,7 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_SeePlayerState,			idSecurityCamera::Event_SeePlayer_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
 	EVENT( EV_SecurityCam_GetEnemy,					idSecurityCamera::Event_GetEnemy )	
+	EVENT( EV_SecurityCam_CanSee,					idSecurityCamera::Event_CanSee )	
 	EVENT( EV_SecurityCam_GetSecurityCameraState,	idSecurityCamera::Event_GetSecurityCameraState )	
 	EVENT( EV_SecurityCam_GetHealth,				idSecurityCamera::Event_GetHealth )
 	EVENT( EV_SecurityCam_SetHealth,				idSecurityCamera::Event_SetHealth )
@@ -669,6 +671,25 @@ void idSecurityCamera::Event_GetEnemy()
 	else
 	{
 		idThread::ReturnEntity(ent);
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_CanSee
+================
+*/
+bool idSecurityCamera::Event_CanSee( idEntity *ent )
+{
+	if( ent && ent->IsType( idPlayer::Type ) )
+	{
+		// side effect: calling this refreshes "enemy" variable
+		return CanSeePlayer();
+	}
+
+	else
+	{
+		return false;
 	}
 }
 

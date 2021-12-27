@@ -173,6 +173,7 @@ private:
 	void					Event_SeePlayer_State( bool set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetEnemy( void );
+	bool					Event_CanSee( idEntity *ent );
 	void					Event_GetSecurityCameraState( void );
 	void					Event_GetHealth( void );
 	void					Event_SetHealth( float newHealth );
