@@ -65,6 +65,22 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 	#ifdef __SSE2__
 		cpuid |= CPUID_SSE2;
 	#endif
+	#ifdef __SSE3__
+		cpuid |= CPUID_SSE3;
+	#endif
+	#ifdef __SSSE3__
+		cpuid |= CPUID_SSSE3;
+	#endif
+	#ifdef __SSE4_1__ 
+		cpuid |= CPUID_SSE41;
+	#endif
+	#ifdef __AVX__
+		cpuid |= CPUID_AVX;
+	#endif
+	#ifdef __AVX2__
+		cpuid |= CPUID_AVX2;
+		cpuid |= CPUID_FMA3;
+	#endif
 
 	// Print what we found to console
 	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
