@@ -2318,6 +2318,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(objectivesOverlay);
 	savefile->WriteInt(inventoryGridOverlay);
+	savefile->WriteInt(subtitlesOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
 	if (m_WeaponCursor != NULL) {
@@ -2659,6 +2660,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt(objectivesOverlay);
 	savefile->ReadInt(inventoryGridOverlay);
+	savefile->ReadInt(subtitlesOverlay);
 
 	bool hasWeaponCursor;
 	savefile->ReadBool(hasWeaponCursor);
