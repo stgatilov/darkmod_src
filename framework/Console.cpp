@@ -34,7 +34,6 @@ struct idConsoleLine : idStr {
 	bool wrapped = false;
 
 	idConsoleLine() {
-		assert( false ); // this constructor is only here to make compiler happy
 	}
 	idConsoleLine( int size ) {
 		Fill( ' ', size );
@@ -877,7 +876,7 @@ void idConsoleLocal::Print( const char *txt ) {
 	int		c, l;
 	int		color;
 
-	printMutex.Lock();
+	idScopedCriticalSection lock(printMutex);
 
 #ifdef ID_ALLOW_TOOLS
 	RadiantPrint( txt );
@@ -971,8 +970,6 @@ void idConsoleLocal::Print( const char *txt ) {
 		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
 	}
 #undef currentLine
-
-	printMutex.Unlock();
 }
 
 
