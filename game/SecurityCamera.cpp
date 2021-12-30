@@ -923,7 +923,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 		// check for eyes
 		dir = (originPlayer + eye) - origin;
 		dist = dir.Normalize();
-		start = 0.95f* + 0.05f*(originPlayer + eye);
+		start = origin + ( viewOffset * GetAxis().ToMat3() );
 		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
 			gameLocal.clip.TracePoint(tr, start, originPlayer + eye, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
@@ -943,7 +943,7 @@ bool idSecurityCamera::CanSeePlayer( void )
 		// check for origin
 		dir = originPlayer - origin;
 		dist = dir.Normalize();
-		start = 0.95f*origin + 0.05f*originPlayer;
+		start = origin + ( viewOffset * GetAxis().ToMat3() );
 		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
 			gameLocal.clip.TracePoint(tr, origin, originPlayer, MASK_OPAQUE, this);
 			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
