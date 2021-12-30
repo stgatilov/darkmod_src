@@ -30,6 +30,7 @@ in vec4 attr_TexCoord;
 in int attr_DrawId;
 
 out vec2 texCoord;
+out float gl_ClipDistance[4];
 
 const mat3 cubicTransformations[6] = mat3[6] (
     mat3(

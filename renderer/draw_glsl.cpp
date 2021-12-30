@@ -286,7 +286,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	if ( clear )
 		qglClear( GL_DEPTH_BUFFER_BIT );
 	for ( int i = 0; i < 4; i++ )
-		qglEnable( GL_CLIP_PLANE0 + i );
+		qglEnable( GL_CLIP_DISTANCE0 + i );
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) 
 			continue;    // this flag is set by entities with parms.noShadow in R_PrepareLightSurf (candles, torches, etc)
@@ -309,7 +309,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			qglPolygonOffset( 0, 0 );*/
 	}
 	for ( int i = 0; i < 4; i++ )
-		qglDisable( GL_CLIP_PLANE0 + i );
+		qglDisable( GL_CLIP_DISTANCE0 + i );
 
 	qglDisable( GL_POLYGON_OFFSET_FILL );
 	GL_Cull( CT_FRONT_SIDED );
