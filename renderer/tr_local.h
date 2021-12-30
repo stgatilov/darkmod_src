@@ -380,6 +380,7 @@ typedef struct viewLight_s {
 	bool					pointLight;
 	bool					noShadows;
 	bool					noSpecular;
+	bool					volumetricNoshadows;		// stgatilov #5816: ignore shadows in volumetric light
 
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend

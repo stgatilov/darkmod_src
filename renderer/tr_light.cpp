@@ -285,7 +285,6 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->pointLight = light->parms.pointLight;
 	vLight->noShadows = light->parms.noShadows;
 	vLight->noSpecular = light->parms.noSpecular;
-	vLight->volumetricDust = light->parms.volumetricDust;
 
 	// the scissorRect will be expanded as the light bounds is accepted into visible portal chains
 	vLight->scissorRect.Clear();
@@ -336,13 +335,27 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 
 	auto shader = vLight->lightShader;
 	auto tooBigForShadowMaps = ( (light->parms.lightRadius.Length() > r_maxShadowMapLight.GetFloat()) || ( light->parms.parallel ) );
-	if ( !r_shadows.GetInteger() || !shader->LightCastsShadows() )
+	if ( !r_shadows.GetInteger() || vLight->noShadows || !shader->LightCastsShadows() )
 		vLight->shadows = LS_NONE;
-	else
+	else {
 		if ( r_shadows.GetInteger() == 1 || tooBigForShadowMaps )
 			vLight->shadows = LS_STENCIL;
 		else
 			vLight->shadows = LS_MAPS;
+	}
+
+	// stgatilov #5816: copy volumetric dust settings, resolve noshadows behavior
+	vLight->volumetricDust = light->parms.volumetricDust;
+	vLight->volumetricNoshadows = false;
+	if ( light->parms.volumetricNoshadows == 0 && vLight->shadows != LS_MAPS ) {
+		// volumetric light must never pass through walls, which can only be achieved with shadow map
+		// so we have to disable the volumetric light entirely
+		vLight->volumetricDust = 0.0f;
+	}
+	if ( light->parms.volumetricNoshadows == 1 || vLight->shadows != LS_MAPS ) {
+		// no shadow map available, or mapper said to ignore shadows -> disable shadows in volumetric light
+		vLight->volumetricNoshadows = true;
+	}
 
 	// multi-light shader stuff
 	if ( shader->LightCastsShadows() && tooBigForShadowMaps ) // use stencil shadows
