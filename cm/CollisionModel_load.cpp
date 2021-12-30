@@ -2669,7 +2669,7 @@ void idCollisionModelManagerLocal::ConvertBrushSides( cm_model_t *model, const i
 	}
 }
 
-static idCVar cm_fixBrushContentsIgnoreLastSide("cm_fixBrushContentsIgnoreLastSide", "1", CVAR_BOOL | CVAR_SYSTEM, 
+idCVar cm_fixBrushContentsIgnoreLastSide("cm_fixBrushContentsIgnoreLastSide", "1", CVAR_BOOL | CVAR_SYSTEM, 
 	"If set to 0, then the last side of a brush is ignored when determining brush contents. "
 	"This usually affects water brushes, making them non-liquid. "
 	"Takes effect during dmap, and only if you have deleted .cm file beforehand! "

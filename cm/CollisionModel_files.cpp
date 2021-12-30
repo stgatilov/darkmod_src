@@ -221,6 +221,8 @@ idCollisionModelManagerLocal::WriteCollisionModelsToFile
 ================
 */
 void idCollisionModelManagerLocal::WriteCollisionModelsToFile( const char *filename, int firstModel, int lastModel, unsigned int mapFileCRC ) {
+	TRACE_CPU_SCOPE_FORMAT( "WriteCollisionFile", "filename %s\nmodels [%d .. %d)", filename, firstModel, lastModel );
+
 	int i;
 	idFile *fp;
 	idStr name;

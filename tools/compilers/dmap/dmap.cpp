@@ -298,6 +298,8 @@ void Dmap( const idCmdArgs &args ) {
 		dmap_fixBrushOpacityFirstSide.SetBool(version >= 208);
 		dmap_bspAllSidesOfVisportal.SetBool(version >= 208);
 		dmap_fixVisportalOutOfBoundaryEffects.SetBool(version >= 208);
+		extern idCVar cm_fixBrushContentsIgnoreLastSide;
+		cm_fixBrushContentsIgnoreLastSide.SetBool(version >= 208);
 		//new in 2.10
 		dmap_planeHashing.SetBool(version >= 210);
 		dmap_fasterPutPrimitives.SetBool(version >= 210);
