@@ -24,7 +24,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
 idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.0005", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
-idCVar r_frobOutline( "r_frobOutline", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
+idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
