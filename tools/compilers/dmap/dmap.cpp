@@ -313,6 +313,8 @@ void Dmap( const idCmdArgs &args ) {
 		dmap_pruneAasBrushesChopping.SetBool(version >= 210);
 		dmap_fasterAasWaterJumpReachability.SetBool(version >= 210);
 		dmap_disableCellSnappingTjunc.SetBool(version >= 210);
+		extern idCVar cm_buildBspForPatchEntities;
+		cm_buildBspForPatchEntities.SetBool(version >= 210);
 	}
 
 	if ( args.Argc() < 2 ) {
