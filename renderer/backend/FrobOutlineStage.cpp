@@ -221,7 +221,7 @@ void FrobOutlineStage::DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs
 	// highlight and mark surfaces in stencil buffer
 	qglStencilFunc( GL_ALWAYS, 0, 0 );
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	DrawSurfaces( surfs, r_newFrob.GetBool(), true );
+	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, true );
 
 	// create outline image and blend it where there were no surfaces
 	DrawImageBasedOutline( surfs, 255 );
@@ -234,7 +234,7 @@ void FrobOutlineStage::DrawFrobImageBased( idList<drawSurf_t*> &surfs ) {
 	// highlight and mark surfaces in stencil buffer
 	qglStencilFunc( GL_ALWAYS, 128, 0 );	// 128 - highlighted object
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	DrawSurfaces( surfs, r_newFrob.GetBool(), true );
+	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, true );
 
 	// consider pixels in surfaces triangles which failed alpha test
 	// mark depth-passing ones as "we allow rendering outline here"
@@ -262,7 +262,7 @@ void FrobOutlineStage::DrawFrobGeometric( idList<drawSurf_t*> &surfs ) {
 	// note: mark surfaces triangle completely, regardless of alpha test
 	qglStencilFunc( GL_ALWAYS, 0, 0 );
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	DrawSurfaces( surfs, r_newFrob.GetBool(), false );
+	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, false );
 
 	// draw extruded object edges where there were no surfaces
 	qglStencilFunc( GL_EQUAL, 255, 255 );
