@@ -68,7 +68,20 @@ namespace {
 }
 
 static void FrobOutlinePreset( const idCmdArgs &args ) {
+	if ( args.Argc() < 2 ) {
+		common->Printf( "Pass number of preset to use:\n" );
+		common->Printf( "  1 - geometric hard\n" );
+		common->Printf( "  2 - geometric soft\n" );
+		common->Printf( "  3 - image-based\n" );
+		common->Printf( "  4 - image-based weak (Kingsal)\n" );
+		common->Printf( "  5 - geometric hard black (Nbohr1more)\n" );
+		common->Printf( "  6 - image-based black (Nbohr1more)\n" );
+		return;
+	}
 	int preset = atoi( args.Argv( 1 ) );
+	r_frobOutlineColorR.SetFloat( 1.0f );
+	r_frobOutlineColorG.SetFloat( 1.0f );
+	r_frobOutlineColorB.SetFloat( 1.0f );
 	if ( preset == 1 ) {
 		//geometric hard
 		r_frobOutline.SetInteger( 2 );
@@ -95,8 +108,27 @@ static void FrobOutlinePreset( const idCmdArgs &args ) {
 		r_frobIgnoreDepth.SetBool( false );
 		r_frobOutlineBlurPasses.SetInteger( 1 );
 	}
+	else if ( preset == 5 ) {
+		//geometric hard black (tweaked by Nbohr1more)
+		r_frobOutline.SetInteger( 2 );
+		r_frobOutlineColorA.SetFloat( 1.0f );
+		r_frobOutlineExtrusion.SetFloat( -8.0f );
+		r_frobOutlineColorR.SetFloat( 0.0f );
+		r_frobOutlineColorG.SetFloat( 0.0f );
+		r_frobOutlineColorB.SetFloat( 0.0f );
+	}
+	else if ( preset == 6 ) {
+		//image-based depth-aware black (tweaked by Nbohr1more)
+		r_frobOutline.SetInteger( 1 );
+		r_frobOutlineColorA.SetFloat( 2.5f );
+		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 2 );
+		r_frobOutlineColorR.SetFloat( 0.0f );
+		r_frobOutlineColorG.SetFloat( 0.0f );
+		r_frobOutlineColorB.SetFloat( 0.0f );
+	}
 	else {
-		common->Printf( "Unknown preset: pass 1, 2, 3, or 4\n" );
+		common->Printf( "Unknown preset number\n" );
 	}
 }
 
