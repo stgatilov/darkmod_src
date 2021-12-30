@@ -347,7 +347,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	// stgatilov #5816: copy volumetric dust settings, resolve noshadows behavior
 	vLight->volumetricDust = light->parms.volumetricDust;
 	vLight->volumetricNoshadows = false;
-	if ( light->parms.volumetricNoshadows == 0 && vLight->shadows != LS_MAPS ) {
+	if ( light->parms.volumetricNoshadows == 0 && vLight->shadows != LS_MAPS || r_volumetricSamples.GetInteger() <= 0 ) {
 		// volumetric light must never pass through walls, which can only be achieved with shadow map
 		// so we have to disable the volumetric light entirely
 		vLight->volumetricDust = 0.0f;

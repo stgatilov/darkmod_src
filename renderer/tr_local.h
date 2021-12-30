@@ -1090,6 +1090,10 @@ extern idCVar r_cinematic_legacyRoq;
 //stgatilov: temporary cvars, to be removed when ARB->GLSL migration is complete and settled
 extern idCVar r_glCoreProfile;
 
+//stgatilov #5816: volumetric light config
+extern idCVar r_volumetricSamples;
+extern idCVar r_volumetricDither;
+
 /*
 ====================================================================
 
