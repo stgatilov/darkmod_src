@@ -2669,7 +2669,7 @@ void idCollisionModelManagerLocal::ConvertBrushSides( cm_model_t *model, const i
 	}
 }
 
-static idCVar cm_fixBrushContentsIgnoreLastSide("cm_fixBrushContentsIgnoreLastSide", "1", CVAR_BOOL | CVAR_SYSTEM, 
+idCVar cm_fixBrushContentsIgnoreLastSide("cm_fixBrushContentsIgnoreLastSide", "1", CVAR_BOOL | CVAR_SYSTEM, 
 	"If set to 0, then the last side of a brush is ignored when determining brush contents. "
 	"This usually affects water brushes, making them non-liquid. "
 	"Takes effect during dmap, and only if you have deleted .cm file beforehand! "
@@ -3104,6 +3104,12 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName,
 	return model;
 }
 
+idCVar cm_buildBspForPatchEntities("cm_buildBspForPatchEntities", "1", CVAR_BOOL | CVAR_SYSTEM, 
+	"If set to 0, then patch-only entities never use BSP optimization. "
+	"Trace queries touching such models are slow. "
+	"This issue was fixed in TDM 2.10."
+);
+
 /*
 ================
 idCollisionModelManagerLocal::CollisionModelForMapEntity
@@ -3137,6 +3143,7 @@ cm_model_t *idCollisionModelManagerLocal::CollisionModelForMapEntity( const idMa
 
 	model = AllocModel();
 	model->node = AllocNode( model, NODE_BLOCK_SIZE_SMALL );
+	model->node->planeType = -1;
 
 	CM_EstimateVertsAndEdges( mapEnt, &model->maxVertices, &model->maxEdges );
 	model->numVertices = 0;
@@ -3150,23 +3157,21 @@ cm_model_t *idCollisionModelManagerLocal::CollisionModelForMapEntity( const idMa
 	model->name = name;
 	model->isConvex = false;
 
-	// convert brushes
+	// convert brushes as brushes
 	for ( i = 0; i < mapEnt->GetNumPrimitives(); i++ ) {
-		idMapPrimitive	*mapPrim;
-
-		mapPrim = mapEnt->GetPrimitive(i);
-		if ( mapPrim->GetType() == idMapPrimitive::TYPE_BRUSH ) {
+		idMapPrimitive *mapPrim = mapEnt->GetPrimitive(i);
+		if ( mapPrim->GetType() == idMapPrimitive::TYPE_BRUSH )
 			ConvertBrush( model, static_cast<idMapBrush*>(mapPrim), i );
-			continue;
-		}
 	}
 
-	// create an axial bsp tree for the model if it has more than just a bunch brushes
 	brushCount = CM_CountNodeBrushes( model->node );
-	if ( brushCount > 4 ) {
-		model->node = CreateAxialBSPTree( model, model->node );
-	} else {
-		model->node->planeType = -1;
+	if ( !cm_buildBspForPatchEntities.GetBool() ) {
+		// create an axial bsp tree for the model if it has more than just a bunch brushes
+		if ( brushCount > 4 ) {
+			model->node = CreateAxialBSPTree( model, model->node );
+		} else {
+			model->node->planeType = -1;
+		}
 	}
 
 	// get bounds for hash
@@ -3180,19 +3185,23 @@ cm_model_t *idCollisionModelManagerLocal::CollisionModelForMapEntity( const idMa
 	// different models do not share edges and vertices with each other, so clear the hash
 	ClearHash( bounds );
 
-	// create polygons from patches and brushes
+	// create polygons from patches
 	for ( i = 0; i < mapEnt->GetNumPrimitives(); i++ ) {
-		idMapPrimitive	*mapPrim;
-
-		mapPrim = mapEnt->GetPrimitive(i);
-		if ( mapPrim->GetType() == idMapPrimitive::TYPE_PATCH ) {
+		idMapPrimitive *mapPrim = mapEnt->GetPrimitive(i);
+		if ( mapPrim->GetType() == idMapPrimitive::TYPE_PATCH )
 			ConvertPatch( model, static_cast<idMapPatch*>(mapPrim), i );
-			continue;
-		}
-		if ( mapPrim->GetType() == idMapPrimitive::TYPE_BRUSH ) {
+	}
+
+	if ( cm_buildBspForPatchEntities.GetBool() ) {
+		// stgatilov #5859: build BSP tree taking both brushes and polys from patches into account
+		model->node = CreateAxialBSPTree( model, model->node );
+	}
+
+	// create polygons from brushes
+	for ( i = 0; i < mapEnt->GetNumPrimitives(); i++ ) {
+		idMapPrimitive *mapPrim = mapEnt->GetPrimitive(i);
+		if ( mapPrim->GetType() == idMapPrimitive::TYPE_BRUSH )
 			ConvertBrushSides( model, static_cast<idMapBrush*>(mapPrim), i );
-			continue;
-		}
 	}
 
 	FinishModel( model );

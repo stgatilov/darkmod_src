@@ -490,7 +490,14 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 		m_fontPath = "fonts/" + m_lang;
 	}
 
-	idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
+	idUserInterface *gui = session->GetGui(idSession::gtMainMenu);
+
+	if (gui && !firstTime) {
+		// Recreate main menu GUI
+		session->ResetMainMenu();
+		session->StartMenu();
+		gui = session->GetGui(idSession::gtMainMenu);
+	}
 
 	if ( gui && (!firstTime) && (oldLang != m_lang && (oldLang == "russian" || m_lang == "russian")))
 	{
@@ -514,17 +521,6 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 		gui->SetStateString("MsgBoxMiddleButtonCmd", "close_msg_box");
 	}
 
-	// finally reload the GUI so it appears in the new language
-	uiManager->Reload( true );		// true => reload all
-
-	// and switch back to the General Settings page
-	if (gui)
-	{
-		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
-		// it will land in the Video Settings page
-		gui->SetStateInt("reload", 1);
-	}
-	
 	return (oldLang != m_lang) ? true : false;
 }
 

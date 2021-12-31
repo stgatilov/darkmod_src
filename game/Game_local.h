@@ -816,7 +816,7 @@ public:
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
 	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material,
-										  float angle = 0, idEntity* target = NULL, bool save = false, int starttime = -1 ); // target, save, startime added #3817 -- SteveL
+										  float angle = 0, idEntity* target = NULL, bool save = false, int starttime = -1, bool allowRandomAngle = true ); // target, save, startime added #3817 -- SteveL
 	void					BloodSplat( const idVec3 &origin, const idVec3 &dir, float size, const char *material );
 
 	void					CallFrameCommand( idEntity *ent, const function_t *frameCommand );

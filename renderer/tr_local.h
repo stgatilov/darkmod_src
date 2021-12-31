@@ -380,6 +380,7 @@ typedef struct viewLight_s {
 	bool					pointLight;
 	bool					noShadows;
 	bool					noSpecular;
+	bool					volumetricNoshadows;		// stgatilov #5816: ignore shadows in volumetric light
 
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend
@@ -1088,6 +1089,10 @@ extern idCVar r_cinematic_legacyRoq;
 
 //stgatilov: temporary cvars, to be removed when ARB->GLSL migration is complete and settled
 extern idCVar r_glCoreProfile;
+
+//stgatilov #5816: volumetric light config
+extern idCVar r_volumetricSamples;
+extern idCVar r_volumetricDither;
 
 /*
 ====================================================================

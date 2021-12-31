@@ -21,6 +21,7 @@ in vec4 attr_Position;
 in vec4 attr_TexCoord;
 
 out vec2 texCoord;
+out float gl_ClipDistance[4];
 
 const mat3 cubicTransformations[6] = mat3[6] (
 	mat3(

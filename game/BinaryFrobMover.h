@@ -125,7 +125,6 @@ public:
 		return m_LastBlockingEnt.GetEntity();
 	}
 
-	void SetClosedBox(idBox box);	// grayman #2345
 	idBox GetClosedBox();			// grayman #2345
 
 	/**
@@ -223,7 +222,8 @@ public:
 	*/
 	void GetRemainingMovement(idVec3& out_deltaPosition, idAngles& out_deltaAngles);
 
-	// angua: returns the AAS area the center of the door is located in (or -1 if AAS is invalid)
+	// angua: returns the AAS area the center of the door is located in
+	// stgatilov: or -1 if AAS is invalid, or 0 if it does not belong to AAS
 	int GetAASArea(idAAS* aas);
 
 	/**

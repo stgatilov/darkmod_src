@@ -218,6 +218,7 @@ typedef struct renderLight_s {
 	renderEntity_s::areaLock_t areaLock;
 
 	float					volumetricDust;		//stgatilov #5816: strength of volumetric light (in color per meter)
+	int						volumetricNoshadows;//stgatilov #5816: use shadows or disable volumetric light?
 
 } renderLight_t;
 

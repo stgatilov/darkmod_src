@@ -278,6 +278,15 @@ const idEventDef EV_EmitParticle( "emitParticle",
 	"sys.getTime() as the start time. Designed to be called once per frame with the same startTime each call to achieve a normal particle "
 	"effect, or on demand with sys.getTime() as the startTime for finer grained control, 1 quad at a time. Returns True (1) if there are "
 	"more particles to be emitted from the stage, False (0) if the stage has released all its quads.");
+const idEventDef EV_ProjectDecal( "projectDecal", EventArgs(
+				'v', "traceOrigin", "Start of the trace.",
+				'v', "traceEnd", "End of the trace.",
+				'e', "passEntity", "This entity will be considered non-solid by the trace.",
+				's', "decal", "Decal to be projected.",
+				'f', "decalSize", "Size of the decal quad.",
+				'f', "angle", "Angle of the decal quad."), 
+	EV_RETURNS_VOID,	
+	"Performs a trace from the specified origin and end positions, then projects a decal in that direction.");
 
 const idEventDef EV_SetSecretsFound("setSecretsFound", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets the player has found. Use getMissionStatistic() for getting the current value.");
 const idEventDef EV_SetSecretsTotal("setSecretsTotal", EventArgs('f', "secrets", ""), EV_RETURNS_VOID, "Set how many secrets exist in the map in total. Use getMissionStatistic() for getting the current value.");
@@ -379,6 +388,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetTicsPerSecond,		idThread::Event_GetTicsPerSecond )
 	EVENT( EV_CacheSoundShader,				idThread::Event_CacheSoundShader )
 	EVENT( EV_PointIsInBounds,				idThread::Event_PointIsInBounds )
+	EVENT( EV_GetLocationPoint,				idThread::Event_GetLocationPoint )
 	EVENT( EV_Thread_DebugLine,				idThread::Event_DebugLine )
 	EVENT( EV_Thread_DebugArrow,			idThread::Event_DebugArrow )
 	EVENT( EV_Thread_DebugCircle,			idThread::Event_DebugCircle )
@@ -419,6 +429,7 @@ CLASS_DECLARATION( idClass, idThread )
 
 	EVENT( EV_GetNextEntity,				idThread::Event_GetNextEntity )	// SteveL #3802
 	EVENT( EV_EmitParticle,  				idThread::Event_EmitParticle )  // SteveL #3962
+	EVENT( EV_ProjectDecal,  				idThread::Event_ProjectDecal )
 
 	EVENT( EV_SetSecretsFound,				idThread::Event_SetSecretsFound )
 	EVENT( EV_SetSecretsTotal,				idThread::Event_SetSecretsTotal )
@@ -2740,6 +2751,20 @@ void idThread::Event_EmitParticle( const char* particle, float startTime, float 
 	const idDeclParticle* ptcl = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particle ) );
 	const bool emitted = gameLocal.smokeParticles->EmitSmoke( ptcl, startTime*1000, diversity, origin, axis );
 	idThread::ReturnFloat( emitted? 1.0f : 0.0f );
+}
+
+void idThread::Event_ProjectDecal( const idVec3& traceOrigin, const idVec3& traceEnd, idEntity* passEntity, const char* decal, float decalSize, float angle )
+{
+	trace_t tr;
+
+	gameLocal.clip.TracePoint( tr, traceOrigin, traceEnd, MASK_OPAQUE, passEntity );
+
+	// if trace made contact with a surface...
+	if ( trace.fraction < 1.0f )
+	{
+		gameLocal.ProjectDecal( tr.c.point, -tr.c.normal, 8.0f, true, decalSize, decal,
+								DEG2RAD(angle), gameLocal.entities[tr.c.entityNum], true, -1, false );
+	}
 }
 
 //Script events for the secrets system

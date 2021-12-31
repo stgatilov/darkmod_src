@@ -332,11 +332,11 @@ int idAF::EntitiesTouchingAF( idClip_afTouchList &touchList ) const {
 	idAFBody *body;
 	idClipModel *cm;
 
+	touchList.Clear();
 	if ( !IsLoaded() ) {
 		return 0;
 	}
 
-	touchList.Clear();
 	idClip_ClipModelList clipModels;
 	numClipModels = gameLocal.clip.ClipModelsTouchingBounds( physicsObj.GetAbsBounds(), -1, clipModels );
 

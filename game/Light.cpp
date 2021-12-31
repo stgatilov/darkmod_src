@@ -199,7 +199,13 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	if (args->GetString("areaLock", "", &areaLock))
 		renderLight->areaLock = (renderEntity_s::areaLock_t) (areaLockOptions.FindIndex(areaLock) + 1);
 
-	args->GetFloat( "volumetric_dust", "0.002", renderLight->volumetricDust );
+	renderLight->volumetricDust = 0.0f;
+	renderLight->volumetricNoshadows = renderLight->noShadows;
+	if ( args->GetBool( "volumetric_light" ) ) {
+		args->GetFloat( "volumetric_dust", "0.002", renderLight->volumetricDust );
+		if ( args->FindKey( "volumetric_noshadows" ) )
+			renderLight->volumetricNoshadows = args->GetInt( "volumetric_noshadows", "$%" );
+	}
 }
 
 /*

@@ -28,7 +28,13 @@ idInteraction implementation
 */
 
 // FIXME: use private allocator for srfCullInfo_t
-idCVar r_useInteractionTriCulling("r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris");
+idCVar r_useInteractionTriCulling(
+	"r_useInteractionTriCulling", "1",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"  1 = cull interactions tris\n"
+	"  0 = skip some culling of interactions tris\n"
+	" -1 = disable all culling\n"
+, -1, 1);
 idCVarInt r_singleShadowEntity( "r_singleShadowEntity", "-1", CVAR_RENDERER, "suppress all but one shadowing entity" );
 
 void idInteraction::PrepareLightSurf( linkLocation_t link, const srfTriangles_t *tri, const viewEntity_s *space,
@@ -133,7 +139,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		}
 
 		// if the surface is completely inside the light frustum
-		if ( frontBits == ( ( 1 << 6 ) - 1 ) || !r_useInteractionTriCulling.GetBool() ) {
+		if ( frontBits == ( ( 1 << 6 ) - 1 ) || r_useInteractionTriCulling.GetInteger() == 0 ) {
 			cullInfo.cullBits = LIGHT_CULL_ALL_FRONT;
 			return;
 		}
@@ -282,12 +288,6 @@ static bool	R_ClipTriangleToLight( const idVec3 &a, const idVec3 &b, const idVec
 	return true;
 }
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-// greebo: switch off function inlining for this file in VC++ 2013 release builds
-// Function inlining seems to cause lighting bugs (triangles are drawn very dark or black)
-#pragma optimize("t", off)
-#endif
-
 /*
 ====================
 R_CreateLightTris
@@ -298,7 +298,10 @@ it will never clip triangles, but it may cull on a per-triangle basis.
 */
 static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
         const srfTriangles_t *tri, const idRenderLightLocal *light,
-        const idMaterial *shader, srfCullInfo_t &cullInfo ) {
+        const idMaterial *shader, srfCullInfo_t &cullInfo
+) {
+	TRACE_CPU_SCOPE("R_CreateLightTris");
+
 	int			i;
 	int			numIndexes;
 	glIndex_t	*indexes;
@@ -331,6 +334,16 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	// the light surface references the verts of the ambient surface
 	newTri->numVerts = tri->numVerts;
 	R_ReferenceStaticTriSurfVerts( newTri, tri );
+
+	if ( r_useInteractionTriCulling.GetInteger() == -1 ) {
+		// stgatilov: don't waste CPU time on individual triangles
+		// send them all to GPU and let it do its thing!
+		// TODO: does it brak anything?...
+		newTri->numIndexes = tri->numIndexes;
+		R_ReferenceStaticTriSurfIndexes( newTri, tri );
+		newTri->bounds = tri->bounds;
+		return newTri;
+	}
 
 	// calculate cull information
 	if ( !includeBackFaces ) {
@@ -444,11 +457,6 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 
 	return newTri;
 }
-
-#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-// greebo: switch on function inlining again
-#pragma optimize("t", on)
-#endif
 
 /*
 ===============
@@ -1069,6 +1077,8 @@ idInteraction::IsPotentiallyVisible
 ==================
 */
 bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
+	TRACE_CPU_SCOPE("IsPotentiallyVisible");
+
 	viewLight_t *	vLight;
 	viewEntity_t *	vEntity;
 
@@ -1191,6 +1201,8 @@ instantiate the dynamic model to find out
 ==================
 */
 void idInteraction::AddActiveInteraction( void ) {
+	TRACE_CPU_SCOPE_FORMAT("AddActiveInteraction", "%s on %s", GetTraceLabel(lightDef->parms), GetTraceLabel(entityDef->parms));
+
 	viewLight_t *	vLight;
 	viewEntity_t *	vEntity;
 	idScreenRect	lightScissor;
@@ -1274,6 +1286,11 @@ void idInteraction::AddActiveInteraction( void ) {
 
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
+
+					// stgatilov: reuse same cache if same array is referenced
+					if ( lightTris->indexes == tri->indexes && lightTris->numIndexes == tri->numIndexes ) {
+						lightTris->indexCache = tri->indexCache;
+					}
 
 					if ( !vertexCache.CacheIsCurrent( lightTris->indexCache ) ) {
 						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ) );

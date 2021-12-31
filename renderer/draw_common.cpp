@@ -1064,7 +1064,15 @@ void RB_VolumetricPass() {
 	shader->Activate();
 	GL_CheckErrors();
 
-	bool useShadows = !( vLight->lightShader->IsAmbientLight() || !vLight->shadowMapIndex );
+	bool useShadows = true;
+	//note: all other noshadows settings already checked in R_SetLightDefViewLight
+	if ( vLight->volumetricNoshadows )
+		useShadows = false;
+	if ( !vLight->shadowMapIndex ) {
+		assert(useShadows == false);
+		useShadows = false;
+	}
+
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
 	qglDisable( GL_SCISSOR_TEST );
 	//out of two fragments, render the farther one
@@ -1157,7 +1165,7 @@ void RB_STD_FogAllLights( bool translucent ) {
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->lightShader->IsVolumetric() && !translucent ) {
+		if ( backEnd.vLight->volumetricDust > 0.0f && !backEnd.viewDef->IsLightGem() && !translucent ) {
 			RB_VolumetricPass();
 		}
 		if ( !backEnd.vLight->lightShader->IsFogLight() && !backEnd.vLight->lightShader->IsBlendLight() ) {

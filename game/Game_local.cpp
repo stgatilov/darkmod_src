@@ -6437,7 +6437,7 @@ idGameLocal::ProjectDecal
 ===============
 */
 void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, 
-								const char *material, float angle, idEntity* target, bool save, int starttime ) 
+								const char *material, float angle, idEntity* target, bool save, int starttime, bool allowRandomAngle )
 {
 	float s, c;
 	idMat3 axis, axistemp;
@@ -6465,8 +6465,13 @@ void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float d
 		return;
 	}
 
-	// randomly rotate the decal winding
-	idMath::SinCos16( ( angle ) ? angle : random.RandomFloat() * idMath::TWO_PI, s, c );
+	// randomly rotate the decal winding if angle = 0 and random angles are allowed
+	if( angle == 0 && allowRandomAngle )
+	{
+		angle = random.RandomFloat() * idMath::TWO_PI;
+	}
+
+	idMath::SinCos16( angle, s, c );
 
 	// winding orientation
 	axis[2] = dir;

@@ -24,7 +24,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 idCVar r_frobIgnoreDepth( "r_frobIgnoreDepth", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Ignore depth when drawing frob outline" );
 idCVar r_frobDepthOffset( "r_frobDepthOffset", "0.0005", CVAR_FLOAT|CVAR_RENDERER|CVAR_ARCHIVE, "Extra depth offset for frob outline" );
-idCVar r_frobOutline( "r_frobOutline", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
+idCVar r_frobOutline( "r_frobOutline", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "Work-in-progress outline around highlighted objects: 1 = image-based, 2 = geometric" );
 idCVar r_frobOutlineColorR( "r_frobOutlineColorR", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - red component" );
 idCVar r_frobOutlineColorG( "r_frobOutlineColorG", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - green component" );
 idCVar r_frobOutlineColorB( "r_frobOutlineColorB", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE , "Color of the frob outline - blue component" );
@@ -68,7 +68,20 @@ namespace {
 }
 
 static void FrobOutlinePreset( const idCmdArgs &args ) {
+	if ( args.Argc() < 2 ) {
+		common->Printf( "Pass number of preset to use:\n" );
+		common->Printf( "  1 - geometric hard\n" );
+		common->Printf( "  2 - geometric soft\n" );
+		common->Printf( "  3 - image-based\n" );
+		common->Printf( "  4 - image-based weak (Kingsal)\n" );
+		common->Printf( "  5 - geometric hard black (Nbohr1more)\n" );
+		common->Printf( "  6 - image-based black (Nbohr1more)\n" );
+		return;
+	}
 	int preset = atoi( args.Argv( 1 ) );
+	r_frobOutlineColorR.SetFloat( 1.0f );
+	r_frobOutlineColorG.SetFloat( 1.0f );
+	r_frobOutlineColorB.SetFloat( 1.0f );
 	if ( preset == 1 ) {
 		//geometric hard
 		r_frobOutline.SetInteger( 2 );
@@ -86,9 +99,36 @@ static void FrobOutlinePreset( const idCmdArgs &args ) {
 		r_frobOutline.SetInteger( 1 );
 		r_frobOutlineColorA.SetFloat( 1.2f );
 		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 2 );
+	}
+	else if ( preset == 4 ) {
+		//image-based depth-aware (tweaked by Kingsal)
+		r_frobOutline.SetInteger( 1 );
+		r_frobOutlineColorA.SetFloat( 0.7f );
+		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 1 );
+	}
+	else if ( preset == 5 ) {
+		//geometric hard black (tweaked by Nbohr1more)
+		r_frobOutline.SetInteger( 2 );
+		r_frobOutlineColorA.SetFloat( 1.0f );
+		r_frobOutlineExtrusion.SetFloat( -8.0f );
+		r_frobOutlineColorR.SetFloat( 0.0f );
+		r_frobOutlineColorG.SetFloat( 0.0f );
+		r_frobOutlineColorB.SetFloat( 0.0f );
+	}
+	else if ( preset == 6 ) {
+		//image-based depth-aware black (tweaked by Nbohr1more)
+		r_frobOutline.SetInteger( 1 );
+		r_frobOutlineColorA.SetFloat( 2.5f );
+		r_frobIgnoreDepth.SetBool( false );
+		r_frobOutlineBlurPasses.SetInteger( 2 );
+		r_frobOutlineColorR.SetFloat( 0.0f );
+		r_frobOutlineColorG.SetFloat( 0.0f );
+		r_frobOutlineColorB.SetFloat( 0.0f );
 	}
 	else {
-		common->Printf( "Unknown preset: pass 1, 2, or 3\n" );
+		common->Printf( "Unknown preset number\n" );
 	}
 }
 
@@ -181,7 +221,7 @@ void FrobOutlineStage::DrawFrobImageBasedIgnoreDepth( idList<drawSurf_t*> &surfs
 	// highlight and mark surfaces in stencil buffer
 	qglStencilFunc( GL_ALWAYS, 0, 0 );
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	DrawSurfaces( surfs, r_newFrob.GetBool(), true );
+	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, true );
 
 	// create outline image and blend it where there were no surfaces
 	DrawImageBasedOutline( surfs, 255 );
@@ -194,7 +234,7 @@ void FrobOutlineStage::DrawFrobImageBased( idList<drawSurf_t*> &surfs ) {
 	// highlight and mark surfaces in stencil buffer
 	qglStencilFunc( GL_ALWAYS, 128, 0 );	// 128 - highlighted object
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	DrawSurfaces( surfs, r_newFrob.GetBool(), true );
+	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, true );
 
 	// consider pixels in surfaces triangles which failed alpha test
 	// mark depth-passing ones as "we allow rendering outline here"
@@ -222,7 +262,7 @@ void FrobOutlineStage::DrawFrobGeometric( idList<drawSurf_t*> &surfs ) {
 	// note: mark surfaces triangle completely, regardless of alpha test
 	qglStencilFunc( GL_ALWAYS, 0, 0 );
 	qglStencilOp( GL_KEEP, GL_REPLACE, GL_REPLACE );
-	DrawSurfaces( surfs, r_newFrob.GetBool(), false );
+	DrawSurfaces( surfs, r_newFrob.GetInteger() == 1, false );
 
 	// draw extruded object edges where there were no surfaces
 	qglStencilFunc( GL_EQUAL, 255, 255 );

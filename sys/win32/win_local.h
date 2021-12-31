@@ -17,6 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define __WIN_LOCAL_H__
 
 #include <windows.h>
+#include <thread>
 
 
 #define	MAX_OSPATH		256
@@ -94,6 +95,7 @@ typedef struct {
 	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
 	static idCVarBool win_topmost;
+	const std::thread::id MAIN_THREAD_ID = std::this_thread::get_id();
 
 	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 	HANDLE			events[MAX_TRIGGER_EVENTS];

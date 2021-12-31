@@ -298,6 +298,8 @@ void Dmap( const idCmdArgs &args ) {
 		dmap_fixBrushOpacityFirstSide.SetBool(version >= 208);
 		dmap_bspAllSidesOfVisportal.SetBool(version >= 208);
 		dmap_fixVisportalOutOfBoundaryEffects.SetBool(version >= 208);
+		extern idCVar cm_fixBrushContentsIgnoreLastSide;
+		cm_fixBrushContentsIgnoreLastSide.SetBool(version >= 208);
 		//new in 2.10
 		dmap_planeHashing.SetBool(version >= 210);
 		dmap_fasterPutPrimitives.SetBool(version >= 210);
@@ -311,6 +313,8 @@ void Dmap( const idCmdArgs &args ) {
 		dmap_pruneAasBrushesChopping.SetBool(version >= 210);
 		dmap_fasterAasWaterJumpReachability.SetBool(version >= 210);
 		dmap_disableCellSnappingTjunc.SetBool(version >= 210);
+		extern idCVar cm_buildBspForPatchEntities;
+		cm_buildBspForPatchEntities.SetBool(version >= 210);
 	}
 
 	if ( args.Argc() < 2 ) {

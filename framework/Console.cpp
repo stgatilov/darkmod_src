@@ -33,7 +33,8 @@ struct idConsoleLine : idStr {
 	idStr colorCodes;
 	bool wrapped = false;
 
-	idConsoleLine() {}
+	idConsoleLine() {
+	}
 	idConsoleLine( int size ) {
 		Fill( ' ', size );
 		colorCodes.Fill( 0, size );
@@ -120,6 +121,8 @@ private:
 	int					historyLine;	// the line being displayed from history list
 
 	idEditField			consoleField;
+
+	idSysMutex			printMutex;		// lock the thread-unsafe console buffer
 
 	static idCVar		con_speed;
 	static idCVar		con_notifyTime;
@@ -847,7 +850,6 @@ Linefeed
 ===============
 */
 void idConsoleLocal::Linefeed() {
-
 	// mark time for transparent overlay
 	if ( text.Num() > 0 ) {
 		times[( text.Num() - 1 ) % NUM_CON_TIMES] = com_frameTime;
@@ -873,6 +875,8 @@ Handles cursor positioning, line wrapping, etc
 void idConsoleLocal::Print( const char *txt ) {
 	int		c, l;
 	int		color;
+
+	idScopedCriticalSection lock(printMutex);
 
 #ifdef ID_ALLOW_TOOLS
 	RadiantPrint( txt );
