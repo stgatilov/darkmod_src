@@ -1560,6 +1560,7 @@ void				R_ReferenceStaticTriSurfIndexes( srfTriangles_t *tri, const srfTriangles
 void				R_FreeStaticTriSurfSilIndexes( srfTriangles_t *tri );
 void				R_FreeStaticTriSurf( srfTriangles_t *tri );
 void				R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri );
+void				R_FreeStaticTriSurfIndexes( srfTriangles_t *tri );
 void				R_ReallyFreeStaticTriSurf( srfTriangles_t *tri );
 void				R_FreeDeferredTriSurfs( frameData_t *frame );
 int					R_TriSurfMemory( const srfTriangles_t *tri );
