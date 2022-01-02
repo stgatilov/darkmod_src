@@ -763,8 +763,6 @@ static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 
-	//qglDisable( GL_TEXTURE_2D );
-	globalImages->whiteImage->Bind();
 	qglDisable( GL_STENCIL_TEST );
 
 	GL_FloatColor( 1, 1, 1 );
@@ -2484,6 +2482,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	OldStageUniforms* oldStageUniforms = programManager->oldStageShader->GetUniformGroup<OldStageUniforms>();
 	oldStageUniforms->colorMul.Set( 1, 1, 1, 1 );
 	oldStageUniforms->colorAdd.Set( 0, 0, 0, 0 );
+	GL_SelectTexture(0);
 	globalImages->whiteImage->Bind();
 
 	RB_ShowLightCount();
