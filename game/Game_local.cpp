@@ -2034,7 +2034,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	// load the map needed for this savegame
-	LoadMap( mapName, 0 );
+	LoadMap( mapName, Sys_Milliseconds() );
 
 	// Restore the global hiding spot search collection
 	CHidingSpotSearchCollection::Instance().Restore(&savegame);
