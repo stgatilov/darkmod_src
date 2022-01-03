@@ -813,7 +813,10 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		lightOrigin.Set( din->localLightOrigin.ToVec3() );
 		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
 	}
-	useBumpmapLightTogglingFix.Set(r_useBumpmapLightTogglingFix.GetBool());
+
+	// stgatilov #4825: make translation "lit tangentially" -> "unlit" smoother
+	// #5862 unless surface has "twosided" material
+	useBumpmapLightTogglingFix.Set( r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides() );
 
 	GL_CheckErrors();
 }

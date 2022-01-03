@@ -63,7 +63,8 @@ idCVar r_softShadowsRadius( "r_softShadowsRadius", "1.0", CVAR_RENDERER | CVAR_F
 //  http://forums.thedarkmod.com/topic/19139-nonsmooth-graphics-due-to-bumpmapping/
 idCVar r_useBumpmapLightTogglingFix(
 	"r_useBumpmapLightTogglingFix", "1", CVAR_RENDERER | CVAR_BOOL,
-	"Reduce light toggling due to difference between bumpmapped normal and interpolated normal in \"enhanced\" interaction.\n"
+	"Reduce light toggling due to difference between bumpmapped normal and interpolated normal. "
+	"Only single-sided surfaces are affected. "
 );
 
 idCVar r_useStateCaching( "r_useStateCaching", "1", CVAR_RENDERER | CVAR_BOOL, "avoid redundant state changes in GL_*() calls" );
