@@ -40,6 +40,9 @@ struct InteractionStage::ShaderParams {
 	idVec4 specularColor;
 	idVec4 hasTextureDNS;
 	idVec4 ambientRimColor;
+	int useBumpmapLightTogglingFix;
+	float RGTC;
+	idVec2 padding_2;
 	// bindless texture handles, if supported
 	uint64_t normalTexture;
 	uint64_t padding;
@@ -62,7 +65,6 @@ namespace {
 		DEFINE_UNIFORM( vec3, globalLightOrigin )
 
 		DEFINE_UNIFORM( int, advanced )
-		DEFINE_UNIFORM( int, useBumpmapLightTogglingFix )
 		DEFINE_UNIFORM( int, cubic )
 		DEFINE_UNIFORM( float, gamma )
 		DEFINE_UNIFORM( float, minLevel )
@@ -302,7 +304,6 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	uniforms->advanced.Set( r_interactionProgram.GetInteger() );
 	uniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	uniforms->minLevel.Set( r_ambientMinLevel.GetFloat() );
-	uniforms->useBumpmapLightTogglingFix.Set( r_useBumpmapLightTogglingFix.GetBool() );
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
 
 	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
@@ -525,6 +526,8 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 		params.hasTextureDNS = idVec4(1, 1, 1, 0);
 	}
 	params.ambientRimColor = din->ambientRimColor;
+	params.useBumpmapLightTogglingFix = r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides();
+	params.RGTC = din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2;
 
 	if (renderBackend->ShouldUseBindlessTextures()) {
 		din->bumpImage->MakeResident();
