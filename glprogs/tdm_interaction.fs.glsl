@@ -57,18 +57,6 @@ float NdotH, NdotL, NdotV;
 
 //fetch surface normal at fragment
 void fetchDNS() {
-/*	if (u_hasTextureDNS[1] != 0) {
-		vec4 bumpTexel = texture (u_normalTexture, var_TexNormal.st) * 2. - 1.;
-		RawN = u_RGTC == 1.0
-			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1. - bumpTexel.x*bumpTexel.x - bumpTexel.y*bumpTexel.y, 0)))
-			: normalize(bumpTexel.wyz);
-		N = var_TangentBitangentNormalMatrix * RawN;
-	}
-	else {
-		RawN = vec3(0, 0, 1);
-		N = var_TangentBitangentNormalMatrix[2];
-	}
-*/
 	//initialize common variables (TODO: move somewhere else?)
 	lightDir = u_lightOrigin.xyz - var_Position;
 	viewDir = u_viewOrigin.xyz - var_Position;

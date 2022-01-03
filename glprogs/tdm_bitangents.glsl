@@ -34,15 +34,10 @@ in vec3 var_ViewDirLocal;
 void calcNormals() {
     // compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
 	if (u_hasTextureDNS[1] != 0) {
-/*		vec4 bumpTexel = texture (u_normalTexture, var_TexNormal.st) * 2. - 1.;
-		RawN = u_RGTC == 1.0
-			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1. - bumpTexel.x*bumpTexel.x - bumpTexel.y*bumpTexel.y, 0)))
-			: normalize(bumpTexel.wyz);
-		N = var_TangentBitangentNormalMatrix * RawN;*/
 		vec4 bumpTexel = texture ( u_normalTexture, var_TexNormal.st ) * 2. - 1.;
     	RawN = u_RGTC == 1. 
 	    	? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
-		    : normalize( bumpTexel.wyz ); 
+		    : normalize( bumpTexel.xyz ); 
     	N = var_TangentBitangentNormalMatrix * RawN; 
 	}
 	else {

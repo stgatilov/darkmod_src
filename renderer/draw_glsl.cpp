@@ -52,7 +52,6 @@ static void ChooseInteractionProgram() {
 			currrentInteractionShader = programManager->stencilInteractionShader;
 	}
 	currrentInteractionShader->Activate();
-	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( 1 ); // FIXME remove the RGTC uniform
 	GL_CheckErrors();
 }
 
@@ -90,6 +89,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 			return;
 		GL_SelectTexture( 0 );
 		din->bumpImage->Bind();
+		interactionUniforms->RGTC.Set( din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2 );
 		if ( interactionUniforms->hasTextureDNS.IsPresent() ) {
 			interactionUniforms->hasTextureDNS.Set( 1, 1, 1 );
 		}

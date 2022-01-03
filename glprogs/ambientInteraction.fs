@@ -61,7 +61,7 @@ void main() {
 	vec4 bumpTexel = texture ( u_normalTexture, var_TexNormal.st ) * 2. - 1.;
 	vec3 localNormal = u_RGTC == 1. 
 		? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
-		: normalize( bumpTexel.wyz ); 
+		: normalize( bumpTexel.xyz ); 
 	vec3 N = var_TangentBinormalNormalMatrix * localNormal;
 	//stgatilov: without normalization |N| > 1 is possible, which leads to |spec| > 1,
 	//which causes white sparklies when antialiasing is enabled (http://forums.thedarkmod.com/topic/19134-aliasing-artefact-white-pixels-near-edges/)
