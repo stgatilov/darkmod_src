@@ -45,6 +45,7 @@ uniform float u_gamma, u_minLevel;
 uniform mat4 u_modelMatrix;
 uniform float u_RGTC;
 uniform vec4 u_rimColor;   
+uniform vec4 u_lightTextureMatrix[2];
 
 uniform sampler2D u_ssaoTexture;
 uniform int u_ssaoEnabled;
@@ -78,7 +79,7 @@ void main() {
 		float a = .25 - tl.x*tl.x - tl.y*tl.y - tl.z*tl.z;
 		light = vec4(vec3(a*2), 1); // FIXME pass r_lightScale as uniform
 	} else {
-		light.rgb = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
+		light.rgb = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
 		light.a = 1;
 	} 
 

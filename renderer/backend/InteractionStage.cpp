@@ -32,6 +32,7 @@ struct InteractionStage::ShaderParams {
 	idVec4 diffuseMatrix[2];
 	idVec4 specularMatrix[2];
 	idMat4 lightProjectionFalloff;
+	idVec4 lightTextureMatrix[2];
 	idVec4 colorModulate;
 	idVec4 colorAdd;
 	idVec4 lightOrigin;
@@ -374,12 +375,14 @@ void InteractionStage::ProcessSingleSurface( viewLight_t *vLight, const shaderSt
 
 	memcpy( inter.lightProjection, lightProject, sizeof( inter.lightProjection ) );
 
-	// now multiply the texgen by the light texture matrix
-	if ( lightStage->texture.hasMatrix ) {
-		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, backEnd.lightTextureMatrix );
-		void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix );
-		RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), backEnd.lightTextureMatrix );
-	}
+	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+	if ( lightStage->texture.hasMatrix )
+		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+	// stgatilov: we no longer merge two transforms together, since we need light-volume coords in fragment shader
+	//RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), lightTexMatrix );
+	inter.lightTextureMatrix[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
+	inter.lightTextureMatrix[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );
+
 	inter.bumpImage = NULL;
 	inter.specularImage = NULL;
 	inter.diffuseImage = NULL;
@@ -502,6 +505,7 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 	params.specularMatrix[0] = din->specularMatrix[0];
 	params.specularMatrix[1] = din->specularMatrix[1];
 	memcpy( params.lightProjectionFalloff.ToFloatPtr(), din->lightProjection, sizeof(idMat4) );
+	memcpy( params.lightTextureMatrix->ToFloatPtr(), din->lightTextureMatrix, sizeof(idVec4) * 2 );
 	switch ( din->vertexColor ) {
 	case SVC_IGNORE:
 		params.colorModulate = idVec4(0, 0, 0, 0);

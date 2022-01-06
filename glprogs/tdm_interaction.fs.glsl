@@ -38,6 +38,7 @@ uniform float	u_advanced;
 uniform float	u_cubic;
 uniform float	u_RGTC;
 uniform vec3	u_hasTextureDNS;
+uniform vec4	u_lightTextureMatrix[2];
 uniform vec3 	u_lightOrigin;
 uniform vec4 	u_viewOrigin;
 uniform vec4 	u_diffuseColor;
@@ -74,7 +75,7 @@ vec3 lightColor() {
 	if (u_cubic == 1.0)
 		return projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
-		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
+		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
 }
 
 //illumination model with "simple interaction" setting

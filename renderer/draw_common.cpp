@@ -1053,6 +1053,7 @@ void RB_VolumetricPass() {
 		DEFINE_UNIFORM( sampler, lightFalloffTexture );
 		DEFINE_UNIFORM( mat4, lightProject );
 		DEFINE_UNIFORM( vec4, lightFrustum );
+		DEFINE_UNIFORM( vec4, lightTextureMatrix );
 
 		//shadow mapping
 		DEFINE_UNIFORM( int, shadows );
@@ -1115,6 +1116,15 @@ void RB_VolumetricPass() {
 	uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );
 	uniforms->lightProject.Set( backEnd.vLight->lightProject[0].ToFloatPtr() );
 	uniforms->lightFrustum.SetArray( 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
+
+	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+	if ( lightStage->texture.hasMatrix )
+		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+	idVec4 lightTexRows[2] = {
+		idVec4( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] ),
+		idVec4( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] ),
+	};
+	uniforms->lightTextureMatrix.SetArray( 2, lightTexRows[0].ToFloatPtr() );
 
 	if ( useShadows ) {
 		auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];

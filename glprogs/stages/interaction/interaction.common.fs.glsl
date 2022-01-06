@@ -122,7 +122,7 @@ vec3 lightColor() {
 	if (u_cubic == 1.0)
 		return projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
-		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
+		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
 }
 
 //illumination model with "simple interaction" setting

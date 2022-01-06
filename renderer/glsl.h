@@ -104,6 +104,7 @@ namespace Uniforms {
 		DEFINE_UNIFORM( vec4, colorAdd )
 
 		DEFINE_UNIFORM( mat4, lightProjectionFalloff )
+		DEFINE_UNIFORM( vec4, lightTextureMatrix )
 		DEFINE_UNIFORM( vec4, diffuseColor )
 		DEFINE_UNIFORM( vec4, specularColor )
 		DEFINE_UNIFORM( float, cubic )

@@ -25,6 +25,7 @@ struct PerDrawCallParams {
 	vec4 diffuseMatrix[2];
 	vec4 specularMatrix[2];
 	mat4 lightProjectionFalloff;
+	vec4 lightTextureMatrix[2];
 	vec4 colorModulate;
 	vec4 colorAdd;
 	vec4 lightOrigin;

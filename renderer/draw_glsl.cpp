@@ -801,6 +801,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	SetForInteractionBasic( din );
 
 	lightProjectionFalloff.Set( din->lightProjection[0].ToFloatPtr() );
+	lightTextureMatrix.SetArray( 2, din->lightTextureMatrix[0].ToFloatPtr() );
 	// set the constant color
 	diffuseColor.Set( din->diffuseColor );
 	specularColor.Set( din->specularColor );

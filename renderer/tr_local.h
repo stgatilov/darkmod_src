@@ -536,10 +536,10 @@ typedef struct {
 										// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)
 	int					cubicLight;		// nbohr1more #3881: dedicated cubemap light // probably not needed
 
-	// these are loaded into the vertex program
 	idVec4				localLightOrigin;
 	idVec4				localViewOrigin;
-	idVec4				lightProjection[4];	// in local coordinates, possibly with a texture matrix baked in
+	idVec4				lightProjection[4];		// transforms object coords into light-volume coords
+	idVec4				lightTextureMatrix[2];	// transforms light-volume coords into lightImage texcoords
 	idVec4				bumpMatrix[2];
 	idVec4				diffuseMatrix[2];
 	idVec4				specularMatrix[2];
@@ -748,7 +748,6 @@ typedef struct {
 
 	viewLight_t 		*vLight;
 	int					depthFunc;			// GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
-	float				lightTextureMatrix[16];	// only if lightStage->texture.hasMatrix
 	float				lightColor[4];		// evaluation of current light's color stage
 
 	float				lightScale;			// Every light color calaculation will be multiplied by this,
