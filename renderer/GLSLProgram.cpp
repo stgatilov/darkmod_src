@@ -96,8 +96,9 @@ bool GLSLProgram::Link() {
 		// display program info log, which may contain clues to the linking error
 		GLint length;
 		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		auto log = std::make_unique<char[]>( length );
+		auto log = std::make_unique<char[]>( length + 1 );
 		qglGetProgramInfoLog( program, length, &result, log.get() );
+		log[length] = 0;
 		common->Warning( "Linking program %s failed:\n%s\n", name.c_str(), log.get() );
 	}
 
@@ -146,8 +147,9 @@ bool GLSLProgram::Validate() {
 		// display program info log, which may contain clues to the linking error
 		GLint length;
 		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		auto log = std::make_unique<char[]>( length );
+		auto log = std::make_unique<char[]>( length + 1 );
 		qglGetProgramInfoLog( program, length, &result, log.get() );
+		log[length] = 0;
 		common->Warning( "Validation for program %s failed:\n%s\n", name.c_str(), log.get() );
 	}
 	return result;
