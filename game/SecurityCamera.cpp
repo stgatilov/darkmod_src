@@ -917,15 +917,30 @@ bool idSecurityCamera::FindEnemy()
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
-			if ( ai->fl.hidden || ai->fl.isDormant || ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+			if ( ai->fl.hidden || ai->fl.isDormant )
 			{
 				continue;
 			}
 
-			// never react to friends, don't react to neutrals if seeAI is 3/4, don't react to animals if seeAI is 1/3
-			if ( IsFriend( ai )
-			|| ( ( seeAI == 3 || seeAI == 4 ) && IsNeutral( ai ) )
-			|| ( ( seeAI == 1 || seeAI == 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 ) )
+			// ignore animals, even their bodies, if seeAI is 1/3
+			if( ( seeAI == 1 || seeAI == 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+			{
+				continue;
+			}
+			
+			// always react to human bodies, but skip if this particular body has already caused an alert
+			if( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+			{
+				idStr key = "bodySeenBy" + name;
+				if( ai->spawnArgs.GetBool( key, "0") )
+				{
+					continue;
+				}
+			}
+
+			// if AI is still upright: never react to friends, don't react to neutrals if seeAI is 3/4
+			else if ( IsFriend( ai )
+			|| ( ( seeAI == 3 || seeAI == 4 ) && IsNeutral( ai ) ) )
 			{
 				continue;
 			}
@@ -1297,6 +1312,20 @@ void idSecurityCamera::Think( void )
 				if ( spawnArgs.GetBool("trigger_alarm_end", "0") )
 				{
 					ActivateTargets(this);
+				}
+			}
+			// Mark bodies as seen so they will not cause an alert anymore.
+			if ( enemy.GetEntity() != NULL && !enemy.GetEntity()->IsType( idPlayer::Type ) )
+			{
+				idAI* ai = (idAI*) enemy.GetEntity();
+
+				if ( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+				{
+					idStr key = "bodySeenBy" + name;
+					if ( !ai->spawnArgs.GetBool(key, "0") )
+					{
+						ai->spawnArgs.Set(key, "1");
+					}
 				}
 			}
 			break;
