@@ -685,7 +685,7 @@ bool idSecurityCamera::Event_CanSee( idEntity *ent )
 {
 	if( ent && ent->IsType( idPlayer::Type ) )
 	{
-		return CanSeeEnemy( ent, false );
+		return CanSeeEnemy( ent );
 	}
 
 	else
@@ -882,36 +882,40 @@ idSecurityCamera::FindEnemy
 bool idSecurityCamera::FindEnemy()
 {
 	pvsHandle_t handle = gameLocal.pvs.SetupCurrentPVS(pvsArea);
-	bool foundEnemy = false;
+	idVec3 origin = GetPhysics()->GetOrigin();
+	idVec3 delta;
+	float dist;
+	float bestDist;
+	idEntity *bestEnemy = NULL;
 
-	// if the security camera already has an enemy, check if it's still visible
-	if( enemy.GetEntity() != NULL )
-	{
-		foundEnemy = CanSeeEnemy( enemy.GetEntity() );
-	}
-
-	// otherwise look for a new enemy
 	// check for player
-	if ( !foundEnemy && spawnArgs.GetBool("seePlayer", "1") )
+	if ( spawnArgs.GetBool("seePlayer", "1") )
 	{
 		idPlayer *player = gameLocal.GetLocalPlayer();
 
 		if( IsFriend( player ) )
 		{
-			foundEnemy = false;
+			bestEnemy = NULL;
 		}
 
 		// only check visibility if there is a possibility to see the player
 		else if ( gameLocal.pvs.InCurrentPVS( handle, player->GetPVSAreas(), player->GetNumPVSAreas() ) )
 		{
-			foundEnemy = CanSeeEnemy( player );
+			if( CanSeeEnemy( player ) )
+			{
+				bestEnemy = player;
+				delta = player->GetPhysics()->GetOrigin() - origin;
+				bestDist = delta.Length();
+
+				gameLocal.Printf("player's distance is %f \n", delta.Length());
+			}
 		}
 	}
 
 	// check for AIs
-	int seeAI = spawnArgs.GetInt( "seeAI", "0");	// 0 = don't react to AIs, 1 = react to hostiles and neutrals, 2 = react only to hostiles
+	int seeAI = spawnArgs.GetInt( "seeAI", "0");
 
-	if ( !foundEnemy && seeAI > 0 )
+	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles and neutrals, 2 = react only to hostiles
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
@@ -932,25 +936,45 @@ bool idSecurityCamera::FindEnemy()
 				continue;
 			}
 
-			// test whether this enemy can be seen
-			foundEnemy = CanSeeEnemy( ai );
+			// is this AI closer than the previous closest enemy, or the only enemy found so far?
+			delta = ai->GetPhysics()->GetOrigin() - origin;
+			dist = delta.Length();
 
-			if( foundEnemy )
+			gameLocal.Printf("AI's dist is %f \n", delta.Length() );
+
+			if( ( dist < bestDist || bestEnemy == NULL ) && ( CanSeeEnemy( ai ) ) )
 			{
-				gameLocal.pvs.FreeCurrentPVS( handle );
-				return true;
+				gameLocal.Printf("AI is closer than player \n");
+				bestDist = dist;
+				bestEnemy = ai;
 			}
 		}
 	}
 
-	//clear enemy if no visible enemy is found
-	if( !foundEnemy )
+	// done scanning for enemies: update variables
+	gameLocal.pvs.FreeCurrentPVS(handle);
+
+	if( bestEnemy == NULL )
 	{
 		enemy = NULL;
+		return false;
 	}
 
-	gameLocal.pvs.FreeCurrentPVS( handle );
-	return foundEnemy;
+	else
+	{
+		enemy = bestEnemy;
+		timeLastSeen = gameLocal.time;
+
+		if ( follow )
+		{
+			delta = ( bestEnemy->GetPhysics()->GetOrigin() + idVec3(0, 0, 32) ) - origin;	//focus on the torso
+			idAngles a = delta.ToAngles();
+			angleToEnemy = a.yaw;
+			inclineToEnemy = a.pitch;
+		}
+
+		return true;
+	}
 }
 
 /*
@@ -958,7 +982,7 @@ bool idSecurityCamera::FindEnemy()
 idSecurityCamera::CanSeeEnemy
 ================
 */
-bool idSecurityCamera::CanSeeEnemy( idEntity *actor, bool updateEnemy )
+bool idSecurityCamera::CanSeeEnemy( idEntity *actor )
 {
 	if ( !actor || actor->fl.notarget || actor->fl.invisible )
 	{
@@ -989,37 +1013,34 @@ bool idSecurityCamera::CanSeeEnemy( idEntity *actor, bool updateEnemy )
 
 	else
 	{
-		eye = idVec3(0, 0, 80);
+		eye = idVec3(0, 0, 64);	//focus on neck
 		numChecks = 1;
 	}
 
-
 	// check for body parts: always eye, also feet on player
-	for ( i = 0; i < numChecks; i++ ) {
-
-		switch ( i ) {
-			case 0:	originEnemy = actor->GetPhysics()->GetOrigin() + eye;
-			case 1:	originEnemy = actor->GetPhysics()->GetOrigin();
+	for ( i = 0; i < numChecks; i++ )
+	{
+		switch ( i )
+		{
+			case 0:
+				originEnemy = actor->GetPhysics()->GetOrigin() + eye;
+				break;
+			case 1:
+				originEnemy = actor->GetPhysics()->GetOrigin();
+				break;
 		}
 
+		originEnemy = actor->GetPhysics()->GetOrigin();
 		dir = originEnemy - origin;
 		dist = dir.Normalize();
 		start = origin + ( viewOffset * GetAxis().ToMat3() );
 
-		if ( dist < scanDist && dir * GetAxis() > scanFovCos ) {
+		if ( dist < scanDist && dir * GetAxis() > scanFovCos )
+		{
 			gameLocal.clip.TracePoint( tr, start, originEnemy, MASK_OPAQUE, this );
 
-			if ( tr.fraction == 1.0 || gameLocal.GetTraceEntity(tr) == actor ) {
-				timeLastSeen = gameLocal.time;
-
-				if ( follow ) {
-					dir = ( actor->GetPhysics()->GetOrigin() + eye/2 ) - origin;	//focus on the torso
-					idAngles a = dir.ToAngles();
-					angleToEnemy = a.yaw;
-					inclineToEnemy = a.pitch;
-				}
-
-				enemy = actor;
+			if ( tr.fraction == 1.0 || gameLocal.GetTraceEntity(tr) == actor )
+			{
 				return true;
 			}
 		}
@@ -1337,7 +1358,7 @@ void idSecurityCamera::Think( void )
 			}
 
 			//check whether the enemy has moved to another position in the camera's view
-			if ( following && CanSeeEnemy( enemy.GetEntity() ) )
+			if ( following && FindEnemy() )
 			{
 				float sweepDist		= fabs( idMath::AngleNormalize180(angleToEnemy - angleTarget) );
 				float inclineDist	= fabs( idMath::AngleNormalize180(inclineToEnemy - inclineTarget) );

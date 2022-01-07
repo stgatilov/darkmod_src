@@ -156,7 +156,7 @@ private:
 
 
 	void					StartSweep( void );
-	bool					CanSeeEnemy( idEntity *actor, bool updateEnemy = true );
+	bool					CanSeeEnemy( idEntity *actor );
 	bool					FindEnemy( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
