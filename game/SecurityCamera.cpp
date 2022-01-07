@@ -45,10 +45,12 @@ const idEventDef EV_SecurityCam_SpotLightToggle( "toggle_light", EventArgs(), EV
 const idEventDef EV_SecurityCam_SpotLightState( "state_light", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Switches the spotlight on or off. Respects the security camera's power state." );
 const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RETURNS_VOID, "Toggles the camera sweep." );
 const idEventDef EV_SecurityCam_SweepState( "state_sweep", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Enables or disables the camera's sweeping." );
-const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see enemies." );
-const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see enemies." );
+const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player." );
+const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
+const idEventDef EV_SecurityCam_SeeAIsToggle( "toggle_see_AIs", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see AIs." );
+const idEventDef EV_SecurityCam_SeeAIsState( "state_see_AIs", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see AIs." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
-const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that most recently alerted the security camera." );
+const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that's currently the focus of the security camera." );
 const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
@@ -683,7 +685,7 @@ bool idSecurityCamera::Event_CanSee( idEntity *ent )
 {
 	if( ent && ent->IsType( idPlayer::Type ) )
 	{
-		return CanSeeEnemy();
+		return CanSeeEnemy( ent, false );
 	}
 
 	else
@@ -874,92 +876,144 @@ bool idSecurityCamera::IsEntityHiddenByDarkness(idEntity* actor, const float sig
 
 /*
 ================
-idSecurityCamera::CanSeeEnemy
+idSecurityCamera::FindEnemy
 ================
 */
-bool idSecurityCamera::CanSeeEnemy()
+bool idSecurityCamera::FindEnemy()
 {
-	int i;
-	float dist;
-	trace_t tr;
-	idEntity *actor;
-	idVec3 dir;
-	idVec3 origin = GetPhysics()->GetOrigin();
-	pvsHandle_t handle;
+	pvsHandle_t handle = gameLocal.pvs.SetupCurrentPVS(pvsArea);
+	bool foundEnemy = false;
 
-	handle = gameLocal.pvs.SetupCurrentPVS( pvsArea );
-	for ( i = 0; i < gameLocal.numClients; i++ ) {
-		actor = static_cast<idPlayer*>(gameLocal.entities[ i ]);
+	// if the security camera already has an enemy, check if it's still visible
+	if( enemy.GetEntity() != NULL )
+	{
+		foundEnemy = CanSeeEnemy( enemy.GetEntity() );
+	}
 
-		if ( !spawnArgs.GetBool("seePlayer", "1") ) // does this camera react to the player?
+	// otherwise look for a new enemy
+	else
+	{
+		// check for player
+		if ( spawnArgs.GetBool("seePlayer", "1") )
 		{
-			continue;
-		}
+			idPlayer *player = gameLocal.GetLocalPlayer();
 
-		if ( !actor || actor->fl.notarget || actor->fl.invisible )
-		{
-			continue;
-		}
-
-		// if there is no way we can see this enemy
-		if ( !gameLocal.pvs.InCurrentPVS( handle, actor->GetPVSAreas(), actor->GetNumPVSAreas() ) ) {
-			continue;
-		}
-
-		// take lighting into account
-		if ( IsEntityHiddenByDarkness(actor, sightThreshold) )
-		{
-			continue;
-		}
-
-		idVec3 eye = static_cast<idPlayer*>(actor)->EyeOffset();
-		idVec3 start;
-		idVec3 originEnemy = actor->GetPhysics()->GetOrigin();
-
-		// check for eyes
-		dir = (originEnemy + eye) - origin;
-		dist = dir.Normalize();
-		start = origin + ( viewOffset * GetAxis().ToMat3() );
-		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
-			gameLocal.clip.TracePoint(tr, start, originEnemy + eye, MASK_OPAQUE, this);
-			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == actor)) {
-				gameLocal.pvs.FreeCurrentPVS(handle);
-				timeLastSeen = gameLocal.time;
-				if ( follow ) {
-					dir = (originEnemy + eye/2) - origin;	//focus on the torso
-					idAngles a		= dir.ToAngles();
-					angleToEnemy	= a.yaw;
-					inclineToEnemy	= a.pitch;
-				}
-				enemy = actor;
-				return true;
+			// only check visibility if there is a possibility to see the player
+			if ( gameLocal.pvs.InCurrentPVS( handle, player->GetPVSAreas(), player->GetNumPVSAreas() ) )
+			{
+				foundEnemy = CanSeeEnemy( player );
 			}
 		}
 
-		// check for origin
-		dir = originEnemy - origin;
-		dist = dir.Normalize();
-		start = origin + ( viewOffset * GetAxis().ToMat3() );
-		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
-			gameLocal.clip.TracePoint(tr, origin, originEnemy, MASK_OPAQUE, this);
-			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == actor)) {
-				gameLocal.pvs.FreeCurrentPVS(handle);
-				timeLastSeen = gameLocal.time;
-				if ( follow ) {
-					dir = (originEnemy + eye / 2) - origin;	//focus on the torso
-					idAngles a		= dir.ToAngles();
-					angleToEnemy	= a.yaw;
-					inclineToEnemy = a.pitch;
+		// check for AIs
+		if ( !foundEnemy && spawnArgs.GetBool("seeAIs", "0") )
+		{
+			for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next() )
+			{
+				if ( ai->fl.hidden || ai->fl.isDormant || ai->AI_DEAD || ai->AI_KNOCKEDOUT || ai->health <= 0 || !ai->IsType( idAI::Type ) )
+				{
+					continue;
 				}
-				enemy = actor;
-				return true;
+
+				// skip if there is no way we can see this AI
+				if ( !gameLocal.pvs.InCurrentPVS( handle, ai->GetPVSAreas(), ai->GetNumPVSAreas() ) )
+				{
+					continue;
+				}
+
+				// test whether this enemy can be seen
+				foundEnemy = CanSeeEnemy( ai );
+
+				if( foundEnemy )
+				{
+					gameLocal.pvs.FreeCurrentPVS(handle);
+					return true;
+				}
 			}
 		}
+	}
 
-	
+	//clear enemy if no visible enemy is found
+	if( !foundEnemy )
+	{
+		enemy = NULL;
 	}
 
 	gameLocal.pvs.FreeCurrentPVS( handle );
+	return foundEnemy;
+}
+
+/*
+================
+idSecurityCamera::CanSeeEnemy
+================
+*/
+bool idSecurityCamera::CanSeeEnemy( idEntity *actor, bool updateEnemy )
+{
+	if ( !actor || actor->fl.notarget || actor->fl.invisible )
+	{
+		return false;
+	}
+
+	// take lighting into account
+	if ( IsEntityHiddenByDarkness(actor, sightThreshold) )
+	{
+		return false;
+	}
+
+	int i;
+	int numChecks;
+	float dist;
+	idVec3 dir;
+	idVec3 origin = GetPhysics()->GetOrigin();
+	idVec3 originEnemy;
+	idVec3 start;
+	idVec3 eye;
+	trace_t tr;
+
+	if( actor->IsType(idPlayer::Type) )
+	{
+		eye = static_cast<idPlayer*>(actor)->EyeOffset();
+		numChecks = 2;
+	}
+
+	else
+	{
+		eye = idVec3(0, 0, 80);
+		numChecks = 1;
+	}
+
+
+	// check for body parts: always eye, also feet on player
+	for ( i = 0; i < numChecks; i++ ) {
+
+		switch ( i ) {
+			case 0:	originEnemy = actor->GetPhysics()->GetOrigin() + eye;
+			case 1:	originEnemy = actor->GetPhysics()->GetOrigin();
+		}
+
+		dir = originEnemy - origin;
+		dist = dir.Normalize();
+		start = origin + ( viewOffset * GetAxis().ToMat3() );
+
+		if ( dist < scanDist && dir * GetAxis() > scanFovCos ) {
+			gameLocal.clip.TracePoint( tr, start, originEnemy, MASK_OPAQUE, this );
+
+			if ( tr.fraction == 1.0 || gameLocal.GetTraceEntity(tr) == actor ) {
+				timeLastSeen = gameLocal.time;
+
+				if ( follow ) {
+					dir = ( actor->GetPhysics()->GetOrigin() + eye/2 ) - origin;	//focus on the torso
+					idAngles a = dir.ToAngles();
+					angleToEnemy = a.yaw;
+					inclineToEnemy = a.pitch;
+				}
+
+				enemy = actor;
+				return true;
+			}
+		}
+	}
 
 	return false;
 }
@@ -1086,7 +1140,7 @@ void idSecurityCamera::Think( void )
 		switch ( state )
 		{
 		case STATE_SWEEPING:
-			if ( CanSeeEnemy() )
+			if ( FindEnemy() )
 			{
 				StopSound(SND_CHANNEL_ANY, false);
 				StartSound("snd_sight", SND_CHANNEL_BODY, 0, false, NULL);
@@ -1126,7 +1180,7 @@ void idSecurityCamera::Think( void )
 		case STATE_ENEMYSIGHTED:
 			if ( gameLocal.time >= startAlertTime )
 			{
-				if ( CanSeeEnemy() )
+				if ( FindEnemy() )
 				{
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
@@ -1165,7 +1219,6 @@ void idSecurityCamera::Think( void )
 					state = STATE_SWEEPING;
 				}
 				UpdateColors();
-				enemy = NULL;
 			}
 			break;
 		case STATE_ALERTED:
@@ -1274,7 +1327,7 @@ void idSecurityCamera::Think( void )
 			}
 
 			//check whether the enemy has moved to another position in the camera's view
-			if ( following && CanSeeEnemy() )
+			if ( following && CanSeeEnemy( enemy.GetEntity() ) )
 			{
 				float sweepDist		= fabs( idMath::AngleNormalize180(angleToEnemy - angleTarget) );
 				float inclineDist	= fabs( idMath::AngleNormalize180(inclineToEnemy - inclineTarget) );
@@ -1973,6 +2026,28 @@ void idSecurityCamera::Event_SeePlayer_State( bool set )
 {
 	const char *kv = ( set ) ? "1" : "0";
 	spawnArgs.Set( "seePlayer", kv );
+}
+
+/*
+================
+idSecurityCamera::Event_SeeAIs_Toggle
+================
+*/
+void idSecurityCamera::Event_SeeAIs_Toggle( void )
+{
+	const char *kv = ( spawnArgs.GetBool("seeAIs", "0") ) ? "0" : "1";
+	spawnArgs.Set( "seeAIs", kv );
+}
+
+/*
+================
+idSecurityCamera::Event_SeeAIs_State
+================
+*/
+void idSecurityCamera::Event_SeeAIs_State( bool set )
+{
+	const char *kv = ( set ) ? "1" : "0";
+	spawnArgs.Set( "seeAIs", kv );
 }
 
 /*

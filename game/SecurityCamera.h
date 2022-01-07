@@ -25,6 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 */
 
 // grayman #4615 - Refactored for 2.06
+// dragofer #5528 - Developed for 2.10
 
 class idSecurityCamera : public idEntity {
 public:
@@ -155,7 +156,8 @@ private:
 
 
 	void					StartSweep( void );
-	bool					CanSeeEnemy( void );
+	bool					CanSeeEnemy( idEntity *actor, bool updateEnemy = true );
+	bool					FindEnemy( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
 	const idVec3			GetAxis( void ) const;
@@ -171,6 +173,8 @@ private:
 	void					Event_Sweep_State( bool set );
 	void					Event_SeePlayer_Toggle( void );
 	void					Event_SeePlayer_State( bool set );
+	void					Event_SeeAIs_Toggle( void );
+	void					Event_SeeAIs_State( bool set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetEnemy( void );
 	bool					Event_CanSee( idEntity *ent );
