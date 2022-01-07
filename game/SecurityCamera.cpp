@@ -891,44 +891,54 @@ bool idSecurityCamera::FindEnemy()
 	}
 
 	// otherwise look for a new enemy
-	else
+	// check for player
+	if ( !foundEnemy && spawnArgs.GetBool("seePlayer", "1") )
 	{
-		// check for player
-		if ( spawnArgs.GetBool("seePlayer", "1") )
-		{
-			idPlayer *player = gameLocal.GetLocalPlayer();
+		idPlayer *player = gameLocal.GetLocalPlayer();
 
-			// only check visibility if there is a possibility to see the player
-			if ( gameLocal.pvs.InCurrentPVS( handle, player->GetPVSAreas(), player->GetNumPVSAreas() ) )
-			{
-				foundEnemy = CanSeeEnemy( player );
-			}
+		if( IsFriend( player ) )
+		{
+			foundEnemy = false;
 		}
 
-		// check for AIs
-		if ( !foundEnemy && spawnArgs.GetBool("seeAIs", "0") )
+		// only check visibility if there is a possibility to see the player
+		else if ( gameLocal.pvs.InCurrentPVS( handle, player->GetPVSAreas(), player->GetNumPVSAreas() ) )
 		{
-			for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next() )
+			foundEnemy = CanSeeEnemy( player );
+		}
+	}
+
+	// check for AIs
+	int seeAI = spawnArgs.GetInt( "seeAI", "0");	// 0 = don't react to AIs, 1 = react to hostiles and neutrals, 2 = react only to hostiles
+
+	if ( !foundEnemy && seeAI > 0 )
+	{
+		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
+		{
+			if ( ai->fl.hidden || ai->fl.isDormant || ai->AI_DEAD || ai->AI_KNOCKEDOUT )
 			{
-				if ( ai->fl.hidden || ai->fl.isDormant || ai->AI_DEAD || ai->AI_KNOCKEDOUT || ai->health <= 0 || !ai->IsType( idAI::Type ) )
-				{
-					continue;
-				}
+				continue;
+			}
 
-				// skip if there is no way we can see this AI
-				if ( !gameLocal.pvs.InCurrentPVS( handle, ai->GetPVSAreas(), ai->GetNumPVSAreas() ) )
-				{
-					continue;
-				}
+			// never react to friends, don't react to neutrals if seeAI is 2
+			if ( IsFriend( ai ) || ( seeAI == 2 && IsNeutral( ai ) ) )
+			{
+				continue;
+			}
 
-				// test whether this enemy can be seen
-				foundEnemy = CanSeeEnemy( ai );
+			// skip if there is no way we can see this AI
+			if ( !gameLocal.pvs.InCurrentPVS( handle, ai->GetPVSAreas(), ai->GetNumPVSAreas() ) )
+			{
+				continue;
+			}
 
-				if( foundEnemy )
-				{
-					gameLocal.pvs.FreeCurrentPVS(handle);
-					return true;
-				}
+			// test whether this enemy can be seen
+			foundEnemy = CanSeeEnemy( ai );
+
+			if( foundEnemy )
+			{
+				gameLocal.pvs.FreeCurrentPVS( handle );
+				return true;
 			}
 		}
 	}
