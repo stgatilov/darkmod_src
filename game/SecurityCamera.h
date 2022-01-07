@@ -57,7 +57,7 @@ private:
 	enum
 	{
 		STATE_SWEEPING,
-		STATE_PLAYERSIGHTED,
+		STATE_ENEMYSIGHTED,
 		STATE_ALERTED,
 		STATE_LOSTINTEREST,
 		STATE_POWERRETURNS_SWEEPING,
@@ -88,12 +88,12 @@ private:
 	float					angleTarget;
 	float					anglePos1;
 	float					anglePos2;
-	float					angleToPlayer;
+	float					angleToEnemy;
 
 	float					incline;
 	float					inclineTarget;
 	float					inclinePos1;
-	float					inclineToPlayer;
+	float					inclineToEnemy;
 
 	bool					follow;
 	bool					following;
@@ -155,7 +155,7 @@ private:
 
 
 	void					StartSweep( void );
-	bool					CanSeePlayer( void );
+	bool					CanSeeEnemy( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
 	const idVec3			GetAxis( void ) const;
@@ -186,7 +186,7 @@ private:
 	void					UpdateColors( void );
 
 	void					Activate( idEntity* activator );
-	bool					IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold);
+	bool					IsEntityHiddenByDarkness(idEntity* actor, const float sightThreshold);
 
 };
 
