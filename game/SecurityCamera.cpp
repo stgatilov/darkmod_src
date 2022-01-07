@@ -47,8 +47,8 @@ const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RET
 const idEventDef EV_SecurityCam_SweepState( "state_sweep", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Enables or disables the camera's sweeping." );
 const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player." );
 const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
-const idEventDef EV_SecurityCam_SeeAIsToggle( "toggle_see_AIs", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see AIs." );
-const idEventDef EV_SecurityCam_SeeAIsState( "state_see_AIs", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see AIs." );
+const idEventDef EV_SecurityCam_SeeAIToggle( "toggle_see_AI", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see AIs." );
+const idEventDef EV_SecurityCam_SeeAIState( "state_see_AI", EventArgs('f', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see AIs." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that's currently the focus of the security camera." );
 const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity." );
@@ -69,6 +69,8 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_SweepState,				idSecurityCamera::Event_Sweep_State )
 	EVENT( EV_SecurityCam_SeePlayerToggle,			idSecurityCamera::Event_SeePlayer_Toggle )
 	EVENT( EV_SecurityCam_SeePlayerState,			idSecurityCamera::Event_SeePlayer_State )
+	EVENT( EV_SecurityCam_SeeAIToggle,				idSecurityCamera::Event_SeeAI_Toggle )
+	EVENT( EV_SecurityCam_SeeAIState,				idSecurityCamera::Event_SeeAI_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
 	EVENT( EV_SecurityCam_GetEnemy,					idSecurityCamera::Event_GetEnemy )	
 	EVENT( EV_SecurityCam_CanSee,					idSecurityCamera::Event_CanSee )	
@@ -135,6 +137,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(scanFov);
 	savefile->WriteFloat(scanFovCos);
 	savefile->WriteFloat(sightThreshold);
+	savefile->WriteInt(seeAI);
 
 	savefile->WriteInt(modelAxis);
 	savefile->WriteBool(flipAxis);
@@ -229,6 +232,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(scanFov);
 	savefile->ReadFloat(scanFovCos);
 	savefile->ReadFloat(sightThreshold);
+	savefile->ReadInt(seeAI);
 
 	savefile->ReadInt(modelAxis);
 	savefile->ReadBool(flipAxis);
@@ -291,6 +295,7 @@ void idSecurityCamera::Spawn( void )
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
 	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
+	seeAI			= spawnArgs.GetInt("seeAI", "0");
 	sparksPowerDependent	= spawnArgs.GetBool("sparks_power_dependent", "1");
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
@@ -911,8 +916,6 @@ bool idSecurityCamera::FindEnemy()
 	}
 
 	// check for AIs
-	int seeAI = spawnArgs.GetInt( "seeAI", "0");
-
 	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles and neutrals 2 = react to hostiles, neutrals and animals, 3 = react to hostiles 4 = react to hostiles and animals
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
@@ -2098,24 +2101,33 @@ void idSecurityCamera::Event_SeePlayer_State( bool set )
 
 /*
 ================
-idSecurityCamera::Event_SeeAIs_Toggle
+idSecurityCamera::Event_SeeAI_Toggle
 ================
 */
-void idSecurityCamera::Event_SeeAIs_Toggle( void )
+void idSecurityCamera::Event_SeeAI_Toggle( void )
 {
-	const char *kv = ( spawnArgs.GetBool("seeAIs", "0") ) ? "0" : "1";
-	spawnArgs.Set( "seeAIs", kv );
+	int kv = spawnArgs.GetInt("seeAI", "0");
+	
+	if( kv > 0 )
+	{
+		seeAI = ( seeAI > 0 ) ? 0 : kv;
+	}
+
+	// security cameras that weren't able to see AIs at map start
+	else if( kv == 0 )
+	{
+		seeAI = ( seeAI == 1 ) ? 0 : 1;
+	}
 }
 
 /*
 ================
-idSecurityCamera::Event_SeeAIs_State
+idSecurityCamera::Event_SeeAI_State
 ================
 */
-void idSecurityCamera::Event_SeeAIs_State( bool set )
+void idSecurityCamera::Event_SeeAI_State( float set )
 {
-	const char *kv = ( set ) ? "1" : "0";
-	spawnArgs.Set( "seeAIs", kv );
+	seeAI = set;
 }
 
 /*

@@ -112,6 +112,7 @@ private:
 	float					scanFov;
 	float					scanFovCos;
 	float					sightThreshold;
+	int						seeAI;
 
 	int						modelAxis;
 	bool					flipAxis;
@@ -173,8 +174,8 @@ private:
 	void					Event_Sweep_State( bool set );
 	void					Event_SeePlayer_Toggle( void );
 	void					Event_SeePlayer_State( bool set );
-	void					Event_SeeAIs_Toggle( void );
-	void					Event_SeeAIs_State( bool set );
+	void					Event_SeeAI_Toggle( void );
+	void					Event_SeeAI_State( float set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetEnemy( void );
 	bool					Event_CanSee( idEntity *ent );
