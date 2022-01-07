@@ -913,7 +913,7 @@ bool idSecurityCamera::FindEnemy()
 	// check for AIs
 	int seeAI = spawnArgs.GetInt( "seeAI", "0");
 
-	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles and neutrals, 2 = react only to hostiles
+	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles and neutrals 2 = react to hostiles, neutrals and animals, 3 = react to hostiles 4 = react to hostiles and animals
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
@@ -922,8 +922,10 @@ bool idSecurityCamera::FindEnemy()
 				continue;
 			}
 
-			// never react to friends, don't react to neutrals if seeAI is 2
-			if ( IsFriend( ai ) || ( seeAI == 2 && IsNeutral( ai ) ) )
+			// never react to friends, don't react to neutrals if seeAI is 3/4, don't react to animals if seeAI is 1/3
+			if ( IsFriend( ai )
+			|| ( ( seeAI == 3 || seeAI == 4 ) && IsNeutral( ai ) )
+			|| ( ( seeAI == 1 || seeAI == 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 ) )
 			{
 				continue;
 			}
