@@ -955,7 +955,8 @@ bool idSecurityCamera::FindEnemy()
 		if( follow && enemy.GetEntity() != NULL )
 		{
 			idVec3 velocity = enemy.GetEntity()->GetPhysics()->GetLinearVelocity();
-			delta = ( enemy.GetEntity()->GetPhysics()->GetOrigin() + idVec3(0, 0, 0) + velocity ) - origin;	//focus on the torso
+			idBounds bounds = enemy.GetEntity()->GetPhysics()->GetBounds();
+			delta = ( enemy.GetEntity()->GetPhysics()->GetOrigin() + idVec3( 0, 0, bounds[1][2]/2 ) + velocity ) - origin;	//focus on the torso
 			idAngles a = delta.ToAngles();
 			angleToEnemy = a.yaw;
 			inclineToEnemy = a.pitch;
@@ -971,7 +972,8 @@ bool idSecurityCamera::FindEnemy()
 
 		if ( follow )
 		{
-			delta = ( bestEnemy->GetPhysics()->GetOrigin() + idVec3(0, 0, 0) ) - origin;	//focus on the torso
+			idBounds bounds = bestEnemy->GetPhysics()->GetBounds();
+			delta = ( bestEnemy->GetPhysics()->GetOrigin() + idVec3( 0, 0, bounds[1][2]/2 ) ) - origin;	//focus on the torso
 			idAngles a = delta.ToAngles();
 			angleToEnemy = a.yaw;
 			inclineToEnemy = a.pitch;
@@ -1017,11 +1019,12 @@ bool idSecurityCamera::CanSeeEnemy( idEntity *actor )
 
 	else
 	{
-		eye = idVec3(0, 0, 64);	//focus on neck
+		idBounds bounds = actor->GetPhysics()->GetBounds();
+		eye = idVec3( 0, 0, bounds[1][2] );	//focus on neck
 		numChecks = 1;
 	}
 
-	// check for body parts: always eye, also feet on player
+	// check for body parts: eye on AI and player, feet only on player
 	for ( i = 0; i < numChecks; i++ )
 	{
 		switch ( i )
@@ -1034,7 +1037,6 @@ bool idSecurityCamera::CanSeeEnemy( idEntity *actor )
 				break;
 		}
 
-		originEnemy = actor->GetPhysics()->GetOrigin();
 		dir = originEnemy - origin;
 		dist = dir.Normalize();
 		start = origin + ( viewOffset * GetAxis().ToMat3() );
