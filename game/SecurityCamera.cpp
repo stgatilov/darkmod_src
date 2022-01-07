@@ -925,27 +925,38 @@ bool idSecurityCamera::FindEnemy()
 				continue;
 			}
 
-			// ignore animals, even their bodies, if seeAI is 1/3
-			if( ( seeAI == 1 || seeAI == 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
-			{
-				continue;
-			}
-			
-			// always react to human bodies, but skip if this particular body has already caused an alert
+			// is this a body? always react to bodies
 			if( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
 			{
+				// skip if this particular body has already been seen during an alert
 				idStr key = "bodySeenBy" + name;
 				if( ai->spawnArgs.GetBool( key, "0") )
 				{
 					continue;
 				}
+
+				// ignore bodies of animals if seeAI is 1/3
+				if( ( seeAI != 1 && seeAI != 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				{
+					continue;
+				}
 			}
 
-			// if AI is still upright: never react to friends, don't react to neutrals if seeAI is 3/4
-			else if ( IsFriend( ai )
-			|| ( ( seeAI == 3 || seeAI == 4 ) && IsNeutral( ai ) ) )
+			// if this not a body: check teams
+			else
 			{
-				continue;
+				// always ignore friends, ignore neutrals if seeAI is 3 or 4
+				if ( IsFriend( ai )
+				|| ( ( seeAI == 3 || seeAI == 4 ) && IsNeutral( ai ) ) )
+				{
+					continue;
+				}
+
+				// ignore animals if seeAI is 1/3
+				else if( ( seeAI == 1 || seeAI == 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				{
+					continue;
+				}
 			}
 
 			// skip if there is no way we can see this AI
