@@ -916,7 +916,7 @@ bool idSecurityCamera::FindEnemy()
 	}
 
 	// check for AIs
-	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles and neutrals 2 = react to hostiles, neutrals and animals, 3 = react to hostiles 4 = react to hostiles and animals
+	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles, 2 = react to hostiles and neutrals, 3 = react to hostiles, neutrals and animals, 4 = react to hostiles and animals
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
@@ -935,8 +935,8 @@ bool idSecurityCamera::FindEnemy()
 					continue;
 				}
 
-				// ignore bodies of animals if seeAI is 1/3
-				if( ( seeAI != 1 && seeAI != 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				// ignore bodies of animals if seeAI is 1/2
+				if( ( seeAI != 1 && seeAI != 2 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
 				{
 					continue;
 				}
@@ -945,15 +945,15 @@ bool idSecurityCamera::FindEnemy()
 			// if this not a body: check teams
 			else
 			{
-				// always ignore friends, ignore neutrals if seeAI is 3 or 4
+				// always ignore friends, ignore neutrals if seeAI is 1 or 4
 				if ( IsFriend( ai )
-				|| ( ( seeAI == 3 || seeAI == 4 ) && IsNeutral( ai ) ) )
+				|| ( ( seeAI == 1 || seeAI == 4 ) && IsNeutral( ai ) ) )
 				{
 					continue;
 				}
 
-				// ignore animals if seeAI is 1/3
-				else if( ( seeAI == 1 || seeAI == 3 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				// ignore animals if seeAI is 1/2
+				else if( ( seeAI == 1 || seeAI == 2 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
 				{
 					continue;
 				}
