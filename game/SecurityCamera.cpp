@@ -906,8 +906,6 @@ bool idSecurityCamera::FindEnemy()
 				bestEnemy = player;
 				delta = player->GetPhysics()->GetOrigin() - origin;
 				bestDist = delta.Length();
-
-				gameLocal.Printf("player's distance is %f \n", delta.Length());
 			}
 		}
 	}
@@ -940,11 +938,8 @@ bool idSecurityCamera::FindEnemy()
 			delta = ai->GetPhysics()->GetOrigin() - origin;
 			dist = delta.Length();
 
-			gameLocal.Printf("AI's dist is %f \n", delta.Length() );
-
 			if( ( dist < bestDist || bestEnemy == NULL ) && ( CanSeeEnemy( ai ) ) )
 			{
-				gameLocal.Printf("AI is closer than player \n");
 				bestDist = dist;
 				bestEnemy = ai;
 			}
@@ -956,6 +951,15 @@ bool idSecurityCamera::FindEnemy()
 
 	if( bestEnemy == NULL )
 	{
+		//did we just lose track of the enemy?
+		if( follow && enemy.GetEntity() != NULL )
+		{
+			idVec3 velocity = enemy.GetEntity()->GetPhysics()->GetLinearVelocity();
+			delta = ( enemy.GetEntity()->GetPhysics()->GetOrigin() + idVec3(0, 0, 0) + velocity ) - origin;	//focus on the torso
+			idAngles a = delta.ToAngles();
+			angleToEnemy = a.yaw;
+			inclineToEnemy = a.pitch;
+		}
 		enemy = NULL;
 		return false;
 	}
@@ -967,7 +971,7 @@ bool idSecurityCamera::FindEnemy()
 
 		if ( follow )
 		{
-			delta = ( bestEnemy->GetPhysics()->GetOrigin() + idVec3(0, 0, 32) ) - origin;	//focus on the torso
+			delta = ( bestEnemy->GetPhysics()->GetOrigin() + idVec3(0, 0, 0) ) - origin;	//focus on the torso
 			idAngles a = delta.ToAngles();
 			angleToEnemy = a.yaw;
 			inclineToEnemy = a.pitch;
