@@ -1013,8 +1013,8 @@ bool idSecurityCamera::FindEnemy()
 		if( follow && enemy.GetEntity() != NULL )
 		{
 			idVec3 velocity = enemy.GetEntity()->GetPhysics()->GetLinearVelocity();
-			idBounds bounds = enemy.GetEntity()->GetPhysics()->GetBounds();
-			delta = ( enemy.GetEntity()->GetPhysics()->GetOrigin() + idVec3( 0, 0, bounds[1][2]/2 ) + velocity ) - origin;	//focus on the torso
+			idVec3 enemyPos = enemy.GetEntity()->GetPhysics()->GetAbsBounds().GetCenter();	//focus on the torso
+			delta = ( enemyPos + velocity ) - origin;
 			idAngles a = delta.ToAngles();
 			angleToEnemy = a.yaw;
 			inclineToEnemy = a.pitch;
@@ -1030,8 +1030,8 @@ bool idSecurityCamera::FindEnemy()
 
 		if ( follow )
 		{
-			idBounds bounds = bestEnemy->GetPhysics()->GetBounds();
-			delta = ( bestEnemy->GetPhysics()->GetOrigin() + idVec3( 0, 0, bounds[1][2]/2 ) ) - origin;	//focus on the torso
+			idVec3 enemyPos = bestEnemy->GetPhysics()->GetAbsBounds().GetCenter();	//focus on the torso
+			delta = enemyPos - origin;
 			idAngles a = delta.ToAngles();
 			angleToEnemy = a.yaw;
 			inclineToEnemy = a.pitch;
