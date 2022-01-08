@@ -578,13 +578,8 @@ void idSecurityCamera::Event_AddLight( void )
 			}
 		}
 
-		// rotate the light origin offset around the z axis
-
-		float angle_radians = angle * (idMath::PI / 180.0f);
-
-		float a = lightOffset.x*idMath::Cos(angle_radians) - lightOffset.y*idMath::Sin(angle_radians);
-		float b = lightOffset.x*idMath::Sin(angle_radians) + lightOffset.y*idMath::Cos(angle_radians);
-		lightOffset = idVec3(a, b, lightOffset.z);
+		// rotate the light origin offset by the security camera's orientation
+		lightOffset *= GetPhysics()->GetAxis();
 
 		// set target, right, up for the spotlight,
 		// as if the light were pointing along the +x axis
