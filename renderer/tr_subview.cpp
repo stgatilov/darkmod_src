@@ -802,7 +802,7 @@ bool R_GenerateSubViews( void ) {
 		dontReenter = true;
 		idScreenRect sc;
 
-		if ( tr.guiModel->hasXrayStage ) {
+		if ( tr.guiModel->hasXrayStage && !tr.viewDef->isSubview ) {
 			R_XrayRender( NULL, (textureStage_t*) tr.guiModel->hasXrayStage, sc );
 			subviews = true;
 		}
