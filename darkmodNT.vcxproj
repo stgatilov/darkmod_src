@@ -230,7 +230,7 @@
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -250,7 +250,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <PostBuildEvent />
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -270,7 +270,7 @@ if %errorlevel% leq 3 exit 0</Command>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -290,7 +290,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <PostBuildEvent />
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -311,7 +311,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <PostBuildEvent />
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -332,7 +332,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <PostBuildEvent />
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -357,7 +357,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <PostBuildEvent />
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -379,7 +379,7 @@ if %errorlevel% leq 3 exit 0</Command>
     </Link>
     <PostBuildEvent />
     <PostBuildEvent>
-      <Command>robocopy $(OutDir)glprogs  $(SolutionDir)glprogs * /s /nfl /ndl /njh /njs /xo
+      <Command>robocopy "$(OutDir)glprogs" "$(SolutionDir)glprogs" * /s /nfl /ndl /njh /njs /xo
 if %errorlevel% leq 3 exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

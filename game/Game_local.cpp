@@ -2034,7 +2034,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	// load the map needed for this savegame
-	LoadMap( mapName, 0 );
+	LoadMap( mapName, Sys_Milliseconds() );
 
 	// Restore the global hiding spot search collection
 	CHidingSpotSearchCollection::Instance().Restore(&savegame);
@@ -3680,7 +3680,7 @@ VideoMode VideoModes[] = {
 	{0,  800,	600  },	//23
 	{0,  1024,	768  },	//24
 	{0,  1152,	864  },	//25
-	{0,  1280,	1024 },	//26
+	{0,  1280,	960  },	//26
 	{0,  1600,	1200 },	//27
 	{5,  2560,	1080 },	//28
 	{5,  3440,	1440 },	//29

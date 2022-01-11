@@ -32,7 +32,7 @@ void main() {
 		vec4 bumpTexel = texture ( u_normalTexture, var_TexCoord0.st ) * 2. - 1.;
 		vec3 localNormal = u_RGTC == 1. 
 			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
-			: normalize( bumpTexel.wyz ); 
+			: normalize( bumpTexel.xyz ); 
 		vec3 N = var_TangentBinormalNormalMatrix * localNormal;
 		N = normalize(N);
 		vec3 nViewDir = normalize(var_viewDir);

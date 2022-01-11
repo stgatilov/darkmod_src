@@ -269,12 +269,15 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			}
 
 			memcpy( params.projection.ToFloatPtr(), vLight->lightProject, sizeof( idMat4 ) );
-			if ( lightStage->texture.hasMatrix ) {
-				float lightTextureMatrix[16];
-				RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTextureMatrix );
-				void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix );
-				RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(params.projection.ToFloatPtr()), lightTextureMatrix );
-			}
+
+			float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+			if ( lightStage->texture.hasMatrix )
+				RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+			// stgatilov: we no longer merge two transforms together, since we need light-volume coords in fragment shader
+			//RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(params.projection.ToFloatPtr()), lightTexMatrix );
+			//TODO
+			/*inter.lightTextureMatrix[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
+			inter.lightTextureMatrix[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );*/
 
 			if ( vLight->shadowMapIndex > 0 && vLight->shadowMapIndex <= 42) {
 				auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];

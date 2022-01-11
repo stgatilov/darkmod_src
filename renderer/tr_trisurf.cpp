@@ -354,6 +354,19 @@ void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) {
 }
 
 /*
+=================
+R_FreeStaticTriSurfIndexes
+=================
+*/
+void R_FreeStaticTriSurfIndexes( srfTriangles_t *tri ) {
+	if ( tri->indexes ) {
+		triIndexAllocator.Free( tri->indexes );
+		tri->indexes = NULL;
+	}
+}
+
+
+/*
 ==============
 R_ReallyFreeStaticTriSurf
 

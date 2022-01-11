@@ -72,7 +72,6 @@ uniform samplerCube	u_lightProjectionCubemap;
 
 uniform int	    u_advanced;
 uniform int 	u_cubic;
-uniform int		u_useBumpmapLightTogglingFix;  //stgatilov #4825
 
 uniform bool	u_shadows;
 uniform int		u_softShadowsQuality;
@@ -94,7 +93,9 @@ void calcNormals() {
 	// compute normal from normal map, move from [0, 1] to [-1, 1] range, normalize 
 	if (params[var_DrawId].hasTextureDNS[1] != 0) {
 		vec4 bumpTexel = textureNormal( var_TexNormal.st ) * 2. - 1.;
-		RawN = vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0))); 
+		RawN = params[var_DrawId].RGTC == 1. 
+			? vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.-bumpTexel.x*bumpTexel.x-bumpTexel.y*bumpTexel.y, 0)))
+			: normalize( bumpTexel.xyz ); 
 		N = var_TangentBitangentNormalMatrix * RawN; 
 	}
 	else {
@@ -121,7 +122,7 @@ vec3 lightColor() {
 	if (u_cubic == 1.0)
 		return projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
-		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
+		return projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
 }
 
 //illumination model with "simple interaction" setting
@@ -170,7 +171,7 @@ vec3 advancedInteraction() {
 	float R2f = clamp(localL.z * 4.0, 0.0, 1.0);
 
 	float NdotL_adjusted = NdotL;
-	if (u_useBumpmapLightTogglingFix != 0) {
+	if (params[var_DrawId].useBumpmapLightTogglingFix != 0) {
 		//stgatilov: hacky coefficient to make lighting smooth when L is almost in surface tangent plane
 		vec3 meshNormal = normalize(var_TangentBitangentNormalMatrix[2]);
 		float MNdotL = max(dot(meshNormal, L), 0);

@@ -27,6 +27,7 @@ uniform sampler2D u_shadowMap;
 uniform vec3 u_viewOrigin;
 uniform mat4 u_lightProject;
 uniform vec4 u_lightFrustum[6];
+uniform vec4 u_lightTextureMatrix[2];
 uniform vec4 u_shadowRect;
 uniform vec3 u_lightOrigin;
 uniform int u_sampleCount;
@@ -72,7 +73,7 @@ vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam
 			lit = float(maxAbsL < depth);
 		}
 		vec4 texCoord = computeLightTex(u_lightProject, vec4(samplePos, 1));
-		vec3 texColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, texCoord);
+		vec3 texColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, texCoord);
 		color += lit * texColor;
 	}
 	return color / samplesNum;

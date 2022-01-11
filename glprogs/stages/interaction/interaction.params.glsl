@@ -25,6 +25,7 @@ struct PerDrawCallParams {
 	vec4 diffuseMatrix[2];
 	vec4 specularMatrix[2];
 	mat4 lightProjectionFalloff;
+	vec4 lightTextureMatrix[2];
 	vec4 colorModulate;
 	vec4 colorAdd;
 	vec4 lightOrigin;
@@ -33,6 +34,9 @@ struct PerDrawCallParams {
 	vec4 specularColor;
 	vec4 hasTextureDNS;
 	vec4 ambientRimColor;
+	int useBumpmapLightTogglingFix;
+	float RGTC;
+	vec2 padding_2;
 	// bindless texture handles - if supported
 	uvec2 normalTexture;
 	uvec2 padding;

@@ -19,20 +19,26 @@ vec4 computeLightTex(mat4 lightProjectionFalloff, vec4 position) {
 	//out: divisor in W, falloff in Z
 }
 
-vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D lightFalloffTexture, vec4 texLight) {
-	vec3 projCoords = texLight.xyw;     //divided by last component
-	float falloffCoord = texLight.z;
+vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D lightFalloffTexture, in vec4 texMatrix[2], vec4 texCoord) {
+	float falloffCoord = texCoord.z;
+	vec4 projCoords = texCoord;     //divided by last component
+	projCoords.z = 0.0;
 
 	if (
-		projCoords.z <= 0 ||                                            //anything with inversed W
-		projCoords.x < 0 || projCoords.x > projCoords.z ||              //proj U outside [0..1]
-		projCoords.y < 0 || projCoords.y > projCoords.z ||              //proj V outside [0..1]
+		projCoords.w <= 0 ||                                            //anything with inversed W
+		projCoords.x < 0 || projCoords.x > projCoords.w ||              //proj U outside [0..1]
+		projCoords.y < 0 || projCoords.y > projCoords.w ||              //proj V outside [0..1]
 		falloffCoord < 0 || falloffCoord > 1.0                          //falloff outside [0..1]
 	) {
 		return vec3(0);
 	}
 
-	vec3 lightProjection = textureProj(lightProjectionTexture, projCoords).rgb;
+	vec3 projTexCoords;
+	projTexCoords.x = dot(projCoords, texMatrix[0]);
+	projTexCoords.y = dot(projCoords, texMatrix[1]);
+	projTexCoords.z = projCoords.w;
+
+	vec3 lightProjection = textureProj(lightProjectionTexture, projTexCoords).rgb;
 	vec3 lightFalloff = texture(lightFalloffTexture, vec2(falloffCoord, 0.5)).rgb;
 	return lightProjection * lightFalloff;
 }

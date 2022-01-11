@@ -108,7 +108,7 @@ void main() {
 		float a = .25 - tl.x*tl.x - tl.y*tl.y - tl.z*tl.z;
 		light = vec4(vec3(a*2), 1); // FIXME pass r_lightScale as uniform
 	} else {
-		light.rgb = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, var_TexLight);
+		light.rgb = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
 		light.a = 1;
 	} 
 

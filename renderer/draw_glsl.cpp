@@ -52,7 +52,6 @@ static void ChooseInteractionProgram() {
 			currrentInteractionShader = programManager->stencilInteractionShader;
 	}
 	currrentInteractionShader->Activate();
-	currrentInteractionShader->GetUniformGroup<Uniforms::Interaction>()->RGTC.Set( 1 ); // FIXME remove the RGTC uniform
 	GL_CheckErrors();
 }
 
@@ -90,6 +89,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 			return;
 		GL_SelectTexture( 0 );
 		din->bumpImage->Bind();
+		interactionUniforms->RGTC.Set( din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2 );
 		if ( interactionUniforms->hasTextureDNS.IsPresent() ) {
 			interactionUniforms->hasTextureDNS.Set( 1, 1, 1 );
 		}
@@ -801,6 +801,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 	SetForInteractionBasic( din );
 
 	lightProjectionFalloff.Set( din->lightProjection[0].ToFloatPtr() );
+	lightTextureMatrix.SetArray( 2, din->lightTextureMatrix[0].ToFloatPtr() );
 	// set the constant color
 	diffuseColor.Set( din->diffuseColor );
 	specularColor.Set( din->specularColor );
@@ -813,7 +814,10 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		lightOrigin.Set( din->localLightOrigin.ToVec3() );
 		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
 	}
-	useBumpmapLightTogglingFix.Set(r_useBumpmapLightTogglingFix.GetBool());
+
+	// stgatilov #4825: make translation "lit tangentially" -> "unlit" smoother
+	// #5862 unless surface has "twosided" material
+	useBumpmapLightTogglingFix.Set( r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides() );
 
 	GL_CheckErrors();
 }

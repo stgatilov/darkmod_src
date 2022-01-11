@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
   SecurityCamera.cpp
 
-  Security camera that watches for the player
+  Security camera that watches for the enemy
 
 */
 
@@ -47,9 +47,11 @@ const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RET
 const idEventDef EV_SecurityCam_SweepState( "state_sweep", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Enables or disables the camera's sweeping." );
 const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see the player." );
 const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
+const idEventDef EV_SecurityCam_SeeAIToggle( "toggle_see_AI", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see AIs." );
+const idEventDef EV_SecurityCam_SeeAIState( "state_see_AI", EventArgs('f', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see AIs." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
-const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that most recently alerted the security camera." );
-const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity. Currently only player1 is supported." );
+const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that's currently the focus of the security camera." );
+const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity." );
 const idEventDef EV_SecurityCam_GetSecurityCameraState("getSecurityCameraState", EventArgs(), 'f', "Returns the security camera's state. 1 = unalerted, 2 = suspicious, 3 = fully alerted, 4 = inactive, 5 = destroyed.");
 const idEventDef EV_SecurityCam_GetHealth("getHealth", EventArgs(), 'f', "Returns the health of the security camera.");
 const idEventDef EV_SecurityCam_SetHealth("setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Set the health of the security camera. Setting to 0 or lower will destroy it.");
@@ -67,6 +69,8 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_SweepState,				idSecurityCamera::Event_Sweep_State )
 	EVENT( EV_SecurityCam_SeePlayerToggle,			idSecurityCamera::Event_SeePlayer_Toggle )
 	EVENT( EV_SecurityCam_SeePlayerState,			idSecurityCamera::Event_SeePlayer_State )
+	EVENT( EV_SecurityCam_SeeAIToggle,				idSecurityCamera::Event_SeeAI_Toggle )
+	EVENT( EV_SecurityCam_SeeAIState,				idSecurityCamera::Event_SeeAI_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
 	EVENT( EV_SecurityCam_GetEnemy,					idSecurityCamera::Event_GetEnemy )	
 	EVENT( EV_SecurityCam_CanSee,					idSecurityCamera::Event_CanSee )	
@@ -107,7 +111,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(angleTarget);
 	savefile->WriteFloat(anglePos1);
 	savefile->WriteFloat(anglePos2);
-	savefile->WriteFloat(angleToPlayer);
+	savefile->WriteFloat(angleToEnemy);
 
 	savefile->WriteFloat(inclineAngle);
 	savefile->WriteFloat(inclineSpeed);
@@ -119,7 +123,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(incline);
 	savefile->WriteFloat(inclineTarget);
 	savefile->WriteFloat(inclinePos1);
-	savefile->WriteFloat(inclineToPlayer);
+	savefile->WriteFloat(inclineToEnemy);
 
 	savefile->WriteFloat(constrainPositive);
 	savefile->WriteFloat(constrainNegative);
@@ -133,6 +137,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(scanFov);
 	savefile->WriteFloat(scanFovCos);
 	savefile->WriteFloat(sightThreshold);
+	savefile->WriteInt(seeAI);
 
 	savefile->WriteInt(modelAxis);
 	savefile->WriteBool(flipAxis);
@@ -201,7 +206,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(angleTarget);
 	savefile->ReadFloat(anglePos1);
 	savefile->ReadFloat(anglePos2);
-	savefile->ReadFloat(angleToPlayer);
+	savefile->ReadFloat(angleToEnemy);
 
 	savefile->ReadFloat(inclineAngle);
 	savefile->ReadFloat(inclineSpeed);
@@ -213,7 +218,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(incline);
 	savefile->ReadFloat(inclineTarget);
 	savefile->ReadFloat(inclinePos1);
-	savefile->ReadFloat(inclineToPlayer);
+	savefile->ReadFloat(inclineToEnemy);
 
 	savefile->ReadFloat(constrainPositive);
 	savefile->ReadFloat(constrainNegative);
@@ -227,6 +232,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(scanFov);
 	savefile->ReadFloat(scanFovCos);
 	savefile->ReadFloat(sightThreshold);
+	savefile->ReadInt(seeAI);
 
 	savefile->ReadInt(modelAxis);
 	savefile->ReadBool(flipAxis);
@@ -289,6 +295,7 @@ void idSecurityCamera::Spawn( void )
 	colorSweeping	= spawnArgs.GetVector("color_sweeping", "0.3 0.7 0.4");
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
 	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
+	seeAI			= spawnArgs.GetInt("seeAI", "0");
 	sparksPowerDependent	= spawnArgs.GetBool("sparks_power_dependent", "1");
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
@@ -357,7 +364,7 @@ void idSecurityCamera::Spawn( void )
 	//yaw angle
 	angle			= GetPhysics()->GetAxis().ToAngles().yaw;
 	angleTarget		= idMath::AngleNormalize180( angle - sweepAngle );
-	angleToPlayer	= 0;
+	angleToEnemy	= 0;
 
 	negativeSweep	= ( sweepAngle < 0 ) ? true : false;
 	anglePos1		= ( negativeSweep ) ? angle : angleTarget;
@@ -368,14 +375,14 @@ void idSecurityCamera::Spawn( void )
 
 	//pitch angle
 	incline			= inclinePos1 = GetPhysics()->GetAxis().ToAngles().pitch;
-	inclineTarget	= inclineToPlayer = 0;
+	inclineTarget	= inclineToEnemy = 0;
 
 	negativeIncline = false;
 	inclineAngle	= 0;
 	inclineSpeed	= spawnArgs.GetFloat("follow_incline_speed", "30");
 	percentInclined = 0.0f;
 
-	//constrain how far the security camera is able to rotate when following the player
+	//constrain how far the security camera is able to rotate when following the enemy
 	constrainPositive	= idMath::AngleNormalize180( anglePos1 - fabs(spawnArgs.GetFloat("follow_constrain_ccw", "45")) );
 	constrainNegative	= idMath::AngleNormalize180( anglePos2 + fabs(spawnArgs.GetFloat("follow_constrain_cw", "45")) );
 	constrainUp			= idMath::AngleNormalize180( inclinePos1 - fabs(spawnArgs.GetFloat("follow_constrain_up", "25")) );
@@ -539,6 +546,7 @@ void idSecurityCamera::Event_AddLight( void )
 		idStr	spotlightTexture;
 		float	spotlightRange;
 		float	spotlightDiameter;
+		idStr	spotlightVolumetric;
 		idVec3	target;
 		idVec3	right;
 		idVec3	up;
@@ -548,6 +556,7 @@ void idSecurityCamera::Event_AddLight( void )
 		spawnArgs.GetString("spotlight_texture", "lights/biground1", spotlightTexture);
 		spawnArgs.GetFloat("spotlight_range", "0", spotlightRange);
 		spawnArgs.GetFloat("spotlight_diameter", "0", spotlightDiameter);
+		spawnArgs.GetString("spotlight_volumetric", "0", spotlightVolumetric);
 
 		//if neither range nor diameter were set (old entity), use scanDist for both
 		if ( spotlightRange == 0 && spotlightDiameter == 0 )
@@ -569,13 +578,8 @@ void idSecurityCamera::Event_AddLight( void )
 			}
 		}
 
-		// rotate the light origin offset around the z axis
-
-		float angle_radians = angle * (idMath::PI / 180.0f);
-
-		float a = lightOffset.x*idMath::Cos(angle_radians) - lightOffset.y*idMath::Sin(angle_radians);
-		float b = lightOffset.x*idMath::Sin(angle_radians) + lightOffset.y*idMath::Cos(angle_radians);
-		lightOffset = idVec3(a, b, lightOffset.z);
+		// rotate the light origin offset by the security camera's orientation
+		lightOffset *= GetPhysics()->GetAxis();
 
 		// set target, right, up for the spotlight,
 		// as if the light were pointing along the +x axis
@@ -590,7 +594,32 @@ void idSecurityCamera::Event_AddLight( void )
 		args.SetFloat("angle", angle);
 		args.Set("texture", spotlightTexture);
 		args.Set("_color", lightColor.ToString());
+		args.Set("volumetric_light", spotlightVolumetric.c_str());
 
+		// parse any additional spawnargs in the format "set x on spotlight". Needed because the security camera does not use the def_attach system for spotlights.
+		for (const idKeyValue* kv_set = spawnArgs.MatchPrefix("set ", NULL); kv_set != NULL; kv_set = spawnArgs.MatchPrefix("set ", kv_set))
+		{
+			// "set FOO on SPOTLIGHT"
+			idStr SpawnargName(kv_set->GetKey());
+
+			// check whether this spawnarg should apply to the spotlight
+			if (SpawnargName.Right(9) == "spotlight")
+			{
+				// "set FOO on SPOTLIGHT" => "FOO on SPOTLIGHT"
+				SpawnargName = SpawnargName.Right(kv_set->GetKey().Length() - 4);
+
+				// find position of first ' '
+				int PosSpace = SpawnargName.Find(' ', 0, -1);
+
+				// "FOO on SPOTLIGHT" => "FOO"
+				SpawnargName = SpawnargName.Left(PosSpace);
+				gameLocal.Printf("setting spawnarg %s \n", SpawnargName);
+
+				// add the spawnarg to the args list
+				args.Set(SpawnargName, kv_set->GetValue());
+			}
+		}
+		
 		light = static_cast<idLight *>(gameLocal.SpawnEntityType(idLight::Type, &args));
 		light->Bind(this, true);
 		light->SetAngles( idAngles(0, 0, 0) );
@@ -619,7 +648,7 @@ void idSecurityCamera::UpdateColors()
 
 	switch (state)
 	{
-	case STATE_PLAYERSIGHTED:
+	case STATE_ENEMYSIGHTED:
 		colorNew = colorSighted;
 		break;
 	case STATE_ALERTED:
@@ -683,8 +712,7 @@ bool idSecurityCamera::Event_CanSee( idEntity *ent )
 {
 	if( ent && ent->IsType( idPlayer::Type ) )
 	{
-		// side effect: calling this refreshes "enemy" variable
-		return CanSeePlayer();
+		return CanSeeEnemy( ent );
 	}
 
 	else
@@ -721,7 +749,7 @@ void idSecurityCamera::Event_GetSecurityCameraState()
 	case STATE_SWEEPING:
 		retFloat = 1;
 		break;
-	case STATE_PLAYERSIGHTED:
+	case STATE_ENEMYSIGHTED:
 		retFloat = 2;
 		break;
 	case STATE_ALERTED:
@@ -848,26 +876,25 @@ idSecurityCamera::IsEntityHiddenByDarkness
 ================
 */
 
-bool idSecurityCamera::IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold)
+bool idSecurityCamera::IsEntityHiddenByDarkness(idEntity* actor, const float sightThreshold)
 {
 	// Quick test using LAS at entity origin
-	idPhysics* p_physics = player->GetPhysics();
+	idPhysics* p_physics = actor->GetPhysics();
 
 	if (p_physics == NULL) 
 	{
 		return false; // Not in darkness
 	}
 
-	// Use lightgem
-		
-	// greebo: Check the visibility of the player depending on lgem
-	float visFraction = player->GetCalibratedLightgemValue(); // returns values in [0..1]
-
-	// Very low threshold for visibility
-	if (visFraction < sightThreshold)
+	// Use lightgem if this is the player
+	if( actor->IsType( idPlayer::Type ) )
 	{
-		// Not visible, entity is hidden in darkness
-		return true;
+		float visFraction = static_cast<idPlayer*>(actor)->GetCalibratedLightgemValue(); // returns values in [0..1]
+
+		if ( visFraction < sightThreshold )
+		{
+			return true;
+		}
 	}
 
 	// Visible, visual stim above threshold
@@ -876,94 +903,207 @@ bool idSecurityCamera::IsEntityHiddenByDarkness(idPlayer* player, const float si
 
 /*
 ================
-idSecurityCamera::CanSeePlayer
+idSecurityCamera::FindEnemy
 ================
 */
-bool idSecurityCamera::CanSeePlayer( void )
+bool idSecurityCamera::FindEnemy()
 {
-	int i;
-	float dist;
-	idPlayer *ent;
-	trace_t tr;
-	idVec3 dir;
+	pvsHandle_t handle = gameLocal.pvs.SetupCurrentPVS(pvsArea);
 	idVec3 origin = GetPhysics()->GetOrigin();
-	pvsHandle_t handle;
+	idVec3 delta;
+	float dist;
+	float bestDist;
+	idEntity *bestEnemy = NULL;
 
-	handle = gameLocal.pvs.SetupCurrentPVS( pvsArea );
-	for ( i = 0; i < gameLocal.numClients; i++ ) {
-		ent = static_cast<idPlayer*>(gameLocal.entities[ i ]);
+	// check for player
+	if ( spawnArgs.GetBool("seePlayer", "1") )
+	{
+		idPlayer *player = gameLocal.GetLocalPlayer();
 
-		if ( !spawnArgs.GetBool("seePlayer", "1") ) // does this camera react to the player?
+		if( IsFriend( player ) )
 		{
-			continue;
+			bestEnemy = NULL;
 		}
 
-		if ( !ent || ent->fl.notarget || ent->fl.invisible )
+		// only check visibility if there is a possibility to see the player
+		else if ( gameLocal.pvs.InCurrentPVS( handle, player->GetPVSAreas(), player->GetNumPVSAreas() ) )
 		{
-			continue;
-		}
-
-		// if there is no way we can see this player
-		if ( !gameLocal.pvs.InCurrentPVS( handle, ent->GetPVSAreas(), ent->GetNumPVSAreas() ) ) {
-			continue;
-		}
-
-		// take lighting into account
-		if ( IsEntityHiddenByDarkness(ent, sightThreshold) )
-		{
-			continue;
-		}
-
-
-
-		idVec3 eye = ent->EyeOffset();
-		idVec3 start;
-		idVec3 originPlayer = ent->GetPhysics()->GetOrigin();
-
-		// check for eyes
-		dir = (originPlayer + eye) - origin;
-		dist = dir.Normalize();
-		start = origin + ( viewOffset * GetAxis().ToMat3() );
-		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
-			gameLocal.clip.TracePoint(tr, start, originPlayer + eye, MASK_OPAQUE, this);
-			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
-				gameLocal.pvs.FreeCurrentPVS(handle);
-				timeLastSeen = gameLocal.time;
-				if ( follow ) {
-					dir = (originPlayer + eye/2) - origin;	//focus on the torso
-					idAngles a		= dir.ToAngles();
-					angleToPlayer	= a.yaw;
-					inclineToPlayer	= a.pitch;
-				}
-				enemy = ent;
-				return true;
+			if( CanSeeEnemy( player ) )
+			{
+				bestEnemy = player;
+				delta = player->GetPhysics()->GetOrigin() - origin;
+				bestDist = delta.Length();
 			}
 		}
-
-		// check for origin
-		dir = originPlayer - origin;
-		dist = dir.Normalize();
-		start = origin + ( viewOffset * GetAxis().ToMat3() );
-		if (dist < scanDist && dir * GetAxis() > scanFovCos) {
-			gameLocal.clip.TracePoint(tr, origin, originPlayer, MASK_OPAQUE, this);
-			if (tr.fraction == 1.0 || (gameLocal.GetTraceEntity(tr) == ent)) {
-				gameLocal.pvs.FreeCurrentPVS(handle);
-				timeLastSeen = gameLocal.time;
-				if ( follow ) {
-					dir = (originPlayer + eye / 2) - origin;	//focus on the torso
-					idAngles a		= dir.ToAngles();
-					angleToPlayer	= a.yaw;
-					inclineToPlayer = a.pitch;
-				}
-				enemy = ent;
-				return true;
-			}
-		}
-
-	
 	}
 
-	gameLocal.pvs.FreeCurrentPVS( handle );
+	// check for AIs
+	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles, 2 = react to hostiles and neutrals, 3 = react to hostiles, neutrals and animals, 4 = react to hostiles and animals
+	{
+		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
+		{
+			if ( ai->fl.hidden || ai->fl.isDormant )
+			{
+				continue;
+			}
+
+			// is this a body? always react to bodies
+			if( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+			{
+				// skip if this particular body has already been seen during an alert
+				idStr key = "bodySeenBy" + name;
+				if( ai->spawnArgs.GetBool( key, "0") )
+				{
+					continue;
+				}
+
+				// ignore bodies of animals if seeAI is 1/2
+				if( ( seeAI != 1 && seeAI != 2 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				{
+					continue;
+				}
+			}
+
+			// if this not a body: check teams
+			else
+			{
+				// always ignore friends, ignore neutrals if seeAI is 1 or 4
+				if ( IsFriend( ai )
+				|| ( ( seeAI == 1 || seeAI == 4 ) && IsNeutral( ai ) ) )
+				{
+					continue;
+				}
+
+				// ignore animals if seeAI is 1/2
+				else if( ( seeAI == 1 || seeAI == 2 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				{
+					continue;
+				}
+			}
+
+			// skip if there is no way we can see this AI
+			if ( !gameLocal.pvs.InCurrentPVS( handle, ai->GetPVSAreas(), ai->GetNumPVSAreas() ) )
+			{
+				continue;
+			}
+
+			// is this AI closer than the previous closest enemy, or the only enemy found so far?
+			delta = ai->GetPhysics()->GetOrigin() - origin;
+			dist = delta.Length();
+
+			if( ( dist < bestDist || bestEnemy == NULL ) && ( CanSeeEnemy( ai ) ) )
+			{
+				bestDist = dist;
+				bestEnemy = ai;
+			}
+		}
+	}
+
+	// done scanning for enemies: update variables
+	gameLocal.pvs.FreeCurrentPVS(handle);
+
+	if( bestEnemy == NULL )
+	{
+		//did we just lose track of the enemy?
+		if( follow && enemy.GetEntity() != NULL )
+		{
+			idVec3 velocity = enemy.GetEntity()->GetPhysics()->GetLinearVelocity();
+			idVec3 enemyPos = enemy.GetEntity()->GetPhysics()->GetAbsBounds().GetCenter();	//focus on the torso
+			delta = ( enemyPos + velocity ) - origin;
+			idAngles a = delta.ToAngles();
+			angleToEnemy = a.yaw;
+			inclineToEnemy = a.pitch;
+		}
+		enemy = NULL;
+		return false;
+	}
+
+	else
+	{
+		enemy = bestEnemy;
+		timeLastSeen = gameLocal.time;
+
+		if ( follow )
+		{
+			idVec3 enemyPos = bestEnemy->GetPhysics()->GetAbsBounds().GetCenter();	//focus on the torso
+			delta = enemyPos - origin;
+			idAngles a = delta.ToAngles();
+			angleToEnemy = a.yaw;
+			inclineToEnemy = a.pitch;
+		}
+
+		return true;
+	}
+}
+
+/*
+================
+idSecurityCamera::CanSeeEnemy
+================
+*/
+bool idSecurityCamera::CanSeeEnemy( idEntity *actor )
+{
+	if ( !actor || actor->fl.notarget || actor->fl.invisible )
+	{
+		return false;
+	}
+
+	// take lighting into account
+	if ( IsEntityHiddenByDarkness(actor, sightThreshold) )
+	{
+		return false;
+	}
+
+	int i;
+	int numChecks;
+	float dist;
+	idVec3 dir;
+	idVec3 origin = GetPhysics()->GetOrigin();
+	idVec3 originEnemy;
+	idVec3 start;
+	idVec3 eye;
+	trace_t tr;
+
+	if( actor->IsType(idPlayer::Type) )
+	{
+		eye = static_cast<idPlayer*>(actor)->EyeOffset();
+		numChecks = 2;
+	}
+
+	else
+	{
+		idBounds bounds = actor->GetPhysics()->GetBounds();
+		eye = idVec3( 0, 0, bounds[1][2] );	//focus on neck
+		numChecks = 1;
+	}
+
+	// check for body parts: eye on AI and player, feet only on player
+	for ( i = 0; i < numChecks; i++ )
+	{
+		switch ( i )
+		{
+			case 0:
+				originEnemy = actor->GetPhysics()->GetOrigin() + eye;
+				break;
+			case 1:
+				originEnemy = actor->GetPhysics()->GetOrigin();
+				break;
+		}
+
+		dir = originEnemy - origin;
+		dist = dir.Normalize();
+		start = origin + ( viewOffset * GetAxis().ToMat3() );
+
+		if ( dist < scanDist && dir * GetAxis() > scanFovCos )
+		{
+			gameLocal.clip.TracePoint( tr, start, originEnemy, MASK_OPAQUE, this );
+
+			if ( tr.fraction == 1.0 || gameLocal.GetTraceEntity(tr) == actor )
+			{
+				return true;
+			}
+		}
+	}
 
 	return false;
 }
@@ -1090,21 +1230,21 @@ void idSecurityCamera::Think( void )
 		switch ( state )
 		{
 		case STATE_SWEEPING:
-			if ( CanSeePlayer() )
+			if ( FindEnemy() )
 			{
 				StopSound(SND_CHANNEL_ANY, false);
 				StartSound("snd_sight", SND_CHANNEL_BODY, 0, false, NULL);
 				float sightTime = spawnArgs.GetFloat("sightTime", "5");
 				startAlertTime = gameLocal.time + SEC2MS(sightTime);
 				sweeping = false;
-				state = STATE_PLAYERSIGHTED;
+				state = STATE_ENEMYSIGHTED;
 				SetAlertMode(MODE_SIGHTED);
 				UpdateColors();
 				if (follow)
 				{
 					following = true;
-					angleTarget = angleToPlayer;
-					inclineTarget = inclineToPlayer;
+					angleTarget = angleToEnemy;
+					inclineTarget = inclineToEnemy;
 					followSpeedMult = spawnArgs.GetFloat("follow_speed_mult", "1.2");
 					TurnToTarget();
 				}
@@ -1127,10 +1267,10 @@ void idSecurityCamera::Think( void )
 				}
 			}
 			break;
-		case STATE_PLAYERSIGHTED:
+		case STATE_ENEMYSIGHTED:
 			if ( gameLocal.time >= startAlertTime )
 			{
-				if ( CanSeePlayer() )
+				if ( FindEnemy() )
 				{
 					StopSound(SND_CHANNEL_ANY, false);
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
@@ -1169,7 +1309,6 @@ void idSecurityCamera::Think( void )
 					state = STATE_SWEEPING;
 				}
 				UpdateColors();
-				enemy = NULL;
 			}
 			break;
 		case STATE_ALERTED:
@@ -1183,7 +1322,7 @@ void idSecurityCamera::Think( void )
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 				}
 
-				//extend the alert state if the camera has recently seen the player
+				//extend the alert state if the camera has recently seen the enemy
 				if ( endAlertTime - timeLastSeen < SEC2MS(alertDuration / 2) )
 				{
 					endAlertTime = gameLocal.time + SEC2MS(alertDuration / 2);
@@ -1209,6 +1348,20 @@ void idSecurityCamera::Think( void )
 				if ( spawnArgs.GetBool("trigger_alarm_end", "0") )
 				{
 					ActivateTargets(this);
+				}
+			}
+			// Mark bodies as seen so they will not cause an alert anymore.
+			if ( enemy.GetEntity() != NULL && !enemy.GetEntity()->IsType( idPlayer::Type ) )
+			{
+				idAI* ai = (idAI*) enemy.GetEntity();
+
+				if ( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+				{
+					idStr key = "bodySeenBy" + name;
+					if ( !ai->spawnArgs.GetBool(key, "0") )
+					{
+						ai->spawnArgs.Set(key, "1");
+					}
 				}
 			}
 			break;
@@ -1277,16 +1430,16 @@ void idSecurityCamera::Think( void )
 				SetAngles(a);
 			}
 
-			//check whether the player has moved to another position in the camera's view
-			if ( following && CanSeePlayer() )
+			//check whether the enemy has moved to another position in the camera's view
+			if ( following && FindEnemy() )
 			{
-				float sweepDist		= fabs( idMath::AngleNormalize180(angleToPlayer - angleTarget) );
-				float inclineDist	= fabs( idMath::AngleNormalize180(inclineToPlayer - inclineTarget) );
+				float sweepDist		= fabs( idMath::AngleNormalize180(angleToEnemy - angleTarget) );
+				float inclineDist	= fabs( idMath::AngleNormalize180(inclineToEnemy - inclineTarget) );
 
 				if ( ( sweepDist > followTolerance ) || ( followIncline && ( inclineDist > followInclineTolerance ) ) )
 				{
-					angleTarget = angleToPlayer;
-					inclineTarget = inclineToPlayer;
+					angleTarget = angleToEnemy;
+					inclineTarget = inclineToEnemy;
 					TurnToTarget();
 				}
 			}
@@ -1336,7 +1489,7 @@ void idSecurityCamera::ContinueSweep( void )
 
 	angle = GetPhysics()->GetAxis().ToAngles().yaw;
 
-	// camera was chasing the player; return to the closest position
+	// camera was chasing the enemy; return to the closest position
 	if ( following )
 	{
 		following = false;
@@ -1357,7 +1510,7 @@ void idSecurityCamera::ContinueSweep( void )
 		}
 	}
 
-	// security camera was switched off or saw the player but didn't turn towards him
+	// security camera was switched off or saw the enemy but didn't turn towards him
 	else
 	{
 		sweepAngle = idMath::AngleNormalize180(angle - angleTarget);
@@ -1578,7 +1731,7 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 		Event_SetSkin(spawnArgs.GetString("skin_broken", "security_camera_off"));
 	}
 
-	// Camera was already broken, player is damaging it again. Has it not been flinderized before?
+	// Camera was already broken, it's now being damaged again. Should it flinderize now?
 	else if ( m_bFlinderize && !flinderized )
 	{
 		idEntity::Flinderize(inflictor);
@@ -1810,7 +1963,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 		case STATE_SWEEPING:
 			state = STATE_POWERRETURNS_SWEEPING;
 			break;
-		case STATE_PLAYERSIGHTED:
+		case STATE_ENEMYSIGHTED:
 		case STATE_ALERTED:
 			state = STATE_LOSTINTEREST;
 		case STATE_LOSTINTEREST:
@@ -1941,7 +2094,7 @@ void idSecurityCamera::Event_Sweep_State( bool set )
 				ContinueSweep(); // changes state to STATE_SWEEPING
 			}
 			break;
-		case STATE_PLAYERSIGHTED:
+		case STATE_ENEMYSIGHTED:
 		case STATE_LOSTINTEREST:
 		case STATE_ALERTED:
 		case STATE_DEAD:
@@ -1977,6 +2130,37 @@ void idSecurityCamera::Event_SeePlayer_State( bool set )
 {
 	const char *kv = ( set ) ? "1" : "0";
 	spawnArgs.Set( "seePlayer", kv );
+}
+
+/*
+================
+idSecurityCamera::Event_SeeAI_Toggle
+================
+*/
+void idSecurityCamera::Event_SeeAI_Toggle( void )
+{
+	int kv = spawnArgs.GetInt("seeAI", "0");
+	
+	if( kv > 0 )
+	{
+		seeAI = ( seeAI > 0 ) ? 0 : kv;
+	}
+
+	// security cameras that weren't able to see AIs at map start
+	else if( kv == 0 )
+	{
+		seeAI = ( seeAI == 1 ) ? 0 : 1;
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_SeeAI_State
+================
+*/
+void idSecurityCamera::Event_SeeAI_State( float set )
+{
+	seeAI = set;
 }
 
 /*

@@ -748,7 +748,7 @@ void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textu
 	genMatrix[11] = lightProject[2][2];
 	genMatrix[15] = lightProject[2][3];
 
-	myGlMultMatrix( genMatrix, backEnd.lightTextureMatrix, final );
+	myGlMultMatrix( genMatrix, textureMatrix, final );
 
 	lightProject[0][0] = final[0];
 	lightProject[0][1] = final[4];
@@ -882,11 +882,14 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 
 		memcpy( inter.lightProjection, lightProject, sizeof( inter.lightProjection ) );
 
-		// now multiply the texgen by the light texture matrix
-		if ( lightStage->texture.hasMatrix ) {
-			RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, backEnd.lightTextureMatrix );
-			RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), backEnd.lightTextureMatrix );
-		}
+		float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+		if ( lightStage->texture.hasMatrix )
+			RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+		// stgatilov: we no longer merge two transforms together, since we need light-volume coords in fragment shader
+		//RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), lightTexMatrix );
+		inter.lightTextureMatrix[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
+		inter.lightTextureMatrix[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );
+
 		inter.bumpImage = NULL;
 		inter.specularImage = NULL;
 		inter.diffuseImage = NULL;

@@ -452,6 +452,12 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 		R_ReallyFreeStaticTriSurf( newTri );
 		return NULL;
 	}
+	if ( tri->indexes != newTri->indexes && numIndexes == tri->numIndexes ) {
+		// stgatilov: better draw from the same index array
+		// don't waste time to transfer and load exact copy
+		R_FreeStaticTriSurfIndexes( newTri );
+		R_ReferenceStaticTriSurfIndexes( newTri, tri );
+	}
 	newTri->numIndexes = numIndexes;
 	newTri->bounds = bounds;
 

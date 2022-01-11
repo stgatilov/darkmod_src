@@ -25,6 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 */
 
 // grayman #4615 - Refactored for 2.06
+// dragofer #5528 - Developed for 2.10
 
 class idSecurityCamera : public idEntity {
 public:
@@ -57,7 +58,7 @@ private:
 	enum
 	{
 		STATE_SWEEPING,
-		STATE_PLAYERSIGHTED,
+		STATE_ENEMYSIGHTED,
 		STATE_ALERTED,
 		STATE_LOSTINTEREST,
 		STATE_POWERRETURNS_SWEEPING,
@@ -88,12 +89,12 @@ private:
 	float					angleTarget;
 	float					anglePos1;
 	float					anglePos2;
-	float					angleToPlayer;
+	float					angleToEnemy;
 
 	float					incline;
 	float					inclineTarget;
 	float					inclinePos1;
-	float					inclineToPlayer;
+	float					inclineToEnemy;
 
 	bool					follow;
 	bool					following;
@@ -111,6 +112,7 @@ private:
 	float					scanFov;
 	float					scanFovCos;
 	float					sightThreshold;
+	int						seeAI;
 
 	int						modelAxis;
 	bool					flipAxis;
@@ -155,7 +157,8 @@ private:
 
 
 	void					StartSweep( void );
-	bool					CanSeePlayer( void );
+	bool					CanSeeEnemy( idEntity *actor );
+	bool					FindEnemy( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
 	const idVec3			GetAxis( void ) const;
@@ -171,6 +174,8 @@ private:
 	void					Event_Sweep_State( bool set );
 	void					Event_SeePlayer_Toggle( void );
 	void					Event_SeePlayer_State( bool set );
+	void					Event_SeeAI_Toggle( void );
+	void					Event_SeeAI_State( float set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetEnemy( void );
 	bool					Event_CanSee( idEntity *ent );
@@ -186,7 +191,7 @@ private:
 	void					UpdateColors( void );
 
 	void					Activate( idEntity* activator );
-	bool					IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold);
+	bool					IsEntityHiddenByDarkness(idEntity* actor, const float sightThreshold);
 
 };
 
