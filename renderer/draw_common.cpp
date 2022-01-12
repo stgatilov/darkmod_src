@@ -1134,7 +1134,7 @@ void RB_VolumetricPass() {
 	}
 
 	uniforms->lightOrigin.Set( backEnd.vLight->globalLightOrigin );
-	uniforms->sampleCount.Set( r_volumetricSamples.GetInteger() );
+	uniforms->sampleCount.Set( backEnd.vLight->lightShader->IsFogLight() ? 0 : r_volumetricSamples.GetInteger() );
 	uniforms->lightColor.Set( lightColor );
 	uniforms->shadows.Set( useShadows );
 	uniforms->dust.Set( vLight->volumetricDust );
@@ -1177,6 +1177,7 @@ void RB_STD_FogAllLights( bool translucent ) {
 	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( backEnd.vLight->volumetricDust > 0.0f && !backEnd.viewDef->IsLightGem() && !translucent ) {
 			RB_VolumetricPass();
+			return;
 		}
 		if ( !backEnd.vLight->lightShader->IsFogLight() && !backEnd.vLight->lightShader->IsBlendLight() ) {
 			continue;
