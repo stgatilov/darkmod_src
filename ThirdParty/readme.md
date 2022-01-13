@@ -53,7 +53,7 @@ You can omit this step, then system-wide cache will be used for building librari
 
 Add bincrafters to the list of conan remotes (otherwise some packages will be missing):
 
-    conan add remote bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
+    conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
 
 Also, enable revisions in config:
 
