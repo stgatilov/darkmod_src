@@ -24,6 +24,17 @@ vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D 
 	vec4 projCoords = texCoord;     //divided by last component
 	projCoords.z = 0.0;
 
+	vec3 projTexCoords;
+	projTexCoords.x = dot(projCoords, texMatrix[0]);
+	projTexCoords.y = dot(projCoords, texMatrix[1]);
+	projTexCoords.z = projCoords.w;
+
+	vec3 lightProjection = textureProj(lightProjectionTexture, projTexCoords).rgb;
+	vec3 lightFalloff = texture(lightFalloffTexture, vec2(falloffCoord, 0.5)).rgb;
+
+	// stgatilov #5876: this "if" MUST be after texture fetches!
+	// not because it is better, but because of AMD driver's stupidity
+	// moving this "if" before texture fetches results in bright lines on light volume boundary
 	if (
 		projCoords.w <= 0 ||                                            //anything with inversed W
 		projCoords.x < 0 || projCoords.x > projCoords.w ||              //proj U outside [0..1]
@@ -33,13 +44,6 @@ vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D 
 		return vec3(0);
 	}
 
-	vec3 projTexCoords;
-	projTexCoords.x = dot(projCoords, texMatrix[0]);
-	projTexCoords.y = dot(projCoords, texMatrix[1]);
-	projTexCoords.z = projCoords.w;
-
-	vec3 lightProjection = textureProj(lightProjectionTexture, projTexCoords).rgb;
-	vec3 lightFalloff = texture(lightFalloffTexture, vec2(falloffCoord, 0.5)).rgb;
 	return lightProjection * lightFalloff;
 }
 
