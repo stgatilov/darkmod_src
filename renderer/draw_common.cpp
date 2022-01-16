@@ -1061,9 +1061,9 @@ void RB_VolumetricPass() {
 	// light color uniform
 	const float* lightRegs = vLight->shaderRegisters;
 	idVec4 lightColor;
-	lightColor.x = backEnd.lightScale * lightRegs[lightStage->color.registers[0]];
-	lightColor.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
-	lightColor.z = backEnd.lightScale * lightRegs[lightStage->color.registers[2]];
+	lightColor.x = lightRegs[lightStage->color.registers[0]];
+	lightColor.y = lightRegs[lightStage->color.registers[1]];
+	lightColor.z = lightRegs[lightStage->color.registers[2]];
 	lightColor.w = lightRegs[lightStage->color.registers[3]];
 
 	// light texture transform
@@ -1103,6 +1103,10 @@ void RB_VolumetricPass() {
 		// use sampling, take dust parameter from volumetric_dust
 		samples = r_volumetricSamples.GetInteger();
 		dust = vLight->volumetricDust;
+		// apply light scale (it is applied to all lights)
+		lightColor.x *= backEnd.lightScale;
+		lightColor.y *= backEnd.lightScale;
+		lightColor.z *= backEnd.lightScale;
 	}
 
 	//--- (GL code starts here) ---
