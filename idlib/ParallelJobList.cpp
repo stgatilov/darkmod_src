@@ -446,8 +446,8 @@ void idParallelJobList_Threads::Wait() {
 			waited = true;
 		}
 
-		jobList.SetNum( 0 );
-		signalJobCount.SetNum( 0 );
+		jobList.Clear();
+		signalJobCount.Clear();
 		numSyncs = 0;
 		lastSignalJob = 0;
 
