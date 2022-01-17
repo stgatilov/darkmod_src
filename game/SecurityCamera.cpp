@@ -1234,8 +1234,8 @@ void idSecurityCamera::TriggerSparks( void )
 		sparks.GetEntity()->Activate(NULL);
 	}
 
-	StopSound(SND_CHANNEL_ANY, false);
-	StartSound("snd_sparks", SND_CHANNEL_BODY, 0, false, NULL);
+	StopSound(SND_CHANNEL_BODY2, false);
+	StartSound("snd_sparks", SND_CHANNEL_BODY2, 0, false, NULL);
 	nextSparkTime = gameLocal.time + SEC2MS(sparksInterval) + SEC2MS(gameLocal.random.RandomInt(sparksIntervalRand));
 }
 
@@ -1800,6 +1800,8 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 
 	// Handle destruction / post-destruction fx
 	// security camera is being broken right now
+	StopSound(SND_CHANNEL_ANY, false);
+
 	if ( broke )
 	{
 		if ( powerOn ) {
@@ -1834,7 +1836,6 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	state = STATE_DEAD;
 	sweeping = false;
 	enemy = NULL;
-	StopSound( SND_CHANNEL_ANY, false );
 
 	if ( spawnArgs.GetBool("notice_destroyed", "1") ) {
 		SetStimEnabled(ST_VISUAL, true); // let AIs see that the camera is destroyed
@@ -1972,7 +1973,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 				idEntity *sparksEntity = sparks.GetEntity();
 
 				sparksEntity->Activate(NULL);
-				StopSound(SND_CHANNEL_ANY, false);
+				StopSound(SND_CHANNEL_BODY2, false);
 				sparksOn = false;
 			}
 		}
