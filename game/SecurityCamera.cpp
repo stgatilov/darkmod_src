@@ -82,8 +82,6 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_Off,						idSecurityCamera::Event_Off )
 	END_CLASS
 
-#define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
-
 /*
 ================
 idSecurityCamera::Save
@@ -162,6 +160,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(nextAlertTime);
 	savefile->WriteFloat(startAlertTime);
 	savefile->WriteFloat(endAlertTime);
+	savefile->WriteFloat(pauseSoundOffset);
 	savefile->WriteBool(emitPauseSound);
 	savefile->WriteFloat(emitPauseSoundTime);
 	savefile->WriteFloat(pauseEndTime);
@@ -257,6 +256,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(nextAlertTime);
 	savefile->ReadFloat(startAlertTime);
 	savefile->ReadFloat(endAlertTime);
+	savefile->ReadFloat(pauseSoundOffset);
 	savefile->ReadBool(emitPauseSound);
 	savefile->ReadFloat(emitPauseSoundTime);
 	savefile->ReadFloat(pauseEndTime);
@@ -300,6 +300,7 @@ void idSecurityCamera::Spawn( void )
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
 	sightThreshold			= spawnArgs.GetFloat("sight_threshold", "0.1");
+	pauseSoundOffset		= spawnArgs.GetFloat("sweepWaitSoundOffset", "0.5");
 	follow					= spawnArgs.GetBool("follow", "0");
 	followIncline			= spawnArgs.GetBool("follow_incline", "0");
 	followTolerance			= spawnArgs.GetFloat("follow_tolerance", "15");
@@ -1467,7 +1468,7 @@ void idSecurityCamera::StartSweep( void ) {
 	sweeping = true;
 	sweepStartTime = gameLocal.time;
 	sweepEndTime = sweepStartTime + SEC2MS(sweepAngle / sweepSpeed);
-	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
+	emitPauseSoundTime = sweepEndTime - pauseSoundOffset;
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	emitPauseSound = true;
 	emitPauseSound = true;
@@ -1532,7 +1533,7 @@ void idSecurityCamera::ContinueSweep( void )
 		}
 	}
 
-	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
+	emitPauseSoundTime = sweepEndTime - pauseSoundOffset;
 	StopSound( SND_CHANNEL_ANY, false );
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(MODE_SCANNING);

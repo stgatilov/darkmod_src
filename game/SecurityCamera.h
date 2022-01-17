@@ -139,6 +139,7 @@ private:
 	float					startAlertTime;
 	float					endAlertTime;
 	float					alertDuration;
+	float					pauseSoundOffset;
 	bool					emitPauseSound;
 	float					emitPauseSoundTime;
 	float					pauseEndTime;
