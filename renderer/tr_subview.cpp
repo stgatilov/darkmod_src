@@ -441,10 +441,21 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		if ( tr.viewDef->isMirror ) {
 			parms->scissor = tr.viewDef->scissor; // mirror in an area that has sky, limit to mirror rect only
 		} else {
-			parms->scissor.x1 = 0;
-			parms->scissor.y1 = 0;
-			parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
-			parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
+			if ( surf && surf->space && r_useEntityScissors.GetBool() ) {
+				idRenderEntityLocal* def = surf->space->entityDef;
+				idBounds bounds = surf->frontendGeo->bounds;
+				idScreenRect rect;
+				if ( tr.viewDef->viewFrustum.ProjectionBounds( idBox( bounds, def->parms.origin, def->parms.axis ), bounds ) )
+					rect = R_ScreenRectFromViewFrustumBounds( bounds );
+				else
+					rect.Clear();
+				parms->scissor = rect;
+			} else {
+				parms->scissor.x1 = 0;
+				parms->scissor.y1 = 0;
+				parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
+				parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
+			}
 		}
 
 		parms->isSubview = true;
