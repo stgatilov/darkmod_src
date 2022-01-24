@@ -202,6 +202,13 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	renderLight->volumetricDust = 0.0f;
 	renderLight->volumetricNoshadows = renderLight->noShadows;
 	if ( args->GetBool( "volumetric_light" ) ) {
+		if ( renderLight->shader && renderLight->shader->IsFogLight() ) {
+			common->Warning(
+				"Volumetric fog lights should NOT be used!\n"
+				"This feature is not finished yet and is subject to change.\n"
+				"See more details in #5889."
+			);
+		}
 		args->GetFloat( "volumetric_dust", "0.002", renderLight->volumetricDust );
 		if ( args->FindKey( "volumetric_noshadows" ) )
 			renderLight->volumetricNoshadows = args->GetInt( "volumetric_noshadows", "$%" );
