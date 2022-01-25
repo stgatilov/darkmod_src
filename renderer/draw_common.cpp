@@ -1034,9 +1034,83 @@ idCVar r_volumetricDither(
 );
 
 void RB_VolumetricPass() {
-	auto vLight = backEnd.vLight;
+	viewLight_t *vLight = backEnd.vLight;
 	TRACE_GL_SCOPE( "RB_VolumetricPass" );
-	
+
+	srfTriangles_t *frustumTris = backEnd.vLight->frustumTris;
+	// if we ran out of vertex cache memory, skip it
+	if ( !frustumTris->ambientCache.IsValid() ) {
+		return;
+	}
+
+	bool useShadows = true;
+	// note: all other noshadows settings already checked in R_SetLightDefViewLight
+	if ( vLight->volumetricNoshadows )
+		useShadows = false;
+	if ( !vLight->shadowMapIndex ) {
+		// shadow map missing?
+		assert(useShadows == false);
+		useShadows = false;
+	}
+
+	const idMaterial* lightShader = vLight->lightShader;
+	const shaderStage_t* lightStage = lightShader->GetStage( 0 );
+	idImage *projectionImage = lightStage->texture.image;
+	idImage *falloffImage = vLight->falloffImage;
+
+	// light color uniform
+	const float* lightRegs = vLight->shaderRegisters;
+	idVec4 lightColor;
+	lightColor.x = lightRegs[lightStage->color.registers[0]];
+	lightColor.y = lightRegs[lightStage->color.registers[1]];
+	lightColor.z = lightRegs[lightStage->color.registers[2]];
+	lightColor.w = lightRegs[lightStage->color.registers[3]];
+
+	// light texture transform
+	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+	if ( lightStage->texture.hasMatrix )
+		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+	idVec4 lightTexRows[2] = {
+		idVec4( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] ),
+		idVec4( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] ),
+	};
+
+	int dstBlend, samples, alphaMode;
+	float dust;
+	if ( vLight->lightShader->IsFogLight() ) {
+		// fog: use normal translucency-like blending
+		dstBlend = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+		// ignore both textures completely
+		projectionImage = globalImages->whiteImage;
+		falloffImage = globalImages->whiteImage;
+		// disable sampling (no shadows, const textures => all samples are same)
+		samples = 0;
+		// use alpha generation for exponential attenuation (see shader for details)
+		alphaMode = 1;
+		if ( lightColor[3] <= 1.0 ) {
+			// (shaderParm3 not specified)
+			// cap = 1.0 / "volumetric_dust"
+			dust = vLight->volumetricDust;
+		} else {
+			// cap = "shaderParm3"
+			dust = 1.0 / lightColor[3];
+		}
+	}
+	else {
+		// volumetric light: use additive blending, uncapped linear alpha
+		dstBlend = GLS_DSTBLEND_ONE;
+		alphaMode = 0;
+		// use sampling, take dust parameter from volumetric_dust
+		samples = r_volumetricSamples.GetInteger();
+		dust = vLight->volumetricDust;
+		// apply light scale (it is applied to all lights)
+		lightColor.x *= backEnd.lightScale;
+		lightColor.y *= backEnd.lightScale;
+		lightColor.z *= backEnd.lightScale;
+	}
+
+	//--- (GL code starts here) ---
+
 	struct VolumetricLightUniforms : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( VolumetricLightUniforms )
 
@@ -1044,6 +1118,7 @@ void RB_VolumetricPass() {
 		DEFINE_UNIFORM( vec3, lightOrigin );
 		DEFINE_UNIFORM( int, sampleCount );
 		DEFINE_UNIFORM( int, randomize );
+		DEFINE_UNIFORM( int, alphaMode );
 		DEFINE_UNIFORM( vec4, lightColor );
 		DEFINE_UNIFORM( sampler, depthTexture );
 		DEFINE_UNIFORM( float, dust )
@@ -1065,16 +1140,7 @@ void RB_VolumetricPass() {
 	shader->Activate();
 	GL_CheckErrors();
 
-	bool useShadows = true;
-	//note: all other noshadows settings already checked in R_SetLightDefViewLight
-	if ( vLight->volumetricNoshadows )
-		useShadows = false;
-	if ( !vLight->shadowMapIndex ) {
-		assert(useShadows == false);
-		useShadows = false;
-	}
-
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
+	GL_State( GLS_SRCBLEND_SRC_ALPHA | dstBlend | GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
 	qglDisable( GL_SCISSOR_TEST );
 	//out of two fragments, render the farther one
 	GL_Cull( CT_BACK_SIDED );
@@ -1083,47 +1149,17 @@ void RB_VolumetricPass() {
 	shader->GetUniformGroup<Uniforms::Global>()->Set( &backEnd.viewDef->worldSpace );
 	VolumetricLightUniforms *uniforms = shader->GetUniformGroup<VolumetricLightUniforms>();
 
-	const idMaterial* lightShader = vLight->lightShader;
-	const shaderStage_t* lightStage = lightShader->GetStage( 0 );
-
-	uniforms->lightProjectionTexture.Set( 2 );
-	GL_SelectTexture( 2 );
-	idImage *projectionImage = lightStage->texture.image;
-	projectionImage->Bind();
-	//auto blurred = globalImages->ImageFromFile( image->imgName, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY );
-	//blurred->Bind();
-
-	uniforms->lightFalloffTexture.Set( 1 );
-	GL_SelectTexture( 1 );
-	backEnd.vLight->falloffImage->Bind();
-	
-	uniforms->depthTexture.Set( 3 );
-	GL_SelectTexture( 3 );
-	globalImages->currentDepthImage->Bind();
-
-	uniforms->shadowMap.Set( 4 );
-	GL_SelectTexture( 4 );
-	globalImages->shadowAtlas->Bind();
-
-	// light color uniform
-	const float* lightRegs = vLight->shaderRegisters;
-	idVec4 lightColor;
-	lightColor.x = backEnd.lightScale * lightRegs[lightStage->color.registers[0]];
-	lightColor.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
-	lightColor.z = backEnd.lightScale * lightRegs[lightStage->color.registers[2]];
-	lightColor.w = lightRegs[lightStage->color.registers[3]];
+	uniforms->alphaMode.Set( alphaMode );
+	uniforms->dust.Set( dust );
+	uniforms->sampleCount.Set( samples );
+	uniforms->shadows.Set( useShadows );
+	uniforms->randomize.Set( r_volumetricDither.GetInteger() );
 
 	uniforms->viewOrigin.Set( backEnd.viewDef->renderView.vieworg );
 	uniforms->lightProject.Set( backEnd.vLight->lightProject[0].ToFloatPtr() );
 	uniforms->lightFrustum.SetArray( 6, backEnd.vLight->lightDef->frustum[0].ToFloatPtr() );
-
-	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
-	if ( lightStage->texture.hasMatrix )
-		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
-	idVec4 lightTexRows[2] = {
-		idVec4( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] ),
-		idVec4( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] ),
-	};
+	uniforms->lightOrigin.Set( vLight->globalLightOrigin );
+	uniforms->lightColor.Set( lightColor );
 	uniforms->lightTextureMatrix.SetArray( 2, lightTexRows[0].ToFloatPtr() );
 
 	if ( useShadows ) {
@@ -1133,18 +1169,21 @@ void RB_VolumetricPass() {
 		uniforms->shadowRect.Set( v );
 	}
 
-	uniforms->lightOrigin.Set( backEnd.vLight->globalLightOrigin );
-	uniforms->sampleCount.Set( r_volumetricSamples.GetInteger() );
-	uniforms->lightColor.Set( lightColor );
-	uniforms->shadows.Set( useShadows );
-	uniforms->dust.Set( vLight->volumetricDust );
-	uniforms->randomize.Set( r_volumetricDither.GetInteger() );
+	uniforms->lightProjectionTexture.Set( 2 );
+	GL_SelectTexture( 2 );
+	projectionImage->Bind();
 
-	srfTriangles_t* frustumTris = backEnd.vLight->frustumTris;
-	// if we ran out of vertex cache memory, skip it
-	if ( !frustumTris->ambientCache.IsValid() ) {
-		return;
-	}
+	uniforms->lightFalloffTexture.Set( 1 );
+	GL_SelectTexture( 1 );
+	falloffImage->Bind();
+	
+	uniforms->depthTexture.Set( 3 );
+	GL_SelectTexture( 3 );
+	globalImages->currentDepthImage->Bind();
+
+	uniforms->shadowMap.Set( 4 );
+	GL_SelectTexture( 4 );
+	globalImages->shadowAtlas->Bind();
 
 	drawSurf_t ds = { 0 };
 	ds.space = &backEnd.viewDef->worldSpace;
@@ -1177,6 +1216,7 @@ void RB_STD_FogAllLights( bool translucent ) {
 	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( backEnd.vLight->volumetricDust > 0.0f && !backEnd.viewDef->IsLightGem() && !translucent ) {
 			RB_VolumetricPass();
+			continue;
 		}
 		if ( !backEnd.vLight->lightShader->IsFogLight() && !backEnd.vLight->lightShader->IsBlendLight() ) {
 			continue;

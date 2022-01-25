@@ -50,6 +50,16 @@ Detailed explanation is available [here][4].
 
 You can omit this step, then system-wide cache will be used for building libraries.
 
+
+Add bincrafters to the list of conan remotes (otherwise some packages will be missing):
+
+    conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
+
+Also, enable revisions in config:
+
+    conan config set general.revisions_enabled=True
+
+
 ### Custom recipes
 
 Recipes for most libraries are taken directly from central conan repository (i.e. "conan-center" or "bincrafters").

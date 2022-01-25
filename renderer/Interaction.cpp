@@ -1207,7 +1207,7 @@ instantiate the dynamic model to find out
 ==================
 */
 void idInteraction::AddActiveInteraction( void ) {
-	TRACE_CPU_SCOPE_FORMAT("AddActiveInteraction", "%s on %s", GetTraceLabel(lightDef->parms), GetTraceLabel(entityDef->parms));
+	TRACE_CPU_SCOPE_TEXT("AddActiveInteraction", GetTraceLabel(lightDef->parms));
 
 	viewLight_t *	vLight;
 	viewEntity_t *	vEntity;

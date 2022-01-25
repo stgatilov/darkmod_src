@@ -289,8 +289,8 @@ public:
 		bool				inaudible			:1; // if true this entity cannot be heard
 	} fl;
 
-	renderEntity_t			xrayEntity;
-	qhandle_t				xrayEntityHandle;
+	renderEntity_t			xrayRenderEnt;
+	qhandle_t				xrayDefHandle;
 	const idDeclSkin* 		xraySkin;
 	idRenderModel*			xrayModelHandle;
 

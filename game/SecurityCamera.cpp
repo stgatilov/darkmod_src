@@ -49,6 +49,10 @@ const idEventDef EV_SecurityCam_SeePlayerToggle( "toggle_see_player", EventArgs(
 const idEventDef EV_SecurityCam_SeePlayerState( "state_see_player", EventArgs('d', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see the player." );
 const idEventDef EV_SecurityCam_SeeAIToggle( "toggle_see_AI", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see AIs." );
 const idEventDef EV_SecurityCam_SeeAIState( "state_see_AI", EventArgs('f', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see AIs." );
+const idEventDef EV_SecurityCam_SeeBodiesToggle( "toggle_see_bodies", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see bodies." );
+const idEventDef EV_SecurityCam_SeeBodiesState( "state_see_bodies", EventArgs('f', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see bodies." );
+const idEventDef EV_SecurityCam_SeeAnimalsToggle( "toggle_see_animals", EventArgs(), EV_RETURNS_VOID, "Toggles whether the camera can see bodies. Checked after seeAI or seeBodies." );
+const idEventDef EV_SecurityCam_SeeAnimalsState( "state_see_animals", EventArgs('f', "set", ""), EV_RETURNS_VOID, "Set whether the camera can see animals. Checked after seeAI or seeBodies." );
 const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 const idEventDef EV_SecurityCam_GetEnemy( "getEnemy", EventArgs(), 'e', "Returns the entity that's currently the focus of the security camera." );
 const idEventDef EV_SecurityCam_CanSee( "canSee", EventArgs('E', "entity", ""), 'd', "Returns true if the security camera can see the specified entity." );
@@ -71,6 +75,10 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_SeePlayerState,			idSecurityCamera::Event_SeePlayer_State )
 	EVENT( EV_SecurityCam_SeeAIToggle,				idSecurityCamera::Event_SeeAI_Toggle )
 	EVENT( EV_SecurityCam_SeeAIState,				idSecurityCamera::Event_SeeAI_State )
+	EVENT( EV_SecurityCam_SeeBodiesToggle,			idSecurityCamera::Event_SeeBodies_Toggle )
+	EVENT( EV_SecurityCam_SeeBodiesState,			idSecurityCamera::Event_SeeBodies_State )
+	EVENT( EV_SecurityCam_SeeAnimalsToggle,			idSecurityCamera::Event_SeeAnimals_Toggle )
+	EVENT( EV_SecurityCam_SeeAnimalsState,			idSecurityCamera::Event_SeeAnimals_State )
 	EVENT( EV_SecurityCam_GetSpotLight,				idSecurityCamera::Event_GetSpotLight )	
 	EVENT( EV_SecurityCam_GetEnemy,					idSecurityCamera::Event_GetEnemy )	
 	EVENT( EV_SecurityCam_CanSee,					idSecurityCamera::Event_CanSee )	
@@ -81,8 +89,6 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_On,						idSecurityCamera::Event_On )
 	EVENT( EV_SecurityCam_Off,						idSecurityCamera::Event_Off )
 	END_CLASS
-
-#define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
 
 /*
 ================
@@ -138,6 +144,8 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(scanFovCos);
 	savefile->WriteFloat(sightThreshold);
 	savefile->WriteInt(seeAI);
+	savefile->WriteInt(seeBodies);
+	savefile->WriteInt(seeAnimals);
 
 	savefile->WriteInt(modelAxis);
 	savefile->WriteBool(flipAxis);
@@ -162,6 +170,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(nextAlertTime);
 	savefile->WriteFloat(startAlertTime);
 	savefile->WriteFloat(endAlertTime);
+	savefile->WriteFloat(pauseSoundOffset);
 	savefile->WriteBool(emitPauseSound);
 	savefile->WriteFloat(emitPauseSoundTime);
 	savefile->WriteFloat(pauseEndTime);
@@ -233,6 +242,8 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(scanFovCos);
 	savefile->ReadFloat(sightThreshold);
 	savefile->ReadInt(seeAI);
+	savefile->ReadInt(seeBodies);
+	savefile->ReadInt(seeAnimals);
 
 	savefile->ReadInt(modelAxis);
 	savefile->ReadBool(flipAxis);
@@ -257,6 +268,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(nextAlertTime);
 	savefile->ReadFloat(startAlertTime);
 	savefile->ReadFloat(endAlertTime);
+	savefile->ReadFloat(pauseSoundOffset);
 	savefile->ReadBool(emitPauseSound);
 	savefile->ReadFloat(emitPauseSoundTime);
 	savefile->ReadFloat(pauseEndTime);
@@ -296,10 +308,13 @@ void idSecurityCamera::Spawn( void )
 	colorSighted	= spawnArgs.GetVector("color_sighted", "0.7 0.7 0.3");
 	colorAlerted	= spawnArgs.GetVector("color_alerted", "0.7 0.3 0.3");
 	seeAI			= spawnArgs.GetInt("seeAI", "0");
+	seeBodies		= spawnArgs.GetInt("seeBodies", "0");
+	seeAnimals		= spawnArgs.GetInt("seeAnimals", "0");
 	sparksPowerDependent	= spawnArgs.GetBool("sparks_power_dependent", "1");
 	sparksInterval			= spawnArgs.GetFloat("sparks_interval", "3");
 	sparksIntervalRand		= spawnArgs.GetFloat("sparks_interval_rand", "2");
 	sightThreshold			= spawnArgs.GetFloat("sight_threshold", "0.1");
+	pauseSoundOffset		= spawnArgs.GetFloat("sweepWaitSoundOffset", "0.5");
 	follow					= spawnArgs.GetBool("follow", "0");
 	followIncline			= spawnArgs.GetBool("follow_incline", "0");
 	followTolerance			= spawnArgs.GetFloat("follow_tolerance", "15");
@@ -938,7 +953,9 @@ bool idSecurityCamera::FindEnemy()
 	}
 
 	// check for AIs
-	if ( seeAI > 0 )	// 0 = don't react to AIs, 1 = react to hostiles, 2 = react to hostiles and neutrals, 3 = react to hostiles, neutrals and animals, 4 = react to hostiles and animals
+	if ( seeAI > 0			// 0 = don't react to AIs, 1 = react to hostiles, 2 = react to hostiles and neutrals, 3 = react to hostiles, neutrals and allies
+	  || seeBodies > 0 )	// 0 = don't react to bodies, 1 = react to all bodies, 2 = react to bodies of allies, 3 = react to bodies of allies and hostiles, 4 = react to bodies of allies and neutrals, 5 = react to bodies of hostiles, 6 = react to bodies of hostiles and neutrals
+	  // seeAnimals			// 0 = don't react to animals, 1 = react to large animals (no rats or small spiders), 2 = react to all animals
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
@@ -947,8 +964,8 @@ bool idSecurityCamera::FindEnemy()
 				continue;
 			}
 
-			// is this a body? always react to bodies
-			if( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+			// is this a body?
+			if( seeBodies > 0 && ( ai->AI_DEAD || ai->AI_KNOCKEDOUT ) )
 			{
 				// skip if this particular body has already been seen during an alert
 				idStr key = "bodySeenBy" + name;
@@ -957,25 +974,53 @@ bool idSecurityCamera::FindEnemy()
 					continue;
 				}
 
-				// ignore bodies of animals if seeAI is 1/2
-				if( ( seeAI != 1 && seeAI != 2 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				// check teams for bodies
+				// ignore allies if seeBodies is 5/6
+				if( IsFriend( ai ) && ( seeBodies == 5 || seeBodies == 6 ) )
+				{
+					continue;
+				}
+
+				// ignore neutrals if seeBodies is 2/3/5
+				else if( IsNeutral( ai ) && ( seeBodies == 2 || seeBodies == 3 || seeBodies == 5 ) )
+				{
+					continue;
+				}
+
+				// ignore hostiles if seeBodies is 2/4
+				else if( IsEnemy( ai ) && ( seeBodies == 2 || seeBodies == 4 ) )
 				{
 					continue;
 				}
 			}
 
-			// if this not a body: check teams
+			// this not a body: check teams
 			else
 			{
-				// always ignore friends, ignore neutrals if seeAI is 1 or 4
-				if ( IsFriend( ai )
-				|| ( ( seeAI == 1 || seeAI == 4 ) && IsNeutral( ai ) ) )
+				// ignore friends unless seeAI is 3
+				if ( IsFriend( ai ) && seeAI != 3 )
 				{
 					continue;
 				}
 
-				// ignore animals if seeAI is 1/2
-				else if( ( seeAI == 1 || seeAI == 2 ) && idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+				// ignore neutrals if seeAI is 1
+				else if ( IsNeutral( ai ) && seeAI == 1 )
+				{
+					continue;
+				}
+			}
+
+			// is this an animal?
+			if( idStr::Icmp( "AIUSE_ANIMAL", ai->spawnArgs.GetString("AIUse", "") ) == 0 )
+			{
+				// skip if seeAnimals is 0
+				if( seeAnimals == 0 )
+				{
+					continue;
+				}
+
+				// skip if seeAnimals is 1 and this is a tiny animal
+				if( seeAnimals == 1 && idStr::Icmp( "aas_rat", ai->spawnArgs.GetString("use_aas", "") ) == 0 )
 				{
 					continue;
 				}
@@ -1189,8 +1234,8 @@ void idSecurityCamera::TriggerSparks( void )
 		sparks.GetEntity()->Activate(NULL);
 	}
 
-	StopSound(SND_CHANNEL_ANY, false);
-	StartSound("snd_sparks", SND_CHANNEL_BODY, 0, false, NULL);
+	StopSound(SND_CHANNEL_BODY2, false);
+	StartSound("snd_sparks", SND_CHANNEL_BODY2, 0, false, NULL);
 	nextSparkTime = gameLocal.time + SEC2MS(sparksInterval) + SEC2MS(gameLocal.random.RandomInt(sparksIntervalRand));
 }
 
@@ -1467,7 +1512,7 @@ void idSecurityCamera::StartSweep( void ) {
 	sweeping = true;
 	sweepStartTime = gameLocal.time;
 	sweepEndTime = sweepStartTime + SEC2MS(sweepAngle / sweepSpeed);
-	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
+	emitPauseSoundTime = sweepEndTime - SEC2MS(pauseSoundOffset);
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	emitPauseSound = true;
 	emitPauseSound = true;
@@ -1532,7 +1577,7 @@ void idSecurityCamera::ContinueSweep( void )
 		}
 	}
 
-	emitPauseSoundTime = sweepEndTime - PAUSE_SOUND_TIMING;
+	emitPauseSoundTime = sweepEndTime - SEC2MS(pauseSoundOffset);
 	StopSound( SND_CHANNEL_ANY, false );
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(MODE_SCANNING);
@@ -1755,6 +1800,8 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 
 	// Handle destruction / post-destruction fx
 	// security camera is being broken right now
+	StopSound(SND_CHANNEL_ANY, false);
+
 	if ( broke )
 	{
 		if ( powerOn ) {
@@ -1789,7 +1836,6 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	state = STATE_DEAD;
 	sweeping = false;
 	enemy = NULL;
-	StopSound( SND_CHANNEL_ANY, false );
 
 	if ( spawnArgs.GetBool("notice_destroyed", "1") ) {
 		SetStimEnabled(ST_VISUAL, true); // let AIs see that the camera is destroyed
@@ -1927,7 +1973,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 				idEntity *sparksEntity = sparks.GetEntity();
 
 				sparksEntity->Activate(NULL);
-				StopSound(SND_CHANNEL_ANY, false);
+				StopSound(SND_CHANNEL_BODY2, false);
 				sparksOn = false;
 			}
 		}
@@ -2161,6 +2207,68 @@ idSecurityCamera::Event_SeeAI_State
 void idSecurityCamera::Event_SeeAI_State( float set )
 {
 	seeAI = set;
+}
+
+/*
+================
+idSecurityCamera::Event_SeeBodies_Toggle
+================
+*/
+void idSecurityCamera::Event_SeeBodies_Toggle( void )
+{
+	int kv = spawnArgs.GetInt("seeBodies", "0");
+	
+	if( kv > 0 )
+	{
+		seeBodies = ( seeBodies > 0 ) ? 0 : kv;
+	}
+
+	// security cameras that weren't able to see bodies at map start
+	else if( kv == 0 )
+	{
+		seeBodies = ( seeBodies == 1 ) ? 0 : 1;
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_SeeBodies_State
+================
+*/
+void idSecurityCamera::Event_SeeBodies_State( float set )
+{
+	seeBodies = set;
+}
+
+/*
+================
+idSecurityCamera::Event_SeeAnimals_Toggle
+================
+*/
+void idSecurityCamera::Event_SeeAnimals_Toggle( void )
+{
+	int kv = spawnArgs.GetInt("seeAnimals", "0");
+	
+	if( kv > 0 )
+	{
+		seeAnimals = ( seeAnimals > 0 ) ? 0 : kv;
+	}
+
+	// security cameras that weren't able to see animals at map start
+	else if( kv == 0 )
+	{
+		seeAnimals = ( seeAnimals == 1 ) ? 0 : 1;
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_SeeAnimals_State
+================
+*/
+void idSecurityCamera::Event_SeeAnimals_State( float set )
+{
+	seeAnimals = set;
 }
 
 /*

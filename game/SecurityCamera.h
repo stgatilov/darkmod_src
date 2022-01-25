@@ -113,6 +113,8 @@ private:
 	float					scanFovCos;
 	float					sightThreshold;
 	int						seeAI;
+	int						seeBodies;
+	int						seeAnimals;
 
 	int						modelAxis;
 	bool					flipAxis;
@@ -139,6 +141,7 @@ private:
 	float					startAlertTime;
 	float					endAlertTime;
 	float					alertDuration;
+	float					pauseSoundOffset;
 	bool					emitPauseSound;
 	float					emitPauseSoundTime;
 	float					pauseEndTime;
@@ -176,6 +179,10 @@ private:
 	void					Event_SeePlayer_State( bool set );
 	void					Event_SeeAI_Toggle( void );
 	void					Event_SeeAI_State( float set );
+	void					Event_SeeBodies_Toggle( void );
+	void					Event_SeeBodies_State( float set );
+	void					Event_SeeAnimals_Toggle( void );
+	void					Event_SeeAnimals_State( float set );
 	void					Event_GetSpotLight(void);
 	void					Event_GetEnemy( void );
 	bool					Event_CanSee( idEntity *ent );

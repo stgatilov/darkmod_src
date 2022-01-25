@@ -1096,9 +1096,9 @@ idEntity::idEntity()
 	// SteveL #3817. Make decals and overlays persistant.
 	needsDecalRestore = false;
 
-	memset( &xrayEntity, 0, sizeof( xrayEntity ) );
+	memset( &xrayRenderEnt, 0, sizeof( xrayRenderEnt ) );
 
-	xrayEntityHandle = -1;
+	xrayDefHandle = -1;
 	xraySkin = NULL;
 	xrayModelHandle = nullptr;
 }
@@ -2083,10 +2083,9 @@ idEntity::~idEntity( void )
 	FreeModelDef();
 	FreeSoundEmitter( false );
 
-	if ( xrayEntityHandle != -1 )
-	{
-		gameRenderWorld->FreeEntityDef( xrayEntityHandle );
-		xrayEntityHandle = -1;
+	if ( xrayDefHandle != -1 ) {
+		gameRenderWorld->FreeEntityDef( xrayDefHandle );
+		xrayDefHandle = -1;
 	}
 
 	if ( m_renderTriggerHandle != -1 ) {
@@ -2241,8 +2240,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	m_StimResponseColl->Save(savefile);
 
-	savefile->WriteRenderEntity( xrayEntity );
-	savefile->WriteInt( xrayEntityHandle );
+	savefile->WriteRenderEntity( xrayRenderEnt );
+	savefile->WriteInt( xrayDefHandle );
 	savefile->WriteSkin( xraySkin );
 
 	savefile->WriteRenderEntity( renderEntity );
@@ -2530,13 +2529,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	m_StimResponseColl->Restore(savefile);
 
-	savefile->ReadRenderEntity( xrayEntity );
-	xrayModelHandle = xrayEntity.hModel;
-	savefile->ReadInt( xrayEntityHandle );
-	if ( xrayEntityHandle != -1 )
-	{
-		xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
-	}
+	savefile->ReadRenderEntity( xrayRenderEnt );
+	xrayModelHandle = xrayRenderEnt.hModel;
+	savefile->ReadInt( xrayDefHandle );
+	if ( xrayDefHandle != -1 )
+		xrayDefHandle = gameRenderWorld->AddEntityDef( &xrayRenderEnt );
 	savefile->ReadSkin( xraySkin );
 
 	savefile->ReadRenderEntity( renderEntity );
@@ -4146,41 +4143,32 @@ void idEntity::UpdateModel( void ) {
 	BecomeActive( TH_UPDATEVISUALS );
 
 	// If the entity has an xray skin, go ahead and add it
-	if ( xraySkin != NULL )
-	{
+	if ( xraySkin != NULL ) {
 		renderEntity.xrayIndex = 4;
-		xrayEntity = renderEntity;
-		xrayEntity.xrayIndex = 2;
-		xrayEntity.customSkin = xraySkin;
-
-		if ( xrayEntityHandle == -1 )
-		{
-			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
-		} else
-		{
-			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
-		}
+		xrayRenderEnt = renderEntity;
+		xrayRenderEnt.xrayIndex = 2;
+		xrayRenderEnt.customSkin = xraySkin;
+		if ( xrayDefHandle == -1 )
+			xrayDefHandle = gameRenderWorld->AddEntityDef( &xrayRenderEnt );
+		else
+			gameRenderWorld->UpdateEntityDef( xrayDefHandle, &xrayRenderEnt );
 	} 
 	if ( xrayModelHandle ) {
 		renderEntity.xrayIndex = 4;
-		xrayEntity = renderEntity;
-		xrayEntity.xrayIndex = 2;
-		xrayEntity.hModel = xrayModelHandle;
-		xrayEntity.customSkin = xraySkin;
+		xrayRenderEnt = renderEntity;
+		xrayRenderEnt.xrayIndex = 2;
+		xrayRenderEnt.hModel = xrayModelHandle;
+		xrayRenderEnt.customSkin = xraySkin;
 
-		if ( xrayEntityHandle == -1 ) {
-			xrayEntityHandle = gameRenderWorld->AddEntityDef( &xrayEntity );
+		if ( IsHidden() ) {
+			gameRenderWorld->FreeEntityDef( xrayDefHandle );
+			xrayDefHandle = -1;
+		} else if ( xrayDefHandle == -1 ) {
+			xrayDefHandle = gameRenderWorld->AddEntityDef( &xrayRenderEnt );
 		} else {
-			gameRenderWorld->UpdateEntityDef( xrayEntityHandle, &xrayEntity );
+			gameRenderWorld->UpdateEntityDef( xrayDefHandle, &xrayRenderEnt );
 		}
 	}
-	/*if ( renderEntity.xrayIndex > 1 && m_Attachments.Num() ) {
-		for ( auto& attachment : m_Attachments ) {
-			if ( !attachment.ent.IsValid() )
-				continue;
-			attachment.ent.GetEntity()->renderEntity.xrayIndex = 4;
-		}
-	}*/
 }
 
 /*

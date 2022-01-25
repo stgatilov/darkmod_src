@@ -148,7 +148,8 @@ void AnimalPatrolTask::switchToState(EState newState, idAI* owner)
 		}
 		else
 		{
-			_waitEndTime = gameLocal.time + gameLocal.random.RandomInt(1000);
+			float wait = owner->spawnArgs.GetFloat("animal_patrol_wait", "1");
+			_waitEndTime = gameLocal.time + gameLocal.random.RandomInt( wait * 1000 );
 		}
 		break;
 	case stateMovingToNextPathCorner:

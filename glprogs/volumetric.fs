@@ -35,6 +35,7 @@ uniform vec4 u_lightColor;
 uniform int u_shadows;
 uniform float u_dust;
 uniform int u_randomize;
+uniform int u_alphaMode;
 
 in vec4 worldPosition;
 
@@ -52,15 +53,18 @@ float DITHER_MATRIX[64] = float[](
 	63, 31, 55, 23, 61, 29, 53, 21
 );
 
+float ditherFraction() {
+	int x = int(gl_FragCoord.x), y = int(gl_FragCoord.y);
+	return DITHER_MATRIX[8 * (x&7) + (y&7)] / 64.0;
+}
+
 // get N samples from the fragment-view ray inside the frustum
 vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam, int samplesNum) {
 	vec3 color = vec3(0.0);
 	for (int i = 0; i < samplesNum; i++) { 
 		float frac = 0.5;
-		if (u_randomize != 0) {
-			int x = int(gl_FragCoord.x), y = int(gl_FragCoord.y);
-			frac = DITHER_MATRIX[8 * (x&7) + (y&7)] / 64.0;
-		}
+		if (u_randomize != 0)
+			frac = ditherFraction();
 		float ratio = (i + frac) / samplesNum;
 		vec3 samplePos = rayStart + rayVec * mix(minParam, maxParam, ratio);
 		// shadow test
@@ -113,13 +117,31 @@ void main() {
 
 	if (minParam >= maxParam)
 		discard;    //no intersection
+	float litDistance = (maxParam - minParam) * length(rayVec);
 	
 	vec3 avgColor;
 	if (u_sampleCount > 0)
 		avgColor = calcWithSampling(rayStart, rayVec, minParam, maxParam, u_sampleCount);
 	else
 		avgColor = calcAverage(rayStart, rayVec, minParam, maxParam);
+	fragColor.rgb = u_lightColor.rgb * avgColor;
 
-	float litDistance = (maxParam - minParam) * length(rayVec);
-	fragColor.rgb = u_lightColor.rgb * avgColor * litDistance * u_dust;
+	if (u_alphaMode == 0) {
+		//volumetric light: uncapped linear growth
+		fragColor.a = u_dust * litDistance;
+	}
+	else if (u_alphaMode == 1) {
+		//fog light: exponential light with forced cap at distance 1 / u_dust = cap
+		float q = u_dust * litDistance;
+		//start with exponential attenuation: 0 at D = 0, (1 - e^-5) at D = cap
+		float exponential = 1.0 - exp(-q * 5.0);
+		//then force fog to be opaque at D = cap
+		float transition = clamp((q - 0.9) / 0.1, 0, 1);
+		//exponential up to 90% of cap, perfectly opaque fog at 100% of cap (linear interpolation in-between)
+		float alpha = mix(exponential, 1, transition);
+		//add a bit of unscientific dithering to smoothen out color banding
+		if (u_randomize != 0)
+			alpha = min(alpha + 1e-2 * ditherFraction(), 1.0);
+		fragColor.a = alpha;
+	}
 }

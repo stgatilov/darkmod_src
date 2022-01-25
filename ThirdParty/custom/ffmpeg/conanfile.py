@@ -127,7 +127,7 @@ class FFMpegConan(ConanFile):
 
     def build_requirements(self):
         if any([str(self.settings.arch).startswith(prefix) for prefix in ['x86', 'arm', 'ppc', 'mips', 'avr']]):
-            self.build_requires("yasm_installer/1.3.0@bincrafters/stable")
+            self.build_requires("yasm/1.3.0")
         if self.settings.os == 'Windows':
             self.build_requires("msys2_installer/latest@bincrafters/stable")
 

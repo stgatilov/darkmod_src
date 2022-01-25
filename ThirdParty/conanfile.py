@@ -51,7 +51,7 @@ class TdmDepends(ConanFile):
     # these deps can be built only once in release mode, and then used both in release and debug builds
     # this is possible only for pure C libraries built with /MT, and needs /nodefaultlib:LIBCMT.lib flag in debug build
     requires_releaseonly = (
-        "zlib/1.2.11@conan/stable",
+        "zlib/1.2.11@#514b772abf9c36ad9be48b84cfc6fdc2",
         "libcurl/7.61.1@thedarkmod/local",
         "libjpeg/9c@thedarkmod/local",
         "libpng/1.6.34@bincrafters/stable",
