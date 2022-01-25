@@ -1512,7 +1512,7 @@ void idSecurityCamera::StartSweep( void ) {
 	sweeping = true;
 	sweepStartTime = gameLocal.time;
 	sweepEndTime = sweepStartTime + SEC2MS(sweepAngle / sweepSpeed);
-	emitPauseSoundTime = sweepEndTime - pauseSoundOffset;
+	emitPauseSoundTime = sweepEndTime - SEC2MS(pauseSoundOffset);
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	emitPauseSound = true;
 	emitPauseSound = true;
@@ -1577,7 +1577,7 @@ void idSecurityCamera::ContinueSweep( void )
 		}
 	}
 
-	emitPauseSoundTime = sweepEndTime - pauseSoundOffset;
+	emitPauseSoundTime = sweepEndTime - SEC2MS(pauseSoundOffset);
 	StopSound( SND_CHANNEL_ANY, false );
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(MODE_SCANNING);
