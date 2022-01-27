@@ -159,6 +159,8 @@ idBrush::idBrush
 ============
 */
 idBrush::idBrush( void ) {
+	entityNum = -1;
+	primitiveNum = -1;
 	contents = flags = 0;
 	bounds.Clear();
 	sides.Clear();
