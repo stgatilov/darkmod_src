@@ -445,10 +445,33 @@ void idStr::StripMediaName( const char *name, idStr &mediaName ) {
 
 /*
 =============
+idStr::IendsWith
+=============
+*/
+bool idStr::IendsWith( const char *text, const char *suffix ) {
+	int textLen = Length( text );
+	int suffLen = Length( suffix );
+	if ( suffLen > textLen )
+		return false;
+	int offset = textLen - suffLen;
+
+	for ( int i = 0; i < suffLen; i++ ) {
+		char c1 = text[offset + i];
+		char c2 = suffix[i];
+		if ( ToLower(c1) != ToLower(c2) )
+			return false;
+	}
+
+	return true;
+}
+
+/*
+=============
 idStr::CheckExtension
 =============
 */
 bool idStr::CheckExtension( const char *name, const char *ext ) {
+	assert( ext && ext[0] == '.' );
 	const char *s1 = name + Length( name ) - 1;
 	const char *s2 = ext + Length( ext ) - 1;
 	int c1, c2, d;

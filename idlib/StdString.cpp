@@ -61,6 +61,6 @@ namespace stdext {
 	}
 
 	bool iends_with(const std::string &text, const std::string &suffix) {
-		return idStr::CheckExtension(text.c_str(), suffix.c_str());
+		return idStr::IendsWith(text.c_str(), suffix.c_str());
 	}
 }
