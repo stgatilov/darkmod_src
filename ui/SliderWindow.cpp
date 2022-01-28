@@ -23,6 +23,12 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "UserInterfaceLocal.h"
 #include "SliderWindow.h"
 
+template<typename T>
+T roundMultiple( T value, T multiple ) {
+	if ( multiple == 0 ) return value;
+	return static_cast<T>( std::round( static_cast<double>( value ) / static_cast<double>( multiple ) ) * static_cast<double>( multiple ) );
+}
+
 /*
 ============
 idSliderWindow::CommonInit
@@ -291,6 +297,7 @@ const char *idSliderWindow::RouteMouseCoords(float xd, float yd) {
 				pct = 1.f - pct;
 			}
 			value = low + (high - low) * pct;
+			value = roundMultiple<float>( value, stepSize / 10 );
 		} else if (gui->CursorY() < r.y) {
 			if ( verticalFlip ) {
 				value = high;
@@ -310,6 +317,7 @@ const char *idSliderWindow::RouteMouseCoords(float xd, float yd) {
 		if (gui->CursorX() >= r.x && gui->CursorX() <= r.Right()) {
 			pct = (gui->CursorX() - r.x) / r.w;
 			value = low + (high - low) * pct;
+			value = roundMultiple<float>( value, stepSize / 10 );
 		} else if (gui->CursorX() < r.x) {
 			value = low;
 		} else {
