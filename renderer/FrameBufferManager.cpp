@@ -23,9 +23,12 @@ FrameBufferManager *frameBuffers = &frameBuffersImpl;
 
 namespace {
 	GLenum ColorBufferFormat() {
-		if( r_fboColorBits.GetInteger() == 64 ) {
+		if ( r_fboColorBits.GetInteger() == 64 ) {
 			return GL_RGBA16F;
-		} 
+		}
+		if ( r_fboColorBits.GetInteger() == 16 ) {
+			return GL_RGB5_A1;
+		}
 		return ( glConfig.srgb ? GL_SRGB_ALPHA : GL_RGBA );
 	}
 
