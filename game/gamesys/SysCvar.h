@@ -283,6 +283,8 @@ extern idCVar cv_drag_targetpos_averaging_time;
 extern idCVar cv_drag_rigid_silentmode;
 extern idCVar cv_drag_rigid_distance_halfing_time;
 extern idCVar cv_drag_rigid_acceleration_radius;
+extern idCVar cv_drag_rigid_angle_halfing_time;
+extern idCVar cv_drag_rigid_acceleration_angle;
 extern idCVar cv_drag_af_weight_ratio;
 extern idCVar cv_drag_af_weight_ratio_canlift;
 extern idCVar cv_drag_af_reduceforce_radius;

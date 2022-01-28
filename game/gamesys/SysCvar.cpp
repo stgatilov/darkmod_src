@@ -337,10 +337,22 @@ idCVar cv_drag_rigid_distance_halfing_time(
 );
 idCVar cv_drag_rigid_acceleration_radius(
 	"tdm_drag2_rigid_acceleration_radius", "1.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
-	"When distance from dragged rigid object to target is smaller than R, the dragging is significantly accelerated. "
+	"When distance from dragged rigid object to target is smaller than R, then dragging is significantly accelerated. "
 	"Set to 0 to disable acceleration completely. ",
 	0.0f, 100.0f
 );
+idCVar cv_drag_rigid_angle_halfing_time(
+	"tdm_drag2_rigid_angle_halfing_time", "0.02", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"It normally takes T seconds for dragged rigid object to reduce its rotation angle to target in 2.71 times. ",
+	0.01f, 10.0f
+);
+idCVar cv_drag_rigid_acceleration_angle(
+	"tdm_drag2_rigid_acceleration_angle", "0.03", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"When angle between current orientation of rigid object to target is smaller than A, then rotation is significantly accelerated. "
+	"Set to 0 to disable acceleration completely. ",
+	0.0f, 100.0f
+);
+
 idCVar cv_drag_af_weight_ratio(
 	"tdm_drag2_af_weight_ratio", "0.8", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
 	"Force applied when dragging articulated figure is K * total weight of AF. "
