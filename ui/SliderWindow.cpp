@@ -22,7 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "SliderWindow.h"
-#include "..\renderer\Image.h"
+#include "../renderer/Image.h"
 
 template<typename T>
 T roundMultiple( T value, T multiple ) {
