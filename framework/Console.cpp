@@ -1104,7 +1104,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	}
 
 	SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
-	renderSystem->DrawStretchPic( 0, y, SCREEN_WIDTH, 2, 0, 0, 0, 0, whiteShader );
+	renderSystem->DrawStretchPic( 0, y, SCREEN_WIDTH, 0.25f * con_fontSize.GetInteger(), 0, 0, 0, 0, whiteShader );
 
 	// draw the version number
 	{
