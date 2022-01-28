@@ -130,6 +130,8 @@ void FrameBufferManager::EnterPrimary() {
 	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
 }
 
+idCVar r_fboScaling( "r_fboScaling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "nearest/linear FBO scaling" );
+
 void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 	// if we want to do tonemapping later, we need to continue to render to a texture,
 	// otherwise we can render the remaining UI views straight to the back buffer
@@ -143,7 +145,7 @@ void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 			ResolvePrimary();
 			resolveFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 		} else {
-			primaryFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+			primaryFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, r_fboScaling.GetBool() ? GL_LINEAR : GL_NEAREST );
 		}
 
 		if ( r_frontBuffer.GetBool() && !r_tonemap ) {
