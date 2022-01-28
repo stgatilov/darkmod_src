@@ -861,6 +861,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			RB_Bloom( (bloomCommand_t*)cmds );
 			FB_DebugShowContents();
 			c_drawBloom++;
+			frameBuffers->LeavePrimary();
 			fboOff = true;
 			break;
 		case RC_COPY_RENDER:
