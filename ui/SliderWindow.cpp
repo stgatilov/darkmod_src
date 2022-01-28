@@ -22,6 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "SliderWindow.h"
+#include "..\renderer\Image.h"
 
 template<typename T>
 T roundMultiple( T value, T multiple ) {
@@ -202,6 +203,8 @@ void idSliderWindow::Draw(int time, float x, float y) {
 	}
 
 	if ( !thumbWidth || !thumbHeight ) {
+		if ( thumbMat->GetStage( 0 )->texture.image->texnum == idImage::TEXTURE_NOT_LOADED )
+			thumbMat->GetStage( 0 )->texture.image->ActuallyLoadImage();
 		thumbWidth = thumbMat->GetImageWidth();
 		thumbHeight = thumbMat->GetImageHeight();
 	}
