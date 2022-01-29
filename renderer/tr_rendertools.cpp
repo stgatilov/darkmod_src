@@ -1972,7 +1972,7 @@ RB_ShowDebugLines
 ================
 */
 void RB_ShowDebugLines( void ) {
-	if ( rb_debug.lines.Num() == 0 ) {
+	if ( rb_debug.lines.Num() == 0 || backEnd.viewDef->renderView.viewID != VID_PLAYER_VIEW ) {
 		return;
 	}
 
