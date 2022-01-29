@@ -299,7 +299,8 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
-		frameBuffers->UpdateCurrentDepthCopy();
+		if ( !( !backEnd.viewDef->isSubview && backEnd.viewDef->renderView.viewID == VID_SUBVIEW ) ) // compass
+			frameBuffers->UpdateCurrentDepthCopy();
 	}
 	GLSLProgram::Deactivate();
 	GL_CheckErrors();
