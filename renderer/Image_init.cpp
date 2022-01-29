@@ -1329,7 +1329,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	if ( name.Find( "fontImage_" ) >= 0
 		//nbohr1more: 4358 blacklist texture paths to prevent image_downsize from making fonts, guis, and background images blurry
 		|| name.Find( "fonts/" ) >= 0
-		|| name.Find( "guis/assets/" ) >= 0
+		|| name.Find( "guis/" ) >= 0
 		|| name.Find( "postprocess/" ) >= 0
 		|| name.Find( "_cookedMath" ) >= 0
 		|| name.Find( "_currentRender" ) >= 0
