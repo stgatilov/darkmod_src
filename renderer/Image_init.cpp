@@ -64,7 +64,6 @@ idCVar idImageManager::image_downSizeBumpLimit( "image_downSizeBumpLimit", "128"
 idCVar idImageManager::image_ignoreHighQuality( "image_ignoreHighQuality", "0", CVAR_RENDERER | CVAR_ARCHIVE, "ignore high quality setting on materials" );
 idCVar idImageManager::image_downSizeLimit( "image_downSizeLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls diffuse map downsample limit" );
 idCVar idImageManager::image_blockChecksum( "image_blockChecksum", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Perform MD4 block checksum calculation for later duplicates check" );
-idCVarBool gui_linearFilter( "gui_linearFilter", "0", CVAR_GUI | CVAR_ARCHIVE, "0 - nearest filtering, some pixels lost, 1 - linear filtering, blurred" );
 
 // do this with a pointer, in case we want to make the actual manager
 // a private virtual subclass
@@ -1342,8 +1341,6 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 		|| name.Find( "/AFX" ) >= 0
 		|| name.Find( "_afxweight" ) >= 0 ) {
 		allowDownSize = false;
-		if( !gui_linearFilter )
-			filter = TF_NEAREST;
 	}
 	image->allowDownSize = allowDownSize;
 	image->repeat = repeat;
