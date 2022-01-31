@@ -792,8 +792,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 			inter.ambientRimColor[3] = 1;
 		} else
 			inter.ambientRimColor.Zero();
-	} else if ( r_skipInteractions.GetBool() ) 
-		return;
+	} else if ( r_skipInteractions.GetBool() ) {
+		if( r_skipInteractions.GetInteger() == 1 || !backEnd.vLight->lightDef->parms.noShadows )
+			return;
+	}
 
 	if ( tr.logFile ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );

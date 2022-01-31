@@ -88,11 +88,11 @@ idCVar r_jitter( "r_jitter", "0", CVAR_RENDERER | CVAR_BOOL, "randomly subpixel 
 
 idCVar r_skipSuppress( "r_skipSuppress", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the per-view suppressions" );
 idCVar r_skipPostProcess( "r_skipPostProcess", "0", CVAR_RENDERER | CVAR_BOOL, "skip all post-process renderings" );
-idCVar r_skipInteractions( "r_skipInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "skip all light/surface interaction drawing" );
+idCVar r_skipInteractions( "r_skipInteractions", "0", CVAR_RENDERER | CVAR_INTEGER, "skip all light/surface interaction drawing" );
 idCVar r_skipDynamicTextures( "r_skipDynamicTextures", "0", CVAR_RENDERER | CVAR_BOOL, "don't dynamically create textures" );
 idCVar r_skipCopyTexture( "r_skipCopyTexture", "0", CVAR_RENDERER | CVAR_BOOL, "do all rendering, but don't actually copyTexSubImage2D" );
 idCVar r_skipBackEnd( "r_skipBackEnd", "0", CVAR_RENDERER | CVAR_BOOL, "don't draw anything" );
-idCVar r_skipRender( "r_skipRender", "0", CVAR_RENDERER | CVAR_BOOL, "skip 3D rendering, but pass 2D" );
+idCVar r_skipRender( "r_skipRender", "0", CVAR_RENDERER | CVAR_INTEGER, "skip 3D rendering, but pass 2D" );
 idCVar r_skipRenderContext( "r_skipRenderContext", "0", CVAR_RENDERER | CVAR_BOOL, "NULL the rendering context during backend 3D rendering" );
 idCVar r_skipTranslucent( "r_skipTranslucent", "0", CVAR_RENDERER | CVAR_BOOL, "skip the translucent interaction rendering" );
 idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = bypasses all non-interaction drawing, 2 = skips ambient light interactions, 3 = both" );
@@ -103,12 +103,12 @@ idCVar r_skipDeforms( "r_skipDeforms", "0", CVAR_RENDERER | CVAR_BOOL, "leave al
 idCVar r_skipFrontEnd( "r_skipFrontEnd", "0", CVAR_RENDERER | CVAR_BOOL, "bypasses all front end work, but 2D gui rendering still draws" );
 idCVar r_skipUpdates( "r_skipUpdates", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't accept any entity or light updates, making everything static" );
 idCVar r_skipOverlays( "r_skipOverlays", "0", CVAR_RENDERER | CVAR_BOOL, "skip overlay surfaces" );
-idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "use black for specular1" );
-idCVar r_skipBump( "r_skipBump", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "uses a flat surface instead of the bump map" );
+idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL, "use black for specular1" );
+idCVar r_skipBump( "r_skipBump", "0", CVAR_RENDERER | CVAR_BOOL, "uses a flat surface instead of the bump map" );
 idCVar r_skipDiffuse( "r_skipDiffuse", "0", CVAR_RENDERER | CVAR_BOOL, "use black for diffuse" );
 idCVar r_skipROQ( "r_skipROQ", "0", CVAR_RENDERER | CVAR_BOOL, "skip ROQ decoding" );
-idCVar r_skipDepthCapture( "r_skipDepthCapture", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "skip depth capture" ); // #3877 #4418
-idCVar r_useSoftParticles( "r_useSoftParticles", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "soften particle transitions when player walks through them or they cross solid geometry" ); // #3878 #4418
+idCVar r_skipDepthCapture( "r_skipDepthCapture", "0", CVAR_RENDERER | CVAR_BOOL, "skip depth capture" ); // #3877 #4418
+idCVar r_useSoftParticles( "r_useSoftParticles", "1", CVAR_RENDERER | CVAR_BOOL, "soften particle transitions when player walks through them or they cross solid geometry" ); // #3878 #4418
 
 idCVar r_ignore( "r_ignore", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
 idCVar r_ignore2( "r_ignore2", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
@@ -1531,6 +1531,24 @@ void R_PurgeImages_f( const idCmdArgs& args ) {
 	globalImages->PurgeAllImages();
 }
 
+void R_TuneDown_f( const idCmdArgs& args ) {
+	bool undo = false;
+	for ( int i = 1; i < args.Argc(); i++ ) {
+		if ( idStr::Icmp( args.Argv( i ), "undo" ) == 0 ) {
+			undo = true;
+			continue;
+		}
+	}
+	r_skipInteractions.SetInteger( undo ? 0 : 2 );
+	r_skipPostProcess.SetInteger( !undo );
+	r_shadows.SetInteger( undo );
+	r_tonemap.SetInteger( undo );
+	r_skipSubviews.SetInteger( !undo );
+	r_skipParticles.SetInteger( !undo );
+	r_ambientMinLevel.SetFloat( undo ? 0 : 0.5 );
+	common->Printf( "%s shadows and most lights, subviews, particles, postprocessing\n", undo ? "Enabled" : "Disabled" );
+}
+
 /*
 =================
 R_VidRestart_f
@@ -1737,6 +1755,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "reloadSurface", R_ReloadSurface_f, CMD_FL_RENDERER, "reloads the decl and images for selected surface" );
 	cmdSystem->AddCommand( "overrideSurfaceMaterial", R_OverrideSurfaceMaterial_f, CMD_FL_RENDERER, "changes the material of the surface currently under cursor", idCmdSystem::ArgCompletion_Decl<DECL_MATERIAL> );
 	cmdSystem->AddCommand( "purgeImages", R_PurgeImages_f, CMD_FL_RENDERER, "deletes all currently loaded images" );
+	cmdSystem->AddCommand( "tuneDown", R_TuneDown_f, CMD_FL_RENDERER, "removes all beauty" );
 }
 
 /*

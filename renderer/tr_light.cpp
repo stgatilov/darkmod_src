@@ -1111,10 +1111,7 @@ static void R_FindSurfaceLights( drawSurf_t& drawSurf ) {
 		if ( light->lightShader->IsAmbientLight() ) {
 			if ( r_skipAmbient.GetInteger() & 2 )
 				continue;
-		} /*else { // duzenko used to disable shadows as well but decided to revert for benchmarking
-			if ( r_skipInteractions.GetBool() )
-				continue;
-		}*/ 
+		}
 		idVec3 localLightOrigin;
 		R_GlobalPointToLocal( drawSurf.space->modelMatrix, light->globalLightOrigin, localLightOrigin );
 		if ( R_CullLocalBox( drawSurf.frontendGeo->bounds, drawSurf.space->modelMatrix, 6, light->frustum ) )

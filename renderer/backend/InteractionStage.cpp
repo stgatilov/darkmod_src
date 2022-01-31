@@ -160,12 +160,6 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 	if ( !interactionSurfs ) {
 		return;
 	}
-	if ( vLight->lightShader->IsAmbientLight() ) {
-		if ( r_skipAmbient.GetInteger() & 2 )
-			return;
-	} else if ( r_skipInteractions.GetBool() ) {
-		return;
-	}
 
 	TRACE_GL_SCOPE( "DrawInteractions" );
 
