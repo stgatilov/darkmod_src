@@ -241,9 +241,13 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 			if ( glConfig.isInitialized || win32.win_maximized ) {
 				RECT rect;
 				if (::GetClientRect(win32.hWnd, &rect)) {
-					glConfig.vidWidth = rect.right - rect.left;
-					glConfig.vidHeight = rect.bottom - rect.top;
-					cvarSystem->Find( "r_fboResolution" )->SetModified();
+					int newWidth = rect.right - rect.left;
+					int newHeight = rect.bottom - rect.top;
+					if (glConfig.vidWidth != newWidth || glConfig.vidHeight != newHeight) {
+						glConfig.vidWidth = newWidth;
+						glConfig.vidHeight = newHeight;
+						cvarSystem->Find( "r_fboResolution" )->SetModified();
+					}
 				}
 			}
 			break;
