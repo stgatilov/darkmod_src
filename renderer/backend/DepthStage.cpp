@@ -153,7 +153,8 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
-		frameBuffers->UpdateCurrentDepthCopy();
+		if ( !( !backEnd.viewDef->isSubview && backEnd.viewDef->renderView.viewID == VID_SUBVIEW ) ) // compass
+			frameBuffers->UpdateCurrentDepthCopy();
 	}
 }
 
