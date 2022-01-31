@@ -374,6 +374,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	WriteVec3( renderLight.origin );
 
 	WriteInt( renderLight.suppressLightInViewID );
+	WriteInt( renderLight.suppressInSubview );
 	WriteInt( renderLight.allowLightInViewID );
 	WriteBool( renderLight.noShadows );
 	WriteBool( renderLight.noSpecular );
@@ -976,6 +977,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	ReadVec3( renderLight.origin );
 
 	ReadInt( renderLight.suppressLightInViewID );
+	ReadInt( renderLight.suppressInSubview );
 	ReadInt( renderLight.allowLightInViewID );
 	ReadBool( renderLight.noShadows );
 	ReadBool( renderLight.noSpecular );
