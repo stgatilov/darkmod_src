@@ -248,7 +248,11 @@ idCVar r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE,
 
 // FBO
 idCVar r_showFBO( "r_showFBO", "0", CVAR_RENDERER | CVAR_INTEGER, "0-5 individual fbo attachments" );
-idCVar r_fboColorBits( "r_fboColorBits", "64", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "32, 64" );
+idCVar r_fboColorBits(
+	"r_fboColorBits", "64", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
+	"Total number of color bits in every pixel of rendered image.\n"
+	"Must be one of: 16, 32, 64"
+);
 idCVarBool r_fboSRGB( "r_fboSRGB", "0", CVAR_RENDERER | CVAR_ARCHIVE, "Use framebuffer-level gamma correction" );
 idCVar r_fboDepthBits( "r_fboDepthBits", "24", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "16, 24, 32" );
 idCVarInt r_shadowMapSize( "r_shadowMapSize", "1024", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Shadow map texture resolution" );
