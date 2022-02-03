@@ -959,6 +959,22 @@ bool idSecurityCamera::FindEnemy()
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
+			delta = ai->GetPhysics()->GetOrigin() - origin;
+			dist = delta.Length();
+
+			// is the enemy AI beyond max scan distance?
+			if( dist > scanDist )
+			{
+				continue;
+			}
+
+			// is this AI no closer than the previous closest enemy?
+			if( dist >= bestDist && bestEnemy != NULL )
+			{
+				continue;
+			}
+
+			// ignore hidden and inactive AIs
 			if ( ai->fl.hidden || ai->fl.isDormant )
 			{
 				continue;
@@ -1042,11 +1058,8 @@ bool idSecurityCamera::FindEnemy()
 				continue;
 			}
 
-			// is this AI closer than the previous closest enemy, or the only enemy found so far?
-			delta = ai->GetPhysics()->GetOrigin() - origin;
-			dist = delta.Length();
-
-			if( ( dist < bestDist || bestEnemy == NULL ) && ( CanSeeEnemy( ai ) ) )
+			// perform the visibility trace
+			if( CanSeeEnemy( ai ) )
 			{
 				bestDist = dist;
 				bestEnemy = ai;
