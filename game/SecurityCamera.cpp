@@ -965,8 +965,13 @@ bool idSecurityCamera::FindEnemy()
 			}
 
 			// is this a body?
-			if( seeBodies > 0 && ( ai->AI_DEAD || ai->AI_KNOCKEDOUT ) )
+			if( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
 			{
+				if( seeBodies == 0 )
+				{
+					continue;
+				}
+
 				// skip if this particular body has already been seen during an alert
 				idStr key = "bodySeenBy" + name;
 				if( ai->spawnArgs.GetBool( key, "0") )
@@ -994,9 +999,14 @@ bool idSecurityCamera::FindEnemy()
 				}
 			}
 
-			// this not a body: check teams
+			// this is not a body
 			else
 			{
+				if( seeAI == 0 )
+				{
+					continue;
+				}
+
 				// ignore friends unless seeAI is 3
 				if ( IsFriend( ai ) && seeAI != 3 )
 				{
