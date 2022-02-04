@@ -277,6 +277,7 @@ void BloomStage::Upsample() {
 		bloomDownSamplers[i]->Bind();
 		upsampleFBOs[i]->Bind();
 		GL_ViewportRelative( 0, 0, 1, 1 );
+		qglClear(GL_COLOR_BUFFER_BIT);
 		RB_DrawFullScreenTri();
 		// next upsampling steps go from upsampler[mip+1] to upsampler[mip]
 		GL_SelectTexture( 0 );
