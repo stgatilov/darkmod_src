@@ -200,6 +200,7 @@ void BloomStage::ApplyBloom() {
 	BindBloomTexture();
 	uniforms->bloomWeight.Set( r_bloom_weight.GetFloat() );
 
+	qglClear(GL_COLOR_BUFFER_BIT);
 	RB_DrawFullScreenTri();
 
 	qglEnable( GL_DEPTH_TEST );
