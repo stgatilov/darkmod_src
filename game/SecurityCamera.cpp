@@ -927,7 +927,7 @@ bool idSecurityCamera::FindEnemy()
 	idVec3 origin = GetPhysics()->GetOrigin();
 	idVec3 delta;
 	float dist;
-	float bestDist;
+	float bestDist = idMath::INFINITY;
 	idEntity *bestEnemy = NULL;
 
 	// check for player
