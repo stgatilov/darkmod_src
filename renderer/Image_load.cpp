@@ -182,7 +182,9 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		if ( globalImages->image_useNormalCompression.GetBool() ) {
 			return GL_COMPRESSED_RG_RGTC2;
 		}
-		return GL_RG8;
+		// discarding blue channel already decreases quality of normal maps,
+		// which is not what an artist wants when he disables normal maps compression
+		return GL_RGB8;
 	}
 
 	// allow a complete override of image compression with a cvar
