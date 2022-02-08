@@ -402,6 +402,9 @@ void idSessionLocal::Shutdown() {
 		guiMainMenu_MapList = NULL;
 	}
 
+	//stgatilov: shut down main menu
+	ResetMainMenu();
+
 	Clear();
 }
 

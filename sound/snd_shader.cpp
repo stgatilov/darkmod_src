@@ -153,6 +153,11 @@ idSoundShader::ParseShader
 ===============
 */
 bool idSoundShader::ParseShader( idLexer &src ) {
+	//stgatilov: if soundCache is not created yet, then shader will be loaded without sound samples
+	//and since sound shader is a decl and decls are cached, they will never be loaded in there future either
+	//this will results in missing sounds later, when soundCache is finally available
+	assert( soundSystemLocal.soundCache || soundSystemLocal.s_noSound.GetBool() );
+
 	parms.minDistance = 1;
 	parms.maxDistance = 10;
 	parms.volume = 1;

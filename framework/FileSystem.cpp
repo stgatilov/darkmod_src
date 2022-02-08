@@ -1151,9 +1151,12 @@ That's why if we detect that such a file is compressed in pk4, we recompress the
 */
 #include "CompressionParameters.h"
 bool DoNotCompressFile(const char *filename) {
-	for (int i = 0; i < PK4_UNCOMPRESSED_EXTENSIONS_COUNT; i++)
-		if (idStr::CheckExtension(filename, PK4_UNCOMPRESSED_EXTENSIONS[i]))
+	char ext[16] = ".";
+	for (int i = 0; i < PK4_UNCOMPRESSED_EXTENSIONS_COUNT; i++) {
+		strcpy(ext + 1, PK4_UNCOMPRESSED_EXTENSIONS[i]);
+		if (idStr::CheckExtension(filename, ext))
 			return true;
+	}
 	return false;
 }
 

@@ -76,7 +76,10 @@ void idSessionLocal::CreateMainMenu() {
 	idDict presetDefines;
 	// flag for in-game menu
 	presetDefines.SetBool("MM_INGAME", mapSpawned);
-	int missionIdx = gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1;
+	int missionIdx = 0;
+	assert(gameLocal.m_MissionManager);
+	if (gameLocal.m_MissionManager)
+		missionIdx = gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1;
 	presetDefines.SetInt("MM_CURRENTMISSION", missionIdx);
 	guiMainMenu = uiManager->FindGui( "guis/mainmenu.gui", true, false, true, presetDefines );
 

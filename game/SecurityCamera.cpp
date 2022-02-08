@@ -927,7 +927,7 @@ bool idSecurityCamera::FindEnemy()
 	idVec3 origin = GetPhysics()->GetOrigin();
 	idVec3 delta;
 	float dist;
-	float bestDist;
+	float bestDist = idMath::INFINITY;
 	idEntity *bestEnemy = NULL;
 
 	// check for player
@@ -959,14 +959,35 @@ bool idSecurityCamera::FindEnemy()
 	{
 		for ( idAI *ai = gameLocal.spawnedAI.Next(); ai != NULL ; ai = ai->aiNode.Next() )
 		{
+			delta = ai->GetPhysics()->GetOrigin() - origin;
+			dist = delta.Length();
+
+			// is the enemy AI beyond max scan distance?
+			if( dist > scanDist )
+			{
+				continue;
+			}
+
+			// is this AI no closer than the previous closest enemy?
+			if( dist >= bestDist && bestEnemy != NULL )
+			{
+				continue;
+			}
+
+			// ignore hidden and inactive AIs
 			if ( ai->fl.hidden || ai->fl.isDormant )
 			{
 				continue;
 			}
 
 			// is this a body?
-			if( seeBodies > 0 && ( ai->AI_DEAD || ai->AI_KNOCKEDOUT ) )
+			if( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
 			{
+				if( seeBodies == 0 )
+				{
+					continue;
+				}
+
 				// skip if this particular body has already been seen during an alert
 				idStr key = "bodySeenBy" + name;
 				if( ai->spawnArgs.GetBool( key, "0") )
@@ -994,9 +1015,14 @@ bool idSecurityCamera::FindEnemy()
 				}
 			}
 
-			// this not a body: check teams
+			// this is not a body
 			else
 			{
+				if( seeAI == 0 )
+				{
+					continue;
+				}
+
 				// ignore friends unless seeAI is 3
 				if ( IsFriend( ai ) && seeAI != 3 )
 				{
@@ -1032,11 +1058,8 @@ bool idSecurityCamera::FindEnemy()
 				continue;
 			}
 
-			// is this AI closer than the previous closest enemy, or the only enemy found so far?
-			delta = ai->GetPhysics()->GetOrigin() - origin;
-			dist = delta.Length();
-
-			if( ( dist < bestDist || bestEnemy == NULL ) && ( CanSeeEnemy( ai ) ) )
+			// perform the visibility trace
+			if( CanSeeEnemy( ai ) )
 			{
 				bestDist = dist;
 				bestEnemy = ai;

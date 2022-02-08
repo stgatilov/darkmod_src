@@ -577,40 +577,53 @@ void CForce_Grab::Evaluate( int time )
 		return;
 	}
 
-	// Finite angular acceleration:
-	Alph = DeltAngVec * (1.0f - ang_damping) / (dT * dT);
-	AlphMag = Alph.Length();
+	if (cv_drag_new.GetBool()) {
+		float halfingTime = cv_drag_rigid_angle_halfing_time.GetFloat();
+		float accelRadius = cv_drag_rigid_acceleration_angle.GetFloat();
+		float period = halfingTime - idMath::Fmin(accelRadius / (1e-3f + DeltAngVec.Length()), 1.0f) * idMath::Fmax(halfingTime - dT, 0.0f);
+		// if accelRadius == 0, then item should travel to target along straight line,
+		// with distance decreasing as D(t) = exp(t / T), where T = halfingTime
+		idVec3 angVelocity = DeltAngVec / period;
 
-	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Desird angular accel this frame is %s\r", Alph.ToString() );
-
-	if( m_bLimitForce )
-	{
-		// Find the scalar moment of inertia about this axis:
-		IAxis = (m_inertiaTensor * RotDir) * RotDir;
-
-		// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: I about axis is %f\r", IAxis );
-
-		// Calculate max alpha about this axis from max torque
-		MaxAlph = max_torque / IAxis;
-		AlphMod = idMath::ClampFloat(0.0f, MaxAlph, AlphMag );
-
-		// Finally, adjust our angular acceleration vector
-		Alph *= (AlphMod/AlphMag);
-		// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Modified alpha is %s\r", Alph.ToString() );
+		m_physics->SetAngularVelocity( angVelocity, m_id );
 	}
+	else {
 
-	if( grabber->m_bIsColliding )
-		PrevOmega = vec3_zero;
-	else
-		PrevOmega = m_physics->GetAngularVelocity( m_id );
+		// Finite angular acceleration:
+		Alph = DeltAngVec * (1.0f - ang_damping) / (dT * dT);
+		AlphMag = Alph.Length();
 
-	Omega = PrevOmega * ang_damping + Alph * dT;
+		// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Desird angular accel this frame is %s\r", Alph.ToString() );
 
-	// TODO: Toggle visual debugging with cvar
-	// gameRenderWorld->DebugLine( colorGreen, COM, (COM + 30 * RotDir), 1);
+		if( m_bLimitForce )
+		{
+			// Find the scalar moment of inertia about this axis:
+			IAxis = (m_inertiaTensor * RotDir) * RotDir;
 
-	// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Setting angular velocity to %s\r", Omega.ToString() );
-	m_physics->SetAngularVelocity( Omega, m_id );
+			// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: I about axis is %f\r", IAxis );
+
+			// Calculate max alpha about this axis from max torque
+			MaxAlph = max_torque / IAxis;
+			AlphMod = idMath::ClampFloat(0.0f, MaxAlph, AlphMag );
+
+			// Finally, adjust our angular acceleration vector
+			Alph *= (AlphMod/AlphMag);
+			// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Modified alpha is %s\r", Alph.ToString() );
+		}
+
+		if( grabber->m_bIsColliding )
+			PrevOmega = vec3_zero;
+		else
+			PrevOmega = m_physics->GetAngularVelocity( m_id );
+
+		Omega = PrevOmega * ang_damping + Alph * dT;
+
+		// TODO: Toggle visual debugging with cvar
+		// gameRenderWorld->DebugLine( colorGreen, COM, (COM + 30 * RotDir), 1);
+
+		// DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Force_Grab Eval: Setting angular velocity to %s\r", Omega.ToString() );
+		m_physics->SetAngularVelocity( Omega, m_id );
+	}
 }
 
 /*

@@ -3020,6 +3020,9 @@ void idCommonLocal::InitGame( void )
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 
+	// reload the language dictionary now that we've loaded config files
+	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "reloadLanguage\n" );
+
 	// run cfg execution
 	cmdSystem->ExecuteCommandBuffer();
 
