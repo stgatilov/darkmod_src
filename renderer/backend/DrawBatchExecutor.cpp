@@ -42,7 +42,7 @@ namespace {
 
 }
 
-idCVarBool r_useMultiDrawIndirect("r_useMultiDrawIndirect", "1", CVAR_RENDERER|CVAR_BOOL, "Batch draw calls in multidraw commands if available");
+idCVarBool r_useMultiDrawIndirect("r_useMultiDrawIndirect", "0", CVAR_RENDERER|CVAR_BOOL, "Batch draw calls in multidraw commands if available");
 
 void DrawBatchExecutor::Init() {
 	GLint uboAlignment;
