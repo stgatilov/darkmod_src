@@ -674,23 +674,15 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 	idVec4 parm;
 	// screen power of two correction factor, assuming the copy to _currentRender
 	// also copied an extra row and column for the bilerp
-	int	w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
 	parm[0] = 1;
-	int	h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
-	int pot = globalImages->currentRenderImage->uploadHeight;
 	parm[1] = 1;
 	parm[2] = 0;
 	parm[3] = 1;
  	scalePotToWindow.Set( parm );
 
 	// window coord to 0.0 to 1.0 conversion
-	if ( frameBuffers->activeFbo == frameBuffers->defaultFbo ) {
-		parm[0] = 1.0 / w;
-		parm[1] = 1.0 / h;
-	} else {
-		parm[0] = 1.0 / globalImages->currentRenderImage->uploadWidth;
-		parm[1] = 1.0 / globalImages->currentRenderImage->uploadHeight;
-	}
+	parm[0] = 1.0 / frameBuffers->activeFbo->Width();
+	parm[1] = 1.0 / frameBuffers->activeFbo->Height();
 	parm[2] = 0;
 	parm[3] = 1;
  	scaleWindowToUnit.Set( parm );
