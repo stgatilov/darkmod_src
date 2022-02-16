@@ -74,7 +74,7 @@ public:
 	FrameBuffer *defaultFbo = nullptr;
 	FrameBuffer *primaryFbo = nullptr;
 	FrameBuffer *resolveFbo = nullptr;
-	FrameBuffer *guiFbo = nullptr;
+	FrameBuffer *guiFbo = nullptr;	// source image for tonemap pass
 	FrameBuffer *shadowStencilFbo = nullptr;
 	FrameBuffer *shadowMapFbo = nullptr;
 
