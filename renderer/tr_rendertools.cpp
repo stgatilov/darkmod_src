@@ -2054,7 +2054,7 @@ RB_ShowDebugPolygons
 ================
 */
 void RB_ShowDebugPolygons( void ) {
-	if ( !rb_debug.polygons.Num() == 0 ) {
+	if ( rb_debug.polygons.Num() == 0 ) {
 		return;
 	}
 
