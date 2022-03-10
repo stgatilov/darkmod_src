@@ -771,9 +771,6 @@
     <ClInclude Include="game\gamesys\Event.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
-    <ClInclude Include="game\gamesys\NoGameTypeInfo.h">
-      <Filter>Game\GameSys</Filter>
-    </ClInclude>
     <ClInclude Include="game\gamesys\SaveGame.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
@@ -781,9 +778,6 @@
       <Filter>Game\GameSys</Filter>
     </ClInclude>
     <ClInclude Include="game\gamesys\SysCvar.h">
-      <Filter>Game\GameSys</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gamesys\TypeInfo.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
     <ClInclude Include="game\Http\HttpConnection.h">
@@ -1219,9 +1213,6 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="idlib\precompiled.h" />
-    <ClInclude Include="game\gamesys\TypeInfo_GenHelper.h">
-      <Filter>Game\GameSys</Filter>
-    </ClInclude>
     <ClInclude Include="renderer\glsl.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -2820,9 +2811,6 @@
     <ClCompile Include="game\gamesys\SysCvar.cpp">
       <Filter>Game\GameSys</Filter>
     </ClCompile>
-    <ClCompile Include="game\gamesys\TypeInfo.cpp">
-      <Filter>Game\GameSys</Filter>
-    </ClCompile>
     <ClCompile Include="game\Http\HttpConnection.cpp">
       <Filter>Game\Network</Filter>
     </ClCompile>
@@ -3235,9 +3223,6 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="idlib\precompiled.cpp" />
-    <ClCompile Include="game\gamesys\TypeInfo_GenHelper.cpp">
-      <Filter>Game\GameSys</Filter>
-    </ClCompile>
     <ClCompile Include="renderer\draw_glsl.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>

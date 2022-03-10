@@ -348,12 +348,9 @@
     <ClInclude Include="game\gamesys\DebugGraph.h" />
     <ClInclude Include="game\gamesys\Event.h" />
     <ClInclude Include="game\gamesys\EventArgs.h" />
-    <ClInclude Include="game\gamesys\NoGameTypeInfo.h" />
     <ClInclude Include="game\gamesys\SaveGame.h" />
     <ClInclude Include="game\gamesys\SysCmds.h" />
     <ClInclude Include="game\gamesys\SysCvar.h" />
-    <ClInclude Include="game\gamesys\TypeInfo.h" />
-    <ClInclude Include="game\gamesys\TypeInfo_GenHelper.h" />
     <ClInclude Include="game\Game_local.h" />
     <ClInclude Include="game\Grabber.h" />
     <ClInclude Include="game\HidingSpotSearchCollection.h" />
@@ -990,15 +987,6 @@
     <ClCompile Include="game\gamesys\SaveGame.cpp" />
     <ClCompile Include="game\gamesys\SysCmds.cpp" />
     <ClCompile Include="game\gamesys\SysCvar.cpp" />
-    <ClCompile Include="game\gamesys\TypeInfo.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="game\gamesys\TypeInfo_GenHelper.cpp" />
     <ClCompile Include="game\Game_local.cpp" />
     <ClCompile Include="game\Grabber.cpp" />
     <ClCompile Include="game\HidingSpotSearchCollection.cpp" />
