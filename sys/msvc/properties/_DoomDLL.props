@@ -24,7 +24,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <ShowProgress>NotSet</ShowProgress>
-      <AdditionalOptions>/NATVIS:sys\msvc\natvis\idlib.natvis /NATVIS:sys\msvc\natvis\game.natvis /WHOLEARCHIVE:idlib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/NATVIS:sys\msvc\natvis\idlib.natvis /NATVIS:sys\msvc\natvis\game.natvis %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -36,5 +36,13 @@ if %errorlevel% leq 3 exit 0</Command>
     <PostBuildEvent>
       <Message>Copy glprogs (shaders)</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>cd $(ProjectDir)
+call gen_svnversion.cmd
+</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Insert SVN revision number into svnversion.h</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
 </Project>

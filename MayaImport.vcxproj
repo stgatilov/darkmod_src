@@ -111,12 +111,6 @@
   <ItemGroup>
     <None Include="MayaImport\mayaimport.def" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="idlib.vcxproj">
-      <Project>{49bec5c6-b964-417a-851e-808886b57400}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
