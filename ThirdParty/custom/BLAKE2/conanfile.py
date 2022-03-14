@@ -1,8 +1,8 @@
 from conans import ConanFile, CMake, tools
+import os
 
 class Blake2Conan(ConanFile):
 	name = "BLAKE2"
-	version = "master"
 	license = "CC0 1.0 Universal"
 	url = "https://github.com/Enhex/conan-BLAKE2"
 	description = "BLAKE2 cryptographic hash function."
@@ -19,7 +19,9 @@ class Blake2Conan(ConanFile):
 	exports_sources = "CMakeLists.txt"
 
 	def source(self):
-		self.run("git clone --depth 1 https://github.com/BLAKE2/BLAKE2.git")
+		tools.get(**self.conan_data["sources"][self.version])
+		extracted_dir = "BLAKE2-" + self.version
+		os.rename(extracted_dir, 'BLAKE2')
 
 	def build(self):
 		cmake = CMake(self)
