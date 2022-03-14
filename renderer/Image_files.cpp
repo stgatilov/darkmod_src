@@ -680,7 +680,7 @@ bool idImageWriter::WriteJPG(int quality) {
 	 * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
 	 * requires it in order to write binary files.
 	 */
-	unsigned long outputSize;
+	size_t outputSize;
 	jpeg_mem_dest(&cinfo, &outputBuffer, &outputSize);
 
 	/* Step 3: set parameters for compression */
