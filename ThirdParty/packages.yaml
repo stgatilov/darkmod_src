@@ -21,7 +21,7 @@ packages:
   - { ref: BLAKE2/master@thedarkmod/local                   , type: release }
   - { ref: glfw/3.3.4@thedarkmod/local                      , type: release }
   - { ref: openal/1.21.1@thedarkmod/local                   , type: vcdebug }
-  - { ref: pugixml/1.9@bincrafters/stable                   , type: vcdebug }
+  - { ref: pugixml/1.12.1                                   , type: vcdebug }
 
 options:
   zlib:
