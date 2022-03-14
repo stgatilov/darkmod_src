@@ -9,7 +9,7 @@
 #       this is required for C++ libs because iterator debugging and runtime differences are not allowed by MSVC
 packages:
   - { ref: tinyformat/2.1.0@thedarkmod/local                , type: header }
-  - { ref: doctest/2.2.3@thedarkmod/local                   , type: header }
+  - { ref: doctest/2.4.8                                    , type: header }
   - { ref: tracy/0.7.8@thedarkmod/local                     , type: header }
   - { ref: "zlib/1.2.11@#514b772abf9c36ad9be48b84cfc6fdc2"  , type: release }
   - { ref: libcurl/7.61.1@thedarkmod/local                  , type: release }
