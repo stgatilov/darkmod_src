@@ -129,7 +129,9 @@ class FFMpegConan(ConanFile):
         if any([str(self.settings.arch).startswith(prefix) for prefix in ['x86', 'arm', 'ppc', 'mips', 'avr']]):
             self.build_requires("yasm/1.3.0")
         if self.settings.os == 'Windows':
-            self.build_requires("msys2_installer/latest@bincrafters/stable")
+            # stgatilov: old msys2 installer cannot fetch packages due to certificate errors
+#            self.build_requires("msys2_installer/latest@bincrafters/stable")
+            self.build_requires("msys2/cci.latest")
 
     def requirements(self):
         if self.options.zlib:
@@ -210,7 +212,7 @@ class FFMpegConan(ConanFile):
 
     def build(self):
         if self.is_msvc or self.is_mingw_windows:
-            msys_bin = self.deps_env_info['msys2_installer'].MSYS_BIN
+            msys_bin = self.deps_env_info['msys2'].MSYS_BIN
             with tools.environment_append({'PATH': [msys_bin],
                                            'CONAN_BASH_PATH': os.path.join(msys_bin, 'bash.exe')}):
                 if self.is_msvc:
