@@ -13,6 +13,7 @@ Here are the contents of this directory:
 
  * `conanfile.py` --- the main file, listing all libraries, options, and import rules
  * `custom/*` --- custom conan recipes for some libraries (in case stock recipe is not available or does not suit)
+ * `profiles/*` --- conan settings for building artefacts for supported platforms
  * `artefacts/*` --- the resulting files (headers and libs) used by TDM projects
 
 All third-party binaries **must** be inside `artefacts` directory!
@@ -40,7 +41,7 @@ You might want to read some "Getting Started" conan docs to get brief understand
 ### Prepare workspace
 
 Conan builds packages inside a *local cache*, which by default is located somewhere in `%USERPROFILE%/.conan` and is in fact system-global.
-In order to make the cache truly local, it is recommended to set environment variable in the shell you are going to use:
+In order to make the cache truly local, you can set environment variable in the shell you are going to use:
 
     # set the path to a custom directory
     set CONAN_USER_HOME=C:\tdm_conan
@@ -50,19 +51,9 @@ Detailed explanation is available [here][4].
 
 You can omit this step, then system-wide cache will be used for building libraries.
 
-
-Add bincrafters to the list of conan remotes (otherwise some packages will be missing):
-
-    conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
-
-Also, enable revisions in config:
-
-    conan config set general.revisions_enabled=True
-
-
 ### Custom recipes
 
-Recipes for most libraries are taken directly from central conan repository (i.e. "conan-center" or "bincrafters").
+Recipes for most libraries are taken directly from central conan repository (i.e. "conan-center").
 Some libraries need special handling for TDM, so we manage recipes for them ourselves. They are located in `custom` directory.
 
 Before actually building the libs, it is necessary to copy these recipes into conan's "local cache".
@@ -70,27 +61,20 @@ The easiest way to do that is to run the small helper script:
 
     python 1_export_custom.py
 
-It performs `conan export custom/{libraryname} thedarkmod/local` for every library, which adds the corresponding recipe to local cache.
+It performs `conan export custom/{libraryname} {libraryname}/{version}@thedarkmod/local` for every library, which adds the corresponding recipe to local cache.
 
 ### Build libraries
 
 Now you are ready to download and build all the libraries.
 You might want to delete the `artefacts` directory to surely get fresh libs.
 
-The straightforward way to build everything is running:
-
-    conan install . --build
-
-It may be enough to produce artefacts if you don't intend to commit them to SVN.
-You might want to read the documentation of `--build` parameter in `conan install --help` beforehand (e.g. `--build=outdated` is useful).
-
 If you want to build all artefacts and commit them to svn, it is recommended to run the helper script:
 
     python 2_build_all.py
 
-The script also runs `conan install`, but with some specific parameters.
-Note that on Windows you have to run script twice: in 64-bit and in 32-bit environments of Visual Studio.
+The script runs `conan install`, but with some specific parameters, including specific profiles.
 Then build all libraries on Linux using GCC.
+If you have GCC of version different from 5, you need to edit `profiles/linuxXX` and change `compiler.version`.
 
 Given that produced artefacts may differ slightly on different machines (no two .lib-s are exactly equal),
 please commit new artefacts only for the libraries which you have actually changed, don't commit changes in libraries which you did not touch.
@@ -119,45 +103,45 @@ When building TDM, you have to pass the chosen value of platform_name as `THIRDP
 
 Without this argument, CMake won't know where to get proper artefacts, and will most likely fail with linking error.
 
+
 ## How to add new library
 
 By default conan uses only one very official and stable remote: "conan-center".
-To increase your chances to find anything, better add "bincrafters" and "conan-community" remotes also.
-Read [this article][5] for more details.
-
 Now that you have remotes, you can search for recipes of a library like this:
 
     conan search {libraryname} -r all
 
 It might be useful to add asterisk at the beginning and at the ending of the library name.
 
-If you manage to find the library, then choose one of the printed references and add it to the list in `conanfile.py`.
+If you manage to find the library, then choose one of the printed references and add it to the list in `packages.yaml`.
 After that you can do usual build and your library will get downloaded and built.
 
 If you fail to find ready-to-use conan recipe, then you have to add a custom one.
+Note that going the custom recipe route most likely needs good conan skills from you!
 You might want to search it on github with codenames `conan` and library name.
 If you find someone else's recipe, you can add it to `custom` and it will probably work.
+Also you can find some recipes in "bincrafters" remote, but you have to add this remote first.
+
+Sometimes there is a recipe for a library, but it needs fine-tuning in order to be used in TDM.
+In such case you should download the recipe, add it to `custom` too, and edit there.
+Make sure to clearly mark all your changes to the recipe, or/and save its original version nearby.
 
 Otherwise you have to create recipe yourself, or ask someone else to do it on forums.
 As the last resort option (i.e. no time to waste or nobody agrees to write it), you can build the library manually and add artefacts to `artefacts` directory.
 Make sure to adhere to existing directory structure and naming conventions.
 
-Sometimes there is a recipe for a library, but it does not support some options required.
-In such case you should download the recipe, add it to `custom` too, and edit there.
-Make sure to clearly mark all your changes to the recipe, and also save its original version somehow.
-
 
 ## How to update library
 
-Look into `conanfile.py` and find the library reference there.
+Look into `packages.yaml` and find the library reference there.
 Now do `conan search` for a newer version of the library.
 
 If you find one, change the reference in `conanfile.py` and rebuild.
 Otherwise, you are out of luck.
 
 If you want to update a library with custom recipe, it gets more complicated.
-If this is custom-modified recipe, then you can fetch a newer recipe from central repository and apply the same TDM-specified hacks to it.
-If this is a fully custom-made recipe, then try to point it to newer version and rebuild --- in the best case it would be enough.
+In many cases you can apply an existing recipe to the newer version: just add source code URL and sha256 checksum for the new version in `conandata.yml`.
+If this is custom-modified recipe, then you can fetch a newer recipe from central repository and try to reapply the same TDM-specified hacks to it.
 
 
 
@@ -165,4 +149,3 @@ If this is a fully custom-made recipe, then try to point it to newer version and
 [2]: https://www.python.org/downloads/
 [3]: https://docs.conan.io/en/latest/installation.html
 [4]: https://docs.conan.io/en/latest/mastering/custom_cache.html
-[5]: https://docs.conan.io/en/latest/uploading_packages/remotes.html#bintray-community-repositories
