@@ -5,7 +5,6 @@ from conans.errors import ConanInvalidConfiguration
 
 class OpenALConan(ConanFile):
     name = "openal"
-    version = "1.21.1"  # stgatilov: without it, 1_export_custom.py does not know the version
     description = "OpenAL Soft is a software implementation of the OpenAL 3D audio API."
     topics = ("conan", "openal", "audio", "api")
     url = "https://github.com/conan-io/conan-center-index"
