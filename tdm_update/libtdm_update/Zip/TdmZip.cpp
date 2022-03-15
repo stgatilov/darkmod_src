@@ -17,8 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <time.h>
 #include <fstream>
-#include "unzip.h"
-#include "zip.h"
+#include <minizip/unzip.h>
+#include <minizip/zip.h>
 
 #include "../Constants.h"
 #include "../TraceLog.h"

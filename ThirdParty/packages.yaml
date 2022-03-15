@@ -11,7 +11,8 @@ packages:
   - { ref: tinyformat/2.3.0@thedarkmod/local                , type: header }
   - { ref: doctest/2.4.8                                    , type: header }
   - { ref: tracy/0.7.8@thedarkmod/local                     , type: header }
-  - { ref: "zlib/1.2.11@#514b772abf9c36ad9be48b84cfc6fdc2"  , type: release }
+  - { ref: zlib/1.2.11                                      , type: release }
+  - { ref: minizip/1.2.11                                   , type: release }
   - { ref: libcurl/7.61.1@thedarkmod/local                  , type: release }
   - { ref: libjpeg/9d                                       , type: release }
   - { ref: libpng/1.6.37                                    , type: release }
@@ -24,9 +25,9 @@ packages:
   - { ref: pugixml/1.12.1                                   , type: vcdebug }
 
 options:
-  zlib:
-    # we need minizip, which is part of zlib package
-    minizip: true
+  minizip:
+    # disable support of bzip2 format
+    bzip2: false
   BLAKE2:
     # enable SSE2 in hash library
     SSE: "SSE2"

@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 
-#include "unzip.h"
+#include <minizip/unzip.h>
 #include "minizip/minizip_extra.h"	//unzSeek
 
 /*

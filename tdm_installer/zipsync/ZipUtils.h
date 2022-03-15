@@ -4,8 +4,8 @@
 #include <vector>
 #include "Logging.h"
 
-#include <unzip.h>
-#include <zip.h>
+#include <minizip/unzip.h>
+#include <minizip/zip.h>
 
 
 namespace ZipSync {

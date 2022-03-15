@@ -1,7 +1,7 @@
 #pragma once
 
-#include <unzip.h>
-#include <zip.h>
+#include <minizip/unzip.h>
+#include <minizip/zip.h>
 #include <string.h>
 
 #ifdef __cplusplus

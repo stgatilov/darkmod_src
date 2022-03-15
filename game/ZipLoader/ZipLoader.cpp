@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "ZipLoader.h"
-#include "unzip.h"
+#include <minizip/unzip.h>
 
 #include <fstream>
 

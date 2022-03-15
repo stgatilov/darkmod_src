@@ -18,10 +18,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 
-#include "unzip.h"
+#include <minizip/unzip.h>
 #include "minizip/minizip_extra.h"	//unzReOpen
 //stgatilov: for pk4 repacking
-#include "zip.h"
+#include <minizip/zip.h>
 
 #ifdef WIN32
 	#include <io.h>	// for _read

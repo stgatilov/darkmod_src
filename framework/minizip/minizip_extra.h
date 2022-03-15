@@ -14,7 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma once
 
-#include "unzip.h"
+#include <minizip/unzip.h>
 
 #ifdef __cplusplus
 extern "C" {
