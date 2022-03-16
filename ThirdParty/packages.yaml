@@ -20,7 +20,7 @@ packages:
   - { ref: vorbis/1.3.7                                     , type: release }
   - { ref: fltk/1.3.8@thedarkmod/local                      , type: release }
   - { ref: BLAKE2/20190724@thedarkmod/local                 , type: release }
-  - { ref: glfw/3.3.4@thedarkmod/local                      , type: release }
+  - { ref: glfw/3.3.6                                       , type: release }
   - { ref: openal/1.21.1@thedarkmod/local                   , type: vcdebug }
   - { ref: pugixml/1.12.1                                   , type: vcdebug }
 
@@ -31,7 +31,3 @@ options:
   BLAKE2:
     # enable SSE2 in hash library
     SSE: "SSE2"
-  glfw:
-    # avoid fragile selection of system packages in glfw
-    no_opengl: true
-    no_xorg: true
