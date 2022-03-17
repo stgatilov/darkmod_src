@@ -69,7 +69,7 @@
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>mbedtls.lib;libtdm_update.lib;libcurl.lib;zlib.lib;minizip.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mbedtls.lib;mbedcrypto.lib;mbedx509.lib;libtdm_update.lib;libcurl.lib;zlib.lib;minizip.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)\tdm_update.exe</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -91,7 +91,7 @@
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>mbedtls.lib;libtdm_update.lib;libcurl.lib;zlib.lib;minizip.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mbedtls.lib;mbedcrypto.lib;mbedx509.lib;libtdm_update.lib;libcurl.lib;zlib.lib;minizip.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)\tdm_update.exe</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
