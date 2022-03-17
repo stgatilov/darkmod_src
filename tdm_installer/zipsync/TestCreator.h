@@ -30,10 +30,12 @@ class TestCreator {
 protected:
     std::mt19937 _rnd;
     UpdateType _updateType = UpdateType::SameCompressed;
+    bool _remote = false;
 
 public:
     void SetSeed(int seed);
     void SetUpdateType(UpdateType type);
+    void SetRemote(bool remote);
 
     int RndInt(int low, int high);
     double RndDbl(double low, double high);

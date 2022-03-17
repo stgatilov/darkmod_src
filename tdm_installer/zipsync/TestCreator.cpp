@@ -20,6 +20,9 @@ void TestCreator::SetSeed(int seed) {
 void TestCreator::SetUpdateType(UpdateType type) {
     _updateType = type;
 }
+void TestCreator::SetRemote(bool remote) {
+    _remote = remote;
+}
 
 int TestCreator::RndInt(int low, int high) {
     return std::uniform_int_distribution<int>(low, high)(_rnd);
@@ -73,6 +76,10 @@ std::string TestCreator::GenName() {
         if (t == 1) ch = RndInt('a', 'z');
         if (t == 2) ch = RndInt('A', 'Z');
         if (t == 3) ch = (RndInt(0, 1) ? ' ' : '_');
+        //since recently, spaces in URLs don't work with libcurl
+        //it probably started in 1.62.0:
+        //  https://github.com/curl/curl/issues/3340
+        if (_remote && ch == ' ') ch = '_';
         res += ch;
     }
     //trailing spaces don't work well in Windows

@@ -106,6 +106,7 @@ public:
         }
 
         SetUpdateType(seed % 2 ? UpdateType::SameCompressed : UpdateType::SameContents);
+        SetRemote(_remoteEnabled);
 
         _initialTargetState = GenTargetState(50, 10);
         _initialInplaceState = GenMutatedState(_initialTargetState);
