@@ -64,7 +64,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 			#define ID_CONSOLE_LOCK 1
 		#endif
 	#else
-		#define ID_CONSOLE_LOCK 0
+		#define ID_CONSOLE_LOCK 1
 	#endif
 #endif
 
