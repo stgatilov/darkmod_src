@@ -255,7 +255,7 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 	//accelerate ExtLibs::avformat_find_stream_info by setting tighter limits
 	ExtLibs::av_dict_set_int(&options, "probesize", 1<<20, 0);
 	ExtLibs::av_dict_set_int(&options, "analyzeduration", int(1.0 * AV_TIME_BASE), 0);		//ROQ is bound by this one
-	bool ok = ExtLibs::avformat_open_input(&_formatContext, _path.c_str(), NULL, &options) >= 0;
+	bool ok = ExtLibs::avformat_open_input(&_formatContext, NULL, NULL, &options) >= 0;
 	ExtLibs::av_dict_free(&options);
 	if (!ok) {
 		common->Warning("Could not open %s\n", _path.c_str());
