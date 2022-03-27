@@ -76,9 +76,6 @@ static void LogPostMessage(const char *message) {
 }
 
 void idCinematicFFMpeg::InitCinematic( void ) {
-	// Make sure all codecs are registered
-	ExtLibs::av_register_all();
-
 	InvClockTicksPerSecond = 1.0 / idLib::sys->ClockTicksPerSecond();
 	//Note: we cannot init logfile, because we cannot read cvars yet (see constructor)
 }
@@ -281,7 +278,7 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 	}
 	AVStream* videoStream = _formatContext->streams[_videoStreamIndex];
 	_videoDecoderContext = videoStream->codec;
-	AVRational videoTBase = ExtLibs::av_codec_get_pkt_timebase(_videoDecoderContext);
+	AVRational videoTBase = _videoDecoderContext->pkt_timebase;
 	LogPrintf("Video stream timebase: %d/%d = %0.6lf", videoTBase.num, videoTBase.den, ExtLibs::av_q2d(videoTBase));
 
 
@@ -294,7 +291,7 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 		}
 		AVStream* audioStream = _formatContext->streams[_audioStreamIndex];
 		_audioDecoderContext = audioStream->codec;
-		AVRational audioTBase = ExtLibs::av_codec_get_pkt_timebase(_audioDecoderContext);
+		AVRational audioTBase = _audioDecoderContext->pkt_timebase;
 		LogPrintf("Audio stream timebase: %d/%d = %0.6lf", audioTBase.num, audioTBase.den, ExtLibs::av_q2d(audioTBase));
 	}
 
@@ -588,7 +585,7 @@ int idCinematicFFMpeg::DecodePacket(AVMediaType type, AVPacket &packet, double d
 
 void idCinematicFFMpeg::ProcessDecodedFrame(AVMediaType type, AVFrame *decodedFrame, double discardTime) {
 	//determine good timestamp using FFmpeg magic
-	int64_t pts = ExtLibs::av_frame_get_best_effort_timestamp(decodedFrame);
+	int64_t pts = decodedFrame->best_effort_timestamp;
 	int streamIdx = (type == AVMEDIA_TYPE_VIDEO ? _videoStreamIndex : _audioStreamIndex);
 	double timebase = ExtLibs::av_q2d(_formatContext->streams[streamIdx]->time_base);
 	double duration = decodedFrame->pkt_duration * timebase;
