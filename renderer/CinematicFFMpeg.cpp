@@ -447,38 +447,38 @@ int idCinematicFFMpeg::OpenBestStreamOfType(AVMediaType type) {
 bool idCinematicFFMpeg::FetchPacket() {
 	while (true) {
 		TIMER_START(readPacket);
-		AVPacket newPacket;
-		ExtLibs::av_init_packet(&newPacket);
-		int ret = ExtLibs::av_read_frame(_formatContext, &newPacket);
+		AVPacket *newPacket = av_packet_alloc();
+		int ret = ExtLibs::av_read_frame(_formatContext, newPacket);
 		if (ret < 0) {
-			ExtLibs::av_packet_unref(&newPacket);
+			ExtLibs::av_packet_free(&newPacket);
 			return false;
 		}
 		TIMER_END_LOG(readPacket, "Read packet");
 
-		int stream = newPacket.stream_index;
+		int stream = newPacket->stream_index;
 		AVStream* st = _formatContext->streams[stream];
 		AVMediaType type = ExtLibs::avcodec_get_type(st->codec->codec_id);
 		LogPrintf("Packet: stream = %d (%s)  size = %d  DTS = %lld  PTS = %lld  dur = %d",
-			newPacket.stream_index, ExtLibs::av_get_media_type_string(type), newPacket.size,
-			newPacket.dts, newPacket.pts, newPacket.duration
+			newPacket->stream_index, ExtLibs::av_get_media_type_string(type), newPacket->size,
+			newPacket->dts, newPacket->pts, newPacket->duration
 		);
 
 		if (stream != _videoStreamIndex && stream != _audioStreamIndex) {
-			ExtLibs::av_packet_unref(&newPacket);
+			ExtLibs::av_packet_free(&newPacket);
 			continue;
 		}
 
 		PacketQueue &queue = (stream == _videoStreamIndex ? _videoPackets : _audioPackets);
-		AVPacketList *packetNode = new AVPacketList();
-		ExtLibs::av_packet_move_ref(&packetNode->pkt, &newPacket);
+		PacketNode *packetNode = new PacketNode();
+		packetNode->_packet = newPacket;
+		packetNode->_next = nullptr;
 		queue.Add(packetNode);
 
 		return ret >= 0;
 	}
 }
 
-AVPacketList *idCinematicFFMpeg::GetPacket(PacketQueue &queue) {
+idCinematicFFMpeg::PacketNode *idCinematicFFMpeg::GetPacket(PacketQueue &queue) {
 	while (!queue.Peek()) {
 		bool ok = FetchPacket();
 		if (!ok)
@@ -486,21 +486,21 @@ AVPacketList *idCinematicFFMpeg::GetPacket(PacketQueue &queue) {
 	}
 	assert(queue.Peek());
 
-	AVPacketList *packetNode = queue.Get();
+	PacketNode *packetNode = queue.Get();
 	return packetNode;
 }
 
 bool idCinematicFFMpeg::DropPacket(PacketQueue &queue) {
-	if (AVPacketList *packetNode = queue.Get()) {
+	if (PacketNode *packetNode = queue.Get()) {
 		FreePacket(packetNode);
 		return true;
 	}
 	return false;
 }
 
-void idCinematicFFMpeg::FreePacket(AVPacketList *packetNode) {
+void idCinematicFFMpeg::FreePacket(PacketNode *packetNode) {
 	if (!packetNode) return;
-	ExtLibs::av_packet_unref(&packetNode->pkt);
+	ExtLibs::av_packet_free(&packetNode->_packet);
 	delete packetNode;
 }
 
@@ -511,9 +511,9 @@ bool idCinematicFFMpeg::FetchPacket_Locking() {
 	return res;
 }
 
-AVPacketList *idCinematicFFMpeg::GetPacket_Locking(PacketQueue &queue) {
+idCinematicFFMpeg::PacketNode *idCinematicFFMpeg::GetPacket_Locking(PacketQueue &queue) {
 	Sys_EnterCriticalSection(CRITICAL_SECTION_PACKETS);
-	AVPacketList *res = GetPacket(queue);
+	PacketNode *res = GetPacket(queue);
 	Sys_LeaveCriticalSection(CRITICAL_SECTION_PACKETS);
 	return res;
 }
@@ -527,10 +527,10 @@ bool idCinematicFFMpeg::FetchFrames(AVMediaType type, double discardTime) {
 	int framesDecoded = 0;
 	do {
 		PacketQueue &queue = (type == AVMEDIA_TYPE_VIDEO ? _videoPackets : _audioPackets);
-		AVPacketList *packetNode = GetPacket_Locking(queue);
+		PacketNode *packetNode = GetPacket_Locking(queue);
 		if (!packetNode)
 			break;	//end of stream
-		AVPacket &packet = packetNode->pkt;
+		AVPacket &packet = *packetNode->_packet;
 
 		byte *oldData = packet.data;
 		int oldSize = packet.size;
