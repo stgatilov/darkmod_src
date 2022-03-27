@@ -615,10 +615,10 @@ void idSoundSample::Load( void ) {
 	hardwareBuffer = false;
 
 	//stgatilov #4847: check if this sound was created via testVideo command
-	if (name.IcmpPrefix("__testvideo") == 0) {
+	if (name.IcmpPrefix("fromVideo __testvideo") == 0) {
 		idCinematic *cin = 0;
-		sscanf(name.c_str(), "__testvideo:%p__", &cin);
-		return LoadFromCinematic(cin);
+		if (sscanf(name.c_str() + 22, "%p__", &cin) == 1)
+			return LoadFromCinematic(cin);
 	}
 	if (name.IcmpPrefix("fromVideo ") == 0) {
 		//stgatilov #4534: material name is specified after "fromVideo" prefix
