@@ -533,15 +533,9 @@ bool idCinematicFFMpeg::FetchFrames(AVMediaType type, double discardTime) {
 		PacketNode *packetNode = GetPacket_Locking(queue);
 		if (!packetNode)
 			break;	//end of stream
-		AVPacket &packet = *packetNode->_packet;
+		const AVPacket &packet = *packetNode->_packet;
 
-		byte *oldData = packet.data;
-		int oldSize = packet.size;
 		framesDecoded += DecodePacket(type, packet, discardTime);
-		//note: DecodePacket changes data & size of packet
-		//we need to restore them to properly destroy packet
-		packet.data = oldData;
-		packet.size = oldSize;
 
 		FreePacket(packetNode);
 	} while (framesDecoded == 0);
@@ -557,31 +551,43 @@ bool idCinematicFFMpeg::FetchFrames(AVMediaType type, double discardTime) {
 	return (framesDecoded > 0);
 }
 
-int idCinematicFFMpeg::DecodePacket(AVMediaType type, AVPacket &packet, double discardTime) {
+int idCinematicFFMpeg::DecodePacket(AVMediaType type, const AVPacket &packet, double discardTime) {
+	AVCodecContext *context;
+	AVFrame *frame;
+	if (type == AVMEDIA_TYPE_VIDEO) {
+		context = _videoDecoderContext;
+		frame = _tempVideoFrame;
+	}
+	else {		//AVMEDIA_TYPE_AUDIO
+		context = _audioDecoderContext;
+		frame = _tempAudioFrame;
+	}
+
+	TIMER_START(pktsend);
+	int sendRet = avcodec_send_packet(context, &packet);
+	if (sendRet == AVERROR_EOF)
+		return 0;	//flushing already flushed decoder
+	if (sendRet < 0) {
+		common->Warning("Error sending %s packet to decoder (%d)\n", ExtLibs::av_get_media_type_string(type), sendRet);
+		return 0;
+	}
+	TIMER_END_LOG(pktsend, "Packet sent");
+
 	int framesDecoded = 0;
-
-	do {
-		TIMER_START(decode);
-		int gotFrame = 0;
-		int readBytes;
-		if (type == AVMEDIA_TYPE_VIDEO)
-			readBytes = ExtLibs::avcodec_decode_video2(_videoDecoderContext, _tempVideoFrame, &gotFrame, &packet);
-		else		//AVMEDIA_TYPE_AUDIO
-			readBytes = ExtLibs::avcodec_decode_audio4(_audioDecoderContext, _tempAudioFrame, &gotFrame, &packet);
-		if (readBytes < 0) {
-			common->Warning("Error decoding %s frame (%d)\n", ExtLibs::av_get_media_type_string(type), readBytes);
-			return false;
-		}
-		TIMER_END_LOG(decode, "Packet decoded");
-
-		if (gotFrame) {
-			framesDecoded++;
-			ProcessDecodedFrame(type, type == AVMEDIA_TYPE_VIDEO ? _tempVideoFrame : _tempAudioFrame, discardTime);
+	while (1) {
+		TIMER_START(recvframe);
+		int recvRet = avcodec_receive_frame(context, frame);
+		if (recvRet == AVERROR(EAGAIN) || recvRet == AVERROR_EOF)
+			break;	//no more frames in this packet / in decoder on flush
+		if (recvRet < 0) {
+			common->Warning("Error receiving %s frame from decoder (%d)\n", ExtLibs::av_get_media_type_string(type), recvRet);
+			break;
 		}
 
-		packet.data += readBytes;
-		packet.size -= readBytes;
-	} while (packet.size > 0);
+		framesDecoded++;
+		ProcessDecodedFrame(type, frame, discardTime);
+		TIMER_END_LOG(recvframe, "Frame received");
+	}
 
 	return framesDecoded;
 }

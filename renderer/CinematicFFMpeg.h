@@ -187,7 +187,7 @@ private: // members
 	bool FetchFrames(AVMediaType type, double discardTime);
 	// decode exactly one packet from queue (may not produce a frame immediately)
 	// returns number of frames decoded
-	int DecodePacket(AVMediaType type, AVPacket &packet, double discardTime);
+	int DecodePacket(AVMediaType type, const AVPacket &packet, double discardTime);
 	// process a given video/audio frame just decoded
 	void ProcessDecodedFrame(AVMediaType type, AVFrame *decodedFrame, double discardTime);
 
