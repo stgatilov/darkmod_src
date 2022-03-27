@@ -72,8 +72,9 @@ private: // methods
 
 	// finds and returns the index of best suitable stream of given type
 	// opens this stream with appropriate decoder (codec)
+	// newly allocated decoder is stored to the context pointer
 	// note: format context must be already opened
-	int OpenBestStreamOfType(AVMediaType type);
+	int OpenBestStreamOfType(AVMediaType type, AVCodecContext* &context);
 
 	// increments current lap (loop) number
 	// reopens decoder to repeat video from the beginning

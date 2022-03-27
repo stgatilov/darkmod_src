@@ -271,26 +271,23 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 	TIMER_END_LOG(findStream, "Found stream info");
 
 	// Find the most suitable video stream and open decoder for it
-	_videoStreamIndex = OpenBestStreamOfType(AVMEDIA_TYPE_VIDEO);
+	_videoStreamIndex = OpenBestStreamOfType(AVMEDIA_TYPE_VIDEO, _videoDecoderContext);
 	if (_videoStreamIndex < 0) {
 		common->Warning("Could not find video stream in %s\n", _path.c_str());
 		return false;
 	}
 	AVStream* videoStream = _formatContext->streams[_videoStreamIndex];
-	_videoDecoderContext = videoStream->codec;
 	AVRational videoTBase = _videoDecoderContext->pkt_timebase;
 	LogPrintf("Video stream timebase: %d/%d = %0.6lf", videoTBase.num, videoTBase.den, ExtLibs::av_q2d(videoTBase));
 
 
 	if (_withAudio) {
 		// Find the most suitable audio stream and open decoder for it
-		_audioStreamIndex = OpenBestStreamOfType(AVMEDIA_TYPE_AUDIO);
+		_audioStreamIndex = OpenBestStreamOfType(AVMEDIA_TYPE_AUDIO, _audioDecoderContext);
 		if (_audioStreamIndex < 0) {
 			common->Warning("Could not find audio stream in %s\n", _path.c_str());
 			return false;
 		}
-		AVStream* audioStream = _formatContext->streams[_audioStreamIndex];
-		_audioDecoderContext = audioStream->codec;
 		AVRational audioTBase = _audioDecoderContext->pkt_timebase;
 		LogPrintf("Audio stream timebase: %d/%d = %0.6lf", audioTBase.num, audioTBase.den, ExtLibs::av_q2d(audioTBase));
 	}
@@ -381,12 +378,10 @@ void idCinematicFFMpeg::CloseDecoder() {
 	_swResampleContext = NULL;
 
 	if (_videoDecoderContext)
-		ExtLibs::avcodec_close(_videoDecoderContext);
-	_videoDecoderContext = NULL;
+		avcodec_free_context(&_videoDecoderContext);
 
 	if (_audioDecoderContext)
-		ExtLibs::avcodec_close(_audioDecoderContext);
-	_audioDecoderContext = NULL;
+		avcodec_free_context(&_audioDecoderContext);
 
 	if (_formatContext)
 		ExtLibs::avformat_close_input(&_formatContext);
@@ -403,7 +398,10 @@ void idCinematicFFMpeg::CloseDecoder() {
 	TIMER_END_LOG(closeAll, "Freed all FFmpeg resources");
 }
 
-int idCinematicFFMpeg::OpenBestStreamOfType(AVMediaType type) {
+int idCinematicFFMpeg::OpenBestStreamOfType(AVMediaType type, AVCodecContext* &context) {
+	if (context)
+		avcodec_free_context(&context);
+
 	TIMER_START(findBestStream);
 	int streamIndex = ExtLibs::av_find_best_stream(_formatContext, type, -1, -1, NULL, 0);
 	if (streamIndex < 0) {
@@ -413,7 +411,7 @@ int idCinematicFFMpeg::OpenBestStreamOfType(AVMediaType type) {
 	TIMER_END_LOG(findBestStream, "Found best stream");
 	AVStream* st = _formatContext->streams[streamIndex];
 
-	AVCodecID codecId = st->codec->codec_id;
+	AVCodecID codecId = st->codecpar->codec_id;
 	LogPrintf("Stream %d is encoded with codec %d: %s", streamIndex, codecId, ExtLibs::avcodec_get_name(codecId));
 	// find decoder for the stream
 	TIMER_START(findDecoder);
@@ -424,16 +422,21 @@ int idCinematicFFMpeg::OpenBestStreamOfType(AVMediaType type) {
 	}
 	TIMER_END_LOG(findDecoder, "Found decoder");
 
+	TIMER_START(openCodec);
+	context = avcodec_alloc_context3(dec);
+	avcodec_parameters_to_context(context, st->codecpar);
+	context->pkt_timebase = st->time_base;
+
 	//note: "0" means "auto" (usually equal to number of CPU cores)
 	//this overrides the default value "1"
-	st->codec->thread_count = 0;
+	context->thread_count = 0;
 	//note: this is the default value
 	//frame-threading is preferred, slice-threading is used only if codec does not support frame-threading
-	//st->codec->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
+	//context->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
 
-	TIMER_START(openCodec);
 	AVDictionary *opts = NULL;
-	if (ExtLibs::avcodec_open2(st->codec, dec, &opts) < 0) {
+	if (ExtLibs::avcodec_open2(context, dec, &opts) < 0) {
+		avcodec_free_context(&context);
 		common->Warning("Failed to open %s:%s codec\n", ExtLibs::av_get_media_type_string(type), ExtLibs::avcodec_get_name(codecId));
 		return -1;
 	}
@@ -457,7 +460,7 @@ bool idCinematicFFMpeg::FetchPacket() {
 
 		int stream = newPacket->stream_index;
 		AVStream* st = _formatContext->streams[stream];
-		AVMediaType type = ExtLibs::avcodec_get_type(st->codec->codec_id);
+		AVMediaType type = ExtLibs::avcodec_get_type(st->codecpar->codec_id);
 		LogPrintf("Packet: stream = %d (%s)  size = %d  DTS = %lld  PTS = %lld  dur = %d",
 			newPacket->stream_index, ExtLibs::av_get_media_type_string(type), newPacket->size,
 			newPacket->dts, newPacket->pts, newPacket->duration
