@@ -628,7 +628,7 @@ void idSecurityCamera::Event_AddLight( void )
 
 				// "FOO on SPOTLIGHT" => "FOO"
 				SpawnargName = SpawnargName.Left(PosSpace);
-				gameLocal.Printf("setting spawnarg %s \n", SpawnargName);
+				gameLocal.Printf("setting spawnarg %s \n", SpawnargName.c_str());
 
 				// add the spawnarg to the args list
 				args.Set(SpawnargName, kv_set->GetValue());

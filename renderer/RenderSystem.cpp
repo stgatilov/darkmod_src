@@ -868,7 +868,7 @@ void idRenderSystemLocal::CaptureRenderToImage( idImage &image ) {
 		session->writeDemo->WriteHashString( image.imgName );
 
 		if ( r_showDemo.GetBool() )
-		{ common->Printf( "write DC_CAPTURE_RENDER: %s\n", image.imgName ); }
+		{ common->Printf( "write DC_CAPTURE_RENDER: %s\n", image.imgName.c_str() ); }
 	}
 
 	renderCrop_t &rc = renderCrops[currentRenderCrop];

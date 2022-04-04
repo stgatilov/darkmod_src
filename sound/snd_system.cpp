@@ -1206,7 +1206,7 @@ ALuint idSoundSystemLocal::AllocOpenALSource( idSoundChannel *chan, bool looping
 
 		return openalSources[index].handle;
 	} else {
-		return NULL;
+		return 0;
 	}
 }
 
@@ -1220,7 +1220,7 @@ void idSoundSystemLocal::FreeOpenALSource( ALuint handle ) {
 	for ( i = 0; i < openalSourceCount; i++ ) {
 		if ( openalSources[i].handle == handle ) {
 			if ( openalSources[i].chan ) {
-				openalSources[i].chan->openalSource = NULL;
+				openalSources[i].chan->openalSource = 0;
 			}
 
 			// Initialize structure
