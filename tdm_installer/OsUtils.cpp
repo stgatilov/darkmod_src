@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "StdString.h"
 #include "LogUtils.h"
 #include <string.h>
-#include <FL/platform.h>
+#include <FL/platform.H>
 
 std::string OsUtils::_argv0;
 

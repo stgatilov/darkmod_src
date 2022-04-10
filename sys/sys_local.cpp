@@ -105,7 +105,7 @@ void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLe
 #ifdef _WIN32
     // e.g. gamex64.dll
     idStr::snPrintf(dllName, maxLength, "%s%s.dll", baseName, CPUSTRING);
-#elif defined( __linux__ )
+#elif defined( __linux__ ) || defined(__FreeBSD__)
     // e.g. gamex64.so
     idStr::snPrintf(dllName, maxLength, "%s%s.so", baseName, CPUSTRING);
 #elif defined( MACOS_X )

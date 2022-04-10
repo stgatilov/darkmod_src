@@ -13,6 +13,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #include "GuiUtils.h"
+#include <string>
 #include <FL/Fl_Progress.H>
 #include <FL/Fl_Output.H>
 

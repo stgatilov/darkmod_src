@@ -146,6 +146,39 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #endif
 
+// FreeBSD
+#ifdef __FreeBSD__
+
+#define BUILD_OS_ID					3
+
+#ifdef __i386__
+	#define CPU_EASYARGS				1
+#elif defined(__x86_64__)
+	#define CPU_EASYARGS				0
+#elif defined(__ppc__)
+	#define CPU_EASYARGS				0
+#endif
+
+#define _alloca							alloca
+
+#define PACKED							__attribute__((packed))
+
+#define PATHSEPERATOR_STR				"/"
+#define PATHSEPERATOR_CHAR				'/'
+
+#define __cdecl
+#define ASSERT							assert
+
+#define ID_NOINLINE						__attribute__((noinline))
+
+#define ID_STATIC_TEMPLATE
+
+#define assertmem( x, y )
+
+#define THREAD_RETURN_TYPE				void *
+
+#endif
+
 #if !defined(ID_LITTLE_ENDIAN) && !defined(ID_BIG_ENDIAN)
 	#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
