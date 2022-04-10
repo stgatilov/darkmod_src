@@ -215,7 +215,7 @@ ucm_set_runtime(STATIC)
 
 find_package(zlib REQUIRED)
 find_package(minizip REQUIRED)
-find_package(libcurl REQUIRED)
+find_package(CURL REQUIRED)
 find_package(openal REQUIRED)
 find_package(ogg REQUIRED)
 find_package(vorbis REQUIRED)
@@ -237,7 +237,7 @@ include_directories(
 		"${PROJECT_SOURCE_DIR}/ThirdParty/artefacts/tracy/include/libbacktrace"
 		${zlib_INCLUDE_DIRS}
 		${minizip_INCLUDE_DIRS}
-		${libcurl_INCLUDE_DIRS}
+		${CURL_INCLUDE_DIRS}
 		${openal_INCLUDE_DIRS}
 		${ogg_INCLUDE_DIRS}
 		${vorbis_INCLUDE_DIRS}
@@ -253,7 +253,7 @@ include_directories(
 target_link_libraries(TheDarkMod
 		${zlib_LIBRARIES}
 		${minizip_LIBRARIES}
-		${libcurl_LIBRARIES}
+		${CURL_LIBRARIES}
 		${openal_LIBRARIES}
 		${vorbis_LIBRARIES}
 		${ogg_LIBRARIES}
