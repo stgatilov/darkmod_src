@@ -49,7 +49,7 @@ Hasher::Hasher() {
     blake2s_init(&_state, sizeof(HashDigest::_data));
 }
 Hasher& Hasher::Update(const void *in, size_t inlen) {
-    blake2s_update(&_state, in, inlen);
+    blake2s_update(&_state, (const uint8_t *)in, inlen);
     return *this;
 }
 HashDigest Hasher::Finalize() {

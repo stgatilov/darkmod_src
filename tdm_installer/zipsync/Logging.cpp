@@ -1,4 +1,5 @@
 #include "Logging.h"
+#include <string>
 #include <stdio.h>
 
 namespace ZipSync {

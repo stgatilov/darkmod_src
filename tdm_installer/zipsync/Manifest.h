@@ -2,14 +2,11 @@
 
 #include <stdint.h>
 #include <vector>
+#include <functional>
 #include "Path.h"
 #include "Hash.h"
 #include "Ini.h"
 #include "ZipUtils.h"
-
-namespace std {
-    template<class Func> class function;
-}
 
 namespace ZipSync {
 
