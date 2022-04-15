@@ -301,7 +301,7 @@ public:
 	static void			ShowMemoryUsage_f( const idCmdArgs &args );
 
 	int					DynamicMemoryUsed() const;
-	static idStr		FormatNumber( int number );
+	static idStr		FormatNumber( int64 number );
 
 	//stgatilov: these methods are private! do not ever used them!
 	void				ReAllocate( int amount, bool keepold );				// reallocate string data buffer

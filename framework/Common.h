@@ -90,20 +90,20 @@ extern bool			com_outputMsg;
 struct MemInfo_t {
 	idStr			filebase;
 
-	int				total;
-	int				assetTotals;
+	int64			total;
+	int64			assetTotals;
 
 	// memory manager totals
-	int				memoryManagerTotal;
+	int64			memoryManagerTotal;
 
 	// subsystem totals
-	int				gameSubsystemTotal;
-	int				renderSubsystemTotal;
+	int64			gameSubsystemTotal;
+	int64			renderSubsystemTotal;
 
 	// asset totals
-	int				imageAssetsTotal;
-	int				modelAssetsTotal;
-	int				soundAssetsTotal;
+	int64			imageAssetsTotal;
+	int64			modelAssetsTotal;
+	int64			soundAssetsTotal;
 };
 
 // grayman #3763 - loading bar progress at key points,
