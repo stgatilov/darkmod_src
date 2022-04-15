@@ -2647,6 +2647,7 @@ void idCollisionModelManagerLocal::ConvertBrushSides( cm_model_t *model, const i
 		planes[i] = mapBrush->GetSide(i)->GetPlane();
 		planes[i].FixDegeneracies( DEGENERATE_DIST_EPSILON );
 	}
+	idPlane* cuttingPlanes = (idPlane *) _alloca16( mapBrush->GetNumSides() * sizeof( planes[0] ) );
 
 	// create a collision polygon for each brush side
 	for ( i = 0; i < mapBrush->GetNumSides(); i++ ) {
@@ -2655,16 +2656,19 @@ void idCollisionModelManagerLocal::ConvertBrushSides( cm_model_t *model, const i
 		if ( !( material->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
 			continue;
 		}
-		w.BaseForPlane( -planes[i] );
-		for ( j = 0; j < mapBrush->GetNumSides() && w.GetNumPoints(); j++ ) {
-			if ( i == j ) {
+		int numCuts = 0;
+		for ( j = 0; j < mapBrush->GetNumSides(); j++ ) {
+			if ( i == j )
 				continue;
-			}
-			w.ClipInPlace( -planes[j], 0 );
+			cuttingPlanes[numCuts++] = -planes[j];
 		}
-
-		if ( w.GetNumPoints() ) {
-			PolygonFromWinding( model, &w, planes[i], material, primitiveNum );
+		idWinding *w = idWinding::CreateTrimmedPlane( -planes[i], numCuts, cuttingPlanes, 0 );
+		if ( w ) {
+			if ( w->GetNumPoints() ) {
+				idFixedWinding fixedWinding(*w);
+				PolygonFromWinding( model, &fixedWinding, planes[i], material, primitiveNum );
+			}
+			delete w;
 		}
 	}
 }
@@ -2687,7 +2691,6 @@ void idCollisionModelManagerLocal::ConvertBrush( cm_model_t *model, const idMapB
 	idMapBrushSide *mapSide;
 	cm_brush_t *brush;
 	idPlane *planes;
-	idFixedWinding w;
 	const idMaterial *material = NULL;
 
 	contents = 0;
@@ -2699,6 +2702,7 @@ void idCollisionModelManagerLocal::ConvertBrush( cm_model_t *model, const idMapB
 		planes[i] = mapBrush->GetSide(i)->GetPlane();
 		planes[i].FixDegeneracies( DEGENERATE_DIST_EPSILON );
 	}
+	idPlane* cuttingPlanes = (idPlane *) _alloca16( mapBrush->GetNumSides() * sizeof( planes[0] ) );
 
 	// stgatilov #5014: unlike what original D3 said,
 	// we MUST include the last brush too, because we are looking for "contents" here!
@@ -2708,16 +2712,18 @@ void idCollisionModelManagerLocal::ConvertBrush( cm_model_t *model, const idMapB
 		mapSide = mapBrush->GetSide(i);
 		material = declManager->FindMaterial( mapSide->GetMaterial() );
 		contents |= ( material->GetContentFlags() & CONTENTS_REMOVE_UTIL );
-		w.BaseForPlane( -planes[i] );
-		for ( j = 0; j < mapBrush->GetNumSides() && w.GetNumPoints(); j++ ) {
-			if ( i == j ) {
+		int numCuts = 0;
+		for ( j = 0; j < mapBrush->GetNumSides(); j++ ) {
+			if ( i == j )
 				continue;
-			}
-			w.ClipInPlace( -planes[j], 0 );
+			cuttingPlanes[numCuts++] = -planes[j];
 		}
-
-		for ( j = 0; j < w.GetNumPoints(); j++ ) {
-			bounds.AddPoint( w[j].ToVec3() );
+		idWinding *w = idWinding::CreateTrimmedPlane( -planes[i], numCuts, cuttingPlanes, 0 );
+		if ( w ) {
+			for ( j = 0; j < w->GetNumPoints(); j++ ) {
+				bounds.AddPoint( (*w)[j].ToVec3() );
+			}
+			delete w;
 		}
 	}
 	if ( !contents ) {
