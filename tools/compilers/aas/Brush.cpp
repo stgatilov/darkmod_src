@@ -814,13 +814,21 @@ int idBrush::SplitImpl( const idPlane &plane, int planeNum, idBrush **front, idB
 	return PLANESIDE_CROSS;
 }
 
+idCVar dmap_aasExpandBrushUseEdgesOnce(
+	"dmap_aasExpandBrushUseEdgesOnce", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"When expanding a brush for AAS, use every edge only once. "
+	"Previously it was used twice from both incident faces, "
+	"which created almost equal new faces, later breaking BSP "
+	"This fix added for 2.11 (see #5648). "
+);
+
+#define BRUSH_BEVEL_EPSILON		0.1f
+
 /*
 ============
 idBrush::AddBevelsForAxialBox
 ============
 */
-#define BRUSH_BEVEL_EPSILON		0.1f
-
 void idBrush::AddBevelsForAxialBox( void ) {
 	int axis, dir, i, j, k, l, order;
 	idBrushSide *side, *newSide;
@@ -879,6 +887,7 @@ void idBrush::AddBevelsForAxialBox( void ) {
 		for ( j = 0; j < w->GetNumPoints(); j++) {
 			k = (j+1) % w->GetNumPoints();
 			vec = (*w)[j].ToVec3() - (*w)[k].ToVec3();
+			idVec3 middle = 0.5f * ( (*w)[j].ToVec3() + (*w)[k].ToVec3() );
 			if ( vec.Normalize() < 0.5f ) {
 				continue;
 			}
@@ -889,6 +898,27 @@ void idBrush::AddBevelsForAxialBox( void ) {
 			}
 			if ( k < 3 ) {
 				continue;	// only test non-axial edges
+			}
+
+			if ( dmap_aasExpandBrushUseEdgesOnce.GetBool() ) {
+				// stgatilov #5648: find which brush side cut this edge
+				float bestDist = -idMath::INFINITY;
+				int bestIdx = -1;
+				for ( int t = 0; t < sides.Num(); t++ ) if ( t != i ) {
+					float dist = sides[t]->plane.Distance( middle );
+					if ( bestDist < dist ) {
+						bestDist = dist;
+						bestIdx = t;
+					}
+				}
+				if ( idMath::Fabs( bestDist ) > BRUSH_BEVEL_EPSILON ) {
+					common->Warning( "Precision issue in building expanded brush %d at %s", primitiveNum, middle.ToString() );
+				}
+				if ( bestIdx < i ) {
+					// this edge was already used at i = bestIdx iteration
+					// don't use it again, since that would produce logically the same plane
+					continue;
+				}
 			}
 
 			// try the six possible slanted axials from this edge

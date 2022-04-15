@@ -315,6 +315,9 @@ void Dmap( const idCmdArgs &args ) {
 		dmap_disableCellSnappingTjunc.SetBool(version >= 210);
 		extern idCVar cm_buildBspForPatchEntities;
 		cm_buildBspForPatchEntities.SetBool(version >= 210);
+		//new in 2.11
+		extern idCVar dmap_aasExpandBrushUseEdgesOnce;
+		dmap_aasExpandBrushUseEdgesOnce.SetBool(version >= 211);
 	}
 
 	if ( args.Argc() < 2 ) {
