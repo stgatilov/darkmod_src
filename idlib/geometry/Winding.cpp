@@ -170,7 +170,8 @@ int idWinding::Split( const idPlane &plane, const float epsilon, idWinding **fro
 
 	// determine sides for each point
 	for ( i = 0; i < numPoints; i++ ) {
-		dists[i] = dot = idVec3d(plane.Normal()).Dot(idVec3d(p[i].ToVec3())) + plane[3];
+		dists[i] = idVec3d(plane.Normal()).Dot(idVec3d(p[i].ToVec3())) + plane[3];
+		dot = dists[i];
 		if ( dot > epsilon ) {
 			sides[i] = SIDE_FRONT;
 		} else if ( dot < -epsilon ) {
@@ -1577,7 +1578,7 @@ idFixedWinding::Split
 */
 int idFixedWinding::Split( idFixedWinding *back, const idPlane &plane, const float epsilon ) {
 	int		counts[3];
-	float	dists[MAX_POINTS_ON_WINDING+4];
+	double	dists[MAX_POINTS_ON_WINDING+4];
 	byte	sides[MAX_POINTS_ON_WINDING+4];
 	float	dot;
 	int		i, j;
@@ -1589,7 +1590,8 @@ int idFixedWinding::Split( idFixedWinding *back, const idPlane &plane, const flo
 
 	// determine sides for each point
 	for ( i = 0; i < numPoints; i++ ) {
-		dists[i] = dot = plane.Distance( p[i].ToVec3() );
+		dists[i] = idVec3d(plane.Normal()).Dot(idVec3d(p[i].ToVec3())) + plane[3];
+		dot = dists[i];
 		if ( dot > epsilon ) {
 			sides[i] = SIDE_FRONT;
 		} else if ( dot < -epsilon ) {
