@@ -38,7 +38,7 @@ void idEntityList::AddToEnd(idEntity *ent) {
 bool idEntityList::Remove(idEntity *ent) {
 	int idx = ent->*idxMember;
 	if (idx < 0) {
-		assert(!order.Find(ent) && !aux.Find(ent));
+		assert(!order.Find(ent));
 		return false;
 	}
 	assert(order[idx] == ent);
