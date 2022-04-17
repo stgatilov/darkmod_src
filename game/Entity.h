@@ -251,7 +251,7 @@ public:
 	int						entityDefNumber;		// index into the entity def list
 
 	idLinkList<idEntity>	spawnNode;				// for being linked into spawnedEntities list
-	idLinkList<idEntity>	activeNode;				// for being linked into activeEntities list
+	int						activeIdx;				// for being linked into activeEntities list
 
 	idLinkList<idEntity>	snapshotNode;			// for being linked into snapshotEntities list
 	int						snapshotSequence;		// last snapshot this entity was in

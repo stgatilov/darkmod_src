@@ -11244,8 +11244,10 @@ idActor* idAI::FindEnemyAI(bool useFOV)
 	float bestDist = idMath::INFINITY;
 	idActor* bestEnemy = NULL;
 
-	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
+	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); )
 	{
+		idEntity *ent = gameLocal.activeEntities.Get(iter);
+
 		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || ent->fl.invisible || !ent->IsType( idActor::Type ) ) // grayman #3857 - also use 'invisible'
 		{
 			continue;
@@ -11283,7 +11285,9 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 	pvsHandle_t pvs(gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas()));
 
 	// Iterate through all active entities and find an AI with the given team.
-	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); )
+	{
+		idEntity *ent = gameLocal.activeEntities.Get(iter);
 		if ( ent == this || ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
 			continue;
 		}
@@ -11485,7 +11489,6 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 
 idActor *idAI::FindNearestEnemy( bool useFOV )
 {
-	idEntity	*ent;
 	idActor		*actor, *playerEnemy;
 	idActor		*bestEnemy;
 	float		bestDist;
@@ -11498,7 +11501,9 @@ idActor *idAI::FindNearestEnemy( bool useFOV )
 	bestDist = idMath::INFINITY;
 	bestEnemy = NULL;
 
-	for ( ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); )
+	{
+		idEntity *ent = gameLocal.activeEntities.Get(iter);
 		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) )
 		{
 			continue;

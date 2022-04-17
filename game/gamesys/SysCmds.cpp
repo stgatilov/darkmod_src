@@ -556,14 +556,14 @@ Cmd_ActiveEntityList_f
 ===================
 */
 void Cmd_ActiveEntityList_f( const idCmdArgs &args ) {
-	idEntity	*check;
 	int			count;
 
 	count = 0;
 
 	gameLocal.Printf( "%-4s  %-20s %-20s %s\n", " Num", "EntityDef", "Class", "Name" );
 	gameLocal.Printf( "--------------------------------------------------------------------\n" );
-	for( check = gameLocal.activeEntities.Next(); check != NULL; check = check->activeNode.Next() ) {
+	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); ) {
+		idEntity *check = gameLocal.activeEntities.Get(iter);
 		char	dormant = check->fl.isDormant ? '-' : ' ';
 		gameLocal.Printf( "%4i:%c%-20s %-20s %s\n", check->entityNumber, dormant, check->GetEntityDefName(), check->GetClassname(), check->name.c_str() );
 		count++;

@@ -1600,6 +1600,9 @@
     <ClInclude Include="idlib\svnversion.h">
       <Filter>Idlib</Filter>
     </ClInclude>
+    <ClInclude Include="game\EntityList.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3543,6 +3546,9 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\artefacts\tracy\src\TracyClient.cpp">
       <Filter>Idlib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\EntityList.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

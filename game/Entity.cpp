@@ -991,7 +991,7 @@ idEntity::idEntity()
 	entityDefNumber = -1;
 
 	spawnNode.SetOwner( this );
-	activeNode.SetOwner( this );
+	activeIdx = -1;
 
 	snapshotNode.SetOwner( this );
 	snapshotSequence = -1;
@@ -2052,7 +2052,7 @@ idEntity::~idEntity( void )
 	if ( thinkFlags ) {
 		BecomeInactive( thinkFlags );
 	}
-	activeNode.Remove();
+	gameLocal.activeEntities.Remove( this );
 
 	Signal( SIG_REMOVED );
 
@@ -2065,6 +2065,10 @@ idEntity::~idEntity( void )
 
 	// unbind from master
 	Unbind();
+
+	// sometimes RemoveBinds add this entity back to active list
+	// so try to remove it again to avoid dangling pointer
+	gameLocal.activeEntities.Remove( this );
 
 	gameLocal.RemoveEntityFromHash( name.c_str(), this );
 
@@ -3449,7 +3453,7 @@ idEntity::IsActive
 ================
 */
 bool idEntity::IsActive( void ) const {
-	return activeNode.InList();
+	return activeIdx >= 0;
 }
 
 /*
@@ -3463,11 +3467,6 @@ void idEntity::BecomeActive( int flags )
 		// enable the team master if this entity is part of a physics team
 		if ( teamMaster && teamMaster != this ) {
 			teamMaster->BecomeActive( TH_PHYSICS );
-		} else if ( !( thinkFlags & TH_PHYSICS ) ) {
-			// if this is a pusher
-			if ( physics->IsType( idPhysics_Parametric::Type ) || physics->IsType( idPhysics_Actor::Type ) ) {
-				gameLocal.sortPushers = true;
-			}
 		}
 	}
 
@@ -3476,7 +3475,8 @@ void idEntity::BecomeActive( int flags )
 
 	if ( thinkFlags ) {
 		if ( !IsActive() ) {
-			activeNode.AddToEnd( gameLocal.activeEntities );
+			assert(activeIdx >= -1);
+			gameLocal.activeEntities.AddToEnd( this );
 		} else if ( !oldFlags ) {
 			// we became inactive this frame, so we have to decrease the count of entities to deactivate
 			gameLocal.numEntitiesToDeactivate--;
@@ -5278,8 +5278,6 @@ void idEntity::FinishBind( idEntity *newMaster, const char *jointName ) // graym
 
 	// bind to the new master (pre/post/notify stuff already done outside)
 	EstablishBindToMaster(newMaster);
-	// reorder the active entity list 
-	gameLocal.sortTeamMasters = true;
 
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );

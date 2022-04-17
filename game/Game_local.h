@@ -413,7 +413,7 @@ struct SuspiciousEvent
 };
 
 #include "SearchManager.h" // grayman #3857 - must follow the definition of "EventType"
-#include "Entity.h"
+#include "EntityList.h"
 
 class idDeclEntityDef;
 
@@ -432,11 +432,9 @@ public:
 	idHashIndex				entityHash;				// hash table to quickly find entities by name
 	idWorldspawn *			world;					// world entity
 	idLinkList<idEntity>	spawnedEntities;		// all spawned entities
-	idLinkList<idEntity>	activeEntities;			// all thinking entities (idEntity::thinkFlags != 0)
+	idEntityList			activeEntities;			// all thinking entities (idEntity::thinkFlags != 0)
 	idLinkList<idAI>		spawnedAI;				// greebo: all spawned AI
 	int						numEntitiesToDeactivate;// number of entities that became inactive in current frame
-	bool					sortPushers;			// true if active lists needs to be reordered to place pushers at the front
-	bool					sortTeamMasters;		// true if active lists needs to be reordered to place physics team masters before their slaves
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
 
 	// The inventory class which keeps items safe between maps

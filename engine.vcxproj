@@ -326,6 +326,7 @@
     <ClInclude Include="game\DownloadMenu.h" />
     <ClInclude Include="game\Emitter.h" />
     <ClInclude Include="game\Entity.h" />
+    <ClInclude Include="game\EntityList.h" />
     <ClInclude Include="game\EscapePointEvaluator.h" />
     <ClInclude Include="game\EscapePointManager.h" />
     <ClInclude Include="game\Force_Grab.h" />
@@ -966,6 +967,7 @@
     <ClCompile Include="game\DownloadMenu.cpp" />
     <ClCompile Include="game\Emitter.cpp" />
     <ClCompile Include="game\Entity.cpp" />
+    <ClCompile Include="game\EntityList.cpp" />
     <ClCompile Include="game\EscapePointEvaluator.cpp" />
     <ClCompile Include="game\EscapePointManager.cpp" />
     <ClCompile Include="game\Force_Grab.cpp" />

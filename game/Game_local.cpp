@@ -228,7 +228,8 @@ idGameLocal::idGameLocal() :
 	curBriefingVideoPart(-1),
 	m_MissionResult(MISSION_NOTEVENSTARTED),
 	m_HighestSRId(0),
-	m_searchManager(NULL) // grayman #3857
+	m_searchManager(NULL), // grayman #3857
+	activeEntities(&idEntity::activeIdx)
 {
 	Clear();
 }
@@ -328,8 +329,6 @@ void idGameLocal::Clear( void )
 	activeEntities.Clear();
 	spawnedAI.Clear();
 	numEntitiesToDeactivate = 0;
-	sortPushers = false;
-	sortTeamMasters = false;
 	persistentLevelInfo.Clear();
 	persistentPlayerInventory.reset();
 	campaignInfoEntities.Clear();
@@ -883,9 +882,10 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteObject( ent );
 	}
 
-	savegame.WriteInt( activeEntities.Num() );
-	for (idEntity* ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		savegame.WriteObject( ent );
+	const idList<idEntity*> &activeList = activeEntities.ToList();
+	savegame.WriteInt( activeList.Num() );
+	for (int i = 0; i < activeList.Num(); i++ ) {
+		savegame.WriteObject( activeList[i] );
 	}
 
 	// tels: save the list of music speakers
@@ -920,8 +920,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	}
 
 	savegame.WriteInt( numEntitiesToDeactivate );
-	savegame.WriteBool( sortPushers );
-	savegame.WriteBool( sortTeamMasters );
 	savegame.WriteDict( &persistentLevelInfo );
 
 	persistentPlayerInventory->Save(&savegame);
@@ -1454,8 +1452,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	activeEntities.Clear();
 	spawnedAI.Clear();
 	numEntitiesToDeactivate = 0;
-	sortTeamMasters = false;
-	sortPushers = false;
 	lastGUIEnt = NULL;
 	lastGUI = 0;
 
@@ -2129,13 +2125,15 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	savegame.ReadInt( num );
+	idList<idEntity*> activeList;
 	for( i = 0; i < num; i++ ) {
 		savegame.ReadObject( reinterpret_cast<idClass *&>( ent ) );
 		assert( ent );
 		if ( ent ) {
-			ent->activeNode.AddToEnd( activeEntities );
+			activeList.AddGrow( ent );
 		}
 	}
+	activeEntities.FromList( activeList );
 
 	// tels: restore the list of music speakers
 	savegame.ReadInt( num );
@@ -2183,8 +2181,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	savegame.ReadInt( numEntitiesToDeactivate );
-	savegame.ReadBool( sortPushers );
-	savegame.ReadBool( sortTeamMasters );
 	savegame.ReadDict( &persistentLevelInfo );
 
 	persistentPlayerInventory->Restore(&savegame);
@@ -3141,62 +3137,54 @@ idGameLocal::SortActiveEntityList
 */
 void idGameLocal::SortActiveEntityList( void ) {
 	TRACE_CPU_SCOPE( "SortActive" )
-	idEntity *ent, *next_ent, *master, *part;
+	idEntity *ent, *master, *part;
 
-	// if the active entity list needs to be reordered to place physics team masters at the front
-	if ( sortTeamMasters ) {
-		for ( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
-			next_ent = ent->activeNode.Next();
-			master = ent->GetTeamMaster();
-			if ( master && master == ent ) {
-				ent->activeNode.Remove();
-				ent->activeNode.AddToFront( activeEntities );
+	static idList<idEntity*> buckets[6];
+
+	for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
+		ent = activeEntities.Get(iter);
+		master = ent->GetTeamMaster();
+
+		bool isTeamMaster = ( master && master == ent );
+		bool hasActor = false;
+		bool hasParametric = false;
+
+		if ( !master || master == ent ) {
+			// check if there is an actor on the team,
+			// or an entity with parametric physics (?pusher?)
+			for ( part = ent; part != NULL; part = part->GetNextTeamEntity() ) {
+				if ( part->GetPhysics()->IsType( idPhysics_Actor::Type ) )
+					hasActor = true;
+				if ( part->GetPhysics()->IsType( idPhysics_Parametric::Type ) )
+					hasParametric = true;
 			}
 		}
+
+		int group = (
+			hasParametric ? 0 :		// pushers first
+			hasActor ? 1 :			// actors next
+			2						// finally, all the rest 
+		);
+		// without eah group, put team masters first
+		group = 2 * group + !isTeamMaster;
+
+		buckets[group].AddGrow( ent );
 	}
 
-	// if the active entity list needs to be reordered to place pushers at the front
-	if ( sortPushers ) {
-
-		for ( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
-			next_ent = ent->activeNode.Next();
-			master = ent->GetTeamMaster();
-			if ( !master || master == ent ) {
-				// check if there is an actor on the team
-				for ( part = ent; part != NULL; part = part->GetNextTeamEntity() ) {
-					if ( part->GetPhysics()->IsType( idPhysics_Actor::Type ) ) {
-						break;
-					}
-				}
-				// if there is an actor on the team
-				if ( part ) {
-					ent->activeNode.Remove();
-					ent->activeNode.AddToFront( activeEntities );
-				}
-			}
-		}
-
-		for ( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
-			next_ent = ent->activeNode.Next();
-			master = ent->GetTeamMaster();
-			if ( !master || master == ent ) {
-				// check if there is an entity on the team using parametric physics
-				for ( part = ent; part != NULL; part = part->GetNextTeamEntity() ) {
-					if ( part->GetPhysics()->IsType( idPhysics_Parametric::Type ) ) {
-						break;
-					}
-				}
-				// if there is an entity on the team using parametric physics
-				if ( part ) {
-					ent->activeNode.Remove();
-					ent->activeNode.AddToFront( activeEntities );
-				}
-			}
-		}
+	// concatenate buckets
+	int num = 0;
+	for ( int b = 0; b < 6; b++ )
+		num += buckets[b].Num();
+	idList<idEntity*> newOrder;
+	newOrder.SetNum(num);
+	num = 0;
+	for ( int b = 0; b < 6; b++ ) {
+		memcpy( newOrder.Ptr() + num, buckets[b].Ptr(), buckets[b].MemoryUsed() );
+		num += buckets[b].Num();
+		buckets[b].Clear();
 	}
 
-	sortTeamMasters = false;
-	sortPushers = false;
+	activeEntities.FromList( newOrder );
 }
 
 /*
@@ -3335,7 +3323,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 				TRACE_CPU_SCOPE( "ThinkAllEntities" )
 				num = 0;
 				bool timeentities = (g_timeentities.GetFloat() > 0.0);
-				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+				for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
+					ent = activeEntities.Get(iter);
 					if ( inCinematic && g_cinematic.GetBool() && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
 						// grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
@@ -3370,12 +3359,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			// remove any entities that have stopped thinking
 			if ( numEntitiesToDeactivate ) {
 				TRACE_CPU_SCOPE( "DeactivateEntities" )
-				idEntity *next_ent;
 				int c = 0;
-				for( ent = activeEntities.Next(); ent != NULL; ent = next_ent ) {
-					next_ent = ent->activeNode.Next();
+				for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
+					ent = activeEntities.Get(iter);
 					if ( !ent->thinkFlags ) {
-						ent->activeNode.Remove();
+						activeEntities.Remove( ent );
 						c++;
 					}
 				}
@@ -5030,7 +5018,8 @@ void idGameLocal::RunDebugInfo( void ) {
 
 	// debug tool to draw bounding boxes around active entities
 	if ( g_showActiveEntities.GetBool() ) {
-		for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
+		for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
+			ent = activeEntities.Get(iter);
 			idBounds	b = ent->GetPhysics()->GetBounds();
 			if ( b.GetVolume() <= 0 ) {
 				b[0][0] = b[0][1] = b[0][2] = -8;
