@@ -24,6 +24,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ===============================================================================
 */
 
+#include "Physics.h"
+
 typedef struct staticPState_s {
 	idVec3					origin;
 	idMat3					axis;

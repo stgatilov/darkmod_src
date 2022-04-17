@@ -5811,24 +5811,6 @@ int idEntity::GetBindBody( void ) const {
 }
 
 /*
-================
-idEntity::GetTeamMaster
-================
-*/
-idEntity *idEntity::GetTeamMaster( void ) const {
-	return teamMaster;
-}
-
-/*
-================
-idEntity::GetNextTeamEntity
-================
-*/
-idEntity *idEntity::GetNextTeamEntity( void ) const {
-	return teamChain;
-}
-
-/*
 =====================
 idEntity::ConvertLocalToWorldTransform
 =====================

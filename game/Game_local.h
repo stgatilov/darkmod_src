@@ -413,6 +413,7 @@ struct SuspiciousEvent
 };
 
 #include "SearchManager.h" // grayman #3857 - must follow the definition of "EventType"
+#include "Entity.h"
 
 class idDeclEntityDef;
 

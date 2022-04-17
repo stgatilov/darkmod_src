@@ -3140,6 +3140,7 @@ idGameLocal::SortActiveEntityList
 ================
 */
 void idGameLocal::SortActiveEntityList( void ) {
+	TRACE_CPU_SCOPE( "SortActive" )
 	idEntity *ent, *next_ent, *master, *part;
 
 	// if the active entity list needs to be reordered to place physics team masters at the front

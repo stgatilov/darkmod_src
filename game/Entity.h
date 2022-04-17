@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "OverlaySys.h"
 #include "UserManager.h"
 #include "ModelGenerator.h"
+#include "Physics/Physics_Static.h"
 
 class CStimResponseCollection;
 class CStim;
@@ -703,8 +704,8 @@ public:
 	idEntity *				GetBindMaster( void ) const;
 	jointHandle_t			GetBindJoint( void ) const;
 	int						GetBindBody( void ) const;
-	idEntity *				GetTeamMaster( void ) const;
-	idEntity *				GetNextTeamEntity( void ) const;
+	idEntity *				GetTeamMaster( void ) const { return teamMaster; }
+	idEntity *				GetNextTeamEntity( void ) const { return teamChain; }
 	/**
 	* TDM: Get a list of bound team members lower down on the chain than this one
 	* Populates the list in the argument argument with entity pointers

@@ -132,7 +132,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <assert.h>
 #include <time.h>
 #include <ctype.h>
 #include <typeinfo>

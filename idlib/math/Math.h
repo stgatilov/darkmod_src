@@ -27,7 +27,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "../../sys/sys_public.h"
 
-#include <assert.h>
 #include <float.h>
 
 /*
