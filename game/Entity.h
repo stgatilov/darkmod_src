@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "OverlaySys.h"
 #include "UserManager.h"
 #include "ModelGenerator.h"
-#include "Physics/Physics_Static.h"
+#include "physics/Physics_Static.h"
 
 class CStimResponseCollection;
 class CStim;
