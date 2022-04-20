@@ -177,14 +177,14 @@ idCVar cv_savegame_compress(		"tdm_savegame_compress", "1",   CVAR_BOOL|CVAR_ARC
 * Dark Mod player movement
 * Use multipliers instead of setting a speed for each
 **/
-idCVar cv_pm_runmod(				"pm_runmod",			"2.12",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain run speed from pm_walkspeed." );
-idCVar cv_pm_run_backmod(			"pm_run_backmod",		"0.7",			CVAR_GAME | CVAR_FLOAT				,	"The multiplier applied to existing run speed when the player is running backwards." );
-idCVar cv_pm_creepmod(				"pm_creepmod",			"0.44",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed." );
-idCVar cv_pm_running_creepmod(		"pm_running_creepmod",	"0.22",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain creep speed from pm_walkspeed but when Always Run is enabled, allowing players to go from full run to creep.");
-idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The multiplier used to obtain crouch speed from walk speed." );
-idCVar cv_pm_max_swimspeed_mod(		"pm_max_swimspeed_mod",	"1.4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Maximum speed of the player when moving in >= waist deep water, relative to player walkspeed." );
-idCVar cv_pm_swimspeed_variation(	"pm_swimspeed_variation","0.6",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The swimspeed periodically decreases and increases by this amount.", 0.0f, 1.0f);
-idCVar cv_pm_swimspeed_frequency(	"pm_swimspeed_frequency","0.8",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The swimspeed periodically decreases and increases by this frequency.", 0.0f, 10.0f);
+idCVar cv_pm_runmod(				"pm_runmod",			"2.12",			CVAR_GAME | CVAR_FLOAT				, "The multiplier used to obtain run speed from pm_walkspeed." );
+idCVar cv_pm_run_backmod(			"pm_run_backmod",		"0.7",			CVAR_GAME | CVAR_FLOAT				, "The multiplier applied to existing run speed when the player is running backwards." );
+idCVar cv_pm_creepmod(				"pm_creepmod",			"0.44",			CVAR_GAME | CVAR_FLOAT				, "The multiplier used to obtain creep speed from pm_walkspeed." );
+idCVar cv_pm_running_creepmod(		"pm_running_creepmod",	"0.22",			CVAR_GAME | CVAR_FLOAT				, "The multiplier used to obtain creep speed from pm_walkspeed but when Always Run is enabled, allowing players to go from full run to creep.");
+idCVar cv_pm_crouchmod(				"pm_crouchmod",			"0.54",			CVAR_GAME | CVAR_FLOAT				, "The multiplier used to obtain crouch speed from walk speed." );
+idCVar cv_pm_max_swimspeed_mod(		"pm_max_swimspeed_mod",	"1.4",			CVAR_GAME | CVAR_FLOAT				, "Maximum speed of the player when moving in >= waist deep water, relative to player walkspeed." );
+idCVar cv_pm_swimspeed_variation(	"pm_swimspeed_variation","0.6",			CVAR_GAME | CVAR_FLOAT				, "The swimspeed periodically decreases and increases by this amount.", 0.0f, 1.0f);
+idCVar cv_pm_swimspeed_frequency(	"pm_swimspeed_frequency","0.8",			CVAR_GAME | CVAR_FLOAT				, "The swimspeed periodically decreases and increases by this frequency.", 0.0f, 10.0f);
 idCVar cv_pm_pushmod(				"pm_pushmod",			"0.15",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Alters the impulse applied when the player runs into an object. Fractional modifier that multiplies the default D3 impulse. ONLY APPLIES TO OBJECTS BEING KICKED. Default is 0.15" );
 idCVar cv_pm_push_maximpulse(		"pm_push_maximpulse",	"300",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the maximum impulse that is allowed to be propagated by the player to moveables just by kicking them. Only applies for 'lightweight' moveables below playermass*pm_push_heavy_threshold. Default is 300 units*kg per second." );
 idCVar cv_pm_push_start_delay(		"pm_push_start_delay",	"1000",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Defines the delay in msecs before heavy things get pushed by the player. Default is 1000 msecs." );
