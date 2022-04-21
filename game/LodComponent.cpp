@@ -671,7 +671,8 @@ bool LodComponent::SwitchLOD()
 		// Distance dependence checks
 		if ( (m_LOD->DistCheckInterval > 0) && (gameLocal.time >= m_DistCheckTimeStamp) )
 		{
-			m_DistCheckTimeStamp = gameLocal.time + m_LOD->DistCheckInterval;
+			while (gameLocal.time >= m_DistCheckTimeStamp)
+				m_DistCheckTimeStamp += m_LOD->DistCheckInterval;
 			deltaSq = GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), m_entity->GetPhysics()->GetOrigin(), rent->bounds.GetSize(), cv_lod_bias.GetFloat() );
 		}
 		else
