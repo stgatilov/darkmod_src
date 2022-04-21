@@ -417,8 +417,9 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict& args, idEntity* owner,
 		// set up time interleaving so the stim isn't fired every frame
 		stim->m_TimeInterleave = args.GetInt(va("sr_time_interval_%u", index), "0");
 
-		// greebo: Add fuzzyness to the timer (ranging from 0.9 - 1.3);
-		stim->m_TimeInterleave = static_cast<int>(stim->m_TimeInterleave * (0.9f + gameLocal.random.RandomFloat()*0.4f));
+		// stgatilov: add random offset so that time taken by stim processing
+		// is spread approximately evenly across frames
+		stim->m_TimeInterleaveStamp = gameLocal.time - int(stim->m_TimeInterleave * gameLocal.random.RandomFloat());
 
 		// userfriendly stim duration time
 		stim->m_Duration = args.GetInt(va("sr_duration_%u", index), "0");

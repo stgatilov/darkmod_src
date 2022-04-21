@@ -7557,7 +7557,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 			}
 
 			// Check the interleaving timer and don't eval stim if it's not up yet
-			if ( ( gameLocal.time - stim->m_TimeInterleaveStamp ) < stim->m_TimeInterleave)
+			if ( gameLocal.time - stim->m_TimeInterleaveStamp < stim->m_TimeInterleave )
 			{
 				continue;
 			}
@@ -7582,8 +7582,15 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 				origin += stim->m_Velocity * (gameLocal.time - stim->m_EnabledTimeStamp)/1000;
 			}
 
-			// Save the current timestamp into the stim, so that we know when it was last fired
-			stim->m_TimeInterleaveStamp = gameLocal.time;
+			if (stim->m_TimeInterleave > 0) {
+				// Save the current timestamp into the stim, so that we know when it was last fired
+				// stgatilov: save exact offset modulo m_TimeInterleave to save even distribution
+				while ( gameLocal.time - stim->m_TimeInterleaveStamp >= stim->m_TimeInterleave)
+					stim->m_TimeInterleaveStamp += stim->m_TimeInterleave;
+			}
+			else {
+				stim->m_TimeInterleaveStamp = gameLocal.time;
+			}
 
 			// greebo: Check if the stim passes the "chance" test
 			// Do this AFTER the m_TimeInterleaveStamp has been set to avoid the stim
