@@ -231,6 +231,8 @@ idGameLocal::idGameLocal() :
 	m_searchManager(NULL), // grayman #3857
 	activeEntities(&idEntity::activeIdx)
 {
+	entities.SetNum( MAX_GENTITIES );
+	spawnIds.SetNum( MAX_GENTITIES );
 	Clear();
 }
 
@@ -321,8 +323,8 @@ void idGameLocal::Clear( void )
 		userInfo.Clear();
 		persistentPlayerInfo.Clear();
 	memset( &usercmds, 0, sizeof( usercmds ) );
-	memset( entities, 0, sizeof( entities ) );
-	memset( spawnIds, -1, sizeof( spawnIds ) );
+	memset( entities.Ptr(), 0, entities.MemoryUsed() );
+	memset( spawnIds.Ptr(), -1, spawnIds.MemoryUsed() );
 	firstFreeIndex = 0;
 	num_entities = 0;
 	spawnedEntities.Clear();
@@ -1443,9 +1445,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	numClients = 0;
 
 	// initialize all entities for this game
-	memset( entities, 0, sizeof( entities ) );
+	memset( entities.Ptr(), 0, entities.MemoryUsed() );
 	memset( &usercmds, 0, sizeof( usercmds ) );
-	memset( spawnIds, -1, sizeof( spawnIds ) );
+	memset( spawnIds.Ptr(), -1, spawnIds.MemoryUsed() );
 	spawnCount = INITIAL_SPAWN_COUNT;
 	
 	spawnedEntities.Clear();

@@ -424,8 +424,8 @@ public:
 	idDict					userInfo;	// client specific settings
 	usercmd_t				usercmds;	// client input commands
 	idDict					persistentPlayerInfo;
-	idEntity *				entities[MAX_GENTITIES];// index to entities
-	int						spawnIds[MAX_GENTITIES];// for use in idEntityPtr
+	idList<idEntity *>		entities;	// index to entities
+	idList<int>				spawnIds;	// for use in idEntityPtr
 
 	int						firstFreeIndex;			// first free index in the entities array
 	int						num_entities;			// current number <= MAX_GENTITIES
