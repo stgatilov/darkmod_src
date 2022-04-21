@@ -958,21 +958,21 @@ idGameEdit::EntityUpdateLOD
 ================
 */
 void idGameEdit::EntityUpdateLOD( idEntity *ent ) {
-	//delete old memory for LOD info
-	if ( ent->m_LODHandle )
-		gameLocal.m_ModelGenerator->UnregisterLODData( ent->m_LODHandle );
+	//unregister this entity from LOD system
+	LodComponent::StopLOD( ent, false );
 
 	//reparse LOD spawnargs again, getting new handle
 	//note: new handle can be zero if user has removed LOD!
-	ent->m_LODHandle = ent->ParseLODSpawnargs( &ent->spawnArgs, gameLocal.random.RandomFloat() );
+	LodComponent lodComp;
+	auto res = lodComp.ParseLODSpawnargs( ent, &ent->spawnArgs, gameLocal.random.RandomFloat() );
 
 	//recompute LOD level and reset all settings accordingly
 	//note: we cannot rely on this method being called from idEntity::Think
 	//because user could have disabled/removed LOD (e.g. m_LODHandle = 0)
-	ent->SwitchLOD();
+	lodComp.SwitchLOD();
 
-	//probably not necessary
-	ent->BecomeActive( TH_THINK );
+	if ( res )
+		gameLocal.lodSystem.AddToEnd( lodComp );
 }
 
 /*

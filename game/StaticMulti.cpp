@@ -144,7 +144,7 @@ void CStaticMulti::Spawn( void )
 	{
 		m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 		m_DistCheckInterval = d;
-		m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
+		m_DistCheckTimeStamp = gameLocal.time - (int) ( m_DistCheckInterval * gameLocal.random.RandomFloat() );
 		m_fHideDistance = spawnArgs.GetFloat( "hide_distance", "0.0" );
 #ifdef M_DEBUG
 		gameLocal.Printf("%s: hide_distance %0.2f\n", GetName(),m_fHideDistance);
@@ -485,7 +485,7 @@ void CStaticMulti::Think( void )
 	lod_data_t* LOD = NULL;
 
 	// Distance dependence checks
-	if ( active && m_bNeedModelUpdates && (gameLocal.time - m_DistCheckTimeStamp) >= m_DistCheckInterval ) 
+	if ( active && m_bNeedModelUpdates && gameLocal.time >= m_DistCheckTimeStamp ) 
 	{
 #ifdef M_TIMINGS
 		if (updates > 0)
@@ -500,7 +500,7 @@ void CStaticMulti::Think( void )
 		}
 #endif
 
-		m_DistCheckTimeStamp = gameLocal.time;
+		m_DistCheckTimeStamp = gameLocal.time + m_DistCheckInterval;
 
 		idVec3 origin = GetPhysics()->GetOrigin();
 		idVec3 vGravNorm = GetPhysics()->GetGravityNormal();
@@ -548,7 +548,7 @@ void CStaticMulti::Think( void )
 			model_ofs_t ofs = m_Offsets->Ptr()[i];
 			// 0 => default model, 1 => first stage etc
 			int orgLOD = ofs.lod - 1;
-			m_LODLevel = orgLOD;
+			m_LodComponent.SetLodLevel( orgLOD );
 
 			idVec3 delta = origin + ofs.offset - playerOrigin;
 			if (bDistCheckXYOnly)
@@ -558,16 +558,17 @@ void CStaticMulti::Think( void )
 			// divide by the user LOD bias setting (squared)
 			float dist = delta.LengthSqr() / lod_bias;
 
-			float fAlpha  = ThinkAboutLOD( m_LODHandle == 0 ? NULL : LOD, dist );
+			float fAlpha  = m_LodComponent.ThinkAboutLOD( m_LODHandle == 0 ? NULL : LOD, dist );
+			int newLodLevel = m_LodComponent.GetLodLevel();
 
 			if (fAlpha == 0)
 			{
 				// the entity should be invisible
-				m_LODLevel = -2;
+				newLodLevel = -2;
 			}
 			// if differs, add a changeset
 			// TODO: compare flags, if they differ, also add a change
-			if (orgLOD != m_LODLevel)
+			if (orgLOD != newLodLevel)
 			{
 #ifdef M_DEBUG
 				gameLocal.Printf("%s: changing from LOD %i to %i\n", GetName(), orgLOD, m_LODLevel);
@@ -575,17 +576,17 @@ void CStaticMulti::Think( void )
 				// 0 => default model, 1 => first stage etc
 				// TODO: compute flags for noclip
 				int flags = 0;
-				m_LODLevel ++;
-				if ( m_LODHandle && (LOD->noshadowsLOD & (1 << m_LODLevel)) )
+				newLodLevel++;
+				if ( m_LODHandle && (LOD->noshadowsLOD & (1 << newLodLevel)) )
 				{
 					flags += SEED_MODEL_NOSHADOW;
 				}
-				AddChange(i, m_LODLevel, flags);
+				AddChange(i, newLodLevel, flags);
 			}
 		}
 
 		// restore our value (it is not used, anyway)
-		m_LODLevel = 0;
+		m_LodComponent.SetLodLevel( 0 );
 
 		// update the render model if nec.
 		UpdateRenderModel();

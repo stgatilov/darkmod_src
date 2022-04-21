@@ -10213,7 +10213,7 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 				}
 
 				// Tels: #2826: re-enable LOD again, in case the entity was in the inventory (like a shoulderable body)
-				ent->EnableLOD(true);
+				LodComponent::EnableLOD(ent, true);
 
 				return true;
 			}

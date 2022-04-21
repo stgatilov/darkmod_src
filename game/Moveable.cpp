@@ -82,10 +82,6 @@ idMoveable::idMoveable( void ) {
 	wasPushedLastFrame = false;
 	pushDirection = vec3_zero;
 	lastPushOrigin = vec3_zero;
-
-	// by default no LOD
-	m_LODHandle = 0;
-	m_DistCheckTimeStamp = 0;
 }
 
 /*
@@ -251,13 +247,6 @@ void idMoveable::Spawn( void ) {
 	m_preHideClipMask = physicsObj.GetClipMask();
 
 	allowStep = spawnArgs.GetBool( "allowStep", "1" );
-
-	// parse LOD spawnargs
-	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
-	{
-		// Have to start thinking if we're distance dependent
-		BecomeActive( TH_THINK );
-	}
 
 	// grayman #2820 - don't queue EV_SetOwnerFromSpawnArgs if it's going to
 	// end up doing nothing. Queuing this for every moveable causes a lot
@@ -767,13 +756,6 @@ idMoveable::Think
 ================
 */
 void idMoveable::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
-		if ( !FollowInitialSplinePath() && !isPushed && !m_LODHandle) {
-			BecomeInactive( TH_THINK );
-		}
-	}
-
-	// will also handle LOD thinking
 	idEntity::Think();
 
 	UpdateSlidingSounds();

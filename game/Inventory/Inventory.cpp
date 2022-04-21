@@ -715,7 +715,7 @@ void CInventory::RemoveEntityFromMap(idEntity* ent, bool deleteEntity)
 	ent->GetPhysics()->PutToRest();
 	ent->GetPhysics()->UnlinkClip();
 	// Tels: #2826: temp. stop LOD thinking, including all possible things attached to this entity
-	ent->DisableLOD( true );
+	LodComponent::DisableLOD( ent, true );
 	ent->Hide();
 
 	if (deleteEntity == true)

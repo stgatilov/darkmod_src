@@ -868,9 +868,13 @@ void Seed::Spawn( void ) {
 	m_bDistCheckXYOnly = spawnArgs.GetBool( "dist_check_xy", "0" );
 
 	// Add some phase diversity to the checks so that they don't all run in one frame
-	// make sure they all run on the first frame though, by initializing m_TimeStamp to
-	// be at least one interval early.
-	m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * (1.0f + gameLocal.random.RandomFloat()) );
+	// make sure they all run on the first frame though
+	m_DistCheckTimeStamp = gameLocal.time - (int) (m_DistCheckInterval * gameLocal.random.RandomFloat() );
+
+	//stgatilov: unregister self from LOD system (it was registered in idEntity::Spawn)
+	//SEED stuff manages LOD manually in its Think function
+	if (HasLod())
+		gameLocal.lodSystem.Get(lodIdx).StopLOD( this, false );
 
 	// Have to start thinking
 	BecomeActive( TH_THINK );
@@ -1524,7 +1528,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	}
 
 	// parse the spawnargs from this entity def for LOD data, and ignore any hide_probability:
-	SeedClass.m_LODHandle = ParseLODSpawnargs( dict, 1.0f );
+	SeedClass.m_LODHandle = m_LodComponent.ParseLODSpawnargs( this, dict, 1.0f );
 	SeedClass.materials.Clear();
 
 	// The default probability for all materials not matching anything in materials:
@@ -3349,14 +3353,14 @@ void Seed::CombineEntities( void )
 		ofs.angles = m_Entities[i].angles;
 
 		// compute the alpha value and the LOD level
-		m_LODLevel = 0;
+		m_LodComponent.SetLodLevel(0);
 		if (entityClass->m_LODHandle)
 		{
 			const lod_data_t *class_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( entityClass->m_LODHandle );
-			ThinkAboutLOD( class_LOD, GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
+			m_LodComponent.ThinkAboutLOD( class_LOD, m_LodComponent.GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
 		}
 		// 0 => default model, 1 => first stage etc
-		ofs.lod	   = m_LODLevel + 1;
+		ofs.lod	   = m_LodComponent.GetLodLevel(); + 1;
 //		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.", GetName(), ofs.lod );
 		// TODO: pack in the correct alpha value
 		ofs.color  = m_Entities[i].color;
@@ -3364,7 +3368,7 @@ void Seed::CombineEntities( void )
 		ofs.flags  = 0;
 
 		// restore our value (it is not used, anyway)
-		m_LODLevel = 0;
+		m_LodComponent.SetLodLevel(0);
 
 		sortOfs.ofs = ofs; sortOfs.entity = i; sortedOffsets.Append (sortOfs);
 
@@ -3429,21 +3433,21 @@ void Seed::CombineEntities( void )
 			ofs.angles = m_Entities[j].angles;
 
 			// compute the alpha value and the LOD level
-			m_LODLevel = 0;
+			m_LodComponent.SetLodLevel(0);
 			if (entityClass->m_LODHandle)
 			{
 				const lod_data_t *class_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( entityClass->m_LODHandle );
-				ThinkAboutLOD( class_LOD, GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
+				m_LodComponent.ThinkAboutLOD( class_LOD, m_LodComponent.GetLODDistance( class_LOD, playerPos, m_Entities[i].origin, entityClass->size, m_fLODBias ) );
 			}
 			// 0 => default model, 1 => level 0 etc.
-			ofs.lod		= m_LODLevel + 1;
+			ofs.lod		= m_LodComponent.GetLodLevel() + 1;
 //			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.", GetName(), ofs.lod, j );
 			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
 			ofs.scale  = m_Entities[j].scale;
 			ofs.flags  = 0;
 			// restore our value (it is not used, anyway)
-			m_LODLevel = 0;
+			m_LodComponent.SetLodLevel(0);
 
 			sortOfs.ofs = ofs; sortOfs.entity = j; sortedOffsets.Append (sortOfs);
 
@@ -4029,9 +4033,9 @@ void Seed::Think( void )
 	}
 
 	// Distance dependence checks
-	if( (gameLocal.time - m_DistCheckTimeStamp) > m_DistCheckInterval )
+	if( gameLocal.time >= m_DistCheckTimeStamp )
 	{
-		m_DistCheckTimeStamp = gameLocal.time;
+		m_DistCheckTimeStamp = gameLocal.time + m_DistCheckInterval;
 
 		// are we outside the player PVS?
 		if ( m_iThinkCounter < 20 &&
@@ -4071,11 +4075,11 @@ void Seed::Think( void )
 			if (lclass->m_LODHandle)
 			{
 				const lod_data_t* lod = gameLocal.m_ModelGenerator->GetLODDataPtr( lclass->m_LODHandle );
-		    	deltaSq = GetLODDistance( lod, playerPos, ent->origin, lclass->size, lodBias );
+		    	deltaSq = m_LodComponent.GetLODDistance( lod, playerPos, ent->origin, lclass->size, lodBias );
 			}
 			else
 			{
-		    	deltaSq = GetLODDistance( NULL, playerPos, ent->origin, lclass->size, lodBias );
+		    	deltaSq = m_LodComponent.GetLODDistance( NULL, playerPos, ent->origin, lclass->size, lodBias );
 			}
 
 //			gameLocal.Printf( "SEED %s: In LOD check: Flags for entity %i: 0x%08x, spawndist %i, deltaSq %i.\n", GetName(), i, ent->flags, (int)lclass->spawnDist, (int)deltaSq );

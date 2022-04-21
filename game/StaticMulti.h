@@ -125,6 +125,11 @@ private:
 	bool						m_bDistCheckXYOnly;
 
 	lod_handle					m_LODHandle;		//!< to retrieve the LOD Data from the ModelGenerator
+
+	//stgatilov: LOD properties which were moved from idEntity to LodComponent
+	//note: this component is not registered in LodSystem (whole SEED is a mess)
+	LodComponent		m_LodComponent;
+
 };
 
 #endif /* !__DARKMOD_STATICMULTI_H__ */

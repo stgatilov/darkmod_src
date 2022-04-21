@@ -244,14 +244,13 @@ typedef struct SAttachPosition_s
 class idEntity : public idClass {
 public:
 	static const int		MAX_PVS_AREAS = 4;
-	static const int		NOLOD = -100000;		// used to disable LOD temp. Must be smaller than 1000 * (distcheckperiod + 2)
-													// SteveL #3770: Moved from a #define in Entity.cpp as many classes now need to use it
 
 	int						entityNumber;			// index into the entity list
 	int						entityDefNumber;		// index into the entity def list
 
 	idLinkList<idEntity>	spawnNode;				// for being linked into spawnedEntities list
 	int						activeIdx;				// for being linked into activeEntities list
+	int						lodIdx;					// for being linked into lodSystem
 
 	idLinkList<idEntity>	snapshotNode;			// for being linked into snapshotEntities list
 	int						snapshotSequence;		// last snapshot this entity was in
@@ -426,49 +425,6 @@ public:
 
 	bool					m_isFlinder;	// grayman #4230
 
-	/**
-	* Tels: Contains handle to (sharable, constant) LOD data if != 0.
-	*/
-	lod_handle				m_LODHandle;
-
-	/**
-	* Tels: Info for LOD, per entity. used if m_LODHandle != 0:
-	* Timestamp for next LOD think. If negative, LOD thinking is
-	* temp. disabled.
-	**/
-	int						m_DistCheckTimeStamp;
-
-	/**
-	* Current LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden). For entities
-	* hidden by MinLODBias/MaxLODBias, is -1 to mark it as hidden.
-	**/
-	int						m_LODLevel;
-
-	/* Store the current model and skin to avoid flicker by not
-	*  switching from one model/skin to the same model/skin when
-	*  changing the LOD.
-	*/
-	int						m_ModelLODCur;
-	int						m_SkinLODCur;
-	// stgatilov: store currently applied offset_lod so that we can reverse it
-	// even if m_LODHandle is removed due to hot-reload map editing.
-	idVec3					m_OffsetLODCur;
-
-	/* Each entity is hidden (and stops thinking) when tdm_lod_bias
-	*  is between m_MinLODBias and m_MaxLODBias. Thus entities can
-	*  be removed for slower machines without having the full LOD
-	*  system active for this entity.
-	*/
-	float					m_MinLODBias;
-	float					m_MaxLODBias;
-
-	/* If "lod_hidden_skin" is set, use this to switch the skin instead
-	*  of hiding the entity. mVisibleSkin stores the skin when the entity
-	*  was visible, so we can restore it when the menu setting changes.
-	*/
-	idStr					m_HiddenSkin;
-	idStr					m_VisibleSkin;
-
 	/* grayman #597 - hide until this timer expires. For
 	*  hiding arrows when they're first nocked.
 	*/
@@ -520,27 +476,12 @@ public:
 	*/
 	virtual void			LoadModels( void );
 
-	/**
-	* Parse the LOD spawnargs and returns 0 if the entity has no LOD (or hide_distance),
-    * otherwise returns a handle registered with ModelGenerator::RegisterLODData();
-	*/
-	lod_handle				ParseLODSpawnargs( const idDict* dict, const float fRandom);
+	// SteveL #3770: Handle changes of model due to LOD in a separate virtual function so that 
+	// SwitchLOD() can be used by all, while applying different methods for different animated classes.
+	// All class-specific LOD logic goes in here.
+	virtual void			SwapLODModel( const char *modelname );
 
-	/**
-	 * Tels: Stop LOD changes permanently. If doTeam is true, also disables it on teammembers.
-	 */
-	void					StopLOD( const bool doTeam);
-
-	/**
-	 * Tels: Hide the entity if tdm_lod_bias is outside MinLODBias .. MaxLODBias.
-	*/
-	void					Event_HideByLODBias( void );
-
-	/**
-	 * Tels: Stop LOD changes temporarily. If doTeam is true, also disables it on teammembers.
-	 */
-	void					DisableLOD( const bool doTeam );
-	void					EnableLOD( const bool doTeam );
+	bool					HasLod( void ) const { return lodIdx >= 0; }
 
 	void					Save( idSaveGame *savefile ) const;
 	void					Restore( idRestoreGame *savefile );
@@ -568,35 +509,10 @@ public:
 	// thinking
 	virtual void			Think( void );
 
-	// Tels: If LOD is enabled on this entity, compute new LOD level and new alpha value.
-	// We pass in a pointer to the data (so the LODE can use shared data) as well as the distance,
-	// so the lode can pre-compute the distance.
-	virtual float			ThinkAboutLOD( const lod_data_t* lod_data, const float deltaSq );
-
-	// Tels: Returns the distance that should be considered for LOD and hiding, depending on:
-	//	* the distance of the origin to the given player origin
-	//	* the lod-bias set in the menu
-	//	* some minimum and maximum distances based on entity size/importance
-	// The returned value is the actual distance squared, and rounded down to an integer.
-	float					GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOrigin, const idVec3 &entOrigin, const idVec3 &entSize, const float lod_bias ) const;
-
-	// Tels: If LOD is enabled on this entity, call ThinkAboutLOD, computing new LOD level and new
-	// alpha value, then do the right things like Hide/Show, SetAlpha, switch models/skin etc.
-	// We pass in a pointer to the data (so LOD can use shared data) as well as the distance,
-	// so the distance can be pre-computed.
-	// SteveL #3770: Params removed. They are now determined in SwitchLOD itself to avoid code repetition
-	// as multiple classes now use LOD.
-	virtual	bool			SwitchLOD();
-	
-	// SteveL #3770: Handle changes of model due to LOD in a separate virtual function so that 
-	// SwitchLOD() can be used by all, while applying different methods for different animated classes.
-	// All class-specific LOD logic goes in here.
-	virtual void			SwapLODModel( const char *modelname );
-
 	bool					CheckDormant( void );	//!< dormant == on the active list, but out of PVS
 	virtual	void			DormantBegin( void );	//!< called when entity becomes dormant
 	virtual	void			DormantEnd( void );		//!< called when entity wakes from being dormant
-	bool					IsActive( void ) const;
+	bool					IsActive( void ) const { return activeIdx >= 0; }
 	void					BecomeActive( int flags );
 	void					BecomeInactive( int flags );
 	void					BecomeBroken( idEntity *activator );	//!< Entity breaks up

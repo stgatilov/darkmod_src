@@ -1374,7 +1374,7 @@ bool CGrabber::PutInHandsAtPoint(idEntity *ent, idVec3 point, idMat3 axis, int b
 
 	ent->SetOrigin( orig );
 	// Tels: re-enable LOD here, including all possible attachments
-	ent->EnableLOD( true ) ;
+	LodComponent::EnableLOD( ent, true ) ;
 	ent->Show();
 
 	StartDrag( m_player.GetEntity(), ent, bodyID );
@@ -1851,7 +1851,7 @@ void CGrabber::ShoulderBody( idAFEntity_Base *body )
 	body->GetPhysics()->PutToRest();
 	body->GetPhysics()->UnlinkClip();
 	// Tels: fix #2826 by stopping LOD temporarily on shouldered bodies, including any attachements
-	body->DisableLOD( true );
+	LodComponent::DisableLOD( body, true );
 	body->Hide();
 
 	// greebo: prevent this entity from stimming while shouldered
@@ -1880,7 +1880,7 @@ void CGrabber::UnShoulderBody( idEntity *body )
 	player->OnStopShoulderingBody(body);
 
 	// Tels: #2826: Enable LOD again, including attachements
-	body->EnableLOD( true );
+	LodComponent::EnableLOD( body, true );
 
 	// Allow the body to stim again after dropping it
 	gameLocal.LinkStimEntity(body);

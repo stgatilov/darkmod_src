@@ -115,6 +115,7 @@ void gameError( const char *fmt, ... );
 #include "ModelGenerator.h"
 #include "LightController.h"
 #include "ModMenu.h"
+#include "LodComponent.h"
 
 #ifdef __linux__
 #include "../renderer/RenderWorld.h"
@@ -434,6 +435,7 @@ public:
 	idLinkList<idEntity>	spawnedEntities;		// all spawned entities
 	idEntityList			activeEntities;			// all thinking entities (idEntity::thinkFlags != 0)
 	idLinkList<idAI>		spawnedAI;				// greebo: all spawned AI
+	LodSystem				lodSystem;				// container for all entities with LOD
 	int						numEntitiesToDeactivate;// number of entities that became inactive in current frame
 	idDict					persistentLevelInfo;	// contains args that are kept around between levels
 

@@ -411,9 +411,14 @@ private:
 
 	/**
 	* Timestamp and interval between distance checks, in milliseconds
+	* stgatilov: timestamp is for the !next! think
 	**/
 	int					m_DistCheckTimeStamp;
 	int					m_DistCheckInterval;
+
+	//stgatilov: LOD properties which were moved from idEntity to LodComponent
+	//note: this component is not registered in LodSystem (whole SEED is a mess)
+	LodComponent		m_LodComponent;
 
 	/**
 	* The classes of entities that we need to construct.

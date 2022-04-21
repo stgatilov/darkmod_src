@@ -2700,11 +2700,6 @@ void idAI::Think( void )
 	}
 	UpdateParticles();
 
-	if ( m_LODHandle && m_DistCheckTimeStamp > NOLOD ) // SteveL #3770
-	{
-		SwitchLOD();
-	}
-
 	if (!cv_ai_opt_nopresent.GetBool())
 	{
 		Present();

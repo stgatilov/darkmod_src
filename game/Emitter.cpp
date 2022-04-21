@@ -47,8 +47,6 @@ idFuncEmitter::idFuncEmitter
 idFuncEmitter::idFuncEmitter( void ) {
 	
 	hidden = false;
-	m_LODHandle = 0;
-
 	m_models.Clear();
 }
 

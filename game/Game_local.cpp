@@ -890,6 +890,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteObject( activeList[i] );
 	}
 
+	lodSystem.Save( savegame );
+
 	// tels: save the list of music speakers
 	savegame.WriteInt( musicSpeakers.Num() );
 	for( i = 0; i < musicSpeakers.Num(); i++ ) {
@@ -1453,6 +1455,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	spawnedEntities.Clear();
 	activeEntities.Clear();
 	spawnedAI.Clear();
+	lodSystem.Clear();
 	numEntitiesToDeactivate = 0;
 	lastGUIEnt = NULL;
 	lastGUI = 0;
@@ -2136,6 +2139,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		}
 	}
 	activeEntities.FromList( activeList );
+
+	lodSystem.Restore( savegame );
 
 	// tels: restore the list of music speakers
 	savegame.ReadInt( num );
@@ -3317,6 +3322,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 
 			// sort the active entity list
 			SortActiveEntityList();
+
+			// check and possibly switch LOD levels 
+			lodSystem.ThinkAllLod();
 
 			timer_think.Clear();
 			timer_think.Start();

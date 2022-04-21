@@ -373,6 +373,7 @@
     <ClInclude Include="game\LightGem.h" />
     <ClInclude Include="game\Liquid.h" />
     <ClInclude Include="game\Listener.h" />
+    <ClInclude Include="game\LodComponent.h" />
     <ClInclude Include="game\MatrixSq.h" />
     <ClInclude Include="game\MeleeWeapon.h" />
     <ClInclude Include="game\Misc.h" />
@@ -1009,6 +1010,7 @@
     <ClCompile Include="game\LightGem.cpp" />
     <ClCompile Include="game\Liquid.cpp" />
     <ClCompile Include="game\Listener.cpp" />
+    <ClCompile Include="game\LodComponent.cpp" />
     <ClCompile Include="game\MeleeWeapon.cpp" />
     <ClCompile Include="game\Misc.cpp" />
     <ClCompile Include="game\Missions\Download.cpp" />
