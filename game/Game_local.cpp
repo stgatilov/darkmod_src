@@ -6759,68 +6759,33 @@ int idGameLocal::sortSpawnPoints( const void *ptr1, const void *ptr2 ) {
 /*
 ===========
 idGameLocal::SelectInitialSpawnPoint
-spectators are spawned randomly anywhere
-in-game clients are spawned based on distance to active players (randomized on the first half)
-upon map restart, initial spawns are used (randomized ordered list of spawns flagged "initial")
-  if there are more players than initial spots, overflow to regular spawning
 ============
 */
 idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
-	int				i, which;
 	spawnSpot_t		spot;
 	idVec3			pos;
-	bool			alone;
 
+	// grayman #2933 - Did the player specify
+	// a starting point in the briefing?
+
+	bool foundSpot = false;
+	spot.ent = NULL;
+	if ( m_StartPosition != NULL && m_StartPosition[0] != '\0' )
 	{
-		// grayman #2933 - Did the player specify
-		// a starting point in the briefing?
-
-		bool foundSpot = false;
-		spot.ent = NULL;
-		if ( m_StartPosition != NULL && m_StartPosition[0] != '\0' )
+		spot.ent = FindEntity( m_StartPosition );
+		if ( spot.ent != NULL )
 		{
-			spot.ent = FindEntity( m_StartPosition );
-			if ( spot.ent != NULL )
-			{
-				foundSpot = true;
-			}
+			foundSpot = true;
 		}
-		
-		if ( !foundSpot )
-		{
-			spot.ent = FindEntityUsingDef( NULL, "info_player_start" );
-			if ( !spot.ent )
-			{
-				Error( "No info_player_start on map.\n" );
-			}
-		}
-		return spot.ent;
 	}
-	if ( player->spectating ) {
-		// plain random spot, don't bother
-		return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
-	} else if ( player->useInitialSpawns && currentInitialSpot < initialSpots.Num() ) {
-		return initialSpots[ currentInitialSpot++ ];
-	} else {
-		// check if we are alone in map
-		alone = true;
-		if ( alone ) {
-			// don't do distance-based
-			return spawnSpots[ random.RandomInt( spawnSpots.Num() ) ].ent;
+	
+	if ( !foundSpot )
+	{
+		spot.ent = FindEntityUsingDef( NULL, "info_player_start" );
+		if ( !spot.ent )
+		{
+			Error( "No info_player_start on map.\n" );
 		}
-
-		// find the distance to the closest active player for each spawn spot
-		for( i = 0; i < spawnSpots.Num(); i++ ) {
-			pos = spawnSpots[ i ].ent->GetPhysics()->GetOrigin();
-			spawnSpots[ i ].dist = 0x7fffffff;
-		}
-
-		// sort the list
-		qsort( ( void * )spawnSpots.Ptr(), spawnSpots.Num(), sizeof( spawnSpot_t ), ( int (*)(const void *, const void *) )sortSpawnPoints );
-
-		// choose a random one in the top half
-		which = random.RandomInt( spawnSpots.Num() / 2 );
-		spot = spawnSpots[ which ];
 	}
 	return spot.ent;
 }

@@ -1000,10 +1000,6 @@ private:
 	//int						clientPVS[ENTITY_PVS_SIZE];
 
 
-	idStaticList<spawnSpot_t, MAX_GENTITIES> spawnSpots;
-	idStaticList<idEntity *, MAX_GENTITIES> initialSpots;
-	int						currentInitialSpot;
-
 	idDict					newInfo;
 
 	idStrList				shakeSounds;
