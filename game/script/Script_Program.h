@@ -428,11 +428,10 @@ private:
 	idStr 										filename;
 	int											filenum;
 
-	unsigned int									numVariables;
-	byte										variables[ MAX_GLOBALS ];
-	idStaticList<byte,MAX_GLOBALS>				variableDefaults;
-	idStaticList<function_t,MAX_FUNCS>			functions;
-	idStaticList<statement_t,MAX_STATEMENTS>	statements;
+	idList<byte>								variables;
+	idList<byte>								variableDefaults;
+	idList<function_t>							functions;
+	idList<statement_t>							statements;
 	idList<idTypeDef *>							types;
 	idList<idVarDefName *>						varDefNames;
 	idHashIndex									varDefNameHash;

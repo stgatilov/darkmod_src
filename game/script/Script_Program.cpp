@@ -1237,15 +1237,16 @@ reserves memory for global variables and returns the starting pointer
 ==============
 */
 byte *idProgram::ReserveMem(int size) {
-    byte *res = &variables[numVariables];
-    numVariables += size;
-    if (numVariables > sizeof(variables)) {
-        throw idCompileError(va("Exceeded global memory size (%d bytes)", sizeof(variables)));
-    }
+	byte *res = variables.end();
 
-    memset(res, 0, size);
+	int newSize = variables.Num() + size;
+	if (newSize > variables.NumAllocated()) {
+		throw idCompileError(va("Exceeded global memory size (%d bytes)", variables.NumAllocated()));
+	}
+	variables.SetNum(newSize, false);
 
-    return res;
+	memset(res, 0, size);
+	return res;
 }
 
 /*
@@ -1598,12 +1599,12 @@ idProgram::AllocFunction
 ================
 */
 function_t &idProgram::AllocFunction( idVarDef *def ) {
-	if ( functions.Num() >= functions.Max() ) {
-		throw idCompileError( va( "Exceeded maximum allowed number of functions (%d)", functions.Max() ) );
+	if ( functions.Num() >= functions.NumAllocated() ) {
+		throw idCompileError( va( "Exceeded maximum allowed number of functions (%d)", functions.NumAllocated() ) );
 	}
 
 	// fill in the dfunction
-	function_t &func	= *functions.Alloc();
+	function_t &func	= functions.Alloc();
 	func.eventdef		= NULL;
 	func.def			= def;
 	func.type			= def->TypeDef();
@@ -1648,10 +1649,10 @@ idProgram::AllocStatement
 ================
 */
 statement_t *idProgram::AllocStatement( void ) {
-	if ( statements.Num() >= statements.Max() ) {
-		throw idCompileError( va( "Exceeded maximum allowed number of statements (%d)", statements.Max() ) );
+	if ( statements.Num() >= statements.NumAllocated() ) {
+		throw idCompileError( va( "Exceeded maximum allowed number of statements (%d)", statements.NumAllocated() ) );
 	}
-	return statements.Alloc();
+	return &statements.Alloc();
 }
 
 /*
@@ -1765,20 +1766,14 @@ Called after all files are compiled to check for errors
 ==============
 */
 void idProgram::FinishCompilation( void ) {
-	unsigned int	i;
-
 	top_functions	= functions.Num();
 	top_statements	= statements.Num();
 	top_types		= types.Num();
 	top_defs		= varDefs.Num();
 	top_files		= fileList.Num();
 
-	variableDefaults.Clear();
-	variableDefaults.SetNum( numVariables );
-
-	for( i = 0; i < numVariables; i++ ) {
-		variableDefaults[ i ] = variables[ i ];
-	}
+	variableDefaults.SetNum(variables.Num(), false);
+	memcpy(variableDefaults.Ptr(), variables.Ptr(), variables.Num());
 }
 
 /*
@@ -1822,13 +1817,13 @@ void idProgram::CompileStats( void ) {
 
 	memused += static_cast<unsigned int>(statements.MemoryUsed());
 	memused += static_cast<unsigned int>(functions.MemoryUsed());	// name and filename of functions are shared, so no need to include them
-	memused += sizeof( variables );
+	memused += static_cast<unsigned int>(variables.MemoryUsed());
 
 	gameLocal.Printf( "\nMemory usage:\n" );
 	gameLocal.Printf( "     Strings: %d, %u bytes\n", fileList.Num(), stringspace );
 	gameLocal.Printf( "  Statements: %d, %u bytes\n", statements.Num(), static_cast<unsigned int>(statements.MemoryUsed()) );
 	gameLocal.Printf( "   Functions: %d, %u bytes\n", functions.Num(), funcMem );
-	gameLocal.Printf( "   Variables: %u bytes\n", numVariables );
+	gameLocal.Printf( "   Variables: %d bytes\n", variables.Num() );
 	gameLocal.Printf( "    Mem used: %u bytes\n", memused );
 	gameLocal.Printf( " Static data: %u bytes\n", static_cast<unsigned int>(sizeof( idProgram )) );
 	gameLocal.Printf( "   Allocated: %u bytes\n", memallocated );
@@ -1949,8 +1944,9 @@ void idProgram::FreeData( void ) {
 
 	filenum = 0;
 
-	numVariables = 0;
-	memset( variables, 0, sizeof( variables ) );
+	variables.Clear();
+	assert(variables.NumAllocated() == MAX_GLOBALS);
+	variableDefaults.Clear();
 
 	// clear all the strings in the functions so that it doesn't look like we're leaking memory.
 	for( i = 0; i < functions.Num(); i++ ) {
@@ -1961,6 +1957,8 @@ void idProgram::FreeData( void ) {
 	fileList.ClearFree();
 	statements.Clear();
 	functions.Clear();
+	assert(statements.NumAllocated() == MAX_STATEMENTS);
+	assert(functions.NumAllocated() == MAX_FUNCS);
 
 	top_functions	= 0;
 	top_statements	= 0;
@@ -2138,8 +2136,8 @@ void idProgram::Save( idSaveGame *savefile ) const {
 	// Mark the end of the diff with default variables with -1
 	savefile->WriteInt( -1 );
 
-	savefile->WriteInt( numVariables );
-	for (unsigned int i = variableDefaults.Num(); i < numVariables; i++ ) {
+	savefile->WriteInt( variables.Num() );
+	for (int i = variableDefaults.Num(); i < variables.Num(); i++ ) {
 		savefile->WriteByte( variables[i] );
 	}
 
@@ -2268,17 +2266,18 @@ void idProgram::Restart( void ) {
 	for( i = top_functions; i < functions.Num(); i++ ) {
 		functions[ i ].Clear();
 	}
-	functions.SetNum( top_functions	);
+	functions.SetNum( top_functions, false);
+	statements.SetNum( top_statements, false );
+	assert(functions.NumAllocated() == MAX_FUNCS);
+	assert(statements.NumAllocated() == MAX_STATEMENTS);
 
-	statements.SetNum( top_statements );
 	fileList.SetNum( top_files, false );
 	filename.Clear();
 	
 	// reset the variables to their default values
-	numVariables = variableDefaults.Num();
-	for(unsigned int i = 0; i < numVariables; i++ ) {
-		variables[ i ] = variableDefaults[ i ];
-	}
+	variables.SetNum(variableDefaults.Num(), false);
+	assert(variables.NumAllocated() == MAX_GLOBALS);
+	memcpy(variables.Ptr(), variableDefaults.Ptr(), variables.Num());
 }
 
 /*
@@ -2312,6 +2311,9 @@ idProgram::idProgram
 ================
 */
 idProgram::idProgram() {
+	variables.Reserve(MAX_GLOBALS);
+	statements.Reserve(MAX_STATEMENTS);
+	functions.Reserve(MAX_FUNCS);
 	FreeData();
 }
 
