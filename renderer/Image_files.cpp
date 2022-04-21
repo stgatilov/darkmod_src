@@ -476,6 +476,116 @@ static void jpg_error_exit(j_common_ptr cinfo) {
 	longjmp(myerr->setjmp_buffer, 1);
 }
 
+struct StaticInit {
+	#define MBR(name) \
+		fprintf(f, "%3zx + %3zx [%2zx]: %s\n", \
+			offsetof(jpeg_decompress_struct, name), \
+			sizeof(jpeg_decompress_struct::name), \
+			alignof(decltype(jpeg_decompress_struct::name)), \
+			#name \
+		); \
+
+	StaticInit() {
+		FILE *f = fopen("jpeg_decompress_struct.txt", "w");
+		MBR(err);
+		MBR(mem);
+		MBR(progress);
+		MBR(client_data);
+		MBR(is_decompressor);
+		MBR(global_state);
+		MBR(src);
+		MBR(image_width);
+		MBR(image_height);
+		MBR(num_components);
+		MBR(jpeg_color_space);
+		MBR(out_color_space);
+		MBR(scale_num);
+		MBR(scale_denom);
+		MBR(output_gamma);
+		MBR(buffered_image);
+		MBR(raw_data_out);
+		MBR(dct_method);
+		MBR(do_fancy_upsampling);
+		MBR(do_block_smoothing);
+		MBR(quantize_colors);
+		MBR(dither_mode);
+		MBR(two_pass_quantize);
+		MBR(desired_number_of_colors);
+		MBR(enable_1pass_quant);
+		MBR(enable_external_quant);
+		MBR(enable_2pass_quant);
+		MBR(output_width);
+		MBR(output_height);
+		MBR(out_color_components);
+		MBR(output_components);
+		MBR(rec_outbuf_height);
+		MBR(actual_number_of_colors);
+		MBR(colormap);
+		MBR(output_scanline);
+		MBR(input_scan_number);
+		MBR(input_iMCU_row);
+		MBR(output_scan_number);
+		MBR(output_iMCU_row);
+		MBR(coef_bits);
+		MBR(quant_tbl_ptrs);
+		MBR(dc_huff_tbl_ptrs);
+		MBR(ac_huff_tbl_ptrs);
+		MBR(data_precision);
+		MBR(comp_info);
+		MBR(is_baseline);
+		MBR(progressive_mode);
+		MBR(arith_code);
+		MBR(arith_dc_L);
+		MBR(arith_dc_U);
+		MBR(arith_ac_K);
+		MBR(restart_interval);
+		MBR(saw_JFIF_marker);
+		MBR(JFIF_major_version);
+		MBR(JFIF_minor_version);
+		MBR(density_unit);
+		MBR(X_density);
+		MBR(Y_density);
+		MBR(saw_Adobe_marker);
+		MBR(Adobe_transform);
+		MBR(color_transform);
+		MBR(CCIR601_sampling);
+		MBR(marker_list);
+		MBR(max_h_samp_factor);
+		MBR(max_v_samp_factor);
+		MBR(min_DCT_h_scaled_size);
+		MBR(min_DCT_v_scaled_size);
+		MBR(total_iMCU_rows);
+		MBR(sample_range_limit);
+		MBR(comps_in_scan);
+		MBR(cur_comp_info);
+		MBR(MCUs_per_row);
+		MBR(MCU_rows_in_scan);
+		MBR(blocks_in_MCU);
+		MBR(MCU_membership);
+		MBR(Ss);
+		MBR(Se);
+		MBR(Ah);
+		MBR(Al);
+		MBR(block_size);
+		MBR(natural_order);
+		MBR(lim_Se);
+		MBR(unread_marker);
+		MBR(master);
+		MBR(main);
+		MBR(coef);
+		MBR(post);
+		MBR(inputctl);
+		MBR(marker);
+		MBR(entropy);
+		MBR(idct);
+		MBR(upsample);
+		MBR(cconvert);
+		MBR(cquantize);
+		fprintf(f, "%3zx [%2zx]\n", sizeof(jpeg_decompress_struct), alignof(jpeg_decompress_struct));
+		fclose(f);
+	}
+} qq;
+
 /*
 =============
 idImageReader::LoadJPG
