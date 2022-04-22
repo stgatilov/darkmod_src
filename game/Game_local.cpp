@@ -884,11 +884,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteObject( ent );
 	}
 
-	const idList<idEntity*> &activeList = activeEntities.ToList();
-	savegame.WriteInt( activeList.Num() );
-	for (int i = 0; i < activeList.Num(); i++ ) {
-		savegame.WriteObject( activeList[i] );
-	}
+	activeEntities.Save( savegame );
 
 	lodSystem.Save( savegame );
 
@@ -2129,16 +2125,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		}
 	}
 
-	savegame.ReadInt( num );
-	idList<idEntity*> activeList;
-	for( i = 0; i < num; i++ ) {
-		savegame.ReadObject( reinterpret_cast<idClass *&>( ent ) );
-		assert( ent );
-		if ( ent ) {
-			activeList.AddGrow( ent );
-		}
-	}
-	activeEntities.FromList( activeList );
+	activeEntities.Restore( savegame );
 
 	lodSystem.Restore( savegame );
 

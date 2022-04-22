@@ -15,25 +15,24 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __GAME_ENTITY_LIST_H__
 #define __GAME_ENTITY_LIST_H__
 
-#include "Entity.h"
 
 // stgatilov: dynamic list of entities
 // mainly used for storing the sequence of all "active" entities
-class idEntityList {
+template<class Entity> class idEntityList {
 	// this member of idEntity contains index into currList where it is located
-	int idEntity::*idxMember;
+	int Entity::*idxMember;
 	// currently used list of entities, possibly with NULLs
-	idList<idEntity*> order;
+	idList<Entity*> order;
 
 public:
-	idEntityList(int idEntity::*idxMember);
+	idEntityList(int Entity::*idxMember);
 	~idEntityList();
 
 	void Clear();
 
 	struct Iterator {
 		int pos;
-		idEntity *entity;
+		Entity *entity;
 
 		ID_FORCE_INLINE explicit operator bool() const { return entity != nullptr; }
 	};
@@ -49,19 +48,23 @@ public:
 				iter.entity = nullptr;
 				break;
 			}
-			if (idEntity* ent = order[iter.pos]) {
+			if (Entity* ent = order[iter.pos]) {
 				iter.entity = ent;
 				break;
 			}
 		}
 	}
 
-	void AddToEnd(idEntity *ent);
-	bool Remove(idEntity *ent);
+	void AddToEnd(Entity *ent);
+	bool Remove(Entity *ent);
 
 	// warning: modifies internal members, don't use while iterating!
-	const idList<idEntity*> &ToList();
-	void FromList(idList<idEntity*> &arr);
+	const idList<Entity*> &ToList();
+	void FromList(idList<Entity*> &arr);
+
+	// note: alive elements are saved as entity indices
+	void Save(idSaveGame &savegame);
+	void Restore(idRestoreGame &savegame);
 };
 
 #endif

@@ -17,25 +17,25 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "EntityList.h"
 #include "Entity.h"
 
-idEntityList::idEntityList(int idEntity::*idxMember) : idxMember(idxMember) {}
-idEntityList::~idEntityList() {
+template<class Entity> idEntityList<Entity>::idEntityList(int Entity::*idxMember) : idxMember(idxMember) {}
+template<class Entity> idEntityList<Entity>::~idEntityList() {
 	Clear();
 }
 
-void idEntityList::Clear() {
+template<class Entity> void idEntityList<Entity>::Clear() {
 	for (int i = 0; i < order.Num(); i++)
 		if (order[i])
 			order[i]->*idxMember = -1;
 	order.Clear();
 }
 
-void idEntityList::AddToEnd(idEntity *ent) {
+template<class Entity> void idEntityList<Entity>::AddToEnd(Entity *ent) {
 	assert(!order.Find(ent));
 	int idx = order.Append(ent);
 	ent->*idxMember = idx;
 }
 
-bool idEntityList::Remove(idEntity *ent) {
+template<class Entity> bool idEntityList<Entity>::Remove(Entity *ent) {
 	int idx = ent->*idxMember;
 	if (idx < 0) {
 		assert(!order.Find(ent));
@@ -47,7 +47,7 @@ bool idEntityList::Remove(idEntity *ent) {
 	return true;
 }
 
-const idList<idEntity*> &idEntityList::ToList() {
+template<class Entity> const idList<Entity*> &idEntityList<Entity>::ToList() {
 	int k = 0;
 	for (int i = 0; i < order.Num(); i++)
 		if (order[i])
@@ -59,9 +59,35 @@ const idList<idEntity*> &idEntityList::ToList() {
 
 	return order;
 }
-void idEntityList::FromList(idList<idEntity*> &arr) {
+template<class Entity> void idEntityList<Entity>::FromList(idList<Entity*> &arr) {
 	Clear();
 	order.Swap(arr);
 	for (int i = 0; i < order.Num(); i++)
 		order[i]->*idxMember = i;
 }
+
+template<class Entity> void idEntityList<Entity>::Save(idSaveGame &savegame) {
+	const idList<Entity*> &arr = ToList();
+	savegame.WriteInt( arr.Num() );
+	for (int i = 0; i < arr.Num(); i++ ) {
+		savegame.WriteObject( arr[i] );
+	}
+}
+template<class Entity> void idEntityList<Entity>::Restore(idRestoreGame &savegame) {
+	int num;
+	savegame.ReadInt( num );
+	idList<Entity*> arr;
+	for( int i = 0; i < num; i++ ) {
+		Entity *ent;
+		savegame.ReadObject( reinterpret_cast<idClass *&>( ent ) );
+		assert( ent );
+		if ( ent ) {
+			arr.AddGrow( ent );
+		}
+	}
+	FromList( arr );
+}
+
+//list of template instantiations used
+template class idEntityList<idEntity>;
+template class idEntityList<idLight>;

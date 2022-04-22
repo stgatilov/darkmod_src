@@ -414,6 +414,7 @@ struct SuspiciousEvent
 };
 
 #include "SearchManager.h" // grayman #3857 - must follow the definition of "EventType"
+#include "Entity.h"
 #include "EntityList.h"
 
 class idDeclEntityDef;
@@ -433,7 +434,7 @@ public:
 	idHashIndex				entityHash;				// hash table to quickly find entities by name
 	idWorldspawn *			world;					// world entity
 	idLinkList<idEntity>	spawnedEntities;		// all spawned entities
-	idEntityList			activeEntities;			// all thinking entities (idEntity::thinkFlags != 0)
+	idEntityList<idEntity>	activeEntities;			// all thinking entities (idEntity::thinkFlags != 0)
 	idLinkList<idAI>		spawnedAI;				// greebo: all spawned AI
 	LodSystem				lodSystem;				// container for all entities with LOD
 	int						numEntitiesToDeactivate;// number of entities that became inactive in current frame
