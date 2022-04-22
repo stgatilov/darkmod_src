@@ -11239,9 +11239,9 @@ idActor* idAI::FindEnemyAI(bool useFOV)
 	float bestDist = idMath::INFINITY;
 	idActor* bestEnemy = NULL;
 
-	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); )
+	for ( auto iter = gameLocal.activeEntities.Begin(); iter; gameLocal.activeEntities.Next(iter) )
 	{
-		idEntity *ent = gameLocal.activeEntities.Get(iter);
+		idEntity *ent = iter.entity;
 
 		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || ent->fl.invisible || !ent->IsType( idActor::Type ) ) // grayman #3857 - also use 'invisible'
 		{
@@ -11280,9 +11280,9 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 	pvsHandle_t pvs(gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas()));
 
 	// Iterate through all active entities and find an AI with the given team.
-	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); )
+	for ( auto iter = gameLocal.activeEntities.Begin(); iter; gameLocal.activeEntities.Next(iter) )
 	{
-		idEntity *ent = gameLocal.activeEntities.Get(iter);
+		idEntity *ent = iter.entity;
 		if ( ent == this || ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) ) {
 			continue;
 		}
@@ -11496,9 +11496,9 @@ idActor *idAI::FindNearestEnemy( bool useFOV )
 	bestDist = idMath::INFINITY;
 	bestEnemy = NULL;
 
-	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); )
+	for ( auto iter = gameLocal.activeEntities.Begin(); iter; gameLocal.activeEntities.Next(iter) )
 	{
-		idEntity *ent = gameLocal.activeEntities.Get(iter);
+		idEntity *ent = iter.entity;
 		if ( ent->fl.hidden || ent->fl.isDormant || !ent->IsType( idActor::Type ) )
 		{
 			continue;

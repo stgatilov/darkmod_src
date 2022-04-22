@@ -3148,8 +3148,8 @@ void idGameLocal::SortActiveEntityList( void ) {
 
 	static idList<idEntity*> buckets[6];
 
-	for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
-		ent = activeEntities.Get(iter);
+	for ( auto iter = activeEntities.Begin(); iter; activeEntities.Next(iter) ) {
+		ent = iter.entity;
 		master = ent->GetTeamMaster();
 
 		bool isTeamMaster = ( master && master == ent );
@@ -3333,8 +3333,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 				TRACE_CPU_SCOPE( "ThinkAllEntities" )
 				num = 0;
 				bool timeentities = (g_timeentities.GetFloat() > 0.0);
-				for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
-					ent = activeEntities.Get(iter);
+				for ( auto iter = activeEntities.Begin(); iter; activeEntities.Next(iter) ) {
+					ent = iter.entity;
 					if ( inCinematic && g_cinematic.GetBool() && !ent->cinematic ) {
 						ent->GetPhysics()->UpdateTime( time );
 						// grayman #2654 - update m_lastThinkTime to keep non-cinematic AI from dying at CrashLand()
@@ -3370,8 +3370,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			if ( numEntitiesToDeactivate ) {
 				TRACE_CPU_SCOPE( "DeactivateEntities" )
 				int c = 0;
-				for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
-					ent = activeEntities.Get(iter);
+				for ( auto iter = activeEntities.Begin(); iter; activeEntities.Next(iter) ) {
+					ent = iter.entity;
 					if ( !ent->thinkFlags ) {
 						activeEntities.Remove( ent );
 						c++;
@@ -5028,8 +5028,8 @@ void idGameLocal::RunDebugInfo( void ) {
 
 	// debug tool to draw bounding boxes around active entities
 	if ( g_showActiveEntities.GetBool() ) {
-		for ( auto iter = activeEntities.Iterate(); activeEntities.Next(iter); ) {
-			ent = activeEntities.Get(iter);
+		for ( auto iter = activeEntities.Begin(); iter; activeEntities.Next(iter) ) {
+			ent = iter.entity;
 			idBounds	b = ent->GetPhysics()->GetBounds();
 			if ( b.GetVolume() <= 0 ) {
 				b[0][0] = b[0][1] = b[0][2] = -8;

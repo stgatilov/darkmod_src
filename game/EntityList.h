@@ -33,21 +33,27 @@ public:
 
 	struct Iterator {
 		int pos;
+		idEntity *entity;
+
+		ID_FORCE_INLINE explicit operator bool() const { return entity != nullptr; }
 	};
-	ID_FORCE_INLINE Iterator Iterate() const {
-		return Iterator{-1};
+	ID_FORCE_INLINE Iterator Begin() const {
+		Iterator iter = {-1, NULL};
+		Next(iter);
+		return iter;
 	}
-	ID_FORCE_INLINE idEntity *Next(Iterator &iter) const {
+	ID_FORCE_INLINE void Next(Iterator &iter) const {
 		while (1) {
 			++iter.pos;
-			if (iter.pos >= order.Num())
-				return nullptr;
-			if (idEntity* ent = order[iter.pos])
-				return ent;
+			if (iter.pos >= order.Num()) {
+				iter.entity = nullptr;
+				break;
+			}
+			if (idEntity* ent = order[iter.pos]) {
+				iter.entity = ent;
+				break;
+			}
 		}
-	}
-	ID_FORCE_INLINE idEntity *Get(const Iterator &iter) const {
-		return order[iter.pos];
 	}
 
 	void AddToEnd(idEntity *ent);

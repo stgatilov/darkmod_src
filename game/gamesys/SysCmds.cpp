@@ -562,8 +562,8 @@ void Cmd_ActiveEntityList_f( const idCmdArgs &args ) {
 
 	gameLocal.Printf( "%-4s  %-20s %-20s %s\n", " Num", "EntityDef", "Class", "Name" );
 	gameLocal.Printf( "--------------------------------------------------------------------\n" );
-	for ( auto iter = gameLocal.activeEntities.Iterate(); gameLocal.activeEntities.Next(iter); ) {
-		idEntity *check = gameLocal.activeEntities.Get(iter);
+	for ( auto iter = gameLocal.activeEntities.Begin(); iter; gameLocal.activeEntities.Next(iter) ) {
+		idEntity *check = iter.entity;
 		char	dormant = check->fl.isDormant ? '-' : ' ';
 		gameLocal.Printf( "%4i:%c%-20s %-20s %s\n", check->entityNumber, dormant, check->GetEntityDefName(), check->GetClassname(), check->name.c_str() );
 		count++;
