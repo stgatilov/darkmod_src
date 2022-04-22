@@ -29,11 +29,14 @@ private:
 	idThread					*waitingForThread;
 	int							waitingFor;
 	int							waitingUntil;
+	idList<idThread*>			threadsWaitingForThis;		//stgatilov: reverse to waitingForThread, empty in most cases
+
 	idInterpreter				interpreter;
 
 	idDict						spawnArgs;
 								
-	int 						threadNum;
+	int 						threadNum;		//stgatilov: assigned sequentally (similar to idEntity::spawnIdx)
+	int							threadPos;		//stgatilov: index in threadList (similar to idEntity::entityNum)
 	idStr 						threadName;
 
 	int							lastExecuteTime;
@@ -43,6 +46,8 @@ private:
 
 	static int					threadIndex;
 	static idList<idThread *>	threadList;
+	static idList<int>			posFreeList;	//stgatilov: indices of NULLs in threadList
+	static idHashIndex			threadNumsHash;
 
 	static trace_t				trace;
 

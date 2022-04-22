@@ -439,6 +439,8 @@ CLASS_DECLARATION( idClass, idThread )
 idThread			*idThread::currentThread = NULL;
 int					idThread::threadIndex = 0;
 idList<idThread *>	idThread::threadList;
+idList<int>			idThread::posFreeList;
+idHashIndex			idThread::threadNumsHash;
 trace_t				idThread::trace;
 
 #define VINE_TRACE_CONTENTS 1281 // grayman #2787 - CONTENTS_CORPSE|CONTENTS_BODY|CONTENTS_SOLID
@@ -569,20 +571,23 @@ idThread::~idThread
 ================
 */
 idThread::~idThread() {
-	idThread	*thread;
-	int			i;
-	int			n;
-
 	if ( g_debugScript.GetBool() ) {
 		gameLocal.Printf( "%d: end thread (%d) '%s'\n", gameLocal.time, threadNum, threadName.c_str() );
 	}
-	threadList.Remove( this );
-	n = threadList.Num();
-	for( i = 0; i < n; i++ ) {
-		thread = threadList[ i ];
-		if ( thread->WaitingOnThread() == this ) {
-			thread->ThreadCallback( this );
-		}
+
+	assert(threadList[threadPos] == this);
+	threadList[threadPos] = NULL;
+	posFreeList.Append(threadPos);
+	assert(threadNumsHash.First(threadNum) >= 0);
+	threadNumsHash.Remove(threadNum, threadPos);
+
+	// note that ThreadCallback usually removes itself from the array
+	// that's why here we copy the list to make iteration over it safe
+	idList<idThread*> waitersCopy = threadsWaitingForThis;
+	for ( int i = 0; i < waitersCopy.Num(); i++ ) {
+		idThread *thread = waitersCopy[i];
+		assert( thread->WaitingOnThread() == this );
+		thread->ThreadCallback( this );
 	}
 
 	if ( currentThread == this ) {
@@ -614,6 +619,10 @@ void idThread::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( waitingFor );
 	savefile->WriteInt( waitingUntil );
 
+	savefile->WriteInt( threadsWaitingForThis.Num() );
+	for ( int i = 0; i < threadsWaitingForThis.Num(); i++ )
+		savefile->WriteObject( threadsWaitingForThis[i] );
+
 	interpreter.Save( savefile );
 
 	savefile->WriteDict( &spawnArgs );
@@ -631,11 +640,20 @@ idThread::Restore
 ================
 */
 void idThread::Restore( idRestoreGame *savefile ) {
+	// stgatilov: we change threadNum here, so we need to update already filled hash table
+	threadNumsHash.Remove( threadNum, threadPos );
 	savefile->ReadInt( threadNum );
+	threadNumsHash.Add( threadNum, threadPos );
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( waitingForThread ) );
 	savefile->ReadInt( waitingFor );
 	savefile->ReadInt( waitingUntil );
+
+	int n;
+	savefile->ReadInt( n );
+	threadsWaitingForThis.SetNum( n );
+	for ( int i = 0; i < threadsWaitingForThis.Num(); i++ )
+		savefile->ReadObject( reinterpret_cast<idClass *&>( threadsWaitingForThis[i] ) );
 
 	interpreter.Restore( savefile );
 
@@ -663,12 +681,17 @@ void idThread::Init( void ) {
 	} while( GetThread( threadIndex ) );
 
 	threadNum = threadIndex;
-	threadList.Append( this );
-	
+	if (posFreeList.Num() == 0)
+		posFreeList.Append(threadList.Append(NULL));
+	threadPos = posFreeList.Pop();
+	threadList[threadPos] = this;
+	threadNumsHash.Add(threadNum, threadPos);
+
 	creationTime = gameLocal.time;
 	lastExecuteTime = 0;
 	manualControl = false;
 
+	waitingForThread = NULL;
 	ClearWaitFor();
 
 	interpreter.SetThread( this );
@@ -680,13 +703,9 @@ idThread::GetThread
 ================
 */
 idThread *idThread::GetThread( int num ) {
-	int			i;
-	int			n;
-	idThread	*thread;
-
-	n = threadList.Num();
-	for( i = 0; i < n; i++ ) {
-		thread = threadList[ i ];
+	for ( int i = threadNumsHash.First(num); i != -1; i = threadNumsHash.Next(i) ) {
+		idThread *thread = threadList[i];
+		assert( thread );
 		if ( thread->GetThreadNum() == num ) {
 			return thread;
 		}
@@ -745,6 +764,8 @@ void idThread::ListThreads_f( const idCmdArgs &args ) {
 
 	n = threadList.Num();
 	for( i = 0; i < n; i++ ) {
+		if ( !threadList[i] )
+			continue;
 		//threadList[ i ]->DisplayInfo();
 		gameLocal.Printf( "%3i: %-20s : %s(%d)\n", threadList[ i ]->threadNum, threadList[ i ]->threadName.c_str(), threadList[ i ]->interpreter.CurrentFile(), threadList[ i ]->interpreter.CurrentLine() );
 	}
@@ -769,6 +790,8 @@ void idThread::Restart( void ) {
 		delete threadList[ i ];
 	}
 	threadList.Clear();
+	posFreeList.Clear();
+	threadNumsHash.Clear();
 
 	memset( &trace, 0, sizeof( trace ) );
 	trace.c.entityNum = ENTITYNUM_NONE;
@@ -863,6 +886,8 @@ void idThread::KillThread( const char *name ) {
 	num = threadList.Num();
 	for( i = 0; i < num; i++ ) {
 		thread = threadList[ i ];
+		if ( !thread )
+			continue;
 		if ( !idStr::Cmpn( thread->GetThreadName(), name, len ) ) {
 			thread->End();
 		}
@@ -971,6 +996,10 @@ idThread::ClearWaitFor
 ================
 */
 void idThread::ClearWaitFor( void ) {
+	if ( waitingForThread ) {
+		bool had = waitingForThread->threadsWaitingForThis.Remove( this );
+		assert( had );
+	}
 	waitingFor			= ENTITYNUM_NONE;
 	waitingForThread	= NULL;
 	waitingUntil		= 0;
@@ -1231,6 +1260,7 @@ void idThread::Event_WaitForThread( int num ) {
 	} else {
 		Pause();
 		waitingForThread = thread;
+		thread->threadsWaitingForThis.Append( this );
 	}
 }
 
