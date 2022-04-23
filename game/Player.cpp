@@ -3409,7 +3409,7 @@ void idPlayer::UpdateConditions( void )
 	else {
 		int creepLimit = cv_pm_creepmod.GetFloat() * 127;
 		AI_CREEP = (usercmd.buttons & BUTTON_CREEP) ||
-			(idMath::Abs(usercmd.forwardmove) <= creepLimit && idMath::Abs(usercmd.rightmove <= creepLimit));
+			(idMath::Abs(usercmd.forwardmove) <= creepLimit && idMath::Abs(usercmd.rightmove) <= creepLimit);
 	}
 }
 
