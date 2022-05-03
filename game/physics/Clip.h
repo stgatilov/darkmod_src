@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #endif
 
 #include "containers/FlexList.h"
+#include "bv/BoxOctree.h"
 
 /*
 ===============================================================================
@@ -106,6 +107,7 @@ public:
 	bool					IsEnabled( void ) const;			// returns true if enabled for collision detection
 	bool					IsEqual( const idTraceModel &trm ) const;
 	cmHandle_t				Handle( void ) const;				// returns handle used to collide vs this model
+	idBoxOctreeHandle&		GetOctreeHandle( void ) { return octreeHandle; }
 	const idTraceModel *	GetTraceModel( void ) const;
 	void					GetMassProperties( const float density, float &mass, idVec3 &centerOfMass, idMat3 &inertiaTensor ) const;
 
@@ -131,11 +133,10 @@ private:
 	int						traceModelIndex;		// trace model used for collision detection
 	int						renderModelHandle;		// render model def handle
 
-	struct clipLink_s *		clipLinks;				// links into sectors
-	int						touchCount;
+	idBoxOctreeHandle		octreeHandle;			// links back to the octree containing the model
+	int						touchCount;				// mutable counter to avoid double-reporting clipmodel
 
 	void					Init( void );			// initialize
-	void					Link_r( struct clipSector_s *node );
 
 	static int				AllocTraceModel( const idTraceModel &trm );
 	static void				FreeTraceModel( const int traceModelIndex );
@@ -240,7 +241,7 @@ ID_INLINE bool idClipModel::IsTraceModel( void ) const {
 }
 
 ID_INLINE bool idClipModel::IsLinked( void ) const {
-	return ( clipLinks != NULL );
+	return octreeHandle.IsLinked();
 }
 
 ID_INLINE bool idClipModel::IsEnabled( void ) const {
@@ -271,9 +272,14 @@ class idClip {
 
 public:
 							idClip( void );
+							~idClip( void );
 
 	void					Init( void );
 	void					Shutdown( void );
+
+	// stgatilov: should be called after all clipmodels got into their normal position
+	// when clipmodels are first linked, they are located at origin, which results in suboptimal octree
+	void					Optimize( void );
 
 	// clip versus the rest of the world
 	bool					Translation( trace_t &results, const idVec3 &start, const idVec3 &end,
@@ -328,8 +334,7 @@ public:
 	void					DrawClipModel( const idClipModel *clipModel, const idVec3 &eye, const float radius ) const;
 
 private:
-	int						numClipSectors;
-	struct clipSector_s *	clipSectors;
+	idBoxOctree				octree;
 	idBounds				worldBounds;
 	idClipModel				temporaryClipModel;
 	idClipModel				defaultClipModel;
@@ -343,7 +348,6 @@ private:
 	int						numContacts;
 
 private:
-	struct clipSector_s *	CreateClipSectors_r( const int depth, const idBounds &bounds, idVec3 &maxSector );
 	void					ClipModelsTouchingBounds_r( const struct clipSector_s *node, struct listParms_s &parms ) const;
 	const idTraceModel *	TraceModelForClipModel( const idClipModel *mdl ) const;
 	int						GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClip_ClipModelList &clipModelList ) const;

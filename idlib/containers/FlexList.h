@@ -94,6 +94,10 @@ public:
 		return idx;
 	}
 
+	ID_FORCE_INLINE type Pop( void ) {
+		return list[--num];
+	}
+
 private:
 	void Grow(int newSize) {
 		type *newList = new type[newSize];

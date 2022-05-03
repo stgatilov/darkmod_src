@@ -1977,6 +1977,11 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// We need an objectives update now that we've loaded the map
 	m_MissionData->ClearGUIState();
 
+	// stgatilov: for some reason, many clipmodels are not in their proper place yet
+	// so this optimization is incomplete...
+	// hopefully, player will save/load game, which would trigger full reconstruction of clip octree
+	clip.Optimize();
+
 	Printf( "--------------------------------------\n" );
 }
 
@@ -2380,6 +2385,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Let the mission database know that we start playing
 	m_MissionManager->OnMissionStart();
+
+	clip.Optimize();
 
 	Printf( "--------------------------------------\n" );
 

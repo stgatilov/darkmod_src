@@ -1606,6 +1606,9 @@
     <ClInclude Include="game\LodComponent.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\bv\BoxOctree.h">
+      <Filter>Idlib\BV</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3555,6 +3558,9 @@
     </ClCompile>
     <ClCompile Include="game\LodComponent.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\bv\BoxOctree.cpp">
+      <Filter>Idlib\BV</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

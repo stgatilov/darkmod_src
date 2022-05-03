@@ -464,6 +464,7 @@
     <ClInclude Include="idlib\BitMsg.h" />
     <ClInclude Include="idlib\bv\Bounds.h" />
     <ClInclude Include="idlib\bv\Box.h" />
+    <ClInclude Include="idlib\bv\BoxOctree.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />
     <ClInclude Include="idlib\bv\Sphere.h" />
     <ClInclude Include="idlib\CmdArgs.h" />
@@ -1096,6 +1097,7 @@
     <ClCompile Include="idlib\BitMsg.cpp" />
     <ClCompile Include="idlib\bv\Bounds.cpp" />
     <ClCompile Include="idlib\bv\Box.cpp" />
+    <ClCompile Include="idlib\bv\BoxOctree.cpp" />
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />
