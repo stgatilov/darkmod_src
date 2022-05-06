@@ -534,6 +534,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClInclude Include="game\DownloadMenu.h" />
     <ClInclude Include="game\Emitter.h" />
     <ClInclude Include="game\Entity.h" />
+    <ClInclude Include="game\EntityList.h" />
     <ClInclude Include="game\EscapePointEvaluator.h" />
     <ClInclude Include="game\EscapePointManager.h" />
     <ClInclude Include="game\Force_Grab.h" />
@@ -581,6 +582,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClInclude Include="game\LightController.h" />
     <ClInclude Include="game\LightGem.h" />
     <ClInclude Include="game\Liquid.h" />
+    <ClInclude Include="game\LodComponent.h" />
     <ClInclude Include="game\MatrixSq.h" />
     <ClInclude Include="game\MeleeWeapon.h" />
     <ClInclude Include="game\Misc.h" />
@@ -670,6 +672,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClInclude Include="idlib\BitMsg.h" />
     <ClInclude Include="idlib\bv\Bounds.h" />
     <ClInclude Include="idlib\bv\Box.h" />
+    <ClInclude Include="idlib\bv\BoxOctree.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />
     <ClInclude Include="idlib\bv\Sphere.h" />
     <ClInclude Include="idlib\CmdArgs.h" />
@@ -1012,6 +1015,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClCompile Include="game\DownloadMenu.cpp" />
     <ClCompile Include="game\Emitter.cpp" />
     <ClCompile Include="game\Entity.cpp" />
+    <ClCompile Include="game\EntityList.cpp" />
     <ClCompile Include="game\EscapePointEvaluator.cpp" />
     <ClCompile Include="game\EscapePointManager.cpp" />
     <ClCompile Include="game\Force_Grab.cpp" />
@@ -1062,6 +1066,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClCompile Include="game\LightController.cpp" />
     <ClCompile Include="game\LightGem.cpp" />
     <ClCompile Include="game\Liquid.cpp" />
+    <ClCompile Include="game\LodComponent.cpp" />
     <ClCompile Include="game\MeleeWeapon.cpp" />
     <ClCompile Include="game\Misc.cpp" />
     <ClCompile Include="game\Missions\Download.cpp" />
@@ -1147,6 +1152,7 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClCompile Include="idlib\BitMsg.cpp" />
     <ClCompile Include="idlib\bv\Bounds.cpp" />
     <ClCompile Include="idlib\bv\Box.cpp" />
+    <ClCompile Include="idlib\bv\BoxOctree.cpp" />
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />

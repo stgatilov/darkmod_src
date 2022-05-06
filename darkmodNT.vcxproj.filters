@@ -1519,6 +1519,15 @@
     <ClInclude Include="framework\DeclSubtitles.h">
       <Filter>Framework</Filter>
     </ClInclude>
+    <ClInclude Include="game\EntityList.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\bv\BoxOctree.h">
+      <Filter>idLib\BV</Filter>
+    </ClInclude>
+    <ClInclude Include="game\LodComponent.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2985,6 +2994,15 @@
     </ClCompile>
     <ClCompile Include="framework\DeclSubtitles.cpp">
       <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="game\EntityList.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\bv\BoxOctree.cpp">
+      <Filter>idLib\BV</Filter>
+    </ClCompile>
+    <ClCompile Include="game\LodComponent.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
