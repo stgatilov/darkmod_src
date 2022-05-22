@@ -895,6 +895,7 @@ void idAI::Save(idSaveGame *savefile) const {
 	savefile->WriteInt(m_maxAlertIndex);
 	savefile->WriteFloat(m_recentHighestAlertLevel);
 	savefile->WriteBool(m_bIgnoreAlerts);
+	savefile->WriteBool(m_drunk);
 
 	m_AlertedByActor.Save(savefile);
 
@@ -1362,6 +1363,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_maxAlertIndex);
 	savefile->ReadFloat(m_recentHighestAlertLevel);
 	savefile->ReadBool( m_bIgnoreAlerts );
+	savefile->ReadBool( m_drunk );
 
 	m_AlertedByActor.Restore( savefile );
 	for (i = 0; i < ai::EAlertTypeCount; i++)
@@ -1753,6 +1755,7 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "max_interleave_think_dist",		"3000",		m_maxInterleaveThinkDist);
 
 	spawnArgs.GetBool( "ignore_alerts",						"0",		m_bIgnoreAlerts );
+	spawnArgs.GetBool( "drunk",								"0",		m_drunk );
 
 	if (spawnArgs.GetBool("canOperateElevators", "0"))
 	{
@@ -10429,7 +10432,7 @@ float idAI::GetAcuity(const char *type) const
 //	}
 
 	// angua: drunken AI have reduced acuity, unless they have seen evidence of intruders
-	if ( spawnArgs.GetBool("drunk", "0") && !HasSeenEvidence() )
+	if ( m_drunk && !HasSeenEvidence() )
 	{
 		returnval *= spawnArgs.GetFloat("drunk_acuity_factor", "1");
 	}

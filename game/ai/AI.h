@@ -976,6 +976,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_bIgnoreAlerts;
 
 	/**
+	* Is AI drunk?
+	* Same as spawnargs.GetBool("drunk"), but a bit faster.
+	**/
+	bool					m_drunk;
+
+	/**
 	* Array containing the various AI acuities (visual, aural, tactile, etc)
 	**/
 	idList<float>			m_Acuities;
