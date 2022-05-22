@@ -24,6 +24,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../bv/Bounds.h"
 #include "RenderMatrix.h"
 
+#ifdef __SSE2__
+	#include "sys_intrinsics.h"
+	#define USE_INTRINSICS
+#endif
+
 // FIXME:	it would be nice if all render matrices were 16-byte aligned
 //			so there is no need for unaligned loads and stores everywhere
 
