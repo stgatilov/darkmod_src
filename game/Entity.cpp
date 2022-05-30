@@ -4300,7 +4300,7 @@ idEntity::PostBind
 void idEntity::PostBind( void )
 {
 	// #3704: Destroy our frob box if bound to an animated entity.
-	if ( bindMaster->IsType(idAnimatedEntity::Type) && m_FrobBox != NULL )
+	if ( bindMaster && bindMaster->IsType(idAnimatedEntity::Type) && m_FrobBox != NULL )
 	{
 		delete m_FrobBox;
 		m_FrobBox = NULL;
@@ -4400,6 +4400,8 @@ void idEntity::FinishBind( idEntity *newMaster, const char *jointName ) // graym
 
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
+
+	if (!bindMaster) return; // can be null if self or loop bind
 
 	// if our bindMaster is enabled during a cinematic, we must be, too
 	cinematic = bindMaster->cinematic;
