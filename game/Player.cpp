@@ -225,6 +225,9 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling",
 const idEventDef EV_Player_SetObjectiveText( "setObjectiveText", EventArgs('d', "ObjNum", "Starts counting at 1", 's', "newText", ""), EV_RETURNS_VOID, 
 		"Modify the displayed text for an objective. Can also be a string template like #str_20000");
 
+// Obsttorte (#5967)
+const idEventDef EV_Player_SetObjectiveNotification("setObjectiveNotification", EventArgs('d', "ObjNote", "Turn notifications on/off"), EV_RETURNS_VOID,
+		"Turns the notifications (sound ++ text) for objectives on/off.");
 
 // greebo: This allows scripts to set the "healthpool" for gradual healing
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", EventArgs('f', "amount", ""), EV_RETURNS_VOID, 
@@ -421,6 +424,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
 	EVENT( EV_Player_SetObjectiveText,		idPlayer::Event_SetObjectiveText )
+	EVENT( EV_Player_SetObjectiveNotification, idPlayer::Event_SetObjectiveNotification)
 
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 	EVENT( EV_Player_WasDamaged,			idPlayer::Event_WasDamaged )
@@ -10615,6 +10619,12 @@ void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 void idPlayer::Event_SetObjectiveText( int ObjIndex, const char *descr )
 {
 	gameLocal.m_MissionData->SetObjectiveText(ObjIndex - 1, descr);
+}
+
+// Obsttorte (#5967)
+void idPlayer::Event_SetObjectiveNotification(bool ObjNote)
+{
+	gameLocal.m_MissionData->ObjNote = ObjNote;
 }
 
 void idPlayer::Event_GiveHealthPool( float amount ) {

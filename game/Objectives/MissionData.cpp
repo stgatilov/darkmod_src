@@ -86,6 +86,8 @@ CMissionData::CMissionData() :
 	{
 		m_SpecTypeHash.Add( m_SpecTypeHash.GenerateKey( SpecTypeNames[i].c_str(), false ), i );
 	}
+
+	ObjNote = true;
 }
 
 CMissionData::~CMissionData( void )
@@ -755,11 +757,13 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	// greebo: Don't play sound or display message for invisible objectives
 	if (!obj.m_bOngoing && obj.m_bVisible)
 	{
-		player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
+		if (ObjNote)
+		{
+			player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
-		// greebo: Notify the player
-		player->SendHUDMessage( "#str_02453" ); // "Objective complete"
-
+			// greebo: Notify the player
+			player->SendHUDMessage("#str_02453"); // "Objective complete"
+		}
 		player->UpdateObjectivesGUI();
 	}
 }
@@ -801,9 +805,11 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 	// greebo: Notify the player for visible objectives only
 	if (obj.m_bVisible)
 	{
-		player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
-		player->SendHUDMessage( "#str_02454" ); // "Objective failed"
-
+		if (ObjNote)
+		{
+			player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
+			player->SendHUDMessage("#str_02454"); // "Objective failed"
+		}
 		player->UpdateObjectivesGUI();
 	}
 
@@ -833,12 +839,13 @@ void CMissionData::Event_NewObjective()
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	if (player == NULL) return;
+	if (ObjNote)
+	{
+		player->StartSound("snd_new_objective", SND_CHANNEL_ANY, 0, false, NULL);
 
-	player->StartSound("snd_new_objective", SND_CHANNEL_ANY, 0, false, NULL);
-
-	// greebo: notify the player
-	player->SendHUDMessage( "#str_02455" ); // "New Objective"
-
+		// greebo: notify the player
+		player->SendHUDMessage("#str_02455"); // "New Objective"
+	}
 	player->UpdateObjectivesGUI();
 }
 

@@ -263,6 +263,9 @@ public:
 	int GetSecretsFound();
 	int GetSecretsTotal();
 
+	// Obsttorte: (#5967) Alter notifications on objective state change
+	bool ObjNote;
+
 	idStr GetDifficultyName(int level); // grayman #3292
 
 	/**

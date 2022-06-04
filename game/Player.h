@@ -1380,6 +1380,9 @@ private:
 	void					Event_SetObjectiveEnabling( int ObjIndex, const char *strIn );
 	void					Event_SetObjectiveText( int ObjIndex, const char *descr );
 
+	// Obsttorte: (#5967) Enable/Disable Objective State Notifications
+	void					Event_SetObjectiveNotification(bool ObjNote);
+
 	/**
 	* greebo: This scriptevent routes the call to the member method "GiveHealthPool".
 	*/
