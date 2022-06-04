@@ -982,7 +982,11 @@ void Screenshot_ChangeFilename( idStr& filename, const char *extension ) {
 	time( &tt );
 	struct tm * ltime = localtime( &tt );
 	strftime( thetime, sizeof( thetime ), "_%Y-%m-%d_%H.%M.%S.", ltime );
-	const idStr fileOnly = mapname + thetime + extension;
+	
+	// Obsttorte: Add players view location to screenshot filename (#5819)
+	idVec3 playerViewOrigin(gameLocal.GetLocalPlayer()->firstPersonViewOrigin);
+	idStr playerViewOriginStr(playerViewOrigin.ToString());
+	const idStr fileOnly = mapname + thetime + playerViewOriginStr + "." + extension;
 
 	filename = "screenshots/";
 	filename.AppendPath( fileOnly );
