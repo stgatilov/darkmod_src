@@ -59,6 +59,7 @@ public:
 	int DamageReceived;
 	int HealthReceived;
 	int PocketsPicked;
+	int PocketsTotal;
 
 	// Item stats are handled by the inventory, not here, 
 	// Might need this for copying over to career stats though

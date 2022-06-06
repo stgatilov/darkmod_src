@@ -55,6 +55,7 @@ void MissionStatistics::Clear()
 	DamageReceived = 0;
 	HealthReceived = 0;
 	PocketsPicked = 0;
+	PocketsTotal = 0;
 
 	secretsFound = 0;
 	secretsTotal = 0;
