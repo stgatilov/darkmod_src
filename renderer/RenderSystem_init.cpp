@@ -977,16 +977,18 @@ void Screenshot_ChangeFilename( idStr& filename, const char *extension ) {
 		mapname = "noFm";
 	}
 
-	// uhm any particular reason this was encapsulated in brackets ?
 	time_t tt;
 	time( &tt );
 	struct tm * ltime = localtime( &tt );
-	strftime( thetime, sizeof( thetime ), "_%Y-%m-%d_%H.%M.%S.", ltime );
+	strftime( thetime, sizeof( thetime ), "%Y-%m-%d %H-%M-%S", ltime );
 	
 	// Obsttorte: Add players view location to screenshot filename (#5819)
-	idVec3 playerViewOrigin(gameLocal.GetLocalPlayer()->firstPersonViewOrigin);
-	idStr playerViewOriginStr(playerViewOrigin.ToString());
-	const idStr fileOnly = mapname + thetime + playerViewOriginStr + "." + extension;
+	idVec3 origin;
+	idMat3 axis;
+	gameLocal.GetViewPos_Cmd(origin, axis);
+	idStr playerViewOriginStr(origin.ToString());
+
+	idStr fileOnly = mapname + " (" + thetime + ") (" + playerViewOriginStr + ")." + extension;
 
 	filename = "screenshots/";
 	filename.AppendPath( fileOnly );

@@ -2975,6 +2975,30 @@ idPlayer *idGameLocal::GetLocalPlayer() const {
 
 /*
 ================
+idGameLocal::GetViewPos_Cmd
+================
+*/
+bool idGameLocal::GetViewPos_Cmd(idVec3 &origin, idMat3 &axis) const {
+	origin.Zero();
+	axis.Zero();
+
+	idPlayer *player = gameLocal.GetLocalPlayer();
+	if ( !player ) {
+		return false;
+	}
+
+	const renderView_t *view = player->GetRenderView();
+	if ( view ) {
+		origin = view->vieworg;
+		axis = view->viewaxis;
+	} else {
+		player->GetViewPos( origin, axis );
+	}
+	return true;
+}
+
+/*
+================
 idGameLocal::SetupClientPVS
 ================
 */

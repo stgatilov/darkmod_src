@@ -994,24 +994,12 @@ Cmd_GetViewpos_f
 ==================
 */
 void Cmd_GetViewpos_f( const idCmdArgs &args ) {
-	idPlayer	*player;
 	idVec3		origin;
 	idMat3		axis;
-
-	player = gameLocal.GetLocalPlayer();
-	if ( !player ) {
-		return;
+	if (gameLocal.GetViewPos_Cmd(origin, axis)) {
+		idAngles angles = axis.ToAngles();
+		gameLocal.Printf( "%s   %.1f %.1f %.1f\n", origin.ToString(), angles.pitch, angles.yaw, angles.roll);
 	}
-
-	const renderView_t *view = player->GetRenderView();
-	if ( view ) {
-		origin = view->vieworg;
-		axis = view->viewaxis;
-	} else {
-		player->GetViewPos( origin, axis );
-	}
-	idAngles angles = axis.ToAngles();
-	gameLocal.Printf( "%s   %.1f %.1f %.1f\n", origin.ToString(), angles.pitch, angles.yaw, angles.roll);
 }
 
 /*
