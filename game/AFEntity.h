@@ -221,6 +221,7 @@ public:
 	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
 	virtual bool			UpdateAnimationControllers( void );
 	virtual void			FreeModelDef( void );
+	virtual void			SetModel( const char *modelname ) override;
 
 	virtual bool			LoadAF( void );
 	bool					IsActiveAF( void ) const { return af.IsActive(); }

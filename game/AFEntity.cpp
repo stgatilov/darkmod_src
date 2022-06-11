@@ -1331,6 +1331,21 @@ void idAFEntity_Base::FreeModelDef( void ) {
 }
 
 /*
+================
+idAFEntity_Base::SetModel
+================
+*/
+void idAFEntity_Base::SetModel( const char *modelname ) {
+	idAnimatedEntity::SetModel(modelname);
+
+	if ( !GetAnimator()->ModelDef() ) {
+		//stgatilov #5845: can only switch AF model with compatible AF model
+		//because we don't (and cannot) change the body set in af.physicsObj
+		common->Error("idAFEntity_Base::SetModel: model %s is not modelDef", modelname);
+	}
+}
+
+/*
 ===============
 idAFEntity_Base::ShowEditingDialog
 ===============
