@@ -129,7 +129,7 @@ void CMissionData::Save(idSaveGame* savefile) const
 	{
 		m_Objectives[i].Save(savefile);
 	}
-
+	savefile->WriteBool(ObjNote); // Obsttorte #5967
 	m_Stats.Save(savefile);
 
 	savefile->WriteString(m_SuccessLogicStr);
@@ -151,7 +151,7 @@ void CMissionData::Restore(idRestoreGame* savefile)
 	{
 		m_Objectives[i].Restore(savefile);
 	}
-
+	savefile->ReadBool(ObjNote); // Obsttorte #5967
 	// Rebuild list of clocked components now that we've loaded objectives
 	m_ClockedComponents.Clear();
 	for (int ind = 0; ind < m_Objectives.Num(); ind++)
