@@ -263,9 +263,6 @@ public:
 	int GetSecretsFound();
 	int GetSecretsTotal();
 
-	// Obsttorte: (#5967) Alter notifications on objective state change
-	bool ObjNote;
-
 	idStr GetDifficultyName(int level); // grayman #3292
 
 	/**
@@ -484,6 +481,11 @@ public:
 	// Dragofer: set stats for secrets
 	void SetSecretsFound( float secrets );
 	void SetSecretsTotal( float secrets );
+
+	/**
+	* Obsttorte: (#5967) Alter notifications on objective state change
+	*/
+	bool m_ObjNote;
 
 protected:
 	/**

@@ -87,7 +87,7 @@ CMissionData::CMissionData() :
 		m_SpecTypeHash.Add( m_SpecTypeHash.GenerateKey( SpecTypeNames[i].c_str(), false ), i );
 	}
 
-	ObjNote = true;
+	m_ObjNote = true;
 }
 
 CMissionData::~CMissionData( void )
@@ -129,7 +129,7 @@ void CMissionData::Save(idSaveGame* savefile) const
 	{
 		m_Objectives[i].Save(savefile);
 	}
-	savefile->WriteBool(ObjNote); // Obsttorte #5967
+	savefile->WriteBool(m_ObjNote); // Obsttorte #5967
 	m_Stats.Save(savefile);
 
 	savefile->WriteString(m_SuccessLogicStr);
@@ -151,7 +151,7 @@ void CMissionData::Restore(idRestoreGame* savefile)
 	{
 		m_Objectives[i].Restore(savefile);
 	}
-	savefile->ReadBool(ObjNote); // Obsttorte #5967
+	savefile->ReadBool(m_ObjNote); // Obsttorte #5967
 	// Rebuild list of clocked components now that we've loaded objectives
 	m_ClockedComponents.Clear();
 	for (int ind = 0; ind < m_Objectives.Num(); ind++)
@@ -757,7 +757,7 @@ void CMissionData::Event_ObjectiveComplete( int ind )
 	// greebo: Don't play sound or display message for invisible objectives
 	if (!obj.m_bOngoing && obj.m_bVisible)
 	{
-		if (ObjNote) // Obsttorte (#5967)
+		if (m_ObjNote) // Obsttorte (#5967)
 		{
 			player->StartSound("snd_objective_complete", SND_CHANNEL_ANY, 0, false, NULL);
 
@@ -805,7 +805,7 @@ void CMissionData::Event_ObjectiveFailed(int ind)
 	// greebo: Notify the player for visible objectives only
 	if (obj.m_bVisible)
 	{
-		if (ObjNote) // Obsttorte (#5967)
+		if (m_ObjNote) // Obsttorte (#5967)
 		{
 			player->StartSound("snd_objective_failed", SND_CHANNEL_ANY, 0, false, NULL);
 			player->SendHUDMessage("#str_02454"); // "Objective failed"
@@ -839,7 +839,7 @@ void CMissionData::Event_NewObjective()
 
 	idPlayer* player = gameLocal.GetLocalPlayer();
 	if (player == NULL) return;
-	if (ObjNote) // Obsttorte (#5967)
+	if (m_ObjNote) // Obsttorte (#5967)
 	{
 		player->StartSound("snd_new_objective", SND_CHANNEL_ANY, 0, false, NULL);
 

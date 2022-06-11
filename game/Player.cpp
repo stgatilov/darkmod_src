@@ -10624,7 +10624,7 @@ void idPlayer::Event_SetObjectiveText( int ObjIndex, const char *descr )
 // Obsttorte (#5967)
 void idPlayer::Event_SetObjectiveNotification(bool ObjNote)
 {
-	gameLocal.m_MissionData->ObjNote = ObjNote;
+	gameLocal.m_MissionData->m_ObjNote = ObjNote;
 }
 
 void idPlayer::Event_GiveHealthPool( float amount ) {
