@@ -538,13 +538,17 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (mods[index]->isUpdate)
 		{
-			title += "*";
+			//title += "*";
+			// Obsttorte #5842
+			title = "*" + title;
 			updateInList = true;
 		}
           // gnartsch: check if a localization pack needs to be downloaded
 		else if (mods[index]->needsL10NpackDownload && mods[index]->l10nPackUrls.Num() > 0)
 		{
-			title += "#";
+			//title += "#";
+			// Obsttorte #5842
+			title = "#" + title;
 			updateInList = true;
 		}
 
