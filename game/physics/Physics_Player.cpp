@@ -2198,10 +2198,13 @@ void idPhysics_Player::CheckDuck( void ) {
 			}
 		}
 
-		// TODO_CROUCH: don't use crouch speed while climbing
 		if ( current.movementFlags & PMF_DUCKED ) 
 		{
-			playerSpeed = crouchSpeed;
+			// #5961 - Don't use crouch speed while climbing
+			if (!(OnRope() || OnLadder()))
+			{
+				playerSpeed = crouchSpeed;
+			}
 			maxZ = pm_crouchheight.GetFloat();
 		}
 		else 
