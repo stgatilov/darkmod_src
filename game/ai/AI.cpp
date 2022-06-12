@@ -6043,9 +6043,10 @@ void idAI::AnimMove()
 	AI_ONGROUND = physicsObj.OnGround();
 
 	const idVec3& org = physicsObj.GetOrigin();
-	if (oldorigin != org) {
+	// Obsttorte #5319
+	//if (oldorigin != org) { 
 		TouchTriggers();
-	}
+	//}
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
