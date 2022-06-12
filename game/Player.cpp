@@ -5610,7 +5610,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_CROUCH:		// Crouch
 		{
-			if (!cv_tdm_crouch_toggle.GetBool())
+			if (cv_tdm_crouch_toggle.GetBool())
+			{
+				if ( entityNumber == gameLocal.localClientNum )
+				{
+					m_CrouchIntent = !m_CrouchIntent;
+				}
+			}		
+			else
 			{
 				m_CrouchIntent = true;
 			}
@@ -5937,14 +5944,7 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 	switch (impulse)
 	{
 		case IMPULSE_CROUCH:		// TDM crouch
-			if (cv_tdm_crouch_toggle.GetBool())
-			{
-				if ( entityNumber == gameLocal.localClientNum )
-				{
-					m_CrouchIntent = !m_CrouchIntent;
-				}
-			}		
-			else
+			if (!cv_tdm_crouch_toggle.GetBool())
 			{
 				m_CrouchIntent = false;
 			}
