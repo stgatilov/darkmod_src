@@ -11653,7 +11653,10 @@ idEntity* idEntity::GetFrobMaster()
 void idEntity::Event_AddFrobPeer(idEntity* peer)
 {
 	AddFrobPeer(peer);
-	peer->SetFrobbed(true);
+	if (m_bFrobbed) // update the frob state if necessary
+	{
+		peer->SetFrobbed(true);
+	}
 }
 void idEntity::Event_RemoveFrobPeer(idEntity* peer)
 {
