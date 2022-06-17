@@ -981,6 +981,12 @@ idBrittleFracture::Break
 */
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
+	// Obsttorte: #5978
+	m_bIsBroken = true;
+	if (spawnArgs.GetBool("notice_destroyed", "1")) 
+	{
+		SetStimEnabled(ST_VISUAL, true); // let AIs see that the entity is destroyed
+	}
 
 	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_MOVEABLECLIP ); // Add moveables. SteveL #4178
 	
