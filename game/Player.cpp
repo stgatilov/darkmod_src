@@ -11331,7 +11331,18 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	{
 		return;
 	}
-
+	// Obsttorte: #5984) multilooting
+	// return, if not enough time has passed since the last pickup
+	if (multiloot && ( gameLocal.time - multiloot_lastfrob < cv_multiloot_min_interval.GetFloat() ) )
+	{
+		return;
+	}
+	// disable multiloot and return if too much time has passed since last pickup
+	if (multiloot && ( gameLocal.time - multiloot_lastfrob > cv_multiloot_max_interval.GetFloat() ) )
+	{
+		multiloot = false;
+		return;
+	}
 	// if we only allow "simple" frob actions and this isn't one, play forbidden sound
 	if ( (GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple )
 	{
@@ -11344,7 +11355,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Retrieve the entity before trying to add it to the inventory, the pointer
 	// might be cleared after calling AddToInventory().
 	idEntity* highlightedEntity = m_FrobEntity.GetEntity();
-
+	
 	if (impulseState == EPressed)
 	{
 		// Fire the STIM_FROB response on key down (if defined) on this entity
@@ -11383,8 +11394,20 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
 	// These actions are only applicable for EPressed buttonstate
-	if (impulseState == EPressed)
+	if (impulseState == EPressed || multiloot)
 	{
+		
+		// First we have to check whether that entity is an inventory 
+		// item. In that case, we have to add it to the inventory and
+		// hide the entity.
+		
+		CInventoryItemPtr addedItem = AddToInventory(target);
+
+		if (addedItem == NULL && multiloot)
+		{
+			//multiloot = 0;
+			return;
+		}
 		// Trigger the frob action script on key down
 		target->FrobAction(true);
 
@@ -11393,42 +11416,43 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		// note which target we started pressing frob on
 		m_FrobPressedTarget = target;
 
-		// First we have to check whether that entity is an inventory 
-		// item. In that case, we have to add it to the inventory and
-		// hide the entity.
-		CInventoryItemPtr addedItem = AddToInventory(target);
-
 		// Check if the frobbed entity is the one currently highlighted by the player
 		if ( (addedItem != NULL) && (highlightedEntity == target) ) 
 		{
 			// Item has been added to the inventory, clear the entity pointer
 			m_FrobEntity = NULL;
 
+			// Obsttorte: start multiloot
+			multiloot = true;
+			multiloot_lastfrob = gameLocal.time; 
+
 			// grayman #3011 - is anything sitting on this inventory item?
 			target->ActivateContacts();
 		}
-
-		// Grab it if it's a grabable class
-		if (target->IsType(idMoveable::Type) || target->IsType(idAFEntity_Base::Type) || 
-			target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type))
+		if (impulseState == EPressed)
 		{
-			// allow override of default grabbing behavior
-			if ( !target->spawnArgs.GetBool("grabable","1") )
+			// Grab it if it's a grabable class
+			if (target->IsType(idMoveable::Type) || target->IsType(idAFEntity_Base::Type) ||
+				target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type))
 			{
-				return;
-			}
-
-			// Do not pick up live, conscious AI
-			if ( target->IsType( idAI::Type ) )
-			{
-				idAI *AItarget = static_cast<idAI *>(target);
-				if ( (AItarget->health > 0) && !AItarget->IsKnockedOut() )
+				// allow override of default grabbing behavior
+				if (!target->spawnArgs.GetBool("grabable", "1"))
 				{
 					return;
 				}
-			}
 
-			gameLocal.m_Grabber->Update( this, false, true ); // preservePosition = true #4149
+				// Do not pick up live, conscious AI
+				if (target->IsType(idAI::Type))
+				{
+					idAI* AItarget = static_cast<idAI*>(target);
+					if ((AItarget->health > 0) && !AItarget->IsKnockedOut())
+					{
+						return;
+					}
+				}
+
+				gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149
+			}
 		}
 	}
 }
@@ -11468,17 +11492,20 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// use the original target until frob is released and pressed again
-	if ( m_FrobPressedTarget.IsValid() && (m_FrobPressedTarget.GetEntity() != NULL ))
+	
+	if (m_FrobPressedTarget.IsValid() && (m_FrobPressedTarget.GetEntity() != NULL))
 	{
 		m_FrobPressedTarget.GetEntity()->FrobHeld( true, false, holdTime );
 	}
-
+	
 	// Relay the function to the specialised method
 	PerformFrob(ERepeat, frob, true);
 }
 
 void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
+	// Obsttorte: multilooting
+	multiloot = 0;
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
 	{

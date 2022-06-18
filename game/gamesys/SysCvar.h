@@ -260,6 +260,10 @@ extern idCVar cv_frobhelper_fadein_duration;
 extern idCVar cv_frobhelper_fadeout_duration;
 extern idCVar cv_frobhelper_ignore_size;
 
+//Obsttorte: #5984 (multilooting)
+extern idCVar cv_multiloot_min_interval;
+extern idCVar cv_multiloot_max_interval;
+
 extern idCVar cv_weapon_next_on_empty;
 
 // physics

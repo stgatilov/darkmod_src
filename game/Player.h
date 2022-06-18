@@ -857,6 +857,10 @@ public:
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease(int holdTime);
 
+	// Obstorte: #5984 (multilooting)
+	bool					multiloot;
+	float					multiloot_lastfrob;
+
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
 

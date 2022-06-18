@@ -290,6 +290,10 @@ idCVar cv_frobhelper_fadein_duration(	"tdm_frobhelper_fadein_duration",	"1500", 
 idCVar cv_frobhelper_fadeout_duration(	"tdm_frobhelper_fadeout_duration",	"500",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER | CVAR_NOCHEAT, "The FrobHelper cursor is faded out for this duration specified in ms.", 0.0f, 5000.0f);
 idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT,	"The FrobHelper is not activated for entites that are bigger than this ignore size along one dimension. Set to 0, to disable ignoring entities.", 0.0f, 10000.0f);
 
+// Obsttorte: #5984 (multilooting)
+idCVar cv_multiloot_min_interval("tdm_multiloot_min_interval", "300",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The minimum interval between two consecutive frobs when multifrobbing.");
+idCVar cv_multiloot_max_interval("tdm_multiloot_max_interval", "2000",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The amount of time after which multilooting gets disabled again.");
+
 /**
 * Dark Mod Misc. Control Options
 **/
