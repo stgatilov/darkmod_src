@@ -17,8 +17,9 @@ class TracyConan(ConanFile):
         os.rename(extracted_dir, "fullsource")
 
     def build(self):
-        # add RecreateQueries method
-        tools.patch(base_path = "fullsource", patch_file = "patches/RecreateQueries.patch")
+        # generic patches (e.g. add RecreateQueries method)
+        for patch in self.conan_data.get("patches", {}).get(self.version, []):
+            tools.patch(**patch)
         # replace glXXX with qglXXX
         for prefix in ['glGet', 'glGen', 'glQuery']:
             tools.replace_in_file("fullsource/TracyOpenGL.hpp", prefix, 'q' + prefix)

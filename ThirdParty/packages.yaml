@@ -10,7 +10,7 @@
 packages:
   - { ref: tinyformat/2.3.0@thedarkmod/local                , type: header }
   - { ref: doctest/2.4.8                                    , type: header }
-  - { ref: tracy/0.7.8@thedarkmod/local                     , type: header }
+  - { ref: tracy/0.8.1@thedarkmod/local                     , type: header }
   - { ref: zlib/1.2.11                                      , type: release }
   - { ref: minizip/1.2.11                                   , type: release }
   - { ref: libcurl/7.80.0@thedarkmod/local                  , type: release }
