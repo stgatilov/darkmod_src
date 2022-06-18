@@ -696,6 +696,11 @@ idPlayer::idPlayer() :
 	m_FrobEntity = NULL;
 	m_FrobJoint = INVALID_JOINT;
 	m_FrobID = 0;
+
+	// Obsttorte: #5984
+	multiloot = false;
+	multiloot_lastfrob = -idMath::INFINITY;
+
 	// greebo: Initialise the frob trace contact material to avoid 
 	// crashing during map save when nothing has been frobbed yet
 	memset(&m_FrobTrace, 0, sizeof(trace_t));
@@ -2400,6 +2405,11 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_FrobID);
 	savefile->ReadTrace(m_FrobTrace);
 	savefile->ReadBool(m_bFrobOnlyUsedByInv);
+
+	// Obsttorte: #5984
+	// those values don't get saved, but instead reset upon load
+	multiloot = false;
+	multiloot_lastfrob = -idMath::INFINITY;
 
 	savefile->ReadInt( buttonMask );
 	savefile->ReadInt( oldButtons );
@@ -11401,15 +11411,19 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		// item. In that case, we have to add it to the inventory and
 		// hide the entity.
 		
+		// Trigger the frob action script on key down
+		// Obsttorte: don't do so if we are multilooting and this is no inventory item
+		if (!multiloot || (target->spawnArgs.GetString("inv_name","") != "") )
+		{
+			target->FrobAction(true);
+		}
+		
 		CInventoryItemPtr addedItem = AddToInventory(target);
 
 		if (addedItem == NULL && multiloot)
 		{
-			//multiloot = 0;
 			return;
 		}
-		// Trigger the frob action script on key down
-		target->FrobAction(true);
 
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("USE: frob target: %s \r", target->name.c_str());
 
@@ -11505,7 +11519,7 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
 	// Obsttorte: multilooting
-	multiloot = 0;
+	multiloot = false;
 	// Ignore frobs if player-frobbing is immobilized.
 	if ( GetImmobilization() & EIM_FROB )
 	{
