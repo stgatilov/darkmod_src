@@ -859,7 +859,7 @@ public:
 
 	// Obstorte: #5984 (multilooting)
 	bool					multiloot;
-	float					multiloot_lastfrob;
+	int						multiloot_lastfrob;
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
