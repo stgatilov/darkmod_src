@@ -2127,7 +2127,7 @@ void idPhysics_Player::CheckDuck( void ) {
 		// stand up when climbing a ladder or rope
 		if (idealCrouchState == true && !m_bOnClimb && !m_bOnRope)
 		{
-			if (waterLevel <= WATERLEVEL_WAIST)
+			if (waterLevel >= WATERLEVEL_WAIST)
 			{
 				// greebo: We're waist-deep in water, trace down a few units to see if we're standing on ground
 				trace_t	trace;
