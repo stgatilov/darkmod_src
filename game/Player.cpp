@@ -2667,6 +2667,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool( m_IdealCrouchState );
 	savefile->ReadBool( m_CrouchIntent );
+	// stgatilov: no need to save it, but better reset it on load
+	m_CrouchToggleBypassed = false;
 
 	savefile->ReadInt(m_InventoryOverlay);
 
