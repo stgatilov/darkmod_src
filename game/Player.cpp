@@ -711,6 +711,7 @@ idPlayer::idPlayer() :
 
 	m_IdealCrouchState		= false;
 	m_CrouchIntent			= false;
+	m_CrouchToggleBypassed	= false;
 
 	m_LeanButtonTimeStamp	= 0;
 	m_InventoryOverlay		= -1;
@@ -5622,9 +5623,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 		{
 			if (cv_tdm_crouch_toggle.GetBool())
 			{
-				if ( entityNumber == gameLocal.localClientNum )
+				if (physicsObj.OnRope() || physicsObj.OnLadder())
 				{
-					m_CrouchIntent = !m_CrouchIntent;
+					// Climbing; use regular crouch behavior
+					m_CrouchToggleBypassed = true;
+					m_CrouchIntent = true;
+				}
+				else
+				{
+					// Not climbing; toggle crouch
+					if (entityNumber == gameLocal.localClientNum)
+					{
+						m_CrouchToggleBypassed = false;
+						m_CrouchIntent = !m_CrouchIntent;
+					}
 				}
 			}		
 			else
@@ -5954,7 +5966,16 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 	switch (impulse)
 	{
 		case IMPULSE_CROUCH:		// TDM crouch
-			if (!cv_tdm_crouch_toggle.GetBool())
+
+			if (cv_tdm_crouch_toggle.GetBool())
+			{
+				if (physicsObj.OnRope() || physicsObj.OnLadder() || m_CrouchToggleBypassed)
+				{
+					// Climbing or initiated crouch while climbing; use regular crouch behavior
+					m_CrouchIntent = false;
+				}
+			}
+			else
 			{
 				m_CrouchIntent = false;
 			}
