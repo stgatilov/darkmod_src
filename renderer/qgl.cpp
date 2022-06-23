@@ -106,7 +106,6 @@ void GLimp_CheckRequiredFeatures( void ) {
 	CHECK_FEATURE(GL_ARB_texture_storage);
 	CHECK_FEATURE(GL_ARB_multi_draw_indirect);
 	CHECK_FEATURE(GL_ARB_vertex_attrib_binding);
-	CHECK_FEATURE(GL_ARB_bindless_texture);
 	CHECK_FEATURE(GL_ARB_compatibility);
 	CHECK_FEATURE(GL_KHR_debug);
 

@@ -37,11 +37,6 @@ struct PerDrawCallParams {
 	int useBumpmapLightTogglingFix;
 	float RGTC;
 	vec2 padding_2;
-	// bindless texture handles - if supported
-	uvec2 normalTexture;
-	uvec2 padding;
-	uvec2 diffuseTexture;
-	uvec2 specularTexture;
 };
 
 layout (std140) uniform PerDrawCallParamsBlock {

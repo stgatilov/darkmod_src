@@ -23,7 +23,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../tr_local.h"
 
 extern idCVar r_useNewBackend;
-extern idCVar r_useBindlessTextures;
 
 class FrameBuffer;
 
@@ -38,8 +37,6 @@ public:
 	void DrawLightgem( const viewDef_t *viewDef, byte *lightgemData );
 
 	void EndFrame();
-
-	bool ShouldUseBindlessTextures() const;
 
 private:
 	DrawBatchExecutor drawBatchExecutor;

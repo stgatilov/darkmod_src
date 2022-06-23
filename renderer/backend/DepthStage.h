@@ -31,7 +31,6 @@ private:
 
 	DrawBatchExecutor *drawBatchExecutor;
 	GLSLProgram *depthShader = nullptr;
-	GLSLProgram *depthShaderBindless = nullptr;
 
 	uint currentIndex = 0;
 	DrawBatch<ShaderParams> drawBatch;

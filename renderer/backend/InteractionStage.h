@@ -34,9 +34,6 @@ private:
 	GLSLProgram *stencilInteractionShader;
 	GLSLProgram *shadowMapInteractionShader;
 	GLSLProgram *ambientInteractionShader;
-	GLSLProgram *bindlessStencilInteractionShader;
-	GLSLProgram *bindlessShadowMapInteractionShader;
-	GLSLProgram *bindlessAmbientInteractionShader;
 	GLSLProgram *interactionShader;
 	uint maxShaderParamsArraySize;
 
@@ -46,7 +43,7 @@ private:
 	GLuint poissonSamplesUbo = 0;
 	idList<idVec2> poissonSamples;
 
-	void LoadInteractionShader(GLSLProgram *shader, const idStr &baseName, bool bindless);
+	void LoadInteractionShader(GLSLProgram *shader, const idStr &baseName);
 	void BindShadowTexture();
 	void ChooseInteractionProgram( viewLight_t *vLight, bool translucent );
 	void ProcessSingleSurface( viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf );

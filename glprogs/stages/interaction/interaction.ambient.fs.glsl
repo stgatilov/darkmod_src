@@ -14,12 +14,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 
-#pragma tdm_define "BINDLESS_TEXTURES"
-
-#ifdef BINDLESS_TEXTURES
-#extension GL_ARB_bindless_texture : require
-#endif
-
 #pragma tdm_include "stages/interaction/interaction.params.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
 
@@ -37,22 +31,6 @@ flat in int var_DrawId;
 
 out vec4 FragColor;
 	 
-#ifdef BINDLESS_TEXTURES
-vec4 textureNormal(vec2 uv) {
-	sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
-	return texture(normalTexture, uv);
-}
-
-vec4 textureDiffuse(vec2 uv) {
-	sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
-	return texture(diffuseTexture, uv);
-}
-
-vec4 textureSpecular(vec2 uv) {
-	sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
-	return texture(specularTexture, uv);
-}
-#else
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_diffuseTexture;
 uniform sampler2D u_specularTexture;
@@ -68,7 +46,6 @@ vec4 textureDiffuse(vec2 uv) {
 vec4 textureSpecular(vec2 uv) {
 	return texture(u_specularTexture, uv);
 }
-#endif
 
 uniform sampler2D u_lightProjectionTexture;         
 uniform samplerCube	u_lightProjectionCubemap;

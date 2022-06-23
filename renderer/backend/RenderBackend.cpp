@@ -28,7 +28,6 @@ RenderBackend renderBackendImpl;
 RenderBackend *renderBackend = &renderBackendImpl;
 
 idCVar r_useNewBackend( "r_useNewBackend", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental new backend" );
-idCVar r_useBindlessTextures("r_useBindlessTextures", "0", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental bindless texturing to reduce drawcall overhead (if supported by hardware)");
 
 namespace {
 	void CreateLightgemFbo( FrameBuffer *fbo ) {
@@ -186,13 +185,6 @@ void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData )
 
 void RenderBackend::EndFrame() {
 	drawBatchExecutor.EndFrame();
-	if (GLAD_GL_ARB_bindless_texture) {
-		globalImages->MakeUnusedImagesNonResident();
-	}
-}
-
-bool RenderBackend::ShouldUseBindlessTextures() const {
-	return GLAD_GL_ARB_bindless_texture && r_useBindlessTextures.GetBool();
 }
 
 void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
@@ -281,8 +273,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 		}
 	}
 
-	bool useManyLightStage = r_shadowMapSinglePass.GetInteger() == 2 && r_shadows.GetInteger() != 1 && 
-		(ShouldUseBindlessTextures() || glConfig.maxTextureUnits >= 32);
+	bool useManyLightStage = r_shadowMapSinglePass.GetInteger() == 2 && r_shadows.GetInteger() != 1 && glConfig.maxTextureUnits >= 32;
 
 	if ( useManyLightStage ) {
 		manyLightStage.DrawInteractions( viewDef );

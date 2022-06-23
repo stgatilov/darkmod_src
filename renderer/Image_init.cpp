@@ -239,10 +239,6 @@ idImage::idImage() {
 	compressedData = nullptr;
 	residency = IR_GRAPHICS;
 	backgroundLoadState = IS_NONE;
-	isBindlessHandleResident = false;
-	textureHandle = 0;
-	lastNeededInFrame = -1;
-	isImmutable = false;
 	loadStack = nullptr;
 }
 
@@ -793,20 +789,15 @@ void idImageManager::ChangeTextureFilter( void ) {
 			continue;
 		}
 
-		if ( glt->isImmutable ) {
-			// textures with bindless handles are immutable, need to recreate
-			glt->PurgeImage( false );
-		} else {
-			glt->Bind();
-			if ( glt->filter == TF_DEFAULT ) {
-				qglTexParameterf( texEnum, GL_TEXTURE_MIN_FILTER, globalImages->textureMinFilter );
-				qglTexParameterf( texEnum, GL_TEXTURE_MAG_FILTER, globalImages->textureMaxFilter );
-			}
-			if ( glConfig.anisotropicAvailable ) {
-				qglTexParameterf( texEnum, GL_TEXTURE_MAX_ANISOTROPY_EXT, globalImages->textureAnisotropy );
-			}
-			qglTexParameterf( texEnum, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
+		glt->Bind();
+		if ( glt->filter == TF_DEFAULT ) {
+			qglTexParameterf( texEnum, GL_TEXTURE_MIN_FILTER, globalImages->textureMinFilter );
+			qglTexParameterf( texEnum, GL_TEXTURE_MAG_FILTER, globalImages->textureMaxFilter );
 		}
+		if ( glConfig.anisotropicAvailable ) {
+			qglTexParameterf( texEnum, GL_TEXTURE_MAX_ANISOTROPY_EXT, globalImages->textureAnisotropy );
+		}
+		qglTexParameterf( texEnum, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
 	}
 
 	// if any framebuffers are using render textures, they will need to be recreated after this
@@ -819,8 +810,6 @@ idImage::Reload
 ===============
 */
 void idImage::Reload( bool checkPrecompressed, bool force ) {
-	MakeNonResident();
-
 	// always regenerate functional images
 	if ( generatorFunction ) {
 		generatorFunction( this );
@@ -1875,14 +1864,4 @@ void idImageManager::PrintMemInfo( MemInfo_t *mi ) {
 
 	f->Printf( "\nTotal image bytes allocated: %s\n", idStr::FormatNumber( total ).c_str() );
 	fileSystem->CloseFile( f );
-}
-
-void idImageManager::MakeUnusedImagesNonResident() {
-    // if textures haven't been used in a frame for a while, they should be removed from residency,
-    // so that they can be evicted from GPU memory if necessary
-    for (idImage *image : images) {
-        if (image->lastNeededInFrame + 250 < backEnd.frameCount) {
-            image->MakeNonResident();
-        }
-    }
 }

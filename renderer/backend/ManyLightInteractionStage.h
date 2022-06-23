@@ -32,8 +32,6 @@ private:
 	// 5 are bound by global / per-model textures, and we need 4 per light
 	// (technically 2, but we need separate 2D/cube samplers for all light types)
 	static const int MAX_LIGHTS = 6;
-	// in bindless mode, max lights is the number of bits available in our mask
-	static const int MAX_BINDLESS_LIGHTS = 32;
 	
 	struct ShaderParams;
 	struct LightParams;
@@ -41,7 +39,6 @@ private:
 
 	DrawBatchExecutor *drawBatchExecutor;
 	GLSLProgram *shadowMapInteractionShader;
-	GLSLProgram *bindlessShadowMapInteractionShader;
 	GLSLProgram *interactionShader;
 	uint maxShaderParamsArraySize;
 
@@ -62,7 +59,7 @@ private:
 	void SetGlState(int depthFunc);
 
 	void DrawAllSurfaces( idList<const drawSurf_t *> &drawSurfs );
-	void LoadInteractionShader(GLSLProgram *shader, bool bindless);
+	void LoadInteractionShader(GLSLProgram *shader);
 	void BindShadowTexture();
 	void PrepareInteractionProgram();
 	void ProcessSingleSurface( const drawSurf_t *surf );

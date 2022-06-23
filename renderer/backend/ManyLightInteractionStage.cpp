@@ -39,11 +39,7 @@ struct ManyLightInteractionStage::ShaderParams {
 	idVec4 hasTextureDNS;
 	idVec4 ambientRimColor;
 	uint32_t lightMask;
-	uint32_t padding;
-	// bindless texture handles, if supported
-	uint64_t normalTexture;
-	uint64_t diffuseTexture;
-	uint64_t specularTexture;
+	uint32_t padding[3];
 };
 
 struct ManyLightInteractionStage::LightParams {
@@ -56,9 +52,6 @@ struct ManyLightInteractionStage::LightParams {
 	int cubic;
 	int ambient;
 	int padding;
-	// bindless texture handles, if supported
-	uint64_t fallOffTexture;
-	uint64_t projectionTexture;
 };
 
 struct ManyLightInteractionStage::DrawInteraction {
@@ -118,22 +111,17 @@ namespace {
 	};
 }
 
-void ManyLightInteractionStage::LoadInteractionShader( GLSLProgram *shader, bool bindless ) {
+void ManyLightInteractionStage::LoadInteractionShader( GLSLProgram *shader ) {
 	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
-	defines.Set( "MAX_LIGHTS", idStr::Fmt( "%d", bindless ? MAX_BINDLESS_LIGHTS : MAX_LIGHTS ) );
-	if (bindless) {
-		defines.Set( "BINDLESS_TEXTURES", "1" );
-	}
+	defines.Set( "MAX_LIGHTS", idStr::Fmt( "%d", MAX_LIGHTS ) );
 	shader->LoadFromFiles( "stages/interaction/manylight.vert.glsl", "stages/interaction/manylight.frag.glsl", defines );
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->ssaoTexture.Set( TU_SSAO );
 	uniforms->shadowMap.Set( TU_SHADOW_MAP );
-	if (!bindless) {
-		uniforms->normalTexture.Set( TU_NORMAL );
-		uniforms->diffuseTexture.Set( TU_DIFFUSE );
-		uniforms->specularTexture.Set( TU_SPECULAR );
-	}
+	uniforms->normalTexture.Set( TU_NORMAL );
+	uniforms->diffuseTexture.Set( TU_DIFFUSE );
+	uniforms->specularTexture.Set( TU_SPECULAR );
 	shader->BindUniformBlockLocation( 0, "ViewParamsBlock" );
 	shader->BindUniformBlockLocation( 1, "PerDrawCallParamsBlock" );
 	shader->BindUniformBlockLocation( 2, "ShadowSamplesBlock" );
@@ -146,15 +134,11 @@ ManyLightInteractionStage::ManyLightInteractionStage( DrawBatchExecutor *drawBat
 {}
 
 void ManyLightInteractionStage::Init() {
-	lightParams = new LightParams[MAX_BINDLESS_LIGHTS];
+	lightParams = new LightParams[MAX_LIGHTS];
 	maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
 	
 	shadowMapInteractionShader = programManager->LoadFromGenerator( "manylight", 
-		[this](GLSLProgram *shader) { LoadInteractionShader( shader, false ); } );
-	if (GLAD_GL_ARB_bindless_texture) {
-		bindlessShadowMapInteractionShader = programManager->LoadFromGenerator( "manylight_bindless", 
-			[this](GLSLProgram *shader) { LoadInteractionShader( shader, true ); } );
-	}
+		[this](GLSLProgram *shader) { LoadInteractionShader( shader ); } );
 
 	qglGenBuffers( 1, &poissonSamplesUbo );
 	qglBindBuffer( GL_UNIFORM_BUFFER, poissonSamplesUbo );
@@ -215,7 +199,7 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 
 		const idMaterial *lightShader = vLight->lightShader;
 		const float	*lightRegs = vLight->shaderRegisters;
-		int maxSupportedLights = renderBackend->ShouldUseBindlessTextures() ? MAX_BINDLESS_LIGHTS : MAX_LIGHTS;
+		int maxSupportedLights = MAX_LIGHTS;
 		for ( int lightStageNum = 0; lightStageNum < lightShader->GetNumStages(); lightStageNum++ ) {
 			const shaderStage_t	*lightStage = lightShader->GetStage( lightStageNum );
 
@@ -227,26 +211,19 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			LightParams &params = lightParams[curLight];
 
 			vLight->lightMask |= (1u << curLight );
-			if ( renderBackend->ShouldUseBindlessTextures() ) {
-				vLight->falloffImage->MakeResident();
-				params.fallOffTexture = vLight->falloffImage->BindlessHandle();
-				lightStage->texture.image->MakeResident();
-				params.projectionTexture = lightStage->texture.image->BindlessHandle();
+			GL_SelectTexture( TU_FIRST_LIGHT + 2 * curLight );
+			vLight->falloffImage->Bind();
+			if ( vLight->falloffImage->type == TT_CUBIC ) {
+				falloffCubeTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight;
 			} else {
-				GL_SelectTexture( TU_FIRST_LIGHT + 2 * curLight );
-				vLight->falloffImage->Bind();
-				if ( vLight->falloffImage->type == TT_CUBIC ) {
-					falloffCubeTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight;
-				} else {
-					falloffTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight;
-				}
-				GL_SelectTexture( TU_FIRST_LIGHT + 2 * curLight + 1 );
-				lightStage->texture.image->Bind();
-				if ( lightStage->texture.image->type == TT_CUBIC) {
-					projectionCubeTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight + 1;
-				} else {
-					projectionTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight + 1;
-				}
+				falloffTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight;
+			}
+			GL_SelectTexture( TU_FIRST_LIGHT + 2 * curLight + 1 );
+			lightStage->texture.image->Bind();
+			if ( lightStage->texture.image->type == TT_CUBIC) {
+				projectionCubeTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight + 1;
+			} else {
+				projectionTextureUnits[curLight] = TU_FIRST_LIGHT + 2 * curLight + 1;
 			}
 
 			params.ambient = lightShader->IsAmbientLight();
@@ -326,12 +303,10 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 	}
 
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
-	if ( !renderBackend->ShouldUseBindlessTextures() ) {
-		uniforms->lightFalloffTexture.SetArray( MAX_LIGHTS, falloffTextureUnits );
-		uniforms->lightFalloffCubemap.SetArray( MAX_LIGHTS, falloffCubeTextureUnits );
-		uniforms->lightProjectionTexture.SetArray( MAX_LIGHTS, projectionTextureUnits );
-		uniforms->lightProjectionCubemap.SetArray( MAX_LIGHTS, projectionCubeTextureUnits );
-	}
+	uniforms->lightFalloffTexture.SetArray( MAX_LIGHTS, falloffTextureUnits );
+	uniforms->lightFalloffCubemap.SetArray( MAX_LIGHTS, falloffCubeTextureUnits );
+	uniforms->lightProjectionTexture.SetArray( MAX_LIGHTS, projectionTextureUnits );
+	uniforms->lightProjectionCubemap.SetArray( MAX_LIGHTS, projectionCubeTextureUnits );
 	uniforms->numLights.Set( curLight );
 
 	drawBatchExecutor->UploadExtraUboData( lightParams, sizeof(LightParams) * curLight, 3 );
@@ -382,7 +357,7 @@ void ManyLightInteractionStage::BindShadowTexture() {
 }
 
 void ManyLightInteractionStage::PrepareInteractionProgram() {
-	interactionShader = renderBackend->ShouldUseBindlessTextures() ? bindlessShadowMapInteractionShader : shadowMapInteractionShader;
+	interactionShader = shadowMapInteractionShader;
 	interactionShader->Activate();
 
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
@@ -501,7 +476,7 @@ void ManyLightInteractionStage::PrepareDrawCommand( DrawInteraction *din ) {
 		din->specularImage = globalImages->blackImage;
 	}
 
-	if (currentIndex > 0 && !renderBackend->ShouldUseBindlessTextures()) {
+	if (currentIndex > 0) {
 		if (!din->bumpImage->IsBound( TU_NORMAL )
 			|| !din->diffuseImage->IsBound( TU_DIFFUSE )
 			|| !din->specularImage->IsBound( TU_SPECULAR ) ) {
@@ -511,7 +486,7 @@ void ManyLightInteractionStage::PrepareDrawCommand( DrawInteraction *din ) {
 		}
 	}
 
-	if (currentIndex == 0 && !renderBackend->ShouldUseBindlessTextures()) {
+	if (currentIndex == 0) {
 		// bind new material textures
 		GL_SelectTexture( TU_NORMAL );
 		din->bumpImage->Bind();
@@ -553,15 +528,6 @@ void ManyLightInteractionStage::PrepareDrawCommand( DrawInteraction *din ) {
 		params.hasTextureDNS = idVec4(1, 1, 1, 0);
 	}
 	params.ambientRimColor = din->ambientRimColor;
-
-	if (renderBackend->ShouldUseBindlessTextures()) {
-		din->bumpImage->MakeResident();
-		params.normalTexture = din->bumpImage->BindlessHandle();
-		din->diffuseImage->MakeResident();
-		params.diffuseTexture = din->diffuseImage->BindlessHandle();
-		din->specularImage->MakeResident();
-		params.specularTexture = din->specularImage->BindlessHandle();
-	}
 
 	params.lightMask = din->lightMask;
 

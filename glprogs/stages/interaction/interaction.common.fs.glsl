@@ -16,12 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Includes: illumination model, fetching surface and light properties
 // Excludes: shadows
 
-#pragma tdm_define "BINDLESS_TEXTURES"
 #pragma tdm_include "tdm_lightproject.glsl"
-
-#ifdef BINDLESS_TEXTURES
-#extension GL_ARB_bindless_texture : require
-#endif
 
 in vec3 var_Position;
 in vec4 var_Color;
@@ -33,22 +28,6 @@ flat in int var_DrawId;
 
 #pragma tdm_include "stages/interaction/interaction.params.glsl"
 
-#ifdef BINDLESS_TEXTURES
-vec4 textureNormal(vec2 uv) {
-	sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
-	return texture(normalTexture, uv);
-}
-
-vec4 textureDiffuse(vec2 uv) {
-	sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
-	return texture(diffuseTexture, uv);
-}
-
-vec4 textureSpecular(vec2 uv) {
-	sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
-	return texture(specularTexture, uv);
-}
-#else
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_diffuseTexture;
 uniform sampler2D u_specularTexture;
@@ -64,7 +43,6 @@ vec4 textureDiffuse(vec2 uv) {
 vec4 textureSpecular(vec2 uv) {
 	return texture(u_specularTexture, uv);
 }
-#endif
 
 uniform sampler2D u_lightFalloffTexture;
 uniform sampler2D u_lightProjectionTexture;

@@ -283,17 +283,6 @@ public:
 
 	//stgatilov: information about why and how this image was loaded (may be missing)
 	LoadStack *			loadStack;
-
-	// START bindless texture support
-private:
-	GLuint64			textureHandle;
-	bool				isBindlessHandleResident;
-public:
-	bool				isImmutable;
-	int					lastNeededInFrame;
-	void				MakeResident();
-	void				MakeNonResident();
-	GLuint64			BindlessHandle();
 };
 
 
@@ -430,8 +419,6 @@ public:
 	float				textureLODBias;
 
 	idImage *			imageHashTable[FILE_HASH_SIZE];
-
-	void				MakeUnusedImagesNonResident();
 };
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system

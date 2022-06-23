@@ -44,11 +44,6 @@ struct InteractionStage::ShaderParams {
 	int useBumpmapLightTogglingFix;
 	float RGTC;
 	idVec2 padding_2;
-	// bindless texture handles, if supported
-	uint64_t normalTexture;
-	uint64_t padding;
-	uint64_t diffuseTexture;
-	uint64_t specularTexture;
 };
 
 namespace {
@@ -96,12 +91,9 @@ namespace {
 	};
 }
 
-void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName, bool bindless ) {
+void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName ) {
 	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
-	if (bindless) {
-		defines.Set( "BINDLESS_TEXTURES", "1" );
-	}
 	shader->LoadFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->lightProjectionCubemap.Set( TU_LIGHT_PROJECT_CUBE );
@@ -112,11 +104,9 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
 	uniforms->stencilTexture.Set( TU_SHADOW_STENCIL );
 	uniforms->depthTexture.Set( TU_SHADOW_DEPTH );
 	uniforms->shadowMap.Set( TU_SHADOW_MAP );
-	if (!bindless) {
-		uniforms->normalTexture.Set( TU_NORMAL );
-		uniforms->diffuseTexture.Set( TU_DIFFUSE );
-		uniforms->specularTexture.Set( TU_SPECULAR );
-	}
+	uniforms->normalTexture.Set( TU_NORMAL );
+	uniforms->diffuseTexture.Set( TU_DIFFUSE );
+	uniforms->specularTexture.Set( TU_SPECULAR );
 	shader->BindUniformBlockLocation( 0, "ViewParamsBlock" );
 	shader->BindUniformBlockLocation( 1, "PerDrawCallParamsBlock" );
 	shader->BindUniformBlockLocation( 2, "ShadowSamplesBlock" );
@@ -131,19 +121,11 @@ void InteractionStage::Init() {
 	maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
 	
 	ambientInteractionShader = programManager->LoadFromGenerator( "interaction_ambient", 
-		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.ambient", false ); } );
+		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.ambient" ); } );
 	stencilInteractionShader = programManager->LoadFromGenerator( "interaction_stencil", 
-		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.stencil", false ); } );
+		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.stencil" ); } );
 	shadowMapInteractionShader = programManager->LoadFromGenerator( "interaction_shadowmap", 
-		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.shadowmap", false ); } );
-	if (GLAD_GL_ARB_bindless_texture) {
-		bindlessAmbientInteractionShader = programManager->LoadFromGenerator( "interaction_ambient_bindless", 
-			[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.ambient", true ); } );
-		bindlessStencilInteractionShader = programManager->LoadFromGenerator( "interaction_stencil_bindless", 
-			[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.stencil", true ); } );
-		bindlessShadowMapInteractionShader = programManager->LoadFromGenerator( "interaction_shadowmap_bindless", 
-			[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.shadowmap", true ); } );
-	}
+		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.shadowmap" ); } );
 
 	qglGenBuffers( 1, &poissonSamplesUbo );
 	qglBindBuffer( GL_UNIFORM_BUFFER, poissonSamplesUbo );
@@ -285,13 +267,13 @@ void InteractionStage::BindShadowTexture() {
 
 void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool translucent ) {
 	if ( vLight->lightShader->IsAmbientLight() ) {
-		interactionShader = renderBackend->ShouldUseBindlessTextures() ? bindlessAmbientInteractionShader : ambientInteractionShader;
+		interactionShader = ambientInteractionShader;
 		Uniforms::Interaction *uniforms = interactionShader->GetUniformGroup<Uniforms::Interaction>();
 		uniforms->ambient = true;
 	} else if ( vLight->shadowMapIndex ) {
-		interactionShader = renderBackend->ShouldUseBindlessTextures() ? bindlessShadowMapInteractionShader : shadowMapInteractionShader;
+		interactionShader = shadowMapInteractionShader;
 	} else {
-		interactionShader = renderBackend->ShouldUseBindlessTextures() ? bindlessStencilInteractionShader : stencilInteractionShader;
+		interactionShader = stencilInteractionShader;
 	}
 	interactionShader->Activate();
 
@@ -468,7 +450,7 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 		din->specularImage = globalImages->blackImage;
 	}
 
-	if (currentIndex > 0 && !renderBackend->ShouldUseBindlessTextures()) {
+	if (currentIndex > 0) {
 		if (!din->bumpImage->IsBound( TU_NORMAL )
 			|| !din->diffuseImage->IsBound( TU_DIFFUSE )
 			|| !din->specularImage->IsBound( TU_SPECULAR ) ) {
@@ -478,7 +460,7 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 		}
 	}
 
-	if (currentIndex == 0 && !renderBackend->ShouldUseBindlessTextures()) {
+	if (currentIndex == 0) {
 		// bind new material textures
 		GL_SelectTexture( TU_NORMAL );
 		din->bumpImage->Bind();
@@ -526,15 +508,6 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 	params.ambientRimColor = din->ambientRimColor;
 	params.useBumpmapLightTogglingFix = r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides();
 	params.RGTC = din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2;
-
-	if (renderBackend->ShouldUseBindlessTextures()) {
-		din->bumpImage->MakeResident();
-		params.normalTexture = din->bumpImage->BindlessHandle();
-		din->diffuseImage->MakeResident();
-		params.diffuseTexture = din->diffuseImage->BindlessHandle();
-		din->specularImage->MakeResident();
-		params.specularTexture = din->specularImage->BindlessHandle();
-	}
 
 	drawBatch.surfs[currentIndex] = din->surf;
 

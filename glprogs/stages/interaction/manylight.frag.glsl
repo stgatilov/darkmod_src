@@ -15,12 +15,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #version 400 core
 #extension GL_ARB_texture_gather: enable
 
-#pragma tdm_define "BINDLESS_TEXTURES"
-
-#ifdef BINDLESS_TEXTURES
-#extension GL_ARB_bindless_texture : require
-#endif
-
 in vec3 var_WorldPosition;
 in vec4 var_ClipPosition;
 in vec4 var_Color;
@@ -30,44 +24,6 @@ in vec2 var_TexSpecular;
 flat in int var_DrawId;
 
 #pragma tdm_include "stages/interaction/manylight.params.glsl"
-
-#ifdef BINDLESS_TEXTURES
-vec4 textureNormal(vec2 uv) {
-	sampler2D normalTexture = sampler2D(params[var_DrawId].normalTexture);
-	return texture(normalTexture, uv);
-}
-
-vec4 textureDiffuse(vec2 uv) {
-	sampler2D diffuseTexture = sampler2D(params[var_DrawId].diffuseTexture);
-	return texture(diffuseTexture, uv);
-}
-
-vec4 textureSpecular(vec2 uv) {
-	sampler2D specularTexture = sampler2D(params[var_DrawId].specularTexture);
-	return texture(specularTexture, uv);
-}
-
-vec4 lightFalloff2D(int light, vec2 uv) {
-    sampler2D falloffTexture = sampler2D(lights[light].falloffTexture);
-    return texture(falloffTexture, uv);
-}
-
-vec4 lightProjection2D(int light, vec3 proj) {
-    sampler2D projectionTexture = sampler2D(lights[light].projectionTexture);
-    return textureProj(projectionTexture, proj);
-}
-
-vec4 lightFalloffCube(int light, vec3 uv) {
-    samplerCube falloffTexture = samplerCube(lights[light].falloffTexture);
-    return texture(falloffTexture, uv, 2);
-}
-
-vec4 lightProjectionCube(int light, vec3 proj) {
-    samplerCube projectionTexture = samplerCube(lights[light].projectionTexture);
-    return texture(projectionTexture, proj);
-}
-
-#else
 
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_diffuseTexture;
@@ -105,8 +61,6 @@ vec4 lightFalloffCube(int light, vec3 uv) {
 vec4 lightProjectionCube(int light, vec3 proj) {
     return texture(u_lightProjectionCubemap[light], proj);
 }
-
-#endif
 
 
 uniform int		u_useBumpmapLightTogglingFix;  //stgatilov #4825

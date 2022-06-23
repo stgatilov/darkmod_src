@@ -32,11 +32,7 @@ struct PerDrawCallParams {
 	vec4 hasTextureDNS;
 	vec4 ambientRimColor;
     uint lightMask;
-    int padding;
-	// bindless texture handles - if supported
-	uvec2 normalTexture;
-	uvec2 diffuseTexture;
-	uvec2 specularTexture;
+    int padding[3];
 };
 
 struct PerLightParams {
@@ -49,9 +45,6 @@ struct PerLightParams {
     int cubic;
     int ambient;
     int padding;
-    // bindless texture handles - if supported
-    uvec2 falloffTexture;
-    uvec2 projectionTexture;
 };
 
 layout (std140) uniform PerDrawCallParamsBlock {

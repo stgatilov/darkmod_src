@@ -243,7 +243,7 @@ void ShadowMapStage::CreateDrawCommands( const drawSurf_t *surf ) {
 }
 
 void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage ) {
-	if( stage && !renderBackend->ShouldUseBindlessTextures() && !stage->texture.image->IsBound( 0 ) ) {
+	if( stage && !stage->texture.image->IsBound( 0 ) ) {
 		ExecuteDrawCalls();
 		stage->texture.image->Bind();
 	}
@@ -255,11 +255,6 @@ void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage
 	if( stage ) {
 		// set the alpha modulate
 		//params.alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
-
-		//if( renderBackend->ShouldUseBindlessTextures() ) {
-		//	stage->texture.image->MakeResident();
-		//	params.textureHandle = stage->texture.image->BindlessHandle();
-		//}
 
 		//if( stage->texture.hasMatrix ) {
 		//	RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, params.textureMatrix.ToFloatPtr() );

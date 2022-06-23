@@ -32,17 +32,12 @@ namespace {
 		DEFINE_UNIFORM( sampler, texture )
 	};
 
-	void LoadShader( GLSLProgram *shader, int maxSupportedDrawsPerBatch, bool bindless ) {
+	void LoadShader( GLSLProgram *shader, int maxSupportedDrawsPerBatch ) {
 		idHashMapDict defines;
 		defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxSupportedDrawsPerBatch ) );
-		if (bindless) {
-			defines.Set( "BINDLESS_TEXTURES", "1" );
-		}
 		shader->LoadFromFiles( "stages/depth/depth.vert.glsl", "stages/depth/depth.frag.glsl", defines );
-		if (!bindless) {
-			DepthUniforms *uniforms = shader->GetUniformGroup<DepthUniforms>();
-			uniforms->texture.Set( 0 );
-		}
+		DepthUniforms *uniforms = shader->GetUniformGroup<DepthUniforms>();
+		uniforms->texture.Set( 0 );
 		shader->BindUniformBlockLocation( 0, "ViewParamsBlock" );
 		shader->BindUniformBlockLocation( 1, "ShaderParamsBlock" );
 	}
@@ -75,11 +70,7 @@ DepthStage::DepthStage( DrawBatchExecutor* drawBatchExecutor )
 
 void DepthStage::Init() {
 	uint maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
-	depthShader = programManager->LoadFromGenerator( "depth", [=](GLSLProgram *program) { LoadShader(program, maxShaderParamsArraySize, false); } );
-
-	if( GLAD_GL_ARB_bindless_texture ) {
-		depthShaderBindless = programManager->LoadFromGenerator( "depth_bindless", [=](GLSLProgram *program) { LoadShader(program, maxShaderParamsArraySize, true); } );
-	}
+	depthShader = programManager->LoadFromGenerator( "depth", [=](GLSLProgram *program) { LoadShader(program, maxShaderParamsArraySize); } );
 }
 
 void DepthStage::Shutdown() {}
@@ -91,7 +82,7 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 
 	TRACE_GL_SCOPE( "DepthStage" );
 
-	GLSLProgram *shader = renderBackend->ShouldUseBindlessTextures() ? depthShaderBindless : depthShader;
+	GLSLProgram *shader = depthShader;
 	shader->Activate();
 	DepthUniforms *depthUniforms = shader->GetUniformGroup<DepthUniforms>();
 
@@ -285,7 +276,7 @@ void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 }
 
 void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage ) {
-	if( stage && !renderBackend->ShouldUseBindlessTextures() && !stage->texture.image->IsBound( 0 ) ) {
+	if( stage && !stage->texture.image->IsBound( 0 ) ) {
 		ExecuteDrawCalls();
 		stage->texture.image->Bind();
 	}
@@ -309,11 +300,6 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 		// set the alpha modulate
 		params.color[3] = surf->shaderRegisters[stage->color.registers[3]];
 		params.alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
-
-		if( renderBackend->ShouldUseBindlessTextures() ) {
-			stage->texture.image->MakeResident();
-			params.textureHandle = stage->texture.image->BindlessHandle();
-		}
 
 		if( stage->texture.hasMatrix ) {
 			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, params.textureMatrix.ToFloatPtr() );
