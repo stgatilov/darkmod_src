@@ -73,6 +73,7 @@ find_package(libjpeg REQUIRED)
 add_executable(tdm_installer WIN32 ${sources})
 target_include_directories(tdm_installer PRIVATE zipsync ${fltk_INCLUDE_DIRS} ${libjpeg_INCLUDE_DIRS})
 target_link_libraries(tdm_installer PRIVATE libzipsync libzipsyncextra ${fltk_LIBRARIES} ${libjpeg_LIBRARIES})
+
 if(UNIX)
     target_link_libraries(tdm_installer PRIVATE m dl X11 Xext pthread)  # fltk -> *
 elseif(MSVC)
@@ -80,6 +81,7 @@ elseif(MSVC)
     target_compile_definitions(tdm_installer PRIVATE _CRT_SECURE_NO_DEPRECATE)
     target_link_libraries(libzipsync INTERFACE ws2_32)                  # libzipsync -> libcurl -> ?
 endif()
+
 if(THIRDPARTY_PLATFORM_OVERRIDE)
     if(UNIX)
         set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.custom")
