@@ -719,7 +719,8 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		// only dump if in a 3d view
 		if ( backEnd.viewDef->viewEntitys ) {
-			frameBuffers->UpdateCurrentRenderCopy();
+			if ( !r_ignore.GetBool() )
+				frameBuffers->UpdateCurrentRenderCopy();
 		}
 		backEnd.currentRenderCopied = true;
 	}
@@ -741,7 +742,10 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		if ( drawSurfs[i]->sort >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
 			break;
 		}
-
+		if ( drawSurfs[i]->sort >= SS_POST_PROCESS ) {
+			if ( r_ignore.GetBool() )
+				frameBuffers->UpdateCurrentRenderCopy();
+		}
 		if ( drawSurfs[i]->sort == SS_AFTER_FOG && !backEnd.afterFogRendered ) {
 			break;
 		}

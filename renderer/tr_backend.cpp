@@ -657,12 +657,12 @@ struct TonemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM(float, sharpness)
 };
 
-void RB_Bloom( bloomCommand_t *cmd ) {
+bool RB_Bloom( bloomCommand_t *cmd ) {
 	if ( !r_bloom.GetBool() ) {
-		return;
+		return false;
 	}
 	if ( RB_CheckTools( globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight ) ) {
-		return;
+		return false;
 	}
 
 	TRACE_GL_SCOPE("Postprocess")
@@ -670,6 +670,7 @@ void RB_Bloom( bloomCommand_t *cmd ) {
 	bloom->ComputeBloomFromRenderImage();
 	frameBuffers->LeavePrimary( false );
 	bloom->ApplyBloom();
+	return true;
 }
 
 idCVar r_postprocess_sharpen( "r_postprocess_sharpen", "1", CVAR_RENDERER|CVAR_BOOL|CVAR_ARCHIVE, "Use contrast-adaptive sharpening in tonemapping" );
@@ -787,15 +788,18 @@ RB_CopyRender
 Copy part of the current framebuffer to an image
 =============
 */
-void RB_CopyRender( const void *data ) {
+bool RB_CopyRender( const void *data ) {
 	if ( r_skipCopyTexture.GetBool() ) {
-		return;
+		return false;
 	}
 	const copyRenderCommand_t &cmd = *( copyRenderCommand_t * )data;
 
 	RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
+	if ( cmd.imageWidth * cmd.imageHeight == 0 )
+		return false;
 	frameBuffers->CopyRender( cmd );
+	return true;
 }
 
 /*
@@ -864,9 +868,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			c_setBuffers++;
 			break;
 		case RC_BLOOM:
-			RB_Bloom( (bloomCommand_t*)cmds );
+			if ( RB_Bloom( (bloomCommand_t*)cmds ) )
+				c_drawBloom++;
 			FB_DebugShowContents();
-			c_drawBloom++;
 			frameBuffers->LeavePrimary();
 			fboOff = true;
 			break;

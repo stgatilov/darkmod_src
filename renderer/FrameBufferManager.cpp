@@ -149,6 +149,7 @@ void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 			resolveFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 		} else {
 			primaryFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, r_fboScaling.GetBool() ? GL_LINEAR : GL_NEAREST );
+			backEnd.c_copyFrameBuffer++;
 		}
 
 		if ( r_frontBuffer.GetBool() && !r_tonemap ) {
@@ -209,10 +210,12 @@ void FrameBufferManager::ResolvePrimary( GLbitfield mask, GLenum filter ) {
 
 void FrameBufferManager::UpdateCurrentRenderCopy() {
 	currentRenderFbo->BlitTo( resolveFbo, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+	backEnd.c_copyFrameBuffer++;
 }
 
 void FrameBufferManager::UpdateCurrentDepthCopy() {
 	currentRenderFbo->BlitTo( resolveFbo, GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	backEnd.c_copyDepthBuffer++;
 }
 
 void FrameBufferManager::CopyRender( const copyRenderCommand_t &cmd ) {
@@ -304,7 +307,6 @@ void FrameBufferManager::CopyRender( idImage* image, int x, int y, int imageWidt
 
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	backEnd.c_copyFrameBuffer++;
 }
 
 void FrameBufferManager::CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO ) {
