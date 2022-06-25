@@ -16,7 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 #include "PackagerOptions.h"
-#include "../ReleaseFileset.h"
 #include "../ReleaseManifest.h"
 #include "../Pk4Mappings.h"
 #include "../PackageInstructions.h"

@@ -22,6 +22,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <regex>
 #include "StdString.h"
+#include "StdFormat.h"
+#include "StdFilesystem.h"
+
+namespace fs = stdext;
+
 
 namespace tdm
 {

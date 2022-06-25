@@ -20,14 +20,10 @@ set(sources
     CRC.h
     File.cpp
     File.h
-    IniFile.cpp
-    IniFile.h
     PackageInstructions.h
     Pk4Mappings.h
     ProgramOptions.h
-    ReleaseFileset.h
     ReleaseManifest.h
-    ReleaseVersions.h
     StdFilesystem.cpp
     StdFilesystem.h
     StdFormat.h

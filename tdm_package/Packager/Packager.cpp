@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "../Constants.h"
 #include "../ThreadPool.h"
+#include "../File.h"
+#include "../Zip/TdmZip.h"
 
 namespace tdm
 {
