@@ -16,8 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Packager.h"
 
 #include "../Constants.h"
-#include "../Util.h"
-#include "../ExceptionSafeThread.h"
+#include "../ThreadPool.h"
 
 namespace tdm
 {
@@ -370,69 +369,31 @@ void Packager::CreatePackage()
 
 	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Using %d threads to compress files.", numHardwareThreads));
 
-	std::vector<ExceptionSafeThreadPtr> threads(numHardwareThreads);
-
-	Package::const_iterator i = _package.begin();
-
-	// Keep pushing threads until we've reached the end of the list
-	while (i != _package.end())
-	{
-		if (numHardwareThreads > 1)
-		{
-			// Go through each thread and find a free one
-			for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
-			{
-				if (threads[threadNum] == NULL || threads[threadNum]->done())
-				{
-					// Allocate a new thread using the package being pointed at
-					threads[threadNum].reset(new ExceptionSafeThread(std::bind(&Packager::ProcessPackageElement, this, i)));
-
-					// Next candidate
-					++i;
-
-					break;
-				}
-			}
-
-			// Sleep 50 msec before attempting to create a new thread
-			Util::Wait(50);
-		}
-		else
-		{
-			// Single-thread mode
-			ProcessPackageElement(i);
-			++i;
-		}
-	}
-
 	if (numHardwareThreads > 1)
 	{
-		// No more unassigned packages, wait till all threads are done
-		bool stillProcessing = true;
+		ThreadPool pool(numHardwareThreads);
 
-		while (stillProcessing)
+		std::vector<std::future<void>> futures;
+
+		for (auto i = _package.begin(); i != _package.end(); i++)
 		{
-			stillProcessing = false;
-
-			// As long as we've still one processing thread, set the bool back to true
-			for (std::size_t threadNum = 0; threadNum < threads.size(); ++threadNum)
+			futures.push_back(pool.enqueue([this, i]()
 			{
-				if (threads[threadNum] != NULL && !threads[threadNum]->done())
-				{
-					stillProcessing = true;
-					break;
-				}
-			}
-
-			Util::Wait(50);
+				ProcessPackageElement(i);
+			}));
 		}
 
-		TraceLog::WriteLine(LOG_STANDARD, "All threads done.");
+		// rethrow exceptions (if any)
+		for (auto& f : futures)
+			f.get();
 	}
 	else
 	{
-		TraceLog::WriteLine(LOG_STANDARD, "Done.");
+		for (auto i = _package.begin(); i != _package.end(); i++)
+			ProcessPackageElement(i);
 	}
+
+	TraceLog::WriteLine(LOG_STANDARD, "Done.");
 }
 
 } // namespace 

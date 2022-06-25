@@ -18,7 +18,6 @@ set(sources
     LogWriters.h
     Constants.h
     CRC.h
-    ExceptionSafeThread.h
     File.cpp
     File.h
     IniFile.cpp
@@ -38,12 +37,9 @@ set(sources
     SvnClient.h
     SvnClientImpl.cpp
     SvnClientImpl.h
-    ThreadControl.cpp
-    ThreadControl.h
     TraceLog.cpp
     TraceLog.h
-    Util.cpp
-    Util.h
+    ThreadPool.h
     Packager/Packager.cpp
     Packager/Packager.h
     Packager/PackagerOptions.h
