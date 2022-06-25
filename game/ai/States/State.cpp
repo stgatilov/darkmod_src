@@ -4054,6 +4054,10 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		{
 			alert = owner->AI_AlertLevel + refSpawnargs.GetFloat("absence_alert", "0");
 		}
+		else
+		{
+			alert = owner->thresh_4 + 0.1f; // Obsttorte: #5987 get into agitated search state if absence_alert not set
+		}
 	}
 
 	// grayman #3424 - it's possible we already know about this
@@ -4067,7 +4071,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		alreadyKnow = owner->KnowsAboutSuspiciousEvent(eventID);
 	}
 
-	if ( alert < ( owner->thresh_4 + 0.1f ) )
+	if ( alert > ( owner->thresh_4 + 0.1f ) ) // Obsttorte: #5987 cap alert level if too high
 	{
 		alert = owner->thresh_4 + 0.1f; // grayman #2903 - put the AI into agitated searching so he draws his weapon
 	}
