@@ -16,6 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 #include <memory>
+#include <string>
+#include <set>
 #include "StdFilesystem.h"
 
 namespace fs = stdext;
@@ -24,7 +26,6 @@ namespace tdm
 {
 
 class SvnClient;
-typedef std::shared_ptr<SvnClient> SvnClientPtr;
 
 /**
  * An object providing a few SVN client methods.
@@ -33,17 +34,16 @@ typedef std::shared_ptr<SvnClient> SvnClientPtr;
 class SvnClient
 {
 public:
-	virtual ~SvnClient() {}
-
 	// Try to activate the client in the specified SVN repository.
 	// Deactivated clients will return true in FileIsUnderVersionControl().
-	virtual bool SetActive(const fs::path& repoRoot) = 0;
+	bool SetActive(const fs::path& repoRoot);
 
 	// Returns true if the given file is under version control, false in all other cases
-	virtual bool FileIsUnderVersionControl(const fs::path& path) = 0;
+	bool FileIsUnderVersionControl(const fs::path& path);
 
-	// Factory method to retrieve an implementation of this class
-	static SvnClientPtr Create();
+private:
+	fs::path _repoRoot;
+	std::set<std::string> _versionedSet;
 };
 
 } // namespace

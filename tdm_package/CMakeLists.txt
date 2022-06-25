@@ -35,8 +35,6 @@ set(sources
     StdString.h
     SvnClient.cpp
     SvnClient.h
-    SvnClientImpl.cpp
-    SvnClientImpl.h
     TraceLog.cpp
     TraceLog.h
     ThreadPool.h

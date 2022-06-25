@@ -140,11 +140,11 @@ public:
 									bool skipVersioningCheck = false)
 	{
 		// Acquire an SVN client implementation
-		SvnClientPtr svnClient = SvnClient::Create();
+		SvnClient svnClient;
 
 		if (!skipVersioningCheck)
 		{
-			svnClient->SetActive(repositoryRoot);
+			svnClient.SetActive(repositoryRoot);
 		}
 
 		// Process the inclusion commands and exclude all files as instructed
@@ -152,7 +152,7 @@ public:
 		{
 			if (instr->type == PackageInstruction::Include)
 			{
-				ProcessInclusion(repositoryRoot, instructions, *instr, *svnClient);
+				ProcessInclusion(repositoryRoot, instructions, *instr, svnClient);
 			}
 		}
 	}
