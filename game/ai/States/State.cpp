@@ -4050,13 +4050,18 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 			}
 			return;
 		}
-		if (refSpawnargs.GetFloat("absence_alert", "0") > 0)
+		/*
+		Obsttorte: #5987 
+		The spawnarg that controls gets a new name, so 'absence_alert' becomes 'absence_alert_increase', as it was used wrong by fm authors in the past.
+		If the spawnarg isn't set, the alert level will be increased slightly above agitated searching
+		*/
+		if (refSpawnargs.GetFloat("absence_alert_increase", "0") > 0)
 		{
-			alert = owner->AI_AlertLevel + refSpawnargs.GetFloat("absence_alert", "0");
+			alert = owner->AI_AlertLevel + refSpawnargs.GetFloat("absence_alert_increase", "0"); 
 		}
 		else
 		{
-			alert = owner->thresh_4 + 0.1f; // Obsttorte: #5987 get into agitated search state if absence_alert not set
+			alert = owner->thresh_4 + 0.1f;
 		}
 	}
 
@@ -4070,12 +4075,13 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	{
 		alreadyKnow = owner->KnowsAboutSuspiciousEvent(eventID);
 	}
-
-	if ( alert > ( owner->thresh_4 + 0.1f ) ) // Obsttorte: #5987 cap alert level if too high
+	/*
+	Obsttorte: #5987 removed, doesn't reflect the intention of the system nor the documentation both in the def files and in the wiki
+	if ( alert < ( owner->thresh_4 + 0.1f ) ) 
 	{
 		alert = owner->thresh_4 + 0.1f; // grayman #2903 - put the AI into agitated searching so he draws his weapon
 	}
-
+	*/
 	// Raise alert level if you didn't already know about this
 	if ( !alreadyKnow )
 	{
