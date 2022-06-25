@@ -37,7 +37,8 @@ int main(int argc, char* argv[])
 	// Start logging
 	RegisterLogWriters();
 
-	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.06 (c) 2016 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
+	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v2.00 (c) 2016-2022 by greebo & Tels & stgatilov.");
+	TraceLog::WriteLine(LOG_STANDARD, "Part of The Dark Mod (http://www.thedarkmod.com).");
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	// Parse the command line
@@ -95,85 +96,6 @@ int main(int argc, char* argv[])
 			// Write manifest to disk
 			packager.SaveManifest();
 		}
-		else if (options.IsSet("create-update-package"))
-		{
-			if (options.Get("basedir").empty() || options.Get("headdir").empty() ||
-				options.Get("baseversion").empty() || options.Get("headversion").empty() ||
-				options.Get("outputdir").empty())
-			{
-				options.PrintHelp();
-				return EXIT_SUCCESS;
-			}
-
-			Packager packager(options);
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Analyse base
-			packager.GatherBaseSet();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Analyse head
-			packager.GatherHeadSet();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Calculate the set difference of the two packages
-			packager.CalculateSetDifference();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Pack the changed files into an update PK4
-			packager.CreateUpdatePackage();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			TraceLog::WriteLine(LOG_STANDARD, "Done.");
-		}
-		else if (options.IsSet("update-version-info-file"))
-		{
-			if (options.Get("basedir").empty() || options.Get("baseversion").empty() ||
-				options.Get("outputdir").empty())
-			{
-				options.PrintHelp();
-				return EXIT_SUCCESS;
-			}
-
-			Packager packager(options);
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Analyse base
-			packager.GatherBaseSet();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Pack the changed files into an update PK4
-			packager.CreateVersionInformation();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			TraceLog::WriteLine(LOG_STANDARD, "Done.");
-		}
-		else if (options.IsSet("register-update-package"))
-		{
-			if (options.Get("package").empty() || options.Get("outputdir").empty())
-			{
-				options.PrintHelp();
-				return EXIT_SUCCESS;
-			}
-
-			Packager packager(options);
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			packager.RegisterUpdatePackage(options.Get("package"));
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			TraceLog::WriteLine(LOG_STANDARD, "Done.");
-		}
 		else if (options.IsSet("create-package"))
 		{
 			if (options.Get("darkmoddir").empty() || options.Get("outputdir").empty())
@@ -225,30 +147,6 @@ int main(int argc, char* argv[])
 			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
 
 			packager.CheckRepository();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			TraceLog::WriteLine(LOG_STANDARD, "Done.");
-		}
-		else if (options.IsSet("create-crc-info"))
-		{
-			if (options.Get("basedir").empty())
-			{
-				options.PrintHelp();
-				return EXIT_SUCCESS;
-			}
-
-			Packager packager(options);
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-	
-			// Analyse base
-			packager.GatherBaseSet();
-
-			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
-
-			// Write the base CRC info to the basedir.
-			packager.CreateCrcInfoFile();
 
 			TraceLog::WriteLine(LOG_STANDARD, "---------------------------------------------------------");
 
