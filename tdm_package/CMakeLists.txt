@@ -42,8 +42,6 @@ set(sources
     ThreadControl.h
     TraceLog.cpp
     TraceLog.h
-    UpdatePackage.h
-    UpdatePackageInfo.h
     Util.cpp
     Util.h
     Packager/Packager.cpp
