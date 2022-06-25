@@ -66,8 +66,12 @@ private:
 	Pk4Mappings _pk4Mappings;
 
 	// Manifest files distributed into Pk4s
-	typedef std::list<ManifestFile> ManifestFiles;
-	typedef std::map<std::string, ManifestFiles> Package;
+	struct ManifestPak {
+		std::string name;
+		std::vector<ManifestFile> files;
+		uint64_t contentsSize = 0;
+	};
+	typedef std::map<std::string, ManifestPak> Package;
 	Package _package;
 
 	// ---- Package creation End ----
@@ -115,7 +119,7 @@ public:
 
 private:
 	// Worker thread for creating a release archive
-	void ProcessPackageElement(Package::const_iterator p);
+	void ProcessPackageElement(const ManifestPak& pak);
 };
 
 } // namespace

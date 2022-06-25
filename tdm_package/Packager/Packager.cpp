@@ -233,18 +233,24 @@ void Packager::SortFilesIntoPk4s()
 		// The patterns are applied in the order they appear in the darkmod_pk4s.txt file
 		for (Pk4Mappings::const_iterator m = _pk4Mappings.begin(); !matched && m != _pk4Mappings.end(); ++m)
 		{
+			const std::string& pk4name = m->first;
+
 			// Does this filename match any of the patterns of this PK4 file?
 			for (Patterns::const_iterator p = m->second.begin(); p != m->second.end(); ++p)
 			{
 				if (std::regex_search(i->destFile.string(), *p))
 				{
 					// Match
-					ManifestFiles& files = _package.insert(Package::value_type(m->first, ManifestFiles())).first->second;
+					ManifestPak& pak = _package[pk4name];
+					pak.name = pk4name;
 
-					//TraceLog::WriteLine(LOG_STANDARD, "Putting file " + i->destFile.string() + " => " + m->first);
+					//TraceLog::WriteLine(LOG_STANDARD, "Putting file " + i->destFile.string() + " => " + pk4name);
 
 					// Copy that file into the release package
-					files.push_back(*i);
+					pak.files.push_back(*i);
+
+					if (fs::is_regular_file(darkmodPath / i->sourceFile))
+						pak.contentsSize += fs::file_size(darkmodPath / i->sourceFile);
 
 					// Remove the file from our manifest
 					_manifest.erase(i++);
@@ -260,7 +266,10 @@ void Packager::SortFilesIntoPk4s()
 			// If the file is a PK4 file itself, just add it to the list
 			if (File::IsArchive(i->destFile))
 			{
-				_package.insert(Package::value_type(i->sourceFile.string(), ManifestFiles()));
+				const std::string& pk4name = i->sourceFile.string();
+
+				_package[pk4name].name = pk4name;
+				_package[pk4name].contentsSize += fs::file_size(darkmodPath / pk4name);
 
 				_manifest.erase(i++);
 			}
@@ -284,7 +293,7 @@ void Packager::SortFilesIntoPk4s()
 
 #include "../../framework/CompressionParameters.h"
 
-void Packager::ProcessPackageElement(Package::const_iterator p)
+void Packager::ProcessPackageElement(const ManifestPak& pak)
 {
 	fs::path outputDir = _options.Get("outputdir");
 
@@ -296,7 +305,7 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 	fs::path darkmodPath = _options.Get("darkmoddir");
 
 	// Target file
-	fs::path pk4Path = outputDir / p->first;
+	fs::path pk4Path = outputDir / pak.name;
 
 	// Make sure all folders exist
 	fs::path pk4Folder = pk4Path;
@@ -311,11 +320,11 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 	File::Remove(pk4Path);
 
 	// Copy-only switch for PK4 files mentioned in the manifest (those have 0 members to compress, like tdm_game01.pk4)
-	if (File::IsArchive(p->first) && p->second.empty())
+	if (File::IsArchive(pak.name) && pak.files.empty())
 	{
 		TraceLog::WriteLine(LOG_STANDARD, stdext::format("Copying file: %s", pk4Path.string()));
 
-		if (!File::Copy(darkmodPath / p->first, pk4Path))
+		if (!File::Copy(darkmodPath / pak.name, pk4Path))
 		{
 			TraceLog::Error(stdext::format("Could not copy file: %s", pk4Path.string()));
 		}
@@ -329,10 +338,10 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 
 	if (pk4 == NULL)
 	{
-		throw FailureException("Failed to process element: " + p->first);
+		throw FailureException("Failed to process element: " + pak.name);
 	}
 
-	for (ManifestFiles::const_iterator m = p->second.begin(); m != p->second.end(); ++m)
+	for (auto m = pak.files.begin(); m != pak.files.end(); ++m)
 	{
 		fs::path sourceFile = darkmodPath / m->sourceFile;
 		const fs::path& targetFile = m->destFile;
@@ -360,28 +369,30 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 
 void Packager::CreatePackage()
 {
+	// Get list of pk4 files to process
+	std::vector<ManifestPak> paks;
+	for (auto& p : _package)
+		paks.push_back(p.second);
+
 	// Create worker threads to compress stuff into the target PK4s
-
 	unsigned int numHardwareThreads = std::thread::hardware_concurrency();
-
 	if (numHardwareThreads == 0 || _options.IsSet("use-singlethread-compression")) 
-	{
 		numHardwareThreads = 1;
-	}
-
 	TraceLog::WriteLine(LOG_STANDARD, stdext::format("Using %d threads to compress files.", numHardwareThreads));
 
-	if (numHardwareThreads > 1)
-	{
+	if (numHardwareThreads > 1) {
+		// Sort paks by size decreasing
+		// This should reduces wall time
+		std::sort(paks.begin(), paks.end(), [](const ManifestPak& a, const ManifestPak& b) {
+			return std::tie(a.contentsSize, a.name) > std::tie(b.contentsSize, b.name);
+		});
+
 		ThreadPool pool(numHardwareThreads);
 
 		std::vector<std::future<void>> futures;
-
-		for (auto i = _package.begin(); i != _package.end(); i++)
-		{
-			futures.push_back(pool.enqueue([this, i]()
-			{
-				ProcessPackageElement(i);
+		for (const ManifestPak& pak : paks) {
+			futures.push_back(pool.enqueue([this, pak]() {
+				ProcessPackageElement(pak);
 			}));
 		}
 
@@ -389,10 +400,9 @@ void Packager::CreatePackage()
 		for (auto& f : futures)
 			f.get();
 	}
-	else
-	{
-		for (auto i = _package.begin(); i != _package.end(); i++)
-			ProcessPackageElement(i);
+	else {
+		for (const ManifestPak& pak : paks)
+			ProcessPackageElement(pak);
 	}
 
 	TraceLog::WriteLine(LOG_STANDARD, "Done.");
