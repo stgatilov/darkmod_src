@@ -29,7 +29,7 @@ namespace tdm
 // tdm_player01.pk4: ^models/md5/weapons, ^models/md5/chars/thief, ^dds/models/md5/chars/thief
 
 // The list of regex patterns for each PK4
-typedef std::vector<std::regex> Patterns;
+typedef std::vector<std::string> Patterns;
 
 // A pair associating a PK4 file name with a pattern list
 typedef std::pair<std::string, Patterns> Pk4Mapping;
@@ -105,6 +105,16 @@ public:
 		TraceLog::WriteLine(LOG_VERBOSE, "Parsed the mapping file.");
 	}
 
+	static bool SearchString(const Patterns& patterns, const std::string &haystack)
+	{
+		for (const std::string& pat : patterns)
+		{
+			if (SearchOne(pat, haystack))
+				return true;
+		}
+		return false;
+	}
+
 private:
 	void AddFile(const std::string &token)
 	{
@@ -118,7 +128,48 @@ private:
 		// Set the destination on the last element
 		assert(!empty());
 
-        back().second.push_back(std::regex(token, std::regex::ECMAScript));
+        back().second.push_back(token);
+	}
+
+	static bool SearchOne(const std::string& needle, const std::string& haystack)
+	{
+		//simple regex = only literal characters, possibly with ^ at beginning
+		bool isNeedleSimple = true;
+		for (int i = 0; i < needle.size(); i++)
+		{
+			char c = needle[i];
+
+			if (c >= '0' && c <= '9')
+				continue;
+			if (c >= 'a' && c <= 'z')
+				continue;
+			if (c >= 'A' && c <= 'Z')
+				continue;
+			if (c == '_' || c == '-' || c == '/')
+				continue;
+			if (c == '^'&& i == 0)
+				continue;
+
+			isNeedleSimple = false;
+			break;
+		}
+
+		if (isNeedleSimple)
+		{
+			if (!needle.empty() && needle[0] == '^')
+			{
+				const char *prefix = needle.c_str() + 1;
+				int prefixLen = needle.size() - 1;
+				return (haystack.size() >= prefixLen && memcmp(haystack.c_str(), prefix, prefixLen) == 0);
+			}
+			else
+				return haystack.find(needle) != std::string::npos;
+		}
+		else
+		{
+			std::regex regex(needle, std::regex::ECMAScript);
+			return std::regex_search(haystack, regex);
+		}
 	}
 };
 

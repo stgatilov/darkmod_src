@@ -228,36 +228,36 @@ void Packager::SortFilesIntoPk4s()
 	// Go through each file in the manifest and check which pattern applies
 	for (ReleaseManifest::iterator i = _manifest.begin(); i != _manifest.end(); /* in-loop increment */)
 	{
+		const std::string& destFilename = i->destFile.string();
+
 		bool matched = false;
 
 		// The patterns are applied in the order they appear in the darkmod_pk4s.txt file
-		for (Pk4Mappings::const_iterator m = _pk4Mappings.begin(); !matched && m != _pk4Mappings.end(); ++m)
+		for (Pk4Mappings::const_iterator m = _pk4Mappings.begin(); m != _pk4Mappings.end(); ++m)
 		{
 			const std::string& pk4name = m->first;
+			const Patterns& patterns = m->second;
 
 			// Does this filename match any of the patterns of this PK4 file?
-			for (Patterns::const_iterator p = m->second.begin(); p != m->second.end(); ++p)
+			if (Pk4Mappings::SearchString(patterns, destFilename))
 			{
-				if (std::regex_search(i->destFile.string(), *p))
-				{
-					// Match
-					ManifestPak& pak = _package[pk4name];
-					pak.name = pk4name;
+				// Match
+				ManifestPak& pak = _package[pk4name];
+				pak.name = pk4name;
 
-					//TraceLog::WriteLine(LOG_STANDARD, "Putting file " + i->destFile.string() + " => " + pk4name);
+				//TraceLog::WriteLine(LOG_STANDARD, "Putting file " + i->destFile.string() + " => " + pk4name);
 
-					// Copy that file into the release package
-					pak.files.push_back(*i);
+				// Copy that file into the release package
+				pak.files.push_back(*i);
 
-					if (fs::is_regular_file(darkmodPath / i->sourceFile))
-						pak.contentsSize += fs::file_size(darkmodPath / i->sourceFile);
+				if (fs::is_regular_file(darkmodPath / i->sourceFile))
+					pak.contentsSize += fs::file_size(darkmodPath / i->sourceFile);
 
-					// Remove the file from our manifest
-					_manifest.erase(i++);
+				// Remove the file from our manifest
+				_manifest.erase(i++);
 
-					matched = true;
-					break;
-				}
+				matched = true;
+				break;
 			}
 		}
 
