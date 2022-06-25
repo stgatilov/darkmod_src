@@ -4059,7 +4059,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		{
 			alert = owner->AI_AlertLevel + refSpawnargs.GetFloat("absence_alert_increase", "0"); 
 		}
-		else
+		else if (owner->AI_AlertLevel < owner->thresh_4 + 0.1f)
 		{
 			alert = owner->thresh_4 + 0.1f;
 		}
