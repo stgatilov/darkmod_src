@@ -220,7 +220,7 @@ idCVar r_debugPolygonFilled( "r_debugPolygonFilled", "1", CVAR_RENDERER | CVAR_B
 
 idCVar r_materialOverride( "r_materialOverride", "", CVAR_RENDERER, "overrides all materials", idCmdSystem::ArgCompletion_Decl<DECL_MATERIAL> );
 
-idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
+idCVar r_showRenderToTexture( "r_showRenderToTexture", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
 
 // greebo: screenshot format CVAR, by default convert the generated TGA to JPG
 idCVar r_screenshot_format(	"r_screenshot_format", "jpg",   CVAR_RENDERER | CVAR_ARCHIVE, "Image format used to store ingame screenshots: png/tga/jpg/bmp." );

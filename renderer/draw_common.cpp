@@ -710,6 +710,8 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_LogComment( "---------- RB_STD_DrawShaderPasses ----------\n" );
 
+	idList<const idMaterial*> renderCopies;
+
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
 	if ( drawSurfs[0]->sort >= SS_AFTER_FOG && !backEnd.viewDef->IsLightGem() ) {
@@ -743,8 +745,10 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			break;
 		}
 		if ( drawSurfs[i]->sort >= SS_POST_PROCESS ) {
-			if ( r_ignore.GetBool() )
+			if ( r_ignore.GetBool() && !renderCopies.Find( drawSurfs[i]->material ) ) {
+				renderCopies.Append( drawSurfs[i]->material );
 				frameBuffers->UpdateCurrentRenderCopy();
+			}
 		}
 		if ( drawSurfs[i]->sort == SS_AFTER_FOG && !backEnd.afterFogRendered ) {
 			break;

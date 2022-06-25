@@ -719,6 +719,9 @@ typedef struct {
 	int		c_drawRefIndexes;
 	int		c_drawRefVertexes;
 
+	int		c_copyFrameBuffer;
+	int		c_copyDepthBuffer;
+
 	int		c_shadowElements;
 	int		c_shadowIndexes;
 	int		c_shadowVertexes;
@@ -766,9 +769,6 @@ typedef struct {
 
 	// our OpenGL state deltas
 	glstate_t			glState;
-
-	int					c_copyFrameBuffer;
-	int					c_copyDepthBuffer;
 } backEndState_t;
 
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
@@ -1071,7 +1071,7 @@ extern idCVar r_debugPolygonFilled;
 
 extern idCVar r_materialOverride;		// override all materials
 
-extern idCVar r_debugRenderToTexture;
+extern idCVar r_showRenderToTexture;
 
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;

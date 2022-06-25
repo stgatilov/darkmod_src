@@ -511,6 +511,9 @@ static void	RB_SetBuffer( const void *data ) {
 
 	backEnd.frameCount = cmd->frameCount;
 
+	qglDrawBuffer( r_frontBuffer.GetBool() ? GL_FRONT : GL_BACK );
+	qglReadBuffer( r_frontBuffer.GetBool() ? GL_FRONT : GL_BACK );
+
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
 	// that might leave unrendered portions of the screen
@@ -854,9 +857,6 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			} else {
 				c_draw2d++;
 			}
-			if ( r_frontBuffer.GetBool() ) {					// debug: put a breakpoint to see a per view render
-				qglFinish();
-			}
 			break;
 		}
 		case RC_DRAW_LIGHTGEM:
@@ -868,11 +868,12 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			c_setBuffers++;
 			break;
 		case RC_BLOOM:
-			if ( RB_Bloom( (bloomCommand_t*)cmds ) )
+			if ( RB_Bloom( (bloomCommand_t*)cmds ) ) {
 				c_drawBloom++;
-			FB_DebugShowContents();
-			frameBuffers->LeavePrimary();
-			fboOff = true;
+				FB_DebugShowContents();
+				frameBuffers->LeavePrimary();
+				fboOff = true;
+			}
 			break;
 		case RC_COPY_RENDER:
 			RB_CopyRender( cmds );
@@ -903,10 +904,8 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	backEnd.pc.msec += backEnd.pc.msecLast;
 
 	// revelator: added depthcopy to counters
-	if ( r_debugRenderToTexture.GetInteger() ) {
-		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, drwBloom: %i, CpyRenders: %i, CpyFrameBuf: %i, CpyDepthBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_drawBloom, c_copyRenders, backEnd.c_copyFrameBuffer, backEnd.c_copyDepthBuffer );
-		backEnd.c_copyFrameBuffer = 0;
-		backEnd.c_copyDepthBuffer = 0;
+	if ( r_showRenderToTexture.GetBool() ) {
+		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, drwBloom: %i, CpyRenders: %i, CpyFrameBuf: %i, CpyDepthBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_drawBloom, c_copyRenders, backEnd.pc.c_copyFrameBuffer, backEnd.pc.c_copyDepthBuffer );
 	}
 
 	if ( image_showBackgroundLoads && backEnd.pc.textureLoads ) {

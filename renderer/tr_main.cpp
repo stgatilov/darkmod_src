@@ -1018,6 +1018,9 @@ static int R_QsortSurfaces( const void *a, const void *b ) {
 	drawSurf_t* ea = *( drawSurf_t ** )a;
 	drawSurf_t* eb = *( drawSurf_t ** )b;
 
+	if ( ea->sort >= SS_POST_PROCESS && eb->sort >= SS_POST_PROCESS ) {
+		return ea->space->modelViewMatrix[14] - eb->space->modelViewMatrix[14];
+	}
 	if ( ea->sort < eb->sort ) {
 		return -1;
 	}

@@ -114,6 +114,7 @@ void FrameBufferManager::BeginFrame() {
 }
 
 void FrameBufferManager::EnterPrimary() {
+	if ( r_frontBuffer.GetBool() ) return;
 	depthCopiedThisView = false;
 	if (currentRenderFbo == primaryFbo) return;
 
@@ -136,6 +137,7 @@ void FrameBufferManager::EnterPrimary() {
 idCVar r_fboScaling( "r_fboScaling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "nearest/linear FBO scaling" );
 
 void FrameBufferManager::LeavePrimary(bool copyToDefault) {
+	if ( r_frontBuffer.GetBool() ) return;
 	// if we want to do tonemapping later, we need to continue to render to a texture,
 	// otherwise we can render the remaining UI views straight to the back buffer
 	FrameBuffer *targetFbo = r_tonemap ? guiFbo : defaultFbo;
@@ -149,7 +151,7 @@ void FrameBufferManager::LeavePrimary(bool copyToDefault) {
 			resolveFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 		} else {
 			primaryFbo->BlitTo( targetFbo, GL_COLOR_BUFFER_BIT, r_fboScaling.GetBool() ? GL_LINEAR : GL_NEAREST );
-			backEnd.c_copyFrameBuffer++;
+			backEnd.pc.c_copyFrameBuffer++;
 		}
 
 		if ( r_frontBuffer.GetBool() && !r_tonemap ) {
@@ -210,12 +212,12 @@ void FrameBufferManager::ResolvePrimary( GLbitfield mask, GLenum filter ) {
 
 void FrameBufferManager::UpdateCurrentRenderCopy() {
 	currentRenderFbo->BlitTo( resolveFbo, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-	backEnd.c_copyFrameBuffer++;
+	backEnd.pc.c_copyFrameBuffer++;
 }
 
 void FrameBufferManager::UpdateCurrentDepthCopy() {
 	currentRenderFbo->BlitTo( resolveFbo, GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-	backEnd.c_copyDepthBuffer++;
+	backEnd.pc.c_copyDepthBuffer++;
 }
 
 void FrameBufferManager::CopyRender( const copyRenderCommand_t &cmd ) {
