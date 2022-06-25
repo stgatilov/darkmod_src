@@ -15,19 +15,15 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <cstdlib>
 #include <iostream>
+#include <functional>
+#include <map>
 
 #include "TraceLog.h"
-#include "ExceptionSafeThread.h"
-
 #include "LogWriters.h"
+#include "StdFormat.h"
 #include "Packager/Packager.h"
 #include "Packager/PackagerOptions.h"
-#include "Util.h"
 
-#include <functional>
-#include "StdFormat.h"
-
-#include <map>
 
 using namespace tdm;
 using namespace packager;
