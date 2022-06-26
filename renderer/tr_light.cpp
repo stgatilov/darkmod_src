@@ -1184,8 +1184,13 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
 			tr.pc.c_noshadowSurfs++;
 		}
-		if ( !r_ignore.GetBool() && eDef->parms.sortOffset )
+		if ( eDef->parms.sortOffset )
 			drawSurf->sort += eDef->parms.sortOffset;
+		if ( material->GetSort() > SS_POST_PROCESS ) {
+			if ( !eDef->parms.hModel->IsDynamicModel() ) {
+				drawSurf->dsFlags |= DSF_SORT_DEPTH;
+			}
+		}
 	}
 
 	if (!deferred) {
@@ -1243,17 +1248,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	// check for deformations
 	R_DeformDrawSurf( drawSurf );
 
-	// 2.08: to be removed after release
-	// skybox surfaces need a dynamic texgen
-	//switch( material->Texgen() ) {
-	//	case TG_SKYBOX_CUBE:
-	//		R_SkyboxTexGen( drawSurf, tr.viewDef->renderView.vieworg );
-	//		return;
-	//	case TG_WOBBLESKY_CUBE:
-	//		R_WobbleskyTexGen( drawSurf, tr.viewDef->renderView.vieworg );
-	//		return;
-	//}
-
 	// check for gui surfaces
 	idUserInterface	*gui = NULL;
 
@@ -1270,26 +1264,15 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	}
 
 	if ( gui ) {
-		/*// force guis on the fast time
-		const float oldFloatTime = tr.viewDef->floatTime;
-		const int oldTime = tr.viewDef->renderView.time;
-
-		tr.viewDef->floatTime = game->GetTimeGroupTime( 1 ) * 0.001f;
-		tr.viewDef->renderView.time = game->GetTimeGroupTime( 1 );*/
-
 		idBounds ndcBounds;
 
 		if ( !R_PreciseCullSurface( drawSurf, ndcBounds ) ) {
 			if (!deferred) {
-				// did we ever use this to forward an entity color to a gui that didn't set color?
-	//			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
 				R_RenderGuiSurf( gui, drawSurf );
 			}
 		} else {
 			gui = nullptr;
 		}
-		/*tr.viewDef->floatTime = oldFloatTime;
-		tr.viewDef->renderView.time = oldTime;*/
 	}
 
 	R_FindSurfaceLights( *drawSurf ); // multi shader data

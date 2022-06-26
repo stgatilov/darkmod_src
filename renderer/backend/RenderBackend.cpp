@@ -80,10 +80,6 @@ void RenderBackend::Shutdown() {
 }
 
 void RenderBackend::DrawView( const viewDef_t *viewDef ) {
-	// we will need to do a new copyTexSubImage of the screen when a SS_POST_PROCESS material is used
-	backEnd.currentRenderCopied = false;
-	backEnd.afterFogRendered = false;
-
 	TRACE_GL_SCOPE( "DrawView" );
 
 	// skip render bypasses everything that has models, assuming
@@ -127,8 +123,8 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	}
 		
 	// now draw any non-light dependent shading passes
-	int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
-	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
+	int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs, bool postProcessing );
+	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs, false );
 
 	if (
 		(r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && 
@@ -141,12 +137,9 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 	extern void RB_STD_FogAllLights( bool translucent );
 	RB_STD_FogAllLights( false );
 
-	// refresh fog and blend status 
-	backEnd.afterFogRendered = true;
-
 	// now draw any post-processing effects using _currentRender
 	if ( processed < numDrawSurfs ) {
-		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed );
+		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed, true );
 	}
 
 	RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only

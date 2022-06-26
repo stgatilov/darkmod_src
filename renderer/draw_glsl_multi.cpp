@@ -218,10 +218,6 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
 		}
 	}
-#if 0
-	if ( r_ignore.GetBool() && data.lightOrigins.Num() * (int)surf->ambientCache.size > r_ignore.GetInteger() )
-		common->Warning( "%d %d %d\n", surf->space->entityDef->index, data.lightOrigins.Num(), surf->ambientCache.size );
-#endif
 	if ( r_warnMultiLight > 0 ) {
 		if ( data.lightOrigins.Num() > r_warnMultiLight )
 			common->Warning("%i %i %i %s", surf->space->entityDef->index, data.lightOrigins.Num(), surf->numIndexes, surf->space->entityDef->parms.hModel->Name() );

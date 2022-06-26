@@ -699,7 +699,7 @@ RB_STD_DrawShaderPasses
 Draw non-light dependent passes
 =====================
 */
-int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
+int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs, bool postProcessing ) {
 	int	 i;
 
 	// only obey skipAmbient if we are rendering a view
@@ -712,20 +712,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	idList<const idMaterial*> renderCopies;
 
-	// if we are about to draw the first surface that needs
-	// the rendering in a texture, copy it over
-	if ( drawSurfs[0]->sort >= SS_AFTER_FOG && !backEnd.viewDef->IsLightGem() ) {
-		if ( r_skipPostProcess.GetBool() ) {
-			return 0;
-		}
-
-		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys ) {
-			if ( !r_ignore.GetBool() )
-				frameBuffers->UpdateCurrentRenderCopy();
-		}
-		backEnd.currentRenderCopied = true;
-	}
 	GL_SelectTexture( 0 );
 
 	GL_CheckErrors();
@@ -734,24 +720,16 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// because we want to defer the matrix load because many
 	// surfaces won't draw any ambient passes
 	backEnd.currentSpace = NULL;
-
+	bool singleRenderCopy = cv_lod_bias.GetFloat() < 2;
+	
 	for ( i = 0  ; i < numDrawSurfs ; i++ ) {
-		if ( drawSurfs[i]->material->SuppressInSubview() ) {
-			continue;
-		}
-
-		// we need to draw the post process shaders after we have drawn the fog lights
-		if ( drawSurfs[i]->sort >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
-			break;
-		}
 		if ( drawSurfs[i]->sort >= SS_POST_PROCESS ) {
-			if ( r_ignore.GetBool() && !renderCopies.Find( drawSurfs[i]->material ) ) {
+			if ( !postProcessing )
+				break; // we need to draw the post process shaders after we have drawn the fog lights
+			if ( !renderCopies.Num() || ( !singleRenderCopy && !renderCopies.Find( drawSurfs[i]->material ) ) ) {
 				renderCopies.Append( drawSurfs[i]->material );
 				frameBuffers->UpdateCurrentRenderCopy();
 			}
-		}
-		if ( drawSurfs[i]->sort == SS_AFTER_FOG && !backEnd.afterFogRendered ) {
-			break;
 		}
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
 		GL_CheckErrors();
@@ -1283,18 +1261,15 @@ void RB_STD_DrawView( void ) {
 	}
 		
 	// now draw any non-light dependent shading passes
-	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
+	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs, false );
 	GL_CheckErrors();
 
 	// fog and blend lights
 	RB_STD_FogAllLights( false );
 
-	// refresh fog and blend status 
-	backEnd.afterFogRendered = true;
-
 	// now draw any post-processing effects using _currentRender
 	if ( processed < numDrawSurfs ) {
-		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed );
+		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed, true );
 	}
 
 	RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only

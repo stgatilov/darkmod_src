@@ -133,6 +133,7 @@ static const int DSF_VIEW_INSIDE_SHADOW	= 1;
 static const int DSF_SOFT_PARTICLE = 2; // #3878
 static const int DSF_SHADOW_MAP_IGNORE = 4; // #4641
 static const int DSF_SHADOW_MAP_ONLY = 8; // #4641
+static const int DSF_SORT_DEPTH = 16;
 
 struct viewLight_s;
 
@@ -759,9 +760,6 @@ typedef struct {
 	float				overBright;			// The amount that all light interactions must be multiplied by
 	// with post processing to get the desired total light level.
 	// A high dynamic range card will have this set to 1.0.
-
-	bool				currentRenderCopied;	// true if any material has already referenced _currentRender
-	bool				afterFogRendered;		// added post process pass.
 
 	// Test if lightDepthBounds should be enabled or not
 	/*bool				useLightDepthBounds;

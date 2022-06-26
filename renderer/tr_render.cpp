@@ -1099,10 +1099,6 @@ RB_DrawView
 =============
 */
 void RB_DrawView( void ) {
-	// we will need to do a new copyTexSubImage of the screen when a SS_POST_PROCESS material is used
-	backEnd.currentRenderCopied = false;
-	backEnd.afterFogRendered = false;
-
 	// if there aren't any drawsurfs, do nothing
 	if ( !backEnd.viewDef->numDrawSurfs ) {
 		//return;
