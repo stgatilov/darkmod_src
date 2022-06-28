@@ -574,6 +574,13 @@ const idEventDef AI_LookupReplacementAnim( "lookupReplacementAnim", EventArgs('s
 	"Returns the current replacement animation for \"anim\". Returns empty if no replacement anim ");
 const idEventDef AI_RemoveReplacementAnim( "removeReplacementAnim", EventArgs('s', "anim", ""), EV_RETURNS_VOID, 
 	"Removes the replacement for the given \"anim\"");
+// Obsttorte: #0540
+const idEventDef EV_getAnimRate("getAnimRate", EventArgs('d',"channel","",'s', "animName", "The name of the animation."),
+	'f', "Returns the rate for the given animation. Returns -1 if animation cannot be found.");
+const idEventDef EV_setAnimRate("setAnimRate", EventArgs('d',"channel","",'s', "animName", "The name of the animation.", 'f', "animRate", "The rate to set the animation to."),
+	'd', "Sets the animation rate to the given value. Returns 1 if successful, otherwise -1");
+const idEventDef EV_getAnimList("getAnimList", EventArgs('d',"channel",""), 's', "Returns a list of all animations and their anim rates.");
+
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )
@@ -639,7 +646,12 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetEyePos,				idActor::Event_GetEyePos )
 	EVENT( AI_SetHealth,				idActor::Event_SetHealth )
 	EVENT( AI_GetHealth,				idActor::Event_GetHealth )
-	
+
+	// Obsttorte: #0540
+	EVENT(EV_getAnimRate,				idActor::Event_getAnimRate)
+	EVENT(EV_setAnimRate,				idActor::Event_setAnimRate)
+	EVENT(EV_getAnimList,				idActor::Event_getAnimList)
+
 	EVENT ( AI_Attach,					idActor::Event_Attach )
 	EVENT ( AI_AttachToPos,				idActor::Event_AttachToPos )
 	EVENT ( AI_ReAttachToPos,			idActor::ReAttachToPos )
@@ -4858,6 +4870,45 @@ void idActor::Event_ReloadTorchReplacementAnims( void )
 		}
 	}
 }
+
+// Obsttorte: #0540
+void idActor::Event_getAnimRate(int channel, const char* animName)
+{
+	const int index = GetAnim(channel, animName);
+	if (index == 0)
+	{
+		idThread::ReturnFloat(-1);
+		return;
+	}
+	idThread::ReturnFloat( m_animRates[index]);
+}
+
+void idActor::Event_setAnimRate(int channel, const char* animName, float animRate)
+{
+	const int index = GetAnim(channel, animName);
+	if (index == 0 || animRate < 0)
+	{
+		idThread::ReturnFloat(-1);
+		return;
+	}
+	m_animRates[index] = animRate;
+	animator.CurrentAnim(channel)->UpdatePlaybackRate(index, this);
+	idThread::ReturnFloat(1);
+}
+
+void idActor::Event_getAnimList(int channel)
+{
+	const idAnimator* anima = GetAnimatorForChannel(channel);
+	if (anima == NULL) idThread::ReturnString("");
+	const int n = anima->NumAnims();
+	idStr res_list;
+	for (int i = 0; i < n; i++)
+	{
+		res_list += idStr(i) + ": " + idStr(anima->AnimName(i)) + "####";
+	}
+	idThread::ReturnString(res_list);
+}
+
 
 /*
 ================

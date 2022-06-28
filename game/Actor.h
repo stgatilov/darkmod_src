@@ -141,6 +141,11 @@ extern const idEventDef AI_AnimDone;
 extern const idEventDef AI_SetBlendFrames;
 extern const idEventDef AI_GetBlendFrames;
 
+// Obsttorte #0540
+extern const idEventDef EV_getAnimRate;
+extern const idEventDef EV_setAnimRate;
+extern const idEventDef EV_getAnimList;
+
 extern const idEventDef AI_MeleeAttackStarted;
 extern const idEventDef AI_MeleeParryStarted;
 extern const idEventDef AI_MeleeActionHeld;
@@ -908,6 +913,11 @@ public:
 	void					Event_GetState( void );
 	void					Event_GetHead( void );
 	void					Event_GetEyePos( void );
+
+	// Obsttorte: #0540
+	void					Event_getAnimRate(int channel, const char* animName);
+	void					Event_setAnimRate(int channel, const char* animName, float animRate);
+	void					Event_getAnimList(int channel);
 
 	// greebo: Moved these from idAI to here
 	void					Event_SetHealth( float newHealth );
