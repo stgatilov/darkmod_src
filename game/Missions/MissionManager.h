@@ -200,6 +200,8 @@ public:
 	};
 
 public:
+	bool sortByDate = true;
+
 	CMissionManager();
 
 	~CMissionManager();
@@ -325,6 +327,9 @@ public:
 	// Accessor to the downloadble mission list
 	const DownloadableModList& GetDownloadableMods() const;
 
+	// Sorts the mod list
+	void SortDownloadableMods();
+
 	// Convenience method which copies a file from <source> to <dest>
 	// If <overwrite> is set to TRUE, any existing destination file will be removed beforehand
 	// Note: CopyFile is already #define'd in a stupid WinBase.h header file, hence DoCopyFile.
@@ -371,9 +376,6 @@ private:
 
 	// Request status according to the pending download
 	RequestStatus GetRequestStatusForDownloadId(int downloadId);
-
-	// Sorts the mod list
-	void SortDownloadableMods();
 
 	// Replaces stuff like &#13;
 	static idStr ReplaceXmlEntities(const idStr& input);

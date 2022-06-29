@@ -315,6 +315,12 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		PerformScreenshotStep(gui, -1);
 		UpdateScreenshotItemVisibility(gui);
 	}
+	else if ( cmd == "onsortmissions" ) {
+		auto mm = gameLocal.m_MissionManager;
+		mm->sortByDate = !mm->sortByDate;
+		mm->SortDownloadableMods();
+		UpdateGUI( gui );
+	}
 }
 
 void CDownloadMenu::UpdateScreenshotItemVisibility(idUserInterface* gui)
@@ -527,6 +533,8 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
 	gui->SetStateBool("av_no_download_available", mods.Num() == 0);
+	auto title = idStr::Fmt( "Sorted By %s", gameLocal.m_MissionManager->sortByDate ? "Date" : "Title" );
+	gui->SetStateString( "sort_btn_caption", title );
 
 	bool downloadInProgress = gui->GetStateBool("mission_download_in_progress");
 

@@ -1689,7 +1689,12 @@ bool CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 
 void CMissionManager::SortDownloadableMods()
 {
-	_downloadableMods.Sort(DownloadableMod::SortCompareTitle);
+	if ( sortByDate ) {
+		_downloadableMods.Sort( []( DownloadableMod* const* a, DownloadableMod* const* b ) {
+			return ( *b )->releaseDate.Cmp( ( *a )->releaseDate );
+			} );
+	} else
+		_downloadableMods.Sort(DownloadableMod::SortCompareTitle);
 }
 
 const DownloadableModList& CMissionManager::GetDownloadableMods() const
