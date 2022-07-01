@@ -370,6 +370,8 @@ const idEventDef EV_Player_TestEvent3("testEvent3",	EventArgs(
 ), D_EVENT_VECTOR, "");
 
 const idEventDef EV_IsLeaning("isLeaning", EventArgs(), 'd', "Get whether the player is leaning"); // grayman #4882
+const idEventDef EV_IsPeakLeaning("isPeakLeaning", EventArgs(), 'd', "Get whether the player is peak leaning (against a keyhole or crack)"); // Obsttorte
+const idEventDef EV_GetSecondaryListenerLoc("getSecondaryListenerLoc", EventArgs(), 'v', "Retrieves the location of the secondary listener."); // Obsttorte, used for debug #5899
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -481,6 +483,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_TestEvent3,		idPlayer::Event_TestEvent3 )
 
 	EVENT(EV_IsLeaning,						idPlayer::Event_IsLeaning) // grayman #4882
+	EVENT(EV_IsPeakLeaning,					idPlayer::Event_IsPeakLeaning) // Obsttorte
+	EVENT(EV_GetSecondaryListenerLoc,		idPlayer::Event_GetSecondaryListenerLoc) // Obsttorte
+
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -12110,6 +12115,14 @@ void idPlayer::Event_IsLeaning() // grayman #4882
 	idThread::ReturnInt(physicsObj.IsLeaning());
 }
 
+void idPlayer::Event_IsPeakLeaning() // Obsttorte
+{
+	idThread::ReturnInt(physicsObj.IsPeakLeaning());
+}
+void idPlayer::Event_GetSecondaryListenerLoc() // Obsttorte
+{
+	idThread::ReturnVector(GetSecondaryListenerLoc());
+}
 //stgatilov: script-cpp interop testing code
 void TestEventError(const char *name) {
 	common->Error("Script events internal check failed (%s)\n", name);

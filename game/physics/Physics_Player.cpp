@@ -5932,6 +5932,15 @@ void idPhysics_Player::UpdateLean( void ) // grayman #4882 - expanded to handle 
 			player->SetListenLoc(m_LeanListenPos);
 		}
 	}
+	// Obsttorte: #5899 
+	else
+	{
+		if (player)
+		{
+			m_LeanEnt = NULL;
+			player->SetListenLoc(vec3_zero);
+		}
+	}
 }
 
 bool idPhysics_Player::IsPeakLeaning( void )
