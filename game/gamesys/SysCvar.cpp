@@ -93,7 +93,15 @@ idCVar cv_ai_search_type (			"tdm_ai_search_type",		"4",			CVAR_GAME | CVAR_ARCH
 idCVar cv_ai_opt_disable (			"tdm_ai_opt_disable",		"1",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs not in the Potentially Visible Set will be completely disabled if they have neverdormant set to 0.");
 idCVar cv_ai_opt_noanims (			"tdm_ai_opt_noanims",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs will not animate.");
 idCVar cv_ai_opt_novisualscan (		"tdm_ai_opt_novisualscan",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs not in the Potentially Visible Set will not look for enemies, not even enemy AIs.");
-idCVar cv_ai_opt_forceopt (			"tdm_ai_opt_forceopt",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs will always be treated as being outside the PVS for the purposes of the other tdm_ai_opt_* spawnargs." );
+idCVar cv_ai_opt_forcedormant (	
+	"tdm_ai_opt_forcedormant",	"0", CVAR_GAME | CVAR_INTEGER,
+	"If 1, AIs will always be dormant.\n"
+	"If -1, AIs will never be dormant."
+);
+idCVar cv_ai_opt_forceopt (	
+	"tdm_ai_opt_forceopt",	"0", CVAR_GAME | CVAR_BOOL,
+	"If true, AIs will do interleaved thinking as if player is infinitely far away.\n"
+);
 idCVar cv_ai_opt_nothink (			"tdm_ai_opt_nothink",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not perform their regular thinking routine (including Mind)." );
 idCVar cv_ai_opt_interleavethinkmindist (		"tdm_ai_opt_interleavethinkmindist",		"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If true (nonzero), the AI will start interleaved thinking if the distance to the player is greater than the set value." );
 idCVar cv_ai_opt_interleavethinkmaxdist (		"tdm_ai_opt_interleavethinkmaxdist",		"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If true (nonzero), this is the distance where interleave frame will reach its maximum value." );

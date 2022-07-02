@@ -2326,7 +2326,11 @@ off from the player can skip all of their work
 */
 bool idEntity::DoDormantTests( void )
 {
-	if (cv_ai_opt_forceopt.GetBool()) return true; // Everything always dormant!
+	if ( cv_ai_opt_forcedormant.GetInteger() > 0)
+		return true; // Everything always dormant!
+	if ( cv_ai_opt_forcedormant.GetInteger() < 0)
+		return false; // Everything never dormant!
+
 	if ( fl.neverDormant ) {
 		return false;
 	}

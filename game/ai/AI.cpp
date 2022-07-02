@@ -2755,7 +2755,7 @@ bool idAI::ThinkingIsAllowed()
 		}
 
 		// skips PVS check, AI will also do interleaved thinking when in player view.
-		bool skipPVScheck = cv_ai_opt_interleavethinkskippvscheck.GetBool();
+		bool skipPVScheck = cv_ai_opt_interleavethinkskippvscheck.GetBool() || cv_ai_opt_forceopt.GetBool();
 		if (skipPVScheck)
 		{
 			return false;
@@ -2859,6 +2859,10 @@ int idAI::GetThinkInterleave() const // grayman 2414 - add 'const'
 	if (cv_ai_opt_interleavethinkframes.GetInteger() > 0)
 	{
 		maxFrames = cv_ai_opt_interleavethinkframes.GetInteger();
+	}
+	if (cv_ai_opt_forceopt.GetBool())
+	{
+		return maxFrames;	// debug only: assume player is far
 	}
 
 	if (maxFrames == 0)
