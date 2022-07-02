@@ -1400,13 +1400,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// This checks whether the AI should think in this frame
 	bool					ThinkingIsAllowed();
 
-	// Sets the frame number when the AI should think next time
+	// Sets time moment when the AI should think next time
 	void					SetNextThinkFrame();
 
 	// returns interleave think frames
-	// the AI will only think once in this number of frames
+	// the AI will only think once in this number of frames (note: frame = 16 ms)
 	int						GetThinkInterleave() const; // grayman 2414 - add 'const'
-	int						m_nextThinkFrame;
+	int						m_nextThinkTime;
 
 	// Below min dist, the AI thinks normally every frame.
 	// Above max dist, the thinking frequency is given by max interleave think frames.

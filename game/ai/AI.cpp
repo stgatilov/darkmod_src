@@ -619,7 +619,7 @@ idAI::idAI()
 	m_minInterleaveThinkDist = 1000;
 	m_maxInterleaveThinkDist = 3000;
 	m_lastThinkTime = 0;
-	m_nextThinkFrame = 0;
+	m_nextThinkTime = 0;
 
 	INIT_TIMER_HANDLE(aiThinkTimer);
 	INIT_TIMER_HANDLE(aiMindTimer);
@@ -1017,7 +1017,7 @@ void idAI::Save(idSaveGame *savefile) const {
 	savefile->WriteFloat(m_maxInterleaveThinkDist);
 
 	savefile->WriteInt(m_lastThinkTime);
-	savefile->WriteInt(m_nextThinkFrame);
+	savefile->WriteInt(m_nextThinkTime);
 
 	savefile->WriteString(m_barkName); // grayman #3857
 	savefile->WriteInt(m_barkEndTime); // grayman #3857
@@ -1508,7 +1508,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(m_maxInterleaveThinkDist);
 
 	savefile->ReadInt(m_lastThinkTime);
-	savefile->ReadInt(m_nextThinkFrame);
+	savefile->ReadInt(m_nextThinkTime);
 
 	savefile->ReadString(m_barkName); // grayman #3857
 	savefile->ReadInt(m_barkEndTime); // grayman #3857
@@ -2735,8 +2735,8 @@ idAI::ThinkingIsAllowed
 */
 bool idAI::ThinkingIsAllowed()
 {
-	int frameNum = gameLocal.framenum;
-	if (frameNum < m_nextThinkFrame)
+	int gameTime = gameLocal.time;
+	if (gameTime < m_nextThinkTime)
 	{
 		// Ragdolls think every frame to avoid physics weirdness.
 		if ( ( health <= 0 ) || IsKnockedOut() ) // grayman #2840 - you're also a ragdoll if you're KO'ed
@@ -2780,9 +2780,9 @@ idAI::SetNextThinkFrame
 */
 void idAI::SetNextThinkFrame()
 {
-	int frameNum = gameLocal.framenum;
+	int gameTime = gameLocal.time;
 	int thinkFrame = GetThinkInterleave();
-	int thinkDelta = 1;
+	int thinkDeltaTime = 1;
 
 	if (thinkFrame > 1)
 	{
@@ -2800,7 +2800,6 @@ void idAI::SetNextThinkFrame()
 			//   * when resolving a block
 
 			bool thinkMore = false;
-			thinkDelta = thinkFrame;
 			ai::Memory& memory = GetMemory();
 			CFrobDoor *door = memory.doorRelated.currentDoor.GetEntity();
 
@@ -2836,8 +2835,9 @@ void idAI::SetNextThinkFrame()
 
 			if (thinkMore)
 			{
-				thinkDelta = (thinkFrame < TEMP_THINK_INTERLEAVE ? thinkFrame : TEMP_THINK_INTERLEAVE);
+				thinkFrame = idMath::Imin(thinkFrame, TEMP_THINK_INTERLEAVE);
 			}
+			thinkDeltaTime = thinkFrame * USERCMD_MSEC;
 		}
 		else
 		{
@@ -2845,7 +2845,7 @@ void idAI::SetNextThinkFrame()
 		}
 	}
 
-	m_nextThinkFrame = frameNum + thinkDelta;
+	m_nextThinkTime = gameTime + thinkDeltaTime;
 }
 
 /*
