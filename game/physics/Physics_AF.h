@@ -947,7 +947,7 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
-	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
+	void					AddForce( const int id, const idVec3 &point, const idVec3 &force ) override;
 	bool					IsAtRest( void ) const;
 	int						GetRestStartTime( void ) const;
 	void					Activate( void );

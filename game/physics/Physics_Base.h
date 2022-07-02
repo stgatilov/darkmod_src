@@ -68,7 +68,6 @@ public:	// common physics interface
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
 	bool					PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse );
 
-	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
 	void					Activate( void );
 	void					PutToRest( void );
 	bool					IsAtRest( void ) const;

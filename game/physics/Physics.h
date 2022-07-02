@@ -116,7 +116,11 @@ public:	// common physics interface
 	// returns true if the impulse has been applied to any neighbours
 	virtual bool				PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse ) = 0;
 
-	virtual void				AddForce( const int id, const idVec3 &point, const idVec3 &force ) = 0;
+	// stgatilov: add external force for the duration of one game tic
+	// in order to exert constant force, one has to reapply it every tic (exactly once)
+	// note: external forces are zeroed at the end of Evaluate method
+	virtual void				AddForce( const int id, const idVec3 &point, const idVec3 &force );
+
 	virtual void				Activate( void ) = 0;
 	virtual void				PutToRest( void ) = 0;
 	virtual bool				IsAtRest( void ) const = 0;

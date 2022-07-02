@@ -97,7 +97,7 @@ public:	// common physics interface
 	 */
 	bool					PropagateImpulse(const int id, const idVec3& point, const idVec3& impulse);
 
-	void					AddForce( const int id, const idVec3 &point, const idVec3 &force );
+	void					AddForce( const int id, const idVec3 &point, const idVec3 &force ) override;
 	void					Activate( void );
 	void					PutToRest( void );
 	bool					IsAtRest( void ) const;

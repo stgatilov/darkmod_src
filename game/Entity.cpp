@@ -5401,6 +5401,7 @@ bool idEntity::RunPhysics( void ) {
 		{
 			// run physics
 			moved = part->physics->Evaluate( endTime - startTime, endTime );
+
 			// check if the object is blocked
 			blockingEntity = part->physics->GetBlockingEntity();
 			if ( blockingEntity ) {

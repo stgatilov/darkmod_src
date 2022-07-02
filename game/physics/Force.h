@@ -40,7 +40,7 @@ public:
 	static void			ClearForceList( void );
 
 public: // common force interface
-						// evalulate the force up to the given time
+						// evaluate the force up to the given time
 	virtual void		Evaluate( int time );
 						// removes any pointers to the physics object
 	virtual void		RemovePhysics( const idPhysics *phys );

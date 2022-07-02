@@ -3570,7 +3570,7 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	MovePlayer( timeStepMSec );
 
 	// Apply the push force to all objects encountered during MovePlayer
-	m_PushForce->Evaluate(timeStepMSec);
+	m_PushForce->Evaluate( endTimeMSec );
 
 	clipModel->Link( gameLocal.clip, self, 0, current.origin, clipModel->GetAxis() );
 

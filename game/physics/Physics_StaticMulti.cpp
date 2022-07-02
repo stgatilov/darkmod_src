@@ -404,14 +404,6 @@ bool idPhysics_StaticMulti::PropagateImpulse( const int id, const idVec3 &point,
 
 /*
 ================
-idPhysics_StaticMulti::AddForce
-================
-*/
-void idPhysics_StaticMulti::AddForce( const int id, const idVec3 &point, const idVec3 &force ) {
-}
-
-/*
-================
 idPhysics_StaticMulti::Activate
 ================
 */

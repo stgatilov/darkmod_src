@@ -67,3 +67,12 @@ int idPhysics::SnapTimeToPhysicsFrame( int t ) {
 	s = t + USERCMD_MSEC - 1;
 	return ( s - s % USERCMD_MSEC );
 }
+
+/*
+================
+idPhysics::AddForce
+================
+*/
+void idPhysics::AddForce( const int bodyId, const idVec3 &point, const idVec3 &force ) {
+	// default: forces ignored
+}
