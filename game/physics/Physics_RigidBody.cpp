@@ -1619,6 +1619,13 @@ idEntity* idPhysics_RigidBody::GetBlockingEntity() const
 	return isBlocked ? gameLocal.entities[collisionTrace.c.entityNum] : NULL;
 }
 
+void idPhysics_RigidBody::DampenMomentums(float linear, float angular)
+{
+	current.i.linearMomentum *= linear;
+	current.i.angularMomentum *= angular;
+}
+
+
 /*
 ================
 idPhysics_RigidBody::Evaluate

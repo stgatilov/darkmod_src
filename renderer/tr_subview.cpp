@@ -574,7 +574,7 @@ bool R_Lightgem_Render() {
 	LGPos.y += (Cam.y - LGPos.y) * 0.3f + cv_lg_oyoffs.GetFloat(); // Move the lightgem out a fraction along the leaning y vector
 
 																   // Prevent lightgem from clipping into the floor while crouching
-	if ( static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->IsCrouching() ) {
+	if ( player->GetPlayerPhysics()->IsCrouching() ) {
 		LGPos.z += 50.0f + cv_lg_ozoffs.GetFloat();
 	} else {
 		LGPos.z = Cam.z + cv_lg_ozoffs.GetFloat(); // Set the lightgem's Z-axis position to that of the player's eyes

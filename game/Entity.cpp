@@ -5475,8 +5475,7 @@ bool idEntity::RunPhysics( void ) {
 				rigidBodyPhysics->CollisionImpulse(*blockedPart->GetPhysics()->GetBlockingInfo(), impulse);
 
 				// greebo: Apply some damping due to the collision with a slave
-				rigidBodyPhysics->State().i.linearMomentum *= 0.95f;
-				rigidBodyPhysics->State().i.angularMomentum *= 0.99f;
+				rigidBodyPhysics->DampenMomentums(0.95f, 0.99f);
 			}
 		}
 

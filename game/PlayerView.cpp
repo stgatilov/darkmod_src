@@ -962,7 +962,7 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 		} else {*/
 
 		// greebo: For underwater effects, use the Doom3 Doubleview
-		if (static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->GetWaterLevel() >= WATERLEVEL_HEAD)
+		if (player->GetPlayerPhysics()->GetWaterLevel() >= WATERLEVEL_HEAD)
 		{
 			DoubleVision(hud, view, cv_tdm_underwater_blur.GetInteger());
 		}

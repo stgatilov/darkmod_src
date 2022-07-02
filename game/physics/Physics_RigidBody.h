@@ -139,6 +139,8 @@ public:	// common physics interface
 	virtual const trace_t*	GetBlockingInfo( void ) const;
 	virtual idEntity *		GetBlockingEntity( void ) const;
 
+	void					DampenMomentums(float linear, float angular);
+
 	void					DisableClip( void );
 	void					EnableClip( void );
 
@@ -155,12 +157,6 @@ public:	// common physics interface
 
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
-
-public:
-	/**
-	 * greebo: "Accessor" method to the internal state. This is a bit hacky, I admit.
-	 */
-	rigidBodyPState_t&		State() { return current; }
 
 private:
 	// state of the rigid body

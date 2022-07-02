@@ -1679,8 +1679,8 @@ bool CGrabber::Equip( void )
 		{
 			{
 				idPlayer *player = m_player.GetEntity();
-				idPhysics_Player* playerPyhsics = dynamic_cast<idPhysics_Player*>(player->GetPlayerPhysics());
-				if (playerPyhsics && playerPyhsics->IsMidAir())
+				idPhysics_Player* playerPhysics = player->GetPlayerPhysics();
+				if (playerPhysics && playerPhysics->IsMidAir())
 				{
 					// Cannot shoulder midair
 					player->StartSound("snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL);
