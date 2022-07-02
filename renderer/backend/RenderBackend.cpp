@@ -51,7 +51,7 @@ void RenderBackend::Init() {
 	drawBatchExecutor.Init();
 	depthStage.Init();
 	interactionStage.Init();
-	manyLightStage.Init();
+	//manyLightStage.Init();
 	stencilShadowStage.Init();
 	shadowMapStage.Init();
 	frobOutlineStage.Init();
