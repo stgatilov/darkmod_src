@@ -1014,24 +1014,29 @@ R_QsortSurfaces
 
 =======================
 */
-static int R_QsortSurfaces( const void *a, const void *b ) {
-	drawSurf_t* ea = *( drawSurf_t ** )a;
-	drawSurf_t* eb = *( drawSurf_t ** )b;
+static bool R_StdSortSurfaces( const drawSurf_t *ea, const drawSurf_t *eb ) {
 
-	if ( ea->dsFlags & ea->dsFlags & DSF_SORT_DEPTH ) {
-		return ea->space->modelViewMatrix[14] - eb->space->modelViewMatrix[14];
-	}
-	if ( ea->sort < eb->sort ) {
-		return -1;
-	}
-	if ( ea->sort > eb->sort ) {
-		return 1;
-	}
+	// sort by DSF_SORT_DEPTH flag presence
+	// surfaces with flag come later
+	bool sortDepthA = (ea->dsFlags & DSF_SORT_DEPTH) != 0;
+	bool sortDepthB = (eb->dsFlags & DSF_SORT_DEPTH) != 0;
+	if ( sortDepthA != sortDepthB )
+		return sortDepthA < sortDepthB;
+
+	// surfaces with DSF_SORT_DEPTH flag are sorted by ?WHAT?
+	if ( sortDepthA )
+		return ea->space->modelViewMatrix[14] < eb->space->modelViewMatrix[14];
+
+	// soft by "sort" value increasing
+	if ( ea->sort != eb->sort )
+		return ea->sort < eb->sort;
+
 	// sort by material to reduce texture state changes in depth stage
-	if ( ea->material != eb->material ) {
-		return ea->material - eb->material;
-	}
-	return ea->space - eb->space;
+	if (ea->material != eb->material)
+		return ea->material < eb->material;
+
+	// sort by entity parameters set
+	return ea->space < eb->space;
 }
 
 /*
@@ -1058,8 +1063,7 @@ static void R_SortDrawSurfs( void ) {
 	memcpy( tr.viewDef->drawSurfs, visible.Ptr(), visible.MemoryUsed() );
 	memcpy( &tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs], offscreen.Ptr(), offscreen.MemoryUsed() );
 	// sort the drawsurfs by sort type, then orientation, then shader
-	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
-		R_QsortSurfaces );
+	std::sort( tr.viewDef->drawSurfs, tr.viewDef->drawSurfs + tr.viewDef->numDrawSurfs, R_StdSortSurfaces );
 }
 
 //========================================================================
