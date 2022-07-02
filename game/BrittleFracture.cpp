@@ -167,6 +167,10 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteFloat( m_lossBaseAI );		// grayman #3042
 	savefile->WriteFloat( m_lossBasePlayer );	// grayman #3042
+
+	savefile->WriteFloat( shardAliveTime );		// dragofer #5363
+	savefile->WriteFloat( shardFadeStart );		// dragofer #5363
+	savefile->WriteInt( m_lastCrackFrameNum );	// dragofer #5363
 }
 
 /*
@@ -259,6 +263,10 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat( m_lossBaseAI );		// grayman #3042
 	savefile->ReadFloat( m_lossBasePlayer );	// grayman #3042
+
+	savefile->ReadFloat(shardAliveTime);		// dragofer #5363
+	savefile->ReadFloat(shardFadeStart);		// dragofer #5363
+	savefile->ReadInt(m_lastCrackFrameNum);		// dragofer #5363
 
 	UpdateSoundLoss();
 }
