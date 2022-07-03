@@ -73,8 +73,8 @@ class CForce_Grab : public idForce
 		void				SetRefEnt( idEntity *ent );
 
 	public: // common force interface
-		virtual void		Evaluate( int time );
-		virtual void		RemovePhysics( const idPhysics *phys );
+		virtual void		Evaluate( int time ) override;
+		virtual void		RemovePhysics( const idPhysics *phys ) override;
 
 	protected:
 		// stgatilov #5599: apply aging to frames, throw away obsolete ones, add one new frame

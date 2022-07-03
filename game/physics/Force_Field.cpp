@@ -220,10 +220,10 @@ void idForce_Field::Evaluate( int time ) {
 		switch( applyType ) {
 			case FORCEFIELD_APPLY_FORCE: {
 				if ( randomTorque != 0.0f ) {
-					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * magnitude );
+					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * magnitude, this );
 				}
 				else {
-					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * magnitude );
+					entity->AddForce( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * magnitude, this );
 				}
 				break;
 			}

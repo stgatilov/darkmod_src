@@ -360,7 +360,7 @@ void CForce_Grab::Evaluate( int time )
 				// otherwise, small body parts will oscillate wildly
 				for (int i = 0; i < phys->GetNumBodies(); i++) {
 					idVec3 force = weakenCoeff * maxFactor * gravAccel * phys->GetMass(i) * dir;
-					m_physics->AddForce(i, phys->GetOrigin(i), force);
+					m_physics->AddForce(i, phys->GetOrigin(i), force, this);
 				}
 
 				// temporarily increase air friction
@@ -371,7 +371,7 @@ void CForce_Grab::Evaluate( int time )
 			else {
 				// apply force to the grabbed part only
 				idVec3 force = weakenCoeff * maxFactor * totalWeight * dir;
-				m_physics->AddForce(m_id, COM, force);
+				m_physics->AddForce(m_id, COM, force, this);
 				// restore normal friction coefficients
 				SetFrictionOverride(false, 0, 0, 0);
 			}

@@ -121,7 +121,7 @@ public:
 
 	virtual void			GetImpactInfo( idEntity *ent, int id, const idVec3 &point, impactInfo_t *info );
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
-	virtual void			AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
+	virtual void			AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) override;
 
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 									const char *damageDefName, const float damageScale,
@@ -216,7 +216,7 @@ public:
 	virtual void			Think( void );
 	virtual void			GetImpactInfo( idEntity *ent, int id, const idVec3 &point, impactInfo_t *info );
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
-	virtual void			AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
+	virtual void			AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) override;
 	virtual bool			Collide( const trace_t &collision, const idVec3 &velocity );
 	virtual bool			GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis );
 	virtual bool			UpdateAnimationControllers( void );

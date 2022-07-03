@@ -43,7 +43,7 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 public: // common force interface
-	virtual void		Evaluate( int time );
+	virtual void		Evaluate( int time ) override;
 
 private:
 	void				SetOwnerIsPushing(bool isPushing);

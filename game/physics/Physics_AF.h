@@ -753,6 +753,7 @@ private:
 	AFBodyPState_t *		current;					// current physics state
 	AFBodyPState_t *		next;						// next physics state
 	AFBodyPState_t			saved;						// saved physics state
+	idForceApplicationList	forceApplications;			// stgatilov #5992: list of all forces applied to this body
 	idVec3					atRestOrigin;				// origin at rest
 	idMat3					atRestAxis;					// axis at rest
 
@@ -947,7 +948,7 @@ public:	// common physics interface
 
 	void					GetImpactInfo( const int id, const idVec3 &point, impactInfo_t *info ) const;
 	void					ApplyImpulse( const int id, const idVec3 &point, const idVec3 &impulse );
-	void					AddForce( const int id, const idVec3 &point, const idVec3 &force ) override;
+	void					AddForce( const int id, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) override;
 	bool					IsAtRest( void ) const;
 	int						GetRestStartTime( void ) const;
 	void					Activate( void );
@@ -1103,7 +1104,6 @@ private:
 	bool					CollisionImpulse( float timeStep, idAFBody *body, trace_t &collision );
 	bool					ApplyCollisions( float timeStep );
 	void					CheckForCollisions( float timeStep );
-	void					ClearExternalForce( void );
 	void					AddGravity( void );
 	void					SwapStates( void );
 	bool					TestIfAtRest( float timeStep );

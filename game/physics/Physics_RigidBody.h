@@ -40,9 +40,7 @@ typedef struct rigidBodyPState_s {
 	idVec3					localOrigin;				// origin relative to master
 	idMat3					localAxis;					// axis relative to master
 	idVec6					pushVelocity;				// push velocity
-	idVec3					externalForce;				// external force relative to center of mass
-	idVec3					externalTorque;				// external torque relative to center of mass
-	idVec3					externalForcePoint;			// point where the externalForce is being applied at
+	idForceApplicationList	forceApplications;			// stgatilov #5992: list of individual external forces applied
 	rigidBodyIState_t		i;							// state used for integration
 } rigidBodyPState_t;
 
@@ -97,7 +95,7 @@ public:	// common physics interface
 	 */
 	bool					PropagateImpulse(const int id, const idVec3& point, const idVec3& impulse);
 
-	void					AddForce( const int id, const idVec3 &point, const idVec3 &force ) override;
+	void					AddForce( const int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) override;
 	void					Activate( void );
 	void					PutToRest( void );
 	bool					IsAtRest( void ) const;
@@ -176,6 +174,11 @@ private:
 	// tels: if the applied impulse/torque exceeds these values, the entity breaks down
 	idVec3					maxForce;				// spawnarg "max_force"
 	idVec3					maxTorque;				// spawnarg "max_torque"
+
+	// stgatilov #5992: accumulated force/torque right now
+	idVec3					externalForce;			// external force relative to center of mass
+	idVec3					externalTorque;			// external torque relative to center of mass
+	idVec3					externalForcePoint;		// point where the externalForce is being applied at
 
 	// derived properties
 	float					mass;					// mass of body

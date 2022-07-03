@@ -1341,7 +1341,7 @@ void idPhysics_Player::RopeMove( void )
 
 		// ishtvan fix: Always translational force, do not torque the rope body
 		// ropePhys->AddForce( bodID, ropePoint, vImpulse/0.1f );
-		ropePhys->AddForce( bodID, ropePhys->GetOrigin(bodID), vImpulse/0.1f );
+		ropePhys->AddForce( bodID, ropePhys->GetOrigin(bodID), vImpulse/0.1f, this );
 	}
 
 // ======================== Rope Swinging =====================
@@ -1397,7 +1397,7 @@ void idPhysics_Player::RopeMove( void )
 			kickDir.Normalize();
 		
 			float force = cv_pm_rope_swing_impulse.GetFloat() / MS2SEC(cv_pm_rope_swing_duration.GetFloat());
-			ropePhys->AddForce( bodID, bodyOrig, kickDir * force );
+			ropePhys->AddForce( bodID, bodyOrig, kickDir * force, this );
 		}
 	}
 
@@ -2101,7 +2101,7 @@ void idPhysics_Player::CheckGround( void ) {
 		{
 			// greebo: Apply a force to the entity below the player
 			//gameRenderWorld->DebugArrow(colorCyan, current.origin, current.origin + gravityNormal*20, 1, 16);
-			groundPhysics->AddForce(0, current.origin, gravityNormal*mass*cv_pm_weightmod.GetFloat());
+			groundPhysics->AddForce(0, current.origin, gravityNormal*mass*cv_pm_weightmod.GetFloat(), this);
 		}
 	}
 }

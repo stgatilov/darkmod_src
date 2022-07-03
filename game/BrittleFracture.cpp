@@ -698,14 +698,14 @@ void idBrittleFracture::ApplyImpulse( idEntity *ent, int id, const idVec3 &point
 idBrittleFracture::AddForce
 ================
 */
-void idBrittleFracture::AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force ) {
+void idBrittleFracture::AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
 
-	if ( id < 0 || id >= shards.Num() ) {
+	if ( bodyId < 0 || bodyId >= shards.Num() ) {
 		return;
 	}
 
-	if ( shards[id]->droppedTime != -1 ) {
-		shards[id]->physicsObj.AddForce( 0, point, force );
+	if ( shards[bodyId]->droppedTime != -1 ) {
+		shards[bodyId]->physicsObj.AddForce( 0, point, force, applId );
 	} else if ( health <= 0 && !disableFracture ) {
 		Shatter( point, force, gameLocal.time );
 	}

@@ -674,7 +674,7 @@ public:
 							// apply an impulse to the physics object, 'ent' is the entity applying the impulse
 	virtual void			ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
 							// add a force to the physics object, 'ent' is the entity adding the force
-	virtual void			AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
+	virtual void			AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId );
 							// activate the physics object, 'ent' is the entity activating this entity (and ignored in the code in entity.cpp...)
 	virtual void			ActivatePhysics( idEntity *ent );
 							// returns true if the physics object is at rest

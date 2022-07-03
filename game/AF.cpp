@@ -464,9 +464,9 @@ void idAF::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec
 idAF::AddForce
 ================
 */
-void idAF::AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force ) {
+void idAF::AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
 	SetupPose( self, gameLocal.time );
-	physicsObj.AddForce( BodyForClipModelId( id ), point, force );
+	physicsObj.AddForce( BodyForClipModelId( bodyId ), point, force, applId );
 }
 
 /*

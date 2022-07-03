@@ -658,11 +658,11 @@ void idAFAttachment::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, c
 idAFAttachment::AddForce
 ================
 */
-void idAFAttachment::AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force ) {
+void idAFAttachment::AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
 	if ( body ) {
-		body->AddForce( ent, JOINT_HANDLE_TO_CLIPMODEL_ID( attachJoint ), point, force );
+		body->AddForce( ent, JOINT_HANDLE_TO_CLIPMODEL_ID( attachJoint ), point, force, applId );
 	} else {
-		idEntity::AddForce( ent, id, point, force );
+		idEntity::AddForce( ent, bodyId, point, force, applId );
 	}
 }
 
@@ -1142,12 +1142,12 @@ void idAFEntity_Base::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, 
 idAFEntity_Base::AddForce
 ================
 */
-void idAFEntity_Base::AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force ) {
+void idAFEntity_Base::AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
 	if ( af.IsLoaded() ) {
-		af.AddForce( ent, id, point, force );
+		af.AddForce( ent, bodyId, point, force, applId );
 	}
 	if ( !af.IsActive() ) {
-		idEntity::AddForce( ent, id, point, force );
+		idEntity::AddForce( ent, bodyId, point, force, applId );
 	}
 }
 

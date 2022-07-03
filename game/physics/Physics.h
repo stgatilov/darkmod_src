@@ -68,6 +68,8 @@ typedef struct impactInfo_s {
 } impactInfo_t;
 
 
+struct idForceApplicationId;
+
 class idPhysics : public idClass {
 
 public:
@@ -116,10 +118,10 @@ public:	// common physics interface
 	// returns true if the impulse has been applied to any neighbours
 	virtual bool				PropagateImpulse( const int id, const idVec3& point, const idVec3& impulse ) = 0;
 
-	// stgatilov: add external force for the duration of one game tic
-	// in order to exert constant force, one has to reapply it every tic (exactly once)
-	// note: external forces are zeroed at the end of Evaluate method
-	virtual void				AddForce( const int id, const idVec3 &point, const idVec3 &force );
+	// stgatilov: add external force to bodyId-th body for the duration of one game tic
+	// in order to exert constant force over time, you have to reapply it every tic
+	// if AddForce with same applId was called before, then new force data REPLACES old
+	virtual void				AddForce( const int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId );
 
 	virtual void				Activate( void ) = 0;
 	virtual void				PutToRest( void ) = 0;

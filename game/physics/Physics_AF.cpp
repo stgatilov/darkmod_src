@@ -4452,6 +4452,7 @@ void idAFBody::Save( idSaveGame *saveFile ) {
 	saveFile->WriteMat3( current->worldAxis );
 	saveFile->WriteVec6( current->spatialVelocity );
 	saveFile->WriteVec6( current->externalForce );
+	forceApplications.Save( saveFile );
 	saveFile->WriteVec3( atRestOrigin );
 	saveFile->WriteMat3( atRestAxis );
 	m_RerouteEnt.Save( saveFile );
@@ -4489,6 +4490,7 @@ void idAFBody::Restore( idRestoreGame *saveFile ) {
 	saveFile->ReadMat3( current->worldAxis );
 	saveFile->ReadVec6( current->spatialVelocity );
 	saveFile->ReadVec6( current->externalForce );
+	forceApplications.Restore( saveFile );
 	saveFile->ReadVec3( atRestOrigin );
 	saveFile->ReadMat3( atRestAxis );
 	m_RerouteEnt.Restore( saveFile );
@@ -5971,24 +5973,6 @@ void idPhysics_AF::ApplyContactForces( void ) {
 
 /*
 ================
-idPhysics_AF::ClearExternalForce
-================
-*/
-void idPhysics_AF::ClearExternalForce( void ) {
-	int i;
-	idAFBody *body;
-
-	for ( i = 0; i < bodies.Num(); i++ ) {
-		body = bodies[i];
-
-		// clear external force
-		body->current->externalForce.Zero();
-		body->next->externalForce.Zero();
-	}
-}
-
-/*
-================
 idPhysics_AF::AddGravity
 ================
 */
@@ -6060,18 +6044,10 @@ idPhysics_AF::SwapStates
 ================
 */
 void idPhysics_AF::SwapStates( void ) {
-	int i;
-	idAFBody *body;
-	AFBodyPState_t *swap;
-
-	for ( i = 0; i < bodies.Num(); i++ ) {
-
-		body = bodies[i];
-
+	for ( int i = 0; i < bodies.Num(); i++ ) {
+		idAFBody *body = bodies[i];
 		// swap the current and next state for next simulation step
-		swap = body->current;
-		body->current = body->next;
-		body->next = swap;
+		idSwap(body->current, body->next);
 	}
 }
 
@@ -6307,6 +6283,7 @@ void idPhysics_AF::Rest( void ) {
 	current.atRest = gameLocal.time;
 	for ( i = 0; i < bodies.Num(); i++ ) {
 		bodies[i]->current->spatialVelocity.Zero();
+		bodies[i]->forceApplications.Clear();
 		bodies[i]->current->externalForce.Zero();
 	}
 
@@ -6576,6 +6553,20 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec )
 	}
 	current.lastTimeStep = timeStep;
 
+	// stgatilov #5992: compute total force/torque for all bodies
+	for ( int i = 0; i < bodies.Num(); i++ ) {
+		// gravity and contact forces are added to externalForce at the end of Evaluate,
+		// i.e. after it has already taken effect in simulation
+		// so here we need to add them instead of just clearing totals
+		// note: I don't know whether it is important of gravity/contacts can be moved to start...
+		idVec6 externalFromLastEvaluate = bodies[i]->current->externalForce;
+		bodies[i]->forceApplications.ComputeTotal(
+			bodies[i]->current->worldOrigin,
+			&bodies[i]->current->externalForce.SubVec3(0),
+			&bodies[i]->current->externalForce.SubVec3(1)
+		);
+		bodies[i]->current->externalForce += externalFromLastEvaluate;
+	}
 
 	// if the articulated figure changed
 	if ( changedAF || ( linearTime != af_useLinearTime.GetBool() ) ) {
@@ -6688,7 +6679,16 @@ bool idPhysics_AF::Evaluate( int timeStepMSec, int endTimeMSec )
 	DebugDraw();
 
 	// clear external forces on all bodies
-	ClearExternalForce();
+	for ( int i = 0; i < bodies.Num(); i++ ) {
+		idAFBody *body = bodies[i];
+		// stgatilov #5992: clear total force to zero
+		// the remaining part of Evaluate will add gravity and contact forces to it
+		// we'll take them into account on the next physics subtic
+		body->current->externalForce.Zero();
+		body->next->externalForce.Zero();
+		// drop list of forces
+		body->forceApplications.Clear();
+	}
 
 	// apply contact force to other entities
 	ApplyContactForces();
@@ -7902,15 +7902,14 @@ void idPhysics_AF::ApplyImpulse( const int id, const idVec3 &point, const idVec3
 idPhysics_AF::AddForce
 ================
 */
-void idPhysics_AF::AddForce( const int id, const idVec3 &point, const idVec3 &force ) {
+void idPhysics_AF::AddForce( const int id, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
 	if ( noImpact ) {
 		return;
 	}
 	if ( id < 0 || id >= bodies.Num() ) {
 		return;
 	}
-	bodies[id]->current->externalForce.SubVec3( 0 ) += force;
-	bodies[id]->current->externalForce.SubVec3( 1 ) += (point - bodies[id]->current->worldOrigin).Cross( force );
+	bodies[id]->forceApplications.Add( point, force, applId );
 	Activate();
 }
 
@@ -7952,7 +7951,7 @@ void idPhysics_AF::SaveState( void ) {
 	saved = current;
 
 	for ( i = 0; i < bodies.Num(); i++ ) {
-		memcpy( &bodies[i]->saved, bodies[i]->current, sizeof( AFBodyPState_t ) );
+		bodies[i]->saved = *bodies[i]->current;
 	}
 }
 

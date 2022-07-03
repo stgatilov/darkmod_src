@@ -104,7 +104,7 @@ void idPhysics_Monster::CheckGround( monsterPState_t &state ) {
 				// gameLocal.clip.Motion() might have a problem with something sitting flat
 				// on a world brush.
 
-				groundPhysics->AddForce(0, current.origin, gravityNormal);
+				groundPhysics->AddForce(0, current.origin, gravityNormal, this);
 				groundPhysics->Activate();
 			}
 		}

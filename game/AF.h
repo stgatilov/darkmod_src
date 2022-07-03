@@ -75,7 +75,7 @@ public:
 	void					GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) const;
 	void					GetImpactInfo( idEntity *ent, int id, const idVec3 &point, impactInfo_t *info );
 	void					ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse );
-	void					AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
+	void					AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId );
 	int						BodyForClipModelId( int id ) const;
 	/**
 	* Find the joint associated with the given body

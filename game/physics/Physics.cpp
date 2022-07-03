@@ -73,6 +73,6 @@ int idPhysics::SnapTimeToPhysicsFrame( int t ) {
 idPhysics::AddForce
 ================
 */
-void idPhysics::AddForce( const int bodyId, const idVec3 &point, const idVec3 &force ) {
+void idPhysics::AddForce( const int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
 	// default: forces ignored
 }

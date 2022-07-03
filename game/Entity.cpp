@@ -5705,8 +5705,8 @@ void idEntity::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const i
 idEntity::AddForce
 ================
 */
-void idEntity::AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force ) {
-	GetPhysics()->AddForce( id, point, force );
+void idEntity::AddForce( idEntity *ent, int bodyId, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId ) {
+	GetPhysics()->AddForce( bodyId, point, force, applId );
 }
 
 /*

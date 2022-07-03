@@ -28,6 +28,12 @@
     </Expand>
   </Type>
 
+  <Type Name="idForceApplicationId">
+    <DisplayString Condition="type == 0">(none)</DisplayString>
+    <DisplayString Condition="type == 1">(force {ptr})</DisplayString>
+    <DisplayString Condition="type == 2">(weight {ptr})</DisplayString>
+  </Type>
+
   <Type Name="idEntity">
     <DisplayString IncludeView="simple">Entity[{entityNumber}]={name}</DisplayString>
     <DisplayString>Entity {name}: num={entityNumber} def={entityDefNumber}</DisplayString>

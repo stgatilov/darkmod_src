@@ -80,3 +80,98 @@ idForce::RemovePhysics
 */
 void idForce::RemovePhysics( const idPhysics *phys ) {
 }
+
+/*
+================
+idForceApplication::Save
+================
+*/
+void idForceApplication::Save(idSaveGame *savefile) const {
+	savefile->WriteVec3( force );
+	savefile->WriteVec3( point );
+}
+
+/*
+================
+idForceApplication::Restore
+================
+*/
+void idForceApplication::Restore(idRestoreGame *savefile) {
+	// NOTE: we cannot reliably serialize/deserialize pointers, so we reset IDs to empty ones
+	// this can probably cause duplicate application of some force for one game tic...
+	// does not sound like a big trouble
+	id = idForceApplicationId();
+	savefile->ReadVec3( force );
+	savefile->ReadVec3( point );
+}
+
+/*
+================
+idForceApplicationList::Add
+================
+*/
+void idForceApplicationList::Add(const idVec3 &point, const idVec3 &force, const idForceApplicationId &id) {
+	// find force application with same ID
+	// if found, then replace its contents with new info
+	int q = -1;
+	for ( int i = 0; i < Num(); i++ )
+		if ( (*this)[i].id.Same( id ) )
+			q = i;
+
+	// if not found, add new force application entry
+	if ( q < 0 )
+		q = Append(idForceApplication());
+
+	// write or overwrite data
+	idForceApplication &appl = (*this)[q];
+	appl.point = point;
+	appl.force = force;
+	appl.id = id;
+}
+
+/*
+================
+idForceApplicationList::ComputeTotal
+================
+*/
+void idForceApplicationList::ComputeTotal(const idVec3 &center, idVec3 *force, idVec3 *torque, idVec3 *point) const {
+	idVec3 totalForce = idVec3(0);
+	idVec3 totalTorque = idVec3(0);
+	idVec3 lastPoint = idVec3(0);
+	for ( int i = 0; i < Num(); i++ ) {
+		const idForceApplication &appl = (*this)[i];
+		totalForce += appl.force;
+		totalTorque += ( appl.point - center ).Cross( appl.force );
+		lastPoint = appl.point;	// assign last point (no sense if several forces)
+	}
+	if (force)
+		*force = totalForce;
+	if (torque)
+		*torque = totalTorque;
+	if (point)
+		*point = lastPoint;
+}
+
+/*
+================
+idForceApplicationList::Save
+================
+*/
+void idForceApplicationList::Save(idSaveGame *savefile) const {
+	savefile->WriteInt( Num() );
+	for ( int i = 0; i < Num(); i++ )
+		(*this)[i].Save( savefile );
+}
+
+/*
+================
+idForceApplicationList::Restore
+================
+*/
+void idForceApplicationList::Restore(idRestoreGame *savefile) {
+	int num;
+	savefile->ReadInt( num );
+	SetNum( num );
+	for ( int i = 0; i < num; i++ )
+		(*this)[i].Restore( savefile );
+}

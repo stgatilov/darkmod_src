@@ -74,20 +74,20 @@ void RigidBodyDerivatives( const float t, const void *clientData, const float *s
     // underwater we have a higher friction
     if( p->GetWaterLevelf() == 0.0f )
 	{
-        d->force = - p->linearFriction * s->linearMomentum + p->current.externalForce;
-        d->torque = - p->angularFriction * s->angularMomentum + p->current.externalTorque;
+        d->force = - p->linearFriction * s->linearMomentum + p->externalForce;
+        d->torque = - p->angularFriction * s->angularMomentum + p->externalTorque;
     }
 	else
 	{
         // don't let water friction go less than 25% of the water viscosity
         float percent = Max(0.25f,p->GetSubmergedPercent(s->position,s->orientation.Transpose()));
 
-        d->force = (-p->linearFriction * p->water->GetViscosity() * percent) * s->linearMomentum + p->current.externalForce;
-        d->torque = (-p->angularFriction * p->water->GetViscosity()) * s->angularMomentum + p->current.externalTorque;
+        d->force = (-p->linearFriction * p->water->GetViscosity() * percent) * s->linearMomentum + p->externalForce;
+        d->torque = (-p->angularFriction * p->water->GetViscosity()) * s->angularMomentum + p->externalTorque;
     }
 #else
-	d->force = - p->linearFriction * s->linearMomentum + p->current.externalForce;
-	d->torque = - p->angularFriction * s->angularMomentum + p->current.externalTorque;
+	d->force = - p->linearFriction * s->linearMomentum + p->externalForce;
+	d->torque = - p->angularFriction * s->angularMomentum + p->externalTorque;
 #endif
 }
 
@@ -1180,6 +1180,10 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	// tels
 	maxForce.Zero();
 	maxTorque.Zero();
+
+	externalForce.Zero();
+	externalTorque.Zero();
+	externalForcePoint.Zero();
 }
 
 /*
@@ -1206,8 +1210,7 @@ void idPhysics_RigidBody_SavePState( idSaveGame *savefile, const rigidBodyPState
 	savefile->WriteVec3( state.localOrigin );
 	savefile->WriteMat3( state.localAxis );
 	savefile->Write( &state.pushVelocity, sizeof( state.pushVelocity ) );
-	savefile->WriteVec3( state.externalForce );
-	savefile->WriteVec3( state.externalTorque );
+	state.forceApplications.Save( savefile );
 
 	savefile->WriteVec3( state.i.position );
 	savefile->WriteMat3( state.i.orientation );
@@ -1226,8 +1229,7 @@ void idPhysics_RigidBody_RestorePState( idRestoreGame *savefile, rigidBodyPState
 	savefile->ReadVec3( state.localOrigin );
 	savefile->ReadMat3( state.localAxis );
 	savefile->Read( &state.pushVelocity, sizeof( state.pushVelocity ) );
-	savefile->ReadVec3( state.externalForce );
-	savefile->ReadVec3( state.externalTorque );
+	state.forceApplications.Restore( savefile );
 
 	savefile->ReadVec3( state.i.position );
 	savefile->ReadMat3( state.i.orientation );
@@ -1276,6 +1278,10 @@ void idPhysics_RigidBody::Save( idSaveGame *savefile ) const {
 	// tels
 	savefile->WriteVec3( maxForce );
 	savefile->WriteVec3( maxTorque );
+
+	savefile->WriteVec3( externalForce );
+	savefile->WriteVec3( externalTorque );
+	savefile->WriteVec3( externalForcePoint );
 }
 
 /*
@@ -1319,6 +1325,10 @@ void idPhysics_RigidBody::Restore( idRestoreGame *savefile ) {
 	// tels
 	savefile->ReadVec3( maxForce );
 	savefile->ReadVec3( maxTorque );
+
+	savefile->ReadVec3( externalForce );
+	savefile->ReadVec3( externalTorque );
+	savefile->ReadVec3( externalForcePoint );
 }
 
 /*
@@ -1657,6 +1667,15 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	timeStep = MS2SEC( timeStepMSec );
 	current.lastTimeStep = timeStep;
 
+	// stgatilov #5992: compute total force/torque
+	current.forceApplications.ComputeTotal(
+		current.i.position + centerOfMass * current.i.orientation,
+		&externalForce, &externalTorque, &externalForcePoint
+	);
+	// end of game tic: clear force list
+	// forces will not show up on next game tic unless reapplied via AddForce
+	current.forceApplications.Clear();
+
 	if ( hasMaster ) {
 		oldOrigin = current.i.position;
 		oldAxis = current.i.orientation;
@@ -1695,9 +1714,6 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
 		current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
 
-		current.externalForce.Zero();
-		current.externalTorque.Zero();		
-
 		return ( current.i.position != oldOrigin || current.i.orientation != oldAxis );
 	}
 
@@ -1712,8 +1728,6 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 																	// grayman #4230 - and it's not a flinder
 	{
 		DropToFloorAndRest();
-		current.externalForce.Zero();
-		current.externalTorque.Zero();
 		return true;
 	}
 
@@ -1781,7 +1795,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 #endif
 
 		// check if the body has come to rest
-		if ( ( current.externalForce.LengthSqr() == 0.0f ) && TestIfAtRest() )
+		if ( ( externalForce.LengthSqr() == 0.0f ) && TestIfAtRest() )
 		{
 			// put to rest
 			Rest();
@@ -1829,8 +1843,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 			idVec3 massCenter(current.i.position + centerOfMass * current.i.orientation);
 
 			// Calculate the lever arms
-			idVec3 arm1(current.externalForcePoint - massCenter);
-			idVec3 arm2(current.externalForcePoint - collision.c.point);
+			idVec3 arm1(externalForcePoint - massCenter);
+			idVec3 arm2(externalForcePoint - collision.c.point);
 			idVec3 arm1N(arm1);
 
 			//gameRenderWorld->DebugArrow(colorCyan, massCenter, massCenter + arm1, 1, 20);
@@ -1843,8 +1857,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 			if (arm2.LengthFast() > l1)
 			{
 				// Apply the linear momentum caused by the external force
-				current.i.linearMomentum -= current.externalForce*2;
-				current.i.angularMomentum += (current.externalForcePoint - collision.c.point).Cross(current.externalForce);
+				current.i.linearMomentum -= externalForce*2;
+				current.i.angularMomentum += (externalForcePoint - collision.c.point).Cross(externalForce);
 			}
 			else if (fabs(l1) > 0.01f)
 			{
@@ -1852,7 +1866,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 				float forceFactor = 4*armRatio*(armRatio - 1);
 
 				forceFactor *= 15;
-				idVec3 leverForceLinear = current.externalForce * forceFactor;
+				idVec3 leverForceLinear = externalForce * forceFactor;
 
 				//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("forceFactor: %f\r", forceFactor);
 				//DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Current impulse", current.i.linearMomentum);
@@ -1862,7 +1876,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 				// Apply the linear momentum caused by the lever force
 				current.i.linearMomentum += leverForceLinear;
-				current.i.angularMomentum += (current.externalForcePoint - collision.c.point).Cross(current.externalForce);
+				current.i.angularMomentum += (externalForcePoint - collision.c.point).Cross(externalForce);
 			}
 		}
 	}
@@ -1873,9 +1887,6 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	current.pushVelocity.Zero();
 
 	current.lastTimeStep = timeStep;
-	current.externalForce.Zero();
-	current.externalForcePoint.Zero();
-	current.externalTorque.Zero();
 
 	if ( IsOutsideWorld() ) {
 		gameLocal.Warning( "rigid body moved outside world bounds for entity '%s' type '%s' at (%s)",
@@ -2001,15 +2012,16 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 idPhysics_RigidBody::AddForce
 ================
 */
-void idPhysics_RigidBody::AddForce( const int id, const idVec3 &point, const idVec3 &force )
+void idPhysics_RigidBody::AddForce( const int id, const idVec3 &point, const idVec3 &force, const idForceApplicationId &applId )
 {
 	if ( noImpact )
 	{
 		return;
 	}
-	current.externalForcePoint = point;
-	current.externalForce += force;
-	current.externalTorque += ( point - ( current.i.position + centerOfMass * current.i.orientation ) ).Cross( force );
+
+	// add or replace existing force application
+	current.forceApplications.Add(point, force, applId);
+
 	Activate();
 }
 
@@ -2460,12 +2472,12 @@ void idPhysics_RigidBody::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
-	msg.WriteDeltaFloat( 0.0f, current.externalForce[0], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
+/*	msg.WriteDeltaFloat( 0.0f, current.externalForce[0], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.externalForce[1], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.externalForce[2], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.externalTorque[0], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	msg.WriteDeltaFloat( 0.0f, current.externalTorque[1], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
-	msg.WriteDeltaFloat( 0.0f, current.externalTorque[2], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
+	msg.WriteDeltaFloat( 0.0f, current.externalTorque[2], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );*/
 }
 
 /*
@@ -2498,12 +2510,12 @@ void idPhysics_RigidBody::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	current.pushVelocity[0] = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 	current.pushVelocity[1] = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
 	current.pushVelocity[2] = msg.ReadDeltaFloat( 0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS );
-	current.externalForce[0] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
+/*	current.externalForce[0] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	current.externalForce[1] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	current.externalForce[2] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	current.externalTorque[0] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
 	current.externalTorque[1] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
-	current.externalTorque[2] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );
+	current.externalTorque[2] = msg.ReadDeltaFloat( 0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS );*/
 
 	current.i.orientation = quat.ToMat3();
 	current.localAxis = localQuat.ToMat3();

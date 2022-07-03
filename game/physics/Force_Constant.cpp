@@ -109,7 +109,7 @@ void idForce_Constant::Evaluate( int time ) {
 
 	p = physics->GetOrigin( id ) + point * physics->GetAxis( id );
 
-	physics->AddForce( id, p, force );
+	physics->AddForce( id, p, force, this );
 }
 
 /*
