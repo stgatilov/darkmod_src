@@ -365,11 +365,11 @@ void idSIMD_SSE2::CalcTriFacing( const idDrawVert *verts, const int numVerts, co
 	}
 }
 
-void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
-	typedef unsigned int uint32;
-	int i = 0;
-	for ( ; i < numBytes && (size_t(src + i) & 15); i++ )
+void CopyBufferSSE2_NT( byte* dst, const byte* src, size_t numBytes ) {
+	size_t i = 0;
+	for ( ; i < numBytes && (size_t(src + i) & 15); i++ ) {
 		dst[i] = src[i];
+	}
 	for ( ; i + 128 <= numBytes; i += 128 ) {
 		__m128i d0 = _mm_load_si128( ( __m128i* ) & src[i + 0 * 16] );
 		__m128i d1 = _mm_load_si128( ( __m128i* ) & src[i + 1 * 16] );
@@ -392,9 +392,6 @@ void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 		__m128i d = _mm_load_si128( ( __m128i* ) & src[i] );
 		_mm_stream_si128( ( __m128i* ) & dst[i], d );
 	}
-	for ( ; i + 4 <= numBytes; i += 4 ) {
-		*(uint32*)& dst[i] = *(const uint32*)& src[i];
-	}
 	for ( ; i < numBytes; i++ ) {
 		dst[i] = src[i];
 	}
@@ -402,11 +399,12 @@ void CopyBufferSSE2( byte* dst, const byte* src, int numBytes ) {
 	assert(i == numBytes);
 }
 
-void idSIMD_SSE2::Memcpy( void* dst, const void* src, const int count ) {
+void idSIMD_SSE2::MemcpyNT( void* dst, const void* src, const int count ) {
+	assert(count >= 0);
 	if ( ( (size_t)src ^ (size_t)dst ) & 15 ) // FIXME allow SSE2 on differently aligned addresses
-		idSIMD_Generic::Memcpy( dst, src, count );
+		memcpy( dst, src, count );
 	else
-		CopyBufferSSE2( (byte*)dst, (byte*)src, count );
+		CopyBufferSSE2_NT( (byte*)dst, (byte*)src, count );
 }
 
 /*

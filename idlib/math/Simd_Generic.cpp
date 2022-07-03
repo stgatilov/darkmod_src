@@ -588,6 +588,15 @@ void idSIMD_Generic::Memset( void *dst, const int val, const int count ) {
 }
 
 /*
+================
+idSIMD_Generic::MemcpyNT
+================
+*/
+void idSIMD_Generic::MemcpyNT( void *dst, const void *src, const int count ) {
+	memcpy( dst, src, count );
+}
+
+/*
 ============
 idSIMD_Generic::Zero16
 ============

@@ -129,8 +129,12 @@ public:
 	virtual	void ClampMin( float *dst,		const float *src,		const float min,		const int count ) = 0;
 	virtual	void ClampMax( float *dst,		const float *src,		const float max,		const int count ) = 0;
 
+	// note: better call ordinary memcpy, since it can inline calls for small and fixed count (e.g. 64 bytes)
 	virtual void Memcpy( void *dst,			const void *src,		const int count ) = 0;
+	// note: better call ordinary memset, since it can inline calls for small and fixed count (e.g. 64 bytes)
 	virtual void Memset( void *dst,			const int val,			const int count ) = 0;
+	// uses nontemporal writes: only use this for writing to GPU-mapped memory!
+	virtual void MemcpyNT( void *dst,		const void *src,		const int count ) = 0;
 
 	// these assume 16 byte aligned and 16 byte padded memory
 	virtual void Zero16( float *dst,			const int count ) = 0;

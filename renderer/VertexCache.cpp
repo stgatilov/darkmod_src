@@ -311,7 +311,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 		const byte* src = (byte*)data;
 		assert_16_byte_aligned( dst );
 		assert_16_byte_aligned( src );
-		SIMDProcessor->Memcpy( dst, src, bytes );
+		SIMDProcessor->MemcpyNT( dst, src, bytes );
 	}
 
 	return vertCacheHandle_t::Create(

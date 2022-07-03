@@ -72,8 +72,9 @@ public:
 	virtual void ClampMin( float *dst,		const float *src,		const float min,		const int count );
 	virtual void ClampMax( float *dst,		const float *src,		const float max,		const int count );
 
-	virtual void Memcpy( void *dst,			const void *src,		const int count );
-	virtual void Memset( void *dst,			const int val,			const int count );
+	virtual void Memcpy( void *dst,			const void *src,		const int count ) override;
+	virtual void Memset( void *dst,			const int val,			const int count ) override;
+	virtual void MemcpyNT( void *dst,		const void *src,		const int count ) override;
 
 	virtual void Zero16( float *dst,			const int count );
 	virtual void Negate16( float *dst,		const int count );
