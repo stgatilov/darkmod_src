@@ -973,7 +973,7 @@ static void R_DefineEdge( int v1, int v2, int planeNum ) {
 
 	// define the new edge
 	if ( numSilEdges == MAX_SIL_EDGES ) {
-		common->DWarning( "MAX_SIL_EDGES" );
+		// overflow! warning will be triggered outside
 		return;
 	}
 	
@@ -1046,6 +1046,10 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 		R_DefineEdge( i1, i2, i );
 		R_DefineEdge( i2, i3, i );
 		R_DefineEdge( i3, i1, i );
+	}
+
+	if (numSilEdges == MAX_SIL_EDGES) {
+		common->Warning( "MAX_SIL_EDGES exceeded: stencil shadows broken!" );
 	}
 
 	if ( c_duplicatedEdges || c_tripledEdges ) {
