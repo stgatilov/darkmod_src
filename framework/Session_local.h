@@ -116,7 +116,7 @@ public:
 
 	virtual int			GetSaveGameVersion( void );
     
-	virtual void		RunGameTic(int timestepMs);
+	virtual void		RunGameTic(int timestepMs, bool minorTic);
 	virtual void		ActivateFrontend();
 	virtual void		WaitForFrontendCompletion();
 	virtual void		StartFrontendThread();
@@ -182,6 +182,7 @@ public:
 	static idCVar		com_maxFPS;
 	static idCVar		com_maxTicTimestep;
 	static idCVar		com_maxTicsPerFrame;
+	static idCVar		com_useMinorTics;
 	static idCVar		com_showDemo;
 	static idCVar		com_skipGameDraw;
 	static idCVar		com_aviDemoWidth;

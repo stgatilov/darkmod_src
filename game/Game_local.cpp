@@ -3217,7 +3217,7 @@ void idGameLocal::SortActiveEntityList( void ) {
 idGameLocal::RunFrame
 ================
 */
-gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs ) {
+gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs, bool minorTic ) {
 	idEntity *	ent;
 	int			num(-1);
 	idTimer		timer_think, timer_events, timer_singlethink;
@@ -3281,6 +3281,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds, int timestepMs 
 			previousTime = time;
 			time += idMath::Imax(int(timestepMs * g_timeModifier.GetFloat()), 1);
 			realClientTime = time;
+			this->minorTic = minorTic;
 
 #ifdef GAME_DLL
 			// allow changing SIMD usage on the fly

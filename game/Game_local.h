@@ -615,6 +615,7 @@ public:
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
 	int						m_Interleave;			// How often should the lightgem calculation be skipped?
+	bool					minorTic;				// stgatilov #5992: true if this is not the first tic in frame (can optimize out e.g. AIs)
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -695,7 +696,7 @@ public:
 	virtual void			MapShutdown( void );
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
-	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds, int timestepMs );
+	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds, int timestepMs, bool minorTic );
 	virtual int				GetSpyglassOverlay(); // grayman #3807
 	virtual int				GetPeekOverlay(); // grayman #4882
 	virtual int				DetermineAspectRatio(); // grayman #3807

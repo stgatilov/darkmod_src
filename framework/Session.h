@@ -130,7 +130,7 @@ public:
 
 	virtual int		GetSaveGameVersion( void ) = 0;
     
-	virtual void    RunGameTic(int timestepMs = USERCMD_MSEC) = 0;
+	virtual void    RunGameTic(int timestepMs = USERCMD_MSEC, bool minorTic = false) = 0;
 	virtual void	ActivateFrontend() = 0;
 	virtual void	WaitForFrontendCompletion() = 0;
 	virtual void    ExecuteFrameCommand(const char *command, bool delayed) = 0;
