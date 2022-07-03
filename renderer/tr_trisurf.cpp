@@ -103,12 +103,13 @@ is highly uneven.
 // instead of using the texture T vector, cross the normal and S vector for an orthogonal axis
 #define DERIVE_UNSMOOTHED_BITANGENT
 
-const int MAX_SIL_EDGES			= 0x10000;
-const int SILEDGE_HASH_SIZE		= 1024;
+// stgatilov: size of global buffer used when preprocessing every surface
+// should be larger than number of edges in any model...
+const int MAX_SIL_EDGES			= 1<<20;
 
 static int			numSilEdges;
 static silEdge_t *	silEdges;
-static idHashIndex	silEdgeHash( SILEDGE_HASH_SIZE, MAX_SIL_EDGES );
+static idHashIndex	silEdgeHash( 1024, 65536 );
 static int			numPlanes;
 
 #if LEGACY_ALLOCATOR
