@@ -1073,7 +1073,6 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 			idPlane		plane;
 			int			base;
 			int			j;
-			float		d;
 
 			if ( silEdges[i].p2 == numPlanes ) {	// the fake dangling edge
 				continue;
@@ -1084,13 +1083,22 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 			i2 = tri->silIndexes[ base + 1 ];
 			i3 = tri->silIndexes[ base + 2 ];
 
-			plane.FromPoints( tri->verts[i1].xyz, tri->verts[i2].xyz, tri->verts[i3].xyz );
+			//plane.FromPoints(tri->verts[i1].xyz , tri->verts[i2].xyz, tri->verts[i3].xyz );
+			idVec3d pnt1(tri->verts[i1].xyz);
+			idVec3d pnt2(tri->verts[i2].xyz);
+			idVec3d pnt3(tri->verts[i3].xyz);
+			idVec3d normal = (pnt2 - pnt1).Cross(pnt3 - pnt1);
+			if (normal.LengthSqr() == 0.0) {
+				continue;
+			}
 
 			// check to see if points of second triangle are not coplanar
 			base = silEdges[i].p2 * 3;
 			for ( j = 0 ; j < 3 ; j++ ) {
 				i1 = tri->silIndexes[ base + j ];
-				d = plane.Distance( tri->verts[i1].xyz );
+				//float d = plane.Distance( tri->verts[i1].xyz );
+				idVec3d pntOther(tri->verts[i1].xyz);
+				double d = (pntOther - pnt1).Dot(normal);
 				if ( d != 0 ) {		// even a small epsilon causes problems
 					break;
 				}
