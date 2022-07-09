@@ -1186,11 +1186,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		}
 		if ( eDef->parms.sortOffset )
 			drawSurf->sort += eDef->parms.sortOffset;
-		if ( material->GetSort() > SS_POST_PROCESS ) {
-			if ( !eDef->parms.hModel->IsDynamicModel() ) {
-				drawSurf->dsFlags |= DSF_SORT_DEPTH;
-			}
-		}
 	}
 
 	if (!deferred) {

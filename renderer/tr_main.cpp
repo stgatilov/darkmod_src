@@ -1016,17 +1016,6 @@ R_QsortSurfaces
 */
 static bool R_StdSortSurfaces( const drawSurf_t *ea, const drawSurf_t *eb ) {
 
-	// sort by DSF_SORT_DEPTH flag presence
-	// surfaces with flag come later
-	bool sortDepthA = (ea->dsFlags & DSF_SORT_DEPTH) != 0;
-	bool sortDepthB = (eb->dsFlags & DSF_SORT_DEPTH) != 0;
-	if ( sortDepthA != sortDepthB )
-		return sortDepthA < sortDepthB;
-
-	// surfaces with DSF_SORT_DEPTH flag are sorted by ?WHAT?
-	if ( sortDepthA )
-		return ea->space->modelViewMatrix[14] < eb->space->modelViewMatrix[14];
-
 	// soft by "sort" value increasing
 	if ( ea->sort != eb->sort )
 		return ea->sort < eb->sort;
