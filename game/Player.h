@@ -861,7 +861,7 @@ public:
 	// Gets called when the player releases the frob button
 	void					PerformFrobKeyRelease(int holdTime);
 
-	// Obstorte: #5984 (multilooting)
+	// Obsttorte: #5984 (multilooting)
 	bool					multiloot;
 	int						multiloot_lastfrob;
 
@@ -1471,7 +1471,7 @@ private:
 	void					Event_SetPeekView(int state, idVec3 peekViewOrigin); // grayman #4882
 
 	void					Event_IsLeaning(); // grayman #4882
-	void					Event_IsPeakLeaning(); // Obsttorte
+	void					Event_IsPeekLeaning(); // Obsttorte
 	void					Event_GetSecondaryListenerLoc(); // Obsttorte #5899
 
 	//stgatilov: testing script-cpp interop

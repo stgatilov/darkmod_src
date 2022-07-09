@@ -911,7 +911,7 @@ public:
 	/**
 	* Returns true if the player is leaning near a peeking entity (keyhole or crack)
 	**/
-	bool IsPeakLeaning();
+	bool IsPeekLeaning();
 
 	/*!
 	* This is called from idPlayer to adjust the camera before

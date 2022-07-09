@@ -5943,7 +5943,7 @@ void idPhysics_Player::UpdateLean( void ) // grayman #4882 - expanded to handle 
 	}
 }
 
-bool idPhysics_Player::IsPeakLeaning( void )
+bool idPhysics_Player::IsPeekLeaning( void )
 {
 	return (m_LeanEnt.GetEntity() != NULL) && m_LeanEnt.IsValid();
 }
