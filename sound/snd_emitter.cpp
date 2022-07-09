@@ -1048,9 +1048,9 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		if ( spatializePrimary )
 		{
 			// grayman #4882 - Spatialize from primary location (player's ear)
-			p = player->GetPrimaryListenerLoc(); // meters
-			area = soundWorld->rw->PointInArea(p * METERS_TO_DOOM);
-			Spatialize(true, p, area, soundWorld->rw); // to player's ear
+			p = player->GetPrimaryListenerLoc(); // doom units
+			area = soundWorld->rw->PointInArea(p);
+			Spatialize(true, p * DOOM_TO_METERS, area, soundWorld->rw); // to player's ear
 
 			// save primary data
 			pSpatializedOrigin = spatializedOrigin;
@@ -1059,11 +1059,11 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		}
 
 		// grayman #4882 - Spatialize from secondary location (beyond door OR remote Listener)
-		p = player->GetSecondaryListenerLoc(); // meters
+		p = player->GetSecondaryListenerLoc(); // doom units
 		if ( p != vec3_zero )
 		{
-			area = soundWorld->rw->PointInArea(p * METERS_TO_DOOM);
-			Spatialize(false, p, area, soundWorld->rw); // to active Listener
+			area = soundWorld->rw->PointInArea(p);
+			Spatialize(false, p * DOOM_TO_METERS, area, soundWorld->rw); // to active Listener
 
 			// If we did a primary spatialize, determine whether the primary path or the secondary path provides the louder sound. Use the winner.
 

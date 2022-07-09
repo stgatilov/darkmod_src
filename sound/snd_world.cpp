@@ -828,7 +828,7 @@ bool idSoundWorldLocal::ResolveOrigin( bool primary, const int stackDepth, const
 	// from here is greater than the sound's max distance, then there's no need to continue, because
 	// the listener won't hear the sound using this chain of portals along this path.
 
-	idVec3 listenerPosition = (primary ? listenerQU : (gameLocal.GetLocalPlayer()->GetSecondaryListenerLoc()*METERS_TO_DOOM)); // doom units
+	idVec3 listenerPosition = (primary ? listenerQU : gameLocal.GetLocalPlayer()->GetSecondaryListenerLoc()); // doom units
 	float distToListener;
 	distToListener = (soundOrigin - listenerPosition).LengthFast(); // min distance remaining to reach listener (doom units)
 	if ( ( dist + (distToListener * DOOM_TO_METERS) ) >= def->distance )
@@ -1282,9 +1282,9 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 			if ( spatializePrimary )
 			{
 				// grayman #4882 - Spatialize from primary location (player's ear)
-				idVec3 p = player->GetPrimaryListenerLoc(); // meters
-				int area = rw->PointInArea(p * METERS_TO_DOOM);
-				def->Spatialize(true, p, area, rw); // to player's ear
+				idVec3 p = player->GetPrimaryListenerLoc(); // doom units
+				int area = rw->PointInArea(p);
+				def->Spatialize(true, p * DOOM_TO_METERS, area, rw); // to player's ear
 
 				// save primary data
 				pSpatializedOrigin = def->spatializedOrigin;
@@ -1293,11 +1293,11 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 			}
 
 			// grayman #4882 - Spatialize from secondary location (beyond door OR remote Listener)
-			p = player->GetSecondaryListenerLoc(); // meters
+			p = player->GetSecondaryListenerLoc(); // doom units
 			if ( p != vec3_zero )
 			{
-				area = rw->PointInArea(p * METERS_TO_DOOM);
-				def->Spatialize(false, p, area, rw); // to active Listener
+				area = rw->PointInArea(p);
+				def->Spatialize(false, p * DOOM_TO_METERS, area, rw); // to active Listener
 
 				// If we did a primary spatialize, determine whether the primary path or the secondary path provides the louder sound. Use the winner.
 

@@ -11287,7 +11287,7 @@ float idPlayer::RangedThreatTo(idEntity* target) {
 #if 1 // grayman #4882
 void idPlayer::SetPrimaryListenerLoc(idVec3 loc)
 {
-	m_PrimaryListenerLoc = loc * DOOM_TO_METERS; // grayman #4882
+	m_PrimaryListenerLoc = loc; // grayman #4882
 }
 
 idVec3 idPlayer::GetPrimaryListenerLoc(void)
@@ -11307,7 +11307,7 @@ idVec3 idPlayer::GetListenLoc(void)
 
 void idPlayer::SetSecondaryListenerLoc(idVec3 loc)
 {
-	m_SecondaryListenerLoc = loc * DOOM_TO_METERS; // grayman #4882
+	m_SecondaryListenerLoc = loc;	// grayman #4882
 }
 
 idVec3 idPlayer::GetSecondaryListenerLoc(void)
@@ -12121,7 +12121,7 @@ void idPlayer::Event_IsPeekLeaning() // Obsttorte
 }
 void idPlayer::Event_GetSecondaryListenerLoc() // Obsttorte
 {
-	idThread::ReturnVector(GetSecondaryListenerLoc()*METERS_TO_DOOM);
+	idThread::ReturnVector(GetSecondaryListenerLoc());
 }
 //stgatilov: script-cpp interop testing code
 void TestEventError(const char *name) {
