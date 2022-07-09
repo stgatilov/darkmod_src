@@ -483,7 +483,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_TestEvent3,		idPlayer::Event_TestEvent3 )
 
 	EVENT(EV_IsLeaning,						idPlayer::Event_IsLeaning) // grayman #4882
-	EVENT(EV_IsPeakLeaning,					idPlayer::Event_IsPeekLeaning) // Obsttorte
+	EVENT(EV_IsPeekLeaning,					idPlayer::Event_IsPeekLeaning) // Obsttorte
 	EVENT(EV_GetSecondaryListenerLoc,		idPlayer::Event_GetSecondaryListenerLoc) // Obsttorte
 
 END_CLASS
@@ -8527,7 +8527,7 @@ void idPlayer::CalculateFirstPersonView(void)
 
 #if 1
 	if ( physics->IsType(idPhysics_Player::Type) &&
-		static_cast<idPhysics_Player*>(physics)->IsPeakLeaning() &&
+		static_cast<idPhysics_Player*>(physics)->IsPeekLeaning() &&
 		!gameLocal.inCinematic )
 	{
 		SetSecondaryListenerLoc(m_ListenLoc);
