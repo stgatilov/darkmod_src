@@ -195,7 +195,9 @@ bool idBox::AddPoint( const idVec3 &v ) {
 	bounds1[0][2] = bounds1[1][2] = center * axis[2];
 	bounds1[0] -= extents;
 	bounds1[1] += extents;
-	if ( !bounds1.AddPoint( idVec3( v * axis[0], v * axis[1], v * axis[2] ) ) ) {
+	idBounds saved = bounds1;
+	bounds1.AddPoint( idVec3( v * axis[0], v * axis[1], v * axis[2] ) );
+	if ( bounds1 == saved ) {
 		// point is contained in the box
 		return false;
 	}
@@ -256,7 +258,9 @@ bool idBox::AddBox( const idBox &a ) {
 	bounds[0][0] -= extents;
 	bounds[0][1] += extents;
 	a.AxisProjection( ax[0], b );
-	if ( !bounds[0].AddBounds( b ) ) {
+	idBounds saved = bounds[0];
+	bounds[0].AddBounds( b );
+	if ( bounds[0] == saved ) {
 		// the other box is contained in this box
 		return false;
 	}
@@ -269,7 +273,9 @@ bool idBox::AddBox( const idBox &a ) {
 	bounds[1][0] -= a.extents;
 	bounds[1][1] += a.extents;
 	AxisProjection( ax[1], b );
-	if ( !bounds[1].AddBounds( b ) ) {
+	saved = bounds[1];
+	bounds[1].AddBounds( b );
+	if ( saved == bounds[1] ) {
 		// this box is contained in the other box
 		center = a.center;
 		extents = a.extents;

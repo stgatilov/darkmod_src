@@ -67,8 +67,8 @@ public:
 	//note: only X coordinate is checked!
 	bool			IsCleared( void ) const;						// returns true if bounds are inside out
 
-	bool			AddPoint( const idVec3 &v );					// add the point, returns true if the bounds expanded
-	bool			AddBounds( const idBounds &a );					// add the bounds, returns true if the bounds expanded
+	void			AddPoint( const idVec3 &v );					// add the point
+	void			AddBounds( const idBounds &a );					// add the bounds
 	idBounds		Intersect( const idBounds &a ) const;			// return intersection of this bounds with the given bounds
 	idBounds &		IntersectSelf( const idBounds &a );				// intersect this bounds with the given bounds
 	idBounds		Expand( const float d ) const;					// return bounds expanded in all directions with the given value
@@ -239,82 +239,42 @@ ID_INLINE bool idBounds::IsCleared( void ) const {
 	return b[0][0] > b[1][0];
 }
 
-ID_INLINE bool idBounds::AddPoint( const idVec3 &v ) {
-	bool expanded = false;
-	if ( v[0] < b[0][0]) {
-		b[0][0] = v[0];
-		expanded = true;
-	}
-	if ( v[0] > b[1][0]) {
-		b[1][0] = v[0];
-		expanded = true;
-	}
-	if ( v[1] < b[0][1] ) {
-		b[0][1] = v[1];
-		expanded = true;
-	}
-	if ( v[1] > b[1][1]) {
-		b[1][1] = v[1];
-		expanded = true;
-	}
-	if ( v[2] < b[0][2] ) {
-		b[0][2] = v[2];
-		expanded = true;
-	}
-	if ( v[2] > b[1][2]) {
-		b[1][2] = v[2];
-		expanded = true;
-	}
-	return expanded;
+ID_INLINE void idBounds::AddPoint( const idVec3 &v ) {
+	b[0][0] = idMath::Fmin( v[0], b[0][0] );
+	b[0][1] = idMath::Fmin( v[1], b[0][1] );
+	b[0][2] = idMath::Fmin( v[2], b[0][2] );
+	b[1][0] = idMath::Fmax( v[0], b[1][0] );
+	b[1][1] = idMath::Fmax( v[1], b[1][1] );
+	b[1][2] = idMath::Fmax( v[2], b[1][2] );
 }
 
-ID_INLINE bool idBounds::AddBounds( const idBounds &a ) {
-	bool expanded = false;
-	if ( a.b[0][0] < b[0][0] ) {
-		b[0][0] = a.b[0][0];
-		expanded = true;
-	}
-	if ( a.b[0][1] < b[0][1] ) {
-		b[0][1] = a.b[0][1];
-		expanded = true;
-	}
-	if ( a.b[0][2] < b[0][2] ) {
-		b[0][2] = a.b[0][2];
-		expanded = true;
-	}
-	if ( a.b[1][0] > b[1][0] ) {
-		b[1][0] = a.b[1][0];
-		expanded = true;
-	}
-	if ( a.b[1][1] > b[1][1] ) {
-		b[1][1] = a.b[1][1];
-		expanded = true;
-	}
-	if ( a.b[1][2] > b[1][2] ) {
-		b[1][2] = a.b[1][2];
-		expanded = true;
-	}
-	return expanded;
+ID_INLINE void idBounds::AddBounds( const idBounds &a ) {
+	b[0][0] = idMath::Fmin( a.b[0][0], b[0][0] );
+	b[0][1] = idMath::Fmin( a.b[0][1], b[0][1] );
+	b[0][2] = idMath::Fmin( a.b[0][2], b[0][2] );
+	b[1][0] = idMath::Fmax( a.b[1][0], b[1][0] );
+	b[1][1] = idMath::Fmax( a.b[1][1], b[1][1] );
+	b[1][2] = idMath::Fmax( a.b[1][2], b[1][2] );
 }
 
 ID_INLINE idBounds idBounds::Intersect( const idBounds &a ) const {
 	idBounds n;
-	n.b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
-	n.b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
-	n.b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
-	n.b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
-	n.b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
-	n.b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
+	n.b[0][0] = idMath::Fmax( a.b[0][0], b[0][0] );
+	n.b[0][1] = idMath::Fmax( a.b[0][1], b[0][1] );
+	n.b[0][2] = idMath::Fmax( a.b[0][2], b[0][2] );
+	n.b[1][0] = idMath::Fmin( a.b[1][0], b[1][0] );
+	n.b[1][1] = idMath::Fmin( a.b[1][1], b[1][1] );
+	n.b[1][2] = idMath::Fmin( a.b[1][2], b[1][2] );
 	return n;
 }
 
 ID_INLINE idBounds &idBounds::IntersectSelf( const idBounds &a ) {
-	b[0][0] = ( a.b[0][0] > b[0][0] ) ? a.b[0][0] : b[0][0];
-	b[0][1] = ( a.b[0][1] > b[0][1] ) ? a.b[0][1] : b[0][1];
-	b[0][2] = ( a.b[0][2] > b[0][2] ) ? a.b[0][2] : b[0][2];
-	b[1][0] = ( a.b[1][0] < b[1][0] ) ? a.b[1][0] : b[1][0];
-	b[1][1] = ( a.b[1][1] < b[1][1] ) ? a.b[1][1] : b[1][1];
-	b[1][2] = ( a.b[1][2] < b[1][2] ) ? a.b[1][2] : b[1][2];
+	b[0][0] = idMath::Fmax( a.b[0][0], b[0][0] );
+	b[0][1] = idMath::Fmax( a.b[0][1], b[0][1] );
+	b[0][2] = idMath::Fmax( a.b[0][2], b[0][2] );
+	b[1][0] = idMath::Fmin( a.b[1][0], b[1][0] );
+	b[1][1] = idMath::Fmin( a.b[1][1], b[1][1] );
+	b[1][2] = idMath::Fmin( a.b[1][2], b[1][2] );
 	return *this;
 }
 
