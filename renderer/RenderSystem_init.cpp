@@ -1530,7 +1530,7 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 
 #ifdef _WIN32
 	if ( r_swapInterval && qwglSwapIntervalEXT ) {
-		common->Printf( "swapInterval forced (%i)\n", r_swapInterval );
+		common->Printf( "swapInterval forced (%i)\n", r_swapInterval.GetInteger() );
 	} else {
 		common->Printf( "swapInterval not forced\n" );
 	}
