@@ -288,6 +288,23 @@ static bool	R_ClipTriangleToLight( const idVec3 &a, const idVec3 &b, const idVec
 	return true;
 }
 
+idCVar r_modelBvhLightTris(
+	"r_modelBvhLightTris", "3",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"  0 = noBVH, precise triangle culling (Doom 3 default)\n"
+	"  1 = use BVH, do NOT cull triangles precisely\n"
+	"      (some out-of-volume and backfacing triangles are allowed)\n"
+	"  2 = use BVH, cull by light volume precisely\n"
+	"      (some backfacing triangles are allowed)\n"
+	"  3 = use BVH + cull by light and facing precisely\n"
+, 0, 3);
+
+static srfTriangles_t *R_FinishLightTrisWithBvh(
+	const idRenderEntityLocal *ent, const idRenderLightLocal *light,
+	const srfTriangles_t *tri, srfTriangles_t *newTri,
+	bool includeBackFaces
+);
+
 /*
 ====================
 R_CreateLightTris
@@ -335,10 +352,15 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	newTri->numVerts = tri->numVerts;
 	R_ReferenceStaticTriSurfVerts( newTri, tri );
 
+	if ( r_modelBvhLightTris.GetInteger() > 0 && tri->bvhNodes ) {
+		// stgatilov #5886: BVH-optimized culling by light volume and facing
+		return R_FinishLightTrisWithBvh( ent, light, tri, newTri, includeBackFaces );
+	}
+
 	if ( r_useInteractionTriCulling.GetInteger() == -1 ) {
 		// stgatilov: don't waste CPU time on individual triangles
 		// send them all to GPU and let it do its thing!
-		// TODO: does it brak anything?...
+		// TODO: does it break anything?...
 		newTri->numIndexes = tri->numIndexes;
 		R_ReferenceStaticTriSurfIndexes( newTri, tri );
 		newTri->bounds = tri->bounds;
@@ -463,6 +485,147 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 
 	return newTri;
 }
+
+/*
+====================
+R_FinishLightTrisWithBvh
+
+Almost whole R_CreateLightTris reimplemented with BVH acceleration.
+====================
+*/
+srfTriangles_t *R_FinishLightTrisWithBvh(
+	const idRenderEntityLocal *ent, const idRenderLightLocal *light,
+	const srfTriangles_t *tri, srfTriangles_t *newTri,
+	bool includeBackFaces
+) {
+	// transform light geometry into model space
+	idVec3 localLightOrigin;
+	idPlane localLightFrustum[6];
+	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
+	for ( int i = 0; i < 6; i++ )
+		R_GlobalPlaneToLocal( ent->modelMatrix, -light->frustum[i], localLightFrustum[i] );
+
+	int forceMask = 0;
+	if ( r_modelBvhLightTris.GetInteger() == 1 )
+		forceMask = BVH_TRI_SURELY_MATCH;		// don't check triangles in BVH leaves
+	else if ( r_modelBvhLightTris.GetInteger() == 2 )
+		forceMask = BVH_TRI_SURELY_GOOD_ORI;	// don't check facing of triangles in BVH leaves
+
+	// filter triangles:
+	//   1) inside light frustum
+	//   2) frontfacing   (or all if flag is set)
+	idFlexListHuge<bvhTriRange_t> intervals;
+	R_CullBvhByFrustumAndOrigin(
+		tri->bounds, tri->bvhNodes,
+		localLightFrustum, (includeBackFaces ? 0 : 1), localLightOrigin,
+		forceMask, intervals
+	);
+
+	int totalTris = 0;
+	idFlexListHuge<int> preciseTris;
+
+	// uncertain intervals should usually be short
+	idFlexList<byte, 1024> triCull, triFacing;
+	// go through all intervals and filter individual triangles in uncertain ones
+	for ( int i = 0; i < intervals.Num(); i++ ) {
+		int beg = intervals[i].beg;
+		int len = intervals[i].end - intervals[i].beg;
+		int info = intervals[i].info;
+
+		if ( info == BVH_TRI_SURELY_MATCH ) {
+			// all triangles surely match, we'll add them to result later
+			totalTris += len;
+			continue;
+		}
+
+		// see which triangles are within light frustum
+		triCull.SetNum( len );
+		if ( info & BVH_TRI_SURELY_WITHIN_LIGHT )
+			memset( triCull.Ptr(), 0, triCull.Num() * sizeof(triCull[0]) );
+		else {
+			SIMDProcessor->CullTrisByFrustum(
+				tri->verts, tri->numVerts,
+				tri->indexes + 3 * beg, 3 * len,
+				localLightFrustum, triCull.Ptr(), LIGHT_CLIP_EPSILON
+			);
+		}
+
+		// see which triangles are frontfacing
+		triFacing.SetNum( len );
+		if ( info & BVH_TRI_SURELY_GOOD_ORI )
+			memset( triFacing.Ptr(), true, triFacing.Num() * sizeof(triFacing[0]) );
+		else {
+			SIMDProcessor->CalcTriFacing(
+				tri->verts, tri->numVerts,
+				tri->indexes + 3 * beg, 3 * len,
+				localLightOrigin, triFacing.Ptr()
+			);
+		}
+
+		for ( int t = 0; t < len; t++ ) {
+			if ( triCull[t] != 0 || triFacing[t] == false )
+				continue;
+			// this triangle matches: add it to "precise list"
+			preciseTris.AddGrow( beg + t );
+			totalTris++;
+		}
+	}
+
+	// we know total number of triangles in result
+	newTri->numIndexes = 3 * totalTris;
+	if ( newTri->numIndexes == 0 ) {
+		// no triangle taken -> return empty geometry
+		R_ReallyFreeStaticTriSurf( newTri );
+		return NULL;
+	}
+	if ( newTri->numIndexes == tri->numIndexes ) {
+		// all triangles taken -> return same geometry
+		R_ReferenceStaticTriSurfIndexes( newTri, tri );
+		newTri->bounds = tri->bounds;
+		return newTri;
+	}
+
+	// allocate memory for new index buffer
+	R_AllocStaticTriSurfIndexes( newTri, newTri->numIndexes );
+
+	idBounds totalBounds;
+	totalBounds.Clear();
+	int pos = 0;
+
+	for ( int i = 0; i < intervals.Num(); i++ ) {
+		if ( intervals[i].info != BVH_TRI_SURELY_MATCH )
+			continue;
+		// this interval surely matches, copy its indices to result
+		int beg = 3 * intervals[i].beg, end = 3 * intervals[i].end;
+		SIMDProcessor->Memcpy( newTri->indexes + pos, tri->indexes + beg, (end - beg) * sizeof(tri->indexes[0]) );
+		pos += end - beg;
+		totalBounds.AddBounds( intervals[i].GetBox() );
+	}
+
+	for ( int i = 0; i < preciseTris.Num(); i++ ) {
+		// add "precise list" to results: that's all matching triangles from "not surely matches" intervals
+		int t = preciseTris[i];
+		int i0 = tri->indexes[3 * t + 0];
+		int i1 = tri->indexes[3 * t + 1];
+		int i2 = tri->indexes[3 * t + 2];
+		newTri->indexes[pos++] = i0;
+		newTri->indexes[pos++] = i1;
+		newTri->indexes[pos++] = i2;
+		totalBounds.AddPoint( tri->verts[i0].xyz );
+		totalBounds.AddPoint( tri->verts[i1].xyz );
+		totalBounds.AddPoint( tri->verts[i2].xyz );
+	}
+
+	assert( pos == totalTris * 3 );
+
+	// we have computed bounds partly from BVH nodes information
+	// that's much faster than going through all vertices of all filtered triangles
+	newTri->bounds = totalBounds;
+	//SIMDProcessor->MinMax( newTri->bounds[0], newTri->bounds[1], newTri->verts, newTri->indexes, newTri->numIndexes );
+
+	return newTri;
+}
+
 
 /*
 ===============

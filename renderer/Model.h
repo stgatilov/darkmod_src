@@ -16,6 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#include "bv/Bvh.h"
+
 /*
 ===============================================================================
 
@@ -107,6 +109,9 @@ typedef struct srfTriangles_s {
 	int							numIndexes;				// for shadows, this has both front and rear end caps and silhouette planes
 	glIndex_t *					indexes;				// indexes, allocated with special allocator
 
+	int							numBvhNodes;
+	bvhNode_t *					bvhNodes;				// stgatilov #5886: compressed BVH tree on triangles of this surface
+
 	glIndex_t *					silIndexes;				// indexes changed to be the first vertex with same XYZ, ignoring normal and texcoords
 
 	int							numMirroredVerts;		// this many verts at the end of the vert list are tangent mirrors
@@ -117,6 +122,7 @@ typedef struct srfTriangles_s {
 
 	int							numSilEdges;			// number of silhouette edges
 	silEdge_t *					silEdges;				// silhouette edges
+	glIndex_t *					adjTris;				// stgatilov #5886: indexes of adjacent triangles opposite to each vertex of a triangle
 
 	idPlane *					facePlanes;				// [numIndexes/3] plane equations
 

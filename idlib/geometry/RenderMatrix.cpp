@@ -4672,3 +4672,103 @@ frustumCull_t idRenderMatrix::CullFrustumCornersToPlane( const frustumCorners_t&
 #endif
 }
 DEBUG_OPTIMIZE_OFF
+
+/*
+========================
+idRenderMatrix::CullSixPlanes::Prepare
+========================
+*/
+void idRenderMatrix::CullSixPlanes::Prepare( const idPlane frustumPlanes[6] )
+{
+#ifdef USE_INTRINSICS
+	// takes absolute value of first three components, zeroes last component
+	static const __m128 mask = _mm_castsi128_ps( _mm_setr_epi32( INT_MAX, INT_MAX, INT_MAX, 0 ) );
+	assert_16_byte_aligned( prep );
+
+	for ( int i = 0; i < 3; i++ ) {
+		__m128 pl0c = _mm_loadu_ps( frustumPlanes[2 * i + 0].ToFloatPtr() );
+		__m128 pl1c = _mm_loadu_ps( frustumPlanes[2 * i + 1].ToFloatPtr() );
+		__m128 pl0r = _mm_and_ps( pl0c, mask );
+		__m128 pl1r = _mm_and_ps( pl1c, mask );
+		_MM_TRANSPOSE4_PS( pl0c, pl1c, pl0r, pl1r );
+		* (__m128*) prep[4 * i + 0] = pl0c;
+		* (__m128*) prep[4 * i + 1] = pl1c;
+		* (__m128*) prep[4 * i + 2] = pl0r;
+		* (__m128*) prep[4 * i + 3] = pl1r;
+	}
+#endif
+}
+
+/*
+========================
+idRenderMatrix::CullSixPlanes::CullBounds
+========================
+*/
+void idRenderMatrix::CullSixPlanes::CullBounds( const idPlane frustumPlanes[6], const idBounds& bounds, byte* allOutBits, byte* anyOutBits ) const
+{
+#ifdef USE_INTRINSICS
+	assert_16_byte_aligned( prep );
+
+	// compute center and half-diagonal of bounding box
+	__m128 bndMin = _mm_loadu_bounds_0( bounds );
+	__m128 bndMax = _mm_loadu_bounds_1( bounds );
+	__m128 bndCtr = _mm_mul_ps( _mm_add_ps( bndMax, bndMin ), vector_float_half );
+	__m128 bndRad = _mm_mul_ps( _mm_sub_ps( bndMax, bndMin ), vector_float_half );
+	// get coordinate-wise vectors, e.g. ctrX, ctrX, radX, radX
+	__m128 bndMixX = _mm_shuffle_ps( bndCtr, bndRad, R_SHUFFLE_D(0, 0, 0, 0) );
+	__m128 bndMixY = _mm_shuffle_ps( bndCtr, bndRad, R_SHUFFLE_D(1, 1, 1, 1) );
+	__m128 bndMixZ = _mm_shuffle_ps( bndCtr, bndRad, R_SHUFFLE_D(2, 2, 2, 2) );
+
+	// compute two values for first two planes:
+	//   lower two components: distance from center to pl0, pl1
+	//   upper two components: half-width of distance interval for pl0, pl1
+	// (then do the same for other planes)
+	__m128 mixDist0 = * (__m128*) prep[ 3];
+	mixDist0 = _mm_madd_ps( bndMixX, * (__m128*) prep[ 0], mixDist0 );
+	mixDist0 = _mm_madd_ps( bndMixY, * (__m128*) prep[ 1], mixDist0 );
+	mixDist0 = _mm_madd_ps( bndMixZ, * (__m128*) prep[ 2], mixDist0 );
+	__m128 mixDist1 = * (__m128*) prep[ 7];
+	mixDist1 = _mm_madd_ps( bndMixX, * (__m128*) prep[ 4], mixDist1 );
+	mixDist1 = _mm_madd_ps( bndMixY, * (__m128*) prep[ 5], mixDist1 );
+	mixDist1 = _mm_madd_ps( bndMixZ, * (__m128*) prep[ 6], mixDist1 );
+	__m128 mixDist2 = * (__m128*) prep[11];
+	mixDist2 = _mm_madd_ps( bndMixX, * (__m128*) prep[ 8], mixDist2 );
+	mixDist2 = _mm_madd_ps( bndMixY, * (__m128*) prep[ 9], mixDist2 );
+	mixDist2 = _mm_madd_ps( bndMixZ, * (__m128*) prep[10], mixDist2 );
+
+	// unpack center / radius for first 4 planes and for last 2 planes
+	__m128 ctrDist0 = _mm_shuffle_ps( mixDist0, mixDist1, R_SHUFFLE_D(0, 1, 0, 1) );
+	__m128 radDist0 = _mm_shuffle_ps( mixDist0, mixDist1, R_SHUFFLE_D(2, 3, 2, 3) );
+	__m128 ctrDist1 = _mm_shuffle_ps( mixDist2, mixDist2, R_SHUFFLE_D(0, 1, 0, 1) );
+	__m128 radDist1 = _mm_shuffle_ps( mixDist2, mixDist2, R_SHUFFLE_D(2, 3, 2, 3) );
+	// compare center vs radius to see if interval is fully / partially outside each plane
+	__m128 anyOut0 = _mm_cmplt_ps( ctrDist0, radDist0 );
+	__m128 allOut0 = _mm_cmplt_ps( ctrDist0, _mm_xor_ps( radDist0, vector_float_sign_bit ) );
+	__m128 anyOut1 = _mm_cmplt_ps( ctrDist1, radDist1 );
+	__m128 allOut1 = _mm_cmplt_ps( ctrDist1, _mm_xor_ps( radDist1, vector_float_sign_bit ) );
+
+	// concatenate two masks into one with 16-bit components
+	__m128i allOut16 = _mm_packs_epi32( _mm_castps_si128( allOut0 ), _mm_castps_si128( allOut1 ) );
+	__m128i anyOut16 = _mm_packs_epi32( _mm_castps_si128( anyOut0 ), _mm_castps_si128( anyOut1 ) );
+	// pack further into 8-bit components and extract bytewise bitmask
+	int maskAllOut = _mm_movemask_epi8( _mm_packs_epi16( allOut16, _mm_setzero_si128() ) ) & 63;
+	int maskAnyOut = _mm_movemask_epi8( _mm_packs_epi16( anyOut16, _mm_setzero_si128() ) ) & 63;
+
+	*allOutBits = (byte) maskAllOut;
+	*anyOutBits = (byte) maskAnyOut;
+#else
+	int allOut = 0;
+	int anyOut = 0;
+	for ( int i = 0; i < 6; i++ ) {
+		int side = bounds.PlaneSide( frustumPlanes[i], 0.0f );
+		if ( side == PLANESIDE_BACK )
+			allOut |= ( 1 << i );
+		if ( side != PLANESIDE_FRONT )
+			anyOut |= ( 1 << i );
+	}
+	*allOutBits = (byte) allOut;
+	*anyOutBits = (byte) anyOut;
+#endif
+//	assert(maskAllOut == allOut);
+//	assert(maskAnyOut == anyOut);
+}

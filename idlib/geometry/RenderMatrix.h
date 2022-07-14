@@ -147,6 +147,16 @@ public:
 	static void				GetFrustumCorners( frustumCorners_t& corners, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds );
 	static frustumCull_t	CullFrustumCornersToPlane( const frustumCorners_t& corners, const idPlane& plane );
 	
+	// stgatilov #5886: This code is similar to CullBoundsToMVPbits, but:
+	//  1) It accepts six inward-looking planes instead of frustum MVP matrix.
+	//  2) It produces two bitmasks: whole box outside plane / some point in box is outside
+	//  3) It is faster, although it needs preparation for maximum performance.
+	struct CullSixPlanes {
+		ALIGNTYPE16 float prep[12][4];
+		void Prepare( const idPlane frustumPlanes[6] );
+		void CullBounds( const idPlane frustumPlanes[6], const idBounds& bounds, byte* allOutBits, byte* anyOutBits ) const;
+	};
+
 private:
 	float					m[16];
 };

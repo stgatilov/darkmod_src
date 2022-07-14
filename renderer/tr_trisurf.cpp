@@ -123,9 +123,11 @@ static idDynamicBlockAlloc<shadowCache_t, 1<<18, 1<<10>	triShadowVertexAllocator
 static idDynamicBlockAlloc<idPlane, 1<<17, 1<<10>		triPlaneAllocator;
 static idDynamicBlockAlloc<glIndex_t, 1<<17, 1<<10>		triSilIndexAllocator;
 static idDynamicBlockAlloc<silEdge_t, 1<<17, 1<<10>		triSilEdgeAllocator;
+static idDynamicBlockAlloc<glIndex_t, 1<<17, 1<<10>		triAdjTrisAllocator;
 static idDynamicBlockAlloc<dominantTri_t, 1<<16, 1<<10>	triDominantTrisAllocator;
 static idDynamicBlockAlloc<int, 1<<16, 1<<10>			triMirroredVertAllocator;
 static idDynamicBlockAlloc<int, 1<<16, 1<<10>			triDupVertAllocator;
+static idDynamicBlockAlloc<bvhNode_t, 1<<16, 1<<10>		triBvhAllocator;
 #else
 static idDynamicAlloc<idDrawVert, 1<<20, 1<<10>			triVertexAllocator;
 static idDynamicAlloc<glIndex_t, 1<<18, 1<<10>			triIndexAllocator;
@@ -133,9 +135,11 @@ static idDynamicAlloc<shadowCache_t, 1<<18, 1<<10>		triShadowVertexAllocator;
 static idDynamicAlloc<idPlane, 1<<17, 1<<10>			triPlaneAllocator;
 static idDynamicAlloc<glIndex_t, 1<<17, 1<<10>			triSilIndexAllocator;
 static idDynamicAlloc<silEdge_t, 1<<17, 1<<10>			triSilEdgeAllocator;
+static idDynamicAlloc<glIndex_t, 1<<17, 1<<10>			triAdjTrisAllocator;
 static idDynamicAlloc<dominantTri_t, 1<<16, 1<<10>		triDominantTrisAllocator;
 static idDynamicAlloc<int, 1<<16, 1<<10>				triMirroredVertAllocator;
 static idDynamicAlloc<int, 1<<16, 1<<10>				triDupVertAllocator;
+static idDynamicAlloc<bvhNode_t, 1<<16, 1<<10>			triBvhAllocator;
 #endif
 
 
@@ -154,9 +158,11 @@ void R_InitTriSurfData( void ) {
 	triPlaneAllocator.Init();
 	triSilIndexAllocator.Init();
 	triSilEdgeAllocator.Init();
+	triAdjTrisAllocator.Init();
 	triDominantTrisAllocator.Init();
 	triMirroredVertAllocator.Init();
 	triDupVertAllocator.Init();
+	triBvhAllocator.Init();
 
 	// never swap out triangle surfaces
 	triVertexAllocator.SetLockMemory( true );
@@ -165,9 +171,11 @@ void R_InitTriSurfData( void ) {
 	triPlaneAllocator.SetLockMemory( true );
 	triSilIndexAllocator.SetLockMemory( true );
 	triSilEdgeAllocator.SetLockMemory( true );
+	triAdjTrisAllocator.SetLockMemory( true );
 	triDominantTrisAllocator.SetLockMemory( true );
 	triMirroredVertAllocator.SetLockMemory( true );
 	triDupVertAllocator.SetLockMemory( true );
+	triBvhAllocator.SetLockMemory( true );
 }
 
 /*
@@ -187,9 +195,11 @@ void R_ShutdownTriSurfData( void ) {
 	triPlaneAllocator.Shutdown();
 	triSilIndexAllocator.Shutdown();
 	triSilEdgeAllocator.Shutdown();
+	triAdjTrisAllocator.Shutdown();
 	triDominantTrisAllocator.Shutdown();
 	triMirroredVertAllocator.Shutdown();
 	triDupVertAllocator.Shutdown();
+	triBvhAllocator.Shutdown();
 }
 
 /*
@@ -208,9 +218,11 @@ void R_PurgeTriSurfData( frameData_t *frame ) {
 	triPlaneAllocator.FreeEmptyBaseBlocks();
 	triSilIndexAllocator.FreeEmptyBaseBlocks();
 	triSilEdgeAllocator.FreeEmptyBaseBlocks();
+	triAdjTrisAllocator.FreeEmptyBaseBlocks();
 	triDominantTrisAllocator.FreeEmptyBaseBlocks();
 	triMirroredVertAllocator.FreeEmptyBaseBlocks();
 	triDupVertAllocator.FreeEmptyBaseBlocks();
+	triBvhAllocator.FreeEmptyBaseBlocks();
 }
 
 /*
@@ -248,9 +260,9 @@ void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
 		triSilEdgeAllocator.GetBaseBlockMemory() >> 10, triSilEdgeAllocator.GetFreeBlockMemory() >> 10,
 			triSilEdgeAllocator.GetNumFreeBlocks(), triSilEdgeAllocator.GetNumEmptyBaseBlocks() );
 
-	common->Printf( "%6d kB dominant tri memory (%d kB free in %d blocks, %d empty base blocks)\n",
-		triDominantTrisAllocator.GetBaseBlockMemory() >> 10, triDominantTrisAllocator.GetFreeBlockMemory() >> 10,
-			triDominantTrisAllocator.GetNumFreeBlocks(), triDominantTrisAllocator.GetNumEmptyBaseBlocks() );
+	common->Printf( "%6d kB adj tris memory (%d kB free in %d blocks, %d empty base blocks)\n",
+		triAdjTrisAllocator.GetBaseBlockMemory() >> 10, triAdjTrisAllocator.GetFreeBlockMemory() >> 10,
+			triAdjTrisAllocator.GetNumFreeBlocks(), triAdjTrisAllocator.GetNumEmptyBaseBlocks() );
 
 	common->Printf( "%6d kB mirror vert memory (%d kB free in %d blocks, %d empty base blocks)\n",
 		triMirroredVertAllocator.GetBaseBlockMemory() >> 10, triMirroredVertAllocator.GetFreeBlockMemory() >> 10,
@@ -259,6 +271,10 @@ void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
 	common->Printf( "%6d kB dup vert memory (%d kB free in %d blocks, %d empty base blocks)\n",
 		triDupVertAllocator.GetBaseBlockMemory() >> 10, triDupVertAllocator.GetFreeBlockMemory() >> 10,
 			triDupVertAllocator.GetNumFreeBlocks(), triDupVertAllocator.GetNumEmptyBaseBlocks() );
+
+	common->Printf( "%6d kB BVH memory (%d kB free in %d blocks, %d empty base blocks)\n",
+		triBvhAllocator.GetBaseBlockMemory() >> 10, triBvhAllocator.GetFreeBlockMemory() >> 10,
+		triBvhAllocator.GetNumFreeBlocks(), triBvhAllocator.GetNumEmptyBaseBlocks() );
 
 #if LEGACY_ALLOCATOR
 	common->Printf( "%6d kB total triangle memory\n",
@@ -269,9 +285,11 @@ void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
 			triPlaneAllocator.GetBaseBlockMemory() +
 			triSilIndexAllocator.GetBaseBlockMemory() +
 			triSilEdgeAllocator.GetBaseBlockMemory() +
+			triAdjTrisAllocator.GetBaseBlockMemory() +
 			triDominantTrisAllocator.GetBaseBlockMemory() +
 			triMirroredVertAllocator.GetBaseBlockMemory() +
-			triDupVertAllocator.GetBaseBlockMemory() ) >> 10 );
+			triDupVertAllocator.GetBaseBlockMemory() +
+			triBvhAllocator.GetBaseBlockMemory()) >> 10 );
 #endif
 }
 
@@ -315,6 +333,9 @@ int R_TriSurfMemory( const srfTriangles_t *tri ) {
 	if ( tri->silEdges != NULL ) {
 		total += tri->numSilEdges * sizeof( tri->silEdges[0] );
 	}
+	if ( tri->adjTris != NULL ) {
+		total += tri->numIndexes * sizeof( tri->adjTris[0] );
+	}
 	if ( tri->dominantTris != NULL ) {
 		total += tri->numVerts * sizeof( tri->dominantTris[0] );
 	}
@@ -323,6 +344,9 @@ int R_TriSurfMemory( const srfTriangles_t *tri ) {
 	}
 	if ( tri->dupVerts != NULL ) {
 		total += tri->numDupVerts * sizeof( tri->dupVerts[0] );
+	}
+	if ( tri->bvhNodes != NULL ) {
+		total += tri->numBvhNodes * sizeof( tri->bvhNodes[0] );
 	}
 
 	total += sizeof( *tri );
@@ -401,6 +425,9 @@ void R_ReallyFreeStaticTriSurf( srfTriangles_t *tri ) {
 		if ( tri->silEdges != NULL ) {
 			triSilEdgeAllocator.Free( tri->silEdges );
 		}
+		if ( tri->adjTris != NULL ) {
+			triAdjTrisAllocator.Free( tri->adjTris );
+		}
 		if ( tri->dominantTris != NULL ) {
 			triDominantTrisAllocator.Free( tri->dominantTris );
 		}
@@ -418,6 +445,10 @@ void R_ReallyFreeStaticTriSurf( srfTriangles_t *tri ) {
 
 	if ( tri->shadowVertexes != NULL ) {
 		triShadowVertexAllocator.Free( tri->shadowVertexes );
+	}
+
+	if ( tri->bvhNodes != NULL ) {
+		triBvhAllocator.Free( tri->bvhNodes );
 	}
 
 #ifdef _DEBUG
@@ -1055,6 +1086,29 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 
 	if ( c_duplicatedEdges || c_tripledEdges ) {
 		common->DWarning( "%i duplicated edge directions, %i tripled edges", c_duplicatedEdges, c_tripledEdges );
+	}
+
+	// stgatilov #5886: fill adjTris data with connectivity information
+	tri->adjTris = triSilIndexAllocator.Alloc( tri->numIndexes );
+	for ( int i = 0; i < tri->numIndexes; i++ )
+		tri->adjTris[i] = numTris;
+	for ( int i = 0; i < numSilEdges; i++ ) {
+		silEdge_t se = silEdges[i];
+		for ( int j = 0; j < 2; j++ ) {
+			int fThis  = (j == 0 ? se.p1 : se.p2);
+			int fOther = (j == 0 ? se.p2 : se.p1);
+			if (fThis == numTris)
+				continue;
+			int cntFound = 0;
+			for (int u = 0; u < 3; u++) {
+				int va = tri->silIndexes[3 * fThis + (u+0)%3];
+				int vb = tri->silIndexes[3 * fThis + (u+1)%3];
+				if ( va == se.v1 && vb == se.v2 || va == se.v2 && vb == se.v1 ) {
+					tri->adjTris[3 * fThis + (u+2)%3] = fOther;
+					cntFound++;
+				}
+			}
+		}
 	}
 
 	// if we know that the vertexes aren't going
@@ -2015,6 +2069,10 @@ void R_CleanupTriangles( srfTriangles_t *tri, bool createNormals, bool identifyS
 	// optimize the index order (not working?)
 //	R_OrderIndexes( tri->numIndexes, tri->indexes );
 
+	// stgatilov #5886: create BVH structure for acceleration
+	// note: changes order of triangles!
+	R_BuildBvhForTri( tri );
+
 	R_CreateDupVerts( tri );
 
 	R_BoundTriSurf( tri );
@@ -2193,4 +2251,396 @@ void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
 	if( tri.verts != NULL && tri.numVerts > 0) {
 		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, tri.numVerts * sizeof( tri.verts[0] ) );
 	}
+}
+
+idCVar r_modelBvhBuild(
+	"r_modelBvhBuild", "1",
+	CVAR_RENDERER | CVAR_BOOL,
+	"If set to 0, then BVH is not built on model load, thus all other BVH features won't work.\n"
+	"Note: full game restart is required for the change to take effect!"
+);
+idCVar r_modelBvhLeafSize(
+	"r_modelBvhLeafSize", "0",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"Controls number of triangles in BVH leafs. "
+	"If zero, then default setting is used.\n"
+	"Note: takes effect only if set immediately after fresh game start! "
+);
+
+/*
+===================
+R_BuildBvhForTri
+
+stgatilov #5886: Builds BVH tree for triangles listed in "indexes" array
+Note: reorders triangles in process!
+===================
+*/
+void R_BuildBvhForTri( srfTriangles_t *tri ) {
+	if (tri->bvhNodes) {
+		triBvhAllocator.Free(tri->bvhNodes);
+		tri->bvhNodes = nullptr;
+		tri->numBvhNodes = 0;
+	}
+	if (!r_modelBvhBuild.GetBool())
+		return;
+
+	TRACE_CPU_SCOPE("BuildBvhForTri");
+	assert(!tri->indexCache.IsValid());
+
+	int n = tri->numIndexes / 3;
+
+	// generate one element per triangle
+	idList<bvhElement_t> elems;
+	elems.SetNum(n);
+	for (int i = 0; i < n; i++) {
+		int a = tri->indexes[3 * i + 0];
+		int b = tri->indexes[3 * i + 1];
+		int c = tri->indexes[3 * i + 2];
+		idVec3 posA = tri->verts[a].xyz;
+		idVec3 posB = tri->verts[b].xyz;
+		idVec3 posC = tri->verts[c].xyz;
+		bvhElement_t &e = elems[i];
+		e.bounds = idBounds(posA);
+		e.bounds.AddPoint(posB);
+		e.bounds.AddPoint(posC);
+		// quite often we see stretched patches, where pairs of triangles (quads) are long but narrow
+		// using box center is much better than using triangle centroid in such case
+		// (with centroid, odd tris go into one cluster, and even tris go to another)
+		e.center = e.bounds.GetCenter();
+		//e.center = (posA + posB + posC) * (1.0f / 3.0f);
+		idVec3 normal = (posB - posA).Cross(posC - posA);
+		normal.Normalize();
+		e.direction = normal;
+		e.id = i;
+	}
+
+	// create BVH tree
+	idBvhCreator creator;
+	if (r_modelBvhLeafSize.GetInteger() > 0)
+		creator.SetLeafSize(r_modelBvhLeafSize.GetInteger());
+	creator.Build(n, elems.Ptr());
+
+	// save triangles remap: old index -> new index
+	idList<int> triangleRemap;
+	triangleRemap.SetNum(n + 1);
+	triangleRemap[n] = n;	// missing triangle is denoted as N in silEdges
+
+	// reorder triangle indices
+	idList<int> triIdsBuff;
+	triIdsBuff.SetNum(3 * n);
+	memcpy(triIdsBuff.Ptr(), tri->indexes, triIdsBuff.Allocated());
+	for (int i = 0; i < n; i++) {
+		int src = creator.GetIdAtPos(i);
+		tri->indexes[3 * i + 0] = triIdsBuff[3 * src + 0];
+		tri->indexes[3 * i + 1] = triIdsBuff[3 * src + 1];
+		tri->indexes[3 * i + 2] = triIdsBuff[3 * src + 2];
+		triangleRemap[src] = i;
+	}
+
+	if (tri->silEdges) {
+		// update triangle indices in silhouette edges
+		for (int i = 0; i < tri->numSilEdges; i++) {
+			int &a = tri->silEdges[i].p1;
+			int &b = tri->silEdges[i].p2;
+			a = triangleRemap[a];
+			b = triangleRemap[b];
+		}
+	}
+
+	if (tri->silIndexes) {
+		// reorder triangle indices for shadow volumes
+		triIdsBuff.SetNum(3 * n);
+		memcpy(triIdsBuff.Ptr(), tri->silIndexes, triIdsBuff.Allocated());
+		for (int i = 0; i < n; i++) {
+			int src = creator.GetIdAtPos(i);
+			tri->silIndexes[3 * i + 0] = triIdsBuff[3 * src + 0];
+			tri->silIndexes[3 * i + 1] = triIdsBuff[3 * src + 1];
+			tri->silIndexes[3 * i + 2] = triIdsBuff[3 * src + 2];
+		}
+	}
+
+	if (tri->adjTris) {
+		// update triangle adjacency information
+		triIdsBuff.SetNum(3 * n);
+		memcpy(triIdsBuff.Ptr(), tri->adjTris, triIdsBuff.Allocated());
+		for (int i = 0; i < n; i++) {
+			int src = creator.GetIdAtPos(i);
+			tri->adjTris[3 * i + 0] = triangleRemap[triIdsBuff[3 * src + 0]];
+			tri->adjTris[3 * i + 1] = triangleRemap[triIdsBuff[3 * src + 1]];
+			tri->adjTris[3 * i + 2] = triangleRemap[triIdsBuff[3 * src + 2]];
+		}
+	}
+
+	assert(tri->facePlanesCalculated == false && tri->facePlanes == NULL);
+
+	// copy compressed BVH into surface
+	tri->bounds = creator.GetRootBounds();
+	tri->numBvhNodes = creator.GetNodesNumber();
+	tri->bvhNodes = (bvhNode_t*)triBvhAllocator.Alloc(tri->numBvhNodes);
+	creator.CopyNodes(tri->bvhNodes);
+}
+
+
+static inline void AddSegmentToList( idFlexListHuge<bvhTriRange_t> &outIntervals, int beg, int num, int info, const idBounds &bounds ) {
+	int n = outIntervals.Num();
+	// intervals must be added in sorted order
+	assert(n == 0 || beg >= outIntervals[n-1].end);
+	if ( n && outIntervals[n-1].end == beg && outIntervals[n-1].info == info ) {
+		// coalesce new interval with the last one
+		outIntervals[n-1].end = beg + num;
+		( (idBounds*) &outIntervals[n-1].box )->AddBounds( bounds );
+	}
+	else {
+		// add as a new interval
+		bvhTriRange_t interval = { beg, beg + num, info };
+		*( (idBounds*) &interval.box ) = bounds;
+		outIntervals.AddGrow( interval );
+	}
+}
+
+/*
+===================
+R_CullBvhByFrustumAndOrigin
+
+Filters triangles using BVH tree:
+  1) Cull away elements outside frustum defined by six planes looking inwards ("frustum").
+  2) Drop elements facing away/towards from "origin".
+    "filterOri" =  0: skip check;
+    "filterOri" =  1: drop backfacing, return frontfacing
+    "filterOri" = -1: drop frontfacing, return backfacing
+
+Output is returned as set of contiguous intervals (ranges).
+
+Each interval has "info" bitmask, which says whether p.1 and/or p.2 is surely true for all triangles within it.
+If a bit is missing in this bitmask, then it is uncertain whether respective condition is true or false for any of the triangles.
+Of course, if p.1 or p.2 is surely false for all triangles in an interval, the interval is dropped and not returned.
+
+"info" mask is ORed with "forceUnknown" parameter.
+For instance, you can set "forceUnknown" = BVH_TRI_SURELY_GOOD_ORI if you don't need strict culling of backfacing triangles.
+This allows to reduce number of intervals in the output, since intervals with equal "info" can be coalesced.
+
+Also, bounding box is returned for each interval.
+Caller can of course compute them himself, but that would be slower.
+===================
+*/
+void R_CullBvhByFrustumAndOrigin(
+	const idBounds &rootBounds, const bvhNode_t *nodes,
+	const idPlane frustum[6], int filterOri, const idVec3 &origin,
+	int forceUnknown,
+	idFlexListHuge<bvhTriRange_t> &outIntervals
+) {
+	outIntervals.Clear();
+
+	idRenderMatrix::CullSixPlanes cull;
+	cull.Prepare( frustum );
+
+	struct Traverser {
+		const bvhNode_t *nodes;
+		const idPlane *frustum;
+		int filterOri;
+		const idVec3 &origin;
+		int forceUnknown;
+		const idRenderMatrix::CullSixPlanes &cull;
+		idFlexListHuge<bvhTriRange_t> &intervals;
+
+		void Traverse( int nodeIdx, const idBounds &parentBounds ) {
+			const bvhNode_t &node = nodes[nodeIdx];
+			idBounds bounds = node.GetBounds( parentBounds );
+
+			// info about which checks surely pass for all triangles of the node
+			int info = 0;
+
+			// check node's bounding box against light frustum
+			byte allOutBits, anyOutBits;
+			cull.CullBounds( frustum, bounds, &allOutBits, &anyOutBits );
+			if ( allOutBits != 0 )						// out of light
+				return;
+			if ( anyOutBits == 0 )
+				info |= BVH_TRI_SURELY_WITHIN_LIGHT;	// fully within light
+
+			if ( filterOri != 0 ) {
+				// check node's normal cone against light->box directions
+				int facing = node.HaveSameDirection( origin, bounds );
+				if ( facing == 0 )
+					;									// uncertain
+				else if ( facing == filterOri )
+					info |= BVH_TRI_SURELY_GOOD_ORI;	// surely proper facing
+				else
+					return;								// surely opposite facing
+			}
+			else
+				info |= BVH_TRI_SURELY_GOOD_ORI;		// filtering by facing disabled: so consider all facing good
+
+			if ( info == BVH_TRI_SURELY_MATCH ) {
+				// get leftmost leaf
+				while ( nodes[nodeIdx].HasSons() )
+					nodeIdx = nodes[nodeIdx].GetSon( nodeIdx, 0 );
+				// add whole node as "surely matches" result
+				AddSegmentToList( intervals, nodes[nodeIdx].firstElement, node.numElements, BVH_TRI_SURELY_MATCH, bounds );
+				return;
+			}
+
+			if ( node.HasSons() ) {
+				// uncertain node, but not leaf -> recurse into subnodes
+				Traverse( node.GetSon( nodeIdx, 0 ), bounds );
+				Traverse( node.GetSon( nodeIdx, 1 ), bounds );
+				return;
+			}
+
+			// add leaf node to output as "uncertain"
+			AddSegmentToList( intervals, node.firstElement, node.numElements, info | forceUnknown, bounds );
+		}
+	};
+
+	// launch recursive traversal over BVH tree
+	Traverser traverser = { nodes, frustum, filterOri, origin, forceUnknown, cull, outIntervals };
+ 	traverser.Traverse( 0, rootBounds );
+}
+
+
+#include "../tests/testing.h"
+
+TEST_CASE("BvhChecks:Sphere") {
+	srfTriangles_t *tri = R_AllocStaticTriSurf();
+
+	static const float RADIUS = 1000.0f;
+	static const int GRID = 128;
+#ifdef  _DEBUG
+	static const int TRIES = 100;
+#else
+	static const int TRIES = 1000;
+#endif
+	static const float LIGHTSIZE = 300.0f;
+	static const int EXCESSIVE_CAP_AVERAGE = 300;
+
+	int v = (GRID + 1) * (GRID * 2);
+	int f = GRID * (GRID * 2) * 2;
+
+	tri->numVerts = v;
+	tri->numIndexes = f * 3;
+	R_AllocStaticTriSurfVerts( tri, tri->numVerts );
+	R_AllocStaticTriSurfIndexes( tri, tri->numIndexes );
+
+	//create sphere tessellated evenly by spherical coordinates
+	for ( int u = 0; u < 2 * GRID; u++ )
+		for ( int v = 0; v <= GRID; v++ ) {
+			float phi = idMath::PI * v / GRID;
+			float theta = idMath::PI * u / GRID;
+			int idx = v * (2 * GRID) + u;
+			tri->verts[idx].Clear();
+			tri->verts[idx].xyz = idVec3(
+				idMath::Sin( phi ) * idMath::Cos( theta ),
+				idMath::Sin( phi ) * idMath::Sin( theta ),
+				idMath::Cos( phi )
+			) * RADIUS;
+		}
+	for ( int u = 0; u < 2 * GRID; u++ ) {
+		int nu = ( u + 1 ) % ( 2 * GRID );
+		for ( int v = 0; v < GRID; v++ ) {
+			int q00 = (v + 0) * (2 * GRID) + u;
+			int q01 = (v + 1) * (2 * GRID) + u;
+			int q10 = (v + 0) * (2 * GRID) + nu;
+			int q11 = (v + 1) * (2 * GRID) + nu;
+			tri->indexes[6 * q00 + 0] = q00;
+			tri->indexes[6 * q00 + 1] = q10;
+			tri->indexes[6 * q00 + 2] = q01;
+			tri->indexes[6 * q00 + 3] = q01;
+			tri->indexes[6 * q00 + 4] = q10;
+			tri->indexes[6 * q00 + 5] = q11;
+		}
+	}
+
+	//build BVH
+	R_BuildBvhForTri( tri );
+
+	for (int mode = 0; mode < 2; mode++) {
+		int totalUnknown = 0;
+		int totalRendered = 0;
+
+		idRandom rnd;
+		for ( int t = 0; t < TRIES; t++ ) {
+			//pick light volume aabox (not too far from sphere)
+			idVec3 ctr, size;
+			do {
+				size.x = rnd.RandomFloat() * LIGHTSIZE;
+				size.y = rnd.RandomFloat() * LIGHTSIZE;
+				size.z = rnd.RandomFloat() * LIGHTSIZE;
+				ctr.x = rnd.CRandomFloat() * (RADIUS + 2.0f * LIGHTSIZE);
+				ctr.y = rnd.CRandomFloat() * (RADIUS + 2.0f * LIGHTSIZE);
+				ctr.z = rnd.CRandomFloat() * (RADIUS + 2.0f * LIGHTSIZE);
+			} while ( idMath::Fabs( ctr.Length() - RADIUS ) > 1.5f * LIGHTSIZE );
+			idBounds volume( ctr - size, ctr + size );
+
+			//generate frustum planes
+			idPlane frustum[6];
+			for ( int i = 0; i < 3; i++ )
+				for ( int j = 0; j < 2; j++ ) {
+					idVec3 pos = ctr;
+					pos[i] += (2*j-1) * size[i];
+					idVec3 normal( 0.0f );
+					normal[i] = -(2*j-1);
+					frustum[2 * i + j].Normal() = normal;
+					frustum[2 * i + j].FitThroughPoint( pos );
+				}
+
+			//filter sphere mesh against light volume
+			idFlexListHuge<bvhTriRange_t> intervals;
+			R_CullBvhByFrustumAndOrigin(
+				tri->bounds, tri->bvhNodes,
+				frustum, (mode == 0 ? 0 : 1), ctr, 0,
+				intervals
+			);
+
+			//count various stats
+			int numUnkn = 0;
+			int numErrors = 0;
+			int numRendered = 0;
+			for ( int i = 0; i < f; i++ ) {
+				idVec3 pa = tri->verts[tri->indexes[3 * i + 0]].xyz;
+				idVec3 pb = tri->verts[tri->indexes[3 * i + 1]].xyz;
+				idVec3 pc = tri->verts[tri->indexes[3 * i + 2]].xyz;
+				idBounds b( pa );
+				b.AddPoint( pb );
+				b.AddPoint( pc );
+
+				float ori = ( pb - pa ).Cross( pc - pa ) * ( pa - ctr );
+				bool shouldBeRendered = volume.IntersectsBounds( b );
+				if ( mode == 1 )
+					shouldBeRendered = shouldBeRendered && ori >= 0.0f;
+
+				bool inSure = false;
+				bool inUnkn = false;
+				for ( int j = 0; j < intervals.Num(); j++ )
+					if ( i >= intervals[j].beg && i < intervals[j].end ) {
+						//filtered bounds must be conservative
+						CHECK( intervals[j].GetBox().ContainsPoint( b[0] ) );
+						CHECK( intervals[j].GetBox().ContainsPoint( b[1] ) );
+						if (intervals[j].info == BVH_TRI_SURELY_MATCH)
+							inSure = true;
+						else
+							inUnkn = true;
+						break;
+					}
+
+				if ( shouldBeRendered && !(inSure || inUnkn) )
+					numErrors++;	//triangle within light volume was filtered away!
+				if ( !shouldBeRendered && inSure )
+					numErrors++;	//triangle out of light volume said to surely be inside!
+				numUnkn += int(inUnkn);
+				numRendered += int(shouldBeRendered);
+			}
+
+			//filtering must be conservative!
+			CHECK( numErrors == 0 );
+
+			totalUnknown += numUnkn;
+			totalRendered += numRendered;
+		}
+
+		//uncertain triangles (which can be inside/outside) are allowed
+		//but average number should be pretty low
+		CHECK( totalUnknown <= TRIES * EXCESSIVE_CAP_AVERAGE );
+	}
+
+	R_FreeStaticTriSurf( tri );
 }

@@ -276,4 +276,8 @@
     <StringView>d._Myptr->_Mystr</StringView>
   </Type>
 
+  <Type Name="idBvhCreator::Node">
+    <DisplayString>elems=[{begElem}..{endElem}) sons={{{sons[0]},{sons[1]}}} bounds={bounds}</DisplayString>
+  </Type>
+
 </AutoVisualizer>

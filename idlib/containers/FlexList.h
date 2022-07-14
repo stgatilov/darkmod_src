@@ -98,6 +98,13 @@ public:
 		return list[--num];
 	}
 
+	void Append( int k, const type *arr ) {
+		int base = num;
+		SetNum(base + k);
+		for (int i = 0; i < k; i++)
+			list[base + i] = arr[i];
+	}
+
 private:
 	void Grow(int newSize) {
 		type *newList = new type[newSize];
@@ -119,5 +126,9 @@ private:
 	type *list;
 	type autoStore[N];
 };
+
+//one idFlexListHuge takes almost 1MB, which is 1/16 of whole stack space!
+//note: space size is 16 MB on Windows, and unlimited on Linux
+template<class type> using idFlexListHuge = idFlexList<type, (1<<20) / sizeof(type)>;
 
 #endif

@@ -1609,6 +1609,12 @@
     <ClInclude Include="idlib\bv\BoxOctree.h">
       <Filter>Idlib\BV</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\bv\Bvh.h">
+      <Filter>Idlib\BV</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\bv\CircCone.h">
+      <Filter>Idlib\BV</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3560,6 +3566,12 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="idlib\bv\BoxOctree.cpp">
+      <Filter>Idlib\BV</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\bv\Bvh.cpp">
+      <Filter>Idlib\BV</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\bv\CircCone.cpp">
       <Filter>Idlib\BV</Filter>
     </ClCompile>
   </ItemGroup>

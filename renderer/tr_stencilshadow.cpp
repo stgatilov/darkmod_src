@@ -1083,6 +1083,13 @@ void R_MakeShadowFrustums( idRenderLightLocal *light ) {
 	// right on the planes must have a sil plane created for them
 }
 
+idCVar r_modelBvhShadows(
+	"r_modelBvhShadows", "1",
+	CVAR_RENDERER | CVAR_BOOL,
+	"  0 = don't use BVH\n"
+	"  1 = use BVH for stencil shadows\n"
+);
+
 /*
 =================
 R_CreateShadowVolume
@@ -1137,6 +1144,11 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 		common->Error( "R_CreateShadowVolume: tri->numVerts = %i", tri->numVerts );
 	}
 	tr.pc.c_createShadowVolumes++;
+
+	if ( r_modelBvhShadows.GetBool() && tri->bvhNodes && tri->adjTris ) {
+		// stgatilov #5886: BVH-optimized generation of turbo shadow volume
+		return R_CreateVertexProgramBvhShadowVolume( ent, tri, light );
+	}
 
 	// use the fast infinite projection in dynamic situations, which
 	// trades somewhat more overdraw and no cap optimizations for

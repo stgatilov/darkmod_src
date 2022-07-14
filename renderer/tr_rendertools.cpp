@@ -751,6 +751,87 @@ static void RB_ShowShadowCount( void ) {
 	GL_Cull( CT_FRONT_SIDED );
 }
 
+
+idCVar r_modelBvhShow(
+	"r_modelBvhShow", "-1", CVAR_INTEGER | CVAR_RENDERER,
+	"Highlight nodes of model BVH with different colors. "
+	"Show leaf nodes and nodes of depth = value of cvar.\n"
+	"Note: does not work with \"com_cmp 1\"."
+);
+
+static void FindBvhNodes(bvhNode_t *nodes, int idx, int remainingDepth, idList<int> &found) {
+	if (!nodes[idx].HasSons() || remainingDepth == 0)
+		found.AddGrow(idx);
+	else {
+		for (int s = 0; s < 2; s++)
+			FindBvhNodes(nodes, nodes[idx].GetSon(idx, s), remainingDepth - 1, found);
+	}
+}
+
+/*
+=====================
+RB_ShowModelBvh
+=====================
+*/
+static void RB_ShowModelBvh() {
+	if (r_modelBvhShow.GetInteger() < 0)
+		return;
+
+	if (tr.primaryView->IsLightGem())
+		return;
+
+	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
+	qglDisable( GL_STENCIL_TEST );
+
+	static float colors[12][3] = {
+		{1,0,0},
+		{0,1,0},
+		{0,0,1},
+		{0,1,1},
+		{1,0,1},
+		{1,1,0},
+		{1,0.5,0},
+		{0,1,0.5},
+		{0.5,0,1},
+		{0.5,1,0},
+		{0,0.5,1},
+		{1,0,0.5},
+	};
+
+	ImmediateRendering ir;
+
+	idList<int> nodeIds;
+	for (int ds = 0; ds < tr.primaryView->numDrawSurfs; ds++) {
+		drawSurf_t *drawSurf = tr.primaryView->drawSurfs[ds];
+		const srfTriangles_t *tri = tr.primaryView->drawSurfs[ds]->frontendGeo;
+		if (!tri->bvhNodes)
+			continue;
+		if (!drawSurf->material)
+			continue;
+		RB_SimpleSurfaceSetup(drawSurf);
+
+		nodeIds.Clear();
+		FindBvhNodes(tri->bvhNodes, 0, r_modelBvhShow.GetInteger(), nodeIds);
+
+		for (int j = 0; j < nodeIds.Num(); j++) {
+			int idx = nodeIds[j];
+			int numElems = tri->bvhNodes[idx].numElements;
+			while (tri->bvhNodes[idx].HasSons())
+				idx = tri->bvhNodes[idx].GetSon(idx, 0);
+			int startElem = tri->bvhNodes[idx].firstElement;
+			float *c = colors[j % 12];
+			ir.glColor4f(c[0], c[1], c[2], 0.3f);
+			ir.glBegin(GL_TRIANGLES);
+			for (int i = 3 * startElem; i < 3 * (startElem + numElems); i++)
+				ir.glVertex3fv(&tri->verts[tri->indexes[i]].xyz.x);
+			ir.glEnd();
+		}
+		ir.Flush();
+	}
+
+	GL_State( GLS_DEFAULT );
+}
+
 /*
 =====================
 RB_ShowTris
@@ -2487,6 +2568,7 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_ShowLightCount();
 	RB_ShowShadowCount();
+	RB_ShowModelBvh();
 	RB_ShowTexturePolarity( drawSurfs, numDrawSurfs );
 	RB_ShowTangentSpace( drawSurfs, numDrawSurfs );
 	RB_ShowVertexColor( drawSurfs, numDrawSurfs );

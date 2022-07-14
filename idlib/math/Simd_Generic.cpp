@@ -2984,7 +2984,7 @@ Moved from R_CalcInteractionCullBits
 */
 void idSIMD_Generic::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], byte *pointCull, float epsilon ) {
 	for ( int j = 0; j < numVerts; j++ ) {
-		idVec3 &vec = verts[j].xyz;
+		const idVec3 &vec = verts[j].xyz;
 		byte bits = 0;
 		for ( int i = 0; i < 6; i++ ) {
 			float d = frustum[i].Distance( vec );
@@ -3001,7 +3001,7 @@ Moved from R_CalcPointCull
 */
 void idSIMD_Generic::CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) {
 	for ( int j = 0; j < numVerts; j++ ) {
-		idVec3 &vec = verts[j].xyz;
+		const idVec3 &vec = verts[j].xyz;
 		short bits = 0;
 		for ( int i = 0; i < 6; i++ ) {
 			float d = frustum[i].Distance( vec );
@@ -3009,6 +3009,32 @@ void idSIMD_Generic::CullByFrustum2( idDrawVert *verts, const int numVerts, cons
 			bits |= (d > -epsilon) << (i + 6);
 		}
 		pointCull[j] = bits;
+	}
+}
+
+/*
+============
+idSIMD_Generic::CullTrisByFrustum
+============
+*/
+void idSIMD_Generic::CullTrisByFrustum( idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idPlane frustum[6], byte *triCull, float epsilon ) {
+	for ( int t = 0; t < numIndexes; t++ ) {
+		int i0 = indexes[3 * t + 0];
+		int i1 = indexes[3 * t + 1];
+		int i2 = indexes[3 * t + 2];
+		idVec3 vert0 = verts[i0].xyz;
+		idVec3 vert1 = verts[i1].xyz;
+		idVec3 vert2 = verts[i2].xyz;
+		byte bits0 = 0, bits1 = 0, bits2 = 0;
+		for ( int p = 0; p < 6; p++ ) {
+			float da = frustum[p].Distance( vert0 );
+			float db = frustum[p].Distance( vert1 );
+			float dc = frustum[p].Distance( vert2 );
+			bits0 |= (da < epsilon) << p;
+			bits1 |= (db < epsilon) << p;
+			bits2 |= (dc < epsilon) << p;
+		}
+		triCull[t] = bits0 & bits1 & bits2;
 	}
 }
 

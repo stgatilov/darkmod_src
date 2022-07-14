@@ -28,6 +28,8 @@ idSIMD_SSE::idSIMD_SSE() {
 
 #include <xmmintrin.h>
 
+#define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
+
 /*
 ============
 idSIMD_SSE::CullByFrustum
@@ -125,6 +127,97 @@ void idSIMD_SSE::CullByFrustum2( idDrawVert *verts, const int numVerts, const id
 		int mask_lo = mask_lo14 | mask_lo56 << 4;
 		int mask_hi = mask_hi14 | mask_hi56 << 4;
 		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
+	}
+}
+
+/*
+============
+idSIMD_SSE::CullTrisByFrustum
+============
+*/
+void idSIMD_SSE::CullTrisByFrustum( idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idPlane frustum[6], byte *triCull, float epsilon ) {
+	assert(numIndexes % 3 == 0);
+	if (numIndexes <= 0)
+		return;
+
+	//note: initially I tried to detect same vertices being usede in adjacent triangles, so that I can process less vertices
+	//however, it turned out that:
+	//  touching vertex memory is most expensive part of vertex processing
+	//  doing all the math for a vertex is actually cheap
+	//  searching for vertex reuses needs branches and thus is expensive
+	//so it's better to simply process all vertices, and let CPU cache optimize out excessive memory loading
+
+	//prepare plane data
+	__m128 planesA0123 = _mm_loadu_ps(frustum[0].ToFloatPtr());
+	__m128 planesB0123 = _mm_loadu_ps(frustum[1].ToFloatPtr());
+	__m128 planesC0123 = _mm_loadu_ps(frustum[2].ToFloatPtr());
+	__m128 planesD0123 = _mm_loadu_ps(frustum[3].ToFloatPtr());
+	_MM_TRANSPOSE4_PS(planesA0123, planesB0123, planesC0123, planesD0123);
+	__m128 planesA45;
+	__m128 planesB45;
+	__m128 planesC45;
+	__m128 planesD45;
+	{
+		__m128 planes4 = _mm_loadu_ps(frustum[0].ToFloatPtr());
+		__m128 planes5 = _mm_loadu_ps(frustum[1].ToFloatPtr());
+		//partial transpose (2x4 + zeros)
+		__m128 P4L = _mm_unpacklo_ps(planes4, _mm_setzero_ps());
+		__m128 P4H = _mm_unpackhi_ps(planes4, _mm_setzero_ps());
+		__m128 P5L = _mm_unpacklo_ps(planes5, _mm_setzero_ps());
+		__m128 P5H = _mm_unpackhi_ps(planes5, _mm_setzero_ps());
+		planesA45 = _mm_unpacklo_ps(P4L, P5L);
+		planesB45 = _mm_unpackhi_ps(P4L, P5L);
+		planesC45 = _mm_unpacklo_ps(P4H, P5H);
+		planesD45 = _mm_unpackhi_ps(P4H, P5H);
+	}
+	__m128 eps = _mm_set1_ps(epsilon);
+
+	//process triangles
+	int numTris = numIndexes / 3;
+	for (int i = 0; i < numTris; i++) {
+		const idDrawVert &vert0 = verts[indexes[3 * i + 0]];
+		const idDrawVert &vert1 = verts[indexes[3 * i + 1]];
+		const idDrawVert &vert2 = verts[indexes[3 * i + 2]];
+		int cull0, cull1, cull2;
+
+		#define PROCESS(k) { \
+			__m128 pos = _mm_loadu_ps( &vert##k.xyz.x ); \
+			\
+			__m128 X = _mm_shuffle_ps(pos, pos, SHUF(0, 0, 0, 0)); \
+			__m128 Y = _mm_shuffle_ps(pos, pos, SHUF(1, 1, 1, 1)); \
+			__m128 Z = _mm_shuffle_ps(pos, pos, SHUF(2, 2, 2, 2)); \
+			\
+			__m128 dist0123 = _mm_add_ps( \
+				_mm_add_ps( \
+					_mm_mul_ps(planesA0123, X), \
+					_mm_mul_ps(planesB0123, Y) \
+				), \
+				_mm_add_ps( \
+					_mm_mul_ps(planesC0123, Z), \
+					planesD0123 \
+				) \
+			); \
+			__m128 dist45 = _mm_add_ps( \
+				_mm_add_ps( \
+					_mm_mul_ps(planesA45, X), \
+					_mm_mul_ps(planesB45, Y) \
+				), \
+				_mm_add_ps( \
+					_mm_mul_ps(planesC45, Z), \
+					planesD45 \
+				) \
+			); \
+			\
+			int mask0123 = _mm_movemask_ps(_mm_cmplt_ps(dist0123, eps)); \
+			int mask45 = _mm_movemask_ps(_mm_cmplt_ps(dist45, eps)); \
+			cull##k = mask0123 + (mask45 << 4); \
+		}
+
+		PROCESS(0);
+		PROCESS(1);
+		PROCESS(2);
+
+		triCull[i] = cull0 & cull1 & cull2 & ((1 << 6) - 1);
 	}
 }
 
