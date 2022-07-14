@@ -1040,12 +1040,14 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 	// use the turbo shadow path
 	shadowGen_t shadowGen = SG_DYNAMIC;
 
+#if 0	// stgatilov #5886: we should cull large meshes using BVH, which does not support static shadow gen semantics
 	// really large models, like outside terrain meshes, should use
 	// the more exactly culled static shadow path instead of the turbo shadow path.
 	// FIXME: this is a HACK, we should probably have a material flag.
 	if ( bounds[1][0] - bounds[0][0] > 3000 ) {
 		shadowGen = SG_STATIC;
 	}
+#endif
 
 	//
 	// create slots for each of the model's surfaces

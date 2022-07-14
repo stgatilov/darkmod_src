@@ -1145,17 +1145,17 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	}
 	tr.pc.c_createShadowVolumes++;
 
-	if ( r_modelBvhShadows.GetBool() && tri->bvhNodes && tri->adjTris ) {
-		// stgatilov #5886: BVH-optimized generation of turbo shadow volume
-		return R_CreateVertexProgramBvhShadowVolume( ent, tri, light );
-	}
-
 	// use the fast infinite projection in dynamic situations, which
 	// trades somewhat more overdraw and no cap optimizations for
 	// a very simple generation process
 	if ( optimize == SG_DYNAMIC && r_useTurboShadow.GetBool() ) {
+		if ( r_modelBvhShadows.GetBool() && tri->bvhNodes && tri->adjTris ) {
+			// stgatilov #5886: BVH-optimized generation of turbo shadow volume
+			return R_CreateVertexProgramBvhShadowVolume( ent, tri, light );
+		}
 		return R_CreateVertexProgramTurboShadowVolume( ent, tri, light, cullInfo );
 	}
+
 	R_CalcInteractionFacing( ent, tri, light, cullInfo );
 
 	int numFaces = tri->numIndexes / 3;
