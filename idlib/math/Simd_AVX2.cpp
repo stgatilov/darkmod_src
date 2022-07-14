@@ -29,7 +29,7 @@ idSIMD_AVX2::idSIMD_AVX2() {
 
 //===============================================================
 //
-//	AVX implementation of idSIMDProcessor
+//	AVX2 implementation of idSIMDProcessor
 //
 //===============================================================
 

@@ -28,6 +28,9 @@ idSIMD_SSE::idSIMD_SSE() {
 
 #include <xmmintrin.h>
 
+//apply optimizations to this file in Debug with Inlines configuration
+DEBUG_OPTIMIZE_ON
+
 #define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
 
 /*

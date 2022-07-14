@@ -552,6 +552,60 @@ void idBvhCreator::CompressBvh() {
 	}
 }
 
+//optimize this function in Debug with Inlines configuration
+DEBUG_OPTIMIZE_ON
+idBounds bvhNode_t::GetBounds(const idBounds &parentBounds) const {
+#ifdef __SSE2__
+	__m128 par0Xyzx = _mm_loadu_ps( &parentBounds[0].x );
+	__m128 par1Zxyz = _mm_loadu_ps( &parentBounds[0].z );
+	__m128 pmin = par0Xyzx;
+	__m128 pmax = _mm_shuffle_ps( par1Zxyz, par1Zxyz, _MM_SHUFFLE(0, 3, 2, 1) );
+	__m128 plen = _mm_sub_ps( pmax, pmin );
+
+	int all = *(int*)subintervals;
+	__m128i code = _mm_cvtsi32_si128(all);
+	code = _mm_unpacklo_epi8(code, _mm_setzero_si128());
+	code = _mm_unpacklo_epi16(code, _mm_setzero_si128());
+	__m128 l = _mm_mul_ps( _mm_cvtepi32_ps( _mm_and_si128(code, _mm_set1_epi32(0x0F)) ), _mm_set1_ps(1.0f / 15.0f) );
+	__m128 r = _mm_mul_ps( _mm_cvtepi32_ps( _mm_srli_epi32(code, 4) ), _mm_set1_ps(1.0f / 15.0f) );
+	__m128 resMin = _mm_add_ps( pmin, _mm_mul_ps(plen, l) );
+	__m128 resMax = _mm_add_ps( pmin, _mm_mul_ps(plen, r) );
+
+	// note: this is pretty ugly, but don't see other way, and unnecessary loads are unavoidable here
+	float data[8];
+	_mm_storeu_ps( data + 0, resMin );
+	_mm_storeu_ps( data + 3, resMax );
+	return *(idBounds*)data;
+#else
+	idBounds res;
+	for (int d = 0; d < 3; d++) {
+		byte code = subintervals[d];
+		float l = (code & 0x0F) * (1.0f / 15.0f);
+		float r = (code >> 4) * (1.0f / 15.0f);
+		float pmin = parentBounds[0][d];
+		float pmax = parentBounds[1][d];
+		res[0][d] = pmin + (pmax - pmin) * l;
+		res[1][d] = pmin + (pmax - pmin) * r;
+	}
+	return res;
+#endif
+}
+DEBUG_OPTIMIZE_OFF
+
+idCircCone bvhNode_t::GetCone() const {
+	if (coneAngle == 255)
+		return idCircCone::Full();
+	float angle = coneAngle * (idMath::PI / 255.0f);
+	idVec3 axis;
+	for (int d = 0; d < 3; d++)
+		axis[d] = coneCenter[d] * (1.0f / 127.0f);
+	idCircCone res;
+	res.SetAngle(axis, angle);
+	return res;
+}
+
+//optimize this function in Debug with Inlines configuration
+DEBUG_OPTIMIZE_ON
 int bvhNode_t::HaveSameDirection( const idVec3 &origin, const idBounds &box ) const {
 #if 0
 	// generic but slow implementaton
@@ -595,6 +649,7 @@ int bvhNode_t::HaveSameDirection( const idVec3 &origin, const idBounds &box ) co
 	return (dotAxes < 0.0f ? -1 : 1);
 #endif
 }
+DEBUG_OPTIMIZE_OFF
 
 
 #include "../tests/testing.h"

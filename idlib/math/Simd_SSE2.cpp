@@ -25,7 +25,9 @@ idSIMD_SSE2::idSIMD_SSE2() {
 
 #ifdef ENABLE_SSE_PROCESSORS
 
-//in "Debug with Inlines" config, optimize all the remaining functions of this file
+#include <emmintrin.h>
+
+//apply optimizations to this file in Debug with Inlines configuration
 DEBUG_OPTIMIZE_ON
 
 #if defined(_MSVC) && defined(_DEBUG) && !defined(_INLINEDEBUG)

@@ -29,6 +29,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 	#define USE_INTRINSICS
 #endif
 
+// optimize this whole file in Debug With Inlines builds
+DEBUG_OPTIMIZE_ON
+
 // FIXME:	it would be nice if all render matrices were 16-byte aligned
 //			so there is no need for unaligned loads and stores everywhere
 
@@ -4482,7 +4485,6 @@ void idRenderMatrix::GetFrustumPlanes( idPlane planes[6], const idRenderMatrix& 
 }
 
 
-DEBUG_OPTIMIZE_ON
 /*
 ========================
 idRenderMatrix::GetFrustumCorners
@@ -4596,9 +4598,7 @@ void idRenderMatrix::GetFrustumCorners( frustumCorners_t& corners, const idRende
 	
 #endif
 }
-DEBUG_OPTIMIZE_OFF
 
-DEBUG_OPTIMIZE_ON
 /*
 ========================
 idRenderMatrix::CullFrustumCornersToPlane
@@ -4671,7 +4671,6 @@ frustumCull_t idRenderMatrix::CullFrustumCornersToPlane( const frustumCorners_t&
 	
 #endif
 }
-DEBUG_OPTIMIZE_OFF
 
 /*
 ========================
