@@ -171,17 +171,23 @@ ID_INLINE idBounds &idBounds::operator+=( const idBounds &a ) {
 }
 
 ID_INLINE idBounds idBounds::operator-( const idBounds &a ) const {
-	assert( b[1][0] - b[0][0] > a.b[1][0] - a.b[0][0] &&
-				b[1][1] - b[0][1] > a.b[1][1] - a.b[0][1] &&
-					b[1][2] - b[0][2] > a.b[1][2] - a.b[0][2] );
-	return idBounds( idVec3( b[0][0] + a.b[1][0], b[0][1] + a.b[1][1], b[0][2] + a.b[1][2] ),
-					idVec3( b[1][0] + a.b[0][0], b[1][1] + a.b[0][1], b[1][2] + a.b[0][2] ) );
+	assert(
+		b[1].x - b[0].x > a.b[1].x - a.b[0].x &&
+		b[1].y - b[0].y > a.b[1].y - a.b[0].y &&
+		b[1].z - b[0].z > a.b[1].z - a.b[0].z
+	);
+	return idBounds(
+		idVec3( b[0].x + a.b[1].x, b[0].y + a.b[1].y, b[0].z + a.b[1].z ),
+		idVec3( b[1].x + a.b[0].x, b[1].y + a.b[0].y, b[1].z + a.b[0].z )
+	);
 }
 
 ID_INLINE idBounds &idBounds::operator-=( const idBounds &a ) {
-	assert( b[1][0] - b[0][0] > a.b[1][0] - a.b[0][0] &&
-				b[1][1] - b[0][1] > a.b[1][1] - a.b[0][1] &&
-					b[1][2] - b[0][2] > a.b[1][2] - a.b[0][2] );
+	assert(
+		b[1].x - b[0].x > a.b[1].x - a.b[0].x &&
+		b[1].y - b[0].y > a.b[1].y - a.b[0].y &&
+		b[1].z - b[0].z > a.b[1].z - a.b[0].z
+	);
 	b[0] += a.b[1];
 	b[1] += a.b[0];
 	return *this;
@@ -204,111 +210,111 @@ ID_INLINE bool idBounds::operator!=( const idBounds &a ) const {
 }
 
 ID_INLINE void idBounds::Clear( void ) {
-	b[0][0] = b[0][1] = b[0][2] = idMath::INFINITY;
-	b[1][0] = b[1][1] = b[1][2] = -idMath::INFINITY;
+	b[0].x = b[0].y = b[0].z = idMath::INFINITY;
+	b[1].x = b[1].y = b[1].z = -idMath::INFINITY;
 }
 
 ID_INLINE void idBounds::Zero( void ) {
-	b[0][0] = b[0][1] = b[0][2] =
-	b[1][0] = b[1][1] = b[1][2] = 0;
+	b[0].x = b[0].y = b[0].z =
+	b[1].x = b[1].y = b[1].z = 0;
 }
 
 ID_INLINE idVec3 idBounds::GetCenter( void ) const {
-	return idVec3( ( b[1][0] + b[0][0] ) * 0.5f, ( b[1][1] + b[0][1] ) * 0.5f, ( b[1][2] + b[0][2] ) * 0.5f );
+	return idVec3( ( b[1].x + b[0].x ) * 0.5f, ( b[1].y + b[0].y ) * 0.5f, ( b[1].z + b[0].z ) * 0.5f );
 }
 
 ID_INLINE float idBounds::GetVolume( void ) const {
-	if ( b[0][0] >= b[1][0] || b[0][1] >= b[1][1] || b[0][2] >= b[1][2] ) {
+	if ( b[0].x >= b[1].x || b[0].y >= b[1].y || b[0].z >= b[1].z ) {
 		return 0.0f;
 	}
-	return ( ( b[1][0] - b[0][0] ) * ( b[1][1] - b[0][1] ) * ( b[1][2] - b[0][2] ) );
+	return ( ( b[1].x - b[0].x ) * ( b[1].y - b[0].y ) * ( b[1].z - b[0].z ) );
 }
 	
 /**
 * Tels: Get the size of the bounds, that is b1 - b0
 */
 ID_INLINE idVec3 idBounds::GetSize( void ) const {
-	return idVec3( b[1][0] - b[0][0], b[1][1] - b[0][1], b[1][2] - b[0][2] );
+	return idVec3( b[1].x - b[0].x, b[1].y - b[0].y, b[1].z - b[0].z );
 }
 	
 ID_INLINE bool idBounds::IsBackwards( void ) const {
-	return b[1][0] < b[0][0] || b[1][1] < b[0][1] || b[1][2] < b[0][2];
+	return b[1].x < b[0].x || b[1].y < b[0].y || b[1].z < b[0].z;
 }
 
 ID_INLINE bool idBounds::IsCleared( void ) const {
-	return b[0][0] > b[1][0];
+	return b[0].x > b[1].x;
 }
 
 ID_INLINE void idBounds::AddPoint( const idVec3 &v ) {
-	b[0][0] = idMath::Fmin( v[0], b[0][0] );
-	b[0][1] = idMath::Fmin( v[1], b[0][1] );
-	b[0][2] = idMath::Fmin( v[2], b[0][2] );
-	b[1][0] = idMath::Fmax( v[0], b[1][0] );
-	b[1][1] = idMath::Fmax( v[1], b[1][1] );
-	b[1][2] = idMath::Fmax( v[2], b[1][2] );
+	b[0].x = idMath::Fmin( v.x, b[0].x );
+	b[0].y = idMath::Fmin( v.y, b[0].y );
+	b[0].z = idMath::Fmin( v.z, b[0].z );
+	b[1].x = idMath::Fmax( v.x, b[1].x );
+	b[1].y = idMath::Fmax( v.y, b[1].y );
+	b[1].z = idMath::Fmax( v.z, b[1].z );
 }
 
 ID_INLINE void idBounds::AddBounds( const idBounds &a ) {
-	b[0][0] = idMath::Fmin( a.b[0][0], b[0][0] );
-	b[0][1] = idMath::Fmin( a.b[0][1], b[0][1] );
-	b[0][2] = idMath::Fmin( a.b[0][2], b[0][2] );
-	b[1][0] = idMath::Fmax( a.b[1][0], b[1][0] );
-	b[1][1] = idMath::Fmax( a.b[1][1], b[1][1] );
-	b[1][2] = idMath::Fmax( a.b[1][2], b[1][2] );
+	b[0].x = idMath::Fmin( a.b[0].x, b[0].x );
+	b[0].y = idMath::Fmin( a.b[0].y, b[0].y );
+	b[0].z = idMath::Fmin( a.b[0].z, b[0].z );
+	b[1].x = idMath::Fmax( a.b[1].x, b[1].x );
+	b[1].y = idMath::Fmax( a.b[1].y, b[1].y );
+	b[1].z = idMath::Fmax( a.b[1].z, b[1].z );
 }
 
 ID_INLINE idBounds idBounds::Intersect( const idBounds &a ) const {
 	idBounds n;
-	n.b[0][0] = idMath::Fmax( a.b[0][0], b[0][0] );
-	n.b[0][1] = idMath::Fmax( a.b[0][1], b[0][1] );
-	n.b[0][2] = idMath::Fmax( a.b[0][2], b[0][2] );
-	n.b[1][0] = idMath::Fmin( a.b[1][0], b[1][0] );
-	n.b[1][1] = idMath::Fmin( a.b[1][1], b[1][1] );
-	n.b[1][2] = idMath::Fmin( a.b[1][2], b[1][2] );
+	n.b[0].x = idMath::Fmax( a.b[0].x, b[0].x );
+	n.b[0].y = idMath::Fmax( a.b[0].y, b[0].y );
+	n.b[0].z = idMath::Fmax( a.b[0].z, b[0].z );
+	n.b[1].x = idMath::Fmin( a.b[1].x, b[1].x );
+	n.b[1].y = idMath::Fmin( a.b[1].y, b[1].y );
+	n.b[1].z = idMath::Fmin( a.b[1].z, b[1].z );
 	return n;
 }
 
 ID_INLINE idBounds &idBounds::IntersectSelf( const idBounds &a ) {
-	b[0][0] = idMath::Fmax( a.b[0][0], b[0][0] );
-	b[0][1] = idMath::Fmax( a.b[0][1], b[0][1] );
-	b[0][2] = idMath::Fmax( a.b[0][2], b[0][2] );
-	b[1][0] = idMath::Fmin( a.b[1][0], b[1][0] );
-	b[1][1] = idMath::Fmin( a.b[1][1], b[1][1] );
-	b[1][2] = idMath::Fmin( a.b[1][2], b[1][2] );
+	b[0].x = idMath::Fmax( a.b[0].x, b[0].x );
+	b[0].y = idMath::Fmax( a.b[0].y, b[0].y );
+	b[0].z = idMath::Fmax( a.b[0].z, b[0].z );
+	b[1].x = idMath::Fmin( a.b[1].x, b[1].x );
+	b[1].y = idMath::Fmin( a.b[1].y, b[1].y );
+	b[1].z = idMath::Fmin( a.b[1].z, b[1].z );
 	return *this;
 }
 
 ID_INLINE idBounds idBounds::Expand( const float d ) const {
 	return idBounds(
-		idVec3( b[0][0] - d, b[0][1] - d, b[0][2] - d ),
-		idVec3( b[1][0] + d, b[1][1] + d, b[1][2] + d )
+		idVec3( b[0].x - d, b[0].y - d, b[0].z - d ),
+		idVec3( b[1].x + d, b[1].y + d, b[1].z + d )
 	);
 }
 
 ID_INLINE idBounds &idBounds::ExpandSelf( const float d ) {
-	b[0][0] -= d;
-	b[0][1] -= d;
-	b[0][2] -= d;
-	b[1][0] += d;
-	b[1][1] += d;
-	b[1][2] += d;
+	b[0].x -= d;
+	b[0].y -= d;
+	b[0].z -= d;
+	b[1].x += d;
+	b[1].y += d;
+	b[1].z += d;
 	return *this;
 }
 
 ID_INLINE idBounds idBounds::Expand( const idVec3 &d ) const {
 	return idBounds(
-		idVec3( b[0][0] - d[0], b[0][1] - d[1], b[0][2] - d[2] ),
-		idVec3( b[1][0] + d[0], b[1][1] + d[1], b[1][2] + d[2] )
+		idVec3( b[0].x - d.x, b[0].y - d.y, b[0].z - d.z ),
+		idVec3( b[1].x + d.x, b[1].y + d.y, b[1].z + d.z )
 	);
 }
 
 ID_INLINE idBounds &idBounds::ExpandSelf( const idVec3 &d ) {
-	b[0][0] -= d[0];
-	b[0][1] -= d[1];
-	b[0][2] -= d[2];
-	b[1][0] += d[0];
-	b[1][1] += d[1];
-	b[1][2] += d[2];
+	b[0].x -= d.x;
+	b[0].y -= d.y;
+	b[0].z -= d.z;
+	b[1].x += d.x;
+	b[1].y += d.y;
+	b[1].z += d.z;
 	return *this;
 }
 ID_INLINE idBounds idBounds::Translate( const idVec3 &translation ) const {
@@ -333,8 +339,10 @@ ID_INLINE idBounds &idBounds::RotateSelf( const idMat3 &rotation ) {
 }
 
 ID_INLINE bool idBounds::ContainsPoint( const idVec3 &p ) const {
-	if ( p[0] < b[0][0] || p[1] < b[0][1] || p[2] < b[0][2]
-		|| p[0] > b[1][0] || p[1] > b[1][1] || p[2] > b[1][2] ) {
+	if (
+		p.x < b[0].x || p.y < b[0].y || p.z < b[0].z ||
+		p.x > b[1].x || p.y > b[1].y || p.z > b[1].z
+	) {
 		return false;
 	}
 	return true;
@@ -355,8 +363,10 @@ ID_INLINE bool idBounds::IntersectsBounds( const idBounds &a ) const {
 	int bits = _mm_movemask_ps(mask);
 	return (bits & 7) == 0;
 #else
-	if ( a.b[1][0] < b[0][0] || a.b[1][1] < b[0][1] || a.b[1][2] < b[0][2]
-		|| a.b[0][0] > b[1][0] || a.b[0][1] > b[1][1] || a.b[0][2] > b[1][2] ) {
+	if (
+		a.b[1].x < b[0].x || a.b[1].y < b[0].y || a.b[1].z < b[0].z ||
+		a.b[0].x > b[1].x || a.b[0].y > b[1].y || a.b[0].z > b[1].z
+	) {
 		return false;
 	}
 	return true;
@@ -378,9 +388,11 @@ ID_INLINE void idBounds::AxisProjection( const idVec3 &dir, float &min, float &m
 	extents = b[1] - center;
 
 	d1 = dir * center;
-	d2 = idMath::Fabs( extents[0] * dir[0] ) +
-			idMath::Fabs( extents[1] * dir[1] ) +
-				idMath::Fabs( extents[2] * dir[2] );
+	d2 = (
+		idMath::Fabs( extents[0] * dir[0] ) +
+		idMath::Fabs( extents[1] * dir[1] ) +
+		idMath::Fabs( extents[2] * dir[2] )
+	);
 
 	min = d1 - d2;
 	max = d1 + d2;
@@ -395,9 +407,11 @@ ID_INLINE void idBounds::AxisProjection( const idVec3 &origin, const idMat3 &axi
 	center = origin + center * axis;
 
 	d1 = dir * center;
-	d2 = idMath::Fabs( extents[0] * ( dir * axis[0] ) ) +
-			idMath::Fabs( extents[1] * ( dir * axis[1] ) ) +
-				idMath::Fabs( extents[2] * ( dir * axis[2] ) );
+	d2 = (
+		idMath::Fabs( extents[0] * ( dir * axis[0] ) ) +
+		idMath::Fabs( extents[1] * ( dir * axis[1] ) ) +
+		idMath::Fabs( extents[2] * ( dir * axis[2] ) )
+	);
 
 	min = d1 - d2;
 	max = d1 + d2;

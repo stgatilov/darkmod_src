@@ -78,9 +78,11 @@ float idBounds::PlaneDistance( const idPlane &plane ) const {
 	center = ( b[0] + b[1] ) * 0.5f;
 
 	d1 = plane.Distance( center );
-	d2 = idMath::Fabs( ( b[1][0] - center[0] ) * plane.Normal()[0] ) +
-			idMath::Fabs( ( b[1][1] - center[1] ) * plane.Normal()[1] ) +
-				idMath::Fabs( ( b[1][2] - center[2] ) * plane.Normal()[2] );
+	d2 = (
+		idMath::Fabs( ( b[1].x - center.x ) * plane.Normal().x ) +
+		idMath::Fabs( ( b[1].y - center.y ) * plane.Normal().y ) +
+		idMath::Fabs( ( b[1].z - center.z ) * plane.Normal().z )
+	);
 
 	if ( d1 - d2 > 0.0f ) {
 		return d1 - d2;
@@ -103,9 +105,11 @@ int idBounds::PlaneSide( const idPlane &plane, const float epsilon ) const {
 	center = ( b[0] + b[1] ) * 0.5f;
 
 	d1 = plane.Distance( center );
-	d2 = idMath::Fabs( ( b[1][0] - center[0] ) * plane.Normal()[0] ) +
-			idMath::Fabs( ( b[1][1] - center[1] ) * plane.Normal()[1] ) +
-				idMath::Fabs( ( b[1][2] - center[2] ) * plane.Normal()[2] );
+	d2 = (
+		idMath::Fabs( ( b[1].x - center.x ) * plane.Normal().x ) +
+		idMath::Fabs( ( b[1].y - center.y ) * plane.Normal().y ) +
+		idMath::Fabs( ( b[1].z - center.z ) * plane.Normal().z )
+	);
 
 	if ( d1 - d2 > epsilon ) {
 		return PLANESIDE_FRONT;
@@ -124,39 +128,39 @@ idBounds::LineIntersection
 ============
 */
 bool idBounds::LineIntersection( const idVec3 &start, const idVec3 &end ) const {
-    float ld[3];
+    idVec3 ld;
 	idVec3 center = ( b[0] + b[1] ) * 0.5f;
 	idVec3 extents = b[1] - center;
     idVec3 lineDir = 0.5f * ( end - start );
     idVec3 lineCenter = start + lineDir;
     idVec3 dir = lineCenter - center;
 
-    ld[0] = idMath::Fabs( lineDir[0] );
-	if ( idMath::Fabs( dir[0] ) > extents[0] + ld[0] ) {
+    ld.x = idMath::Fabs( lineDir.x );
+	if ( idMath::Fabs( dir.x ) > extents.x + ld.x ) {
         return false;
 	}
 
-    ld[1] = idMath::Fabs( lineDir[1] );
-	if ( idMath::Fabs( dir[1] ) > extents[1] + ld[1] ) {
+    ld.y = idMath::Fabs( lineDir.y );
+	if ( idMath::Fabs( dir.y ) > extents.y + ld.y ) {
         return false;
 	}
 
-    ld[2] = idMath::Fabs( lineDir[2] );
-	if ( idMath::Fabs( dir[2] ) > extents[2] + ld[2] ) {
+    ld.z = idMath::Fabs( lineDir.z );
+	if ( idMath::Fabs( dir.z ) > extents.z + ld.z ) {
         return false;
 	}
 
     idVec3 cross = lineDir.Cross( dir );
 
-	if ( idMath::Fabs( cross[0] ) > extents[1] * ld[2] + extents[2] * ld[1] ) {
+	if ( idMath::Fabs( cross.x ) > extents.y * ld.z + extents.z * ld.y ) {
         return false;
 	}
 
-	if ( idMath::Fabs( cross[1] ) > extents[0] * ld[2] + extents[2] * ld[0] ) {
+	if ( idMath::Fabs( cross.y ) > extents.x * ld.z + extents.z * ld.x ) {
         return false;
 	}
 
-	if ( idMath::Fabs( cross[2] ) > extents[0] * ld[1] + extents[1] * ld[0] ) {
+	if ( idMath::Fabs( cross.z ) > extents.x * ld.y + extents.y * ld.z ) {
         return false;
 	}
 
@@ -211,8 +215,10 @@ bool idBounds::RayIntersection( const idVec3 &start, const idVec3 &dir, float &s
 	hit[ax1] = start[ax1] + scale * dir[ax1];
 	hit[ax2] = start[ax2] + scale * dir[ax2];
 
-	return ( hit[ax1] >= b[0][ax1] && hit[ax1] <= b[1][ax1] &&
-				hit[ax2] >= b[0][ax2] && hit[ax2] <= b[1][ax2] );
+	return (
+		hit[ax1] >= b[0][ax1] && hit[ax1] <= b[1][ax1] &&
+		hit[ax2] >= b[0][ax2] && hit[ax2] <= b[1][ax2]
+	);
 }
 
 /*
@@ -228,9 +234,9 @@ void idBounds::FromTransformedBounds( const idBounds &bounds, const idVec3 &orig
 	extents = bounds[1] - center;
 
 	for ( i = 0; i < 3; i++ ) {
-		rotatedExtents[i] = idMath::Fabs( extents[0] * axis[0][i] ) +
-							idMath::Fabs( extents[1] * axis[1][i] ) +
-							idMath::Fabs( extents[2] * axis[2][i] );
+		rotatedExtents[i] = idMath::Fabs( extents.x * axis[0][i] ) +
+							idMath::Fabs( extents.y * axis[1][i] ) +
+							idMath::Fabs( extents.z * axis[2][i] );
 	}
 
 	center = origin + center * axis;
@@ -401,9 +407,9 @@ void idBounds::FromBoundsRotation( const idBounds &bounds, const idVec3 &origin,
 
 		(*this) = BoundsForPointRotation( bounds[0] * axis + origin, rotation );
 		for ( i = 1; i < 8; i++ ) {
-			point[0] = bounds[(i^(i>>1))&1][0];
-			point[1] = bounds[(i>>1)&1][1];
-			point[2] = bounds[(i>>2)&1][2];
+			point.x = bounds[(i^(i>>1))&1].x;
+			point.y = bounds[(i>>1)&1].y;
+			point.z = bounds[(i>>2)&1].z;
 			(*this) += BoundsForPointRotation( point * axis + origin, rotation );
 		}
 
@@ -437,9 +443,9 @@ void idBounds::FromBoundsRotation( const idBounds &bounds, const idVec3 &origin,
 		idBounds test;
 		test.FromPointRotation( bounds[0] * axis + origin, rotation );
 		for ( i = 1; i < 8; i++ ) {
-			point[0] = bounds[(i^(i>>1))&1][0];
-			point[1] = bounds[(i>>1)&1][1];
-			point[2] = bounds[(i>>2)&1][2];
+			point.x = bounds[(i^(i>>1))&1].x;
+			point.y = bounds[(i>>1)&1].y;
+			point.z = bounds[(i>>2)&1].z;
 			idBounds qq;
 			qq.FromPointRotation( point * axis + origin, rotation );
 			test += qq;
@@ -457,9 +463,9 @@ idBounds::ToPoints
 */
 void idBounds::ToPoints( idVec3 points[8] ) const {
 	for ( int i = 0; i < 8; i++ ) {
-		points[i][0] = b[(i^(i>>1))&1][0];
-		points[i][1] = b[(i>>1)&1][1];
-		points[i][2] = b[(i>>2)&1][2];
+		points[i].x = b[(i^(i>>1))&1].x;
+		points[i].y = b[(i>>1)&1].y;
+		points[i].z = b[(i>>2)&1].z;
 	}
 }
 
