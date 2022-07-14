@@ -611,17 +611,19 @@ srfTriangles_t *R_FinishLightTrisWithBvh(
 		newTri->indexes[pos++] = i0;
 		newTri->indexes[pos++] = i1;
 		newTri->indexes[pos++] = i2;
-		totalBounds.AddPoint( tri->verts[i0].xyz );
-		totalBounds.AddPoint( tri->verts[i1].xyz );
-		totalBounds.AddPoint( tri->verts[i2].xyz );
+		// these vertices will be added to totalBounds later
 	}
 
 	assert( pos == totalTris * 3 );
 
+	// compute bounds of preciseTris with SIMD
+	idBounds preciseBounds;
+	SIMDProcessor->MinMax( preciseBounds[0], preciseBounds[1], tri->verts, newTri->indexes + (totalTris - preciseTris.Num()) * 3, preciseTris.Num() * 3 );
+	totalBounds.AddBounds( preciseBounds );
+
 	// we have computed bounds partly from BVH nodes information
 	// that's much faster than going through all vertices of all filtered triangles
 	newTri->bounds = totalBounds;
-	//SIMDProcessor->MinMax( newTri->bounds[0], newTri->bounds[1], newTri->verts, newTri->indexes, newTri->numIndexes );
 
 	return newTri;
 }
