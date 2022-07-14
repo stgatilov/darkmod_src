@@ -259,7 +259,7 @@ struct idIgnoreFpExceptions {
 #define SSE_SQRT(x) _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)))
 #endif
 
-ID_INLINE float idMath::RSqrt( float x ) {
+ID_FORCE_INLINE float idMath::RSqrt( float x ) {
 #ifdef __SSE__
 	//stgatilov: use SSE instruction rsqrt
 	x = SSE_MAKEPOSITIVE(x);
@@ -846,7 +846,7 @@ ID_INLINE int idMath::Abs( int x ) {
    return ( ( x ^ y ) - y );
 }
 
-ID_INLINE float idMath::Fabs( float f ) {
+ID_FORCE_INLINE float idMath::Fabs( float f ) {
 #ifdef __SSE2__
 	//stgatilov: prefer using FP operations instead of integer ones
 	//this should merge nicely with other FP computations
@@ -940,7 +940,7 @@ ID_INLINE unsigned int idMath::FtolFast( float f ) {
 #endif
 }
 
-ID_INLINE float idMath::Fmin ( float a, float b ) {
+ID_FORCE_INLINE float idMath::Fmin ( float a, float b ) {
 #ifdef __SSE__
 	return _mm_cvtss_f32(_mm_min_ss(_mm_set_ss(a), _mm_set_ss(b)));
 #else
@@ -948,7 +948,7 @@ ID_INLINE float idMath::Fmin ( float a, float b ) {
 #endif
 }
 
-ID_INLINE float idMath::Fmax ( float a, float b ) {
+ID_FORCE_INLINE float idMath::Fmax ( float a, float b ) {
 #ifdef __SSE__
 	return _mm_cvtss_f32(_mm_max_ss(_mm_set_ss(a), _mm_set_ss(b)));
 #else
