@@ -30,7 +30,7 @@ idSIMD_SSE2::idSIMD_SSE2() {
 //apply optimizations to this file in Debug with Inlines configuration
 DEBUG_OPTIMIZE_ON
 
-#if defined(_MSVC) && defined(_DEBUG) && !defined(_INLINEDEBUG)
+#if defined(_MSVC) && defined(_DEBUG) && !defined(EXPLICIT_OPTIMIZATION)
 	//assert only checked in "Debug" build of MSVC
 	#define DBG_ASSERT(cond) assert(cond)
 #else

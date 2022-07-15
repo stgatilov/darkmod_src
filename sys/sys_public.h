@@ -205,7 +205,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define id_attribute(x)
 #endif
 
-#ifdef _INLINEDEBUG
+#ifdef EXPLICIT_OPTIMIZATION
 //stgatilov: force optimization of some function in "Debug with Inlines" MSVC configuration
 #define DEBUG_OPTIMIZE_ON __pragma(optimize("gt", on))
 #define DEBUG_OPTIMIZE_OFF __pragma(optimize("", on))
