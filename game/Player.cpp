@@ -371,7 +371,7 @@ const idEventDef EV_Player_TestEvent3("testEvent3",	EventArgs(
 
 const idEventDef EV_IsLeaning("isLeaning", EventArgs(), 'd', "Get whether the player is leaning"); // grayman #4882
 const idEventDef EV_IsPeekLeaning("isPeekLeaning", EventArgs(), 'd', "Get whether the player is peek leaning (against a keyhole or crack)"); // Obsttorte
-const idEventDef EV_GetSecondaryListenerLoc("getSecondaryListenerLoc", EventArgs(), 'v', "Retrieves the location of the secondary listener."); // Obsttorte, used for debug #5899
+const idEventDef EV_GetListenLoc("getListenLoc", EventArgs(), 'v', "Retrieves the location of the listener when leaning."); // Obsttorte, used for debug #5899
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -484,7 +484,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT(EV_IsLeaning,						idPlayer::Event_IsLeaning) // grayman #4882
 	EVENT(EV_IsPeekLeaning,					idPlayer::Event_IsPeekLeaning) // Obsttorte
-	EVENT(EV_GetSecondaryListenerLoc,		idPlayer::Event_GetSecondaryListenerLoc) // Obsttorte
+	EVENT(EV_GetListenLoc,					idPlayer::Event_GetListenLoc) // Obsttorte
 
 END_CLASS
 
@@ -12119,7 +12119,7 @@ void idPlayer::Event_IsPeekLeaning() // Obsttorte
 {
 	idThread::ReturnInt(physicsObj.IsPeekLeaning());
 }
-void idPlayer::Event_GetSecondaryListenerLoc() // Obsttorte
+void idPlayer::Event_GetListenLoc() // Obsttorte
 {
 	idThread::ReturnVector(GetSecondaryListenerLoc());
 }

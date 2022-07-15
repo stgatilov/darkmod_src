@@ -1472,7 +1472,7 @@ private:
 
 	void					Event_IsLeaning(); // grayman #4882
 	void					Event_IsPeekLeaning(); // Obsttorte
-	void					Event_GetSecondaryListenerLoc(); // Obsttorte #5899
+	void					Event_GetListenLoc(); // Obsttorte #5899
 
 	//stgatilov: testing script-cpp interop
 	void Event_TestEvent1(float float_pi, int int_beef, float float_exp, const char *string_tdm, float float_exp10, int int_food);
