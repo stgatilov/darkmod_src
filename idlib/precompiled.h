@@ -32,11 +32,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 //-----------------------------------------------------
 
-#if !defined( _DEBUG ) && !defined( NDEBUG )
-	// don't generate asserts
-	#define NDEBUG
-#endif
-
 // non-portable system services
 #include "../sys/sys_public.h"
 

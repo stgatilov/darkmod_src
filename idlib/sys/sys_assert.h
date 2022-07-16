@@ -29,8 +29,11 @@ bool AssertFailed( const char *file, int line, const char *expression );
 // are true for subsequent analysis.
 //lint -function( exit, AssertFailed )
 
+// stgatilov: leave asserts enabled in "Debug Fast"
+// despite NDEBUG being defined by builtin VC rules (because of Release CRT)
+
 //====================== assert in debug mode =======================
-#if defined( _DEBUG ) || defined( _lint )
+#if defined( _DEBUG ) || defined( _lint ) || defined( EXPLICIT_OPTIMIZATION )
 
 
 #undef assert

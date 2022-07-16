@@ -123,11 +123,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ================================================================================================
 */
 
-#if !defined( _DEBUG ) && !defined( NDEBUG )
-// don't generate asserts
-#define NDEBUG
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
