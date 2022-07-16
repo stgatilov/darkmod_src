@@ -408,18 +408,19 @@ void idSecurityCamera::Spawn( void )
 	spotlightPowerOn = true;
 
 	if ( powerOn ) {
-		if ( rotate )
-		{
+		if ( rotate ) {
 			StartSweep();
-			Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
 		}
-		else
-		{
+		else {
 			StartSound("snd_stationary", SND_CHANNEL_BODY, 0, false, NULL);
-			Event_SetSkin(spawnArgs.GetString("skin_off", "security_camera_off"));
 		}
 
+		Event_SetSkin(spawnArgs.GetString("skin_on", "security_camera_on"));
 		BecomeActive( TH_THINK | TH_UPDATEVISUALS );
+	}
+
+	else {
+		Event_SetSkin(spawnArgs.GetString("skin_off", "security_camera_off"));
 	}
 
 	//sets initial shaderParms and color
