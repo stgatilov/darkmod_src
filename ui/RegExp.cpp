@@ -261,6 +261,9 @@ void idRegisterList::AddReg( const char *name, int type, idParser *src, idWindow
 				src->ExpectTokenString(",");
 			}
 		}
+		// stgatilov #5869: warn user if he accidentally wrote more components than necessary
+		if ( src->PeekTokenString(",") )
+			src->Warning( "Register seems to have more than %d components", numRegs );
 	}
 
 	if ( newReg ) {
