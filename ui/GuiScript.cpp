@@ -470,6 +470,8 @@ idGuiScriptList::FixupParms
 */
 void idGuiScript::FixupParms(idWindow *win) {
 	if (handler == &Script_Set) {
+		if (parms.Num() < 1)
+			return;	// already warned in idGuiScript::Parse
 		bool precacheBackground = false;
 		bool precacheSounds = false;
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
@@ -539,9 +541,8 @@ void idGuiScript::FixupParms(idWindow *win) {
 			}
 		}
 	} else if (handler == &Script_Transition) {
-		if (parms.Num() < 4) {
-			common->Warning("Window %s in gui %s has a bad transition definition", win->GetName(), win->GetGui()->GetSourceFile()); 
-		}
+		if (parms.Num() < 4)
+			return;	// already warned in idGuiScript::Parse
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
 		assert(str);
 
@@ -555,11 +556,11 @@ void idGuiScript::FixupParms(idWindow *win) {
 			parms[0].var = dest;
 			parms[0].own = false;
 		} else {
-			common->Warning("Window %s in gui %s: a transition does not have a valid destination var %s", win->GetName(), win->GetGui()->GetSourceFile(),str->c_str());
+			common->Warning("Window '%s' transition has invalid destination var '%s' at %s", win->GetName(), str->c_str(), GetSourceLocation().c_str());
 		}
 
 		// 
-		//  support variables as parameters		
+		//  support variables as parameters
 		int c;
 		for ( c = 1; c < 3; c ++ ) {
 			str = dynamic_cast<idWinStr*>(parms[c].var);
@@ -575,6 +576,17 @@ void idGuiScript::FixupParms(idWindow *win) {
 			} else {
 				dest = NULL;
 			}
+
+			// stgatilov #5869: print detailed warning if value is ill-suited
+			auto VarSetWithWarning = [&](idWinVec4 *var, const char *value) {
+				bool good = var->Set(value);
+				if ( !good ) {
+					common->Warning(
+						"Window '%s' transition got wrong %s color '%s' at %s",
+						win->GetName(), (c == 1 ? "1st" : "2nd"), value, GetSourceLocation().c_str()
+					);
+				}
+			};
 
 			if ( dest ) {	
 				idWindow* ownerparent;
@@ -593,13 +605,13 @@ void idGuiScript::FixupParms(idWindow *win) {
 						destparent->ScreenToClient ( &rect );
 						*v4 = rect.ToVec4 ( );
 					} else {
-						v4->Set ( dest->c_str ( ) );
+						VarSetWithWarning(v4, dest->c_str());
 					}
 				} else {
-					v4->Set ( dest->c_str ( ) );
+					VarSetWithWarning(v4, dest->c_str());
 				}
 			} else {
-				v4->Set(*str);
+				VarSetWithWarning(v4, *str);
 			}			
 			
 			delete str;
