@@ -491,9 +491,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		assert(str);
 		idWinVar *dest = win->GetWinVarByName(*str, true);
 		if (dest) {
-			delete parms[0].var;
-			parms[0].var = dest;
-			parms[0].own = false;
+			parms[0].RelinkVar(dest, false);
 
 			if ( dynamic_cast<idWinBackground *>(dest) != NULL ) {
 				precacheBackground = true;
@@ -517,26 +515,14 @@ void idGuiScript::FixupParms(idWindow *win) {
 				idWinStr* defvar = new idWinStr();
 				defvar->Init ( *str, win );
 				win->AddDefinedVar ( defvar );
-				delete parms[i].var;
-				parms[i].var = defvar;
-				parms[i].own = false;
+				parms[i].RelinkVar( defvar, false );
 
-				//dest = win->GetWinVarByName(*str, true);
-				//if (dest) {
-				//	delete parms[i].var;
-				//	parms[i].var = dest;
-				//	parms[i].own = false;
-				//}
-				// 
 			} else if ((*str[0]) == '$') {
 				// 
 				//  dont include the $ when asking for variable
 				dest = win->GetGui()->GetDesktop()->GetWinVarByName((const char*)(*str) + 1, true);
-				// 					
 				if (dest) {
-					delete parms[i].var;
-					parms[i].var = dest;
-					parms[i].own = false;
+					parms[i].RelinkVar(dest, false);
 				}
 			} else {
 				// stgatilov: this is a plain string
@@ -568,7 +554,8 @@ void idGuiScript::FixupParms(idWindow *win) {
 				}
 			}
 		}
-	} else if (handler == &Script_Transition) {
+	}
+	else if (handler == &Script_Transition) {
 		if (parms.Num() < 4)
 			return;	// already warned in idGuiScript::Parse
 		if (parms.Num() == 5) {
@@ -583,9 +570,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		// 
 
 		if (dest) {
-			delete parms[0].var;
-			parms[0].var = dest;
-			parms[0].own = false;
+			parms[0].RelinkVar(dest, false);
 		} else {
 			common->Warning("Window '%s' transition has invalid destination var '%s' at %s", win->GetName(), str->c_str(), GetSourceLocation().c_str());
 		}
@@ -597,11 +582,8 @@ void idGuiScript::FixupParms(idWindow *win) {
 			str = dynamic_cast<idWinStr*>(parms[c].var);
 
 			idWinVec4 *v4 = new idWinVec4;
-			parms[c].var = v4;
-			parms[c].own = true;
 
 			drawWin_t* owner;
-
 			if ( (*str[0]) == '$' ) {
 				dest = win->GetWinVarByName ( (const char*)(*str) + 1, true, &owner );
 			} else {
@@ -645,7 +627,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 				VarSetWithWarning(v4, *str);
 			}			
 			
-			delete str;
+			parms[c].RelinkVar(v4, true);
 		}
 
 		{
@@ -654,9 +636,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 			if (!intVar->Set(var->c_str())) {
 				common->Warning("transition duration '%s' is not integer at %s", var->c_str(), GetSourceLocation().c_str());
 			}
-			delete var;
-			var = intVar;
-			parms[3].own = true;
+			parms[3].RelinkVar(intVar, true);
 		}
 
 		if (parms.Num() >= 6) {
@@ -666,13 +646,12 @@ void idGuiScript::FixupParms(idWindow *win) {
 				if (!floatVar->Set(var->c_str())) {
 					common->Warning("transition %s time '%s' is not float at %s", (c == 4 ? "accel" : "decel"), var->c_str(), GetSourceLocation().c_str());
 				}
-				delete var;
-				var = floatVar;
-				parms[c].own = true;
+				parms[c].RelinkVar(floatVar, true);
 			}
 		}
 
-	} else if (handler == &Script_ResetTime) {
+	}
+	else if (handler == &Script_ResetTime) {
 		idWinVar *target = nullptr;
 		idGSWinVar *value = nullptr;
 		if (parms.Num() == 2) {
@@ -695,11 +674,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 			if ( !intVar->Set(value->var->c_str()) ) {
 				common->Warning("resetTime time value '%s' is not integer at %s", value->var->c_str(), GetSourceLocation().c_str());
 			}
-			delete value->var;
-			value->var = intVar;
-			value->own = true;
+			value->RelinkVar(intVar, true);
 		}
-	} else if (handler == &Script_ShowCursor) {
+	}
+	else if (handler == &Script_ShowCursor) {
 		if (parms.Num() < 1)
 			return;
 		idWinVar *value = parms[0].var;
@@ -707,10 +685,9 @@ void idGuiScript::FixupParms(idWindow *win) {
 		if (!boolVar->Set(value->c_str())) {
 			common->Warning("showCursor value '%s' is not bool at %s", value->c_str(), GetSourceLocation().c_str());
 		}
-		delete value;
-		parms[0].var = boolVar;
-		parms[0].own = true;
-	} else if (handler == &Script_SetFocus) {
+		parms[0].RelinkVar(boolVar, true);
+	}
+	else if (handler == &Script_SetFocus) {
 		if (parms.Num() < 1)
 			return;
 		idWinVar *target = parms[0].var;
@@ -719,7 +696,8 @@ void idGuiScript::FixupParms(idWindow *win) {
 			common->Warning("setFocus target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
 		else if (!match->win)
 			common->Warning("setFocus target window '%s' lacks behavior at %s", target->c_str(), GetSourceLocation().c_str());
-	} else {
+	}
+	else {
 		int c = parms.Num();
 		for (int i = 0; i < c; i++) {
 			parms[i].var->Init(parms[i].var->c_str(), win);

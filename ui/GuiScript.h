@@ -23,6 +23,12 @@ struct idGSWinVar {
 		var = NULL;
 		own = false;
 	}
+	void RelinkVar(idWinVar *newVar, bool newOwn) {
+		if (own && var)
+			delete var;
+		var = newVar;
+		own = newOwn;
+	}
 	idWinVar* var;
 	bool own;
 };
