@@ -2103,49 +2103,53 @@ bool idWindow::ParseRegEntry(const char *name, idParser *src) {
 	if ( var ) {
 		for (int i = 0; i < NumRegisterVars; i++) {
 			if (idStr::Icmp(work, RegisterVars[i].name) == 0) {
+				// stgatilov: name of builtin parameter like e.g. rect or visible
+				// these parameters can be assigned expressions, and are based on register evaluation
 				regList.AddReg(work, RegisterVars[i].type, src, this, var);
 				return true;
 			}
 		}
+		// stgatilov: name of builtin parameter e.g. notime or updateGroup
+		// these parameters must be assigned immediate value without register evaluation
+		idToken tok;
+		src->ExpectAnyToken(&tok);
+		var->Set(tok);
+		return true;
 	}
 
 	// not predefined so just read the next token and add it to the state
+
+	// stgatilov #5869: unknown name for window variable, complain about it
+	// if you really want to create a custom window variable, you should use definefloat keyword
+	src->Warning("Unknown variable '%s': perhaps use definefloat instead?", work.c_str());
+
 	idToken tok;
-	idVec4 v;	
-	idWinInt *vari;
-	idWinFloat *varf;
-	idWinStr *vars;
-	if (src->ReadToken(&tok)) {
-		if (var) {
-			var->Set(tok);
-			return true;
-		}
-		switch (tok.type) {
-			case TT_NUMBER : 
-				if (tok.subtype & TT_INTEGER) {
-					vari = new idWinInt();
-					*vari = atoi(tok);
-					vari->SetName(work);
-					definedVars.Append(vari);
-				} else if (tok.subtype & TT_FLOAT) {
-					varf = new idWinFloat();
-					*varf = atof(tok);
-					varf->SetName(work);
-					definedVars.Append(varf);
-				} else {
-					vars = new idWinStr();
-					*vars = tok;
-					vars->SetName(work);
-					definedVars.Append(vars);
-				}
-				break;
-			default :
-				vars = new idWinStr();
+	src->ExpectAnyToken(&tok);
+	switch (tok.type) {
+		case TT_NUMBER : 
+			if (tok.subtype & TT_INTEGER) {
+				idWinInt *vari = new idWinInt();
+				*vari = atoi(tok);
+				vari->SetName(work);
+				definedVars.Append(vari);
+			} else if (tok.subtype & TT_FLOAT) {
+				idWinFloat *varf = new idWinFloat();
+				*varf = atof(tok);
+				varf->SetName(work);
+				definedVars.Append(varf);
+			} else {
+				idWinStr *vars = new idWinStr();
 				*vars = tok;
 				vars->SetName(work);
 				definedVars.Append(vars);
-				break;
-		}
+			}
+			break;
+		default :
+			idWinStr *vars = new idWinStr();
+			*vars = tok;
+			vars->SetName(work);
+			definedVars.Append(vars);
+			break;
 	}
 
 	return true;
