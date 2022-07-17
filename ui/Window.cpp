@@ -2526,7 +2526,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			}
 #endif
 		}
-		else {
+		else if (token.type == TT_NAME) {
 			ParseRegEntry(token, src);
 			// hook into the main window parsing for the gui editor
 			// If we are in the gui editor then add the internal var to the 
@@ -2538,7 +2538,11 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 				rvGEWindowWrapper::GetWrapper ( this )->SetStateKey ( token, str, false );
 			}
 #endif
-		} 
+		} else {
+			// stgatilov #5869: the most common reason is semicolon at the end of previous window line
+			// but this can also be excessive number of similar stuff
+			src->Error( "Dropped unexpected token '%s' (window line expected)", token.c_str() );
+		}
 		if ( !src->ReadToken( &token ) ) {
 			src->Error( "Unexpected end of file" );
 			ret = false;
