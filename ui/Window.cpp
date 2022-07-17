@@ -2333,10 +2333,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 		}
 		else if ( token == "onNamedEvent" ) {
 			// Read the event name
-			if ( !src->ReadToken(&token) ) {
-				src->Error( "Expected event name" );
-				return false;
-			}
+			src->ExpectTokenType( TT_NAME, 0, &token );
 
 			rvNamedEvent* ev = new rvNamedEvent ( token );
 			
