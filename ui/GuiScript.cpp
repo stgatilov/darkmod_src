@@ -150,19 +150,30 @@ Script_ResetTime
 =========================
 */
 void Script_ResetTime(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
-	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
-	drawWin_t *win = NULL;
-	if (parm && src->Num() > 1) {
-		win = window->GetGui()->GetDesktop()->FindChildByName(*parm);
-		parm = dynamic_cast<idWinStr*>((*src)[1].var);
+	idWinVar *target = nullptr;
+	idWinVar *value = nullptr;
+	if (src->Num() >= 2) {
+		target = (*src)[0].var;
+		value = (*src)[1].var;
 	}
-	if (win && win->win) {
-		win->win->ResetTime(atoi(*parm));
-		win->win->EvalRegs(-1, true);
-	} else {
-		window->ResetTime(atoi(*parm));
-		window->EvalRegs(-1, true);
+	else if (src->Num() == 1) {
+		value = (*src)[0].var;
 	}
+
+	idWindow *targetWin = window;
+	if (target) {
+		drawWin_t *win = window->GetGui()->GetDesktop()->FindChildByName(target->c_str());
+		if (win && win->win)
+			targetWin = win->win;
+	}
+
+	idWinInt *intVar = dynamic_cast<idWinInt*>(value);
+	if (!intVar)
+		return;	// no arguments / not integer: already reported in Parse
+	int timeMoment = int(*intVar);
+
+	targetWin->ResetTime(timeMoment);
+	targetWin->EvalRegs(-1, true);
 }
 
 /*
@@ -246,7 +257,7 @@ guiCommandDef_t commandList[] = {
 	{ "set", Script_Set, 2, 2 },
 	{ "setFocus", Script_SetFocus, 1, 1 },
 	{ "endGame", Script_EndGame, 0, 0 },
-	{ "resetTime", Script_ResetTime, 0, 2 },
+	{ "resetTime", Script_ResetTime, 1, 2 },
 	{ "showCursor", Script_ShowCursor, 1, 1 },
 	{ "resetCinematics", Script_ResetCinematics, 0, 0 },
 	{ "transition", Script_Transition, 4, 6 },
@@ -616,8 +627,33 @@ void idGuiScript::FixupParms(idWindow *win) {
 			
 			delete str;
 		}		
-		// 
+	} else if (handler == &Script_ResetTime) {
+		idWinVar *target = nullptr;
+		idGSWinVar *value = nullptr;
+		if (parms.Num() == 2) {
+			target = parms[0].var;
+			value = &parms[1];
+		}
+		else if (parms.Num() == 1) {
+			value = &parms[0];
+		}
 
+		if (target) {
+			drawWin_t *match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
+			if (!match)
+				common->Warning("resetTime target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
+			else if (!match->win)
+				common->Warning("resetTime target window '%s' lacks time behavior at %s", target->c_str(), GetSourceLocation().c_str());
+		}
+		if (value) {
+			idWinInt *intVar = new idWinInt();
+			if ( !intVar->Set(value->var->c_str()) ) {
+				common->Warning("resetTime time value '%s' is not integer at %s", value->var->c_str(), GetSourceLocation().c_str());
+			}
+			delete value->var;
+			value->var = intVar;
+			value->own = true;
+		}
 	} else {
 		int c = parms.Num();
 		for (int i = 0; i < c; i++) {
