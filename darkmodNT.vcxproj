@@ -673,6 +673,8 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClInclude Include="idlib\bv\Bounds.h" />
     <ClInclude Include="idlib\bv\Box.h" />
     <ClInclude Include="idlib\bv\BoxOctree.h" />
+    <ClInclude Include="idlib\bv\Bvh.h" />
+    <ClInclude Include="idlib\bv\CircCone.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />
     <ClInclude Include="idlib\bv\Sphere.h" />
     <ClInclude Include="idlib\CmdArgs.h" />
@@ -1153,6 +1155,8 @@ if %errorlevel% leq 3 exit 0</Command>
     <ClCompile Include="idlib\bv\Bounds.cpp" />
     <ClCompile Include="idlib\bv\Box.cpp" />
     <ClCompile Include="idlib\bv\BoxOctree.cpp" />
+    <ClCompile Include="idlib\bv\Bvh.cpp" />
+    <ClCompile Include="idlib\bv\CircCone.cpp" />
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />

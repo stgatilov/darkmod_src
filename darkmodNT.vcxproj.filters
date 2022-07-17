@@ -1528,6 +1528,12 @@
     <ClInclude Include="game\LodComponent.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\bv\Bvh.h">
+      <Filter>idLib\BV</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\bv\CircCone.h">
+      <Filter>idLib\BV</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3003,6 +3009,12 @@
     </ClCompile>
     <ClCompile Include="game\LodComponent.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\bv\Bvh.cpp">
+      <Filter>idLib\BV</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\bv\CircCone.cpp">
+      <Filter>idLib\BV</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
