@@ -2468,6 +2468,18 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			// set the marker to after the float name
 			src->SetMarker ( );
 
+			// stgatilov #5869: Unfortunately, it is common practice in TDM to declare window variables like this:
+			//   float exit;
+			// Here semicolon serves as value of variable (implicitly zero).
+			// This hacky code supports such conversion explicitly.
+			src->ReadToken(&token);
+			if (token == ";") {
+				token = "0";
+				token.type = TT_NUMBER;
+				token.subtype = TT_INTEGER;
+			}
+			src->UnreadToken(&token);
+
 			// Parse the float
 			regList.AddReg(work, idRegister::FLOAT, src, this, varf);
 
@@ -3935,7 +3947,6 @@ void idWindow::FixupParms() {
 			ops[i].b = -1;
 		}
 	}
-	
 	
 	if (flags & WIN_DESKTOP) {
 		CalcRects(0,0);
