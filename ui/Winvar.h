@@ -58,7 +58,6 @@ public:
 	bool NeedsUpdate() { return (guiDict != NULL); }
 
 	virtual void Init(const char *_name, idWindow* win) = 0;
-	virtual bool Set(const char *val) = 0;
 	virtual void Update() = 0;
 	virtual const char *c_str() const = 0;
 	virtual size_t Size() {	size_t sz = (name) ? strlen(name) : 0; return sz + sizeof(*this); }
@@ -68,14 +67,19 @@ public:
 
 	virtual float x( void ) const = 0;
 
+	bool Set(const char *val) { return _Set(val, false); }
+	bool TestSet(const char *val) const { return const_cast<idWinVar*>(this)->_Set(val, true); }
+
 	void SetEval(bool b) {
 		eval = b;
 	}
 	bool GetEval() {
 		return eval;
 	}
-	
+
 protected:
+	virtual bool _Set(const char *val, bool dryRun) = 0;
+
 	idDict *guiDict;
 	char *name;
 	bool eval;
@@ -107,15 +111,17 @@ public:
 
 	operator bool() const { return data; }
 
-	virtual bool Set(const char *val) override { 
+	virtual bool _Set(const char *val, bool dryRun) override { 
 		int parsedVal = 0;
 		int numChars = 0;
 		bool good = (idStr::IsNumeric(val) && sscanf(val, "%d%n", &parsedVal, &numChars) == 1 && !val[numChars]);
 		// stgatilov #5869: other integers will work fine, but better warn
 		good = good && (parsedVal == 0 || parsedVal == 1);
-		data = ( parsedVal != 0 );
-		if (guiDict) {
-			guiDict->SetBool(GetName(), data);
+		if (!dryRun) {
+			data = ( parsedVal != 0 );
+			if (guiDict) {
+				guiDict->SetBool(GetName(), data);
+			}
 		}
 		return good;
 	}
@@ -202,10 +208,12 @@ public:
 		return data.c_str();
 	}
 
-	virtual bool Set(const char *val) override {
-		data = val;
-		if ( guiDict ) {
-			guiDict->Set(GetName(), data);
+	virtual bool _Set(const char *val, bool dryRun) override {
+		if (!dryRun) {
+			data = val;
+			if ( guiDict ) {
+				guiDict->Set(GetName(), data);
+			}
 		}
 		return true;
 	}
@@ -276,14 +284,15 @@ public:
 	operator int () const {
 		return data;
 	}
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val, bool dryRun) override {
 		int parsedVal = 0;
 		int numChars = 0;
 		bool good = (idStr::IsNumeric(val) && sscanf(val, "%d%n", &parsedVal, &numChars) == 1 && !val[numChars]);
-
-		data = parsedVal;
-		if (guiDict) {
-			guiDict->SetInt(GetName(), data);
+		if (!dryRun) {
+			data = parsedVal;
+			if (guiDict) {
+				guiDict->SetInt(GetName(), data);
+			}
 		}
 		return good;
 	}
@@ -341,13 +350,15 @@ public:
 	operator float() const {
 		return data;
 	}
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val, bool dryRun) override {
 		float parsedVal = 0;
 		int numChars = 0;
 		bool good = (idStr::IsNumeric(val) && sscanf(val, "%f%n", &parsedVal, &numChars) == 1 && !val[numChars]);
-		data = parsedVal;
-		if (guiDict) {
-			guiDict->SetFloat(GetName(), data);
+		if (!dryRun) {
+			data = parsedVal;
+			if (guiDict) {
+				guiDict->SetFloat(GetName(), data);
+			}
 		}
 		return good;
 	}
@@ -444,7 +455,7 @@ public:
 		ret = data.ToVec4();
 		return ret;
 	}
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val,bool dryRun) override {
 		int ret;
 		idRectangle v;
 		if ( strchr ( val, ',' ) ) {
@@ -452,10 +463,12 @@ public:
 		} else {
 			ret = sscanf( val, "%f %f %f %f", &v.x, &v.y, &v.w, &v.h );
 		}
-		data = v;
-		if (guiDict) {
-			idVec4 v = data.ToVec4();
-			guiDict->SetVec4(GetName(), v);
+		if (!dryRun) {
+			data = v;
+			if (guiDict) {
+				idVec4 v = data.ToVec4();
+				guiDict->SetVec4(GetName(), v);
+			}
 		}
 		return (ret == 4);
 	}
@@ -520,7 +533,7 @@ public:
 	float y() const {
 		return data.y;
 	}
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val, bool dryRun) override {
 		int ret;
 		idVec2 v(0.0f, 0.0f);
 		if ( strchr ( val, ',' ) ) {
@@ -528,9 +541,11 @@ public:
 		} else {
 			ret = sscanf( val, "%f %f", &v.x, &v.y);
 		}
-		data = v;
-		if (guiDict) {
-			guiDict->SetVec2(GetName(), data);
+		if (!dryRun) {
+			data = v;
+			if (guiDict) {
+				guiDict->SetVec2(GetName(), data);
+			}
 		}
 		return (ret == 2);
 	}
@@ -608,7 +623,7 @@ public:
 	float w() const {
 		return data.w;
 	}
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val, bool dryRun) override {
 		int ret;
 		idVec4 v(0.0f, 0.0f, 0.0f, 0.0f);
 		if ( strchr ( val, ',' ) ) {
@@ -618,9 +633,11 @@ public:
 		}
 		//stgatilov: "transition" expects vec4, but it often receives scalar for e.g. "rotation" property
 		bool good = (ret == 4 || ret == 1);
-		data = v;
-		if ( guiDict ) {
-			guiDict->SetVec4( GetName(), data );
+		if (!dryRun) {
+			data = v;
+			if ( guiDict ) {
+				guiDict->SetVec4( GetName(), data );
+			}
 		}
 		return good;
 	}
@@ -700,7 +717,7 @@ public:
 		return data.z;
 	}
 
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val, bool dryRun) override {
 		int ret;
 		idVec3 v(0.0f, 0.0f, 0.0f);
 		if ( strchr ( val, ',' ) ) {
@@ -708,9 +725,11 @@ public:
 		} else {
 			ret = sscanf( val, "%f %f %f", &v.x, &v.y, &v.z );
 		}
-		data = v;
-		if (guiDict) {
-			guiDict->SetVector(GetName(), data);
+		if (!dryRun) {
+			data = v;
+			if (guiDict) {
+				guiDict->SetVector(GetName(), data);
+			}
 		}
 		return (ret == 3);
 	}
@@ -806,16 +825,20 @@ public:
 		return data.c_str();
 	}
 
-	virtual bool Set(const char *val) override {
-		data = val;
-		if (guiDict) {
-			guiDict->Set(GetName(), data);
+	virtual bool _Set(const char *val, bool dryRun) override {
+		const idMaterial *matVal = nullptr;
+		if ( !val[0] ) {
+			matVal = nullptr;
+		} else {
+			matVal = declManager->FindMaterial(val);
 		}
-		if (mat) {
-			if ( data == "" ) {
-				(*mat) = NULL;
-			} else {
-				(*mat) = declManager->FindMaterial(data);
+		if (!dryRun) {
+			data = val;
+			if (guiDict) {
+				guiDict->Set(GetName(), data);
+			}
+			if (mat) {
+				(*mat) = matVal;
 			}
 		}
 		return true;
@@ -914,12 +937,14 @@ public:
 	operator size_t() const {
 		return data;
 	}
-	virtual bool Set(const char *val) override {
+	virtual bool _Set(const char *val, bool dryRun) override {
 		size_t parsedVal = 0;
 		int numChars = 0;
 		bool good = (idStr::IsNumeric(val) && sscanf(val, "%zu%n", &parsedVal, &numChars) == 1 && !val[numChars]);
-		data = parsedVal;
-		assert(!guiDict);
+		if (!dryRun) {
+			data = parsedVal;
+			assert(!guiDict);
+		}
 		return good;
 	}
 

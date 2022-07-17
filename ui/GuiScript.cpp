@@ -501,6 +501,8 @@ void idGuiScript::FixupParms(idWindow *win) {
 		} else if ( idStr::Icmp( str->c_str(), "cmd" ) == 0 ) {
 			precacheSounds = true;
 		} else {
+			// stgatilov #5869: other destinations make no sense
+			// I believe Script_Set would treat token as string and would assign new value straight into this token =)
 			common->Warning("unknown destination '%s' of set command at %s", str->c_str(), GetSourceLocation().c_str());
 		}
 
@@ -536,21 +538,31 @@ void idGuiScript::FixupParms(idWindow *win) {
 					parms[i].var = dest;
 					parms[i].own = false;
 				}
-			} else if ( idStr::Cmpn( str->c_str(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
-				str->Set( common->Translate( str->c_str() ) );
-			} else if ( precacheBackground ) {
-				const idMaterial *mat = declManager->FindMaterial( str->c_str() );
-				mat->SetSort( SS_GUI );
-			} else if ( precacheSounds ) {
-				// Search for "play <...>"
-				idToken token;
-				idParser parser( LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWPATHNAMES );
-				parser.LoadMemory(str->c_str(), str->Length(), "command");
+			} else {
+				// stgatilov: this is a plain string
+				if (dest) {
+					// stgatilov #5869: check compatible type of right value in assignment
+					if (!dest->TestSet(str->c_str())) {
+						common->Warning("set value '%s' is not compatible with type %s at %s", str->c_str(), dest->GetTypeName(), GetSourceLocation().c_str());
+					}
+				}
 
-				while ( parser.ReadToken(&token) ) {
-					if ( token.Icmp("play") == 0 ) {
-						if ( parser.ReadToken(&token) && ( token != "" ) ) {
-							declManager->FindSound( token.c_str() );
+				if ( idStr::Cmpn( str->c_str(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
+					str->Set( common->Translate( str->c_str() ) );
+				} else if ( precacheBackground ) {
+					const idMaterial *mat = declManager->FindMaterial( str->c_str() );
+					mat->SetSort( SS_GUI );
+				} else if ( precacheSounds ) {
+					// Search for "play <...>"
+					idToken token;
+					idParser parser( LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWPATHNAMES );
+					parser.LoadMemory(str->c_str(), str->Length(), "command");
+
+					while ( parser.ReadToken(&token) ) {
+						if ( token.Icmp("play") == 0 ) {
+							if ( parser.ReadToken(&token) && ( token != "" ) ) {
+								declManager->FindSound( token.c_str() );
+							}
 						}
 					}
 				}
