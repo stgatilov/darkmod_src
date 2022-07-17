@@ -2331,8 +2331,6 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			dwt.win = win;
 			drawWindows.Append(dwt);
 		}
-// 
-//  added new onEvent
 		else if ( token == "onNamedEvent" ) {
 			// Read the event name
 			if ( !src->ReadToken(&token) ) {
@@ -2372,11 +2370,8 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 		else if ( token == "onTime" ) {
 			idTimeLineEvent *ev = new idTimeLineEvent;
 
-			if ( !src->ReadToken(&token) ) {
-				src->Error( "Unexpected end of file" );
-				return false;
-			}
-			ev->time = atoi(token.c_str());
+			src->ExpectTokenType( TT_NUMBER, TT_INTEGER, &token );
+			ev->time = token.GetIntValue();
 			
 			// reset the mark since we dont want it to include the time
 			src->SetMarker ( );
