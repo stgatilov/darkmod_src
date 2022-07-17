@@ -1649,10 +1649,18 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 
 		idGuiScript *gs = new idGuiScript();
 		if (token.Icmp("if") == 0) {
+			// stgatilov #5869: check that condition is enclosed in parentheses
+			src->ReadToken(&token);
+			if (token != "(") {
+				src->Warning("condition starts with '%s'", token.c_str());
+			}
+			src->UnreadToken(&token);
+
 			gs->conditionReg = ParseExpression(src);
 			gs->ifList = new idGuiScriptList();
 			gs->SetSourceLocation(srcFilename, src->GetLineNum());
 			ParseScript(src, *gs->ifList, NULL);
+
 			if (src->ReadToken(&token)) {
 				if (token == "else") {
 					gs->elseList = new idGuiScriptList();
