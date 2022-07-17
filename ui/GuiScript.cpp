@@ -87,9 +87,9 @@ Script_ShowCursor
 =========================
 */
 void Script_ShowCursor(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
-	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
+	idWinBool *parm = dynamic_cast<idWinBool*>((*src)[0].var);
 	if ( parm ) {
-		if ( atoi( *parm ) ) {
+		if ( bool(parm) ) {
 			window->GetGui()->GetDesktop()->ClearFlag( WIN_NOCURSOR );
 		} else {
 			window->GetGui()->GetDesktop()->SetFlag( WIN_NOCURSOR );
@@ -654,6 +654,26 @@ void idGuiScript::FixupParms(idWindow *win) {
 			value->var = intVar;
 			value->own = true;
 		}
+	} else if (handler == &Script_ShowCursor) {
+		if (parms.Num() < 1)
+			return;
+		idWinVar *value = parms[0].var;
+		idWinBool *boolVar = new idWinBool();
+		if (!boolVar->Set(value->c_str())) {
+			common->Warning("showCursor value '%s' is not bool at %s", value->c_str(), GetSourceLocation().c_str());
+		}
+		delete value;
+		parms[0].var = boolVar;
+		parms[0].own = true;
+	} else if (handler == &Script_SetFocus) {
+		if (parms.Num() < 1)
+			return;
+		idWinVar *target = parms[0].var;
+		drawWin_t *match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
+		if (!match)
+			common->Warning("setFocus target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
+		else if (!match->win)
+			common->Warning("setFocus target window '%s' lacks behavior at %s", target->c_str(), GetSourceLocation().c_str());
 	} else {
 		int c = parms.Num();
 		for (int i = 0; i < c; i++) {
