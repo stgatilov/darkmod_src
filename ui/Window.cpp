@@ -1919,9 +1919,11 @@ idWindow::ParseString
 */
 void idWindow::ParseString(idParser *src, idStr &out) {
 	idToken tok;
-	if (src->ReadToken(&tok)) {
-		out = tok;
+	if (!src->ReadToken(&tok)) {
+		// stgatilov #5869: report error if parameter is missing
+		src->Error("unexpected EOF while string expected");
 	}
+	out = tok;
 }
 
 /*
@@ -1946,19 +1948,38 @@ void idWindow::ParseVec4(idParser *src, idVec4 &out) {
 
 /*
 ================
+idWindow::ParseBool
+================
+*/
+bool idWindow::ParseBool(idParser *src) {
+	idToken token;
+	if ( !src->ExpectTokenType( TT_NUMBER, 0, &token ) ) {
+		src->Error( "couldn't read expected boolean" );
+		return false;
+	}
+	int value = token.GetIntValue();
+	if ( value != 0 && value != 1 ) {
+		// stgatilov #5869: this is most likely an error, better let user know about it
+		src->Warning( "expected boolean, found '%s'", token.c_str() );
+	}
+	return ( value != 0 );
+}
+
+/*
+================
 idWindow::ParseInternalVar
 ================
 */
 bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 
 	if (idStr::Icmp(_name, "showtime") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_SHOWTIME;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "showcoords") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_SHOWCOORDS;
 		}
 		return true;
@@ -1992,7 +2013,7 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 		return true;
 	}
 	if (idStr::Icmp(_name, "nowrap") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_NOWRAP;
 		}
 		return true;
@@ -2018,50 +2039,50 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 		idToken tok;
 		src->ReadToken( &tok );
 		if ( tok.Icmp( "," ) ) {
-			src->Error( "Expected comma in shear definiation" );
+			src->Error( "Expected comma in shear definition" );
 			return false;
 		}
 		shear.y = src->ParseFloat();
 		return true;
 	}
 	if (idStr::Icmp(_name, "wantenter") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_WANTENTER;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "naturalmatscale") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_NATURALMAT;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "noclip") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_NOCLIP;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "nocursor") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_NOCURSOR;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "menugui") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_MENUGUI;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "modal") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_MODAL;
 		}
 		return true;
 	}
 	if (idStr::Icmp(_name, "invertrect") == 0) {
-		if ( src->ParseBool() ) {
+		if ( ParseBool(src) ) {
 			flags |= WIN_INVERTRECT;
 		}
 		return true;

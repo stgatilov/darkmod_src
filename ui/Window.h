@@ -355,6 +355,7 @@ protected:
 	virtual bool ParseInternalVar(const char *name, idParser *src);
 	void ParseString(idParser *src, idStr &out);
 	void ParseVec4(idParser *src, idVec4 &out);
+	bool ParseBool(idParser *src);
 	void ConvertRegEntry(const char *name, idParser *src, idStr &out, int tabs);
 
 	float actualX;					// physical coords

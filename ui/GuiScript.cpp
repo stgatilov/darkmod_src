@@ -252,7 +252,7 @@ guiCommandDef_t commandList[] = {
 	{ "endGame", Script_EndGame, 0, 0 },
 	{ "resetTime", Script_ResetTime, 0, 2 },
 	{ "showCursor", Script_ShowCursor, 1, 1 },
-	{ "resetCinematics", Script_ResetCinematics, 0, 2 },
+	{ "resetCinematics", Script_ResetCinematics, 0, 0 },
 	{ "transition", Script_Transition, 4, 6 },
 	{ "localSound", Script_LocalSound, 1, 1 },
 	{ "runScript", Script_RunScript, 1, 1 },
@@ -368,7 +368,7 @@ bool idGuiScript::Parse(idParser *src) {
 	}
 
 	if (handler == NULL) {
-		src->Error("Uknown script call %s", token.c_str());
+		src->Error("Wrong script command '%s' ignored", token.c_str());
 	}
 	// now read parms til ;
 	// all parms are read as idWinStr's but will be fixed up later 
