@@ -247,7 +247,7 @@ typedef struct {
 } guiCommandDef_t;
 
 guiCommandDef_t commandList[] = {
-	{ "set", Script_Set, 2, 999 },
+	{ "set", Script_Set, 2, 2 },
 	{ "setFocus", Script_SetFocus, 1, 1 },
 	{ "endGame", Script_EndGame, 0, 0 },
 	{ "resetTime", Script_ResetTime, 0, 2 },
@@ -396,10 +396,24 @@ bool idGuiScript::Parse(idParser *src) {
 		parms.Append( wv );
 	}
 
-	// 
 	//  verify min/max params
 	if ( handler && (parms.Num() < commandList[i].mMinParms || parms.Num() > commandList[i].mMaxParms ) ) {
-		src->Error("incorrect number of parameters for script %s", commandList[i].name );
+		bool maybeMissedSemicolon = false;
+		if ( parms.Num() > commandList[i].mMaxParms ) {
+			// check if we have another command in arguments
+			for ( int p = 0; p < parms.Num(); p++ )
+				for ( int j = 0; j < scriptCommandCount; j++ )
+					if ( idStr::Icmp( parms[p].var->c_str(), commandList[j].name ) == 0 ) {
+						maybeMissedSemicolon = true;
+					}
+		}
+		// stgatilov #5869: even though "set" command can technically process several arguments,
+		// better complain about it, since otherwise missing semicolon at the end of any "set" command will silently swallow next command!
+		src->Warning(
+			"wrong number of arguments for script command %s: %d instead of [%d..%d]%s",
+			commandList[i].name, parms.Num(), commandList[i].mMinParms, commandList[i].mMaxParms,
+			(maybeMissedSemicolon ? ", maybe missing semicolon?" : "")
+		);
 	}
 	// 
 
