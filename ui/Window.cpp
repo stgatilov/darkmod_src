@@ -1867,7 +1867,7 @@ idWinVar *idWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t** o
 	bool guiVar = (key.Find(VAR_GUIPREFIX) >= 0);
 	int c = definedVars.Num();
 	for (int i = 0; i < c; i++) {
-		if (idStr::Icmp(_name, (guiVar) ? va("%s",definedVars[i]->GetName()) : definedVars[i]->GetName()) == 0) {
+		if (idStr::Icmp(_name, definedVars[i]->GetName()) == 0) {
 			retVar = definedVars[i];
 			break;
 		}
@@ -2977,13 +2977,19 @@ intptr_t idWindow::ParseTerm(idParser *src, idWinVar *var, intptr_t component) {
 			src->Warning("Var expression not vec4, float or int '%s'", token.c_str());
 		}
 		return 0;
-	} else {
+	} else if ( token.type == TT_STRING || token.type == TT_NAME ) {
 		// ugly but used for post parsing to fixup named vars
+		// stgatilov: will be handled in idWindow::FixupParms
 		char *p = new char[token.Length()+1];
 		strcpy(p, token);
         a = (intptr_t)p;
 		b = -2;
 		return EmitOp(a, b, WOP_TYPE_VAR);
+	} else {
+		// stgatilov #5869: warn and ignore if we see total trash
+		// only save name for fixup if string (previously it was always saved)
+		src->Error("Unexpected term '%s' in expression", token.c_str());
+		return 0;
 	}
 
 }
@@ -3939,9 +3945,15 @@ void idWindow::FixupParms() {
 	c = ops.Num();
 	for (i = 0; i < c; i++) {
 		if (ops[i].b == -2) {
+			// stgatilov: this case was set at the end of idWindow::ParseTerm
+			assert(ops[i].opType == WOP_TYPE_VAR);
 			// need to fix this up
 			const char *p = (const char*)(ops[i].a);
 			idWinVar *var = GetWinVarByName(p, true);
+			if (!var) {
+				// stgatilov #5869: zero op.a will evaluate as 0.0f in idWindow::EvaluateRegisters
+				common->Warning("Failed to fixup '%s' in window '%s', replaced with zero", p, name.c_str());
+			}
 			delete []p;
             ops[i].a = (intptr_t)var;
 			ops[i].b = -1;
