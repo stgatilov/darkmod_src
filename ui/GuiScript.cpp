@@ -210,23 +210,23 @@ void Script_Transition(idGuiScript *self, idWindow *window, idList<idGSWinVar> *
 		}
 		idWinVec4 *from = dynamic_cast<idWinVec4*>((*src)[1].var);
 		idWinVec4 *to = dynamic_cast<idWinVec4*>((*src)[2].var);
-		idWinStr *timeStr = dynamic_cast<idWinStr*>((*src)[3].var);
+		idWinInt *timeVal = dynamic_cast<idWinInt*>((*src)[3].var);
 		// 
 		//  added float variable					
-		if (!((vec4 || rect || val) && from && to && timeStr)) {
+		if (!((vec4 || rect || val) && from && to && timeVal)) {
 			// 
 			common->Warning("Bad transition in gui %s in window %s", window->GetGui()->GetSourceFile(), window->GetName());
 			return;
 		}
-		int time = atoi(*timeStr);
+		int time = int(*timeVal);
 		float ac = 0.0f;
 		float dc = 0.0f;
 		if (src->Num() > 4) {
-			idWinStr *acv = dynamic_cast<idWinStr*>((*src)[4].var);
-			idWinStr *dcv = dynamic_cast<idWinStr*>((*src)[5].var);
+			idWinFloat *acv = dynamic_cast<idWinFloat*>((*src)[4].var);
+			idWinFloat *dcv = dynamic_cast<idWinFloat*>((*src)[5].var);
 			assert(acv && dcv);
-			ac = atof(*acv);
-			dc = atof(*dcv);
+			ac = float(*acv);
+			dc = float(*dcv);
 		}
 				
 		if (vec4) {
@@ -554,6 +554,9 @@ void idGuiScript::FixupParms(idWindow *win) {
 	} else if (handler == &Script_Transition) {
 		if (parms.Num() < 4)
 			return;	// already warned in idGuiScript::Parse
+		if (parms.Num() == 5) {
+			common->Warning("transition has 5 arguments (must be 4 or 6) at %s", GetSourceLocation().c_str());
+		}
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
 		assert(str);
 
@@ -626,7 +629,32 @@ void idGuiScript::FixupParms(idWindow *win) {
 			}			
 			
 			delete str;
-		}		
+		}
+
+		{
+			idWinVar* &var = parms[3].var;
+			idWinInt *intVar = new idWinInt();
+			if (!intVar->Set(var->c_str())) {
+				common->Warning("transition duration '%s' is not integer at %s", var->c_str(), GetSourceLocation().c_str());
+			}
+			delete var;
+			var = intVar;
+			parms[3].own = true;
+		}
+
+		if (parms.Num() >= 6) {
+			for (int c = 4; c < 6; c++) {
+				idWinVar* &var = parms[c].var;
+				idWinFloat *floatVar = new idWinFloat();
+				if (!floatVar->Set(var->c_str())) {
+					common->Warning("transition %s time '%s' is not float at %s", (c == 4 ? "accel" : "decel"), var->c_str(), GetSourceLocation().c_str());
+				}
+				delete var;
+				var = floatVar;
+				parms[c].own = true;
+			}
+		}
+
 	} else if (handler == &Script_ResetTime) {
 		idWinVar *target = nullptr;
 		idGSWinVar *value = nullptr;
