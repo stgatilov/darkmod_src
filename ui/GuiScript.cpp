@@ -483,8 +483,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 	if (handler == &Script_Set) {
 		if (parms.Num() < 1)
 			return;	// already warned in idGuiScript::Parse
+
 		bool precacheBackground = false;
 		bool precacheSounds = false;
+
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
 		assert(str);
 		idWinVar *dest = win->GetWinVarByName(*str, true);
@@ -498,7 +500,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 			}
 		} else if ( idStr::Icmp( str->c_str(), "cmd" ) == 0 ) {
 			precacheSounds = true;
+		} else {
+			common->Warning("unknown destination '%s' of set command at %s", str->c_str(), GetSourceLocation().c_str());
 		}
+
 		int parmCount = parms.Num();
 		for (int i = 1; i < parmCount; i++) {
 			idWinStr *str = dynamic_cast<idWinStr*>(parms[i].var);		
