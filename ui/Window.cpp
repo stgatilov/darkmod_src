@@ -4359,28 +4359,3 @@ bool idWindow::UpdateFromDictionary ( idDict& dict ) {
 	
 	return true;
 }
-
-/*
-================
-idWindow::BeforeExecute
-
-Hack to make idGuiScript additional info available in Script_XXX functions.
-================
-*/
-void idWindow::BeforeExecute(idGuiScript *script) {
-	sourceFilenameCurrent = script->srcFilename;
-	sourceLineNumCurrent = script->srcLineNum;
-}
-
-/*
-================
-idWindow::GetCurrentSourceLocation
-
-Hack to make idGuiScript additional info available in Script_XXX functions.
-================
-*/
-idStr idWindow::GetCurrentSourceLocation() const {
-	if (!sourceFilenameCurrent)
-		return "[unknown]";
-	return idStr(sourceFilenameCurrent) + ':' + idStr(sourceLineNumCurrent);
-}

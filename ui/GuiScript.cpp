@@ -25,10 +25,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 //stgatilov: additional debug output
-static void ReportGuiCmd(idWindow *window, const char *fullCmd) {
+static void ReportGuiCmd(idGuiScript *script, const char *fullCmd) {
 	if (idStr::Cmp(fullCmd, "mainmenu_heartbeat;") == 0)
 		return;	//stgatilov: suppress typical meaningless spam
-	idStr location = window->GetCurrentSourceLocation();
+	idStr location = script->GetSourceLocation();
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("CMD: %-30s (%s)", fullCmd, location.c_str());
 }
 
@@ -37,11 +37,7 @@ static void ReportGuiCmd(idWindow *window, const char *fullCmd) {
 Script_Set
 =========================
 */
-void Script_Set(idWindow *window, idList<idGSWinVar> *src) {
-	if (src->Num() < 2) {
-		idStr location = window->GetCurrentSourceLocation();
-		common->Error("Set command lacks parameters at %s", location.c_str());
-	}
+void Script_Set(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idStr key, val;
 	idWinStr *dest = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (dest) {
@@ -57,10 +53,10 @@ void Script_Set(idWindow *window, idList<idGSWinVar> *src) {
 					val += "\"";
 					i++;
 				}
-				ReportGuiCmd(window, val.c_str());
+				ReportGuiCmd(self, val.c_str());
 				window->AddCommand(val);
 			} else {
-				ReportGuiCmd(window, dest->c_str());
+				ReportGuiCmd(self, dest->c_str());
 				window->AddCommand(*dest);
 			}
 			return;
@@ -75,7 +71,7 @@ void Script_Set(idWindow *window, idList<idGSWinVar> *src) {
 Script_SetFocus
 =========================
 */
-void Script_SetFocus(idWindow *window, idList<idGSWinVar> *src) {
+void Script_SetFocus(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (parm) {
 		drawWin_t *win = window->GetGui()->GetDesktop()->FindChildByName(*parm);
@@ -90,7 +86,7 @@ void Script_SetFocus(idWindow *window, idList<idGSWinVar> *src) {
 Script_ShowCursor
 =========================
 */
-void Script_ShowCursor(idWindow *window, idList<idGSWinVar> *src) {
+void Script_ShowCursor(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	if ( parm ) {
 		if ( atoi( *parm ) ) {
@@ -108,7 +104,7 @@ Script_RunScript
  run scripts must come after any set cmd set's in the script
 =========================
 */
-void Script_RunScript(idWindow *window, idList<idGSWinVar> *src) {
+void Script_RunScript(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (parm) {
 		idStr str = window->cmd;
@@ -123,7 +119,7 @@ void Script_RunScript(idWindow *window, idList<idGSWinVar> *src) {
 Script_LocalSound
 =========================
 */
-void Script_LocalSound(idWindow *window, idList<idGSWinVar> *src) {
+void Script_LocalSound(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (parm) {
 		session->sw->PlayShaderDirectly(*parm);
@@ -135,7 +131,7 @@ void Script_LocalSound(idWindow *window, idList<idGSWinVar> *src) {
 Script_EvalRegs
 =========================
 */
-void Script_EvalRegs(idWindow *window, idList<idGSWinVar> *src) {
+void Script_EvalRegs(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	window->EvalRegs(-1, true);
 }
 
@@ -144,7 +140,7 @@ void Script_EvalRegs(idWindow *window, idList<idGSWinVar> *src) {
 Script_EndGame
 =========================
 */
-void Script_EndGame( idWindow *window, idList<idGSWinVar> *src ) {
+void Script_EndGame(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "disconnect\n" );
 }
 
@@ -153,7 +149,7 @@ void Script_EndGame( idWindow *window, idList<idGSWinVar> *src ) {
 Script_ResetTime
 =========================
 */
-void Script_ResetTime(idWindow *window, idList<idGSWinVar> *src) {
+void Script_ResetTime(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	drawWin_t *win = NULL;
 	if (parm && src->Num() > 1) {
@@ -174,7 +170,7 @@ void Script_ResetTime(idWindow *window, idList<idGSWinVar> *src) {
 Script_ResetCinematics
 =========================
 */
-void Script_ResetCinematics(idWindow *window, idList<idGSWinVar> *src) {
+void Script_ResetCinematics(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	window->ResetCinematics();
 }
 
@@ -183,7 +179,7 @@ void Script_ResetCinematics(idWindow *window, idList<idGSWinVar> *src) {
 Script_Transition
 =========================
 */
-void Script_Transition(idWindow *window, idList<idGSWinVar> *src) {
+void Script_Transition(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	// transitions always affect rect or vec4 vars
 	if (src->Num() >= 4) {
 		idWinRectangle *rect = NULL;
@@ -241,7 +237,7 @@ void Script_Transition(idWindow *window, idList<idGSWinVar> *src) {
 
 typedef struct {
 	const char *name;
-	void (*handler) (idWindow *window, idList<idGSWinVar> *src);
+	void (*handler) (idGuiScript *self, idWindow *window, idList<idGSWinVar> *src);
 	int mMinParms;
 	int mMaxParms;
 } guiCommandDef_t;
@@ -291,6 +287,27 @@ idGuiScript::~idGuiScript() {
 			delete parms[i].var;
 		}
 	}
+}
+
+/*
+================
+idGuiScript::SetSourceLocation
+================
+*/
+void idGuiScript::SetSourceLocation(const char *filename, int linenum) {
+	srcFilename = filename;	//pointer must live as long as owner window lives!
+	srcLineNum = linenum;
+}
+
+/*
+================
+idGuiScript::GetSourceLocation
+================
+*/
+idStr idGuiScript::GetSourceLocation() const {
+	if (!srcFilename)
+		return "[unknown]";
+	return idStr(srcFilename) + ':' + idStr(srcLineNum);
 }
 
 /*
@@ -442,7 +459,6 @@ void idGuiScriptList::Execute(idWindow *win) {
 				}
 			}
 		}
-		win->BeforeExecute(gs);
 		gs->Execute(win);
 	}
 }

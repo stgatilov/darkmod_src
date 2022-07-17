@@ -319,10 +319,6 @@ public:
 
 	bool		UpdateFromDictionary ( idDict& dict );
 
-	//stgatilov: debugging/error reporting
-	void		BeforeExecute(idGuiScript *script);
-	idStr		GetCurrentSourceLocation() const;
-
 protected:
 
 	friend		class rvGEWindowWrapper;
@@ -442,9 +438,6 @@ protected:
 
 	//stgatilov: pool of source filename strings referenced in idGuiScript elements
 	idDict sourceFilenamePool;
-	//regularly set during script execution: workaround to pass this data into Script_Set
-	const char *sourceFilenameCurrent;
-	int sourceLineNumCurrent;
 };
 
 ID_INLINE void idWindow::AddDefinedVar( idWinVar* var ) {
