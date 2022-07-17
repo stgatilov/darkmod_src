@@ -239,44 +239,33 @@ void idRegisterList::AddReg( const char *name, int type, idParser *src, idWindow
 	idRegister* reg;
 
 	reg = FindReg( name );
+	bool newReg = ( reg == NULL );
 
-	if ( reg == NULL ) {
+	if ( newReg ) {
 		assert(type >= 0 && type < idRegister::NUMTYPES);
-		int numRegs = idRegister::REGCOUNT[type];
 		reg = new idRegister( name, type );
-		reg->var = var;
-		if ( type == idRegister::STRING ) {
-			idToken tok;
-			if ( src->ReadToken( &tok ) ) {
-				tok = common->Translate( tok );
-				var->Init( tok, win );
-			}
-		} else {
-			for ( int i = 0; i < numRegs; i++ ) {
-				reg->regs[i] = win->ParseExpression(src, NULL);
-				if ( i < numRegs-1 ) {
-					src->ExpectTokenString(",");
-				}
+	}
+
+	int numRegs = idRegister::REGCOUNT[type];
+	reg->var = var;
+	if ( type == idRegister::STRING ) {
+		idToken tok;
+		if ( src->ReadToken( &tok ) ) {
+			tok = common->Translate( tok );
+			var->Init( tok, win );
+		}
+	} else {
+		for ( int i = 0; i < numRegs; i++ ) {
+			reg->regs[i] = win->ParseExpression(src, NULL);
+			if ( i < numRegs-1 ) {
+				src->ExpectTokenString(",");
 			}
 		}
+	}
+
+	if ( newReg ) {
 		int hash = regHash.GenerateKey( name, false );
 		regHash.Add( hash, regs.Append( reg ) );
-	} else {
-		int numRegs = idRegister::REGCOUNT[type];
-		reg->var = var;
-		if ( type == idRegister::STRING ) {
-			idToken tok;
-			if ( src->ReadToken( &tok ) ) {
-				var->Init( tok, win );
-			}
-		} else {
-			for ( int i = 0; i < numRegs; i++ ) {
-				reg->regs[i] = win->ParseExpression( src, NULL );
-				if ( i < numRegs-1 ) {
-					src->ExpectTokenString(",");
-				}
-			}
-		}
 	}
 }
 
