@@ -2142,7 +2142,11 @@ bool idWindow::ParseRegEntry(const char *name, idParser *src) {
 		// these parameters must be assigned immediate value without register evaluation
 		idToken tok;
 		src->ExpectAnyToken(&tok);
-		var->Set(tok);
+		bool good = var->Set(tok);
+		if (!good) {
+			// stgatilov #5869: happens e.g. if you write notime 173 or notime abc
+			src->Warning("Variable '%s' of type '%s' got wrong value '%s'", work.c_str(), var->GetTypeName(), tok.c_str());
+		}
 		return true;
 	}
 

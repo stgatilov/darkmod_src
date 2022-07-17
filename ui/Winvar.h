@@ -27,6 +27,8 @@ public:
 	idWinVar();
 	virtual ~idWinVar();
 
+	virtual const char *GetTypeName() const = 0;
+
 	void SetGuiInfo(idDict *gd, const char *_name);
 	const char *GetName() const { 
 		if (name) {
@@ -83,6 +85,7 @@ class idWinBool : public idWinVar {
 public:
 	idWinBool() : idWinVar() {};
 	~idWinBool() {};
+	virtual const char *GetTypeName() const override { return "bool"; }
 	virtual void Init(const char *_name, idWindow *win) { idWinVar::Init(_name, win);
 		if (guiDict) {
 			data = guiDict->GetBool(GetName());
@@ -146,6 +149,7 @@ class idWinStr : public idWinVar {
 public:
 	idWinStr() : idWinVar() {};
 	~idWinStr() {};
+	virtual const char *GetTypeName() const override { return "str"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
@@ -250,6 +254,7 @@ class idWinInt : public idWinVar {
 public:
 	idWinInt() : idWinVar() {};
 	~idWinInt() {};
+	virtual const char *GetTypeName() const override { return "int"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name,  win);
 		if (guiDict) {
@@ -314,6 +319,7 @@ class idWinFloat : public idWinVar {
 public:
 	idWinFloat() : idWinVar() {};
 	~idWinFloat() {};
+	virtual const char *GetTypeName() const override { return "float"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
@@ -373,6 +379,7 @@ class idWinRectangle : public idWinVar {
 public:
 	idWinRectangle() : idWinVar() {};
 	~idWinRectangle() {};
+	virtual const char *GetTypeName() const override { return "rect"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
@@ -484,6 +491,7 @@ class idWinVec2 : public idWinVar {
 public:
 	idWinVec2() : idWinVar() {};
 	~idWinVec2() {};
+	virtual const char *GetTypeName() const override { return "vec2"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
@@ -559,6 +567,7 @@ class idWinVec4 : public idWinVar {
 public:
 	idWinVec4() : idWinVar() {};
 	~idWinVec4() {};
+	virtual const char *GetTypeName() const override { return "vec4"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
@@ -653,6 +662,7 @@ class idWinVec3 : public idWinVar {
 public:
 	idWinVec3() : idWinVar() {};
 	~idWinVec3() {};
+	virtual const char *GetTypeName() const override { return "vec3"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		if (guiDict) {
@@ -740,6 +750,7 @@ public:
 		mat = NULL;
 	};
 	~idWinBackground() {};
+	virtual const char *GetTypeName() const override { return "background"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinStr::Init(_name, win);
 		if (guiDict) {
@@ -885,6 +896,7 @@ class idWinUIntPtr : public idWinVar {
 public:
 	idWinUIntPtr() : idWinVar() {};
 	~idWinUIntPtr() {};
+	virtual const char *GetTypeName() const override { return "uintptr"; }
 	virtual void Init(const char *_name, idWindow *win) {
 		idWinVar::Init(_name, win);
 		assert(!guiDict);
