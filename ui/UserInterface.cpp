@@ -304,15 +304,20 @@ bool idUserInterfaceLocal::InitFromFile( const char *qpath, bool rebuild ) {
 			src.AddDefine(line.c_str());
 		}
 
-		idToken token;
-		while( src.ReadToken( &token ) ) {
-			if ( idStr::Icmp( token, "windowDef" ) == 0 ) {
-				desktop->SetDC( &uiManagerLocal.dc );
-				if ( desktop->Parse( &src, rebuild ) ) {
-					desktop->SetFlag( WIN_DESKTOP );
-					desktop->FixupParms();
-				}
-				continue;
+		// stgatilov #5869: read one desktop window, from start to end
+		// note: original code skipped tokens and tried to parse any found windowDefs over and over again =(
+		if ( src.ExpectTokenString("windowDef") ) {
+			// parse desktop window
+			desktop->SetDC( &uiManagerLocal.dc );
+			desktop->Parse( &src, rebuild );
+			desktop->SetFlag( WIN_DESKTOP );
+			desktop->FixupParms();
+
+			// check that there is no trash afterwards
+			// this is typical issue if braces balance is broken (closed without opening)
+			idToken token;
+			if ( src.ReadToken(&token) ) {
+				src.Warning( "Excessive token '%s' after desktop ended", token.c_str() );
 			}
 		}
 
