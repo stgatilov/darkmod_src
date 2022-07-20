@@ -1652,6 +1652,11 @@ int idLexer::LoadFile( const char *filename, bool OSPath ) {
 	idLexer::filename = fp->GetFullPath();
 	idLib::fileSystem->CloseFile( fp );
 
+	// stgatilov #5869: filename is used only for error/warning reports
+	// we don't need full absolute path in this case: better make it relative to TDM root if possible
+	const char *tdmroot = cvarSystem->GetCVarString( "fs_basepath" );
+	idLexer::filename.StripLeadingOnce(tdmroot);
+
 	idLexer::buffer = buf;
 	idLexer::length = length;
 	// pointer in script buffer

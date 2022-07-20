@@ -2290,14 +2290,18 @@ int idProgram::GetFilenum( const char *name ) {
 		return filenum;
 	}
 
+#if 0	// stgatilov #5869: idLexer already removed TDM root prefix
 	idStr strippedName;
 	strippedName = fileSystem->OSPathToRelativePath( name );
 	if ( !strippedName.Length() ) {
+#endif
 		// not off the base path so just use the full path
 		filenum = fileList.AddUnique( name );
+#if 0
 	} else {
 		filenum = fileList.AddUnique( strippedName );
 	}
+#endif
 
 	// save the unstripped name so that we don't have to strip the incoming name every time we call GetFilenum
 	filename = name;
