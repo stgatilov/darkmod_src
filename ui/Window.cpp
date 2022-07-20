@@ -2282,8 +2282,10 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			src->ExpectTokenType( TT_NAME, 0, &token );
 			token2 = token;
 			src->UnreadToken(&token);
-			drawWin_t dw = FindChildByName(token2.c_str());
+			// stgatilov #5869: ignore simple windows in this search
+			drawWin_t dw = FindChildByName(token2.c_str(), true);
 			if (dw.win) {
+				src->Warning("Window '%s' overrides previous definition at %s", token2.c_str(), dw.win->srcLocation.ToString().c_str());
 				SaveExpressionParseState();
 				dw.win->Parse(src, rebuild);
 				RestoreExpressionParseState();
@@ -2641,29 +2643,54 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 idWindow::FindChildByName
 ================
 */
-drawWin_t idWindow::FindChildByName(const char *_name) {
-	drawWin_t dw = {0};
-	if (idStr::Icmp(name,_name) == 0) {
-		dw.win = this;
-		return dw;
+drawWin_t idWindow::FindChildByName(const char *_name, bool ignoreSimple) {
+	idList<drawWin_t> res;
+
+	FindChildrenByName(_name, res);
+
+	if (ignoreSimple) {
+		int k = 0;
+		for (int i = 0; i < res.Num(); i++)
+			if (res[i].win)
+				res[k++] = res[i];
+		res.SetNum(k, false);
+	}
+
+	if (res.Num() == 0)
+		return drawWin_t{nullptr, nullptr};
+
+	if (res.Num() > 1) {
+		idStr pathListStr;
+		for (int i = 0; i < res.Num(); i++) {
+			const idGuiSourceLocation &loc = (res[i].simp ? res[i].simp->srcLocation : res[i].win->srcLocation);
+			if (i > 0)
+				pathListStr += "  and  ";
+			pathListStr += loc.ToString();
+		}
+		common->Warning("Ambiguous reference to window '%s': %s", _name, pathListStr.c_str());
+	}
+	return res[0];
+}
+
+/*
+================
+idWindow::FindChildrenByName
+================
+*/
+void idWindow::FindChildrenByName(const char *_name, idList<drawWin_t> &allMatches) {
+	if (idStr::Icmp(name, _name) == 0) {
+		allMatches.AddGrow({this, nullptr});
 	}
 	int c = drawWindows.Num();
 	for (int i = 0; i < c; i++) {
 		if (drawWindows[i].win) {
-			if (idStr::Icmp(drawWindows[i].win->name, _name) == 0) {
-				return drawWindows[i];
-			}
-			drawWin_t win = drawWindows[i].win->FindChildByName(_name);
-			if (win.simp || win.win) {
-				return win;
-			}
+			drawWindows[i].win->FindChildrenByName(_name, allMatches);
 		} else {
 			if (idStr::Icmp(drawWindows[i].simp->name, _name) == 0) {
-				return drawWindows[i];
+				allMatches.AddGrow(drawWindows[i]);
 			}
 		}
 	}
-	return dw;
 }
 
 /*

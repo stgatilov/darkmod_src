@@ -203,7 +203,7 @@ public:
 	void Size(float x, float y, float w, float h);
 	void SetupFromState();
 	void SetupBackground();
-	drawWin_t FindChildByName(const char *name);
+	drawWin_t FindChildByName(const char *name, bool ignoreSimple = false);
 	idWindow *GetParent() { return parent; }
 	idUserInterfaceLocal *GetGui() {return gui;};
 	bool Contains(float x, float y);
@@ -349,6 +349,7 @@ protected:
 	void ParseVec4(idParser *src, idVec4 &out);
 	bool ParseBool(idParser *src);
 	void ConvertRegEntry(const char *name, idParser *src, idStr &out, int tabs);
+	void FindChildrenByName(const char *name, idList<drawWin_t> &allMatches);	// appends all matches to list
 
 	float actualX;					// physical coords
 	float actualY;					// ''
