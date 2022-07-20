@@ -1503,18 +1503,19 @@ idWindow* rvGEWorkspace::NewWindow ( idDict* state, rvGEWindowWrapper::EWindowTy
 	baseName.StripQuotes ( );
 
 	count = 0;
-	if ( mInterface->GetDesktop()->FindChildByName ( baseName ) ) 
+	drawWin_t dw = mInterface->GetDesktop()->FindChildByName ( baseName );
+	if ( dw.win || dw.simp ) 
 	{
 		count = 1;
 		while ( 1 )
 		{
-			drawWin_t* dw = mInterface->GetDesktop()->FindChildByName ( va("%s%d",baseName.c_str(),count) );
-			if ( !dw )
+			dw = mInterface->GetDesktop()->FindChildByName ( va("%s%d",baseName.c_str(),count) );
+			if ( !dw.win && !dw.simp )
 			{
 				break;
 			}
-			assert ( dw->win );
-			wrapper = rvGEWindowWrapper::GetWrapper ( dw->win );
+			assert ( dw.win );
+			wrapper = rvGEWindowWrapper::GetWrapper ( dw.win );
 			if ( wrapper && wrapper->IsDeleted ( ) )
 			{
 				break;

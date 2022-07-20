@@ -44,7 +44,7 @@ public:
 	virtual void		HandleBuddyUpdate(idWindow *buddy);
 	virtual void		StateChanged( bool redraw = false );
 	virtual size_t		Allocated(){return idWindow::Allocated();};
-	virtual idWinVar*	GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
+	virtual idWinVar*	GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t* owner = NULL) override;
 
 	void				UpdateList();
 	

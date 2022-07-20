@@ -75,9 +75,9 @@ Script_SetFocus
 void Script_SetFocus(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 	idWinStr *parm = dynamic_cast<idWinStr*>((*src)[0].var);
 	if (parm) {
-		drawWin_t *win = window->GetGui()->GetDesktop()->FindChildByName(*parm);
-		if (win && win->win) {
-			window->SetFocus(win->win);
+		drawWin_t win = window->GetGui()->GetDesktop()->FindChildByName(*parm);
+		if (win.win) {
+			window->SetFocus(win.win);
 		}
 	}
 }
@@ -163,9 +163,9 @@ void Script_ResetTime(idGuiScript *self, idWindow *window, idList<idGSWinVar> *s
 
 	idWindow *targetWin = window;
 	if (target) {
-		drawWin_t *win = window->GetGui()->GetDesktop()->FindChildByName(target->c_str());
-		if (win && win->win)
-			targetWin = win->win;
+		drawWin_t win = window->GetGui()->GetDesktop()->FindChildByName(target->c_str());
+		if (win.win)
+			targetWin = win.win;
 	}
 
 	idWinInt *intVar = dynamic_cast<idWinInt*>(value);
@@ -566,7 +566,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		assert(str);
 
 		// 
-		drawWin_t *destowner;
+		drawWin_t destowner = {0};
 		idWinVar *dest = win->GetWinVarByName(*str, true, &destowner );
 		// 
 
@@ -584,7 +584,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 
 			idWinVec4 *v4 = new idWinVec4;
 
-			drawWin_t* owner;
+			drawWin_t owner = {0};
 			if ( (*str[0]) == '$' ) {
 				dest = win->GetWinVarByName ( (const char*)(*str) + 1, true, &owner );
 			} else {
@@ -605,13 +605,13 @@ void idGuiScript::FixupParms(idWindow *win) {
 			if ( dest ) {	
 				idWindow* ownerparent;
 				idWindow* destparent;
-				if ( owner ) {
-					ownerparent = owner->simp?owner->simp->GetParent():owner->win->GetParent();
-					destparent  = destowner->simp?destowner->simp->GetParent():destowner->win->GetParent();
+				if ( owner.win || owner.simp ) {
+					ownerparent = owner.simp ? owner.simp->GetParent() : owner.win->GetParent();
+					destparent  = destowner.simp ? destowner.simp->GetParent() : destowner.win->GetParent();
 
 					// If its the rectangle they are referencing then adjust it 
 					if ( ownerparent && destparent && 
-						(dest == (owner->simp?owner->simp->GetWinVarByName ( "rect" ):owner->win->GetWinVarByName ( "rect" ) ) ) )
+						(dest == (owner.simp ? owner.simp->GetWinVarByName ( "rect" ) : owner.win->GetWinVarByName ( "rect" ) ) ) )
 					{
 						idRectangle rect;
 						rect = *(dynamic_cast<idWinRectangle*>(dest));
@@ -664,10 +664,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 		}
 
 		if (target) {
-			drawWin_t *match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
-			if (!match)
+			drawWin_t match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
+			if (!match.win && !match.simp)
 				common->Warning("resetTime target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
-			else if (!match->win)
+			else if (!match.win)
 				common->Warning("resetTime target window '%s' lacks time behavior at %s", target->c_str(), GetSourceLocation().c_str());
 		}
 		if (value) {
@@ -692,10 +692,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 		if (parms.Num() < 1)
 			return;
 		idWinVar *target = parms[0].var;
-		drawWin_t *match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
-		if (!match)
+		drawWin_t match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
+		if (!match.win && !match.simp)
 			common->Warning("setFocus target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
-		else if (!match->win)
+		else if (!match.win)
 			common->Warning("setFocus target window '%s' lacks behavior at %s", target->c_str(), GetSourceLocation().c_str());
 	}
 	else {

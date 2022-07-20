@@ -62,7 +62,7 @@ bool idEditWindow::ParseInternalVar( const char *_name, idParser *src ) {
 	return idWindow::ParseInternalVar( _name, src );
 }
 
-idWinVar *idEditWindow::GetWinVarByName( const char *_name, bool fixup, drawWin_t** owner ) {
+idWinVar *idEditWindow::GetWinVarByName( const char *_name, bool fixup, drawWin_t* owner ) {
 	if ( idStr::Icmp( _name, "cvar" ) == 0 ) {
 		return &cvarStr;
 	}

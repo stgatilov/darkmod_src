@@ -101,7 +101,7 @@ bool idSliderWindow::ParseInternalVar(const char *_name, idParser *src) {
 	return idWindow::ParseInternalVar(_name, src);
 }
 
-idWinVar *idSliderWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t** owner) {
+idWinVar *idSliderWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
  
 	if (idStr::Icmp(_name, "value") == 0) {
 		return &value;

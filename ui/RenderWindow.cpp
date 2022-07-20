@@ -162,7 +162,7 @@ void idRenderWindow::PostParse() {
 
 // 
 //  
-idWinVar *idRenderWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t** owner ) {
+idWinVar *idRenderWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner ) {
 // 
 	if (idStr::Icmp(_name, "model") == 0) {
 		return &modelName;

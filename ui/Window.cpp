@@ -1846,11 +1846,11 @@ intptr_t idWindow::GetWinVarOffset(idWinVar *wv, drawWin_t* owner) {
 idWindow::GetWinVarByName
 ================
 */
-idWinVar *idWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t** owner) {
+idWinVar *idWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
 	idWinVar *retVar = NULL;
 
 	if ( owner ) {
-		*owner = NULL;
+		*owner = drawWin_t{0};
 	}
 
 	if (idStr::Icmp(_name, "notime") == 0) {
@@ -1932,16 +1932,14 @@ idWinVar *idWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t** o
 		if (n > 0) {
 			idStr winName = key.Left(n);
 			idStr var = key.Right(key.Length() - n - 2);
-			drawWin_t *win = GetGui()->GetDesktop()->FindChildByName(winName);
-			if (win) {
-				if (win->win) {
-					return win->win->GetWinVarByName(var, false, owner);
-				} else {
-					if ( owner ) {
-						*owner = win;
-					}
-					return win->simp->GetWinVarByName(var);
+			drawWin_t win = GetGui()->GetDesktop()->FindChildByName(winName);
+			if (win.win) {
+				return win.win->GetWinVarByName(var, false, owner);
+			} else if (win.simp){
+				if ( owner ) {
+					*owner = win;
 				}
+				return win.simp->GetWinVarByName(var);
 			} 
 		}
 	}
@@ -2282,10 +2280,10 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			src->ExpectTokenType( TT_NAME, 0, &token );
 			token2 = token;
 			src->UnreadToken(&token);
-			drawWin_t *dw = FindChildByName(token2.c_str());
-			if (dw && dw->win) {
+			drawWin_t dw = FindChildByName(token2.c_str());
+			if (dw.win) {
 				SaveExpressionParseState();
-				dw->win->Parse(src, rebuild);
+				dw.win->Parse(src, rebuild);
 				RestoreExpressionParseState();
 			} else {
 				idWindow *win = new idWindow(dc, gui);
@@ -2641,30 +2639,29 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 idWindow::FindChildByName
 ================
 */
-drawWin_t *idWindow::FindChildByName(const char *_name) {
-	static drawWin_t dw;
+drawWin_t idWindow::FindChildByName(const char *_name) {
+	drawWin_t dw = {0};
 	if (idStr::Icmp(name,_name) == 0) {
-		dw.simp = NULL;
 		dw.win = this;
-		return &dw;
+		return dw;
 	}
 	int c = drawWindows.Num();
 	for (int i = 0; i < c; i++) {
 		if (drawWindows[i].win) {
 			if (idStr::Icmp(drawWindows[i].win->name, _name) == 0) {
-				return &drawWindows[i];
+				return drawWindows[i];
 			}
-			drawWin_t *win = drawWindows[i].win->FindChildByName(_name);
-			if (win) {
+			drawWin_t win = drawWindows[i].win->FindChildByName(_name);
+			if (win.simp || win.win) {
 				return win;
 			}
 		} else {
 			if (idStr::Icmp(drawWindows[i].simp->name, _name) == 0) {
-				return &drawWindows[i];
+				return drawWindows[i];
 			}
 		}
 	}
-	return NULL;
+	return dw;
 }
 
 /*
@@ -3551,7 +3548,7 @@ idWindow::WriteSaveGameTransition
 ===============
 */
 void idWindow::WriteSaveGameTransition( idTransitionData &trans, idFile *savefile ) {
-	drawWin_t dw, *fdw;
+	drawWin_t dw, fdw;
 	idStr winName("");
 	dw.simp = NULL;
 	dw.win = NULL;
@@ -3560,7 +3557,7 @@ void idWindow::WriteSaveGameTransition( idTransitionData &trans, idFile *savefil
 		winName = ( dw.win ) ? dw.win->GetName() : dw.simp->name.c_str();
 	}
 	fdw = gui->GetDesktop()->FindChildByName( winName );
-	if ( offset != -1 && fdw && ( fdw->win || fdw->simp ) ) {
+	if ( offset != -1 && ( fdw.win || fdw.simp ) ) {
 		savefile->Write( &offset, sizeof( offset ) );
 		WriteSaveGameString( winName, savefile );
 		savefile->Write( &trans.interp, sizeof( trans.interp ) );
@@ -3908,41 +3905,41 @@ idWindow::FixupTransitions
 void idWindow::FixupTransitions() {
 	int i, c = transitions.Num();
 	for ( i = 0; i < c; i++ ) {
-		drawWin_t *dw = gui->GetDesktop()->FindChildByName( ( ( idWinStr* )transitions[i].data )->c_str() );
+		drawWin_t dw = gui->GetDesktop()->FindChildByName( ( ( idWinStr* )transitions[i].data )->c_str() );
 		delete transitions[i].data;
 		transitions[i].data = NULL;
-		if ( dw && ( dw->win || dw->simp ) ){
-			if ( dw->win ) {
+		if ( dw.win || dw.simp ){
+			if ( dw.win ) {
 				if ( transitions[i].offset == (ptrdiff_t)&this->rect - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->rect;
+					transitions[i].data = &dw.win->rect;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->backColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->backColor;
+					transitions[i].data = &dw.win->backColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->matColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->matColor;
+					transitions[i].data = &dw.win->matColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->foreColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->foreColor;
+					transitions[i].data = &dw.win->foreColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->borderColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->borderColor;
+					transitions[i].data = &dw.win->borderColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->textScale - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->textScale;
+					transitions[i].data = &dw.win->textScale;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->rotate - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->win->rotate;
+					transitions[i].data = &dw.win->rotate;
 				}
 			} else {
 				if ( transitions[i].offset == (ptrdiff_t)&this->rect - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->rect;
+					transitions[i].data = &dw.simp->rect;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->backColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->backColor;
+					transitions[i].data = &dw.simp->backColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->matColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->matColor;
+					transitions[i].data = &dw.simp->matColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->foreColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->foreColor;
+					transitions[i].data = &dw.simp->foreColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->borderColor - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->borderColor;
+					transitions[i].data = &dw.simp->borderColor;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->textScale - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->textScale;
+					transitions[i].data = &dw.simp->textScale;
 				} else if ( transitions[i].offset == (ptrdiff_t)&this->rotate - (ptrdiff_t)this ) {
-					transitions[i].data = &dw->simp->rotate;
+					transitions[i].data = &dw.simp->rotate;
 				}
 			}
 		}
@@ -4097,12 +4094,12 @@ idWindow::SetChildWinVarVal
 ================
 */
 void idWindow::SetChildWinVarVal(const char *name, const char *var, const char *val) {
-	drawWin_t *dw = FindChildByName(name);
+	drawWin_t dw = FindChildByName(name);
 	idWinVar *wv = NULL;
-	if (dw && dw->simp) {
-		wv = dw->simp->GetWinVarByName(var);
-	} else if (dw && dw->win) {
-		wv = dw->win->GetWinVarByName(var);
+	if (dw.simp) {
+		wv = dw.simp->GetWinVarByName(var);
+	} else if (dw.win) {
+		wv = dw.win->GetWinVarByName(var);
 	}
 	if (wv) {
 		wv->Set(val);

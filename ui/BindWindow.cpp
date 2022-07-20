@@ -73,13 +73,13 @@ const char *idBindWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 	return "";
 }
 
-idWinVar *idBindWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t** owner) {
+idWinVar *idBindWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
 
 	if (idStr::Icmp(_name, "bind") == 0) {
 		return &bindName;
 	}
 
-	return idWindow::GetWinVarByName(_name, fixup,owner);
+	return idWindow::GetWinVarByName(_name, fixup, owner);
 }
 
 void idBindWindow::PostParse() {

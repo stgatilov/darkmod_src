@@ -195,7 +195,7 @@ public:
 	void Size(float x, float y, float w, float h);
 	void SetupFromState();
 	void SetupBackground();
-	drawWin_t *FindChildByName(const char *name);
+	drawWin_t FindChildByName(const char *name);
 	idWindow *GetParent() { return parent; }
 	idUserInterfaceLocal *GetGui() {return gui;};
 	bool Contains(float x, float y);
@@ -203,7 +203,7 @@ public:
 	virtual size_t Allocated();
 	idStr* GetStrPtrByName(const char *_name);
 
-	virtual idWinVar *GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
+	virtual idWinVar *GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t* owner = NULL);
 
     intptr_t  GetWinVarOffset(idWinVar *wv, drawWin_t *dw);
 	float GetMaxCharHeight();
