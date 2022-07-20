@@ -1671,9 +1671,7 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 
 		//stgatilov: add filename string to window pool if not there yet
 		const char *srcFilename = src->GetFileName();
-		if (!sourceFilenamePool.FindKey(srcFilename))
-			sourceFilenamePool.Set(srcFilename, "");
-		srcFilename = sourceFilenamePool.FindKey(srcFilename)->GetKey();
+		srcFilename = AddSourceFilenameToPool(srcFilename);
 
 		idGuiScript *gs = new idGuiScript();
 		if (token.Icmp("if") == 0) {
@@ -1686,13 +1684,13 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 
 			gs->conditionReg = ParseExpression(src);
 			gs->ifList = new idGuiScriptList();
-			gs->SetSourceLocation(srcFilename, src->GetLineNum());
+			gs->SetSourceLocation( {srcFilename, src->GetLineNum()} );
 			ParseScript(src, *gs->ifList, NULL);
 
 			if (src->ReadToken(&token)) {
 				if (token == "else") {
 					gs->elseList = new idGuiScriptList();
-					gs->SetSourceLocation(srcFilename, src->GetLineNum());
+					gs->SetSourceLocation( {srcFilename, src->GetLineNum()} );
 					// pass true to indicate we are parsing an else condition
 					ParseScript(src, *gs->elseList, NULL, true );
 				} else {
@@ -1719,7 +1717,7 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 			 return false;
 		}
 
-		gs->SetSourceLocation(srcFilename, src->GetLineNum());
+		gs->SetSourceLocation( {srcFilename, src->GetLineNum()} );
 		gs->Parse(src);
 		list.Append(gs);
 	}
@@ -2251,6 +2249,10 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	namedEvents.DeleteContents( true );
 
 	src->ExpectTokenType( TT_NAME, 0, &token );
+
+	//stgatilov: add filename string to window pool if not there yet
+	srcLocation = {src->GetFileName(), src->GetLineNum()};
+	srcLocation.filename = AddSourceFilenameToPool(srcLocation.filename);
 
 	SetInitialState(token);
 	TRACE_CPU_SCOPE_STR("Parse:Window", name)
@@ -4366,4 +4368,27 @@ bool idWindow::UpdateFromDictionary ( idDict& dict ) {
 	PostParse();
 	
 	return true;
+}
+
+
+/*
+================
+idWindow::AddSourceFilenameToPool
+================
+*/
+const char *idWindow::AddSourceFilenameToPool(const char *filename) {
+	if (!sourceFilenamePool.FindKey(filename))
+		sourceFilenamePool.Set(filename, "");
+	return sourceFilenamePool.FindKey(filename)->GetKey();
+}
+
+/*
+================
+idGuiSourceLocation::ToString
+================
+*/
+idStr idGuiSourceLocation::ToString() const {
+	if (!filename)
+		return "[unknown]";
+	return idStr(filename) + ':' + idStr(linenum);
 }

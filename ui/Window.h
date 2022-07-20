@@ -138,6 +138,14 @@ typedef struct {
 	idSimpleWindow *simp;
 } drawWin_t;
 
+struct idGuiSourceLocation {
+	const char *filename = nullptr;	// points into idWindow::sourceFilenamePool
+	int linenum = -1;
+
+	idStr ToString() const;
+};
+
+
 class idUserInterfaceLocal;
 class idWindow {
 public:
@@ -312,6 +320,7 @@ protected:
 
 	idWindow*	FindChildByPoint	( float x, float y, idWindow** below );
 	void		SetDefaults			( void );
+	const char *AddSourceFilenameToPool(const char *filename);
 
 	friend class idSimpleWindow;
 	friend class idUserInterfaceLocal;
@@ -425,6 +434,8 @@ protected:
 
 	//stgatilov: pool of source filename strings referenced in idGuiScript elements
 	idDict sourceFilenamePool;
+	//stgatilov: error reporting and debuggability
+	idGuiSourceLocation srcLocation;	//points into sourceFilenamePool
 };
 
 ID_INLINE void idWindow::AddDefinedVar( idWinVar* var ) {

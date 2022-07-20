@@ -29,7 +29,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 static void ReportGuiCmd(idGuiScript *script, const char *fullCmd) {
 	if (idStr::Cmp(fullCmd, "mainmenu_heartbeat;") == 0)
 		return;	//stgatilov: suppress typical meaningless spam
-	idStr location = script->GetSourceLocation();
+	idStr location = script->GetSrcLocStr();
 	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("CMD: %-30s (%s)", fullCmd, location.c_str());
 }
 
@@ -281,8 +281,6 @@ idGuiScript::idGuiScript() {
 	conditionReg = -1;
 	handler = NULL;
 	parms.SetGranularity( 2 );
-	srcFilename = nullptr;
-	srcLineNum = 0;
 }
 
 /*
@@ -302,24 +300,12 @@ idGuiScript::~idGuiScript() {
 }
 
 /*
-================
-idGuiScript::SetSourceLocation
-================
+=========================
+idGuiScript::GetSrcLocStr
+=========================
 */
-void idGuiScript::SetSourceLocation(const char *filename, int linenum) {
-	srcFilename = filename;	//pointer must live as long as owner window lives!
-	srcLineNum = linenum;
-}
-
-/*
-================
-idGuiScript::GetSourceLocation
-================
-*/
-idStr idGuiScript::GetSourceLocation() const {
-	if (!srcFilename)
-		return "[unknown]";
-	return idStr(srcFilename) + ':' + idStr(srcLineNum);
+idStr idGuiScript::GetSrcLocStr() const {
+	return srcLocation.ToString();
 }
 
 /*
@@ -502,7 +488,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		} else {
 			// stgatilov #5869: other destinations make no sense
 			// I believe Script_Set would treat token as string and would assign new value straight into this token =)
-			common->Warning("unknown destination '%s' of set command at %s", str->c_str(), GetSourceLocation().c_str());
+			common->Warning("unknown destination '%s' of set command at %s", str->c_str(), GetSrcLocStr().c_str());
 		}
 
 		int parmCount = parms.Num();
@@ -530,7 +516,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 				if (dest) {
 					// stgatilov #5869: check compatible type of right value in assignment
 					if (!dest->TestSet(str->c_str())) {
-						common->Warning("set value '%s' is not compatible with type %s at %s", str->c_str(), dest->GetTypeName(), GetSourceLocation().c_str());
+						common->Warning("set value '%s' is not compatible with type %s at %s", str->c_str(), dest->GetTypeName(), GetSrcLocStr().c_str());
 					}
 				}
 
@@ -560,7 +546,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		if (parms.Num() < 4)
 			return;	// already warned in idGuiScript::Parse
 		if (parms.Num() == 5) {
-			common->Warning("transition has 5 arguments (must be 4 or 6) at %s", GetSourceLocation().c_str());
+			common->Warning("transition has 5 arguments (must be 4 or 6) at %s", GetSrcLocStr().c_str());
 		}
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
 		assert(str);
@@ -573,7 +559,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		if (dest) {
 			parms[0].RelinkVar(dest, false);
 		} else {
-			common->Warning("Window '%s' transition has invalid destination var '%s' at %s", win->GetName(), str->c_str(), GetSourceLocation().c_str());
+			common->Warning("Window '%s' transition has invalid destination var '%s' at %s", win->GetName(), str->c_str(), GetSrcLocStr().c_str());
 		}
 
 		// 
@@ -597,7 +583,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 				if ( !good ) {
 					common->Warning(
 						"Window '%s' transition got wrong %s color '%s' at %s",
-						win->GetName(), (c == 1 ? "1st" : "2nd"), value, GetSourceLocation().c_str()
+						win->GetName(), (c == 1 ? "1st" : "2nd"), value, GetSrcLocStr().c_str()
 					);
 				}
 			};
@@ -635,7 +621,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 			idWinVar* &var = parms[3].var;
 			idWinInt *intVar = new idWinInt();
 			if (!intVar->Set(var->c_str())) {
-				common->Warning("transition duration '%s' is not integer at %s", var->c_str(), GetSourceLocation().c_str());
+				common->Warning("transition duration '%s' is not integer at %s", var->c_str(), GetSrcLocStr().c_str());
 			}
 			parms[3].RelinkVar(intVar, true);
 		}
@@ -645,7 +631,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 				idWinVar* &var = parms[c].var;
 				idWinFloat *floatVar = new idWinFloat();
 				if (!floatVar->Set(var->c_str())) {
-					common->Warning("transition %s time '%s' is not float at %s", (c == 4 ? "accel" : "decel"), var->c_str(), GetSourceLocation().c_str());
+					common->Warning("transition %s time '%s' is not float at %s", (c == 4 ? "accel" : "decel"), var->c_str(), GetSrcLocStr().c_str());
 				}
 				parms[c].RelinkVar(floatVar, true);
 			}
@@ -666,14 +652,14 @@ void idGuiScript::FixupParms(idWindow *win) {
 		if (target) {
 			drawWin_t match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
 			if (!match.win && !match.simp)
-				common->Warning("resetTime target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
+				common->Warning("resetTime target window '%s' not found at %s", target->c_str(), GetSrcLocStr().c_str());
 			else if (!match.win)
-				common->Warning("resetTime target window '%s' lacks time behavior at %s", target->c_str(), GetSourceLocation().c_str());
+				common->Warning("resetTime target window '%s' lacks time behavior at %s", target->c_str(), GetSrcLocStr().c_str());
 		}
 		if (value) {
 			idWinInt *intVar = new idWinInt();
 			if ( !intVar->Set(value->var->c_str()) ) {
-				common->Warning("resetTime time value '%s' is not integer at %s", value->var->c_str(), GetSourceLocation().c_str());
+				common->Warning("resetTime time value '%s' is not integer at %s", value->var->c_str(), GetSrcLocStr().c_str());
 			}
 			value->RelinkVar(intVar, true);
 		}
@@ -684,7 +670,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 		idWinVar *value = parms[0].var;
 		idWinBool *boolVar = new idWinBool();
 		if (!boolVar->Set(value->c_str())) {
-			common->Warning("showCursor value '%s' is not bool at %s", value->c_str(), GetSourceLocation().c_str());
+			common->Warning("showCursor value '%s' is not bool at %s", value->c_str(), GetSrcLocStr().c_str());
 		}
 		parms[0].RelinkVar(boolVar, true);
 	}
@@ -694,9 +680,9 @@ void idGuiScript::FixupParms(idWindow *win) {
 		idWinVar *target = parms[0].var;
 		drawWin_t match = win->GetGui()->GetDesktop()->FindChildByName(target->c_str());
 		if (!match.win && !match.simp)
-			common->Warning("setFocus target window '%s' not found at %s", target->c_str(), GetSourceLocation().c_str());
+			common->Warning("setFocus target window '%s' not found at %s", target->c_str(), GetSrcLocStr().c_str());
 		else if (!match.win)
-			common->Warning("setFocus target window '%s' lacks behavior at %s", target->c_str(), GetSourceLocation().c_str());
+			common->Warning("setFocus target window '%s' lacks behavior at %s", target->c_str(), GetSrcLocStr().c_str());
 	}
 	else {
 		int c = parms.Num();

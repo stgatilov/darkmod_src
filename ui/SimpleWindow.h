@@ -80,6 +80,8 @@ protected:
 	idWindow *		mParent;
 
 	idWinBool	hideCursor;
+
+	idGuiSourceLocation srcLocation;
 };
 
 #endif /* !__SIMPLEWIN_H__ */

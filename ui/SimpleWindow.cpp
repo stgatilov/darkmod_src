@@ -104,6 +104,8 @@ idSimpleWindow::idSimpleWindow(idWindow *win) {
 			parent->AddUpdateVar(&backGroundName);
 		}
 	}
+
+	srcLocation = win->srcLocation;
 }
 
 idSimpleWindow::~idSimpleWindow() {

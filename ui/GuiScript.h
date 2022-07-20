@@ -16,6 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define __GUISCRIPT_H
 
 #include "Winvar.h"
+#include "Window.h"
 
 struct idGSWinVar {
 	idGSWinVar() {
@@ -42,8 +43,9 @@ public:
 	idGuiScript();
 	~idGuiScript();
 
-	void SetSourceLocation(const char *filename, int linenum);
-	idStr GetSourceLocation() const;
+	void SetSourceLocation(const idGuiSourceLocation &loc) { srcLocation = loc; }
+	const idGuiSourceLocation &GetSourceLocation() const { return srcLocation; }
+	idStr GetSrcLocStr() const;
 
 	bool Parse(idParser *src);
 	void Execute(idWindow *win) {
@@ -70,8 +72,7 @@ protected:
 	idList<idGSWinVar> parms;
 	void (*handler) (idGuiScript *self, idWindow *window, idList<idGSWinVar> *src);
 	//stgatilov: error reporting and debuggability
-	const char *srcFilename;	//points into owner's idWindow::sourceFilenamePool
-	int srcLineNum;
+	idGuiSourceLocation srcLocation;	//points into owner's idWindow::sourceFilenamePool
 };
 
 
