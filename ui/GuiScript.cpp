@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "Window.h"
+#include "SimpleWindow.h"
 #include "Winvar.h"
 #include "GuiScript.h"
 #include "UserInterfaceLocal.h"

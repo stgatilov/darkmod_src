@@ -16,14 +16,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __SIMPLEWIN_H__
 #define __SIMPLEWIN_H__
 
+#include "Window.h"
+
 class idUserInterfaceLocal;
 class idDeviceContext;
 class idSimpleWindow;
-
-typedef struct {
-	idWindow *win;
-	idSimpleWindow *simp;
-} drawWin_t;
 
 class idSimpleWindow {
 	friend class idWindow;

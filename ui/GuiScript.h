@@ -15,7 +15,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __GUISCRIPT_H
 #define __GUISCRIPT_H
 
-#include "Window.h"
 #include "Winvar.h"
 
 struct idGSWinVar {

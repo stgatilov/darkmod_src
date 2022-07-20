@@ -29,6 +29,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "RenderWindow.h"
 #include "MarkerWindow.h"
 #include "FieldWindow.h"
+#include "SimpleWindow.h"
+#include "GuiScript.h"
 #include "../renderer/tr_local.h"
 
 // 
@@ -90,6 +92,32 @@ const char *idWindow::ScriptNames[] = {
 	"onEnter",
 	"onEnterRelease"
 };
+
+idTimeLineEvent::idTimeLineEvent() {
+	event = new idGuiScriptList;
+	time = -1;
+	pending = false;
+}
+idTimeLineEvent::~idTimeLineEvent() {
+	delete event;
+}
+size_t idTimeLineEvent::Size() const {
+	return sizeof(*this) + event->Size();
+}
+rvNamedEvent::rvNamedEvent(const char* name)
+{
+	mEvent = new idGuiScriptList;
+	mName  = name;
+}
+rvNamedEvent::~rvNamedEvent(void)
+{
+	delete mEvent;
+}
+size_t rvNamedEvent::Size() const
+{
+	return sizeof(*this) + mEvent->Size();
+}
+
 
 /*
 ================
@@ -2607,23 +2635,6 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	return ret;
 }
 
-/*
-================
-idWindow::FindSimpleWinByName
-================
-*/
-idSimpleWindow *idWindow::FindSimpleWinByName(const char *_name) {
-	int c = drawWindows.Num();
-	for (int i = 0; i < c; i++) {
-		if (drawWindows[i].simp == NULL) {
-			continue;
-		}
-		if ( idStr::Icmp(drawWindows[i].simp->name, _name) == 0 ) {
-			return drawWindows[i].simp;
-		} 
-	}
-	return NULL;
-}
 
 /*
 ================

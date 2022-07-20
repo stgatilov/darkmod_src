@@ -20,8 +20,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "DeviceContext.h"
 #include "RegExp.h"
 #include "Winvar.h"
-#include "GuiScript.h"
-#include "SimpleWindow.h"
 
 const int WIN_CHILD			= 0x00000001;
 const int WIN_CAPTION		= 0x00000002;
@@ -105,42 +103,26 @@ struct idRegEntry {
 
 class rvGEWindowWrapper;
 class idWindow;
+class idGuiScriptList;
 
 struct idTimeLineEvent {
-	idTimeLineEvent() {
-		event = new idGuiScriptList;
-	}
-	~idTimeLineEvent() {
-		delete event;
-	}
 	int time;
 	idGuiScriptList *event;
 	bool pending;
-	size_t Size() {
-		return sizeof(*this) + event->Size();
-	}
+
+	idTimeLineEvent();
+	~idTimeLineEvent();
+	size_t Size() const;
 };
 
-class rvNamedEvent
+struct rvNamedEvent
 {
-public:
-
-	rvNamedEvent(const char* name)
-	{
-		mEvent = new idGuiScriptList;
-		mName  = name;
-	}
-	~rvNamedEvent(void)
-	{
-		delete mEvent;
-	}
-	size_t Size() 
-	{
-		return sizeof(*this) + mEvent->Size();
-	}
-	
 	idStr				mName;
 	idGuiScriptList*	mEvent;
+
+	rvNamedEvent(const char* name);
+	~rvNamedEvent(void);
+	size_t Size() const;
 };
 
 struct idTransitionData {
@@ -149,6 +131,12 @@ struct idTransitionData {
 	idInterpolateAccelDecelLinear<idVec4> interp;
 };
 
+class idSimpleWindow;
+
+typedef struct {
+	idWindow *win;
+	idSimpleWindow *simp;
+} drawWin_t;
 
 class idUserInterfaceLocal;
 class idWindow {
@@ -208,7 +196,6 @@ public:
 	void SetupFromState();
 	void SetupBackground();
 	drawWin_t *FindChildByName(const char *name);
-	idSimpleWindow *FindSimpleWinByName(const char *_name);
 	idWindow *GetParent() { return parent; }
 	idUserInterfaceLocal *GetGui() {return gui;};
 	bool Contains(float x, float y);
