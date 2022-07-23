@@ -2667,7 +2667,8 @@ drawWin_t idWindow::FindChildByName(const char *_name, bool ignoreSimple) {
 				pathListStr += "  and  ";
 			pathListStr += loc.ToString();
 		}
-		common->Warning("Ambiguous reference to window '%s': %s", _name, pathListStr.c_str());
+		//TEMPORARILY DISABLED for dev build
+		//common->Warning("Ambiguous reference to window '%s': %s", _name, pathListStr.c_str());
 	}
 	return res[0];
 }
