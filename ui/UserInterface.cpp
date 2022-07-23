@@ -290,7 +290,9 @@ bool idUserInterfaceLocal::InitFromFile( const char *qpath, bool rebuild ) {
 	source = qpath;
 	state.Set( "text", "Test Text!" );
 
-	idParser src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
+	// stgatilov #5869: removed LEXFL_ALLOWBACKSLASHSTRINGCONCAT,
+	//since it breaks multiline macros with a line ending on string literal
+	idParser src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS );
 
 	//Load the timestamp so reload guis will work correctly
 	fileSystem->ReadFile(qpath, NULL, &timeStamp);
