@@ -505,11 +505,20 @@ void idGuiScript::FixupParms(idWindow *win) {
 				parms[i].RelinkVar( defvar, false );
 
 			} else if ((*str[0]) == '$') {
-				// 
-				//  dont include the $ when asking for variable
-				dest = win->GetGui()->GetDesktop()->GetWinVarByName((const char*)(*str) + 1, true);
+				// stgatilov: take window variable of specified name
+				const char *varname = str->c_str() + 1;
+				if (idStr::FindText(varname, "::") >= 0) {
+					// contains window name, so search for it globally
+					dest = win->GetGui()->GetDesktop()->GetWinVarByName((const char*)(*str) + 1, true);
+				} else {
+					// does not contain window name, so find this variable in the current window
+					dest = win->GetWinVarByName((const char*)(*str) + 1, true);
+				}
 				if (dest) {
 					parms[i].RelinkVar(dest, false);
+				}
+				else {
+					common->Warning("dollar source '%s' not found at %s", varname, GetSrcLocStr().c_str());
 				}
 			} else {
 				// stgatilov: this is a plain string
