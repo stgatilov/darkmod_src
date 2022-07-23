@@ -35,7 +35,7 @@ bool CModInfoDecl::Parse(idLexer& src)
 
 	if (key.type != TT_PUNCTUATION || key.subtype != P_BRACEOPEN)
 	{
-		src.Warning("Cannot find opening brace in file %s:%d.", src.GetFileName(), src.GetLineNum());
+		src.Warning("Cannot find opening brace in file %s:%d.", src.GetDisplayFileName(), src.GetLineNum());
 		return false;
 	}
 

@@ -1670,7 +1670,7 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 		}
 
 		//stgatilov: add filename string to window pool if not there yet
-		const char *srcFilename = src->GetFileName();
+		const char *srcFilename = src->GetDisplayFileName();
 		srcFilename = AddSourceFilenameToPool(srcFilename);
 
 		idGuiScript *gs = new idGuiScript();
@@ -2251,7 +2251,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 	src->ExpectTokenType( TT_NAME, 0, &token );
 
 	//stgatilov: add filename string to window pool if not there yet
-	srcLocation = {src->GetFileName(), src->GetLineNum()};
+	srcLocation = {src->GetDisplayFileName(), src->GetLineNum()};
 	srcLocation.filename = AddSourceFilenameToPool(srcLocation.filename);
 
 	SetInitialState(token);

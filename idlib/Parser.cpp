@@ -410,7 +410,7 @@ void idParser::PushScript( idLexer *script ) {
 
 	for ( s = idParser::scriptstack; s; s = s->next ) {
 		if ( !idStr::Icmp(s->GetFileName(), script->GetFileName()) ) {
-			idParser::Warning( "'%s' recursively included", script->GetFileName() );
+			idParser::Warning( "'%s' recursively included", script->GetDisplayFileName() );
 			return;
 		}
 	}

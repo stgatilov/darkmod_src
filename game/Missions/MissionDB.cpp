@@ -63,7 +63,7 @@ void CMissionDB::ReloadMissionInfoFile()
 		{
 			if (!src.ReadToken(&token))
 			{
-				src.Warning("Missing name on info declaration in %s line %d", src.GetFileName(), src.GetLineNum());
+				src.Warning("Missing name on info declaration in %s line %d", src.GetDisplayFileName(), src.GetLineNum());
 				break;
 			}
 

@@ -145,6 +145,7 @@ public:
 	int				GetFlags( void ) const;
 					// returns the current filename
 	const char *	GetFileName( void ) const;
+	const char *	GetDisplayFileName( void ) const;
 					// get current offset in current script
 	const int		GetFileOffset( void ) const;
 					// get file time for current script
@@ -240,6 +241,15 @@ private:
 ID_INLINE const char *idParser::GetFileName( void ) const {
 	if ( idParser::scriptstack ) {
 		return idParser::scriptstack->GetFileName();
+	}
+	else {
+		return "";
+	}
+}
+
+ID_INLINE const char *idParser::GetDisplayFileName( void ) const {
+	if ( idParser::scriptstack ) {
+		return idParser::scriptstack->GetDisplayFileName();
 	}
 	else {
 		return "";

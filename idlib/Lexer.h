@@ -285,6 +285,7 @@ public:
 	int				EndOfFile( void );
 					// returns the current filename
 	const char *	GetFileName( void );
+	const char *	GetDisplayFileName( void );
 					// get offset in script
 	const int		GetFileOffset( void );
 					// get file time
@@ -306,7 +307,8 @@ public:
 
 private:
 	int				loaded;					// set when a script file is loaded from file or memory
-	idStr			filename;				// file name of the script
+	idStr			displayFilename;		// shortened file path for printing warnings
+	idStr			filename;				// file path of the script (absolute)
 	int				allocated;				// true if buffer memory was allocated
 	const char *	buffer;					// buffer containing the script
 	const char *	script_p;				// current pointer in the script
@@ -344,6 +346,10 @@ private:
 
 ID_INLINE const char *idLexer::GetFileName( void ) {
 	return idLexer::filename;
+}
+
+ID_INLINE const char *idLexer::GetDisplayFileName( void ) {
+	return idLexer::displayFilename;
 }
 
 ID_INLINE const int idLexer::GetFileOffset( void ) {
