@@ -470,7 +470,7 @@ int idLexer::ReadString( idToken *token, int quote ) {
 				// step over the '\\'
 				idLexer::script_p++;
 				if ( !idLexer::ReadWhiteSpace() || ( *idLexer::script_p != quote ) ) {
-					idLexer::Error( "expecting string after '\' terminated line" );
+					idLexer::Error( "expecting string after '\\' terminated line" );
 					return 0;
 				}
 			}
