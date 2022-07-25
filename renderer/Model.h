@@ -55,6 +55,9 @@ struct vertCacheHandle_t {
 		res.isStatic = isStatic;
 		return res;
 	}
+	bool operator== (const vertCacheHandle_t &other) const {
+		return offset == other.offset && size == other.size && isStatic == other.isStatic && frameNumber == other.frameNumber;
+	}
 };
 
 // using shorts for triangle indexes can save a significant amount of traffic, but

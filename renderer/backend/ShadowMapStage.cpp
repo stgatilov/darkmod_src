@@ -86,8 +86,8 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		}
 		qglClear( GL_DEPTH_BUFFER_BIT );
 		BeginDrawBatch();
-		DrawLightInteractions( vLight->globalInteractions );
-		DrawLightInteractions( vLight->localInteractions );
+		DrawLightInteractions( vLight->globalShadows );
+		DrawLightInteractions( vLight->localShadows );
 	}
 
 	for ( int i = 0; i < 4; i++ ) {

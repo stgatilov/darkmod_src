@@ -284,7 +284,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
 
 	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
-	if ( doShadows && r_shadows.GetInteger() == 2 ) {
+	if ( doShadows && vLight->shadows == LS_MAPS ) {
 		// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 		doShadows = vLight->globalInteractions != NULL;
 	}
@@ -301,7 +301,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	}
 	uniforms->shadowMapCullFront.Set( r_shadowMapCullFront );
 
-	if ( !translucent && ( vLight->globalShadows || vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
+	if ( !translucent && ( vLight->globalShadows || vLight->localShadows ) && !backEnd.viewDef->IsLightGem() ) {
 		uniforms->softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );
 	} else {
 		uniforms->softShadowsQuality.Set( 0 );

@@ -343,6 +343,10 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 		else
 			vLight->shadows = LS_MAPS;
 	}
+	// stgatilov #5880: this is hacky!
+	// ideally, we should determine both shadows and volumetric lights without view involved
+	// used in view-independent function idInteraction::CreateInteraction to determine which implementation to generate shadow tris for
+	light->shadows = vLight->shadows;
 
 	// stgatilov #5816: copy volumetric dust settings, resolve noshadows behavior
 	vLight->volumetricDust = light->parms.volumetricDust;
@@ -620,21 +624,8 @@ drawSurf_t *R_PrepareLightSurf( const srfTriangles_t *tri, const viewEntity_t *s
 	drawSurf->space = space;
 	drawSurf->material = material;
 	drawSurf->scissorRect = scissor;
-	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
-	if ( space->entityDef && space->entityDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) { // some dynamic models use a no-shadow material and for shadows have a separate geometry with an invisible (in main render) material
-		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
-	}
+	drawSurf->dsFlags = 0;
 	
-	static idCVar r_skipDynamicShadows( "r_skipDynamicShadows", "0", CVAR_ARCHIVE | CVAR_BOOL | CVAR_RENDERER, "" );
-	if ( r_skipDynamicShadows.GetBool() )
-		for ( auto ent = space; ent; ent = ent->next ) {
-			//&& !space->entityDef->parms.hModel->IsStaticWorldModel() 
-			//	&& space->entityDef->lastModifiedFrameNum == tr.viewCount 
-			if ( ent->entityDef && ent->entityDef->parms.hModel && ent->entityDef->parms.hModel->IsDynamicModel() ) {
-				drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
-			}
-		}
-
 	drawSurf->particle_radius = 0.0f; // #3878
 
 	if ( viewInsideShadow ) {

@@ -53,8 +53,11 @@ typedef struct {
 	// lightTris has been deferred, and must be done if ambientTris is visible
 	srfTriangles_t *		lightTris;
 
-	// shadow volume triangle surface
-	srfTriangles_t *		shadowTris;
+	// shadow volume triangle surface (stencil shadows)
+	srfTriangles_t *		shadowVolumeTris;
+
+	// shadowing triangles, usually same pointer as lightTris (shadow maps #5880)
+	srfTriangles_t *		shadowMapTris;
 
 	// so we can check ambientViewCount before adding lightTris, and get
 	// at the shared vertex and possibly shadowVertex caches

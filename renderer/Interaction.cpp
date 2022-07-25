@@ -337,7 +337,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	indexes = NULL;
 
 	// it is debatable if non-shadowing lights should light back faces. we aren't at the moment
-	includeBackFaces = r_lightAllBackFaces.GetBool() || r_shadows.GetInteger() == 2 ||  // duzenko: need the back faces for SS
+	includeBackFaces = r_lightAllBackFaces.GetBool() || light->shadows == LS_MAPS ||  // need the back faces for shadows
 										light->lightShader->LightEffectsBackSides() || 
 										shader->ReceivesLightingOnBackSides() || 
 										ent->parms.noSelfShadow || ent->parms.noShadow;
@@ -715,18 +715,23 @@ void idInteraction::FreeSurfaces( void ) {
 		for ( int i = 0 ; i < this->numSurfaces ; i++ ) {
 			surfaceInteraction_t *sint = &this->surfaces[i];
 
+			if ( sint->shadowMapTris ) {
+				if ( sint->shadowMapTris != sint->lightTris )
+					R_FreeStaticTriSurf( sint->shadowMapTris );
+				sint->shadowMapTris = NULL;
+			}
 			if ( sint->lightTris ) {
 				if ( sint->lightTris != LIGHT_TRIS_DEFERRED ) {
 					R_FreeStaticTriSurf( sint->lightTris );
 				}
 				sint->lightTris = NULL;
 			}
-			if ( sint->shadowTris ) {
+			if ( sint->shadowVolumeTris ) {
 				// if it doesn't have an entityDef, it is part of a prelight
 				// model, not a generated interaction
 				if ( this->entityDef ) {
-					R_FreeStaticTriSurf( sint->shadowTris );
-					sint->shadowTris = NULL;
+					R_FreeStaticTriSurf( sint->shadowVolumeTris );
+					sint->shadowVolumeTris = NULL;
 				}
 			}
 			R_FreeInteractionCullInfo( sint->cullInfo );
@@ -860,7 +865,9 @@ int idInteraction::MemoryUsed( void ) {
 		surfaceInteraction_t *inter = &surfaces[i];
 
 		total += R_TriSurfMemory( inter->lightTris );
-		total += R_TriSurfMemory( inter->shadowTris );
+		total += R_TriSurfMemory( inter->shadowVolumeTris );
+		if ( inter->shadowMapTris && inter->shadowMapTris != inter->lightTris )
+			total += R_TriSurfMemory( inter->shadowMapTris );
 	}
 	return total;
 }
@@ -1125,9 +1132,12 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
            continue;
         }
 
+		bool genLightTris = shader->ReceivesLighting();
+		// if the interaction has shadows and this surface casts a shadow
+		bool genShadows = HasShadows() && shader->SurfaceCastsShadow();
 
 		// generate a lighted surface and add it
-		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 && shader->SurfaceCastsShadow() ) {
+		if ( genLightTris ) {
 			if ( tri->ambientViewCount == tr.viewCount ) {
 				sint->lightTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
 			} else {
@@ -1137,22 +1147,30 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			interactionGenerated = true;
 		}
 
-		// if the interaction has shadows and this surface casts a shadow
-		if ( HasShadows() && shader->SurfaceCastsShadow() && tri->silEdges != NULL ) {
-
-			// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
-			if ( lightDef->parms.prelightModel == NULL || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool() ) {
-
-				// this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
-				sint->shadowTris = R_CreateShadowVolume( entityDef, tri, lightDef, shadowGen, sint->cullInfo );
-				if ( sint->shadowTris ) {
-					if ( shader->Coverage() != MC_OPAQUE || ( !r_skipSuppress.GetBool() && entityDef->parms.suppressSurfaceInViewID ) ) {
-						// if any surface is a shadow-casting perforated or translucent surface, or the
-						// base surface is suppressed in the view (world weapon shadows) we can't use
-						// the external shadow optimizations because we can see through some of the faces
-						sint->shadowTris->numShadowIndexesNoCaps = sint->shadowTris->numIndexes;
-						sint->shadowTris->numShadowIndexesNoFrontCaps = sint->shadowTris->numIndexes;
+		if ( genShadows ) {
+			if ( lightDef->shadows == LS_STENCIL && tri->silEdges != NULL) {
+				// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
+				bool precomputedShadows = ( lightDef->parms.prelightModel && model->IsStaticWorldModel() && r_useOptimizedShadows.GetBool() );
+				if ( !precomputedShadows ) {
+					// this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
+					sint->shadowVolumeTris = R_CreateShadowVolume( entityDef, tri, lightDef, shadowGen, sint->cullInfo );
+					if ( sint->shadowVolumeTris ) {
+						if ( shader->Coverage() != MC_OPAQUE || ( !r_skipSuppress.GetBool() && entityDef->parms.suppressSurfaceInViewID ) ) {
+							// if any surface is a shadow-casting perforated or translucent surface, or the
+							// base surface is suppressed in the view (world weapon shadows) we can't use
+							// the external shadow optimizations because we can see through some of the faces
+							sint->shadowVolumeTris->numShadowIndexesNoCaps = sint->shadowVolumeTris->numIndexes;
+							sint->shadowVolumeTris->numShadowIndexesNoFrontCaps = sint->shadowVolumeTris->numIndexes;
+						}
 					}
+					interactionGenerated = true;
+				}
+			}
+			else if ( lightDef->shadows == LS_MAPS ) {
+				if ( sint->lightTris && sint->lightTris != LIGHT_TRIS_DEFERRED ) {
+					sint->shadowMapTris = sint->lightTris;
+				} else {
+					sint->shadowMapTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
 				}
 				interactionGenerated = true;
 			}
@@ -1429,24 +1447,25 @@ void idInteraction::AddActiveInteraction( void ) {
 		surfaceInteraction_t *sint = &surfaces[i];
 
 		// see if the base surface is visible, we may still need to add shadows even if empty
-		if ( vLight->shadows == LS_MAPS || // duzenko: send off-screen surfaces to backend in case they cast shadows
-			!lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
+		if ( !lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
 
 			// make sure we have created this interaction, which may have been deferred
 			// on a previous use that only needed the shadow
 			if ( sint->lightTris == LIGHT_TRIS_DEFERRED ) {
-				sint->lightTris = R_CreateLightTris( vEntity->entityDef, sint->ambientTris, vLight->lightDef, sint->shader, sint->cullInfo );
+				if ( sint->shadowMapTris ) {
+					sint->lightTris = sint->shadowMapTris;
+				} else {
+					sint->lightTris = R_CreateLightTris( vEntity->entityDef, sint->ambientTris, vLight->lightDef, sint->shader, sint->cullInfo );
+				}
 				R_FreeInteractionCullInfo( sint->cullInfo );
 			}
-			srfTriangles_t *lightTris = sint->lightTris;
-
-			if ( lightTris ) {
+			
+			if ( srfTriangles_t *lightTris = sint->lightTris ) {
 
 				// try to cull before adding
 				// FIXME: this may not be worthwhile. We have already done culling on the ambient,
 				// but individual surfaces may still be cropped somewhat more
-				if ( r_shadows.GetInteger() == 2 || // duzenko: send off-screen surfaces to backend in case they cast shadows
-					!R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
+				if ( !R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
 					// make sure the original surface has its ambient cache created
 					srfTriangles_t *tri = sint->ambientTris;
@@ -1456,7 +1475,6 @@ void idInteraction::AddActiveInteraction( void ) {
 							continue;
 						}
 					}
-
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
 
@@ -1464,9 +1482,11 @@ void idInteraction::AddActiveInteraction( void ) {
 					if ( lightTris->indexes == tri->indexes && lightTris->numIndexes == tri->numIndexes ) {
 						lightTris->indexCache = tri->indexCache;
 					}
-
+					// put index buffer to vertex cache if not there yet
 					if ( !vertexCache.CacheIsCurrent( lightTris->indexCache ) ) {
 						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ) );
+						if ( !lightTris->indexCache.IsValid() )
+							continue;
 					}
 
 					// add the surface to the light list
@@ -1475,35 +1495,47 @@ void idInteraction::AddActiveInteraction( void ) {
 
 					// there will only be localSurfaces if the light casts shadows and there are surfaces with NOSELFSHADOW
 					if ( sint->shader->Coverage() == MC_TRANSLUCENT && sint->shader->ReceivesLighting() ) {
-						PrepareLightSurf( INTERACTION_TRANSLUCENT, lightTris,
-						                 vEntity, shader, lightScissor, false );
+						PrepareLightSurf(
+							INTERACTION_TRANSLUCENT, lightTris,
+							vEntity, shader, lightScissor, false
+						);
 					} else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
-						PrepareLightSurf( INTERACTION_LOCAL, lightTris,
-						                 vEntity, shader, lightScissor, false );
+						PrepareLightSurf(
+							INTERACTION_LOCAL, lightTris,
+							vEntity, shader, lightScissor, false
+						);
 					} else {
-						PrepareLightSurf( INTERACTION_GLOBAL, lightTris,
-						                 vEntity, shader, lightScissor, false );
+						PrepareLightSurf(
+							INTERACTION_GLOBAL, lightTris,
+							vEntity, shader, lightScissor, false
+						);
 					}
 				}
 			}
 		}
-		srfTriangles_t *shadowTris = sint->shadowTris;
 
 		// the shadows will always have to be added, unless we can tell they
 		// are from a surface in an unconnected area
-		if ( shadowTris ) {
 
-			// check for view specific shadow suppression (player shadows, etc)
-			if ( !r_skipSuppress.GetBool() ) {
-				if ( entityDef->parms.suppressShadowInViewID &&
-				     entityDef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
-					continue;
-				}
-				if ( entityDef->parms.suppressShadowInLightID &&
-				     entityDef->parms.suppressShadowInLightID == lightDef->parms.lightId ) {
-					continue;
-				}
+		// check for view specific shadow suppression (player shadows, etc)
+		if ( !r_skipSuppress.GetBool() ) {
+			if ( entityDef->parms.suppressShadowInViewID &&
+				entityDef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
+				continue;
 			}
+			if ( entityDef->parms.suppressShadowInLightID &&
+				entityDef->parms.suppressShadowInLightID == lightDef->parms.lightId ) {
+				continue;
+			}
+		}
+		if ( r_singleShadowEntity >= 0 && r_singleShadowEntity != vEntity->entityDef->index )
+			continue;
+
+		// stgatilov: should never generate both on one interaction...
+		assert( !sint->shadowMapTris || !sint->shadowVolumeTris );
+
+
+		if ( srfTriangles_t *shadowTris = sint->shadowVolumeTris ) {
 
 			// cull static shadows that have a non-empty bounds
 			// dynamic shadows that use the turboshadow code will not have valid
@@ -1513,9 +1545,6 @@ void idInteraction::AddActiveInteraction( void ) {
 					continue;
 				}
 			}
-
-			if ( r_singleShadowEntity >= 0 && r_singleShadowEntity != vEntity->entityDef->index )
-				continue;
 
 			// copy the shadow vertexes to the vertex cache if they have been purged
 			// if we are using shared shadowVertexes and letting a vertex program fix them up,
@@ -1535,25 +1564,79 @@ void idInteraction::AddActiveInteraction( void ) {
 					shadowTris->shadowCache = sint->ambientTris->shadowCache;
 				}
 				// if we are out of vertex cache space, skip the interaction
-				if ( !shadowTris->shadowCache.IsValid() ) {
+				if ( !shadowTris->shadowCache.IsValid() )
 					continue;
-				}
 			}
 
+			// put index buffer to vertex cache if not there yet
 			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) ) {
 				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				if ( !shadowTris->indexCache.IsValid() )
+					continue;
 			}
 
 			// see if we can avoid using the shadow volume caps
 			bool inside = R_PotentiallyInsideInfiniteShadow( sint->ambientTris, localViewOrigin, localLightOrigin );
 
 			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
-				PrepareLightSurf( SHADOW_LOCAL,
-				                 shadowTris, vEntity, NULL, shadowScissor, inside );
+				PrepareLightSurf(
+					SHADOW_LOCAL, shadowTris,
+					vEntity, NULL, shadowScissor, inside
+				);
 			} else {
-				PrepareLightSurf( SHADOW_GLOBAL,
-				                 shadowTris, vEntity, NULL, shadowScissor, inside );
+				PrepareLightSurf(
+					SHADOW_GLOBAL, shadowTris,
+					vEntity, NULL, shadowScissor, inside
+				);
 			}
+		}
+		else if ( srfTriangles_t *shadowTris = sint->shadowMapTris ) {
+
+			// make sure the original surface has its ambient cache created
+			srfTriangles_t *tri = sint->ambientTris;
+			if ( !vertexCache.CacheIsCurrent( shadowTris->ambientCache ) ) {
+				if ( !R_CreateAmbientCache( tri, false ) ) {
+					// skip if we were out of vertex memory
+					continue;
+				}
+			}
+			// we always use same vertex buffer as the original model
+			shadowTris->ambientCache = tri->ambientCache;
+
+			// stgatilov: reuse same cache if same array is referenced
+			if ( shadowTris->indexes == tri->indexes && shadowTris->numIndexes == tri->numIndexes ) {
+				shadowTris->indexCache = tri->indexCache;
+			}
+			// put index buffer to vertex cache if not there yet
+			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) ) {
+				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				if ( !shadowTris->indexCache.IsValid() )
+					continue;
+			}
+
+			// add the surface to the shadow maps list
+			const idMaterial *shader = sint->shader;
+			R_GlobalShaderOverride( &shader );
+			// note: material is needed for shadow maps to handle perforated surfaces
+
+			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
+				PrepareLightSurf(
+					SHADOW_LOCAL, shadowTris,
+					vEntity, shader, shadowScissor, false
+				);
+			} else {
+				PrepareLightSurf(
+					SHADOW_GLOBAL, shadowTris,
+					vEntity, shader, shadowScissor, false
+				);
+			}
+		}
+
+		// stgatilov #5880: there is no reason to have different geometry for lighttris and shadow maps
+		// maybe it will appear in future, but for now let's check that we don't duplicate stuff
+		if ( sint->lightTris && sint->lightTris != LIGHT_TRIS_DEFERRED && sint->shadowMapTris ) {
+			assert( sint->lightTris->ambientCache == sint->shadowMapTris->ambientCache );
+			assert( sint->lightTris->indexCache == sint->shadowMapTris->indexCache );
 		}
 	}
 }
@@ -1607,10 +1690,16 @@ void R_ShowInteractionMemory_f( const idCmdArgs &args ) {
 					lightTriVerts += srf->lightTris->numVerts;
 					lightTriIndexes += srf->lightTris->numIndexes;
 				}
-				if ( srf->shadowTris ) {
+				if ( srf->shadowVolumeTris ) {
 					shadowTris++;
-					shadowTriVerts += srf->shadowTris->numVerts;
-					shadowTriIndexes += srf->shadowTris->numIndexes;
+					shadowTriVerts += srf->shadowVolumeTris->numVerts;
+					shadowTriIndexes += srf->shadowVolumeTris->numIndexes;
+				}
+				if ( srf->shadowMapTris && srf->shadowMapTris != srf->lightTris ) {
+					// TODO: where should be put this case?...
+					lightTris++;
+					lightTriVerts += srf->shadowMapTris->numVerts;
+					lightTriIndexes += srf->shadowMapTris->numIndexes;
 				}
 			}
 		}

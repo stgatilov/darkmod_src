@@ -148,9 +148,6 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	}
 
 	for ( /**/; surf; surf = surf->nextOnLight ) {
-		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
-			continue;
-		}
 		if ( backEnd.currentSpace != surf->space ) {
 			// FIXME needs a better integration with RB_CreateSingleDrawInteractions
 			interactionUniforms->modelMatrix.Set( surf->space->modelMatrix );
@@ -288,9 +285,6 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	for ( int i = 0; i < 4; i++ )
 		qglEnable( GL_CLIP_DISTANCE0 + i );
 	for ( ; surf; surf = surf->nextOnLight ) {
-		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE ) 
-			continue;    // this flag is set by entities with parms.noShadow in R_PrepareLightSurf (candles, torches, etc)
-
 		/*float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
 		if ( customOffset != 0 )
 			qglPolygonOffset( customOffset, 0 );*/
@@ -344,9 +338,9 @@ void RB_GLSL_DrawLight_ShadowMap() {
 	GL_CheckErrors();
 
 	if ( backEnd.vLight->lightShader->LightCastsShadows() && !r_shadowMapSinglePass ) {
-		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalShadows, true );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localShadows );
 	} else {
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	}
@@ -844,7 +838,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 
 	auto vLight = backEnd.vLight;
 	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 
-	if ( doShadows && r_shadows.GetInteger() == 2 ) {
+	if ( doShadows && vLight->shadows == LS_MAPS ) {
 		// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 		doShadows = vLight->globalInteractions != NULL;
 	}
@@ -866,7 +860,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 	}
 	shadowMapCullFront.Set( r_shadowMapCullFront );
 
-	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2 ) && !backEnd.viewDef->IsLightGem() ) {
+	if ( !translucent && ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) && !backEnd.viewDef->IsLightGem() ) {
 		softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
