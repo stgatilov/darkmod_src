@@ -1364,7 +1364,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			continue;
 		}
 
-		if ( !shader->IsDrawn() && r_shadows.GetInteger() != 2 ) {
+		if ( !shader->IsDrawn() ) {
 			continue;
 		}
 
