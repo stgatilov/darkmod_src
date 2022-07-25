@@ -214,9 +214,6 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		BeginDrawBatch();
 		const drawSurf_t *curBatchCaches = drawSurfs[0];
 		for ( const drawSurf_t *surf : drawSurfs ) {
-			if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
-				continue;
-			}
 			if ( !surf->ambientCache.IsValid() || !surf->indexCache.IsValid() ) {
 #ifdef _DEBUG
 				common->Printf( "InteractionStage: missing vertex or index cache\n" );

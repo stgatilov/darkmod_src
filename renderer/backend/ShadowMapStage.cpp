@@ -107,10 +107,6 @@ float ShadowMapStage::GetEffectiveLightRadius( viewLight_t *vLight ) {
 bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {
     const idMaterial *shader = surf->material;
 
-    if ( /*!shader->IsDrawn() || !shader->SurfaceCastsShadow() ||*/ (surf->dsFlags & DSF_SHADOW_MAP_IGNORE) ) {
-        return false;
-    }
-
     // some deforms may disable themselves by setting numIndexes = 0
     if ( !surf->numIndexes ) {
         return false;

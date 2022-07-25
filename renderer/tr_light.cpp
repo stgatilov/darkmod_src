@@ -1162,8 +1162,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	drawSurf->scissorRect = scissor;
 	drawSurf->sort = material->GetSort();
 	drawSurf->dsFlags = 0;
-	if( scissor.IsEmpty() )
-		drawSurf->dsFlags |= DSF_SHADOW_MAP_ONLY;
 	if ( soft_particle_radius != -1.0f ) {	// #3878
 		drawSurf->dsFlags |= DSF_SOFT_PARTICLE;
 		drawSurf->particle_radius = soft_particle_radius;
@@ -1171,10 +1169,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		drawSurf->particle_radius = 0.0f;
 	}
 	if ( auto eDef = space->entityDef ) {
-		if ( eDef->parms.noShadow || !material || !material->SurfaceCastsShadow() ) {
-			drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;		// multi-light shader optimization
-			tr.pc.c_noshadowSurfs++;
-		}
 		if ( eDef->parms.sortOffset )
 			drawSurf->sort += eDef->parms.sortOffset;
 	}

@@ -314,9 +314,6 @@ void ManyLightInteractionStage::DrawAllSurfaces( idList<const drawSurf_t *> &dra
 	BeginDrawBatch();
 	const drawSurf_t *curBatchCaches = drawSurfs[0];
 	for ( const drawSurf_t *surf : drawSurfs ) {
-		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY ) {
-			continue;
-		}
 		if ( !surf->ambientCache.IsValid() ) {
 			common->Warning( "Found invalid ambientCache!" );
 			continue;

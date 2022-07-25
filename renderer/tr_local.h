@@ -131,8 +131,6 @@ SURFACES
 
 static const int DSF_VIEW_INSIDE_SHADOW	= 1;
 static const int DSF_SOFT_PARTICLE = 2; // #3878
-static const int DSF_SHADOW_MAP_IGNORE = 4; // #4641	stgatilov #5880: DEPRECATED!
-static const int DSF_SHADOW_MAP_ONLY = 8; // #4641		stgatilov #5880: DEPRECATED!
 
 struct viewLight_s;
 

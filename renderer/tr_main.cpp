@@ -1038,19 +1038,7 @@ static void R_SortDrawSurfs( void ) {
 
 	if ( !tr.viewDef->numDrawSurfs ) // otherwise an assert fails in debug builds
 		return;
-	// filter the offscreen shadow-only surfaces into a separate array
-	idList<drawSurf_t*> visible( tr.viewDef->numDrawSurfs ), offscreen( tr.viewDef->numDrawSurfs );
-	for ( int i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
-		auto surf = tr.viewDef->drawSurfs[i];
-		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY )
-			offscreen.Append( surf );
-		else
-			visible.Append( surf );
-	}
-	tr.viewDef->numDrawSurfs = visible.Num();
-	tr.viewDef->numOffscreenSurfs = offscreen.Num();
-	memcpy( tr.viewDef->drawSurfs, visible.Ptr(), visible.MemoryUsed() );
-	memcpy( &tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs], offscreen.Ptr(), offscreen.MemoryUsed() );
+	tr.viewDef->numOffscreenSurfs = 0;
 	// sort the drawsurfs by sort type, then orientation, then shader
 	std::sort( tr.viewDef->drawSurfs, tr.viewDef->drawSurfs + tr.viewDef->numDrawSurfs, R_StdSortSurfaces );
 }
