@@ -1349,6 +1349,8 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
 void R_CreatePrivateShadowCache( srfTriangles_t *tri );
 void R_CreateVertexProgramShadowCache( srfTriangles_t *tri );
 
+void R_AssignShadowMapAtlasPages( void );
+
 /*
 ============================================================
 

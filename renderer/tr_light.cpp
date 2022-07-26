@@ -1695,36 +1695,31 @@ void R_RemoveUnecessaryViewLights( void ) {
 	LinkedListBubbleSort( &tr.viewDef->viewLights, &viewLight_s::next, [](const viewLight_t &a, const viewLight_t &b) -> bool {
 		return a.scissorRect.GetArea() > b.scissorRect.GetArea();
 	});
+}
 
-	if ( r_shadows.GetInteger() == 2 ) {
-		int ShadowAtlasIndex = 0;
-		switch ( tr.viewDef->renderView.viewID ) { // force lower precision for shadow maps in subviews
-		case VID_LIGHTGEM:
-			ShadowAtlasIndex = 6;
-			break;
-		case VID_SUBVIEW:
-			ShadowAtlasIndex = 2;
-			break;
+/*
+=====================
+R_AssignShadowMapAtlasPages
+=====================
+*/
+void R_AssignShadowMapAtlasPages( void ) {
+	int ShadowAtlasIndex = 0;
+
+	// force lower precision for shadow maps in subviews
+	switch ( tr.viewDef->renderView.viewID ) {
+	case VID_LIGHTGEM:
+		ShadowAtlasIndex = 6;
+		break;
+	case VID_SUBVIEW:
+		ShadowAtlasIndex = 2;
+		break;
+	}
+
+	// assign shadow pages and prepare lights for single/multi processing
+	// singleLightOnly flag is now set in frontend
+	for ( viewLight_t *vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next ) {
+		if ( vLight->shadows == LS_MAPS ) {
+			vLight->shadowMapIndex = ++ShadowAtlasIndex;
 		}
-		// assign shadow pages and prepare lights for single/multi processing // singleLightOnly flag is now set in frontend
-		for ( auto vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next )
-			if ( vLight->shadows == LS_MAPS ) {
-				vLight->shadowMapIndex = ++ShadowAtlasIndex;
-				// if we are doing a soft-shadow novelty test, regenerate the light with a random offset every time
-				if ( vLight->shadowMapIndex == 1 ) {
-					/*vLight->globalLightOrigin[0] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
-					vLight->globalLightOrigin[1] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);
-					vLight->globalLightOrigin[2] += r_lightSourceRadius.GetFloat() * (-1 + 2 * (rand() & 0xfff) / (float)0xfff);*/
-					//tr.viewDef->lightSample.z = (backEnd.frameCount % 8) - 3.5;
-					tr.viewDef->lightSample.x = backEnd.frameCount & 1 ? 1 : -1;
-					tr.viewDef->lightSample.y = backEnd.frameCount & 2 ? 1 : -1;
-					tr.viewDef->lightSample.z = backEnd.frameCount & 4 ? 1 : -1;
-					float r = 1;// static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-					tr.viewDef->lightSample *= r_lightSourceRadius.GetFloat() * sqrt(r);
-					vLight->globalLightOrigin += tr.viewDef->lightSample;
-					tr.viewDef->lightSample = vLight->globalLightOrigin;
-				}
-
-			}
 	}
 }

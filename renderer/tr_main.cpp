@@ -1102,6 +1102,9 @@ void R_RenderView( viewDef_t &parms ) {
 	// any viewLight that didn't have visible surfaces can have it's shadows removed
 	R_RemoveUnecessaryViewLights();
 
+	// assign pages of shadow map buffer to lights that use shadow maps
+	R_AssignShadowMapAtlasPages();
+
 	// sort all the ambient surfaces for translucency ordering
 	R_SortDrawSurfs();
 
