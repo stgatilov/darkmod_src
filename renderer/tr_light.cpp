@@ -263,6 +263,11 @@ static bool R_PointInFrustum( idVec3 &p, idPlane *planes, int numPlanes ) {
 	return true;
 }
 
+idCVar r_volumetricForceShadowMaps(
+	"r_volumetricForceShadowMaps", "1", CVAR_BOOL | CVAR_RENDERER,
+	"If volumetrics need shadows, then switch the light to shadow maps even if stencil shadows are preferred in general. "
+);
+
 /*
 =============
 R_SetLightDefViewLight
@@ -357,9 +362,16 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	}
 	else {
 		if ( light->parms.volumetricNoshadows == 0 && vLight->shadows != LS_MAPS || r_volumetricSamples.GetInteger() <= 0 ) {
-			// volumetric light must never pass through walls, which can only be achieved with shadow map
-			// so we have to disable the volumetric light entirely
-			vLight->volumetricDust = 0.0f;
+			if ( vLight->volumetricDust > 0.0f && r_volumetricForceShadowMaps.GetBool() ) {
+				// force shadow maps implementation
+				// ATTENTION: modifies "shadows" member, which is normally defined earlier in this function
+				light->shadows = vLight->shadows = LS_MAPS;
+			}
+			else {
+				// volumetric light must never pass through walls, which can only be achieved with shadow map
+				// so we have to disable the volumetric light entirely
+				vLight->volumetricDust = 0.0f;
+			}
 		}
 		if ( light->parms.volumetricNoshadows == 1 || vLight->shadows != LS_MAPS ) {
 			// no shadow map available, or mapper said to ignore shadows -> disable shadows in volumetric light
