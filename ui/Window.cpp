@@ -2967,16 +2967,6 @@ intptr_t idWindow::EmitOp(intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t 
 	return op->c;
 }
 
-/*
-================
-idWindow::ParseEmitOp
-================
-*/
-intptr_t idWindow::ParseEmitOp(idParser *src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t **opp) {
-    intptr_t b = ParseExpressionPriority(src, priority);
-	return EmitOp( a, b, opType, opp );  
-}
-
 
 /*
 ================
@@ -3082,63 +3072,23 @@ Returns a register index
 */
 #define	TOP_PRIORITY 4
 intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar *var, intptr_t component) {
-	idToken token;
-    intptr_t		a;
-
 	if ( priority == 0 ) {
 		return ParseTerm( src, var, component );
 	}
 
-	a = ParseExpressionPriority( src, priority - 1, var, component );
+	intptr_t a = ParseExpressionPriority( src, priority - 1, var, component );
 
+	idToken token;
 	if ( !src->ReadToken( &token ) ) {
 		// we won't get EOF in a real file, but we can
 		// when parsing from generated strings
 		return a;
 	}
 
-	if ( priority == 1 && token == "*" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_MULTIPLY, priority );
-	}
-	if ( priority == 1 && token == "/" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_DIVIDE, priority );
-	}
-	if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
-		return ParseEmitOp( src, a, WOP_TYPE_MOD, priority );
-	}
-	if ( priority == 2 && token == "+" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_ADD, priority );
-	}
-	if ( priority == 2 && token == "-" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_SUBTRACT, priority );
-	}
-	if ( priority == 3 && token == ">" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_GT, priority );
-	}
-	if ( priority == 3 && token == ">=" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_GE, priority );
-	}
-	if ( priority == 3 && token == "<" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_LT, priority );
-	}
-	if ( priority == 3 && token == "<=" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_LE, priority );
-	}
-	if ( priority == 3 && token == "==" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_EQ, priority );
-	}
-	if ( priority == 3 && token == "!=" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_NE, priority );
-	}
-	if ( priority == 4 && token == "&&" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_AND, priority );
-	}
-	if ( priority == 4 && token == "||" ) {
-		return ParseEmitOp( src, a, WOP_TYPE_OR, priority );
-	}
 	if ( priority == 4 && token == "?" ) {
 		wexpOp_t *oop = NULL;
-        intptr_t o = ParseEmitOp(src, a, WOP_TYPE_COND, priority, &oop);
+		intptr_t b = ParseExpressionPriority(src, priority);
+		intptr_t o = EmitOp( a, b, WOP_TYPE_COND, &oop );  
 		if ( !src->ReadToken( &token ) ) {
 			return o;
 		}
@@ -3149,9 +3099,73 @@ intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar
 		return o;
 	}
 
+	auto CheckOperationType = [priority](const idToken &token) -> wexpOpType_t {
+		if ( priority == 1 && token == "*" ) {
+			return WOP_TYPE_MULTIPLY;
+		}
+		if ( priority == 1 && token == "/" ) {
+			return WOP_TYPE_DIVIDE;
+		}
+		if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
+			return WOP_TYPE_MOD;
+		}
+		if ( priority == 2 && token == "+" ) {
+			return WOP_TYPE_ADD;
+		}
+		if ( priority == 2 && token == "-" ) {
+			return WOP_TYPE_SUBTRACT;
+		}
+		if ( priority == 3 && token == ">" ) {
+			return WOP_TYPE_GT;
+		}
+		if ( priority == 3 && token == ">=" ) {
+			return WOP_TYPE_GE;
+		}
+		if ( priority == 3 && token == "<" ) {
+			return WOP_TYPE_LT;
+		}
+		if ( priority == 3 && token == "<=" ) {
+			return WOP_TYPE_LE;
+		}
+		if ( priority == 3 && token == "==" ) {
+			return WOP_TYPE_EQ;
+		}
+		if ( priority == 3 && token == "!=" ) {
+			return WOP_TYPE_NE;
+		}
+		if ( priority == 4 && token == "&&" ) {
+			return WOP_TYPE_AND;
+		}
+		if ( priority == 4 && token == "||" ) {
+			return WOP_TYPE_OR;
+		}
+		return WOP_TYPE_INVALID;
+	};
+
+	wexpOpType_t last = WOP_TYPE_INVALID;
+	wexpOpType_t operType = CheckOperationType( token );
+	while ( operType != WOP_TYPE_INVALID ) {
+		if ( last == WOP_TYPE_SUBTRACT || last == WOP_TYPE_DIVIDE || last == WOP_TYPE_MOD )
+			src->Warning("wrong order of same-priority operations?");
+		if ( priority == 4 && last != WOP_TYPE_INVALID && last != operType )
+			src->Warning("unclear order of logical operations");
+		if ( idList<wexpOpType_t>{WOP_TYPE_EQ, WOP_TYPE_NE}.Find(last) != idList<wexpOpType_t>{WOP_TYPE_EQ, WOP_TYPE_NE}.Find(last) )
+			src->Warning("unclear order of comparisons");
+		last = operType;
+
+		// stgatilov: build tree with left-to-right evaluation order
+		// (original D3 code applied right-to-left order)
+		intptr_t b = ParseExpressionPriority( src, priority - 1, var, component );
+		a = EmitOp( a, b, operType );
+
+		if ( !src->ReadToken( &token ) ) {
+			return a;
+		}
+		operType = CheckOperationType( token );
+	}
+
 	// assume that anything else terminates the expression
 	// not too robust error checking...
-
 	src->UnreadToken( &token );
 
 	return a;

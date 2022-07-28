@@ -63,6 +63,7 @@ const char DEFAULT_BORDERCOLOR[] = "0 0 0 1";
 const char DEFAULT_TEXTSCALE[] = "0.4";
 
 typedef enum {
+	WOP_TYPE_INVALID = 0,		// stgatilov: not a valid operation, used internally
 	WOP_TYPE_ADD,
 	WOP_TYPE_SUBTRACT,
 	WOP_TYPE_MULTIPLY,
@@ -335,7 +336,6 @@ protected:
 	int ExpressionTemporary();
 	wexpOp_t *ExpressionOp();
 	intptr_t EmitOp( intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t **opp = NULL );
-	intptr_t ParseEmitOp( idParser *src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t **opp = NULL );
 	intptr_t ParseTerm( idParser *src, idWinVar *var = NULL, intptr_t component = 0 );
 	intptr_t ParseExpressionPriority( idParser *src, int priority, idWinVar *var = NULL, intptr_t component = 0 );
 	void EvaluateRegisters(float *registers);

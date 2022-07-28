@@ -491,15 +491,6 @@ int idMaterial::EmitOp( int a, int b, expOpType_t opType ) {
 
 /*
 =================
-idMaterial::ParseEmitOp
-=================
-*/
-int idMaterial::ParseEmitOp( idLexer &src, int a, expOpType_t opType, int priority ) {
-	return EmitOp( a, ParseExpressionPriority( src, priority ), opType );
-}
-
-/*
-=================
 idMaterial::ParseTerm
 
 Returns a register index
@@ -663,59 +654,82 @@ int idMaterial::ParseExpressionPriority( idLexer &src, int priority ) {
 		return 0;
 	}
 
-	else if ( !src.ReadToken( &token ) ) {
+	if ( !src.ReadToken( &token ) ) {
 		// we won't get EOF in a real file, but we can
 		// when parsing from generated strings
 		return a;
 	}
 
-	else if ( priority == 1 && token == "*" ) {
-		return ParseEmitOp( src, a, OP_TYPE_MULTIPLY, priority );
-	}
-	else if ( priority == 1 && token == "/" ) {
-		return ParseEmitOp( src, a, OP_TYPE_DIVIDE, priority );
-	}
-	else if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
-		return ParseEmitOp( src, a, OP_TYPE_MOD, priority );
-	}
-	else if ( priority == 2 && token == "+" ) {
-		return ParseEmitOp( src, a, OP_TYPE_ADD, priority );
-	}
-	else if ( priority == 2 && token == "-" ) {
-		return ParseEmitOp( src, a, OP_TYPE_SUBTRACT, priority );
-	}
-	else if ( priority == 3 && token == ">" ) {
-		return ParseEmitOp( src, a, OP_TYPE_GT, priority );
-	}
-	else if ( priority == 3 && token == ">=" ) {
-		return ParseEmitOp( src, a, OP_TYPE_GE, priority );
-	}
-	else if ( priority == 3 && token == "<" ) {
-		return ParseEmitOp( src, a, OP_TYPE_LT, priority );
-	}
-	else if ( priority == 3 && token == "<=" ) {
-		return ParseEmitOp( src, a, OP_TYPE_LE, priority );
-	}
-	else if ( priority == 3 && token == "==" ) {
-		return ParseEmitOp( src, a, OP_TYPE_EQ, priority );
-	}
-	else if ( priority == 3 && token == "!=" ) {
-		return ParseEmitOp( src, a, OP_TYPE_NE, priority );
-	}
-	else if ( priority == 4 && token == "&&" ) {
-		return ParseEmitOp( src, a, OP_TYPE_AND, priority );
-	}
-	else if ( priority == 4 && token == "||" ) {
-		return ParseEmitOp( src, a, OP_TYPE_OR, priority );
-	}
-	else {
-		// assume that anything else terminates the expression
-		// not too robust error checking...
+	auto CheckOperationType = [priority](const idToken &token) -> expOpType_t {
+		if ( priority == 1 && token == "*" ) {
+			return OP_TYPE_MULTIPLY;
+		}
+		if ( priority == 1 && token == "/" ) {
+			return OP_TYPE_DIVIDE;
+		}
+		if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
+			return OP_TYPE_MOD;
+		}
+		if ( priority == 2 && token == "+" ) {
+			return OP_TYPE_ADD;
+		}
+		if ( priority == 2 && token == "-" ) {
+			return OP_TYPE_SUBTRACT;
+		}
+		if ( priority == 3 && token == ">" ) {
+			return OP_TYPE_GT;
+		}
+		if ( priority == 3 && token == ">=" ) {
+			return OP_TYPE_GE;
+		}
+		if ( priority == 3 && token == "<" ) {
+			return OP_TYPE_LT;
+		}
+		if ( priority == 3 && token == "<=" ) {
+			return OP_TYPE_LE;
+		}
+		if ( priority == 3 && token == "==" ) {
+			return OP_TYPE_EQ;
+		}
+		if ( priority == 3 && token == "!=" ) {
+			return OP_TYPE_NE;
+		}
+		if ( priority == 4 && token == "&&" ) {
+			return OP_TYPE_AND;
+		}
+		if ( priority == 4 && token == "||" ) {
+			return OP_TYPE_OR;
+		}
+		return OP_TYPE_INVALID;
+	};
 
-		src.UnreadToken( &token );
+	expOpType_t last = OP_TYPE_INVALID;
+	expOpType_t operType = CheckOperationType( token );
+	while ( operType != OP_TYPE_INVALID ) {
+		if ( last == OP_TYPE_SUBTRACT || last == OP_TYPE_DIVIDE || last == OP_TYPE_MOD )
+			src.Warning("wrong order of same-priority operations?");
+		if ( priority == 4 && last != OP_TYPE_INVALID && last != operType )
+			src.Warning("unclear order of logical operations");
+		if ( idList<expOpType_t>{OP_TYPE_EQ, OP_TYPE_NE}.Find(last) != idList<expOpType_t>{OP_TYPE_EQ, OP_TYPE_NE}.Find(last) )
+			src.Warning("unclear order of comparisons");
+		last = operType;
 
-		return a;
+		// stgatilov: build tree with left-to-right evaluation order
+		// (original D3 code applied right-to-left order)
+		intptr_t b = ParseExpressionPriority( src, priority - 1 );
+		a = EmitOp( a, b, operType );
+
+		if ( !src.ReadToken( &token ) ) {
+			return a;
+		}
+		operType = CheckOperationType( token );
 	}
+
+	// assume that anything else terminates the expression
+	// not too robust error checking...
+	src.UnreadToken( &token );
+
+	return a;
 }
 
 /*
@@ -2411,6 +2425,7 @@ idMaterial::Print
 ===================
 */
 const char *opNames[] = {
+	"OP_TYPE_INVALID",
 	"OP_TYPE_ADD",
 	"OP_TYPE_SUBTRACT",
 	"OP_TYPE_MULTIPLY",

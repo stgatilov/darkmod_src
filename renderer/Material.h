@@ -79,6 +79,7 @@ typedef enum {
 
 // note: keep opNames[] in sync with changes
 typedef enum {
+	OP_TYPE_INVALID,		// stgatilov: not a valid operation, used internally
 	OP_TYPE_ADD,
 	OP_TYPE_SUBTRACT,
 	OP_TYPE_MULTIPLY,
@@ -621,7 +622,6 @@ private:
 	int					GetExpressionTemporary( void );
 	expOp_t	*			GetExpressionOp( void );
 	int					EmitOp( int a, int b, expOpType_t opType );
-	int					ParseEmitOp( idLexer &src, int a, expOpType_t opType, int priority );
 	int					ParseTerm( idLexer &src );
 	int					ParseExpressionPriority( idLexer &src, int priority );
 	int					ParseExpression( idLexer &src );
