@@ -703,17 +703,8 @@ int idMaterial::ParseExpressionPriority( idLexer &src, int priority ) {
 		return OP_TYPE_INVALID;
 	};
 
-	expOpType_t last = OP_TYPE_INVALID;
 	expOpType_t operType = CheckOperationType( token );
 	while ( operType != OP_TYPE_INVALID ) {
-		if ( last == OP_TYPE_SUBTRACT || last == OP_TYPE_DIVIDE || last == OP_TYPE_MOD )
-			src.Warning("wrong order of same-priority operations?");
-		if ( priority == 4 && last != OP_TYPE_INVALID && last != operType )
-			src.Warning("unclear order of logical operations");
-		if ( idList<expOpType_t>{OP_TYPE_EQ, OP_TYPE_NE}.Find(last) != idList<expOpType_t>{OP_TYPE_EQ, OP_TYPE_NE}.Find(last) )
-			src.Warning("unclear order of comparisons");
-		last = operType;
-
 		// stgatilov: build tree with left-to-right evaluation order
 		// (original D3 code applied right-to-left order)
 		intptr_t b = ParseExpressionPriority( src, priority - 1 );

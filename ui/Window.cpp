@@ -3146,17 +3146,8 @@ intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar
 		return WOP_TYPE_INVALID;
 	};
 
-	wexpOpType_t last = WOP_TYPE_INVALID;
 	wexpOpType_t operType = CheckOperationType( token );
 	while ( operType != WOP_TYPE_INVALID ) {
-		if ( last == WOP_TYPE_SUBTRACT || last == WOP_TYPE_DIVIDE || last == WOP_TYPE_MOD )
-			src->Warning("wrong order of same-priority operations?");
-		if ( priority == 4 && last != WOP_TYPE_INVALID && last != operType )
-			src->Warning("unclear order of logical operations");
-		if ( idList<wexpOpType_t>{WOP_TYPE_EQ, WOP_TYPE_NE}.Find(last) != idList<wexpOpType_t>{WOP_TYPE_EQ, WOP_TYPE_NE}.Find(last) )
-			src->Warning("unclear order of comparisons");
-		last = operType;
-
 		// stgatilov: build tree with left-to-right evaluation order
 		// (original D3 code applied right-to-left order)
 		intptr_t b = ParseExpressionPriority( src, priority - 1, var, component );
