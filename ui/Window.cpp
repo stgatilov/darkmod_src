@@ -3087,16 +3087,20 @@ intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar
 
 	if ( priority == 7 && token == "?" ) {
 		wexpOp_t *oop = NULL;
-		intptr_t b = ParseExpressionPriority(src, priority);
-		intptr_t o = EmitOp( a, b, WOP_TYPE_COND, &oop );  
-		if ( !src->ReadToken( &token ) ) {
+		intptr_t b = ParseExpressionPriority( src, priority );
+		src->ReadToken( &token );
+		if ( token.Icmp( ":" ) == 0 ) {
+			intptr_t d = ParseExpressionPriority( src, priority, var );
+			intptr_t o = EmitOp( a, b, WOP_TYPE_COND, &oop );  
+			oop->d = d;
 			return o;
 		}
-		if (token == ":") {
-			a = ParseExpressionPriority( src, priority - 1, var );
-			oop->d = a;
+		else {
+			// this case should never happen
+			src->Warning( "Incomplete ternary operator" );
+			src->UnreadToken( &token );
+			return EmitOp( a, b, WOP_TYPE_COND, &oop );  
 		}
-		return o;
 	}
 
 	auto CheckOperationType = [priority](const idToken &token) -> wexpOpType_t {
