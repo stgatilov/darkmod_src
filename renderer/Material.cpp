@@ -640,7 +640,7 @@ idMaterial::ParseExpressionPriority
 Returns a register index
 =================
 */
-#define	TOP_PRIORITY 4
+#define	TOP_PRIORITY 6
 int idMaterial::ParseExpressionPriority( idLexer &src, int priority ) {
 	idToken token;
 
@@ -688,16 +688,16 @@ int idMaterial::ParseExpressionPriority( idLexer &src, int priority ) {
 		if ( priority == 3 && token == "<=" ) {
 			return OP_TYPE_LE;
 		}
-		if ( priority == 3 && token == "==" ) {
+		if ( priority == 4 && token == "==" ) {
 			return OP_TYPE_EQ;
 		}
-		if ( priority == 3 && token == "!=" ) {
+		if ( priority == 4 && token == "!=" ) {
 			return OP_TYPE_NE;
 		}
-		if ( priority == 4 && token == "&&" ) {
+		if ( priority == 5 && token == "&&" ) {
 			return OP_TYPE_AND;
 		}
-		if ( priority == 4 && token == "||" ) {
+		if ( priority == 6 && token == "||" ) {
 			return OP_TYPE_OR;
 		}
 		return OP_TYPE_INVALID;

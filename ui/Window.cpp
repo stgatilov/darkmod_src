@@ -3070,7 +3070,7 @@ idWindow::ParseExpressionPriority
 Returns a register index
 =================
 */
-#define	TOP_PRIORITY 4
+#define	TOP_PRIORITY 7
 intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar *var, intptr_t component) {
 	if ( priority == 0 ) {
 		return ParseTerm( src, var, component );
@@ -3085,7 +3085,7 @@ intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar
 		return a;
 	}
 
-	if ( priority == 4 && token == "?" ) {
+	if ( priority == 7 && token == "?" ) {
 		wexpOp_t *oop = NULL;
 		intptr_t b = ParseExpressionPriority(src, priority);
 		intptr_t o = EmitOp( a, b, WOP_TYPE_COND, &oop );  
@@ -3127,16 +3127,16 @@ intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar
 		if ( priority == 3 && token == "<=" ) {
 			return WOP_TYPE_LE;
 		}
-		if ( priority == 3 && token == "==" ) {
+		if ( priority == 4 && token == "==" ) {
 			return WOP_TYPE_EQ;
 		}
-		if ( priority == 3 && token == "!=" ) {
+		if ( priority == 4 && token == "!=" ) {
 			return WOP_TYPE_NE;
 		}
-		if ( priority == 4 && token == "&&" ) {
+		if ( priority == 5 && token == "&&" ) {
 			return WOP_TYPE_AND;
 		}
-		if ( priority == 4 && token == "||" ) {
+		if ( priority == 6 && token == "||" ) {
 			return WOP_TYPE_OR;
 		}
 		return WOP_TYPE_INVALID;
