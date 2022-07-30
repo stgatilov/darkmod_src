@@ -2357,14 +2357,6 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 	ui->SetStateInt("ObjectiveBoxIsVisible", 1);
 	ui->SetStateFloat("objectiveTextSize", cv_gui_objectiveTextSize.GetFloat());
 
-	// First, hide all objectives, the number might have been changed, so some could stay visible
-	for (int i = 0; i < 8; i++)
-	{
-		// greebo: GUI objective numbers are starting with 1
-		idStr prefix = va("obj%d", i+1);
-		ui->SetStateInt(prefix + "_visible", 0);
-	}
-
 	for (int i = 0; i < objIndices.Num(); i++)
 	{
 		int index = objIndices[i];
@@ -2373,9 +2365,6 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 		int guiObjNum = i + 1;
 
 		idStr prefix = va("obj%d", guiObjNum);
-
-		// Show this objective
-		ui->SetStateInt(prefix + "_visible", 1);
 
 		// Get a shortcut to the target objective
 		CObjective& obj = m_Objectives[index];
