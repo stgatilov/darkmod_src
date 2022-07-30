@@ -49,7 +49,7 @@ public:
 	const idGuiSourceLocation &GetSourceLocation() const { return srcLocation; }
 	idStr GetSrcLocStr() const;
 
-	bool Parse(idParser *src);
+	bool Parse(idParser *src, idWindow *win);
 	void Execute(idWindow *win) {
 		if (handler) {
 			handler(this, win, &parms);

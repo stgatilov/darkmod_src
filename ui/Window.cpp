@@ -1718,7 +1718,7 @@ bool idWindow::ParseScript(idParser *src, idGuiScriptList &list, int *timeParm, 
 		}
 
 		gs->SetSourceLocation( {srcFilename, src->GetLineNum()} );
-		gs->Parse(src);
+		gs->Parse(src, this);
 		list.Append(gs);
 	}
 

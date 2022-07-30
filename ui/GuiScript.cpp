@@ -362,9 +362,9 @@ void idGuiScript::ReadFromSaveGame( idFile *savefile ) {
 idGuiScript::Parse
 =========================
 */
-bool idGuiScript::Parse(idParser *src) {
+bool idGuiScript::Parse(idParser *src, idWindow *win) {
 	int i;
-	
+
 	// first token should be function call
 	// then a potentially variable set of parms
 	// ended with a ;
@@ -402,6 +402,51 @@ bool idGuiScript::Parse(idParser *src) {
 		if (idStr::Icmp(token, "}") == 0) {
 			src->UnreadToken(&token);
 			break;
+		}
+
+		if (handler == Script_Set && parms.Num() == 1 && token.Icmp("(") == 0 && token.type == TT_PUNCTUATION) {
+			// stgatilov #6028: allow window expressions as source argument to Set command
+			// note that we need some trigger to distinguish it from ordinary assignment
+			// so we require all expressions to be enclosed into parentheses
+			idList<int> exprNodes;
+			do {
+				exprNodes.Append(win->ParseExpression(src, NULL));
+				src->ReadToken(&token);
+			} while (token.Icmp(",") == 0);
+
+			if ( !(token.Icmp(")") == 0 && token.type == TT_PUNCTUATION) )
+				src->Warning("Right side of Set with expressions ends with '%s' instead of ')'", token.c_str());
+
+			if (exprNodes.Num() > 4)
+				src->Warning("Too many components (%d) on right side of Set", exprNodes.Num());
+
+			// decide which register type to use, create unnamed variable
+			idWinVar *srcVar = nullptr;
+			idRegister::REGTYPE regType = idRegister::NUMTYPES;
+			if (exprNodes.Num() == 1) {
+				srcVar = new idWinFloat();
+				regType = idRegister::FLOAT;
+			} else if (exprNodes.Num() == 2) {
+				srcVar = new idWinVec2();
+				regType = idRegister::VEC2;
+			} else if (exprNodes.Num() == 3) {
+				srcVar = new idWinVec3();
+				regType = idRegister::VEC3;
+			} else {
+				srcVar = new idWinVec4();
+				regType = idRegister::VEC4;
+			}
+
+			// add unnamed register with these expressions, link to new unnamed var
+			win->RegList()->AddReg(nullptr, regType, exprNodes.Ptr(), srcVar);
+
+			// add var to command parameters
+			idGSWinVar wv;
+			wv.own = true;
+			wv.var = srcVar;
+			parms.Append( wv );
+
+			continue;
 		}
 
 		idWinStr *str = new idWinStr();
@@ -495,7 +540,22 @@ void idGuiScript::FixupParms(idWindow *win) {
 		int parmCount = parms.Num();
 		for (int i = 1; i < parmCount; i++) {
 			idWinStr *str = dynamic_cast<idWinStr*>(parms[i].var);		
-			if (idStr::Icmpn(*str, "gui::", 5) == 0) {
+
+			if (str == nullptr) {
+				// stgatilov #6028: this is expression (or several component expressions)
+				if (!dest)
+					return;
+
+				// check that dimensions match or destination var is string
+				idRegister::REGTYPE dstType = idRegister::RegTypeForVar(dest);
+				idRegister::REGTYPE srcType = idRegister::RegTypeForVar(parms[i].var);
+				int dstDim = idRegister::REGCOUNT[dstType];
+				int srcDim = idRegister::REGCOUNT[srcType];
+				if (dstType != idRegister::STRING && dstDim != srcDim) {
+					common->Warning("destination var has type %s but source expression has %d components at %s", dest->GetTypeName(), srcDim, GetSrcLocStr().c_str());
+				}
+
+			} else if (idStr::Icmpn(*str, "gui::", 5) == 0) {
 
 				//  always use a string here, no point using a float if it is one
 				//  FIXME: This creates duplicate variables, while not technically a problem since they
