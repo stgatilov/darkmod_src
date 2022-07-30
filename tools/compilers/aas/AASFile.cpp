@@ -1096,11 +1096,12 @@ bool idAASFileLocal::Load( const idStr &fileName, const unsigned int mapFileCRC 
 	crc = mapFileCRC;
 
 	common->Printf( "[Load AAS]\n" );
-	common->Printf( "loading %s\n", name.c_str() );
 
 	if ( !src.LoadFile( name ) ) {
+		common->Printf( "missing %s\n", name.c_str() );
 		return false;
 	}
+	common->Printf( "loading %s\n", name.c_str() );
 
 	if ( !src.ExpectTokenString( AAS_FILEID ) ) {
 		common->Warning( "Not an AAS file: '%s'", name.c_str() );
