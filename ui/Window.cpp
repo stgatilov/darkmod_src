@@ -2180,7 +2180,7 @@ bool idWindow::ParseRegEntry(const char *name, idParser *src) {
 			if (idStr::Icmp(work, RegisterVars[i].name) == 0) {
 				// stgatilov: name of builtin parameter like e.g. rect or visible
 				// these parameters can be assigned expressions, and are based on register evaluation
-				regList.AddReg(work, RegisterVars[i].type, src, this, var);
+				regList.ParseAndAddReg(work, RegisterVars[i].type, src, this, var);
 				return true;
 			}
 		}
@@ -2503,7 +2503,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			src->SetMarker ( );
 
 			// Read in the float 
-			regList.AddReg(work, idRegister::FLOAT, src, this, varf);
+			regList.ParseAndAddReg(work, idRegister::FLOAT, src, this, varf);
 
 			// If we are in the gui editor then add the float to the defines
 #ifdef ID_ALLOW_TOOLS
@@ -2531,7 +2531,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			//        when this window is destoyed which even happens during parsing with simple windows ?
 			//definedVars.Append(var);
 			gui->GetDesktop()->definedVars.Append( var );
-			gui->GetDesktop()->regList.AddReg( work, idRegister::VEC4, src, gui->GetDesktop(), var );
+			gui->GetDesktop()->regList.ParseAndAddReg( work, idRegister::VEC4, src, gui->GetDesktop(), var );
 
 			// store the original vec4 for the editor
 			// If we are in the gui editor then add the float to the defines
@@ -2570,7 +2570,7 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 			src->UnreadToken(&token);
 
 			// Parse the float
-			regList.AddReg(work, idRegister::FLOAT, src, this, varf);
+			regList.ParseAndAddReg(work, idRegister::FLOAT, src, this, varf);
 
 			// If we are in the gui editor then add the float to the defines
 #ifdef ID_ALLOW_TOOLS

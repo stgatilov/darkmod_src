@@ -253,52 +253,62 @@ void idRegister::ReadFromSaveGame( idFile *savefile ) {
 
 /*
 ====================
-idRegisterList::AddReg
+idRegisterList::AddOrOverwriteReg
 ====================
 */
-void idRegisterList::AddReg( const char *name, int type, idVec4 data, idWindow *win, idWinVar *var ) {
-	if ( FindReg( name ) == NULL ) {
-		assert( type >= 0 && type < idRegister::NUMTYPES );
-		int numRegs = idRegister::REGCOUNT[type];
-		idRegister *reg = new idRegister( name, type );
-		bool ok = reg->SetVar( var );
-		assert(ok);
-		for ( int i = 0; i < numRegs; i++ ) {
-			reg->regs[i] = win->ExpressionConstant(data[i]);
+void idRegisterList::AddReg( const char *name, int type, const int *expressions, idWinVar *var) {
+	
+	// check if such register already exists
+	idRegister* reg = FindReg( name );
+	bool newReg = ( reg == NULL );
+
+	if ( newReg ) {
+		// no such register yet: create a new one
+		reg = new idRegister( name, type );
+	}
+
+	// attach expressions to register
+	for ( int i = 0; i < reg->regCount; i++ ) {
+		reg->regs[i] = expressions[i];
+	}
+
+	// link variable to register
+	bool ok = reg->SetVar( var );
+	assert(ok);
+
+	if ( newReg ) {
+		// add variable to the list
+		int index = regs.Append( reg );
+		// add to hash table unless it is unnamed
+		if ( name ) {
+			int hash = regHash.GenerateKey( name, false );
+			regHash.Add( hash, index );
 		}
-		int hash = regHash.GenerateKey( name, false );
-		regHash.Add( hash, regs.Append( reg ) );
 	}
 }
 
 /*
 ====================
-idRegisterList::AddReg
+idRegisterList::AddOrOverwriteReg
 ====================
 */
-void idRegisterList::AddReg( const char *name, int type, idParser *src, idWindow *win, idWinVar *var ) {
-	idRegister* reg;
-
-	reg = FindReg( name );
-	bool newReg = ( reg == NULL );
-
-	if ( newReg ) {
-		assert(type >= 0 && type < idRegister::NUMTYPES);
-		reg = new idRegister( name, type );
-	}
-
+void idRegisterList::ParseAndAddReg( const char *name, int type, idParser *src, idWindow *win, idWinVar *var ) {
+	// prepare expressions
+	int expressions[4] = {0};
 	int numRegs = idRegister::REGCOUNT[type];
-	bool ok = reg->SetVar( var );
-	assert(ok);
+
 	if ( type == idRegister::STRING ) {
+		// no expression is possible here, just some string constant
+		// it can be linked to another variable later in fixup phase
 		idToken tok;
 		if ( src->ReadToken( &tok ) ) {
 			tok = common->Translate( tok );
 			var->Init( tok, win );
 		}
 	} else {
+		// this must be several comma-separated components
 		for ( int i = 0; i < numRegs; i++ ) {
-			reg->regs[i] = win->ParseExpression(src, NULL);
+			expressions[i] = win->ParseExpression(src, NULL);
 			if ( i < numRegs-1 ) {
 				src->ExpectTokenString(",");
 			}
@@ -308,10 +318,8 @@ void idRegisterList::AddReg( const char *name, int type, idParser *src, idWindow
 			src->Warning( "Register seems to have more than %d components", numRegs );
 	}
 
-	if ( newReg ) {
-		int hash = regHash.GenerateKey( name, false );
-		regHash.Add( hash, regs.Append( reg ) );
-	}
+	// add/overwrite variable
+	AddReg( name, type, expressions, var );
 }
 
 /*
@@ -344,6 +352,9 @@ idRegisterList::FindReg
 ====================
 */
 idRegister *idRegisterList::FindReg( const char *name ) {
+	if (!name) {
+		return NULL;
+	}
 	int hash = regHash.GenerateKey( name, false );
 	for ( int i = regHash.First( hash ); i != -1; i = regHash.Next( i ) ) {
 		if ( regs[i]->name.Icmp( name ) == 0 ) {
