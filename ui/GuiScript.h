@@ -24,8 +24,10 @@ struct idGSWinVar {
 		own = false;
 	}
 	void RelinkVar(idWinVar *newVar, bool newOwn) {
-		if (own && var)
+		if (own && var) {
+			assert(var != newVar);
 			delete var;
+		}
 		var = newVar;
 		own = newOwn;
 	}
