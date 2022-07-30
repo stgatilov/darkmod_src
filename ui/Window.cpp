@@ -3198,22 +3198,18 @@ set to their apropriate values.
 ===============
 */
 void idWindow::EvaluateRegisters(float *registers) {
-	int		i, b;
-	wexpOp_t	*op;
-	idVec4 v;
-
 	int erc = expressionRegisters.Num();
 	int oc = ops.Num();
 	// copy the constants
-	for ( i = WEXP_REG_NUM_PREDEFINED ; i < erc ; i++ ) {
+	for ( int i = WEXP_REG_NUM_PREDEFINED ; i < erc ; i++ ) {
 		registers[i] = expressionRegisters[i];
 	}
 
 	// copy the local and global parameters
 	registers[WEXP_REG_TIME] = gui->GetTime();
 
-	for ( i = 0 ; i < oc ; i++ ) {
-		op = &ops[i];
+	for ( int i = 0 ; i < oc ; i++ ) {
+		wexpOp_t *op = &ops[i];
 		if (op->b == -2) {
 			continue;
 		}
@@ -3235,17 +3231,17 @@ void idWindow::EvaluateRegisters(float *registers) {
 				registers[op->c] = registers[op->a] / registers[op->b];
 			}
 			break;
-		case WOP_TYPE_MOD:
-			b = (int)registers[op->b];
+		case WOP_TYPE_MOD: {
+			int b = (int)registers[op->b];
 			b = b != 0 ? b : 1;
 			registers[op->c] = (int)registers[op->a] % b;
 			break;
-		case WOP_TYPE_TABLE:
-			{
-				const idDeclTable *table = static_cast<const idDeclTable *>( declManager->DeclByIndex( DECL_TABLE, op->a ) );
-				registers[op->c] = table->TableLookup( registers[op->b] );
-			}
+		}
+		case WOP_TYPE_TABLE: {
+			const idDeclTable *table = static_cast<const idDeclTable *>( declManager->DeclByIndex( DECL_TABLE, op->a ) );
+			registers[op->c] = table->TableLookup( registers[op->b] );
 			break;
+		}
 		case WOP_TYPE_GT:
 			registers[op->c] = registers[ op->a ] > registers[op->b];
 			break;
@@ -3281,7 +3277,9 @@ void idWindow::EvaluateRegisters(float *registers) {
 			if ( op->b >= 0 && registers[op->b] >= 0 && registers[op->b] < 4 ) {
 				// grabs vector components
 				idWinVec4 *var = (idWinVec4 *)( op->a );
-				registers[op->c] = ((idVec4&)var)[registers[op->b]];
+				const idVec4 &value = static_cast<const idVec4&>(*var);
+				int index = int(registers[op->b]);
+				registers[op->c] = value[index];
 			} else {
 				registers[op->c] = ((idWinVar*)(op->a))->x();
 			}
@@ -3322,7 +3320,6 @@ void idWindow::EvaluateRegisters(float *registers) {
 			common->FatalError( "R_EvaluateExpression: bad opcode" );
 		}
 	}
-
 }
 
 /*
