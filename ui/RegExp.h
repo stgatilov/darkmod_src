@@ -24,8 +24,12 @@ public:
 						idRegister();
 						idRegister( const char *p, int t );
 
+	bool				SetVar( idWinVar *var );
+
 	enum REGTYPE { VEC4 = 0, FLOAT, BOOL, INT, STRING, VEC2, VEC3, RECTANGLE, NUMTYPES } ;
 	static int REGCOUNT[NUMTYPES];
+
+	static REGTYPE		RegTypeForVar( idWinVar *var );
 
 	bool				enabled;
 	short				type;

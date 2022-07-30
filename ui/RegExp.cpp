@@ -27,6 +27,46 @@ int idRegister::REGCOUNT[NUMTYPES] = {4, 1, 1, 1, 0, 2, 3, 4};
 
 /*
 ====================
+idRegister::RegTypeForVar
+====================
+*/
+idRegister::REGTYPE idRegister::RegTypeForVar( idWinVar *var ) {
+	if (dynamic_cast<idWinVec4*>(var))
+		return VEC4;
+	if (dynamic_cast<idWinRectangle*>(var))
+		return RECTANGLE;
+	if (dynamic_cast<idWinVec2*>(var))
+		return VEC2;
+	if (dynamic_cast<idWinVec3*>(var))
+		return VEC3;
+	if (dynamic_cast<idWinFloat*>(var))
+		return FLOAT;
+	if (dynamic_cast<idWinInt*>(var))
+		return INT;
+	if (dynamic_cast<idWinBool*>(var))
+		return BOOL;
+	if (dynamic_cast<idWinStr*>(var))
+		return STRING;
+	common->FatalError( "idRegister::RegTypeForVar: bad var type" );
+	return NUMTYPES;
+}
+
+/*
+====================
+idRegister::SetVar
+====================
+*/
+bool idRegister::SetVar( idWinVar *var ) {
+	REGTYPE typeForVar = RegTypeForVar(var);
+	if (typeForVar == type) {
+		this->var = var;
+		return true;
+	}
+	return false;
+}
+
+/*
+====================
 idRegister::SetToRegs
 ====================
 */
@@ -105,7 +145,7 @@ void idRegister::GetFromRegs( float *registers ) {
 	
 	switch( type ) {
 		case VEC4: {
-			*dynamic_cast<idWinVec4*>(var) = v;
+			*static_cast<idWinVec4*>(var) = v;
 			break;
 		}
 		case RECTANGLE: {
@@ -221,7 +261,8 @@ void idRegisterList::AddReg( const char *name, int type, idVec4 data, idWindow *
 		assert( type >= 0 && type < idRegister::NUMTYPES );
 		int numRegs = idRegister::REGCOUNT[type];
 		idRegister *reg = new idRegister( name, type );
-		reg->var = var;
+		bool ok = reg->SetVar( var );
+		assert(ok);
 		for ( int i = 0; i < numRegs; i++ ) {
 			reg->regs[i] = win->ExpressionConstant(data[i]);
 		}
@@ -247,7 +288,8 @@ void idRegisterList::AddReg( const char *name, int type, idParser *src, idWindow
 	}
 
 	int numRegs = idRegister::REGCOUNT[type];
-	reg->var = var;
+	bool ok = reg->SetVar( var );
+	assert(ok);
 	if ( type == idRegister::STRING ) {
 		idToken tok;
 		if ( src->ReadToken( &tok ) ) {
