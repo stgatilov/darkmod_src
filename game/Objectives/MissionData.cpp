@@ -2353,75 +2353,28 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 		}
 	}
 
-	/*const idDict& state = ui->State();
-
-	for (int i = 0; i < state.GetNumKeyVals(); ++i)
-	{
-		const idKeyValue* kv = state.GetKeyVal(i);
-
-		gameLocal.Printf("%s: %s\n", kv->GetKey().c_str(), kv->GetValue().c_str());
-	}*/
-
 	ui->SetStateInt("NumVisibleObjectives", objIndices.Num());
 	ui->SetStateInt("ObjectiveBoxIsVisible", 1);
 	ui->SetStateFloat("objectiveTextSize", cv_gui_objectiveTextSize.GetFloat());
-	// Tell the GUI to set its values
-	ui->HandleNamedEvent("GetObjectivesInfo");
-
-	int numObjectivesPerPage = ui->GetStateInt("NumObjectivesPerPage");
-
-	int startIdx = ui->GetStateInt("ObjStartIdx", "0");
-
-	// Check if the GUI requests a scroll event, applies to in-game GUI
-	if (ui->GetStateBool("PrevObjectiveRequest"))
-	{
-		ui->SetStateBool("PrevObjectiveRequest", false);
-
-		if (startIdx > 0) 
-		{
-			startIdx--;
-			ui->SetStateInt("ObjStartIdx", startIdx);
-		}
-	}
-
-	if (ui->GetStateBool("NextObjectiveRequest"))
-	{
-		ui->SetStateBool("NextObjectiveRequest", false);
-
-		if (startIdx + numObjectivesPerPage < objIndices.Num()) 
-		{
-			startIdx++;
-			ui->SetStateInt("ObjStartIdx", startIdx);
-		}
-	}
-
-	// Check which buttons should be visible
-	bool nextButtonVisible = (startIdx + numObjectivesPerPage < objIndices.Num());
-	bool prevButtonVisible = (startIdx > 0);
-
-	ui->SetStateInt("ScrollDownVisible", nextButtonVisible ? 1 : 0);
-	ui->SetStateInt("ScrollUpVisible", prevButtonVisible ? 1 : 0);
 
 	// First, hide all objectives, the number might have been changed, so some could stay visible
-	for (int i = 0; i < numObjectivesPerPage; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		// greebo: GUI objective numbers are starting with 1
 		idStr prefix = va("obj%d", i+1);
 		ui->SetStateInt(prefix + "_visible", 0);
 	}
 
-	for (int i = startIdx, objCount = 0; 
-		 i < objIndices.Num() && objCount < numObjectivesPerPage; 
-		 i++, objCount++)
+	for (int i = 0; i < objIndices.Num(); i++)
 	{
 		int index = objIndices[i];
 
 		// greebo: GUI objective numbers are starting with 1
-		int guiObjNum = objCount + 1;
+		int guiObjNum = i + 1;
 
 		idStr prefix = va("obj%d", guiObjNum);
 
-		// Show this objective, invisible ones are not considered in this loop in the first place
+		// Show this objective
 		ui->SetStateInt(prefix + "_visible", 1);
 
 		// Get a shortcut to the target objective
