@@ -62,20 +62,20 @@ bool idEditWindow::ParseInternalVar( const char *_name, idParser *src ) {
 	return idWindow::ParseInternalVar( _name, src );
 }
 
-idWinVar *idEditWindow::GetWinVarByName( const char *_name, bool fixup, drawWin_t* owner ) {
-	if ( idStr::Icmp( _name, "cvar" ) == 0 ) {
+idWinVar *idEditWindow::GetThisWinVarByName(const char *varname) {
+	if ( idStr::Icmp( varname, "cvar" ) == 0 ) {
 		return &cvarStr;
 	}
-	if ( idStr::Icmp( _name, "password" ) == 0 ) {
+	if ( idStr::Icmp( varname, "password" ) == 0 ) {
 		return &password;
 	}
-	if ( idStr::Icmp( _name, "liveUpdate" ) == 0 ) {
+	if ( idStr::Icmp( varname, "liveUpdate" ) == 0 ) {
 		return &liveUpdate;
 	}
-	if ( idStr::Icmp( _name, "cvarGroup" ) == 0 ) {
+	if ( idStr::Icmp( varname, "cvarGroup" ) == 0 ) {
 		return &cvarGroup;
 	}
-	return idWindow::GetWinVarByName( _name, fixup, owner );
+	return idWindow::GetThisWinVarByName( varname );
 }
 
 void idEditWindow::CommonInit() {

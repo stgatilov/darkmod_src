@@ -64,6 +64,7 @@ void Script_Set(idGuiScript *self, idWindow *window, idList<idGSWinVar> *src) {
 		} 
 	}
 	(*src)[0].var->Set((*src)[1].var->c_str());
+	// stgatilov: don't reset this variable automatically from register expressions
 	(*src)[0].var->SetEval(false);
 }
 
@@ -476,7 +477,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 
 		idWinStr *str = dynamic_cast<idWinStr*>(parms[0].var);
 		assert(str);
-		idWinVar *dest = win->GetWinVarByName(*str, true);
+		idWinVar *dest = win->GetAnyVarByName(*str);
 		if (dest) {
 			parms[0].RelinkVar(dest, false);
 
@@ -509,10 +510,10 @@ void idGuiScript::FixupParms(idWindow *win) {
 				const char *varname = str->c_str() + 1;
 				if (idStr::FindText(varname, "::") >= 0) {
 					// contains window name, so search for it globally
-					dest = win->GetGui()->GetDesktop()->GetWinVarByName((const char*)(*str) + 1, true);
+					dest = win->GetGui()->GetDesktop()->GetAnyVarByName((const char*)(*str) + 1);
 				} else {
 					// does not contain window name, so find this variable in the current window
-					dest = win->GetWinVarByName((const char*)(*str) + 1, true);
+					dest = win->GetThisWinVarByName((const char*)(*str) + 1);
 				}
 				if (dest) {
 					parms[i].RelinkVar(dest, false);
@@ -562,7 +563,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 
 		// 
 		drawWin_t destowner = {0};
-		idWinVar *dest = win->GetWinVarByName(*str, true, &destowner );
+		idWinVar *dest = win->GetWinVarByName(*str, &destowner, nullptr);
 		// 
 
 		if (dest) {
@@ -581,7 +582,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 
 			drawWin_t owner = {0};
 			if ( (*str[0]) == '$' ) {
-				dest = win->GetWinVarByName ( (const char*)(*str) + 1, true, &owner );
+				dest = win->GetWinVarByName((const char*)(*str) + 1, &owner, nullptr);
 			} else {
 				dest = NULL;
 			}
@@ -606,7 +607,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 
 					// If its the rectangle they are referencing then adjust it 
 					if ( ownerparent && destparent && 
-						(dest == (owner.simp ? owner.simp->GetWinVarByName ( "rect" ) : owner.win->GetWinVarByName ( "rect" ) ) ) )
+						(dest == (owner.simp ? owner.simp->GetThisWinVarByName ( "rect" ) : owner.win->GetThisWinVarByName ( "rect" ) ) ) )
 					{
 						idRectangle rect;
 						rect = *(dynamic_cast<idWinRectangle*>(dest));

@@ -282,39 +282,39 @@ intptr_t idSimpleWindow::GetWinVarOffset(idWinVar *wv, drawWin_t* owner) {
 	return ret;
 }
 
-idWinVar *idSimpleWindow::GetWinVarByName(const char *_name) {
+idWinVar *idSimpleWindow::GetThisWinVarByName(const char *varname) {
 	idWinVar *retVar = NULL;
-	if (idStr::Icmp(_name, "background") == 0) {
+	if (idStr::Icmp(varname, "background") == 0) {
 		retVar = &backGroundName;
 	}
-	if (idStr::Icmp(_name, "visible") == 0) {
+	if (idStr::Icmp(varname, "visible") == 0) {
 		retVar = &visible;
 	}
-	if (idStr::Icmp(_name, "rect") == 0) {
+	if (idStr::Icmp(varname, "rect") == 0) {
 		retVar = &rect;
 	}
-	if (idStr::Icmp(_name, "backColor") == 0) {
+	if (idStr::Icmp(varname, "backColor") == 0) {
 		retVar = &backColor;
 	}
-	if (idStr::Icmp(_name, "matColor") == 0) {
+	if (idStr::Icmp(varname, "matColor") == 0) {
 		retVar = &matColor;
 	}
-	if (idStr::Icmp(_name, "foreColor") == 0) {
+	if (idStr::Icmp(varname, "foreColor") == 0) {
 		retVar = &foreColor;
 	}
-	if (idStr::Icmp(_name, "borderColor") == 0) {
+	if (idStr::Icmp(varname, "borderColor") == 0) {
 		retVar = &borderColor;
 	}
-	if (idStr::Icmp(_name, "textScale") == 0) {
+	if (idStr::Icmp(varname, "textScale") == 0) {
 		retVar = &textScale;
 	}
-	if (idStr::Icmp(_name, "rotate") == 0) {
+	if (idStr::Icmp(varname, "rotate") == 0) {
 		retVar = &rotate;
 	}
-	if (idStr::Icmp(_name, "shear") == 0) {
+	if (idStr::Icmp(varname, "shear") == 0) {
 		retVar = &shear;
 	}
-	if (idStr::Icmp(_name, "text") == 0) {
+	if (idStr::Icmp(varname, "text") == 0) {
 		retVar = &text;
 	}
 	return retVar;

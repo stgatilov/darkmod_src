@@ -659,7 +659,7 @@ size_t idUserInterfaceLocal::Size() {
 
 void idUserInterfaceLocal::RecurseSetKeyBindingNames( idWindow *window ) {
 	int i;
-	idWinVar *v = window->GetWinVarByName( "bind" );
+	idWinVar *v = window->GetThisWinVarByName( "bind" );
 	if ( v ) {
 		SetStateString( v->GetName(), idKeyInput::KeysFromBinding( v->GetName() ) );
 	}

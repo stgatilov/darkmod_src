@@ -1841,107 +1841,129 @@ intptr_t idWindow::GetWinVarOffset(idWinVar *wv, drawWin_t* owner) {
 
 /*
 ================
+idWindow::GetThisWinVarByName
+================
+*/
+idWinVar *idWindow::GetThisWinVarByName(const char *_name) {
+	// first check or builtin variables
+	if (idStr::Icmp(_name, "notime") == 0) {
+		return &noTime;
+	}
+	if (idStr::Icmp(_name, "background") == 0) {
+		return &backGroundName;
+	}
+	if (idStr::Icmp(_name, "visible") == 0) {
+		return &visible;
+	}
+	if (idStr::Icmp(_name, "rect") == 0) {
+		return &rect;
+	}
+	if (idStr::Icmp(_name, "backColor") == 0) {
+		return &backColor;
+	}
+	if (idStr::Icmp(_name, "matColor") == 0) {
+		return &matColor;
+	}
+	if (idStr::Icmp(_name, "foreColor") == 0) {
+		return &foreColor;
+	}
+	if (idStr::Icmp(_name, "hoverColor") == 0) {
+		return &hoverColor;
+	}
+	if (idStr::Icmp(_name, "borderColor") == 0) {
+		return &borderColor;
+	}
+	if (idStr::Icmp(_name, "textScale") == 0) {
+		return &textScale;
+	}
+	if (idStr::Icmp(_name, "rotate") == 0) {
+		return &rotate;
+	}
+	if (idStr::Icmp(_name, "noEvents") == 0) {
+		return &noEvents;
+	}
+	if (idStr::Icmp(_name, "text") == 0) {
+		return &text;
+	}
+	if (idStr::Icmp(_name, "backGroundName") == 0) {
+		return &backGroundName;
+	}
+	if (idStr::Icmp(_name, "hidecursor") == 0) {
+		return &hideCursor;
+	}
+
+	// then check custom variables, e.g. created with "definefloat" keyword
+	for (int i = 0; i < definedVars.Num(); i++)
+		if (idStr::Icmp(_name, definedVars[i]->GetName()) == 0)
+			return definedVars[i];
+
+	return NULL;
+}
+
+/*
+================
 idWindow::GetWinVarByName
 ================
 */
-idWinVar *idWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
-	idWinVar *retVar = NULL;
+idWinVar *idWindow::GetWinVarByName(const char *fullname, drawWin_t *owner, idStr *varname) {
+	// check if name is qualified
+	idStr key = fullname;
+	int pos = key.Find("::");
 
-	if ( owner ) {
-		*owner = drawWin_t{0};
-	}
+	if (pos < 0) {
+		// unqualified name: search in this window only
+		if (owner)
+			*owner = {this, nullptr};
+		if (varname)
+			*varname = fullname;
 
-	if (idStr::Icmp(_name, "notime") == 0) {
-		retVar = &noTime;
+		return GetThisWinVarByName(fullname);
 	}
-	if (idStr::Icmp(_name, "background") == 0) {
-		retVar = &backGroundName;
-	}
-	if (idStr::Icmp(_name, "visible") == 0) {
-		retVar = &visible;
-	}
-	if (idStr::Icmp(_name, "rect") == 0) {
-		retVar = &rect;
-	}
-	if (idStr::Icmp(_name, "backColor") == 0) {
-		retVar = &backColor;
-	}
-	if (idStr::Icmp(_name, "matColor") == 0) {
-		retVar = &matColor;
-	}
-	if (idStr::Icmp(_name, "foreColor") == 0) {
-		retVar = &foreColor;
-	}
-	if (idStr::Icmp(_name, "hoverColor") == 0) {
-		retVar = &hoverColor;
-	}
-	if (idStr::Icmp(_name, "borderColor") == 0) {
-		retVar = &borderColor;
-	}
-	if (idStr::Icmp(_name, "textScale") == 0) {
-		retVar = &textScale;
-	}
-	if (idStr::Icmp(_name, "rotate") == 0) {
-		retVar = &rotate;
-	}
-	if (idStr::Icmp(_name, "noEvents") == 0) {
-		retVar = &noEvents;
-	}
-	if (idStr::Icmp(_name, "text") == 0) {
-		retVar = &text;
-	}
-	if (idStr::Icmp(_name, "backGroundName") == 0) {
-		retVar = &backGroundName;
-	}
-	if (idStr::Icmp(_name, "hidecursor") == 0) {
-		retVar = &hideCursor;
-	}
+	else {
+		// qualified name: break into parts
+		idStr otherWinName = key.Left(pos);
+		idStr otherVarName = key.Right(key.Length() - pos - 2);
 
-	idStr key = _name;
-	bool guiVar = (key.Find(VAR_GUIPREFIX) >= 0);
-	int c = definedVars.Num();
-	for (int i = 0; i < c; i++) {
-		if (idStr::Icmp(_name, definedVars[i]->GetName()) == 0) {
-			retVar = definedVars[i];
-			break;
+		// find window by name
+		drawWin_t win = GetGui()->GetDesktop()->FindChildByName(otherWinName);
+
+		// report back which window we found, and name of variable
+		if (owner)
+			*owner = win;
+		if (varname)
+			*varname = otherVarName;
+
+		// search variable in the window
+		if (win.win) {
+			return win.win->GetThisWinVarByName(otherVarName);
+		}
+		else if (win.simp) {
+			return win.simp->GetThisWinVarByName(otherVarName);
 		}
 	}
 
-	if (retVar) {
-		if (fixup && *_name != '$') {
-			DisableRegister(_name);
-		}
+	return nullptr;
+}
 
-		if ( owner && parent ) {
-			*owner = parent->FindChildByName ( name );
-		}
+/*
+================
+idWindow::GetAnyVarByName
+================
+*/
+idWinVar *idWindow::GetAnyVarByName(const char *varname) {
+	bool isGuiVar = (idStr::IcmpPrefix(varname, VAR_GUIPREFIX) == 0);
 
-		return retVar;
-	}
-
-	int len = key.Length();
-	if ( len > 5 && guiVar ) {
+	if (isGuiVar) {
+		// return newly created internal variable, linked to global variable in gui state
 		idWinVar *var = new idWinStr;
-		var->Init(_name, this);
+		var->Init(varname, this);
 		definedVars.Append(var);
 		return var;
-	} else if (fixup) {
-		int n = key.Find("::");
-		if (n > 0) {
-			idStr winName = key.Left(n);
-			idStr var = key.Right(key.Length() - n - 2);
-			drawWin_t win = GetGui()->GetDesktop()->FindChildByName(winName);
-			if (win.win) {
-				return win.win->GetWinVarByName(var, false, owner);
-			} else if (win.simp){
-				if ( owner ) {
-					*owner = win;
-				}
-				return win.simp->GetWinVarByName(var);
-			} 
-		}
 	}
-	return NULL;
+	else {
+		// search for window variable, like "background"
+		return GetWinVarByName(varname, nullptr, nullptr);
+	}
 }
 
 /*
@@ -2152,7 +2174,7 @@ bool idWindow::ParseRegEntry(const char *name, idParser *src) {
 	work = name;
 	work.ToLower();
 
-	idWinVar *var = GetWinVarByName(work, false);
+	idWinVar *var = GetThisWinVarByName(work);
 	if ( var ) {
 		for (int i = 0; i < NumRegisterVars; i++) {
 			if (idStr::Icmp(work, RegisterVars[i].name) == 0) {
@@ -3017,7 +3039,7 @@ intptr_t idWindow::ParseTerm(idParser *src, idWinVar *var, intptr_t component) {
 	}
 	
 	if (var == NULL) {
-		var = GetWinVarByName(token, true);
+		var = GetAnyVarByName(token);
 	}
 	if (var) {
         a = (intptr_t)var;
@@ -4034,7 +4056,7 @@ void idWindow::FixupParms() {
 			assert(ops[i].opType == WOP_TYPE_VAR);
 			// need to fix this up
 			const char *p = (const char*)(ops[i].a);
-			idWinVar *var = GetWinVarByName(p, true);
+			idWinVar *var = GetAnyVarByName(p);
 			if (!var) {
 				// stgatilov #5869: zero op.a will evaluate as 0.0f in idWindow::EvaluateRegisters
 				common->Warning("Failed to fixup '%s' in window '%s', replaced with zero", p, name.c_str());
@@ -4133,9 +4155,9 @@ void idWindow::SetChildWinVarVal(const char *name, const char *var, const char *
 	drawWin_t dw = FindChildByName(name);
 	idWinVar *wv = NULL;
 	if (dw.simp) {
-		wv = dw.simp->GetWinVarByName(var);
+		wv = dw.simp->GetThisWinVarByName(var);
 	} else if (dw.win) {
-		wv = dw.win->GetWinVarByName(var);
+		wv = dw.win->GetThisWinVarByName(var);
 	}
 	if (wv) {
 		wv->Set(val);

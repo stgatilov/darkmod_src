@@ -101,22 +101,22 @@ bool idSliderWindow::ParseInternalVar(const char *_name, idParser *src) {
 	return idWindow::ParseInternalVar(_name, src);
 }
 
-idWinVar *idSliderWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
+idWinVar *idSliderWindow::GetThisWinVarByName(const char *varname) {
  
-	if (idStr::Icmp(_name, "value") == 0) {
+	if (idStr::Icmp(varname, "value") == 0) {
 		return &value;
 	}
-	if (idStr::Icmp(_name, "cvar") == 0) {
+	if (idStr::Icmp(varname, "cvar") == 0) {
 		return &cvarStr;
 	}
-	if ( idStr::Icmp( _name, "liveUpdate" ) == 0 ) {
+	if ( idStr::Icmp( varname, "liveUpdate" ) == 0 ) {
 		return &liveUpdate;
 	}
-	if ( idStr::Icmp( _name, "cvarGroup" ) == 0 ) {
+	if ( idStr::Icmp( varname, "cvarGroup" ) == 0 ) {
 		return &cvarGroup;
 	}
 	
-	return idWindow::GetWinVarByName(_name, fixup, owner);
+	return idWindow::GetThisWinVarByName(varname);
 }
 
 const char *idSliderWindow::HandleEvent(const sysEvent_t *event, bool *updateVisuals) {

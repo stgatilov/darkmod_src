@@ -76,7 +76,7 @@ Static method that returns the window wrapper for the given window class
 ================
 */
 rvGEWindowWrapper * rvGEWindowWrapper::GetWrapper( idWindow *window ) {
-	auto var = dynamic_cast< idWinUIntPtr*>(window->GetWinVarByName("guied_wrapper"));	
+	auto var = dynamic_cast< idWinUIntPtr*>(window->GetThisWinVarByName("guied_wrapper"));	
 	return var ? ((rvGEWindowWrapper *)(size_t)(*var)) : NULL;
 }
 
@@ -92,7 +92,7 @@ void rvGEWindowWrapper::UpdateRect( void ) {
 	idVec4 rect;
 	idWinRectangle *winrect;
 
-	winrect = dynamic_cast< idWinRectangle*>(mWindow->GetWinVarByName("rect"));
+	winrect = dynamic_cast< idWinRectangle*>(mWindow->GetThisWinVarByName("rect"));
 	assert(winrect);
 	rect = winrect->ToVec4();
 
@@ -515,7 +515,7 @@ the finish method is called to finish up any last details
 ================
 */
 void rvGEWindowWrapper::Finish( void ) {
-	mOldVisible = ((bool) * dynamic_cast< idWinBool*>(mWindow->GetWinVarByName("visible")));
+	mOldVisible = ((bool) * dynamic_cast< idWinBool*>(mWindow->GetThisWinVarByName("visible")));
 	mHidden = mOldVisible ? false : true;
 	UpdateRect();
 }

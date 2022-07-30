@@ -35,7 +35,7 @@ public:
 	virtual void		GainFocus();
 	virtual size_t		Allocated(){return idWindow::Allocated();};
 	
-	virtual idWinVar *	GetWinVarByName(const char *_name, bool winLookup = false, drawWin_t* owner = NULL ) override;
+	virtual idWinVar *	GetThisWinVarByName(const char *varname) override;
 	
 	virtual void 		HandleBuddyUpdate(idWindow *buddy);
 	virtual void		Activate(bool activate, idStr &act);

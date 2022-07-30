@@ -162,36 +162,36 @@ void idRenderWindow::PostParse() {
 
 // 
 //  
-idWinVar *idRenderWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner ) {
+idWinVar *idRenderWindow::GetThisWinVarByName(const char *varname) {
 // 
-	if (idStr::Icmp(_name, "model") == 0) {
+	if (idStr::Icmp(varname, "model") == 0) {
 		return &modelName;
 	}
-	if (idStr::Icmp(_name, "anim") == 0) {
+	if (idStr::Icmp(varname, "anim") == 0) {
 		return &animName;
 	}
-	if (idStr::Icmp(_name, "lightOrigin") == 0) {
+	if (idStr::Icmp(varname, "lightOrigin") == 0) {
 		return &lightOrigin;
 	}
-	if (idStr::Icmp(_name, "lightColor") == 0) {
+	if (idStr::Icmp(varname, "lightColor") == 0) {
 		return &lightColor;
 	}
-	if (idStr::Icmp(_name, "modelOrigin") == 0) {
+	if (idStr::Icmp(varname, "modelOrigin") == 0) {
 		return &modelOrigin;
 	}
-	if (idStr::Icmp(_name, "modelRotate") == 0) {
+	if (idStr::Icmp(varname, "modelRotate") == 0) {
 		return &modelRotate;
 	}
-	if (idStr::Icmp(_name, "viewOffset") == 0) {
+	if (idStr::Icmp(varname, "viewOffset") == 0) {
 		return &viewOffset;
 	}
-	if (idStr::Icmp(_name, "needsRender") == 0) {
+	if (idStr::Icmp(varname, "needsRender") == 0) {
 		return &needsRender;
 	}
 
 // 
 //  
-	return idWindow::GetWinVarByName(_name, fixup, owner);
+	return idWindow::GetThisWinVarByName(varname);
 // 
 }
 

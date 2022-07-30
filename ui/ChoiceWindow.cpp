@@ -245,27 +245,27 @@ bool idChoiceWindow::ParseInternalVar(const char *_name, idParser *src) {
 }
 
 
-idWinVar *idChoiceWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
-	if ( idStr::Icmp( _name, "choices" ) == 0 ) {
+idWinVar *idChoiceWindow::GetThisWinVarByName(const char *varname) {
+	if ( idStr::Icmp( varname, "choices" ) == 0 ) {
 		return &choicesStr;
 	}
-	if ( idStr::Icmp( _name, "values" ) == 0 ) {
+	if ( idStr::Icmp( varname, "values" ) == 0 ) {
 		return &choiceVals;
 	}
-	if ( idStr::Icmp( _name, "cvar" ) == 0 ) {
+	if ( idStr::Icmp( varname, "cvar" ) == 0 ) {
 		return &cvarStr;
 	}
-	if ( idStr::Icmp( _name, "gui" ) == 0 ) {
+	if ( idStr::Icmp( varname, "gui" ) == 0 ) {
 		return &guiStr;
 	}
-	if ( idStr::Icmp( _name, "liveUpdate" ) == 0 ) {
+	if ( idStr::Icmp( varname, "liveUpdate" ) == 0 ) {
 		return &liveUpdate;
 	}
-	if ( idStr::Icmp( _name, "updateGroup" ) == 0 ) {
+	if ( idStr::Icmp( varname, "updateGroup" ) == 0 ) {
 		return &updateGroup;
 	}
 	
-	return idWindow::GetWinVarByName(_name, fixup, owner);
+	return idWindow::GetThisWinVarByName(varname);
 }
 
 // update the lists whenever the WinVar have changed

@@ -276,8 +276,8 @@ bool idListWindow::ParseInternalVar(const char *_name, idParser *src) {
 	return idWindow::ParseInternalVar(_name, src);
 }
 
-idWinVar *idListWindow::GetWinVarByName(const char *_name, bool fixup, drawWin_t* owner) {
-	return idWindow::GetWinVarByName(_name, fixup, owner);
+idWinVar *idListWindow::GetThisWinVarByName(const char *varname) {
+	return idWindow::GetThisWinVarByName(varname);
 }
 
 void idListWindow::PostParse() {

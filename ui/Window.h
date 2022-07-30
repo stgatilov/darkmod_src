@@ -212,9 +212,18 @@ public:
 	virtual size_t Allocated();
 	idStr* GetStrPtrByName(const char *_name);
 
-	virtual idWinVar *GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t* owner = NULL);
+	// stgatilov: search for window variable with this exact name in "this" window
+	virtual idWinVar *GetThisWinVarByName(const char *varname);
+	// stgatilov: search for window variable:
+	//   either in this window if not qualified (e.g. "background")
+	//   or in specific window by qualified name (e.g. "OtherWindowName::background")
+	// writes window (which contains the variable) into *owner, unqualified name into varname
+	idWinVar *GetWinVarByName(const char *fullname, drawWin_t *owner, idStr *varname);
+	// stgatilov: search for window variable (see GetWinVarByName) or gui variable (e.g. "gui::green_background")
+	idWinVar *GetAnyVarByName(const char *varname);
 
-    intptr_t  GetWinVarOffset(idWinVar *wv, drawWin_t *dw);
+
+	intptr_t  GetWinVarOffset(idWinVar *wv, drawWin_t *dw);
 	float GetMaxCharHeight();
 	float GetMaxCharWidth();
 	void SetFont();
