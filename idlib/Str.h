@@ -246,6 +246,7 @@ public:
 	static int			Cmpn( const char *s1, const char *s2, int n );
 	static int			Icmp( const char *s1, const char *s2 );
 	static int			Icmpn( const char *s1, const char *s2, int n );
+	static int			IcmpPrefix( const char *s1, const char *s2 );
 	static int			IcmpNoColor( const char *s1, const char *s2 );
 	static int			IcmpPath( const char *s1, const char *s2 );			// compares paths and makes sure folders come first
 	static int			IcmpnPath( const char *s1, const char *s2, int n );	// compares paths and makes sure folders come first
@@ -688,6 +689,11 @@ ID_INLINE int idStr::Icmpn( const char *text, int n ) const {
 ID_INLINE int idStr::IcmpPrefix( const char *text ) const {
 	assert( text );
     return idStr::Icmpn(data, text, static_cast<int>(strlen(text)));
+}
+
+ID_INLINE int idStr::IcmpPrefix( const char *s1, const char *s2 ) {
+	assert( s1 && s2 );
+	return idStr::Icmpn(s1, s2, static_cast<int>(strlen(s2)));
 }
 
 ID_INLINE int idStr::IcmpNoColor( const char *text ) const {

@@ -1581,7 +1581,7 @@ int idStr::Icmpn( const char *s1, const char *s2, int n ) {
 
 /*
 ================
-idStr::Icmp
+idStr::IcmpNoColor
 ================
 */
 int idStr::IcmpNoColor( const char *s1, const char *s2 ) {
