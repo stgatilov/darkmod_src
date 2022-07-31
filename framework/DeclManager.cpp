@@ -2209,7 +2209,6 @@ static constexpr const char *GetParseLabelOfDeclType(declType_t type) {
 	if (type == DECL_AF) return "Parse:AF";
 	if (type == DECL_XDATA) return "Parse:XData";
 	if (type == DECL_TDM_MATINFO) return "Parse:MatInfo";
-	if (type == DECL_TDM_MISSIONINFO) return "Parse:MissionInfo";
 	return "Parse:Decl";
 }
 
