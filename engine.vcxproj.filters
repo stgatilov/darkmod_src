@@ -999,9 +999,6 @@
     <ClInclude Include="game\darkModLAS.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="game\decltdm_matinfo.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="game\declxdata.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -3031,9 +3028,6 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="game\darkModLAS.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\decltdm_matinfo.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="game\declxdata.cpp">

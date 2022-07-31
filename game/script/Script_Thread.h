@@ -181,9 +181,6 @@ private:
 	*/
 	void						Event_Translate(const char* input);
 
-	// For test purposes only.
-	void						Event_DebugTDM_MatInfo( const char *mat );
-
 	/**
 	* The following events are a frontend for the AI relationship
 	* manager (stored in game_local).

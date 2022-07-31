@@ -19,7 +19,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "../Game_local.h"
-#include "../decltdm_matinfo.h"
 #include "../Relations.h"
 #include "../SndProp.h"
 #include "../Objectives/MissionData.h"
@@ -204,8 +203,6 @@ const idEventDef EV_PointInLiquid( "pointInLiquid", EventArgs('v', "point", "", 
 
 // tels: Translate a string into the current language
 const idEventDef EV_Translate( "translate", EventArgs('s', "input", ""), 's', "Translates a string (like #str_12345) into the current language");
-
-const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", EventArgs('s', "file", ""), EV_RETURNS_VOID, "For temporary debuging purposes only. Should be removed eventually.");
 
 // greebo: Writes the string to the Darkmod.log file using DM_LOG
 const idEventDef EV_LogString("logString", EventArgs('d', "logClass", "", 'd', "logType", "", 's', "output", ""), EV_RETURNS_VOID, "This is the script counterpart to DM_LOG");
@@ -411,8 +408,6 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_PointInLiquid,				idThread::Event_PointInLiquid )
 	EVENT( EV_Translate,					idThread::Event_Translate )
 
-	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
-	
 	EVENT( EV_LogString,					idThread::Event_LogString )
 	EVENT( EV_SessionCommand,				idThread::Event_SessionCommand )
 	EVENT( EV_SaveConDump,					idThread::Event_SaveConDump )
@@ -2412,17 +2407,6 @@ bool idThread::CallFunctionArgsVN(const function_t *func, bool clearStack, const
 	rc = interpreter.EnterFunctionVarArgVN(func, clearStack, fmt, args);
 
 	return rc;
-}
-
-void idThread::Event_DebugTDM_MatInfo( const char *mat )
-{
-	const tdmDeclTDM_MatInfo *tdmat = static_cast< const tdmDeclTDM_MatInfo* >( declManager->FindType( DECL_TDM_MATINFO, mat, false ) );
-	if ( tdmat != NULL ) {
-		gameLocal.Printf( "Information for tdm material declaration: %s\n", mat );
-		gameLocal.Printf( "surfacetype: %s\n", tdmat->surfaceType.c_str() );
-	} else {
-		gameLocal.Warning( "Non-existant tdm material declaration: %s", mat );
-	}
 }
 
 void idThread::Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity ) {

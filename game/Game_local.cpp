@@ -23,7 +23,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Game_local.h"
 #include "DarkModGlobals.h"
 #include "darkModLAS.h"
-#include "decltdm_matinfo.h"
 #include "declxdata.h"
 #include "Grabber.h"
 #include "Relations.h"
@@ -481,7 +480,6 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclType( "export",			DECL_MODELEXPORT,	idDeclAllocator<idDecl> );
 	// TDM specific DECLs
 	declManager->RegisterDeclType( "xdata",				DECL_XDATA,			idDeclAllocator<tdmDeclXData> );
-	declManager->RegisterDeclType( "tdm_matinfo",		DECL_TDM_MATINFO,	idDeclAllocator<tdmDeclTDM_MatInfo> );
 
 	// register game specific decl folders
 	declManager->RegisterDeclFolder( "def",				".def",				DECL_ENTITYDEF );
@@ -490,7 +488,6 @@ void idGameLocal::Init( void ) {
 	declManager->RegisterDeclFolder( "af",				".af",				DECL_AF );
 	// TDM specific DECLs
 	declManager->RegisterDeclFolder( "xdata",			".xd",				DECL_XDATA );
-	declManager->RegisterDeclFolder( "materials",		".mtr",				DECL_TDM_MATINFO );
 
 	cmdSystem->AddCommand( "listModelDefs", idListDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "lists model defs" );
 	cmdSystem->AddCommand( "printModelDefs", idPrintDecls_f<DECL_MODELDEF>, CMD_FL_SYSTEM|CMD_FL_GAME, "prints a model def", idCmdSystem::ArgCompletion_Decl<DECL_MODELDEF> );
@@ -1433,7 +1430,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 			mapFile = NULL;
 			Error( "Couldn't load %s", mapName );
 		}
-		tdmDeclTDM_MatInfo::precacheMap( mapFile );
 	}
 	mapFileName = mapFile->GetName();
 
@@ -2692,8 +2688,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 				idRenderModel *renderModel = renderModelManager->FindModel( modelName );
 				// precache .cm files only
 				cmHandle_t cmHandle = collisionModelManager->LoadModel( modelName, true );
-				// load any tdm_matinfo decls for materials referenced by the model
-				tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( modelName ) );
 			}
 		}
 		kv = dict->MatchPrefix( "model", kv );
@@ -2738,7 +2732,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	if ( kv && kv->GetValue().Length() ) {
 		declManager->MediaPrint( "CacheDictionaryMedia - Precaching texture %s\n", kv->GetValue().c_str() );
 		declManager->FindType( DECL_MATERIAL, kv->GetValue() );
-		declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
 	}
 
 	kv = dict->MatchPrefix( "mtr", NULL );
@@ -2746,7 +2739,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		if ( kv->GetValue().Length() ) {
 			declManager->MediaPrint( "CacheDictionaryMedia - Precaching mtr %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
-			declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
 		}
 		kv = dict->MatchPrefix( "mtr", kv );
 	}

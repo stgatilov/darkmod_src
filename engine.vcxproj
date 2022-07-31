@@ -367,7 +367,6 @@
     <ClInclude Include="game\DarkModGlobals.h" />
     <ClInclude Include="game\darkmodHidingSpotTree.h" />
     <ClInclude Include="game\darkModLAS.h" />
-    <ClInclude Include="game\decltdm_matinfo.h" />
     <ClInclude Include="game\declxdata.h" />
     <ClInclude Include="game\DifficultyManager.h" />
     <ClInclude Include="game\DifficultySettings.h" />
@@ -1014,7 +1013,6 @@
     <ClCompile Include="game\DarkModGlobals.cpp" />
     <ClCompile Include="game\darkmodHidingSpotTree.cpp" />
     <ClCompile Include="game\darkModLAS.cpp" />
-    <ClCompile Include="game\decltdm_matinfo.cpp" />
     <ClCompile Include="game\declxdata.cpp" />
     <ClCompile Include="game\DifficultyManager.cpp" />
     <ClCompile Include="game\DifficultySettings.cpp" />
