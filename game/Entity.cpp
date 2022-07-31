@@ -1471,7 +1471,7 @@ void idEntity::LoadModels()
 	}
 
 	// greebo: Only try to cache the model if it actually exists -> otherwise tons of false warnings get emitted
-	bool brokenModelFileExists = (fileSystem->FindFile(brokenModel) != FIND_NO);
+	bool brokenModelFileExists = brokenModel.Length() > 0 && (fileSystem->FindFile(brokenModel) != FIND_NO);
 
 	if (brokenModelFileExists)
 	{
