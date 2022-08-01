@@ -206,6 +206,29 @@ static void Session_TestMap_f( const idCmdArgs &args ) {
 	sprintf( string, "dmap maps/%s.map", map.c_str() );
 	cmdSystem->BufferCommandText( CMD_EXEC_NOW, string );
 
+	sprintf( string, "map %s", map.c_str() );
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, string );
+}
+
+/*
+==================
+Session_TestDevmap_f
+==================
+*/
+static void Session_TestDevmap_f( const idCmdArgs &args ) {
+	idStr map, string;
+
+	map = args.Argv(1);
+	if ( !map.Length() ) {
+		return;
+	}
+	map.StripFileExtension();
+
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+
+	sprintf( string, "dmap maps/%s.map", map.c_str() );
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, string );
+
 	sprintf( string, "devmap %s", map.c_str() );
 	cmdSystem->BufferCommandText( CMD_EXEC_NOW, string );
 }
@@ -3275,6 +3298,7 @@ void idSessionLocal::Init() {
 	cmdSystem->AddCommand( "map", Session_Map_f, CMD_FL_SYSTEM, "loads a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "devmap", Session_DevMap_f, CMD_FL_SYSTEM, "loads a map in developer mode", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "testmap", Session_TestMap_f, CMD_FL_SYSTEM, "tests a map", idCmdSystem::ArgCompletion_MapName );
+	cmdSystem->AddCommand( "testdevmap", Session_TestDevmap_f, CMD_FL_SYSTEM, "tests a map in developer mode", idCmdSystem::ArgCompletion_MapName );
 
 	cmdSystem->AddCommand( "writeCmdDemo", Session_WriteCmdDemo_f, CMD_FL_SYSTEM, "writes a command demo" );
 	cmdSystem->AddCommand( "playCmdDemo", Session_PlayCmdDemo_f, CMD_FL_SYSTEM, "plays back a command demo" );
