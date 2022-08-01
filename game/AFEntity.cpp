@@ -1336,9 +1336,11 @@ idAFEntity_Base::SetModel
 ================
 */
 void idAFEntity_Base::SetModel( const char *modelname ) {
+	bool hadModelDef = ( GetAnimator()->ModelDef() != NULL );
+
 	idAnimatedEntity::SetModel(modelname);
 
-	if ( !GetAnimator()->ModelDef() ) {
+	if ( hadModelDef && !GetAnimator()->ModelDef() ) {
 		//stgatilov #5845: can only switch AF model with compatible AF model
 		//because we don't (and cannot) change the body set in af.physicsObj
 		common->Error("idAFEntity_Base::SetModel: model %s is not modelDef", modelname);
