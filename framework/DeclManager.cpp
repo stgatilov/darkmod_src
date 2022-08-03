@@ -161,6 +161,7 @@ public:
 	int							fileSize;
 	int							numLines;
 	bool						hasReloadedSubtitles;
+	domainStatus_t				domain;		//stgatilov #5766
 
 	idDeclLocal *				decls;
 };
@@ -245,6 +246,19 @@ private:
 };
 
 idCVar idDeclManagerLocal::decl_show( "decl_show", "0", CVAR_SYSTEM, "set to 1 to print parses, 2 to also print references", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar decl_skip_redefine_warning(
+	"decl_skip_redefine_warning", "cf;", CVAR_SYSTEM,
+	"Conditionally suppress 'decl X previously defined at Y' warnings.\n"
+	"Set semicolon-separated list of codes saying when to skip warning:\n"
+	"  cc --- both definitions are in TDM core decl files\n"
+	"  cf --- defined in TDM core file but overridden with FM file\n"
+	"  ff --- both definitions are in FM decl files\n"
+);
+idCVar decl_fix_mission_override(
+	"decl_fix_mission_override", "1", CVAR_SYSTEM | CVAR_BOOL,
+	"Sort loaded decl files in such way that mission-provided decls override core decls.\n"
+	"If set to 0, then original Doom 3 order is used, and which decl wins depends on filenames."
+);
 
 idDeclManagerLocal	declManagerLocal;
 idDeclManager *		declManager = &declManagerLocal;
@@ -557,6 +571,7 @@ idDeclFile::idDeclFile( const char *fileName, declType_t defaultType ) {
 	this->fileSize = 0;
 	this->numLines = 0;
 	this->decls = NULL;
+	this->domain = FDOM_UNKNOWN;
 }
 
 /*
@@ -572,6 +587,7 @@ idDeclFile::idDeclFile() {
 	this->fileSize = 0;
 	this->numLines = 0;
 	this->decls = NULL;
+	this->domain = FDOM_UNKNOWN;
 }
 
 /*
@@ -738,8 +754,25 @@ int idDeclFile::LoadAndParse() {
 		if ( newDecl ) {
 			// update the existing copy
 			if ( newDecl->sourceFile != this || newDecl->redefinedInReload ) {
-				src.Warning( "%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType( identifiedType ),
-								name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine );
+				// stgatilov #5170: usually we should suppress warning when FM author overrides core decl
+				static_assert( FDOM_UNKNOWN == 0 && FDOM_CORE == 1 && FDOM_FM == 2, "" );
+				static const char LETTERS[] = "ucf";
+				char code[3] = { LETTERS[domain], LETTERS[newDecl->sourceFile->domain], 0 };
+
+				bool suppress = idStr::FindText( decl_skip_redefine_warning.GetString(), code, false ) != -1;
+				bool internalError = ( idStr::Cmp(code, "fc") == 0 );
+				assert( !internalError );	// should never happen
+
+				if ( !suppress ) {
+					src.Warning(
+						"%s%s '%s' previously defined at %s:%i",
+						(internalError ? "INTERNAL ERROR! " : ""),
+						declManagerLocal.GetDeclNameFromType( identifiedType ),
+						name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine
+					);
+				}
+
+				// skip this decl, retain the previously loaded one
 				continue;
 			}
 			if ( newDecl->declState != DS_UNPARSED ) {
@@ -1030,6 +1063,9 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 		}
 	}
 	if ( i < declFolders.Num() ) {
+		// stgatilov #5766: need to sort all decl files by core/FM domain first
+		// and then load + parse all of them in correct order
+		common->Error("Registering same files twice is forbidden");
 		declFolder = declFolders[i];
 	} else {
 		declFolder = new idDeclFolder;
@@ -1042,7 +1078,9 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 	// scan for decl files
 	fileList = fileSystem->ListFiles( declFolder->folder, declFolder->extension, true );
 
-	// load and parse decl files
+	int previouslyLoadedNum = loadedFiles.Num();
+
+	// add decl files
 	for ( i = 0; i < fileList->GetNumFiles(); i++ ) {
 		fileName = declFolder->folder + "/" + fileList->GetFile( i );
 
@@ -1053,15 +1091,43 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 			}
 		}
 		if ( j < loadedFiles.Num() ) {
+			// stgatilov #5766: should never happen
+			// but if it does, than we probably broke FM > core ordering
+			common->Error( "Decl file '%s' is loaded twice", fileName.c_str() );
 			df = loadedFiles[j];
 		} else {
 			df = new idDeclFile( fileName, defaultType );
 			loadedFiles.Append( df );
+
+			// stgatilov #5766: see where this file comes from (TDM core / FM)
+			idFile *f = fileSystem->OpenFileRead( fileName );
+			assert(f);
+			if (f) {
+				df->domain = f->GetDomain();
+				fileSystem->CloseFile(f);
+			}
 		}
-		df->LoadAndParse();
 	}
 
 	fileSystem->FreeFileList( fileList );
+
+	if ( decl_fix_mission_override.GetBool() ) {
+		// stgatilov #5766: sort decl files by domain (core or FM)
+		// since LoadAndParse skips new decls with same name, we must ensure FM decls are loaded first
+		// in case of same domain, try to save original order
+		std::stable_sort( loadedFiles.Ptr() + previouslyLoadedNum, loadedFiles.Ptr() + loadedFiles.Num(), [](idDeclFile *a, idDeclFile *b) -> bool {
+			if ( a->domain != b->domain ) {
+				static_assert(FDOM_CORE < FDOM_FM, "FM domain is greater");
+				return a->domain > b->domain;
+			}
+			return false;
+		});
+	}
+
+	// load and parse added decl files
+	for ( i = previouslyLoadedNum; i < loadedFiles.Num(); i++ ) {
+		loadedFiles[i]->LoadAndParse();
+	}
 }
 
 /*
