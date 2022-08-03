@@ -208,6 +208,15 @@ ID_TIME_T idFile::Timestamp( void ) {
 
 /*
 =================
+idFile::GetDomain
+=================
+*/
+domainStatus_t idFile::GetDomain() const {
+	return FDOM_UNKNOWN;
+}
+
+/*
+=================
 idFile::Tell
 =================
 */
@@ -986,6 +995,7 @@ idFile_Permanent::idFile_Permanent( void ) {
 	mode = 0;
 	fileSize = 0;
 	handleSync = false;
+	domain = FDOM_UNKNOWN;
 }
 
 /*
@@ -1149,6 +1159,15 @@ ID_TIME_T idFile_Permanent::Timestamp( void ) {
 }
 
 /*
+================
+idFile_Permanent::GetDomain
+================
+*/
+domainStatus_t idFile_Permanent::GetDomain() const {
+	return domain;
+}
+
+/*
 =================
 idFile_Permanent::Seek
 
@@ -1201,6 +1220,7 @@ idFile_InZip::idFile_InZip( void ) {
 	compressed = false;
 	fileSize = 0;
 	memset( &z, 0, sizeof( z ) );
+	domain = FDOM_UNKNOWN;
 }
 
 /*
@@ -1279,7 +1299,16 @@ idFile_InZip::Timestamp
 ================
 */
 ID_TIME_T idFile_InZip::Timestamp( void ) {
-	return fileLastMod;
+	return 0;
+}
+
+/*
+================
+idFile_InZip::GetDomain
+================
+*/
+domainStatus_t idFile_InZip::GetDomain() const {
+	return domain;
 }
 
 /*
@@ -1303,7 +1332,7 @@ idFile_InZip::Seek
 int idFile_InZip::Seek( long offset, fsOrigin_t origin ) {
 	//stgatilov: try to seek using minizip function
 	//this would work very fast if the file is uncompressed
-	//see issue 4504 (and 4507) for reasoning behind this
+	//see issue #4504 (and #4507) for reasoning behind this
 
 	//Note: mode constants are different from standard ones!
 	int stdioOrigin = -1;

@@ -163,7 +163,7 @@ public:
 							// Creates the given OS path for as far as it doesn't exist already.
 	virtual void			CreateOSPath( const char *OSPath ) = 0;
 							// Returns true if a file is in a pak file.
-	virtual bool			FileIsInPAK( const char *relativePath ) = 0;
+	virtual bool			FileIsInPAK( const char *relativePath ) const = 0;
 							// Returns a space separated string containing the checksums of all referenced pak files.
 	virtual int				GetOSMask( void ) = 0;
 							// Reads a complete file.

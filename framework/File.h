@@ -28,6 +28,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ==============================================================
 */
 
+// stgatilov #5766: remember where search directory belongs to
+// this is useful for determining whether file comes from TDM core or from FM
+typedef enum {
+	FDOM_UNKNOWN = 0,
+	FDOM_CORE,
+	FDOM_FM
+} domainStatus_t;
+
 // mode parm for Seek
 typedef enum {
 	FS_SEEK_CUR,
@@ -55,6 +63,8 @@ public:
 	virtual int				Length( void );
 							// Return a time value for reload operations.
 	virtual ID_TIME_T		Timestamp( void );
+							//stgatilov #5766: is it core TDM file or part of FM?
+	virtual domainStatus_t	GetDomain() const;
 							// Returns offset in file.
 	virtual int				Tell( void );
 							// Forces flush on files being writting to.
@@ -184,6 +194,7 @@ public:
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
 	virtual ID_TIME_T		Timestamp( void );
+	virtual domainStatus_t	GetDomain() const override;
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -199,6 +210,7 @@ private:
 	int						fileSize;		// size of the file
 	FILE *					o;				// file handle
 	bool					handleSync;		// true if written data is immediately flushed
+	domainStatus_t			domain;			// stgatilov #5766
 };
 
 
@@ -215,6 +227,7 @@ public:
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
 	virtual ID_TIME_T		Timestamp( void );
+	virtual domainStatus_t	GetDomain() const override;
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -227,8 +240,8 @@ private:
 	bool compressed;		// whether the file is actually compressed
 	uint64_t				zipFilePos;		// zip file info position in pak
 	int						fileSize;		// size of the file
-	static const ID_TIME_T	fileLastMod = 0;	//stgatilov #5042: not used any more
 	void *					z;				// unzip info
+	domainStatus_t			domain;			// stgatilov #5766
 };
 
 #endif /* !__FILE_H__ */

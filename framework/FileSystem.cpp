@@ -166,6 +166,7 @@ typedef struct {
 typedef struct searchpath_s {
 	pack_t *			pack;						// only one of pack / dir will be non NULL
 	directory_t *		dir;
+	domainStatus_t		domain;						// stgatilov #5766: TDM core / FM
 	struct searchpath_s *next;
 } searchpath_t;
 
@@ -216,7 +217,7 @@ public:
 	virtual const char *	RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir = NULL ) override;
 	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath ) const override;
 	virtual void			CreateOSPath( const char *OSPath ) override;
-	virtual bool			FileIsInPAK( const char *relativePath ) override;
+	virtual bool			FileIsInPAK( const char *relativePath ) const override;
 	bool					UpdateGamePakChecksums( void );
 	virtual int				GetOSMask( void ) override;
 	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp ) override;
@@ -322,7 +323,7 @@ private:
 
 	int						GetFileListTree( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, const char* gamedir = NULL ) const; //note: thread-unsafe!
 	pack_t *				LoadZipFile( const char *zipfile ); //note: thread-unsafe!
-	void					AddGameDirectory( const char *path, const char *dir ); //note: thread-unsafe!
+	void					AddGameDirectory( const char *path, const char *dir, domainStatus_t domain ); //note: thread-unsafe!
 	void					SetupGameDirectories( const char *gameName ); //note: thread-unsafe!
 	void					Startup( void ); //note: thread-unsafe!
 
@@ -839,7 +840,7 @@ void idFileSystemLocal::RemoveFile( const char *relativePath, const char *gamedi
 idFileSystemLocal::FileIsInPAK
 ================
 */
-bool idFileSystemLocal::FileIsInPAK( const char *relativePath ) {
+bool idFileSystemLocal::FileIsInPAK( const char *relativePath ) const {
 	//the only reason to lock here is to forbid adding searchPaths in parallel
 	idScopedCriticalSection lock(globalMutex);
 
@@ -1384,6 +1385,7 @@ int idFileSystemLocal::AddZipFile( const char *path ) {
 	search = new searchpath_t;
 	search->dir = NULL;
 	search->pack = pak;
+	search->domain = FDOM_UNKNOWN;
 	search->next = NULL;
 	last = searchPaths;
 
@@ -2009,9 +2011,22 @@ void idFileSystemLocal::Path_f( const idCmdArgs &args ) {
 
 	sp = fileSystemLocal.searchPaths;
 	while ( sp ) {
+		// stgatilov #5766: show domain
+		char domain = '?';
+		if ( sp->domain == FDOM_CORE )
+			domain = 'C';
+		if ( sp->domain == FDOM_FM )
+			domain = 'M';
+
 		if ( sp->pack ) {
 			if ( com_developer.GetBool() ) {
-				sprintf( status, "  %s (%i files - 0x%x %s", sp->pack->pakFilename.c_str(), sp->pack->numfiles, sp->pack->checksum, sp->pack->referenced ? "referenced" : "not referenced" );
+				sprintf( status, "  [%c] %s (%i files - 0x%x %s",
+					domain,
+					sp->pack->pakFilename.c_str(),
+					sp->pack->numfiles,
+					sp->pack->checksum,
+					sp->pack->referenced ? "referenced" : "not referenced"
+				);
 				if ( sp->pack->addon ) {
 					status += " - addon)\n";
 				} else {
@@ -2019,10 +2034,19 @@ void idFileSystemLocal::Path_f( const idCmdArgs &args ) {
 				}
 				common->Printf( status.c_str() );
 			} else {
-				common->Printf( "  %s (%i files)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles );
+				common->Printf( "  [%c] %s (%i files - 0x%x)\n",
+					domain,
+					sp->pack->pakFilename.c_str(),
+					sp->pack->numfiles,
+					sp->pack->checksum
+				);
 			}
 		} else {
-			common->Printf( "  %s/%s\n", sp->dir->path.c_str(), sp->dir->gamedir.c_str() );
+			common->Printf( "  [%c] %s/%s\n",
+				domain,
+				sp->dir->path.c_str(),
+				sp->dir->gamedir.c_str()
+			);
 		}
 		sp = sp->next;
 	}
@@ -2137,7 +2161,7 @@ idFileSystemLocal::AddGameDirectory
 Sets gameFolder, adds the directory to the head of the search paths, then loads any pk4 files.
 ================
 */
-void idFileSystemLocal::AddGameDirectory( const char *path, const char *dir ) {
+void idFileSystemLocal::AddGameDirectory( const char *path, const char *dir, domainStatus_t domain ) {
 	searchpath_t *	search;
 	pack_t *		pak;
 	idStr			pakfile;
@@ -2162,6 +2186,7 @@ void idFileSystemLocal::AddGameDirectory( const char *path, const char *dir ) {
 	search = new searchpath_t;
 	search->dir = new directory_t;
 	search->pack = NULL;
+	search->domain = domain;
 
 	search->dir->path = path;
 	search->dir->gamedir = dir;
@@ -2189,6 +2214,7 @@ void idFileSystemLocal::AddGameDirectory( const char *path, const char *dir ) {
 		search = new searchpath_t;
 		search->dir = NULL;
 		search->pack = pak;
+		search->domain = domain;
 		search->next = searchPaths->next;
 		searchPaths->next = search;
 
@@ -2207,7 +2233,7 @@ idFileSystemLocal::SetupGameDirectories
 void idFileSystemLocal::SetupGameDirectories( const char *gameName ) {
 	// setup basepath
 	if ( fs_basepath.GetString()[0] ) {
-		AddGameDirectory( fs_basepath.GetString(), gameName );
+		AddGameDirectory( fs_basepath.GetString(), gameName, FDOM_UNKNOWN );
 	}
 }
 
@@ -2268,7 +2294,7 @@ void idFileSystemLocal::Startup( void ) {
 		common->Printf( "restarting filesystem with %d addon pak file(s) to include\n", addonChecksums.Num() );
 	}
 
-    AddGameDirectory( fs_basepath.GetString(), "" ); // always add the basepath
+    AddGameDirectory( fs_basepath.GetString(), "", FDOM_CORE ); // always add the basepath
 
     // fs_mod override
     if ( fs_mod.GetString()[0] &&
@@ -2319,23 +2345,23 @@ void idFileSystemLocal::Startup( void ) {
         // if fs_modSavePath has been modified (cmdline args) and differs from the default, use the 
         // supplied version. otherwise, recreate fs_modSavePath using the devpath
         if ( addFsModSave && idStr::Icmp( fs_modSavePath.GetString(), Sys_ModSavePath() ) ) {
-            AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+            AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString(), FDOM_FM );
         } else {
             fs_modSavePath.SetString( devbase.c_str() );
-            AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+            AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString(), FDOM_FM );
             addFsModSave = false;
         }
 
         // check if the supplied fs_currentfm is the same as the lowest level directory
         // supplied in the fs_devpath argument. if not, use the directory from the devpath
         if ( idStr::Icmp ( devfm.c_str(), fs_currentfm.GetString() ) == 0 ) {
-            AddGameDirectory( devbase.c_str(), fs_currentfm.GetString() );
+            AddGameDirectory( devbase.c_str(), fs_currentfm.GetString(), FDOM_FM );
         } else {
-            AddGameDirectory( devbase.c_str(), devfm.c_str() );
+            AddGameDirectory( devbase.c_str(), devfm.c_str(), FDOM_FM );
         }
     } else if ( addFsModSave ) {
         // devpath was not modified, so we can add fs_modSavePath with the current fm to the searchpath
-        AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+        AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString(), FDOM_FM );
     }
 
     // currently all addons are in the search list - deal with filtering out and dependencies now
@@ -2826,7 +2852,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 		common->FatalError( "idFileSystemLocal::OpenFileRead: NULL 'relativePath' parameter passed\n" );
 	} else if ( relativePath[0] == '\0' ) { // edge case
 		// FIXME : Serp - This seems to happen a lot - find out why and see if its fixable
-		//common->Warning("idFileSystemLocal::OpenFileRead: Relative path was empty");
+		common->Warning("idFileSystemLocal::OpenFileRead: Relative path was empty");
 		return NULL;
 	} else if ( relativePath[0] == '/' || relativePath[0] == '\\' ) { // paths are not supposed to have a leading slash
 		relativePath++;
@@ -2878,6 +2904,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 			file->fullPath = netpath;
 			file->mode = ( 1 << FS_READ );
 			file->fileSize = DirectFileLength( file->o );
+			file->domain = search->domain;
 			if ( fs_debug.GetInteger() ) {
 				common->Printf( "idFileSystem::OpenFileRead: %s (found in '%s/%s')\n", relativePath, dir->path.c_str(), dir->gamedir.c_str() );
 			}
@@ -2913,6 +2940,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 				// case and separator insensitive comparisons
 				if ( !FilenameCompare( pakFile->name, relativePath ) ) {
 					idFile_InZip *file = ReadFileFromZip( pak, pakFile, relativePath );
+					file->domain = search->domain;
 
 					if ( foundInPak ) {
 						*foundInPak = pak;
