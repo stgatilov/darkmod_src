@@ -4483,7 +4483,8 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 	m_bShoulderingBody = true;
 
 	// STiFU #3607: Trigger shouldering viewport animation
-	physicsObj.StartShouldering(body);
+    if (!noclip)
+	    physicsObj.StartShouldering(body);
 }
 
 void idPlayer::OnStopShoulderingBody(idEntity* body)
