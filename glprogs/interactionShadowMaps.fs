@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define STGATILOV_OCCLUDER_SEARCH 1
 #define STGATILOV_USEGATHER 1
 
-#pragma tdm_include "tdm_interaction.fs.glsl"
+#pragma tdm_include "interactionCommon.fs"
 #define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
 #pragma tdm_include "tdm_shadowmaps.glsl"
 

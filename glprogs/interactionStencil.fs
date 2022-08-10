@@ -15,8 +15,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #version 140
 
 #pragma tdm_include "tdm_utils.glsl"
-#pragma tdm_include "tdm_interaction.fs.glsl"
-#pragma tdm_include "tdm_shadowstencilsoft.fs"
+#pragma tdm_include "interactionCommon.fs"
+#pragma tdm_include "tdm_shadowstencilsoft.glsl"
 
 
 uniform bool	u_shadows;

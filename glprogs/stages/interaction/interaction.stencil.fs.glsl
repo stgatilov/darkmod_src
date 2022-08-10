@@ -16,7 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_utils.glsl"
 #pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
-#pragma tdm_include "tdm_shadowstencilsoft.fs"
+#pragma tdm_include "tdm_shadowstencilsoft.glsl"
 
 uniform usampler2D u_stencilTexture;
 uniform sampler2D u_depthTexture;

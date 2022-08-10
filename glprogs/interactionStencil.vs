@@ -14,7 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 140
 
-#pragma tdm_include "tdm_interaction.vs.glsl"
+#pragma tdm_include "interactionCommon.vs"
 
 void main( void ) {
 	interactionProcessVertex();
