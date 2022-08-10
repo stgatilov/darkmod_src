@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_lightproject.glsl"
 #pragma tdm_include "tdm_interaction.glsl"
+#pragma tdm_include "tdm_utils.glsl"
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
@@ -45,9 +46,8 @@ out vec3 var_WorldLightDir;
 
 
 void interactionProcessVertex() {
-	//TODO: extract it properly
 	// transform vertex position into homogenous clip-space
-	gl_Position = u_projectionMatrix * (params[attr_DrawId].modelViewMatrix * attr_Position);
+	gl_Position = transformPosition(attr_Position, params[attr_DrawId].modelViewMatrix, u_projectionMatrix);
 
 	// surface texcoords, tangent space, and color generation
 	generateSurfaceProperties(
