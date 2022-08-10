@@ -27,7 +27,7 @@ in vec4 var_TexLight;
 flat in int var_DrawId;
 
 #pragma tdm_include "stages/interaction/interaction.params.glsl"
-#pragma tdm_include "tdm_lighting.glsl"
+#pragma tdm_include "tdm_interaction.glsl"
 
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_diffuseTexture;

@@ -14,7 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma tdm_include "tdm_transform.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
-#pragma tdm_include "tdm_lighting.glsl"
+#pragma tdm_include "tdm_interaction.glsl"
 
 // Contains common formulas for computing interaction.
 // Includes: illumination model, fetching surface and light properties

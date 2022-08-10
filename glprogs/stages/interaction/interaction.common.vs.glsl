@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Excludes: shadows
 
 #pragma tdm_include "tdm_lightproject.glsl"
-#pragma tdm_include "tdm_lighting.glsl"
+#pragma tdm_include "tdm_interaction.glsl"
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
