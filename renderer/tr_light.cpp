@@ -1100,7 +1100,7 @@ The multi light shader needs lights per each surface
 static void R_FindSurfaceLights( drawSurf_t& drawSurf ) {
 	drawSurf.onLights = nullptr;
 	auto def = drawSurf.space->entityDef;
-	if ( !def || !(r_interactionProgram.GetInteger() == 2 || r_shadowMapSinglePass.GetBool()) )
+	if ( !def || !(r_shadowMapSinglePass.GetBool()) )
 		return;
 	idList<viewLight_s*> lights; // local list
 	for ( auto inter = def->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {

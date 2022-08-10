@@ -396,12 +396,11 @@ void RB_GLSL_DrawInteractions() {
 	if ( r_shadows.GetInteger() == 2 ) 
 		if ( r_shadowMapSinglePass.GetBool() )
 			RB_ShadowMap_RenderAllLights();
-	if ( r_shadows.GetInteger() != 1 )
-		if ( r_interactionProgram.GetInteger() == 2 ) {
-			extern void RB_GLSL_DrawInteractions_MultiLight();
-			RB_GLSL_DrawInteractions_MultiLight();
-			return;
-		}
+	if ( r_shadows.GetInteger() != 1 && r_shadowMapSinglePass.GetInteger() == 2 ) {
+		extern void RB_GLSL_DrawInteractions_MultiLight();
+		RB_GLSL_DrawInteractions_MultiLight();
+		return;
+	}
 
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) 
@@ -833,8 +832,6 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() );
 		return;
 	}
-
-	advanced.Set( r_interactionProgram.GetFloat() );
 
 	auto vLight = backEnd.vLight;
 	bool doShadows = !vLight->noShadows && vLight->lightShader->LightCastsShadows(); 

@@ -60,7 +60,6 @@ namespace {
 		DEFINE_UNIFORM( sampler, ssaoTexture )
 		DEFINE_UNIFORM( vec3, globalLightOrigin )
 
-		DEFINE_UNIFORM( int, advanced )
 		DEFINE_UNIFORM( int, cubic )
 		DEFINE_UNIFORM( float, gamma )
 		DEFINE_UNIFORM( float, minLevel )
@@ -275,7 +274,6 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	interactionShader->Activate();
 
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
-	uniforms->advanced.Set( r_interactionProgram.GetInteger() );
 	uniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	uniforms->minLevel.Set( r_ambientMinLevel.GetFloat() );
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
