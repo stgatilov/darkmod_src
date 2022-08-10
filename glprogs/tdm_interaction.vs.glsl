@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma tdm_include "tdm_transform.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
+#pragma tdm_include "tdm_lighting.glsl"
 
 // Contains common formulas for computing interaction.
 // Includes: illumination model, fetching surface and light properties
@@ -37,7 +38,7 @@ uniform vec4 u_colorAdd;
 uniform vec3 u_lightOrigin;
 uniform vec4 u_viewOrigin;
 uniform mat4 u_modelMatrix;
-uniform vec3 u_lightOrigin2;
+uniform vec3 u_globalLightOrigin;
 
 out vec3 var_Position;
 out vec2 var_TexDiffuse;
@@ -45,8 +46,9 @@ out vec2 var_TexNormal;
 out vec2 var_TexSpecular;
 out vec4 var_TexLight;
 out vec4 var_Color;
-
-#pragma tdm_include "tdm_bitangents.glsl"
+out mat3 var_TangentBitangentNormalMatrix; 
+out vec3 var_LightDirLocal;  
+out vec3 var_ViewDirLocal;  
 
 out vec3 var_WorldLightDir;
 
@@ -55,30 +57,25 @@ void interactionProcessVertex() {
 	// transform vertex position into homogenous clip-space
 	gl_Position = tdm_transform(attr_Position);
 
-	// transform vertex position into world space
-	var_Position = attr_Position.xyz;
-
-	// normal map texgen
-	var_TexNormal.x = dot(attr_TexCoord, u_bumpMatrix[0]);
-	var_TexNormal.y = dot(attr_TexCoord, u_bumpMatrix[1]);
-
-	// diffuse map texgen
-	var_TexDiffuse.x = dot(attr_TexCoord, u_diffuseMatrix[0]);
-	var_TexDiffuse.y = dot(attr_TexCoord, u_diffuseMatrix[1]);
-
-	// specular map texgen
-	var_TexSpecular.x = dot(attr_TexCoord, u_specularMatrix[0]);
-	var_TexSpecular.y = dot(attr_TexCoord, u_specularMatrix[1]);
+	// generate surface texcoords, vertex color, and tangent space
+	generateSurfaceProperties(
+		attr_TexCoord, attr_Color, 
+		attr_Tangent, attr_Bitangent, attr_Normal,
+		u_bumpMatrix, u_diffuseMatrix, u_specularMatrix,
+		u_colorModulate, u_colorAdd,
+		var_TexNormal, var_TexDiffuse, var_TexSpecular,
+		var_Color, var_TangentBitangentNormalMatrix
+	);
 
 	// light projection texgen
 	var_TexLight = computeLightTex(u_lightProjectionFalloff, attr_Position);
 
-	// construct tangent-bitangent-normal 3x3 matrix
-	sendTBN();
 
-	// primary color
-	var_Color = (attr_Color * u_colorModulate) + u_colorAdd;
+	var_Position = attr_Position.xyz;
+
+	var_LightDirLocal = (u_lightOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
+	var_ViewDirLocal = (u_viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
 
 	// light->fragment vector in world coordinates
-	var_WorldLightDir = (u_modelMatrix * attr_Position).xyz - u_lightOrigin2;
+	var_WorldLightDir = (u_modelMatrix * attr_Position).xyz - u_globalLightOrigin;
 }

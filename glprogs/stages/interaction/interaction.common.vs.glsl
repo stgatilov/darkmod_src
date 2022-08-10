@@ -17,6 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Excludes: shadows
 
 #pragma tdm_include "tdm_lightproject.glsl"
+#pragma tdm_include "tdm_lighting.glsl"
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
@@ -39,45 +40,35 @@ out vec3 var_LightDirLocal;
 out vec3 var_ViewDirLocal;  
 flat out int var_DrawId;
 
-void sendTBN() {
-	// construct tangent-bitangent-normal 3x3 matrix   
-	var_TangentBitangentNormalMatrix = mat3( clamp(attr_Tangent,-1,1), clamp(attr_Bitangent,-1,1), clamp(attr_Normal,-1,1) );
-	var_LightDirLocal = (params[attr_DrawId].lightOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
-	var_ViewDirLocal = (params[attr_DrawId].viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
-}
-
 uniform vec3 u_globalLightOrigin;
 out vec3 var_WorldLightDir;
 
 
 void interactionProcessVertex() {
+	//TODO: extract it properly
 	// transform vertex position into homogenous clip-space
 	gl_Position = u_projectionMatrix * (params[attr_DrawId].modelViewMatrix * attr_Position);
 
-	var_Position = attr_Position.xyz;
-
-	// normal map texgen
-	var_TexNormal.x = dot(attr_TexCoord, params[attr_DrawId].bumpMatrix[0]);
-	var_TexNormal.y = dot(attr_TexCoord, params[attr_DrawId].bumpMatrix[1]);
-
-	// diffuse map texgen
-	var_TexDiffuse.x = dot(attr_TexCoord, params[attr_DrawId].diffuseMatrix[0]);
-	var_TexDiffuse.y = dot(attr_TexCoord, params[attr_DrawId].diffuseMatrix[1]);
-
-	// specular map texgen
-	var_TexSpecular.x = dot(attr_TexCoord, params[attr_DrawId].specularMatrix[0]);
-	var_TexSpecular.y = dot(attr_TexCoord, params[attr_DrawId].specularMatrix[1]);
+	// surface texcoords, tangent space, and color generation
+	generateSurfaceProperties(
+		attr_TexCoord, attr_Color, 
+		attr_Tangent, attr_Bitangent, attr_Normal,
+		params[attr_DrawId].bumpMatrix, params[attr_DrawId].diffuseMatrix, params[attr_DrawId].specularMatrix,
+		params[attr_DrawId].colorModulate, params[attr_DrawId].colorAdd,
+		var_TexNormal, var_TexDiffuse, var_TexSpecular,
+		var_Color, var_TangentBitangentNormalMatrix
+	);
 
 	// light projection texgen
 	var_TexLight = computeLightTex(params[attr_DrawId].lightProjectionFalloff, attr_Position);
 
-	// construct tangent-bitangent-normal 3x3 matrix
-	sendTBN();
 
-	// primary color
-	var_Color = (attr_Color * params[attr_DrawId].colorModulate) + params[attr_DrawId].colorAdd;
+	var_DrawId = attr_DrawId;
+	var_Position = attr_Position.xyz;
+
+	var_LightDirLocal = (params[attr_DrawId].lightOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
+	var_ViewDirLocal = (params[attr_DrawId].viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;	
 
 	// light->fragment vector in world coordinates
 	var_WorldLightDir = (params[attr_DrawId].modelMatrix * attr_Position).xyz - u_globalLightOrigin;
-	var_DrawId = attr_DrawId;
 }

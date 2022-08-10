@@ -21,3 +21,5 @@ float depthToZ(mat4 projectionMatrix, float depth) {
 	float B = projectionMatrix[3].z;
 	return B / (A + clipZ);
 }
+
+#define SOFT_SHADOWS_SAMPLES_COUNT 150

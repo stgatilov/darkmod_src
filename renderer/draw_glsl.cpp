@@ -797,7 +797,7 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 		rimColor.Set( din->ambientRimColor );
 	} else {
 		lightOrigin.Set( din->localLightOrigin.ToVec3() );
-		lightOrigin2.Set( backEnd.vLight->globalLightOrigin );
+		globalLightOrigin.Set( backEnd.vLight->globalLightOrigin );
 	}
 
 	// stgatilov #4825: make translation "lit tangentially" -> "unlit" smoother

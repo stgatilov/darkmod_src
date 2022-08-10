@@ -118,7 +118,7 @@ namespace Uniforms {
 		DEFINE_UNIFORM( vec4, viewOrigin )
 
 		DEFINE_UNIFORM( vec3, lightOrigin )
-		DEFINE_UNIFORM( vec3, lightOrigin2 )
+		DEFINE_UNIFORM( vec3, globalLightOrigin )
 
 		DEFINE_UNIFORM( float, minLevel )
 		DEFINE_UNIFORM( float, gamma )
