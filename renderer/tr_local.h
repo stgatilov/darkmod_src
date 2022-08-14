@@ -869,8 +869,6 @@ public:
 	idCinematic 			*testVideo;
 	float					testVideoStartTime;
 
-	idImage 				*ambientCubeImage;	// hack for testing dependent ambient lighting
-
 	viewDef_t 				*viewDef;
 
 	performanceCounters_t	pc;					// performance counters

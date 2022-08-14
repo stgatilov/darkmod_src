@@ -1789,7 +1789,6 @@ void idRenderSystemLocal::Clear( void ) {
 	primaryView = NULL;
 	defaultMaterial = NULL;
 	testImage = NULL;
-	ambientCubeImage = NULL;
 	viewDef = NULL;
 	memset( &pc, 0, sizeof( pc ) );
 	memset( &identitySpace, 0, sizeof( identitySpace ) );
