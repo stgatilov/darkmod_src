@@ -199,6 +199,8 @@ void RB_GLSL_DrawLight_Stencil() {
 	if ( backEnd.vLight->globalShadows ) {
 		RB_StencilShadowPass( backEnd.vLight->globalShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			backEnd.currentScissor = backEnd.vLight->scissorRect;
+			FB_ApplyScissor();
 			frameBuffers->ResolveShadowStencilAA();
 		}
 	}
@@ -220,6 +222,8 @@ void RB_GLSL_DrawLight_Stencil() {
 	if ( backEnd.vLight->localShadows ) {
 		RB_StencilShadowPass( backEnd.vLight->localShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			backEnd.currentScissor = backEnd.vLight->scissorRect;
+			FB_ApplyScissor();
 			frameBuffers->ResolveShadowStencilAA();
 		}
 	}

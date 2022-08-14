@@ -185,7 +185,19 @@ void FrameBufferManager::LeaveShadowStencil() {
 }
 
 void FrameBufferManager::ResolveShadowStencilAA() {
-	primaryFbo->BlitTo( shadowStencilFbo, GL_STENCIL_BUFFER_BIT, GL_NEAREST );
+	if ( r_useScissor.GetBool() ) {
+		// copy only the region selected by light scissor
+		primaryFbo->BlitToVidSize(
+			shadowStencilFbo, GL_STENCIL_BUFFER_BIT, GL_NEAREST,
+			backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+			backEnd.currentScissor.GetWidth(),
+			backEnd.currentScissor.GetHeight()
+		);
+	} else {
+		// copy whole buffer
+		primaryFbo->BlitTo( shadowStencilFbo, GL_STENCIL_BUFFER_BIT, GL_NEAREST );
+	}
 }
 
 void FrameBufferManager::EnterShadowMap() {

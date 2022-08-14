@@ -222,6 +222,8 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( vLight->globalShadows ) {
 		stencilShadowStage.DrawStencilShadows( vLight, vLight->globalShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			backEnd.currentScissor = vLight->scissorRect;
+			FB_ApplyScissor();
 			frameBuffers->ResolveShadowStencilAA();
 		}
 	}
@@ -238,6 +240,8 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( vLight->localShadows ) {
 		stencilShadowStage.DrawStencilShadows( vLight, vLight->localShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 && r_softShadowsQuality.GetInteger() >= 0 ) {
+			backEnd.currentScissor = vLight->scissorRect;
+			FB_ApplyScissor();
 			frameBuffers->ResolveShadowStencilAA();
 		}
 	}
