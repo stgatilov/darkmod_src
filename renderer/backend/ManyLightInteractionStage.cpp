@@ -37,7 +37,6 @@ struct ManyLightInteractionStage::ShaderParams {
 	idVec4 diffuseColor;
 	idVec4 specularColor;
 	idVec4 hasTextureDNS;
-	idVec4 ambientRimColor;
 	uint32_t lightMask;
 	uint32_t padding[3];
 };
@@ -63,7 +62,6 @@ struct ManyLightInteractionStage::DrawInteraction {
 
 	idVec4 diffuseColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
 	idVec4 specularColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
-	idVec4 ambientRimColor;
 	stageVertexColor_t vertexColor;	// applies to both diffuse and specular
 
 	idVec4 bumpMatrix[2];
@@ -381,14 +379,6 @@ void ManyLightInteractionStage::ProcessSingleSurface( const drawSurf_t *surf ) {
 		return;
 	}
 
-	auto ambientRegs = material->GetAmbientRimColor().registers;
-	if ( ambientRegs[0] ) {
-		for ( int i = 0; i < 3; i++ )
-			inter.ambientRimColor[i] = surfaceRegs[ambientRegs[i]];
-		inter.ambientRimColor[3] = 1;
-	} else
-		inter.ambientRimColor.Zero();
-
 	inter.surf = surf;
 
 	inter.bumpImage = NULL;
@@ -524,7 +514,6 @@ void ManyLightInteractionStage::PrepareDrawCommand( DrawInteraction *din ) {
 	} else {
 		params.hasTextureDNS = idVec4(1, 1, 1, 0);
 	}
-	params.ambientRimColor = din->ambientRimColor;
 
 	params.lightMask = din->lightMask;
 

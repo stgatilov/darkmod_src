@@ -551,7 +551,6 @@ public:
 	
 		                // nbohr1more: #4379 lightgem culling
 	bool				IsLightgemSurf( void ) const { return isLightgemSurf; }
-	colorStage_t const& GetAmbientRimColor() const { return ambientRimColor; }
 	float				FogAlpha() const { return fogAlpha; }
 
 	float				GetPolygonOffset( void ) const { return polygonOffset; }
@@ -657,7 +656,6 @@ private:
 	idStr				materialImage;
 	
 	decalInfo_t			decalInfo;
-	colorStage_t		ambientRimColor;
 
 	mutable	float		sort;				// lower numbered shaders draw before higher numbered
 	deform_t			deform;

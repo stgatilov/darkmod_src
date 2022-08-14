@@ -40,7 +40,6 @@ struct InteractionStage::ShaderParams {
 	idVec4 diffuseColor;
 	idVec4 specularColor;
 	idVec4 hasTextureDNS;
-	idVec4 ambientRimColor;
 	int useBumpmapLightTogglingFix;
 	float RGTC;
 	idVec2 padding_2;
@@ -319,13 +318,6 @@ void InteractionStage::ProcessSingleSurface( viewLight_t *vLight, const shaderSt
 		inter.worldUpLocal.x = surf->space->modelMatrix[2];
 		inter.worldUpLocal.y = surf->space->modelMatrix[6];
 		inter.worldUpLocal.z = surf->space->modelMatrix[10];
-		auto ambientRegs = material->GetAmbientRimColor().registers;
-		if ( ambientRegs[0] ) {
-			for ( int i = 0; i < 3; i++ )
-				inter.ambientRimColor[i] = surfaceRegs[ambientRegs[i]];
-			inter.ambientRimColor[3] = 1;
-		} else
-			inter.ambientRimColor.Zero();
 	}
 
 	inter.surf = surf;
@@ -500,7 +492,6 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 	} else {
 		params.hasTextureDNS = idVec4(1, 1, 1, 0);
 	}
-	params.ambientRimColor = din->ambientRimColor;
 	params.useBumpmapLightTogglingFix = r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides();
 	params.RGTC = din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2;
 

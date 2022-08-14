@@ -116,12 +116,6 @@ void main() {
 	if(u_gamma != 1 ) // old-school exponential
 		light.rgb = pow(light.rgb, vec3(1.0 / u_gamma));
 
-	if(params[var_DrawId].ambientRimColor.a != 0) { // produces no visible speed difference on nVidia 1060, but maybe on some other hardware?..
-		float NV = 1-abs(dot(N, nViewDir));
-		NV *= NV;
-		light.rgb += params[var_DrawId].ambientRimColor.rgb * NV * NV;
-	}
-
 	if (u_ssaoEnabled == 1) {
 		light *= sampleSSAO();
 	}

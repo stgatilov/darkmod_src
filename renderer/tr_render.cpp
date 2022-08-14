@@ -785,13 +785,6 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		if ( r_skipAmbient.GetInteger() & 2 )
 			return;
-		auto ambientRegs = material->GetAmbientRimColor().registers;
-		if ( ambientRegs[0] ) {
-			for ( int i = 0; i < 3; i++ )
-				inter.ambientRimColor[i] = surfaceRegs[ambientRegs[i]];
-			inter.ambientRimColor[3] = 1;
-		} else
-			inter.ambientRimColor.Zero();
 	} else if ( r_skipInteractions.GetBool() ) {
 		if( r_skipInteractions.GetInteger() == 1 || !backEnd.vLight->lightDef->parms.noShadows )
 			return;

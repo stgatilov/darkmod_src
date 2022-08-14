@@ -30,7 +30,6 @@ struct PerDrawCallParams {
 	vec4 diffuseColor;
 	vec4 specularColor;
 	vec4 hasTextureDNS;
-	vec4 ambientRimColor;
     uint lightMask;
     int padding[3];
 };

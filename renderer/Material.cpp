@@ -103,7 +103,6 @@ void idMaterial::CommonInit() {
 	polygonOffset = 0.0f;
 	shadowmapOffset = 0;
 	fogAlpha = 0;
-	ambientRimColor.registers[0] = 0;
 	suppressInSubview = false;
 	refCount = 0;
 	portalSky = false;
@@ -2084,14 +2083,6 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
 			newSrc.FreeSource();
-			continue;
-		}
-		else if ( !token.Icmp( "ambientRimColor" ) ) {
-			ambientRimColor.registers[0] = ParseExpression( src );
-			MatchToken( src, "," );
-			ambientRimColor.registers[1] = ParseExpression( src );
-			MatchToken( src, "," );
-			ambientRimColor.registers[2] = ParseExpression( src );
 			continue;
 		}
 		// DECAL_MACRO for backwards compatibility with the preprocessor macros

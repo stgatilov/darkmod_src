@@ -44,7 +44,6 @@ uniform float u_cubic;
 uniform float u_gamma, u_minLevel;
 uniform mat4 u_modelMatrix;
 uniform float u_RGTC;
-uniform vec4 u_rimColor;   
 uniform vec4 u_lightTextureMatrix[2];
 
 uniform sampler2D u_ssaoTexture;
@@ -109,12 +108,6 @@ void main() {
 	light = max(light, vec4(0));  // avoid negative values, which with floating point render buffers can lead to NaN artefacts
 	if(u_gamma != 1 ) // old-school exponential
 		light.rgb = pow(light.rgb, vec3(1.0 / u_gamma));
-
-	if(u_rimColor.a != 0) { // produces no visible speed difference on nVidia 1060, but maybe on some other hardware?..
-		float NV = 1-abs(dot(N, nViewDir));
-		NV *= NV;
-		light.rgb += u_rimColor.rgb * NV * NV;
-	}
 
     if (u_ssaoEnabled == 1) {
 		light *= sampleSSAO();

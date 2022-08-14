@@ -794,7 +794,6 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 
 	if( ambient ) {
 		lightOrigin.Set( din->worldUpLocal.ToVec3() );
-		rimColor.Set( din->ambientRimColor );
 	} else {
 		lightOrigin.Set( din->localLightOrigin.ToVec3() );
 		globalLightOrigin.Set( backEnd.vLight->globalLightOrigin );

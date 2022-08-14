@@ -33,7 +33,6 @@ struct PerDrawCallParams {
 	vec4 diffuseColor;
 	vec4 specularColor;
 	vec4 hasTextureDNS;
-	vec4 ambientRimColor;
 	int useBumpmapLightTogglingFix;
 	float RGTC;
 	vec2 padding_2;
