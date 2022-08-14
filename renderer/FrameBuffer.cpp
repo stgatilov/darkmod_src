@@ -154,13 +154,33 @@ void FrameBuffer::Bind() {
 }
 
 void FrameBuffer::BlitTo( FrameBuffer *target, GLbitfield mask, GLenum filter ) {
+	BlitToVidSize(target, mask, filter, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
+}
+
+void FrameBuffer::BlitToVidSize(FrameBuffer *target, GLbitfield mask, GLenum filter, int x, int y, int w, int h) {
 	FrameBuffer *previous = frameBuffers->activeFbo;
 	Bind();
 	qglDisable(GL_SCISSOR_TEST);
+
 	target->BindDraw();
-	qglBlitFramebuffer(0, 0, width, height, 0, 0, target->width, target->height, mask, filter);
-	previous->Bind();
+
+	int xl = x, yl = y, xr = x + w, yr = y + h;
+	// note: avoid floats here!
+	// so that if we specify full screen, we don't accidentally skip last row/column
+	qglBlitFramebuffer(
+		xl * width  / glConfig.vidWidth ,
+		yl * height / glConfig.vidHeight,
+		xr * width  / glConfig.vidWidth ,
+		yr * height / glConfig.vidHeight,
+		xl * target->width  / glConfig.vidWidth ,
+		yl * target->height / glConfig.vidHeight,
+		xr * target->width  / glConfig.vidWidth ,
+		yr * target->height / glConfig.vidHeight,
+		mask, filter
+	);
+
 	qglEnable(GL_SCISSOR_TEST);
+	previous->Bind();
 }
 
 void FrameBuffer::CreateDefaultFrameBuffer(FrameBuffer *fbo) {
