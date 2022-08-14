@@ -184,13 +184,7 @@ void RB_GLSL_DrawLight_Stencil() {
 	// clear the stencil buffer if needed
 	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) {
 		backEnd.currentScissor = backEnd.vLight->scissorRect;
-
-		if ( r_useScissor.GetBool() ) {
-			GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-			            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-		}
+		FB_ApplyScissor();
 
 		if ( useShadowFbo ) {
 			frameBuffers->EnterShadowStencil();

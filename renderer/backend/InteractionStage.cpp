@@ -158,10 +158,7 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 
 	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( vLight->scissorRect ) ) {
 		backEnd.currentScissor = vLight->scissorRect;
-		GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+		FB_ApplyScissor();
 		GL_CheckErrors();
 	}
 
