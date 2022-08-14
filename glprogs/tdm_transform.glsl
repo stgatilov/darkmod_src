@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_utils.glsl"
 
-// stgatilov: it is recommended to use transformPosition from tdm_utils.glsl instead
+// stgatilov: it is recommended to use objectPosToClip from tdm_utils.glsl instead
 // especially if you need to receive any matrix in different way...
 
 uniform block {
@@ -24,7 +24,7 @@ uniform block {
 uniform mat4 u_modelViewMatrix;
 
 vec4 tdm_transform(vec4 position) {
-	return transformPosition(position, u_modelViewMatrix, u_projectionMatrix);
+	return objectPosToClip(position, u_modelViewMatrix, u_projectionMatrix);
 }
 
 #define INATTR_POSITION in vec4 attr_Position;

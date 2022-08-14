@@ -141,7 +141,6 @@ static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
 		int thisCount = idMath::Imin( (uint)data.lightOrigins.Num() - i, MAX_LIGHTS );
 
 		interactionUniforms->lightCount.Set( thisCount );
-		interactionUniforms->lightOrigin.SetArray( thisCount, data.lightOrigins[i].ToFloatPtr() );
 		interactionUniforms->lightColor.SetArray( thisCount, data.lightColors[i].ToFloatPtr() );
 		interactionUniforms->lightProjectionFalloff.SetArray( thisCount, data.projectionFalloff[i].ToFloatPtr() );
 		interactionUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );

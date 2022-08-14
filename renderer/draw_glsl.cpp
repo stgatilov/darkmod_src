@@ -787,17 +787,12 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 
 	lightProjectionFalloff.Set( din->lightProjection[0].ToFloatPtr() );
 	lightTextureMatrix.SetArray( 2, din->lightTextureMatrix[0].ToFloatPtr() );
-	// set the constant color
+
+	globalLightOrigin.Set( backEnd.vLight->globalLightOrigin );
+	globalViewOrigin.Set( backEnd.viewDef->renderView.vieworg );
+	renderResolution.Set( frameBuffers->activeFbo->Width(), frameBuffers->activeFbo->Height() );
 	diffuseColor.Set( din->diffuseColor );
 	specularColor.Set( din->specularColor );
-	viewOrigin.Set( din->localViewOrigin );
-
-	if( ambient ) {
-		lightOrigin.Set( din->worldUpLocal.ToVec3() );
-	} else {
-		lightOrigin.Set( din->localLightOrigin.ToVec3() );
-		globalLightOrigin.Set( backEnd.vLight->globalLightOrigin );
-	}
 
 	// stgatilov #4825: make translation "lit tangentially" -> "unlit" smoother
 	// #5862 unless surface has "twosided" material

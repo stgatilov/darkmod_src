@@ -535,14 +535,11 @@ typedef struct {
 										// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)
 	int					cubicLight;		// nbohr1more #3881: dedicated cubemap light // probably not needed
 
-	idVec4				localLightOrigin;
-	idVec4				localViewOrigin;
 	idVec4				lightProjection[4];		// transforms object coords into light-volume coords
 	idVec4				lightTextureMatrix[2];	// transforms light-volume coords into lightImage texcoords
 	idVec4				bumpMatrix[2];
 	idVec4				diffuseMatrix[2];
 	idVec4				specularMatrix[2];
-	idVec4				worldUpLocal; // rebb: world up vector in local space, required for effects like hemisphere lighting. alternatively always pass model matrix ?
 } drawInteraction_t;
 
 

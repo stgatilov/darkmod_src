@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 // computes all vertex shader outputs related to surface texturing & coloring
 void generateSurfaceProperties(
-	vec4 attrTexCoord, vec4 attrColor, 
+	vec4 attrTexCoord, vec4 attrColor,
 	vec3 attrTangent, vec3 attrBitangent, vec3 attrNormal,
 	vec4 bumpMatrix[2], vec4 diffuseMatrix[2], vec4 specularMatrix[2],
 	vec4 colorModulate, vec4 colorAdd,
@@ -60,7 +60,7 @@ vec3 fetchSurfaceNormal(vec2 texCoord, bool hasNormalsTexture, in sampler2D norm
 		}
 		else {
 			// full RGB texture
-			return normalize(bumpTexel.xyz); 
+			return normalize(bumpTexel.xyz);
 		}
 	}
 	else {
@@ -128,7 +128,7 @@ vec3 computeSpecularTerm(InteractionGeometry props, vec3 specularTexColor, vec3 
 
 vec3 computeAdvancedInteraction(
 	// interaction properties:
-	InteractionGeometry props, 
+	InteractionGeometry props,
 	// surface color:
 	sampler2D diffuseTexture, vec3 diffuseParamColor, vec2 diffuseTexCoord,
 	sampler2D specularTexture, vec3 specularParamColor, vec2 specularTexCoord,
@@ -151,4 +151,66 @@ vec3 computeAdvancedInteraction(
 
 	vec3 totalColor = surfaceTerm * globalMultiplier * vertexColor;
 	return totalColor;
+}
+
+
+struct AmbientGeometry {
+	vec3 worldV;	// unit direction from fragment to view origin
+	vec3 worldN;	// unit normal (bump/normal map)
+	vec3 worldR;    // direction to view, mirrored relative to normal
+	float NdotV;
+};
+
+AmbientGeometry computeAmbientGeometry(vec3 globalToView, vec3 localNormal, mat3 matTangentToObject, mat3 modelMatrix) {
+	AmbientGeometry props;
+	props.worldV = normalize(globalToView);
+	props.worldN = normalize(modelMatrix * (matTangentToObject * localNormal));
+	props.NdotV = clamp(dot(props.worldN, props.worldV), 0.0, 1.0);
+	props.worldR = 2 * props.worldN * props.NdotV - props.worldV;
+	return props;
+}
+
+vec4 computeAmbientInteraction(
+	// interaction properties:
+	AmbientGeometry props,
+	// surface color:
+	sampler2D diffuseTexture, vec3 diffuseParamColor, vec2 diffuseTexCoord,
+	sampler2D specularTexture, vec3 specularParamColor, vec2 specularTexCoord,
+	vec3 vertexColor,
+	// ambient hack for general brightness
+	float ambientMinLevel, float ambientGamma
+) {
+	// compute the diffuse term
+	vec4 matDiffuse = texture(diffuseTexture, diffuseTexCoord);
+	vec3 matSpecular = texture(specularTexture, specularTexCoord).rgb;
+
+	// somewhat hacky ambient where most of light comes from above
+	vec3 worldL = vec3(0, 0, 1);
+
+	// diffuse term
+	float NdotL = dot(props.worldN, worldL);
+	vec3 diffuseTerm = mix(vec3(1.0), max(NdotL * (1.0 - matSpecular), 0), 0.5);
+
+	// specular term
+	float spec = max(dot(props.worldR, worldL), 0);
+	float specPow = clamp(spec * spec, 0.0, 1.1);
+	vec3 specularTerm = vec3(spec * specPow * specPow) * matSpecular;
+
+	vec3 surfaceTerm = (diffuseTerm + specularTerm) * diffuseParamColor * vertexColor;
+
+	// tweaking brightness by messing with ambient
+	if (ambientMinLevel != 0)
+		surfaceTerm = mix(surfaceTerm, vec3(1), ambientMinLevel);
+
+	vec4 result;
+	result.rgb = matDiffuse.rgb * surfaceTerm;
+	result.a = matDiffuse.a;
+
+	// avoid negative values, which with floating point render buffers can lead to NaN artefacts
+	result = max(result, vec4(0));
+	// tweaking brightness by messing with ambient
+	if (ambientGamma != 1)
+		result.rgb = pow(result.rgb, vec3(1.0 / ambientGamma));
+
+	return result;
 }

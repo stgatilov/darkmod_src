@@ -17,17 +17,18 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Excludes: shadows
 
 #pragma tdm_include "tdm_lightproject.glsl"
+#pragma tdm_include "stages/interaction/interaction.params.glsl"
+#pragma tdm_include "tdm_interaction.glsl"
 
-in vec3 var_Position;
-in vec4 var_Color;
+flat in int var_DrawId;
 in vec2 var_TexDiffuse;
 in vec2 var_TexNormal;
 in vec2 var_TexSpecular;
 in vec4 var_TexLight;
-flat in int var_DrawId;
-
-#pragma tdm_include "stages/interaction/interaction.params.glsl"
-#pragma tdm_include "tdm_interaction.glsl"
+in vec4 var_Color;
+in mat3 var_TangentBitangentNormalMatrix; 
+in vec3 var_LightDirLocal;
+in vec3 var_ViewDirLocal;
 
 uniform sampler2D u_normalTexture;
 uniform sampler2D u_diffuseTexture;
@@ -42,10 +43,6 @@ uniform int 	u_cubic;
 uniform bool	u_shadows;
 uniform int		u_softShadowsQuality;
 uniform float	u_softShadowsRadius;
-
-in mat3 var_TangentBitangentNormalMatrix; 
-in vec3 var_LightDirLocal;  
-in vec3 var_ViewDirLocal;
 
 
 vec3 computeInteraction(out InteractionGeometry props) {

@@ -28,8 +28,6 @@ struct PerDrawCallParams {
 	vec4 lightTextureMatrix[2];
 	vec4 colorModulate;
 	vec4 colorAdd;
-	vec4 lightOrigin;
-	vec4 viewOrigin;
 	vec4 diffuseColor;
 	vec4 specularColor;
 	vec4 hasTextureDNS;

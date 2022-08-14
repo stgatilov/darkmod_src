@@ -30,7 +30,7 @@ in int attr_DrawId;
 
 #pragma tdm_include "stages/interaction/interaction.params.glsl"
 
-out vec3 var_Position;
+flat out int var_DrawId;
 out vec2 var_TexDiffuse;
 out vec2 var_TexNormal;
 out vec2 var_TexSpecular;
@@ -39,15 +39,14 @@ out vec4 var_Color;
 out mat3 var_TangentBitangentNormalMatrix; 
 out vec3 var_LightDirLocal;  
 out vec3 var_ViewDirLocal;  
-flat out int var_DrawId;
-
-uniform vec3 u_globalLightOrigin;
 out vec3 var_WorldLightDir;
 
+uniform vec3 u_globalViewOrigin;
+uniform vec3 u_globalLightOrigin;
 
 void interactionProcessVertex() {
 	// transform vertex position into homogenous clip-space
-	gl_Position = transformPosition(attr_Position, params[attr_DrawId].modelViewMatrix, u_projectionMatrix);
+	gl_Position = objectPosToClip(attr_Position, params[attr_DrawId].modelViewMatrix, u_projectionMatrix);
 
 	// surface texcoords, tangent space, and color generation
 	generateSurfaceProperties(
@@ -64,10 +63,9 @@ void interactionProcessVertex() {
 
 
 	var_DrawId = attr_DrawId;
-	var_Position = attr_Position.xyz;
 
-	var_LightDirLocal = (params[attr_DrawId].lightOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;
-	var_ViewDirLocal = (params[attr_DrawId].viewOrigin.xyz - var_Position).xyz * var_TangentBitangentNormalMatrix;	
+	var_LightDirLocal = (worldPosToObject(u_globalLightOrigin, params[attr_DrawId].modelMatrix) - attr_Position.xyz) * var_TangentBitangentNormalMatrix;
+	var_ViewDirLocal = (worldPosToObject(u_globalViewOrigin, params[attr_DrawId].modelMatrix) - attr_Position.xyz) * var_TangentBitangentNormalMatrix;	
 
 	// light->fragment vector in world coordinates
 	var_WorldLightDir = (params[attr_DrawId].modelMatrix * attr_Position).xyz - u_globalLightOrigin;

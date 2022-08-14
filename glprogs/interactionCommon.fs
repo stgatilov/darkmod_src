@@ -21,14 +21,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Excludes: shadows
 
 
-in vec3 var_Position;
 in vec4 var_Color;
 in vec2 var_TexDiffuse;
 in vec2 var_TexNormal;
 in vec2 var_TexSpecular;
 in vec4 var_TexLight;
 
-in mat3 var_TangentBitangentNormalMatrix; 
+in mat3 var_TangentBitangentNormalMatrix;
 in vec3 var_LightDirLocal;
 in vec3 var_ViewDirLocal;
 

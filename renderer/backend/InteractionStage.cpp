@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 #include "../FrameBuffer.h"
+#include "../FrameBufferManager.h"
 #include "../AmbientOcclusionStage.h"
 #include "DrawBatchExecutor.h"
 
@@ -35,8 +36,6 @@ struct InteractionStage::ShaderParams {
 	idVec4 lightTextureMatrix[2];
 	idVec4 colorModulate;
 	idVec4 colorAdd;
-	idVec4 lightOrigin;
-	idVec4 viewOrigin;
 	idVec4 diffuseColor;
 	idVec4 specularColor;
 	idVec4 hasTextureDNS;
@@ -57,12 +56,14 @@ namespace {
 		DEFINE_UNIFORM( sampler, lightFalloffTexture )
 		DEFINE_UNIFORM( sampler, lightFalloffCubemap )
 		DEFINE_UNIFORM( sampler, ssaoTexture )
+		DEFINE_UNIFORM( vec3, globalViewOrigin )
 		DEFINE_UNIFORM( vec3, globalLightOrigin )
 
 		DEFINE_UNIFORM( int, cubic )
 		DEFINE_UNIFORM( float, gamma )
 		DEFINE_UNIFORM( float, minLevel )
 		DEFINE_UNIFORM( int, ssaoEnabled )
+		DEFINE_UNIFORM( vec2, renderResolution )
 
 		DEFINE_UNIFORM( int, shadows )
 		DEFINE_UNIFORM( int, softShadowsQuality )
@@ -169,6 +170,8 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
 	uniforms->cubic.Set( vLight->lightShader->IsCubicLight() ? 1 : 0 );
 	uniforms->globalLightOrigin.Set( vLight->globalLightOrigin );
+	uniforms->globalViewOrigin.Set( backEnd.viewDef->renderView.vieworg );
+	uniforms->renderResolution.Set( frameBuffers->activeFbo->Width(), frameBuffers->activeFbo->Height() );
 
 	idList<const drawSurf_t *> drawSurfs;
 	for ( const drawSurf_t *surf = interactionSurfs; surf; surf = surf->nextOnLight) {
@@ -314,18 +317,8 @@ void InteractionStage::ProcessSingleSurface( viewLight_t *vLight, const shaderSt
 		return;
 	}
 
-	if ( lightShader->IsAmbientLight() ) {
-		inter.worldUpLocal.x = surf->space->modelMatrix[2];
-		inter.worldUpLocal.y = surf->space->modelMatrix[6];
-		inter.worldUpLocal.z = surf->space->modelMatrix[10];
-	}
-
 	inter.surf = surf;
 
-	R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, inter.localLightOrigin.ToVec3() );
-	R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, inter.localViewOrigin.ToVec3() );
-	inter.localLightOrigin[3] = 0;
-	inter.localViewOrigin[3] = 1;
 	inter.cubicLight = lightShader->IsCubicLight(); // nbohr1more #3881: cubemap lights
 	inter.ambientLight = lightShader->IsAmbientLight();
 
@@ -483,8 +476,6 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 		params.colorAdd = idVec4(1, 1, 1, 1);
 		break;
 	}
-	params.lightOrigin = din->ambientLight ? din->worldUpLocal : din->localLightOrigin;
-	params.viewOrigin = din->localViewOrigin;
 	params.diffuseColor = din->diffuseColor;
 	params.specularColor = din->specularColor;
 	if ( !din->bumpImage ) {

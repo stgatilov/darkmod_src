@@ -44,6 +44,7 @@ struct ManyLightInteractionStage::ShaderParams {
 struct ManyLightInteractionStage::LightParams {
 	idVec4 scissor;
 	idVec4 globalLightOrigin;
+	idVec4 globalViewOrigin;
 	idVec4 shadowRect;
 	idVec4 color;
 	idMat4 projection;
@@ -229,7 +230,8 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			// FIXME shadowmap only valid when globalInteractions not empty, otherwise garbage
 			bool doShadows = !vLight->noShadows && lightShader->LightCastsShadows() && vLight->globalInteractions != nullptr;
 			params.shadows = doShadows;
-			params.globalLightOrigin = idVec4(vLight->globalLightOrigin.x, vLight->globalLightOrigin.y, vLight->globalLightOrigin.z, 1);
+			params.globalLightOrigin.Set(vLight->globalLightOrigin, 1);
+			params.globalViewOrigin.Set(backEnd.viewDef->renderView.vieworg, 1);
 			params.color.x = backEnd.lightScale * lightRegs[lightStage->color.registers[0]];
 			params.color.y = backEnd.lightScale * lightRegs[lightStage->color.registers[1]];
 			params.color.z = backEnd.lightScale * lightRegs[lightStage->color.registers[2]];

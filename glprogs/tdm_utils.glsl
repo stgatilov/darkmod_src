@@ -15,8 +15,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 // transforms homogeneous 3D position according to MVP matrices (for vertex shaders)
 // note: you must use this exact code, otherwise you'll get depth fighting due to numeric differences!
-vec4 transformPosition(vec4 position, mat4 modelView, mat4 projection) {
+vec4 objectPosToClip(vec4 position, mat4 modelView, mat4 projection) {
 	return projection * (modelView * position);
+}
+
+// transforms 3D position from world space to object/model space using inverse model transform
+vec3 worldPosToObject(vec3 worldPosition, mat4 modelMatrix) {
+	return (worldPosition - vec3(modelMatrix[3])) * mat3(modelMatrix);
 }
 
 // returns eye Z coordinate with reversed sign (monotonically increasing with depth)
