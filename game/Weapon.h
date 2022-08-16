@@ -30,7 +30,8 @@ typedef enum {
 	WP_RELOAD,
 	WP_HOLSTERED,
 	WP_RISING,
-	WP_LOWERING
+	WP_LOWERING,
+	WP_INDICATE
 } weaponStatus_t;
 
 class idPlayer;
@@ -98,6 +99,10 @@ public:
 	bool					CanDrop( void ) const;
 	void					WeaponStolen( void );
 	void					SetArrow2Arrow( bool state); // grayman #597
+	void					Indicate(bool indicate);		// Obsttorte
+	void					Perform_KO(void);	// Obsttorte
+	bool					canKnockout(void);
+	float					getMeleeDistance(void);
 
 	// Script state management
 	virtual idThread *		ConstructScriptObject( void );
@@ -168,6 +173,7 @@ private:
 	idScriptBool			WEAPON_NETFIRING;
 	idScriptBool			WEAPON_RAISEWEAPON;
 	idScriptBool			WEAPON_LOWERWEAPON;
+	idScriptBool			WEAPON_INDICATE; // Obsttorte
 	weaponStatus_t			status;
 	idThread *				thread;
 	idStr					state;
@@ -315,6 +321,7 @@ private:
 
 	// flashlight
 	void					AlertMonsters( void );
+
 
 	// Visual presentation
 	void					InitWorldModel( const idDeclEntityDef *def );

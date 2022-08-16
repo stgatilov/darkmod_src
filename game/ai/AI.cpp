@@ -11805,9 +11805,10 @@ idAI::TestKnockoutBlow
 =====================
 */
 
-bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow )
+bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow, bool performAttack )
 {
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - Attempted KO of AI %s\r", name.c_str());
+
 
 	if ( AI_DEAD )
 	{
@@ -11835,7 +11836,10 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	if ( idStr::Cmp(locationName, m_KoZone) != 0 )
 	{
 		// Signal the failed KO to the current state
-		GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, false);
+		if (performAttack)
+		{
+			GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, false);
+		}
 		
 		return false; // damage zone not matching
 	}
@@ -11930,7 +11934,10 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	if ( immune2KO )
 	{
 		// Signal the failed KO to the current state
-		GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
+		if (performAttack)
+		{
+			GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
+		}
 		return false; // AI is immune, so no KO this time
 	}
 
@@ -11959,7 +11966,10 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	{
 		// We just got knocked the taff out!
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - %s was knocked out by a blow to the head\r", name.c_str());
-		Event_KO_Knockout(attacker); // grayman #2468
+		if (performAttack)
+		{
+			Event_KO_Knockout(attacker); // grayman #2468
+		}
 
 		return true;
 	}
@@ -11971,7 +11981,10 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	}
 
 	// Signal the failed KO to the current state
-	GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
+	if (performAttack)
+	{
+		GetMind()->GetState()->OnFailedKnockoutBlow(attacker, dir, true);
+	}
 	
 	return false; // knockout angles missed
 }

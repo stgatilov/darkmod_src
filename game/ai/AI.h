@@ -1497,7 +1497,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*
 	* Note: overrides idActor::TestKnockoutBlow.
 	**/
-	virtual bool			TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow );  
+	virtual bool			TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow, bool performAttack=true );  
 	
 	/**
 	* Can the AI greet someone?

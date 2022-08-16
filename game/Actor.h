@@ -510,6 +510,7 @@ public:
 
 							// damage
 	void					SetupDamageGroups( void );
+	int						GetDamageLocation(idStr name); // Obsttorte
 	// DarkMod: Added trace reference to damage
 	virtual	void			Damage
 							( 
@@ -835,7 +836,7 @@ protected:
 	* TestKnockoutBlow, only defined in derived classes
 	* Returns true if going from conscious to unconscious
 	**/
-	virtual bool TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow )
+	virtual bool TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow, bool performAttack = true)
 	{
 		return false;
 	};

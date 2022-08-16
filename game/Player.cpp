@@ -1762,7 +1762,10 @@ void idPlayer::UpdateInventoryGridGUI()
 	const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
 	int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
 	const int pageRequest = GetGuiInt(inventoryGridOverlay, "PageRequest");
-
+	// Obsttorte
+	const int userChoice = GetGuiInt(inventoryGridOverlay, "UserChoice");
+	const int selectedItem = (pageSize * currentPage) + userChoice;
+	common->Printf("%d", selectedItem);
 	// Handle request for prev/next pages.
 	if (pageRequest == 1 && (items.Num() - 1 >= pageSize * (currentPage + 1)))
 	{
@@ -1798,7 +1801,6 @@ void idPlayer::UpdateInventoryGridGUI()
 	
 	// Clear entries until we determine if they hold an item.
 	invgridGUI->HandleNamedEvent("clearGrid");
-	
 	// Update each inventory grid entry for current page.
 	for (int i = 0; i != pageSize; ++i)
 	{
@@ -1816,6 +1818,7 @@ void idPlayer::UpdateInventoryGridGUI()
 
 		// Get item.
 		CInventoryItemPtr item = items[itemIndex];
+
 
 		// Update grid entry for this item.
 		idStr itemName = common->Translate( item->GetName() );
@@ -4218,11 +4221,44 @@ void idPlayer::Weapon_Combat( void ) {
 			weapon.GetEntity()->EndBlock();
 		}
 	}
-
+	
 	// update our ammo clip in our inventory
 	if ( currentWeapon == idealWeapon ) {
 		UpdateHudAmmo();
 	}
+	
+	if (weapon.GetEntity()->canKnockout())
+	{
+		trace_t tr;
+		idEntity* ent;
+		idVec3 start, end;
+		float meleeDistance = weapon.GetEntity()->getMeleeDistance();
+		start = firstPersonViewOrigin;
+		end = start + firstPersonViewAxis[0] * meleeDistance;
+		gameLocal.clip.TracePoint(tr, start, end, MASK_SHOT_RENDERMODEL, this);
+		//gameRenderWorld->DebugArrow(colorBlue, start, end, 3, 1000);
+		if (tr.fraction < 1.0f && gameLocal.entities[tr.c.entityNum])
+		{
+			//ent = gameLocal.GetTraceEntity( tr );
+			ent = gameLocal.entities[tr.c.entityNum];
+		}
+		else
+		{
+			ent = NULL;
+			weapon.GetEntity()->Indicate(false);
+		}
+		if (ent) {
+			if (ent->IsType(idAI::Type) && ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < 0.5*meleeDistance) && static_cast<idAI*>(ent)->TestKnockoutBlow(this, idVec3('0'), &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0, false))
+			{
+				weapon.GetEntity()->Indicate(true);
+			}
+			else
+			{
+				weapon.GetEntity()->Indicate(false);
+			}
+		}
+	}
+	
 }
 
 /*

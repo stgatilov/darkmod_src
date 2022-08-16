@@ -3934,6 +3934,22 @@ const char *idActor::GetDamageGroup( int location ) {
 }
 
 /*
+====================
+idActor::GetDamageLocation
+====================
+*/
+int idActor::GetDamageLocation(idStr name)
+{
+	for (int i = 0; i < damageGroups.Num(); i++)
+	{
+		if (damageGroups[i] == name)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+/*
 =====================
 idActor::PlayFootStepSound
 =====================

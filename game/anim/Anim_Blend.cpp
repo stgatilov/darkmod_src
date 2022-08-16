@@ -825,6 +825,10 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		fc.type = FC_MELEE_ATTACK_STOP;
 		fc.string = new idStr( token );
 	}
+	else if (token == "melee_knockout") // Obsttorte
+	{
+		fc.type = FC_MELEE_KNOCKOUT;
+	}
 	else if ( token == "melee_parry_start" )
 	{
 		if( !src.ReadTokenOnLine( &token ) )
@@ -1659,6 +1663,12 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						WeapEnt->DeactivateAttack();
 					}
 
+					break;
+				}
+				case FC_MELEE_KNOCKOUT:
+				{
+					idWeapon* WeapEnt = static_cast<idWeapon*>(ent);
+					WeapEnt->Perform_KO();
 					break;
 				}
 				case FC_MELEE_PARRY_START:

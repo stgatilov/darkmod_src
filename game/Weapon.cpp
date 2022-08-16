@@ -399,6 +399,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
+	WEAPON_INDICATE.LinkTo(		scriptObject, "WEAPON_INDICATE");
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( owner ) );
 	worldModel.Restore( savefile );
@@ -558,6 +559,7 @@ void idWeapon::Clear( void ) {
 	WEAPON_NETFIRING.Unlink();
 	WEAPON_RAISEWEAPON.Unlink();
 	WEAPON_LOWERWEAPON.Unlink();
+	WEAPON_INDICATE.Unlink();
 
 	if ( muzzleFlashHandle != -1 ) {
 		gameRenderWorld->FreeLightDef( muzzleFlashHandle );
@@ -1131,6 +1133,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	WEAPON_NETFIRING.LinkTo(	scriptObject, "WEAPON_NETFIRING" );
 	WEAPON_RAISEWEAPON.LinkTo(	scriptObject, "WEAPON_RAISEWEAPON" );
 	WEAPON_LOWERWEAPON.LinkTo(	scriptObject, "WEAPON_LOWERWEAPON" );
+	WEAPON_INDICATE.LinkTo(		scriptObject, "WEAPON_INDICATE");
 
 	spawnArgs = weaponDef->dict;
 
@@ -1476,6 +1479,68 @@ void idWeapon::RaiseWeapon( void ) {
 }
 
 /*
+=====================
+idWeapon::Indicate
+=====================
+*/
+void idWeapon::Indicate(bool indicate)
+{
+	if (isLinked)
+	{
+		WEAPON_INDICATE = indicate;
+	}
+}
+
+/*
+====================
+idWeapon::Perform_KO
+====================
+*/
+void idWeapon::Perform_KO(void)
+{
+	if (!isLinked)
+	{
+		return;
+	}
+	Event_Melee();
+	/*
+	trace_t trace;
+	idVec3 start, end, aiEyePos;
+	idEntity* ent;
+	idAI* enemy;
+	float dist;
+	int loc;
+	start = playerViewOrigin;
+	end = start + playerViewAxis[0] * 56.0f;
+	gameLocal.clip.TracePoint(trace, start, end, MASK_SHOT_RENDERMODEL, owner);
+	if (trace.fraction < 1.0f)
+	{
+		ent = gameLocal.entities[trace.c.entityNum];
+		common->Printf(ent->name.c_str());
+		if (ent->IsBound())
+		{
+			ent = ent->GetBindMaster();
+		}
+		if (ent->IsType(idAI::Type))
+		{
+			enemy = static_cast<idAI*>(ent);
+			aiEyePos = enemy->GetEyePosition();
+			dist = (aiEyePos - trace.endpos).Length();
+			common->Printf("\t%f",dist);
+			loc = -1;
+			if (dist < 24)
+			{
+				loc = enemy->GetDamageLocation("head");
+			}
+			enemy->TestKnockoutBlow(owner, playerViewAxis[0], &trace, loc, 0);
+		}
+		common->Printf("\n");
+		gameRenderWorld->DebugArrow(colorCyan, start, end, 3, 1000);
+	}
+	*/
+}
+
+/*
 ================
 idWeapon::HideWeapon
 ================
@@ -1775,6 +1840,7 @@ idEntity * idWeapon::DropItem( const idVec3 &velocity, int activateDelay, int re
 
 	return idMoveableItem::DropItem( classname, worldModel.GetEntity()->GetPhysics()->GetOrigin(), worldModel.GetEntity()->GetPhysics()->GetAxis(), velocity, activateDelay, removeDelay );
 }
+
 
 /***********************************************************************
 
@@ -2280,6 +2346,7 @@ void idWeapon::EnterCinematic( void ) {
 		WEAPON_NETFIRING	= false;
 		WEAPON_RAISEWEAPON	= false;
 		WEAPON_LOWERWEAPON	= false;
+		WEAPON_INDICATE		= false;
 	}
 
 	disabled = true;
@@ -3246,6 +3313,31 @@ void idWeapon::Event_LaunchProjectiles( int num_projectiles, float spread, float
 	// reset muzzle smoke
 	weaponSmokeStartTime = gameLocal.realClientTime;
 }
+/*
+=====================
+idWeapon::canKnockout
+=====================
+*/
+bool idWeapon::canKnockout(void)
+{
+	if (!meleeDef || !worldModel.GetEntity()) {
+		return false;
+	}
+	return (meleeDef->dict.GetFloat("knockout") > 0);
+}
+
+/*
+=====================
+idWeapon::getMeleeDistance
+=====================
+*/
+float idWeapon::getMeleeDistance(void)
+{
+	if (!meleeDef || !worldModel.GetEntity()) {
+		return false;
+	}
+	return meleeDistance;
+}
 
 /*
 =====================
@@ -3263,7 +3355,8 @@ void idWeapon::Event_Melee( void ) {
 	{
 		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
-		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner );
+		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner);
+		//gameRenderWorld->DebugArrow(colorGreen, start, end, 3, 1000);
 		if ( tr.fraction < 1.0f && gameLocal.entities[tr.c.entityNum] ) 
 		{
 			//ent = gameLocal.GetTraceEntity( tr );
@@ -3294,35 +3387,40 @@ void idWeapon::Event_Melee( void ) {
 				return;
 			}
 
-			ent->ApplyImpulse( this, tr.c.id, tr.c.point, impulse );
 
 			if ( ent->fl.takedamage ) {
 				idVec3 kickDir, globalKickDir;
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );
 				globalKickDir = muzzleAxis * kickDir;
 
-				ent->Damage( owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier( MELEE_DAMAGE ), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr );
-
-				// apply a LARGE tactile alert to AI
+				
+				if (ent->IsBound())
+				{
+					ent = ent->GetBindMaster();
+				}
 				if( ent->IsType(idAI::Type) )
 				{
-					static_cast<idAI *>(ent)->TactileAlert( GetOwner(), 100 );
+					if (meleeDef->dict.GetFloat("knockout") > 0)
+					{
+						if ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < 0.5*meleeDistance)
+						{
+							static_cast<idAI*>(ent)->TestKnockoutBlow(owner, globalKickDir, &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0);
+						}
+					}
 				}
+				ent->Damage(owner, owner, globalKickDir, meleeDefName, owner->PowerUpModifier(MELEE_DAMAGE), CLIPMODEL_ID_TO_JOINT_HANDLE(tr.c.id), &tr);
+
 
 				hit = true;
 			}
 
+			ent->ApplyImpulse(this, tr.c.id, tr.c.point, impulse);
 			if ( weaponDef->dict.GetBool( "impact_damage_effect" ) ) {
 
 				if ( ent->spawnArgs.GetBool( "bleed" ) ) {
 
-					hitSound = meleeDef->dict.GetString( "snd_hit" );
-					sndName = "snd_hit";
-
 					ent->AddDamageEffect( tr, impulse, meleeDef->dict.GetString( "classname" ) );
-
-				} else 
-				{
+				} 
 
 					idStr materialType;
 					int type = tr.c.material->GetSurfaceType();
@@ -3358,7 +3456,7 @@ void idWeapon::Event_Melee( void ) {
 					strikeSmokeStartTime = gameLocal.time;
 					strikePos = tr.c.point;
 					strikeAxis = -tr.endAxis;
-				}
+				
 			}
 		}
 

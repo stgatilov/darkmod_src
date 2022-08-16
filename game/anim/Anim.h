@@ -139,53 +139,53 @@ typedef enum {
 	FC_RECORDDEMO,
 	FC_AVIGAME,
 
-/**
-* DarkMod:
-* FC_SETRATE sets the anim rate, used for speeding up/slowing down walking
-* and crouchwalking animations to get correct footstep sounds.
-**/
+	/**
+	* DarkMod:
+	* FC_SETRATE sets the anim rate, used for speeding up/slowing down walking
+	* and crouchwalking animations to get correct footstep sounds.
+	**/
 	FC_SETRATE,
-/**
-* Move an attachment to a different position
-**/
+	/**
+	* Move an attachment to a different position
+	**/
 	FC_REATTACH,
-/**
-* Tels: Spawn an item (the item contains where to attach it)
-**/
+	/**
+	* Tels: Spawn an item (the item contains where to attach it)
+	**/
 	FC_ATTACH,
-/**
-* Tels: Detach and destroy the named attachement
-**/
+	/**
+	* Tels: Detach and destroy the named attachement
+	**/
 	FC_DESTROY,
-/**
-* Tels: Detach and drop the named attachement
-**/
+	/**
+	* Tels: Detach and drop the named attachement
+	**/
 	FC_DROP,
-/**
-* Tels: Detach and put down the named attachement (e.g. restore origin and angles to "before pickup")
-**/
+	/**
+	* Tels: Detach and put down the named attachement (e.g. restore origin and angles to "before pickup")
+	**/
 	FC_PUTDOWN,
-/**
-* Tels: Pickup an object (either the direct entity name, or the AIUSE class)
-**/
+	/**
+	* Tels: Pickup an object (either the direct entity name, or the AIUSE class)
+	**/
 	FC_PICKUP,
-/**
-* Tels: Activate the attached entity at the named joint
-**/
+	/**
+	* Tels: Activate the attached entity at the named joint
+	**/
 	FC_ACTIVATE_AT_JOINT,
-/**
-* Tels: Activate the entity (either direct name or AIUSE class)
-**/
+	/**
+	* Tels: Activate the entity (either direct name or AIUSE class)
+	**/
 	FC_ACTIVATE_NEAR,
-/**
-* Pause the animation at its current frame, wait for unpause from somewhere else
-**/
+	/**
+	* Pause the animation at its current frame, wait for unpause from somewhere else
+	**/
 	FC_PAUSE,
-/**
-* Holds a melee attack at a given point in the animation
-* (e.g., at the back swing in attacks, at the parry position in parries)
-* Similar to pause but also updates actor's melee status
-**/
+	/**
+	* Holds a melee attack at a given point in the animation
+	* (e.g., at the back swing in attacks, at the parry position in parries)
+	* Similar to pause but also updates actor's melee status
+	**/
 	FC_MELEE_HOLD,
 	FC_MELEE_ATTACK_START,
 	FC_MELEE_ATTACK_STOP,
@@ -194,6 +194,7 @@ typedef enum {
 	FC_SET_ATTACK_FLAG,   // greebo: enables a certain attack type
 	FC_CLEAR_ATTACK_FLAG, // greebo: disables a certain attack type
 	FC_CREATEMISSILE_FROM_DEF,	// greebo: create a specific projectile def for ranged attack
+	FC_MELEE_KNOCKOUT	// Obsttorte: alternative knockouts
 } frameCommandType_t;
 
 typedef struct {
