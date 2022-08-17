@@ -103,6 +103,7 @@ public:
 	void					Perform_KO(void);	// Obsttorte
 	bool					canKnockout(void);
 	float					getMeleeDistance(void);
+	float					getKnockoutRange(void);
 
 	// Script state management
 	virtual idThread *		ConstructScriptObject( void );
@@ -225,6 +226,7 @@ private:
 	// greebo: This is not needed anymore - the projectile dictionary is requested when it's actually needed
 	//idDict					projectileDict;
 	float					meleeDistance;
+	float					knockoutRange; // Obsttorte (#4289)
 	idStr					meleeDefName;
 	idDict					brassDict;
 	int						brassDelay;

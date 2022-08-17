@@ -302,6 +302,8 @@ idCVar cv_frobhelper_ignore_size(		"tdm_frobhelper_ignore_size",		"40.0",	CVAR_G
 // Obsttorte: #5984 (multilooting)
 idCVar cv_multiloot_min_interval("tdm_multiloot_min_interval", "300",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The minimum interval between two consecutive frobs when multifrobbing.");
 idCVar cv_multiloot_max_interval("tdm_multiloot_max_interval", "2000",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_NOCHEAT, "The amount of time after which multilooting gets disabled again.");
+// #4289
+idCVar cv_pm_blackjack_indicate("tdm_blackjack_indicate", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL | CVAR_NOCHEAT, "Set to 1 to activate blackjack indicator.", 0, 1);
 
 /**
 * Dark Mod Misc. Control Options

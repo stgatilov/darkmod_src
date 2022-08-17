@@ -198,6 +198,8 @@ extern idCVar cv_pm_water_z_friction;
 extern idCVar cv_pm_show_waterlevel;
 extern idCVar cv_pm_climb_distance;
 
+extern idCVar cv_pm_blackjack_indicate; // Obsttorte (#4289)
+
 /**
 * This cvar controls if ai hiding spot search debug graphics are drawn
 * If it is 0, then the graphics are not drawn.  If it is >= 1.0 then it

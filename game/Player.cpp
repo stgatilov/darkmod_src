@@ -4226,13 +4226,14 @@ void idPlayer::Weapon_Combat( void ) {
 	if ( currentWeapon == idealWeapon ) {
 		UpdateHudAmmo();
 	}
-	
-	if (weapon.GetEntity()->canKnockout())
+	// Obsttorte (#4289)
+	if (cvarSystem->GetCVarBool("tdm_blackjack_indicate") && weapon.GetEntity()->canKnockout())
 	{
 		trace_t tr;
 		idEntity* ent;
 		idVec3 start, end;
 		float meleeDistance = weapon.GetEntity()->getMeleeDistance();
+		float knockoutRange = weapon.GetEntity()->getKnockoutRange();
 		start = firstPersonViewOrigin;
 		end = start + firstPersonViewAxis[0] * meleeDistance;
 		gameLocal.clip.TracePoint(tr, start, end, MASK_SHOT_RENDERMODEL, this);
@@ -4248,7 +4249,7 @@ void idPlayer::Weapon_Combat( void ) {
 			weapon.GetEntity()->Indicate(false);
 		}
 		if (ent) {
-			if (ent->IsType(idAI::Type) && ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < 0.5*meleeDistance) && static_cast<idAI*>(ent)->TestKnockoutBlow(this, idVec3('0'), &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0, false))
+			if (ent->IsType(idAI::Type) && ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < knockoutRange) && static_cast<idAI*>(ent)->TestKnockoutBlow(this, idVec3('0'), &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0, false))
 			{
 				weapon.GetEntity()->Indicate(true);
 			}

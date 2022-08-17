@@ -288,6 +288,7 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteString( weaponDef->GetName() );
 	savefile->WriteFloat( meleeDistance );
+	savefile->WriteFloat( knockoutRange );
 	savefile->WriteString( meleeDefName );
 	savefile->WriteInt( brassDelay );
 	savefile->WriteString( icon );
@@ -444,6 +445,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadFloat( meleeDistance );
+	savefile->ReadFloat( knockoutRange );
 	savefile->ReadString( meleeDefName );
 	savefile->ReadInt( brassDelay );
 	savefile->ReadString( icon );
@@ -664,6 +666,7 @@ void idWeapon::Clear( void ) {
 	meleeDef		= NULL;
 	meleeDefName	= "";
 	meleeDistance	= 0.0f;
+	knockoutRange	= 0.0f;
 	brassDict.Clear();
 
 	flashTime		= 250;
@@ -993,6 +996,7 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 
 	// get the melee damage def
 	meleeDistance = weaponDef->dict.GetFloat( "melee_distance" );
+	knockoutRange = weaponDef->dict.GetFloat("knockout_range");
 	meleeDefName = weaponDef->dict.GetString( "def_melee" );
 	if ( meleeDefName.Length() ) {
 		meleeDef = gameLocal.FindEntityDef( meleeDefName, false );
@@ -3341,6 +3345,20 @@ float idWeapon::getMeleeDistance(void)
 
 /*
 =====================
+idWeapon::getKnockoutRange
+=====================
+*/
+float idWeapon::getKnockoutRange(void)
+{
+	if (!meleeDef || !worldModel.GetEntity()) {
+		return false;
+	}
+	return knockoutRange;
+}
+
+
+/*
+=====================
 idWeapon::Event_Melee
 =====================
 */
@@ -3402,7 +3420,7 @@ void idWeapon::Event_Melee( void ) {
 				{
 					if (meleeDef->dict.GetFloat("knockout") > 0)
 					{
-						if ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < 0.5*meleeDistance)
+						if ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < knockoutRange)
 						{
 							static_cast<idAI*>(ent)->TestKnockoutBlow(owner, globalKickDir, &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0);
 						}
