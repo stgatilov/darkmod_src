@@ -3944,7 +3944,7 @@ void idPhysics_Player::MantleMove()
 
 		newPosition = m_mantlePullStartPos;
 		float timeRadians = idMath::PI * timeRatio;
-		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance * cv_pm_mantle_tilt_mod.GetFloat();
+		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance * cv_pm_mantle_roll_mod.GetFloat();
 		newPosition += (idMath::Sin(timeRadians) * rockDistance) * viewRight;
 		
 		if (self != NULL)
@@ -3966,7 +3966,7 @@ void idPhysics_Player::MantleMove()
 		newPosition = m_mantlePullEndPos;
 		float timeRadians = idMath::PI * timeRatio;
 		newPosition += (idMath::Sin(timeRadians) * rockDistance) * viewRight;
-		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance * cv_pm_mantle_tilt_mod.GetFloat();
+		viewAngles.roll = idMath::Sin(timeRadians) * rockDistance * cv_pm_mantle_roll_mod.GetFloat();
 
 		if (self != NULL)
 		{
@@ -3989,7 +3989,7 @@ void idPhysics_Player::MantleMove()
 
 		float timeRadians = idMath::PI * timeRatio;
 		newPosition += (idMath::Sin (timeRadians) * rockDistance) * viewRight;
-		viewAngles.roll = idMath::Sin (timeRadians) * rockDistance * cv_pm_mantle_tilt_mod.GetFloat();
+		viewAngles.roll = idMath::Sin (timeRadians) * rockDistance * cv_pm_mantle_roll_mod.GetFloat();
 
 		// stgatilov: set precise values at the very end of animation
 		if (timeRatio == 1.0f)
@@ -4014,7 +4014,7 @@ void idPhysics_Player::MantleMove()
 		newPosition = m_mantleCancelStartPos + timeRatio*totalMove;
 
 		float timeRadians = idMath::HALF_PI * timeRatio;
-		viewAngles.roll = idMath::Cos(timeRadians) * m_mantleCancelStartRoll * cv_pm_mantle_tilt_mod.GetFloat();
+		viewAngles.roll = idMath::Cos(timeRadians) * m_mantleCancelStartRoll * cv_pm_mantle_roll_mod.GetFloat();
 
 		if (self != NULL)
 		{
