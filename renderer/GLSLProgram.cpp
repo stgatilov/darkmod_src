@@ -305,6 +305,7 @@ namespace {
 			}
 
 			std::string define( pragma.tokens[1] );
+			assert( define.length() >= 2 && define.front() == '"' && define.back() == '"' );
 			define = define.substr( 1, define.size() - 2 );
 
 			std::string replacement;
