@@ -567,7 +567,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 }
 
 // FBO attachments need specific setup, rarely changed
-void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum filter, GLenum wrapMode ) {
+void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum filter, GLenum wrapMode, int lodLevel ) {
 	GLenum dataFormat = GL_RGBA;
 	GLenum dataType = GL_FLOAT;
 	switch ( format ) {
@@ -604,11 +604,26 @@ void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum f
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter );
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode );
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode );
-	qglTexImage2D( GL_TEXTURE_2D, 0, format, width, height, 0, dataFormat, dataType, nullptr );
+	qglTexImage2D( GL_TEXTURE_2D, lodLevel, format, width, height, 0, dataFormat, dataType, nullptr );
 
-	uploadWidth = width;
-	uploadHeight = height;
 	internalFormat = format;
+
+	// update base/max LOD level
+	int oldBaseLevel = 0, oldMaxLevel = 1000;
+	qglGetTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &oldBaseLevel );
+	qglGetTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &oldMaxLevel );
+	if ( oldMaxLevel == 1000 ) {
+		// first call: set both base and max to this single level
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &lodLevel );
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &lodLevel );
+		// save size of level 0 texture in members
+		uploadWidth = width << lodLevel;
+		uploadHeight = height << lodLevel;
+	} else if ( oldBaseLevel > lodLevel ) {
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &lodLevel );
+	} else if ( oldMaxLevel < lodLevel ) {
+		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &lodLevel );
+	}
 }
 
 /*
