@@ -54,6 +54,57 @@ struct GLSLUniform_int : GLSLUniformBase {
 
 typedef GLSLUniform_int GLSLUniform_sampler;
 
+struct GLSLUniform_ivec2 : GLSLUniformBase {
+	GLSLUniform_ivec2(GLSLProgram *program, const char *uniformName)
+		: GLSLUniformBase(program, uniformName) {}
+
+	void Set(int v1, int v2) {
+		qglUniform2i(paramLocation, v1, v2);
+	}
+
+	void Set(const int *value) {
+		qglUniform2iv( paramLocation, 1, value );
+	}
+
+	void SetArray(int count, const int *value) {
+		qglUniform2iv(paramLocation, count, value);
+	}
+};
+
+struct GLSLUniform_ivec3 : GLSLUniformBase {
+	GLSLUniform_ivec3(GLSLProgram *program, const char *uniformName)
+		: GLSLUniformBase(program, uniformName) {}
+
+	void Set(int v1, int v2, int v3) {
+		qglUniform3i(paramLocation, v1, v2, v3);
+	}
+
+	void Set(const int *value) {
+		qglUniform3iv( paramLocation, 1, value );
+	}
+
+	void SetArray( int count, const int * value ) {
+		qglUniform3iv( paramLocation, count, value );
+	}
+};
+
+struct GLSLUniform_ivec4 : GLSLUniformBase {
+	GLSLUniform_ivec4(GLSLProgram *program, const char *uniformName)
+		: GLSLUniformBase(program, uniformName) {}
+
+	void Set(int v1, int v2, int v3, int v4) {
+		qglUniform4i(paramLocation, v1, v2, v3, v4);
+	}
+
+	void Set(const int *value) {
+		qglUniform4iv( paramLocation, 1, value );
+	}
+
+	void SetArray(int count, const int *value) {
+		qglUniform4iv( paramLocation, count, value );
+	}
+};
+
 struct GLSLUniform_float : GLSLUniformBase {
 	GLSLUniform_float(GLSLProgram *program, const char *uniformName)
 			: GLSLUniformBase(program, uniformName) {}
@@ -77,6 +128,10 @@ struct GLSLUniform_vec2 : GLSLUniformBase {
 
 	void Set(const idVec2 &value) {
 		qglUniform2fv(paramLocation, 1, value.ToFloatPtr());
+	}
+
+	void Set(const float *value) {
+		qglUniform2fv( paramLocation, 1, value );
 	}
 
 	void SetArray(int count, const float *value) {
