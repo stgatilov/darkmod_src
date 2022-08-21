@@ -469,6 +469,7 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 			//this hack was found here: https://stackoverflow.com/q/22259067/556899
 			y = -1;
 			parms.height += 2;
+			glConfig.vidHeight += 2;
 		}
 
 		w = parms.width;
