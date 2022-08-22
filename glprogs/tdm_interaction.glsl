@@ -193,7 +193,7 @@ vec4 computeAmbientInteraction(
 	float specPow = clamp(spec * spec, 0.0, 1.1);
 	vec3 specularTerm = vec3(spec * specPow * specPow) * specularTexColor;
 
-	vec3 surfaceTerm = (diffuseTerm + specularTerm) * diffuseParamColor * vertexColor;
+	vec3 surfaceTerm = (diffuseTerm * diffuseParamColor + specularTerm * specularParamColor) * vertexColor;
 
 	// tweaking brightness by messing with ambient
 	if (ambientMinLevel != 0)
