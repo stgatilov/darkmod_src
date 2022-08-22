@@ -1566,6 +1566,10 @@ void idImageManager::Init() {
 	cinematicImage = ImageFromFunction( "_cinematic", R_RGBA8Image );
 	scratchImage = ImageFromFunction( "_scratch", R_RGBA8Image );
 	scratchImage2 = ImageFromFunction( "_scratch2", R_RGBA8Image );
+	// cameraN is used in security camera (see materials/tdm_camera.mtr)
+	memset(cameraImages, 0, sizeof(cameraImages));
+	for (int k = 1; k <= 9; k++)
+		cameraImages[k] = ImageFromFunction( ("_camera" + idStr(k)).c_str(), R_RGBA8Image );
 	xrayImage = ImageFromFunction( "_xray", R_RGBA8Image );
 	accumImage = ImageFromFunction( "_accum", R_RGBA8Image );
 	scratchCubeMapImage = ImageFromFunction( "_scratchCubeMap", makeNormalizeVectorCubeMap );
