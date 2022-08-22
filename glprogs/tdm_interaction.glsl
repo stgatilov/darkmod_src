@@ -186,7 +186,7 @@ vec4 computeAmbientInteraction(
 
 	// diffuse term
 	float NdotL = dot(props.worldN, worldL);
-	vec3 diffuseTerm = mix(vec3(1.0), max(NdotL * (1.0 - specularTexColor), 0), 0.5);
+	float diffuseTerm = mix(1.0, max(NdotL, 0), 0.5);
 
 	// specular term
 	float spec = max(dot(props.worldR, worldL), 0);
