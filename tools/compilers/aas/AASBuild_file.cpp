@@ -204,9 +204,9 @@ idAASBuild::GetFaceForPortal
 */
 bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *faceNum ) {
 	int i, j, v1num;
-	int numFaceEdges, faceEdges[MAX_POINTS_ON_WINDING];
 	idWinding *w;
 	aasFace_t face;
+	idFlexList<int, MAX_POINTS_ON_WINDING> faceEdges;
 
 	if ( portal->GetFaceNum() > 0 ) {
 		if ( side ) {
@@ -219,30 +219,31 @@ bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *face
 	}
 
 	w = portal->GetWinding();
+	int wn = w->GetNumPoints();
 	// turn the winding into a sequence of edges
-	numFaceEdges = 0;
 	v1num = -1;		// first vertex unknown
-	for ( i = 0; i < w->GetNumPoints(); i++ ) {
+	for ( i = 0; i < wn; i++ ) {
 
-		GetEdge( (*w)[i].ToVec3(), (*w)[(i+1)%w->GetNumPoints()].ToVec3(), &faceEdges[numFaceEdges], v1num );
+		int newFaceEdge;
+		GetEdge( (*w)[i].ToVec3(), (*w)[(i+1) % wn].ToVec3(), &newFaceEdge, v1num );
 
-		if ( faceEdges[numFaceEdges] ) {
+		if ( newFaceEdge ) {
 			// last vertex of this edge is the first vertex of the next edge
-			v1num = file->edges[ abs(faceEdges[numFaceEdges]) ].vertexNum[ INTSIGNBITNOTSET(faceEdges[numFaceEdges]) ];
+			v1num = file->edges[ abs(newFaceEdge) ].vertexNum[ INTSIGNBITNOTSET(newFaceEdge) ];
 
 			// this edge is valid so keep it
-			numFaceEdges++;
+			faceEdges.AddGrow(newFaceEdge);
 		}
 	}
 
 	// should have at least 3 edges
-	if ( numFaceEdges < 3 ) {
+	if ( faceEdges.Num() < 3 ) {
 		return false;
 	}
 
 	// the polygon is invalid if some edge is found twice
-	for ( i = 0; i < numFaceEdges; i++ ) {
-		for ( j = i+1; j < numFaceEdges; j++ ) {
+	for ( i = 0; i < faceEdges.Num(); i++ ) {
+		for ( j = i+1; j < faceEdges.Num(); j++ ) {
 			if ( faceEdges[i] == faceEdges[j] || faceEdges[i] == -faceEdges[j] ) {
 				return false;
 			}
@@ -255,8 +256,8 @@ bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *face
 	face.flags = portal->GetFlags();
 	face.areas[0] = face.areas[1] = 0;
 	face.firstEdge = file->edgeIndex.Num();
-	face.numEdges = numFaceEdges;
-	for ( i = 0; i < numFaceEdges; i++ ) {
+	face.numEdges = faceEdges.Num();
+	for ( i = 0; i < faceEdges.Num(); i++ ) {
 		file->edgeIndex.Append( faceEdges[i] );
 	}
 	if ( side ) {
