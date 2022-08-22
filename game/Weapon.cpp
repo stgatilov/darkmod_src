@@ -995,8 +995,9 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	nozzleGlowShader = declManager->FindMaterial( shader, false );
 
 	// get the melee damage def
-	meleeDistance = weaponDef->dict.GetFloat( "melee_distance" );
-	knockoutRange = weaponDef->dict.GetFloat("knockout_range");
+	meleeDistance = weaponDef->dict.GetFloat( "melee_distance","56.0");
+	knockoutRange = weaponDef->dict.GetFloat("knockout_range", "28.0");
+	KOBoxSize = weaponDef->dict.GetFloat("KO_box_size", "4.0");
 	meleeDefName = weaponDef->dict.GetString( "def_melee" );
 	if ( meleeDefName.Length() ) {
 		meleeDef = gameLocal.FindEntityDef( meleeDefName, false );
@@ -3356,6 +3357,18 @@ float idWeapon::getKnockoutRange(void)
 	return knockoutRange;
 }
 
+/*
+======================
+idWeapon::getKOBoxSize
+======================
+*/
+float idWeapon::getKOBoxSize(void)
+{
+	if (!meleeDef || !worldModel.GetEntity()) {
+		return false;
+	}
+	return KOBoxSize;
+}
 
 /*
 =====================
@@ -3373,7 +3386,10 @@ void idWeapon::Event_Melee( void ) {
 	{
 		idVec3 start = playerViewOrigin;
 		idVec3 end = start + playerViewAxis[0] * ( meleeDistance * owner->PowerUpModifier( MELEE_DISTANCE ) );
-		gameLocal.clip.TracePoint( tr, start, end, MASK_SHOT_RENDERMODEL, owner);
+		idBounds bo;
+		bo.Zero();
+		bo.ExpandSelf(KOBoxSize);
+		gameLocal.clip.TraceBounds( tr, start, end, bo, MASK_SHOT_RENDERMODEL, owner);
 		//gameRenderWorld->DebugArrow(colorGreen, start, end, 3, 1000);
 		if ( tr.fraction < 1.0f && gameLocal.entities[tr.c.entityNum] ) 
 		{

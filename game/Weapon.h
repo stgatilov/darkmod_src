@@ -104,6 +104,7 @@ public:
 	bool					canKnockout(void);
 	float					getMeleeDistance(void);
 	float					getKnockoutRange(void);
+	float					getKOBoxSize(void);
 
 	// Script state management
 	virtual idThread *		ConstructScriptObject( void );
@@ -227,6 +228,7 @@ private:
 	//idDict					projectileDict;
 	float					meleeDistance;
 	float					knockoutRange; // Obsttorte (#4289)
+	float					KOBoxSize;
 	idStr					meleeDefName;
 	idDict					brassDict;
 	int						brassDelay;

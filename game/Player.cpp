@@ -4234,14 +4234,29 @@ void idPlayer::Weapon_Combat( void ) {
 		idVec3 start, end;
 		float meleeDistance = weapon.GetEntity()->getMeleeDistance();
 		float knockoutRange = weapon.GetEntity()->getKnockoutRange();
+		float KOBoxSize = weapon.GetEntity()->getKOBoxSize();
 		start = firstPersonViewOrigin;
 		end = start + firstPersonViewAxis[0] * meleeDistance;
-		gameLocal.clip.TracePoint(tr, start, end, MASK_SHOT_RENDERMODEL, this);
+		idBounds bo;
+		bo.Zero();
+		bo.ExpandSelf(KOBoxSize);
+		gameLocal.clip.TraceBounds(tr, start, end, bo, MASK_SHOT_RENDERMODEL, this);
 		//gameRenderWorld->DebugArrow(colorBlue, start, end, 3, 1000);
+		//gameRenderWorld->DebugBounds(colorBlue, bo, tr.endpos, 1000);
+		/*
+		if (gameLocal.entities[tr.c.entityNum])
+		{
+			common->Printf("%s\n", gameLocal.entities[tr.c.entityNum]->GetName());
+		}
+		*/
 		if (tr.fraction < 1.0f && gameLocal.entities[tr.c.entityNum])
 		{
 			//ent = gameLocal.GetTraceEntity( tr );
 			ent = gameLocal.entities[tr.c.entityNum];
+			if (ent->GetBindMaster())
+			{
+				ent = ent->GetBindMaster();
+			}
 		}
 		else
 		{
