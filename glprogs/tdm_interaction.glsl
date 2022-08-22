@@ -120,10 +120,10 @@ FresnelRimCoeffs computeFresnelRimCoefficients(InteractionGeometry props) {
 	return res;
 }
 
-vec3 computeSpecularTerm(InteractionGeometry props, vec3 specularTexColor, vec3 diffuseTexColor, FresnelRimCoeffs fresnelRim) {
+vec3 computeSpecularTerm(InteractionGeometry props, vec3 specularTexColor, FresnelRimCoeffs fresnelRim) {
 	float specularPower = mix(10.0, 30.0, specularTexColor.z);
 	float specularCoeff = pow(props.NdotH, specularPower) * 120.0;
-	return specularCoeff * fresnelRim.fresnelCoeff * specularTexColor * (diffuseTexColor * 0.25 + vec3(0.75));
+	return specularCoeff * fresnelRim.fresnelCoeff * specularTexColor;
 }
 
 vec3 computeAdvancedInteraction(
@@ -140,7 +140,7 @@ vec3 computeAdvancedInteraction(
 	vec3 specularTexColor = texture(specularTexture, specularTexCoord).rgb;
 
 	FresnelRimCoeffs fresnelRim = computeFresnelRimCoefficients(props);
-	vec3 specularTerm = computeSpecularTerm(props, specularTexColor, diffuseTexColor, fresnelRim);
+	vec3 specularTerm = computeSpecularTerm(props, specularTexColor, fresnelRim);
 
 	vec3 surfaceTerm = specularParamColor * specularTerm * fresnelRim.R2f + diffuseParamColor * diffuseTexColor;
 	float NdotL_adjusted = applyBumpmapTogglingFix(props, bumpmapTogglingFixEnabled);
