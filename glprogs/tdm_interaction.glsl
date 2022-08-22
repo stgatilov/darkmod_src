@@ -137,10 +137,7 @@ vec3 computeAdvancedInteraction(
 	bool bumpmapTogglingFixEnabled
 ) {
 	vec3 diffuseTexColor = texture(diffuseTexture, diffuseTexCoord).rgb;
-
-	vec3 specularTexColor = vec3(0.026);	// default value if texture not set?...
-	if (dot(specularParamColor, specularParamColor) > 0.0)
-		specularTexColor = texture(specularTexture, specularTexCoord).rgb;
+	vec3 specularTexColor = texture(specularTexture, specularTexCoord).rgb;
 
 	FresnelRimCoeffs fresnelRim = computeFresnelRimCoefficients(props);
 	vec3 specularTerm = computeSpecularTerm(props, specularTexColor, diffuseTexColor, fresnelRim);
