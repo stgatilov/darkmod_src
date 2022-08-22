@@ -181,20 +181,20 @@ vec4 computeAmbientInteraction(
 	float ambientMinLevel, float ambientGamma
 ) {
 	// compute the diffuse term
-	vec4 matDiffuse = texture(diffuseTexture, diffuseTexCoord);
-	vec3 matSpecular = texture(specularTexture, specularTexCoord).rgb;
+	vec4 diffuseTexColor = texture(diffuseTexture, diffuseTexCoord);
+	vec3 specularTexColor = texture(specularTexture, specularTexCoord).rgb;
 
 	// somewhat hacky ambient where most of light comes from above
 	vec3 worldL = vec3(0, 0, 1);
 
 	// diffuse term
 	float NdotL = dot(props.worldN, worldL);
-	vec3 diffuseTerm = mix(vec3(1.0), max(NdotL * (1.0 - matSpecular), 0), 0.5);
+	vec3 diffuseTerm = mix(vec3(1.0), max(NdotL * (1.0 - specularTexColor), 0), 0.5);
 
 	// specular term
 	float spec = max(dot(props.worldR, worldL), 0);
 	float specPow = clamp(spec * spec, 0.0, 1.1);
-	vec3 specularTerm = vec3(spec * specPow * specPow) * matSpecular;
+	vec3 specularTerm = vec3(spec * specPow * specPow) * specularTexColor;
 
 	vec3 surfaceTerm = (diffuseTerm + specularTerm) * diffuseParamColor * vertexColor;
 
@@ -203,8 +203,8 @@ vec4 computeAmbientInteraction(
 		surfaceTerm = mix(surfaceTerm, vec3(1), ambientMinLevel);
 
 	vec4 result;
-	result.rgb = matDiffuse.rgb * surfaceTerm;
-	result.a = matDiffuse.a;
+	result.rgb = diffuseTexColor.rgb * surfaceTerm;
+	result.a = diffuseTexColor.a;
 
 	// avoid negative values, which with floating point render buffers can lead to NaN artefacts
 	result = max(result, vec4(0));
