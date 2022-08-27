@@ -149,7 +149,7 @@ public:
 
 	virtual	int				NumAreas( void ) const;
 	virtual int				GetAreaAtPoint( const idVec3 &point ) const;
-	virtual int				BoundsInAreas( const idBounds &bounds, int *areas, int maxAreas ) const;
+	virtual int				FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const;
 	virtual	int				NumPortalsInArea( int areaNum );
 	// grayman #3042 - set portal sound loss (in dB)
 	virtual void			SetPortalPlayerLoss( qhandle_t portal, float loss );

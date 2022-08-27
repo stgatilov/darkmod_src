@@ -921,7 +921,7 @@ idPVS::GetPVSAreas
 ================
 */
 int idPVS::GetPVSAreas( const idBounds &bounds, int *areas, int maxAreas ) const {
-	return gameRenderWorld->BoundsInAreas( bounds, areas, maxAreas );
+	return gameRenderWorld->FindAreasInBounds( bounds, areas, maxAreas );
 }
 
 /*
@@ -945,7 +945,7 @@ idPVS::SetupCurrentPVS
 pvsHandle_t idPVS::SetupCurrentPVS( const idBounds &source, const pvsType_t type ) const {
 	int numSourceAreas, sourceAreas[MAX_BOUNDS_AREAS];
 
-	numSourceAreas = gameRenderWorld->BoundsInAreas( source, sourceAreas, MAX_BOUNDS_AREAS );
+	numSourceAreas = gameRenderWorld->FindAreasInBounds( source, sourceAreas, MAX_BOUNDS_AREAS );
 
 	return SetupCurrentPVS( sourceAreas, numSourceAreas, type );
 }
@@ -1157,7 +1157,7 @@ bool idPVS::InCurrentPVS( const pvsHandle_t handle, const idBounds &target ) con
 		gameLocal.Error( "idPVS::InCurrentPVS: invalid handle" );
 	}
 
-	numTargetAreas = gameRenderWorld->BoundsInAreas( target, targetAreas, MAX_BOUNDS_AREAS );
+	numTargetAreas = gameRenderWorld->FindAreasInBounds( target, targetAreas, MAX_BOUNDS_AREAS );
 
 	for ( i = 0; i < numTargetAreas; i++ ) {
 		if ( currentPVS[handle.i].pvs[targetAreas[i]>>3] & (1 << (targetAreas[i]&7)) ) {
@@ -1274,7 +1274,7 @@ void idPVS::DrawPVS( const idBounds &source, const pvsType_t type ) const {
 	idVec4 *color;
 	pvsHandle_t handle;
 
-	num = gameRenderWorld->BoundsInAreas( source, areas, MAX_BOUNDS_AREAS );
+	num = gameRenderWorld->FindAreasInBounds( source, areas, MAX_BOUNDS_AREAS );
 
 	if ( !num ) {
 		return;

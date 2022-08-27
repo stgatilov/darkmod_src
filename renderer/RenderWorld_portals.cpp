@@ -458,7 +458,7 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 		//stgatilov #5121: trace light rays from every area having portalSky
 		idList<int> areas;
 		areas.SetNum(light->world->NumAreas());
-		int k = light->world->BoundsInAreas(light->globalLightBounds, areas.Ptr(), areas.Num());
+		int k = light->world->FindAreasInBounds(light->globalLightBounds, areas.Ptr(), areas.Num());
 		areas.SetNum(k, false);
 		for (int areaNum : areas) {
 			if (light->world->CheckAreaForPortalSky(areaNum))

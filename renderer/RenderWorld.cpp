@@ -484,7 +484,7 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 	}
 
 	// get the world areas touched by the projection volume
-	numAreas = BoundsInAreas( info.projectionBounds, areas, 10 );
+	numAreas = FindAreasInBounds( info.projectionBounds, areas, 10 );
 
 	// check all areas for models
 	for ( i = 0; i < numAreas; i++ ) {
@@ -927,13 +927,13 @@ void idRenderWorldLocal::BoundsInAreas_r( int nodeNum, const idBounds &bounds, i
 
 /*
 ===================
-BoundsInAreas
+FindAreasInBounds
 
   fills the *areas array with the number of the areas the bounds are in
   returns the total number of areas the bounds are in
 ===================
 */
-int idRenderWorldLocal::BoundsInAreas( const idBounds &bounds, int *areas, int maxAreas ) const {
+int idRenderWorldLocal::FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const {
 	int numAreas = 0;
 
 	assert( areas );
@@ -1152,7 +1152,7 @@ bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, con
 		}
 	}
 	else {
-		numAreas = BoundsInAreas( traceBounds, areas, 4096 );
+		numAreas = FindAreasInBounds( traceBounds, areas, 4096 );
 	}
 	if (numAreas >= 4096)
 		common->Warning("idRenderWorldLocal::TraceAll: areas array overflow");

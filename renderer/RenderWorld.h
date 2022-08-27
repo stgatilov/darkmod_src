@@ -389,7 +389,7 @@ public:
 
 	// fills the *areas array with the numbers of the areas the bounds cover
 	// returns the total number of areas the bounds cover
-	virtual int				BoundsInAreas( const idBounds &bounds, int *areas, int maxAreas ) const = 0;
+	virtual int				FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const = 0;
 
 	// Used by the sound system to do area flowing
 	virtual	int				NumPortalsInArea( int areaNum ) = 0;
