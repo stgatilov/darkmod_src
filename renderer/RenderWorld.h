@@ -387,6 +387,15 @@ public:
 	// it will return 0 <= value < NumAreas()
 	virtual int				GetAreaAtPoint( const idVec3 &point ) const = 0;
 
+	// stgatilov #6083: returns ANY point inside area with specified number
+	// it tries to find a point distant from area boundaries
+	//   return 0: success, good point found
+	//   return 1: failed to find good point, returned center of area's bounding box
+	//   return -1: can't even approximately locate the area! point zeroed
+	// warning: this function is very slow!
+	// used only for developer tool or "teleportArea"
+	virtual int				GetPointInArea( int areaNum, idVec3 &point ) const = 0;
+
 	// fills the *areas array with the numbers of the areas the bounds cover
 	// returns the total number of areas the bounds cover
 	virtual int				FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const = 0;

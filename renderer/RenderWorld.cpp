@@ -880,6 +880,189 @@ int idRenderWorldLocal::GetAreaAtPoint( const idVec3 &point ) const {
 
 /*
 ===================
+GetPointInArea
+===================
+*/
+int idRenderWorldLocal::GetPointInArea( int areaNum, idVec3 &result ) const {
+	result.Zero();
+
+	// fetch area by index
+	if ( areaNum < 0 || areaNum >= NumAreas() )
+		return -1;
+	const portalArea_t *area = &portalAreas[areaNum];
+
+	// lookup _areaN model of the area, loaded from .proc file
+	idList<const idRenderModel *> areaModels;
+	for ( const areaReference_t *ref = area->entityRefs.areaNext; ref != &area->entityRefs; ref = ref->areaNext ) {
+		if ( const idRenderEntityLocal *rent = ref->entity ) {
+			if ( const idRenderModel *model = rent->parms.hModel ) {
+				if ( model->IsStaticWorldModel() ) {
+					assert( strcmp(model->Name(), va("_area%d", areaNum)) == 0 );
+					areaModels.AddGrow( model );
+				}
+			}
+		}
+	}
+	assert( areaModels.Num() == 1 );
+
+	// determine bounding box of area model
+	idBounds passBounds[2];
+	passBounds[0] = areaModels[0]->Bounds();
+	if ( passBounds[0].GetRadius() == 0.0f ) {
+		// sometimes area model is empty (e.g. an area fully surrounded by portals)
+		// in this case its bounds are fully zero, which is wrong: reset them to empty
+		passBounds[0].Clear();
+	}
+
+	// add bounding box of adjacent portals
+	passBounds[1] = passBounds[0];
+	for ( int i = 0; i < doublePortals.Num(); i++ ) {
+		const doublePortal_t *dblPortal = &doublePortals[i];
+		for ( int s = 0; s < 2; s++ ) {
+			const portal_t *portal = &dblPortal->portals[s];
+			if ( portal->intoArea == areaNum ) {
+				idBounds wbox;
+				if ( portal->w.GetNumPoints() > 0 ) {
+					portal->w.GetBounds( wbox );
+					passBounds[1].AddBounds( wbox );
+				}
+			}
+		}
+	}
+
+
+	// first pass: try bbox with portals included
+	// second pass: try bbox of area model only
+	for ( int pass = 0; pass < 2; pass++ ) {
+
+		idBounds areaBounds = passBounds[pass];
+		// some kind error happened, e.g. singular area
+		if ( areaBounds.GetSize().Min() <= 1e-2f )
+			continue;
+
+		// note: there is no simple and reliable way to find good inner point
+		// here we use slow but relatively simple heuristic: check NxNxN grid of points without bounds
+		static const int GRIDRES = 13;
+
+		// to compute score for a grid point, we trace 6 axis-aligned rays
+		// then we take sqrt(sum(dist ^ -2)) , with Z distance scaled down
+		// we strive to make this score as small as possible
+		float score[GRIDRES][GRIDRES][GRIDRES] = {{{0.0f}}};
+
+		// draw and intersect all axis-aligned lines passing through the grid points
+		for ( int d = 0; d < 3; d++ ) {
+			int du = (d + 1) % 3;
+			int dv = (d + 2) % 3;
+
+			for ( int iu = 0; iu < GRIDRES; iu++ )
+				for ( int iv = 0; iv < GRIDRES; iv++ ) {
+					float ratioU = (iu + 0.5f) / GRIDRES;
+					float ratioV = (iv + 0.5f) / GRIDRES;
+
+					// set up ray
+					idVec3 origin, dir;
+					dir[d] = 1.0f;
+					origin[d] = areaBounds[0][d];
+					float len = areaBounds[1][d] - areaBounds[0][d];
+					origin[du] = areaBounds[0][du] + (areaBounds[1][du] - areaBounds[0][du]) * ratioU;
+					origin[dv] = areaBounds[0][dv] + (areaBounds[1][dv] - areaBounds[0][dv]) * ratioV;
+
+					// trace ray against world BSP tree (brushes)
+					// note: trace only goes without area bonding box
+					idList<LineIntersectionPoint> result;
+					result.AddGrow( {0.0f, INT_MIN} );
+					RecurseFullLineIntersectionBSP_r( result, 0, -1, 0.0f, len, origin, dir );
+					assert( result.Num() >= 2 );
+					assert( result.Last().param == len );
+
+					for ( int id = 0; id < GRIDRES; id++ ) {
+						float ratioD = (id + 0.5f) / GRIDRES;
+						float param = ratioD * len;
+
+						float *thisScore = (
+							d == 0 ? &score[id][iu][iv] :
+							d == 1 ? &score[iv][id][iu] :
+							d == 2 ? &score[iu][iv][id] :
+							nullptr
+						);
+						if ( *thisScore == FLT_MAX )
+							continue;	// previously determined as opaque or other area
+
+						auto Comp = [](const LineIntersectionPoint &a, const LineIntersectionPoint &b) -> bool {
+							return a.param < b.param;
+						};
+						// find closest keyparam before and afterthe analyzed postion
+						int afterIndex = idBinSearch_GreaterEqual( result.Ptr(), result.Num(), LineIntersectionPoint{param, -1}, Comp );
+						int beforeIndex = idBinSearch_Less( result.Ptr(), result.Num(), LineIntersectionPoint{param, -1}, Comp );
+						assert( afterIndex > 0 && afterIndex < result.Num() );
+						assert( beforeIndex >= 0 && beforeIndex < result.Num() - 1 );
+
+						if ( result[afterIndex].areaBefore != areaNum ) {
+							// point inside opaque space or different area, rule it out of candidates
+							*thisScore = FLT_MAX;
+							continue;
+						}
+
+						float distAfter = idMath::Fmax( result[afterIndex].param - param, 1e-10f );
+						float distBefore = idMath::Fmax( param - result[beforeIndex].param, 1e-10f );
+						if ( d == 2 ) {
+							// areas often have small Z size, so we give it less weight in score
+							distAfter *= 0.1f;
+							distBefore *= 0.1f;
+						}
+
+						// add inverse quadratic terms to score
+						*thisScore += 1.0f / (distAfter * distAfter);
+						*thisScore += 1.0f / (distBefore * distBefore);
+					}
+				}
+		}
+
+		// find best candidate among all grid points
+		float bestScore = FLT_MAX * 0.5f;
+		int bestIdx[3] = {-1, -1, -1};
+		for ( int u = 0; u < GRIDRES; u++ )
+			for ( int v = 0; v < GRIDRES; v++ )
+				for ( int w = 0; w < GRIDRES; w++ ) {
+					float thisScore = score[u][v][w];
+					// note: FLT_MAX scores of ruled out points are skipped
+					if ( bestScore > thisScore ) {
+						bestScore = thisScore;
+						bestIdx[0] = u;
+						bestIdx[1] = v;
+						bestIdx[2] = w;
+					}
+				}
+
+		if ( bestIdx[0] >= 0 ) {
+			// compute position of the best grid point
+			idVec3 ratio = ( idVec3( bestIdx[0], bestIdx[1], bestIdx[2] ) + idVec3( 0.5f ) ) / GRIDRES;
+			result = ratio;
+			result.MulCW( areaBounds[1] - areaBounds[0] );
+			result += areaBounds[0];
+
+			return 0;
+		}
+	}
+
+	// all grid points are outside area
+	// this is highly unlikely, but can happen
+	for ( int pass = 0; pass < 2; pass++ ) {
+		// some kind error happened, e.g. singular area
+		if ( passBounds[pass].GetSize().Min() <= 1e-2f )
+			continue;
+
+		// return center of box
+		result = passBounds[pass].GetCenter();
+		return 1;
+	}
+
+	// all bounds are singular: report global failure
+	return -1;
+}
+
+/*
+===================
 BoundsInAreas_r
 ===================
 */
@@ -1422,6 +1605,53 @@ bool idRenderWorldLocal::FastWorldTrace( modelTrace_t &results, const idVec3 &st
 		return ( results.fraction < 1.0f );
 	}
 	return false;
+}
+
+/*
+==================
+idRenderWorldLocal::RecurseFullLineIntersectionBSP_r
+==================
+*/
+void idRenderWorldLocal::RecurseFullLineIntersectionBSP_r( idList<LineIntersectionPoint> &result, int nodeNum, int parentNodeNum, float paramMin, float paramMax, const idVec3 &origin, const idVec3 &dir ) const {
+	if ( nodeNum <= 0 && parentNodeNum >= 0 ) {
+		// leaf node
+		int areaNum = -nodeNum - 1;	// -1 for opaque leaf
+
+		assert( result.Num() == 0 || result.Last().param == paramMin );
+		if ( result.Num() == 0 || result.Last().areaBefore != areaNum ) {
+			result.AddGrow( {paramMax, areaNum} );
+		}
+		result.Last().param = paramMax;
+
+		return;
+	}
+
+	const areaNode_t *node = &areaNodes[nodeNum];
+
+	idVec3 pntMin = origin + dir * paramMin;
+	idVec3 pntMax = origin + dir * paramMax;
+
+	// distance from plane for trace start and end
+	float tBeg = node->plane.Distance( pntMin );
+	float tEnd = node->plane.Distance( pntMax );
+
+	if ( tBeg >= 0.0f && tEnd >= 0.0f ) {
+		RecurseFullLineIntersectionBSP_r( result, node->children[0], nodeNum, paramMin, paramMax, origin, dir );
+		return;
+	}
+	if ( tBeg < 0.0f && tEnd < 0.0f ) {
+		RecurseFullLineIntersectionBSP_r( result, node->children[1], nodeNum, paramMin, paramMax, origin, dir );
+		return;
+	}
+	int side = tBeg < tEnd;
+	float frac = tBeg / (tBeg - tEnd);
+	float paramCross = paramMin + frac * (paramMax - paramMin);
+	if (paramCross > paramMin) {
+		RecurseFullLineIntersectionBSP_r( result, node->children[side], nodeNum, paramMin, paramCross, origin, dir );
+	}
+	if (paramCross < paramMax) {
+		RecurseFullLineIntersectionBSP_r( result, node->children[side^1], nodeNum, paramCross, paramMax, origin, dir );
+	}
 }
 
 /*

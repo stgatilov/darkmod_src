@@ -1087,6 +1087,40 @@ void Cmd_Teleport_f( const idCmdArgs &args ) {
 
 /*
 =================
+Cmd_TeleportArea_f
+=================
+*/
+void Cmd_TeleportArea_f( const idCmdArgs &args ) {
+	if ( args.Argc() != 2 ) {
+		gameLocal.Printf( "usage: teleportArea <index of area to teleport to>\n" );
+		return;
+	}
+
+	int numAreas = gameRenderWorld->NumAreas();
+	int areaIdx = -1;
+	sscanf( args.Argv( 1 ), "%d", &areaIdx );
+	if ( areaIdx < 0 || areaIdx >= numAreas ) {
+		gameLocal.Printf( "area index out of range [%d; %d)\n", 0, numAreas );
+		return;
+	}
+
+	idVec3 position;
+	int verdict = gameRenderWorld->GetPointInArea( areaIdx, position );
+
+	if ( verdict < 0 ) {
+		gameLocal.Printf( "failed to locate area at all\n" );
+	} else {
+		if ( verdict > 0 ) {
+			gameLocal.Printf( "failed to find point inside area, use bbox center\n" );
+		}
+
+		idCmdArgs viewposArgs( idStr("setviewpos ") + position.ToString(), false );
+		Cmd_SetViewpos_f( viewposArgs );
+	}
+}
+
+/*
+=================
 Cmd_Trigger_f
 =================
 */
@@ -3576,6 +3610,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "getviewpos",			Cmd_GetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints the current view position:  x y z   pitch yaw roll" );
 	cmdSystem->AddCommand( "setviewpos",			Cmd_SetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"sets the current view position:  [x y z] or [x y z yaw] or [x y z pitch yaw]" );
 	cmdSystem->AddCommand( "teleport",				Cmd_Teleport_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleports the player to an entity location", idGameLocal::ArgCompletion_EntityName );
+	cmdSystem->AddCommand( "teleportArea",			Cmd_TeleportArea_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"teleports the player to area with given number" );
 	cmdSystem->AddCommand( "trigger",				Cmd_Trigger_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"triggers an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "spawn",					Cmd_Spawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"spawns a game entity", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> );
 	cmdSystem->AddCommand( "respawn",				Cmd_ReSpawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"respawns game entity with given name", idGameLocal::ArgCompletion_MapEntityName );

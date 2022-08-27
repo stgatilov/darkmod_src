@@ -149,6 +149,7 @@ public:
 
 	virtual	int				NumAreas( void ) const;
 	virtual int				GetAreaAtPoint( const idVec3 &point ) const;
+	virtual int				GetPointInArea( int areaNum, idVec3 &point ) const override;
 	virtual int				FindAreasInBounds( const idBounds &bounds, int *areas, int maxAreas ) const;
 	virtual	int				NumPortalsInArea( int areaNum );
 	// grayman #3042 - set portal sound loss (in dB)
@@ -292,6 +293,11 @@ public:
 	void					AddLightRefToArea( idRenderLightLocal *light, portalArea_t *area );
 
 	void					RecurseProcBSP_r( modelTrace_t *results, int *areas, int *numAreas, int maxAreas, int parentNodeNum, int nodeNum, float p1f, float p2f, const idVec3 &p1, const idVec3 &p2 ) const;
+	struct LineIntersectionPoint {
+		float param;
+		int areaBefore;
+	};
+	void					RecurseFullLineIntersectionBSP_r( idList<LineIntersectionPoint> &result, int nodeNum, int parentNodeNum, float paramMin, float paramMax, const idVec3 &origin, const idVec3 &dir ) const;
 
 	void					BoundsInAreas_r( int nodeNum, const idBounds &bounds, int *areas, int *numAreas, int maxAreas ) const;
 
