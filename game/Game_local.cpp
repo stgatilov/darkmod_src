@@ -6693,7 +6693,7 @@ void idGameLocal::SpreadLocations() {
 			continue;
 		}
 		idVec3	point = ent->spawnArgs.GetVector( "origin" );
-		int areaNum = gameRenderWorld->PointInArea( point );
+		int areaNum = gameRenderWorld->GetAreaAtPoint( point );
 		if ( areaNum < 0 ) {
 			Printf( "SpreadLocations: location '%s' is not in a valid area\n", ent->spawnArgs.GetString( "name" ) );
 			continue;
@@ -6735,7 +6735,7 @@ idLocationEntity *idGameLocal::LocationForPoint( const idVec3 &point ) {
 		return NULL;
 	}
 
-	int areaNum = gameRenderWorld->PointInArea( point );
+	int areaNum = gameRenderWorld->GetAreaAtPoint( point );
 	if ( areaNum < 0 ) {
 		return NULL;
 	}

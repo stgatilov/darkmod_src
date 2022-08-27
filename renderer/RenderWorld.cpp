@@ -840,13 +840,13 @@ void idRenderWorldLocal::SetPortalPlayerLoss( qhandle_t portal, float loss ) // 
 
 /*
 ===============
-PointInAreaNum
+GetAreaAtPoint
 
 Will return -1 if the point is not in an area, otherwise
 it will return 0 <= value < tr.world->numPortalAreas
 ===============
 */
-int idRenderWorldLocal::PointInArea( const idVec3 &point ) const {
+int idRenderWorldLocal::GetAreaAtPoint( const idVec3 &point ) const {
 	areaNode_t	*node;
 	int			nodeNum;
 	float		d;
@@ -868,7 +868,7 @@ int idRenderWorldLocal::PointInArea( const idVec3 &point ) const {
 		if ( nodeNum < 0 ) {
 			nodeNum = -1 - nodeNum;
 			if ( nodeNum >= portalAreas.Num() ) {
-				common->Error( "idRenderWorld::PointInArea: area out of range" );
+				common->Error( "idRenderWorld::GetAreaAtPoint: area out of range" );
 			}
 			return nodeNum;
 		}
@@ -1670,7 +1670,7 @@ void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderL
 	// 2.08 Dragofer's draw call optimization
 	if (def && (areaLock = def->parms.areaLock) != renderEntity_s::RAL_NONE && r_useAreaLocks & 1) { // 2.08 Dragofer's draw call optimization
 		idVec3 point = areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalReferenceBounds.GetCenter();
-		int areaNum = PointInArea(point);
+		int areaNum = GetAreaAtPoint(point);
 		if (areaNum >= 0) {
 			portalArea_t *area = &portalAreas[areaNum];
 			AddEntityRefToArea(def, area);
@@ -1679,7 +1679,7 @@ void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderL
 	}
 	if (light && (areaLock = light->parms.areaLock) != renderEntity_s::RAL_NONE && r_useAreaLocks & 2) {
 		idVec3 point = areaLock == renderEntity_s::RAL_ORIGIN ? light->parms.origin : light->globalLightBounds.GetCenter();
-		int areaNum = PointInArea(point);
+		int areaNum = GetAreaAtPoint(point);
 		if (areaNum >= 0) {
 			portalArea_t *area = &portalAreas[areaNum];
 			AddLightRefToArea(light, area);
@@ -2150,7 +2150,7 @@ Supposed to be used by game/physics code
 */
 bool idRenderWorldLocal::MaterialTrace( const idVec3 &p, const idMaterial *mat, idStr &matName ) const {
 	// only testing the collision area - what if blocker is <.25 units behind the area end?
-	int areaNum = PointInArea( p );
+	int areaNum = GetAreaAtPoint( p );
 	if ( areaNum < 0 )
 		return false;
 	auto area = &portalAreas[areaNum];

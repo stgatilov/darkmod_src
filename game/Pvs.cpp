@@ -912,7 +912,7 @@ idPVS::GetPVSArea
 ================
 */
 int idPVS::GetPVSArea( const idVec3 &point ) const {
-	return gameRenderWorld->PointInArea( point );
+	return gameRenderWorld->GetAreaAtPoint( point );
 }
 
 /*
@@ -932,7 +932,7 @@ idPVS::SetupCurrentPVS
 pvsHandle_t idPVS::SetupCurrentPVS( const idVec3 &source, const pvsType_t type ) const {
 	int sourceArea;
 
-	sourceArea = gameRenderWorld->PointInArea( source );
+	sourceArea = gameRenderWorld->GetAreaAtPoint( source );
 
 	return SetupCurrentPVS( sourceArea, type );
 }
@@ -1135,7 +1135,7 @@ bool idPVS::InCurrentPVS( const pvsHandle_t handle, const idVec3 &target ) const
 		gameLocal.Error( "idPVS::InCurrentPVS: invalid handle" );
 	}
 
-	targetArea = gameRenderWorld->PointInArea( target );
+	targetArea = gameRenderWorld->GetAreaAtPoint( target );
 
 	if ( targetArea == -1 ) {
 		return false;
@@ -1222,7 +1222,7 @@ void idPVS::DrawPVS( const idVec3 &source, const pvsType_t type ) const {
 	idVec4 *color;
 	pvsHandle_t handle;
 
-	sourceArea = gameRenderWorld->PointInArea( source );
+	sourceArea = gameRenderWorld->GetAreaAtPoint( source );
 
 	if ( sourceArea == -1 ) {
 		return;
@@ -1335,7 +1335,7 @@ void idPVS::DrawCurrentPVS( const pvsHandle_t handle, const idVec3 &source ) con
 		gameLocal.Error( "idPVS::DrawCurrentPVS: invalid handle" );
 	}
 
-	sourceArea = gameRenderWorld->PointInArea( source );
+	sourceArea = gameRenderWorld->GetAreaAtPoint( source );
 
 	if ( sourceArea == -1 ) {
 		return;
@@ -1421,7 +1421,7 @@ bool idPVS::CheckAreasForPortalSky( const pvsHandle_t handle, const idVec3 &orig
 		return false;
 	}
 
-	sourceArea = gameRenderWorld->PointInArea( origin );
+	sourceArea = gameRenderWorld->GetAreaAtPoint( origin );
 
 	if ( sourceArea == -1 )
 	{

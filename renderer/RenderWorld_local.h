@@ -148,7 +148,7 @@ public:
 	virtual	void			RenderScene( const renderView_t &renderView );
 
 	virtual	int				NumAreas( void ) const;
-	virtual int				PointInArea( const idVec3 &point ) const;
+	virtual int				GetAreaAtPoint( const idVec3 &point ) const;
 	virtual int				BoundsInAreas( const idBounds &bounds, int *areas, int maxAreas ) const;
 	virtual	int				NumPortalsInArea( int areaNum );
 	// grayman #3042 - set portal sound loss (in dB)

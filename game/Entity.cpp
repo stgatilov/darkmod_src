@@ -11902,7 +11902,7 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 	{
 		origin = GetPhysics()->GetOrigin();
 	}
-	int areaNum = gameRenderWorld->PointInArea( origin );
+	int areaNum = gameRenderWorld->GetAreaAtPoint( origin );
 
 	// Find all light entities, then check if they are in the same area as the player:
 	for( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
@@ -11918,7 +11918,7 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 
 		// light is in the same area?
 		idVec3 light_origin = light->GetLightOrigin();
-		if ( areaNum == gameRenderWorld->PointInArea( light_origin ) ) {
+		if ( areaNum == gameRenderWorld->GetAreaAtPoint( light_origin ) ) {
 			light->GetColor( local_light );
 			// multiply the light color by the radius to get a fake "light energy":
 			light->GetRadius( local_light_radius );

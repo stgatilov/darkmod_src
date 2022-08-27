@@ -600,7 +600,7 @@ void idSoundEmitterLocal::Spatialize( bool primary, idVec3 listenerPos, int list
 	if ( rw )
 	{
 		// we have a valid renderWorld
-		int soundInArea = rw->PointInArea(realOrigin * METERS_TO_DOOM);
+		int soundInArea = rw->GetAreaAtPoint(realOrigin * METERS_TO_DOOM);
 		if ( soundInArea == -1 )
 		{
 			if ( lastValidPortalArea == -1 )		// sound is outside the world
@@ -636,7 +636,7 @@ void idSoundEmitterLocal::Spatialize( bool primary, idVec3 listenerPos, int list
 							if ( target )
 							{
 								idVec3 targetOrigin = target->GetPhysics()->GetOrigin();
-								int targetArea = rw->PointInArea(targetOrigin);
+								int targetArea = rw->GetAreaAtPoint(targetOrigin);
 
 								SoundChainResults results;
 								if ( soundWorld->ResolveOrigin(true, 0, NULL, targetArea, realDistance, 0, targetOrigin, targetOrigin, this, &results) ) // grayman #3042
@@ -686,7 +686,7 @@ void idSoundEmitterLocal::Spatialize( bool primary, idVec3 listenerPos, int list
 							if ( target )
 							{
 								idVec3 targetOrigin = target->GetPhysics()->GetOrigin();
-								int targetArea = rw->PointInArea(targetOrigin);
+								int targetArea = rw->GetAreaAtPoint(targetOrigin);
 
 								soundWorld->ResolveOrigin(true, 0, NULL, targetArea, results.distance*DOOM_TO_METERS, results.loss, targetOrigin, targetOrigin, this, &results); // grayman #3042
 							}
@@ -1049,7 +1049,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		{
 			// grayman #4882 - Spatialize from primary location (player's ear)
 			p = player->GetPrimaryListenerLoc(); // doom units
-			area = soundWorld->rw->PointInArea(p);
+			area = soundWorld->rw->GetAreaAtPoint(p);
 			Spatialize(true, p * DOOM_TO_METERS, area, soundWorld->rw); // to player's ear
 
 			// save primary data
@@ -1062,7 +1062,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		p = player->GetSecondaryListenerLoc(); // doom units
 		if ( p != vec3_zero )
 		{
-			area = soundWorld->rw->PointInArea(p);
+			area = soundWorld->rw->GetAreaAtPoint(p);
 			Spatialize(false, p * DOOM_TO_METERS, area, soundWorld->rw); // to active Listener
 
 			// If we did a primary spatialize, determine whether the primary path or the secondary path provides the louder sound. Use the winner.

@@ -459,7 +459,7 @@ void CsndProp::Propagate
 	}
 
 	// add the area-specific volMod, if we're in an area
-	int areaNum = gameRenderWorld->PointInArea(origin);
+	int areaNum = gameRenderWorld->GetAreaAtPoint(origin);
 	vol0 += (areaNum >= 0) ? m_AreaPropsG[areaNum].VolMod : 0;
 
 	// Adjust the volume by some amount that is a cvar for now for tweaking
@@ -687,9 +687,9 @@ void CsndProp::Propagate
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Filling populated areas array with AI\r" );
 	for ( int j = 0 ; j < validEnts.Num() ; j++ )
 	{
-		int AIAreaNum = gameRenderWorld->PointInArea( validEnts[j]->GetPhysics()->GetOrigin() );
+		int AIAreaNum = gameRenderWorld->GetAreaAtPoint( validEnts[j]->GetPhysics()->GetOrigin() );
 		
-		// Sometimes PointInArea returns -1, don't know why
+		// Sometimes GetAreaAtPoint returns -1, don't know why
 		if ( AIAreaNum < 0 )
 		{
 			continue;
@@ -871,7 +871,7 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin, float minAudThresh) // g
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing initial area\r" );
 
-	int initArea = gameRenderWorld->PointInArea( origin );
+	int initArea = gameRenderWorld->GetAreaAtPoint( origin );
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound origin is in portal area: %d\r", initArea );
 	if ( initArea == -1 )
 	{
@@ -1114,7 +1114,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 	SPopArea *pPopArea;
 	idList<idVec3> showPoints;
 	
-	int initArea = gameRenderWorld->PointInArea( origin );
+	int initArea = gameRenderWorld->GetAreaAtPoint( origin );
 
 	for ( int i = 0; i < m_PopAreasInd.Num() ; i++ )
 	{
@@ -1814,7 +1814,7 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, float MaxDist, int 
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing initial area\r" );
 
-	int initArea = gameRenderWorld->PointInArea( origin );
+	int initArea = gameRenderWorld->GetAreaAtPoint( origin );
 
 	m_EventAreas[ initArea ].bVisited = true;
 

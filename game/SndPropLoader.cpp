@@ -505,7 +505,7 @@ void CsndPropLoader::ParseAreaPropEnt ( idDict args )
 	SAreaProp propEntry;
 	idStr lossvalue, VolOffset;
 
-	if ( ( area = gameRenderWorld->PointInArea(args.GetVector("origin")) ) == -1 )
+	if ( ( area = gameRenderWorld->GetAreaAtPoint(args.GetVector("origin")) ) == -1 )
 	{
 		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Sound area properties entity %s is not placed in any area.  It will be ignored\r", args.GetString("name") );
 		goto Quit;

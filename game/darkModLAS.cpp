@@ -1266,7 +1266,7 @@ void darkModLAS::addLight (idLight* p_idLight)
 	lightPos += lightCenter; // true origin of light
 
 	// Determine the index of the area containing this light
-	int containingAreaIndex = gameRenderWorld->PointInArea (lightPos);
+	int containingAreaIndex = gameRenderWorld->GetAreaAtPoint (lightPos);
 	if (containingAreaIndex < 0)
 	{
 		// The light isn't in an area
@@ -1515,7 +1515,7 @@ void darkModLAS::updateLASState()
 					p_LASLight->lastWorldPos = lightPos;
 
 					// This light may have moved between areas
-					int newAreaIndex = gameRenderWorld->PointInArea (p_LASLight->lastWorldPos);
+					int newAreaIndex = gameRenderWorld->GetAreaAtPoint (p_LASLight->lastWorldPos);
 					if (newAreaIndex == -1)
 					{
 						// Light is now in the void
@@ -1588,7 +1588,7 @@ float darkModLAS::queryLightingAlongLine
 	float totalIllumination = 0.0f;
 
 	// Find the area that the test points are in
-//	int testPointAreaIndex = gameRenderWorld->PointInArea (testPoint1);
+//	int testPointAreaIndex = gameRenderWorld->GetAreaAtPoint (testPoint1);
 
 	// Compute test bounds
 	idVec3 mins, maxes;

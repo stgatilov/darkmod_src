@@ -385,7 +385,7 @@ public:
 
 	// Will return -1 if the point is not in an area, otherwise
 	// it will return 0 <= value < NumAreas()
-	virtual int				PointInArea( const idVec3 &point ) const = 0;
+	virtual int				GetAreaAtPoint( const idVec3 &point ) const = 0;
 
 	// fills the *areas array with the numbers of the areas the bounds cover
 	// returns the total number of areas the bounds cover

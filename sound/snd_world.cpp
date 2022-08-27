@@ -856,7 +856,7 @@ bool idSoundWorldLocal::ResolveOrigin( bool primary, const int stackDepth, const
 
 	float angularLoss = 0.0f;
 
-	int listenArea = rw->PointInArea(listenerPosition);
+	int listenArea = rw->GetAreaAtPoint(listenerPosition);
 
 	if ( soundArea == listenArea ) // grayman #4882
 	{
@@ -1199,7 +1199,7 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	listenerAreaName = areaName;
 
 	if ( rw ) {
-		listenerArea = rw->PointInArea( listenerQU );	// where are we?
+		listenerArea = rw->GetAreaAtPoint( listenerQU );	// where are we?
 	} else {
 		listenerArea = 0;
 	}
@@ -1283,7 +1283,7 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 			{
 				// grayman #4882 - Spatialize from primary location (player's ear)
 				idVec3 p = player->GetPrimaryListenerLoc(); // doom units
-				int area = rw->PointInArea(p);
+				int area = rw->GetAreaAtPoint(p);
 				def->Spatialize(true, p * DOOM_TO_METERS, area, rw); // to player's ear
 
 				// save primary data
@@ -1296,7 +1296,7 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 			p = player->GetSecondaryListenerLoc(); // doom units
 			if ( p != vec3_zero )
 			{
-				area = rw->PointInArea(p);
+				area = rw->GetAreaAtPoint(p);
 				def->Spatialize(false, p * DOOM_TO_METERS, area, rw); // to active Listener
 
 				// If we did a primary spatialize, determine whether the primary path or the secondary path provides the louder sound. Use the winner.

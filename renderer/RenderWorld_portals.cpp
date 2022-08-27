@@ -948,7 +948,7 @@ void idRenderWorldLocal::FindViewLightsAndEntities( void ) {
 		// debug tool to force no portal culling
 		tr.viewDef->areaNum = -1;
 	} else {
-		tr.viewDef->areaNum = PointInArea( tr.viewDef->initialViewAreaOrigin );
+		tr.viewDef->areaNum = GetAreaAtPoint( tr.viewDef->initialViewAreaOrigin );
 	}
 
 	// determine all possible connected areas for

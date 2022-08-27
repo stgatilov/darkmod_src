@@ -2466,7 +2466,7 @@ void idVacuumEntity::Spawn() {
 
 	idVec3 org = spawnArgs.GetVector( "origin" );
 
-	gameLocal.vacuumAreaNum = gameRenderWorld->PointInArea( org );
+	gameLocal.vacuumAreaNum = gameRenderWorld->GetAreaAtPoint( org );
 }
 
 

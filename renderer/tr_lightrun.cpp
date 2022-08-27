@@ -734,9 +734,9 @@ void R_CreateLightRefs( idRenderLightLocal *light ) {
 	// cull the light if it is behind a closed door
 	// it is debatable if we want to use the entity origin or the center offset origin,
 	// but we definitely don't want to use a parallel offset origin
-	light->areaNum = light->world->PointInArea( light->globalLightOrigin );
+	light->areaNum = light->world->GetAreaAtPoint( light->globalLightOrigin );
 	if ( light->areaNum == -1 ) {
-		light->areaNum = light->world->PointInArea( light->parms.origin );
+		light->areaNum = light->world->GetAreaAtPoint( light->parms.origin );
 	}
 
 	// bump the view count so we can tell if an

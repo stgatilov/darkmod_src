@@ -5373,7 +5373,7 @@ void idPlayer::UpdateAir( void )
 				areaNum = pvsAreas[0];
 			} else
 			{
-				areaNum = gameRenderWorld->PointInArea( this->GetPhysics()->GetOrigin() );
+				areaNum = gameRenderWorld->GetAreaAtPoint( this->GetPhysics()->GetOrigin() );
 			}
 			newAirless = gameRenderWorld->AreasAreConnected( gameLocal.vacuumAreaNum, areaNum, PS_BLOCK_AIR );
 			DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("UpdateAir: Bordering on neighbor area. VacuumArea: %d, NeighborArea: %d, Airless: %d", gameLocal.vacuumAreaNum, areaNum, newAirless);
