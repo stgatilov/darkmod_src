@@ -98,6 +98,8 @@ public:
 	idList<type> &	operator=( const idList<type> &other );
 	const type &	operator[]( int index ) const;
 	type &			operator[]( int index );
+	const type &	Last() const;
+	type &			Last();
 
 	void			Condense( void );									// resizes list to exactly the number of elements it contains
 	void			Resize( int newsize );								// resizes list to the given number of elements
@@ -624,6 +626,28 @@ ID_FORCE_INLINE type &idList<type>::operator[]( int index ) {
 	assert( unsigned(index) < unsigned(num) );
 
 	return list[ index ];
+}
+
+/*
+================
+idList<type>::Last
+================
+*/
+template< class type >
+ID_FORCE_INLINE const type &idList<type>::Last() const {
+	assert( num > 0 );
+	return list[num - 1];
+}
+
+/*
+================
+idList<type>::Last
+================
+*/
+template< class type >
+ID_FORCE_INLINE type &idList<type>::Last() {
+	assert( num > 0 );
+	return list[num - 1];
 }
 
 /*

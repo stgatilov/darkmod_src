@@ -44,6 +44,8 @@ public:
 
 	const type &		operator[]( int index ) const;
 	type &				operator[]( int index );
+	const type &		Last() const;
+	type &				Last();
 
 	type *				Ptr( void );										// returns a pointer to the list
 	const type *		Ptr( void ) const;									// returns a pointer to the list
@@ -214,8 +216,7 @@ Release builds do no range checking.
 */
 template<class type,int size>
 ID_INLINE const type &idStaticList<type,size>::operator[]( int index ) const {
-	assert( index >= 0 );
-	assert( index < num );
+	assert(unsigned(index) < unsigned(num));
 
 	return list[ index ];
 }
@@ -230,11 +231,33 @@ Release builds do no range checking.
 */
 template<class type,int size>
 ID_INLINE type &idStaticList<type,size>::operator[]( int index ) {
-	assert( index >= 0 );
-	assert( index < num );
+	assert(unsigned(index) < unsigned(num));
 
 	return list[ index ];
 }
+
+/*
+================
+idStaticList<type>::Last
+================
+*/
+template< class type,int size >
+ID_FORCE_INLINE const type &idStaticList<type,size>::Last() const {
+	assert( num > 0 );
+	return list[num - 1];
+}
+
+/*
+================
+idStaticList<type>::Last
+================
+*/
+template< class type,int size >
+ID_FORCE_INLINE type &idStaticList<type,size>::Last() {
+	assert( num > 0 );
+	return list[num - 1];
+}
+
 
 /*
 ================

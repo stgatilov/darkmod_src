@@ -85,6 +85,14 @@ public:
 		assert(unsigned(index) < unsigned(num));
 		return list[index];
 	}
+	ID_FORCE_INLINE const type &Last() const {
+		assert(num > 0);
+		return list[num - 1];
+	}
+	ID_FORCE_INLINE type &Last() {
+		assert(num > 0);
+		return list[num - 1];
+	}
 
 	int	AddGrow( type obj ) {
 		if (num == size)
