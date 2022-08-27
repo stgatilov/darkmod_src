@@ -41,8 +41,8 @@ void GL_SetDebugLabel(void *ptr, const idStr &label ) {
 }
 
 void InitTracing() {
-#ifdef TRACY_ENABLE
 	if ( !g_tracingEnabled && com_enableTracing.GetBool() ) {
+#ifdef TRACY_ENABLE
 		tracy::StartupProfiler();
 		g_tracingEnabled = true;
 
@@ -60,9 +60,13 @@ void InitTracing() {
 				Sys_Yield();
 			}
 		}
+#else
+		common->Printf("Tracy profiling not included in this build\n");
+		common->Printf("Note that Tracy does not work in Debug configurations\n");
+		g_tracingEnabled = true;
+#endif
 	}
 	g_tracingAllocStacks = com_tracingAllocStacks.GetBool();
-#endif
 }
 
 void InitOpenGLTracing() {
@@ -80,9 +84,9 @@ void InitOpenGLTracing() {
 }
 
 void TracingEndFrame() {
-#ifdef TRACY_ENABLE
 	InitTracing();
 
+#ifdef TRACY_ENABLE
 	if ( g_tracingEnabled ) {
 		if ( !g_glTraceInitialized ) {
 			TracyGpuContext;
