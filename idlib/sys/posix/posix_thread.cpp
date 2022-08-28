@@ -27,9 +27,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <pthread_np.h> // for pthread_set_name_np
 #endif
 
-// DG: Note: On Linux you need at least (e)glibc 2.12 to be able to set the threadname
-//#define DEBUG_THREADS
-
 typedef void* ( *pthread_function_t )( void* );
 
 /*
@@ -43,7 +40,6 @@ caedes: This should be seen as a helper-function for Sys_CreateThread() only.
 
 ========================
 */
-#ifdef DEBUG_THREADS
 static int Sys_SetThreadName( pthread_t handle, const char* name )
 {
 	int ret = 0;
@@ -51,15 +47,22 @@ static int Sys_SetThreadName( pthread_t handle, const char* name )
 	// NOTE: linux only supports threadnames up to 16chars *including* terminating NULL
 	// http://man7.org/linux/man-pages/man3/pthread_setname_np.3.html
 	// on my machine a longer name (eg "JobListProcessor_0") caused an ENOENT error (instead of ERANGE)
-	assert( strlen( name ) < 16 );
-	
-	ret = pthread_setname_np( handle, name );
+	char shortName[16];
+	if ( strlen( name ) <= 15 ) {
+		strcpy( shortName, name );
+	} else {
+		strncpy( shortName + 0, name, 6 );
+		strcpy( shortName + 6, "..." );
+		strcpy( shortName + 9, name + strlen(name) - 6 );
+	}
+
+	ret = pthread_setname_np( handle, shortName );
 	if( ret != 0 )
-		idLib::common->Printf( "Setting threadname \"%s\" failed, reason: %s (%i)\n", name, strerror( errno ), errno );
+		idLib::common->Printf( "Setting threadname \"%s\" failed, reason: %s (%i)\n", shortName, strerror( errno ), errno );
 #elif defined(__FreeBSD__)
 	// according to http://www.freebsd.org/cgi/man.cgi?query=pthread_set_name_np&sektion=3
 	// the interface is void pthread_set_name_np(pthread_t tid, const char *name);
-	pthread_set_name_np( handle, name ); // doesn't return anything
+	pthread_set_name_np( handle, shortName ); // doesn't return anything
 #endif
 	/* TODO: OSX:
 		// according to http://stackoverflow.com/a/7989973
@@ -70,6 +73,12 @@ static int Sys_SetThreadName( pthread_t handle, const char* name )
 	*/
 	
 	return ret;
+}
+
+void Sys_SetCurrentThreadName( const char * name )
+{
+	Sys_SetThreadName( pthread_self(), name );
+	TRACE_THREAD_NAME( name );
 }
 
 static int Sys_GetThreadName( pthread_t handle, char* namebuf, size_t buflen )
@@ -90,7 +99,6 @@ static int Sys_GetThreadName( pthread_t handle, char* namebuf, size_t buflen )
 	return ret;
 }
 
-#endif // DEBUG_THREADS
 
 
 
@@ -117,13 +125,11 @@ uintptr_t Sys_CreateThread( xthread_t function, void* parms, xthreadPriority pri
 		return ( uintptr_t )0;
 	}
 	
-#if defined(DEBUG_THREADS)
 	if( Sys_SetThreadName( handle, name ) != 0 )
 	{
 		idLib::common->Warning( "Warning: pthread_setname_np %s failed\n", name );
 		return ( uintptr_t )0;
 	}
-#endif
 	
 	pthread_attr_destroy( &attr );
 	
@@ -234,9 +240,7 @@ void Sys_DestroyThread( uintptr_t threadHandle )
 	char	name[128];
 	name[0] = '\0';
 	
-#if defined(DEBUG_THREADS)
 	Sys_GetThreadName( ( pthread_t )threadHandle, name, sizeof( name ) );
-#endif
 	
 #if 0
 #if !defined(__ANDROID__)
