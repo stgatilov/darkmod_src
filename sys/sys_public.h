@@ -579,7 +579,8 @@ public:
 	// stgatilov #4550: should be called when new thread starts: sets FPU properties
 	virtual void			ThreadStartup() = 0;
 	// stgatilov #4550: should be called regularly in every thread: updates FPU properties after cvar changes
-	virtual void			ThreadHeartbeat() = 0;
+	//                  also makes sure Tracy receives thread name even if it starts late
+	virtual void			ThreadHeartbeat( const char *threadName ) = 0;
 
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;

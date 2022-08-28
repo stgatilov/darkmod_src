@@ -69,15 +69,21 @@ void idSysLocal::ThreadStartup() {
 	Sys_FPU_SetPrecision();
 	Sys_FPU_SetFTZ(true);
 	Sys_FPU_SetDAZ(true);
-	ThreadHeartbeat();
+	ThreadHeartbeat( nullptr );
 }
 
-void idSysLocal::ThreadHeartbeat() {
+void idSysLocal::ThreadHeartbeat( const char *threadName ) {
 	thread_local static int oldValue = -1;
 	int newValue = com_fpexceptions.GetInteger();
 	if (newValue != oldValue) {
 		oldValue = newValue;
 		Sys_FPU_SetExceptions(com_fpexceptions.GetBool());
+	}
+
+	thread_local static bool threadNameSetInTracy = false;
+	if (threadName && !threadNameSetInTracy && g_tracingEnabled) {
+		Sys_SetCurrentThreadName( threadName );
+		threadNameSetInTracy = true;
 	}
 }
 

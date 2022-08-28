@@ -39,7 +39,7 @@ public:
 	virtual void			FPU_SetExceptions(bool enable);
 
 	virtual void			ThreadStartup() override;
-	virtual void			ThreadHeartbeat() override;
+	virtual void			ThreadHeartbeat( const char *threadName ) override;
 
 	virtual bool			LockMemory( void *ptr, int bytes );
 	virtual bool			UnlockMemory( void *ptr, int bytes );

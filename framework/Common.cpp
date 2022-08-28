@@ -2487,7 +2487,7 @@ void idCommonLocal::Frame( void ) {
 		WriteConfiguration(); 
 
 		// stgatilov #4550: update FPU props (e.g. NaN exceptions)
-		sys->ThreadHeartbeat();
+		sys->ThreadHeartbeat( "Main Thread" );
 
 		// change SIMD implementation if required
 		if ( com_forceGenericSIMD.IsModified() ) {
@@ -2648,7 +2648,7 @@ void idCommonLocal::Async( void ) {
 	}
 
 	// stgatilov #4550: update FPU props (e.g. NaN exceptions)
-	sys->ThreadHeartbeat();
+	sys->ThreadHeartbeat( "Async" );
 
 	if ( !com_preciseTic.GetBool() ) {
 		// just run a single tic, even if the exact msec isn't precise

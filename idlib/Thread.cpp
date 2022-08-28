@@ -175,8 +175,6 @@ int idSysThread::ThreadProc( idSysThread * thread ) {
 	// stgatilov #4550: set FPU props (FTZ + DAZ, etc.)
 	sys->ThreadStartup();
 
-	TRACE_THREAD_NAME( thread->GetName() )
-
 	int retVal = 0;
 
 	try {
@@ -200,7 +198,7 @@ int idSysThread::ThreadProc( idSysThread * thread ) {
 				}
 
 				// stgatilov #4550: update FPU props (e.g. NaN exceptions)
-				sys->ThreadHeartbeat();
+				sys->ThreadHeartbeat( thread->GetName() );
 
 				retVal = thread->Run();
 			}

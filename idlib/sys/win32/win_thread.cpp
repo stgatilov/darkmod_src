@@ -56,6 +56,7 @@ Sys_SetCurrentThreadName
 */
 void Sys_SetCurrentThreadName( const char * name ) {
 	Sys_SetThreadName( GetCurrentThreadId(), name );
+	TRACE_THREAD_NAME( name );
 }
 
 /*
