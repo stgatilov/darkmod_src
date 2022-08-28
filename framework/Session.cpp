@@ -3109,7 +3109,7 @@ void idSessionLocal::DrawFrame() {
 	tr.guiModel->Clear();
 	// add the swapbuffers command
 	emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
-	cmd->commandId = RC_SWAP_BUFFERS;
+	cmd->commandId = RC_TONEMAP;
 }
 
 /*

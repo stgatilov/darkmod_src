@@ -121,8 +121,8 @@ Called by R_EndFrame each frame
 ====================
 */
 void R_IssueRenderCommands( frameData_t *frameData ) {
+	TRACE_GL_SCOPE( "R_IssueRenderCommands" )
 	TRACE_CPU_SCOPE( "R_IssueRenderCommands" )
-	TRACE_GL_SCOPE( "RenderFrame" )
 
 	emptyCommand_t *cmds = frameData->cmdHead;
 	if ( cmds->commandId == RC_NOP
@@ -143,6 +143,8 @@ void R_IssueRenderCommands( frameData_t *frameData ) {
 		RB_ExecuteBackEndCommands( cmds );
 	}
 	R_ClearCommandChain( frameData );
+
+	RB_SwapBuffers();
 }
 
 /*

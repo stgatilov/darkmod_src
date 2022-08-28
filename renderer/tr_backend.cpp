@@ -764,7 +764,8 @@ void RB_ShowImages( void ) {
 RB_SwapBuffers
 =============
 */
-const void	RB_SwapBuffers( const void *data ) {
+void RB_SwapBuffers() {
+	TRACE_CPU_SCOPE_COLOR( "SwapBuffers", TRACE_COLOR_IDLE )
 	TRACE_GL_SCOPE( "SwapBuffers" )
 
 	// texture swapping test
@@ -821,7 +822,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 
 	// r_debugRenderToTexture
 	// revelator: added bloom to counters.
-	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_drawBloom = 0, c_copyRenders = 0;
+	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_drawBloom = 0, c_copyRenders = 0;
 
 	backEndStartTime = Sys_Milliseconds();
 
@@ -879,12 +880,10 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			RB_CopyRender( cmds );
 			c_copyRenders++;
 			break;
-		case RC_SWAP_BUFFERS:
+		case RC_TONEMAP:
 			// duzenko #4425: display the fbo content
 			frameBuffers->LeavePrimary();
 			RB_Tonemap();
-			RB_SwapBuffers( cmds );
-			c_swapBuffers++;
 			break;
 		default:
 			common->Error( "RB_ExecuteBackEndCommands: bad commandId" );
@@ -905,7 +904,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 
 	// revelator: added depthcopy to counters
 	if ( r_showRenderToTexture.GetBool() ) {
-		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, drwBloom: %i, CpyRenders: %i, CpyFrameBuf: %i, CpyDepthBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_drawBloom, c_copyRenders, backEnd.pc.c_copyFrameBuffer, backEnd.pc.c_copyDepthBuffer );
+		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, drwBloom: %i, CpyRenders: %i, CpyFrameBuf: %i, CpyDepthBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_drawBloom, c_copyRenders, backEnd.pc.c_copyFrameBuffer, backEnd.pc.c_copyDepthBuffer );
 	}
 
 	if ( image_showBackgroundLoads && backEnd.pc.textureLoads ) {

@@ -560,8 +560,7 @@ typedef enum {
 	RC_SET_BUFFER,
 	RC_COPY_RENDER,
 	RC_BLOOM,
-	RC_SWAP_BUFFERS		// can't just assume swap at end of list because
-	// of forced list submission before syncs
+	RC_TONEMAP
 } renderCommand_t;
 
 struct baseCommand_t {
@@ -1723,6 +1722,7 @@ void RB_SetGL2D( void );
 void RB_ShowImages( void );
 
 void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds );
+void RB_SwapBuffers();
 
 
 /*
