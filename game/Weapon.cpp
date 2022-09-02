@@ -3438,7 +3438,7 @@ void idWeapon::Event_Melee( void ) {
 					{
 						if ((static_cast<idAI*>(ent)->GetEyePosition() - tr.endpos).Length() < knockoutRange)
 						{
-							static_cast<idAI*>(ent)->TestKnockoutBlow(owner, globalKickDir, &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0);
+							static_cast<idAI*>(ent)->TestKnockoutBlow(owner, idVec3(), &tr, static_cast<idAI*>(ent)->GetDamageLocation("head"), 0);
 						}
 					}
 				}

@@ -11910,7 +11910,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 		else // Rule #5
 		{
 			// A KO can occur only from behind, when this AI is more likely to be surprised
-			
+
 			idVec3 aiForward = viewAxis.ToAngles().ToForward();
 			if ( dir * aiForward < 0.0f )
 			{
@@ -11940,14 +11940,14 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 		}
 		return false; // AI is immune, so no KO this time
 	}
-
 	idVec3 KOSpot;
 	idMat3 headAxis;
 	// store head joint base position to KOSpot, axis to HeadAxis
 	GetJointWorldTransform( m_HeadJointID, gameLocal.time, KOSpot, headAxis );
 
 	KOSpot += headAxis * m_HeadCenterOffset;
-	idMat3 headAxisR = headAxis * m_KoRot;
+	//idMat3 headAxisR = headAxis * m_KoRot;
+	idMat3 headAxisR = viewAxis * m_KoRot; //Obsttorte: Use body orientation instead of head to avoid random head turning preventing knockouts
 
 	idVec3 delta = KOSpot - tr->c.point;
 	float lenDelta = delta.Length();
