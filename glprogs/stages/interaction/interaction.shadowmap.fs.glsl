@@ -15,8 +15,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #version 330 core
 #extension GL_ARB_texture_gather: enable
 
-#define STGATILOV_OCCLUDER_SEARCH 1
 #define STGATILOV_USEGATHER 1
+
+out vec4 FragColor;
 
 #pragma tdm_include "stages/interaction/interaction.common.fs.glsl"
 #define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
@@ -27,11 +28,9 @@ uniform vec4	u_shadowRect;
 uniform sampler2D u_shadowMap;
 in vec3 var_WorldLightDir;
 
-out vec4 fragColor;
-
 void main() {
 	InteractionGeometry props;
-	fragColor.rgb = computeInteraction(props);
+	FragColor.rgb = computeInteraction(props);
 
 	vec3 worldNormal = mat3(params[var_DrawId].modelMatrix) * (var_TangentBitangentNormalMatrix * props.localN);
 
@@ -41,7 +40,7 @@ void main() {
 			u_shadowMap, u_shadowRect,
 			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples, u_shadowMapCullFront
 		);
-		fragColor.rgb *= shadowsCoeff;
+		FragColor.rgb *= shadowsCoeff;
 	}
-	fragColor.a = 1.0;
+	FragColor.a = 1.0;
 }

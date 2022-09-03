@@ -1612,6 +1612,9 @@
     <ClInclude Include="idlib\bv\CircCone.h">
       <Filter>Idlib\BV</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\TiledCustomMipmapStage.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3567,6 +3570,9 @@
     </ClCompile>
     <ClCompile Include="idlib\bv\CircCone.cpp">
       <Filter>Idlib\BV</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\TiledCustomMipmapStage.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

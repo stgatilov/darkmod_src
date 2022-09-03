@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 
 #pragma tdm_include "tdm_utils.glsl"
+#pragma tdm_include "tdm_shadowstencilsoft_shared.glsl"
 
 float fetchStencilShadowTexture(usampler2D stencilTexture, vec2 texCoord) {
 	float stTex = float(texture(stencilTexture, texCoord).r);
@@ -26,11 +27,27 @@ float computeStencilSoftShadow(
 	usampler2D stencilTexture, sampler2D depthTexture,
 	vec3 objectToLight, vec3 objectNormal,
 	mat4 modelViewMatrix, mat4 projectionMatrix,
-	int softQuality, float softRadius, vec2 softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT]
+	int softQuality, float softRadius, vec2 softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT],
+	sampler2D stencilMipmapsTexture, ivec2 stencilMipmapsLevel, vec4 stencilMipmapsScissor 
 ) {
 	vec2 texSize = vec2(textureSize(stencilTexture, 0));
 	vec2 pixSize = vec2(1.0, 1.0) / texSize;
 	vec2 baseTexCoord = gl_FragCoord.xy * pixSize;
+
+	//check stencil mipmaps if there is constant value in vicinity
+	if (stencilMipmapsLevel.x >= 0) {
+		vec2 pixelCoords = clamp(gl_FragCoord.xy, stencilMipmapsScissor.xy, stencilMipmapsScissor.zw);
+		vec2 mipmapsFullSize = textureSize(stencilMipmapsTexture, 0) * (1 << stencilMipmapsLevel.y);
+		float mipmapValue = textureLod(
+			stencilMipmapsTexture,
+			pixelCoords / mipmapsFullSize,
+			stencilMipmapsLevel.x - stencilMipmapsLevel.y
+		).r;
+		if (mipmapValue == 0.0)
+			return 0.0;
+		else if (mipmapValue == 1.0)
+			return 1.0;
+	}
 
 	float stencil = fetchStencilShadowTexture(stencilTexture, baseTexCoord);
 	float sumWeight = 1.0;
@@ -81,8 +98,8 @@ float computeStencilSoftShadow(
 	float lenX = length(alongDir * texSize);
 	float lenY = length(orthoDir * texSize);
 	//make sure vectors are sufficiently sampled
-	float avgSampleDistInPixels = 2 * max(1e-3 * texSize.y, 1.0);
-	float oversize = max(lenX, lenY) / (avgSampleDistInPixels * sqrt(0.0 + softQuality));
+	float maxBlurAxisLength = computeMaxBlurAxisLength(texSize.y, softQuality);
+	float oversize = max(lenX, lenY) / maxBlurAxisLength;
 	if (oversize > 1) {
 		alongDir /= oversize;
 		orthoDir /= oversize;

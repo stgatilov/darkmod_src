@@ -187,12 +187,12 @@ void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
 
 	if ( !r_shadowMapSinglePass && ( vLight->globalShadows || vLight->localShadows ) ) {
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalShadows, true );
-		interactionStage.DrawInteractions( vLight, vLight->localInteractions );
+		interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->localShadows, false );
 	} else {
-		interactionStage.DrawInteractions( vLight, vLight->localInteractions );
+		interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
 	}
-	interactionStage.DrawInteractions( vLight, vLight->globalInteractions );
+	interactionStage.DrawInteractions( vLight, vLight->globalInteractions, nullptr );
 
 	GLSLProgram::Deactivate();
 }
@@ -231,7 +231,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( useShadowFbo ) {
 		frameBuffers->LeaveShadowStencil();
 	}
-	interactionStage.DrawInteractions( vLight, vLight->localInteractions );
+	interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
 
 	if ( useShadowFbo ) {
 		frameBuffers->EnterShadowStencil();
@@ -245,12 +245,15 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 			frameBuffers->ResolveShadowStencilAA();
 		}
 	}
+	if ( vLight->globalShadows || vLight->localShadows ) {
+		stencilShadowStage.FillStencilShadowMipmaps( vLight->scissorRect );
+	}
 
 	if ( useShadowFbo ) {
 		frameBuffers->LeaveShadowStencil();
 	}
 
-	interactionStage.DrawInteractions( vLight, vLight->globalInteractions );
+	interactionStage.DrawInteractions( vLight, vLight->globalInteractions, &stencilShadowStage.stencilShadowMipmap );
 
 	GLSLProgram::Deactivate();
 }
@@ -297,7 +300,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 		}
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
 		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
-		interactionStage.DrawInteractions( vLight, vLight->translucentInteractions );
+		interactionStage.DrawInteractions( vLight, vLight->translucentInteractions, nullptr );
 		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 	}
 

@@ -18,6 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "StencilShadowStage.h"
 #include "DrawBatchExecutor.h"
 #include "../FrameBuffer.h"
+#include "../FrameBufferManager.h"
 #include "../GLSLProgram.h"
 #include "../GLSLProgramManager.h"
 
@@ -39,7 +40,9 @@ void StencilShadowStage::Init() {
 		defines );
 }
 
-void StencilShadowStage::Shutdown() {}
+void StencilShadowStage::Shutdown() {
+	ShutdownMipmaps();
+}
 
 void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
 	if ( !shadowSurfs || !r_shadows.GetInteger() ) {
@@ -140,4 +143,71 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 	}
 
 	drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
+}
+
+//=======================================================================================
+
+idCVar r_softShadowsMipmaps(
+	"r_softShadowsMipmaps", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"Use mipmap tiles to avoid sampling far away from penumbra"
+);
+
+#define max(x, y) idMath::Fmax(x, y)
+#include "../../glprogs/tdm_shadowstencilsoft_shared.glsl"
+#undef max
+
+// if any of these properties change, then we need to recreate mipmaps
+struct MipmapsInitProps {
+	int renderWidth = -1;
+	int renderHeight = -1;
+	int softShadowQuality = -1;
+
+	bool operator== (const MipmapsInitProps &p) const {
+		return memcmp(this, &p, sizeof(p)) == 0;
+	}
+};
+static MipmapsInitProps currentMipmapProps;
+
+void StencilShadowStage::ShutdownMipmaps() {
+	stencilShadowMipmap.Shutdown();
+	currentMipmapProps = MipmapsInitProps();
+}
+
+void StencilShadowStage::FillStencilShadowMipmaps( const idScreenRect &lightScissor ) {
+	if ( backEnd.viewDef->IsLightGem() )
+		return;
+
+	MipmapsInitProps newProps = {
+		frameBuffers->shadowStencilFbo->Width(),
+		frameBuffers->shadowStencilFbo->Height(),
+		r_softShadowsMipmaps.GetBool() ? r_softShadowsQuality.GetInteger() : 0
+	};
+	if ( !(newProps == currentMipmapProps) ) {
+		// some important property has changed: everything should be recreated
+		stencilShadowMipmap.Shutdown();
+
+		float maxBlurAxisLength = computeMaxBlurAxisLength( newProps.renderHeight, r_softShadowsQuality.GetInteger() );
+		int lodLevel = int(ceil(log2(maxBlurAxisLength * 2)));
+		static const int BASE_LEVEL = 2;
+		lodLevel = idMath::Imax(lodLevel, BASE_LEVEL);
+
+		if ( newProps.softShadowQuality > 0 ) {
+			stencilShadowMipmap.Init(
+				TiledCustomMipmapStage::MM_STENCIL_SHADOW, GL_R8,
+				newProps.renderWidth,
+				newProps.renderHeight,
+				lodLevel, BASE_LEVEL
+			);
+		}
+		currentMipmapProps = newProps;
+	}
+
+	if ( newProps.softShadowQuality > 0 ) {
+		int x = lightScissor.x1 * newProps.renderWidth  / glConfig.vidWidth ;
+		int y = lightScissor.y1 * newProps.renderHeight / glConfig.vidHeight;
+		int w = lightScissor.GetWidth()  * newProps.renderWidth  / glConfig.vidWidth ;
+		int h = lightScissor.GetHeight() * newProps.renderHeight / glConfig.vidHeight;
+
+		stencilShadowMipmap.FillFrom( globalImages->shadowDepthFbo, x, y, w, h );
+	}
 }

@@ -32,6 +32,10 @@ FrameBuffer::~FrameBuffer() {
 	Destroy();
 }
 
+void FrameBuffer::SetGenerator( const Generator &generator ) {
+	this->generator = generator;
+}
+
 void FrameBuffer::Init( int width, int height, int msaa ) {
 	if (initialized) {
 		common->Warning("Trying to initialize already created framebuffer %s", name.c_str());
