@@ -36,18 +36,17 @@ uniform sampler2D u_specularTexture;
 
 uniform sampler2D u_lightFalloffTexture;
 uniform sampler2D u_lightProjectionTexture;
+uniform bool u_cubic;
 uniform samplerCube	u_lightProjectionCubemap;
 
-uniform int 	u_cubic;
-
-uniform bool	u_shadows;
-uniform int		u_softShadowsQuality;
-uniform float	u_softShadowsRadius;
+uniform bool u_shadows;
+uniform int u_softShadowsQuality;
+uniform float u_softShadowsRadius;
 
 
 vec3 computeInteraction(out InteractionGeometry props) {
 	vec3 lightColor;
-	if (u_cubic == 1.0)
+	if (u_cubic)
 		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
 		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);

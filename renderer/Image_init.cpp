@@ -473,6 +473,22 @@ static void getCubeVector( int i, int cubesize, int x, int y, float *vector ) {
 }
 
 
+static void makeWhiteCubeMap( idImage *image ) {
+	float vector[3] = { };
+	byte	*pixels[6];
+
+	static const int size = 16;
+
+	pixels[0] = ( GLubyte * ) Mem_Alloc( size * size * 4 * 6 );
+	memset( pixels[0], 255, size * size * 4 * 6 );
+	for ( int i = 0; i < 6; i++ )
+		pixels[i] = pixels[0] + i * size * size * 4;
+
+	image->GenerateCubeImage( ( const byte ** )pixels, size, TF_LINEAR, false, TD_HIGH_QUALITY );
+
+	Mem_Free( pixels[0] );
+}
+
 /* Initialize a cube map texture object that generates RGB values
  * that when expanded to a [-1,1] range in the register combiners
  * form a normalized vector matching the per-pixel vector used to
@@ -819,7 +835,7 @@ void idImage::Reload( bool checkPrecompressed, bool force ) {
 		ID_TIME_T	current;
 
 		if ( cubeFiles != CF_2D ) {
-			R_LoadCubeImages( imgName, cubeFiles, nullptr, nullptr, &current );
+			R_LoadImageProgramCubeMap( imgName, cubeFiles, nullptr, nullptr, &current );
 		} else { // get the current values
 			R_LoadImageProgram( imgName, nullptr, nullptr, nullptr, &current );
 		}
@@ -1547,6 +1563,8 @@ void idImageManager::Init() {
 	defaultImage = ImageFromFunction( "_default", R_DefaultImage );
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage );
 	blackImage = ImageFromFunction( "_black", R_BlackImage );
+	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", makeWhiteCubeMap );
+
 	//borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );
 	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage );

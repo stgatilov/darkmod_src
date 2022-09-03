@@ -1277,7 +1277,7 @@ void R_LoadImageData( idImage& image ) {
 		cpuData.sides = 6;
 
 		// we don't check for pre-compressed cube images currently
-		R_LoadCubeImages( image.imgName, image.cubeFiles, cpuData.pic, &cpuData.width, &image.timestamp );
+		R_LoadImageProgramCubeMap( image.imgName, image.cubeFiles, cpuData.pic, &cpuData.width, &image.timestamp );
 		cpuData.height = cpuData.width;
 		TRACE_ATTACH_FORMAT( "cube %d x [%d x %d]", cpuData.sides, cpuData.width, cpuData.height );
 

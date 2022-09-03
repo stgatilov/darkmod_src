@@ -174,6 +174,8 @@ vec4 computeAmbientInteraction(
 	sampler2D diffuseTexture, vec3 diffuseParamColor, vec2 diffuseTexCoord,
 	sampler2D specularTexture, vec3 specularParamColor, vec2 specularTexCoord,
 	vec3 vertexColor,
+	// light properties
+	bool useNormalIndexed, samplerCube normalIndexedDiffuse, samplerCube normalIndexedSpecular,
 	// ambient hack for general brightness
 	float ambientMinLevel, float ambientGamma
 ) {
@@ -185,17 +187,36 @@ vec4 computeAmbientInteraction(
 	vec3 worldL = vec3(0, 0, 1);
 
 	// diffuse term
-	float NdotL = dot(props.worldN, worldL);
-	vec3 diffuseTerm = mix(1.0, max(NdotL, 0), 0.5) * diffuseParamColor;
+	vec3 diffuseTerm;
+	if (useNormalIndexed) {
+		diffuseTerm = texture(normalIndexedDiffuse, props.worldN).rgb;
+	}
+	else {
+		// TODO: remove direction-dependent hack after SSAO takes bumpmaps into account
+		float NdotL = dot(props.worldN, worldL);
+		diffuseTerm = vec3(mix(1.0, max(NdotL, 0), 0.5));
+	}
+	diffuseTerm *= diffuseParamColor;
 
 	// tweaking brightness by messing with ambient
 	if (ambientMinLevel != 0)
 		diffuseTerm = mix(diffuseTerm, vec3(1), ambientMinLevel);
 
 	// specular term
-	float spec = max(dot(props.worldR, worldL), 0);
-	float specPow = clamp(spec * spec, 0.0, 1.1);
-	vec3 specularTerm = vec3(spec * specPow * specPow) * specularParamColor;
+	vec3 specularTerm;
+	if (useNormalIndexed) {
+		specularTerm = texture(normalIndexedSpecular, props.worldN).rgb;
+		// bakeAmbientDiffuse scales result up 2x, bakeAmbientSpecular scales result up 5x
+		// so we scale specular term down in 2.5 times to adhere to Phong math with single light color
+		specularTerm *= 0.4;
+	}
+	else {
+		// TODO: remove direction-dependent hack after SSAO takes bumpmaps into account
+		float spec = max(dot(props.worldR, worldL), 0);
+		float specPow = clamp(spec * spec, 0.0, 1.1);
+		specularTerm = vec3(spec * specPow * specPow);
+	}
+	specularTerm *= specularParamColor;
 
 	vec3 surfaceTerm = (diffuseTerm * diffuseTexColor.rgb + specularTerm * specularTexColor) * vertexColor;
 	vec4 result = vec4(surfaceTerm, diffuseTexColor.a);

@@ -33,6 +33,10 @@ uniform sampler2D u_specularTexture;
 
 uniform sampler2D u_lightFalloffTexture;
 uniform sampler2D u_lightProjectionTexture;
+uniform bool u_cubic;
+uniform samplerCube u_lightProjectionCubemap;   // TODO: is this needed?
+uniform samplerCube u_lightDiffuseCubemap;
+uniform samplerCube u_lightSpecularCubemap;
 
 uniform float u_gamma, u_minLevel;
 
@@ -48,7 +52,11 @@ uniform vec4 u_lightTextureMatrix[2];
 uniform vec3 u_hasTextureDNS;
 
 void main() {
-    vec3 lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
+	vec3 lightColor;
+	if (u_cubic)
+		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
+	else
+		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
 
 	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, u_hasTextureDNS[1] != 0.0, u_normalTexture, u_RGTC != 0.0);
 	AmbientGeometry props = computeAmbientGeometry(var_worldViewDir, localNormal, var_TangentBinormalNormalMatrix, mat3(u_modelMatrix));
@@ -58,6 +66,7 @@ void main() {
 		u_diffuseTexture, u_diffuseColor.rgb, var_TexDiffuse,
 		u_specularTexture, u_specularColor.rgb, var_TexSpecular,
 		var_Color.rgb,
+		u_cubic, u_lightDiffuseCubemap, u_lightSpecularCubemap,
 		u_minLevel, u_gamma
 	);
 

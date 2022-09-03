@@ -1358,7 +1358,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	const char	*baseName;
 
 	if ( args.Argc() < 2 || args.Argc() > 6 ) {
-		common->Printf( "USAGE: MakeAmbientMap <basename> [size [sample_count [crutch_up [specular?]]]]\n" );
+		common->Printf( "USAGE: MakeAmbientMap <basename> [size [sample_count [multiplier [specular?]]]]\n" );
 		return;
 	}
 	baseName = args.Argv( 1 );
@@ -1374,9 +1374,9 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	if ( args.Argc() > 3 ) {
 		param.samples = atoi( args.Argv( 3 ) );
 	}
-	param.crutchUp = 1;
+	param.multiplier = 1;
 	if ( args.Argc() > 4 ) {
-		param.crutchUp = atoi( args.Argv( 4 ) );
+		param.multiplier = atof( args.Argv( 4 ) );
 	}
 	int	specular = 1;
 	if ( args.Argc() > 5 ) {
@@ -1399,12 +1399,14 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	}
 	param.outBuffer = ( byte* )R_StaticAlloc( 4 * param.outSize * param.outSize );
 
-	for ( param.specular = false;; ) {
-		common->Printf( !param.specular ? "Ambient (1/2)\n" : "Specular (2/2)\n" );
+	for ( int specular = 0; specular < 2; specular++ ) {
+		common->Printf( !specular ? "Diffuse (1/2)\n" : "Specular (2/2)\n" );
 		session->UpdateScreen();
+		// note: should match specular power of NdotR in Phong shader
+		param.cosPower = ( specular ? 4 : 1 );
 
 		for ( param.side = 0; param.side < 6; param.side++ ) {
-			sprintf( fullname, param.specular ? "env/%s_spec%s" : "env/%s_amb%s", baseName, cubeExtensions[param.side] );
+			sprintf( fullname, specular ? "env/%s_spec%s" : "env/%s_diff%s", baseName, cubeExtensions[param.side] );
 			common->Printf( "%d/6: %s\n", param.side + 1, fullname.c_str() );
 			session->UpdateScreen();
 
@@ -1414,12 +1416,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 			common->Printf( "Writing out...\n" );
 			session->UpdateScreen();
 			R_WriteTGA( fullname, param.outBuffer, param.outSize, param.outSize );
-		}
-
-		if ( !param.specular && specular ) { // TODO move to the loop operator above
-			param.specular = true;
-		} else {
-			break;
 		}
 	}
 	R_StaticFree( param.outBuffer );

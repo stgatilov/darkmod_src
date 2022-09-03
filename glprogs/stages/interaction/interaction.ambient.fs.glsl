@@ -35,6 +35,10 @@ uniform sampler2D u_specularTexture;
 
 uniform sampler2D u_lightProjectionTexture;
 uniform sampler2D u_lightFalloffTexture;
+uniform bool u_cubic;
+uniform samplerCube u_lightProjectionCubemap;   // TODO: is this needed?
+uniform samplerCube u_lightDiffuseCubemap;
+uniform samplerCube u_lightSpecularCubemap;
 
 uniform float u_gamma, u_minLevel;
 
@@ -43,7 +47,11 @@ uniform sampler2D u_ssaoTexture;
 uniform int u_ssaoEnabled;
 
 void main() {
-	vec3 lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
+	vec3 lightColor;
+	if (u_cubic)
+		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
+	else
+		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
 
 	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, params[var_DrawId].hasTextureDNS[1] != 0.0, u_normalTexture, params[var_DrawId].RGTC != 0.0);
 	AmbientGeometry props = computeAmbientGeometry(var_worldViewDir, localNormal, var_TangentBinormalNormalMatrix, mat3(params[var_DrawId].modelMatrix));
@@ -53,6 +61,7 @@ void main() {
 		u_diffuseTexture, params[var_DrawId].diffuseColor.rgb, var_TexDiffuse,
 		u_specularTexture, params[var_DrawId].specularColor.rgb, var_TexSpecular,
 		var_Color.rgb,
+		u_cubic, u_lightDiffuseCubemap, u_lightSpecularCubemap,
 		u_minLevel, u_gamma
 	);
 

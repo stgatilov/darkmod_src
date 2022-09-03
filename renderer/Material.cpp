@@ -959,6 +959,8 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 			continue;
 		}
 		else if ( !token.Icmp( "cameraCubeMap" ) ) {
+			// note: you can use instead:
+			//   cubeMap cameraLayout(textures/env/mycubemap) 
 			cubeMap = CF_CAMERA;
 			continue;
 		}
@@ -1007,6 +1009,7 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 			break;
 		}
 	}
+
 	str = R_ParsePastImageProgram( src );
 
 	newStage->fragmentProgramImages[unit] = 
@@ -1228,14 +1231,14 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 
 		else if ( !token.Icmp( "cubeMap" ) ) {
-			str = R_ParsePastImageProgram( src );
+			str = R_ParsePastImageProgramCubeMap( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_NATIVE;
 			continue;
 		}
 
 		else if ( !token.Icmp( "cameraCubeMap" ) ) {
-			str = R_ParsePastImageProgram( src );
+			str = R_ParsePastImageProgramCubeMap( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_CAMERA;
 			continue;
@@ -2007,7 +2010,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			continue;
 		}
 		else if ( !token.Icmp( "lightFalloffCubeMap" ) ) {
-			str = R_ParsePastImageProgram( src );
+			str = R_ParsePastImageProgramCubeMap( src );
 			idStr copy = str;	// so other things don't step on it
 
 			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT, CF_CAMERA );

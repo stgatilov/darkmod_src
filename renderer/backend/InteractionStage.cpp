@@ -54,7 +54,8 @@ namespace {
 		DEFINE_UNIFORM( sampler, lightProjectionTexture )
 		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
 		DEFINE_UNIFORM( sampler, lightFalloffTexture )
-		DEFINE_UNIFORM( sampler, lightFalloffCubemap )
+		DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
+		DEFINE_UNIFORM( sampler, lightSpecularCubemap )
 		DEFINE_UNIFORM( sampler, ssaoTexture )
 		DEFINE_UNIFORM( vec3, globalViewOrigin )
 		DEFINE_UNIFORM( vec3, globalLightOrigin )
@@ -82,11 +83,12 @@ namespace {
 		TU_LIGHT_PROJECT = 3,
 		TU_LIGHT_PROJECT_CUBE = 4,
 		TU_LIGHT_FALLOFF = 5,
-		TU_LIGHT_FALLOFF_CUBE = 6,
-		TU_SSAO = 7,
-		TU_SHADOW_MAP = 8,
-		TU_SHADOW_DEPTH = 9,
-		TU_SHADOW_STENCIL = 10,
+		TU_LIGHT_DIFFUSE_CUBE = 6,
+		TU_LIGHT_SPECULAR_CUBE = 7,
+		TU_SSAO = 8,
+		TU_SHADOW_MAP = 9,
+		TU_SHADOW_DEPTH = 10,
+		TU_SHADOW_STENCIL = 11,
 	};
 }
 
@@ -97,8 +99,9 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->lightProjectionCubemap.Set( TU_LIGHT_PROJECT_CUBE );
 	uniforms->lightProjectionTexture.Set( TU_LIGHT_PROJECT );
-	uniforms->lightFalloffCubemap.Set( TU_LIGHT_FALLOFF_CUBE );
 	uniforms->lightFalloffTexture.Set( TU_LIGHT_FALLOFF );
+	uniforms->lightDiffuseCubemap.Set( TU_LIGHT_DIFFUSE_CUBE );
+	uniforms->lightSpecularCubemap.Set( TU_LIGHT_SPECULAR_CUBE );
 	uniforms->ssaoTexture.Set( TU_SSAO );
 	uniforms->stencilTexture.Set( TU_SHADOW_STENCIL );
 	uniforms->depthTexture.Set( TU_SHADOW_DEPTH );
@@ -183,8 +186,16 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		return a->material < b->material;
 	} );
 
-	GL_SelectTexture( vLight->lightShader->IsCubicLight() ? TU_LIGHT_FALLOFF_CUBE : TU_LIGHT_FALLOFF );
-	vLight->falloffImage->Bind();
+	if ( vLight->lightShader->IsCubicLight() ) {
+		if ( vLight->lightShader->IsAmbientLight() ) {
+			GL_SelectTexture( TU_LIGHT_SPECULAR_CUBE );
+			vLight->falloffImage->Bind();	// TODO: proper location?
+		}
+	}
+	else {
+		GL_SelectTexture( TU_LIGHT_FALLOFF );
+		vLight->falloffImage->Bind();
+	}
 
 	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || vLight->shadows == LS_MAPS )
 		BindShadowTexture();
@@ -203,8 +214,22 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 			continue;
 		}
 
-		GL_SelectTexture( vLight->lightShader->IsCubicLight() ? TU_LIGHT_PROJECT_CUBE : TU_LIGHT_PROJECT );
-		lightStage->texture.image->Bind();
+		if ( vLight->lightShader->IsCubicLight() ) {
+			if ( vLight->lightShader->IsAmbientLight() ) {
+				GL_SelectTexture( TU_LIGHT_DIFFUSE_CUBE );
+				lightStage->texture.image->Bind();	// TODO: proper location?
+				GL_SelectTexture( TU_LIGHT_PROJECT_CUBE );
+				globalImages->whiteCubeMapImage->Bind();
+			}
+			else {
+				GL_SelectTexture( TU_LIGHT_PROJECT_CUBE );
+				lightStage->texture.image->Bind();
+			}
+		}
+		else {
+			GL_SelectTexture( TU_LIGHT_PROJECT );
+			lightStage->texture.image->Bind();
+		}
 		// careful - making bindless textures resident could bind an arbitrary texture to the currently active
 		// slot, so reset this to something that is safe to override in bindless mode!
 		GL_SelectTexture(TU_NORMAL);

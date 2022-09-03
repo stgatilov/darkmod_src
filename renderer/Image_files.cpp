@@ -1610,208 +1610,6 @@ CUBE MAPS
 ===================================================================
 */
 
-static idMat3 cubeAxis[6];
-
-void InitCubeAxis() {
-	if ( cubeAxis[0][0][0] == 1 ) {
-		return;
-	}
-	cubeAxis[0][0][0] = 1;
-	cubeAxis[0][1][2] = 1;
-	cubeAxis[0][2][1] = 1;
-
-	cubeAxis[1][0][0] = -1;
-	cubeAxis[1][1][2] = -1;
-	cubeAxis[1][2][1] = 1;
-
-	cubeAxis[2][0][1] = 1;
-	cubeAxis[2][1][0] = -1;
-	cubeAxis[2][2][2] = -1;
-
-	cubeAxis[3][0][1] = -1;
-	cubeAxis[3][1][0] = -1;
-	cubeAxis[3][2][2] = 1;
-
-	cubeAxis[4][0][2] = 1;
-	cubeAxis[4][1][0] = -1;
-	cubeAxis[4][2][1] = 1;
-
-	cubeAxis[5][0][2] = -1;
-	cubeAxis[5][1][0] = 1;
-	cubeAxis[5][2][1] = 1;
-}
-
-/*
-==================
-R_SampleCubeMap
-==================
-*/
-void R_SampleCubeMap( const idVec3 &dir, int size, byte *buffers[6], byte result[4] ) {
-	float	adir[3];
-	int		axis, x, y;
-
-	adir[0] = fabs( dir[0] );
-	adir[1] = fabs( dir[1] );
-	adir[2] = fabs( dir[2] );
-
-	if ( dir[0] >= adir[1] && dir[0] >= adir[2] ) {
-		axis = 0;
-	} else if ( -dir[0] >= adir[1] && -dir[0] >= adir[2] ) {
-		axis = 1;
-	} else if ( dir[1] >= adir[0] && dir[1] >= adir[2] ) {
-		axis = 2;
-	} else if ( -dir[1] >= adir[0] && -dir[1] >= adir[2] ) {
-		axis = 3;
-	} else if ( dir[2] >= adir[1] && dir[2] >= adir[2] ) {
-		axis = 4;
-	} else {
-		axis = 5;
-	}
-	float	fx = ( dir * cubeAxis[axis][1] ) / ( dir * cubeAxis[axis][0] );
-	float	fy = ( dir * cubeAxis[axis][2] ) / ( dir * cubeAxis[axis][0] );
-
-	fx = -fx;
-	fy = -fy;
-	x = size * 0.5 * ( fx + 1 );
-	y = size * 0.5 * ( fy + 1 );
-
-	if ( x < 0 ) {
-		x = 0;
-	} else if ( x >= size ) {
-		x = size - 1;
-	}
-
-	if ( y < 0 ) {
-		y = 0;
-	} else if ( y >= size ) {
-		y = size - 1;
-	}
-	result[0] = buffers[axis][( y * size + x ) * 4 + 0];
-	result[1] = buffers[axis][( y * size + x ) * 4 + 1];
-	result[2] = buffers[axis][( y * size + x ) * 4 + 2];
-	result[3] = buffers[axis][( y * size + x ) * 4 + 3];
-}
-
-/*
-=======================
-R_MakeIrradiance
-=======================
-*/
-void R_MakeAmbientMap( MakeAmbientMapParam param ) {
-	InitCubeAxis();
-
-	for ( int y = 0; y < param.outSize; y++ ) {
-		for ( int x = 0; x < param.outSize; x++ ) {
-			idVec3	dir, test;
-
-			dir = cubeAxis[param.side][0] + -( -1 + 2.0 * x / ( param.outSize - 1 ) ) * cubeAxis[param.side][1] + -( -1 + 2.0 * y / ( param.outSize - 1 ) ) * cubeAxis[param.side][2];
-			dir.Normalize();
-			test = dir;
-
-			float	total[3] = { 0, 0, 0 }, totDot = 0;
-			float	dot = 1;
-			float	specularLimit = 0.95f;
-
-			for ( int s = 0; s < param.samples; s++ ) {
-				byte	result[4];
-				R_SampleCubeMap( test, param.size, param.buffers, result );
-				total[0] += result[0];
-				total[1] += result[1];
-				total[2] += result[2];
-				totDot += dot;
-				// pick a random direction vector that is inside the unit sphere but not behind dir,
-				// which is a robust way to evenly sample a hemisphere
-				while ( 1 ) {
-					for ( int j = 0; j < 3; j++ ) {
-						test[j] = -1 + 2 * ( rand() & 0x7fff ) / ( float )0x7fff;
-					}
-
-					if ( test.LengthSqr() == 0.0f ) {
-						continue;
-					}
-					test.Normalize();
-
-					dot = test * dir;
-
-					// revelator: might have been a misprint here else ; ? wtf
-					if ( param.specular ) {
-						if ( dot > specularLimit ) {
-							break; // out of the specular spot
-						}
-					} else {
-						if ( dot < 0 ) {
-							test = -test;
-							dot = -dot;
-						}
-						if ( dot > 1e-3 ) {
-							break;
-						}
-					}
-				}
-			}
-			byte *pixel = param.outBuffer + ( y * param.outSize + x ) * 4;
-
-			pixel[0] = param.crutchUp * total[0] / totDot;
-			pixel[1] = param.crutchUp * total[1] / totDot;
-			pixel[2] = param.crutchUp * total[2] / totDot;
-			pixel[3] = 255;
-		}
-	}
-}
-
-/*
-=======================
-R_MakeAmbientMaps
-=======================
-*/
-void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular ) {
-	std::thread threads[6];
-	for ( int i = 0; i < 6; i++ ) {
-		MakeAmbientMapParam p;
-		p.buffers = buffers;
-		p.outBuffer = outBuffers[i];
-		p.outSize = outSize;
-		p.samples = samples;
-		p.size = size;
-		p.crutchUp = crutchUp;
-		p.specular = specular;
-		p.side = i;
-		threads[i] = std::thread( R_MakeAmbientMap, p );
-	}
-
-	for ( auto &th : threads ) {
-		th.join();
-	}
-}
-
-/*
-=======================
-R_MakeIrradiance
-=======================
-*/
-void R_MakeIrradiance( byte *pics[6], int *size ) {
-	if ( *size == 0 ) {
-		return;
-	}
-	int time = Sys_Milliseconds();
-	int outSize = 32;
-	byte *outPics[6];
-
-	// assume cubemaps are RGBA
-	for ( int side = 0; side < 6; side++ ) {
-		outPics[side] = ( byte * )R_StaticAlloc( 4 * outSize * outSize );
-	}
-	R_MakeAmbientMaps( pics, outPics, outSize, 333, *size, 1, false );
-
-	for ( int side = 0; side < 6; side++ ) {
-		R_StaticFree( pics[side] );
-		pics[side] = outPics[side];
-	}
-	time = Sys_Milliseconds() - time;
-	common->Printf( "R_MakeIrradiance completed in %d ms.\n", time );
-	*size = outSize;
-}
-
 /*
 =======================
 R_LoadCubeImages
@@ -1826,19 +1624,7 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 	int			i, j;
 	const char	**sides;
 	char		fullName[MAX_IMAGE_NAME];
-	int			width, height, size = 0, makeIrradiance = 0;
-	idLexer		lexer( imgName, ( int )strlen( imgName ), imgName, LEXFL_ALLOWPATHNAMES );
-	idToken		token;
-
-	lexer.ReadToken( &token );
-
-	if ( !token.Icmp( "makeIrradiance" ) ) {
-		makeIrradiance = 1;
-		lexer.ReadToken( &token ); // '('
-		lexer.ReadToken( &token ); // source cubemap
-		imgName = token.c_str();
-	}
-	lexer.FreeSource();
+	int			width, height, size = 0;
 
 	if ( extensions == CF_CAMERA ) {
 		sides = cameraSides;
@@ -1846,7 +1632,6 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 		sides = cubeExtensions;
 	}
 
-	// FIXME: precompressed cube map files
 	if ( pics ) {
 		memset( pics, 0, 6 * sizeof( pics[0] ) );
 	}
@@ -1923,10 +1708,6 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 			*timestamp = 0;
 		}
 		return false;
-	}
-
-	if ( makeIrradiance ) {
-		R_MakeIrradiance( pics, &size );
 	}
 
 	if ( outSize ) {

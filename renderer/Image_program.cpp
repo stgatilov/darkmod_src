@@ -553,13 +553,6 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		return true;
 	}
 
-	if ( !token.Icmp( "makeIrradiance" ) ) {
-		MatchAndAppendToken( src, "(" );
-		R_ParseImageProgram_r( src, pic, width, height, timestamps, depth );
-		MatchAndAppendToken( src, ")" );
-		return true;
-	}
-
 	// if we are just parsing instead of loading or checking,
 	// don't do the R_LoadImage
 	if ( !timestamps && !pic ) {
@@ -637,3 +630,365 @@ const char *R_ParsePastImageProgram( idLexer &src ) {
 	return parseBuffer;
 }
 
+/*
+===================================================================
+
+CUBE MAPS
+
+===================================================================
+*/
+
+
+static idMat3 cubeAxis[6];
+
+void InitCubeAxis() {
+	if ( cubeAxis[0][0][0] == 1 ) {
+		return;
+	}
+	cubeAxis[0][0][0] = 1;
+	cubeAxis[0][1][2] = -1;
+	cubeAxis[0][2][1] = -1;
+
+	cubeAxis[1][0][0] = -1;
+	cubeAxis[1][1][2] = 1;
+	cubeAxis[1][2][1] = -1;
+
+	cubeAxis[2][0][1] = 1;
+	cubeAxis[2][1][0] = 1;
+	cubeAxis[2][2][2] = 1;
+
+	cubeAxis[3][0][1] = -1;
+	cubeAxis[3][1][0] = 1;
+	cubeAxis[3][2][2] = -1;
+
+	cubeAxis[4][0][2] = 1;
+	cubeAxis[4][1][0] = 1;
+	cubeAxis[4][2][1] = -1;
+
+	cubeAxis[5][0][2] = -1;
+	cubeAxis[5][1][0] = -1;
+	cubeAxis[5][2][1] = -1;
+}
+
+/*
+==================
+R_SampleCubeMap
+==================
+*/
+void R_SampleCubeMap( const idVec3 &dir, int size, byte *buffers[6], byte result[4] ) {
+	idVec3 adir;
+	adir[0] = idMath::Fabs( dir[0] );
+	adir[1] = idMath::Fabs( dir[1] );
+	adir[2] = idMath::Fabs( dir[2] );
+
+	// select component with maximum absolute value
+	float amax = adir.Max();
+	int axis;
+	if ( adir[0] == amax )
+		axis = 0;
+	else if ( adir[1] == amax )
+		axis = 1;
+	else
+		axis = 2;
+	// look if direction aong it is positive or negative
+	float localZ = dir[axis];
+	axis = axis * 2 + ( localZ < 0.0f );
+
+	// compute texcoords on the chosen face
+	float invZ = idMath::InvSqrt( idMath::Fabs( localZ ) );
+	float fx = ( dir * cubeAxis[axis][1] ) * invZ;
+	float fy = ( dir * cubeAxis[axis][2] ) * invZ;
+	fx = 0.5f * ( fx + 1.0f );
+	fy = 0.5f * ( fy + 1.0f );
+
+	// convert to texels
+	int x = int( size * fx );
+	int y = int( size * fy );
+	x = idMath::ClampInt( 0, size - 1, x );
+	y = idMath::ClampInt( 0, size - 1, y );
+
+	memcpy( result, &buffers[axis][( y * size + x ) * 4], 4 );
+}
+
+/*
+=======================
+R_MakeAmbientMap
+=======================
+*/
+void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
+	InitCubeAxis();
+
+	TRACE_CPU_SCOPE( "R_MakeAmbientMap" )
+
+	// For each axis direction (surface normal for diffuse, reflected direction for specular),
+	// we compute 2D integral over spherical coordinates:
+	//   alpha = angle( axis, sample )
+	//   phi = rotation of sample around axis
+	// 
+	// The average incoming irradiance is:
+	//   integral( color cos(alpha)^s dS ) / Q =
+	//   integral( color cos(alpha)^s sin(alpha) dAlpha dPhi ) / Q
+	// For alpha = [0..pi/2], phi = [0..2pi]
+	// Where Q is surface of hemisphere:
+	//   Q = integral( dS ) = integral( sin(alpha) dAlpha dPhi ) = 2 pi
+	// 
+	// Note that if color == 1, then the average = 1 / (s + 1)
+
+	int samples = idMath::Imax( param.samples, 16 );
+	int resAlp = int( idMath::Sqrt( samples ) * 0.5f );
+	int resPhi = int( idMath::Sqrt( samples ) * 2.0f );
+
+	// precompute sin/cos of angles for better performance
+	idList<idVec2> alpCosSin, phiCosSin;
+	alpCosSin.SetNum(resAlp);
+	for ( int segAlp = 0; segAlp < resAlp; segAlp++ ) {
+		float alp = ( segAlp + 0.5f ) * ( idMath::HALF_PI / resAlp );
+		idMath::SinCos( alp, alpCosSin[segAlp].y, alpCosSin[segAlp].x );
+	}
+	phiCosSin.SetNum(resPhi);
+	for ( int segPhi = 0; segPhi < resPhi; segPhi++ ) {
+		float phi = ( segPhi + 0.5f ) * ( idMath::TWO_PI / resPhi );
+		idMath::SinCos( phi, phiCosSin[segPhi].y, phiCosSin[segPhi].x );
+	}
+	// dAlpha dPhi / Q
+	const float dAlpPhiQ = ( idMath::HALF_PI / resAlp / resPhi );
+
+	for ( int y = 0; y < param.outSize; y++ ) {
+		for ( int x = 0; x < param.outSize; x++ ) {
+			float ratioX = ( x + 0.5f ) / param.outSize;
+			float ratioY = ( y + 0.5f ) / param.outSize;
+			// axis direction precomputed in this cubemap texel
+			idVec3 axisZ = (
+				cubeAxis[param.side][0] + 
+				cubeAxis[param.side][1] * ( 2.0f * ratioX - 1.0f ) +
+				cubeAxis[param.side][2] * ( 2.0f * ratioY - 1.0f )
+			);
+			axisZ.Normalize();
+
+			// we need local coordinate system
+			idVec3 axisX, axisY;
+			axisZ.NormalVectors( axisX, axisY );
+
+			idVec3 totalColor = idVec3( 0.0f );
+			float totalCoeff = 0.0f;
+
+			for ( int segAlp = 0; segAlp < resAlp; segAlp++ ) {
+				for ( int segPhi = 0; segPhi < resPhi; segPhi++ ) {
+					// convert to direction in world system
+					float cosAlp = alpCosSin[segAlp].x;
+					float sinAlp = alpCosSin[segAlp].y;
+					float cosPhi = phiCosSin[segPhi].x;
+					float sinPhi = phiCosSin[segPhi].y;
+					idVec3 testDir = (
+						axisZ * cosAlp + 
+						axisX * (sinAlp * cosPhi) + 
+						axisY * (sinAlp * sinPhi)
+					);
+
+					// fetch light at sample direction
+					byte result[4];
+					R_SampleCubeMap( testDir, param.size, param.buffers, result );
+
+					// accumulate integral
+					float pwr = cosAlp;
+					for ( int t = 1; t < param.cosPower; t++ )
+						pwr *= cosAlp;
+					float coeff = pwr * sinAlp * dAlpPhiQ;
+					totalColor[0] += coeff * result[0];
+					totalColor[1] += coeff * result[1];
+					totalColor[2] += coeff * result[2];
+					totalCoeff += coeff;
+				}
+			}
+
+			// note: totalCoeff is just for checking that math is correct
+			// it's what we'll get for color == 1 constant environment
+
+			idVec3 result( totalColor[0], totalColor[1], totalColor[2] );
+			// now that we have average irradiance, we multiply it by:
+			//   1. (s + 1) --- in order to normalize output to range [0..1]
+			//   2. artist-controlled multiplier
+			// ideally, one should remember about 2/5 normalization when consuming the texture
+			result *= ( param.cosPower + 1.0f ) * param.multiplier;
+
+			// store result in image
+			byte *pixel = param.outBuffer + ( y * param.outSize + x ) * 4;
+			pixel[0] = idMath::ClampInt( 0, 255, int( result[0] ) );
+			pixel[1] = idMath::ClampInt( 0, 255, int( result[1] ) );
+			pixel[2] = idMath::ClampInt( 0, 255, int( result[2] ) );
+			pixel[3] = 255;
+		}
+	}
+}
+
+REGISTER_PARALLEL_JOB( R_MakeAmbientMap, "R_MakeAmbientMap_SingleFace" );
+
+/*
+=======================
+R_MakeAmbientMaps
+=======================
+*/
+void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, float multiplier, int cosPower ) {
+	TRACE_CPU_SCOPE_FORMAT( "R_MakeAmbientMaps", "size %d <- %d, smp %d, pwr %d", outSize, size, samples, cosPower );
+	idParallelJobList *jobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, 6, 0, nullptr );
+
+	MakeAmbientMapParam params[6];
+	for ( int i = 0; i < 6; i++ ) {
+		MakeAmbientMapParam &p = params[i];
+		p.buffers = buffers;
+		p.outBuffer = outBuffers[i];
+		p.outSize = outSize;
+		p.samples = samples;
+		p.size = size;
+		p.multiplier = multiplier;
+		p.cosPower = cosPower;
+		p.side = i;
+		jobs->AddJob( (jobRun_t)R_MakeAmbientMap, &p );
+	}
+
+	jobs->Submit( nullptr, JOBLIST_PARALLELISM_MAX_CORES );
+	jobs->Wait();
+
+	parallelJobManager->FreeJobList( jobs );
+}
+
+/*
+=======================
+R_BakeAmbientDiffuse
+=======================
+*/
+void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular ) {
+	if ( *size == 0 ) {
+		return;
+	}
+
+	int outSize = specular ? 64 : 32;
+	// note: should match specular power of NdotR in Phong shader
+	int cosPower = ( specular ? 4 : 1 );
+
+	byte *outPics[6] = { nullptr };
+	// assume cubemaps are RGBA
+	for ( int side = 0; side < 6; side++ ) {
+		outPics[side] = ( byte * )R_StaticAlloc( 4 * outSize * outSize );
+	}
+
+	R_MakeAmbientMaps( pics, outPics, outSize, 256, *size, multiplier, cosPower );
+
+	for ( int side = 0; side < 6; side++ ) {
+		R_StaticFree( pics[side] );
+		pics[side] = outPics[side];
+	}
+	*size = outSize;
+}
+
+/*
+===================
+R_ParseImageProgramCubeMap_r
+
+If pic is NULL, the timestamps will be filled in, but no image will be generated
+If both pic and timestamps are NULL, it will just advance past it, which can be
+used to parse an image program from a text stream.
+===================
+*/
+static bool R_ParseImageProgramCubeMap_r( idLexer &src, cubeFiles_t extensions, byte *pics[6], int *size, ID_TIME_T *timestamps ) {
+	idToken		token;
+	ID_TIME_T		timestamp;
+
+	src.ReadToken( &token );
+	AppendToken( token );
+
+	if ( !token.Icmp( "bakeAmbientDiffuse" ) || !token.Icmp( "bakeAmbientSpecular" ) ) {
+		bool specular = !token.Icmp( "bakeAmbientSpecular" );
+		MatchAndAppendToken( src, "(" );
+
+		if ( !R_ParseImageProgramCubeMap_r( src, extensions, pics, size, timestamps ) ) {
+			return false;
+		}
+
+		float multiplier = 1.0f;
+		if ( src.PeekTokenString( "," ) ) {
+			MatchAndAppendToken( src, "," );
+
+			src.ExpectTokenType( TT_NUMBER, 0, &token );
+			AppendToken( token );
+			multiplier = token.GetFloatValue();
+		}
+
+		// process it
+		if ( pics ) {
+			R_BakeAmbient( pics, size, multiplier, specular );
+			/*// DEBUG OUTPUT..
+			for ( int i = 0; i < 6; i++ )
+				R_WriteTGA( va("ad%d.tga", i ), pics[i], *size, *size );*/
+		}
+
+		MatchAndAppendToken( src, ")" );
+		return true;
+	}
+
+	if ( !token.Icmp( "nativeLayout" ) || !token.Icmp( "cameraLayout" ) ) {
+		// override cubemap layout / orientation in subexpression inside
+		cubeFiles_t layout = ( token.Icmp( "nativeLayout" ) == 0 ? CF_NATIVE : CF_CAMERA );
+		MatchAndAppendToken( src, "(" );
+		if ( !R_ParseImageProgramCubeMap_r( src, layout, pics, size, timestamps ) ) {
+			return false;
+		}
+		MatchAndAppendToken( src, ")" );
+		return true;
+	}
+
+	// if we are just parsing instead of loading or checking,
+	// don't do the actual load
+	if ( !timestamps && !pics ) {
+		return true;
+	}
+
+	// FIXME: precompressed cube map files
+
+	// try to load it as uncompressed image
+	R_LoadCubeImages( token.c_str(), extensions, pics, size, &timestamp );
+
+	if ( timestamp == -1 ) {
+		return false;
+	}
+
+	// add this to the timestamp
+	if ( timestamps ) {
+		if ( timestamp > *timestamps ) {
+			*timestamps = timestamp;
+		}
+	}
+	return true;
+}
+
+/*
+===================
+R_LoadImageProgramCubeMap
+===================
+*/
+void R_LoadImageProgramCubeMap( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamps ) {
+	idLexer src;
+
+	src.LoadMemory(cname, static_cast<int>(strlen(cname)), cname);
+	src.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+
+	parseBuffer[0] = 0;
+	if ( timestamps ) {
+		*timestamps = 0;
+	}
+	R_ParseImageProgramCubeMap_r( src, extensions, pic, size, timestamps );
+
+	src.FreeSource();
+}
+
+/*
+===================
+R_ParsePastImageProgramCubeMap
+===================
+*/
+const char *R_ParsePastImageProgramCubeMap( idLexer &src ) {
+	parseBuffer[0] = 0;
+	// note: faces layout should not matter
+	R_ParseImageProgramCubeMap_r( src, CF_NATIVE, nullptr, nullptr, nullptr );
+	return parseBuffer;
+}

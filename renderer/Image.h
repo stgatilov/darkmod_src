@@ -102,8 +102,8 @@ struct MakeAmbientMapParam {
 	int outSize;
 	int samples;
 	int size;
-	int crutchUp;
-	bool specular;
+	float multiplier;
+	int cosPower;
 	int side;
 };
 
@@ -375,6 +375,7 @@ public:
 	idImage *			alphaNotchImage;			// 2x1 texture with just 1110 and 1111 with point sampling
 	idImage *			whiteImage;					// full of 0xff
 	idImage *			blackImage;					// full of 0x00
+	idImage *			whiteCubeMapImage;			// full of 0xff
 	idImage *			normalCubeMapImage;			// cube map to normalize STR into RGB
 	idImage *			noFalloffImage;				// all 255, but zero clamped
 	idImage *			fogImage;					// increasing alpha is denser fog
@@ -459,7 +460,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME
 void R_LoadCompressedImage( const char *name, imageCompressedData_t **pic, ID_TIME_T *timestamp );
 // pic is in top to bottom raster format
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
-void R_MakeAmbientMap( MakeAmbientMapParam param );
+void R_MakeAmbientMap( const MakeAmbientMapParam &param );
 void R_LoadImageData( idImage &image );
 void R_RGBA8Image( idImage* image );
 
@@ -473,6 +474,8 @@ IMAGEPROGRAM
 
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL );
 const char *R_ParsePastImageProgram( idLexer &src );
+void R_LoadImageProgramCubeMap( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamps );
+const char *R_ParsePastImageProgramCubeMap( idLexer &src );
 
 /*
 ====================================================================
