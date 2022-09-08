@@ -1718,6 +1718,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetCurInvItemName();
 	void					Event_GetCurInvItemId();
 	void					Event_GetCurInvIcon();
+	void					Event_GetCurInvItemCount(); // Obsttorte #6096
 
 	// tels: remove all bound entities that have "unbindonalertlevel" higher or equal than alertlevel
 	void					RemoveBindsOnAlert( const int alertIndex );
