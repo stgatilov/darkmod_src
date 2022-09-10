@@ -5107,22 +5107,12 @@ void idPlayer::UpdateViewAngles( void )
 	}
 
 	// clamp the pitch
-	if ( noclip ) {
-		if ( TestAngles.pitch > 89.0f ) {
-			// don't let the player look down more than 89 degrees while noclipping
-			TestAngles.pitch = 89.0f;
-		} else if ( TestAngles.pitch < -89.0f ) {
-			// don't let the player look up more than 89 degrees while noclipping
-			TestAngles.pitch = -89.0f;
-		}
-	} else {
-		if ( TestAngles.pitch > pm_maxviewpitch.GetFloat() ) {
-			// don't let the player look down enough to see the shadow of his (non-existant) feet
-			TestAngles.pitch = pm_maxviewpitch.GetFloat();
-		} else if ( TestAngles.pitch < pm_minviewpitch.GetFloat() ) {
-			// don't let the player look up more than 89 degrees
-			TestAngles.pitch = pm_minviewpitch.GetFloat();
-		}
+	if ( TestAngles.pitch > pm_maxviewpitch.GetFloat() ) {
+		// don't let the player look down enough to see the shadow of his (non-existant) feet
+		TestAngles.pitch = pm_maxviewpitch.GetFloat();
+	} else if ( TestAngles.pitch < pm_minviewpitch.GetFloat() ) {
+		// don't let the player look up more than 89 degrees
+		TestAngles.pitch = pm_minviewpitch.GetFloat();
 	}
 
 	// TDM: Check for collisions due to delta yaw when leaning, overwrite test angles to avoid
