@@ -801,12 +801,12 @@ void Uniforms::Interaction::SetForInteraction( const drawInteraction_t *din ) {
 
 void Uniforms::Interaction::SetForShadows( bool translucent ) {
 	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		cubic.Set( 1.f );
+		cubic.Set( true );
 		lightProjectionTexture.Set( MAX_MULTITEXTURE_UNITS );
 		lightProjectionCubemap.Set( 2 );
 		lightFalloffTexture.Set( MAX_MULTITEXTURE_UNITS );
 	} else {
-		cubic.Set( 0.f );
+		cubic.Set( false );
 		lightProjectionTexture.Set( 2 );
 		lightProjectionCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
 		lightFalloffTexture.Set( 1 );
@@ -816,9 +816,11 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		minLevel.Set( backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-			lightFalloffCubemap.Set( 1 );
+			lightDiffuseCubemap.Set( 8 );
+			lightSpecularCubemap.Set( 9 );
 		} else {
-			lightFalloffCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
+			lightDiffuseCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
+			lightSpecularCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
 		}
 		ssaoTexture.Set( 6 );
 		ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() );

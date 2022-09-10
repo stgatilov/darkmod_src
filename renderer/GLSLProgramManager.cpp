@@ -247,7 +247,8 @@ namespace {
 			interactionUniforms->lightProjectionCubemap.Set( 5 );
 			interactionUniforms->shadowMap.Set( 6 );
 			interactionUniforms->stencilTexture.Set( 7 );
-			interactionUniforms->lightFalloffCubemap.Set( 8 );
+			interactionUniforms->lightDiffuseCubemap.Set( 8 );
+			interactionUniforms->lightSpecularCubemap.Set( 9 );
 			program->Validate();
 		} );
 	}

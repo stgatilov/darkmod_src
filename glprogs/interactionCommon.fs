@@ -38,7 +38,7 @@ uniform sampler2D u_lightFalloffTexture;
 uniform sampler2D u_lightProjectionTexture;
 uniform samplerCube	u_lightProjectionCubemap;
 
-uniform float	u_cubic;
+uniform bool	u_cubic;
 uniform float	u_RGTC;
 uniform vec3	u_hasTextureDNS;
 uniform vec4	u_lightTextureMatrix[2];
@@ -48,7 +48,7 @@ uniform int		u_useBumpmapLightTogglingFix;  //stgatilov #4825
 
 vec3 computeInteraction(out InteractionGeometry props) {
 	vec3 lightColor;
-	if (u_cubic == 1.0)
+	if (u_cubic)
 		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
 		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
