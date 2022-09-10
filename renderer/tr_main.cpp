@@ -47,6 +47,17 @@ void idScreenRect::Clear() {
 
 /*
 ======================
+idScreenRect::ClearWithZ
+======================
+*/
+void idScreenRect::ClearWithZ() {
+	Clear();
+	zmin = 1.0f;
+	zmax = 0.0f;
+}
+
+/*
+======================
 idScreenRect::AddPoint
 ======================
 */
@@ -102,6 +113,17 @@ void idScreenRect::Intersect( const idScreenRect &rect ) {
 
 /*
 ======================
+idScreenRect::IntersectWithZ
+======================
+*/
+void idScreenRect::IntersectWithZ( const idScreenRect &rect ) {
+	Intersect( rect );
+	zmin = idMath::Fmax( zmin, rect.zmin );
+	zmax = idMath::Fmin( zmax, rect.zmax );
+}
+
+/*
+======================
 idScreenRect::Union
 ======================
 */
@@ -122,11 +144,31 @@ void idScreenRect::Union( const idScreenRect &rect ) {
 
 /*
 ======================
+idScreenRect::UnionWithZ
+======================
+*/
+void idScreenRect::UnionWithZ( const idScreenRect &rect ) {
+	Union( rect );
+	zmin = idMath::Fmin( zmin, rect.zmin );
+	zmax = idMath::Fmax( zmax, rect.zmax );
+}
+
+/*
+======================
 idScreenRect::IsEmpty
 ======================
 */
 bool idScreenRect::IsEmpty() const {
 	return ( x1 > x2 || y1 > y2 );
+}
+
+/*
+======================
+idScreenRect::IsEmptyWithZ
+======================
+*/
+bool idScreenRect::IsEmptyWithZ() const {
+	return IsEmpty() || zmin > zmax;
 }
 
 /*
@@ -143,8 +185,8 @@ idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds ) {
 	screenRect.y2 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[1].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
 
 	if ( r_useDepthBoundsTest.GetInteger() ) {
-		R_TransformEyeZToWin( -bounds[0].x, tr.viewDef->projectionMatrix, screenRect.zmin );
-		R_TransformEyeZToWin( -bounds[1].x, tr.viewDef->projectionMatrix, screenRect.zmax );
+		R_TransformEyeZToDepth( -bounds[0].x, tr.viewDef->projectionMatrix, screenRect.zmin );
+		R_TransformEyeZToDepth( -bounds[1].x, tr.viewDef->projectionMatrix, screenRect.zmax );
 	}
 	return screenRect;
 }
@@ -464,8 +506,8 @@ void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPla
 }
 DEBUG_OPTIMIZE_OFF
 
-// transform Z in eye coordinates to window coordinates
-void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z ) {
+// transform Z in eye coordinates to window coordinates (depth)
+void R_TransformEyeZToDepth( float src_z, const float *projectionMatrix, float &dst_depth ) {
 	float clip_z, clip_w;
 
 	// projection
@@ -473,11 +515,22 @@ void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &ds
 	clip_w = src_z * projectionMatrix[ 3 + 2 * 4 ] + projectionMatrix[ 3 + 3 * 4 ];
 
 	if ( clip_w <= 0.0f ) {
-		dst_z = 0.0f;					// clamp to near plane
+		dst_depth = 0.0f;					// clamp to near plane
 	} else {
-		dst_z = clip_z / clip_w;
-		dst_z = dst_z * 0.5f + 0.5f;	// convert to window coords
+		dst_depth = clip_z / clip_w;
+		dst_depth = dst_depth * 0.5f + 0.5f;	// convert to window coords
 	}
+}
+
+// transform [0..1] depth to Z in eye coordinates
+void R_TransformDepthToEyeZ( float src_depth, const float *projectionMatrix, float &dst_z ) {
+	// convert to NDC coords
+	float ndcZ = 2.0f * src_depth - 1.0f;
+
+	// this is exactly the equation from R_TransformEyeZToWin solved for Z
+	float numer = projectionMatrix[ 2 + 3 * 4 ] - ndcZ * projectionMatrix[ 3 + 3 * 4 ];
+	float denom = projectionMatrix[ 2 + 2 * 4 ] - ndcZ * projectionMatrix[ 3 + 2 * 4 ];
+	dst_z = - numer / denom;
 }
 
 /*

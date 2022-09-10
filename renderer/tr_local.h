@@ -40,10 +40,13 @@ public:
 	float       zmin, zmax;								// for depth bounds test
 
 	void		Clear();								// clear to backwards values
+	void		ClearWithZ();
 	void		AddPoint( float x, float y );			// adds a point
 	void		Expand();								// expand by one pixel each way to fix roundoffs
 	void		Intersect( const idScreenRect &rect );
+	void		IntersectWithZ( const idScreenRect &rect );
 	void		Union( const idScreenRect &rect );
+	void		UnionWithZ( const idScreenRect &rect );
 	bool		Equals( const idScreenRect& rect ) const {
 		return ( x1 == rect.x1 && x2 == rect.x2 && y1 == rect.y1 && y2 == rect.y2 );
 	}
@@ -61,6 +64,7 @@ public:
 		return !noOverlap;
 	}
 	bool		IsEmpty() const;
+	bool		IsEmptyWithZ() const;
 	int			GetArea() const { //anon
 		return GetWidth() * GetHeight();
 	}
@@ -1300,7 +1304,8 @@ void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out );
-void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z );
+void R_TransformEyeZToDepth( float src_z, const float *projectionMatrix, float &dst_depth );
+void R_TransformDepthToEyeZ( float src_depth, const float *projectionMatrix, float &dst_z );
 
 void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
 
