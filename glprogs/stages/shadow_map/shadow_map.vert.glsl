@@ -24,13 +24,14 @@ layout (std140) uniform PerDrawCallParamsBlock {
 };
 
 uniform vec4 u_lightOrigin;
+uniform float u_maxLightDistance;
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
 in int attr_DrawId;
 
 out vec2 texCoord;
-out float gl_ClipDistance[4];
+out float gl_ClipDistance[5];
 
 const mat3 cubicTransformations[6] = mat3[6] (
     mat3(
@@ -85,4 +86,5 @@ void main() {
     gl_ClipDistance[1] = dot(fragPos, ClipPlanes[1]);
     gl_ClipDistance[2] = dot(fragPos, ClipPlanes[2]);
     gl_ClipDistance[3] = dot(fragPos, ClipPlanes[3]);
+    gl_ClipDistance[4] = u_maxLightDistance - (-fragPos.z);
 }

@@ -314,6 +314,14 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 		vLight->viewSeesShadowPlaneBits = 63;
 	}
 
+	// find maximum distance from light origin to vertices of its light frustum
+	frustumCorners_t corners;
+	idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube );
+	float lightFrustumRadius = 0.0f;
+	for ( int i = 0; i < NUM_FRUSTUM_CORNERS; i++ )
+		lightFrustumRadius = idMath::Fmax( lightFrustumRadius, ( idVec3( corners.x[i], corners.y[i], corners.z[i] ) - light->globalLightOrigin ).LengthSqr() );
+	vLight->maxLightDistance = idMath::Sqrt( lightFrustumRadius );
+
 	// see if the light center is in view, which will allow us to cull invisible shadows
 	vLight->viewSeesGlobalLightOrigin = R_PointInFrustum( light->globalLightOrigin, tr.viewDef->frustum, 4 );
 
@@ -1756,15 +1764,7 @@ void R_AssignShadowMapAtlasPages( void ) {
 			float stretch = 1e-10f;
 			if ( !shadowsScissor.IsEmpty() || shadowsScissor.zmin <= shadowsScissor.zmax ) {
 				float minViewDistance = tr.viewDef->projectionRenderMatrix.DepthToZ( shadowsScissor.zmin );
-
-				// find maximum distance from light origin to vertices of its light frustum
-				frustumCorners_t corners;
-				idRenderMatrix::GetFrustumCorners( corners, vLight->lightDef->inverseBaseLightProject, bounds_zeroOneCube );
-				float lightFrustumRadius = 0.0f;
-				for ( int i = 0; i < NUM_FRUSTUM_CORNERS; i++ )
-					lightFrustumRadius = idMath::Fmax( lightFrustumRadius, ( idVec3( corners.x[i], corners.y[i], corners.z[i] ) - vLight->lightDef->globalLightOrigin ).LengthSqr() );
-				lightFrustumRadius = idMath::Sqrt( lightFrustumRadius );
-
+				float lightFrustumRadius = vLight->maxLightDistance;
 				// this is rather approximate...
 				stretch = lightFrustumRadius / minViewDistance;
 			}

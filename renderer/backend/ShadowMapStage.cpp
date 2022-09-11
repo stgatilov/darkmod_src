@@ -25,6 +25,7 @@ namespace {
 	struct ShadowMapUniforms : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( ShadowMapUniforms )
 		DEFINE_UNIFORM( vec4, lightOrigin )
+		DEFINE_UNIFORM( float, maxLightDistance )
 	};
 }
 
@@ -62,8 +63,8 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 	GL_Cull( r_shadowMapCullFront ? CT_BACK_SIDED : CT_TWO_SIDED );
 	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
-	for ( int i = 0; i < 4; i++ ) {
-		qglEnable( GL_CLIP_PLANE0 + i );
+	for ( int i = 0; i < 5; i++ ) {
+		qglEnable( GL_CLIP_DISTANCE0 + i );
 	}
 
 	ShadowMapUniforms *shadowMapUniforms = shadowMapShader->GetUniformGroup<ShadowMapUniforms>();
@@ -78,6 +79,7 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		lightOrigin.z = vLight->globalLightOrigin.z;
 		lightOrigin.w = 0;
 		shadowMapUniforms->lightOrigin.Set( lightOrigin );
+		shadowMapUniforms->maxLightDistance.Set( vLight->maxLightDistance );
 
 		const renderCrop_t &page = vLight->shadowMapPage;
 		qglViewport( page.x, page.y, 6*page.width, page.width );
@@ -90,8 +92,8 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		DrawLightInteractions( vLight->localShadows );
 	}
 
-	for ( int i = 0; i < 4; i++ ) {
-		qglDisable( GL_CLIP_PLANE0 + i );
+	for ( int i = 0; i < 5; i++ ) {
+		qglDisable( GL_CLIP_DISTANCE0 + i );
 	}
 
 	qglDisable( GL_POLYGON_OFFSET_FILL );

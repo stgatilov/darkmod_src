@@ -34,6 +34,7 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapUniforms )
 
 	DEFINE_UNIFORM( vec4, lightOrigin )
+	DEFINE_UNIFORM( float, maxLightDistance )
 	DEFINE_UNIFORM( float, alphaTest )
 	DEFINE_UNIFORM( mat4, modelMatrix )
 };
@@ -262,6 +263,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	lightOrigin.z = backEnd.vLight->globalLightOrigin.z;
 	lightOrigin.w = 0;
 	shadowMapUniforms->lightOrigin.Set( lightOrigin );
+	shadowMapUniforms->maxLightDistance.Set( backEnd.vLight->maxLightDistance );
 	shadowMapUniforms->alphaTest.Set( -1 );
 	backEnd.currentSpace = NULL;
 
@@ -275,7 +277,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		qglScissor( page.x, page.y, 6*page.width, page.width );
 	if ( clear )
 		qglClear( GL_DEPTH_BUFFER_BIT );
-	for ( int i = 0; i < 4; i++ )
+	for ( int i = 0; i < 5; i++ )
 		qglEnable( GL_CLIP_DISTANCE0 + i );
 	for ( ; surf; surf = surf->nextOnLight ) {
 		/*float customOffset = surf->space->entityDef->parms.shadowMapOffset + surf->material->GetShadowMapOffset();
@@ -295,7 +297,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 		/*if ( customOffset != 0 )
 			qglPolygonOffset( 0, 0 );*/
 	}
-	for ( int i = 0; i < 4; i++ )
+	for ( int i = 0; i < 5; i++ )
 		qglDisable( GL_CLIP_DISTANCE0 + i );
 
 	qglDisable( GL_POLYGON_OFFSET_FILL );

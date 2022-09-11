@@ -383,6 +383,7 @@ typedef struct viewLight_s {
 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
 	int						viewSeesShadowPlaneBits;
 	renderCrop_t			shadowMapPage;
+	float					maxLightDistance;			// maximum distance from light origin to light volume points
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 	bool					singleLightOnly;			// multi-light shader can't handle it
