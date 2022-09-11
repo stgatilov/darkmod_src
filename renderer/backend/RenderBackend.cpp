@@ -202,9 +202,6 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();// && (r_shadows.GetInteger() != 2);
 
-	// set depth bounds for the whole light
-	const DepthBoundsTest depthBoundsTest( vLight->scissorRect );
-
 	// clear the stencil buffer if needed
 	if ( vLight->globalShadows || vLight->localShadows ) {
 		backEnd.currentScissor = vLight->scissorRect;

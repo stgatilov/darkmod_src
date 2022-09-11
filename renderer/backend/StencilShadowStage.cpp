@@ -57,9 +57,6 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 	GL_State( GLS_DEPTHMASK | GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
-		qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
-	}
 	GL_Cull( CT_TWO_SIDED );
 	stencilShadowShader->Activate();
 
@@ -92,9 +89,6 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
-		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
-	}
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 	// FIXME: move to interaction stage
 	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() /*|| r_shadows.GetInteger()==2 && backEnd.vLight->tooBigForShadowMaps*/ )
@@ -114,6 +108,7 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 		backEnd.currentScissor = backEnd.vLight->scissorRect;
 		FB_ApplyScissor();
 	}
+	DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
 
 	const drawSurf_t *curBatchCaches = surfs[0];
 	for (size_t i = 0; i < count; ++i) {
@@ -132,6 +127,9 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 			backEnd.currentScissor = surf->scissorRect;
 			FB_ApplyScissor();
 		}
+		// stgatilov: this is preferable to take effect on this surface
+		// but it's too messy to do it properly with batching
+		//depthBoundsTest.Update( surf->scissorRect );
 
 		ShaderParams &params = drawBatch.shaderParams[paramsIdx];
 		memcpy( params.modelViewMatrix.ToFloatPtr(), surf->space->modelViewMatrix, sizeof(idMat4) );

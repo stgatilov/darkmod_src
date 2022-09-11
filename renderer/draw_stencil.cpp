@@ -65,7 +65,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	}
 
 	// set depth bounds
-	const DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
+	const DepthBoundsTest depthBoundsTest( surf->scissorRect );
 
 	// debug visualization
 	if ( r_showShadows.GetInteger() ) {
@@ -164,9 +164,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	}
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
-		qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
-	}
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_Shadow );
 
 	GL_Cull( CT_FRONT_SIDED );
@@ -175,9 +172,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
-		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
-	}
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 
 	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() /*|| r_shadows.GetInteger()==2 && backEnd.vLight->tooBigForShadowMaps*/ )

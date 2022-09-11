@@ -184,10 +184,13 @@ idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds ) {
 	screenRect.y1 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[0].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
 	screenRect.y2 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[1].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
 
-	if ( r_useDepthBoundsTest.GetInteger() ) {
-		R_TransformEyeZToDepth( -bounds[0].x, tr.viewDef->projectionMatrix, screenRect.zmin );
-		R_TransformEyeZToDepth( -bounds[1].x, tr.viewDef->projectionMatrix, screenRect.zmax );
-	}
+	assert( bounds[0].x <= bounds[1].x );
+	R_TransformEyeZToDepth( -bounds[0].x, tr.viewDef->projectionMatrix, screenRect.zmin );
+	R_TransformEyeZToDepth( -bounds[1].x, tr.viewDef->projectionMatrix, screenRect.zmax );
+	screenRect.zmin = idMath::ClampFloat( 0.0f, 1.0f, screenRect.zmin );
+	screenRect.zmax = idMath::ClampFloat( 0.0f, 1.0f, screenRect.zmax );
+	assert( screenRect.zmin <= screenRect.zmax );
+
 	return screenRect;
 }
 

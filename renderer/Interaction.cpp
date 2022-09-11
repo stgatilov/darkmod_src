@@ -1436,7 +1436,7 @@ void idInteraction::AddActiveInteraction( void ) {
 	// calculate the scissor as the intersection of the light and model rects
 	// this is used for light triangles, but not for shadow triangles
 	lightScissor = vLight->scissorRect;
-	lightScissor.Intersect( vEntity->scissorRect );
+	lightScissor.IntersectWithZ( vEntity->scissorRect );
 
 	bool lightScissorsEmpty = lightScissor.IsEmpty();
 

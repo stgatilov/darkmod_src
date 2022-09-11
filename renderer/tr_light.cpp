@@ -210,6 +210,8 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def ) {
 
 	// the scissorRect will be expanded as the model bounds is accepted into visible portal chains
 	vModel->scissorRect.Clear();
+	vModel->scissorRect.zmin = 0.0f;
+	vModel->scissorRect.zmax = 1.0f;
 
 	// copy the model and weapon depth hack for back-end use
 	vModel->modelDepthHack = def->parms.modelDepthHack;
@@ -293,6 +295,8 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 
 	// the scissorRect will be expanded as the light bounds is accepted into visible portal chains
 	vLight->scissorRect.Clear();
+	vLight->scissorRect.zmin = 0.0f;
+	vLight->scissorRect.zmax = 1.0f;
 
 	// calculate the shadow cap optimization states
 	vLight->viewInsideLight = R_TestPointInViewLight( tr.viewDef->renderView.vieworg, light );
@@ -756,7 +760,7 @@ idScreenRect R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 		if ( tr.viewDef->viewFrustum.ProjectionBounds( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), bounds ) )
 			r = R_ScreenRectFromViewFrustumBounds( bounds );
 		else
-			r.Clear();
+			r.ClearWithZ();
 		return r;
 	}
 
@@ -915,7 +919,7 @@ void R_AddLightSurfaces( void ) {
 			// which will be used to crop the stencil cull
 			idScreenRect scissorRect = R_CalcLightScissorRectangle( vLight );
 			// intersect with the portal crossing scissor rectangle
-			vLight->scissorRect.Intersect( scissorRect );
+			vLight->scissorRect.IntersectWithZ( scissorRect );
 
 			if ( r_showLightScissors.GetBool() ) {
 				R_ShowColoredScreenRect( vLight->scissorRect, light->index );
@@ -1475,7 +1479,7 @@ idScreenRect R_CalcEntityScissorRectangle( viewEntity_t *vEntity ) {
 	if ( tr.viewDef->viewFrustum.ProjectionBounds( idBox( bounds, def->parms.origin, def->parms.axis ), bounds ) )
 		rect = R_ScreenRectFromViewFrustumBounds( bounds );
 	else
-		rect.Clear();
+		rect.ClearWithZ();
 
 	return rect;
 }
@@ -1520,7 +1524,7 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 		idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
 
 		// intersect with the portal crossing scissor rectangle
-		vEntity->scissorRect.Intersect( scissorRect );
+		vEntity->scissorRect.IntersectWithZ( scissorRect );
 
 		if ( r_showEntityScissors.GetBool() && !r_useParallelAddModels.GetBool() ) {
 			R_ShowColoredScreenRect( vEntity->scissorRect, def.index );
@@ -1674,33 +1678,31 @@ void R_RemoveUnecessaryViewLights( void ) {
 		// This doesn't seem to actually help, perhaps because the surface scissor
 		// rects aren't actually the surface, but only the portal clippings.
 		for ( vLight = tr.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
-			const drawSurf_t	*surf;
-			idScreenRect	surfRect;
-
-			if ( !vLight->lightShader->LightCastsShadows() ) {
+			if ( vLight->volumetricDust != 0.0f )
 				continue;
-			}
-			surfRect.Clear();
 
-			for ( surf = vLight->globalInteractions ; surf ; surf = surf->nextOnLight ) {
-				surfRect.Union( surf->scissorRect );
-			}
+			idScreenRect	surfRect;
+			surfRect.ClearWithZ();
 
-			for ( surf = vLight->localShadows ; surf ; surf = surf->nextOnLight ) {
-				const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
+			for ( const drawSurf_t *surf = vLight->globalInteractions ; surf ; surf = surf->nextOnLight ) {
+				surfRect.UnionWithZ( surf->scissorRect );
 			}
-
-			for ( surf = vLight->localInteractions ; surf ; surf = surf->nextOnLight ) {
-				surfRect.Union( surf->scissorRect );
-			}
-			for ( surf = vLight->globalShadows ; surf ; surf = surf->nextOnLight ) {
-				const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
+			for ( const drawSurf_t *surf = vLight->localInteractions ; surf ; surf = surf->nextOnLight ) {
+				surfRect.UnionWithZ( surf->scissorRect );
 			}
 
-			for ( surf = vLight->translucentInteractions ; surf ; surf = surf->nextOnLight ) {
-				surfRect.Union( surf->scissorRect );
+			for ( drawSurf_t *surf = vLight->localShadows ; surf ; surf = surf->nextOnLight ) {
+				surf->scissorRect.IntersectWithZ( surfRect );
 			}
-			vLight->scissorRect.Intersect( surfRect );
+			for ( drawSurf_t *surf = vLight->globalShadows ; surf ; surf = surf->nextOnLight ) {
+				surf->scissorRect.IntersectWithZ( surfRect );
+			}
+
+			for ( const drawSurf_t *surf = vLight->translucentInteractions ; surf ; surf = surf->nextOnLight ) {
+				surfRect.UnionWithZ( surf->scissorRect );
+			}
+
+			vLight->scissorRect.IntersectWithZ( surfRect );
 		}
 	}
 	// sort the viewLights list so the largest lights come first, which will reduce the chance of GPU pipeline bubbles
