@@ -369,22 +369,63 @@ void FrameBufferManager::CreateMapsShadow( FrameBuffer *shadow ) {
 	shadow->Init( shadowAtlasSize, shadowAtlasSize );
 	globalImages->shadowAtlas->GenerateAttachment( shadowAtlasSize, shadowAtlasSize, GL_DEPTH_COMPONENT32F, GL_NEAREST );
 	shadow->AddDepthRenderTexture( globalImages->shadowAtlas );
-	for ( int i = 0; i < 2; i++ ) { // 2x full size pages
-		ShadowAtlasPages[i].x = 0;
-		ShadowAtlasPages[i].y = r_shadowMapSize.GetInteger() * i;
-		ShadowAtlasPages[i].width = r_shadowMapSize.GetInteger();
-	}
-	for ( int i = 0; i < 8; i++ ) { // 8x 1/4 pages
-		ShadowAtlasPages[2 + i].x = 0;
-		ShadowAtlasPages[2 + i].y = r_shadowMapSize.GetInteger() * 2 + (r_shadowMapSize.GetInteger() >> 1) * i;
-		ShadowAtlasPages[2 + i].width = r_shadowMapSize.GetInteger() >> 1;
-	}
-	for ( int i = 0; i < 16; i++ ) { // 32x 1/16-sized pages
-		ShadowAtlasPages[10 + i].x = r_shadowMapSize.GetInteger() * 3;
-		ShadowAtlasPages[10 + i].y = r_shadowMapSize.GetInteger() * 2 + (r_shadowMapSize.GetInteger() >> 2) * i;
-		ShadowAtlasPages[10 + i].width = r_shadowMapSize.GetInteger() >> 2;
-		ShadowAtlasPages[26 + i].x = r_shadowMapSize.GetInteger() * 4.5;
-		ShadowAtlasPages[26 + i].y = r_shadowMapSize.GetInteger() * 2 + (r_shadowMapSize.GetInteger() >> 2) * i;
-		ShadowAtlasPages[26 + i].width = r_shadowMapSize.GetInteger() >> 2;
-	}
 }
+
+void FrameBufferManager::GetShadowMapBudget( int &numAtlasTiles, int &tileSize ) {
+	tileSize = r_shadowMapSize.GetInteger();
+	numAtlasTiles = shadowAtlasSize / tileSize;
+	assert( tileSize * numAtlasTiles <= shadowAtlasSize );
+}
+
+idList<renderCrop_t> FrameBufferManager::CreateShadowMapPages( const idList<int> &ratios, int denominator ) {
+	int n = ratios.Num();
+	int minRatio = denominator;
+
+	assert( idMath::IsPowerOfTwo( denominator ) );
+	for ( int r : ratios ) {
+		assert( idMath::IsPowerOfTwo( r ) );
+		minRatio = idMath::Imin( minRatio, r );
+	}
+
+	// add initial full tiles
+	idList<renderCrop_t> freeTiles, subTiles;
+	for ( int i = 0; i < shadowAtlasSize; i += r_shadowMapSize.GetInteger() ) {
+		freeTiles.AddGrow( renderCrop_t{
+			0, i, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger()
+		} );
+	}
+	freeTiles.Reverse();
+
+	// initially, all lights have no window (i.e. no shadows)
+	idList<renderCrop_t> result;
+	result.SetNum( n );
+	memset( result.Ptr(), 0, result.Allocated() );
+
+	for ( int currentRatio = denominator; currentRatio >= minRatio; currentRatio >>= 1 ) {
+		for ( int i = 0; i < n; i++ ) {
+			if ( ratios[i] != currentRatio )
+				continue;
+			if ( freeTiles.Num() == 0 )
+				break;	// budget overflow: should never happen on correct input data
+
+			// assign first available tile of matching size
+			result[i] = freeTiles.Pop();
+		}
+
+		// split available tiles into 4 subtiles
+		subTiles.SetNum( freeTiles.Num() * 4 );
+		for ( int i = 0; i < freeTiles.Num(); i++ ) {
+			renderCrop_t crop = freeTiles[i];
+			int sw = crop.width / 2;
+			int sh = crop.height / 2;
+			subTiles[4 * i + 3] = { crop.x + 0 , crop.y + 0 , sw, sh };
+			subTiles[4 * i + 2] = { crop.x + sw, crop.y + 0 , sw, sh };
+			subTiles[4 * i + 1] = { crop.x + 0 , crop.y + sh, sw, sh };
+			subTiles[4 * i + 0] = { crop.x + sw, crop.y + sh, sw, sh };
+		}
+		freeTiles.Swap( subTiles );
+	}
+
+	return result;
+}
+

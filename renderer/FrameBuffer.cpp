@@ -241,7 +241,6 @@ void FrameBuffer::AddRenderTexture( idImage *texture, GLenum attachment, int mip
 }
 
 
-renderCrop_t ShadowAtlasPages[42];
 idCVar r_fboResolution( "r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor" );
 
 void FB_RenderTexture(idImage *texture) {

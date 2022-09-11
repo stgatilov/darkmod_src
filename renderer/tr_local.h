@@ -32,6 +32,10 @@ const float FOG_ENTER = ( FOG_ENTER_SIZE + 1.0f ) / ( FOG_ENTER_SIZE * 2 );
 // picky to get the bilerp correct at terminator
 
 
+typedef struct {
+	int		x, y, width, height;	// these are in physical, OpenGL Y-at-bottom pixels
+} renderCrop_t;
+
 // idScreenRect gets carried around with each drawSurf, so it makes sense
 // to keep it compact, instead of just using the idBounds class
 class idScreenRect {
@@ -79,6 +83,7 @@ public:
 
 idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds );
 void R_ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
+
 
 typedef enum {
 	DC_BAD,
@@ -377,7 +382,7 @@ typedef struct viewLight_s {
 	// projection planes that the view is on the negative side of will be set,
 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
 	int						viewSeesShadowPlaneBits;
-	int						shadowMapIndex;				// zero - shadow maps not used, positive - shadow page index +1
+	renderCrop_t			shadowMapPage;
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
 	bool					singleLightOnly;			// multi-light shader can't handle it
@@ -770,9 +775,6 @@ typedef struct {
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
 // be automatically expanded as needed
 
-typedef struct {
-	int		x, y, width, height;	// these are in physical, OpenGL Y-at-bottom pixels
-} renderCrop_t;
 static const int	MAX_RENDER_CROPS = 8;
 
 /*

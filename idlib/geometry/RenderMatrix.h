@@ -142,6 +142,11 @@ public:
 	static void				DepthBoundsForExtrudedBounds( float& min, float& max, const idRenderMatrix& mvp, const idBounds& bounds, const idVec3& extrudeDirection, const idPlane& clipPlane, bool windowSpace = true );
 	static void				DepthBoundsForShadowBounds( float& min, float& max, const idRenderMatrix& mvp, const idBounds& bounds, const idVec3& localLightOrigin, bool windowSpace = true );
 	
+	// Returns eye Z coordinate with reversed sign (monotonically increasing with depth).
+	// In other words, it is eye-fragment distance along view direction.
+	// Projection matrix is read from "this" matrix.
+	ID_INLINE float			DepthToZ( float depth ) const;
+
 	// Create frustum planes and corners from a matrix.
 	static void				GetFrustumPlanes( idPlane planes[6], const idRenderMatrix& frustum, bool zeroToOne, bool normalize );
 	static void				GetFrustumCorners( frustumCorners_t& corners, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds );
@@ -555,6 +560,25 @@ ID_INLINE bool idRenderMatrix::CullExtrudedBoundsToMVP( const idRenderMatrix& mv
 {
 	byte bits;
 	return CullExtrudedBoundsToMVPbits( mvp, bounds, extrudeDirection, clipPlane, &bits, zeroToOne );
+}
+
+/*
+========================
+idRenderMatrix::DepthToZ
+========================
+*/
+ID_INLINE float idRenderMatrix::DepthToZ( float depth ) const
+{
+	// only OpenGL-standard perspective projection matrix is supported!
+	assert( m[1] == 0.0f && m[2] == 0.0f && m[3] == 0.0f );
+	assert( m[4] == 0.0f && m[6] == 0.0f && m[7] == 0.0f );
+	assert( m[8] == 0.0f && m[9] == 0.0f && m[12] == 0.0f && m[13] == 0.0f );
+	assert( m[14] == -1.0f && m[15] == 0.0f );
+
+	float clipZ = 2.0 * depth - 1.0;
+	float A = m[10];
+	float B = m[11];
+	return B / (A + clipZ);
 }
 
 #endif // !__RENDERMATRIX_H__

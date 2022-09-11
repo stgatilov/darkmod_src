@@ -56,7 +56,7 @@ struct MultiLightShaderData { // used by both interaction and shadow map shaders
 			auto vLight = *pLight;
 			backEnd.vLight = vLight; // GetEffectiveLightRadius needs this
 			if ( shadowPass ) {
-				if ( !vLight->shadowMapIndex || vLight->shadowMapIndex > 42 )
+				if ( vLight->shadowMapPage.width == 0 )
 					continue;
 			} else {
 				if ( vLight->singleLightOnly )
@@ -86,14 +86,14 @@ private:
 
 		if ( vLight->lightShader->IsAmbientLight() )
 			shadowRects.Append( idVec4( 0, 0, -2, 0 ) );
-		else if ( vLight->shadowMapIndex <= 0 )
+		else if ( vLight->shadowMapPage.width == 0 )
 			shadowRects.Append( idVec4( 0, 0, -1, 0 ) ); 
 		else {
-			auto & page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
+			const renderCrop_t &page = vLight->shadowMapPage;
 			idVec4 v( page.x, page.y, 0, page.width - 1 );
 			v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());
 			v.w /= 6 * r_shadowMapSize.GetFloat();
-			v.z = vLight->shadowMapIndex - 1;
+			v.z = -1;  /*TODO: vLight->shadowMapIndex*/;
 			shadowRects.Append( v );
 		}
 		softShadowRads.Append( GetEffectiveLightRadius() );

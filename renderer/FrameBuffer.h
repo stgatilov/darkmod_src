@@ -77,8 +77,6 @@ extern idCVarInt r_shadowMapSize;
 extern idCVar r_fboResolution;
 extern idCVarBool r_tonemap;
 
-extern renderCrop_t ShadowAtlasPages[42];
-
 void FB_RenderTexture(idImage *texture);
 void FB_DebugShowContents();
 void FB_ApplyScissor();

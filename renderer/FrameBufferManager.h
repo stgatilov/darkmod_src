@@ -64,6 +64,10 @@ private:
 	void CreateMapsShadow(FrameBuffer *shadow);
 	int shadowAtlasSize = 0;
 	bool depthCopiedThisView = false;
+public:
+	void GetShadowMapBudget( int &numAtlasTiles, int &tileSize );
+	idList<renderCrop_t> CreateShadowMapPages( const idList<int> &ratios, int denominator );
+
 
 public:
 	int renderWidth = 0;

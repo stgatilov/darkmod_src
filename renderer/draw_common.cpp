@@ -1040,7 +1040,7 @@ void RB_VolumetricPass() {
 	// note: all other noshadows settings already checked in R_SetLightDefViewLight
 	if ( vLight->volumetricNoshadows )
 		useShadows = false;
-	if ( !vLight->shadowMapIndex ) {
+	if ( vLight->shadowMapPage.width <= 0 ) {
 		// shadow map missing?
 		assert(useShadows == false);
 		useShadows = false;
@@ -1156,7 +1156,7 @@ void RB_VolumetricPass() {
 	uniforms->lightTextureMatrix.SetArray( 2, lightTexRows[0].ToFloatPtr() );
 
 	if ( useShadows ) {
-		auto& page = ShadowAtlasPages[vLight->shadowMapIndex - 1];
+		const renderCrop_t &page = vLight->shadowMapPage;
 		idVec4 v( page.x, page.y, 0, page.width );
 		v /= 6 * r_shadowMapSize.GetFloat();
 		uniforms->shadowRect.Set( v );

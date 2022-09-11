@@ -295,7 +295,7 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 }
 
 void InteractionStage::BindShadowTexture( const TiledCustomMipmapStage *stencilShadowMipmaps ) {
-	if ( backEnd.vLight->shadowMapIndex ) {
+	if ( backEnd.vLight->shadowMapPage.width > 0 ) {
 		GL_SelectTexture( TU_SHADOW_MAP );
 		globalImages->shadowAtlas->Bind();
 	} else {
@@ -314,7 +314,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 		interactionShader = ambientInteractionShader;
 		Uniforms::Interaction *uniforms = interactionShader->GetUniformGroup<Uniforms::Interaction>();
 		uniforms->ambient = true;
-	} else if ( vLight->shadowMapIndex ) {
+	} else if ( vLight->shadowMapPage.width > 0 ) {
 		interactionShader = shadowMapInteractionShader;
 	} else {
 		interactionShader = stencilInteractionShader;
@@ -333,7 +333,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	}
 	if ( doShadows ) {
 		uniforms->shadows.Set( vLight->shadows );
-		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
+		const renderCrop_t &page = vLight->shadowMapPage;
 		// https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
 		idVec4 v( page.x, page.y, 0, page.width-1 );
 		v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());

@@ -256,8 +256,8 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			/*inter.lightTextureMatrix[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
 			inter.lightTextureMatrix[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );*/
 
-			if ( vLight->shadowMapIndex > 0 && vLight->shadowMapIndex <= 42) {
-				auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
+			if ( vLight->shadowMapPage.width > 0 ) {
+				const renderCrop_t &page = vLight->shadowMapPage;
 				// https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
 				idVec4 v( page.x, page.y, 0, page.width-1 );
 				v.ToVec2() = (v.ToVec2() * 2 + idVec2( 1, 1 )) / (2 * 6 * r_shadowMapSize.GetInteger());

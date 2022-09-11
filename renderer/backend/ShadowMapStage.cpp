@@ -69,7 +69,7 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 	ShadowMapUniforms *shadowMapUniforms = shadowMapShader->GetUniformGroup<ShadowMapUniforms>();
 
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapIndex > 42 ) {
+		if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapPage.width == 0 ) {
 			continue;
 		}
 		idVec4 lightOrigin;
@@ -79,7 +79,7 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		lightOrigin.w = 0;
 		shadowMapUniforms->lightOrigin.Set( lightOrigin );
 
-		auto &page = ShadowAtlasPages[vLight->shadowMapIndex-1];
+		const renderCrop_t &page = vLight->shadowMapPage;
 		qglViewport( page.x, page.y, 6*page.width, page.width );
 		if ( r_useScissor.GetBool() ) {
 			qglScissor( page.x, page.y, 6*page.width, page.width );
