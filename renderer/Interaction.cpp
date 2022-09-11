@@ -899,7 +899,7 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 	//stgatilov: single-point frustum happens from full-zero model bounds
 	//which happens when model has no surfaces at all (e.g. aasobstacle)
 	if ( frustum.GetLeft() == 0.0 && frustum.GetUp() == 0.0 ) {
-		scissorRect.Clear();
+		scissorRect.ClearWithZ();
 		return scissorRect;
 	}
 
@@ -1285,8 +1285,8 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 			return false;
 
 		// use the entity scissor rectangle
-		shadowScissor.Intersect(vEntity->scissorRect);
-		if (shadowScissor.IsEmpty())
+		shadowScissor.IntersectWithZ(vEntity->scissorRect);
+		if (shadowScissor.IsEmptyWithZ())
 			return false;
 		return true;
 	}
@@ -1330,8 +1330,8 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 	if ( !tr.viewDef->viewFrustum.ProjectionBounds( shadowBounds, shadowProjectionBounds ) )
 		return false;
 	idScreenRect shadowRect = R_ScreenRectFromViewFrustumBounds( shadowProjectionBounds );
-	shadowScissor.Intersect(shadowRect);
-	if ( shadowScissor.IsEmpty() )
+	shadowScissor.IntersectWithZ(shadowRect);
+	if ( shadowScissor.IsEmptyWithZ() )
 		return false;
 
 	// try to cull the interaction by view frustum
@@ -1407,6 +1407,7 @@ void idInteraction::AddActiveInteraction( void ) {
 
 	// Try to cull the whole interaction away in a multitide of ways
 	// Also, reduce scissor rect of the interaction if possible
+	// stgatilov: depthbounds also are reduced according to bounds of shadow volume
 	idScreenRect shadowScissor = vLight->scissorRect;
 	if ( !IsPotentiallyVisible( shadowScissor ) )
 		return;
@@ -1578,15 +1579,21 @@ void idInteraction::AddActiveInteraction( void ) {
 			// see if we can avoid using the shadow volume caps
 			bool inside = R_PotentiallyInsideInfiniteShadow( sint->ambientTris, localViewOrigin, localLightOrigin );
 
+			// stgatilov: depthbounds of shadow volumes are passed to glDepthBoundsTest in stencil shadows rendering
+			// so we cannot reduce them to shadow volume geometry, and here we restore them to light's depthbounds
+			idScreenRect shadowScissorLightDepthBounds = shadowScissor;
+			shadowScissorLightDepthBounds.zmin = vLight->scissorRect.zmin;
+			shadowScissorLightDepthBounds.zmax = vLight->scissorRect.zmax;
+
 			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) {
 				PrepareLightSurf(
 					SHADOW_LOCAL, shadowTris,
-					vEntity, NULL, shadowScissor, inside
+					vEntity, NULL, shadowScissorLightDepthBounds, inside
 				);
 			} else {
 				PrepareLightSurf(
 					SHADOW_GLOBAL, shadowTris,
-					vEntity, NULL, shadowScissor, inside
+					vEntity, NULL, shadowScissorLightDepthBounds, inside
 				);
 			}
 		}
