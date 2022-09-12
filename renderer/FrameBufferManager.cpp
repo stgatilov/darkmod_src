@@ -388,6 +388,9 @@ idList<renderCrop_t> FrameBufferManager::CreateShadowMapPages( const idList<int>
 	}
 
 	// add initial full tiles
+	// note: we allocate first row with x in range [0..sz)
+	// this would be OK if K-th layer is at offset K * sz
+	// but it is not... see the end of the function
 	idList<renderCrop_t> freeTiles, subTiles;
 	for ( int i = 0; i < shadowAtlasSize; i += r_shadowMapSize.GetInteger() ) {
 		freeTiles.AddGrow( renderCrop_t{
@@ -425,6 +428,11 @@ idList<renderCrop_t> FrameBufferManager::CreateShadowMapPages( const idList<int>
 		}
 		freeTiles.Swap( subTiles );
 	}
+
+	// the engine actually expects all layers of cubemap contiguous by X
+	// so we need to convert our pages
+	for ( int i = 0; i < result.Num(); i++ )
+		result[i].x *= 6;
 
 	return result;
 }
