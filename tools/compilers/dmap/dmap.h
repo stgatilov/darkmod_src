@@ -416,6 +416,14 @@ void	Prelight( uEntity_t *e );
 
 // tritjunction.cpp
 
+// TODO stgatilov: remove old tritjunction and this struct
+typedef struct hashVert_s {
+	struct hashVert_s	*next;
+	idVec3				v;
+	int					iv[3];
+	int					idx;
+} hashVert_t;
+
 void	FreeTJunctionHash( void );
 int		CountGroupListTris( const optimizeGroup_t *groupList );
 void	FixEntityTjunctions( uEntity_t *e );

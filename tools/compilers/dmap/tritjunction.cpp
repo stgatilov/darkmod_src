@@ -22,6 +22,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "containers/DisjointSets.h"
 #include "containers/FlexList.h"
 
+#include "tjunctionfixer.h"	// new algo!
+static TJunctionFixer newTjuncAlgorithm;
+
 /*
 
   T junction fixing never creates more xyz points, but
@@ -73,17 +76,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 //#define	SNAP_FRACTIONS	1
 
 #define	VERTEX_EPSILON	( 1.0 / SNAP_FRACTIONS )
-
 #define	COLINEAR_EPSILON	( 1.8 * VERTEX_EPSILON )
+#define	VERTEX_EPSILON_NEW	COLINEAR_EPSILON
 
 #define	HASH_BINS	16
-
-typedef struct hashVert_s {
-	struct hashVert_s	*next;
-	idVec3				v;
-	int					iv[3];
-	int					idx;
-} hashVert_t;
 
 static idBounds	hashBounds;
 static idVec3	hashScale;
@@ -112,10 +108,21 @@ idCVar dmap_fixVertexSnappingTjunc(
 	0, 2
 );
 idCVar dmap_disableCellSnappingTjunc(
-	"dmap_disableCellSnappingTjunc", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"dmap_disableCellSnappingTjunc", "0", CVAR_BOOL | CVAR_SYSTEM,
 	"Disables unconditional snapping of all coordinates to [integer/64].\n"
 	"The vertices still snap to each other if they are close.\n"
-	"This is behavior change in TDM 2.10"
+	"This is behavior change ONLY in TDM 2.10"
+);
+idCVar dmap_tjunctionsAlgorithm(
+	"dmap_tjunctionsAlgorithm", "1", CVAR_BOOL | CVAR_SYSTEM,
+	"Which algorithm to use for merging close verts and fixing T-junctions:\n"
+	"  0 --- old algorithm from Doom 3\n"
+	"  1 --- new fast algorithm\n"
+	"Old algorithm depends on more cvars, while the new one has new defaults:\n"
+	"  dmap_dontSplitWithFuncStaticVertices 1\n"
+	"  dmap_fixVertexSnappingTjunc 2\n"
+	"  dmap_disableCellSnappingTjunc 1\n"
+	"This is behavior change in TDM 2.11"
 );
 
 
@@ -443,7 +450,7 @@ Returns a list of two new mapTri if the hashVert is
 on an edge of the given mapTri, otherwise returns NULL.
 ==================
 */
-static mapTri_t *FixTriangleAgainstHashVert( const mapTri_t *a, const hashVert_t *hv ) {
+mapTri_t *FixTriangleAgainstHashVert( const mapTri_t *a, const hashVert_t *hv ) {
 	int			i;
 	const idDrawVert	*v1, *v2;
 	idDrawVert	split;
@@ -611,15 +618,35 @@ FixAreaGroupsTjunctions
 ==================
 */
 void	FixAreaGroupsTjunctions( optimizeGroup_t *groupList ) {
+	if ( dmapGlobals.noTJunc ) {
+		return;
+	}
+
+	if (dmap_tjunctionsAlgorithm.GetBool()) {
+		newTjuncAlgorithm.Reset();
+
+		for ( optimizeGroup_t *group = groupList ; group ; group = group->nextGroup ) {
+			// don't touch discrete surfaces
+			if ( group->material != NULL && group->material->IsDiscrete() ) {
+				continue;
+			}
+			newTjuncAlgorithm.AddTriList( &group->triList );
+		}
+		// do all the hard stuff (lists will get replaced)
+		newTjuncAlgorithm.Run( 
+			float(VERTEX_EPSILON_NEW), float(COLINEAR_EPSILON),
+			(dmap_disableCellSnappingTjunc.GetBool() ? 0 : SNAP_FRACTIONS)
+		);
+
+		newTjuncAlgorithm.Reset();
+		return;
+	}
+
 	const mapTri_t	*tri;
 	mapTri_t		*newList;
 	mapTri_t		*fixed;
 	int				startCount, endCount;
 	optimizeGroup_t	*group;
-
-	if ( dmapGlobals.noTJunc ) {
-		return;
-	}
 
 	if ( !groupList ) {
 		return;
@@ -680,7 +707,34 @@ idCVar dmap_dontSplitWithFuncStaticVertices(
 FixGlobalTjunctions
 ==================
 */
-void	FixGlobalTjunctions( uEntity_t *e ) {
+void FixGlobalTjunctions( uEntity_t *e ) {
+	if (dmap_tjunctionsAlgorithm.GetBool()) {
+		newTjuncAlgorithm.Reset();
+		TRACE_CPU_SCOPE_TEXT("FixGlobalTjunctions", e->nameEntity);
+
+		for ( int areaNum = 0 ; areaNum < e->numAreas ; areaNum++ ) {
+			for ( optimizeGroup_t *group = e->areas[areaNum].groups ; group ; group = group->nextGroup ) {
+				// don't touch discrete surfaces
+				if ( group->material != NULL && group->material->IsDiscrete() )
+					continue;
+				newTjuncAlgorithm.AddTriList( &group->triList );
+			}
+		}
+		// do all the hard stuff (lists will get replaced)
+		newTjuncAlgorithm.Run( 
+			float(VERTEX_EPSILON_NEW), float(COLINEAR_EPSILON),
+			(dmap_disableCellSnappingTjunc.GetBool() ? 0 : SNAP_FRACTIONS)
+		);
+
+		TRACE_ATTACH_FORMAT(
+			"%d -> %d tris, %d unique verts",
+			newTjuncAlgorithm.GetInitialTriCount(), newTjuncAlgorithm.GetSplitTriCount(), newTjuncAlgorithm.GetMergedVertsCount()
+		);
+
+		newTjuncAlgorithm.Reset();
+		return;
+	}
+
 	mapTri_t	*a;
 	int			vert;
 	int			i;

@@ -672,6 +672,7 @@
     <ClInclude Include="tools\compilers\compiler_common.h" />
     <ClInclude Include="tools\compilers\dmap\earcut.h" />
     <ClInclude Include="tools\compilers\dmap\planargraph.h" />
+    <ClInclude Include="tools\compilers\dmap\tjunctionfixer.h" />
     <ClInclude Include="tools\edit_public.h" />
     <ClInclude Include="tools\af\DialogAF.h" />
     <ClInclude Include="tools\af\DialogAFBody.h" />
@@ -1423,6 +1424,7 @@
     <ClCompile Include="tools\compilers\dmap\planargraph.cpp" />
     <ClCompile Include="tools\compilers\dmap\portals.cpp" />
     <ClCompile Include="tools\compilers\dmap\shadowopt3.cpp" />
+    <ClCompile Include="tools\compilers\dmap\tjunctionfixer.cpp" />
     <ClCompile Include="tools\compilers\dmap\tritjunction.cpp" />
     <ClCompile Include="tools\compilers\dmap\tritools.cpp" />
     <ClCompile Include="tools\compilers\dmap\ubrush.cpp" />

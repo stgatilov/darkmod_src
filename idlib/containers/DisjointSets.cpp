@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #include "precompiled.h"
 #include "DisjointSets.h"
+#include "FlexList.h"
 
 
 void idDisjointSets::Init(idList<int> &arr, int num) {
@@ -55,7 +56,8 @@ void idDisjointSets::CompressAll(idList<int> &arr) {
 
 int idDisjointSets::ConvertToColors(idList<int> &arr) {
 	CompressAll(arr);
-	int *remap = (int*)alloca(arr.Num() * sizeof(int));
+	idFlexList<int, 128> remap;
+	remap.SetNum(arr.Num());
 	int k = 0;
 	for (int i = 0; i < arr.Num(); i++) if (arr[i] == i)
 		remap[i] = k++;
