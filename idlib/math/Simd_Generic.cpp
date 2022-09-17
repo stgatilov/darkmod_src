@@ -3018,7 +3018,9 @@ idSIMD_Generic::CullTrisByFrustum
 ============
 */
 void idSIMD_Generic::CullTrisByFrustum( idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idPlane frustum[6], byte *triCull, float epsilon ) {
-	for ( int t = 0; t < numIndexes; t++ ) {
+	assert(numIndexes % 3 == 0);
+	int numTris = numIndexes / 3;
+	for ( int t = 0; t < numTris; t++ ) {
 		int i0 = indexes[3 * t + 0];
 		int i1 = indexes[3 * t + 1];
 		int i2 = indexes[3 * t + 2];
