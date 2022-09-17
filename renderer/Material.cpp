@@ -85,6 +85,8 @@ void idMaterial::CommonInit() {
 	stages = NULL;
 	editorImage = NULL;
 	lightFalloffImage = NULL;
+	lightAmbientDiffuse = NULL;
+	lightAmbientSpecular = NULL;
 	shouldCreateBackSides = false;
 	entityGui = 0;
 	fogLight = false;
@@ -1972,13 +1974,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			ambientLight = true;
 			continue;
 		}
-		// nbohr1more #3881: cubicLight further changes
-		else if ( !token.Icmp( "ambientCubicLight" ) ) {
-			ambientLight = true;
-			cubicLight = true;
-			continue;
-		}
-		// nbohr1more #3881: cubicLight 
+		// nbohr1more #3881: cubicLight
 		else if ( !token.Icmp( "cubicLight" ) ) {
 			cubicLight = true;
 			continue;
@@ -1999,21 +1995,31 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			unsmoothedTangents = true;
 			continue;
 		}
-		// lightFallofImage <imageprogram>
+		// lightFalloffImage <imageprogram>
 		// specifies the image to use for the third axis of projected
 		// light volumes
 		else if ( !token.Icmp( "lightFalloffImage" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr copy = str;	// so other things don't step on it
-
 			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT );
 			continue;
 		}
-		else if ( !token.Icmp( "lightFalloffCubeMap" ) ) {
+		// lightAmbientDiffuse <imageprogram>
+		// specifies the image indexed by surface normal in world space
+		// contains ambient-diffuse light from environment (stgatilov #6090)
+		else if ( !token.Icmp( "lightAmbientDiffuse" ) ) {
 			str = R_ParsePastImageProgramCubeMap( src );
 			idStr copy = str;	// so other things don't step on it
-
-			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT, CF_CAMERA );
+			lightAmbientDiffuse = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT, CF_NATIVE );
+			continue;
+		}
+		// lightAmbientSpecular <imageprogram>
+		// specifies the image indexed by surface normal in world space
+		// contains ambient-specular light from environment (stgatilov #6090)
+		else if ( !token.Icmp( "lightAmbientSpecular" ) ) {
+			str = R_ParsePastImageProgramCubeMap( src );
+			idStr copy = str;	// so other things don't step on it
+			lightAmbientSpecular = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT, CF_NATIVE );
 			continue;
 		}
 		// guisurf <guifile> | guisurf entity

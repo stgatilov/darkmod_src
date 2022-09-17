@@ -473,20 +473,34 @@ static void getCubeVector( int i, int cubesize, int x, int y, float *vector ) {
 }
 
 
-static void makeWhiteCubeMap( idImage *image ) {
+static void makeConstCubeMap( idImage *image, const byte value[4] ) {
 	float vector[3] = { };
 	byte	*pixels[6];
 
 	static const int size = 16;
 
 	pixels[0] = ( GLubyte * ) Mem_Alloc( size * size * 4 * 6 );
-	memset( pixels[0], 255, size * size * 4 * 6 );
-	for ( int i = 0; i < 6; i++ )
+	for ( int i = 0; i < 6; i++ ) {
 		pixels[i] = pixels[0] + i * size * size * 4;
+		for ( int p = 0; p < size * size; p++ ) {
+			pixels[i][4 * p + 0] = value[0];
+			pixels[i][4 * p + 1] = value[1];
+			pixels[i][4 * p + 2] = value[2];
+			pixels[i][4 * p + 3] = value[3];
+		}
+	}
 
 	image->GenerateCubeImage( ( const byte ** )pixels, size, TF_LINEAR, false, TD_HIGH_QUALITY );
 
 	Mem_Free( pixels[0] );
+}
+static void makeWhiteCubeMap( idImage *image ) {
+	static const byte WHITE[4] = {255, 255, 255, 255};
+	return makeConstCubeMap( image, WHITE );
+}
+static void makeBlackCubeMap( idImage *image ) {
+	static const byte BLACK[4] = {0, 0, 0, 0};
+	return makeConstCubeMap( image, BLACK );
 }
 
 /* Initialize a cube map texture object that generates RGB values
@@ -1564,6 +1578,7 @@ void idImageManager::Init() {
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage );
 	blackImage = ImageFromFunction( "_black", R_BlackImage );
 	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", makeWhiteCubeMap );
+	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", makeBlackCubeMap );
 
 	//borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );

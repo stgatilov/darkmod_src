@@ -487,6 +487,11 @@ public:
 						// NULL unless an image is explicitly specified in the shader with "lightFalloffShader <image>"
 	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
 
+						// stgatilov #6090: for ambient light which depends on incoming direction
+	bool				UseNormalIndexedAmbient() const { return ambientLight && ( lightAmbientDiffuse || lightAmbientSpecular ); }
+	idImage	*			LightAmbientDiffuse() const { return lightAmbientDiffuse; }
+	idImage	*			LightAmbientSpecular() const { return lightAmbientSpecular; }
+
 	//------------------------------------------------------------------
 
 						// returns the renderbump command line for this shader, or an empty string if not present
@@ -637,6 +642,8 @@ private:
 	idStr				renderBump;			// renderbump command options, without the "renderbump" at the start
 
 	idImage	*			lightFalloffImage;
+	idImage *			lightAmbientDiffuse;
+	idImage *			lightAmbientSpecular;
 
 	int					entityGui;			// draw a gui with the idUserInterface from the renderEntity_t
 											// non zero will draw gui, gui2, or gui3 from renderEnitty_t

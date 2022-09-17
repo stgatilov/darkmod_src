@@ -54,6 +54,7 @@ namespace {
 		DEFINE_UNIFORM( sampler, lightProjectionTexture )
 		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
 		DEFINE_UNIFORM( sampler, lightFalloffTexture )
+		DEFINE_UNIFORM( int, useNormalIndexed )
 		DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
 		DEFINE_UNIFORM( sampler, lightSpecularCubemap )
 		DEFINE_UNIFORM( sampler, ssaoTexture )
@@ -191,16 +192,29 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		return a->material < b->material;
 	} );
 
-	if ( vLight->lightShader->IsCubicLight() ) {
-		if ( vLight->lightShader->IsAmbientLight() ) {
-			GL_SelectTexture( TU_LIGHT_SPECULAR_CUBE );
-			vLight->falloffImage->Bind();	// TODO: proper location?
-		}
+	if ( vLight->lightShader->UseNormalIndexedAmbient() ) {
+		// stgatilov #6090: ambient lights can have cubemaps indexed by surface normal
+		// separately for diffuse and specular
+		uniforms->useNormalIndexed.Set( true );
+
+		GL_SelectTexture( TU_LIGHT_DIFFUSE_CUBE );
+		idImage *cubemap = vLight->lightShader->LightAmbientDiffuse();
+		if (!cubemap)
+			cubemap = globalImages->blackCubeMapImage;
+		cubemap->Bind();
+
+		GL_SelectTexture( TU_LIGHT_SPECULAR_CUBE );
+		cubemap = vLight->lightShader->LightAmbientSpecular();
+		if (!cubemap)
+			cubemap = globalImages->blackCubeMapImage;
+		cubemap->Bind();
 	}
 	else {
-		GL_SelectTexture( TU_LIGHT_FALLOFF );
-		vLight->falloffImage->Bind();
+		uniforms->useNormalIndexed.Set( false );
 	}
+
+	GL_SelectTexture( TU_LIGHT_FALLOFF );
+	vLight->falloffImage->Bind();
 
 	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || vLight->shadows == LS_MAPS )
 		BindShadowTexture( stencilShadowMipmaps );
@@ -239,16 +253,8 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		}
 
 		if ( vLight->lightShader->IsCubicLight() ) {
-			if ( vLight->lightShader->IsAmbientLight() ) {
-				GL_SelectTexture( TU_LIGHT_DIFFUSE_CUBE );
-				lightStage->texture.image->Bind();	// TODO: proper location?
-				GL_SelectTexture( TU_LIGHT_PROJECT_CUBE );
-				globalImages->whiteCubeMapImage->Bind();
-			}
-			else {
-				GL_SelectTexture( TU_LIGHT_PROJECT_CUBE );
-				lightStage->texture.image->Bind();
-			}
+			GL_SelectTexture( TU_LIGHT_PROJECT_CUBE );
+			lightStage->texture.image->Bind();
 		}
 		else {
 			GL_SelectTexture( TU_LIGHT_PROJECT );

@@ -376,6 +376,7 @@ public:
 	idImage *			whiteImage;					// full of 0xff
 	idImage *			blackImage;					// full of 0x00
 	idImage *			whiteCubeMapImage;			// full of 0xff
+	idImage *			blackCubeMapImage;			// full of 0x00
 	idImage *			normalCubeMapImage;			// cube map to normalize STR into RGB
 	idImage *			noFalloffImage;				// all 255, but zero clamped
 	idImage *			fogImage;					// increasing alpha is denser fog

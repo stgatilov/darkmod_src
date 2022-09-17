@@ -37,6 +37,7 @@ uniform sampler2D u_lightProjectionTexture;
 uniform sampler2D u_lightFalloffTexture;
 uniform bool u_cubic;
 uniform samplerCube u_lightProjectionCubemap;   // TODO: is this needed?
+uniform bool u_useNormalIndexed;
 uniform samplerCube u_lightDiffuseCubemap;
 uniform samplerCube u_lightSpecularCubemap;
 
@@ -61,7 +62,7 @@ void main() {
 		u_diffuseTexture, params[var_DrawId].diffuseColor.rgb, var_TexDiffuse,
 		u_specularTexture, params[var_DrawId].specularColor.rgb, var_TexSpecular,
 		var_Color.rgb,
-		u_cubic, u_lightDiffuseCubemap, u_lightSpecularCubemap,
+		u_useNormalIndexed, u_lightDiffuseCubemap, u_lightSpecularCubemap,
 		u_minLevel, u_gamma
 	);
 
