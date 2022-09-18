@@ -79,7 +79,7 @@ void TJunctionFixer::SetupWorkArea() {
 		triBox.AddPoint(tri.v[1].xyz);
 		triBox.AddPoint(tri.v[2].xyz);
 		bounds.AddBounds(triBox);
-		float triSize = (bounds[1] - bounds[0]).Max();
+		float triSize = (triBox[1] - triBox[0]).Max();
 		sumSizesCubed += triSize * triSize * triSize;
 	}
 	avgTriSize = idMath::Pow(sumSizesCubed / idMath::Imax(allTris.Num(), 1), 1.0f / 3.0f);
