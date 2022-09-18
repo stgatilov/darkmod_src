@@ -105,6 +105,7 @@ struct MakeAmbientMapParam {
 	float multiplier;
 	int cosPower;
 	int side;
+	idBounds *colorRange = nullptr;
 };
 
 // increasing numeric values imply more information is stored

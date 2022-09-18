@@ -753,6 +753,9 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 	// dAlpha dPhi / Q
 	const float dAlpPhiQ = ( idMath::HALF_PI / resAlp / resPhi );
 
+	idBounds colorRange;
+	colorRange.Clear();
+
 	for ( int y = 0; y < param.outSize; y++ ) {
 		for ( int x = 0; x < param.outSize; x++ ) {
 			float ratioX = ( x + 0.5f ) / param.outSize;
@@ -811,6 +814,9 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 			// ideally, one should remember about 2/5 normalization when consuming the texture
 			result *= ( param.cosPower + 1.0f ) * param.multiplier;
 
+			// collect stats about highest levels
+			colorRange.AddPoint( result );
+
 			// store result in image
 			byte *pixel = param.outBuffer + ( y * param.outSize + x ) * 4;
 			pixel[0] = idMath::ClampInt( 0, 255, int( result[0] ) );
@@ -818,6 +824,13 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 			pixel[2] = idMath::ClampInt( 0, 255, int( result[2] ) );
 			pixel[3] = 255;
 		}
+	}
+
+	// update external bounds (note: guard by mutex!)
+	static idSysMutex colorRangeUpdateMutex;
+	if ( param.colorRange ) {
+		idScopedCriticalSection lock( colorRangeUpdateMutex );
+		param.colorRange->AddBounds( colorRange );
 	}
 }
 
@@ -828,9 +841,16 @@ REGISTER_PARALLEL_JOB( R_MakeAmbientMap, "R_MakeAmbientMap_SingleFace" );
 R_MakeAmbientMaps
 =======================
 */
-void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, float multiplier, int cosPower ) {
+void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, float multiplier, int cosPower, const char *name ) {
 	TRACE_CPU_SCOPE_FORMAT( "R_MakeAmbientMaps", "size %d <- %d, smp %d, pwr %d", outSize, size, samples, cosPower );
-	idParallelJobList *jobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, 6, 0, nullptr );
+
+	// stgatilov: D3BFG job system does not support nested parallelism
+	// in such case it simply hangs =(
+	// and spawning 6 threads for this little work is useless too
+	//idParallelJobList *jobs = parallelJobManager->AllocJobList( JOBLIST_UTILITY, JOBLIST_PRIORITY_MEDIUM, 6, 0, nullptr );
+
+	idBounds colorRange;
+	colorRange.Clear();
 
 	MakeAmbientMapParam params[6];
 	for ( int i = 0; i < 6; i++ ) {
@@ -843,13 +863,26 @@ void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int 
 		p.multiplier = multiplier;
 		p.cosPower = cosPower;
 		p.side = i;
-		jobs->AddJob( (jobRun_t)R_MakeAmbientMap, &p );
+		p.colorRange = &colorRange;
+
+		//jobs->AddJob( (jobRun_t)R_MakeAmbientMap, &p );
+		R_MakeAmbientMap( p );
 	}
 
-	jobs->Submit( nullptr, JOBLIST_PARALLELISM_MAX_CORES );
-	jobs->Wait();
+	//jobs->Submit( nullptr, JOBLIST_PARALLELISM_MAX_CORES );
+	//jobs->Wait();
+	
+	// check if color rangewas clamped
+	float maxMax = colorRange[1].Max();
+	if ( maxMax > 260.0f ) {
+		// note: I'm sure mapper should know about it, but I don't know how to report it properly...
+		common->Warning(
+			"bakeAmbient on %s: max color is (%0.0f %0.0f %0.0f) --- clamped to 255",
+			(name ? name : "[unknown]"), colorRange[1][0], colorRange[1][1], colorRange[1][2]
+		);
+	}
 
-	parallelJobManager->FreeJobList( jobs );
+	//parallelJobManager->FreeJobList( jobs );
 }
 
 /*
@@ -857,7 +890,7 @@ void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int 
 R_BakeAmbientDiffuse
 =======================
 */
-void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular ) {
+void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, const char *name ) {
 	if ( *size == 0 ) {
 		return;
 	}
@@ -872,7 +905,7 @@ void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular ) 
 		outPics[side] = ( byte * )R_StaticAlloc( 4 * outSize * outSize );
 	}
 
-	R_MakeAmbientMaps( pics, outPics, outSize, 256, *size, multiplier, cosPower );
+	R_MakeAmbientMaps( pics, outPics, outSize, 256, *size, multiplier, cosPower, name );
 
 	for ( int side = 0; side < 6; side++ ) {
 		R_StaticFree( pics[side] );
@@ -916,7 +949,7 @@ static bool R_ParseImageProgramCubeMap_r( idLexer &src, cubeFiles_t extensions, 
 
 		// process it
 		if ( pics ) {
-			R_BakeAmbient( pics, size, multiplier, specular );
+			R_BakeAmbient( pics, size, multiplier, specular, src.GetDisplayFileName() );
 			/*// DEBUG OUTPUT..
 			for ( int i = 0; i < 6; i++ )
 				R_WriteTGA( va("ad%d.tga", i ), pics[i], *size, *size );*/
