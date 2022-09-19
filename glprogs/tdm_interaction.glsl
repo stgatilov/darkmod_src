@@ -205,7 +205,7 @@ vec4 computeAmbientInteraction(
 	// specular term
 	vec3 specularTerm;
 	if (useNormalIndexed) {
-		specularTerm = texture(normalIndexedSpecular, props.worldN).rgb;
+		specularTerm = texture(normalIndexedSpecular, props.worldR).rgb;
 		// bakeAmbientDiffuse scales result up 2x, bakeAmbientSpecular scales result up 5x
 		// so we scale specular term down in 2.5 times to adhere to Phong math with single light color
 		specularTerm *= 0.4;
