@@ -199,6 +199,11 @@ struct GLSLUniform_mat4 : GLSLUniformBase {
 			qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
 	}
 
+	void Set(const idRenderMatrix &value) {
+		if ( IsPresent() )
+			qglUniformMatrix4fv( paramLocation, 1, true, value[0] );
+	}
+
 	void SetArray( int count, const float *value ) {
 		if ( IsPresent() )
 			qglUniformMatrix4fv( paramLocation, count, false, value );

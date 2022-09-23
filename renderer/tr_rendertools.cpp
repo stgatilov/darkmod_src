@@ -2331,13 +2331,14 @@ Display a single image over most of the screen
 void RB_TestImage( void ) {
 	idImage	*image;
 	int		max;
-	float	w, h;
 
 	image = tr.testImage;
 	if ( !image ) {
 		return;
 	}
 
+	float w = 0.25;
+	float h = 0.25;
 	if ( tr.testVideo ) {
 		cinData_t	cin;
 
@@ -2348,9 +2349,7 @@ void RB_TestImage( void ) {
 			tr.testImage = NULL;
 			return;
 		}
-		w = 0.25;
-		h = 0.25;
-	} else {
+	} else if ( image->cubeFiles == CF_2D ) {
 		max = image->uploadWidth > image->uploadHeight ? image->uploadWidth : image->uploadHeight;
 
 		w = 0.25 * image->uploadWidth / max;
@@ -2360,28 +2359,75 @@ void RB_TestImage( void ) {
 	}
 
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
-	RB_SimpleScreenSetup();
+	image->Bind();
 
-	tr.testImage->Bind();
+	if ( image->cubeFiles != CF_2D ) {
+		idMat3 axis = tr.primaryRenderView.viewaxis;
+		idRenderMatrix viewMatrix;
+		idRenderMatrix::CreateViewMatrix( idVec3( 0.0f ), axis * 100.0f, viewMatrix );
+		const idRenderMatrix &projectionMatrix = backEnd.viewDef->projectionRenderMatrix;
 
-	ImmediateRendering ir;
-	ir.glColor3f(1, 1, 1);
+		// render cubemap as if it was around us
+		GL_ViewportRelative( 0.5f - w, 0, 2 * w, 2 * h );
 
-	ir.glBegin( GL_QUADS );
+		struct TestImageCubeUniforms : GLSLUniformGroup {
+			UNIFORM_GROUP_DEF(TestImageCubeUniforms)
+			DEFINE_UNIFORM(mat4, modelViewMatrix);
+			DEFINE_UNIFORM(mat4, projectionMatrix);
+			DEFINE_UNIFORM(sampler, texCube);
+		};
+		programManager->testImageCubeShader->Activate();
+		auto uniforms = programManager->testImageCubeShader->GetUniformGroup<TestImageCubeUniforms>();
+		uniforms->texCube.Set( 0 );
+		uniforms->modelViewMatrix.Set( viewMatrix );
+		uniforms->projectionMatrix.Set( projectionMatrix );
+
+		ImmediateRendering ir;
+		ir.glBegin( GL_QUADS );
+		for ( int d = 0; d < 3; d++ )
+			for ( int s = -1; s <= 1; s += 2) {
+				idVec3 axisN( 0.0f ), axisX( 0.0f ), axisY( 0.0f );
+				axisN[d] = s;
+				axisX[(d+1)%3] = s;
+				axisY[(d+2)%3] = 1;
+
+				idVec3 p;
+				p = axisN - axisX - axisY;
+				ir.glVertex3fv( &p.x );
+				p = axisN + axisX - axisY;
+				ir.glVertex3fv( &p.x );
+				p = axisN + axisX + axisY;
+				ir.glVertex3fv( &p.x );
+				p = axisN - axisX + axisY;
+				ir.glVertex3fv( &p.x );
+			}
+		ir.glEnd();
+	}
+	else {
+		// render screen-space 2D image
+		RB_SimpleScreenSetup();
+
+		ImmediateRendering ir;
+		ir.glColor3f(1, 1, 1);
+
+		ir.glBegin( GL_QUADS );
 	
-	ir.glTexCoord2f( 0, 1 );
-	ir.glVertex2f( 0.5 - w, 0 );
+		ir.glTexCoord2f( 0, 1 );
+		ir.glVertex2f( 0.5 - w, 0 );
 
-	ir.glTexCoord2f( 0, 0 );
-	ir.glVertex2f( 0.5 - w, h*2 );
+		ir.glTexCoord2f( 0, 0 );
+		ir.glVertex2f( 0.5 - w, h*2 );
 
-	ir.glTexCoord2f( 1, 0 );
-	ir.glVertex2f( 0.5 + w, h*2 );
+		ir.glTexCoord2f( 1, 0 );
+		ir.glVertex2f( 0.5 + w, h*2 );
 
-	ir.glTexCoord2f( 1, 1 );
-	ir.glVertex2f( 0.5 + w, 0 );
+		ir.glTexCoord2f( 1, 1 );
+		ir.glVertex2f( 0.5 + w, 0 );
 
-	ir.glEnd();
+		ir.glEnd();
+	}
+
+	programManager->oldStageShader->Activate();
 }
 
 /*

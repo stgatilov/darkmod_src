@@ -574,38 +574,6 @@ static void R_OverrideSurfaceMaterial_f( const idCmdArgs &args ) {
 
 /*
 =============
-R_TestImage_f
-
-Display the given image centered on the screen.
-testimage <number>
-testimage <filename>
-=============
-*/
-void R_TestImage_f( const idCmdArgs &args ) {
-	int imageNum;
-
-	if ( tr.testVideo ) {
-		delete tr.testVideo;
-		tr.testVideo = NULL;
-	}
-	tr.testImage = NULL;
-
-	if ( args.Argc() != 2 ) {
-		return;
-	}
-
-	if ( idStr::IsNumeric( args.Argv( 1 ) ) ) {
-		imageNum = atoi( args.Argv( 1 ) );
-		if ( imageNum >= 0 && imageNum < globalImages->images.Num() ) {
-			tr.testImage = globalImages->images[imageNum];
-		}
-	} else {
-		tr.testImage = globalImages->ImageFromFile( args.Argv( 1 ), TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-	}
-}
-
-/*
-=============
 TestVideoClean
 =============
 */
@@ -615,6 +583,55 @@ static void TestVideoClean() {
 		tr.testVideo = NULL;
 	}
 	tr.testImage = NULL;
+}
+
+/*
+=============
+R_TestImage_f
+
+Display the given image centered on the screen.
+testimage <filename>
+testimage cubemap <filename>
+testimage index <number>
+=============
+*/
+void R_TestImage_f( const idCmdArgs &args ) {
+	TestVideoClean();
+	tr.testImage = NULL;
+
+	bool cubemap = false;
+	const char *filename = nullptr;
+	int imageNum = -1;
+
+	if ( args.Argc() == 3 && !idStr::Icmp( args.Argv( 1 ), "cubemap" ) ) {
+		cubemap = true;
+		filename = args.Argv( 2 );
+	}
+	else if ( args.Argc() == 3 && !idStr::Icmp( args.Argv( 1 ), "index" ) && idStr::IsNumeric( args.Argv( 2 ) ) ) {
+		imageNum = atoi( args.Argv( 2 ) );
+		if ( !( imageNum >= 0 && imageNum < globalImages->images.Num() ) ) {
+			common->Printf("Image index out of range: %d not in [0..%d)\n", imageNum, globalImages->images.Num() );
+			return;
+		}
+	}
+	else if ( args.Argc() == 2 ) {
+		filename = args.Argv( 1 );
+	}
+	else {
+		common->Printf(
+			"Usage syntax (note: enclose image programs in doublequotes):\n"
+			"  testImage <imagename>\n"
+			"  testImage cubemap <imagename>\n"
+			"  testImage index <imageindex>\n"
+		);
+		return;
+	}
+
+	if ( filename ) {
+		tr.testImage = globalImages->ImageFromFile( filename, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT, cubemap ? CF_NATIVE : CF_2D );
+	} else {
+		tr.testImage = globalImages->images[imageNum];
+	}
 }
 
 /*

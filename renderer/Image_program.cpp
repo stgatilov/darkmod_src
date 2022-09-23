@@ -877,7 +877,7 @@ void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int 
 	if ( maxMax > 260.0f ) {
 		// note: I'm sure mapper should know about it, but I don't know how to report it properly...
 		common->Warning(
-			"bakeAmbient on %s: max color is (%0.0f %0.0f %0.0f) --- clamped to 255",
+			"%s: max color is (%0.0f %0.0f %0.0f) --- clamped to 255",
 			(name ? name : "[unknown]"), colorRange[1][0], colorRange[1][1], colorRange[1][2]
 		);
 	}

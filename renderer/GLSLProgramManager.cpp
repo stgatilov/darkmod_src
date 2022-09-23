@@ -274,5 +274,5 @@ void GLSLProgramManager::Init() {
 	toneMapShader = Load( "tonemap" );
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
 	volumetricLightShader = Load( "volumetric" );
+	testImageCubeShader = Load( "testImageCube" );
 }
-
