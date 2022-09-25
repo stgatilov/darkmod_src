@@ -212,6 +212,148 @@ void imageBlock_s::Purge() {
 	memset(this, 0, sizeof(imageBlock_s));
 }
 
+idVec4 imageBlock_s::Sample(float s, float t, textureFilter_t filter, textureRepeat_t repeat, int side) const {
+	assert(dword(side) < dword(sides));
+
+	auto GetPixelRepeat = [&](int is, int it) -> idVec4 {
+		bool inBounds = (dword(is) < dword(width) && dword(it) < dword(height));
+		if (!inBounds) {
+			assert(is >= -width && is < 2 * width && it >= -height && it < 2 * height);
+			if (repeat == TR_REPEAT) {
+				if (is < 0) is += width;
+				if (is >= width) is -= width;
+				if (it < 0) it += height;
+				if (it >= height) it -= height;
+			}
+			else if (repeat == TR_CLAMP) {
+				is = idMath::ClampInt(0, width - 1, is);
+				it = idMath::ClampInt(0, height - 1, it);
+			}
+			else if (repeat == TR_CLAMP_TO_ZERO)
+				return idVec4(0.0f, 0.0f, 0.0f, 1.0f);
+			else if (repeat == TR_CLAMP_TO_ZERO_ALPHA)
+				return idVec4(0.0f, 0.0f, 0.0f, 0.0f);
+			else assert(0);
+		}
+		return Fetch(is, it, side);
+	};
+
+	if (repeat == TR_REPEAT) {
+		s = s - (int(s) - (s < 0.0f));	// fast equivalent to fmodf(s, 1.0f);
+		t = t - (int(t) - (t < 0.0f));
+	}
+	// sanity clamp: at most half-size out of bounds
+	s = idMath::ClampFloat(-0.5f, 1.5f - idMath::FLT_EPS * 4.0f, s);
+	t = idMath::ClampFloat(-0.5f, 1.5f - idMath::FLT_EPS * 4.0f, t);
+	assert(width >= 2 && height >= 2);	// tiny textures not supported, sorry
+	// scale to texels
+	s *= width;
+	t *= height;
+
+	if (filter == TF_NEAREST) {
+		int is = int(s) - (s < 0.0f);	// fast floor
+		int it = int(t) - (t < 0.0f);	//
+		return GetPixelRepeat(is, it);
+	}
+	else if (filter == TF_LINEAR) {
+		s += 0.5f;
+		t += 0.5f;
+		int is = int(s) - (s < 0.0f);	// fast floor
+		int it = int(t) - (t < 0.0f);	//
+		float fs = s - is;
+		float ft = t - it;
+
+		idVec4 res(0.0f);
+		res += (1.0f - fs) * (1.0 - ft) * GetPixelRepeat(is - 1, it - 1);
+		res += (       fs) * (1.0 - ft) * GetPixelRepeat(is    , it - 1);
+		res += (1.0f - fs) * (      ft) * GetPixelRepeat(is - 1, it    );
+		res += (       fs) * (      ft) * GetPixelRepeat(is    , it    );
+		return res;
+	}
+	else {
+		assert(0);
+		return idVec4(0.0f);
+	}
+}
+
+const idVec3 cubeMapAxes[6][3] = {
+	{
+		idVec3(0, 0, -1),
+		idVec3(0, -1, 0),
+		idVec3(1, 0, 0)
+	},
+	{
+		idVec3(0, 0, 1),
+		idVec3(0, -1, 0),
+		idVec3(-1, 0, 0)
+	},
+	{
+		idVec3(1, 0, 0),
+		idVec3(0, 0, 1),
+		idVec3(0, 1, 0)
+	},
+	{
+		idVec3(1, 0, 0),
+		idVec3(0, 0, -1),
+		idVec3(0, -1, 0)
+	},
+	{
+		idVec3(1, 0, 0),
+		idVec3(0, -1, 0),
+		idVec3(0, 0, 1)
+	},
+	{
+		idVec3(-1, 0, 0),
+		idVec3(0, -1, 0),
+		idVec3(0, 0, -1)
+	}
+};
+
+idVec4 imageBlock_s::SampleCube(const idVec3 &dir, textureFilter_t filter) const {
+	idVec3 adir;
+	adir[0] = idMath::Fabs(dir[0]);
+	adir[1] = idMath::Fabs(dir[1]);
+	adir[2] = idMath::Fabs(dir[2]);
+
+	// select component with maximum absolute value
+	float amax = adir.Max();
+	int axis;
+	if (adir[0] == amax)
+		axis = 0;
+	else if (adir[1] == amax)
+		axis = 1;
+	else {
+		assert(adir[2] == amax);
+		axis = 2;
+	}
+	// look if direction along it is positive or negative
+	float localZ = dir[axis];
+	// compute face index
+	int face = axis * 2 + (localZ < 0.0f);
+	assert(cubeMapAxes[face][2][axis] == (localZ < 0.0f ? -1.0f : 1.0f));
+	assert((cubeMapAxes[face][2] * dir) == idMath::Fabs(localZ));
+
+	// compute texcoords on the chosen face
+	float invZ = 1.0f / idMath::Fabs(localZ);
+	float fx = (dir * cubeMapAxes[face][0]) * invZ;
+	float fy = (dir * cubeMapAxes[face][1]) * invZ;
+	fx = 0.5f * (fx + 1.0f);
+	fy = 0.5f * (fy + 1.0f);
+
+	return Sample(fx, fy, filter, TR_CLAMP, face);
+}
+
+/*
+===============
+idImage::Sample
+===============
+*/
+idVec4 idImage::Sample(float s, float t) const {
+	assert(residency & IR_CPU);
+	assert(!cpuData.IsCubemap());
+	return cpuData.Sample(s, t, filter, repeat, 0);
+}
+
 idImage::idImage() {
 	texnum = static_cast< GLuint >( TEXTURE_NOT_LOADED );
 	type = TT_DISABLED;

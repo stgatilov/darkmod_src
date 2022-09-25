@@ -850,6 +850,7 @@ public:
 
 					idVec4( void );
 					explicit idVec4( const float x, const float y, const float z, const float w );
+					explicit idVec4( const float v );
 					explicit idVec4( const idVec3 &xyz, const float w );
 
 	void 			Set( const float x, const float y, const float z, const float w );
@@ -906,6 +907,13 @@ ID_FORCE_INLINE idVec4::idVec4( const float x, const float y, const float z, con
 	this->y = y;
 	this->z = z;
 	this->w = w;
+}
+
+ID_FORCE_INLINE idVec4::idVec4( const float v ) {
+	this->x = v;
+	this->y = v;
+	this->z = v;
+	this->w = v;
 }
 
 ID_FORCE_INLINE idVec4::idVec4( const idVec3 &xyz, const float w ) {

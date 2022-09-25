@@ -152,13 +152,33 @@ typedef struct imageBlock_s {
 	int height;
 	int sides;			//six for cubemaps, one for the others
 
-	byte *GetPic(int side = 0) const { return pic[side]; }
-	bool IsValid() const { return pic[0] != nullptr; }
-	bool IsCubemap() const { return sides == 6; }
-	int GetSizeInBytes() const { return width * height * 4; }
+	ID_FORCE_INLINE byte *GetPic(int side = 0) const {
+		assert(dword(side) < dword(sides));
+		return pic[side];
+	}
+	ID_FORCE_INLINE bool IsValid() const { return pic[0] != nullptr; }
+	ID_FORCE_INLINE bool IsCubemap() const { return sides == 6; }
+	ID_FORCE_INLINE int GetSizeInBytes() const { return width * height * 4; }
 	int GetTotalSizeInBytes() const { return sides * GetSizeInBytes(); }
 	void Purge();
+
+	ID_FORCE_INLINE byte* FetchPtr(int s, int t, int side = 0) const {
+		assert(dword(side) < dword(sides) && dword(s) < dword(width) && dword(t) < dword(height));
+		return &pic[side][4 * (t * width + s)];
+	}
+	ID_FORCE_INLINE idVec4 Fetch(int s, int t, int side = 0) const {
+		const byte *p = FetchPtr(s, t, side);
+		return idVec4(p[0], p[1], p[2], p[3]) * (1.0f / 255.0f);
+	}
+	idVec4 Sample(float s, float t, textureFilter_t filter, textureRepeat_t repeat, int side = 0) const;
+	idVec4 SampleCube(const idVec3 &dir, textureFilter_t filter) const;
 } imageBlock_t;
+
+// stgatilov: cubeMapAxes[f] --- coordinate system of f-th face of cubemap
+// [2]-th axis is major axis, [0] and [1] are directions of U and V texcoords growth
+// perfectly matches OpenGL specs (CF_NATIVE layout) 
+extern const idVec3 cubeMapAxes[6][3];
+
 
 // stgatilov: represents compressed texture as contents of DDS file
 typedef struct imageCompressedData_s {
@@ -227,6 +247,10 @@ public:
 	void		Reload( bool checkPrecompressed, bool force );
 
 	void		AddReference()				{ refCount++; };
+
+	void		MakeCpuResident();
+
+	idVec4		Sample(float s, float t) const;
 
 	//==========================================================
 

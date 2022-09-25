@@ -638,87 +638,19 @@ CUBE MAPS
 ===================================================================
 */
 
-
-static idMat3 cubeAxis[6];
-
-void InitCubeAxis() {
-	if ( cubeAxis[0][0][0] == 1 ) {
-		return;
-	}
-	cubeAxis[0][0][0] = 1;
-	cubeAxis[0][1][2] = -1;
-	cubeAxis[0][2][1] = -1;
-
-	cubeAxis[1][0][0] = -1;
-	cubeAxis[1][1][2] = 1;
-	cubeAxis[1][2][1] = -1;
-
-	cubeAxis[2][0][1] = 1;
-	cubeAxis[2][1][0] = 1;
-	cubeAxis[2][2][2] = 1;
-
-	cubeAxis[3][0][1] = -1;
-	cubeAxis[3][1][0] = 1;
-	cubeAxis[3][2][2] = -1;
-
-	cubeAxis[4][0][2] = 1;
-	cubeAxis[4][1][0] = 1;
-	cubeAxis[4][2][1] = -1;
-
-	cubeAxis[5][0][2] = -1;
-	cubeAxis[5][1][0] = -1;
-	cubeAxis[5][2][1] = -1;
-}
-
-/*
-==================
-R_SampleCubeMap
-==================
-*/
-void R_SampleCubeMap( const idVec3 &dir, int size, byte *buffers[6], byte result[4] ) {
-	idVec3 adir;
-	adir[0] = idMath::Fabs( dir[0] );
-	adir[1] = idMath::Fabs( dir[1] );
-	adir[2] = idMath::Fabs( dir[2] );
-
-	// select component with maximum absolute value
-	float amax = adir.Max();
-	int axis;
-	if ( adir[0] == amax )
-		axis = 0;
-	else if ( adir[1] == amax )
-		axis = 1;
-	else
-		axis = 2;
-	// look if direction aong it is positive or negative
-	float localZ = dir[axis];
-	axis = axis * 2 + ( localZ < 0.0f );
-
-	// compute texcoords on the chosen face
-	float invZ = idMath::InvSqrt( idMath::Fabs( localZ ) );
-	float fx = ( dir * cubeAxis[axis][1] ) * invZ;
-	float fy = ( dir * cubeAxis[axis][2] ) * invZ;
-	fx = 0.5f * ( fx + 1.0f );
-	fy = 0.5f * ( fy + 1.0f );
-
-	// convert to texels
-	int x = int( size * fx );
-	int y = int( size * fy );
-	x = idMath::ClampInt( 0, size - 1, x );
-	y = idMath::ClampInt( 0, size - 1, y );
-
-	memcpy( result, &buffers[axis][( y * size + x ) * 4], 4 );
-}
-
 /*
 =======================
 R_MakeAmbientMap
 =======================
 */
 void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
-	InitCubeAxis();
-
 	TRACE_CPU_SCOPE( "R_MakeAmbientMap" )
+
+	// set up cubemap sampler for source image
+	imageBlock_t srcImage;
+	srcImage.sides = 6;
+	srcImage.width = srcImage.height = param.size;
+	memcpy(srcImage.pic, param.buffers, 6 * sizeof(byte*));
 
 	// For each axis direction (surface normal for diffuse, reflected direction for specular),
 	// we compute 2D integral over spherical coordinates:
@@ -762,9 +694,9 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 			float ratioY = ( y + 0.5f ) / param.outSize;
 			// axis direction precomputed in this cubemap texel
 			idVec3 axisZ = (
-				cubeAxis[param.side][0] + 
-				cubeAxis[param.side][1] * ( 2.0f * ratioX - 1.0f ) +
-				cubeAxis[param.side][2] * ( 2.0f * ratioY - 1.0f )
+				cubeMapAxes[param.side][2] + 
+				cubeMapAxes[param.side][0] * ( 2.0f * ratioX - 1.0f ) +
+				cubeMapAxes[param.side][1] * ( 2.0f * ratioY - 1.0f )
 			);
 			axisZ.Normalize();
 
@@ -789,8 +721,7 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 					);
 
 					// fetch light at sample direction
-					byte result[4];
-					R_SampleCubeMap( testDir, param.size, param.buffers, result );
+					idVec4 result = srcImage.SampleCube( testDir, TF_LINEAR );
 
 					// accumulate integral
 					float pwr = cosAlp;
@@ -813,6 +744,8 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 			//   2. artist-controlled multiplier
 			// ideally, one should remember about 2/5 normalization when consuming the texture
 			result *= ( param.cosPower + 1.0f ) * param.multiplier;
+			// back to [0..255] range
+			result *= 255.0f;
 
 			// collect stats about highest levels
 			colorRange.AddPoint( result );
