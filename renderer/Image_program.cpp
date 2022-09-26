@@ -670,26 +670,45 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 	int resAlp = int( idMath::Sqrt( samples ) * 0.5f );
 	int resPhi = int( idMath::Sqrt( samples ) * 2.0f );
 
-	// precompute sin/cos of angles for better performance
-	idList<idVec2> alpCosSin, phiCosSin;
-	alpCosSin.SetNum(resAlp);
-	for ( int segAlp = 0; segAlp < resAlp; segAlp++ ) {
-		float alp = ( segAlp + 0.5f ) * ( idMath::HALF_PI / resAlp );
-		idMath::SinCos( alp, alpCosSin[segAlp].y, alpCosSin[segAlp].x );
-	}
-	phiCosSin.SetNum(resPhi);
-	for ( int segPhi = 0; segPhi < resPhi; segPhi++ ) {
-		float phi = ( segPhi + 0.5f ) * ( idMath::TWO_PI / resPhi );
-		idMath::SinCos( phi, phiCosSin[segPhi].y, phiCosSin[segPhi].x );
-	}
 	// dAlpha dPhi / Q
 	const float dAlpPhiQ = ( idMath::HALF_PI / resAlp / resPhi );
+
+	// I experimented with box filter postprocessing
+	// but in the end decided to not use it
+	static const int MARGIN = 0;
+	idList<idVec3> rawPixels;
+	int rawSize = param.outSize + 2 * MARGIN;
+	rawPixels.SetNum(rawSize * rawSize);
+
+	// 4x4 Bayer matrix for dithering
+	static const int BAYER_SIZE = 4;
+	static const int BAYER_QUOT = 16;
+	static const float BAYER_SCALE = 1.0f / BAYER_QUOT;
+	static const int BAYER_MATRIX[BAYER_SIZE][BAYER_SIZE] = {
+		{0, 8, 2, 10},
+		{12, 4, 14, 6},
+		{3, 11, 1, 9},
+		{15, 7, 13, 5}
+	};
+
+	// precompute sin/cos of angles for better performance
+	idList<idVec2> alpCosSin, phiCosSin;
+	alpCosSin.SetNum(resAlp * BAYER_QUOT);
+	for ( int segAlp = 0; segAlp < alpCosSin.Num(); segAlp++ ) {
+		float alp = ( segAlp + 0.5f ) * ( idMath::HALF_PI / alpCosSin.Num() );
+		idMath::SinCos( alp, alpCosSin[segAlp].y, alpCosSin[segAlp].x );
+	}
+	phiCosSin.SetNum(resPhi * BAYER_QUOT);
+	for ( int segPhi = 0; segPhi < phiCosSin.Num(); segPhi++ ) {
+		float phi = ( segPhi + 0.5f ) * ( idMath::TWO_PI / phiCosSin.Num() );
+		idMath::SinCos( phi, phiCosSin[segPhi].y, phiCosSin[segPhi].x );
+	}
 
 	idBounds colorRange;
 	colorRange.Clear();
 
-	for ( int y = 0; y < param.outSize; y++ ) {
-		for ( int x = 0; x < param.outSize; x++ ) {
+	for ( int y = -MARGIN; y < param.outSize + MARGIN; y++ ) {
+		for ( int x = -MARGIN; x < param.outSize + MARGIN; x++ ) {
 			float ratioX = ( x + 0.5f ) / param.outSize;
 			float ratioY = ( y + 0.5f ) / param.outSize;
 			// axis direction precomputed in this cubemap texel
@@ -709,11 +728,26 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 
 			for ( int segAlp = 0; segAlp < resAlp; segAlp++ ) {
 				for ( int segPhi = 0; segPhi < resPhi; segPhi++ ) {
+#if 0
+					// slow way of evaluating angles
+					float ditherAlp = BAYER_MATRIX[segAlp & 3][segPhi & 3] * BAYER_SCALE;
+					float ditherPhi = BAYER_MATRIX[segPhi & 3][segAlp & 3] * BAYER_SCALE;
+					float alp = ( segAlp + ditherAlp ) / resAlp * idMath::HALF_PI;
+					float phi = ( segPhi + ditherPhi ) / resPhi * idMath::TWO_PI;
+					float cosAlp, sinAlp;
+					float cosPhi, sinPhi;
+					idMath::SinCos( alp, sinAlp, cosAlp );
+					idMath::SinCos( phi, sinPhi, cosPhi );
+#else
+					// fast equivalent: use precomputed cos/sin
+					int idxAlp = segAlp * BAYER_QUOT + BAYER_MATRIX[segAlp & 3][segPhi & 3];
+					int idxPhi = segPhi * BAYER_QUOT + BAYER_MATRIX[segPhi & 3][segAlp & 3];
+					float cosAlp = alpCosSin[idxAlp].x;
+					float sinAlp = alpCosSin[idxAlp].y;
+					float cosPhi = phiCosSin[idxPhi].x;
+					float sinPhi = phiCosSin[idxPhi].y;
+#endif
 					// convert to direction in world system
-					float cosAlp = alpCosSin[segAlp].x;
-					float sinAlp = alpCosSin[segAlp].y;
-					float cosPhi = phiCosSin[segPhi].x;
-					float sinPhi = phiCosSin[segPhi].y;
 					idVec3 testDir = (
 						axisZ * cosAlp + 
 						axisX * (sinAlp * cosPhi) + 
@@ -744,20 +778,29 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 			//   2. artist-controlled multiplier
 			// ideally, one should remember about 2/5 normalization when consuming the texture
 			result *= ( param.cosPower + 1.0f ) * param.multiplier;
-			// back to [0..255] range
-			result *= 255.0f;
-
-			// collect stats about highest levels
-			colorRange.AddPoint( result );
 
 			// store result in image
-			byte *pixel = param.outBuffer + ( y * param.outSize + x ) * 4;
-			pixel[0] = idMath::ClampInt( 0, 255, int( result[0] ) );
-			pixel[1] = idMath::ClampInt( 0, 255, int( result[1] ) );
-			pixel[2] = idMath::ClampInt( 0, 255, int( result[2] ) );
-			pixel[3] = 255;
+			idVec3 &pixel = rawPixels[ (y + MARGIN) * rawSize + (x + MARGIN) ];
+			pixel = result;
 		}
 	}
+
+	// copy results into output
+	for ( int y = 0; y < param.outSize; y++ )
+		for ( int x = 0; x < param.outSize; x++ ) {
+			byte *dstPixel = param.outBuffer + ( y * param.outSize + x ) * 4;
+			idVec3 srcPixel = rawPixels[ (y + MARGIN) * rawSize + (x + MARGIN) ];
+
+			// back to [0..255] range
+			srcPixel *= 255.0f;
+			// collect stats about highest levels
+			colorRange.AddPoint( srcPixel );
+
+			dstPixel[0] = idMath::ClampInt( 0, 255, int( srcPixel[0] ) );
+			dstPixel[1] = idMath::ClampInt( 0, 255, int( srcPixel[1] ) );
+			dstPixel[2] = idMath::ClampInt( 0, 255, int( srcPixel[2] ) );
+			dstPixel[3] = 255;
+		}
 
 	// update external bounds (note: guard by mutex!)
 	static idSysMutex colorRangeUpdateMutex;
