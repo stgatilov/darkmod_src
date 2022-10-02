@@ -278,13 +278,16 @@ void idGuiModel::EmitFullScreen( void ) {
 	// add the surfaces to this view
 	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
 		auto surface = &surfaces[i];
-		EmitSurface( surface, viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false );
+		bool skipXraySurface = false;
 		for ( int j = 0; j < surface->material->GetNumStages(); j++ ) {
 			auto stage = surface->material->GetStage( j );
 			if ( stage->texture.dynamic == DI_XRAY_RENDER ) {
 				hasXrayStage = &stage->texture;
+				skipXraySurface = stage->texture.dynamicFrameCount < tr.frameCount;
 			}
 		}
+		if ( skipXraySurface ) continue;
+		EmitSurface( surface, viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false );
 	}
 	tr.viewDef = oldViewDef;
 
