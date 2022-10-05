@@ -665,6 +665,8 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 	//   Q = integral( dS ) = integral( sin(alpha) dAlpha dPhi ) = 2 pi
 	// 
 	// Note that if color == 1, then the average = 1 / (s + 1)
+	// That's maximum that we can achieve with light density limit = 1.
+	// To achieve maximum value = 1, we need to concentrate all light at a single point (aka delta function image)
 
 	int samples = idMath::Imax( param.samples, 16 );
 	int resAlp = int( idMath::Sqrt( samples ) * 0.5f );
@@ -773,11 +775,8 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 			// it's what we'll get for color == 1 constant environment
 
 			idVec3 result( totalColor[0], totalColor[1], totalColor[2] );
-			// now that we have average irradiance, we multiply it by:
-			//   1. (s + 1) --- in order to normalize output to range [0..1]
-			//   2. artist-controlled multiplier
-			// ideally, one should remember about 2/5 normalization when consuming the texture
-			result *= ( param.cosPower + 1.0f ) * param.multiplier;
+			// now that we have average irradiance, we multiply it by artist-controlled multiplier
+			result *= param.multiplier;
 
 			// store result in image
 			idVec3 &pixel = rawPixels[ (y + MARGIN) * rawSize + (x + MARGIN) ];
