@@ -54,7 +54,8 @@ namespace {
 		DEFINE_UNIFORM( sampler, lightProjectionTexture )
 		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
 		DEFINE_UNIFORM( sampler, lightFalloffTexture )
-		DEFINE_UNIFORM( int, useNormalIndexed )
+		DEFINE_UNIFORM( int, useNormalIndexedDiffuse )
+		DEFINE_UNIFORM( int, useNormalIndexedSpecular )
 		DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
 		DEFINE_UNIFORM( sampler, lightSpecularCubemap )
 		DEFINE_UNIFORM( sampler, ssaoTexture )
@@ -192,25 +193,29 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		return a->material < b->material;
 	} );
 
-	if ( vLight->lightShader->UseNormalIndexedAmbient() ) {
+	if ( vLight->lightShader->IsAmbientLight() ) {
 		// stgatilov #6090: ambient lights can have cubemaps indexed by surface normal
 		// separately for diffuse and specular
-		uniforms->useNormalIndexed.Set( true );
 
-		GL_SelectTexture( TU_LIGHT_DIFFUSE_CUBE );
 		idImage *cubemap = vLight->lightShader->LightAmbientDiffuse();
-		if (!cubemap)
-			cubemap = globalImages->blackCubeMapImage;
-		cubemap->Bind();
+		if ( cubemap ) {
+			uniforms->useNormalIndexedDiffuse.Set( true );
+			GL_SelectTexture( TU_LIGHT_DIFFUSE_CUBE );
+			cubemap->Bind();
+		}
+		else {
+			uniforms->useNormalIndexedDiffuse.Set( false );
+		}
 
-		GL_SelectTexture( TU_LIGHT_SPECULAR_CUBE );
 		cubemap = vLight->lightShader->LightAmbientSpecular();
-		if (!cubemap)
-			cubemap = globalImages->blackCubeMapImage;
-		cubemap->Bind();
-	}
-	else {
-		uniforms->useNormalIndexed.Set( false );
+		if ( cubemap ) {
+			uniforms->useNormalIndexedSpecular.Set( true );
+			GL_SelectTexture( TU_LIGHT_SPECULAR_CUBE );
+			cubemap->Bind();
+		}
+		else {
+			uniforms->useNormalIndexedSpecular.Set( false );
+		}
 	}
 
 	GL_SelectTexture( TU_LIGHT_FALLOFF );

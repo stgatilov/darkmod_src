@@ -561,12 +561,10 @@ void CreatePitFogImage( void ) {
 	R_WriteTGA( "shapes/pitFalloff.tga", data[0][0], 16, 16 );
 }
 
-static void makeConstCubeMap( idImage *image, const byte value[4] ) {
-	float vector[3] = { };
-	byte	*pixels[6];
-
+static void R_MakeConstCubeMap( idImage *image, const byte value[4] ) {
 	static const int size = 16;
 
+	byte *pixels[6];
 	pixels[0] = ( GLubyte * ) Mem_Alloc( size * size * 4 * 6 );
 	for ( int i = 0; i < 6; i++ ) {
 		pixels[i] = pixels[0] + i * size * size * 4;
@@ -582,13 +580,62 @@ static void makeConstCubeMap( idImage *image, const byte value[4] ) {
 
 	Mem_Free( pixels[0] );
 }
-static void makeWhiteCubeMap( idImage *image ) {
+static void R_MakeWhiteCubeMap( idImage *image ) {
 	static const byte WHITE[4] = {255, 255, 255, 255};
-	return makeConstCubeMap( image, WHITE );
+	return R_MakeConstCubeMap( image, WHITE );
 }
-static void makeBlackCubeMap( idImage *image ) {
+static void R_MakeBlackCubeMap( idImage *image ) {
 	static const byte BLACK[4] = {0, 0, 0, 0};
-	return makeConstCubeMap( image, BLACK );
+	return R_MakeConstCubeMap( image, BLACK );
+}
+
+static void R_CosPowerCubeMap( idImage *image, idVec3 axis, int power, float scale, idVec3 add ) {
+	static const int size = 32;
+
+	byte *pixels[6];
+	pixels[0] = ( GLubyte * ) Mem_Alloc( size * size * 4 * 6 );
+	for ( int f = 0; f < 6; f++ ) {
+		pixels[f] = pixels[0] + f * size * size * 4;
+		for ( int y = 0; y < size; y++ ) {
+			for ( int x = 0; x < size; x++ ) {
+				float ratioX = ( x + 0.5f ) / size;
+				float ratioY = ( y + 0.5f ) / size;
+				// direction to center of texel
+				idVec3 dir = (
+					cubeMapAxes[f][2] + 
+					cubeMapAxes[f][0] * ( 2.0f * ratioX - 1.0f ) +
+					cubeMapAxes[f][1] * ( 2.0f * ratioY - 1.0f )
+				);
+				dir.Normalize();
+
+				float cosA = idMath::Fmax(axis * dir, 0.0f);
+				float cosPwr = cosA;
+				for (int q = 1; q < power; q++)
+					cosPwr *= cosA;
+
+				idVec3 light = idVec3(cosPwr) * scale + add;
+
+				int p = (y * size + x);
+				pixels[f][4 * p + 0] = int(idMath::ClampFloat(0.0f, 1.0f, light[0]) * 255.0f + 0.5f);
+				pixels[f][4 * p + 1] = int(idMath::ClampFloat(0.0f, 1.0f, light[1]) * 255.0f + 0.5f);
+				pixels[f][4 * p + 2] = int(idMath::ClampFloat(0.0f, 1.0f, light[2]) * 255.0f + 0.5f);
+				pixels[f][4 * p + 3] = 255;
+			}
+		}
+	}
+
+	image->GenerateCubeImage( ( const byte ** )pixels, size, TF_LINEAR, false, TD_HIGH_QUALITY );
+
+	Mem_Free( pixels[0] );
+}
+
+static void R_AmbientWorldDiffuseCubeMap( idImage *image ) {
+	// mix diffuse and ambient in 1:1 proportion
+	R_CosPowerCubeMap( image, idVec3(0, 0, 1), 1, 0.5f, idVec3(0.5f) );
+}
+static void R_AmbientWorldSpecularCubeMap( idImage *image ) {
+	// take 50% of pure specular
+	R_CosPowerCubeMap( image, idVec3(0, 0, 1), 4, 0.5f, idVec3(0.0f) );
 }
 
 
@@ -1634,8 +1681,6 @@ void idImageManager::Init() {
 	defaultImage = ImageFromFunction( "_default", R_DefaultImage );
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage );
 	blackImage = ImageFromFunction( "_black", R_BlackImage );
-	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", makeWhiteCubeMap );
-	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", makeBlackCubeMap );
 
 	//borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );
@@ -1668,6 +1713,11 @@ void idImageManager::Init() {
 	shadowAtlas = ImageFromFunction( "_shadowAtlas", R_DepthTexture );
 	//shadowAtlasHistory = ImageFromFunction( "_shadowAtlasHistory", R_DepthTexture );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
+
+	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap );
+	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap );
+	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap );
+	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap );
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );

@@ -175,7 +175,7 @@ vec4 computeAmbientInteraction(
 	sampler2D specularTexture, vec3 specularParamColor, vec2 specularTexCoord,
 	vec3 vertexColor,
 	// light properties
-	bool useNormalIndexed, samplerCube normalIndexedDiffuse, samplerCube normalIndexedSpecular,
+	bool useNormalIndexedDiffuse, bool useNormalIndexedSpecular, samplerCube normalIndexedDiffuse, samplerCube normalIndexedSpecular,
 	// ambient hack for general brightness
 	float ambientMinLevel, float ambientGamma
 ) {
@@ -183,19 +183,10 @@ vec4 computeAmbientInteraction(
 	vec4 diffuseTexColor = texture(diffuseTexture, diffuseTexCoord);
 	vec3 specularTexColor = texture(specularTexture, specularTexCoord).rgb;
 
-	// somewhat hacky ambient where most of light comes from above
-	vec3 worldL = vec3(0, 0, 1);
-
 	// diffuse term
-	vec3 diffuseTerm;
-	if (useNormalIndexed) {
+	vec3 diffuseTerm = vec3(1);
+	if (useNormalIndexedDiffuse)
 		diffuseTerm = texture(normalIndexedDiffuse, props.worldN).rgb;
-	}
-	else {
-		// TODO: remove direction-dependent hack after SSAO takes bumpmaps into account
-		float NdotL = dot(props.worldN, worldL);
-		diffuseTerm = vec3(mix(1.0, max(NdotL, 0), 0.5));
-	}
 	diffuseTerm *= diffuseParamColor;
 
 	// tweaking brightness by messing with ambient
@@ -203,16 +194,9 @@ vec4 computeAmbientInteraction(
 		diffuseTerm = mix(diffuseTerm, vec3(1), ambientMinLevel);
 
 	// specular term
-	vec3 specularTerm;
-	if (useNormalIndexed) {
+	vec3 specularTerm = vec3(0);
+	if (useNormalIndexedSpecular)
 		specularTerm = texture(normalIndexedSpecular, props.worldR).rgb;
-	}
-	else {
-		// TODO: remove direction-dependent hack after SSAO takes bumpmaps into account
-		float spec = max(dot(props.worldR, worldL), 0);
-		float specPow = clamp(spec * spec, 0.0, 1.1);
-		specularTerm = vec3(spec * specPow * specPow);
-	}
 	specularTerm *= specularParamColor;
 
 	vec3 surfaceTerm = (diffuseTerm * diffuseTexColor.rgb + specularTerm * specularTexColor) * vertexColor;

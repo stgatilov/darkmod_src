@@ -488,7 +488,6 @@ public:
 	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
 
 						// stgatilov #6090: for ambient light which depends on incoming direction
-	bool				UseNormalIndexedAmbient() const { return ambientLight && ( lightAmbientDiffuse || lightAmbientSpecular ); }
 	idImage	*			LightAmbientDiffuse() const { return lightAmbientDiffuse; }
 	idImage	*			LightAmbientSpecular() const { return lightAmbientSpecular; }
 

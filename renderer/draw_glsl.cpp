@@ -810,17 +810,37 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 	}
 
 	if( ambient ) {
+		viewLight_t *vLight = backEnd.vLight;
 		minLevel.Set( backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
 		gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
-		if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-			lightDiffuseCubemap.Set( 8 );
-			lightSpecularCubemap.Set( 9 );
-		} else {
-			lightDiffuseCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
-			lightSpecularCubemap.Set( MAX_MULTITEXTURE_UNITS + 1 );
-		}
+
 		ssaoTexture.Set( 6 );
 		ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() );
+
+		// stgatilov #6090: ambient lights can have cubemaps indexed by surface normal
+		// separately for diffuse and specular
+		idImage *cubemap = vLight->lightShader->LightAmbientDiffuse();
+		if ( cubemap ) {
+			useNormalIndexedDiffuse.Set( true );
+			lightDiffuseCubemap.Set( 8 );
+			GL_SelectTexture( 8 );
+			cubemap->Bind();
+		}
+		else {
+			useNormalIndexedDiffuse.Set( false );
+		}
+
+		cubemap = vLight->lightShader->LightAmbientSpecular();
+		if ( cubemap ) {
+			useNormalIndexedSpecular.Set( true );
+			lightSpecularCubemap.Set( 9 );
+			GL_SelectTexture( 9 );
+			cubemap->Bind();
+		}
+		else {
+			useNormalIndexedSpecular.Set( false );
+		}
+
 		return;
 	}
 

@@ -114,6 +114,8 @@ namespace Uniforms {
 		DEFINE_UNIFORM( sampler, lightProjectionTexture )
 		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
 		DEFINE_UNIFORM( sampler, lightFalloffTexture )
+		DEFINE_UNIFORM( int, useNormalIndexedDiffuse )
+		DEFINE_UNIFORM( int, useNormalIndexedSpecular )
 		DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
 		DEFINE_UNIFORM( sampler, lightSpecularCubemap )
 
