@@ -708,6 +708,7 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 
 	idBounds colorRange;
 	colorRange.Clear();
+	idRandom rnd;
 
 	for ( int y = -MARGIN; y < param.outSize + MARGIN; y++ ) {
 		for ( int x = -MARGIN; x < param.outSize + MARGIN; x++ ) {
@@ -723,7 +724,14 @@ void R_MakeAmbientMap( const MakeAmbientMapParam &param ) {
 
 			// we need local coordinate system
 			idVec3 axisX, axisY;
-			axisZ.NormalVectors( axisX, axisY );
+			do {
+				axisX.x = rnd.CRandomFloat();
+				axisX.y = rnd.CRandomFloat();
+				axisX.z = rnd.CRandomFloat();
+				axisX = axisX - (axisZ * axisX) * axisZ;
+			} while (axisX.Length() < 0.5f);
+			axisX.Normalize();
+			axisY = axisZ.Cross(axisX);
 
 			idVec3 totalColor = idVec3( 0.0f );
 			float totalCoeff = 0.0f;
@@ -874,13 +882,24 @@ void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, c
 	// note: should match specular power of NdotR in Phong shader
 	int cosPower = ( specular ? 4 : 1 );
 
+	int inSize = *size;
+	while ( inSize > idMath::Imax( outSize + 4, outSize * 3/2 ) ) {
+		// downscale input cubemap to the resolution of output cubemap
+		for ( int f = 0; f < 6; f++ ) {
+			byte *newPic = R_MipMap( pics[f], inSize, inSize );
+			R_StaticFree(pics[f]);
+			pics[f] = newPic;
+		}
+		inSize >>= 1;
+	}
+
 	byte *outPics[6] = { nullptr };
 	// assume cubemaps are RGBA
 	for ( int side = 0; side < 6; side++ ) {
 		outPics[side] = ( byte * )R_StaticAlloc( 4 * outSize * outSize );
 	}
 
-	R_MakeAmbientMaps( pics, outPics, outSize, 256, *size, multiplier, cosPower, name );
+	R_MakeAmbientMaps( pics, outPics, outSize, 256, inSize, multiplier, cosPower, name );
 
 	for ( int side = 0; side < 6; side++ ) {
 		R_StaticFree( pics[side] );
