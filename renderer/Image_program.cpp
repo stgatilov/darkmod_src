@@ -638,6 +638,18 @@ CUBE MAPS
 ===================================================================
 */
 
+struct MakeAmbientMapParam {
+	byte **buffers;
+	byte *outBuffer;
+	int outSize;
+	int samples;
+	int size;
+	float multiplier;
+	int cosPower;
+	int side;
+	idBounds *colorRange = nullptr;
+};
+
 /*
 =======================
 R_MakeAmbientMap
@@ -870,7 +882,7 @@ void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int 
 
 /*
 =======================
-R_BakeAmbientDiffuse
+R_BakeAmbient
 =======================
 */
 void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, const char *name ) {

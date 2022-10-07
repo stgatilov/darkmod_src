@@ -96,18 +96,6 @@ typedef struct {
 	unsigned int dwReserved2[3];
 } ddsFileHeader_t;
 
-struct MakeAmbientMapParam {
-	byte **buffers;
-	byte *outBuffer;
-	int outSize;
-	int samples;
-	int size;
-	float multiplier;
-	int cosPower;
-	int side;
-	idBounds *colorRange = nullptr;
-};
-
 // increasing numeric values imply more information is stored
 typedef enum {
 	TD_SPECULAR,			// may be compressed, and always zeros the alpha channel
@@ -482,11 +470,14 @@ IMAGEFILES
 ====================================================================
 */
 
+extern const char *cubemapFaceNamesCamera[6];
+extern const char *cubemapFaceNamesNative[6];
+
 void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp );
 void R_LoadCompressedImage( const char *name, imageCompressedData_t **pic, ID_TIME_T *timestamp );
 // pic is in top to bottom raster format
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
-void R_MakeAmbientMap( const MakeAmbientMapParam &param );
+void R_BakeAmbient( byte *pics[6], int *size, float multiplier, bool specular, const char *name );
 void R_LoadImageData( idImage &image );
 void R_RGBA8Image( idImage* image );
 

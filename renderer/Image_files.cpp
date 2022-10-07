@@ -1617,8 +1617,8 @@ R_LoadCubeImages
 Loads six files with proper extensions
 =======================
 */
-const static char *cameraSides[6] = { "_forward.tga", "_back.tga", "_left.tga", "_right.tga", "_up.tga", "_down.tga" };
-const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+const char *cubemapFaceNamesCamera[6] = { "_forward.tga", "_back.tga", "_left.tga", "_right.tga", "_up.tga", "_down.tga" };
+const char *cubemapFaceNamesNative[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 
 bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6], int *outSize, ID_TIME_T *timestamp ) {
 	int			i, j;
@@ -1627,9 +1627,9 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 	int			width, height, size = 0;
 
 	if ( extensions == CF_CAMERA ) {
-		sides = cameraSides;
+		sides = cubemapFaceNamesCamera;
 	} else {
-		sides = cubeExtensions;
+		sides = cubemapFaceNamesNative;
 	}
 
 	if ( pics ) {

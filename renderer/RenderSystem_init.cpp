@@ -1198,8 +1198,6 @@ envshotGL <basename>
 (OpenGL orientation) Saves out env/<basename>_ft.tga, etc
 ==================
 */
-const static char *GLcubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
-
 void R_EnvShotGL_f( const idCmdArgs &args ) {
 	idStr		fullname;
 	const char	*baseName;
@@ -1261,7 +1259,7 @@ void R_EnvShotGL_f( const idCmdArgs &args ) {
 		ref.width = SCREEN_WIDTH;// glConfig.vidWidth;
 		ref.height = SCREEN_HEIGHT; //glConfig.vidHeight;
 		ref.viewaxis = axis[i];
-		sprintf( fullname, "env/%s%s", baseName, GLcubeExtensions[i] );
+		sprintf( fullname, "env/%s%s", baseName, cubemapFaceNamesNative[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
 	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
@@ -1278,8 +1276,6 @@ envshot <basename>
 Saves out env/<basename>_ft.tga, etc
 ==================
 */
-const static char *cubeExtensions[6] = { "_forward.tga", "_left.tga", "_right.tga", "_back.tga", "_down.tga", "_up.tga" }; // names changed for TDM in #4041
-
 void R_EnvShot_f( const idCmdArgs &args ) {
 	idStr fullname;
 	const char *baseName;
@@ -1351,7 +1347,7 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		if ( playerView ) {
 			ref.viewaxis = /*axis[1] **/ ref.viewaxis * gameLocal.GetLocalPlayer()->renderView->viewaxis;
 		}
-		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
+		sprintf( fullname, "env/%s%s", baseName, cubemapFaceNamesCamera[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
 	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
@@ -1363,86 +1359,53 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 /*
 ==================
 R_MakeAmbientMap_f
-
-R_MakeAmbientMap_f <basename> [size]
-
-Saves out env/<basename>_amb_ft.tga, etc
 ==================
 */
 void R_MakeAmbientMap_f( const idCmdArgs &args ) {
-	MakeAmbientMapParam param;
-	idStr		fullname;
-	const char	*baseName;
-
-	if ( args.Argc() < 2 || args.Argc() > 6 ) {
-		common->Printf( "USAGE: MakeAmbientMap <basename> [size [sample_count [multiplier [specular?]]]]\n" );
+	if ( args.Argc() < 2 ) {
+		common->Printf( "USAGE: makeAmbientMap <basename> (multiplier)\n" );
 		return;
 	}
-	baseName = args.Argv( 1 );
+	const char *baseName = args.Argv(1);
 
-	byte* facepalm[6];
-	param.buffers = facepalm;
-
-	param.outSize = 32;
-	if ( args.Argc() > 2 ) {
-		param.outSize = atoi( args.Argv( 2 ) );
-	}
-	param.samples = 1000;
-	if ( args.Argc() > 3 ) {
-		param.samples = atoi( args.Argv( 3 ) );
-	}
-	param.multiplier = 1;
-	if ( args.Argc() > 4 ) {
-		param.multiplier = atof( args.Argv( 4 ) );
-	}
-	int	specular = 1;
-	if ( args.Argc() > 5 ) {
-		specular = atoi( args.Argv( 5 ) );
+	float multiplier = 1.0f;
+	if ( args.Argc() >= 3 ) {
+		sscanf( args.Argv(2), "%f", &multiplier);
 	}
 
-	// read all of the images
-	for ( int i = 0 ; i < 6 ; i++ ) {
-		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
-		common->Printf( "loading %s\n", fullname.c_str() );
-		session->UpdateScreen();
-		R_LoadImage( fullname, &param.buffers[i], &param.size, &param.size, NULL );
-		if ( !param.buffers[i] ) {
-			common->Printf( "failed.\n" );
-			for ( i-- ; i >= 0 ; i-- ) {
-				Mem_Free( param.buffers[i] );
-			}
-			return;
-		}
+	byte *picDiffuse[6] = {nullptr};
+	int size = 0;
+	idStr paddedBasename = idStr("env/") + baseName;
+	if ( !R_LoadCubeImages( paddedBasename.c_str(), CF_CAMERA, picDiffuse, &size, nullptr ) ) {
+		common->Printf( "Failed to load cubemap %s\n", baseName );
+		return;
 	}
-	param.outBuffer = ( byte* )R_StaticAlloc( 4 * param.outSize * param.outSize );
 
+	// clone cubemap, since R_BakeAmbient destroys input
+	byte *picSpecular[6] = {nullptr};
+	for ( int f = 0; f < 6; f++ ) {
+		picSpecular[f] = (byte *) Mem_Alloc( size * size * 4 );
+		memcpy( picSpecular[f], picDiffuse[f], size * size * 4 );
+	}
+	int sizeDiffuse = size;
+	int sizeSpecular = size;
+
+	R_BakeAmbient( picDiffuse, &sizeDiffuse, multiplier, false, nullptr );
+	R_BakeAmbient( picSpecular, &sizeSpecular, multiplier, true, nullptr );
+
+	static const char *typeSuffix[2] = {"_diff", "_spec"};
 	for ( int specular = 0; specular < 2; specular++ ) {
-		common->Printf( !specular ? "Diffuse (1/2)\n" : "Specular (2/2)\n" );
-		session->UpdateScreen();
-		// note: should match specular power of NdotR in Phong shader
-		param.cosPower = ( specular ? 4 : 1 );
-
-		for ( param.side = 0; param.side < 6; param.side++ ) {
-			sprintf( fullname, specular ? "env/%s_spec%s" : "env/%s_diff%s", baseName, cubeExtensions[param.side] );
-			common->Printf( "%d/6: %s\n", param.side + 1, fullname.c_str() );
-			session->UpdateScreen();
-
-			// resample with hemispherical blending
-			R_MakeAmbientMap( param );
-
-			common->Printf( "Writing out...\n" );
-			session->UpdateScreen();
-			R_WriteTGA( fullname, param.outBuffer, param.outSize, param.outSize );
+		for ( int f = 0; f < 6; f++ ) {
+			char fullname[1024];
+			idStr::snPrintf( fullname, sizeof(fullname), "%s%s%s", paddedBasename.c_str(), typeSuffix[specular], cubemapFaceNamesNative[f] );
+			int sz = (specular ? sizeSpecular : sizeDiffuse);
+			R_WriteTGA( fullname, (specular ? picSpecular : picDiffuse)[f], sz, sz );
 		}
 	}
-	R_StaticFree( param.outBuffer );
-
-	for ( int f = 0 ; f < 6 ; f++ ) {
-		if ( param.buffers[f] ) {
-			Mem_Free( param.buffers[f] );
-		}
+	for ( int f = 0; f < 6; f++ ) {
+		Mem_Free( picDiffuse[f] );
+		Mem_Free( picSpecular[f] );
 	}
-	session->UpdateScreen();
 }
 
 //============================================================================
