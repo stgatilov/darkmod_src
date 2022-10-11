@@ -103,15 +103,6 @@ is highly uneven.
 // instead of using the texture T vector, cross the normal and S vector for an orthogonal axis
 #define DERIVE_UNSMOOTHED_BITANGENT
 
-// stgatilov: size of global buffer used when preprocessing every surface
-// should be larger than number of edges in any model...
-const int MAX_SIL_EDGES			= 1<<20;
-
-static int			numSilEdges;
-static silEdge_t *	silEdges;
-static idHashIndex	silEdgeHash( 1024, 65536 );
-static int			numPlanes;
-
 #if LEGACY_ALLOCATOR
 static idBlockAlloc<srfTriangles_t, 1<<8>				srfTrianglesAllocator;
 #endif
@@ -149,8 +140,6 @@ R_InitTriSurfData
 ===============
 */
 void R_InitTriSurfData( void ) {
-	silEdges = (silEdge_t *)R_StaticAlloc( MAX_SIL_EDGES * sizeof( silEdges[0] ) );
-
 	// initialize allocators for triangle surfaces
 	triVertexAllocator.Init();
 	triIndexAllocator.Init();
@@ -184,8 +173,6 @@ R_ShutdownTriSurfData
 ===============
 */
 void R_ShutdownTriSurfData( void ) {
-	R_StaticFree( silEdges );
-	silEdgeHash.ClearFree();
 #if LEGACY_ALLOCATOR
 	srfTrianglesAllocator.Shutdown();
 #endif
@@ -970,75 +957,62 @@ void R_CreateVertexNormals( srfTriangles_t *tri ) {
 
 /*
 ===============
-R_DefineEdge
+SilEdgeGenerator
 ===============
 */
-static int c_duplicatedEdges, c_tripledEdges;
+struct SilEdgeGenerator {
+	int numPlanes = -1;
+	idList<silEdge_t> silEdges;
+	idHashIndex	silEdgeHash;
 
-static void R_DefineEdge( int v1, int v2, int planeNum ) {
-	int		i, hashKey;
+	int c_duplicatedEdges = 0;
+	int c_tripledEdges = 0;
 
-	// check for degenerate edge
-	if ( v1 == v2 ) {
-		return;
-	}
-	hashKey = silEdgeHash.GenerateKey( v1, v2 );
-	// search for a matching other side
-	for ( i = silEdgeHash.First( hashKey ); i >= 0 && i < MAX_SIL_EDGES; i = silEdgeHash.Next( i ) ) {
-		if ( silEdges[i].v1 == v1 && silEdges[i].v2 == v2 ) {
-			c_duplicatedEdges++;
-			// allow it to still create a new edge
-			continue;
+	void DefineEdge( int v1, int v2, int planeNum ) {
+		// check for degenerate edge
+		if ( v1 == v2 ) {
+			return;
 		}
-		if ( silEdges[i].v2 == v1 && silEdges[i].v1 == v2 ) {
-			if ( silEdges[i].p2 != numPlanes )  {
-				c_tripledEdges++;
+		int hashKey = silEdgeHash.GenerateKey( v1, v2 );
+		// search for a matching other side
+		for ( int i = silEdgeHash.First( hashKey ); i >= 0; i = silEdgeHash.Next( i ) ) {
+			if ( silEdges[i].v1 == v1 && silEdges[i].v2 == v2 ) {
+				c_duplicatedEdges++;
 				// allow it to still create a new edge
 				continue;
 			}
-			// this is a matching back side
-			silEdges[i].p2 = planeNum;
-			return;
+			if ( silEdges[i].v2 == v1 && silEdges[i].v1 == v2 ) {
+				if ( silEdges[i].p2 != numPlanes )  {
+					c_tripledEdges++;
+					// allow it to still create a new edge
+					continue;
+				}
+				// this is a matching back side
+				silEdges[i].p2 = planeNum;
+				return;
+			}
+
 		}
 
+		silEdge_t se;
+		se.p1 = planeNum;
+		se.p2 = numPlanes;
+		se.v1 = v1;
+		se.v2 = v2;
+		silEdgeHash.Add( hashKey, silEdges.Num() );
+		silEdges.AddGrow( se );
 	}
 
-	// define the new edge
-	if ( numSilEdges == MAX_SIL_EDGES ) {
-		// overflow! warning will be triggered outside
-		return;
+	void Sort() {
+		silEdges.Sort([](const silEdge_t *a, const silEdge_t *b) -> int {
+			if ( a->p1 != b->p1 )
+				return ( a->p1 < b->p1 ? -1 : 1 );
+			if ( a->p2 != b->p2 )
+				return ( a->p2 < b->p2 ? -1 : 1 );
+			return 0;
+		});
 	}
-	
-	silEdgeHash.Add( hashKey, numSilEdges );
-
-	silEdges[numSilEdges].p1 = planeNum;
-	silEdges[numSilEdges].p2 = numPlanes;
-	silEdges[numSilEdges].v1 = v1;
-	silEdges[numSilEdges].v2 = v2;
-
-	numSilEdges++;
-}
-
-/*
-=================
-SilEdgeSort
-=================
-*/
-static int SilEdgeSort( const void *a, const void *b ) {
-	if ( ((silEdge_t *)a)->p1 < ((silEdge_t *)b)->p1 ) {
-		return -1;
-	}
-	if ( ((silEdge_t *)a)->p1 > ((silEdge_t *)b)->p1 ) {
-		return 1;
-	}
-	if ( ((silEdge_t *)a)->p2 < ((silEdge_t *)b)->p2 ) {
-		return -1;
-	}
-	if ( ((silEdge_t *)a)->p2 > ((silEdge_t *)b)->p2 ) {
-		return 1;
-	}
-	return 0;
-}
+};
 
 /*
 =================
@@ -1048,26 +1022,16 @@ If the surface will not deform, coplanar edges (polygon interiors)
 can never create silhouette plains, and can be omited
 =================
 */
-int	c_coplanarSilEdges;
-int	c_totalSilEdges;
-
 void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
-	int		i;
-	int		numTris;
-	int		shared, single;
-
 	omitCoplanarEdges = false;	// optimization doesn't work for some reason
 
-	numTris = tri->numIndexes / 3;
+	int numTris = tri->numIndexes / 3;
 
-	numSilEdges = 0;
-	silEdgeHash.Clear();
-	numPlanes = numTris;
+	SilEdgeGenerator gen;
+	gen.numPlanes = numTris;
+	gen.silEdgeHash.ClearFree(1024, 65536);
 
-	c_duplicatedEdges = 0;
-	c_tripledEdges = 0;
-
-	for ( i = 0 ; i < numTris ; i++ ) {
+	for ( int i = 0 ; i < numTris ; i++ ) {
 		int		i1, i2, i3;
 
 		i1 = tri->silIndexes[ i*3 + 0 ];
@@ -1075,25 +1039,21 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 		i3 = tri->silIndexes[ i*3 + 2 ];
 
 		// create the edges
-		R_DefineEdge( i1, i2, i );
-		R_DefineEdge( i2, i3, i );
-		R_DefineEdge( i3, i1, i );
+		gen.DefineEdge( i1, i2, i );
+		gen.DefineEdge( i2, i3, i );
+		gen.DefineEdge( i3, i1, i );
 	}
 
-	if (numSilEdges == MAX_SIL_EDGES) {
-		common->Warning( "MAX_SIL_EDGES exceeded: stencil shadows broken!" );
-	}
-
-	if ( c_duplicatedEdges || c_tripledEdges ) {
-		common->DWarning( "%i duplicated edge directions, %i tripled edges", c_duplicatedEdges, c_tripledEdges );
+	if ( gen.c_duplicatedEdges || gen.c_tripledEdges ) {
+		common->DWarning( "%i duplicated edge directions, %i tripled edges", gen.c_duplicatedEdges, gen.c_tripledEdges );
 	}
 
 	// stgatilov #5886: fill adjTris data with connectivity information
 	tri->adjTris = triSilIndexAllocator.Alloc( tri->numIndexes );
 	for ( int i = 0; i < tri->numIndexes; i++ )
 		tri->adjTris[i] = numTris;
-	for ( int i = 0; i < numSilEdges; i++ ) {
-		silEdge_t se = silEdges[i];
+	for ( int i = 0; i < gen.silEdges.Num(); i++ ) {
+		silEdge_t se = gen.silEdges[i];
 		for ( int j = 0; j < 2; j++ ) {
 			int fThis  = (j == 0 ? se.p1 : se.p2);
 			int fOther = (j == 0 ? se.p2 : se.p1);
@@ -1122,17 +1082,18 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 
 	c_coplanarCulled = 0;
 	if ( omitCoplanarEdges ) {
-		for ( i = 0 ; i < numSilEdges ; i++ ) {
+		for ( int i = 0 ; i < gen.silEdges.Num() ; i++ ) {
+			silEdge_t se = gen.silEdges[i];
 			int			i1, i2, i3;
 			idPlane		plane;
 			int			base;
 			int			j;
 
-			if ( silEdges[i].p2 == numPlanes ) {	// the fake dangling edge
+			if ( se.p2 == gen.numPlanes ) {	// the fake dangling edge
 				continue;
 			}
 
-			base = silEdges[i].p1 * 3;
+			base = se.p1 * 3;
 			i1 = tri->silIndexes[ base + 0 ];
 			i2 = tri->silIndexes[ base + 1 ];
 			i3 = tri->silIndexes[ base + 2 ];
@@ -1147,7 +1108,7 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 			}
 
 			// check to see if points of second triangle are not coplanar
-			base = silEdges[i].p2 * 3;
+			base = se.p2 * 3;
 			for ( j = 0 ; j < 3 ; j++ ) {
 				i1 = tri->silIndexes[ base + j ];
 				//float d = plane.Distance( tri->verts[i1].xyz );
@@ -1160,31 +1121,24 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 
 			if ( j == 3 ) {
 				// we can cull this sil edge
-				memmove( &silEdges[i], &silEdges[i+1], (numSilEdges-i-1) * sizeof( silEdges[i] ) );
+				gen.silEdges.RemoveIndex( i );
 				c_coplanarCulled++;
-				numSilEdges--;
 				i--;
 			}
 		}
-		if ( c_coplanarCulled ) {
-			c_coplanarSilEdges += c_coplanarCulled;
-//			common->Printf( "%i of %i sil edges coplanar culled\n", c_coplanarCulled,
-//				c_coplanarCulled + numSilEdges );
-		}
 	}
-	c_totalSilEdges += numSilEdges;
 
 	// sort the sil edges based on plane number
-	qsort( silEdges, numSilEdges, sizeof( silEdges[0] ), SilEdgeSort );
+	gen.Sort();
 
 	// count up the distribution.
 	// a perfectly built model should only have shared
 	// edges, but most models will have some interpenetration
 	// and dangling edges
-	shared = 0;
-	single = 0;
-	for ( i = 0 ; i < numSilEdges ; i++ ) {
-		if ( silEdges[i].p2 == numPlanes ) {
+	int shared = 0;
+	int single = 0;
+	for ( int i = 0 ; i < gen.silEdges.Num() ; i++ ) {
+		if ( gen.silEdges[i].p2 == gen.numPlanes ) {
 			single++;
 		} else {
 			shared++;
@@ -1197,9 +1151,9 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 		tri->perfectHull = false;
 	}
 
-	tri->numSilEdges = numSilEdges;
-	tri->silEdges = triSilEdgeAllocator.Alloc( numSilEdges );
-	memcpy( tri->silEdges, silEdges, numSilEdges * sizeof( tri->silEdges[0] ) );
+	tri->numSilEdges = gen.silEdges.Num();
+	tri->silEdges = triSilEdgeAllocator.Alloc( tri->numSilEdges );
+	memcpy( tri->silEdges, gen.silEdges.Ptr(), tri->numSilEdges * sizeof( tri->silEdges[0] ) );
 }
 
 /*
