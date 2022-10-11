@@ -1004,12 +1004,12 @@ struct SilEdgeGenerator {
 	}
 
 	void Sort() {
-		silEdges.Sort([](const silEdge_t *a, const silEdge_t *b) -> int {
-			if ( a->p1 != b->p1 )
-				return ( a->p1 < b->p1 ? -1 : 1 );
-			if ( a->p2 != b->p2 )
-				return ( a->p2 < b->p2 ? -1 : 1 );
-			return 0;
+		std::sort(silEdges.begin(), silEdges.end(), [](const silEdge_t &a, const silEdge_t &b) -> bool {
+			if ( a.p1 != b.p1 )
+				return a.p1 < b.p1;
+			if ( a.p2 != b.p2 )
+				return a.p2 < b.p2;
+			return false;
 		});
 	}
 };
@@ -1029,7 +1029,9 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 
 	SilEdgeGenerator gen;
 	gen.numPlanes = numTris;
-	gen.silEdgeHash.ClearFree(1024, 65536);
+	int hashCells = idMath::Imax( idMath::CeilPowerOfTwo( numTris ), 32 );
+	int hashItems = int( tri->numIndexes * 0.6 + 32 );		// 50% of index count for closed mesh
+	gen.silEdgeHash.ClearFree( hashCells, hashItems );
 
 	for ( int i = 0 ; i < numTris ; i++ ) {
 		int		i1, i2, i3;
