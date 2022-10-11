@@ -584,6 +584,8 @@ Extends the bounds of deformed surfaces so they don't cull incorrectly at screen
 ================
 */
 void idRenderModelStatic::FinishSurfaces() {
+	TRACE_CPU_SCOPE("FinishSurfaces");
+
 	int			i;
 	int			totalVerts, totalIndexes;
 
@@ -1965,11 +1967,15 @@ idRenderModelStatic::LoadASE
 bool idRenderModelStatic::LoadASE( const char *fileName ) {
 	aseModel_t *ase;
 
-	ase = ASE_Load( fileName );
+	{
+		TRACE_CPU_SCOPE("ASE_Load");
+		ase = ASE_Load( fileName );
+	}
 	if ( ase == NULL ) {
 		return false;
 	}
 
+	TRACE_CPU_SCOPE("ConvertASEToModelSurfaces");
 	ConvertASEToModelSurfaces( ase );
 
 	ASE_Free( ase );
@@ -1987,11 +1993,15 @@ bool idRenderModelStatic::LoadLWO( const char *fileName ) {
 	int failPos;
 	lwObject *lwo;
 
-	lwo = lwGetObject( fileName, &failID, &failPos );
+	{
+		TRACE_CPU_SCOPE("lwGetObject");
+		lwo = lwGetObject( fileName, &failID, &failPos );
+	}
 	if ( lwo == NULL ) {
 		return false;
 	}
 
+	TRACE_CPU_SCOPE("ConvertLWOToModelSurfaces");
 	ConvertLWOToModelSurfaces( lwo );
 
 	lwFreeObject( lwo );
