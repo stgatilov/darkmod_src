@@ -275,9 +275,9 @@ idRenderModel *idRenderModelManagerLocal::GetModel( const char *modelName, bool 
 
 	// determine which subclass of idRenderModel to initialize
 	idRenderModel *model = nullptr;
-	if ( ( extension.Icmp( "ase" ) == 0 ) || ( extension.Icmp( "lwo" ) == 0 ) || ( extension.Icmp( "flt" ) == 0 ) ) {
+	if ( extension.Icmp( "ase" ) == 0 || extension.Icmp( "lwo" ) == 0 || extension.Icmp( "obj" ) == 0 ) {
 		model = new idRenderModelStatic;
-	} else if ( extension.Icmp( "ma" ) == 0 ) {
+	} else if ( extension.Icmp( "ma" ) == 0 || extension.Icmp( "flt" ) == 0 ) {
 		model = new idRenderModelStatic;
 	} else if ( extension.Icmp( "proxy" ) == 0 ) {
 		//stgatilov #4970: proxy models substitute rotation hack

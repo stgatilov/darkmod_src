@@ -74,6 +74,7 @@ public:
 
 	void						MakeDefaultModel();
 	
+	bool						LoadOBJ( const char *fileName );
 	bool						LoadASE( const char *fileName );
 	bool						LoadLWO( const char *fileName );
 	bool						LoadFLT( const char *fileName );

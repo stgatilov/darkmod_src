@@ -50,7 +50,7 @@
     <ShowAllFiles>false</ShowAllFiles>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Editable|x64'">
-    <LocalDebuggerCommandArguments>+set com_allowConsole 1 +set r_ignoreglerrors 0</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>+set com_allowConsole 1 +set r_ignoreglerrors 0 +set r_glDebugContext 1 +set r_glDebugOutput 2</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <LocalDebuggerCommand>$(OutDir)$(TargetName)$(TargetExt)</LocalDebuggerCommand>
@@ -58,7 +58,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Editable|Win32'">
     <LocalDebuggerCommand>$(OutDir)$(TargetName)$(TargetExt)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>+set com_allowConsole 1 +set r_ignoreglerrors 0</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>+set com_allowConsole 1 +set r_ignoreglerrors 0 +set r_glDebugContext 1 +set r_glDebugOutput 2</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

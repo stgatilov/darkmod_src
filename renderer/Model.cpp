@@ -22,6 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Model_local.h"
 #include "Model_ase.h"
 #include "Model_lwo.h"
+#include "Model_obj.h"
 #include "Model_ma.h"
 
 idCVar idRenderModelStatic::r_mergeModelSurfaces( "r_mergeModelSurfaces", "1", CVAR_BOOL|CVAR_RENDERER, "combine model surfaces with the same material" );
@@ -288,6 +289,9 @@ void idRenderModelStatic::InitFromFile( const char *fileName ) {
 			fallback 	= "ASE";
 			loaded		= LoadASE( name );
 		}
+		reloadable	= true;
+	} else if ( extension.Icmp( "obj" ) == 0 ) {
+		loaded		= LoadOBJ( name );
 		reloadable	= true;
 	} else if ( extension.Icmp( "flt" ) == 0 ) {
 		loaded		= LoadFLT( name );
@@ -1955,6 +1959,131 @@ bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma )
 			R_FreeStaticTriSurf( mergeTri );
 		}
 	}
+
+	return true;
+}
+
+/*
+=================
+idRenderModelStatic::LoadOBJ
+=================
+*/
+bool idRenderModelStatic::LoadOBJ( const char *fileName ) {
+	obj_file_t *obj;
+	{
+		TRACE_CPU_SCOPE("Obj_Load");
+		obj = OBJ_Load(fileName);
+	}
+	if (!obj)
+		return false;
+
+	TRACE_CPU_SCOPE("LoadOBJ postprocess");
+	timeStamp = obj->timestamp;
+
+	auto AreSame = [](const obj_index_t &a, const obj_index_t &b) -> bool {
+		return (
+			a.vertex == b.vertex &&
+			a.normal == b.normal && 
+			a.texcoord == b.texcoord
+		);
+	};
+
+	struct FullVertex {
+		obj_index_t data;
+		int finalIdx;
+		int next;
+	};
+	// for each geometric vertex, store a linked list of all vertex-uses with it
+	idList<FullVertex> vertexListItems;
+	idList<int> vertexListFirst;
+
+	// create surface independently for every unique material used
+	for (int materialIdx = (obj->usesUnknownMaterial ? -1 : 0); materialIdx < obj->materials.Num(); materialIdx++) {
+		// select material
+		const idMaterial *material = nullptr;
+		if (materialIdx < 0)
+			material = declManager->FindMaterial("_default");
+		else
+			material = obj->materials[materialIdx].material;
+
+		// clear per-vertex structure
+		vertexListFirst.SetNum(obj->vertices.Num());
+		memset(vertexListFirst.Ptr(), -1, vertexListFirst.Allocated());
+		vertexListItems.Clear();
+
+		// index in vertexListItems for each triangle corner with current material
+		idList<int> itemOfTriVert;
+		assert(obj->indices.Num() == 3 * obj->materialIds.Num());
+
+		// collect all distinct vertex-uses
+		for (int f = 0; f < obj->materialIds.Num(); f++) {
+			if (obj->materialIds[f] != materialIdx)
+				continue;
+
+			for (int c = 0; c < 3; c++) {
+				const obj_index_t &vertUse = obj->indices[3 * f + c];
+				// find item in linked list of its vertex
+				int *list = &vertexListFirst[vertUse.vertex];
+				int item;
+				for (item = *list; item >= 0; item = vertexListItems[item].next)
+					if (AreSame(vertexListItems[item].data, vertUse))
+						break;
+				if (item < 0) {
+					// not found: add new item to the list
+					item = vertexListItems.AddGrow({vertUse, -666, *list});
+					*list = item;
+				}
+				itemOfTriVert.AddGrow(item);
+			}
+		}
+
+		assert(itemOfTriVert.Num() % 3 == 0);
+		int numTotalTris = itemOfTriVert.Num() / 3;
+		int numTotalVerts = vertexListItems.Num();
+
+		// allocate triangle surface
+		srfTriangles_t *tri = R_AllocStaticTriSurf();
+		tri->numVerts = numTotalVerts;
+		tri->numIndexes = numTotalTris * 3;
+		R_AllocStaticTriSurfVerts(tri, tri->numVerts);
+		R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
+
+		// assign final index for every vertex-use
+		// make sure vertex-uses are ordered by their geometric vertex first!
+		int vertexPos = 0;
+		for (int v = 0; v < vertexListFirst.Num(); v++)
+			for (int item = vertexListFirst[v]; item >= 0; item = vertexListItems[item].next) {
+				int q = vertexPos++;
+				vertexListItems[item].finalIdx = q;
+
+				// also fill vertex in the output surface
+				const obj_index_t &vertUse = vertexListItems[item].data;
+				idDrawVert &outVertex = tri->verts[q];
+				outVertex.Clear();
+				memcpy(outVertex.xyz.ToFloatPtr(), &obj->vertices[vertUse.vertex], sizeof(idVec3));
+				memcpy(outVertex.normal.ToFloatPtr(), &obj->normals[vertUse.normal], sizeof(idVec3));
+				memcpy(outVertex.st.ToFloatPtr(), &obj->texcoords[vertUse.texcoord], sizeof(idVec2));
+				idVec3 rgb = obj->colors[vertUse.vertex];
+				outVertex.color[0] = idMath::ClampByte(0, 255, byte(255.0f * rgb[0]));
+				outVertex.color[1] = idMath::ClampByte(0, 255, byte(255.0f * rgb[1]));
+				outVertex.color[2] = idMath::ClampByte(0, 255, byte(255.0f * rgb[2]));
+				outVertex.color[3] = 255;
+			}
+		assert(vertexPos == numTotalVerts);
+
+		// fill the surface indices
+		for (int q = 0; q < numTotalTris * 3; q++)
+			tri->indexes[q] = vertexListItems[itemOfTriVert[q]].finalIdx;
+
+		// add surface to model
+		modelSurface_t surf;
+		surf.geometry = tri;
+		surf.id = surfaces.Num();
+		surf.material = material;
+		AddSurface(surf);
+	}
+
+	delete obj;
 
 	return true;
 }
