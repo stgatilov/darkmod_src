@@ -67,22 +67,12 @@ idStr::ReAllocate
 ============
 */
 void idStr::ReAllocate( int amount, bool keepold ) {
-	char	*newbuffer;
-	int		newsize;
-	int		mod;
-
 	//assert( data );
 	assert( amount > 0 );
 
-	mod = amount % STR_ALLOC_GRAN;
-	if ( !mod ) {
-		newsize = amount;
-	}
-	else {
-		newsize = amount + STR_ALLOC_GRAN - mod;
-	}
-	alloced = newsize;
+	alloced = unsigned( amount + (STR_ALLOC_GRAN - 1) ) / STR_ALLOC_GRAN * STR_ALLOC_GRAN;
 
+	char	*newbuffer;
 #ifdef USE_STRING_DATA_ALLOCATOR
 	newbuffer = stringDataAllocator.Alloc( alloced );
 #else
