@@ -1686,16 +1686,12 @@ void idMaterial::ParseDeform( idLexer &src ) {
 	}
 }
 
-
 /*
 ==============
 idMaterial::AddImplicitStages
 
 If a material has diffuse or specular stages without any
 bump stage, add an implicit _flat bumpmap stage.
-
-If a material has a bump stage but no diffuse or specular
-stage, add a _white diffuse stage.
 
 It is valid to have either a diffuse or specular without the other.
 
@@ -1725,21 +1721,19 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 		}
 	}
 
-	// if it doesn't have an interaction at all, don't add anything
-	if ( !hasBump && !hasDiffuse && !hasSpecular ) {
-		return;
-	}
-
-	if ( !hasBump ) {
-		idStr::snPrintf( buffer, sizeof( buffer ), "blend bumpmap\nmap _flat\n}\n" );
-        newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "bumpmap");
-		newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
-		ParseStage( newSrc, trpDefault );
-		newSrc.FreeSource();
-	}
-
-	if ( numStages == MAX_SHADER_STAGES ) {
-		return;
+	if ( hasBump || hasDiffuse || hasSpecular ) {
+		// if it has any interaction, then it should have bumpmap
+		if ( !hasBump ) {
+			idStr::snPrintf( buffer, sizeof( buffer ),
+				"blend bumpmap\n"
+				"map _flat\n"
+				"}\n"	// finishes stage
+			);
+			newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "bumpmap");
+			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+			ParseStage( newSrc, trpDefault );
+			newSrc.FreeSource();
+		}
 	}
 }
 
@@ -2836,6 +2830,11 @@ void idMaterial::ReloadImages( bool force ) const {
 	}
 }
 
+/*
+===================
+idMaterial::HasMirrorLikeStage
+===================
+*/
 bool idMaterial::HasMirrorLikeStage() const {
 	if (!HasSubview())
 		return false;
