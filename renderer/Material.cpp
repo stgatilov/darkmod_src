@@ -57,6 +57,7 @@ typedef struct mtrParsingData_s {
 
 	bool			registersAreConstant;
 	bool			forceOverlays;
+	bool			usesFrobParm;	// stgatilov #5427: is parm11 referenced in current stage?
 } mtrParsingData_t;
 
 
@@ -321,6 +322,26 @@ bool idMaterial::MatchToken( idLexer &src, const char *match ) {
 }
 
 /*
+===============
+idMaterial::ParseNumberOrVec3
+===============
+*/
+idVec3 idMaterial::ParseNumberOrVec3( idLexer &src ) {
+	if ( src.PeekTokenString( "(" ) ) {
+		MatchToken( src, "(" );
+		float red = src.ParseFloat();
+		float green = src.ParseFloat();
+		float blue = src.ParseFloat();
+		MatchToken( src, ")" );
+		return idVec3( red, green, blue );
+	}
+	else {
+		float gray = src.ParseFloat();
+		return idVec3( gray, gray, gray );
+	}
+}
+
+/*
 =================
 idMaterial::ParseSort
 =================
@@ -558,6 +579,7 @@ int idMaterial::ParseTerm( idLexer &src ) {
 	}
 	else if ( !token.Icmp( "parm11" ) ) {
 		pd->registersAreConstant = false;
+		pd->usesFrobParm = true;
 		return EXP_REG_PARM11;
 	}
 	else if ( !token.Icmp( "global0" ) ) {
@@ -1112,6 +1134,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 
 	ss = &pd->parseStages[numStages];
 	ts = &ss->texture;
+	pd->usesFrobParm = false;
 
 	ClearStage( ss );
 
@@ -1569,6 +1592,12 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		*(ss->newStage) = newStage;
 	}
 
+	if ( pd->usesFrobParm ) {
+		// stgatilov #5427: using parm11 outside "frob stage" is wrong
+		if ( !IsFrobStage( numStages ) )
+			common->Warning( "Material '%s' stage %d uses parm11 without frobstage condition", GetName(), numStages );
+	}
+
 	// successfully parsed a stage
 	numStages++;
 
@@ -1686,6 +1715,10 @@ void idMaterial::ParseDeform( idLexer &src ) {
 	}
 }
 
+idCVar r_frobDefaultEnable("r_frobDefaultEnable", "1", CVAR_RENDERER | CVAR_BOOL, "Should we add implicit frobstages if none are present?");
+idCVar r_frobDefaultAdd("r_frobDefaultAdd", "0.4", CVAR_RENDERER | CVAR_FLOAT, "Plain color value added in implicitly generated material frobstage");
+idCVar r_frobDefaultMult("r_frobDefaultMult", "0.15", CVAR_RENDERER | CVAR_FLOAT, "Multiplier of diffuse texture color added in implicitly generated material frobstage");
+
 /*
 ==============
 idMaterial::AddImplicitStages
@@ -1702,15 +1735,18 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 	char	buffer[1024];
 	idLexer		newSrc;
 	bool hasDiffuse = false;
+	idImage *diffuseTex = nullptr;
 	bool hasSpecular = false;
 	bool hasBump = false;
 	bool hasReflection = false;
+	bool hasFrobStage = false, isFrobStandard = false;
 
 	for ( int i = 0 ; i < numStages ; i++ ) {
 		if ( pd->parseStages[i].lighting == SL_BUMP ) {
 			hasBump = true;
 		}
 		if ( pd->parseStages[i].lighting == SL_DIFFUSE ) {
+			diffuseTex = pd->parseStages[i].texture.image;
 			hasDiffuse = true;
 		}
 		if ( pd->parseStages[i].lighting == SL_SPECULAR ) {
@@ -1718,6 +1754,12 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 		}
 		if ( pd->parseStages[i].texture.texgen == TG_REFLECT_CUBE ) {
 			hasReflection = true;
+		}
+		if ( IsFrobStage( i, &isFrobStandard) ) {
+			// stgatilov #5427: warn about nonstandard frobstage condition
+			if ( !isFrobStandard )
+				common->Warning( "Material '%s' frobstage %d: bad condition, should be 'if (parm11 > 0)'", GetName(), i );
+			hasFrobStage = true;
 		}
 	}
 
@@ -1733,6 +1775,16 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
 			newSrc.FreeSource();
+		}
+
+		// stgatilov #5427: no frobstage found -> add default stages implicitly
+		if ( !hasFrobStage && r_frobDefaultEnable.GetBool() ) {
+			AddFrobStages(
+				idVec3( r_frobDefaultAdd.GetFloat() ),
+				diffuseTex ? diffuseTex->imgName.c_str() : nullptr,
+				idVec3( r_frobDefaultMult.GetFloat() ),
+				trpDefault
+			);
 		}
 	}
 }
@@ -2086,6 +2138,37 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
 			newSrc.FreeSource();
+			continue;
+		}
+		// stgatilov #5427: handle macros for typical frobstages generation
+		else if ( !token.Icmp( "frobstage_texture" ) || !token.Icmp( "frobstage_diffuse" ) ) {
+
+			str = nullptr;
+			if ( !token.Icmp( "frobstage_texture" ) ) {
+				// frobstage_texture: texture must be specified as argument
+				str = R_ParsePastImageProgram( src );
+			} else {
+				// frobstage_diffuse: take first diffuse map (must be added beforehand)
+				for ( int i = 0; i < numStages; i++ )
+					if ( pd->parseStages[i].lighting == SL_DIFFUSE )
+						if ( idImage *image = pd->parseStages[i].texture.image ) {
+							str = image->imgName.c_str();
+							break;
+						}
+				if ( !str )
+					common->Warning( "material '%s' frobstage_diffuse: cannot find diffuse texture", GetName() );
+			}
+
+			idVec3 mult = ParseNumberOrVec3( src );
+			idVec3 add = ParseNumberOrVec3( src );
+
+			AddFrobStages( add, str, mult, trpDefault );
+			continue;
+		}
+		else if ( !token.Icmp( "frobstage_none" ) ) {
+			// add frobstage which has no effect
+			// the goal is to block implicit frobstages from being added
+			AddFrobStages( idVec3(0.0f), nullptr, idVec3(0.0f), trpDefault );
 			continue;
 		}
 		// DECAL_MACRO for backwards compatibility with the preprocessor macros
@@ -2844,4 +2927,95 @@ bool idMaterial::HasMirrorLikeStage() const {
 			return true;
 	}
 	return false;
+}
+
+/*
+===================
+idMaterial::IsFrobStage
+===================
+*/
+bool idMaterial::IsFrobStage(int stageIdx, bool *isStandard) const {
+	const shaderStage_t *stage = &pd->parseStages[stageIdx];
+
+	// expression operations are executed sequentally
+	// so we need to trace operations backwards to see which of them write to "active" register we are interested in
+	// this way we can walk through the whole dependency subgraph of an "if" statement
+	const expOp_t *lastOp = nullptr;
+	idList<int> activeRegisters;
+	activeRegisters.Append(	stage->conditionRegister );
+
+	for ( int i = numOps - 1; i >= 0; i-- ) {
+		const expOp_t &op = pd->shaderOps[i];
+		if ( int *ptr = activeRegisters.Find( op.c ) ) {
+			activeRegisters.Remove( *ptr );
+			activeRegisters.AddUnique( op.a );
+			activeRegisters.AddUnique( op.b );
+			if ( !lastOp )
+				lastOp = &op;
+		}
+	}
+
+	// we only have leaf registers of dependency subgraph, check if parm11 is among them
+	if ( !activeRegisters.Find( EXP_REG_PARM11 ) )
+		return false;
+
+	if ( isStandard ) {
+		// standard format of frobstage condition is:
+		//    if (parm11 > 0)
+		// we should encourage mappers to write this exact condition
+
+		if ( lastOp &&
+			lastOp->a == EXP_REG_PARM11 && lastOp->opType == OP_TYPE_GT &&
+			!pd->registerIsTemporary[lastOp->b] && pd->shaderRegisters[lastOp->b] == 0.0f
+		) {
+			*isStandard = true;
+		} else {
+			*isStandard = false;
+		}
+	}
+
+	return true;
+}
+
+/*
+===================
+idMaterial::AddFrobStages
+===================
+*/
+void idMaterial::AddFrobStages(const idVec3 &rgbAdd, const char *imageName, const idVec3 &rgbMult, const textureRepeat_t trpDefault) {
+	idLexer newSrc;
+	char buffer[1024];
+
+	idStr::snPrintf( buffer, sizeof( buffer ),
+		"if ( parm11 > 0 )\n"
+		"blend  gl_dst_color, gl_one\n"
+		"map    _white\n"
+		"red    %f * parm11\n"
+		"green  %f * parm11\n"
+		"blue   %f * parm11\n"
+		"}\n",	// finishes stage
+		rgbAdd.x, rgbAdd.y, rgbAdd.z
+	);
+	newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "frobstage_const");
+	newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+	ParseStage( newSrc, trpDefault );
+	newSrc.FreeSource();
+
+	if (imageName) {
+		idStr::snPrintf( buffer, sizeof( buffer ),
+			"if ( parm11 > 0 )\n"
+			"blend  add\n"
+			"map    %s\n"
+			"red    %f * parm11\n"
+			"green  %f * parm11\n"
+			"blue   %f * parm11\n"
+			"}\n",	// finishes stage
+			imageName,
+			rgbMult.x, rgbMult.y, rgbMult.z
+		);
+		newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "frobstage_mult");
+		newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+		ParseStage( newSrc, trpDefault );
+		newSrc.FreeSource();
+	}
 }

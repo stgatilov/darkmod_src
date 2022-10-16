@@ -620,6 +620,7 @@ private:
 	void				ParseStage( idLexer &src, const textureRepeat_t trpDefault = TR_REPEAT );
 	void				ParseDeform( idLexer &src );
 	void				ParseDecalInfo( idLexer &src );
+	idVec3				ParseNumberOrVec3( idLexer &src );
 	bool				CheckSurfaceParm( idToken *token );
 	int					GetExpressionConstant( float f );
 	int					GetExpressionTemporary( void );
@@ -635,6 +636,8 @@ private:
 	void				SortInteractionStages();
 	void				AddImplicitStages( const textureRepeat_t trpDefault = TR_REPEAT );
 	void				CheckForConstantRegisters();
+	bool				IsFrobStage(int stageIdx, bool *isStandard = nullptr) const;
+	void				AddFrobStages(const idVec3 &rgbAdd, const char *imageName, const idVec3 &rgbMult, const textureRepeat_t trpDefault = TR_REPEAT);
 
 private:
 	idStr				desc;				// description
