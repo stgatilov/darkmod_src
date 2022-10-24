@@ -43,7 +43,7 @@ ivec2 clampPixelCoords(ivec2 pixelCoords) {
 
 	vec4 sample(ivec2 pixelCoords) {
 		// fetch from base LOD level
-		return texelFetch(u_sourceTexture, clampPixelCoords(pixelCoords), 0);
+		return vec4(texelFetch(u_sourceTexture, clampPixelCoords(pixelCoords), 0));
 	}
 #else
 	uniform sampler2D u_mipmapTexture;
