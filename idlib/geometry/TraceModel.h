@@ -48,8 +48,8 @@ typedef enum {
 
 // these are bit cache limits
 #define MAX_TRACEMODEL_VERTS		32
-#define MAX_TRACEMODEL_EDGES		32
-#define MAX_TRACEMODEL_POLYS		16
+#define MAX_TRACEMODEL_EDGES		63
+#define MAX_TRACEMODEL_POLYS		32
 
 typedef idVec3 traceModelVert_t;
 

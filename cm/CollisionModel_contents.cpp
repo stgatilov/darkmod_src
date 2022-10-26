@@ -106,13 +106,14 @@ bool idCollisionModelManagerLocal::TestTrmVertsInBrush( cm_traceWork_t *tw, cm_b
 CM_SetTrmEdgeSidedness
 ================
 */
-#define CM_SetTrmEdgeSidedness( edge, bpl, epl, bitNum ) {							\
-	if ( !(edge->sideSet & (1<<bitNum)) ) {											\
-		float fl;																	\
-		fl = (bpl).PermutedInnerProduct( epl );										\
-		edge->side = (edge->side & ~(1<<bitNum)) | (FLOATSIGNBITSET(fl) << bitNum);	\
-		edge->sideSet |= (1 << bitNum);												\
-	}																				\
+ID_INLINE void CM_SetTrmEdgeSidedness( cm_edge_t *edge, const idPluecker &bpl, const idPluecker &epl, const int bitNum ) {
+	if ( !(edge->sideSet & (1LL << bitNum)) ) {
+		float fl;
+		fl = bpl.PermutedInnerProduct( epl );
+		edge->side &= ~(1LL << bitNum);
+		edge->side |= (uint64(FLOATSIGNBITSET(fl)) << bitNum);
+		edge->sideSet |= (1LL << bitNum);
+	}
 }
 
 /*
@@ -120,19 +121,19 @@ CM_SetTrmEdgeSidedness
 CM_SetTrmPolygonSidedness
 ================
 */
-#define CM_SetTrmPolygonSidedness( v, plane, bitNum ) {								\
-	if ( !((v)->sideSet & (1<<bitNum)) ) {											\
-		float fl;																	\
-		fl = plane.Distance( (v)->p );												\
-		/* cannot use float sign bit because it is undetermined when fl == 0.0f */	\
-		if ( fl < 0.0f ) {															\
-			(v)->side |= (1 << bitNum);												\
-		}																			\
-		else {																		\
-			(v)->side &= ~(1 << bitNum);											\
-		}																			\
-		(v)->sideSet |= (1 << bitNum);												\
-	}																				\
+ID_INLINE void CM_SetTrmPolygonSidedness( cm_vertex_t *v, const idPlane &plane, const int bitNum ) {
+	if ( !((v)->sideSet & (1LL << bitNum)) ) {
+		float fl;
+		fl = plane.Distance( (v)->p );
+		/* cannot use float sign bit because it is undetermined when fl == 0.0f */
+		if ( fl < 0.0f ) {
+			(v)->side |= (1LL << bitNum);
+		}
+		else {
+			(v)->side &= ~(1LL << bitNum);
+		}
+		(v)->sideSet |= (1LL << bitNum);
+	}
 }
 
 /*
