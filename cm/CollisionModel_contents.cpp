@@ -126,13 +126,9 @@ ID_INLINE void CM_SetTrmPolygonSidedness( cm_vertex_t *v, const idPlane &plane, 
 		float fl;
 		fl = plane.Distance( (v)->p );
 		/* cannot use float sign bit because it is undetermined when fl == 0.0f */
-		if ( fl < 0.0f ) {
-			(v)->side |= (1LL << bitNum);
-		}
-		else {
-			(v)->side &= ~(1LL << bitNum);
-		}
-		(v)->sideSet |= (1LL << bitNum);
+		v->side &= ~(1LL << bitNum);
+		v->side |= (uint64(fl < 0.0f) << bitNum);
+		v->sideSet |= (1LL << bitNum);
 	}
 }
 
