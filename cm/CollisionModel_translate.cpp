@@ -502,7 +502,7 @@ void idCollisionModelManagerLocal::TranslateVertexThroughTrmPolygon( cm_traceWor
 	if ( f < tw->trace.fraction ) {
 
 		for ( i = 0; i < trmpoly->numEdges; i++ ) {
-			edgeNum = trmpoly->edges[i];
+			edgeNum = tw->edgeUses[trmpoly->firstEdge + i];
 			edge = tw->edges + abs(edgeNum);
 
 			CM_SetVertexSidedness( v, pl, edge->pl, edge->bitNum );
@@ -711,7 +711,7 @@ idCollisionModelManagerLocal::SetupTrm
 ================
 */
 void idCollisionModelManagerLocal::SetupTrm( cm_traceWork_t *tw, const idTraceModel *trm ) {
-	int i, j;
+	int i;
 
 	// vertices
 	tw->numVerts = trm->numVerts;
@@ -726,13 +726,16 @@ void idCollisionModelManagerLocal::SetupTrm( cm_traceWork_t *tw, const idTraceMo
 		tw->edges[i].vertexNum[1] = trm->edges[i].v[1];
 		tw->edges[i].used = false;
 	}
+	// edgeuses
+	tw->numEdgeUses = trm->numEdgeUses;
+	for ( i = 0; i < trm->numEdgeUses; i++ ) {
+		tw->edgeUses[i] = trm->edgeUses[i];
+	}
 	// polygons
 	tw->numPolys = trm->numPolys;
 	for ( i = 0; i < trm->numPolys; i++ ) {
 		tw->polys[i].numEdges = trm->polys[i].numEdges;
-		for ( j = 0; j < trm->polys[i].numEdges; j++ ) {
-			tw->polys[i].edges[j] = trm->polys[i].edges[j];
-		}
+		tw->polys[i].firstEdge = trm->polys[i].firstEdge;
 		tw->polys[i].plane.SetNormal( trm->polys[i].normal );
 		tw->polys[i].used = false;
 	}
@@ -962,7 +965,8 @@ void idCollisionModelManagerLocal::Translation( trace_t *results, const idVec3 &
 			// this trm poly and it's edges and vertices need to be used for collision
 			poly->used = true;
 			for ( j = 0; j < poly->numEdges; j++ ) {
-				edge = &tw.edges[abs( poly->edges[j] )];
+				int edgeNum = tw.edgeUses[poly->firstEdge + j];
+				edge = &tw.edges[abs( edgeNum )];
 				edge->used = true;
 				tw.vertices[edge->vertexNum[0]].used = true;
 				tw.vertices[edge->vertexNum[1]].used = true;
@@ -1004,7 +1008,8 @@ void idCollisionModelManagerLocal::Translation( trace_t *results, const idVec3 &
 	// set trm plane distances
 	for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ ) {
 		if ( poly->used ) {
-			poly->plane.FitThroughPoint( tw.edges[abs(poly->edges[0])].start );
+			int edgeNum = tw.edgeUses[poly->firstEdge];
+			poly->plane.FitThroughPoint( tw.edges[abs(edgeNum)].start );
 		}
 	}
 

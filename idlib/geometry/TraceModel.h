@@ -50,7 +50,6 @@ typedef enum {
 #define MAX_TRACEMODEL_VERTS		32
 #define MAX_TRACEMODEL_EDGES		32
 #define MAX_TRACEMODEL_POLYS		16
-#define MAX_TRACEMODEL_POLYEDGES	16
 
 typedef idVec3 traceModelVert_t;
 
@@ -64,22 +63,24 @@ typedef struct {
 	float				dist;
 	idBounds			bounds;
 	int					numEdges;
-	int					edges[MAX_TRACEMODEL_POLYEDGES];
+	int					firstEdge;
 } traceModelPoly_t;
 
 class idTraceModel {
 
 public:
-	traceModel_t		type;
-	int					numVerts;
+	traceModel_t		type = TRM_INVALID;
+	int					numVerts = 0;
 	traceModelVert_t	verts[MAX_TRACEMODEL_VERTS];
-	int					numEdges;
+	int					numEdges = 0;
 	traceModelEdge_t	edges[MAX_TRACEMODEL_EDGES+1];
-	int					numPolys;
+	int					numPolys = 0;
 	traceModelPoly_t	polys[MAX_TRACEMODEL_POLYS];
-	idVec3				offset;			// offset to center of model
-	idBounds			bounds;			// bounds of model
-	bool				isConvex;		// true when model is convex
+	int					numEdgeUses = 0;
+	int					edgeUses[MAX_TRACEMODEL_EDGES*2];
+	idVec3				offset;					// offset to center of model
+	idBounds			bounds{idVec3(0.0f)};	// bounds of model
+	bool				isConvex;				// true when model is convex
 
 public:
 						idTraceModel( void );
@@ -147,11 +148,7 @@ private:
 };
 
 
-ID_INLINE idTraceModel::idTraceModel( void ) {
-	type = TRM_INVALID;
-	numVerts = numEdges = numPolys = 0;
-	bounds.Zero();
-}
+ID_INLINE idTraceModel::idTraceModel( void ) {}
 
 ID_INLINE idTraceModel::idTraceModel( const idBounds &boxBounds ) {
 	InitBox();

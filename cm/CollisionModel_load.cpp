@@ -753,7 +753,7 @@ void idCollisionModelManagerLocal::SetupTrmModelStructure( void ) {
 	// allocate polygons
 	for ( i = 0; i < MAX_TRACEMODEL_POLYS; i++ ) {
 		trmPolygons[i] = AllocPolygonReference( model, MAX_TRACEMODEL_POLYS );
-		trmPolygons[i]->p = AllocPolygon( model, MAX_TRACEMODEL_POLYEDGES );
+		trmPolygons[i]->p = AllocPolygon( model, MAX_TRACEMODEL_POLYS );
 		trmPolygons[i]->p->bounds.Clear();
 		trmPolygons[i]->p->plane.Zero();
 		trmPolygons[i]->p->checkcount = 0;
@@ -828,7 +828,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel( const idTraceModel &trm,
 		poly = trmPolygons[i]->p;
 		poly->numEdges = trmPoly->numEdges;
 		for ( j = 0; j < trmPoly->numEdges; j++ ) {
-			poly->edges[j] = trmPoly->edges[j];
+			poly->edges[j] = trm.edgeUses[trmPoly->firstEdge + j];
 		}
 		poly->plane.SetNormal( trmPoly->normal );
 		poly->plane.SetDist( trmPoly->dist );
@@ -3639,9 +3639,11 @@ bool idCollisionModelManagerLocal::TrmFromModel_r( idTraceModel &trm, cm_node_t 
 			trm.polys[ trm.numPolys ].dist = p->plane.Dist();
 			trm.polys[ trm.numPolys ].numEdges = p->numEdges;
 			// copy edge index
+			trm.polys[ trm.numPolys ].firstEdge = trm.numEdgeUses;
 			for ( i = 0; i < p->numEdges; i++ ) {
-				trm.polys[ trm.numPolys ].edges[ i ] = p->edges[ i ];
+				trm.edgeUses[ trm.numEdgeUses + i ] = p->edges[ i ];
 			}
+			trm.numEdgeUses += p->numEdges;
 			trm.numPolys++;
 		}
 		if ( node->planeType == -1 ) {
@@ -3712,7 +3714,8 @@ bool idCollisionModelManagerLocal::TrmFromModel( const cm_model_t *model, idTrac
 	memset( numEdgeUsers, 0, sizeof(numEdgeUsers) );
 	for ( i = 0; i < trm.numPolys; i++ ) {
 		for ( j = 0; j < trm.polys[i].numEdges; j++ ) {
-			numEdgeUsers[ abs( trm.polys[i].edges[j] ) ]++;
+			int edgeNum = trm.edgeUses[ trm.polys[i].firstEdge + j ];
+			numEdgeUsers[ abs( edgeNum ) ]++;
 		}
 	}
 	for ( i = 1; i <= trm.numEdges; i++ ) {

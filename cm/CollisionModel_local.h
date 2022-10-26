@@ -214,7 +214,7 @@ typedef struct cm_trmPolygon_s {
 	int used;
 	idPlane plane;									// polygon plane
 	int numEdges;									// number of edges
-	int edges[MAX_TRACEMODEL_POLYEDGES];			// index into cm_traceWork_t->edges
+	int firstEdge;									// start location in cm_traceWork_t::edgeUses
 	idBounds rotationBounds;						// rotation bounds for this polygon
 } cm_trmPolygon_t;
 
@@ -223,6 +223,8 @@ typedef struct cm_traceWork_s {
 	cm_trmVertex_t vertices[MAX_TRACEMODEL_VERTS];	// trm vertices
 	int numEdges;
 	cm_trmEdge_t edges[MAX_TRACEMODEL_EDGES+1];		// trm edges
+	int numEdgeUses;
+	int edgeUses[MAX_TRACEMODEL_EDGES*2];			// tdm edgeuses (index into edges)
 	int numPolys;
 	cm_trmPolygon_t polys[MAX_TRACEMODEL_POLYS];	// trm polygons
 	cm_model_t *model;								// model colliding with

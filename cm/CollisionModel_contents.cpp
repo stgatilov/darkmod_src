@@ -335,7 +335,8 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon( cm_traceWork_t *tw, cm_poly
 #endif
 			// test if polygon edge goes through the trm polygon between the trm polygon edges
 			for ( k = 0; k < tw->polys[j].numEdges; k++ ) {
-				trmEdgeNum = tw->polys[j].edges[k];
+				trmEdgeNum = tw->polys[j].firstEdge + k;
+				trmEdgeNum = tw->edgeUses[trmEdgeNum];
 				trmEdge = tw->edges + abs(trmEdgeNum);
 #if 1
 				bitNum = abs(trmEdgeNum);
@@ -570,7 +571,8 @@ int idCollisionModelManagerLocal::ContentsTrm( trace_t *results, const idVec3 &s
 		}
 	}
 	for ( i = 0; i < tw.numPolys; i++ ) {
-		tw.polys[i].plane.FitThroughPoint( tw.edges[abs(tw.polys[i].edges[0])].start );
+		int edgeNum = tw.edgeUses[tw.polys[i].firstEdge];
+		tw.polys[i].plane.FitThroughPoint( tw.edges[abs(edgeNum)].start );
 	}
 
 	// bounds for full trace, a little bit larger for epsilons

@@ -21,6 +21,27 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "TraceModel.h"
 
 
+static void SetPolygon(idTraceModel &trm, int polyIdx, idList<int> edgeUses, const idVec3 &normal = idVec3(0.0f)) {
+	int pos = trm.numEdgeUses;
+	trm.polys[polyIdx].firstEdge = pos;
+
+	for (int eu : edgeUses)
+		trm.edgeUses[pos++] = eu;
+
+	trm.polys[polyIdx].numEdges = pos - trm.numEdgeUses;
+	trm.numEdgeUses = pos;
+
+	trm.polys[polyIdx].normal = normal;
+}
+
+static void SetPolygon(idTraceModel &trm, int polyIdx, std::initializer_list<int> edgeUses, const idVec3 &normal = idVec3(0.0f)) {
+	idList<int> arr;
+	for (int eu : edgeUses)
+		arr.Append(eu);
+
+	SetPolygon(trm, polyIdx, arr, normal);
+}
+
 /*
 ============
 idTraceModel::SetupBox
@@ -104,47 +125,12 @@ void idTraceModel::InitBox( void ) {
 	}
 
 	// all edges of a polygon go counter clockwise
-	polys[0].numEdges = 4;
-	polys[0].edges[0] = -4;
-	polys[0].edges[1] = -3;
-	polys[0].edges[2] = -2;
-	polys[0].edges[3] = -1;
-	polys[0].normal.Set( 0.0f, 0.0f, -1.0f );
-
-	polys[1].numEdges = 4;
-	polys[1].edges[0] = 5;
-	polys[1].edges[1] = 6;
-	polys[1].edges[2] = 7;
-	polys[1].edges[3] = 8;
-	polys[1].normal.Set( 0.0f, 0.0f, 1.0f );
-
-	polys[2].numEdges = 4;
-	polys[2].edges[0] = 1;
-	polys[2].edges[1] = 10;
-	polys[2].edges[2] = -5;
-	polys[2].edges[3] = -9;
-	polys[2].normal.Set( 0.0f, -1.0f,  0.0f );
-
-	polys[3].numEdges = 4;
-	polys[3].edges[0] = 2;
-	polys[3].edges[1] = 11;
-	polys[3].edges[2] = -6;
-	polys[3].edges[3] = -10;
-	polys[3].normal.Set( 1.0f,  0.0f,  0.0f );
-
-	polys[4].numEdges = 4;
-	polys[4].edges[0] = 3;
-	polys[4].edges[1] = 12;
-	polys[4].edges[2] = -7;
-	polys[4].edges[3] = -11;
-	polys[4].normal.Set( 0.0f,  1.0f,  0.0f );
-
-	polys[5].numEdges = 4;
-	polys[5].edges[0] = 4;
-	polys[5].edges[1] = 9;
-	polys[5].edges[2] = -8;
-	polys[5].edges[3] = -12;
-	polys[5].normal.Set( -1.0f,  0.0f,  0.0f );
+	SetPolygon(*this, 0, {  -4,  -3,  -2,  -1}, idVec3( 0,  0, -1));
+	SetPolygon(*this, 1, {   5,   6,   7,   8}, idVec3( 0,  0,  1));
+	SetPolygon(*this, 2, {   1,  10,  -5,  -9}, idVec3( 0, -1,  0));
+	SetPolygon(*this, 3, {   2,  11,  -6, -10}, idVec3( 1,  0,  0));
+	SetPolygon(*this, 4, {   3,  12,  -7, -11}, idVec3( 0,  1,  0));
+	SetPolygon(*this, 5, {   4,   9,  -8, -12}, idVec3(-1,  0,  0));
 
 	// convex model
 	isConvex = true;
@@ -180,8 +166,8 @@ void idTraceModel::SetupOctahedron( const idBounds &octBounds ) {
 
 	// set polygons
 	for ( i = 0; i < numPolys; i++ ) {
-		e0 = polys[i].edges[0];
-		e1 = polys[i].edges[1];
+		e0 = edgeUses[polys[i].firstEdge + 0];
+		e1 = edgeUses[polys[i].firstEdge + 1];
 		v0 = edges[abs(e0)].v[INTSIGNBITSET(e0)];
 		v1 = edges[abs(e0)].v[INTSIGNBITNOTSET(e0)];
 		v2 = edges[abs(e1)].v[INTSIGNBITNOTSET(e1)];
@@ -247,45 +233,14 @@ void idTraceModel::InitOctahedron( void ) {
 	edges[12].v[0] =  5; edges[12].v[1] =  3;
 
 	// all edges of a polygon go counter clockwise
-	polys[0].numEdges = 3;
-	polys[0].edges[0] = 1;
-	polys[0].edges[1] = 2;
-	polys[0].edges[2] = 3;
-
-	polys[1].numEdges = 3;
-	polys[1].edges[0] = -3;
-	polys[1].edges[1] = 4;
-	polys[1].edges[2] = 5;
-
-	polys[2].numEdges = 3;
-	polys[2].edges[0] = -5;
-	polys[2].edges[1] = 6;
-	polys[2].edges[2] = 7;
-
-	polys[3].numEdges = 3;
-	polys[3].edges[0] = -7;
-	polys[3].edges[1] = 8;
-	polys[3].edges[2] = -1;
-
-	polys[4].numEdges = 3;
-	polys[4].edges[0] = 9;
-	polys[4].edges[1] = -2;
-	polys[4].edges[2] = 10;
-
-	polys[5].numEdges = 3;
-	polys[5].edges[0] = 11;
-	polys[5].edges[1] = -4;
-	polys[5].edges[2] = -9;
-
-	polys[6].numEdges = 3;
-	polys[6].edges[0] = 12;
-	polys[6].edges[1] = -6;
-	polys[6].edges[2] = -11;
-
-	polys[7].numEdges = 3;
-	polys[7].edges[0] = -10;
-	polys[7].edges[1] = -8;
-	polys[7].edges[2] = -12;
+	SetPolygon(*this, 0, {   1,   2,   3});
+	SetPolygon(*this, 1, {  -3,   4,   5});
+	SetPolygon(*this, 2, {  -5,   6,   7});
+	SetPolygon(*this, 3, {  -7,   8,  -1});
+	SetPolygon(*this, 4, {   9,  -2,  10});
+	SetPolygon(*this, 5, {  11,  -4,  -9});
+	SetPolygon(*this, 6, {  12,  -6, -11});
+	SetPolygon(*this, 7, { -10,  -8, -12});
 
 	// convex model
 	isConvex = true;
@@ -348,10 +303,10 @@ void idTraceModel::SetupDodecahedron( const idBounds &dodBounds ) {
 
 	// set polygons
 	for ( i = 0; i < numPolys; i++ ) {
-		e0 = polys[i].edges[0];
-		e1 = polys[i].edges[1];
-		e2 = polys[i].edges[2];
-		e3 = polys[i].edges[3];
+		e0 = edgeUses[polys[i].firstEdge + 0];
+		e1 = edgeUses[polys[i].firstEdge + 1];
+		e2 = edgeUses[polys[i].firstEdge + 2];
+		e3 = edgeUses[polys[i].firstEdge + 3];
 		v0 = edges[abs(e0)].v[INTSIGNBITSET(e0)];
 		v1 = edges[abs(e0)].v[INTSIGNBITNOTSET(e0)];
 		v2 = edges[abs(e1)].v[INTSIGNBITNOTSET(e1)];
@@ -439,89 +394,18 @@ void idTraceModel::InitDodecahedron( void ) {
 	edges[30].v[0] = 19; edges[30].v[1] =  7;
 
 	// all edges of a polygon go counter clockwise
-	polys[0].numEdges = 5;
-	polys[0].edges[0] = 1;
-	polys[0].edges[1] = 2;
-	polys[0].edges[2] = 3;
-	polys[0].edges[3] = 4;
-	polys[0].edges[4] = 5;
-
-	polys[1].numEdges = 5;
-	polys[1].edges[0] = -5;
-	polys[1].edges[1] = 6;
-	polys[1].edges[2] = 7;
-	polys[1].edges[3] = 8;
-	polys[1].edges[4] = 9;
-
-	polys[2].numEdges = 5;
-	polys[2].edges[0] = -8;
-	polys[2].edges[1] = 10;
-	polys[2].edges[2] = 11;
-	polys[2].edges[3] = 12;
-	polys[2].edges[4] = 13;
-
-	polys[3].numEdges = 5;
-	polys[3].edges[0] = 14;
-	polys[3].edges[1] = 15;
-	polys[3].edges[2] = 16;
-	polys[3].edges[3] = 17;
-	polys[3].edges[4] = -3;
-
-	polys[4].numEdges = 5;
-	polys[4].edges[0] = 18;
-	polys[4].edges[1] = 19;
-	polys[4].edges[2] = 20;
-	polys[4].edges[3] = 21;
-	polys[4].edges[4] = -12;
-
-	polys[5].numEdges = 5;
-	polys[5].edges[0] = 22;
-	polys[5].edges[1] = 23;
-	polys[5].edges[2] = 24;
-	polys[5].edges[3] = -16;
-	polys[5].edges[4] = 25;
-
-	polys[6].numEdges = 5;
-	polys[6].edges[0] = -9;
-	polys[6].edges[1] = -13;
-	polys[6].edges[2] = -21;
-	polys[6].edges[3] = 26;
-	polys[6].edges[4] = -1;
-
-	polys[7].numEdges = 5;
-	polys[7].edges[0] = -26;
-	polys[7].edges[1] = -20;
-	polys[7].edges[2] = 27;
-	polys[7].edges[3] = -14;
-	polys[7].edges[4] = -2;
-
-	polys[8].numEdges = 5;
-	polys[8].edges[0] = -4;
-	polys[8].edges[1] = -17;
-	polys[8].edges[2] = -24;
-	polys[8].edges[3] = 28;
-	polys[8].edges[4] = -6;
-
-	polys[9].numEdges = 5;
-	polys[9].edges[0] = -23;
-	polys[9].edges[1] = 29;
-	polys[9].edges[2] = -10;
-	polys[9].edges[3] = -7;
-	polys[9].edges[4] = -28;
-
-	polys[10].numEdges = 5;
-	polys[10].edges[0] = -25;
-	polys[10].edges[1] = -15;
-	polys[10].edges[2] = -27;
-	polys[10].edges[3] = -19;
-	polys[10].edges[4] = 30;
-
-	polys[11].numEdges = 5;
-	polys[11].edges[0] = -30;
-	polys[11].edges[1] = -18;
-	polys[11].edges[2] = -11;
-	polys[11].edges[3] = -29;
-	polys[11].edges[4] = -22;
+	SetPolygon(*this,  0, {   1,   2,   3,   4,   5 });
+	SetPolygon(*this,  1, {  -5,   6,   7,   8,   9 });
+	SetPolygon(*this,  2, {  -8,  10,  11,  12,  13 });
+	SetPolygon(*this,  3, {  14,  15,  16,  17,  -3 });
+	SetPolygon(*this,  4, {  18,  19,  20,  21, -12 });
+	SetPolygon(*this,  5, {  22,  23,  24, -16,  25 });
+	SetPolygon(*this,  6, {  -9, -13, -21,  26,  -1 });
+	SetPolygon(*this,  7, { -26, -20,  27, -14,  -2 });
+	SetPolygon(*this,  8, {  -4, -17, -24,  28,  -6 });
+	SetPolygon(*this,  9, { -23,  29, -10,  -7, -28 });
+	SetPolygon(*this, 10, { -25, -15, -27, -19,  30 });
+	SetPolygon(*this, 11, { -30, -18, -11, -29, -22 });
 
 	// convex model
 	isConvex = true;
@@ -579,18 +463,16 @@ void idTraceModel::SetupCylinder( const idBounds &cylBounds, const int numSides 
 		edges[n2+ii].v[0] = i;
 		edges[n2+ii].v[1] = n + i;
 		// vertical polygon edges
-		polys[i].numEdges = 4;
-		polys[i].edges[0] = ii;
-		polys[i].edges[1] = n2 + (ii % n) + 1;
-		polys[i].edges[2] = -(n + ii);
-		polys[i].edges[3] = -(n2 + ii);
-		// bottom and top polygon edges
-		polys[n].edges[i] = -(n - i);
-		polys[n+1].edges[i] = n + ii;
+		SetPolygon(*this, i, { ii, n2 + (ii % n) + 1, -(n + ii), -(n2 + ii) });
 	}
-	// bottom and top polygon numEdges
-	polys[n].numEdges = n;
-	polys[n+1].numEdges = n;
+	// bottom and top polygon edges
+	idList<int> euCaps[2];
+	for ( i = 0; i < n; i++ ) {
+		euCaps[0].Append(-(n - i));
+		euCaps[1].Append(n + ii);
+	}
+	SetPolygon(*this, n, euCaps[0]);
+	SetPolygon(*this, n+1, euCaps[1]);
 	// polygons
 	for ( i = 0; i < n; i++ ) {
 		// vertical polygon plane
@@ -687,16 +569,13 @@ void idTraceModel::SetupCone( const idBounds &coneBounds, const int numSides ) {
 		edges[n+ii].v[0] = i;
 		edges[n+ii].v[1] = n;
 		// vertical polygon edges
-		polys[i].numEdges = 3;
-		polys[i].edges[0] = ii;
-		polys[i].edges[1] = n + (ii % n) + 1;
-		polys[i].edges[2] = -(n + ii);
-		// bottom polygon edges
-		polys[n].edges[i] = -(n - i);
+		SetPolygon(*this, i, { ii, n + (ii % n) + 1, -(n + ii) });
 	}
-	// bottom polygon numEdges
-	polys[n].numEdges = n;
-
+	// bottom polygon edges
+	idList<int> euCap;
+	for ( i = 0; i < n; i++ )
+		euCap.Append( -(n - i) );
+	SetPolygon(*this, n, euCap);
 	// polygons
 	for ( i = 0; i < n; i++ ) {
 		// polygon plane
@@ -776,10 +655,11 @@ void idTraceModel::SetupBone( const float length, const float width ) {
 	polys[4].normal.Set( polys[1].normal[0], polys[1].normal[1], -polys[1].normal[2] );
 	// poly plane distances
 	for ( i = 0; i < 6; i++ ) {
-		polys[i].dist = polys[i].normal * verts[ edges[ abs(polys[i].edges[0]) ].v[0] ];
+		edgeNum = edgeUses[ polys[i].firstEdge ];
+		polys[i].dist = polys[i].normal * verts[ edges[ abs(edgeNum) ].v[0] ];
 		polys[i].bounds.Clear();
 		for ( j = 0; j < 3; j++ ) {
-			edgeNum = polys[i].edges[ j ];
+			edgeNum = edgeUses[ polys[i].firstEdge + j ];
 			polys[i].bounds.AddPoint( verts[ edges[abs(edgeNum)].v[edgeNum < 0] ] );
 		}
 	}
@@ -813,35 +693,12 @@ void idTraceModel::InitBone( void ) {
 	}
 
 	// all edges of a polygon go counter clockwise
-	polys[0].numEdges = 3;
-	polys[0].edges[0] = 2;
-	polys[0].edges[1] = -4;
-	polys[0].edges[2] = -1;
-
-	polys[1].numEdges = 3;
-	polys[1].edges[0] = 3;
-	polys[1].edges[1] = -5;
-	polys[1].edges[2] = -2;
-
-	polys[2].numEdges = 3;
-	polys[2].edges[0] = 1;
-	polys[2].edges[1] = -6;
-	polys[2].edges[2] = -3;
-
-	polys[3].numEdges = 3;
-	polys[3].edges[0] = 4;
-	polys[3].edges[1] = 8;
-	polys[3].edges[2] = -7;
-
-	polys[4].numEdges = 3;
-	polys[4].edges[0] = 5;
-	polys[4].edges[1] = 9;
-	polys[4].edges[2] = -8;
-
-	polys[5].numEdges = 3;
-	polys[5].edges[0] = 6;
-	polys[5].edges[1] = 7;
-	polys[5].edges[2] = -9;
+	SetPolygon(*this, 0, { 2, -4, -1 });
+	SetPolygon(*this, 1, { 3, -5, -2 });
+	SetPolygon(*this, 2, { 1, -6, -3 });
+	SetPolygon(*this, 3, { 4,  8, -7 });
+	SetPolygon(*this, 4, { 5,  9, -8 });
+	SetPolygon(*this, 5, { 6,  7, -9 });
 
 	// convex model
 	isConvex = true;
@@ -866,17 +723,10 @@ void idTraceModel::SetupPolygon( const idVec3 *v, const int count ) {
 
 	numEdges = numVerts;
 	numPolys = 2;
-	// set polygon planes
-	polys[0].numEdges = numEdges;
-	polys[0].normal = ( v[1] - v[0] ).Cross( v[2] - v[0] );
-	polys[0].normal.Normalize();
-	polys[0].dist = polys[0].normal * v[0];
-	polys[1].numEdges = numEdges;
-	polys[1].normal = -polys[0].normal;
-	polys[1].dist = -polys[0].dist;
 	// setup verts, edges and polygons
 	polys[0].bounds.Clear();
 	mid = vec3_origin;
+	idList<int> euFaces[2];
 	for ( i = 0, j = 1; i < numVerts; i++, j++ ) {
 		if ( j >= numVerts ) {
 			j = 0;
@@ -886,12 +736,21 @@ void idTraceModel::SetupPolygon( const idVec3 *v, const int count ) {
 		edges[i+1].v[1] = j;
 		edges[i+1].normal = polys[0].normal.Cross( v[i] - v[j] );
 		edges[i+1].normal.Normalize();
-		polys[0].edges[i] = i + 1;
-		polys[1].edges[i] = -(numVerts - i);
+		euFaces[0].Append( i + 1 );
+		euFaces[1].Append( -(numVerts - i) );
 		polys[0].bounds.AddPoint( verts[i] );
 		mid += v[i];
 	}
 	polys[1].bounds = polys[0].bounds;
+
+	SetPolygon(*this, 0, euFaces[0]);
+	SetPolygon(*this, 1, euFaces[1]);
+	polys[0].normal = ( v[1] - v[0] ).Cross( v[2] - v[0] );
+	polys[0].normal.Normalize();
+	polys[0].dist = polys[0].normal * v[0];
+	polys[1].normal = -polys[0].normal;
+	polys[1].dist = -polys[0].dist;
+
 	// offset to center
 	offset = mid * (1.0f / numVerts);
 	// total bounds
@@ -929,18 +788,15 @@ void idTraceModel::VolumeFromPolygon( idTraceModel &trm, float thickness ) const
 	trm.numVerts = numVerts * 2;
 	trm.numEdges = numEdges * 3;
 	trm.numPolys = numEdges + 2;
+	assert(trm.polys[1].numEdges == trm.polys[0].numEdges);
 	for ( i = 0; i < numEdges; i++ ) {
 		trm.verts[ numVerts + i ] = verts[i] - thickness * polys[0].normal;
 		trm.edges[ numEdges + i + 1 ].v[0] = numVerts + i;
 		trm.edges[ numEdges + i + 1 ].v[1] = numVerts + (i+1) % numVerts;
 		trm.edges[ numEdges * 2 + i + 1 ].v[0] = i;
 		trm.edges[ numEdges * 2 + i + 1 ].v[1] = numVerts + i;
-		trm.polys[1].edges[i] = -(numEdges + i + 1);
-		trm.polys[2+i].numEdges = 4;
-		trm.polys[2+i].edges[0] = -(i + 1);
-		trm.polys[2+i].edges[1] = numEdges*2 + i + 1;
-		trm.polys[2+i].edges[2] = numEdges + i + 1;
-		trm.polys[2+i].edges[3] = -(numEdges*2 + (i+1) % numEdges + 1);
+		trm.edgeUses[trm.polys[1].firstEdge + i] = -(numEdges + i + 1);
+		SetPolygon(trm, 2+i, { -(i + 1), numEdges*2 + i + 1, numEdges + i + 1, -(numEdges*2 + (i+1) % numEdges + 1) } );
 		trm.polys[2+i].normal = (verts[(i + 1) % numVerts] - verts[i]).Cross( polys[0].normal );
 		trm.polys[2+i].normal.Normalize();
 		trm.polys[2+i].dist = trm.polys[2+i].normal * verts[i];
@@ -972,7 +828,7 @@ int idTraceModel::GenerateEdgeNormals( void ) {
 	for ( i = 0; i < numPolys; i++ ) {
 		poly = polys + i;
 		for ( j = 0; j < poly->numEdges; j++ ) {
-			edgeNum = poly->edges[j];
+			edgeNum = edgeUses[poly->firstEdge + j];
 			edge = edges + abs( edgeNum );
 			if ( edge->normal[0] == 0.0f && edge->normal[1] == 0.0f && edge->normal[2] == 0.0f ) {
 				edge->normal = poly->normal;
@@ -1045,7 +901,7 @@ void idTraceModel::Rotate( const idMat3 &rotation, bool isRotationOrthogonal ) {
 		polys[i].bounds.Clear();
 		edgeNum = 0;
 		for ( j = 0; j < polys[i].numEdges; j++ ) {
-			edgeNum = polys[i].edges[j];
+			edgeNum = edgeUses[polys[i].firstEdge + j];
 			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
 		}
 		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
@@ -1079,7 +935,7 @@ void idTraceModel::Scale( const idVec3 &scale ) {
 		polys[i].bounds.Clear();
 		edgeNum = 0;
 		for ( j = 0; j < polys[i].numEdges; j++ ) {
-			edgeNum = polys[i].edges[j];
+			edgeNum = edgeUses[polys[i].firstEdge + j];
 			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
 		}
 		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
@@ -1088,34 +944,6 @@ void idTraceModel::Scale( const idVec3 &scale ) {
 
 	GenerateEdgeNormals();
 }
-
-/* Old code, commented out tels 2011-01-13
-============
-idTraceModel::Rotate
-============
-void idTraceModel::Rotate( const idMat3 &rotation ) {
-	int i, j, edgeNum;
-
-	for ( i = 0; i < numVerts; i++ ) {
-		verts[i] *= rotation;
-	}
-
-	bounds.Clear();
-	for ( i = 0; i < numPolys; i++ ) {
-		polys[i].normal *= rotation;
-		polys[i].bounds.Clear();
-		edgeNum = 0;
-		for ( j = 0; j < polys[i].numEdges; j++ ) {
-			edgeNum = polys[i].edges[j];
-			polys[i].bounds.AddPoint( verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]] );
-		}
-		polys[i].dist = polys[i].normal * verts[edges[abs(edgeNum)].v[INTSIGNBITSET(edgeNum)]];
-		bounds += polys[i].bounds;
-	}
-
-	GenerateEdgeNormals();
-}
-*/
 
 /*
 ============
@@ -1129,7 +957,7 @@ void idTraceModel::Shrink( const float m ) {
 
 	if ( type == TRM_POLYGON ) {
 		for ( i = 0; i < numEdges; i++ ) {
-			edgeNum = polys[0].edges[i];
+			edgeNum = edgeUses[polys[0].firstEdge + i];
 			edge = &edges[abs(edgeNum)];
 			dir = verts[ edge->v[ INTSIGNBITSET(edgeNum) ] ] - verts[ edge->v[ INTSIGNBITNOTSET(edgeNum) ] ];
 			if ( dir.Normalize() < 2.0f * m ) {
@@ -1146,7 +974,7 @@ void idTraceModel::Shrink( const float m ) {
 		polys[i].dist -= m;
 
 		for ( j = 0; j < polys[i].numEdges; j++ ) {
-			edgeNum = polys[i].edges[j];
+			edgeNum = edgeUses[polys[i].firstEdge + j];
 			edge = &edges[abs(edgeNum)];
 			verts[ edge->v[ INTSIGNBITSET(edgeNum) ] ] -= polys[i].normal * m;
 		}
@@ -1201,16 +1029,19 @@ float idTraceModel::GetPolygonArea( int polyNum ) const {
 	idVec3 base, v1, v2, cross;
 	float total;
 	const traceModelPoly_t *poly;
+	int edgeNum;
 
 	if ( polyNum < 0 || polyNum >= numPolys ) {
 		return 0.0f;
 	}
 	poly = &polys[polyNum];
 	total = 0.0f;
-	base = verts[ edges[ abs(poly->edges[0]) ].v[ INTSIGNBITSET( poly->edges[0] ) ] ];
+	edgeNum = edgeUses[poly->firstEdge + 0];
+	base = verts[ edges[ abs(edgeNum) ].v[ INTSIGNBITSET( edgeNum ) ] ];
 	for ( i = 0; i < poly->numEdges; i++ ) {
-		v1 = verts[ edges[ abs(poly->edges[i]) ].v[ INTSIGNBITSET( poly->edges[i] ) ] ] - base;
-		v2 = verts[ edges[ abs(poly->edges[i]) ].v[ INTSIGNBITNOTSET( poly->edges[i] ) ] ] - base;
+		edgeNum = edgeUses[poly->firstEdge + i];
+		v1 = verts[ edges[ abs(edgeNum) ].v[ INTSIGNBITSET( edgeNum ) ] ] - base;
+		v2 = verts[ edges[ abs(edgeNum) ].v[ INTSIGNBITNOTSET( edgeNum ) ] ] - base;
 		cross = v1.Cross( v2 );
 		total += cross.Length();
 	}
@@ -1275,11 +1106,11 @@ int idTraceModel::GetProjectionSilhouetteEdges( const idVec3 &projectionOrigin, 
 
 	for ( i = 0; i < numPolys; i++ ) {
 		poly = &polys[i];
-		edgeNum = poly->edges[0];
+		edgeNum = edgeUses[poly->firstEdge + 0];
 		dir = verts[ edges[abs(edgeNum)].v[ INTSIGNBITSET(edgeNum) ] ] - projectionOrigin;
 		if ( dir * poly->normal < 0.0f ) {
 			for ( j = 0; j < poly->numEdges; j++ ) {
-				edgeNum = poly->edges[j];
+				edgeNum = edgeUses[poly->firstEdge + j];
 				edgeIsSilEdge[abs(edgeNum)] ^= 1;
 			}
 		}
@@ -1304,7 +1135,7 @@ int idTraceModel::GetParallelProjectionSilhouetteEdges( const idVec3 &projection
 		poly = &polys[i];
 		if ( projectionDir * poly->normal < 0.0f ) {
 			for ( j = 0; j < poly->numEdges; j++ ) {
-				edgeNum = poly->edges[j];
+				edgeNum = edgeUses[poly->firstEdge + j];
 				edgeIsSilEdge[abs(edgeNum)] ^= 1;
 			}
 		}
@@ -1346,7 +1177,7 @@ void idTraceModel::ProjectionIntegrals( int polyNum, int a, int b, struct projec
 	memset(&integrals, 0, sizeof(projectionIntegrals_t));
 	poly = &polys[polyNum];
 	for ( i = 0; i < poly->numEdges; i++ ) {
-		edgeNum = poly->edges[i];
+		edgeNum = edgeUses[poly->firstEdge + i];
 		v1 = verts[ edges[ abs(edgeNum) ].v[ edgeNum < 0 ] ];
 		v2 = verts[ edges[ abs(edgeNum) ].v[ edgeNum > 0 ] ];
 		a0 = v1[a];

@@ -6413,7 +6413,8 @@ void idGameLocal::RadiusPushClipModel( const idVec3 &origin, const float push, c
 
 		center.Zero();
 		for ( j = 0; j < poly->numEdges; j++ ) {
-			v = trm->verts[ trm->edges[ abs(poly->edges[j]) ].v[ INTSIGNBITSET( poly->edges[j] ) ] ];
+			int edgeNum = trm->edgeUses[poly->firstEdge + j];
+			v = trm->verts[ trm->edges[ abs(edgeNum) ].v[ INTSIGNBITSET( edgeNum ) ] ];
 			center += v;
 			v -= localOrigin;
 			v.NormalizeFast();	// project point on a unit sphere
