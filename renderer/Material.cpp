@@ -2143,7 +2143,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// stgatilov #5427: handle macros for typical frobstages generation
 		else if ( !token.Icmp( "frobstage_texture" ) || !token.Icmp( "frobstage_diffuse" ) ) {
 
-			str = nullptr;
+			idStr str;
 			if ( !token.Icmp( "frobstage_texture" ) ) {
 				// frobstage_texture: texture must be specified as argument
 				str = R_ParsePastImageProgram( src );
@@ -2155,14 +2155,14 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 							str = image->imgName.c_str();
 							break;
 						}
-				if ( !str )
+				if ( str.IsEmpty() )
 					common->Warning( "material '%s' frobstage_diffuse: cannot find diffuse texture", GetName() );
 			}
 
 			idVec3 mult = ParseNumberOrVec3( src );
 			idVec3 add = ParseNumberOrVec3( src );
 
-			AddFrobStages( add, str, mult, trpDefault );
+			AddFrobStages( add, str.c_str(), mult, trpDefault );
 			continue;
 		}
 		else if ( !token.Icmp( "frobstage_none" ) ) {
