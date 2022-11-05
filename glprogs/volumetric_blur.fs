@@ -23,6 +23,7 @@ out vec4 FragColor;
 uniform sampler2D u_sourceTexture;
 uniform sampler2D u_depthTexture;
 uniform vec2 u_invDestResolution;
+uniform vec2 u_subpixelShift;
 uniform bool u_vertical;
 uniform float u_blurSigma;
 
@@ -38,7 +39,7 @@ void main() {
 
 	// save view Z of central sample
 	vec2 distDerivs;
-	float distCenter = sampleZWithDerivs(u_depthTexture, u_projectionMatrix, tcCenter, u_invDestResolution, distDerivs);
+	float distCenter = sampleZWithDerivs(u_depthTexture, u_projectionMatrix, tcCenter + u_subpixelShift, u_invDestResolution, distDerivs);
 
 	float sumWeight = 0;
 	vec4 sumColor = vec4(0);
@@ -49,7 +50,7 @@ void main() {
 		float density = exp(-0.5 * (i/u_blurSigma) * (i/u_blurSigma));
 
 		// blur is depth-aware, so edges are not blurred
-		float distThis = depthToZ(u_projectionMatrix, texture(u_depthTexture, tcThis).r);
+		float distThis = depthToZ(u_projectionMatrix, texture(u_depthTexture, tcThis + u_subpixelShift).r);
 		float depthWeight = depthDifferenceWeight(distCenter, distThis, tcCenter, tcThis, distDerivs);
 
 		vec4 color = texture(u_sourceTexture, tcThis);

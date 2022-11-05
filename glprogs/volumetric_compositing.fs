@@ -23,6 +23,7 @@ out vec4 FragColor;
 uniform sampler2D u_resultTexture;
 uniform sampler2D u_depthTexture;
 uniform vec2 u_invDestResolution;
+uniform vec2 u_subpixelShift;
 uniform bool u_upsampling;
 
 
@@ -60,10 +61,10 @@ void main() {
 		vec4 color01 = texture(u_resultTexture, tc01);
 		vec4 color10 = texture(u_resultTexture, tc10);
 		vec4 color00 = texture(u_resultTexture, tc00);
-		float dist11 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc11).r);
-		float dist01 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc01).r);
-		float dist10 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc10).r);
-		float dist00 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc00).r);
+		float dist11 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc11 + u_subpixelShift).r);
+		float dist01 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc01 + u_subpixelShift).r);
+		float dist10 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc10 + u_subpixelShift).r);
+		float dist00 = depthToZ(u_projectionMatrix, texture(u_depthTexture, tc00 + u_subpixelShift).r);
 		float weight11 =   rightWeight.x   * rightWeight.y   *   depthDifferenceWeight(thisDist, dist11, thisTC, tc11, distDerivs);
 		float weight01 = (1-rightWeight.x) * rightWeight.y   *   depthDifferenceWeight(thisDist, dist01, thisTC, tc01, distDerivs);
 		float weight10 =   rightWeight.x   * (1-rightWeight.y) * depthDifferenceWeight(thisDist, dist10, thisTC, tc10, distDerivs);
