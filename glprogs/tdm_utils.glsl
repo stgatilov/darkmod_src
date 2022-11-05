@@ -24,13 +24,45 @@ vec3 worldPosToObject(vec3 worldPosition, mat4 modelMatrix) {
 	return (worldPosition - vec3(modelMatrix[3])) * mat3(modelMatrix);
 }
 
-// returns eye Z coordinate with reversed sign (monotonically increasing with depth)
+// returns view Z coordinate with reversed sign (monotonically increasing with depth)
 // in other words, it is eye-fragment distance along view direction
 float depthToZ(mat4 projectionMatrix, float depth) {
 	float clipZ = 2.0 * depth - 1.0;
 	float A = projectionMatrix[2].z;
 	float B = projectionMatrix[3].z;
 	return B / (A + clipZ);
+}
+
+// samples depth texture and returns negated view Z with derivatives
+// tcDelta should equal inverse resolution of depth texture (sampling distance)
+// Zderivs is mathematically equivalent to (dFdx(return), dFdy(return)) if depth and render resolutions are equal
+// but this function returns good values even for texels on discontinuity edge
+float sampleZWithDerivs(sampler2D depthTexture, mat4 projectionMatrix, vec2 tcPoint, vec2 tcDelta, out vec2 Zderivs) {
+	// set cross pattern
+	vec2 tcMoreX = tcPoint + vec2(tcDelta.x, 0);
+	vec2 tcLessX = tcPoint - vec2(tcDelta.x, 0);
+	vec2 tcMoreY = tcPoint + vec2(0, tcDelta.y);
+	vec2 tcLessY = tcPoint - vec2(0, tcDelta.y);
+	// evaluate all samples
+	float valueCenter = depthToZ(projectionMatrix, texture(depthTexture, tcPoint).r);
+	float valueMoreX = depthToZ(projectionMatrix, texture(depthTexture, tcMoreX).r);
+	float valueLessX = depthToZ(projectionMatrix, texture(depthTexture, tcLessX).r);
+	float valueMoreY = depthToZ(projectionMatrix, texture(depthTexture, tcMoreY).r);
+	float valueLessY = depthToZ(projectionMatrix, texture(depthTexture, tcLessY).r);
+	// set infinite values for texcoords outside [0..1]
+	if (tcMoreX.x > 1) valueMoreX = 1e+20;
+	if (tcLessX.x < 0) valueLessX = 1e+20;
+	if (tcMoreY.x > 1) valueMoreY = 1e+20;
+	if (tcLessY.x < 0) valueLessY = 1e+20;
+	// compute all finite differences
+	float derivMoreX = valueMoreX - valueCenter;
+	float derivLessX = -(valueLessX - valueCenter);
+	float derivMoreY = valueMoreY - valueCenter;
+	float derivLessY = -(valueLessY - valueCenter);
+	// among two differences, choose one with smaller magnitude
+	Zderivs.x = (abs(derivLessX) < abs(derivMoreX) ? derivLessX : derivMoreX);
+	Zderivs.y = (abs(derivLessY) < abs(derivMoreY) ? derivLessY : derivMoreY);
+	return valueCenter;
 }
 
 #define SOFT_SHADOWS_SAMPLES_COUNT 150

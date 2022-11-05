@@ -64,7 +64,6 @@ public:
 	GLSLProgram *shadowMapInteractionShader;
 	GLSLProgram *multiLightInteractionShader;
 	GLSLProgram *gaussianBlurShader;
-	GLSLProgram* volumetricLightShader;
 	GLSLProgram *testImageCubeShader;
 
 	GLuint uboHandle;

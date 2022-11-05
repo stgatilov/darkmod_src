@@ -36,6 +36,7 @@ uniform int u_shadows;
 uniform float u_dust;
 uniform int u_randomize;
 uniform int u_alphaMode;
+uniform vec2 u_invDestResolution;
 
 in vec4 worldPosition;
 
@@ -110,7 +111,7 @@ void main() {
 	}
 
 	//only consider visible part (not occluded by opaque geometry)
-	vec2 depthTexCoord = gl_FragCoord.xy / textureSize(u_depthTexture, 0);
+	vec2 depthTexCoord = gl_FragCoord.xy * u_invDestResolution;
 	float depth = texture2D(u_depthTexture, depthTexCoord).r;
 	float solidParam = depthToZ(u_projectionMatrix, depth) / depthToZ(u_projectionMatrix, gl_FragCoord.z);
 	maxParam = min(maxParam, solidParam);
