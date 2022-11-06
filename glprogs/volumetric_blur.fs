@@ -40,6 +40,9 @@ void main() {
 	// save view Z of central sample
 	vec2 distDerivs;
 	float distCenter = sampleZWithDerivs(u_depthTexture, u_projectionMatrix, tcCenter + u_subpixelShift, u_invDestResolution, distDerivs);
+	// since we render backfaces, set tangent plane as upper limit for view distance
+	float exitDist = depthToZ(u_projectionMatrix, gl_FragCoord.z);
+	vec2 exitDerivs = vec2(dFdx(exitDist), dFdy(exitDist));
 
 	float sumWeight = 0;
 	vec4 sumColor = vec4(0);
@@ -51,7 +54,7 @@ void main() {
 
 		// blur is depth-aware, so edges are not blurred
 		float distThis = depthToZ(u_projectionMatrix, texture(u_depthTexture, tcThis + u_subpixelShift).r);
-		float depthWeight = depthDifferenceWeight(distCenter, distThis, tcCenter, tcThis, distDerivs);
+		float depthWeight = depthDifferenceWeight(distCenter, distThis, tcCenter, tcThis, distDerivs, exitDist, exitDerivs);
 
 		vec4 color = texture(u_sourceTexture, tcThis);
 		sumWeight += depthWeight * density;

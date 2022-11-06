@@ -13,9 +13,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 
-float depthDifferenceWeight(float distCorrect, float distHave, vec2 tcCorrect, vec2 tcHave, vec2 distDerivs) {
-	// using high-res derivatives of view Z, do linear estimate of true difference
+float depthDifferenceWeight(float distCorrect, float distHave, vec2 tcCorrect, vec2 tcHave, vec2 distDerivs, float capDist, vec2 capDistDerivs) {
 	vec2 tcDelta = tcHave - tcCorrect;
+	// if both pixels are behind light frustum, then weight = 1, i.e. full blur
+	// this means that depth variation in background does not harm volumetric light
+	if (distCorrect > capDist && distHave > capDist + dot(capDistDerivs, tcDelta))
+		return 1.0;
+	// using high-res derivatives of view Z, do linear estimate of true difference
 	vec2 distDelta = distDerivs * tcDelta;
 	float distEstim = distCorrect + distDelta.x + distDelta.y;
 	float distError = abs(distHave - distEstim);

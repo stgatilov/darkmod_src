@@ -290,9 +290,10 @@ void VolumetricStage::SetScissor() {
 
 void VolumetricStage::RenderFrustum(GLSLProgram *shader) {
 	// note: in principle, we can often do scissored full-screen pass (for blur & compositing)
-	// instead, we render frustum with single-sided culling to get two benefits:
+	// instead, we render frustum with backfaces to get benefits:
 	//   1) less fragments to process (only frustum pixels instead of scissor rect)
-	//   2) retain sharp edge of light volume boundary
+	//   2) retain sharp edge of light volume boundary (not perfectly due to lower resolution)
+	//   3) can use frustum exit distance for clamping depth texture
 
 	// set modelview / projection
 	shader->GetUniformGroup<Uniforms::Global>()->Set( &viewDef->worldSpace );
