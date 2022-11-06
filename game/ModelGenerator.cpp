@@ -730,7 +730,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 
 		// set these so they don't get recalculated in FinishSurfaces():
 		newSurf.geometry->tangentsCalculated = true;
-		newSurf.geometry->facePlanesCalculated = true;
+		newSurf.geometry->facePlanesCalculated = false;
 		newSurf.geometry->generateNormals = false;
 		newSurf.geometry->numVerts = nV;
 		newSurf.geometry->numIndexes = nI;
@@ -1363,7 +1363,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 #endif
 
 		newSurf->geometry->tangentsCalculated = true;
-		newSurf->geometry->facePlanesCalculated = true;
+		newSurf->geometry->facePlanesCalculated = false;
 		newSurf->geometry->generateNormals = false;
 		// calculate new bounds
 		SIMDProcessor->MinMax( newSurf->geometry->bounds[0], newSurf->geometry->bounds[1], newSurf->geometry->verts, newSurf->geometry->numVerts );
