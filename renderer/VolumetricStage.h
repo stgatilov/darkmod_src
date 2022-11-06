@@ -48,6 +48,12 @@ private:
 	// temporary data
 	mutable const viewDef_t *viewDef;
 	mutable const viewLight_t *viewLight;
+	// whenever we sample depth texture at low-res pixel (aka "block"), we shift texcoord from block center by this amount
+	// since lowres texture is 2/4/8 times smaller, block center is always exactly between 2x2 high-res pixels
+	// depth is sampled with nearest filter, so one of them is chosen depending on roundoff errors
+	// however, we want to ensure that the same depth texel is used for block in all shaders, otherwise depth-aware blur/upsampling will look bad
+	// adding shift by half of high-res texel means that upper-right depth texel our of 2x2 square is always chosen
+	mutable idVec2 subpixelShift;
 };
 
 extern VolumetricStage *volumetric;

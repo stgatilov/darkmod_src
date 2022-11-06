@@ -139,6 +139,10 @@ bool VolumetricStage::RenderLight(const viewDef_t *viewDef, const viewLight_t *v
 
 	bool useFBO = ( r_volumetricBlur.GetFloat() > 0.0f || r_volumetricLowres.GetBool() ) && data.samples > 0;
 
+	subpixelShift.Zero();
+	if ( r_volumetricLowres.GetInteger() > 0 )
+		subpixelShift.Set( 0.5f / globalImages->currentDepthImage->uploadWidth, 0.5f / globalImages->currentDepthImage->uploadHeight );
+
 	// out of two fragments, render the farther one
 	GL_Cull( CT_BACK_SIDED );
 
@@ -345,12 +349,7 @@ void VolumetricStage::RenderRaymarching(const TemporaryData &data) {
 	uniforms->randomize.Set( r_volumetricDither.GetInteger() );
 
 	uniforms->invDestResolution.Set( 1.0f / frameBuffers->activeDrawFbo->Width(), 1.0f / frameBuffers->activeDrawFbo->Height() );
-	// whenever we sample depth texture at low-res pixel (aka "block"), we shift texcoord from block center by this amount
-	// since lowres texture is 2/4/8 times smaller, block center is always exactly between 2x2 high-res pixels
-	// depth is sampled with nearest filter, so one of them is chosen depending on roundoff errors
-	// however, we want to ensure that the same depth texel is used for block in all shaders, otherwise depth-aware blur/upsampling will look bad
-	// adding shift by half of high-res texel means that upper-right depth texel our of 2x2 square is always chosen
-	uniforms->subpixelShift.Set( 0.5f / globalImages->currentDepthImage->uploadWidth, 0.5f / globalImages->currentDepthImage->uploadHeight );
+	uniforms->subpixelShift.Set( subpixelShift );
 
 	uniforms->viewOrigin.Set( viewDef->renderView.vieworg );
 	uniforms->lightProject.Set( viewLight->lightProject[0].ToFloatPtr() );
@@ -412,7 +411,7 @@ void VolumetricStage::Blur(idImage *sourceTexture, bool vertical) {
 	globalImages->currentDepthImage->Bind();
 
 	uniforms->invDestResolution.Set( 1.0f / frameBuffers->activeDrawFbo->Width(), 1.0f / frameBuffers->activeDrawFbo->Height() );
-	uniforms->subpixelShift.Set( 0.5f / globalImages->currentDepthImage->uploadWidth, 0.5f / globalImages->currentDepthImage->uploadHeight );
+	uniforms->subpixelShift.Set( subpixelShift );
 	uniforms->vertical.Set( vertical );
 	uniforms->blurSigma.Set( r_volumetricBlur.GetFloat() );
 
@@ -445,7 +444,7 @@ void VolumetricStage::PerformCompositing(idImage *colorTexture) {
 	globalImages->currentDepthImage->Bind();
 
 	uniforms->invDestResolution.Set( 1.0f / frameBuffers->activeDrawFbo->Width(), 1.0f / frameBuffers->activeDrawFbo->Height() );
-	uniforms->subpixelShift.Set( 0.5f / globalImages->currentDepthImage->uploadWidth, 0.5f / globalImages->currentDepthImage->uploadHeight );
+	uniforms->subpixelShift.Set( subpixelShift );
 	uniforms->upsampling.Set( r_volumetricLowres.GetInteger() > 0 );
 
 	RenderFrustum( compositingShader );
