@@ -315,7 +315,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	}
 
 	// find maximum distance from light origin to vertices of its light frustum
-	frustumCorners_t corners;
+	ALIGN16( frustumCorners_t corners );
 	idRenderMatrix::GetFrustumCorners( corners, light->inverseBaseLightProject, bounds_zeroOneCube );
 	float lightFrustumRadius = 0.0f;
 	for ( int i = 0; i < NUM_FRUSTUM_CORNERS; i++ )
