@@ -23,6 +23,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "backend/RenderBackend.h"
 #include "AmbientOcclusionStage.h"
 #include "BloomStage.h"
+#include "VolumetricStage.h"
 #include "FrameBufferManager.h"
 #include "../sys/sys_padinput.h"
 
@@ -1843,6 +1844,7 @@ void idRenderSystemLocal::Shutdown( void ) {
 
 	ambientOcclusion->Shutdown();
 	bloom->Shutdown();
+	volumetric->Shutdown();
 
 	if ( glConfig.isInitialized ) {
 		globalImages->PurgeAllImages();
