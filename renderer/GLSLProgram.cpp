@@ -90,16 +90,18 @@ bool GLSLProgram::Link() {
 	qglLinkProgram( program );
 	GL_SetDebugLabel( GL_PROGRAM, program, name );
 
-	GLint result = GL_FALSE;
+	GLint result = false;
 	qglGetProgramiv( program, GL_LINK_STATUS, &result );
-	if( result != GL_TRUE ) {
+	if( !result || r_glDebugContext.GetBool() ) {
 		// display program info log, which may contain clues to the linking error
 		GLint length;
 		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
-		auto log = std::make_unique<char[]>( length + 1 );
-		qglGetProgramInfoLog( program, length, &result, log.get() );
-		log[length] = 0;
-		common->Warning( "Linking program %s failed:\n%s\n", name.c_str(), log.get() );
+		if ( !result || length > 0 ) {
+			auto log = std::make_unique<char[]>( length + 1 );
+			qglGetProgramInfoLog( program, length, &length, log.get() );
+			log[length] = 0;
+			common->Warning( "Linking program %s %s:\n%s\n", name.c_str(), (result ? "info" : "failed"), log.get() );
+		}
 	}
 
 	SetDefaultUniformBlockBindings();
@@ -345,24 +347,28 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 	// check if compilation was successful
 	GLint result;
 	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
-	if( result == GL_FALSE ) {
+	if( !result || r_glDebugContext.GetBool() ) {
 		// display the shader info log, which contains compile errors
 		int length;
 		qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
-		auto log = std::make_unique<char[]>( length );
-		qglGetShaderInfoLog( shader, length, &result, log.get() );
-		std::stringstream ss;
-		ss << "Compiling shader file " << sourceFile << " failed:\n" << log.get() << "\n\n";
-		// unfortunately, GLSL compilers don't reference any actual source files in their errors, but only
-		// file index numbers. So we'll display a short legend which index corresponds to which file.
-		ss << "File indexes:\n";
-		for( size_t i = 0; i < sourceFiles.size(); ++i ) {
-			ss << "  " << i << " - " << sourceFiles[i] << "\n";
+		if ( !result || length > 0 ) {
+			auto log = std::make_unique<char[]>( length );
+			qglGetShaderInfoLog( shader, length, &length, log.get() );
+			std::stringstream ss;
+			ss << "Compiling shader file " << sourceFile << " " << (result ? "info" : "failed") << ":\n" << log.get() << "\n\n";
+			// unfortunately, GLSL compilers don't reference any actual source files in their errors, but only
+			// file index numbers. So we'll display a short legend which index corresponds to which file.
+			ss << "File indexes:\n";
+			for( size_t i = 0; i < sourceFiles.size(); ++i ) {
+				ss << "  " << i << " - " << sourceFiles[i] << "\n";
+			}
+			common->Warning( "%s", ss.str().c_str() );
 		}
-		common->Warning( "%s", ss.str().c_str() );
 
-		qglDeleteShader( shader );
-		return 0;
+		if ( !result ) {
+			qglDeleteShader( shader );
+			return 0;
+		}
 	}
 
 	return shader;
