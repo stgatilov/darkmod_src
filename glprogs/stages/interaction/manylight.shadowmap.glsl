@@ -89,7 +89,7 @@ float UseShadowMap(int lightNum) {
 	}
 	//shortcut: no blockers in search angle => fully lit
 	if (blockerCnt == 0)
-		return 1;
+		return 1.0;
 	/* Bad optimization!
 	 * Go to St. Alban's Collateral and execute:
 	 *   setviewpos  -114.57 1021.61 130.95   -1.0 147.8 0.0

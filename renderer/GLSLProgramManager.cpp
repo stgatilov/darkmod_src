@@ -263,8 +263,8 @@ void GLSLProgramManager::Init() {
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
 	stencilShadowShader = Load( "stencilshadow" );
 	shadowMapShader = LoadFromGenerator( "shadowMapA", InitShadowMapShader );
-	shadowMapMultiShader = LoadFromGenerator( "shadowMapN", InitShadowMapShader );
-	shadowMapMultiGShader = LoadFromGenerator( "shadowMapNG", InitShadowMapShader );
+	shadowMapMultiShader = nullptr; //LoadFromGenerator( "shadowMapN", InitShadowMapShader );
+	shadowMapMultiGShader = nullptr; //LoadFromGenerator( "shadowMapNG", InitShadowMapShader );
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
 	stencilInteractionShader = LoadInteractionShader( "interactionStencil", "interactionStencil", false );
 	shadowMapInteractionShader = LoadInteractionShader( "interactionShadowMaps", "interactionShadowMaps", false );
