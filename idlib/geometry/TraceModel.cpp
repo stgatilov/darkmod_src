@@ -468,6 +468,7 @@ void idTraceModel::SetupCylinder( const idBounds &cylBounds, const int numSides 
 	// bottom and top polygon edges
 	idList<int> euCaps[2];
 	for ( i = 0; i < n; i++ ) {
+		ii = i + 1;
 		euCaps[0].Append(-(n - i));
 		euCaps[1].Append(n + ii);
 	}
