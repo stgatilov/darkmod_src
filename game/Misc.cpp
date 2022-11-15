@@ -2188,7 +2188,7 @@ void idPortalEntity::Spawn()
 	m_EntityLocationDone = false;
 
 	// store the sound loss for the associated portal
-	m_SoundLoss = spawnArgs.GetFloat("sound_loss", "0.0");
+	m_SoundLoss = idMath::Fabs( spawnArgs.GetFloat("sound_loss", "0.0") );
 
 	// store the light loss factor for this portal
 	m_LightLoss = spawnArgs.GetFloat("light_loss", "0.0");
