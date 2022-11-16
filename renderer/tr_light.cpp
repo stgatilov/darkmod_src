@@ -266,8 +266,12 @@ static bool R_PointInFrustum( idVec3 &p, idPlane *planes, int numPlanes ) {
 	return true;
 }
 
+idCVar r_volumetricEnable(
+	"r_volumetricEnable", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"If set to 0, then all volumetric lights are disabled. "
+);
 idCVar r_volumetricForceShadowMaps(
-	"r_volumetricForceShadowMaps", "1", CVAR_BOOL | CVAR_RENDERER,
+	"r_volumetricForceShadowMaps", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
 	"If volumetrics need shadows, then switch the light to shadow maps even if stencil shadows are preferred in general. "
 );
 
@@ -368,6 +372,10 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 
 	// stgatilov #5816: copy volumetric dust settings, resolve noshadows behavior
 	vLight->volumetricDust = light->parms.volumetricDust;
+	if ( !r_volumetricEnable.GetBool() ) {
+		// debug cvar says to remove volumetrics
+		vLight->volumetricDust = 0.0f;
+	}
 	vLight->volumetricNoshadows = false;
 	if ( vLight->lightShader->IsFogLight() ) {
 		// no shadows in fog

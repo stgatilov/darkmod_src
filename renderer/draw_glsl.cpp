@@ -463,6 +463,13 @@ void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf
 	GL_CheckErrors();
 	Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
 
+	if ( !shader )
+	{
+		// normally, should never happen
+		// but toggling some cvars make lights switch between modes =(
+		return;
+	}
+
 	// subviews will just down-modulate the color buffer by overbright
 	if ( shader->GetSort() == SS_SUBVIEW ) {
 		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
