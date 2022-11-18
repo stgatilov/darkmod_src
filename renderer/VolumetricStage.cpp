@@ -27,7 +27,7 @@ VolumetricStage volumetricImpl;
 VolumetricStage *volumetric = &volumetricImpl;
 
 idCVar r_volumetricSamples(
-	"r_volumetricSamples", "8", CVAR_ARCHIVE | CVAR_INTEGER | CVAR_RENDERER,
+	"r_volumetricSamples", "24", CVAR_ARCHIVE | CVAR_INTEGER | CVAR_RENDERER,
 	"How many samples to compute at every pixel of a volumetric light. "
 	"Higher values improve quality but severely degrade performance. "
 	"Zero value means using average color of projection/falloff textures and no shadows (very cheap).",
