@@ -624,6 +624,15 @@ void idImage::GenerateAttachment( int width, int height, GLenum format, GLenum f
 	} else if ( oldMaxLevel < lodLevel ) {
 		qglTexParameteriv( GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &lodLevel );
 	}
+
+	if ( lodLevel == 0 ) {
+		// this must be recreation of image without purging it first
+		// make sure to assign width/height
+		uploadWidth = width;
+		uploadHeight = height;
+		// note: if your image does not have 0-th LOD level, then you MUST purge it!
+		// otherwise, these members won't update with bad consequences
+	}
 }
 
 /*
