@@ -129,10 +129,6 @@ bool VolumetricStage::RenderLight(const viewDef_t *viewDef, const viewLight_t *v
 		// ran out of vertex cache memory => skip it
 		return false;
 	}
-	if ( viewDef->isSubview ) {
-		// does not work in subviews, at least because currentDepth is not up-to-date
-		return false;
-	}
 
 	if ( r_volumetricLowres.IsModified() ) {
 		Shutdown();
