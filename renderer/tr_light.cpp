@@ -383,7 +383,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	}
 	else {
 		if ( light->parms.volumetricNoshadows == 0 && vLight->shadows != LS_MAPS || r_volumetricSamples.GetInteger() <= 0 ) {
-			if ( vLight->volumetricDust > 0.0f && r_volumetricForceShadowMaps.GetBool() ) {
+			if ( vLight->volumetricDust > 0.0f && r_volumetricForceShadowMaps.GetBool() && !tooBigForShadowMaps ) {
 				// force shadow maps implementation
 				// ATTENTION: modifies "shadows" member, which is normally defined earlier in this function
 				light->shadows = vLight->shadows = LS_MAPS;
