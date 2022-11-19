@@ -274,6 +274,11 @@ idCVar r_volumetricForceShadowMaps(
 	"r_volumetricForceShadowMaps", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
 	"If volumetrics need shadows, then switch the light to shadow maps even if stencil shadows are preferred in general. "
 );
+idCVar r_volumetricDustMultiplier(
+	"r_volumetricDustMultiplier", "1", CVAR_ARCHIVE | CVAR_FLOAT | CVAR_RENDERER,
+	"Multiplier applied to volumetric dust parameter (makes volumetrics stronger/weaker). ",
+	0.001f, 100.0f
+);
 
 /*
 =============
@@ -371,7 +376,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	light->shadows = vLight->shadows;
 
 	// stgatilov #5816: copy volumetric dust settings, resolve noshadows behavior
-	vLight->volumetricDust = light->parms.volumetricDust;
+	vLight->volumetricDust = light->parms.volumetricDust * r_volumetricDustMultiplier.GetFloat();
 	if ( !r_volumetricEnable.GetBool() ) {
 		// debug cvar says to remove volumetrics
 		vLight->volumetricDust = 0.0f;
