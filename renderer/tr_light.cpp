@@ -63,7 +63,6 @@ This is used only for a specific light
 ==================
 */
 void R_CreatePrivateShadowCache( srfTriangles_t *tri ) {
-
 	if ( vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 		return;
 	}
@@ -80,6 +79,9 @@ takes care of projecting the verts to infinity.
 */
 void R_CreateVertexProgramShadowCache( srfTriangles_t *tri ) {
 	if ( !tri->verts ) {
+		return;
+	}
+	if ( vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 		return;
 	}
 	shadowCache_t *temp = (shadowCache_t *)_alloca16( tri->numVerts * 2 * sizeof( shadowCache_t ) );

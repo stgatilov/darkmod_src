@@ -2204,8 +2204,16 @@ void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
 	}
 
 	// vertex cache
-	if( tri.verts != NULL && tri.numVerts > 0) {
+	if( tri.verts != NULL && tri.numVerts > 0 ) {
 		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, tri.numVerts * sizeof( tri.verts[0] ) );
+	}
+
+	// turbo shadow cache
+	if( tri.verts != NULL && tri.numVerts > 0 ) {
+		size_t shadowSize = ALIGN( tri.numVerts * 2 * sizeof( shadowCache_t ), 16 );
+		shadowCache_t *shadowCache = (shadowCache_t *)Mem_Alloc( shadowSize );
+		SIMDProcessor->CreateVertexProgramShadowCache( &shadowCache->xyz, tri.verts, tri.numVerts );
+		tri.shadowCache = vertexCache.AllocStaticShadow( shadowCache, shadowSize );
 	}
 }
 

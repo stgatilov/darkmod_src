@@ -31,6 +31,7 @@ static const uint32 VERTCACHE_FRAME_MASK = ( 1 << VERTCACHE_FRAMENUM_BITS ) - 1;
 // functions.
 const int VERTEX_CACHE_ALIGN = 240;
 const int INDEX_CACHE_ALIGN = 16;
+const int SHADOW_CACHE_ALIGN = 16;
 //#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % a ) )
 
 enum cacheType_t {
@@ -93,6 +94,7 @@ public:
 	// this data is valid until the next map load
 	vertCacheHandle_t AllocStaticVertex( const void* data, int bytes );
 	vertCacheHandle_t AllocStaticIndex( const void* data, int bytes );
+	vertCacheHandle_t AllocStaticShadow( void* data, int bytes );	// receives ownership
 
 	// Returns false if it's been purged
 	// This can only be called by the front end, the back end should only be looking at
@@ -126,6 +128,7 @@ private:
 	geoBufferSet_t	dynamicData;
 	GLuint			staticVertexBuffer;
 	GLuint			staticIndexBuffer;
+	GLuint			staticShadowBuffer;
 
 	GLuint			currentVertexBuffer;
 	GLuint			currentIndexBuffer;

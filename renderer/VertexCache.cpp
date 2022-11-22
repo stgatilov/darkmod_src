@@ -28,7 +28,7 @@ idCVar r_useFenceSync( "r_useFenceSync", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_A
 idCVarBool r_usePersistentMapping( "r_usePersistentMapping", "1", CVAR_RENDERER | CVAR_ARCHIVE, "Use persistent buffer mapping" );
 
 idVertexCache		vertexCache;
-uint32_t			staticVertexSize, staticIndexSize;
+uint32_t			staticVertexSize, staticIndexSize, staticShadowSize;
 attribBind_t		currentAttribBinding;
 
 ALIGNTYPE16 const idDrawVert screenRectVerts[4] = {
@@ -103,8 +103,13 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		vbo = 0;
 	} else {
 		++vertexUseCount;
-		vbo = handle.isStatic ? staticVertexBuffer : dynamicData.vertexBuffer.GetAPIObject();
+		if ( handle.isStatic ) {
+			vbo = ( attrib == ATTRIB_REGULAR ? staticVertexBuffer : staticShadowBuffer );
+		} else {
+			vbo = dynamicData.vertexBuffer.GetAPIObject();
+		}
 	}
+
 	if ( vbo != currentVertexBuffer ) {
 		qglBindBuffer( GL_ARRAY_BUFFER, vbo );
 		currentVertexBuffer = vbo;
@@ -114,10 +119,14 @@ void idVertexCache::VertexPosition( vertCacheHandle_t handle, attribBind_t attri
 		if ( currentAttribBinding != attrib )
 			BindAttributes( 0, attrib );
 	}
-	if ( attrib == attribBind_t::ATTRIB_REGULAR ) 
+
+	if ( attrib == ATTRIB_REGULAR )  {
+		assert( handle.offset % sizeof( idDrawVert ) == 0 );
 		basePointer = handle.offset / sizeof( idDrawVert );
-	else
+	} else {
+		assert( handle.offset % sizeof( shadowCache_t ) == 0 );
 		basePointer = handle.offset / sizeof( shadowCache_t );
+	}
 }
 
 /*
@@ -131,12 +140,18 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		vbo = 0;
 	} else {
 		++indexUseCount;
-		vbo = handle.isStatic ? staticIndexBuffer : dynamicData.indexBuffer.GetAPIObject();
+		if ( handle.isStatic ) {
+			vbo = staticIndexBuffer;
+		} else {
+			vbo = dynamicData.indexBuffer.GetAPIObject();
+		}
 	}
+
 	if ( vbo != currentIndexBuffer ) {
 		qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo );
 		currentIndexBuffer = vbo;
 	}
+
 	return ( void * )( size_t )( handle.offset );
 }
 
@@ -176,6 +191,7 @@ void idVertexCache::Init() {
 
 	staticVertexBuffer = 0;
 	staticIndexBuffer = 0;
+	staticShadowBuffer = 0;
 	
 	AllocGeoBufferSet( dynamicData, currentVertexCacheSize, currentIndexCacheSize );
 	EndFrame();
@@ -210,6 +226,10 @@ void idVertexCache::Shutdown() {
 	if ( staticIndexBuffer != 0 ) {
 		qglDeleteBuffers( 1, &staticIndexBuffer );
 		staticIndexBuffer = 0;
+	}
+	if ( staticShadowBuffer != 0 ) {
+		qglDeleteBuffers( 1, &staticShadowBuffer );
+		staticShadowBuffer = 0;
 	}
 }
 
@@ -322,8 +342,13 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t &vcs, const void 
 	);
 }
 
-typedef idList <std::pair<const void*, int>> StaticList;
-StaticList staticVertexList, staticIndexList;
+struct StaticCacheSource {
+	const void *ptr;
+	int size;
+	bool owned;		// if true, Mem_Free is called on pointer after upload
+};
+typedef idList<StaticCacheSource> StaticList;
+StaticList staticVertexList, staticIndexList, staticShadowList;
 
 /*
 ==============
@@ -335,9 +360,13 @@ void idVertexCache::PrepareStaticCacheForUpload() {
 	auto upload = [](GLuint buffer, GLenum bufferType, int size, StaticList &staticList ) {
 		int offset = 0;
 		byte* ptr = (byte*)Mem_Alloc16( size );
-		for ( auto& pair : staticList ) {
-			memcpy( ptr + offset, pair.first, pair.second );
-			offset += pair.second;
+		for ( auto& entry : staticList ) {
+			memcpy( ptr + offset, entry.ptr, entry.size );
+			offset += entry.size;
+			if ( entry.owned ) {
+				Mem_Free( (void*)entry.ptr );
+				entry.ptr = nullptr;
+			}
 		}
 		qglBindBuffer( bufferType, buffer );
 		if ( GLAD_GL_ARB_buffer_storage ) {
@@ -355,16 +384,23 @@ void idVertexCache::PrepareStaticCacheForUpload() {
 	if ( staticIndexBuffer != 0 ) {
 		qglDeleteBuffers( 1, &staticIndexBuffer );
 	}
+	if ( staticShadowBuffer != 0 ) {
+		qglDeleteBuffers( 1, &staticShadowBuffer );
+	}
 	qglGenBuffers( 1, &staticVertexBuffer );
 	qglGenBuffers( 1, &staticIndexBuffer );
+	qglGenBuffers( 1, &staticShadowBuffer );
 
 	staticVertexSize = ALIGN( staticVertexSize, VERTEX_CACHE_ALIGN );
 	upload( staticVertexBuffer, GL_ARRAY_BUFFER, staticVertexSize, staticVertexList );
 	staticIndexSize = ALIGN( staticIndexSize, INDEX_CACHE_ALIGN );
 	upload( staticIndexBuffer, GL_ELEMENT_ARRAY_BUFFER, staticIndexSize, staticIndexList );
+	staticShadowSize = ALIGN( staticShadowSize, SHADOW_CACHE_ALIGN );
+	upload( staticShadowBuffer, GL_ARRAY_BUFFER, staticShadowSize, staticShadowList );
 
 	GL_SetDebugLabel( GL_BUFFER, staticVertexBuffer, "StaticVertexCache" );
 	GL_SetDebugLabel( GL_BUFFER, staticIndexBuffer, "StaticIndexCache" );
+	GL_SetDebugLabel( GL_BUFFER, staticShadowBuffer, "StaticShadowCache" );
 
 	qglBindBuffer( GL_ARRAY_BUFFER, currentVertexBuffer = 0 );
 	qglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, currentIndexBuffer = 0 );
@@ -373,15 +409,23 @@ void idVertexCache::PrepareStaticCacheForUpload() {
 vertCacheHandle_t idVertexCache::AllocStaticVertex( const void* data, int bytes ) {
 	if ( !staticVertexList.Num() )
 		staticVertexSize = 0;
-	staticVertexList.Append( std::make_pair( data, bytes ) );
+	staticVertexList.Append( StaticCacheSource{ data, bytes, false } );
 	staticVertexSize += bytes;
 	return vertCacheHandle_t::Create( bytes, staticVertexSize - bytes, 0, true );
+}
+
+vertCacheHandle_t idVertexCache::AllocStaticShadow( void* data, int bytes ) {
+	if ( !staticShadowList.Num() )
+		staticShadowSize = 0;
+	staticShadowList.Append( StaticCacheSource{ data, bytes, true } );
+	staticShadowSize += bytes;
+	return vertCacheHandle_t::Create( bytes, staticShadowSize - bytes, 0, true );
 }
 
 vertCacheHandle_t idVertexCache::AllocStaticIndex( const void* data, int bytes ) {
 	if ( !staticIndexList.Num() )
 		staticIndexSize = 0;
-	staticIndexList.Append( std::make_pair( data, bytes ) );
+	staticIndexList.Append( StaticCacheSource{ data, bytes, false } );
 	staticIndexSize += bytes;
 	return vertCacheHandle_t::Create( bytes, staticIndexSize - bytes, 0, true );
 }
