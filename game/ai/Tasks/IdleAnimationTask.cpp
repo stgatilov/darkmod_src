@@ -175,7 +175,8 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
 			!(owner->AI_RUN && owner->m_HandlingDoor && (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) && // grayman #4040
-			!owner->GetMemory().hidingSpotInvestigationInProgress )
+			!owner->GetMemory().hidingSpotInvestigationInProgress &&
+			owner->spawnArgs.GetBool("allow_idle_anims", "1")) // angua: allow or disable idle anims by spawn arg (also works while the map is running)
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && (moveType != MOVETYPE_SIT))
