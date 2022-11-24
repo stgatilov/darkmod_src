@@ -187,7 +187,7 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 	//   1) inside light frustum
 	//   2) backfacing
 	// such triangles are called "shadowing" below
-	idFlexListHuge<bvhTriRange_t> intervals;
+	idFlexList<bvhTriRange_t, 128> intervals;
 	R_CullBvhByFrustumAndOrigin(
 		tri->bounds, tri->bvhNodes,
 		localLightFrustum, -1, localLightOrigin,
@@ -198,7 +198,7 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 	// stores whether each triangle in the found intervals is shadowing or not
 	// more precisely, flags for triangles in intervals[i] are laid at range [ shadowingStarts[i] .. shadowingStarts[i+1] )
 	// note: if interval surely matches (all triangles surely shadowing), then flags are not stored (i.e. shadowingStarts[i] == shadowingStarts[i+1])
-	idFlexListHuge<bool> shadowingData;
+	idFlexList<bool, 4096> shadowingData;
 	idFlexList<int, 1024> shadowingStarts;
 	shadowingStarts.AddGrow(0);
 
@@ -291,7 +291,7 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 
 	// for each shadowing triangles, check if its edges are silhouette (separate shadowing from non-shadowing)
 	// all silhouette edges with proper orientation are collected in this list
-	idFlexListHuge<glIndex_t> silEdges;
+	idFlexList<glIndex_t, 1024> silEdges;
 
 	for ( int i = 0; i < intervals.Num(); i++ ) {
 		bvhTriRange_t r = intervals[i];

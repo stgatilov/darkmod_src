@@ -1650,7 +1650,7 @@ void R_CullBvhByFrustumAndOrigin(
 	const idBounds &rootBounds, const bvhNode_t *nodes,
 	const idPlane frustum[6], int filterOri, const idVec3 &origin,
 	int forceUnknown, int granularity,
-	idFlexListHuge<bvhTriRange_t> &outIntervals
+	idFlexList<bvhTriRange_t, 128> &outIntervals
 );
 
 /*

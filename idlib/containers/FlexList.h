@@ -136,8 +136,4 @@ private:
 	type autoStore[N];
 };
 
-//one idFlexListHuge takes almost 1MB, which is 1/16 of whole stack space!
-//note: space size is 16 MB on Windows, and unlimited on Linux
-template<class type> using idFlexListHuge = idFlexList<type, (1<<20) / sizeof(type)>;
-
 #endif

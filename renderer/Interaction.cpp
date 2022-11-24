@@ -519,7 +519,7 @@ srfTriangles_t *R_FinishLightTrisWithBvh(
 	// filter triangles:
 	//   1) inside light frustum
 	//   2) frontfacing   (or all if flag is set)
-	idFlexListHuge<bvhTriRange_t> intervals;
+	idFlexList<bvhTriRange_t, 128> intervals;
 	R_CullBvhByFrustumAndOrigin(
 		tri->bounds, tri->bvhNodes,
 		localLightFrustum, (includeBackFaces ? 0 : 1), localLightOrigin,
@@ -528,7 +528,7 @@ srfTriangles_t *R_FinishLightTrisWithBvh(
 	);
 
 	int totalTris = 0;
-	idFlexListHuge<int> preciseTris;
+	idFlexList<int, 1024> preciseTris;
 
 	// uncertain intervals should usually be short
 	idFlexList<byte, 1024> triCull, triFacing;

@@ -2345,7 +2345,7 @@ void R_BuildBvhForTri( srfTriangles_t *tri ) {
 }
 
 
-static inline void AddSegmentToList( idFlexListHuge<bvhTriRange_t> &outIntervals, int beg, int num, int info, const idBounds &bounds ) {
+static inline void AddSegmentToList( idFlexList<bvhTriRange_t, 128> &outIntervals, int beg, int num, int info, const idBounds &bounds ) {
 	int n = outIntervals.Num();
 	// intervals must be added in sorted order
 	assert(n == 0 || beg >= outIntervals[n-1].end);
@@ -2394,7 +2394,7 @@ void R_CullBvhByFrustumAndOrigin(
 	const idBounds &rootBounds, const bvhNode_t *nodes,
 	const idPlane frustum[6], int filterOri, const idVec3 &origin,
 	int forceUnknown, int granularity,
-	idFlexListHuge<bvhTriRange_t> &outIntervals
+	idFlexList<bvhTriRange_t, 128> &outIntervals
 ) {
 	outIntervals.Clear();
 
@@ -2409,7 +2409,7 @@ void R_CullBvhByFrustumAndOrigin(
 		int forceUnknown;
 		int granularity;
 		const idRenderMatrix::CullSixPlanes &cull;
-		idFlexListHuge<bvhTriRange_t> &intervals;
+		idFlexList<bvhTriRange_t, 128> &intervals;
 
 		void Traverse( int nodeIdx, const idBounds &parentBounds ) {
 			const bvhNode_t &node = nodes[nodeIdx];
@@ -2557,7 +2557,7 @@ TEST_CASE("BvhChecks:Sphere") {
 				}
 
 			//filter sphere mesh against light volume
-			idFlexListHuge<bvhTriRange_t> intervals;
+			idFlexList<bvhTriRange_t, 128> intervals;
 			R_CullBvhByFrustumAndOrigin(
 				tri->bounds, tri->bvhNodes,
 				frustum, (mode == 0 ? 0 : 1), ctr,
