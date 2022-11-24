@@ -57,9 +57,10 @@ public:
 
 	void SetNum( int newNum ) {
 		if (newNum > size) {
-			if (newNum < 2 * size)
-				newNum = 2 * size;	//ensure exponential growth
-			Grow(newNum);
+			int newSize = newNum;
+			if (newSize < 2 * size)
+				newSize = 2 * size;	//ensure exponential growth
+			Grow(newSize);
 		}
 		num = newNum;
 	}
