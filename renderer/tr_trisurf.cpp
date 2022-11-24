@@ -2224,11 +2224,12 @@ idCVar r_modelBvhBuild(
 	"Note: full game restart is required for the change to take effect!"
 );
 idCVar r_modelBvhLeafSize(
-	"r_modelBvhLeafSize", "0",
+	"r_modelBvhLeafSize", "32",
 	CVAR_RENDERER | CVAR_INTEGER,
 	"Controls number of triangles in BVH leafs. "
 	"If zero, then default setting is used.\n"
-	"Note: takes effect only if set immediately after fresh game start! "
+	"Note: takes effect only if set immediately after fresh game start! ",
+	1, 1<<20
 );
 
 /*
@@ -2280,8 +2281,7 @@ void R_BuildBvhForTri( srfTriangles_t *tri ) {
 
 	// create BVH tree
 	idBvhCreator creator;
-	if (r_modelBvhLeafSize.GetInteger() > 0)
-		creator.SetLeafSize(r_modelBvhLeafSize.GetInteger());
+	creator.SetLeafSize(r_modelBvhLeafSize.GetInteger());
 	creator.Build(n, elems.Ptr());
 
 	// save triangles remap: old index -> new index
@@ -2383,6 +2383,9 @@ Of course, if p.1 or p.2 is surely false for all triangles in an interval, the i
 For instance, you can set "forceUnknown" = BVH_TRI_SURELY_GOOD_ORI if you don't need strict culling of backfacing triangles.
 This allows to reduce number of intervals in the output, since intervals with equal "info" can be coalesced.
 
+Also, we turn all nodes with <= "granularity" elements into leaves, which can also be used to reduce number of intervals.
+Pass zero granularity is you want to recurse through the whole tree.
+
 Also, bounding box is returned for each interval.
 Caller can of course compute them himself, but that would be slower.
 ===================
@@ -2390,7 +2393,7 @@ Caller can of course compute them himself, but that would be slower.
 void R_CullBvhByFrustumAndOrigin(
 	const idBounds &rootBounds, const bvhNode_t *nodes,
 	const idPlane frustum[6], int filterOri, const idVec3 &origin,
-	int forceUnknown,
+	int forceUnknown, int granularity,
 	idFlexListHuge<bvhTriRange_t> &outIntervals
 ) {
 	outIntervals.Clear();
@@ -2404,6 +2407,7 @@ void R_CullBvhByFrustumAndOrigin(
 		int filterOri;
 		const idVec3 &origin;
 		int forceUnknown;
+		int granularity;
 		const idRenderMatrix::CullSixPlanes &cull;
 		idFlexListHuge<bvhTriRange_t> &intervals;
 
@@ -2444,20 +2448,25 @@ void R_CullBvhByFrustumAndOrigin(
 				return;
 			}
 
-			if ( node.HasSons() ) {
+			if ( node.HasSons() && node.numElements > granularity ) {
 				// uncertain node, but not leaf -> recurse into subnodes
 				Traverse( node.GetSon( nodeIdx, 0 ), bounds );
 				Traverse( node.GetSon( nodeIdx, 1 ), bounds );
 				return;
 			}
 
+			if ( node.HasSons() ) {
+				// get leftmost leaf
+				while ( nodes[nodeIdx].HasSons() )
+					nodeIdx = nodes[nodeIdx].GetSon( nodeIdx, 0 );
+			}
 			// add leaf node to output as "uncertain"
-			AddSegmentToList( intervals, node.firstElement, node.numElements, info | forceUnknown, bounds );
+			AddSegmentToList( intervals, nodes[nodeIdx].firstElement, node.numElements, info | forceUnknown, bounds );
 		}
 	};
 
 	// launch recursive traversal over BVH tree
-	Traverser traverser = { nodes, frustum, filterOri, origin, forceUnknown, cull, outIntervals };
+	Traverser traverser = { nodes, frustum, filterOri, origin, forceUnknown, granularity, cull, outIntervals };
  	traverser.Traverse( 0, rootBounds );
 }
 
@@ -2551,8 +2560,8 @@ TEST_CASE("BvhChecks:Sphere") {
 			idFlexListHuge<bvhTriRange_t> intervals;
 			R_CullBvhByFrustumAndOrigin(
 				tri->bounds, tri->bvhNodes,
-				frustum, (mode == 0 ? 0 : 1), ctr, 0,
-				intervals
+				frustum, (mode == 0 ? 0 : 1), ctr,
+				0, 0, intervals
 			);
 
 			//count various stats

@@ -1497,6 +1497,8 @@ calling this function may modify "facing" based on culling
 ============================================================
 */
 
+extern idCVar r_modelBvhShadowsGranularity;
+
 srfTriangles_t *R_CreateVertexProgramTurboShadowVolume( const idRenderEntityLocal *ent,
 		const srfTriangles_t *tri, const idRenderLightLocal *light,
 		srfCullInfo_t &cullInfo );
@@ -1647,7 +1649,7 @@ typedef struct triRange_s {
 void R_CullBvhByFrustumAndOrigin(
 	const idBounds &rootBounds, const bvhNode_t *nodes,
 	const idPlane frustum[6], int filterOri, const idVec3 &origin,
-	int forceUnknown,
+	int forceUnknown, int granularity,
 	idFlexListHuge<bvhTriRange_t> &outIntervals
 );
 

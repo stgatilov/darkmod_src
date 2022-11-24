@@ -298,6 +298,11 @@ idCVar r_modelBvhLightTris(
 	"      (some backfacing triangles are allowed)\n"
 	"  3 = use BVH + cull by light and facing precisely\n"
 , 0, 3);
+idCVar r_modelBvhLightTrisGranularity(
+	"r_modelBvhLightTrisGranularity", "32",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"Don't recurse into nodes of less size (overhead tweaking)."
+, 0, 1<<20);
 
 static srfTriangles_t *R_FinishLightTrisWithBvh(
 	const idRenderEntityLocal *ent, const idRenderLightLocal *light,
@@ -352,7 +357,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	newTri->numVerts = tri->numVerts;
 	R_ReferenceStaticTriSurfVerts( newTri, tri );
 
-	if ( r_modelBvhLightTris.GetInteger() > 0 && tri->bvhNodes ) {
+	if ( r_modelBvhLightTris.GetInteger() > 0 && tri->bvhNodes && tri->numIndexes / 3 > r_modelBvhLightTrisGranularity.GetInteger() ) {
 		// stgatilov #5886: BVH-optimized culling by light volume and facing
 		return R_FinishLightTrisWithBvh( ent, light, tri, newTri, includeBackFaces );
 	}
@@ -518,7 +523,8 @@ srfTriangles_t *R_FinishLightTrisWithBvh(
 	R_CullBvhByFrustumAndOrigin(
 		tri->bounds, tri->bvhNodes,
 		localLightFrustum, (includeBackFaces ? 0 : 1), localLightOrigin,
-		forceMask, intervals
+		forceMask, r_modelBvhLightTrisGranularity.GetInteger(),
+		intervals
 	);
 
 	int totalTris = 0;

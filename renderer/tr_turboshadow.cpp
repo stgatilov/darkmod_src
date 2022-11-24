@@ -191,7 +191,8 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 	R_CullBvhByFrustumAndOrigin(
 		tri->bounds, tri->bvhNodes,
 		localLightFrustum, -1, localLightOrigin,
-		0, intervals
+		0, r_modelBvhShadowsGranularity.GetInteger(),
+		intervals
 	);
 
 	// stores whether each triangle in the found intervals is shadowing or not

@@ -1089,6 +1089,12 @@ idCVar r_modelBvhShadows(
 	"  0 = don't use BVH\n"
 	"  1 = use BVH for stencil shadows\n"
 );
+idCVar r_modelBvhShadowsGranularity(
+	"r_modelBvhShadowsGranularity", "32",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"Don't recurse into nodes of less size (overhead tweaking).",
+	0, 1<<20
+);
 
 /*
 =================
@@ -1145,11 +1151,13 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	}
 	tr.pc.c_createShadowVolumes++;
 
+	int numFaces = tri->numIndexes / 3;
+
 	// use the fast infinite projection in dynamic situations, which
 	// trades somewhat more overdraw and no cap optimizations for
 	// a very simple generation process
 	if ( optimize == SG_DYNAMIC && r_useTurboShadow.GetBool() ) {
-		if ( r_modelBvhShadows.GetBool() && tri->bvhNodes && tri->adjTris ) {
+		if ( r_modelBvhShadows.GetBool() && tri->bvhNodes && tri->adjTris && numFaces >= r_modelBvhShadowsGranularity.GetInteger() ) {
 			// stgatilov #5886: BVH-optimized generation of turbo shadow volume
 			return R_CreateVertexProgramBvhShadowVolume( ent, tri, light );
 		}
@@ -1158,7 +1166,6 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	R_CalcInteractionFacing( ent, tri, light, cullInfo );
 
-	int numFaces = tri->numIndexes / 3;
 	int allFront = 1;
 	for ( i = 0; i < numFaces && allFront; i++ ) {
 		allFront &= cullInfo.facing[i];
