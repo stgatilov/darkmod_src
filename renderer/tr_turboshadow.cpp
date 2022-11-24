@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "tr_local.h"
+#include "../idlib/containers/BitArray.h"
 
 int	c_turboUsedVerts;
 int c_turboUnusedVerts;
@@ -195,40 +196,17 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 		intervals
 	);
 
-	// stores whether each triangle in the found intervals is shadowing or not
-	// more precisely, flags for triangles in intervals[i] are laid at range [ shadowingStarts[i] .. shadowingStarts[i+1] )
-	// note: if interval surely matches (all triangles surely shadowing), then flags are not stored (i.e. shadowingStarts[i] == shadowingStarts[i+1])
-	idFlexList<bool, 4096> shadowingData;
-	idFlexList<int, 1024> shadowingStarts;
-	shadowingStarts.AddGrow(0);
-
-	// same as IsShadowing, but caller guarantees that triangle belongs to specified interval (faster)
-	auto IsShadowingInRange = [&]( int t, int rngIdx ) -> bool {
-		if ( intervals[rngIdx].info == BVH_TRI_SURELY_MATCH ) {
-			// intervals surely matches: all triangles are implicitly shadowing
-			return true;
-		}
-		// interval is uncertain: read flag from appropriate location
-		assert( t >= intervals[rngIdx].beg && t < intervals[rngIdx].end );
-		int offset = t - intervals[rngIdx].beg;
-		int pos = shadowingStarts[rngIdx] + offset;
-		return shadowingData[pos];
-	};
-
-	// determines if triangle with specified index is shadowing
-	auto IsShadowing = [&]( int t ) -> bool {
-		// find interval which contains t using binary search
-		int q = std::lower_bound( intervals.Ptr(), intervals.Ptr() + intervals.Num(), t, []( const bvhTriRange_t &rng, int value ) {
-			return rng.end <= value;
-		}) - intervals.Ptr();
-		// we have found min q : intervals[q].end > value
-		// check if we are indeed within q-th interval, and if yes, check flag in this interval
-		if ( q < intervals.Num() && t >= intervals[q].beg && IsShadowingInRange( t, q ) )
-			return true;
-		return false;
-	};
-
-	int totalShadowingTris = 0;
+	// note: the bitset persists between calls
+	// its memory is never deallocated!
+	// we need to avoid clearing whole bitset on every call
+	thread_local static idBitArrayDefault shadowing;
+	int bsSize = tri->numIndexes / 3 + 1;
+	if (shadowing.Num() < bsSize) {
+		// reallocate bitset exponentially, clear all contents
+		shadowing.Init(idMath::Imax(shadowing.Num() * 2 + 10, bsSize));
+		shadowing.SetBitsSameAll(false);
+	}
+	bool hasShadowing = false;
 
 	// uncertain intervals should usually be short
 	idFlexList<byte, 1024> triCull, triFacing;
@@ -239,9 +217,9 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 		int info = intervals[i].info;
 
 		if ( info == BVH_TRI_SURELY_MATCH ) {
-			// all triangles surely match, so all will be considered shadowing implicitly
-			totalShadowingTris += len;
-			shadowingStarts.AddGrow( shadowingData.Num() );
+			// all triangles surely match
+			shadowing.SetBitsTrue(beg, beg + len);
+			hasShadowing |= (len > 0);
 			continue;
 		}
 
@@ -269,16 +247,28 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 			);
 		}
 
-		for ( int t = 0; t < len; t++ ) {
+		int t = 0;
+#ifdef __SSE2__
+		for ( ; t + 16 <= len; t += 16 ) {
+			// SSE-optimized version (see main version below for tail)
+			__m128i xCull = _mm_loadu_si128( (__m128i*) &triCull[t] );
+			__m128i xFacing = _mm_loadu_si128( (__m128i*) &triFacing[t] );
+			__m128i xShadow = _mm_cmpeq_epi8(xCull, _mm_setzero_si128());
+			xShadow = _mm_and_si128( xShadow, _mm_cmpeq_epi8(xFacing, _mm_setzero_si128()) );
+			uint32_t shadow = _mm_movemask_epi8(xShadow);
+			shadowing.SetBitsWord(beg + t, beg + t + 16, shadow);
+			hasShadowing |= (shadow != 0);
+		}
+#endif
+		for ( ; t < len; t++ ) {
 			// detect if triangle is shadowing, and save this data
 			bool shadow = ( triCull[t] == 0 && triFacing[t] == false );
-			shadowingData.AddGrow(shadow);
-			totalShadowingTris += int(shadow);
+			shadowing.SetBit(beg + t, shadow);
+			hasShadowing |= int(shadow);
 		}
-		shadowingStarts.AddGrow( shadowingData.Num() );
 	}
 
-	if ( totalShadowingTris == 0 ) {
+	if ( !hasShadowing ) {
 		// no shadowing triangles -> no shadow geometry
 		return nullptr;
 	}
@@ -289,6 +279,8 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 	// these have no effect, because they extend to infinity
 	newTri->bounds.Clear();
 
+	int totalShadowingTris = 0;
+
 	// for each shadowing triangles, check if its edges are silhouette (separate shadowing from non-shadowing)
 	// all silhouette edges with proper orientation are collected in this list
 	idFlexList<glIndex_t, 1024> silEdges;
@@ -298,29 +290,43 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 
 		for ( int t = r.beg; t < r.end; t++ ) {
 			// only consider shadowing triangles
-			if ( !IsShadowingInRange( t, i ) )
+			if ( !shadowing.IfBit( t ) )
 				continue;
+			totalShadowingTris++;
 
-			// iterate over edges of this tri
-			for ( int s = 0; s < 3; s++ ) {
-				// index of adjacent triangle (along edge opposite to s-th vertex)
-				int adj = tri->adjTris[3 * t + s];
+			// index of adjacent triangle (along edge opposite to s-th vertex)
+			int adj0 = tri->adjTris[3 * t + 0];
+			int adj1 = tri->adjTris[3 * t + 1];
+			int adj2 = tri->adjTris[3 * t + 2];
 
-				// see if adjacent tri is also shadowing
-				bool adjIsShadowing = false;
-				if ( adj >= r.beg && adj < r.end )
-					adjIsShadowing = IsShadowingInRange( adj, i );	// fast case: same range
-				else
-					adjIsShadowing = IsShadowing( adj );			// general case: search for range
+			// see if adjacent tri is also shadowing
+			bool edge0 = !shadowing.IfBit( adj0 );
+			bool edge1 = !shadowing.IfBit( adj1 );
+			bool edge2 = !shadowing.IfBit( adj2 );
 
-				if ( adjIsShadowing )
-					continue;
-
-				// this is edge from shadowing tri to non-shadowing tri = silhouette edge
-				// store the edge oriented in such way that shadowing triangle is to the left of it
-				silEdges.AddGrow( tri->indexes[3 * t + (s+1) % 3] );
-				silEdges.AddGrow( tri->indexes[3 * t + (s+2) % 3] );
+			// this is edge from shadowing tri to non-shadowing tri = silhouette edge
+			// store the edge oriented in such way that shadowing triangle is to the left of it
+			int add[6], ak = 0;
+			if ( edge0 ) {
+				static const int s = 0;
+				add[ak++] = tri->indexes[3 * t + (s+1) % 3];
+				add[ak++] = tri->indexes[3 * t + (s+2) % 3];
 			}
+			if ( edge1 ) {
+				static const int s = 1;
+				add[ak++] = tri->indexes[3 * t + (s+1) % 3];
+				add[ak++] = tri->indexes[3 * t + (s+2) % 3];
+			}
+			if ( edge2 ) {
+				static const int s = 2;
+				add[ak++] = tri->indexes[3 * t + (s+1) % 3];
+				add[ak++] = tri->indexes[3 * t + (s+2) % 3];
+			}
+			// commit: add found silhouette edges to array
+			int base = silEdges.Num();
+			silEdges.SetNum(base + ak);
+			for (int p = 0; p < ak; p++)
+				silEdges[base + p] = add[p];
 		}
 	}
 
@@ -350,7 +356,7 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 		bvhTriRange_t r = intervals[i];
 
 		for ( int t = r.beg; t < r.end; t++ ) {
-			if ( !IsShadowingInRange( t, i ) )
+			if ( !shadowing.IfBit( t ) )
 				continue;
 
 			// this tri is shadowing
@@ -365,6 +371,9 @@ srfTriangles_t *R_CreateVertexProgramBvhShadowVolume( const idRenderEntityLocal 
 			newTri->indexes[pos++] = 2 * b + 1;
 			newTri->indexes[pos++] = 2 * c + 1;
 		}
+
+		// clear bitset on interval: it would be all false by next call
+		shadowing.SetBitsFalse(r.beg, r.end);
 	}
 	assert( pos == newTri->numIndexes );
 
