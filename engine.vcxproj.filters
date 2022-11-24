@@ -1624,6 +1624,9 @@
     <ClInclude Include="renderer\VolumetricStage.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\containers\BitArray.h">
+      <Filter>Idlib\Containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3591,6 +3594,9 @@
     </ClCompile>
     <ClCompile Include="renderer\VolumetricStage.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\containers\BitArray.cpp">
+      <Filter>Idlib\Containers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

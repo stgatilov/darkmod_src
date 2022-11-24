@@ -124,6 +124,16 @@
     </Expand>
   </Type>
 
+  <Type Name="idBitArray&lt;*&gt;">
+    <DisplayString>[{num}] bitset{list,[(num - 1) / (sizeof($T1)*8) + 1]na}</DisplayString>
+    <Expand>
+      <IndexListItems>
+        <Size>num</Size>
+        <ValueNode>( list[$i / (8 * sizeof($T1))] &amp; ( 1 &lt;&lt; ($i % (8 * sizeof($T1))) ) ) != 0</ValueNode>
+      </IndexListItems>
+    </Expand>
+  </Type>
+
   <Type Name="idDict">
     <DisplayString>{args}</DisplayString>
     <Expand>

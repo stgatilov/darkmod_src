@@ -519,6 +519,7 @@
     <ClInclude Include="idlib\CmdArgs.h" />
     <ClInclude Include="idlib\containers\BinHeap.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
+    <ClInclude Include="idlib\containers\BitArray.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
     <ClInclude Include="idlib\containers\DisjointSets.h" />
     <ClInclude Include="idlib\containers\FlexList.h" />
@@ -1157,6 +1158,7 @@
     <ClCompile Include="idlib\bv\Frustum.cpp" />
     <ClCompile Include="idlib\bv\Sphere.cpp" />
     <ClCompile Include="idlib\CmdArgs.cpp" />
+    <ClCompile Include="idlib\containers\BitArray.cpp" />
     <ClCompile Include="idlib\containers\DisjointSets.cpp" />
     <ClCompile Include="idlib\containers\HashIndex.cpp" />
     <ClCompile Include="idlib\containers\HashMap.cpp" />
