@@ -3006,6 +3006,7 @@ void idEntity::Show( void )
 		{
 			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 		}
+        SetSolid(true);    // #6175
 		UpdateVisuals();
 		RestoreDecals();	// #3817
 
