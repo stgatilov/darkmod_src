@@ -99,7 +99,8 @@ void RandomHeadturnTask::PerformHeadTurnCheck()
 	// angua: check if the current animation allows random headturning
 	// if the focusTime > current time, the AI is currently looking at a specified direction or entity
 	// we don't want to interrupt that
-	if (!animflags.no_random_headturning && owner->GetFocusTime() < gameLocal.time)
+	if (!animflags.no_random_headturning && owner->GetFocusTime() < gameLocal.time && 
+			owner->spawnArgs.GetBool("allow_random_headturning", "1")) // angua: allow or disable random headturning by spawn arg (also works while the map is running)
 	{
 		// Yep, set the angles and start head turning
 		memory.currentlyHeadTurning = true;
