@@ -65,6 +65,15 @@ void RB_SetDefaultGLState( void ) {
 	qglCullFace( GL_FRONT_AND_BACK );
 	//qglShadeModel( GL_SMOOTH );
 
+	// stgatilov #5875: clean ALL texture units just to be sure
+	for (int i = 0; i < MAX_MULTITEXTURE_UNITS; i++) {
+		qglActiveTexture(GL_TEXTURE0 + i);
+		qglBindTexture(GL_TEXTURE_2D, 0);
+	}
+	// and set active TMU to 0 to ensure GL_SelectTexture is synced
+	assert( backEnd.glState.currenttmu == 0 );
+	qglActiveTexture( GL_TEXTURE0 );
+
 	if ( r_useScissor.GetBool() ) {
 		GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
