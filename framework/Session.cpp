@@ -480,12 +480,12 @@ void idSessionLocal::CompleteWipe() {
 		UpdateScreen( true );
 		return;
 	}
-	while ( com_ticNumber < wipeStopTic ) {
+	do {
 #if ID_CONSOLE_LOCK
 		emptyDrawCount = 0;
 #endif
 		UpdateScreen( true );
-	}
+	} while ( com_ticNumber < wipeStopTic );
 }
 
 /*
