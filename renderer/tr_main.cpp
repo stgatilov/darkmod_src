@@ -219,8 +219,12 @@ void R_ToggleSmpFrame( void ) {
 
 	// switch to the next frame
 	smpFrame++;
-	backendFrameData = frameData;
-	frameData = &smpFrameData[smpFrame % NUM_FRAME_DATA];
+	if (com_smp.GetBool()) {
+		backendFrameData = frameData;
+		frameData = &smpFrameData[smpFrame % NUM_FRAME_DATA];
+	} else {
+		frameData = backendFrameData = &smpFrameData[0];
+	}
 
 	// reset the memory allocation
 	R_FreeDeferredTriSurfs( frameData );
