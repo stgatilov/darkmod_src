@@ -35,6 +35,7 @@ may touch, including the editor.
 ======================
 */
 void RB_SetDefaultGLState( void ) {
+	TRACE_GL_SCOPE( "RB_SetDefaultGLState" );
 	RB_LogComment( "--- R_SetDefaultGLState ---\n" );
 	GL_CheckErrors();
 
