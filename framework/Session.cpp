@@ -454,6 +454,13 @@ void idSessionLocal::StartWipe( const char *_wipeMaterial, bool hold ) {
 	renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 	renderSystem->UnCrop();
 
+	// stgatilov #6149: execute these commands now, including finishing SwapBuffers
+	// otherwise they get concatenated with CompleteWipe into a single backend commands sequence
+	// which causes broken rendering due to some kind of FBO state leak
+	extern void R_IssueRenderCommands( frameData_t *frameData );
+	R_IssueRenderCommands( backendFrameData );
+	R_ToggleSmpFrame();
+
 	wipeMaterial = declManager->FindMaterial( _wipeMaterial, false );
 
 	wipeStartTic = com_ticNumber;
