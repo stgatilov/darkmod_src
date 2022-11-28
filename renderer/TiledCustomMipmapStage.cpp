@@ -171,6 +171,7 @@ void TiledCustomMipmapStage::FillFrom(idImage *image, int x, int y, int w, int h
 		uniforms->clampRegion.Set(srcRect.x1, srcRect.y1, srcRect.x2, srcRect.y2);
 
 		// limit rendering to scissor
+		// TODO: should we respect r_useScissor (disabled for screenshots) ?
 		qglEnable(GL_SCISSOR_TEST);
 		qglScissor(dstRect.x1, dstRect.y1, dstRect.GetWidth(), dstRect.GetHeight());
 		// fullscreen pass
@@ -179,7 +180,7 @@ void TiledCustomMipmapStage::FillFrom(idImage *image, int x, int y, int w, int h
 
 	frameBuffers->currentRenderFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
-	FB_ApplyScissor();
+	GL_ScissorRelative( 0, 0, 1, 1 );
 }
 
 idScreenRect TiledCustomMipmapStage::GetScissorAtLevel(int lodLevel) const {
