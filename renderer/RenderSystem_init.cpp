@@ -1091,18 +1091,10 @@ screenshot [width] [height] [samples]
 #define	MAX_BLENDS	256	// to keep the accumulation in shorts
 void R_ScreenShot_f( const idCmdArgs &args ) {
 	idStr checkname;
-	qglFinish();
 
-	static bool stopTimeT = false;
 	int width = glConfig.vidWidth;
 	int height = glConfig.vidHeight;
 	int	blends = 0;
-
-	if ( g_stopTime.GetBool() ) {
-		stopTimeT = true;
-	} else {
-		g_stopTime.SetBool( true );
-	}
 
 	switch ( args.Argc() ) {
 	case 1:
@@ -1142,10 +1134,6 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
 
-	if ( !stopTimeT ) {
-		g_stopTime.SetBool( false );
-	}
-	stopTimeT = false;
 
 }
 
