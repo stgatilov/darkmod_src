@@ -932,6 +932,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 	tr.tiledViewport[1] = height;
 
 	// disable scissor, so we don't need to adjust all those rects
+	bool oldValue = r_useScissor.GetBool();
 	r_useScissor.SetBool( false );
 
 	for ( int xo = 0 ; xo < width ; xo += oldWidth ) {
@@ -968,7 +969,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 			}
 		}
 	}
-	r_useScissor.SetBool( true );
+	r_useScissor.SetBool( oldValue );
 
 	tr.viewportOffset[0] = 0;
 	tr.viewportOffset[1] = 0;
