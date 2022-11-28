@@ -314,7 +314,7 @@ if you absolutely must check for anything out of the ordinary, then do it here.
 ====================
 */
 void GL_ScissorAbsolute( int x, int y, int w, int h ) {
-	if (w <= 0 || h <= 0) {
+	if (w < 0 || h < 0) {
 		// apparently, this happens quite a bit for some reason
 		//common->Warning("Invalid scissor dimensions: (%d, %d, %d, %d)", x, y, w, h);
 		return;
