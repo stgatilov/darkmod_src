@@ -192,14 +192,11 @@ RB_SimpleSurfaceSetup
 void RB_SimpleSurfaceSetup( const drawSurf_t *drawSurf ) {
 	RB_SimpleSpaceSetup(drawSurf->space);
 
-	// change the scissor if needed
-	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-		backEnd.currentScissor = drawSurf->scissorRect;
-		GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-	}
+	backEnd.currentScissor = drawSurf->scissorRect;
+	GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
+		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 }
 
 

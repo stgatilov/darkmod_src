@@ -598,13 +598,13 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	GL_CheckErrors();
 
 	// change the scissor if needed
-	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
-		backEnd.currentScissor = surf->scissorRect;
-		GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-	}
+	backEnd.currentScissor = surf->scissorRect;
+	GL_ScissorVidSize(
+		backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1
+	);
 	GL_CheckErrors();
 
 	// some deforms may disable themselves by setting numIndexes = 0

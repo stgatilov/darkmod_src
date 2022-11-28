@@ -104,10 +104,8 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 	DrawBatch<ShaderParams> drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
 	uint paramsIdx = 0;
 
-	if ( r_useScissor.GetBool() ) {
-		backEnd.currentScissor = backEnd.vLight->scissorRect;
-		FB_ApplyScissor();
-	}
+	backEnd.currentScissor = backEnd.vLight->scissorRect;
+	FB_ApplyScissor();
 	DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
 
 	const drawSurf_t *curBatchCaches = surfs[0];
@@ -123,10 +121,8 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 			paramsIdx = 0;
 		}
 
-		if (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect)) {
-			backEnd.currentScissor = surf->scissorRect;
-			FB_ApplyScissor();
-		}
+		backEnd.currentScissor = surf->scissorRect;
+		FB_ApplyScissor();
 		// stgatilov: this is preferable to take effect on this surface
 		// but it's too messy to do it properly with batching
 		//depthBoundsTest.Update( surf->scissorRect );

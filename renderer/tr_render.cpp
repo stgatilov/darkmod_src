@@ -417,12 +417,9 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		}
 
 #if 1 // duzenko: this is needed for portal fogging e.g. in Lone Salvation
-		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			backEnd.currentScissor = drawSurf->scissorRect;
-			// revelator: test. parts of the functions loaded here also runs through the fbo transforms (the code for filling the depthbuffer for instance)
-			FB_ApplyScissor();
-			GL_CheckErrors();
-		}
+		backEnd.currentScissor = drawSurf->scissorRect;
+		FB_ApplyScissor();
+		GL_CheckErrors();
 #endif
 
 		// render it
@@ -478,13 +475,9 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 		}
 
-		/* change the scissor if needed
-		#7627 revelator reverted and cleaned up. */
-		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			//common->Printf( "Yay i just ran the scissor, because now the scissor equals the viewport\n" );
-			backEnd.currentScissor = drawSurf->scissorRect;
-			FB_ApplyScissor();
-		}
+		/* change the scissor if needed */
+		backEnd.currentScissor = drawSurf->scissorRect;
+		FB_ApplyScissor();
 
 		// render it
 		//common->Printf( "Yay i just ran a function, i hope someone does not do returns or continues above or im busted\n" );
@@ -821,14 +814,12 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	}
 
 	// change the scissor if needed
-	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
-		backEnd.currentScissor = surf->scissorRect;
-		GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-		            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-		            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-		            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-		GL_CheckErrors();
-	}
+	backEnd.currentScissor = surf->scissorRect;
+	GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+	            backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+	            backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+	            backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+	GL_CheckErrors();
 
 	// hack depth range if needed
 	if ( surf->space->weaponDepthHack ) {
@@ -987,13 +978,11 @@ void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
 	}
 
 	// change the scissor if needed
-	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) {
-		backEnd.currentScissor = surf->scissorRect;
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-	}
+	backEnd.currentScissor = surf->scissorRect;
+	qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 
 	// hack depth range if needed
 	if ( surf->space->weaponDepthHack ) {
