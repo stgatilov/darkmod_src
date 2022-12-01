@@ -383,10 +383,6 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 		// debug cvar says to remove volumetrics
 		vLight->volumetricDust = 0.0f;
 	}
-	if ( tr.viewDef->isSubview ) {
-		// does not work in subviews, at least because currentDepth is not up-to-date
-		vLight->volumetricDust = 0.0f;
-	}
 	vLight->volumetricNoshadows = false;
 	if ( vLight->lightShader->IsFogLight() ) {
 		// no shadows in fog
@@ -410,6 +406,13 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 			vLight->volumetricNoshadows = true;
 		}
 	}
+	if ( tr.viewDef->isSubview ) {
+		// does not work in subviews, at least because currentDepth is not up-to-date
+		// note: somehow, the engine does not like different shadows implementation in main view and lightgem,
+		// so I placed this condition AFTER shadows implementation is chosen
+		vLight->volumetricDust = 0.0f;
+	}
+
 
 	// multi-light shader stuff
 	if ( shader->LightCastsShadows() && tooBigForShadowMaps ) // use stencil shadows
