@@ -875,6 +875,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	//idScriptBool			AI_DEAD; // is defined on idActor now
 	idScriptBool			AI_KNOCKEDOUT;
 	idScriptBool			AI_ENEMY_VISIBLE;
+	idScriptBool			AI_ENEMY_TACTILE;
 	idScriptBool			AI_ENEMY_IN_FOV;
 	idScriptBool			AI_MOVE_DONE;
 	idScriptBool			AI_ONGROUND;

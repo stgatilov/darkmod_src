@@ -1879,7 +1879,7 @@ void idAI::Event_CanHitEnemy( void ) {
 	idEntity *hit;
 
 	idActor *enemyEnt = enemy.GetEntity();
-	if ( !AI_ENEMY_VISIBLE || !enemyEnt ) {
+	if ( !AI_ENEMY_VISIBLE || !AI_ENEMY_TACTILE || !enemyEnt ) {
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -1930,7 +1930,7 @@ void idAI::Event_CanHitEnemyFromAnim( const char *animname ) {
 	float	distance;
 
 	idActor *enemyEnt = enemy.GetEntity();
-	if ( !AI_ENEMY_VISIBLE || !enemyEnt ) {
+	if ( !AI_ENEMY_VISIBLE || !AI_ENEMY_TACTILE || !enemyEnt ) {
 		idThread::ReturnInt( false );
 		return;
 	}
@@ -1998,7 +1998,7 @@ void idAI::Event_CanHitEnemyFromJoint( const char *jointname ) {
 	float	distance;
 
 	idActor *enemyEnt = enemy.GetEntity();
-	if ( !AI_ENEMY_VISIBLE || !enemyEnt ) {
+	if ( !AI_ENEMY_VISIBLE || !AI_ENEMY_TACTILE || !enemyEnt ) {
 		idThread::ReturnInt( false );
 		return;
 	}
