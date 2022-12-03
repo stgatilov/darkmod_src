@@ -10629,9 +10629,12 @@ void idAI::PerformVisualScan(float timecheck)
 		{
 			SetEnemy(player);
 			
-			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
-			// visibility in the mission data
-			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
+			// grayman #3063 - set flag that tells UpDateEnemyPosition() to NOT count this instance of player visibility in the mission data
+			// dragofer #5286 - only set this flag if the AI isn't fleeing, as unarmed civilians never enter the combat state
+			if( GetMind()->GetState()->GetName() != "Flee" )
+			{
+				m_ignorePlayer = true; // totalTimePlayerSeen: ignore the player until Combat state begins
+			}
 		}
 		else // player is too far away, but AI will continue to move because he can walk to the player
 		{
