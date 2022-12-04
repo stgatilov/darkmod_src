@@ -824,7 +824,6 @@ public:
 	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
 	virtual void			GetCurrentRenderCropSize( int &width, int &height );
 	virtual void			CaptureRenderToImage( idImage &image );
-	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			CaptureRenderToBuffer( unsigned char *buffer, bool usePbo = false );
 	virtual void			PostProcess();
 	virtual void			UnCrop();

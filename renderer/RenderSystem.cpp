@@ -916,47 +916,6 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool use
 
 /*
 ==============
-CaptureRenderToFile
-
-==============
-*/
-void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlpha ) {
-	if ( session->IsFrontend() ) {
-		common->Error( "CaptureRenderToFile called from frontend thread, not supported." );
-	}
-
-	if ( !glConfig.isInitialized ) {
-		return;
-	}
-	renderCrop_t *rc = &renderCrops[currentRenderCrop];
-	guiModel->EmitFullScreen();
-	guiModel->Clear();
-	R_IssueRenderCommands( frameData );
-
-	byte *data = ( byte * )R_StaticAlloc( 4 * rc->width * rc->height );
-	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data );
-
-	byte *data2 = ( byte * )R_StaticAlloc( rc->width * rc->height * 4 );
-
-	for ( int y = 0 ; y < rc->height ; y++ ) {
-		for ( int x = 0 ; x < rc->width ; x++ ) {
-			int idx2 = ( y * rc->width + x ) * 4;
-			int idx = idx2;
-
-			data2[ idx2 + 0 ] = data[ idx + 0 ];
-			data2[ idx2 + 1 ] = data[ idx + 1 ];
-			data2[ idx2 + 2 ] = data[ idx + 2 ];
-			data2[ idx2 + 3 ] = 0xff;
-		}
-	}
-	R_WriteTGA( fileName, data2, rc->width, rc->height, true );
-
-	R_StaticFree( data );
-	R_StaticFree( data2 );
-}
-
-/*
-==============
 AllocRenderWorld
 ==============
 */
