@@ -1994,31 +1994,39 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 
 	// Write screenshot
 	if ( !autosave ) {
-	    qglFinish();
-		renderSystem->CropRenderSize( 170, 110 ); // actual size from mainmenu_loadsave.gui
+		qglFinish();
 		game->Draw( 0 );
 		// need to make the changes to the vertex cache accessible to the backend
 		vertexCache.EndFrame();
 
-		//stgatilov: render image to buffer
-		int width, height, bpp = 3;
+		// stgatilov: render image to buffer
+		int width, height;
 		renderSystem->GetCurrentRenderCropSize(width, height);
-		/*if ( r_useFbo.GetBool() ) { // 4676
-			width /= r_fboResolution.GetFloat();
-			height /= r_fboResolution.GetFloat();
-		}*/
-		byte *imgData = (byte*)Mem_Alloc(height * width * bpp);
-		renderSystem->CaptureRenderToBuffer( imgData );
+		byte *imgData = (byte*)Mem_Alloc(height * width * 3);
+		renderSystem->CaptureRenderToBuffer(imgData);
 
-		//save image to file
+		{ // convert to RGBA since image processing functions use that
+			byte *newImg = (byte*)Mem_Alloc(height * width * 4);
+			bool ok = SIMDProcessor->ConvertRowToRGBA8(imgData, width * height, 24, false, newImg);
+			assert(ok);
+			Mem_Free(imgData);
+			imgData = newImg;
+		}
+		// downsample the image to reduce file size
+		while ( width > 480 && height > 270 ) {
+			imgData = R_MipMap( imgData, width, height );
+			width >>= 1;
+			height >>= 1;
+		}
+
+		// save image to file
 		idImageWriter wr;
-		wr.Source(imgData, width, height, bpp);
+		wr.Source(imgData, width, height, 4);
 		wr.Dest(fileSystem->OpenFileWrite(previewFile.c_str(), "fs_modSavePath"));
 		wr.Flip();
 		wr.WriteExtension(previewExtension.c_str());
 		Mem_Free(imgData);
 
-		renderSystem->UnCrop();
 		R_ClearCommandChain( frameData );
 		qglFinish();
 	}
