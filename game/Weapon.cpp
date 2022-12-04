@@ -289,6 +289,7 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteString( weaponDef->GetName() );
 	savefile->WriteFloat( meleeDistance );
 	savefile->WriteFloat( knockoutRange );
+	savefile->WriteFloat( KOBoxSize );
 	savefile->WriteString( meleeDefName );
 	savefile->WriteInt( brassDelay );
 	savefile->WriteString( icon );
@@ -446,6 +447,7 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat( meleeDistance );
 	savefile->ReadFloat( knockoutRange );
+	savefile->ReadFloat( KOBoxSize );
 	savefile->ReadString( meleeDefName );
 	savefile->ReadInt( brassDelay );
 	savefile->ReadString( icon );
