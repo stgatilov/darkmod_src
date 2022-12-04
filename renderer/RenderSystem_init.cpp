@@ -960,12 +960,12 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 			} else {
 				session->UpdateScreen( false );
 				qglReadBuffer( GL_FRONT );
+				qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 				qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 			}
-			int	row = ( oldWidth * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
 
 			for ( int y = 0 ; y < h ; y++ ) {
-				memcpy( buffer + ( ( yo + y )* width + xo ) * 3, temp + y * row, w * 3 );
+				memcpy( buffer + ( ( yo + y )* width + xo ) * 3, temp + y * oldWidth * 3, w * 3 );
 			}
 		}
 	}
@@ -1156,6 +1156,7 @@ void R_StencilShot( void ) {
 
 	byte *byteBuffer = ( byte * )Mem_Alloc( pix );
 
+	qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 	qglReadPixels( 0, 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, byteBuffer );
 
 	for ( int i = 0 ; i < pix ; i++ ) {

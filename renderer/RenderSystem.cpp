@@ -897,7 +897,6 @@ void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char *buffer, bool use
 		rc.width /= r_fboResolution.GetFloat();
 		rc.height /= r_fboResolution.GetFloat();
 	}*/
-	rc.width = ( rc.width + 3 ) & ~3; //opengl wants width padded to 4x
 
 	//guiModel->EmitFullScreen();
 	//guiModel->Clear();
@@ -934,23 +933,15 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	guiModel->Clear();
 	R_IssueRenderCommands( frameData );
 
-	// calculate pitch of buffer that will be returned by qglReadPixels()
-	int alignment;
-	qglGetIntegerv( GL_PACK_ALIGNMENT, &alignment );
-
-	int pitch = rc->width * 4 + alignment - 1;
-	pitch = pitch - pitch % alignment;
-	byte *data = ( byte * )R_StaticAlloc( pitch * rc->height );
-
-	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
+	byte *data = ( byte * )R_StaticAlloc( 4 * rc->width * rc->height );
 	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data );
 
 	byte *data2 = ( byte * )R_StaticAlloc( rc->width * rc->height * 4 );
 
 	for ( int y = 0 ; y < rc->height ; y++ ) {
 		for ( int x = 0 ; x < rc->width ; x++ ) {
-			int idx = y * pitch + x * 4;
 			int idx2 = ( y * rc->width + x ) * 4;
+			int idx = idx2;
 
 			data2[ idx2 + 0 ] = data[ idx + 0 ];
 			data2[ idx2 + 1 ] = data[ idx + 1 ];

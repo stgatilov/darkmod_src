@@ -2007,7 +2007,6 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 			width /= r_fboResolution.GetFloat();
 			height /= r_fboResolution.GetFloat();
 		}*/
-		width = (width + 3) & ~3; //opengl wants width padded to 4x
 		byte *imgData = (byte*)Mem_Alloc(height * width * bpp);
 		renderSystem->CaptureRenderToBuffer( imgData );
 

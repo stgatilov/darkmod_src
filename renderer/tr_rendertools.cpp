@@ -295,6 +295,7 @@ void RB_ScanStencilBuffer( void ) {
 	memset( counts, 0, sizeof( counts ) );
 
 	stencilReadback = (byte *)R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight );
+	qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
 
 	for ( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
@@ -324,6 +325,7 @@ void RB_CountStencilBuffer( void ) {
 	byte	*stencilReadback;
 
 	stencilReadback = (byte *)R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight );
+	qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
 
 	count = 0;
