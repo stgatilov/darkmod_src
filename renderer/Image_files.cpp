@@ -239,7 +239,7 @@ void idImageReader::LoadTGA() {
 
 		//stgatilov: fast path for plain 8/24/32-bit images
 		if ( !mapped && !rlencoded ) {
-			if ( SIMDProcessor->ConvertTargaRowToRGBA8(buf_p, w, pixel_size, dst) ) {
+			if ( SIMDProcessor->ConvertRowToRGBA8(buf_p, w, pixel_size, true, dst) ) {
 				int pixBytes = ((pixel_size + 1) >> 3);
 				buf_p += pixBytes * w;
 				dst += 4 * w;
@@ -1584,16 +1584,16 @@ byte *imageCompressedData_s::ComputeUncompressedData() const {
 			return resData;
 		}
 	} else if ( ( header.ddspf.dwFlags & DDSF_RGBA ) && header.ddspf.dwRGBBitCount == 32 ) {
-		SIMDProcessor->ConvertTargaRowToRGBA8( contents, w * h, 32, resData );
+		SIMDProcessor->ConvertRowToRGBA8( contents, w * h, 32, true, resData );
 		return resData;
 	} else if ( ( header.ddspf.dwFlags & DDSF_RGB ) && header.ddspf.dwRGBBitCount == 32 ) {
-		SIMDProcessor->ConvertTargaRowToRGBA8( contents, w * h, 32, resData );
+		SIMDProcessor->ConvertRowToRGBA8( contents, w * h, 32, true, resData );
 		return resData;
 	} else if ( ( header.ddspf.dwFlags & DDSF_RGB ) && header.ddspf.dwRGBBitCount == 24 ) {
-		SIMDProcessor->ConvertTargaRowToRGBA8( contents, w * h, 24, resData );
+		SIMDProcessor->ConvertRowToRGBA8( contents, w * h, 24, true, resData );
 		return resData;
 	} else if ( header.ddspf.dwRGBBitCount == 8 ) {
-		SIMDProcessor->ConvertTargaRowToRGBA8( contents, w * h, 8, resData );
+		SIMDProcessor->ConvertRowToRGBA8( contents, w * h, 8, true, resData );
 		return resData;
 	}
 
