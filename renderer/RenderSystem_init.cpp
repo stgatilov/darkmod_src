@@ -923,17 +923,13 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref = NULL ) {
 	// include extra space for OpenGL padding to word boundaries
-	byte *temp = ( byte * )R_StaticAlloc( ( glConfig.vidWidth + 3 ) * glConfig.vidHeight * 3 );
+	byte *temp = ( byte * )R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight * 3 );
 
 	const int oldWidth = glConfig.vidWidth;
 	const int oldHeight = glConfig.vidHeight;
 
 	tr.tiledViewport[0] = width;
 	tr.tiledViewport[1] = height;
-
-	// disable scissor, so we don't need to adjust all those rects
-	bool oldValue = r_useScissor.GetBool();
-	r_useScissor.SetBool( false );
 
 	for ( int xo = 0 ; xo < width ; xo += oldWidth ) {
 		for ( int yo = 0 ; yo < height ; yo += oldHeight ) {
@@ -969,7 +965,6 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 			}
 		}
 	}
-	r_useScissor.SetBool( oldValue );
 
 	tr.viewportOffset[0] = 0;
 	tr.viewportOffset[1] = 0;
