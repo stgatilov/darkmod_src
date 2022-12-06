@@ -21,9 +21,22 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // see this issue: https://github.com/wolfpld/tracy/issues/449
 #include <common/TracyVersion.hpp>
 
-idCVar r_useDebugGroups( "r_useDebugGroups", "1", CVAR_RENDERER | CVAR_BOOL, "Emit GL debug groups during rendering. Useful for frame debugging and analysis with e.g. nSight, which will group render calls accordingly." );
-idCVar com_enableTracing( "com_enableTracing", "0", CVAR_SYSTEM|CVAR_INTEGER, "Enable the tracy profiler. If set to 2, will stall until the Tracy Profiler app is connected" );
-idCVar com_tracingAllocStacks( "com_tracingAllocStacks", "0", CVAR_SYSTEM|CVAR_BOOL, "Collect call stacks for all memory allocations (wastes time)" );
+idCVar r_useDebugGroups(
+	// note: we cannot enable these for players, because they are slow as shit in AMD driver:
+	// https://forums.thedarkmod.com/index.php?/topic/21682-r_usedebuggroups-kills-performance
+	"r_useDebugGroups", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE,
+	"Emit GL debug groups during rendering. "
+	"Useful for frame debugging and analysis with e.g. nSight, "
+	"which will group render calls accordingly."
+);
+idCVar com_enableTracing(
+	"com_enableTracing", "0", CVAR_SYSTEM | CVAR_INTEGER,
+	"Enable the tracy profiler. If set to 2, will stall until the Tracy Profiler app is connected"
+);
+idCVar com_tracingAllocStacks(
+	"com_tracingAllocStacks", "0", CVAR_SYSTEM | CVAR_BOOL,
+	"Collect call stacks for all memory allocations (wastes time)"
+);
 
 bool g_tracingEnabled = false;
 bool g_glTraceInitialized = false;
