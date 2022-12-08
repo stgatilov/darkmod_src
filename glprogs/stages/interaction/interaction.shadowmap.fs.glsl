@@ -23,7 +23,7 @@ out vec4 FragColor;
 #define TDM_allow_ARB_texture_gather STGATILOV_USEGATHER
 #pragma tdm_include "tdm_shadowmaps.glsl"
 
-uniform bool 	u_shadowMapCullFront;
+uniform int 	u_shadowMapCullFront;
 uniform vec4	u_shadowRect;
 uniform sampler2D u_shadowMap;
 in vec3 var_WorldLightDir;
@@ -34,11 +34,11 @@ void main() {
 
 	vec3 worldNormal = mat3(params[var_DrawId].modelMatrix) * (var_TangentBitangentNormalMatrix * props.localN);
 
-	if (u_shadows) {
+	if (u_shadows != 0) {
 		float shadowsCoeff = computeShadowMapCoefficient(
 			var_WorldLightDir, worldNormal,
 			u_shadowMap, u_shadowRect,
-			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples, u_shadowMapCullFront
+			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples, u_shadowMapCullFront != 0
 		);
 		FragColor.rgb *= shadowsCoeff;
 	}

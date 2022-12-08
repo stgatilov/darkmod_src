@@ -35,9 +35,9 @@ uniform sampler2D u_specularTexture;
 
 uniform sampler2D u_lightProjectionTexture;
 uniform sampler2D u_lightFalloffTexture;
-uniform bool u_cubic;
+uniform int u_cubic;
 uniform samplerCube u_lightProjectionCubemap;   // TODO: is this needed?
-uniform bool u_useNormalIndexedDiffuse, u_useNormalIndexedSpecular;
+uniform int u_useNormalIndexedDiffuse, u_useNormalIndexedSpecular;
 uniform samplerCube u_lightDiffuseCubemap;
 uniform samplerCube u_lightSpecularCubemap;
 
@@ -49,7 +49,7 @@ uniform int u_ssaoEnabled;
 
 void main() {
 	vec3 lightColor;
-	if (u_cubic)
+	if (u_cubic != 0)
 		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
 		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
@@ -62,7 +62,7 @@ void main() {
 		u_diffuseTexture, params[var_DrawId].diffuseColor.rgb, var_TexDiffuse,
 		u_specularTexture, params[var_DrawId].specularColor.rgb, var_TexSpecular,
 		var_Color.rgb,
-		u_useNormalIndexedDiffuse, u_useNormalIndexedSpecular, u_lightDiffuseCubemap, u_lightSpecularCubemap,
+		u_useNormalIndexedDiffuse != 0, u_useNormalIndexedSpecular != 0, u_lightDiffuseCubemap, u_lightSpecularCubemap,
 		u_minLevel, u_gamma
 	);
 
