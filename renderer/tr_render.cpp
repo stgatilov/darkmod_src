@@ -779,7 +779,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 		if ( r_skipAmbient.GetInteger() & 2 )
 			return;
 	} else if ( r_skipInteractions.GetBool() ) {
-		if( r_skipInteractions.GetInteger() == 1 || !backEnd.vLight->lightDef->parms.noShadows )
+		if( r_skipInteractions.GetInteger() == 1 || !vLight->lightDef->parms.noShadows )
 			return;
 	}
 

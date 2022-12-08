@@ -152,6 +152,14 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		return;
 	}
 
+	if ( vLight->lightShader->IsAmbientLight() ) {
+		if ( r_skipAmbient.GetInteger() & 2 )
+			return;
+	} else if ( r_skipInteractions.GetBool() ) {
+		if( r_skipInteractions.GetInteger() == 1 || !vLight->lightDef->parms.noShadows )
+			return;
+	}
+
 	TRACE_GL_SCOPE( "DrawInteractions" );
 
 	PreparePoissonSamples();
