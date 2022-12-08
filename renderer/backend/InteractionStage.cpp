@@ -348,7 +348,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 		doShadows = vLight->globalInteractions != NULL;
 	}
 	if ( doShadows ) {
-		uniforms->shadows.Set( vLight->shadows );
+		uniforms->shadows.Set(true);
 		const renderCrop_t &page = vLight->shadowMapPage;
 		// https://stackoverflow.com/questions/5879403/opengl-texture-coordinates-in-pixel-space
 		idVec4 v( page.x, page.y, 0, page.width-1 );
@@ -356,7 +356,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 		v.w /= 6 * r_shadowMapSize.GetFloat();
 		uniforms->shadowRect.Set( v );
 	} else {
-		uniforms->shadows.Set(0);
+		uniforms->shadows.Set(false);
 	}
 	uniforms->shadowMapCullFront.Set( r_shadowMapCullFront );
 

@@ -858,7 +858,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 		doShadows = vLight->globalInteractions != NULL;
 	}
 	if ( doShadows ) {
-		shadows.Set( vLight->shadows );
+		shadows.Set(true);
 		const renderCrop_t &page = vLight->shadowMapPage;
 		if ( 0 ) { // select the pixels to TexCoords method for interactionA.fs
 			idVec4 v( page.x, page.y, 0, page.width );
@@ -871,7 +871,7 @@ void Uniforms::Interaction::SetForShadows( bool translucent ) {
 			shadowRect.Set( v );
 		}
 	} else {
-		shadows.Set(0);
+		shadows.Set(false);
 	}
 	shadowMapCullFront.Set( r_shadowMapCullFront );
 
