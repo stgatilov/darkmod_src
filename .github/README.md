@@ -16,7 +16,7 @@ The history in this mirror is slightly cleaned up to reduce repository size.
 Most importantly, it does **not** contain the binaries of third-party libs.
 
 The binaries allow building the game easily on the officially supported platforms.
-Without them, you'll have to build all third-party libs according to instructions in [ThirdParty/readme.md](ThirdParty/readme.md).
+Without them, you'll have to build all third-party libs according to instructions in [ThirdParty/readme.md](../ThirdParty/readme.md).
 The binaries are available in SVN repository, and you can download them from there.
 
 The best approach is to checkout binaries as SVN repository:
@@ -32,7 +32,7 @@ Note that third-party libs also change over time, but quite rarely.
 
 ### Build
 
-The build instructions and information about workspace layout are available in [COMPILING.txt](COMPILING.txt) file.
+The build instructions and information about workspace layout are available in [COMPILING.txt](../COMPILING.txt) file.
 
 
 ### Assets
