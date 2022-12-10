@@ -224,6 +224,12 @@ bool CFrobLock::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		return GetFrobMaster()->UseBy(impulseState, item);
 	}
 
+	// Call the used_action_script via the generic idEntity method, if desired by the mapper
+	if ( spawnArgs.GetBool("call_used_action_script", "0") )
+	{
+		idEntity::UseBy(impulseState, item);
+	}
+
 	assert(item->Category() != NULL);
 
 	// Retrieve the entity behind that item and reject NULL entities
