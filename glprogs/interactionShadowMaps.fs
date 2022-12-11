@@ -29,7 +29,6 @@ uniform int		u_softShadowsQuality;
 uniform float	u_softShadowsRadius;
 uniform vec4	u_shadowRect;
 uniform mat4	u_modelMatrix;
-uniform vec2	u_softShadowsSamples[150];
 uniform sampler2D u_shadowMap;
 in vec3 var_WorldLightDir;
 
@@ -46,7 +45,7 @@ void main() {
 		float shadowsCoeff = computeShadowMapCoefficient(
 			var_WorldLightDir, worldNormal,
 			u_shadowMap, u_shadowRect,
-			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples, u_shadowMapCullFront
+			u_softShadowsQuality, u_softShadowsRadius, u_shadowMapCullFront
 		);
 		fragColor.rgb *= shadowsCoeff;
 	}

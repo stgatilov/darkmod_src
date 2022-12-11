@@ -67,5 +67,3 @@ float sampleZWithDerivs(sampler2D depthTexture, mat4 projectionMatrix, vec2 tcPo
 	Zderivs.y = (abs(derivLessY) < abs(derivMoreY) ? derivLessY : derivMoreY);
 	return valueCenter;
 }
-
-#define SOFT_SHADOWS_SAMPLES_COUNT 150

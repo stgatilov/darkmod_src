@@ -101,6 +101,7 @@ namespace {
 void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName ) {
 	idHashMapDict defines;
 	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
+	defines.Set( "POISSON_DISK_USE_UBO", "1" );
 	shader->LoadFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
 	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
 	uniforms->lightProjectionCubemap.Set( TU_LIGHT_PROJECT_CUBE );

@@ -23,7 +23,6 @@ uniform bool	u_shadows;
 uniform int		u_softShadowsQuality;
 uniform float	u_softShadowsRadius;
 uniform vec2	u_renderResolution;
-uniform vec2	u_softShadowsSamples[150];
 uniform usampler2D u_stencilTexture;
 uniform sampler2D u_depthTexture;
 
@@ -42,7 +41,7 @@ void main() {
 			u_stencilTexture, u_depthTexture,
 			objectToLight, objectNormal,
 			u_modelViewMatrix, u_projectionMatrix,
-			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples,
+			u_softShadowsQuality, u_softShadowsRadius,
 			u_depthTexture, ivec2(-1, -1), vec4(0)
 		);
 	}
