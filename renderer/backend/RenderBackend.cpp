@@ -163,6 +163,7 @@ void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData )
 
 	// asynchronously copy contents of the lightgem framebuffer to a pixel buffer
 	qglBindBuffer( GL_PIXEL_PACK_BUFFER, lightgemPbos[currentLightgemPbo] );
+	qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 	qglReadPixels( 0, 0, DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH, GL_RGB, GL_UNSIGNED_BYTE, nullptr );
 
 	// advance PBO index and actually copy the data stored in that PBO to local memory

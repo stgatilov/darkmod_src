@@ -326,6 +326,8 @@ void FrameBufferManager::CopyRender( idImage* image, int x, int y, int imageWidt
 }
 
 void FrameBufferManager::CopyRender( unsigned char *buffer, int x, int y, int imageWidth, int imageHeight, bool usePBO ) {
+	qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
+
 	// #4395 lightem pixel pack buffer optimization
 	if ( usePBO ) {
 		static int pboSize = -1;

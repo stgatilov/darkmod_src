@@ -3146,10 +3146,10 @@ void idSIMD_Generic::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int h
 
 /*
 ============
-idSIMD_Generic::ConvertTargaRowToRGBA8
+idSIMD_Generic::ConvertRowToRGBA8
 ============
 */
-bool idSIMD_Generic::ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, byte *dstPtr ) {
+bool idSIMD_Generic::ConvertRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, bool bgr, byte *dstPtr ) {
 	if (bitsPerPixel == 8) {
 		for (int i = 0; i < width; i++) {
 			byte val = srcPtr[i];
@@ -3162,21 +3162,41 @@ bool idSIMD_Generic::ConvertTargaRowToRGBA8( const byte *srcPtr, int width, int 
 	}
 
 	if (bitsPerPixel == 32) {
-		for (int i = 0; i < width; i++) {
-			dstPtr[4*i+0] = srcPtr[4*i+2];
-			dstPtr[4*i+1] = srcPtr[4*i+1];
-			dstPtr[4*i+2] = srcPtr[4*i+0];
-			dstPtr[4*i+3] = srcPtr[4*i+3];
+		if (bgr) {
+			for (int i = 0; i < width; i++) {
+				dstPtr[4*i+0] = srcPtr[4*i+2];
+				dstPtr[4*i+1] = srcPtr[4*i+1];
+				dstPtr[4*i+2] = srcPtr[4*i+0];
+				dstPtr[4*i+3] = srcPtr[4*i+3];
+			}
+		}
+		else {
+			for (int i = 0; i < width; i++) {
+				dstPtr[4*i+0] = srcPtr[4*i+0];
+				dstPtr[4*i+1] = srcPtr[4*i+1];
+				dstPtr[4*i+2] = srcPtr[4*i+2];
+				dstPtr[4*i+3] = srcPtr[4*i+3];
+			}
 		}
 		return true;
 	}
 
 	if (bitsPerPixel == 24) {
-		for (int i = 0; i < width; i++) {
-			dstPtr[4*i+0] = srcPtr[3*i+2];
-			dstPtr[4*i+1] = srcPtr[3*i+1];
-			dstPtr[4*i+2] = srcPtr[3*i+0];
-			dstPtr[4*i+3] = 255;
+		if (bgr) {
+			for (int i = 0; i < width; i++) {
+				dstPtr[4*i+0] = srcPtr[3*i+2];
+				dstPtr[4*i+1] = srcPtr[3*i+1];
+				dstPtr[4*i+2] = srcPtr[3*i+0];
+				dstPtr[4*i+3] = 255;
+			}
+		}
+		else {
+			for (int i = 0; i < width; i++) {
+				dstPtr[4*i+0] = srcPtr[3*i+0];
+				dstPtr[4*i+1] = srcPtr[3*i+1];
+				dstPtr[4*i+2] = srcPtr[3*i+2];
+				dstPtr[4*i+3] = 255;
+			}
 		}
 		return true;
 	}

@@ -2940,6 +2940,7 @@ void idAI::LinkScriptVariables( void )
 	AI_KNOCKEDOUT.LinkTo(		scriptObject, "AI_KNOCKEDOUT" );
 	AI_ENEMY_VISIBLE.LinkTo(	scriptObject, "AI_ENEMY_VISIBLE" );
 	AI_ENEMY_IN_FOV.LinkTo(		scriptObject, "AI_ENEMY_IN_FOV" );
+	AI_ENEMY_TACTILE.LinkTo(	scriptObject, "AI_ENEMY_TACTILE" );
 	AI_MOVE_DONE.LinkTo(		scriptObject, "AI_MOVE_DONE" );
 	AI_ONGROUND.LinkTo(			scriptObject, "AI_ONGROUND" );
 	AI_ACTIVATED.LinkTo(		scriptObject, "AI_ACTIVATED" );
@@ -7475,7 +7476,7 @@ void idAI::ClearEnemy( void ) {
 	// to check here in case the AI is killed or KO'ed and doesn't
 	// use the normal logging code there.
 
-	if ( AI_ENEMY_VISIBLE )
+	if ( AI_ENEMY_VISIBLE || AI_ENEMY_TACTILE )
 	{
 		if ( ( enemy.GetEntity() != NULL ) && ( enemy.GetEntity()->IsType(idPlayer::Type) ) )
 		{
@@ -7495,6 +7496,7 @@ void idAI::ClearEnemy( void ) {
 	enemy				= NULL;
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
+	AI_ENEMY_TACTILE	= false;
 }
 
 /*
@@ -7511,7 +7513,7 @@ bool idAI::EnemyPositionValid( void ) const {
 		return false;
 	}
 
-	if ( AI_ENEMY_VISIBLE ) {
+	if ( AI_ENEMY_VISIBLE || AI_ENEMY_TACTILE ) {
 		return true;
 	}
 
@@ -7978,6 +7980,7 @@ void idAI::UpdateEnemyPosition()
 	
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
+	AI_ENEMY_TACTILE	= false;
 	
 	if (CanSee(enemyEnt, false))
 	{
@@ -8013,11 +8016,17 @@ void idAI::UpdateEnemyPosition()
 		}
 	}
 
-	// grayman #2887 - track enemy visibility for statistics
+	// is the enemy in tactile range? dragofer #6186
+	idEntity* tactEnt = GetTactEnt();
+	if( tactEnt != NULL && tactEnt == enemyEnt )
+	{
+		AI_ENEMY_TACTILE = true;
+	}
 
+	// grayman #2887 - track enemy visibility for statistics
 	if ( enemyEnt->IsType(idPlayer::Type) && !m_ignorePlayer) // grayman #3063 - ignore the player when in a Combat mode setup
 	{
-		if ( AI_ENEMY_VISIBLE )
+		if ( AI_ENEMY_VISIBLE || AI_ENEMY_TACTILE )	//player is visible or in tactile range
 		{
 			if ( ( lastTimePlayerSeen < 0 ) && ( lastTimePlayerLost < 0 ) )
 			{
@@ -8041,7 +8050,7 @@ void idAI::UpdateEnemyPosition()
 				}
 			}
 		}
-		else // not visible
+		else // neither visible nor tactile
 		{
 			// log the amount of time you saw the player
 
@@ -9133,6 +9142,7 @@ void idAI::Hide( void ) {
 
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
+	AI_ENEMY_TACTILE	= false;
 	StopMove( MOVE_STATUS_DONE );
 }
 
@@ -10629,9 +10639,12 @@ void idAI::PerformVisualScan(float timecheck)
 		{
 			SetEnemy(player);
 			
-			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
-			// visibility in the mission data
-			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
+			// grayman #3063 - set flag that tells UpDateEnemyPosition() to NOT count this instance of player visibility in the mission data
+			// dragofer #5286 - only set this flag if the AI isn't fleeing, as unarmed civilians never enter the combat state
+			if( GetMind()->GetState()->GetName() != "Flee" )
+			{
+				m_ignorePlayer = true; // totalTimePlayerSeen: ignore the player until Combat state begins
+			}
 		}
 		else // player is too far away, but AI will continue to move because he can walk to the player
 		{

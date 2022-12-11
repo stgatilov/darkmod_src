@@ -8,3 +8,5 @@ CMakeSettings.json
 build/
 ipch/
 Darkmod.log
+
+ThirdParty/artefacts/

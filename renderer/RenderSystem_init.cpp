@@ -923,17 +923,13 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref = NULL ) {
 	// include extra space for OpenGL padding to word boundaries
-	byte *temp = ( byte * )R_StaticAlloc( ( glConfig.vidWidth + 3 ) * glConfig.vidHeight * 3 );
+	byte *temp = ( byte * )R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight * 3 );
 
 	const int oldWidth = glConfig.vidWidth;
 	const int oldHeight = glConfig.vidHeight;
 
 	tr.tiledViewport[0] = width;
 	tr.tiledViewport[1] = height;
-
-	// disable scissor, so we don't need to adjust all those rects
-	bool oldValue = r_useScissor.GetBool();
-	r_useScissor.SetBool( false );
 
 	for ( int xo = 0 ; xo < width ; xo += oldWidth ) {
 		for ( int yo = 0 ; yo < height ; yo += oldHeight ) {
@@ -960,16 +956,15 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 			} else {
 				session->UpdateScreen( false );
 				qglReadBuffer( GL_FRONT );
+				qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 				qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp );
 			}
-			int	row = ( oldWidth * 3 + 3 ) & ~3;		// OpenGL pads to dword boundaries
 
 			for ( int y = 0 ; y < h ; y++ ) {
-				memcpy( buffer + ( ( yo + y )* width + xo ) * 3, temp + y * row, w * 3 );
+				memcpy( buffer + ( ( yo + y )* width + xo ) * 3, temp + y * oldWidth * 3, w * 3 );
 			}
 		}
 	}
-	r_useScissor.SetBool( oldValue );
 
 	tr.viewportOffset[0] = 0;
 	tr.viewportOffset[1] = 0;
@@ -1156,6 +1151,7 @@ void R_StencilShot( void ) {
 
 	byte *byteBuffer = ( byte * )Mem_Alloc( pix );
 
+	qglPixelStorei( GL_PACK_ALIGNMENT, 1 );	// otherwise small rows get padded to 32 bits
 	qglReadPixels( 0, 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, byteBuffer );
 
 	for ( int i = 0 ; i < pix ; i++ ) {
