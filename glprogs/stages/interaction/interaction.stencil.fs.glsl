@@ -34,7 +34,7 @@ void main() {
 	vec3 objectToLight = var_TangentBitangentNormalMatrix * var_LightDirLocal;
 	vec3 objectNormal = var_TangentBitangentNormalMatrix[2];
 
-	if (u_shadows != 0 && u_softShadowsQuality > 0) {
+	if (u_shadows && u_softShadowsQuality > 0) {
 		FragColor.rgb *= computeStencilSoftShadow(
 			u_stencilTexture, u_depthTexture,
 			objectToLight, objectNormal,
