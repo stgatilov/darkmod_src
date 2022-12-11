@@ -268,8 +268,16 @@ namespace {
 }
 
 static void APIENTRY R_OpenGLDebugMessageCallback( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam ) {
-	if( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
+	if ( type == GL_DEBUG_TYPE_PUSH_GROUP || type == GL_DEBUG_TYPE_POP_GROUP ) {
+		// this is gl[Push|Pop]DebugGroup that we called ourselves
 		return;
+	}
+	if ( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
+		if ( type == GL_DEBUG_TYPE_OTHER && strstr(message, "Buffer detailed info") ) {
+			// We don't want to see this from NVIDIA driver:
+			//   Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_DYNAMIC_DRAW) will use SYSTEM HEAP memory as the source for buffer object operations.
+			return;
+		}
 	}
 
 	int msgHash = idStr::Hash( message );
