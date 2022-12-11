@@ -100,7 +100,9 @@ bool GLSLProgram::Link() {
 			auto log = std::make_unique<char[]>( length + 1 );
 			qglGetProgramInfoLog( program, length, &length, log.get() );
 			log[length] = 0;
-			common->Warning( "Linking program %s %s:\n%s\n", name.c_str(), (result ? "info" : "failed"), log.get() );
+			if ( length > 1 ) {	// I get to here with length == 0 on AMD =)
+				common->Warning( "Linking program %s %s:\n%s\n", name.c_str(), (result ? "info" : "failed"), log.get() );
+			}
 		}
 	}
 
@@ -152,7 +154,9 @@ bool GLSLProgram::Validate() {
 		auto log = std::make_unique<char[]>( length + 1 );
 		qglGetProgramInfoLog( program, length, &result, log.get() );
 		log[length] = 0;
-		common->Warning( "Validation for program %s failed:\n%s\n", name.c_str(), log.get() );
+		if ( length > 1 ) {
+			common->Warning( "Validation for program %s failed:\n%s\n", name.c_str(), log.get() );
+		}
 	}
 	return result;
 }
@@ -354,15 +358,18 @@ GLuint GLSLProgram::CompileShader( GLint shaderType, const char *sourceFile, con
 		if ( !result || length > 0 ) {
 			auto log = std::make_unique<char[]>( length );
 			qglGetShaderInfoLog( shader, length, &length, log.get() );
-			std::stringstream ss;
-			ss << "Compiling shader file " << sourceFile << " " << (result ? "info" : "failed") << ":\n" << log.get() << "\n\n";
-			// unfortunately, GLSL compilers don't reference any actual source files in their errors, but only
-			// file index numbers. So we'll display a short legend which index corresponds to which file.
-			ss << "File indexes:\n";
-			for( size_t i = 0; i < sourceFiles.size(); ++i ) {
-				ss << "  " << i << " - " << sourceFiles[i] << "\n";
+			log[length] = 0;
+			if ( length > 1 ) {
+				std::stringstream ss;
+				ss << "Compiling shader file " << sourceFile << " " << (result ? "info" : "failed") << ":\n" << log.get() << "\n\n";
+				// unfortunately, GLSL compilers don't reference any actual source files in their errors, but only
+				// file index numbers. So we'll display a short legend which index corresponds to which file.
+				ss << "File indexes:\n";
+				for( size_t i = 0; i < sourceFiles.size(); ++i ) {
+					ss << "  " << i << " - " << sourceFiles[i] << "\n";
+				}
+				common->Warning( "%s", ss.str().c_str() );
 			}
-			common->Warning( "%s", ss.str().c_str() );
 		}
 
 		if ( !result ) {
