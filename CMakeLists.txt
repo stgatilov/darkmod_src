@@ -183,6 +183,7 @@ add_compile_definitions(
 		IL_STATIC_LIB
 		__DOOM__
 		CURL_STATICLIB
+		LIBJPEG_STATIC
 		AL_LIBTYPE_STATIC
 )
 if (ENABLE_TRACY)
