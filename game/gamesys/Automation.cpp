@@ -27,7 +27,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define AUTOMATION_VARMODE 0
 #endif
 
-idCVar com_automation("com_automation", "0", CVAR_BOOL | AUTOMATION_VARMODE, "Enable TDM automation (for tests)");
+idCVar com_automation("com_automation", "0", CVAR_BOOL | AUTOMATION_VARMODE, "Enable TDM automation for connection with DarkRadiant");
 idCVar com_automation_port("com_automation_port", "3879", CVAR_INTEGER | CVAR_ARCHIVE, "The TCP port number to be listened to");
 
 Automation automationLocal;
@@ -542,31 +542,73 @@ void Automation::WriteResponse(int seqno, const char *response) {
 	connection.WriteMessage(text.c_str(), text.Length());
 }
 
+bool Automation::TryListen() {
+	if (listenTcp.IsAlive())
+		return true;
+
+	int port = com_automation_port.GetInteger();
+
+	static int64 lastAttemptAtTime = -int64(1e+18);
+	static int retriesCount = 0;
+
+	//if fails, retry every second
+	int64 nowTime = Sys_Microseconds();
+	if (nowTime - lastAttemptAtTime > 1000000) {
+		lastAttemptAtTime = nowTime;
+
+		listenTcp.Listen(port);
+		if (listenTcp.IsAlive()) {
+			common->Printf("Automation now listens on port %d\n", port);
+			retriesCount = 0;
+		}
+		else {
+			common->Warning("Automation cannot listen on port %d", port);
+			if (++retriesCount >= 30) {
+				retriesCount = 0;
+				com_automation.SetBool(false);
+				common->Printf("com_automation disabled\n");
+			}
+		}
+	}
+
+	//still not working -> skip automation
+	if (listenTcp.IsAlive())
+		return true;
+	return false;
+}
+
+bool Automation::TryConnect() {
+	if (connection.IsAlive())
+		return true;
+
+	std::unique_ptr<idTCP> clientTcp(listenTcp.Accept());
+	if (!clientTcp)
+		return false;
+
+	const auto &addr = clientTcp->GetAddress();
+	common->Printf("Automation received incoming connection from %d.%d.%d.%d:%d\n",
+		int(addr.ip[0]), int(addr.ip[1]), int(addr.ip[2]), int(addr.ip[3]), int(addr.port)
+	);
+
+	connection.Init(std::move(clientTcp));
+	return true;
+}
+
 void Automation::Think() {
 	//make sure log file is enabled, so that automation can fetch console messages
 	if (com_logFile.GetInteger() == 0) {
 		common->Printf("Forcing com_logFile to 1 for automation to work properly");
 		com_logFile.SetInteger(1);
 	}
-	//if started for first time, open tcp port and start listening
-	if (!listenTcp.IsAlive()) {
-		int port = com_automation_port.GetInteger();
-		listenTcp.Listen(port);
-		if (!listenTcp.IsAlive())
-			common->Error("Automation cannot listen on port %d", port);
-		common->Printf("Automation now listens on port %d\n", port);
-	}
+
+	//if not yet listening, open tcp port and start listening
+	if (!TryListen())
+		return;
+
 	//if not connected yet, check for incoming client
-	if (!connection.IsAlive()) {
-		std::unique_ptr<idTCP> clientTcp(listenTcp.Accept());
-		if (!clientTcp)
-			return;
-		const auto &addr = clientTcp->GetAddress();
-		common->Printf("Automation received incoming connection from %d.%d.%d.%d:%d\n",
-			int(addr.ip[0]), int(addr.ip[1]), int(addr.ip[2]), int(addr.ip[3]), int(addr.port)
-		);
-		connection.Init(std::move(clientTcp));
-	}
+	if (!TryConnect())
+		return;
+
 	//push data from output buffer, pull into input buffer
 	connection.Think();
 
