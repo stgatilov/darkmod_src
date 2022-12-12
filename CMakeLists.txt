@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 
+if(NOT CMAKE_BUILD_TYPE)
+    # sometimes people build without specifying build type, then get surprised how slow it is...
+    message(FATAL_ERROR "Set CMAKE_BUILD_TYPE to either Release or Debug")
+endif()
+
 if (UNIX)
 	# we want debug symbols even with Release builds
 	string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT "-g -ffast-math")
