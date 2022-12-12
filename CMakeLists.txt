@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 
-if(NOT CMAKE_BUILD_TYPE)
-    # sometimes people build without specifying build type, then get surprised how slow it is...
-    message(FATAL_ERROR "Set CMAKE_BUILD_TYPE to either Release or Debug")
+get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(NOT is_multi_config AND NOT CMAKE_BUILD_TYPE)
+	# sometimes people build without specifying build type, then get surprised how slow it is...
+	message(FATAL_ERROR "Set CMAKE_BUILD_TYPE to either Release or Debug")
 endif()
 
 if (UNIX)
