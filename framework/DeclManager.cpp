@@ -1065,7 +1065,7 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 	if ( i < declFolders.Num() ) {
 		// stgatilov #5766: need to sort all decl files by core/FM domain first
 		// and then load + parse all of them in correct order
-		common->Error("Registering same files twice is forbidden");
+		common->Warning( "Decl folder '%s' with extension '%s' registered twice: %s", folder, extension );
 		declFolder = declFolders[i];
 	} else {
 		declFolder = new idDeclFolder;
@@ -1093,7 +1093,7 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 		if ( j < loadedFiles.Num() ) {
 			// stgatilov #5766: should never happen
 			// but if it does, than we probably broke FM > core ordering
-			common->Error( "Decl file '%s' is loaded twice", fileName.c_str() );
+			common->Warning( "Decl file '%s' is loaded twice", fileName.c_str() );
 			df = loadedFiles[j];
 		} else {
 			df = new idDeclFile( fileName, defaultType );
