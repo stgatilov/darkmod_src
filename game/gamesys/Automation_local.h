@@ -104,6 +104,8 @@ private:
 		int seqno;
 	};
 
+	bool TryListen();
+	bool TryConnect();
 	void ParseMessage(const char *message, int len);
 	void ParseMessage(ParseIn &parseIn);
 	void ParseAction(ParseIn &parseIn);

@@ -39,7 +39,7 @@ void main() {
 			u_stencilTexture, u_depthTexture,
 			objectToLight, objectNormal,
 			params[var_DrawId].modelViewMatrix, u_projectionMatrix,
-			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples,
+			u_softShadowsQuality, u_softShadowsRadius,
 			u_stencilMipmapsTexture, u_stencilMipmapsLevel, u_stencilMipmapsScissor
 		);
 	}

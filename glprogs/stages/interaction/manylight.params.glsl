@@ -53,7 +53,3 @@ layout (std140) uniform PerDrawCallParamsBlock {
 layout (std140) uniform PerLightParamsBlock {
     PerLightParams lights[MAX_LIGHTS];
 };
-
-layout (std140) uniform ShadowSamplesBlock {
-	vec2 u_softShadowsSamples[150];
-};

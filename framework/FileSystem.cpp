@@ -1404,7 +1404,7 @@ idFileSystemLocal::AddUnique
 ===============
 */
 int idFileSystemLocal::AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex ) {
-	const int hashKey = hashIndex.GenerateKey( name );
+	const int hashKey = hashIndex.GenerateKey( name, false );
 
 	for ( int i = hashIndex.First( hashKey ); i >= 0; i = hashIndex.Next( i ) ) {
 		if ( list[i].Icmp( name ) == 0 ) {

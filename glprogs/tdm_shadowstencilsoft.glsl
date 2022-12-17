@@ -15,6 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_utils.glsl"
 #pragma tdm_include "tdm_shadowstencilsoft_shared.glsl"
+#pragma tdm_include "tdm_poissondisk.glsl"  // note: adds uniform
 
 float fetchStencilShadowTexture(usampler2D stencilTexture, vec2 texCoord) {
 	float stTex = float(texture(stencilTexture, texCoord).r);
@@ -27,7 +28,7 @@ float computeStencilSoftShadow(
 	usampler2D stencilTexture, sampler2D depthTexture,
 	vec3 objectToLight, vec3 objectNormal,
 	mat4 modelViewMatrix, mat4 projectionMatrix,
-	int softQuality, float softRadius, vec2 softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT],
+	int softQuality, float softRadius,
 	sampler2D stencilMipmapsTexture, ivec2 stencilMipmapsLevel, vec4 stencilMipmapsScissor 
 ) {
 	vec2 texSize = vec2(textureSize(stencilTexture, 0));
@@ -115,7 +116,7 @@ float computeStencilSoftShadow(
 	vec2 canonDerivs = 2.0 * Z00 * tanFovHalf;
 
 	for( int i = 0; i < softQuality; i++ ) {
-		vec2 delta = softShadowsSamples[i].x * alongDir + softShadowsSamples[i].y * orthoDir;
+		vec2 delta = u_softShadowsSamples[i].x * alongDir + u_softShadowsSamples[i].y * orthoDir;
 		vec2 sampleTexCoord = baseTexCoord + delta;
 
 		// ignore samples with drastically different Z/depth

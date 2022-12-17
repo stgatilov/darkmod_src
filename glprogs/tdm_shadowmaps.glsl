@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 
 #pragma tdm_include "tdm_utils.glsl"
+#pragma tdm_include "tdm_poissondisk.glsl"  // note: adds uniform
 
 vec3 CubeMapDirectionToUv(vec3 v, out int faceIdx) {
 	vec3 v1 = abs(v);
@@ -82,7 +83,7 @@ vec4 ShadowAtlasForVector4(in sampler2D shadowMapTexture, vec4 shadowRect, vec3 
 float computeShadowMapCoefficient(
 	vec3 worldFromLight, vec3 worldNormal,
 	sampler2D shadowMap, vec4 shadowRect,
-	int softQuality, float softRadius, vec2 softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT], bool shadowMapCullFrontHack
+	int softQuality, float softRadius, bool shadowMapCullFrontHack
 ) {
 	float shadowMapResolution = (textureSize(shadowMap, 0).x * shadowRect.w);
 
@@ -132,7 +133,7 @@ float computeShadowMapCoefficient(
 	int blockerCnt = 0;
 	for (int i = 0; i < softQuality; i++) {
 		//note: copy/paste from sampling code below
-		vec3 perturbedLightDir = normalize(L + searchAngle * (softShadowsSamples[i].x * orthoAxisX + softShadowsSamples[i].y * orthoAxisY));
+		vec3 perturbedLightDir = normalize(L + searchAngle * (u_softShadowsSamples[i].x * orthoAxisX + u_softShadowsSamples[i].y * orthoAxisY));
 		float blockerZ = ShadowAtlasForVector(shadowMap, shadowRect, perturbedLightDir);
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));
 		float distCoeff = lightFallAngle / max(-dot(worldNormal, perturbedLightDir), 1e-3) * (dotDpL * secFallAngle);
@@ -181,7 +182,7 @@ float computeShadowMapCoefficient(
 	}
 	for (int i = 0; i < softQuality; i++) {
 		//unit vector L' = perturbed version of L
-		vec3 perturbedLightDir = normalize(L + blurRadiusRel * (softShadowsSamples[i].x * orthoAxisX + softShadowsSamples[i].y * orthoAxisY));
+		vec3 perturbedLightDir = normalize(L + blurRadiusRel * (u_softShadowsSamples[i].x * orthoAxisX + u_softShadowsSamples[i].y * orthoAxisY));
 		//this is:  (cos(D ^ L') / cos(N ^ L')) / (cos(D ^ L) / cos(N ^ L))
 		//where L and L' is central/perturbed light direction, D is normal of active cubemap face, and N is normal of tangent plane
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));

@@ -38,7 +38,7 @@ void main() {
 		float shadowsCoeff = computeShadowMapCoefficient(
 			var_WorldLightDir, worldNormal,
 			u_shadowMap, u_shadowRect,
-			u_softShadowsQuality, u_softShadowsRadius, u_softShadowsSamples, u_shadowMapCullFront
+			u_softShadowsQuality, u_softShadowsRadius, u_shadowMapCullFront
 		);
 		FragColor.rgb *= shadowsCoeff;
 	}
