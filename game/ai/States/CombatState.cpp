@@ -602,6 +602,7 @@ void CombatState::Think(idAI* owner)
 		if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 		{
 			owner->GetMind()->SwitchState(STATE_FLEE);
+			owner->m_ignorePlayer = false;	// dragofer #5286: make sure ignorePlayer flag is cleared by the time the AI begins to flee
 		}
 		return;
 	}
