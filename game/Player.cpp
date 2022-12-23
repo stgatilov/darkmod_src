@@ -32,6 +32,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Inventory/Inventory.h"
 #include "Inventory/WeaponItem.h"
 #include "Shop/Shop.h"
+#include "Session_local.h"
 #include <numeric>
 
 #include "../sys/sys_padinput.h"
@@ -48,6 +49,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 idCVar grid_currentCategory( "grid_currentCategory", "-1", CVAR_GUI|CVAR_INTEGER, "Current inventory category shown in the grid" );
 
 #define	FPS_FRAMES	5 // number of frames used to average the FPS display
+
+int lg_reload_delay = 0 ; // nbohr1more #6088 prevent lightgem from rendering brightly on quickload
 
 // amount of health per dose from the health station
 const int HEALTH_PER_DOSE = 10;
@@ -2726,6 +2729,12 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_LightgemValue);
 	savefile->ReadFloat(m_fColVal);
 	savefile->ReadInt(m_LightgemInterleave);
+    // nbohr1more #6088 prevent lightgem from rendering brightly on quickload
+    if (sessLocal.com_fixedTic.GetBool()){
+    lg_reload_delay = cv_lg_reload_delay.GetInteger() + sessLocal.com_maxFPS.GetInteger();
+    } else {
+    lg_reload_delay = cv_lg_reload_delay.GetInteger() + 60;
+    }
 	savefile->ReadBool(ignoreWeaponAttack);   // grayman #597
 	savefile->ReadInt(timeEvidenceIntruders); // grayman #3424
 	savefile->ReadInt(savePermissions);
@@ -9555,7 +9564,7 @@ void idPlayer::Event_GetIdealWeapon( void ) {
 
 int idPlayer::ProcessLightgem(bool processing)
 {
-	if( !processing || cv_lg_interleave.GetInteger() <= 0 ) {
+	if( !processing || cv_lg_interleave.GetInteger() <= 0  ) {
 		return m_LightgemValue;
 	}
 
@@ -9579,7 +9588,8 @@ int idPlayer::ProcessLightgem(bool processing)
 
 	// Skip frames according to the value set in cv_lg_interleave
 	m_LightgemInterleave++;
-	if (m_LightgemInterleave >= interleaveFrames) {
+    // nbohr1more #6088 prevent lightgem from rendering brightly on quickload via lg_reload_delay
+	if (m_LightgemInterleave >= interleaveFrames && lg_reload_delay < 1) {
 		m_LightgemInterleave = 0;
 		float value;
 		if( cv_lg_weak.GetBool() ) {
@@ -9604,10 +9614,16 @@ int idPlayer::ProcessLightgem(bool processing)
 		m_LightgemValue = GetLightgemModifier( int( DARKMOD_LG_MAX * value ) );
 
 		DM_LOG( LC_LIGHT, LT_DEBUG )LOGSTRING( "After player adjustment %d\r", m_LightgemValue );
-	}
+        
+	} else {
+       lg_reload_delay--;
+    }
 
 	m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, m_LightgemValue);
 	return m_LightgemValue;
+    
+         
+    
 }
 
 float idPlayer::CalculateWeakLightgem()

@@ -372,6 +372,8 @@ extern idCVar cv_lg_fov;
 extern idCVar cv_lg_interleave;
 // nbohr1more #4369 Dynamic Lightgem Interleave
 extern idCVar cv_lg_interleave_min;
+// nbohr1more #6088 prevent lightgem from rendering brightly on quickload
+extern idCVar cv_lg_reload_delay;
 extern idCVar cv_lg_weak;
 extern idCVar cv_lg_model;
 extern idCVar cv_lg_adjust;

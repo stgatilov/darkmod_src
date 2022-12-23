@@ -523,6 +523,8 @@ idCVar cv_lg_ozoffs("tdm_lg_ozoffs",		"-20",		CVAR_GAME | CVAR_FLOAT,	"Sets the 
 idCVar cv_lg_interleave("tdm_lg_interleave",	"1",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,		"If set to 0 no lightgem processing is done. Any other values determines how often the lightgem should be processed.\n1 (default) means to process every frame." );
 // nbohr1more #4369 Dynamic Lightgem Interleave
 idCVar cv_lg_interleave_min("tdm_lg_interleave_min",	"40",	CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,	"The minimum FPS to activate Lightgem Interleave. Defaults to 40FPS" );
+// nbohr1more #6088 prevent lightgem from rendering brightly on quickload
+idCVar cv_lg_reload_delay("tdm_lg_reload_delay",        "40",   CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,    "Number of lightem cycles to prevent lightgem from rendering immediately after quickload" ); 
 idCVar cv_lg_weak("tdm_lg_weak",			"0",		CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,		"Switches to the weaker algorithm, but may be faster." );
 
 idCVar cv_lg_model("tdm_lg_model",		"models/darkmod/misc/system/lightgem.lwo",	CVAR_GAME | CVAR_ARCHIVE,	"Set the lightgem model file. Map has to be restarted to take effect." );
