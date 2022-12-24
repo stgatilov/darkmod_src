@@ -71,6 +71,7 @@ LightGem::~LightGem()
 	Mem_Free16( m_LightgemImgBufferBackend );
 }
 
+int m_lg_reload_delay = 0 ; // nbohr1more #6088 prevent lightgem from rendering brightly on quickload
 
 //----------------------------------------------------
 // Initialization
@@ -124,19 +125,19 @@ void LightGem::InitializeLightGemEntity( void )
 void LightGem::Save( idSaveGame & a_saveGame )
 {
 	m_LightgemSurface.Save( &a_saveGame );
-	a_saveGame.WriteInt(m_LightgemShotSpot);
+	/* a_saveGame.WriteInt(m_LightgemShotSpot);
 	for (int i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++) {
 		a_saveGame.WriteFloat(m_LightgemShotValue[i]);
-	}
+	} */
 }
 
 void LightGem::Restore( idRestoreGame & a_savedGame )
 {
 	m_LightgemSurface.Restore( &a_savedGame );
-	a_savedGame.ReadInt(m_LightgemShotSpot);
+	/* a_savedGame.ReadInt(m_LightgemShotSpot);
 	for (int i = 0; i < DARKMOD_LG_MAX_RENDERPASSES; i++) {
 		a_savedGame.ReadFloat(m_LightgemShotValue[i]);
-	}
+	} */
 
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = VID_LIGHTGEM;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->suppressShadowInViewID = 0;
@@ -145,6 +146,7 @@ void LightGem::Restore( idRestoreGame & a_savedGame )
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noSelfShadow = true;
 	//nbohr1more: #4379 lightgem culling
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->isLightgem = true;
+    m_lg_reload_delay = 5;
 
 	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface.GetEntity());
 }
@@ -174,6 +176,10 @@ float LightGem::Calculate(idPlayer *player)
 	if ( player->GetModelDefHandle() == -1 ) {
 		return 0.0f;
 	}
+    if ( m_lg_reload_delay > 0 ) {
+         m_lg_reload_delay--;
+         return 0.0f;    
+    }
 	
 	// Get position for lg
 	idEntity* lg = m_LightgemSurface.GetEntity();

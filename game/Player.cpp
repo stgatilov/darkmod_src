@@ -2367,9 +2367,9 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 		savefile->WriteObject(m_LightList[i]);
 	}
 
-	savefile->WriteInt(m_LightgemValue);
-	savefile->WriteFloat(m_fColVal);
-	savefile->WriteInt(m_LightgemInterleave);
+	// savefile->WriteInt(m_LightgemValue);
+	// savefile->WriteFloat(m_fColVal);
+	// savefile->WriteInt(m_LightgemInterleave);
 	savefile->WriteBool(ignoreWeaponAttack);   // grayman #597
 	savefile->WriteInt(timeEvidenceIntruders); // grayman #3424
 	savefile->WriteInt(savePermissions);
@@ -2726,15 +2726,12 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		m_LightList[i] = light;
 	}
 
-	savefile->ReadInt(m_LightgemValue);
-	savefile->ReadFloat(m_fColVal);
-	savefile->ReadInt(m_LightgemInterleave);
+	// savefile->ReadInt(m_LightgemValue);
+	// savefile->ReadFloat(m_fColVal);
+	// savefile->ReadInt(m_LightgemInterleave);
     // nbohr1more #6088 prevent lightgem from rendering brightly on quickload
-    if (sessLocal.com_fixedTic.GetBool()){
-    lg_reload_delay = cv_lg_reload_delay.GetInteger() + sessLocal.com_maxFPS.GetInteger();
-    } else {
-    lg_reload_delay = cv_lg_reload_delay.GetInteger() + 60;
-    }
+    lg_reload_delay = cv_lg_reload_delay.GetInteger();
+
 	savefile->ReadBool(ignoreWeaponAttack);   // grayman #597
 	savefile->ReadInt(timeEvidenceIntruders); // grayman #3424
 	savefile->ReadInt(savePermissions);
@@ -9614,10 +9611,11 @@ int idPlayer::ProcessLightgem(bool processing)
 		m_LightgemValue = GetLightgemModifier( int( DARKMOD_LG_MAX * value ) );
 
 		DM_LOG( LC_LIGHT, LT_DEBUG )LOGSTRING( "After player adjustment %d\r", m_LightgemValue );
-        
-	} else {
-       lg_reload_delay--;
-    }
+      } else {
+        m_LightgemValue = 0;
+        lg_reload_delay--;
+      }  
+	
 
 	m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, m_LightgemValue);
 	return m_LightgemValue;
