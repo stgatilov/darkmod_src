@@ -21,41 +21,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "LightGem.h"
 #include "../renderer/tr_local.h"
 
-// Temporary profiling related macros
-
-//#define ENABLE_PROFILING
-
-#ifdef ENABLE_PROFILING
-#define PROFILE_BLOCK( block_tag )																				\
-class __profile_block {																							\
-	idTimer m_timeStamp;																						\
-public:																											\
-	__profile_block()  {																						\
-	m_timeStamp.Start();																						\
-	}																											\
-	~__profile_block()  {																						\
-	m_timeStamp.Stop();																							\
-	gameLocal.Printf( #block_tag" : %lf \n\n", m_timeStamp.Milliseconds() );									\
-	}																											\
-}	_profile_blockInstance_##block_tag;																			\
-
-
-#define PROFILE_BLOCK_START( block_tag )																		\
-	idTimer timer##block_tag;																					\
-	timer##block_tag.Start()																					\
-
-// PROFILE_BLOCK_END requires PROFILE_BLOCK_START to be placed before it, to work.
-#define PROFILE_BLOCK_END( block_tag )																			\
-	timer##block_tag.Stop();																					\
-	gameLocal.Printf( #block_tag": %lf \n", timer##block_tag.Milliseconds() )									\
-
-#else
-
-#define PROFILE_BLOCK( block_tag )
-#define PROFILE_BLOCK_START( block_tag )
-#define PROFILE_BLOCK_END( block_tag )	
-
-#endif
 //------------------------
 // Construction/Destruction
 //----------------------------------------------------
@@ -164,9 +129,6 @@ void LightGem::Restore( idRestoreGame & a_savedGame )
 
 float LightGem::Calculate(idPlayer *player)
 {
-	PROFILE_BLOCK( LightGem_Calculate );
-
-	PROFILE_BLOCK_START(LightGem_Calculate_AnalyzeRenderImage);
 	// analyze rendered shot from previous frame
 	AnalyzeRenderImage();
 	m_LightgemShotValue[m_LightgemShotSpot] = 0.0f;
@@ -176,9 +138,7 @@ float LightGem::Calculate(idPlayer *player)
 			m_LightgemShotValue[m_LightgemShotSpot] = m_fColVal[l];
 		}
 	}
-	PROFILE_BLOCK_END(LightGem_Calculate_AnalyzeRenderImage);
 
-	PROFILE_BLOCK_START( LightGem_Calculate_Setup);
 	// If player is hidden (i.e the whole player entity is actually hidden)
 	if ( player->GetModelDefHandle() == -1 ) {
 		return 0.0f;
