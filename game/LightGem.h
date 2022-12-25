@@ -28,6 +28,7 @@ static const char * DARKMOD_LG_ENTITY_NAME		= "lightgem_surface";
 static const int    DARKMOD_LG_RENDER_WIDTH		= 64; // LG render resolution - keep it a power-of-two!
 static const float  DARKMOD_LG_RENDER_FOV		= 70.0f;
 static const int	DARKMOD_LG_BPP				= 3; // 3 Channels of 8 bits
+static const int	DARKMOD_LG_PAUSE			= 6; // #6088: PBO triple-buffering + frontend/backend + passes = 5 frames minimum!
 
 // The colour is converted to a grayscale value which determines the state of the lightgem.
 // LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
@@ -52,6 +53,11 @@ private:
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 
 	float 					m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
+
+	// future "Frames" calls will return "Value" instead of actually computed values
+	// this is used to avoid wrong lightgem values briefly after quickload (#6088)
+	int						m_LightgemOverrideFrames;
+	float					m_LightgemOverrideValue;
 
 public:
 	unsigned char*			m_LightgemImgBufferFrontend;
