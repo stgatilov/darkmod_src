@@ -78,7 +78,8 @@ class COverlaySys
 	void					Restore( idRestoreGame *savefile );
 
 	/// Draws the contained GUIs to the screen, in order.
-	void					drawOverlays();
+	/// if onlyOverlayHandles is specified, all UIs not in the list are skipped
+	void					drawOverlays( idList<int> *onlyOverlayHandles = nullptr );
 	/// Returns true if any of the GUIs are opaque.
 	bool					isOpaque();
 	/// Returns the interactive GUI.

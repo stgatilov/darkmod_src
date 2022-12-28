@@ -109,18 +109,18 @@ void COverlaySys::Restore( idRestoreGame *savefile )
 Quit:
 	return;
 }
-
-void COverlaySys::drawOverlays()
+void COverlaySys::drawOverlays( idList<int> *onlyOverlayHandles )
 {
 	idUserInterface* gui;
 	idLinkList<SOverlay>* oNode = findOpaque();
-	if(!oNode)
+	if (!oNode)
 		oNode = m_overlays.NextNode();
 	
-	while(oNode)
+	while (oNode)
 	{
 		gui = oNode->Owner()->m_gui;
-		if(gui)
+		bool matchesFilter = (onlyOverlayHandles == nullptr || onlyOverlayHandles->Find(oNode->Owner()->m_handle));
+		if (gui && matchesFilter)
 		{
 			gameLocal.UpdateGUIScaling(gui);
 
