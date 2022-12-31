@@ -61,5 +61,5 @@ void main() {
 		sumColor += depthWeight * density * color;
 	}
 
-	FragColor = sumColor / sumWeight;
+	FragColor = sumColor / max(sumWeight, 1e-3);
 }
