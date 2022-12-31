@@ -15,6 +15,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #include "earcut.h"
 
+#include "dmap.h"
+
 
 int EarCutter::FailsCount = 0;
 
@@ -167,12 +169,17 @@ void EarCutter::CutEars() {
 		if (earIds.Num() == 0) {
 			//in some rare cases algorithm inevitably breaks =(
 			FailsCount++;
-			idVec2 zone = EstimateErrorZone();
+			idVec2 somePos;
+			idVec2 zone = EstimateErrorZone(&somePos);
 			//usually algorithm breaks on (almost)singular contours
 			//the unfilled part of triangulation cannot be thicker than the bounding box of remaining part
 			//so let's better suppress the warning in thin cases, when width is less than 1 unit
 			if (idMath::Fmin(zone.x, zone.y) > 1.0f)
-				common->Printf("EarCutter: no more ears after %d/%d iterations (zone %0.3lf x %0.3lf)\n", iter, n-2, zone.x, zone.y);
+				common->Printf(
+					"EarCutter: no more ears after %d/%d iterations (zone %0.3lf x %0.3lf) near (%s)\n",
+					iter, n-2, zone.x, zone.y,
+					ReportWorldPositionInOptimizeGroup(somePos, optGroup).c_str()
+				);
 			break;
 		}
 		int ear = earIds.GetMin();
@@ -211,7 +218,7 @@ void EarCutter::CutEars() {
 		}
 }
 
-idVec2 EarCutter::EstimateErrorZone() const {
+idVec2 EarCutter::EstimateErrorZone(idVec2 *somePos) const {
 	int n = verts.Num();
 	//find leftmost vertex
 	idVec2 leftPos(FLT_MAX, FLT_MAX);
@@ -250,7 +257,9 @@ idVec2 EarCutter::EstimateErrorZone() const {
 		idVec3 local(p * axisX, p * axisY, 0.0f);
 		bbox.AddPoint(local);
 	}
-	//return box sizes
+	//return values
+	if (somePos)
+		*somePos = leftPos;
 	return bbox.GetSize().ToVec2();
 }
 
@@ -473,7 +482,10 @@ void EarCutter::ConnectHoles() {
 		if (posS < 0) {
 			//normally, this should never happen
 			//but at least we should not crash in this case
-			common->Printf("EarCutter: failed to connect inner loop of area %0.3lf\n", l.area);
+			common->Printf(
+				"EarCutter: failed to connect inner loop of area %0.3lf near (%s)\n",
+				l.area, ReportWorldPositionInOptimizeGroup(verts[sequence[0]].pos, optGroup).c_str()
+			);
 			FailsCount++;
 			continue;	//drop this inner loop
 		}
@@ -539,4 +551,9 @@ void EarCutter::Reset() {
 	earIds.Clear();
 	tris.SetNum(0, false);
 	seams.SetNum(0, false);
+	optGroup = nullptr;
+}
+
+void EarCutter::SetOptimizeGroup(optimizeGroup_t *group) {
+	optGroup = group;
 }

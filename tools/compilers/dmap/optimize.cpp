@@ -1731,6 +1731,7 @@ static void AddTriangulationEdges( optIsland_t *island ) {
 	static idList<optVertex_t*> pgActiveVerts;
 
 	planarGraph.Reset();
+	planarGraph.SetOptimizeGroup(island->group);
 
 	//add vertices
 	pgActiveVerts.SetNum(0, false);
@@ -1983,6 +1984,15 @@ static	void OptimizeOptList( optimizeGroup_t *opt ) {
 	FreeTriList( opt->triList );
 	opt->triList = opt->regeneratedTris;
 	opt->regeneratedTris = NULL;
+}
+
+idStr ReportWorldPositionInOptimizeGroup(const idVec2 &pos, optimizeGroup_t *group) {
+	if (group == nullptr)
+		return "???";
+	const idPlane &plane = dmapGlobals.mapPlanes[group->planeNum];
+	idVec3 origin = plane.Normal() * plane.Dist();
+	idVec3 worldPos = origin + group->axis[0] * pos.x + group->axis[1] * pos.y;
+	return worldPos.ToString();
 }
 
 

@@ -14,7 +14,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #include "precompiled.h"
 #include "planargraph.h"
+
 #include "containers/DisjointSets.h"
+#include "dmap.h"
 
 
 int PlanarGraph::AddVertex(idVec2 pos) {
@@ -274,7 +276,10 @@ void PlanarGraph::BuildFaces() {
 			}
 			facets[minIdx].clockwise = true;
 			components[c].cwFacet = minIdx;
-			common->Printf("PlanarGraph: facets reclassified by area (CW area %0.3lf)\n", -minArea);
+			common->Printf(
+				"PlanarGraph: facets reclassified by area (CW area %0.3lf) near (%s)\n",
+				-minArea, ReportWorldPositionInOptimizeGroup(verts[facets[minIdx].rightmost].pos, optGroup).c_str()
+			);
 		}
 	}
 
@@ -429,6 +434,7 @@ void PlanarGraph::TriangulateFaces(idList<Triangle> &tris, idList<AddedEdge> &ad
 		remap.SetNum(0, false);
 
 		earcut.Reset();
+		earcut.SetOptimizeGroup(optGroup);
 
 		//pass all holes
 		for (int u = fOuter.holeBeg; u < fOuter.holeEnd; u++) {
@@ -498,7 +504,13 @@ void PlanarGraph::Reset() {
 	facetHoles.SetNum(0, false);
 	_work.SetNum(0, false);
 	earcut.Reset();
+	optGroup = nullptr;
 }
+
+void PlanarGraph::SetOptimizeGroup(optimizeGroup_t *group) {
+	optGroup = group;
+}
+
 
 
 

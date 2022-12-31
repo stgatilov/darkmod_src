@@ -221,13 +221,14 @@ typedef struct optimizeGroup_s {
 	idVec3				axis[2];			// orthogonal to the plane, so optimization can be 2D
 } optimizeGroup_t;
 
-// all primitives from the map are added to optimzeGroups, creating new ones as needed
+// all primitives from the map are added to optimizeGroups, creating new ones as needed
 // each optimizeGroup is then split into the map areas, creating groups in each area
 // each optimizeGroup is then divided by each light, creating more groups
 // the final list of groups is then tjunction fixed against all groups, then optimized internally
 // multiple optimizeGroups will be merged together into .proc surfaces, but no further optimization
 // is done on them
 
+idStr ReportWorldPositionInOptimizeGroup(const idVec2 &pos, optimizeGroup_t *group);
 
 //=============================================================================
 

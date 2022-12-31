@@ -16,6 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "containers/BinHeap.h"
 
+typedef struct optimizeGroup_s optimizeGroup_t;
+
 /*
  * Triangulation of polygonal face, possibly with hole loops.
  * Algorithm described by David Eberly here:
@@ -76,6 +78,9 @@ private:
 	idList<int> _work1, _work2;
 	idList<Vertex> _work3;
 
+	//LCS in 3D world space (only for warnings)
+	optimizeGroup_t *optGroup = nullptr;
+
 public:
 	//vertices must be added one-by-one in sequental order (traversing along polygon edges)
 	//note: last point is automatically joined to the first one
@@ -95,6 +100,8 @@ public:
 
 	//reset to default-constructed state, but retaining memory buffers
 	void Reset();
+	//optional: set local coordinate system for console messages
+	void SetOptimizeGroup(optimizeGroup_t *group);
 
 	//total number of fails in the algorithm (for testing/debugging)
 	static int FailsCount;
@@ -103,7 +110,7 @@ private:
 	void DetectOrientation();
 	void ConnectHoles();
 	void CutEars();
-	idVec2 EstimateErrorZone() const;
+	idVec2 EstimateErrorZone(idVec2 *somePos) const;
 
 	double CrossVectors(int sA, int eA, int sB, int eB) const;
 	int OrientVectors(int sA, int eA, int sB, int eB) const;
