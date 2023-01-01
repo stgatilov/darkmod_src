@@ -8024,7 +8024,7 @@ void idAI::UpdateEnemyPosition()
 	}
 
 	// grayman #2887 - track enemy visibility for statistics
-	if ( enemyEnt->IsType(idPlayer::Type) && !m_ignorePlayer) // grayman #3063 - ignore the player when in a Combat mode setup
+	if ( enemyEnt->IsType(idPlayer::Type) )
 	{
 		if ( AI_ENEMY_VISIBLE || AI_ENEMY_TACTILE )	//player is visible or in tactile range
 		{
