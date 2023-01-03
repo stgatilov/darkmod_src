@@ -958,12 +958,8 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 		}
 
 		int nextCharWidth = ( idStr::CharIsPrintable(*p) ? CharWidth( *p, textScale ) : cursorSkip );
-		// FIXME: this is a temp hack until the guis can be fixed to not overflow the bounding rectangles
-		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
-		//	The following line and the !linebreak in the if statement below should be removed
-		nextCharWidth = 0;
 
-		if ( !lineBreak && ( textWidth + nextCharWidth ) > rectDraw.w ) {
+		if ( ( textWidth + nextCharWidth ) > rectDraw.w ) {
 			// The next character will cause us to overflow, if we haven't yet found a suitable
 			// break spot, set it to be this character
 			if ( len > 0 && newLine == 0 ) {
