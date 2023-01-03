@@ -323,14 +323,20 @@ void GL_ScissorAbsolute( int x, int y, int w, int h ) {
 }
 
 void GL_ScissorVidSize( int x /* left*/, int y /* bottom */, int w, int h ) {
+	// get [L..R) ranges
+	int x1 = x;
+	int y1 = y;
+	int x2 = x + w;
+	int y2 = y + h;
+	// convert to FBO resolution with conservative outwards rounding
 	int width = frameBuffers->activeFbo->Width();
 	int height = frameBuffers->activeFbo->Height();
-	GL_ScissorAbsolute(
-		x * width  / glConfig.vidWidth ,
-		y * height / glConfig.vidHeight,
-		w * width  / glConfig.vidWidth ,
-		h * height / glConfig.vidHeight
-	);
+	x1 = x1 * width  / glConfig.vidWidth;
+	y1 = y1 * height / glConfig.vidHeight;
+	x2 = (x2 * width  + glConfig.vidWidth  - 1) / glConfig.vidWidth;
+	y2 = (y2 * height + glConfig.vidHeight - 1) / glConfig.vidHeight;
+	// get width/height and apply scissor
+	GL_ScissorAbsolute(x1, y1, x2 - x1, y2 - y1);
 }
 
 void GL_ScissorRelative( float x, float y, float w, float h ) {

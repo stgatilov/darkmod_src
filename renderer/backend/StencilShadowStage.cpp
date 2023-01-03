@@ -197,6 +197,7 @@ void StencilShadowStage::FillStencilShadowMipmaps( const idScreenRect &lightScis
 	}
 
 	if ( newProps.softShadowQuality > 0 ) {
+		// TODO #6214: how to round up properly for low renderscale?
 		int x = lightScissor.x1 * newProps.renderWidth  / glConfig.vidWidth ;
 		int y = lightScissor.y1 * newProps.renderHeight / glConfig.vidHeight;
 		int w = lightScissor.GetWidth()  * newProps.renderWidth  / glConfig.vidWidth ;
