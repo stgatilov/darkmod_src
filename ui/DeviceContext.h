@@ -48,11 +48,11 @@ public:
 	void				DrawMaterialRotated(float x, float y, float w, float h, const idMaterial *mat, const idVec4 &color, float scalex = 1.0, float scaley = 1.0, float angle = 0.0f);
 	void				DrawStretchPicRotated(float x, float y, float w, float h, float s0, float t0, float s1, float t1, const idMaterial *mat, float angle = 0.0f);
 
-	int					CharWidth( const char c, float scale );
-	int					TextWidth(const char *text, float scale, int limit);
-	int					TextHeight(const char *text, float scale, int limit);
-	int					MaxCharHeight(float scale);
-	int					MaxCharWidth(float scale);
+	float				CharWidth( const char c, float scale );
+	float				TextWidth(const char *text, float scale, int limit);
+	float				TextHeight(const char *text, float scale, int limit);
+	float				MaxCharHeight(float scale);
+	float				MaxCharWidth(float scale);
 
 	int					FindFont( const char *name );
 	void				SetupFonts();

@@ -496,7 +496,7 @@ void idEditWindow::EnsureCursorVisible()
 
 	SetFont();
 	if ( !wrap ) {
-		int cursorX = 0;
+		float cursorX = 0;
 		if ( password ) {
 			cursorX = cursorPos * dc->CharWidth( '*', textScale );
 		} else {
@@ -510,9 +510,9 @@ void idEditWindow::EnsureCursorVisible()
 				}
 			}
 		}
-		int maxWidth = GetMaxCharWidth( );
-		int left = cursorX - maxWidth;
-		int right = ( cursorX - textRect.w ) + maxWidth;
+		float maxWidth = GetMaxCharWidth( );
+		float left = cursorX - maxWidth;
+		float right = ( cursorX - textRect.w ) + maxWidth;
 
 		if ( paintOffset > left ) {
 			// When we go past the left side, we want the text to jump 6 characters
