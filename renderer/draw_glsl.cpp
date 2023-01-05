@@ -317,8 +317,8 @@ void RB_GLSL_GenerateShadowMaps() {
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( backEnd.vLight->shadowMapPage.width == 0 || backEnd.vLight->singleLightOnly )
 			continue;
-		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
-		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions, false );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalShadows, true );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localShadows, false );
 	}
 }
 
