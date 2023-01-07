@@ -958,8 +958,14 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 		}
 
 		float nextCharWidth = ( idStr::CharIsPrintable(*p) ? CharWidth( *p, textScale ) : cursorSkip );
+		// FIXME: this is a temp hack until the guis can be fixed to not overflow the bounding rectangles
+		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
+		//	The following line and the !linebreak in the if statement below should be removed
+		// stgatilov #5914: Trying to change it now will break all readables =(
+		// see also: https://forums.thedarkmod.com/index.php?/topic/21710-implicit-linebreaks-in-text/
+		nextCharWidth = 0;
 
-		if ( ( textWidth + nextCharWidth ) > rectDraw.w + 1e-3f ) {
+		if ( !lineBreak && ( textWidth + nextCharWidth ) > rectDraw.w + 1e-3f ) {
 			// The next character will cause us to overflow, if we haven't yet found a suitable
 			// break spot, set it to be this character
 			if ( len > 0 && newLine == 0 ) {
