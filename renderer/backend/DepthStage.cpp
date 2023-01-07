@@ -44,10 +44,10 @@ namespace {
 
 	void CalcScissorParam( uint32_t scissor[4], const idScreenRect &screenRect ) {
 		// get [L..R) ranges
-		int x1 = screenRect.x1;
-		int y1 = screenRect.y1;
-		int x2 = screenRect.x2 + 1;
-		int y2 = screenRect.y2 + 1;
+		int x1 = backEnd.viewDef->viewport.x1 + screenRect.x1;
+		int y1 = backEnd.viewDef->viewport.y1 + screenRect.y1;
+		int x2 = backEnd.viewDef->viewport.x1 + screenRect.x2 + 1;
+		int y2 = backEnd.viewDef->viewport.y1 + screenRect.y2 + 1;
 		// convert to FBO resolution with conservative outwards rounding
 		int width = frameBuffers->activeFbo->Width();
 		int height = frameBuffers->activeFbo->Height();
