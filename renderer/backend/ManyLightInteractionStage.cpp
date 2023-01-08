@@ -240,6 +240,7 @@ void ManyLightInteractionStage::DrawInteractions( const viewDef_t *viewDef ) {
 			if (r_useScissor.GetBool()) {
 				float xScale = static_cast<float>(frameBuffers->activeFbo->Width()) / glConfig.vidWidth;
 				float yScale = static_cast<float>(frameBuffers->activeFbo->Height()) / glConfig.vidHeight;
+				// TODO #6214: how to round up properly for low renderscale?
 				params.scissor = idVec4( vLight->scissorRect.x1 * xScale, vLight->scissorRect.y1 * yScale, vLight->scissorRect.x2 * xScale, vLight->scissorRect.y2 * yScale );
 			} else {
 				params.scissor = idVec4(0, 0, frameBuffers->activeFbo->Width(), frameBuffers->activeFbo->Height());

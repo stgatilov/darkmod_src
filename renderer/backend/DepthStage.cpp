@@ -43,13 +43,23 @@ namespace {
 	}
 
 	void CalcScissorParam( uint32_t scissor[4], const idScreenRect &screenRect ) {
-		float xScale = static_cast<float>(frameBuffers->activeFbo->Width()) / glConfig.vidWidth;
-		float yScale = static_cast<float>(frameBuffers->activeFbo->Height()) / glConfig.vidHeight;
-
-		scissor[0] = xScale * (backEnd.viewDef->viewport.x1 + screenRect.x1);
-		scissor[1] = yScale * (backEnd.viewDef->viewport.y1 + screenRect.y1);
-		scissor[2] = xScale * (screenRect.x2 + 1 - screenRect.x1);
-		scissor[3] = yScale * (screenRect.y2 + 1 - screenRect.y1);
+		// get [L..R) ranges
+		int x1 = backEnd.viewDef->viewport.x1 + screenRect.x1;
+		int y1 = backEnd.viewDef->viewport.y1 + screenRect.y1;
+		int x2 = backEnd.viewDef->viewport.x1 + screenRect.x2 + 1;
+		int y2 = backEnd.viewDef->viewport.y1 + screenRect.y2 + 1;
+		// convert to FBO resolution with conservative outwards rounding
+		int width = frameBuffers->activeFbo->Width();
+		int height = frameBuffers->activeFbo->Height();
+		x1 = x1 * width  / glConfig.vidWidth;
+		y1 = y1 * height / glConfig.vidHeight;
+		x2 = (x2 * width  + glConfig.vidWidth  - 1) / glConfig.vidWidth;
+		y2 = (y2 * height + glConfig.vidHeight - 1) / glConfig.vidHeight;
+		// get width/height and apply scissor
+		scissor[0] = x1;
+		scissor[1] = y1;
+		scissor[2] = x2 - x1;
+		scissor[3] = y2 - y1;
 	}
 }
 

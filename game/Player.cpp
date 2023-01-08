@@ -3274,6 +3274,12 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		}
 
 	if ( !weapon.GetEntity() || influenceActive != INFLUENCE_NONE || privateCameraView || gameLocal.GetCamera() || !_hud || !g_showHud.GetBool() ) {
+		// #6197: even if HUD is hidden, still render subtitles overlay
+		if (subtitlesOverlay != -1) {
+			idList<int> filter(1);
+			filter.Append(subtitlesOverlay);
+			m_overlays.drawOverlays(&filter);
+		}
 		return;
 	}
 

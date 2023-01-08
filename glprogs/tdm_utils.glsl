@@ -30,10 +30,11 @@ float depthToZ(mat4 projectionMatrix, float depth) {
 	float clipZ = 2.0 * depth - 1.0;
 	float A = projectionMatrix[2].z;
 	float B = projectionMatrix[3].z;
-	// note: D3 uses nonstandard far-at-infnity projection matrix (see R_SetupProjection)
+	// note: D3 uses nonstandard far-at-infinity projection matrix (see R_SetupProjection)
 	// it means that d > 0.999 is invalid range
-	// the clamping to -eps from below ensures that such depth (e.g. depth = 1) produce very large positive values
-	return B / min(A + clipZ, -1e-9);
+	// the clamping to -eps from below ensures that such depth (e.g. depth = 1) produce large distance
+	// (according to R_SetupProjection, eps = 1e-5 gives distance ~= 6e+5)
+	return B / min(A + clipZ, -1e-5);
 }
 
 // samples depth texture and returns negated view Z with derivatives

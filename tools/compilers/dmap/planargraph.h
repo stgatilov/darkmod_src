@@ -78,6 +78,9 @@ private:
 	idList<int> _work;
 	EarCutter earcut;
 
+	//LCS in 3D world space (only for warnings)
+	optimizeGroup_t *optGroup = nullptr;
+
 public:
 
 	//step 1: fill graph
@@ -97,4 +100,6 @@ public:
 
 	//optional: restart from scratch without losing memory buffers
 	void Reset();
+	//optional: set local coordinate system for console messages
+	void SetOptimizeGroup(optimizeGroup_t *group);
 };

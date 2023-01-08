@@ -1342,29 +1342,6 @@ void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, c
 
 /*
 ===============
-R_HasVisibleShadows
-
-Do we need to add offscreen geometry? Is it casting shadows into the view frustum?
-===============
-*/
-static bool R_HasVisibleShadows( viewEntity_t *vEntity ) {
-	if ( !r_shadowMapSinglePass.GetBool() )
-		return false;
-	auto &def = *vEntity->entityDef;
-	for ( auto inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {
-		if ( inter->lightDef->viewCount != tr.viewCount ) {
-			continue;
-		}
-		// check more precisely for shadow visibility
-		idScreenRect shadowRect;
-		if ( inter->IsPotentiallyVisible( shadowRect ) )
-			return true;
-	}
-	return false;
-}
-
-/*
-===============
 R_AddAmbientDrawsurfs
 
 Adds surfaces for the given viewEntity
@@ -1444,9 +1421,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			}
 		}
 
-		if ( 
-			!R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) || R_HasVisibleShadows( vEntity )
-		) {
+		if ( !R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
 			if ( r_useClipPlaneCulling && tr.viewDef->clipPlane ) { // 4946 - try to cull transparent objects behind mirrors, that are ignored by clip plane during depth pass
 				idPlane inversePlane( -tr.viewDef->clipPlane->Normal(), -tr.viewDef->clipPlane->Dist() ); // for some reason, the clipPlane normal points to the wrong side
@@ -1580,7 +1555,7 @@ void R_AddSingleModel( viewEntity_t *vEntity ) {
 	}
 
 	// add the ambient surface if it has a visible rectangle
-	if ( !vEntity->scissorRect.IsEmpty() || R_HasVisibleShadows( vEntity ) ) {
+	if ( !vEntity->scissorRect.IsEmpty() ) {
 		model = R_EntityDefDynamicModel( &def );
 		if ( model == NULL || model->NumSurfaces() <= 0 ) {
 			/*if ( def.parms.timeGroup ) {

@@ -732,17 +732,17 @@ void idDeviceContext::SetSize(float width, float height) {
 	}
 }
 
-int idDeviceContext::CharWidth( const char c, float scale ) {
+float idDeviceContext::CharWidth( const char c, float scale ) {
 	glyphInfo_t *glyph;
 	float		useScale;
 	SetFontByScale(scale);
 	fontInfo_t	*font = useFont;
 	useScale = scale * font->glyphScale;
 	glyph = &font->glyphs[(const unsigned char)c];
-	return idMath::FtoiFast( glyph->xSkip * useScale );
+	return glyph->xSkip * useScale;
 }
 
-int idDeviceContext::TextWidth( const char *text, float scale, int limit ) {
+float idDeviceContext::TextWidth( const char *text, float scale, int limit ) {
 	int i, width;
 
 	SetFontByScale( scale );
@@ -770,10 +770,10 @@ int idDeviceContext::TextWidth( const char *text, float scale, int limit ) {
 			}
 		}
 	}
-	return idMath::FtoiFast( scale * useFont->glyphScale * width );
+	return scale * useFont->glyphScale * width;
 }
 
-int idDeviceContext::TextHeight(const char *text, float scale, int limit) {
+float idDeviceContext::TextHeight(const char *text, float scale, int limit) {
 	int			len, count;
 	float		max;
 	glyphInfo_t *glyph;
@@ -808,19 +808,19 @@ int idDeviceContext::TextHeight(const char *text, float scale, int limit) {
 		}
 	}
 
-	return idMath::FtoiFast( max * useScale );
+	return max * useScale;
 }
 
-int idDeviceContext::MaxCharWidth(float scale) {
+float idDeviceContext::MaxCharWidth(float scale) {
 	SetFontByScale(scale);
 	float useScale = scale * useFont->glyphScale;
-	return idMath::FtoiFast( activeFont->maxWidth * useScale );
+	return activeFont->maxWidth * useScale;
 }
 
-int idDeviceContext::MaxCharHeight(float scale) {
+float idDeviceContext::MaxCharHeight(float scale) {
 	SetFontByScale(scale);
 	float useScale = scale * useFont->glyphScale;
-	return idMath::FtoiFast( activeFont->maxHeight * useScale );
+	return activeFont->maxHeight * useScale;
 }
 
 // this only supports left aligned text
@@ -908,9 +908,9 @@ void idDeviceContext::DrawEditCursor( float x, float y, float scale ) {
 int idDeviceContext::DrawText( const char *text, float textScale, int textAlign, idVec4 color, idRectangle rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit ) {
 	const char	*p, *textPtr, *newLinePtr;
 	char		buff[1024];
-	int			len, newLine, newLineWidth, count;
+	int			len, newLine, count;
 	float		y;
-	float		textWidth;
+	float		textWidth, newLineWidth;
 
 	float		charSkip = MaxCharWidth( textScale ) + 1;
 	float		lineSkip = MaxCharHeight( textScale );
@@ -957,13 +957,15 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 			}
 		}
 
-		int nextCharWidth = ( idStr::CharIsPrintable(*p) ? CharWidth( *p, textScale ) : cursorSkip );
+		float nextCharWidth = ( idStr::CharIsPrintable(*p) ? CharWidth( *p, textScale ) : cursorSkip );
 		// FIXME: this is a temp hack until the guis can be fixed to not overflow the bounding rectangles
 		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
 		//	The following line and the !linebreak in the if statement below should be removed
+		// stgatilov #5914: Trying to change it now will break all readables =(
+		// see also: https://forums.thedarkmod.com/index.php?/topic/21710-implicit-linebreaks-in-text/
 		nextCharWidth = 0;
 
-		if ( !lineBreak && ( textWidth + nextCharWidth ) > rectDraw.w ) {
+		if ( !lineBreak && ( textWidth + nextCharWidth ) > rectDraw.w + 1e-3f ) {
 			// The next character will cause us to overflow, if we haven't yet found a suitable
 			// break spot, set it to be this character
 			if ( len > 0 && newLine == 0 ) {
