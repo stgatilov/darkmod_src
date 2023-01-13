@@ -40,7 +40,6 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_bAttacking = false;
 	m_bParrying = false;
 
-	m_bClipAxAlign = true;
 	m_bWorldCollide = false;
 	m_bModCM = false;
 
@@ -74,7 +73,6 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bAttacking );
 	savefile->WriteBool( m_bParrying );
 	savefile->WriteString( m_ActionName );
-	savefile->WriteBool( m_bClipAxAlign );
 	savefile->WriteBool( m_bWorldCollide );
 	savefile->WriteBool( m_bModCM );
 	savefile->WriteVec3( m_ClipOffset );
@@ -107,7 +105,6 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bAttacking );
 	savefile->ReadBool( m_bParrying );
 	savefile->ReadString( m_ActionName );
-	savefile->ReadBool( m_bClipAxAlign );
 	savefile->ReadBool( m_bWorldCollide );
 	savefile->ReadBool( m_bModCM );
 	savefile->ReadVec3( m_ClipOffset );
@@ -405,7 +402,6 @@ void CMeleeWeapon::ClearClipModel( void )
 
 	m_ClipOffset = vec3_zero;
 	m_ClipRotation = mat3_identity;
-	m_bClipAxAlign = true;
 	m_bClipYawOnly = false;
 	m_ClipPitchAngle = 0.0f;
 }
@@ -417,12 +413,7 @@ void CMeleeWeapon::Think( void )
 	// Move the custom clipmodel around to match the weapon
 	if( m_WeapClip )
 	{
-		idMat3 CMaxis;
-
-		if( m_bClipAxAlign )
-			CMaxis = GetPhysics()->GetAxis();
-		else
-			CMaxis = mat3_identity;
+		idMat3 CMaxis = GetPhysics()->GetAxis();
 
 		// option to maintain pitch relative to world
 		// (only implemented for parries for now)
