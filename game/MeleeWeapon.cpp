@@ -64,6 +64,7 @@ CMeleeWeapon::~CMeleeWeapon( void )
 	// avoid leaving behind a clipmodel with stale entity pointers
 	DeactivateAttack();
 	DeactivateParry();
+	assert(!m_WeapClip);
 }
 
 void CMeleeWeapon::Save( idSaveGame *savefile ) const 
@@ -170,7 +171,6 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	m_ParticlesMade = 0;
 	m_bModAICMs = spawnArgs.GetBool("use_larger_ai_head_CMs");
 
-	m_WeapClip = NULL;
 	pClip = GetPhysics()->GetClipModel();
 	if( spawnArgs.GetBool(va("att_mod_cm_%s", AttName) ) )
 	{
@@ -357,7 +357,6 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 		m_bParrying = true;
 
 		// set up the clipmodel
-		m_WeapClip = NULL;
 		idClipModel *pClip;
 		if( spawnArgs.GetBool(va("par_mod_cm_%s", ParryName)) )
 		{
@@ -1139,6 +1138,7 @@ void CMeleeWeapon::SetupClipModel( )
 	else
 		trm.SetupBox( CMBounds );
 
+	assert(!m_WeapClip);
 	m_WeapClip = new idClipModel( trm );
 
 	m_ClipOffset = spawnArgs.GetVector( va("%s_cm_offset_%s", APrefix, AName) );
