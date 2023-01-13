@@ -1085,6 +1085,10 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 
 void CMeleeWeapon::SetupClipModel( )
 {
+	// stgatilov #6225: if custom clipmodel is used now, make sure to deallocate it
+	// since otherwise we'll overwrite it, leaving a dangling clipmodel in idClip
+	ClearClipModel();
+
 	float size(0.0f);
 	idBounds CMBounds;
 	idTraceModel trm;
