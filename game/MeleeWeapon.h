@@ -190,11 +190,6 @@ protected:
 	bool					m_bWorldCollide;
 
 	/**
-	* Whether we're using a modified clipmodel or our own entity clipmodel
-	**/
-	bool					m_bModCM;
-
-	/**
 	* Type of melee action for parry tests
 	* Slash, overhand, thrust, or unblockable
 	**/

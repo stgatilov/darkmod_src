@@ -41,7 +41,6 @@ CMeleeWeapon::CMeleeWeapon( void )
 	m_bParrying = false;
 
 	m_bWorldCollide = false;
-	m_bModCM = false;
 
 	m_MeleeType = MELEETYPE_OVER;
 	m_StopMass = 0.0f;
@@ -75,7 +74,6 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bParrying );
 	savefile->WriteString( m_ActionName );
 	savefile->WriteBool( m_bWorldCollide );
-	savefile->WriteBool( m_bModCM );
 	savefile->WriteVec3( m_ClipOffset );
 	savefile->WriteMat3( m_ClipRotation );
 	savefile->WriteBool( m_bClipYawOnly );
@@ -97,6 +95,8 @@ void CMeleeWeapon::Save( idSaveGame *savefile ) const
 	savefile->WriteBool( m_bFailsafeTrace );
 	savefile->WriteVec3( m_vFailsafeTraceStart );
 	savefile->WriteVec3( m_vFailsafeTraceEnd );
+
+	savefile->WriteBool( m_WeapClip != NULL );
 }
 
 void CMeleeWeapon::Restore( idRestoreGame *savefile ) 
@@ -107,7 +107,6 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadBool( m_bParrying );
 	savefile->ReadString( m_ActionName );
 	savefile->ReadBool( m_bWorldCollide );
-	savefile->ReadBool( m_bModCM );
 	savefile->ReadVec3( m_ClipOffset );
 	savefile->ReadMat3( m_ClipRotation );
 	savefile->ReadBool( m_bClipYawOnly );
@@ -136,7 +135,9 @@ void CMeleeWeapon::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3( m_vFailsafeTraceEnd );
 
 	// Regenerate the clipmodel
-	if( m_bModCM )
+	bool modCM;
+	savefile->ReadBool( modCM );
+	if( modCM )
 		SetupClipModel();
 	else
 		m_WeapClip = NULL;
