@@ -184,6 +184,17 @@ void idBoxOctree::Update(Pointer ptr, const idBounds &box) {
 
 		static_assert(sizeof(CellRanges) == 24, "CellRanges: expected tight packing");
 		fastUpdate = (memcmp(&oldRange, &newRange, sizeof(CellRanges)) == 0);
+
+		if (fastUpdate) {
+			int oldLevel = GetLevel(handle.bounds);
+			int newLevel = GetLevel(box);
+			if (oldLevel != newLevel) {
+				// level has changed => numSmall might change too
+				// the only exception is when object was and is small in all its nodes
+				if (!(oldLevel > maxDepth && newLevel > maxDepth))
+					fastUpdate = false;
+			}
+		}
 	}
 	else {
 		fastUpdate = false;
