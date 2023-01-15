@@ -5271,7 +5271,7 @@ void idPhysics_Player::ProcessPeek(idEntity* peekEntity, idEntity* door, idVec3 
 	{
 		idThread *pThread = new idThread(func);
 		int n = pThread->GetThreadNum();
-		pThread->CallFunctionArgs(func, true, "eev", peekEntity, door,normal);
+		pThread->CallFunctionArgs(func, true, "eev", peekEntity, door, &normal);
 		pThread->DelayedStart(0);
 		pThread->Execute();
 	}

@@ -124,6 +124,9 @@ private:
 	void Add_r(AddContext &ctx, int nodeIdx, const idBounds &cellBox);
 	void AddToNode(AddContext &ctx, int nodeIdx, const idBounds &cellBox);
 
+	void AssertValidity() const;
+	void AssertValidity_r(int nodeIdx, int depth) const;
+
 	struct OctreeNode {
 		Chunk *links = nullptr;		// linked list of chunks attached to node
 		int firstSonIdx = -1;		// sons have indices [firstSonIdx .. firstSonIdx + 8)

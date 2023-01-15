@@ -19,6 +19,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "BoxOctree.h"
 
 
+// uncomment this temporarily to force validity check in Debug build
+// note that it is VERY SLOW, so never commit it enabled!
+//#define ASSERT_VALIDITY AssertValidity();
+#define ASSERT_VALIDITY (void(0));
+
 struct idBoxOctree::QueryContext {
 	QueryResult *res;
 	//total bounding box
@@ -70,6 +75,7 @@ void idBoxOctree::Init(const idBounds &worldBounds, HandleGetter getHandle) {
 
 	invWorldSize = idVec3(1.0f);
 	invWorldSize.DivCW(worldBounds.GetSize());
+	ASSERT_VALIDITY
 }
 
 void idBoxOctree::Condense() {
@@ -111,6 +117,7 @@ void idBoxOctree::Condense() {
 		for (int i = ni; i < chunks.Num(); i++)
 			allocator.Free(chunks[i]);
 	}
+	ASSERT_VALIDITY
 }
 
 void idBoxOctree::Add(Pointer ptr, const idBounds &box) {
@@ -119,6 +126,7 @@ void idBoxOctree::Add(Pointer ptr, const idBounds &box) {
 	idBounds cellBox = worldBounds;
 	Add_r(ctx, 0, cellBox);
 	getHandle(ptr).bounds = box;
+	ASSERT_VALIDITY
 }
 
 void idBoxOctree::Remove(Pointer ptr) {
@@ -145,12 +153,14 @@ void idBoxOctree::Remove(Pointer ptr) {
 		if (level >= 0) {
 			bool isSmall = (level > node.depth);
 			node.numSmall -= int(isSmall);
+			assert(node.numSmall >= 0);
 		}
 	}
 
 	handle.ids.Clear();
-
 	handle.bounds.Clear();
+
+	ASSERT_VALIDITY
 }
 
 void idBoxOctree::Update(Pointer ptr, const idBounds &box) {
@@ -174,6 +184,17 @@ void idBoxOctree::Update(Pointer ptr, const idBounds &box) {
 
 		static_assert(sizeof(CellRanges) == 24, "CellRanges: expected tight packing");
 		fastUpdate = (memcmp(&oldRange, &newRange, sizeof(CellRanges)) == 0);
+
+		if (fastUpdate) {
+			int oldLevel = GetLevel(handle.bounds);
+			int newLevel = GetLevel(box);
+			if (oldLevel != newLevel) {
+				// level has changed => numSmall might change too
+				// the only exception is when object was and is small in all its nodes
+				if (!(oldLevel > maxDepth && newLevel > maxDepth))
+					fastUpdate = false;
+			}
+		}
 	}
 	else {
 		fastUpdate = false;
@@ -208,8 +229,9 @@ void idBoxOctree::Update(Pointer ptr, const idBounds &box) {
 		// something might have changed: remove and add afresh
 		Remove(ptr);
 		Add(ptr, box);
-		return;
 	}
+
+	ASSERT_VALIDITY
 }
 
 void idBoxOctree::QueryInBox(const idBounds &box, QueryResult &res) const {
@@ -218,6 +240,7 @@ void idBoxOctree::QueryInBox(const idBounds &box, QueryResult &res) const {
 	idBounds cellBox = worldBounds;
 	idBounds spaceBox(idVec3(-idMath::INFINITY), idVec3(idMath::INFINITY));
 	Query_r(ctx, 0, cellBox, spaceBox);
+	ASSERT_VALIDITY
 }
 
 void idBoxOctree::QueryInMovingBox(const idBounds &box, const idVec3 &start, const idVec3 &invDir, const idVec3 &radius, QueryResult &res) const {
@@ -226,6 +249,7 @@ void idBoxOctree::QueryInMovingBox(const idBounds &box, const idVec3 &start, con
 	idBounds cellBox = worldBounds;
 	idBounds spaceBox(idVec3(-idMath::INFINITY), idVec3(idMath::INFINITY));
 	Query_r(ctx, 0, cellBox, spaceBox);
+	ASSERT_VALIDITY
 }
 
 int idBoxOctree::GetLevel(const idBounds &box) const {
@@ -414,5 +438,45 @@ void idBoxOctree::AddToNode(AddContext &ctx, int nodeIdx, const idBounds &cellBo
 	for (Chunk *chunk = reinsertLinks, *nextChunk; chunk; chunk = nextChunk) {
 		nextChunk = chunk->next;
 		allocator.Free(chunk);
+	}
+}
+
+void idBoxOctree::AssertValidity() const {
+	AssertValidity_r(0, 0);
+}
+
+void idBoxOctree::AssertValidity_r(int nodeIdx, int depth) const {
+	const OctreeNode &node = nodes[nodeIdx];
+	assert(node.depth == depth);
+
+	int realNumSmall = 0;
+	for (Chunk *chunk = node.links; chunk; chunk = chunk->next) {
+		int k = chunk->num;
+		assert(k >= 0 && k <= CHUNK_SIZE);
+
+		for (int i = 0; i < k; i++) {
+			const Link &link = chunk->arr[i];
+
+			const idBoxOctreeHandle &handle = getHandle(link.object);
+			assert(handle.IsLinked());
+			assert(link.bounds == handle.bounds);
+
+			bool found = false;
+			for (int u = 0; u < handle.ids.Num(); u++) {
+				int linkNodeIdx = handle.ids[u];
+				found |= (linkNodeIdx == nodeIdx);
+			}
+			assert(found);
+
+			int level = GetLevel(handle.bounds);
+			realNumSmall += (level > depth);
+		}
+	}
+	assert(realNumSmall == node.numSmall);
+
+	if (node.firstSonIdx != -1) {
+		assert(node.firstSonIdx > nodeIdx && node.firstSonIdx + 8 <= nodes.Num());
+		for (int s = 0; s < 8; s++)
+			AssertValidity_r(node.firstSonIdx + s, depth + 1);
 	}
 }

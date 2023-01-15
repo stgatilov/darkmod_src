@@ -184,20 +184,10 @@ protected:
 	idStr					m_ActionName;
 
 	/**
-	* Whether the modified clipmodel is axis-aligned or moves with joint
-	**/
-	bool					m_bClipAxAlign;
-
-	/**
 	* Whether this attack is set to collide with world/solids or not
 	* (Typically player attacks collide with solids, AI's only collide with melee parries)
 	**/
 	bool					m_bWorldCollide;
-
-	/**
-	* Whether we're using a modified clipmodel or our own entity clipmodel
-	**/
-	bool					m_bModCM;
 
 	/**
 	* Type of melee action for parry tests
