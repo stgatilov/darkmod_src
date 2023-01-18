@@ -34,7 +34,7 @@ class CStimResponse {
 	friend class CStimResponseCollection;
 
 protected:
-	CStimResponse(idEntity* owner, StimType type, int uniqueId);
+	CStimResponse(idEntity* owner, StimType type, int uniqueId, bool isStim);
 
 public:
 	virtual void Save(idSaveGame *savefile) const;
@@ -76,6 +76,12 @@ public:
 	 * be associated to each other.
 	 */
 	StimType			m_StimTypeId;
+
+	/**
+	 * stgatilov: true for CStim, false for CStimResponse
+	 * (aka RTTI helper)
+	 */
+	bool				m_IsStim;
 
 	// This is only populated with the Id as used in the entity definition. We
 	// store the name here to reference the script action key.

@@ -25,7 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 /*                     CStim                                        */
 /********************************************************************/
 CStim::CStim(idEntity *e, StimType type, int uniqueId) : 
-	CStimResponse(e, type, uniqueId)
+	CStimResponse(e, type, uniqueId, true)
 {
 	m_bUseEntBounds = false;
 	m_bCollisionBased = false;

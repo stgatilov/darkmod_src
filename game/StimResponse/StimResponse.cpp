@@ -58,9 +58,10 @@ const char *cStimType[] = {
 /********************************************************************/
 /*                    CStimResponse                                 */
 /********************************************************************/
-CStimResponse::CStimResponse(idEntity* owner, StimType type, int uniqueId)
+CStimResponse::CStimResponse(idEntity* owner, StimType type, int uniqueId, bool isStim)
 {
 	m_UniqueId = uniqueId;
+	m_IsStim = isStim;
 	m_StimTypeId = type;
 	m_Owner = owner;
 	m_State = SS_DISABLED;
@@ -133,6 +134,15 @@ StimType CStimResponse::GetStimType(const idStr& stimName)
 
 void CStimResponse::SetEnabled(bool enabled)
 {
+	idEntity* owner = m_Owner.GetEntity();
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING(
+		"%s set %s:  type %s  owner %s\r",
+		(m_IsStim ? "Stim" : "Response"),
+		(enabled ? "On" : "Off"),
+		m_StimTypeName.c_str(),
+		owner ? owner->GetName() : "[NULL]"
+	);
+
 	if (enabled)
 	{
 		m_State = SS_ENABLED;
