@@ -202,7 +202,6 @@ void cb_Settings_ButtonNext(Fl_Widget *self) {
 
 	//update versions tree on page "Version"
 	g_Version_TreeVersions->clear();
-	g_Version_TreeVersions->sortorder(FL_TREE_SORT_DESCENDING);
 	std::vector<std::string> allVersions = g_state->_config.GetAllVersions();
 	std::string defaultVersion = g_state->_config.GetDefaultVersion();
 	for (const std::string &version : allVersions) {

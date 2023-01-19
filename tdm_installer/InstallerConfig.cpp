@@ -29,6 +29,18 @@ void InstallerConfig::Clear() {
 	_defaultVersion.clear();
 }
 
+InstallerConfig::Version *InstallerConfig::FindVersion(const std::string &versionName, bool mustExist) {
+	for (Version &ver : _versions) {
+		if (ver._name == versionName)
+			return &ver;
+	}
+	ZipSyncAssertF(!mustExist, "Can't find version %s", versionName.c_str());
+	return nullptr;
+}
+const InstallerConfig::Version *InstallerConfig::FindVersion(const std::string &versionName, bool mustExist) const {
+	return const_cast<InstallerConfig*>(this)->FindVersion(versionName, mustExist);
+}
+
 void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 	Clear();
 
@@ -68,7 +80,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 			_mirrors[mirror._name] = std::move(mirror);
 		}
 		else if (secClass == "Version") {
-			ZipSyncAssertF(_versions.count(secName) == 0, "Version %s: described in INI twice", secName.c_str());
+			ZipSyncAssertF(!FindVersion(secName), "Version %s: described in INI twice", secName.c_str());
 			Version ver;
 			ver._name = secName;
 			ver._ini = secData;
@@ -98,7 +110,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 			}
 			ZipSyncAssertF(!ver._folderPath.empty(), "Version %s: folder not specified", ver._name.c_str());
 			ZipSyncAssertF(!ver._manifestUrls.empty(), "Version %s: no manifestUrl-s", ver._name.c_str());
-			_versions[ver._name] = std::move(ver);
+			_versions.push_back(std::move(ver));
 		}
 		else {
 			ZipSyncAssertF(false, "Unknown INI section class \"%s\"", secClass.c_str());
@@ -107,9 +119,7 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 	ZipSyncAssertF(!_defaultVersion.empty(), "No default version specified in INI");
 
 	//pass 2: resolve manifestUrls and verify depends
-	for (auto &pNV : _versions) {
-		Version &ver = pNV.second;
-
+	for (Version &ver : _versions) {
 		//process mirrors
 		std::vector<ProcessedUrl> newUrls;
 		for (const ProcessedUrl &url : ver._manifestUrls) {
@@ -142,15 +152,12 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 		ZipSyncAssertF(trustedCnt > 0, "Version %s: has no manifest URL at trusted location", ver._name.c_str());
 
 		for (const std::string &dep : ver._depends) {
-			ZipSyncAssertF(_versions.count(dep), "Version %s: depends on missing Version %s", ver._name.c_str(), dep.c_str());
+			ZipSyncAssertF(FindVersion(dep), "Version %s: depends on missing Version %s", ver._name.c_str(), dep.c_str());
 		}
 	}
 
 	//pass 3: compute provided manifests for every version, check for dependency cycles
-	for (auto &pNV : _versions) {
-		const std::string &name = pNV.first;
-		Version &ver = pNV.second;
-
+	for (Version &ver : _versions) {
 		std::vector<std::string> providedVersions;
 		std::set<std::string> inRecursion;
 		std::function<void(const std::string &)> TraverseDependencies = [&](const std::string &version) -> void {
@@ -161,14 +168,14 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 				return;
 			providedVersions.push_back(version);
 
-			const auto &depends = _versions.at(version)._depends;
+			const auto &depends = FindVersion(version, true)->_depends;
 			for (const std::string &dep : depends) {
 				TraverseDependencies(dep);
 			}
 
 			inRecursion.erase(version);
 		};
-		TraverseDependencies(name);
+		TraverseDependencies(ver._name);
 
 		ver._providedVersions = std::move(providedVersions);
 	}
@@ -176,8 +183,8 @@ void InstallerConfig::InitFromIni(const ZipSync::IniData &iniData) {
 
 std::vector<std::string> InstallerConfig::GetAllVersions() const {
 	std::vector<std::string> res;
-	for (const auto &pNV : _versions)
-		res.push_back(pNV.first);
+	for (const Version &ver : _versions)
+		res.push_back(ver._name);
 	return res;
 }
 
@@ -192,7 +199,7 @@ std::vector<std::string> InstallerConfig::GetAllMirrors() const {
 }
 
 std::vector<std::string> InstallerConfig::GetFolderPath(const std::string &version) const {
-	return _versions.at(version)._folderPath;
+	return FindVersion(version, true)->_folderPath;
 }
 
 std::string InstallerConfig::GetDefaultVersion() const {
@@ -222,7 +229,7 @@ std::string InstallerConfig::ChooseManifestUrl(const std::string &version, bool 
 	if (ZipSync::PathAR::IsHttp(version))
 		return version;	//this is custom manifest, not a version
 
-	const Version &ver = _versions.at(version);
+	const Version &ver = *FindVersion(version, true);
 	std::vector<ProcessedUrl> candidates;
 	if (trusted) {
 		for (const ProcessedUrl &url : ver._manifestUrls)
@@ -252,27 +259,23 @@ std::string InstallerConfig::ChooseManifestUrl(const std::string &version, bool 
 }
 
 std::vector<std::string> InstallerConfig::GetProvidedVersions(const std::string &version) const {
-	const Version &ver = _versions.at(version);
-	return ver._providedVersions;
+	return FindVersion(version, true)->_providedVersions;
 }
 
 void InstallerConfig::RemoveFailingUrl(const std::string &badUrl) {
 	int cntRemoved = 0;
 
-	for (auto &pNV : _versions) {
-		const std::string &ver = pNV.first;
-		Version &version = pNV.second;
-
+	for (Version &ver : _versions) {
 		std::vector<ProcessedUrl> remainUrls;
-		for (ProcessedUrl maniUrl : version._manifestUrls) {
+		for (ProcessedUrl maniUrl : ver._manifestUrls) {
 			if (maniUrl._url == badUrl) {
-				g_logger->warningf("Removed manifest URL %s from version %s", maniUrl._url.c_str(), ver.c_str());
+				g_logger->warningf("Removed manifest URL %s from version %s", maniUrl._url.c_str(), ver._name.c_str());
 				cntRemoved++;
 			}
 			else
 				remainUrls.push_back(maniUrl);
 		}
-		version._manifestUrls = std::move(remainUrls);
+		ver._manifestUrls = std::move(remainUrls);
 	}
 
 	ZipSyncAssertF(cntRemoved > 0, "Cannot handle nonworking URL %s", badUrl.c_str());

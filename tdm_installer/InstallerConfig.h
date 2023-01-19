@@ -38,15 +38,17 @@ class InstallerConfig {
 		std::vector<ProcessedUrl> _manifestUrls;
 		std::vector<std::string> _depends;
 		std::vector<std::string> _folderPath;
-		std::vector<std::string> _providedVersions;		//transitive closure by _depends (itself included first)
+		std::vector<std::string> _providedVersions;			//transitive closure by _depends (itself included first)
 		std::string _name;
 		ZipSync::IniSect _ini;
 	};
 	std::map<std::string, Mirror> _mirrors;
-	std::map<std::string, Version> _versions;
+	std::vector<Version> _versions;
 	std::string _defaultVersion;
 
 	double GetUrlWeight(const ProcessedUrl &url) const;
+	Version *FindVersion(const std::string &version, bool mustExist = false);
+	const Version *FindVersion(const std::string &version, bool mustExist = false) const;
 
 public:
 	void Clear();
