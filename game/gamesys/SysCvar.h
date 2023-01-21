@@ -221,6 +221,9 @@ extern idCVar cv_tdm_reattach_delay;
 // nbohr1more: #558 TDM toggle creep
 extern idCVar cv_tdm_creep_toggle;
 
+// #6232: Player choice of "put away weapons" behavior
+extern idCVar cv_tdm_holster_weapon_behavior;
+
 // stifu #3607: Shouldering animation
 extern idCVar cv_pm_shoulderAnim_msecs;
 extern idCVar cv_pm_shoulderAnim_dip_duration;

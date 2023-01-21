@@ -3916,9 +3916,10 @@ bool idPlayer::SelectWeapon( int num, bool force )
 
 	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
 
+	// #6232 - if 'tdm_holster_weapon_behavior' is 1 and
 	// grayman #3747 - if the current and desired indices are zero,
 	// bring back the previous weapon if it's non-zero
-	if ( (num == 0) && (item->GetWeaponIndex() == 0) )
+	if ( cv_tdm_holster_weapon_behavior.GetBool() && (num == 0) && (item->GetWeaponIndex() == 0) )
 	{
 		if (previousWeapon > 0)
 		{

@@ -252,6 +252,14 @@ idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVA
 // nbohr1more: #558 Toggle Creep
 idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
+// #6232: Player choice of "put away weapons" behavior
+idCVar cv_tdm_holster_weapon_behavior(
+	"tdm_holster_weapon_behavior", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,
+	"Which 'put away weapons' behavior?\n"
+	"  0 --- only holster weapon (TDM original)\n"
+	"  1 --- holster weapon or equip last used weapon when holstered (TDM 2.03-2.10)"
+);
+
 // stifu #3607: Shouldering animation
 idCVar cv_pm_shoulderAnim_msecs(        "pm_shoulderAnim_msecs",        "700.0",        CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the shouldering animation in msecs. Set to 0 to disable shouldering animation.", 0.0f, 5000.0f);
 idCVar cv_pm_shoulderAnim_dip_duration(	"pm_shoulderAnim_dip_duration", "0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"Duration of the dip during the shouldering animation relative to pm_shoulderAnim_msecs.", 0.0f, 1.0f);
