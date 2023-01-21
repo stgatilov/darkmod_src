@@ -222,7 +222,7 @@ extern idCVar cv_tdm_reattach_delay;
 extern idCVar cv_tdm_creep_toggle;
 
 // #6232: Player choice of sheathe key behavior
-extern idCVar cv_tdm_sheathe_weapon_behavior;
+extern idCVar cv_tdm_toggle_sheathe;
 
 // stifu #3607: Shouldering animation
 extern idCVar cv_pm_shoulderAnim_msecs;

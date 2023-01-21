@@ -253,8 +253,8 @@ idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVA
 idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
 // #6232: Player choice of sheathe key behavior
-idCVar cv_tdm_sheathe_weapon_behavior(
-	"tdm_sheathe_weapon_behavior", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,
+idCVar cv_tdm_toggle_sheathe(
+	"tdm_toggle_sheathe", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE,
 	"Which 'put away weapons' behavior?\n"
 	"  0 --- only sheathe weapon (TDM original)\n"
 	"  1 --- toggle between sheathing and equipping weapon (TDM 2.03-2.10)"
