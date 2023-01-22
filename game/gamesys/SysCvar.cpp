@@ -208,6 +208,9 @@ idCVar cv_pm_softhinderance_run(	"pm_softhinderance_run",	"1.0",	CVAR_GAME | CVA
 
 idCVar cv_pm_weightmod(				"pm_weightmod",			"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Gets multiplied to the force applied to objects below the player model. Defaults to 1." );
 
+// #5892: Mantle while carring a body
+idCVar cv_pm_mantle_while_shouldering( "pm_mantle_while_shouldering", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, allow mantling while shouldering a body." );
+
 idCVar cv_pm_mantle_reach(			"pm_mantle_reach",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Horizontal reach of mantle ability, as fraction of player height.  Default is 0.5" );
 idCVar cv_pm_mantle_height(			"pm_mantle_height",		"0.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Vertical reach of mantle ability, as fraction of player height.  Default is 0.2" );
 idCVar cv_pm_mantle_minflatness(	"pm_mantle_minflatness",		"0.707",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Cannot mantle on top of surfaces whose angle's cosine is smaller than this value. e.g. >1.0 means nothing can be mantled; 1.0 means only perfectly flat floors (0 degrees) can be mantled on top of; ~0.707 means no surfaces steeper than 45 degrees can be mantled on top of; 0.5 means no surfaces steeper than 60 degrees can be mantled on top of; a large negative value (like -10) means all surfaces can be mantled regardless of steepness. Default is 0.707." );

@@ -165,6 +165,9 @@ extern idCVar cv_tdm_footfalls_movetype_specific;
 
 extern idCVar cv_pm_weightmod;
 
+// #5892: Mantle while carring a body
+extern idCVar cv_pm_mantle_while_shouldering;
+
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_mantle_reach;
 extern idCVar cv_pm_mantle_minflatness;
