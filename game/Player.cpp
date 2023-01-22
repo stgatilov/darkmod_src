@@ -3916,9 +3916,10 @@ bool idPlayer::SelectWeapon( int num, bool force )
 
 	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
 
+	// #6232 - if 'tdm_holster_weapon_behavior' is 1 and
 	// grayman #3747 - if the current and desired indices are zero,
 	// bring back the previous weapon if it's non-zero
-	if ( (num == 0) && (item->GetWeaponIndex() == 0) )
+	if ( cv_tdm_toggle_sheathe.GetBool() && (num == 0) && (item->GetWeaponIndex() == 0) )
 	{
 		if (previousWeapon > 0)
 		{
@@ -4512,7 +4513,12 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 
 	// TODO: Also make sure you can't grab anything else (hands are full)
 	// requires a new EIM flag?
-	SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
+	SetImmobilization( "ShoulderedBody",
+		cv_pm_mantle_while_shouldering.GetBool() ?
+		// #5892: Mantle while carring a body
+		(SHOULDER_IMMOBILIZATIONS & ~EIM_MANTLE) :
+		SHOULDER_IMMOBILIZATIONS
+	);
 	
 	// set hinderance
 	float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");

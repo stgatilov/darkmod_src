@@ -149,7 +149,6 @@ CGlobal::CGlobal()
 	memset(m_LogArray, 0, sizeof(m_LogArray));
 	memset(m_ClassArray, 0, sizeof(m_ClassArray));
 	m_LogFile = 0;
-	m_Frame = 0;
 	m_MaxFrobDistance = 0;
 	m_LogClass = LC_SYSTEM;
 	m_LogType = LT_DEBUG;
@@ -314,7 +313,7 @@ void CGlobal::LogString(const char *fmt, ...)
 	va_start(arg, fmt);
 
 	const char *cleanFilename = CleanupSourceCodeFileName(m_Filename);
-	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4u] ", cleanFilename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
+	fprintf(m_LogFile, "[%s (%4u):%s (%s) GT: %4u] ", cleanFilename, m_Linenumber, LTString[lt], LCString[lc], gameLocal.time);
 	vfprintf(m_LogFile, fmt, arg);
 	fprintf(m_LogFile, "\n");
 	fflush(m_LogFile);

@@ -417,9 +417,15 @@ bool CStimResponseCollection::ParseSpawnArg(const idDict& args, idEntity* owner,
 		// set up time interleaving so the stim isn't fired every frame
 		stim->m_TimeInterleave = args.GetInt(va("sr_time_interval_%u", index), "0");
 
-		// stgatilov: add random offset so that time taken by stim processing
-		// is spread approximately evenly across frames
+		// stgatilov: add random offset in range [0 ... TI],
+		// so that time taken by stim processing is spread approximately evenly across frames
 		stim->m_TimeInterleaveStamp = gameLocal.time - int(stim->m_TimeInterleave * gameLocal.random.RandomFloat());
+
+		// stgatilov #6223: wait at least one full period from game start until the first trigger
+		// this is necessary for lights: they enable/disable stims during thread initialization, which can happen later than first stim check
+		// (unfortunately, some lights use custom entityDef, and we can't disable their stims initially by spawnarg)
+		if (stim->m_TimeInterleaveStamp < 0)
+			stim->m_TimeInterleaveStamp += stim->m_TimeInterleave;
 
 		// userfriendly stim duration time
 		stim->m_Duration = args.GetInt(va("sr_duration_%u", index), "0");

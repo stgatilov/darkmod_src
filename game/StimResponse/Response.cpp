@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 /*                   CResponse                                      */
 /********************************************************************/
 CResponse::CResponse(idEntity* owner, StimType type, int uniqueId) : 
-	CStimResponse(owner, type, uniqueId)
+	CStimResponse(owner, type, uniqueId, false)
 {
 	m_ScriptFunction = NULL;
 	m_MinDamage = 0.0f;
@@ -81,6 +81,13 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 	if (!CheckChance()) return;
 
 	idEntity* owner = m_Owner.GetEntity();
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING(
+		"TriggerResponse:  type %s  func %s  owner %s  source %s\r",
+		stim ? stim->m_StimTypeName.c_str() : "[NULL]",
+		m_ScriptFunction.c_str(),
+		owner->GetName(),
+		sourceEntity ? sourceEntity->GetName() : "[NULL]"
+	);
 
 	// Notify the owner entity
 	owner->OnStim(stim, sourceEntity);
@@ -94,7 +101,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 
 	if (func != NULL)
 	{
-		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
+		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript %s\r", func->Name());
 		idThread *pThread = new idThread(func);
 		int n = pThread->GetThreadNum();
 		pThread->CallFunctionArgs(func, true, "eed", owner, sourceEntity, n);

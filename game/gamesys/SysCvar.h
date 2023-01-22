@@ -165,6 +165,9 @@ extern idCVar cv_tdm_footfalls_movetype_specific;
 
 extern idCVar cv_pm_weightmod;
 
+// #5892: Mantle while carring a body
+extern idCVar cv_pm_mantle_while_shouldering;
+
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_mantle_reach;
 extern idCVar cv_pm_mantle_minflatness;
@@ -220,6 +223,9 @@ extern idCVar cv_tdm_reattach_delay;
 
 // nbohr1more: #558 TDM toggle creep
 extern idCVar cv_tdm_creep_toggle;
+
+// #6232: Player choice of sheathe key behavior
+extern idCVar cv_tdm_toggle_sheathe;
 
 // stifu #3607: Shouldering animation
 extern idCVar cv_pm_shoulderAnim_msecs;
