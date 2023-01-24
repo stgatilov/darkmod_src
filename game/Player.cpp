@@ -718,6 +718,8 @@ idPlayer::idPlayer() :
 	m_CrouchIntent			= false;
 	m_CrouchToggleBypassed	= false;
 
+	m_CreepIntent			= false;
+
 	m_LeanButtonTimeStamp	= 0;
 	m_InventoryOverlay		= -1;
 	objectivesOverlay		= -1;
@@ -2329,6 +2331,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( m_IdealCrouchState );
 	savefile->WriteBool( m_CrouchIntent );
 
+	savefile->WriteBool( m_CreepIntent );
+
 	savefile->WriteInt(m_InventoryOverlay);
 
 	savefile->WriteInt(m_WaitUntilReadyGuiHandle);
@@ -2677,6 +2681,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( m_CrouchIntent );
 	// stgatilov: no need to save it, but better reset it on load
 	m_CrouchToggleBypassed = false;
+
+	savefile->ReadBool( m_CreepIntent );
 
 	savefile->ReadInt(m_InventoryOverlay);
 
@@ -3433,15 +3439,9 @@ void idPlayer::UpdateConditions( void )
 	AI_RUN = ( usercmd.buttons & BUTTON_RUN ) && true ;
 	AI_DEAD			= ( health <= 0 );
 	
-	// DarkMod: Catch the creep modifier
-	if (cv_tdm_creep_toggle.GetBool()){
-		AI_CREEP = true;
-	}
-	else {
-		int creepLimit = cv_pm_creepmod.GetFloat() * 127;
-		AI_CREEP = (usercmd.buttons & BUTTON_CREEP) ||
-			(idMath::Abs(usercmd.forwardmove) <= creepLimit && idMath::Abs(usercmd.rightmove) <= creepLimit);
-	}
+	int creepLimit = cv_pm_creepmod.GetFloat() * 127;
+	AI_CREEP = m_CreepIntent ||
+		(idMath::Abs(usercmd.forwardmove) <= creepLimit && idMath::Abs(usercmd.rightmove) <= creepLimit);
 }
 
 /*
@@ -4934,7 +4934,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		}
 
 		// greebo: is the player creeping? (Only kicks in when not running, run key cancels out creep key)
-		if ( (cv_tdm_creep_toggle.GetBool() || (usercmd.buttons & BUTTON_CREEP)) && !(usercmd.buttons & BUTTON_RUN)) 
+		if ( m_CreepIntent && !(usercmd.buttons & BUTTON_RUN) )
 		{
 			bobmove *= 0.5f * (1 - bobFrac);
 		}
@@ -5711,6 +5711,24 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
+		case IMPULSE_CREEP:		// Creep
+		{
+			if (cv_tdm_toggle_creep.GetBool())
+			{
+					if (entityNumber == gameLocal.localClientNum)
+					{
+						m_CreepIntent = !m_CreepIntent;
+					}
+			}
+			else
+			{
+				m_CreepIntent = true;
+			}
+
+			m_ButtonStateTracker.StartTracking(impulse);
+		}
+		break;
+
 		case IMPULSE_MANTLE:
 		{
 			if ( entityNumber == gameLocal.localClientNum )
@@ -6046,6 +6064,13 @@ void idPlayer::PerformKeyRelease(int impulse, int holdTime)
 			// clear climb detach or slide intent when crouch is released
 			physicsObj.m_bSlideOrDetachClimb = false;
 
+		break;
+
+		case IMPULSE_CREEP:		// TDM creep
+			if (!cv_tdm_toggle_creep.GetBool())
+			{
+				m_CreepIntent = false;
+			}
 		break;
 
 		case IMPULSE_FROB:		// TDM Use/Frob
@@ -6467,7 +6492,7 @@ void idPlayer::AdjustSpeed( void )
 			speed = pm_noclipspeed.GetFloat() * cv_pm_runmod.GetFloat();
 			bobFrac = 0.0f;
 		} 
-		else if ((usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool())
+		else if (m_CreepIntent)
 		{
 			// slow "creep" noclip
 			speed = pm_noclipspeed.GetFloat() * cv_pm_creepmod.GetFloat();
@@ -6488,8 +6513,7 @@ void idPlayer::AdjustSpeed( void )
 
 		speed = walkSpeed * cv_pm_runmod.GetFloat();
 		// apply creep modifier; creep is on button_5
-		const bool bCreeping = (usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool();
-		if (bCreeping)
+		if (m_CreepIntent)
 		{
 			speed *= (cv_pm_running_creepmod.GetFloat());
 		}
@@ -6528,8 +6552,7 @@ void idPlayer::AdjustSpeed( void )
 		bobFrac = 0.0f;
 
 		// apply creep modifier; creep is on button_5
-		const bool bCreeping = (usercmd.buttons & BUTTON_CREEP) || cv_tdm_creep_toggle.GetBool();
-		if(bCreeping)
+		if (m_CreepIntent)
 		{
 			speed *= cv_pm_creepmod.GetFloat();
 		}		
@@ -6537,7 +6560,7 @@ void idPlayer::AdjustSpeed( void )
 		// STiFU #1932: Apply hinderance not only to max speed but to all speeds.
 		if (cv_pm_softhinderance_active.GetBool())
 		{
-			if (bCreeping)
+			if (m_CreepIntent)
 			{
 				speed *= (cv_pm_softhinderance_creep.GetFloat() * fCurrentHinderance 
 					+ 1.0f - cv_pm_softhinderance_creep.GetFloat());

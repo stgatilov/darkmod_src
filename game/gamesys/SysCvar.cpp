@@ -253,7 +253,7 @@ idCVar cv_tdm_crouch_toggle_hold_time(	"tdm_crouch_toggle_hold_time",	"400",			C
 idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Delay (in ms) for reattaching to ropes/ladders after detaching using crouch." );
 
 // nbohr1more: #558 Toggle Creep
-idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
+idCVar cv_tdm_toggle_creep(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
 // #6232: Player choice of sheathe key behavior
 idCVar cv_tdm_toggle_sheathe(

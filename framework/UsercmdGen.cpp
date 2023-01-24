@@ -164,7 +164,6 @@ userCmdString_t	userCmdStrings[] = {
 	// self-explanatory names
 	{ "_jump",			UB_UP },
 	{ "_parry",			UB_PARRY_MANIPULATE },
-	{ "_creep",			UB_CREEP },
 
 	{ "_weapon0",		UB_WEAPON0 },
 	{ "_weapon1",		UB_WEAPON1 },
@@ -198,6 +197,7 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_inventory_group_next", UB_INVENTORY_GROUP_NEXT },
 	{ "_inventory_use",	UB_INVENTORY_USE },
 	{ "_inventory_drop",	UB_INVENTORY_DROP },
+	{ "_creep",	UB_CREEP },
 
 	// legacy names
 	{ "_moveUp",		UB_UP },
@@ -223,7 +223,7 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_button2",		UB_BUTTON2 },
 	{ "_button3",		UB_BUTTON3 },
 	{ "_button4",		UB_BUTTON4 },
-	{ "_button5",		UB_CREEP },
+	{ "_button5",		UB_BUTTON5 },
 	{ "_button6",		UB_BUTTON6 },
 	{ "_button7",		UB_BUTTON7 },
 
@@ -280,7 +280,7 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_impulse50",		UB_INVENTORY_GROUP_NEXT },
 	{ "_impulse51",		UB_INVENTORY_USE },
 	{ "_impulse52",		UB_INVENTORY_DROP },
-	{ "_impulse53",		UB_IMPULSE53 },
+	{ "_impulse53",		UB_CREEP },
 	{ "_impulse54",		UB_IMPULSE54 },
 	{ "_impulse55",		UB_IMPULSE55 },
 	{ "_impulse56",		UB_IMPULSE56 },

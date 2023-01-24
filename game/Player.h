@@ -396,6 +396,10 @@ public:
 	// player has pressed toggle crouch while on a rope or ladder/vine.
 	bool					m_CrouchToggleBypassed;
 
+	// Daft Mugi: For new toggle creep, this is set to true when the
+	// player is holding the creep button or toggle creep is active.
+	bool					m_CreepIntent;
+
 	// STiFU: FrobHelper alpha calculation
 	CFrobHelper				m_FrobHelper;
 

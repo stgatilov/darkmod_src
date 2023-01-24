@@ -425,7 +425,6 @@ void idConsoleLocal::Close() {
 	displayFrac = 0;	// don't scroll to that point, go immediately
 
 	ClearNotifyLines();
-	cv_tdm_creep_toggle.SetBool( 0 );
 }
 
 /*

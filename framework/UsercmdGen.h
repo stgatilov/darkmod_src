@@ -49,7 +49,7 @@ typedef enum {
    UB_BUTTON2,
    UB_BUTTON3,
    UB_BUTTON4,
-   UB_CREEP,
+   UB_BUTTON5,
    UB_BUTTON6,
    UB_BUTTON7,
 
@@ -118,7 +118,7 @@ typedef enum {
    UB_INVENTORY_GROUP_NEXT,
    UB_INVENTORY_USE,
    UB_INVENTORY_DROP,
-   UB_IMPULSE53,
+   UB_CREEP,
    UB_IMPULSE54,
    UB_IMPULSE55,
    UB_IMPULSE56,
@@ -140,7 +140,7 @@ const int BUTTON_RUN			= BIT(1);
 const int BUTTON_ZOOM			= BIT(2);
 const int BUTTON_SCORES			= BIT(3);
 const int BUTTON_MLOOK			= BIT(4);
-const int BUTTON_CREEP			= BIT(5);
+const int BUTTON_5				= BIT(5);
 const int BUTTON_6				= BIT(6);
 const int BUTTON_7				= BIT(7);
 
@@ -190,6 +190,7 @@ enum {
 	IMPULSE_INVENTORY_GROUP_NEXT,
 	IMPULSE_INVENTORY_USE,
 	IMPULSE_INVENTORY_DROP,
+	IMPULSE_CREEP,
 	IMPULSE_MAX
 };
 

@@ -378,7 +378,7 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 		//stgatilov #5599: new grabber, detect if we should set silent mode
 		switch (cv_drag_rigid_silentmode.GetInteger()) {
 			case 1:
-				if (player->usercmd.buttons & BUTTON_CREEP)
+				if (player->m_CreepIntent)
 					m_silentMode = true;
 				break;
 			case 2:

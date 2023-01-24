@@ -222,7 +222,7 @@ extern idCVar cv_tdm_crouch_toggle_hold_time;
 extern idCVar cv_tdm_reattach_delay;
 
 // nbohr1more: #558 TDM toggle creep
-extern idCVar cv_tdm_creep_toggle;
+extern idCVar cv_tdm_toggle_creep;
 
 // #6232: Player choice of sheathe key behavior
 extern idCVar cv_tdm_toggle_sheathe;
