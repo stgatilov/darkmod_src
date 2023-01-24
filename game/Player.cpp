@@ -6512,7 +6512,7 @@ void idPlayer::AdjustSpeed( void )
 		float walkSpeed = pm_walkspeed.GetFloat();
 
 		speed = walkSpeed * cv_pm_runmod.GetFloat();
-		// apply creep modifier; creep is on button_5
+		// apply creep modifier
 		if (m_CreepIntent)
 		{
 			speed *= (cv_pm_running_creepmod.GetFloat());
@@ -6551,7 +6551,7 @@ void idPlayer::AdjustSpeed( void )
 		speed = pm_walkspeed.GetFloat();
 		bobFrac = 0.0f;
 
-		// apply creep modifier; creep is on button_5
+		// apply creep modifier
 		if (m_CreepIntent)
 		{
 			speed *= cv_pm_creepmod.GetFloat();
