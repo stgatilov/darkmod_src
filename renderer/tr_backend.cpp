@@ -76,7 +76,7 @@ void RB_SetDefaultGLState( void ) {
 	qglActiveTexture( GL_TEXTURE0 );
 
 	if ( r_useScissor.GetBool() ) {
-		GL_ScissorVidSize( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		GL_ScissorRelative( 0, 0, 1, 1 );
 	}
 
 	GL_CheckErrors();

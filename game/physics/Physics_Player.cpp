@@ -4376,6 +4376,14 @@ void idPhysics_Player::StartMantle
 		}
 	}
 
+	// #6231: Delayed fall damage on mantle
+	// Zero out all velocity sooner than at the end of the mantle so
+	// that the player receives damage feedback immediately on impact
+	// from a fall rather than at the end of the mantle animation.
+	// Also, zeroing out all velocity at mantle start makes sense,
+	// because the animation is stop, mantle, stop.
+	current.velocity.Zero();
+
 	m_mantlePhase = initialMantlePhase;
 	m_mantleTime = GetMantleTimeForPhase(m_mantlePhase);
 
