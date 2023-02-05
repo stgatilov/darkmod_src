@@ -25,9 +25,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR	2
-#define TDM_VERSION_MINOR	11
+#define TDM_VERSION_MINOR	12
 #define GAME_API_VERSION	TDM_VERSION_MAJOR * 100 + TDM_VERSION_MINOR	// e.g. 210
-#define ENGINE_VERSION		"TDM 2.11"	// printed in console
+#define ENGINE_VERSION		"TDM 2.12"	// printed in console
 
 // paths
 #define	BASE_GAMEDIR					"base"
