@@ -208,9 +208,6 @@ idCVar cv_pm_softhinderance_run(	"pm_softhinderance_run",	"1.0",	CVAR_GAME | CVA
 
 idCVar cv_pm_weightmod(				"pm_weightmod",			"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Gets multiplied to the force applied to objects below the player model. Defaults to 1." );
 
-// #5892: Mantle while carring a body
-idCVar cv_pm_mantle_while_shouldering( "pm_mantle_while_shouldering", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, allow mantling while shouldering a body." );
-
 idCVar cv_pm_mantle_reach(			"pm_mantle_reach",		"0.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Horizontal reach of mantle ability, as fraction of player height.  Default is 0.5" );
 idCVar cv_pm_mantle_height(			"pm_mantle_height",		"0.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Vertical reach of mantle ability, as fraction of player height.  Default is 0.2" );
 idCVar cv_pm_mantle_minflatness(	"pm_mantle_minflatness",		"0.707",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Cannot mantle on top of surfaces whose angle's cosine is smaller than this value. e.g. >1.0 means nothing can be mantled; 1.0 means only perfectly flat floors (0 degrees) can be mantled on top of; ~0.707 means no surfaces steeper than 45 degrees can be mantled on top of; 0.5 means no surfaces steeper than 60 degrees can be mantled on top of; a large negative value (like -10) means all surfaces can be mantled regardless of steepness. Default is 0.707." );
@@ -226,6 +223,22 @@ idCVar cv_pm_mantle_pushNonCrouched_msecs("pm_mantle_pushNonCrouched_msecs","550
 idCVar cv_pm_mantle_pushNonCrouched_playgrunt_speedthreshold("pm_mantle_pushNonCrouched_playgrunt_speedthreshold", "120.0", CVAR_GAME | CVAR_FLOAT, "If the player speed exceeds this threshold, a grund sound is played when performing the mantle.", 0.0f, 100000.0f);
 idCVar cv_pm_mantle_fastLowObstaces("pm_mantle_fastLowObstacles", "1", CVAR_GAME | CVAR_BOOL, "If true, a faster mantle will be performed for low obstacles.", 0, 1);
 idCVar cv_pm_mantle_maxLowObstacleHeight("pm_mantle_maxLowObstacleHeight", "36.0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "The maximum height of obstacles over which a fast mantle can be performed", 0.0f, 60.0f);
+
+// Daft Mugi #5892: Mantle while carrying a body
+idCVar cv_pm_mantle_maxShoulderingObstacleHeight(
+	"pm_mantle_maxShoulderingObstacleHeight", "41", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE,
+	"The maximum height of obstacles allowed for a shouldering body mantle\n"
+	"Note that mantling above eye level is disabled regardless of this value",
+	0.0f, 100.0f
+);
+idCVar cv_pm_mantle_while_shouldering(
+	"pm_mantle_while_shouldering", "1", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE,
+	"Which restriction for mantle while shouldering?\n"
+	"  0 --- no mantling while shouldering a body (TDM original)\n"
+	"  1 --- restricted mantling while shouldering a body\n"
+	"  2 --- unrestricted mantling while shouldering a body (Cheat Mode)"
+);
+
 idCVar cv_pm_mantle_fastMediumObstaclesCrouched("pm_mantle_fastMediumObstaclesCrouched", "1", CVAR_GAME | CVAR_BOOL, "If true, a faster mantle will be performed for medium-high obstacles in crouched state", 0, 1);
 idCVar cv_pm_mantle_pullFast_msecs("pm_mantle_pullFast_msecs", "450.0", CVAR_GAME | CVAR_INTEGER |CVAR_ARCHIVE, "The duration it takes for a fast pull.", 0, 10000);
 idCVar cv_pm_mantle_fallingFast_speedthreshold("pm_mantle_fallingFast_speedthreshold", "360.0", CVAR_GAME | CVAR_FLOAT, "If falling faster than this threshold, no fast mantles will be performed.", 0.0f, 100000.0f);

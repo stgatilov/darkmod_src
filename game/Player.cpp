@@ -67,7 +67,7 @@ const int HEALTHPULSE_TIME = 333;
 const float MIN_BOB_SPEED = 5.0f;
 
 // shouldered body immobilizations
-const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
+const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_FROB_COMPLEX;
 const float SHOULDER_JUMP_HINDERANCE = 0.25f;
 
 // grayman #3485 - additional volume reduction when falling when crouched
@@ -4513,13 +4513,8 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 
 	// TODO: Also make sure you can't grab anything else (hands are full)
 	// requires a new EIM flag?
-	SetImmobilization( "ShoulderedBody",
-		cv_pm_mantle_while_shouldering.GetBool() ?
-		// #5892: Mantle while carring a body
-		(SHOULDER_IMMOBILIZATIONS & ~EIM_MANTLE) :
-		SHOULDER_IMMOBILIZATIONS
-	);
-	
+	SetImmobilization( "ShoulderedBody", SHOULDER_IMMOBILIZATIONS );
+
 	// set hinderance
 	float maxSpeed = body->spawnArgs.GetFloat("shouldered_maxspeed","1.0f");
 	SetHinderance( "ShoulderedBody", 1.0f, maxSpeed );

@@ -825,6 +825,8 @@ public:
 
 	void					UpdateSkinSetup( bool restart );
 
+	bool					IsShoulderingBody( void ) { return m_bShoulderingBody; };
+
 	bool					OnLadder( void ) const;
 	// Virtal override of idActor::OnElevator()
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;

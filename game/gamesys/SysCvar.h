@@ -165,9 +165,6 @@ extern idCVar cv_tdm_footfalls_movetype_specific;
 
 extern idCVar cv_pm_weightmod;
 
-// #5892: Mantle while carring a body
-extern idCVar cv_pm_mantle_while_shouldering;
-
 extern idCVar cv_pm_mantle_height;
 extern idCVar cv_pm_mantle_reach;
 extern idCVar cv_pm_mantle_minflatness;
@@ -181,6 +178,11 @@ extern idCVar cv_pm_mantle_push_msecs;
 extern idCVar cv_pm_mantle_pushNonCrouched_msecs;
 extern idCVar cv_pm_mantle_fastLowObstaces;
 extern idCVar cv_pm_mantle_maxLowObstacleHeight;
+
+// Daft Mugi #5892: Mantle while carrying a body
+extern idCVar cv_pm_mantle_maxShoulderingObstacleHeight;
+extern idCVar cv_pm_mantle_while_shouldering;
+
 extern idCVar cv_pm_mantle_fastMediumObstaclesCrouched;
 extern idCVar cv_pm_mantle_pullFast_msecs;
 extern idCVar cv_pm_mantle_pushNonCrouched_playgrunt_speedthreshold;
