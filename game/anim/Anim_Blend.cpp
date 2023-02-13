@@ -5204,8 +5204,6 @@ bool idAnimator::CreateFrame( int currentTime, bool force ) {
 	const jointMod_t *	jointMod;
 	const idJointQuat *	defaultPose;
 
-	static idCVar		r_showSkel( "r_showSkel", "0", CVAR_RENDERER | CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
-
 	if ( gameLocal.inCinematic && gameLocal.skipCinematic ) {
 		return false;
 	}
@@ -5214,6 +5212,7 @@ bool idAnimator::CreateFrame( int currentTime, bool force ) {
 		return false;
 	}
 
+	extern idCVar r_showSkel;
 	if ( !force && !r_showSkel.GetInteger() ) {
 		if ( lastTransformTime == currentTime ) {
 			return false;
