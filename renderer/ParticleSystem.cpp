@@ -100,14 +100,15 @@ idBounds idParticle_EstimateBoundsStdSys(const idPartStageData &stg) {
 	}
 
 	// find the max size
-	float	maxSize = 0;
-
+	float maxSize = 0;
 	for ( float f = 0; f <= 1.0f; f += 1.0f / 64 ) {
 		float size = idParticleParm_Eval( stg.size, f );
 		float aspect = idParticleParm_Eval( stg.aspect, f );
-		if ( aspect > 1 ) {
-			size *= aspect;
-		}
+		float width = size;
+		float height = size * aspect;
+		// stgatilov #6099: the particles can be rotated arbitrarily (e.g. view-dependent)
+		// so we take bounding sphere and use its radius for expansion
+		size = idVec2(width, height).Length();
 		if ( size > maxSize ) {
 			maxSize = size;
 		}
