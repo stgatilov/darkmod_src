@@ -2327,6 +2327,22 @@ void idSIMD_Generic::TransformVerts( idDrawVert *verts, const int numVerts, cons
 
 /*
 ============
+idSIMD_Generic::ComputeBoundsFromJointBounds
+============
+*/
+void idSIMD_Generic::ComputeBoundsFromJointBounds( idBounds &totalBounds, int numJoints, const idJointMat *joints, const idBounds *jointBounds ) {
+	totalBounds.Clear();
+	for ( int i = 0; i < numJoints; i++ ) {
+		if ( jointBounds[i].IsCleared() )
+			continue;
+		idBounds jointWorldBounds;
+		jointWorldBounds.FromTransformedBounds( jointBounds[i], joints[i].ToVec3(), joints[i].ToMat3() );
+		totalBounds.AddBounds( jointWorldBounds );
+	}
+}
+
+/*
+============
 idSIMD_Generic::TracePointCull
 ============
 */

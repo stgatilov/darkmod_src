@@ -4810,48 +4810,68 @@ void idAnimator::GetOrigin( int currentTime, idVec3 &pos ) const {
 	pos += modelDef->GetVisualOffset();
 }
 
+idCVar r_animationBounds(
+	"r_animationBounds", "1", CVAR_RENDERER | CVAR_BOOL,
+	"Compute bounds of animated models by combining per-joint bounds. "
+	"Such bounds are provably correct, but require evaluating whole skeleton every frame. "
+	"If set to 0, then prebaked bounds are fetched from md5anim, and are not always correct."
+);
+
 /*
 ====================
 idAnimator::GetBounds
 ====================
 */
 bool idAnimator::GetBounds( int currentTime, idBounds &bounds ) {
-	int					i, j;
-	const idAnimBlend	*blend;
-	int					count;
-
 	if ( !modelDef || !modelDef->ModelHandle() ) {
 		return false;
 	}
 
-	if ( AFPoseJoints.Num() ) {
-		bounds = AFPoseBounds;
-		count = 1;
-	} else {
-		bounds.Clear();
-		count = 0;
-	}
+	const idBounds* jointLocalBounds = modelDef->ModelHandle()->JointBounds();
+	if ( r_animationBounds.GetBool() && jointLocalBounds ) {
+		// stgatilov #6099: compute conservative bounds (without touching mesh vertices)
 
-	blend = channels[ 0 ];
-	for( i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; i++ ) {
-		for( j = 0; j < ANIM_MaxAnimsPerChannel; j++, blend++ ) {
-			if ( blend->AddBounds( currentTime, bounds, removeOriginOffset ) ) {
-				count++;
+		// update orientation of all joints (only recomputed on change)
+		CreateFrame( currentTime, false );
+		// merge joint bounds into total world bounds
+		// note: this is surely conservative as long as:
+		//   1. sum of all weights of a vertex = 1
+		//   2. all weights >= 0
+		SIMDProcessor->ComputeBoundsFromJointBounds( bounds, numJoints, joints, jointLocalBounds );
+	}
+	else {
+		// old approach: blend bounds baked in md5anim files
+
+		int count;
+		if ( AFPoseJoints.Num() ) {
+			bounds = AFPoseBounds;
+			count = 1;
+		} else {
+			bounds.Clear();
+			count = 0;
+		}
+
+		for( int i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; i++ ) {
+			for( int j = 0; j < ANIM_MaxAnimsPerChannel; j++ ) {
+				const idAnimBlend *blend = &channels[ i ][ j ];
+				if ( blend->AddBounds( currentTime, bounds, removeOriginOffset ) ) {
+					count++;
+				}
 			}
 		}
-	}
 
-	if ( !count ) {
-		if ( !frameBounds.IsCleared() ) {
-			bounds = frameBounds;
-			return true;
-		} else {
-			bounds.Zero();
-			return false;
+		if ( !count ) {
+			if ( !frameBounds.IsCleared() ) {
+				bounds = frameBounds;
+				return true;
+			} else {
+				bounds.Zero();
+				return false;
+			}
 		}
-	}
 
-	bounds.TranslateSelf( modelDef->GetVisualOffset() );
+		bounds.TranslateSelf( modelDef->GetVisualOffset() );
+	}
 
 	if ( g_debugBounds.GetBool() ) {
 		if ( bounds[1][0] - bounds[0][0] > 2048 || bounds[1][1] - bounds[0][1] > 2048 ) {

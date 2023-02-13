@@ -104,6 +104,8 @@ public:
 	virtual void TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint );
 	virtual void UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint );
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
+	virtual void ComputeBoundsFromJointBounds( idBounds &totalBounds, int numJoints, const idJointMat *joints, const idBounds *jointBounds );
+
 	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts );
 	virtual void DecalPointCull( byte *cullBits, const idPlane *planes, const idDrawVert *verts, const int numVerts );
 	virtual void OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts );

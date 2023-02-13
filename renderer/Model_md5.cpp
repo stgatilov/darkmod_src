@@ -74,7 +74,7 @@ idMD5Mesh::~idMD5Mesh() {
 idMD5Mesh::ParseMesh
 ====================
 */
-void idMD5Mesh::ParseMesh( idLexer &parser, int numJoints, const idJointMat *joints ) {
+void idMD5Mesh::ParseMesh( idLexer &parser, int numJoints, const idJointMat *joints, idBounds *jointBounds ) {
 	idToken		token;
 	idToken		name;
 	int			num;
@@ -189,6 +189,13 @@ void idMD5Mesh::ParseMesh( idLexer &parser, int numJoints, const idJointMat *joi
 		tempWeights[ i ].jointWeight	= parser.ParseFloat();
 
 		parser.Parse1DMatrix( 3, tempWeights[ i ].offset.ToFloatPtr() );
+	}
+
+	// stgatilov #6099: fill per-joint bounds
+	for( i = 0; i < tempWeights.Num(); i++ ) {
+		idBounds &jb = jointBounds[tempWeights[i].joint];
+		const idVec3 &p = tempWeights[i].offset;
+		jb.AddPoint(p);
 	}
 
 	// create pre-scaled weights and an index for the vertex/joint lookup
@@ -550,9 +557,14 @@ void idRenderModelMD5::LoadModel() {
 	}
 	parser.ExpectTokenString( "}" );
 
+	// stgatilov #6099: initialize per-joint bounds
+	jointBounds.SetNum( joints.Num() );
+	for( i = 0; i < jointBounds.Num(); i++ )
+		jointBounds[i].Clear();
+
 	for( i = 0; i < meshes.Num(); i++ ) {
 		parser.ExpectTokenString( "mesh" );
-		meshes[ i ].ParseMesh( parser, defaultPose.Num(), poseMat3 );
+		meshes[ i ].ParseMesh( parser, defaultPose.Num(), poseMat3, jointBounds.Ptr() );
 	}
 
 	//
@@ -656,6 +668,17 @@ idBounds idRenderModelMD5::Bounds( const renderEntity_t *ent ) const {
 	}
 
 	return ent->bounds;
+}
+
+/*
+====================
+idRenderModelMD5::JointBounds
+
+Returns per-joint local bounds (#6099)
+====================
+*/
+const idBounds *idRenderModelMD5::JointBounds() const {
+	return jointBounds.Ptr();
 }
 
 /*

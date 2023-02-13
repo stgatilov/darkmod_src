@@ -66,6 +66,7 @@ class idPlane;
 class idDrawVert;
 class idJointQuat;
 class idJointMat;
+class idBounds;
 struct dominantTri_s;
 
 const int MIXBUFFER_SAMPLES = 4096;
@@ -160,13 +161,16 @@ public:
 	virtual void MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n ) = 0;
 	virtual bool MatX_LDLTFactor( idMatX &mat, idVecX &invDiag, const int n ) = 0;
 
-	// rendering
+	// skeletal animation
 	virtual void BlendJoints( idJointQuat *joints, const idJointQuat *blendJoints, const float lerp, const int *index, const int numJoints ) = 0;
 	virtual void ConvertJointQuatsToJointMats( idJointMat *jointMats, const idJointQuat *jointQuats, const int numJoints ) = 0;
 	virtual void ConvertJointMatsToJointQuats( idJointQuat *jointQuats, const idJointMat *jointMats, const int numJoints ) = 0;
 	virtual void TransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) = 0;
 	virtual void UntransformJoints( idJointMat *jointMats, const int *parents, const int firstJoint, const int lastJoint ) = 0;
 	virtual void TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights ) = 0;
+	virtual void ComputeBoundsFromJointBounds( idBounds &totalBounds, int numJoints, const idJointMat *joints, const idBounds *jointBounds ) = 0;
+
+	// rendering
 	virtual void TracePointCull( byte *cullBits, byte &totalOr, const float radius, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
 	virtual void DecalPointCull( byte *cullBits, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;
 	virtual void OverlayPointCull( byte *cullBits, idVec2 *texCoords, const idPlane *planes, const idDrawVert *verts, const int numVerts ) = 0;

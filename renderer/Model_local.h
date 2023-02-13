@@ -68,6 +68,7 @@ public:
 	virtual const idJointQuat *	GetDefaultPose( void ) const;
 	virtual int					NearestJoint( int surfaceNum, int a, int b, int c ) const;
 	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual const idBounds *	JointBounds() const;
 	virtual void				ReadFromDemoFile( class idDemoFile *f );
 	virtual void				WriteToDemoFile( class idDemoFile *f );
 	virtual float				DepthHack() const;
@@ -133,7 +134,7 @@ public:
 								idMD5Mesh();
 								~idMD5Mesh();
 
- 	void						ParseMesh( idLexer &parser, int numJoints, const idJointMat *joints );
+ 	void						ParseMesh( idLexer &parser, int numJoints, const idJointMat *joints, idBounds *jointBounds );
 	void						UpdateSurface( const struct renderEntity_s *ent, const idJointMat *joints, modelSurface_t *surf );
 	idBounds					CalcBounds( const idJointMat *joints );
 	int							NearestJoint( int a, int b, int c ) const;
@@ -160,6 +161,7 @@ public:
 	virtual void				InitFromFile( const char *fileName );
 	virtual dynamicModel_t		IsDynamicModel() const;
 	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
+	virtual const idBounds *	JointBounds() const;
 	virtual void				Print() const;
 	virtual void				List() const;
 	virtual void				TouchData();
@@ -178,9 +180,9 @@ private:
 	idList<idMD5Joint>			joints;
 	idList<idJointQuat>			defaultPose;
 	idList<idMD5Mesh>			meshes;
+	idList<idBounds>			jointBounds;	// #6099: includes all vertices connected to each joint
 
 	void						CalculateBounds( const idJointMat *joints );
-	void						GetFrameBounds( const renderEntity_t *ent, idBounds &bounds ) const;
 	void						DrawJoints( const renderEntity_t *ent, const struct viewDef_s *view ) const;
 	void						ParseJoint( idLexer &parser, idMD5Joint *joint, idJointQuat *defaultPose );
 };

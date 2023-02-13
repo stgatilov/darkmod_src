@@ -314,6 +314,10 @@ public:
 	// Returns the name for the joint with the given handle.
 	virtual const char *		GetJointName( jointHandle_t handle ) const = 0;
 
+	// stgatilov #6099: k-th element = bounds of all joint-affected vertices in local joint space
+	// (NULL if model is not MD5)
+	virtual const idBounds *	JointBounds() const = 0;
+
 	// Returns the default animation pose or NULL if the model is not an MD5.
 	virtual const idJointQuat *	GetDefaultPose( void ) const = 0;
 

@@ -483,6 +483,15 @@ idBounds idRenderModelStatic::Bounds( const struct renderEntity_s *mdef ) const 
 
 /*
 ================
+idRenderModelStatic::JointBounds
+================
+*/
+const idBounds *idRenderModelStatic::JointBounds() const {
+	return nullptr;
+}
+
+/*
+================
 idRenderModelStatic::DepthHack
 ================
 */
