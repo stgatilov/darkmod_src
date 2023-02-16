@@ -385,14 +385,14 @@ R_PortalRender
 duzenko: copy pasted from idPlayerView::SingleView
 =================
 */
-void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scissor ) {
+void R_PortalRender( textureStage_t *stage, idScreenRect& scissor ) {
 	viewDef_t		*parms;
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.primaryView;
 	parms->renderView.viewID = VID_SUBVIEW;
 	parms->clipPlane = nullptr;
 	parms->superView = tr.viewDef;
-	parms->subviewSurface = surf;
+	parms->subviewSurface = nullptr;
 
 	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
 
@@ -441,21 +441,10 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		if ( tr.viewDef->isMirror ) {
 			parms->scissor = tr.viewDef->scissor; // mirror in an area that has sky, limit to mirror rect only
 		} else {
-			if ( surf && surf->space && r_useEntityScissors.GetBool() ) {
-				idRenderEntityLocal* def = surf->space->entityDef;
-				idBounds bounds = surf->frontendGeo->bounds;
-				idScreenRect rect;
-				if ( tr.viewDef->viewFrustum.ProjectionBounds( idBox( bounds, def->parms.origin, def->parms.axis ), bounds ) )
-					rect = R_ScreenRectFromViewFrustumBounds( bounds );
-				else
-					rect.Clear();
-				parms->scissor = rect;
-			} else {
-				parms->scissor.x1 = 0;
-				parms->scissor.y1 = 0;
-				parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
-				parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
-			}
+			parms->scissor.x1 = 0;
+			parms->scissor.y1 = 0;
+			parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
+			parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
 		}
 
 		parms->isSubview = true;
@@ -770,7 +759,7 @@ would change tr.viewCount.
 bool R_GenerateSubViews( void ) {
 	TRACE_CPU_SCOPE( "R_GenerateSubViews" )
 
-	drawSurf_t *drawSurf, *skySurf = NULL;
+	drawSurf_t *drawSurf;
 	int				i;
 	bool			subviews;
 	const idMaterial		*shader;
@@ -800,9 +789,7 @@ bool R_GenerateSubViews( void ) {
 		if ( !shader || !shader->HasSubview() )
 			continue;
 
-		if ( shader->GetSort() == SS_PORTAL_SKY ) // portal sky needs to be the last one, and only once
-			skySurf = drawSurf;
-		else
+		if ( shader->GetSort() != SS_PORTAL_SKY ) // portal sky needs to be the last one, and only once
 			if ( R_GenerateSurfaceSubview( drawSurf ) ) {
 				subviews = true;
 			}
@@ -820,8 +807,8 @@ bool R_GenerateSubViews( void ) {
 
 		if ( gameLocal.portalSkyEnt.GetEntity() && ( gameLocal.IsPortalSkyActive() || g_stopTime.GetBool() ) && g_enablePortalSky.GetBool()
 			&& !tr.viewDef->renderWorld->mapName.IsEmpty()  // FIXME a better way to check for RenderWindow views? (compass, etc)
-			) {
-			R_PortalRender( skySurf, NULL, sc ); // even if skySurf null
+		) {
+			R_PortalRender( NULL, sc );
 			subviews = true;
 		}
 
