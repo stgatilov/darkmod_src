@@ -756,28 +756,6 @@ void idRenderModelStatic::FinishSurfaces() {
 				tri->bounds[1][2] = mid[2] + radius;
 				}
 				break;
-
-/* previous method
-			// if the surface has a deformation, increase the bounds
-			// the amount here is somewhat arbitrary, designed to handle
-			// autosprites and flares, but could be done better with exact
-			// deformation information.
-			// Note that this doesn't handle deformations that are skinned in
-			// at run time...
-			if ( surf->shader->Deform() != DFRM_NONE ) {
-				srfTriangles_t	*tri = surf->geometry;
-				idVec3	mid = ( tri->bounds[1] + tri->bounds[0] ) * 0.5f;
-				float	radius = ( tri->bounds[0] - mid ).Length();
-				radius += 20.0f;
-
-				tri->bounds[0][0] = mid[0] - radius;
-				tri->bounds[0][1] = mid[1] - radius;
-				tri->bounds[0][2] = mid[2] - radius;
-
-				tri->bounds[1][0] = mid[0] + radius;
-				tri->bounds[1][1] = mid[1] + radius;
-				tri->bounds[1][2] = mid[2] + radius;
- */
 			}
 			// add to the model bounds
 			bounds.AddBounds( surf->geometry->bounds );
