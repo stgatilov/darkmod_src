@@ -607,6 +607,7 @@ static void  R_MoveDeform( drawSurf_t *surf ) {
 R_TurbulentDeform
 
 Turbulently deforms the XYZ, S, and T values
+stgatilov #5990: actually, it does not modify XYZ, only ST texcoords
 =====================
 */
 static void  R_TurbulentDeform( drawSurf_t *surf ) {

@@ -710,6 +710,7 @@ void idRenderModelStatic::FinishSurfaces() {
 			switch ( surf->material->Deform() )
 			{
 			case DFRM_NONE:
+			case DFRM_TURB:	// does not modify geometry
 				break;
 			case DFRM_PARTICLE:
 			case DFRM_PARTICLE2:
