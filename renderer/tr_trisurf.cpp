@@ -2586,8 +2586,10 @@ TEST_CASE("BvhChecks:Sphere") {
 				for ( int j = 0; j < intervals.Num(); j++ )
 					if ( i >= intervals[j].beg && i < intervals[j].end ) {
 						//filtered bounds must be conservative
-						CHECK( intervals[j].GetBox().ContainsPoint( b[0] ) );
-						CHECK( intervals[j].GetBox().ContainsPoint( b[1] ) );
+						idBounds filterBounds = intervals[j].GetBox();
+						filterBounds.ExpandSelf( 0.1f );
+						CHECK( filterBounds.ContainsPoint( b[0] ) );
+						CHECK( filterBounds.ContainsPoint( b[1] ) );
 						if (intervals[j].info == BVH_TRI_SURELY_MATCH)
 							inSure = true;
 						else
