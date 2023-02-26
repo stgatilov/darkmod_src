@@ -30,7 +30,7 @@ idUserInterfaceManagerLocal	uiManagerLocal;
 idUserInterfaceManager *	uiManager = &uiManagerLocal;
 
 //maximum number of slots for subtitles (stgatilov #2454)
-static const int SUBTITLE_SLOTS = 4;
+static const int SUBTITLE_SLOTS = 3;
 
 /*
 ===============================================================================
