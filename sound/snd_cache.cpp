@@ -475,6 +475,21 @@ int idSoundSample::LengthIn44kHzSamples( void ) const {
 
 /*
 ===================
+idSoundSample::DurationIn44kHzSamples
+===================
+*/
+int idSoundSample::DurationIn44kHzSamples( void ) const
+{
+	int length = LengthIn44kHzSamples();
+	if ( objectInfo.nChannels == 1 )
+		return length;
+	if ( objectInfo.nChannels == 2 )
+		return length >> 1;
+	return length / objectInfo.nChannels;
+}
+
+/*
+===================
 idSoundSample::MakeDefault
 ===================
 */

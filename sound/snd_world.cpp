@@ -2000,7 +2000,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	// entire mix buffer
 
 	float volumeDB = 0; // grayman #3042
-	if ( shader->leadinVolume && ( ( current44kHz - chan->trigger44kHzTime ) < sample->LengthIn44kHzSamples() ) )
+	if ( shader->leadinVolume && ( ( current44kHz - chan->trigger44kHzTime ) < sample->DurationIn44kHzSamples() ) )
 	{
 		volumeDB = shader->leadinVolume;
 	}

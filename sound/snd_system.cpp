@@ -150,7 +150,7 @@ void ListSounds_f( const idCmdArgs &args ) {
 		const char *defaulted = ( sample->defaultSound ? "(DEFAULTED)" : sample->purged ? "(PURGED)" : "" );
 
 		common->Printf( "%s %dkHz %6dms %5dkB %4s %s%s\n", stereo, sample->objectInfo.nSamplesPerSec / 1000,
-					soundSystemLocal.SamplesToMilliseconds( sample->LengthIn44kHzSamples() ),
+					soundSystemLocal.SamplesToMilliseconds( sample->DurationIn44kHzSamples() ),
 					sample->objectMemSize >> 10, format, sample->name.c_str(), defaulted );
 
 		if ( !sample->purged ) {
@@ -230,7 +230,7 @@ void ListSoundDecoders_f( const idCmdArgs &args ) {
 			const char *format = ( sample->objectInfo.wFormatTag == WAVE_FORMAT_TAG_OGG ) ? "OGG" : "WAV";
 
 			int localTime = soundSystemLocal.GetCurrent44kHzTime() - chan->trigger44kHzTime;
-			int sampleTime = sample->LengthIn44kHzSamples() * sample->objectInfo.nChannels;
+			int sampleTime = sample->DurationIn44kHzSamples();
 			int percent;
 			if ( localTime > sampleTime ) {
 				if ( chan->parms.soundShaderFlags & SSF_LOOPING ) {

@@ -865,7 +865,8 @@ public:
 	idList<Subtitle>		subtitles;
 	SubtitleLevel			subtitlesVerbosity;
 
-	int						LengthIn44kHzSamples() const;
+	int						LengthIn44kHzSamples() const;	// BEWARE: this is 2 x duration if stereo!
+	int						DurationIn44kHzSamples() const;	// stgatilov: duration multiplied by 44.1K
 	ID_TIME_T		 			GetNewTimeStamp( void ) const;
 	void					MakeDefault();				// turns it into a beep
 	void					Load();						// loads the current sound based on name
