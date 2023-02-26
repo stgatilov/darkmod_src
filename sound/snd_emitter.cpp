@@ -336,24 +336,24 @@ int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> 
 		return 0;
 	}
 
+	// it is looping?
+	bool looping = parms.soundShaderFlags & SSF_LOOPING;
+
+	// we need to find currently playing sample, or the last playing sample if it's already over
 	int addedNum = 0;
-	// if current moment is in leadin sample
-	if ( sampleOffset44k < leadin->LengthIn44kHzSamples() ) {
+	if ( !looping || sampleOffset44k < leadin->LengthIn44kHzSamples() ) {
+		// leadin sample is playing now or last playing
 		addedNum = leadin->FetchSubtitles( sampleOffset44k / leadin->objectInfo.nChannels, matches );
 	}
 	else {
-		// is it looping?
-		if ( !soundShader || !( parms.soundShaderFlags & SSF_LOOPING ) ) {
-			return 0;
+		assert( looping );
+		if ( soundShader ) {
+			if ( idSoundSample *loop = soundShader->entries[0] ) {
+				// playing looping sample right now and forever
+				int remainderOffset = ( sampleOffset44k - leadin->LengthIn44kHzSamples() ) % loop->LengthIn44kHzSamples();
+				addedNum = leadin->FetchSubtitles( remainderOffset / leadin->objectInfo.nChannels, matches );
+			}
 		}
-		idSoundSample *loop = soundShader->entries[0];
-		if ( !loop ) {
-			return 0;
-		}
-
-		// if current moment is in looping sample
-		int remainderOffset = ( sampleOffset44k - leadin->LengthIn44kHzSamples() ) % loop->LengthIn44kHzSamples();
-		addedNum = leadin->FetchSubtitles( remainderOffset / leadin->objectInfo.nChannels, matches );
 	}
 
 	// save channel in generated matches
