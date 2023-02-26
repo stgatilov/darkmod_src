@@ -488,19 +488,19 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			if ( !( chan->parms.soundShaderFlags & SSF_LOOPING ) ) {
 				idSlowChannel slow = GetSlowChannel( chan );
 
+				int playsFor = current44kHzTime - chan->trigger44kHzTime;
+				bool finished;
 				if ( soundWorld->slowmoActive && slow.IsActive() ) {
-					if ( slow.GetCurrentPosition().time >= chan->leadinSample->LengthIn44kHzSamples() / 2 ) {
-						chan->Stop();
-						// if this was an onDemand sound, purge the sample now
-						if ( chan->leadinSample->onDemand ) {
-							chan->leadinSample->PurgeSoundSample();
-						}
-						continue;
-					}
-				} else if ( ( chan->trigger44kHzTime + chan->leadinSample->LengthIn44kHzSamples() < current44kHzTime ) ) {
+					finished = slow.GetCurrentPosition().time >= chan->leadinSample->LengthIn44kHzSamples() / 2;
+				} else {
+					finished = playsFor > chan->leadinSample->LengthIn44kHzSamples();
+				}
+
+				if ( finished ) {
 					chan->Stop();
 
 					// free hardware resources
+					// stgatilov: this was NOT done in slowmo case?...
 					chan->ALStop();
 					
 					// if this was an onDemand sound, purge the sample now
@@ -539,11 +539,9 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 idSoundEmitterLocal::Spatialize
 
 Called once each sound frame by the main thread from idSoundWorldLocal::PlaceOrigin
+grayman #4882 - listenerPos is in meters
 ===================
 */
-
-// grayman #4882 - listenerPos is in meters
-
 void idSoundEmitterLocal::Spatialize( bool primary, idVec3 listenerPos, int listenerArea, idRenderWorld *rw ) // grayman #4882
 {
 	//
