@@ -1088,11 +1088,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 	}
 
 	// return length of sound in milliseconds
-	int length = chan->leadinSample->LengthIn44kHzSamples();
-
-	if ( chan->leadinSample->objectInfo.nChannels == 2 ) {
-		length /= 2;	// stereo samples
-	}
+	int length = chan->leadinSample->DurationIn44kHzSamples();
 
 	// adjust the start time based on diversity for looping sounds, so they don't all start
 	// at the same point
