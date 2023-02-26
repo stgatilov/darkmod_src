@@ -493,7 +493,7 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 				if ( soundWorld->slowmoActive && slow.IsActive() ) {
 					finished = slow.GetCurrentPosition().time >= chan->leadinSample->LengthIn44kHzSamples() / 2;
 				} else {
-					finished = playsFor > chan->leadinSample->LengthIn44kHzSamples();
+					finished = playsFor > chan->leadinSample->DurationIn44kHzSamples();
 				}
 
 				if ( finished ) {
