@@ -122,6 +122,19 @@ static bool LoadSrtFile( const char *filename, idList<Subtitle> &subtitles ) {
 	return true;
 }
 
+idCVar tdm_subtitles_inlineDurationExtension(
+	"tdm_subtitles_inlineDurationExtension", "0.2", CVAR_FLOAT | CVAR_SOUND | CVAR_ARCHIVE,
+	"Inline type of subtitles is extended by this number of seconds after sound ends."
+);
+idCVar tdm_subtitles_inlineDurationMinimum(
+	"tdm_subtitles_inlineDurationMinimum", "1.0", CVAR_FLOAT | CVAR_SOUND | CVAR_ARCHIVE,
+	"Inline type of subtitles lasts at least this number of seconds."
+);
+idCVar tdm_subtitles_durationExtensionLimit(
+	"tdm_subtitles_durationExtensionLimit", "5.0", CVAR_FLOAT | CVAR_SOUND | CVAR_ARCHIVE,
+	"Any subtitle can last no more that this number of seconds after the sound ends."
+);
+
 /*
 ===================
 idSoundCache::LoadSubtitles()
@@ -130,6 +143,7 @@ idSoundCache::LoadSubtitles()
 void idSoundSample::LoadSubtitles() {
 	subtitles.Clear();
 	subtitlesVerbosity = SUBL_MISSING;
+	subtitleTotalDuration = 0;
 
 	const idDeclSubtitles *allSubs = (idDeclSubtitles *) declManager->FindType( DECL_SUBTITLES, "tdm_root" );
 	if ( !allSubs )
@@ -155,12 +169,24 @@ void idSoundSample::LoadSubtitles() {
 	}
 	else {
 		// inline subtitle
+		int durAdd = int( tdm_subtitles_inlineDurationExtension.GetFloat() * PRIMARYFREQ );
+		int durMin = int( tdm_subtitles_inlineDurationMinimum.GetFloat() * PRIMARYFREQ );
 		Subtitle sub;
 		sub.offsetStart = 0;
-		sub.offsetEnd = LengthIn44kHzSamples();
+		// #6262: inline subtitles are extended slightly
+		sub.offsetEnd = idMath::Imax( DurationIn44kHzSamples() + durAdd, durMin );
 		sub.text = mapping->inlineText;
-		subtitles.Append(sub);
+		subtitles.Append( sub );
 	}
+
+	for ( int i = 0; i < subtitles.Num(); i++ ) {
+		int endsAt = subtitles[i].offsetEnd;
+		subtitleTotalDuration = idMath::Imax( subtitleTotalDuration, endsAt );
+	}
+	// hard-cap extension of subtitles beyond sound for safety
+	int durCap = DurationIn44kHzSamples() + int( tdm_subtitles_durationExtensionLimit.GetFloat() * PRIMARYFREQ );
+	if ( subtitleTotalDuration > durCap )
+		subtitleTotalDuration = durCap;
 }
 
 /*
@@ -446,6 +472,7 @@ idSoundSample::idSoundSample() {
 	levelLoadReferenced = false;
 	cinematic = NULL;
 	subtitlesVerbosity = SUBL_MISSING;
+	subtitleTotalDuration = 0;
 }
 
 /*
@@ -537,6 +564,7 @@ void idSoundSample::MakeDefault( void ) {
 
 	subtitles.Clear();
 	subtitlesVerbosity = SUBL_MISSING;
+	subtitleTotalDuration = 0;
 }
 
 /*
@@ -875,11 +903,11 @@ bool idSoundSample::FetchFromCinematic(int sampleOffset, int *sampleSize, float 
 }
 
 int idSoundSample::FetchSubtitles( int offset, idList<SubtitleMatch> &matches ) {
-	if (cinematic) {
+	if ( cinematic ) {
 		//ask cinematic about current video time
 		//otherwise subtitles will get out of sync with sound and video
 		//easy to check by pausing with debugger while video is playing
-		offset = cinematic->GetRealSoundOffset(offset);
+		offset = cinematic->GetRealSoundOffset( offset );
 	}
 
 	//note: if this ever becomes too slow, we can implement "decoder" for subtitles
@@ -897,4 +925,10 @@ int idSoundSample::FetchSubtitles( int offset, idList<SubtitleMatch> &matches ) 
 	}
 
 	return cnt;
+}
+
+bool idSoundSample::HaveSubtitlesFinished( int offset ) const {
+	if ( cinematic )
+		offset = cinematic->GetRealSoundOffset( offset );
+	return offset >= subtitleTotalDuration;
 }

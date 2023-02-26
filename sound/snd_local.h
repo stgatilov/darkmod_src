@@ -863,6 +863,7 @@ public:
 	bool					purged;
 	bool					levelLoadReferenced;		// so we can tell which samples aren't needed any more
 	idList<Subtitle>		subtitles;
+	int						subtitleTotalDuration;
 	SubtitleLevel			subtitlesVerbosity;
 
 	int						LengthIn44kHzSamples() const;	// BEWARE: this is 2 x duration if stereo!
@@ -876,6 +877,7 @@ public:
 	void					CheckForDownSample();		// down sample if required
 	bool					FetchFromCache( int offset, const byte **output, int *position, int *size, const bool allowIO );
 	int						FetchSubtitles( int offset, idList<SubtitleMatch> &matches );	//stgatilov #2454
+	bool					HaveSubtitlesFinished( int offset ) const;
 
 	//stgatilov #4534: for playing sound from a video
 	idCinematic *cinematic;

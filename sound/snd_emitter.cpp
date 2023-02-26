@@ -495,6 +495,10 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 				} else {
 					finished = playsFor > chan->leadinSample->DurationIn44kHzSamples();
 				}
+				if ( finished && !chan->leadinSample->HaveSubtitlesFinished( playsFor ) ) {
+					// stgatilov #6262: extend sound while subtitles are still playing
+					finished = false;
+				}
 
 				if ( finished ) {
 					chan->Stop();
