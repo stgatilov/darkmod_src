@@ -752,51 +752,47 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 		}
 	}
 
-	bool slotUsed[SUBTITLE_SLOTS] = { false };
-	//assign active subtitles to slots
-	for ( int i = 0; i < matches.Num(); i++ ) {
-		int found = -1;
+	//clear all statuses to start fresh assignment
+	enum Status {
+		STATUS_ASSIGNED,
+		STATUS_VACANT,
+	};
+	for ( SubtitleMatch &m : matches )
+		m.status = STATUS_VACANT;
+	for ( SubtitleMatch &m : subtitleSlots )
+		m.status = STATUS_VACANT;
+	auto SweepAndMatch = [&matches, this](auto compatible) {
+		for ( int i = 0; i < matches.Num(); i++ )
+			if ( matches[i].status == STATUS_VACANT )
+				for ( int j = 0; j < subtitleSlots.Num(); j++ )
+					if ( subtitleSlots[j].status == STATUS_VACANT )
+						if ( compatible( matches[i], subtitleSlots[j] ) ) {
+							matches[i].status = STATUS_ASSIGNED;
+							subtitleSlots[j] = matches[i];
+							break;
+						}
+	};
 
-		if ( found < 0 ) {
-			//if same subtitle was active last time, put it to same place
-			for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
-				if ( !slotUsed[j] && subtitleSlots[j].subtitle == matches[i].subtitle ) {
-					found = j;
-					break;
-				}
-		}
-		if ( found < 0 ) {
-			//if same channel was active last time, put its subtitle to same place
-			//TODO: what about rest between phrases of same subtitle?
-			for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
-				if ( !slotUsed[j] && subtitleSlots[j].channel == matches[i].channel ) {
-					found = j;
-					break;
-				}
-		}
-		if ( found < 0 ) {
-			//just take first unused channel
-			for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
-				if ( !slotUsed[j] ) {
-					found = j;
-					break;
-				}
-		}
-
-		if (found < 0) {
-			//overflow: all slots occupied
-			continue;
-		}
-
-		//assign subtitle to slot
-		slotUsed[found] = true;
-		subtitleSlots[found] = matches[i];
+	//assign subtitles in order of decreasing verbosity
+	for ( int level = SUBL_STORY; level <= SUBL_EFFECT; level++ ) {
+		//match by: subtitle entry, sound sample, sound channel, sound emitter
+		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.subtitle == slot.subtitle; } );
+		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.sample == slot.sample; } );
+		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.channel == slot.channel; } );
+		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.emitter == slot.emitter; } );
+		//assign the rest to arbitrary places
+		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level; } );
 	}
 
 	//clear unused slots
-	for ( int j = 0; j < SUBTITLE_SLOTS; j++ )
-		if ( !slotUsed[j] )
+	for ( int j = 0; j < subtitleSlots.Num(); j++ )
+		if ( subtitleSlots[j].status == STATUS_VACANT )
 			subtitleSlots[j] = SubtitleMatch{0};
+	//check if we have not enough slots to display everything
+	int overflow = 0;
+	for ( int i = 0; i < matches.Num(); i++ )
+		if ( matches[i].status == STATUS_VACANT )
+			overflow++;
 
 	//update GUI variables
 	char textVar[] = "subtitle0";

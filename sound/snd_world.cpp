@@ -2114,11 +2114,14 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	if ( sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED )
 	{
 		// stgatilov #2454: add any active subtitles to soundWorld's buffer
+		idList<SubtitleMatch> &destSubtitles = activeSubtitles[!activeSubtitlesFrame];
 		int subsNum = chan->GatherSubtitles(
 			offset * sample->objectInfo.nChannels,
-			activeSubtitles[!activeSubtitlesFrame],
+			destSubtitles,
 			cv_tdm_subtitles.GetInteger()
 		);
+		for ( int i = destSubtitles.Num() - subsNum; i < destSubtitles.Num(); i++ )
+			destSubtitles[i].emitter = sound;
 
 		if ( !alIsSource( chan->openalSource ) ) {
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );

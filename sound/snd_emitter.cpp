@@ -332,9 +332,6 @@ int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> 
 	if ( !leadin || sampleOffset44k < 0 ) {
 		return 0;
 	}
-	if ( leadin->subtitlesVerbosity > level ) {
-		return 0;
-	}
 
 	// it is looping?
 	bool looping = parms.soundShaderFlags & SSF_LOOPING;
@@ -343,15 +340,19 @@ int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> 
 	int addedNum = 0;
 	if ( !looping || sampleOffset44k < leadin->LengthIn44kHzSamples() ) {
 		// leadin sample is playing now or last playing
-		addedNum = leadin->FetchSubtitles( sampleOffset44k / leadin->objectInfo.nChannels, matches );
+		if ( leadin->subtitlesVerbosity <= level ) {
+			addedNum = leadin->FetchSubtitles( sampleOffset44k / leadin->objectInfo.nChannels, matches );
+		}
 	}
 	else {
 		assert( looping );
 		if ( soundShader ) {
 			if ( idSoundSample *loop = soundShader->entries[0] ) {
 				// playing looping sample right now and forever
-				int remainderOffset = ( sampleOffset44k - leadin->LengthIn44kHzSamples() ) % loop->LengthIn44kHzSamples();
-				addedNum = leadin->FetchSubtitles( remainderOffset / leadin->objectInfo.nChannels, matches );
+				if ( loop->subtitlesVerbosity <= level ) {
+					int remainderOffset = ( sampleOffset44k - leadin->LengthIn44kHzSamples() ) % loop->LengthIn44kHzSamples();
+					addedNum = loop->FetchSubtitles( remainderOffset / loop->objectInfo.nChannels, matches );
+				}
 			}
 		}
 	}

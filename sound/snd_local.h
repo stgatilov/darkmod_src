@@ -67,8 +67,11 @@ struct Subtitle {
 //stgatilov #2454: reference to subtitle which should be displayed now
 struct SubtitleMatch {
 	const Subtitle *subtitle;		/* subtitle to be shown */
-	const idSoundChannel *channel;	/* channel which emitted message */
-	// TODO: return ended subtitles if they did not display for long enough?
+	const idSoundSample *sample;	/* which sample? */
+	const idSoundChannel *channel;	/* which channel? */
+	const idSoundEmitter *emitter;	/* which emitter? */
+	SubtitleLevel verbosity;		/* how important is this subtitle */
+	int status;						/* temporary: used during slot assignment */
 };
 
 /*

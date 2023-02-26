@@ -918,7 +918,10 @@ int idSoundSample::FetchSubtitles( int offset, idList<SubtitleMatch> &matches ) 
 		if ( offset >= subtitles[i].offsetStart && offset < subtitles[i].offsetEnd ) {
 			SubtitleMatch m;
 			m.subtitle = &subtitles[i];
-			m.channel = nullptr;	// will be set by caller
+			m.sample = this;
+			m.verbosity = subtitlesVerbosity;
+			m.channel = nullptr;		// will be set by caller
+			m.emitter = nullptr;		// ...
 			matches.AddGrow( m );
 			cnt++;
 		}
