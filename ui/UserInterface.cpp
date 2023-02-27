@@ -753,9 +753,9 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 	}
 
 	//clear all statuses to start fresh assignment
-	enum Status {
+	enum status {
 		STATUS_ASSIGNED,
-		STATUS_VACANT,
+		STATUS_VACANT
 	};
 	for ( SubtitleMatch &m : matches )
 		m.status = STATUS_VACANT;
