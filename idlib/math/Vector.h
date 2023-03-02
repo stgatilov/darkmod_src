@@ -73,6 +73,7 @@ public:
 	float			LengthSqr( void ) const;
 	float			Normalize( void );			// returns length
 	float			NormalizeFast( void );		// returns length
+	idVec2			Normalized( void ) const;
 	idVec2 &		Truncate( float length );	// cap length
 	void			Clamp( const idVec2 &min, const idVec2 &max );
 	void			Snap( void );				// snap to closest integer value
@@ -176,6 +177,12 @@ ID_INLINE float idVec2::NormalizeFast( void ) {
 	x *= invLength;
 	y *= invLength;
 	return invLength * lengthSqr;
+}
+
+ID_INLINE idVec2 idVec2::Normalized( void ) const {
+	float sqrLength = x * x + y * y;
+	float invLength = idMath::InvSqrt( sqrLength );
+	return idVec2(x * invLength, y * invLength);
 }
 
 ID_INLINE idVec2 &idVec2::Truncate( float length ) {

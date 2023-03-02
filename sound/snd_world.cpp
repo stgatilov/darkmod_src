@@ -2120,8 +2120,15 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			destSubtitles,
 			cv_tdm_subtitles.GetInteger()
 		);
-		for ( int i = destSubtitles.Num() - subsNum; i < destSubtitles.Num(); i++ )
+		for ( int i = destSubtitles.Num() - subsNum; i < destSubtitles.Num(); i++ ) {
 			destSubtitles[i].emitter = sound;
+			destSubtitles[i].channel = chan;
+			destSubtitles[i].spatializedDirection.Zero();
+			if ( !(global || omni) )
+				destSubtitles[i].spatializedDirection = ( listenerAxis.Transpose() * ( spatializedOriginInMeters - listenerPos ) ).Normalized();
+			// TODO: formula, lower limit, dependency on sample amplitude?
+			destSubtitles[i].volume = idMath::Fmin( volume / 0.2f, 1.0f );
+		}
 
 		if ( !alIsSource( chan->openalSource ) ) {
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );

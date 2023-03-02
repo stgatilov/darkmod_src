@@ -732,27 +732,78 @@ bool idUserInterfaceLocal::ResetWindowTime(const char *windowName, int startTime
 	return true;
 }
 
+idCVar tdm_subtitles_debug(
+	"tdm_subtitles_debug", "0", CVAR_BOOL | CVAR_SOUND | CVAR_ARCHIVE,
+	"If set to 1, then internal debug information is displayed for subtitles."
+);
+
+static const char SubtitleOrientationProbeVars[5][30] = {
+	"subtitleN_oriFrontLeft",
+	"subtitleN_oriFront",
+	"subtitleN_oriFrontRight",
+	"subtitleN_oriBackRight",
+	"subtitleN_oriBackLeft",
+};
+static void ComputeSubtitleProbeValues(idVec2 dir, float values[5]) {
+	// probing directions, sorted by polar angle
+	static const idVec2 PROBES[5] = {
+		idVec2(1, 2).Normalized(),		// front-left
+		idVec2(1, 0).Normalized(),		// front
+		idVec2(1, -2).Normalized(),		// front-right
+		idVec2(-1, -1).Normalized(),	// back-right
+		idVec2(-1, 1).Normalized()		// back-left
+	};
+
+	// find closest probe direction
+	int baseIdx = 0;
+	for ( int i = 0; i < 5; i++ )
+		if ( PROBES[i] * dir > PROBES[baseIdx] * dir )
+			baseIdx = i;
+
+	// select between the next and the previous probes to get a sector
+	int nextIdx = ( baseIdx + 1 ) % 5;
+	if ( PROBES[baseIdx].Cross( dir ) * PROBES[nextIdx].Cross( dir ) > 0.0f )
+		nextIdx = ( baseIdx + 4 ) % 5;
+	// input direction is within sector between the two probes
+	assert( PROBES[baseIdx].Cross( dir ) * PROBES[nextIdx].Cross( dir ) <= 1e-5f );
+
+	// decompose input direction into linear combination of two probes
+	idMat2 matrix( PROBES[baseIdx].x, PROBES[nextIdx].x, PROBES[baseIdx].y, PROBES[nextIdx].y );
+	idVec2 coeffs = matrix.Inverse() * dir;
+	// normalize coefficients (sum of squares should be kept constant)
+	coeffs.Normalize();
+
+	// fill values
+	for ( int i = 0; i < 5; i++ ) {
+		values[i] = 0.0f;
+		if ( i == baseIdx )
+			values[i] += coeffs.x;
+		if ( i == nextIdx )
+			values[i] += coeffs.y;
+	}
+}
+
 /*
 ==============
 idUserInterfaceLocal::UpdateSubtitles
 ==============
 */
 void idUserInterfaceLocal::UpdateSubtitles() {
-	//make sure all slots for subtitles are allocated
+	// make sure all slots for subtitles are allocated
 	while ( subtitleSlots.Num() < SUBTITLE_SLOTS ) {
 		SubtitleMatch empty = { 0 };
 		subtitleSlots.Append( empty );
 	}
 
 	idList<SubtitleMatch> matches;
-	//fetch active subtitles from sound world
+	// fetch active subtitles from sound world
 	if ( cv_tdm_subtitles.GetBool() ) {
 		if ( idSoundWorld *soundWorld = soundSystem->GetPlayingSoundWorld() ) {
 			soundWorld->GetSubtitles( matches );
 		}
 	}
 
-	//clear all statuses to start fresh assignment
+	// clear all statuses to start fresh assignment
 	enum status {
 		STATUS_ASSIGNED,
 		STATUS_VACANT
@@ -773,38 +824,74 @@ void idUserInterfaceLocal::UpdateSubtitles() {
 						}
 	};
 
-	//assign subtitles in order of decreasing verbosity
+	// assign subtitles in order of decreasing verbosity
 	for ( int level = SUBL_STORY; level <= SUBL_EFFECT; level++ ) {
-		//match by: subtitle entry, sound sample, sound channel, sound emitter
+		// match by: subtitle entry, sound sample, sound channel, sound emitter
 		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.subtitle == slot.subtitle; } );
 		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.sample == slot.sample; } );
 		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.channel == slot.channel; } );
 		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level && match.emitter == slot.emitter; } );
-		//assign the rest to arbitrary places
+		// assign the rest to arbitrary places
 		SweepAndMatch( [&]( auto &match, auto &slot ) { return match.verbosity == level; } );
 	}
 
-	//clear unused slots
+	// clear unused slots
 	for ( int j = 0; j < subtitleSlots.Num(); j++ )
 		if ( subtitleSlots[j].status == STATUS_VACANT )
 			subtitleSlots[j] = SubtitleMatch{0};
-	//check if we have not enough slots to display everything
+	// check if we have not enough slots to display everything
 	int overflow = 0;
 	for ( int i = 0; i < matches.Num(); i++ )
 		if ( matches[i].status == STATUS_VACANT )
 			overflow++;
 
-	//update GUI variables
-	char textVar[] = "subtitle0";
-	char enabledVar[] = "subtitle0_nonempty";
+	// update GUI variables
+	char textVar[] = "subtitleN";
+	char enabledVar[] = "subtitleN_nonempty";
+	char debugVar[] = "subtitleN_debug";
+	char alphaVar[] = "subtitleN_alpha";
 	for ( int j = 0; j < SUBTITLE_SLOTS; j++ ) {
-		textVar[8] = enabledVar[8] = char('0' + j);
-		const char *subtitleText = "";
-		if ( const Subtitle *sub = subtitleSlots[j].subtitle )
-			subtitleText = sub->text.c_str();
-		if ( idStr::Cmp( GetStateString( textVar ), subtitleText ) ) {
-			SetStateString( textVar, subtitleText );
-			SetStateString( enabledVar, subtitleText[0] ? "1" : "0" );
+		textVar[8] = enabledVar[8] = debugVar[8] = alphaVar[8] = char('0' + j);
+		const SubtitleMatch &m = subtitleSlots[j];
+		const Subtitle *sub = m.subtitle;
+
+		// update enabled flag
+		const char *enabled = (sub ? "1" : "0");
+		if ( idStr::Cmp( GetStateString( enabledVar ), enabled ) )
+			SetStateString( enabledVar, enabled );
+		if (!sub)
+			continue;	// if disabled, other properties don't matter
+
+		// update text
+		if ( idStr::Cmp( GetStateString( textVar ), sub->text.c_str() ) )
+			SetStateString( textVar, sub->text.c_str() );
+
+		// update alpha according to volume
+		SetStateFloat( alphaVar, m.volume );
+
+		// update direction cue
+		float probeValues[5];
+		ComputeSubtitleProbeValues( idVec2( m.spatializedDirection.x, m.spatializedDirection.y ), probeValues );
+		for ( int i = 0; i < 5; i++ ) {
+			char varname[30];
+			strcpy( varname, SubtitleOrientationProbeVars[i] );
+			varname[8] = char('0' + j);
+			SetStateFloat( varname, probeValues[i] );
 		}
+
+		// update debug text
+		idStr debugMessage;
+		if ( tdm_subtitles_debug.GetBool() ) {
+			idHashFunction<const void*> hashFunc;
+			// (yeah, this is a mess, but it's OK only for debug purposes)
+			sprintf( debugMessage,
+				"[%04x %04x %04x %04x] V%5.3f (%5.2f %5.2f %5.2f) : %s '%s'",
+				hashFunc( m.emitter ) >> 16, hashFunc( m.channel ) >> 16, hashFunc( m.sample ) >> 16, hashFunc( m.subtitle ) >> 16,
+				m.volume,
+				m.spatializedDirection.x, m.spatializedDirection.y, m.spatializedDirection.z,
+				( m.verbosity == SUBL_STORY ? "story" : m.verbosity == SUBL_SPEECH ? "speech" : "effect" ), m.sample->name.c_str()
+			);
+		}
+		SetStateString( debugVar, debugMessage.c_str() );
 	}
 }

@@ -71,6 +71,8 @@ struct SubtitleMatch {
 	const idSoundChannel *channel;	/* which channel? */
 	const idSoundEmitter *emitter;	/* which emitter? */
 	SubtitleLevel verbosity;		/* how important is this subtitle */
+	idVec3 spatializedDirection;	/* direction vector in listener's local space */
+	float volume;					/* volume of sound (0..1) */
 	int status;						/* temporary: used during slot assignment */
 };
 

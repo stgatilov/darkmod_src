@@ -357,9 +357,6 @@ int idSoundChannel::GatherSubtitles( int sampleOffset44k, idList<SubtitleMatch> 
 		}
 	}
 
-	// save channel in generated matches
-	for ( int i = matches.Num() - addedNum; i < matches.Num(); i++ )
-		matches[i].channel = this;
 	return addedNum;
 }
 
