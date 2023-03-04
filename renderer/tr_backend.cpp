@@ -315,6 +315,7 @@ DepthBoundsTest
 DepthBoundsTest::DepthBoundsTest( const idScreenRect &scissorRect ) {
 	if ( !glConfig.depthBoundsTestAvailable || !r_useDepthBoundsTest.GetBool() )
 		return;
+	// note: the bounds should have been expanded for precision in R_ScreenRectFromViewFrustumBounds
 	assert( scissorRect.zmin <= scissorRect.zmax );
 	qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
 	qglDepthBoundsEXT( scissorRect.zmin, scissorRect.zmax );
