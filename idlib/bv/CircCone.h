@@ -163,9 +163,11 @@ ID_INLINE bool idCircCone::ContainsVecFast( const idVec3 &v ) const {
 
 ID_INLINE idCircCone &idCircCone::Transform( const idMat3 &rotation ) {
 	axis = rotation * axis;
+	return *this;
 }
 ID_INLINE idCircCone &idCircCone::Negate() {
 	axis = -axis;
+	return *this;
 }
 ID_INLINE idCircCone idCircCone::Negated() const {
 	return idCircCone( -axis, cosAngle, sinAngle );
