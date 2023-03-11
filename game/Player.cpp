@@ -11515,7 +11515,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 		// hide the entity.
 
 		// Obsttorte: don't do anything if we are multilooting and this is no inventory item
-		if (multiloot && target->spawnArgs.GetString("inv_name", "") == "")
+		if (multiloot && target->spawnArgs.GetString("inv_name", nullptr) == nullptr)
 		{
 			return;
 		}
