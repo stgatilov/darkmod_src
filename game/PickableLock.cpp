@@ -527,8 +527,8 @@ bool PickableLock::ProcessLockpickRepeat(int type)
 			m_FailedLockpickRounds++;
 
 			// greebo: Check if auto-pick should kick in
-			if (cv_lp_auto_pick.GetBool() && cv_lp_max_pick_attempts.GetInteger() > 0 && 
-				m_FailedLockpickRounds > cv_lp_max_pick_attempts.GetInteger())
+			if (cv_lp_auto_pick.GetBool()
+				&& m_FailedLockpickRounds >= cv_lp_max_pick_attempts.GetInteger())
 			{
 				OnLockpickPinSuccess();
 				success = true;

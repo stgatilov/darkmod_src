@@ -4532,7 +4532,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			break;
 		case 4: // Automatic
 			cv_lp_auto_pick.SetBool(true);
-			cv_lp_pick_timeout.SetInteger(500); // auto-LP is using average timeout
+			cv_lp_pick_timeout.SetInteger(300); // auto-LP is using expert timeout
 			break;
 		default:
 			gameLocal.Warning("Unknown value for lockpicking difficulty encountered!");
