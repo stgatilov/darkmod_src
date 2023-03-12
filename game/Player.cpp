@@ -11565,19 +11565,21 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target, bool al
 					}
 				}
 
-				// If attachment, such as head, get its body.
-				idEntity* body = target->IsType(idAFAttachment::Type) ?
-					static_cast<idAFAttachment*>(target)->GetBindMaster() :
-					target;
-
-				// NOTE: The body being looted might not be an idAI.
-				if (body && body->IsType(idAFEntity_Base::Type))
+				if (cv_tdm_autosearch_bodies.GetBool())
 				{
-					// Daft Mugi #6257
-					// If looted body this time, do not pick up.
-					if (cv_tdm_autosearch_bodies.GetBool()
-						&& body->AddAttachmentsToInventory(this))
-						return;
+					// If attachment, such as head, get its body.
+					idEntity* body = target->IsType(idAFAttachment::Type) ?
+						static_cast<idAFAttachment*>(target)->GetBindMaster() :
+						target;
+
+					// NOTE: The body being looted might not be an idAI.
+					if (body && body->IsType(idAFEntity_Base::Type))
+					{
+						// Daft Mugi #6257
+						// If looted body this time, do not pick up.
+						if (body->AddAttachmentsToInventory(this))
+							return;
+					}
 				}
 
 				gameLocal.m_Grabber->Update(this, false, true); // preservePosition = true #4149

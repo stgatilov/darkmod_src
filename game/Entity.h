@@ -1116,7 +1116,7 @@ public:
 	 * Daft Mugi #6257: Auto-search bodies
 	 * Returns true, if any of the items attached to the entity were added to the player's inventory.
 	 */
-	virtual bool AddAttachmentsToInventory( idPlayer* player );
+	bool AddAttachmentsToInventory( idPlayer* player );
 
 	/**
 	 * AddToInventory will add an entity to the inventory. The item is only
