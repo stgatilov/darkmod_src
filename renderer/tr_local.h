@@ -1077,7 +1077,7 @@ extern idCVar r_softShadowsRadius;
 extern idCVar r_useBumpmapLightTogglingFix;
 
 extern idCVar r_useAnonreclaimer;
-extern idCVarInt r_shadowMapSinglePass;
+extern idCVar r_shadowMapSinglePass;
 
 // stgatilov ROQ
 extern idCVar r_cinematic_legacyRoq;

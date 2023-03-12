@@ -62,7 +62,6 @@ public:
 	GLSLProgram *ambientInteractionShader;
 	GLSLProgram *stencilInteractionShader;
 	GLSLProgram *shadowMapInteractionShader;
-	GLSLProgram *multiLightInteractionShader;
 	GLSLProgram *gaussianBlurShader;
 	GLSLProgram *testImageCubeShader;
 

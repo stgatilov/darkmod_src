@@ -41,7 +41,7 @@ struct ShadowMapUniforms : GLSLUniformGroup {
 
 GLSLProgram *currrentInteractionShader; // dynamic, either pointInteractionShader or ambientInteractionShader
 
-idCVarInt r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER, "1 - render shadow maps for all lights in a single pass; 2 - also render all light interactions in a single pass" );
+idCVar r_shadowMapSinglePass( "r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_BOOL, "1 - render shadow maps for all lights in a single pass" );
 
 static void ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
@@ -332,7 +332,7 @@ void RB_GLSL_DrawLight_ShadowMap() {
 
 	GL_CheckErrors();
 
-	if ( backEnd.vLight->lightShader->LightCastsShadows() && !r_shadowMapSinglePass ) {
+	if ( backEnd.vLight->lightShader->LightCastsShadows() && !r_shadowMapSinglePass.GetBool() ) {
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalShadows, true );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localShadows );
@@ -391,11 +391,6 @@ void RB_GLSL_DrawInteractions() {
 	if ( r_shadows.GetInteger() == 2 ) 
 		if ( r_shadowMapSinglePass.GetBool() )
 			RB_ShadowMap_RenderAllLights();
-	if ( r_shadows.GetInteger() != 1 && r_shadowMapSinglePass.GetInteger() == 2 ) {
-		extern void RB_GLSL_DrawInteractions_MultiLight();
-		RB_GLSL_DrawInteractions_MultiLight();
-		return;
-	}
 
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) 

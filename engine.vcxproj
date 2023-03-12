@@ -603,7 +603,6 @@
     <ClInclude Include="renderer\AmbientOcclusionStage.h" />
     <ClInclude Include="renderer\backend\FrobOutlineStage.h" />
     <ClInclude Include="renderer\backend\GpuBuffer.h" />
-    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h" />
     <ClInclude Include="renderer\backend\ShadowMapStage.h" />
     <ClInclude Include="renderer\BloomStage.h" />
     <ClInclude Include="renderer\backend\DrawBatchExecutor.h" />
@@ -1240,7 +1239,6 @@
     <ClCompile Include="renderer\AmbientOcclusionStage.cpp" />
     <ClCompile Include="renderer\backend\FrobOutlineStage.cpp" />
     <ClCompile Include="renderer\backend\GpuBuffer.cpp" />
-    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp" />
     <ClCompile Include="renderer\backend\ShadowMapStage.cpp" />
     <ClCompile Include="renderer\BloomStage.cpp" />
     <ClCompile Include="renderer\backend\DrawBatchExecutor.cpp" />

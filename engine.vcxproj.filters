@@ -1315,9 +1315,6 @@
     <ClInclude Include="renderer\backend\ShadowMapStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\backend\ManyLightInteractionStage.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
     <ClInclude Include="tools\compilers\dmap\earcut.h">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClInclude>
@@ -3344,9 +3341,6 @@
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\ShadowMapStage.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\ManyLightInteractionStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="renderer\ParticleSystem.cpp">

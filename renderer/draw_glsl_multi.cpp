@@ -48,27 +48,21 @@ struct MultiLightShaderData { // used by both interaction and shadow map shaders
 	idList<idVec3> lightColors;
 	idList<idMat4> projectionFalloff;
 	idList<idMat3> bounds;
-	MultiLightShaderData( const drawSurf_t* surf, bool shadowPass, const drawInteraction_t* din = nullptr ) :
-		surf( surf ), shadowPass( shadowPass ), din( din ) {
+	MultiLightShaderData( const drawSurf_t* surf, const drawInteraction_t* din = nullptr ) :
+		surf( surf ), din( din ) {
 		if ( !surf->onLights )
 			return;
 		for ( auto pLight = surf->onLights; *pLight; pLight++ ) {
 			auto vLight = *pLight;
 			backEnd.vLight = vLight; // GetEffectiveLightRadius needs this
-			if ( shadowPass ) {
-				if ( vLight->shadowMapPage.width == 0 )
-					continue;
-			} else {
-				if ( vLight->singleLightOnly )
-					continue;
-			}
+			if ( vLight->shadowMapPage.width == 0 )
+				continue;
 			AddLightData();
 		}
 		backEnd.vLight = nullptr; // just in case
 	}
 private:
 	const drawSurf_t* surf;
-	bool shadowPass;
 	const drawInteraction_t* din = nullptr;
 	void AddLightData() {
 		auto vLight = backEnd.vLight;
@@ -128,41 +122,6 @@ private:
 	}
 };
 
-static void RB_DrawMultiLightInteraction( const drawInteraction_t *din ) {
-	auto surf = din->surf;
-	MultiLightShaderData data( surf, false, din );
-
-	Uniforms::Interaction *interactionUniforms = programManager->multiLightInteractionShader->GetUniformGroup<Uniforms::Interaction>();
-	interactionUniforms->SetForInteractionBasic( din );
-	interactionUniforms->minLevel.Set( backEnd.viewDef->IsLightGem() ? 0 : r_ambientMinLevel.GetFloat() );
-	interactionUniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
-
-	for ( int i = 0; i < (int)data.lightOrigins.Num(); i += MAX_LIGHTS ) {
-		int thisCount = idMath::Imin( (uint)data.lightOrigins.Num() - i, MAX_LIGHTS );
-
-		interactionUniforms->lightCount.Set( thisCount );
-		interactionUniforms->lightColor.SetArray( thisCount, data.lightColors[i].ToFloatPtr() );
-		interactionUniforms->lightProjectionFalloff.SetArray( thisCount, data.projectionFalloff[i].ToFloatPtr() );
-		interactionUniforms->shadowRect.SetArray( thisCount, data.shadowRects[i].ToFloatPtr() );
-		interactionUniforms->softShadowsRadius.SetArray( thisCount, &data.softShadowRads[i] );
-		GL_CheckErrors();
-
-		RB_DrawElementsWithCounters( surf );
-
-		if ( r_showMultiLight.GetInteger() == 1 ) {
-			backEnd.pc.c_interactions++;
-			backEnd.pc.c_interactionLights += (uint)data.lightOrigins.Num();
-			backEnd.pc.c_interactionMaxLights = idMath::Imax( backEnd.pc.c_interactionMaxLights, (uint)data.lightOrigins.Num() );
-			auto shMaps = std::count_if( data.shadowRects.begin(), data.shadowRects.end(), []( idVec4 v ) {
-				return v.z >= 0;
-			} );
-			if ( backEnd.pc.c_interactionMaxShadowMaps < (uint)shMaps )
-				backEnd.pc.c_interactionMaxShadowMaps = (uint)shMaps;
-		}
-	}
-	GL_CheckErrors();
-}
-
 static idCVarInt r_warnMultiLight( "r_warnMultiLight", "0", CVAR_RENDERER, "warns about heavy draw calls" );
 
 void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
@@ -187,7 +146,7 @@ void RB_ShadowMap_RenderAllLights( drawSurf_t *surf ) {
 		backEnd.pc.c_matrixLoads++;
 	}
 
-	MultiLightShaderData data( surf, true );
+	MultiLightShaderData data( surf );
 
 	for ( int i = 0; i < (int)data.lightOrigins.Num(); i += MAX_LIGHTS ) {
 		int thisCount = idMath::Imin( (int)data.lightOrigins.Num() - i, MAX_LIGHTS );
@@ -265,109 +224,4 @@ void RB_ShadowMap_RenderAllLights() {
 	frameBuffers->LeaveShadowMap();
 
 	GL_CheckErrors();
-}
-
-void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t *din ) {
-	// load all the shader parameters
-	GL_CheckErrors();
-
-	// set the textures
-	// texture 0 will be the per-surface bump map
-	if ( !din->bumpImage ) return;// FIXME support textureDNS
-	GL_SelectTexture( 0 );
-	din->bumpImage->Bind();
-
-	// texture 1 will be the light falloff texture
-	GL_SelectTexture( 1 );
-	//din->lightFalloffImage->Bind();
-
-	// texture 2 will be the light projection texture
-	GL_SelectTexture( 2 );
-	//din->lightImage->Bind();
-
-	// texture 3 is the per-surface diffuse map
-	GL_SelectTexture( 3 );
-	din->diffuseImage->Bind();
-
-	// texture 4 is the per-surface specular map
-	GL_SelectTexture( 4 );
-	din->specularImage->Bind();
-
-	RB_DrawMultiLightInteraction( din );
-	GL_CheckErrors();
-}
-
-idVec3 softLightSamples[8];
-
-void RB_GLSL_DrawInteractions_MultiLight() {
-	if ( !backEnd.viewDef->viewLights )
-		return;
-	GL_CheckErrors();
-	TRACE_GL_SCOPE( "GLSL_MultiLightInteractions" );
-
-	extern void RB_GLSL_GenerateShadowMaps();
-	RB_GLSL_GenerateShadowMaps();
-
-	GL_CheckErrors();
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
-
-	GL_SelectTexture( 5 );
-	globalImages->shadowAtlas->Bind();
-
-	//GL_SelectTexture( 6 );
-	//globalImages->shadowAtlasHistory->Bind();
-
-	programManager->multiLightInteractionShader->Activate();
-	Uniforms::Interaction *interactionUniforms = programManager->multiLightInteractionShader->GetUniformGroup<Uniforms::Interaction>();
-	interactionUniforms->shadowMap.Set( 5 );
-	interactionUniforms->shadowMapHistory.Set( 6 );
-	interactionUniforms->frameCount.Set( backEnd.frameCount );
-	//softLightSamples[7] = backEnd.viewDef->lightSample;
-	interactionUniforms->lightSamples.SetArray( 8, softLightSamples[0].ToFloatPtr() );
-
-	backEnd.currentSpace = NULL; // shadow map shader uses a uniform instead of qglLoadMatrixf, needs reset
-
-	for ( int i = 0; i < backEnd.viewDef->numDrawSurfs; i++ ) {
-		auto surf = backEnd.viewDef->drawSurfs[i];
-		auto material = surf->material;
-		if ( material->SuppressInSubview() || material->GetSort() < SS_OPAQUE )
-			continue;
-		if ( surf->material->GetSort() >= SS_AFTER_FOG )
-			break;
-
-		if ( surf->space != backEnd.currentSpace ) {
-			if ( GLSLProgram::GetCurrentProgram() != nullptr ) {
-				Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
-				transformUniforms->Set( surf->space );
-			}
-		}
-
-		vertexCache.VertexPosition( surf->ambientCache );
-
-		extern void RB_CreateMultiDrawInteractions( const drawSurf_t *surf );
-		RB_CreateMultiDrawInteractions( surf );
-	}
-
-	GLSLProgram::Deactivate();
-
-	GL_SelectTexture( 0 );
-
-	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		if ( backEnd.vLight->singleLightOnly ) {
-			extern void RB_GLSL_DrawInteractions_SingleLight();
-			RB_GLSL_DrawInteractions_SingleLight();
-			backEnd.pc.c_interactionSingleLights++;
-		}
-	}
-
-	// FIXME temporary experimental code
-	/*if ( backEnd.viewDef->viewEntitys && !backEnd.viewDef->isSubview ) {
-		static int lightHistoryIndex = 0;
-		softLightSamples[lightHistoryIndex] = backEnd.viewDef->lightSample;
-		FB_ToggleShadow( true );
-		globalImages->shadowAtlasHistory->Bind();
-		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, lightHistoryIndex * r_shadowMapSize, 0, 0, r_shadowMapSize * 6, r_shadowMapSize );
-		FB_ToggleShadow( false );
-		lightHistoryIndex = (lightHistoryIndex + 1) % 8;
-	}*/
 }

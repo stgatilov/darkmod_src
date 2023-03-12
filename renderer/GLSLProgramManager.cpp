@@ -71,7 +71,6 @@ void GLSLProgramManager::Shutdown() {
 	ambientInteractionShader = nullptr;
 	stencilInteractionShader = nullptr;
 	shadowMapInteractionShader = nullptr;
-	multiLightInteractionShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idHashMapDict &defines ) {
@@ -268,7 +267,6 @@ void GLSLProgramManager::Init() {
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
 	stencilInteractionShader = LoadInteractionShader( "interactionStencil", "interactionStencil", false );
 	shadowMapInteractionShader = LoadInteractionShader( "interactionShadowMaps", "interactionShadowMaps", false );
-	multiLightInteractionShader = LoadInteractionShader( "interactionMultiLight", "interactionMultiLight", false );
 	frobShader = Load( "frob" );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	toneMapShader = Load( "tonemap" );

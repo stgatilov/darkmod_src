@@ -691,7 +691,7 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 RB_SubmittInteraction
 =================
 */
-static void RB_SubmitInteraction( drawInteraction_t* din, bool multi = false ) {
+static void RB_SubmitInteraction( drawInteraction_t* din ) {
 	GL_CheckErrors();
 	if ( !din->bumpImage && !r_skipBump.GetBool() )
 		return;
@@ -705,11 +705,7 @@ static void RB_SubmitInteraction( drawInteraction_t* din, bool multi = false ) {
 		din->specularImage = globalImages->blackImage;
 	}
 
-	if ( multi ) {
-		extern void RB_GLSL_DrawInteraction_MultiLight( const drawInteraction_t * din );
-		RB_GLSL_DrawInteraction_MultiLight( din );
-	} else
-		RB_GLSL_DrawInteraction( din );
+	RB_GLSL_DrawInteraction( din );
 }
 
 /*
@@ -951,111 +947,6 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 	/*	if ( backEnd.useLightDepthBounds && backEnd.lightDepthBoundsDisabled ) {
 			GL_DepthBoundsTest( vLight->scissorRect.zmin, vLight->scissorRect.zmax );
 		}*/
-}
-
-void RB_CreateMultiDrawInteractions( const drawSurf_t *surf ) {
-	const idMaterial	*material = surf->material;
-	const float			*surfaceRegs = surf->shaderRegisters;
-	drawInteraction_t	inter;
-
-	if ( !surf->ambientCache.IsValid() ) {
-		return;
-	}
-
-	if ( r_skipInteractions.GetBool() ) {
-		return;
-	}
-
-	if ( tr.logFile ) {
-		//RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );
-	}
-
-	// change the matrix and light projection vectors if needed
-	if ( surf->space != backEnd.currentSpace ) {
-		backEnd.currentSpace = surf->space;
-
-		qglLoadMatrixf( surf->space->modelViewMatrix );
-	}
-
-	// change the scissor if needed
-	backEnd.currentScissor = surf->scissorRect;
-	qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-
-	// hack depth range if needed
-	if ( surf->space->weaponDepthHack ) {
-		RB_EnterWeaponDepthHack();
-	}
-
-	if ( surf->space->modelDepthHack ) {
-		RB_EnterModelDepthHack( surf->space->modelDepthHack );
-	}
-	inter.surf = surf;
-
-	inter.bumpImage = NULL;
-	inter.specularImage = NULL;
-	inter.diffuseImage = NULL;
-	inter.diffuseColor[0] = inter.diffuseColor[1] = inter.diffuseColor[2] = inter.diffuseColor[3] = 0;
-	inter.specularColor[0] = inter.specularColor[1] = inter.specularColor[2] = inter.specularColor[3] = 0;
-
-	// go through the individual stages
-	for ( int surfaceStageNum = 0; surfaceStageNum < material->GetNumStages(); surfaceStageNum++ ) {
-		const shaderStage_t	*surfaceStage = material->GetStage( surfaceStageNum );
-
-		switch ( surfaceStage->lighting ) {
-		case SL_AMBIENT: {
-			// ignore ambient stages while drawing interactions
-			break;
-		}
-		case SL_BUMP: {
-			// ignore stage that fails the condition
-			if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
-				break;
-			}
-			// draw any previous interaction
-			RB_SubmitInteraction( &inter, true );
-			inter.diffuseImage = NULL;
-			inter.specularImage = NULL;
-			R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
-			break;
-		}
-		case SL_DIFFUSE: {
-			// ignore stage that fails the condition
-			if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
-				break;
-			} else if ( inter.diffuseImage ) {
-				RB_SubmitInteraction( &inter, true );
-			}
-			R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
-				inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
-			inter.vertexColor = surfaceStage->vertexColor;
-			break;
-		}
-		case SL_SPECULAR: {
-			// ignore stage that fails the condition
-			if ( !surfaceRegs[surfaceStage->conditionRegister] ) {
-				break;
-			}
-			else if ( inter.specularImage ) {
-				RB_SubmitInteraction( &inter, true );
-			}
-			R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
-				inter.specularMatrix, inter.specularColor.ToFloatPtr() );
-			inter.vertexColor = surfaceStage->vertexColor;
-			break;
-		}
-		}
-	}
-
-	// draw the final interaction
-	RB_SubmitInteraction( &inter, true );
-
-	// unhack depth range if needed
-	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
-		RB_LeaveDepthHack();
-	}
 }
 
 /*

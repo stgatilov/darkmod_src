@@ -40,7 +40,6 @@ namespace {
 RenderBackend::RenderBackend() 
 	: depthStage( &drawBatchExecutor ),
 	  interactionStage( &drawBatchExecutor ),
-	  manyLightStage( &drawBatchExecutor ),
 	  stencilShadowStage( &drawBatchExecutor ),
 	  shadowMapStage( &drawBatchExecutor )
 {}
@@ -51,7 +50,6 @@ void RenderBackend::Init() {
 	drawBatchExecutor.Init();
 	depthStage.Init();
 	interactionStage.Init();
-	//manyLightStage.Init();
 	stencilShadowStage.Init();
 	shadowMapStage.Init();
 	frobOutlineStage.Init();
@@ -73,7 +71,6 @@ void RenderBackend::Shutdown() {
 	frobOutlineStage.Shutdown();
 	shadowMapStage.Shutdown();
 	stencilShadowStage.Shutdown();
-	manyLightStage.Shutdown();
 	interactionStage.Shutdown();
 	depthStage.Shutdown();
 	drawBatchExecutor.Destroy();
@@ -186,7 +183,7 @@ void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
 
 	TRACE_GL_SCOPE( "DrawLight_ShadowMap" );
 
-	if ( !r_shadowMapSinglePass && ( vLight->globalShadows || vLight->localShadows ) ) {
+	if ( !r_shadowMapSinglePass.GetBool() && ( vLight->globalShadows || vLight->localShadows ) ) {
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalShadows, true );
 		interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->localShadows, false );
@@ -265,20 +262,9 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 		}
 	}
 
-	bool useManyLightStage = r_shadowMapSinglePass.GetInteger() == 2 && r_shadows.GetInteger() != 1 && glConfig.maxTextureUnits >= 32;
-
-	if ( useManyLightStage ) {
-		manyLightStage.DrawInteractions( viewDef );
-	}
-
 	// for each light, perform adding and shadowing
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
 		if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() ) {
-			continue;
-		}
-
-		if ( useManyLightStage && (vLight->shadows == LS_MAPS || vLight->shadows == LS_NONE || vLight->noShadows || vLight->lightShader->IsAmbientLight() ) ) {
-			// already handled in the many light stage
 			continue;
 		}
 
