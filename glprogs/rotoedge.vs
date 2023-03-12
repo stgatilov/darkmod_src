@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_transform.glsl"
 
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 out vec4 var_tc0;
 uniform vec4 u_localParam0;
 

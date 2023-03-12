@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #version 330
 
 #pragma tdm_include "tdm_transform.glsl"
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 
 out vec4 worldPosition;
 

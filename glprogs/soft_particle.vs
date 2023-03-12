@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma tdm_include "tdm_transform.glsl"
 
 in vec4 attr_Color;
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 in vec4 attr_TexCoord;
 out vec4 var_color;
 out vec4 var_tc0;

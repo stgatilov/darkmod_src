@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 in vec3 attr_Normal;
 in vec4 attr_TexCoord;
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 
 out vec2 var_TexCoord;
 

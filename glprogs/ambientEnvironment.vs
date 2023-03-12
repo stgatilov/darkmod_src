@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 in vec3 attr_Bitangent;
 in vec3 attr_Normal;
 in vec3 attr_Tangent;
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 in vec4 attr_TexCoord;
 out vec4 var_tc0;
 out vec4 var_tc1;

@@ -22,7 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 in vec4 attr_TexCoord;
 in vec3 attr_Tangent;
 in vec3 attr_Bitangent;

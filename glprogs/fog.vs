@@ -16,7 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_transform.glsl"
 
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 
 uniform vec4 u_tex0PlaneS;
 uniform vec4 u_tex1PlaneT;

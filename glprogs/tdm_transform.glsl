@@ -26,5 +26,3 @@ uniform mat4 u_modelViewMatrix;
 vec4 tdm_transform(vec4 position) {
 	return objectPosToClip(position, u_modelViewMatrix, u_projectionMatrix);
 }
-
-#define INATTR_POSITION in vec4 attr_Position;

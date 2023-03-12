@@ -20,7 +20,7 @@ in vec3 attr_Bitangent;
 in vec3 attr_Normal;
 in vec3 attr_Tangent;
 in vec4 attr_Color;
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 in vec2 attr_TexCoord;
 
 out vec2 var_uvNormal;

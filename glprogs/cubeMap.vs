@@ -16,7 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_transform.glsl"
 
-INATTR_POSITION  //in vec4 attr_Position;
+in vec4 attr_Position;
 in vec3 attr_TexCoord;
 in vec3 attr_Tangent;     
 in vec3 attr_Bitangent;     
