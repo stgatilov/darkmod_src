@@ -11339,6 +11339,30 @@ void idEntity::Event_AddItemToInv(idEntity* ent)
 	ent->AddToInventory(this);
 }
 
+bool idEntity::AddAttachmentsToInventory( idPlayer* player )
+{
+	// NOTE: m_Attachments might not include a key, purse, or other item attached
+	// using "bind" or "bindToJoint", so iterate through children instead.
+
+	if (GetBindMaster() != NULL) {
+		// Not a BindMaster, so don't iterate through its children.
+		// No items can be added to the player's inventory.
+		return false;
+	}
+
+	bool didAddItem = false;
+
+	idList<idEntity *> children;
+	GetTeamChildren(&children);
+	for (int i = 0 ; i < children.Num() ; i++) {
+		idEntity* child = children[i];
+		if (child && player->AddToInventory(child))
+			didAddItem = true;
+	}
+
+	return didAddItem;
+}
+
 CInventoryItemPtr idEntity::AddToInventory(idEntity *ent)
 {
 	// Sanity check

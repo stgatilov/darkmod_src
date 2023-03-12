@@ -218,6 +218,9 @@ extern idCVar cv_ai_search_type; // grayman #4220 - control type of search
 extern idCVar cv_force_savegame_load;
 extern idCVar cv_savegame_compress;
 
+// Daft Mugi #6257: Auto-search bodies
+extern idCVar cv_tdm_autosearch_bodies;
+
 // angua: TDM toggle crouch
 extern idCVar cv_tdm_crouch_toggle;
 extern idCVar cv_tdm_crouch_toggle_hold_time;
