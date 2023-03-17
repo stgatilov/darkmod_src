@@ -14,24 +14,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 
-uniform ViewParamsBlock {
-	uniform mat4 u_projectionMatrix;
-};
+#pragma tdm_include "tdm_utils.glsl"
 
-#pragma tdm_define "MAX_SHADER_PARAMS"
-
-struct PerDrawCallParams {
-	mat4 modelViewMatrix;
-	vec4 localLightOrigin;
-};
-
-layout (std140) uniform PerDrawCallParamsBlock {
-	PerDrawCallParams params[MAX_SHADER_PARAMS];
-};
+uniform mat4 u_projectionMatrix;
+uniform mat4 u_modelViewMatrix;
+uniform vec4 u_localLightOrigin;
 
 in vec4 attr_Position;
 in vec4 attr_Color;
-in int attr_DrawId;
 
 out vec4 var_Color;
   
@@ -39,10 +29,9 @@ void main( void ) {
 	vec4 projectedPosition = attr_Position;
 	if( attr_Position.w != 1.0 ) {
 		// project vertex position to infinity
-		projectedPosition -= params[attr_DrawId].localLightOrigin;
+		projectedPosition -= u_localLightOrigin;
 	}
-
-	gl_Position = u_projectionMatrix * (params[attr_DrawId].modelViewMatrix * projectedPosition);
+	gl_Position = objectPosToClip(projectedPosition, u_modelViewMatrix, u_projectionMatrix);
 
 	// primary color
 	var_Color = attr_Color; 

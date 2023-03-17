@@ -16,35 +16,35 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 
 #include "StencilShadowStage.h"
-#include "DrawBatchExecutor.h"
 #include "../FrameBuffer.h"
 #include "../FrameBufferManager.h"
 #include "../GLSLProgram.h"
 #include "../GLSLProgramManager.h"
+#include "../GLSLUniforms.h"
 
-struct StencilShadowStage::ShaderParams {
-	idMat4 modelViewMatrix;
-	idVec4 localLightOrigin;
+struct StencilShadowStage::Uniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( Uniforms )
+
+	DEFINE_UNIFORM( mat4, modelViewMatrix )
+	DEFINE_UNIFORM( mat4, projectionMatrix )
+	DEFINE_UNIFORM( vec4, localLightOrigin )
 };
 
-StencilShadowStage::StencilShadowStage( DrawBatchExecutor *drawBatchExecutor ) {
-	this->drawBatchExecutor = drawBatchExecutor;
-}
+StencilShadowStage::StencilShadowStage() {}
 
 void StencilShadowStage::Init() {
-	idHashMapDict defines;
-	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt("%d", drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>()) );
-	stencilShadowShader = programManager->LoadFromFiles( "stencil_shadow", 
+	stencilShadowShader = programManager->LoadFromFiles(
+		"stencil_shadow",
 		"stages/stencil/stencil_shadow.vert.glsl",
-		"stages/stencil/stencil_shadow.frag.glsl",
-		defines );
+		"stages/stencil/stencil_shadow.frag.glsl"
+	);
 }
 
 void StencilShadowStage::Shutdown() {
 	ShutdownMipmaps();
 }
 
-void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
+void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
 	if ( !shadowSurfs || !r_shadows.GetInteger() ) {
 		return;
 	}
@@ -59,11 +59,14 @@ void StencilShadowStage::DrawStencilShadows( viewLight_t *vLight, const drawSurf
 
 	GL_Cull( CT_TWO_SIDED );
 	stencilShadowShader->Activate();
+	uniforms = stencilShadowShader->GetUniformGroup<Uniforms>();
+
+	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
 
 	idList<const drawSurf_t*> depthFailSurfs;
 	idList<const drawSurf_t*> depthPassSurfs;
 	for (const drawSurf_t *surf = shadowSurfs; surf; surf = surf->nextOnLight) {
-		if (!surf->shadowCache.IsValid()) {
+		if ( !surf->shadowCache.IsValid() ) {
 			continue;
 		}
 
@@ -101,42 +104,29 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 		return;
 	}
 
-	DrawBatch<ShaderParams> drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
-	uint paramsIdx = 0;
-
 	backEnd.currentScissor = backEnd.vLight->scissorRect;
 	FB_ApplyScissor();
 	DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
 
-	const drawSurf_t *curBatchCaches = surfs[0];
 	for (size_t i = 0; i < count; ++i) {
 		const drawSurf_t *surf = surfs[i];
 
-		if (paramsIdx == drawBatch.maxBatchSize
-				|| (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect))
-				|| surf->shadowCache.isStatic != curBatchCaches->shadowCache.isStatic
-				|| surf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
-			drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
-			drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
-			paramsIdx = 0;
+		// note: already checked for validity in parent scope
+		vertexCache.VertexPosition( surf->shadowCache, ATTRIB_SHADOW );
+
+		if (r_useScissor.GetBool() && !backEnd.currentScissor.Equals(surf->scissorRect)) {
+			backEnd.currentScissor = surf->scissorRect;
+			FB_ApplyScissor();
 		}
+		depthBoundsTest.Update( surf->scissorRect );
 
-		backEnd.currentScissor = surf->scissorRect;
-		FB_ApplyScissor();
-		// stgatilov: this is preferable to take effect on this surface
-		// but it's too messy to do it properly with batching
-		//depthBoundsTest.Update( surf->scissorRect );
+		uniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
+		idVec3 localLightOrigin;
+		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLightOrigin );
+		uniforms->localLightOrigin.Set( idVec4( localLightOrigin, 0.0f ) );
 
-		ShaderParams &params = drawBatch.shaderParams[paramsIdx];
-		memcpy( params.modelViewMatrix.ToFloatPtr(), surf->space->modelViewMatrix, sizeof(idMat4) );
-		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, params.localLightOrigin.ToVec3() );
-		params.localLightOrigin.w = 0.0f;
-		drawBatch.surfs[paramsIdx] = surf;
-		++paramsIdx;
-		curBatchCaches = surf;
+		RB_DrawElementsWithCounters( surf );
 	}
-
-	drawBatchExecutor->ExecuteShadowVertBatch( paramsIdx );
 }
 
 //=======================================================================================

@@ -39,7 +39,6 @@ namespace {
 
 RenderBackend::RenderBackend() 
 	: interactionStage( &drawBatchExecutor ),
-	  stencilShadowStage( &drawBatchExecutor ),
 	  shadowMapStage( &drawBatchExecutor )
 {}
 
@@ -214,7 +213,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	}
 
 	if ( vLight->globalShadows ) {
-		stencilShadowStage.DrawStencilShadows( vLight, vLight->globalShadows );
+		stencilShadowStage.DrawStencilShadows( viewDef, vLight, vLight->globalShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 ) {
 			backEnd.currentScissor = vLight->scissorRect;
 			FB_ApplyScissor();
@@ -232,7 +231,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	}
 
 	if ( vLight->localShadows ) {
-		stencilShadowStage.DrawStencilShadows( vLight, vLight->localShadows );
+		stencilShadowStage.DrawStencilShadows( viewDef, vLight, vLight->localShadows );
 		if ( useShadowFbo && r_multiSamples.GetInteger() > 1 ) {
 			backEnd.currentScissor = vLight->scissorRect;
 			FB_ApplyScissor();
