@@ -104,11 +104,6 @@ bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {
         return false;
     }
 
-	// translucent surfaces are not supported for shadows
-    if ( shader->Coverage() == MC_TRANSLUCENT ) {
-        //return false;
-    }
-
     if ( !surf->ambientCache.IsValid() || !surf->indexCache.IsValid() ) {
         #ifdef _DEBUG
         common->Printf( "ShadowMapStage: missing vertex or index cache\n" );
@@ -116,19 +111,6 @@ bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {
         return false;
     }
 
-    // get the expressions for conditionals / color / texcoords
-    const float *regs = surf->shaderRegisters;
-
-    // if all stages of a material have been conditioned off, don't do anything
-    /*int stage;
-    for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
-        const shaderStage_t *pStage = shader->GetStage( stage );
-        // check the stage enable condition
-        if ( regs[ pStage->conditionRegister ] != 0 ) {
-            break;
-        }
-    }
-    return stage != shader->GetNumStages();*/
 	return true;
 }
 
@@ -144,34 +126,10 @@ void ShadowMapStage::DrawLightInteractions( const drawSurf_t *surfs ) {
 }
 
 void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
-	/*if ( surf->space->weaponDepthHack ) {
-		// this is a state change, need to finish any previous calls
-		ExecuteDrawCalls();
-		RB_EnterWeaponDepthHack();
-	}*/
-
 	const idMaterial *shader = surf->material;
 	vertexCache.VertexPosition( surf->ambientCache );
 
-	/*if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		// this is a state change, need to finish any previous calls
-		ExecuteDrawCalls();
-		qglEnable( GL_POLYGON_OFFSET_FILL );
-		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
-	}*/
-
 	CreateDrawCommands( surf );
-
-	// reset polygon offset
-	/*if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		ExecuteDrawCalls();
-		qglDisable( GL_POLYGON_OFFSET_FILL );
-	}*/
-
-/*	if ( surf->space->weaponDepthHack ) {
-		ExecuteDrawCalls();
-		RB_LeaveDepthHack();
-	}*/
 }
 
 void ShadowMapStage::CreateDrawCommands( const drawSurf_t *surf ) {
