@@ -14,6 +14,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma once
 
+#include "../tr_local.h"
+
 class DepthStage
 {
 public:

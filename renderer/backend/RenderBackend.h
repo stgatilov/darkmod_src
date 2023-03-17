@@ -13,7 +13,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma once
-#include "DrawBatchExecutor.h"
+
 #include "DepthStage.h"
 #include "FrobOutlineStage.h"
 #include "InteractionStage.h"
@@ -38,7 +38,6 @@ public:
 	void EndFrame();
 
 private:
-	DrawBatchExecutor drawBatchExecutor;
 	DepthStage depthStage;
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;

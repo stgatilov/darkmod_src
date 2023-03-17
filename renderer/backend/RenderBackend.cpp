@@ -42,7 +42,6 @@ RenderBackend::RenderBackend() {}
 void RenderBackend::Init() {
 	initialized = true;
 
-	drawBatchExecutor.Init();
 	depthStage.Init();
 	interactionStage.Init();
 	stencilShadowStage.Init();
@@ -68,7 +67,6 @@ void RenderBackend::Shutdown() {
 	stencilShadowStage.Shutdown();
 	interactionStage.Shutdown();
 	depthStage.Shutdown();
-	drawBatchExecutor.Destroy();
 }
 
 void RenderBackend::DrawView( const viewDef_t *viewDef ) {
@@ -169,9 +167,7 @@ void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData )
 	frameBuffers->currentRenderFbo = renderFbo;
 }
 
-void RenderBackend::EndFrame() {
-	drawBatchExecutor.EndFrame();
-}
+void RenderBackend::EndFrame() {}
 
 void RenderBackend::DrawInteractionsWithShadowMapping( const viewDef_t *viewDef, viewLight_t *vLight ) {
 	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );

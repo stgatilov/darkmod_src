@@ -13,6 +13,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma once
+
 class FrameBuffer;
 
 class FrobOutlineStage {

@@ -23,7 +23,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../FrameBuffer.h"
 #include "../FrameBufferManager.h"
 #include "../AmbientOcclusionStage.h"
-#include "DrawBatchExecutor.h"
 
 struct InteractionStage::Uniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( Uniforms )

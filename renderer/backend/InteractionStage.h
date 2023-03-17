@@ -13,8 +13,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #pragma once
+
 #include "../tr_local.h"
-#include "DrawBatchExecutor.h"
 
 class GLSLProgram;
 class TiledCustomMipmapStage;

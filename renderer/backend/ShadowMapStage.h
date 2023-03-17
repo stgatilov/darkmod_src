@@ -14,7 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma once
 
-#include "DrawBatchExecutor.h"
+#include "../tr_local.h"
 
 class ShadowMapStage
 {
