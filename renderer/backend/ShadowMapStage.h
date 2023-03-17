@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 class ShadowMapStage
 {
 public:
-	ShadowMapStage( DrawBatchExecutor *drawBatchExecutor );
+	ShadowMapStage();
 
 	void Init();
 	void Shutdown();
@@ -27,13 +27,10 @@ public:
 	void DrawShadowMap( const viewDef_t *viewDef );
 
 private:
-	struct ShaderParams;
-
-	DrawBatchExecutor *drawBatchExecutor;
 	GLSLProgram *shadowMapShader = nullptr;
 
-	uint currentIndex = 0;
-	DrawBatch<ShaderParams> drawBatch;
+	struct Uniforms;
+	Uniforms *uniforms = nullptr;
 
 	float GetEffectiveLightRadius( viewLight_t *vLight );
 	bool ShouldDrawSurf( const drawSurf_t *surf ) const;
@@ -43,7 +40,4 @@ private:
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );
 
 	void FallbackPathForIntel( const viewDef_t *viewDef );
-
-	void BeginDrawBatch();
-	void ExecuteDrawCalls();
 };

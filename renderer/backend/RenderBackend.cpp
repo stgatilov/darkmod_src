@@ -38,8 +38,7 @@ namespace {
 }
 
 RenderBackend::RenderBackend() 
-	: interactionStage( &drawBatchExecutor ),
-	  shadowMapStage( &drawBatchExecutor )
+	: interactionStage( &drawBatchExecutor )
 {}
 
 void RenderBackend::Init() {

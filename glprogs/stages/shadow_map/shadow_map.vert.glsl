@@ -13,16 +13,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #version 330 core
-#pragma tdm_define "MAX_SHADER_PARAMS"
 
-struct PerDrawCallParams {
-	mat4 modelMatrix;
-};
-
-layout (std140) uniform PerDrawCallParamsBlock {
-	PerDrawCallParams params[MAX_SHADER_PARAMS];
-};
-
+uniform mat4 u_modelMatrix;
 uniform vec4 u_lightOrigin;
 uniform float u_maxLightDistance;
 
@@ -76,7 +68,7 @@ const vec4 ClipPlanes[4] = vec4[4] (
 
 void main() {
     texCoord = (attr_TexCoord).st;
-    vec4 lightSpacePos = params[attr_DrawId].modelMatrix * attr_Position - u_lightOrigin;
+    vec4 lightSpacePos = u_modelMatrix * attr_Position - u_lightOrigin;
     vec4 fragPos = vec4(cubicTransformations[gl_InstanceID] * lightSpacePos.xyz, 1);
     gl_Position.x = fragPos.x / 6 + fragPos.z * 5/6 - fragPos.z / 3 * gl_InstanceID;
     gl_Position.y = fragPos.y;

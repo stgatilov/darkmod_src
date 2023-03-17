@@ -21,26 +21,17 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 
-namespace {
-	struct ShadowMapUniforms : GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( ShadowMapUniforms )
-		DEFINE_UNIFORM( vec4, lightOrigin )
-		DEFINE_UNIFORM( float, maxLightDistance )
-	};
-}
-
-struct ShadowMapStage::ShaderParams {
-	idMat4 modelMatrix;
+struct ShadowMapStage::Uniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( ShadowMapStage::Uniforms )
+	DEFINE_UNIFORM( mat4, modelMatrix )
+	DEFINE_UNIFORM( vec4, lightOrigin )
+	DEFINE_UNIFORM( float, maxLightDistance )
 };
 
-ShadowMapStage::ShadowMapStage( DrawBatchExecutor *drawBatchExecutor ) : drawBatchExecutor( drawBatchExecutor ) {
-}
+ShadowMapStage::ShadowMapStage() {}
 
 void ShadowMapStage::Init() {
-	const uint maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
-	idHashMapDict defines;
-	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
-	shadowMapShader = programManager->LoadFromFiles( "shadow_map", "stages/shadow_map/shadow_map.vert.glsl", defines );
+	shadowMapShader = programManager->LoadFromFiles( "shadow_map", "stages/shadow_map/shadow_map.vert.glsl" );
 }
 
 void ShadowMapStage::Shutdown() {}
@@ -67,7 +58,7 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		qglEnable( GL_CLIP_DISTANCE0 + i );
 	}
 
-	ShadowMapUniforms *shadowMapUniforms = shadowMapShader->GetUniformGroup<ShadowMapUniforms>();
+	uniforms = shadowMapShader->GetUniformGroup<Uniforms>();
 
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
 		if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapPage.width == 0 ) {
@@ -78,8 +69,8 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		lightOrigin.y = vLight->globalLightOrigin.y;
 		lightOrigin.z = vLight->globalLightOrigin.z;
 		lightOrigin.w = 0;
-		shadowMapUniforms->lightOrigin.Set( lightOrigin );
-		shadowMapUniforms->maxLightDistance.Set( vLight->maxLightDistance );
+		uniforms->lightOrigin.Set( lightOrigin );
+		uniforms->maxLightDistance.Set( vLight->maxLightDistance );
 
 		const renderCrop_t &page = vLight->shadowMapPage;
 		qglViewport( page.x, page.y, 6*page.width, page.width );
@@ -87,7 +78,6 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 			qglScissor( page.x, page.y, 6*page.width, page.width );
 		}
 		qglClear( GL_DEPTH_BUFFER_BIT );
-		BeginDrawBatch();
 		DrawLightInteractions( vLight->globalShadows );
 		DrawLightInteractions( vLight->localShadows );
 	}
@@ -148,13 +138,9 @@ void ShadowMapStage::DrawLightInteractions( const drawSurf_t *surfs ) {
 		if ( !ShouldDrawSurf( surf ) ) {
 			continue;
 		}
-		if ( surf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic || surf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
-			ExecuteDrawCalls();
-		}
 		curBatchCaches = surf;
 		DrawSurf( surf );
 	}
-	ExecuteDrawCalls();
 }
 
 void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
@@ -165,6 +151,7 @@ void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
 	}*/
 
 	const idMaterial *shader = surf->material;
+	vertexCache.VertexPosition( surf->ambientCache );
 
 	/*if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
 		// this is a state change, need to finish any previous calls
@@ -241,14 +228,11 @@ void ShadowMapStage::CreateDrawCommands( const drawSurf_t *surf ) {
 }
 
 void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage ) {
-	if( stage && !stage->texture.image->IsBound( 0 ) ) {
-		ExecuteDrawCalls();
+	if( stage ) {
 		stage->texture.image->Bind();
 	}
 
-	ShaderParams &params = drawBatch.shaderParams[currentIndex];
-
-	memcpy( params.modelMatrix.ToFloatPtr(), surf->space->modelMatrix, sizeof(idMat4) );
+	uniforms->modelMatrix.Set( surf->space->modelMatrix );
 
 	if( stage ) {
 		// set the alpha modulate
@@ -261,25 +245,7 @@ void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage
 		//}
 	}
 
-	drawBatch.surfs[currentIndex] = surf;
-	++currentIndex;
-	if ( currentIndex == drawBatch.maxBatchSize ) {
-		ExecuteDrawCalls();
-	}
-}
-
-void ShadowMapStage::BeginDrawBatch() {
-	currentIndex = 0;
-	drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
-}
-
-void ShadowMapStage::ExecuteDrawCalls() {
-	if (currentIndex == 0) {
-		return;
-	}
-
-	drawBatchExecutor->ExecuteDrawVertBatch(currentIndex, 6);
-	BeginDrawBatch();
+	RB_DrawElementsInstanced( surf, 6 );
 }
 
 void ShadowMapStage::FallbackPathForIntel( const viewDef_t *viewDef ) {

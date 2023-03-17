@@ -26,5 +26,4 @@ void main() {
 		if (tex.a <= u_alphaTest)
 			discard;
 	}
-//	gl_FragColor = u_color;
 }
