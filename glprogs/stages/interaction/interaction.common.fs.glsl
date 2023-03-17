@@ -17,10 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // Excludes: shadows
 
 #pragma tdm_include "tdm_lightproject.glsl"
-#pragma tdm_include "stages/interaction/interaction.params.glsl"
 #pragma tdm_include "tdm_interaction.glsl"
 
-flat in int var_DrawId;
 in vec2 var_TexDiffuse;
 in vec2 var_TexNormal;
 in vec2 var_TexSpecular;
@@ -43,23 +41,33 @@ uniform bool u_shadows;
 uniform int u_softShadowsQuality;
 uniform float u_softShadowsRadius;
 
+uniform mat4 u_modelViewMatrix;
+uniform mat4 u_modelMatrix;
+uniform mat4 u_projectionMatrix;
+uniform vec4 u_lightTextureMatrix[2];
+uniform vec4 u_diffuseColor;
+uniform vec4 u_specularColor;
+uniform vec4 u_hasTextureDNS;
+uniform int u_useBumpmapLightTogglingFix;
+uniform float u_RGTC;
+
 
 vec3 computeInteraction(out InteractionGeometry props) {
 	vec3 lightColor;
 	if (u_cubic)
 		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
-		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
+		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
 
-	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, params[var_DrawId].hasTextureDNS[1] != 0.0, u_normalTexture, params[var_DrawId].RGTC != 0.0);
+	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, u_hasTextureDNS[1] != 0.0, u_normalTexture, u_RGTC != 0.0);
 	props = computeInteractionGeometry(var_LightDirLocal, var_ViewDirLocal, localNormal);
 
 	vec3 interactionColor = computeAdvancedInteraction(
 		props,
-		u_diffuseTexture, params[var_DrawId].diffuseColor.rgb, var_TexDiffuse,
-		u_specularTexture, params[var_DrawId].specularColor.rgb, var_TexSpecular,
+		u_diffuseTexture, u_diffuseColor.rgb, var_TexDiffuse,
+		u_specularTexture, u_specularColor.rgb, var_TexSpecular,
 		var_Color.rgb,
-		params[var_DrawId].useBumpmapLightTogglingFix != 0
+		u_useBumpmapLightTogglingFix != 0
 	);
 
 	return interactionColor * lightColor;

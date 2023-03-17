@@ -50,7 +50,7 @@ private:
 	int currentLightgemPbo = 0;
 	bool initialized = false;
 
-	void DrawInteractionsWithShadowMapping( viewLight_t *vLight );
+	void DrawInteractionsWithShadowMapping( const viewDef_t *viewDef, viewLight_t *vLight );
 	void DrawInteractionsWithStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight );
 	void DrawShadowsAndInteractions( const viewDef_t *viewDef );
 };

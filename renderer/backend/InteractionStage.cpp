@@ -25,85 +25,77 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../AmbientOcclusionStage.h"
 #include "DrawBatchExecutor.h"
 
-// NOTE: must match struct in shader, beware of std140 layout requirements and alignment!
-struct InteractionStage::ShaderParams {
-	idMat4 modelMatrix;
-	idMat4 modelViewMatrix;
-	idVec4 bumpMatrix[2];
-	idVec4 diffuseMatrix[2];
-	idVec4 specularMatrix[2];
-	idMat4 lightProjectionFalloff;
-	idVec4 lightTextureMatrix[2];
-	idVec4 colorModulate;
-	idVec4 colorAdd;
-	idVec4 diffuseColor;
-	idVec4 specularColor;
-	idVec4 hasTextureDNS;
-	int useBumpmapLightTogglingFix;
-	float RGTC;
-	idVec2 padding_2;
+struct InteractionStage::Uniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( Uniforms )
+
+	DEFINE_UNIFORM( sampler, normalTexture )
+	DEFINE_UNIFORM( sampler, diffuseTexture )
+	DEFINE_UNIFORM( sampler, specularTexture )
+	DEFINE_UNIFORM( sampler, lightProjectionTexture )
+	DEFINE_UNIFORM( sampler, lightProjectionCubemap )
+	DEFINE_UNIFORM( sampler, lightFalloffTexture )
+	DEFINE_UNIFORM( int, useNormalIndexedDiffuse )
+	DEFINE_UNIFORM( int, useNormalIndexedSpecular )
+	DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
+	DEFINE_UNIFORM( sampler, lightSpecularCubemap )
+	DEFINE_UNIFORM( sampler, ssaoTexture )
+	DEFINE_UNIFORM( vec3, globalViewOrigin )
+	DEFINE_UNIFORM( vec3, globalLightOrigin )
+
+	DEFINE_UNIFORM( int, cubic )
+	DEFINE_UNIFORM( float, gamma )
+	DEFINE_UNIFORM( float, minLevel )
+	DEFINE_UNIFORM( int, ssaoEnabled )
+	DEFINE_UNIFORM( vec2, renderResolution )
+
+	DEFINE_UNIFORM( int, shadows )
+	DEFINE_UNIFORM( int, softShadowsQuality )
+	DEFINE_UNIFORM( float, softShadowsRadius )
+	DEFINE_UNIFORM( vec4, shadowRect )
+	DEFINE_UNIFORM( int, shadowMapCullFront )
+	DEFINE_UNIFORM( sampler, stencilTexture )
+	DEFINE_UNIFORM( sampler, depthTexture )
+	DEFINE_UNIFORM( sampler, shadowMap )
+	DEFINE_UNIFORM( ivec2, stencilMipmapsLevel )
+	DEFINE_UNIFORM( vec4, stencilMipmapsScissor )
+	DEFINE_UNIFORM( sampler, stencilMipmapsTexture )
+
+	DEFINE_UNIFORM( mat4, modelMatrix )
+	DEFINE_UNIFORM( mat4, modelViewMatrix )
+	DEFINE_UNIFORM( mat4, projectionMatrix )
+	DEFINE_UNIFORM( vec4, bumpMatrix/*[2]*/ )
+	DEFINE_UNIFORM( vec4, diffuseMatrix/*[2]*/ )
+	DEFINE_UNIFORM( vec4, specularMatrix/*[2]*/ )
+	DEFINE_UNIFORM( mat4, lightProjectionFalloff )
+	DEFINE_UNIFORM( vec4, lightTextureMatrix/*[2]*/ )
+	DEFINE_UNIFORM( vec4, colorModulate )
+	DEFINE_UNIFORM( vec4, colorAdd )
+	DEFINE_UNIFORM( vec4, diffuseColor )
+	DEFINE_UNIFORM( vec4, specularColor )
+	DEFINE_UNIFORM( vec4, hasTextureDNS )
+	DEFINE_UNIFORM( int, useBumpmapLightTogglingFix )
+	DEFINE_UNIFORM( float, RGTC )
 };
 
-namespace {
-	struct InteractionUniforms: GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( InteractionUniforms )
-
-		DEFINE_UNIFORM( sampler, normalTexture )
-		DEFINE_UNIFORM( sampler, diffuseTexture )
-		DEFINE_UNIFORM( sampler, specularTexture )
-		DEFINE_UNIFORM( sampler, lightProjectionTexture )
-		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
-		DEFINE_UNIFORM( sampler, lightFalloffTexture )
-		DEFINE_UNIFORM( int, useNormalIndexedDiffuse )
-		DEFINE_UNIFORM( int, useNormalIndexedSpecular )
-		DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
-		DEFINE_UNIFORM( sampler, lightSpecularCubemap )
-		DEFINE_UNIFORM( sampler, ssaoTexture )
-		DEFINE_UNIFORM( vec3, globalViewOrigin )
-		DEFINE_UNIFORM( vec3, globalLightOrigin )
-
-		DEFINE_UNIFORM( int, cubic )
-		DEFINE_UNIFORM( float, gamma )
-		DEFINE_UNIFORM( float, minLevel )
-		DEFINE_UNIFORM( int, ssaoEnabled )
-		DEFINE_UNIFORM( vec2, renderResolution )
-
-		DEFINE_UNIFORM( int, shadows )
-		DEFINE_UNIFORM( int, softShadowsQuality )
-		DEFINE_UNIFORM( float, softShadowsRadius )
-		DEFINE_UNIFORM( vec4, shadowRect )
-		DEFINE_UNIFORM( int, shadowMapCullFront )
-		DEFINE_UNIFORM( sampler, stencilTexture )
-		DEFINE_UNIFORM( sampler, depthTexture )
-		DEFINE_UNIFORM( sampler, shadowMap )
-		DEFINE_UNIFORM( ivec2, stencilMipmapsLevel )
-		DEFINE_UNIFORM( vec4, stencilMipmapsScissor )
-		DEFINE_UNIFORM( sampler, stencilMipmapsTexture )
-	};
-
-	enum TextureUnits {
-		TU_NORMAL = 0,
-		TU_DIFFUSE = 1,
-		TU_SPECULAR = 2,
-		TU_LIGHT_PROJECT = 3,
-		TU_LIGHT_PROJECT_CUBE = 4,
-		TU_LIGHT_FALLOFF = 5,
-		TU_LIGHT_DIFFUSE_CUBE = 6,
-		TU_LIGHT_SPECULAR_CUBE = 7,
-		TU_SSAO = 8,
-		TU_SHADOW_MAP = 9,
-		TU_SHADOW_DEPTH = 10,
-		TU_SHADOW_STENCIL = 11,
-		TU_SHADOW_STENCIL_MIPMAPS = 12,
-	};
-}
+enum InteractionStage::TextureUnits {
+	TU_NORMAL = 0,
+	TU_DIFFUSE = 1,
+	TU_SPECULAR = 2,
+	TU_LIGHT_PROJECT = 3,
+	TU_LIGHT_PROJECT_CUBE = 4,
+	TU_LIGHT_FALLOFF = 5,
+	TU_LIGHT_DIFFUSE_CUBE = 6,
+	TU_LIGHT_SPECULAR_CUBE = 7,
+	TU_SSAO = 8,
+	TU_SHADOW_MAP = 9,
+	TU_SHADOW_DEPTH = 10,
+	TU_SHADOW_STENCIL = 11,
+	TU_SHADOW_STENCIL_MIPMAPS = 12,
+};
 
 void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &baseName ) {
-	idHashMapDict defines;
-	defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxShaderParamsArraySize ) );
-	defines.Set( "POISSON_DISK_USE_UBO", "1" );
-	shader->LoadFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl", defines );
-	InteractionUniforms *uniforms = shader->GetUniformGroup<InteractionUniforms>();
+	shader->LoadFromFiles( "stages/interaction/" + baseName + ".vs.glsl", "stages/interaction/" + baseName + ".fs.glsl" );
+	Uniforms *uniforms = shader->GetUniformGroup<Uniforms>();
 	uniforms->lightProjectionCubemap.Set( TU_LIGHT_PROJECT_CUBE );
 	uniforms->lightProjectionTexture.Set( TU_LIGHT_PROJECT );
 	uniforms->lightFalloffTexture.Set( TU_LIGHT_FALLOFF );
@@ -117,38 +109,23 @@ void InteractionStage::LoadInteractionShader( GLSLProgram *shader, const idStr &
 	uniforms->normalTexture.Set( TU_NORMAL );
 	uniforms->diffuseTexture.Set( TU_DIFFUSE );
 	uniforms->specularTexture.Set( TU_SPECULAR );
-	shader->BindUniformBlockLocation( 0, "ViewParamsBlock" );
-	shader->BindUniformBlockLocation( 1, "PerDrawCallParamsBlock" );
-	shader->BindUniformBlockLocation( 2, "ShadowSamplesBlock" );
 }
 
 
-InteractionStage::InteractionStage( DrawBatchExecutor *drawBatchExecutor )
-	: drawBatchExecutor( drawBatchExecutor ), interactionShader( nullptr )
-{}
+InteractionStage::InteractionStage() {}
 
 void InteractionStage::Init() {
-	maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
-	
 	ambientInteractionShader = programManager->LoadFromGenerator( "interaction_ambient", 
 		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.ambient" ); } );
 	stencilInteractionShader = programManager->LoadFromGenerator( "interaction_stencil", 
 		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.stencil" ); } );
 	shadowMapInteractionShader = programManager->LoadFromGenerator( "interaction_shadowmap", 
 		[this](GLSLProgram *shader) { LoadInteractionShader( shader, "interaction.shadowmap" ); } );
-
-	qglGenBuffers( 1, &poissonSamplesUbo );
-	qglBindBuffer( GL_UNIFORM_BUFFER, poissonSamplesUbo );
-	qglBufferData( GL_UNIFORM_BUFFER, 0, nullptr, GL_STATIC_DRAW );
 }
 
-void InteractionStage::Shutdown() {
-	qglDeleteBuffers( 1, &poissonSamplesUbo );
-	poissonSamplesUbo = 0;
-	poissonSamples.ClearFree();
-}
+void InteractionStage::Shutdown() {}
 
-void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *interactionSurfs, const TiledCustomMipmapStage *stencilShadowMipmaps ) {
+void InteractionStage::DrawInteractions( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *interactionSurfs, const TiledCustomMipmapStage *stencilShadowMipmaps ) {
 	if ( !interactionSurfs ) {
 		return;
 	}
@@ -163,7 +140,8 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 
 	TRACE_GL_SCOPE( "DrawInteractions" );
 
-	PreparePoissonSamples();
+	this->viewDef = viewDef;
+	this->vLight = vLight;
 
 	// if using float buffers, alpha values are not clamped and can stack up quite high, since most interactions add 1 to its value
 	// this in turn causes issues with some shader stage materials that use DST_ALPHA blending.
@@ -179,12 +157,12 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 	FB_ApplyScissor();
 
 	// bind the vertex and fragment program
-	ChooseInteractionProgram( vLight, interactionSurfs == backEnd.vLight->translucentInteractions );
-	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
+	ChooseInteractionProgram( vLight, interactionSurfs == vLight->translucentInteractions );
 	uniforms->cubic.Set( vLight->lightShader->IsCubicLight() ? 1 : 0 );
 	uniforms->globalLightOrigin.Set( vLight->globalLightOrigin );
-	uniforms->globalViewOrigin.Set( backEnd.viewDef->renderView.vieworg );
+	uniforms->globalViewOrigin.Set( viewDef->renderView.vieworg );
 	uniforms->renderResolution.Set( frameBuffers->activeFbo->Width(), frameBuffers->activeFbo->Height() );
+	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
 
 	idList<const drawSurf_t *> drawSurfs;
 	for ( const drawSurf_t *surf = interactionSurfs; surf; surf = surf->nextOnLight) {
@@ -227,7 +205,7 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 	GL_SelectTexture( TU_LIGHT_FALLOFF );
 	vLight->falloffImage->Bind();
 
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || vLight->shadows == LS_MAPS )
+	if ( r_softShadowsQuality.GetBool() && !viewDef->IsLightGem() || vLight->shadows == LS_MAPS )
 		BindShadowTexture( stencilShadowMipmaps );
 
 	if( vLight->lightShader->IsAmbientLight() && ambientOcclusion->ShouldEnableForCurrentView() ) {
@@ -275,8 +253,6 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 		// slot, so reset this to something that is safe to override in bindless mode!
 		GL_SelectTexture(TU_NORMAL);
 
-		BeginDrawBatch();
-		const drawSurf_t *curBatchCaches = drawSurfs[0];
 		for ( const drawSurf_t *surf : drawSurfs ) {
 			if ( !surf->ambientCache.IsValid() || !surf->indexCache.IsValid() ) {
 #ifdef _DEBUG
@@ -285,25 +261,16 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 				continue;
 			}
 
-			if ( surf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic || surf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
-				ExecuteDrawCalls();
-			}
-
 			if ( surf->space->weaponDepthHack ) {
-				// GL state change, need to execute previous draw calls
-				ExecuteDrawCalls();
 				RB_EnterWeaponDepthHack();
 			}
 
-			curBatchCaches = surf;
 			ProcessSingleSurface( vLight, lightStage, surf );
 
 			if ( surf->space->weaponDepthHack ) {
-				ExecuteDrawCalls();
 				RB_LeaveDepthHack();
 			}
 		}
-		ExecuteDrawCalls();
 	}
 
 	GL_SelectTexture( 0 );
@@ -312,7 +279,7 @@ void InteractionStage::DrawInteractions( viewLight_t *vLight, const drawSurf_t *
 }
 
 void InteractionStage::BindShadowTexture( const TiledCustomMipmapStage *stencilShadowMipmaps ) {
-	if ( backEnd.vLight->shadowMapPage.width > 0 ) {
+	if ( vLight->shadowMapPage.width > 0 ) {
 		GL_SelectTexture( TU_SHADOW_MAP );
 		globalImages->shadowAtlas->Bind();
 	} else {
@@ -329,8 +296,6 @@ void InteractionStage::BindShadowTexture( const TiledCustomMipmapStage *stencilS
 void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool translucent ) {
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		interactionShader = ambientInteractionShader;
-		Uniforms::Interaction *uniforms = interactionShader->GetUniformGroup<Uniforms::Interaction>();
-		uniforms->ambient = true;
 	} else if ( vLight->shadowMapPage.width > 0 ) {
 		interactionShader = shadowMapInteractionShader;
 	} else {
@@ -338,8 +303,8 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	}
 	interactionShader->Activate();
 
-	InteractionUniforms *uniforms = interactionShader->GetUniformGroup<InteractionUniforms>();
-	uniforms->gamma.Set( backEnd.viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
+	uniforms = interactionShader->GetUniformGroup<Uniforms>();
+	uniforms->gamma.Set( viewDef->IsLightGem() ? 1 : r_ambientGamma.GetFloat() );
 	uniforms->minLevel.Set( r_ambientMinLevel.GetFloat() );
 	uniforms->ssaoEnabled.Set( ambientOcclusion->ShouldEnableForCurrentView() ? 1 : 0 );
 
@@ -361,12 +326,14 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	}
 	uniforms->shadowMapCullFront.Set( r_shadowMapCullFront );
 
-	if ( !translucent && ( vLight->globalShadows || vLight->localShadows ) && !backEnd.viewDef->IsLightGem() ) {
+	if ( !translucent && ( vLight->globalShadows || vLight->localShadows ) && !viewDef->IsLightGem() ) {
 		uniforms->softShadowsQuality.Set( r_softShadowsQuality.GetInteger() );
 	} else {
 		uniforms->softShadowsQuality.Set( 0 );
 	}
 	uniforms->softShadowsRadius.Set( GetEffectiveLightRadius() ); // for soft stencil and all shadow maps
+
+	PreparePoissonSamples();
 }
 
 void InteractionStage::ProcessSingleSurface( viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf ) {
@@ -493,98 +460,60 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 		din->specularImage = globalImages->blackImage;
 	}
 
-	if (currentIndex > 0) {
-		if (!din->bumpImage->IsBound( TU_NORMAL )
-			|| !din->diffuseImage->IsBound( TU_DIFFUSE )
-			|| !din->specularImage->IsBound( TU_SPECULAR ) ) {
+	// bind new material textures
+	GL_SelectTexture( TU_NORMAL );
+	din->bumpImage->Bind();
+	GL_SelectTexture( TU_DIFFUSE );
+	din->diffuseImage->Bind();
+	GL_SelectTexture( TU_SPECULAR );
+	din->specularImage->Bind();
 
-			// change in textures, execute previous draw calls
-			ExecuteDrawCalls();
-		}
-	}
+	vertexCache.VertexPosition( din->surf->ambientCache );
 
-	if (currentIndex == 0) {
-		// bind new material textures
-		GL_SelectTexture( TU_NORMAL );
-		din->bumpImage->Bind();
-		GL_SelectTexture( TU_DIFFUSE );
-		din->diffuseImage->Bind();
-		GL_SelectTexture( TU_SPECULAR );
-		din->specularImage->Bind();
-	}
-
-	ShaderParams &params = drawBatch.shaderParams[currentIndex];
-
-	memcpy( params.modelMatrix.ToFloatPtr(), din->surf->space->modelMatrix, sizeof(idMat4) );
-	memcpy( params.modelViewMatrix.ToFloatPtr(), din->surf->space->modelViewMatrix, sizeof(idMat4) );
-	params.bumpMatrix[0] = din->bumpMatrix[0];
-	params.bumpMatrix[1] = din->bumpMatrix[1];
-	params.diffuseMatrix[0] = din->diffuseMatrix[0];
-	params.diffuseMatrix[1] = din->diffuseMatrix[1];
-	params.specularMatrix[0] = din->specularMatrix[0];
-	params.specularMatrix[1] = din->specularMatrix[1];
-	memcpy( params.lightProjectionFalloff.ToFloatPtr(), din->lightProjection, sizeof(idMat4) );
-	memcpy( params.lightTextureMatrix->ToFloatPtr(), din->lightTextureMatrix, sizeof(idVec4) * 2 );
+	uniforms->modelMatrix.Set( din->surf->space->modelMatrix );
+	uniforms->modelViewMatrix.Set( din->surf->space->modelViewMatrix );
+	uniforms->bumpMatrix.SetArray( 2, (float*)din->bumpMatrix );
+	uniforms->diffuseMatrix.SetArray( 2, (float*)din->diffuseMatrix );
+	uniforms->specularMatrix.SetArray( 2, (float*)din->specularMatrix );
+	uniforms->lightProjectionFalloff.Set( (float*)din->lightProjection );
+	uniforms->lightTextureMatrix.SetArray( 2, (float*)din->lightTextureMatrix );
 	switch ( din->vertexColor ) {
 	case SVC_IGNORE:
-		params.colorModulate = idVec4(0, 0, 0, 0);
-		params.colorAdd = idVec4(1, 1, 1, 1);
+		uniforms->colorModulate.Set( 0, 0, 0, 0 );
+		uniforms->colorAdd.Set( 1, 1, 1, 1 );
 		break;
 	case SVC_MODULATE:
-		params.colorModulate = idVec4(1, 1, 1, 1);
-		params.colorAdd = idVec4(0, 0, 0, 0);
+		uniforms->colorModulate.Set( 1, 1, 1, 1 );
+		uniforms->colorAdd.Set( 0, 0, 0, 0 );
 		break;
 	case SVC_INVERSE_MODULATE:
-		params.colorModulate = idVec4(-1, -1, -1, -1);
-		params.colorAdd = idVec4(1, 1, 1, 1);
+		uniforms->colorModulate.Set( -1, -1, -1, -1 );
+		uniforms->colorAdd.Set( 1, 1, 1, 1 );
 		break;
 	}
-	params.diffuseColor = din->diffuseColor;
-	params.specularColor = din->specularColor;
+	uniforms->diffuseColor.Set( din->diffuseColor );
+	uniforms->specularColor.Set( din->specularColor );
 	if ( !din->bumpImage ) {
-		params.hasTextureDNS = idVec4(1, 0, 1, 0);
+		uniforms->hasTextureDNS.Set( 1, 0, 1, 0 );
 	} else {
-		params.hasTextureDNS = idVec4(1, 1, 1, 0);
+		uniforms->hasTextureDNS.Set( 1, 1, 1, 0 );
 	}
-	params.useBumpmapLightTogglingFix = r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides();
-	params.RGTC = din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2;
+	uniforms->useBumpmapLightTogglingFix.Set( r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides() );
+	uniforms->RGTC.Set( din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2 );
 
-	drawBatch.surfs[currentIndex] = din->surf;
-
-	++currentIndex;
-	if (currentIndex == drawBatch.maxBatchSize) {
-		ExecuteDrawCalls();
-	}
+	RB_DrawElementsWithCounters( din->surf );
 }
 
-void InteractionStage::BeginDrawBatch() {
-	currentIndex = 0;
-	drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
-}
-
-void InteractionStage::ExecuteDrawCalls() {
-	if (currentIndex == 0) {
-		return;
-	}
-	drawBatchExecutor->ExecuteDrawVertBatch( currentIndex );
-	BeginDrawBatch();
-}
+struct PoissonSamplesUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( PoissonSamplesUniforms )
+	DEFINE_UNIFORM( vec2, softShadowsSamples/*[???]*/ )
+};
 
 void InteractionStage::PreparePoissonSamples() {
 	int sampleK = r_softShadowsQuality.GetInteger();
 	if ( sampleK > 0 && poissonSamples.Num() != sampleK ) {
 		GeneratePoissonDiskSampling( poissonSamples, sampleK );
-		// note: due to std140 buffer requirements, array members must be aligned with vec4 size
-		// so we have to copy our samples to a vec4 array for upload :-/
-		idList<idVec4> uploadSamples;
-		uploadSamples.SetNum( poissonSamples.Num() );
-		for ( int i = 0; i < poissonSamples.Num(); ++i ) {
-			uploadSamples[i].x = poissonSamples[i].x;
-			uploadSamples[i].y = poissonSamples[i].y;
-		}
-		size_t size = uploadSamples.Num() * sizeof(idVec4);
-		qglBindBuffer( GL_UNIFORM_BUFFER, poissonSamplesUbo );
-		qglBufferData( GL_UNIFORM_BUFFER, size, uploadSamples.Ptr(), GL_STATIC_DRAW );
 	}
-	qglBindBufferBase( GL_UNIFORM_BUFFER, 2, poissonSamplesUbo );
+	PoissonSamplesUniforms *samplesUniforms = interactionShader->GetUniformGroup<PoissonSamplesUniforms>();
+	samplesUniforms->softShadowsSamples.SetArray( sampleK, (float*)poissonSamples.Ptr() );
 }

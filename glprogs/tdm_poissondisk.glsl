@@ -15,14 +15,4 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #define SOFT_SHADOWS_SAMPLES_COUNT 150
 
-#pragma tdm_define "POISSON_DISK_USE_UBO"
-
-#if POISSON_DISK_USE_UBO
-	layout (std140) uniform ShadowSamplesBlock {
-		vec2 u_softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT];
-	};
-#else
-	// TODO: remove this part after new/old backends get merged
-	uniform vec2 u_softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT];
-#endif
-
+uniform vec2 u_softShadowsSamples[SOFT_SHADOWS_SAMPLES_COUNT];

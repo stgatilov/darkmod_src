@@ -21,36 +21,33 @@ class TiledCustomMipmapStage;
 
 class InteractionStage {
 public:
-	InteractionStage( DrawBatchExecutor *drawBatchExecutor );
+	InteractionStage();
 
 	void Init();
 	void Shutdown();
 
-	void DrawInteractions( viewLight_t *vLight, const drawSurf_t *interactionSurfs, const TiledCustomMipmapStage *stencilShadowMipmaps );
+	void DrawInteractions( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *interactionSurfs, const TiledCustomMipmapStage *stencilShadowMipmaps );
 
 private:
-	struct ShaderParams;
+	struct Uniforms;
+	enum TextureUnits;
 
-	DrawBatchExecutor *drawBatchExecutor;
-	GLSLProgram *stencilInteractionShader;
-	GLSLProgram *shadowMapInteractionShader;
-	GLSLProgram *ambientInteractionShader;
-	GLSLProgram *interactionShader;
-	uint maxShaderParamsArraySize;
+	GLSLProgram *stencilInteractionShader = nullptr;
+	GLSLProgram *shadowMapInteractionShader = nullptr;
+	GLSLProgram *ambientInteractionShader = nullptr;
+	GLSLProgram *interactionShader = nullptr;
 
-	DrawBatch<ShaderParams> drawBatch;
-	int currentIndex;
-
-	GLuint poissonSamplesUbo = 0;
+	Uniforms *uniforms = nullptr;
 	idList<idVec2> poissonSamples;
+
+	const viewDef_t *viewDef = nullptr;
+	viewLight_t *vLight = nullptr;
 
 	void LoadInteractionShader(GLSLProgram *shader, const idStr &baseName);
 	void BindShadowTexture( const TiledCustomMipmapStage *stencilShadowMipmaps );
 	void ChooseInteractionProgram( viewLight_t *vLight, bool translucent );
 	void ProcessSingleSurface( viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf );
 	void PrepareDrawCommand( drawInteraction_t * inter );
-	void BeginDrawBatch();
-	void ExecuteDrawCalls();
 
 	void PreparePoissonSamples();
 };

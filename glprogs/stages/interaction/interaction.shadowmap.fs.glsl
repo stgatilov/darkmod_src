@@ -32,7 +32,7 @@ void main() {
 	InteractionGeometry props;
 	FragColor.rgb = computeInteraction(props);
 
-	vec3 worldNormal = mat3(params[var_DrawId].modelMatrix) * (var_TangentBitangentNormalMatrix * props.localN);
+	vec3 worldNormal = mat3(u_modelMatrix) * (var_TangentBitangentNormalMatrix * props.localN);
 
 	if (u_shadows) {
 		float shadowsCoeff = computeShadowMapCoefficient(

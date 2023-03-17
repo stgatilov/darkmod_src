@@ -14,11 +14,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 
-#pragma tdm_include "stages/interaction/interaction.params.glsl"
 #pragma tdm_include "tdm_lightproject.glsl"
 #pragma tdm_include "tdm_interaction.glsl"
 
-flat in int var_DrawId;
 in vec2 var_TexDiffuse;
 in vec2 var_TexSpecular;
 in vec2 var_TexNormal;
@@ -47,20 +45,27 @@ uniform vec2 u_renderResolution;
 uniform sampler2D u_ssaoTexture;
 uniform int u_ssaoEnabled;
 
+uniform vec4 u_lightTextureMatrix[2];
+uniform vec4 u_diffuseColor;
+uniform vec4 u_specularColor;
+uniform vec4 u_hasTextureDNS;
+uniform float u_RGTC;
+uniform mat4 u_modelMatrix;
+
 void main() {
 	vec3 lightColor;
 	if (u_cubic)
 		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
 	else
-		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, params[var_DrawId].lightTextureMatrix, var_TexLight);
+		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
 
-	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, params[var_DrawId].hasTextureDNS[1] != 0.0, u_normalTexture, params[var_DrawId].RGTC != 0.0);
-	AmbientGeometry props = computeAmbientGeometry(var_worldViewDir, localNormal, var_TangentBinormalNormalMatrix, mat3(params[var_DrawId].modelMatrix));
+	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, u_hasTextureDNS[1] != 0.0, u_normalTexture, u_RGTC != 0.0);
+	AmbientGeometry props = computeAmbientGeometry(var_worldViewDir, localNormal, var_TangentBinormalNormalMatrix, mat3(u_modelMatrix));
 
 	vec4 interactionColor = computeAmbientInteraction(
 		props,
-		u_diffuseTexture, params[var_DrawId].diffuseColor.rgb, var_TexDiffuse,
-		u_specularTexture, params[var_DrawId].specularColor.rgb, var_TexSpecular,
+		u_diffuseTexture, u_diffuseColor.rgb, var_TexDiffuse,
+		u_specularTexture, u_specularColor.rgb, var_TexSpecular,
 		var_Color.rgb,
 		u_useNormalIndexedDiffuse, u_useNormalIndexedSpecular, u_lightDiffuseCubemap, u_lightSpecularCubemap,
 		u_minLevel, u_gamma

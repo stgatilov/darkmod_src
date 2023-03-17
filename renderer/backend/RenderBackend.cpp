@@ -37,9 +37,7 @@ namespace {
 	}
 }
 
-RenderBackend::RenderBackend() 
-	: interactionStage( &drawBatchExecutor )
-{}
+RenderBackend::RenderBackend() {}
 
 void RenderBackend::Init() {
 	initialized = true;
@@ -175,19 +173,19 @@ void RenderBackend::EndFrame() {
 	drawBatchExecutor.EndFrame();
 }
 
-void RenderBackend::DrawInteractionsWithShadowMapping(viewLight_t *vLight) {
+void RenderBackend::DrawInteractionsWithShadowMapping( const viewDef_t *viewDef, viewLight_t *vLight ) {
 	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
 
 	TRACE_GL_SCOPE( "DrawLight_ShadowMap" );
 
 	if ( !r_shadowMapSinglePass.GetBool() && ( vLight->globalShadows || vLight->localShadows ) ) {
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalShadows, true );
-		interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
+		interactionStage.DrawInteractions( backEnd.viewDef, vLight, vLight->localInteractions, nullptr );
 		RB_GLSL_DrawInteractions_ShadowMap( vLight->localShadows, false );
 	} else {
-		interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
+		interactionStage.DrawInteractions( backEnd.viewDef, vLight, vLight->localInteractions, nullptr );
 	}
-	interactionStage.DrawInteractions( vLight, vLight->globalInteractions, nullptr );
+	interactionStage.DrawInteractions( backEnd.viewDef, vLight, vLight->globalInteractions, nullptr );
 
 	GLSLProgram::Deactivate();
 }
@@ -223,7 +221,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 	if ( useShadowFbo ) {
 		frameBuffers->LeaveShadowStencil();
 	}
-	interactionStage.DrawInteractions( vLight, vLight->localInteractions, nullptr );
+	interactionStage.DrawInteractions( viewDef, vLight, vLight->localInteractions, nullptr );
 
 	if ( useShadowFbo ) {
 		frameBuffers->EnterShadowStencil();
@@ -245,7 +243,7 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 		frameBuffers->LeaveShadowStencil();
 	}
 
-	interactionStage.DrawInteractions( vLight, vLight->globalInteractions, &stencilShadowStage.stencilShadowMipmap );
+	interactionStage.DrawInteractions( viewDef, vLight, vLight->globalInteractions, &stencilShadowStage.stencilShadowMipmap );
 
 	GLSLProgram::Deactivate();
 }
@@ -271,7 +269,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 
 		backEnd.vLight = vLight;
 		if ( vLight->shadows == LS_MAPS ) {
-			DrawInteractionsWithShadowMapping( vLight );
+			DrawInteractionsWithShadowMapping( viewDef, vLight );
 		} else {
 			DrawInteractionsWithStencilShadows( viewDef, vLight );
 		}
@@ -281,7 +279,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 		}
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
 		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
-		interactionStage.DrawInteractions( vLight, vLight->translucentInteractions, nullptr );
+		interactionStage.DrawInteractions( viewDef, vLight, vLight->translucentInteractions, nullptr );
 		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 	}
 
