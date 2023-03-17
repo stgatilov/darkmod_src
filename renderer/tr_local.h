@@ -1123,6 +1123,7 @@ void	GL_SetProjection( float* matrix );
 class DepthBoundsTest {
 public:
 	DepthBoundsTest( const idScreenRect &scissorRect );
+	void Update( const idScreenRect &scissorRect );
 	~DepthBoundsTest();
 };
 
