@@ -23,64 +23,47 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../GLSLProgramManager.h"
 
 
-namespace {
-	struct DepthUniforms : GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( DepthUniforms )
+struct DepthStage::DepthUniforms : GLSLUniformGroup {
+	UNIFORM_GROUP_DEF( DepthUniforms )
 
-		DEFINE_UNIFORM( vec4, clipPlane )
-		DEFINE_UNIFORM( mat4, inverseView )
-		DEFINE_UNIFORM( sampler, texture )
-	};
-
-	void LoadShader( GLSLProgram *shader, int maxSupportedDrawsPerBatch ) {
-		idHashMapDict defines;
-		defines.Set( "MAX_SHADER_PARAMS", idStr::Fmt( "%d", maxSupportedDrawsPerBatch ) );
-		shader->LoadFromFiles( "stages/depth/depth.vert.glsl", "stages/depth/depth.frag.glsl", defines );
-		DepthUniforms *uniforms = shader->GetUniformGroup<DepthUniforms>();
-		uniforms->texture.Set( 0 );
-		shader->BindUniformBlockLocation( 0, "ViewParamsBlock" );
-		shader->BindUniformBlockLocation( 1, "ShaderParamsBlock" );
-	}
-
-	void CalcScissorParam( uint32_t scissor[4], const idScreenRect &screenRect ) {
-		// get [L..R) ranges
-		int x1 = backEnd.viewDef->viewport.x1 + screenRect.x1;
-		int y1 = backEnd.viewDef->viewport.y1 + screenRect.y1;
-		int x2 = backEnd.viewDef->viewport.x1 + screenRect.x2 + 1;
-		int y2 = backEnd.viewDef->viewport.y1 + screenRect.y2 + 1;
-		// convert to FBO resolution with conservative outwards rounding
-		int width = frameBuffers->activeFbo->Width();
-		int height = frameBuffers->activeFbo->Height();
-		x1 = x1 * width  / glConfig.vidWidth;
-		y1 = y1 * height / glConfig.vidHeight;
-		x2 = (x2 * width  + glConfig.vidWidth  - 1) / glConfig.vidWidth;
-		y2 = (y2 * height + glConfig.vidHeight - 1) / glConfig.vidHeight;
-		// get width/height and apply scissor
-		scissor[0] = x1;
-		scissor[1] = y1;
-		scissor[2] = x2 - x1;
-		scissor[3] = y2 - y1;
-	}
-}
-
-struct DepthStage::ShaderParams {
-	idMat4 modelViewMatrix;
-	idMat4 textureMatrix;
-	idVec4 color;
-	uint32_t scissor[4];
-	uint64_t textureHandle;
-	float alphaTest;
-	float padding;
+	DEFINE_UNIFORM( mat4, modelViewMatrix )
+	DEFINE_UNIFORM( mat4, projectionMatrix )
+	DEFINE_UNIFORM( mat4, textureMatrix )
+	DEFINE_UNIFORM( vec4, clipPlane )
+	DEFINE_UNIFORM( mat4, inverseView )
+	DEFINE_UNIFORM( sampler, texture )
+	DEFINE_UNIFORM( float, alphaTest )
+	DEFINE_UNIFORM( vec4, color )
 };
 
-DepthStage::DepthStage( DrawBatchExecutor* drawBatchExecutor )
-	: drawBatchExecutor(drawBatchExecutor)
-{
+void DepthStage::LoadShader( GLSLProgram *shader ) {
+	shader->LoadFromFiles( "stages/depth/depth.vert.glsl", "stages/depth/depth.frag.glsl" );
+	DepthUniforms *uniforms = shader->GetUniformGroup<DepthUniforms>();
+	uniforms->texture.Set( 0 );
+}
+
+void DepthStage::CalcScissorParam( uint32_t scissor[4], const idScreenRect &screenRect ) {
+	// get [L..R) ranges
+	int x1 = backEnd.viewDef->viewport.x1 + screenRect.x1;
+	int y1 = backEnd.viewDef->viewport.y1 + screenRect.y1;
+	int x2 = backEnd.viewDef->viewport.x1 + screenRect.x2 + 1;
+	int y2 = backEnd.viewDef->viewport.y1 + screenRect.y2 + 1;
+	// convert to FBO resolution with conservative outwards rounding
+	int width = frameBuffers->activeFbo->Width();
+	int height = frameBuffers->activeFbo->Height();
+	x1 = x1 * width  / glConfig.vidWidth;
+	y1 = y1 * height / glConfig.vidHeight;
+	x2 = (x2 * width  + glConfig.vidWidth  - 1) / glConfig.vidWidth;
+	y2 = (y2 * height + glConfig.vidHeight - 1) / glConfig.vidHeight;
+	// get width/height and apply scissor
+	scissor[0] = x1;
+	scissor[1] = y1;
+	scissor[2] = x2 - x1;
+	scissor[3] = y2 - y1;
 }
 
 void DepthStage::Init() {
-	uint maxShaderParamsArraySize = drawBatchExecutor->MaxShaderParamsArraySize<ShaderParams>();
-	depthShader = programManager->LoadFromGenerator( "depth", [=](GLSLProgram *program) { LoadShader(program, maxShaderParamsArraySize); } );
+	depthShader = programManager->LoadFromGenerator( "depth", [=](GLSLProgram *program) { LoadShader(program); } );
 }
 
 void DepthStage::Shutdown() {}
@@ -94,23 +77,25 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 
 	GLSLProgram *shader = depthShader;
 	shader->Activate();
-	DepthUniforms *depthUniforms = shader->GetUniformGroup<DepthUniforms>();
+	uniforms = shader->GetUniformGroup<DepthUniforms>();
+
+	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
 
 	idMat4 inverseView;
 	memcpy( inverseView.ToFloatPtr(), viewDef->worldSpace.modelViewMatrix, sizeof( inverseView ) );
 	inverseView.InverseSelf();
-	depthUniforms->inverseView.Set( inverseView );
+	uniforms->inverseView.Set( inverseView );
 
 	// pass mirror clip plane details to vertex shader if needed
 	if ( viewDef->clipPlane) {
-		depthUniforms->clipPlane.Set( *viewDef->clipPlane );
+		uniforms->clipPlane.Set( *viewDef->clipPlane );
 	} else {
-		depthUniforms->clipPlane.Set( colorBlack );
+		uniforms->clipPlane.Set( colorBlack );
 	}
 
 	// the first texture will be used for alpha tested surfaces
 	GL_SelectTexture( 0 );
-	depthUniforms->texture.Set( 0 );
+	uniforms->texture.Set( 0 );
 
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
@@ -123,34 +108,14 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 	qglEnable( GL_STENCIL_TEST );
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	BeginDrawBatch();
-
-	bool subViewEnabled = false;
-	const drawSurf_t *curBatchCaches = drawSurfs[0];
 	for ( int i = 0; i < numDrawSurfs; ++i ) {
 		const drawSurf_t *drawSurf = drawSurfs[i];
 		if ( !ShouldDrawSurf( drawSurf ) ) {
 			continue;
 		}
 
-		bool isSubView = drawSurf->material->GetSort() == SS_SUBVIEW;
-		if( isSubView != subViewEnabled
-				|| drawSurf->ambientCache.isStatic != curBatchCaches->ambientCache.isStatic
-				|| drawSurf->indexCache.isStatic != curBatchCaches->indexCache.isStatic ) {
-			ExecuteDrawCalls();
-			if( isSubView ) {
-				GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
-			} else {
-				GL_State( GLS_DEPTHFUNC_LESS );
-			}
-			subViewEnabled = isSubView;
-		}
-
-		curBatchCaches = drawSurf;
 		DrawSurf( drawSurf );
 	}
-
-	ExecuteDrawCalls();
 
 	// Make the early depth pass available to shaders. #3877
 	if ( !viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() ) {
@@ -205,16 +170,12 @@ bool DepthStage::ShouldDrawSurf(const drawSurf_t *surf) const {
 
 void DepthStage::DrawSurf( const drawSurf_t *surf ) {
 	if ( surf->space->weaponDepthHack ) {
-		// this is a state change, need to finish any previous calls
-		ExecuteDrawCalls();
 		RB_EnterWeaponDepthHack();
 	}
 
 	const idMaterial *shader = surf->material;
 
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		// this is a state change, need to finish any previous calls
-		ExecuteDrawCalls();
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 	}
@@ -223,12 +184,10 @@ void DepthStage::DrawSurf( const drawSurf_t *surf ) {
 
 	// reset polygon offset
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		ExecuteDrawCalls();
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
 
 	if ( surf->space->weaponDepthHack ) {
-		ExecuteDrawCalls();
 		RB_LeaveDepthHack();
 	}
 }
@@ -236,6 +195,15 @@ void DepthStage::DrawSurf( const drawSurf_t *surf ) {
 void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 	const idMaterial		*shader = surf->material;
 	const float				*regs = surf->shaderRegisters;
+
+	vertexCache.VertexPosition( surf->ambientCache );
+
+	bool isSubView = surf->material->GetSort() == SS_SUBVIEW;
+	if( isSubView ) {
+		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
+	} else {
+		GL_State( GLS_DEPTHFUNC_LESS );
+	}
 
 	bool drawSolid = false;
 
@@ -286,55 +254,42 @@ void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 }
 
 void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage ) {
-	if( stage && !stage->texture.image->IsBound( 0 ) ) {
-		ExecuteDrawCalls();
+	if( stage ) {
 		stage->texture.image->Bind();
 	}
 
-	ShaderParams &params = drawBatch.shaderParams[currentIndex];
+	uniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
 
-	memcpy( params.modelViewMatrix.ToFloatPtr(), surf->space->modelViewMatrix, sizeof(idMat4) );
-	CalcScissorParam( params.scissor, surf->scissorRect );
-	params.alphaTest = -1.f;
+	uint32_t scissor[4];
+	CalcScissorParam( scissor, surf->scissorRect );
+	qglScissor( scissor[0], scissor[1], scissor[2], scissor[3] );
 
+	idVec4 color;
 	if ( surf->material->GetSort() == SS_SUBVIEW ) {
 		// subviews will just down-modulate the color buffer by overbright
-		params.color[0] = params.color[1] = params.color[2] = 1.0f / backEnd.overBright;
-		params.color[3] = 1;
+		color[0] = color[1] = color[2] = 1.0f / backEnd.overBright;
+		color[3] = 1;
 	} else {
 		// others just draw black
-		params.color = idVec4(0, 0, 0, 1);
+		color = idVec4( 0, 0, 0, 1 );
 	}
 
+	float alphaTest = -1.0f;
 	if( stage ) {
 		// set the alpha modulate
-		params.color[3] = surf->shaderRegisters[stage->color.registers[3]];
-		params.alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
+		color[3] = surf->shaderRegisters[stage->color.registers[3]];
+		alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
 
+		idMat4 textureMatrix;
 		if( stage->texture.hasMatrix ) {
-			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, params.textureMatrix.ToFloatPtr() );
+			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, textureMatrix.ToFloatPtr() );
 		} else {
-			params.textureMatrix.Identity();
+			textureMatrix.Identity();
 		}
+		uniforms->textureMatrix.Set( textureMatrix );
 	}
+	uniforms->color.Set( color );
+	uniforms->alphaTest.Set( alphaTest );
 
-	drawBatch.surfs[currentIndex] = surf;
-	++currentIndex;
-	if ( currentIndex == drawBatch.maxBatchSize ) {
-		ExecuteDrawCalls();
-	}
-}
-
-void DepthStage::BeginDrawBatch() {
-	currentIndex = 0;
-	drawBatch = drawBatchExecutor->BeginBatch<ShaderParams>();
-}
-
-void DepthStage::ExecuteDrawCalls() {
-	if (currentIndex == 0) {
-		return;
-	}
-
-	drawBatchExecutor->ExecuteDrawVertBatch(currentIndex);
-	BeginDrawBatch();
+	RB_DrawElementsWithCounters( surf );
 }

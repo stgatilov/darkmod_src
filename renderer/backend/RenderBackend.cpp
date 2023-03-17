@@ -38,8 +38,7 @@ namespace {
 }
 
 RenderBackend::RenderBackend() 
-	: depthStage( &drawBatchExecutor ),
-	  interactionStage( &drawBatchExecutor ),
+	: interactionStage( &drawBatchExecutor ),
 	  stencilShadowStage( &drawBatchExecutor ),
 	  shadowMapStage( &drawBatchExecutor )
 {}

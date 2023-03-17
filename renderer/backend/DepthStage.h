@@ -14,32 +14,25 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma once
 
-#include "DrawBatchExecutor.h"
-
 class DepthStage
 {
 public:
-	DepthStage( DrawBatchExecutor *drawBatchExecutor );
-
 	void Init();
 	void Shutdown();
 
 	void DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, int numDrawSurfs );
 
 private:
-	struct ShaderParams;
+	struct DepthUniforms;
 
-	DrawBatchExecutor *drawBatchExecutor;
 	GLSLProgram *depthShader = nullptr;
-
-	uint currentIndex = 0;
-	DrawBatch<ShaderParams> drawBatch;
+	DepthUniforms *uniforms = nullptr;
 
 	bool ShouldDrawSurf( const drawSurf_t *surf ) const;
 	void DrawSurf( const drawSurf_t * drawSurf );
 	void CreateDrawCommands( const drawSurf_t *surf );
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );
 
-	void BeginDrawBatch();
-	void ExecuteDrawCalls();
+	static void LoadShader( GLSLProgram *shader );
+	static void CalcScissorParam( uint32_t scissor[4], const idScreenRect &screenRect );
 };
