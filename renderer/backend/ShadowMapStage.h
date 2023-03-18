@@ -32,11 +32,14 @@ private:
 	struct Uniforms;
 	Uniforms *uniforms = nullptr;
 
-	float GetEffectiveLightRadius( viewLight_t *vLight );
+	void Start();
+	bool ShouldDrawLight( const viewLight_t *vLight );
+	void DrawLight( const viewLight_t *vLight );
+	void End();
+
 	bool ShouldDrawSurf( const drawSurf_t *surf ) const;
 	void DrawLightInteractions( const drawSurf_t *surfs );
 	void DrawSurf( const drawSurf_t * drawSurf );
-	void CreateDrawCommands( const drawSurf_t *surf );
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );
 
 	void FallbackPathForIntel( const viewDef_t *viewDef );

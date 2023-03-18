@@ -46,16 +46,7 @@ void ShadowMapStage::Init() {
 
 void ShadowMapStage::Shutdown() {}
 
-void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
-	TRACE_GL_SCOPE( "RenderShadowMap" );
-
-	if ( glConfig.vendor == glvIntel ) {
-		// for some reason, Intel has massive performance problems with this path, cause as of yet is unknown
-		// we'll just use the existing shadow mapping code, but applied consecutively
-		FallbackPathForIntel( viewDef );
-		return;
-	}
-
+void ShadowMapStage::Start() {
 	GL_CheckErrors();
 	frameBuffers->EnterShadowMap();
 
@@ -69,29 +60,35 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 	shadowMapShader->Activate();
 	uniforms = shadowMapShader->GetUniformGroup<Uniforms>();
 	uniforms->opaqueTexture.Set( 0 );
+}
 
-	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapPage.width == 0 ) {
-			continue;
-		}
-		idVec4 lightOrigin;
-		lightOrigin.x = vLight->globalLightOrigin.x;
-		lightOrigin.y = vLight->globalLightOrigin.y;
-		lightOrigin.z = vLight->globalLightOrigin.z;
-		lightOrigin.w = 0;
-		uniforms->lightOrigin.Set( lightOrigin );
-		uniforms->maxLightDistance.Set( vLight->maxLightDistance );
-
-		const renderCrop_t &page = vLight->shadowMapPage;
-		qglViewport( page.x, page.y, 6*page.width, page.width );
-		if ( r_useScissor.GetBool() ) {
-			qglScissor( page.x, page.y, 6*page.width, page.width );
-		}
-		qglClear( GL_DEPTH_BUFFER_BIT );
-		DrawLightInteractions( vLight->globalShadows );
-		DrawLightInteractions( vLight->localShadows );
+bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight ) {
+	if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapPage.width == 0 ) {
+		return false;
 	}
+	return true;
+}
 
+void ShadowMapStage::DrawLight( const viewLight_t *vLight ) {
+	idVec4 lightOrigin;
+	lightOrigin.x = vLight->globalLightOrigin.x;
+	lightOrigin.y = vLight->globalLightOrigin.y;
+	lightOrigin.z = vLight->globalLightOrigin.z;
+	lightOrigin.w = 0;
+	uniforms->lightOrigin.Set( lightOrigin );
+	uniforms->maxLightDistance.Set( vLight->maxLightDistance );
+
+	const renderCrop_t &page = vLight->shadowMapPage;
+	qglViewport( page.x, page.y, 6*page.width, page.width );
+	if ( r_useScissor.GetBool() ) {
+		qglScissor( page.x, page.y, 6*page.width, page.width );
+	}
+	qglClear( GL_DEPTH_BUFFER_BIT );
+	DrawLightInteractions( vLight->globalShadows );
+	DrawLightInteractions( vLight->localShadows );
+}
+
+void ShadowMapStage::End() {
 	for ( int i = 0; i < 5; i++ ) {
 		qglDisable( GL_CLIP_DISTANCE0 + i );
 	}
@@ -102,8 +99,23 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 	frameBuffers->LeaveShadowMap();
 }
 
-float ShadowMapStage::GetEffectiveLightRadius( viewLight_t *vLight ) {
-	return ::GetEffectiveLightRadius();
+void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
+	TRACE_GL_SCOPE( "RenderShadowMap" );
+
+	if ( glConfig.vendor == glvIntel ) {
+		// for some reason, Intel has massive performance problems with this path, cause as of yet is unknown
+		// we'll just use the existing shadow mapping code, but applied consecutively
+		FallbackPathForIntel( viewDef );
+		return;
+	}
+
+	Start();
+	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
+		if ( !ShouldDrawLight( vLight ) )
+			continue;
+		DrawLight( vLight );
+	}
+	End();
 }
 
 bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {
@@ -125,26 +137,19 @@ bool ShadowMapStage::ShouldDrawSurf( const drawSurf_t *surf ) const {
 }
 
 void ShadowMapStage::DrawLightInteractions( const drawSurf_t *surfs ) {
-	const drawSurf_t *curBatchCaches = surfs;
 	for ( const drawSurf_t *surf = surfs; surf; surf = surf->nextOnLight ) {
 		if ( !ShouldDrawSurf( surf ) ) {
 			continue;
 		}
-		curBatchCaches = surf;
 		DrawSurf( surf );
 	}
 }
 
 void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
 	const idMaterial *shader = surf->material;
+	const float *regs = surf->shaderRegisters;
+
 	vertexCache.VertexPosition( surf->ambientCache );
-
-	CreateDrawCommands( surf );
-}
-
-void ShadowMapStage::CreateDrawCommands( const drawSurf_t *surf ) {
-	const idMaterial		*shader = surf->material;
-	const float				*regs = surf->shaderRegisters;
 
 	bool drawSolid = false;
 
