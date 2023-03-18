@@ -29,7 +29,7 @@ idCVar r_shadowMapAlphaTested(
 
 
 struct ShadowMapStage::Uniforms : GLSLUniformGroup {
-	UNIFORM_GROUP_DEF( ShadowMapStage::Uniforms )
+	UNIFORM_GROUP_DEF( Uniforms )
 	DEFINE_UNIFORM( mat4, modelMatrix )
 	DEFINE_UNIFORM( vec4, lightOrigin )
 	DEFINE_UNIFORM( float, maxLightDistance )
