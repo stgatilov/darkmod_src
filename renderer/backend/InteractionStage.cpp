@@ -76,7 +76,7 @@ struct InteractionStage::Uniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( float, RGTC )
 };
 
-enum InteractionStage::TextureUnits {
+enum TextureUnits {
 	TU_NORMAL = 0,
 	TU_DIFFUSE = 1,
 	TU_SPECULAR = 2,

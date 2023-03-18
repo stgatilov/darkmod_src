@@ -30,7 +30,6 @@ public:
 
 private:
 	struct Uniforms;
-	enum TextureUnits;
 
 	GLSLProgram *stencilInteractionShader = nullptr;
 	GLSLProgram *shadowMapInteractionShader = nullptr;
