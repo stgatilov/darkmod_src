@@ -24,7 +24,15 @@ public:
 	void Init();
 	void Shutdown();
 
-	void DrawShadowMap( const viewDef_t *viewDef );
+	// what to draw?
+	struct DrawMask {
+		bool clear = true;		// clear shadow map page first
+		bool global = true;		// draw global shadows
+		bool local = true;		// draw local shadows
+	};
+
+	bool DrawShadowMapSingleLight( const viewDef_t *viewDef, const viewLight_t *vLight, const DrawMask &mask );
+	void DrawShadowMapAllLights( const viewDef_t *viewDef, const DrawMask &mask );
 
 private:
 	GLSLProgram *shadowMapShader = nullptr;
@@ -33,14 +41,12 @@ private:
 	Uniforms *uniforms = nullptr;
 
 	void Start();
-	bool ShouldDrawLight( const viewLight_t *vLight );
-	void DrawLight( const viewLight_t *vLight );
+	bool ShouldDrawLight( const viewLight_t *vLight, const DrawMask &mask );
+	void DrawLight( const viewLight_t *vLight, const DrawMask &mask );
 	void End();
 
 	bool ShouldDrawSurf( const drawSurf_t *surf ) const;
 	void DrawLightInteractions( const drawSurf_t *surfs );
 	void DrawSurf( const drawSurf_t * drawSurf );
 	void IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage );
-
-	void FallbackPathForIntel( const viewDef_t *viewDef );
 };

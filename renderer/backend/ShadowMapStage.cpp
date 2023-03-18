@@ -62,14 +62,23 @@ void ShadowMapStage::Start() {
 	uniforms->opaqueTexture.Set( 0 );
 }
 
-bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight ) {
-	if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapPage.width == 0 ) {
+bool ShadowMapStage::ShouldDrawLight( const viewLight_t *vLight, const DrawMask &mask ) {
+	if ( vLight->noShadows ) {
+		return false;
+	}
+	if ( vLight->shadows != LS_MAPS) {
+		return false;
+	}
+	if ( vLight->shadowMapPage.width == 0 ) {
+		return false;
+	}
+	if ( !( mask.clear || mask.global && vLight->globalShadows || mask.local && vLight->localShadows ) ) {
 		return false;
 	}
 	return true;
 }
 
-void ShadowMapStage::DrawLight( const viewLight_t *vLight ) {
+void ShadowMapStage::DrawLight( const viewLight_t *vLight, const DrawMask &mask ) {
 	idVec4 lightOrigin;
 	lightOrigin.x = vLight->globalLightOrigin.x;
 	lightOrigin.y = vLight->globalLightOrigin.y;
@@ -83,9 +92,15 @@ void ShadowMapStage::DrawLight( const viewLight_t *vLight ) {
 	if ( r_useScissor.GetBool() ) {
 		qglScissor( page.x, page.y, 6*page.width, page.width );
 	}
-	qglClear( GL_DEPTH_BUFFER_BIT );
-	DrawLightInteractions( vLight->globalShadows );
-	DrawLightInteractions( vLight->localShadows );
+
+	if ( mask.clear )
+		qglClear( GL_DEPTH_BUFFER_BIT );
+
+	if ( mask.global )
+		DrawLightInteractions( vLight->globalShadows );
+
+	if ( mask.local )
+		DrawLightInteractions( vLight->localShadows );
 }
 
 void ShadowMapStage::End() {
@@ -99,21 +114,27 @@ void ShadowMapStage::End() {
 	frameBuffers->LeaveShadowMap();
 }
 
-void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
-	TRACE_GL_SCOPE( "RenderShadowMap" );
+bool ShadowMapStage::DrawShadowMapSingleLight( const viewDef_t *viewDef, const viewLight_t *vLight, const DrawMask &mask ) {
+	if ( !ShouldDrawLight( vLight, mask ) )
+		return false;
 
-	if ( glConfig.vendor == glvIntel ) {
-		// for some reason, Intel has massive performance problems with this path, cause as of yet is unknown
-		// we'll just use the existing shadow mapping code, but applied consecutively
-		FallbackPathForIntel( viewDef );
-		return;
-	}
+	TRACE_GL_SCOPE( "DrawShadowMapSingleLight" );
+
+	Start();
+	DrawLight( vLight, mask );
+	End();
+
+	return true;
+}
+
+void ShadowMapStage::DrawShadowMapAllLights( const viewDef_t *viewDef, const DrawMask &mask ) {
+	TRACE_GL_SCOPE( "DrawShadowMapAllLights" );
 
 	Start();
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
-		if ( !ShouldDrawLight( vLight ) )
+		if ( !ShouldDrawLight( vLight, mask ) )
 			continue;
-		DrawLight( vLight );
+		DrawLight( vLight, mask );
 	}
 	End();
 }
@@ -230,14 +251,4 @@ void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage
 	}
 
 	RB_DrawElementsInstanced( surf, 6 );
-}
-
-void ShadowMapStage::FallbackPathForIntel( const viewDef_t *viewDef ) {
-	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
-
-	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
-		backEnd.vLight = vLight;
-		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalInteractions, true );
-		RB_GLSL_DrawInteractions_ShadowMap( vLight->localInteractions, false );
-	}
 }

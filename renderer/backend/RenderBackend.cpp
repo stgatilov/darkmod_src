@@ -170,17 +170,27 @@ void RenderBackend::DrawLightgem( const viewDef_t *viewDef, byte *lightgemData )
 void RenderBackend::EndFrame() {}
 
 void RenderBackend::DrawInteractionsWithShadowMapping( const viewDef_t *viewDef, viewLight_t *vLight ) {
-	extern void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear );
-
 	TRACE_GL_SCOPE( "DrawLight_ShadowMap" );
 
 	if ( !r_shadowMapSinglePass.GetBool() && ( vLight->globalShadows || vLight->localShadows ) ) {
-		RB_GLSL_DrawInteractions_ShadowMap( vLight->globalShadows, true );
+		ShadowMapStage::DrawMask mask;
+
+		mask.clear = true;
+		mask.global = true;
+		mask.local = false;
+		shadowMapStage.DrawShadowMapSingleLight( viewDef, vLight, mask );
+
 		interactionStage.DrawInteractions( backEnd.viewDef, vLight, vLight->localInteractions, nullptr );
-		RB_GLSL_DrawInteractions_ShadowMap( vLight->localShadows, false );
+
+		mask.clear = false;
+		mask.global = false;
+		mask.local = true;
+		shadowMapStage.DrawShadowMapSingleLight( viewDef, vLight, mask );
+
 	} else {
 		interactionStage.DrawInteractions( backEnd.viewDef, vLight, vLight->localInteractions, nullptr );
 	}
+
 	interactionStage.DrawInteractions( backEnd.viewDef, vLight, vLight->globalInteractions, nullptr );
 
 	GLSLProgram::Deactivate();
@@ -249,7 +259,8 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 
 	if ( r_shadows.GetInteger() == 2 ) {
 		if ( r_shadowMapSinglePass.GetBool() ) {
-			shadowMapStage.DrawShadowMap( viewDef );
+			ShadowMapStage::DrawMask fullMask = { true, true, true };
+			shadowMapStage.DrawShadowMapAllLights( viewDef, fullMask );
 		}
 	}
 
