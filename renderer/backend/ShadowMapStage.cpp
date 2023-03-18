@@ -21,17 +21,27 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 
+idCVar r_shadowMapAlphaTested(
+	"r_shadowMapAlphaTested", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
+	"In case of alpha-tested material, apply alpha test to shadows too?\n"
+	"Note: stencil shadows cannot work with alpha test."
+);
+
+
 struct ShadowMapStage::Uniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( ShadowMapStage::Uniforms )
 	DEFINE_UNIFORM( mat4, modelMatrix )
 	DEFINE_UNIFORM( vec4, lightOrigin )
 	DEFINE_UNIFORM( float, maxLightDistance )
+	DEFINE_UNIFORM( float, alphaTest )
+	DEFINE_UNIFORM( sampler, opaqueTexture )
+	DEFINE_UNIFORM( vec4, textureMatrix/*[2]*/ )
 };
 
 ShadowMapStage::ShadowMapStage() {}
 
 void ShadowMapStage::Init() {
-	shadowMapShader = programManager->LoadFromFiles( "shadow_map", "stages/shadow_map/shadow_map.vert.glsl" );
+	shadowMapShader = programManager->LoadFromFiles( "shadow_map", "stages/shadow_map/shadow_map.vert.glsl", "stages/shadow_map/shadow_map.frag.glsl" );
 }
 
 void ShadowMapStage::Shutdown() {}
@@ -49,8 +59,6 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 	GL_CheckErrors();
 	frameBuffers->EnterShadowMap();
 
-	shadowMapShader->Activate();
-	GL_SelectTexture( 0 );
 	GL_Cull( r_shadowMapCullFront ? CT_BACK_SIDED : CT_TWO_SIDED );
 	qglPolygonOffset( 0, 0 );
 	qglEnable( GL_POLYGON_OFFSET_FILL );
@@ -58,7 +66,9 @@ void ShadowMapStage::DrawShadowMap( const viewDef_t *viewDef ) {
 		qglEnable( GL_CLIP_DISTANCE0 + i );
 	}
 
+	shadowMapShader->Activate();
 	uniforms = shadowMapShader->GetUniformGroup<Uniforms>();
+	uniforms->opaqueTexture.Set( 0 );
 
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
 		if ( vLight->noShadows || vLight->shadows != LS_MAPS || vLight->shadowMapPage.width == 0 ) {
@@ -138,47 +148,52 @@ void ShadowMapStage::CreateDrawCommands( const drawSurf_t *surf ) {
 
 	bool drawSolid = false;
 
-	if ( shader->Coverage() == MC_OPAQUE ) {
+	if ( shader->Coverage() == MC_OPAQUE || shader->Coverage() == MC_TRANSLUCENT ) {
 		drawSolid = true;
 	}
 
-	drawSolid = true;
 	// we may have multiple alpha tested stages
-	/*if ( shader->Coverage() == MC_PERFORATED ) {
-		// if the only alpha tested stages are condition register omitted,
-		// draw a normal opaque surface
-		bool	didDraw = false;
+	if ( shader->Coverage() == MC_PERFORATED ) {
 
-		GL_CheckErrors();
+		if ( r_shadowMapAlphaTested.GetBool() ) {
+			// if the only alpha tested stages are condition register omitted,
+			// draw a normal opaque surface
+			bool	didDraw = false;
 
-		// perforated surfaces may have multiple alpha tested stages
-		for ( int stage = 0; stage < shader->GetNumStages(); stage++ ) {
-			const shaderStage_t *pStage = shader->GetStage( stage );
+			GL_CheckErrors();
 
-			if ( !pStage->hasAlphaTest ) {
-				continue;
+			// perforated surfaces may have multiple alpha tested stages
+			for ( int stage = 0; stage < shader->GetNumStages(); stage++ ) {
+				const shaderStage_t *pStage = shader->GetStage( stage );
+
+				if ( !pStage->hasAlphaTest ) {
+					continue;
+				}
+
+				// check the stage enable condition
+				if ( regs[pStage->conditionRegister] == 0 ) {
+					continue;
+				}
+
+				// if we at least tried to draw an alpha tested stage,
+				// we won't draw the opaque surface
+				didDraw = true;
+
+				// skip the entire stage if alpha would be black
+				if ( regs[pStage->color.registers[3]] <= 0 ) {
+					continue;
+				}
+				IssueDrawCommand( surf, pStage );
 			}
 
-			// check the stage enable condition
-			if ( regs[pStage->conditionRegister] == 0 ) {
-				continue;
+			if ( !didDraw ) {
+				drawSolid = true;
 			}
-
-			// if we at least tried to draw an alpha tested stage,
-			// we won't draw the opaque surface
-			didDraw = true;
-
-			// skip the entire stage if alpha would be black
-			if ( regs[pStage->color.registers[3]] <= 0 ) {
-				continue;
-			}
-			IssueDrawCommand( surf, pStage );
 		}
-
-		if ( !didDraw ) {
+		else {
 			drawSolid = true;
 		}
-	}*/
+	}
 
 	if ( drawSolid ) {  // draw the entire surface solid
 		IssueDrawCommand( surf, nullptr );
@@ -187,6 +202,7 @@ void ShadowMapStage::CreateDrawCommands( const drawSurf_t *surf ) {
 
 void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *stage ) {
 	if( stage ) {
+		GL_SelectTexture( 0 );
 		stage->texture.image->Bind();
 	}
 
@@ -194,13 +210,18 @@ void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage
 
 	if( stage ) {
 		// set the alpha modulate
-		//params.alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
+		uniforms->alphaTest.Set( surf->shaderRegisters[stage->alphaTestRegister] );
 
-		//if( stage->texture.hasMatrix ) {
-		//	RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, params.textureMatrix.ToFloatPtr() );
-		//} else {
-		//	params.textureMatrix.Identity();
-		//}
+		idMat4 textureMatrix;
+		if( stage->texture.hasMatrix ) {
+			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, textureMatrix.ToFloatPtr() );
+		} else {
+			textureMatrix.Identity();
+		}
+		uniforms->textureMatrix.SetArray( 2, textureMatrix.ToFloatPtr() );
+	}
+	else {
+		uniforms->alphaTest.Set( -1.0f );
 	}
 
 	RB_DrawElementsInstanced( surf, 6 );
