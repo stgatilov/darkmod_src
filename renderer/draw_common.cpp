@@ -34,13 +34,6 @@ struct CubemapUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, modelMatrix );
 };
 
-struct BumpyEnvironmentUniforms : GLSLUniformGroup {
-	UNIFORM_GROUP_DEF( BumpyEnvironmentUniforms );
-
-	DEFINE_UNIFORM( vec4, colorAdd );
-	DEFINE_UNIFORM( vec4, colorModulate );
-};
-
 struct FogUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( FogUniforms );
 
@@ -84,9 +77,6 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 
 		programManager->bumpyEnvironment->Activate();
 		programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
-		BumpyEnvironmentUniforms *uniforms = programManager->bumpyEnvironment->GetUniformGroup<BumpyEnvironmentUniforms>();
-		uniforms->colorAdd.Set(0, 0, 0, 0);
-		uniforms->colorModulate.Set(0, 0, 0, 0);
 	} else {
 		GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
 		environmentShader->Activate();
