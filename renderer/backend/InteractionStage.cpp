@@ -124,8 +124,31 @@ void InteractionStage::Init() {
 
 void InteractionStage::Shutdown() {}
 
-void InteractionStage::DrawInteractions( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *interactionSurfs, const TiledCustomMipmapStage *stencilShadowMipmaps ) {
+bool InteractionStage::ShouldDrawLight( const viewLight_t *vLight ) const {
+	if ( vLight->lightShader->IsFogLight() || vLight->lightShader->IsBlendLight() )
+		return false;
+
+	// if there are no interactions, get out!
+	if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions )
+		return false;
+
+	return true;
+}
+
+void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLight_t *vLight, DrawSurfaceList list, const TiledCustomMipmapStage *stencilShadowMipmaps ) {
+	drawSurf_t *interactionSurfs = nullptr;
+	if ( list == DSL_GLOBAL ) {
+		interactionSurfs = vLight->globalInteractions;
+	} else if ( list == DSL_LOCAL ) {
+		interactionSurfs = vLight->localInteractions;
+	} else if ( list == DSL_TRANSLUCENT ) {
+		interactionSurfs = vLight->translucentInteractions;
+	}
+
 	if ( !interactionSurfs ) {
+		return;
+	}
+	if ( r_skipTranslucent.GetBool() && list == DSL_TRANSLUCENT ) {
 		return;
 	}
 
@@ -148,15 +171,16 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, viewLight_t *
 	// unwanted side effects
 	int alphaMask = r_fboColorBits.GetInteger() == 64 ? GLS_ALPHAMASK : 0;
 
+	int depthFunc = list == DSL_TRANSLUCENT ? GLS_DEPTHFUNC_LESS : GLS_DEPTHFUNC_EQUAL;
+
 	// perform setup here that will be constant for all interactions
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | alphaMask | backEnd.depthFunc );
-	backEnd.currentSpace = NULL; // ambient/interaction shaders conflict
+	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | alphaMask | depthFunc );
 
 	backEnd.currentScissor = vLight->scissorRect;
 	FB_ApplyScissor();
 
 	// bind the vertex and fragment program
-	ChooseInteractionProgram( vLight, interactionSurfs == vLight->translucentInteractions );
+	ChooseInteractionProgram( vLight, list == DSL_TRANSLUCENT );
 	uniforms->cubic.Set( vLight->lightShader->IsCubicLight() ? 1 : 0 );
 	uniforms->globalLightOrigin.Set( vLight->globalLightOrigin );
 	uniforms->globalViewOrigin.Set( viewDef->renderView.vieworg );
@@ -292,7 +316,7 @@ void InteractionStage::BindShadowTexture( const TiledCustomMipmapStage *stencilS
 	}
 }
 
-void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool translucent ) {
+void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool translucent ) {
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		interactionShader = ambientInteractionShader;
 	} else if ( vLight->shadowMapPage.width > 0 ) {
@@ -335,7 +359,7 @@ void InteractionStage::ChooseInteractionProgram( viewLight_t *vLight, bool trans
 	PreparePoissonSamples();
 }
 
-void InteractionStage::ProcessSingleSurface( viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf ) {
+void InteractionStage::ProcessSingleSurface( const viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf ) {
 	const idMaterial	*material = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
 	const idMaterial	*lightShader = vLight->lightShader;

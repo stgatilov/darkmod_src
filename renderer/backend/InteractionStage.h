@@ -19,6 +19,12 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 class GLSLProgram;
 class TiledCustomMipmapStage;
 
+enum DrawSurfaceList {
+	DSL_GLOBAL,
+	DSL_LOCAL,
+	DSL_TRANSLUCENT,
+};
+
 class InteractionStage {
 public:
 	InteractionStage();
@@ -26,7 +32,9 @@ public:
 	void Init();
 	void Shutdown();
 
-	void DrawInteractions( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *interactionSurfs, const TiledCustomMipmapStage *stencilShadowMipmaps );
+	bool ShouldDrawLight( const viewLight_t *vLight ) const;
+
+	void DrawInteractions( const viewDef_t *viewDef, const viewLight_t *vLight, DrawSurfaceList list, const TiledCustomMipmapStage *stencilShadowMipmaps );
 
 private:
 	struct Uniforms;
@@ -40,13 +48,13 @@ private:
 	idList<idVec2> poissonSamples;
 
 	const viewDef_t *viewDef = nullptr;
-	viewLight_t *vLight = nullptr;
+	const viewLight_t *vLight = nullptr;
 
 	void LoadInteractionShader(GLSLProgram *shader, const idStr &baseName);
 	void BindShadowTexture( const TiledCustomMipmapStage *stencilShadowMipmaps );
-	void ChooseInteractionProgram( viewLight_t *vLight, bool translucent );
-	void ProcessSingleSurface( viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf );
-	void PrepareDrawCommand( drawInteraction_t * inter );
+	void ChooseInteractionProgram( const viewLight_t *vLight, bool translucent );
+	void ProcessSingleSurface( const viewLight_t *vLight, const shaderStage_t *lightStage, const drawSurf_t *surf );
+	void PrepareDrawCommand( drawInteraction_t *inter );
 
 	void PreparePoissonSamples();
 };

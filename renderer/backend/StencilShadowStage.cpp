@@ -44,7 +44,7 @@ void StencilShadowStage::Shutdown() {
 	ShutdownMipmaps();
 }
 
-void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
+void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t *shadowSurfs ) {
 	if ( !shadowSurfs || !r_shadows.GetInteger() ) {
 		return;
 	}
@@ -79,13 +79,13 @@ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, viewLight
 	}
 
 	// draw depth-fail stencil shadows
-	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
-	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
-	DrawSurfs( depthFailSurfs.Ptr(), depthFailSurfs.Num() );
+	qglStencilOpSeparate( viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
+	qglStencilOpSeparate( viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
+	DrawSurfs( vLight, depthFailSurfs.Ptr(), depthFailSurfs.Num() );
 	// draw traditional depth-pass stencil shadows
-	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
-	qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
-	DrawSurfs( depthPassSurfs.Ptr(), depthPassSurfs.Num() );
+	qglStencilOpSeparate( viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, GL_INCR_WRAP );
+	qglStencilOpSeparate( viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
+	DrawSurfs( vLight, depthPassSurfs.Ptr(), depthPassSurfs.Num() );
 
 	// reset state
 	GL_Cull( CT_FRONT_SIDED );
@@ -94,19 +94,19 @@ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, viewLight
 	}
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 	// FIXME: move to interaction stage
-	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->IsLightGem() /*|| r_shadows.GetInteger()==2 && backEnd.vLight->tooBigForShadowMaps*/ )
+	if ( !r_softShadowsQuality.GetBool() || viewDef->IsLightGem() )
 		qglStencilFunc( GL_GEQUAL, 128, 255 ); // enable stencil test - the shadow volume path
 	
 }
 
-void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
+void StencilShadowStage::DrawSurfs( const viewLight_t *vLight, const drawSurf_t **surfs, size_t count ) {
 	if (count == 0) {
 		return;
 	}
 
-	backEnd.currentScissor = backEnd.vLight->scissorRect;
+	backEnd.currentScissor = vLight->scissorRect;
 	FB_ApplyScissor();
-	DepthBoundsTest depthBoundsTest( backEnd.vLight->scissorRect );
+	DepthBoundsTest depthBoundsTest( vLight->scissorRect );
 
 	for (size_t i = 0; i < count; ++i) {
 		const drawSurf_t *surf = surfs[i];
@@ -122,7 +122,7 @@ void StencilShadowStage::DrawSurfs( const drawSurf_t **surfs, size_t count ) {
 
 		uniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
 		idVec3 localLightOrigin;
-		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLightOrigin );
+		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		uniforms->localLightOrigin.Set( idVec4( localLightOrigin, 0.0f ) );
 
 		RB_DrawElementsWithCounters( surf );
@@ -157,8 +157,8 @@ void StencilShadowStage::ShutdownMipmaps() {
 	currentMipmapProps = MipmapsInitProps();
 }
 
-void StencilShadowStage::FillStencilShadowMipmaps( const idScreenRect &lightScissor ) {
-	if ( backEnd.viewDef->IsLightGem() )
+void StencilShadowStage::FillStencilShadowMipmaps( const viewDef_t *viewDef, const idScreenRect &lightScissor ) {
+	if ( viewDef->IsLightGem() )
 		return;
 
 	MipmapsInitProps newProps = {

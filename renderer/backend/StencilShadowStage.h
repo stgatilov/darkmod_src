@@ -23,14 +23,14 @@ public:
 	void Init();
 	void Shutdown();
 
-	void DrawStencilShadows( const viewDef_t *viewDef, viewLight_t *vLight, const drawSurf_t *shadowSurfs );
+	void DrawStencilShadows( const viewDef_t *viewDef, const viewLight_t *vLight, const drawSurf_t *shadowSurfs );
 
-	void FillStencilShadowMipmaps( const idScreenRect &lightScissor );
+	void FillStencilShadowMipmaps( const viewDef_t *viewDef, const idScreenRect &lightScissor );
 
 private:
 	struct Uniforms;
 
-	void DrawSurfs(const drawSurf_t **surfs, size_t count);
+	void DrawSurfs( const viewLight_t *vLight, const drawSurf_t **surfs, size_t count );
 	void ShutdownMipmaps();
 
 	Uniforms *uniforms = nullptr;
