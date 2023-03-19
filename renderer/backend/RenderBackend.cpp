@@ -193,6 +193,8 @@ void RenderBackend::DrawInteractionsWithShadowMapping( const viewDef_t *viewDef,
 
 	interactionStage.DrawInteractions( viewDef, vLight, DSL_GLOBAL, nullptr );
 
+	interactionStage.DrawInteractions( viewDef, vLight, DSL_TRANSLUCENT, nullptr );
+
 	GLSLProgram::Deactivate();
 }
 
@@ -251,32 +253,52 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 
 	interactionStage.DrawInteractions( viewDef, vLight, DSL_GLOBAL, &stencilShadowStage.stencilShadowMipmap );
 
+	qglStencilFunc( GL_ALWAYS, 128, 255 );
+	interactionStage.DrawInteractions( viewDef, vLight, DSL_TRANSLUCENT, nullptr );
+
 	GLSLProgram::Deactivate();
 }
 
 void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 	TRACE_GL_SCOPE( "LightInteractions" );
 
-	if ( r_shadows.GetInteger() == 2 ) {
-		if ( r_shadowMapSinglePass.GetBool() ) {
-			ShadowMapStage::DrawMask fullMask = { true, true, true };
-			shadowMapStage.DrawShadowMapAllLights( viewDef, fullMask );
+	if ( r_shadows.GetInteger() == 2 && r_shadowMapSinglePass.GetBool() ) {
+		for ( int pass = 0; pass < 2; pass++ ) {
+			// draw all shadow maps: global on pass 0, add local on pass 1
+			ShadowMapStage::DrawMask mask;
+			mask.clear = ( pass == 0 );
+			mask.global = ( pass == 0 );
+			mask.local = ( pass == 1 );
+			shadowMapStage.DrawShadowMapAllLights( viewDef, mask );
+
+			// draw interactions for all shadow-mapped lights
+			for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
+				if ( !interactionStage.ShouldDrawLight( vLight ) || vLight->shadows != LS_MAPS )
+					continue;
+
+				if ( pass == 0 ) {
+					interactionStage.DrawInteractions( viewDef, vLight, DSL_LOCAL, nullptr );
+				} else {
+					interactionStage.DrawInteractions( viewDef, vLight, DSL_GLOBAL, nullptr );
+					interactionStage.DrawInteractions( viewDef, vLight, DSL_TRANSLUCENT, nullptr );
+				}
+			}
 		}
 	}
 
-	// for each light, perform adding and shadowing
+	// draw interactions and shadows for each light separately
+	// note: even with single-pass shadow maps on, we might still have some stencil-shadowed lights to process here
 	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next ) {
 		if ( !interactionStage.ShouldDrawLight( vLight ) )
 			continue;
-
+	
 		if ( vLight->shadows == LS_MAPS ) {
-			DrawInteractionsWithShadowMapping( viewDef, vLight );
+			if ( !r_shadowMapSinglePass.GetBool() ) {
+				DrawInteractionsWithShadowMapping( viewDef, vLight );
+			}
 		} else {
 			DrawInteractionsWithStencilShadows( viewDef, vLight );
 		}
-
-		qglStencilFunc( GL_ALWAYS, 128, 255 );
-		interactionStage.DrawInteractions( viewDef, vLight, DSL_TRANSLUCENT, nullptr );
 	}
 
 	// disable stencil shadow test
