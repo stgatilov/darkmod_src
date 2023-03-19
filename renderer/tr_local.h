@@ -1719,16 +1719,6 @@ TR_BACKEND
 
 void RB_SetDefaultGLState( void );
 void RB_SetGL2D( void );
-
-// write a comment to the r_logFile if it is enabled
-//void RB_LogComment( const char *comment, ... ) id_attribute( (format( printf, 1, 2 )) );
-// duzenko: switch to define so that we have a chance to skip the function calls getting the parameters
-#define RB_LogComment(comment, ...)						\
-	if ( tr.logFile ) {									\
-		fprintf( tr.logFile, "// " );					\
-		fprintf( tr.logFile, comment, ##__VA_ARGS__ );	\
-	}													
-
 void RB_ShowImages( void );
 
 void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds );

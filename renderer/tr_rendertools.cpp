@@ -2596,8 +2596,6 @@ void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 	TRACE_GL_SCOPE( "RenderDebugTools" );
 
-	RB_LogComment( "---------- RB_RenderDebugTools ----------\n" );
-
 	GL_State( GLS_DEFAULT );
 	backEnd.currentScissor = backEnd.viewDef->scissor;
 	GL_ScissorVidSize( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 

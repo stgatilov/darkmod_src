@@ -36,7 +36,6 @@ may touch, including the editor.
 */
 void RB_SetDefaultGLState( void ) {
 	TRACE_GL_SCOPE( "RB_SetDefaultGLState" );
-	RB_LogComment( "--- R_SetDefaultGLState ---\n" );
 	GL_CheckErrors();
 
 	qglClearDepth( 1.0f );
@@ -117,8 +116,6 @@ void GL_SelectTexture( const int unit ) {
 		return;
 	}
 	qglActiveTexture( GL_TEXTURE0 + unit );
-
-	RB_LogComment( "glActiveTextureARB( %i );\n", unit );
 
 	backEnd.glState.currenttmu = unit;
 }
@@ -794,7 +791,6 @@ void RB_SwapBuffers() {
 	if ( r_finish.GetBool() ) {
 		qglFinish();
 	}
-	RB_LogComment( "***************** RB_SwapBuffers *****************\n" );
 
 	// don't flip if drawing to front buffer
 	if ( !r_frontBuffer.GetBool() ) {
@@ -814,8 +810,6 @@ bool RB_CopyRender( const void *data ) {
 		return false;
 	}
 	const copyRenderCommand_t &cmd = *( copyRenderCommand_t * )data;
-
-	RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
 	if ( cmd.imageWidth * cmd.imageHeight == 0 )
 		return false;

@@ -135,8 +135,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	}
 	TRACE_GL_SCOPE( "StencilShadowPass" );
 
-	RB_LogComment( "---------- RB_StencilShadowPass ----------\n" );
-
 	// for visualizing the shadows
 	switch ( r_showShadows.GetInteger() ) {
 	case -1:

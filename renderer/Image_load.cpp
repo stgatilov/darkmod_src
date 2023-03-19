@@ -1501,12 +1501,6 @@ Automatically enables 2D mapping, cube mapping, or 3D texturing if needed
 ==============
 */
 void idImage::Bind() {
-#ifdef _DEBUG
-	if ( tr.logFile ) {
-		RB_LogComment( "idImage::Bind( %s )\n", imgName.c_str() );
-	}
-#endif
-
 	// load the image if necessary
 	if ( texnum == TEXTURE_NOT_LOADED ) {
 		auto start = Sys_Milliseconds();

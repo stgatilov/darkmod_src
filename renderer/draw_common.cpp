@@ -264,8 +264,6 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	
 	TRACE_GL_SCOPE( "STD_FillDepthBuffer" );
 
-	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
-
 	programManager->depthShader->Activate();
 	Uniforms::Depth * depthUniforms = programManager->depthShader->GetUniformGroup<Uniforms::Depth>();
 	depthUniforms->alphaTest.Set( -1 );	// no alpha test by default
@@ -593,7 +591,6 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( surf->material->GetSort() == SS_PORTAL_SKY && g_enablePortalSky.GetInteger() == 2 ) {
 		return;
 	}
-	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );
 
 	GL_CheckErrors();
 
@@ -709,8 +706,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs, bool post
 	}
 	TRACE_GL_SCOPE( "STD_DrawShaderPasses" );
 
-	RB_LogComment( "---------- RB_STD_DrawShaderPasses ----------\n" );
-
 	idList<const idMaterial*> renderCopies;
 
 	GL_SelectTexture( 0 );
@@ -804,7 +799,6 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 	if ( r_skipBlendLights.GetBool() ) {
 		return;
 	}
-	RB_LogComment( "---------- RB_BlendLight ----------\n" );
 
 	lightShader = backEnd.vLight->lightShader;
 	regs = backEnd.vLight->shaderRegisters;
@@ -892,8 +886,6 @@ static void RB_FogPass( bool translucent ) {
 	const idMaterial	*lightShader;
 	const shaderStage_t	*stage;
 	const float			*regs;
-
-	RB_LogComment( "---------- RB_FogPass ----------\n" );
 
 	// create a surface for the light frustom triangles, which are oriented drawn side out
 	frustumTris = backEnd.vLight->frustumTris;
@@ -1025,8 +1017,6 @@ void RB_STD_FogAllLights( bool translucent ) {
 	}
 	TRACE_GL_SCOPE( "STD_FogAllLights" );
 
-	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
-
 	for ( backEnd.vLight = backEnd.viewDef->viewLights ; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		if ( backEnd.vLight->volumetricDust > 0.0f && !backEnd.viewDef->IsLightGem() && !translucent ) {
 			volumetric->RenderLight( backEnd.viewDef, backEnd.vLight );
@@ -1059,8 +1049,6 @@ void RB_STD_DrawView( void ) {
 
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs, processed;
-
-	RB_LogComment( "---------- RB_STD_DrawView ----------\n" );
 
 	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 

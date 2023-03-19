@@ -779,9 +779,6 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf ) {
 			return;
 	}
 
-	if ( tr.logFile ) {
-		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), material->GetName() );
-	}
 	GL_CheckErrors();
 
 	// change the matrix and light projection vectors if needed
