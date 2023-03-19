@@ -13,19 +13,18 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #version 140
-// !!ARBvp1.0
 
 #pragma tdm_include "tdm_transform.glsl"
 
-in vec4 attr_Color;
 in vec4 attr_Position;
-in vec4 attr_TexCoord;
+in vec2 attr_TexCoord;
+in vec4 attr_Color;
+
 out vec4 var_color;
-out vec4 var_tc0;
+out vec2 var_texCoord;
 
 void main() {
-	// OPTION ARB_position_invariant;
-	var_tc0 = attr_TexCoord;                                                                            //MOV	   result.texcoord, vertex.attrib[8];
-	var_color = attr_Color;                                                                             //MOV	   result.color, vertex.attrib[3];
 	gl_Position = tdm_transform(attr_Position);
+	var_texCoord = attr_TexCoord;
+	var_color = attr_Color;
 }
