@@ -28,7 +28,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 struct CubemapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( CubemapUniforms );
 
-	DEFINE_UNIFORM( float, reflective );
 	DEFINE_UNIFORM( int, skybox );
 	DEFINE_UNIFORM( vec3, viewOrigin );
 	DEFINE_UNIFORM( mat4, modelMatrix );
@@ -129,9 +128,6 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 		if ( bumpStage ) {
 			GL_SelectTexture( 0 );
-
-			//if ( r_useGLSL )
-			//	programManager->cubeMapShader->GetUniformGroup<CubemapUniforms>()->reflective.Set( 0 );
 		}
 		GLSLProgram::Deactivate();
 

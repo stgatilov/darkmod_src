@@ -16,14 +16,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_transform.glsl"
 
-in vec4 attr_Position;
-in vec2 attr_TexCoord;
-in vec4 attr_Color;
-
 uniform mat4 u_textureMatrix;
 uniform vec4 u_colorMul;
 uniform vec4 u_colorAdd;
 uniform float u_screenTex;
+
+in vec4 attr_Position;
+in vec2 attr_TexCoord;
+in vec4 attr_Color;
 
 out vec4 var_TexCoord0;
 out vec4 var_Color;
@@ -31,7 +31,7 @@ out vec4 var_Color;
 void main() {
 	gl_Position = tdm_transform(attr_Position);
 	var_Color = attr_Color * u_colorMul + u_colorAdd;
-	if (u_screenTex == 1.0) 
+	if (u_screenTex == 1.0)
 		var_TexCoord0 = gl_Position;
 	else
 		var_TexCoord0 = u_textureMatrix * vec4(attr_TexCoord, 0, 1);

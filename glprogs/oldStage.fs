@@ -29,7 +29,9 @@ void main() {
 		tex.xy /= tex.w;
 		tex = tex * 0.5 + 0.5;
 		tex = texture(u_tex0, tex.xy);
-	} else
+	}
+	else {
 		tex = textureProj(u_tex0, var_TexCoord0);
-	FragColor = tex*var_Color;
+	}
+	FragColor = tex * var_Color;
 }
