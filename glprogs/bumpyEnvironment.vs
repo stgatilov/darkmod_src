@@ -31,9 +31,9 @@ out mat3 var_TangentToWorldMatrix;
 
 void main() {
 	gl_Position = tdm_transform(attr_Position);
-	
+
 	var_toEyeWorld = mat3(u_modelMatrix) * vec3(u_viewOriginLocal - attr_Position);
-	
+
 	mat3 matTangentToLocal = mat3(
 		clamp(attr_Tangent, -1, 1),
 		clamp(attr_Bitangent, -1, 1),
