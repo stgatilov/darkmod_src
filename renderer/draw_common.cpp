@@ -53,12 +53,6 @@ struct BlendUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, blendColor );
 };
 
-struct FrobUniforms : GLSLUniformGroup {
-	UNIFORM_GROUP_DEF( FrobUniforms );
-
-	DEFINE_UNIFORM( float, pulse );
-};
-
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
