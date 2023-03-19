@@ -46,7 +46,6 @@ public:
 	void ReloadAllPrograms();
 
 	// global built-in shaders
-	GLSLProgram* frobShader;
 	GLSLProgram *softParticleShader;
 	GLSLProgram* toneMapShader;
 	GLSLProgram *cubeMapShader;

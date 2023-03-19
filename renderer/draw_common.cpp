@@ -535,37 +535,6 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( const shaderStage_t *pStage, cons
 
 /*
 ==================
-RB_STD_T_RenderShaderPasses_Frob
-
-Frob shader stub
-==================
-*/
-ID_NOINLINE void RB_STD_T_RenderShaderPasses_Frob( const shaderStage_t *pStage, const drawSurf_t *surf ) {
-	//if ( r_newFrob.GetInteger() != 1 )
-		return;
-	if ( surf->sort >= SS_DECAL ) // otherwise fills black
-		return;
-
-	programManager->frobShader->Activate();
-
-	programManager->frobShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
-	auto frobUniforms = programManager->frobShader->GetUniformGroup<FrobUniforms>();
-	frobUniforms->pulse.Set( .7 + .3 * sin( gameLocal.time * 1e-3 ) ); // FIXME move to frontend?
-	if ( !surf->space )
-		return;
-
-	{
-		using namespace Attributes::Default;
-		//Attributes::Default::SetDrawVert( (size_t)ac, (1 << Position) | (1 << Normal) );
-	}
-	RB_DrawElementsWithCounters( surf );
-
-	GL_SelectTexture( 0 );
-	GLSLProgram::Deactivate();
-}
-
-/*
-==================
 RB_STD_T_RenderShaderPasses
 
 This is also called for the generated 2D rendering
@@ -680,9 +649,6 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
-
-	if ( surf->shaderRegisters[EXP_REG_PARM11] )
-		RB_STD_T_RenderShaderPasses_Frob( pStage, surf );
 
 	if ( surf->space->weaponDepthHack || ( !soft_particle && surf->space->modelDepthHack != 0.0f ) ) {
 		RB_LeaveDepthHack();

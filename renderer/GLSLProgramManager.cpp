@@ -59,7 +59,6 @@ void GLSLProgramManager::Shutdown() {
 	}
 	programs.ClearFree();
 
-	frobShader = nullptr;
 	cubeMapShader = nullptr;
 	depthShader = nullptr;
 	fogShader = nullptr;
@@ -267,7 +266,6 @@ void GLSLProgramManager::Init() {
 	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
 	stencilInteractionShader = LoadInteractionShader( "interactionStencil", "interactionStencil", false );
 	shadowMapInteractionShader = LoadInteractionShader( "interactionShadowMaps", "interactionShadowMaps", false );
-	frobShader = Load( "frob" );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	toneMapShader = Load( "tonemap" );
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
