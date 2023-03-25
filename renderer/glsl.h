@@ -24,8 +24,6 @@ extern idCVarBool r_shadowMapCullFront;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );
-float GetEffectiveLightRadius();
-void RB_SingleSurfaceToDepthBuffer( GLSLProgram *program, const drawSurf_t *surf );
 
 GLSLProgram *R_FindGLSLProgram( const char *name );
 
@@ -69,18 +67,6 @@ namespace Uniforms {
 		void Set( const viewEntity_t *space );
 	};
 
-	struct Depth: GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( Depth)
-
-		DEFINE_UNIFORM( float, alphaTest )
-		DEFINE_UNIFORM( vec4, clipPlane )
-		DEFINE_UNIFORM( mat4, matViewRev )
-		DEFINE_UNIFORM( vec4, color )
-
-		int instances = 0;
-		bool acceptsTranslucent = false;
-	};
-
 	struct SoftParticle : GLSLUniformGroup {
 		UNIFORM_GROUP_DEF( SoftParticle )
 
@@ -91,74 +77,6 @@ namespace Uniforms {
 
 		int instances = 0;
 		bool acceptsTranslucent = false;
-	};
-
-	struct Interaction: GLSLUniformGroup {
-		UNIFORM_GROUP_DEF( Interaction )
-
-		DEFINE_UNIFORM( mat4, modelMatrix )
-		DEFINE_UNIFORM( vec4, diffuseMatrix )
-		DEFINE_UNIFORM( vec4, bumpMatrix )
-		DEFINE_UNIFORM( vec4, specularMatrix )
-		DEFINE_UNIFORM( vec4, colorModulate )
-		DEFINE_UNIFORM( vec4, colorAdd )
-
-		DEFINE_UNIFORM( mat4, lightProjectionFalloff )
-		DEFINE_UNIFORM( vec4, lightTextureMatrix )
-		DEFINE_UNIFORM( vec4, diffuseColor )
-		DEFINE_UNIFORM( vec4, specularColor )
-		DEFINE_UNIFORM( int, cubic )
-		DEFINE_UNIFORM( sampler, normalTexture )
-		DEFINE_UNIFORM( sampler, diffuseTexture )
-		DEFINE_UNIFORM( sampler, specularTexture )
-		DEFINE_UNIFORM( sampler, lightProjectionTexture )
-		DEFINE_UNIFORM( sampler, lightProjectionCubemap )
-		DEFINE_UNIFORM( sampler, lightFalloffTexture )
-		DEFINE_UNIFORM( int, useNormalIndexedDiffuse )
-		DEFINE_UNIFORM( int, useNormalIndexedSpecular )
-		DEFINE_UNIFORM( sampler, lightDiffuseCubemap )
-		DEFINE_UNIFORM( sampler, lightSpecularCubemap )
-
-		DEFINE_UNIFORM( vec3, globalLightOrigin )
-		DEFINE_UNIFORM( vec3, globalViewOrigin )
-		DEFINE_UNIFORM( vec2, renderResolution )
-
-		DEFINE_UNIFORM( float, minLevel )
-		DEFINE_UNIFORM( float, gamma )
-
-		DEFINE_UNIFORM( int, shadows )
-		DEFINE_UNIFORM( int, shadowMapCullFront )
-		DEFINE_UNIFORM( vec4, shadowRect )
-		DEFINE_UNIFORM( int, softShadowsQuality )
-		DEFINE_UNIFORM( vec2, softShadowsSamples )
-		DEFINE_UNIFORM( float, softShadowsRadius )
-		DEFINE_UNIFORM( int, shadowMap )
-		DEFINE_UNIFORM( sampler, depthTexture )
-		DEFINE_UNIFORM( sampler, stencilTexture )
-
-		DEFINE_UNIFORM( float, RGTC )
-		DEFINE_UNIFORM( vec3, hasTextureDNS )
-		DEFINE_UNIFORM( int, useBumpmapLightTogglingFix )
-
-		DEFINE_UNIFORM( int, lightCount )
-		DEFINE_UNIFORM( vec3, lightColor )
-
-		DEFINE_UNIFORM( sampler, ssaoTexture )
-		DEFINE_UNIFORM( int, ssaoEnabled )
-
-		// temp
-		DEFINE_UNIFORM( int, shadowMapHistory )
-		DEFINE_UNIFORM( int, frameCount )
-		DEFINE_UNIFORM( vec3, lightSamples )
-
-
-		bool ambient = false;
-
-		idList<idVec2> poissonSamples;
-
-		void SetForInteractionBasic( const drawInteraction_t *din );
-		void SetForInteraction( const drawInteraction_t *din );
-		void SetForShadows( bool translucent );
 	};
 
 	//pack of uniforms defined in a shader attached to "new" stage of a material

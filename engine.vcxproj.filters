@@ -3250,9 +3250,6 @@
     <ClCompile Include="renderer\FrameBuffer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\draw_stencil.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="game\gamesys\Automation.cpp">
       <Filter>Game\GameSys</Filter>
     </ClCompile>
@@ -3275,9 +3272,6 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\GLSLProgramManager.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_glsl_multi.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="framework\minizip\minizip_extra.c">

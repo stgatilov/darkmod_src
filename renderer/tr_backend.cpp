@@ -858,11 +858,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 					fboOff = true;
 				}
 			}
-			if( r_useNewBackend.GetBool() ) {
-				renderBackend->DrawView( backEnd.viewDef );
-			} else {
-				RB_DrawView();
-			}
+			renderBackend->DrawView( backEnd.viewDef );
 			GL_CheckErrors();
 			if ( isv3d ) {
 				c_draw3d++;

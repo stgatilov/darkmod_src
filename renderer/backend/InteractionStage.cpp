@@ -354,7 +354,7 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
 	} else {
 		uniforms->softShadowsQuality.Set( 0 );
 	}
-	uniforms->softShadowsRadius.Set( GetEffectiveLightRadius() ); // for soft stencil and all shadow maps
+	uniforms->softShadowsRadius.Set( r_softShadowsRadius.GetFloat() ); // for soft stencil and all shadow maps
 
 	PreparePoissonSamples();
 }
@@ -388,7 +388,6 @@ void InteractionStage::ProcessSingleSurface( const viewLight_t *vLight, const sh
 	if ( lightStage->texture.hasMatrix )
 		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
 	// stgatilov: we no longer merge two transforms together, since we need light-volume coords in fragment shader
-	//RB_BakeTextureMatrixIntoTexgen( reinterpret_cast<class idPlane *>(inter.lightProjection), lightTexMatrix );
 	inter.lightTextureMatrix[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
 	inter.lightTextureMatrix[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );
 

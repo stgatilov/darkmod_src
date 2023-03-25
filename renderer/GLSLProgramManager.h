@@ -50,17 +50,9 @@ public:
 	GLSLProgram* toneMapShader;
 	GLSLProgram *cubeMapShader;
 	GLSLProgram *bumpyEnvironment;
-	GLSLProgram *depthShader;
 	GLSLProgram *fogShader;
 	GLSLProgram *oldStageShader;
 	GLSLProgram *blendShader;
-	GLSLProgram *stencilShadowShader;
-	GLSLProgram *shadowMapShader;
-	GLSLProgram *shadowMapMultiShader;
-	GLSLProgram *shadowMapMultiGShader;
-	GLSLProgram *ambientInteractionShader;
-	GLSLProgram *stencilInteractionShader;
-	GLSLProgram *shadowMapInteractionShader;
 	GLSLProgram *gaussianBlurShader;
 	GLSLProgram *testImageCubeShader;
 

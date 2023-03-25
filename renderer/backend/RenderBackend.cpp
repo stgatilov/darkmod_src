@@ -27,8 +27,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 RenderBackend renderBackendImpl;
 RenderBackend *renderBackend = &renderBackendImpl;
 
-idCVar r_useNewBackend( "r_useNewBackend", "1", CVAR_BOOL|CVAR_RENDERER|CVAR_ARCHIVE, "Use experimental new backend" );
-
 namespace {
 	void CreateLightgemFbo( FrameBuffer *fbo ) {
 		fbo->Init( DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH );

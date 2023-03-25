@@ -60,16 +60,9 @@ void GLSLProgramManager::Shutdown() {
 	programs.ClearFree();
 
 	cubeMapShader = nullptr;
-	depthShader = nullptr;
 	fogShader = nullptr;
 	oldStageShader = nullptr;
 	blendShader = nullptr;
-	stencilShadowShader = nullptr;
-	shadowMapShader = nullptr;
-	shadowMapMultiShader = nullptr;
-	ambientInteractionShader = nullptr;
-	stencilInteractionShader = nullptr;
-	shadowMapInteractionShader = nullptr;
 }
 
 GLSLProgram * GLSLProgramManager::Load( const idStr &name, const idHashMapDict &defines ) {
@@ -158,14 +151,6 @@ namespace {
 		program->Validate();
 	}
 
-	void InitDepthShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, {}, "depthAlpha.vs", "depthAlpha.fs" );
-		program->Activate();
-		GLSLUniform_sampler( program, "u_tex0" ).Set( 0 );
-		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-		program->Validate();
-	}
-
 	void InitFogShader( GLSLProgram *program ) {
 		DefaultProgramInit( program, {}, "fog.vs", "fog.fs" );
 		program->Activate();
@@ -189,14 +174,6 @@ namespace {
 		GLSLUniform_sampler( program, "u_texture0" ).Set( 0 );
 		GLSLUniform_sampler( program, "u_texture1" ).Set( 1 );
 		program->GetUniformGroup<Uniforms::Global>()->textureMatrix.Set( mat4_identity );
-		program->Validate();
-	}
-
-	void InitShadowMapShader( GLSLProgram *program ) {
-		DefaultProgramInit( program, {}, program->GetName() + ".vs", program->GetName() + ".fs"/*, program->GetName() + ".gs"*/ );
-		Uniforms::Depth *depthUniforms = program->GetUniformGroup<Uniforms::Depth>();
-		depthUniforms->instances = 6;
-		depthUniforms->acceptsTranslucent = true; //duzenko: wait, what?
 		program->Validate();
 	}
 
@@ -226,46 +203,14 @@ namespace {
 			program->Validate();
 		});		
 	}
-
-	GLSLProgram *LoadInteractionShader( const idStr &name, const idStr &baseName, bool ambient ) {
-		return programManager->LoadFromGenerator( name, [=]( GLSLProgram *program ) {
-			idHashMapDict defines;
-			DefaultProgramInit( program, defines, baseName + ".vs", baseName + ".fs" );
-			program->Activate();
-			Uniforms::Interaction *interactionUniforms = program->GetUniformGroup<Uniforms::Interaction>();
-			interactionUniforms->ambient = ambient;
-			// static bindings
-			interactionUniforms->normalTexture.Set( 0 );
-			interactionUniforms->lightFalloffTexture.Set( 1 );
-			interactionUniforms->lightProjectionTexture.Set( 2 );
-			interactionUniforms->diffuseTexture.Set( 3 );
-			interactionUniforms->specularTexture.Set( 4 );
-
-			// can't have sampler2D, usampler2D, samplerCube have the same TMU index
-			interactionUniforms->lightProjectionCubemap.Set( 5 );
-			interactionUniforms->shadowMap.Set( 6 );
-			interactionUniforms->stencilTexture.Set( 7 );
-			interactionUniforms->lightDiffuseCubemap.Set( 8 );
-			interactionUniforms->lightSpecularCubemap.Set( 9 );
-			program->Validate();
-		} );
-	}
 }
 
 void GLSLProgramManager::Init() {
 	cubeMapShader = LoadFromBaseNameWithCustomizer( "cubeMap", InitSamplerBindingsForBumpShaders );
 	bumpyEnvironment = LoadFromBaseNameWithCustomizer( "bumpyEnvironment", InitSamplerBindingsForBumpShaders );
-	depthShader = LoadFromGenerator( "depthAlpha" , InitDepthShader );
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
-	stencilShadowShader = Load( "stencilshadow" );
-	shadowMapShader = LoadFromGenerator( "shadowMapA", InitShadowMapShader );
-	shadowMapMultiShader = nullptr; //LoadFromGenerator( "shadowMapN", InitShadowMapShader );
-	shadowMapMultiGShader = nullptr; //LoadFromGenerator( "shadowMapNG", InitShadowMapShader );
-	ambientInteractionShader = LoadInteractionShader( "ambientInteraction", "ambientInteraction", true );
-	stencilInteractionShader = LoadInteractionShader( "interactionStencil", "interactionStencil", false );
-	shadowMapInteractionShader = LoadInteractionShader( "interactionShadowMaps", "interactionShadowMaps", false );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
 	toneMapShader = Load( "tonemap" );
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );

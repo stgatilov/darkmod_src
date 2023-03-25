@@ -1422,9 +1422,6 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 		void ( *triFunc_ )( const drawSurf_t * ) );
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const shaderStage_t* pStage );
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
-void RB_CreateSingleDrawInteractions( const drawSurf_t *surf );
-
-void RB_DrawView();
 
 void RB_BeginDrawingView( void );
 
@@ -1441,12 +1438,6 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances );
 void RB_DrawTriangles( const srfTriangles_t& tri );
 void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
-void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
-void RB_STD_DrawView( void );
-
-// multi draw
-void RB_Multi_AddSurf( const drawSurf_t* surf );
-void RB_Multi_DrawElements( int instances = 0 );
 
 // postprocessing related
 void RB_DrawFullScreenQuad( float e = 1 );
@@ -1458,8 +1449,6 @@ DRAW_*
 ============================================================
 */
 
-void    RB_GLSL_DrawInteraction( const drawInteraction_t *din );
-void    RB_GLSL_DrawInteractions( void );
 void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
 
 /*
