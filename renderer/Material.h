@@ -94,6 +94,8 @@ typedef enum {
 	OP_TYPE_NE,
 	OP_TYPE_AND,
 	OP_TYPE_OR,
+	OP_TYPE_MIN,
+	OP_TYPE_MAX,
 	OP_TYPE_SOUND
 } expOpType_t;
 

@@ -614,10 +614,21 @@ int idMaterial::ParseTerm( idLexer &src ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL7;
 	}
+	else if ( !token.Icmp( "min" ) || !token.Icmp( "max" ) ) {
+		expOpType_t op = ( !token.Icmp( "min" ) ? OP_TYPE_MIN : OP_TYPE_MAX );
+		MatchToken( src, "(" );
+		int a = ParseExpression( src );
+		do {
+			MatchToken( src, "," );
+			int b = ParseExpression( src );
+			a = EmitOp( a, b, op );
+		} while ( src.PeekTokenString(",") );
+		MatchToken( src, ")" );
+		return a;
+	}
 	else if ( !token.Icmp( "fragmentPrograms" ) ) {
 		return GetExpressionConstant( 1 );
 	}
-
 	else if ( !token.Icmp( "sound" ) ) {
 		pd->registersAreConstant = false;
 		return EmitOp( 0, 0, OP_TYPE_SOUND );
@@ -2508,6 +2519,8 @@ const char *opNames[] = {
 	"OP_TYPE_NE",
 	"OP_TYPE_AND",
 	"OP_TYPE_OR",
+	"OP_TYPE_MIN",
+	"OP_TYPE_MAX",
 	"OP_TYPE_SOUND"
 };
 
@@ -2650,6 +2663,12 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 			break;
 		case OP_TYPE_OR:
 			registers[op->c] = registers[ op->a ] || registers[op->b];
+			break;
+		case OP_TYPE_MIN:
+			registers[op->c] = idMath::Fmin( registers[ op->a ], registers[op->b] );
+			break;
+		case OP_TYPE_MAX:
+			registers[op->c] = idMath::Fmax( registers[ op->a ], registers[op->b] );
 			break;
 		case OP_TYPE_SOUND:
 			if ( soundEmitter && soundEmitter->CurrentlyPlaying() ) {
