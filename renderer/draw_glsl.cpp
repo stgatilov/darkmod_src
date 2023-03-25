@@ -60,14 +60,6 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 	common->Printf( "---------------------------------\n" );
 }
 
-GLSLProgram *R_FindGLSLProgram( const char *name ) {
-	GLSLProgram *program = programManager->Find( name );
-	if( program == nullptr ) {
-		program = programManager->Load( name );
-	}
-	return program;
-}
-
 
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.

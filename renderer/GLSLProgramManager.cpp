@@ -208,6 +208,7 @@ namespace {
 void GLSLProgramManager::Init() {
 	cubeMapShader = LoadFromBaseNameWithCustomizer( "cubeMap", InitSamplerBindingsForBumpShaders );
 	bumpyEnvironment = LoadFromBaseNameWithCustomizer( "bumpyEnvironment", InitSamplerBindingsForBumpShaders );
+	environment = Load( "environment" );
 	fogShader = LoadFromGenerator( "fog", InitFogShader );
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );

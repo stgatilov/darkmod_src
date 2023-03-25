@@ -71,9 +71,8 @@ ID_NOINLINE void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pSta
 		programManager->bumpyEnvironment->Activate();
 		programManager->bumpyEnvironment->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 	} else {
-		GLSLProgram *environmentShader = R_FindGLSLProgram( "environment" );
-		environmentShader->Activate();
-		environmentShader->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
+		programManager->environment->Activate();
+		programManager->environment->GetUniformGroup<Uniforms::Global>()->Set( surf->space );
 	}
 }
 

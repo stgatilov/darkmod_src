@@ -707,7 +707,7 @@ void RB_Tonemap() {
 	GL_SelectTexture( 0 );
 	globalImages->guiRenderImage->Bind();
 
-	GLSLProgram* tonemap = R_FindGLSLProgram( "tonemap" );
+	GLSLProgram* tonemap = programManager->toneMapShader;
 	tonemap->Activate();
 	TonemapUniforms *uniforms = tonemap->GetUniformGroup<TonemapUniforms>();
 	uniforms->texture.Set( 0 );

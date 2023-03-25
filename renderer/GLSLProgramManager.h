@@ -49,6 +49,7 @@ public:
 	GLSLProgram *softParticleShader;
 	GLSLProgram* toneMapShader;
 	GLSLProgram *cubeMapShader;
+	GLSLProgram *environment;
 	GLSLProgram *bumpyEnvironment;
 	GLSLProgram *fogShader;
 	GLSLProgram *oldStageShader;

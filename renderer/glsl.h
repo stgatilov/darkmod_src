@@ -25,8 +25,6 @@ extern idCVarBool r_shadowMapCullFront;
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );
 
-GLSLProgram *R_FindGLSLProgram( const char *name );
-
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.
 
