@@ -19,10 +19,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 #include "../game/Grabber.h"
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
-#endif
-
 typedef struct {
 	idVec3		origin;
 	idMat3		axis;

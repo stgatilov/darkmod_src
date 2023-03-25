@@ -22,10 +22,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "GLSLProgramManager.h"
 #include "backend/RenderBackend.h"
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
-//#pragma optimize("t", off) // duzenko: used in release to enforce breakpoints in inlineable code. Please do not remove
-#endif
-
 /*
   back end scene + lights rendering functions
 */
@@ -379,6 +375,45 @@ void RB_LeaveDepthHack() {
 	}
 }
 
+
+static void RB_RenderDrawSurfWithFunction( const drawSurf_t *drawSurf, void ( *triFunc_ )( const drawSurf_t * ) ) {
+	if ( drawSurf->space != backEnd.currentSpace ) {
+		if( GLSLProgram::GetCurrentProgram() != nullptr ) {
+			Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
+			transformUniforms->Set( drawSurf->space );
+		}
+		GL_CheckErrors();
+	}
+
+	if ( drawSurf->space->weaponDepthHack ) {
+		RB_EnterWeaponDepthHack();
+		GL_CheckErrors();
+	}
+
+	if ( drawSurf->space->modelDepthHack != 0.0f ) {
+		RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
+		GL_CheckErrors();
+	}
+
+#if 1 // duzenko: this is needed for portal fogging e.g. in Lone Salvation
+	backEnd.currentScissor = drawSurf->scissorRect;
+	FB_ApplyScissor();
+	GL_CheckErrors();
+#endif
+
+	// render it
+	triFunc_( drawSurf );
+	GL_CheckErrors();
+
+	if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
+		RB_LeaveDepthHack();
+		GL_CheckErrors();
+	}
+
+	// mark currentSpace if we have drawn.
+	backEnd.currentSpace = drawSurf->space;
+}
+
 /*
 ====================
 RB_RenderDrawSurfListWithFunction
@@ -391,106 +426,17 @@ be updated after the triangle function completes.
 */
 void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
 	GL_CheckErrors();
-
 	backEnd.currentSpace = nullptr;
-
-	/* Reverted all the unnessesary gunk here */
-	for ( int i = 0  ; i < numDrawSurfs ; i++ ) {
-		const drawSurf_t *drawSurf = drawSurfs[i];
-
-		if ( drawSurf->space != backEnd.currentSpace ) {
-			if( GLSLProgram::GetCurrentProgram() != nullptr ) {
-				Uniforms::Global *transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
-				transformUniforms->Set( drawSurf->space );
-			}
-			GL_CheckErrors();
-		}
-
-		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
-			GL_CheckErrors();
-		}
-
-		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-			GL_CheckErrors();
-		}
-
-#if 1 // duzenko: this is needed for portal fogging e.g. in Lone Salvation
-		backEnd.currentScissor = drawSurf->scissorRect;
-		FB_ApplyScissor();
-		GL_CheckErrors();
-#endif
-
-		// render it
-		triFunc_( drawSurf );
-		GL_CheckErrors();
-
-		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			RB_LeaveDepthHack();
-			GL_CheckErrors();
-		}
-
-		// mark currentSpace if we have drawn.
-		backEnd.currentSpace = drawSurf->space;
+	for ( int i = 0; i < numDrawSurfs ; i++ ) {
+		RB_RenderDrawSurfWithFunction( drawSurfs[i], triFunc_ );
 	}
 	GL_CheckErrors();
 }
-
-/*
-======================
-RB_RenderDrawSurfChainWithFunction
-
-The triangle functions can check backEnd.currentSpace != surf->space
-to see if they need to perform any new matrix setup.  The modelview
-matrix will already have been loaded, and backEnd.currentSpace will
-be updated after the triangle function completes.
-
-Revelator: i left in console prints so that devs dont get any nasty ideas about how this works.
-Try and enable them if in doubt, but disable them again after use because the console spam will kill performance pretty badly.
-======================
-*/
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *triFunc_ )( const drawSurf_t * ) ) {
 	GL_CheckErrors();
-
 	backEnd.currentSpace = nullptr;
-
-	/* Reverted all the unnessesary gunk here */
 	for ( const drawSurf_t *drawSurf = drawSurfs; drawSurf; drawSurf = drawSurf->nextOnLight ) {
-		if ( drawSurf->space != backEnd.currentSpace ) {
-			//common->Printf( "Yay i just loaded the matrix again, because (drawSurf->space does not equal backEnd.currentSpace) because it is NULL\n" );
-			if ( GLSLProgram::GetCurrentProgram() != nullptr ) {
-				Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
-				transformUniforms->Set( drawSurf->space );
-			}
-		}
-
-		if ( drawSurf->space->weaponDepthHack ) {
-			//common->Printf( "Yay i just ran a depth hack on viewmodels\n" );
-			RB_EnterWeaponDepthHack();
-		}
-
-		if ( drawSurf->space->modelDepthHack != 0.0f ) {
-			//common->Printf( "Yay i just ran a depth hack on other models\n" );
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-		}
-
-		/* change the scissor if needed */
-		backEnd.currentScissor = drawSurf->scissorRect;
-		FB_ApplyScissor();
-
-		// render it
-		//common->Printf( "Yay i just ran a function, i hope someone does not do returns or continues above or im busted\n" );
-		triFunc_( drawSurf );
-
-		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack != 0.0f ) {
-			//common->Printf( "Booh i just disabled the depth hacks\n" );
-			RB_LeaveDepthHack();
-		}
-
-		// mark currentSpace if we have drawn.
-		//common->Printf( "Yay i just determined that i dont need to run again, so ill set (backEnd.currentSpace to the value of drawSurf->space) so it is no longer NULL\n" );
-		backEnd.currentSpace = drawSurf->space;
+		RB_RenderDrawSurfWithFunction( drawSurf, triFunc_ );
 	}
 	GL_CheckErrors();
 }

@@ -18,8 +18,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 
-//#pragma optimize( "", off )
-
 #include "dmap.h"
 #ifdef WIN32
 #include <windows.h>
