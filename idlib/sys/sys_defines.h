@@ -160,7 +160,7 @@ Defines and macros usable in all code
 ================================================================================================
 */
 
-#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % a ) )
+#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) - ( ( (x) + (a) - 1 ) % (a) ) )
 //#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
 
 // RB: changed UINT_PTR to uintptr_t
