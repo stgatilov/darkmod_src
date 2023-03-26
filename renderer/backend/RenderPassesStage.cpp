@@ -43,7 +43,7 @@ struct EnvironmentUniforms : GLSLUniformGroup {
 
 	DEFINE_UNIFORM( mat4, modelViewMatrix )
 	DEFINE_UNIFORM( mat4, projectionMatrix )
-	DEFINE_UNIFORM( vec3, viewOriginLocal )
+	DEFINE_UNIFORM( vec3, globalViewOrigin )
 	DEFINE_UNIFORM( mat4, modelMatrix )
 	DEFINE_UNIFORM( sampler, environmentMap )
 	DEFINE_UNIFORM( sampler, normalMap )
@@ -374,9 +374,7 @@ void RenderPassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shade
 	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
 	uniforms->modelViewMatrix.Set( drawSurf->space->modelViewMatrix );
 	uniforms->modelMatrix.Set( drawSurf->space->modelMatrix );
-	idVec3 localViewOrigin;
-	R_GlobalPointToLocal( drawSurf->space->modelMatrix, viewDef->renderView.vieworg, localViewOrigin );
-	uniforms->viewOriginLocal.Set( localViewOrigin );
+	uniforms->globalViewOrigin.Set( viewDef->renderView.vieworg );
 
 	// see if there is also a bump map specified
 	const shaderStage_t *bumpStage = drawSurf->material->GetBumpStage();

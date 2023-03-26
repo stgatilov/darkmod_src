@@ -17,8 +17,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 // TODO: move bumpmap reading function to separate file
 #pragma tdm_include "tdm_interaction.glsl"
 
-uniform vec3 u_viewOriginLocal;
-uniform mat4 u_modelMatrix;
 uniform samplerCube u_environmentMap;
 uniform sampler2D u_normalMap;
 uniform bool u_RGTC;
@@ -27,23 +25,19 @@ uniform vec4 u_fresnel;
 uniform bool u_tonemapOutputColor;
 
 in vec2 var_TexCoord;
-in vec4 var_Color;
-in vec3 var_PositionLocal;
-in mat3 var_TangentToLocalMatrix;
+in vec3 var_ToEyeWorld;
+in mat3 var_TangentToWorldMatrix;
 
 out vec4 FragColor;
 
 void main() {
 	vec3 normalTangent = fetchSurfaceNormal(var_TexCoord, true, u_normalMap, u_RGTC);
-	// transform the surface normal to model space
-	vec3 normalLocal = normalize(var_TangentToLocalMatrix * normalTangent);
+	vec3 normalWorld = normalize(var_TangentToWorldMatrix * normalTangent);
 
 	// calculate reflection vector
-	vec3 toEyeLocal = normalize(u_viewOriginLocal - var_PositionLocal);
-	float dotEN = dot(toEyeLocal, normalLocal);
-	vec3 reflectLocal = 2 * dotEN * normalLocal - toEyeLocal;
-	// transform it to world space
-	vec3 reflectWorld = mat3(u_modelMatrix) * reflectLocal;
+	vec3 eyeWorld = normalize(var_ToEyeWorld);
+	float dotEN = dot(eyeWorld, normalWorld);
+	vec3 reflectWorld = 2 * dotEN * normalWorld - eyeWorld;
 
 	// read the environment map with the reflection vector
 	vec4 reflectedColor = texture(u_environmentMap, reflectWorld);

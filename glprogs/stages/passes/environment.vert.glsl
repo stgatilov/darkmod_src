@@ -18,6 +18,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
+uniform vec3 u_globalViewOrigin;
+uniform mat4 u_modelMatrix;
 
 in vec4 attr_Position;
 in vec2 attr_TexCoord;
@@ -26,18 +28,20 @@ in vec3 attr_Bitangent;
 in vec3 attr_Normal;
 
 out vec2 var_TexCoord;
-out vec3 var_PositionLocal;
-out mat3 var_TangentToLocalMatrix;
+out vec3 var_ToEyeWorld;
+out mat3 var_TangentToWorldMatrix;
 
 void main() {
 	gl_Position = objectPosToClip(attr_Position, u_modelViewMatrix, u_projectionMatrix);
 
-	var_TangentToLocalMatrix = mat3(
+	var_ToEyeWorld = u_globalViewOrigin - vec3(u_modelMatrix * attr_Position);
+
+	mat3 tangentToLocalMatrix = mat3(
 		clamp(attr_Tangent, -1, 1),
 		clamp(attr_Bitangent, -1, 1),
 		clamp(attr_Normal, -1, 1)
 	);
+	var_TangentToWorldMatrix = mat3(u_modelMatrix) * tangentToLocalMatrix;
 
-	var_PositionLocal = vec3(attr_Position);
 	var_TexCoord = attr_TexCoord;
 }
