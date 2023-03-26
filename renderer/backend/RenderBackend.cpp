@@ -24,6 +24,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../FrameBuffer.h"
 #include "../glsl.h"
 
+idCVar r_useNewRenderPasses( "r_useNewRenderPasses", "1", CVAR_BOOL | CVAR_ARCHIVE| CVAR_RENDERER,
+	"Use new refactored code for rendering light-independent material stages"
+);
+
 RenderBackend renderBackendImpl;
 RenderBackend *renderBackend = &renderBackendImpl;
 
@@ -44,6 +48,7 @@ void RenderBackend::Init() {
 	interactionStage.Init();
 	stencilShadowStage.Init();
 	shadowMapStage.Init();
+	renderPassesStage.Init();
 	frobOutlineStage.Init();
 
 	lightgemFbo = frameBuffers->CreateFromGenerator( "lightgem", CreateLightgemFbo );
@@ -64,6 +69,7 @@ void RenderBackend::Shutdown() {
 	shadowMapStage.Shutdown();
 	stencilShadowStage.Shutdown();
 	interactionStage.Shutdown();
+	renderPassesStage.Shutdown();
 	depthStage.Shutdown();
 }
 
@@ -109,28 +115,48 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 		}
 		DrawShadowsAndInteractions( viewDef );
 	}
-		
-	// now draw any non-light dependent shading passes
-	int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs, bool postProcessing );
-	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs, false );
 
-	if (
-		(r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && 
-		!viewDef->IsLightGem()
-	) {
-		frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
+	if ( r_useNewRenderPasses.GetBool() ) {
+		int beforePostproc = 0;
+		while ( beforePostproc < numDrawSurfs && drawSurfs[beforePostproc]->sort < SS_POST_PROCESS )
+			beforePostproc++;
+
+		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
+
+		// fog and blend lights
+		extern void RB_STD_FogAllLights( bool translucent );
+		RB_STD_FogAllLights( false );
+
+		frameBuffers->UpdateCurrentRenderCopy();
+
+		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs + beforePostproc, numDrawSurfs - beforePostproc );
+
+		RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
 	}
+	else {
 
-	// fog and blend lights
-	extern void RB_STD_FogAllLights( bool translucent );
-	RB_STD_FogAllLights( false );
+		// now draw any non-light dependent shading passes
+		int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs, bool postProcessing );
+		processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs, false );
 
-	// now draw any post-processing effects using _currentRender
-	if ( processed < numDrawSurfs ) {
-		RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed, true );
+		if (
+			(r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && 
+			!viewDef->IsLightGem()
+		) {
+			frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
+		}
+
+		// fog and blend lights
+		extern void RB_STD_FogAllLights( bool translucent );
+		RB_STD_FogAllLights( false );
+
+		// now draw any post-processing effects using _currentRender
+		if ( processed < numDrawSurfs ) {
+			RB_STD_DrawShaderPasses( drawSurfs + processed, numDrawSurfs - processed, true );
+		}
+
+		RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
 	}
-
-	RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
 
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
 

@@ -1621,6 +1621,9 @@
     <ClInclude Include="idlib\containers\BitArray.h">
       <Filter>Idlib\Containers</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\RenderPassesStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3579,6 +3582,9 @@
     </ClCompile>
     <ClCompile Include="idlib\containers\BitArray.cpp">
       <Filter>Idlib\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\RenderPassesStage.cpp">
+      <Filter>Renderer\Backend</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -19,9 +19,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "InteractionStage.h"
 #include "ShadowMapStage.h"
 #include "StencilShadowStage.h"
+#include "RenderPassesStage.h"
 #include "../tr_local.h"
-
-extern idCVar r_useNewBackend;
 
 class FrameBuffer;
 
@@ -42,6 +41,7 @@ private:
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;
 	ShadowMapStage shadowMapStage;
+	RenderPassesStage renderPassesStage;
 	FrobOutlineStage frobOutlineStage;
 
 	FrameBuffer *lightgemFbo = nullptr;
