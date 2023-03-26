@@ -419,13 +419,6 @@ void RenderPassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shade
 }
 
 void RenderPassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
-	// determine the blend mode (used by soft particles #3878)
-	const int srcBlendFactor = pStage->drawStateBits & GLS_SRCBLEND_BITS;
-	if ( !( srcBlendFactor == GLS_SRCBLEND_ONE || srcBlendFactor == GLS_SRCBLEND_SRC_ALPHA ) ) {
-		assert(0);	// stgatilov: I wanna see such cases if they exist
-		return;
-	}
-
 	softParticleShader->Activate();
 	SoftParticleUniforms *uniforms = softParticleShader->GetUniformGroup<SoftParticleUniforms>();
 	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
@@ -439,15 +432,28 @@ void RenderPassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shad
 	globalImages->currentDepthImage->Bind();
 	uniforms->depthTexture.Set( 1 );
 
+	// determine the blend mode (used by soft particles #3878)
+	int srcBlendFactor = pStage->drawStateBits & GLS_SRCBLEND_BITS;
+	int dstBlendFactor = pStage->drawStateBits & GLS_DSTBLEND_BITS;
+	// stgatilov: some factors immediately mean we should fade corresponding component to zero
+	bool fadeColor = false, fadeAlpha = false;
+	if ( srcBlendFactor == GLS_SRCBLEND_ONE || dstBlendFactor == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR )
+		fadeColor = true;
+	if ( srcBlendFactor == GLS_SRCBLEND_SRC_ALPHA || dstBlendFactor == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA )
+		fadeAlpha = true;
+	// if can't decide, fade alpha to zero
+	if ( !fadeColor && !fadeAlpha )
+		fadeAlpha = true;
+	// fade = true => value = 0 => fade coeff will take effect
+	uniforms->fadeMask.Set( !fadeColor, !fadeColor, !fadeColor, !fadeAlpha );
+
 	// fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive
 	// blends (light glares), because additive effects work differently. Fog is half as apparent when a wall
 	// is in the middle of it. Light glares lose no visibility when they have something to reflect off. See
 	// issue #3878 for diagram
-	if ( srcBlendFactor == GLS_SRCBLEND_SRC_ALPHA ) {
-		uniforms->fadeMask.Set( 1, 1, 1, 0 );	// fade away RGB
+	if ( fadeAlpha ) {
 		uniforms->sceneFadeCoeff.Set( 2.0f );	// half fading speed
-	} else if ( srcBlendFactor == GLS_SRCBLEND_ONE ) {
-		uniforms->fadeMask.Set( 0, 0, 0, 1 );	// fade away alpha
+	} else {
 		uniforms->sceneFadeCoeff.Set( 1.0f );
 	}
 	uniforms->particleRadius.Set( drawSurf->particle_radius );
