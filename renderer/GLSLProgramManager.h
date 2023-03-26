@@ -66,4 +66,6 @@ private:
 
 extern GLSLProgramManager *programManager;
 
+void R_ReloadGLSLPrograms_f( const idCmdArgs &args );
+
 #endif

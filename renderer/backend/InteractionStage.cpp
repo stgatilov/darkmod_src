@@ -346,6 +346,7 @@ void InteractionStage::ChooseInteractionProgram( const viewLight_t *vLight, bool
 	} else {
 		uniforms->shadows.Set(false);
 	}
+	extern idCVarBool r_shadowMapCullFront;
 	uniforms->shadowMapCullFront.Set( r_shadowMapCullFront );
 
 	if ( !translucent && ( vLight->globalShadows || vLight->localShadows ) && !viewDef->IsLightGem() ) {

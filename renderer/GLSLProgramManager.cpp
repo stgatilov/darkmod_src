@@ -217,3 +217,14 @@ void GLSLProgramManager::Init() {
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
 	testImageCubeShader = Load( "testImageCube" );
 }
+
+void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
+	common->Printf( "---------- R_ReloadGLSLPrograms_f -----------\n" );
+	const char *programName = args.Argc() > 1 ? args.Argv( 1 ) : nullptr;
+	if ( programName ) {
+		programManager->Reload( programName );
+	} else {
+		programManager->ReloadAllPrograms();
+	}
+	common->Printf( "---------------------------------\n" );
+}

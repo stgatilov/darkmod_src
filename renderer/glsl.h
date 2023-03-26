@@ -20,7 +20,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 extern idCVar r_newFrob;
 extern idCVar r_frobOutline;
-extern idCVarBool r_shadowMapCullFront;
 
 void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );

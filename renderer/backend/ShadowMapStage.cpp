@@ -21,6 +21,14 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../glsl.h"
 #include "../GLSLProgramManager.h"
 
+idCVarBool r_shadowMapCullFront(
+	"r_shadowMapCullFront", "0", CVAR_ARCHIVE | CVAR_RENDERER,
+	"Cull front faces in shadow maps"
+);
+idCVar r_shadowMapSinglePass(
+	"r_shadowMapSinglePass", "0", CVAR_ARCHIVE | CVAR_RENDERER | CVAR_BOOL,
+	"1 - render shadow maps for all lights in a single pass"
+);
 idCVar r_shadowMapAlphaTested(
 	"r_shadowMapAlphaTested", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE,
 	"In case of alpha-tested material, apply alpha test to shadows too?\n"
