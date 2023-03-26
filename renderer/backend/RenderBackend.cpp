@@ -123,7 +123,10 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 
 		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
 
-		// fog and blend lights
+		if ( (r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && !viewDef->IsLightGem() ) {
+			frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
+		}
+
 		extern void RB_STD_FogAllLights( bool translucent );
 		RB_STD_FogAllLights( false );
 
