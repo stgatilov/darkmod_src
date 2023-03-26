@@ -522,6 +522,57 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 	RB_DrawElementsWithCounters( din->surf );
 }
 
+static void AddPoissonDiskSamples( idList<idVec2> &pts, float dist ) {
+	static const int MaxFailStreak = 1000;
+	idRandom rnd;
+	int fails = 0;
+	while ( 1 ) {
+		idVec2 np;
+		np.x = rnd.CRandomFloat();
+		np.y = rnd.CRandomFloat();
+		if ( np.LengthFast() > 1.0f ) {
+			continue;
+		}
+		bool ok = true;
+		for ( int i = 0; ok && i < pts.Num(); i++ ) {
+			if ( (pts[i] - np).LengthFast() < dist ) {
+				ok = false;
+			}
+		}
+		if ( !ok ) {
+			fails++;
+			if ( fails == MaxFailStreak ) {
+				break;
+			}
+		} else {
+			pts.Append( np );
+		}
+	}
+}
+
+static void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount ) {
+	pts.Clear();
+	pts.Append( idVec2( 0, 0 ) );
+	if (wantedCount >= 12) {
+		//pre-generate vertices of perfect hexagon
+		for ( int i = 0; i < 6; i++ ) {
+			float ang = 0.3f + idMath::TWO_PI * i / 6;
+			float c, s;
+			idMath::SinCos( ang, s, c );
+			pts.Append( idVec2( c, s ) );
+		}
+	}
+	float dist = idMath::Sqrt( 2.0f / wantedCount );
+	int fixedK = pts.Num();
+	do {
+		pts.Resize( fixedK );
+		AddPoissonDiskSamples( pts, dist );
+		dist *= 0.9f;
+	} while ( pts.Num() - 1 < wantedCount );
+	idSwap( pts[0], pts[wantedCount] );
+	pts.Resize( wantedCount );
+}
+
 struct PoissonSamplesUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( PoissonSamplesUniforms )
 	DEFINE_UNIFORM( vec2, softShadowsSamples/*[???]*/ )

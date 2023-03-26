@@ -21,9 +21,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 extern idCVar r_newFrob;
 extern idCVar r_frobOutline;
 
-void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
-void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );
-
 //=============================================================================
 // Below goes the suggested new way of handling GLSL parameters.
 
