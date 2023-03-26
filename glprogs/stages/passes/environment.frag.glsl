@@ -14,8 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 
-// TODO: move bumpmap reading function to separate file
-#pragma tdm_include "tdm_interaction.glsl"
+#pragma tdm_include "tdm_compression.glsl"
 
 uniform samplerCube u_environmentMap;
 uniform sampler2D u_normalMap;

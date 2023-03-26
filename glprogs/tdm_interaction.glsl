@@ -46,29 +46,6 @@ void generateSurfaceProperties(
 }
 
 
-// returns surface normal in tangent space
-// should handle all the specifics of normalmap format
-vec3 fetchSurfaceNormal(vec2 texCoord, bool hasNormalsTexture, in sampler2D normalsTexture, bool RGTC) {
-	if (hasNormalsTexture) {
-		// fetch RGB, convert from [0, 1] to [-1, 1] range
-		vec3 bumpTexel = texture(normalsTexture, texCoord.st).xyz * 2.0 - 1.0;
-
-		if (RGTC) {
-			// RGTC compression: add positive Z value
-			float xyNormSqr = dot(bumpTexel.xy, bumpTexel.xy);
-			return vec3(bumpTexel.x, bumpTexel.y, sqrt(max(1.0 - xyNormSqr, 0)));
-		}
-		else {
-			// full RGB texture
-			return normalize(bumpTexel.xyz);
-		}
-	}
-	else {
-		// flat surface
-		return vec3(0, 0, 1);
-	}
-}
-
 // describes local geometry of surface, light and view origin in tangent space
 struct InteractionGeometry {
 	vec3 localL;	// unit direction from fragment to light source

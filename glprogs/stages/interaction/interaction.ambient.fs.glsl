@@ -16,6 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_lightproject.glsl"
 #pragma tdm_include "tdm_interaction.glsl"
+#pragma tdm_include "tdm_compression.glsl"
 
 in vec2 var_TexDiffuse;
 in vec2 var_TexSpecular;
