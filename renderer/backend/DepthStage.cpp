@@ -153,15 +153,12 @@ bool DepthStage::ShouldDrawSurf(const drawSurf_t *surf) const {
         return false;
     }
 
-    // get the expressions for conditionals / color / texcoords
-    const float *regs = surf->shaderRegisters;
-
     // if all stages of a material have been conditioned off, don't do anything
     int stage;
     for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {
         const shaderStage_t *pStage = shader->GetStage( stage );
         // check the stage enable condition
-        if ( regs[ pStage->conditionRegister ] != 0 ) {
+        if ( surf->IsStageEnabled( pStage ) ) {
             break;
         }
     }
@@ -194,7 +191,6 @@ void DepthStage::DrawSurf( const drawSurf_t *surf ) {
 
 void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 	const idMaterial		*shader = surf->material;
-	const float				*regs = surf->shaderRegisters;
 
 	vertexCache.VertexPosition( surf->ambientCache );
 
@@ -228,7 +224,7 @@ void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 			}
 
 			// check the stage enable condition
-			if ( regs[pStage->conditionRegister] == 0 ) {
+			if ( !surf->IsStageEnabled( pStage ) ) {
 				continue;
 			}
 
@@ -237,7 +233,7 @@ void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
 			didDraw = true;
 
 			// skip the entire stage if alpha would be black
-			if ( regs[pStage->color.registers[3]] <= 0 ) {
+			if ( surf->GetStageColor( pStage )[3] <= 0 ) {
 				continue;
 			}
 			IssueDrawCommand( surf, pStage );

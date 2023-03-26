@@ -219,16 +219,12 @@ void VolumetricStage::PrepareRaymarching(TemporaryData &data) {
 	data.falloffImage = viewLight->falloffImage;
 
 	// light color uniform
-	const float* lightRegs = viewLight->shaderRegisters;
-	data.lightColor.x = lightRegs[lightStage->color.registers[0]];
-	data.lightColor.y = lightRegs[lightStage->color.registers[1]];
-	data.lightColor.z = lightRegs[lightStage->color.registers[2]];
-	data.lightColor.w = lightRegs[lightStage->color.registers[3]];
+	data.lightColor = viewLight->GetStageColor( lightStage );
 
 	// light texture transform
 	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
 	if ( lightStage->texture.hasMatrix )
-		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+		RB_GetShaderTextureMatrix( viewLight->shaderRegisters, &lightStage->texture, lightTexMatrix );
 	data.lightTexRows[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
 	data.lightTexRows[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );
 
@@ -259,9 +255,7 @@ void VolumetricStage::PrepareRaymarching(TemporaryData &data) {
 		data.samples = r_volumetricSamples.GetInteger();
 		data.dust = viewLight->volumetricDust;
 		// apply light scale (it is applied to all lights)
-		data.lightColor.x *= backEnd.lightScale;
-		data.lightColor.y *= backEnd.lightScale;
-		data.lightColor.z *= backEnd.lightScale;
+		data.lightColor.ToVec3() *= backEnd.lightScale;
 	}
 }
 

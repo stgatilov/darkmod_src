@@ -255,12 +255,11 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLig
 	}
 
 	const idMaterial	*lightShader = vLight->lightShader;
-	const float			*lightRegs = vLight->shaderRegisters;
 	for ( int lightStageNum = 0; lightStageNum < lightShader->GetNumStages(); lightStageNum++ ) {
 		const shaderStage_t	*lightStage = lightShader->GetStage( lightStageNum );
 
 		// ignore stages that fail the condition
-		if ( !lightRegs[lightStage->conditionRegister] ) {
+		if ( !vLight->IsStageEnabled( lightStage ) ) {
 			continue;
 		}
 
@@ -399,18 +398,14 @@ void InteractionStage::ProcessSingleSurface( const viewLight_t *vLight, const sh
 
 	// backEnd.lightScale is calculated so that lightColor[] will never exceed
 	// tr.backEndRendererMaxLight
-	float lightColor[4] = {
-		lightColor[0] = backEnd.lightScale * lightRegs[lightStage->color.registers[0]],
-		lightColor[1] = backEnd.lightScale * lightRegs[lightStage->color.registers[1]],
-		lightColor[2] = backEnd.lightScale * lightRegs[lightStage->color.registers[2]],
-		lightColor[3] = lightRegs[lightStage->color.registers[3]]
-	};
+	idVec4 lightColor = vLight->GetStageColor( lightStage );
+	lightColor.ToVec3() *= backEnd.lightScale;
 
 	// go through the individual stages
 	for ( int surfaceStageNum = 0; surfaceStageNum < material->GetNumStages(); surfaceStageNum++ ) {
 		const shaderStage_t	*surfaceStage = material->GetStage( surfaceStageNum );
 
-		if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) // ignore stage that fails the condition
+		if ( !surf->IsStageEnabled( surfaceStage ) )
 			continue;
 
 

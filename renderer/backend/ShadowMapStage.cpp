@@ -168,7 +168,6 @@ void ShadowMapStage::DrawLightInteractions( const drawSurf_t *surfs ) {
 
 void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
 	const idMaterial *shader = surf->material;
-	const float *regs = surf->shaderRegisters;
 
 	vertexCache.VertexPosition( surf->ambientCache );
 
@@ -197,7 +196,7 @@ void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
 				}
 
 				// check the stage enable condition
-				if ( regs[pStage->conditionRegister] == 0 ) {
+				if ( !surf->IsStageEnabled( pStage ) ) {
 					continue;
 				}
 
@@ -206,7 +205,7 @@ void ShadowMapStage::DrawSurf( const drawSurf_t *surf ) {
 				didDraw = true;
 
 				// skip the entire stage if alpha would be black
-				if ( regs[pStage->color.registers[3]] <= 0 ) {
+				if ( surf->GetStageColor( pStage )[3] <= 0 ) {
 					continue;
 				}
 				IssueDrawCommand( surf, pStage );

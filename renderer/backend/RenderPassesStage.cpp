@@ -173,9 +173,8 @@ void RenderPassesStage::DrawSurf( const drawSurf_t *drawSurf ) {
 }
 
 bool RenderPassesStage::ShouldDrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) const {
-	const float *regs = drawSurf->shaderRegisters;
 	// check the enable condition
-	if ( regs[ pStage->conditionRegister ] == 0 ) {
+	if ( !drawSurf->IsStageEnabled( pStage ) ) {
 		return false;
 	}
 	// skip the stages involved in lighting
@@ -192,10 +191,7 @@ bool RenderPassesStage::ShouldDrawStage( const drawSurf_t *drawSurf, const shade
 	// we do this for "simple" mode only, and only for two typical vertex color modes
 	StageType type = ChooseType( drawSurf, pStage );
 	if ( type == ST_SIMPLE_TEXTURE && ( pStage->vertexColor == SVC_IGNORE || pStage->vertexColor == SVC_MODULATE ) ) {
-		float regColor[4];
-		for ( int c = 0; c < 4; c++ )
-			regColor[c] = regs[pStage->color.registers[c]];
-
+		idVec4 regColor = drawSurf->GetStageColor( pStage );
 		bool zeroAlpha = regColor[3] == 0.0f;
 		bool zeroColor = regColor[0] == 0.0f && regColor[1] == 0.0f && regColor[2] == 0.0f;
 
@@ -346,10 +342,7 @@ void RenderPassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const sha
 	}
 
 	// set the color
-	float regColor[4];
-	for ( int c = 0; c < 4; c++ )
-		regColor[c] = regs[pStage->color.registers[c]];
-
+	idVec4 regColor = drawSurf->GetStageColor( pStage );
 	if ( pStage->vertexColor == SVC_IGNORE ) {
 		uniforms->colorMul.Set( 0, 0, 0, 0 );
 		uniforms->colorAdd.Set( regColor );
@@ -396,10 +389,7 @@ void RenderPassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shade
 	pStage->texture.image->Bind();
 
 	// look at the color
-	const float *regs = drawSurf->shaderRegisters;
-	float regColor[4];
-	for ( int c = 0; c < 4; c++ )
-		regColor[c] = regs[pStage->color.registers[c]];
+	idVec4 regColor = drawSurf->GetStageColor( pStage );
 
 	// set settings which different in bumpmapped case
 	// TODO: why do they differ?
@@ -458,11 +448,7 @@ void RenderPassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shad
 	}
 	uniforms->particleRadius.Set( drawSurf->particle_radius );
 
-	const float	*regs = drawSurf->shaderRegisters;
-	float regColor[4];
-	for ( int c = 0; c < 4; c++ )
-		regColor[c] = regs[ pStage->color.registers[c] ];
-
+	idVec4 regColor = drawSurf->GetStageColor( pStage );
 	if ( pStage->vertexColor == SVC_IGNORE ) {
 		// ignoring vertexColor is not recommended for particles, since particle system uses vertexColor for fading
 		// however, there are existing particle effects that don't use it
@@ -536,11 +522,7 @@ void RenderPassesStage::DrawCustomShader( const drawSurf_t *drawSurf, const shad
 	// setting local parameters (specified in material definition)
 	const float *regs = drawSurf->shaderRegisters;
 	for ( int i = 0; i < newStage->numVertexParms; i++ ) {
-		idVec4 parm;
-		parm[0] = regs[ newStage->vertexParms[i][0] ];
-		parm[1] = regs[ newStage->vertexParms[i][1] ];
-		parm[2] = regs[ newStage->vertexParms[i][2] ];
-		parm[3] = regs[ newStage->vertexParms[i][3] ];
+		idVec4 parm = drawSurf->GetRegisterVec4( newStage->vertexParms[i] );
 		uniforms->localParams[ i ]->Set( parm );
 	}
 

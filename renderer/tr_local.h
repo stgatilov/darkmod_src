@@ -171,6 +171,19 @@ typedef struct drawSurf_s {
 		ambientCache = tri->ambientCache;
 		shadowCache = tri->shadowCache;
 	}
+
+	idVec4 GetRegisterVec4( const int registerIndices[4] ) const {
+		idVec4 res;
+		for (int d = 0; d < 4; d++)
+			res[d] = shaderRegisters[ registerIndices[d] ];
+		return res;
+	}
+	bool IsStageEnabled( const shaderStage_t *pStage ) const {
+		return shaderRegisters[ pStage->conditionRegister ] != 0.0f;
+	}
+	idVec4 GetStageColor( const shaderStage_t *pStage ) const {
+		return GetRegisterVec4( pStage->color.registers );
+	}
 } drawSurf_t;
 
 
@@ -409,6 +422,19 @@ typedef struct viewLight_s {
 	/*const */struct drawSurf_s	*translucentInteractions;	// get shadows from everything
 
 	uint32_t				lightMask;
+
+	idVec4 GetRegisterVec4( const int registerIndices[4] ) const {
+		idVec4 res;
+		for (int d = 0; d < 4; d++)
+			res[d] = shaderRegisters[ registerIndices[d] ];
+		return res;
+	}
+	bool IsStageEnabled( const shaderStage_t *pStage ) const {
+		return shaderRegisters[ pStage->conditionRegister ] != 0.0f;
+	}
+	idVec4 GetStageColor( const shaderStage_t *pStage ) const {
+		return GetRegisterVec4( pStage->color.registers );
+	}
 } viewLight_t;
 
 struct preparedSurf_t {
