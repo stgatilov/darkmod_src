@@ -69,6 +69,9 @@ void StencilShadowStage::DrawStencilShadows( const viewDef_t *viewDef, const vie
 		if ( !surf->shadowCache.IsValid() ) {
 			continue;
 		}
+		if ( surf->scissorRect.IsEmptyWithZ() ) {
+			continue;
+		}
 
 		bool external = r_useExternalShadows.GetInteger() && !(surf->dsFlags & DSF_VIEW_INSIDE_SHADOW);
 		if (external) {
