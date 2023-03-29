@@ -41,7 +41,7 @@ public:
 	float			x;
 	float			y;
 
-					idVec2( void );
+					idVec2( void ) = default;
 					explicit idVec2( const float x, const float y );
 
 	void 			Set( const float x, const float y );
@@ -94,9 +94,6 @@ public:
 
 extern idVec2 vec2_origin;
 #define vec2_zero vec2_origin
-
-ID_FORCE_INLINE idVec2::idVec2( void ) {
-}
 
 ID_FORCE_INLINE idVec2::idVec2( const float x, const float y ) {
 	this->x = x;
@@ -855,7 +852,7 @@ public:
 	float			z;
 	float			w;
 
-					idVec4( void );
+					idVec4( void ) = default;
 					explicit idVec4( const float x, const float y, const float z, const float w );
 					explicit idVec4( const float v );
 					explicit idVec4( const idVec3 &xyz, const float w );
@@ -905,9 +902,6 @@ public:
 
 extern idVec4 vec4_origin;
 #define vec4_zero vec4_origin
-
-ID_FORCE_INLINE idVec4::idVec4( void ) {
-}
 
 ID_FORCE_INLINE idVec4::idVec4( const float x, const float y, const float z, const float w ) {
 	this->x = x;
@@ -1138,7 +1132,7 @@ public:
 	float			s;
 	float			t;
 
-					idVec5( void );
+					idVec5( void ) = default;
 					explicit idVec5( const idVec3 &xyz, const idVec2 &st );
 					explicit idVec5( const float x, const float y, const float z, const float s, const float t );
 
@@ -1159,9 +1153,6 @@ public:
 
 extern idVec5 vec5_origin;
 #define vec5_zero vec5_origin
-
-ID_FORCE_INLINE idVec5::idVec5( void ) {
-}
 
 ID_FORCE_INLINE idVec5::idVec5( const idVec3 &xyz, const idVec2 &st ) {
 	x = xyz.x;
@@ -1224,7 +1215,7 @@ ID_FORCE_INLINE float *idVec5::ToFloatPtr( void ) {
 
 class idVec6 {
 public:	
-					idVec6( void );
+					idVec6( void ) = default;
 					explicit idVec6( const float *a );
 					explicit idVec6( const float a1, const float a2, const float a3, const float a4, const float a5, const float a6 );
 
@@ -1271,9 +1262,6 @@ private:
 extern idVec6 vec6_origin;
 #define vec6_zero vec6_origin
 extern idVec6 vec6_infinity;
-
-ID_FORCE_INLINE idVec6::idVec6( void ) {
-}
 
 ID_FORCE_INLINE idVec6::idVec6( const float *a ) {
 	memcpy( p, a, 6 * sizeof( float ) );

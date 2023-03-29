@@ -61,7 +61,7 @@ class idMat4;
 
 class idMat2 {
 public:
-					idMat2( void );
+					idMat2( void ) = default;
 					explicit idMat2( const idVec2 &x, const idVec2 &y );
 					explicit idMat2( const float xx, const float xy, const float yx, const float yy );
 					explicit idMat2( const float src[ 2 ][ 2 ] );
@@ -116,9 +116,6 @@ private:
 extern idMat2 mat2_zero;
 extern idMat2 mat2_identity;
 #define mat2_default	mat2_identity
-
-ID_INLINE idMat2::idMat2( void ) {
-}
 
 ID_INLINE idMat2::idMat2( const idVec2 &x, const idVec2 &y ) {
 	mat[ 0 ].x = x.x; mat[ 0 ].y = x.y;
@@ -351,7 +348,7 @@ ID_FORCE_INLINE float *idMat2::ToFloatPtr( void ) {
 
 class idMat3 {
 public:
-					idMat3( void );
+					idMat3( void ) = default;
 					explicit idMat3( const idVec3 &x, const idVec3 &y, const idVec3 &z );
 					explicit idMat3( const float xx, const float xy, const float xz, const float yx, const float yy, const float yz, const float zx, const float zy, const float zz );
 					explicit idMat3( const float src[ 3 ][ 3 ] );
@@ -433,9 +430,6 @@ private:
 extern idMat3 mat3_zero;
 extern idMat3 mat3_identity;
 #define mat3_default	mat3_identity
-
-ID_INLINE idMat3::idMat3( void ) {
-}
 
 ID_INLINE idMat3::idMat3( const idVec3 &x, const idVec3 &y, const idVec3 &z ) {
 	mat[ 0 ].x = x.x; mat[ 0 ].y = x.y; mat[ 0 ].z = x.z;
@@ -802,7 +796,7 @@ ID_FORCE_INLINE float *idMat3::ToFloatPtr( void ) {
 
 class idMat4 {
 public:
-					idMat4( void );
+					idMat4( void ) = default;
 					explicit idMat4( const idVec4 &x, const idVec4 &y, const idVec4 &z, const idVec4 &w );
 					explicit idMat4(const float xx, const float xy, const float xz, const float xw,
 									const float yx, const float yy, const float yz, const float yw,
@@ -868,9 +862,6 @@ private:
 extern idMat4 mat4_zero;
 extern idMat4 mat4_identity;
 #define mat4_default	mat4_identity
-
-ID_INLINE idMat4::idMat4( void ) {
-}
 
 ID_INLINE idMat4::idMat4( const idVec4 &x, const idVec4 &y, const idVec4 &z, const idVec4 &w ) {
 	mat[ 0 ] = x;
@@ -1202,7 +1193,7 @@ ID_FORCE_INLINE float *idMat4::ToFloatPtr( void ) {
 
 class idMat5 {
 public:
-					idMat5( void );
+					idMat5( void ) = default;
 					explicit idMat5( const idVec5 &v0, const idVec5 &v1, const idVec5 &v2, const idVec5 &v3, const idVec5 &v4 );
 					explicit idMat5( const float src[ 5 ][ 5 ] );
 
@@ -1255,9 +1246,6 @@ private:
 extern idMat5 mat5_zero;
 extern idMat5 mat5_identity;
 #define mat5_default	mat5_identity
-
-ID_INLINE idMat5::idMat5( void ) {
-}
 
 ID_INLINE idMat5::idMat5( const float src[ 5 ][ 5 ] ) {
 	memcpy( mat, src, 5 * 5 * sizeof( float ) );
@@ -1511,7 +1499,7 @@ ID_FORCE_INLINE float *idMat5::ToFloatPtr( void ) {
 
 class idMat6 {
 public:
-					idMat6( void );
+					idMat6( void ) = default;
 					explicit idMat6( const idVec6 &v0, const idVec6 &v1, const idVec6 &v2, const idVec6 &v3, const idVec6 &v4, const idVec6 &v5 );
 					explicit idMat6( const idMat3 &m0, const idMat3 &m1, const idMat3 &m2, const idMat3 &m3 );
 					explicit idMat6( const float src[ 6 ][ 6 ] );
@@ -1566,9 +1554,6 @@ private:
 extern idMat6 mat6_zero;
 extern idMat6 mat6_identity;
 #define mat6_default	mat6_identity
-
-ID_INLINE idMat6::idMat6( void ) {
-}
 
 ID_INLINE idMat6::idMat6( const idMat3 &m0, const idMat3 &m1, const idMat3 &m2, const idMat3 &m3 ) {
 	mat[0] = idVec6( m0[0][0], m0[0][1], m0[0][2], m1[0][0], m1[0][1], m1[0][2] );
