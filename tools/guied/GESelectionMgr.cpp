@@ -287,7 +287,6 @@ Update the selection rectangle from all the currently selected items.
 void rvGESelectionMgr::UpdateRectangle ( void )
 {
 	int		i;
-	idVec2	point;
 
 	assert ( mWorkspace );
 	

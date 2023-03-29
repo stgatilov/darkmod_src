@@ -112,8 +112,8 @@ idVec4 compute_homogeneous_plane(idVec4 a, idVec4 b, idVec4 c) {
 
     // can't handle 3 infinite points
     if( a[3] == 0 ) {
-        return v;
-	}
+        return idVec4( 0.0f );
+    }
     idVec3 vb = homogeneous_difference(a, b);
     idVec3 vc = homogeneous_difference(a, c);
     

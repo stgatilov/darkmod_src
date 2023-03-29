@@ -398,7 +398,6 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 	int clipMask;
 	float stepHeight, headHeight, min, max;
 	idVec3 silVerts[32];
-	idVec2 obDelta;
 		
 	/** TDM: SZ: This variable tracks if the obstacle is a binary mover or not
 	 * If NULL its not, if non NULL it is, and the pointer is a cast to it
@@ -906,7 +905,7 @@ GetPathNodeDelta
 bool GetPathNodeDelta( pathNode_t *node, const obstacle_t *obstacles, const idVec2 &seekPos, bool blocked ) {
 	int numPoints, edgeNum;
 	bool facing;
-	idVec2 seekDelta, dir;
+	idVec2 seekDelta;
 	pathNode_t *n;
 
 	numPoints = obstacles[node->obstacle].winding.GetNumPoints();

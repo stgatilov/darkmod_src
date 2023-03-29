@@ -5486,7 +5486,6 @@ void idPhysics_AF::Evolve( float timeStep ) {
 #endif
 	idVec3 vec;
 	idAFBody *body;
-	idVec6 force;
 	idRotation rotation;
 	float vSqr, maxLinearVelocity, maxAngularVelocity;
 	float frictionTickMul;
