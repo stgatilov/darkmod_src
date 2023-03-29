@@ -195,8 +195,10 @@ struct GLSLUniform_mat4 : GLSLUniformBase {
 	}
 
 	void Set(const idMat4 &value) {
+		// stgatilov #6279: note that idMat4 is row-major, so it needs transpose
+		// if you convert it from float[16] of column-major GL matrix, use idMat::FromGL instead of memcpy!
 		if ( IsPresent() )
-			qglUniformMatrix4fv( paramLocation, 1, false, value.ToFloatPtr() );
+			qglUniformMatrix4fv( paramLocation, 1, true, value.ToFloatPtr() );
 	}
 
 	void Set(const idRenderMatrix &value) {

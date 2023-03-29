@@ -81,8 +81,7 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 
 	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
 
-	idMat4 inverseView;
-	memcpy( inverseView.ToFloatPtr(), viewDef->worldSpace.modelViewMatrix, sizeof( inverseView ) );
+	idMat4 inverseView = idMat4::FromGL( viewDef->worldSpace.modelViewMatrix );
 	inverseView.InverseSelf();
 	uniforms->inverseView.Set( inverseView );
 
@@ -276,11 +275,11 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 		color[3] = surf->shaderRegisters[stage->color.registers[3]];
 		alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
 
-		idMat4 textureMatrix;
+		float textureMatrix[16];
 		if( stage->texture.hasMatrix ) {
-			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, textureMatrix.ToFloatPtr() );
+			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, textureMatrix );
 		} else {
-			textureMatrix.Identity();
+			R_IdentityGLMatrix( textureMatrix );
 		}
 		uniforms->textureMatrix.Set( textureMatrix );
 	}

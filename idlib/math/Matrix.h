@@ -855,6 +855,13 @@ public:
 	float *			ToFloatPtr( void );
 	const char *	ToString( int precision = 2 ) const;
 
+	// stgatilov #6279: Doom 3 renderer backend uses float[16] for OpenGL-style column-major matrices
+	// this method converts from OpenGL-style column-major matrix to row-major idMat4
+	static idMat4	FromGL( const float data[16] );
+	// stgatilov #6279: Doom 3 renderer backend uses float[16] for OpenGL-style column-major matrices
+	// this method converts from row-major idMat4 to OpenGL-style column-major matrix
+	void			ToGL( float data[16] ) const;
+
 private:
 	idVec4			mat[ 4 ];
 };
@@ -1182,6 +1189,16 @@ ID_FORCE_INLINE const float *idMat4::ToFloatPtr( void ) const {
 
 ID_FORCE_INLINE float *idMat4::ToFloatPtr( void ) {
 	return mat[0].ToFloatPtr();
+}
+
+ID_INLINE idMat4 idMat4::FromGL( const float data[16] ) {
+	idMat4 mat;
+	memcpy( mat.ToFloatPtr(), data, sizeof(mat) );
+	return mat.Transpose();
+}
+ID_INLINE void idMat4::ToGL( float data[16] ) const {
+	idMat4 mat = Transpose();
+	memcpy( data, mat.ToFloatPtr(), sizeof(mat) );
 }
 
 

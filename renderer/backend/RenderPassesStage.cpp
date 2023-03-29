@@ -318,11 +318,11 @@ void RenderPassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const sha
 	uniforms->texgen.Set( texgen );
 
 	// set the texture matrix if needed
-	idMat4 textureMatrix;
+	float textureMatrix[16];
 	if( pStage->texture.hasMatrix ) {
-		RB_GetShaderTextureMatrix( drawSurf->shaderRegisters, &pStage->texture, textureMatrix.ToFloatPtr() );
+		RB_GetShaderTextureMatrix( drawSurf->shaderRegisters, &pStage->texture, textureMatrix );
 	} else {
-		textureMatrix.Identity();
+		R_IdentityGLMatrix( textureMatrix );
 	}
 	uniforms->textureMatrix.Set( textureMatrix );
 
