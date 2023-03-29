@@ -1347,6 +1347,7 @@ void R_TransposeGLMatrix( const float in[16], float out[16] );
 void R_SetViewMatrix( viewDef_t &viewDef );
 
 // corrected this one.
+// note: "out" transform is equivalent to first applying transform "a", then transform "b"
 void myGlMultMatrix( const float a[16], const float b[16], float out[16] );
 
 /*

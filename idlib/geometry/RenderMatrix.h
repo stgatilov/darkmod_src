@@ -38,6 +38,11 @@ idRenderMatrix
 
 This is a row-major matrix and transforms are applied with left-multiplication.
 
+stgatilov #6279: This is the main type of matrix from Doom 3 BFG renderer.
+It is row-major, i.e. it is indexed like M[row][column], and each row occupies float[4] block of memory.
+To transform a vector, put it as column-vector on the right of the matrix * vector product.
+Naturally, in order to apply matrix A first and matrix B then, compute Multiply(B, A).
+
 ================================================================================================
 */
 class idRenderMatrix

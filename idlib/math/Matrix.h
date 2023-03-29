@@ -26,6 +26,21 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
   Matrix classes, all matrices are row-major except idMat3
 
+  stgatilov #6279: These are main matrix classes from original Doom 3 code.
+
+  All matrices EXCEPT idMat3 use the following conventions.
+  Row-major layout: indexed as A[row][column], every row is contiguous idVecN.
+  To transform a vector, put it as column-vector on the right of multiplication.
+  Note that operator* works this way regardless of whether you write matrix as first or second argument.
+  To compose transform A then transform B, compute (B * A) product (explained as B * (A * v) = (B * A) * v).
+
+  idMat3 is special case because it follows different convention.
+  Perhaps the easiest way of thinking is that idMat3 matrices are stored transposed compared to other matrices.
+  So the mathematical conventions are the same as for idMat4, but C++ conventions are different due to this transposition.
+  The matrix is indexed as A[column][row] and each column is contiguous idVec3.
+  To transform a vector, put it as row-vector on the left (order or arguments in operator* does not matter).
+  To compose transform A then transform B, compute (A * B) product.
+
 ===============================================================================
 */
 
