@@ -376,7 +376,8 @@ idAASLocal::GetAreaBounds
 idBounds idAASLocal::GetAreaBounds( int areaNum ) const {
 	if ( !file ) 
 	{
-		idBounds emptyBounds;
+		assert(false);
+		idBounds emptyBounds(vec3_zero);
 		return emptyBounds;
 	}
 	return file->AreaBounds(areaNum);
