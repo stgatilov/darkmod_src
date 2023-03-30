@@ -5069,8 +5069,6 @@ idEntity::GetMasterPosition
 ================
 */
 bool idEntity::GetMasterPosition( idVec3 &masterOrigin, idMat3 &masterAxis ) const {
-	idVec3		localOrigin;
-	idMat3		localAxis;
 	idAnimator	*masterAnimator;
 
 	if ( bindMaster ) 
@@ -5268,7 +5266,7 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 
 	// create a frob box separate from the collision box for easier frobbing
 	bool bUseFrobBox(false);
-	idBounds bounds, FrobBounds;
+	idBounds FrobBounds;
 	idTraceModel FrobTrm;
 	int numSides(0);
 	
@@ -5360,7 +5358,6 @@ idEntity::RunPhysics
 bool idEntity::RunPhysics( void ) {
 	int			i, reachedTime, startTime, endTime;
 	idEntity *	part, *blockedPart, *blockingEntity(NULL);
-    trace_t		results;
 	bool		moved;
 
 	// don't run physics if not enabled

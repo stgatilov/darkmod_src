@@ -3056,7 +3056,7 @@ idAFConstraint_Contact::ApplyFriction
 ================
 */
 void idAFConstraint_Contact::ApplyFriction( float invTimeStep ) {
-	idVec3 r, velocity, normal, dir1, dir2;
+	idVec3 r, velocity, normal;
 	float friction, magnitude, forceNumerator, forceDenominator;
 	idVecX impulse, dv;
 
@@ -5752,9 +5752,6 @@ void idPhysics_AF::CheckForCollisions( float timeStep ) {
 	idRotation rotation;
 	trace_t collision;
 	idEntity *passEntity;
-#ifdef MOD_WATERPHYSICS
-	impactInfo_t info;
-#endif
 
 	// clear list with collisions
 	collisions.SetNum( 0, false );

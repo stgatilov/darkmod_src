@@ -6783,7 +6783,6 @@ idGameLocal::SelectInitialSpawnPoint
 */
 idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 	spawnSpot_t		spot;
-	idVec3			pos;
 
 	// grayman #2933 - Did the player specify
 	// a starting point in the briefing?

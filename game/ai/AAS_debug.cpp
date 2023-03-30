@@ -235,7 +235,7 @@ idAASLocal::ShowWalkPath
 void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) {
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
-	idVec3 org, areaCenter;
+	idVec3 org;
 	aasPath_t path;
 
 	if ( !file ) {
@@ -283,7 +283,7 @@ void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec
 {
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
-	idVec3 org, areaCenter;
+	idVec3 org;
 	aasPath_t path;
 
 	if ( !file ) {

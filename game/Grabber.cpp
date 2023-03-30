@@ -365,7 +365,6 @@ void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition )
 	idVec3 COM(vec3_zero);
 	idVec3 draggedPosition(vec3_zero), targetPosition(vec3_zero);
 	idMat3 viewAxis(mat3_identity), axis(mat3_identity);
-	trace_t trace;
 	idAnimator *dragAnimator;
 	renderEntity_t *renderEntity;
 	float distFactor;
@@ -1535,7 +1534,7 @@ idVec3 CGrabber::GetHoldPoint( idEntity *ent, idMat3 axis, int bodyID )
 
 void CGrabber::CheckStuck( void )
 {
-	idVec3 EntPoint, delta;
+	idVec3 delta;
 	float lensqr, maxsqr;
 	idEntity *ent = m_dragEnt.GetEntity();
 	bool bColliding(false);

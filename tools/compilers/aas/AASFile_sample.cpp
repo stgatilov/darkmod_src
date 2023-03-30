@@ -96,7 +96,7 @@ idVec3 idAASFileLocal::AreaReachableGoal( int areaNum ) const {
 	int i, faceNum, numFaces;
 	const aasArea_t *area;
 	idVec3 center;
-	idVec3 start, end;
+	idVec3 end;
 	aasTrace_t trace;
 
 	area = &areas[areaNum];

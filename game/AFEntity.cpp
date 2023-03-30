@@ -2766,7 +2766,6 @@ void idAFEntity_VehicleSimple::Think( void ) {
 	int i;
 	float force = 0.0f, velocity = 0.0f, steerAngle = 0.0f;
 	idVec3 origin;
-	idMat3 axis;
 	idRotation wheelRotation, steerRotation;
 
 	if ( thinkFlags & TH_THINK ) {

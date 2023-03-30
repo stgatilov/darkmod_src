@@ -250,7 +250,6 @@ void idProjectile::Create( idEntity *owner, const idVec3 &start, const idVec3 &d
 	idDict		args;
 	idStr		shaderName;
 	idVec3		light_color;
-	idVec3		light_offset;
 	idVec3		tmp;
 	idMat3		axis;
 

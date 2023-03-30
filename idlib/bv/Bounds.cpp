@@ -401,7 +401,6 @@ void idBounds::FromBoundsRotation( const idBounds &bounds, const idVec3 &origin,
 	int i;
 	float radius;
 	idVec3 point;
-	idBounds rBounds;
 
 	if ( idMath::Fabs( rotation.GetAngle() ) < 180.0f ) {
 

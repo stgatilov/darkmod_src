@@ -65,7 +65,6 @@ idBounds idParticle_EstimateBoundsStdSys(const idPartStageData &stg) {
 
 	// this isn't absolutely guaranteed, but it should be close
 
-	idPartSysData psys;
 	idParticleData part;
 	part.origin.Zero();
 	part.axis = mat3_identity;

@@ -1513,7 +1513,6 @@ bool idAASLocal::FindGoalClosestToTarget( aasGoal_t &goal, int areaNum, const id
 	idRoutingUpdate *updateListStart, *updateListEnd, *curUpdate, *nextUpdate;
 	idReachability *reach;
 	const aasArea_t *nextArea;
-	idVec3 v1, v2, p;
 	float targetDist;
 
 	if ( file == NULL || areaNum <= 0 ) 

@@ -1360,7 +1360,6 @@ void CDialogParticleEditor::EnableEditControls() {
 
 void CDialogParticleEditor::UpdateSelectedOrigin( float x, float y, float z ) {
 	idList<idEntity*> list;
-	idVec3 origin;
 	idVec3 vec(x, y, z);
 
 	list.SetNum( 128 );

@@ -723,7 +723,7 @@ entity_t *Entity_PostParse(entity_t *ent, brush_t *pList) {
 		}
 
 		if (needsOrigin) {
-			idVec3	mins, maxs, mid;
+			idVec3	mins, maxs;
 			int		i;
 			char	text[32];
 			mins[0] = mins[1] = mins[2] = 999999;

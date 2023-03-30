@@ -775,7 +775,7 @@ void idCollisionModelManagerLocal::Translation( trace_t *results, const idVec3 &
 	int i, j;
 	float dist;
 	bool model_rotated, trm_rotated;
-	idVec3 dir1, dir2, dir;
+	idVec3 dir;
 	idMat3 invModelAxis, tmpAxis;
 	cm_trmPolygon_t *poly;
 	cm_trmEdge_t *edge;

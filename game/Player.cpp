@@ -1055,7 +1055,6 @@ void idPlayer::Spawn( void )
 {
 	int			i;
 	idStr		temp;
-	idBounds	bounds;
 
 	if ( entityNumber >= 1) {
 		gameLocal.Error( "entityNum > 1 for player.  Player may only be spawned with a client." );
@@ -6602,7 +6601,6 @@ idPlayer::AdjustBodyAngles
 ==============
 */
 void idPlayer::AdjustBodyAngles( void ) {
-	idMat3	lookAxis;
 	idMat3	legsAxis;
 	bool	blend;
 	float	diff;
@@ -8422,7 +8420,6 @@ idPlayer::OffsetThirdPersonView
 */
 void idPlayer::OffsetThirdPersonView( float angle, float range, float height, bool clip ) {
 	idVec3			view;
-	idVec3			focusAngles;
 	trace_t			trace;
 	idVec3			focusPoint;
 	float			focusDist;

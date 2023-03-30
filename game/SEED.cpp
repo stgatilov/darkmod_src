@@ -3238,7 +3238,6 @@ void Seed::CombineEntities( void )
 	bool multiPVS =				m_iNumPVSAreas > 1 ? true : false;
 	idList < int >				pvs;				//!< in which PVS is this entity?
 	idBounds					modelAbsBounds;		//!< for per-entity PVS check
-	idBounds					entityBounds;		//!< for per-entity PVS check
 	int							iPVSAreas[2];		//!< for per-entity PVS check
 	seed_class_t				PseudoClass;
 	idList< seed_entity_t >		newEntities;

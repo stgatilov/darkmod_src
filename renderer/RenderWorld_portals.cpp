@@ -689,7 +689,6 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 	idRenderEntityLocal	*entity;
 	portalArea_t		*area;
 	viewEntity_t		*vEnt;
-	idBounds			b;
 
 	area = &portalAreas[ areaNum ];
 

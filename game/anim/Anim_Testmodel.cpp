@@ -688,7 +688,6 @@ Sets a skin on an existing testModel
 =================
 */
 void idTestModel::TestSkin_f( const idCmdArgs &args ) {
-	idVec3		offset;
 	idStr		name;
 	idPlayer *	player;
 	idDict		dict;
@@ -722,7 +721,6 @@ Sets a shaderParm on an existing testModel
 =================
 */
 void idTestModel::TestShaderParm_f( const idCmdArgs &args ) {
-	idVec3		offset;
 	idStr		name;
 	idPlayer *	player;
 	idDict		dict;

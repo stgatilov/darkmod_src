@@ -63,7 +63,7 @@ public:
 
 
 	void Rotate(float a, idRectangle &out) {
-		idVec3 p1, p2, p3, p4, p5;
+		idVec3 p1, p2, p4;
 		float c, s;
 		idVec3 center;
 		center.Set((x + w) / 2.0, (y + h) / 2.0, 0);

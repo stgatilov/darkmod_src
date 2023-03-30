@@ -98,7 +98,7 @@ void CProjectileResult::Init
 			idProjectile *pProj, bool bActivate
 		)
 {
-	idVec3 dotprod, LinVelocity;
+	idVec3 LinVelocity;
 	float fTemp;
 	int StimFalloffExponent = 1;
 	float StimRadius = 10.0; // we use a (hopefully) reasonable default radius if none is set.

@@ -164,8 +164,6 @@ Bumps tr.viewCount.
 ===============
 */
 void R_CreateEntityRefs( idRenderEntityLocal *def ) {
-	idVec3		transformed[8], v;
-
 	if ( !def->parms.hModel ) {
 		def->parms.hModel = renderModelManager->DefaultModel();
 	}

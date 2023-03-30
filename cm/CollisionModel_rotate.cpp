@@ -1203,8 +1203,8 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	int i, j, edgeNum;
 	float d, maxErr, initialTan;
 	bool model_rotated, trm_rotated;
-	idVec3 dir, dir1, dir2, tmp, vr, vup, org, at, bt;
-	idMat3 invModelAxis, endAxis, tmpAxis;
+	idVec3 vr, vup, at, bt;
+	idMat3 invModelAxis, tmpAxis;
 	idRotation startRotation, endRotation;
 	idPluecker plaxis;
 	cm_trmPolygon_t *poly;
@@ -1564,7 +1564,6 @@ idCollisionModelManagerLocal::Rotation
 void idCollisionModelManagerLocal::Rotation( trace_t *results, const idVec3 &start, const idRotation &rotation,
 										const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
 										cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) {
-	idVec3 tmp;
 	float maxa, stepa, a, lasta;
 
 	assert( ((byte *)&start) < ((byte *)results) || ((byte *)&start) > (((byte *)results) + sizeof( trace_t )) );

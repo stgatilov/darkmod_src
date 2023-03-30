@@ -582,7 +582,6 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	modelSurface_s newSurf;
 	bool needScale = false;
 	idList< bool > backsides;
-	idMat3 mScale;
 
 #ifdef M_TIMINGS
 	timer_dupmodel.Start();

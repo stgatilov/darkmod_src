@@ -806,7 +806,7 @@ void idMoveableItem::Spawn( void )
 	idTraceModel trm;
 	float density, friction, air_friction_linear, air_friction_angular, bouncyness, tsize;
 	idStr clipModelName;
-	idBounds bounds, FrobBounds;
+	idBounds FrobBounds;
 	idTraceModel FrobTrm;
 	int numSides(0);
 

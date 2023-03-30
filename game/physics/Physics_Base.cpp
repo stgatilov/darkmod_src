@@ -891,7 +891,6 @@ idPhysics_Base::SetWaterLevelf
 */
 float idPhysics_Base::SetWaterLevelf() {
 	if( this->water == NULL ) {
-		trace_t result;
 		idBounds bounds = this->GetBounds();
 
 		bounds += this->GetOrigin();

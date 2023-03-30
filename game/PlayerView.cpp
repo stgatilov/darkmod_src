@@ -368,8 +368,6 @@ idPlayerView::CalculateShake
 ===================
 */
 void idPlayerView::CalculateShake() {
-	idVec3	origin, matrix;
-
 	float shakeVolume = gameSoundWorld->CurrentShakeAmplitudeForPosition( gameLocal.time, player->firstPersonViewOrigin );
 	//
 	// shakeVolume should somehow be molded into an angle here

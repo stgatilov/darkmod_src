@@ -1125,7 +1125,6 @@ Cmd_Trigger_f
 =================
 */
 void Cmd_Trigger_f( const idCmdArgs &args ) {
-	idVec3		origin;
 	idAngles	angles;
 	idPlayer	*player;
 	idEntity	*ent;

@@ -3090,7 +3090,7 @@ void Brush_UpdateLightPoints(brush_t *b, const idVec3 &offset) {
 
 	str = ValueForKey(b->owner, "light_right");
 	if (str && *str) {
-		idVec3	vRight, vUp, vTarget, vTemp;
+		idVec3	vRight, vUp, vTarget;
 
 		if (GetVectorForKey(b->owner, "light_start", b->lightStart)) {
 			b->startEnd = true;
@@ -3579,8 +3579,6 @@ DrawProjectedLight
 */
 void DrawProjectedLight(brush_t *b, bool bSelected, bool texture) {
 	int		i;
-	idVec3	v1, v2, cross, vieworg, edge[8][2], v[4];
-	idVec3	target, start;
 
 	if (!bSelected && !g_bShowLightVolumes) {
 		return;

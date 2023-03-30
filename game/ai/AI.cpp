@@ -1114,7 +1114,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	bool		restorePhysics;
 	int			i;
 	int			num;
-	idBounds	bounds;
 
 	savefile->ReadInt( travelFlags );
 	savefile->ReadInt(lastAreaReevaluationTime);
@@ -4169,9 +4168,7 @@ idAI::GetObservationPosition
 idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne, const unsigned short maxCost) // grayman #4347
 {
 	int				areaNum;
-	aasObstacle_t	obstacle;
 	aasGoal_t		goal;
-	idBounds		bounds;
 	idVec3			observeFromPos;
 	aasPath_t	path;
 
@@ -4328,7 +4325,6 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	int				areaNum;
 	aasObstacle_t	obstacle;
 	aasGoal_t		goal;
-	idBounds		bounds;
 	idVec3			pos;
 
 	if ( !aas || !ent ) {
@@ -4399,7 +4395,6 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 	int				areaNum;
 	aasObstacle_t	obstacle;
 	aasGoal_t		goal;
-	idBounds		bounds;
 	idVec3			pos;
 
 	if ( !aas || !ent ) {
@@ -4548,7 +4543,6 @@ bool idAI::LookForCover(aasGoal_t& hideGoal,idEntity *hideFromEnt, const idVec3 
 		return false;
 	}
 
-	idBounds bounds;
 	aasObstacle_t obstacle;
 
 	const idVec3 &org = physicsObj.GetOrigin();
@@ -6081,10 +6075,7 @@ idAI::SittingMove
 */
 void idAI::SittingMove()
 {
-	idVec3				goalPos;
-	idVec3				goalDelta;
 	monsterMoveResult_t	moveResult;
-	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
 	idMat3 oldaxis = viewAxis;
@@ -6492,7 +6483,6 @@ idAI::FlyMove
 void idAI::FlyMove( void ) {
 	idVec3	goalPos;
 	idVec3	oldorigin;
-	idVec3	newDest;
 
 	AI_BLOCKED = false;
 	if ( ( move.moveCommand != MOVE_NONE ) && ReachedPos( move.moveDest, move.moveCommand ) ) {
@@ -7506,8 +7496,6 @@ idAI::EnemyPositionValid
 */
 bool idAI::EnemyPositionValid( void ) const {
 	trace_t	tr;
-	idVec3	muzzle;
-	idMat3	axis;
 
 	if ( !enemy.GetEntity() ) {
 		return false;
@@ -9259,7 +9247,6 @@ idAI::UpdateAnimationControllers
 ================
 */
 bool idAI::UpdateAnimationControllers( void ) {
-	idVec3		local;
 	idVec3		focusPos;
 	idQuat		jawQuat;
 	idVec3		left;
@@ -9268,12 +9255,10 @@ bool idAI::UpdateAnimationControllers( void ) {
 	idVec3 		localDir;
 	idAngles 	newLookAng;
 	idAngles	diff;
-	idMat3		mat;
 	idMat3		axis;
 	idMat3		orientationJointAxis;
 	idAFAttachment	*headEnt = head.GetEntity();
 	idVec3		eyepos;
-	idVec3		pos;
 	int			i;
 	idAngles	jointAng;
 	float		orientationJointYaw;
@@ -9794,7 +9779,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		int areaNum = PointReachableAreaNum(myOrigin, 1.0f);
 		int soundAreaNum = PointReachableAreaNum(effectiveOrigin, 1.0f);
 		aasPath_t path;
-		idVec3 goal;
 
 		if ( PathToGoal(path, areaNum, myOrigin, soundAreaNum, effectiveOrigin, this) )
 		{
@@ -12325,7 +12309,7 @@ bool idAI::CheckFOV( const idVec3 &pos ) const
 	//DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::CheckFOV called \r");
 
 	float	dotHoriz, dotVert, lenDelta, lenDeltaH;
-	idVec3	delta, deltaH, deltaV, HeadCenter;
+	idVec3	delta, deltaH, HeadCenter;
 	idMat3	HeadAxis;
 
 	// ugliness
@@ -12495,7 +12479,7 @@ idVec3 idAI::GetEyePosition( void ) const
 bool idAI::MouthIsUnderwater( void )
 {
 	bool bReturnVal( false );
-	idVec3 MouthOffset, MouthPosition;
+	idVec3 MouthPosition;
 
 	idEntity *headEnt = head.GetEntity();
 
@@ -13071,7 +13055,6 @@ void idAI::PopMoveNoRestoreMove()
 void idAI::RestoreMove(const idMoveState& saved)
 {
 	idVec3 goalPos;
-	idVec3 dest;
 
 	switch( saved.moveCommand ) {
 	case MOVE_NONE :

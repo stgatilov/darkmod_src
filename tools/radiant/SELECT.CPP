@@ -945,8 +945,6 @@ void Select_ApplyMatrix_BrushPrimit() {
  =======================================================================================================================
  */
 void Select_RotateAxis(int axis, float deg, bool bPaint, bool bMouse) {
-	idVec3	temp;
-
 	if (deg == 0) {
 		return;
 	}

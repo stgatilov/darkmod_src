@@ -877,7 +877,6 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 										const idVec3 &newOrigin, const idVec3 &move ) {
 	trace_t		trace;
 	idVec3		checkMove;
-	idVec3		oldOrigin;
 
 	idPhysics* physics = check->GetPhysics();
 

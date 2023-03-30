@@ -356,7 +356,6 @@ static idVec3 *testend;
 void idCollisionModelManagerLocal::DebugOutput( const idVec3 &origin ) {
 	int i, k, t;
 	char buf[128];
-	idVec3 end;
 	idAngles boxAngles;
 	idMat3 modelAxis, boxAxis;
 	idBounds bounds;

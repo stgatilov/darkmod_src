@@ -919,7 +919,6 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 	float outerRadius = 0;
 	idBounds searchBounds;
-	idBounds searchExclusionBounds;
 
 	// How many assignments does this search have?
 

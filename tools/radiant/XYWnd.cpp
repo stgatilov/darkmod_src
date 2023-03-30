@@ -2309,7 +2309,7 @@ idVec3 dragX;
 idVec3 dragY;
 
 void CXYWnd::XY_MouseDown(int x, int y, int buttons) {
-	idVec3	point,center;
+	idVec3	point;
 	idVec3	origin, dir, right, up;
 
 	m_nButtonstate = buttons;

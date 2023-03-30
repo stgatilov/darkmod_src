@@ -1221,8 +1221,6 @@ void idPhysics_Player::SpectatorMove( void ) {
 	idVec3	wishdir;
 	float	scale;
 
-	idVec3	end;
-
 	// fly movement
 
 	// idPhysics_Player::Friction();
@@ -1257,7 +1255,7 @@ idPhysics_Player::RopeMove
 #pragma warning( disable : 4533 )
 void idPhysics_Player::RopeMove( void ) 
 {
-	idVec3	wishdir, wishvel, right, ropeBodyOrig;
+	idVec3	wishvel, ropeBodyOrig;
 	idVec3	ropePoint, offset, newOrigin, climbDir;
 	float	wishspeed, scale, temp, deltaYaw, deltaAng1, deltaAng2;
 	float	upscale, ropeTop, ropeBot; // z coordinates of the top and bottom of rope
@@ -1963,7 +1961,6 @@ idPhysics_Player::CheckGround
 */
 void idPhysics_Player::CheckGround( void ) {
 	int i, contents;
-	idVec3 point;
 	bool hadGroundContacts;
 
 	hadGroundContacts = HasGroundContacts();
