@@ -126,6 +126,11 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 	// Have the PVS system identify locations containing the hide from position
 	hideFromPVSAreas[0] = gameLocal.pvs.GetPVSArea(hideFromPosition);
 	numHideFromPVSAreas = 1;
+
+	currentGridSearchBounds.Zero();
+	currentGridSearchBoundMins.Zero();
+	currentGridSearchBoundMaxes.Zero();
+	currentGridSearchPoint.Zero();
 }
 
 void CDarkmodAASHidingSpotFinder::EnsurePVS()

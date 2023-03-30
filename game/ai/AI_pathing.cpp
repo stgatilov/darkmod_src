@@ -621,8 +621,8 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 
 		// Get the box bounding the obstacle
 		idBox box( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
-		idBox boxClosed;			// grayman #2712
-		bool openDoorFound = false;	// grayman #2712
+		idBox boxClosed( idVec3(0) );	// grayman #2712
+		bool openDoorFound = false;		// grayman #2712
 
 		// grayman #2345 - To get AI to queue at an open door and not cause logjams, treat an open door
 		// as if it's closed. This could also apply to all binary frob movers, but since many of those

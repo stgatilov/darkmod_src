@@ -348,7 +348,7 @@ static int total_rotation;
 static int min_rotation = 999999;
 static int max_rotation = -999999;
 static int num_rotation = 0;
-static idVec3 start;
+static idVec3 start = vec3_zero;
 static idVec3 *testend;
 
 #include "../sys/sys_public.h"

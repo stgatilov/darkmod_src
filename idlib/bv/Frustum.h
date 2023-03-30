@@ -137,7 +137,9 @@ private:
 
 
 ID_INLINE idFrustum::idFrustum( void ) {
-	dNear = dFar = 0.0f;
+	origin = idVec3(0);
+	axis = mat3_zero;
+	dNear = dFar = dLeft = dUp = invFar = 0.0f;
 }
 
 ID_FORCE_INLINE void idFrustum::SetOrigin( const idVec3 &origin ) {

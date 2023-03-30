@@ -715,7 +715,9 @@ protected:
 			def(NULL),
 			clipModel(NULL),
 			radius(-1),
-			speed(-1)
+			speed(-1),
+			velocity(0),
+			gravity(0)
 		{}
 
 		~ProjectileInfo()
