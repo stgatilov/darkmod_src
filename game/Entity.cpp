@@ -1098,6 +1098,9 @@ idEntity::idEntity()
 	xrayDefHandle = -1;
 	xraySkin = NULL;
 	xrayModelHandle = nullptr;
+
+	m_VinePlantLoc = vec3_zero;
+	m_VinePlantNormal = vec3_zero;
 }
 
 /*

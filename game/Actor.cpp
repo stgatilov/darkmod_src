@@ -746,6 +746,7 @@ idActor::idActor( void ) {
 	rightEyeJoint		= INVALID_JOINT;
 	soundJoint			= INVALID_JOINT;
 
+	mHeadModelOffset.Zero();
 	modelOffset.Zero();
 	deltaViewAngles.Zero();
 

@@ -87,6 +87,8 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_StateChange = false;
 	m_Rotating = false;
 	m_Translating = false;
+	m_StartPos = vec3_zero;
+	m_Translation = vec3_zero;
 	m_TransSpeed = 0;
 	m_ImpulseThreshCloseSq = 0;
 	m_ImpulseThreshOpenSq = 0;
@@ -104,6 +106,11 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_targetingOff = false; // grayman #3029
 	m_wasFoundLocked = false; // grayman #3104
 	m_timeDoorStartedMoving = 0; // grayman #3462
+	m_ClosedOrigin = vec3_zero;
+	m_OpenOrigin = vec3_zero;
+	m_ClosedPos = vec3_zero;
+	m_OpenPos = vec3_zero;
+	m_OpenDir = vec3_zero;
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()

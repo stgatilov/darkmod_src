@@ -481,7 +481,9 @@ idAI::idAI()
 	lastTimePlayerLost = -1;
 
 	fleeingEvent = false; // grayman #3317
+	fleeingFrom = vec3_zero;
 	emitFleeBarks = false;
+	lastSearchedSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 
 	memset( &worldMuzzleFlash, 0, sizeof ( worldMuzzleFlash ) );
 	worldMuzzleFlashHandle = -1;

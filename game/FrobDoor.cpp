@@ -90,6 +90,10 @@ CFrobDoor::CFrobDoor()
 	m_doorHandlingPositions.Clear(); // grayman #3643 - list of my door handling positions
 	m_AIPushingDoor = false;	// grayman #3748
 	m_speedFactor = -1.0f;
+	m_previouslyFrobable = false;
+	m_previouslyPushingPlayer = false;
+	m_rotates = false;
+	memset(m_doorPositions, 0, sizeof(m_doorPositions));
 }
 
 CFrobDoor::~CFrobDoor()
