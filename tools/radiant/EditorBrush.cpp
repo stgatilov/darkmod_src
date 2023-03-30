@@ -3585,7 +3585,6 @@ void DrawProjectedLight(brush_t *b, bool bSelected, bool texture) {
 	}
 
 	// use the renderer to get the volume outline
-	idPlane		lightProject[4];
 	idPlane		planes[6];
 	srfTriangles_t	*tri;
 

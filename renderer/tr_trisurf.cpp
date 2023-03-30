@@ -1087,7 +1087,6 @@ void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
 		for ( int i = 0 ; i < gen.silEdges.Num() ; i++ ) {
 			silEdge_t se = gen.silEdges[i];
 			int			i1, i2, i3;
-			idPlane		plane;
 			int			base;
 			int			j;
 

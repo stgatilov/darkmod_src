@@ -255,7 +255,6 @@ R_XrayViewBySurface
 */
 static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	viewDef_t		*parms;
-	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
@@ -529,7 +528,6 @@ R_Lightgem_Render
 */
 bool R_Lightgem_Render() {
 	// issue a new view command
-	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
 	auto &parms = *(viewDef_t *)R_FrameAlloc( sizeof( viewDef_t ) );

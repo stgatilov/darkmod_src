@@ -9248,7 +9248,6 @@ idAI::UpdateAnimationControllers
 */
 bool idAI::UpdateAnimationControllers( void ) {
 	idVec3		focusPos;
-	idQuat		jawQuat;
 	idVec3		left;
 	idVec3 		dir;
 	idVec3 		orientationJointPos;
