@@ -39,7 +39,7 @@ public:
 	float			z;
 	float			w;
 
-					idQuat( void );
+					idQuat( void ) = default;
 					idQuat( float x, float y, float z, float w );
 
 	void 			Set( float x, float y, float z, float w );
@@ -85,9 +85,6 @@ public:
 
 	idQuat &		Slerp( const idQuat &from, const idQuat &to, float t );
 };
-
-ID_INLINE idQuat::idQuat( void ) {
-}
 
 ID_INLINE idQuat::idQuat( float x, float y, float z, float w ) {
 	this->x = x;
@@ -296,7 +293,7 @@ public:
 	float			y;
 	float			z;
 
-					idCQuat( void );
+					idCQuat( void ) = default;
 					idCQuat( float x, float y, float z );
 
 	void 			Set( float x, float y, float z );
@@ -320,9 +317,6 @@ public:
 	float *			ToFloatPtr( void );
 	const char *	ToString( int precision = 2 ) const;
 };
-
-ID_INLINE idCQuat::idCQuat( void ) {
-}
 
 ID_INLINE idCQuat::idCQuat( float x, float y, float z ) {
 	this->x = x;

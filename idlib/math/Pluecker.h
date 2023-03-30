@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idPluecker {
 public:	
-					idPluecker( void );
+					idPluecker( void ) = default;
 					explicit idPluecker( const float *a );
 					explicit idPluecker( const idVec3 &start, const idVec3 &end );
 					explicit idPluecker( const float a1, const float a2, const float a3, const float a4, const float a5, const float a6 );
@@ -78,9 +78,6 @@ private:
 
 extern idPluecker pluecker_origin;
 #define pluecker_zero pluecker_origin
-
-ID_INLINE idPluecker::idPluecker( void ) {
-}
 
 ID_INLINE idPluecker::idPluecker( const float *a ) {
 	memcpy( p, a, 6 * sizeof( float ) );

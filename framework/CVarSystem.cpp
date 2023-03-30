@@ -31,7 +31,7 @@ idCVar * idCVar::staticVars = NULL;
 class idInternalCVar : public idCVar {
 	friend class idCVarSystemLocal;
 public:
-							idInternalCVar( void );
+							idInternalCVar( void ) = default;
 							idInternalCVar( const char *newName, const char *newValue, int newFlags );
 							idInternalCVar( const idCVar *cvar );
 	virtual					~idInternalCVar( void );
@@ -54,14 +54,6 @@ private:
 	virtual void			InternalSetInteger( const int newValue );
 	virtual void			InternalSetFloat( const float newValue );
 };
-
-/*
-============
-idInternalCVar::idInternalCVar
-============
-*/
-idInternalCVar::idInternalCVar( void ) {
-}
 
 /*
 ============

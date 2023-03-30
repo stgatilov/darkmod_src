@@ -34,7 +34,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 */
 class idCircCone {
 public:
-					idCircCone();
+					idCircCone() = default;
 	explicit		idCircCone( const idVec3 &axis, float cosAng, float sinAng );
 
 	void			Set( const idVec3 &axis, float cosAng, float sinAng );	// set by unit axis and cos,sin
@@ -94,9 +94,6 @@ private:
 	float			sinAngle;
 };
 
-
-ID_FORCE_INLINE idCircCone::idCircCone() {
-}
 
 ID_FORCE_INLINE idCircCone::idCircCone( const idVec3 &ax, float cosAng, float sinAng ) {
 	// note: this setter is "unsafe", it assumes that caller has prepared data properly

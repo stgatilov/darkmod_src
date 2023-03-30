@@ -1981,7 +1981,7 @@ class idPolar3 {
 public:	
 	float			radius, theta, phi;
 
-					idPolar3( void );
+					idPolar3( void ) = default;
 					explicit idPolar3( const float radius, const float theta, const float phi );
 					explicit idPolar3( const idVec3 vec3 );
 
@@ -1994,9 +1994,6 @@ public:
 
 	idVec3			ToVec3( void ) const;
 };
-
-ID_FORCE_INLINE idPolar3::idPolar3( void ) {
-}
 
 ID_INLINE idPolar3::idPolar3( const float radius, const float theta, const float phi ) {
 	assert( radius > 0 );

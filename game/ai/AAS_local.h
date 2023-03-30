@@ -65,7 +65,7 @@ private:
 
 class idRoutingObstacle {
 	friend class idAASLocal;
-								idRoutingObstacle( void ) { }
+								idRoutingObstacle( void ) = default;
 
 private:
 	idBounds					bounds;					// obstacle bounds

@@ -83,7 +83,7 @@ public:
 	bool				isConvex;				// true when model is convex
 
 public:
-						idTraceModel( void );
+						idTraceModel( void ) = default;
 						// axial bounding box
 						idTraceModel( const idBounds &boxBounds );
 						// cylinder approximation
@@ -147,8 +147,6 @@ private:
 	int					GetOrderedSilhouetteEdges( const int edgeIsSilEdge[MAX_TRACEMODEL_EDGES+1], int silEdges[MAX_TRACEMODEL_EDGES] ) const;
 };
 
-
-ID_INLINE idTraceModel::idTraceModel( void ) {}
 
 ID_INLINE idTraceModel::idTraceModel( const idBounds &boxBounds ) {
 	InitBox();

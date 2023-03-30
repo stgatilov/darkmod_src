@@ -21,7 +21,7 @@ class idWinVar;
 
 class idRegister {
 public:
-						idRegister();
+						idRegister() = default;
 						idRegister( const char *p, int t );
 
 	bool				SetVar( idWinVar *var );
@@ -47,9 +47,6 @@ public:
 	void				WriteToSaveGame( idFile *savefile );
 	void				ReadFromSaveGame( idFile *savefile );
 };
-
-ID_INLINE idRegister::idRegister( void ) {
-}
 
 ID_INLINE idRegister::idRegister( const char *p, int t ) {
 	name = p;

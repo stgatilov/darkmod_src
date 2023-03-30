@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idBox {
 public:
-					idBox( void );
+					idBox( void ) = default;
 					explicit idBox( const idVec3 &center, const idVec3 &extents, const idMat3 &axis );
 					explicit idBox( const idVec3 &point );
 					explicit idBox( const idBounds &bounds );
@@ -110,9 +110,6 @@ private:
 };
 
 extern idBox	box_zero;
-
-ID_INLINE idBox::idBox( void ) {
-}
 
 ID_INLINE idBox::idBox( const idVec3 &center, const idVec3 &extents, const idMat3 &axis ) {
 	this->center = center;

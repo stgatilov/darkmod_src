@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idSphere {
 public:
-					idSphere( void );
+					idSphere( void ) = default;
 					explicit idSphere( const idVec3 &point );
 					explicit idSphere( const idVec3 &point, const float r );
 
@@ -84,9 +84,6 @@ private:
 };
 
 extern idSphere	sphere_zero;
-
-ID_INLINE idSphere::idSphere( void ) {
-}
 
 ID_INLINE idSphere::idSphere( const idVec3 &point ) {
 	origin = point;

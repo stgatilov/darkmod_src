@@ -35,10 +35,10 @@ typedef struct surfaceEdge_s {
 
 class idSurface {
 public:
-							idSurface( void );
+							idSurface( void ) = default;
 							explicit idSurface( const idSurface &surf );
 							explicit idSurface( const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes );
-							~idSurface( void );
+							~idSurface( void ) = default;
 
 	const idDrawVert &		operator[]( const int index ) const;
 	idDrawVert &			operator[]( const int index );
@@ -91,14 +91,6 @@ protected:
 };
 
 /*
-====================
-idSurface::idSurface
-====================
-*/
-ID_INLINE idSurface::idSurface( void ) {
-}
-
-/*
 =================
 idSurface::idSurface
 =================
@@ -122,14 +114,6 @@ ID_INLINE idSurface::idSurface( const idSurface &surf ) {
 	this->indexes = surf.indexes;
 	this->edges = surf.edges;
 	this->edgeIndexes = surf.edgeIndexes;
-}
-
-/*
-====================
-idSurface::~idSurface
-====================
-*/
-ID_INLINE idSurface::~idSurface( void ) {
 }
 
 /*

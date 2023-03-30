@@ -28,7 +28,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idSurface_Polytope : public idSurface {
 public:
-						idSurface_Polytope( void );
+						idSurface_Polytope( void ) = default;
 
 	void				FromPlanes( const idPlane *planes, const int numPlanes );
 
@@ -45,13 +45,5 @@ public:
 protected:
 
 };
-
-/*
-====================
-idSurface_Polytope::idSurface_Polytope
-====================
-*/
-ID_INLINE idSurface_Polytope::idSurface_Polytope( void ) {
-}
 
 #endif /* !__SURFACE_POLYTOPE_H__ */

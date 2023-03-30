@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class idBounds {
 public:
-					idBounds( void );
+					idBounds( void ) = default;
 					explicit idBounds( const idVec3 &mins, const idVec3 &maxs );
 					explicit idBounds( const idVec3 &point );
 
@@ -115,9 +115,6 @@ private:
 extern idBounds	bounds_zero;
 extern idBounds bounds_zeroOneCube; //anon
 extern idBounds bounds_unitCube; //anon
-
-ID_INLINE idBounds::idBounds( void ) {
-}
 
 ID_INLINE idBounds::idBounds( const idVec3 &mins, const idVec3 &maxs ) {
 	b[0] = mins;
