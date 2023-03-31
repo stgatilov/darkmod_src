@@ -810,7 +810,8 @@ void R_CreateLightDefFogPortals( idRenderLightLocal *ldef ) {
 	ldef->foggedPortals = NULL;
 	if ( !ldef->lightShader->IsFogLight() ||
 		// some fog lights will explicitly disallow portal fogging
-		ldef->lightShader->TestMaterialFlag( MF_NOPORTALFOG)) {
+		ldef->lightShader->TestMaterialFlag( MF_NOPORTALFOG) || 
+	  ldef->parms.noPortalFog ) {
 		return;
 	}
 

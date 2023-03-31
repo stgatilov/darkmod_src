@@ -409,6 +409,7 @@ void idSaveGame::WriteRenderLight( const renderLight_t &renderLight ) {
 	}
 
 	WriteBool( renderLight.noFogBoundary ); // #3664
+	WriteBool( renderLight.noPortalFog ); //
 	WriteInt( renderLight.areaLock );
 
 	WriteFloat( renderLight.volumetricDust );
@@ -1012,6 +1013,7 @@ void idRestoreGame::ReadRenderLight( renderLight_t &renderLight ) {
 	renderLight.referenceSound = gameSoundWorld->EmitterForIndex( index );
 
 	ReadBool( renderLight.noFogBoundary ); // #3664
+	ReadBool( renderLight.noPortalFog ); //
 	ReadInt( (int&)renderLight.areaLock );
 
 	ReadFloat( renderLight.volumetricDust );
