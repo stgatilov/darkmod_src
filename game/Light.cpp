@@ -183,7 +183,7 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 		renderLight->parallel = true;
 
 	args->GetBool( "noFogBoundary", "0", renderLight->noFogBoundary ); // Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
-	args->GetBool( "noPortalFog", "0", renderLight->noPortalFog ); // Prevents fog from prematurely closing portals. Same as the material flag from Doom 3
+	args->GetBool( "noPortalFog", "0", renderLight->noPortalFog ); // Prevents fog from prematurely closing portals. Same as the material flag from Doom 3 -- nbohr1more #6282
 	args->GetInt( "spectrum", "0", renderLight->spectrum );
 
 	args->GetString( "texture", "lights/squarelight1", &texture );

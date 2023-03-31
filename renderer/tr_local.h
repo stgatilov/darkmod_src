@@ -399,7 +399,7 @@ typedef struct viewLight_s {
 	float					maxLightDistance;			// maximum distance from light origin to light volume points
 
 	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
-	bool                    noPortalFog;				// Prevents fog from prematurely closing portals and snapping off lights, matches the material flag from Doom 3			
+	bool                    noPortalFog;				// Prevents fog from prematurely closing portals and snapping off lights, matches the material flag from Doom 3	-- nbohr1more #6282		
 	bool					singleLightOnly;			// multi-light shader can't handle it
 	bool					pointLight;
 	bool					noShadows;

@@ -213,7 +213,7 @@ typedef struct renderLight_s {
 	idSoundEmitter *		referenceSound;		// for shader sound tables, allowing effects to vary with sounds
 
 	bool					noFogBoundary;		// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
-	bool                    noPortalFog;		// Prevents fog from prematurely closing portals and snapping off lights, matches the material flag from Doom 3	
+	bool                    noPortalFog;		// Prevents fog from prematurely closing portals and snapping off lights, matches the material flag from Doom 3	-- nbohr1more #6282
 	
 	int						spectrum;			//nbohr1more: #4956 spectrum entity arg
 	renderEntity_s::areaLock_t areaLock;

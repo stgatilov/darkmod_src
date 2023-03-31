@@ -813,7 +813,7 @@ void R_CreateLightDefFogPortals( idRenderLightLocal *ldef ) {
 		ldef->lightShader->TestMaterialFlag( MF_NOPORTALFOG) || 
 	  ldef->parms.noPortalFog ) {
 		return;
-	}
+	} // #6282 added noPortalFog entity flag
 
 	//const portal_t	*prt;
 	portalArea_t	*area;
