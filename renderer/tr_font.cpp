@@ -275,7 +275,7 @@ RegisterFont
 Loads 3 point sizes, 12, 24, and 48
 ============
 */
-bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font ) {
+bool idRenderSystemLocal::RegisterFont( const char *fontName, const fontParameters_t &params, fontInfoEx_t &font ) {
 #ifdef BUILD_FREETYPE
 	FT_Face face;
 	int j, k, xOut, yOut, lastStart, imageNumber;
@@ -362,13 +362,13 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 		fdOffset = 0;
 		fdFile = reinterpret_cast<unsigned char*>(faceData);
 		for( int i = 0; i < GLYPHS_PER_FONT; i++ ) {
-			outFont->glyphs[i].height		= readInt();
-			outFont->glyphs[i].top			= readInt();
-			outFont->glyphs[i].bottom		= readInt();
-			outFont->glyphs[i].pitch		= readInt();
-			outFont->glyphs[i].xSkip		= readInt();
-			outFont->glyphs[i].imageWidth	= readInt();
-			outFont->glyphs[i].imageHeight	= readInt();
+			outFont->glyphs[i].height		= readInt() * params.scale.y;
+			outFont->glyphs[i].top			= readInt() * params.scale.y;
+			outFont->glyphs[i].bottom		= readInt() * params.scale.y;
+			outFont->glyphs[i].pitch		= readInt() * params.scale.x;
+			outFont->glyphs[i].xSkip		= readInt() * params.scale.x;
+			outFont->glyphs[i].imageWidth	= readInt() * params.scale.x;
+			outFont->glyphs[i].imageHeight	= readInt() * params.scale.y;
 			outFont->glyphs[i].s			= readFloat();
 			outFont->glyphs[i].t			= readFloat();
 			outFont->glyphs[i].s2			= readFloat();

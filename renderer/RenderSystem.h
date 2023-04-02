@@ -82,6 +82,12 @@ extern idCVar con_fontSize;
 #define GLYPH_CHAREND		127
 #define GLYPHS_PER_FONT		(GLYPH_END - GLYPH_START + 1)
 
+// stgatilov #6283: now it is possible to customize existing fonts
+// to do it, add suffix like this to font name:    @param1@param2@param3=XX
+struct fontParameters_t {
+	idVec2 scale = idVec2(1.0f, 1.0f);
+};
+
 typedef struct {
 	int					height;			// number of scan lines
 	int					top;			// top of glyph in buffer
@@ -154,7 +160,7 @@ public:
 	virtual void			EndLevelLoad( void ) = 0;
 
 	// font support
-	virtual bool			RegisterFont( const char *fontName, fontInfoEx_t &font ) = 0;
+	virtual bool			RegisterFont( const char *fontName, const fontParameters_t &params, fontInfoEx_t &font ) = 0;
 
 	// GUI drawing just involves shader parameter setting and axial image subsections
 	virtual void			SetColor( const idVec4 &rgba ) = 0;

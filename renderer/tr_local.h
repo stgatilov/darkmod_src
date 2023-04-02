@@ -827,7 +827,7 @@ public:
 	virtual void			FreeRenderWorld( idRenderWorld *rw );
 	virtual void			BeginLevelLoad( void );
 	virtual void			EndLevelLoad( void );
-	virtual bool			RegisterFont( const char *fontName, fontInfoEx_t &font );
+	virtual bool			RegisterFont( const char *fontName, const fontParameters_t &params, fontInfoEx_t &font ) override;
 	virtual void			SetColor( const idVec4 &rgba );
 	virtual void			SetColor4( float r, float g, float b, float a );
 	virtual void			DrawStretchPic( const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *material,

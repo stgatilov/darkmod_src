@@ -35,6 +35,29 @@ idCVar gui_mediumFontLimit( "gui_mediumFontLimit", "0.30", CVAR_GUI | CVAR_ARCHI
 
 idList<fontInfoEx_t> idDeviceContext::fonts;
 
+static idStr ParseFontParameters( const idStr &fontName, fontParameters_t &params ) {
+	idStringList tokens = fontName.Split( "@", false );
+	idStr fileName = tokens[0];
+
+	for ( int i = 1; i < tokens.Num(); i++ ) {
+		const idStr &tok = tokens[i];
+		int X, Y, len;
+
+		// stgatilov #6283:    @aspect=X:Y
+		// results in intended font proportions on X:Y screen resolution
+		if ( sscanf( tok.c_str(), "aspect=%d:%d%n", &X, &Y, &len) == 2 && len == tok.Length() ) {
+			assert( X > 0 && Y > 0 && X < 5000 && Y < 5000 ); // be sane, please!
+			// for widescreen resolution, reduce virtual X size to get correct on-screen proportions
+			params.scale.x = float(4 * Y) / (3 * X);
+		}
+		else {
+			common->Warning( "Unknown font %s parameter: @%s", fileName.c_str(), tok.c_str() );
+		}
+	}
+
+	return fileName;
+}
+
 int idDeviceContext::FindFont( const char *name ) {
 	int c = fonts.Num();
 	for (int i = 0; i < c; i++) {
@@ -44,11 +67,15 @@ int idDeviceContext::FindFont( const char *name ) {
 	}
 
 	// If the font was not found, try to register it
-	idStr fileName = name;
-	fileName.Replace("fonts", common->GetI18N()->GetCurrentFontPath().c_str() );
+	idStr fontName = name;
+	fontName.Replace("fonts", common->GetI18N()->GetCurrentFontPath().c_str() );
+
+	// stgatilov #6283: parse customization parameters from font name
+	fontParameters_t fontParams;
+	idStr fileName = ParseFontParameters( fontName, fontParams );
 
 	fontInfoEx_t fontInfo;
-	if ( renderSystem->RegisterFont( fileName, fontInfo ) )
+	if ( renderSystem->RegisterFont( fileName, fontParams, fontInfo ) )
 	{
 		idStr::Copynz( fontInfo.name, name, sizeof( fontInfo.name ) );
 		// tels: #3060: only append the fontInfo if the font was actually found
