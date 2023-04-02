@@ -348,6 +348,8 @@ void idSessionLocal::Stop() {
 
 	// clear mapSpawned and demo playing flags
 	UnloadMap();
+	// stgatilov: reset to default playerstart when "Quit Mission" is used (but not on restart)
+	gameLocal.m_StartPosition = "";
 
 	if ( sw ) {
 		sw->StopAllSounds();
