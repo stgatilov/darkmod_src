@@ -1577,7 +1577,7 @@ void idInteraction::AddActiveInteraction( void ) {
 
 			// put index buffer to vertex cache if not there yet
 			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) ) {
-				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ) );
 				if ( !shadowTris->indexCache.IsValid() )
 					continue;
 			}
@@ -1622,7 +1622,7 @@ void idInteraction::AddActiveInteraction( void ) {
 			}
 			// put index buffer to vertex cache if not there yet
 			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) ) {
-				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ) );
 				if ( !shadowTris->indexCache.IsValid() )
 					continue;
 			}

@@ -42,8 +42,8 @@ static void R_FinishDeform( drawSurf_t *drawSurf, srfTriangles_t *newTri, idDraw
 		R_DeriveTangents( newTri, false );
 		newTri->verts = NULL;
 	}
-	newTri->ambientCache = vertexCache.AllocVertex( ac, ALIGN( newTri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
-	newTri->indexCache = vertexCache.AllocIndex( newTri->indexes, ALIGN( newTri->numIndexes * sizeof( newTri->indexes[0] ), INDEX_CACHE_ALIGN ) );
+	newTri->ambientCache = vertexCache.AllocVertex( ac, newTri->numVerts * sizeof( idDrawVert ) );
+	newTri->indexCache = vertexCache.AllocIndex( newTri->indexes, newTri->numIndexes * sizeof( newTri->indexes[0] ) );
 
 	// if we are out of vertex cache, leave it the way it is
 	if ( newTri->ambientCache.IsValid() && newTri->indexCache.IsValid() ) {
@@ -980,8 +980,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 				indexes += 6;
 			}
 			tri->numIndexes = indexes;
-			tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
-			tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
+			tri->ambientCache = vertexCache.AllocVertex( tri->verts, tri->numVerts * sizeof( idDrawVert ) );
+			tri->indexCache = vertexCache.AllocIndex( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ) );
 
 			if ( tri->ambientCache.IsValid() && tri->indexCache.IsValid() ) {
 				// add the drawsurf

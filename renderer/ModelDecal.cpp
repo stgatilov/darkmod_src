@@ -504,8 +504,8 @@ void idRenderModelDecal::AddDecalDrawSurf( viewEntity_t *space ) {
 	*newTri = tri;
 
 	// copy the current vertexes to temp vertex cache
-	newTri->ambientCache = vertexCache.AllocVertex( tri.verts, ALIGN( tri.numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
-	newTri->indexCache = vertexCache.AllocIndex( tri.indexes, ALIGN( tri.numIndexes * sizeof( tri.indexes[0] ), INDEX_CACHE_ALIGN ) );
+	newTri->ambientCache = vertexCache.AllocVertex( tri.verts, tri.numVerts * sizeof( idDrawVert ) );
+	newTri->indexCache = vertexCache.AllocIndex( tri.indexes, tri.numIndexes * sizeof( tri.indexes[0] ) );
 
 	if ( newTri->ambientCache.IsValid() && newTri->indexCache.IsValid() ) {
 		// create the drawsurf

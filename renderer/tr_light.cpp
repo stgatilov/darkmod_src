@@ -86,7 +86,7 @@ void R_CreateVertexProgramShadowCache( srfTriangles_t *tri ) {
 	}
 	shadowCache_t *temp = (shadowCache_t *)_alloca16( tri->numVerts * 2 * sizeof( shadowCache_t ) );
 	SIMDProcessor->CreateVertexProgramShadowCache( &temp->xyz, tri->verts, tri->numVerts );
-	tri->shadowCache = vertexCache.AllocVertex( temp, ALIGN( tri->numVerts * 2 * sizeof( shadowCache_t ), VERTEX_CACHE_ALIGN ) );
+	tri->shadowCache = vertexCache.AllocVertex( temp, tri->numVerts * 2 * sizeof( shadowCache_t ) );
 }
 
 /*
@@ -109,7 +109,7 @@ R_SkyboxTexGen
 //		texCoords[i][1] = verts[i].xyz[1] - localViewOrigin[1];
 //		texCoords[i][2] = verts[i].xyz[2] - localViewOrigin[2];
 //	}
-//	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
+//	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, size );
 //}
 
 /*
@@ -184,7 +184,7 @@ R_WobbleskyTexGen
 //
 //		R_LocalPointToGlobal( transform, v, texCoords[i] );
 //	}
-//	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
+//	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, size );
 //}
 
 //=======================================================================================================
@@ -993,7 +993,7 @@ void R_AddLightSurfaces( void ) {
 			}
 
 			if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
-				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				tri->indexCache = vertexCache.AllocIndex( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ) );
 			}
 			drawSurf_t *surf = R_PrepareLightSurf( tri, NULL, NULL, vLight->scissorRect, true /* FIXME ? */ );
 			// actually link it in
@@ -1439,7 +1439,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 				return;
 
 			if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
-				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				tri->indexCache = vertexCache.AllocIndex( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ) );
 			}
 
 			// Soft Particles -- SteveL #3878
