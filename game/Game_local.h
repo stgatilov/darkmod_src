@@ -664,7 +664,7 @@ public:
 	bool					m_TriggerFinalSave;
 
 	// grayman #2933 - store the start position selected during the mission briefing, if any
-	const char *			m_StartPosition;
+	idStr					m_StartPosition;
 
 	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 

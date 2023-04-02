@@ -6789,7 +6789,7 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 
 	bool foundSpot = false;
 	spot.ent = NULL;
-	if ( m_StartPosition != NULL && m_StartPosition[0] != '\0' )
+	if ( m_StartPosition[0] != '\0' )
 	{
 		spot.ent = FindEntity( m_StartPosition );
 		if ( spot.ent != NULL )
