@@ -89,13 +89,13 @@ struct fontParameters_t {
 };
 
 typedef struct {
-	int					height;			// number of scan lines
-	int					top;			// top of glyph in buffer
-	int					bottom;			// bottom of glyph in buffer
-	int					pitch;			// width for copying
-	int					xSkip;			// x adjustment
-	int					imageWidth;		// width of actual image
-	int					imageHeight;	// height of actual image
+	float				height;			// number of scan lines
+	float				top;			// top of glyph in buffer
+	float				bottom;			// bottom of glyph in buffer
+	float				pitch;			// width for copying
+	float				xSkip;			// x adjustment
+	float				imageWidth;		// width of actual image
+	float				imageHeight;	// height of actual image
 	float				s;				// x offset in image where glyph starts
 	float				t;				// y offset in image where glyph starts
 	float				s2;
@@ -114,14 +114,14 @@ typedef struct {
 	fontInfo_t			fontInfoSmall;
 	fontInfo_t			fontInfoMedium;
 	fontInfo_t			fontInfoLarge;
-	int					maxHeight;
-	int					maxWidth;
-	int					maxHeightSmall;
-	int					maxWidthSmall;
-	int					maxHeightMedium;
-	int					maxWidthMedium;
-	int					maxHeightLarge;
-	int					maxWidthLarge;
+	float				maxHeight;
+	float				maxWidth;
+	float				maxHeightSmall;
+	float				maxWidthSmall;
+	float				maxHeightMedium;
+	float				maxWidthMedium;
+	float				maxHeightLarge;
+	float				maxWidthLarge;
 	char				name[64];
 } fontInfoEx_t;
 

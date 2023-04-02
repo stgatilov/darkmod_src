@@ -380,8 +380,8 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, const fontParamete
 		}
 		outFont->glyphScale = readFloat();
 
-		int mw = 0;
-		int mh = 0;
+		float mw = 0;
+		float mh = 0;
 		for (int i = GLYPH_START; i <= GLYPH_END; i++) {
 			idStr::snPrintf(name, sizeof(name), "%s/%s", fontName, outFont->glyphs[i].shaderName);
 			outFont->glyphs[i].glyph = declManager->FindMaterial(name);

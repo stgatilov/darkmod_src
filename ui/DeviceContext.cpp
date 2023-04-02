@@ -770,8 +770,6 @@ float idDeviceContext::CharWidth( const char c, float scale ) {
 }
 
 float idDeviceContext::TextWidth( const char *text, float scale, int limit ) {
-	int i, width;
-
 	SetFontByScale( scale );
 	const glyphInfo_t *glyphs = useFont->glyphs;
 
@@ -779,9 +777,9 @@ float idDeviceContext::TextWidth( const char *text, float scale, int limit ) {
 		return 0;
 	}
 
-	width = 0;
+	float width = 0;
 	if ( limit > 0 ) {
-		for ( i = 0; text[i] != '\0' && i < limit; i++ ) {
+		for ( int i = 0; text[i] != '\0' && i < limit; i++ ) {
 			if ( idStr::IsColor( text + i ) ) {
 				i++;
 			} else {
@@ -789,7 +787,7 @@ float idDeviceContext::TextWidth( const char *text, float scale, int limit ) {
 			}
 		}
 	} else {
-		for ( i = 0; text[i] != '\0'; i++ ) {
+		for ( int i = 0; text[i] != '\0'; i++ ) {
 			if ( idStr::IsColor( text + i ) ) {
 				i++;
 			} else {
