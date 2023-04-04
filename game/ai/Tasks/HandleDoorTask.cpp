@@ -316,7 +316,7 @@ void HandleDoorTask::MoveToSafePosition(CFrobDoor* door)
 {
 	idAI* owner = _owner.GetEntity();
 
-	const idVec3& centerPos = door->GetClosedBox().GetCenter();
+	idVec3 centerPos = door->GetClosedBox().GetCenter();
 	idVec3 dir2AI = owner->GetPhysics()->GetOrigin() - centerPos;
 	dir2AI.z = 0;
 	dir2AI.NormalizeFast();

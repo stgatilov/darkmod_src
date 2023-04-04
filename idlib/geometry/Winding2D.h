@@ -40,6 +40,7 @@ public:
 	int				GetNumPoints( void ) const;
 
 	void			Expand( const float d );
+					// stgatilov: does NOT work properly for windings with obtuse angles
 	void			ExpandForAxialBox( const idVec2 bounds[2] );
 
 					// splits the winding into a front and back winding, the winding itself stays unchanged
