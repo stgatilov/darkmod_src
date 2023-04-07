@@ -314,7 +314,7 @@ public:
 	float			y;
 	float			z;
 
-					idVec3( void );
+					idVec3( void ) = default;
 					ID_FORCE_INLINE explicit idVec3(const float xyz) //anon
 					{
 						Set(xyz, xyz, xyz);
@@ -395,14 +395,6 @@ public:
 
 extern idVec3 vec3_origin;
 #define vec3_zero vec3_origin
-
-// Default constructor
-ID_FORCE_INLINE idVec3::idVec3( void ):
-	x(0.0f), // OrbWeaver: let's not leave stuff uninitialised
-	y(0.0f),
-	z(0.0f)
-{
-}
 
 ID_FORCE_INLINE idVec3::idVec3( const float x, const float y, const float z ) {
 	this->x = x;
