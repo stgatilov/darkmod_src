@@ -386,9 +386,9 @@ void CForce_Grab::Evaluate( int time )
 		// note: it is very important to specify the direction we are going to move to
 		dir.SubVec3(0) = dragShift.Normalized();
 		idClipModel *clipModel = m_physics->GetClipModel(m_id);
-		idRaw<contactInfo_t> contacts[CONTACTS_MAX_NUMBER];
+		contactInfo_t contacts[CONTACTS_MAX_NUMBER];
 		int num = gameLocal.clip.Contacts(
-			contacts[0].Ptr(), CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
+			contacts, CONTACTS_MAX_NUMBER, clipModel->GetOrigin(),
 			dir, CONTACT_EPSILON, clipModel, clipModel->GetAxis(),
 			m_physics->GetClipMask(m_id), m_physics->GetSelf()
 		);
@@ -396,7 +396,7 @@ void CForce_Grab::Evaluate( int time )
 		// filter contacts with what we consider to be obstacles
 		idList<idVec3> normals;
 		for (int i = 0; i < num; i++) {
-			const contactInfo_t &contact = contacts[i].Get();
+			const contactInfo_t &contact = contacts[i];
 
 			idEntity *contEnt = gameLocal.entities[contact.entityNum];
 			if (!contEnt->GetPhysics())

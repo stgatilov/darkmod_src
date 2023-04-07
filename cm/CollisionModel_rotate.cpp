@@ -1210,8 +1210,7 @@ void idCollisionModelManagerLocal::Rotation180( trace_t *results, const idVec3 &
 	cm_trmPolygon_t *poly;
 	cm_trmEdge_t *edge;
 	cm_trmVertex_t *vert;
-	idRaw<cm_traceWork_t> twRaw;
-	cm_traceWork_t &tw = twRaw.Get();
+	cm_traceWork_t tw;
 
 	if ( model < 0 || model > MAX_SUBMODELS || model > idCollisionModelManagerLocal::maxModels ) {
 		common->Printf("idCollisionModelManagerLocal::Rotation180: invalid model handle\n");

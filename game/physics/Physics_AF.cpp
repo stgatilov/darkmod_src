@@ -5840,7 +5840,7 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 	idAFBody *body;
 	idEntity *passEntity;
 	idVecX dir( 6, VECX_ALLOCA( 6 ) );
-	idRaw<contactInfo_t> contactInfo[CONTACTS_MAX_NUMBER];	//avoid zeroing
+	contactInfo_t contactInfo[CONTACTS_MAX_NUMBER];
 
 	// evaluate bodies
 	EvaluateBodies( current.lastTimeStep );
@@ -5870,7 +5870,7 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 		dir.SubVec3(1).Normalize();
 
 		numContacts = gameLocal.clip.Contacts(
-			contactInfo[0].Ptr(), CONTACTS_MAX_NUMBER, body->current->worldOrigin, dir.SubVec6(0), 2.0f, //CONTACT_EPSILON,
+			contactInfo, CONTACTS_MAX_NUMBER, body->current->worldOrigin, dir.SubVec6(0), 2.0f, //CONTACT_EPSILON,
 			body->clipModel, body->current->worldAxis, body->clipMask, passEntity
 		);
 
@@ -5881,14 +5881,14 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 
 			numBodyContacts = 0;
 			for ( k = 0; k < contacts.Num(); k++ ) {
-				if ( contacts[k].entityNum == contactInfo[j].Get().entityNum ) {
-					if ( ( contacts[k].id == i && contactInfo[j].Get().id == contactBodies[k] ) ||
-							( contactBodies[k] == i && contacts[k].id == contactInfo[j].Get().id ) ) {
+				if ( contacts[k].entityNum == contactInfo[j].entityNum ) {
+					if ( ( contacts[k].id == i && contactInfo[j].id == contactBodies[k] ) ||
+							( contactBodies[k] == i && contacts[k].id == contactInfo[j].id ) ) {
 
-						if ( ( contacts[k].point - contactInfo[j].Get().point ).LengthSqr() < Square( 2.0f ) ) {
+						if ( ( contacts[k].point - contactInfo[j].point ).LengthSqr() < Square( 2.0f ) ) {
 							break;
 						}
-						if ( idMath::Fabs( contacts[k].normal * contactInfo[j].Get().normal ) > 0.9f ) {
+						if ( idMath::Fabs( contacts[k].normal * contactInfo[j].normal ) > 0.9f ) {
 							numBodyContacts++;
 						}
 					}
@@ -5896,7 +5896,7 @@ bool idPhysics_AF::EvaluateContacts( void ) {
 			}
 
 			if ( k >= contacts.Num() && numBodyContacts < 3 ) {
-				contacts.Append( contactInfo[j].Get() );
+				contacts.Append( contactInfo[j] );
 				contactBodies.Append( i );
 			}
 		}

@@ -460,8 +460,7 @@ int idCollisionModelManagerLocal::ContentsTrm( trace_t *results, const idVec3 &s
 	bool model_rotated, trm_rotated;
 	idMat3 invModelAxis, tmpAxis;
 	idVec3 dir;
-	idRaw<cm_traceWork_t> twRaw;
-	cm_traceWork_t &tw = twRaw.Get();
+	cm_traceWork_t tw;
 
 	// fast point case
 	if ( !trm || ( trm->bounds[1][0] - trm->bounds[0][0] <= 0.0f &&
