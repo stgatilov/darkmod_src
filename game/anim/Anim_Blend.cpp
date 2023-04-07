@@ -4518,6 +4518,7 @@ void idAnimator::CycleAnim( int channelNum, int animNum, int currentTime, int bl
 	
 	PushAnims( channelNum, currentTime, blendTime );
 	channels[ channelNum ][ 0 ].CycleAnim( modelDef, animNum, currentTime, blendTime, entity );
+	ForceUpdate();	// stgatilov #6099: current frame might have changed
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
 	}
