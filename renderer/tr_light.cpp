@@ -1126,45 +1126,6 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 	return def->dynamicModel;
 }
 
-/*
-===============
-R_FindSurfaceLights
-
-The multi light shader needs lights per each surface
-===============
-*/
-static void R_FindSurfaceLights( drawSurf_t& drawSurf ) {
-	drawSurf.onLights = nullptr;
-	auto def = drawSurf.space->entityDef;
-	if ( !def || !(r_shadowMapSinglePass.GetBool()) )
-		return;
-	idList<viewLight_s*> lights; // local list
-	for ( auto inter = def->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext ) {
-		auto light = inter->lightDef;
-		if ( light->viewCount != tr.viewCount )
-			continue; // skip any lights that aren't currently visible
-		if ( drawSurf.material->Spectrum() != light->lightShader->Spectrum() )
-			continue;
-		if ( light->viewLight->shadows == LS_STENCIL )
-			continue;
-		if ( light->lightShader->IsAmbientLight() ) {
-			if ( r_skipAmbient.GetInteger() & 2 )
-				continue;
-		}
-		idVec3 localLightOrigin;
-		R_GlobalPointToLocal( drawSurf.space->modelMatrix, light->globalLightOrigin, localLightOrigin );
-		if ( R_CullLocalBox( drawSurf.frontendGeo->bounds, drawSurf.space->modelMatrix, 6, light->frustum ) )
-			continue;
-		lights.Append( light->viewLight );
-	}
-	if ( lights.Num() ) { // expect to at least include the main ambient light if exists
-		lights.Append( nullptr );
-		auto frameMem = R_FrameAlloc( lights.MemoryUsed() );
-		memcpy( frameMem, lights.Ptr(), lights.MemoryUsed() );
-		drawSurf.onLights = (viewLight_s * *)frameMem;
-	}
-}
-
 void R_AddSurfaceToView( drawSurf_t *drawSurf ) {
 	// bumping this offset each time causes surfaces with equal sort orders to still
 	// deterministically draw in the order they are added
@@ -1302,8 +1263,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 			gui = nullptr;
 		}
 	}
-
-	R_FindSurfaceLights( *drawSurf ); // multi shader data
 
 	if (deferred) {
 		preparedSurf_t *preparedSurf = (preparedSurf_t*)R_FrameAlloc( sizeof(preparedSurf_t) );

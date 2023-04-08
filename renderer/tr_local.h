@@ -156,8 +156,6 @@ typedef struct drawSurf_s {
 	const float				*shaderRegisters;	// evaluated and adjusted for referenceShaders
 	/*const*/ struct drawSurf_s	*nextOnLight;	// viewLight chains
 
-	viewLight_s				**onLights;			// light/entity bounds intersections, terminated by null - multi light shader
-
 	idScreenRect			scissorRect;		// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
 	//vertCacheHandle_t		dynamicTexCoords;	// float * in vertex cache memory // duzenko: disabled in 2.08, to be removed in 2.09
