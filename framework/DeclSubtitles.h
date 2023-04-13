@@ -20,9 +20,14 @@ class idDeclSubtitles;
 typedef struct {
 	idStr soundSampleName;				// must match idSoundSample::name
 	SubtitleLevel verbosityLevel;		// when to show/hide dependong on player settings
-	idStr inlineText;					// single-text subtitle over whole sample, written in decl
-	idStr srtFileName;					// path to .srt file which should be loaded for subtitles
 	idDeclSubtitles *owner;				// which decl contains this mapping struct
+
+	// (inline)
+	idStr inlineText;					// single-text subtitle over whole sample, written in decl
+	float inlineDurationExtend;			// subtitle is extended by X seconds after sound ends, X = -1 means "default"
+
+	// (SRT file)
+	idStr srtFileName;					// path to .srt file which should be loaded for subtitles
 } subtitleMapping_t;
 
 class idDeclSubtitles : public idDecl {

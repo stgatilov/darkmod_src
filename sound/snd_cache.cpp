@@ -169,7 +169,10 @@ void idSoundSample::LoadSubtitles() {
 	}
 	else {
 		// inline subtitle
-		int durAdd = int( tdm_subtitles_inlineDurationExtension.GetFloat() * PRIMARYFREQ );
+		float durationExtend = tdm_subtitles_inlineDurationExtension.GetFloat();
+		if ( mapping->inlineDurationExtend >= 0.0f )
+			durationExtend = mapping->inlineDurationExtend;
+		int durAdd = int( durationExtend * PRIMARYFREQ );
 		int durMin = int( tdm_subtitles_inlineDurationMinimum.GetFloat() * PRIMARYFREQ );
 		Subtitle sub;
 		sub.offsetStart = 0;

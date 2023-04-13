@@ -25,29 +25,29 @@ bool idDeclSubtitles::Parse( const char *text, const int textLength ) {
 
 	SubtitleLevel verbosity = SUBL_MISSING;
 
-	idToken	token, tokenSound, tokenValue;
-	while ( src.ReadToken( &token ) ) {
-		if ( !token.Icmp("}") ) {
+	idToken	tokenCommand, tokenSound, tokenValue;
+	while ( src.ReadToken( &tokenCommand ) ) {
+		if ( !tokenCommand.Icmp("}") ) {
 			break;
 
-		} else if ( !token.Icmp("verbosity") ) {
-			if ( !src.ReadToken( &token ) ) {
+		} else if ( !tokenCommand.Icmp("verbosity") ) {
+			if ( !src.ReadToken( &tokenValue ) ) {
 				src.Warning( "Missing subtitle verbosity level" );
 				return false;
 			}
 
-			if ( !token.Icmp("story") ) {
+			if ( !tokenValue.Icmp("story") ) {
 				verbosity = SUBL_STORY;
-			} else if ( !token.Icmp("speech") ) {
+			} else if ( !tokenValue.Icmp("speech") ) {
 				verbosity = SUBL_SPEECH;
-			} else if ( !token.Icmp("effect") ) {
+			} else if ( !tokenValue.Icmp("effect") ) {
 				verbosity = SUBL_EFFECT;
 			} else {
 				src.Warning( "Subtitle verbosity must be one of: effect, speech, story" );
 				return false;
 			}
 
-		} else if ( !token.Icmp( "inline" ) || !token.Icmp( "srt" ) ) {
+		} else if ( !tokenCommand.Icmp( "inline" ) || !tokenCommand.Icmp( "srt" ) ) {
 			if ( !src.ReadToken( &tokenSound ) ) {
 				src.Warning( "Missing sound sample name" );
 				return false;
@@ -65,14 +65,35 @@ bool idDeclSubtitles::Parse( const char *text, const int textLength ) {
 			mapping.owner = this;
 			mapping.soundSampleName = tokenSound;
 			mapping.verbosityLevel = verbosity;
-			if ( !token.Icmp( "inline" ) ) {
+			bool isInline = false;
+			if ( !tokenCommand.Icmp( "inline" ) ) {
 				mapping.inlineText = tokenValue;
-			} else if ( !token.Icmp( "srt" ) ) {
+				isInline = true;
+			} else if ( !tokenCommand.Icmp( "srt" ) ) {
 				mapping.srtFileName = tokenValue;
 			}
+			mapping.inlineDurationExtend = -1.0f;
+
+			// parse optional key arguments
+			idToken tokenOption;
+			while ( src.CheckTokenString( "-" ) ) {
+				src.ReadToken( &tokenOption );
+				if ( isInline && ( !tokenOption.Icmp( "dx" ) || !tokenOption.Icmp( "durationExtend" ) ) ) {
+					mapping.inlineDurationExtend = src.ParseFloat();
+					if ( mapping.inlineDurationExtend < 0.0f) {
+						src.Warning( "durationExtend value can't be negative (%f)", mapping.inlineDurationExtend );
+						return false;
+					}
+				}
+				else {
+					src.Warning( "Unknown option -%s on %s subtitle", tokenOption.c_str(), tokenCommand.c_str() );
+					return false;
+				}
+			}
+
 			defs.Append( mapping );
 
-		} else if ( !token.Icmp( "include" ) ) {
+		} else if ( !tokenCommand.Icmp( "include" ) ) {
 			if ( !src.ReadToken( &tokenValue ) ) {
 				src.Warning( "Missing name of included subtitle decl" );
 				return false;
@@ -82,7 +103,7 @@ bool idDeclSubtitles::Parse( const char *text, const int textLength ) {
 			includes.Append( (idDeclSubtitles*)decl );
 
 		} else {
-			src.Warning( "Unexpected token %s", token.c_str() );
+			src.Warning( "Unknown command '%s'", tokenCommand.c_str() );
 			return false;
 		}
 	}
