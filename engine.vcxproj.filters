@@ -1621,7 +1621,7 @@
     <ClInclude Include="idlib\containers\BitArray.h">
       <Filter>Idlib\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\backend\RenderPassesStage.h">
+    <ClInclude Include="renderer\backend\SurfacePassesStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
   </ItemGroup>
@@ -3583,7 +3583,7 @@
     <ClCompile Include="idlib\containers\BitArray.cpp">
       <Filter>Idlib\Containers</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\RenderPassesStage.cpp">
+    <ClCompile Include="renderer\backend\SurfacePassesStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
   </ItemGroup>

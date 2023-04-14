@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class GLSLProgram;
 
-class RenderPassesStage {
+class SurfacePassesStage {
 public:
 	void Init();
 	void Shutdown();

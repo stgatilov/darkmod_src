@@ -41,7 +41,7 @@ private:
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;
 	ShadowMapStage shadowMapStage;
-	RenderPassesStage renderPassesStage;
+	SurfacePassesStage renderPassesStage;
 	FrobOutlineStage frobOutlineStage;
 
 	FrameBuffer *lightgemFbo = nullptr;

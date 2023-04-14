@@ -105,16 +105,16 @@ static GLSLProgram *LoadShader(const idStr &name) {
 	return programManager->LoadFromFiles( name + "_new", "stages/passes/" + name + ".vert.glsl", "stages/passes/" + name + ".frag.glsl" );
 }
 
-void RenderPassesStage::Init() {
+void SurfacePassesStage::Init() {
 	simpleTextureShader = LoadShader( "simple_texture" );
 	softParticleShader = LoadShader( "soft_particle" );
 	environmentShader = LoadShader( "environment" );
 }
 
-void RenderPassesStage::Shutdown() {}
+void SurfacePassesStage::Shutdown() {}
 
-void RenderPassesStage::DrawSurfaces( const viewDef_t *viewDef, const drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	TRACE_GL_SCOPE( "RenderPassesStage" );
+void SurfacePassesStage::DrawSurfaces( const viewDef_t *viewDef, const drawSurf_t **drawSurfs, int numDrawSurfs ) {
+	TRACE_GL_SCOPE( "SurfacePassesStage" );
 
 	this->viewDef = viewDef;
 
@@ -129,7 +129,7 @@ void RenderPassesStage::DrawSurfaces( const viewDef_t *viewDef, const drawSurf_t
 	GL_Cull( CT_FRONT_SIDED );
 }
 
-bool RenderPassesStage::ShouldDrawSurf( const drawSurf_t *drawSurf ) const {
+bool SurfacePassesStage::ShouldDrawSurf( const drawSurf_t *drawSurf ) const {
 	const idMaterial *shader = drawSurf->material;
 
 	if ( !shader->HasAmbient() ) {
@@ -151,7 +151,7 @@ bool RenderPassesStage::ShouldDrawSurf( const drawSurf_t *drawSurf ) const {
 
 	if ( !drawSurf->ambientCache.IsValid() || !drawSurf->indexCache.IsValid() ) {
 #ifdef _DEBUG
-		common->Printf( "RenderPassesStage: missing vertex or index cache\n" );
+		common->Printf( "SurfacePassesStage: missing vertex or index cache\n" );
 #endif
 		return false;
 	}
@@ -159,7 +159,7 @@ bool RenderPassesStage::ShouldDrawSurf( const drawSurf_t *drawSurf ) const {
 	return true;
 }
 
-void RenderPassesStage::DrawSurf( const drawSurf_t *drawSurf ) {
+void SurfacePassesStage::DrawSurf( const drawSurf_t *drawSurf ) {
 	const idMaterial *shader = drawSurf->material;
 
 	for ( int stage = 0; stage < shader->GetNumStages() ; stage++ ) {
@@ -172,7 +172,7 @@ void RenderPassesStage::DrawSurf( const drawSurf_t *drawSurf ) {
 	}
 }
 
-bool RenderPassesStage::ShouldDrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) const {
+bool SurfacePassesStage::ShouldDrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) const {
 	// check the enable condition
 	if ( !drawSurf->IsStageEnabled( pStage ) ) {
 		return false;
@@ -230,7 +230,7 @@ bool RenderPassesStage::ShouldDrawStage( const drawSurf_t *drawSurf, const shade
 	return true;
 }
 
-void RenderPassesStage::DrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	const idMaterial *shader = drawSurf->material;
 
 	// set polygon offset if necessary
@@ -253,7 +253,7 @@ void RenderPassesStage::DrawStage( const drawSurf_t *drawSurf, const shaderStage
 	}
 }
 
-RenderPassesStage::StageType RenderPassesStage::ChooseType( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+SurfacePassesStage::StageType SurfacePassesStage::ChooseType( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	texgen_t texgen = pStage->texture.texgen;
 
 	if ( pStage->newStage ) {
@@ -270,7 +270,7 @@ RenderPassesStage::StageType RenderPassesStage::ChooseType( const drawSurf_t *dr
 	}
 }
 
-void RenderPassesStage::DrawStageInternal( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawStageInternal( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	const idMaterial *shader = drawSurf->material;
 	GL_Cull( shader->GetCullType() );
 
@@ -292,7 +292,7 @@ void RenderPassesStage::DrawStageInternal( const drawSurf_t *drawSurf, const sha
 	} 
 }
 
-void RenderPassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	const float *regs = drawSurf->shaderRegisters;
 
 	// specify how to compute texcoords in vertex shader
@@ -352,7 +352,7 @@ void RenderPassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const sha
 	RB_DrawElementsWithCounters( drawSurf );
 }
 
-void RenderPassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	environmentShader->Activate();
 	EnvironmentUniforms *uniforms = environmentShader->GetUniformGroup<EnvironmentUniforms>();
 
@@ -400,7 +400,7 @@ void RenderPassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shade
 	RB_DrawElementsWithCounters( drawSurf );
 }
 
-void RenderPassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	softParticleShader->Activate();
 	SoftParticleUniforms *uniforms = softParticleShader->GetUniformGroup<SoftParticleUniforms>();
 	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
@@ -459,7 +459,7 @@ void RenderPassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shad
 	RB_DrawElementsWithCounters( drawSurf );
 }
 
-void RenderPassesStage::DrawCustomShader( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawCustomShader( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	newShaderStage_t *newStage = pStage->newStage;
 
 	newStage->glslProgram->Activate();
@@ -533,7 +533,7 @@ void RenderPassesStage::DrawCustomShader( const drawSurf_t *drawSurf, const shad
 	RB_DrawElementsWithCounters( drawSurf );
 }
 
-void RenderPassesStage::BindVariableStageImage( const textureStage_t *texture, const float *regs ) {
+void SurfacePassesStage::BindVariableStageImage( const textureStage_t *texture, const float *regs ) {
 	if ( texture->cinematic ) {
 		if ( r_skipDynamicTextures.GetBool() ) {
 			globalImages->defaultImage->Bind();
