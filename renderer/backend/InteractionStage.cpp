@@ -363,7 +363,6 @@ void InteractionStage::ProcessSingleSurface( const viewLight_t *vLight, const sh
 	const idMaterial	*material = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
 	const idMaterial	*lightShader = vLight->lightShader;
-	const float			*lightRegs = vLight->shaderRegisters;
 	drawInteraction_t	inter;
 
 	if ( !surf->ambientCache.IsValid() ) {
@@ -384,12 +383,10 @@ void InteractionStage::ProcessSingleSurface( const viewLight_t *vLight, const sh
 
 	memcpy( inter.lightProjection, lightProject, sizeof( inter.lightProjection ) );
 
-	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
-	if ( lightStage->texture.hasMatrix )
-		RB_GetShaderTextureMatrix( lightRegs, &lightStage->texture, lightTexMatrix );
+	idMat4 lightTexMatrix = vLight->GetTextureMatrix( lightStage );
 	// stgatilov: we no longer merge two transforms together, since we need light-volume coords in fragment shader
-	inter.lightTextureMatrix[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
-	inter.lightTextureMatrix[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );
+	inter.lightTextureMatrix[0] = lightTexMatrix[0];
+	inter.lightTextureMatrix[1] = lightTexMatrix[1];
 
 	inter.bumpImage = NULL;
 	inter.specularImage = NULL;

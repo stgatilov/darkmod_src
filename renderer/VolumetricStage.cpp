@@ -222,11 +222,9 @@ void VolumetricStage::PrepareRaymarching(TemporaryData &data) {
 	data.lightColor = viewLight->GetStageColor( lightStage );
 
 	// light texture transform
-	float lightTexMatrix[16] = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
-	if ( lightStage->texture.hasMatrix )
-		RB_GetShaderTextureMatrix( viewLight->shaderRegisters, &lightStage->texture, lightTexMatrix );
-	data.lightTexRows[0].Set( lightTexMatrix[0], lightTexMatrix[4], 0, lightTexMatrix[12] );
-	data.lightTexRows[1].Set( lightTexMatrix[1], lightTexMatrix[5], 0, lightTexMatrix[13] );
+	idMat4 lightTexMatrix = viewLight->GetTextureMatrix( lightStage );
+	data.lightTexRows[0] = lightTexMatrix[0];
+	data.lightTexRows[1] = lightTexMatrix[1];
 
 	if ( viewLight->lightShader->IsFogLight() ) {
 		// fog: use normal translucency-like blending

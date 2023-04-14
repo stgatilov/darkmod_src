@@ -150,7 +150,7 @@ typedef struct {
 	idImage *			image;
 	texgen_t			texgen;
 	bool				hasMatrix;
-	int					matrix[2][3];	// we only allow a subset of the full projection matrix
+	int					matrix[2][3];	// subset of the full projection matrix (row-major)
 
 	// dynamic image variables
 	dynamicidImage_t	dynamic;

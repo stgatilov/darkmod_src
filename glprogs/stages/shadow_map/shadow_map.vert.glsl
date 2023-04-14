@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 uniform mat4 u_modelMatrix;
 uniform vec4 u_lightOrigin;
 uniform float u_maxLightDistance;
-uniform vec4 u_textureMatrix[2];
+uniform mat4 u_textureMatrix;
 
 in vec4 attr_Position;
 in vec4 attr_TexCoord;
@@ -68,8 +68,7 @@ const vec4 ClipPlanes[4] = vec4[4] (
 );
 
 void main() {
-    texCoord.x = dot(attr_TexCoord, u_textureMatrix[0]);
-	texCoord.y = dot(attr_TexCoord, u_textureMatrix[1]);
+    texCoord = (u_textureMatrix * attr_TexCoord).xy;
     vec4 lightSpacePos = u_modelMatrix * attr_Position - u_lightOrigin;
     vec4 fragPos = vec4(cubicTransformations[gl_InstanceID] * lightSpacePos.xyz, 1);
     gl_Position.x = fragPos.x / 6 + fragPos.z * 5/6 - fragPos.z / 3 * gl_InstanceID;

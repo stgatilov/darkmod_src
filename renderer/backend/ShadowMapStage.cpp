@@ -43,7 +43,7 @@ struct ShadowMapStage::Uniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( float, maxLightDistance )
 	DEFINE_UNIFORM( float, alphaTest )
 	DEFINE_UNIFORM( sampler, opaqueTexture )
-	DEFINE_UNIFORM( vec4, textureMatrix/*[2]*/ )
+	DEFINE_UNIFORM( mat4, textureMatrix )
 };
 
 ShadowMapStage::ShadowMapStage() {}
@@ -244,14 +244,7 @@ void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage
 	if( stage ) {
 		// set the alpha modulate
 		uniforms->alphaTest.Set( surf->shaderRegisters[stage->alphaTestRegister] );
-
-		idMat4 textureMatrix;
-		if( stage->texture.hasMatrix ) {
-			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, textureMatrix.ToFloatPtr() );
-		} else {
-			textureMatrix.Identity();
-		}
-		uniforms->textureMatrix.SetArray( 2, textureMatrix.ToFloatPtr() );
+		uniforms->textureMatrix.Set( surf->GetTextureMatrix( stage ) );
 	}
 	else {
 		uniforms->alphaTest.Set( -1.0f );

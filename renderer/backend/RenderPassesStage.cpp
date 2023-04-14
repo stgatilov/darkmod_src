@@ -316,15 +316,7 @@ void RenderPassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const sha
 	R_GlobalPointToLocal( drawSurf->space->modelMatrix, viewDef->renderView.vieworg, localViewOrigin );
 	uniforms->viewOrigin.Set( localViewOrigin );
 	uniforms->texgen.Set( texgen );
-
-	// set the texture matrix if needed
-	float textureMatrix[16];
-	if( pStage->texture.hasMatrix ) {
-		RB_GetShaderTextureMatrix( drawSurf->shaderRegisters, &pStage->texture, textureMatrix );
-	} else {
-		R_IdentityGLMatrix( textureMatrix );
-	}
-	uniforms->textureMatrix.Set( textureMatrix );
+	uniforms->textureMatrix.Set( drawSurf->GetTextureMatrix( pStage ) );
 
 	// bind texture (either 2D texture or cubemap is used)
 	GL_SelectTexture( 0 );

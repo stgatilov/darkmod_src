@@ -128,6 +128,7 @@ SURFACES
 #include "ModelOverlay.h"
 #include "Interaction.h"
 
+idMat4 RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
 
 // drawSurf_t structures command the back end to render surfaces
 // a given srfTriangles_t may be used with multiple viewEntity_t,
@@ -181,6 +182,9 @@ typedef struct drawSurf_s {
 	}
 	idVec4 GetStageColor( const shaderStage_t *pStage ) const {
 		return GetRegisterVec4( pStage->color.registers );
+	}
+	idMat4 GetTextureMatrix( const shaderStage_t *pStage ) const {
+		return RB_GetShaderTextureMatrix( shaderRegisters, &pStage->texture );
 	}
 } drawSurf_t;
 
@@ -433,6 +437,9 @@ typedef struct viewLight_s {
 	}
 	idVec4 GetStageColor( const shaderStage_t *pStage ) const {
 		return GetRegisterVec4( pStage->color.registers );
+	}
+	idMat4 GetTextureMatrix( const shaderStage_t *pStage ) const {
+		return RB_GetShaderTextureMatrix( shaderRegisters, &pStage->texture );
 	}
 } viewLight_t;
 

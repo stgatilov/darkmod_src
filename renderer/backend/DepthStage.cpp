@@ -274,14 +274,7 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 		// set the alpha modulate
 		color[3] = surf->shaderRegisters[stage->color.registers[3]];
 		alphaTest = surf->shaderRegisters[stage->alphaTestRegister];
-
-		float textureMatrix[16];
-		if( stage->texture.hasMatrix ) {
-			RB_GetShaderTextureMatrix( surf->shaderRegisters, &stage->texture, textureMatrix );
-		} else {
-			R_IdentityGLMatrix( textureMatrix );
-		}
-		uniforms->textureMatrix.Set( textureMatrix );
+		uniforms->textureMatrix.Set( surf->GetTextureMatrix( stage ) );
 	}
 	uniforms->color.Set( color );
 	uniforms->alphaTest.Set( alphaTest );

@@ -446,35 +446,33 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void ( *tr
 RB_GetShaderTextureMatrix
 ======================
 */
+idMat4 RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture ) {
+	idMat4 result = mat4_identity;
+
+	if ( texture->hasMatrix ) {
+		// fetch register values into 2 x 3 matrix
+		idVec3 texmat[2];
+		for ( int r = 0; r < 2; r++ )
+			for ( int c = 0; c < 3; c++ )
+				texmat[r][c] = shaderRegisters[ texture->matrix[r][c] ];
+
+		// we attempt to keep scrolls from generating incredibly large texture values, but
+		// center rotations and center scales can still generate offsets that need to be > 1
+		for ( int r = 0; r < 2; r++ ) {
+			float &x = texmat[r][2];
+			if ( idMath::Fabs(x) > 40.0f )
+				x -= ( int )x;
+		}
+
+		// expand to 4 x 4 matrix
+		for ( int r = 0; r < 2; r++ )
+			result[r].Set( texmat[r][0], texmat[r][1], 0, texmat[r][2] );
+	}
+
+	return result;
+}
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] ) {
-	matrix[0] = shaderRegisters[ texture->matrix[0][0] ];
-	matrix[4] = shaderRegisters[ texture->matrix[0][1] ];
-	matrix[8] = 0;
-	matrix[12] = shaderRegisters[ texture->matrix[0][2] ];
-
-	// we attempt to keep scrolls from generating incredibly large texture values, but
-	// center rotations and center scales can still generate offsets that need to be > 1
-	if ( matrix[12] < -40.0f || matrix[12] > 40.0f ) {
-		matrix[12] -= ( int )matrix[12];
-	}
-	matrix[1] = shaderRegisters[ texture->matrix[1][0] ];
-	matrix[5] = shaderRegisters[ texture->matrix[1][1] ];
-	matrix[9] = 0;
-	matrix[13] = shaderRegisters[ texture->matrix[1][2] ];
-
-	if ( matrix[13] < -40.0f || matrix[13] > 40.0f ) {
-		// same with this
-		matrix[13] -= ( int )matrix[13];
-	}
-	matrix[2] = 0;
-	matrix[6] = 0;
-	matrix[10] = 1;
-	matrix[14] = 0;
-
-	matrix[3] = 0;
-	matrix[7] = 0;
-	matrix[11] = 0;
-	matrix[15] = 1;
+	RB_GetShaderTextureMatrix( shaderRegisters, texture ).ToGL( matrix );
 }
 
 /*
