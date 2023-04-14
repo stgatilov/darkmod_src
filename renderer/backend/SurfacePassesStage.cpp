@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "precompiled.h"
 
-#include "RenderPassesStage.h"
+#include "SurfacePassesStage.h"
 
 #include "RenderBackend.h"
 #include "../glsl.h"

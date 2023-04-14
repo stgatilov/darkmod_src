@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "InteractionStage.h"
 #include "ShadowMapStage.h"
 #include "StencilShadowStage.h"
-#include "RenderPassesStage.h"
+#include "SurfacePassesStage.h"
 #include "../tr_local.h"
 
 class FrameBuffer;
