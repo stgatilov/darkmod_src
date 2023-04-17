@@ -120,6 +120,7 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 		int beforePostproc = 0;
 		while ( beforePostproc < numDrawSurfs && drawSurfs[beforePostproc]->sort < SS_POST_PROCESS )
 			beforePostproc++;
+		int postprocCount = numDrawSurfs - beforePostproc;
 
 		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
 
@@ -130,9 +131,10 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 		extern void RB_STD_FogAllLights( bool translucent );
 		RB_STD_FogAllLights( false );
 
-		frameBuffers->UpdateCurrentRenderCopy();
+		if ( postprocCount > 0 )
+			frameBuffers->UpdateCurrentRenderCopy();
 
-		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs + beforePostproc, numDrawSurfs - beforePostproc );
+		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs + beforePostproc, postprocCount );
 
 		RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
 	}
