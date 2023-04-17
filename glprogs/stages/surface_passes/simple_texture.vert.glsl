@@ -14,26 +14,38 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 
-#pragma tdm_include "stages/passes/texgen_shared.glsl"
+#pragma tdm_include "tdm_utils.glsl"
+#pragma tdm_include "stages/surface_passes/texgen_shared.glsl"
+
+uniform mat4 u_modelViewMatrix;
+uniform mat4 u_projectionMatrix;
+
+uniform vec4 u_colorMul;
+uniform vec4 u_colorAdd;
 
 uniform int u_texgen;
-uniform sampler2D u_texture;
-uniform samplerCube u_cubemap;
+uniform mat4 u_textureMatrix;
+uniform vec3 u_viewOrigin;
 
-in vec4 var_TexCoord;
-in vec4 var_Color;
+in vec4 attr_Position;
+in vec2 attr_TexCoord;
+in vec4 attr_Color;
 
-out vec4 FragColor;
+out vec4 var_TexCoord;
+out vec4 var_Color;
 
 void main() {
+	gl_Position = objectPosToClip(attr_Position, u_modelViewMatrix, u_projectionMatrix);
+
+	var_Color = attr_Color * u_colorMul + u_colorAdd;
+
 	if (u_texgen == TEXGEN_EXPLICIT) {
-		FragColor = var_Color * textureProj(u_texture, var_TexCoord);
+		var_TexCoord = u_textureMatrix * vec4(attr_TexCoord, 0, 1);
 	}
 	else if (u_texgen == TEXGEN_SCREEN) {
-		vec2 tc = var_TexCoord.xy / var_TexCoord.w * 0.5 + 0.5;
-		FragColor = var_Color * texture(u_texture, tc);
+		var_TexCoord = gl_Position;
 	}
 	else if (u_texgen == TEXGEN_CUBEMAP) {
-		FragColor = texture(u_cubemap, var_TexCoord.xyz);
+		var_TexCoord = vec4(vec3(attr_Position) - u_viewOrigin, 0);
 	}
 }

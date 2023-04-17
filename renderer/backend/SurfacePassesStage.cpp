@@ -22,7 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../GLSLProgramManager.h"
 #include "../FrameBuffer.h"
 #include "../FrameBufferManager.h"
-#include "../../glprogs/stages/passes/texgen_shared.glsl"
+#include "../../glprogs/stages/surface_passes/texgen_shared.glsl"
 
 struct SimpleTextureUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( SimpleTextureUniforms )
@@ -102,7 +102,7 @@ struct CustomShaderUniforms : GLSLUniformGroup {
 static GLSLProgram *LoadShader(const idStr &name) {
 	// TODO: delete the "new" suffix after old backend code is deleted
 	// right now both shaders are called "environment"
-	return programManager->LoadFromFiles( name + "_new", "stages/passes/" + name + ".vert.glsl", "stages/passes/" + name + ".frag.glsl" );
+	return programManager->LoadFromFiles( name + "_new", "stages/surface_passes/" + name + ".vert.glsl", "stages/surface_passes/" + name + ".frag.glsl" );
 }
 
 void SurfacePassesStage::Init() {
