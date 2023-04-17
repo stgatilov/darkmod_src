@@ -243,6 +243,11 @@ void LightPassesStage::DrawBlendLight() {
 
 		GL_State( GLS_DEPTHMASK | stage->drawStateBits | GLS_DEPTHFUNC_EQUAL );
 
+		// sanity check: only allow blend modes where src = (0,0,0,0) causes no change in framebuffer
+		int dstBlendFactor = stage->drawStateBits & GLS_DSTBLEND_BITS;
+		if ( !(dstBlendFactor == GLS_DSTBLEND_ONE || dstBlendFactor == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA || dstBlendFactor == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR) )
+			continue;	// avoid bad behavior, ugly scissor boundaries, etc.
+
 		// texture 0: projected texture
 		GL_SelectTexture( 0 );
 		stage->texture.image->Bind();
