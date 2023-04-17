@@ -1151,6 +1151,15 @@ void	GL_ViewportRelative( float x /* left */, float y /* bottom */, float w, flo
 
 void	GL_SetProjection( float* matrix );
 
+// RAII helper to apply all surface-specific depth customizations:
+//	* polygon offset
+//  * weapon depth hack
+struct ApplyDepthTweaks {
+	const drawSurf_t *drawSurf = nullptr;
+	ApplyDepthTweaks(const drawSurf_t *surf);
+	~ApplyDepthTweaks();
+};
+
 // RAII-style wrapper for qglDepthBoundsEXT
 class DepthBoundsTest {
 public:

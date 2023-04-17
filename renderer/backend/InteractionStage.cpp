@@ -374,7 +374,6 @@ void InteractionStage::ProcessSingleSurface( const viewLight_t *vLight, const sh
 	inter.cubicLight = lightShader->IsCubicLight(); // nbohr1more #3881: cubemap lights
 	inter.ambientLight = lightShader->IsAmbientLight();
 
-	// the base projections may be modified by texture matrix on light stages
 	idPlane lightProject[4];
 	R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[0], lightProject[0] );
 	R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->lightProject[1], lightProject[1] );

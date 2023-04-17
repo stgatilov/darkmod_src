@@ -20,6 +20,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "ShadowMapStage.h"
 #include "StencilShadowStage.h"
 #include "SurfacePassesStage.h"
+#include "LightPassesStage.h"
+#include "../VolumetricStage.h"
 #include "../tr_local.h"
 
 class FrameBuffer;
@@ -41,7 +43,8 @@ private:
 	InteractionStage interactionStage;
 	StencilShadowStage stencilShadowStage;
 	ShadowMapStage shadowMapStage;
-	SurfacePassesStage renderPassesStage;
+	SurfacePassesStage surfacePassesStage;
+	LightPassesStage lightPassesStage;
 	FrobOutlineStage frobOutlineStage;
 
 	FrameBuffer *lightgemFbo = nullptr;

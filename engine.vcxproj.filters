@@ -1624,6 +1624,9 @@
     <ClInclude Include="renderer\backend\SurfacePassesStage.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\backend\LightPassesStage.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -3584,6 +3587,9 @@
       <Filter>Idlib\Containers</Filter>
     </ClCompile>
     <ClCompile Include="renderer\backend\SurfacePassesStage.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\LightPassesStage.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
   </ItemGroup>

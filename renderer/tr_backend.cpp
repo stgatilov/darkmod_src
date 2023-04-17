@@ -306,6 +306,35 @@ void GL_State( const int stateBits ) {
 
 /*
 ========================
+ApplyDepthTweaks
+========================
+*/
+
+ApplyDepthTweaks::ApplyDepthTweaks( const drawSurf_t *surf ) : drawSurf(surf) {
+	if ( drawSurf ) {
+		if ( drawSurf->material && drawSurf->material->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
+			qglEnable( GL_POLYGON_OFFSET_FILL );
+			qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * drawSurf->material->GetPolygonOffset() );
+		}
+		if ( drawSurf->space && drawSurf->space->weaponDepthHack ) {
+			RB_EnterWeaponDepthHack();
+		}
+	}
+}
+
+ApplyDepthTweaks::~ApplyDepthTweaks() {
+	if ( drawSurf ) {
+		if ( drawSurf->material && drawSurf->material->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
+			qglDisable( GL_POLYGON_OFFSET_FILL );
+		}
+		if ( drawSurf->space && drawSurf->space->weaponDepthHack ) {
+			RB_LeaveDepthHack();
+		}
+	}
+}
+
+/*
+========================
 DepthBoundsTest
 ========================
 */

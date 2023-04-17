@@ -79,7 +79,7 @@ vec3 calcWithSampling(vec3 rayStart, vec3 rayVec, float minParam, float maxParam
 			lit = float(maxAbsL < depth);
 		}
 		vec4 texCoord = computeLightTex(u_lightProject, vec4(samplePos, 1));
-		vec3 texColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, texCoord);
+		vec3 texColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, texCoord).rgb;
 		color += lit * texColor;
 	}
 	return color / samplesNum;

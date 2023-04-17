@@ -878,6 +878,7 @@ public:
 	float			LengthSqr( void ) const;
 	float			Normalize( void );			// returns length
 	float			NormalizeFast( void );		// returns length
+	idVec4			Normalized( void ) const;
 
 	int				GetDimension( void ) const;
 
@@ -1079,6 +1080,12 @@ ID_INLINE float idVec4::NormalizeFast( void ) {
 	z *= invLength;
 	w *= invLength;
 	return invLength * sqrLength;
+}
+
+ID_INLINE idVec4 idVec4::Normalized( void ) const {
+	float sqrLength = x * x + y * y + z * z + w * w;
+	float invLength = idMath::InvSqrt( sqrLength );
+	return idVec4(x * invLength, y * invLength, z * invLength, w * invLength);
 }
 
 ID_FORCE_INLINE int idVec4::GetDimension( void ) const {

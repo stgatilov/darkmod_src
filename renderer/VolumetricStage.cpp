@@ -99,6 +99,13 @@ void VolumetricStage::Shutdown() {
 	}
 }
 
+void VolumetricStage::RenderAll(const viewDef_t *viewDef) {
+	for ( const viewLight_t *vLight = viewDef->viewLights ; vLight; vLight = vLight->next ) {
+		if ( vLight->volumetricDust > 0.0f && !viewDef->IsLightGem() )
+			RenderLight( viewDef, vLight );
+	}
+}
+
 struct VolumetricStage::TemporaryData {
 	bool useShadows;
 	srfTriangles_t *frustumTris;
@@ -120,8 +127,6 @@ bool VolumetricStage::RenderLight(const viewDef_t *viewDef, const viewLight_t *v
 	TRACE_GL_SCOPE( "VolumetricStage" );
 
 	// not sure if it is important to set global variables, but let's require it for now
-	assert(backEnd.vLight == viewLight);
-	assert(backEnd.viewDef == viewDef);
 	this->viewDef = viewDef;
 	this->viewLight = viewLight;
 

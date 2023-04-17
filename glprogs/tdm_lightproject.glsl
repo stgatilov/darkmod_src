@@ -19,7 +19,7 @@ vec4 computeLightTex(mat4 lightProjectionFalloff, vec4 position) {
 	//out: divisor in W, falloff in Z
 }
 
-vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D lightFalloffTexture, in vec4 texMatrix[2], vec4 texCoord) {
+vec4 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D lightFalloffTexture, in vec4 texMatrix[2], vec4 texCoord) {
 	float falloffCoord = texCoord.z;
 	vec4 projCoords = texCoord;     //divided by last component
 	projCoords.z = 0.0;
@@ -29,8 +29,8 @@ vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D 
 	projTexCoords.y = dot(projCoords, texMatrix[1]);
 	projTexCoords.z = projCoords.w;
 
-	vec3 lightProjection = textureProj(lightProjectionTexture, projTexCoords).rgb;
-	vec3 lightFalloff = texture(lightFalloffTexture, vec2(falloffCoord, 0.5)).rgb;
+	vec4 lightProjection = textureProj(lightProjectionTexture, projTexCoords);
+	vec4 lightFalloff = texture(lightFalloffTexture, vec2(falloffCoord, 0.5));
 
 	// stgatilov #5876: this "if" MUST be after texture fetches!
 	// not because it is better, but because of AMD driver's stupidity
@@ -41,15 +41,15 @@ vec3 projFalloffOfNormalLight(in sampler2D lightProjectionTexture, in sampler2D 
 		projCoords.y < 0 || projCoords.y > projCoords.w ||              //proj V outside [0..1]
 		falloffCoord < 0 || falloffCoord > 1.0                          //falloff outside [0..1]
 	) {
-		return vec3(0);
+		return vec4(0);
 	}
 
 	return lightProjection * lightFalloff;
 }
 
-vec3 projFalloffOfCubicLight(in samplerCube	lightProjectionCubemap, vec4 texLight) {
+vec4 projFalloffOfCubicLight(in samplerCube	lightProjectionCubemap, vec4 texLight) {
 	vec3 cubeTC = texLight.xyz * 2.0 - 1.0;
-	vec3 lightColor = texture(lightProjectionCubemap, cubeTC).rgb;
+	vec4 lightColor = texture(lightProjectionCubemap, cubeTC);
 	float att = clamp(1.0 - length(cubeTC), 0.0, 1.0);
 	lightColor *= att * att;
 	return lightColor;

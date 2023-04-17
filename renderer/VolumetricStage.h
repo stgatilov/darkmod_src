@@ -28,6 +28,7 @@ public:
 	void Shutdown();
 
 	bool RenderLight(const viewDef_t *viewDef, const viewLight_t *viewLight);
+	void RenderAll(const viewDef_t *viewDef);
 
 private:
 	struct TemporaryData;

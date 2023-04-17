@@ -56,9 +56,9 @@ uniform mat4 u_modelMatrix;
 void main() {
 	vec3 lightColor;
 	if (u_cubic)
-		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight);
+		lightColor = projFalloffOfCubicLight(u_lightProjectionCubemap, var_TexLight).rgb;
 	else
-		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight);
+		lightColor = projFalloffOfNormalLight(u_lightProjectionTexture, u_lightFalloffTexture, u_lightTextureMatrix, var_TexLight).rgb;
 
 	vec3 localNormal = fetchSurfaceNormal(var_TexNormal, u_hasTextureDNS[1] != 0.0, u_normalTexture, u_RGTC != 0.0);
 	AmbientGeometry props = computeAmbientGeometry(var_worldViewDir, localNormal, var_TangentBinormalNormalMatrix, mat3(u_modelMatrix));

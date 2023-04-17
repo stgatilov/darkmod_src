@@ -24,8 +24,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../FrameBuffer.h"
 #include "../glsl.h"
 
-idCVar r_useNewRenderPasses( "r_useNewRenderPasses", "1", CVAR_BOOL | CVAR_ARCHIVE| CVAR_RENDERER,
-	"Use new refactored code for rendering light-independent material stages"
+idCVar r_useNewRenderPasses( "r_useNewRenderPasses", "2", CVAR_INTEGER | CVAR_ARCHIVE| CVAR_RENDERER,
+	"Use new refactored code for rendering surface/light material stages",
+	0, 2
 );
 
 RenderBackend renderBackendImpl;
@@ -48,7 +49,8 @@ void RenderBackend::Init() {
 	interactionStage.Init();
 	stencilShadowStage.Init();
 	shadowMapStage.Init();
-	renderPassesStage.Init();
+	surfacePassesStage.Init();
+	lightPassesStage.Init();
 	frobOutlineStage.Init();
 
 	lightgemFbo = frameBuffers->CreateFromGenerator( "lightgem", CreateLightgemFbo );
@@ -66,10 +68,11 @@ void RenderBackend::Shutdown() {
 	qglDeleteBuffers( 3, lightgemPbos );
 	
 	frobOutlineStage.Shutdown();
+	lightPassesStage.Shutdown();
+	surfacePassesStage.Shutdown();
 	shadowMapStage.Shutdown();
 	stencilShadowStage.Shutdown();
 	interactionStage.Shutdown();
-	renderPassesStage.Shutdown();
 	depthStage.Shutdown();
 }
 
@@ -116,28 +119,49 @@ void RenderBackend::DrawView( const viewDef_t *viewDef ) {
 		DrawShadowsAndInteractions( viewDef );
 	}
 
-	if ( r_useNewRenderPasses.GetBool() ) {
+	if ( r_useNewRenderPasses.GetInteger() > 0 ) {
 		int beforePostproc = 0;
 		while ( beforePostproc < numDrawSurfs && drawSurfs[beforePostproc]->sort < SS_POST_PROCESS )
 			beforePostproc++;
 		const drawSurf_t **postprocSurfs = (const drawSurf_t **)drawSurfs + beforePostproc;
 		int postprocCount = numDrawSurfs - beforePostproc;
 
-		renderPassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
+		surfacePassesStage.DrawSurfaces( viewDef, (const drawSurf_t **)drawSurfs, beforePostproc );
 
 		if ( (r_frobOutline.GetInteger() > 0 || r_newFrob.GetInteger() == 1) && !viewDef->IsLightGem() ) {
 			frobOutlineStage.DrawFrobOutline( drawSurfs, numDrawSurfs );
 		}
 
-		extern void RB_STD_FogAllLights( bool translucent );
-		RB_STD_FogAllLights( false );
+		if ( r_useNewRenderPasses.GetInteger() == 2 ) {
+			LightPassesStage::DrawMask mask;
+			mask.opaque = true;
+			mask.translucent = false;
+			lightPassesStage.DrawAllFogLights( viewDef, mask );
 
-		if ( renderPassesStage.NeedCurrentRenderTexture( viewDef, postprocSurfs, postprocCount ) )
-			frameBuffers->UpdateCurrentRenderCopy();
+			lightPassesStage.DrawAllBlendLights( viewDef );
+			volumetric->RenderAll( viewDef );
 
-		renderPassesStage.DrawSurfaces( viewDef, postprocSurfs, postprocCount );
+			if ( surfacePassesStage.NeedCurrentRenderTexture( viewDef, postprocSurfs, postprocCount ) )
+				frameBuffers->UpdateCurrentRenderCopy();
 
-		RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
+			surfacePassesStage.DrawSurfaces( viewDef, postprocSurfs, postprocCount );
+
+			// 2.08: second fog pass, translucent only
+			mask.opaque = false;
+			mask.translucent = true;
+			lightPassesStage.DrawAllFogLights( viewDef, mask );
+		}
+		else {
+			extern void RB_STD_FogAllLights( bool translucent );
+			RB_STD_FogAllLights( false );
+
+			if ( surfacePassesStage.NeedCurrentRenderTexture( viewDef, postprocSurfs, postprocCount ) )
+				frameBuffers->UpdateCurrentRenderCopy();
+
+			surfacePassesStage.DrawSurfaces( viewDef, postprocSurfs, postprocCount );
+
+			RB_STD_FogAllLights( true ); // 2.08: second fog pass, translucent only
+		}
 	}
 	else {
 
