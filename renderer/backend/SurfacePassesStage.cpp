@@ -113,6 +113,39 @@ void SurfacePassesStage::Init() {
 
 void SurfacePassesStage::Shutdown() {}
 
+bool SurfacePassesStage::NeedCurrentRenderTexture( const viewDef_t *viewDef, const drawSurf_t **drawSurfs, int numDrawSurfs ) {
+	this->viewDef = viewDef;
+
+	for ( int i = 0; i < numDrawSurfs; i++ ) {
+		const drawSurf_t *drawSurf = drawSurfs[i];
+		if ( !ShouldDrawSurf( drawSurf ) )
+			continue;
+		const idMaterial *shader = drawSurf->material;
+
+		for ( int stage = 0; stage < shader->GetNumStages() ; stage++ ) {
+			const shaderStage_t *pStage = shader->GetStage( stage );
+			if ( !ShouldDrawStage( drawSurf, pStage ) )
+				continue;
+
+			if ( pStage->newStage ) {
+				// typical usage in various heatHaze materials
+				for ( int i = 0; i < pStage->newStage->numFragmentProgramImages; i++ ) {
+					if ( pStage->newStage->fragmentProgramImages[i] == globalImages->currentRenderImage ) {
+						return true;
+					}
+				}
+			}
+			if ( pStage->texture.image == globalImages->currentRenderImage ) {
+				// this only happens for builtin and special portalsky material!
+				assert( drawSurf->material->GetSort() == SS_PORTAL_SKY );
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void SurfacePassesStage::DrawSurfaces( const viewDef_t *viewDef, const drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	TRACE_GL_SCOPE( "SurfacePassesStage" );
 

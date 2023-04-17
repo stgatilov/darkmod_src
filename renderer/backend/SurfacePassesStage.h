@@ -25,6 +25,9 @@ public:
 
 	void DrawSurfaces( const viewDef_t *viewDef, const drawSurf_t **drawSurfs, int numDrawSurfs );
 
+	// if no surface uses _currentRender, then we can skip frame color copy
+	bool NeedCurrentRenderTexture( const viewDef_t *viewDef, const drawSurf_t **drawSurfs, int numDrawSurfs );
+
 private:
 	enum StageType {
 		ST_SIMPLE_TEXTURE,	// "old stage", cubemap sky, screen-textured
