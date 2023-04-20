@@ -40,14 +40,11 @@ struct FogLightUniforms : GLSLUniformGroup {
 
 	DEFINE_UNIFORM( mat4, modelViewMatrix )
 	DEFINE_UNIFORM( mat4, projectionMatrix )
-	DEFINE_UNIFORM( vec4, texPlaneFalloffS )
-	DEFINE_UNIFORM( vec4, texPlaneFalloffT )
-	DEFINE_UNIFORM( vec4, texPlaneEnterS )
-	DEFINE_UNIFORM( vec4, texPlaneEnterT )
+	DEFINE_UNIFORM( vec4, fogPlane )
+	DEFINE_UNIFORM( vec3, viewOrigin )
 	DEFINE_UNIFORM( vec3, fogColor )
 	DEFINE_UNIFORM( float, fogAlpha )
-	DEFINE_UNIFORM( sampler, fogFalloffImage )
-	DEFINE_UNIFORM( sampler, fogEnterImage )
+	DEFINE_UNIFORM( float, eyeDistanceCap )
 };	
 
 static GLSLProgram *LoadShader(const idStr &name) {
@@ -120,39 +117,21 @@ void LightPassesStage::DrawFogLight( const DrawMask &mask ) {
 	idVec4 color = vLight->GetStageColor( stage );
 
 	// calculate the falloff planes
-	float a;
+	float distanceCap;
 	if ( color.w <= 1.0 ) {
 		// if they left the default value on, set a fog distance of 500
-		a = -0.5f / DEFAULT_FOG_DISTANCE;
+		distanceCap = DEFAULT_FOG_DISTANCE;
 	} else {
 		// otherwise, distance = alpha color
-		a = -0.5f / color.w;
+		distanceCap = color.w;
 	}
-
-	idMat4 viewMatrix = idMat4::FromGL( viewDef->worldSpace.modelViewMatrix );
-	idVec4 fogPlanes[4];	// TODO: what is this trash?
-	fogPlanes[0] = a * viewMatrix[2];
-	fogPlanes[1] = a * viewMatrix[0];
-	// T will get a texgen for the fade plane, which is always the "top" plane on unrotated lights
-	fogPlanes[2] = 0.001f * vLight->fogPlane.ToVec4();
-	// S is based on the view origin
-	float s = viewDef->renderView.vieworg * fogPlanes[2].ToVec3() + fogPlanes[2][3];
-	fogPlanes[3].Set(0, 0, 0, FOG_ENTER + s);
 
 	fogLightShader->Activate();
 	FogLightUniforms *uniforms = fogLightShader->GetUniformGroup<FogLightUniforms>();
 	uniforms->projectionMatrix.Set( viewDef->projectionMatrix );
 
 	uniforms->fogColor.Set( color.ToVec3() );
-
-	// texture 0 is the falloff image
-	GL_SelectTexture( 0 );
-	globalImages->fogImage->Bind();
-	uniforms->fogFalloffImage.Set( 0 );
-	// texture 1 is the entering plane fade correction
-	GL_SelectTexture( 1 );
-	globalImages->fogEnterImage->Bind();
-	uniforms->fogEnterImage.Set( 1 );
+	uniforms->eyeDistanceCap.Set( distanceCap );
 
 	auto perSurface = [&](const drawSurf_t *surf) {
 		uniforms->modelViewMatrix.Set( surf->space->modelViewMatrix );
@@ -162,18 +141,13 @@ void LightPassesStage::DrawFogLight( const DrawMask &mask ) {
 		else
 			uniforms->fogAlpha.Set( 1 );
 
-		idPlane	local;
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, ((idPlane*)fogPlanes)[0], local );
-		local[3] += 0.5;
-		uniforms->texPlaneFalloffS.Set( local );
-		uniforms->texPlaneFalloffT.Set( 0, 0, 0, 0.5 );
+		idPlane fogPlaneLocal;
+		R_GlobalPlaneToLocal( surf->space->modelMatrix, vLight->fogPlane, fogPlaneLocal );
+		uniforms->fogPlane.Set( fogPlaneLocal );
 
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, ((idPlane*)fogPlanes)[3], local );
-		uniforms->texPlaneEnterS.Set( local );
-		// GL_S is constant per viewer
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, ((idPlane*)fogPlanes)[2], local );
-		local[3] += FOG_ENTER;
-		uniforms->texPlaneEnterT.Set( local );
+		idVec3 viewOriginLocal;
+		R_GlobalPointToLocal( surf->space->modelMatrix, viewDef->renderView.vieworg, viewOriginLocal );
+		uniforms->viewOrigin.Set( viewOriginLocal );
 	};
 
 	if ( mask.opaque ) {
@@ -241,12 +215,12 @@ void LightPassesStage::DrawBlendLight() {
 		if ( !vLight->IsStageEnabled( stage ) )
 			continue;
 
-		GL_State( GLS_DEPTHMASK | stage->drawStateBits | GLS_DEPTHFUNC_EQUAL );
-
 		// sanity check: only allow blend modes where src = (0,0,0,0) causes no change in framebuffer
 		int dstBlendFactor = stage->drawStateBits & GLS_DSTBLEND_BITS;
 		if ( !(dstBlendFactor == GLS_DSTBLEND_ONE || dstBlendFactor == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA || dstBlendFactor == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR) )
 			continue;	// avoid bad behavior, ugly scissor boundaries, etc.
+
+		GL_State( GLS_DEPTHMASK | stage->drawStateBits | GLS_DEPTHFUNC_EQUAL );
 
 		// texture 0: projected texture
 		GL_SelectTexture( 0 );

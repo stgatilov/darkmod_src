@@ -16,27 +16,20 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma tdm_include "tdm_utils.glsl"
 
-in vec4 attr_Position;
-
-out vec2 var_falloffTexcoord;
-out vec2 var_enterTexcoord;
-
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
-uniform vec4 u_texPlaneFalloffS;
-uniform vec4 u_texPlaneFalloffT;
-uniform vec4 u_texPlaneEnterS;
-uniform vec4 u_texPlaneEnterT;
+uniform vec4 u_fogPlane;
+uniform vec3 u_viewOrigin;
+
+in vec4 attr_Position;
+
+out float var_eyeDistance;
+out float var_eyeHeight;
+out float var_fragHeight;
 
 void main() {
 	gl_Position = objectPosToClip(attr_Position, u_modelViewMatrix, u_projectionMatrix);
-	float s, t;
-
-	s = dot(attr_Position, u_texPlaneFalloffS);
-	t = dot(attr_Position, u_texPlaneFalloffT);
-	var_falloffTexcoord = vec2(s, t);
-
-	s = dot(attr_Position, u_texPlaneEnterS);
-	t = dot(attr_Position, u_texPlaneEnterT);
-	var_enterTexcoord = vec2(s, t);
+	var_eyeDistance = -(u_modelViewMatrix * attr_Position).z;
+	var_eyeHeight = dot(u_fogPlane, vec4(u_viewOrigin, 1));
+	var_fragHeight = dot(u_fogPlane, attr_Position);
 }

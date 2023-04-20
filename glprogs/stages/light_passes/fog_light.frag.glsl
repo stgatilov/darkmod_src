@@ -14,20 +14,47 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330 core
 
-uniform sampler2D u_fogFalloffImage;
-uniform sampler2D u_fogEnterImage;
 uniform vec3 u_fogColor;
 uniform float u_fogAlpha;
+uniform float u_eyeDistanceCap;
 
-in vec2 var_falloffTexcoord;
-in vec2 var_enterTexcoord;
+in float var_eyeDistance;
+in float var_eyeHeight;
+in float var_fragHeight;
 
 out vec4 FragColor;
 
+// restored from R_FogImage C++ function
+float falloffRatio(float depthRatio) {
+	// note: there is sharp step from 0.991 to 1.0
+	if (depthRatio >= 1.0)
+		return 1.0;
+	return 1.0 - pow(0.009737, max(depthRatio, 1e-10));
+}
+
+// restored from R_FogEnterImage + FogFraction C++ mess
+float fogEnterRatio(float eyeHeight, float fragHeight, float enterDistance, float deepDistance) {
+	if (eyeHeight > 0 && fragHeight > 0)
+		return 0.0;
+	if (eyeHeight < -enterDistance && fragHeight < -enterDistance)
+		return 1.0;
+	float above = max(max(eyeHeight, fragHeight), 0.0);
+	float top = min(max(eyeHeight, fragHeight), 0.0);
+	float bottom = max(min(eyeHeight, fragHeight), -enterDistance);
+	float ramp = (1.0 + 0.5 * (top + bottom) / enterDistance) * (top - bottom);
+	float frac = 1.0 - (above + ramp) / max(abs(fragHeight - eyeHeight), 1e-3);
+	float deepest = min(eyeHeight, fragHeight);
+	float deepFrac = clamp(-deepest / deepDistance, 0.0, 1.0);
+	frac = mix(frac, 1.0, deepFrac);
+	return frac;
+}
+
 void main() {
-	vec4 falloffColor = texture(u_fogFalloffImage, var_falloffTexcoord);
-	vec4 enterColor = texture(u_fogEnterImage, var_enterTexcoord);
-	vec4 result = enterColor * falloffColor * vec4(u_fogColor, 1);
-	result.a *= u_fogAlpha;
+	float falloffFactor = falloffRatio(var_eyeDistance / u_eyeDistanceCap);
+	// enterDistance = 1000 * RAMP_RANGE / FOG_ENTER
+	// deepDistance = 1000 * DEEP_RANGE / FOG_ENTER
+	float enterFactor = fogEnterRatio(var_eyeHeight, var_fragHeight, 1000 * 8 / 64, 1000 * 30 / 64);
+
+	vec4 result = vec4(u_fogColor, falloffFactor * enterFactor * u_fogAlpha);
 	FragColor = result;
 }
