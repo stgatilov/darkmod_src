@@ -26,10 +26,10 @@ out vec4 FragColor;
 
 // restored from R_FogImage C++ function
 float falloffRatio(float depthRatio) {
-	// note: there is sharp step from 0.991 to 1.0
-	if (depthRatio >= 1.0)
-		return 1.0;
-	return 1.0 - pow(0.009737, max(depthRatio, 1e-10));
+	float remains = pow(0.009737, max(depthRatio, 1e-10));
+	// note: original code worked with finalizer == 0, having a jump from 0.991 to 1.0 on far end
+	float finalizer = clamp(depthRatio - 0.9, 0, 1) / 0.1;
+	return 1.0 - mix(remains, 0.0, finalizer);
 }
 
 // restored from R_FogEnterImage + FogFraction C++ mess
