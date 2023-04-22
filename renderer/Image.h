@@ -379,12 +379,10 @@ public:
 	static idCVar		image_downSizeLimit;		// downsize diffuse limit
 	static idCVar		image_blockChecksum;		// duplicate check
 
-	// built-in images
+	// built-in readable images
 	idImage *			defaultImage;
 	idImage *			flatNormalMap;				// 128 128 255 in all pixels
 	idImage *			ambientNormalMap;			// tr.ambientLightVector encoded in all pixels
-	//idImage *			rampImage;					// 0-255 in RGBA in S
-	//idImage *			alphaRampImage;				// 0-255 in alpha, 255 in RGB
 	idImage *			alphaNotchImage;			// 2x1 texture with just 1110 and 1111 with point sampling
 	idImage *			whiteImage;					// full of 0xff
 	idImage *			blackImage;					// full of 0x00
@@ -394,24 +392,17 @@ public:
 	idImage *			noFalloffImage;				// all 255, but zero clamped
 	idImage *			fogImage;					// increasing alpha is denser fog
 	idImage *			fogEnterImage;				// adjust fogImage alpha based on terminator plane
+	// built-in stream-written textures
 	idImage *			cinematicImage;
 	idImage *			scratchImage;
 	idImage *			scratchImage2;
 	idImage *			cameraImages[10];
 	idImage *			xrayImage;
-	idImage *			accumImage;
 	idImage *			currentRenderImage;			// for SS_POST_PROCESS shaders
 	idImage *			guiRenderImage;
-	idImage *			scratchCubeMapImage;
-	//idImage *			specularTableImage;			// 1D intensity texture with our specular function
-	//idImage *			specular2DTableImage;		// 2D intensity texture with our specular function with variable specularity
-	//idImage *			borderClampImage;			// white inside, black outside
-
-
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
 	idImage *			shadowDepthFbo;
 	idImage *			shadowAtlas;
-	//idImage *			shadowAtlasHistory;
 	idImage *			currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
 
 	//--------------------------------------------------------

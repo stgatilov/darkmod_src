@@ -1681,19 +1681,17 @@ void idImageManager::Init() {
 	defaultImage = ImageFromFunction( "_default", R_DefaultImage );
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage );
 	blackImage = ImageFromFunction( "_black", R_BlackImage );
-
-	//borderClampImage = ImageFromFunction( "_borderClamp", R_BorderClampImage );
 	flatNormalMap = ImageFromFunction( "_flat", R_FlatNormalImage );
 	ambientNormalMap = ImageFromFunction( "_ambient", R_AmbientNormalImage );
-	//specularTableImage = ImageFromFunction( "_specularTable", R_SpecularTableImage );
-	//specular2DTableImage = ImageFromFunction( "_specular2DTable", R_Specular2DTableImage );
-	//rampImage = ImageFromFunction( "_ramp", R_RampImage );
-	//alphaRampImage = ImageFromFunction( "_alphaRamp", R_RampImage );
 	alphaNotchImage = ImageFromFunction( "_alphaNotch", R_AlphaNotchImage );
 	fogImage = ImageFromFunction( "_fog", R_FogImage );
 	fogEnterImage = ImageFromFunction( "_fogEnter", R_FogEnterImage );
 	noFalloffImage = ImageFromFunction( "_noFalloff", R_CreateNoFalloffImage );
 	ImageFromFunction( "_quadratic", R_QuadraticImage );
+	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap );
+	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap );
+	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap );
+	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap );
 
 	// cinematicImage is used for cinematic drawing
 	// scratchImage is used for screen wipes/doublevision etc..
@@ -1705,19 +1703,12 @@ void idImageManager::Init() {
 	for (int k = 1; k <= 9; k++)
 		cameraImages[k] = ImageFromFunction( ("_camera" + idStr(k)).c_str(), R_RGBA8Image );
 	xrayImage = ImageFromFunction( "_xray", R_RGBA8Image );
-	accumImage = ImageFromFunction( "_accum", R_RGBA8Image );
 	currentRenderImage = ImageFromFunction( "_currentRender", R_RGBA8Image );
 	guiRenderImage = ImageFromFunction( "_guiRender", R_RGBA8Image );
 	currentDepthImage = ImageFromFunction( "_currentDepth", R_DepthTexture ); // #3877. Allow shaders to access scene depth
 	shadowDepthFbo = ImageFromFunction( "_shadowDepthFbo", R_DepthTexture );
 	shadowAtlas = ImageFromFunction( "_shadowAtlas", R_DepthTexture );
-	//shadowAtlasHistory = ImageFromFunction( "_shadowAtlasHistory", R_DepthTexture );
 	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
-
-	whiteCubeMapImage = ImageFromFunction( "_whiteCubeMap", R_MakeWhiteCubeMap );
-	blackCubeMapImage = ImageFromFunction( "_blackCubeMap", R_MakeBlackCubeMap );
-	ImageFromFunction( "_ambientWorldDiffuseCubeMap", R_AmbientWorldDiffuseCubeMap );
-	ImageFromFunction( "_ambientWorldSpecularCubeMap", R_AmbientWorldSpecularCubeMap );
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );
