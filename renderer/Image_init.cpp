@@ -1677,6 +1677,13 @@ void idImageManager::Init() {
 	// set default texture filter modes
 	ChangeTextureFilter();
 
+	blueNoise1024rgbaImage = ImageFromFile(
+		"textures/internal/blue_noise_1024_rgba.tga",
+		TF_NEAREST, false,	// must always be used in pixel-perfect way
+		TR_REPEAT,			// tileable
+		TD_HIGH_QUALITY 	// never compress
+	);
+
 	// create built in images
 	defaultImage = ImageFromFunction( "_default", R_DefaultImage );
 	whiteImage = ImageFromFunction( "_white", R_WhiteImage );

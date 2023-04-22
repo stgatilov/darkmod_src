@@ -691,16 +691,17 @@ GLSL replacement for legacy hardware gamma ramp
 struct TonemapUniforms : GLSLUniformGroup {
 	UNIFORM_GROUP_DEF( TonemapUniforms )
 	DEFINE_UNIFORM(sampler, texture)
-	DEFINE_UNIFORM(sampler, bloomTex)
 	DEFINE_UNIFORM(float, gamma)
 	DEFINE_UNIFORM(float, brightness)
 	DEFINE_UNIFORM(float, desaturation)
 	DEFINE_UNIFORM(float, colorCurveBias)
 	DEFINE_UNIFORM(float, colorCorrection)
 	DEFINE_UNIFORM(float, colorCorrectBias)
-	DEFINE_UNIFORM(float, bloomWeight)
 	DEFINE_UNIFORM(int, sharpen)
 	DEFINE_UNIFORM(float, sharpness)
+	DEFINE_UNIFORM(sampler, noiseImage)
+	DEFINE_UNIFORM(float, ditherInput)
+	DEFINE_UNIFORM(float, ditherOutput)
 };
 
 bool RB_Bloom( bloomCommand_t *cmd ) {
@@ -722,6 +723,20 @@ bool RB_Bloom( bloomCommand_t *cmd ) {
 idCVar r_postprocess_sharpen( "r_postprocess_sharpen", "1", CVAR_RENDERER|CVAR_BOOL|CVAR_ARCHIVE, "Use contrast-adaptive sharpening in tonemapping" );
 idCVar r_postprocess_sharpness( "r_postprocess_sharpness", "0.5", CVAR_RENDERER|CVAR_FLOAT|CVAR_ARCHIVE, "Sharpening amount" );
 
+idCVar r_postprocess_dither( "r_postprocess_dither", "1",
+	CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE,
+	"Should blue noise dithering be used in tonemapping to reduce color banding issues?\n"
+	"Note that dithering is force-disabled for low color precision, r_fboColorBits = 64 is needed."
+);
+idCVar r_postprocess_dither_input( "r_postprocess_dither_input", "2",
+	CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE,
+	"Dithering up to X/2 is added to integer color value BEFORE tonemapping"
+);
+idCVar r_postprocess_dither_output( "r_postprocess_dither_output", "2",
+	CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE,
+	"Dithering up to X/2 is added to integer color value AFTER tonemapping"
+);
+
 void RB_Tonemap() {
 	if ( !r_tonemap ) {
 		return;
@@ -731,15 +746,13 @@ void RB_Tonemap() {
 	frameBuffers->defaultFbo->Bind();
 	GL_ViewportRelative( 0, 0, 1, 1 );
 	GL_ScissorRelative( 0, 0, 1, 1 );
+
 	GL_State( GLS_DEPTHMASK );
 	qglDisable( GL_DEPTH_TEST );
-	GL_SelectTexture( 0 );
-	globalImages->guiRenderImage->Bind();
 
 	GLSLProgram* tonemap = programManager->toneMapShader;
 	tonemap->Activate();
 	TonemapUniforms *uniforms = tonemap->GetUniformGroup<TonemapUniforms>();
-	uniforms->texture.Set( 0 );
 	uniforms->gamma.Set( idMath::ClampFloat( 1e-3f, 1e+3f, r_postprocess_gamma.GetFloat() ) );
 	uniforms->brightness.Set( r_postprocess_brightness.GetFloat() );
 	uniforms->desaturation.Set(idMath::ClampFloat( -1.0f, 1.0f, r_postprocess_desaturation.GetFloat() ) );
@@ -748,6 +761,26 @@ void RB_Tonemap() {
 	uniforms->colorCorrectBias.Set(idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_colorCorrectBias.GetFloat() ) );
 	uniforms->sharpen.Set( r_postprocess_sharpen.GetBool() );
 	uniforms->sharpness.Set( idMath::ClampFloat( 0.0f, 1.0f, r_postprocess_sharpness.GetFloat() ) );
+
+	// note: dithering helps only when internal color precision is greater than output precision
+	// otherwise, we lose necessary information before tonemapping, and dithering does not help at all
+	if ( r_postprocess_dither.GetBool() && r_fboColorBits.GetInteger() > 32 ) {
+		// r_fboColorBits = 64 means half-floats, which have 10 bits of precision
+		uniforms->ditherInput.Set( r_postprocess_dither_input.GetFloat() / (1 << 10) );
+		uniforms->ditherOutput.Set( r_postprocess_dither_output.GetFloat()  / (1 << 8) );
+	}
+	else {
+		uniforms->ditherInput.Set( 0.0f );
+		uniforms->ditherOutput.Set( 0.0f );
+	}
+
+	GL_SelectTexture( 0 );
+	globalImages->guiRenderImage->Bind();
+	uniforms->texture.Set( 0 );
+
+	GL_SelectTexture( 1 );
+	globalImages->blueNoise1024rgbaImage->Bind();
+	uniforms->noiseImage.Set( 1 );
 
 	RB_DrawFullScreenQuad();
 }

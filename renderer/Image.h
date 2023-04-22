@@ -392,6 +392,7 @@ public:
 	idImage *			noFalloffImage;				// all 255, but zero clamped
 	idImage *			fogImage;					// increasing alpha is denser fog
 	idImage *			fogEnterImage;				// adjust fogImage alpha based on terminator plane
+	idImage *			blueNoise1024rgbaImage;		// blue noise precomputed image for dithering
 	// built-in stream-written textures
 	idImage *			cinematicImage;
 	idImage *			scratchImage;

@@ -26,6 +26,10 @@ uniform float u_colorCorrection, u_colorCorrectBias;
 uniform int u_sharpen;
 uniform float u_sharpness;
 
+uniform float u_ditherInput;
+uniform float u_ditherOutput;
+uniform sampler2D u_noiseImage;
+
 /**
  * Contrast-adaptive sharpening from AMD's FidelityFX.
  * Adapted from Marty McFly's port for Reshade:
@@ -107,7 +111,7 @@ vec3 sharpen(vec2 texcoord) {
 }
 
 float mapColorComponent(float value) {
-	float color = value;
+	float color = max(value, 0.0);
 
 	//stgatilov: apply traditional gamma/brightness settings
 	color = pow(color, 1.0/u_gamma);
@@ -130,6 +134,13 @@ float mapColorComponent(float value) {
 	return color;
 }
 
+vec3 ditherColor(vec3 value, float strength) {
+	vec2 tc = gl_FragCoord.xy / textureSize(u_noiseImage, 0);
+	vec3 noiseColor = textureLod(u_noiseImage, tc, 0).rgb;
+	value += (noiseColor - vec3(0.5)) * strength;
+	return value;
+}
+
 void main() {
 	vec3 color;
 	if (u_sharpen != 0) {
@@ -137,6 +148,9 @@ void main() {
 	} else {
 		color = texture(u_texture, var_TexCoord.xy).rgb;
 	}
+
+	if (u_ditherInput > 0)
+		color = ditherColor(color, -u_ditherInput);
 
 	color.r = mapColorComponent(color.r);
 	color.g = mapColorComponent(color.g);
@@ -146,6 +160,9 @@ void main() {
 		float luma = clamp(dot(vec3(0.2125, 0.7154, 0.0721), color.rgb), 0.0, 1.0);
 		color = mix(color, vec3(luma), u_desaturation);
 	}
+
+	if (u_ditherOutput > 0)
+		color = ditherColor(color, u_ditherOutput);
 
 	draw_Color = vec4(color, 1);
 }
