@@ -60,10 +60,11 @@ struct SoftParticleUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( mat4, projectionMatrix )
 	DEFINE_UNIFORM( sampler, particleColorTexture )
 	DEFINE_UNIFORM( sampler, depthTexture )
+	DEFINE_UNIFORM( vec2, invDepthTextureSize )
 	DEFINE_UNIFORM( vec4, colorMul )
 	DEFINE_UNIFORM( vec4, colorAdd )
-	DEFINE_UNIFORM( float, particleRadius )
-	DEFINE_UNIFORM( float, sceneFadeCoeff )
+	DEFINE_UNIFORM( float, invParticleRadius )
+	DEFINE_UNIFORM( float, invSceneFadeCoeff )
 	DEFINE_UNIFORM( vec4, fadeMask )
 };
 
@@ -467,11 +468,13 @@ void SurfacePassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const sha
 	// is in the middle of it. Light glares lose no visibility when they have something to reflect off. See
 	// issue #3878 for diagram
 	if ( fadeAlpha ) {
-		uniforms->sceneFadeCoeff.Set( 2.0f );	// half fading speed
+		uniforms->invSceneFadeCoeff.Set( 0.5f );	// half fading speed
 	} else {
-		uniforms->sceneFadeCoeff.Set( 1.0f );
+		uniforms->invSceneFadeCoeff.Set( 1.0f );
 	}
-	uniforms->particleRadius.Set( drawSurf->particle_radius );
+	uniforms->invParticleRadius.Set( 1.0f / drawSurf->particle_radius );
+	// micro-optimization for fragment shader =(
+	uniforms->invDepthTextureSize.Set( 1.0f / globalImages->currentDepthImage->uploadWidth, 1.0f / globalImages->currentDepthImage->uploadHeight );
 
 	idVec4 regColor = drawSurf->GetStageColor( pStage );
 	if ( pStage->vertexColor == SVC_IGNORE ) {

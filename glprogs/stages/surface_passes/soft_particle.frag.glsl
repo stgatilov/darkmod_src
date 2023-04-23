@@ -19,8 +19,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 uniform sampler2D u_particleColorTexture;
 uniform sampler2D u_depthTexture;
 uniform mat4 u_projectionMatrix;
-uniform float u_particleRadius;
-uniform float u_sceneFadeCoeff;
+uniform float u_invParticleRadius;
+uniform float u_invSceneFadeCoeff;
+uniform vec2 u_invDepthTextureSize;
 uniform vec4 u_fadeMask;
 
 in vec4 var_Color;
@@ -29,7 +30,7 @@ in vec2 var_TexCoord;
 out vec4 FragColor;
 
 void main() {
-	vec2 screenTc = gl_FragCoord.xy / textureSize(u_depthTexture, 0);
+	vec2 screenTc = gl_FragCoord.xy * u_invDepthTextureSize;
 
 	// take depth of particle and background
 	float sceneDepth = texture(u_depthTexture, screenTc).r;
@@ -41,10 +42,10 @@ void main() {
 
 	// scale the depth difference by the particle diameter to calc an alpha value
 	// based on how much of the 3d volume represented by the particle is in front of the solid scene
-	float sceneFade = clamp((depthDelta / u_particleRadius + 1.0) / u_sceneFadeCoeff, 0.0, 1.0);
+	float sceneFade = clamp((depthDelta * u_invParticleRadius + 1.0) * u_invSceneFadeCoeff, 0.0, 1.0);
 	// also fade if the particle is too close to our eye position, so it doesn't 'pop' in and out of view
 	// start a linear fade at u_particleRadius distance from the particle.
-	float nearFade = clamp(particleDepth / u_particleRadius, 0.0, 1.0);
+	float nearFade = clamp(particleDepth * u_invParticleRadius, 0.0, 1.0);
 
 	// calculate final fade and apply the channel mask
 	vec4 fade = clamp(vec4(sceneFade * nearFade) + u_fadeMask, 0.0, 1.0);
