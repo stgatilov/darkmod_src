@@ -96,9 +96,6 @@ void DepthStage::DrawDepth( const viewDef_t *viewDef, drawSurf_t **drawSurfs, in
 	GL_SelectTexture( 0 );
 	uniforms->texture.Set( 0 );
 
-	// decal surfaces may enable polygon offset
-	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
-
 	GL_State( GLS_DEPTHFUNC_LESS );
 
 	// Enable stencil test if we are going to be using it for shadows.
@@ -165,27 +162,9 @@ bool DepthStage::ShouldDrawSurf(const drawSurf_t *surf) const {
 }
 
 void DepthStage::DrawSurf( const drawSurf_t *surf ) {
-	if ( surf->space->weaponDepthHack ) {
-		RB_EnterWeaponDepthHack();
-	}
-
-	const idMaterial *shader = surf->material;
-
-	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		qglEnable( GL_POLYGON_OFFSET_FILL );
-		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
-	}
+	ApplyDepthTweaks depthTweaks( surf );
 
 	CreateDrawCommands( surf );
-
-	// reset polygon offset
-	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		qglDisable( GL_POLYGON_OFFSET_FILL );
-	}
-
-	if ( surf->space->weaponDepthHack ) {
-		RB_LeaveDepthHack();
-	}
 }
 
 void DepthStage::CreateDrawCommands( const drawSurf_t *surf ) {
