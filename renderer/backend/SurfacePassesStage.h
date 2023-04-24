@@ -48,7 +48,6 @@ private:
 	void DrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage );
 
 	static StageType ChooseType( const drawSurf_t *drawSurf, const shaderStage_t *pStage );
-	void DrawStageInternal( const drawSurf_t *drawSurf, const shaderStage_t *pStage );
 
 	void DrawSimpleTexture( const drawSurf_t *drawSurf, const shaderStage_t *pStage );
 	void DrawEnvironment( const drawSurf_t *drawSurf, const shaderStage_t *pStage );

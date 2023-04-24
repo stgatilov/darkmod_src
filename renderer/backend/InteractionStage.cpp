@@ -283,15 +283,9 @@ void InteractionStage::DrawInteractions( const viewDef_t *viewDef, const viewLig
 				continue;
 			}
 
-			if ( surf->space->weaponDepthHack ) {
-				RB_EnterWeaponDepthHack();
-			}
+			ApplyDepthTweaks depthTweaks( surf );
 
 			ProcessSingleSurface( vLight, lightStage, surf );
-
-			if ( surf->space->weaponDepthHack ) {
-				RB_LeaveDepthHack();
-			}
 		}
 	}
 

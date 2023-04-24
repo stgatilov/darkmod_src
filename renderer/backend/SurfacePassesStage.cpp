@@ -264,29 +264,6 @@ bool SurfacePassesStage::ShouldDrawStage( const drawSurf_t *drawSurf, const shad
 	return true;
 }
 
-void SurfacePassesStage::DrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
-	const idMaterial *shader = drawSurf->material;
-
-	// set polygon offset if necessary
-	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		qglEnable( GL_POLYGON_OFFSET_FILL );
-		qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
-	}
-	if ( drawSurf->space->weaponDepthHack ) {
-		RB_EnterWeaponDepthHack();
-	}
-
-	DrawStageInternal( drawSurf, pStage );
-
-	// reset polygon offset
-	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) ) {
-		qglDisable( GL_POLYGON_OFFSET_FILL );
-	}
-	if ( drawSurf->space->weaponDepthHack ) {
-		RB_LeaveDepthHack();
-	}
-}
-
 SurfacePassesStage::StageType SurfacePassesStage::ChooseType( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	texgen_t texgen = pStage->texture.texgen;
 
@@ -304,9 +281,12 @@ SurfacePassesStage::StageType SurfacePassesStage::ChooseType( const drawSurf_t *
 	}
 }
 
-void SurfacePassesStage::DrawStageInternal( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
+void SurfacePassesStage::DrawStage( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
 	const idMaterial *shader = drawSurf->material;
 	GL_Cull( shader->GetCullType() );
+
+	// set polygon offset if necessary
+	ApplyDepthTweaks depthTweaks( drawSurf );
 
 	// change the scissor if needed
 	backEnd.currentScissor = drawSurf->scissorRect;
