@@ -47,7 +47,6 @@ public:
 
 	// global built-in shaders
 	GLSLProgram *softParticleShader;
-	GLSLProgram* toneMapShader;
 	GLSLProgram *cubeMapShader;
 	GLSLProgram *environment;
 	GLSLProgram *bumpyEnvironment;

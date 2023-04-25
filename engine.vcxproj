@@ -613,6 +613,7 @@
     <ClInclude Include="renderer\backend\LightPassesStage.h" />
     <ClInclude Include="renderer\backend\ShadowMapStage.h" />
     <ClInclude Include="renderer\backend\SurfacePassesStage.h" />
+    <ClInclude Include="renderer\backend\TonemapStage.h" />
     <ClInclude Include="renderer\BloomStage.h" />
     <ClInclude Include="renderer\backend\StencilShadowStage.h" />
     <ClInclude Include="renderer\backend\InteractionStage.h" />
@@ -1228,6 +1229,7 @@
     <ClCompile Include="renderer\backend\LightPassesStage.cpp" />
     <ClCompile Include="renderer\backend\ShadowMapStage.cpp" />
     <ClCompile Include="renderer\backend\SurfacePassesStage.cpp" />
+    <ClCompile Include="renderer\backend\TonemapStage.cpp" />
     <ClCompile Include="renderer\BloomStage.cpp" />
     <ClCompile Include="renderer\backend\StencilShadowStage.cpp" />
     <ClCompile Include="renderer\backend\InteractionStage.cpp" />

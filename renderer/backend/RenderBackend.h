@@ -21,6 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "StencilShadowStage.h"
 #include "SurfacePassesStage.h"
 #include "LightPassesStage.h"
+#include "TonemapStage.h"
 #include "../VolumetricStage.h"
 #include "../tr_local.h"
 
@@ -38,6 +39,8 @@ public:
 
 	void EndFrame();
 
+	void Tonemap();
+
 private:
 	DepthStage depthStage;
 	InteractionStage interactionStage;
@@ -46,6 +49,7 @@ private:
 	SurfacePassesStage surfacePassesStage;
 	LightPassesStage lightPassesStage;
 	FrobOutlineStage frobOutlineStage;
+	TonemapStage tonemapStage;
 
 	FrameBuffer *lightgemFbo = nullptr;
 	GLuint lightgemPbos[3] = { 0 };

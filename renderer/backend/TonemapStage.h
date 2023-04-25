@@ -12,13 +12,20 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
-#version 140
+#pragma once
 
-in vec4 attr_Position;
-in vec4 attr_TexCoord;
-out vec4 var_TexCoord;
+class FrameBuffer;
+class GLSLProgram;
 
-void main() {
-	gl_Position = attr_Position;
-	var_TexCoord = attr_TexCoord;
-}
+class TonemapStage {
+public:
+	void Init();
+	void Shutdown();
+
+	void ApplyTonemap( FrameBuffer *destinationFbo, idImage *sourceTexture );
+
+private:
+	GLSLProgram *tonemapShader = nullptr;
+
+	struct Uniforms;
+};

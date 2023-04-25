@@ -52,6 +52,7 @@ void RenderBackend::Init() {
 	surfacePassesStage.Init();
 	lightPassesStage.Init();
 	frobOutlineStage.Init();
+	tonemapStage.Init();
 
 	lightgemFbo = frameBuffers->CreateFromGenerator( "lightgem", CreateLightgemFbo );
 	qglGenBuffers( 3, lightgemPbos );
@@ -67,6 +68,7 @@ void RenderBackend::Shutdown() {
 		return;
 	qglDeleteBuffers( 3, lightgemPbos );
 	
+	tonemapStage.Shutdown();
 	frobOutlineStage.Shutdown();
 	lightPassesStage.Shutdown();
 	surfacePassesStage.Shutdown();
@@ -358,4 +360,8 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 	GL_SelectTexture( 0 );
+}
+
+void RenderBackend::Tonemap() {
+	tonemapStage.ApplyTonemap( frameBuffers->defaultFbo, globalImages->guiRenderImage );
 }

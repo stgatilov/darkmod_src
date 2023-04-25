@@ -213,7 +213,6 @@ void GLSLProgramManager::Init() {
 	oldStageShader = LoadFromGenerator( "oldStage", InitOldStageShader );
 	blendShader = LoadFromGenerator( "blend", InitBlendShader );
 	softParticleShader = LoadFromGenerator( "soft_particle", InitSoftParticleShader );
-	toneMapShader = Load( "tonemap" );
 	gaussianBlurShader = LoadFromFiles( "gaussian_blur", "fullscreen_tri.vert.glsl", "gaussian_blur.frag.glsl" );
 	testImageCubeShader = Load( "testImageCube" );
 }
