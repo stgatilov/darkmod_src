@@ -19,7 +19,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <atomic>
 
 #include "Image.h"
-#include "MegaTexture.h"
 
 class idRenderWorldLocal;
 

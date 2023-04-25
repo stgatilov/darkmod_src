@@ -27,7 +27,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 class idImage;
 class idCinematic;
 class idUserInterface;
-class idMegaTexture;
 
 class GLSLProgram;
 

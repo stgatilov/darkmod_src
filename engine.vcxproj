@@ -636,7 +636,6 @@
     <ClInclude Include="renderer\ImmediateRendering.h" />
     <ClInclude Include="renderer\Interaction.h" />
     <ClInclude Include="renderer\Material.h" />
-    <ClInclude Include="renderer\MegaTexture.h" />
     <ClInclude Include="renderer\Model.h" />
     <ClInclude Include="renderer\Model_ase.h" />
     <ClInclude Include="renderer\Model_local.h" />
@@ -1260,7 +1259,6 @@
     <ClCompile Include="renderer\ImmediateRendering.cpp" />
     <ClCompile Include="renderer\Interaction.cpp" />
     <ClCompile Include="renderer\Material.cpp" />
-    <ClCompile Include="renderer\MegaTexture.cpp" />
     <ClCompile Include="renderer\Model.cpp" />
     <ClCompile Include="renderer\Model_ase.cpp" />
     <ClCompile Include="renderer\Model_beam.cpp" />

@@ -261,9 +261,6 @@
     <ClInclude Include="renderer\Material.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\MegaTexture.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="renderer\Model.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -1744,9 +1741,6 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\Material.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\MegaTexture.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\Model.cpp">
