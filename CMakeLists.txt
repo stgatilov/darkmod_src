@@ -236,7 +236,6 @@ find_package(glfw REQUIRED)
 include_directories(
 		"${PROJECT_SOURCE_DIR}"
 		"${PROJECT_SOURCE_DIR}/idlib"
-		"${PROJECT_SOURCE_DIR}/framework"
 		"${PROJECT_SOURCE_DIR}/ThirdParty/artefacts/doctest/include"
 		"${PROJECT_SOURCE_DIR}/ThirdParty/artefacts/tracy/include"
 		"${PROJECT_SOURCE_DIR}/ThirdParty/artefacts/tracy/include/common"

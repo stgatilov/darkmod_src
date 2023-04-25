@@ -22,7 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <mutex>          // std::mutex, std::unique_lock, std::defer_lock
 #include <stack>
 #include <condition_variable>
-#include "LoadStack.h"
+#include "framework/LoadStack.h"
 #include "../tests/testing.h"
 
 /*

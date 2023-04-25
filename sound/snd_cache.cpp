@@ -19,8 +19,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "snd_local.h"
 #include <limits.h>
-#include "LoadStack.h"
-#include "DeclSubtitles.h"
+#include "framework/LoadStack.h"
+#include "framework/DeclSubtitles.h"
 
 #define USE_SOUND_CACHE_ALLOCATOR
 

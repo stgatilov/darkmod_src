@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define DOCTEST_CONFIG_IMPLEMENT
 #include "testing.h"
 #include "TestRun.h"
-#include "CmdSystem.h"
+#include "framework/CmdSystem.h"
 
 class GameConsoleStreamBuf : public std::stringbuf {
 	idList<char> buffer;

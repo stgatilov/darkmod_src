@@ -46,8 +46,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Http/HttpRequest.h"
 #include "StimResponse/StimType.h" // grayman #2721
 #include "StdString.h"
-#include "Session_local.h"
-#include "../framework/Common.h"
+#include "framework/Session_local.h"
+#include "framework/Common.h"
 
 #include <chrono>
 #include <iostream>

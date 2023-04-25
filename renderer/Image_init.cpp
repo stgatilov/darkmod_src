@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "BloomStage.h"
 #include "AmbientOcclusionStage.h"
 #include "FrameBufferManager.h"
-#include "LoadStack.h"
+#include "framework/LoadStack.h"
 
 #define	DEFAULT_SIZE		16
 #define	NORMAL_MAP_SIZE		32
