@@ -18,7 +18,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include <atomic>
 
-#include "Image.h"
+#include "renderer/resources/Image.h"
 
 class idRenderWorldLocal;
 
@@ -123,9 +123,9 @@ SURFACES
 ==============================================================================
 */
 
-#include "ModelDecal.h"
-#include "ModelOverlay.h"
-#include "Interaction.h"
+#include "renderer/resources/ModelDecal.h"
+#include "renderer/resources/ModelOverlay.h"
+#include "renderer/frontend/Interaction.h"
 
 idMat4 RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
 
@@ -1811,8 +1811,8 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal *lightDef,
 
 //=============================================
 
-#include "RenderWorld_local.h"
-#include "GuiModel.h"
-#include "VertexCache.h"
+#include "renderer/frontend/RenderWorld_local.h"
+#include "renderer/frontend/GuiModel.h"
+#include "renderer/VertexCache.h"
 
 #endif /* !__TR_LOCAL_H__ */

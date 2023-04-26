@@ -77,7 +77,7 @@ TODO: We currently determine the material by doing a point-trace, then when the 
 
 
 #include "SEED.h"
-#include "../renderer/Image.h"
+#include "renderer/resources/Image.h"
 
 // maximum number of tries to place an entity
 #define MAX_TRIES 8

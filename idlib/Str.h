@@ -16,10 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __STR_H__
 #define __STR_H__
 
-#ifdef __linux__
-#include <cassert>
-#endif
-
 #define ASSERT_ENUM_STRING( string, index )		( 1 / (int)!( string - index ) ) ? #string : ""
 
 /*

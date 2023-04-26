@@ -16,10 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __ANIM_H__
 #define __ANIM_H__
 
-#ifdef __linux__
-#include "../../framework/DeclManager.h"
-#endif
-
 //
 // animation channels
 // these can be changed by modmakers and licensees to be whatever they need.

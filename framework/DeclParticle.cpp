@@ -15,7 +15,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "precompiled.h"
 #pragma hdrstop
-#include "../renderer/Image.h"
+
+#include "renderer/resources/Image.h"
 
 
 

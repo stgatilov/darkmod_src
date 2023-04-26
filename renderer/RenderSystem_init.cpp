@@ -16,20 +16,20 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "tr_local.h"
-#include "FrameBuffer.h"
-#include "glsl.h"
-#include "GLSLProgramManager.h"
-#include "backend/RenderBackend.h"
-#include "AmbientOcclusionStage.h"
-#include "BloomStage.h"
-#include "VolumetricStage.h"
-#include "FrameBufferManager.h"
-#include "../sys/sys_padinput.h"
+#include "renderer/tr_local.h"
+#include "renderer/backend/FrameBuffer.h"
+#include "renderer/backend/glsl.h"
+#include "renderer/backend/GLSLProgramManager.h"
+#include "renderer/backend/RenderBackend.h"
+#include "renderer/backend/stages/AmbientOcclusionStage.h"
+#include "renderer/backend/stages/BloomStage.h"
+#include "renderer/backend/stages/VolumetricStage.h"
+#include "renderer/backend/FrameBufferManager.h"
+#include "sys/sys_padinput.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
-#include "../sys/win32/win_local.h"
+#include "sys/win32/win_local.h"
 #endif
 
 // functions that are not called every frame

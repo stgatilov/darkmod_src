@@ -25,7 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 //#include <GL/gl.h>
 //#include <GL/glu.h>
 //#include <GL/glaux.h>
-#include "../renderer/GLSLProgram.h"
+#include "renderer/backend/GLSLProgram.h"
 
 #define	WIN_SIZE	1024
 

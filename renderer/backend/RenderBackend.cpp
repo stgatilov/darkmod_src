@@ -16,13 +16,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "RenderBackend.h"
+#include "renderer/backend/RenderBackend.h"
 
-#include "../AmbientOcclusionStage.h"
-#include "../GLSLProgram.h"
-#include "../FrameBufferManager.h"
-#include "../FrameBuffer.h"
-#include "../glsl.h"
+#include "renderer/backend/stages/AmbientOcclusionStage.h"
+#include "renderer/backend/GLSLProgram.h"
+#include "renderer/backend/FrameBufferManager.h"
+#include "renderer/backend/FrameBuffer.h"
+#include "renderer/backend/glsl.h"
 
 idCVar r_useNewRenderPasses( "r_useNewRenderPasses", "2", CVAR_INTEGER | CVAR_ARCHIVE| CVAR_RENDERER,
 	"Use new refactored code for rendering surface/light material stages",

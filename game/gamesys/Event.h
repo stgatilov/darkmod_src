@@ -23,10 +23,6 @@ Event are used for scheduling tasks and for linking script commands.
 #ifndef __SYS_EVENT_H__
 #define __SYS_EVENT_H__
 
-#ifdef __linux__
-#include <cassert>
-#endif
-
 #include "../../idlib/Lib.h"
 #include <cstring>
 #include "EventArgs.h"

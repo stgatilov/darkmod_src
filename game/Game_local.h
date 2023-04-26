@@ -18,10 +18,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "Game.h"
 
-#ifdef __linux__
-#include "../framework/UsercmdGen.h"
-#endif
-
 // enables water physics
 #define MOD_WATERPHYSICS
 
@@ -116,10 +112,6 @@ void gameError( const char *fmt, ... );
 #include "LightController.h"
 #include "ModMenu.h"
 #include "LodComponent.h"
-
-#ifdef __linux__
-#include "../renderer/RenderWorld.h"
-#endif
 
 //============================================================================
 

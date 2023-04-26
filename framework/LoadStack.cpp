@@ -14,7 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #include "precompiled.h"
 #include "LoadStack.h"
-#include "../renderer/Image.h"
+#include "renderer/resources/Image.h"
 #include "DeclManager.h"
 #include "MapFile.h"
 #include "../sound/snd_local.h"

@@ -16,10 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __BTREE_H__
 #define __BTREE_H__
 
-#ifdef __linux__
-#include "../../sys/sys_public.h"
-#endif
-
 /*
 ===============================================================================
 

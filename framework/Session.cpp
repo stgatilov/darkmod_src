@@ -18,10 +18,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "Session_local.h"
 #include "Common.h"
-#include "../renderer/tr_local.h"
-#include "../renderer/FrameBuffer.h"
-#include "../game/gamesys/SysCvar.h"
-#include "../game/Missions/MissionManager.h"
+#include "renderer/tr_local.h"
+#include "renderer/backend/FrameBuffer.h"
+#include "game/gamesys/SysCvar.h"
+#include "game/Missions/MissionManager.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "0", CVAR_SYSTEM, "" );

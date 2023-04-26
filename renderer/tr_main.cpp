@@ -16,11 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "tr_local.h"
-#include "math.h"
-#ifdef __ppc__
-#include <vecLib/vecLib.h>
-#endif
+#include "renderer/tr_local.h"
+#include <math.h>
 
 //====================================================================
 

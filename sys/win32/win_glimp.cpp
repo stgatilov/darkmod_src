@@ -32,8 +32,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "win_local.h"
 #include "rc/doom_resource.h"
-#include "../../renderer/tr_local.h"
-#include "../../renderer/FrameBuffer.h"
+#include "renderer/tr_local.h"
+#include "renderer/backend/FrameBuffer.h"
 
 
 /*

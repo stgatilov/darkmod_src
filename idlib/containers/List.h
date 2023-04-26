@@ -16,9 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __LIST_H__
 #define __LIST_H__
 
-#ifdef __linux__
-#include <cassert>
-#endif
 #include <initializer_list>
 
 /*

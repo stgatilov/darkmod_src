@@ -26,7 +26,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "PreviewDlg.h"
 #include "CurveDlg.h"
 
-#include "../../renderer/model_local.h"		// for idRenderModelPrt
+#include "renderer/resources/model_local.h"		// for idRenderModelPrt
 
 void	Select_Ungroup();
 

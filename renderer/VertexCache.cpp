@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include <mutex>
 #pragma hdrstop
 
-#include "tr_local.h"
+#include "renderer/tr_local.h"
 
 const int32 MAX_VERTCACHE_SIZE = INT_MAX;
 

@@ -22,10 +22,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 class CFrobDoor;
 
-#ifdef __linux__
-#include "tools/compilers/aas/AASFile.h"
-#endif
-
 /*
 ===============================================================================
 

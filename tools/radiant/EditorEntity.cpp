@@ -19,8 +19,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "qe3.h"
-#include "../../renderer/tr_local.h"
-#include "../../renderer/model_local.h"	// for idRenderModelMD5
+#include "renderer/tr_local.h"
+#include "renderer/resources/model_local.h"	// for idRenderModelMD5
 int g_entityId = 1;
 
 #define CURVE_TAG "curve_"

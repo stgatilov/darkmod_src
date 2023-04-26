@@ -16,10 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __MULTIPLAYERGAME_H__
 #define	__MULTIPLAYERGAME_H__
 
-#ifdef __linux__
-#include "../ui/ListGUI.h"
-#endif
-
 /*
 ===============================================================================
 

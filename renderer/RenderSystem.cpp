@@ -15,11 +15,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "tr_local.h"
-#include "FrameBuffer.h"
-#include "glsl.h"
-#include "backend/RenderBackend.h"
-#include "FrameBufferManager.h"
+#include "renderer/tr_local.h"
+#include "renderer/backend/FrameBuffer.h"
+#include "renderer/backend/glsl.h"
+#include "renderer/backend/RenderBackend.h"
+#include "renderer/backend/FrameBufferManager.h"
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;

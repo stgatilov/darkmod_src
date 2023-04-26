@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma once
 
-#include "../renderer/qgl.h"
+#include "renderer/backend/qgl/qgl.h"
 #include <TracyOpenGL.hpp>
 #include <common/TracySystem.hpp>
 

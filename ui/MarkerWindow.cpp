@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 // included for image uploading for player stat graph
-#include "../renderer/Image.h"
+#include "renderer/resources/Image.h"
 
 #include "DeviceContext.h"
 #include "Window.h"

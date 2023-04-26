@@ -16,10 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __CLIP_H__
 #define __CLIP_H__
 
-#ifdef __linux__
-#include "cm/CollisionModel.h"
-#endif
-
 #include "containers/FlexList.h"
 #include "bv/BoxOctree.h"
 

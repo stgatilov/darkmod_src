@@ -21,8 +21,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "qe3.h"
 //#include <GL/glu.h>
 
-#include "../../renderer/tr_local.h"
-#include "../../renderer/model_local.h"	// for idRenderModelMD5
+#include "renderer/tr_local.h"
+#include "renderer/resources/model_local.h"	// for idRenderModelMD5
 
 void	Brush_UpdateLightPoints(brush_t *b, const idVec3 &offset);
 void Brush_DrawCurve( brush_t *b, bool bSelected, bool cam );

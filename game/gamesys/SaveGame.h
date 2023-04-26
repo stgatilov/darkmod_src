@@ -24,10 +24,6 @@ Save game related helper classes.
 
 #include "../RawVector.h"
 
-#ifdef __linux__
-#include "../../renderer/Model.h"
-#endif
-
 const int INITIAL_RELEASE_BUILD_NUMBER = 1262;
 
 class idDeclSkin;

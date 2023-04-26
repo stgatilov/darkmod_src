@@ -25,7 +25,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "darkModLAS.h"
 #include "Pvs.h"
-#include "../renderer/RenderWorld.h"
+#include "renderer/frontend/RenderWorld.h"
 #include "DarkModGlobals.h"
 #include "Intersection.h"
 #include "TimerManager.h"

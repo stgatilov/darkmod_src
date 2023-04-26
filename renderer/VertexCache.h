@@ -16,7 +16,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __VERTEXCACHE_H__
 #define __VERTEXCACHE_H__
 
-#include "backend/GpuBuffer.h"
+#include "renderer/backend/GpuBuffer.h"
 
 // vertex cache calls should only be made by the front end
 

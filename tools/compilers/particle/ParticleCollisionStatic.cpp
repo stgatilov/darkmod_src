@@ -16,8 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "../compiler_common.h"
-#include "../../../renderer/Image.h"
+#include "tools/compilers/compiler_common.h"
+#include "renderer/resources/Image.h"
 
 
 class PrtCollision {

@@ -21,7 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "PVSToAASMapping.h"
 #include "DarkModGlobals.h"
 #include "Pvs.h"
-#include "../renderer/RenderWorld.h"
+#include "renderer/frontend/RenderWorld.h"
 #include "Intersection.h"
 
 //----------------------------------------------------------------------------

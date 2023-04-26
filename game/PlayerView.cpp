@@ -17,7 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 
 
-#include "../renderer/Image.h"
+#include "renderer/resources/Image.h"
 #include "Game_local.h"
 
 static int MakePowerOfTwo( int num ) {

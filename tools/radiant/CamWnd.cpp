@@ -25,8 +25,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "splines.h"
 //#include <GL/glu.h>
 
-#include "../../renderer/tr_local.h"
-#include "../../renderer/model_local.h"	// for idRenderModelMD5
+#include "renderer/tr_local.h"
+#include "renderer/resources/model_local.h"	// for idRenderModelMD5
 
 #ifdef _DEBUG
 	#define new DEBUG_NEW

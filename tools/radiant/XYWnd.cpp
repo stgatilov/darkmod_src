@@ -21,8 +21,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "XYWnd.h"
 #include "DialogInfo.h"
 #include "splines.h"
-#include "../../renderer/tr_local.h"
-#include "../../renderer/model_local.h"	// for idRenderModelLiquid
+#include "renderer/tr_local.h"
+#include "renderer/resources/model_local.h"	// for idRenderModelLiquid
 
 #ifdef _DEBUG
 	#define new DEBUG_NEW

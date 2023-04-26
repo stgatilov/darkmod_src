@@ -133,14 +133,8 @@
     <Filter Include="Tests">
       <UniqueIdentifier>{f2796430-f703-4cad-956a-d3aa24b66499}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\glad">
-      <UniqueIdentifier>{47f98cf0-60e3-4fea-ab19-c4ac45ad6cc4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Tools\Compilers\Particle">
       <UniqueIdentifier>{383ce183-feff-45cb-b59d-fdebabb847fa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Backend">
-      <UniqueIdentifier>{26537bda-7135-4d5d-b420-3003aa3a506b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Idlib">
       <UniqueIdentifier>{ddd96867-b413-40fb-bb56-7ab43fcb5dea}</UniqueIdentifier>
@@ -168,6 +162,21 @@
     </Filter>
     <Filter Include="Idlib\Text">
       <UniqueIdentifier>{540fcf5a-6234-44ad-92a0-eacd08571bc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Backend">
+      <UniqueIdentifier>{d4d62bf0-dae3-40da-88e8-9c5e82a92793}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Frontend">
+      <UniqueIdentifier>{f460561b-0926-4902-8d3f-0c7fdec35cf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources">
+      <UniqueIdentifier>{e91c6bda-9046-4c57-a54f-90a996649088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Backend\qgl">
+      <UniqueIdentifier>{ca033ce6-2c1e-4460-8cc4-cf59578465f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Backend\Stages">
+      <UniqueIdentifier>{bab852b7-1248-4e31-80c8-bd75d92b63ad}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -245,69 +254,6 @@
     </ClInclude>
     <ClInclude Include="framework\UsercmdGen.h">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Cinematic.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\GuiModel.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Image.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Interaction.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Material.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model_ase.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model_local.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model_lwo.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model_ma.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model_md3.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\ModelDecal.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\ModelManager.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\ModelOverlay.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\qgl.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\RenderSystem.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\RenderWorld.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\RenderWorld_local.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\simplex.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\tr_local.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\VertexCache.h">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="sound\snd_local.h">
       <Filter>Sound</Filter>
@@ -470,9 +416,6 @@
     </ClInclude>
     <ClInclude Include="framework\CompressionParameters.h">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\CinematicID.h">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="game\ai\AAS.h">
       <Filter>Game\AI</Filter>
@@ -1203,16 +1146,7 @@
     <ClInclude Include="game\precompiled_game.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\CinematicFFMpeg.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="idlib\precompiled.h" />
-    <ClInclude Include="renderer\glsl.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\FrameBuffer.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="game\gamesys\Automation.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
@@ -1234,59 +1168,17 @@
     <ClInclude Include="tests\TestRun.h">
       <Filter>Tests</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\GLSLProgram.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="tests\testing.h">
       <Filter>Tests</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\GLSLUniforms.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\GLSLProgramManager.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="framework\minizip\minizip_extra.h">
       <Filter>Framework\minizip</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\glad.h">
-      <Filter>Renderer\glad</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\glad_wgl.h">
-      <Filter>Renderer\glad</Filter>
     </ClInclude>
     <ClInclude Include="framework\minizip\minizip_private.h">
       <Filter>Framework\minizip</Filter>
     </ClInclude>
     <ClInclude Include="tools\compilers\compiler_common.h">
       <Filter>Tools\Compilers</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\ImmediateRendering.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\RenderBackend.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\StencilShadowStage.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\InteractionStage.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\DepthStage.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\AmbientOcclusionStage.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\BloomStage.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\FrameBufferManager.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\GpuBuffer.h">
-      <Filter>Renderer\Backend</Filter>
     </ClInclude>
     <ClInclude Include="framework\LoadStack.h">
       <Filter>Framework</Filter>
@@ -1297,26 +1189,11 @@
     <ClInclude Include="sys\sys_padinput.h">
       <Filter>Sys</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\ParticleSystem_decl.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\ParticleSystem_def.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\ParticleSystem.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\ShadowMapStage.h">
-      <Filter>Renderer\Backend</Filter>
-    </ClInclude>
     <ClInclude Include="tools\compilers\dmap\earcut.h">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClInclude>
     <ClInclude Include="tools\compilers\dmap\planargraph.h">
       <Filter>Tools\Compilers\DMap</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\backend\FrobOutlineStage.h">
-      <Filter>Renderer\Backend</Filter>
     </ClInclude>
     <ClInclude Include="framework\Tracing.h">
       <Filter>Framework</Filter>
@@ -1603,29 +1480,161 @@
     <ClInclude Include="idlib\bv\CircCone.h">
       <Filter>Idlib\BV</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\TiledCustomMipmapStage.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="tools\compilers\dmap\tjunctionfixer.h">
       <Filter>Tools\Compilers\DMap</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\Model_obj.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer\VolumetricStage.h">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="idlib\containers\BitArray.h">
       <Filter>Idlib\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\backend\SurfacePassesStage.h">
+    <ClInclude Include="renderer\RenderSystem.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\tr_local.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\VertexCache.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\frontend\GuiModel.h">
+      <Filter>Renderer\Frontend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\frontend\Interaction.h">
+      <Filter>Renderer\Frontend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\frontend\RenderWorld.h">
+      <Filter>Renderer\Frontend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\frontend\RenderWorld_local.h">
+      <Filter>Renderer\Frontend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\FrameBuffer.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\backend\LightPassesStage.h">
+    <ClInclude Include="renderer\backend\FrameBufferManager.h">
       <Filter>Renderer\Backend</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\backend\TonemapStage.h">
+    <ClInclude Include="renderer\backend\glsl.h">
       <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\GLSLProgram.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\GLSLProgramManager.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\GLSLUniforms.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\GpuBuffer.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\ImmediateRendering.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\RenderBackend.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\simplex.h">
+      <Filter>Renderer\Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Cinematic.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\CinematicFFMpeg.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\CinematicID.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Image.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Material.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model_ase.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model_local.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model_lwo.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model_ma.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model_md3.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\Model_obj.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\ModelDecal.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\ModelManager.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\ModelOverlay.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\ParticleSystem.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\ParticleSystem_decl.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\resources\ParticleSystem_def.h">
+      <Filter>Renderer\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\qgl\glad.h">
+      <Filter>Renderer\Backend\qgl</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\qgl\glad_wgl.h">
+      <Filter>Renderer\Backend\qgl</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\qgl\qgl.h">
+      <Filter>Renderer\Backend\qgl</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\AmbientOcclusionStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\BloomStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\DepthStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\FrobOutlineStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\InteractionStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\LightPassesStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\ShadowMapStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\StencilShadowStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\SurfacePassesStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\TiledCustomMipmapStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\TonemapStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\backend\stages\VolumetricStage.h">
+      <Filter>Renderer\Backend\Stages</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1715,150 +1724,6 @@
     </ClCompile>
     <ClCompile Include="framework\UsercmdGen.cpp">
       <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Cinematic.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_common.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\GuiModel.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Image_files.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Image_init.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Image_load.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Image_process.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Image_program.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Interaction.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Material.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_ase.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_beam.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_liquid.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_lwo.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_ma.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_md3.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_md5.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_prt.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_sprite.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\ModelDecal.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\ModelManager.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\ModelOverlay.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderEntity.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderSystem.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderSystem_init.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderWorld.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderWorld_demo.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderWorld_load.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\RenderWorld_portals.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_backend.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_deform.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_font.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_guisurf.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_light.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_lightrun.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_main.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_orderIndexes.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_polytope.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_render.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_rendertools.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_shadowbounds.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_stencilshadow.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_subview.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_trace.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_trisurf.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\tr_turboshadow.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\VertexCache.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="sound\snd_cache.cpp">
       <Filter>Sound</Filter>
@@ -2528,9 +2393,6 @@
     </ClCompile>
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\CinematicID.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="game\ai\AAS.cpp">
       <Filter>Game\AI</Filter>
@@ -3240,18 +3102,9 @@
     <ClCompile Include="game\precompiled_game.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\CinematicFFMpeg.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="idlib\precompiled.cpp" />
-    <ClCompile Include="renderer\draw_glsl.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp">
       <Filter>Game\AI\Tasks</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\FrameBuffer.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="game\gamesys\Automation.cpp">
       <Filter>Game\GameSys</Filter>
@@ -3271,56 +3124,14 @@
     <ClCompile Include="tests\TestRun.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\GLSLProgram.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\GLSLProgramManager.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="framework\minizip\minizip_extra.c">
       <Filter>Framework\minizip</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\qgl.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\glad.c">
-      <Filter>Renderer\glad</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\glad_wgl.c">
-      <Filter>Renderer\glad</Filter>
     </ClCompile>
     <ClCompile Include="tools\compilers\compiler_common.cpp">
       <Filter>Tools\Compilers</Filter>
     </ClCompile>
     <ClCompile Include="tools\compilers\particle\ParticleCollisionStatic.cpp">
       <Filter>Tools\Compilers\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\ImmediateRendering.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\RenderBackend.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\StencilShadowStage.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\InteractionStage.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\DepthStage.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\AmbientOcclusionStage.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\BloomStage.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\FrameBufferManager.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\GpuBuffer.cpp">
-      <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="framework\LoadStack.cpp">
       <Filter>Framework</Filter>
@@ -3331,12 +3142,6 @@
     <ClCompile Include="sys\sys_padinput.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\ShadowMapStage.cpp">
-      <Filter>Renderer\Backend</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\ParticleSystem.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="tools\compilers\dmap\earcut.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
     </ClCompile>
@@ -3345,9 +3150,6 @@
     </ClCompile>
     <ClCompile Include="sys\sys_cpu.cpp">
       <Filter>Sys</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\backend\FrobOutlineStage.cpp">
-      <Filter>Renderer\Backend</Filter>
     </ClCompile>
     <ClCompile Include="framework\Tracing.cpp">
       <Filter>Framework</Filter>
@@ -3568,29 +3370,236 @@
     <ClCompile Include="idlib\bv\CircCone.cpp">
       <Filter>Idlib\BV</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\TiledCustomMipmapStage.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="tools\compilers\dmap\tjunctionfixer.cpp">
       <Filter>Tools\Compilers\DMap</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\Model_obj.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\VolumetricStage.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="idlib\containers\BitArray.cpp">
       <Filter>Idlib\Containers</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\SurfacePassesStage.cpp">
+    <ClCompile Include="renderer\RenderSystem.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\RenderSystem_init.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\tr_main.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\VertexCache.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\GuiModel.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\Interaction.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\RenderEntity.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\RenderWorld.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\RenderWorld_demo.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\RenderWorld_load.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\RenderWorld_portals.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_deform.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_guisurf.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_light.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_lightrun.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_orderIndexes.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_polytope.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_shadowbounds.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_stencilshadow.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_subview.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_trace.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_trisurf.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\frontend\tr_turboshadow.cpp">
+      <Filter>Renderer\Frontend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\draw_common.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\LightPassesStage.cpp">
+    <ClCompile Include="renderer\backend\draw_glsl.cpp">
       <Filter>Renderer\Backend</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\backend\TonemapStage.cpp">
+    <ClCompile Include="renderer\backend\FrameBuffer.cpp">
       <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\FrameBufferManager.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\GLSLProgram.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\GLSLProgramManager.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\GpuBuffer.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\ImmediateRendering.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\RenderBackend.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\tr_backend.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\tr_render.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\tr_rendertools.cpp">
+      <Filter>Renderer\Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Cinematic.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\CinematicFFMpeg.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\CinematicID.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Image_files.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Image_init.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Image_load.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Image_process.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Image_program.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Material.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_ase.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_beam.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_liquid.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_lwo.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_ma.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_md3.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_md5.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_obj.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_prt.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\Model_sprite.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\ModelDecal.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\ModelManager.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\ModelOverlay.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\ParticleSystem.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\resources\tr_font.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\qgl\glad.c">
+      <Filter>Renderer\Backend\qgl</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\qgl\glad_wgl.c">
+      <Filter>Renderer\Backend\qgl</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\qgl\qgl.cpp">
+      <Filter>Renderer\Backend\qgl</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\AmbientOcclusionStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\BloomStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\DepthStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\FrobOutlineStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\InteractionStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\LightPassesStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\ShadowMapStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\StencilShadowStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\SurfacePassesStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\TiledCustomMipmapStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\TonemapStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\backend\stages\VolumetricStage.cpp">
+      <Filter>Renderer\Backend\Stages</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

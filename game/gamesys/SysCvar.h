@@ -16,10 +16,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
 
-#ifdef __linux__
-#include "../../framework/CVarSystem.h"
-#endif
-
 /**
 * DarkMod cvars - See text description in syscvar.cpp for descriptions
 **/

@@ -19,13 +19,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 
 #include "../idlib/RevisionTracker.h"
-#include "../renderer/Image.h"
+#include "renderer/resources/Image.h"
 #include "Session_local.h"
 #include "Debug.h"
 #include <iostream>
 
 #include "GamepadInput.h"
-#include "../renderer/backend/RenderBackend.h"
+#include "renderer/backend/RenderBackend.h"
 #include "LoadStack.h"
 #include "../game/Missions/MissionManager.h"
 #include "../tests/TestRun.h"

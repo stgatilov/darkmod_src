@@ -26,7 +26,7 @@ class idImage;
 ===============================================================================
 */
 
-#include "../renderer/ParticleSystem.h"
+#include "renderer/resources/ParticleSystem.h"
 
 //
 // single particle stage

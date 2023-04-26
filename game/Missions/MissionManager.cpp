@@ -28,7 +28,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "../Http/HttpConnection.h"
 #include "../Http/HttpRequest.h"
 #include "StdString.h"
-#include "../renderer/Image.h"
+#include "renderer/resources/Image.h"
 
 
 idStr MissionScreenshot::GetLocalFilename() const

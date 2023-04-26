@@ -14,16 +14,16 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma once
 
-#include "DepthStage.h"
-#include "FrobOutlineStage.h"
-#include "InteractionStage.h"
-#include "ShadowMapStage.h"
-#include "StencilShadowStage.h"
-#include "SurfacePassesStage.h"
-#include "LightPassesStage.h"
-#include "TonemapStage.h"
-#include "../VolumetricStage.h"
-#include "../tr_local.h"
+#include "renderer/backend/stages/DepthStage.h"
+#include "renderer/backend/stages/FrobOutlineStage.h"
+#include "renderer/backend/stages/InteractionStage.h"
+#include "renderer/backend/stages/ShadowMapStage.h"
+#include "renderer/backend/stages/StencilShadowStage.h"
+#include "renderer/backend/stages/SurfacePassesStage.h"
+#include "renderer/backend/stages/LightPassesStage.h"
+#include "renderer/backend/stages/TonemapStage.h"
+#include "renderer/backend/stages/VolumetricStage.h"
+#include "renderer/tr_local.h"
 
 class FrameBuffer;
 

@@ -138,7 +138,7 @@ if (UNIX)
 	ucm_add_dirs("sys/linux" "sys/posix" TO TDM_SOURCE_FILES RECURSIVE)
 	ucm_remove_directories("idlib/sys/win32" FROM TDM_SOURCE_FILES)
 	ucm_remove_files(
-			"renderer/glad_wgl.c"
+			"renderer/backend/qgl/glad_wgl.c"
 			"sys/linux/dedicated.cpp"
 			"sys/linux/test_scheduler.c"
 			"sys/posix/platform_osx.cpp"
@@ -148,7 +148,7 @@ elseif (WIN32)
 	ucm_add_dirs("sys/win32" TO TDM_SOURCE_FILES RECURSIVE)
 	ucm_add_files("sys/win32/rc/doom.rc" TO TDM_SOURCE_FILES)
 	ucm_remove_directories("idlib/sys/posix" FROM TDM_SOURCE_FILES)
-	ucm_remove_files("renderer/glad_glx.c" "tools/compilers/dmap/optimize_gcc.cpp" "idlib/bv/Frustum_gcc.cpp" FROM TDM_SOURCE_FILES)
+	ucm_remove_files("renderer/backend/qgl/glad_glx.c" FROM TDM_SOURCE_FILES)
 endif ()
 
 # blacklist dead code files that unfortunately still hang around the repository
@@ -159,7 +159,6 @@ ucm_remove_files(
 		"game/MultiplayerGame.cpp"
 		"game/gamesys/Callbacks.cpp"
 		"idlib/math/Simd_AltiVec.cpp"
-		"renderer/draw_exp.cpp"
 		"sys/win32/win_gamma.cpp"
 		FROM TDM_SOURCE_FILES
 )

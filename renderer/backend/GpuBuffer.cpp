@@ -13,7 +13,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 ******************************************************************************/
 #include "precompiled.h"
-#include "GpuBuffer.h"
+#include "renderer/backend/GpuBuffer.h"
 
 extern idCVarBool r_usePersistentMapping;
 idCVar r_gpuBufferNonpersistentUpdateMode(
