@@ -20,7 +20,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/ImmediateRendering.h"
 #include "renderer/backend/GLSLProgramManager.h"
 #include "renderer/backend/GLSLProgram.h"
-#include "renderer/backend/glsl.h"
 #include "renderer/tr_local.h"
 
 

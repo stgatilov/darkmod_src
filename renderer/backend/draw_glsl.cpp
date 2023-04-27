@@ -145,11 +145,3 @@ void Uniforms::MaterialStage::Set(const shaderStage_t *pStage, const drawSurf_t 
 
 	GL_CheckErrors();
 }
-
-GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name) {
-	GLSLProgram *program = programManager->Find( name );
-	if( program == nullptr ) {
-		program = programManager->Load( name );
-	}
-	return program;
-}

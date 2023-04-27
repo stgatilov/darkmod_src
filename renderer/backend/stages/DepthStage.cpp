@@ -18,9 +18,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/stages/DepthStage.h"
 #include "renderer/backend/RenderBackend.h"
 #include "renderer/backend/FrameBuffer.h"
-#include "renderer/backend/glsl.h"
 #include "renderer/backend/FrameBufferManager.h"
 #include "renderer/backend/GLSLProgramManager.h"
+#include "renderer/backend/GLSLUniforms.h"
 
 
 struct DepthStage::DepthUniforms : GLSLUniformGroup {

@@ -18,7 +18,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "renderer/tr_local.h"
 #include "renderer/backend/FrameBuffer.h"
-#include "renderer/backend/glsl.h"
 #include "renderer/backend/GLSLProgramManager.h"
 #include "renderer/backend/RenderBackend.h"
 #include "renderer/backend/stages/AmbientOcclusionStage.h"
@@ -237,13 +236,6 @@ idCVar r_glCoreProfile( "r_glCoreProfile", "2", CVAR_RENDERER | CVAR_ARCHIVE,
 	"  1: core profile\n"
 	"  2: forward-compatible core profile\n"
 	"Note: restarting TDM is required after change!"
-);
-idCVar r_newFrob( "r_newFrob", "0", CVAR_RENDERER | CVAR_ARCHIVE,
-	"Controls how objects are frob-highlighted:\n"
-	"  0 = use material stages by parm11\n"
-	"  1 = use the frob shader\n"
-	"  2 = use nothing (no highlight)\n"
-	"Note: outline is controlled by r_frobOutline"
 );
 
 // FBO

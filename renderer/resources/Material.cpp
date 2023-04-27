@@ -20,7 +20,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "renderer/tr_local.h"
 #include "renderer/resources/CinematicFFMpeg.h"
-#include "renderer/backend/glsl.h"
+#include "renderer/backend/GLSLProgramManager.h"
 
 /*
 
@@ -766,6 +766,11 @@ Returns a register index
 */
 int idMaterial::ParseExpression( idLexer &src ) {
 	return ParseExpressionPriority( src, TOP_PRIORITY );
+}
+
+
+static GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name) {
+	return programManager->Load( name );
 }
 
 
@@ -2605,7 +2610,7 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 	registers[EXP_REG_PARM8] = shaderParms[8];
 	registers[EXP_REG_PARM9] = shaderParms[9];
 	registers[EXP_REG_PARM10] = shaderParms[10];
-	registers[EXP_REG_PARM11] = r_newFrob.GetInteger() ? 0 : shaderParms[11]; // duzenko: temporary frob override
+	registers[EXP_REG_PARM11] = shaderParms[11];
 	registers[EXP_REG_GLOBAL0] = view->renderView.shaderParms[0];
 	registers[EXP_REG_GLOBAL1] = view->renderView.shaderParms[1];
 	registers[EXP_REG_GLOBAL2] = view->renderView.shaderParms[2];
@@ -2681,8 +2686,6 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 			common->FatalError( "R_EvaluateExpression: bad opcode" );
 		}
 	}
-
-	registers[EXP_REG_PARM11] = shaderParms[11]; // duzenko: temporary frob override
 }
 
 /*

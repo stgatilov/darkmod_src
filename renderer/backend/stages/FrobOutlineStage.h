@@ -49,3 +49,6 @@ private:
 	void DrawElements( idList<drawSurf_t *> &surfs, GLSLProgram *shader, bool enableAlphaTest );
 	void ApplyBlur();
 };
+
+extern idCVar r_newFrob;
+extern idCVar r_frobOutline;

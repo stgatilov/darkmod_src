@@ -18,13 +18,11 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/backend/qgl/qgl.h"
 #include "renderer/tr_local.h"
 
-extern idCVar r_newFrob;
-extern idCVar r_frobOutline;
-
-//=============================================================================
-// Below goes the suggested new way of handling GLSL parameters.
-
 #include "renderer/backend/GLSLUniforms.h"
+
+
+// stgatilov: it would be great to DELETE THIS FILE
+// after we drop old code behind r_useNewShaderPasses cvar
 
 
 //pack of attributes used (almost) everywhere
@@ -116,5 +114,3 @@ struct OldStageUniforms : GLSLUniformGroup {
 	DEFINE_UNIFORM( vec4, colorMul );
 	DEFINE_UNIFORM( vec4, colorAdd );
 };
-
-GLSLProgram* GLSL_LoadMaterialStageProgram(const char *name);

@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #include "renderer/backend/stages/TonemapStage.h"
 
-#include "renderer/backend/glsl.h"
+#include "renderer/backend/GLSLUniforms.h"
 #include "renderer/backend/GLSLProgram.h"
 #include "renderer/backend/GLSLProgramManager.h"
 #include "renderer/tr_local.h"
