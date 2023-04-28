@@ -14,7 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #version 330
 
-in vec4 var_TexCoord;
+in vec2 var_TexCoord;
 out vec4 draw_Color;
 uniform sampler2D u_texture;
 
@@ -144,9 +144,9 @@ vec3 ditherColor(vec3 value, float strength) {
 void main() {
 	vec3 color;
 	if (u_sharpen != 0) {
-		color = sharpen(var_TexCoord.xy);
+		color = sharpen(var_TexCoord);
 	} else {
-		color = texture(u_texture, var_TexCoord.xy).rgb;
+		color = texture(u_texture, var_TexCoord).rgb;
 	}
 
 	if (u_ditherInput > 0)
