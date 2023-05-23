@@ -183,7 +183,8 @@ float computeShadowMapCoefficient(
 	for (int i = 0; i < softQuality; i++) {
 		//unit vector L' = perturbed version of L
 		vec3 perturbedLightDir = normalize(L + blurRadiusRel * (u_softShadowsSamples[i].x * orthoAxisX + u_softShadowsSamples[i].y * orthoAxisY));
-		//this is:  (cos(D ^ L') / cos(N ^ L')) / (cos(D ^ L) / cos(N ^ L))
+		//exactly raytrace tangent plane of the surface
+		//the multiplier is:  (cos(D ^ L') / cos(N ^ L')) / (cos(D ^ L) / cos(N ^ L))
 		//where L and L' is central/perturbed light direction, D is normal of active cubemap face, and N is normal of tangent plane
 		float dotDpL = max(max(abs(perturbedLightDir.x), abs(perturbedLightDir.y)), abs(perturbedLightDir.z));
 		float distCoeff = lightFallAngle / max(-dot(worldNormal, perturbedLightDir), 1e-3) * (dotDpL * secFallAngle);
