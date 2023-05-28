@@ -509,7 +509,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			if ( inter ) {
 				// if this entity wasn't in view already, the scissor rect will be empty,
 				// so it will only be used for shadow casting
-				if ( !inter->IsEmpty() ) {
+				if ( !edefInView && !inter->IsEmpty() ) {
 					R_SetEntityDefViewEntity( edef );
 				}
 				continue;
