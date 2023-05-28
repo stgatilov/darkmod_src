@@ -482,40 +482,19 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 
 		// check all the models in this area
 		for ( int entityIdx : area->entityRefs ) {
-			idRenderEntityLocal	*edef = entityDefs[entityIdx];
 			int edefInView = entityDefsInView.GetBit(entityIdx);
-			assert(edefInView == (edef->viewCount == tr.viewCount));
+			assert(edefInView == (entityDefs[entityIdx]->viewCount == tr.viewCount));
 
 			// if the entity doesn't have any light-interacting surfaces, we could skip this,
 			// but we don't want to instantiate dynamic models yet, so we can't check that on
 			// most things
-
-			if ( tr.viewDef && !edefInView ) {
+			if ( tr.viewDef && !lightCastsShadows && !edefInView ) {
 				// if the entity isn't viewed and light has now shadows, skip
-				if ( !lightCastsShadows ) {
-					continue;
-				}
-				// if the entity isn't viewed and shadow is suppressed, skip
-				if ( !r_skipSuppress.GetBool() ) {
-					if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
-						continue;
-					}
-					if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId ) {
-						continue;
-					}
-				}
-			}
-
-			// some big outdoor meshes are flagged to not create any dynamic interactions
-			// when the level designer knows that nearby moving lights shouldn't actually hit them
-			if ( edef->parms.noDynamicInteractions && generateAllInteractionsCalled ) {
 				continue;
 			}
 
-			if ( r_singleEntity.GetInteger() >= 0 && r_singleEntity.GetInteger() != edef->index ) {
-				continue;
-			}
-			
+			idRenderEntityLocal	*edef = entityDefs[entityIdx];
+
 			// if any of the edef's interaction match this light, we don't
 			// need to consider it. 
 			idInteraction *inter = interactionTable.Find(ldef, edef);
@@ -530,6 +509,29 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 
 			// create a new interaction, but don't do any work other than bbox to frustum culling
 			inter = idInteraction::AllocAndLink( edef, ldef );
+
+			bool skipInteraction = false;
+			if ( tr.viewDef && edef->viewCount != tr.viewCount ) {
+				// if the entity isn't viewed and shadow is suppressed, skip
+				if ( !r_skipSuppress.GetBool() ) {
+					if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID )
+						skipInteraction = true;
+					if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId )
+						skipInteraction = true;
+				}
+			}
+			// some big outdoor meshes are flagged to not create any dynamic interactions
+			// when the level designer knows that nearby moving lights shouldn't actually hit them
+			if ( edef->parms.noDynamicInteractions && generateAllInteractionsCalled ) {
+				skipInteraction = true;
+			}
+			if ( r_singleEntity.GetInteger() >= 0 && r_singleEntity.GetInteger() != edef->index ) {
+				skipInteraction = true;
+			}
+			if ( skipInteraction ) {
+				inter->MakeEmpty();
+				continue;
+			}
 
 			// do a check of the entity reference bounds against the light frustum,
 			// trying to avoid creating a viewEntity if it hasn't been already
