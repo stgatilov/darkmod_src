@@ -214,45 +214,15 @@ typedef struct areaReference_s {
 } areaReference_t;
 
 
-// idRenderLight should become the new public interface replacing the qhandle_t to light defs in the idRenderWorld interface
-class idRenderLight {
-public:
-	virtual					~idRenderLight() {}
-
-	virtual void			FreeRenderLight() = 0;
-	virtual void			UpdateRenderLight( const renderLight_t *re, bool forceUpdate = false ) = 0;
-	virtual void			GetRenderLight( renderLight_t *re ) = 0;
-	virtual void			ForceUpdate() = 0;
-	virtual int				GetIndex() = 0;
-};
-
-
-// idRenderEntity should become the new public interface replacing the qhandle_t to entity defs in the idRenderWorld interface
-class idRenderEntity {
-public:
-	virtual					~idRenderEntity() {}
-
-	virtual void			FreeRenderEntity() = 0;
-	virtual void			UpdateRenderEntity( const renderEntity_t *re, bool forceUpdate = false ) = 0;
-	virtual void			GetRenderEntity( renderEntity_t *re ) = 0;
-	virtual void			ForceUpdate() = 0;
-	virtual int				GetIndex() = 0;
-
-	// overlays are extra polygons that deform with animating models for blood and damage marks
-	virtual void			ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial *material ) = 0;
-	virtual void			RemoveDecals() = 0;
-};
-
-
-class idRenderLightLocal : public idRenderLight {
+class idRenderLightLocal {
 public:
 	idRenderLightLocal();
 
-	virtual void			FreeRenderLight();
-	virtual void			UpdateRenderLight( const renderLight_t *re, bool forceUpdate = false );
-	virtual void			GetRenderLight( renderLight_t *re );
-	virtual void			ForceUpdate();
-	virtual int				GetIndex();
+	void			FreeRenderLight();
+	void			UpdateRenderLight( const renderLight_t *re, bool forceUpdate = false );
+	void			GetRenderLight( renderLight_t *re );
+	void			ForceUpdate();
+	int				GetIndex();
 
 	renderLight_t			parms;					// specification
 
@@ -305,19 +275,19 @@ public:
 };
 
 
-class idRenderEntityLocal : public idRenderEntity {
+class idRenderEntityLocal {
 public:
 	idRenderEntityLocal();
 
-	virtual void			FreeRenderEntity();
-	virtual void			UpdateRenderEntity( const renderEntity_t *re, bool forceUpdate = false );
-	virtual void			GetRenderEntity( renderEntity_t *re );
-	virtual void			ForceUpdate();
-	virtual int				GetIndex();
+	void			FreeRenderEntity();
+	void			UpdateRenderEntity( const renderEntity_t *re, bool forceUpdate = false );
+	void			GetRenderEntity( renderEntity_t *re );
+	void			ForceUpdate();
+	int				GetIndex();
 
 	// overlays are extra polygons that deform with animating models for blood and damage marks
-	virtual void			ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial *material );
-	virtual void			RemoveDecals();
+	void			ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial *material );
+	void			RemoveDecals();
 
 	renderEntity_t			parms;
 
