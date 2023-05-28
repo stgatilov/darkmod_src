@@ -551,26 +551,17 @@ void R_TransformDepthToEyeZ( float src_depth, const float *projectionMatrix, flo
 
 /*
 =================
-R_RadiusCullLocalBox
+R_BoundingSphereOfLocalBox
 
-A fast, conservative center-to-corner culling test
-Returns true if the box is outside the given global frustum, (positive sides are out)
+stgatilov: Conservative bounding sphere for a box in local coordinates.
+Note that it also supports rotation-hacked entities with non-orthogonal modelMatrix.
 =================
 */
-bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
-	int			i;
-	float		d;
-	idVec3		worldOrigin;
-	float		worldRadius;
-	const idPlane	*frust;
-
-	if ( r_useCulling.GetInteger() == 0 ) {
-		return false;
-	}
-
+idSphere R_BoundingSphereOfLocalBox( const idBounds &bounds, const float modelMatrix[16] ) {
 	// transform the surface bounds into world space
 	idVec3	localOrigin = ( bounds[0] + bounds[1] ) * 0.5;
 
+	idVec3 worldOrigin;
 	R_LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
 
 	//stgatilov #4970: should be 1 for orthogonal transformations
@@ -579,18 +570,45 @@ bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 		idVec3(modelMatrix[4], modelMatrix[5], modelMatrix[6]).LengthSqr() ),
 		idVec3(modelMatrix[8], modelMatrix[9], modelMatrix[10]).LengthSqr() )
 	);
-	worldRadius = ( bounds[0] - localOrigin ).Length() * maxScale;
+	float worldRadius = ( bounds[0] - localOrigin ).Length() * maxScale;
 
-	for ( i = 0 ; i < numPlanes ; i++ ) {
-		frust = planes + i;
+	return idSphere( worldOrigin, worldRadius );
+}
 
-		d = frust->Distance( worldOrigin );
+/*
+=================
+R_RadiusCullLocalBox
 
-		if ( d > worldRadius ) {
+A fast, conservative sphere + frustum culling test
+Returns true if the sphere is outside the given global frustum (positive sides are out)
+=================
+*/
+bool R_CullFrustumSphere( const idSphere &bounds, int numPlanes, const idPlane *planes )
+{
+	for ( int i = 0 ; i < numPlanes ; i++ ) {
+		const idPlane *frust = planes + i;
+		float d = frust->Distance( bounds.GetOrigin() );
+		if ( d > bounds.GetRadius() ) {
 			return true;	// culled
 		}
 	}
 	return false;		// no culled
+}
+
+/*
+=================
+R_RadiusCullLocalBox
+
+A fast, conservative center-to-corner culling test
+Returns true if the box is outside the given global frustum (positive sides are out)
+=================
+*/
+bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
+	if ( r_useCulling.GetInteger() == 0 ) {
+		return false;
+	}
+	idSphere boundingSphere = R_BoundingSphereOfLocalBox( bounds, modelMatrix );
+	return R_CullFrustumSphere( boundingSphere, numPlanes, planes );
 }
 
 /*

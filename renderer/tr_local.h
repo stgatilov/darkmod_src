@@ -1287,6 +1287,8 @@ MAIN
 
 void R_RenderView( viewDef_t &parms );
 
+idSphere R_BoundingSphereOfLocalBox( const idBounds &bounds, const float modelMatrix[16] );
+bool R_CullFrustumSphere( const idSphere &bounds, int numPlanes, const idPlane *planes );
 bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
 bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
 /*

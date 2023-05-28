@@ -469,6 +469,8 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 	TRACE_CPU_SCOPE_TEXT( "CreateLightDefInteractions", GetTraceLabel( ldef->parms ) );
 
 	bool lightCastsShadows = ldef->lightShader->LightCastsShadows();
+	idRenderMatrix::CullSixPlanes2 lightCuller;
+	lightCuller.Prepare(ldef->frustum);
 
 	for ( areaReference_t *lref = ldef->references ; lref ; lref = lref->next ) {
 		int areaIdx = lref->areaIdx;
@@ -492,6 +494,12 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 				// if the entity isn't viewed and light has now shadows, skip
 				continue;
 			}
+
+			// stgatilov #6296: do very fast light-entity culling
+			// bounding sphere of entity is compact and stored outside entityDef
+			// we use frustum planes as exact representation of light volume: bounding sphere would sweep much more space
+			if ( lightCuller.CullSphere( ldef->frustum, entityDefsBoundingSphere[entityIdx] ) )
+				continue;
 
 			idRenderEntityLocal	*edef = entityDefs[entityIdx];
 
@@ -544,7 +552,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 				m = modelMatrix;
 			}
 
-			if ( R_CullLocalBox( edef->referenceBounds, m, 6, ldef->frustum ) ) {
+			if ( R_CornerCullLocalBox( edef->referenceBounds, m, 6, ldef->frustum ) ) {
 				inter->MakeEmpty();
 				continue;
 			}

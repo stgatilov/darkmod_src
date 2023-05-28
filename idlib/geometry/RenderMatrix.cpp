@@ -4771,3 +4771,54 @@ void idRenderMatrix::CullSixPlanes::CullBounds( const idPlane frustumPlanes[6], 
 //	assert(maskAllOut == allOut);
 //	assert(maskAnyOut == anyOut);
 }
+
+
+void idRenderMatrix::CullSixPlanes2::Prepare( const idPlane frustumPlanes[6] ) {
+#ifdef USE_INTRINSICS
+	__m128 pl0 = _mm_loadu_ps( frustumPlanes[0].ToFloatPtr() );
+	__m128 pl1 = _mm_loadu_ps( frustumPlanes[1].ToFloatPtr() );
+	__m128 pl2 = _mm_loadu_ps( frustumPlanes[2].ToFloatPtr() );
+	__m128 pl3 = _mm_loadu_ps( frustumPlanes[3].ToFloatPtr() );
+	_MM_TRANSPOSE4_PS(pl0, pl1, pl2, pl3);
+	* (__m128*) prep[0] = pl0;
+	* (__m128*) prep[1] = pl1;
+	* (__m128*) prep[2] = pl2;
+	* (__m128*) prep[3] = pl3;
+	__m128 pl4 = _mm_loadu_ps( frustumPlanes[4].ToFloatPtr() );
+	__m128 pl5 = _mm_loadu_ps( frustumPlanes[5].ToFloatPtr() );
+	__m128 pl6 = _mm_setzero_ps();
+	__m128 pl7 = _mm_setzero_ps();
+	_MM_TRANSPOSE4_PS(pl4, pl5, pl6, pl7);
+	* (__m128*) prep[4] = pl4;
+	* (__m128*) prep[5] = pl5;
+	* (__m128*) prep[6] = pl6;
+	* (__m128*) prep[7] = pl7;
+#endif
+}
+
+bool idRenderMatrix::CullSixPlanes2::CullSphere( const idPlane frustumPlanes[6], const idSphere& sphere ) const {
+#ifdef USE_INTRINSICS
+	__m128 rsph = _mm_loadu_ps( (float*)&sphere );
+	__m128 sphX = _mm_shuffle_ps(rsph, rsph, R_SHUFFLE_D(0, 0, 0, 0));
+	__m128 sphY = _mm_shuffle_ps(rsph, rsph, R_SHUFFLE_D(1, 1, 1, 1));
+	__m128 sphZ = _mm_shuffle_ps(rsph, rsph, R_SHUFFLE_D(2, 2, 2, 2));
+	__m128 sphR = _mm_shuffle_ps(rsph, rsph, R_SHUFFLE_D(3, 3, 3, 3));
+	__m128 sum0 = *(__m128*)prep[3];
+	sum0 = _mm_madd_ps(sphX, *(__m128*)prep[0], sum0);
+	sum0 = _mm_madd_ps(sphY, *(__m128*)prep[1], sum0);
+	sum0 = _mm_madd_ps(sphZ, *(__m128*)prep[2], sum0);
+	__m128 sum1 = *(__m128*)prep[7];
+	sum1 = _mm_madd_ps(sphX, *(__m128*)prep[4], sum1);
+	sum1 = _mm_madd_ps(sphY, *(__m128*)prep[5], sum1);
+	sum1 = _mm_madd_ps(sphZ, *(__m128*)prep[6], sum1);
+	__m128 mask = _mm_or_ps(_mm_cmpgt_ps(sum0, sphR), _mm_cmpgt_ps(sum1, sphR));
+	return _mm_movemask_ps(mask) != 0;
+#else
+	for ( int i = 0 ; i < 6 ; i++ ) {
+		float d = frustumPlanes[i].Distance( sphere.GetOrigin() );
+		if ( d > sphere.GetRadius() )
+			return true;	// culled
+	}
+	return false;		// no culled
+#endif
+}

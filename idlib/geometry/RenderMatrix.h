@@ -167,6 +167,13 @@ public:
 		void CullBounds( const idPlane frustumPlanes[6], const idBounds& bounds, byte* allOutBits, byte* anyOutBits ) const;
 	};
 
+	// stgatilov #6296: This code is optimized version of R_CullFrustumSphere / R_RadiusCullLocalBox
+	struct CullSixPlanes2 {
+		ALIGNTYPE16 float prep[8][4];
+		void Prepare( const idPlane frustumPlanes[6] );
+		bool CullSphere( const idPlane frustumPlanes[6], const idSphere& sphere ) const;
+	};
+
 private:
 	float					m[16];
 };

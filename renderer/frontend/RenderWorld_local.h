@@ -211,7 +211,8 @@ public:
 	idList<idRenderEntityLocal*>	entityDefs;
 	idList<idRenderLightLocal*>		lightDefs;
 	// stgatilov #6296: duplicate members of entityDefs/lightDefs in compact arrays for faster access
-	idBitArrayDefault entityDefsInView;	// 1 when viewCount == tr.viewCount
+	idBitArrayDefault entityDefsInView;			// 1 when viewCount == tr.viewCount
+	idList<idSphere> entityDefsBoundingSphere;	// computed by referenceBounds
 
 	idBlockAlloc<areaReference_t, 1024> areaReferenceAllocator;
 	idBlockAlloc<idInteraction, 256>	interactionAllocator;

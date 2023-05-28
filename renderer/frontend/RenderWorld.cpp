@@ -160,6 +160,7 @@ int idRenderWorldLocal::AllocateEntityDefHandle() {
 	if ( entityHandle == -1 ) {
 		entityHandle = entityDefs.Append( NULL );
 		entityDefsInView.AddGrow( 0 );
+		entityDefsBoundingSphere.AddGrow( idSphere( vec3_zero ) );
 	}
 	return entityHandle;
 }
