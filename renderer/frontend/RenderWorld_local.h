@@ -60,17 +60,23 @@ typedef struct portalArea_s {
 	int				connectedAreaNum[NUM_PORTAL_ATTRIBUTES];	// if two areas have matching connectedAreaNum, they are
 									// not separated by a portal with the apropriate PS_BLOCK_* blockingBits
 	int				areaViewCount;		// set by R_FindViewLightsAndEntities. Marks whether anything in this area has been drawn this frame for r_showPortals
-	idList<portal_t*> areaPortals;		// never changes after load
-	areaReference_t	entityRefs;		// head/tail of doubly linked list, may change
-	areaReference_t	lightRefs;		// head/tail of doubly linked list, may change
 	idScreenRect	areaScreenRect;
+
+	idList<portal_t*> areaPortals;		// never changes after load
+
+	// stgatilov #6296: indexes of entities/light present in this area
+	// these arrays are designed for fastest area->entity/light iteration
+	idList<int>		entityRefs;
+	idList<int>		lightRefs;
+	// xxxBackRefs[k] is a linked list node explaining how to remove xxxRefs[k]
+	// this is needed for O(1) additions/removals, is not very fast, and should not be used for iteration
+	idList<areaReference_t*> entityBackRefs;
+	idList<areaReference_t*> lightBackRefs;
 
 	portalArea_s() { // zero fill
 		areaNum = 0;
 		memset(connectedAreaNum, 0, sizeof(connectedAreaNum));
 		areaViewCount = 0;
-		memset(&entityRefs, 0, sizeof(entityRefs));
-		memset(&lightRefs, 0, sizeof(lightRefs));
 		memset(&areaScreenRect, 0, sizeof(areaScreenRect));
 	}
 } portalArea_t;

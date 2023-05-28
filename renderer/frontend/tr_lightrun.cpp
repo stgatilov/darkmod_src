@@ -819,9 +819,10 @@ void R_CreateLightDefFogPortals( idRenderLightLocal *ldef ) {
 	portalArea_t	*area;
 	doublePortal_t	*dp;
 
-	for ( lref = ldef->references ; lref ; lref = lref->ownerNext ) {
+	for ( lref = ldef->references ; lref ; lref = lref->next ) {
 		// check all the models in this area
-		area = lref->area;
+		int areaIdx = lref->areaIdx;
+		area = &ldef->world->portalAreas[areaIdx];
 
 		for ( auto const &prt: area->areaPortals ) {
 			dp = prt->doublePortal;
@@ -849,36 +850,42 @@ R_FreeLightDefDerivedData
 Frees all references and lit surfaces from the light
 ====================
 */
-void R_FreeLightDefDerivedData( idRenderLightLocal *ldef ) {
-	areaReference_t	*lref;
+void R_FreeLightDefDerivedData( idRenderLightLocal *def ) {
 
 	// remove any portal fog references
-	doublePortal_t *dp = ldef->foggedPortals;
+	doublePortal_t *dp = def->foggedPortals;
 	while ( dp ) {
 		dp->fogLight = NULL;
 		dp = dp->nextFoggedPortal;
 	}
 
 	// free all the interactions
-	while ( ldef->firstInteraction ) {
-		ldef->firstInteraction->UnlinkAndFree();
+	while ( def->firstInteraction ) {
+		def->firstInteraction->UnlinkAndFree();
 	}
 
 	// free all the references to the light
-	lref = ldef->references;
-	while ( lref ) {
-		// unlink from the area
-		lref->areaNext->areaPrev = lref->areaPrev;
-		lref->areaPrev->areaNext = lref->areaNext;
+	for ( areaReference_t *ref = def->references; ref; ref = ref->next ) {
+		// look at the area with reference
+		int areaIdx = ref->areaIdx;
+		portalArea_t *area = &def->world->portalAreas[areaIdx];
+		assert(area->lightBackRefs[ref->idxInArea] == ref);
 
+		// overwrite our deleted ref with the last ref in the area
+		int last = area->lightRefs.Num() - 1;
+		area->lightRefs[ref->idxInArea] = area->lightRefs[last];
+		area->lightBackRefs[ref->idxInArea] = area->lightBackRefs[last];
+		area->lightBackRefs[ref->idxInArea]->idxInArea = ref->idxInArea;
+		// delete last ref
+		area->lightRefs.Pop();
+		area->lightBackRefs.Pop();
+		
 		// put it back on the free list for reuse
-		ldef->world->areaReferenceAllocator.Free( lref );
-
-		lref = lref->ownerNext;
+		def->world->areaReferenceAllocator.Free( ref );
 	}
+	def->references = NULL;
 
-	ldef->references = NULL;
-	R_FreeLightDefFrustum( ldef );
+	R_FreeLightDefFrustum( def );
 }
 
 /*
@@ -890,8 +897,6 @@ Does not actually free the entityDef.
 ===================
 */
 void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool keepCachedDynamicModel ) {
-	areaReference_t	*ref;
-
 	// demo playback needs to free the joints, while normal play
 	// leaves them in the control of the game
 	if ( session->readDemo ) {
@@ -931,19 +936,26 @@ void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool
 		R_FreeEntityDefOverlay( def );
 	}
 
+
 	// free the entityRefs from the areas
-	ref = def->entityRefs;
-	while (ref) {
-		// unlink from the area
-		ref->areaNext->areaPrev = ref->areaPrev;
-		ref->areaPrev->areaNext = ref->areaNext;
+	for ( areaReference_t *ref = def->entityRefs; ref; ref = ref->next ) {
+		// look at the area with reference
+		int areaIdx = ref->areaIdx;
+		portalArea_t *area = &def->world->portalAreas[areaIdx];
+		assert(area->entityBackRefs[ref->idxInArea] == ref);
+
+		// overwrite our deleted ref with the last ref in the area
+		int last = area->entityRefs.Num() - 1;
+		area->entityRefs[ref->idxInArea] = area->entityRefs[last];
+		area->entityBackRefs[ref->idxInArea] = area->entityBackRefs[last];
+		area->entityBackRefs[ref->idxInArea]->idxInArea = ref->idxInArea;
+		// delete last ref
+		area->entityRefs.Pop();
+		area->entityBackRefs.Pop();
 
 		// put it back on the free list for reuse
 		def->world->areaReferenceAllocator.Free( ref );
-
-		ref = ref->ownerNext;
 	}
-
 	def->entityRefs = NULL;
 }
 

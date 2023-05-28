@@ -469,12 +469,13 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 
 	bool lightCastsShadows = ldef->lightShader->LightCastsShadows();
 
-	for ( areaReference_t *lref = ldef->references ; lref ; lref = lref->ownerNext ) {
-		portalArea_t *area = lref->area;
+	for ( areaReference_t *lref = ldef->references ; lref ; lref = lref->next ) {
+		int areaIdx = lref->areaIdx;
+		portalArea_t *area = &portalAreas[areaIdx];
 
 		// check all the models in this area
-		for ( areaReference_t *eref = area->entityRefs.areaNext ; eref != &area->entityRefs ; eref = eref->areaNext ) {
-			idRenderEntityLocal	*edef = eref->entity;
+		for ( int entityIdx : area->entityRefs ) {
+			idRenderEntityLocal	*edef = entityDefs[entityIdx];
 
 			// if the entity doesn't have any light-interacting surfaces, we could skip this,
 			// but we don't want to instantiate dynamic models yet, so we can't check that on

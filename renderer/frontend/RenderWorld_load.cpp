@@ -33,10 +33,10 @@ void idRenderWorldLocal::FreeWorld() {
 	// free all the portals and check light/model references
 	for ( auto &area: portalAreas ) {
 		// there shouldn't be any remaining lightRefs or entityRefs
-		if ( area.lightRefs.areaNext != &area.lightRefs ) {
+		if ( area.lightRefs.Num() > 0 ) {
 			common->Error( "FreeWorld: unexpected remaining lightRefs" );
 		}
-		if ( area.entityRefs.areaNext != &area.entityRefs ) {
+		if ( area.entityRefs.Num() > 0 ) {
 			common->Error( "FreeWorld: unexpected remaining entityRefs" );
 		}
 	}
@@ -242,12 +242,8 @@ void idRenderWorldLocal::SetupAreaRefs() {
 	connectedAreaNum = 0;
 	for ( i = 0; i < portalAreas.Num(); i++ ) {
 		portalAreas[i].areaNum = i;
-		portalAreas[i].lightRefs.areaNext =
-		portalAreas[i].lightRefs.areaPrev =
-			&portalAreas[i].lightRefs;
-		portalAreas[i].entityRefs.areaNext =
-		portalAreas[i].entityRefs.areaPrev =
-			&portalAreas[i].entityRefs;
+		assert(portalAreas[i].entityRefs.Num() == 0);
+		assert(portalAreas[i].lightRefs.Num() == 0);
 	}
 }
 
@@ -664,14 +660,11 @@ CheckAreaForPortalSky
 =====================
 */
 bool idRenderWorldLocal::CheckAreaForPortalSky( int areaNum ) {
-	areaReference_t	*ref;
-
 	assert( areaNum >= 0 && areaNum < portalAreas.Num() );
 
-	for ( ref = portalAreas[areaNum].entityRefs.areaNext; ref->entity; ref = ref->areaNext ) {
-		assert( ref->area == &portalAreas[areaNum] );
-
-		if ( ref->entity && ref->entity->needsPortalSky ) {
+	for ( int entityIdx : portalAreas[areaNum].entityRefs ) {
+		idRenderEntityLocal *def = entityDefs[entityIdx];
+		if ( def && def->needsPortalSky ) {
 			return true;
 		}
 	}

@@ -233,8 +233,8 @@
         <Expand>
           <LinkedListItems>
             <HeadPointer>entityRefs</HeadPointer>
-            <NextPointer>ownerNext</NextPointer>
-            <ValueNode>area</ValueNode>
+            <NextPointer>next</NextPointer>
+            <ValueNode>((idRenderWorldLocal*)gameRenderWorld)->portalAreas[areaIdx]</ValueNode>
           </LinkedListItems>
         </Expand>
       </Synthetic>
@@ -259,8 +259,8 @@
         <Expand>
           <LinkedListItems>
             <HeadPointer>references</HeadPointer>
-            <NextPointer>ownerNext</NextPointer>
-            <ValueNode>area</ValueNode>
+            <NextPointer>next</NextPointer>
+            <ValueNode>((idRenderWorldLocal*)gameRenderWorld)->portalAreas[areaIdx]</ValueNode>
           </LinkedListItems>
         </Expand>
       </Synthetic>
@@ -352,20 +352,18 @@
       <ExpandedItem>this,!</ExpandedItem>
       <Synthetic Name="[All entityRefs]" ExcludeView="raw">
         <Expand>
-          <LinkedListItems>
-            <HeadPointer>entityRefs.areaNext</HeadPointer>
-            <NextPointer>areaNext</NextPointer>
-            <ValueNode>entity</ValueNode>
-          </LinkedListItems>
+          <IndexListItems>
+            <Size>entityRefs.num</Size>
+            <ValueNode>((idRenderWorldLocal*)gameRenderWorld)->entityDefs[entityRefs.list[$i]]</ValueNode>
+          </IndexListItems>
         </Expand>
       </Synthetic>
       <Synthetic Name="[All lightRefs]" ExcludeView="raw">
         <Expand>
-          <LinkedListItems>
-            <HeadPointer>lightRefs.areaNext</HeadPointer>
-            <NextPointer>areaNext</NextPointer>
-            <ValueNode>light</ValueNode>
-          </LinkedListItems>
+          <IndexListItems>
+            <Size>lightRefs.num</Size>
+            <ValueNode>((idRenderWorldLocal*)gameRenderWorld)->lightDefs[lightRefs.list[$i]]</ValueNode>
+          </IndexListItems>
         </Expand>
       </Synthetic>
     </Expand>

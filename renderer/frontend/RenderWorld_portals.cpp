@@ -337,7 +337,7 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 
 	// add an areaRef
 	// stgatilov: skip if last-added light is same
-	if (area->lightRefs.areaNext->light != light)
+	if (area->lightRefs.Num() > 0 && area->lightRefs.Last() != light->index)
 		AddLightRefToArea( light, area );
 
 	// go through all the portals
@@ -685,15 +685,14 @@ have their scissor
 ===================
 */
 void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps ) {
-	areaReference_t		*ref;
 	idRenderEntityLocal	*entity;
 	portalArea_t		*area;
 	viewEntity_t		*vEnt;
 
 	area = &portalAreas[ areaNum ];
 
-	for ( ref = area->entityRefs.areaNext ; ref != &area->entityRefs ; ref = ref->areaNext ) {
-		entity = ref->entity;
+	for ( int entityIdx : area->entityRefs ) {
+		entity = entityDefs[entityIdx];
 
 		// debug tool to allow viewing of only one entity at a time
 		if ( r_singleEntity.GetInteger() >= 0 && r_singleEntity.GetInteger() != entity->index ) {
@@ -812,15 +811,14 @@ This is the only point where lights get added to the viewLights list
 ===================
 */
 void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps ) {
-	areaReference_t		*lref;
 	portalArea_t		*area;
 	idRenderLightLocal	*light;
 	viewLight_t			*vLight;
 
 	area = &portalAreas[ areaNum ];
 
-	for ( lref = area->lightRefs.areaNext ; lref != &area->lightRefs ; lref = lref->areaNext ) {
-		light = lref->light;
+	for ( int lightIdx : area->lightRefs ) {
+		light = lightDefs[lightIdx];
 
 
 		// debug tool to allow viewing of only one light at a time

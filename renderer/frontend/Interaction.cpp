@@ -917,8 +917,8 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 		// retrieve all the areas the entity belongs to
 		static const int MAX_AREAS_NUM = 32;
 		int areas[MAX_AREAS_NUM], areasCnt = 0;
-		for ( areaReference_t *ref = entityDef->entityRefs; ref; ref = ref->ownerNext ) {
-			int area = ref->area->areaNum;
+		for ( areaReference_t *ref = entityDef->entityRefs; ref; ref = ref->next ) {
+			int area = ref->areaIdx;
 			if (area == viewerArea || areasCnt == MAX_AREAS_NUM) {
 				fullScissor = true;
 				break;
@@ -1305,8 +1305,8 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 		// if no part of the model is in an area that is connected to
 		// the light center (it is behind a solid, closed door), we can ignore it
 		bool areasConnected = false;
-		for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->ownerNext ) {
-			if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->area->areaNum, PS_BLOCK_VIEW ) ) {
+		for ( areaReference_t* ref = entityDef->entityRefs; ref != NULL; ref = ref->next ) {
+			if ( tr.viewDef->renderWorld->AreasAreConnected( lightDef->areaNum, ref->areaIdx, PS_BLOCK_VIEW ) ) {
 				areasConnected = true;
 				break;
 			}

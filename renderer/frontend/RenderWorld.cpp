@@ -55,7 +55,7 @@ void R_ListRenderLightDefs_f( const idCmdArgs &args ) {
 
 		// count up the references
 		int	rCount = 0;
-		for ( areaReference_t *ref = ldef->references ; ref ; ref = ref->ownerNext ) {
+		for ( areaReference_t *ref = ldef->references ; ref ; ref = ref->next ) {
 			rCount++;
 		}
 		totalRef += rCount;
@@ -99,7 +99,7 @@ void R_ListRenderEntityDefs_f( const idCmdArgs &args ) {
 
 		// count up the references
 		int	rCount = 0;
-		for ( areaReference_t *ref = mdef->entityRefs ; ref ; ref = ref->ownerNext ) {
+		for ( areaReference_t *ref = mdef->entityRefs ; ref ; ref = ref->next ) {
 			rCount++;
 		}
 		totalRef += rCount;
@@ -473,7 +473,6 @@ idRenderWorldLocal::ProjectDecalOntoWorld
 */
 void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime ) {
 	int i, areas[10], numAreas;
-	const areaReference_t *ref;
 	const portalArea_t *area;
 	const idRenderModel *model;
 	idRenderEntityLocal *def;
@@ -492,8 +491,8 @@ void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, c
 		area = &portalAreas[ areas[i] ];
 
 		// check all models in this area
-		for ( ref = area->entityRefs.areaNext; ref != &area->entityRefs; ref = ref->areaNext ) {
-			def = ref->entity;
+		for ( int entityIdx : area->entityRefs ) {
+			def = entityDefs[entityIdx];
 
 			// completely ignore any dynamic or callback models
 			model = def->parms.hModel;
@@ -893,8 +892,8 @@ int idRenderWorldLocal::GetPointInArea( int areaNum, idVec3 &result ) const {
 
 	// lookup _areaN model of the area, loaded from .proc file
 	idList<const idRenderModel *> areaModels;
-	for ( const areaReference_t *ref = area->entityRefs.areaNext; ref != &area->entityRefs; ref = ref->areaNext ) {
-		if ( const idRenderEntityLocal *rent = ref->entity ) {
+	for ( int entityIdx : area->entityRefs ) {
+		if ( const idRenderEntityLocal *rent = entityDefs[entityIdx] ) {
 			if ( const idRenderModel *model = rent->parms.hModel ) {
 				if ( model->IsStaticWorldModel() ) {
 					assert( strcmp(model->Name(), va("_area%d", areaNum)) == 0 );
@@ -1354,15 +1353,15 @@ bool idRenderWorldLocal::TraceAll( modelTrace_t &trace, const idVec3 &start, con
 		const portalArea_t &area = portalAreas[areas[a]];
 
 		// check all models in this area
-		for ( const areaReference_t *ref = area.entityRefs.areaNext; ref != &area.entityRefs; ref = ref->areaNext ) {
-			idRenderEntityLocal *def = ref->entity;
+		for ( int entityIdx : area.entityRefs ) {
+			idRenderEntityLocal *def = entityDefs[entityIdx];
 
 			const idRenderModel *model = def->parms.hModel;
 			if ( !model )
 				continue;
 
 			// note: the very first reference must be for "_areaN" model, i.e. world geometry of the area
-			if ( ref == area.entityRefs.areaNext )
+			if ( entityIdx == area.entityRefs[0] )
 				assert( model->IsStaticWorldModel() );
 			if ( model->IsStaticWorldModel() ) {
 				idBounds areaBounds = model->Bounds();
@@ -1671,29 +1670,19 @@ for the world model references that are precalculated.
 =================
 */
 void idRenderWorldLocal::AddEntityRefToArea( idRenderEntityLocal *def, portalArea_t *area ) {
-	areaReference_t	*ref;
-
-	if ( !def ) {
+	if ( !def )
 		common->Error( "idRenderWorldLocal::AddEntityRefToArea: NULL def" );
-	} 
-	else {
-		ref = areaReferenceAllocator.Alloc();
 
-		tr.pc.c_entityReferences++;
+	tr.pc.c_entityReferences++;
 
-		ref->entity = def;
+	areaReference_t *ref = areaReferenceAllocator.Alloc();
+	ref->areaIdx = area->areaNum;
+	ref->idxInArea = area->entityRefs.Append(def->index);
+	area->entityBackRefs.Append(ref);
+	assert(area->entityRefs.Num() == area->entityBackRefs.Num());
 
-		// link to entityDef
-		ref->ownerNext = def->entityRefs;
-		def->entityRefs = ref;
-
-		// link to end of area list
-		ref->area = area;
-		ref->areaNext = &area->entityRefs;
-		ref->areaPrev = area->entityRefs.areaPrev;
-		ref->areaNext->areaPrev = ref;
-		ref->areaPrev->areaNext = ref;
-	}
+	ref->next = def->entityRefs;
+	def->entityRefs = ref;
 }
 
 /*
@@ -1702,22 +1691,20 @@ AddLightRefToArea
 
 ===================
 */
-void idRenderWorldLocal::AddLightRefToArea( idRenderLightLocal *light, portalArea_t *area ) {
-	areaReference_t	*lref;
+void idRenderWorldLocal::AddLightRefToArea( idRenderLightLocal *def, portalArea_t *area ) {
+	if ( !def )
+		common->Error( "idRenderWorldLocal::AddLightRefToArea: NULL def" );
 
-	// add a lightref to this area
-	lref = areaReferenceAllocator.Alloc();
-	lref->light = light;
-	lref->area = area;
-	lref->ownerNext = light->references;
-	light->references = lref;
 	tr.pc.c_lightReferences++;
 
-	// doubly linked list so we can free them easily later
-	area->lightRefs.areaNext->areaPrev = lref;
-	lref->areaNext = area->lightRefs.areaNext;
-	lref->areaPrev = &area->lightRefs;
-	area->lightRefs.areaNext = lref;
+	areaReference_t *ref = areaReferenceAllocator.Alloc();
+	ref->areaIdx = area->areaNum;
+	ref->idxInArea = area->lightRefs.Append(def->index);
+	area->lightBackRefs.Append(ref);
+	assert(area->lightRefs.Num() == area->lightBackRefs.Num());
+
+	ref->next = def->references;
+	def->references = ref;
 }
 
 /*
@@ -2384,8 +2371,8 @@ bool idRenderWorldLocal::MaterialTrace( const idVec3 &p, const idMaterial *mat, 
 	if ( areaNum < 0 )
 		return false;
 	auto area = &portalAreas[areaNum];
-	for ( auto eref = area->entityRefs.areaNext; eref != &area->entityRefs; eref = eref->areaNext ) {
-		auto def = eref->entity;	// loop through all entities in the area, skipping some
+	for ( int entityIdx : area->entityRefs ) {
+		auto def = entityDefs[entityIdx];	// loop through all entities in the area, skipping some
 		if ( def->dynamicModel )
 			continue;
 		idVec3 lp;

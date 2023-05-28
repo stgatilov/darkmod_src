@@ -203,14 +203,13 @@ typedef struct {
 } shadowFrustum_t;
 
 
-// areas have references to hold all the lights and entities in them
+// stgatilov #6296: linked list of references to the areas that an entity/light belongs to
+// this is inverse correspondence for portalArea_t::entityRefs/lightRefs
+// it is designed to work in O(1) time, but otherwise its speed is not important
 typedef struct areaReference_s {
-	struct areaReference_s *areaNext;				// chain in the area
-	struct areaReference_s *areaPrev;
-	struct areaReference_s *ownerNext;				// chain on either the entityDef or lightDef
-	idRenderEntityLocal 	*entity;					// only one of entity / light will be non-NULL
-	idRenderLightLocal 	*light;					// only one of entity / light will be non-NULL
-	struct portalArea_s		*area;					// so owners can find all the areas they are in
+	int areaIdx;
+	int idxInArea;
+	struct areaReference_s *next;
 } areaReference_t;
 
 
