@@ -17,6 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define __RENDERWORLDLOCAL_H__
 
 #include "idlib/containers/HashMap.h"
+#include "idlib/containers/BitArray.h"
 
 // assume any lightDef or entityDef index above this is an internal error
 #define LUDICROUS_INDEX	65537		// (2 ** 16) + 1;
@@ -209,6 +210,8 @@ public:
 
 	idList<idRenderEntityLocal*>	entityDefs;
 	idList<idRenderLightLocal*>		lightDefs;
+	// stgatilov #6296: duplicate members of entityDefs/lightDefs in compact arrays for faster access
+	idBitArrayDefault entityDefsInView;	// 1 when viewCount == tr.viewCount
 
 	idBlockAlloc<areaReference_t, 1024> areaReferenceAllocator;
 	idBlockAlloc<idInteraction, 256>	interactionAllocator;
@@ -295,6 +298,7 @@ public:
 	//--------------------------
 	// RenderWorld.cpp
 
+	int						AllocateEntityDefHandle();
 	void					AddEntityRefToArea( idRenderEntityLocal *def, portalArea_t *area );
 	void					AddLightRefToArea( idRenderLightLocal *light, portalArea_t *area );
 

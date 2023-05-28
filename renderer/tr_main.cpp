@@ -1144,6 +1144,7 @@ void R_RenderView( viewDef_t &parms ) {
 		return;
 	}
 	tr.viewCount++;
+	parms.renderWorld->entityDefsInView.SetBitsSameAll(false);
 
 	// save view in case we are a subview
 	oldView = tr.viewDef;
@@ -1165,7 +1166,7 @@ void R_RenderView( viewDef_t &parms ) {
 
 	// identify all the visible portalAreas, and the entityDefs and
 	// lightDefs that are in them and pass culling.
-	static_cast<idRenderWorldLocal *>( parms.renderWorld )->FindViewLightsAndEntities();
+	parms.renderWorld->FindViewLightsAndEntities();
 
 	// constrain the view frustum to the view lights and entities
 	R_ConstrainViewFrustum();

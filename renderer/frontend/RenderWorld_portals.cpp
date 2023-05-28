@@ -952,9 +952,6 @@ void idRenderWorldLocal::FindViewLightsAndEntities( void ) {
 	// light-behind-door culling
 	BuildConnectedAreas();
 
-	// bump the view count, invalidating all visible areas
-	//tr.viewCount++; duzenko: double increment here and in R_RenderView
-
 	// flow through all the portals and add models / lights
 	if ( r_singleArea.GetBool() ) {
 		// if debugging, only mark this area

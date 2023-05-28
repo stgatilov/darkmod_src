@@ -151,17 +151,27 @@ idRenderWorldLocal::~idRenderWorldLocal() {
 
 /*
 ===================
+AllocateEntityRefHandle
+===================
+*/
+int idRenderWorldLocal::AllocateEntityDefHandle() {
+	// try and reuse a free spot
+	int entityHandle = entityDefs.FindNull();
+	if ( entityHandle == -1 ) {
+		entityHandle = entityDefs.Append( NULL );
+		entityDefsInView.AddGrow( 0 );
+	}
+	return entityHandle;
+}
+
+/*
+===================
 AddEntityDef
 ===================
 */
 qhandle_t idRenderWorldLocal::AddEntityDef( const renderEntity_t *re ){
-	// try and reuse a free spot
-	int entityHandle = entityDefs.FindNull();
-	if ( entityHandle == -1 ) 
-		entityHandle = entityDefs.Append( NULL );
-
+	int entityHandle = AllocateEntityDefHandle();
 	UpdateEntityDef( entityHandle, re );
-	
 	return entityHandle;
 }
 
@@ -191,6 +201,7 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 		common->Error( "idRenderWorld::UpdateEntityDef: index = %i", entityHandle );
 	}
 	while ( entityHandle >= entityDefs.Num() ) {
+		common->Error("TODO: can this really happen?");
 		entityDefs.Append( NULL );
 	}
 

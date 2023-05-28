@@ -604,14 +604,8 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 
 		def = new idRenderEntityLocal;
 
-		// try and reuse a free spot
-		index = entityDefs.FindNull();
-		if ( index == -1 ) {
-			index = entityDefs.Append(def);
-		} else {
-			entityDefs[index] = def;
-		}
-
+		index = AllocateEntityDefHandle();
+		entityDefs[index] = def;
 		def->index = index;
 		def->world = this;
 

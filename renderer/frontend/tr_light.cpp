@@ -206,6 +206,7 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def ) {
 		return def->viewEntity;
 	}
 	def->viewCount = tr.viewCount;
+	def->world->entityDefsInView.SetBitTrue(def->index);
 
 	// set the model and modelview matricies
 	vModel = (viewEntity_t *)R_ClearedFrameAlloc( sizeof( *vModel ) );
@@ -476,26 +477,24 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 		// check all the models in this area
 		for ( int entityIdx : area->entityRefs ) {
 			idRenderEntityLocal	*edef = entityDefs[entityIdx];
+			int edefInView = entityDefsInView.GetBit(entityIdx);
+			assert(edefInView == (edef->viewCount == tr.viewCount));
 
 			// if the entity doesn't have any light-interacting surfaces, we could skip this,
 			// but we don't want to instantiate dynamic models yet, so we can't check that on
 			// most things
 
-			if ( tr.viewDef ) {
+			if ( tr.viewDef && !edefInView ) {
 				// if the entity isn't viewed and light has now shadows, skip
 				if ( !lightCastsShadows ) {
-					if ( edef->viewCount != tr.viewCount ) {
-						continue;
-					}
+					continue;
 				}
 				// if the entity isn't viewed and shadow is suppressed, skip
-				if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
-					if ( !r_skipSuppress.GetBool() && edef->viewCount != tr.viewCount ) {
+				if ( !r_skipSuppress.GetBool() ) {
+					if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) {
 						continue;
 					}
-				}
-				if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId ) {
-					if ( !r_skipSuppress.GetBool() && edef->viewCount != tr.viewCount ) {
+					if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId ) {
 						continue;
 					}
 				}
@@ -503,7 +502,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 
 			// some big outdoor meshes are flagged to not create any dynamic interactions
 			// when the level designer knows that nearby moving lights shouldn't actually hit them
-			if ( edef->parms.noDynamicInteractions && edef->world->generateAllInteractionsCalled ) {
+			if ( edef->parms.noDynamicInteractions && generateAllInteractionsCalled ) {
 				continue;
 			}
 
