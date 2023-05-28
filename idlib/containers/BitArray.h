@@ -15,6 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma once
 
 #include <type_traits>
+#include <stdlib.h>
 
 /**
  * Array of boolean values packed in a bitset.
@@ -34,10 +35,12 @@ public:
 	static const TWord W1 = TWord(1);
 
 
-	static ID_FORCE_INLINE int CeilSize(int num) {
+	static ID_FORCE_INLINE int NumWordsForBits(int num) {
 		// note: if num % WB = 0, then we need one padding word for segment operations
-		num -= num & (WordBits - 1);
-		return num + WordBits;
+		return (num >> LogWordBits) + 1;
+	}
+	static ID_FORCE_INLINE int CapacityInWords(int num) {
+		return (num << LogWordBits) - 1;
 	}
 
 	static ID_FORCE_INLINE TWord IfBit(const TWord *arr, int index) {
@@ -142,25 +145,41 @@ public:
 	// or you can use the methods below for simple cases, when size is known at time of initialization
 
 	~idBitArray() {
-		delete list;
+		free(list);
 	}
 	idBitArray() {
-		// note: this object is invalid
+		// note: this object is invalid (see NumWordsForBits)
 		// don't use any methods on it!
-		num = -1;
+		num = cap = -1;
 		list = nullptr;
 	}
 	void Init(int numBits) {
-		delete list;
+		free(list);
+		int numWords = NumWordsForBits(numBits);
 		num = numBits;
-		list = new TWord[CeilSize(numBits)];
+		cap = CapacityInWords(numWords);
+		assert(num <= cap);
+		list = (TWord*)malloc(numWords * sizeof(TWord));
 	}
 	// non-copyable for now
 	idBitArray(const idBitArray &x) = delete;
 	idBitArray& operator=(const idBitArray &x) = delete;
 
 	void SetBitsSameAll(int value) {
-		memset(list, value ? -1 : 0, CeilSize(num) * sizeof(TWord));
+		memset(list, value ? -1 : 0, (num + 7) >> 3);
+	}
+
+	void AddGrow(int value) {
+		if (num == cap) {
+			int numWords = NumWordsForBits(cap) * 2 + 1;
+			assert(numWords > 0 && CapacityInWords(numWords) > cap);
+			cap = CapacityInWords(numWords);
+			list = (TWord*)realloc(list, numWords * sizeof(TWord));
+			num = idMath::Imax(num, 0);
+		}
+		assert(num < cap);
+		int idx = num++;
+		SetBit(idx, value);
 	}
 
 	ID_FORCE_INLINE int Num() const {
@@ -221,6 +240,7 @@ public:
 private:
 	TWord *list;
 	int num;		// logical number of bits!
+	int cap;		// maximum allowed value of "num" without growth
 };
 
 typedef idBitArray<size_t> idBitArrayDefault;
