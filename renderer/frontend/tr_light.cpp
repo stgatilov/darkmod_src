@@ -497,7 +497,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 
 			// if any of the edef's interaction match this light, we don't
 			// need to consider it. 
-			idInteraction *inter = interactionTable.Find(ldef, edef);
+			idInteraction *inter = interactionTable.Find(this, ldef->index, entityIdx);
 			if ( inter ) {
 				// if this entity wasn't in view already, the scissor rect will be empty,
 				// so it will only be used for shadow casting
@@ -589,17 +589,19 @@ void idInteractionTable::Shutdown() {
 	useInteractionTable = -1;
 }
 DEBUG_OPTIMIZE_ON
-idInteraction *idInteractionTable::Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const {
+idInteraction *idInteractionTable::Find(idRenderWorldLocal *world, int lightIdx, int entityIdx) const {
 	if (useInteractionTable < 0)
 		common->Error("Interaction table not initialized");
 	if (useInteractionTable == 1) {
-		int idx = ldef->index * INTERACTION_TABLE_MAX_ENTITYS + edef->index;
+		int idx = lightIdx * INTERACTION_TABLE_MAX_ENTITYS + entityIdx;
 		return SM_matrix[idx];
 	}
 	if (useInteractionTable == 2) {
-		int key = (ldef->index << 16) + edef->index;
+		int key = (lightIdx << 16) + entityIdx;
 		return SHT_table.Get(key, nullptr);
 	}
+	idRenderEntityLocal *edef = world->entityDefs[entityIdx];
+	idRenderLightLocal *ldef = world->lightDefs[lightIdx];
 	for ( idInteraction *inter = edef->lastInteraction; inter; inter = inter->entityPrev ) {
 		if ( inter->lightDef == ldef ) {
 			return inter;

@@ -113,7 +113,7 @@ public:
 	~idInteractionTable();
 	void Init();
 	void Shutdown();
-	idInteraction *Find(idRenderLightLocal *ldef, idRenderEntityLocal *edef) const;
+	idInteraction *Find(idRenderWorldLocal *world, int lightIdx, int entityIdx) const;
 	bool Add(idInteraction *interaction);
 	bool Remove(idInteraction *interaction);
 	idStr Stats() const;
