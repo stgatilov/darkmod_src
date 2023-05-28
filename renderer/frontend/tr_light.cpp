@@ -474,6 +474,12 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 		int areaIdx = lref->areaIdx;
 		portalArea_t *area = &portalAreas[areaIdx];
 
+		// stgatilov #6296: for noshadows light, skip areas outside view
+		// this is valid because we can skip all entities outside view
+		// and if entity is in view, at least one of its areas must be in view too
+		if ( tr.viewDef && !lightCastsShadows && area->areaViewCount != tr.viewCount )
+			continue;
+
 		// check all the models in this area
 		for ( int entityIdx : area->entityRefs ) {
 			idRenderEntityLocal	*edef = entityDefs[entityIdx];
