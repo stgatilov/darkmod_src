@@ -872,12 +872,17 @@ void R_FreeLightDefDerivedData( idRenderLightLocal *def ) {
 		int areaIdx = ref->areaIdx;
 		portalArea_t *area = &def->world->portalAreas[areaIdx];
 		assert(area->lightBackRefs[ref->idxInArea] == ref);
+		assert(area->lightRefs[ref->idxInArea] == def->index);
 
 		// overwrite our deleted ref with the last ref in the area
 		int last = area->lightRefs.Num() - 1;
+		assert(ref->idxInArea == last || def->index != area->lightRefs[last]);
+		assert(area->lightBackRefs[last]->areaIdx == areaIdx);
+		assert(area->lightBackRefs[last]->idxInArea == last);
 		area->lightRefs[ref->idxInArea] = area->lightRefs[last];
 		area->lightBackRefs[ref->idxInArea] = area->lightBackRefs[last];
 		area->lightBackRefs[ref->idxInArea]->idxInArea = ref->idxInArea;
+		assert(area->lightBackRefs[ref->idxInArea]->areaIdx == areaIdx);
 		// delete last ref
 		area->lightRefs.Pop();
 		area->lightBackRefs.Pop();
@@ -945,12 +950,17 @@ void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool
 		int areaIdx = ref->areaIdx;
 		portalArea_t *area = &def->world->portalAreas[areaIdx];
 		assert(area->entityBackRefs[ref->idxInArea] == ref);
+		assert(area->entityRefs[ref->idxInArea] == def->index);
 
 		// overwrite our deleted ref with the last ref in the area
 		int last = area->entityRefs.Num() - 1;
+		assert(ref->idxInArea == last || def->index != area->entityRefs[last]);
+		assert(area->entityBackRefs[last]->areaIdx == areaIdx);
+		assert(area->entityBackRefs[last]->idxInArea == last);
 		area->entityRefs[ref->idxInArea] = area->entityRefs[last];
 		area->entityBackRefs[ref->idxInArea] = area->entityBackRefs[last];
 		area->entityBackRefs[ref->idxInArea]->idxInArea = ref->idxInArea;
+		assert(area->entityBackRefs[ref->idxInArea]->areaIdx == areaIdx);
 		// delete last ref
 		area->entityRefs.Pop();
 		area->entityBackRefs.Pop();

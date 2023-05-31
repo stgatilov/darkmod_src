@@ -337,7 +337,7 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 
 	// add an areaRef
 	// stgatilov: skip if last-added light is same
-	if (area->lightRefs.Num() > 0 && area->lightRefs.Last() != light->index)
+	if (area->lightRefs.Num() == 0 || area->lightRefs.Last() != light->index)
 		AddLightRefToArea( light, area );
 
 	// go through all the portals
