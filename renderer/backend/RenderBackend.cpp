@@ -227,7 +227,7 @@ void RenderBackend::EndFrame() {}
 void RenderBackend::DrawInteractionsWithShadowMapping( const viewDef_t *viewDef, const viewLight_t *vLight ) {
 	TRACE_GL_SCOPE( "DrawLight_ShadowMap" );
 
-	if ( !r_shadowMapSinglePass.GetBool() && ( vLight->globalShadows || vLight->localShadows ) ) {
+	if ( vLight->globalShadows || vLight->localShadows ) {
 		ShadowMapStage::DrawMask mask;
 
 		mask.clear = true;
@@ -317,7 +317,8 @@ void RenderBackend::DrawInteractionsWithStencilShadows( const viewDef_t *viewDef
 void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 	TRACE_GL_SCOPE( "LightInteractions" );
 
-	if ( r_shadows.GetInteger() == 2 && r_shadowMapSinglePass.GetBool() ) {
+	bool singlePassShadowMaps = r_shadows.GetInteger() == 2 && r_shadowMapSinglePass.GetBool();
+	if ( singlePassShadowMaps ) {
 		for ( int pass = 0; pass < 2; pass++ ) {
 			// draw all shadow maps: global on pass 0, add local on pass 1
 			ShadowMapStage::DrawMask mask;
@@ -348,7 +349,7 @@ void RenderBackend::DrawShadowsAndInteractions( const viewDef_t *viewDef ) {
 			continue;
 	
 		if ( vLight->shadows == LS_MAPS ) {
-			if ( !r_shadowMapSinglePass.GetBool() ) {
+			if ( !singlePassShadowMaps ) {
 				DrawInteractionsWithShadowMapping( viewDef, vLight );
 			}
 		} else {
