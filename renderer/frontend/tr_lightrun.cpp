@@ -192,13 +192,8 @@ void R_CreateEntityRefs( idRenderEntityLocal *def ) {
 	// derive entity data
 	R_DeriveEntityData(def);
 
-	// bump the view count so we can tell if an area already has a reference
-	tr.viewCount++;
-
-	// push these points down the BSP tree into areas
-	def->world->PushFrustumIntoTree(def, NULL, def->inverseBaseModelProject, bounds_unitCube);
+	def->world->AddEntityToAreas(def);
 }
-
 
 /*
 =================================================================================
@@ -739,20 +734,7 @@ void R_CreateLightRefs( idRenderLightLocal *light ) {
 		light->areaNum = light->world->GetAreaAtPoint( light->parms.origin );
 	}
 
-	// bump the view count so we can tell if an
-	// area already has a reference
-	tr.viewCount++;
-
-	// if we have a prelight model that includes all the shadows for the major world occluders,
-	// we can limit the area references to those visible through the portals from the light center.
-	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
-	// may be in areas not directly visible to the light projection center.
-	if ( light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() ) {
-		light->world->FlowLightThroughPortals( light );
-	} else {
-		// push these points down the BSP tree into areas
-		light->world->PushFrustumIntoTree( NULL, light, light->inverseBaseLightProject, bounds_zeroOneCube );
-	}
+	light->world->AddLightToAreas( light );
 }
 
 /*

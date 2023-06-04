@@ -322,10 +322,9 @@ void idRenderWorldLocal::FlowViewThroughPortals( const idVec3 origin, int numPla
 FloodLightThroughArea_r
 ===================
 */
-void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int areaNum,
-        const struct portalStack_s *ps ) {
+void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int areaNum, const struct portalStack_s *ps, AreaList &resultAreaIds ) const {
 	float			d;
-	portalArea_t 	*area;
+	const portalArea_t 	*area;
 	const portalStack_t	*check, *firstPortalStack;
 	portalStack_t	newStack;
 	int				j;
@@ -336,9 +335,8 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 	area = &portalAreas[ areaNum ];
 
 	// add an areaRef
-	// stgatilov: skip if last-added light is same
-	if (area->lightRefs.Num() == 0 || area->lightRefs.Last() != light->index)
-		AddLightRefToArea( light, area );
+	if ( !resultAreaIds.Find(areaNum) )
+		resultAreaIds.AddGrow(areaNum);
 
 	// go through all the portals
 	for ( auto p : area->areaPortals ) {
@@ -368,7 +366,7 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 			newStack = *ps;
 			newStack.p = p;
 			newStack.next = ps;
-			FloodLightThroughArea_r( light, p->intoArea, &newStack );
+			FloodLightThroughArea_r( light, p->intoArea, &newStack, resultAreaIds );
 			continue;
 		}
 
@@ -429,7 +427,7 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 
 			newStack.numPortalPlanes++;
 		}
-		FloodLightThroughArea_r( light, p->intoArea, &newStack );
+		FloodLightThroughArea_r( light, p->intoArea, &newStack, resultAreaIds );
 	}
 }
 
@@ -443,11 +441,13 @@ This can only be used for shadow casting lights that have a generated
 prelight, because shadows are cast from back side which may not be in visible areas.
 =======================
 */
-void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
+void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light, AreaList &areaIds ) const {
+	areaIds.Clear();
+
 	idPlane frustumPlanes[6];
 	idRenderMatrix::GetFrustumPlanes( frustumPlanes, light->baseLightProject, true, true );
 
-	portalStack_t	ps;
+	portalStack_t ps;
 	memset( &ps, 0, sizeof( ps ) );
 	ps.numPortalPlanes = 6;
 	for ( int i = 0; i < 6; i++ ) {
@@ -462,7 +462,7 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 		areas.SetNum(k, false);
 		for (int areaNum : areas) {
 			if (light->world->CheckAreaForPortalSky(areaNum))
-				FloodLightThroughArea_r( light, areaNum, &ps );
+				FloodLightThroughArea_r( light, areaNum, &ps, areaIds );
 		}
 	}
 
@@ -471,7 +471,7 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 	if ( light->areaNum == -1 ) {
 		return;
 	}
-	FloodLightThroughArea_r( light, light->areaNum, &ps );
+	FloodLightThroughArea_r( light, light->areaNum, &ps, areaIds );
 }
 
 //======================================================================================================

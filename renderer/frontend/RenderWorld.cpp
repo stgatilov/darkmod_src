@@ -21,7 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "renderer/tr_local.h"
 #include "math/Line.h"
 
-static idCVarInt r_useAreaLocks( "r_useAreaLocks", "3", CVAR_RENDERER, "1 - suppress multiple entity/area refs, 2 - lights, 3 - both" );
+idCVarInt r_useAreaLocks( "r_useAreaLocks", "3", CVAR_RENDERER, "1 - suppress multiple entity/area refs, 2 - lights, 3 - both" );
 
 /*
 ===================
@@ -1826,25 +1826,26 @@ void idRenderWorldLocal::FreeInteractions() {
 
 /*
 ==================
-idRenderWorldLocal::PushFrustumIntoTree_r
+idRenderWorldLocal::GetFrustumCoveredAreas
 
 Used for both light volumes and model volumes.
 
 This does not clip the points by the planes, so some slop
 occurs.
 
-tr.viewCount should be bumped before calling, allowing it
-to prevent double checking areas.
-
 We might alternatively choose to do this with an area flow.
 ==================
 */
-void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRenderLightLocal* light,
-	const frustumCorners_t& corners, int nodeNum)
-{
+
+struct idRenderWorldLocal::FrustumCoveredContext {
+	ALIGNTYPE16 frustumCorners_t corners;
+	AreaList *coveredAreas;
+};
+
+void idRenderWorldLocal::GetFrustumCoveredAreas_r(FrustumCoveredContext &context, int nodeNum) const {
 	areaNode_t* node = areaNodes + nodeNum;
 
-	// if we know that all possible children nodes only touch an area
+	// if we know that all possible children nodes only touch areas
 	// we have already marked, we can early out
 	if (node->commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS && r_useNodeCommonChildren.GetBool())
 	{
@@ -1852,14 +1853,14 @@ void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRende
 		// yet, because the test volume may yet wind up being in the
 		// solid part, which would cause bounds slightly poked into
 		// a wall to show up in the next room
-		if ( portalAreas[node->commonChildrenArea].areaViewCount == tr.viewCount )
+		if ( context.coveredAreas->Find( node->commonChildrenArea ) )
 		{
 			return;
 		}
 	}
 
 	// exact check all the corners against the node plane
-	frustumCull_t cull = idRenderMatrix::CullFrustumCornersToPlane(corners, node->plane);
+	frustumCull_t cull = idRenderMatrix::CullFrustumCornersToPlane(context.corners, node->plane);
 	bool sideIncluded[2] = { cull != FRUSTUM_CULL_BACK, cull != FRUSTUM_CULL_FRONT };
 	for ( int i = 0; i < 2; i++ ) {
 		if ( !sideIncluded[i] )
@@ -1868,62 +1869,97 @@ void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRende
 		if ( nodeNum == 0 )  	// 0 = solid
 			continue;
 		if ( nodeNum > 0 ) {	// navigate further down the BSP tree
-			PushFrustumIntoTree_r( def, light, corners, nodeNum );
+			GetFrustumCoveredAreas_r( context, nodeNum );
 			continue;
-		}						// tree leave
+		}						// tree leaf
 		int areaNum = -1 - nodeNum;
-		portalArea_t* area = &portalAreas[areaNum];
-		if ( area->areaViewCount == tr.viewCount ) {
-			continue;	// already added a reference here
-		}
-		area->areaViewCount = tr.viewCount;
-		if ( def != NULL ) {
-			AddEntityRefToArea( def, area );
-		}
-		if ( light != NULL ) {
-			AddLightRefToArea( light, area );
-		}
+
+		if ( !context.coveredAreas->Find(areaNum) )
+			context.coveredAreas->AddGrow( areaNum );
 	}
 }
 
-/*
-==============
-idRenderWorldLocal::PushFrustumIntoTree
-==============
-*/
-void idRenderWorldLocal::PushFrustumIntoTree(idRenderEntityLocal* def, idRenderLightLocal* light, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds)
-{
-	if (areaNodes == NULL)
-		return;
-	renderEntity_s::areaLock_t areaLock;
-	// 2.08 Dragofer's draw call optimization
-	if (def && (areaLock = def->parms.areaLock) != renderEntity_s::RAL_NONE && r_useAreaLocks & 1) { // 2.08 Dragofer's draw call optimization
-		idVec3 point = areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalReferenceBounds.GetCenter();
-		int areaNum = GetAreaAtPoint(point);
-		if (areaNum >= 0) {
-			portalArea_t *area = &portalAreas[areaNum];
-			AddEntityRefToArea(def, area);
-			return;
-		}
-	}
-	if (light && (areaLock = light->parms.areaLock) != renderEntity_s::RAL_NONE && r_useAreaLocks & 2) {
-		idVec3 point = areaLock == renderEntity_s::RAL_ORIGIN ? light->parms.origin : light->globalLightBounds.GetCenter();
-		int areaNum = GetAreaAtPoint(point);
-		if (areaNum >= 0) {
-			portalArea_t *area = &portalAreas[areaNum];
-			AddLightRefToArea(light, area);
-			return;
-		}
-	}
+void idRenderWorldLocal::GetFrustumCoveredAreas(idRenderEntityLocal* def, AreaList &areaIds) const {
+	areaIds.Clear();
 
-	// calculate the corners of the frustum in word space
-	ALIGNTYPE16 frustumCorners_t corners;
-	idRenderMatrix::GetFrustumCorners(corners, frustumTransform, frustumBounds);
+	FrustumCoveredContext context;
+	context.coveredAreas = &areaIds;
+	idRenderMatrix::GetFrustumCorners(context.corners, def->inverseBaseModelProject, bounds_unitCube);
 
-	PushFrustumIntoTree_r(def, light, corners, 0);
+	GetFrustumCoveredAreas_r(context, 0);
 }
 
-//===================================================================
+void idRenderWorldLocal::GetFrustumCoveredAreas(idRenderLightLocal* def, AreaList &areaIds) const {
+	areaIds.Clear();
+
+	FrustumCoveredContext context;
+	context.coveredAreas = &areaIds;
+	idRenderMatrix::GetFrustumCorners(context.corners, def->inverseBaseLightProject, bounds_zeroOneCube);
+
+	GetFrustumCoveredAreas_r(context, 0);
+}
+
+
+void idRenderWorldLocal::AddEntityToAreas(idRenderEntityLocal* def) {
+	AreaList areaIds;
+
+	if (def->parms.areaLock != renderEntity_s::RAL_NONE && r_useAreaLocks & 1) { // 2.08 Dragofer's draw call optimization
+		// 2.08 Dragofer's draw call optimization
+		// try to find single area by key point
+		idVec3 point = def->parms.areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalReferenceBounds.GetCenter();
+
+		int areaNum = GetAreaAtPoint(point);
+		if (areaNum >= 0) {
+			areaIds.AddGrow(areaNum);
+			goto found;
+		}
+	}
+
+	// find list of areas by checking oriented bounding box against BSP tree
+	GetFrustumCoveredAreas(def, areaIds);
+
+found:
+	// add reference to all found areas
+	for (int i = 0; i < areaIds.Num(); i++) {
+		portalArea_t *area = &portalAreas[areaIds[i]];
+		AddEntityRefToArea( def, area );
+	}
+}
+
+void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
+	AreaList areaIds;
+
+	if (def && def->parms.areaLock != renderEntity_s::RAL_NONE && r_useAreaLocks & 2) {
+		// 2.08 Dragofer's draw call optimization
+		// try to find single area by key point
+		idVec3 point = def->parms.areaLock == renderEntity_s::RAL_ORIGIN ? def->parms.origin : def->globalLightBounds.GetCenter();
+
+		int areaNum = GetAreaAtPoint(point);
+		if (areaNum >= 0) {
+			areaIds.AddGrow(areaNum);
+			goto found;
+		}
+	}
+
+	// if we have a prelight model that includes all the shadows for the major world occluders,
+	// we can limit the area references to those visible through the portals from the light center.
+	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
+	// may be in areas not directly visible to the light projection center.
+	if ( def->parms.prelightModel && r_useLightPortalFlow.GetBool() && def->lightShader->LightCastsShadows() ) {
+		FlowLightThroughPortals( def, areaIds );
+		goto found;
+	}
+
+	// push these points down the BSP tree into areas
+	GetFrustumCoveredAreas( def, areaIds );
+
+found:
+	// add reference to all found areas
+	for (int i = 0; i < areaIds.Num(); i++) {
+		portalArea_t *area = &portalAreas[areaIds[i]];
+		AddLightRefToArea( def, area );
+	}
+}
 
 /*
 ====================

@@ -227,6 +227,8 @@ public:
 
 	bool					generateAllInteractionsCalled;
 
+	typedef idFlexList<int, 128> AreaList;
+
 	//-----------------------
 	// RenderWorld_load.cpp
 
@@ -251,8 +253,8 @@ public:
 	bool					PortalIsFoggedOut( const portal_t *p );
 	void					FloodViewThroughArea_r( const idVec3 origin, int areaNum, const struct portalStack_s *ps );
 	void					FlowViewThroughPortals( const idVec3 origin, int numPlanes, const idPlane *planes );
-	void					FloodLightThroughArea_r( idRenderLightLocal *light, int areaNum, const struct portalStack_s *ps );
-	void					FlowLightThroughPortals( idRenderLightLocal *light );
+	void					FloodLightThroughArea_r( idRenderLightLocal *light, int areaNum, const struct portalStack_s *ps, AreaList &areaIds ) const;
+	void					FlowLightThroughPortals( idRenderLightLocal *light, AreaList &areaIds ) const;
 	bool					CullEntityByPortals( const idRenderEntityLocal *entity, const struct portalStack_s *ps );
 	void					AddAreaEntityRefs( int areaNum, const struct portalStack_s *ps );
 	bool					CullLightByPortals( const idRenderLightLocal *light, const struct portalStack_s *ps );
@@ -317,13 +319,15 @@ public:
 	void					PutAllInteractionsIntoTable( bool resetTable );
 	void					FreeInteractions();
 
-	void					PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3 (*points), int nodeNum );
-
-	void					PushVolumeIntoTree( idRenderEntityLocal *def, idRenderLightLocal *light, int numPoints, const idVec3 (*points) );
-
-	void					PushFrustumIntoTree_r(idRenderEntityLocal* def, idRenderLightLocal* light, const frustumCorners_t& corners, int nodeNum);
-	void					PushFrustumIntoTree(idRenderEntityLocal* def, idRenderLightLocal* light, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds);
 	
+	struct FrustumCoveredContext;
+	void					GetFrustumCoveredAreas_r(FrustumCoveredContext &context, int nodeNum) const;
+	void					GetFrustumCoveredAreas(idRenderEntityLocal* def, AreaList &areaIds) const;
+	void					GetFrustumCoveredAreas(idRenderLightLocal* light, AreaList &areaIds) const;
+
+	void					AddEntityToAreas(idRenderEntityLocal* def);
+	void					AddLightToAreas(idRenderLightLocal* def);
+
 	//-------------------------------
 	// tr_light.c
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );

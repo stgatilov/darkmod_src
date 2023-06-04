@@ -107,6 +107,13 @@ public:
 		return list[--num];
 	}
 
+	type *Find( const type &value ) const {
+		for (int i = 0; i < num; i++)
+			if (list[i] == value)
+				return &list[i];
+		return nullptr;
+	}
+
 	void Append( int k, const type *arr ) {
 		int base = num;
 		SetNum(base + k);
