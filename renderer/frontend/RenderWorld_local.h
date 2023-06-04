@@ -331,6 +331,7 @@ public:
 	//-------------------------------
 	// tr_light.c
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );
+	void					CreateNewLightDefInteraction( idRenderLightLocal *ldef, idRenderEntityLocal *edef );
 };
 
 

@@ -874,6 +874,8 @@ void R_FreeLightDefDerivedData( idRenderLightLocal *def ) {
 	}
 	def->references = NULL;
 
+	def->areasForAdditionalWorldShadows.ClearFree();
+
 	R_FreeLightDefFrustum( def );
 }
 

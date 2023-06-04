@@ -38,7 +38,13 @@ glconfig_t	glConfig;
 idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32.dll\", etc." );
 idCVar r_glDebugOutput( "r_glDebugOutput", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Enables GL debug messages and displays them on the console. Using a debug context may provide additional insight. 2 - enables synchronous processing (slower)" );
 idCVar r_glDebugContext( "r_glDebugContext", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "If enabled, create a GL debug context." );
-idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "1", CVAR_RENDERER | CVAR_BOOL, "use a more precise area reference determination" );
+idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "2",\
+	CVAR_RENDERER | CVAR_INTEGER,
+	"Take portals into account to reduce number of area references for a shadowing light:\n"
+	"  1 --- only if prelight shadow model is valid (Doom 3 original)\n"
+	"  2 --- for all shadowing lights (#5172)",
+	0, 2
+);
 idCVar r_multiSamples( "r_multiSamples", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "number of antialiasing samples" );
 idCVar r_displayRefresh( "r_displayRefresh", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_NOCHEAT, "optional display refresh rate option for vid mode", 0.0f, 200.0f );
 idCVar r_fullscreen( "r_fullscreen", "2", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "0 = windowed, 1 = full screen, 2 = fullscreen windowed" );

@@ -1945,9 +1945,25 @@ void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
 	// we can limit the area references to those visible through the portals from the light center.
 	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
 	// may be in areas not directly visible to the light projection center.
-	if ( def->parms.prelightModel && r_useLightPortalFlow.GetBool() && def->lightShader->LightCastsShadows() ) {
-		FlowLightThroughPortals( def, areaIds );
-		goto found;
+	if ( def->lightShader->LightCastsShadows() ) {
+		if ( def->parms.prelightModel && r_useLightPortalFlow.GetInteger() == 1 ) {
+			FlowLightThroughPortals( def, areaIds );
+			goto found;
+		}
+
+		// stgatilov #5172: now we use this code for all shadowing lights regardless of prelight existance.
+		// we ensure separately that world geometry produces shadows in all covered areas.
+		if ( r_useLightPortalFlow.GetInteger() == 2 ) {
+			FlowLightThroughPortals( def, areaIds );
+
+			AreaList coveredAreas;
+			GetFrustumCoveredAreas( def, coveredAreas );
+			for ( int i = 0; i < coveredAreas.Num(); i++ )
+				if ( !areaIds.Find( coveredAreas[i] ) )
+					def->areasForAdditionalWorldShadows.AddGrow( coveredAreas[i] );
+
+			goto found;
+		}
 	}
 
 	// push these points down the BSP tree into areas

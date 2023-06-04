@@ -266,9 +266,12 @@ public:
 	int						viewCount;				// if == tr.viewCount, the light is on the viewDef->viewLights list
 	struct viewLight_s 		*viewLight;
 
-	areaReference_t 		*references;				// each area the light is present in will have a lightRef
+	areaReference_t 		*references;			// each area the light is present in will have a lightRef
 	idInteraction 			*firstInteraction;		// doubly linked list
 	idInteraction 			*lastInteraction;
+	// stgatilov #5172: list of areas where world geometry should give additional shadows
+	// this can be non-empty when "portal flow" code is used for normal "references".
+	idList<int>				areasForAdditionalWorldShadows;	
 
 	struct doublePortal_s 	*foggedPortals;
 };
