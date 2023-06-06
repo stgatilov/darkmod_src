@@ -2819,6 +2819,34 @@ void Cmd_GiveLoot_f(const idCmdArgs& args)
 	}
 }
 
+static void SetDoorsState(bool open)
+{
+	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	{
+		gameLocal.Printf("No map running\n");
+		return;
+	}
+
+	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	{
+		if (!ent || !ent->IsType(CFrobDoor::Type))
+			continue;
+		CFrobDoor *door = (CFrobDoor*)ent;
+		if (open)
+			door->Open(false);
+		else
+			door->Close(false);
+	}
+}
+void Cmd_OpenDoors_f(const idCmdArgs& args)
+{
+	SetDoorsState(true);
+}
+void Cmd_CloseDoors_f(const idCmdArgs& args)
+{
+	SetDoorsState(false);
+}
+
 void Cmd_ShowFrobs_f( const idCmdArgs& args )
 {
 	if ( gameLocal.GameState() != GAMESTATE_ACTIVE )
@@ -3691,6 +3719,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_show_keys",			Cmd_ShowKeys_f,	CMD_FL_GAME | CMD_FL_CHEAT,	"Highlight all keys in the map." );
 	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f, CMD_FL_GAME | CMD_FL_CHEAT, "Highlight all loot items in the map." );
 	cmdSystem->AddCommand( "tdm_give_loot",			Cmd_GiveLoot_f, CMD_FL_GAME | CMD_FL_CHEAT, "Adds all loot items in the map to in inventory of the player.");
+	cmdSystem->AddCommand( "tdm_open_doors",			Cmd_OpenDoors_f, CMD_FL_GAME | CMD_FL_CHEAT, "Open all doors.");
+	cmdSystem->AddCommand( "tdm_close_doors",			Cmd_CloseDoors_f, CMD_FL_GAME | CMD_FL_CHEAT, "Close all doors.");
 
 	cmdSystem->AddCommand( "tdm_activatelogclass",		Cmd_ActivateLog_f,			CMD_FL_GAME,	"Activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
 	cmdSystem->AddCommand( "tdm_deactivatelogclass",	Cmd_DeactivateLog_f,		CMD_FL_GAME,	"De-activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
