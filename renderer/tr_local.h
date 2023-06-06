@@ -212,6 +212,25 @@ typedef struct areaReference_s {
 	struct areaReference_s *next;
 } areaReference_t;
 
+// stgatilov #5172: fully stored results of FlowLightThroughPortals for a light
+// we store not only the areas light can reach, but also the portal-limited windings we get along
+struct lightPortalFlow_t {
+	struct areaRef_t {
+		int areaIdx;
+		// planeStorage[planeBeg..planeEnd) define winding for this reference
+		int planeBeg, planeEnd;
+
+		bool operator< (const areaRef_t &b) const { return areaIdx < b.areaIdx; }
+	};
+	idList<areaRef_t> areaRefs;
+	idList<idPlane> planeStorage;
+
+	void Clear() {
+		areaRefs.Clear();
+		planeStorage.Clear();
+	}
+};
+
 
 class idRenderLightLocal {
 public:
@@ -267,6 +286,8 @@ public:
 	struct viewLight_s 		*viewLight;
 
 	areaReference_t 		*references;			// each area the light is present in will have a lightRef
+	lightPortalFlow_t		lightPortalFlow;		// stgatilov #5172: info about how light reaches areas
+
 	idInteraction 			*firstInteraction;		// doubly linked list
 	idInteraction 			*lastInteraction;
 	// stgatilov #5172: list of areas where world geometry should give additional shadows
@@ -933,7 +954,6 @@ extern idCVar r_ambientGamma;			// tweaking overall ambient brightness
 
 extern idCVar r_checkBounds;			// compare all surface bounds with precalculated ones
 
-extern idCVar r_useLightPortalFlow;		// 1 = do a more precise area reference determination
 extern idCVar r_useShadowSurfaceScissor;// 1 = scissor shadows by the scissor rect of the interaction surfaces
 extern idCVar r_useConstantMaterials;	// 1 = use pre-calculated material registers if possible
 extern idCVar r_useNodeCommonChildren;	// stop pushing reference bounds early when possible

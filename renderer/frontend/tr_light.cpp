@@ -540,6 +540,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 		CreateNewLightDefInteraction( ldef, edef );
 	}
 }
+
 /*
 =================
 idRenderWorldLocal::CreateNewLightDefInteraction
@@ -591,10 +592,54 @@ void idRenderWorldLocal::CreateNewLightDefInteraction( idRenderLightLocal *ldef,
 		return;
 	}
 
+	extern idCVar r_useLightPortalFlowCulling;
+	if ( r_useLightPortalFlowCulling.GetBool() && !edef->parms.hModel->IsStaticWorldModel() ) {
+		// stgatilov #5172: check if entity bounds are visible through saved portal windings
+		if ( CullInteractionByLightFlow( ldef, edef) ) {
+			inter->MakeEmpty();
+			return;
+		}
+	}
+
 	// we will do a more precise per-surface check when we are checking the entity
 	// if this entity wasn't in view already, the scissor rect will be empty,
 	// so it will only be used for shadow casting
 	R_SetEntityDefViewEntity( edef );
+}
+
+bool idRenderWorldLocal::CullInteractionByLightFlow( idRenderLightLocal *ldef, idRenderEntityLocal *edef ) const {
+	// check if light flow information was generated
+	if ( ldef->lightPortalFlow.areaRefs.Num() == 0 )
+		return false;
+
+	const lightPortalFlow_t &flow = ldef->lightPortalFlow;
+	idBox entityBox( edef->referenceBounds, edef->modelMatrix );
+
+	for ( areaReference_t *eref = edef->entityRefs; eref; eref = eref->next ) {
+
+		// find how light enters into particular area with the entity
+		auto iterPair = std::equal_range(flow.areaRefs.begin(), flow.areaRefs.end(), lightPortalFlow_t::areaRef_t{eref->areaIdx, -1, -1});
+
+		for ( const lightPortalFlow_t::areaRef_t *portalEntry = iterPair.first; portalEntry < iterPair.second; portalEntry++ ) {
+
+			// for each entry, check if whole entity is outside light cone
+			bool culled = false;
+			for ( int planeIdx = portalEntry->planeBeg; planeIdx < portalEntry->planeEnd; planeIdx++ ) {
+				const idPlane &plane = flow.planeStorage[planeIdx];
+
+				int side = entityBox.PlaneSide( plane );
+				if ( side == PLANESIDE_FRONT ) {
+					culled = true;
+					break;
+				}
+			}
+
+			if ( !culled ) {
+				// reached in at least one area by at least one portal entry
+				return false;
+			}
+		}
+	}
 }
 
 static const int INTERACTION_TABLE_MAX_LIGHTS = 4096;

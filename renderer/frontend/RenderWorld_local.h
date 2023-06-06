@@ -253,8 +253,9 @@ public:
 	bool					PortalIsFoggedOut( const portal_t *p );
 	void					FloodViewThroughArea_r( const idVec3 origin, int areaNum, const struct portalStack_s *ps );
 	void					FlowViewThroughPortals( const idVec3 origin, int numPlanes, const idPlane *planes );
-	void					FloodLightThroughArea_r( idRenderLightLocal *light, int areaNum, const struct portalStack_s *ps, AreaList &areaIds ) const;
-	void					FlowLightThroughPortals( idRenderLightLocal *light, AreaList &areaIds ) const;
+	struct FlowLightThroughPortalsContext;
+	void					FloodLightThroughArea_r( FlowLightThroughPortalsContext &context, int areaNum, const struct portalStack_s *ps ) const;
+	void					FlowLightThroughPortals( idRenderLightLocal *light, AreaList *areaIds, lightPortalFlow_t *portalFlow ) const;
 	bool					CullEntityByPortals( const idRenderEntityLocal *entity, const struct portalStack_s *ps );
 	void					AddAreaEntityRefs( int areaNum, const struct portalStack_s *ps );
 	bool					CullLightByPortals( const idRenderLightLocal *light, const struct portalStack_s *ps );
@@ -332,6 +333,7 @@ public:
 	// tr_light.c
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );
 	void					CreateNewLightDefInteraction( idRenderLightLocal *ldef, idRenderEntityLocal *edef );
+	bool					CullInteractionByLightFlow( idRenderLightLocal *ldef, idRenderEntityLocal *edef ) const;
 };
 
 

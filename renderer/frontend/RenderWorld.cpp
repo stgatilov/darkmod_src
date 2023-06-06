@@ -1926,6 +1926,18 @@ found:
 	}
 }
 
+idCVar r_useLightPortalFlow( "r_useLightPortalFlow", "2",
+	CVAR_RENDERER | CVAR_INTEGER,
+	"Take portals into account to reduce number of area references for a shadowing light:\n"
+	"  1 --- only if prelight shadow model is valid (Doom 3 original)\n"
+	"  2 --- for all shadowing lights (#5172)",
+	0, 2
+);
+idCVar r_useLightPortalFlowCulling( "r_useLightPortalFlowCulling", "1",
+	CVAR_RENDERER | CVAR_BOOL,
+	"Use windings through which light reaches areas for culling interactions"
+);
+
 void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
 	AreaList areaIds;
 
@@ -1946,15 +1958,18 @@ void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
 	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
 	// may be in areas not directly visible to the light projection center.
 	if ( def->lightShader->LightCastsShadows() ) {
+		// stgatilov #5172: also save portal windings along with area indices
+		lightPortalFlow_t *flow = ( r_useLightPortalFlowCulling.GetBool() ? &def->lightPortalFlow : nullptr );
+
 		if ( def->parms.prelightModel && r_useLightPortalFlow.GetInteger() == 1 ) {
-			FlowLightThroughPortals( def, areaIds );
+			FlowLightThroughPortals( def, &areaIds, flow );
 			goto found;
 		}
 
 		// stgatilov #5172: now we use this code for all shadowing lights regardless of prelight existance.
 		// we ensure separately that world geometry produces shadows in all covered areas.
 		if ( r_useLightPortalFlow.GetInteger() == 2 ) {
-			FlowLightThroughPortals( def, areaIds );
+			FlowLightThroughPortals( def, &areaIds, flow );
 
 			AreaList coveredAreas;
 			GetFrustumCoveredAreas( def, coveredAreas );
