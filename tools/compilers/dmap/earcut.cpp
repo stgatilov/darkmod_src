@@ -186,24 +186,53 @@ void EarCutter::CutEars() {
 	for (int i = 0; i < n; i++)
 		UpdateEar(i);
 
+	bool failReported = false;
 	for (int iter = 0; iter < n - 2; iter++) {
-		if (earIds.Num() == 0) {
-			//in some rare cases algorithm inevitably breaks =(
-			FailsCount++;
-			idVec2 somePos;
-			idVec2 zone = EstimateErrorZone(&somePos);
-			//usually algorithm breaks on (almost)singular contours
-			//the unfilled part of triangulation cannot be thicker than the bounding box of remaining part
-			//so let's better suppress the warning in thin cases, when width is less than 1 unit
-			if (idMath::Fmin(zone.x, zone.y) > 1.0f)
-				common->Printf(
-					"EarCutter: no more ears after %d/%d iterations (zone %0.3lf x %0.3lf) near (%s)\n",
-					iter, n-2, zone.x, zone.y,
-					ReportWorldPositionInOptimizeGroup(somePos, optGroup).c_str()
-				);
-			break;
+		int ear = -1;
+
+		if (earIds.Num() > 0) {
+			//normal case: choose best ear to cut
+			ear = earIds.GetMin();
 		}
-		int ear = earIds.GetMin();
+		else {
+			//in some rare cases algorithm inevitably breaks =(
+			if (!failReported) {
+				FailsCount++;
+				idVec2 somePos;
+				idVec2 zone = EstimateErrorZone(&somePos);
+				//usually algorithm breaks on (almost)singular contours
+				//the unfilled part of triangulation cannot be thicker than the bounding box of remaining part
+				//so let's better suppress the warning in thin cases, when width is less than 1 unit
+				if (idMath::Fmin(zone.x, zone.y) > 1.0f)
+					common->Printf(
+						"EarCutter: no more ears after %d/%d iterations (zone %0.3lf x %0.3lf) near (%s)\n",
+						iter, n-2, zone.x, zone.y,
+						ReportWorldPositionInOptimizeGroup(somePos, optGroup).c_str()
+					);
+				failReported = true;
+			}
+			//"desperate mode" from FIST: pick any remaining vertex
+			int bestIdx = -1;
+			double bestScore = DBL_MAX;
+			for (int i = first; ; i = verts[i].next) {
+				int vp = verts[i].prev;
+				int vn = verts[i].next;
+				double lp = (verts[i].pos - verts[vn].pos).LengthSqr();
+				double ln = (verts[i].pos - verts[vp].pos).LengthSqr();
+				double ld = (verts[vp].pos - verts[vn].pos).LengthSqr();
+				//first try to get rid of triangles with zero-length side
+				bool reflex = (verts[i].inReflex >= 0);
+				double score = idMath::Fmin(lp, ln, ld) * (reflex ? 10 : 1);
+				if (bestScore > score) {
+					bestScore = score;
+					bestIdx = i;
+				}
+				if (vn == first)
+					break;
+			}
+			//cut it as ear
+			ear = bestIdx;
+		}
 
 		//add ear triangle
 		Triangle t = {verts[ear].prev, ear, verts[ear].next};
@@ -218,7 +247,8 @@ void EarCutter::CutEars() {
 		verts[vprev].next = vnext;
 		//unlink vertex from lists
 		RemoveReflex(ear);
-		RemoveEar(ear);
+		if (verts[ear].isEar)
+			RemoveEar(ear);
 		//fill vertex with obvious garbage
 		verts[ear].next = verts[ear].prev = -1;
 		verts[ear].inReflex = 0xCCCCCCCC;
