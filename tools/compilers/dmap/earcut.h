@@ -115,6 +115,7 @@ private:
 	double CrossVectors(int sA, int eA, int sB, int eB) const;
 	int OrientVectors(int sA, int eA, int sB, int eB) const;
 	bool OutsideTriangle(int a, int b, int c, int p) const;
+	int DotVectorsSign(int sA, int eA, int sB, int eB) const;
 
 	bool UpdateReflex(int i);
 	bool UpdateEar(int i);

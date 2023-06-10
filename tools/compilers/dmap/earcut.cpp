@@ -68,6 +68,14 @@ bool EarCutter::OutsideTriangle(int a, int b, int c, int p) const {
 	return false;
 }
 
+int EarCutter::DotVectorsSign(int sA, int eA, int sB, int eB) const {
+	//note: the result should be exact thanks to double precision
+	idVec2d a = idVec2d(verts[eA].pos) - idVec2d(verts[sA].pos);
+	idVec2d b = idVec2d(verts[eB].pos) - idVec2d(verts[sB].pos);
+	double pdot = a.Dot(b);
+	return (pdot == 0.0 ? 0 : (pdot < 0.0 ? -1 : 1));
+}
+
 void EarCutter::RemoveReflex(int i) {
 	//swap with last reflex vertex, then pop it
 	int q = verts[i].inReflex, l = reflexIds.Num() - 1;
@@ -85,9 +93,22 @@ void EarCutter::RemoveEar(int i) {
 }
 
 bool EarCutter::UpdateReflex(int i) {
-	int ori = OrientVectors(verts[i].prev, i, i, verts[i].next);
+	int vp = verts[i].prev;
+	int vn = verts[i].next;
+	int ori = OrientVectors(i, vp, i, vn);
 	//note: 180 degrees is reflex too (can happen after some ears cut)
-	bool newReflex = (ori <= 0);
+	bool newReflex = (ori >= 0);
+
+	if (ori == 0 && DotVectorsSign(i, vp, i, vn) > 0) {
+		//idea from FIST: distinguish between angle = 0 (convex) and angle = 360 (reflex)
+		for (int vx = vn; vx != vp; vx = verts[vx].next) {
+			int xori = OrientVectors(i, vp, i, vx);
+			if (xori != 0) {
+				newReflex = (xori > 0);
+				break;
+			}
+		}
+	}
 
 	if ((verts[i].inReflex >= 0) == newReflex)
 		return false;	//same
