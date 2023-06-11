@@ -640,6 +640,8 @@ bool idRenderWorldLocal::CullInteractionByLightFlow( idRenderLightLocal *ldef, i
 			}
 		}
 	}
+
+	return true;
 }
 
 static const int INTERACTION_TABLE_MAX_LIGHTS = 4096;
