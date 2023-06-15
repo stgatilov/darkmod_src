@@ -2152,7 +2152,7 @@ CLASS_DECLARATION( idEntity, idPortalEntity )
 END_CLASS
 
 idPortalEntity::idPortalEntity() {
-	m_SoundLoss = m_LightLoss = 0.0f;
+	m_SoundLoss = 0.0f;
 	m_Portal = -1;
 	m_Entity = nullptr;
 	m_EntityLocationDone = false;
@@ -2189,9 +2189,6 @@ void idPortalEntity::Spawn()
 
 	// store the sound loss for the associated portal
 	m_SoundLoss = idMath::Fabs( spawnArgs.GetFloat("sound_loss", "0.0") );
-
-	// store the light loss factor for this portal
-	m_LightLoss = spawnArgs.GetFloat("light_loss", "0.0");
 }
 
 // grayman #3042 - Doors and brittle fractures need to know about any portal entities they share a portal with.
@@ -2314,7 +2311,6 @@ Tels: Each idPortalEntity contains the handle of the portal it
 void idPortalEntity::Save( idSaveGame *savefile ) const
 {
 	savefile->WriteFloat( m_SoundLoss );
-	savefile->WriteFloat( m_LightLoss );
 	savefile->WriteInt( m_Portal );
 	savefile->WriteObject(m_Entity);				// grayman #3042
 	savefile->WriteBool(m_EntityLocationDone);	// grayman #3042
@@ -2323,7 +2319,6 @@ void idPortalEntity::Save( idSaveGame *savefile ) const
 void idPortalEntity::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadFloat( m_SoundLoss );
-	savefile->ReadFloat( m_LightLoss );
 	savefile->ReadInt( m_Portal );
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Entity));		// grayman #3042
 	savefile->ReadBool(m_EntityLocationDone);						// grayman #3042
@@ -2332,11 +2327,6 @@ void idPortalEntity::Restore( idRestoreGame *savefile )
 qhandle_t idPortalEntity::GetPortalHandle( void ) const
 {
 	return m_Portal;
-}
-
-float idPortalEntity::GetLightLoss( void ) const
-{
-	return m_LightLoss;
 }
 
 // grayman #3042 - retrieve sound loss

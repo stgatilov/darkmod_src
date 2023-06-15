@@ -504,11 +504,6 @@ public:
 	float				m_SoundLoss;
 
 	/**
-	* Tels: Lightprop: Volume loss for sounds traveling through this portal
-	**/
-	float				m_LightLoss;
-
-	/**
 	* Tels: Handle of the portal this entity touches.
 	**/
 	qhandle_t			m_Portal;
