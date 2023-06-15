@@ -1219,14 +1219,19 @@ static void CheckInfoLocations(uEntity_t *e) {
 	// is there location separator at each inter-area portal?
 	idList<const char *> separatorPerVisportal;
 	separatorPerVisportal.SetNum(numInterAreaPortals);
-	memset(separatorPerVisportal.Ptr(), 0, separatorPerVisportal.Allocated());
+	memset(separatorPerVisportal.Ptr(), NULL, separatorPerVisportal.Allocated());
+	idList<bool> visportalBlocked;
+	visportalBlocked.SetNum(numInterAreaPortals);
+	memset(visportalBlocked.Ptr(), false, visportalBlocked.Allocated());
 
 	// read location separators and fill separatorPerVisportal
 	for (int entnum = 1; entnum < dmapGlobals.num_entities; entnum++) {
 		const idDict &spawnargs = dmapGlobals.uEntities[entnum].mapEntity->epairs;
 
 		const char *classname = spawnargs.GetString("classname", "");
-		if ( idStr::Icmp(classname, "info_locationseparator") != 0)
+		bool isSeparator = idStr::Icmp(classname, "info_locationseparator") == 0;
+		bool isSettings = idStr::Icmp(classname, "info_portalsettings") == 0;	// #6224
+		if ( !isSeparator && !isSettings )
 			continue;
 		const char *name = spawnargs.GetString("name", "???");
 		idVec3 origin = spawnargs.GetVector("origin");
@@ -1238,6 +1243,9 @@ static void CheckInfoLocations(uEntity_t *e) {
 			int brushnum = interAreaPortals[j].brush->brushnum;
 			if (!idRenderWorldLocal::DoesVisportalContactBox(w, box))
 				continue;
+
+			if (isSeparator)
+				visportalBlocked[j] = true;	// #6224: only separator blocks pathfinding (see below)
 
 			const char* &refSep = separatorPerVisportal[j];
 			if (refSep) {
@@ -1266,7 +1274,7 @@ static void CheckInfoLocations(uEntity_t *e) {
 		}
 	}
 
-	auto CanPass_Locations = [&separatorPerVisportal](node_t *from, uPortal_t *through, node_t *to) -> bool {
+	auto CanPass_Locations = [&visportalBlocked](node_t *from, uPortal_t *through, node_t *to) -> bool {
 		if ( !Portal_Passable( through ) )
 			return false;					// going into solid
 
@@ -1281,8 +1289,8 @@ static void CheckInfoLocations(uEntity_t *e) {
 		// find visportal we are going through
 		for (int i = 0; i < numInterAreaPortals; i++) {
 			if (IsPortalSame(&iap, &interAreaPortals[i])) {
-				// check if it is covered by location separator
-				if (separatorPerVisportal[i])
+				// check if it is covered by location separator (portal settings ignored here)
+				if (visportalBlocked[i])
 					return false;
 			}
 		}
