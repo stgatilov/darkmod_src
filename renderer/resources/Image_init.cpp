@@ -1106,7 +1106,7 @@ void R_ListImages_f( const idCmdArgs &args ) {
 		common->Printf( "usage: listImages [ sorted | partial | unloaded | cached | uncached | tagged | duplicated | touched | classify | showOverSized ]\n" );
 		return;
 	}
-	const char *header = "       -w-- -h-- filt -fmt-- wrap  size --name-------\n";
+	const char *header = "        -w-- -h-- filt -fmt-- wrap  size  --name-------\n";
 
 	common->Printf( "\n%s", header );
 

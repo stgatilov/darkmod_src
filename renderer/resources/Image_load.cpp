@@ -1710,43 +1710,52 @@ void idImage::Print() const {
 	switch ( internalFormat ) {
 		case GL_R8:
 		case GL_RG8:
-			common->Printf( "RG    " );
+			common->Printf( "RG     " );
 			break;
 		case GL_RGB565:
-			common->Printf( "RGB565" );
+			common->Printf( "RGB565 " );
 			break;
 		case GL_ALPHA8:
-			common->Printf( "A     " );
+			common->Printf( "A      " );
 			break;
 		case GL_RGBA8:
-			common->Printf( "RGBA8 " );
+			common->Printf( "RGBA8  " );
+			break;
+		case GL_RGBA16F:
+			common->Printf( "RGBA16F" );
 			break;
 		case GL_RGB8:
-			common->Printf( "RGB8  " );
+			common->Printf( "RGB8   " );
 			break;
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-			common->Printf( "DXT1  " );
+			common->Printf( "DXT1   " );
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-			common->Printf( "DXT1A " );
+			common->Printf( "DXT1A  " );
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-			common->Printf( "DXT3  " );
+			common->Printf( "DXT3   " );
 			break;
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-			common->Printf( "DXT5  " );
+			common->Printf( "DXT5   " );
 			break;
 		case GL_RGBA4:
-			common->Printf( "RGBA4 " );
+			common->Printf( "RGBA4  " );
 			break;
 		case GL_RGB5:
-			common->Printf( "RGB5  " );
+			common->Printf( "RGB5   " );
 			break;
 		case GL_COMPRESSED_RG_RGTC2:
-			common->Printf( "RGTC2 " );
+			common->Printf( "RGTC2  " );
+			break;
+		case GL_DEPTH24_STENCIL8:
+			common->Printf( "D24S8  " );
+			break;
+		case GL_DEPTH_COMPONENT32F:
+			common->Printf( "D32F   " );
 			break;
 		case 0:
-			common->Printf( "      " );
+			common->Printf( "       " );
 			break;
 		default:
 			common->Printf( "<BAD FORMAT:%i>", internalFormat );
