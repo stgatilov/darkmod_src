@@ -45,16 +45,10 @@ Used for determining memory utilization
 int idImage::BitsForInternalFormat( int internalFormat ) {
 	switch ( internalFormat ) {
 		case GL_R8:
-		case 1: // FIXME: legacy OpenGL 1.0 format - remove?
 			return 8;
-		case 2: // FIXME: legacy OpenGL 1.0 format - remove?
 		case GL_RG8:
 		case GL_RGB565:
 			return 16;
-		case 3: // FIXME: legacy OpenGL 1.0 format - remove?
-			return 32;		// on some future hardware, this may actually be 24, but be conservative
-		case 4: // FIXME: legacy OpenGL 1.0 format - remove?
-			return 32;
 		case GL_ALPHA8:
 			return 8;
 		case GL_RGBA:		// current render texture
@@ -68,17 +62,11 @@ int idImage::BitsForInternalFormat( int internalFormat ) {
 			return 4;
 		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-		case GL_COMPRESSED_LUMINANCE_LATC1_EXT: // TODO Serp: check this, derp
-		case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
 		case GL_COMPRESSED_RG_RGTC2:
 			return 8;
 		case GL_RGBA4:
 		case GL_RGB5:
 			return 16;
-		case GL_COMPRESSED_RGB_ARB:
-			return 4;			// not sure
-		case GL_COMPRESSED_RGBA_ARB:
-			return 8;			// not sure
 		case GL_COLOR: // FBO attachments
 		case GL_DEPTH_STENCIL:
 		case GL_DEPTH24_STENCIL8:		// current depth texture
@@ -90,10 +78,7 @@ int idImage::BitsForInternalFormat( int internalFormat ) {
 		case GL_STENCIL:
 			return 0;
 		default:
-            // nbohr1more: #5223 silence internal format warnings during r_showPrimitives
-            if ( !r_showPrimitives.GetInteger() ) {
 			common->Warning( "\nR_BitsForInternalFormat: bad internalFormat (%i)", internalFormat );
-            }
 	}
 	return 0;
 }
@@ -1729,23 +1714,15 @@ void idImage::Print() const {
 	}
 
 	switch ( internalFormat ) {
-		//case GL_INTENSITY8:
 		case GL_R8:
-		case 1:
 			common->Printf( "R     " );
 			break;
-		case 2:
-		//case GL_LUMINANCE8_ALPHA8:
 		case GL_RG8:
 			common->Printf( "RG    " );
 			break;
 		case GL_RGB565:
 			common->Printf( "RGB565" );
 			break;
-		case 3:
-			common->Printf( "RGB   " );
-			break;
-		case 4:
 		case GL_COLOR:
 			common->Printf( "RGBA  " );
 			break;
@@ -1770,23 +1747,11 @@ void idImage::Print() const {
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 			common->Printf( "DXT5  " );
 			break;
-		case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
-			common->Printf( "LATC1 " );
-			break;
-		case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
-			common->Printf( "LATC2 " );
-			break;
 		case GL_RGBA4:
 			common->Printf( "RGBA4 " );
 			break;
 		case GL_RGB5:
 			common->Printf( "RGB5  " );
-			break;
-		case GL_COMPRESSED_RGB_ARB:
-			common->Printf( "RGBC  " );
-			break;
-		case GL_COMPRESSED_RGBA_ARB:
-			common->Printf( "RGBAC " );
 			break;
 		case GL_COMPRESSED_RG_RGTC2:
 			common->Printf( "RGTC2 " );
