@@ -35,48 +35,6 @@ static bool FormatIsDXT( int internalFormat ) {
 	return true;
 }
 
-/*
-================
-BitsForInternalFormat
-
-Used for determining memory utilization
-================
-*/
-int idImage::BitsForInternalFormat( int internalFormat ) {
-	switch ( internalFormat ) {
-		case GL_R8:
-			return 8;
-		case GL_RG8:
-		case GL_RGB565:
-			return 16;
-		case GL_ALPHA8:
-			return 8;
-		case GL_RGBA8:
-			return 32;
-		case GL_RGB8:
-			return 32;		// on some future hardware, this may actually be 24, but be conservative
-		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-			return 4;
-		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-			return 4;
-		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-		case GL_COMPRESSED_RG_RGTC2:
-			return 8;
-		case GL_RGBA4:
-		case GL_RGB5:
-			return 16;
-		case GL_DEPTH24_STENCIL8:		// current depth texture
-		case GL_DEPTH_COMPONENT32F:		// shadow atlas
-			return 32;
-		case GL_RGBA16F: // current render texture, 64-bit
-			return 64;
-		default:
-			common->Warning( "\nR_BitsForInternalFormat: bad internalFormat (%i)", internalFormat );
-	}
-	return 0;
-}
-
 //=======================================================================
 
 static byte	mipBlendColors[16][4] = {
@@ -1708,15 +1666,15 @@ void idImage::Print() const {
 	}
 
 	switch ( internalFormat ) {
+	// --- color uncompressed ---
 		case GL_R8:
+			common->Printf( "R8     " );
+			break;
 		case GL_RG8:
-			common->Printf( "RG     " );
+			common->Printf( "RG8    " );
 			break;
-		case GL_RGB565:
-			common->Printf( "RGB565 " );
-			break;
-		case GL_ALPHA8:
-			common->Printf( "A      " );
+		case GL_RGB8:
+			common->Printf( "RGB8   " );
 			break;
 		case GL_RGBA8:
 			common->Printf( "RGBA8  " );
@@ -1724,9 +1682,19 @@ void idImage::Print() const {
 		case GL_RGBA16F:
 			common->Printf( "RGBA16F" );
 			break;
-		case GL_RGB8:
-			common->Printf( "RGB8   " );
+		case GL_RGB5:
+			common->Printf( "RGB5   " );
 			break;
+		case GL_RGB565:
+			common->Printf( "RGB565 " );
+			break;
+		case GL_RGBA4:
+			common->Printf( "RGBA4  " );
+			break;
+		case GL_ALPHA8:
+			common->Printf( "A8     " );
+			break;
+	// --- color compressed ---
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 			common->Printf( "DXT1   " );
 			break;
@@ -1739,21 +1707,17 @@ void idImage::Print() const {
 		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 			common->Printf( "DXT5   " );
 			break;
-		case GL_RGBA4:
-			common->Printf( "RGBA4  " );
-			break;
-		case GL_RGB5:
-			common->Printf( "RGB5   " );
-			break;
 		case GL_COMPRESSED_RG_RGTC2:
 			common->Printf( "RGTC2  " );
 			break;
+	// --- depth/stencil ---
 		case GL_DEPTH24_STENCIL8:
 			common->Printf( "D24S8  " );
 			break;
 		case GL_DEPTH_COMPONENT32F:
 			common->Printf( "D32F   " );
 			break;
+	// ---------------------
 		case 0:
 			common->Printf( "       " );
 			break;
@@ -1788,6 +1752,52 @@ void idImage::Print() const {
 		storSize /= 1024;
 	}
 	common->Printf( " %s\n", imgName.c_str() );
+}
+
+
+/*
+================
+BitsForInternalFormat
+
+Used for determining memory utilization
+================
+*/
+int idImage::BitsForInternalFormat( int internalFormat ) {
+	switch ( internalFormat ) {
+	// --- color uncompressed ---
+		case GL_R8:
+			return 8;
+		case GL_RG8:
+			return 16;
+		case GL_RGB8:
+			return 32;		// on some future hardware, this may actually be 24, but be conservative
+		case GL_RGBA8:
+			return 32;
+		case GL_RGBA16F:
+			return 64;
+		case GL_RGB5:
+		case GL_RGB565:
+		case GL_RGBA4:
+			return 16;
+		case GL_ALPHA8:
+			return 8;
+	// --- color compressed ---
+		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+		case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+			return 4;
+		case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+		case GL_COMPRESSED_RG_RGTC2:
+			return 8;
+	// --- depth/stencil ---
+		case GL_DEPTH24_STENCIL8:
+		case GL_DEPTH_COMPONENT32F:
+			return 32;
+	// ---------------------
+		default:
+			common->Warning( "\nR_BitsForInternalFormat: bad internalFormat (%i)", internalFormat );
+	}
+	return 0;
 }
 
 //==============================================
