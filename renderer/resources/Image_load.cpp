@@ -51,7 +51,6 @@ int idImage::BitsForInternalFormat( int internalFormat ) {
 			return 16;
 		case GL_ALPHA8:
 			return 8;
-		case GL_RGBA:		// current render texture
 		case GL_RGBA8:
 			return 32;
 		case GL_RGB8:
@@ -67,16 +66,11 @@ int idImage::BitsForInternalFormat( int internalFormat ) {
 		case GL_RGBA4:
 		case GL_RGB5:
 			return 16;
-		case GL_COLOR: // FBO attachments
-		case GL_DEPTH_STENCIL:
 		case GL_DEPTH24_STENCIL8:		// current depth texture
 		case GL_DEPTH_COMPONENT32F:		// shadow atlas
 			return 32;
 		case GL_RGBA16F: // current render texture, 64-bit
 			return 64;
-		case GL_DEPTH:
-		case GL_STENCIL:
-			return 0;
 		default:
 			common->Warning( "\nR_BitsForInternalFormat: bad internalFormat (%i)", internalFormat );
 	}
@@ -1715,16 +1709,11 @@ void idImage::Print() const {
 
 	switch ( internalFormat ) {
 		case GL_R8:
-			common->Printf( "R     " );
-			break;
 		case GL_RG8:
 			common->Printf( "RG    " );
 			break;
 		case GL_RGB565:
 			common->Printf( "RGB565" );
-			break;
-		case GL_COLOR:
-			common->Printf( "RGBA  " );
 			break;
 		case GL_ALPHA8:
 			common->Printf( "A     " );
@@ -1755,9 +1744,6 @@ void idImage::Print() const {
 			break;
 		case GL_COMPRESSED_RG_RGTC2:
 			common->Printf( "RGTC2 " );
-			break;
-		case GL_DEPTH_STENCIL:
-			common->Printf( "DP/ST " );
 			break;
 		case 0:
 			common->Printf( "      " );
