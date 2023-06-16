@@ -1584,6 +1584,9 @@ void idImage::SetClassification( int tag ) {
 /*
 ==================
 StorageSize
+
+stgatilov: only GPU memory estimate is returned here.
+Note that CPU-resident textures also occupy CPU memory, but it is not reported.
 ==================
 */
 int idImage::StorageSize() const {
@@ -1602,7 +1605,7 @@ int idImage::StorageSize() const {
 			baseSize = 6 * uploadWidth * uploadHeight;
 			break;
 	}
-	baseSize *= BitsForInternalFormat( internalFormat );
+	baseSize *= BitsForInternalFormat( internalFormat, true );
 
 	baseSize /= 8;
 
@@ -1765,10 +1768,13 @@ void idImage::Print() const {
 ================
 BitsForInternalFormat
 
-Used for determining memory utilization
+Returns number of bits per pixel in an image of this internal format.
+If gpu = false (default), then size of data on CPU is computed.
+If gpu = true, then amount of GPU memory is estimated --- never use the result for anything but debug prints!
+Also note that any compressed image is internally padded to integer number of blocks.
 ================
 */
-int idImage::BitsForInternalFormat( int internalFormat ) {
+int idImage::BitsForInternalFormat( int internalFormat, bool gpu ) {
 	switch ( internalFormat ) {
 	// --- color uncompressed ---
 		case GL_R8:
@@ -1776,7 +1782,7 @@ int idImage::BitsForInternalFormat( int internalFormat ) {
 		case GL_RG8:
 			return 16;
 		case GL_RGB8:
-			return 32;		// on some future hardware, this may actually be 24, but be conservative
+			return (gpu ? 32 : 24);	// RGB is usually padded to RGBA internally
 		case GL_RGBA8:
 			return 32;
 		case GL_RGBA16F:
