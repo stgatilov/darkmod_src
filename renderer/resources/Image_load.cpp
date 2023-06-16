@@ -28,11 +28,17 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
 */
-static bool FormatIsDXT( int internalFormat ) {
-	if ( internalFormat < GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalFormat > GL_COMPRESSED_RG_RGTC2 ) {
-		return false;
+static bool IsImageFormatCompressed( int internalFormat ) {
+	if (
+		internalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
+		internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
+		internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT ||
+		internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
+		internalFormat == GL_COMPRESSED_RG_RGTC2
+	) {
+		return true;
 	}
-	return true;
+	return false;
 }
 
 //=======================================================================
@@ -454,7 +460,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	//stgatilov: OpenGL does not guarantee compressing glTexSubImage to work for sizes not divisible by 4, and AMD driver crashes on it
 	//https://forums.thedarkmod.com/index.php?/topic/21073-a-house-of-locked-secrets-crashes-tdm-on-startup/
-	bool crossesCompressionBlocks = FormatIsDXT( internalFormat ) && ( scaled_width % 4 || scaled_height % 4 );
+	bool crossesCompressionBlocks = IsImageFormatCompressed( internalFormat ) && ( scaled_width % 4 || scaled_height % 4 );
 	bool useTexStorage = GLAD_GL_ARB_texture_storage && !generatorFunction && !crossesCompressionBlocks && image_useTexStorage.GetBool();
 
 	//Routine test( &uploading );
@@ -796,7 +802,7 @@ void idImage::WritePrecompressedImage() {
 		bitSize = 8;
 		break;
 	default:
-		if ( FormatIsDXT( internalFormat ) ) {
+		if ( IsImageFormatCompressed( internalFormat ) ) {
 			altInternalFormat = internalFormat;
 		} else {
 			common->Warning( "Unknown or unsupported format for %s", filename );
@@ -804,7 +810,7 @@ void idImage::WritePrecompressedImage() {
 		}
 	}
 
-	if ( globalImages->image_useOffLineCompression.GetBool() && FormatIsDXT( altInternalFormat ) ) {
+	if ( globalImages->image_useOffLineCompression.GetBool() && IsImageFormatCompressed( altInternalFormat ) ) {
 		idStr outFile = fileSystem->RelativePathToOSPath( filename, "fs_basepath" );
 		idStr inFile = outFile;
 		inFile.StripFileExtension();
@@ -838,7 +844,7 @@ void idImage::WritePrecompressedImage() {
 	header.dwHeight = uploadHeight;
 	header.dwWidth = uploadWidth;
 
-	if ( FormatIsDXT( altInternalFormat ) ) {
+	if ( IsImageFormatCompressed( altInternalFormat ) ) {
 		// size (in bytes) of the compressed base image
 		header.dwFlags |= DDSF_LINEARSIZE;
 		header.dwPitchOrLinearSize = ( ( uploadWidth + 3 ) / 4 ) * ( ( uploadHeight + 3 ) / 4 ) *
@@ -857,7 +863,7 @@ void idImage::WritePrecompressedImage() {
 	}
 	header.ddspf.dwSize = sizeof( header.ddspf );
 
-	if ( FormatIsDXT( altInternalFormat ) ) {
+	if ( IsImageFormatCompressed( altInternalFormat ) ) {
 		header.ddspf.dwFlags = DDSF_FOURCC;
 		switch ( altInternalFormat ) {
 		case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
@@ -923,7 +929,7 @@ void idImage::WritePrecompressedImage() {
 	for ( int level = 0 ; level < numLevels ; level++ ) {
 
 		int size = 0;
-		if ( FormatIsDXT( altInternalFormat ) ) {
+		if ( IsImageFormatCompressed( altInternalFormat ) ) {
 			size = ( ( uw + 3 ) / 4 ) * ( ( uh + 3 ) / 4 ) *
 			       ( altInternalFormat <= GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16 );
 		} else {
@@ -934,7 +940,7 @@ void idImage::WritePrecompressedImage() {
 			data = ( byte * )R_StaticAlloc( size );
 		}
 
-		if ( FormatIsDXT( altInternalFormat ) ) {
+		if ( IsImageFormatCompressed( altInternalFormat ) ) {
 			qglGetCompressedTexImage( GL_TEXTURE_2D, level, data );
 		} else {
 			qglGetTexImage( GL_TEXTURE_2D, level, altInternalFormat, GL_UNSIGNED_BYTE, data );
@@ -1087,7 +1093,7 @@ void idImage::UploadPrecompressedImage() {
 
 	for ( int i = 0 ; i < numMipmaps; i++ ) {
 		int size = 0;
-		if ( FormatIsDXT( internalFormat ) ) {
+		if ( IsImageFormatCompressed( internalFormat ) ) {
 			size = ( ( uw + 3 ) / 4 ) * ( ( uh + 3 ) / 4 ) *
 			       ( internalFormat <= GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ? 8 : 16 );
 			if(glConfig.srgb)
@@ -1102,7 +1108,7 @@ void idImage::UploadPrecompressedImage() {
 		} else {
 			//Routine test( &uploading );
 			auto start = Sys_Milliseconds();
-			if ( FormatIsDXT( internalFormat ) ) {
+			if ( IsImageFormatCompressed( internalFormat ) ) {
 				qglCompressedTexImage2D( GL_TEXTURE_2D, i - skipMip, internalFormat, uw, uh, 0, size, imagedata );
 			} else {
 				qglTexImage2D( GL_TEXTURE_2D, i - skipMip, internalFormat, uw, uh, 0, externalFormat, GL_UNSIGNED_BYTE, imagedata );
