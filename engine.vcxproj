@@ -1278,6 +1278,7 @@
     <ClCompile Include="renderer\resources\Cinematic.cpp" />
     <ClCompile Include="renderer\resources\CinematicFFMpeg.cpp" />
     <ClCompile Include="renderer\resources\CinematicID.cpp" />
+    <ClCompile Include="renderer\resources\Image_compress.cpp" />
     <ClCompile Include="renderer\resources\Image_files.cpp" />
     <ClCompile Include="renderer\resources\Image_init.cpp" />
     <ClCompile Include="renderer\resources\Image_load.cpp" />

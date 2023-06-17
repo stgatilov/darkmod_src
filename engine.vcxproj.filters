@@ -3601,6 +3601,9 @@
     <ClCompile Include="renderer\backend\stages\VolumetricStage.cpp">
       <Filter>Renderer\Backend\Stages</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\resources\Image_compress.cpp">
+      <Filter>Renderer\Resources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">
