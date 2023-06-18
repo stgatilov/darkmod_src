@@ -170,13 +170,13 @@ public:
 
 	static int					Abs( int x );				// returns the absolute value of the integer value (for reference only)
 	static float				Fabs( float f );			// returns the absolute value of the floating point value
+
 	static float				Floor( float f );			// returns the largest integer that is less than or equal to the given value
 	static float				Ceil( float f );			// returns the smallest integer that is greater than or equal to the given value
-	static float				Rint( float f );			// returns the nearest integer
-	static int					Ftoi( float f );			// float to int conversion
+	static float				Rint( float f );			// returns the nearest integer (ties resolved arbitrarily)
+	static int					Ftoi( float f );			// float to int conversion, round to zero
+	static unsigned int			Ftou( float f );			// float to unsigned conversion, round down
 	static int					FtoiFast( float f );		// fast float to int conversion but uses current FPU round mode (default round nearest)
-	static unsigned int			Ftol( float f );			// float to int conversion
-	static unsigned int			FtolFast( float );			// fast float to int conversion but uses current FPU round mode (default round nearest)
 
 	//stgatilov: branchless min and max for floating point values
 	static float Fmin ( float a, float b );
@@ -905,39 +905,8 @@ ID_INLINE int idMath::FtoiFast( float f ) {
 #endif
 }
 
-ID_INLINE unsigned int idMath::Ftol( float f ) {
+ID_INLINE unsigned int idMath::Ftou( float f ) {
 	return (unsigned int) f;
-}
-
-ID_INLINE unsigned int idMath::FtolFast( float f ) {
-	//stgatilov: when SSE arithmetic is used, do not use FPU
-#if defined(_MSC_VER) && defined(_M_IX86) && !defined(__SSE__)
-	// FIXME: this overflows on 31bits still .. same as FtoiFast
-	unsigned int i;
-	__asm fld		f
-	__asm fistp		i		// use default rouding mode (round nearest)
-	return i;
-#elif 0						// round chop (C/C++ standard)
-	int i, s, e, m, shift;
-	i = *reinterpret_cast<int *>(&f);
-	s = i >> IEEE_FLT_SIGN_BIT;
-	e = ( ( i >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
-	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
-	shift = e - IEEE_FLT_MANTISSA_BITS;
-	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
-//#elif defined( __i386__ )
-#elif 0
-	// for some reason, on gcc I need to make sure i == 0 before performing a fistp
-	int i = 0;
-	__asm__ __volatile__ (
-						  "fld %1\n" \
-						  "fistp %0\n" \
-						  : "=m" (i) \
-						  : "m" (f) );
-	return i;
-#else
-	return (unsigned int) f;
-#endif
 }
 
 ID_FORCE_INLINE float idMath::Fmin ( float a, float b ) {
