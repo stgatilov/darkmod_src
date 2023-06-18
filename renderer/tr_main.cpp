@@ -59,8 +59,8 @@ idScreenRect::AddPoint
 ======================
 */
 void idScreenRect::AddPoint( float x, float y ) {
-	int	ix = idMath::FtoiFast( x );
-	int iy = idMath::FtoiFast( y );
+	int	ix = idMath::FtoiRound( x );
+	int iy = idMath::FtoiRound( y );
 
 	if ( ix < x1 ) {
 		x1 = ix;
@@ -176,10 +176,10 @@ R_ScreenRectFromViewFrustumBounds
 idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds ) {
 	idScreenRect screenRect;
 
-	screenRect.x1 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[1].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
-	screenRect.x2 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[0].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
-	screenRect.y1 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[0].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
-	screenRect.y2 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[1].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
+	screenRect.x1 = idMath::FtoiRound( 0.5f * ( 1.0f - bounds[1].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
+	screenRect.x2 = idMath::FtoiRound( 0.5f * ( 1.0f - bounds[0].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
+	screenRect.y1 = idMath::FtoiRound( 0.5f * ( 1.0f + bounds[0].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
+	screenRect.y2 = idMath::FtoiRound( 0.5f * ( 1.0f + bounds[1].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
 
 	assert( bounds[0].x <= bounds[1].x );
 	float zmin, zmax;

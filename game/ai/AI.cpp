@@ -10001,7 +10001,7 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 				if (actor->IsType(idPlayer::Type))
 				{
 					idPlayer* player = static_cast<idPlayer*>(actor);
-					m_AlertGraceCount += static_cast<int>(idMath::Rint(player->GetCurrentLightgemValue() * 0.125f));
+					m_AlertGraceCount += static_cast<int>(idMath::Round(player->GetCurrentLightgemValue() * 0.125f));
 				}
 			}*/
 

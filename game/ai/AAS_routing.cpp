@@ -95,7 +95,7 @@ unsigned short idAASLocal::AreaTravelTime( int areaNum, const idVec3 &start, con
 	if ( dist < 1.0f ) {
 		return 1;
 	}
-	return (unsigned short) idMath::FtoiFast( dist );
+	return (unsigned short) idMath::FtoiRound( dist );
 }
 
 /*

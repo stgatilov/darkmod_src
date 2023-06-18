@@ -2063,7 +2063,7 @@ brush_t *Brush_CreatePyramid(idVec3 mins, idVec3 maxs, texdef_t *texdef) {
 
 	idVec3	corners[4];
 
-	float	fMid = idMath::Rint(mins[2] + (idMath::Rint((maxs[2] - mins[2]) / 2)));
+	float	fMid = idMath::Round(mins[2] + (idMath::Round((maxs[2] - mins[2]) / 2)));
 
 	corners[0][0] = mins[0];
 	corners[0][1] = mins[1];
@@ -2083,9 +2083,9 @@ brush_t *Brush_CreatePyramid(idVec3 mins, idVec3 maxs, texdef_t *texdef) {
 
 	idVec3	top, bottom;
 
-	top[0] = idMath::Rint(mins[0] + ((maxs[0] - mins[0]) / 2));
-	top[1] = idMath::Rint(mins[1] + ((maxs[1] - mins[1]) / 2));
-	top[2] = idMath::Rint(maxs[2]);
+	top[0] = idMath::Round(mins[0] + ((maxs[0] - mins[0]) / 2));
+	top[1] = idMath::Round(mins[1] + ((maxs[1] - mins[1]) / 2));
+	top[2] = idMath::Round(maxs[2]);
 
 	VectorCopy(top, bottom);
 	bottom[2] = mins[2];

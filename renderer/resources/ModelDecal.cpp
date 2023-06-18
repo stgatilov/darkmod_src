@@ -228,7 +228,7 @@ void idRenderModelDecal::AddWinding( const idWinding &w, const idMaterial *decal
 			tri.verts[tri.numVerts + i].st[0] = w[i].s;
 			tri.verts[tri.numVerts + i].st[1] = w[i].t;
 			for ( int k = 0 ; k < 4 ; k++ ) {
-				int icolor = idMath::FtoiFast( decalInfo.start[k] * fade * 255.0f );
+				int icolor = idMath::FtoiRound( decalInfo.start[k] * fade * 255.0f );
 				if ( icolor < 0 ) {
 					icolor = 0;
 				} else if ( icolor > 255 ) {
@@ -486,7 +486,7 @@ void idRenderModelDecal::AddDecalDrawSurf( viewEntity_t *space ) {
 
 			for ( int k = 0; k < 4; k++ ) {
 				float fcolor = decalInfo.start[k] + ( decalInfo.end[k] - decalInfo.start[k] ) * f;
-				int icolor = idMath::FtoiFast( fcolor * vertDepthFade[ind] * 255.0f );
+				int icolor = idMath::FtoiRound( fcolor * vertDepthFade[ind] * 255.0f );
 				if ( icolor < 0 ) {
 					icolor = 0;
 				} else if ( icolor > 255 ) {

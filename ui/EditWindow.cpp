@@ -554,7 +554,7 @@ void idEditWindow::EnsureCursorVisible()
 					break;
 				}
 			}
-			int topLine = idMath::FtoiFast( scroller->GetValue() );
+			int topLine = idMath::FtoiRound( scroller->GetValue() );
 			if ( cursorLine < topLine ) {
 				scroller->SetValue( cursorLine );
 			} else if ( cursorLine >= topLine + fit) {

@@ -41,7 +41,7 @@ float idDeclTable::TableLookup( float index ) const {
 		} else if ( index <= 0 ) {
 			return values[0];
 		}
-		iIndex = idMath::Ftoi( index );
+		iIndex = idMath::FtoiTrunc( index );
 		iFrac = index - iIndex;
 	} else {
 		index *= domain;
@@ -50,7 +50,7 @@ float idDeclTable::TableLookup( float index ) const {
 			index += domain * idMath::Ceil( -index / domain );
 		}
 
-		iIndex = idMath::FtoiFast( idMath::Floor( index ) );
+		iIndex = idMath::FtoiRound( idMath::Floor( index ) );
 		iFrac = index - iIndex;
 		iIndex = iIndex % domain;
 	}

@@ -804,7 +804,7 @@ int idParticleStage::NumQuadsPerParticle() const {
 	int	count = 1;
 
 	if ( orientation == POR_AIMED ) {
-		int	trails = idMath::Ftoi( orientationParms[0] );
+		int	trails = idMath::FtoiTrunc( orientationParms[0] );
 		// each trail stage will add an extra quad
 		count *= ( 1 + trails );
 	}

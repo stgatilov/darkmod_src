@@ -3089,8 +3089,8 @@ void TestConvertRGTCFromRGBA8() {
 					idVec2 val;
 					val.x = idMath::ClampFloat(0, 1, avg.x + radius * rnd.CRandomFloat());
 					val.y = idMath::ClampFloat(0, 1, avg.y + radius * rnd.CRandomFloat());
-					dword red = idMath::Rint(val.x * 255.0f);
-					dword green = idMath::Rint(val.y * 255.0f);
+					dword red = idMath::Round(val.x * 255.0f);
+					dword green = idMath::Round(val.y * 255.0f);
 					dword blue = rnd.RandomInt(256);
 					dword alpha = rnd.RandomInt(256);
 					rgbaPixels[i * stride + j] = red + (green << 8) + (blue << 16) + (alpha << 24);

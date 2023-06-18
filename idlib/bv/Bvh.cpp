@@ -442,7 +442,7 @@ void idBvhCreator::CompressSubintervals(const idBounds &parentBounds, const idBo
 void idBvhCreator::CompressBoundingCone(const idCircCone &cone, char coneCenter[3], byte &coneAngle) {
 	// round cone axis to grid nearest
 	for (int d = 0; d < 3; d++) {
-		int x = idMath::Rint(cone.GetAxis()[d] * 127.0f);
+		int x = idMath::Round(cone.GetAxis()[d] * 127.0f);
 		x = idMath::ClampInt(-127, 127, x);
 		coneCenter[d] = x;
 	}

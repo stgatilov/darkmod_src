@@ -130,10 +130,10 @@ idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct rende
 		staticModel->AddSurface( surf );
 	}
 
-	int	red			= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_RED ] * 255.0f );
-	int green		= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_GREEN ] * 255.0f );
-	int	blue		= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_BLUE ] * 255.0f );
-	int	alpha		= idMath::FtoiFast( renderEntity->shaderParms[ SHADERPARM_ALPHA ] * 255.0f );
+	int	red			= idMath::FtoiRound( renderEntity->shaderParms[ SHADERPARM_RED ] * 255.0f );
+	int green		= idMath::FtoiRound( renderEntity->shaderParms[ SHADERPARM_GREEN ] * 255.0f );
+	int	blue		= idMath::FtoiRound( renderEntity->shaderParms[ SHADERPARM_BLUE ] * 255.0f );
+	int	alpha		= idMath::FtoiRound( renderEntity->shaderParms[ SHADERPARM_ALPHA ] * 255.0f );
 
 	idVec3 right	= idVec3( 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ] * 0.5f, 0.0f );
 	idVec3 up		= idVec3( 0.0f, 0.0f, renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] * 0.5f );

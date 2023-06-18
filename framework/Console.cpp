@@ -1085,7 +1085,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	int				lines;
 	int				currentColor;
 
-	lines = idMath::FtoiFast( SCREEN_HEIGHT * frac );
+	lines = idMath::FtoiRound( SCREEN_HEIGHT * frac );
 	if ( lines <= 0 ) {
 		return;
 	}
@@ -1128,7 +1128,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 		// draw arrows to show the buffer is backscrolled
 		SetColor( idStr::ColorIndex( C_COLOR_DEFAULT ) );
 		for ( x = 0; x < SCREEN_WIDTH / SMALLCHAR_WIDTH; x += 4 ) {
-			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), '^', charSetMaterial() );
+			renderSystem->DrawSmallChar( (x+1)*SMALLCHAR_WIDTH, idMath::FtoiRound( y ), '^', charSetMaterial() );
 		}
 		y -= SMALLCHAR_HEIGHT;
 		rows--;
@@ -1155,7 +1155,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 				currentColor = idStr::ColorIndex(text_p.colorCodes[x]);
 				SetColor( currentColor );
 			}
-			renderSystem->DrawSmallChar( 0.5*SMALLCHAR_WIDTH + x*SMALLCHAR_WIDTH, idMath::FtoiFast( y ), text_p[x], charSetMaterial() );
+			renderSystem->DrawSmallChar( 0.5*SMALLCHAR_WIDTH + x*SMALLCHAR_WIDTH, idMath::FtoiRound( y ), text_p[x], charSetMaterial() );
 		}
 	}
 

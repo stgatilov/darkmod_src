@@ -108,8 +108,8 @@ bool idAASBuild::GetVertex( const idVec3 &v, int *vertexNum ) {
 	aasVertex_t vert, *p;
 	
 	for (i = 0; i < 3; i++) {
-		if ( idMath::Fabs(v[i] - idMath::Rint(v[i])) < INTEGRAL_EPSILON ) {
-			vert[i] = idMath::Rint(v[i]);
+		if ( idMath::Fabs(v[i] - idMath::Round(v[i])) < INTEGRAL_EPSILON ) {
+			vert[i] = idMath::Round(v[i]);
 		}
 		else {
 			vert[i] = v[i];

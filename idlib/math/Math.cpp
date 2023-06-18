@@ -151,20 +151,20 @@ TEST_CASE("Math:Rounding") {
 			// check rounding of exact integers
 			errors += (idMath::Floor(xf) != xi);
 			errors += (idMath::Ceil(xf) != xi);
-			errors += (idMath::Rint(xf) != xi);
-			errors += (idMath::Ftoi(xf) != xi);
-			errors += (idMath::FtoiFast(xf) != xi);
+			errors += (idMath::Round(xf) != xi);
+			errors += (idMath::FtoiTrunc(xf) != xi);
+			errors += (idMath::FtoiRound(xf) != xi);
 
 			// check rounding of fractional numbers
 			errors += (idMath::Floor(xf + 0.25f) != xi);
 			errors += (idMath::Ceil(xf + 0.25f) != xi + 1);
-			errors += (idMath::Rint(xf + 0.25f) != xi);
-			errors += (idMath::FtoiFast(xf + 0.25f) != xi);
+			errors += (idMath::Round(xf + 0.25f) != xi);
+			errors += (idMath::FtoiRound(xf + 0.25f) != xi);
 
 			errors += (idMath::Floor(xf + 0.75f) != xi);
 			errors += (idMath::Ceil(xf + 0.75f) != xi + 1);
-			errors += (idMath::Rint(xf + 0.75f) != xi + 1);
-			errors += (idMath::FtoiFast(xf + 0.75f) != xi + 1);
+			errors += (idMath::Round(xf + 0.75f) != xi + 1);
+			errors += (idMath::FtoiRound(xf + 0.75f) != xi + 1);
 
 			// check rounding of exact halves
 			errors += (idMath::Floor(xf + 0.5f) != xi);
@@ -173,17 +173,17 @@ TEST_CASE("Math:Rounding") {
 
 		float xp = i, xm = -i;
 
-		errors += (idMath::Ftoi(xp + 0.25f) != xp);
-		errors += (idMath::Ftoi(xm - 0.25f) != xm);
+		errors += (idMath::FtoiTrunc(xp + 0.25f) != xp);
+		errors += (idMath::FtoiTrunc(xm - 0.25f) != xm);
 
-		errors += (idMath::Ftoi(xp + 0.75f) != xp);
-		errors += (idMath::Ftoi(xm - 0.75f) != xm);
+		errors += (idMath::FtoiTrunc(xp + 0.75f) != xp);
+		errors += (idMath::FtoiTrunc(xm - 0.75f) != xm);
 
-		errors += (idMath::Ftoi(xp + 0.5f) != xp);
-		errors += (idMath::Ftoi(xm - 0.5f) != xm);
+		errors += (idMath::FtoiTrunc(xp + 0.5f) != xp);
+		errors += (idMath::FtoiTrunc(xm - 0.5f) != xm);
 
-		errors += (idMath::FtoiFast(xp + 0.5f) != (i + (i & 1)));	// FE_TONEAREST: choose even
-		errors += (idMath::FtoiFast(xm - 0.5f) != -(i + (i & 1)));	// FE_TONEAREST: choose even
+		errors += (idMath::FtoiRound(xp + 0.5f) != (i + (i & 1)));	// FE_TONEAREST: choose even
+		errors += (idMath::FtoiRound(xm - 0.5f) != -(i + (i & 1)));	// FE_TONEAREST: choose even
 	}
 
 	CHECK(errors == 0);
@@ -207,7 +207,7 @@ TEST_CASE("Math:RoundToNearestAll"
 		if (double(x) > INT_MAX || double(x) < -INT_MAX)	// note: results might differ for INT_MIN
 			continue;
 
-		if (nearbyint(x) != idMath::FtoiFast(x))
+		if (nearbyint(x) != idMath::FtoiRound(x))
 			errors++;
 	}
 

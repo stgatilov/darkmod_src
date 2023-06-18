@@ -44,13 +44,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define DEG2RAD(a)				( (a) * idMath::M_DEG2RAD )
 #define RAD2DEG(a)				( (a) * idMath::M_RAD2DEG )
 
-#define SEC2MS(t)				( idMath::FtoiFast( (t) * idMath::M_SEC2MS ) )
+#define SEC2MS(t)				( idMath::FtoiRound( (t) * idMath::M_SEC2MS ) )
 #define MS2SEC(t)				( (t) * idMath::M_MS2SEC )
 
-#define	ANGLE2SHORT(x)			( idMath::FtoiFast( (x) * 65536.0f / 360.0f ) & 65535 )
+#define	ANGLE2SHORT(x)			( idMath::FtoiRound( (x) * 65536.0f / 360.0f ) & 65535 )
 #define	SHORT2ANGLE(x)			( (x) * ( 360.0f / 65536.0f ) )
 
-#define	ANGLE2BYTE(x)			( idMath::FtoiFast( (x) * 256.0f / 360.0f ) & 255 )
+#define	ANGLE2BYTE(x)			( idMath::FtoiRound( (x) * 256.0f / 360.0f ) & 255 )
 #define	BYTE2ANGLE(x)			( (x) * ( 360.0f / 256.0f ) )
 
 #define FLOATSIGNBITSET(f)		((*(const unsigned int *)&(f)) >> 31)
@@ -173,9 +173,9 @@ public:
 
 	static float				Floor( float f );			// returns the largest integer that is less than or equal to the given value
 	static float				Ceil( float f );			// returns the smallest integer that is greater than or equal to the given value
-	static float				Rint( float f );			// returns the nearest integer (ties resolved arbitrarily)
-	static int					Ftoi( float f );			// float to int conversion: round to zero
-	static int					FtoiFast( float f );		// float to int conversion: round to nearest (ties are rounded to even) --- depends on FPU mode
+	static float				Round( float f );			// returns the nearest integer (ties resolved arbitrarily)
+	static int					FtoiTrunc( float f );		// float to int conversion: truncate = round to zero
+	static int					FtoiRound( float f );		// float to int conversion: round to nearest (ties are rounded to even) --- depends on FPU mode
 
 	//stgatilov: branchless min and max for floating point values
 	static float Fmin ( float a, float b );
@@ -867,15 +867,15 @@ ID_INLINE float idMath::Ceil( float f ) {
 	return ceilf( f );
 }
 
-ID_INLINE float idMath::Rint( float f ) {
+ID_INLINE float idMath::Round( float f ) {
 	return floorf( f + 0.5f );
 }
 
-ID_INLINE int idMath::Ftoi( float f ) {
+ID_INLINE int idMath::FtoiTrunc( float f ) {
 	return (int) f;
 }
 
-ID_INLINE int idMath::FtoiFast( float f ) {
+ID_INLINE int idMath::FtoiRound( float f ) {
 #ifdef __SSE2__
 	//stgatilov: float-to-int convertion instruction from SSE2
 	return _mm_cvtsi128_si32( _mm_cvtps_epi32( _mm_set_ss( f ) ) );

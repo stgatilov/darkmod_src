@@ -677,7 +677,7 @@ void idSoundWorldLocal::AVIUpdate() {
 			} else if ( s > 32767.0f ) {
 				outD[j] = 32767;
 			} else {
-				outD[j] = idMath::FtoiFast( s );
+				outD[j] = idMath::FtoiRound( s );
 			}
 		}
 		// write to file
@@ -1185,10 +1185,10 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 	gameMsec = gameTime;
 	if ( fpa[0] ) {
 		// exactly 30 fps so the wave file can be used for exact video frames
-		game44kHz = idMath::FtoiFast( gameMsec * ( ( 1000.0f / 60.0f ) / 16.0f ) * 0.001f * 44100.0f );
+		game44kHz = idMath::FtoiRound( gameMsec * ( ( 1000.0f / 60.0f ) / 16.0f ) * 0.001f * 44100.0f );
 	} else {
 		// the normal 16 msec / frame
-		game44kHz = idMath::FtoiFast( gameMsec * 0.001f * 44100.0f );
+		game44kHz = idMath::FtoiRound( gameMsec * 0.001f * 44100.0f );
 	}
 
 	listenerPrivateId = listenerId;
@@ -2220,7 +2220,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 						else if ( alignedInputSamples[i] > 32767.0f )
 							((short *)alignedInputSamples)[i] = 32767;
 						else
-							((short *)alignedInputSamples)[i] = idMath::FtoiFast( alignedInputSamples[i] );
+							((short *)alignedInputSamples)[i] = idMath::FtoiRound( alignedInputSamples[i] );
 					}
 					alBufferData( buffers[j], chan->leadinSample->objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, alignedInputSamples, MIXBUFFER_SAMPLES * sample->objectInfo.nChannels * sizeof( short ), 44100 );
 					chan->openalStreamingOffset += MIXBUFFER_SAMPLES;

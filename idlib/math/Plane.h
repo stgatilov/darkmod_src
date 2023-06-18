@@ -262,8 +262,8 @@ ID_INLINE bool idPlane::FixDegeneracies( float distEpsilon ) {
 	bool fixedNormal = FixDegenerateNormal();
 	// only fix dist if the normal was degenerate
 	if ( fixedNormal ) {
-		if ( idMath::Fabs( d - idMath::Rint( d ) ) < distEpsilon ) {
-			d = idMath::Rint( d );
+		if ( idMath::Fabs( d - idMath::Round( d ) ) < distEpsilon ) {
+			d = idMath::Round( d );
 		}
 	}
 	return fixedNormal;

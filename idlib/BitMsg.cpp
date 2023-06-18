@@ -584,11 +584,11 @@ int idBitMsg::DirToBits( const idVec3 &dir, int numBits ) {
 	bias = 0.5f / max;
 
 	bits = FLOATSIGNBITSET( dir.x ) << ( numBits * 3 - 1 );
-	bits |= ( idMath::Ftoi( ( idMath::Fabs( dir.x ) + bias ) * max ) ) << ( numBits * 2 );
+	bits |= ( idMath::FtoiTrunc( ( idMath::Fabs( dir.x ) + bias ) * max ) ) << ( numBits * 2 );
 	bits |= FLOATSIGNBITSET( dir.y ) << ( numBits * 2 - 1 );
-	bits |= ( idMath::Ftoi( ( idMath::Fabs( dir.y ) + bias ) * max ) ) << ( numBits * 1 );
+	bits |= ( idMath::FtoiTrunc( ( idMath::Fabs( dir.y ) + bias ) * max ) ) << ( numBits * 1 );
 	bits |= FLOATSIGNBITSET( dir.z ) << ( numBits * 1 - 1 );
-	bits |= ( idMath::Ftoi( ( idMath::Fabs( dir.z ) + bias ) * max ) ) << ( numBits * 0 );
+	bits |= ( idMath::FtoiTrunc( ( idMath::Fabs( dir.z ) + bias ) * max ) ) << ( numBits * 0 );
 	return bits;
 }
 

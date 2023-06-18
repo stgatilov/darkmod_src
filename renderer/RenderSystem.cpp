@@ -707,10 +707,10 @@ void idRenderSystemLocal::RenderViewToViewport( const renderView_t &renderView, 
 	float wRatio = ( float ) rc.width / SCREEN_WIDTH;
 	float hRatio = ( float ) rc.height / SCREEN_HEIGHT;
 
-	viewport.x1 = idMath::Ftoi( rc.x + renderView.x * wRatio );
-	viewport.x2 = idMath::Ftoi( rc.x + floor( ( renderView.x + renderView.width ) * wRatio + 0.5f ) - 1 );
-	viewport.y1 = idMath::Ftoi( ( rc.y + rc.height ) - floor( ( renderView.y + renderView.height ) * hRatio + 0.5f ) );
-	viewport.y2 = idMath::Ftoi( ( rc.y + rc.height ) - floor( renderView.y * hRatio + 0.5f ) - 1 );
+	viewport.x1 = idMath::FtoiTrunc( rc.x + renderView.x * wRatio );
+	viewport.x2 = idMath::FtoiTrunc( rc.x + floor( ( renderView.x + renderView.width ) * wRatio + 0.5f ) - 1 );
+	viewport.y1 = idMath::FtoiTrunc( ( rc.y + rc.height ) - floor( ( renderView.y + renderView.height ) * hRatio + 0.5f ) );
+	viewport.y2 = idMath::FtoiTrunc( ( rc.y + rc.height ) - floor( renderView.y * hRatio + 0.5f ) - 1 );
 }
 
 static int RoundDownToPowerOfTwo( int v ) {

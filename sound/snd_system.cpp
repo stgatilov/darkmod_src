@@ -631,7 +631,7 @@ int idSoundSystemLocal::GetCurrent44kHzTime( void ) const {
 	} else {
 		// NOTE: this would overflow 31bits within about 1h20
 		//return ( ( Sys_Milliseconds()*441 ) / 10 ) * 4; 
-		return idMath::FtoiFast( (float)Sys_Milliseconds() * 176.4f );
+		return idMath::FtoiRound( (float)Sys_Milliseconds() * 176.4f );
 	}
 }
 

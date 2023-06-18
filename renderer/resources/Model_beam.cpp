@@ -139,10 +139,10 @@ idRenderModel *idRenderModelBeam::InstantiateDynamicModel( const struct renderEn
 		minor *= renderEntity->shaderParms[SHADERPARM_BEAM_WIDTH] * 0.5f;
 	}
 
-	int red		= idMath::FtoiFast( renderEntity->shaderParms[SHADERPARM_RED] * 255.0f );
-	int green	= idMath::FtoiFast( renderEntity->shaderParms[SHADERPARM_GREEN] * 255.0f );
-	int blue	= idMath::FtoiFast( renderEntity->shaderParms[SHADERPARM_BLUE] * 255.0f );
-	int alpha	= idMath::FtoiFast( renderEntity->shaderParms[SHADERPARM_ALPHA] * 255.0f );
+	int red		= idMath::FtoiRound( renderEntity->shaderParms[SHADERPARM_RED] * 255.0f );
+	int green	= idMath::FtoiRound( renderEntity->shaderParms[SHADERPARM_GREEN] * 255.0f );
+	int blue	= idMath::FtoiRound( renderEntity->shaderParms[SHADERPARM_BLUE] * 255.0f );
+	int alpha	= idMath::FtoiRound( renderEntity->shaderParms[SHADERPARM_ALPHA] * 255.0f );
 
 	tri->verts[0].xyz = minor;
 	tri->verts[0].color[0] = red;

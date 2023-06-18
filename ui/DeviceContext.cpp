@@ -954,7 +954,7 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 			renderSystem->SetColor(color);
 			DrawEditCursor(rectDraw.x, lineSkip + rectDraw.y, textScale);
 		}
-		return idMath::FtoiFast( rectDraw.w / charSkip );
+		return idMath::FtoiRound( rectDraw.w / charSkip );
 	}
 
 	textPtr = text;
@@ -1073,7 +1073,7 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 		}
 	}
 
-	return idMath::FtoiFast( rectDraw.w / charSkip );
+	return idMath::FtoiRound( rectDraw.w / charSkip );
 }
 
 /*

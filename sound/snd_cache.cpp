@@ -770,7 +770,7 @@ void idSoundSample::Load( void ) {
 							else if ( destData[i*4] > 32767.0f )
 								((short *)destData)[i] = 32767;
 							else
-								((short *)destData)[i] = idMath::FtoiFast( destData[i*4] );
+								((short *)destData)[i] = idMath::FtoiRound( destData[i*4] );
 						}
 					} else if ( objectInfo.nSamplesPerSec == 22050 ) {
 						for ( int i = 0; i < objectSize; i++ ) {
@@ -779,7 +779,7 @@ void idSoundSample::Load( void ) {
 							else if ( destData[i*2] > 32767.0f )
 								((short *)destData)[i] = 32767;
 							else
-								((short *)destData)[i] = idMath::FtoiFast( destData[i*2] );
+								((short *)destData)[i] = idMath::FtoiRound( destData[i*2] );
 						}
 					} else {
 						for ( int i = 0; i < objectSize; i++ ) {
@@ -788,7 +788,7 @@ void idSoundSample::Load( void ) {
 							else if ( destData[i] > 32767.0f )
 								((short *)destData)[i] = 32767;
 							else
-								((short *)destData)[i] = idMath::FtoiFast( destData[i] );
+								((short *)destData)[i] = idMath::FtoiRound( destData[i] );
 						}
 					}
 

@@ -79,8 +79,8 @@ int	PruneNodes_r( node_t *node ) {
 
 static void WriteFloat( idFile *f, float v )
 {
-	if ( idMath::Fabs(v - idMath::Rint(v)) < 0.001 ) {
-		f->WriteFloatString( "%i ", (int)idMath::Rint(v) );
+	if ( idMath::Fabs(v - idMath::Round(v)) < 0.001 ) {
+		f->WriteFloatString( "%i ", (int)idMath::Round(v) );
 	}
 	else {
 		f->WriteFloatString( "%f ", v );

@@ -46,10 +46,10 @@ static void idParticle_EmitQuad(
 	#define EMIT_VERTEX(v) \
 		emitter->xyz = v.xyz; \
 		emitter->st = v.st; \
-		emitter->color[0] = idMath::Ftoi(v.color[0] * 255.0f); \
-		emitter->color[1] = idMath::Ftoi(v.color[1] * 255.0f); \
-		emitter->color[2] = idMath::Ftoi(v.color[2] * 255.0f); \
-		emitter->color[3] = idMath::Ftoi(v.color[3] * 255.0f); \
+		emitter->color[0] = idMath::FtoiTrunc(v.color[0] * 255.0f); \
+		emitter->color[1] = idMath::FtoiTrunc(v.color[1] * 255.0f); \
+		emitter->color[2] = idMath::FtoiTrunc(v.color[2] * 255.0f); \
+		emitter->color[3] = idMath::FtoiTrunc(v.color[3] * 255.0f); \
 		emitter++;
 	EMIT_VERTEX(v0);
 	EMIT_VERTEX(v1);

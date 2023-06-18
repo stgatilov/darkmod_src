@@ -3120,7 +3120,7 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 		// stamina disabled, so show full stamina bar
 		staminapercentage = 100;
 	} else {
-		staminapercentage = idMath::FtoiFast( 100.0f * stamina / max_stamina );
+		staminapercentage = idMath::FtoiRound( 100.0f * stamina / max_stamina );
 	}*/
 
 	_hud->SetStateInt( "player_health", health );
@@ -5190,8 +5190,8 @@ idPlayer::GetBaseHeartRate
 */
 int idPlayer::GetBaseHeartRate( void ) {
 	/*
-	int base = idMath::FtoiFast( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float)health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
-	int rate = idMath::FtoiFast( base + ( ZEROSTAMINA_HEARTRATE - base ) * ( 1.0f - stamina / pm_stamina.GetFloat() ) );
+	int base = idMath::FtoiRound( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float)health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
+	int rate = idMath::FtoiRound( base + ( ZEROSTAMINA_HEARTRATE - base ) * ( 1.0f - stamina / pm_stamina.GetFloat() ) );
 	int diff = ( lastDmgTime ) ? gameLocal.time - lastDmgTime : 99999;
 	rate += ( diff < 5000 ) ? ( diff < 2500 ) ? ( diff < 1000 ) ? 15 : 10 : 5 : 0;
 	return rate;
@@ -5232,17 +5232,17 @@ void idPlayer::SetCurrentHeartRate( void )
 
 	m_HeartBeatAllow = true;
 
-	int base = idMath::FtoiFast( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float) health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
+	int base = idMath::FtoiRound( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float) health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
 
 	// removed adrenaline affect - Rich
-	heartRate = idMath::FtoiFast( heartInfo.GetCurrentValue( gameLocal.time ) );
+	heartRate = idMath::FtoiRound( heartInfo.GetCurrentValue( gameLocal.time ) );
 	int currentRate = GetBaseHeartRate();
 	if ( ( health >= 0 ) && ( gameLocal.time > ( lastHeartAdjust + 2500 ) ) )
 	{
 		AdjustHeartRate( currentRate, 2.5f, 0.0f, false );
 	}
 
-	int bps = idMath::FtoiFast( 60.0f / heartRate * 1000.0f );
+	int bps = idMath::FtoiRound( 60.0f / heartRate * 1000.0f );
 	if ( ( gameLocal.time - lastHeartBeat ) > bps )
 	{
 		int dmgVol = DMG_VOLUME;
