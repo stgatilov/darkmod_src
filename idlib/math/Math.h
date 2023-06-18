@@ -175,7 +175,6 @@ public:
 	static float				Ceil( float f );			// returns the smallest integer that is greater than or equal to the given value
 	static float				Rint( float f );			// returns the nearest integer (ties resolved arbitrarily)
 	static int					Ftoi( float f );			// float to int conversion: round to zero
-	static unsigned int			Ftou( float f );			// float to unsigned conversion: round down
 	static int					FtoiFast( float f );		// float to int conversion: round to nearest (ties are rounded to even) --- depends on FPU mode
 
 	//stgatilov: branchless min and max for floating point values
@@ -899,10 +898,6 @@ ID_INLINE int idMath::FtoiFast( float f ) {
 	//stgatilov: standard C++11 function (slow)
 	return int( nearbyint( f ) );
 #endif
-}
-
-ID_INLINE unsigned int idMath::Ftou( float f ) {
-	return (unsigned int) f;
 }
 
 ID_FORCE_INLINE float idMath::Fmin ( float a, float b ) {

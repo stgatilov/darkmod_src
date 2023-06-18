@@ -173,19 +173,14 @@ TEST_CASE("Math:Rounding") {
 
 		float xp = i, xm = -i;
 
-		errors += (idMath::Ftou(xp) != xp);
-
 		errors += (idMath::Ftoi(xp + 0.25f) != xp);
 		errors += (idMath::Ftoi(xm - 0.25f) != xm);
-		errors += (idMath::Ftou(xp + 0.25f) != xp);
 
 		errors += (idMath::Ftoi(xp + 0.75f) != xp);
 		errors += (idMath::Ftoi(xm - 0.75f) != xm);
-		errors += (idMath::Ftou(xp + 0.75f) != xp);
 
 		errors += (idMath::Ftoi(xp + 0.5f) != xp);
 		errors += (idMath::Ftoi(xm - 0.5f) != xm);
-		errors += (idMath::Ftou(xp + 0.5f) != xp);
 
 		errors += (idMath::FtoiFast(xp + 0.5f) != (i + (i & 1)));	// FE_TONEAREST: choose even
 		errors += (idMath::FtoiFast(xm - 0.5f) != -(i + (i & 1)));	// FE_TONEAREST: choose even

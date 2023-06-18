@@ -87,7 +87,7 @@ void idToken::NumberValue( void ) {
 				}
 			}
 		}
-		intvalue = idMath::Ftou( floatvalue );
+		intvalue = dword( floatvalue );
 	}
 	else if ( subtype & TT_DECIMAL ) {
 		while( *p ) {

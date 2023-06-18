@@ -677,7 +677,7 @@ int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 	dword dwCurrentBlock;
 
 	// here we do it in samples ( overflows in 27 hours or so )
-	dwCurrentWritePos = idMath::Ftou((float)Sys_Milliseconds() * 44.1f) % (MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER);
+	dwCurrentWritePos = dword((float)Sys_Milliseconds() * 44.1f) % (MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER);
 	dwCurrentBlock = dwCurrentWritePos / MIXBUFFER_SAMPLES;
 
 	if ( nextWriteBlock == 0xffffffff ) {
