@@ -174,9 +174,9 @@ public:
 	static float				Floor( float f );			// returns the largest integer that is less than or equal to the given value
 	static float				Ceil( float f );			// returns the smallest integer that is greater than or equal to the given value
 	static float				Rint( float f );			// returns the nearest integer (ties resolved arbitrarily)
-	static int					Ftoi( float f );			// float to int conversion, round to zero
-	static unsigned int			Ftou( float f );			// float to unsigned conversion, round down
-	static int					FtoiFast( float f );		// fast float to int conversion but uses current FPU round mode (default round nearest)
+	static int					Ftoi( float f );			// float to int conversion: round to zero
+	static unsigned int			Ftou( float f );			// float to unsigned conversion: round down
+	static int					FtoiFast( float f );		// float to int conversion: round to nearest (ties are rounded to even) --- depends on FPU mode
 
 	//stgatilov: branchless min and max for floating point values
 	static float Fmin ( float a, float b );
@@ -877,31 +877,27 @@ ID_INLINE int idMath::Ftoi( float f ) {
 }
 
 ID_INLINE int idMath::FtoiFast( float f ) {
-	//stgatilov: when SSE arithmetic is used, do not use FPU
-#if defined(_MSC_VER) && defined(_M_IX86) && !defined(__SSE__)
-	int i;
-	__asm fld		f
-	__asm fistp		i		// use default rouding mode (round nearest)
-	return i;
-#elif 0						// round chop (C/C++ standard)
-	int i, s, e, m, shift;
-	i = *reinterpret_cast<int *>(&f);
-	s = i >> IEEE_FLT_SIGN_BIT;
-	e = ( ( i >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
-	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
-	shift = e - IEEE_FLT_MANTISSA_BITS;
-	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
-//#elif defined( __i386__ )
-#elif 0
-	int i = 0;
-	__asm__ __volatile__ (
-						  "fld %1\n" \
-						  "fistp %0\n" \
-						  : "=m" (i) \
-						  : "m" (f) );
-	return i;
+#ifdef __SSE2__
+	//stgatilov: float-to-int convertion instruction from SSE2
+	return _mm_cvtsi128_si32( _mm_cvtps_epi32( _mm_set_ss( f ) ) );
+#elif !defined(_M_FP_FAST) && !defined(__FAST_MATH__)
+	//stgatilov: custom implementation of nearbyint (fast)
+	//  https://stackoverflow.com/a/32791681/556899
+	//note: I verified that it gives the same result for f in [-INT_MAX..INT_MAX] with default rounding
+	if ( f > -8388608.0f && f < 8388608.0f ) {
+		if ( f > 0.0f ) {
+			f += 8388608.0f;
+			f -= 8388608.0f;
+		}
+		else {
+			f -= 8388608.0f;
+			f += 8388608.0f;
+		}
+	}
+	return int( f );
 #else
-	return (int) f;
+	//stgatilov: standard C++11 function (slow)
+	return int( nearbyint( f ) );
 #endif
 }
 
