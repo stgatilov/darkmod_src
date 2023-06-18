@@ -468,7 +468,7 @@ Both shadow and light surfaces have been generated.  Either or both surfaces may
 void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) {
 	TRACE_CPU_SCOPE_TEXT( "CreateLightDefInteractions", GetTraceLabel( ldef->parms ) );
 
-	bool lightCastsShadows = ldef->lightShader->LightCastsShadows();
+	bool lightCastsShadows = !ldef->parms.noShadows && ldef->lightShader->LightCastsShadows();
 	idRenderMatrix::CullSixPlanes2 lightCuller;
 	lightCuller.Prepare(ldef->frustum);
 
