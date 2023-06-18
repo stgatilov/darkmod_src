@@ -16,6 +16,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "precompiled.h"
 #pragma hdrstop
 
+#include "tests/testing.h"
+#include <cmath>
+
 const int SMALLEST_NON_DENORMAL = 1 << IEEE_FLT_MANTISSA_BITS; //anon
 
 const float	idMath::PI				= 3.14159265358979323846f;
@@ -134,4 +137,84 @@ idIgnoreFpExceptions::~idIgnoreFpExceptions() {
 	IgnoreFpExceptionsCount--;
 	if (IgnoreFpExceptionsCount == 0 && com_fpexceptions.GetBool())
 		sys->FPU_SetExceptions(true);
+}
+
+TEST_CASE("Math:Rounding") {
+	int errors = 0;
+
+	for (int64 i = 0; i < 1 << 22; i++) {
+		for (int s = -1; s <= 1; s += 2) {
+			int xi = i * s;
+			float xf = xi;
+			assert(xi == xf);
+
+			// check rounding of exact integers
+			errors += (idMath::Floor(xf) != xi);
+			errors += (idMath::Ceil(xf) != xi);
+			errors += (idMath::Rint(xf) != xi);
+			errors += (idMath::Ftoi(xf) != xi);
+			errors += (idMath::FtoiFast(xf) != xi);
+
+			// check rounding of fractional numbers
+			errors += (idMath::Floor(xf + 0.25f) != xi);
+			errors += (idMath::Ceil(xf + 0.25f) != xi + 1);
+			errors += (idMath::Rint(xf + 0.25f) != xi);
+			errors += (idMath::FtoiFast(xf + 0.25f) != xi);
+
+			errors += (idMath::Floor(xf + 0.75f) != xi);
+			errors += (idMath::Ceil(xf + 0.75f) != xi + 1);
+			errors += (idMath::Rint(xf + 0.75f) != xi + 1);
+			errors += (idMath::FtoiFast(xf + 0.75f) != xi + 1);
+
+			// check rounding of exact halves
+			errors += (idMath::Floor(xf + 0.5f) != xi);
+			errors += (idMath::Ceil(xf + 0.5f) != xi + 1);
+		}
+
+		float xp = i, xm = -i;
+
+		errors += (idMath::Ftou(xp) != xp);
+
+		errors += (idMath::Ftoi(xp + 0.25f) != xp);
+		errors += (idMath::Ftoi(xm - 0.25f) != xm);
+		errors += (idMath::Ftou(xp + 0.25f) != xp);
+
+		errors += (idMath::Ftoi(xp + 0.75f) != xp);
+		errors += (idMath::Ftoi(xm - 0.75f) != xm);
+		errors += (idMath::Ftou(xp + 0.75f) != xp);
+
+		errors += (idMath::Ftoi(xp + 0.5f) != xp);
+		errors += (idMath::Ftoi(xm - 0.5f) != xm);
+		errors += (idMath::Ftou(xp + 0.5f) != xp);
+
+		errors += (idMath::FtoiFast(xp + 0.5f) != (i + (i & 1)));	// FE_TONEAREST: choose even
+		errors += (idMath::FtoiFast(xm - 0.5f) != -(i + (i & 1)));	// FE_TONEAREST: choose even
+	}
+
+	CHECK(errors == 0);
+}
+
+TEST_CASE("Math:RoundToNearestAll"
+	* doctest::skip()
+) {
+	int errors = 0;
+
+	for (uint64 i = 0; i <= UINT32_MAX; i++) {
+		union {
+			uint32 xinteger;
+			float xfloat;
+		};
+		xinteger = i;
+		float x = xfloat;
+
+		if (std::isnan(x) || std::isinf(x))
+			continue;
+		if (double(x) > INT_MAX || double(x) < -INT_MAX)	// note: results might differ for INT_MIN
+			continue;
+
+		if (nearbyint(x) != idMath::FtoiFast(x))
+			errors++;
+	}
+
+	CHECK(errors == 0);
 }
