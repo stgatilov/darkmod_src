@@ -372,6 +372,7 @@ public:
 	static idCVar		image_anisotropy;			// set the maximum texture anisotropy if available
 	static idCVar		image_lodbias;				// change lod bias on mipmapped images
 	static idCVar		image_usePrecompressedTextures;	// use .dds files if present
+	static idCVar		image_forceRecompress;		// stgatilov #6300: uncompress all read DDS, so that they are recompressed by our code
 	static idCVar		image_writePrecompressedTextures; // write .dds files if necessary
 	static idCVar		image_writeNormalTGA;		// debug tool to write out .tgas of the final normal maps
 	static idCVar		image_writeTGA;				// debug tool to write out .tgas of the non normal maps

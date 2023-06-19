@@ -997,8 +997,17 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	R_LoadCompressedImage( filename, &compressedData, nullptr );
 	if ( !compressedData )
 		return false;
-
 	cpuData.Purge();
+
+	if ( idImageManager::image_forceRecompress.GetBool() ) {
+		// debug only: decompress DDS on read, so that we can test our compression code
+		cpuData.sides = 1;
+		cpuData.pic[0] = compressedData->ComputeUncompressedData();
+		cpuData.width = compressedData->GetWidth();
+		cpuData.height = compressedData->GetHeight();
+		R_StaticFree( compressedData );
+		compressedData = nullptr;
+	}
 
 	return true;
 }
@@ -1260,6 +1269,8 @@ void R_LoadImageData( idImage& image ) {
 		// already image processed and compressed
 		if ( globalImages->image_usePrecompressedTextures.GetBool() && !(image.residency & IR_CPU) ) {
 			if ( image.CheckPrecompressedImage( true ) ) {
+				if ( !image.compressedData && image.cpuData.IsValid() )	// image_forceRecompress --- debug only
+					goto normalImageLoaded;
 				// we got the precompressed image
 				const char *fourcc = image.compressedData->header.dwFlags & DDSF_FOURCC ? (char*)&image.compressedData->header.ddspf.dwFourCC : "    ";
 				TRACE_ATTACH_FORMAT( "DDS %d x %d (%c%c%c%c)", image.compressedData->header.dwWidth, image.compressedData->header.dwHeight, fourcc[0], fourcc[1], fourcc[2], fourcc[3] );
@@ -1269,8 +1280,9 @@ void R_LoadImageData( idImage& image ) {
 		}
 		cpuData.Purge();
 		R_LoadImageProgram( image.imgName, &cpuData.pic[0], &cpuData.width, &cpuData.height, &image.timestamp, &image.depth );
-		TRACE_ATTACH_FORMAT( "%d x %d", cpuData.width, cpuData.height );
 		cpuData.sides = 1;
+	normalImageLoaded:
+		TRACE_ATTACH_FORMAT( "%d x %d", cpuData.width, cpuData.height );
 	}
 
 	// stgatilov: software compression/decompression of texture if needed
