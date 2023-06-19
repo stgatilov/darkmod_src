@@ -57,12 +57,15 @@ SelectInternalFormat
 This may need to scan six cube map images
 ===============
 */
-GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth ) const {
+GLenum idImage::SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask ) {
 	int			i, c;
 	const byte	*scan;
 	int			rgbOr, aOr, aAnd;
 	int			rgbDiffer, rgbaDiffer;
 	const bool allowCompress = globalImages->image_useCompression.GetBool();//&& globalImages->image_preload.GetBool();
+
+	if ( swizzleMask )
+		*swizzleMask = nullptr;
 
 	// determine if the rgb channels are all the same
 	// and if either all rgb or all alpha are 255
@@ -163,8 +166,10 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 			return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;	// one byte
 		}
 		//return GL_INTENSITY8;							// single byte for all channels
-		static const GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_RED };
-		((idImage*)this)->swizzleMask = swizzleMask;
+		if ( swizzleMask ) {
+			static const GLint SWIZZLE[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+			*swizzleMask = SWIZZLE;
+		}
 		return GL_R8;									// single byte for all channels
 	}
 
@@ -176,8 +181,10 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 	}
 	if ( !rgbDiffer ) {
 		//return GL_LUMINANCE8_ALPHA8;					// two bytes, max quality
-		static const GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
-		( (idImage*)this )->swizzleMask = swizzleMask;
+		if ( swizzleMask ) {
+			static const GLint SWIZZLE[] = { GL_RED, GL_RED, GL_RED, GL_GREEN };
+			*swizzleMask = SWIZZLE;
+		}
 		return GL_RG8;									// two bytes, max quality
 	}
 	return GL_RGBA4;									// two bytes
@@ -390,7 +397,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	qglGenTextures( 1, &texnum );
 
 	// select proper internal format before we resample
-	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth );
+	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth, &swizzleMask );
 
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
@@ -602,7 +609,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	qglGenTextures( 1, &texnum );
 
 	// select proper internal format before we resample
-	internalFormat = SelectInternalFormat( pic, 6, width, height, depth );
+	internalFormat = SelectInternalFormat( pic, 6, width, height, depth, &swizzleMask );
 
 	// don't bother with downsample for now
 	scaled_width = width;
@@ -1127,15 +1134,14 @@ void idImage::UploadPrecompressedImage() {
 }
 
 void R_HandleImageCompression( idImage& image ) {
-	bool compressToRgtc = (
-		(image.residency & IR_GRAPHICS) && 
-		image.depth == TD_BUMP &&
-		globalImages->image_useNormalCompression.GetBool() &&
-		image.cpuData.IsValid() &&
-		!image.compressedData
-	);
+	if ( !(image.residency & IR_GRAPHICS) )
+		return;		// not needed on GPU, so no point in compressing
+	if ( image.compressedData )
+		return;		// output data already computed/provided
+	if ( !image.cpuData.IsValid() )
+		return;		// have no input data?
 
-	if (compressToRgtc) {
+	if (image.depth == TD_BUMP && globalImages->image_useNormalCompression.GetBool()) {
 		TRACE_CPU_SCOPE_STR("Compress:Image", image.imgName)
 		int blockSize = 16;
 
@@ -1185,9 +1191,9 @@ void R_HandleImageCompression( idImage& image ) {
 		while (1) {
 			int bw = (levw + 3) >> 2;
 			int bh = (levh + 3) >> 2;
-			SIMDProcessor->CompressRGTCFromRGBA8(
-				srcData, levw, levh, 4 * levw,
-				dstData
+			CompressImage(
+				GL_COMPRESSED_RG_RGTC2,
+				dstData, srcData, levw, levh
 			);
 			dstData += bw * bh * blockSize;
 			if (levw == 1 && levh == 1)

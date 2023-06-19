@@ -97,6 +97,9 @@ typedef struct {
 } ddsFileHeader_t;
 
 bool IsImageFormatCompressed( int internalFormat );
+int SizeOfCompressedImage( int width, int height, int internalFormat );
+void CompressImage( int internalFormat, byte *compressedPtr, const byte *srcPtr, int width, int height, int stride = 0 );
+void DecompressImage( int internalFormat, const byte *compressedPtr, byte *dstPtr, int width, int height, int stride = 0 );
 
 // increasing numeric values imply more information is stored
 typedef enum {
@@ -185,6 +188,9 @@ typedef struct imageCompressedData_s {
 	static int TotalSizeFromFileSize(int fileSize) { return fileSize + 8; }
 	static int TotalSizeFromContentSize(int contentSize) { return TotalSizeFromFileSize(FileSizeFromContentSize(contentSize)); }
 	int GetTotalSize() const { return TotalSizeFromFileSize(fileSize); }
+
+	int GetWidth() const { return header.dwWidth; }
+	int GetHeight() const { return header.dwHeight; }
 	byte *ComputeUncompressedData() const;
 } imageCompressedData_t;
 static_assert(offsetof(imageCompressedData_s, contents) - offsetof(imageCompressedData_s, magic) == 128, "Wrong imageCompressedData_t layout");
@@ -252,7 +258,7 @@ public:
 	void		UploadPrecompressedImage( void );
 	void		ActuallyLoadImage( bool allowBackground = false );
 	static int	BitsForInternalFormat( int internalFormat, bool gpu = false );
-	GLenum		SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth ) const;
+	static GLenum SelectInternalFormat( byte const* const* dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, GLint const* *swizzleMask = nullptr );
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
 	int			NumLevelsForImageSize( int width, int height ) const;
 

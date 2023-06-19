@@ -33,14 +33,58 @@ bool IsImageFormatCompressed( int internalFormat ) {
 	return false;
 }
 
-static int SizeOfCompressedImage( int w, int h, int internalFormat ) {
+int SizeOfCompressedImage( int width, int height, int internalFormat ) {
 	assert( IsImageFormatCompressed( internalFormat ) );
-	int numBlocks = ( (w + 3) / 4 ) * ( (h + 3) / 4 );
+	int numBlocks = ( (width + 3) / 4 ) * ( (height + 3) / 4 );
 	int bytesPerBlock = 16;
 	if (internalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 		bytesPerBlock = 8;
 	return numBlocks * bytesPerBlock;
 }
+
+void CompressImage( int internalFormat, byte *compressedPtr, const byte *srcPtr, int width, int height, int stride ) {
+	// replace zero stride with default stride
+	if ( stride == 0 )
+		stride = 4 * width;
+
+	if ( internalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT )
+		assert(0); // TODO
+	else if ( internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT )
+		assert(0); // TODO
+	else if ( internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT )
+		assert(0); // TODO
+	else if ( internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT )
+		assert(0); // TODO
+	else if ( internalFormat == GL_COMPRESSED_RG_RGTC2 )
+		SIMDProcessor->CompressRGTCFromRGBA8( srcPtr, width, height, stride, compressedPtr );
+	else {
+		assert( 0 );
+		memset( compressedPtr, 0, SizeOfCompressedImage( width, height, internalFormat ) );
+	}
+}
+
+void DecompressImage( int internalFormat, const byte *compressedPtr, byte *dstPtr, int width, int height, int stride ) {
+	// replace zero stride with default stride
+	if ( stride == 0 )
+		stride = 4 * width;
+
+	if ( internalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT )
+		SIMDProcessor->DecompressRGBA8FromDXT1( compressedPtr, width, height, dstPtr, stride, false );
+	else if ( internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT )
+		SIMDProcessor->DecompressRGBA8FromDXT1( compressedPtr, width, height, dstPtr, stride, true );
+	else if ( internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT )
+		SIMDProcessor->DecompressRGBA8FromDXT3( compressedPtr, width, height, dstPtr, stride );
+	else if ( internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT )
+		SIMDProcessor->DecompressRGBA8FromDXT5( compressedPtr, width, height, dstPtr, stride );
+	else if ( internalFormat == GL_COMPRESSED_RG_RGTC2 )
+		SIMDProcessor->DecompressRGBA8FromRGTC( compressedPtr, width, height, dstPtr, stride );
+	else {
+		assert( 0 );
+		memset( dstPtr, 0, width * height * 4 );
+	}
+}
+
+//========================================================================================================================
 
 static void TestDecompressOnImage(int W, int H, const idList<byte>& inputUnc, GLenum compressedFormat, bool checkPerfo = false) {
 	qglGetError();
@@ -73,18 +117,7 @@ static void TestDecompressOnImage(int W, int H, const idList<byte>& inputUnc, GL
 	const int TRIES = checkPerfo ? 5 : 1;
 	for (int ntry = 0; ntry < TRIES; ntry++) {
 		double startClock = Sys_GetClockTicks();
-		if (compressedFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
-			SIMDProcessor->DecompressRGBA8FromDXT1(openglComp.Ptr(), W, H, softUnc.Ptr(), 4 * W, false);
-		else if (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
-			SIMDProcessor->DecompressRGBA8FromDXT1(openglComp.Ptr(), W, H, softUnc.Ptr(), 4 * W, true);
-		else if (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT)
-			SIMDProcessor->DecompressRGBA8FromDXT3(openglComp.Ptr(), W, H, softUnc.Ptr(), 4 * W);
-		else if (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
-			SIMDProcessor->DecompressRGBA8FromDXT5(openglComp.Ptr(), W, H, softUnc.Ptr(), 4 * W);
-		else if (compressedFormat == GL_COMPRESSED_RG_RGTC2)
-			SIMDProcessor->DecompressRGBA8FromRGTC(openglComp.Ptr(), W, H, softUnc.Ptr(), 4 * W);
-		else
-			CHECK(false);
+		DecompressImage( compressedFormat, openglComp.Ptr(), softUnc.Ptr(), W, H );
 		double endClock = Sys_GetClockTicks();
 		if (checkPerfo && ntry == TRIES-1) {
 			MESSAGE(va("Decompressed (%d x %d) image from format %x in %0.3lf ms",
