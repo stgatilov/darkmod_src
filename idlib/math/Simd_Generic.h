@@ -121,8 +121,11 @@ public:
 	virtual void CullTrisByFrustum( idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes, const idPlane frustum[6], byte *triCull, float epsilon ) override;
 
 	virtual void GenerateMipMap2x2( const byte *srcPtr, int srcStride, int halfWidth, int halfHeight, byte *dstPtr, int dstStride ) override;
-	virtual void CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) override;
 	virtual bool ConvertRowToRGBA8( const byte *srcPtr, int width, int bitsPerPixel, bool bgr, byte *dstPtr ) override;
+	virtual void CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) override;
+	virtual void CompressDXT1FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) override;
+	virtual void CompressDXT3FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) override;
+	virtual void CompressDXT5FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) override;
 	virtual void DecompressRGBA8FromDXT1( const byte *srcPtr, int width, int height, byte *dstPtr, int stride, bool allowTransparency ) override;
 	virtual void DecompressRGBA8FromDXT3( const byte *srcPtr, int width, int height, byte *dstPtr, int stride ) override;
 	virtual void DecompressRGBA8FromDXT5( const byte *srcPtr, int width, int height, byte *dstPtr, int stride ) override;

@@ -3080,6 +3080,299 @@ void idSIMD_Generic::GenerateMipMap2x2( const byte *srcPtr, int srcStride, int h
 	}
 }
 
+namespace DxtCompress {
+
+static void LoadBlockChannel( byte block[16], const byte *srcPtr, int width, int height, int stride, int brow, int bcol, int channel ) {
+	for (int r = 0; r < 4; r++)
+		for (int c = 0; c < 4; c++) {
+			int i = brow * 4 + r;
+			int j = bcol * 4 + c;
+			// use "clamp" continuation
+			if (i > height - 1)
+				i = height - 1;
+			if (j > width - 1)
+				j = width - 1;
+			byte &dstPixel = block[4 * r + c];
+			const byte *srcPixel = &srcPtr[i * stride + 4 * j];
+			dstPixel = srcPixel[channel];
+		}
+}
+
+static void LoadBlockFull( byte block[16][4], const byte *srcPtr, int width, int height, int stride, int brow, int bcol ) {
+	for (int r = 0; r < 4; r++)
+		for (int c = 0; c < 4; c++) {
+			int i = brow * 4 + r;
+			int j = bcol * 4 + c;
+			// use "clamp" continuation
+			if (i > height - 1)
+				i = height - 1;
+			if (j > width - 1)
+				j = width - 1;
+			byte *dstPixel = block[4 * r + c];
+			const byte *srcPixel = &srcPtr[i * stride + 4 * j];
+			for (int c = 0; c < 4; c++)
+				dstPixel[c] = srcPixel[c];
+		}
+}
+
+static uint64 ProcessAlphaBlock( const byte block[16] ) {
+	// compute min/max
+	int minv = block[0];
+	int maxv = block[0];
+	for (int i = 0; i < 16; i++) {
+		minv = idMath::Imin(minv, block[i]);
+		maxv = idMath::Imax(maxv, block[i]);
+	}
+
+	// make sure min < max, so that 7-step case is used
+	if (minv == maxv) {
+		if (maxv < 255)
+			maxv++;
+		else
+			minv--;
+	}
+
+	uint64 blockData = maxv + (minv << 8);
+	int bits = 16;
+	for (int i = 0; i < 16; i++) {
+		// compute ratio
+		int numer = block[i] - minv;
+		int denom = maxv - minv;
+#if 0
+		// find closest ramp point
+		int idx = (numer * 7 + (denom >> 1)) / denom;
+#else
+		// this code yields closest ramp point in most cases
+		// among all 32K ratios D/N, there are 258 exceptions with N >= 65
+		// in exceptional cases, ratio is close to middle, and chosen ramp point is almost as close
+		// Note: this code is used here to match CompressRGTCFromRGBA8_Kernel8x4 !
+		int mult = ((7 << 12) + denom-1) / denom;
+		int idx = (mult * numer + (1 << 11)) >> 12;
+#endif
+		// convert to DXT5 index
+		int val = 8 - idx;
+		if (idx == 7)
+			val = 0;
+		if (idx == 0)
+			val = 1;
+		//append to bit stream
+		blockData += uint64(val) << bits;
+		bits += 3;
+	}
+
+	assert(bits == 64);
+	return blockData;
+}
+
+static uint64 ProcessAlphaBlock4b( const byte block[16] ) {
+	uint64 result = 0;
+	for (int i = 15; i >= 0; i--) {
+		int x = (int(block[i]) * 15 + 127) / 255;
+		assert(x >= 0 && x < 16);
+		result = (result << 4) + x;
+	}
+	return result;
+}
+
+static uint64 ProcessColorBlock( const byte block[16][4] ) {
+	// compute average color
+	uint16 sumColor[3] = {0};
+	for (int i = 0; i < 16; i++)
+		for (int c = 0; c < 3; c++)
+			sumColor[c] += block[i][c];
+	uint8 avgColor[3];
+	for (int c = 0; c < 3; c++)
+		avgColor[c] = (sumColor[c] + 7) >> 4;
+
+	// compute covariance matrix
+	float covMatr[3][3] = {{0.0f}};
+	for (int i = 0; i < 16; i++) {
+		float r = block[i][0];  r -= avgColor[0];
+		float g = block[i][1];  g -= avgColor[1];
+		float b = block[i][2];  b -= avgColor[2];
+		covMatr[0][0] += r * r;
+		covMatr[0][1] += r * g;
+		covMatr[0][2] += r * b;
+		covMatr[1][1] += g * g;
+		covMatr[1][2] += g * b;
+		covMatr[2][2] += b * b;
+	}
+	covMatr[1][0] = covMatr[0][1];
+	covMatr[2][0] = covMatr[0][2];
+	covMatr[2][1] = covMatr[1][2];
+
+	// compute maximum eigenvector of covariance matrix
+	// using a few power iterations from (1,1,1) vector
+	float vec[3] = {1.0f, 1.0f, 1.0f};
+	for (int pwr = 0; pwr < 3; pwr++) {
+		float nvec[3];
+		for (int c = 0; c < 3; c++)
+			nvec[c] = covMatr[c][0] * vec[0] + covMatr[c][1] * vec[1] + covMatr[c][2] * vec[2];
+		for (int c = 0; c < 3; c++)
+			vec[c] = nvec[c];
+	}
+	// singular matrix (e.g. constant color block) can result in zero vector
+	// otherwise it is >= 1 since it is integer
+	float norm = sqrtf(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+	if (norm == 0.0f) {
+		static const float SQRT3 = sqrtf(3.0f);
+		vec[0] = vec[1] = vec[2] = 1.0f;
+		norm = SQRT3;
+	}
+	// normalize eigenvector to length = 64 and round to integer
+	float normMultiplier = 64.0f / norm;
+	int8 axis[3];
+	for (int c = 0; c < 3; c++)
+		axis[c] = int8(idMath::FtoiRound(vec[c] * normMultiplier));
+
+	// find range of colors projected on the eigenvector axis
+	int16 minDot = INT16_MAX, maxDot = INT16_MIN;
+	int minIdx = -1, maxIdx = -1;
+	for (int i = 0; i < 16; i++) {
+		int16 r = block[i][0];  r -= avgColor[0];
+		int16 g = block[i][1];  g -= avgColor[1];
+		int16 b = block[i][2];  b -= avgColor[2];
+		int16 dot = int16(axis[0]) * r + int16(axis[1]) * g + int16(axis[2]) * b;
+		minDot = std::min(minDot, dot);
+		maxDot = std::max(maxDot, dot);
+	}
+	// compute endpoints of the range
+	int16 bmin[3], bmax[3];
+	for (int c = 0; c < 3; c++) {
+		// note: divide by 64^2 because length(axis) = 64
+		bmin[c] = avgColor[c] + ((int32(axis[c]) * minDot) >> 12);
+		bmax[c] = avgColor[c] + ((int32(axis[c]) * maxDot) >> 12);
+	}
+	// reduce range by 12.5% and use its endpoints as key colors
+	int16 keyColorA[3], keyColorB[3];
+	for (int c = 0; c < 3; c++) {
+		// note: this is quite helpful on photos
+		int16 diag = bmax[c] - bmin[c];
+		keyColorA[c] = bmin[c] + (diag >> 3);
+		keyColorB[c] = bmax[c] - (diag >> 3);
+	}
+
+	uint8 key565A[3], key565B[3];	// key colors packed as RGB565
+	uint8 ids[16];					// indices of pixels [0..3]
+
+	// compute block and do refinement a few times
+	for (int iter = 0; ; iter++) {
+
+		for (int c = 0; c < 3; c++) {
+			// slightly push almost equal colors apart from each other (emulated rounding in opposite directions)
+			// note: this special rounding is very important for reducing color banding on gradients
+			int threshold = (c == 1 ? 4 : 8);
+			int shift = (threshold - 1) >> 1;	// 1 or 3
+			if (idMath::Abs(keyColorA[c] - keyColorB[c]) < threshold) {
+				keyColorA[c] += (keyColorA[c] < keyColorB[c] ? -shift : shift);
+				keyColorB[c] += (keyColorA[c] < keyColorB[c] ? shift : -shift);
+			}
+			// clamp key colors to [0..255] range
+			keyColorA[c] = idMath::ClampInt(0, 255, int(keyColorA[c]));
+			keyColorB[c] = idMath::ClampInt(0, 255, int(keyColorB[c]));
+		}
+		// reduce key colors to 565
+		for (int c = 0; c < 3; c++) {
+			int maxValue = (c == 1 ? 63 : 31);
+			key565A[c] = uint8((int16(keyColorA[c]) * maxValue + 127) / 255);
+			key565B[c] = uint8((int16(keyColorB[c]) * maxValue + 127) / 255);
+		}
+		// make sure colors are not exactly equal: avoid encoding with transparency 
+		if (key565A[0] == key565B[0] && key565A[1] == key565B[1] && key565A[2] == key565B[2]) {
+			key565B[1] += (key565B[1] < 32 ? 1 : -1);
+		}
+		// recompute 8-bit representation of key colors
+		for (int c = 0; c < 3; c++) {
+			int maxValue = (c == 1 ? 63 : 31);
+			int addedHalf = maxValue >> 1;	// 31 or 15
+			keyColorA[c] = ((uint16(key565A[c]) * 255 + addedHalf) / maxValue);
+			keyColorB[c] = ((uint16(key565B[c]) * 255 + addedHalf) / maxValue);
+		}
+
+		// prepare indices computation
+		int32 denom = 0;
+		for (int c = 0; c < 3; c++)
+			denom += (int32(keyColorB[c]) - keyColorA[c]) * (int32_t(keyColorB[c]) - keyColorA[c]);
+		assert(denom > 0);
+		// reciprocal value for denominator
+		// it is increased slightly to ensure that colors with exact index don't get rounded below it
+		float invDenom3 = 3.0f / denom + 3.0f * FLT_EPSILON;
+		// compute indices
+		for (int i = 0; i < 16; i++) {
+			int32 numer = 0;
+			for (int c = 0; c < 3; c++)
+				numer += (int32(block[i][c]) - keyColorA[c]) * (int32(keyColorB[c]) - keyColorA[c]);
+			int k = idMath::FtoiRound(numer * invDenom3);
+			k = idMath::ClampInt(0, 3, k);
+			ids[i] = k;
+		}
+
+		// we do 1 iteration of refinement + recompute block after that
+		if (iter == 1)
+			break;
+
+		// least squares refinement: find best non-integer key colors for fixed indices
+		// compute matrix and right side of 2x2 equation system
+		uint16 alpha = 0, beta = 0, gamma = 0;
+		uint16 rightA[3] = {0}, rightB[3] = {0};
+		for (int i = 0; i < 16; i++) {
+			alpha += (3 - ids[i]) * (3 - ids[i]);
+			beta += ids[i] * ids[i];
+			gamma += ids[i] * (3 - ids[i]);
+			for (int c = 0; c < 3; c++)
+				rightB[c] += ids[i] * uint16(block[i][c]);
+		}
+		for (int c = 0; c < 3; c++) {
+			rightA[c] = sumColor[c] * 3 - rightB[c];
+			rightA[c] *= 3;
+			rightB[c] *= 3;
+		}
+
+		// don't do anything if dmatrix is singular
+		int32_t det = int32(alpha) * beta - int32(gamma) * gamma;
+		assert(det >= 0);
+		if (det != 0) {
+			float invDet = 1.0f / det;
+			// solve system
+			for (int c = 0; c < 3; c++) {
+				int32 detA = int32(rightA[c]) * beta - int32(rightB[c]) * gamma;
+				int32 detB = int32(rightB[c]) * alpha - int32(rightA[c]) * gamma;
+				keyColorA[c] = idMath::FtoiRound(detA * invDet);
+				keyColorB[c] = idMath::FtoiRound(detB * invDet);
+			}
+		}
+	}
+
+	// pack key colors into 32 bits
+	uint16 baseA = uint16(key565A[2]) + (uint16(key565A[1]) << 5) + (uint16(key565A[0]) << 11);
+	uint16 baseB = uint16(key565B[2]) + (uint16(key565B[1]) << 5) + (uint16(key565B[0]) << 11);
+	assert(baseA != baseB);
+
+	// pack indices into 32 bits
+	uint32_t mask = 0;
+	for (int i = 15; i >= 0; i--) {
+		// reorder for DXT: c0 = 0, c1 = 3, c2 = 1, c3 = 2
+		int q = ids[i];
+		if (q == 3)
+			q = 1;
+		else if (q > 0)
+			q++;
+
+		mask = (mask << 2) + q;
+	}
+
+	// swap key colors if necessary, inverting indices
+	if (baseA < baseB) {
+		std::swap(baseA, baseB);
+		mask ^= 0x55555555;
+	}
+
+	uint64 result = (((uint64(mask) << 16) + baseB) << 16) + baseA;
+	return result;
+}
+
+}
+
 /*
 ============
 idSIMD_Generic::CompressRGTCFromRGBA8
@@ -3089,73 +3382,79 @@ void idSIMD_Generic::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int h
 	int bw = (width + 3) / 4;
 	int bh = (height + 3) / 4;
 	uint64 *dstBlocks = (uint64*)dstPtr;
-	byte block[4][4];
+	byte block[16];
 
+	using namespace DxtCompress;
 	for (int brow = 0; brow < bh; brow++) {
 		for (int bcol = 0; bcol < bw; bcol++) {
 			for (int comp = 0; comp < 2; comp++) {
-
-				// load block
-				for (int r = 0; r < 4; r++)
-					for (int c = 0; c < 4; c++) {
-						int i = brow * 4 + r;
-						int j = bcol * 4 + c;
-						// use "clamp" continuation
-						if (i > height - 1)
-							i = height - 1;
-						if (j > width - 1)
-							j = width - 1;
-						block[r][c] = srcPtr[i * stride + 4 * j + comp];
-					}
-
-				// compute min/max
-				int minv = block[0][0];
-				int maxv = block[0][0];
-				for (int r = 0; r < 4; r++)
-					for (int c = 0; c < 4; c++) {
-						minv = idMath::Imin(minv, block[r][c]);
-						maxv = idMath::Imax(maxv, block[r][c]);
-					}
-				// be sure min < max, so that 7-step case is used
-				if (minv == maxv) {
-					if (maxv < 255)
-						maxv++;
-					else
-						minv--;
-				}
-
-				uint64 blockData = maxv + (minv << 8);
-				int bits = 16;
-				for (int r = 0; r < 4; r++)
-					for (int c = 0; c < 4; c++) {
-						// compute ratio
-						int numer = block[r][c] - minv;
-						int denom = maxv - minv;
-						#if 0
-						// find closest ramp point
-						int idx = (numer * 7 + (denom >> 1)) / denom;
-						#else
-						// this code yields closest ramp point in most cases
-						// among all 32K ratios D/N, there are 258 exceptions with N >= 65
-						// in exceptional cases, ratio is close to middle, and chosen ramp point is almost as close
-						// Note: this code is used here to match CompressRGTCFromRGBA8_Kernel8x4 !
-						int mult = ((7 << 12) + denom-1) / denom;
-						int idx = (mult * numer + (1 << 11)) >> 12;
-						#endif
-						// convert to DXT5 index
-						int val = 8 - idx;
-						if (idx == 7)
-							val = 0;
-						if (idx == 0)
-							val = 1;
-						//append to bit stream
-						blockData += uint64(val) << bits;
-						bits += 3;
-					}
-				assert(bits == 64);
-
-				*dstBlocks++ = blockData;
+				LoadBlockChannel( block, srcPtr, width, height, stride, brow, bcol, comp );
+				*dstBlocks++ = ProcessAlphaBlock( block );
 			}
+		}
+	}
+}
+
+/*
+============
+idSIMD_Generic::CompressDXT1FromRGBA8
+============
+*/
+void idSIMD_Generic::CompressDXT1FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	uint64 *dstBlocks = (uint64*)dstPtr;
+	byte block[16][4];
+
+	using namespace DxtCompress;
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			LoadBlockFull( block, srcPtr, width, height, stride, brow, bcol );
+			*dstBlocks++ = ProcessColorBlock( block );
+		}
+	}
+}
+
+/*
+============
+idSIMD_Generic::CompressDXT3FromRGBA8
+============
+*/
+void idSIMD_Generic::CompressDXT3FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	uint64 *dstBlocks = (uint64*)dstPtr;
+	byte block[16][4], alpha[16];
+
+	using namespace DxtCompress;
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			LoadBlockFull( block, srcPtr, width, height, stride, brow, bcol );
+			LoadBlockChannel( alpha, srcPtr, width, height, stride, brow, bcol, 3 );
+			*dstBlocks++ = ProcessAlphaBlock4b( alpha );
+			*dstBlocks++ = ProcessColorBlock( block );
+		}
+	}
+}
+
+/*
+============
+idSIMD_Generic::CompressDXT5FromRGBA8
+============
+*/
+void idSIMD_Generic::CompressDXT5FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	int bw = (width + 3) / 4;
+	int bh = (height + 3) / 4;
+	uint64 *dstBlocks = (uint64*)dstPtr;
+	byte block[16][4], alpha[16];
+
+	using namespace DxtCompress;
+	for (int brow = 0; brow < bh; brow++) {
+		for (int bcol = 0; bcol < bw; bcol++) {
+			LoadBlockFull( block, srcPtr, width, height, stride, brow, bcol );
+			LoadBlockChannel( alpha, srcPtr, width, height, stride, brow, bcol, 3 );
+			*dstBlocks++ = ProcessAlphaBlock( alpha );
+			*dstBlocks++ = ProcessColorBlock( block );
 		}
 	}
 }

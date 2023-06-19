@@ -1013,6 +1013,10 @@ has completed
 ===================
 */
 void idImage::UploadPrecompressedImage() {
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
 	ddsFileHeader_t	*header = &compressedData->header;
 
 	// generate the texture number
@@ -1141,77 +1145,95 @@ void R_HandleImageCompression( idImage& image ) {
 	if ( !image.cpuData.IsValid() )
 		return;		// have no input data?
 
-	if (image.depth == TD_BUMP && globalImages->image_useNormalCompression.GetBool()) {
-		TRACE_CPU_SCOPE_STR("Compress:Image", image.imgName)
-		int blockSize = 16;
+	GLenum internalFormat = idImage::SelectInternalFormat( image.cpuData.pic, image.cpuData.sides, image.cpuData.width, image.cpuData.height, image.depth );
+	if ( !IsImageFormatCompressed(internalFormat) )
+		return;		// don't want to compress it
 
-		// Compute size of compressed output
-		int levw = image.cpuData.width;
-		int levh = image.cpuData.height;
-		int totalBytes = 0, mainBytes = 0;
-		int mipLevels = 0;
-		while (1) {
-			int bw = (levw + 3) >> 2;
-			int bh = (levh + 3) >> 2;
-			int currSz = bw * bh * blockSize;
-			if (mainBytes == 0)
-				mainBytes = currSz;
-			mipLevels++;
-			totalBytes += currSz;
-			if (levw == 1 && levh == 1)
-				break;
-			levw = idMath::Imax(levw >> 1, 1);
-			levh = idMath::Imax(levh >> 1, 1);
-		}
+	// proper DXT1 with alpha can only be prepared by artist, never compress to it automatically
+	assert( internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT );
 
-		// Allocate DDS data
-		int allocSize = imageCompressedData_t::TotalSizeFromContentSize(totalBytes);
-		imageCompressedData_t *compData = (imageCompressedData_t*)R_StaticAlloc(allocSize);
-		// Fill header
-		compData->fileSize = imageCompressedData_t::FileSizeFromContentSize(totalBytes);
-		compData->magic = DDS_MAKEFOURCC( 'D', 'D', 'S', ' ' );
-		memset(&compData->header, 0, sizeof(compData->header));
-		compData->header.dwSize = sizeof(compData->header);
-		compData->header.dwFlags = DDSF_CAPS | DDSF_PIXELFORMAT | DDSF_WIDTH | DDSF_HEIGHT;
-		compData->header.dwFlags |= DDSF_LINEARSIZE | DDSF_MIPMAPCOUNT;
-		compData->header.dwWidth = image.cpuData.width;
-		compData->header.dwHeight = image.cpuData.height;
-		compData->header.dwPitchOrLinearSize = mainBytes;
-		compData->header.dwMipMapCount = mipLevels;
-		compData->header.ddspf.dwSize = sizeof(compData->header.ddspf);
-		compData->header.ddspf.dwFlags = DDSF_FOURCC;
+	TRACE_CPU_SCOPE_STR("Compress:Image", image.imgName)
+	int blockSize = SizeOfCompressedImage(4, 4, internalFormat);
+
+	// Compute size of compressed output
+	int levw = image.cpuData.width;
+	int levh = image.cpuData.height;
+	int totalBytes = 0, mainBytes = 0;
+	int mipLevels = 0;
+	while (1) {
+		int bw = (levw + 3) >> 2;
+		int bh = (levh + 3) >> 2;
+		int currSz = bw * bh * blockSize;
+		if (mainBytes == 0)
+			mainBytes = currSz;
+		mipLevels++;
+		totalBytes += currSz;
+		if (levw == 1 && levh == 1)
+			break;
+		levw = idMath::Imax(levw >> 1, 1);
+		levh = idMath::Imax(levh >> 1, 1);
+	}
+
+	// Allocate DDS data
+	int allocSize = imageCompressedData_t::TotalSizeFromContentSize(totalBytes);
+	imageCompressedData_t *compData = (imageCompressedData_t*)R_StaticAlloc(allocSize);
+	// Fill header
+	compData->fileSize = imageCompressedData_t::FileSizeFromContentSize(totalBytes);
+	compData->magic = DDS_MAKEFOURCC( 'D', 'D', 'S', ' ' );
+	memset(&compData->header, 0, sizeof(compData->header));
+	compData->header.dwSize = sizeof(compData->header);
+	compData->header.dwFlags = DDSF_CAPS | DDSF_PIXELFORMAT | DDSF_WIDTH | DDSF_HEIGHT;
+	compData->header.dwFlags |= DDSF_LINEARSIZE | DDSF_MIPMAPCOUNT;
+	compData->header.dwWidth = image.cpuData.width;
+	compData->header.dwHeight = image.cpuData.height;
+	compData->header.dwPitchOrLinearSize = mainBytes;
+	compData->header.dwMipMapCount = mipLevels;
+	compData->header.ddspf.dwSize = sizeof(compData->header.ddspf);
+	compData->header.ddspf.dwFlags = DDSF_FOURCC;
+	compData->header.dwCaps1 = DDSF_TEXTURE | DDSF_MIPMAP | DDSF_COMPLEX;
+
+	if (internalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT) {
+		compData->header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'D', 'X', 'T', '1' );
+	} else if (internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT) {
+		compData->header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'D', 'X', 'T', '3' );
+		compData->header.ddspf.dwFlags |= DDSF_ALPHAPIXELS;
+	} else if (internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT) {
+		compData->header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'D', 'X', 'T', '5' );
+		compData->header.ddspf.dwFlags |= DDSF_ALPHAPIXELS;
+	} else if (internalFormat == GL_COMPRESSED_RG_RGTC2) {
 		compData->header.ddspf.dwFourCC = DDS_MAKEFOURCC( 'A', 'T', 'I', '2' );
-		compData->header.dwCaps1 = DDSF_TEXTURE | DDSF_MIPMAP | DDSF_COMPLEX;
+	} else {
+		common->Error("R_HandleImageCompression: unknown compressed image format %d", internalFormat);
+	}
 
-		// Generate mipmaps and compress them
-		byte *dstData = compData->contents;
-		byte *srcData = image.cpuData.GetPic();
-		levw = image.cpuData.width;
-		levh = image.cpuData.height;
-		while (1) {
-			int bw = (levw + 3) >> 2;
-			int bh = (levh + 3) >> 2;
-			CompressImage(
-				GL_COMPRESSED_RG_RGTC2,
-				dstData, srcData, levw, levh
-			);
-			dstData += bw * bh * blockSize;
-			if (levw == 1 && levh == 1)
-				break;
-			byte *newMip = R_MipMap(srcData, levw, levh);
-			levw = idMath::Imax(levw >> 1, 1);
-			levh = idMath::Imax(levh >> 1, 1);
-			if (srcData != image.cpuData.GetPic())
-				R_StaticFree(srcData);
-			srcData = newMip;
-		} 
+	// Generate mipmaps and compress them
+	byte *dstData = compData->contents;
+	byte *srcData = image.cpuData.GetPic();
+	levw = image.cpuData.width;
+	levh = image.cpuData.height;
+	while (1) {
+		int bw = (levw + 3) >> 2;
+		int bh = (levh + 3) >> 2;
+		CompressImage(
+			internalFormat,
+			dstData, srcData, levw, levh
+		);
+		dstData += bw * bh * blockSize;
+		if (levw == 1 && levh == 1)
+			break;
+		byte *newMip = R_MipMap(srcData, levw, levh);
+		levw = idMath::Imax(levw >> 1, 1);
+		levh = idMath::Imax(levh >> 1, 1);
 		if (srcData != image.cpuData.GetPic())
 			R_StaticFree(srcData);
+		srcData = newMip;
+	} 
+	if (srcData != image.cpuData.GetPic())
+		R_StaticFree(srcData);
 
-		// Save compressed DDS in image
-		assert(!image.compressedData);
-		image.compressedData = compData;
-	}
+	// Save compressed DDS in image
+	assert(!image.compressedData);
+	image.compressedData = compData;
 }
 
 void R_LoadImageData( idImage& image ) {
