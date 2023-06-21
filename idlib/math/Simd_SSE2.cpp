@@ -979,19 +979,49 @@ ID_FORCE_INLINE static void ProcessColorBlock_x8( const __m128i inputRows[8][4],
 static void RgtcKernel8x4( const byte *srcPtr, int stride, byte *dstPtr ) {
 	__m128i rgbaRows[2][4];
 	LoadBlocks<2>(srcPtr, stride, rgbaRows);
+
 	__m128i rgrgRows[4];
 	ExtractRedGreen_x2(rgbaRows, rgrgRows);
 	__m128i output[2];
 	ProcessAlphaBlock_x4(rgrgRows, output);
+
 	StoreOutput<2>(dstPtr, output);
 }
 
 static void Dxt1Kernel32x4( const byte *srcPtr, int stride, byte *dstPtr ) {
 	__m128i rgbaRows[8][4];
 	LoadBlocks<8>(srcPtr, stride, rgbaRows);
+
 	__m128i output[4];
 	ProcessColorBlock_x8(rgbaRows, output);
+
 	StoreOutput<4>(dstPtr, output);
+}
+
+static void Dxt5Kernel32x4( const byte *srcPtr, int stride, byte *dstPtr ) {
+	__m128i rgbaRows[8][4];
+	LoadBlocks<8>(srcPtr, stride, rgbaRows);
+
+	__m128i colorOutput[4];
+	ProcessColorBlock_x8(rgbaRows, colorOutput);
+
+	__m128i alphaRows[4];
+	__m128i alphaOutput[4];
+	ExtractAlpha_x4(rgbaRows + 0, alphaRows);
+	ProcessAlphaBlock_x4(alphaRows, alphaOutput + 0);
+	ExtractAlpha_x4(rgbaRows + 4, alphaRows);
+	ProcessAlphaBlock_x4(alphaRows, alphaOutput + 2);
+
+	__m128i output[8];
+	output[0] = _mm_unpacklo_epi64(alphaOutput[0], colorOutput[0]);
+	output[1] = _mm_unpackhi_epi64(alphaOutput[0], colorOutput[0]);
+	output[2] = _mm_unpacklo_epi64(alphaOutput[1], colorOutput[1]);
+	output[3] = _mm_unpackhi_epi64(alphaOutput[1], colorOutput[1]);
+	output[4] = _mm_unpacklo_epi64(alphaOutput[2], colorOutput[2]);
+	output[5] = _mm_unpackhi_epi64(alphaOutput[2], colorOutput[2]);
+	output[6] = _mm_unpacklo_epi64(alphaOutput[3], colorOutput[3]);
+	output[7] = _mm_unpackhi_epi64(alphaOutput[3], colorOutput[3]);
+	StoreOutput<8>(dstPtr, output);
 }
 
 template<int KernelBlocks, int OutputWordsPerBlock>
@@ -1035,6 +1065,11 @@ void idSIMD_SSE2::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int heig
 void idSIMD_SSE2::CompressDXT1FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
 	using namespace DxtCompress;
 	ProcessWithKernel<8, 1>( Dxt1Kernel32x4, srcPtr, width, height, stride, dstPtr );
+}
+
+void idSIMD_SSE2::CompressDXT5FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	using namespace DxtCompress;
+	ProcessWithKernel<8, 2>( Dxt5Kernel32x4, srcPtr, width, height, stride, dstPtr );
 }
 
 #endif
