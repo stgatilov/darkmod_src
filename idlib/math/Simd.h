@@ -27,10 +27,13 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ===============================================================================
 */
 
+class idSIMDProcessor;
+
 class idSIMD {
 public:
 	static void			Init( void );
 	static void			InitProcessor( const char *module, const char *forceImpl = nullptr );
+	static idSIMDProcessor *CreateProcessor( const char *forceImpl );	// stgatilov: global state not changed
 	static void			Shutdown( void );
 	static void			Test_f( const class idCmdArgs &args );
 };

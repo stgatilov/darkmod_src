@@ -24,8 +24,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "Simd_AVX2.h"
 #include "Simd_IdAsm.h"
 
-idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
-idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
 idSIMDProcessor *	SIMDProcessor = NULL;
 
 
@@ -37,10 +35,7 @@ idSIMD::Init
 ================
 */
 void idSIMD::Init( void ) {
-	generic = new idSIMD_Generic;
-	generic->cpuid = CPUID_GENERIC;
-	processor = NULL;
-	SIMDProcessor = generic;
+	SIMDProcessor = CreateProcessor( "generic" ); 
 }
 
 /*
@@ -49,12 +44,36 @@ idSIMD::InitProcessor
 ============
 */
 void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
-	if (processor != generic) {
-		delete processor;
-		processor = nullptr;
-		SIMDProcessor = generic;
-	}
+	SIMDProcessor = CreateProcessor( forceImpl );
+	int cpuid = SIMDProcessor->cpuid;
 
+	// Print what we found to console
+	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
+		// Vendor
+		cpuid & CPUID_AMD ? "AMD" :
+		cpuid & CPUID_INTEL ? "Intel" :
+		cpuid & CPUID_GENERIC ? "Generic" :
+		"Unsupported",
+		// Flags
+		cpuid & CPUID_SSE ? " SSE" : "",
+		cpuid & CPUID_SSE2 ? " SSE2" : "",
+		cpuid & CPUID_SSE3 ? " SSE3" : "",
+		cpuid & CPUID_SSSE3 ? " SSSE3" : "",
+		cpuid & CPUID_SSE41 ? " SSE41" : "",
+		cpuid & CPUID_AVX ? " AVX" : "",
+		cpuid & CPUID_AVX2 ? " AVX2" : "",
+		cpuid & CPUID_FMA3 ? " FMA3" : ""
+	);
+
+	idLib::common->Printf( "%s using %s for SIMD processing.\n", module, SIMDProcessor->GetName() );
+}
+
+/*
+============
+idSIMD::CreateProcessor
+============
+*/
+idSIMDProcessor *idSIMD::CreateProcessor( const char *forceImpl ) {
 	int cpuid = idLib::sys->GetProcessorId();
 
 	//stgatilov: force cpuid bits for SIMD choice if compiler macros are set
@@ -82,27 +101,6 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 		cpuid |= CPUID_FMA3;
 	#endif
 
-	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
-	                       // Vendor
-	                       cpuid & CPUID_AMD ? "AMD" :
-	                       cpuid & CPUID_INTEL ? "Intel" :
-	                       cpuid & CPUID_GENERIC ? "Generic" :
-	                       "Unsupported",
-	                       // the calculation how many physical/logical CPUs the machine has is rather
-	                       // convuluted and differes between AMD and Intel, so we don't attempt it:
-	                       //			cores,
-	                       //		   	cores > 1 ? "cores" : "core",
-	                       // Flags
-	                       cpuid & CPUID_SSE ? " SSE" : "",
-	                       cpuid & CPUID_SSE2 ? " SSE2" : "",
-	                       cpuid & CPUID_SSE3 ? " SSE3" : "",
-	                       cpuid & CPUID_SSSE3 ? " SSSE3" : "",
-	                       cpuid & CPUID_SSE41 ? " SSE41" : "",
-	                       cpuid & CPUID_AVX ? " AVX" : "",
-	                       cpuid & CPUID_AVX2 ? " AVX2" : "",
-	                       cpuid & CPUID_FMA3 ? " FMA3" : "" );
-
 	bool upToSSE = ( cpuid & CPUID_SSE );
 	bool upToSSE2 = upToSSE && ( cpuid & CPUID_SSE2 );
 	bool upToSSE3 = upToSSE2 && ( cpuid & CPUID_SSE3 );
@@ -111,32 +109,30 @@ void idSIMD::InitProcessor( const char *module, const char *forceImpl ) {
 	bool upToAVX = upToSSE41 && ( cpuid & CPUID_AVX );
 	bool upToAVX2 = upToAVX && ( cpuid & CPUID_AVX2 ) && ( cpuid & CPUID_FMA3 );
 
+	idSIMDProcessor *result = nullptr;
 	if (false) {
 #ifdef ENABLE_SSE_PROCESSORS
 	} else if ( upToAVX2 && (!forceImpl || idStr::Icmp(forceImpl, "AVX2") == 0) ) {
-		processor = new idSIMD_AVX2;
+		result = new idSIMD_AVX2;
 	} else if ( upToAVX && (!forceImpl || idStr::Icmp(forceImpl, "AVX") == 0) ) {
-		processor = new idSIMD_AVX;
+		result = new idSIMD_AVX;
 #if defined(_MSC_VER) && defined(_M_IX86)	//stgatilov: this processor is defined only on MSVC 32-bit
 	} else if ( upToSSE3 && (forceImpl && idStr::Icmp(forceImpl, "IdAsm") == 0) ) {
-		processor = new idSIMD_IdAsm;
+		result = new idSIMD_IdAsm;
 #endif
 	} else if ( upToSSSE3 && (!forceImpl || idStr::Icmp(forceImpl, "SSSE3") == 0) ) {
-		processor = new idSIMD_SSSE3;
+		result = new idSIMD_SSSE3;
 	} else if ( upToSSE2 && (!forceImpl || idStr::Icmp(forceImpl, "SSE2") == 0) ) {
-		processor = new idSIMD_SSE2;
+		result = new idSIMD_SSE2;
 	} else if ( upToSSE && (!forceImpl || idStr::Icmp(forceImpl, "SSE") == 0) ) {
-		processor = new idSIMD_SSE;
+		result = new idSIMD_SSE;
 #endif
 	} else {
-		processor = generic;
+		result = new idSIMD_Generic;
 	}
-	processor->cpuid = (cpuid_t)cpuid;
 
-	if ( processor != SIMDProcessor ) {
-		SIMDProcessor = processor;
-	}
-	idLib::common->Printf( "%s using %s for SIMD processing.\n", module, SIMDProcessor->GetName() );
+	result->cpuid = (cpuid_t)cpuid;
+	return result;
 }
 
 /*
@@ -145,12 +141,7 @@ idSIMD::Shutdown
 ================
 */
 void idSIMD::Shutdown( void ) {
-	if ( processor != generic ) {
-		delete processor;
-	}
-	delete generic;
-	generic = NULL;
-	processor = NULL;
+	delete SIMDProcessor;
 	SIMDProcessor = NULL;
 }
 
@@ -3861,8 +3852,8 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL );
 #endif /* _WIN32 */
 
-	p_simd = processor;
-	p_generic = generic;
+	p_simd = SIMDProcessor;
+	p_generic = CreateProcessor( "generic" );
 
 	int testBits = -1;
 	if ( idStr::Length( args.Argv( 1 ) ) != 0 ) {
@@ -3935,9 +3926,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 
 	idLib::common->SetRefreshOnPrint( false );
 
-	if ( p_simd != processor ) {
-		delete p_simd;
-	}
+	delete p_generic;
 	p_simd = NULL;
 	p_generic = NULL;
 
