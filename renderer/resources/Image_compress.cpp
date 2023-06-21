@@ -165,6 +165,22 @@ static void TestCompressOnImage(int W, int H, const idList<byte>& inputUnc, GLen
 		}
 	}
 
+	{
+		//SSE-optimized and generic implementations produce exactly the same result
+		//it greatly simplifies troubleshooting and debugging, since generic code is more understandable
+		idSIMDProcessor *genericProcessor = idSIMD::CreateProcessor("generic");
+		idList<byte> outputGeneric;
+		outputGeneric.SetNum(outputComp.Num());
+
+		std::swap(SIMDProcessor, genericProcessor);
+		CompressImage(compressedFormat, outputGeneric.Ptr(), inputUnc.Ptr(), W, H);
+		std::swap(SIMDProcessor, genericProcessor);
+
+		delete genericProcessor;
+		int cmp = memcmp(outputGeneric.Ptr(), outputComp.Ptr(), outputGeneric.Num());
+		CHECK(cmp == 0);
+	}
+
 	//we rely on this function being correct!
 	DecompressImage(compressedFormat, outputComp.Ptr(), checkUnc.Ptr(), W, H);
 
