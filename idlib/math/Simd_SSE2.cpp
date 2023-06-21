@@ -631,6 +631,33 @@ ID_FORCE_INLINE static void ProcessAlphaBlock_x4( const __m128i inputRows[4], __
 	outputs[1] = _mm_unpackhi_epi32(blockLow32, blockHigh32);
 }
 
+ID_FORCE_INLINE static void ProcessAlphaBlock4b_x2( const __m128i inputRows[2][4], __m128i outputs[1] ) {
+	__m128i bytes[2];
+	for (int b = 0; b < 2; b++) {
+		__m128i row0 = _mm_srli_epi32(inputRows[b][0], 24);
+		__m128i row1 = _mm_srli_epi32(inputRows[b][1], 24);
+		__m128i row2 = _mm_srli_epi32(inputRows[b][2], 24);
+		__m128i row3 = _mm_srli_epi32(inputRows[b][3], 24);
+		__m128i rows01 = _mm_packs_epi32(row0, row1);
+		__m128i rows23 = _mm_packs_epi32(row2, row3);
+
+		// convert to 4-bit: round(X * 15 / 255)
+		rows01 = _mm_add_epi16(_mm_mullo_epi16(rows01, _mm_set1_epi16(15)), _mm_set1_epi16(127));
+		rows23 = _mm_add_epi16(_mm_mullo_epi16(rows23, _mm_set1_epi16(15)), _mm_set1_epi16(127));
+		// note: X/255 = X/256 + X/256^2 + (X/256^3 + ...)
+		rows01 = _mm_srli_epi16(_mm_add_epi16(rows01, _mm_srli_epi16(rows01, 8)), 8);
+		rows23 = _mm_srli_epi16(_mm_add_epi16(rows23, _mm_srli_epi16(rows23, 8)), 8);
+
+		bytes[b] = _mm_packus_epi16(rows01, rows23);
+	}
+	__m128i lohalf = _mm_packus_epi16(_mm_and_si128(bytes[0], _mm_set1_epi16(0x00FF)), _mm_and_si128(bytes[1], _mm_set1_epi16(0x00FF)));
+	__m128i hihalf = _mm_packus_epi16(
+		_mm_srli_epi16(_mm_and_si128(bytes[0], _mm_set1_epi16(0xFF00u)), 4),
+		_mm_srli_epi16(_mm_and_si128(bytes[1], _mm_set1_epi16(0xFF00u)), 4)
+	);
+	outputs[0] = _mm_xor_si128(lohalf, hihalf);
+}
+
 ID_FORCE_INLINE static void ProcessColorBlock_x8( const __m128i inputRows[8][4], __m128i outputs[4] ) {
 	// shuffle/transpose data to get a pack of 8 16-bit values of every scalar
 	__m128i inputx2Row[8][4];
@@ -998,6 +1025,31 @@ static void Dxt1Kernel32x4( const byte *srcPtr, int stride, byte *dstPtr ) {
 	StoreOutput<4>(dstPtr, output);
 }
 
+static void Dxt3Kernel32x4( const byte *srcPtr, int stride, byte *dstPtr ) {
+	__m128i rgbaRows[8][4];
+	LoadBlocks<8>(srcPtr, stride, rgbaRows);
+
+	__m128i colorOutput[4];
+	ProcessColorBlock_x8(rgbaRows, colorOutput);
+
+	__m128i alphaOutput[4];
+	ProcessAlphaBlock4b_x2(rgbaRows + 0, alphaOutput + 0);
+	ProcessAlphaBlock4b_x2(rgbaRows + 2, alphaOutput + 1);
+	ProcessAlphaBlock4b_x2(rgbaRows + 4, alphaOutput + 2);
+	ProcessAlphaBlock4b_x2(rgbaRows + 6, alphaOutput + 3);
+
+	__m128i output[8];
+	output[0] = _mm_unpacklo_epi64(alphaOutput[0], colorOutput[0]);
+	output[1] = _mm_unpackhi_epi64(alphaOutput[0], colorOutput[0]);
+	output[2] = _mm_unpacklo_epi64(alphaOutput[1], colorOutput[1]);
+	output[3] = _mm_unpackhi_epi64(alphaOutput[1], colorOutput[1]);
+	output[4] = _mm_unpacklo_epi64(alphaOutput[2], colorOutput[2]);
+	output[5] = _mm_unpackhi_epi64(alphaOutput[2], colorOutput[2]);
+	output[6] = _mm_unpacklo_epi64(alphaOutput[3], colorOutput[3]);
+	output[7] = _mm_unpackhi_epi64(alphaOutput[3], colorOutput[3]);
+	StoreOutput<8>(dstPtr, output);
+}
+
 static void Dxt5Kernel32x4( const byte *srcPtr, int stride, byte *dstPtr ) {
 	__m128i rgbaRows[8][4];
 	LoadBlocks<8>(srcPtr, stride, rgbaRows);
@@ -1065,6 +1117,11 @@ void idSIMD_SSE2::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int heig
 void idSIMD_SSE2::CompressDXT1FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
 	using namespace DxtCompress;
 	ProcessWithKernel<8, 1>( Dxt1Kernel32x4, srcPtr, width, height, stride, dstPtr );
+}
+
+void idSIMD_SSE2::CompressDXT3FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	using namespace DxtCompress;
+	ProcessWithKernel<8, 2>( Dxt3Kernel32x4, srcPtr, width, height, stride, dstPtr );
 }
 
 void idSIMD_SSE2::CompressDXT5FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
