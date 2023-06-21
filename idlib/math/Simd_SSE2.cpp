@@ -462,22 +462,89 @@ void idSIMD_SSE2::GenerateMipMap2x2( const byte *srcPtr, int srcStride, int half
 	}
 }
 
-static void CompressRGTCFromRGBA8_Kernel8x4( const byte *srcPtr, int stride, byte *dstPtr ) {
-	// Load rows and remove blue/alpha channels
-	__m128i rgrg0, rgrg1, rgrg2, rgrg3;
-	#define LOADROW(r) {\
-		__m128i rgbaBlock0 = _mm_loadu_si128((__m128i*)(srcPtr + r * stride + 0)); \
-		__m128i rgbaBlock1 = _mm_loadu_si128((__m128i*)(srcPtr + r * stride + 16)); \
-		rgrg##r = _mm_xor_si128( \
-			_mm_slli_epi32(rgbaBlock1, 16), \
-			_mm_and_si128(rgbaBlock0, _mm_set1_epi32(0xFFFF)) \
-		);\
+namespace DxtCompress {
+
+static void LoadBoundaryBlocks( const byte *srcPtr, int stride, int width, int height, int baseR, int baseC, int numBlocks, byte *expandedBlocks ) {
+	// Copy blocks with clamp-style padding
+	for (int r = 0; r < 4; r++) {
+		for (int c = 0; c < 4 * numBlocks; c++) {
+			int a = baseR + r;
+			int b = baseC + c;
+			if (a > height - 1)
+				a = height - 1;
+			if (b > width - 1)
+				b = width - 1;
+			((dword*)expandedBlocks)[r * (4 * numBlocks) + c] = *(dword*)&srcPtr[a * stride + 4 * b];
+		}
 	}
-	LOADROW(0)
-	LOADROW(1)
-	LOADROW(2)
-	LOADROW(3)
-	#undef LOADROW
+}
+
+static int StoreBoundaryOutput( byte *dstPtr, int width, int height, int baseR, int baseC, int numBlocks, int numWordsPerBlock, const byte *expandedOutput) {
+	// Copy starting subsegment of blocks to output (not always all of them)
+	int countBlocks = idMath::Imin((width - baseC + 3) >> 2, numBlocks);
+	int countWords = numWordsPerBlock * countBlocks;
+	memcpy(dstPtr, expandedOutput, 8 * countWords);
+	return 8 * countWords;
+}
+
+template<int NumBlocks> ID_FORCE_INLINE static void LoadBlocks( const byte *srcPtr, int stride, __m128i rowsRgba[NumBlocks][4] ) {
+	for (int r = 0; r < 4; r++) {
+		for (int b = 0; b < NumBlocks; b++)
+			rowsRgba[b][r] = _mm_loadu_si128( (__m128i*)(srcPtr + b * 16) );
+		srcPtr += stride;
+	}
+}
+
+template<int NumRegs> ID_FORCE_INLINE static void StoreOutput( byte *dstPtr, const __m128i output[NumRegs] ) {
+	for (int i = 0; i < NumRegs; i++)
+		_mm_storeu_si128( (__m128i*)(dstPtr + i * 16), output[i] );
+}
+
+ID_FORCE_INLINE static void ExtractRedGreen_x2( const __m128i inputRowsRgba[2][4], __m128i outputRowsRgrg[4] ) {
+	// inputRowsRgba[b][r] is r-th row of b-th block
+	// each register is full 8-bit RGBA data, as read from image memory
+	#define REPACKROW(r) { \
+		__m128i rg0 = _mm_and_si128(inputRowsRgba[0][r], _mm_set1_epi32(0xFFFF)); \
+		__m128i rg1 = _mm_slli_epi32(inputRowsRgba[1][r], 16); \
+		outputRowsRgrg[r] = _mm_xor_si128(rg1, rg0); \
+	}
+	REPACKROW(0)
+	REPACKROW(1)
+	REPACKROW(2)
+	REPACKROW(3)
+	#undef REPACKROW
+	// outputRowsRgrg[r] contains red and green channels of r-th row in both blocks
+	// each "pixel" (4-byte world) of it has layout: red0, green0, red1, green1
+}
+
+ID_FORCE_INLINE static void ExtractAlpha_x4( const __m128i inputRowsRgba[4][4], __m128i outputRowsAaaa[4] ) {
+	// same input data as in ExtractRedGreen_x2 but for 4 blocks
+	#define REPACKROW(r) { \
+		__m128i alpha0 = _mm_srli_epi32(inputRowsRgba[0][r], 24); \
+		__m128i alpha1 = _mm_srli_epi32(_mm_and_si128(inputRowsRgba[1][r], _mm_set1_epi32(0xFF000000)), 16); \
+		__m128i alpha2 = _mm_srli_epi32(_mm_and_si128(inputRowsRgba[2][r], _mm_set1_epi32(0xFF000000)), 8); \
+		__m128i alpha3 = _mm_and_si128(inputRowsRgba[3][r], _mm_set1_epi32(0xFF000000)); \
+		outputRowsAaaa[r] = _mm_xor_si128(_mm_xor_si128(alpha0, alpha1), _mm_xor_si128(alpha2, alpha3)); \
+	}
+	REPACKROW(0)
+	REPACKROW(1)
+	REPACKROW(2)
+	REPACKROW(3)
+	#undef REPACKROW
+	// outputRowsAaaa[r] contains alpha channels of r-th row in all blocks
+	// each "pixel" (4-byte world) of it has layout: alpha0, alpha1, alpha2, alpha3
+}
+
+ID_FORCE_INLINE static void ProcessAlphaBlock_x4( const __m128i inputRows[4], __m128i outputs[2] ) {
+	// 4 input blocks are provided in SoA fashion:
+	// inputRows[r] contains r-th row of all blocks
+	// (4 * c + d)-th byte of it is pixel in c-th column of d-th block
+
+	// Note: originally the function was written for RGTC compression (of two blocks)
+	__m128i rgrg0 = inputRows[0];
+	__m128i rgrg1 = inputRows[1];
+	__m128i rgrg2 = inputRows[2];
+	__m128i rgrg3 = inputRows[3];
 
 	// Compute min/max values
 	__m128i minBytes = _mm_min_epu8(_mm_min_epu8(rgrg0, rgrg1), _mm_min_epu8(rgrg2, rgrg3));
@@ -559,48 +626,57 @@ static void CompressRGTCFromRGBA8_Kernel8x4( const byte *srcPtr, int stride, byt
 	maxMinDwords = _mm_unpacklo_epi16(maxMinDwords, _mm_setzero_si128());
 	blockLow32 = _mm_xor_si128(blockLow32, maxMinDwords);
 
-	// Write out two blocks
-	__m128i block0 = _mm_unpacklo_epi32(blockLow32, blockHigh32);
-	__m128i block1 = _mm_unpackhi_epi32(blockLow32, blockHigh32);
-	_mm_storeu_si128((__m128i*)(dstPtr + 0), block0);
-	_mm_storeu_si128((__m128i*)(dstPtr + 16), block1);
+	// Output two blocks
+	outputs[0] = _mm_unpacklo_epi32(blockLow32, blockHigh32);
+	outputs[1] = _mm_unpackhi_epi32(blockLow32, blockHigh32);
 }
 
-void idSIMD_SSE2::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
-	ALIGNTYPE16 dword inputBlocks[4][8];
-	__m128i outputBlocks[2];
+static void RgtcKernel8x4( const byte *srcPtr, int stride, byte *dstPtr ) {
+	__m128i rgbaRows[2][4];
+	LoadBlocks<2>(srcPtr, stride, rgbaRows);
+	__m128i rgrgRows[4];
+	ExtractRedGreen_x2(rgbaRows, rgrgRows);
+	__m128i output[2];
+	ProcessAlphaBlock_x4(rgrgRows, output);
+	StoreOutput<2>(dstPtr, output);
+}
+
+template<int KernelBlocks, int OutputWordsPerBlock>
+static void ProcessWithKernel( void (*kernelFunction)(const byte*, int, byte*), const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	// kernel processes KernelBlocks blocks of size 4 x 4 pixels each
+	// for each block, OutputWordsPerBlock words are produced, each of size = 8 bytes
+	static const int KernelPixelsInRow = KernelBlocks * 4;
+	static const int KernelBytesInRow = KernelPixelsInRow * 4;
+	static const int KernelOutputWords = OutputWordsPerBlock * KernelBlocks;
+	static const int KernelOutputBytes = KernelOutputWords * 8;
+	static const int KernelOutputRegs = KernelOutputWords / 16;
 
 	for (int sr = 0; sr < height; sr += 4) {
-		int fitsNum = (sr + 4 <= height ? width >> 3 : 0);
+		int fitsNum = (sr + 4 <= height ? width / KernelPixelsInRow : 0);
 
 		int iters;
 		for (iters = 0; iters < fitsNum; iters++) {
-			// Load blocks directly from image memory
-			CompressRGTCFromRGBA8_Kernel8x4(&srcPtr[sr * stride + 32 * iters], stride, dstPtr);
-			dstPtr += 32;
+			// load blocks directly from image memory
+			kernelFunction(&srcPtr[sr * stride + KernelBytesInRow * iters], stride, dstPtr);
+			dstPtr += KernelOutputBytes;
 		}
 
-		for (int sc = 8 * iters; sc < width; sc += 8) {
-			// Copy blocks with clamp-style padding
-			for (int i = 0; i < 4; i++)
-				for (int j = 0; j < 8; j++) {
-					int a = sr + i;
-					int b = sc + j;
-					if (a > height - 1)
-						a = height - 1;
-					if (b > width - 1)
-						b = width - 1;
-					inputBlocks[i][j] = *(dword*)&srcPtr[a * stride + 4 * b];
-				}
-			CompressRGTCFromRGBA8_Kernel8x4((byte*)&inputBlocks[0][0], sizeof(inputBlocks[0]), (byte*)outputBlocks);
-			// Copy one or two blocks to output
-			int numBlocks = idMath::Imin((width - sc + 3) >> 2, 2);
-			for (int b = 0; b < numBlocks; b++) {
-				_mm_storeu_si128((__m128i*)dstPtr, outputBlocks[b]);
-				dstPtr += 16;
-			}
+		for (int sc = KernelPixelsInRow * iters; sc < width; sc += KernelPixelsInRow) {
+			ALIGNTYPE16 byte inputBlocks[4][KernelBytesInRow];
+			ALIGNTYPE16 byte outputData[KernelOutputBytes];
+			DxtCompress::LoadBoundaryBlocks(srcPtr, stride, width, height, sr, sc, KernelBlocks, &inputBlocks[0][0]);
+
+			kernelFunction(&inputBlocks[0][0], sizeof(inputBlocks[0]), outputData);
+			dstPtr += DxtCompress::StoreBoundaryOutput(dstPtr, width, height, sr, sc, KernelBlocks, OutputWordsPerBlock, outputData);
 		}
 	}
+}
+
+}
+
+void idSIMD_SSE2::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	using namespace DxtCompress;
+	ProcessWithKernel<2, 2>( RgtcKernel8x4, srcPtr, width, height, stride, dstPtr );
 }
 
 #endif
