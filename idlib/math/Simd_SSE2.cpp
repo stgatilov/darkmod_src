@@ -631,6 +631,351 @@ ID_FORCE_INLINE static void ProcessAlphaBlock_x4( const __m128i inputRows[4], __
 	outputs[1] = _mm_unpackhi_epi32(blockLow32, blockHigh32);
 }
 
+ID_FORCE_INLINE static void ProcessColorBlock_x8( const __m128i inputRows[8][4], __m128i outputs[4] ) {
+	// shuffle/transpose data to get a pack of 8 16-bit values of every scalar
+	__m128i inputx2Row[8][4];
+	for (int b = 0; b < 8; b += 2)
+		for (int r = 0; r < 4; r++) {
+			inputx2Row[b + 0][r] = _mm_unpacklo_epi8(inputRows[b + 0][r], inputRows[b + 1][r]);
+			inputx2Row[b + 1][r] = _mm_unpackhi_epi8(inputRows[b + 0][r], inputRows[b + 1][r]);
+		}
+	__m128i inputx4Row[8][4];
+	for (int b = 0; b < 8; b += 4)
+		for (int r = 0; r < 4; r++) {
+			inputx4Row[b + 0][r] = _mm_unpacklo_epi16(inputx2Row[b + 0][r], inputx2Row[b + 2][r]);
+			inputx4Row[b + 1][r] = _mm_unpackhi_epi16(inputx2Row[b + 0][r], inputx2Row[b + 2][r]);
+			inputx4Row[b + 2][r] = _mm_unpacklo_epi16(inputx2Row[b + 1][r], inputx2Row[b + 3][r]);
+			inputx4Row[b + 3][r] = _mm_unpackhi_epi16(inputx2Row[b + 1][r], inputx2Row[b + 3][r]);
+		}
+	__m128i pixels[16][4];
+	for (int r = 0; r < 4; r++)
+		for (int c = 0; c < 4; c++) {
+			__m128i rrgg = _mm_unpacklo_epi32(inputx4Row[c + 0][r], inputx4Row[c + 4][r]);
+			pixels[4 * r + c][0] = _mm_unpacklo_epi8(rrgg, _mm_setzero_si128());
+			pixels[4 * r + c][1] = _mm_unpackhi_epi8(rrgg, _mm_setzero_si128());
+			__m128i bbaa = _mm_unpackhi_epi32(inputx4Row[c + 0][r], inputx4Row[c + 4][r]);
+			pixels[4 * r + c][2] = _mm_unpacklo_epi8(bbaa, _mm_setzero_si128());
+			pixels[4 * r + c][3] = _mm_unpackhi_epi8(bbaa, _mm_setzero_si128());
+		}
+
+	// compute sum and average color
+	__m128i sumColor[3] = {_mm_setzero_si128(), _mm_setzero_si128(), _mm_setzero_si128()};
+	for (int i = 0; i < 16; i++) {
+		sumColor[0] = _mm_add_epi16(sumColor[0], pixels[i][0]);
+		sumColor[1] = _mm_add_epi16(sumColor[1], pixels[i][1]);
+		sumColor[2] = _mm_add_epi16(sumColor[2], pixels[i][2]);
+	}
+	__m128i avgColor[3] = {_mm_setzero_si128(), _mm_setzero_si128(), _mm_setzero_si128()};
+	avgColor[0] = _mm_srli_epi16(_mm_add_epi16(sumColor[0], _mm_set1_epi16(7)), 4);
+	avgColor[1] = _mm_srli_epi16(_mm_add_epi16(sumColor[1], _mm_set1_epi16(7)), 4);
+	avgColor[2] = _mm_srli_epi16(_mm_add_epi16(sumColor[2], _mm_set1_epi16(7)), 4);
+
+	// compute covariance matrix (float)
+	__m128 covMatrRRlo = _mm_setzero_ps(), covMatrRRhi = _mm_setzero_ps();
+	__m128 covMatrRGlo = _mm_setzero_ps(), covMatrRGhi = _mm_setzero_ps();
+	__m128 covMatrRBlo = _mm_setzero_ps(), covMatrRBhi = _mm_setzero_ps();
+	__m128 covMatrGGlo = _mm_setzero_ps(), covMatrGGhi = _mm_setzero_ps();
+	__m128 covMatrGBlo = _mm_setzero_ps(), covMatrGBhi = _mm_setzero_ps();
+	__m128 covMatrBBlo = _mm_setzero_ps(), covMatrBBhi = _mm_setzero_ps();
+	for (int i = 0; i < 16; i++) {
+		__m128i Rdiff = _mm_sub_epi16(pixels[i][0], avgColor[0]);
+		__m128i Gdiff = _mm_sub_epi16(pixels[i][1], avgColor[1]);
+		__m128i Bdiff = _mm_sub_epi16(pixels[i][2], avgColor[2]);
+		__m128 Rlo = _mm_cvtepi32_ps(_mm_srai_epi32(_mm_unpacklo_epi16(Rdiff, Rdiff), 16));
+		__m128 Rhi = _mm_cvtepi32_ps(_mm_srai_epi32(_mm_unpackhi_epi16(Rdiff, Rdiff), 16));
+		__m128 Glo = _mm_cvtepi32_ps(_mm_srai_epi32(_mm_unpacklo_epi16(Gdiff, Gdiff), 16));
+		__m128 Ghi = _mm_cvtepi32_ps(_mm_srai_epi32(_mm_unpackhi_epi16(Gdiff, Gdiff), 16));
+		__m128 Blo = _mm_cvtepi32_ps(_mm_srai_epi32(_mm_unpacklo_epi16(Bdiff, Bdiff), 16));
+		__m128 Bhi = _mm_cvtepi32_ps(_mm_srai_epi32(_mm_unpackhi_epi16(Bdiff, Bdiff), 16));
+		covMatrRRlo = _mm_add_ps(covMatrRRlo, _mm_mul_ps(Rlo, Rlo));
+		covMatrRGlo = _mm_add_ps(covMatrRGlo, _mm_mul_ps(Rlo, Glo));
+		covMatrRBlo = _mm_add_ps(covMatrRBlo, _mm_mul_ps(Rlo, Blo));
+		covMatrGGlo = _mm_add_ps(covMatrGGlo, _mm_mul_ps(Glo, Glo));
+		covMatrGBlo = _mm_add_ps(covMatrGBlo, _mm_mul_ps(Glo, Blo));
+		covMatrBBlo = _mm_add_ps(covMatrBBlo, _mm_mul_ps(Blo, Blo));
+		covMatrRRhi = _mm_add_ps(covMatrRRhi, _mm_mul_ps(Rhi, Rhi));
+		covMatrRGhi = _mm_add_ps(covMatrRGhi, _mm_mul_ps(Rhi, Ghi));
+		covMatrRBhi = _mm_add_ps(covMatrRBhi, _mm_mul_ps(Rhi, Bhi));
+		covMatrGGhi = _mm_add_ps(covMatrGGhi, _mm_mul_ps(Ghi, Ghi));
+		covMatrGBhi = _mm_add_ps(covMatrGBhi, _mm_mul_ps(Ghi, Bhi));
+		covMatrBBhi = _mm_add_ps(covMatrBBhi, _mm_mul_ps(Bhi, Bhi));
+	}
+	// find max eigenvector with power iteration
+	__m128 veclo[3] = {_mm_set1_ps(1.0f), _mm_set1_ps(1.0f), _mm_set1_ps(1.0f)};
+	__m128 vechi[3] = {_mm_set1_ps(1.0f), _mm_set1_ps(1.0f), _mm_set1_ps(1.0f)};
+	for (int pwr = 0; pwr < 3; pwr++) {
+		__m128 nveclo[3], nvechi[3];
+		nveclo[0] = _mm_add_ps(_mm_mul_ps(covMatrRRlo, veclo[0]), _mm_add_ps(_mm_mul_ps(covMatrRGlo, veclo[1]), _mm_mul_ps(covMatrRBlo, veclo[2])));
+		nveclo[1] = _mm_add_ps(_mm_mul_ps(covMatrRGlo, veclo[0]), _mm_add_ps(_mm_mul_ps(covMatrGGlo, veclo[1]), _mm_mul_ps(covMatrGBlo, veclo[2])));
+		nveclo[2] = _mm_add_ps(_mm_mul_ps(covMatrRBlo, veclo[0]), _mm_add_ps(_mm_mul_ps(covMatrGBlo, veclo[1]), _mm_mul_ps(covMatrBBlo, veclo[2])));
+		veclo[0] = nveclo[0];
+		veclo[1] = nveclo[1];
+		veclo[2] = nveclo[2];
+		nvechi[0] = _mm_add_ps(_mm_mul_ps(covMatrRRhi, vechi[0]), _mm_add_ps(_mm_mul_ps(covMatrRGhi, vechi[1]), _mm_mul_ps(covMatrRBhi, vechi[2])));
+		nvechi[1] = _mm_add_ps(_mm_mul_ps(covMatrRGhi, vechi[0]), _mm_add_ps(_mm_mul_ps(covMatrGGhi, vechi[1]), _mm_mul_ps(covMatrGBhi, vechi[2])));
+		nvechi[2] = _mm_add_ps(_mm_mul_ps(covMatrRBhi, vechi[0]), _mm_add_ps(_mm_mul_ps(covMatrGBhi, vechi[1]), _mm_mul_ps(covMatrBBhi, vechi[2])));
+		vechi[0] = nvechi[0];
+		vechi[1] = nvechi[1];
+		vechi[2] = nvechi[2];
+	}
+	// compute length of found axis
+	__m128 normlo = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(veclo[0], veclo[0]), _mm_add_ps(_mm_mul_ps(veclo[1], veclo[1]), _mm_mul_ps(veclo[2], veclo[2]))));
+	__m128 normhi = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(vechi[0], vechi[0]), _mm_add_ps(_mm_mul_ps(vechi[1], vechi[1]), _mm_mul_ps(vechi[2], vechi[2]))));
+	__m128 isNormZerolo = _mm_cmpeq_ps(normlo, _mm_setzero_ps());
+	__m128 isNormZerohi = _mm_cmpeq_ps(normhi, _mm_setzero_ps());
+	for (int c = 0; c < 3; c++) {
+		static const float SQRT3 = sqrtf(3.0f);
+		veclo[c] = _mm_xor_ps(veclo[c], _mm_and_ps(isNormZerolo, _mm_set1_ps(1.0f)));
+		vechi[c] = _mm_xor_ps(vechi[c], _mm_and_ps(isNormZerohi, _mm_set1_ps(1.0f)));
+		normlo = _mm_xor_ps(normlo, _mm_and_ps(isNormZerolo, _mm_set1_ps(SQRT3)));
+		normhi = _mm_xor_ps(normhi, _mm_and_ps(isNormZerohi, _mm_set1_ps(SQRT3)));
+	}
+	// normalize, scale and convert to 16-bit integers
+	__m128 normMultiplierlo = _mm_div_ps(_mm_set1_ps(64.0f), normlo);
+	__m128 normMultiplierhi = _mm_div_ps(_mm_set1_ps(64.0f), normhi);
+	__m128i axis[3];
+	for (int c = 0; c < 3; c++) {
+		__m128i lo = _mm_cvtps_epi32(_mm_mul_ps(veclo[c], normMultiplierlo));
+		__m128i hi = _mm_cvtps_epi32(_mm_mul_ps(vechi[c], normMultiplierhi));
+		axis[c] = _mm_packs_epi32(lo, hi);
+	}
+
+	// find bounding interval along axis
+	__m128i minDot = _mm_set1_epi16(INT16_MAX), maxDot = _mm_set1_epi16(INT16_MIN);
+	for (int i = 0; i < 16; i++) {
+		__m128i Rdiff = _mm_sub_epi16(pixels[i][0], avgColor[0]);
+		__m128i Gdiff = _mm_sub_epi16(pixels[i][1], avgColor[1]);
+		__m128i Bdiff = _mm_sub_epi16(pixels[i][2], avgColor[2]);
+		__m128i dot = _mm_add_epi16(_mm_mullo_epi16(axis[0], Rdiff), _mm_add_epi16(_mm_mullo_epi16(axis[1], Gdiff), _mm_mullo_epi16(axis[2], Bdiff)));
+		minDot = _mm_min_epi16(minDot, dot);
+		maxDot = _mm_max_epi16(maxDot, dot);
+	}
+	// find endpoints of this interval
+	__m128i bmin[3], bmax[3];
+	for (int c = 0; c < 3; c++) {
+		__m128i minlo = _mm_mullo_epi16(axis[c], minDot);
+		__m128i minhi = _mm_mulhi_epi16(axis[c], minDot);
+		__m128i minscaled = _mm_packs_epi32(_mm_srai_epi32(_mm_unpacklo_epi16(minlo, minhi), 12), _mm_srai_epi32(_mm_unpackhi_epi16(minlo, minhi), 12));
+		__m128i maxlo = _mm_mullo_epi16(axis[c], maxDot);
+		__m128i maxhi = _mm_mulhi_epi16(axis[c], maxDot);
+		__m128i maxscaled = _mm_packs_epi32(_mm_srai_epi32(_mm_unpacklo_epi16(maxlo, maxhi), 12), _mm_srai_epi32(_mm_unpackhi_epi16(maxlo, maxhi), 12));
+		bmin[c] = _mm_add_epi16(avgColor[c], minscaled);
+		bmax[c] = _mm_add_epi16(avgColor[c], maxscaled);
+	}
+	// specify initial key colors as the interval symmetrically reduced by 25%
+	__m128i keyColorA[3], keyColorB[3];
+	for (int c = 0; c < 3; c++) {
+		__m128i diag = _mm_sub_epi16(bmax[c], bmin[c]);
+		diag = _mm_srai_epi16(diag, 3);
+		keyColorA[c] = _mm_add_epi16(bmin[c], diag);
+		keyColorB[c] = _mm_sub_epi16(bmax[c], diag);
+	}
+
+	__m128i key565A[3], key565B[3];
+	__m128i ids[16];
+	for (int iter = 0; ; iter++) {
+		// round outwards (almost) in case of low-variance blocks
+		__m128i diff0 = _mm_sub_epi16(keyColorA[0], keyColorB[0]);
+		__m128i diff1 = _mm_sub_epi16(keyColorA[1], keyColorB[1]);
+		__m128i diff2 = _mm_sub_epi16(keyColorA[2], keyColorB[2]);
+		__m128i lowvar0 = _mm_and_si128(_mm_cmplt_epi16(diff0, _mm_set1_epi16(8)), _mm_cmpgt_epi16(diff0, _mm_set1_epi16(-8)));
+		__m128i lowvar1 = _mm_and_si128(_mm_cmplt_epi16(diff1, _mm_set1_epi16(4)), _mm_cmpgt_epi16(diff1, _mm_set1_epi16(-4)));
+		__m128i lowvar2 = _mm_and_si128(_mm_cmplt_epi16(diff2, _mm_set1_epi16(8)), _mm_cmpgt_epi16(diff2, _mm_set1_epi16(-8)));
+		__m128i delta0 = _mm_cmplt_epi16(keyColorA[0], keyColorB[0]);
+		__m128i delta1 = _mm_cmplt_epi16(keyColorA[1], keyColorB[1]);
+		__m128i delta2 = _mm_cmplt_epi16(keyColorA[2], keyColorB[2]);
+		delta0 = _mm_and_si128(lowvar0, _mm_xor_si128(_mm_and_si128(delta0, _mm_set1_epi16(-3)), _mm_andnot_si128(delta0, _mm_set1_epi16(3))));
+		delta1 = _mm_and_si128(lowvar1, _mm_xor_si128(_mm_and_si128(delta1, _mm_set1_epi16(-1)), _mm_andnot_si128(delta1, _mm_set1_epi16(1))));
+		delta2 = _mm_and_si128(lowvar2, _mm_xor_si128(_mm_and_si128(delta2, _mm_set1_epi16(-3)), _mm_andnot_si128(delta2, _mm_set1_epi16(3))));
+		keyColorA[0] = _mm_add_epi16(keyColorA[0], delta0);
+		keyColorB[0] = _mm_sub_epi16(keyColorB[0], delta0);
+		keyColorA[1] = _mm_add_epi16(keyColorA[1], delta1);
+		keyColorB[1] = _mm_sub_epi16(keyColorB[1], delta1);
+		keyColorA[2] = _mm_add_epi16(keyColorA[2], delta2);
+		keyColorB[2] = _mm_sub_epi16(keyColorB[2], delta2);
+		// clamp to [0..255]
+		keyColorA[0] = _mm_unpacklo_epi8(_mm_packus_epi16(keyColorA[0], _mm_setzero_si128()), _mm_setzero_si128());
+		keyColorA[1] = _mm_unpacklo_epi8(_mm_packus_epi16(keyColorA[1], _mm_setzero_si128()), _mm_setzero_si128());
+		keyColorA[2] = _mm_unpacklo_epi8(_mm_packus_epi16(keyColorA[2], _mm_setzero_si128()), _mm_setzero_si128());
+		keyColorB[0] = _mm_unpacklo_epi8(_mm_packus_epi16(keyColorB[0], _mm_setzero_si128()), _mm_setzero_si128());
+		keyColorB[1] = _mm_unpacklo_epi8(_mm_packus_epi16(keyColorB[1], _mm_setzero_si128()), _mm_setzero_si128());
+		keyColorB[2] = _mm_unpacklo_epi8(_mm_packus_epi16(keyColorB[2], _mm_setzero_si128()), _mm_setzero_si128());
+		// convert to 565 format: round(X * 31 / 255)
+		key565A[0] = _mm_add_epi16(_mm_mullo_epi16(keyColorA[0], _mm_set1_epi16(31)), _mm_set1_epi16(128));
+		key565A[1] = _mm_add_epi16(_mm_mullo_epi16(keyColorA[1], _mm_set1_epi16(63)), _mm_set1_epi16(128));
+		key565A[2] = _mm_add_epi16(_mm_mullo_epi16(keyColorA[2], _mm_set1_epi16(31)), _mm_set1_epi16(128));
+		key565B[0] = _mm_add_epi16(_mm_mullo_epi16(keyColorB[0], _mm_set1_epi16(31)), _mm_set1_epi16(128));
+		key565B[1] = _mm_add_epi16(_mm_mullo_epi16(keyColorB[1], _mm_set1_epi16(63)), _mm_set1_epi16(128));
+		key565B[2] = _mm_add_epi16(_mm_mullo_epi16(keyColorB[2], _mm_set1_epi16(31)), _mm_set1_epi16(128));
+		// note: X/255 = X/256 + X/256^2 + (X/256^3 + ...)
+		key565A[0] = _mm_srli_epi16(_mm_add_epi16(key565A[0], _mm_srli_epi16(key565A[0], 8)), 8);
+		key565A[1] = _mm_srli_epi16(_mm_add_epi16(key565A[1], _mm_srli_epi16(key565A[1], 8)), 8);
+		key565A[2] = _mm_srli_epi16(_mm_add_epi16(key565A[2], _mm_srli_epi16(key565A[2], 8)), 8);
+		key565B[0] = _mm_srli_epi16(_mm_add_epi16(key565B[0], _mm_srli_epi16(key565B[0], 8)), 8);
+		key565B[1] = _mm_srli_epi16(_mm_add_epi16(key565B[1], _mm_srli_epi16(key565B[1], 8)), 8);
+		key565B[2] = _mm_srli_epi16(_mm_add_epi16(key565B[2], _mm_srli_epi16(key565B[2], 8)), 8);
+		// if keycolors are equal, bump B-green a bit
+		__m128i sameKeys = _mm_and_si128(_mm_and_si128(
+			_mm_cmpeq_epi16(key565A[0], key565B[0]),
+			_mm_cmpeq_epi16(key565A[1], key565B[1])),
+			_mm_cmpeq_epi16(key565A[2], key565B[2])
+		);
+		__m128i bump1 = _mm_sub_epi16(_mm_cmplt_epi16(key565B[1], _mm_set1_epi16(32)), _mm_cmpgt_epi16(key565B[1], _mm_set1_epi16(31)));
+		key565B[1] = _mm_sub_epi16(key565B[1], _mm_and_si128(sameKeys, bump1));
+		// convert key colors back into 8-bit
+		keyColorA[0] = _mm_add_epi16(_mm_mullo_epi16(key565A[0], _mm_set1_epi16(255)), _mm_set1_epi16(16));
+		keyColorA[1] = _mm_add_epi16(_mm_mullo_epi16(key565A[1], _mm_set1_epi16(255)), _mm_set1_epi16(32));
+		keyColorA[2] = _mm_add_epi16(_mm_mullo_epi16(key565A[2], _mm_set1_epi16(255)), _mm_set1_epi16(16));
+		keyColorB[0] = _mm_add_epi16(_mm_mullo_epi16(key565B[0], _mm_set1_epi16(255)), _mm_set1_epi16(16));
+		keyColorB[1] = _mm_add_epi16(_mm_mullo_epi16(key565B[1], _mm_set1_epi16(255)), _mm_set1_epi16(32));
+		keyColorB[2] = _mm_add_epi16(_mm_mullo_epi16(key565B[2], _mm_set1_epi16(255)), _mm_set1_epi16(16));
+		// note: X/31 = X/32 + X/32^2 + X/32^3 + (X/32^4 + ...)
+		//       X/63 = X/64 + X/64^2 + X/64^3 + (X/64^4 + ...)
+		keyColorA[0] = _mm_srli_epi16(_mm_add_epi16(keyColorA[0], _mm_srli_epi16(_mm_add_epi16(keyColorA[0], _mm_srli_epi16(keyColorA[0], 5)), 5)), 5);
+		keyColorA[1] = _mm_srli_epi16(_mm_add_epi16(keyColorA[1], _mm_srli_epi16(_mm_add_epi16(keyColorA[1], _mm_srli_epi16(keyColorA[1], 6)), 6)), 6);
+		keyColorA[2] = _mm_srli_epi16(_mm_add_epi16(keyColorA[2], _mm_srli_epi16(_mm_add_epi16(keyColorA[2], _mm_srli_epi16(keyColorA[2], 5)), 5)), 5);
+		keyColorB[0] = _mm_srli_epi16(_mm_add_epi16(keyColorB[0], _mm_srli_epi16(_mm_add_epi16(keyColorB[0], _mm_srli_epi16(keyColorB[0], 5)), 5)), 5);
+		keyColorB[1] = _mm_srli_epi16(_mm_add_epi16(keyColorB[1], _mm_srli_epi16(_mm_add_epi16(keyColorB[1], _mm_srli_epi16(keyColorB[1], 6)), 6)), 6);
+		keyColorB[2] = _mm_srli_epi16(_mm_add_epi16(keyColorB[2], _mm_srli_epi16(_mm_add_epi16(keyColorB[2], _mm_srli_epi16(keyColorB[2], 5)), 5)), 5);
+
+		// compute squared length of A-B key vector
+		__m128i denomlo = _mm_setzero_si128();
+		__m128i denomhi = _mm_setzero_si128();
+		for (int c = 0; c < 3; c++) {
+			__m128i diff = _mm_sub_epi16(keyColorB[c], keyColorA[c]);
+			__m128i mullo = _mm_mullo_epi16(diff, diff);
+			__m128i mulhi = _mm_mulhi_epi16(diff, diff);
+			denomlo = _mm_add_epi32(denomlo, _mm_unpacklo_epi16(mullo, mulhi));
+			denomhi = _mm_add_epi32(denomhi, _mm_unpackhi_epi16(mullo, mulhi));
+		}
+		assert(_mm_movemask_epi8(_mm_cmpgt_epi32(denomlo, _mm_setzero_si128())) == 0xFFFF);
+		assert(_mm_movemask_epi8(_mm_cmpgt_epi32(denomhi, _mm_setzero_si128())) == 0xFFFF);
+		// compute length-based multiplier to convert dot product into index
+		__m128 invDenom3lo = _mm_add_ps(_mm_div_ps(_mm_set1_ps(3.0f), _mm_cvtepi32_ps(denomlo)), _mm_set1_ps(3.0f * FLT_EPSILON));
+		__m128 invDenom3hi = _mm_add_ps(_mm_div_ps(_mm_set1_ps(3.0f), _mm_cvtepi32_ps(denomhi)), _mm_set1_ps(3.0f * FLT_EPSILON));
+
+		// compute pixel indices
+		for (int i = 0; i < 16; i++) {
+			__m128i numerlo = _mm_setzero_si128();
+			__m128i numerhi = _mm_setzero_si128();
+			for (int c = 0; c < 3; c++) {
+				__m128i ABdiff = _mm_sub_epi16(keyColorB[c], keyColorA[c]);
+				__m128i APdiff = _mm_sub_epi16(pixels[i][c], keyColorA[c]);
+				__m128i mullo = _mm_mullo_epi16(APdiff, ABdiff);
+				__m128i mulhi = _mm_mulhi_epi16(APdiff, ABdiff);
+				numerlo = _mm_add_epi32(numerlo, _mm_unpacklo_epi16(mullo, mulhi));
+				numerhi = _mm_add_epi32(numerhi, _mm_unpackhi_epi16(mullo, mulhi));
+			}
+			__m128i klo = _mm_cvtps_epi32(_mm_mul_ps(_mm_cvtepi32_ps(numerlo), invDenom3lo));
+			__m128i khi = _mm_cvtps_epi32(_mm_mul_ps(_mm_cvtepi32_ps(numerhi), invDenom3hi));
+			__m128i k = _mm_packs_epi32(klo, khi);
+			ids[i] = _mm_min_epi16(_mm_max_epi16(k, _mm_setzero_si128()), _mm_set1_epi16(3));
+		}
+
+		if (iter == 1)
+			break;
+
+		// compute equation system for least squares problem
+		__m128i alpha = _mm_setzero_si128();
+		__m128i beta = _mm_setzero_si128();
+		__m128i gamma = _mm_setzero_si128();
+		__m128i rightB[3] = {_mm_setzero_si128(), _mm_setzero_si128(), _mm_setzero_si128()};
+		for (int i = 0; i < 16; i++) {
+			__m128i idx = ids[i];
+			__m128i sidx = _mm_sub_epi16(_mm_set1_epi16(3), ids[i]);
+			alpha = _mm_add_epi16(alpha, _mm_mullo_epi16(sidx, sidx));
+			beta = _mm_add_epi16(beta, _mm_mullo_epi16(idx, idx));
+			gamma = _mm_add_epi16(gamma, _mm_mullo_epi16(sidx, idx));
+			rightB[0] = _mm_add_epi16(rightB[0], _mm_mullo_epi16(idx, pixels[i][0]));
+			rightB[1] = _mm_add_epi16(rightB[1], _mm_mullo_epi16(idx, pixels[i][1]));
+			rightB[2] = _mm_add_epi16(rightB[2], _mm_mullo_epi16(idx, pixels[i][2]));
+		}
+		__m128i rightA[3];
+		for (int c = 0; c < 3; c++) {
+			rightA[c] = _mm_sub_epi16(_mm_mullo_epi16(sumColor[c], _mm_set1_epi16(3)), rightB[c]);
+			// note: rightX[*] can be up to 9*16*255 > 32K, so these values are actually unsigned
+			rightA[c] = _mm_mullo_epi16(rightA[c], _mm_set1_epi16(3));
+			rightB[c] = _mm_mullo_epi16(rightB[c], _mm_set1_epi16(3));
+		}
+
+		// solve equation system
+		__m128i ablo = _mm_mullo_epi16(alpha, beta);
+		__m128i abhi = _mm_mulhi_epu16(alpha, beta);
+		__m128i gglo = _mm_mullo_epi16(gamma, gamma);
+		__m128i gghi = _mm_mulhi_epu16(gamma, gamma);
+		__m128i detlo = _mm_sub_epi32(_mm_unpacklo_epi16(ablo, abhi), _mm_unpacklo_epi16(gglo, gghi));
+		__m128i dethi = _mm_sub_epi32(_mm_unpackhi_epi16(ablo, abhi), _mm_unpackhi_epi16(gglo, gghi));
+		assert(_mm_movemask_epi8(_mm_cmplt_epi32(detlo, _mm_setzero_si128())) == 0);
+		assert(_mm_movemask_epi8(_mm_cmplt_epi32(dethi, _mm_setzero_si128())) == 0);
+		__m128i detZero = _mm_packs_epi32(_mm_cmpeq_epi32(detlo, _mm_setzero_si128()), _mm_cmpeq_epi32(dethi, _mm_setzero_si128()));
+		__m128 invDetlo = _mm_div_ps(_mm_set1_ps(1.0f), _mm_max_ps(_mm_cvtepi32_ps(detlo), _mm_set1_ps(1.0f)));
+		__m128 invDethi = _mm_div_ps(_mm_set1_ps(1.0f), _mm_max_ps(_mm_cvtepi32_ps(dethi), _mm_set1_ps(1.0f)));
+		for (int c = 0; c < 3; c++) {
+			__m128i bralo = _mm_mullo_epi16(beta, rightA[c]);
+			__m128i brahi = _mm_mulhi_epu16(beta, rightA[c]);
+			__m128i grblo = _mm_mullo_epi16(gamma, rightB[c]);
+			__m128i grbhi = _mm_mulhi_epu16(gamma, rightB[c]);
+			__m128i detAlo = _mm_sub_epi32(_mm_unpacklo_epi16(bralo, brahi), _mm_unpacklo_epi16(grblo, grbhi));
+			__m128i detAhi = _mm_sub_epi32(_mm_unpackhi_epi16(bralo, brahi), _mm_unpackhi_epi16(grblo, grbhi));
+			__m128i keyAlo = _mm_cvtps_epi32(_mm_mul_ps(_mm_cvtepi32_ps(detAlo), invDetlo));
+			__m128i keyAhi = _mm_cvtps_epi32(_mm_mul_ps(_mm_cvtepi32_ps(detAhi), invDethi));
+			__m128i keyA = _mm_packs_epi32(keyAlo, keyAhi);
+			keyColorA[c] = _mm_xor_si128(_mm_andnot_si128(detZero, keyA), _mm_and_si128(detZero, keyColorA[c]));
+			__m128i arblo = _mm_mullo_epi16(alpha, rightB[c]);
+			__m128i arbhi = _mm_mulhi_epu16(alpha, rightB[c]);
+			__m128i gralo = _mm_mullo_epi16(gamma, rightA[c]);
+			__m128i grahi = _mm_mulhi_epu16(gamma, rightA[c]);
+			__m128i detBlo = _mm_sub_epi32(_mm_unpacklo_epi16(arblo, arbhi), _mm_unpacklo_epi16(gralo, grahi));
+			__m128i detBhi = _mm_sub_epi32(_mm_unpackhi_epi16(arblo, arbhi), _mm_unpackhi_epi16(gralo, grahi));
+			__m128i keyBlo = _mm_cvtps_epi32(_mm_mul_ps(_mm_cvtepi32_ps(detBlo), invDetlo));
+			__m128i keyBhi = _mm_cvtps_epi32(_mm_mul_ps(_mm_cvtepi32_ps(detBhi), invDethi));
+			__m128i keyB = _mm_packs_epi32(keyBlo, keyBhi);
+			keyColorB[c] = _mm_xor_si128(_mm_andnot_si128(detZero, keyB), _mm_and_si128(detZero, keyColorB[c]));
+			// key colors will be clamped at the beginning of next iteration
+		}
+	}
+
+	// pack 565 key colors into 16-bit words
+	__m128i baseA = _mm_xor_si128(key565A[2], _mm_xor_si128(_mm_slli_epi16(key565A[1], 5), _mm_slli_epi16(key565A[0], 11)));
+	__m128i baseB = _mm_xor_si128(key565B[2], _mm_xor_si128(_mm_slli_epi16(key565B[1], 5), _mm_slli_epi16(key565B[0], 11)));
+	assert(_mm_movemask_epi8(_mm_cmpeq_epi16(baseA, baseB)) == 0);
+	// compute pixel mask (in 2 halves)
+	__m128i masklo = _mm_setzero_si128();
+	__m128i maskhi = _mm_setzero_si128();
+	for (int i = 7; i >= 0; i--) {
+		// reorder for DXT
+		__m128i idslo = ids[i + 0];
+		__m128i idshi = ids[i + 8];
+		idslo = _mm_sub_epi16(idslo, _mm_cmpgt_epi16(idslo, _mm_setzero_si128()));
+		idshi = _mm_sub_epi16(idshi, _mm_cmpgt_epi16(idshi, _mm_setzero_si128()));
+		idslo = _mm_sub_epi16(idslo, _mm_and_si128(_mm_cmpeq_epi16(idslo, _mm_set1_epi16(4)), _mm_set1_epi16(3)));
+		idshi = _mm_sub_epi16(idshi, _mm_and_si128(_mm_cmpeq_epi16(idshi, _mm_set1_epi16(4)), _mm_set1_epi16(3)));
+		masklo = _mm_xor_si128(_mm_slli_epi16(masklo, 2), idslo);
+		maskhi = _mm_xor_si128(_mm_slli_epi16(maskhi, 2), idshi);
+	}
+	// make sure 565 colors have A > B
+	baseA = _mm_add_epi16(baseA, _mm_set1_epi16(0x8000U));  // unsigned -> signed comparison
+	baseB = _mm_add_epi16(baseB, _mm_set1_epi16(0x8000U));
+	__m128i revMask = _mm_cmplt_epi16(baseA, baseB);
+	revMask = _mm_and_si128(revMask, _mm_set1_epi8(0x55));
+	masklo = _mm_xor_si128(masklo, revMask);
+	maskhi = _mm_xor_si128(maskhi, revMask);
+	__m128i nbaseA = _mm_max_epi16(baseA, baseB);
+	__m128i nbaseB = _mm_min_epi16(baseA, baseB);
+	baseA = _mm_sub_epi16(nbaseA, _mm_set1_epi16(0x8000U));
+	baseB = _mm_sub_epi16(nbaseB, _mm_set1_epi16(0x8000U));
+
+	// shuffle/transpose 4 x 16-bit masks into 8 x 64-bit blocks
+	__m128i outA32 = _mm_unpacklo_epi16(baseA, baseB);
+	__m128i outB32 = _mm_unpackhi_epi16(baseA, baseB);
+	__m128i outC32 = _mm_unpacklo_epi16(masklo, maskhi);
+	__m128i outD32 = _mm_unpackhi_epi16(masklo, maskhi);
+	outputs[0] = _mm_unpacklo_epi32(outA32, outC32);
+	outputs[1] = _mm_unpackhi_epi32(outA32, outC32);
+	outputs[2] = _mm_unpacklo_epi32(outB32, outD32);
+	outputs[3] = _mm_unpackhi_epi32(outB32, outD32);
+}
+
 static void RgtcKernel8x4( const byte *srcPtr, int stride, byte *dstPtr ) {
 	__m128i rgbaRows[2][4];
 	LoadBlocks<2>(srcPtr, stride, rgbaRows);
@@ -639,6 +984,14 @@ static void RgtcKernel8x4( const byte *srcPtr, int stride, byte *dstPtr ) {
 	__m128i output[2];
 	ProcessAlphaBlock_x4(rgrgRows, output);
 	StoreOutput<2>(dstPtr, output);
+}
+
+static void Dxt1Kernel32x4( const byte *srcPtr, int stride, byte *dstPtr ) {
+	__m128i rgbaRows[8][4];
+	LoadBlocks<8>(srcPtr, stride, rgbaRows);
+	__m128i output[4];
+	ProcessColorBlock_x8(rgbaRows, output);
+	StoreOutput<4>(dstPtr, output);
 }
 
 template<int KernelBlocks, int OutputWordsPerBlock>
@@ -677,6 +1030,11 @@ static void ProcessWithKernel( void (*kernelFunction)(const byte*, int, byte*), 
 void idSIMD_SSE2::CompressRGTCFromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
 	using namespace DxtCompress;
 	ProcessWithKernel<2, 2>( RgtcKernel8x4, srcPtr, width, height, stride, dstPtr );
+}
+
+void idSIMD_SSE2::CompressDXT1FromRGBA8( const byte *srcPtr, int width, int height, int stride, byte *dstPtr ) {
+	using namespace DxtCompress;
+	ProcessWithKernel<8, 1>( Dxt1Kernel32x4, srcPtr, width, height, stride, dstPtr );
 }
 
 #endif
