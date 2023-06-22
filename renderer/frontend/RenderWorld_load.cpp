@@ -656,11 +656,14 @@ CheckAreaForPortalSky
 bool idRenderWorldLocal::CheckAreaForPortalSky( int areaNum ) {
 	assert( areaNum >= 0 && areaNum < portalAreas.Num() );
 
-	for ( int entityIdx : portalAreas[areaNum].entityRefs ) {
-		idRenderEntityLocal *def = entityDefs[entityIdx];
-		if ( def && def->needsPortalSky ) {
+	const idList<int> &entityIds = portalAreas[areaNum].entityRefs;
+	if ( entityIds.Num() > 0 ) {
+		const idRenderEntityLocal *edef = entityDefs[entityIds[0]];
+		if ( const idRenderModel *model = edef->parms.hModel )
+			assert( model->IsStaticWorldModel() );	// world area model always goes first
+		if ( edef->needsPortalSky )
 			return true;
-		}
 	}
+
 	return false;
 }
