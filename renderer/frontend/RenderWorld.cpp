@@ -1961,7 +1961,14 @@ void idRenderWorldLocal::AddLightToAreas(idRenderLightLocal* def) {
 		// stgatilov #5172: also save portal windings along with area indices
 		lightPortalFlow_t *flow = ( r_useLightPortalFlowCulling.GetBool() ? &def->lightPortalFlow : nullptr );
 
-		if ( def->parms.prelightModel && r_useLightPortalFlow.GetInteger() == 1 ) {
+		// parallel lights are garbage in Doom 3, and mappers introduced all sort of hacks to make them work
+		// changing ANYTHING in culling immediately breaks these hacky missions
+		// so just try to do exactly the same stupid things as Doom 3 did
+		bool forceOldCodeForParallel = def->parms.parallel && !def->parms.parallelSky;
+		if ( forceOldCodeForParallel )
+			flow = nullptr;
+
+		if ( def->parms.prelightModel && r_useLightPortalFlow.GetInteger() == 1 || forceOldCodeForParallel ) {
 			FlowLightThroughPortals( def, &areaIds, flow );
 			goto found;
 		}
