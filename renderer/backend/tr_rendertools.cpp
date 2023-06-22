@@ -1782,6 +1782,9 @@ void RB_ShowPortals( void ) {
 	auto portalStates = backEnd.viewDef->portalStates;
 	if ( !r_showPortals || !portalStates )
 		return;
+	// stgatilov: only display stuff for the main view (skip subviews and lightgem)
+	if ( backEnd.viewDef->renderView.viewID != VID_PLAYER_VIEW )
+		return;
 
 	// all portals are expressed in world coordinates
 	RB_SimpleWorldSetup();
@@ -1790,38 +1793,42 @@ void RB_ShowPortals( void ) {
 
 	GL_State( GLS_DEFAULT );
 
+	if ( r_showPortals > 1 )
+		common->Printf( "^8EYE:^7%d^8 ", backEnd.viewDef->areaNum );
+
 	ImmediateRendering ir;
-	//((idRenderWorldLocal *)backEnd.viewDef->renderWorld)->ShowPortals();
-	auto world = (idRenderWorldLocal *)backEnd.viewDef->renderWorld;
+	idRenderWorldLocal *world = backEnd.viewDef->renderWorld;
 	for ( auto &area : world->portalAreas ) {
 		if ( *portalStates++ == 'C' ) // area closed
 			continue;
-		idStr consoleMsg( area.areaNum );
+		idStr consoleMsg = idStr::Fmt( "  ^7%d^8->", area.areaNum );
 		idVec4 color;
 		for ( auto p : area.areaPortals ) {
+			if ( consoleMsg.Right(2) != "->" )
+				consoleMsg += ",";
 			switch ( *portalStates++ ) {	// Changed to show 3 colours. -- SteveL #4162
 			case 'G':
 				color.Set( 0, 1, 0, 1 ); 	// green = we see through this portal
-				consoleMsg += "-^2";
+				consoleMsg += "^2";
 				break;
 			case 'Y':
 				color.Set( 1, 1, 0, 1 );	// yellow = we see into this visleaf but not through this portal
-				consoleMsg += "-^3";
+				consoleMsg += "^3";
 				break;
 			default:
 				color.Set( 1, 0, 0, 1 ); 	// red = can't see
-				consoleMsg += "-^1";			
+				consoleMsg += "^1";			
 				break;
 			}
 			ir.glColor4fv( color.ToFloatPtr() );
-			consoleMsg += p->intoArea;
+			consoleMsg += idStr::Fmt( "%d^8", p->intoArea );
 			ir.glBegin( GL_LINE_LOOP );		// FIXME convert to modern OpenGL
 			for ( int j = 0; j < p->w.GetNumPoints(); j++ )
 				ir.glVertex3fv( p->w[j].ToFloatPtr() );
 			ir.glEnd();
 		}
 		if ( r_showPortals > 1 )
-			common->Printf( consoleMsg += " " );
+			common->Printf( consoleMsg + "^0" );
 	}
 	if ( r_showPortals > 1 )
 		common->Printf( "\n" );
