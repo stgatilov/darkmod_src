@@ -477,15 +477,13 @@ void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light, Are
 		ps.portalPlanes[i] = -frustumPlanes[i];
 	}
 
-	if (light->parms.parallelSky) {
+	if ( light->parms.parallelSky ) {
 		//stgatilov #5121: trace light rays from every area having portalSky
-		idList<int> areas;
-		areas.SetNum(light->world->NumAreas());
-		int k = light->world->FindAreasInBounds(light->globalLightBounds, areas.Ptr(), areas.Num());
-		areas.SetNum(k, false);
-		for (int areaNum : areas) {
-			if (light->world->CheckAreaForPortalSky(areaNum))
-				FloodLightThroughArea_r( context, areaNum, &ps );
+		AreaList startingAreas;
+		GetParallelLightEnteringAreas( light, startingAreas );
+		for ( int i = 0; i < startingAreas.Num(); i++ ) {
+			int areaNum = startingAreas[i];
+			FloodLightThroughArea_r( context, areaNum, &ps );
 		}
 	}
 

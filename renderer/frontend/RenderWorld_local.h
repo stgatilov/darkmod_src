@@ -325,6 +325,7 @@ public:
 	void					GetFrustumCoveredAreas_r(FrustumCoveredContext &context, int nodeNum) const;
 	void					GetFrustumCoveredAreas(idRenderEntityLocal* def, AreaList &areaIds) const;
 	void					GetFrustumCoveredAreas(idRenderLightLocal* light, AreaList &areaIds) const;
+	void					GetParallelLightEnteringAreas(idRenderLightLocal* light, AreaList &areaIds) const;
 
 	void					AddEntityToAreas(idRenderEntityLocal* def);
 	void					AddLightToAreas(idRenderLightLocal* def);

@@ -1899,6 +1899,63 @@ void idRenderWorldLocal::GetFrustumCoveredAreas(idRenderLightLocal* def, AreaLis
 	GetFrustumCoveredAreas_r(context, 0);
 }
 
+void idRenderWorldLocal::GetParallelLightEnteringAreas(idRenderLightLocal* light, AreaList &areaIds) const {
+	areaIds.Clear();
+
+	assert(light->parms.parallel);
+	// copy/pasted from R_DeriveLightData
+	idVec3 lightDirectionReversed = light->parms.lightCenter;
+	if (lightDirectionReversed.Normalize() == 0.0f)
+		lightDirectionReversed[2] = 1.0f;
+
+	// Origin point has no sense for a parallel light.
+	// Parallel light covers a frustum and originates on all the "entering" faces of the frustum.
+	// These are the faces through which light rays enters the volume.
+	// All the areas covered by these faces must be included in starting ones for portal flow.
+
+	// go through all faces of light frustum
+	for (int d = 0; d < 3; d++)
+		for (int s = 0; s < 2; s++) {
+			// find outer normal (global coords)
+			idVec3 localNormal = vec3_zero;
+			localNormal[d] = 2 * s - 1;
+			idVec3 globalNormal;
+			light->inverseBaseLightProject.TransformDir(localNormal, globalNormal, false);
+
+			// only consider faces through which parallel light enters the volume
+			if (globalNormal * lightDirectionReversed <= 0.0f)
+				continue;
+
+			// the face is singular aabox in local coordinates
+			idBounds localBounds = bounds_zeroOneCube;
+			localBounds[0][d] = localBounds[1][d] = s;
+
+			// add all areas touched by this face
+			FrustumCoveredContext context;
+			context.coveredAreas = &areaIds;
+			idRenderMatrix::GetFrustumCorners(context.corners, light->inverseBaseLightProject, localBounds);
+			GetFrustumCoveredAreas_r(context, 0);
+		}
+
+
+	// In a typical scenario of global moonlight, entering faces are completely outside playable areas.
+	// In order to make parallel light useful, we have to allow light to enter areas from "void" (i.e. solid nowhere) --- unlike point lights.
+	// In particular, it is natural to expect that parallel lights can enter through portalsky boundary surfaces.
+	// So we add all areas with portalsky which are covered by light frustum.
+
+	AreaList coveredAreas;
+	GetFrustumCoveredAreas(light, coveredAreas);
+
+	for (int i = 0; i < coveredAreas.Num(); i++) {
+		int areaNum = coveredAreas[i];
+		if (light->world->CheckAreaForPortalSky(areaNum)) {
+			if (!areaIds.Find(areaNum)) {
+				areaIds.AddGrow(areaNum);
+			}
+		}
+	}
+}
+
 
 void idRenderWorldLocal::AddEntityToAreas(idRenderEntityLocal* def) {
 	AreaList areaIds;
