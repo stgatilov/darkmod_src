@@ -861,8 +861,10 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
+		// stgatilov #6306: parallelSky light originates in many areas, so skip this check for it
 		if ( r_useLightAreaCulling.GetInteger() &&
 			!light->parms.noShadows && light->lightShader->LightCastsShadows() && 
+			!light->parms.parallelSky && 
 			light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum] ) {
 			continue;
 		}
