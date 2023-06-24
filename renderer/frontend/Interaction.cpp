@@ -1299,9 +1299,9 @@ bool idInteraction::IsPotentiallyVisible( idScreenRect &shadowScissor ) {
 
 	// duzenko: cull away interaction if light and entity are in disconnected areas
 	// note: this cannot be done for noshadows lights, since they light objects through closed doors!
-	// stgatilov #5121: parallel light originates in many areas, so skip this check for it
+	// stgatilov #5121: parallelSky light originates in many areas, so skip this check for it
 	assert(HasShadows());
-	if ( lightDef->areaNum != -1 && !lightDef->parms.parallel ) {
+	if ( lightDef->areaNum != -1 && !lightDef->parms.parallelSky ) {
 		// if no part of the model is in an area that is connected to
 		// the light center (it is behind a solid, closed door), we can ignore it
 		bool areasConnected = false;
