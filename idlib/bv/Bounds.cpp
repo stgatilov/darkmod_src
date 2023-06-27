@@ -160,7 +160,7 @@ bool idBounds::LineIntersection( const idVec3 &start, const idVec3 &end ) const 
         return false;
 	}
 
-	if ( idMath::Fabs( cross.z ) > extents.x * ld.y + extents.y * ld.z ) {
+	if ( idMath::Fabs( cross.z ) > extents.x * ld.y + extents.y * ld.x ) {
         return false;
 	}
 
