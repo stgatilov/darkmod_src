@@ -6,6 +6,7 @@
 #ifdef _WIN32
 #include <direct.h>
 #else
+#include <cstdint>
 #include <sys/stat.h>
 #endif
 

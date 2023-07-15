@@ -14,6 +14,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 ******************************************************************************/
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include "Ini.h"
