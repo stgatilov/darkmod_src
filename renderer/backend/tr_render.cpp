@@ -36,15 +36,6 @@ This should never happen if the vertex cache is operating properly.
 =================
 */
 void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
-	if ( tri->ambientSurface ) {
-		if ( tri->indexes == tri->ambientSurface->indexes ) {
-			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		}
-		if ( tri->verts == tri->ambientSurface->verts ) {
-			backEnd.pc.c_drawRefVertexes += tri->numVerts;
-		}
-	}
-
 	if (r_glCoreProfile.GetInteger() > 0) {
 #ifdef _DEBUG
 		common->Warning("Drawing without index buffer not supported in Core profile!");

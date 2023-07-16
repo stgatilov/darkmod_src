@@ -737,16 +737,10 @@ typedef struct {
 
 typedef struct {
 	int		c_surfaces;
-	int		c_shaders;
-	int		c_vertexes;
-	int		c_indexes;		// one set per pass
-	int		c_totalIndexes;	// counting all passes
 
 	int		c_drawElements;
 	int		c_drawIndexes;
 	int		c_drawVertexes;
-	int		c_drawRefIndexes;
-	int		c_drawRefVertexes;
 
 	int		c_copyFrameBuffer;
 	int		c_copyDepthBuffer;
@@ -756,10 +750,7 @@ typedef struct {
 	int		c_shadowVertexes;
 
 	int		c_vboIndexes;
-	int		c_matrixLoads;
-	float	c_overDraw;
 
-	uint	c_interactions, c_interactionSingleLights, c_interactionLights, c_interactionMaxLights, c_interactionMaxShadowMaps;
 	uint	textureLoads, textureBackgroundLoads, textureLoadTime, textureUploadTime;
 
 	int		msec;			// total msec for backend run
@@ -1055,7 +1046,6 @@ extern idCVar r_showCull;				// report sphere and box culling stats
 extern idCVar r_showInteractions;		// report interaction generation activity
 extern idCVar r_showSurfaces;			// report surface/light/shadow counts
 extern idCVar r_showPrimitives;			// report vertex/index/draw counts
-extern idCVar r_showMultiLight;			// 
 extern idCVarInt r_showPortals;			// draw portal outlines in color based on passed / not passed
 extern idCVar r_showAlloc;				// report alloc/free counts
 extern idCVar r_showSkel;				// draw the skeleton when model animates

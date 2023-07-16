@@ -41,17 +41,16 @@ static void R_PerformanceCounters( void ) {
 		int bytesUsed = globalImages->SumOfUsedImages(&numUsed);
 
 		if ( r_showPrimitives.GetInteger() > 1 ) {
-			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i images:%d ml:%i\n",
+			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i images:%d\n",
 				tr.pc.c_numViews,
 				backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
 				backEnd.pc.c_drawIndexes / 3,
-				(backEnd.pc.c_drawIndexes - backEnd.pc.c_drawRefIndexes) / 3,
+				(backEnd.pc.c_drawIndexes) / 3,
 				backEnd.pc.c_drawVertexes,
-				(backEnd.pc.c_drawVertexes - backEnd.pc.c_drawRefVertexes),
+				(backEnd.pc.c_drawVertexes),
 				backEnd.pc.c_shadowIndexes / 3,
 				backEnd.pc.c_shadowVertexes,
-				numUsed,
-				backEnd.pc.c_matrixLoads
+				numUsed
 			);
 		} else {
 			common->Printf( "views:%i draws:%i tris:%i (shdw:%i) (vbo:%i) image:%d MB\n",
