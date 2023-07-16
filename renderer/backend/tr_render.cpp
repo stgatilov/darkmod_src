@@ -299,7 +299,7 @@ Sets vertex pointers
 */
 void RB_RenderTriangleSurface( const drawSurf_t *surf ) {
 	if ( !surf->ambientCache.IsValid() ) {
-		RB_DrawElementsImmediate( surf->frontendGeo );
+		//RB_DrawElementsImmediate( surf->frontendGeo );
 		return;
 	}
 	vertexCache.VertexPosition( surf->ambientCache );

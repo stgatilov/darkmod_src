@@ -2555,11 +2555,6 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		// highlight the surface
 		GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 
-		/*{
-			GL_FloatColor( 1, 0, 0, 0.25 );
-			RB_DrawElementsImmediate( tri );
-		}*/
-		//stgatilov: RB_DrawElementsImmediate not working currently
 		ImmediateRendering ir;
 		ir.glBegin( GL_TRIANGLES );
 		ir.glColor4f( 1, 0, 0, 0.25 );
