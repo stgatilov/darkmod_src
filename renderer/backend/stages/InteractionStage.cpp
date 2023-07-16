@@ -509,7 +509,7 @@ void InteractionStage::PrepareDrawCommand( drawInteraction_t *din ) {
 	uniforms->useBumpmapLightTogglingFix.Set( r_useBumpmapLightTogglingFix.GetBool() && !din->surf->material->ShouldCreateBackSides() );
 	uniforms->RGTC.Set( din->bumpImage->internalFormat == GL_COMPRESSED_RG_RGTC2 );
 
-	RB_DrawElementsWithCounters( din->surf );
+	RB_DrawElementsWithCounters( din->surf, DCK_INTERACTION );
 }
 
 static void AddPoissonDiskSamples( idList<idVec2> &pts, float dist ) {

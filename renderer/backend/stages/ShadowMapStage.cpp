@@ -250,5 +250,5 @@ void ShadowMapStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage
 		uniforms->alphaTest.Set( -1.0f );
 	}
 
-	RB_DrawElementsInstanced( surf, 6 );
+	RB_DrawElementsInstanced( surf, 6, DCK_SHADOW );
 }

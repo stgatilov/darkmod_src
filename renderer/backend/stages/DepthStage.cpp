@@ -258,5 +258,5 @@ void DepthStage::IssueDrawCommand( const drawSurf_t *surf, const shaderStage_t *
 	uniforms->color.Set( color );
 	uniforms->alphaTest.Set( alphaTest );
 
-	RB_DrawElementsWithCounters( surf );
+	RB_DrawElementsWithCounters( surf, DCK_DEPTH_PREPASS );
 }

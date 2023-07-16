@@ -363,7 +363,7 @@ void SurfacePassesStage::DrawSimpleTexture( const drawSurf_t *drawSurf, const sh
 	GL_State( pStage->drawStateBits );
 
 	// draw it
-	RB_DrawElementsWithCounters( drawSurf );
+	RB_DrawElementsWithCounters( drawSurf, DCK_SURFACE_PASS );
 }
 
 void SurfacePassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
@@ -411,7 +411,7 @@ void SurfacePassesStage::DrawEnvironment( const drawSurf_t *drawSurf, const shad
 
 	GL_State( pStage->drawStateBits );
 
-	RB_DrawElementsWithCounters( drawSurf );
+	RB_DrawElementsWithCounters( drawSurf, DCK_SURFACE_PASS );
 }
 
 void SurfacePassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
@@ -472,7 +472,7 @@ void SurfacePassesStage::DrawSoftParticle( const drawSurf_t *drawSurf, const sha
 	// Disable depth clipping. The fragment program will handle it to allow overdraw.
 	GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS );
 
-	RB_DrawElementsWithCounters( drawSurf );
+	RB_DrawElementsWithCounters( drawSurf, DCK_SURFACE_PASS );
 }
 
 void SurfacePassesStage::DrawCustomShader( const drawSurf_t *drawSurf, const shaderStage_t *pStage ) {
@@ -546,7 +546,7 @@ void SurfacePassesStage::DrawCustomShader( const drawSurf_t *drawSurf, const sha
 
 	GL_State( pStage->drawStateBits );
 
-	RB_DrawElementsWithCounters( drawSurf );
+	RB_DrawElementsWithCounters( drawSurf, DCK_SURFACE_PASS );
 }
 
 void SurfacePassesStage::BindVariableStageImage( const textureStage_t *texture, const float *regs ) {

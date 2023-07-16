@@ -49,26 +49,24 @@ void RB_DrawElementsImmediate( const srfTriangles_t *tri ) {
 	qglDrawElements( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
 }
 
-ID_INLINE void RB_PerfCounters( const drawSurf_t* surf, int instances = 1, bool shadows = false ) {
-	if ( r_showPrimitives.GetBool() && backEnd.viewDef->viewEntitys ) {
-		if ( shadows ) {
-			if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-				backEnd.pc.c_shadowElements++;
-				backEnd.pc.c_shadowIndexes += surf->numIndexes;
-				backEnd.pc.c_shadowVertexes += surf->frontendGeo->numVerts;
-			}
-		} else {
-			backEnd.pc.c_drawElements++;
-			backEnd.pc.c_drawIndexes += surf->numIndexes * instances;
-			if ( surf->frontendGeo )
-				backEnd.pc.c_drawVertexes += surf->frontendGeo->numVerts;
-		}
+static void RB_PerfCounters( const drawSurf_t* surf, int instances, drawCallKind_t kind ) {
+	if ( backEnd.viewDef->IsLightGem() )
+		return;	// ignore lightgem
+	if ( !backEnd.viewDef->viewEntitys )
+		return;	// GUI
+
+	if ( r_showPrimitives.GetBool() ) {
+		backEnd.pc.c_drawCalls[kind]++;
+		backEnd.pc.c_drawIndexes[kind] += instances * surf->numIndexes;
+		backEnd.pc.c_drawVerts[kind] += instances * surf->numVerts;	// we pay for vertex shader cost per instance
 	}
-	if ( r_showEntityDraws && surf->space )
-		if ( r_showEntityDraws & 4 ) {
-			( (viewEntity_t*) surf->space )->drawCalls += surf->frontendGeo->numIndexes / 3;
-		} else
+
+	if ( r_showEntityDraws && surf->space ) {
+		if ( r_showEntityDraws & 4 )
+			( (viewEntity_t*) surf->space )->drawCalls += surf->numIndexes / 3;
+		else
 			( (viewEntity_t*) surf->space )->drawCalls++;
+	}
 }
 
 /*
@@ -76,14 +74,11 @@ ID_INLINE void RB_PerfCounters( const drawSurf_t* surf, int instances = 1, bool 
 RB_DrawElementsWithCounters
 ================
 */
-void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
-	RB_PerfCounters( surf );
+void RB_DrawElementsWithCounters( const drawSurf_t *surf, drawCallKind_t kind ) {
+	RB_PerfCounters( surf, 1, kind );
 	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
 		indexPtr = vertexCache.IndexPosition( surf->indexCache );
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += surf->numIndexes;
-		}
 	} else {
 		//note: this happens briefly when index cache is being resized
 		if (r_glCoreProfile.GetInteger() > 0) {
@@ -104,13 +99,10 @@ void RB_DrawElementsWithCounters( const drawSurf_t *surf ) {
 		qglDrawElementsBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, basePointer );
 }
 
-void RB_DrawTriangles( const srfTriangles_t &tri) {
+void RB_DrawTriangles( const srfTriangles_t &tri ) {
 	void* indexPtr;
 	if ( tri.indexCache.IsValid() ) {
 		indexPtr = vertexCache.IndexPosition( tri.indexCache );
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += tri.numIndexes;
-		}
 	} else {
 		if (r_glCoreProfile.GetInteger() > 0) {
 #ifdef _DEBUG
@@ -134,15 +126,12 @@ void RB_DrawTriangles( const srfTriangles_t &tri) {
 RB_DrawElementsInstanced
 ================
 */
-void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
-	RB_PerfCounters( surf, instances );
+void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances, drawCallKind_t kind ) {
+	RB_PerfCounters( surf, instances, kind );
 
 	void* indexPtr;
 	if ( surf->indexCache.IsValid() ) {
 		indexPtr = vertexCache.IndexPosition( surf->indexCache );
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
-			backEnd.pc.c_vboIndexes += surf->numIndexes;
-		}
 	} else {
 		if (r_glCoreProfile.GetInteger() > 0) {
 #ifdef _DEBUG
@@ -160,126 +149,6 @@ void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances ) {
 	else
 		qglDrawElementsInstancedBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, instances, basePointer );
 }
-
-/*
-================
-RB_DrawElementsMulti
-
-Useful for batched calls with no state changes (depth pass, shadow maps)
-================
-*/
-idCVarInt r_skipMultiDraw( "r_skipMultiDraw", "0", CVAR_RENDERER, "1 - skip single only, 2 - skip multi only" );
-
-idList<const drawSurf_t*> allSurfaces( 1 << 11 );
-
-void RB_Multi_AddSurf( const drawSurf_t* surf ) {
-	auto ent = surf->space;
-	if ( !ent->weaponDepthHack && ent->modelDepthHack == 0 )
-		allSurfaces.Append( surf );
-	else
-		RB_DrawElementsWithCounters( surf );
-}
-
-void RB_Multi_DrawElements( int instances ) {
-	idList<const drawSurf_t*> spaceSurfaces( 1 << 7 );
-	idList<GLsizei> multiDrawCount( 1 << 7 );
-	idList<void*> multiDrawIndices( 1 << 7 );
-	idList<GLint> multiDrawBaseVertices( 1 << 7 );
-
-	auto DrawSpaceSurfaces = [&]() {
-		if ( !spaceSurfaces.Num() )
-			return;
-		if ( GLSLProgram::GetCurrentProgram() != nullptr ) {
-			Uniforms::Global* transformUniforms = GLSLProgram::GetCurrentProgram()->GetUniformGroup<Uniforms::Global>();
-			transformUniforms->Set( spaceSurfaces[0]->space );
-		}
-		if ( spaceSurfaces.Num() == 1 ) {
-			if ( !( r_skipMultiDraw & 1 ) ) {
-				vertexCache.VertexPosition( spaceSurfaces[0]->ambientCache );
-				RB_DrawElementsWithCounters( spaceSurfaces[0] );
-			}
-			spaceSurfaces.SetNum( 0, false );
-			return;
-		}
-		if ( r_skipMultiDraw & 2 ) {
-			spaceSurfaces.SetNum( 0, false );
-			return;
-		}
-		if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() && backEnd.viewDef->viewEntitys ) {
-			backEnd.pc.c_drawElements++;
-		}
-		for ( auto surf : spaceSurfaces ) {
-			multiDrawCount.Append( surf->numIndexes );
-			void* offset = (void*)(size_t)surf->indexCache.offset;
-			multiDrawIndices.Append( offset );
-			vertexCache.VertexPosition( surf->ambientCache );
-			int baseVertex = vertexCache.GetBaseVertex();
-			if ( baseVertex < 0 )
-				common->Error( "Invalid base vertex in RB_Multi_AddSurf" );
-			multiDrawBaseVertices.Append( baseVertex );
-			RB_PerfCounters( surf );
-		}
-		vertCacheHandle_t hBufferStart{ 1,0,0 };
-		vertexCache.IndexPosition( hBufferStart );
-		vertexCache.VertexPosition( hBufferStart );
-		auto indices = (const void* const*)multiDrawIndices.Ptr();
-#if 1
-		qglMultiDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount.Ptr(), GL_INDEX_TYPE, indices, multiDrawCount.Num(), multiDrawBaseVertices.Ptr() );
-#else
-		for ( int i = 0; i < multiDrawCount.Num(); i++ ) {
-			qglDrawElementsBaseVertex( GL_TRIANGLES, multiDrawCount[i], GL_INDEX_TYPE, indices[i], multiDrawBaseVertices[i] );
-			GL_CheckErrors();
-		}
-#endif
-		multiDrawCount.SetNum( 0, false );
-		multiDrawIndices.SetNum( 0, false );
-		multiDrawBaseVertices.SetNum( 0, false );
-		spaceSurfaces.SetNum( 0, false );
-	};
-
-	backEnd.currentSpace = NULL;
-	for ( auto surf : allSurfaces ) {
-		if ( surf->space != backEnd.currentSpace ) {
-			DrawSpaceSurfaces();
-			backEnd.currentSpace = surf->space;
-		}
-		spaceSurfaces.Append( surf );
-	}
-	DrawSpaceSurfaces();
-	allSurfaces.SetNum( 0, false );
-}
-
-/*
-================
-RB_DrawShadowElementsWithCounters
-
-May not use all the indexes in the surface if caps are skipped
-================
-*/
-void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf ) {
-	RB_PerfCounters( surf, 1, true );
-
-	void* indexPtr;
-	if ( surf->indexCache.IsValid() ) {
-		indexPtr = vertexCache.IndexPosition( surf->indexCache );
-	} else {
-		if (r_glCoreProfile.GetInteger() > 0) {
-#ifdef _DEBUG
-			common->Warning("Drawing without index buffer not supported in Core profile!");
-#endif
-			return;
-		}
-		//TODO: remove this code?
-		vertexCache.UnbindIndex();
-		indexPtr = surf->frontendGeo->indexes; // FIXME
-	}
-	int basePointer = vertexCache.GetBaseVertex();
-	if ( basePointer < 0 )
-		qglDrawElements( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr );
-	else
-		qglDrawElementsBaseVertex( GL_TRIANGLES, surf->numIndexes, GL_INDEX_TYPE, indexPtr, basePointer );
-}
-
 
 /*
 ===============

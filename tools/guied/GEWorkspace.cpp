@@ -314,10 +314,10 @@ void rvGEWorkspace::Render ( HDC hdc )
 	// We are done using the renderSystem now
 	renderSystem->EndFrame( &front, &back );
 
-	if ( mApplication->GetActiveWorkspace ( ) == this )
+	/*if ( mApplication->GetActiveWorkspace ( ) == this )
 	{
 		mApplication->GetStatusBar().SetTriangles ( backEnd.pc.c_drawIndexes/3 );
-	}
+	}*/
 
 	// Prepare the viewport for drawing selections, etc.
 	GL_State( GLS_DEFAULT );

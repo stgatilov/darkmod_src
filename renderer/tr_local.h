@@ -146,6 +146,7 @@ struct viewLight_s;
 typedef struct drawSurf_s {
 	const srfTriangles_t	*frontendGeo;			// do not use in the backend; may be modified by the frontend
 	int						numIndexes;				// these four are frame-safe copies for backend use
+	int						numVerts;
 	vertCacheHandle_t		indexCache;				// int				
 	vertCacheHandle_t		ambientCache;			// idDrawVert
 	vertCacheHandle_t		shadowCache;			// shadowCache_t
@@ -165,6 +166,7 @@ typedef struct drawSurf_s {
 	void CopyGeo( const srfTriangles_t *tri ) {
 		frontendGeo = tri;
 		numIndexes = tri->numIndexes;
+		numVerts = tri->numVerts;
 		indexCache = tri->indexCache;
 		ambientCache = tri->ambientCache;
 		shadowCache = tri->shadowCache;
@@ -735,21 +737,28 @@ typedef struct {
 } glstate_t;
 
 
+// stgatilov: draw calls are tagged with this type for statistics
+// see r_showPrimitives and backEndCounters_t
+typedef enum {
+	DCK_DEPTH_PREPASS,
+	DCK_SURFACE_PASS,
+	DCK_INTERACTION,
+	DCK_SHADOW,
+	DCK_LIGHT_PASS,
+	DCK_MISC,			// other kinds
+	DCK_NONE,			// ignore in all displayed stats
+	DCK_COUNT			// auxilliary
+} drawCallKind_t;
+
 typedef struct {
 	int		c_surfaces;
 
-	int		c_drawElements;
-	int		c_drawIndexes;
-	int		c_drawVertexes;
+	int		c_drawCalls[DCK_COUNT];
+	int		c_drawIndexes[DCK_COUNT];
+	int		c_drawVerts[DCK_COUNT];
 
 	int		c_copyFrameBuffer;
 	int		c_copyDepthBuffer;
-
-	int		c_shadowElements;
-	int		c_shadowIndexes;
-	int		c_shadowVertexes;
-
-	int		c_vboIndexes;
 
 	uint	textureLoads, textureBackgroundLoads, textureLoadTime, textureUploadTime;
 
@@ -1459,10 +1468,9 @@ DRAW_STANDARD
 ============================================================
 */
 
-void RB_DrawElementsWithCounters( const drawSurf_t* surf );
-void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances );
+void RB_DrawElementsWithCounters( const drawSurf_t* surf, drawCallKind_t kind = DCK_MISC );
+void RB_DrawElementsInstanced( const drawSurf_t *surf, int instances, drawCallKind_t kind = DCK_MISC );
 void RB_DrawTriangles( const srfTriangles_t& tri );
-void RB_DrawShadowElementsWithCounters( const drawSurf_t *surf );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
 
 // postprocessing related

@@ -128,7 +128,7 @@ void StencilShadowStage::DrawSurfs( const viewLight_t *vLight, const drawSurf_t 
 		R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, localLightOrigin );
 		uniforms->localLightOrigin.Set( idVec4( localLightOrigin, 0.0f ) );
 
-		RB_DrawElementsWithCounters( surf );
+		RB_DrawElementsWithCounters( surf, DCK_SHADOW );
 	}
 }
 

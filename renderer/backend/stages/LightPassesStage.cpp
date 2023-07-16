@@ -258,5 +258,5 @@ void LightPassesStage::DrawSurf( const drawSurf_t *drawSurf, std::function<void(
 	vertexCache.VertexPosition( drawSurf->ambientCache );
 
 	perSurfaceSetup( drawSurf );	// most importantly: modelview
-	RB_DrawElementsWithCounters( drawSurf );
+	RB_DrawElementsWithCounters( drawSurf, DCK_LIGHT_PASS );
 }

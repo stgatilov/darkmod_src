@@ -40,27 +40,55 @@ static void R_PerformanceCounters( void ) {
 		int numUsed = -1;
 		int bytesUsed = globalImages->SumOfUsedImages(&numUsed);
 
+		int totalCalls = 0;
+		int totalIndexes = 0;
+		int totalVerts = 0;
+		for ( int i = 0; i < DCK_COUNT; i++ ) {
+			if ( i == DCK_NONE )
+				continue;
+			totalCalls += backEnd.pc.c_drawCalls[i];
+			totalIndexes += backEnd.pc.c_drawIndexes[i];
+			totalVerts += backEnd.pc.c_drawVerts[i];
+		}
+
 		if ( r_showPrimitives.GetInteger() > 1 ) {
-			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i images:%d\n",
+			static const char* LABELS[] = { "depth", "surf", "inter", "shadow", "light", "misc" };
+			int k = 0;
+			for ( int i = 0; i < DCK_COUNT; i++ ) {
+				if ( i == DCK_NONE )
+					continue;
+				common->Printf(
+					"%s: %i/%i/%i",
+					LABELS[i],
+					backEnd.pc.c_drawCalls[i],
+					backEnd.pc.c_drawIndexes[i] / 3,
+					backEnd.pc.c_drawVerts[i]
+				);
+				if (++k == 3) {
+					common->Printf("\n");
+					k = 0;
+				}
+				else {
+					common->Printf("   ");
+				}
+			}
+			common->Printf(
+				"views:%i draws:%i/%i images:%i/%i\n",
 				tr.pc.c_numViews,
-				backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
-				backEnd.pc.c_drawIndexes / 3,
-				(backEnd.pc.c_drawIndexes) / 3,
-				backEnd.pc.c_drawVertexes,
-				(backEnd.pc.c_drawVertexes),
-				backEnd.pc.c_shadowIndexes / 3,
-				backEnd.pc.c_shadowVertexes,
-				numUsed
+				totalCalls,
+				totalIndexes / 3,
+				numUsed,
+				bytesUsed >> 20
 			);
 		} else {
-			common->Printf( "views:%i draws:%i tris:%i (shdw:%i) (vbo:%i) image:%d MB\n",
-			                tr.pc.c_numViews,
-			                backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
-			                ( backEnd.pc.c_drawIndexes + backEnd.pc.c_shadowIndexes ) / 3,
-			                backEnd.pc.c_shadowIndexes / 3,
-			                backEnd.pc.c_vboIndexes / 3,
-			                bytesUsed >> 20
-			              );
+			common->Printf(
+				"views:%i draws:%i tris:%i (shdw:%i) image:%d MB\n",
+				tr.pc.c_numViews,
+				totalCalls,
+				totalIndexes / 3,
+				backEnd.pc.c_drawIndexes[DCK_SHADOW] / 3,
+				bytesUsed >> 20
+			);
 		}
 	}
 
