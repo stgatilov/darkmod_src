@@ -506,20 +506,33 @@ CreateMapLights
 ==============
 */
 static void CreateMapLights( const idMapFile *dmapFile ) {
-	int		i;
-	const idMapEntity *mapEnt;
-	const char	*value;
 	TRACE_CPU_SCOPE("CreateMapLights")
 
-	for ( i = 0 ; i < dmapFile->GetNumEntities() ; i++ ) {
-		mapEnt = dmapFile->GetEntity(i);
-		mapEnt->epairs.GetString( "classname", "", &value);
+	for ( int i = 0 ; i < dmapFile->GetNumEntities() ; i++ ) {
+		const idMapEntity *mapEnt = dmapFile->GetEntity(i);
+		const char *value = mapEnt->epairs.GetString( "classname", "" );
 		if ( !idStr::Icmp( value, "light" ) ) {
 			CreateMapLight( mapEnt );
 		}
-
 	}
 
+	// stgatilov #6306: deprecate shadow-casting parallel lights
+	idList<idStr> deprecatedParallelLights;
+	for ( const mapLight_t *light : dmapGlobals.mapLights ) {
+		if ( light->def.parms.parallel ) {
+			if ( !light->def.parms.noShadows && light->def.lightShader->LightCastsShadows() ) {
+				if ( !light->def.parms.parallelSky ) {
+					deprecatedParallelLights.Append( light->name );
+				}
+			}
+		}
+	}
+	if ( deprecatedParallelLights.Num() > 0 ) {
+		idStr nameList = idStr::Join( deprecatedParallelLights, ", ");
+		common->Warning( "Shadow-casting and parallel lights are deprecated: %s", nameList.c_str() );
+		common->Printf( "If you need global parallel light (like sun or moon), use parallelSky light instead.\n" );
+		common->Printf( "If you need local parallel light, disable shadows. (see #6306)\n" );
+	}
 }
 
 /*

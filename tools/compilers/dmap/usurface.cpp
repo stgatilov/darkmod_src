@@ -864,8 +864,7 @@ static void BuildLightShadows( uEntity_t *e, mapLight_t *light ) {
 
 	// if the light is no-shadows, don't add any surfaces
 	// to the beam tree at all
-	if ( !light->def.parms.noShadows
-		&& light->def.lightShader->LightCastsShadows() ) {
+	if ( !light->def.parms.noShadows && light->def.lightShader->LightCastsShadows() ) {
 		for ( i = 0 ; i < e->numAreas ; i++ ) {
 			for ( group = e->areas[i].groups ; group ; group = group->nextGroup ) {
 				// if the surface doesn't cast shadows, skip it
