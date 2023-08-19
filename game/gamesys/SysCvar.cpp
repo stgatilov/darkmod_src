@@ -262,12 +262,8 @@ idCVar cv_tdm_footfalls_movetype_specific( "tdm_footfall_sounds_movetype_specifi
 
 // Daft Mugi #6257: Auto-search bodies
 idCVar cv_tdm_autosearch_bodies(
-	"tdm_autosearch_bodies", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER,
-	"Do auto-search keys and other items on bodies?\n"
-	"  0 --- nope\n"
-	"  1 --- get one attachment per frob\n"
-	"  2 --- get all attachments in one frob",
-	0, 2
+	"tdm_autosearch_bodies", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,
+	"Set to 1 to auto-search for keys and other items on bodies when frobbed"
 );
 
 // Dark Mod crouching

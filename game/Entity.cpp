@@ -11356,11 +11356,8 @@ bool idEntity::AddAttachmentsToInventory( idPlayer* player )
 	GetTeamChildren(&children);
 	for (int i = 0 ; i < children.Num() ; i++) {
 		idEntity* child = children[i];
-		if (child && player->AddToInventory(child)) {
+		if (child && player->AddToInventory(child))
 			didAddItem = true;
-			if (cv_tdm_autosearch_bodies.GetInteger() == 1)
-				return didAddItem;	// one item at a time
-		}
 	}
 
 	return didAddItem;
