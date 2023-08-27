@@ -1701,7 +1701,8 @@ void FluidAllGui() {
         } // Fl_Text_Display* g_Settings_TextGreetings
         { g_Settings_InputInstallDirectory = new Fl_Input(445, 125, 485, 20, "Install directory: ");
           g_Settings_InputInstallDirectory->tooltip("This is where the game will be installed. Do not install to Program Files! Ch\
-oose some directory where you can write, like: C:/Games/TheDarkMod");
+oose some directory where you can write, like: C:/Games/TheDarkMod. Path must \
+be absolute, period character is not allowed.");
         } // Fl_Input* g_Settings_InputInstallDirectory
         { g_Settings_ButtonBrowseInstallDirectory = new Fl_Button(940, 125, 60, 20, "Browse");
         } // Fl_Button* g_Settings_ButtonBrowseInstallDirectory
