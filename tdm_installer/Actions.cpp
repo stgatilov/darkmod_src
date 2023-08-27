@@ -231,11 +231,10 @@ void Actions::StartLogFile() {
 }
 
 bool Actions::NeedsSelfUpdate(ZipSync::ProgressIndicator *progress) {
-	std::string exeFilename = OsUtils::GetExecutableName();
 	std::string exePath = OsUtils::GetExecutablePath();
 	std::string exeTempPath = OsUtils::GetExecutablePath() + ".__temp__";
 	std::string exeZipPath = OsUtils::GetExecutablePath() + ".__temp__.zip";
-	std::string exeUrl = TDM_INSTALLER_EXECUTABLE_URL_PREFIX + OsUtils::GetExecutableName() + ".zip";
+	std::string exeUrl = std::string(TDM_INSTALLER_EXECUTABLE_URL_PREFIX) + TDM_INSTALLER_EXECUTABLE_FILENAME + ".zip";
 
 	ZipSync::HashDigest myHash;
 	{
@@ -266,7 +265,7 @@ bool Actions::NeedsSelfUpdate(ZipSync::ProgressIndicator *progress) {
 		ZipSyncAssert(exeZipPath == outPaths[0]);
 
 		g_logger->infof("Unpacking data from %s to temporary file %s", exeZipPath.c_str(), exeTempPath.c_str());
-		std::vector<uint8_t> data = ZipSync::ReadChecksummedZip(exeZipPath.c_str(), exeFilename.c_str());
+		std::vector<uint8_t> data = ZipSync::ReadChecksummedZip(exeZipPath.c_str(), TDM_INSTALLER_EXECUTABLE_FILENAME);
 		{
 			ZipSync::StdioFileHolder f(exeTempPath.c_str(), "wb");
 			int wr = fwrite(data.data(), 1, data.size(), f);

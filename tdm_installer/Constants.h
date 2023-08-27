@@ -19,6 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define TDM_INSTALLER_LOG_FORMAT "tdm_installer_%lld.log"
 #define TDM_INSTALLER_CONFIG_FILENAME "tdm_installer.ini"
 #define TDM_INSTALLER_LOCAL_MANIFEST "manifest.iniz"
+#define TDM_INSTALLER_EXECUTABLE_FILENAME "tdm_installer" TDM_INSTALLER_EXECUTABLE_FILENAME_SUFFIX
 
 #define TDM_INSTALLER_ZIPSYNC_DIR ".zipsync"
 #define TDM_INSTALLER_MANICACHE_SUBDIR "mani"

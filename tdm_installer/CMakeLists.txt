@@ -84,17 +84,28 @@ endif()
 
 if(THIRDPARTY_PLATFORM_OVERRIDE)
     if(UNIX)
-        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.custom")
+        set(FILENAME_SUFFIX ".custom")
+        set(OUTPUT_SUFFIX "${FILENAME_SUFFIX}")
     elseif(MSVC)
-        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer_custom.exe")
+        set(FILENAME_SUFFIX "_custom.exe")
+        set(OUTPUT_SUFFIX "_custom")
     endif()
 elseif(UNIX)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.linux64")
+        set(FILENAME_SUFFIX ".linux64")
+        set(OUTPUT_SUFFIX "${FILENAME_SUFFIX}")
     else()
-        set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer.linux32")
+        set(FILENAME_SUFFIX ".linux32")
+        set(OUTPUT_SUFFIX "${FILENAME_SUFFIX}")
     endif()
+else()
+    set(FILENAME_SUFFIX ".exe")
+    set(OUTPUT_SUFFIX "")
 endif()
+
+target_compile_definitions(tdm_installer PRIVATE TDM_INSTALLER_EXECUTABLE_FILENAME_SUFFIX="${FILENAME_SUFFIX}")
+set_target_properties(tdm_installer PROPERTIES OUTPUT_NAME "tdm_installer${OUTPUT_SUFFIX}")
+
 
 # fix libcurl dependencies
 find_package(mbedtls REQUIRED)  # libzipsync -> libcurl -> mbedtls
