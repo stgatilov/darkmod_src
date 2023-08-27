@@ -53,15 +53,15 @@ const char *GuiChooseDirectory(const char *message) {
 	GuiSetStyles(fc->window);
 	fc->preview(0);
 	fc->favoritesButton->hide();
-	fc->newButton->hide();
+	fc->newButton->show();
 	fc->previewButton->hide();
 	fc->showChoice->hide();
 	fc->previewBox->hide();
 	fc->showHiddenButton->hide();
 	Fl_Widget *ch = fc->fileList;
 	Fl_Group *par = fc->fileList->parent();
-	par->resize(par->x(), par->y() - 30, par->w(), par->h() + 30);
-	ch->resize(ch->x(), ch->y(), ch->w(), ch->h() + 20);
+	par->resize(par->x(), par->y() - 30, par->w() - 30, par->h() + 30);
+	ch->resize(ch->x(), ch->y(), ch->w() - 5, ch->h() + 20);
 
 	PopupDialogModal(fc.get());
 	return fc->value();
