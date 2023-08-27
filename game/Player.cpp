@@ -4974,12 +4974,12 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 	// make sure the bob is visible even at low speeds
 	speed = xyspeed > 200 ? xyspeed : 200;
 
-	delta = bobfracsin * pm_bobpitch.GetFloat() * speed;
+	delta = bobfracsin * speed * pm_bobpitch.GetFloat() * pm_headbob_mod.GetFloat();
 	if ( physicsObj.IsCrouching() ) {
 		delta *= 3;		// crouching
 	}
 	viewBobAngles.pitch += delta;
-	delta = bobfracsin * pm_bobroll.GetFloat() * speed;
+	delta = bobfracsin * speed * pm_bobroll.GetFloat() * pm_headbob_mod.GetFloat();
 	if (physicsObj.IsCrouching()) {
 		delta *= 3;		// crouching accentuates roll
 	}
@@ -5015,7 +5015,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 	}
 
 	// add bob height after any movement smoothing
-	bob = bobfracsin * xyspeed * pm_bobup.GetFloat();
+	bob = bobfracsin * xyspeed * pm_bobup.GetFloat() * pm_headbob_mod.GetFloat();
 	if ( bob > 6 ) {
 		bob = 6;
 	}

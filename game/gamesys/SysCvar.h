@@ -623,6 +623,10 @@ extern idCVar	pm_runroll;
 extern idCVar	pm_bobup;
 extern idCVar	pm_bobpitch;
 extern idCVar	pm_bobroll;
+
+// Daft Mugi #6310: Add simplified head bob cvar
+extern idCVar	pm_headbob_mod;
+
 extern idCVar	pm_thirdPersonRange;
 extern idCVar	pm_thirdPersonHeight;
 extern idCVar	pm_thirdPersonAngle;
