@@ -4538,6 +4538,27 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gameLocal.Warning("Unknown value for lockpicking difficulty encountered!");
 		};
 	}
+	else if (cmd == "setdefaultspeed") // Daft Mugi #6311
+	{
+		int defaultSpeed = gui->GetStateInt("defaultspeed", "-1");
+		switch (defaultSpeed)
+		{
+		case 0: // Walk
+			cvarSystem->SetCVarBool("in_alwaysRun", false);
+			cvarSystem->SetCVarBool("in_toggleRun", false);
+			break;
+		case 1: // Run
+			cvarSystem->SetCVarBool("in_alwaysRun", true);
+			cvarSystem->SetCVarBool("in_toggleRun", false);
+			break;
+		case 2: // Toggle
+			cvarSystem->SetCVarBool("in_alwaysRun", false);
+			cvarSystem->SetCVarBool("in_toggleRun", true);
+			break;
+		default:
+			gameLocal.Warning("Unknown value for defaultspeed encountered!");
+		};
+	}
 	// load various game play settings, and update the GUI strings in one go
 	else if (cmd == "loadsettings")
 	{
@@ -4566,6 +4587,13 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			}
 		}
 		gui->SetStateInt("lp_difficulty", setting);
+
+		int defaultSpeed = 0; // Walk
+		if (cvarSystem->GetCVarBool("in_toggleRun"))
+			defaultSpeed = 2; // Toggle (has precedence; works when in_alwaysRun true)
+		else if (cvarSystem->GetCVarBool("in_alwaysRun"))
+			defaultSpeed = 1; // Run
+		gui->SetStateInt("defaultspeed", defaultSpeed);
 
 		idStr diffString = cv_melee_difficulty.GetString();
 		bool bForbidAuto = cv_melee_forbid_auto_parry.GetBool();
