@@ -4559,6 +4559,36 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			gameLocal.Warning("Unknown value for defaultspeed encountered!");
 		};
 	}
+	else if (cmd == "set_frob_helper")
+	{
+		int frobHelperPreset = gui->GetStateInt("frob_helper_preset", "-1");
+		switch (frobHelperPreset)
+		{
+		case 0: // Off
+			cvarSystem->SetCVarBool("tdm_frobhelper_active", false);
+			break;
+		case 1: // Always
+			cvarSystem->SetCVarBool("tdm_frobhelper_active", true);
+			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", true);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 0);    // no delay after menu close
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 0); // no delay after menu close
+			break;
+		case 2: // Hover
+			cvarSystem->SetCVarBool("tdm_frobhelper_active", true);
+			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", false);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 0);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 0);
+			break;
+		case 3: // Fade In
+			cvarSystem->SetCVarBool("tdm_frobhelper_active", true);
+			cvarSystem->SetCVarBool("tdm_frobhelper_alwaysVisible", false);
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_delay", 500);     // default value
+			cvarSystem->SetCVarInteger("tdm_frobhelper_fadein_duration", 1500); // default value
+			break;
+		default:
+			gameLocal.Warning("Unknown value for frob_helper_preset encountered!");
+		};
+	}
 	// load various game play settings, and update the GUI strings in one go
 	else if (cmd == "loadsettings")
 	{
@@ -4594,6 +4624,18 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		else if (cvarSystem->GetCVarBool("in_alwaysRun"))
 			defaultSpeed = 1; // Run
 		gui->SetStateInt("defaultspeed", defaultSpeed);
+
+		int frobHelperPreset = 0; // Off
+		if (cvarSystem->GetCVarBool("tdm_frobhelper_active")) {
+			if (cvarSystem->GetCVarBool("tdm_frobhelper_alwaysVisible")) {
+				frobHelperPreset = 1; // Always
+			} else if (cvarSystem->GetCVarInteger("tdm_frobhelper_fadein_duration") == 0) {
+				frobHelperPreset = 2; // Hover
+			} else {
+				frobHelperPreset = 3; // Fade In
+			}
+		}
+		gui->SetStateInt("frob_helper_preset", frobHelperPreset);
 
 		idStr diffString = cv_melee_difficulty.GetString();
 		bool bForbidAuto = cv_melee_forbid_auto_parry.GetBool();
